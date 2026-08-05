@@ -84,9 +84,3 @@ func (s *storeImpl) AddLibraryPath(ctx context.Context, libraryID uuid.UUID, pat
 func (s *storeImpl) RemoveLibraryPath(ctx context.Context, libraryID uuid.UUID, path string) error {
 	return s.db.WithContext(ctx).Delete(&LibraryPath{}, "library_id = ? AND path = ?", libraryID, path).Error
 }
-
-func (s *storeImpl) UpdateLibraryPath(ctx context.Context, libraryID uuid.UUID, path, newPath string) error {
-	return s.db.WithContext(ctx).Model(&LibraryPath{}).
-		Where("library_id = ? AND path = ?", libraryID, path).
-		Update("path", newPath).Error
-}

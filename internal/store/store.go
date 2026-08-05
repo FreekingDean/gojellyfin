@@ -38,7 +38,6 @@ type Store interface {
 	DeleteLibrary(ctx context.Context, id uuid.UUID) error
 	AddLibraryPath(ctx context.Context, libraryID uuid.UUID, path string) error
 	RemoveLibraryPath(ctx context.Context, libraryID uuid.UUID, path string) error
-	UpdateLibraryPath(ctx context.Context, libraryID uuid.UUID, path, newPath string) error
 }
 
 type storeImpl struct {
