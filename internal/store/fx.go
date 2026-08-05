@@ -5,6 +5,8 @@ import (
 
 	"go.uber.org/fx"
 	"gorm.io/gorm"
+
+	"github.com/FreekingDean/gojellyfin/internal/store/migrations"
 )
 
 var Module = fx.Module(
@@ -14,14 +16,10 @@ var Module = fx.Module(
 		New,
 	),
 	fx.Invoke(
-		migrate,
+		migrations.Run,
 		run,
 	),
 )
-
-func migrate(db *gorm.DB) error {
-	return db.AutoMigrate(&User{})
-}
 
 func run(lc fx.Lifecycle, db *gorm.DB) {
 	lc.Append(fx.Hook{
