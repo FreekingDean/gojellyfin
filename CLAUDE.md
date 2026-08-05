@@ -51,11 +51,23 @@ Routing uses a hand-rolled `internal/http/mux`, not `http.ServeMux`, because Jel
 
 `GET /socket` is registered outside the generated API for the websocket keepalive loop (`internal/server/socket`).
 
+### Domain services
+
+Handlers are being moved out of `package server` into a package per domain, keyed on the spec's tags (every operation carries exactly one tag). `internal/server/users` is the template: handlers, the gorm model and its queries all live together, with `New(db *gorm.DB)`. No interface between handler and query — they're the same package. Files split by concern (`users.go`, `store.go`, `auth.go`, `session.go`), not by layer; there is no separate "service" type, because most operations are translate-and-query and a forwarding layer would be noise.
+
+`server.Server` embeds each service, and embeds `api.Unimplemented` **one level deeper** through `nestedUnimplemented`. Go resolves a method at the shallowest depth where exactly one candidate exists, so a service at depth 1 wins and everything unimplemented falls through to the 501 stub at depth 2. Three things silently break this, all surfacing as a confusing "does not implement StrictServerInterface": a service embedding `api.Unimplemented` itself, two services declaring the same method, or flattening the wrapper. Embedded field names are type names, so each service is embedded through a local alias (`type UsersServer = users.Server`) to keep them distinct.
+
 ### Persistence
 
-`internal/store` is the only package that touches gorm; everything else depends on the `Store` interface. Schema changes go through `internal/store/migrations`: add `000N_description.go` defining a `*gormigrate.Migration` and append it to `all` in `migrations.go`. Migrations run transactionally at startup via `fx.Invoke(migrations.Run)`.
+`internal/store` owns the connection (`NewDB`), migrations, and shared types like `JSON`. It still holds the not-yet-extracted domains behind the `Store` interface; that interface shrinks as each domain moves to its own package.
 
-Migration files snapshot their models as local structs rather than referencing `store.User`, so migrations stay stable as the live model evolves.
+Schema changes go through `internal/store/migrations`: add `000N_description.go` defining a `*gormigrate.Migration` and append it to `all` in `migrations.go`. Migrations run transactionally at startup via `fx.Invoke(migrations.Run)`. Migration files snapshot their models as local structs rather than referencing the live model, which is what lets models move between packages without touching them.
+
+Columns owned by a background process must be left out of an upsert's `DoUpdates` — the scan clobbering probe-owned columns like `run_time_ticks` was a real bug.
+
+### Request identity
+
+`middleware.Auth` resolves a token through the narrow `middleware.Sessions` interface and puts a `middleware.Session` (user id, session id) in the context — not the user record, which would make every domain package a dependency of the middleware. Handlers read `middleware.UserID(ctx)` and fetch what they need.
 
 ### Current state
 
