@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"log"
 
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/store"
@@ -159,6 +160,16 @@ func (s *Server) UpdateMediaPath(ctx context.Context, request api.UpdateMediaPat
 	}
 
 	return api.UpdateMediaPath204Response{}, nil
+}
+
+func (s *Server) RefreshLibrary(ctx context.Context, request api.RefreshLibraryRequestObject) (api.RefreshLibraryResponseObject, error) {
+	go func() {
+		if err := s.scanner.Scan(context.Background()); err != nil {
+			log.Printf("refresh library: %v", err)
+		}
+	}()
+
+	return api.RefreshLibrary204Response{}, nil
 }
 
 func (s *Server) libraryByName(ctx context.Context, name *string) (*store.Library, error) {

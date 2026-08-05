@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/FreekingDean/gojellyfin/internal/scanner"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	"github.com/FreekingDean/gojellyfin/internal/system"
@@ -12,16 +13,18 @@ type Server struct {
 	id   string
 	name string
 
-	store  store.Store
-	system system.Service
+	store   store.Store
+	system  system.Service
+	scanner *scanner.Scanner
 }
 
-func New(store store.Store, system system.Service) *Server {
+func New(store store.Store, system system.Service, scanner *scanner.Scanner) *Server {
 	return &Server{
-		store:  store,
-		system: system,
-		id:     serverId,
-		name:   "gojellyfin",
+		store:   store,
+		system:  system,
+		scanner: scanner,
+		id:      serverId,
+		name:    "gojellyfin",
 	}
 }
 
