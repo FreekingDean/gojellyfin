@@ -8,6 +8,7 @@ import (
 var all = []*gormigrate.Migration{
 	createUsers,
 	userAuth,
+	seedAdmin,
 }
 
 func Run(db *gorm.DB) error {
