@@ -38,6 +38,13 @@ type Store interface {
 	DeleteLibrary(ctx context.Context, id uuid.UUID) error
 	AddLibraryPath(ctx context.Context, libraryID uuid.UUID, path string) error
 	RemoveLibraryPath(ctx context.Context, libraryID uuid.UUID, path string) error
+
+	UpsertItem(ctx context.Context, item *Item) error
+	GetItem(ctx context.Context, id uuid.UUID) (*Item, error)
+	GetItemByPath(ctx context.Context, libraryID uuid.UUID, path string) (*Item, error)
+	ListItemsByLibrary(ctx context.Context, libraryID uuid.UUID) ([]Item, error)
+	ListItemsByParent(ctx context.Context, parentID uuid.UUID) ([]Item, error)
+	DeleteItemsNotInPaths(ctx context.Context, libraryID uuid.UUID, paths []string) error
 }
 
 type storeImpl struct {

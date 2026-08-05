@@ -12,6 +12,7 @@ var all = []*gormigrate.Migration{
 	bcryptPasswords,
 	configurations,
 	libraries,
+	items,
 }
 
 func Run(db *gorm.DB) error {
