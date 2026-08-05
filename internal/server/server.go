@@ -1,8 +1,6 @@
 package server
 
 import (
-	"net/http"
-
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	"github.com/FreekingDean/gojellyfin/internal/system"
@@ -10,7 +8,6 @@ import (
 
 type Server struct {
 	api.Unimplemented
-	server *http.Server
 
 	id   string
 	name string
@@ -23,7 +20,8 @@ func New(store store.Store, system system.Service) *Server {
 	return &Server{
 		store:  store,
 		system: system,
-		id:     "1234",
+		id:     serverId,
+		name:   "gojellyfin",
 	}
 }
 

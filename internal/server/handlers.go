@@ -27,26 +27,6 @@ func (s *Server) GetBrandingOptions(ctx context.Context, request api.GetBranding
 	}, nil
 }
 
-func (s *Server) GetPublicUsers(ctx context.Context, request api.GetPublicUsersRequestObject) (api.GetPublicUsersResponseObject, error) {
-	return api.GetPublicUsers200JSONResponse{}, nil
-}
-
-func (s *Server) AuthenticateUserByName(ctx context.Context, request api.AuthenticateUserByNameRequestObject) (api.AuthenticateUserByNameResponseObject, error) {
-	return api.AuthenticateUserByName200JSONResponse{
-		ServerId:    ptr(serverId),
-		User:        adminUser(),
-		AccessToken: ptr("some-token"),
-	}, nil
-}
-
-func (s *Server) PostFullCapabilities(ctx context.Context, request api.PostFullCapabilitiesRequestObject) (api.PostFullCapabilitiesResponseObject, error) {
-	return api.PostFullCapabilities204Response{}, nil
-}
-
-func (s *Server) GetUserById(ctx context.Context, request api.GetUserByIdRequestObject) (api.GetUserByIdResponseObject, error) {
-	return api.GetUserById200JSONResponse(*adminUser()), nil
-}
-
 func (s *Server) GetDisplayPreferences(ctx context.Context, request api.GetDisplayPreferencesRequestObject) (api.GetDisplayPreferencesResponseObject, error) {
 	return api.GetDisplayPreferences200JSONResponse{}, nil
 }
