@@ -1,4 +1,4 @@
-package server
+package users
 
 import (
 	"context"
@@ -17,6 +17,16 @@ const (
 	serverId     = "e10a32fca79342d7b8b9d96e255ce1bc"
 	rootFolderId = "e9d5075a555c1cbc394eec4cef295274"
 )
+
+type Server struct {
+	store store.Store
+}
+
+func New(s store.Store) *Server {
+	return &Server{
+		store: s,
+	}
+}
 
 func (s *Server) AuthenticateUserByName(ctx context.Context, request api.AuthenticateUserByNameRequestObject) (api.AuthenticateUserByNameResponseObject, error) {
 	req := body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
@@ -388,4 +398,48 @@ func defaultPolicy(isAdministrator bool) api.UserPolicy {
 		RemoteClientBitrateLimit:         ptr(int32(0)),
 		SyncPlayAccess:                   &syncPlayAccess,
 	}
+}
+
+func ptr[T any](v T) *T {
+	return &v
+}
+
+func deref[T any](v *T) T {
+	if v == nil {
+		var zero T
+		return zero
+	}
+
+	return *v
+}
+func body[T any](jsonBody, wildcardBody *T) *T {
+	if jsonBody != nil {
+		return jsonBody
+	}
+
+	return wildcardBody
+}
+
+func sessionDto(session *store.Session, user *store.User) *api.SessionInfoDto {
+	dto := &api.SessionInfoDto{
+		Id:                    ptr(session.ID.String()),
+		ServerId:              ptr(serverId),
+		Client:                ptr(session.Client),
+		DeviceId:              ptr(session.DeviceID),
+		DeviceName:            ptr(session.DeviceName),
+		ApplicationVersion:    ptr(session.AppVersion),
+		LastActivityDate:      ptr(session.LastActivityDate),
+		IsActive:              ptr(true),
+		SupportsRemoteControl: ptr(false),
+		PlayableMediaTypes:    &[]api.MediaType{},
+		SupportedCommands:     &[]api.GeneralCommandType{},
+		AdditionalUsers:       &[]api.SessionUserInfo{},
+	}
+
+	if user != nil {
+		dto.UserId = &user.ID
+		dto.UserName = ptr(user.Name)
+	}
+
+	return dto
 }
