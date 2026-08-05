@@ -30,6 +30,7 @@ func New(m *mux.Mux, auth *middleware.Auth) *Server {
 		httpMiddleware: []middleware.HttpMiddleware{
 			middleware.HttpCORS,
 			middleware.HttpLogging,
+			middleware.HttpCanonicalQuery,
 		},
 
 		apiMiddleware: []api.StrictMiddlewareFunc{
