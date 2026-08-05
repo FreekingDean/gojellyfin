@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+
+	"github.com/FreekingDean/gojellyfin/internal/store"
 )
 
 var upgrader = websocket.Upgrader{
@@ -20,8 +22,28 @@ type wsMessage struct {
 	MessageId   string      `json:"MessageId"`
 }
 
-func SocketHandler(w http.ResponseWriter, r *http.Request) {
-	// available if you want them: r.URL.Query().Get("api_key"), .Get("deviceId")
+type Socket struct {
+	store store.Store
+}
+
+func New(store store.Store) *Socket {
+	return &Socket{store: store}
+}
+
+// Browsers cannot set headers on a websocket handshake, so clients pass the
+// access token as a query param instead of the usual Authorization header.
+func (s *Socket) Handle(w http.ResponseWriter, r *http.Request) {
+	token := r.URL.Query().Get("api_key")
+	if token == "" {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	if _, err := s.store.GetSessionByToken(r.Context(), token); err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return

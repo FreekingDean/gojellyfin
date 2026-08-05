@@ -54,9 +54,9 @@ func New(m *mux.Mux, auth *middleware.Auth) *Server {
 	}
 }
 
-func Register(s *Server, apiServer *server.Server, m *mux.Mux) {
+func Register(s *Server, apiServer *server.Server, sock *socket.Socket, m *mux.Mux) {
 	h := api.NewStrictHandlerWithOptions(apiServer, s.apiMiddleware, s.apiOptions)
-	m.HandleFunc("GET /socket", socket.SocketHandler)
+	m.HandleFunc("GET /socket", sock.Handle)
 	finalHandler := api.HandlerFromMux(h, m)
 	for _, mw := range s.httpMiddleware {
 		finalHandler = mw(finalHandler)
