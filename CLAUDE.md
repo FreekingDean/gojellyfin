@@ -12,7 +12,7 @@ A Go reimplementation of a Jellyfin media server, serving the Jellyfin 10.10.0 H
 
 **Paradigms.** Use what the codebase already does. Don't introduce a new pattern or a new dependency if the existing ones can carry the change, and never refactor toward a better paradigm mid-change. If something genuinely needs rework, add a line to `TODO.md` and move on.
 
-**Commits.** Small and iterative. Each commit stands on its own — it builds, boots, and can be applied or replayed without depending on a later commit to make it valid. Migrations in particular must be safe to re-run.
+**Commits.** Always be committing — don't wait to be asked, and never leave finished work sitting in the working tree. Commit as soon as a change builds and boots, then keep going. Small and iterative: each commit stands on its own and can be applied or replayed without depending on a later commit to make it valid. Migrations in particular must be safe to re-run.
 
 ## Commands
 
