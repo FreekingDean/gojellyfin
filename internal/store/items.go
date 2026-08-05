@@ -35,9 +35,11 @@ type Item struct {
 func (s *storeImpl) UpsertItem(ctx context.Context, item *Item) error {
 	return s.db.WithContext(ctx).Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "library_id"}, {Name: "path"}},
+		// run_time_ticks, container, size, bitrate and probed_at belong to the
+		// probe, not the scan, and would be clobbered back to zero here.
 		DoUpdates: clause.AssignmentColumns([]string{
 			"parent_id", "type", "name", "sort_name", "overview", "production_year",
-			"index_number", "parent_index_number", "premiere_date", "run_time_ticks",
+			"index_number", "parent_index_number", "premiere_date",
 			"date_modified", "updated_at",
 		}),
 	}).Create(item).Error
