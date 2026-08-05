@@ -8,6 +8,7 @@ import (
 
 	"github.com/gorilla/websocket"
 
+	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 )
 
@@ -33,7 +34,7 @@ func New(store store.Store) *Socket {
 // Browsers cannot set headers on a websocket handshake, so clients pass the
 // access token as a query param instead of the usual Authorization header.
 func (s *Socket) Handle(w http.ResponseWriter, r *http.Request) {
-	token := r.URL.Query().Get("api_key")
+	token := middleware.TokenFrom(r)
 	if token == "" {
 		w.WriteHeader(http.StatusUnauthorized)
 		return

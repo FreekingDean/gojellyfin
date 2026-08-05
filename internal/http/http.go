@@ -11,7 +11,19 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/socket"
+	"github.com/FreekingDean/gojellyfin/internal/server/stream"
 )
+
+var streamRoutes = []string{
+	"GET /Videos/{itemId}/stream",
+	"HEAD /Videos/{itemId}/stream",
+	"GET /Videos/{itemId}/stream.{container}",
+	"HEAD /Videos/{itemId}/stream.{container}",
+	"GET /Audio/{itemId}/stream",
+	"HEAD /Audio/{itemId}/stream",
+	"GET /Audio/{itemId}/stream.{container}",
+	"HEAD /Audio/{itemId}/stream.{container}",
+}
 
 type Server struct {
 	s *http.Server
@@ -55,9 +67,13 @@ func New(m *mux.Mux, auth *middleware.Auth) *Server {
 	}
 }
 
-func Register(s *Server, apiServer *server.Server, sock *socket.Socket, m *mux.Mux) {
+func Register(s *Server, apiServer *server.Server, sock *socket.Socket, streams *stream.Handler, m *mux.Mux) {
 	h := api.NewStrictHandlerWithOptions(apiServer, s.apiMiddleware, s.apiOptions)
 	m.HandleFunc("GET /socket", sock.Handle)
+
+	for _, pattern := range streamRoutes {
+		m.HandleFunc(pattern, streams.Serve)
+	}
 	finalHandler := api.HandlerFromMux(h, m)
 	for _, mw := range s.httpMiddleware {
 		finalHandler = mw(finalHandler)

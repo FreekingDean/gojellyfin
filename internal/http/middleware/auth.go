@@ -66,6 +66,16 @@ func (a *Auth) Middleware(f api.StrictHandlerFunc, operationID string) api.Stric
 	}
 }
 
+// Media URLs and websocket handshakes cannot carry an Authorization header, so
+// clients fall back to an api_key query parameter.
+func TokenFrom(r *http.Request) string {
+	if token := parseAuthorization(r).Token; token != "" {
+		return token
+	}
+
+	return r.URL.Query().Get("api_key")
+}
+
 func AuthorizationFrom(ctx context.Context) Authorization {
 	authorization, _ := ctx.Value(authorizationKey).(Authorization)
 
