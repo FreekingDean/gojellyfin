@@ -12,7 +12,7 @@ var PublicOperations = map[string]bool{
 	"GetAudioStream":                true,
 	"GetAudioStreamByContainer":     true,
 	"GetBrandingCss":                true,
-	"GetBrandingCss_2":              true,
+	"GetBrandingCss2":               true,
 	"GetBrandingOptions":            true,
 	"GetDashboardConfigurationPage": true,
 	"GetGenreImage":                 true,
