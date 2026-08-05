@@ -47,6 +47,10 @@ type Store interface {
 	QueryItems(ctx context.Context, query ItemQuery) ([]Item, int64, error)
 	CountChildren(ctx context.Context, parentIDs []uuid.UUID) (map[uuid.UUID]int32, error)
 	DeleteItemsNotInPaths(ctx context.Context, libraryID uuid.UUID, paths []string) error
+
+	GetUserItemDatum(ctx context.Context, userID, itemID uuid.UUID) (*UserItemDatum, error)
+	ListUserItemData(ctx context.Context, userID uuid.UUID, itemIDs []uuid.UUID) (map[uuid.UUID]UserItemDatum, error)
+	SaveUserItemDatum(ctx context.Context, datum *UserItemDatum) error
 }
 
 type storeImpl struct {

@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 )
@@ -149,7 +150,9 @@ func (s *Server) queryResult(ctx context.Context, query store.ItemQuery) (api.Ba
 
 func (s *Server) itemDtos(ctx context.Context, items []store.Item) ([]api.BaseItemDto, error) {
 	folderIDs := make([]uuid.UUID, 0, len(items))
+	itemIDs := make([]uuid.UUID, 0, len(items))
 	for _, item := range items {
+		itemIDs = append(itemIDs, item.ID)
 		if folderTypes[item.Type] {
 			folderIDs = append(folderIDs, item.ID)
 		}
@@ -160,9 +163,22 @@ func (s *Server) itemDtos(ctx context.Context, items []store.Item) ([]api.BaseIt
 		return nil, err
 	}
 
+	userData := map[uuid.UUID]store.UserItemDatum{}
+	if user := middleware.UserFrom(ctx); user != nil {
+		if userData, err = s.store.ListUserItemData(ctx, user.ID, itemIDs); err != nil {
+			return nil, err
+		}
+	}
+
 	dtos := make([]api.BaseItemDto, 0, len(items))
 	for _, item := range items {
-		dtos = append(dtos, itemDto(&item, counts[item.ID]))
+		dto := itemDto(&item, counts[item.ID])
+		datum, ok := userData[item.ID]
+		if !ok {
+			datum = store.UserItemDatum{ItemID: item.ID}
+		}
+		dto.UserData = ptr(userItemDataDto(&datum))
+		dtos = append(dtos, dto)
 	}
 
 	return dtos, nil

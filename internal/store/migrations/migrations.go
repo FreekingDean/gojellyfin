@@ -13,6 +13,7 @@ var all = []*gormigrate.Migration{
 	configurations,
 	libraries,
 	items,
+	userItemData,
 }
 
 func Run(db *gorm.DB) error {
