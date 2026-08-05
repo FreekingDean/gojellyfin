@@ -19,14 +19,6 @@ func (s *Server) GetQuickConnectEnabled(ctx context.Context, request api.GetQuic
 	return api.GetQuickConnectEnabled200JSONResponse(true), nil
 }
 
-func (s *Server) GetBrandingOptions(ctx context.Context, request api.GetBrandingOptionsRequestObject) (api.GetBrandingOptionsResponseObject, error) {
-	return api.GetBrandingOptions200JSONResponse{
-		CustomCss:           ptr(""),
-		LoginDisclaimer:     ptr("This is a go server mimicing jellyfin dont be afraid."),
-		SplashscreenEnabled: ptr(false),
-	}, nil
-}
-
 func (s *Server) GetDisplayPreferences(ctx context.Context, request api.GetDisplayPreferencesRequestObject) (api.GetDisplayPreferencesResponseObject, error) {
 	return api.GetDisplayPreferences200JSONResponse{}, nil
 }

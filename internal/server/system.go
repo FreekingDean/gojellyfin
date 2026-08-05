@@ -6,34 +6,40 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 )
 
-var (
-	VERSION = "10.10.0"
-)
-
 func (s *Server) GetPublicSystemInfo(
 	ctx context.Context,
 	request api.GetPublicSystemInfoRequestObject,
 ) (api.GetPublicSystemInfoResponseObject, error) {
+	configuration, err := s.serverConfiguration(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	return api.GetPublicSystemInfo200JSONResponse{
 		Id:                     ptr(s.ID()),
 		LocalAddress:           ptr(s.system.LocalAddress()),
-		ServerName:             ptr(s.Name()),
+		ServerName:             configuration.ServerName,
 		ProductName:            ptr(s.system.ProductName()),
 		Version:                ptr(s.system.Version()),
-		StartupWizardCompleted: ptr(true),
+		StartupWizardCompleted: configuration.IsStartupWizardCompleted,
 		OperatingSystem:        ptr(s.system.OperatingSystem()),
 	}, nil
 }
 
 func (s *Server) GetSystemInfo(ctx context.Context, request api.GetSystemInfoRequestObject) (api.GetSystemInfoResponseObject, error) {
+	configuration, err := s.serverConfiguration(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	return api.GetSystemInfo200JSONResponse{
 		Id:                       ptr(s.ID()),
 		LocalAddress:             ptr(s.system.LocalAddress()),
-		ServerName:               ptr(s.Name()),
+		ServerName:               configuration.ServerName,
 		ProductName:              ptr(s.system.ProductName()),
 		Version:                  ptr(s.system.Version()),
-		CastReceiverApplications: ptr([]api.CastReceiverApplication{}),
-		StartupWizardCompleted:   ptr(true),
+		CastReceiverApplications: configuration.CastReceiverApplications,
+		StartupWizardCompleted:   configuration.IsStartupWizardCompleted,
 		HasPendingRestart:        ptr(false),
 		IsShuttingDown:           ptr(false),
 		SupportsLibraryMonitor:   ptr(true),
@@ -47,9 +53,9 @@ func (s *Server) GetSystemInfo(ctx context.Context, request api.GetSystemInfoReq
 		CanLaunchWebBrowser:        ptr(false),
 		WebPath:                    ptr("/gojelly/jellyfin-web"),
 		ItemsByNamePath:            ptr("/gojelly/items"),
-		CachePath:                  ptr("/gojelly/cache"),
+		CachePath:                  orElse(configuration.CachePath, "/gojelly/cache"),
 		LogPath:                    ptr("/gojelly/logs"),
-		InternalMetadataPath:       ptr("/gojelly/metadata"),
+		InternalMetadataPath:       orElse(configuration.MetadataPath, "/gojelly/metadata"),
 		TranscodingTempPath:        ptr("/gojelly/transcoding"),
 		HasUpdateAvailable:         ptr(false),
 		EncoderLocation:            ptr(""),
