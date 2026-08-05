@@ -13,7 +13,10 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store"
 )
 
-const serverId = "e10a32fca79342d7b8b9d96e255ce1bc"
+const (
+	serverId     = "e10a32fca79342d7b8b9d96e255ce1bc"
+	rootFolderId = "e9d5075a555c1cbc394eec4cef295274"
+)
 
 func (s *Server) AuthenticateUserByName(ctx context.Context, request api.AuthenticateUserByNameRequestObject) (api.AuthenticateUserByNameResponseObject, error) {
 	req := body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)

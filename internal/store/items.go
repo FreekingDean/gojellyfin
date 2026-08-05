@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -72,6 +73,115 @@ func (s *storeImpl) ListItemsByParent(ctx context.Context, parentID uuid.UUID) (
 	}
 
 	return items, nil
+}
+
+type ItemQuery struct {
+	LibraryID  *uuid.UUID
+	ParentID   *uuid.UUID
+	TopLevel   bool
+	Types      []string
+	IDs        []uuid.UUID
+	SearchTerm string
+	SortBy     []string
+	Descending bool
+	StartIndex int
+	Limit      int
+}
+
+var sortColumns = map[string]string{
+	"sortname":       "sort_name",
+	"name":           "sort_name",
+	"premieredate":   "premiere_date",
+	"productionyear": "production_year",
+	"datecreated":    "created_at",
+	"datemodified":   "date_modified",
+	"indexnumber":    "index_number",
+	"random":         "random()",
+}
+
+func (s *storeImpl) QueryItems(ctx context.Context, query ItemQuery) ([]Item, int64, error) {
+	db := s.db.WithContext(ctx).Model(&Item{})
+
+	if query.LibraryID != nil {
+		db = db.Where("library_id = ?", *query.LibraryID)
+	}
+	if query.TopLevel {
+		db = db.Where("parent_id IS NULL")
+	}
+	if query.ParentID != nil {
+		db = db.Where("parent_id = ?", *query.ParentID)
+	}
+	if len(query.Types) > 0 {
+		db = db.Where("type IN ?", query.Types)
+	}
+	if len(query.IDs) > 0 {
+		db = db.Where("id IN ?", query.IDs)
+	}
+	if query.SearchTerm != "" {
+		db = db.Where("name ILIKE ?", "%"+query.SearchTerm+"%")
+	}
+
+	var total int64
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	direction := " asc"
+	if query.Descending {
+		direction = " desc"
+	}
+	for _, sort := range query.SortBy {
+		column, ok := sortColumns[strings.ToLower(sort)]
+		if !ok {
+			continue
+		}
+		if column == "random()" {
+			db = db.Order(column)
+			continue
+		}
+		db = db.Order(column + direction)
+	}
+	db = db.Order("sort_name" + direction)
+
+	if query.StartIndex > 0 {
+		db = db.Offset(query.StartIndex)
+	}
+	if query.Limit > 0 {
+		db = db.Limit(query.Limit)
+	}
+
+	var items []Item
+	if err := db.Find(&items).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return items, total, nil
+}
+
+func (s *storeImpl) CountChildren(ctx context.Context, parentIDs []uuid.UUID) (map[uuid.UUID]int32, error) {
+	counts := make(map[uuid.UUID]int32, len(parentIDs))
+	if len(parentIDs) == 0 {
+		return counts, nil
+	}
+
+	var rows []struct {
+		ParentID uuid.UUID
+		Count    int32
+	}
+	err := s.db.WithContext(ctx).Model(&Item{}).
+		Select("parent_id, count(*) as count").
+		Where("parent_id IN ?", parentIDs).
+		Group("parent_id").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+
+	for _, row := range rows {
+		counts[row.ParentID] = row.Count
+	}
+
+	return counts, nil
 }
 
 func (s *storeImpl) DeleteItemsNotInPaths(ctx context.Context, libraryID uuid.UUID, paths []string) error {

@@ -23,18 +23,6 @@ func (s *Server) GetDisplayPreferences(ctx context.Context, request api.GetDispl
 	return api.GetDisplayPreferences200JSONResponse{}, nil
 }
 
-func (s *Server) GetUserViews(ctx context.Context, request api.GetUserViewsRequestObject) (api.GetUserViewsResponseObject, error) {
-	items := []api.BaseItemDto{{
-		Id:   uid("4cb0ebf115cb44068837635374d3a6ea"),
-		Name: ptr("Default"),
-	}}
-	return api.GetUserViews200JSONResponse{
-		Items:            &items,
-		StartIndex:       ptr(int32(0)),
-		TotalRecordCount: ptr(int32(len(items))),
-	}, nil
-}
-
 func (s *Server) GetBitrateTestBytes(ctx context.Context, request api.GetBitrateTestBytesRequestObject) (api.GetBitrateTestBytesResponseObject, error) {
 	buf := bytes.NewBufferString("This is a test endpoint info response")
 	return api.GetBitrateTestBytes200ApplicationoctetStreamResponse{

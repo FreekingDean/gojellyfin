@@ -44,6 +44,8 @@ type Store interface {
 	GetItemByPath(ctx context.Context, libraryID uuid.UUID, path string) (*Item, error)
 	ListItemsByLibrary(ctx context.Context, libraryID uuid.UUID) ([]Item, error)
 	ListItemsByParent(ctx context.Context, parentID uuid.UUID) ([]Item, error)
+	QueryItems(ctx context.Context, query ItemQuery) ([]Item, int64, error)
+	CountChildren(ctx context.Context, parentIDs []uuid.UUID) (map[uuid.UUID]int32, error)
 	DeleteItemsNotInPaths(ctx context.Context, libraryID uuid.UUID, paths []string) error
 }
 
