@@ -3,14 +3,14 @@ package users
 import (
 	"context"
 	"encoding/json"
-	"time"
 
 	openapi_types "github.com/oapi-codegen/runtime/types"
+
+	"gorm.io/gorm"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	"github.com/FreekingDean/gojellyfin/internal/store"
 )
 
 const (
@@ -19,72 +19,29 @@ const (
 )
 
 type Server struct {
-	store store.Store
+	db *gorm.DB
 }
 
-func New(s store.Store) *Server {
-	return &Server{
-		store: s,
-	}
+func New(db *gorm.DB) *Server {
+	return &Server{db: db}
 }
 
-func (s *Server) AuthenticateUserByName(ctx context.Context, request api.AuthenticateUserByNameRequestObject) (api.AuthenticateUserByNameResponseObject, error) {
-	req := body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
-	if req == nil || req.Username == nil {
-		return nil, middleware.ErrUnauthorized
-	}
-
-	user, err := s.store.GetUserByUsername(ctx, *req.Username)
-	if err != nil {
-		return nil, middleware.ErrUnauthorized
-	}
-
-	matches, err := auth.Verify(deref(req.Pw), user.PasswordHash)
-	if err != nil || !matches {
-		return nil, middleware.ErrUnauthorized
-	}
-
-	token, err := auth.NewToken()
+func (s *Server) GetUsers(ctx context.Context, request api.GetUsersRequestObject) (api.GetUsersResponseObject, error) {
+	dtos, err := s.listUserDtos(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	now := time.Now()
-	authorization := middleware.AuthorizationFrom(ctx)
-	session := &store.Session{
-		UserID:           user.ID,
-		AccessToken:      token,
-		DeviceID:         authorization.DeviceID,
-		DeviceName:       authorization.Device,
-		Client:           authorization.Client,
-		AppVersion:       authorization.Version,
-		LastActivityDate: now,
-	}
-	if err := s.store.CreateSession(ctx, session); err != nil {
-		return nil, err
-	}
-
-	if err := s.store.TouchUserLogin(ctx, user.ID); err != nil {
-		return nil, err
-	}
-	user.LastLoginDate = &now
-	user.LastActivityDate = &now
-
-	dto, err := userDto(user)
-	if err != nil {
-		return nil, err
-	}
-
-	return api.AuthenticateUserByName200JSONResponse{
-		AccessToken: ptr(token),
-		ServerId:    ptr(serverId),
-		User:        &dto,
-		SessionInfo: sessionDto(session, user),
-	}, nil
+	return api.GetUsers200JSONResponse(dtos), nil
 }
 
 func (s *Server) GetCurrentUser(ctx context.Context, request api.GetCurrentUserRequestObject) (api.GetCurrentUserResponseObject, error) {
-	dto, err := userDto(middleware.UserFrom(ctx))
+	user, err := s.user(ctx, middleware.UserID(ctx))
+	if err != nil {
+		return api.GetCurrentUser400JSONResponse{}, nil
+	}
+
+	dto, err := userDto(user)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +50,7 @@ func (s *Server) GetCurrentUser(ctx context.Context, request api.GetCurrentUserR
 }
 
 func (s *Server) GetUserById(ctx context.Context, request api.GetUserByIdRequestObject) (api.GetUserByIdResponseObject, error) {
-	user, err := s.store.GetUser(ctx, request.UserId)
+	user, err := s.user(ctx, request.UserId)
 	if err != nil {
 		return api.GetUserById404JSONResponse{}, nil
 	}
@@ -104,15 +61,6 @@ func (s *Server) GetUserById(ctx context.Context, request api.GetUserByIdRequest
 	}
 
 	return api.GetUserById200JSONResponse(dto), nil
-}
-
-func (s *Server) GetUsers(ctx context.Context, request api.GetUsersRequestObject) (api.GetUsersResponseObject, error) {
-	dtos, err := s.listUserDtos(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return api.GetUsers200JSONResponse(dtos), nil
 }
 
 func (s *Server) GetPublicUsers(ctx context.Context, request api.GetPublicUsersRequestObject) (api.GetPublicUsersResponseObject, error) {
@@ -135,12 +83,12 @@ func (s *Server) CreateUserByName(ctx context.Context, request api.CreateUserByN
 		return nil, err
 	}
 
-	user := &store.User{
+	user := &User{
 		Name:         req.Name,
 		Username:     req.Name,
 		PasswordHash: hash,
 	}
-	if err := s.store.CreateUser(ctx, user); err != nil {
+	if err := s.createUser(ctx, user); err != nil {
 		return nil, err
 	}
 
@@ -158,7 +106,7 @@ func (s *Server) UpdateUser(ctx context.Context, request api.UpdateUserRequestOb
 		return api.UpdateUser400JSONResponse{}, nil
 	}
 
-	user, err := s.store.GetUser(ctx, *request.Params.UserId)
+	user, err := s.user(ctx, *request.Params.UserId)
 	if err != nil {
 		return api.UpdateUser400JSONResponse{}, nil
 	}
@@ -178,7 +126,7 @@ func (s *Server) UpdateUser(ctx context.Context, request api.UpdateUserRequestOb
 		user.IsAdministrator = deref(req.Policy.IsAdministrator)
 	}
 
-	if err := s.store.UpdateUser(ctx, user); err != nil {
+	if err := s.updateUser(ctx, user); err != nil {
 		return nil, err
 	}
 
@@ -199,7 +147,7 @@ func (s *Server) UpdateUserConfiguration(ctx context.Context, request api.Update
 	if user.Configuration, err = json.Marshal(req); err != nil {
 		return nil, err
 	}
-	if err := s.store.UpdateUser(ctx, user); err != nil {
+	if err := s.updateUser(ctx, user); err != nil {
 		return nil, err
 	}
 
@@ -212,7 +160,7 @@ func (s *Server) UpdateUserPolicy(ctx context.Context, request api.UpdateUserPol
 		return api.UpdateUserPolicy400JSONResponse{}, nil
 	}
 
-	user, err := s.store.GetUser(ctx, request.UserId)
+	user, err := s.user(ctx, request.UserId)
 	if err != nil {
 		return api.UpdateUserPolicy400JSONResponse{}, nil
 	}
@@ -222,7 +170,7 @@ func (s *Server) UpdateUserPolicy(ctx context.Context, request api.UpdateUserPol
 	}
 	user.IsAdministrator = deref(req.IsAdministrator)
 
-	if err := s.store.UpdateUser(ctx, user); err != nil {
+	if err := s.updateUser(ctx, user); err != nil {
 		return nil, err
 	}
 
@@ -250,7 +198,7 @@ func (s *Server) UpdateUserPassword(ctx context.Context, request api.UpdateUserP
 	if user.PasswordHash, err = auth.Hash(deref(req.NewPw)); err != nil {
 		return nil, err
 	}
-	if err := s.store.UpdateUser(ctx, user); err != nil {
+	if err := s.updateUser(ctx, user); err != nil {
 		return nil, err
 	}
 
@@ -258,11 +206,11 @@ func (s *Server) UpdateUserPassword(ctx context.Context, request api.UpdateUserP
 }
 
 func (s *Server) DeleteUser(ctx context.Context, request api.DeleteUserRequestObject) (api.DeleteUserResponseObject, error) {
-	if _, err := s.store.GetUser(ctx, request.UserId); err != nil {
+	if _, err := s.user(ctx, request.UserId); err != nil {
 		return api.DeleteUser404JSONResponse{}, nil
 	}
 
-	if err := s.store.DeleteUser(ctx, request.UserId); err != nil {
+	if err := s.deleteUser(ctx, request.UserId); err != nil {
 		return nil, err
 	}
 
@@ -270,7 +218,7 @@ func (s *Server) DeleteUser(ctx context.Context, request api.DeleteUserRequestOb
 }
 
 func (s *Server) listUserDtos(ctx context.Context) ([]api.UserDto, error) {
-	users, err := s.store.ListUsers(ctx)
+	users, err := s.users(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -287,15 +235,15 @@ func (s *Server) listUserDtos(ctx context.Context) ([]api.UserDto, error) {
 	return dtos, nil
 }
 
-func (s *Server) userFor(ctx context.Context, id *openapi_types.UUID) (*store.User, error) {
+func (s *Server) userFor(ctx context.Context, id *openapi_types.UUID) (*User, error) {
 	if id == nil {
-		return middleware.UserFrom(ctx), nil
+		return s.user(ctx, middleware.UserID(ctx))
 	}
 
-	return s.store.GetUser(ctx, *id)
+	return s.user(ctx, *id)
 }
 
-func userDto(u *store.User) (api.UserDto, error) {
+func userDto(u *User) (api.UserDto, error) {
 	if u == nil {
 		return api.UserDto{}, nil
 	}
@@ -418,28 +366,4 @@ func body[T any](jsonBody, wildcardBody *T) *T {
 	}
 
 	return wildcardBody
-}
-
-func sessionDto(session *store.Session, user *store.User) *api.SessionInfoDto {
-	dto := &api.SessionInfoDto{
-		Id:                    ptr(session.ID.String()),
-		ServerId:              ptr(serverId),
-		Client:                ptr(session.Client),
-		DeviceId:              ptr(session.DeviceID),
-		DeviceName:            ptr(session.DeviceName),
-		ApplicationVersion:    ptr(session.AppVersion),
-		LastActivityDate:      ptr(session.LastActivityDate),
-		IsActive:              ptr(true),
-		SupportsRemoteControl: ptr(false),
-		PlayableMediaTypes:    &[]api.MediaType{},
-		SupportedCommands:     &[]api.GeneralCommandType{},
-		AdditionalUsers:       &[]api.SessionUserInfo{},
-	}
-
-	if user != nil {
-		dto.UserId = &user.ID
-		dto.UserName = ptr(user.Name)
-	}
-
-	return dto
 }

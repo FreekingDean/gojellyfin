@@ -1,6 +1,8 @@
 package server
 
 import (
+	"gorm.io/gorm"
+
 	"github.com/FreekingDean/gojellyfin/internal/scanner"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/users"
@@ -15,12 +17,14 @@ const (
 
 // Services sit one level shallower than the fallback, so a registered service
 // wins the selector and everything else falls through to Unimplemented.
-type NestedUnimplemented struct {
+type nestedUnimplemented struct {
 	api.Unimplemented
 }
 
+type UsersServer = users.Server
+
 type Server struct {
-	*users.Server
+	*UsersServer
 
 	id   string
 	name string
@@ -29,17 +33,17 @@ type Server struct {
 	system  system.Service
 	scanner *scanner.Scanner
 
-	NestedUnimplemented
+	nestedUnimplemented
 }
 
-func New(store store.Store, system system.Service, scanner *scanner.Scanner) *Server {
+func New(db *gorm.DB, store store.Store, system system.Service, scanner *scanner.Scanner) *Server {
 	return &Server{
-		Server:  users.New(store),
-		store:   store,
-		system:  system,
-		scanner: scanner,
-		id:      serverId,
-		name:    "gojellyfin",
+		UsersServer: users.New(db),
+		store:       store,
+		system:      system,
+		scanner:     scanner,
+		id:          serverId,
+		name:        "gojellyfin",
 	}
 }
 

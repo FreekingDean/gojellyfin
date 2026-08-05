@@ -30,11 +30,12 @@ var contentTypes = map[string]string{
 }
 
 type Handler struct {
-	store store.Store
+	sessions middleware.Sessions
+	store    store.Store
 }
 
-func New(store store.Store) *Handler {
-	return &Handler{store: store}
+func New(sessions middleware.Sessions, store store.Store) *Handler {
+	return &Handler{sessions: sessions, store: store}
 }
 
 // Registered ahead of the generated routes because the generated response type
@@ -45,7 +46,7 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	if _, err := h.store.GetSessionByToken(r.Context(), token); err != nil {
+	if _, err := h.sessions.SessionByToken(r.Context(), token); err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}

@@ -6,8 +6,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/google/uuid"
+
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	"github.com/FreekingDean/gojellyfin/internal/store"
 )
 
 var ErrUnauthorized = errors.New("unauthorized")
@@ -16,7 +17,6 @@ type contextKey int
 
 const (
 	authorizationKey contextKey = iota
-	userKey
 	sessionKey
 )
 
@@ -28,12 +28,23 @@ type Authorization struct {
 	Token    string
 }
 
-type Auth struct {
-	store store.Store
+// Identity of the caller, resolved once per request. Deliberately not the user
+// record itself, so this package stays independent of the domain packages.
+type Session struct {
+	ID     uuid.UUID
+	UserID uuid.UUID
 }
 
-func NewAuth(store store.Store) *Auth {
-	return &Auth{store: store}
+type Sessions interface {
+	SessionByToken(ctx context.Context, token string) (Session, error)
+}
+
+type Auth struct {
+	sessions Sessions
+}
+
+func NewAuth(sessions Sessions) *Auth {
+	return &Auth{sessions: sessions}
 }
 
 func (a *Auth) Middleware(f api.StrictHandlerFunc, operationID string) api.StrictHandlerFunc {
@@ -49,20 +60,12 @@ func (a *Auth) Middleware(f api.StrictHandlerFunc, operationID string) api.Stric
 			return nil, ErrUnauthorized
 		}
 
-		session, err := a.store.GetSessionByToken(ctx, authorization.Token)
+		session, err := a.sessions.SessionByToken(ctx, authorization.Token)
 		if err != nil {
 			return nil, ErrUnauthorized
 		}
 
-		user, err := a.store.GetUser(ctx, session.UserID)
-		if err != nil {
-			return nil, ErrUnauthorized
-		}
-
-		ctx = context.WithValue(ctx, sessionKey, session)
-		ctx = context.WithValue(ctx, userKey, user)
-
-		return f(ctx, w, r, request)
+		return f(context.WithValue(ctx, sessionKey, session), w, r, request)
 	}
 }
 
@@ -82,16 +85,14 @@ func AuthorizationFrom(ctx context.Context) Authorization {
 	return authorization
 }
 
-func UserFrom(ctx context.Context) *store.User {
-	user, _ := ctx.Value(userKey).(*store.User)
-
-	return user
-}
-
-func SessionFrom(ctx context.Context) *store.Session {
-	session, _ := ctx.Value(sessionKey).(*store.Session)
+func SessionFrom(ctx context.Context) Session {
+	session, _ := ctx.Value(sessionKey).(Session)
 
 	return session
+}
+
+func UserID(ctx context.Context) uuid.UUID {
+	return SessionFrom(ctx).UserID
 }
 
 func parseAuthorization(r *http.Request) Authorization {

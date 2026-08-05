@@ -164,8 +164,8 @@ func (s *Server) itemDtos(ctx context.Context, items []store.Item) ([]api.BaseIt
 	}
 
 	userData := map[uuid.UUID]store.UserItemDatum{}
-	if user := middleware.UserFrom(ctx); user != nil {
-		if userData, err = s.store.ListUserItemData(ctx, user.ID, itemIDs); err != nil {
+	if userID := middleware.UserID(ctx); userID != uuid.Nil {
+		if userData, err = s.store.ListUserItemData(ctx, userID, itemIDs); err != nil {
 			return nil, err
 		}
 	}

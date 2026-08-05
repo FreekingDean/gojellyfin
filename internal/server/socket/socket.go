@@ -9,7 +9,6 @@ import (
 	"github.com/gorilla/websocket"
 
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
-	"github.com/FreekingDean/gojellyfin/internal/store"
 )
 
 var upgrader = websocket.Upgrader{
@@ -24,11 +23,11 @@ type wsMessage struct {
 }
 
 type Socket struct {
-	store store.Store
+	sessions middleware.Sessions
 }
 
-func New(store store.Store) *Socket {
-	return &Socket{store: store}
+func New(sessions middleware.Sessions) *Socket {
+	return &Socket{sessions: sessions}
 }
 
 // Browsers cannot set headers on a websocket handshake, so clients pass the
@@ -40,7 +39,7 @@ func (s *Socket) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := s.store.GetSessionByToken(r.Context(), token); err != nil {
+	if _, err := s.sessions.SessionByToken(r.Context(), token); err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}

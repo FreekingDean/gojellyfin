@@ -118,12 +118,12 @@ func (s *Server) savePlayed(ctx context.Context, itemID uuid.UUID, played bool) 
 }
 
 func (s *Server) userItemDatum(ctx context.Context, itemID uuid.UUID) (*store.UserItemDatum, error) {
-	user := middleware.UserFrom(ctx)
-	if user == nil {
+	userID := middleware.UserID(ctx)
+	if userID == uuid.Nil {
 		return nil, middleware.ErrUnauthorized
 	}
 
-	return s.store.GetUserItemDatum(ctx, user.ID, itemID)
+	return s.store.GetUserItemDatum(ctx, userID, itemID)
 }
 
 func userItemDataDto(datum *store.UserItemDatum) api.UserItemDataDto {
