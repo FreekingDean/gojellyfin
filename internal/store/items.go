@@ -23,6 +23,10 @@ type Item struct {
 	ParentIndexNumber *int32
 	PremiereDate      *time.Time
 	RunTimeTicks      *int64
+	Container         string
+	Size              int64
+	Bitrate           int32
+	ProbedAt          *time.Time
 	DateModified      time.Time
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
@@ -37,6 +41,16 @@ func (s *storeImpl) UpsertItem(ctx context.Context, item *Item) error {
 			"date_modified", "updated_at",
 		}),
 	}).Create(item).Error
+}
+
+func (s *storeImpl) SaveItemMedia(ctx context.Context, item *Item) error {
+	return s.db.WithContext(ctx).Model(&Item{}).Where("id = ?", item.ID).Updates(map[string]any{
+		"run_time_ticks": item.RunTimeTicks,
+		"container":      item.Container,
+		"size":           item.Size,
+		"bitrate":        item.Bitrate,
+		"probed_at":      time.Now(),
+	}).Error
 }
 
 func (s *storeImpl) GetItem(ctx context.Context, id uuid.UUID) (*Item, error) {

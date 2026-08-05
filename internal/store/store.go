@@ -48,6 +48,10 @@ type Store interface {
 	CountChildren(ctx context.Context, parentIDs []uuid.UUID) (map[uuid.UUID]int32, error)
 	DeleteItemsNotInPaths(ctx context.Context, libraryID uuid.UUID, paths []string) error
 
+	SaveItemMedia(ctx context.Context, item *Item) error
+	ReplaceMediaStreams(ctx context.Context, itemID uuid.UUID, streams []MediaStream) error
+	ListMediaStreams(ctx context.Context, itemID uuid.UUID) ([]MediaStream, error)
+
 	GetUserItemDatum(ctx context.Context, userID, itemID uuid.UUID) (*UserItemDatum, error)
 	ListUserItemData(ctx context.Context, userID uuid.UUID, itemIDs []uuid.UUID) (map[uuid.UUID]UserItemDatum, error)
 	SaveUserItemDatum(ctx context.Context, datum *UserItemDatum) error

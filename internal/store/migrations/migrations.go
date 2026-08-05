@@ -14,6 +14,7 @@ var all = []*gormigrate.Migration{
 	libraries,
 	items,
 	userItemData,
+	mediaStreams,
 }
 
 func Run(db *gorm.DB) error {

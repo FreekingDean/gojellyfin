@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 )
 
@@ -117,7 +118,7 @@ func (s *Scanner) scanMovies(ctx context.Context, library *store.Library, root s
 		}
 		seen = append(seen, path)
 
-		return nil
+		return s.probeMedia(ctx, library.ID, path)
 	})
 
 	return seen, err
@@ -243,7 +244,7 @@ func (s *Scanner) upsertEpisode(ctx context.Context, library *store.Library, ser
 		title = episodeTitle(seriesName, season, number)
 	}
 
-	return s.store.UpsertItem(ctx, &store.Item{
+	err := s.store.UpsertItem(ctx, &store.Item{
 		LibraryID:         library.ID,
 		ParentID:          &parentID,
 		Type:              "Episode",
@@ -254,6 +255,23 @@ func (s *Scanner) upsertEpisode(ctx context.Context, library *store.Library, ser
 		ParentIndexNumber: season,
 		DateModified:      modifiedAt(entry),
 	})
+	if err != nil {
+		return err
+	}
+
+	return s.probeMedia(ctx, library.ID, path)
+}
+
+func (s *Scanner) probeMedia(ctx context.Context, libraryID uuid.UUID, path string) error {
+	if !ffmpeg.Available() {
+		return nil
+	}
+
+	if err := s.probe(ctx, libraryID, path); err != nil {
+		log.Printf("probe %s: %v", path, err)
+	}
+
+	return nil
 }
 
 func (s *Scanner) itemID(ctx context.Context, libraryID uuid.UUID, path string) (uuid.UUID, error) {
