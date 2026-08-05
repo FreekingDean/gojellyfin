@@ -21,7 +21,7 @@ type Server struct {
 	apiOptions     api.StrictHTTPServerOptions
 }
 
-func New(m *mux.Mux) *Server {
+func New(m *mux.Mux, auth *middleware.Auth) *Server {
 	return &Server{
 		s: &http.Server{
 			Addr: ":8081",
@@ -34,6 +34,7 @@ func New(m *mux.Mux) *Server {
 
 		apiMiddleware: []api.StrictMiddlewareFunc{
 			middleware.OapiLogging,
+			auth.Middleware,
 		},
 
 		apiOptions: api.StrictHTTPServerOptions{
@@ -41,6 +42,10 @@ func New(m *mux.Mux) *Server {
 				log.Printf("Error: %v", err)
 				if errors.Is(err, api.ErrNotImplemented) {
 					http.Error(w, err.Error(), http.StatusNotImplemented)
+					return
+				}
+				if errors.Is(err, middleware.ErrUnauthorized) {
+					http.Error(w, err.Error(), http.StatusUnauthorized)
 					return
 				}
 				http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -5,6 +5,7 @@ import (
 
 	"go.uber.org/fx"
 
+	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/http/mux"
 )
 
@@ -12,6 +13,7 @@ var Module = fx.Module(
 	"http",
 	mux.Module,
 	fx.Provide(
+		middleware.NewAuth,
 		New,
 	),
 	fx.Invoke(
