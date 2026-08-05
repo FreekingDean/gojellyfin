@@ -18,6 +18,14 @@ type Store interface {
 	ListUsers(ctx context.Context) ([]User, error)
 	UpdateUser(ctx context.Context, u *User) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
+	TouchUserLogin(ctx context.Context, id uuid.UUID) error
+	TouchUserActivity(ctx context.Context, id uuid.UUID) error
+
+	CreateSession(ctx context.Context, sess *Session) error
+	GetSessionByToken(ctx context.Context, token string) (*Session, error)
+	ListSessions(ctx context.Context) ([]Session, error)
+	UpdateSession(ctx context.Context, sess *Session) error
+	DeleteSessionByToken(ctx context.Context, token string) error
 }
 
 type storeImpl struct {

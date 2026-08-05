@@ -8,11 +8,17 @@ import (
 )
 
 type User struct {
-	ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid()" json:"id"`
-	Name      string    `json:"name"`
-	Username  string    `gorm:"uniqueIndex" json:"username"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	ID               uuid.UUID `gorm:"type:uuid;default:gen_random_uuid()"`
+	Name             string
+	Username         string `gorm:"uniqueIndex"`
+	PasswordHash     string
+	IsAdministrator  bool
+	Configuration    JSON
+	Policy           JSON
+	LastLoginDate    *time.Time
+	LastActivityDate *time.Time
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
 }
 
 func (s *storeImpl) CreateUser(ctx context.Context, u *User) error {
@@ -52,4 +58,16 @@ func (s *storeImpl) UpdateUser(ctx context.Context, u *User) error {
 
 func (s *storeImpl) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	return s.db.WithContext(ctx).Delete(&User{}, "id = ?", id).Error
+}
+
+func (s *storeImpl) TouchUserLogin(ctx context.Context, id uuid.UUID) error {
+	now := time.Now()
+
+	return s.db.WithContext(ctx).Model(&User{}).Where("id = ?", id).
+		Updates(map[string]any{"last_login_date": now, "last_activity_date": now}).Error
+}
+
+func (s *storeImpl) TouchUserActivity(ctx context.Context, id uuid.UUID) error {
+	return s.db.WithContext(ctx).Model(&User{}).Where("id = ?", id).
+		Update("last_activity_date", time.Now()).Error
 }
