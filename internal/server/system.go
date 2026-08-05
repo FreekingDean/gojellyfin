@@ -6,6 +6,10 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 )
 
+var (
+	VERSION = "10.10.0"
+)
+
 func (s *Server) GetPublicSystemInfo(
 	ctx context.Context,
 	request api.GetPublicSystemInfoRequestObject,
