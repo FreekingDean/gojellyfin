@@ -75,16 +75,31 @@ func compile(pattern string) (*regexp.Regexp, error) {
 	b.WriteString("(?i)^")
 	for _, s := range strings.Split(strings.Trim(pattern, "/"), "/") {
 		b.WriteString("/")
-		switch {
-		case s == "*": // catch-all, e.g. /web/*  — swallows remaining slashes
+		if s == "*" { // catch-all, e.g. /web/*  — swallows remaining slashes
 			b.WriteString("(?P<rest>.*)")
-		case strings.HasPrefix(s, "{") && strings.HasSuffix(s, "}"):
-			b.WriteString("(?P<" + s[1:len(s)-1] + ">[^/]+)")
-		default:
-			b.WriteString(regexp.QuoteMeta(s)) // escape . in things like stream.mp4
+			continue
 		}
+		b.WriteString(compileSegment(s))
 	}
 	b.WriteString("/?$") // tolerate a trailing slash for free
 	reg, err := regexp.Compile(b.String())
 	return reg, err
+}
+
+var paramPattern = regexp.MustCompile(`\{([^}]+)\}`)
+
+// A segment can mix literals and captures, as in stream.{container}, so the
+// literal parts are escaped around each capture rather than whole-segment.
+func compileSegment(segment string) string {
+	var b strings.Builder
+
+	last := 0
+	for _, match := range paramPattern.FindAllStringSubmatchIndex(segment, -1) {
+		b.WriteString(regexp.QuoteMeta(segment[last:match[0]]))
+		b.WriteString("(?P<" + segment[match[2]:match[3]] + ">[^/]+)")
+		last = match[1]
+	}
+	b.WriteString(regexp.QuoteMeta(segment[last:]))
+
+	return b.String()
 }
