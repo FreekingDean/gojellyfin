@@ -26,6 +26,9 @@ type Store interface {
 	ListSessions(ctx context.Context) ([]Session, error)
 	UpdateSession(ctx context.Context, sess *Session) error
 	DeleteSessionByToken(ctx context.Context, token string) error
+
+	GetConfiguration(ctx context.Context, key string) (JSON, error)
+	SetConfiguration(ctx context.Context, key string, value JSON) error
 }
 
 type storeImpl struct {
