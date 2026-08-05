@@ -11,6 +11,7 @@ var all = []*gormigrate.Migration{
 	seedAdmin,
 	bcryptPasswords,
 	configurations,
+	libraries,
 }
 
 func Run(db *gorm.DB) error {

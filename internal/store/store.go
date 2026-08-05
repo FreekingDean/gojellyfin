@@ -29,6 +29,16 @@ type Store interface {
 
 	GetConfiguration(ctx context.Context, key string) (JSON, error)
 	SetConfiguration(ctx context.Context, key string, value JSON) error
+
+	CreateLibrary(ctx context.Context, library *Library) error
+	GetLibrary(ctx context.Context, id uuid.UUID) (*Library, error)
+	GetLibraryByName(ctx context.Context, name string) (*Library, error)
+	ListLibraries(ctx context.Context) ([]Library, error)
+	UpdateLibrary(ctx context.Context, library *Library) error
+	DeleteLibrary(ctx context.Context, id uuid.UUID) error
+	AddLibraryPath(ctx context.Context, libraryID uuid.UUID, path string) error
+	RemoveLibraryPath(ctx context.Context, libraryID uuid.UUID, path string) error
+	UpdateLibraryPath(ctx context.Context, libraryID uuid.UUID, path, newPath string) error
 }
 
 type storeImpl struct {
