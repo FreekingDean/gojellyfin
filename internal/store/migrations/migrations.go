@@ -7,6 +7,7 @@ import (
 
 var all = []*gormigrate.Migration{
 	createUsers,
+	userAuth,
 }
 
 func Run(db *gorm.DB) error {
