@@ -19,7 +19,7 @@ A Go reimplementation of a Jellyfin media server, serving the Jellyfin 10.10.0 H
 ```sh
 go run ./cmd/server                  # run (listens on :8081)
 go build ./...
-go test ./...                        # no tests exist yet
+go test ./...
 go test -run TestName ./internal/... # single test
 go generate ./internal/server/api    # regenerate API from the OpenAPI spec
 ```
