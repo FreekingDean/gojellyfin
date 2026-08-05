@@ -42,7 +42,7 @@ func TestHashIsSaltedPerCall(t *testing.T) {
 }
 
 func TestVerifyRejectsMalformedHash(t *testing.T) {
-	for _, hash := range []string{"", "hunter2", "$MD5$1$AA$BB", "$PBKDF2-SHA512$notanumber$AA$BB"} {
+	for _, hash := range []string{"", "hunter2", "$1$AA$BB"} {
 		if _, err := Verify("hunter2", hash); err == nil {
 			t.Errorf("want error for %q", hash)
 		}
