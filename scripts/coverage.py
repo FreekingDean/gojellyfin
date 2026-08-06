@@ -58,6 +58,13 @@ def missing(tags, done):
     return out
 
 
+def bar(done, total, width=10):
+    """GitHub renders no progress bar inside a table, so draw one."""
+    filled = 0 if not total else round(width * done / total)
+    return '`%s%s` %d%%' % ('█' * filled, '░' * (width - filled),
+                            0 if not total else round(100 * done / total))
+
+
 def table(tags, done):
     rows = sorted(
         ((tag, sum(1 for op in ops if op.replace('_', '').lower() in done), len(ops))
@@ -69,13 +76,13 @@ def table(tags, done):
     planned = sum(row[2] for row in rows if row[0] not in NOT_PLANNED)
 
     lines = [
-        '`%d/%d` operations have a handler (`%d` in tags we intend to support).'
-        % (total_done, total, planned),
+        '## %s %d/%d operations' % (bar(total_done, total, width=20), total_done, total),
         '',
-        'Regenerate with `scripts/coverage.py`.',
+        '`%d` of those are in tags we intend to support. Regenerate with `scripts/coverage.py`.'
+        % planned,
         '',
-        '| Tag | Done | Total | |',
-        '| --- | ---: | ----: | --- |',
+        '| Tag | Progress | Done | Total | |',
+        '| --- | --- | ---: | ----: | --- |',
     ]
     for tag, have, count in rows:
         if tag in NOT_PLANNED:
@@ -86,16 +93,39 @@ def table(tags, done):
             note = 'partial'
         else:
             note = ''
-        lines.append('| %s | %d | %d | %s |' % (tag, have, count, note))
+        lines.append('| %s | %s | %d | %d | %s |'
+                     % (tag, bar(have, count), have, count, note))
 
     lines += ['', '**Not planned:** ' + ', '.join(sorted(NOT_PLANNED)) + '.']
+    return '\n'.join(lines)
+
+
+def issue(tag, tags, done):
+    """Checkbox per operation, so GitHub renders its own progress counter."""
+    ops = tags[tag]
+    have = sum(1 for op in ops if op.replace('_', '').lower() in done)
+
+    lines = [
+        '%s %d of %d operations in the `%s` tag.' % (bar(have, len(ops)), have, len(ops), tag),
+        '',
+        'A box is ticked when a handler exists in `internal/server/<tag>`, which is'
+        ' not the same as the operation being fully backed by data.',
+        '',
+    ]
+    for op, route in sorted(ops.items(), key=lambda kv: kv[1]):
+        mark = 'x' if op.replace('_', '').lower() in done else ' '
+        lines.append('- [%s] `%s` — `%s`' % (mark, op, route))
+
+    lines += ['', 'Regenerate with `scripts/coverage.py --tag %s`.' % tag]
     return '\n'.join(lines)
 
 
 def main():
     tags, done = operations(), implemented()
 
-    if '--tag' in sys.argv:
+    if '--issue' in sys.argv:
+        print(issue(sys.argv[sys.argv.index('--issue') + 1], tags, done))
+    elif '--tag' in sys.argv:
         tag = sys.argv[sys.argv.index('--tag') + 1]
         for op, route in sorted(missing(tags, done).get(tag, {}).items()):
             print('%-40s %s' % (op, route))
