@@ -3,6 +3,7 @@ package socket
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"net/http"
 	"time"
 
@@ -10,6 +11,13 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
+)
+
+// The client treats an unanswered KeepAlive as a dead socket and reconnects, so
+// the timeout is advertised as 60s and ForceKeepAlive is pushed at half that.
+const (
+	keepAliveTimeout  = 60
+	keepAliveInterval = 30 * time.Second
 )
 
 var upgrader = websocket.Upgrader{
@@ -32,7 +40,7 @@ func New(auth *auth.Service) *Socket {
 }
 
 // Browsers cannot set headers on a websocket handshake, so clients pass the
-// access token as a query param instead of the usual Authorization header.
+// access token as a query parameter instead.
 func (s *Socket) Handle(w http.ResponseWriter, r *http.Request) {
 	token := middleware.TokenFrom(r)
 	if token == "" {
@@ -51,32 +59,60 @@ func (s *Socket) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	// Reader goroutine: drain inbound (KeepAlive, SessionsStart, etc.).
-	// We ignore the contents but MUST keep reading to detect disconnect.
+	// Gorilla allows one concurrent writer, so replies are funnelled to the
+	// write loop below rather than sent from the reader.
+	replies := make(chan wsMessage, 8)
 	done := make(chan struct{})
+
 	go func() {
 		defer close(done)
 		for {
-			if _, _, err := conn.ReadMessage(); err != nil {
+			_, payload, err := conn.ReadMessage()
+			if err != nil {
+				return
+			}
+
+			var message wsMessage
+			if err := json.Unmarshal(payload, &message); err != nil {
+				continue
+			}
+			if message.MessageType != "KeepAlive" {
+				continue
+			}
+
+			select {
+			case replies <- wsMessage{MessageType: "KeepAlive", MessageId: newGUID()}:
+			case <-done:
 				return
 			}
 		}
 	}()
 
-	// Writer: push ForceKeepAlive every 30s (timeout is 60s, so send at half).
-	ticker := time.NewTicker(30 * time.Second)
+	if err := conn.WriteJSON(forceKeepAlive()); err != nil {
+		return
+	}
+
+	ticker := time.NewTicker(keepAliveInterval)
 	defer ticker.Stop()
+
 	for {
-		msg := wsMessage{MessageType: "ForceKeepAlive", Data: 60, MessageId: newGUID()}
-		if err := conn.WriteJSON(msg); err != nil {
-			return
-		}
 		select {
+		case reply := <-replies:
+			if err := conn.WriteJSON(reply); err != nil {
+				return
+			}
 		case <-ticker.C:
+			if err := conn.WriteJSON(forceKeepAlive()); err != nil {
+				return
+			}
 		case <-done:
 			return
 		}
 	}
+}
+
+func forceKeepAlive() wsMessage {
+	return wsMessage{MessageType: "ForceKeepAlive", Data: keepAliveTimeout, MessageId: newGUID()}
 }
 
 func newGUID() string {

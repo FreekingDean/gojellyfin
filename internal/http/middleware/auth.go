@@ -38,13 +38,21 @@ func (a *Auth) Middleware(f api.StrictHandlerFunc, operationID string) api.Stric
 }
 
 // Media URLs and websocket handshakes cannot carry an Authorization header, so
-// clients fall back to an api_key query parameter.
+// clients fall back to a query parameter. jellyfin-web sends ApiKey, older Emby
+// clients send api_key, and neither casing is canonicalised for these routes
+// because they are registered outside the generated API.
 func TokenFrom(r *http.Request) string {
 	if token := parseAuthorization(r).Token; token != "" {
 		return token
 	}
 
-	return r.URL.Query().Get("api_key")
+	for key, values := range r.URL.Query() {
+		if strings.EqualFold(strings.ReplaceAll(key, "_", ""), "apikey") && len(values) > 0 {
+			return values[0]
+		}
+	}
+
+	return ""
 }
 
 func parseAuthorization(r *http.Request) auth.Authorization {
