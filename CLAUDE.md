@@ -53,16 +53,15 @@ Routing uses a hand-rolled `internal/http/mux`, not `http.ServeMux`, because Jel
 
 ### Domain services
 
-Two groups, split on whether the code knows about the HTTP API:
+Three layers, split on what each is allowed to know:
 
-- **`internal/{auth,users,items,libraries,config}` — domains.** Models and behaviour, exposing a `Service` built with `New(db *gorm.DB)`. `auth` owns sessions, password hashing and token minting; `users` owns only the user record. **A domain package must never import `internal/server/api` or `internal/http/middleware`.** That invariant is what the layout rests on; check it with `grep -rl 'server/api\|http/middleware' internal/<domain>/`, which must come back empty.
-- **`internal/server/<domain>` — handlers.** A `Server` holding the domain `Store`, implementing the generated operations and owning every DTO translation.
+- **`internal/{auth,users,items,libraries,config}` — domains.** Models and behaviour, exposing a `Service` built with `New(db *gorm.DB)`. **A domain package must never import `internal/server/api` or `internal/http/middleware`.** That invariant is what the layout rests on; check it with `grep -rl 'server/api\|http/middleware' internal/<domain>/`, which must come back empty. `auth` owns sessions, hashing and tokens; `users` owns only the user record.
+- **`internal/server/<tag>` — one package per spec tag.** Named for the tag (`userlibrary`, `librarystructure`, `mediainfo`), holding exactly the operations that tag declares and a `Server` with the domain services it needs. Add a tag package by looking the operation up in the spec, not by guessing where it feels like it belongs — `AuthenticateUserByName` is a `User` operation, `GetBitrateTestBytes` is `MediaInfo`.
+- **`internal/server/dtos`** — translation and helpers shared by more than one tag (`ItemDto`, `UserDto`, `SessionDto`, `ServerConfiguration`, plus `Ptr`/`Deref`/`Body`/`UID`). Domains can't hold these because they'd have to import `api`.
 
-Domains are keyed on **entities, not tags** — `Item` is touched by nine tags (Items, Image, UserLibrary, Playstate, Videos, Audio, MediaInfo, TvShows, Movies), so a package per tag would either duplicate the queries or make handlers depend on handlers. One handler package covers all the tags about its entity.
+Two naming traps, both of which cost real time: generated operation names occupy the method namespace, so domain queries need distinct names (`ItemByID`, not `GetItem`); and package names are easily shadowed by locals — `items []items.Item`, `dtos := make(...)`. Name the local something else.
 
-Because generated operation names occupy the method namespace, domain queries take distinct names — `ItemByID`, not `GetItem`. The domain package name is also easily shadowed by a local (`items []items.Item`); name the local something else.
-
-`internal/server` itself is only the composition root plus the transport edge (`api`, `socket`, `stream`), and imports the handler packages under aliases (`serveritems`) because the short names belong to the domains.
+`internal/server` itself is only the composition root plus the transport edge (`api`, `socket`, `stream`).
 
 Cross-domain wiring uses interfaces declared by the *consumer* — `middleware.Sessions`, `libraries.Scanner`. Where that would make the object graph cyclic (libraries needs the scanner, the scanner reads libraries), the dependency is set after construction via `fx.Invoke` rather than in the constructor.
 
