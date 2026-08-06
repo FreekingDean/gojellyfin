@@ -81,8 +81,6 @@ func Register(s *Server, apiServer *server.Server, sock *socket.Socket, streams 
 	for _, pattern := range streamRoutes {
 		m.HandleFunc(pattern, streams.Serve)
 	}
-
-	registerLegacyRoutes(m)
 	// Parameter binding failures answer 400 without reaching a handler, so this
 	// is the only place the reason is visible.
 	finalHandler := api.HandlerWithOptions(h, api.StdHTTPServerOptions{
