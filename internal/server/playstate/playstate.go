@@ -1,22 +1,41 @@
-package items
+package playstate
 
 import (
 	"context"
 	"time"
 
-	"github.com/google/uuid"
-
+	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
+	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
+	"github.com/FreekingDean/gojellyfin/internal/server/dtos"
+	"github.com/google/uuid"
 )
 
 // Below this fraction of the runtime a stop is treated as an abandoned resume
 // point; above it the item counts as watched.
 const playedThreshold = 0.9
 
+func (s *Server) userItemDatum(ctx context.Context, itemID uuid.UUID) (*items.Datum, error) {
+	userID := middleware.UserID(ctx)
+	if userID == uuid.Nil {
+		return nil, middleware.ErrUnauthorized
+	}
+
+	return s.items.GetUserItemDatum(ctx, userID, itemID)
+}
+
+type Server struct {
+	items *items.Service
+}
+
+func New(items *items.Service) *Server {
+	return &Server{items: items}
+}
+
 func (s *Server) ReportPlaybackStart(ctx context.Context, request api.ReportPlaybackStartRequestObject) (api.ReportPlaybackStartResponseObject, error) {
-	req := body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
+	req := dtos.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
 	if req != nil && req.ItemId != nil {
-		if err := s.recordProgress(ctx, *req.ItemId, deref(req.PositionTicks)); err != nil {
+		if err := s.recordProgress(ctx, *req.ItemId, dtos.Deref(req.PositionTicks)); err != nil {
 			return nil, err
 		}
 	}
@@ -25,9 +44,9 @@ func (s *Server) ReportPlaybackStart(ctx context.Context, request api.ReportPlay
 }
 
 func (s *Server) ReportPlaybackProgress(ctx context.Context, request api.ReportPlaybackProgressRequestObject) (api.ReportPlaybackProgressResponseObject, error) {
-	req := body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
+	req := dtos.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
 	if req != nil && req.ItemId != nil {
-		if err := s.recordProgress(ctx, *req.ItemId, deref(req.PositionTicks)); err != nil {
+		if err := s.recordProgress(ctx, *req.ItemId, dtos.Deref(req.PositionTicks)); err != nil {
 			return nil, err
 		}
 	}
@@ -36,9 +55,9 @@ func (s *Server) ReportPlaybackProgress(ctx context.Context, request api.ReportP
 }
 
 func (s *Server) ReportPlaybackStopped(ctx context.Context, request api.ReportPlaybackStoppedRequestObject) (api.ReportPlaybackStoppedResponseObject, error) {
-	req := body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
+	req := dtos.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
 	if req != nil && req.ItemId != nil {
-		if err := s.recordStop(ctx, *req.ItemId, deref(req.PositionTicks)); err != nil {
+		if err := s.recordStop(ctx, *req.ItemId, dtos.Deref(req.PositionTicks)); err != nil {
 			return nil, err
 		}
 	}
@@ -55,7 +74,7 @@ func (s *Server) OnPlaybackStart(ctx context.Context, request api.OnPlaybackStar
 }
 
 func (s *Server) OnPlaybackProgress(ctx context.Context, request api.OnPlaybackProgressRequestObject) (api.OnPlaybackProgressResponseObject, error) {
-	if err := s.recordProgress(ctx, request.ItemId, deref(request.Params.PositionTicks)); err != nil {
+	if err := s.recordProgress(ctx, request.ItemId, dtos.Deref(request.Params.PositionTicks)); err != nil {
 		return nil, err
 	}
 
@@ -63,7 +82,7 @@ func (s *Server) OnPlaybackProgress(ctx context.Context, request api.OnPlaybackP
 }
 
 func (s *Server) OnPlaybackStopped(ctx context.Context, request api.OnPlaybackStoppedRequestObject) (api.OnPlaybackStoppedResponseObject, error) {
-	if err := s.recordStop(ctx, request.ItemId, deref(request.Params.PositionTicks)); err != nil {
+	if err := s.recordStop(ctx, request.ItemId, dtos.Deref(request.Params.PositionTicks)); err != nil {
 		return nil, err
 	}
 
@@ -81,7 +100,7 @@ func (s *Server) recordProgress(ctx context.Context, itemID uuid.UUID, position 
 	}
 
 	datum.PlaybackPositionTicks = position
-	datum.LastPlayedDate = ptr(time.Now())
+	datum.LastPlayedDate = dtos.Ptr(time.Now())
 
 	return s.items.SaveUserItemDatum(ctx, datum)
 }
@@ -97,7 +116,7 @@ func (s *Server) recordStop(ctx context.Context, itemID uuid.UUID, position int6
 		return err
 	}
 
-	datum.LastPlayedDate = ptr(time.Now())
+	datum.LastPlayedDate = dtos.Ptr(time.Now())
 	datum.PlaybackPositionTicks = position
 
 	if watched(item.RunTimeTicks, position) {

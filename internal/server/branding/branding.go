@@ -1,14 +1,24 @@
-package config
+package branding
 
 import (
 	"context"
 	"strings"
 
+	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
+	"github.com/FreekingDean/gojellyfin/internal/server/dtos"
 )
 
+type Server struct {
+	config *config.Service
+}
+
+func New(config *config.Service) *Server {
+	return &Server{config: config}
+}
+
 func (s *Server) GetBrandingOptions(ctx context.Context, request api.GetBrandingOptionsRequestObject) (api.GetBrandingOptionsResponseObject, error) {
-	branding, err := s.brandingConfiguration(ctx)
+	branding, err := dtos.BrandingConfiguration(ctx, s.config)
 	if err != nil {
 		return nil, err
 	}
@@ -41,10 +51,10 @@ func (s *Server) GetBrandingCss2(ctx context.Context, request api.GetBrandingCss
 }
 
 func (s *Server) brandingCss(ctx context.Context) (string, error) {
-	branding, err := s.brandingConfiguration(ctx)
+	branding, err := dtos.BrandingConfiguration(ctx, s.config)
 	if err != nil {
 		return "", err
 	}
 
-	return deref(branding.CustomCss), nil
+	return dtos.Deref(branding.CustomCss), nil
 }

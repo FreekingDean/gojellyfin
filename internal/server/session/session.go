@@ -1,11 +1,23 @@
-package auth
+package session
 
 import (
 	"context"
 
+	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
+	"github.com/FreekingDean/gojellyfin/internal/server/dtos"
+	"github.com/FreekingDean/gojellyfin/internal/users"
 )
+
+type Server struct {
+	auth  *auth.Service
+	users *users.Service
+}
+
+func New(auth *auth.Service, users *users.Service) *Server {
+	return &Server{auth: auth, users: users}
+}
 
 func (s *Server) GetSessions(ctx context.Context, request api.GetSessionsRequestObject) (api.GetSessionsResponseObject, error) {
 	sessions, err := s.auth.ListSessions(ctx)
@@ -13,16 +25,16 @@ func (s *Server) GetSessions(ctx context.Context, request api.GetSessionsRequest
 		return nil, err
 	}
 
-	dtos := make([]api.SessionInfoDto, 0, len(sessions))
+	converted := make([]api.SessionInfoDto, 0, len(sessions))
 	for _, session := range sessions {
 		user, err := s.users.User(ctx, session.UserID)
 		if err != nil {
 			continue
 		}
-		dtos = append(dtos, *SessionDto(&session, user))
+		converted = append(converted, *dtos.SessionDto(&session, user))
 	}
 
-	return api.GetSessions200JSONResponse(dtos), nil
+	return api.GetSessions200JSONResponse(converted), nil
 }
 
 func (s *Server) ReportSessionEnded(ctx context.Context, request api.ReportSessionEndedRequestObject) (api.ReportSessionEndedResponseObject, error) {
@@ -42,8 +54,6 @@ func (s *Server) PostFullCapabilities(ctx context.Context, request api.PostFullC
 	return api.PostFullCapabilities204Response{}, nil
 }
 
-// Satisfies middleware.Sessions. The translation lives here rather than beside
-// the query so storage has no reason to know about transport types.
 func (s *Server) SessionByToken(ctx context.Context, token string) (middleware.Session, error) {
 	session, err := s.auth.SessionByToken(ctx, token)
 	if err != nil {

@@ -79,10 +79,6 @@ func (s *Service) TouchLogin(ctx context.Context, id uuid.UUID) error {
 		Updates(map[string]any{"last_login_date": now, "last_activity_date": now}).Error
 }
 
-
-
-
-
 func (s *Service) UserName(ctx context.Context, id uuid.UUID) string {
 	user, err := s.User(ctx, id)
 	if err != nil {

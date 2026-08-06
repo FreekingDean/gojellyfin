@@ -2,22 +2,23 @@ package items
 
 import (
 	"context"
-	"strings"
-
-	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
+	"github.com/FreekingDean/gojellyfin/internal/server/dtos"
+	"github.com/google/uuid"
 )
 
-var folderTypes = map[string]bool{
-	"Series":           true,
-	"Season":           true,
-	"Folder":           true,
-	"CollectionFolder": true,
+type Server struct {
+	items     *items.Service
+	libraries *libraries.Service
+}
+
+func New(items *items.Service, libraries *libraries.Service) *Server {
+	return &Server{items: items, libraries: libraries}
 }
 
 func (s *Server) GetItems(ctx context.Context, request api.GetItemsRequestObject) (api.GetItemsResponseObject, error) {
@@ -40,39 +41,21 @@ func (s *Server) GetItem(ctx context.Context, request api.GetItemRequestObject) 
 		return api.GetItem403Response{}, nil
 	}
 
-	dtos, err := s.itemDtos(ctx, []items.Item{*item})
+	converted, err := s.itemDtos(ctx, []items.Item{*item})
 	if err != nil {
 		return nil, err
 	}
 
-	return api.GetItem200JSONResponse(dtos[0]), nil
+	return api.GetItem200JSONResponse(converted[0]), nil
 }
 
 func (s *Server) GetRootFolder(ctx context.Context, request api.GetRootFolderRequestObject) (api.GetRootFolderResponseObject, error) {
 	return api.GetRootFolder200JSONResponse{
-		Id:       uid(config.RootFolderID),
-		Name:     ptr("Media Folders"),
-		ServerId: ptr(config.ServerID),
-		Type:     ptr(api.BaseItemKindFolder),
-		IsFolder: ptr(true),
-	}, nil
-}
-
-func (s *Server) GetUserViews(ctx context.Context, request api.GetUserViewsRequestObject) (api.GetUserViewsResponseObject, error) {
-	libraries, err := s.libraries.ListLibraries(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	views := make([]api.BaseItemDto, 0, len(libraries))
-	for _, library := range libraries {
-		views = append(views, libraryView(&library))
-	}
-
-	return api.GetUserViews200JSONResponse{
-		Items:            &views,
-		StartIndex:       ptr(int32(0)),
-		TotalRecordCount: ptr(int32(len(views))),
+		Id:       dtos.UID(config.RootFolderID),
+		Name:     dtos.Ptr("Media Folders"),
+		ServerId: dtos.Ptr(config.ServerID),
+		Type:     dtos.Ptr(api.BaseItemKindFolder),
+		IsFolder: dtos.Ptr(true),
 	}, nil
 }
 
@@ -81,7 +64,7 @@ func (s *Server) GetLatestMedia(ctx context.Context, request api.GetLatestMediaR
 		Types:      []string{"Movie", "Series"},
 		SortBy:     []string{"DateCreated"},
 		Descending: true,
-		Limit:      int(deref(orElse(request.Params.Limit, int32(20)))),
+		Limit:      int(dtos.Deref(dtos.OrElse(request.Params.Limit, int32(20)))),
 	}
 	if request.Params.ParentId != nil {
 		query.LibraryID = request.Params.ParentId
@@ -92,21 +75,21 @@ func (s *Server) GetLatestMedia(ctx context.Context, request api.GetLatestMediaR
 		return nil, err
 	}
 
-	dtos, err := s.itemDtos(ctx, records)
+	converted, err := s.itemDtos(ctx, records)
 	if err != nil {
 		return nil, err
 	}
 
-	return api.GetLatestMedia200JSONResponse(dtos), nil
+	return api.GetLatestMedia200JSONResponse(converted), nil
 }
 
 func (s *Server) itemQuery(ctx context.Context, params api.GetItemsParams) (items.ItemQuery, error) {
 	query := items.ItemQuery{
-		SearchTerm: deref(params.SearchTerm),
-		StartIndex: int(deref(params.StartIndex)),
-		Limit:      int(deref(params.Limit)),
-		Descending: descending(params.SortOrder),
-		SortBy:     sortFields(params.SortBy),
+		SearchTerm: dtos.Deref(params.SearchTerm),
+		StartIndex: int(dtos.Deref(params.StartIndex)),
+		Limit:      int(dtos.Deref(params.Limit)),
+		Descending: dtos.Descending(params.SortOrder),
+		SortBy:     dtos.SortFields(params.SortBy),
 	}
 
 	if params.IncludeItemTypes != nil {
@@ -123,7 +106,7 @@ func (s *Server) itemQuery(ctx context.Context, params api.GetItemsParams) (item
 		switch {
 		case err == nil:
 			query.LibraryID = &library.ID
-			query.TopLevel = !deref(params.Recursive)
+			query.TopLevel = !dtos.Deref(params.Recursive)
 		default:
 			query.ParentID = params.ParentId
 		}
@@ -138,15 +121,15 @@ func (s *Server) queryResult(ctx context.Context, query items.ItemQuery) (api.Ba
 		return api.BaseItemDtoQueryResult{}, err
 	}
 
-	dtos, err := s.itemDtos(ctx, records)
+	converted, err := s.itemDtos(ctx, records)
 	if err != nil {
 		return api.BaseItemDtoQueryResult{}, err
 	}
 
 	return api.BaseItemDtoQueryResult{
-		Items:            &dtos,
-		StartIndex:       ptr(int32(query.StartIndex)),
-		TotalRecordCount: ptr(int32(total)),
+		Items:            &converted,
+		StartIndex:       dtos.Ptr(int32(query.StartIndex)),
+		TotalRecordCount: dtos.Ptr(int32(total)),
 	}, nil
 }
 
@@ -155,7 +138,7 @@ func (s *Server) itemDtos(ctx context.Context, records []items.Item) ([]api.Base
 	itemIDs := make([]uuid.UUID, 0, len(records))
 	for _, item := range records {
 		itemIDs = append(itemIDs, item.ID)
-		if folderTypes[item.Type] {
+		if dtos.FolderTypes[item.Type] {
 			folderIDs = append(folderIDs, item.ID)
 		}
 	}
@@ -172,96 +155,16 @@ func (s *Server) itemDtos(ctx context.Context, records []items.Item) ([]api.Base
 		}
 	}
 
-	dtos := make([]api.BaseItemDto, 0, len(records))
+	converted := make([]api.BaseItemDto, 0, len(records))
 	for _, item := range records {
-		dto := itemDto(&item, counts[item.ID])
+		dto := dtos.ItemDto(&item, counts[item.ID])
 		datum, ok := userData[item.ID]
 		if !ok {
 			datum = items.Datum{ItemID: item.ID}
 		}
-		dto.UserData = ptr(userItemDataDto(&datum))
-		dtos = append(dtos, dto)
+		dto.UserData = dtos.Ptr(dtos.UserItemDataDto(&datum))
+		converted = append(converted, dto)
 	}
 
-	return dtos, nil
-}
-
-func itemDto(item *items.Item, childCount int32) api.BaseItemDto {
-	kind := api.BaseItemKind(item.Type)
-	isFolder := folderTypes[item.Type]
-
-	dto := api.BaseItemDto{
-		Id:                &item.ID,
-		ServerId:          ptr(config.ServerID),
-		Name:              ptr(item.Name),
-		SortName:          ptr(item.SortName),
-		Type:              &kind,
-		Path:              ptr(item.Path),
-		IsFolder:          ptr(isFolder),
-		ParentId:          item.ParentID,
-		IndexNumber:       item.IndexNumber,
-		ParentIndexNumber: item.ParentIndexNumber,
-		ProductionYear:    item.ProductionYear,
-		PremiereDate:      item.PremiereDate,
-		RunTimeTicks:      item.RunTimeTicks,
-		DateCreated:       ptr(item.CreatedAt),
-		LocationType:      ptr(api.FileSystem),
-		ImageTags:         &map[string]string{},
-		BackdropImageTags: &[]string{},
-	}
-
-	if item.Overview != "" {
-		dto.Overview = ptr(item.Overview)
-	}
-	if isFolder {
-		dto.ChildCount = ptr(childCount)
-	} else {
-		dto.MediaType = ptr(api.MediaTypeVideo)
-	}
-
-	return dto
-}
-
-func libraryView(library *libraries.Library) api.BaseItemDto {
-	collectionType := api.CollectionType(library.CollectionType)
-
-	return api.BaseItemDto{
-		Id:                &library.ID,
-		ServerId:          ptr(config.ServerID),
-		Name:              ptr(library.Name),
-		SortName:          ptr(strings.ToLower(library.Name)),
-		Type:              ptr(api.BaseItemKindCollectionFolder),
-		CollectionType:    &collectionType,
-		IsFolder:          ptr(true),
-		LocationType:      ptr(api.FileSystem),
-		ImageTags:         &map[string]string{},
-		BackdropImageTags: &[]string{},
-	}
-}
-
-func descending(order *[]api.SortOrder) bool {
-	if order == nil {
-		return false
-	}
-
-	for _, value := range *order {
-		if value == api.Descending {
-			return true
-		}
-	}
-
-	return false
-}
-
-func sortFields(sortBy *[]api.ItemSortBy) []string {
-	if sortBy == nil {
-		return nil
-	}
-
-	fields := make([]string, 0, len(*sortBy))
-	for _, field := range *sortBy {
-		fields = append(fields, string(field))
-	}
-
-	return fields
+	return converted, nil
 }

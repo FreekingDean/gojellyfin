@@ -1,6 +1,7 @@
-package items
+package mediainfo
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 
@@ -8,7 +9,16 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
+	"github.com/FreekingDean/gojellyfin/internal/server/dtos"
 )
+
+type Server struct {
+	items *items.Service
+}
+
+func New(items *items.Service) *Server {
+	return &Server{items: items}
+}
 
 func (s *Server) GetPlaybackInfo(ctx context.Context, request api.GetPlaybackInfoRequestObject) (api.GetPlaybackInfoResponseObject, error) {
 	response, err := s.playbackInfo(ctx, request.ItemId)
@@ -46,7 +56,7 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID) (api.Playba
 
 	return api.PlaybackInfoResponse{
 		MediaSources:  &[]api.MediaSourceInfo{source},
-		PlaySessionId: ptr(session),
+		PlaySessionId: dtos.Ptr(session),
 	}, nil
 }
 
@@ -56,33 +66,33 @@ func (s *Server) mediaSource(ctx context.Context, item *items.Item) (api.MediaSo
 		return api.MediaSourceInfo{}, err
 	}
 
-	dtos := make([]api.MediaStream, 0, len(streams))
+	converted := make([]api.MediaStream, 0, len(streams))
 	for _, stream := range streams {
-		dtos = append(dtos, mediaStreamDto(&stream))
+		converted = append(converted, mediaStreamDto(&stream))
 	}
 
 	return api.MediaSourceInfo{
-		Id:                         ptr(item.ID.String()),
-		Name:                       ptr(item.Name),
-		Path:                       ptr(item.Path),
-		Protocol:                   ptr(api.MediaProtocolFile),
-		Type:                       ptr(api.MediaSourceTypeDefault),
-		Container:                  ptr(item.Container),
-		Size:                       ptr(item.Size),
-		Bitrate:                    ptr(item.Bitrate),
+		Id:                         dtos.Ptr(item.ID.String()),
+		Name:                       dtos.Ptr(item.Name),
+		Path:                       dtos.Ptr(item.Path),
+		Protocol:                   dtos.Ptr(api.MediaProtocolFile),
+		Type:                       dtos.Ptr(api.MediaSourceTypeDefault),
+		Container:                  dtos.Ptr(item.Container),
+		Size:                       dtos.Ptr(item.Size),
+		Bitrate:                    dtos.Ptr(item.Bitrate),
 		RunTimeTicks:               item.RunTimeTicks,
-		MediaStreams:               &dtos,
+		MediaStreams:               &converted,
 		MediaAttachments:           &[]api.MediaAttachment{},
 		Formats:                    &[]string{},
-		SupportsDirectPlay:         ptr(true),
-		SupportsDirectStream:       ptr(true),
-		SupportsTranscoding:        ptr(false),
-		SupportsProbing:            ptr(true),
-		IsRemote:                   ptr(false),
-		IsInfiniteStream:           ptr(false),
-		RequiresOpening:            ptr(false),
-		RequiresClosing:            ptr(false),
-		RequiresLooping:            ptr(false),
+		SupportsDirectPlay:         dtos.Ptr(true),
+		SupportsDirectStream:       dtos.Ptr(true),
+		SupportsTranscoding:        dtos.Ptr(false),
+		SupportsProbing:            dtos.Ptr(true),
+		IsRemote:                   dtos.Ptr(false),
+		IsInfiniteStream:           dtos.Ptr(false),
+		RequiresOpening:            dtos.Ptr(false),
+		RequiresClosing:            dtos.Ptr(false),
+		RequiresLooping:            dtos.Ptr(false),
 		DefaultAudioStreamIndex:    defaultStreamIndex(streams, "Audio"),
 		DefaultSubtitleStreamIndex: defaultStreamIndex(streams, "Subtitle"),
 	}, nil
@@ -92,44 +102,44 @@ func mediaStreamDto(stream *items.MediaStream) api.MediaStream {
 	kind := api.MediaStreamType(stream.Type)
 
 	dto := api.MediaStream{
-		Index:                  ptr(stream.Index),
+		Index:                  dtos.Ptr(stream.Index),
 		Type:                   &kind,
-		Codec:                  ptr(stream.Codec),
-		IsDefault:              ptr(stream.IsDefault),
-		IsForced:               ptr(stream.IsForced),
-		IsExternal:             ptr(false),
-		IsInterlaced:           ptr(false),
-		SupportsExternalStream: ptr(false),
-		DisplayTitle:           ptr(streamDisplayTitle(stream)),
+		Codec:                  dtos.Ptr(stream.Codec),
+		IsDefault:              dtos.Ptr(stream.IsDefault),
+		IsForced:               dtos.Ptr(stream.IsForced),
+		IsExternal:             dtos.Ptr(false),
+		IsInterlaced:           dtos.Ptr(false),
+		SupportsExternalStream: dtos.Ptr(false),
+		DisplayTitle:           dtos.Ptr(streamDisplayTitle(stream)),
 	}
 
 	if stream.Profile != "" {
-		dto.Profile = ptr(stream.Profile)
+		dto.Profile = dtos.Ptr(stream.Profile)
 	}
 	if stream.Language != "" {
-		dto.Language = ptr(stream.Language)
+		dto.Language = dtos.Ptr(stream.Language)
 	}
 	if stream.Title != "" {
-		dto.Title = ptr(stream.Title)
+		dto.Title = dtos.Ptr(stream.Title)
 	}
 	if stream.Bitrate > 0 {
-		dto.BitRate = ptr(stream.Bitrate)
+		dto.BitRate = dtos.Ptr(stream.Bitrate)
 	}
 	if stream.PixelFormat != "" {
-		dto.PixelFormat = ptr(stream.PixelFormat)
+		dto.PixelFormat = dtos.Ptr(stream.PixelFormat)
 	}
 	if stream.Level > 0 {
-		dto.Level = ptr(float64(stream.Level))
+		dto.Level = dtos.Ptr(float64(stream.Level))
 	}
 
 	switch stream.Type {
 	case "Video":
-		dto.Width = ptr(stream.Width)
-		dto.Height = ptr(stream.Height)
-		dto.AspectRatio = ptr(aspectRatio(stream.Width, stream.Height))
+		dto.Width = dtos.Ptr(stream.Width)
+		dto.Height = dtos.Ptr(stream.Height)
+		dto.AspectRatio = dtos.Ptr(aspectRatio(stream.Width, stream.Height))
 	case "Audio":
-		dto.Channels = ptr(stream.Channels)
-		dto.SampleRate = ptr(stream.SampleRate)
+		dto.Channels = dtos.Ptr(stream.Channels)
+		dto.SampleRate = dtos.Ptr(stream.SampleRate)
 	}
 
 	return dto
@@ -157,12 +167,12 @@ func streamDisplayTitle(stream *items.MediaStream) string {
 func defaultStreamIndex(streams []items.MediaStream, kind string) *int32 {
 	for _, stream := range streams {
 		if stream.Type == kind && stream.IsDefault {
-			return ptr(stream.Index)
+			return dtos.Ptr(stream.Index)
 		}
 	}
 	for _, stream := range streams {
 		if stream.Type == kind {
-			return ptr(stream.Index)
+			return dtos.Ptr(stream.Index)
 		}
 	}
 
@@ -194,4 +204,16 @@ func newPlaySessionId() (string, error) {
 	}
 
 	return id.String(), nil
+}
+
+func (s *Server) GetBitrateTestBytes(ctx context.Context, request api.GetBitrateTestBytesRequestObject) (api.GetBitrateTestBytesResponseObject, error) {
+	buf := bytes.NewBufferString("This is a test endpoint info response")
+	return api.GetBitrateTestBytes200ApplicationoctetStreamResponse{
+		Body:          buf,
+		ContentLength: int64(buf.Len()),
+	}, nil
+}
+
+func (s *Server) GetEndpointInfo(ctx context.Context, request api.GetEndpointInfoRequestObject) (api.GetEndpointInfoResponseObject, error) {
+	return api.GetEndpointInfo200JSONResponse{}, nil
 }

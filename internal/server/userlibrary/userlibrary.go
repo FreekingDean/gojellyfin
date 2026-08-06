@@ -1,15 +1,23 @@
-package items
+package userlibrary
 
 import (
 	"context"
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
+	"github.com/FreekingDean/gojellyfin/internal/server/dtos"
+	"github.com/google/uuid"
 )
+
+type Server struct {
+	items *items.Service
+}
+
+func New(items *items.Service) *Server {
+	return &Server{items: items}
+}
 
 func (s *Server) GetItemUserData(ctx context.Context, request api.GetItemUserDataRequestObject) (api.GetItemUserDataResponseObject, error) {
 	datum, err := s.userItemDatum(ctx, request.ItemId)
@@ -17,7 +25,7 @@ func (s *Server) GetItemUserData(ctx context.Context, request api.GetItemUserDat
 		return api.GetItemUserData404JSONResponse{}, nil
 	}
 
-	return api.GetItemUserData200JSONResponse(userItemDataDto(datum)), nil
+	return api.GetItemUserData200JSONResponse(dtos.UserItemDataDto(datum)), nil
 }
 
 func (s *Server) MarkFavoriteItem(ctx context.Context, request api.MarkFavoriteItemRequestObject) (api.MarkFavoriteItemResponseObject, error) {
@@ -26,7 +34,7 @@ func (s *Server) MarkFavoriteItem(ctx context.Context, request api.MarkFavoriteI
 		return nil, err
 	}
 
-	return api.MarkFavoriteItem200JSONResponse(userItemDataDto(datum)), nil
+	return api.MarkFavoriteItem200JSONResponse(dtos.UserItemDataDto(datum)), nil
 }
 
 func (s *Server) UnmarkFavoriteItem(ctx context.Context, request api.UnmarkFavoriteItemRequestObject) (api.UnmarkFavoriteItemResponseObject, error) {
@@ -35,7 +43,7 @@ func (s *Server) UnmarkFavoriteItem(ctx context.Context, request api.UnmarkFavor
 		return nil, err
 	}
 
-	return api.UnmarkFavoriteItem200JSONResponse(userItemDataDto(datum)), nil
+	return api.UnmarkFavoriteItem200JSONResponse(dtos.UserItemDataDto(datum)), nil
 }
 
 func (s *Server) MarkPlayedItem(ctx context.Context, request api.MarkPlayedItemRequestObject) (api.MarkPlayedItemResponseObject, error) {
@@ -44,7 +52,7 @@ func (s *Server) MarkPlayedItem(ctx context.Context, request api.MarkPlayedItemR
 		return nil, err
 	}
 
-	return api.MarkPlayedItem200JSONResponse(userItemDataDto(datum)), nil
+	return api.MarkPlayedItem200JSONResponse(dtos.UserItemDataDto(datum)), nil
 }
 
 func (s *Server) MarkUnplayedItem(ctx context.Context, request api.MarkUnplayedItemRequestObject) (api.MarkUnplayedItemResponseObject, error) {
@@ -53,11 +61,11 @@ func (s *Server) MarkUnplayedItem(ctx context.Context, request api.MarkUnplayedI
 		return nil, err
 	}
 
-	return api.MarkUnplayedItem200JSONResponse(userItemDataDto(datum)), nil
+	return api.MarkUnplayedItem200JSONResponse(dtos.UserItemDataDto(datum)), nil
 }
 
 func (s *Server) UpdateItemUserData(ctx context.Context, request api.UpdateItemUserDataRequestObject) (api.UpdateItemUserDataResponseObject, error) {
-	req := body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
+	req := dtos.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
 	if req == nil {
 		return api.UpdateItemUserData404JSONResponse{}, nil
 	}
@@ -87,7 +95,7 @@ func (s *Server) UpdateItemUserData(ctx context.Context, request api.UpdateItemU
 		return nil, err
 	}
 
-	return api.UpdateItemUserData200JSONResponse(userItemDataDto(datum)), nil
+	return api.UpdateItemUserData200JSONResponse(dtos.UserItemDataDto(datum)), nil
 }
 
 func (s *Server) saveFavorite(ctx context.Context, itemID uuid.UUID, favorite bool) (*items.Datum, error) {
@@ -111,7 +119,7 @@ func (s *Server) savePlayed(ctx context.Context, itemID uuid.UUID, played bool) 
 	datum.PlaybackPositionTicks = 0
 	if played {
 		datum.PlayCount++
-		datum.LastPlayedDate = ptr(time.Now())
+		datum.LastPlayedDate = dtos.Ptr(time.Now())
 	}
 
 	return datum, s.items.SaveUserItemDatum(ctx, datum)
@@ -124,16 +132,4 @@ func (s *Server) userItemDatum(ctx context.Context, itemID uuid.UUID) (*items.Da
 	}
 
 	return s.items.GetUserItemDatum(ctx, userID, itemID)
-}
-
-func userItemDataDto(datum *items.Datum) api.UserItemDataDto {
-	return api.UserItemDataDto{
-		ItemId:                &datum.ItemID,
-		Key:                   ptr(datum.ItemID.String()),
-		Played:                ptr(datum.Played),
-		PlayCount:             ptr(datum.PlayCount),
-		IsFavorite:            ptr(datum.IsFavorite),
-		PlaybackPositionTicks: ptr(datum.PlaybackPositionTicks),
-		LastPlayedDate:        datum.LastPlayedDate,
-	}
 }

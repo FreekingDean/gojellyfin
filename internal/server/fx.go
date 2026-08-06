@@ -9,28 +9,56 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/scanner"
-	serverauth "github.com/FreekingDean/gojellyfin/internal/server/auth"
-	serverconfig "github.com/FreekingDean/gojellyfin/internal/server/config"
+	"github.com/FreekingDean/gojellyfin/internal/server/activitylog"
+	"github.com/FreekingDean/gojellyfin/internal/server/branding"
+	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
+	"github.com/FreekingDean/gojellyfin/internal/server/displaypreferences"
 	serveritems "github.com/FreekingDean/gojellyfin/internal/server/items"
-	serverlibraries "github.com/FreekingDean/gojellyfin/internal/server/libraries"
-	serverusers "github.com/FreekingDean/gojellyfin/internal/server/users"
+	"github.com/FreekingDean/gojellyfin/internal/server/library"
+	"github.com/FreekingDean/gojellyfin/internal/server/librarystructure"
+	"github.com/FreekingDean/gojellyfin/internal/server/localization"
+	"github.com/FreekingDean/gojellyfin/internal/server/mediainfo"
+	"github.com/FreekingDean/gojellyfin/internal/server/playlists"
+	"github.com/FreekingDean/gojellyfin/internal/server/playstate"
+	"github.com/FreekingDean/gojellyfin/internal/server/quickconnect"
+	"github.com/FreekingDean/gojellyfin/internal/server/session"
+	"github.com/FreekingDean/gojellyfin/internal/server/syncplay"
+	"github.com/FreekingDean/gojellyfin/internal/server/system"
+	"github.com/FreekingDean/gojellyfin/internal/server/user"
+	"github.com/FreekingDean/gojellyfin/internal/server/userlibrary"
+	"github.com/FreekingDean/gojellyfin/internal/server/userviews"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
 var Module = fx.Module(
 	"server",
 	fx.Provide(
+		// domains
 		auth.New,
 		users.New,
 		items.New,
 		libraries.New,
 		config.New,
 
-		serverauth.New,
-		serverusers.New,
+		// one handler service per spec tag
+		activitylog.New,
+		branding.New,
+		configuration.New,
+		displaypreferences.New,
 		serveritems.New,
-		serverlibraries.New,
-		serverconfig.New,
+		library.New,
+		librarystructure.New,
+		localization.New,
+		mediainfo.New,
+		playlists.New,
+		playstate.New,
+		quickconnect.New,
+		session.New,
+		syncplay.New,
+		system.New,
+		user.New,
+		userlibrary.New,
+		userviews.New,
 
 		sessions,
 		New,
@@ -40,10 +68,10 @@ var Module = fx.Module(
 	),
 )
 
-func sessions(auth *serverauth.Server) middleware.Sessions {
-	return auth
+func sessions(session *session.Server) middleware.Sessions {
+	return session
 }
 
-func useScanner(libraries *serverlibraries.Server, scanner *scanner.Scanner) {
-	libraries.UseScanner(scanner)
+func useScanner(library *library.Server, scanner *scanner.Scanner) {
+	library.UseScanner(scanner)
 }

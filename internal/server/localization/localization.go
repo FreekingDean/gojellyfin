@@ -1,10 +1,17 @@
-package config
+package localization
 
 import (
 	"context"
 
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
+	"github.com/FreekingDean/gojellyfin/internal/server/dtos"
 )
+
+type Server struct{}
+
+func New() *Server {
+	return &Server{}
+}
 
 func (s *Server) GetCultures(ctx context.Context, request api.GetCulturesRequestObject) (api.GetCulturesResponseObject, error) {
 	return api.GetCultures200JSONResponse([]api.CultureDto{
@@ -28,35 +35,35 @@ func (s *Server) GetCountries(ctx context.Context, request api.GetCountriesReque
 
 func (s *Server) GetLocalizationOptions(ctx context.Context, request api.GetLocalizationOptionsRequestObject) (api.GetLocalizationOptionsResponseObject, error) {
 	return api.GetLocalizationOptions200JSONResponse([]api.LocalizationOption{
-		{Name: ptr("English"), Value: ptr("en-US")},
+		{Name: dtos.Ptr("English"), Value: dtos.Ptr("en-US")},
 	}), nil
 }
 
 func (s *Server) GetParentalRatings(ctx context.Context, request api.GetParentalRatingsRequestObject) (api.GetParentalRatingsResponseObject, error) {
 	return api.GetParentalRatings200JSONResponse([]api.ParentalRating{
-		{Name: ptr("G"), Value: ptr(int32(1))},
-		{Name: ptr("PG"), Value: ptr(int32(5))},
-		{Name: ptr("PG-13"), Value: ptr(int32(7))},
-		{Name: ptr("R"), Value: ptr(int32(9))},
-		{Name: ptr("NC-17"), Value: ptr(int32(10))},
+		{Name: dtos.Ptr("G"), Value: dtos.Ptr(int32(1))},
+		{Name: dtos.Ptr("PG"), Value: dtos.Ptr(int32(5))},
+		{Name: dtos.Ptr("PG-13"), Value: dtos.Ptr(int32(7))},
+		{Name: dtos.Ptr("R"), Value: dtos.Ptr(int32(9))},
+		{Name: dtos.Ptr("NC-17"), Value: dtos.Ptr(int32(10))},
 	}), nil
 }
 
 func culture(displayName, twoLetter, threeLetter string) api.CultureDto {
 	return api.CultureDto{
-		Name:                        ptr(displayName),
-		DisplayName:                 ptr(displayName),
-		TwoLetterISOLanguageName:    ptr(twoLetter),
-		ThreeLetterISOLanguageName:  ptr(threeLetter),
+		Name:                        dtos.Ptr(displayName),
+		DisplayName:                 dtos.Ptr(displayName),
+		TwoLetterISOLanguageName:    dtos.Ptr(twoLetter),
+		ThreeLetterISOLanguageName:  dtos.Ptr(threeLetter),
 		ThreeLetterISOLanguageNames: &[]string{threeLetter},
 	}
 }
 
 func country(displayName, twoLetter, threeLetter string) api.CountryInfo {
 	return api.CountryInfo{
-		Name:                     ptr(displayName),
-		DisplayName:              ptr(displayName),
-		TwoLetterISORegionName:   ptr(twoLetter),
-		ThreeLetterISORegionName: ptr(threeLetter),
+		Name:                     dtos.Ptr(displayName),
+		DisplayName:              dtos.Ptr(displayName),
+		TwoLetterISORegionName:   dtos.Ptr(twoLetter),
+		ThreeLetterISORegionName: dtos.Ptr(threeLetter),
 	}
 }
