@@ -3,12 +3,12 @@ package server
 import (
 	"go.uber.org/fx"
 
+	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
+	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/scanner"
-	"github.com/FreekingDean/gojellyfin/internal/server/config"
-	"github.com/FreekingDean/gojellyfin/internal/server/items"
-	"github.com/FreekingDean/gojellyfin/internal/server/libraries"
-	"github.com/FreekingDean/gojellyfin/internal/server/users"
+	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
 var Module = fx.Module(

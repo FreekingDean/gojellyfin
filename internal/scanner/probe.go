@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
-	"github.com/FreekingDean/gojellyfin/internal/server/items"
+	"github.com/FreekingDean/gojellyfin/internal/items"
 )
 
 const ticksPerSecond = 10_000_000

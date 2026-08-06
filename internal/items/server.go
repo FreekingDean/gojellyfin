@@ -3,7 +3,7 @@ package items
 import (
 	"gorm.io/gorm"
 
-	"github.com/FreekingDean/gojellyfin/internal/server/libraries"
+	"github.com/FreekingDean/gojellyfin/internal/libraries"
 )
 
 type Server struct {

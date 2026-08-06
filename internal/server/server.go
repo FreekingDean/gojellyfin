@@ -1,11 +1,11 @@
 package server
 
 import (
+	"github.com/FreekingDean/gojellyfin/internal/config"
+	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	"github.com/FreekingDean/gojellyfin/internal/server/config"
-	"github.com/FreekingDean/gojellyfin/internal/server/items"
-	"github.com/FreekingDean/gojellyfin/internal/server/libraries"
-	"github.com/FreekingDean/gojellyfin/internal/server/users"
+	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
 // Services sit one level shallower than the fallback, so a registered service

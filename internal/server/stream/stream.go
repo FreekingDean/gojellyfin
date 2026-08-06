@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
-	"github.com/FreekingDean/gojellyfin/internal/server/items"
+	"github.com/FreekingDean/gojellyfin/internal/items"
 )
 
 var contentTypes = map[string]string{

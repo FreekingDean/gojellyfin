@@ -11,8 +11,8 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
-	"github.com/FreekingDean/gojellyfin/internal/server/items"
-	"github.com/FreekingDean/gojellyfin/internal/server/libraries"
+	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/libraries"
 )
 
 const collectionTypeTVShows = "tvshows"
