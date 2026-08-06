@@ -9,7 +9,6 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/config"
-	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/dtos"
 	"github.com/FreekingDean/gojellyfin/internal/users"
@@ -34,7 +33,7 @@ func (s *Server) GetUsers(ctx context.Context, request api.GetUsersRequestObject
 }
 
 func (s *Server) GetCurrentUser(ctx context.Context, request api.GetCurrentUserRequestObject) (api.GetCurrentUserResponseObject, error) {
-	user, err := s.users.User(ctx, middleware.UserID(ctx))
+	user, err := s.users.User(ctx, auth.UserID(ctx))
 	if err != nil {
 		return api.GetCurrentUser400JSONResponse{}, nil
 	}
@@ -235,7 +234,7 @@ func (s *Server) listUserDtos(ctx context.Context) ([]api.UserDto, error) {
 
 func (s *Server) userFor(ctx context.Context, id *openapi_types.UUID) (*users.User, error) {
 	if id == nil {
-		return s.users.User(ctx, middleware.UserID(ctx))
+		return s.users.User(ctx, auth.UserID(ctx))
 	}
 
 	return s.users.User(ctx, *id)
@@ -244,17 +243,17 @@ func (s *Server) userFor(ctx context.Context, id *openapi_types.UUID) (*users.Us
 func (s *Server) AuthenticateUserByName(ctx context.Context, request api.AuthenticateUserByNameRequestObject) (api.AuthenticateUserByNameResponseObject, error) {
 	req := dtos.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
 	if req == nil || req.Username == nil {
-		return nil, middleware.ErrUnauthorized
+		return nil, auth.ErrUnauthorized
 	}
 
 	user, err := s.users.UserByUsername(ctx, *req.Username)
 	if err != nil {
-		return nil, middleware.ErrUnauthorized
+		return nil, auth.ErrUnauthorized
 	}
 
 	matches, err := auth.Verify(dtos.Deref(req.Pw), user.PasswordHash)
 	if err != nil || !matches {
-		return nil, middleware.ErrUnauthorized
+		return nil, auth.ErrUnauthorized
 	}
 
 	token, err := auth.NewToken()
@@ -263,7 +262,7 @@ func (s *Server) AuthenticateUserByName(ctx context.Context, request api.Authent
 	}
 
 	now := time.Now()
-	authorization := middleware.AuthorizationFrom(ctx)
+	authorization := auth.AuthorizationFrom(ctx)
 	session := &auth.Session{
 		UserID:           user.ID,
 		AccessToken:      token,

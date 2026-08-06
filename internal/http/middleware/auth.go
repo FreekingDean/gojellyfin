@@ -2,70 +2,38 @@ package middleware
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"strings"
 
-	"github.com/google/uuid"
-
+	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 )
 
-var ErrUnauthorized = errors.New("unauthorized")
-
-type contextKey int
-
-const (
-	authorizationKey contextKey = iota
-	sessionKey
-)
-
-type Authorization struct {
-	Client   string
-	Device   string
-	DeviceID string
-	Version  string
-	Token    string
-}
-
-// Identity of the caller, resolved once per request. Deliberately not the user
-// record itself, so this package stays independent of the domain packages.
-type Session struct {
-	ID     uuid.UUID
-	UserID uuid.UUID
-}
-
-type Sessions interface {
-	SessionByToken(ctx context.Context, token string) (Session, error)
-}
-
+// Transport only: parse what the client sent and hand it to auth, which owns
+// the identity on the context.
 type Auth struct {
-	sessions Sessions
+	auth *auth.Service
 }
 
-func NewAuth(sessions Sessions) *Auth {
-	return &Auth{sessions: sessions}
+func NewAuth(auth *auth.Service) *Auth {
+	return &Auth{auth: auth}
 }
 
 func (a *Auth) Middleware(f api.StrictHandlerFunc, operationID string) api.StrictHandlerFunc {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
 		authorization := parseAuthorization(r)
-		ctx = context.WithValue(ctx, authorizationKey, authorization)
+		ctx = auth.ContextWithAuthorization(ctx, authorization)
 
 		if api.PublicOperations[operationID] {
 			return f(ctx, w, r, request)
 		}
 
-		if authorization.Token == "" {
-			return nil, ErrUnauthorized
-		}
-
-		session, err := a.sessions.SessionByToken(ctx, authorization.Token)
+		ctx, err := a.auth.Authenticate(ctx, authorization.Token)
 		if err != nil {
-			return nil, ErrUnauthorized
+			return nil, err
 		}
 
-		return f(context.WithValue(ctx, sessionKey, session), w, r, request)
+		return f(ctx, w, r, request)
 	}
 }
 
@@ -79,29 +47,13 @@ func TokenFrom(r *http.Request) string {
 	return r.URL.Query().Get("api_key")
 }
 
-func AuthorizationFrom(ctx context.Context) Authorization {
-	authorization, _ := ctx.Value(authorizationKey).(Authorization)
-
-	return authorization
-}
-
-func SessionFrom(ctx context.Context) Session {
-	session, _ := ctx.Value(sessionKey).(Session)
-
-	return session
-}
-
-func UserID(ctx context.Context) uuid.UUID {
-	return SessionFrom(ctx).UserID
-}
-
-func parseAuthorization(r *http.Request) Authorization {
+func parseAuthorization(r *http.Request) auth.Authorization {
 	header := r.Header.Get("Authorization")
 	if !strings.HasPrefix(header, "MediaBrowser") {
 		header = r.Header.Get("X-Emby-Authorization")
 	}
 
-	authorization := Authorization{}
+	authorization := auth.Authorization{}
 	for _, pair := range strings.Split(strings.TrimPrefix(header, "MediaBrowser"), ",") {
 		key, value, ok := strings.Cut(pair, "=")
 		if !ok {

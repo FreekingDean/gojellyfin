@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
+	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/dtos"
@@ -16,9 +16,9 @@ import (
 const playedThreshold = 0.9
 
 func (s *Server) userItemDatum(ctx context.Context, itemID uuid.UUID) (*items.Datum, error) {
-	userID := middleware.UserID(ctx)
+	userID := auth.UserID(ctx)
 	if userID == uuid.Nil {
-		return nil, middleware.ErrUnauthorized
+		return nil, auth.ErrUnauthorized
 	}
 
 	return s.items.GetUserItemDatum(ctx, userID, itemID)

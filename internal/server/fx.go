@@ -5,7 +5,6 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/config"
-	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/scanner"
@@ -60,17 +59,12 @@ var Module = fx.Module(
 		userlibrary.New,
 		userviews.New,
 
-		sessions,
 		New,
 	),
 	fx.Invoke(
 		useScanner,
 	),
 )
-
-func sessions(session *session.Server) middleware.Sessions {
-	return session
-}
 
 func useScanner(library *library.Server, scanner *scanner.Scanner) {
 	library.UseScanner(scanner)

@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/http/mux"
 	"github.com/FreekingDean/gojellyfin/internal/server"
@@ -33,7 +34,7 @@ type Server struct {
 	apiOptions     api.StrictHTTPServerOptions
 }
 
-func New(m *mux.Mux, auth *middleware.Auth) *Server {
+func New(m *mux.Mux, authMiddleware *middleware.Auth) *Server {
 	return &Server{
 		s: &http.Server{
 			Addr: ":8081",
@@ -47,7 +48,7 @@ func New(m *mux.Mux, auth *middleware.Auth) *Server {
 
 		apiMiddleware: []api.StrictMiddlewareFunc{
 			middleware.OapiLogging,
-			auth.Middleware,
+			authMiddleware.Middleware,
 		},
 
 		apiOptions: api.StrictHTTPServerOptions{
@@ -57,7 +58,7 @@ func New(m *mux.Mux, auth *middleware.Auth) *Server {
 					http.Error(w, err.Error(), http.StatusNotImplemented)
 					return
 				}
-				if errors.Is(err, middleware.ErrUnauthorized) {
+				if errors.Is(err, auth.ErrUnauthorized) {
 					http.Error(w, err.Error(), http.StatusUnauthorized)
 					return
 				}

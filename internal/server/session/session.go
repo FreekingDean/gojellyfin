@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
-	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/dtos"
 	"github.com/FreekingDean/gojellyfin/internal/users"
@@ -38,7 +37,7 @@ func (s *Server) GetSessions(ctx context.Context, request api.GetSessionsRequest
 }
 
 func (s *Server) ReportSessionEnded(ctx context.Context, request api.ReportSessionEndedRequestObject) (api.ReportSessionEndedResponseObject, error) {
-	authorization := middleware.AuthorizationFrom(ctx)
+	authorization := auth.AuthorizationFrom(ctx)
 	if err := s.auth.DeleteSessionByToken(ctx, authorization.Token); err != nil {
 		return nil, err
 	}
@@ -52,13 +51,4 @@ func (s *Server) PostCapabilities(ctx context.Context, request api.PostCapabilit
 
 func (s *Server) PostFullCapabilities(ctx context.Context, request api.PostFullCapabilitiesRequestObject) (api.PostFullCapabilitiesResponseObject, error) {
 	return api.PostFullCapabilities204Response{}, nil
-}
-
-func (s *Server) SessionByToken(ctx context.Context, token string) (middleware.Session, error) {
-	session, err := s.auth.SessionByToken(ctx, token)
-	if err != nil {
-		return middleware.Session{}, err
-	}
-
-	return middleware.Session{ID: session.ID, UserID: session.UserID}, nil
 }

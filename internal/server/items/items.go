@@ -3,8 +3,8 @@ package items
 import (
 	"context"
 
+	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/config"
-	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
@@ -149,7 +149,7 @@ func (s *Server) itemDtos(ctx context.Context, records []items.Item) ([]api.Base
 	}
 
 	userData := map[uuid.UUID]items.Datum{}
-	if userID := middleware.UserID(ctx); userID != uuid.Nil {
+	if userID := auth.UserID(ctx); userID != uuid.Nil {
 		if userData, err = s.items.ListUserItemData(ctx, userID, itemIDs); err != nil {
 			return nil, err
 		}
