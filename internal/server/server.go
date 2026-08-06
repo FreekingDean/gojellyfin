@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
+	serverauth "github.com/FreekingDean/gojellyfin/internal/server/auth"
 	serverconfig "github.com/FreekingDean/gojellyfin/internal/server/config"
 	serveritems "github.com/FreekingDean/gojellyfin/internal/server/items"
 	serverlibraries "github.com/FreekingDean/gojellyfin/internal/server/libraries"
@@ -17,6 +18,7 @@ type nestedUnimplemented struct {
 // Embedded field names are type names, so each service comes in under an alias
 // to keep them distinct.
 type (
+	AuthServer      = serverauth.Server
 	UsersServer     = serverusers.Server
 	ItemsServer     = serveritems.Server
 	LibrariesServer = serverlibraries.Server
@@ -24,6 +26,7 @@ type (
 )
 
 type Server struct {
+	*AuthServer
 	*UsersServer
 	*ItemsServer
 	*LibrariesServer
@@ -33,12 +36,14 @@ type Server struct {
 }
 
 func New(
+	auth *serverauth.Server,
 	users *serverusers.Server,
 	items *serveritems.Server,
 	libraries *serverlibraries.Server,
 	config *serverconfig.Server,
 ) *Server {
 	return &Server{
+		AuthServer:      auth,
 		UsersServer:     users,
 		ItemsServer:     items,
 		LibrariesServer: libraries,

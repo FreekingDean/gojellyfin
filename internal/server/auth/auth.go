@@ -1,12 +1,14 @@
-package users
+package auth
 
 import (
 	"context"
 	"time"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
+	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
+	serverusers "github.com/FreekingDean/gojellyfin/internal/server/users"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
@@ -33,7 +35,7 @@ func (s *Server) AuthenticateUserByName(ctx context.Context, request api.Authent
 
 	now := time.Now()
 	authorization := middleware.AuthorizationFrom(ctx)
-	session := &users.Session{
+	session := &auth.Session{
 		UserID:           user.ID,
 		AccessToken:      token,
 		DeviceID:         authorization.DeviceID,
@@ -42,7 +44,7 @@ func (s *Server) AuthenticateUserByName(ctx context.Context, request api.Authent
 		AppVersion:       authorization.Version,
 		LastActivityDate: now,
 	}
-	if err := s.users.CreateSession(ctx, session); err != nil {
+	if err := s.auth.CreateSession(ctx, session); err != nil {
 		return nil, err
 	}
 
@@ -52,23 +54,23 @@ func (s *Server) AuthenticateUserByName(ctx context.Context, request api.Authent
 	user.LastLoginDate = &now
 	user.LastActivityDate = &now
 
-	dto, err := userDto(user)
+	dto, err := serverusers.UserDto(user)
 	if err != nil {
 		return nil, err
 	}
 
 	return api.AuthenticateUserByName200JSONResponse{
 		AccessToken: ptr(token),
-		ServerId:    ptr(serverId),
+		ServerId:    ptr(config.ServerID),
 		User:        &dto,
 		SessionInfo: SessionDto(session, user),
 	}, nil
 }
 
-func SessionDto(session *users.Session, user *users.User) *api.SessionInfoDto {
+func SessionDto(session *auth.Session, user *users.User) *api.SessionInfoDto {
 	dto := &api.SessionInfoDto{
 		Id:                    ptr(session.ID.String()),
-		ServerId:              ptr(serverId),
+		ServerId:              ptr(config.ServerID),
 		Client:                ptr(session.Client),
 		DeviceId:              ptr(session.DeviceID),
 		DeviceName:            ptr(session.DeviceName),

@@ -32,7 +32,7 @@ func (s *Server) GetCurrentUser(ctx context.Context, request api.GetCurrentUserR
 		return api.GetCurrentUser400JSONResponse{}, nil
 	}
 
-	dto, err := userDto(user)
+	dto, err := UserDto(user)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (s *Server) GetUserById(ctx context.Context, request api.GetUserByIdRequest
 		return api.GetUserById404JSONResponse{}, nil
 	}
 
-	dto, err := userDto(user)
+	dto, err := UserDto(user)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func (s *Server) CreateUserByName(ctx context.Context, request api.CreateUserByN
 		return nil, err
 	}
 
-	dto, err := userDto(user)
+	dto, err := UserDto(user)
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +216,7 @@ func (s *Server) listUserDtos(ctx context.Context) ([]api.UserDto, error) {
 
 	dtos := make([]api.UserDto, 0, len(users))
 	for _, user := range users {
-		dto, err := userDto(&user)
+		dto, err := UserDto(&user)
 		if err != nil {
 			return nil, err
 		}
@@ -234,7 +234,7 @@ func (s *Server) userFor(ctx context.Context, id *openapi_types.UUID) (*users.Us
 	return s.users.User(ctx, *id)
 }
 
-func userDto(u *users.User) (api.UserDto, error) {
+func UserDto(u *users.User) (api.UserDto, error) {
 	if u == nil {
 		return api.UserDto{}, nil
 	}

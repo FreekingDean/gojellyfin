@@ -33,19 +33,6 @@ type User struct {
 	UpdatedAt        time.Time
 }
 
-type Session struct {
-	ID               uuid.UUID `gorm:"type:uuid;default:gen_random_uuid()"`
-	UserID           uuid.UUID `gorm:"type:uuid;index"`
-	AccessToken      string    `gorm:"uniqueIndex"`
-	DeviceID         string
-	DeviceName       string
-	Client           string
-	AppVersion       string
-	LastActivityDate time.Time
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
-}
-
 func (s *Service) CreateUser(ctx context.Context, user *User) error {
 	return s.db.WithContext(ctx).Create(user).Error
 }
@@ -92,31 +79,9 @@ func (s *Service) TouchLogin(ctx context.Context, id uuid.UUID) error {
 		Updates(map[string]any{"last_login_date": now, "last_activity_date": now}).Error
 }
 
-func (s *Service) CreateSession(ctx context.Context, session *Session) error {
-	return s.db.WithContext(ctx).Create(session).Error
-}
 
-func (s *Service) SessionByToken(ctx context.Context, token string) (*Session, error) {
-	var session Session
-	if err := s.db.WithContext(ctx).First(&session, "access_token = ?", token).Error; err != nil {
-		return nil, err
-	}
 
-	return &session, nil
-}
 
-func (s *Service) ListSessions(ctx context.Context) ([]Session, error) {
-	var sessions []Session
-	if err := s.db.WithContext(ctx).Find(&sessions).Error; err != nil {
-		return nil, err
-	}
-
-	return sessions, nil
-}
-
-func (s *Service) DeleteSessionByToken(ctx context.Context, token string) error {
-	return s.db.WithContext(ctx).Delete(&Session{}, "access_token = ?", token).Error
-}
 
 func (s *Service) UserName(ctx context.Context, id uuid.UUID) string {
 	user, err := s.User(ctx, id)
