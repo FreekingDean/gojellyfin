@@ -27,7 +27,7 @@ air                                  # watch and restart (go install github.com/
 
 `go generate` is deliberately not part of the watch loop: it re-emits ~95k lines and only matters when the spec or `internal/server/api/gen` changes.
 
-`air` owns `:8081` while it runs, so starting a second server alongside it fails with `ListenAndServe error: address already in use`. Check the listener with `lsof -ti:8081 -sTCP:LISTEN` — without `-sTCP:LISTEN` it also matches browsers connected to the port, and killing those results is not what you want. An orphaned `.air/server` can outlive its supervisor and keep serving stale code.
+`air` owns `:8081` while it runs, so starting a second server alongside it fails with `ListenAndServe error: address already in use`. Check whether it is running with `pgrep -x air` (matching on a path fails — the process is just `air`), and the listener with `lsof -ti:8081 -sTCP:LISTEN` — without `-sTCP:LISTEN` it also matches browsers connected to the port, and killing those results is not what you want. An orphaned `.air/server` can outlive its supervisor and keep serving stale code.
 
 Requires a reachable Postgres. `DATABASE_URL` overrides the default DSN in `internal/store/store.go` (`postgres://localhost:5432/gojellyfin_development?sslmode=disable`).
 
