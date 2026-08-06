@@ -17,6 +17,7 @@ import (
 	serveritems "github.com/FreekingDean/gojellyfin/internal/server/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/library"
 	"github.com/FreekingDean/gojellyfin/internal/server/librarystructure"
+	"github.com/FreekingDean/gojellyfin/internal/server/livetv"
 	"github.com/FreekingDean/gojellyfin/internal/server/localization"
 	"github.com/FreekingDean/gojellyfin/internal/server/mediainfo"
 	"github.com/FreekingDean/gojellyfin/internal/server/musicgenres"
@@ -55,6 +56,7 @@ var Module = fx.Module(
 		musicgenres.New,
 		persons.New,
 		activitylog.New,
+		livetv.New,
 		branding.New,
 		configuration.New,
 		displaypreferences.New,

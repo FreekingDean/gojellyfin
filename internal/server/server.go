@@ -11,6 +11,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/library"
 	"github.com/FreekingDean/gojellyfin/internal/server/librarystructure"
+	"github.com/FreekingDean/gojellyfin/internal/server/livetv"
 	"github.com/FreekingDean/gojellyfin/internal/server/localization"
 	"github.com/FreekingDean/gojellyfin/internal/server/mediainfo"
 	"github.com/FreekingDean/gojellyfin/internal/server/musicgenres"
@@ -45,6 +46,7 @@ type (
 	GenresServer             = genres.Server
 	MusicGenresServer        = musicgenres.Server
 	PersonsServer            = persons.Server
+	LiveTvServer             = livetv.Server
 	ActivityLogServer        = activitylog.Server
 	BrandingServer           = branding.Server
 	ConfigurationServer      = configuration.Server
@@ -73,6 +75,7 @@ type Server struct {
 	*GenresServer
 	*MusicGenresServer
 	*PersonsServer
+	*LiveTvServer
 	*ActivityLogServer
 	*BrandingServer
 	*ConfigurationServer
@@ -103,6 +106,7 @@ func New(
 	genres *genres.Server,
 	musicgenres *musicgenres.Server,
 	persons *persons.Server,
+	liveTv *livetv.Server,
 	activityLog *activitylog.Server,
 	branding *branding.Server,
 	configuration *configuration.Server,
@@ -130,6 +134,7 @@ func New(
 		GenresServer:             genres,
 		MusicGenresServer:        musicgenres,
 		PersonsServer:            persons,
+		LiveTvServer:             liveTv,
 		ActivityLogServer:        activityLog,
 		BrandingServer:           branding,
 		ConfigurationServer:      configuration,

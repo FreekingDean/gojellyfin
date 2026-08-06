@@ -187,7 +187,7 @@ func DefaultPolicy(isAdministrator bool) api.UserPolicy {
 		EnableContentDeletion:            Ptr(isAdministrator),
 		EnableContentDeletionFromFolders: &[]string{},
 		EnableContentDownloading:         Ptr(true),
-		EnableLiveTvAccess:               Ptr(true),
+		EnableLiveTvAccess:               Ptr(false),
 		EnableLiveTvManagement:           Ptr(false),
 		EnableLyricManagement:            Ptr(false),
 		EnableMediaConversion:            Ptr(true),
