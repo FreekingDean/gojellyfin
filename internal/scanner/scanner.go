@@ -120,6 +120,19 @@ func (s *Scanner) scanMovies(ctx context.Context, library *libraries.Library, ro
 		}
 		seen = append(seen, path)
 
+		id, err := s.itemID(ctx, library.ID, path)
+		if err != nil {
+			return err
+		}
+		if err := s.scanArtwork(ctx, id, path, false); err != nil {
+			log.Printf("artwork %s: %v", path, err)
+		}
+		if parent := filepath.Dir(path); parent != root {
+			if err := s.scanArtwork(ctx, id, parent, true); err != nil {
+				log.Printf("artwork %s: %v", parent, err)
+			}
+		}
+
 		return s.probeMedia(ctx, library.ID, path)
 	})
 
@@ -158,6 +171,9 @@ func (s *Scanner) scanShows(ctx context.Context, library *libraries.Library, roo
 		seriesID, err := s.itemID(ctx, library.ID, seriesPath)
 		if err != nil {
 			return nil, err
+		}
+		if err := s.scanArtwork(ctx, seriesID, seriesPath, true); err != nil {
+			log.Printf("artwork %s: %v", seriesPath, err)
 		}
 
 		paths, err := s.scanSeries(ctx, library, series.Name, seriesID, seriesPath)
@@ -216,6 +232,9 @@ func (s *Scanner) scanSeries(ctx context.Context, library *libraries.Library, se
 		if err != nil {
 			return nil, err
 		}
+		if err := s.scanArtwork(ctx, seasonID, path, true); err != nil {
+			log.Printf("artwork %s: %v", path, err)
+		}
 
 		episodes, err := os.ReadDir(path)
 		if err != nil {
@@ -259,6 +278,12 @@ func (s *Scanner) upsertEpisode(ctx context.Context, library *libraries.Library,
 	})
 	if err != nil {
 		return err
+	}
+
+	if id, err := s.itemID(ctx, library.ID, path); err == nil {
+		if err := s.scanArtwork(ctx, id, path, false); err != nil {
+			log.Printf("artwork %s: %v", path, err)
+		}
 	}
 
 	return s.probeMedia(ctx, library.ID, path)
