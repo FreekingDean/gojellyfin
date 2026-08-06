@@ -27,7 +27,7 @@ func (s *Server) GetUsers(ctx context.Context, request api.GetUsersRequestObject
 }
 
 func (s *Server) GetCurrentUser(ctx context.Context, request api.GetCurrentUserRequestObject) (api.GetCurrentUserResponseObject, error) {
-	user, err := s.store.User(ctx, middleware.UserID(ctx))
+	user, err := s.users.User(ctx, middleware.UserID(ctx))
 	if err != nil {
 		return api.GetCurrentUser400JSONResponse{}, nil
 	}
@@ -41,7 +41,7 @@ func (s *Server) GetCurrentUser(ctx context.Context, request api.GetCurrentUserR
 }
 
 func (s *Server) GetUserById(ctx context.Context, request api.GetUserByIdRequestObject) (api.GetUserByIdResponseObject, error) {
-	user, err := s.store.User(ctx, request.UserId)
+	user, err := s.users.User(ctx, request.UserId)
 	if err != nil {
 		return api.GetUserById404JSONResponse{}, nil
 	}
@@ -79,7 +79,7 @@ func (s *Server) CreateUserByName(ctx context.Context, request api.CreateUserByN
 		Username:     req.Name,
 		PasswordHash: hash,
 	}
-	if err := s.store.CreateUser(ctx, user); err != nil {
+	if err := s.users.CreateUser(ctx, user); err != nil {
 		return nil, err
 	}
 
@@ -97,7 +97,7 @@ func (s *Server) UpdateUser(ctx context.Context, request api.UpdateUserRequestOb
 		return api.UpdateUser400JSONResponse{}, nil
 	}
 
-	user, err := s.store.User(ctx, *request.Params.UserId)
+	user, err := s.users.User(ctx, *request.Params.UserId)
 	if err != nil {
 		return api.UpdateUser400JSONResponse{}, nil
 	}
@@ -117,7 +117,7 @@ func (s *Server) UpdateUser(ctx context.Context, request api.UpdateUserRequestOb
 		user.IsAdministrator = deref(req.Policy.IsAdministrator)
 	}
 
-	if err := s.store.UpdateUser(ctx, user); err != nil {
+	if err := s.users.UpdateUser(ctx, user); err != nil {
 		return nil, err
 	}
 
@@ -138,7 +138,7 @@ func (s *Server) UpdateUserConfiguration(ctx context.Context, request api.Update
 	if user.Configuration, err = json.Marshal(req); err != nil {
 		return nil, err
 	}
-	if err := s.store.UpdateUser(ctx, user); err != nil {
+	if err := s.users.UpdateUser(ctx, user); err != nil {
 		return nil, err
 	}
 
@@ -151,7 +151,7 @@ func (s *Server) UpdateUserPolicy(ctx context.Context, request api.UpdateUserPol
 		return api.UpdateUserPolicy400JSONResponse{}, nil
 	}
 
-	user, err := s.store.User(ctx, request.UserId)
+	user, err := s.users.User(ctx, request.UserId)
 	if err != nil {
 		return api.UpdateUserPolicy400JSONResponse{}, nil
 	}
@@ -161,7 +161,7 @@ func (s *Server) UpdateUserPolicy(ctx context.Context, request api.UpdateUserPol
 	}
 	user.IsAdministrator = deref(req.IsAdministrator)
 
-	if err := s.store.UpdateUser(ctx, user); err != nil {
+	if err := s.users.UpdateUser(ctx, user); err != nil {
 		return nil, err
 	}
 
@@ -189,7 +189,7 @@ func (s *Server) UpdateUserPassword(ctx context.Context, request api.UpdateUserP
 	if user.PasswordHash, err = auth.Hash(deref(req.NewPw)); err != nil {
 		return nil, err
 	}
-	if err := s.store.UpdateUser(ctx, user); err != nil {
+	if err := s.users.UpdateUser(ctx, user); err != nil {
 		return nil, err
 	}
 
@@ -197,11 +197,11 @@ func (s *Server) UpdateUserPassword(ctx context.Context, request api.UpdateUserP
 }
 
 func (s *Server) DeleteUser(ctx context.Context, request api.DeleteUserRequestObject) (api.DeleteUserResponseObject, error) {
-	if _, err := s.store.User(ctx, request.UserId); err != nil {
+	if _, err := s.users.User(ctx, request.UserId); err != nil {
 		return api.DeleteUser404JSONResponse{}, nil
 	}
 
-	if err := s.store.DeleteUser(ctx, request.UserId); err != nil {
+	if err := s.users.DeleteUser(ctx, request.UserId); err != nil {
 		return nil, err
 	}
 
@@ -209,7 +209,7 @@ func (s *Server) DeleteUser(ctx context.Context, request api.DeleteUserRequestOb
 }
 
 func (s *Server) listUserDtos(ctx context.Context) ([]api.UserDto, error) {
-	users, err := s.store.Users(ctx)
+	users, err := s.users.Users(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -228,10 +228,10 @@ func (s *Server) listUserDtos(ctx context.Context) ([]api.UserDto, error) {
 
 func (s *Server) userFor(ctx context.Context, id *openapi_types.UUID) (*users.User, error) {
 	if id == nil {
-		return s.store.User(ctx, middleware.UserID(ctx))
+		return s.users.User(ctx, middleware.UserID(ctx))
 	}
 
-	return s.store.User(ctx, *id)
+	return s.users.User(ctx, *id)
 }
 
 func userDto(u *users.User) (api.UserDto, error) {

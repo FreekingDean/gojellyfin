@@ -11,12 +11,12 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store"
 )
 
-type Store struct {
+type Service struct {
 	db *gorm.DB
 }
 
-func New(db *gorm.DB) *Store {
-	return &Store{db: db}
+func New(db *gorm.DB) *Service {
+	return &Service{db: db}
 }
 
 type User struct {
@@ -46,11 +46,11 @@ type Session struct {
 	UpdatedAt        time.Time
 }
 
-func (s *Store) CreateUser(ctx context.Context, user *User) error {
+func (s *Service) CreateUser(ctx context.Context, user *User) error {
 	return s.db.WithContext(ctx).Create(user).Error
 }
 
-func (s *Store) User(ctx context.Context, id uuid.UUID) (*User, error) {
+func (s *Service) User(ctx context.Context, id uuid.UUID) (*User, error) {
 	var user User
 	if err := s.db.WithContext(ctx).First(&user, "id = ?", id).Error; err != nil {
 		return nil, err
@@ -59,7 +59,7 @@ func (s *Store) User(ctx context.Context, id uuid.UUID) (*User, error) {
 	return &user, nil
 }
 
-func (s *Store) UserByUsername(ctx context.Context, username string) (*User, error) {
+func (s *Service) UserByUsername(ctx context.Context, username string) (*User, error) {
 	var user User
 	if err := s.db.WithContext(ctx).First(&user, "username = ?", username).Error; err != nil {
 		return nil, err
@@ -68,7 +68,7 @@ func (s *Store) UserByUsername(ctx context.Context, username string) (*User, err
 	return &user, nil
 }
 
-func (s *Store) Users(ctx context.Context) ([]User, error) {
+func (s *Service) Users(ctx context.Context) ([]User, error) {
 	var users []User
 	if err := s.db.WithContext(ctx).Find(&users).Error; err != nil {
 		return nil, err
@@ -77,26 +77,26 @@ func (s *Store) Users(ctx context.Context) ([]User, error) {
 	return users, nil
 }
 
-func (s *Store) UpdateUser(ctx context.Context, user *User) error {
+func (s *Service) UpdateUser(ctx context.Context, user *User) error {
 	return s.db.WithContext(ctx).Save(user).Error
 }
 
-func (s *Store) DeleteUser(ctx context.Context, id uuid.UUID) error {
+func (s *Service) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	return s.db.WithContext(ctx).Delete(&User{}, "id = ?", id).Error
 }
 
-func (s *Store) TouchLogin(ctx context.Context, id uuid.UUID) error {
+func (s *Service) TouchLogin(ctx context.Context, id uuid.UUID) error {
 	now := time.Now()
 
 	return s.db.WithContext(ctx).Model(&User{}).Where("id = ?", id).
 		Updates(map[string]any{"last_login_date": now, "last_activity_date": now}).Error
 }
 
-func (s *Store) CreateSession(ctx context.Context, session *Session) error {
+func (s *Service) CreateSession(ctx context.Context, session *Session) error {
 	return s.db.WithContext(ctx).Create(session).Error
 }
 
-func (s *Store) SessionByToken(ctx context.Context, token string) (*Session, error) {
+func (s *Service) SessionByToken(ctx context.Context, token string) (*Session, error) {
 	var session Session
 	if err := s.db.WithContext(ctx).First(&session, "access_token = ?", token).Error; err != nil {
 		return nil, err
@@ -105,7 +105,7 @@ func (s *Store) SessionByToken(ctx context.Context, token string) (*Session, err
 	return &session, nil
 }
 
-func (s *Store) ListSessions(ctx context.Context) ([]Session, error) {
+func (s *Service) ListSessions(ctx context.Context) ([]Session, error) {
 	var sessions []Session
 	if err := s.db.WithContext(ctx).Find(&sessions).Error; err != nil {
 		return nil, err
@@ -114,11 +114,11 @@ func (s *Store) ListSessions(ctx context.Context) ([]Session, error) {
 	return sessions, nil
 }
 
-func (s *Store) DeleteSessionByToken(ctx context.Context, token string) error {
+func (s *Service) DeleteSessionByToken(ctx context.Context, token string) error {
 	return s.db.WithContext(ctx).Delete(&Session{}, "access_token = ?", token).Error
 }
 
-func (s *Store) UserName(ctx context.Context, id uuid.UUID) string {
+func (s *Service) UserName(ctx context.Context, id uuid.UUID) string {
 	user, err := s.User(ctx, id)
 	if err != nil {
 		return ""

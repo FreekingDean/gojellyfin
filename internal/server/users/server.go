@@ -5,9 +5,9 @@ import (
 )
 
 type Server struct {
-	store *users.Store
+	users *users.Service
 }
 
-func New(store *users.Store) *Server {
-	return &Server{store: store}
+func New(service *users.Service) *Server {
+	return &Server{users: service}
 }

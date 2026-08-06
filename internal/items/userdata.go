@@ -28,7 +28,7 @@ func (Datum) TableName() string {
 	return "user_item_data"
 }
 
-func (s *Store) GetUserItemDatum(ctx context.Context, userID, itemID uuid.UUID) (*Datum, error) {
+func (s *Service) GetUserItemDatum(ctx context.Context, userID, itemID uuid.UUID) (*Datum, error) {
 	var datum Datum
 	err := s.db.WithContext(ctx).First(&datum, "user_id = ? AND item_id = ?", userID, itemID).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -41,7 +41,7 @@ func (s *Store) GetUserItemDatum(ctx context.Context, userID, itemID uuid.UUID) 
 	return &datum, nil
 }
 
-func (s *Store) ListUserItemData(ctx context.Context, userID uuid.UUID, itemIDs []uuid.UUID) (map[uuid.UUID]Datum, error) {
+func (s *Service) ListUserItemData(ctx context.Context, userID uuid.UUID, itemIDs []uuid.UUID) (map[uuid.UUID]Datum, error) {
 	data := make(map[uuid.UUID]Datum, len(itemIDs))
 	if len(itemIDs) == 0 {
 		return data, nil
@@ -62,7 +62,7 @@ func (s *Store) ListUserItemData(ctx context.Context, userID uuid.UUID, itemIDs 
 	return data, nil
 }
 
-func (s *Store) SaveUserItemDatum(ctx context.Context, datum *Datum) error {
+func (s *Service) SaveUserItemDatum(ctx context.Context, datum *Datum) error {
 	return s.db.WithContext(ctx).Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "user_id"}, {Name: "item_id"}},
 		DoUpdates: clause.AssignmentColumns([]string{

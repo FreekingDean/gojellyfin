@@ -13,12 +13,12 @@ type Scanner interface {
 }
 
 type Server struct {
-	store   *libraries.Store
-	scanner Scanner
+	libraries *libraries.Service
+	scanner   Scanner
 }
 
-func New(store *libraries.Store) *Server {
-	return &Server{store: store}
+func New(service *libraries.Service) *Server {
+	return &Server{libraries: service}
 }
 
 // Set after construction: the scanner reads libraries, so taking it as a

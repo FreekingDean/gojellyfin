@@ -83,7 +83,7 @@ func (s *Server) UpdateItemUserData(ctx context.Context, request api.UpdateItemU
 		datum.LastPlayedDate = req.LastPlayedDate
 	}
 
-	if err := s.store.SaveUserItemDatum(ctx, datum); err != nil {
+	if err := s.items.SaveUserItemDatum(ctx, datum); err != nil {
 		return nil, err
 	}
 
@@ -98,7 +98,7 @@ func (s *Server) saveFavorite(ctx context.Context, itemID uuid.UUID, favorite bo
 
 	datum.IsFavorite = favorite
 
-	return datum, s.store.SaveUserItemDatum(ctx, datum)
+	return datum, s.items.SaveUserItemDatum(ctx, datum)
 }
 
 func (s *Server) savePlayed(ctx context.Context, itemID uuid.UUID, played bool) (*items.Datum, error) {
@@ -114,7 +114,7 @@ func (s *Server) savePlayed(ctx context.Context, itemID uuid.UUID, played bool) 
 		datum.LastPlayedDate = ptr(time.Now())
 	}
 
-	return datum, s.store.SaveUserItemDatum(ctx, datum)
+	return datum, s.items.SaveUserItemDatum(ctx, datum)
 }
 
 func (s *Server) userItemDatum(ctx context.Context, itemID uuid.UUID) (*items.Datum, error) {
@@ -123,7 +123,7 @@ func (s *Server) userItemDatum(ctx context.Context, itemID uuid.UUID) (*items.Da
 		return nil, middleware.ErrUnauthorized
 	}
 
-	return s.store.GetUserItemDatum(ctx, userID, itemID)
+	return s.items.GetUserItemDatum(ctx, userID, itemID)
 }
 
 func userItemDataDto(datum *items.Datum) api.UserItemDataDto {

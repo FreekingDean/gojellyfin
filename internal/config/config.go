@@ -18,12 +18,12 @@ const (
 	RootFolderID = "e9d5075a555c1cbc394eec4cef295274"
 )
 
-type Store struct {
+type Service struct {
 	db *gorm.DB
 }
 
-func New(db *gorm.DB) *Store {
-	return &Store{db: db}
+func New(db *gorm.DB) *Service {
+	return &Service{db: db}
 }
 
 type Configuration struct {
@@ -33,7 +33,7 @@ type Configuration struct {
 	UpdatedAt time.Time
 }
 
-func (s *Store) Configuration(ctx context.Context, key string) (store.JSON, error) {
+func (s *Service) Configuration(ctx context.Context, key string) (store.JSON, error) {
 	var configuration Configuration
 	err := s.db.WithContext(ctx).First(&configuration, "key = ?", key).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -46,7 +46,7 @@ func (s *Store) Configuration(ctx context.Context, key string) (store.JSON, erro
 	return configuration.Value, nil
 }
 
-func (s *Store) SetConfiguration(ctx context.Context, key string, value store.JSON) error {
+func (s *Service) SetConfiguration(ctx context.Context, key string, value store.JSON) error {
 	return s.db.WithContext(ctx).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "key"}},
 		DoUpdates: clause.AssignmentColumns([]string{"value", "updated_at"}),

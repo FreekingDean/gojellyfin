@@ -11,12 +11,12 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store"
 )
 
-type Store struct {
+type Service struct {
 	db *gorm.DB
 }
 
-func New(db *gorm.DB) *Store {
-	return &Store{db: db}
+func New(db *gorm.DB) *Service {
+	return &Service{db: db}
 }
 
 type Library struct {
@@ -37,11 +37,11 @@ type LibraryPath struct {
 	UpdatedAt time.Time
 }
 
-func (s *Store) CreateLibrary(ctx context.Context, library *Library) error {
+func (s *Service) CreateLibrary(ctx context.Context, library *Library) error {
 	return s.db.WithContext(ctx).Create(library).Error
 }
 
-func (s *Store) GetLibrary(ctx context.Context, id uuid.UUID) (*Library, error) {
+func (s *Service) GetLibrary(ctx context.Context, id uuid.UUID) (*Library, error) {
 	var library Library
 	if err := s.db.WithContext(ctx).Preload("Paths").First(&library, "id = ?", id).Error; err != nil {
 		return nil, err
@@ -50,7 +50,7 @@ func (s *Store) GetLibrary(ctx context.Context, id uuid.UUID) (*Library, error) 
 	return &library, nil
 }
 
-func (s *Store) GetLibraryByName(ctx context.Context, name string) (*Library, error) {
+func (s *Service) GetLibraryByName(ctx context.Context, name string) (*Library, error) {
 	var library Library
 	if err := s.db.WithContext(ctx).Preload("Paths").First(&library, "name = ?", name).Error; err != nil {
 		return nil, err
@@ -59,7 +59,7 @@ func (s *Store) GetLibraryByName(ctx context.Context, name string) (*Library, er
 	return &library, nil
 }
 
-func (s *Store) ListLibraries(ctx context.Context) ([]Library, error) {
+func (s *Service) ListLibraries(ctx context.Context) ([]Library, error) {
 	var libraries []Library
 	if err := s.db.WithContext(ctx).Preload("Paths").Find(&libraries).Error; err != nil {
 		return nil, err
@@ -68,11 +68,11 @@ func (s *Store) ListLibraries(ctx context.Context) ([]Library, error) {
 	return libraries, nil
 }
 
-func (s *Store) UpdateLibrary(ctx context.Context, library *Library) error {
+func (s *Service) UpdateLibrary(ctx context.Context, library *Library) error {
 	return s.db.WithContext(ctx).Omit("Paths").Save(library).Error
 }
 
-func (s *Store) DeleteLibrary(ctx context.Context, id uuid.UUID) error {
+func (s *Service) DeleteLibrary(ctx context.Context, id uuid.UUID) error {
 	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Delete(&LibraryPath{}, "library_id = ?", id).Error; err != nil {
 			return err
@@ -82,7 +82,7 @@ func (s *Store) DeleteLibrary(ctx context.Context, id uuid.UUID) error {
 	})
 }
 
-func (s *Store) AddLibraryPath(ctx context.Context, libraryID uuid.UUID, path string) error {
+func (s *Service) AddLibraryPath(ctx context.Context, libraryID uuid.UUID, path string) error {
 	err := s.db.WithContext(ctx).Create(&LibraryPath{LibraryID: libraryID, Path: path}).Error
 	if errors.Is(err, gorm.ErrDuplicatedKey) {
 		return nil
@@ -91,6 +91,6 @@ func (s *Store) AddLibraryPath(ctx context.Context, libraryID uuid.UUID, path st
 	return err
 }
 
-func (s *Store) RemoveLibraryPath(ctx context.Context, libraryID uuid.UUID, path string) error {
+func (s *Service) RemoveLibraryPath(ctx context.Context, libraryID uuid.UUID, path string) error {
 	return s.db.WithContext(ctx).Delete(&LibraryPath{}, "library_id = ? AND path = ?", libraryID, path).Error
 }

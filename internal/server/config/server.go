@@ -6,10 +6,10 @@ import (
 )
 
 type Server struct {
-	store  *config.Store
+	config *config.Service
 	system system.Service
 }
 
-func New(store *config.Store, system system.Service) *Server {
-	return &Server{store: store, system: system}
+func New(service *config.Service, system system.Service) *Server {
+	return &Server{config: service, system: system}
 }

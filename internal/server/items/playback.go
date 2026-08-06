@@ -29,7 +29,7 @@ func (s *Server) GetPostedPlaybackInfo(ctx context.Context, request api.GetPoste
 }
 
 func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID) (api.PlaybackInfoResponse, error) {
-	item, err := s.store.ItemByID(ctx, itemID)
+	item, err := s.items.ItemByID(ctx, itemID)
 	if err != nil {
 		return api.PlaybackInfoResponse{}, err
 	}
@@ -51,7 +51,7 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID) (api.Playba
 }
 
 func (s *Server) mediaSource(ctx context.Context, item *items.Item) (api.MediaSourceInfo, error) {
-	streams, err := s.store.ListMediaStreams(ctx, item.ID)
+	streams, err := s.items.ListMediaStreams(ctx, item.ID)
 	if err != nil {
 		return api.MediaSourceInfo{}, err
 	}

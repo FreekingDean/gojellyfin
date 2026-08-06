@@ -10,12 +10,12 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-type Store struct {
+type Service struct {
 	db *gorm.DB
 }
 
-func New(db *gorm.DB) *Store {
-	return &Store{db: db}
+func New(db *gorm.DB) *Service {
+	return &Service{db: db}
 }
 
 type Item struct {
@@ -41,7 +41,7 @@ type Item struct {
 	UpdatedAt         time.Time
 }
 
-func (s *Store) UpsertItem(ctx context.Context, item *Item) error {
+func (s *Service) UpsertItem(ctx context.Context, item *Item) error {
 	return s.db.WithContext(ctx).Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "library_id"}, {Name: "path"}},
 		// run_time_ticks, container, size, bitrate and probed_at belong to the
@@ -54,7 +54,7 @@ func (s *Store) UpsertItem(ctx context.Context, item *Item) error {
 	}).Create(item).Error
 }
 
-func (s *Store) SaveItemMedia(ctx context.Context, item *Item) error {
+func (s *Service) SaveItemMedia(ctx context.Context, item *Item) error {
 	return s.db.WithContext(ctx).Model(&Item{}).Where("id = ?", item.ID).Updates(map[string]any{
 		"run_time_ticks": item.RunTimeTicks,
 		"container":      item.Container,
@@ -64,7 +64,7 @@ func (s *Store) SaveItemMedia(ctx context.Context, item *Item) error {
 	}).Error
 }
 
-func (s *Store) ItemByID(ctx context.Context, id uuid.UUID) (*Item, error) {
+func (s *Service) ItemByID(ctx context.Context, id uuid.UUID) (*Item, error) {
 	var item Item
 	if err := s.db.WithContext(ctx).First(&item, "id = ?", id).Error; err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func (s *Store) ItemByID(ctx context.Context, id uuid.UUID) (*Item, error) {
 	return &item, nil
 }
 
-func (s *Store) GetItemByPath(ctx context.Context, libraryID uuid.UUID, path string) (*Item, error) {
+func (s *Service) GetItemByPath(ctx context.Context, libraryID uuid.UUID, path string) (*Item, error) {
 	var item Item
 	if err := s.db.WithContext(ctx).First(&item, "library_id = ? AND path = ?", libraryID, path).Error; err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func (s *Store) GetItemByPath(ctx context.Context, libraryID uuid.UUID, path str
 	return &item, nil
 }
 
-func (s *Store) ListItemsByLibrary(ctx context.Context, libraryID uuid.UUID) ([]Item, error) {
+func (s *Service) ListItemsByLibrary(ctx context.Context, libraryID uuid.UUID) ([]Item, error) {
 	var items []Item
 	if err := s.db.WithContext(ctx).Where("library_id = ?", libraryID).Order("sort_name").Find(&items).Error; err != nil {
 		return nil, err
@@ -91,7 +91,7 @@ func (s *Store) ListItemsByLibrary(ctx context.Context, libraryID uuid.UUID) ([]
 	return items, nil
 }
 
-func (s *Store) ListItemsByParent(ctx context.Context, parentID uuid.UUID) ([]Item, error) {
+func (s *Service) ListItemsByParent(ctx context.Context, parentID uuid.UUID) ([]Item, error) {
 	var items []Item
 	if err := s.db.WithContext(ctx).Where("parent_id = ?", parentID).Order("index_number, sort_name").Find(&items).Error; err != nil {
 		return nil, err
@@ -124,7 +124,7 @@ var sortColumns = map[string]string{
 	"random":         "random()",
 }
 
-func (s *Store) QueryItems(ctx context.Context, query ItemQuery) ([]Item, int64, error) {
+func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]Item, int64, error) {
 	db := s.db.WithContext(ctx).Model(&Item{})
 
 	if query.LibraryID != nil {
@@ -183,7 +183,7 @@ func (s *Store) QueryItems(ctx context.Context, query ItemQuery) ([]Item, int64,
 	return items, total, nil
 }
 
-func (s *Store) CountChildren(ctx context.Context, parentIDs []uuid.UUID) (map[uuid.UUID]int32, error) {
+func (s *Service) CountChildren(ctx context.Context, parentIDs []uuid.UUID) (map[uuid.UUID]int32, error) {
 	counts := make(map[uuid.UUID]int32, len(parentIDs))
 	if len(parentIDs) == 0 {
 		return counts, nil
@@ -209,7 +209,7 @@ func (s *Store) CountChildren(ctx context.Context, parentIDs []uuid.UUID) (map[u
 	return counts, nil
 }
 
-func (s *Store) DeleteItemsNotInPaths(ctx context.Context, libraryID uuid.UUID, paths []string) error {
+func (s *Service) DeleteItemsNotInPaths(ctx context.Context, libraryID uuid.UUID, paths []string) error {
 	query := s.db.WithContext(ctx).Where("library_id = ?", libraryID)
 	if len(paths) > 0 {
 		query = query.Where("path NOT IN ?", paths)

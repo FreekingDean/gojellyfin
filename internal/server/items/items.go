@@ -35,7 +35,7 @@ func (s *Server) GetItems(ctx context.Context, request api.GetItemsRequestObject
 }
 
 func (s *Server) GetItem(ctx context.Context, request api.GetItemRequestObject) (api.GetItemResponseObject, error) {
-	item, err := s.store.ItemByID(ctx, request.ItemId)
+	item, err := s.items.ItemByID(ctx, request.ItemId)
 	if err != nil {
 		return api.GetItem403Response{}, nil
 	}
@@ -87,7 +87,7 @@ func (s *Server) GetLatestMedia(ctx context.Context, request api.GetLatestMediaR
 		query.LibraryID = request.Params.ParentId
 	}
 
-	records, _, err := s.store.QueryItems(ctx, query)
+	records, _, err := s.items.QueryItems(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func (s *Server) itemQuery(ctx context.Context, params api.GetItemsParams) (item
 }
 
 func (s *Server) queryResult(ctx context.Context, query items.ItemQuery) (api.BaseItemDtoQueryResult, error) {
-	records, total, err := s.store.QueryItems(ctx, query)
+	records, total, err := s.items.QueryItems(ctx, query)
 	if err != nil {
 		return api.BaseItemDtoQueryResult{}, err
 	}
@@ -160,14 +160,14 @@ func (s *Server) itemDtos(ctx context.Context, records []items.Item) ([]api.Base
 		}
 	}
 
-	counts, err := s.store.CountChildren(ctx, folderIDs)
+	counts, err := s.items.CountChildren(ctx, folderIDs)
 	if err != nil {
 		return nil, err
 	}
 
 	userData := map[uuid.UUID]items.Datum{}
 	if userID := middleware.UserID(ctx); userID != uuid.Nil {
-		if userData, err = s.store.ListUserItemData(ctx, userID, itemIDs); err != nil {
+		if userData, err = s.items.ListUserItemData(ctx, userID, itemIDs); err != nil {
 			return nil, err
 		}
 	}

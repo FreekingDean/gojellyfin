@@ -6,10 +6,10 @@ import (
 )
 
 type Server struct {
-	store     *items.Store
-	libraries *libraries.Store
+	items     *items.Service
+	libraries *libraries.Service
 }
 
-func New(store *items.Store, libraries *libraries.Store) *Server {
-	return &Server{store: store, libraries: libraries}
+func New(service *items.Service, libraries *libraries.Service) *Server {
+	return &Server{items: service, libraries: libraries}
 }
