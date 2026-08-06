@@ -36,7 +36,14 @@ func (s *Server) GetItems(ctx context.Context, request api.GetItemsRequestObject
 func (s *Server) GetItem(ctx context.Context, request api.GetItemRequestObject) (api.GetItemResponseObject, error) {
 	item, err := s.items.ItemByID(ctx, request.ItemId)
 	if err != nil {
-		return api.GetItem403Response{}, nil
+		// Clients navigate into a library by asking for it as an item, but
+		// libraries are rows in their own table rather than items.
+		library, libraryErr := s.libraries.GetLibrary(ctx, request.ItemId)
+		if libraryErr != nil {
+			return api.GetItem403Response{}, nil
+		}
+
+		return api.GetItem200JSONResponse(dtos.LibraryView(library)), nil
 	}
 
 	converted, err := dtos.ItemDtos(ctx, s.items, []items.Item{*item})
