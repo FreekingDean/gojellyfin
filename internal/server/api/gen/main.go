@@ -216,7 +216,7 @@ func normalize(s string) string {
 func write(path string, b []byte) {
 	formatted, err := format.Source(b)
 	if err != nil {
-		os.WriteFile(path+".broken", b, 0644)
+		_ = os.WriteFile(path+".broken", b, 0644)
 		log.Fatalf("%s: %v (unformatted output written to %s.broken)", path, err, path)
 	}
 	if err := os.WriteFile(path, formatted, 0644); err != nil {
