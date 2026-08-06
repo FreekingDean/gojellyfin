@@ -18,15 +18,10 @@ jobs:
       - name: Build
         run: go build ./...
 
-      # gofmt exits 0 whether or not it finds anything, so the output is the check.
       - name: Format
         run: |
-          unformatted=$(gofmt -l internal cmd)
-          if [ -n "$unformatted" ]; then
-            echo "not gofmt'd:"
-            echo "$unformatted"
-            exit 1
-          fi
+          go fmt ./...
+          git diff --exit-code
 
       - name: Vet
         run: go vet ./...
@@ -34,7 +29,6 @@ jobs:
       - name: Test
         run: go test -race ./...
 
-      # Generated api code is excluded: it is ~95k lines emitted by oapi-codegen.
       - name: Lint
         uses: golangci/golangci-lint-action@v9
         with:

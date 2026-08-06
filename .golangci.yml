@@ -7,6 +7,3 @@ linters:
   exclusions:
     presets:
       - std-error-handling
-    paths:
-      # Emitted by oapi-codegen and the local gen tool; not ours to lint.
-      - internal/server/api
