@@ -6,7 +6,8 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	"github.com/FreekingDean/gojellyfin/internal/server/dtos"
+	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
 )
 
 type Server struct {
@@ -18,7 +19,7 @@ func New(config *config.Service) *Server {
 }
 
 func (s *Server) GetBrandingOptions(ctx context.Context, request api.GetBrandingOptionsRequestObject) (api.GetBrandingOptionsResponseObject, error) {
-	branding, err := dtos.BrandingConfiguration(ctx, s.config)
+	branding, err := configuration.BrandingConfiguration(ctx, s.config)
 	if err != nil {
 		return nil, err
 	}
@@ -51,10 +52,10 @@ func (s *Server) GetBrandingCss2(ctx context.Context, request api.GetBrandingCss
 }
 
 func (s *Server) brandingCss(ctx context.Context) (string, error) {
-	branding, err := dtos.BrandingConfiguration(ctx, s.config)
+	branding, err := configuration.BrandingConfiguration(ctx, s.config)
 	if err != nil {
 		return "", err
 	}
 
-	return dtos.Deref(branding.CustomCss), nil
+	return apiutil.Deref(branding.CustomCss), nil
 }

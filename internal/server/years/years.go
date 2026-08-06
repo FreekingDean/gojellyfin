@@ -7,7 +7,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	"github.com/FreekingDean/gojellyfin/internal/server/dtos"
+	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
 type Server struct {
@@ -31,8 +31,8 @@ func (s *Server) GetYears(ctx context.Context, request api.GetYearsRequestObject
 
 	return api.GetYears200JSONResponse{
 		Items:            &dtoList,
-		StartIndex:       dtos.Ptr(int32(0)),
-		TotalRecordCount: dtos.Ptr(int32(len(dtoList))),
+		StartIndex:       apiutil.Ptr(int32(0)),
+		TotalRecordCount: apiutil.Ptr(int32(len(dtoList))),
 	}, nil
 }
 
@@ -44,12 +44,12 @@ func yearDto(year int32) api.BaseItemDto {
 	name := strconv.Itoa(int(year))
 
 	return api.BaseItemDto{
-		Name:              dtos.Ptr(name),
-		SortName:          dtos.Ptr(name),
-		ServerId:          dtos.Ptr(config.ServerID),
-		Type:              dtos.Ptr(api.BaseItemKindYear),
-		ProductionYear:    dtos.Ptr(year),
-		IsFolder:          dtos.Ptr(true),
+		Name:              apiutil.Ptr(name),
+		SortName:          apiutil.Ptr(name),
+		ServerId:          apiutil.Ptr(config.ServerID),
+		Type:              apiutil.Ptr(api.BaseItemKindYear),
+		ProductionYear:    apiutil.Ptr(year),
+		IsFolder:          apiutil.Ptr(true),
 		ImageTags:         &map[string]string{},
 		BackdropImageTags: &[]string{},
 	}

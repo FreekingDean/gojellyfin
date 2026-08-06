@@ -5,7 +5,8 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	"github.com/FreekingDean/gojellyfin/internal/server/dtos"
+	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	serveritems "github.com/FreekingDean/gojellyfin/internal/server/items"
 )
 
 type Server struct {
@@ -19,8 +20,8 @@ func New(items *items.Service) *Server {
 func (s *Server) GetSearchHints(ctx context.Context, request api.GetSearchHintsRequestObject) (api.GetSearchHintsResponseObject, error) {
 	query := items.ItemQuery{
 		SearchTerm: request.Params.SearchTerm,
-		StartIndex: int(dtos.Deref(request.Params.StartIndex)),
-		Limit:      int(dtos.Deref(request.Params.Limit)),
+		StartIndex: int(apiutil.Deref(request.Params.StartIndex)),
+		Limit:      int(apiutil.Deref(request.Params.Limit)),
 		SortBy:     []string{"SortName"},
 	}
 	if request.Params.IncludeItemTypes != nil {
@@ -44,7 +45,7 @@ func (s *Server) GetSearchHints(ctx context.Context, request api.GetSearchHintsR
 
 	return api.GetSearchHints200JSONResponse{
 		SearchHints:      &hints,
-		TotalRecordCount: dtos.Ptr(int32(total)),
+		TotalRecordCount: apiutil.Ptr(int32(total)),
 	}, nil
 }
 
@@ -54,18 +55,18 @@ func searchHint(item *items.Item, term string) api.SearchHint {
 	hint := api.SearchHint{
 		ItemId:            &item.ID,
 		Id:                &item.ID,
-		Name:              dtos.Ptr(item.Name),
-		MatchedTerm:       dtos.Ptr(term),
+		Name:              apiutil.Ptr(item.Name),
+		MatchedTerm:       apiutil.Ptr(term),
 		Type:              &kind,
-		IsFolder:          dtos.Ptr(dtos.FolderTypes[item.Type]),
+		IsFolder:          apiutil.Ptr(serveritems.FolderTypes[item.Type]),
 		IndexNumber:       item.IndexNumber,
 		ParentIndexNumber: item.ParentIndexNumber,
 		ProductionYear:    item.ProductionYear,
 		RunTimeTicks:      item.RunTimeTicks,
 	}
 
-	if !dtos.FolderTypes[item.Type] {
-		hint.MediaType = dtos.Ptr(api.MediaTypeVideo)
+	if !serveritems.FolderTypes[item.Type] {
+		hint.MediaType = apiutil.Ptr(api.MediaTypeVideo)
 	}
 
 	return hint

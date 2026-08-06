@@ -7,7 +7,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	"github.com/FreekingDean/gojellyfin/internal/server/dtos"
+	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
 type Server struct {
@@ -43,10 +43,10 @@ func (s *Server) GetItem(ctx context.Context, request api.GetItemRequestObject) 
 			return api.GetItem403Response{}, nil
 		}
 
-		return api.GetItem200JSONResponse(dtos.LibraryView(library)), nil
+		return api.GetItem200JSONResponse(LibraryView(library)), nil
 	}
 
-	converted, err := dtos.ItemDtos(ctx, s.items, []items.Item{*item})
+	converted, err := ItemDtos(ctx, s.items, []items.Item{*item})
 	if err != nil {
 		return nil, err
 	}
@@ -56,11 +56,11 @@ func (s *Server) GetItem(ctx context.Context, request api.GetItemRequestObject) 
 
 func (s *Server) GetRootFolder(ctx context.Context, request api.GetRootFolderRequestObject) (api.GetRootFolderResponseObject, error) {
 	return api.GetRootFolder200JSONResponse{
-		Id:       dtos.UID(config.RootFolderID),
-		Name:     dtos.Ptr("Media Folders"),
-		ServerId: dtos.Ptr(config.ServerID),
-		Type:     dtos.Ptr(api.BaseItemKindFolder),
-		IsFolder: dtos.Ptr(true),
+		Id:       apiutil.UID(config.RootFolderID),
+		Name:     apiutil.Ptr("Media Folders"),
+		ServerId: apiutil.Ptr(config.ServerID),
+		Type:     apiutil.Ptr(api.BaseItemKindFolder),
+		IsFolder: apiutil.Ptr(true),
 	}, nil
 }
 
@@ -69,7 +69,7 @@ func (s *Server) GetLatestMedia(ctx context.Context, request api.GetLatestMediaR
 		Types:      []string{"Movie", "Series"},
 		SortBy:     []string{"DateCreated"},
 		Descending: true,
-		Limit:      int(dtos.Deref(dtos.OrElse(request.Params.Limit, int32(20)))),
+		Limit:      int(apiutil.Deref(apiutil.OrElse(request.Params.Limit, int32(20)))),
 	}
 	if request.Params.ParentId != nil {
 		query.LibraryID = request.Params.ParentId
@@ -80,7 +80,7 @@ func (s *Server) GetLatestMedia(ctx context.Context, request api.GetLatestMediaR
 		return nil, err
 	}
 
-	converted, err := dtos.ItemDtos(ctx, s.items, records)
+	converted, err := ItemDtos(ctx, s.items, records)
 	if err != nil {
 		return nil, err
 	}
@@ -90,11 +90,11 @@ func (s *Server) GetLatestMedia(ctx context.Context, request api.GetLatestMediaR
 
 func (s *Server) itemQuery(ctx context.Context, params api.GetItemsParams) (items.ItemQuery, error) {
 	query := items.ItemQuery{
-		SearchTerm: dtos.Deref(params.SearchTerm),
-		StartIndex: int(dtos.Deref(params.StartIndex)),
-		Limit:      int(dtos.Deref(params.Limit)),
-		Descending: dtos.Descending(params.SortOrder),
-		SortBy:     dtos.SortFields(params.SortBy),
+		SearchTerm: apiutil.Deref(params.SearchTerm),
+		StartIndex: int(apiutil.Deref(params.StartIndex)),
+		Limit:      int(apiutil.Deref(params.Limit)),
+		Descending: Descending(params.SortOrder),
+		SortBy:     SortFields(params.SortBy),
 	}
 
 	if params.IncludeItemTypes != nil {
@@ -111,7 +111,7 @@ func (s *Server) itemQuery(ctx context.Context, params api.GetItemsParams) (item
 		switch {
 		case err == nil:
 			query.LibraryID = &library.ID
-			query.TopLevel = !dtos.Deref(params.Recursive)
+			query.TopLevel = !apiutil.Deref(params.Recursive)
 		default:
 			query.ParentID = params.ParentId
 		}
@@ -126,14 +126,14 @@ func (s *Server) queryResult(ctx context.Context, query items.ItemQuery) (api.Ba
 		return api.BaseItemDtoQueryResult{}, err
 	}
 
-	converted, err := dtos.ItemDtos(ctx, s.items, records)
+	converted, err := ItemDtos(ctx, s.items, records)
 	if err != nil {
 		return api.BaseItemDtoQueryResult{}, err
 	}
 
 	return api.BaseItemDtoQueryResult{
 		Items:            &converted,
-		StartIndex:       dtos.Ptr(int32(query.StartIndex)),
-		TotalRecordCount: dtos.Ptr(int32(total)),
+		StartIndex:       apiutil.Ptr(int32(query.StartIndex)),
+		TotalRecordCount: apiutil.Ptr(int32(total)),
 	}, nil
 }

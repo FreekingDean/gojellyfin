@@ -5,7 +5,6 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	"github.com/FreekingDean/gojellyfin/internal/server/dtos"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
@@ -30,7 +29,7 @@ func (s *Server) GetSessions(ctx context.Context, request api.GetSessionsRequest
 		if err != nil {
 			continue
 		}
-		converted = append(converted, *dtos.SessionDto(&session, user))
+		converted = append(converted, *SessionDto(&session, user))
 	}
 
 	return api.GetSessions200JSONResponse(converted), nil

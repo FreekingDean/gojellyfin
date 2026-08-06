@@ -1,6 +1,7 @@
-// Package dtos translates domain models into generated api types, for shapes
-// that more than one tag's handlers need.
-package dtos
+// Package apiutil holds the small generic helpers every tag package needs at
+// the api boundary. Go cannot alias generic functions, so they live here rather
+// than being copied into each package. No domain knowledge belongs in here.
+package apiutil
 
 import (
 	"github.com/google/uuid"

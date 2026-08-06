@@ -7,7 +7,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	"github.com/FreekingDean/gojellyfin/internal/server/dtos"
+	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
 type Server struct {
@@ -19,7 +19,7 @@ func New(config *config.Service) *Server {
 }
 
 func (s *Server) GetConfiguration(ctx context.Context, request api.GetConfigurationRequestObject) (api.GetConfigurationResponseObject, error) {
-	configuration, err := dtos.ServerConfiguration(ctx, s.config)
+	configuration, err := ServerConfiguration(ctx, s.config)
 	if err != nil {
 		return nil, err
 	}
@@ -28,7 +28,7 @@ func (s *Server) GetConfiguration(ctx context.Context, request api.GetConfigurat
 }
 
 func (s *Server) UpdateConfiguration(ctx context.Context, request api.UpdateConfigurationRequestObject) (api.UpdateConfigurationResponseObject, error) {
-	req := dtos.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
+	req := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
 	if req == nil {
 		return api.UpdateConfiguration403Response{}, nil
 	}
@@ -37,7 +37,7 @@ func (s *Server) UpdateConfiguration(ctx context.Context, request api.UpdateConf
 	if err != nil {
 		return nil, err
 	}
-	if err := s.config.SetConfiguration(ctx, dtos.SystemConfigurationKey, value); err != nil {
+	if err := s.config.SetConfiguration(ctx, SystemConfigurationKey, value); err != nil {
 		return nil, err
 	}
 
@@ -52,7 +52,7 @@ func (s *Server) GetNamedConfiguration(ctx context.Context, request api.GetNamed
 		return nil, err
 	}
 	if value == nil {
-		if value, err = json.Marshal(dtos.DefaultNamedConfiguration(key)); err != nil {
+		if value, err = json.Marshal(DefaultNamedConfiguration(key)); err != nil {
 			return nil, err
 		}
 	}
@@ -66,7 +66,7 @@ func (s *Server) GetNamedConfiguration(ctx context.Context, request api.GetNamed
 }
 
 func (s *Server) UpdateNamedConfiguration(ctx context.Context, request api.UpdateNamedConfigurationRequestObject) (api.UpdateNamedConfigurationResponseObject, error) {
-	req := dtos.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
+	req := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
 	if req == nil {
 		return api.UpdateNamedConfiguration403Response{}, nil
 	}
@@ -83,5 +83,5 @@ func (s *Server) UpdateNamedConfiguration(ctx context.Context, request api.Updat
 }
 
 func (s *Server) GetDefaultMetadataOptions(ctx context.Context, request api.GetDefaultMetadataOptionsRequestObject) (api.GetDefaultMetadataOptionsResponseObject, error) {
-	return api.GetDefaultMetadataOptions200JSONResponse(dtos.DefaultMetadataOptions()), nil
+	return api.GetDefaultMetadataOptions200JSONResponse(DefaultMetadataOptions()), nil
 }

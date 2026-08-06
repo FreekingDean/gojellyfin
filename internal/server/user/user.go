@@ -10,7 +10,8 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	"github.com/FreekingDean/gojellyfin/internal/server/dtos"
+	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	serversession "github.com/FreekingDean/gojellyfin/internal/server/session"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
@@ -38,7 +39,7 @@ func (s *Server) GetCurrentUser(ctx context.Context, request api.GetCurrentUserR
 		return api.GetCurrentUser400JSONResponse{}, nil
 	}
 
-	dto, err := dtos.UserDto(user)
+	dto, err := UserDto(user)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +53,7 @@ func (s *Server) GetUserById(ctx context.Context, request api.GetUserByIdRequest
 		return api.GetUserById404JSONResponse{}, nil
 	}
 
-	dto, err := dtos.UserDto(user)
+	dto, err := UserDto(user)
 	if err != nil {
 		return nil, err
 	}
@@ -70,12 +71,12 @@ func (s *Server) GetPublicUsers(ctx context.Context, request api.GetPublicUsersR
 }
 
 func (s *Server) CreateUserByName(ctx context.Context, request api.CreateUserByNameRequestObject) (api.CreateUserByNameResponseObject, error) {
-	req := dtos.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
+	req := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
 	if req == nil {
 		return api.CreateUserByName403Response{}, nil
 	}
 
-	hash, err := auth.Hash(dtos.Deref(req.Password))
+	hash, err := auth.Hash(apiutil.Deref(req.Password))
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +90,7 @@ func (s *Server) CreateUserByName(ctx context.Context, request api.CreateUserByN
 		return nil, err
 	}
 
-	dto, err := dtos.UserDto(user)
+	dto, err := UserDto(user)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +99,7 @@ func (s *Server) CreateUserByName(ctx context.Context, request api.CreateUserByN
 }
 
 func (s *Server) UpdateUser(ctx context.Context, request api.UpdateUserRequestObject) (api.UpdateUserResponseObject, error) {
-	req := dtos.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
+	req := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
 	if req == nil || request.Params.UserId == nil {
 		return api.UpdateUser400JSONResponse{}, nil
 	}
@@ -120,7 +121,7 @@ func (s *Server) UpdateUser(ctx context.Context, request api.UpdateUserRequestOb
 		if user.Policy, err = json.Marshal(req.Policy); err != nil {
 			return nil, err
 		}
-		user.IsAdministrator = dtos.Deref(req.Policy.IsAdministrator)
+		user.IsAdministrator = apiutil.Deref(req.Policy.IsAdministrator)
 	}
 
 	if err := s.users.UpdateUser(ctx, user); err != nil {
@@ -131,7 +132,7 @@ func (s *Server) UpdateUser(ctx context.Context, request api.UpdateUserRequestOb
 }
 
 func (s *Server) UpdateUserConfiguration(ctx context.Context, request api.UpdateUserConfigurationRequestObject) (api.UpdateUserConfigurationResponseObject, error) {
-	req := dtos.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
+	req := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
 	if req == nil {
 		return api.UpdateUserConfiguration403JSONResponse{}, nil
 	}
@@ -152,7 +153,7 @@ func (s *Server) UpdateUserConfiguration(ctx context.Context, request api.Update
 }
 
 func (s *Server) UpdateUserPolicy(ctx context.Context, request api.UpdateUserPolicyRequestObject) (api.UpdateUserPolicyResponseObject, error) {
-	req := dtos.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
+	req := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
 	if req == nil {
 		return api.UpdateUserPolicy400JSONResponse{}, nil
 	}
@@ -165,7 +166,7 @@ func (s *Server) UpdateUserPolicy(ctx context.Context, request api.UpdateUserPol
 	if user.Policy, err = json.Marshal(req); err != nil {
 		return nil, err
 	}
-	user.IsAdministrator = dtos.Deref(req.IsAdministrator)
+	user.IsAdministrator = apiutil.Deref(req.IsAdministrator)
 
 	if err := s.users.UpdateUser(ctx, user); err != nil {
 		return nil, err
@@ -175,7 +176,7 @@ func (s *Server) UpdateUserPolicy(ctx context.Context, request api.UpdateUserPol
 }
 
 func (s *Server) UpdateUserPassword(ctx context.Context, request api.UpdateUserPasswordRequestObject) (api.UpdateUserPasswordResponseObject, error) {
-	req := dtos.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
+	req := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
 	if req == nil {
 		return api.UpdateUserPassword403JSONResponse{}, nil
 	}
@@ -185,14 +186,14 @@ func (s *Server) UpdateUserPassword(ctx context.Context, request api.UpdateUserP
 		return api.UpdateUserPassword404JSONResponse{}, nil
 	}
 
-	if !dtos.Deref(req.ResetPassword) {
-		matches, err := auth.Verify(dtos.Deref(req.CurrentPw), user.PasswordHash)
+	if !apiutil.Deref(req.ResetPassword) {
+		matches, err := auth.Verify(apiutil.Deref(req.CurrentPw), user.PasswordHash)
 		if err != nil || !matches {
 			return api.UpdateUserPassword403JSONResponse{}, nil
 		}
 	}
 
-	if user.PasswordHash, err = auth.Hash(dtos.Deref(req.NewPw)); err != nil {
+	if user.PasswordHash, err = auth.Hash(apiutil.Deref(req.NewPw)); err != nil {
 		return nil, err
 	}
 	if err := s.users.UpdateUser(ctx, user); err != nil {
@@ -222,7 +223,7 @@ func (s *Server) listUserDtos(ctx context.Context) ([]api.UserDto, error) {
 
 	converted := make([]api.UserDto, 0, len(users))
 	for _, user := range users {
-		dto, err := dtos.UserDto(&user)
+		dto, err := UserDto(&user)
 		if err != nil {
 			return nil, err
 		}
@@ -241,7 +242,7 @@ func (s *Server) userFor(ctx context.Context, id *openapi_types.UUID) (*users.Us
 }
 
 func (s *Server) AuthenticateUserByName(ctx context.Context, request api.AuthenticateUserByNameRequestObject) (api.AuthenticateUserByNameResponseObject, error) {
-	req := dtos.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
+	req := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
 	if req == nil || req.Username == nil {
 		return nil, auth.ErrUnauthorized
 	}
@@ -251,7 +252,7 @@ func (s *Server) AuthenticateUserByName(ctx context.Context, request api.Authent
 		return nil, auth.ErrUnauthorized
 	}
 
-	matches, err := auth.Verify(dtos.Deref(req.Pw), user.PasswordHash)
+	matches, err := auth.Verify(apiutil.Deref(req.Pw), user.PasswordHash)
 	if err != nil || !matches {
 		return nil, auth.ErrUnauthorized
 	}
@@ -282,15 +283,15 @@ func (s *Server) AuthenticateUserByName(ctx context.Context, request api.Authent
 	user.LastLoginDate = &now
 	user.LastActivityDate = &now
 
-	dto, err := dtos.UserDto(user)
+	dto, err := UserDto(user)
 	if err != nil {
 		return nil, err
 	}
 
 	return api.AuthenticateUserByName200JSONResponse{
-		AccessToken: dtos.Ptr(token),
-		ServerId:    dtos.Ptr(config.ServerID),
+		AccessToken: apiutil.Ptr(token),
+		ServerId:    apiutil.Ptr(config.ServerID),
 		User:        &dto,
-		SessionInfo: dtos.SessionDto(session, user),
+		SessionInfo: serversession.SessionDto(session, user),
 	}, nil
 }

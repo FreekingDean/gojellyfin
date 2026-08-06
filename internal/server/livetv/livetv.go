@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	"github.com/FreekingDean/gojellyfin/internal/server/dtos"
+	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
 // Live TV is not implemented. These two exist only because the web home screen
@@ -18,7 +18,7 @@ func New() *Server {
 
 func (s *Server) GetLiveTvInfo(ctx context.Context, request api.GetLiveTvInfoRequestObject) (api.GetLiveTvInfoResponseObject, error) {
 	return api.GetLiveTvInfo200JSONResponse{
-		IsEnabled:    dtos.Ptr(false),
+		IsEnabled:    apiutil.Ptr(false),
 		Services:     &[]api.LiveTvServiceInfo{},
 		EnabledUsers: &[]string{},
 	}, nil
@@ -27,7 +27,7 @@ func (s *Server) GetLiveTvInfo(ctx context.Context, request api.GetLiveTvInfoReq
 func (s *Server) GetRecommendedPrograms(ctx context.Context, request api.GetRecommendedProgramsRequestObject) (api.GetRecommendedProgramsResponseObject, error) {
 	return api.GetRecommendedPrograms200JSONResponse{
 		Items:            &[]api.BaseItemDto{},
-		StartIndex:       dtos.Ptr(int32(0)),
-		TotalRecordCount: dtos.Ptr(int32(0)),
+		StartIndex:       apiutil.Ptr(int32(0)),
+		TotalRecordCount: apiutil.Ptr(int32(0)),
 	}, nil
 }

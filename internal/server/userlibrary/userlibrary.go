@@ -7,7 +7,8 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	"github.com/FreekingDean/gojellyfin/internal/server/dtos"
+	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	serveritems "github.com/FreekingDean/gojellyfin/internal/server/items"
 	"github.com/google/uuid"
 )
 
@@ -25,7 +26,7 @@ func (s *Server) GetItemUserData(ctx context.Context, request api.GetItemUserDat
 		return api.GetItemUserData404JSONResponse{}, nil
 	}
 
-	return api.GetItemUserData200JSONResponse(dtos.UserItemDataDto(datum)), nil
+	return api.GetItemUserData200JSONResponse(serveritems.UserItemDataDto(datum)), nil
 }
 
 func (s *Server) MarkFavoriteItem(ctx context.Context, request api.MarkFavoriteItemRequestObject) (api.MarkFavoriteItemResponseObject, error) {
@@ -34,7 +35,7 @@ func (s *Server) MarkFavoriteItem(ctx context.Context, request api.MarkFavoriteI
 		return nil, err
 	}
 
-	return api.MarkFavoriteItem200JSONResponse(dtos.UserItemDataDto(datum)), nil
+	return api.MarkFavoriteItem200JSONResponse(serveritems.UserItemDataDto(datum)), nil
 }
 
 func (s *Server) UnmarkFavoriteItem(ctx context.Context, request api.UnmarkFavoriteItemRequestObject) (api.UnmarkFavoriteItemResponseObject, error) {
@@ -43,7 +44,7 @@ func (s *Server) UnmarkFavoriteItem(ctx context.Context, request api.UnmarkFavor
 		return nil, err
 	}
 
-	return api.UnmarkFavoriteItem200JSONResponse(dtos.UserItemDataDto(datum)), nil
+	return api.UnmarkFavoriteItem200JSONResponse(serveritems.UserItemDataDto(datum)), nil
 }
 
 func (s *Server) MarkPlayedItem(ctx context.Context, request api.MarkPlayedItemRequestObject) (api.MarkPlayedItemResponseObject, error) {
@@ -52,7 +53,7 @@ func (s *Server) MarkPlayedItem(ctx context.Context, request api.MarkPlayedItemR
 		return nil, err
 	}
 
-	return api.MarkPlayedItem200JSONResponse(dtos.UserItemDataDto(datum)), nil
+	return api.MarkPlayedItem200JSONResponse(serveritems.UserItemDataDto(datum)), nil
 }
 
 func (s *Server) MarkUnplayedItem(ctx context.Context, request api.MarkUnplayedItemRequestObject) (api.MarkUnplayedItemResponseObject, error) {
@@ -61,11 +62,11 @@ func (s *Server) MarkUnplayedItem(ctx context.Context, request api.MarkUnplayedI
 		return nil, err
 	}
 
-	return api.MarkUnplayedItem200JSONResponse(dtos.UserItemDataDto(datum)), nil
+	return api.MarkUnplayedItem200JSONResponse(serveritems.UserItemDataDto(datum)), nil
 }
 
 func (s *Server) UpdateItemUserData(ctx context.Context, request api.UpdateItemUserDataRequestObject) (api.UpdateItemUserDataResponseObject, error) {
-	req := dtos.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
+	req := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
 	if req == nil {
 		return api.UpdateItemUserData404JSONResponse{}, nil
 	}
@@ -95,7 +96,7 @@ func (s *Server) UpdateItemUserData(ctx context.Context, request api.UpdateItemU
 		return nil, err
 	}
 
-	return api.UpdateItemUserData200JSONResponse(dtos.UserItemDataDto(datum)), nil
+	return api.UpdateItemUserData200JSONResponse(serveritems.UserItemDataDto(datum)), nil
 }
 
 func (s *Server) saveFavorite(ctx context.Context, itemID uuid.UUID, favorite bool) (*items.Datum, error) {
@@ -119,7 +120,7 @@ func (s *Server) savePlayed(ctx context.Context, itemID uuid.UUID, played bool) 
 	datum.PlaybackPositionTicks = 0
 	if played {
 		datum.PlayCount++
-		datum.LastPlayedDate = dtos.Ptr(time.Now())
+		datum.LastPlayedDate = apiutil.Ptr(time.Now())
 	}
 
 	return datum, s.items.SaveUserItemDatum(ctx, datum)

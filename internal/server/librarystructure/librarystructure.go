@@ -6,7 +6,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	"github.com/FreekingDean/gojellyfin/internal/server/dtos"
+	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
 type Server struct {
@@ -45,7 +45,7 @@ func (s *Server) AddVirtualFolder(ctx context.Context, request api.AddVirtualFol
 		library.CollectionType = string(*request.Params.CollectionType)
 	}
 
-	if req := dtos.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody); req != nil && req.LibraryOptions != nil {
+	if req := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody); req != nil && req.LibraryOptions != nil {
 		options, err := json.Marshal(req.LibraryOptions)
 		if err != nil {
 			return nil, err
@@ -57,7 +57,7 @@ func (s *Server) AddVirtualFolder(ctx context.Context, request api.AddVirtualFol
 		return nil, err
 	}
 
-	for _, path := range dtos.Deref(request.Params.Paths) {
+	for _, path := range apiutil.Deref(request.Params.Paths) {
 		if err := s.libraries.AddLibraryPath(ctx, library.ID, path); err != nil {
 			return nil, err
 		}
@@ -98,7 +98,7 @@ func (s *Server) RenameVirtualFolder(ctx context.Context, request api.RenameVirt
 }
 
 func (s *Server) UpdateLibraryOptions(ctx context.Context, request api.UpdateLibraryOptionsRequestObject) (api.UpdateLibraryOptionsResponseObject, error) {
-	req := dtos.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
+	req := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
 	if req == nil || req.Id == nil {
 		return api.UpdateLibraryOptions404JSONResponse{}, nil
 	}
@@ -119,7 +119,7 @@ func (s *Server) UpdateLibraryOptions(ctx context.Context, request api.UpdateLib
 }
 
 func (s *Server) AddMediaPath(ctx context.Context, request api.AddMediaPathRequestObject) (api.AddMediaPathResponseObject, error) {
-	req := dtos.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
+	req := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
 	if req == nil {
 		return api.AddMediaPath403Response{}, nil
 	}
@@ -129,9 +129,9 @@ func (s *Server) AddMediaPath(ctx context.Context, request api.AddMediaPathReque
 		return api.AddMediaPath403Response{}, nil
 	}
 
-	path := dtos.Deref(req.Path)
+	path := apiutil.Deref(req.Path)
 	if req.PathInfo != nil {
-		path = dtos.Deref(req.PathInfo.Path)
+		path = apiutil.Deref(req.PathInfo.Path)
 	}
 	if path == "" {
 		return api.AddMediaPath403Response{}, nil
@@ -150,7 +150,7 @@ func (s *Server) RemoveMediaPath(ctx context.Context, request api.RemoveMediaPat
 		return api.RemoveMediaPath204Response{}, nil
 	}
 
-	if err := s.libraries.RemoveLibraryPath(ctx, library.ID, dtos.Deref(request.Params.Path)); err != nil {
+	if err := s.libraries.RemoveLibraryPath(ctx, library.ID, apiutil.Deref(request.Params.Path)); err != nil {
 		return nil, err
 	}
 
@@ -158,7 +158,7 @@ func (s *Server) RemoveMediaPath(ctx context.Context, request api.RemoveMediaPat
 }
 
 func (s *Server) UpdateMediaPath(ctx context.Context, request api.UpdateMediaPathRequestObject) (api.UpdateMediaPathResponseObject, error) {
-	req := dtos.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
+	req := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
 	if req == nil {
 		return api.UpdateMediaPath403Response{}, nil
 	}
@@ -171,7 +171,7 @@ func (s *Server) UpdateMediaPath(ctx context.Context, request api.UpdateMediaPat
 }
 
 func (s *Server) libraryByName(ctx context.Context, name *string) (*libraries.Library, error) {
-	return s.libraries.GetLibraryByName(ctx, dtos.Deref(name))
+	return s.libraries.GetLibraryByName(ctx, apiutil.Deref(name))
 }
 
 func virtualFolderInfo(library *libraries.Library) (api.VirtualFolderInfo, error) {
@@ -186,36 +186,36 @@ func virtualFolderInfo(library *libraries.Library) (api.VirtualFolderInfo, error
 	pathInfos := make([]api.MediaPathInfo, 0, len(library.Paths))
 	for _, path := range library.Paths {
 		locations = append(locations, path.Path)
-		pathInfos = append(pathInfos, api.MediaPathInfo{Path: dtos.Ptr(path.Path)})
+		pathInfos = append(pathInfos, api.MediaPathInfo{Path: apiutil.Ptr(path.Path)})
 	}
 	options.PathInfos = &pathInfos
 
 	collectionType := api.CollectionTypeOptions(library.CollectionType)
 
 	return api.VirtualFolderInfo{
-		Name:           dtos.Ptr(library.Name),
-		ItemId:         dtos.Ptr(library.ID.String()),
+		Name:           apiutil.Ptr(library.Name),
+		ItemId:         apiutil.Ptr(library.ID.String()),
 		Locations:      &locations,
 		CollectionType: &collectionType,
 		LibraryOptions: &options,
-		RefreshStatus:  dtos.Ptr("Idle"),
+		RefreshStatus:  apiutil.Ptr("Idle"),
 	}, nil
 }
 
 func defaultLibraryOptions() api.LibraryOptions {
 	return api.LibraryOptions{
-		Enabled:                       dtos.Ptr(true),
-		EnablePhotos:                  dtos.Ptr(true),
-		EnableRealtimeMonitor:         dtos.Ptr(true),
-		EnableChapterImageExtraction:  dtos.Ptr(false),
-		EnableInternetProviders:       dtos.Ptr(false),
-		EnableAutomaticSeriesGrouping: dtos.Ptr(false),
-		EnableEmbeddedTitles:          dtos.Ptr(false),
-		SaveLocalMetadata:             dtos.Ptr(false),
-		PreferredMetadataLanguage:     dtos.Ptr("en"),
-		MetadataCountryCode:           dtos.Ptr("US"),
-		SeasonZeroDisplayName:         dtos.Ptr("Specials"),
-		AutomaticRefreshIntervalDays:  dtos.Ptr(int32(0)),
+		Enabled:                       apiutil.Ptr(true),
+		EnablePhotos:                  apiutil.Ptr(true),
+		EnableRealtimeMonitor:         apiutil.Ptr(true),
+		EnableChapterImageExtraction:  apiutil.Ptr(false),
+		EnableInternetProviders:       apiutil.Ptr(false),
+		EnableAutomaticSeriesGrouping: apiutil.Ptr(false),
+		EnableEmbeddedTitles:          apiutil.Ptr(false),
+		SaveLocalMetadata:             apiutil.Ptr(false),
+		PreferredMetadataLanguage:     apiutil.Ptr("en"),
+		MetadataCountryCode:           apiutil.Ptr("US"),
+		SeasonZeroDisplayName:         apiutil.Ptr("Specials"),
+		AutomaticRefreshIntervalDays:  apiutil.Ptr(int32(0)),
 		PathInfos:                     &[]api.MediaPathInfo{},
 		MetadataSavers:                &[]string{},
 		DisabledLocalMetadataReaders:  &[]string{},

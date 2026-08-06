@@ -5,7 +5,8 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	"github.com/FreekingDean/gojellyfin/internal/server/dtos"
+	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	serveritems "github.com/FreekingDean/gojellyfin/internal/server/items"
 )
 
 func (s *Server) GetResumeItems(ctx context.Context, request api.GetResumeItemsRequestObject) (api.GetResumeItemsResponseObject, error) {
@@ -19,22 +20,22 @@ func (s *Server) GetResumeItems(ctx context.Context, request api.GetResumeItemsR
 		auth.UserID(ctx),
 		itemTypes(request.Params.IncludeItemTypes),
 		request.Params.ParentId,
-		int(dtos.Deref(request.Params.StartIndex)),
-		int(dtos.Deref(request.Params.Limit)),
+		int(apiutil.Deref(request.Params.StartIndex)),
+		int(apiutil.Deref(request.Params.Limit)),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	items, err := dtos.ItemDtos(ctx, s.items, records)
+	items, err := serveritems.ItemDtos(ctx, s.items, records)
 	if err != nil {
 		return nil, err
 	}
 
 	return api.GetResumeItems200JSONResponse{
 		Items:            &items,
-		StartIndex:       dtos.Ptr(int32(dtos.Deref(request.Params.StartIndex))),
-		TotalRecordCount: dtos.Ptr(int32(total)),
+		StartIndex:       apiutil.Ptr(int32(apiutil.Deref(request.Params.StartIndex))),
+		TotalRecordCount: apiutil.Ptr(int32(total)),
 	}, nil
 }
 
@@ -68,7 +69,7 @@ func itemTypes(kinds *[]api.BaseItemKind) []string {
 func emptyResult() api.BaseItemDtoQueryResult {
 	return api.BaseItemDtoQueryResult{
 		Items:            &[]api.BaseItemDto{},
-		StartIndex:       dtos.Ptr(int32(0)),
-		TotalRecordCount: dtos.Ptr(int32(0)),
+		StartIndex:       apiutil.Ptr(int32(0)),
+		TotalRecordCount: apiutil.Ptr(int32(0)),
 	}
 }

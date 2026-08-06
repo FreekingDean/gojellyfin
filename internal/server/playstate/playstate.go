@@ -7,7 +7,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	"github.com/FreekingDean/gojellyfin/internal/server/dtos"
+	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/google/uuid"
 )
 
@@ -33,9 +33,9 @@ func New(items *items.Service) *Server {
 }
 
 func (s *Server) ReportPlaybackStart(ctx context.Context, request api.ReportPlaybackStartRequestObject) (api.ReportPlaybackStartResponseObject, error) {
-	req := dtos.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
+	req := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
 	if req != nil && req.ItemId != nil {
-		if err := s.recordProgress(ctx, *req.ItemId, dtos.Deref(req.PositionTicks)); err != nil {
+		if err := s.recordProgress(ctx, *req.ItemId, apiutil.Deref(req.PositionTicks)); err != nil {
 			return nil, err
 		}
 	}
@@ -44,9 +44,9 @@ func (s *Server) ReportPlaybackStart(ctx context.Context, request api.ReportPlay
 }
 
 func (s *Server) ReportPlaybackProgress(ctx context.Context, request api.ReportPlaybackProgressRequestObject) (api.ReportPlaybackProgressResponseObject, error) {
-	req := dtos.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
+	req := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
 	if req != nil && req.ItemId != nil {
-		if err := s.recordProgress(ctx, *req.ItemId, dtos.Deref(req.PositionTicks)); err != nil {
+		if err := s.recordProgress(ctx, *req.ItemId, apiutil.Deref(req.PositionTicks)); err != nil {
 			return nil, err
 		}
 	}
@@ -55,9 +55,9 @@ func (s *Server) ReportPlaybackProgress(ctx context.Context, request api.ReportP
 }
 
 func (s *Server) ReportPlaybackStopped(ctx context.Context, request api.ReportPlaybackStoppedRequestObject) (api.ReportPlaybackStoppedResponseObject, error) {
-	req := dtos.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
+	req := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
 	if req != nil && req.ItemId != nil {
-		if err := s.recordStop(ctx, *req.ItemId, dtos.Deref(req.PositionTicks)); err != nil {
+		if err := s.recordStop(ctx, *req.ItemId, apiutil.Deref(req.PositionTicks)); err != nil {
 			return nil, err
 		}
 	}
@@ -74,7 +74,7 @@ func (s *Server) OnPlaybackStart(ctx context.Context, request api.OnPlaybackStar
 }
 
 func (s *Server) OnPlaybackProgress(ctx context.Context, request api.OnPlaybackProgressRequestObject) (api.OnPlaybackProgressResponseObject, error) {
-	if err := s.recordProgress(ctx, request.ItemId, dtos.Deref(request.Params.PositionTicks)); err != nil {
+	if err := s.recordProgress(ctx, request.ItemId, apiutil.Deref(request.Params.PositionTicks)); err != nil {
 		return nil, err
 	}
 
@@ -82,7 +82,7 @@ func (s *Server) OnPlaybackProgress(ctx context.Context, request api.OnPlaybackP
 }
 
 func (s *Server) OnPlaybackStopped(ctx context.Context, request api.OnPlaybackStoppedRequestObject) (api.OnPlaybackStoppedResponseObject, error) {
-	if err := s.recordStop(ctx, request.ItemId, dtos.Deref(request.Params.PositionTicks)); err != nil {
+	if err := s.recordStop(ctx, request.ItemId, apiutil.Deref(request.Params.PositionTicks)); err != nil {
 		return nil, err
 	}
 
@@ -100,7 +100,7 @@ func (s *Server) recordProgress(ctx context.Context, itemID uuid.UUID, position 
 	}
 
 	datum.PlaybackPositionTicks = position
-	datum.LastPlayedDate = dtos.Ptr(time.Now())
+	datum.LastPlayedDate = apiutil.Ptr(time.Now())
 
 	return s.items.SaveUserItemDatum(ctx, datum)
 }
@@ -116,7 +116,7 @@ func (s *Server) recordStop(ctx context.Context, itemID uuid.UUID, position int6
 		return err
 	}
 
-	datum.LastPlayedDate = dtos.Ptr(time.Now())
+	datum.LastPlayedDate = apiutil.Ptr(time.Now())
 	datum.PlaybackPositionTicks = position
 
 	if watched(item.RunTimeTicks, position) {

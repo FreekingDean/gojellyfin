@@ -6,16 +6,16 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	"github.com/FreekingDean/gojellyfin/internal/server/dtos"
+	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
 // Theme songs and videos are extras sitting alongside the media. The scanner
 // does not collect them, so every item reports none.
 func (s *Server) GetThemeMedia(ctx context.Context, request api.GetThemeMediaRequestObject) (api.GetThemeMediaResponseObject, error) {
 	return api.GetThemeMedia200JSONResponse{
-		ThemeVideosResult:     dtos.Ptr(themeMedia(request.ItemId)),
-		ThemeSongsResult:      dtos.Ptr(themeMedia(request.ItemId)),
-		SoundtrackSongsResult: dtos.Ptr(themeMedia(request.ItemId)),
+		ThemeVideosResult:     apiutil.Ptr(themeMedia(request.ItemId)),
+		ThemeSongsResult:      apiutil.Ptr(themeMedia(request.ItemId)),
+		SoundtrackSongsResult: apiutil.Ptr(themeMedia(request.ItemId)),
 	}, nil
 }
 
@@ -31,7 +31,7 @@ func themeMedia(ownerID openapi_types.UUID) api.ThemeMediaResult {
 	return api.ThemeMediaResult{
 		OwnerId:          &ownerID,
 		Items:            &[]api.BaseItemDto{},
-		StartIndex:       dtos.Ptr(int32(0)),
-		TotalRecordCount: dtos.Ptr(int32(0)),
+		StartIndex:       apiutil.Ptr(int32(0)),
+		TotalRecordCount: apiutil.Ptr(int32(0)),
 	}
 }
