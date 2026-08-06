@@ -52,6 +52,12 @@ func New(m *mux.Mux, authMiddleware *middleware.Auth) *Server {
 		},
 
 		apiOptions: api.StrictHTTPServerOptions{
+			// Body decoding failures answer 400 from inside the generated
+			// wrapper; without this the reason is thrown away.
+			RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+				log.Printf("bad request: %s %s: %v", r.Method, r.RequestURI, err)
+				http.Error(w, err.Error(), http.StatusBadRequest)
+			},
 			ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
 				log.Printf("Error: %v", err)
 				if errors.Is(err, api.ErrNotImplemented) {
@@ -77,7 +83,15 @@ func Register(s *Server, apiServer *server.Server, sock *socket.Socket, streams 
 	}
 
 	registerLegacyRoutes(m)
-	finalHandler := api.HandlerFromMux(h, m)
+	// Parameter binding failures answer 400 without reaching a handler, so this
+	// is the only place the reason is visible.
+	finalHandler := api.HandlerWithOptions(h, api.StdHTTPServerOptions{
+		BaseRouter: m,
+		ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			log.Printf("bad request: %s %s: %v", r.Method, r.RequestURI, err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		},
+	})
 	for _, mw := range s.httpMiddleware {
 		finalHandler = mw(finalHandler)
 	}
