@@ -66,7 +66,9 @@ Three layers, split on what each is allowed to know:
 
 - **`internal/{auth,users,items,libraries,config}` — domains.** Models and behaviour, exposing a `Service` built with `New(db *gorm.DB)`. **A domain package must never import `internal/server/api` or `internal/http/middleware`.** That invariant is what the layout rests on; check it with `grep -rl 'server/api\|http/middleware' internal/<domain>/`, which must come back empty. `auth` owns sessions, hashing and tokens; `users` owns only the user record.
 - **`internal/server/<tag>` — one package per spec tag.** Named for the tag (`userlibrary`, `librarystructure`, `mediainfo`), holding exactly the operations that tag declares and a `Server` with the domain services it needs. Add a tag package by looking the operation up in the spec, not by guessing where it feels like it belongs — `AuthenticateUserByName` is a `User` operation, `GetBitrateTestBytes` is `MediaInfo`.
-- **`internal/server/dtos`** — translation and helpers shared by more than one tag (`ItemDto`, `UserDto`, `SessionDto`, `ServerConfiguration`, plus `Ptr`/`Deref`/`Body`/`UID`). Domains can't hold these because they'd have to import `api`.
+- **`internal/server/apiutil`** — five generic helpers (`Ptr`, `Deref`, `OrElse`, `Body`, `UID`) and nothing else. It imports none of our packages, and no domain knowledge belongs in it; Go cannot alias generic functions, which is the only reason they are shared rather than copied.
+
+Translation lives in `<tag>/dto.go`, owned by the tag that returns the shape — `items` owns `ItemDto`/`LibraryView`/`UserItemDataDto`, `user` owns `UserDto` and the policy defaults, `session` owns `SessionDto`, `configuration` owns `ServerConfiguration` and the `Default*` builders. Other tags import the owner. Domains cannot hold any of it, because they would have to import `api`.
 
 Two naming traps, both of which cost real time: generated operation names occupy the method namespace, so domain queries need distinct names (`ItemByID`, not `GetItem`); and package names are easily shadowed by locals — `items []items.Item`, `dtos := make(...)`. Name the local something else.
 
