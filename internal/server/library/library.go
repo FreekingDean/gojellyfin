@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 )
 
@@ -12,11 +13,12 @@ type Scanner interface {
 }
 
 type Server struct {
+	items   *items.Service
 	scanner Scanner
 }
 
-func New() *Server {
-	return &Server{}
+func New(items *items.Service) *Server {
+	return &Server{items: items}
 }
 
 // Set after construction: the scanner reads libraries, so taking it as a

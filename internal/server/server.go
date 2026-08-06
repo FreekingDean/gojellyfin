@@ -5,6 +5,8 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/branding"
 	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
+	"github.com/FreekingDean/gojellyfin/internal/server/dashboard"
+	"github.com/FreekingDean/gojellyfin/internal/server/devices"
 	"github.com/FreekingDean/gojellyfin/internal/server/displaypreferences"
 	"github.com/FreekingDean/gojellyfin/internal/server/filter"
 	"github.com/FreekingDean/gojellyfin/internal/server/genres"
@@ -19,6 +21,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/playlists"
 	"github.com/FreekingDean/gojellyfin/internal/server/playstate"
 	"github.com/FreekingDean/gojellyfin/internal/server/quickconnect"
+	"github.com/FreekingDean/gojellyfin/internal/server/scheduledtasks"
 	"github.com/FreekingDean/gojellyfin/internal/server/search"
 	"github.com/FreekingDean/gojellyfin/internal/server/session"
 	"github.com/FreekingDean/gojellyfin/internal/server/studios"
@@ -49,6 +52,9 @@ type (
 	PersonsServer            = persons.Server
 	LiveTvServer             = livetv.Server
 	TvShowsServer            = tvshows.Server
+	DevicesServer            = devices.Server
+	ScheduledTasksServer     = scheduledtasks.Server
+	DashboardServer          = dashboard.Server
 	ActivityLogServer        = activitylog.Server
 	BrandingServer           = branding.Server
 	ConfigurationServer      = configuration.Server
@@ -79,6 +85,9 @@ type Server struct {
 	*PersonsServer
 	*LiveTvServer
 	*TvShowsServer
+	*DevicesServer
+	*ScheduledTasksServer
+	*DashboardServer
 	*ActivityLogServer
 	*BrandingServer
 	*ConfigurationServer
@@ -111,6 +120,9 @@ func New(
 	persons *persons.Server,
 	liveTv *livetv.Server,
 	tvShows *tvshows.Server,
+	devices *devices.Server,
+	scheduledtasks *scheduledtasks.Server,
+	dashboard *dashboard.Server,
 	activityLog *activitylog.Server,
 	branding *branding.Server,
 	configuration *configuration.Server,
@@ -140,6 +152,9 @@ func New(
 		PersonsServer:            persons,
 		LiveTvServer:             liveTv,
 		TvShowsServer:            tvShows,
+		DevicesServer:            devices,
+		ScheduledTasksServer:     scheduledtasks,
+		DashboardServer:          dashboard,
 		ActivityLogServer:        activityLog,
 		BrandingServer:           branding,
 		ConfigurationServer:      configuration,

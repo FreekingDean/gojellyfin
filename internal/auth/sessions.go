@@ -54,3 +54,15 @@ func (s *Service) ListSessions(ctx context.Context) ([]Session, error) {
 func (s *Service) DeleteSessionByToken(ctx context.Context, token string) error {
 	return s.db.WithContext(ctx).Delete(&Session{}, "access_token = ?", token).Error
 }
+
+// One row per device rather than per session, newest activity first.
+func (s *Service) Devices(ctx context.Context) ([]Session, error) {
+	var sessions []Session
+	err := s.db.WithContext(ctx).
+		Raw(`SELECT DISTINCT ON (device_id) * FROM sessions
+			WHERE device_id <> ''
+			ORDER BY device_id, last_activity_date DESC`).
+		Scan(&sessions).Error
+
+	return sessions, err
+}

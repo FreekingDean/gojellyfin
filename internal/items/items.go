@@ -314,3 +314,24 @@ func (s *Service) NextUpEpisodes(ctx context.Context, userID uuid.UUID, seriesID
 
 	return records, err
 }
+
+func (s *Service) CountByType(ctx context.Context) (map[string]int32, error) {
+	var rows []struct {
+		Type  string
+		Count int32
+	}
+	err := s.db.WithContext(ctx).Model(&Item{}).
+		Select("type, count(*) as count").
+		Group("type").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+
+	counts := make(map[string]int32, len(rows))
+	for _, row := range rows {
+		counts[row.Type] = row.Count
+	}
+
+	return counts, nil
+}
