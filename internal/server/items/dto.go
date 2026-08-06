@@ -20,7 +20,7 @@ var FolderTypes = map[string]bool{
 	"CollectionFolder": true,
 }
 
-func ItemDto(item *items.Item, childCount int32) api.BaseItemDto {
+func ItemDto(item *items.Item, childCount int32, imageTags map[string]string) api.BaseItemDto {
 	kind := api.BaseItemKind(item.Type)
 	isFolder := FolderTypes[item.Type]
 
@@ -42,6 +42,20 @@ func ItemDto(item *items.Item, childCount int32) api.BaseItemDto {
 		LocationType:      apiutil.Ptr(api.FileSystem),
 		ImageTags:         &map[string]string{},
 		BackdropImageTags: &[]string{},
+	}
+
+	if len(imageTags) > 0 {
+		tags := map[string]string{}
+		backdrops := []string{}
+		for imageType, tag := range imageTags {
+			if imageType == "Backdrop" {
+				backdrops = append(backdrops, tag)
+				continue
+			}
+			tags[imageType] = tag
+		}
+		dto.ImageTags = &tags
+		dto.BackdropImageTags = &backdrops
 	}
 
 	if item.Overview != "" {
@@ -71,6 +85,11 @@ func ItemDtos(ctx context.Context, store *items.Service, records []items.Item) (
 		return nil, err
 	}
 
+	imageTags, err := store.ImageTagsByItem(ctx, itemIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	userData := map[uuid.UUID]items.Datum{}
 	if userID := auth.UserID(ctx); userID != uuid.Nil {
 		if userData, err = store.ListUserItemData(ctx, userID, itemIDs); err != nil {
@@ -80,7 +99,7 @@ func ItemDtos(ctx context.Context, store *items.Service, records []items.Item) (
 
 	converted := make([]api.BaseItemDto, 0, len(records))
 	for _, item := range records {
-		dto := ItemDto(&item, counts[item.ID])
+		dto := ItemDto(&item, counts[item.ID], imageTags[item.ID])
 		datum, ok := userData[item.ID]
 		if !ok {
 			datum = items.Datum{ItemID: item.ID}
