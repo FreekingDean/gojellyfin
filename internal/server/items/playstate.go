@@ -83,7 +83,7 @@ func (s *Server) recordProgress(ctx context.Context, itemID uuid.UUID, position 
 	datum.PlaybackPositionTicks = position
 	datum.LastPlayedDate = ptr(time.Now())
 
-	return s.SaveUserItemDatum(ctx, datum)
+	return s.store.SaveUserItemDatum(ctx, datum)
 }
 
 func (s *Server) recordStop(ctx context.Context, itemID uuid.UUID, position int64) error {
@@ -92,7 +92,7 @@ func (s *Server) recordStop(ctx context.Context, itemID uuid.UUID, position int6
 		return err
 	}
 
-	item, err := s.ItemByID(ctx, itemID)
+	item, err := s.store.ItemByID(ctx, itemID)
 	if err != nil {
 		return err
 	}
@@ -106,7 +106,7 @@ func (s *Server) recordStop(ctx context.Context, itemID uuid.UUID, position int6
 		datum.PlaybackPositionTicks = 0
 	}
 
-	return s.SaveUserItemDatum(ctx, datum)
+	return s.store.SaveUserItemDatum(ctx, datum)
 }
 
 func watched(runTimeTicks *int64, position int64) bool {

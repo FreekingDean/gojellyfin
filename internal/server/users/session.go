@@ -8,14 +8,14 @@ import (
 )
 
 func (s *Server) GetSessions(ctx context.Context, request api.GetSessionsRequestObject) (api.GetSessionsResponseObject, error) {
-	sessions, err := s.ListSessions(ctx)
+	sessions, err := s.store.ListSessions(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	dtos := make([]api.SessionInfoDto, 0, len(sessions))
 	for _, session := range sessions {
-		user, err := s.user(ctx, session.UserID)
+		user, err := s.store.User(ctx, session.UserID)
 		if err != nil {
 			continue
 		}
@@ -27,7 +27,7 @@ func (s *Server) GetSessions(ctx context.Context, request api.GetSessionsRequest
 
 func (s *Server) ReportSessionEnded(ctx context.Context, request api.ReportSessionEndedRequestObject) (api.ReportSessionEndedResponseObject, error) {
 	authorization := middleware.AuthorizationFrom(ctx)
-	if err := s.DeleteSessionByToken(ctx, authorization.Token); err != nil {
+	if err := s.store.DeleteSessionByToken(ctx, authorization.Token); err != nil {
 		return nil, err
 	}
 
@@ -45,7 +45,7 @@ func (s *Server) PostFullCapabilities(ctx context.Context, request api.PostFullC
 // Satisfies middleware.Sessions. The translation lives here rather than beside
 // the query so storage has no reason to know about transport types.
 func (s *Server) SessionByToken(ctx context.Context, token string) (middleware.Session, error) {
-	session, err := s.sessionByToken(ctx, token)
+	session, err := s.store.SessionByToken(ctx, token)
 	if err != nil {
 		return middleware.Session{}, err
 	}

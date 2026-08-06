@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 )
 
@@ -28,7 +29,7 @@ func (s *Server) GetPostedPlaybackInfo(ctx context.Context, request api.GetPoste
 }
 
 func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID) (api.PlaybackInfoResponse, error) {
-	item, err := s.ItemByID(ctx, itemID)
+	item, err := s.store.ItemByID(ctx, itemID)
 	if err != nil {
 		return api.PlaybackInfoResponse{}, err
 	}
@@ -49,8 +50,8 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID) (api.Playba
 	}, nil
 }
 
-func (s *Server) mediaSource(ctx context.Context, item *Item) (api.MediaSourceInfo, error) {
-	streams, err := s.ListMediaStreams(ctx, item.ID)
+func (s *Server) mediaSource(ctx context.Context, item *items.Item) (api.MediaSourceInfo, error) {
+	streams, err := s.store.ListMediaStreams(ctx, item.ID)
 	if err != nil {
 		return api.MediaSourceInfo{}, err
 	}
@@ -87,7 +88,7 @@ func (s *Server) mediaSource(ctx context.Context, item *Item) (api.MediaSourceIn
 	}, nil
 }
 
-func mediaStreamDto(stream *MediaStream) api.MediaStream {
+func mediaStreamDto(stream *items.MediaStream) api.MediaStream {
 	kind := api.MediaStreamType(stream.Type)
 
 	dto := api.MediaStream{
@@ -134,7 +135,7 @@ func mediaStreamDto(stream *MediaStream) api.MediaStream {
 	return dto
 }
 
-func streamDisplayTitle(stream *MediaStream) string {
+func streamDisplayTitle(stream *items.MediaStream) string {
 	switch stream.Type {
 	case "Video":
 		return fmt.Sprintf("%dx%d %s", stream.Width, stream.Height, stream.Codec)
@@ -153,7 +154,7 @@ func streamDisplayTitle(stream *MediaStream) string {
 	}
 }
 
-func defaultStreamIndex(streams []MediaStream, kind string) *int32 {
+func defaultStreamIndex(streams []items.MediaStream, kind string) *int32 {
 	for _, stream := range streams {
 		if stream.Type == kind && stream.IsDefault {
 			return ptr(stream.Index)

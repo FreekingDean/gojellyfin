@@ -2,137 +2,72 @@ package items
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
-
-	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
-	"github.com/FreekingDean/gojellyfin/internal/server/api"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
-func (s *Server) GetItemUserData(ctx context.Context, request api.GetItemUserDataRequestObject) (api.GetItemUserDataResponseObject, error) {
-	datum, err := s.userItemDatum(ctx, request.ItemId)
-	if err != nil {
-		return api.GetItemUserData404JSONResponse{}, nil
-	}
-
-	return api.GetItemUserData200JSONResponse(userItemDataDto(datum)), nil
+type Datum struct {
+	ID                    uuid.UUID `gorm:"type:uuid;default:gen_random_uuid()"`
+	UserID                uuid.UUID `gorm:"type:uuid;uniqueIndex:idx_user_item_data_user_item"`
+	ItemID                uuid.UUID `gorm:"type:uuid;uniqueIndex:idx_user_item_data_user_item;index"`
+	Played                bool
+	PlayCount             int32
+	IsFavorite            bool
+	PlaybackPositionTicks int64
+	LastPlayedDate        *time.Time
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
 }
 
-func (s *Server) MarkFavoriteItem(ctx context.Context, request api.MarkFavoriteItemRequestObject) (api.MarkFavoriteItemResponseObject, error) {
-	datum, err := s.saveFavorite(ctx, request.ItemId, true)
-	if err != nil {
-		return nil, err
-	}
-
-	return api.MarkFavoriteItem200JSONResponse(userItemDataDto(datum)), nil
+// Renaming the model must not move the table.
+func (Datum) TableName() string {
+	return "user_item_data"
 }
 
-func (s *Server) UnmarkFavoriteItem(ctx context.Context, request api.UnmarkFavoriteItemRequestObject) (api.UnmarkFavoriteItemResponseObject, error) {
-	datum, err := s.saveFavorite(ctx, request.ItemId, false)
-	if err != nil {
-		return nil, err
+func (s *Store) GetUserItemDatum(ctx context.Context, userID, itemID uuid.UUID) (*Datum, error) {
+	var datum Datum
+	err := s.db.WithContext(ctx).First(&datum, "user_id = ? AND item_id = ?", userID, itemID).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return &Datum{UserID: userID, ItemID: itemID}, nil
 	}
-
-	return api.UnmarkFavoriteItem200JSONResponse(userItemDataDto(datum)), nil
-}
-
-func (s *Server) MarkPlayedItem(ctx context.Context, request api.MarkPlayedItemRequestObject) (api.MarkPlayedItemResponseObject, error) {
-	datum, err := s.savePlayed(ctx, request.ItemId, true)
 	if err != nil {
 		return nil, err
 	}
 
-	return api.MarkPlayedItem200JSONResponse(userItemDataDto(datum)), nil
+	return &datum, nil
 }
 
-func (s *Server) MarkUnplayedItem(ctx context.Context, request api.MarkUnplayedItemRequestObject) (api.MarkUnplayedItemResponseObject, error) {
-	datum, err := s.savePlayed(ctx, request.ItemId, false)
+func (s *Store) ListUserItemData(ctx context.Context, userID uuid.UUID, itemIDs []uuid.UUID) (map[uuid.UUID]Datum, error) {
+	data := make(map[uuid.UUID]Datum, len(itemIDs))
+	if len(itemIDs) == 0 {
+		return data, nil
+	}
+
+	var rows []Datum
+	err := s.db.WithContext(ctx).
+		Where("user_id = ? AND item_id IN ?", userID, itemIDs).
+		Find(&rows).Error
 	if err != nil {
 		return nil, err
 	}
 
-	return api.MarkUnplayedItem200JSONResponse(userItemDataDto(datum)), nil
+	for _, row := range rows {
+		data[row.ItemID] = row
+	}
+
+	return data, nil
 }
 
-func (s *Server) UpdateItemUserData(ctx context.Context, request api.UpdateItemUserDataRequestObject) (api.UpdateItemUserDataResponseObject, error) {
-	req := body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
-	if req == nil {
-		return api.UpdateItemUserData404JSONResponse{}, nil
-	}
-
-	datum, err := s.userItemDatum(ctx, request.ItemId)
-	if err != nil {
-		return api.UpdateItemUserData404JSONResponse{}, nil
-	}
-
-	if req.Played != nil {
-		datum.Played = *req.Played
-	}
-	if req.IsFavorite != nil {
-		datum.IsFavorite = *req.IsFavorite
-	}
-	if req.PlayCount != nil {
-		datum.PlayCount = *req.PlayCount
-	}
-	if req.PlaybackPositionTicks != nil {
-		datum.PlaybackPositionTicks = *req.PlaybackPositionTicks
-	}
-	if req.LastPlayedDate != nil {
-		datum.LastPlayedDate = req.LastPlayedDate
-	}
-
-	if err := s.SaveUserItemDatum(ctx, datum); err != nil {
-		return nil, err
-	}
-
-	return api.UpdateItemUserData200JSONResponse(userItemDataDto(datum)), nil
-}
-
-func (s *Server) saveFavorite(ctx context.Context, itemID uuid.UUID, favorite bool) (*Datum, error) {
-	datum, err := s.userItemDatum(ctx, itemID)
-	if err != nil {
-		return nil, err
-	}
-
-	datum.IsFavorite = favorite
-
-	return datum, s.SaveUserItemDatum(ctx, datum)
-}
-
-func (s *Server) savePlayed(ctx context.Context, itemID uuid.UUID, played bool) (*Datum, error) {
-	datum, err := s.userItemDatum(ctx, itemID)
-	if err != nil {
-		return nil, err
-	}
-
-	datum.Played = played
-	datum.PlaybackPositionTicks = 0
-	if played {
-		datum.PlayCount++
-		datum.LastPlayedDate = ptr(time.Now())
-	}
-
-	return datum, s.SaveUserItemDatum(ctx, datum)
-}
-
-func (s *Server) userItemDatum(ctx context.Context, itemID uuid.UUID) (*Datum, error) {
-	userID := middleware.UserID(ctx)
-	if userID == uuid.Nil {
-		return nil, middleware.ErrUnauthorized
-	}
-
-	return s.GetUserItemDatum(ctx, userID, itemID)
-}
-
-func userItemDataDto(datum *Datum) api.UserItemDataDto {
-	return api.UserItemDataDto{
-		ItemId:                &datum.ItemID,
-		Key:                   ptr(datum.ItemID.String()),
-		Played:                ptr(datum.Played),
-		PlayCount:             ptr(datum.PlayCount),
-		IsFavorite:            ptr(datum.IsFavorite),
-		PlaybackPositionTicks: ptr(datum.PlaybackPositionTicks),
-		LastPlayedDate:        datum.LastPlayedDate,
-	}
+func (s *Store) SaveUserItemDatum(ctx context.Context, datum *Datum) error {
+	return s.db.WithContext(ctx).Clauses(clause.OnConflict{
+		Columns: []clause.Column{{Name: "user_id"}, {Name: "item_id"}},
+		DoUpdates: clause.AssignmentColumns([]string{
+			"played", "play_count", "is_favorite", "playback_position_ticks",
+			"last_played_date", "updated_at",
+		}),
+	}).Create(datum).Error
 }

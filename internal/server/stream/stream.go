@@ -31,10 +31,10 @@ var contentTypes = map[string]string{
 
 type Handler struct {
 	sessions middleware.Sessions
-	items    *items.Server
+	items    *items.Store
 }
 
-func New(sessions middleware.Sessions, items *items.Server) *Handler {
+func New(sessions middleware.Sessions, items *items.Store) *Handler {
 	return &Handler{sessions: sessions, items: items}
 }
 

@@ -8,6 +8,10 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/scanner"
+	serverconfig "github.com/FreekingDean/gojellyfin/internal/server/config"
+	serveritems "github.com/FreekingDean/gojellyfin/internal/server/items"
+	serverlibraries "github.com/FreekingDean/gojellyfin/internal/server/libraries"
+	serverusers "github.com/FreekingDean/gojellyfin/internal/server/users"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
@@ -18,6 +22,12 @@ var Module = fx.Module(
 		items.New,
 		libraries.New,
 		config.New,
+
+		serverusers.New,
+		serveritems.New,
+		serverlibraries.New,
+		serverconfig.New,
+
 		sessions,
 		New,
 	),
@@ -26,10 +36,10 @@ var Module = fx.Module(
 	),
 )
 
-func sessions(users *users.Server) middleware.Sessions {
+func sessions(users *serverusers.Server) middleware.Sessions {
 	return users
 }
 
-func useScanner(libraries *libraries.Server, scanner *scanner.Scanner) {
+func useScanner(libraries *serverlibraries.Server, scanner *scanner.Scanner) {
 	libraries.UseScanner(scanner)
 }

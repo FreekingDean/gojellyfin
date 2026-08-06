@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 
+	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 )
 
@@ -16,7 +17,7 @@ func (s *Server) GetPublicSystemInfo(
 	}
 
 	return api.GetPublicSystemInfo200JSONResponse{
-		Id:                     ptr(ServerID),
+		Id:                     ptr(config.ServerID),
 		LocalAddress:           ptr(s.system.LocalAddress()),
 		ServerName:             configuration.ServerName,
 		ProductName:            ptr(s.system.ProductName()),
@@ -33,7 +34,7 @@ func (s *Server) GetSystemInfo(ctx context.Context, request api.GetSystemInfoReq
 	}
 
 	return api.GetSystemInfo200JSONResponse{
-		Id:                       ptr(ServerID),
+		Id:                       ptr(config.ServerID),
 		LocalAddress:             ptr(s.system.LocalAddress()),
 		ServerName:               configuration.ServerName,
 		ProductName:              ptr(s.system.ProductName()),

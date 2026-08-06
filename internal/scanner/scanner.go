@@ -18,14 +18,14 @@ import (
 const collectionTypeTVShows = "tvshows"
 
 type Scanner struct {
-	items     *items.Server
-	libraries *libraries.Server
+	items     *items.Store
+	libraries *libraries.Store
 
 	mu      sync.Mutex
 	running bool
 }
 
-func New(items *items.Server, libraries *libraries.Server) *Scanner {
+func New(items *items.Store, libraries *libraries.Store) *Scanner {
 	return &Scanner{items: items, libraries: libraries}
 }
 

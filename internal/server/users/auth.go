@@ -7,6 +7,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
+	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
 func (s *Server) AuthenticateUserByName(ctx context.Context, request api.AuthenticateUserByNameRequestObject) (api.AuthenticateUserByNameResponseObject, error) {
@@ -15,7 +16,7 @@ func (s *Server) AuthenticateUserByName(ctx context.Context, request api.Authent
 		return nil, middleware.ErrUnauthorized
 	}
 
-	user, err := s.userByUsername(ctx, *req.Username)
+	user, err := s.store.UserByUsername(ctx, *req.Username)
 	if err != nil {
 		return nil, middleware.ErrUnauthorized
 	}
@@ -32,7 +33,7 @@ func (s *Server) AuthenticateUserByName(ctx context.Context, request api.Authent
 
 	now := time.Now()
 	authorization := middleware.AuthorizationFrom(ctx)
-	session := &Session{
+	session := &users.Session{
 		UserID:           user.ID,
 		AccessToken:      token,
 		DeviceID:         authorization.DeviceID,
@@ -41,11 +42,11 @@ func (s *Server) AuthenticateUserByName(ctx context.Context, request api.Authent
 		AppVersion:       authorization.Version,
 		LastActivityDate: now,
 	}
-	if err := s.createSession(ctx, session); err != nil {
+	if err := s.store.CreateSession(ctx, session); err != nil {
 		return nil, err
 	}
 
-	if err := s.touchLogin(ctx, user.ID); err != nil {
+	if err := s.store.TouchLogin(ctx, user.ID); err != nil {
 		return nil, err
 	}
 	user.LastLoginDate = &now
@@ -64,7 +65,7 @@ func (s *Server) AuthenticateUserByName(ctx context.Context, request api.Authent
 	}, nil
 }
 
-func SessionDto(session *Session, user *User) *api.SessionInfoDto {
+func SessionDto(session *users.Session, user *users.User) *api.SessionInfoDto {
 	dto := &api.SessionInfoDto{
 		Id:                    ptr(session.ID.String()),
 		ServerId:              ptr(serverId),

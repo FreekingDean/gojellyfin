@@ -3,264 +3,217 @@ package items
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
-
-	"github.com/FreekingDean/gojellyfin/internal/config"
-	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
-	"github.com/FreekingDean/gojellyfin/internal/libraries"
-	"github.com/FreekingDean/gojellyfin/internal/server/api"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
-var folderTypes = map[string]bool{
-	"Series":           true,
-	"Season":           true,
-	"Folder":           true,
-	"CollectionFolder": true,
+type Store struct {
+	db *gorm.DB
 }
 
-func (s *Server) GetItems(ctx context.Context, request api.GetItemsRequestObject) (api.GetItemsResponseObject, error) {
-	query, err := s.itemQuery(ctx, request.Params)
-	if err != nil {
+func New(db *gorm.DB) *Store {
+	return &Store{db: db}
+}
+
+type Item struct {
+	ID                uuid.UUID  `gorm:"type:uuid;default:gen_random_uuid()"`
+	LibraryID         uuid.UUID  `gorm:"type:uuid;index;uniqueIndex:idx_items_library_path"`
+	ParentID          *uuid.UUID `gorm:"type:uuid;index"`
+	Type              string     `gorm:"index"`
+	Name              string
+	SortName          string `gorm:"index"`
+	Path              string `gorm:"uniqueIndex:idx_items_library_path"`
+	Overview          string
+	ProductionYear    *int32
+	IndexNumber       *int32
+	ParentIndexNumber *int32
+	PremiereDate      *time.Time
+	RunTimeTicks      *int64
+	Container         string
+	Size              int64
+	Bitrate           int32
+	ProbedAt          *time.Time
+	DateModified      time.Time
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+}
+
+func (s *Store) UpsertItem(ctx context.Context, item *Item) error {
+	return s.db.WithContext(ctx).Clauses(clause.OnConflict{
+		Columns: []clause.Column{{Name: "library_id"}, {Name: "path"}},
+		// run_time_ticks, container, size, bitrate and probed_at belong to the
+		// probe, not the scan, and would be clobbered back to zero here.
+		DoUpdates: clause.AssignmentColumns([]string{
+			"parent_id", "type", "name", "sort_name", "overview", "production_year",
+			"index_number", "parent_index_number", "premiere_date",
+			"date_modified", "updated_at",
+		}),
+	}).Create(item).Error
+}
+
+func (s *Store) SaveItemMedia(ctx context.Context, item *Item) error {
+	return s.db.WithContext(ctx).Model(&Item{}).Where("id = ?", item.ID).Updates(map[string]any{
+		"run_time_ticks": item.RunTimeTicks,
+		"container":      item.Container,
+		"size":           item.Size,
+		"bitrate":        item.Bitrate,
+		"probed_at":      time.Now(),
+	}).Error
+}
+
+func (s *Store) ItemByID(ctx context.Context, id uuid.UUID) (*Item, error) {
+	var item Item
+	if err := s.db.WithContext(ctx).First(&item, "id = ?", id).Error; err != nil {
 		return nil, err
 	}
 
-	result, err := s.queryResult(ctx, query)
-	if err != nil {
+	return &item, nil
+}
+
+func (s *Store) GetItemByPath(ctx context.Context, libraryID uuid.UUID, path string) (*Item, error) {
+	var item Item
+	if err := s.db.WithContext(ctx).First(&item, "library_id = ? AND path = ?", libraryID, path).Error; err != nil {
 		return nil, err
 	}
 
-	return api.GetItems200JSONResponse(result), nil
+	return &item, nil
 }
 
-func (s *Server) GetItem(ctx context.Context, request api.GetItemRequestObject) (api.GetItemResponseObject, error) {
-	item, err := s.ItemByID(ctx, request.ItemId)
-	if err != nil {
-		return api.GetItem403Response{}, nil
-	}
-
-	dtos, err := s.itemDtos(ctx, []Item{*item})
-	if err != nil {
+func (s *Store) ListItemsByLibrary(ctx context.Context, libraryID uuid.UUID) ([]Item, error) {
+	var items []Item
+	if err := s.db.WithContext(ctx).Where("library_id = ?", libraryID).Order("sort_name").Find(&items).Error; err != nil {
 		return nil, err
 	}
 
-	return api.GetItem200JSONResponse(dtos[0]), nil
+	return items, nil
 }
 
-func (s *Server) GetRootFolder(ctx context.Context, request api.GetRootFolderRequestObject) (api.GetRootFolderResponseObject, error) {
-	return api.GetRootFolder200JSONResponse{
-		Id:       uid(config.RootFolderID),
-		Name:     ptr("Media Folders"),
-		ServerId: ptr(config.ServerID),
-		Type:     ptr(api.BaseItemKindFolder),
-		IsFolder: ptr(true),
-	}, nil
-}
-
-func (s *Server) GetUserViews(ctx context.Context, request api.GetUserViewsRequestObject) (api.GetUserViewsResponseObject, error) {
-	libraries, err := s.libraries.ListLibraries(ctx)
-	if err != nil {
+func (s *Store) ListItemsByParent(ctx context.Context, parentID uuid.UUID) ([]Item, error) {
+	var items []Item
+	if err := s.db.WithContext(ctx).Where("parent_id = ?", parentID).Order("index_number, sort_name").Find(&items).Error; err != nil {
 		return nil, err
 	}
 
-	views := make([]api.BaseItemDto, 0, len(libraries))
-	for _, library := range libraries {
-		views = append(views, libraryView(&library))
-	}
-
-	return api.GetUserViews200JSONResponse{
-		Items:            &views,
-		StartIndex:       ptr(int32(0)),
-		TotalRecordCount: ptr(int32(len(views))),
-	}, nil
+	return items, nil
 }
 
-func (s *Server) GetLatestMedia(ctx context.Context, request api.GetLatestMediaRequestObject) (api.GetLatestMediaResponseObject, error) {
-	query := ItemQuery{
-		Types:      []string{"Movie", "Series"},
-		SortBy:     []string{"DateCreated"},
-		Descending: true,
-		Limit:      int(deref(orElse(request.Params.Limit, int32(20)))),
-	}
-	if request.Params.ParentId != nil {
-		query.LibraryID = request.Params.ParentId
-	}
-
-	items, _, err := s.QueryItems(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-
-	dtos, err := s.itemDtos(ctx, items)
-	if err != nil {
-		return nil, err
-	}
-
-	return api.GetLatestMedia200JSONResponse(dtos), nil
+type ItemQuery struct {
+	LibraryID  *uuid.UUID
+	ParentID   *uuid.UUID
+	TopLevel   bool
+	Types      []string
+	IDs        []uuid.UUID
+	SearchTerm string
+	SortBy     []string
+	Descending bool
+	StartIndex int
+	Limit      int
 }
 
-func (s *Server) itemQuery(ctx context.Context, params api.GetItemsParams) (ItemQuery, error) {
-	query := ItemQuery{
-		SearchTerm: deref(params.SearchTerm),
-		StartIndex: int(deref(params.StartIndex)),
-		Limit:      int(deref(params.Limit)),
-		Descending: descending(params.SortOrder),
-		SortBy:     sortFields(params.SortBy),
-	}
-
-	if params.IncludeItemTypes != nil {
-		for _, kind := range *params.IncludeItemTypes {
-			query.Types = append(query.Types, string(kind))
-		}
-	}
-	if params.Ids != nil {
-		query.IDs = *params.Ids
-	}
-
-	if params.ParentId != nil {
-		library, err := s.libraries.GetLibrary(ctx, *params.ParentId)
-		switch {
-		case err == nil:
-			query.LibraryID = &library.ID
-			query.TopLevel = !deref(params.Recursive)
-		default:
-			query.ParentID = params.ParentId
-		}
-	}
-
-	return query, nil
+var sortColumns = map[string]string{
+	"sortname":       "sort_name",
+	"name":           "sort_name",
+	"premieredate":   "premiere_date",
+	"productionyear": "production_year",
+	"datecreated":    "created_at",
+	"datemodified":   "date_modified",
+	"indexnumber":    "index_number",
+	"random":         "random()",
 }
 
-func (s *Server) queryResult(ctx context.Context, query ItemQuery) (api.BaseItemDtoQueryResult, error) {
-	items, total, err := s.QueryItems(ctx, query)
-	if err != nil {
-		return api.BaseItemDtoQueryResult{}, err
+func (s *Store) QueryItems(ctx context.Context, query ItemQuery) ([]Item, int64, error) {
+	db := s.db.WithContext(ctx).Model(&Item{})
+
+	if query.LibraryID != nil {
+		db = db.Where("library_id = ?", *query.LibraryID)
+	}
+	if query.TopLevel {
+		db = db.Where("parent_id IS NULL")
+	}
+	if query.ParentID != nil {
+		db = db.Where("parent_id = ?", *query.ParentID)
+	}
+	if len(query.Types) > 0 {
+		db = db.Where("type IN ?", query.Types)
+	}
+	if len(query.IDs) > 0 {
+		db = db.Where("id IN ?", query.IDs)
+	}
+	if query.SearchTerm != "" {
+		db = db.Where("name ILIKE ?", "%"+query.SearchTerm+"%")
 	}
 
-	dtos, err := s.itemDtos(ctx, items)
-	if err != nil {
-		return api.BaseItemDtoQueryResult{}, err
+	var total int64
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
 	}
 
-	return api.BaseItemDtoQueryResult{
-		Items:            &dtos,
-		StartIndex:       ptr(int32(query.StartIndex)),
-		TotalRecordCount: ptr(int32(total)),
-	}, nil
-}
-
-func (s *Server) itemDtos(ctx context.Context, items []Item) ([]api.BaseItemDto, error) {
-	folderIDs := make([]uuid.UUID, 0, len(items))
-	itemIDs := make([]uuid.UUID, 0, len(items))
-	for _, item := range items {
-		itemIDs = append(itemIDs, item.ID)
-		if folderTypes[item.Type] {
-			folderIDs = append(folderIDs, item.ID)
-		}
+	direction := " asc"
+	if query.Descending {
+		direction = " desc"
 	}
-
-	counts, err := s.CountChildren(ctx, folderIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	userData := map[uuid.UUID]Datum{}
-	if userID := middleware.UserID(ctx); userID != uuid.Nil {
-		if userData, err = s.ListUserItemData(ctx, userID, itemIDs); err != nil {
-			return nil, err
-		}
-	}
-
-	dtos := make([]api.BaseItemDto, 0, len(items))
-	for _, item := range items {
-		dto := itemDto(&item, counts[item.ID])
-		datum, ok := userData[item.ID]
+	for _, sort := range query.SortBy {
+		column, ok := sortColumns[strings.ToLower(sort)]
 		if !ok {
-			datum = Datum{ItemID: item.ID}
+			continue
 		}
-		dto.UserData = ptr(userItemDataDto(&datum))
-		dtos = append(dtos, dto)
-	}
-
-	return dtos, nil
-}
-
-func itemDto(item *Item, childCount int32) api.BaseItemDto {
-	kind := api.BaseItemKind(item.Type)
-	isFolder := folderTypes[item.Type]
-
-	dto := api.BaseItemDto{
-		Id:                &item.ID,
-		ServerId:          ptr(config.ServerID),
-		Name:              ptr(item.Name),
-		SortName:          ptr(item.SortName),
-		Type:              &kind,
-		Path:              ptr(item.Path),
-		IsFolder:          ptr(isFolder),
-		ParentId:          item.ParentID,
-		IndexNumber:       item.IndexNumber,
-		ParentIndexNumber: item.ParentIndexNumber,
-		ProductionYear:    item.ProductionYear,
-		PremiereDate:      item.PremiereDate,
-		RunTimeTicks:      item.RunTimeTicks,
-		DateCreated:       ptr(item.CreatedAt),
-		LocationType:      ptr(api.FileSystem),
-		ImageTags:         &map[string]string{},
-		BackdropImageTags: &[]string{},
-	}
-
-	if item.Overview != "" {
-		dto.Overview = ptr(item.Overview)
-	}
-	if isFolder {
-		dto.ChildCount = ptr(childCount)
-	} else {
-		dto.MediaType = ptr(api.MediaTypeVideo)
-	}
-
-	return dto
-}
-
-func libraryView(library *libraries.Library) api.BaseItemDto {
-	collectionType := api.CollectionType(library.CollectionType)
-
-	return api.BaseItemDto{
-		Id:                &library.ID,
-		ServerId:          ptr(config.ServerID),
-		Name:              ptr(library.Name),
-		SortName:          ptr(strings.ToLower(library.Name)),
-		Type:              ptr(api.BaseItemKindCollectionFolder),
-		CollectionType:    &collectionType,
-		IsFolder:          ptr(true),
-		LocationType:      ptr(api.FileSystem),
-		ImageTags:         &map[string]string{},
-		BackdropImageTags: &[]string{},
-	}
-}
-
-func descending(order *[]api.SortOrder) bool {
-	if order == nil {
-		return false
-	}
-
-	for _, value := range *order {
-		if value == api.Descending {
-			return true
+		if column == "random()" {
+			db = db.Order(column)
+			continue
 		}
+		db = db.Order(column + direction)
+	}
+	db = db.Order("sort_name" + direction)
+
+	if query.StartIndex > 0 {
+		db = db.Offset(query.StartIndex)
+	}
+	if query.Limit > 0 {
+		db = db.Limit(query.Limit)
 	}
 
-	return false
+	var items []Item
+	if err := db.Find(&items).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return items, total, nil
 }
 
-func sortFields(sortBy *[]api.ItemSortBy) []string {
-	if sortBy == nil {
-		return nil
+func (s *Store) CountChildren(ctx context.Context, parentIDs []uuid.UUID) (map[uuid.UUID]int32, error) {
+	counts := make(map[uuid.UUID]int32, len(parentIDs))
+	if len(parentIDs) == 0 {
+		return counts, nil
 	}
 
-	fields := make([]string, 0, len(*sortBy))
-	for _, field := range *sortBy {
-		fields = append(fields, string(field))
+	var rows []struct {
+		ParentID uuid.UUID
+		Count    int32
+	}
+	err := s.db.WithContext(ctx).Model(&Item{}).
+		Select("parent_id, count(*) as count").
+		Where("parent_id IN ?", parentIDs).
+		Group("parent_id").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
 	}
 
-	return fields
+	for _, row := range rows {
+		counts[row.ParentID] = row.Count
+	}
+
+	return counts, nil
+}
+
+func (s *Store) DeleteItemsNotInPaths(ctx context.Context, libraryID uuid.UUID, paths []string) error {
+	query := s.db.WithContext(ctx).Where("library_id = ?", libraryID)
+	if len(paths) > 0 {
+		query = query.Where("path NOT IN ?", paths)
+	}
+
+	return query.Delete(&Item{}).Error
 }
