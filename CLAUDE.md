@@ -53,13 +53,21 @@ Routing uses a hand-rolled `internal/http/mux`, not `http.ServeMux`, because Jel
 
 ### Domain services
 
-Handlers are being moved out of `package server` into a package per domain, keyed on the spec's tags (every operation carries exactly one tag). `internal/server/users` is the template: handlers, the gorm model and its queries all live together, with `New(db *gorm.DB)`. No interface between handler and query — they're the same package. Files split by concern (`users.go`, `store.go`, `auth.go`, `session.go`), not by layer; there is no separate "service" type, because most operations are translate-and-query and a forwarding layer would be noise.
+`internal/server/{users,items,libraries,config}` each own their gorm models, their queries, and the handlers for every tag that is *about* that domain. Packages are keyed on **entities, not tags** — `Item` is touched by nine tags (Items, Image, UserLibrary, Playstate, Videos, Audio, MediaInfo, TvShows, Movies), so a package per tag would either duplicate the queries or make handlers depend on handlers.
+
+Queries stay unexported and DTO translation lives beside the handler, so storage never learns about `api` or `middleware` types. A query only becomes exported when another package genuinely needs it (the scanner writing items, `stream` reading them). Because generated operation names occupy the method namespace, storage methods take distinct names — `ItemByID`, not `GetItem`.
+
+Files split by concern (`store.go`, `items.go`, `playback.go`), not by layer. There is no separate "service" type: most operations are translate-and-query, and a forwarding layer would be noise.
+
+Cross-domain wiring uses interfaces declared by the *consumer* — `middleware.Sessions`, `libraries.Scanner`. Where that would make the object graph cyclic (libraries needs the scanner, the scanner reads libraries), the dependency is set after construction via `fx.Invoke` rather than in the constructor.
 
 `server.Server` embeds each service, and embeds `api.Unimplemented` **one level deeper** through `nestedUnimplemented`. Go resolves a method at the shallowest depth where exactly one candidate exists, so a service at depth 1 wins and everything unimplemented falls through to the 501 stub at depth 2. Three things silently break this, all surfacing as a confusing "does not implement StrictServerInterface": a service embedding `api.Unimplemented` itself, two services declaring the same method, or flattening the wrapper. Embedded field names are type names, so each service is embedded through a local alias (`type UsersServer = users.Server`) to keep them distinct.
 
 ### Persistence
 
-`internal/store` owns the connection (`NewDB`), migrations, and shared types like `JSON`. It still holds the not-yet-extracted domains behind the `Store` interface; that interface shrinks as each domain moves to its own package.
+`internal/store` owns the connection (`NewDB`), migrations, and the `JSON` type for `jsonb` columns. That's all — there is no `Store` interface and no shared repository.
+
+Renaming a model does **not** rename its table: gorm infers the table name from the type, so a renamed model needs an explicit `TableName()` (see `items.Datum` → `user_item_data`).
 
 Schema changes go through `internal/store/migrations`: add `000N_description.go` defining a `*gormigrate.Migration` and append it to `all` in `migrations.go`. Migrations run transactionally at startup via `fx.Invoke(migrations.Run)`. Migration files snapshot their models as local structs rather than referencing the live model, which is what lets models move between packages without touching them.
 
