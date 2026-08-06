@@ -235,3 +235,82 @@ func (s *Service) DistinctYears(ctx context.Context, libraryID *uuid.UUID, types
 
 	return years, nil
 }
+
+// Items the user started and did not finish, most recently played first.
+func (s *Service) ResumeItems(ctx context.Context, userID uuid.UUID, types []string, libraryID *uuid.UUID, startIndex, limit int) ([]Item, int64, error) {
+	db := s.db.WithContext(ctx).Model(&Item{}).
+		Joins("JOIN user_item_data ON user_item_data.item_id = items.id AND user_item_data.user_id = ?", userID).
+		Where("user_item_data.playback_position_ticks > 0").
+		Where("user_item_data.played = ?", false).
+		// Only leaf items are playable, so only they can be resumed.
+		Where("items.type NOT IN ?", []string{"Series", "Season", "Folder", "CollectionFolder"})
+
+	if len(types) > 0 {
+		db = db.Where("items.type IN ?", types)
+	}
+	if libraryID != nil {
+		db = db.Where("items.library_id = ?", *libraryID)
+	}
+
+	var total int64
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	db = db.Order("user_item_data.last_played_date DESC NULLS LAST")
+	if startIndex > 0 {
+		db = db.Offset(startIndex)
+	}
+	if limit > 0 {
+		db = db.Limit(limit)
+	}
+
+	var records []Item
+	if err := db.Find(&records).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return records, total, nil
+}
+
+// The earliest unwatched episode of each series the user has already started.
+func (s *Service) NextUpEpisodes(ctx context.Context, userID uuid.UUID, seriesID *uuid.UUID, limit int) ([]Item, error) {
+	if limit <= 0 {
+		limit = 24
+	}
+
+	// DISTINCT ON picks one row per series; the ORDER BY decides which.
+	query := `
+		SELECT DISTINCT ON (series.id) episodes.*
+		FROM items AS episodes
+		JOIN items AS seasons ON seasons.id = episodes.parent_id
+		JOIN items AS series ON series.id = seasons.parent_id
+		LEFT JOIN user_item_data AS data
+			ON data.item_id = episodes.id AND data.user_id = ?
+		WHERE episodes.type = 'Episode'
+			AND COALESCE(data.played, false) = false
+			-- Specials are not part of the running order.
+			AND COALESCE(episodes.parent_index_number, 0) > 0
+			AND EXISTS (
+				SELECT 1
+				FROM items AS watched
+				JOIN items AS watched_season ON watched_season.id = watched.parent_id
+				JOIN user_item_data AS watched_data
+					ON watched_data.item_id = watched.id AND watched_data.user_id = ?
+				WHERE watched_season.parent_id = series.id AND watched_data.played
+			)`
+	args := []any{userID, userID}
+
+	if seriesID != nil {
+		query += "\n\t\t\tAND series.id = ?"
+		args = append(args, *seriesID)
+	}
+
+	query += "\n\t\tORDER BY series.id, episodes.parent_index_number, episodes.index_number\n\t\tLIMIT ?"
+	args = append(args, limit)
+
+	var records []Item
+	err := s.db.WithContext(ctx).Raw(query, args...).Scan(&records).Error
+
+	return records, err
+}

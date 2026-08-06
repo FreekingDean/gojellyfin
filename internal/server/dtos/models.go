@@ -1,6 +1,7 @@
 package dtos
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/users"
+	"github.com/google/uuid"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
@@ -239,4 +241,42 @@ func SessionDto(session *auth.Session, user *users.User) *api.SessionInfoDto {
 	}
 
 	return dto
+}
+
+// ItemDtos fills in child counts and per-user data, which every tag that
+// returns items needs.
+func ItemDtos(ctx context.Context, store *items.Service, records []items.Item) ([]api.BaseItemDto, error) {
+	folderIDs := make([]uuid.UUID, 0, len(records))
+	itemIDs := make([]uuid.UUID, 0, len(records))
+	for _, item := range records {
+		itemIDs = append(itemIDs, item.ID)
+		if FolderTypes[item.Type] {
+			folderIDs = append(folderIDs, item.ID)
+		}
+	}
+
+	counts, err := store.CountChildren(ctx, folderIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	userData := map[uuid.UUID]items.Datum{}
+	if userID := auth.UserID(ctx); userID != uuid.Nil {
+		if userData, err = store.ListUserItemData(ctx, userID, itemIDs); err != nil {
+			return nil, err
+		}
+	}
+
+	converted := make([]api.BaseItemDto, 0, len(records))
+	for _, item := range records {
+		dto := ItemDto(&item, counts[item.ID])
+		datum, ok := userData[item.ID]
+		if !ok {
+			datum = items.Datum{ItemID: item.ID}
+		}
+		dto.UserData = Ptr(UserItemDataDto(&datum))
+		converted = append(converted, dto)
+	}
+
+	return converted, nil
 }

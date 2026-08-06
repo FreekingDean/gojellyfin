@@ -3,13 +3,11 @@ package items
 import (
 	"context"
 
-	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/dtos"
-	"github.com/google/uuid"
 )
 
 type Server struct {
@@ -41,7 +39,7 @@ func (s *Server) GetItem(ctx context.Context, request api.GetItemRequestObject) 
 		return api.GetItem403Response{}, nil
 	}
 
-	converted, err := s.itemDtos(ctx, []items.Item{*item})
+	converted, err := dtos.ItemDtos(ctx, s.items, []items.Item{*item})
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +73,7 @@ func (s *Server) GetLatestMedia(ctx context.Context, request api.GetLatestMediaR
 		return nil, err
 	}
 
-	converted, err := s.itemDtos(ctx, records)
+	converted, err := dtos.ItemDtos(ctx, s.items, records)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +119,7 @@ func (s *Server) queryResult(ctx context.Context, query items.ItemQuery) (api.Ba
 		return api.BaseItemDtoQueryResult{}, err
 	}
 
-	converted, err := s.itemDtos(ctx, records)
+	converted, err := dtos.ItemDtos(ctx, s.items, records)
 	if err != nil {
 		return api.BaseItemDtoQueryResult{}, err
 	}
@@ -131,40 +129,4 @@ func (s *Server) queryResult(ctx context.Context, query items.ItemQuery) (api.Ba
 		StartIndex:       dtos.Ptr(int32(query.StartIndex)),
 		TotalRecordCount: dtos.Ptr(int32(total)),
 	}, nil
-}
-
-func (s *Server) itemDtos(ctx context.Context, records []items.Item) ([]api.BaseItemDto, error) {
-	folderIDs := make([]uuid.UUID, 0, len(records))
-	itemIDs := make([]uuid.UUID, 0, len(records))
-	for _, item := range records {
-		itemIDs = append(itemIDs, item.ID)
-		if dtos.FolderTypes[item.Type] {
-			folderIDs = append(folderIDs, item.ID)
-		}
-	}
-
-	counts, err := s.items.CountChildren(ctx, folderIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	userData := map[uuid.UUID]items.Datum{}
-	if userID := auth.UserID(ctx); userID != uuid.Nil {
-		if userData, err = s.items.ListUserItemData(ctx, userID, itemIDs); err != nil {
-			return nil, err
-		}
-	}
-
-	converted := make([]api.BaseItemDto, 0, len(records))
-	for _, item := range records {
-		dto := dtos.ItemDto(&item, counts[item.ID])
-		datum, ok := userData[item.ID]
-		if !ok {
-			datum = items.Datum{ItemID: item.ID}
-		}
-		dto.UserData = dtos.Ptr(dtos.UserItemDataDto(&datum))
-		converted = append(converted, dto)
-	}
-
-	return converted, nil
 }

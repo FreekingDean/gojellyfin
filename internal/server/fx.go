@@ -30,6 +30,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/studios"
 	"github.com/FreekingDean/gojellyfin/internal/server/syncplay"
 	"github.com/FreekingDean/gojellyfin/internal/server/system"
+	"github.com/FreekingDean/gojellyfin/internal/server/tvshows"
 	"github.com/FreekingDean/gojellyfin/internal/server/user"
 	"github.com/FreekingDean/gojellyfin/internal/server/userlibrary"
 	"github.com/FreekingDean/gojellyfin/internal/server/userviews"
@@ -56,6 +57,7 @@ var Module = fx.Module(
 		musicgenres.New,
 		persons.New,
 		activitylog.New,
+		tvshows.New,
 		livetv.New,
 		branding.New,
 		configuration.New,
