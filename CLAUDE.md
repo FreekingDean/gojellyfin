@@ -22,7 +22,12 @@ go build ./...
 go test ./...
 go test -run TestName ./internal/... # single test
 go generate ./internal/server/api    # regenerate API from the OpenAPI spec
+air                                  # watch and restart (go install github.com/air-verse/air@latest)
 ```
+
+`go generate` is deliberately not part of the watch loop: it re-emits ~95k lines and only matters when the spec or `internal/server/api/gen` changes.
+
+A stale process holding `:8081` produces `ListenAndServe error: address already in use` while the new one silently serves nothing — if requests look like they are hitting old code, check `lsof -ti:8081`.
 
 Requires a reachable Postgres. `DATABASE_URL` overrides the default DSN in `internal/store/store.go` (`postgres://localhost:5432/gojellyfin_development?sslmode=disable`).
 
