@@ -79,7 +79,9 @@ Columns owned by a background process must be left out of an upsert's `DoUpdates
 
 ### Request identity
 
-`middleware.Auth` resolves a token through the narrow `middleware.Sessions` interface and puts a `middleware.Session` (user id, session id) in the context — not the user record, which would make every domain package a dependency of the middleware. Handlers read `middleware.UserID(ctx)` and fetch what they need.
+`internal/auth` owns identity on the context — it puts it on and takes it off, and nothing else knows the keys exist. `middleware.Auth` only parses what the client sent (`Authorization: MediaBrowser …`, `X-Emby-Token`, `?api_key=`) and calls `auth.Authenticate`, which resolves the token and returns a context carrying the session.
+
+Handlers read `auth.UserID(ctx)`, `auth.SessionFrom(ctx)`, `auth.AuthorizationFrom(ctx)` and return `auth.ErrUnauthorized`; `middleware.TokenFrom` is the only thing left in the middleware package that handlers touch, and only because websocket and media URLs cannot send headers.
 
 ### Current state
 
