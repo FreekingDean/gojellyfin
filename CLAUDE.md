@@ -55,7 +55,7 @@ Routing uses a hand-rolled `internal/http/mux`, not `http.ServeMux`, because Jel
 
 Two groups, split on whether the code knows about the HTTP API:
 
-- **`internal/{users,items,libraries,config}` — domains.** gorm models and queries, exposing a `Store` built with `New(db *gorm.DB)`. **A domain package must never import `internal/server/api` or `internal/http/middleware`.** That invariant is what the layout rests on; check it with `grep -rl 'server/api\|http/middleware' internal/<domain>/`, which must come back empty.
+- **`internal/{auth,users,items,libraries,config}` — domains.** Models and behaviour, exposing a `Service` built with `New(db *gorm.DB)`. `auth` owns sessions, password hashing and token minting; `users` owns only the user record. **A domain package must never import `internal/server/api` or `internal/http/middleware`.** That invariant is what the layout rests on; check it with `grep -rl 'server/api\|http/middleware' internal/<domain>/`, which must come back empty.
 - **`internal/server/<domain>` — handlers.** A `Server` holding the domain `Store`, implementing the generated operations and owning every DTO translation.
 
 Domains are keyed on **entities, not tags** — `Item` is touched by nine tags (Items, Image, UserLibrary, Playstate, Videos, Audio, MediaInfo, TvShows, Movies), so a package per tag would either duplicate the queries or make handlers depend on handlers. One handler package covers all the tags about its entity.
