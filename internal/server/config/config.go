@@ -1,4 +1,4 @@
-package server
+package config
 
 import (
 	"context"
@@ -32,7 +32,7 @@ func (s *Server) UpdateConfiguration(ctx context.Context, request api.UpdateConf
 	if err != nil {
 		return nil, err
 	}
-	if err := s.store.SetConfiguration(ctx, systemConfigurationKey, value); err != nil {
+	if err := s.setConfiguration(ctx, systemConfigurationKey, value); err != nil {
 		return nil, err
 	}
 
@@ -42,7 +42,7 @@ func (s *Server) UpdateConfiguration(ctx context.Context, request api.UpdateConf
 func (s *Server) GetNamedConfiguration(ctx context.Context, request api.GetNamedConfigurationRequestObject) (api.GetNamedConfigurationResponseObject, error) {
 	key := strings.ToLower(request.Key)
 
-	value, err := s.store.GetConfiguration(ctx, key)
+	value, err := s.configuration(ctx, key)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (s *Server) UpdateNamedConfiguration(ctx context.Context, request api.Updat
 	if err != nil {
 		return nil, err
 	}
-	if err := s.store.SetConfiguration(ctx, strings.ToLower(request.Key), value); err != nil {
+	if err := s.setConfiguration(ctx, strings.ToLower(request.Key), value); err != nil {
 		return nil, err
 	}
 
@@ -84,7 +84,7 @@ func (s *Server) GetDefaultMetadataOptions(ctx context.Context, request api.GetD
 func (s *Server) serverConfiguration(ctx context.Context) (api.ServerConfiguration, error) {
 	configuration := defaultServerConfiguration()
 
-	value, err := s.store.GetConfiguration(ctx, systemConfigurationKey)
+	value, err := s.configuration(ctx, systemConfigurationKey)
 	if err != nil {
 		return api.ServerConfiguration{}, err
 	}
@@ -100,7 +100,7 @@ func (s *Server) serverConfiguration(ctx context.Context) (api.ServerConfigurati
 func (s *Server) brandingConfiguration(ctx context.Context) (api.BrandingOptions, error) {
 	branding := defaultBrandingOptions()
 
-	value, err := s.store.GetConfiguration(ctx, brandingConfigurationKey)
+	value, err := s.configuration(ctx, brandingConfigurationKey)
 	if err != nil {
 		return api.BrandingOptions{}, err
 	}

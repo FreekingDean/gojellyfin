@@ -1,4 +1,4 @@
-package store
+package items
 
 import (
 	"context"
@@ -30,7 +30,7 @@ type MediaStream struct {
 	UpdatedAt   time.Time
 }
 
-func (s *storeImpl) ReplaceMediaStreams(ctx context.Context, itemID uuid.UUID, streams []MediaStream) error {
+func (s *Server) ReplaceMediaStreams(ctx context.Context, itemID uuid.UUID, streams []MediaStream) error {
 	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Delete(&MediaStream{}, "item_id = ?", itemID).Error; err != nil {
 			return err
@@ -43,7 +43,7 @@ func (s *storeImpl) ReplaceMediaStreams(ctx context.Context, itemID uuid.UUID, s
 	})
 }
 
-func (s *storeImpl) ListMediaStreams(ctx context.Context, itemID uuid.UUID) ([]MediaStream, error) {
+func (s *Server) ListMediaStreams(ctx context.Context, itemID uuid.UUID) ([]MediaStream, error) {
 	var streams []MediaStream
 	if err := s.db.WithContext(ctx).Where("item_id = ?", itemID).Order("index").Find(&streams).Error; err != nil {
 		return nil, err

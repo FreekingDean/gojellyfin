@@ -1,4 +1,4 @@
-package server
+package items
 
 import (
 	"context"
@@ -8,7 +8,8 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	"github.com/FreekingDean/gojellyfin/internal/store"
+	"github.com/FreekingDean/gojellyfin/internal/server/config"
+	"github.com/FreekingDean/gojellyfin/internal/server/libraries"
 )
 
 var folderTypes = map[string]bool{
@@ -33,12 +34,12 @@ func (s *Server) GetItems(ctx context.Context, request api.GetItemsRequestObject
 }
 
 func (s *Server) GetItem(ctx context.Context, request api.GetItemRequestObject) (api.GetItemResponseObject, error) {
-	item, err := s.store.GetItem(ctx, request.ItemId)
+	item, err := s.ItemByID(ctx, request.ItemId)
 	if err != nil {
 		return api.GetItem403Response{}, nil
 	}
 
-	dtos, err := s.itemDtos(ctx, []store.Item{*item})
+	dtos, err := s.itemDtos(ctx, []Item{*item})
 	if err != nil {
 		return nil, err
 	}
@@ -48,16 +49,16 @@ func (s *Server) GetItem(ctx context.Context, request api.GetItemRequestObject) 
 
 func (s *Server) GetRootFolder(ctx context.Context, request api.GetRootFolderRequestObject) (api.GetRootFolderResponseObject, error) {
 	return api.GetRootFolder200JSONResponse{
-		Id:       uid(rootFolderId),
+		Id:       uid(config.RootFolderID),
 		Name:     ptr("Media Folders"),
-		ServerId: ptr(serverId),
+		ServerId: ptr(config.ServerID),
 		Type:     ptr(api.BaseItemKindFolder),
 		IsFolder: ptr(true),
 	}, nil
 }
 
 func (s *Server) GetUserViews(ctx context.Context, request api.GetUserViewsRequestObject) (api.GetUserViewsResponseObject, error) {
-	libraries, err := s.store.ListLibraries(ctx)
+	libraries, err := s.libraries.ListLibraries(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +76,7 @@ func (s *Server) GetUserViews(ctx context.Context, request api.GetUserViewsReque
 }
 
 func (s *Server) GetLatestMedia(ctx context.Context, request api.GetLatestMediaRequestObject) (api.GetLatestMediaResponseObject, error) {
-	query := store.ItemQuery{
+	query := ItemQuery{
 		Types:      []string{"Movie", "Series"},
 		SortBy:     []string{"DateCreated"},
 		Descending: true,
@@ -85,7 +86,7 @@ func (s *Server) GetLatestMedia(ctx context.Context, request api.GetLatestMediaR
 		query.LibraryID = request.Params.ParentId
 	}
 
-	items, _, err := s.store.QueryItems(ctx, query)
+	items, _, err := s.QueryItems(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -98,8 +99,8 @@ func (s *Server) GetLatestMedia(ctx context.Context, request api.GetLatestMediaR
 	return api.GetLatestMedia200JSONResponse(dtos), nil
 }
 
-func (s *Server) itemQuery(ctx context.Context, params api.GetItemsParams) (store.ItemQuery, error) {
-	query := store.ItemQuery{
+func (s *Server) itemQuery(ctx context.Context, params api.GetItemsParams) (ItemQuery, error) {
+	query := ItemQuery{
 		SearchTerm: deref(params.SearchTerm),
 		StartIndex: int(deref(params.StartIndex)),
 		Limit:      int(deref(params.Limit)),
@@ -117,7 +118,7 @@ func (s *Server) itemQuery(ctx context.Context, params api.GetItemsParams) (stor
 	}
 
 	if params.ParentId != nil {
-		library, err := s.store.GetLibrary(ctx, *params.ParentId)
+		library, err := s.libraries.GetLibrary(ctx, *params.ParentId)
 		switch {
 		case err == nil:
 			query.LibraryID = &library.ID
@@ -130,8 +131,8 @@ func (s *Server) itemQuery(ctx context.Context, params api.GetItemsParams) (stor
 	return query, nil
 }
 
-func (s *Server) queryResult(ctx context.Context, query store.ItemQuery) (api.BaseItemDtoQueryResult, error) {
-	items, total, err := s.store.QueryItems(ctx, query)
+func (s *Server) queryResult(ctx context.Context, query ItemQuery) (api.BaseItemDtoQueryResult, error) {
+	items, total, err := s.QueryItems(ctx, query)
 	if err != nil {
 		return api.BaseItemDtoQueryResult{}, err
 	}
@@ -148,7 +149,7 @@ func (s *Server) queryResult(ctx context.Context, query store.ItemQuery) (api.Ba
 	}, nil
 }
 
-func (s *Server) itemDtos(ctx context.Context, items []store.Item) ([]api.BaseItemDto, error) {
+func (s *Server) itemDtos(ctx context.Context, items []Item) ([]api.BaseItemDto, error) {
 	folderIDs := make([]uuid.UUID, 0, len(items))
 	itemIDs := make([]uuid.UUID, 0, len(items))
 	for _, item := range items {
@@ -158,14 +159,14 @@ func (s *Server) itemDtos(ctx context.Context, items []store.Item) ([]api.BaseIt
 		}
 	}
 
-	counts, err := s.store.CountChildren(ctx, folderIDs)
+	counts, err := s.CountChildren(ctx, folderIDs)
 	if err != nil {
 		return nil, err
 	}
 
-	userData := map[uuid.UUID]store.UserItemDatum{}
+	userData := map[uuid.UUID]Datum{}
 	if userID := middleware.UserID(ctx); userID != uuid.Nil {
-		if userData, err = s.store.ListUserItemData(ctx, userID, itemIDs); err != nil {
+		if userData, err = s.ListUserItemData(ctx, userID, itemIDs); err != nil {
 			return nil, err
 		}
 	}
@@ -175,7 +176,7 @@ func (s *Server) itemDtos(ctx context.Context, items []store.Item) ([]api.BaseIt
 		dto := itemDto(&item, counts[item.ID])
 		datum, ok := userData[item.ID]
 		if !ok {
-			datum = store.UserItemDatum{ItemID: item.ID}
+			datum = Datum{ItemID: item.ID}
 		}
 		dto.UserData = ptr(userItemDataDto(&datum))
 		dtos = append(dtos, dto)
@@ -184,13 +185,13 @@ func (s *Server) itemDtos(ctx context.Context, items []store.Item) ([]api.BaseIt
 	return dtos, nil
 }
 
-func itemDto(item *store.Item, childCount int32) api.BaseItemDto {
+func itemDto(item *Item, childCount int32) api.BaseItemDto {
 	kind := api.BaseItemKind(item.Type)
 	isFolder := folderTypes[item.Type]
 
 	dto := api.BaseItemDto{
 		Id:                &item.ID,
-		ServerId:          ptr(serverId),
+		ServerId:          ptr(config.ServerID),
 		Name:              ptr(item.Name),
 		SortName:          ptr(item.SortName),
 		Type:              &kind,
@@ -220,12 +221,12 @@ func itemDto(item *store.Item, childCount int32) api.BaseItemDto {
 	return dto
 }
 
-func libraryView(library *store.Library) api.BaseItemDto {
+func libraryView(library *libraries.Library) api.BaseItemDto {
 	collectionType := api.CollectionType(library.CollectionType)
 
 	return api.BaseItemDto{
 		Id:                &library.ID,
-		ServerId:          ptr(serverId),
+		ServerId:          ptr(config.ServerID),
 		Name:              ptr(library.Name),
 		SortName:          ptr(strings.ToLower(library.Name)),
 		Type:              ptr(api.BaseItemKindCollectionFolder),

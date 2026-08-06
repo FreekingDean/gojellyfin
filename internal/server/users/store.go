@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 )
 
@@ -87,15 +86,13 @@ func (s *Server) createSession(ctx context.Context, session *Session) error {
 	return s.db.WithContext(ctx).Create(session).Error
 }
 
-// SessionByToken satisfies middleware.Sessions so the auth middleware can
-// resolve a token without depending on this package's model.
-func (s *Server) SessionByToken(ctx context.Context, token string) (middleware.Session, error) {
+func (s *Server) sessionByToken(ctx context.Context, token string) (*Session, error) {
 	var session Session
 	if err := s.db.WithContext(ctx).First(&session, "access_token = ?", token).Error; err != nil {
-		return middleware.Session{}, err
+		return nil, err
 	}
 
-	return middleware.Session{ID: session.ID, UserID: session.UserID}, nil
+	return &session, nil
 }
 
 func (s *Server) ListSessions(ctx context.Context) ([]Session, error) {

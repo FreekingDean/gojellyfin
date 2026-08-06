@@ -1,4 +1,4 @@
-package server
+package items
 
 import (
 	"context"
@@ -8,7 +8,6 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	"github.com/FreekingDean/gojellyfin/internal/store"
 )
 
 func (s *Server) GetItemUserData(ctx context.Context, request api.GetItemUserDataRequestObject) (api.GetItemUserDataResponseObject, error) {
@@ -83,14 +82,14 @@ func (s *Server) UpdateItemUserData(ctx context.Context, request api.UpdateItemU
 		datum.LastPlayedDate = req.LastPlayedDate
 	}
 
-	if err := s.store.SaveUserItemDatum(ctx, datum); err != nil {
+	if err := s.SaveUserItemDatum(ctx, datum); err != nil {
 		return nil, err
 	}
 
 	return api.UpdateItemUserData200JSONResponse(userItemDataDto(datum)), nil
 }
 
-func (s *Server) saveFavorite(ctx context.Context, itemID uuid.UUID, favorite bool) (*store.UserItemDatum, error) {
+func (s *Server) saveFavorite(ctx context.Context, itemID uuid.UUID, favorite bool) (*Datum, error) {
 	datum, err := s.userItemDatum(ctx, itemID)
 	if err != nil {
 		return nil, err
@@ -98,10 +97,10 @@ func (s *Server) saveFavorite(ctx context.Context, itemID uuid.UUID, favorite bo
 
 	datum.IsFavorite = favorite
 
-	return datum, s.store.SaveUserItemDatum(ctx, datum)
+	return datum, s.SaveUserItemDatum(ctx, datum)
 }
 
-func (s *Server) savePlayed(ctx context.Context, itemID uuid.UUID, played bool) (*store.UserItemDatum, error) {
+func (s *Server) savePlayed(ctx context.Context, itemID uuid.UUID, played bool) (*Datum, error) {
 	datum, err := s.userItemDatum(ctx, itemID)
 	if err != nil {
 		return nil, err
@@ -114,19 +113,19 @@ func (s *Server) savePlayed(ctx context.Context, itemID uuid.UUID, played bool) 
 		datum.LastPlayedDate = ptr(time.Now())
 	}
 
-	return datum, s.store.SaveUserItemDatum(ctx, datum)
+	return datum, s.SaveUserItemDatum(ctx, datum)
 }
 
-func (s *Server) userItemDatum(ctx context.Context, itemID uuid.UUID) (*store.UserItemDatum, error) {
+func (s *Server) userItemDatum(ctx context.Context, itemID uuid.UUID) (*Datum, error) {
 	userID := middleware.UserID(ctx)
 	if userID == uuid.Nil {
 		return nil, middleware.ErrUnauthorized
 	}
 
-	return s.store.GetUserItemDatum(ctx, userID, itemID)
+	return s.GetUserItemDatum(ctx, userID, itemID)
 }
 
-func userItemDataDto(datum *store.UserItemDatum) api.UserItemDataDto {
+func userItemDataDto(datum *Datum) api.UserItemDataDto {
 	return api.UserItemDataDto{
 		ItemId:                &datum.ItemID,
 		Key:                   ptr(datum.ItemID.String()),

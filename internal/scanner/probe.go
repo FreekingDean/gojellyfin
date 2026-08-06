@@ -8,13 +8,13 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
-	"github.com/FreekingDean/gojellyfin/internal/store"
+	"github.com/FreekingDean/gojellyfin/internal/server/items"
 )
 
 const ticksPerSecond = 10_000_000
 
 func (s *Scanner) probe(ctx context.Context, libraryID uuid.UUID, path string) error {
-	item, err := s.store.GetItemByPath(ctx, libraryID, path)
+	item, err := s.items.GetItemByPath(ctx, libraryID, path)
 	if err != nil {
 		return err
 	}
@@ -32,13 +32,13 @@ func (s *Scanner) probe(ctx context.Context, libraryID uuid.UUID, path string) e
 	item.Size = probe.Format.Bytes()
 	item.Bitrate = probe.Format.Bitrate()
 
-	if err := s.store.SaveItemMedia(ctx, item); err != nil {
+	if err := s.items.SaveItemMedia(ctx, item); err != nil {
 		return err
 	}
 
-	streams := make([]store.MediaStream, 0, len(probe.Streams))
+	streams := make([]items.MediaStream, 0, len(probe.Streams))
 	for _, stream := range probe.Streams {
-		streams = append(streams, store.MediaStream{
+		streams = append(streams, items.MediaStream{
 			ItemID:      item.ID,
 			Index:       int32(stream.Index),
 			Type:        streamType(stream.CodecType),
@@ -58,7 +58,7 @@ func (s *Scanner) probe(ctx context.Context, libraryID uuid.UUID, path string) e
 		})
 	}
 
-	return s.store.ReplaceMediaStreams(ctx, item.ID, streams)
+	return s.items.ReplaceMediaStreams(ctx, item.ID, streams)
 }
 
 // ffprobe reports muxer families like "matroska,webm"; the file extension picks

@@ -1,4 +1,4 @@
-package store
+package config
 
 import (
 	"context"
@@ -6,17 +6,19 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+
+	"github.com/FreekingDean/gojellyfin/internal/store"
 	"gorm.io/gorm/clause"
 )
 
 type Configuration struct {
 	Key       string `gorm:"primaryKey"`
-	Value     JSON
+	Value     store.JSON
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
-func (s *storeImpl) GetConfiguration(ctx context.Context, key string) (JSON, error) {
+func (s *Server) configuration(ctx context.Context, key string) (store.JSON, error) {
 	var configuration Configuration
 	err := s.db.WithContext(ctx).First(&configuration, "key = ?", key).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -29,7 +31,7 @@ func (s *storeImpl) GetConfiguration(ctx context.Context, key string) (JSON, err
 	return configuration.Value, nil
 }
 
-func (s *storeImpl) SetConfiguration(ctx context.Context, key string, value JSON) error {
+func (s *Server) setConfiguration(ctx context.Context, key string, value store.JSON) error {
 	return s.db.WithContext(ctx).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "key"}},
 		DoUpdates: clause.AssignmentColumns([]string{"value", "updated_at"}),

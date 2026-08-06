@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
-	"github.com/FreekingDean/gojellyfin/internal/store"
+	"github.com/FreekingDean/gojellyfin/internal/server/items"
 )
 
 var contentTypes = map[string]string{
@@ -31,11 +31,11 @@ var contentTypes = map[string]string{
 
 type Handler struct {
 	sessions middleware.Sessions
-	store    store.Store
+	items    *items.Server
 }
 
-func New(sessions middleware.Sessions, store store.Store) *Handler {
-	return &Handler{sessions: sessions, store: store}
+func New(sessions middleware.Sessions, items *items.Server) *Handler {
+	return &Handler{sessions: sessions, items: items}
 }
 
 // Registered ahead of the generated routes because the generated response type
@@ -57,7 +57,7 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	item, err := h.store.GetItem(r.Context(), id)
+	item, err := h.items.ItemByID(r.Context(), id)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return

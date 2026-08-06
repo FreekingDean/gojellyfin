@@ -11,20 +11,22 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
-	"github.com/FreekingDean/gojellyfin/internal/store"
+	"github.com/FreekingDean/gojellyfin/internal/server/items"
+	"github.com/FreekingDean/gojellyfin/internal/server/libraries"
 )
 
 const collectionTypeTVShows = "tvshows"
 
 type Scanner struct {
-	store store.Store
+	items     *items.Server
+	libraries *libraries.Server
 
 	mu      sync.Mutex
 	running bool
 }
 
-func New(store store.Store) *Scanner {
-	return &Scanner{store: store}
+func New(items *items.Server, libraries *libraries.Server) *Scanner {
+	return &Scanner{items: items, libraries: libraries}
 }
 
 func (s *Scanner) Scan(ctx context.Context) error {
@@ -33,7 +35,7 @@ func (s *Scanner) Scan(ctx context.Context) error {
 	}
 	defer s.finish()
 
-	libraries, err := s.store.ListLibraries(ctx)
+	libraries, err := s.libraries.ListLibraries(ctx)
 	if err != nil {
 		return err
 	}
@@ -66,7 +68,7 @@ func (s *Scanner) finish() {
 	s.running = false
 }
 
-func (s *Scanner) scanLibrary(ctx context.Context, library *store.Library) error {
+func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) error {
 	seen := make([]string, 0)
 
 	for _, path := range library.Paths {
@@ -87,10 +89,10 @@ func (s *Scanner) scanLibrary(ctx context.Context, library *store.Library) error
 
 	log.Printf("scanned %s: %d items", library.Name, len(seen))
 
-	return s.store.DeleteItemsNotInPaths(ctx, library.ID, seen)
+	return s.items.DeleteItemsNotInPaths(ctx, library.ID, seen)
 }
 
-func (s *Scanner) scanMovies(ctx context.Context, library *store.Library, root string) ([]string, error) {
+func (s *Scanner) scanMovies(ctx context.Context, library *libraries.Library, root string) ([]string, error) {
 	seen := make([]string, 0)
 
 	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
@@ -104,7 +106,7 @@ func (s *Scanner) scanMovies(ctx context.Context, library *store.Library, root s
 		}
 
 		name, year := parseTitle(title)
-		item := &store.Item{
+		item := &items.Item{
 			LibraryID:      library.ID,
 			Type:           "Movie",
 			Name:           name,
@@ -113,7 +115,7 @@ func (s *Scanner) scanMovies(ctx context.Context, library *store.Library, root s
 			ProductionYear: year,
 			DateModified:   modifiedAt(entry),
 		}
-		if err := s.store.UpsertItem(ctx, item); err != nil {
+		if err := s.items.UpsertItem(ctx, item); err != nil {
 			return err
 		}
 		seen = append(seen, path)
@@ -124,7 +126,7 @@ func (s *Scanner) scanMovies(ctx context.Context, library *store.Library, root s
 	return seen, err
 }
 
-func (s *Scanner) scanShows(ctx context.Context, library *store.Library, root string) ([]string, error) {
+func (s *Scanner) scanShows(ctx context.Context, library *libraries.Library, root string) ([]string, error) {
 	seen := make([]string, 0)
 
 	entries, err := os.ReadDir(root)
@@ -139,7 +141,7 @@ func (s *Scanner) scanShows(ctx context.Context, library *store.Library, root st
 
 		seriesPath := filepath.Join(root, entry.Name())
 		name, year := parseTitle(entry.Name())
-		series := &store.Item{
+		series := &items.Item{
 			LibraryID:      library.ID,
 			Type:           "Series",
 			Name:           name,
@@ -148,7 +150,7 @@ func (s *Scanner) scanShows(ctx context.Context, library *store.Library, root st
 			ProductionYear: year,
 			DateModified:   modifiedAt(entry),
 		}
-		if err := s.store.UpsertItem(ctx, series); err != nil {
+		if err := s.items.UpsertItem(ctx, series); err != nil {
 			return nil, err
 		}
 		seen = append(seen, seriesPath)
@@ -168,7 +170,7 @@ func (s *Scanner) scanShows(ctx context.Context, library *store.Library, root st
 	return seen, nil
 }
 
-func (s *Scanner) scanSeries(ctx context.Context, library *store.Library, seriesName string, seriesID uuid.UUID, seriesPath string) ([]string, error) {
+func (s *Scanner) scanSeries(ctx context.Context, library *libraries.Library, seriesName string, seriesID uuid.UUID, seriesPath string) ([]string, error) {
 	seen := make([]string, 0)
 
 	entries, err := os.ReadDir(seriesPath)
@@ -195,7 +197,7 @@ func (s *Scanner) scanSeries(ctx context.Context, library *store.Library, series
 			continue
 		}
 
-		season := &store.Item{
+		season := &items.Item{
 			LibraryID:    library.ID,
 			ParentID:     &seriesID,
 			Type:         "Season",
@@ -205,7 +207,7 @@ func (s *Scanner) scanSeries(ctx context.Context, library *store.Library, series
 			IndexNumber:  number,
 			DateModified: modifiedAt(entry),
 		}
-		if err := s.store.UpsertItem(ctx, season); err != nil {
+		if err := s.items.UpsertItem(ctx, season); err != nil {
 			return nil, err
 		}
 		seen = append(seen, path)
@@ -235,7 +237,7 @@ func (s *Scanner) scanSeries(ctx context.Context, library *store.Library, series
 	return seen, nil
 }
 
-func (s *Scanner) upsertEpisode(ctx context.Context, library *store.Library, seriesName string, parentID uuid.UUID, path string, entry os.DirEntry) error {
+func (s *Scanner) upsertEpisode(ctx context.Context, library *libraries.Library, seriesName string, parentID uuid.UUID, path string, entry os.DirEntry) error {
 	season, number, title, ok := parseEpisode(entry.Name())
 	if !ok {
 		title = stripExtension(entry.Name())
@@ -244,7 +246,7 @@ func (s *Scanner) upsertEpisode(ctx context.Context, library *store.Library, ser
 		title = episodeTitle(seriesName, season, number)
 	}
 
-	err := s.store.UpsertItem(ctx, &store.Item{
+	err := s.items.UpsertItem(ctx, &items.Item{
 		LibraryID:         library.ID,
 		ParentID:          &parentID,
 		Type:              "Episode",
@@ -275,7 +277,7 @@ func (s *Scanner) probeMedia(ctx context.Context, libraryID uuid.UUID, path stri
 }
 
 func (s *Scanner) itemID(ctx context.Context, libraryID uuid.UUID, path string) (uuid.UUID, error) {
-	item, err := s.store.GetItemByPath(ctx, libraryID, path)
+	item, err := s.items.GetItemByPath(ctx, libraryID, path)
 	if err != nil {
 		return uuid.Nil, err
 	}

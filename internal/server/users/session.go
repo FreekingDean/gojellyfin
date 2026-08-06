@@ -41,3 +41,14 @@ func (s *Server) PostCapabilities(ctx context.Context, request api.PostCapabilit
 func (s *Server) PostFullCapabilities(ctx context.Context, request api.PostFullCapabilitiesRequestObject) (api.PostFullCapabilitiesResponseObject, error) {
 	return api.PostFullCapabilities204Response{}, nil
 }
+
+// Satisfies middleware.Sessions. The translation lives here rather than beside
+// the query so storage has no reason to know about transport types.
+func (s *Server) SessionByToken(ctx context.Context, token string) (middleware.Session, error) {
+	session, err := s.sessionByToken(ctx, token)
+	if err != nil {
+		return middleware.Session{}, err
+	}
+
+	return middleware.Session{ID: session.ID, UserID: session.UserID}, nil
+}

@@ -1,4 +1,4 @@
-package server
+package config
 
 import (
 	"context"
@@ -16,7 +16,7 @@ func (s *Server) GetPublicSystemInfo(
 	}
 
 	return api.GetPublicSystemInfo200JSONResponse{
-		Id:                     ptr(s.ID()),
+		Id:                     ptr(ServerID),
 		LocalAddress:           ptr(s.system.LocalAddress()),
 		ServerName:             configuration.ServerName,
 		ProductName:            ptr(s.system.ProductName()),
@@ -33,7 +33,7 @@ func (s *Server) GetSystemInfo(ctx context.Context, request api.GetSystemInfoReq
 	}
 
 	return api.GetSystemInfo200JSONResponse{
-		Id:                       ptr(s.ID()),
+		Id:                       ptr(ServerID),
 		LocalAddress:             ptr(s.system.LocalAddress()),
 		ServerName:               configuration.ServerName,
 		ProductName:              ptr(s.system.ProductName()),

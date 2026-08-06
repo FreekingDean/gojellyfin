@@ -1,4 +1,4 @@
-package store
+package items
 
 import (
 	"context"
@@ -32,7 +32,7 @@ type Item struct {
 	UpdatedAt         time.Time
 }
 
-func (s *storeImpl) UpsertItem(ctx context.Context, item *Item) error {
+func (s *Server) UpsertItem(ctx context.Context, item *Item) error {
 	return s.db.WithContext(ctx).Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "library_id"}, {Name: "path"}},
 		// run_time_ticks, container, size, bitrate and probed_at belong to the
@@ -45,7 +45,7 @@ func (s *storeImpl) UpsertItem(ctx context.Context, item *Item) error {
 	}).Create(item).Error
 }
 
-func (s *storeImpl) SaveItemMedia(ctx context.Context, item *Item) error {
+func (s *Server) SaveItemMedia(ctx context.Context, item *Item) error {
 	return s.db.WithContext(ctx).Model(&Item{}).Where("id = ?", item.ID).Updates(map[string]any{
 		"run_time_ticks": item.RunTimeTicks,
 		"container":      item.Container,
@@ -55,7 +55,7 @@ func (s *storeImpl) SaveItemMedia(ctx context.Context, item *Item) error {
 	}).Error
 }
 
-func (s *storeImpl) GetItem(ctx context.Context, id uuid.UUID) (*Item, error) {
+func (s *Server) ItemByID(ctx context.Context, id uuid.UUID) (*Item, error) {
 	var item Item
 	if err := s.db.WithContext(ctx).First(&item, "id = ?", id).Error; err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func (s *storeImpl) GetItem(ctx context.Context, id uuid.UUID) (*Item, error) {
 	return &item, nil
 }
 
-func (s *storeImpl) GetItemByPath(ctx context.Context, libraryID uuid.UUID, path string) (*Item, error) {
+func (s *Server) GetItemByPath(ctx context.Context, libraryID uuid.UUID, path string) (*Item, error) {
 	var item Item
 	if err := s.db.WithContext(ctx).First(&item, "library_id = ? AND path = ?", libraryID, path).Error; err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func (s *storeImpl) GetItemByPath(ctx context.Context, libraryID uuid.UUID, path
 	return &item, nil
 }
 
-func (s *storeImpl) ListItemsByLibrary(ctx context.Context, libraryID uuid.UUID) ([]Item, error) {
+func (s *Server) ListItemsByLibrary(ctx context.Context, libraryID uuid.UUID) ([]Item, error) {
 	var items []Item
 	if err := s.db.WithContext(ctx).Where("library_id = ?", libraryID).Order("sort_name").Find(&items).Error; err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func (s *storeImpl) ListItemsByLibrary(ctx context.Context, libraryID uuid.UUID)
 	return items, nil
 }
 
-func (s *storeImpl) ListItemsByParent(ctx context.Context, parentID uuid.UUID) ([]Item, error) {
+func (s *Server) ListItemsByParent(ctx context.Context, parentID uuid.UUID) ([]Item, error) {
 	var items []Item
 	if err := s.db.WithContext(ctx).Where("parent_id = ?", parentID).Order("index_number, sort_name").Find(&items).Error; err != nil {
 		return nil, err
@@ -115,7 +115,7 @@ var sortColumns = map[string]string{
 	"random":         "random()",
 }
 
-func (s *storeImpl) QueryItems(ctx context.Context, query ItemQuery) ([]Item, int64, error) {
+func (s *Server) QueryItems(ctx context.Context, query ItemQuery) ([]Item, int64, error) {
 	db := s.db.WithContext(ctx).Model(&Item{})
 
 	if query.LibraryID != nil {
@@ -174,7 +174,7 @@ func (s *storeImpl) QueryItems(ctx context.Context, query ItemQuery) ([]Item, in
 	return items, total, nil
 }
 
-func (s *storeImpl) CountChildren(ctx context.Context, parentIDs []uuid.UUID) (map[uuid.UUID]int32, error) {
+func (s *Server) CountChildren(ctx context.Context, parentIDs []uuid.UUID) (map[uuid.UUID]int32, error) {
 	counts := make(map[uuid.UUID]int32, len(parentIDs))
 	if len(parentIDs) == 0 {
 		return counts, nil
@@ -200,7 +200,7 @@ func (s *storeImpl) CountChildren(ctx context.Context, parentIDs []uuid.UUID) (m
 	return counts, nil
 }
 
-func (s *storeImpl) DeleteItemsNotInPaths(ctx context.Context, libraryID uuid.UUID, paths []string) error {
+func (s *Server) DeleteItemsNotInPaths(ctx context.Context, libraryID uuid.UUID, paths []string) error {
 	query := s.db.WithContext(ctx).Where("library_id = ?", libraryID)
 	if len(paths) > 0 {
 		query = query.Where("path NOT IN ?", paths)

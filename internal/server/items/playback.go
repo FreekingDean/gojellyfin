@@ -1,4 +1,4 @@
-package server
+package items
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	"github.com/FreekingDean/gojellyfin/internal/store"
 )
 
 func (s *Server) GetPlaybackInfo(ctx context.Context, request api.GetPlaybackInfoRequestObject) (api.GetPlaybackInfoResponseObject, error) {
@@ -29,7 +28,7 @@ func (s *Server) GetPostedPlaybackInfo(ctx context.Context, request api.GetPoste
 }
 
 func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID) (api.PlaybackInfoResponse, error) {
-	item, err := s.store.GetItem(ctx, itemID)
+	item, err := s.ItemByID(ctx, itemID)
 	if err != nil {
 		return api.PlaybackInfoResponse{}, err
 	}
@@ -50,8 +49,8 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID) (api.Playba
 	}, nil
 }
 
-func (s *Server) mediaSource(ctx context.Context, item *store.Item) (api.MediaSourceInfo, error) {
-	streams, err := s.store.ListMediaStreams(ctx, item.ID)
+func (s *Server) mediaSource(ctx context.Context, item *Item) (api.MediaSourceInfo, error) {
+	streams, err := s.ListMediaStreams(ctx, item.ID)
 	if err != nil {
 		return api.MediaSourceInfo{}, err
 	}
@@ -88,7 +87,7 @@ func (s *Server) mediaSource(ctx context.Context, item *store.Item) (api.MediaSo
 	}, nil
 }
 
-func mediaStreamDto(stream *store.MediaStream) api.MediaStream {
+func mediaStreamDto(stream *MediaStream) api.MediaStream {
 	kind := api.MediaStreamType(stream.Type)
 
 	dto := api.MediaStream{
@@ -135,7 +134,7 @@ func mediaStreamDto(stream *store.MediaStream) api.MediaStream {
 	return dto
 }
 
-func streamDisplayTitle(stream *store.MediaStream) string {
+func streamDisplayTitle(stream *MediaStream) string {
 	switch stream.Type {
 	case "Video":
 		return fmt.Sprintf("%dx%d %s", stream.Width, stream.Height, stream.Codec)
@@ -154,7 +153,7 @@ func streamDisplayTitle(stream *store.MediaStream) string {
 	}
 }
 
-func defaultStreamIndex(streams []store.MediaStream, kind string) *int32 {
+func defaultStreamIndex(streams []MediaStream, kind string) *int32 {
 	for _, stream := range streams {
 		if stream.Type == kind && stream.IsDefault {
 			return ptr(stream.Index)

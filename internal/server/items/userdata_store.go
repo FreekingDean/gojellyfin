@@ -1,4 +1,4 @@
-package store
+package items
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-type UserItemDatum struct {
+type Datum struct {
 	ID                    uuid.UUID `gorm:"type:uuid;default:gen_random_uuid()"`
 	UserID                uuid.UUID `gorm:"type:uuid;uniqueIndex:idx_user_item_data_user_item"`
 	ItemID                uuid.UUID `gorm:"type:uuid;uniqueIndex:idx_user_item_data_user_item;index"`
@@ -23,11 +23,16 @@ type UserItemDatum struct {
 	UpdatedAt             time.Time
 }
 
-func (s *storeImpl) GetUserItemDatum(ctx context.Context, userID, itemID uuid.UUID) (*UserItemDatum, error) {
-	var datum UserItemDatum
+// Renaming the model must not move the table.
+func (Datum) TableName() string {
+	return "user_item_data"
+}
+
+func (s *Server) GetUserItemDatum(ctx context.Context, userID, itemID uuid.UUID) (*Datum, error) {
+	var datum Datum
 	err := s.db.WithContext(ctx).First(&datum, "user_id = ? AND item_id = ?", userID, itemID).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return &UserItemDatum{UserID: userID, ItemID: itemID}, nil
+		return &Datum{UserID: userID, ItemID: itemID}, nil
 	}
 	if err != nil {
 		return nil, err
@@ -36,13 +41,13 @@ func (s *storeImpl) GetUserItemDatum(ctx context.Context, userID, itemID uuid.UU
 	return &datum, nil
 }
 
-func (s *storeImpl) ListUserItemData(ctx context.Context, userID uuid.UUID, itemIDs []uuid.UUID) (map[uuid.UUID]UserItemDatum, error) {
-	data := make(map[uuid.UUID]UserItemDatum, len(itemIDs))
+func (s *Server) ListUserItemData(ctx context.Context, userID uuid.UUID, itemIDs []uuid.UUID) (map[uuid.UUID]Datum, error) {
+	data := make(map[uuid.UUID]Datum, len(itemIDs))
 	if len(itemIDs) == 0 {
 		return data, nil
 	}
 
-	var rows []UserItemDatum
+	var rows []Datum
 	err := s.db.WithContext(ctx).
 		Where("user_id = ? AND item_id IN ?", userID, itemIDs).
 		Find(&rows).Error
@@ -57,7 +62,7 @@ func (s *storeImpl) ListUserItemData(ctx context.Context, userID uuid.UUID, item
 	return data, nil
 }
 
-func (s *storeImpl) SaveUserItemDatum(ctx context.Context, datum *UserItemDatum) error {
+func (s *Server) SaveUserItemDatum(ctx context.Context, datum *Datum) error {
 	return s.db.WithContext(ctx).Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "user_id"}, {Name: "item_id"}},
 		DoUpdates: clause.AssignmentColumns([]string{

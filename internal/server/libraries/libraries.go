@@ -1,4 +1,4 @@
-package server
+package libraries
 
 import (
 	"context"
@@ -6,11 +6,10 @@ import (
 	"log"
 
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	"github.com/FreekingDean/gojellyfin/internal/store"
 )
 
 func (s *Server) GetVirtualFolders(ctx context.Context, request api.GetVirtualFoldersRequestObject) (api.GetVirtualFoldersResponseObject, error) {
-	libraries, err := s.store.ListLibraries(ctx)
+	libraries, err := s.ListLibraries(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +31,7 @@ func (s *Server) AddVirtualFolder(ctx context.Context, request api.AddVirtualFol
 		return api.AddVirtualFolder403Response{}, nil
 	}
 
-	library := &store.Library{Name: *request.Params.Name}
+	library := &Library{Name: *request.Params.Name}
 	if request.Params.CollectionType != nil {
 		library.CollectionType = string(*request.Params.CollectionType)
 	}
@@ -45,12 +44,12 @@ func (s *Server) AddVirtualFolder(ctx context.Context, request api.AddVirtualFol
 		library.Options = options
 	}
 
-	if err := s.store.CreateLibrary(ctx, library); err != nil {
+	if err := s.CreateLibrary(ctx, library); err != nil {
 		return nil, err
 	}
 
 	for _, path := range deref(request.Params.Paths) {
-		if err := s.store.AddLibraryPath(ctx, library.ID, path); err != nil {
+		if err := s.AddLibraryPath(ctx, library.ID, path); err != nil {
 			return nil, err
 		}
 	}
@@ -64,7 +63,7 @@ func (s *Server) RemoveVirtualFolder(ctx context.Context, request api.RemoveVirt
 		return api.RemoveVirtualFolder204Response{}, nil
 	}
 
-	if err := s.store.DeleteLibrary(ctx, library.ID); err != nil {
+	if err := s.DeleteLibrary(ctx, library.ID); err != nil {
 		return nil, err
 	}
 
@@ -82,7 +81,7 @@ func (s *Server) RenameVirtualFolder(ctx context.Context, request api.RenameVirt
 	}
 
 	library.Name = *request.Params.NewName
-	if err := s.store.UpdateLibrary(ctx, library); err != nil {
+	if err := s.UpdateLibrary(ctx, library); err != nil {
 		return nil, err
 	}
 
@@ -95,7 +94,7 @@ func (s *Server) UpdateLibraryOptions(ctx context.Context, request api.UpdateLib
 		return api.UpdateLibraryOptions404JSONResponse{}, nil
 	}
 
-	library, err := s.store.GetLibrary(ctx, *req.Id)
+	library, err := s.GetLibrary(ctx, *req.Id)
 	if err != nil {
 		return api.UpdateLibraryOptions404JSONResponse{}, nil
 	}
@@ -103,7 +102,7 @@ func (s *Server) UpdateLibraryOptions(ctx context.Context, request api.UpdateLib
 	if library.Options, err = json.Marshal(req.LibraryOptions); err != nil {
 		return nil, err
 	}
-	if err := s.store.UpdateLibrary(ctx, library); err != nil {
+	if err := s.UpdateLibrary(ctx, library); err != nil {
 		return nil, err
 	}
 
@@ -129,7 +128,7 @@ func (s *Server) AddMediaPath(ctx context.Context, request api.AddMediaPathReque
 		return api.AddMediaPath403Response{}, nil
 	}
 
-	if err := s.store.AddLibraryPath(ctx, library.ID, path); err != nil {
+	if err := s.AddLibraryPath(ctx, library.ID, path); err != nil {
 		return nil, err
 	}
 
@@ -142,7 +141,7 @@ func (s *Server) RemoveMediaPath(ctx context.Context, request api.RemoveMediaPat
 		return api.RemoveMediaPath204Response{}, nil
 	}
 
-	if err := s.store.RemoveLibraryPath(ctx, library.ID, deref(request.Params.Path)); err != nil {
+	if err := s.RemoveLibraryPath(ctx, library.ID, deref(request.Params.Path)); err != nil {
 		return nil, err
 	}
 
@@ -172,11 +171,11 @@ func (s *Server) RefreshLibrary(ctx context.Context, request api.RefreshLibraryR
 	return api.RefreshLibrary204Response{}, nil
 }
 
-func (s *Server) libraryByName(ctx context.Context, name *string) (*store.Library, error) {
-	return s.store.GetLibraryByName(ctx, deref(name))
+func (s *Server) libraryByName(ctx context.Context, name *string) (*Library, error) {
+	return s.GetLibraryByName(ctx, deref(name))
 }
 
-func virtualFolderInfo(library *store.Library) (api.VirtualFolderInfo, error) {
+func virtualFolderInfo(library *Library) (api.VirtualFolderInfo, error) {
 	options := defaultLibraryOptions()
 	if len(library.Options) > 0 {
 		if err := json.Unmarshal(library.Options, &options); err != nil {

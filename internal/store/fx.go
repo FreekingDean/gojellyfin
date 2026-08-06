@@ -13,7 +13,6 @@ var Module = fx.Module(
 	"store",
 	fx.Provide(
 		NewDB,
-		New,
 	),
 	fx.Invoke(
 		migrations.Run,
