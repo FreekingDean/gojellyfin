@@ -53,11 +53,16 @@ Routing uses a hand-rolled `internal/http/mux`, not `http.ServeMux`, because Jel
 
 ### Domain services
 
-`internal/{users,items,libraries,config}` each own their gorm models, their queries, and the handlers for every tag that is *about* that domain. They sit beside `internal/server` rather than under it — `internal/server` is only the composition root and the transport edge (`api`, `socket`, `stream`). Packages are keyed on **entities, not tags** — `Item` is touched by nine tags (Items, Image, UserLibrary, Playstate, Videos, Audio, MediaInfo, TvShows, Movies), so a package per tag would either duplicate the queries or make handlers depend on handlers.
+Two groups, split on whether the code knows about the HTTP API:
 
-Queries stay unexported and DTO translation lives beside the handler, so storage never learns about `api` or `middleware` types. A query only becomes exported when another package genuinely needs it (the scanner writing items, `stream` reading them). Because generated operation names occupy the method namespace, storage methods take distinct names — `ItemByID`, not `GetItem`.
+- **`internal/{users,items,libraries,config}` — domains.** gorm models and queries, exposing a `Store` built with `New(db *gorm.DB)`. **A domain package must never import `internal/server/api` or `internal/http/middleware`.** That invariant is what the layout rests on; check it with `grep -rl 'server/api\|http/middleware' internal/<domain>/`, which must come back empty.
+- **`internal/server/<domain>` — handlers.** A `Server` holding the domain `Store`, implementing the generated operations and owning every DTO translation.
 
-Files split by concern (`store.go`, `items.go`, `playback.go`), not by layer. There is no separate "service" type: most operations are translate-and-query, and a forwarding layer would be noise.
+Domains are keyed on **entities, not tags** — `Item` is touched by nine tags (Items, Image, UserLibrary, Playstate, Videos, Audio, MediaInfo, TvShows, Movies), so a package per tag would either duplicate the queries or make handlers depend on handlers. One handler package covers all the tags about its entity.
+
+Because generated operation names occupy the method namespace, domain queries take distinct names — `ItemByID`, not `GetItem`. The domain package name is also easily shadowed by a local (`items []items.Item`); name the local something else.
+
+`internal/server` itself is only the composition root plus the transport edge (`api`, `socket`, `stream`), and imports the handler packages under aliases (`serveritems`) because the short names belong to the domains.
 
 Cross-domain wiring uses interfaces declared by the *consumer* — `middleware.Sessions`, `libraries.Scanner`. Where that would make the object graph cyclic (libraries needs the scanner, the scanner reads libraries), the dependency is set after construction via `fx.Invoke` rather than in the constructor.
 
