@@ -4,10 +4,12 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/activitylog"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/branding"
+	"github.com/FreekingDean/gojellyfin/internal/server/channels"
 	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
 	"github.com/FreekingDean/gojellyfin/internal/server/dashboard"
 	"github.com/FreekingDean/gojellyfin/internal/server/devices"
 	"github.com/FreekingDean/gojellyfin/internal/server/displaypreferences"
+	"github.com/FreekingDean/gojellyfin/internal/server/environment"
 	"github.com/FreekingDean/gojellyfin/internal/server/filter"
 	"github.com/FreekingDean/gojellyfin/internal/server/genres"
 	"github.com/FreekingDean/gojellyfin/internal/server/items"
@@ -55,6 +57,8 @@ type (
 	DevicesServer            = devices.Server
 	ScheduledTasksServer     = scheduledtasks.Server
 	DashboardServer          = dashboard.Server
+	ChannelsServer           = channels.Server
+	EnvironmentServer        = environment.Server
 	ActivityLogServer        = activitylog.Server
 	BrandingServer           = branding.Server
 	ConfigurationServer      = configuration.Server
@@ -88,6 +92,8 @@ type Server struct {
 	*DevicesServer
 	*ScheduledTasksServer
 	*DashboardServer
+	*ChannelsServer
+	*EnvironmentServer
 	*ActivityLogServer
 	*BrandingServer
 	*ConfigurationServer
@@ -123,6 +129,8 @@ func New(
 	devices *devices.Server,
 	scheduledtasks *scheduledtasks.Server,
 	dashboard *dashboard.Server,
+	channels *channels.Server,
+	environment *environment.Server,
 	activityLog *activitylog.Server,
 	branding *branding.Server,
 	configuration *configuration.Server,
@@ -155,6 +163,8 @@ func New(
 		DevicesServer:            devices,
 		ScheduledTasksServer:     scheduledtasks,
 		DashboardServer:          dashboard,
+		ChannelsServer:           channels,
+		EnvironmentServer:        environment,
 		ActivityLogServer:        activityLog,
 		BrandingServer:           branding,
 		ConfigurationServer:      configuration,
