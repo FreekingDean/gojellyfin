@@ -17,13 +17,15 @@ A Go reimplementation of a Jellyfin media server, serving the Jellyfin 10.10.0 H
 ## Commands
 
 ```sh
-go run ./cmd/server                  # run (listens on :8081)
-go build ./...
-go test ./...
+make dev                             # watch and restart (go install github.com/air-verse/air@latest)
+make run                             # run once, no watching
+make build test fmt
+make generate                        # regenerate API from the OpenAPI spec
+make kill                            # free :8081 when a server is orphaned
 go test -run TestName ./internal/... # single test
-go generate ./internal/server/api    # regenerate API from the OpenAPI spec
-air 2>&1 | tee /tmp/gojellyfin.log   # watch and restart (go install github.com/air-verse/air@latest)
 ```
+
+`make dev` and `make run` tee to `/tmp/gojellyfin.log`, so the log is on screen and readable by tooling at the same time.
 
 `go generate` is deliberately not part of the watch loop: it re-emits ~95k lines and only matters when the spec or `internal/server/api/gen` changes.
 
