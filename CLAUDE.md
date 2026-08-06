@@ -53,7 +53,7 @@ Routing uses a hand-rolled `internal/http/mux`, not `http.ServeMux`, because Jel
 
 ### Domain services
 
-`internal/server/{users,items,libraries,config}` each own their gorm models, their queries, and the handlers for every tag that is *about* that domain. Packages are keyed on **entities, not tags** — `Item` is touched by nine tags (Items, Image, UserLibrary, Playstate, Videos, Audio, MediaInfo, TvShows, Movies), so a package per tag would either duplicate the queries or make handlers depend on handlers.
+`internal/{users,items,libraries,config}` each own their gorm models, their queries, and the handlers for every tag that is *about* that domain. They sit beside `internal/server` rather than under it — `internal/server` is only the composition root and the transport edge (`api`, `socket`, `stream`). Packages are keyed on **entities, not tags** — `Item` is touched by nine tags (Items, Image, UserLibrary, Playstate, Videos, Audio, MediaInfo, TvShows, Movies), so a package per tag would either duplicate the queries or make handlers depend on handlers.
 
 Queries stay unexported and DTO translation lives beside the handler, so storage never learns about `api` or `middleware` types. A query only becomes exported when another package genuinely needs it (the scanner writing items, `stream` reading them). Because generated operation names occupy the method namespace, storage methods take distinct names — `ItemByID`, not `GetItem`.
 
