@@ -36,7 +36,6 @@ jobs:
 
       # Generated api code is excluded: it is ~95k lines emitted by oapi-codegen.
       - name: Lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v9
         with:
-          version: v1.64.8
-          args: --timeout 5m ./internal/... ./cmd/...
+          version: v2.12.2

@@ -107,12 +107,10 @@ func (s *Server) itemQuery(ctx context.Context, params api.GetItemsParams) (item
 	}
 
 	if params.ParentId != nil {
-		library, err := s.libraries.GetLibrary(ctx, *params.ParentId)
-		switch {
-		case err == nil:
+		if library, err := s.libraries.GetLibrary(ctx, *params.ParentId); err == nil {
 			query.LibraryID = &library.ID
 			query.TopLevel = !apiutil.Deref(params.Recursive)
-		default:
+		} else {
 			query.ParentID = params.ParentId
 		}
 	}

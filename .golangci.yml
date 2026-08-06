@@ -1,7 +1,12 @@
+version: "2"
+
 run:
   timeout: 5m
 
-issues:
-  exclude-dirs:
-    # Emitted by oapi-codegen and the local gen tool; not ours to lint.
-    - internal/server/api
+linters:
+  exclusions:
+    presets:
+      - std-error-handling
+    paths:
+      # Emitted by oapi-codegen and the local gen tool; not ours to lint.
+      - internal/server/api
