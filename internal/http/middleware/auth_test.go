@@ -29,3 +29,12 @@ func TestTokenFromPrefersTheHeader(t *testing.T) {
 		t.Errorf("TokenFrom = %q, want fromheader", got)
 	}
 }
+
+func TestTokenFromDecodesPercentEncoding(t *testing.T) {
+	r := httptest.NewRequest("GET", "/", nil)
+	r.Header.Set("Authorization", `MediaBrowser Client="Jellyfin%20Web", Token="a%2Bb"`)
+
+	if got := TokenFrom(r); got != "a+b" {
+		t.Errorf("TokenFrom = %q, want %q", got, "a+b")
+	}
+}

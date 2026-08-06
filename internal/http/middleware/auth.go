@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
@@ -69,6 +70,10 @@ func parseAuthorization(r *http.Request) auth.Authorization {
 		}
 
 		value = strings.Trim(strings.TrimSpace(value), `"`)
+		// Clients percent-encode these, so "Jellyfin%20Web" arrives verbatim.
+		if decoded, err := url.QueryUnescape(value); err == nil {
+			value = decoded
+		}
 		switch strings.ToLower(strings.TrimSpace(key)) {
 		case "client":
 			authorization.Client = value

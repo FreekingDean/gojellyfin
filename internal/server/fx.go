@@ -10,8 +10,12 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/scanner"
 	"github.com/FreekingDean/gojellyfin/internal/server/activitylog"
 	"github.com/FreekingDean/gojellyfin/internal/server/branding"
+	"github.com/FreekingDean/gojellyfin/internal/server/channels"
 	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
+	"github.com/FreekingDean/gojellyfin/internal/server/dashboard"
+	"github.com/FreekingDean/gojellyfin/internal/server/devices"
 	"github.com/FreekingDean/gojellyfin/internal/server/displaypreferences"
+	"github.com/FreekingDean/gojellyfin/internal/server/environment"
 	"github.com/FreekingDean/gojellyfin/internal/server/filter"
 	"github.com/FreekingDean/gojellyfin/internal/server/genres"
 	serveritems "github.com/FreekingDean/gojellyfin/internal/server/items"
@@ -25,6 +29,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/playlists"
 	"github.com/FreekingDean/gojellyfin/internal/server/playstate"
 	"github.com/FreekingDean/gojellyfin/internal/server/quickconnect"
+	"github.com/FreekingDean/gojellyfin/internal/server/scheduledtasks"
 	"github.com/FreekingDean/gojellyfin/internal/server/search"
 	"github.com/FreekingDean/gojellyfin/internal/server/session"
 	"github.com/FreekingDean/gojellyfin/internal/server/studios"
@@ -57,6 +62,11 @@ var Module = fx.Module(
 		musicgenres.New,
 		persons.New,
 		activitylog.New,
+		environment.New,
+		channels.New,
+		dashboard.New,
+		scheduledtasks.New,
+		devices.New,
 		tvshows.New,
 		livetv.New,
 		branding.New,
