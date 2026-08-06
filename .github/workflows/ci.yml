@@ -29,6 +29,7 @@ jobs:
       - name: Test
         run: go test -race ./...
 
+      # Generated api code is excluded: it is ~95k lines emitted by oapi-codegen.
       - name: Lint
         uses: golangci/golangci-lint-action@v9
         with:
