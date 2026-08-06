@@ -75,6 +75,8 @@ func Register(s *Server, apiServer *server.Server, sock *socket.Socket, streams 
 	for _, pattern := range streamRoutes {
 		m.HandleFunc(pattern, streams.Serve)
 	}
+
+	registerLegacyRoutes(m)
 	finalHandler := api.HandlerFromMux(h, m)
 	for _, mw := range s.httpMiddleware {
 		finalHandler = mw(finalHandler)
