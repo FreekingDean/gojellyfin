@@ -7,8 +7,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
-// Only the built-in provider exists; these names are what the dashboard shows
-// against a user, and must match what DefaultPolicy reports.
 func (s *Server) GetAuthProviders(ctx context.Context, request api.GetAuthProvidersRequestObject) (api.GetAuthProvidersResponseObject, error) {
 	return api.GetAuthProviders200JSONResponse([]api.NameIdPair{{
 		Name: apiutil.Ptr("Default"),

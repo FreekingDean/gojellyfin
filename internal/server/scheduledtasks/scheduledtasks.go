@@ -6,8 +6,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 )
 
-// There is no task scheduler: the library scan runs at startup and on
-// /Library/Refresh, so nothing is schedulable yet.
 type Server struct{}
 
 func New() *Server {

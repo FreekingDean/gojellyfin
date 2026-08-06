@@ -30,11 +30,11 @@ func TestTokenFromPrefersTheHeader(t *testing.T) {
 	}
 }
 
-func TestParseAuthorizationDecodesValues(t *testing.T) {
+func TestTokenFromDecodesPercentEncoding(t *testing.T) {
 	r := httptest.NewRequest("GET", "/", nil)
-	r.Header.Set("Authorization", `MediaBrowser Client="Jellyfin%20Web", Device="Chrome", Token="abc"`)
+	r.Header.Set("Authorization", `MediaBrowser Client="Jellyfin%20Web", Token="a%2Bb"`)
 
-	if got := parseAuthorization(r).Client; got != "Jellyfin Web" {
-		t.Errorf("Client = %q, want %q", got, "Jellyfin Web")
+	if got := TokenFrom(r); got != "a+b" {
+		t.Errorf("TokenFrom = %q, want %q", got, "a+b")
 	}
 }

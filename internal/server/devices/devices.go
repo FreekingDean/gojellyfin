@@ -18,7 +18,6 @@ func New(auth *auth.Service, users *users.Service) *Server {
 	return &Server{auth: auth, users: users}
 }
 
-// Devices are derived from sessions: a device is whatever has authenticated.
 func (s *Server) GetDevices(ctx context.Context, request api.GetDevicesRequestObject) (api.GetDevicesResponseObject, error) {
 	sessions, err := s.auth.Devices(ctx)
 	if err != nil {

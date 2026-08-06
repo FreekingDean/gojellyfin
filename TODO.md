@@ -8,3 +8,4 @@ Refactors and cleanups deferred out of a change. One line each.
 - The remaining stub handlers in `internal/server/handlers.go` (DisplayPreferences, QuickConnect, SyncPlay, bitrate test) have no domain yet.
 - Authorization is declarative in the spec (`security: [{CustomAuthentication: ["RequiresElevation"]}]`, 15 policies over 62+ operations). Generate the operation-to-policy map like `PublicOperations` and enforce it in the middleware rather than checking `IsAdministrator` per handler.
 - Data-scoped authorization (blocked folders, parental ratings) belongs in the domain queries, not the edge.
+- Sessions live in Postgres; they are short-lived and read on every request, so a cache like Redis is a better fit.
