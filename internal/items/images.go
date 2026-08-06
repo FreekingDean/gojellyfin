@@ -10,9 +10,9 @@ import (
 
 type ItemImage struct {
 	ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid()"`
-	ItemID    uuid.UUID `gorm:"type:uuid;index;uniqueIndex:idx_item_images_item_type_index"`
-	Type      string    `gorm:"uniqueIndex:idx_item_images_item_type_index"`
-	Index     int32     `gorm:"uniqueIndex:idx_item_images_item_type_index"`
+	ItemID    uuid.UUID `gorm:"type:uuid"`
+	Type      string
+	Index     int32
 	Path      string
 	Tag       string
 	Width     int32
@@ -48,7 +48,8 @@ func (s *Service) Images(ctx context.Context, itemID uuid.UUID) ([]ItemImage, er
 func (s *Service) Image(ctx context.Context, itemID uuid.UUID, imageType string, index int32) (*ItemImage, error) {
 	var image ItemImage
 	err := s.db.WithContext(ctx).
-		First(&image, "item_id = ? AND type = ? AND index = ?", itemID, imageType, index).Error
+		Where(map[string]any{"item_id": itemID, "type": imageType, "index": index}).
+		First(&image).Error
 	if err != nil {
 		return nil, err
 	}
@@ -56,9 +57,7 @@ func (s *Service) Image(ctx context.Context, itemID uuid.UUID, imageType string,
 	return &image, nil
 }
 
-// ImageTags is the {type: tag} map every item DTO carries, for whole result
-// sets at once.
-func (s *Service) ImageTags(ctx context.Context, itemIDs []uuid.UUID) (map[uuid.UUID]map[string]string, error) {
+func (s *Service) ImageTagsByItem(ctx context.Context, itemIDs []uuid.UUID) (map[uuid.UUID]map[string]string, error) {
 	tags := map[uuid.UUID]map[string]string{}
 	if len(itemIDs) == 0 {
 		return tags, nil
@@ -66,7 +65,8 @@ func (s *Service) ImageTags(ctx context.Context, itemIDs []uuid.UUID) (map[uuid.
 
 	var images []ItemImage
 	err := s.db.WithContext(ctx).
-		Where("item_id IN ? AND index = 0", itemIDs).
+		Where("item_id IN ?", itemIDs).
+		Where(map[string]any{"index": 0}).
 		Find(&images).Error
 	if err != nil {
 		return nil, err

@@ -85,7 +85,7 @@ func ItemDtos(ctx context.Context, store *items.Service, records []items.Item) (
 		return nil, err
 	}
 
-	imageTags, err := store.ImageTags(ctx, itemIDs)
+	imageTags, err := store.ImageTagsByItem(ctx, itemIDs)
 	if err != nil {
 		return nil, err
 	}

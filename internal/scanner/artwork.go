@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	// Registers the decoders image.DecodeConfig needs to read artwork
+	// dimensions; without them every image reports 0x0.
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
