@@ -6,20 +6,27 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/branding"
 	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
 	"github.com/FreekingDean/gojellyfin/internal/server/displaypreferences"
+	"github.com/FreekingDean/gojellyfin/internal/server/filter"
+	"github.com/FreekingDean/gojellyfin/internal/server/genres"
 	"github.com/FreekingDean/gojellyfin/internal/server/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/library"
 	"github.com/FreekingDean/gojellyfin/internal/server/librarystructure"
 	"github.com/FreekingDean/gojellyfin/internal/server/localization"
 	"github.com/FreekingDean/gojellyfin/internal/server/mediainfo"
+	"github.com/FreekingDean/gojellyfin/internal/server/musicgenres"
+	"github.com/FreekingDean/gojellyfin/internal/server/persons"
 	"github.com/FreekingDean/gojellyfin/internal/server/playlists"
 	"github.com/FreekingDean/gojellyfin/internal/server/playstate"
 	"github.com/FreekingDean/gojellyfin/internal/server/quickconnect"
+	"github.com/FreekingDean/gojellyfin/internal/server/search"
 	"github.com/FreekingDean/gojellyfin/internal/server/session"
+	"github.com/FreekingDean/gojellyfin/internal/server/studios"
 	"github.com/FreekingDean/gojellyfin/internal/server/syncplay"
 	"github.com/FreekingDean/gojellyfin/internal/server/system"
 	"github.com/FreekingDean/gojellyfin/internal/server/user"
 	"github.com/FreekingDean/gojellyfin/internal/server/userlibrary"
 	"github.com/FreekingDean/gojellyfin/internal/server/userviews"
+	"github.com/FreekingDean/gojellyfin/internal/server/years"
 )
 
 // Tag services sit one level shallower than the fallback, so a registered
@@ -31,6 +38,13 @@ type nestedUnimplemented struct {
 // Embedded field names are type names, so every tag service comes in under an
 // alias to keep them distinct.
 type (
+	FilterServer             = filter.Server
+	YearsServer              = years.Server
+	SearchServer             = search.Server
+	StudiosServer            = studios.Server
+	GenresServer             = genres.Server
+	MusicGenresServer        = musicgenres.Server
+	PersonsServer            = persons.Server
 	ActivityLogServer        = activitylog.Server
 	BrandingServer           = branding.Server
 	ConfigurationServer      = configuration.Server
@@ -52,6 +66,13 @@ type (
 )
 
 type Server struct {
+	*FilterServer
+	*YearsServer
+	*SearchServer
+	*StudiosServer
+	*GenresServer
+	*MusicGenresServer
+	*PersonsServer
 	*ActivityLogServer
 	*BrandingServer
 	*ConfigurationServer
@@ -75,6 +96,13 @@ type Server struct {
 }
 
 func New(
+	filter *filter.Server,
+	years *years.Server,
+	search *search.Server,
+	studios *studios.Server,
+	genres *genres.Server,
+	musicgenres *musicgenres.Server,
+	persons *persons.Server,
 	activityLog *activitylog.Server,
 	branding *branding.Server,
 	configuration *configuration.Server,
@@ -95,6 +123,13 @@ func New(
 	userViews *userviews.Server,
 ) *Server {
 	return &Server{
+		FilterServer:             filter,
+		YearsServer:              years,
+		SearchServer:             search,
+		StudiosServer:            studios,
+		GenresServer:             genres,
+		MusicGenresServer:        musicgenres,
+		PersonsServer:            persons,
 		ActivityLogServer:        activityLog,
 		BrandingServer:           branding,
 		ConfigurationServer:      configuration,

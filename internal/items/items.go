@@ -217,3 +217,21 @@ func (s *Service) DeleteItemsNotInPaths(ctx context.Context, libraryID uuid.UUID
 
 	return query.Delete(&Item{}).Error
 }
+
+func (s *Service) DistinctYears(ctx context.Context, libraryID *uuid.UUID, types []string) ([]int32, error) {
+	db := s.db.WithContext(ctx).Model(&Item{}).
+		Where("production_year IS NOT NULL")
+	if libraryID != nil {
+		db = db.Where("library_id = ?", *libraryID)
+	}
+	if len(types) > 0 {
+		db = db.Where("type IN ?", types)
+	}
+
+	var years []int32
+	if err := db.Distinct().Order("production_year").Pluck("production_year", &years).Error; err != nil {
+		return nil, err
+	}
+
+	return years, nil
+}
