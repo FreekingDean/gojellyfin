@@ -57,7 +57,7 @@ func (s *Socket) Handle(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	// Gorilla allows one concurrent writer, so replies are funnelled to the
 	// write loop below rather than sent from the reader.
