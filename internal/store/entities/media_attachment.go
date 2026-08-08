@@ -4,6 +4,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 type MediaAttachment struct {
@@ -24,5 +25,11 @@ func (MediaAttachment) Fields() []ent.Field {
 func (MediaAttachment) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("source", MediaSource.Type).Ref("attachments").Unique().Required(),
+	}
+}
+
+func (MediaAttachment) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("index").Edges("source").Unique(),
 	}
 }

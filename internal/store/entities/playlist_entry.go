@@ -4,6 +4,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 type PlaylistEntry struct {
@@ -20,5 +21,11 @@ func (PlaylistEntry) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("playlist", Playlist.Type).Ref("entries").Unique().Required(),
 		edge.From("item", Item.Type).Ref("playlist_entries").Unique().Required(),
+	}
+}
+
+func (PlaylistEntry) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("sort_order").Edges("playlist"),
 	}
 }

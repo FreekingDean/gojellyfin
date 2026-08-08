@@ -4,6 +4,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 type MediaStream struct {
@@ -79,5 +80,11 @@ func (MediaStream) Fields() []ent.Field {
 func (MediaStream) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("source", MediaSource.Type).Ref("streams").Unique().Required(),
+	}
+}
+
+func (MediaStream) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("index").Edges("source").Unique(),
 	}
 }

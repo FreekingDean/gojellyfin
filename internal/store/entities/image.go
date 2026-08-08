@@ -4,6 +4,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 type Image struct {
@@ -28,5 +29,11 @@ func (Image) Fields() []ent.Field {
 func (Image) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("item", Item.Type).Ref("images").Unique().Required(),
+	}
+}
+
+func (Image) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("kind", "index").Edges("item").Unique(),
 	}
 }

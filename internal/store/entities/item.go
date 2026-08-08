@@ -4,6 +4,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 type ExternalUrl struct {
@@ -112,5 +113,12 @@ func (Item) Edges() []ent.Edge {
 		edge.To("playlist_entries", PlaylistEntry.Type),
 		edge.To("genres", Genre.Type),
 		edge.To("studios", Studio.Type),
+	}
+}
+
+func (Item) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("path"),
+		index.Fields("kind", "sort_name"),
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 type DisplayPreferences struct {
@@ -32,5 +33,11 @@ func (DisplayPreferences) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("user", User.Type).Ref("display_preferences").Unique().Required(),
 		edge.From("item", Item.Type).Ref("display_preferences").Unique(),
+	}
+}
+
+func (DisplayPreferences) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("client").Edges("user", "item").Unique(),
 	}
 }
