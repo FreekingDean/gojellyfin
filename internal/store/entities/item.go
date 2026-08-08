@@ -101,5 +101,7 @@ func (Item) Edges() []ent.Edge {
 		edge.From("library", Library.Type).Ref("items").Unique(),
 		edge.To("media_sources", MediaSource.Type),
 		edge.To("credits", Credit.Type),
+		edge.To("genres", Genre.Type),
+		edge.To("studios", Studio.Type),
 	}
 }
