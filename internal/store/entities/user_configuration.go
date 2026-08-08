@@ -4,6 +4,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 )
 
 type UserConfiguration struct {
@@ -11,27 +12,27 @@ type UserConfiguration struct {
 }
 
 func (UserConfiguration) Fields() []ent.Field {
-	languages := []string{"English", "Spanish"}
 	return withDefaultFields(
-		field.String("cast_receiver_id"),
+		field.String("cast_receiver_id").Optional(),
 
-		field.Enum("audio_language_preference").Values(languages...),
+		field.String("audio_language_preference").Optional(),
+		field.String("subtitle_language_preference").Optional(),
 		field.Bool("play_default_audio_track"),
-		field.Enum("subtitle_language_preference").Values(languages...),
 		field.Enum("subtitle_mode").Values(
 			"Default", "Always", "OnlyForced", "None", "Smart",
 		),
 
-		field.JSON("gropued_folders", []string{}),
-		field.JSON("ordered_views", []string{}),
-		field.JSON("latest_items_excludes", []string{}),
-		field.JSON("my_media_excludes", []string{}),
+		field.JSON("grouped_folders", []uuid.UUID{}).Optional(),
+		field.JSON("ordered_views", []uuid.UUID{}).Optional(),
+		field.JSON("latest_items_excludes", []uuid.UUID{}).Optional(),
+		field.JSON("my_media_excludes", []uuid.UUID{}).Optional(),
 
 		field.Bool("display_missing_episodes"),
 		field.Bool("display_collections_view"),
-		field.Bool("enabled_local_password"),
+		field.Bool("enable_local_password"),
 		field.Bool("hide_played_in_latest"),
 		field.Bool("remember_audio_selections"),
+		field.Bool("remember_subtitle_selections"),
 		field.Bool("enable_next_episode_auto_play"),
 	)
 }
