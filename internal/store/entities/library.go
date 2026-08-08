@@ -24,5 +24,6 @@ func (Library) Fields() []ent.Field {
 func (Library) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("options", LibraryOptions.Type).Unique(),
+		edge.To("items", Item.Type),
 	}
 }
