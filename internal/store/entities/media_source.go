@@ -57,5 +57,6 @@ func (MediaSource) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("item", Item.Type).Ref("media_sources").Unique().Required(),
 		edge.To("streams", MediaStream.Type),
+		edge.To("attachments", MediaAttachment.Type),
 	}
 }
