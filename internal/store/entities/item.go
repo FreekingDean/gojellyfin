@@ -104,6 +104,7 @@ func (Item) Edges() []ent.Edge {
 		edge.To("chapters", Chapter.Type),
 		edge.To("images", Image.Type),
 		edge.To("user_data", UserItemData.Type),
+		edge.To("display_preferences", DisplayPreferences.Type),
 		edge.To("genres", Genre.Type),
 		edge.To("studios", Studio.Type),
 	}
