@@ -24,5 +24,6 @@ func (User) Edges() []ent.Edge {
 		edge.To("configuration", UserConfiguration.Type),
 		edge.To("policy", UserPolicy.Type),
 		edge.To("sessions", Session.Type),
+		edge.To("item_data", UserItemData.Type),
 	}
 }
