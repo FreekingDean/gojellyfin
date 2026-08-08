@@ -26,5 +26,6 @@ func (User) Edges() []ent.Edge {
 		edge.To("sessions", Session.Type),
 		edge.To("item_data", UserItemData.Type),
 		edge.To("display_preferences", DisplayPreferences.Type),
+		edge.To("activity_log_entries", ActivityLogEntry.Type),
 	}
 }
