@@ -102,6 +102,7 @@ func (Item) Edges() []ent.Edge {
 		edge.To("media_sources", MediaSource.Type),
 		edge.To("credits", Credit.Type),
 		edge.To("chapters", Chapter.Type),
+		edge.To("images", Image.Type),
 		edge.To("genres", Genre.Type),
 		edge.To("studios", Studio.Type),
 	}
