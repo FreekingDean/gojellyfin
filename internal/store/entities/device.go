@@ -2,6 +2,7 @@ package entities
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
 
@@ -27,4 +28,10 @@ func (Device) Fields() []ent.Field {
 
 		field.Time("last_activity_at").Optional(),
 	)
+}
+
+func (Device) Edges() []ent.Edge {
+	return []ent.Edge{
+		edge.To("sessions", Session.Type),
+	}
 }
