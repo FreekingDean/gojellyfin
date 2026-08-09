@@ -71,6 +71,16 @@ func CastReceiverID(v string) predicate.UserConfiguration {
 	return predicate.UserConfiguration(sql.FieldEQ(FieldCastReceiverID, v))
 }
 
+// AudioLanguagePreference applies equality check predicate on the "audio_language_preference" field. It's identical to AudioLanguagePreferenceEQ.
+func AudioLanguagePreference(v string) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldEQ(FieldAudioLanguagePreference, v))
+}
+
+// SubtitleLanguagePreference applies equality check predicate on the "subtitle_language_preference" field. It's identical to SubtitleLanguagePreferenceEQ.
+func SubtitleLanguagePreference(v string) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldEQ(FieldSubtitleLanguagePreference, v))
+}
+
 // PlayDefaultAudioTrack applies equality check predicate on the "play_default_audio_track" field. It's identical to PlayDefaultAudioTrackEQ.
 func PlayDefaultAudioTrack(v bool) predicate.UserConfiguration {
 	return predicate.UserConfiguration(sql.FieldEQ(FieldPlayDefaultAudioTrack, v))
@@ -86,9 +96,9 @@ func DisplayCollectionsView(v bool) predicate.UserConfiguration {
 	return predicate.UserConfiguration(sql.FieldEQ(FieldDisplayCollectionsView, v))
 }
 
-// EnabledLocalPassword applies equality check predicate on the "enabled_local_password" field. It's identical to EnabledLocalPasswordEQ.
-func EnabledLocalPassword(v bool) predicate.UserConfiguration {
-	return predicate.UserConfiguration(sql.FieldEQ(FieldEnabledLocalPassword, v))
+// EnableLocalPassword applies equality check predicate on the "enable_local_password" field. It's identical to EnableLocalPasswordEQ.
+func EnableLocalPassword(v bool) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldEQ(FieldEnableLocalPassword, v))
 }
 
 // HidePlayedInLatest applies equality check predicate on the "hide_played_in_latest" field. It's identical to HidePlayedInLatestEQ.
@@ -99,6 +109,11 @@ func HidePlayedInLatest(v bool) predicate.UserConfiguration {
 // RememberAudioSelections applies equality check predicate on the "remember_audio_selections" field. It's identical to RememberAudioSelectionsEQ.
 func RememberAudioSelections(v bool) predicate.UserConfiguration {
 	return predicate.UserConfiguration(sql.FieldEQ(FieldRememberAudioSelections, v))
+}
+
+// RememberSubtitleSelections applies equality check predicate on the "remember_subtitle_selections" field. It's identical to RememberSubtitleSelectionsEQ.
+func RememberSubtitleSelections(v bool) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldEQ(FieldRememberSubtitleSelections, v))
 }
 
 // EnableNextEpisodeAutoPlay applies equality check predicate on the "enable_next_episode_auto_play" field. It's identical to EnableNextEpisodeAutoPlayEQ.
@@ -241,6 +256,16 @@ func CastReceiverIDHasSuffix(v string) predicate.UserConfiguration {
 	return predicate.UserConfiguration(sql.FieldHasSuffix(FieldCastReceiverID, v))
 }
 
+// CastReceiverIDIsNil applies the IsNil predicate on the "cast_receiver_id" field.
+func CastReceiverIDIsNil() predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldIsNull(FieldCastReceiverID))
+}
+
+// CastReceiverIDNotNil applies the NotNil predicate on the "cast_receiver_id" field.
+func CastReceiverIDNotNil() predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldNotNull(FieldCastReceiverID))
+}
+
 // CastReceiverIDEqualFold applies the EqualFold predicate on the "cast_receiver_id" field.
 func CastReceiverIDEqualFold(v string) predicate.UserConfiguration {
 	return predicate.UserConfiguration(sql.FieldEqualFold(FieldCastReceiverID, v))
@@ -252,23 +277,153 @@ func CastReceiverIDContainsFold(v string) predicate.UserConfiguration {
 }
 
 // AudioLanguagePreferenceEQ applies the EQ predicate on the "audio_language_preference" field.
-func AudioLanguagePreferenceEQ(v AudioLanguagePreference) predicate.UserConfiguration {
+func AudioLanguagePreferenceEQ(v string) predicate.UserConfiguration {
 	return predicate.UserConfiguration(sql.FieldEQ(FieldAudioLanguagePreference, v))
 }
 
 // AudioLanguagePreferenceNEQ applies the NEQ predicate on the "audio_language_preference" field.
-func AudioLanguagePreferenceNEQ(v AudioLanguagePreference) predicate.UserConfiguration {
+func AudioLanguagePreferenceNEQ(v string) predicate.UserConfiguration {
 	return predicate.UserConfiguration(sql.FieldNEQ(FieldAudioLanguagePreference, v))
 }
 
 // AudioLanguagePreferenceIn applies the In predicate on the "audio_language_preference" field.
-func AudioLanguagePreferenceIn(vs ...AudioLanguagePreference) predicate.UserConfiguration {
+func AudioLanguagePreferenceIn(vs ...string) predicate.UserConfiguration {
 	return predicate.UserConfiguration(sql.FieldIn(FieldAudioLanguagePreference, vs...))
 }
 
 // AudioLanguagePreferenceNotIn applies the NotIn predicate on the "audio_language_preference" field.
-func AudioLanguagePreferenceNotIn(vs ...AudioLanguagePreference) predicate.UserConfiguration {
+func AudioLanguagePreferenceNotIn(vs ...string) predicate.UserConfiguration {
 	return predicate.UserConfiguration(sql.FieldNotIn(FieldAudioLanguagePreference, vs...))
+}
+
+// AudioLanguagePreferenceGT applies the GT predicate on the "audio_language_preference" field.
+func AudioLanguagePreferenceGT(v string) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldGT(FieldAudioLanguagePreference, v))
+}
+
+// AudioLanguagePreferenceGTE applies the GTE predicate on the "audio_language_preference" field.
+func AudioLanguagePreferenceGTE(v string) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldGTE(FieldAudioLanguagePreference, v))
+}
+
+// AudioLanguagePreferenceLT applies the LT predicate on the "audio_language_preference" field.
+func AudioLanguagePreferenceLT(v string) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldLT(FieldAudioLanguagePreference, v))
+}
+
+// AudioLanguagePreferenceLTE applies the LTE predicate on the "audio_language_preference" field.
+func AudioLanguagePreferenceLTE(v string) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldLTE(FieldAudioLanguagePreference, v))
+}
+
+// AudioLanguagePreferenceContains applies the Contains predicate on the "audio_language_preference" field.
+func AudioLanguagePreferenceContains(v string) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldContains(FieldAudioLanguagePreference, v))
+}
+
+// AudioLanguagePreferenceHasPrefix applies the HasPrefix predicate on the "audio_language_preference" field.
+func AudioLanguagePreferenceHasPrefix(v string) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldHasPrefix(FieldAudioLanguagePreference, v))
+}
+
+// AudioLanguagePreferenceHasSuffix applies the HasSuffix predicate on the "audio_language_preference" field.
+func AudioLanguagePreferenceHasSuffix(v string) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldHasSuffix(FieldAudioLanguagePreference, v))
+}
+
+// AudioLanguagePreferenceIsNil applies the IsNil predicate on the "audio_language_preference" field.
+func AudioLanguagePreferenceIsNil() predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldIsNull(FieldAudioLanguagePreference))
+}
+
+// AudioLanguagePreferenceNotNil applies the NotNil predicate on the "audio_language_preference" field.
+func AudioLanguagePreferenceNotNil() predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldNotNull(FieldAudioLanguagePreference))
+}
+
+// AudioLanguagePreferenceEqualFold applies the EqualFold predicate on the "audio_language_preference" field.
+func AudioLanguagePreferenceEqualFold(v string) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldEqualFold(FieldAudioLanguagePreference, v))
+}
+
+// AudioLanguagePreferenceContainsFold applies the ContainsFold predicate on the "audio_language_preference" field.
+func AudioLanguagePreferenceContainsFold(v string) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldContainsFold(FieldAudioLanguagePreference, v))
+}
+
+// SubtitleLanguagePreferenceEQ applies the EQ predicate on the "subtitle_language_preference" field.
+func SubtitleLanguagePreferenceEQ(v string) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldEQ(FieldSubtitleLanguagePreference, v))
+}
+
+// SubtitleLanguagePreferenceNEQ applies the NEQ predicate on the "subtitle_language_preference" field.
+func SubtitleLanguagePreferenceNEQ(v string) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldNEQ(FieldSubtitleLanguagePreference, v))
+}
+
+// SubtitleLanguagePreferenceIn applies the In predicate on the "subtitle_language_preference" field.
+func SubtitleLanguagePreferenceIn(vs ...string) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldIn(FieldSubtitleLanguagePreference, vs...))
+}
+
+// SubtitleLanguagePreferenceNotIn applies the NotIn predicate on the "subtitle_language_preference" field.
+func SubtitleLanguagePreferenceNotIn(vs ...string) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldNotIn(FieldSubtitleLanguagePreference, vs...))
+}
+
+// SubtitleLanguagePreferenceGT applies the GT predicate on the "subtitle_language_preference" field.
+func SubtitleLanguagePreferenceGT(v string) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldGT(FieldSubtitleLanguagePreference, v))
+}
+
+// SubtitleLanguagePreferenceGTE applies the GTE predicate on the "subtitle_language_preference" field.
+func SubtitleLanguagePreferenceGTE(v string) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldGTE(FieldSubtitleLanguagePreference, v))
+}
+
+// SubtitleLanguagePreferenceLT applies the LT predicate on the "subtitle_language_preference" field.
+func SubtitleLanguagePreferenceLT(v string) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldLT(FieldSubtitleLanguagePreference, v))
+}
+
+// SubtitleLanguagePreferenceLTE applies the LTE predicate on the "subtitle_language_preference" field.
+func SubtitleLanguagePreferenceLTE(v string) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldLTE(FieldSubtitleLanguagePreference, v))
+}
+
+// SubtitleLanguagePreferenceContains applies the Contains predicate on the "subtitle_language_preference" field.
+func SubtitleLanguagePreferenceContains(v string) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldContains(FieldSubtitleLanguagePreference, v))
+}
+
+// SubtitleLanguagePreferenceHasPrefix applies the HasPrefix predicate on the "subtitle_language_preference" field.
+func SubtitleLanguagePreferenceHasPrefix(v string) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldHasPrefix(FieldSubtitleLanguagePreference, v))
+}
+
+// SubtitleLanguagePreferenceHasSuffix applies the HasSuffix predicate on the "subtitle_language_preference" field.
+func SubtitleLanguagePreferenceHasSuffix(v string) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldHasSuffix(FieldSubtitleLanguagePreference, v))
+}
+
+// SubtitleLanguagePreferenceIsNil applies the IsNil predicate on the "subtitle_language_preference" field.
+func SubtitleLanguagePreferenceIsNil() predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldIsNull(FieldSubtitleLanguagePreference))
+}
+
+// SubtitleLanguagePreferenceNotNil applies the NotNil predicate on the "subtitle_language_preference" field.
+func SubtitleLanguagePreferenceNotNil() predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldNotNull(FieldSubtitleLanguagePreference))
+}
+
+// SubtitleLanguagePreferenceEqualFold applies the EqualFold predicate on the "subtitle_language_preference" field.
+func SubtitleLanguagePreferenceEqualFold(v string) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldEqualFold(FieldSubtitleLanguagePreference, v))
+}
+
+// SubtitleLanguagePreferenceContainsFold applies the ContainsFold predicate on the "subtitle_language_preference" field.
+func SubtitleLanguagePreferenceContainsFold(v string) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldContainsFold(FieldSubtitleLanguagePreference, v))
 }
 
 // PlayDefaultAudioTrackEQ applies the EQ predicate on the "play_default_audio_track" field.
@@ -279,26 +434,6 @@ func PlayDefaultAudioTrackEQ(v bool) predicate.UserConfiguration {
 // PlayDefaultAudioTrackNEQ applies the NEQ predicate on the "play_default_audio_track" field.
 func PlayDefaultAudioTrackNEQ(v bool) predicate.UserConfiguration {
 	return predicate.UserConfiguration(sql.FieldNEQ(FieldPlayDefaultAudioTrack, v))
-}
-
-// SubtitleLanguagePreferenceEQ applies the EQ predicate on the "subtitle_language_preference" field.
-func SubtitleLanguagePreferenceEQ(v SubtitleLanguagePreference) predicate.UserConfiguration {
-	return predicate.UserConfiguration(sql.FieldEQ(FieldSubtitleLanguagePreference, v))
-}
-
-// SubtitleLanguagePreferenceNEQ applies the NEQ predicate on the "subtitle_language_preference" field.
-func SubtitleLanguagePreferenceNEQ(v SubtitleLanguagePreference) predicate.UserConfiguration {
-	return predicate.UserConfiguration(sql.FieldNEQ(FieldSubtitleLanguagePreference, v))
-}
-
-// SubtitleLanguagePreferenceIn applies the In predicate on the "subtitle_language_preference" field.
-func SubtitleLanguagePreferenceIn(vs ...SubtitleLanguagePreference) predicate.UserConfiguration {
-	return predicate.UserConfiguration(sql.FieldIn(FieldSubtitleLanguagePreference, vs...))
-}
-
-// SubtitleLanguagePreferenceNotIn applies the NotIn predicate on the "subtitle_language_preference" field.
-func SubtitleLanguagePreferenceNotIn(vs ...SubtitleLanguagePreference) predicate.UserConfiguration {
-	return predicate.UserConfiguration(sql.FieldNotIn(FieldSubtitleLanguagePreference, vs...))
 }
 
 // SubtitleModeEQ applies the EQ predicate on the "subtitle_mode" field.
@@ -321,6 +456,46 @@ func SubtitleModeNotIn(vs ...SubtitleMode) predicate.UserConfiguration {
 	return predicate.UserConfiguration(sql.FieldNotIn(FieldSubtitleMode, vs...))
 }
 
+// GroupedFoldersIsNil applies the IsNil predicate on the "grouped_folders" field.
+func GroupedFoldersIsNil() predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldIsNull(FieldGroupedFolders))
+}
+
+// GroupedFoldersNotNil applies the NotNil predicate on the "grouped_folders" field.
+func GroupedFoldersNotNil() predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldNotNull(FieldGroupedFolders))
+}
+
+// OrderedViewsIsNil applies the IsNil predicate on the "ordered_views" field.
+func OrderedViewsIsNil() predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldIsNull(FieldOrderedViews))
+}
+
+// OrderedViewsNotNil applies the NotNil predicate on the "ordered_views" field.
+func OrderedViewsNotNil() predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldNotNull(FieldOrderedViews))
+}
+
+// LatestItemsExcludesIsNil applies the IsNil predicate on the "latest_items_excludes" field.
+func LatestItemsExcludesIsNil() predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldIsNull(FieldLatestItemsExcludes))
+}
+
+// LatestItemsExcludesNotNil applies the NotNil predicate on the "latest_items_excludes" field.
+func LatestItemsExcludesNotNil() predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldNotNull(FieldLatestItemsExcludes))
+}
+
+// MyMediaExcludesIsNil applies the IsNil predicate on the "my_media_excludes" field.
+func MyMediaExcludesIsNil() predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldIsNull(FieldMyMediaExcludes))
+}
+
+// MyMediaExcludesNotNil applies the NotNil predicate on the "my_media_excludes" field.
+func MyMediaExcludesNotNil() predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldNotNull(FieldMyMediaExcludes))
+}
+
 // DisplayMissingEpisodesEQ applies the EQ predicate on the "display_missing_episodes" field.
 func DisplayMissingEpisodesEQ(v bool) predicate.UserConfiguration {
 	return predicate.UserConfiguration(sql.FieldEQ(FieldDisplayMissingEpisodes, v))
@@ -341,14 +516,14 @@ func DisplayCollectionsViewNEQ(v bool) predicate.UserConfiguration {
 	return predicate.UserConfiguration(sql.FieldNEQ(FieldDisplayCollectionsView, v))
 }
 
-// EnabledLocalPasswordEQ applies the EQ predicate on the "enabled_local_password" field.
-func EnabledLocalPasswordEQ(v bool) predicate.UserConfiguration {
-	return predicate.UserConfiguration(sql.FieldEQ(FieldEnabledLocalPassword, v))
+// EnableLocalPasswordEQ applies the EQ predicate on the "enable_local_password" field.
+func EnableLocalPasswordEQ(v bool) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldEQ(FieldEnableLocalPassword, v))
 }
 
-// EnabledLocalPasswordNEQ applies the NEQ predicate on the "enabled_local_password" field.
-func EnabledLocalPasswordNEQ(v bool) predicate.UserConfiguration {
-	return predicate.UserConfiguration(sql.FieldNEQ(FieldEnabledLocalPassword, v))
+// EnableLocalPasswordNEQ applies the NEQ predicate on the "enable_local_password" field.
+func EnableLocalPasswordNEQ(v bool) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldNEQ(FieldEnableLocalPassword, v))
 }
 
 // HidePlayedInLatestEQ applies the EQ predicate on the "hide_played_in_latest" field.
@@ -369,6 +544,16 @@ func RememberAudioSelectionsEQ(v bool) predicate.UserConfiguration {
 // RememberAudioSelectionsNEQ applies the NEQ predicate on the "remember_audio_selections" field.
 func RememberAudioSelectionsNEQ(v bool) predicate.UserConfiguration {
 	return predicate.UserConfiguration(sql.FieldNEQ(FieldRememberAudioSelections, v))
+}
+
+// RememberSubtitleSelectionsEQ applies the EQ predicate on the "remember_subtitle_selections" field.
+func RememberSubtitleSelectionsEQ(v bool) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldEQ(FieldRememberSubtitleSelections, v))
+}
+
+// RememberSubtitleSelectionsNEQ applies the NEQ predicate on the "remember_subtitle_selections" field.
+func RememberSubtitleSelectionsNEQ(v bool) predicate.UserConfiguration {
+	return predicate.UserConfiguration(sql.FieldNEQ(FieldRememberSubtitleSelections, v))
 }
 
 // EnableNextEpisodeAutoPlayEQ applies the EQ predicate on the "enable_next_episode_auto_play" field.
