@@ -1,0 +1,10 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  exclusions:
+    paths:
+      # Emitted by oapi-codegen and the local gen tool; not ours to lint.
+      - internal/server/api

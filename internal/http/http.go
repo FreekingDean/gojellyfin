@@ -108,5 +108,4 @@ func (s *Server) Shutdown(ctx context.Context) {
 	if err := s.s.Shutdown(ctx); err != nil {
 		log.Printf("Shutdown error: %v", err)
 	}
-	return
 }
