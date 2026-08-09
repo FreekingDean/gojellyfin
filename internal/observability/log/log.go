@@ -59,7 +59,7 @@ func (l *loggerImpl) write(ctx context.Context, level logLevel, msg string, args
 	// This is a placeholder implementation.
 	fields := []zap.Field{}
 	if !l.internal {
-		fields = append(fields, zap.String("userID", context.UserID()))
+		fields = append(fields, zap.String("userID", ctx.UserID()))
 		//l.store.StoreActivityLog(...)
 	}
 	l.writer.Log(zapcore.Level(level), fmt.Sprintf(msg, args...))

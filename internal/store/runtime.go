@@ -8,6 +8,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/apikey"
 	"github.com/FreekingDean/gojellyfin/internal/store/chapter"
+	"github.com/FreekingDean/gojellyfin/internal/store/configuration"
 	"github.com/FreekingDean/gojellyfin/internal/store/credit"
 	"github.com/FreekingDean/gojellyfin/internal/store/device"
 	"github.com/FreekingDean/gojellyfin/internal/store/displaypreferences"
@@ -79,6 +80,18 @@ func init() {
 	chapter.DefaultUpdatedAt = chapterDescUpdatedAt.Default.(func() time.Time)
 	// chapter.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	chapter.UpdateDefaultUpdatedAt = chapterDescUpdatedAt.UpdateDefault.(func() time.Time)
+	configurationFields := entities.Configuration{}.Fields()
+	_ = configurationFields
+	// configurationDescCreatedAt is the schema descriptor for created_at field.
+	configurationDescCreatedAt := configurationFields[1].Descriptor()
+	// configuration.DefaultCreatedAt holds the default value on creation for the created_at field.
+	configuration.DefaultCreatedAt = configurationDescCreatedAt.Default.(func() time.Time)
+	// configurationDescUpdatedAt is the schema descriptor for updated_at field.
+	configurationDescUpdatedAt := configurationFields[2].Descriptor()
+	// configuration.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	configuration.DefaultUpdatedAt = configurationDescUpdatedAt.Default.(func() time.Time)
+	// configuration.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	configuration.UpdateDefaultUpdatedAt = configurationDescUpdatedAt.UpdateDefault.(func() time.Time)
 	creditFields := entities.Credit{}.Fields()
 	_ = creditFields
 	// creditDescCreatedAt is the schema descriptor for created_at field.
