@@ -5,6 +5,8 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
+
+	"github.com/FreekingDean/gojellyfin/internal/sessions"
 )
 
 var ErrUnauthorized = errors.New("unauthorized")
@@ -26,6 +28,23 @@ type Authorization struct {
 	Token    string
 }
 
+func (a Authorization) DeviceInfo() sessions.DeviceInfo {
+	return sessions.DeviceInfo{
+		ID:         a.DeviceID,
+		Name:       a.Device,
+		AppName:    a.Client,
+		AppVersion: a.Version,
+	}
+}
+
+type Service struct {
+	sessions *sessions.Service
+}
+
+func New(sessions *sessions.Service) *Service {
+	return &Service{sessions: sessions}
+}
+
 // Authenticate resolves a token and returns a context carrying the session.
 // This package puts the identity on the context and takes it back off; nothing
 // else should know the keys exist.
@@ -34,7 +53,7 @@ func (s *Service) Authenticate(ctx context.Context, token string) (context.Conte
 		return ctx, ErrUnauthorized
 	}
 
-	session, err := s.SessionByToken(ctx, token)
+	session, err := s.sessions.ByToken(ctx, token)
 	if err != nil {
 		return ctx, ErrUnauthorized
 	}
@@ -52,14 +71,14 @@ func AuthorizationFrom(ctx context.Context) Authorization {
 	return authorization
 }
 
-func SessionFrom(ctx context.Context) *Session {
-	session, _ := ctx.Value(sessionKey).(*Session)
+func SessionFrom(ctx context.Context) *sessions.Session {
+	session, _ := ctx.Value(sessionKey).(*sessions.Session)
 
 	return session
 }
 
 func UserID(ctx context.Context) uuid.UUID {
-	if session := SessionFrom(ctx); session != nil {
+	if session := SessionFrom(ctx); session != nil && session.Edges.User != nil {
 		return session.Edges.User.ID
 	}
 

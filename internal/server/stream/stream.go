@@ -7,9 +7,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/sessions"
 )
 
 var contentTypes = map[string]string{
@@ -31,12 +31,12 @@ var contentTypes = map[string]string{
 }
 
 type Handler struct {
-	auth  *auth.Service
-	items *items.Service
+	sessions *sessions.Service
+	items    *items.Service
 }
 
-func New(auth *auth.Service, items *items.Service) *Handler {
-	return &Handler{auth: auth, items: items}
+func New(sessions *sessions.Service, items *items.Service) *Handler {
+	return &Handler{sessions: sessions, items: items}
 }
 
 // Registered ahead of the generated routes because the generated response type
@@ -47,7 +47,7 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	if _, err := h.auth.SessionByToken(r.Context(), token); err != nil {
+	if _, err := h.sessions.ByToken(r.Context(), token); err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}

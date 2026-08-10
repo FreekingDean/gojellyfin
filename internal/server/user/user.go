@@ -12,16 +12,17 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	serversession "github.com/FreekingDean/gojellyfin/internal/server/session"
+	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
 type Server struct {
-	users *users.Service
-	auth  *auth.Service
+	users    *users.Service
+	sessions *sessions.Service
 }
 
-func New(users *users.Service, auth *auth.Service) *Server {
-	return &Server{users: users, auth: auth}
+func New(users *users.Service, sessions *sessions.Service) *Server {
+	return &Server{users: users, sessions: sessions}
 }
 
 func (s *Server) GetUsers(ctx context.Context, request api.GetUsersRequestObject) (api.GetUsersResponseObject, error) {
@@ -262,24 +263,15 @@ func (s *Server) AuthenticateUserByName(ctx context.Context, request api.Authent
 		return nil, err
 	}
 
-	now := time.Now()
-	authorization := auth.AuthorizationFrom(ctx)
-	session := &auth.Session{
-		UserID:           user.ID,
-		AccessToken:      token,
-		DeviceID:         authorization.DeviceID,
-		DeviceName:       authorization.Device,
-		Client:           authorization.Client,
-		AppVersion:       authorization.Version,
-		LastActivityDate: now,
-	}
-	if err := s.auth.CreateSession(ctx, session); err != nil {
+	session, err := s.sessions.Create(ctx, user.ID, token, auth.AuthorizationFrom(ctx).DeviceInfo())
+	if err != nil {
 		return nil, err
 	}
 
 	if err := s.users.TouchLogin(ctx, user.ID); err != nil {
 		return nil, err
 	}
+	now := time.Now()
 	user.LastLoginDate = &now
 	user.LastActivityDate = &now
 
@@ -292,6 +284,6 @@ func (s *Server) AuthenticateUserByName(ctx context.Context, request api.Authent
 		AccessToken: apiutil.Ptr(token),
 		ServerId:    apiutil.Ptr(config.ServerID),
 		User:        &dto,
-		SessionInfo: serversession.SessionDto(session, user),
+		SessionInfo: serversession.SessionDto(session),
 	}, nil
 }

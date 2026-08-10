@@ -9,8 +9,8 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
+	"github.com/FreekingDean/gojellyfin/internal/sessions"
 )
 
 // The client treats an unanswered KeepAlive as a dead socket and reconnects, so
@@ -32,11 +32,11 @@ type wsMessage struct {
 }
 
 type Socket struct {
-	auth *auth.Service
+	sessions *sessions.Service
 }
 
-func New(auth *auth.Service) *Socket {
-	return &Socket{auth: auth}
+func New(sessions *sessions.Service) *Socket {
+	return &Socket{sessions: sessions}
 }
 
 // Browsers cannot set headers on a websocket handshake, so clients pass the
@@ -48,7 +48,7 @@ func (s *Socket) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := s.auth.SessionByToken(r.Context(), token); err != nil {
+	if _, err := s.sessions.ByToken(r.Context(), token); err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
