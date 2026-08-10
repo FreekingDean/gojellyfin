@@ -13,16 +13,18 @@ type User struct {
 func (User) Fields() []ent.Field {
 	return withDefaultFields(
 		field.String("name"),
-		field.String("username"),
+		field.String("username").Unique(),
 		field.String("password_hash").Sensitive(),
+		field.Time("last_login_at").Optional(),
+		field.Time("last_activity_at").Optional(),
 	)
 }
 
 // Edges of the User.
 func (User) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("configuration", UserConfiguration.Type),
-		edge.To("policy", UserPolicy.Type),
+		edge.To("configuration", UserConfiguration.Type).Unique(),
+		edge.To("policy", UserPolicy.Type).Unique(),
 		edge.To("sessions", Session.Type),
 		edge.To("item_data", UserItemData.Type),
 		edge.To("display_preferences", DisplayPreferences.Type),

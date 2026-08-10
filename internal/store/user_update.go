@@ -98,34 +98,82 @@ func (_u *UserUpdate) SetNillablePasswordHash(v *string) *UserUpdate {
 	return _u
 }
 
-// AddConfigurationIDs adds the "configuration" edge to the UserConfiguration entity by IDs.
-func (_u *UserUpdate) AddConfigurationIDs(ids ...uuid.UUID) *UserUpdate {
-	_u.mutation.AddConfigurationIDs(ids...)
+// SetLastLoginAt sets the "last_login_at" field.
+func (_u *UserUpdate) SetLastLoginAt(v time.Time) *UserUpdate {
+	_u.mutation.SetLastLoginAt(v)
 	return _u
 }
 
-// AddConfiguration adds the "configuration" edges to the UserConfiguration entity.
-func (_u *UserUpdate) AddConfiguration(v ...*UserConfiguration) *UserUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+// SetNillableLastLoginAt sets the "last_login_at" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableLastLoginAt(v *time.Time) *UserUpdate {
+	if v != nil {
+		_u.SetLastLoginAt(*v)
 	}
-	return _u.AddConfigurationIDs(ids...)
-}
-
-// AddPolicyIDs adds the "policy" edge to the UserPolicy entity by IDs.
-func (_u *UserUpdate) AddPolicyIDs(ids ...uuid.UUID) *UserUpdate {
-	_u.mutation.AddPolicyIDs(ids...)
 	return _u
 }
 
-// AddPolicy adds the "policy" edges to the UserPolicy entity.
-func (_u *UserUpdate) AddPolicy(v ...*UserPolicy) *UserUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+// ClearLastLoginAt clears the value of the "last_login_at" field.
+func (_u *UserUpdate) ClearLastLoginAt() *UserUpdate {
+	_u.mutation.ClearLastLoginAt()
+	return _u
+}
+
+// SetLastActivityAt sets the "last_activity_at" field.
+func (_u *UserUpdate) SetLastActivityAt(v time.Time) *UserUpdate {
+	_u.mutation.SetLastActivityAt(v)
+	return _u
+}
+
+// SetNillableLastActivityAt sets the "last_activity_at" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableLastActivityAt(v *time.Time) *UserUpdate {
+	if v != nil {
+		_u.SetLastActivityAt(*v)
 	}
-	return _u.AddPolicyIDs(ids...)
+	return _u
+}
+
+// ClearLastActivityAt clears the value of the "last_activity_at" field.
+func (_u *UserUpdate) ClearLastActivityAt() *UserUpdate {
+	_u.mutation.ClearLastActivityAt()
+	return _u
+}
+
+// SetConfigurationID sets the "configuration" edge to the UserConfiguration entity by ID.
+func (_u *UserUpdate) SetConfigurationID(id uuid.UUID) *UserUpdate {
+	_u.mutation.SetConfigurationID(id)
+	return _u
+}
+
+// SetNillableConfigurationID sets the "configuration" edge to the UserConfiguration entity by ID if the given value is not nil.
+func (_u *UserUpdate) SetNillableConfigurationID(id *uuid.UUID) *UserUpdate {
+	if id != nil {
+		_u = _u.SetConfigurationID(*id)
+	}
+	return _u
+}
+
+// SetConfiguration sets the "configuration" edge to the UserConfiguration entity.
+func (_u *UserUpdate) SetConfiguration(v *UserConfiguration) *UserUpdate {
+	return _u.SetConfigurationID(v.ID)
+}
+
+// SetPolicyID sets the "policy" edge to the UserPolicy entity by ID.
+func (_u *UserUpdate) SetPolicyID(id uuid.UUID) *UserUpdate {
+	_u.mutation.SetPolicyID(id)
+	return _u
+}
+
+// SetNillablePolicyID sets the "policy" edge to the UserPolicy entity by ID if the given value is not nil.
+func (_u *UserUpdate) SetNillablePolicyID(id *uuid.UUID) *UserUpdate {
+	if id != nil {
+		_u = _u.SetPolicyID(*id)
+	}
+	return _u
+}
+
+// SetPolicy sets the "policy" edge to the UserPolicy entity.
+func (_u *UserUpdate) SetPolicy(v *UserPolicy) *UserUpdate {
+	return _u.SetPolicyID(v.ID)
 }
 
 // AddSessionIDs adds the "sessions" edge to the Session entity by IDs.
@@ -208,46 +256,16 @@ func (_u *UserUpdate) Mutation() *UserMutation {
 	return _u.mutation
 }
 
-// ClearConfiguration clears all "configuration" edges to the UserConfiguration entity.
+// ClearConfiguration clears the "configuration" edge to the UserConfiguration entity.
 func (_u *UserUpdate) ClearConfiguration() *UserUpdate {
 	_u.mutation.ClearConfiguration()
 	return _u
 }
 
-// RemoveConfigurationIDs removes the "configuration" edge to UserConfiguration entities by IDs.
-func (_u *UserUpdate) RemoveConfigurationIDs(ids ...uuid.UUID) *UserUpdate {
-	_u.mutation.RemoveConfigurationIDs(ids...)
-	return _u
-}
-
-// RemoveConfiguration removes "configuration" edges to UserConfiguration entities.
-func (_u *UserUpdate) RemoveConfiguration(v ...*UserConfiguration) *UserUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveConfigurationIDs(ids...)
-}
-
-// ClearPolicy clears all "policy" edges to the UserPolicy entity.
+// ClearPolicy clears the "policy" edge to the UserPolicy entity.
 func (_u *UserUpdate) ClearPolicy() *UserUpdate {
 	_u.mutation.ClearPolicy()
 	return _u
-}
-
-// RemovePolicyIDs removes the "policy" edge to UserPolicy entities by IDs.
-func (_u *UserUpdate) RemovePolicyIDs(ids ...uuid.UUID) *UserUpdate {
-	_u.mutation.RemovePolicyIDs(ids...)
-	return _u
-}
-
-// RemovePolicy removes "policy" edges to UserPolicy entities.
-func (_u *UserUpdate) RemovePolicy(v ...*UserPolicy) *UserUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemovePolicyIDs(ids...)
 }
 
 // ClearSessions clears all "sessions" edges to the Session entity.
@@ -415,9 +433,21 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.PasswordHash(); ok {
 		_spec.SetField(user.FieldPasswordHash, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.LastLoginAt(); ok {
+		_spec.SetField(user.FieldLastLoginAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastLoginAtCleared() {
+		_spec.ClearField(user.FieldLastLoginAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LastActivityAt(); ok {
+		_spec.SetField(user.FieldLastActivityAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastActivityAtCleared() {
+		_spec.ClearField(user.FieldLastActivityAt, field.TypeTime)
+	}
 	if _u.mutation.ConfigurationCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.O2O,
 			Inverse: false,
 			Table:   user.ConfigurationTable,
 			Columns: []string{user.ConfigurationColumn},
@@ -425,28 +455,12 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(userconfiguration.FieldID, field.TypeUUID),
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedConfigurationIDs(); len(nodes) > 0 && !_u.mutation.ConfigurationCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.ConfigurationTable,
-			Columns: []string{user.ConfigurationColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userconfiguration.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := _u.mutation.ConfigurationIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.O2O,
 			Inverse: false,
 			Table:   user.ConfigurationTable,
 			Columns: []string{user.ConfigurationColumn},
@@ -462,7 +476,7 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.PolicyCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.O2O,
 			Inverse: false,
 			Table:   user.PolicyTable,
 			Columns: []string{user.PolicyColumn},
@@ -470,28 +484,12 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(userpolicy.FieldID, field.TypeUUID),
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedPolicyIDs(); len(nodes) > 0 && !_u.mutation.PolicyCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.PolicyTable,
-			Columns: []string{user.PolicyColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userpolicy.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := _u.mutation.PolicyIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.O2O,
 			Inverse: false,
 			Table:   user.PolicyTable,
 			Columns: []string{user.PolicyColumn},
@@ -812,34 +810,82 @@ func (_u *UserUpdateOne) SetNillablePasswordHash(v *string) *UserUpdateOne {
 	return _u
 }
 
-// AddConfigurationIDs adds the "configuration" edge to the UserConfiguration entity by IDs.
-func (_u *UserUpdateOne) AddConfigurationIDs(ids ...uuid.UUID) *UserUpdateOne {
-	_u.mutation.AddConfigurationIDs(ids...)
+// SetLastLoginAt sets the "last_login_at" field.
+func (_u *UserUpdateOne) SetLastLoginAt(v time.Time) *UserUpdateOne {
+	_u.mutation.SetLastLoginAt(v)
 	return _u
 }
 
-// AddConfiguration adds the "configuration" edges to the UserConfiguration entity.
-func (_u *UserUpdateOne) AddConfiguration(v ...*UserConfiguration) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+// SetNillableLastLoginAt sets the "last_login_at" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableLastLoginAt(v *time.Time) *UserUpdateOne {
+	if v != nil {
+		_u.SetLastLoginAt(*v)
 	}
-	return _u.AddConfigurationIDs(ids...)
-}
-
-// AddPolicyIDs adds the "policy" edge to the UserPolicy entity by IDs.
-func (_u *UserUpdateOne) AddPolicyIDs(ids ...uuid.UUID) *UserUpdateOne {
-	_u.mutation.AddPolicyIDs(ids...)
 	return _u
 }
 
-// AddPolicy adds the "policy" edges to the UserPolicy entity.
-func (_u *UserUpdateOne) AddPolicy(v ...*UserPolicy) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+// ClearLastLoginAt clears the value of the "last_login_at" field.
+func (_u *UserUpdateOne) ClearLastLoginAt() *UserUpdateOne {
+	_u.mutation.ClearLastLoginAt()
+	return _u
+}
+
+// SetLastActivityAt sets the "last_activity_at" field.
+func (_u *UserUpdateOne) SetLastActivityAt(v time.Time) *UserUpdateOne {
+	_u.mutation.SetLastActivityAt(v)
+	return _u
+}
+
+// SetNillableLastActivityAt sets the "last_activity_at" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableLastActivityAt(v *time.Time) *UserUpdateOne {
+	if v != nil {
+		_u.SetLastActivityAt(*v)
 	}
-	return _u.AddPolicyIDs(ids...)
+	return _u
+}
+
+// ClearLastActivityAt clears the value of the "last_activity_at" field.
+func (_u *UserUpdateOne) ClearLastActivityAt() *UserUpdateOne {
+	_u.mutation.ClearLastActivityAt()
+	return _u
+}
+
+// SetConfigurationID sets the "configuration" edge to the UserConfiguration entity by ID.
+func (_u *UserUpdateOne) SetConfigurationID(id uuid.UUID) *UserUpdateOne {
+	_u.mutation.SetConfigurationID(id)
+	return _u
+}
+
+// SetNillableConfigurationID sets the "configuration" edge to the UserConfiguration entity by ID if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableConfigurationID(id *uuid.UUID) *UserUpdateOne {
+	if id != nil {
+		_u = _u.SetConfigurationID(*id)
+	}
+	return _u
+}
+
+// SetConfiguration sets the "configuration" edge to the UserConfiguration entity.
+func (_u *UserUpdateOne) SetConfiguration(v *UserConfiguration) *UserUpdateOne {
+	return _u.SetConfigurationID(v.ID)
+}
+
+// SetPolicyID sets the "policy" edge to the UserPolicy entity by ID.
+func (_u *UserUpdateOne) SetPolicyID(id uuid.UUID) *UserUpdateOne {
+	_u.mutation.SetPolicyID(id)
+	return _u
+}
+
+// SetNillablePolicyID sets the "policy" edge to the UserPolicy entity by ID if the given value is not nil.
+func (_u *UserUpdateOne) SetNillablePolicyID(id *uuid.UUID) *UserUpdateOne {
+	if id != nil {
+		_u = _u.SetPolicyID(*id)
+	}
+	return _u
+}
+
+// SetPolicy sets the "policy" edge to the UserPolicy entity.
+func (_u *UserUpdateOne) SetPolicy(v *UserPolicy) *UserUpdateOne {
+	return _u.SetPolicyID(v.ID)
 }
 
 // AddSessionIDs adds the "sessions" edge to the Session entity by IDs.
@@ -922,46 +968,16 @@ func (_u *UserUpdateOne) Mutation() *UserMutation {
 	return _u.mutation
 }
 
-// ClearConfiguration clears all "configuration" edges to the UserConfiguration entity.
+// ClearConfiguration clears the "configuration" edge to the UserConfiguration entity.
 func (_u *UserUpdateOne) ClearConfiguration() *UserUpdateOne {
 	_u.mutation.ClearConfiguration()
 	return _u
 }
 
-// RemoveConfigurationIDs removes the "configuration" edge to UserConfiguration entities by IDs.
-func (_u *UserUpdateOne) RemoveConfigurationIDs(ids ...uuid.UUID) *UserUpdateOne {
-	_u.mutation.RemoveConfigurationIDs(ids...)
-	return _u
-}
-
-// RemoveConfiguration removes "configuration" edges to UserConfiguration entities.
-func (_u *UserUpdateOne) RemoveConfiguration(v ...*UserConfiguration) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveConfigurationIDs(ids...)
-}
-
-// ClearPolicy clears all "policy" edges to the UserPolicy entity.
+// ClearPolicy clears the "policy" edge to the UserPolicy entity.
 func (_u *UserUpdateOne) ClearPolicy() *UserUpdateOne {
 	_u.mutation.ClearPolicy()
 	return _u
-}
-
-// RemovePolicyIDs removes the "policy" edge to UserPolicy entities by IDs.
-func (_u *UserUpdateOne) RemovePolicyIDs(ids ...uuid.UUID) *UserUpdateOne {
-	_u.mutation.RemovePolicyIDs(ids...)
-	return _u
-}
-
-// RemovePolicy removes "policy" edges to UserPolicy entities.
-func (_u *UserUpdateOne) RemovePolicy(v ...*UserPolicy) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemovePolicyIDs(ids...)
 }
 
 // ClearSessions clears all "sessions" edges to the Session entity.
@@ -1159,9 +1175,21 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	if value, ok := _u.mutation.PasswordHash(); ok {
 		_spec.SetField(user.FieldPasswordHash, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.LastLoginAt(); ok {
+		_spec.SetField(user.FieldLastLoginAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastLoginAtCleared() {
+		_spec.ClearField(user.FieldLastLoginAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LastActivityAt(); ok {
+		_spec.SetField(user.FieldLastActivityAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastActivityAtCleared() {
+		_spec.ClearField(user.FieldLastActivityAt, field.TypeTime)
+	}
 	if _u.mutation.ConfigurationCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.O2O,
 			Inverse: false,
 			Table:   user.ConfigurationTable,
 			Columns: []string{user.ConfigurationColumn},
@@ -1169,28 +1197,12 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(userconfiguration.FieldID, field.TypeUUID),
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedConfigurationIDs(); len(nodes) > 0 && !_u.mutation.ConfigurationCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.ConfigurationTable,
-			Columns: []string{user.ConfigurationColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userconfiguration.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := _u.mutation.ConfigurationIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.O2O,
 			Inverse: false,
 			Table:   user.ConfigurationTable,
 			Columns: []string{user.ConfigurationColumn},
@@ -1206,7 +1218,7 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	}
 	if _u.mutation.PolicyCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.O2O,
 			Inverse: false,
 			Table:   user.PolicyTable,
 			Columns: []string{user.PolicyColumn},
@@ -1214,28 +1226,12 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(userpolicy.FieldID, field.TypeUUID),
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedPolicyIDs(); len(nodes) > 0 && !_u.mutation.PolicyCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.PolicyTable,
-			Columns: []string{user.PolicyColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userpolicy.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := _u.mutation.PolicyIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.O2O,
 			Inverse: false,
 			Table:   user.PolicyTable,
 			Columns: []string{user.PolicyColumn},

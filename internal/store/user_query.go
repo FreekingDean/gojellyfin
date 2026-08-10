@@ -88,7 +88,7 @@ func (_q *UserQuery) QueryConfiguration() *UserConfigurationQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(userconfiguration.Table, userconfiguration.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, user.ConfigurationTable, user.ConfigurationColumn),
+			sqlgraph.Edge(sqlgraph.O2O, false, user.ConfigurationTable, user.ConfigurationColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -110,7 +110,7 @@ func (_q *UserQuery) QueryPolicy() *UserPolicyQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(userpolicy.Table, userpolicy.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, user.PolicyTable, user.PolicyColumn),
+			sqlgraph.Edge(sqlgraph.O2O, false, user.PolicyTable, user.PolicyColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -617,16 +617,14 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		return nodes, nil
 	}
 	if query := _q.withConfiguration; query != nil {
-		if err := _q.loadConfiguration(ctx, query, nodes,
-			func(n *User) { n.Edges.Configuration = []*UserConfiguration{} },
-			func(n *User, e *UserConfiguration) { n.Edges.Configuration = append(n.Edges.Configuration, e) }); err != nil {
+		if err := _q.loadConfiguration(ctx, query, nodes, nil,
+			func(n *User, e *UserConfiguration) { n.Edges.Configuration = e }); err != nil {
 			return nil, err
 		}
 	}
 	if query := _q.withPolicy; query != nil {
-		if err := _q.loadPolicy(ctx, query, nodes,
-			func(n *User) { n.Edges.Policy = []*UserPolicy{} },
-			func(n *User, e *UserPolicy) { n.Edges.Policy = append(n.Edges.Policy, e) }); err != nil {
+		if err := _q.loadPolicy(ctx, query, nodes, nil,
+			func(n *User, e *UserPolicy) { n.Edges.Policy = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -676,9 +674,6 @@ func (_q *UserQuery) loadConfiguration(ctx context.Context, query *UserConfigura
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
 	}
 	query.withFKs = true
 	query.Where(predicate.UserConfiguration(func(s *sql.Selector) {
@@ -707,9 +702,6 @@ func (_q *UserQuery) loadPolicy(ctx context.Context, query *UserPolicyQuery, nod
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
 	}
 	query.withFKs = true
 	query.Where(predicate.UserPolicy(func(s *sql.Selector) {

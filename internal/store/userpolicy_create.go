@@ -60,15 +60,39 @@ func (_c *UserPolicyCreate) SetIsAdministrator(v bool) *UserPolicyCreate {
 	return _c
 }
 
+// SetNillableIsAdministrator sets the "is_administrator" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableIsAdministrator(v *bool) *UserPolicyCreate {
+	if v != nil {
+		_c.SetIsAdministrator(*v)
+	}
+	return _c
+}
+
 // SetIsHidden sets the "is_hidden" field.
 func (_c *UserPolicyCreate) SetIsHidden(v bool) *UserPolicyCreate {
 	_c.mutation.SetIsHidden(v)
 	return _c
 }
 
+// SetNillableIsHidden sets the "is_hidden" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableIsHidden(v *bool) *UserPolicyCreate {
+	if v != nil {
+		_c.SetIsHidden(*v)
+	}
+	return _c
+}
+
 // SetIsDisabled sets the "is_disabled" field.
 func (_c *UserPolicyCreate) SetIsDisabled(v bool) *UserPolicyCreate {
 	_c.mutation.SetIsDisabled(v)
+	return _c
+}
+
+// SetNillableIsDisabled sets the "is_disabled" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableIsDisabled(v *bool) *UserPolicyCreate {
+	if v != nil {
+		_c.SetIsDisabled(*v)
+	}
 	return _c
 }
 
@@ -120,9 +144,25 @@ func (_c *UserPolicyCreate) SetEnableUserPreferenceAccess(v bool) *UserPolicyCre
 	return _c
 }
 
+// SetNillableEnableUserPreferenceAccess sets the "enable_user_preference_access" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableEnableUserPreferenceAccess(v *bool) *UserPolicyCreate {
+	if v != nil {
+		_c.SetEnableUserPreferenceAccess(*v)
+	}
+	return _c
+}
+
 // SetEnableRemoteControlOfOtherUsers sets the "enable_remote_control_of_other_users" field.
 func (_c *UserPolicyCreate) SetEnableRemoteControlOfOtherUsers(v bool) *UserPolicyCreate {
 	_c.mutation.SetEnableRemoteControlOfOtherUsers(v)
+	return _c
+}
+
+// SetNillableEnableRemoteControlOfOtherUsers sets the "enable_remote_control_of_other_users" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableEnableRemoteControlOfOtherUsers(v *bool) *UserPolicyCreate {
+	if v != nil {
+		_c.SetEnableRemoteControlOfOtherUsers(*v)
+	}
 	return _c
 }
 
@@ -132,9 +172,25 @@ func (_c *UserPolicyCreate) SetEnableSharedDeviceControl(v bool) *UserPolicyCrea
 	return _c
 }
 
+// SetNillableEnableSharedDeviceControl sets the "enable_shared_device_control" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableEnableSharedDeviceControl(v *bool) *UserPolicyCreate {
+	if v != nil {
+		_c.SetEnableSharedDeviceControl(*v)
+	}
+	return _c
+}
+
 // SetEnableRemoteAccess sets the "enable_remote_access" field.
 func (_c *UserPolicyCreate) SetEnableRemoteAccess(v bool) *UserPolicyCreate {
 	_c.mutation.SetEnableRemoteAccess(v)
+	return _c
+}
+
+// SetNillableEnableRemoteAccess sets the "enable_remote_access" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableEnableRemoteAccess(v *bool) *UserPolicyCreate {
+	if v != nil {
+		_c.SetEnableRemoteAccess(*v)
+	}
 	return _c
 }
 
@@ -144,9 +200,25 @@ func (_c *UserPolicyCreate) SetEnableLiveTvManagement(v bool) *UserPolicyCreate 
 	return _c
 }
 
+// SetNillableEnableLiveTvManagement sets the "enable_live_tv_management" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableEnableLiveTvManagement(v *bool) *UserPolicyCreate {
+	if v != nil {
+		_c.SetEnableLiveTvManagement(*v)
+	}
+	return _c
+}
+
 // SetEnableLiveTvAccess sets the "enable_live_tv_access" field.
 func (_c *UserPolicyCreate) SetEnableLiveTvAccess(v bool) *UserPolicyCreate {
 	_c.mutation.SetEnableLiveTvAccess(v)
+	return _c
+}
+
+// SetNillableEnableLiveTvAccess sets the "enable_live_tv_access" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableEnableLiveTvAccess(v *bool) *UserPolicyCreate {
+	if v != nil {
+		_c.SetEnableLiveTvAccess(*v)
+	}
 	return _c
 }
 
@@ -156,9 +228,25 @@ func (_c *UserPolicyCreate) SetEnableMediaPlayback(v bool) *UserPolicyCreate {
 	return _c
 }
 
+// SetNillableEnableMediaPlayback sets the "enable_media_playback" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableEnableMediaPlayback(v *bool) *UserPolicyCreate {
+	if v != nil {
+		_c.SetEnableMediaPlayback(*v)
+	}
+	return _c
+}
+
 // SetEnableAudioPlaybackTranscoding sets the "enable_audio_playback_transcoding" field.
 func (_c *UserPolicyCreate) SetEnableAudioPlaybackTranscoding(v bool) *UserPolicyCreate {
 	_c.mutation.SetEnableAudioPlaybackTranscoding(v)
+	return _c
+}
+
+// SetNillableEnableAudioPlaybackTranscoding sets the "enable_audio_playback_transcoding" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableEnableAudioPlaybackTranscoding(v *bool) *UserPolicyCreate {
+	if v != nil {
+		_c.SetEnableAudioPlaybackTranscoding(*v)
+	}
 	return _c
 }
 
@@ -168,9 +256,25 @@ func (_c *UserPolicyCreate) SetEnableVideoPlaybackTranscoding(v bool) *UserPolic
 	return _c
 }
 
+// SetNillableEnableVideoPlaybackTranscoding sets the "enable_video_playback_transcoding" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableEnableVideoPlaybackTranscoding(v *bool) *UserPolicyCreate {
+	if v != nil {
+		_c.SetEnableVideoPlaybackTranscoding(*v)
+	}
+	return _c
+}
+
 // SetEnablePlaybackRemuxing sets the "enable_playback_remuxing" field.
 func (_c *UserPolicyCreate) SetEnablePlaybackRemuxing(v bool) *UserPolicyCreate {
 	_c.mutation.SetEnablePlaybackRemuxing(v)
+	return _c
+}
+
+// SetNillableEnablePlaybackRemuxing sets the "enable_playback_remuxing" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableEnablePlaybackRemuxing(v *bool) *UserPolicyCreate {
+	if v != nil {
+		_c.SetEnablePlaybackRemuxing(*v)
+	}
 	return _c
 }
 
@@ -180,9 +284,25 @@ func (_c *UserPolicyCreate) SetForceRemoteSourceTranscoding(v bool) *UserPolicyC
 	return _c
 }
 
+// SetNillableForceRemoteSourceTranscoding sets the "force_remote_source_transcoding" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableForceRemoteSourceTranscoding(v *bool) *UserPolicyCreate {
+	if v != nil {
+		_c.SetForceRemoteSourceTranscoding(*v)
+	}
+	return _c
+}
+
 // SetEnableContentDeletion sets the "enable_content_deletion" field.
 func (_c *UserPolicyCreate) SetEnableContentDeletion(v bool) *UserPolicyCreate {
 	_c.mutation.SetEnableContentDeletion(v)
+	return _c
+}
+
+// SetNillableEnableContentDeletion sets the "enable_content_deletion" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableEnableContentDeletion(v *bool) *UserPolicyCreate {
+	if v != nil {
+		_c.SetEnableContentDeletion(*v)
+	}
 	return _c
 }
 
@@ -192,9 +312,25 @@ func (_c *UserPolicyCreate) SetEnableContentDownloading(v bool) *UserPolicyCreat
 	return _c
 }
 
+// SetNillableEnableContentDownloading sets the "enable_content_downloading" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableEnableContentDownloading(v *bool) *UserPolicyCreate {
+	if v != nil {
+		_c.SetEnableContentDownloading(*v)
+	}
+	return _c
+}
+
 // SetEnableSyncTranscoding sets the "enable_sync_transcoding" field.
 func (_c *UserPolicyCreate) SetEnableSyncTranscoding(v bool) *UserPolicyCreate {
 	_c.mutation.SetEnableSyncTranscoding(v)
+	return _c
+}
+
+// SetNillableEnableSyncTranscoding sets the "enable_sync_transcoding" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableEnableSyncTranscoding(v *bool) *UserPolicyCreate {
+	if v != nil {
+		_c.SetEnableSyncTranscoding(*v)
+	}
 	return _c
 }
 
@@ -204,9 +340,25 @@ func (_c *UserPolicyCreate) SetEnableMediaConversion(v bool) *UserPolicyCreate {
 	return _c
 }
 
+// SetNillableEnableMediaConversion sets the "enable_media_conversion" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableEnableMediaConversion(v *bool) *UserPolicyCreate {
+	if v != nil {
+		_c.SetEnableMediaConversion(*v)
+	}
+	return _c
+}
+
 // SetEnablePublicSharing sets the "enable_public_sharing" field.
 func (_c *UserPolicyCreate) SetEnablePublicSharing(v bool) *UserPolicyCreate {
 	_c.mutation.SetEnablePublicSharing(v)
+	return _c
+}
+
+// SetNillableEnablePublicSharing sets the "enable_public_sharing" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableEnablePublicSharing(v *bool) *UserPolicyCreate {
+	if v != nil {
+		_c.SetEnablePublicSharing(*v)
+	}
 	return _c
 }
 
@@ -216,15 +368,39 @@ func (_c *UserPolicyCreate) SetEnableAllDevices(v bool) *UserPolicyCreate {
 	return _c
 }
 
+// SetNillableEnableAllDevices sets the "enable_all_devices" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableEnableAllDevices(v *bool) *UserPolicyCreate {
+	if v != nil {
+		_c.SetEnableAllDevices(*v)
+	}
+	return _c
+}
+
 // SetEnableAllChannels sets the "enable_all_channels" field.
 func (_c *UserPolicyCreate) SetEnableAllChannels(v bool) *UserPolicyCreate {
 	_c.mutation.SetEnableAllChannels(v)
 	return _c
 }
 
+// SetNillableEnableAllChannels sets the "enable_all_channels" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableEnableAllChannels(v *bool) *UserPolicyCreate {
+	if v != nil {
+		_c.SetEnableAllChannels(*v)
+	}
+	return _c
+}
+
 // SetEnableAllFolders sets the "enable_all_folders" field.
 func (_c *UserPolicyCreate) SetEnableAllFolders(v bool) *UserPolicyCreate {
 	_c.mutation.SetEnableAllFolders(v)
+	return _c
+}
+
+// SetNillableEnableAllFolders sets the "enable_all_folders" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableEnableAllFolders(v *bool) *UserPolicyCreate {
+	if v != nil {
+		_c.SetEnableAllFolders(*v)
+	}
 	return _c
 }
 
@@ -262,9 +438,25 @@ func (_c *UserPolicyCreate) SetInvalidLoginAttemptCount(v int32) *UserPolicyCrea
 	return _c
 }
 
+// SetNillableInvalidLoginAttemptCount sets the "invalid_login_attempt_count" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableInvalidLoginAttemptCount(v *int32) *UserPolicyCreate {
+	if v != nil {
+		_c.SetInvalidLoginAttemptCount(*v)
+	}
+	return _c
+}
+
 // SetLoginAttemptsBeforeLockout sets the "login_attempts_before_lockout" field.
 func (_c *UserPolicyCreate) SetLoginAttemptsBeforeLockout(v int32) *UserPolicyCreate {
 	_c.mutation.SetLoginAttemptsBeforeLockout(v)
+	return _c
+}
+
+// SetNillableLoginAttemptsBeforeLockout sets the "login_attempts_before_lockout" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableLoginAttemptsBeforeLockout(v *int32) *UserPolicyCreate {
+	if v != nil {
+		_c.SetLoginAttemptsBeforeLockout(*v)
+	}
 	return _c
 }
 
@@ -274,9 +466,25 @@ func (_c *UserPolicyCreate) SetMaxActiveSessions(v int32) *UserPolicyCreate {
 	return _c
 }
 
+// SetNillableMaxActiveSessions sets the "max_active_sessions" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableMaxActiveSessions(v *int32) *UserPolicyCreate {
+	if v != nil {
+		_c.SetMaxActiveSessions(*v)
+	}
+	return _c
+}
+
 // SetRemoteClientBitrateLimit sets the "remote_client_bitrate_limit" field.
 func (_c *UserPolicyCreate) SetRemoteClientBitrateLimit(v int32) *UserPolicyCreate {
 	_c.mutation.SetRemoteClientBitrateLimit(v)
+	return _c
+}
+
+// SetNillableRemoteClientBitrateLimit sets the "remote_client_bitrate_limit" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableRemoteClientBitrateLimit(v *int32) *UserPolicyCreate {
+	if v != nil {
+		_c.SetRemoteClientBitrateLimit(*v)
+	}
 	return _c
 }
 
@@ -346,15 +554,39 @@ func (_c *UserPolicyCreate) SetAuthenticationProviderID(v string) *UserPolicyCre
 	return _c
 }
 
+// SetNillableAuthenticationProviderID sets the "authentication_provider_id" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableAuthenticationProviderID(v *string) *UserPolicyCreate {
+	if v != nil {
+		_c.SetAuthenticationProviderID(*v)
+	}
+	return _c
+}
+
 // SetPasswordResetProviderID sets the "password_reset_provider_id" field.
 func (_c *UserPolicyCreate) SetPasswordResetProviderID(v string) *UserPolicyCreate {
 	_c.mutation.SetPasswordResetProviderID(v)
 	return _c
 }
 
+// SetNillablePasswordResetProviderID sets the "password_reset_provider_id" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillablePasswordResetProviderID(v *string) *UserPolicyCreate {
+	if v != nil {
+		_c.SetPasswordResetProviderID(*v)
+	}
+	return _c
+}
+
 // SetSyncPlayAccess sets the "sync_play_access" field.
 func (_c *UserPolicyCreate) SetSyncPlayAccess(v userpolicy.SyncPlayAccess) *UserPolicyCreate {
 	_c.mutation.SetSyncPlayAccess(v)
+	return _c
+}
+
+// SetNillableSyncPlayAccess sets the "sync_play_access" field if the given value is not nil.
+func (_c *UserPolicyCreate) SetNillableSyncPlayAccess(v *userpolicy.SyncPlayAccess) *UserPolicyCreate {
+	if v != nil {
+		_c.SetSyncPlayAccess(*v)
+	}
 	return _c
 }
 
@@ -426,6 +658,18 @@ func (_c *UserPolicyCreate) defaults() {
 		v := userpolicy.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.IsAdministrator(); !ok {
+		v := userpolicy.DefaultIsAdministrator
+		_c.mutation.SetIsAdministrator(v)
+	}
+	if _, ok := _c.mutation.IsHidden(); !ok {
+		v := userpolicy.DefaultIsHidden
+		_c.mutation.SetIsHidden(v)
+	}
+	if _, ok := _c.mutation.IsDisabled(); !ok {
+		v := userpolicy.DefaultIsDisabled
+		_c.mutation.SetIsDisabled(v)
+	}
 	if _, ok := _c.mutation.EnableCollectionManagement(); !ok {
 		v := userpolicy.DefaultEnableCollectionManagement
 		_c.mutation.SetEnableCollectionManagement(v)
@@ -437,6 +681,150 @@ func (_c *UserPolicyCreate) defaults() {
 	if _, ok := _c.mutation.EnableLyricManagement(); !ok {
 		v := userpolicy.DefaultEnableLyricManagement
 		_c.mutation.SetEnableLyricManagement(v)
+	}
+	if _, ok := _c.mutation.EnableUserPreferenceAccess(); !ok {
+		v := userpolicy.DefaultEnableUserPreferenceAccess
+		_c.mutation.SetEnableUserPreferenceAccess(v)
+	}
+	if _, ok := _c.mutation.EnableRemoteControlOfOtherUsers(); !ok {
+		v := userpolicy.DefaultEnableRemoteControlOfOtherUsers
+		_c.mutation.SetEnableRemoteControlOfOtherUsers(v)
+	}
+	if _, ok := _c.mutation.EnableSharedDeviceControl(); !ok {
+		v := userpolicy.DefaultEnableSharedDeviceControl
+		_c.mutation.SetEnableSharedDeviceControl(v)
+	}
+	if _, ok := _c.mutation.EnableRemoteAccess(); !ok {
+		v := userpolicy.DefaultEnableRemoteAccess
+		_c.mutation.SetEnableRemoteAccess(v)
+	}
+	if _, ok := _c.mutation.EnableLiveTvManagement(); !ok {
+		v := userpolicy.DefaultEnableLiveTvManagement
+		_c.mutation.SetEnableLiveTvManagement(v)
+	}
+	if _, ok := _c.mutation.EnableLiveTvAccess(); !ok {
+		v := userpolicy.DefaultEnableLiveTvAccess
+		_c.mutation.SetEnableLiveTvAccess(v)
+	}
+	if _, ok := _c.mutation.EnableMediaPlayback(); !ok {
+		v := userpolicy.DefaultEnableMediaPlayback
+		_c.mutation.SetEnableMediaPlayback(v)
+	}
+	if _, ok := _c.mutation.EnableAudioPlaybackTranscoding(); !ok {
+		v := userpolicy.DefaultEnableAudioPlaybackTranscoding
+		_c.mutation.SetEnableAudioPlaybackTranscoding(v)
+	}
+	if _, ok := _c.mutation.EnableVideoPlaybackTranscoding(); !ok {
+		v := userpolicy.DefaultEnableVideoPlaybackTranscoding
+		_c.mutation.SetEnableVideoPlaybackTranscoding(v)
+	}
+	if _, ok := _c.mutation.EnablePlaybackRemuxing(); !ok {
+		v := userpolicy.DefaultEnablePlaybackRemuxing
+		_c.mutation.SetEnablePlaybackRemuxing(v)
+	}
+	if _, ok := _c.mutation.ForceRemoteSourceTranscoding(); !ok {
+		v := userpolicy.DefaultForceRemoteSourceTranscoding
+		_c.mutation.SetForceRemoteSourceTranscoding(v)
+	}
+	if _, ok := _c.mutation.EnableContentDeletion(); !ok {
+		v := userpolicy.DefaultEnableContentDeletion
+		_c.mutation.SetEnableContentDeletion(v)
+	}
+	if _, ok := _c.mutation.EnableContentDownloading(); !ok {
+		v := userpolicy.DefaultEnableContentDownloading
+		_c.mutation.SetEnableContentDownloading(v)
+	}
+	if _, ok := _c.mutation.EnableSyncTranscoding(); !ok {
+		v := userpolicy.DefaultEnableSyncTranscoding
+		_c.mutation.SetEnableSyncTranscoding(v)
+	}
+	if _, ok := _c.mutation.EnableMediaConversion(); !ok {
+		v := userpolicy.DefaultEnableMediaConversion
+		_c.mutation.SetEnableMediaConversion(v)
+	}
+	if _, ok := _c.mutation.EnablePublicSharing(); !ok {
+		v := userpolicy.DefaultEnablePublicSharing
+		_c.mutation.SetEnablePublicSharing(v)
+	}
+	if _, ok := _c.mutation.EnableAllDevices(); !ok {
+		v := userpolicy.DefaultEnableAllDevices
+		_c.mutation.SetEnableAllDevices(v)
+	}
+	if _, ok := _c.mutation.EnableAllChannels(); !ok {
+		v := userpolicy.DefaultEnableAllChannels
+		_c.mutation.SetEnableAllChannels(v)
+	}
+	if _, ok := _c.mutation.EnableAllFolders(); !ok {
+		v := userpolicy.DefaultEnableAllFolders
+		_c.mutation.SetEnableAllFolders(v)
+	}
+	if _, ok := _c.mutation.InvalidLoginAttemptCount(); !ok {
+		v := userpolicy.DefaultInvalidLoginAttemptCount
+		_c.mutation.SetInvalidLoginAttemptCount(v)
+	}
+	if _, ok := _c.mutation.LoginAttemptsBeforeLockout(); !ok {
+		v := userpolicy.DefaultLoginAttemptsBeforeLockout
+		_c.mutation.SetLoginAttemptsBeforeLockout(v)
+	}
+	if _, ok := _c.mutation.MaxActiveSessions(); !ok {
+		v := userpolicy.DefaultMaxActiveSessions
+		_c.mutation.SetMaxActiveSessions(v)
+	}
+	if _, ok := _c.mutation.RemoteClientBitrateLimit(); !ok {
+		v := userpolicy.DefaultRemoteClientBitrateLimit
+		_c.mutation.SetRemoteClientBitrateLimit(v)
+	}
+	if _, ok := _c.mutation.AllowedTags(); !ok {
+		v := userpolicy.DefaultAllowedTags
+		_c.mutation.SetAllowedTags(v)
+	}
+	if _, ok := _c.mutation.BlockedTags(); !ok {
+		v := userpolicy.DefaultBlockedTags
+		_c.mutation.SetBlockedTags(v)
+	}
+	if _, ok := _c.mutation.AccessSchedules(); !ok {
+		v := userpolicy.DefaultAccessSchedules
+		_c.mutation.SetAccessSchedules(v)
+	}
+	if _, ok := _c.mutation.EnableContentDeletionFromFolders(); !ok {
+		v := userpolicy.DefaultEnableContentDeletionFromFolders
+		_c.mutation.SetEnableContentDeletionFromFolders(v)
+	}
+	if _, ok := _c.mutation.EnabledDevices(); !ok {
+		v := userpolicy.DefaultEnabledDevices
+		_c.mutation.SetEnabledDevices(v)
+	}
+	if _, ok := _c.mutation.EnabledChannels(); !ok {
+		v := userpolicy.DefaultEnabledChannels
+		_c.mutation.SetEnabledChannels(v)
+	}
+	if _, ok := _c.mutation.EnabledFolders(); !ok {
+		v := userpolicy.DefaultEnabledFolders
+		_c.mutation.SetEnabledFolders(v)
+	}
+	if _, ok := _c.mutation.BlockedMediaFolders(); !ok {
+		v := userpolicy.DefaultBlockedMediaFolders
+		_c.mutation.SetBlockedMediaFolders(v)
+	}
+	if _, ok := _c.mutation.BlockedChannels(); !ok {
+		v := userpolicy.DefaultBlockedChannels
+		_c.mutation.SetBlockedChannels(v)
+	}
+	if _, ok := _c.mutation.BlockUnratedItems(); !ok {
+		v := userpolicy.DefaultBlockUnratedItems
+		_c.mutation.SetBlockUnratedItems(v)
+	}
+	if _, ok := _c.mutation.AuthenticationProviderID(); !ok {
+		v := userpolicy.DefaultAuthenticationProviderID
+		_c.mutation.SetAuthenticationProviderID(v)
+	}
+	if _, ok := _c.mutation.PasswordResetProviderID(); !ok {
+		v := userpolicy.DefaultPasswordResetProviderID
+		_c.mutation.SetPasswordResetProviderID(v)
+	}
+	if _, ok := _c.mutation.SyncPlayAccess(); !ok {
+		v := userpolicy.DefaultSyncPlayAccess
+		_c.mutation.SetSyncPlayAccess(v)
 	}
 }
 
@@ -791,7 +1179,7 @@ func (_c *UserPolicyCreate) createSpec() (*UserPolicy, *sqlgraph.CreateSpec) {
 	}
 	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: true,
 			Table:   userpolicy.UserTable,
 			Columns: []string{userpolicy.UserColumn},

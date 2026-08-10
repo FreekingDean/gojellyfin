@@ -5088,7 +5088,7 @@ func (c *UserClient) QueryConfiguration(_m *User) *UserConfigurationQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(userconfiguration.Table, userconfiguration.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, user.ConfigurationTable, user.ConfigurationColumn),
+			sqlgraph.Edge(sqlgraph.O2O, false, user.ConfigurationTable, user.ConfigurationColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -5104,7 +5104,7 @@ func (c *UserClient) QueryPolicy(_m *User) *UserPolicyQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(userpolicy.Table, userpolicy.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, user.PolicyTable, user.PolicyColumn),
+			sqlgraph.Edge(sqlgraph.O2O, false, user.PolicyTable, user.PolicyColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -5333,7 +5333,7 @@ func (c *UserConfigurationClient) QueryUser(_m *UserConfiguration) *UserQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(userconfiguration.Table, userconfiguration.FieldID, id),
 			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, userconfiguration.UserTable, userconfiguration.UserColumn),
+			sqlgraph.Edge(sqlgraph.O2O, true, userconfiguration.UserTable, userconfiguration.UserColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -5647,7 +5647,7 @@ func (c *UserPolicyClient) QueryUser(_m *UserPolicy) *UserQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(userpolicy.Table, userpolicy.FieldID, id),
 			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, userpolicy.UserTable, userpolicy.UserColumn),
+			sqlgraph.Edge(sqlgraph.O2O, true, userpolicy.UserTable, userpolicy.UserColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

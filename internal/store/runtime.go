@@ -38,6 +38,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
 	"github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
 	"github.com/FreekingDean/gojellyfin/internal/store/userpolicy"
+	"github.com/google/uuid"
 )
 
 // The init function reads all schema descriptors with runtime code
@@ -404,6 +405,54 @@ func init() {
 	userconfiguration.DefaultUpdatedAt = userconfigurationDescUpdatedAt.Default.(func() time.Time)
 	// userconfiguration.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	userconfiguration.UpdateDefaultUpdatedAt = userconfigurationDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// userconfigurationDescPlayDefaultAudioTrack is the schema descriptor for play_default_audio_track field.
+	userconfigurationDescPlayDefaultAudioTrack := userconfigurationFields[6].Descriptor()
+	// userconfiguration.DefaultPlayDefaultAudioTrack holds the default value on creation for the play_default_audio_track field.
+	userconfiguration.DefaultPlayDefaultAudioTrack = userconfigurationDescPlayDefaultAudioTrack.Default.(bool)
+	// userconfigurationDescGroupedFolders is the schema descriptor for grouped_folders field.
+	userconfigurationDescGroupedFolders := userconfigurationFields[8].Descriptor()
+	// userconfiguration.DefaultGroupedFolders holds the default value on creation for the grouped_folders field.
+	userconfiguration.DefaultGroupedFolders = userconfigurationDescGroupedFolders.Default.([]uuid.UUID)
+	// userconfigurationDescOrderedViews is the schema descriptor for ordered_views field.
+	userconfigurationDescOrderedViews := userconfigurationFields[9].Descriptor()
+	// userconfiguration.DefaultOrderedViews holds the default value on creation for the ordered_views field.
+	userconfiguration.DefaultOrderedViews = userconfigurationDescOrderedViews.Default.([]uuid.UUID)
+	// userconfigurationDescLatestItemsExcludes is the schema descriptor for latest_items_excludes field.
+	userconfigurationDescLatestItemsExcludes := userconfigurationFields[10].Descriptor()
+	// userconfiguration.DefaultLatestItemsExcludes holds the default value on creation for the latest_items_excludes field.
+	userconfiguration.DefaultLatestItemsExcludes = userconfigurationDescLatestItemsExcludes.Default.([]uuid.UUID)
+	// userconfigurationDescMyMediaExcludes is the schema descriptor for my_media_excludes field.
+	userconfigurationDescMyMediaExcludes := userconfigurationFields[11].Descriptor()
+	// userconfiguration.DefaultMyMediaExcludes holds the default value on creation for the my_media_excludes field.
+	userconfiguration.DefaultMyMediaExcludes = userconfigurationDescMyMediaExcludes.Default.([]uuid.UUID)
+	// userconfigurationDescDisplayMissingEpisodes is the schema descriptor for display_missing_episodes field.
+	userconfigurationDescDisplayMissingEpisodes := userconfigurationFields[12].Descriptor()
+	// userconfiguration.DefaultDisplayMissingEpisodes holds the default value on creation for the display_missing_episodes field.
+	userconfiguration.DefaultDisplayMissingEpisodes = userconfigurationDescDisplayMissingEpisodes.Default.(bool)
+	// userconfigurationDescDisplayCollectionsView is the schema descriptor for display_collections_view field.
+	userconfigurationDescDisplayCollectionsView := userconfigurationFields[13].Descriptor()
+	// userconfiguration.DefaultDisplayCollectionsView holds the default value on creation for the display_collections_view field.
+	userconfiguration.DefaultDisplayCollectionsView = userconfigurationDescDisplayCollectionsView.Default.(bool)
+	// userconfigurationDescEnableLocalPassword is the schema descriptor for enable_local_password field.
+	userconfigurationDescEnableLocalPassword := userconfigurationFields[14].Descriptor()
+	// userconfiguration.DefaultEnableLocalPassword holds the default value on creation for the enable_local_password field.
+	userconfiguration.DefaultEnableLocalPassword = userconfigurationDescEnableLocalPassword.Default.(bool)
+	// userconfigurationDescHidePlayedInLatest is the schema descriptor for hide_played_in_latest field.
+	userconfigurationDescHidePlayedInLatest := userconfigurationFields[15].Descriptor()
+	// userconfiguration.DefaultHidePlayedInLatest holds the default value on creation for the hide_played_in_latest field.
+	userconfiguration.DefaultHidePlayedInLatest = userconfigurationDescHidePlayedInLatest.Default.(bool)
+	// userconfigurationDescRememberAudioSelections is the schema descriptor for remember_audio_selections field.
+	userconfigurationDescRememberAudioSelections := userconfigurationFields[16].Descriptor()
+	// userconfiguration.DefaultRememberAudioSelections holds the default value on creation for the remember_audio_selections field.
+	userconfiguration.DefaultRememberAudioSelections = userconfigurationDescRememberAudioSelections.Default.(bool)
+	// userconfigurationDescRememberSubtitleSelections is the schema descriptor for remember_subtitle_selections field.
+	userconfigurationDescRememberSubtitleSelections := userconfigurationFields[17].Descriptor()
+	// userconfiguration.DefaultRememberSubtitleSelections holds the default value on creation for the remember_subtitle_selections field.
+	userconfiguration.DefaultRememberSubtitleSelections = userconfigurationDescRememberSubtitleSelections.Default.(bool)
+	// userconfigurationDescEnableNextEpisodeAutoPlay is the schema descriptor for enable_next_episode_auto_play field.
+	userconfigurationDescEnableNextEpisodeAutoPlay := userconfigurationFields[18].Descriptor()
+	// userconfiguration.DefaultEnableNextEpisodeAutoPlay holds the default value on creation for the enable_next_episode_auto_play field.
+	userconfiguration.DefaultEnableNextEpisodeAutoPlay = userconfigurationDescEnableNextEpisodeAutoPlay.Default.(bool)
 	useritemdataFields := entities.UserItemData{}.Fields()
 	_ = useritemdataFields
 	// useritemdataDescCreatedAt is the schema descriptor for created_at field.
@@ -428,6 +477,18 @@ func init() {
 	userpolicy.DefaultUpdatedAt = userpolicyDescUpdatedAt.Default.(func() time.Time)
 	// userpolicy.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	userpolicy.UpdateDefaultUpdatedAt = userpolicyDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// userpolicyDescIsAdministrator is the schema descriptor for is_administrator field.
+	userpolicyDescIsAdministrator := userpolicyFields[3].Descriptor()
+	// userpolicy.DefaultIsAdministrator holds the default value on creation for the is_administrator field.
+	userpolicy.DefaultIsAdministrator = userpolicyDescIsAdministrator.Default.(bool)
+	// userpolicyDescIsHidden is the schema descriptor for is_hidden field.
+	userpolicyDescIsHidden := userpolicyFields[4].Descriptor()
+	// userpolicy.DefaultIsHidden holds the default value on creation for the is_hidden field.
+	userpolicy.DefaultIsHidden = userpolicyDescIsHidden.Default.(bool)
+	// userpolicyDescIsDisabled is the schema descriptor for is_disabled field.
+	userpolicyDescIsDisabled := userpolicyFields[5].Descriptor()
+	// userpolicy.DefaultIsDisabled holds the default value on creation for the is_disabled field.
+	userpolicy.DefaultIsDisabled = userpolicyDescIsDisabled.Default.(bool)
 	// userpolicyDescEnableCollectionManagement is the schema descriptor for enable_collection_management field.
 	userpolicyDescEnableCollectionManagement := userpolicyFields[6].Descriptor()
 	// userpolicy.DefaultEnableCollectionManagement holds the default value on creation for the enable_collection_management field.
@@ -440,12 +501,148 @@ func init() {
 	userpolicyDescEnableLyricManagement := userpolicyFields[8].Descriptor()
 	// userpolicy.DefaultEnableLyricManagement holds the default value on creation for the enable_lyric_management field.
 	userpolicy.DefaultEnableLyricManagement = userpolicyDescEnableLyricManagement.Default.(bool)
+	// userpolicyDescEnableUserPreferenceAccess is the schema descriptor for enable_user_preference_access field.
+	userpolicyDescEnableUserPreferenceAccess := userpolicyFields[9].Descriptor()
+	// userpolicy.DefaultEnableUserPreferenceAccess holds the default value on creation for the enable_user_preference_access field.
+	userpolicy.DefaultEnableUserPreferenceAccess = userpolicyDescEnableUserPreferenceAccess.Default.(bool)
+	// userpolicyDescEnableRemoteControlOfOtherUsers is the schema descriptor for enable_remote_control_of_other_users field.
+	userpolicyDescEnableRemoteControlOfOtherUsers := userpolicyFields[10].Descriptor()
+	// userpolicy.DefaultEnableRemoteControlOfOtherUsers holds the default value on creation for the enable_remote_control_of_other_users field.
+	userpolicy.DefaultEnableRemoteControlOfOtherUsers = userpolicyDescEnableRemoteControlOfOtherUsers.Default.(bool)
+	// userpolicyDescEnableSharedDeviceControl is the schema descriptor for enable_shared_device_control field.
+	userpolicyDescEnableSharedDeviceControl := userpolicyFields[11].Descriptor()
+	// userpolicy.DefaultEnableSharedDeviceControl holds the default value on creation for the enable_shared_device_control field.
+	userpolicy.DefaultEnableSharedDeviceControl = userpolicyDescEnableSharedDeviceControl.Default.(bool)
+	// userpolicyDescEnableRemoteAccess is the schema descriptor for enable_remote_access field.
+	userpolicyDescEnableRemoteAccess := userpolicyFields[12].Descriptor()
+	// userpolicy.DefaultEnableRemoteAccess holds the default value on creation for the enable_remote_access field.
+	userpolicy.DefaultEnableRemoteAccess = userpolicyDescEnableRemoteAccess.Default.(bool)
+	// userpolicyDescEnableLiveTvManagement is the schema descriptor for enable_live_tv_management field.
+	userpolicyDescEnableLiveTvManagement := userpolicyFields[13].Descriptor()
+	// userpolicy.DefaultEnableLiveTvManagement holds the default value on creation for the enable_live_tv_management field.
+	userpolicy.DefaultEnableLiveTvManagement = userpolicyDescEnableLiveTvManagement.Default.(bool)
+	// userpolicyDescEnableLiveTvAccess is the schema descriptor for enable_live_tv_access field.
+	userpolicyDescEnableLiveTvAccess := userpolicyFields[14].Descriptor()
+	// userpolicy.DefaultEnableLiveTvAccess holds the default value on creation for the enable_live_tv_access field.
+	userpolicy.DefaultEnableLiveTvAccess = userpolicyDescEnableLiveTvAccess.Default.(bool)
+	// userpolicyDescEnableMediaPlayback is the schema descriptor for enable_media_playback field.
+	userpolicyDescEnableMediaPlayback := userpolicyFields[15].Descriptor()
+	// userpolicy.DefaultEnableMediaPlayback holds the default value on creation for the enable_media_playback field.
+	userpolicy.DefaultEnableMediaPlayback = userpolicyDescEnableMediaPlayback.Default.(bool)
+	// userpolicyDescEnableAudioPlaybackTranscoding is the schema descriptor for enable_audio_playback_transcoding field.
+	userpolicyDescEnableAudioPlaybackTranscoding := userpolicyFields[16].Descriptor()
+	// userpolicy.DefaultEnableAudioPlaybackTranscoding holds the default value on creation for the enable_audio_playback_transcoding field.
+	userpolicy.DefaultEnableAudioPlaybackTranscoding = userpolicyDescEnableAudioPlaybackTranscoding.Default.(bool)
+	// userpolicyDescEnableVideoPlaybackTranscoding is the schema descriptor for enable_video_playback_transcoding field.
+	userpolicyDescEnableVideoPlaybackTranscoding := userpolicyFields[17].Descriptor()
+	// userpolicy.DefaultEnableVideoPlaybackTranscoding holds the default value on creation for the enable_video_playback_transcoding field.
+	userpolicy.DefaultEnableVideoPlaybackTranscoding = userpolicyDescEnableVideoPlaybackTranscoding.Default.(bool)
+	// userpolicyDescEnablePlaybackRemuxing is the schema descriptor for enable_playback_remuxing field.
+	userpolicyDescEnablePlaybackRemuxing := userpolicyFields[18].Descriptor()
+	// userpolicy.DefaultEnablePlaybackRemuxing holds the default value on creation for the enable_playback_remuxing field.
+	userpolicy.DefaultEnablePlaybackRemuxing = userpolicyDescEnablePlaybackRemuxing.Default.(bool)
+	// userpolicyDescForceRemoteSourceTranscoding is the schema descriptor for force_remote_source_transcoding field.
+	userpolicyDescForceRemoteSourceTranscoding := userpolicyFields[19].Descriptor()
+	// userpolicy.DefaultForceRemoteSourceTranscoding holds the default value on creation for the force_remote_source_transcoding field.
+	userpolicy.DefaultForceRemoteSourceTranscoding = userpolicyDescForceRemoteSourceTranscoding.Default.(bool)
+	// userpolicyDescEnableContentDeletion is the schema descriptor for enable_content_deletion field.
+	userpolicyDescEnableContentDeletion := userpolicyFields[20].Descriptor()
+	// userpolicy.DefaultEnableContentDeletion holds the default value on creation for the enable_content_deletion field.
+	userpolicy.DefaultEnableContentDeletion = userpolicyDescEnableContentDeletion.Default.(bool)
+	// userpolicyDescEnableContentDownloading is the schema descriptor for enable_content_downloading field.
+	userpolicyDescEnableContentDownloading := userpolicyFields[21].Descriptor()
+	// userpolicy.DefaultEnableContentDownloading holds the default value on creation for the enable_content_downloading field.
+	userpolicy.DefaultEnableContentDownloading = userpolicyDescEnableContentDownloading.Default.(bool)
+	// userpolicyDescEnableSyncTranscoding is the schema descriptor for enable_sync_transcoding field.
+	userpolicyDescEnableSyncTranscoding := userpolicyFields[22].Descriptor()
+	// userpolicy.DefaultEnableSyncTranscoding holds the default value on creation for the enable_sync_transcoding field.
+	userpolicy.DefaultEnableSyncTranscoding = userpolicyDescEnableSyncTranscoding.Default.(bool)
+	// userpolicyDescEnableMediaConversion is the schema descriptor for enable_media_conversion field.
+	userpolicyDescEnableMediaConversion := userpolicyFields[23].Descriptor()
+	// userpolicy.DefaultEnableMediaConversion holds the default value on creation for the enable_media_conversion field.
+	userpolicy.DefaultEnableMediaConversion = userpolicyDescEnableMediaConversion.Default.(bool)
+	// userpolicyDescEnablePublicSharing is the schema descriptor for enable_public_sharing field.
+	userpolicyDescEnablePublicSharing := userpolicyFields[24].Descriptor()
+	// userpolicy.DefaultEnablePublicSharing holds the default value on creation for the enable_public_sharing field.
+	userpolicy.DefaultEnablePublicSharing = userpolicyDescEnablePublicSharing.Default.(bool)
+	// userpolicyDescEnableAllDevices is the schema descriptor for enable_all_devices field.
+	userpolicyDescEnableAllDevices := userpolicyFields[25].Descriptor()
+	// userpolicy.DefaultEnableAllDevices holds the default value on creation for the enable_all_devices field.
+	userpolicy.DefaultEnableAllDevices = userpolicyDescEnableAllDevices.Default.(bool)
+	// userpolicyDescEnableAllChannels is the schema descriptor for enable_all_channels field.
+	userpolicyDescEnableAllChannels := userpolicyFields[26].Descriptor()
+	// userpolicy.DefaultEnableAllChannels holds the default value on creation for the enable_all_channels field.
+	userpolicy.DefaultEnableAllChannels = userpolicyDescEnableAllChannels.Default.(bool)
+	// userpolicyDescEnableAllFolders is the schema descriptor for enable_all_folders field.
+	userpolicyDescEnableAllFolders := userpolicyFields[27].Descriptor()
+	// userpolicy.DefaultEnableAllFolders holds the default value on creation for the enable_all_folders field.
+	userpolicy.DefaultEnableAllFolders = userpolicyDescEnableAllFolders.Default.(bool)
+	// userpolicyDescInvalidLoginAttemptCount is the schema descriptor for invalid_login_attempt_count field.
+	userpolicyDescInvalidLoginAttemptCount := userpolicyFields[30].Descriptor()
+	// userpolicy.DefaultInvalidLoginAttemptCount holds the default value on creation for the invalid_login_attempt_count field.
+	userpolicy.DefaultInvalidLoginAttemptCount = userpolicyDescInvalidLoginAttemptCount.Default.(int32)
+	// userpolicyDescLoginAttemptsBeforeLockout is the schema descriptor for login_attempts_before_lockout field.
+	userpolicyDescLoginAttemptsBeforeLockout := userpolicyFields[31].Descriptor()
+	// userpolicy.DefaultLoginAttemptsBeforeLockout holds the default value on creation for the login_attempts_before_lockout field.
+	userpolicy.DefaultLoginAttemptsBeforeLockout = userpolicyDescLoginAttemptsBeforeLockout.Default.(int32)
+	// userpolicyDescMaxActiveSessions is the schema descriptor for max_active_sessions field.
+	userpolicyDescMaxActiveSessions := userpolicyFields[32].Descriptor()
+	// userpolicy.DefaultMaxActiveSessions holds the default value on creation for the max_active_sessions field.
+	userpolicy.DefaultMaxActiveSessions = userpolicyDescMaxActiveSessions.Default.(int32)
+	// userpolicyDescRemoteClientBitrateLimit is the schema descriptor for remote_client_bitrate_limit field.
+	userpolicyDescRemoteClientBitrateLimit := userpolicyFields[33].Descriptor()
+	// userpolicy.DefaultRemoteClientBitrateLimit holds the default value on creation for the remote_client_bitrate_limit field.
+	userpolicy.DefaultRemoteClientBitrateLimit = userpolicyDescRemoteClientBitrateLimit.Default.(int32)
+	// userpolicyDescAllowedTags is the schema descriptor for allowed_tags field.
+	userpolicyDescAllowedTags := userpolicyFields[34].Descriptor()
+	// userpolicy.DefaultAllowedTags holds the default value on creation for the allowed_tags field.
+	userpolicy.DefaultAllowedTags = userpolicyDescAllowedTags.Default.([]string)
+	// userpolicyDescBlockedTags is the schema descriptor for blocked_tags field.
+	userpolicyDescBlockedTags := userpolicyFields[35].Descriptor()
+	// userpolicy.DefaultBlockedTags holds the default value on creation for the blocked_tags field.
+	userpolicy.DefaultBlockedTags = userpolicyDescBlockedTags.Default.([]string)
+	// userpolicyDescAccessSchedules is the schema descriptor for access_schedules field.
+	userpolicyDescAccessSchedules := userpolicyFields[36].Descriptor()
+	// userpolicy.DefaultAccessSchedules holds the default value on creation for the access_schedules field.
+	userpolicy.DefaultAccessSchedules = userpolicyDescAccessSchedules.Default.([]entities.AccessSchedule)
+	// userpolicyDescEnableContentDeletionFromFolders is the schema descriptor for enable_content_deletion_from_folders field.
+	userpolicyDescEnableContentDeletionFromFolders := userpolicyFields[37].Descriptor()
+	// userpolicy.DefaultEnableContentDeletionFromFolders holds the default value on creation for the enable_content_deletion_from_folders field.
+	userpolicy.DefaultEnableContentDeletionFromFolders = userpolicyDescEnableContentDeletionFromFolders.Default.([]string)
+	// userpolicyDescEnabledDevices is the schema descriptor for enabled_devices field.
+	userpolicyDescEnabledDevices := userpolicyFields[38].Descriptor()
+	// userpolicy.DefaultEnabledDevices holds the default value on creation for the enabled_devices field.
+	userpolicy.DefaultEnabledDevices = userpolicyDescEnabledDevices.Default.([]string)
+	// userpolicyDescEnabledChannels is the schema descriptor for enabled_channels field.
+	userpolicyDescEnabledChannels := userpolicyFields[39].Descriptor()
+	// userpolicy.DefaultEnabledChannels holds the default value on creation for the enabled_channels field.
+	userpolicy.DefaultEnabledChannels = userpolicyDescEnabledChannels.Default.([]uuid.UUID)
+	// userpolicyDescEnabledFolders is the schema descriptor for enabled_folders field.
+	userpolicyDescEnabledFolders := userpolicyFields[40].Descriptor()
+	// userpolicy.DefaultEnabledFolders holds the default value on creation for the enabled_folders field.
+	userpolicy.DefaultEnabledFolders = userpolicyDescEnabledFolders.Default.([]uuid.UUID)
+	// userpolicyDescBlockedMediaFolders is the schema descriptor for blocked_media_folders field.
+	userpolicyDescBlockedMediaFolders := userpolicyFields[41].Descriptor()
+	// userpolicy.DefaultBlockedMediaFolders holds the default value on creation for the blocked_media_folders field.
+	userpolicy.DefaultBlockedMediaFolders = userpolicyDescBlockedMediaFolders.Default.([]uuid.UUID)
+	// userpolicyDescBlockedChannels is the schema descriptor for blocked_channels field.
+	userpolicyDescBlockedChannels := userpolicyFields[42].Descriptor()
+	// userpolicy.DefaultBlockedChannels holds the default value on creation for the blocked_channels field.
+	userpolicy.DefaultBlockedChannels = userpolicyDescBlockedChannels.Default.([]uuid.UUID)
+	// userpolicyDescBlockUnratedItems is the schema descriptor for block_unrated_items field.
+	userpolicyDescBlockUnratedItems := userpolicyFields[43].Descriptor()
+	// userpolicy.DefaultBlockUnratedItems holds the default value on creation for the block_unrated_items field.
+	userpolicy.DefaultBlockUnratedItems = userpolicyDescBlockUnratedItems.Default.([]string)
 	// userpolicyDescAuthenticationProviderID is the schema descriptor for authentication_provider_id field.
 	userpolicyDescAuthenticationProviderID := userpolicyFields[44].Descriptor()
+	// userpolicy.DefaultAuthenticationProviderID holds the default value on creation for the authentication_provider_id field.
+	userpolicy.DefaultAuthenticationProviderID = userpolicyDescAuthenticationProviderID.Default.(string)
 	// userpolicy.AuthenticationProviderIDValidator is a validator for the "authentication_provider_id" field. It is called by the builders before save.
 	userpolicy.AuthenticationProviderIDValidator = userpolicyDescAuthenticationProviderID.Validators[0].(func(string) error)
 	// userpolicyDescPasswordResetProviderID is the schema descriptor for password_reset_provider_id field.
 	userpolicyDescPasswordResetProviderID := userpolicyFields[45].Descriptor()
+	// userpolicy.DefaultPasswordResetProviderID holds the default value on creation for the password_reset_provider_id field.
+	userpolicy.DefaultPasswordResetProviderID = userpolicyDescPasswordResetProviderID.Default.(string)
 	// userpolicy.PasswordResetProviderIDValidator is a validator for the "password_reset_provider_id" field. It is called by the builders before save.
 	userpolicy.PasswordResetProviderIDValidator = userpolicyDescPasswordResetProviderID.Validators[0].(func(string) error)
 }

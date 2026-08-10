@@ -24,6 +24,10 @@ const (
 	FieldUsername = "username"
 	// FieldPasswordHash holds the string denoting the password_hash field in the database.
 	FieldPasswordHash = "password_hash"
+	// FieldLastLoginAt holds the string denoting the last_login_at field in the database.
+	FieldLastLoginAt = "last_login_at"
+	// FieldLastActivityAt holds the string denoting the last_activity_at field in the database.
+	FieldLastActivityAt = "last_activity_at"
 	// EdgeConfiguration holds the string denoting the configuration edge name in mutations.
 	EdgeConfiguration = "configuration"
 	// EdgePolicy holds the string denoting the policy edge name in mutations.
@@ -99,6 +103,8 @@ var Columns = []string{
 	FieldName,
 	FieldUsername,
 	FieldPasswordHash,
+	FieldLastLoginAt,
+	FieldLastActivityAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -153,31 +159,27 @@ func ByPasswordHash(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPasswordHash, opts...).ToFunc()
 }
 
-// ByConfigurationCount orders the results by configuration count.
-func ByConfigurationCount(opts ...sql.OrderTermOption) OrderOption {
+// ByLastLoginAt orders the results by the last_login_at field.
+func ByLastLoginAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastLoginAt, opts...).ToFunc()
+}
+
+// ByLastActivityAt orders the results by the last_activity_at field.
+func ByLastActivityAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastActivityAt, opts...).ToFunc()
+}
+
+// ByConfigurationField orders the results by configuration field.
+func ByConfigurationField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newConfigurationStep(), opts...)
+		sqlgraph.OrderByNeighborTerms(s, newConfigurationStep(), sql.OrderByField(field, opts...))
 	}
 }
 
-// ByConfiguration orders the results by configuration terms.
-func ByConfiguration(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+// ByPolicyField orders the results by policy field.
+func ByPolicyField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newConfigurationStep(), append([]sql.OrderTerm{term}, terms...)...)
-	}
-}
-
-// ByPolicyCount orders the results by policy count.
-func ByPolicyCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newPolicyStep(), opts...)
-	}
-}
-
-// ByPolicy orders the results by policy terms.
-func ByPolicy(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newPolicyStep(), append([]sql.OrderTerm{term}, terms...)...)
+		sqlgraph.OrderByNeighborTerms(s, newPolicyStep(), sql.OrderByField(field, opts...))
 	}
 }
 
@@ -254,14 +256,14 @@ func newConfigurationStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ConfigurationInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, ConfigurationTable, ConfigurationColumn),
+		sqlgraph.Edge(sqlgraph.O2O, false, ConfigurationTable, ConfigurationColumn),
 	)
 }
 func newPolicyStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(PolicyInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, PolicyTable, PolicyColumn),
+		sqlgraph.Edge(sqlgraph.O2O, false, PolicyTable, PolicyColumn),
 	)
 }
 func newSessionsStep() *sqlgraph.Step {

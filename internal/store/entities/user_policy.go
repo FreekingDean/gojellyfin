@@ -5,6 +5,8 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+
+	"github.com/FreekingDean/gojellyfin/internal/consts"
 )
 
 type AccessSchedule struct {
@@ -24,57 +26,59 @@ func (UserPolicy) Fields() []ent.Field {
 	}
 
 	return withDefaultFields(
-		field.Bool("is_administrator"),
-		field.Bool("is_hidden"),
-		field.Bool("is_disabled"),
+		field.Bool("is_administrator").Default(false),
+		field.Bool("is_hidden").Default(false),
+		field.Bool("is_disabled").Default(false),
 
 		field.Bool("enable_collection_management").Default(false),
-		field.Bool("enable_subtitle_management").Default(false),
+		field.Bool("enable_subtitle_management").Default(true),
 		field.Bool("enable_lyric_management").Default(false),
-		field.Bool("enable_user_preference_access"),
-		field.Bool("enable_remote_control_of_other_users"),
-		field.Bool("enable_shared_device_control"),
-		field.Bool("enable_remote_access"),
-		field.Bool("enable_live_tv_management"),
-		field.Bool("enable_live_tv_access"),
-		field.Bool("enable_media_playback"),
-		field.Bool("enable_audio_playback_transcoding"),
-		field.Bool("enable_video_playback_transcoding"),
-		field.Bool("enable_playback_remuxing"),
-		field.Bool("force_remote_source_transcoding"),
-		field.Bool("enable_content_deletion"),
-		field.Bool("enable_content_downloading"),
-		field.Bool("enable_sync_transcoding"),
-		field.Bool("enable_media_conversion"),
-		field.Bool("enable_public_sharing"),
-		field.Bool("enable_all_devices"),
-		field.Bool("enable_all_channels"),
-		field.Bool("enable_all_folders"),
+		field.Bool("enable_user_preference_access").Default(true),
+		field.Bool("enable_remote_control_of_other_users").Default(false),
+		field.Bool("enable_shared_device_control").Default(true),
+		field.Bool("enable_remote_access").Default(true),
+		field.Bool("enable_live_tv_management").Default(false),
+		field.Bool("enable_live_tv_access").Default(false),
+		field.Bool("enable_media_playback").Default(true),
+		field.Bool("enable_audio_playback_transcoding").Default(true),
+		field.Bool("enable_video_playback_transcoding").Default(true),
+		field.Bool("enable_playback_remuxing").Default(true),
+		field.Bool("force_remote_source_transcoding").Default(false),
+		field.Bool("enable_content_deletion").Default(false),
+		field.Bool("enable_content_downloading").Default(true),
+		field.Bool("enable_sync_transcoding").Default(true),
+		field.Bool("enable_media_conversion").Default(true),
+		field.Bool("enable_public_sharing").Default(true),
+		field.Bool("enable_all_devices").Default(true),
+		field.Bool("enable_all_channels").Default(true),
+		field.Bool("enable_all_folders").Default(true),
 
 		field.Enum("max_parental_rating").Optional().Values(ratings...),
 		field.Enum("max_parental_sub_rating").Optional().Values(ratings...),
 
-		field.Int32("invalid_login_attempt_count"),
-		field.Int32("login_attempts_before_lockout"),
-		field.Int32("max_active_sessions"),
-		field.Int32("remote_client_bitrate_limit"),
+		field.Int32("invalid_login_attempt_count").Default(0),
+		field.Int32("login_attempts_before_lockout").Default(-1),
+		field.Int32("max_active_sessions").Default(0),
+		field.Int32("remote_client_bitrate_limit").Default(0),
 
-		field.JSON("allowed_tags", []string{}).Optional(),
-		field.JSON("blocked_tags", []string{}).Optional(),
-		field.JSON("access_schedules", []AccessSchedule{}).Optional(),
-		field.JSON("enable_content_deletion_from_folders", []string{}).Optional(),
-		field.JSON("enabled_devices", []string{}).Optional(),
-		field.JSON("enabled_channels", []uuid.UUID{}).Optional(),
-		field.JSON("enabled_folders", []uuid.UUID{}).Optional(),
-		field.JSON("blocked_media_folders", []uuid.UUID{}).Optional(),
-		field.JSON("blocked_channels", []uuid.UUID{}).Optional(),
-		field.JSON("block_unrated_items", []string{}).Optional(),
+		field.JSON("allowed_tags", []string{}).Optional().Default([]string{}),
+		field.JSON("blocked_tags", []string{}).Optional().Default([]string{}),
+		field.JSON("access_schedules", []AccessSchedule{}).Optional().Default([]AccessSchedule{}),
+		field.JSON("enable_content_deletion_from_folders", []string{}).Optional().Default([]string{}),
+		field.JSON("enabled_devices", []string{}).Optional().Default([]string{}),
+		field.JSON("enabled_channels", []uuid.UUID{}).Optional().Default([]uuid.UUID{}),
+		field.JSON("enabled_folders", []uuid.UUID{}).Optional().Default([]uuid.UUID{}),
+		field.JSON("blocked_media_folders", []uuid.UUID{}).Optional().Default([]uuid.UUID{}),
+		field.JSON("blocked_channels", []uuid.UUID{}).Optional().Default([]uuid.UUID{}),
+		field.JSON("block_unrated_items", []string{}).Optional().Default([]string{}),
 
-		field.String("authentication_provider_id").NotEmpty(),
-		field.String("password_reset_provider_id").NotEmpty(),
+		field.String("authentication_provider_id").NotEmpty().
+			Default(consts.DefaultProviderFor("Users", "DefaultAuthenticationProvider")),
+		field.String("password_reset_provider_id").NotEmpty().
+			Default(consts.DefaultProviderFor("Users", "DefaultPasswordResetProvider")),
 		field.Enum("sync_play_access").Values(
 			"CreateAndJoinGroups", "JoinGroups", "None",
-		),
+		).Default("CreateAndJoinGroups"),
 	)
 }
 

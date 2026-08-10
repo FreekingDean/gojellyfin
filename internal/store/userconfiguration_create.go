@@ -101,9 +101,25 @@ func (_c *UserConfigurationCreate) SetPlayDefaultAudioTrack(v bool) *UserConfigu
 	return _c
 }
 
+// SetNillablePlayDefaultAudioTrack sets the "play_default_audio_track" field if the given value is not nil.
+func (_c *UserConfigurationCreate) SetNillablePlayDefaultAudioTrack(v *bool) *UserConfigurationCreate {
+	if v != nil {
+		_c.SetPlayDefaultAudioTrack(*v)
+	}
+	return _c
+}
+
 // SetSubtitleMode sets the "subtitle_mode" field.
 func (_c *UserConfigurationCreate) SetSubtitleMode(v userconfiguration.SubtitleMode) *UserConfigurationCreate {
 	_c.mutation.SetSubtitleMode(v)
+	return _c
+}
+
+// SetNillableSubtitleMode sets the "subtitle_mode" field if the given value is not nil.
+func (_c *UserConfigurationCreate) SetNillableSubtitleMode(v *userconfiguration.SubtitleMode) *UserConfigurationCreate {
+	if v != nil {
+		_c.SetSubtitleMode(*v)
+	}
 	return _c
 }
 
@@ -137,9 +153,25 @@ func (_c *UserConfigurationCreate) SetDisplayMissingEpisodes(v bool) *UserConfig
 	return _c
 }
 
+// SetNillableDisplayMissingEpisodes sets the "display_missing_episodes" field if the given value is not nil.
+func (_c *UserConfigurationCreate) SetNillableDisplayMissingEpisodes(v *bool) *UserConfigurationCreate {
+	if v != nil {
+		_c.SetDisplayMissingEpisodes(*v)
+	}
+	return _c
+}
+
 // SetDisplayCollectionsView sets the "display_collections_view" field.
 func (_c *UserConfigurationCreate) SetDisplayCollectionsView(v bool) *UserConfigurationCreate {
 	_c.mutation.SetDisplayCollectionsView(v)
+	return _c
+}
+
+// SetNillableDisplayCollectionsView sets the "display_collections_view" field if the given value is not nil.
+func (_c *UserConfigurationCreate) SetNillableDisplayCollectionsView(v *bool) *UserConfigurationCreate {
+	if v != nil {
+		_c.SetDisplayCollectionsView(*v)
+	}
 	return _c
 }
 
@@ -149,9 +181,25 @@ func (_c *UserConfigurationCreate) SetEnableLocalPassword(v bool) *UserConfigura
 	return _c
 }
 
+// SetNillableEnableLocalPassword sets the "enable_local_password" field if the given value is not nil.
+func (_c *UserConfigurationCreate) SetNillableEnableLocalPassword(v *bool) *UserConfigurationCreate {
+	if v != nil {
+		_c.SetEnableLocalPassword(*v)
+	}
+	return _c
+}
+
 // SetHidePlayedInLatest sets the "hide_played_in_latest" field.
 func (_c *UserConfigurationCreate) SetHidePlayedInLatest(v bool) *UserConfigurationCreate {
 	_c.mutation.SetHidePlayedInLatest(v)
+	return _c
+}
+
+// SetNillableHidePlayedInLatest sets the "hide_played_in_latest" field if the given value is not nil.
+func (_c *UserConfigurationCreate) SetNillableHidePlayedInLatest(v *bool) *UserConfigurationCreate {
+	if v != nil {
+		_c.SetHidePlayedInLatest(*v)
+	}
 	return _c
 }
 
@@ -161,15 +209,39 @@ func (_c *UserConfigurationCreate) SetRememberAudioSelections(v bool) *UserConfi
 	return _c
 }
 
+// SetNillableRememberAudioSelections sets the "remember_audio_selections" field if the given value is not nil.
+func (_c *UserConfigurationCreate) SetNillableRememberAudioSelections(v *bool) *UserConfigurationCreate {
+	if v != nil {
+		_c.SetRememberAudioSelections(*v)
+	}
+	return _c
+}
+
 // SetRememberSubtitleSelections sets the "remember_subtitle_selections" field.
 func (_c *UserConfigurationCreate) SetRememberSubtitleSelections(v bool) *UserConfigurationCreate {
 	_c.mutation.SetRememberSubtitleSelections(v)
 	return _c
 }
 
+// SetNillableRememberSubtitleSelections sets the "remember_subtitle_selections" field if the given value is not nil.
+func (_c *UserConfigurationCreate) SetNillableRememberSubtitleSelections(v *bool) *UserConfigurationCreate {
+	if v != nil {
+		_c.SetRememberSubtitleSelections(*v)
+	}
+	return _c
+}
+
 // SetEnableNextEpisodeAutoPlay sets the "enable_next_episode_auto_play" field.
 func (_c *UserConfigurationCreate) SetEnableNextEpisodeAutoPlay(v bool) *UserConfigurationCreate {
 	_c.mutation.SetEnableNextEpisodeAutoPlay(v)
+	return _c
+}
+
+// SetNillableEnableNextEpisodeAutoPlay sets the "enable_next_episode_auto_play" field if the given value is not nil.
+func (_c *UserConfigurationCreate) SetNillableEnableNextEpisodeAutoPlay(v *bool) *UserConfigurationCreate {
+	if v != nil {
+		_c.SetEnableNextEpisodeAutoPlay(*v)
+	}
 	return _c
 }
 
@@ -240,6 +312,58 @@ func (_c *UserConfigurationCreate) defaults() {
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		v := userconfiguration.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
+	}
+	if _, ok := _c.mutation.PlayDefaultAudioTrack(); !ok {
+		v := userconfiguration.DefaultPlayDefaultAudioTrack
+		_c.mutation.SetPlayDefaultAudioTrack(v)
+	}
+	if _, ok := _c.mutation.SubtitleMode(); !ok {
+		v := userconfiguration.DefaultSubtitleMode
+		_c.mutation.SetSubtitleMode(v)
+	}
+	if _, ok := _c.mutation.GroupedFolders(); !ok {
+		v := userconfiguration.DefaultGroupedFolders
+		_c.mutation.SetGroupedFolders(v)
+	}
+	if _, ok := _c.mutation.OrderedViews(); !ok {
+		v := userconfiguration.DefaultOrderedViews
+		_c.mutation.SetOrderedViews(v)
+	}
+	if _, ok := _c.mutation.LatestItemsExcludes(); !ok {
+		v := userconfiguration.DefaultLatestItemsExcludes
+		_c.mutation.SetLatestItemsExcludes(v)
+	}
+	if _, ok := _c.mutation.MyMediaExcludes(); !ok {
+		v := userconfiguration.DefaultMyMediaExcludes
+		_c.mutation.SetMyMediaExcludes(v)
+	}
+	if _, ok := _c.mutation.DisplayMissingEpisodes(); !ok {
+		v := userconfiguration.DefaultDisplayMissingEpisodes
+		_c.mutation.SetDisplayMissingEpisodes(v)
+	}
+	if _, ok := _c.mutation.DisplayCollectionsView(); !ok {
+		v := userconfiguration.DefaultDisplayCollectionsView
+		_c.mutation.SetDisplayCollectionsView(v)
+	}
+	if _, ok := _c.mutation.EnableLocalPassword(); !ok {
+		v := userconfiguration.DefaultEnableLocalPassword
+		_c.mutation.SetEnableLocalPassword(v)
+	}
+	if _, ok := _c.mutation.HidePlayedInLatest(); !ok {
+		v := userconfiguration.DefaultHidePlayedInLatest
+		_c.mutation.SetHidePlayedInLatest(v)
+	}
+	if _, ok := _c.mutation.RememberAudioSelections(); !ok {
+		v := userconfiguration.DefaultRememberAudioSelections
+		_c.mutation.SetRememberAudioSelections(v)
+	}
+	if _, ok := _c.mutation.RememberSubtitleSelections(); !ok {
+		v := userconfiguration.DefaultRememberSubtitleSelections
+		_c.mutation.SetRememberSubtitleSelections(v)
+	}
+	if _, ok := _c.mutation.EnableNextEpisodeAutoPlay(); !ok {
+		v := userconfiguration.DefaultEnableNextEpisodeAutoPlay
+		_c.mutation.SetEnableNextEpisodeAutoPlay(v)
 	}
 }
 
@@ -393,7 +517,7 @@ func (_c *UserConfigurationCreate) createSpec() (*UserConfiguration, *sqlgraph.C
 	}
 	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: true,
 			Table:   userconfiguration.UserTable,
 			Columns: []string{userconfiguration.UserColumn},

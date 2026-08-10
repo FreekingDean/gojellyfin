@@ -10,6 +10,8 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
+	"github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
+	"github.com/FreekingDean/gojellyfin/internal/store/userpolicy"
 	"github.com/google/uuid"
 )
 
@@ -28,6 +30,10 @@ type User struct {
 	Username string `json:"username,omitempty"`
 	// PasswordHash holds the value of the "password_hash" field.
 	PasswordHash string `json:"-"`
+	// LastLoginAt holds the value of the "last_login_at" field.
+	LastLoginAt time.Time `json:"last_login_at,omitempty"`
+	// LastActivityAt holds the value of the "last_activity_at" field.
+	LastActivityAt time.Time `json:"last_activity_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
 	Edges        UserEdges `json:"edges"`
@@ -37,9 +43,9 @@ type User struct {
 // UserEdges holds the relations/edges for other nodes in the graph.
 type UserEdges struct {
 	// Configuration holds the value of the configuration edge.
-	Configuration []*UserConfiguration `json:"configuration,omitempty"`
+	Configuration *UserConfiguration `json:"configuration,omitempty"`
 	// Policy holds the value of the policy edge.
-	Policy []*UserPolicy `json:"policy,omitempty"`
+	Policy *UserPolicy `json:"policy,omitempty"`
 	// Sessions holds the value of the sessions edge.
 	Sessions []*Session `json:"sessions,omitempty"`
 	// ItemData holds the value of the item_data edge.
@@ -56,19 +62,23 @@ type UserEdges struct {
 }
 
 // ConfigurationOrErr returns the Configuration value or an error if the edge
-// was not loaded in eager-loading.
-func (e UserEdges) ConfigurationOrErr() ([]*UserConfiguration, error) {
-	if e.loadedTypes[0] {
+// was not loaded in eager-loading, or loaded but was not found.
+func (e UserEdges) ConfigurationOrErr() (*UserConfiguration, error) {
+	if e.Configuration != nil {
 		return e.Configuration, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: userconfiguration.Label}
 	}
 	return nil, &NotLoadedError{edge: "configuration"}
 }
 
 // PolicyOrErr returns the Policy value or an error if the edge
-// was not loaded in eager-loading.
-func (e UserEdges) PolicyOrErr() ([]*UserPolicy, error) {
-	if e.loadedTypes[1] {
+// was not loaded in eager-loading, or loaded but was not found.
+func (e UserEdges) PolicyOrErr() (*UserPolicy, error) {
+	if e.Policy != nil {
 		return e.Policy, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: userpolicy.Label}
 	}
 	return nil, &NotLoadedError{edge: "policy"}
 }
@@ -125,7 +135,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case user.FieldName, user.FieldUsername, user.FieldPasswordHash:
 			values[i] = new(sql.NullString)
-		case user.FieldCreatedAt, user.FieldUpdatedAt:
+		case user.FieldCreatedAt, user.FieldUpdatedAt, user.FieldLastLoginAt, user.FieldLastActivityAt:
 			values[i] = new(sql.NullTime)
 		case user.FieldID:
 			values[i] = new(uuid.UUID)
@@ -179,6 +189,18 @@ func (_m *User) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field password_hash", values[i])
 			} else if value.Valid {
 				_m.PasswordHash = value.String
+			}
+		case user.FieldLastLoginAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field last_login_at", values[i])
+			} else if value.Valid {
+				_m.LastLoginAt = value.Time
+			}
+		case user.FieldLastActivityAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field last_activity_at", values[i])
+			} else if value.Valid {
+				_m.LastActivityAt = value.Time
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -264,6 +286,12 @@ func (_m *User) String() string {
 	builder.WriteString(_m.Username)
 	builder.WriteString(", ")
 	builder.WriteString("password_hash=<sensitive>")
+	builder.WriteString(", ")
+	builder.WriteString("last_login_at=")
+	builder.WriteString(_m.LastLoginAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("last_activity_at=")
+	builder.WriteString(_m.LastActivityAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

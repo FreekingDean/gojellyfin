@@ -8,6 +8,8 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/FreekingDean/gojellyfin/internal/store/entities"
+	"github.com/google/uuid"
 )
 
 const (
@@ -199,14 +201,90 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultIsAdministrator holds the default value on creation for the "is_administrator" field.
+	DefaultIsAdministrator bool
+	// DefaultIsHidden holds the default value on creation for the "is_hidden" field.
+	DefaultIsHidden bool
+	// DefaultIsDisabled holds the default value on creation for the "is_disabled" field.
+	DefaultIsDisabled bool
 	// DefaultEnableCollectionManagement holds the default value on creation for the "enable_collection_management" field.
 	DefaultEnableCollectionManagement bool
 	// DefaultEnableSubtitleManagement holds the default value on creation for the "enable_subtitle_management" field.
 	DefaultEnableSubtitleManagement bool
 	// DefaultEnableLyricManagement holds the default value on creation for the "enable_lyric_management" field.
 	DefaultEnableLyricManagement bool
+	// DefaultEnableUserPreferenceAccess holds the default value on creation for the "enable_user_preference_access" field.
+	DefaultEnableUserPreferenceAccess bool
+	// DefaultEnableRemoteControlOfOtherUsers holds the default value on creation for the "enable_remote_control_of_other_users" field.
+	DefaultEnableRemoteControlOfOtherUsers bool
+	// DefaultEnableSharedDeviceControl holds the default value on creation for the "enable_shared_device_control" field.
+	DefaultEnableSharedDeviceControl bool
+	// DefaultEnableRemoteAccess holds the default value on creation for the "enable_remote_access" field.
+	DefaultEnableRemoteAccess bool
+	// DefaultEnableLiveTvManagement holds the default value on creation for the "enable_live_tv_management" field.
+	DefaultEnableLiveTvManagement bool
+	// DefaultEnableLiveTvAccess holds the default value on creation for the "enable_live_tv_access" field.
+	DefaultEnableLiveTvAccess bool
+	// DefaultEnableMediaPlayback holds the default value on creation for the "enable_media_playback" field.
+	DefaultEnableMediaPlayback bool
+	// DefaultEnableAudioPlaybackTranscoding holds the default value on creation for the "enable_audio_playback_transcoding" field.
+	DefaultEnableAudioPlaybackTranscoding bool
+	// DefaultEnableVideoPlaybackTranscoding holds the default value on creation for the "enable_video_playback_transcoding" field.
+	DefaultEnableVideoPlaybackTranscoding bool
+	// DefaultEnablePlaybackRemuxing holds the default value on creation for the "enable_playback_remuxing" field.
+	DefaultEnablePlaybackRemuxing bool
+	// DefaultForceRemoteSourceTranscoding holds the default value on creation for the "force_remote_source_transcoding" field.
+	DefaultForceRemoteSourceTranscoding bool
+	// DefaultEnableContentDeletion holds the default value on creation for the "enable_content_deletion" field.
+	DefaultEnableContentDeletion bool
+	// DefaultEnableContentDownloading holds the default value on creation for the "enable_content_downloading" field.
+	DefaultEnableContentDownloading bool
+	// DefaultEnableSyncTranscoding holds the default value on creation for the "enable_sync_transcoding" field.
+	DefaultEnableSyncTranscoding bool
+	// DefaultEnableMediaConversion holds the default value on creation for the "enable_media_conversion" field.
+	DefaultEnableMediaConversion bool
+	// DefaultEnablePublicSharing holds the default value on creation for the "enable_public_sharing" field.
+	DefaultEnablePublicSharing bool
+	// DefaultEnableAllDevices holds the default value on creation for the "enable_all_devices" field.
+	DefaultEnableAllDevices bool
+	// DefaultEnableAllChannels holds the default value on creation for the "enable_all_channels" field.
+	DefaultEnableAllChannels bool
+	// DefaultEnableAllFolders holds the default value on creation for the "enable_all_folders" field.
+	DefaultEnableAllFolders bool
+	// DefaultInvalidLoginAttemptCount holds the default value on creation for the "invalid_login_attempt_count" field.
+	DefaultInvalidLoginAttemptCount int32
+	// DefaultLoginAttemptsBeforeLockout holds the default value on creation for the "login_attempts_before_lockout" field.
+	DefaultLoginAttemptsBeforeLockout int32
+	// DefaultMaxActiveSessions holds the default value on creation for the "max_active_sessions" field.
+	DefaultMaxActiveSessions int32
+	// DefaultRemoteClientBitrateLimit holds the default value on creation for the "remote_client_bitrate_limit" field.
+	DefaultRemoteClientBitrateLimit int32
+	// DefaultAllowedTags holds the default value on creation for the "allowed_tags" field.
+	DefaultAllowedTags []string
+	// DefaultBlockedTags holds the default value on creation for the "blocked_tags" field.
+	DefaultBlockedTags []string
+	// DefaultAccessSchedules holds the default value on creation for the "access_schedules" field.
+	DefaultAccessSchedules []entities.AccessSchedule
+	// DefaultEnableContentDeletionFromFolders holds the default value on creation for the "enable_content_deletion_from_folders" field.
+	DefaultEnableContentDeletionFromFolders []string
+	// DefaultEnabledDevices holds the default value on creation for the "enabled_devices" field.
+	DefaultEnabledDevices []string
+	// DefaultEnabledChannels holds the default value on creation for the "enabled_channels" field.
+	DefaultEnabledChannels []uuid.UUID
+	// DefaultEnabledFolders holds the default value on creation for the "enabled_folders" field.
+	DefaultEnabledFolders []uuid.UUID
+	// DefaultBlockedMediaFolders holds the default value on creation for the "blocked_media_folders" field.
+	DefaultBlockedMediaFolders []uuid.UUID
+	// DefaultBlockedChannels holds the default value on creation for the "blocked_channels" field.
+	DefaultBlockedChannels []uuid.UUID
+	// DefaultBlockUnratedItems holds the default value on creation for the "block_unrated_items" field.
+	DefaultBlockUnratedItems []string
+	// DefaultAuthenticationProviderID holds the default value on creation for the "authentication_provider_id" field.
+	DefaultAuthenticationProviderID string
 	// AuthenticationProviderIDValidator is a validator for the "authentication_provider_id" field. It is called by the builders before save.
 	AuthenticationProviderIDValidator func(string) error
+	// DefaultPasswordResetProviderID holds the default value on creation for the "password_reset_provider_id" field.
+	DefaultPasswordResetProviderID string
 	// PasswordResetProviderIDValidator is a validator for the "password_reset_provider_id" field. It is called by the builders before save.
 	PasswordResetProviderIDValidator func(string) error
 )
@@ -277,6 +355,9 @@ func MaxParentalSubRatingValidator(mpsr MaxParentalSubRating) error {
 
 // SyncPlayAccess defines the type for the "sync_play_access" enum field.
 type SyncPlayAccess string
+
+// SyncPlayAccessCreateAndJoinGroups is the default value of the SyncPlayAccess enum.
+const DefaultSyncPlayAccess = SyncPlayAccessCreateAndJoinGroups
 
 // SyncPlayAccess values.
 const (
@@ -497,6 +578,6 @@ func newUserStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(UserInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
+		sqlgraph.Edge(sqlgraph.O2O, true, UserTable, UserColumn),
 	)
 }

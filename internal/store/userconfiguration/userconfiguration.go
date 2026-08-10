@@ -8,6 +8,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/google/uuid"
 )
 
 const (
@@ -115,10 +116,37 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultPlayDefaultAudioTrack holds the default value on creation for the "play_default_audio_track" field.
+	DefaultPlayDefaultAudioTrack bool
+	// DefaultGroupedFolders holds the default value on creation for the "grouped_folders" field.
+	DefaultGroupedFolders []uuid.UUID
+	// DefaultOrderedViews holds the default value on creation for the "ordered_views" field.
+	DefaultOrderedViews []uuid.UUID
+	// DefaultLatestItemsExcludes holds the default value on creation for the "latest_items_excludes" field.
+	DefaultLatestItemsExcludes []uuid.UUID
+	// DefaultMyMediaExcludes holds the default value on creation for the "my_media_excludes" field.
+	DefaultMyMediaExcludes []uuid.UUID
+	// DefaultDisplayMissingEpisodes holds the default value on creation for the "display_missing_episodes" field.
+	DefaultDisplayMissingEpisodes bool
+	// DefaultDisplayCollectionsView holds the default value on creation for the "display_collections_view" field.
+	DefaultDisplayCollectionsView bool
+	// DefaultEnableLocalPassword holds the default value on creation for the "enable_local_password" field.
+	DefaultEnableLocalPassword bool
+	// DefaultHidePlayedInLatest holds the default value on creation for the "hide_played_in_latest" field.
+	DefaultHidePlayedInLatest bool
+	// DefaultRememberAudioSelections holds the default value on creation for the "remember_audio_selections" field.
+	DefaultRememberAudioSelections bool
+	// DefaultRememberSubtitleSelections holds the default value on creation for the "remember_subtitle_selections" field.
+	DefaultRememberSubtitleSelections bool
+	// DefaultEnableNextEpisodeAutoPlay holds the default value on creation for the "enable_next_episode_auto_play" field.
+	DefaultEnableNextEpisodeAutoPlay bool
 )
 
 // SubtitleMode defines the type for the "subtitle_mode" enum field.
 type SubtitleMode string
+
+// SubtitleModeOnlyForced is the default value of the SubtitleMode enum.
+const DefaultSubtitleMode = SubtitleModeOnlyForced
 
 // SubtitleMode values.
 const (
@@ -231,6 +259,6 @@ func newUserStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(UserInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
+		sqlgraph.Edge(sqlgraph.O2O, true, UserTable, UserColumn),
 	)
 }

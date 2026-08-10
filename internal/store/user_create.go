@@ -77,40 +77,76 @@ func (_c *UserCreate) SetPasswordHash(v string) *UserCreate {
 	return _c
 }
 
+// SetLastLoginAt sets the "last_login_at" field.
+func (_c *UserCreate) SetLastLoginAt(v time.Time) *UserCreate {
+	_c.mutation.SetLastLoginAt(v)
+	return _c
+}
+
+// SetNillableLastLoginAt sets the "last_login_at" field if the given value is not nil.
+func (_c *UserCreate) SetNillableLastLoginAt(v *time.Time) *UserCreate {
+	if v != nil {
+		_c.SetLastLoginAt(*v)
+	}
+	return _c
+}
+
+// SetLastActivityAt sets the "last_activity_at" field.
+func (_c *UserCreate) SetLastActivityAt(v time.Time) *UserCreate {
+	_c.mutation.SetLastActivityAt(v)
+	return _c
+}
+
+// SetNillableLastActivityAt sets the "last_activity_at" field if the given value is not nil.
+func (_c *UserCreate) SetNillableLastActivityAt(v *time.Time) *UserCreate {
+	if v != nil {
+		_c.SetLastActivityAt(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *UserCreate) SetID(v uuid.UUID) *UserCreate {
 	_c.mutation.SetID(v)
 	return _c
 }
 
-// AddConfigurationIDs adds the "configuration" edge to the UserConfiguration entity by IDs.
-func (_c *UserCreate) AddConfigurationIDs(ids ...uuid.UUID) *UserCreate {
-	_c.mutation.AddConfigurationIDs(ids...)
+// SetConfigurationID sets the "configuration" edge to the UserConfiguration entity by ID.
+func (_c *UserCreate) SetConfigurationID(id uuid.UUID) *UserCreate {
+	_c.mutation.SetConfigurationID(id)
 	return _c
 }
 
-// AddConfiguration adds the "configuration" edges to the UserConfiguration entity.
-func (_c *UserCreate) AddConfiguration(v ...*UserConfiguration) *UserCreate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+// SetNillableConfigurationID sets the "configuration" edge to the UserConfiguration entity by ID if the given value is not nil.
+func (_c *UserCreate) SetNillableConfigurationID(id *uuid.UUID) *UserCreate {
+	if id != nil {
+		_c = _c.SetConfigurationID(*id)
 	}
-	return _c.AddConfigurationIDs(ids...)
-}
-
-// AddPolicyIDs adds the "policy" edge to the UserPolicy entity by IDs.
-func (_c *UserCreate) AddPolicyIDs(ids ...uuid.UUID) *UserCreate {
-	_c.mutation.AddPolicyIDs(ids...)
 	return _c
 }
 
-// AddPolicy adds the "policy" edges to the UserPolicy entity.
-func (_c *UserCreate) AddPolicy(v ...*UserPolicy) *UserCreate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+// SetConfiguration sets the "configuration" edge to the UserConfiguration entity.
+func (_c *UserCreate) SetConfiguration(v *UserConfiguration) *UserCreate {
+	return _c.SetConfigurationID(v.ID)
+}
+
+// SetPolicyID sets the "policy" edge to the UserPolicy entity by ID.
+func (_c *UserCreate) SetPolicyID(id uuid.UUID) *UserCreate {
+	_c.mutation.SetPolicyID(id)
+	return _c
+}
+
+// SetNillablePolicyID sets the "policy" edge to the UserPolicy entity by ID if the given value is not nil.
+func (_c *UserCreate) SetNillablePolicyID(id *uuid.UUID) *UserCreate {
+	if id != nil {
+		_c = _c.SetPolicyID(*id)
 	}
-	return _c.AddPolicyIDs(ids...)
+	return _c
+}
+
+// SetPolicy sets the "policy" edge to the UserPolicy entity.
+func (_c *UserCreate) SetPolicy(v *UserPolicy) *UserCreate {
+	return _c.SetPolicyID(v.ID)
 }
 
 // AddSessionIDs adds the "sessions" edge to the Session entity by IDs.
@@ -306,9 +342,17 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		_spec.SetField(user.FieldPasswordHash, field.TypeString, value)
 		_node.PasswordHash = value
 	}
+	if value, ok := _c.mutation.LastLoginAt(); ok {
+		_spec.SetField(user.FieldLastLoginAt, field.TypeTime, value)
+		_node.LastLoginAt = value
+	}
+	if value, ok := _c.mutation.LastActivityAt(); ok {
+		_spec.SetField(user.FieldLastActivityAt, field.TypeTime, value)
+		_node.LastActivityAt = value
+	}
 	if nodes := _c.mutation.ConfigurationIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.O2O,
 			Inverse: false,
 			Table:   user.ConfigurationTable,
 			Columns: []string{user.ConfigurationColumn},
@@ -324,7 +368,7 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	}
 	if nodes := _c.mutation.PolicyIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.O2O,
 			Inverse: false,
 			Table:   user.PolicyTable,
 			Columns: []string{user.PolicyColumn},
@@ -530,6 +574,42 @@ func (u *UserUpsert) UpdatePasswordHash() *UserUpsert {
 	return u
 }
 
+// SetLastLoginAt sets the "last_login_at" field.
+func (u *UserUpsert) SetLastLoginAt(v time.Time) *UserUpsert {
+	u.Set(user.FieldLastLoginAt, v)
+	return u
+}
+
+// UpdateLastLoginAt sets the "last_login_at" field to the value that was provided on create.
+func (u *UserUpsert) UpdateLastLoginAt() *UserUpsert {
+	u.SetExcluded(user.FieldLastLoginAt)
+	return u
+}
+
+// ClearLastLoginAt clears the value of the "last_login_at" field.
+func (u *UserUpsert) ClearLastLoginAt() *UserUpsert {
+	u.SetNull(user.FieldLastLoginAt)
+	return u
+}
+
+// SetLastActivityAt sets the "last_activity_at" field.
+func (u *UserUpsert) SetLastActivityAt(v time.Time) *UserUpsert {
+	u.Set(user.FieldLastActivityAt, v)
+	return u
+}
+
+// UpdateLastActivityAt sets the "last_activity_at" field to the value that was provided on create.
+func (u *UserUpsert) UpdateLastActivityAt() *UserUpsert {
+	u.SetExcluded(user.FieldLastActivityAt)
+	return u
+}
+
+// ClearLastActivityAt clears the value of the "last_activity_at" field.
+func (u *UserUpsert) ClearLastActivityAt() *UserUpsert {
+	u.SetNull(user.FieldLastActivityAt)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -645,6 +725,48 @@ func (u *UserUpsertOne) SetPasswordHash(v string) *UserUpsertOne {
 func (u *UserUpsertOne) UpdatePasswordHash() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdatePasswordHash()
+	})
+}
+
+// SetLastLoginAt sets the "last_login_at" field.
+func (u *UserUpsertOne) SetLastLoginAt(v time.Time) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetLastLoginAt(v)
+	})
+}
+
+// UpdateLastLoginAt sets the "last_login_at" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateLastLoginAt() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateLastLoginAt()
+	})
+}
+
+// ClearLastLoginAt clears the value of the "last_login_at" field.
+func (u *UserUpsertOne) ClearLastLoginAt() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearLastLoginAt()
+	})
+}
+
+// SetLastActivityAt sets the "last_activity_at" field.
+func (u *UserUpsertOne) SetLastActivityAt(v time.Time) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetLastActivityAt(v)
+	})
+}
+
+// UpdateLastActivityAt sets the "last_activity_at" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateLastActivityAt() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateLastActivityAt()
+	})
+}
+
+// ClearLastActivityAt clears the value of the "last_activity_at" field.
+func (u *UserUpsertOne) ClearLastActivityAt() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearLastActivityAt()
 	})
 }
 
@@ -930,6 +1052,48 @@ func (u *UserUpsertBulk) SetPasswordHash(v string) *UserUpsertBulk {
 func (u *UserUpsertBulk) UpdatePasswordHash() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdatePasswordHash()
+	})
+}
+
+// SetLastLoginAt sets the "last_login_at" field.
+func (u *UserUpsertBulk) SetLastLoginAt(v time.Time) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetLastLoginAt(v)
+	})
+}
+
+// UpdateLastLoginAt sets the "last_login_at" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateLastLoginAt() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateLastLoginAt()
+	})
+}
+
+// ClearLastLoginAt clears the value of the "last_login_at" field.
+func (u *UserUpsertBulk) ClearLastLoginAt() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearLastLoginAt()
+	})
+}
+
+// SetLastActivityAt sets the "last_activity_at" field.
+func (u *UserUpsertBulk) SetLastActivityAt(v time.Time) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetLastActivityAt(v)
+	})
+}
+
+// UpdateLastActivityAt sets the "last_activity_at" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateLastActivityAt() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateLastActivityAt()
+	})
+}
+
+// ClearLastActivityAt clears the value of the "last_activity_at" field.
+func (u *UserUpsertBulk) ClearLastActivityAt() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearLastActivityAt()
 	})
 }
 

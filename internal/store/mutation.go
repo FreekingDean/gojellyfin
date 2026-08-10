@@ -39122,12 +39122,12 @@ type UserMutation struct {
 	name                        *string
 	username                    *string
 	password_hash               *string
+	last_login_at               *time.Time
+	last_activity_at            *time.Time
 	clearedFields               map[string]struct{}
-	configuration               map[uuid.UUID]struct{}
-	removedconfiguration        map[uuid.UUID]struct{}
+	configuration               *uuid.UUID
 	clearedconfiguration        bool
-	policy                      map[uuid.UUID]struct{}
-	removedpolicy               map[uuid.UUID]struct{}
+	policy                      *uuid.UUID
 	clearedpolicy               bool
 	sessions                    map[uuid.UUID]struct{}
 	removedsessions             map[uuid.UUID]struct{}
@@ -39433,14 +39433,107 @@ func (m *UserMutation) ResetPasswordHash() {
 	m.password_hash = nil
 }
 
-// AddConfigurationIDs adds the "configuration" edge to the UserConfiguration entity by ids.
-func (m *UserMutation) AddConfigurationIDs(ids ...uuid.UUID) {
-	if m.configuration == nil {
-		m.configuration = make(map[uuid.UUID]struct{})
+// SetLastLoginAt sets the "last_login_at" field.
+func (m *UserMutation) SetLastLoginAt(t time.Time) {
+	m.last_login_at = &t
+}
+
+// LastLoginAt returns the value of the "last_login_at" field in the mutation.
+func (m *UserMutation) LastLoginAt() (r time.Time, exists bool) {
+	v := m.last_login_at
+	if v == nil {
+		return
 	}
-	for i := range ids {
-		m.configuration[ids[i]] = struct{}{}
+	return *v, true
+}
+
+// OldLastLoginAt returns the old "last_login_at" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldLastLoginAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastLoginAt is only allowed on UpdateOne operations")
 	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastLoginAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastLoginAt: %w", err)
+	}
+	return oldValue.LastLoginAt, nil
+}
+
+// ClearLastLoginAt clears the value of the "last_login_at" field.
+func (m *UserMutation) ClearLastLoginAt() {
+	m.last_login_at = nil
+	m.clearedFields[user.FieldLastLoginAt] = struct{}{}
+}
+
+// LastLoginAtCleared returns if the "last_login_at" field was cleared in this mutation.
+func (m *UserMutation) LastLoginAtCleared() bool {
+	_, ok := m.clearedFields[user.FieldLastLoginAt]
+	return ok
+}
+
+// ResetLastLoginAt resets all changes to the "last_login_at" field.
+func (m *UserMutation) ResetLastLoginAt() {
+	m.last_login_at = nil
+	delete(m.clearedFields, user.FieldLastLoginAt)
+}
+
+// SetLastActivityAt sets the "last_activity_at" field.
+func (m *UserMutation) SetLastActivityAt(t time.Time) {
+	m.last_activity_at = &t
+}
+
+// LastActivityAt returns the value of the "last_activity_at" field in the mutation.
+func (m *UserMutation) LastActivityAt() (r time.Time, exists bool) {
+	v := m.last_activity_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastActivityAt returns the old "last_activity_at" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldLastActivityAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastActivityAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastActivityAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastActivityAt: %w", err)
+	}
+	return oldValue.LastActivityAt, nil
+}
+
+// ClearLastActivityAt clears the value of the "last_activity_at" field.
+func (m *UserMutation) ClearLastActivityAt() {
+	m.last_activity_at = nil
+	m.clearedFields[user.FieldLastActivityAt] = struct{}{}
+}
+
+// LastActivityAtCleared returns if the "last_activity_at" field was cleared in this mutation.
+func (m *UserMutation) LastActivityAtCleared() bool {
+	_, ok := m.clearedFields[user.FieldLastActivityAt]
+	return ok
+}
+
+// ResetLastActivityAt resets all changes to the "last_activity_at" field.
+func (m *UserMutation) ResetLastActivityAt() {
+	m.last_activity_at = nil
+	delete(m.clearedFields, user.FieldLastActivityAt)
+}
+
+// SetConfigurationID sets the "configuration" edge to the UserConfiguration entity by id.
+func (m *UserMutation) SetConfigurationID(id uuid.UUID) {
+	m.configuration = &id
 }
 
 // ClearConfiguration clears the "configuration" edge to the UserConfiguration entity.
@@ -39453,29 +39546,20 @@ func (m *UserMutation) ConfigurationCleared() bool {
 	return m.clearedconfiguration
 }
 
-// RemoveConfigurationIDs removes the "configuration" edge to the UserConfiguration entity by IDs.
-func (m *UserMutation) RemoveConfigurationIDs(ids ...uuid.UUID) {
-	if m.removedconfiguration == nil {
-		m.removedconfiguration = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		delete(m.configuration, ids[i])
-		m.removedconfiguration[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedConfiguration returns the removed IDs of the "configuration" edge to the UserConfiguration entity.
-func (m *UserMutation) RemovedConfigurationIDs() (ids []uuid.UUID) {
-	for id := range m.removedconfiguration {
-		ids = append(ids, id)
+// ConfigurationID returns the "configuration" edge ID in the mutation.
+func (m *UserMutation) ConfigurationID() (id uuid.UUID, exists bool) {
+	if m.configuration != nil {
+		return *m.configuration, true
 	}
 	return
 }
 
 // ConfigurationIDs returns the "configuration" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ConfigurationID instead. It exists only for internal usage by the builders.
 func (m *UserMutation) ConfigurationIDs() (ids []uuid.UUID) {
-	for id := range m.configuration {
-		ids = append(ids, id)
+	if id := m.configuration; id != nil {
+		ids = append(ids, *id)
 	}
 	return
 }
@@ -39484,17 +39568,11 @@ func (m *UserMutation) ConfigurationIDs() (ids []uuid.UUID) {
 func (m *UserMutation) ResetConfiguration() {
 	m.configuration = nil
 	m.clearedconfiguration = false
-	m.removedconfiguration = nil
 }
 
-// AddPolicyIDs adds the "policy" edge to the UserPolicy entity by ids.
-func (m *UserMutation) AddPolicyIDs(ids ...uuid.UUID) {
-	if m.policy == nil {
-		m.policy = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		m.policy[ids[i]] = struct{}{}
-	}
+// SetPolicyID sets the "policy" edge to the UserPolicy entity by id.
+func (m *UserMutation) SetPolicyID(id uuid.UUID) {
+	m.policy = &id
 }
 
 // ClearPolicy clears the "policy" edge to the UserPolicy entity.
@@ -39507,29 +39585,20 @@ func (m *UserMutation) PolicyCleared() bool {
 	return m.clearedpolicy
 }
 
-// RemovePolicyIDs removes the "policy" edge to the UserPolicy entity by IDs.
-func (m *UserMutation) RemovePolicyIDs(ids ...uuid.UUID) {
-	if m.removedpolicy == nil {
-		m.removedpolicy = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		delete(m.policy, ids[i])
-		m.removedpolicy[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedPolicy returns the removed IDs of the "policy" edge to the UserPolicy entity.
-func (m *UserMutation) RemovedPolicyIDs() (ids []uuid.UUID) {
-	for id := range m.removedpolicy {
-		ids = append(ids, id)
+// PolicyID returns the "policy" edge ID in the mutation.
+func (m *UserMutation) PolicyID() (id uuid.UUID, exists bool) {
+	if m.policy != nil {
+		return *m.policy, true
 	}
 	return
 }
 
 // PolicyIDs returns the "policy" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// PolicyID instead. It exists only for internal usage by the builders.
 func (m *UserMutation) PolicyIDs() (ids []uuid.UUID) {
-	for id := range m.policy {
-		ids = append(ids, id)
+	if id := m.policy; id != nil {
+		ids = append(ids, *id)
 	}
 	return
 }
@@ -39538,7 +39607,6 @@ func (m *UserMutation) PolicyIDs() (ids []uuid.UUID) {
 func (m *UserMutation) ResetPolicy() {
 	m.policy = nil
 	m.clearedpolicy = false
-	m.removedpolicy = nil
 }
 
 // AddSessionIDs adds the "sessions" edge to the Session entity by ids.
@@ -39845,7 +39913,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, user.FieldCreatedAt)
 	}
@@ -39860,6 +39928,12 @@ func (m *UserMutation) Fields() []string {
 	}
 	if m.password_hash != nil {
 		fields = append(fields, user.FieldPasswordHash)
+	}
+	if m.last_login_at != nil {
+		fields = append(fields, user.FieldLastLoginAt)
+	}
+	if m.last_activity_at != nil {
+		fields = append(fields, user.FieldLastActivityAt)
 	}
 	return fields
 }
@@ -39879,6 +39953,10 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.Username()
 	case user.FieldPasswordHash:
 		return m.PasswordHash()
+	case user.FieldLastLoginAt:
+		return m.LastLoginAt()
+	case user.FieldLastActivityAt:
+		return m.LastActivityAt()
 	}
 	return nil, false
 }
@@ -39898,6 +39976,10 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldUsername(ctx)
 	case user.FieldPasswordHash:
 		return m.OldPasswordHash(ctx)
+	case user.FieldLastLoginAt:
+		return m.OldLastLoginAt(ctx)
+	case user.FieldLastActivityAt:
+		return m.OldLastActivityAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown User field %s", name)
 }
@@ -39942,6 +40024,20 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetPasswordHash(v)
 		return nil
+	case user.FieldLastLoginAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastLoginAt(v)
+		return nil
+	case user.FieldLastActivityAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastActivityAt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)
 }
@@ -39971,7 +40067,14 @@ func (m *UserMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *UserMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(user.FieldLastLoginAt) {
+		fields = append(fields, user.FieldLastLoginAt)
+	}
+	if m.FieldCleared(user.FieldLastActivityAt) {
+		fields = append(fields, user.FieldLastActivityAt)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -39984,6 +40087,14 @@ func (m *UserMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *UserMutation) ClearField(name string) error {
+	switch name {
+	case user.FieldLastLoginAt:
+		m.ClearLastLoginAt()
+		return nil
+	case user.FieldLastActivityAt:
+		m.ClearLastActivityAt()
+		return nil
+	}
 	return fmt.Errorf("unknown User nullable field %s", name)
 }
 
@@ -40005,6 +40116,12 @@ func (m *UserMutation) ResetField(name string) error {
 		return nil
 	case user.FieldPasswordHash:
 		m.ResetPasswordHash()
+		return nil
+	case user.FieldLastLoginAt:
+		m.ResetLastLoginAt()
+		return nil
+	case user.FieldLastActivityAt:
+		m.ResetLastActivityAt()
 		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)
@@ -40042,17 +40159,13 @@ func (m *UserMutation) AddedEdges() []string {
 func (m *UserMutation) AddedIDs(name string) []ent.Value {
 	switch name {
 	case user.EdgeConfiguration:
-		ids := make([]ent.Value, 0, len(m.configuration))
-		for id := range m.configuration {
-			ids = append(ids, id)
+		if id := m.configuration; id != nil {
+			return []ent.Value{*id}
 		}
-		return ids
 	case user.EdgePolicy:
-		ids := make([]ent.Value, 0, len(m.policy))
-		for id := range m.policy {
-			ids = append(ids, id)
+		if id := m.policy; id != nil {
+			return []ent.Value{*id}
 		}
-		return ids
 	case user.EdgeSessions:
 		ids := make([]ent.Value, 0, len(m.sessions))
 		for id := range m.sessions {
@@ -40090,12 +40203,6 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 7)
-	if m.removedconfiguration != nil {
-		edges = append(edges, user.EdgeConfiguration)
-	}
-	if m.removedpolicy != nil {
-		edges = append(edges, user.EdgePolicy)
-	}
 	if m.removedsessions != nil {
 		edges = append(edges, user.EdgeSessions)
 	}
@@ -40118,18 +40225,6 @@ func (m *UserMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case user.EdgeConfiguration:
-		ids := make([]ent.Value, 0, len(m.removedconfiguration))
-		for id := range m.removedconfiguration {
-			ids = append(ids, id)
-		}
-		return ids
-	case user.EdgePolicy:
-		ids := make([]ent.Value, 0, len(m.removedpolicy))
-		for id := range m.removedpolicy {
-			ids = append(ids, id)
-		}
-		return ids
 	case user.EdgeSessions:
 		ids := make([]ent.Value, 0, len(m.removedsessions))
 		for id := range m.removedsessions {
@@ -40217,6 +40312,12 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *UserMutation) ClearEdge(name string) error {
 	switch name {
+	case user.EdgeConfiguration:
+		m.ClearConfiguration()
+		return nil
+	case user.EdgePolicy:
+		m.ClearPolicy()
+		return nil
 	}
 	return fmt.Errorf("unknown User unique edge %s", name)
 }

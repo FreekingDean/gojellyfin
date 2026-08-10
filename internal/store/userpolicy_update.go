@@ -1094,7 +1094,7 @@ func (_u *UserPolicyUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: true,
 			Table:   userpolicy.UserTable,
 			Columns: []string{userpolicy.UserColumn},
@@ -1107,7 +1107,7 @@ func (_u *UserPolicyUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	}
 	if nodes := _u.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: true,
 			Table:   userpolicy.UserTable,
 			Columns: []string{userpolicy.UserColumn},
@@ -2233,7 +2233,7 @@ func (_u *UserPolicyUpdateOne) sqlSave(ctx context.Context) (_node *UserPolicy, 
 	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: true,
 			Table:   userpolicy.UserTable,
 			Columns: []string{userpolicy.UserColumn},
@@ -2246,7 +2246,7 @@ func (_u *UserPolicyUpdateOne) sqlSave(ctx context.Context) (_node *UserPolicy, 
 	}
 	if nodes := _u.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: true,
 			Table:   userpolicy.UserTable,
 			Columns: []string{userpolicy.UserColumn},
