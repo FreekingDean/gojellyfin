@@ -2,67 +2,93 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"time"
 
-	"github.com/google/uuid"
-	"gorm.io/gorm"
+	"github.com/FreekingDean/gojellyfin/internal/store"
+	devicemodal "github.com/FreekingDean/gojellyfin/internal/store/device"
+	sessionmodal "github.com/FreekingDean/gojellyfin/internal/store/session"
 )
 
-type Session struct {
-	ID               uuid.UUID `gorm:"type:uuid;default:gen_random_uuid()"`
-	UserID           uuid.UUID `gorm:"type:uuid;index"`
-	AccessToken      string    `gorm:"uniqueIndex"`
-	DeviceID         string
-	DeviceName       string
-	Client           string
-	AppVersion       string
-	LastActivityDate time.Time
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
-}
+type (
+	Session = store.Session
+	Device  = store.Device
+)
 
 type Service struct {
-	db *gorm.DB
+	store *store.Client
 }
 
-func New(db *gorm.DB) *Service {
-	return &Service{db: db}
+func New(client *store.Client) *Service {
+	return &Service{store: client}
 }
 
-func (s *Service) CreateSession(ctx context.Context, session *Session) error {
-	return s.db.WithContext(ctx).Create(session).Error
+func (s *Service) CreateSession(ctx context.Context, session *Session, device *Device) error {
+	return s.store.WithTx(ctx, func(tx *store.Tx) error {
+		deviceID, err := tx.Device.Create().
+			SetClientID(device.ClientID).
+			SetName(device.Name).
+			SetAppVersion(device.AppVersion).
+			SetLastActivityAt(time.Now()).
+			OnConflictColumns(devicemodal.FieldClientID).
+			UpdateAppVersion().
+			UpdateLastActivityAt().
+			ID(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to create or update device: %w", err)
+		}
+		_, err = tx.Session.Create().
+			SetUserID(session.Edges.User.ID).
+			SetAccessToken(session.AccessToken).
+			SetDeviceID(deviceID).
+			Save(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to create session: %w", err)
+		}
+
+		return nil
+	})
 }
 
 func (s *Service) SessionByToken(ctx context.Context, token string) (*Session, error) {
-	var session Session
-	if err := s.db.WithContext(ctx).First(&session, "access_token = ?", token).Error; err != nil {
-		return nil, err
+	session, err := s.store.Session.Query().Where(sessionmodal.AccessToken(token)).Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query session by token: %w", err)
 	}
 
-	return &session, nil
+	if session.RevokedAt.Before(time.Now()) {
+		return nil, fmt.Errorf("session is revoked")
+	}
+
+	return session, nil
 }
 
-func (s *Service) ListSessions(ctx context.Context) ([]Session, error) {
-	var sessions []Session
-	if err := s.db.WithContext(ctx).Find(&sessions).Error; err != nil {
-		return nil, err
+func (s *Service) ListSessions(ctx context.Context) ([]*Session, error) {
+	sessions, err := s.store.Session.Query().All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list sessions: %w", err)
 	}
 
 	return sessions, nil
 }
 
 func (s *Service) DeleteSessionByToken(ctx context.Context, token string) error {
-	return s.db.WithContext(ctx).Delete(&Session{}, "access_token = ?", token).Error
+	_, err := s.store.Session.Delete().Where(
+		sessionmodal.AccessToken(token),
+	).Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to delete session by token: %w", err)
+	}
+
+	return nil
 }
 
 // One row per device rather than per session, newest activity first.
-func (s *Service) Devices(ctx context.Context) ([]Session, error) {
-	var sessions []Session
-	err := s.db.WithContext(ctx).
-		Raw(`SELECT DISTINCT ON (device_id) * FROM sessions
-			WHERE device_id <> ''
-			ORDER BY device_id, last_activity_date DESC`).
-		Scan(&sessions).Error
+func (s *Service) Devices(ctx context.Context) ([]*Device, error) {
+	devices, err := s.store.Device.Query().Order(devicemodal.ByLastActivityAt()).All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list devices: %w", err)
+	}
 
-	return sessions, err
+	return devices, err
 }

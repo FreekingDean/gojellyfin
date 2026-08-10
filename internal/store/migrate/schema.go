@@ -833,6 +833,13 @@ var (
 				OnDelete:   schema.NoAction,
 			},
 		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "session_access_token",
+				Unique:  true,
+				Columns: []*schema.Column{SessionsColumns[3]},
+			},
+		},
 	}
 	// StudiosColumns holds the columns for the "studios" table.
 	StudiosColumns = []*schema.Column{

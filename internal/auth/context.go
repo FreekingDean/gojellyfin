@@ -60,7 +60,7 @@ func SessionFrom(ctx context.Context) *Session {
 
 func UserID(ctx context.Context) uuid.UUID {
 	if session := SessionFrom(ctx); session != nil {
-		return session.UserID
+		return session.Edges.User.ID
 	}
 
 	return uuid.Nil
