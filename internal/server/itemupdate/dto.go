@@ -1,11 +1,12 @@
 package itemupdate
 
 import (
-	"strings"
-
+	"github.com/FreekingDean/gojellyfin/internal/consts"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
 )
 
 // Everything the editor may change; the columns the scanner and the probe own
@@ -16,10 +17,10 @@ func Metadata(req *api.BaseItemDto) items.Metadata {
 		OriginalTitle:                req.OriginalTitle,
 		SortName:                     req.SortName,
 		Overview:                     req.Overview,
-		OfficialRating:               req.OfficialRating,
-		CustomRating:                 req.CustomRating,
-		CommunityRating:              rating(req.CommunityRating),
-		CriticRating:                 rating(req.CriticRating),
+		OfficialRating:               rating(req.OfficialRating),
+		CustomRating:                 rating(req.CustomRating),
+		CommunityRating:              score(req.CommunityRating),
+		CriticRating:                 score(req.CriticRating),
 		ProductionYear:               req.ProductionYear,
 		PremiereDate:                 req.PremiereDate,
 		EndDate:                      req.EndDate,
@@ -67,7 +68,17 @@ func Metadata(req *api.BaseItemDto) items.Metadata {
 	return metadata
 }
 
-func rating(value *float32) *float64 {
+func rating(value *string) *consts.Rating {
+	if value == nil {
+		return nil
+	}
+
+	parsed, _ := consts.ParseRating(*value)
+
+	return &parsed
+}
+
+func score(value *float32) *float64 {
 	if value == nil {
 		return nil
 	}
@@ -75,31 +86,40 @@ func rating(value *float32) *float64 {
 	return apiutil.Ptr(float64(*value))
 }
 
-// Content types live in the server configuration keyed by path, the same place
-// Jellyfin keeps them.
-func configuredContentType(server api.ServerConfiguration, path string) string {
-	for _, pair := range apiutil.Deref(server.ContentTypes) {
-		if strings.EqualFold(apiutil.Deref(pair.Name), path) {
-			return apiutil.Deref(pair.Value)
-		}
+func supportedContentType(value *string) bool {
+	contentType := libraries.CollectionType(apiutil.Deref(value))
+
+	return contentType == "" || libraries.ValidCollectionType(contentType) == nil
+}
+
+// Mixed is the absence of a content type rather than one the api can name.
+func contentType(collectionType libraries.CollectionType) *api.CollectionType {
+	if collectionType == librarymodal.CollectionTypeMixed {
+		return nil
 	}
 
-	return ""
+	return apiutil.Ptr(api.CollectionType(collectionType))
+}
+
+var contentTypeNames = map[libraries.CollectionType]string{
+	librarymodal.CollectionTypeMovies:      "Movies",
+	librarymodal.CollectionTypeTvshows:     "Shows",
+	librarymodal.CollectionTypeMusic:       "Music",
+	librarymodal.CollectionTypeMusicvideos: "Music Videos",
+	librarymodal.CollectionTypeHomevideos:  "Home Videos",
+	librarymodal.CollectionTypeBoxsets:     "Box Sets",
+	librarymodal.CollectionTypeBooks:       "Books",
+	librarymodal.CollectionTypeMixed:       "Mixed",
 }
 
 func contentTypeOptions() []api.NameValuePair {
-	return []api.NameValuePair{
-		contentTypeOption("Inherit", ""),
-		contentTypeOption("Movies", api.CollectionTypeMovies),
-		contentTypeOption("Music", api.CollectionTypeMusic),
-		contentTypeOption("Shows", api.CollectionTypeTvshows),
-		contentTypeOption("Books", api.CollectionTypeBooks),
-		contentTypeOption("Home Videos", api.CollectionTypeHomevideos),
-		contentTypeOption("Music Videos", api.CollectionTypeMusicvideos),
-		contentTypeOption("Photos", api.CollectionTypePhotos),
+	options := make([]api.NameValuePair, 0, len(libraries.CollectionTypes))
+	for _, collectionType := range libraries.CollectionTypes {
+		options = append(options, api.NameValuePair{
+			Name:  apiutil.Ptr(contentTypeNames[collectionType]),
+			Value: apiutil.Ptr(string(collectionType)),
+		})
 	}
-}
 
-func contentTypeOption(name string, value api.CollectionType) api.NameValuePair {
-	return api.NameValuePair{Name: apiutil.Ptr(name), Value: apiutil.Ptr(string(value))}
+	return options
 }

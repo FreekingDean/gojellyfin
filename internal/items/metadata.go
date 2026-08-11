@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
+	"github.com/FreekingDean/gojellyfin/internal/consts"
 )
 
 // Only the fields a metadata editor may change; the scanner owns
@@ -16,8 +18,8 @@ type Metadata struct {
 	OriginalTitle                *string
 	SortName                     *string
 	Overview                     *string
-	OfficialRating               *string
-	CustomRating                 *string
+	OfficialRating               *consts.Rating
+	CustomRating                 *consts.Rating
 	CommunityRating              *float64
 	CriticRating                 *float64
 	ProductionYear               *int32
@@ -49,8 +51,8 @@ func (s *Service) UpdateMetadata(ctx context.Context, id uuid.UUID, metadata Met
 		SetNillableOriginalTitle(metadata.OriginalTitle).
 		SetNillableSortName(metadata.SortName).
 		SetNillableOverview(metadata.Overview).
-		SetNillableOfficialRating(metadata.OfficialRating).
-		SetNillableCustomRating(metadata.CustomRating).
+		SetNillableOfficialRating((*string)(metadata.OfficialRating)).
+		SetNillableCustomRating((*string)(metadata.CustomRating)).
 		SetNillableCommunityRating(metadata.CommunityRating).
 		SetNillableCriticRating(metadata.CriticRating).
 		SetNillableProductionYear(metadata.ProductionYear).

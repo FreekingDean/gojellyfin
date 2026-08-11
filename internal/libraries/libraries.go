@@ -21,6 +21,21 @@ type (
 	TypeOptions       = entities.TypeOptions
 )
 
+var (
+	ValidCollectionType = librarymodal.CollectionTypeValidator
+
+	CollectionTypes = []CollectionType{
+		librarymodal.CollectionTypeMovies,
+		librarymodal.CollectionTypeTvshows,
+		librarymodal.CollectionTypeMusic,
+		librarymodal.CollectionTypeMusicvideos,
+		librarymodal.CollectionTypeHomevideos,
+		librarymodal.CollectionTypeBoxsets,
+		librarymodal.CollectionTypeBooks,
+		librarymodal.CollectionTypeMixed,
+	}
+)
+
 type Service struct {
 	store *store.Client
 }

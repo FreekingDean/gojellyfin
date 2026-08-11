@@ -2,7 +2,6 @@ package itemupdate
 
 import (
 	"context"
-	"encoding/json"
 	"maps"
 	"slices"
 	"testing"
@@ -10,20 +9,25 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
-	serverconfig "github.com/FreekingDean/gojellyfin/internal/server/configuration"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	configmodal "github.com/FreekingDean/gojellyfin/internal/store/configuration"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
+)
+
+var (
+	probedAt     = time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC)
+	dateModified = time.Date(2021, 2, 3, 4, 5, 6, 0, time.UTC)
 )
 
 type fixture struct {
-	server *Server
-	client *store.Client
-	itemID uuid.UUID
+	server   *Server
+	client   *store.Client
+	itemID   uuid.UUID
+	folderID uuid.UUID
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -39,15 +43,12 @@ func newFixture(t *testing.T) *fixture {
 
 	ctx := context.Background()
 	client := connection.Client()
-	library, err := client.Library.Create().SetName(t.Name() + "-" + uuid.NewString()).Save(ctx)
+	library, err := client.Library.Create().
+		SetName(t.Name() + "-" + uuid.NewString()).
+		SetCollectionType(librarymodal.CollectionTypeMovies).
+		Save(ctx)
 	if err != nil {
 		t.Fatalf("failed to create the library: %v", err)
-	}
-
-	settings := config.New(client)
-	stored, err := settings.Configuration(ctx, serverconfig.SystemConfigurationKey)
-	if err != nil {
-		t.Fatalf("failed to read the server configuration: %v", err)
 	}
 
 	t.Cleanup(func() {
@@ -56,16 +57,6 @@ func newFixture(t *testing.T) *fixture {
 		}
 		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the library: %v", err)
-		}
-		if stored == nil {
-			_, err = client.Configuration.Delete().
-				Where(configmodal.Key(serverconfig.SystemConfigurationKey)).
-				Exec(ctx)
-		} else {
-			err = settings.SetConfiguration(ctx, serverconfig.SystemConfigurationKey, stored)
-		}
-		if err != nil {
-			t.Errorf("failed to restore the server configuration: %v", err)
 		}
 		if err := connection.Stop(); err != nil {
 			t.Errorf("failed to close the database: %v", err)
@@ -87,17 +78,25 @@ func newFixture(t *testing.T) *fixture {
 		t.Fatalf("failed to create the item: %v", err)
 	}
 
+	folder, err := client.Item.Create().
+		SetLibraryID(library.ID).
+		SetKind(itemmodal.KindFolder).
+		SetIsFolder(true).
+		SetName("Folder").
+		SetSortName("folder").
+		SetPath("/" + library.ID.String() + "/folder").
+		Save(ctx)
+	if err != nil {
+		t.Fatalf("failed to create the folder: %v", err)
+	}
+
 	return &fixture{
-		server: New(items.New(client), settings),
-		client: client,
-		itemID: record.ID,
+		server:   New(items.New(client), libraries.New(client)),
+		client:   client,
+		itemID:   record.ID,
+		folderID: folder.ID,
 	}
 }
-
-var (
-	probedAt     = time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC)
-	dateModified = time.Date(2021, 2, 3, 4, 5, 6, 0, time.UTC)
-)
 
 func (f *fixture) item(t *testing.T) *store.Item {
 	t.Helper()
@@ -124,6 +123,22 @@ func (f *fixture) update(t *testing.T, id uuid.UUID, body api.BaseItemDto) api.U
 	return response
 }
 
+func (f *fixture) editorInfo(t *testing.T, id uuid.UUID) api.GetMetadataEditorInfo200JSONResponse {
+	t.Helper()
+
+	response, err := f.server.GetMetadataEditorInfo(context.Background(), api.GetMetadataEditorInfoRequestObject{ItemId: id})
+	if err != nil {
+		t.Fatalf("failed to get the metadata editor info: %v", err)
+	}
+
+	info, ok := response.(api.GetMetadataEditorInfo200JSONResponse)
+	if !ok {
+		t.Fatalf("response = %T, want GetMetadataEditorInfo200JSONResponse", response)
+	}
+
+	return info
+}
+
 func TestUpdateItem(t *testing.T) {
 	fixture := newFixture(t)
 	premiere := time.Date(1999, 3, 31, 0, 0, 0, 0, time.UTC)
@@ -133,7 +148,7 @@ func TestUpdateItem(t *testing.T) {
 		SortName:       apiutil.Ptr("matrix, the"),
 		OriginalTitle:  apiutil.Ptr("The Matrix"),
 		Overview:       apiutil.Ptr("A hacker learns the truth."),
-		OfficialRating: apiutil.Ptr("R"),
+		OfficialRating: apiutil.Ptr("r"),
 		ProductionYear: apiutil.Ptr(int32(1999)),
 		PremiereDate:   &premiere,
 		IndexNumber:    apiutil.Ptr(int32(3)),
@@ -182,6 +197,16 @@ func TestUpdateItem(t *testing.T) {
 	}
 }
 
+func TestUpdateItemKeepsUnknownRating(t *testing.T) {
+	fixture := newFixture(t)
+
+	fixture.update(t, fixture.itemID, api.BaseItemDto{OfficialRating: apiutil.Ptr("FSK 16")})
+
+	if record := fixture.item(t); record.OfficialRating != "FSK 16" {
+		t.Errorf("official rating = %q, want %q", record.OfficialRating, "FSK 16")
+	}
+}
+
 func TestUpdateItemKeepsProbedColumns(t *testing.T) {
 	fixture := newFixture(t)
 
@@ -221,82 +246,91 @@ func TestUpdateItemUnknownItem(t *testing.T) {
 
 func TestGetMetadataEditorInfo(t *testing.T) {
 	fixture := newFixture(t)
-	ctx := context.Background()
 
-	response, err := fixture.server.GetMetadataEditorInfo(ctx, api.GetMetadataEditorInfoRequestObject{ItemId: fixture.itemID})
-	if err != nil {
-		t.Fatalf("failed to get the metadata editor info: %v", err)
-	}
+	t.Run("describes the item", func(t *testing.T) {
+		info := fixture.editorInfo(t, fixture.itemID)
 
-	info, ok := response.(api.GetMetadataEditorInfo200JSONResponse)
-	if !ok {
-		t.Fatalf("response = %T, want GetMetadataEditorInfo200JSONResponse", response)
-	}
-	if len(apiutil.Deref(info.ContentTypeOptions)) == 0 {
-		t.Error("content type options are empty")
-	}
-	if len(apiutil.Deref(info.Countries)) == 0 {
-		t.Error("countries are empty")
-	}
-	if len(apiutil.Deref(info.Cultures)) == 0 {
-		t.Error("cultures are empty")
-	}
-	if len(apiutil.Deref(info.ParentalRatingOptions)) == 0 {
-		t.Error("parental rating options are empty")
-	}
-	if info.ContentType != nil {
-		t.Errorf("content type = %v, want none", *info.ContentType)
-	}
+		if info.ContentType == nil || *info.ContentType != api.CollectionTypeMovies {
+			t.Errorf("content type = %v, want movies", info.ContentType)
+		}
+		if len(apiutil.Deref(info.ContentTypeOptions)) != 0 {
+			t.Errorf("content type options = %v, want none for a file", *info.ContentTypeOptions)
+		}
+		if len(apiutil.Deref(info.Countries)) == 0 {
+			t.Error("countries are empty")
+		}
+		if len(apiutil.Deref(info.Cultures)) == 0 {
+			t.Error("cultures are empty")
+		}
+		if len(apiutil.Deref(info.ParentalRatingOptions)) == 0 {
+			t.Error("parental rating options are empty")
+		}
+	})
 
-	unknown, err := fixture.server.GetMetadataEditorInfo(ctx, api.GetMetadataEditorInfoRequestObject{ItemId: uuid.New()})
-	if err != nil {
-		t.Fatalf("failed to get the metadata editor info: %v", err)
-	}
-	if _, ok := unknown.(api.GetMetadataEditorInfo404JSONResponse); !ok {
-		t.Fatalf("response = %T, want GetMetadataEditorInfo404JSONResponse", unknown)
-	}
+	t.Run("offers the supported content types for a folder", func(t *testing.T) {
+		info := fixture.editorInfo(t, fixture.folderID)
+
+		values := make([]string, 0, len(apiutil.Deref(info.ContentTypeOptions)))
+		for _, option := range apiutil.Deref(info.ContentTypeOptions) {
+			values = append(values, apiutil.Deref(option.Value))
+		}
+		if !slices.Contains(values, string(librarymodal.CollectionTypeMovies)) {
+			t.Errorf("content type options = %v, want the supported collection types", values)
+		}
+		if len(values) != len(libraries.CollectionTypes) {
+			t.Errorf("content type options = %v, want %d", values, len(libraries.CollectionTypes))
+		}
+	})
+
+	t.Run("404s for an unknown item", func(t *testing.T) {
+		response, err := fixture.server.GetMetadataEditorInfo(context.Background(), api.GetMetadataEditorInfoRequestObject{ItemId: uuid.New()})
+		if err != nil {
+			t.Fatalf("failed to get the metadata editor info: %v", err)
+		}
+		if _, ok := response.(api.GetMetadataEditorInfo404JSONResponse); !ok {
+			t.Fatalf("response = %T, want GetMetadataEditorInfo404JSONResponse", response)
+		}
+	})
 }
 
 func TestUpdateItemContentType(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
-	response, err := fixture.server.UpdateItemContentType(ctx, api.UpdateItemContentTypeRequestObject{
-		ItemId: fixture.itemID,
-		Params: api.UpdateItemContentTypeParams{ContentType: apiutil.Ptr("tvshows")},
+	cases := []struct {
+		name        string
+		contentType *string
+		want        api.UpdateItemContentTypeResponseObject
+	}{
+		{name: "supported", contentType: apiutil.Ptr("tvshows"), want: api.UpdateItemContentType204Response{}},
+		{name: "inherited", contentType: nil, want: api.UpdateItemContentType204Response{}},
+		{name: "unhandleable", contentType: apiutil.Ptr("podcasts"), want: api.UpdateItemContentType403Response{}},
+	}
+	for _, test := range cases {
+		t.Run(test.name, func(t *testing.T) {
+			response, err := fixture.server.UpdateItemContentType(ctx, api.UpdateItemContentTypeRequestObject{
+				ItemId: fixture.folderID,
+				Params: api.UpdateItemContentTypeParams{ContentType: test.contentType},
+			})
+			if err != nil {
+				t.Fatalf("failed to update the content type: %v", err)
+			}
+			if response != test.want {
+				t.Errorf("response = %T, want %T", response, test.want)
+			}
+		})
+	}
+
+	t.Run("404s for an unknown item", func(t *testing.T) {
+		response, err := fixture.server.UpdateItemContentType(ctx, api.UpdateItemContentTypeRequestObject{
+			ItemId: uuid.New(),
+			Params: api.UpdateItemContentTypeParams{ContentType: apiutil.Ptr("movies")},
+		})
+		if err != nil {
+			t.Fatalf("failed to update the content type: %v", err)
+		}
+		if _, ok := response.(api.UpdateItemContentType404JSONResponse); !ok {
+			t.Fatalf("response = %T, want UpdateItemContentType404JSONResponse", response)
+		}
 	})
-	if err != nil {
-		t.Fatalf("failed to update the content type: %v", err)
-	}
-	if _, ok := response.(api.UpdateItemContentType204Response); !ok {
-		t.Fatalf("response = %T, want UpdateItemContentType204Response", response)
-	}
-
-	editor, err := fixture.server.GetMetadataEditorInfo(ctx, api.GetMetadataEditorInfoRequestObject{ItemId: fixture.itemID})
-	if err != nil {
-		t.Fatalf("failed to get the metadata editor info: %v", err)
-	}
-	info := editor.(api.GetMetadataEditorInfo200JSONResponse)
-	if info.ContentType == nil || *info.ContentType != api.CollectionTypeTvshows {
-		t.Fatalf("content type = %v, want tvshows", info.ContentType)
-	}
-
-	if _, err := fixture.server.UpdateItemContentType(ctx, api.UpdateItemContentTypeRequestObject{
-		ItemId: fixture.itemID,
-		Params: api.UpdateItemContentTypeParams{},
-	}); err != nil {
-		t.Fatalf("failed to clear the content type: %v", err)
-	}
-
-	stored, err := config.New(fixture.client).Configuration(ctx, serverconfig.SystemConfigurationKey)
-	if err != nil {
-		t.Fatalf("failed to read the server configuration: %v", err)
-	}
-	var configured api.ServerConfiguration
-	if err := json.Unmarshal(stored, &configured); err != nil {
-		t.Fatalf("failed to decode the server configuration: %v", err)
-	}
-	if len(apiutil.Deref(configured.ContentTypes)) != 0 {
-		t.Errorf("content types = %v, want none", *configured.ContentTypes)
-	}
 }
