@@ -26,6 +26,8 @@ make run                             # run once, no watching
 make build test fmt
 make generate                        # regenerate the API from the spec and the store from the ent schema
 go test -run TestName ./internal/... # single test
+
+echo hunter2 | go run ./cmd/tasks/adduser -name Dean   # bootstrap the first user
 ```
 
 `make dev` and `make run` tee to `/tmp/gojellyfin.log`, so the log is on screen and readable by tooling at the same time.
@@ -114,4 +116,4 @@ Handlers read `auth.UserID(ctx)`, `auth.SessionFrom(ctx)`, `auth.AuthorizationFr
 
 Users, sessions, devices, libraries, items and their user data are real rows; most other handlers still return hardcoded data or a 501.
 
-A fresh database has no way in: `CreateUserByName` requires an administrator and nothing seeds one, so the first user has to be inserted by hand.
+A fresh database has no way in through the API — `CreateUserByName` requires an administrator and nothing seeds one — so `cmd/tasks/adduser` creates the first one. It reads the password from stdin rather than a flag, which keeps it out of the shell history and the process list. One-off jobs that need the domain services rather than a running server belong beside it under `cmd/tasks`.
