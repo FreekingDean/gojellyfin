@@ -2,6 +2,7 @@ package apikeys
 
 import (
 	"context"
+	"fmt"
 
 	"entgo.io/ent/dialect/sql"
 
@@ -20,9 +21,13 @@ func New(client *store.Client) *Service {
 }
 
 func (s *Service) Keys(ctx context.Context) ([]*ApiKey, error) {
-	return s.store.ApiKey.Query().
+	keys, err := s.store.ApiKey.Query().
 		Order(apikeymodal.ByCreatedAt(sql.OrderDesc())).
 		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list api keys: %w", err)
+	}
+	return keys, nil
 }
 
 func (s *Service) Create(ctx context.Context, appName, token string) (*ApiKey, error) {
