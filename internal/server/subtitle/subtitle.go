@@ -76,7 +76,7 @@ func (s *Server) subtitle(ctx context.Context, itemID uuid.UUID, index int32, fo
 	target := strings.ToLower(strings.TrimPrefix(format, "."))
 	source := strings.ToLower(strings.TrimPrefix(filepath.Ext(stream.Path), "."))
 	direct := source == target && window.whole()
-	if !direct && !(cueFormats[source] && cueFormats[target]) {
+	if !direct && (!cueFormats[source] || !cueFormats[target]) {
 		return nil, "", 0, fmt.Errorf("converting %s subtitles to %s needs ffmpeg: %w", source, target, api.ErrNotImplemented)
 	}
 
