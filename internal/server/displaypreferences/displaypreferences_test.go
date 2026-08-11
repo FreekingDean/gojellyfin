@@ -2,6 +2,7 @@ package displaypreferences
 
 import (
 	"context"
+	"sync"
 	"testing"
 
 	"github.com/google/uuid"
@@ -21,7 +22,9 @@ import (
 
 type fixture struct {
 	server *Server
+	client *store.Client
 	ctx    context.Context
+	userID uuid.UUID
 	itemID uuid.UUID
 }
 
@@ -99,7 +102,13 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
-	return &fixture{server: New(displaypreferences.New(client)), ctx: authenticated, itemID: item.ID}
+	return &fixture{
+		server: New(displaypreferences.New(client)),
+		client: client,
+		ctx:    authenticated,
+		userID: user.ID,
+		itemID: item.ID,
+	}
 }
 
 func (f *fixture) save(t *testing.T, id, client string, body api.DisplayPreferencesDto) {
@@ -208,6 +217,45 @@ func TestDisplayPreferencesKeying(t *testing.T) {
 		if got := apiutil.Deref(fixture.load(t, want.id, want.client).ViewType); got != want.viewType {
 			t.Errorf("ViewType for %q on %q = %q, want %q", want.id, want.client, got, want.viewType)
 		}
+	}
+}
+
+func TestDisplayPreferencesConcurrentGets(t *testing.T) {
+	fixture := newFixture(t)
+
+	const callers = 8
+	var group sync.WaitGroup
+	failures := make(chan error, callers)
+
+	for i := 0; i < callers; i++ {
+		group.Add(1)
+		go func() {
+			defer group.Done()
+			_, err := fixture.server.GetDisplayPreferences(fixture.ctx, api.GetDisplayPreferencesRequestObject{
+				DisplayPreferencesId: "usersettings",
+				Params:               api.GetDisplayPreferencesParams{Client: "emby"},
+			})
+			failures <- err
+		}()
+	}
+
+	group.Wait()
+	close(failures)
+
+	for err := range failures {
+		if err != nil {
+			t.Fatalf("concurrent get failed: %v", err)
+		}
+	}
+
+	count, err := fixture.client.DisplayPreferences.Query().
+		Where(displaypreferencesmodal.HasUserWith(usermodal.ID(fixture.userID))).
+		Count(context.Background())
+	if err != nil {
+		t.Fatalf("failed to count the display preferences: %v", err)
+	}
+	if count != 1 {
+		t.Errorf("rows = %d, want 1", count)
 	}
 }
 

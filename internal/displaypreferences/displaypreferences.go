@@ -26,31 +26,15 @@ func New(client *store.Client) *Service {
 	return &Service{store: client}
 }
 
-// Clients send a free-form id ("usersettings" as often as a guid), so a row is
-// keyed by the user, the client and the item the id names when there is one.
 func (s *Service) Preferences(ctx context.Context, userID uuid.UUID, client, id string) (*DisplayPreferences, error) {
 	itemID, err := s.itemID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	query := s.store.DisplayPreferences.Query().
-		Where(
-			displaypreferencesmodal.Client(client),
-			displaypreferencesmodal.HasUserWith(usermodal.ID(userID)),
-		)
-	if itemID == nil {
-		query = query.Where(displaypreferencesmodal.Not(displaypreferencesmodal.HasItem()))
-	} else {
-		query = query.Where(displaypreferencesmodal.HasItemWith(itemmodal.ID(*itemID)))
-	}
-
-	prefs, err := query.First(ctx)
-	if err == nil {
-		return prefs, nil
-	}
-	if !store.IsNotFound(err) {
-		return nil, fmt.Errorf("failed to query display preferences: %w", err)
+	prefs, err := s.existing(ctx, userID, client, itemID)
+	if err != nil || prefs != nil {
+		return prefs, err
 	}
 
 	prefs, err = s.store.DisplayPreferences.Create().
@@ -67,6 +51,11 @@ func (s *Service) Preferences(ctx context.Context, userID uuid.UUID, client, id 
 		SetPrimaryImageHeight(0).
 		SetPrimaryImageWidth(0).
 		Save(ctx)
+	if store.IsConstraintError(err) {
+		if raced, requery := s.existing(ctx, userID, client, itemID); requery == nil && raced != nil {
+			return raced, nil
+		}
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to create display preferences: %w", err)
 	}
@@ -74,8 +63,29 @@ func (s *Service) Preferences(ctx context.Context, userID uuid.UUID, client, id 
 	return prefs, nil
 }
 
-// The caller chains the fields it wants changed; every field has a
-// SetNillable form, which is the shape the api sends them in.
+func (s *Service) existing(ctx context.Context, userID uuid.UUID, client string, itemID *uuid.UUID) (*DisplayPreferences, error) {
+	query := s.store.DisplayPreferences.Query().
+		Where(
+			displaypreferencesmodal.Client(client),
+			displaypreferencesmodal.HasUserWith(usermodal.ID(userID)),
+		)
+	if itemID == nil {
+		query = query.Where(displaypreferencesmodal.Not(displaypreferencesmodal.HasItem()))
+	} else {
+		query = query.Where(displaypreferencesmodal.HasItemWith(itemmodal.ID(*itemID)))
+	}
+
+	prefs, err := query.First(ctx)
+	if store.IsNotFound(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to query display preferences: %w", err)
+	}
+
+	return prefs, nil
+}
+
 func (s *Service) Update(id uuid.UUID) *store.DisplayPreferencesUpdateOne {
 	return s.store.DisplayPreferences.UpdateOneID(id)
 }

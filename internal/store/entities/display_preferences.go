@@ -2,6 +2,7 @@ package entities
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -39,5 +40,7 @@ func (DisplayPreferences) Edges() []ent.Edge {
 func (DisplayPreferences) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("client").Edges("user", "item").Unique(),
+		index.Fields("client").Edges("user").Unique().
+			Annotations(entsql.IndexWhere("item_display_preferences IS NULL")),
 	}
 }

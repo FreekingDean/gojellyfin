@@ -3,6 +3,7 @@
 package migrate
 
 import (
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/dialect/sql/schema"
 	"entgo.io/ent/schema/field"
 )
@@ -202,6 +203,14 @@ var (
 				Name:    "displaypreferences_client_user_display_preferences_item_display_preferences",
 				Unique:  true,
 				Columns: []*schema.Column{DisplayPreferencesColumns[3], DisplayPreferencesColumns[17], DisplayPreferencesColumns[16]},
+			},
+			{
+				Name:    "displaypreferences_client_user_display_preferences",
+				Unique:  true,
+				Columns: []*schema.Column{DisplayPreferencesColumns[3], DisplayPreferencesColumns[17]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "item_display_preferences IS NULL",
+				},
 			},
 		},
 	}

@@ -33,7 +33,10 @@ func DisplayPreferencesDto(id string, prefs *displaypreferences.DisplayPreferenc
 func customPrefs(prefs map[string]*string) map[string]string {
 	stored := make(map[string]string, len(prefs))
 	for key, value := range prefs {
-		stored[key] = apiutil.Deref(value)
+		if value == nil {
+			continue
+		}
+		stored[key] = *value
 	}
 
 	return stored
