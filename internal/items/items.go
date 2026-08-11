@@ -105,6 +105,12 @@ func (s *Service) ItemByID(ctx context.Context, id uuid.UUID) (*Item, error) {
 	return item, nil
 }
 
+// The caller chains the fields it wants changed; every field has a
+// SetNillable form, which is the shape the api sends them in.
+func (s *Service) UpdateMetadata(id uuid.UUID) *store.ItemUpdateOne {
+	return s.store.Item.UpdateOneID(id)
+}
+
 type ItemQuery struct {
 	LibraryID  *uuid.UUID
 	ParentID   *uuid.UUID
