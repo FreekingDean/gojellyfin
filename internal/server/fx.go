@@ -5,6 +5,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/config"
+	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/scanner"
@@ -54,6 +55,7 @@ var Module = fx.Module(
 		items.New,
 		libraries.New,
 		config.New,
+		filesystem.New,
 
 		// one handler service per spec tag
 		filter.New,
