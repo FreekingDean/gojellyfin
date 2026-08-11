@@ -62,8 +62,10 @@ func (s *Server) UpdateDeviceOptions(ctx context.Context, request api.UpdateDevi
 		return api.UpdateDeviceOptions403Response{}, nil
 	}
 
-	if err := s.sessions.RenameDevice(ctx, request.Params.Id, apiutil.Deref(req.CustomName)); err != nil {
-		return nil, err
+	if req.CustomName != nil {
+		if err := s.sessions.RenameDevice(ctx, request.Params.Id, *req.CustomName); err != nil {
+			return nil, err
+		}
 	}
 
 	return api.UpdateDeviceOptions204Response{}, nil
