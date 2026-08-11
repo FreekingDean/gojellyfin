@@ -22,9 +22,11 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/localization"
 	"github.com/FreekingDean/gojellyfin/internal/server/mediainfo"
 	"github.com/FreekingDean/gojellyfin/internal/server/musicgenres"
+	"github.com/FreekingDean/gojellyfin/internal/server/packages"
 	"github.com/FreekingDean/gojellyfin/internal/server/persons"
 	"github.com/FreekingDean/gojellyfin/internal/server/playlists"
 	"github.com/FreekingDean/gojellyfin/internal/server/playstate"
+	"github.com/FreekingDean/gojellyfin/internal/server/plugins"
 	"github.com/FreekingDean/gojellyfin/internal/server/quickconnect"
 	"github.com/FreekingDean/gojellyfin/internal/server/scheduledtasks"
 	"github.com/FreekingDean/gojellyfin/internal/server/search"
@@ -76,6 +78,8 @@ type (
 	MediaInfoServer          = mediainfo.Server
 	PlaylistsServer          = playlists.Server
 	PlaystateServer          = playstate.Server
+	PluginsServer            = plugins.Server
+	PackagesServer           = packages.Server
 	QuickConnectServer       = quickconnect.Server
 	SessionServer            = session.Server
 	SyncPlayServer           = syncplay.Server
@@ -114,6 +118,8 @@ type Server struct {
 	*MediaInfoServer
 	*PlaylistsServer
 	*PlaystateServer
+	*PluginsServer
+	*PackagesServer
 	*QuickConnectServer
 	*SessionServer
 	*SyncPlayServer
@@ -154,6 +160,8 @@ func New(
 	mediaInfo *mediainfo.Server,
 	playlists *playlists.Server,
 	playstate *playstate.Server,
+	plugins *plugins.Server,
+	packages *packages.Server,
 	quickConnect *quickconnect.Server,
 	session *session.Server,
 	syncPlay *syncplay.Server,
@@ -191,6 +199,8 @@ func New(
 		MediaInfoServer:          mediaInfo,
 		PlaylistsServer:          playlists,
 		PlaystateServer:          playstate,
+		PluginsServer:            plugins,
+		PackagesServer:           packages,
 		QuickConnectServer:       quickConnect,
 		SessionServer:            session,
 		SyncPlayServer:           syncPlay,
