@@ -2,10 +2,12 @@ package user
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
+	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
@@ -18,10 +20,11 @@ import (
 type Server struct {
 	users    *users.Service
 	sessions *sessions.Service
+	activity *activity.Service
 }
 
-func New(users *users.Service, sessions *sessions.Service) *Server {
-	return &Server{users: users, sessions: sessions}
+func New(users *users.Service, sessions *sessions.Service, activity *activity.Service) *Server {
+	return &Server{users: users, sessions: sessions, activity: activity}
 }
 
 func (s *Server) GetUsers(ctx context.Context, request api.GetUsersRequestObject) (api.GetUsersResponseObject, error) {
@@ -245,12 +248,24 @@ func (s *Server) AuthenticateUserByName(ctx context.Context, request api.Authent
 		return nil, err
 	}
 
-	session, err := s.sessions.Create(ctx, user.ID, token, auth.AuthorizationFrom(ctx).DeviceInfo())
+	authorization := auth.AuthorizationFrom(ctx)
+	session, err := s.sessions.Create(ctx, user.ID, token, authorization.DeviceInfo())
 	if err != nil {
 		return nil, err
 	}
 
 	if err := s.users.TouchLogin(ctx, user.ID); err != nil {
+		return nil, err
+	}
+
+	err = s.activity.Record(ctx, activity.Event{
+		Name:          fmt.Sprintf("%s has been authenticated", user.Username),
+		Kind:          activity.KindAuthenticationSucceeded,
+		ShortOverview: authorization.Device,
+		Severity:      activity.SeverityInformation,
+		UserID:        &user.ID,
+	})
+	if err != nil {
 		return nil, err
 	}
 	now := time.Now()
