@@ -410,6 +410,13 @@ func TestRemoveEntries(t *testing.T) {
 	if got := fixture.order(t, playlistID); !slices.Equal(got, want) {
 		t.Errorf("entries = %v, want %v", got, want)
 	}
+
+	if err := fixture.service.RemoveEntries(ctx, playlistID, nil); err != nil {
+		t.Fatalf("failed to remove no entries: %v", err)
+	}
+	if got := fixture.order(t, playlistID); !slices.Equal(got, want) {
+		t.Errorf("entries = %v after removing nothing, want %v", got, want)
+	}
 }
 
 func TestEntriesPages(t *testing.T) {
