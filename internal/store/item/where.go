@@ -66,6 +66,16 @@ func UpdatedAt(v time.Time) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
+// LibraryID applies equality check predicate on the "library_id" field. It's identical to LibraryIDEQ.
+func LibraryID(v uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldLibraryID, v))
+}
+
+// ParentID applies equality check predicate on the "parent_id" field. It's identical to ParentIDEQ.
+func ParentID(v uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldParentID, v))
+}
+
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
 func Name(v string) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldName, v))
@@ -144,6 +154,16 @@ func EndDate(v time.Time) predicate.Item {
 // LastMediaAddedAt applies equality check predicate on the "last_media_added_at" field. It's identical to LastMediaAddedAtEQ.
 func LastMediaAddedAt(v time.Time) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldLastMediaAddedAt, v))
+}
+
+// DateModified applies equality check predicate on the "date_modified" field. It's identical to DateModifiedEQ.
+func DateModified(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldDateModified, v))
+}
+
+// ProbedAt applies equality check predicate on the "probed_at" field. It's identical to ProbedAtEQ.
+func ProbedAt(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldProbedAt, v))
 }
 
 // ProductionYear applies equality check predicate on the "production_year" field. It's identical to ProductionYearEQ.
@@ -329,6 +349,66 @@ func UpdatedAtLT(v time.Time) predicate.Item {
 // UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
 func UpdatedAtLTE(v time.Time) predicate.Item {
 	return predicate.Item(sql.FieldLTE(FieldUpdatedAt, v))
+}
+
+// LibraryIDEQ applies the EQ predicate on the "library_id" field.
+func LibraryIDEQ(v uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldLibraryID, v))
+}
+
+// LibraryIDNEQ applies the NEQ predicate on the "library_id" field.
+func LibraryIDNEQ(v uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldLibraryID, v))
+}
+
+// LibraryIDIn applies the In predicate on the "library_id" field.
+func LibraryIDIn(vs ...uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldLibraryID, vs...))
+}
+
+// LibraryIDNotIn applies the NotIn predicate on the "library_id" field.
+func LibraryIDNotIn(vs ...uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldLibraryID, vs...))
+}
+
+// LibraryIDIsNil applies the IsNil predicate on the "library_id" field.
+func LibraryIDIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldLibraryID))
+}
+
+// LibraryIDNotNil applies the NotNil predicate on the "library_id" field.
+func LibraryIDNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldLibraryID))
+}
+
+// ParentIDEQ applies the EQ predicate on the "parent_id" field.
+func ParentIDEQ(v uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldParentID, v))
+}
+
+// ParentIDNEQ applies the NEQ predicate on the "parent_id" field.
+func ParentIDNEQ(v uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldParentID, v))
+}
+
+// ParentIDIn applies the In predicate on the "parent_id" field.
+func ParentIDIn(vs ...uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldParentID, vs...))
+}
+
+// ParentIDNotIn applies the NotIn predicate on the "parent_id" field.
+func ParentIDNotIn(vs ...uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldParentID, vs...))
+}
+
+// ParentIDIsNil applies the IsNil predicate on the "parent_id" field.
+func ParentIDIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldParentID))
+}
+
+// ParentIDNotNil applies the NotNil predicate on the "parent_id" field.
+func ParentIDNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldParentID))
 }
 
 // KindEQ applies the EQ predicate on the "kind" field.
@@ -1169,6 +1249,106 @@ func LastMediaAddedAtIsNil() predicate.Item {
 // LastMediaAddedAtNotNil applies the NotNil predicate on the "last_media_added_at" field.
 func LastMediaAddedAtNotNil() predicate.Item {
 	return predicate.Item(sql.FieldNotNull(FieldLastMediaAddedAt))
+}
+
+// DateModifiedEQ applies the EQ predicate on the "date_modified" field.
+func DateModifiedEQ(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldDateModified, v))
+}
+
+// DateModifiedNEQ applies the NEQ predicate on the "date_modified" field.
+func DateModifiedNEQ(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldDateModified, v))
+}
+
+// DateModifiedIn applies the In predicate on the "date_modified" field.
+func DateModifiedIn(vs ...time.Time) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldDateModified, vs...))
+}
+
+// DateModifiedNotIn applies the NotIn predicate on the "date_modified" field.
+func DateModifiedNotIn(vs ...time.Time) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldDateModified, vs...))
+}
+
+// DateModifiedGT applies the GT predicate on the "date_modified" field.
+func DateModifiedGT(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldDateModified, v))
+}
+
+// DateModifiedGTE applies the GTE predicate on the "date_modified" field.
+func DateModifiedGTE(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldDateModified, v))
+}
+
+// DateModifiedLT applies the LT predicate on the "date_modified" field.
+func DateModifiedLT(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldDateModified, v))
+}
+
+// DateModifiedLTE applies the LTE predicate on the "date_modified" field.
+func DateModifiedLTE(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldDateModified, v))
+}
+
+// DateModifiedIsNil applies the IsNil predicate on the "date_modified" field.
+func DateModifiedIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldDateModified))
+}
+
+// DateModifiedNotNil applies the NotNil predicate on the "date_modified" field.
+func DateModifiedNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldDateModified))
+}
+
+// ProbedAtEQ applies the EQ predicate on the "probed_at" field.
+func ProbedAtEQ(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldProbedAt, v))
+}
+
+// ProbedAtNEQ applies the NEQ predicate on the "probed_at" field.
+func ProbedAtNEQ(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldProbedAt, v))
+}
+
+// ProbedAtIn applies the In predicate on the "probed_at" field.
+func ProbedAtIn(vs ...time.Time) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldProbedAt, vs...))
+}
+
+// ProbedAtNotIn applies the NotIn predicate on the "probed_at" field.
+func ProbedAtNotIn(vs ...time.Time) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldProbedAt, vs...))
+}
+
+// ProbedAtGT applies the GT predicate on the "probed_at" field.
+func ProbedAtGT(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldProbedAt, v))
+}
+
+// ProbedAtGTE applies the GTE predicate on the "probed_at" field.
+func ProbedAtGTE(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldProbedAt, v))
+}
+
+// ProbedAtLT applies the LT predicate on the "probed_at" field.
+func ProbedAtLT(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldProbedAt, v))
+}
+
+// ProbedAtLTE applies the LTE predicate on the "probed_at" field.
+func ProbedAtLTE(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldProbedAt, v))
+}
+
+// ProbedAtIsNil applies the IsNil predicate on the "probed_at" field.
+func ProbedAtIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldProbedAt))
+}
+
+// ProbedAtNotNil applies the NotNil predicate on the "probed_at" field.
+func ProbedAtNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldProbedAt))
 }
 
 // ProductionYearEQ applies the EQ predicate on the "production_year" field.

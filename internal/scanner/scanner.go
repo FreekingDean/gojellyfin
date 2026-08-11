@@ -13,9 +13,9 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
+	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
 )
-
-const collectionTypeTVShows = "tvshows"
 
 type Scanner struct {
 	items     *items.Service
@@ -41,7 +41,7 @@ func (s *Scanner) Scan(ctx context.Context) error {
 	}
 
 	for _, library := range libraries {
-		if err := s.scanLibrary(ctx, &library); err != nil {
+		if err := s.scanLibrary(ctx, library); err != nil {
 			log.Printf("scan %s: %v", library.Name, err)
 		}
 	}
@@ -71,15 +71,15 @@ func (s *Scanner) finish() {
 func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) error {
 	seen := make([]string, 0)
 
-	for _, path := range library.Paths {
+	for _, location := range library.Locations {
 		var paths []string
 		var err error
 
 		switch library.CollectionType {
-		case collectionTypeTVShows:
-			paths, err = s.scanShows(ctx, library, path.Path)
+		case librarymodal.CollectionTypeTvshows:
+			paths, err = s.scanShows(ctx, library, location)
 		default:
-			paths, err = s.scanMovies(ctx, library, path.Path)
+			paths, err = s.scanMovies(ctx, library, location)
 		}
 		if err != nil {
 			return err
@@ -106,34 +106,30 @@ func (s *Scanner) scanMovies(ctx context.Context, library *libraries.Library, ro
 		}
 
 		name, year := parseTitle(title)
-		item := &items.Item{
+		item, err := s.items.SaveScanned(ctx, items.Scanned{
 			LibraryID:      library.ID,
-			Type:           "Movie",
+			Kind:           itemmodal.KindMovie,
 			Name:           name,
 			SortName:       sortName(name),
 			Path:           path,
 			ProductionYear: year,
 			DateModified:   modifiedAt(entry),
-		}
-		if err := s.items.UpsertItem(ctx, item); err != nil {
+		})
+		if err != nil {
 			return err
 		}
 		seen = append(seen, path)
 
-		id, err := s.itemID(ctx, library.ID, path)
-		if err != nil {
-			return err
-		}
-		if err := s.scanArtwork(ctx, id, path, false); err != nil {
+		if err := s.scanArtwork(ctx, item.ID, path, false); err != nil {
 			log.Printf("artwork %s: %v", path, err)
 		}
 		if parent := filepath.Dir(path); parent != root {
-			if err := s.scanArtwork(ctx, id, parent, true); err != nil {
+			if err := s.scanArtwork(ctx, item.ID, parent, true); err != nil {
 				log.Printf("artwork %s: %v", parent, err)
 			}
 		}
 
-		return s.probeMedia(ctx, library.ID, path)
+		return s.probeMedia(ctx, item)
 	})
 
 	return seen, err
@@ -154,29 +150,25 @@ func (s *Scanner) scanShows(ctx context.Context, library *libraries.Library, roo
 
 		seriesPath := filepath.Join(root, entry.Name())
 		name, year := parseTitle(entry.Name())
-		series := &items.Item{
+		series, err := s.items.SaveScanned(ctx, items.Scanned{
 			LibraryID:      library.ID,
-			Type:           "Series",
+			Kind:           itemmodal.KindSeries,
 			Name:           name,
 			SortName:       sortName(name),
 			Path:           seriesPath,
 			ProductionYear: year,
 			DateModified:   modifiedAt(entry),
-		}
-		if err := s.items.UpsertItem(ctx, series); err != nil {
+		})
+		if err != nil {
 			return nil, err
 		}
 		seen = append(seen, seriesPath)
 
-		seriesID, err := s.itemID(ctx, library.ID, seriesPath)
-		if err != nil {
-			return nil, err
-		}
-		if err := s.scanArtwork(ctx, seriesID, seriesPath, true); err != nil {
+		if err := s.scanArtwork(ctx, series.ID, seriesPath, true); err != nil {
 			log.Printf("artwork %s: %v", seriesPath, err)
 		}
 
-		paths, err := s.scanSeries(ctx, library, series.Name, seriesID, seriesPath)
+		paths, err := s.scanSeries(ctx, library, series.Name, series.ID, seriesPath)
 		if err != nil {
 			return nil, err
 		}
@@ -213,26 +205,22 @@ func (s *Scanner) scanSeries(ctx context.Context, library *libraries.Library, se
 			continue
 		}
 
-		season := &items.Item{
+		season, err := s.items.SaveScanned(ctx, items.Scanned{
 			LibraryID:    library.ID,
 			ParentID:     &seriesID,
-			Type:         "Season",
+			Kind:         itemmodal.KindSeason,
 			Name:         seasonName(number),
 			SortName:     seasonSortName(number),
 			Path:         path,
 			IndexNumber:  number,
 			DateModified: modifiedAt(entry),
-		}
-		if err := s.items.UpsertItem(ctx, season); err != nil {
+		})
+		if err != nil {
 			return nil, err
 		}
 		seen = append(seen, path)
 
-		seasonID, err := s.itemID(ctx, library.ID, path)
-		if err != nil {
-			return nil, err
-		}
-		if err := s.scanArtwork(ctx, seasonID, path, true); err != nil {
+		if err := s.scanArtwork(ctx, season.ID, path, true); err != nil {
 			log.Printf("artwork %s: %v", path, err)
 		}
 
@@ -246,7 +234,7 @@ func (s *Scanner) scanSeries(ctx context.Context, library *libraries.Library, se
 			}
 
 			episodePath := filepath.Join(path, episode.Name())
-			if err := s.upsertEpisode(ctx, library, seriesName, seasonID, episodePath, episode); err != nil {
+			if err := s.upsertEpisode(ctx, library, seriesName, season.ID, episodePath, episode); err != nil {
 				return nil, err
 			}
 			seen = append(seen, episodePath)
@@ -265,10 +253,10 @@ func (s *Scanner) upsertEpisode(ctx context.Context, library *libraries.Library,
 		title = episodeTitle(seriesName, season, number)
 	}
 
-	err := s.items.UpsertItem(ctx, &items.Item{
+	item, err := s.items.SaveScanned(ctx, items.Scanned{
 		LibraryID:         library.ID,
 		ParentID:          &parentID,
-		Type:              "Episode",
+		Kind:              itemmodal.KindEpisode,
 		Name:              title,
 		SortName:          sortName(title),
 		Path:              path,
@@ -280,34 +268,23 @@ func (s *Scanner) upsertEpisode(ctx context.Context, library *libraries.Library,
 		return err
 	}
 
-	if id, err := s.itemID(ctx, library.ID, path); err == nil {
-		if err := s.scanArtwork(ctx, id, path, false); err != nil {
-			log.Printf("artwork %s: %v", path, err)
-		}
+	if err := s.scanArtwork(ctx, item.ID, path, false); err != nil {
+		log.Printf("artwork %s: %v", path, err)
 	}
 
-	return s.probeMedia(ctx, library.ID, path)
+	return s.probeMedia(ctx, item)
 }
 
-func (s *Scanner) probeMedia(ctx context.Context, libraryID uuid.UUID, path string) error {
+func (s *Scanner) probeMedia(ctx context.Context, item *items.Item) error {
 	if !ffmpeg.Available() {
 		return nil
 	}
 
-	if err := s.probe(ctx, libraryID, path); err != nil {
-		log.Printf("probe %s: %v", path, err)
+	if err := s.probe(ctx, item); err != nil {
+		log.Printf("probe %s: %v", item.Path, err)
 	}
 
 	return nil
-}
-
-func (s *Scanner) itemID(ctx context.Context, libraryID uuid.UUID, path string) (uuid.UUID, error) {
-	item, err := s.items.GetItemByPath(ctx, libraryID, path)
-	if err != nil {
-		return uuid.Nil, err
-	}
-
-	return item.ID, nil
 }
 
 func modifiedAt(entry os.DirEntry) time.Time {

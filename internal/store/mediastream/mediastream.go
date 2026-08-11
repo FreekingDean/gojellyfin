@@ -19,6 +19,8 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// FieldSourceID holds the string denoting the source_id field in the database.
+	FieldSourceID = "source_id"
 	// FieldKind holds the string denoting the kind field in the database.
 	FieldKind = "kind"
 	// FieldVideoRange holds the string denoting the video_range field in the database.
@@ -131,7 +133,7 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "mediasource" package.
 	SourceInverseTable = "media_sources"
 	// SourceColumn is the table column denoting the source relation/edge.
-	SourceColumn = "media_source_streams"
+	SourceColumn = "source_id"
 )
 
 // Columns holds all SQL columns for mediastream fields.
@@ -139,6 +141,7 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
+	FieldSourceID,
 	FieldKind,
 	FieldVideoRange,
 	FieldVideoRangeType,
@@ -192,21 +195,10 @@ var Columns = []string{
 	FieldIsHearingImpaired,
 }
 
-// ForeignKeys holds the SQL foreign-keys that are owned by the "media_streams"
-// table and are not defined as standalone fields in the schema.
-var ForeignKeys = []string{
-	"media_source_streams",
-}
-
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
-			return true
-		}
-	}
-	for i := range ForeignKeys {
-		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -220,6 +212,22 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultIndex holds the default value on creation for the "index" field.
+	DefaultIndex int32
+	// DefaultIsDefault holds the default value on creation for the "is_default" field.
+	DefaultIsDefault bool
+	// DefaultIsForced holds the default value on creation for the "is_forced" field.
+	DefaultIsForced bool
+	// DefaultIsExternal holds the default value on creation for the "is_external" field.
+	DefaultIsExternal bool
+	// DefaultIsInterlaced holds the default value on creation for the "is_interlaced" field.
+	DefaultIsInterlaced bool
+	// DefaultIsAnamorphic holds the default value on creation for the "is_anamorphic" field.
+	DefaultIsAnamorphic bool
+	// DefaultIsAvc holds the default value on creation for the "is_avc" field.
+	DefaultIsAvc bool
+	// DefaultIsHearingImpaired holds the default value on creation for the "is_hearing_impaired" field.
+	DefaultIsHearingImpaired bool
 )
 
 // Kind defines the type for the "kind" enum field.
@@ -343,6 +351,11 @@ func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByUpdatedAt orders the results by the updated_at field.
 func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
+}
+
+// BySourceID orders the results by the source_id field.
+func BySourceID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSourceID, opts...).ToFunc()
 }
 
 // ByKind orders the results by the kind field.

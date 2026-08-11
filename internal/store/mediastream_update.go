@@ -50,6 +50,20 @@ func (_u *MediaStreamUpdate) SetUpdatedAt(v time.Time) *MediaStreamUpdate {
 	return _u
 }
 
+// SetSourceID sets the "source_id" field.
+func (_u *MediaStreamUpdate) SetSourceID(v uuid.UUID) *MediaStreamUpdate {
+	_u.mutation.SetSourceID(v)
+	return _u
+}
+
+// SetNillableSourceID sets the "source_id" field if the given value is not nil.
+func (_u *MediaStreamUpdate) SetNillableSourceID(v *uuid.UUID) *MediaStreamUpdate {
+	if v != nil {
+		_u.SetSourceID(*v)
+	}
+	return _u
+}
+
 // SetKind sets the "kind" field.
 func (_u *MediaStreamUpdate) SetKind(v mediastream.Kind) *MediaStreamUpdate {
 	_u.mutation.SetKind(v)
@@ -1177,12 +1191,6 @@ func (_u *MediaStreamUpdate) SetNillableIsHearingImpaired(v *bool) *MediaStreamU
 	return _u
 }
 
-// SetSourceID sets the "source" edge to the MediaSource entity by ID.
-func (_u *MediaStreamUpdate) SetSourceID(id uuid.UUID) *MediaStreamUpdate {
-	_u.mutation.SetSourceID(id)
-	return _u
-}
-
 // SetSource sets the "source" edge to the MediaSource entity.
 func (_u *MediaStreamUpdate) SetSource(v *MediaSource) *MediaStreamUpdate {
 	return _u.SetSourceID(v.ID)
@@ -1695,6 +1703,20 @@ func (_u *MediaStreamUpdateOne) SetNillableCreatedAt(v *time.Time) *MediaStreamU
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *MediaStreamUpdateOne) SetUpdatedAt(v time.Time) *MediaStreamUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetSourceID sets the "source_id" field.
+func (_u *MediaStreamUpdateOne) SetSourceID(v uuid.UUID) *MediaStreamUpdateOne {
+	_u.mutation.SetSourceID(v)
+	return _u
+}
+
+// SetNillableSourceID sets the "source_id" field if the given value is not nil.
+func (_u *MediaStreamUpdateOne) SetNillableSourceID(v *uuid.UUID) *MediaStreamUpdateOne {
+	if v != nil {
+		_u.SetSourceID(*v)
+	}
 	return _u
 }
 
@@ -2822,12 +2844,6 @@ func (_u *MediaStreamUpdateOne) SetNillableIsHearingImpaired(v *bool) *MediaStre
 	if v != nil {
 		_u.SetIsHearingImpaired(*v)
 	}
-	return _u
-}
-
-// SetSourceID sets the "source" edge to the MediaSource entity by ID.
-func (_u *MediaStreamUpdateOne) SetSourceID(id uuid.UUID) *MediaStreamUpdateOne {
-	_u.mutation.SetSourceID(id)
 	return _u
 }
 

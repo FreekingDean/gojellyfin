@@ -23,12 +23,16 @@ type Image struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// ItemID holds the value of the "item_id" field.
+	ItemID uuid.UUID `json:"item_id,omitempty"`
 	// Kind holds the value of the "kind" field.
 	Kind image.Kind `json:"kind,omitempty"`
 	// Index holds the value of the "index" field.
 	Index int32 `json:"index,omitempty"`
 	// Path holds the value of the "path" field.
 	Path string `json:"path,omitempty"`
+	// Tag holds the value of the "tag" field.
+	Tag string `json:"tag,omitempty"`
 	// BlurHash holds the value of the "blur_hash" field.
 	BlurHash string `json:"blur_hash,omitempty"`
 	// Width holds the value of the "width" field.
@@ -40,7 +44,6 @@ type Image struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ImageQuery when eager-loading is set.
 	Edges        ImageEdges `json:"edges"`
-	item_images  *uuid.UUID
 	selectValues sql.SelectValues
 }
 
@@ -71,14 +74,12 @@ func (*Image) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case image.FieldIndex, image.FieldWidth, image.FieldHeight, image.FieldSize:
 			values[i] = new(sql.NullInt64)
-		case image.FieldKind, image.FieldPath, image.FieldBlurHash:
+		case image.FieldKind, image.FieldPath, image.FieldTag, image.FieldBlurHash:
 			values[i] = new(sql.NullString)
 		case image.FieldCreatedAt, image.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case image.FieldID:
+		case image.FieldID, image.FieldItemID:
 			values[i] = new(uuid.UUID)
-		case image.ForeignKeys[0]: // item_images
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -112,6 +113,12 @@ func (_m *Image) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
 			}
+		case image.FieldItemID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field item_id", values[i])
+			} else if value != nil {
+				_m.ItemID = *value
+			}
 		case image.FieldKind:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field kind", values[i])
@@ -129,6 +136,12 @@ func (_m *Image) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field path", values[i])
 			} else if value.Valid {
 				_m.Path = value.String
+			}
+		case image.FieldTag:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field tag", values[i])
+			} else if value.Valid {
+				_m.Tag = value.String
 			}
 		case image.FieldBlurHash:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -153,13 +166,6 @@ func (_m *Image) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field size", values[i])
 			} else if value.Valid {
 				_m.Size = value.Int64
-			}
-		case image.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullScanner); !ok {
-				return fmt.Errorf("unexpected type %T for field item_images", values[i])
-			} else if value.Valid {
-				_m.item_images = new(uuid.UUID)
-				*_m.item_images = *value.S.(*uuid.UUID)
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -208,6 +214,9 @@ func (_m *Image) String() string {
 	builder.WriteString("updated_at=")
 	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
+	builder.WriteString("item_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ItemID))
+	builder.WriteString(", ")
 	builder.WriteString("kind=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Kind))
 	builder.WriteString(", ")
@@ -216,6 +225,9 @@ func (_m *Image) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("path=")
 	builder.WriteString(_m.Path)
+	builder.WriteString(", ")
+	builder.WriteString("tag=")
+	builder.WriteString(_m.Tag)
 	builder.WriteString(", ")
 	builder.WriteString("blur_hash=")
 	builder.WriteString(_m.BlurHash)

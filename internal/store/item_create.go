@@ -67,6 +67,34 @@ func (_c *ItemCreate) SetNillableUpdatedAt(v *time.Time) *ItemCreate {
 	return _c
 }
 
+// SetLibraryID sets the "library_id" field.
+func (_c *ItemCreate) SetLibraryID(v uuid.UUID) *ItemCreate {
+	_c.mutation.SetLibraryID(v)
+	return _c
+}
+
+// SetNillableLibraryID sets the "library_id" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableLibraryID(v *uuid.UUID) *ItemCreate {
+	if v != nil {
+		_c.SetLibraryID(*v)
+	}
+	return _c
+}
+
+// SetParentID sets the "parent_id" field.
+func (_c *ItemCreate) SetParentID(v uuid.UUID) *ItemCreate {
+	_c.mutation.SetParentID(v)
+	return _c
+}
+
+// SetNillableParentID sets the "parent_id" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableParentID(v *uuid.UUID) *ItemCreate {
+	if v != nil {
+		_c.SetParentID(*v)
+	}
+	return _c
+}
+
 // SetKind sets the "kind" field.
 func (_c *ItemCreate) SetKind(v item.Kind) *ItemCreate {
 	_c.mutation.SetKind(v)
@@ -79,9 +107,25 @@ func (_c *ItemCreate) SetMediaType(v item.MediaType) *ItemCreate {
 	return _c
 }
 
+// SetNillableMediaType sets the "media_type" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableMediaType(v *item.MediaType) *ItemCreate {
+	if v != nil {
+		_c.SetMediaType(*v)
+	}
+	return _c
+}
+
 // SetLocationType sets the "location_type" field.
 func (_c *ItemCreate) SetLocationType(v item.LocationType) *ItemCreate {
 	_c.mutation.SetLocationType(v)
+	return _c
+}
+
+// SetNillableLocationType sets the "location_type" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableLocationType(v *item.LocationType) *ItemCreate {
+	if v != nil {
+		_c.SetLocationType(*v)
+	}
 	return _c
 }
 
@@ -181,6 +225,14 @@ func (_c *ItemCreate) SetForcedSortName(v bool) *ItemCreate {
 	return _c
 }
 
+// SetNillableForcedSortName sets the "forced_sort_name" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableForcedSortName(v *bool) *ItemCreate {
+	if v != nil {
+		_c.SetForcedSortName(*v)
+	}
+	return _c
+}
+
 // SetPath sets the "path" field.
 func (_c *ItemCreate) SetPath(v string) *ItemCreate {
 	_c.mutation.SetPath(v)
@@ -229,9 +281,25 @@ func (_c *ItemCreate) SetIsFolder(v bool) *ItemCreate {
 	return _c
 }
 
+// SetNillableIsFolder sets the "is_folder" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableIsFolder(v *bool) *ItemCreate {
+	if v != nil {
+		_c.SetIsFolder(*v)
+	}
+	return _c
+}
+
 // SetIsPlaceholder sets the "is_placeholder" field.
 func (_c *ItemCreate) SetIsPlaceholder(v bool) *ItemCreate {
 	_c.mutation.SetIsPlaceholder(v)
+	return _c
+}
+
+// SetNillableIsPlaceholder sets the "is_placeholder" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableIsPlaceholder(v *bool) *ItemCreate {
+	if v != nil {
+		_c.SetIsPlaceholder(*v)
+	}
 	return _c
 }
 
@@ -241,9 +309,25 @@ func (_c *ItemCreate) SetLockData(v bool) *ItemCreate {
 	return _c
 }
 
+// SetNillableLockData sets the "lock_data" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableLockData(v *bool) *ItemCreate {
+	if v != nil {
+		_c.SetLockData(*v)
+	}
+	return _c
+}
+
 // SetHasLyrics sets the "has_lyrics" field.
 func (_c *ItemCreate) SetHasLyrics(v bool) *ItemCreate {
 	_c.mutation.SetHasLyrics(v)
+	return _c
+}
+
+// SetNillableHasLyrics sets the "has_lyrics" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableHasLyrics(v *bool) *ItemCreate {
+	if v != nil {
+		_c.SetHasLyrics(*v)
+	}
 	return _c
 }
 
@@ -253,9 +337,25 @@ func (_c *ItemCreate) SetHasSubtitles(v bool) *ItemCreate {
 	return _c
 }
 
+// SetNillableHasSubtitles sets the "has_subtitles" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableHasSubtitles(v *bool) *ItemCreate {
+	if v != nil {
+		_c.SetHasSubtitles(*v)
+	}
+	return _c
+}
+
 // SetEnableMediaSourceDisplay sets the "enable_media_source_display" field.
 func (_c *ItemCreate) SetEnableMediaSourceDisplay(v bool) *ItemCreate {
 	_c.mutation.SetEnableMediaSourceDisplay(v)
+	return _c
+}
+
+// SetNillableEnableMediaSourceDisplay sets the "enable_media_source_display" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableEnableMediaSourceDisplay(v *bool) *ItemCreate {
+	if v != nil {
+		_c.SetEnableMediaSourceDisplay(*v)
+	}
 	return _c
 }
 
@@ -297,6 +397,34 @@ func (_c *ItemCreate) SetLastMediaAddedAt(v time.Time) *ItemCreate {
 func (_c *ItemCreate) SetNillableLastMediaAddedAt(v *time.Time) *ItemCreate {
 	if v != nil {
 		_c.SetLastMediaAddedAt(*v)
+	}
+	return _c
+}
+
+// SetDateModified sets the "date_modified" field.
+func (_c *ItemCreate) SetDateModified(v time.Time) *ItemCreate {
+	_c.mutation.SetDateModified(v)
+	return _c
+}
+
+// SetNillableDateModified sets the "date_modified" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableDateModified(v *time.Time) *ItemCreate {
+	if v != nil {
+		_c.SetDateModified(*v)
+	}
+	return _c
+}
+
+// SetProbedAt sets the "probed_at" field.
+func (_c *ItemCreate) SetProbedAt(v time.Time) *ItemCreate {
+	_c.mutation.SetProbedAt(v)
+	return _c
+}
+
+// SetNillableProbedAt sets the "probed_at" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableProbedAt(v *time.Time) *ItemCreate {
+	if v != nil {
+		_c.SetProbedAt(*v)
 	}
 	return _c
 }
@@ -643,20 +771,6 @@ func (_c *ItemCreate) SetID(v uuid.UUID) *ItemCreate {
 	return _c
 }
 
-// SetParentID sets the "parent" edge to the Item entity by ID.
-func (_c *ItemCreate) SetParentID(id uuid.UUID) *ItemCreate {
-	_c.mutation.SetParentID(id)
-	return _c
-}
-
-// SetNillableParentID sets the "parent" edge to the Item entity by ID if the given value is not nil.
-func (_c *ItemCreate) SetNillableParentID(id *uuid.UUID) *ItemCreate {
-	if id != nil {
-		_c = _c.SetParentID(*id)
-	}
-	return _c
-}
-
 // SetParent sets the "parent" edge to the Item entity.
 func (_c *ItemCreate) SetParent(v *Item) *ItemCreate {
 	return _c.SetParentID(v.ID)
@@ -675,20 +789,6 @@ func (_c *ItemCreate) AddChildren(v ...*Item) *ItemCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddChildIDs(ids...)
-}
-
-// SetLibraryID sets the "library" edge to the Library entity by ID.
-func (_c *ItemCreate) SetLibraryID(id uuid.UUID) *ItemCreate {
-	_c.mutation.SetLibraryID(id)
-	return _c
-}
-
-// SetNillableLibraryID sets the "library" edge to the Library entity by ID if the given value is not nil.
-func (_c *ItemCreate) SetNillableLibraryID(id *uuid.UUID) *ItemCreate {
-	if id != nil {
-		_c = _c.SetLibraryID(*id)
-	}
-	return _c
 }
 
 // SetLibrary sets the "library" edge to the Library entity.
@@ -938,6 +1038,42 @@ func (_c *ItemCreate) defaults() {
 		v := item.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.MediaType(); !ok {
+		v := item.DefaultMediaType
+		_c.mutation.SetMediaType(v)
+	}
+	if _, ok := _c.mutation.LocationType(); !ok {
+		v := item.DefaultLocationType
+		_c.mutation.SetLocationType(v)
+	}
+	if _, ok := _c.mutation.ForcedSortName(); !ok {
+		v := item.DefaultForcedSortName
+		_c.mutation.SetForcedSortName(v)
+	}
+	if _, ok := _c.mutation.IsFolder(); !ok {
+		v := item.DefaultIsFolder
+		_c.mutation.SetIsFolder(v)
+	}
+	if _, ok := _c.mutation.IsPlaceholder(); !ok {
+		v := item.DefaultIsPlaceholder
+		_c.mutation.SetIsPlaceholder(v)
+	}
+	if _, ok := _c.mutation.LockData(); !ok {
+		v := item.DefaultLockData
+		_c.mutation.SetLockData(v)
+	}
+	if _, ok := _c.mutation.HasLyrics(); !ok {
+		v := item.DefaultHasLyrics
+		_c.mutation.SetHasLyrics(v)
+	}
+	if _, ok := _c.mutation.HasSubtitles(); !ok {
+		v := item.DefaultHasSubtitles
+		_c.mutation.SetHasSubtitles(v)
+	}
+	if _, ok := _c.mutation.EnableMediaSourceDisplay(); !ok {
+		v := item.DefaultEnableMediaSourceDisplay
+		_c.mutation.SetEnableMediaSourceDisplay(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -1142,19 +1278,27 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := _c.mutation.PremiereDate(); ok {
 		_spec.SetField(item.FieldPremiereDate, field.TypeTime, value)
-		_node.PremiereDate = value
+		_node.PremiereDate = &value
 	}
 	if value, ok := _c.mutation.EndDate(); ok {
 		_spec.SetField(item.FieldEndDate, field.TypeTime, value)
-		_node.EndDate = value
+		_node.EndDate = &value
 	}
 	if value, ok := _c.mutation.LastMediaAddedAt(); ok {
 		_spec.SetField(item.FieldLastMediaAddedAt, field.TypeTime, value)
-		_node.LastMediaAddedAt = value
+		_node.LastMediaAddedAt = &value
+	}
+	if value, ok := _c.mutation.DateModified(); ok {
+		_spec.SetField(item.FieldDateModified, field.TypeTime, value)
+		_node.DateModified = value
+	}
+	if value, ok := _c.mutation.ProbedAt(); ok {
+		_spec.SetField(item.FieldProbedAt, field.TypeTime, value)
+		_node.ProbedAt = value
 	}
 	if value, ok := _c.mutation.ProductionYear(); ok {
 		_spec.SetField(item.FieldProductionYear, field.TypeInt32, value)
-		_node.ProductionYear = value
+		_node.ProductionYear = &value
 	}
 	if value, ok := _c.mutation.OfficialRating(); ok {
 		_spec.SetField(item.FieldOfficialRating, field.TypeString, value)
@@ -1166,39 +1310,39 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := _c.mutation.CriticRating(); ok {
 		_spec.SetField(item.FieldCriticRating, field.TypeFloat64, value)
-		_node.CriticRating = value
+		_node.CriticRating = &value
 	}
 	if value, ok := _c.mutation.CommunityRating(); ok {
 		_spec.SetField(item.FieldCommunityRating, field.TypeFloat64, value)
-		_node.CommunityRating = value
+		_node.CommunityRating = &value
 	}
 	if value, ok := _c.mutation.RunTimeTicks(); ok {
 		_spec.SetField(item.FieldRunTimeTicks, field.TypeInt64, value)
-		_node.RunTimeTicks = value
+		_node.RunTimeTicks = &value
 	}
 	if value, ok := _c.mutation.IndexNumber(); ok {
 		_spec.SetField(item.FieldIndexNumber, field.TypeInt32, value)
-		_node.IndexNumber = value
+		_node.IndexNumber = &value
 	}
 	if value, ok := _c.mutation.IndexNumberEnd(); ok {
 		_spec.SetField(item.FieldIndexNumberEnd, field.TypeInt32, value)
-		_node.IndexNumberEnd = value
+		_node.IndexNumberEnd = &value
 	}
 	if value, ok := _c.mutation.ParentIndexNumber(); ok {
 		_spec.SetField(item.FieldParentIndexNumber, field.TypeInt32, value)
-		_node.ParentIndexNumber = value
+		_node.ParentIndexNumber = &value
 	}
 	if value, ok := _c.mutation.AirsBeforeSeasonNumber(); ok {
 		_spec.SetField(item.FieldAirsBeforeSeasonNumber, field.TypeInt32, value)
-		_node.AirsBeforeSeasonNumber = value
+		_node.AirsBeforeSeasonNumber = &value
 	}
 	if value, ok := _c.mutation.AirsAfterSeasonNumber(); ok {
 		_spec.SetField(item.FieldAirsAfterSeasonNumber, field.TypeInt32, value)
-		_node.AirsAfterSeasonNumber = value
+		_node.AirsAfterSeasonNumber = &value
 	}
 	if value, ok := _c.mutation.AirsBeforeEpisodeNumber(); ok {
 		_spec.SetField(item.FieldAirsBeforeEpisodeNumber, field.TypeInt32, value)
-		_node.AirsBeforeEpisodeNumber = value
+		_node.AirsBeforeEpisodeNumber = &value
 	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(item.FieldStatus, field.TypeString, value)
@@ -1222,11 +1366,11 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := _c.mutation.Width(); ok {
 		_spec.SetField(item.FieldWidth, field.TypeInt32, value)
-		_node.Width = value
+		_node.Width = &value
 	}
 	if value, ok := _c.mutation.Height(); ok {
 		_spec.SetField(item.FieldHeight, field.TypeInt32, value)
-		_node.Height = value
+		_node.Height = &value
 	}
 	if value, ok := _c.mutation.NormalizationGain(); ok {
 		_spec.SetField(item.FieldNormalizationGain, field.TypeFloat64, value)
@@ -1278,7 +1422,7 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.item_children = &nodes[0]
+		_node.ParentID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.ChildrenIDs(); len(nodes) > 0 {
@@ -1311,7 +1455,7 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.library_items = &nodes[0]
+		_node.LibraryID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.MediaSourcesIDs(); len(nodes) > 0 {
@@ -1595,6 +1739,42 @@ func (u *ItemUpsert) SetUpdatedAt(v time.Time) *ItemUpsert {
 // UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
 func (u *ItemUpsert) UpdateUpdatedAt() *ItemUpsert {
 	u.SetExcluded(item.FieldUpdatedAt)
+	return u
+}
+
+// SetLibraryID sets the "library_id" field.
+func (u *ItemUpsert) SetLibraryID(v uuid.UUID) *ItemUpsert {
+	u.Set(item.FieldLibraryID, v)
+	return u
+}
+
+// UpdateLibraryID sets the "library_id" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateLibraryID() *ItemUpsert {
+	u.SetExcluded(item.FieldLibraryID)
+	return u
+}
+
+// ClearLibraryID clears the value of the "library_id" field.
+func (u *ItemUpsert) ClearLibraryID() *ItemUpsert {
+	u.SetNull(item.FieldLibraryID)
+	return u
+}
+
+// SetParentID sets the "parent_id" field.
+func (u *ItemUpsert) SetParentID(v uuid.UUID) *ItemUpsert {
+	u.Set(item.FieldParentID, v)
+	return u
+}
+
+// UpdateParentID sets the "parent_id" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateParentID() *ItemUpsert {
+	u.SetExcluded(item.FieldParentID)
+	return u
+}
+
+// ClearParentID clears the value of the "parent_id" field.
+func (u *ItemUpsert) ClearParentID() *ItemUpsert {
+	u.SetNull(item.FieldParentID)
 	return u
 }
 
@@ -1943,6 +2123,42 @@ func (u *ItemUpsert) UpdateLastMediaAddedAt() *ItemUpsert {
 // ClearLastMediaAddedAt clears the value of the "last_media_added_at" field.
 func (u *ItemUpsert) ClearLastMediaAddedAt() *ItemUpsert {
 	u.SetNull(item.FieldLastMediaAddedAt)
+	return u
+}
+
+// SetDateModified sets the "date_modified" field.
+func (u *ItemUpsert) SetDateModified(v time.Time) *ItemUpsert {
+	u.Set(item.FieldDateModified, v)
+	return u
+}
+
+// UpdateDateModified sets the "date_modified" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateDateModified() *ItemUpsert {
+	u.SetExcluded(item.FieldDateModified)
+	return u
+}
+
+// ClearDateModified clears the value of the "date_modified" field.
+func (u *ItemUpsert) ClearDateModified() *ItemUpsert {
+	u.SetNull(item.FieldDateModified)
+	return u
+}
+
+// SetProbedAt sets the "probed_at" field.
+func (u *ItemUpsert) SetProbedAt(v time.Time) *ItemUpsert {
+	u.Set(item.FieldProbedAt, v)
+	return u
+}
+
+// UpdateProbedAt sets the "probed_at" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateProbedAt() *ItemUpsert {
+	u.SetExcluded(item.FieldProbedAt)
+	return u
+}
+
+// ClearProbedAt clears the value of the "probed_at" field.
+func (u *ItemUpsert) ClearProbedAt() *ItemUpsert {
+	u.SetNull(item.FieldProbedAt)
 	return u
 }
 
@@ -2604,6 +2820,48 @@ func (u *ItemUpsertOne) UpdateUpdatedAt() *ItemUpsertOne {
 	})
 }
 
+// SetLibraryID sets the "library_id" field.
+func (u *ItemUpsertOne) SetLibraryID(v uuid.UUID) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetLibraryID(v)
+	})
+}
+
+// UpdateLibraryID sets the "library_id" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateLibraryID() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateLibraryID()
+	})
+}
+
+// ClearLibraryID clears the value of the "library_id" field.
+func (u *ItemUpsertOne) ClearLibraryID() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearLibraryID()
+	})
+}
+
+// SetParentID sets the "parent_id" field.
+func (u *ItemUpsertOne) SetParentID(v uuid.UUID) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetParentID(v)
+	})
+}
+
+// UpdateParentID sets the "parent_id" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateParentID() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateParentID()
+	})
+}
+
+// ClearParentID clears the value of the "parent_id" field.
+func (u *ItemUpsertOne) ClearParentID() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearParentID()
+	})
+}
+
 // SetKind sets the "kind" field.
 func (u *ItemUpsertOne) SetKind(v item.Kind) *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
@@ -3007,6 +3265,48 @@ func (u *ItemUpsertOne) UpdateLastMediaAddedAt() *ItemUpsertOne {
 func (u *ItemUpsertOne) ClearLastMediaAddedAt() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearLastMediaAddedAt()
+	})
+}
+
+// SetDateModified sets the "date_modified" field.
+func (u *ItemUpsertOne) SetDateModified(v time.Time) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetDateModified(v)
+	})
+}
+
+// UpdateDateModified sets the "date_modified" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateDateModified() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateDateModified()
+	})
+}
+
+// ClearDateModified clears the value of the "date_modified" field.
+func (u *ItemUpsertOne) ClearDateModified() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearDateModified()
+	})
+}
+
+// SetProbedAt sets the "probed_at" field.
+func (u *ItemUpsertOne) SetProbedAt(v time.Time) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetProbedAt(v)
+	})
+}
+
+// UpdateProbedAt sets the "probed_at" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateProbedAt() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateProbedAt()
+	})
+}
+
+// ClearProbedAt clears the value of the "probed_at" field.
+func (u *ItemUpsertOne) ClearProbedAt() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearProbedAt()
 	})
 }
 
@@ -3932,6 +4232,48 @@ func (u *ItemUpsertBulk) UpdateUpdatedAt() *ItemUpsertBulk {
 	})
 }
 
+// SetLibraryID sets the "library_id" field.
+func (u *ItemUpsertBulk) SetLibraryID(v uuid.UUID) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetLibraryID(v)
+	})
+}
+
+// UpdateLibraryID sets the "library_id" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateLibraryID() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateLibraryID()
+	})
+}
+
+// ClearLibraryID clears the value of the "library_id" field.
+func (u *ItemUpsertBulk) ClearLibraryID() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearLibraryID()
+	})
+}
+
+// SetParentID sets the "parent_id" field.
+func (u *ItemUpsertBulk) SetParentID(v uuid.UUID) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetParentID(v)
+	})
+}
+
+// UpdateParentID sets the "parent_id" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateParentID() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateParentID()
+	})
+}
+
+// ClearParentID clears the value of the "parent_id" field.
+func (u *ItemUpsertBulk) ClearParentID() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearParentID()
+	})
+}
+
 // SetKind sets the "kind" field.
 func (u *ItemUpsertBulk) SetKind(v item.Kind) *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
@@ -4335,6 +4677,48 @@ func (u *ItemUpsertBulk) UpdateLastMediaAddedAt() *ItemUpsertBulk {
 func (u *ItemUpsertBulk) ClearLastMediaAddedAt() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearLastMediaAddedAt()
+	})
+}
+
+// SetDateModified sets the "date_modified" field.
+func (u *ItemUpsertBulk) SetDateModified(v time.Time) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetDateModified(v)
+	})
+}
+
+// UpdateDateModified sets the "date_modified" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateDateModified() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateDateModified()
+	})
+}
+
+// ClearDateModified clears the value of the "date_modified" field.
+func (u *ItemUpsertBulk) ClearDateModified() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearDateModified()
+	})
+}
+
+// SetProbedAt sets the "probed_at" field.
+func (u *ItemUpsertBulk) SetProbedAt(v time.Time) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetProbedAt(v)
+	})
+}
+
+// UpdateProbedAt sets the "probed_at" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateProbedAt() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateProbedAt()
+	})
+}
+
+// ClearProbedAt clears the value of the "probed_at" field.
+func (u *ItemUpsertBulk) ClearProbedAt() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearProbedAt()
 	})
 }
 

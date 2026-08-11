@@ -71,7 +71,7 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "useritemdata" package.
 	ItemDataInverseTable = "user_item_data"
 	// ItemDataColumn is the table column denoting the item_data relation/edge.
-	ItemDataColumn = "user_item_data"
+	ItemDataColumn = "user_id"
 	// DisplayPreferencesTable is the table that holds the display_preferences relation/edge.
 	DisplayPreferencesTable = "display_preferences"
 	// DisplayPreferencesInverseTable is the table name for the DisplayPreferences entity.

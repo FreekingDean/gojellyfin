@@ -2,59 +2,83 @@ package items
 
 import (
 	"context"
-	"time"
+	"fmt"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
+
+	"github.com/FreekingDean/gojellyfin/internal/store"
+	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
 )
 
-type ItemImage struct {
-	ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid()"`
-	ItemID    uuid.UUID `gorm:"type:uuid"`
-	Type      string
-	Index     int32
-	Path      string
-	Tag       string
-	Width     int32
-	Height    int32
-	Size      int64
-	CreatedAt time.Time
-	UpdatedAt time.Time
+type (
+	Image     = store.Image
+	ImageKind = imagemodal.Kind
+)
+
+// One artwork file found beside the media.
+type Artwork struct {
+	Kind   ImageKind
+	Path   string
+	Tag    string
+	Width  int32
+	Height int32
+	Size   int64
 }
 
-func (s *Service) ReplaceImages(ctx context.Context, itemID uuid.UUID, images []ItemImage) error {
-	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Delete(&ItemImage{}, "item_id = ?", itemID).Error; err != nil {
-			return err
+func (s *Service) ReplaceImages(ctx context.Context, itemID uuid.UUID, artwork []Artwork) error {
+	return s.store.WithTx(ctx, func(tx *store.Tx) error {
+		_, err := tx.Image.Delete().Where(imagemodal.ItemID(itemID)).Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to clear images: %w", err)
 		}
-		if len(images) == 0 {
+		if len(artwork) == 0 {
 			return nil
 		}
 
-		return tx.Create(&images).Error
+		builders := make([]*store.ImageCreate, 0, len(artwork))
+		for _, image := range artwork {
+			builders = append(builders, tx.Image.Create().
+				SetItemID(itemID).
+				SetKind(image.Kind).
+				SetPath(image.Path).
+				SetTag(image.Tag).
+				SetWidth(image.Width).
+				SetHeight(image.Height).
+				SetSize(image.Size))
+		}
+		if err := tx.Image.CreateBulk(builders...).Exec(ctx); err != nil {
+			return fmt.Errorf("failed to create images: %w", err)
+		}
+
+		return nil
 	})
 }
 
-func (s *Service) Images(ctx context.Context, itemID uuid.UUID) ([]ItemImage, error) {
-	var images []ItemImage
-	err := s.db.WithContext(ctx).
-		Where("item_id = ?", itemID).
-		Order("type, index").
-		Find(&images).Error
-
-	return images, err
-}
-
-func (s *Service) Image(ctx context.Context, itemID uuid.UUID, imageType string, index int32) (*ItemImage, error) {
-	var image ItemImage
-	err := s.db.WithContext(ctx).
-		Where(map[string]any{"item_id": itemID, "type": imageType, "index": index}).
-		First(&image).Error
+func (s *Service) Images(ctx context.Context, itemID uuid.UUID) ([]*Image, error) {
+	images, err := s.store.Image.Query().
+		Where(imagemodal.ItemID(itemID)).
+		Order(imagemodal.ByKind(), imagemodal.ByIndex()).
+		All(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to list images: %w", err)
 	}
 
-	return &image, nil
+	return images, nil
+}
+
+func (s *Service) Image(ctx context.Context, itemID uuid.UUID, kind ImageKind, index int32) (*Image, error) {
+	image, err := s.store.Image.Query().
+		Where(
+			imagemodal.ItemID(itemID),
+			imagemodal.KindEQ(kind),
+			imagemodal.Index(index),
+		).
+		Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query image: %w", err)
+	}
+
+	return image, nil
 }
 
 func (s *Service) ImageTagsByItem(ctx context.Context, itemIDs []uuid.UUID) (map[uuid.UUID]map[string]string, error) {
@@ -63,20 +87,18 @@ func (s *Service) ImageTagsByItem(ctx context.Context, itemIDs []uuid.UUID) (map
 		return tags, nil
 	}
 
-	var images []ItemImage
-	err := s.db.WithContext(ctx).
-		Where("item_id IN ?", itemIDs).
-		Where(map[string]any{"index": 0}).
-		Find(&images).Error
+	images, err := s.store.Image.Query().
+		Where(imagemodal.ItemIDIn(itemIDs...), imagemodal.Index(0)).
+		All(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to query image tags: %w", err)
 	}
 
 	for _, image := range images {
 		if tags[image.ItemID] == nil {
 			tags[image.ItemID] = map[string]string{}
 		}
-		tags[image.ItemID][image.Type] = image.Tag
+		tags[image.ItemID][string(image.Kind)] = image.Tag
 	}
 
 	return tags, nil

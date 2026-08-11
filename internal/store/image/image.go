@@ -19,12 +19,16 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// FieldItemID holds the string denoting the item_id field in the database.
+	FieldItemID = "item_id"
 	// FieldKind holds the string denoting the kind field in the database.
 	FieldKind = "kind"
 	// FieldIndex holds the string denoting the index field in the database.
 	FieldIndex = "index"
 	// FieldPath holds the string denoting the path field in the database.
 	FieldPath = "path"
+	// FieldTag holds the string denoting the tag field in the database.
+	FieldTag = "tag"
 	// FieldBlurHash holds the string denoting the blur_hash field in the database.
 	FieldBlurHash = "blur_hash"
 	// FieldWidth holds the string denoting the width field in the database.
@@ -43,7 +47,7 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "item" package.
 	ItemInverseTable = "items"
 	// ItemColumn is the table column denoting the item relation/edge.
-	ItemColumn = "item_images"
+	ItemColumn = "item_id"
 )
 
 // Columns holds all SQL columns for image fields.
@@ -51,30 +55,21 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
+	FieldItemID,
 	FieldKind,
 	FieldIndex,
 	FieldPath,
+	FieldTag,
 	FieldBlurHash,
 	FieldWidth,
 	FieldHeight,
 	FieldSize,
 }
 
-// ForeignKeys holds the SQL foreign-keys that are owned by the "images"
-// table and are not defined as standalone fields in the schema.
-var ForeignKeys = []string{
-	"item_images",
-}
-
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
-			return true
-		}
-	}
-	for i := range ForeignKeys {
-		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -88,6 +83,8 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultIndex holds the default value on creation for the "index" field.
+	DefaultIndex int32
 )
 
 // Kind defines the type for the "kind" enum field.
@@ -142,6 +139,11 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
+// ByItemID orders the results by the item_id field.
+func ByItemID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldItemID, opts...).ToFunc()
+}
+
 // ByKind orders the results by the kind field.
 func ByKind(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldKind, opts...).ToFunc()
@@ -155,6 +157,11 @@ func ByIndex(opts ...sql.OrderTermOption) OrderOption {
 // ByPath orders the results by the path field.
 func ByPath(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPath, opts...).ToFunc()
+}
+
+// ByTag orders the results by the tag field.
+func ByTag(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTag, opts...).ToFunc()
 }
 
 // ByBlurHash orders the results by the blur_hash field.

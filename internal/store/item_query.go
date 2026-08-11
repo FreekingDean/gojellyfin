@@ -54,7 +54,6 @@ type ItemQuery struct {
 	withPlaylistEntries    *PlaylistEntryQuery
 	withGenres             *GenreQuery
 	withStudios            *StudioQuery
-	withFKs                bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -910,7 +909,6 @@ func (_q *ItemQuery) prepareQuery(ctx context.Context) error {
 func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, error) {
 	var (
 		nodes       = []*Item{}
-		withFKs     = _q.withFKs
 		_spec       = _q.querySpec()
 		loadedTypes = [16]bool{
 			_q.withParent != nil,
@@ -931,12 +929,6 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 			_q.withStudios != nil,
 		}
 	)
-	if _q.withParent != nil || _q.withLibrary != nil {
-		withFKs = true
-	}
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, item.ForeignKeys...)
-	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Item).scanValues(nil, columns)
 	}
@@ -1073,10 +1065,10 @@ func (_q *ItemQuery) loadParent(ctx context.Context, query *ItemQuery, nodes []*
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*Item)
 	for i := range nodes {
-		if nodes[i].item_children == nil {
+		if nodes[i].ParentID == nil {
 			continue
 		}
-		fk := *nodes[i].item_children
+		fk := *nodes[i].ParentID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -1093,7 +1085,7 @@ func (_q *ItemQuery) loadParent(ctx context.Context, query *ItemQuery, nodes []*
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "item_children" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "parent_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -1111,7 +1103,9 @@ func (_q *ItemQuery) loadChildren(ctx context.Context, query *ItemQuery, nodes [
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(item.FieldParentID)
+	}
 	query.Where(predicate.Item(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(item.ChildrenColumn), fks...))
 	}))
@@ -1120,13 +1114,13 @@ func (_q *ItemQuery) loadChildren(ctx context.Context, query *ItemQuery, nodes [
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.item_children
+		fk := n.ParentID
 		if fk == nil {
-			return fmt.Errorf(`foreign-key "item_children" is nil for node %v`, n.ID)
+			return fmt.Errorf(`foreign-key "parent_id" is nil for node %v`, n.ID)
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "item_children" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "parent_id" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -1136,10 +1130,7 @@ func (_q *ItemQuery) loadLibrary(ctx context.Context, query *LibraryQuery, nodes
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*Item)
 	for i := range nodes {
-		if nodes[i].library_items == nil {
-			continue
-		}
-		fk := *nodes[i].library_items
+		fk := nodes[i].LibraryID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -1156,7 +1147,7 @@ func (_q *ItemQuery) loadLibrary(ctx context.Context, query *LibraryQuery, nodes
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "library_items" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "library_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -1174,7 +1165,9 @@ func (_q *ItemQuery) loadMediaSources(ctx context.Context, query *MediaSourceQue
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(mediasource.FieldItemID)
+	}
 	query.Where(predicate.MediaSource(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(item.MediaSourcesColumn), fks...))
 	}))
@@ -1183,13 +1176,10 @@ func (_q *ItemQuery) loadMediaSources(ctx context.Context, query *MediaSourceQue
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.item_media_sources
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "item_media_sources" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		fk := n.ItemID
+		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "item_media_sources" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "item_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -1267,7 +1257,9 @@ func (_q *ItemQuery) loadImages(ctx context.Context, query *ImageQuery, nodes []
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(image.FieldItemID)
+	}
 	query.Where(predicate.Image(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(item.ImagesColumn), fks...))
 	}))
@@ -1276,13 +1268,10 @@ func (_q *ItemQuery) loadImages(ctx context.Context, query *ImageQuery, nodes []
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.item_images
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "item_images" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		fk := n.ItemID
+		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "item_images" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "item_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -1298,7 +1287,9 @@ func (_q *ItemQuery) loadUserData(ctx context.Context, query *UserItemDataQuery,
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(useritemdata.FieldItemID)
+	}
 	query.Where(predicate.UserItemData(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(item.UserDataColumn), fks...))
 	}))
@@ -1307,13 +1298,10 @@ func (_q *ItemQuery) loadUserData(ctx context.Context, query *UserItemDataQuery,
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.item_user_data
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "item_user_data" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		fk := n.ItemID
+		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "item_user_data" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "item_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -1649,6 +1637,12 @@ func (_q *ItemQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != item.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withParent != nil {
+			_spec.Node.AddColumnOnce(item.FieldParentID)
+		}
+		if _q.withLibrary != nil {
+			_spec.Node.AddColumnOnce(item.FieldLibraryID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

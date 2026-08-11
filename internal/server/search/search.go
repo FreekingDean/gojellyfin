@@ -24,11 +24,7 @@ func (s *Server) GetSearchHints(ctx context.Context, request api.GetSearchHintsR
 		Limit:      int(apiutil.Deref(request.Params.Limit)),
 		SortBy:     []string{"SortName"},
 	}
-	if request.Params.IncludeItemTypes != nil {
-		for _, kind := range *request.Params.IncludeItemTypes {
-			query.Types = append(query.Types, string(kind))
-		}
-	}
+	query.Kinds = serveritems.Kinds(request.Params.IncludeItemTypes)
 	if request.Params.ParentId != nil {
 		query.ParentID = request.Params.ParentId
 	}
@@ -40,7 +36,7 @@ func (s *Server) GetSearchHints(ctx context.Context, request api.GetSearchHintsR
 
 	hints := make([]api.SearchHint, 0, len(records))
 	for _, record := range records {
-		hints = append(hints, searchHint(&record, request.Params.SearchTerm))
+		hints = append(hints, searchHint(record, request.Params.SearchTerm))
 	}
 
 	return api.GetSearchHints200JSONResponse{
@@ -50,7 +46,7 @@ func (s *Server) GetSearchHints(ctx context.Context, request api.GetSearchHintsR
 }
 
 func searchHint(item *items.Item, term string) api.SearchHint {
-	kind := api.BaseItemKind(item.Type)
+	kind := api.BaseItemKind(item.Kind)
 
 	hint := api.SearchHint{
 		ItemId:            &item.ID,
@@ -58,15 +54,15 @@ func searchHint(item *items.Item, term string) api.SearchHint {
 		Name:              apiutil.Ptr(item.Name),
 		MatchedTerm:       apiutil.Ptr(term),
 		Type:              &kind,
-		IsFolder:          apiutil.Ptr(serveritems.FolderTypes[item.Type]),
+		IsFolder:          apiutil.Ptr(item.IsFolder),
 		IndexNumber:       item.IndexNumber,
 		ParentIndexNumber: item.ParentIndexNumber,
 		ProductionYear:    item.ProductionYear,
 		RunTimeTicks:      item.RunTimeTicks,
 	}
 
-	if !serveritems.FolderTypes[item.Type] {
-		hint.MediaType = apiutil.Ptr(api.MediaTypeVideo)
+	if !item.IsFolder {
+		hint.MediaType = apiutil.Ptr(api.MediaType(item.MediaType))
 	}
 
 	return hint

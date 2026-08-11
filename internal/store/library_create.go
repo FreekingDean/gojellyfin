@@ -66,6 +66,14 @@ func (_c *LibraryCreate) SetCollectionType(v library.CollectionType) *LibraryCre
 	return _c
 }
 
+// SetNillableCollectionType sets the "collection_type" field if the given value is not nil.
+func (_c *LibraryCreate) SetNillableCollectionType(v *library.CollectionType) *LibraryCreate {
+	if v != nil {
+		_c.SetCollectionType(*v)
+	}
+	return _c
+}
+
 // SetLocations sets the "locations" field.
 func (_c *LibraryCreate) SetLocations(v []string) *LibraryCreate {
 	_c.mutation.SetLocations(v)
@@ -154,6 +162,14 @@ func (_c *LibraryCreate) defaults() {
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		v := library.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
+	}
+	if _, ok := _c.mutation.CollectionType(); !ok {
+		v := library.DefaultCollectionType
+		_c.mutation.SetCollectionType(v)
+	}
+	if _, ok := _c.mutation.Locations(); !ok {
+		v := library.DefaultLocations
+		_c.mutation.SetLocations(v)
 	}
 }
 

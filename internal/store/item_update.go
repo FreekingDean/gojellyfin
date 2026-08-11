@@ -65,6 +65,46 @@ func (_u *ItemUpdate) SetUpdatedAt(v time.Time) *ItemUpdate {
 	return _u
 }
 
+// SetLibraryID sets the "library_id" field.
+func (_u *ItemUpdate) SetLibraryID(v uuid.UUID) *ItemUpdate {
+	_u.mutation.SetLibraryID(v)
+	return _u
+}
+
+// SetNillableLibraryID sets the "library_id" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableLibraryID(v *uuid.UUID) *ItemUpdate {
+	if v != nil {
+		_u.SetLibraryID(*v)
+	}
+	return _u
+}
+
+// ClearLibraryID clears the value of the "library_id" field.
+func (_u *ItemUpdate) ClearLibraryID() *ItemUpdate {
+	_u.mutation.ClearLibraryID()
+	return _u
+}
+
+// SetParentID sets the "parent_id" field.
+func (_u *ItemUpdate) SetParentID(v uuid.UUID) *ItemUpdate {
+	_u.mutation.SetParentID(v)
+	return _u
+}
+
+// SetNillableParentID sets the "parent_id" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableParentID(v *uuid.UUID) *ItemUpdate {
+	if v != nil {
+		_u.SetParentID(*v)
+	}
+	return _u
+}
+
+// ClearParentID clears the value of the "parent_id" field.
+func (_u *ItemUpdate) ClearParentID() *ItemUpdate {
+	_u.mutation.ClearParentID()
+	return _u
+}
+
 // SetKind sets the "kind" field.
 func (_u *ItemUpdate) SetKind(v item.Kind) *ItemUpdate {
 	_u.mutation.SetKind(v)
@@ -456,6 +496,46 @@ func (_u *ItemUpdate) SetNillableLastMediaAddedAt(v *time.Time) *ItemUpdate {
 // ClearLastMediaAddedAt clears the value of the "last_media_added_at" field.
 func (_u *ItemUpdate) ClearLastMediaAddedAt() *ItemUpdate {
 	_u.mutation.ClearLastMediaAddedAt()
+	return _u
+}
+
+// SetDateModified sets the "date_modified" field.
+func (_u *ItemUpdate) SetDateModified(v time.Time) *ItemUpdate {
+	_u.mutation.SetDateModified(v)
+	return _u
+}
+
+// SetNillableDateModified sets the "date_modified" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableDateModified(v *time.Time) *ItemUpdate {
+	if v != nil {
+		_u.SetDateModified(*v)
+	}
+	return _u
+}
+
+// ClearDateModified clears the value of the "date_modified" field.
+func (_u *ItemUpdate) ClearDateModified() *ItemUpdate {
+	_u.mutation.ClearDateModified()
+	return _u
+}
+
+// SetProbedAt sets the "probed_at" field.
+func (_u *ItemUpdate) SetProbedAt(v time.Time) *ItemUpdate {
+	_u.mutation.SetProbedAt(v)
+	return _u
+}
+
+// SetNillableProbedAt sets the "probed_at" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableProbedAt(v *time.Time) *ItemUpdate {
+	if v != nil {
+		_u.SetProbedAt(*v)
+	}
+	return _u
+}
+
+// ClearProbedAt clears the value of the "probed_at" field.
+func (_u *ItemUpdate) ClearProbedAt() *ItemUpdate {
+	_u.mutation.ClearProbedAt()
 	return _u
 }
 
@@ -1090,20 +1170,6 @@ func (_u *ItemUpdate) ClearExternalUrls() *ItemUpdate {
 	return _u
 }
 
-// SetParentID sets the "parent" edge to the Item entity by ID.
-func (_u *ItemUpdate) SetParentID(id uuid.UUID) *ItemUpdate {
-	_u.mutation.SetParentID(id)
-	return _u
-}
-
-// SetNillableParentID sets the "parent" edge to the Item entity by ID if the given value is not nil.
-func (_u *ItemUpdate) SetNillableParentID(id *uuid.UUID) *ItemUpdate {
-	if id != nil {
-		_u = _u.SetParentID(*id)
-	}
-	return _u
-}
-
 // SetParent sets the "parent" edge to the Item entity.
 func (_u *ItemUpdate) SetParent(v *Item) *ItemUpdate {
 	return _u.SetParentID(v.ID)
@@ -1122,20 +1188,6 @@ func (_u *ItemUpdate) AddChildren(v ...*Item) *ItemUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddChildIDs(ids...)
-}
-
-// SetLibraryID sets the "library" edge to the Library entity by ID.
-func (_u *ItemUpdate) SetLibraryID(id uuid.UUID) *ItemUpdate {
-	_u.mutation.SetLibraryID(id)
-	return _u
-}
-
-// SetNillableLibraryID sets the "library" edge to the Library entity by ID if the given value is not nil.
-func (_u *ItemUpdate) SetNillableLibraryID(id *uuid.UUID) *ItemUpdate {
-	if id != nil {
-		_u = _u.SetLibraryID(*id)
-	}
-	return _u
 }
 
 // SetLibrary sets the "library" edge to the Library entity.
@@ -1836,6 +1888,18 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.LastMediaAddedAtCleared() {
 		_spec.ClearField(item.FieldLastMediaAddedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.DateModified(); ok {
+		_spec.SetField(item.FieldDateModified, field.TypeTime, value)
+	}
+	if _u.mutation.DateModifiedCleared() {
+		_spec.ClearField(item.FieldDateModified, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ProbedAt(); ok {
+		_spec.SetField(item.FieldProbedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ProbedAtCleared() {
+		_spec.ClearField(item.FieldProbedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.ProductionYear(); ok {
 		_spec.SetField(item.FieldProductionYear, field.TypeInt32, value)
@@ -2786,6 +2850,46 @@ func (_u *ItemUpdateOne) SetUpdatedAt(v time.Time) *ItemUpdateOne {
 	return _u
 }
 
+// SetLibraryID sets the "library_id" field.
+func (_u *ItemUpdateOne) SetLibraryID(v uuid.UUID) *ItemUpdateOne {
+	_u.mutation.SetLibraryID(v)
+	return _u
+}
+
+// SetNillableLibraryID sets the "library_id" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableLibraryID(v *uuid.UUID) *ItemUpdateOne {
+	if v != nil {
+		_u.SetLibraryID(*v)
+	}
+	return _u
+}
+
+// ClearLibraryID clears the value of the "library_id" field.
+func (_u *ItemUpdateOne) ClearLibraryID() *ItemUpdateOne {
+	_u.mutation.ClearLibraryID()
+	return _u
+}
+
+// SetParentID sets the "parent_id" field.
+func (_u *ItemUpdateOne) SetParentID(v uuid.UUID) *ItemUpdateOne {
+	_u.mutation.SetParentID(v)
+	return _u
+}
+
+// SetNillableParentID sets the "parent_id" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableParentID(v *uuid.UUID) *ItemUpdateOne {
+	if v != nil {
+		_u.SetParentID(*v)
+	}
+	return _u
+}
+
+// ClearParentID clears the value of the "parent_id" field.
+func (_u *ItemUpdateOne) ClearParentID() *ItemUpdateOne {
+	_u.mutation.ClearParentID()
+	return _u
+}
+
 // SetKind sets the "kind" field.
 func (_u *ItemUpdateOne) SetKind(v item.Kind) *ItemUpdateOne {
 	_u.mutation.SetKind(v)
@@ -3177,6 +3281,46 @@ func (_u *ItemUpdateOne) SetNillableLastMediaAddedAt(v *time.Time) *ItemUpdateOn
 // ClearLastMediaAddedAt clears the value of the "last_media_added_at" field.
 func (_u *ItemUpdateOne) ClearLastMediaAddedAt() *ItemUpdateOne {
 	_u.mutation.ClearLastMediaAddedAt()
+	return _u
+}
+
+// SetDateModified sets the "date_modified" field.
+func (_u *ItemUpdateOne) SetDateModified(v time.Time) *ItemUpdateOne {
+	_u.mutation.SetDateModified(v)
+	return _u
+}
+
+// SetNillableDateModified sets the "date_modified" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableDateModified(v *time.Time) *ItemUpdateOne {
+	if v != nil {
+		_u.SetDateModified(*v)
+	}
+	return _u
+}
+
+// ClearDateModified clears the value of the "date_modified" field.
+func (_u *ItemUpdateOne) ClearDateModified() *ItemUpdateOne {
+	_u.mutation.ClearDateModified()
+	return _u
+}
+
+// SetProbedAt sets the "probed_at" field.
+func (_u *ItemUpdateOne) SetProbedAt(v time.Time) *ItemUpdateOne {
+	_u.mutation.SetProbedAt(v)
+	return _u
+}
+
+// SetNillableProbedAt sets the "probed_at" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableProbedAt(v *time.Time) *ItemUpdateOne {
+	if v != nil {
+		_u.SetProbedAt(*v)
+	}
+	return _u
+}
+
+// ClearProbedAt clears the value of the "probed_at" field.
+func (_u *ItemUpdateOne) ClearProbedAt() *ItemUpdateOne {
+	_u.mutation.ClearProbedAt()
 	return _u
 }
 
@@ -3811,20 +3955,6 @@ func (_u *ItemUpdateOne) ClearExternalUrls() *ItemUpdateOne {
 	return _u
 }
 
-// SetParentID sets the "parent" edge to the Item entity by ID.
-func (_u *ItemUpdateOne) SetParentID(id uuid.UUID) *ItemUpdateOne {
-	_u.mutation.SetParentID(id)
-	return _u
-}
-
-// SetNillableParentID sets the "parent" edge to the Item entity by ID if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableParentID(id *uuid.UUID) *ItemUpdateOne {
-	if id != nil {
-		_u = _u.SetParentID(*id)
-	}
-	return _u
-}
-
 // SetParent sets the "parent" edge to the Item entity.
 func (_u *ItemUpdateOne) SetParent(v *Item) *ItemUpdateOne {
 	return _u.SetParentID(v.ID)
@@ -3843,20 +3973,6 @@ func (_u *ItemUpdateOne) AddChildren(v ...*Item) *ItemUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.AddChildIDs(ids...)
-}
-
-// SetLibraryID sets the "library" edge to the Library entity by ID.
-func (_u *ItemUpdateOne) SetLibraryID(id uuid.UUID) *ItemUpdateOne {
-	_u.mutation.SetLibraryID(id)
-	return _u
-}
-
-// SetNillableLibraryID sets the "library" edge to the Library entity by ID if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableLibraryID(id *uuid.UUID) *ItemUpdateOne {
-	if id != nil {
-		_u = _u.SetLibraryID(*id)
-	}
-	return _u
 }
 
 // SetLibrary sets the "library" edge to the Library entity.
@@ -4587,6 +4703,18 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	}
 	if _u.mutation.LastMediaAddedAtCleared() {
 		_spec.ClearField(item.FieldLastMediaAddedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.DateModified(); ok {
+		_spec.SetField(item.FieldDateModified, field.TypeTime, value)
+	}
+	if _u.mutation.DateModifiedCleared() {
+		_spec.ClearField(item.FieldDateModified, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ProbedAt(); ok {
+		_spec.SetField(item.FieldProbedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ProbedAtCleared() {
+		_spec.ClearField(item.FieldProbedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.ProductionYear(); ok {
 		_spec.SetField(item.FieldProductionYear, field.TypeInt32, value)

@@ -24,6 +24,10 @@ type UserItemData struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// UserID holds the value of the "user_id" field.
+	UserID uuid.UUID `json:"user_id,omitempty"`
+	// ItemID holds the value of the "item_id" field.
+	ItemID uuid.UUID `json:"item_id,omitempty"`
 	// Played holds the value of the "played" field.
 	Played bool `json:"played,omitempty"`
 	// IsFavorite holds the value of the "is_favorite" field.
@@ -33,17 +37,15 @@ type UserItemData struct {
 	// PlaybackPositionTicks holds the value of the "playback_position_ticks" field.
 	PlaybackPositionTicks int64 `json:"playback_position_ticks,omitempty"`
 	// Rating holds the value of the "rating" field.
-	Rating float64 `json:"rating,omitempty"`
+	Rating *float64 `json:"rating,omitempty"`
 	// Likes holds the value of the "likes" field.
 	Likes bool `json:"likes,omitempty"`
 	// LastPlayedAt holds the value of the "last_played_at" field.
-	LastPlayedAt time.Time `json:"last_played_at,omitempty"`
+	LastPlayedAt *time.Time `json:"last_played_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserItemDataQuery when eager-loading is set.
-	Edges          UserItemDataEdges `json:"edges"`
-	item_user_data *uuid.UUID
-	user_item_data *uuid.UUID
-	selectValues   sql.SelectValues
+	Edges        UserItemDataEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // UserItemDataEdges holds the relations/edges for other nodes in the graph.
@@ -92,12 +94,8 @@ func (*UserItemData) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case useritemdata.FieldCreatedAt, useritemdata.FieldUpdatedAt, useritemdata.FieldLastPlayedAt:
 			values[i] = new(sql.NullTime)
-		case useritemdata.FieldID:
+		case useritemdata.FieldID, useritemdata.FieldUserID, useritemdata.FieldItemID:
 			values[i] = new(uuid.UUID)
-		case useritemdata.ForeignKeys[0]: // item_user_data
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case useritemdata.ForeignKeys[1]: // user_item_data
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -131,6 +129,18 @@ func (_m *UserItemData) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
 			}
+		case useritemdata.FieldUserID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field user_id", values[i])
+			} else if value != nil {
+				_m.UserID = *value
+			}
+		case useritemdata.FieldItemID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field item_id", values[i])
+			} else if value != nil {
+				_m.ItemID = *value
+			}
 		case useritemdata.FieldPlayed:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field played", values[i])
@@ -159,7 +169,8 @@ func (_m *UserItemData) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field rating", values[i])
 			} else if value.Valid {
-				_m.Rating = value.Float64
+				_m.Rating = new(float64)
+				*_m.Rating = value.Float64
 			}
 		case useritemdata.FieldLikes:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -171,21 +182,8 @@ func (_m *UserItemData) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_played_at", values[i])
 			} else if value.Valid {
-				_m.LastPlayedAt = value.Time
-			}
-		case useritemdata.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullScanner); !ok {
-				return fmt.Errorf("unexpected type %T for field item_user_data", values[i])
-			} else if value.Valid {
-				_m.item_user_data = new(uuid.UUID)
-				*_m.item_user_data = *value.S.(*uuid.UUID)
-			}
-		case useritemdata.ForeignKeys[1]:
-			if value, ok := values[i].(*sql.NullScanner); !ok {
-				return fmt.Errorf("unexpected type %T for field user_item_data", values[i])
-			} else if value.Valid {
-				_m.user_item_data = new(uuid.UUID)
-				*_m.user_item_data = *value.S.(*uuid.UUID)
+				_m.LastPlayedAt = new(time.Time)
+				*_m.LastPlayedAt = value.Time
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -239,6 +237,12 @@ func (_m *UserItemData) String() string {
 	builder.WriteString("updated_at=")
 	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
+	builder.WriteString("user_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.UserID))
+	builder.WriteString(", ")
+	builder.WriteString("item_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ItemID))
+	builder.WriteString(", ")
 	builder.WriteString("played=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Played))
 	builder.WriteString(", ")
@@ -251,14 +255,18 @@ func (_m *UserItemData) String() string {
 	builder.WriteString("playback_position_ticks=")
 	builder.WriteString(fmt.Sprintf("%v", _m.PlaybackPositionTicks))
 	builder.WriteString(", ")
-	builder.WriteString("rating=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Rating))
+	if v := _m.Rating; v != nil {
+		builder.WriteString("rating=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("likes=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Likes))
 	builder.WriteString(", ")
-	builder.WriteString("last_played_at=")
-	builder.WriteString(_m.LastPlayedAt.Format(time.ANSIC))
+	if v := _m.LastPlayedAt; v != nil {
+		builder.WriteString("last_played_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

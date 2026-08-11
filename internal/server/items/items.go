@@ -8,6 +8,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
 type Server struct {
@@ -38,7 +39,7 @@ func (s *Server) GetItem(ctx context.Context, request api.GetItemRequestObject) 
 	if err != nil {
 		// Clients navigate into a library by asking for it as an item, but
 		// libraries are rows in their own table rather than items.
-		library, libraryErr := s.libraries.GetLibrary(ctx, request.ItemId)
+		library, libraryErr := s.libraries.Library(ctx, request.ItemId)
 		if libraryErr != nil {
 			return api.GetItem403Response{}, nil
 		}
@@ -46,7 +47,7 @@ func (s *Server) GetItem(ctx context.Context, request api.GetItemRequestObject) 
 		return api.GetItem200JSONResponse(LibraryView(library)), nil
 	}
 
-	converted, err := ItemDtos(ctx, s.items, []items.Item{*item})
+	converted, err := ItemDtos(ctx, s.items, []*items.Item{item})
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +67,7 @@ func (s *Server) GetRootFolder(ctx context.Context, request api.GetRootFolderReq
 
 func (s *Server) GetLatestMedia(ctx context.Context, request api.GetLatestMediaRequestObject) (api.GetLatestMediaResponseObject, error) {
 	query := items.ItemQuery{
-		Types:      []string{"Movie", "Series"},
+		Kinds:      []items.Kind{itemmodal.KindMovie, itemmodal.KindSeries},
 		SortBy:     []string{"DateCreated"},
 		Descending: true,
 		Limit:      int(apiutil.Deref(apiutil.OrElse(request.Params.Limit, int32(20)))),
@@ -97,17 +98,13 @@ func (s *Server) itemQuery(ctx context.Context, params api.GetItemsParams) (item
 		SortBy:     SortFields(params.SortBy),
 	}
 
-	if params.IncludeItemTypes != nil {
-		for _, kind := range *params.IncludeItemTypes {
-			query.Types = append(query.Types, string(kind))
-		}
-	}
+	query.Kinds = Kinds(params.IncludeItemTypes)
 	if params.Ids != nil {
 		query.IDs = *params.Ids
 	}
 
 	if params.ParentId != nil {
-		if library, err := s.libraries.GetLibrary(ctx, *params.ParentId); err == nil {
+		if library, err := s.libraries.Library(ctx, *params.ParentId); err == nil {
 			query.LibraryID = &library.ID
 			query.TopLevel = !apiutil.Deref(params.Recursive)
 		} else {

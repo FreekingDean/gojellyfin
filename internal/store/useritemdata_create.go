@@ -54,9 +54,29 @@ func (_c *UserItemDataCreate) SetNillableUpdatedAt(v *time.Time) *UserItemDataCr
 	return _c
 }
 
+// SetUserID sets the "user_id" field.
+func (_c *UserItemDataCreate) SetUserID(v uuid.UUID) *UserItemDataCreate {
+	_c.mutation.SetUserID(v)
+	return _c
+}
+
+// SetItemID sets the "item_id" field.
+func (_c *UserItemDataCreate) SetItemID(v uuid.UUID) *UserItemDataCreate {
+	_c.mutation.SetItemID(v)
+	return _c
+}
+
 // SetPlayed sets the "played" field.
 func (_c *UserItemDataCreate) SetPlayed(v bool) *UserItemDataCreate {
 	_c.mutation.SetPlayed(v)
+	return _c
+}
+
+// SetNillablePlayed sets the "played" field if the given value is not nil.
+func (_c *UserItemDataCreate) SetNillablePlayed(v *bool) *UserItemDataCreate {
+	if v != nil {
+		_c.SetPlayed(*v)
+	}
 	return _c
 }
 
@@ -66,15 +86,39 @@ func (_c *UserItemDataCreate) SetIsFavorite(v bool) *UserItemDataCreate {
 	return _c
 }
 
+// SetNillableIsFavorite sets the "is_favorite" field if the given value is not nil.
+func (_c *UserItemDataCreate) SetNillableIsFavorite(v *bool) *UserItemDataCreate {
+	if v != nil {
+		_c.SetIsFavorite(*v)
+	}
+	return _c
+}
+
 // SetPlayCount sets the "play_count" field.
 func (_c *UserItemDataCreate) SetPlayCount(v int32) *UserItemDataCreate {
 	_c.mutation.SetPlayCount(v)
 	return _c
 }
 
+// SetNillablePlayCount sets the "play_count" field if the given value is not nil.
+func (_c *UserItemDataCreate) SetNillablePlayCount(v *int32) *UserItemDataCreate {
+	if v != nil {
+		_c.SetPlayCount(*v)
+	}
+	return _c
+}
+
 // SetPlaybackPositionTicks sets the "playback_position_ticks" field.
 func (_c *UserItemDataCreate) SetPlaybackPositionTicks(v int64) *UserItemDataCreate {
 	_c.mutation.SetPlaybackPositionTicks(v)
+	return _c
+}
+
+// SetNillablePlaybackPositionTicks sets the "playback_position_ticks" field if the given value is not nil.
+func (_c *UserItemDataCreate) SetNillablePlaybackPositionTicks(v *int64) *UserItemDataCreate {
+	if v != nil {
+		_c.SetPlaybackPositionTicks(*v)
+	}
 	return _c
 }
 
@@ -126,21 +170,9 @@ func (_c *UserItemDataCreate) SetID(v uuid.UUID) *UserItemDataCreate {
 	return _c
 }
 
-// SetUserID sets the "user" edge to the User entity by ID.
-func (_c *UserItemDataCreate) SetUserID(id uuid.UUID) *UserItemDataCreate {
-	_c.mutation.SetUserID(id)
-	return _c
-}
-
 // SetUser sets the "user" edge to the User entity.
 func (_c *UserItemDataCreate) SetUser(v *User) *UserItemDataCreate {
 	return _c.SetUserID(v.ID)
-}
-
-// SetItemID sets the "item" edge to the Item entity by ID.
-func (_c *UserItemDataCreate) SetItemID(id uuid.UUID) *UserItemDataCreate {
-	_c.mutation.SetItemID(id)
-	return _c
 }
 
 // SetItem sets the "item" edge to the Item entity.
@@ -191,6 +223,22 @@ func (_c *UserItemDataCreate) defaults() {
 		v := useritemdata.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Played(); !ok {
+		v := useritemdata.DefaultPlayed
+		_c.mutation.SetPlayed(v)
+	}
+	if _, ok := _c.mutation.IsFavorite(); !ok {
+		v := useritemdata.DefaultIsFavorite
+		_c.mutation.SetIsFavorite(v)
+	}
+	if _, ok := _c.mutation.PlayCount(); !ok {
+		v := useritemdata.DefaultPlayCount
+		_c.mutation.SetPlayCount(v)
+	}
+	if _, ok := _c.mutation.PlaybackPositionTicks(); !ok {
+		v := useritemdata.DefaultPlaybackPositionTicks
+		_c.mutation.SetPlaybackPositionTicks(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -200,6 +248,12 @@ func (_c *UserItemDataCreate) check() error {
 	}
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`store: missing required field "UserItemData.updated_at"`)}
+	}
+	if _, ok := _c.mutation.UserID(); !ok {
+		return &ValidationError{Name: "user_id", err: errors.New(`store: missing required field "UserItemData.user_id"`)}
+	}
+	if _, ok := _c.mutation.ItemID(); !ok {
+		return &ValidationError{Name: "item_id", err: errors.New(`store: missing required field "UserItemData.item_id"`)}
 	}
 	if _, ok := _c.mutation.Played(); !ok {
 		return &ValidationError{Name: "played", err: errors.New(`store: missing required field "UserItemData.played"`)}
@@ -281,7 +335,7 @@ func (_c *UserItemDataCreate) createSpec() (*UserItemData, *sqlgraph.CreateSpec)
 	}
 	if value, ok := _c.mutation.Rating(); ok {
 		_spec.SetField(useritemdata.FieldRating, field.TypeFloat64, value)
-		_node.Rating = value
+		_node.Rating = &value
 	}
 	if value, ok := _c.mutation.Likes(); ok {
 		_spec.SetField(useritemdata.FieldLikes, field.TypeBool, value)
@@ -289,7 +343,7 @@ func (_c *UserItemDataCreate) createSpec() (*UserItemData, *sqlgraph.CreateSpec)
 	}
 	if value, ok := _c.mutation.LastPlayedAt(); ok {
 		_spec.SetField(useritemdata.FieldLastPlayedAt, field.TypeTime, value)
-		_node.LastPlayedAt = value
+		_node.LastPlayedAt = &value
 	}
 	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -305,7 +359,7 @@ func (_c *UserItemDataCreate) createSpec() (*UserItemData, *sqlgraph.CreateSpec)
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.user_item_data = &nodes[0]
+		_node.UserID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.ItemIDs(); len(nodes) > 0 {
@@ -322,7 +376,7 @@ func (_c *UserItemDataCreate) createSpec() (*UserItemData, *sqlgraph.CreateSpec)
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.item_user_data = &nodes[0]
+		_node.ItemID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -398,6 +452,30 @@ func (u *UserItemDataUpsert) SetUpdatedAt(v time.Time) *UserItemDataUpsert {
 // UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
 func (u *UserItemDataUpsert) UpdateUpdatedAt() *UserItemDataUpsert {
 	u.SetExcluded(useritemdata.FieldUpdatedAt)
+	return u
+}
+
+// SetUserID sets the "user_id" field.
+func (u *UserItemDataUpsert) SetUserID(v uuid.UUID) *UserItemDataUpsert {
+	u.Set(useritemdata.FieldUserID, v)
+	return u
+}
+
+// UpdateUserID sets the "user_id" field to the value that was provided on create.
+func (u *UserItemDataUpsert) UpdateUserID() *UserItemDataUpsert {
+	u.SetExcluded(useritemdata.FieldUserID)
+	return u
+}
+
+// SetItemID sets the "item_id" field.
+func (u *UserItemDataUpsert) SetItemID(v uuid.UUID) *UserItemDataUpsert {
+	u.Set(useritemdata.FieldItemID, v)
+	return u
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *UserItemDataUpsert) UpdateItemID() *UserItemDataUpsert {
+	u.SetExcluded(useritemdata.FieldItemID)
 	return u
 }
 
@@ -594,6 +672,34 @@ func (u *UserItemDataUpsertOne) SetUpdatedAt(v time.Time) *UserItemDataUpsertOne
 func (u *UserItemDataUpsertOne) UpdateUpdatedAt() *UserItemDataUpsertOne {
 	return u.Update(func(s *UserItemDataUpsert) {
 		s.UpdateUpdatedAt()
+	})
+}
+
+// SetUserID sets the "user_id" field.
+func (u *UserItemDataUpsertOne) SetUserID(v uuid.UUID) *UserItemDataUpsertOne {
+	return u.Update(func(s *UserItemDataUpsert) {
+		s.SetUserID(v)
+	})
+}
+
+// UpdateUserID sets the "user_id" field to the value that was provided on create.
+func (u *UserItemDataUpsertOne) UpdateUserID() *UserItemDataUpsertOne {
+	return u.Update(func(s *UserItemDataUpsert) {
+		s.UpdateUserID()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *UserItemDataUpsertOne) SetItemID(v uuid.UUID) *UserItemDataUpsertOne {
+	return u.Update(func(s *UserItemDataUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *UserItemDataUpsertOne) UpdateItemID() *UserItemDataUpsertOne {
+	return u.Update(func(s *UserItemDataUpsert) {
+		s.UpdateItemID()
 	})
 }
 
@@ -977,6 +1083,34 @@ func (u *UserItemDataUpsertBulk) SetUpdatedAt(v time.Time) *UserItemDataUpsertBu
 func (u *UserItemDataUpsertBulk) UpdateUpdatedAt() *UserItemDataUpsertBulk {
 	return u.Update(func(s *UserItemDataUpsert) {
 		s.UpdateUpdatedAt()
+	})
+}
+
+// SetUserID sets the "user_id" field.
+func (u *UserItemDataUpsertBulk) SetUserID(v uuid.UUID) *UserItemDataUpsertBulk {
+	return u.Update(func(s *UserItemDataUpsert) {
+		s.SetUserID(v)
+	})
+}
+
+// UpdateUserID sets the "user_id" field to the value that was provided on create.
+func (u *UserItemDataUpsertBulk) UpdateUserID() *UserItemDataUpsertBulk {
+	return u.Update(func(s *UserItemDataUpsert) {
+		s.UpdateUserID()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *UserItemDataUpsertBulk) SetItemID(v uuid.UUID) *UserItemDataUpsertBulk {
+	return u.Update(func(s *UserItemDataUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *UserItemDataUpsertBulk) UpdateItemID() *UserItemDataUpsertBulk {
+	return u.Update(func(s *UserItemDataUpsert) {
+		s.UpdateItemID()
 	})
 }
 

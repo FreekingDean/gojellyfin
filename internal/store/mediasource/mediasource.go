@@ -19,6 +19,8 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// FieldItemID holds the string denoting the item_id field in the database.
+	FieldItemID = "item_id"
 	// FieldProtocol holds the string denoting the protocol field in the database.
 	FieldProtocol = "protocol"
 	// FieldEncoderProtocol holds the string denoting the encoder_protocol field in the database.
@@ -91,14 +93,14 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "item" package.
 	ItemInverseTable = "items"
 	// ItemColumn is the table column denoting the item relation/edge.
-	ItemColumn = "item_media_sources"
+	ItemColumn = "item_id"
 	// StreamsTable is the table that holds the streams relation/edge.
 	StreamsTable = "media_streams"
 	// StreamsInverseTable is the table name for the MediaStream entity.
 	// It exists in this package in order to avoid circular dependency with the "mediastream" package.
 	StreamsInverseTable = "media_streams"
 	// StreamsColumn is the table column denoting the streams relation/edge.
-	StreamsColumn = "media_source_streams"
+	StreamsColumn = "source_id"
 	// AttachmentsTable is the table that holds the attachments relation/edge.
 	AttachmentsTable = "media_attachments"
 	// AttachmentsInverseTable is the table name for the MediaAttachment entity.
@@ -113,6 +115,7 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
+	FieldItemID,
 	FieldProtocol,
 	FieldEncoderProtocol,
 	FieldKind,
@@ -144,21 +147,10 @@ var Columns = []string{
 	FieldFormats,
 }
 
-// ForeignKeys holds the SQL foreign-keys that are owned by the "media_sources"
-// table and are not defined as standalone fields in the schema.
-var ForeignKeys = []string{
-	"item_media_sources",
-}
-
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
-			return true
-		}
-	}
-	for i := range ForeignKeys {
-		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -172,10 +164,37 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultIsRemote holds the default value on creation for the "is_remote" field.
+	DefaultIsRemote bool
+	// DefaultIsInfiniteStream holds the default value on creation for the "is_infinite_stream" field.
+	DefaultIsInfiniteStream bool
+	// DefaultSupportsTranscoding holds the default value on creation for the "supports_transcoding" field.
+	DefaultSupportsTranscoding bool
+	// DefaultSupportsDirectStream holds the default value on creation for the "supports_direct_stream" field.
+	DefaultSupportsDirectStream bool
+	// DefaultSupportsDirectPlay holds the default value on creation for the "supports_direct_play" field.
+	DefaultSupportsDirectPlay bool
+	// DefaultSupportsProbing holds the default value on creation for the "supports_probing" field.
+	DefaultSupportsProbing bool
+	// DefaultReadAtNativeFramerate holds the default value on creation for the "read_at_native_framerate" field.
+	DefaultReadAtNativeFramerate bool
+	// DefaultIgnoreDts holds the default value on creation for the "ignore_dts" field.
+	DefaultIgnoreDts bool
+	// DefaultIgnoreIndex holds the default value on creation for the "ignore_index" field.
+	DefaultIgnoreIndex bool
+	// DefaultGenPtsInput holds the default value on creation for the "gen_pts_input" field.
+	DefaultGenPtsInput bool
+	// DefaultRequiresLooping holds the default value on creation for the "requires_looping" field.
+	DefaultRequiresLooping bool
+	// DefaultHasSegments holds the default value on creation for the "has_segments" field.
+	DefaultHasSegments bool
 )
 
 // Protocol defines the type for the "protocol" enum field.
 type Protocol string
+
+// ProtocolFile is the default value of the Protocol enum.
+const DefaultProtocol = ProtocolFile
 
 // Protocol values.
 const (
@@ -232,6 +251,9 @@ func EncoderProtocolValidator(ep EncoderProtocol) error {
 
 // Kind defines the type for the "kind" enum field.
 type Kind string
+
+// KindDefault is the default value of the Kind enum.
+const DefaultKind = KindDefault
 
 // Kind values.
 const (
@@ -368,6 +390,11 @@ func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByUpdatedAt orders the results by the updated_at field.
 func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
+}
+
+// ByItemID orders the results by the item_id field.
+func ByItemID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldItemID, opts...).ToFunc()
 }
 
 // ByProtocol orders the results by the protocol field.

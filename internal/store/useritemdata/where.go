@@ -66,6 +66,16 @@ func UpdatedAt(v time.Time) predicate.UserItemData {
 	return predicate.UserItemData(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
+// UserID applies equality check predicate on the "user_id" field. It's identical to UserIDEQ.
+func UserID(v uuid.UUID) predicate.UserItemData {
+	return predicate.UserItemData(sql.FieldEQ(FieldUserID, v))
+}
+
+// ItemID applies equality check predicate on the "item_id" field. It's identical to ItemIDEQ.
+func ItemID(v uuid.UUID) predicate.UserItemData {
+	return predicate.UserItemData(sql.FieldEQ(FieldItemID, v))
+}
+
 // Played applies equality check predicate on the "played" field. It's identical to PlayedEQ.
 func Played(v bool) predicate.UserItemData {
 	return predicate.UserItemData(sql.FieldEQ(FieldPlayed, v))
@@ -179,6 +189,46 @@ func UpdatedAtLT(v time.Time) predicate.UserItemData {
 // UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
 func UpdatedAtLTE(v time.Time) predicate.UserItemData {
 	return predicate.UserItemData(sql.FieldLTE(FieldUpdatedAt, v))
+}
+
+// UserIDEQ applies the EQ predicate on the "user_id" field.
+func UserIDEQ(v uuid.UUID) predicate.UserItemData {
+	return predicate.UserItemData(sql.FieldEQ(FieldUserID, v))
+}
+
+// UserIDNEQ applies the NEQ predicate on the "user_id" field.
+func UserIDNEQ(v uuid.UUID) predicate.UserItemData {
+	return predicate.UserItemData(sql.FieldNEQ(FieldUserID, v))
+}
+
+// UserIDIn applies the In predicate on the "user_id" field.
+func UserIDIn(vs ...uuid.UUID) predicate.UserItemData {
+	return predicate.UserItemData(sql.FieldIn(FieldUserID, vs...))
+}
+
+// UserIDNotIn applies the NotIn predicate on the "user_id" field.
+func UserIDNotIn(vs ...uuid.UUID) predicate.UserItemData {
+	return predicate.UserItemData(sql.FieldNotIn(FieldUserID, vs...))
+}
+
+// ItemIDEQ applies the EQ predicate on the "item_id" field.
+func ItemIDEQ(v uuid.UUID) predicate.UserItemData {
+	return predicate.UserItemData(sql.FieldEQ(FieldItemID, v))
+}
+
+// ItemIDNEQ applies the NEQ predicate on the "item_id" field.
+func ItemIDNEQ(v uuid.UUID) predicate.UserItemData {
+	return predicate.UserItemData(sql.FieldNEQ(FieldItemID, v))
+}
+
+// ItemIDIn applies the In predicate on the "item_id" field.
+func ItemIDIn(vs ...uuid.UUID) predicate.UserItemData {
+	return predicate.UserItemData(sql.FieldIn(FieldItemID, vs...))
+}
+
+// ItemIDNotIn applies the NotIn predicate on the "item_id" field.
+func ItemIDNotIn(vs ...uuid.UUID) predicate.UserItemData {
+	return predicate.UserItemData(sql.FieldNotIn(FieldItemID, vs...))
 }
 
 // PlayedEQ applies the EQ predicate on the "played" field.

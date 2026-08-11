@@ -18,6 +18,10 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// FieldUserID holds the string denoting the user_id field in the database.
+	FieldUserID = "user_id"
+	// FieldItemID holds the string denoting the item_id field in the database.
+	FieldItemID = "item_id"
 	// FieldPlayed holds the string denoting the played field in the database.
 	FieldPlayed = "played"
 	// FieldIsFavorite holds the string denoting the is_favorite field in the database.
@@ -44,14 +48,14 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "user" package.
 	UserInverseTable = "users"
 	// UserColumn is the table column denoting the user relation/edge.
-	UserColumn = "user_item_data"
+	UserColumn = "user_id"
 	// ItemTable is the table that holds the item relation/edge.
 	ItemTable = "user_item_data"
 	// ItemInverseTable is the table name for the Item entity.
 	// It exists in this package in order to avoid circular dependency with the "item" package.
 	ItemInverseTable = "items"
 	// ItemColumn is the table column denoting the item relation/edge.
-	ItemColumn = "item_user_data"
+	ItemColumn = "item_id"
 )
 
 // Columns holds all SQL columns for useritemdata fields.
@@ -59,6 +63,8 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
+	FieldUserID,
+	FieldItemID,
 	FieldPlayed,
 	FieldIsFavorite,
 	FieldPlayCount,
@@ -68,22 +74,10 @@ var Columns = []string{
 	FieldLastPlayedAt,
 }
 
-// ForeignKeys holds the SQL foreign-keys that are owned by the "user_item_data"
-// table and are not defined as standalone fields in the schema.
-var ForeignKeys = []string{
-	"item_user_data",
-	"user_item_data",
-}
-
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
-			return true
-		}
-	}
-	for i := range ForeignKeys {
-		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -97,6 +91,14 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultPlayed holds the default value on creation for the "played" field.
+	DefaultPlayed bool
+	// DefaultIsFavorite holds the default value on creation for the "is_favorite" field.
+	DefaultIsFavorite bool
+	// DefaultPlayCount holds the default value on creation for the "play_count" field.
+	DefaultPlayCount int32
+	// DefaultPlaybackPositionTicks holds the default value on creation for the "playback_position_ticks" field.
+	DefaultPlaybackPositionTicks int64
 )
 
 // OrderOption defines the ordering options for the UserItemData queries.
@@ -115,6 +117,16 @@ func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByUpdatedAt orders the results by the updated_at field.
 func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
+}
+
+// ByUserID orders the results by the user_id field.
+func ByUserID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUserID, opts...).ToFunc()
+}
+
+// ByItemID orders the results by the item_id field.
+func ByItemID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldItemID, opts...).ToFunc()
 }
 
 // ByPlayed orders the results by the played field.

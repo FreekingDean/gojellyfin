@@ -21,7 +21,7 @@ func (s *Server) userItemDatum(ctx context.Context, itemID uuid.UUID) (*items.Da
 		return nil, auth.ErrUnauthorized
 	}
 
-	return s.items.GetUserItemDatum(ctx, userID, itemID)
+	return s.items.UserItemDatum(ctx, userID, itemID)
 }
 
 type Server struct {
@@ -100,7 +100,7 @@ func (s *Server) recordProgress(ctx context.Context, itemID uuid.UUID, position 
 	}
 
 	datum.PlaybackPositionTicks = position
-	datum.LastPlayedDate = apiutil.Ptr(time.Now())
+	datum.LastPlayedAt = apiutil.Ptr(time.Now())
 
 	return s.items.SaveUserItemDatum(ctx, datum)
 }
@@ -116,7 +116,7 @@ func (s *Server) recordStop(ctx context.Context, itemID uuid.UUID, position int6
 		return err
 	}
 
-	datum.LastPlayedDate = apiutil.Ptr(time.Now())
+	datum.LastPlayedAt = apiutil.Ptr(time.Now())
 	datum.PlaybackPositionTicks = position
 
 	if watched(item.RunTimeTicks, position) {

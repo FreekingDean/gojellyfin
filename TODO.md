@@ -10,5 +10,6 @@ Refactors and cleanups deferred out of a change. One line each.
 - Sessions live in Postgres; they are short-lived and read on every request, so a cache like Redis is a better fit.
 - `UserPolicy.max_parental_rating`/`max_parental_sub_rating` are rating-name enums, but the spec sends `MaxParentalRating` as an `int32` score and has no sub-rating field; the DTO leaves both unmapped until there is a rating-to-score table.
 - `PostCapabilities` still 204s without writing; the columns it should fill (`playable_media_types`, `supported_commands`, `profile`, `supports_media_control`) now exist on `Device`.
-- `items` and `libraries` are still on gorm and nothing provides `*gorm.DB`, so the fx graph does not resolve. Migrating them needs schema decisions first: `Item` has no `size`/`bitrate`/`probed_at`/`date_modified`; `MediaStream` hangs off `MediaSource` but the scanner writes streams per item; `Image` has `blur_hash` but no `tag`; `LibraryPath` rows became `Library.locations`; `LibraryOptions` has ~40 required fields with no defaults.
-- `atlas migrate diff` is commented out in `internal/store/generate.go`, so `migrations/*.sql` is behind `migrate/schema.go`.
+- `atlas migrate diff` is commented out in `internal/store/generate.go` because it needs Docker; schema changes mean running it by hand.
+- The scanner writes one `MediaSource` per item and replaces it wholesale on every probe, so nothing can hang off a source across scans yet (attachments, segments, trickplay).
+- `Item.width`/`height`/`aspect_ratio` and the chapter, credit, genre and studio edges are modelled but nothing populates them.

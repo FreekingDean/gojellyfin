@@ -30,7 +30,6 @@ type MediaSourceQuery struct {
 	withItem        *ItemQuery
 	withStreams     *MediaStreamQuery
 	withAttachments *MediaAttachmentQuery
-	withFKs         bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -444,7 +443,6 @@ func (_q *MediaSourceQuery) prepareQuery(ctx context.Context) error {
 func (_q *MediaSourceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*MediaSource, error) {
 	var (
 		nodes       = []*MediaSource{}
-		withFKs     = _q.withFKs
 		_spec       = _q.querySpec()
 		loadedTypes = [3]bool{
 			_q.withItem != nil,
@@ -452,12 +450,6 @@ func (_q *MediaSourceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 			_q.withAttachments != nil,
 		}
 	)
-	if _q.withItem != nil {
-		withFKs = true
-	}
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, mediasource.ForeignKeys...)
-	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*MediaSource).scanValues(nil, columns)
 	}
@@ -503,10 +495,7 @@ func (_q *MediaSourceQuery) loadItem(ctx context.Context, query *ItemQuery, node
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*MediaSource)
 	for i := range nodes {
-		if nodes[i].item_media_sources == nil {
-			continue
-		}
-		fk := *nodes[i].item_media_sources
+		fk := nodes[i].ItemID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -523,7 +512,7 @@ func (_q *MediaSourceQuery) loadItem(ctx context.Context, query *ItemQuery, node
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "item_media_sources" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "item_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -541,7 +530,9 @@ func (_q *MediaSourceQuery) loadStreams(ctx context.Context, query *MediaStreamQ
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(mediastream.FieldSourceID)
+	}
 	query.Where(predicate.MediaStream(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(mediasource.StreamsColumn), fks...))
 	}))
@@ -550,13 +541,10 @@ func (_q *MediaSourceQuery) loadStreams(ctx context.Context, query *MediaStreamQ
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.media_source_streams
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "media_source_streams" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		fk := n.SourceID
+		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "media_source_streams" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "source_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -618,6 +606,9 @@ func (_q *MediaSourceQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != mediasource.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withItem != nil {
+			_spec.Node.AddColumnOnce(mediasource.FieldItemID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

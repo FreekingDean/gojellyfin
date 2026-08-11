@@ -53,6 +53,12 @@ func (_c *MediaStreamCreate) SetNillableUpdatedAt(v *time.Time) *MediaStreamCrea
 	return _c
 }
 
+// SetSourceID sets the "source_id" field.
+func (_c *MediaStreamCreate) SetSourceID(v uuid.UUID) *MediaStreamCreate {
+	_c.mutation.SetSourceID(v)
+	return _c
+}
+
 // SetKind sets the "kind" field.
 func (_c *MediaStreamCreate) SetKind(v mediastream.Kind) *MediaStreamCreate {
 	_c.mutation.SetKind(v)
@@ -104,6 +110,14 @@ func (_c *MediaStreamCreate) SetNillableAudioSpatialFormat(v *mediastream.AudioS
 // SetIndex sets the "index" field.
 func (_c *MediaStreamCreate) SetIndex(v int32) *MediaStreamCreate {
 	_c.mutation.SetIndex(v)
+	return _c
+}
+
+// SetNillableIndex sets the "index" field if the given value is not nil.
+func (_c *MediaStreamCreate) SetNillableIndex(v *int32) *MediaStreamCreate {
+	if v != nil {
+		_c.SetIndex(*v)
+	}
 	return _c
 }
 
@@ -659,9 +673,25 @@ func (_c *MediaStreamCreate) SetIsDefault(v bool) *MediaStreamCreate {
 	return _c
 }
 
+// SetNillableIsDefault sets the "is_default" field if the given value is not nil.
+func (_c *MediaStreamCreate) SetNillableIsDefault(v *bool) *MediaStreamCreate {
+	if v != nil {
+		_c.SetIsDefault(*v)
+	}
+	return _c
+}
+
 // SetIsForced sets the "is_forced" field.
 func (_c *MediaStreamCreate) SetIsForced(v bool) *MediaStreamCreate {
 	_c.mutation.SetIsForced(v)
+	return _c
+}
+
+// SetNillableIsForced sets the "is_forced" field if the given value is not nil.
+func (_c *MediaStreamCreate) SetNillableIsForced(v *bool) *MediaStreamCreate {
+	if v != nil {
+		_c.SetIsForced(*v)
+	}
 	return _c
 }
 
@@ -671,9 +701,25 @@ func (_c *MediaStreamCreate) SetIsExternal(v bool) *MediaStreamCreate {
 	return _c
 }
 
+// SetNillableIsExternal sets the "is_external" field if the given value is not nil.
+func (_c *MediaStreamCreate) SetNillableIsExternal(v *bool) *MediaStreamCreate {
+	if v != nil {
+		_c.SetIsExternal(*v)
+	}
+	return _c
+}
+
 // SetIsInterlaced sets the "is_interlaced" field.
 func (_c *MediaStreamCreate) SetIsInterlaced(v bool) *MediaStreamCreate {
 	_c.mutation.SetIsInterlaced(v)
+	return _c
+}
+
+// SetNillableIsInterlaced sets the "is_interlaced" field if the given value is not nil.
+func (_c *MediaStreamCreate) SetNillableIsInterlaced(v *bool) *MediaStreamCreate {
+	if v != nil {
+		_c.SetIsInterlaced(*v)
+	}
 	return _c
 }
 
@@ -683,9 +729,25 @@ func (_c *MediaStreamCreate) SetIsAnamorphic(v bool) *MediaStreamCreate {
 	return _c
 }
 
+// SetNillableIsAnamorphic sets the "is_anamorphic" field if the given value is not nil.
+func (_c *MediaStreamCreate) SetNillableIsAnamorphic(v *bool) *MediaStreamCreate {
+	if v != nil {
+		_c.SetIsAnamorphic(*v)
+	}
+	return _c
+}
+
 // SetIsAvc sets the "is_avc" field.
 func (_c *MediaStreamCreate) SetIsAvc(v bool) *MediaStreamCreate {
 	_c.mutation.SetIsAvc(v)
+	return _c
+}
+
+// SetNillableIsAvc sets the "is_avc" field if the given value is not nil.
+func (_c *MediaStreamCreate) SetNillableIsAvc(v *bool) *MediaStreamCreate {
+	if v != nil {
+		_c.SetIsAvc(*v)
+	}
 	return _c
 }
 
@@ -695,15 +757,17 @@ func (_c *MediaStreamCreate) SetIsHearingImpaired(v bool) *MediaStreamCreate {
 	return _c
 }
 
-// SetID sets the "id" field.
-func (_c *MediaStreamCreate) SetID(v uuid.UUID) *MediaStreamCreate {
-	_c.mutation.SetID(v)
+// SetNillableIsHearingImpaired sets the "is_hearing_impaired" field if the given value is not nil.
+func (_c *MediaStreamCreate) SetNillableIsHearingImpaired(v *bool) *MediaStreamCreate {
+	if v != nil {
+		_c.SetIsHearingImpaired(*v)
+	}
 	return _c
 }
 
-// SetSourceID sets the "source" edge to the MediaSource entity by ID.
-func (_c *MediaStreamCreate) SetSourceID(id uuid.UUID) *MediaStreamCreate {
-	_c.mutation.SetSourceID(id)
+// SetID sets the "id" field.
+func (_c *MediaStreamCreate) SetID(v uuid.UUID) *MediaStreamCreate {
+	_c.mutation.SetID(v)
 	return _c
 }
 
@@ -755,6 +819,38 @@ func (_c *MediaStreamCreate) defaults() {
 		v := mediastream.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Index(); !ok {
+		v := mediastream.DefaultIndex
+		_c.mutation.SetIndex(v)
+	}
+	if _, ok := _c.mutation.IsDefault(); !ok {
+		v := mediastream.DefaultIsDefault
+		_c.mutation.SetIsDefault(v)
+	}
+	if _, ok := _c.mutation.IsForced(); !ok {
+		v := mediastream.DefaultIsForced
+		_c.mutation.SetIsForced(v)
+	}
+	if _, ok := _c.mutation.IsExternal(); !ok {
+		v := mediastream.DefaultIsExternal
+		_c.mutation.SetIsExternal(v)
+	}
+	if _, ok := _c.mutation.IsInterlaced(); !ok {
+		v := mediastream.DefaultIsInterlaced
+		_c.mutation.SetIsInterlaced(v)
+	}
+	if _, ok := _c.mutation.IsAnamorphic(); !ok {
+		v := mediastream.DefaultIsAnamorphic
+		_c.mutation.SetIsAnamorphic(v)
+	}
+	if _, ok := _c.mutation.IsAvc(); !ok {
+		v := mediastream.DefaultIsAvc
+		_c.mutation.SetIsAvc(v)
+	}
+	if _, ok := _c.mutation.IsHearingImpaired(); !ok {
+		v := mediastream.DefaultIsHearingImpaired
+		_c.mutation.SetIsHearingImpaired(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -764,6 +860,9 @@ func (_c *MediaStreamCreate) check() error {
 	}
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`store: missing required field "MediaStream.updated_at"`)}
+	}
+	if _, ok := _c.mutation.SourceID(); !ok {
+		return &ValidationError{Name: "source_id", err: errors.New(`store: missing required field "MediaStream.source_id"`)}
 	}
 	if _, ok := _c.mutation.Kind(); !ok {
 		return &ValidationError{Name: "kind", err: errors.New(`store: missing required field "MediaStream.kind"`)}
@@ -1077,7 +1176,7 @@ func (_c *MediaStreamCreate) createSpec() (*MediaStream, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.media_source_streams = &nodes[0]
+		_node.SourceID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -1153,6 +1252,18 @@ func (u *MediaStreamUpsert) SetUpdatedAt(v time.Time) *MediaStreamUpsert {
 // UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
 func (u *MediaStreamUpsert) UpdateUpdatedAt() *MediaStreamUpsert {
 	u.SetExcluded(mediastream.FieldUpdatedAt)
+	return u
+}
+
+// SetSourceID sets the "source_id" field.
+func (u *MediaStreamUpsert) SetSourceID(v uuid.UUID) *MediaStreamUpsert {
+	u.Set(mediastream.FieldSourceID, v)
+	return u
+}
+
+// UpdateSourceID sets the "source_id" field to the value that was provided on create.
+func (u *MediaStreamUpsert) UpdateSourceID() *MediaStreamUpsert {
+	u.SetExcluded(mediastream.FieldSourceID)
 	return u
 }
 
@@ -2231,6 +2342,20 @@ func (u *MediaStreamUpsertOne) SetUpdatedAt(v time.Time) *MediaStreamUpsertOne {
 func (u *MediaStreamUpsertOne) UpdateUpdatedAt() *MediaStreamUpsertOne {
 	return u.Update(func(s *MediaStreamUpsert) {
 		s.UpdateUpdatedAt()
+	})
+}
+
+// SetSourceID sets the "source_id" field.
+func (u *MediaStreamUpsertOne) SetSourceID(v uuid.UUID) *MediaStreamUpsertOne {
+	return u.Update(func(s *MediaStreamUpsert) {
+		s.SetSourceID(v)
+	})
+}
+
+// UpdateSourceID sets the "source_id" field to the value that was provided on create.
+func (u *MediaStreamUpsertOne) UpdateSourceID() *MediaStreamUpsertOne {
+	return u.Update(func(s *MediaStreamUpsert) {
+		s.UpdateSourceID()
 	})
 }
 
@@ -3643,6 +3768,20 @@ func (u *MediaStreamUpsertBulk) SetUpdatedAt(v time.Time) *MediaStreamUpsertBulk
 func (u *MediaStreamUpsertBulk) UpdateUpdatedAt() *MediaStreamUpsertBulk {
 	return u.Update(func(s *MediaStreamUpsert) {
 		s.UpdateUpdatedAt()
+	})
+}
+
+// SetSourceID sets the "source_id" field.
+func (u *MediaStreamUpsertBulk) SetSourceID(v uuid.UUID) *MediaStreamUpsertBulk {
+	return u.Update(func(s *MediaStreamUpsert) {
+		s.SetSourceID(v)
+	})
+}
+
+// UpdateSourceID sets the "source_id" field to the value that was provided on create.
+func (u *MediaStreamUpsertBulk) UpdateSourceID() *MediaStreamUpsertBulk {
+	return u.Update(func(s *MediaStreamUpsert) {
+		s.UpdateSourceID()
 	})
 }
 

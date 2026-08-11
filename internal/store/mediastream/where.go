@@ -66,6 +66,11 @@ func UpdatedAt(v time.Time) predicate.MediaStream {
 	return predicate.MediaStream(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
+// SourceID applies equality check predicate on the "source_id" field. It's identical to SourceIDEQ.
+func SourceID(v uuid.UUID) predicate.MediaStream {
+	return predicate.MediaStream(sql.FieldEQ(FieldSourceID, v))
+}
+
 // Index applies equality check predicate on the "index" field. It's identical to IndexEQ.
 func Index(v int32) predicate.MediaStream {
 	return predicate.MediaStream(sql.FieldEQ(FieldIndex, v))
@@ -379,6 +384,26 @@ func UpdatedAtLT(v time.Time) predicate.MediaStream {
 // UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
 func UpdatedAtLTE(v time.Time) predicate.MediaStream {
 	return predicate.MediaStream(sql.FieldLTE(FieldUpdatedAt, v))
+}
+
+// SourceIDEQ applies the EQ predicate on the "source_id" field.
+func SourceIDEQ(v uuid.UUID) predicate.MediaStream {
+	return predicate.MediaStream(sql.FieldEQ(FieldSourceID, v))
+}
+
+// SourceIDNEQ applies the NEQ predicate on the "source_id" field.
+func SourceIDNEQ(v uuid.UUID) predicate.MediaStream {
+	return predicate.MediaStream(sql.FieldNEQ(FieldSourceID, v))
+}
+
+// SourceIDIn applies the In predicate on the "source_id" field.
+func SourceIDIn(vs ...uuid.UUID) predicate.MediaStream {
+	return predicate.MediaStream(sql.FieldIn(FieldSourceID, vs...))
+}
+
+// SourceIDNotIn applies the NotIn predicate on the "source_id" field.
+func SourceIDNotIn(vs ...uuid.UUID) predicate.MediaStream {
+	return predicate.MediaStream(sql.FieldNotIn(FieldSourceID, vs...))
 }
 
 // KindEQ applies the EQ predicate on the "kind" field.

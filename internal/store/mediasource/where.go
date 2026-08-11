@@ -66,6 +66,11 @@ func UpdatedAt(v time.Time) predicate.MediaSource {
 	return predicate.MediaSource(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
+// ItemID applies equality check predicate on the "item_id" field. It's identical to ItemIDEQ.
+func ItemID(v uuid.UUID) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldEQ(FieldItemID, v))
+}
+
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
 func Name(v string) predicate.MediaSource {
 	return predicate.MediaSource(sql.FieldEQ(FieldName, v))
@@ -249,6 +254,26 @@ func UpdatedAtLT(v time.Time) predicate.MediaSource {
 // UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
 func UpdatedAtLTE(v time.Time) predicate.MediaSource {
 	return predicate.MediaSource(sql.FieldLTE(FieldUpdatedAt, v))
+}
+
+// ItemIDEQ applies the EQ predicate on the "item_id" field.
+func ItemIDEQ(v uuid.UUID) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldEQ(FieldItemID, v))
+}
+
+// ItemIDNEQ applies the NEQ predicate on the "item_id" field.
+func ItemIDNEQ(v uuid.UUID) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldNEQ(FieldItemID, v))
+}
+
+// ItemIDIn applies the In predicate on the "item_id" field.
+func ItemIDIn(vs ...uuid.UUID) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldIn(FieldItemID, vs...))
+}
+
+// ItemIDNotIn applies the NotIn predicate on the "item_id" field.
+func ItemIDNotIn(vs ...uuid.UUID) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldNotIn(FieldItemID, vs...))
 }
 
 // ProtocolEQ applies the EQ predicate on the "protocol" field.

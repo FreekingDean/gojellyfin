@@ -51,6 +51,34 @@ func (_u *UserItemDataUpdate) SetUpdatedAt(v time.Time) *UserItemDataUpdate {
 	return _u
 }
 
+// SetUserID sets the "user_id" field.
+func (_u *UserItemDataUpdate) SetUserID(v uuid.UUID) *UserItemDataUpdate {
+	_u.mutation.SetUserID(v)
+	return _u
+}
+
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (_u *UserItemDataUpdate) SetNillableUserID(v *uuid.UUID) *UserItemDataUpdate {
+	if v != nil {
+		_u.SetUserID(*v)
+	}
+	return _u
+}
+
+// SetItemID sets the "item_id" field.
+func (_u *UserItemDataUpdate) SetItemID(v uuid.UUID) *UserItemDataUpdate {
+	_u.mutation.SetItemID(v)
+	return _u
+}
+
+// SetNillableItemID sets the "item_id" field if the given value is not nil.
+func (_u *UserItemDataUpdate) SetNillableItemID(v *uuid.UUID) *UserItemDataUpdate {
+	if v != nil {
+		_u.SetItemID(*v)
+	}
+	return _u
+}
+
 // SetPlayed sets the "played" field.
 func (_u *UserItemDataUpdate) SetPlayed(v bool) *UserItemDataUpdate {
 	_u.mutation.SetPlayed(v)
@@ -188,21 +216,9 @@ func (_u *UserItemDataUpdate) ClearLastPlayedAt() *UserItemDataUpdate {
 	return _u
 }
 
-// SetUserID sets the "user" edge to the User entity by ID.
-func (_u *UserItemDataUpdate) SetUserID(id uuid.UUID) *UserItemDataUpdate {
-	_u.mutation.SetUserID(id)
-	return _u
-}
-
 // SetUser sets the "user" edge to the User entity.
 func (_u *UserItemDataUpdate) SetUser(v *User) *UserItemDataUpdate {
 	return _u.SetUserID(v.ID)
-}
-
-// SetItemID sets the "item" edge to the Item entity by ID.
-func (_u *UserItemDataUpdate) SetItemID(id uuid.UUID) *UserItemDataUpdate {
-	_u.mutation.SetItemID(id)
-	return _u
 }
 
 // SetItem sets the "item" edge to the Item entity.
@@ -429,6 +445,34 @@ func (_u *UserItemDataUpdateOne) SetUpdatedAt(v time.Time) *UserItemDataUpdateOn
 	return _u
 }
 
+// SetUserID sets the "user_id" field.
+func (_u *UserItemDataUpdateOne) SetUserID(v uuid.UUID) *UserItemDataUpdateOne {
+	_u.mutation.SetUserID(v)
+	return _u
+}
+
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (_u *UserItemDataUpdateOne) SetNillableUserID(v *uuid.UUID) *UserItemDataUpdateOne {
+	if v != nil {
+		_u.SetUserID(*v)
+	}
+	return _u
+}
+
+// SetItemID sets the "item_id" field.
+func (_u *UserItemDataUpdateOne) SetItemID(v uuid.UUID) *UserItemDataUpdateOne {
+	_u.mutation.SetItemID(v)
+	return _u
+}
+
+// SetNillableItemID sets the "item_id" field if the given value is not nil.
+func (_u *UserItemDataUpdateOne) SetNillableItemID(v *uuid.UUID) *UserItemDataUpdateOne {
+	if v != nil {
+		_u.SetItemID(*v)
+	}
+	return _u
+}
+
 // SetPlayed sets the "played" field.
 func (_u *UserItemDataUpdateOne) SetPlayed(v bool) *UserItemDataUpdateOne {
 	_u.mutation.SetPlayed(v)
@@ -566,21 +610,9 @@ func (_u *UserItemDataUpdateOne) ClearLastPlayedAt() *UserItemDataUpdateOne {
 	return _u
 }
 
-// SetUserID sets the "user" edge to the User entity by ID.
-func (_u *UserItemDataUpdateOne) SetUserID(id uuid.UUID) *UserItemDataUpdateOne {
-	_u.mutation.SetUserID(id)
-	return _u
-}
-
 // SetUser sets the "user" edge to the User entity.
 func (_u *UserItemDataUpdateOne) SetUser(v *User) *UserItemDataUpdateOne {
 	return _u.SetUserID(v.ID)
-}
-
-// SetItemID sets the "item" edge to the Item entity by ID.
-func (_u *UserItemDataUpdateOne) SetItemID(id uuid.UUID) *UserItemDataUpdateOne {
-	_u.mutation.SetItemID(id)
-	return _u
 }
 
 // SetItem sets the "item" edge to the Item entity.

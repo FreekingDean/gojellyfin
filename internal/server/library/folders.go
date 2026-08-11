@@ -17,7 +17,7 @@ func (s *Server) GetMediaFolders(ctx context.Context, request api.GetMediaFolder
 
 	folders := make([]api.BaseItemDto, 0, len(records))
 	for _, library := range records {
-		folders = append(folders, serveritems.LibraryView(&library))
+		folders = append(folders, serveritems.LibraryView(library))
 	}
 
 	return api.GetMediaFolders200JSONResponse{

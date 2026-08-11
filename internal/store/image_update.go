@@ -50,6 +50,20 @@ func (_u *ImageUpdate) SetUpdatedAt(v time.Time) *ImageUpdate {
 	return _u
 }
 
+// SetItemID sets the "item_id" field.
+func (_u *ImageUpdate) SetItemID(v uuid.UUID) *ImageUpdate {
+	_u.mutation.SetItemID(v)
+	return _u
+}
+
+// SetNillableItemID sets the "item_id" field if the given value is not nil.
+func (_u *ImageUpdate) SetNillableItemID(v *uuid.UUID) *ImageUpdate {
+	if v != nil {
+		_u.SetItemID(*v)
+	}
+	return _u
+}
+
 // SetKind sets the "kind" field.
 func (_u *ImageUpdate) SetKind(v image.Kind) *ImageUpdate {
 	_u.mutation.SetKind(v)
@@ -95,6 +109,20 @@ func (_u *ImageUpdate) SetPath(v string) *ImageUpdate {
 func (_u *ImageUpdate) SetNillablePath(v *string) *ImageUpdate {
 	if v != nil {
 		_u.SetPath(*v)
+	}
+	return _u
+}
+
+// SetTag sets the "tag" field.
+func (_u *ImageUpdate) SetTag(v string) *ImageUpdate {
+	_u.mutation.SetTag(v)
+	return _u
+}
+
+// SetNillableTag sets the "tag" field if the given value is not nil.
+func (_u *ImageUpdate) SetNillableTag(v *string) *ImageUpdate {
+	if v != nil {
+		_u.SetTag(*v)
 	}
 	return _u
 }
@@ -200,12 +228,6 @@ func (_u *ImageUpdate) ClearSize() *ImageUpdate {
 	return _u
 }
 
-// SetItemID sets the "item" edge to the Item entity by ID.
-func (_u *ImageUpdate) SetItemID(id uuid.UUID) *ImageUpdate {
-	_u.mutation.SetItemID(id)
-	return _u
-}
-
 // SetItem sets the "item" edge to the Item entity.
 func (_u *ImageUpdate) SetItem(v *Item) *ImageUpdate {
 	return _u.SetItemID(v.ID)
@@ -300,6 +322,9 @@ func (_u *ImageUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.Path(); ok {
 		_spec.SetField(image.FieldPath, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Tag(); ok {
+		_spec.SetField(image.FieldTag, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.BlurHash(); ok {
 		_spec.SetField(image.FieldBlurHash, field.TypeString, value)
@@ -403,6 +428,20 @@ func (_u *ImageUpdateOne) SetUpdatedAt(v time.Time) *ImageUpdateOne {
 	return _u
 }
 
+// SetItemID sets the "item_id" field.
+func (_u *ImageUpdateOne) SetItemID(v uuid.UUID) *ImageUpdateOne {
+	_u.mutation.SetItemID(v)
+	return _u
+}
+
+// SetNillableItemID sets the "item_id" field if the given value is not nil.
+func (_u *ImageUpdateOne) SetNillableItemID(v *uuid.UUID) *ImageUpdateOne {
+	if v != nil {
+		_u.SetItemID(*v)
+	}
+	return _u
+}
+
 // SetKind sets the "kind" field.
 func (_u *ImageUpdateOne) SetKind(v image.Kind) *ImageUpdateOne {
 	_u.mutation.SetKind(v)
@@ -448,6 +487,20 @@ func (_u *ImageUpdateOne) SetPath(v string) *ImageUpdateOne {
 func (_u *ImageUpdateOne) SetNillablePath(v *string) *ImageUpdateOne {
 	if v != nil {
 		_u.SetPath(*v)
+	}
+	return _u
+}
+
+// SetTag sets the "tag" field.
+func (_u *ImageUpdateOne) SetTag(v string) *ImageUpdateOne {
+	_u.mutation.SetTag(v)
+	return _u
+}
+
+// SetNillableTag sets the "tag" field if the given value is not nil.
+func (_u *ImageUpdateOne) SetNillableTag(v *string) *ImageUpdateOne {
+	if v != nil {
+		_u.SetTag(*v)
 	}
 	return _u
 }
@@ -550,12 +603,6 @@ func (_u *ImageUpdateOne) AddSize(v int64) *ImageUpdateOne {
 // ClearSize clears the value of the "size" field.
 func (_u *ImageUpdateOne) ClearSize() *ImageUpdateOne {
 	_u.mutation.ClearSize()
-	return _u
-}
-
-// SetItemID sets the "item" edge to the Item entity by ID.
-func (_u *ImageUpdateOne) SetItemID(id uuid.UUID) *ImageUpdateOne {
-	_u.mutation.SetItemID(id)
 	return _u
 }
 
@@ -683,6 +730,9 @@ func (_u *ImageUpdateOne) sqlSave(ctx context.Context) (_node *Image, err error)
 	}
 	if value, ok := _u.mutation.Path(); ok {
 		_spec.SetField(image.FieldPath, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Tag(); ok {
+		_spec.SetField(image.FieldTag, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.BlurHash(); ok {
 		_spec.SetField(image.FieldBlurHash, field.TypeString, value)

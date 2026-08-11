@@ -19,6 +19,10 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// FieldLibraryID holds the string denoting the library_id field in the database.
+	FieldLibraryID = "library_id"
+	// FieldParentID holds the string denoting the parent_id field in the database.
+	FieldParentID = "parent_id"
 	// FieldKind holds the string denoting the kind field in the database.
 	FieldKind = "kind"
 	// FieldMediaType holds the string denoting the media_type field in the database.
@@ -65,6 +69,10 @@ const (
 	FieldEndDate = "end_date"
 	// FieldLastMediaAddedAt holds the string denoting the last_media_added_at field in the database.
 	FieldLastMediaAddedAt = "last_media_added_at"
+	// FieldDateModified holds the string denoting the date_modified field in the database.
+	FieldDateModified = "date_modified"
+	// FieldProbedAt holds the string denoting the probed_at field in the database.
+	FieldProbedAt = "probed_at"
 	// FieldProductionYear holds the string denoting the production_year field in the database.
 	FieldProductionYear = "production_year"
 	// FieldOfficialRating holds the string denoting the official_rating field in the database.
@@ -158,25 +166,25 @@ const (
 	// ParentTable is the table that holds the parent relation/edge.
 	ParentTable = "items"
 	// ParentColumn is the table column denoting the parent relation/edge.
-	ParentColumn = "item_children"
+	ParentColumn = "parent_id"
 	// ChildrenTable is the table that holds the children relation/edge.
 	ChildrenTable = "items"
 	// ChildrenColumn is the table column denoting the children relation/edge.
-	ChildrenColumn = "item_children"
+	ChildrenColumn = "parent_id"
 	// LibraryTable is the table that holds the library relation/edge.
 	LibraryTable = "items"
 	// LibraryInverseTable is the table name for the Library entity.
 	// It exists in this package in order to avoid circular dependency with the "library" package.
 	LibraryInverseTable = "libraries"
 	// LibraryColumn is the table column denoting the library relation/edge.
-	LibraryColumn = "library_items"
+	LibraryColumn = "library_id"
 	// MediaSourcesTable is the table that holds the media_sources relation/edge.
 	MediaSourcesTable = "media_sources"
 	// MediaSourcesInverseTable is the table name for the MediaSource entity.
 	// It exists in this package in order to avoid circular dependency with the "mediasource" package.
 	MediaSourcesInverseTable = "media_sources"
 	// MediaSourcesColumn is the table column denoting the media_sources relation/edge.
-	MediaSourcesColumn = "item_media_sources"
+	MediaSourcesColumn = "item_id"
 	// CreditsTable is the table that holds the credits relation/edge.
 	CreditsTable = "credits"
 	// CreditsInverseTable is the table name for the Credit entity.
@@ -197,14 +205,14 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "image" package.
 	ImagesInverseTable = "images"
 	// ImagesColumn is the table column denoting the images relation/edge.
-	ImagesColumn = "item_images"
+	ImagesColumn = "item_id"
 	// UserDataTable is the table that holds the user_data relation/edge.
 	UserDataTable = "user_item_data"
 	// UserDataInverseTable is the table name for the UserItemData entity.
 	// It exists in this package in order to avoid circular dependency with the "useritemdata" package.
 	UserDataInverseTable = "user_item_data"
 	// UserDataColumn is the table column denoting the user_data relation/edge.
-	UserDataColumn = "item_user_data"
+	UserDataColumn = "item_id"
 	// DisplayPreferencesTable is the table that holds the display_preferences relation/edge.
 	DisplayPreferencesTable = "display_preferences"
 	// DisplayPreferencesInverseTable is the table name for the DisplayPreferences entity.
@@ -264,6 +272,8 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
+	FieldLibraryID,
+	FieldParentID,
 	FieldKind,
 	FieldMediaType,
 	FieldLocationType,
@@ -287,6 +297,8 @@ var Columns = []string{
 	FieldPremiereDate,
 	FieldEndDate,
 	FieldLastMediaAddedAt,
+	FieldDateModified,
+	FieldProbedAt,
 	FieldProductionYear,
 	FieldOfficialRating,
 	FieldCustomRating,
@@ -317,13 +329,6 @@ var Columns = []string{
 	FieldExternalUrls,
 }
 
-// ForeignKeys holds the SQL foreign-keys that are owned by the "items"
-// table and are not defined as standalone fields in the schema.
-var ForeignKeys = []string{
-	"item_children",
-	"library_items",
-}
-
 var (
 	// GenresPrimaryKey and GenresColumn2 are the table columns denoting the
 	// primary key for the genres relation (M2M).
@@ -340,11 +345,6 @@ func ValidColumn(column string) bool {
 			return true
 		}
 	}
-	for i := range ForeignKeys {
-		if column == ForeignKeys[i] {
-			return true
-		}
-	}
 	return false
 }
 
@@ -355,6 +355,20 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultForcedSortName holds the default value on creation for the "forced_sort_name" field.
+	DefaultForcedSortName bool
+	// DefaultIsFolder holds the default value on creation for the "is_folder" field.
+	DefaultIsFolder bool
+	// DefaultIsPlaceholder holds the default value on creation for the "is_placeholder" field.
+	DefaultIsPlaceholder bool
+	// DefaultLockData holds the default value on creation for the "lock_data" field.
+	DefaultLockData bool
+	// DefaultHasLyrics holds the default value on creation for the "has_lyrics" field.
+	DefaultHasLyrics bool
+	// DefaultHasSubtitles holds the default value on creation for the "has_subtitles" field.
+	DefaultHasSubtitles bool
+	// DefaultEnableMediaSourceDisplay holds the default value on creation for the "enable_media_source_display" field.
+	DefaultEnableMediaSourceDisplay bool
 )
 
 // Kind defines the type for the "kind" enum field.
@@ -418,6 +432,9 @@ func KindValidator(k Kind) error {
 // MediaType defines the type for the "media_type" enum field.
 type MediaType string
 
+// MediaTypeUnknown is the default value of the MediaType enum.
+const DefaultMediaType = MediaTypeUnknown
+
 // MediaType values.
 const (
 	MediaTypeUnknown MediaType = "Unknown"
@@ -443,6 +460,9 @@ func MediaTypeValidator(mt MediaType) error {
 
 // LocationType defines the type for the "location_type" enum field.
 type LocationType string
+
+// LocationTypeFileSystem is the default value of the LocationType enum.
+const DefaultLocationType = LocationTypeFileSystem
 
 // LocationType values.
 const (
@@ -591,6 +611,16 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
+// ByLibraryID orders the results by the library_id field.
+func ByLibraryID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLibraryID, opts...).ToFunc()
+}
+
+// ByParentID orders the results by the parent_id field.
+func ByParentID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldParentID, opts...).ToFunc()
+}
+
 // ByKind orders the results by the kind field.
 func ByKind(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldKind, opts...).ToFunc()
@@ -704,6 +734,16 @@ func ByEndDate(opts ...sql.OrderTermOption) OrderOption {
 // ByLastMediaAddedAt orders the results by the last_media_added_at field.
 func ByLastMediaAddedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastMediaAddedAt, opts...).ToFunc()
+}
+
+// ByDateModified orders the results by the date_modified field.
+func ByDateModified(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDateModified, opts...).ToFunc()
+}
+
+// ByProbedAt orders the results by the probed_at field.
+func ByProbedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProbedAt, opts...).ToFunc()
 }
 
 // ByProductionYear orders the results by the production_year field.

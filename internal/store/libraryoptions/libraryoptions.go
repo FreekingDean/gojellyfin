@@ -8,6 +8,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 )
 
 const (
@@ -190,10 +191,93 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultEnabled holds the default value on creation for the "enabled" field.
+	DefaultEnabled bool
+	// DefaultEnablePhotos holds the default value on creation for the "enable_photos" field.
+	DefaultEnablePhotos bool
+	// DefaultEnableRealtimeMonitor holds the default value on creation for the "enable_realtime_monitor" field.
+	DefaultEnableRealtimeMonitor bool
+	// DefaultEnableLufsScan holds the default value on creation for the "enable_lufs_scan" field.
+	DefaultEnableLufsScan bool
+	// DefaultEnableChapterImageExtraction holds the default value on creation for the "enable_chapter_image_extraction" field.
+	DefaultEnableChapterImageExtraction bool
+	// DefaultExtractChapterImagesDuringLibraryScan holds the default value on creation for the "extract_chapter_images_during_library_scan" field.
+	DefaultExtractChapterImagesDuringLibraryScan bool
+	// DefaultEnableTrickplayImageExtraction holds the default value on creation for the "enable_trickplay_image_extraction" field.
+	DefaultEnableTrickplayImageExtraction bool
+	// DefaultExtractTrickplayImagesDuringLibraryScan holds the default value on creation for the "extract_trickplay_images_during_library_scan" field.
+	DefaultExtractTrickplayImagesDuringLibraryScan bool
+	// DefaultSaveLocalMetadata holds the default value on creation for the "save_local_metadata" field.
+	DefaultSaveLocalMetadata bool
+	// DefaultEnableInternetProviders holds the default value on creation for the "enable_internet_providers" field.
+	DefaultEnableInternetProviders bool
+	// DefaultEnableAutomaticSeriesGrouping holds the default value on creation for the "enable_automatic_series_grouping" field.
+	DefaultEnableAutomaticSeriesGrouping bool
+	// DefaultEnableEmbeddedTitles holds the default value on creation for the "enable_embedded_titles" field.
+	DefaultEnableEmbeddedTitles bool
+	// DefaultEnableEmbeddedExtrasTitles holds the default value on creation for the "enable_embedded_extras_titles" field.
+	DefaultEnableEmbeddedExtrasTitles bool
+	// DefaultEnableEmbeddedEpisodeInfos holds the default value on creation for the "enable_embedded_episode_infos" field.
+	DefaultEnableEmbeddedEpisodeInfos bool
+	// DefaultSkipSubtitlesIfEmbeddedSubtitlesPresent holds the default value on creation for the "skip_subtitles_if_embedded_subtitles_present" field.
+	DefaultSkipSubtitlesIfEmbeddedSubtitlesPresent bool
+	// DefaultSkipSubtitlesIfAudioTrackMatches holds the default value on creation for the "skip_subtitles_if_audio_track_matches" field.
+	DefaultSkipSubtitlesIfAudioTrackMatches bool
+	// DefaultRequirePerfectSubtitleMatch holds the default value on creation for the "require_perfect_subtitle_match" field.
+	DefaultRequirePerfectSubtitleMatch bool
+	// DefaultSaveSubtitlesWithMedia holds the default value on creation for the "save_subtitles_with_media" field.
+	DefaultSaveSubtitlesWithMedia bool
+	// DefaultSaveLyricsWithMedia holds the default value on creation for the "save_lyrics_with_media" field.
+	DefaultSaveLyricsWithMedia bool
+	// DefaultSaveTrickplayWithMedia holds the default value on creation for the "save_trickplay_with_media" field.
+	DefaultSaveTrickplayWithMedia bool
+	// DefaultPreferNonstandardArtistsTag holds the default value on creation for the "prefer_nonstandard_artists_tag" field.
+	DefaultPreferNonstandardArtistsTag bool
+	// DefaultUseCustomTagDelimiters holds the default value on creation for the "use_custom_tag_delimiters" field.
+	DefaultUseCustomTagDelimiters bool
+	// DefaultAutomaticallyAddToCollection holds the default value on creation for the "automatically_add_to_collection" field.
+	DefaultAutomaticallyAddToCollection bool
+	// DefaultAutomaticRefreshIntervalDays holds the default value on creation for the "automatic_refresh_interval_days" field.
+	DefaultAutomaticRefreshIntervalDays int32
+	// DefaultPreferredMetadataLanguage holds the default value on creation for the "preferred_metadata_language" field.
+	DefaultPreferredMetadataLanguage string
+	// DefaultMetadataCountryCode holds the default value on creation for the "metadata_country_code" field.
+	DefaultMetadataCountryCode string
+	// DefaultSeasonZeroDisplayName holds the default value on creation for the "season_zero_display_name" field.
+	DefaultSeasonZeroDisplayName string
+	// DefaultMetadataSavers holds the default value on creation for the "metadata_savers" field.
+	DefaultMetadataSavers []string
+	// DefaultDisabledLocalMetadataReaders holds the default value on creation for the "disabled_local_metadata_readers" field.
+	DefaultDisabledLocalMetadataReaders []string
+	// DefaultLocalMetadataReaderOrder holds the default value on creation for the "local_metadata_reader_order" field.
+	DefaultLocalMetadataReaderOrder []string
+	// DefaultDisabledSubtitleFetchers holds the default value on creation for the "disabled_subtitle_fetchers" field.
+	DefaultDisabledSubtitleFetchers []string
+	// DefaultSubtitleFetcherOrder holds the default value on creation for the "subtitle_fetcher_order" field.
+	DefaultSubtitleFetcherOrder []string
+	// DefaultDisabledMediaSegmentProviders holds the default value on creation for the "disabled_media_segment_providers" field.
+	DefaultDisabledMediaSegmentProviders []string
+	// DefaultMediaSegmentProviderOrder holds the default value on creation for the "media_segment_provider_order" field.
+	DefaultMediaSegmentProviderOrder []string
+	// DefaultSubtitleDownloadLanguages holds the default value on creation for the "subtitle_download_languages" field.
+	DefaultSubtitleDownloadLanguages []string
+	// DefaultDisabledLyricFetchers holds the default value on creation for the "disabled_lyric_fetchers" field.
+	DefaultDisabledLyricFetchers []string
+	// DefaultLyricFetcherOrder holds the default value on creation for the "lyric_fetcher_order" field.
+	DefaultLyricFetcherOrder []string
+	// DefaultCustomTagDelimiters holds the default value on creation for the "custom_tag_delimiters" field.
+	DefaultCustomTagDelimiters []string
+	// DefaultDelimiterWhitelist holds the default value on creation for the "delimiter_whitelist" field.
+	DefaultDelimiterWhitelist []string
+	// DefaultTypeOptions holds the default value on creation for the "type_options" field.
+	DefaultTypeOptions []entities.TypeOptions
 )
 
 // AllowEmbeddedSubtitles defines the type for the "allow_embedded_subtitles" enum field.
 type AllowEmbeddedSubtitles string
+
+// AllowEmbeddedSubtitlesAllowAll is the default value of the AllowEmbeddedSubtitles enum.
+const DefaultAllowEmbeddedSubtitles = AllowEmbeddedSubtitlesAllowAll
 
 // AllowEmbeddedSubtitles values.
 const (

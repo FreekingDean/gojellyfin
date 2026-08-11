@@ -55,9 +55,23 @@ func (_c *MediaSourceCreate) SetNillableUpdatedAt(v *time.Time) *MediaSourceCrea
 	return _c
 }
 
+// SetItemID sets the "item_id" field.
+func (_c *MediaSourceCreate) SetItemID(v uuid.UUID) *MediaSourceCreate {
+	_c.mutation.SetItemID(v)
+	return _c
+}
+
 // SetProtocol sets the "protocol" field.
 func (_c *MediaSourceCreate) SetProtocol(v mediasource.Protocol) *MediaSourceCreate {
 	_c.mutation.SetProtocol(v)
+	return _c
+}
+
+// SetNillableProtocol sets the "protocol" field if the given value is not nil.
+func (_c *MediaSourceCreate) SetNillableProtocol(v *mediasource.Protocol) *MediaSourceCreate {
+	if v != nil {
+		_c.SetProtocol(*v)
+	}
 	return _c
 }
 
@@ -78,6 +92,14 @@ func (_c *MediaSourceCreate) SetNillableEncoderProtocol(v *mediasource.EncoderPr
 // SetKind sets the "kind" field.
 func (_c *MediaSourceCreate) SetKind(v mediasource.Kind) *MediaSourceCreate {
 	_c.mutation.SetKind(v)
+	return _c
+}
+
+// SetNillableKind sets the "kind" field if the given value is not nil.
+func (_c *MediaSourceCreate) SetNillableKind(v *mediasource.Kind) *MediaSourceCreate {
+	if v != nil {
+		_c.SetKind(*v)
+	}
 	return _c
 }
 
@@ -225,9 +247,25 @@ func (_c *MediaSourceCreate) SetIsRemote(v bool) *MediaSourceCreate {
 	return _c
 }
 
+// SetNillableIsRemote sets the "is_remote" field if the given value is not nil.
+func (_c *MediaSourceCreate) SetNillableIsRemote(v *bool) *MediaSourceCreate {
+	if v != nil {
+		_c.SetIsRemote(*v)
+	}
+	return _c
+}
+
 // SetIsInfiniteStream sets the "is_infinite_stream" field.
 func (_c *MediaSourceCreate) SetIsInfiniteStream(v bool) *MediaSourceCreate {
 	_c.mutation.SetIsInfiniteStream(v)
+	return _c
+}
+
+// SetNillableIsInfiniteStream sets the "is_infinite_stream" field if the given value is not nil.
+func (_c *MediaSourceCreate) SetNillableIsInfiniteStream(v *bool) *MediaSourceCreate {
+	if v != nil {
+		_c.SetIsInfiniteStream(*v)
+	}
 	return _c
 }
 
@@ -237,9 +275,25 @@ func (_c *MediaSourceCreate) SetSupportsTranscoding(v bool) *MediaSourceCreate {
 	return _c
 }
 
+// SetNillableSupportsTranscoding sets the "supports_transcoding" field if the given value is not nil.
+func (_c *MediaSourceCreate) SetNillableSupportsTranscoding(v *bool) *MediaSourceCreate {
+	if v != nil {
+		_c.SetSupportsTranscoding(*v)
+	}
+	return _c
+}
+
 // SetSupportsDirectStream sets the "supports_direct_stream" field.
 func (_c *MediaSourceCreate) SetSupportsDirectStream(v bool) *MediaSourceCreate {
 	_c.mutation.SetSupportsDirectStream(v)
+	return _c
+}
+
+// SetNillableSupportsDirectStream sets the "supports_direct_stream" field if the given value is not nil.
+func (_c *MediaSourceCreate) SetNillableSupportsDirectStream(v *bool) *MediaSourceCreate {
+	if v != nil {
+		_c.SetSupportsDirectStream(*v)
+	}
 	return _c
 }
 
@@ -249,9 +303,25 @@ func (_c *MediaSourceCreate) SetSupportsDirectPlay(v bool) *MediaSourceCreate {
 	return _c
 }
 
+// SetNillableSupportsDirectPlay sets the "supports_direct_play" field if the given value is not nil.
+func (_c *MediaSourceCreate) SetNillableSupportsDirectPlay(v *bool) *MediaSourceCreate {
+	if v != nil {
+		_c.SetSupportsDirectPlay(*v)
+	}
+	return _c
+}
+
 // SetSupportsProbing sets the "supports_probing" field.
 func (_c *MediaSourceCreate) SetSupportsProbing(v bool) *MediaSourceCreate {
 	_c.mutation.SetSupportsProbing(v)
+	return _c
+}
+
+// SetNillableSupportsProbing sets the "supports_probing" field if the given value is not nil.
+func (_c *MediaSourceCreate) SetNillableSupportsProbing(v *bool) *MediaSourceCreate {
+	if v != nil {
+		_c.SetSupportsProbing(*v)
+	}
 	return _c
 }
 
@@ -261,9 +331,25 @@ func (_c *MediaSourceCreate) SetReadAtNativeFramerate(v bool) *MediaSourceCreate
 	return _c
 }
 
+// SetNillableReadAtNativeFramerate sets the "read_at_native_framerate" field if the given value is not nil.
+func (_c *MediaSourceCreate) SetNillableReadAtNativeFramerate(v *bool) *MediaSourceCreate {
+	if v != nil {
+		_c.SetReadAtNativeFramerate(*v)
+	}
+	return _c
+}
+
 // SetIgnoreDts sets the "ignore_dts" field.
 func (_c *MediaSourceCreate) SetIgnoreDts(v bool) *MediaSourceCreate {
 	_c.mutation.SetIgnoreDts(v)
+	return _c
+}
+
+// SetNillableIgnoreDts sets the "ignore_dts" field if the given value is not nil.
+func (_c *MediaSourceCreate) SetNillableIgnoreDts(v *bool) *MediaSourceCreate {
+	if v != nil {
+		_c.SetIgnoreDts(*v)
+	}
 	return _c
 }
 
@@ -273,9 +359,25 @@ func (_c *MediaSourceCreate) SetIgnoreIndex(v bool) *MediaSourceCreate {
 	return _c
 }
 
+// SetNillableIgnoreIndex sets the "ignore_index" field if the given value is not nil.
+func (_c *MediaSourceCreate) SetNillableIgnoreIndex(v *bool) *MediaSourceCreate {
+	if v != nil {
+		_c.SetIgnoreIndex(*v)
+	}
+	return _c
+}
+
 // SetGenPtsInput sets the "gen_pts_input" field.
 func (_c *MediaSourceCreate) SetGenPtsInput(v bool) *MediaSourceCreate {
 	_c.mutation.SetGenPtsInput(v)
+	return _c
+}
+
+// SetNillableGenPtsInput sets the "gen_pts_input" field if the given value is not nil.
+func (_c *MediaSourceCreate) SetNillableGenPtsInput(v *bool) *MediaSourceCreate {
+	if v != nil {
+		_c.SetGenPtsInput(*v)
+	}
 	return _c
 }
 
@@ -285,9 +387,25 @@ func (_c *MediaSourceCreate) SetRequiresLooping(v bool) *MediaSourceCreate {
 	return _c
 }
 
+// SetNillableRequiresLooping sets the "requires_looping" field if the given value is not nil.
+func (_c *MediaSourceCreate) SetNillableRequiresLooping(v *bool) *MediaSourceCreate {
+	if v != nil {
+		_c.SetRequiresLooping(*v)
+	}
+	return _c
+}
+
 // SetHasSegments sets the "has_segments" field.
 func (_c *MediaSourceCreate) SetHasSegments(v bool) *MediaSourceCreate {
 	_c.mutation.SetHasSegments(v)
+	return _c
+}
+
+// SetNillableHasSegments sets the "has_segments" field if the given value is not nil.
+func (_c *MediaSourceCreate) SetNillableHasSegments(v *bool) *MediaSourceCreate {
+	if v != nil {
+		_c.SetHasSegments(*v)
+	}
 	return _c
 }
 
@@ -328,12 +446,6 @@ func (_c *MediaSourceCreate) SetFormats(v []string) *MediaSourceCreate {
 // SetID sets the "id" field.
 func (_c *MediaSourceCreate) SetID(v uuid.UUID) *MediaSourceCreate {
 	_c.mutation.SetID(v)
-	return _c
-}
-
-// SetItemID sets the "item" edge to the Item entity by ID.
-func (_c *MediaSourceCreate) SetItemID(id uuid.UUID) *MediaSourceCreate {
-	_c.mutation.SetItemID(id)
 	return _c
 }
 
@@ -415,6 +527,62 @@ func (_c *MediaSourceCreate) defaults() {
 		v := mediasource.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Protocol(); !ok {
+		v := mediasource.DefaultProtocol
+		_c.mutation.SetProtocol(v)
+	}
+	if _, ok := _c.mutation.Kind(); !ok {
+		v := mediasource.DefaultKind
+		_c.mutation.SetKind(v)
+	}
+	if _, ok := _c.mutation.IsRemote(); !ok {
+		v := mediasource.DefaultIsRemote
+		_c.mutation.SetIsRemote(v)
+	}
+	if _, ok := _c.mutation.IsInfiniteStream(); !ok {
+		v := mediasource.DefaultIsInfiniteStream
+		_c.mutation.SetIsInfiniteStream(v)
+	}
+	if _, ok := _c.mutation.SupportsTranscoding(); !ok {
+		v := mediasource.DefaultSupportsTranscoding
+		_c.mutation.SetSupportsTranscoding(v)
+	}
+	if _, ok := _c.mutation.SupportsDirectStream(); !ok {
+		v := mediasource.DefaultSupportsDirectStream
+		_c.mutation.SetSupportsDirectStream(v)
+	}
+	if _, ok := _c.mutation.SupportsDirectPlay(); !ok {
+		v := mediasource.DefaultSupportsDirectPlay
+		_c.mutation.SetSupportsDirectPlay(v)
+	}
+	if _, ok := _c.mutation.SupportsProbing(); !ok {
+		v := mediasource.DefaultSupportsProbing
+		_c.mutation.SetSupportsProbing(v)
+	}
+	if _, ok := _c.mutation.ReadAtNativeFramerate(); !ok {
+		v := mediasource.DefaultReadAtNativeFramerate
+		_c.mutation.SetReadAtNativeFramerate(v)
+	}
+	if _, ok := _c.mutation.IgnoreDts(); !ok {
+		v := mediasource.DefaultIgnoreDts
+		_c.mutation.SetIgnoreDts(v)
+	}
+	if _, ok := _c.mutation.IgnoreIndex(); !ok {
+		v := mediasource.DefaultIgnoreIndex
+		_c.mutation.SetIgnoreIndex(v)
+	}
+	if _, ok := _c.mutation.GenPtsInput(); !ok {
+		v := mediasource.DefaultGenPtsInput
+		_c.mutation.SetGenPtsInput(v)
+	}
+	if _, ok := _c.mutation.RequiresLooping(); !ok {
+		v := mediasource.DefaultRequiresLooping
+		_c.mutation.SetRequiresLooping(v)
+	}
+	if _, ok := _c.mutation.HasSegments(); !ok {
+		v := mediasource.DefaultHasSegments
+		_c.mutation.SetHasSegments(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -424,6 +592,9 @@ func (_c *MediaSourceCreate) check() error {
 	}
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`store: missing required field "MediaSource.updated_at"`)}
+	}
+	if _, ok := _c.mutation.ItemID(); !ok {
+		return &ValidationError{Name: "item_id", err: errors.New(`store: missing required field "MediaSource.item_id"`)}
 	}
 	if _, ok := _c.mutation.Protocol(); !ok {
 		return &ValidationError{Name: "protocol", err: errors.New(`store: missing required field "MediaSource.protocol"`)}
@@ -685,7 +856,7 @@ func (_c *MediaSourceCreate) createSpec() (*MediaSource, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.item_media_sources = &nodes[0]
+		_node.ItemID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.StreamsIDs(); len(nodes) > 0 {
@@ -793,6 +964,18 @@ func (u *MediaSourceUpsert) SetUpdatedAt(v time.Time) *MediaSourceUpsert {
 // UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
 func (u *MediaSourceUpsert) UpdateUpdatedAt() *MediaSourceUpsert {
 	u.SetExcluded(mediasource.FieldUpdatedAt)
+	return u
+}
+
+// SetItemID sets the "item_id" field.
+func (u *MediaSourceUpsert) SetItemID(v uuid.UUID) *MediaSourceUpsert {
+	u.Set(mediasource.FieldItemID, v)
+	return u
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *MediaSourceUpsert) UpdateItemID() *MediaSourceUpsert {
+	u.SetExcluded(mediasource.FieldItemID)
 	return u
 }
 
@@ -1325,6 +1508,20 @@ func (u *MediaSourceUpsertOne) SetUpdatedAt(v time.Time) *MediaSourceUpsertOne {
 func (u *MediaSourceUpsertOne) UpdateUpdatedAt() *MediaSourceUpsertOne {
 	return u.Update(func(s *MediaSourceUpsert) {
 		s.UpdateUpdatedAt()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *MediaSourceUpsertOne) SetItemID(v uuid.UUID) *MediaSourceUpsertOne {
+	return u.Update(func(s *MediaSourceUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *MediaSourceUpsertOne) UpdateItemID() *MediaSourceUpsertOne {
+	return u.Update(func(s *MediaSourceUpsert) {
+		s.UpdateItemID()
 	})
 }
 
@@ -2100,6 +2297,20 @@ func (u *MediaSourceUpsertBulk) SetUpdatedAt(v time.Time) *MediaSourceUpsertBulk
 func (u *MediaSourceUpsertBulk) UpdateUpdatedAt() *MediaSourceUpsertBulk {
 	return u.Update(func(s *MediaSourceUpsert) {
 		s.UpdateUpdatedAt()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *MediaSourceUpsertBulk) SetItemID(v uuid.UUID) *MediaSourceUpsertBulk {
+	return u.Update(func(s *MediaSourceUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *MediaSourceUpsertBulk) UpdateItemID() *MediaSourceUpsertBulk {
+	return u.Update(func(s *MediaSourceUpsert) {
+		s.UpdateItemID()
 	})
 }
 

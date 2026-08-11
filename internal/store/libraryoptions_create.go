@@ -60,9 +60,25 @@ func (_c *LibraryOptionsCreate) SetEnabled(v bool) *LibraryOptionsCreate {
 	return _c
 }
 
+// SetNillableEnabled sets the "enabled" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillableEnabled(v *bool) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetEnabled(*v)
+	}
+	return _c
+}
+
 // SetEnablePhotos sets the "enable_photos" field.
 func (_c *LibraryOptionsCreate) SetEnablePhotos(v bool) *LibraryOptionsCreate {
 	_c.mutation.SetEnablePhotos(v)
+	return _c
+}
+
+// SetNillableEnablePhotos sets the "enable_photos" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillableEnablePhotos(v *bool) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetEnablePhotos(*v)
+	}
 	return _c
 }
 
@@ -72,9 +88,25 @@ func (_c *LibraryOptionsCreate) SetEnableRealtimeMonitor(v bool) *LibraryOptions
 	return _c
 }
 
+// SetNillableEnableRealtimeMonitor sets the "enable_realtime_monitor" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillableEnableRealtimeMonitor(v *bool) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetEnableRealtimeMonitor(*v)
+	}
+	return _c
+}
+
 // SetEnableLufsScan sets the "enable_lufs_scan" field.
 func (_c *LibraryOptionsCreate) SetEnableLufsScan(v bool) *LibraryOptionsCreate {
 	_c.mutation.SetEnableLufsScan(v)
+	return _c
+}
+
+// SetNillableEnableLufsScan sets the "enable_lufs_scan" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillableEnableLufsScan(v *bool) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetEnableLufsScan(*v)
+	}
 	return _c
 }
 
@@ -84,9 +116,25 @@ func (_c *LibraryOptionsCreate) SetEnableChapterImageExtraction(v bool) *Library
 	return _c
 }
 
+// SetNillableEnableChapterImageExtraction sets the "enable_chapter_image_extraction" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillableEnableChapterImageExtraction(v *bool) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetEnableChapterImageExtraction(*v)
+	}
+	return _c
+}
+
 // SetExtractChapterImagesDuringLibraryScan sets the "extract_chapter_images_during_library_scan" field.
 func (_c *LibraryOptionsCreate) SetExtractChapterImagesDuringLibraryScan(v bool) *LibraryOptionsCreate {
 	_c.mutation.SetExtractChapterImagesDuringLibraryScan(v)
+	return _c
+}
+
+// SetNillableExtractChapterImagesDuringLibraryScan sets the "extract_chapter_images_during_library_scan" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillableExtractChapterImagesDuringLibraryScan(v *bool) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetExtractChapterImagesDuringLibraryScan(*v)
+	}
 	return _c
 }
 
@@ -96,9 +144,25 @@ func (_c *LibraryOptionsCreate) SetEnableTrickplayImageExtraction(v bool) *Libra
 	return _c
 }
 
+// SetNillableEnableTrickplayImageExtraction sets the "enable_trickplay_image_extraction" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillableEnableTrickplayImageExtraction(v *bool) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetEnableTrickplayImageExtraction(*v)
+	}
+	return _c
+}
+
 // SetExtractTrickplayImagesDuringLibraryScan sets the "extract_trickplay_images_during_library_scan" field.
 func (_c *LibraryOptionsCreate) SetExtractTrickplayImagesDuringLibraryScan(v bool) *LibraryOptionsCreate {
 	_c.mutation.SetExtractTrickplayImagesDuringLibraryScan(v)
+	return _c
+}
+
+// SetNillableExtractTrickplayImagesDuringLibraryScan sets the "extract_trickplay_images_during_library_scan" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillableExtractTrickplayImagesDuringLibraryScan(v *bool) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetExtractTrickplayImagesDuringLibraryScan(*v)
+	}
 	return _c
 }
 
@@ -108,9 +172,25 @@ func (_c *LibraryOptionsCreate) SetSaveLocalMetadata(v bool) *LibraryOptionsCrea
 	return _c
 }
 
+// SetNillableSaveLocalMetadata sets the "save_local_metadata" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillableSaveLocalMetadata(v *bool) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetSaveLocalMetadata(*v)
+	}
+	return _c
+}
+
 // SetEnableInternetProviders sets the "enable_internet_providers" field.
 func (_c *LibraryOptionsCreate) SetEnableInternetProviders(v bool) *LibraryOptionsCreate {
 	_c.mutation.SetEnableInternetProviders(v)
+	return _c
+}
+
+// SetNillableEnableInternetProviders sets the "enable_internet_providers" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillableEnableInternetProviders(v *bool) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetEnableInternetProviders(*v)
+	}
 	return _c
 }
 
@@ -120,9 +200,25 @@ func (_c *LibraryOptionsCreate) SetEnableAutomaticSeriesGrouping(v bool) *Librar
 	return _c
 }
 
+// SetNillableEnableAutomaticSeriesGrouping sets the "enable_automatic_series_grouping" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillableEnableAutomaticSeriesGrouping(v *bool) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetEnableAutomaticSeriesGrouping(*v)
+	}
+	return _c
+}
+
 // SetEnableEmbeddedTitles sets the "enable_embedded_titles" field.
 func (_c *LibraryOptionsCreate) SetEnableEmbeddedTitles(v bool) *LibraryOptionsCreate {
 	_c.mutation.SetEnableEmbeddedTitles(v)
+	return _c
+}
+
+// SetNillableEnableEmbeddedTitles sets the "enable_embedded_titles" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillableEnableEmbeddedTitles(v *bool) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetEnableEmbeddedTitles(*v)
+	}
 	return _c
 }
 
@@ -132,9 +228,25 @@ func (_c *LibraryOptionsCreate) SetEnableEmbeddedExtrasTitles(v bool) *LibraryOp
 	return _c
 }
 
+// SetNillableEnableEmbeddedExtrasTitles sets the "enable_embedded_extras_titles" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillableEnableEmbeddedExtrasTitles(v *bool) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetEnableEmbeddedExtrasTitles(*v)
+	}
+	return _c
+}
+
 // SetEnableEmbeddedEpisodeInfos sets the "enable_embedded_episode_infos" field.
 func (_c *LibraryOptionsCreate) SetEnableEmbeddedEpisodeInfos(v bool) *LibraryOptionsCreate {
 	_c.mutation.SetEnableEmbeddedEpisodeInfos(v)
+	return _c
+}
+
+// SetNillableEnableEmbeddedEpisodeInfos sets the "enable_embedded_episode_infos" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillableEnableEmbeddedEpisodeInfos(v *bool) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetEnableEmbeddedEpisodeInfos(*v)
+	}
 	return _c
 }
 
@@ -144,9 +256,25 @@ func (_c *LibraryOptionsCreate) SetSkipSubtitlesIfEmbeddedSubtitlesPresent(v boo
 	return _c
 }
 
+// SetNillableSkipSubtitlesIfEmbeddedSubtitlesPresent sets the "skip_subtitles_if_embedded_subtitles_present" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillableSkipSubtitlesIfEmbeddedSubtitlesPresent(v *bool) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetSkipSubtitlesIfEmbeddedSubtitlesPresent(*v)
+	}
+	return _c
+}
+
 // SetSkipSubtitlesIfAudioTrackMatches sets the "skip_subtitles_if_audio_track_matches" field.
 func (_c *LibraryOptionsCreate) SetSkipSubtitlesIfAudioTrackMatches(v bool) *LibraryOptionsCreate {
 	_c.mutation.SetSkipSubtitlesIfAudioTrackMatches(v)
+	return _c
+}
+
+// SetNillableSkipSubtitlesIfAudioTrackMatches sets the "skip_subtitles_if_audio_track_matches" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillableSkipSubtitlesIfAudioTrackMatches(v *bool) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetSkipSubtitlesIfAudioTrackMatches(*v)
+	}
 	return _c
 }
 
@@ -156,9 +284,25 @@ func (_c *LibraryOptionsCreate) SetRequirePerfectSubtitleMatch(v bool) *LibraryO
 	return _c
 }
 
+// SetNillableRequirePerfectSubtitleMatch sets the "require_perfect_subtitle_match" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillableRequirePerfectSubtitleMatch(v *bool) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetRequirePerfectSubtitleMatch(*v)
+	}
+	return _c
+}
+
 // SetSaveSubtitlesWithMedia sets the "save_subtitles_with_media" field.
 func (_c *LibraryOptionsCreate) SetSaveSubtitlesWithMedia(v bool) *LibraryOptionsCreate {
 	_c.mutation.SetSaveSubtitlesWithMedia(v)
+	return _c
+}
+
+// SetNillableSaveSubtitlesWithMedia sets the "save_subtitles_with_media" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillableSaveSubtitlesWithMedia(v *bool) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetSaveSubtitlesWithMedia(*v)
+	}
 	return _c
 }
 
@@ -168,9 +312,25 @@ func (_c *LibraryOptionsCreate) SetSaveLyricsWithMedia(v bool) *LibraryOptionsCr
 	return _c
 }
 
+// SetNillableSaveLyricsWithMedia sets the "save_lyrics_with_media" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillableSaveLyricsWithMedia(v *bool) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetSaveLyricsWithMedia(*v)
+	}
+	return _c
+}
+
 // SetSaveTrickplayWithMedia sets the "save_trickplay_with_media" field.
 func (_c *LibraryOptionsCreate) SetSaveTrickplayWithMedia(v bool) *LibraryOptionsCreate {
 	_c.mutation.SetSaveTrickplayWithMedia(v)
+	return _c
+}
+
+// SetNillableSaveTrickplayWithMedia sets the "save_trickplay_with_media" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillableSaveTrickplayWithMedia(v *bool) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetSaveTrickplayWithMedia(*v)
+	}
 	return _c
 }
 
@@ -180,9 +340,25 @@ func (_c *LibraryOptionsCreate) SetPreferNonstandardArtistsTag(v bool) *LibraryO
 	return _c
 }
 
+// SetNillablePreferNonstandardArtistsTag sets the "prefer_nonstandard_artists_tag" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillablePreferNonstandardArtistsTag(v *bool) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetPreferNonstandardArtistsTag(*v)
+	}
+	return _c
+}
+
 // SetUseCustomTagDelimiters sets the "use_custom_tag_delimiters" field.
 func (_c *LibraryOptionsCreate) SetUseCustomTagDelimiters(v bool) *LibraryOptionsCreate {
 	_c.mutation.SetUseCustomTagDelimiters(v)
+	return _c
+}
+
+// SetNillableUseCustomTagDelimiters sets the "use_custom_tag_delimiters" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillableUseCustomTagDelimiters(v *bool) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetUseCustomTagDelimiters(*v)
+	}
 	return _c
 }
 
@@ -192,9 +368,25 @@ func (_c *LibraryOptionsCreate) SetAutomaticallyAddToCollection(v bool) *Library
 	return _c
 }
 
+// SetNillableAutomaticallyAddToCollection sets the "automatically_add_to_collection" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillableAutomaticallyAddToCollection(v *bool) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetAutomaticallyAddToCollection(*v)
+	}
+	return _c
+}
+
 // SetAutomaticRefreshIntervalDays sets the "automatic_refresh_interval_days" field.
 func (_c *LibraryOptionsCreate) SetAutomaticRefreshIntervalDays(v int32) *LibraryOptionsCreate {
 	_c.mutation.SetAutomaticRefreshIntervalDays(v)
+	return _c
+}
+
+// SetNillableAutomaticRefreshIntervalDays sets the "automatic_refresh_interval_days" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillableAutomaticRefreshIntervalDays(v *int32) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetAutomaticRefreshIntervalDays(*v)
+	}
 	return _c
 }
 
@@ -204,9 +396,25 @@ func (_c *LibraryOptionsCreate) SetPreferredMetadataLanguage(v string) *LibraryO
 	return _c
 }
 
+// SetNillablePreferredMetadataLanguage sets the "preferred_metadata_language" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillablePreferredMetadataLanguage(v *string) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetPreferredMetadataLanguage(*v)
+	}
+	return _c
+}
+
 // SetMetadataCountryCode sets the "metadata_country_code" field.
 func (_c *LibraryOptionsCreate) SetMetadataCountryCode(v string) *LibraryOptionsCreate {
 	_c.mutation.SetMetadataCountryCode(v)
+	return _c
+}
+
+// SetNillableMetadataCountryCode sets the "metadata_country_code" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillableMetadataCountryCode(v *string) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetMetadataCountryCode(*v)
+	}
 	return _c
 }
 
@@ -216,9 +424,25 @@ func (_c *LibraryOptionsCreate) SetSeasonZeroDisplayName(v string) *LibraryOptio
 	return _c
 }
 
+// SetNillableSeasonZeroDisplayName sets the "season_zero_display_name" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillableSeasonZeroDisplayName(v *string) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetSeasonZeroDisplayName(*v)
+	}
+	return _c
+}
+
 // SetAllowEmbeddedSubtitles sets the "allow_embedded_subtitles" field.
 func (_c *LibraryOptionsCreate) SetAllowEmbeddedSubtitles(v libraryoptions.AllowEmbeddedSubtitles) *LibraryOptionsCreate {
 	_c.mutation.SetAllowEmbeddedSubtitles(v)
+	return _c
+}
+
+// SetNillableAllowEmbeddedSubtitles sets the "allow_embedded_subtitles" field if the given value is not nil.
+func (_c *LibraryOptionsCreate) SetNillableAllowEmbeddedSubtitles(v *libraryoptions.AllowEmbeddedSubtitles) *LibraryOptionsCreate {
+	if v != nil {
+		_c.SetAllowEmbeddedSubtitles(*v)
+	}
 	return _c
 }
 
@@ -367,6 +591,170 @@ func (_c *LibraryOptionsCreate) defaults() {
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		v := libraryoptions.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
+	}
+	if _, ok := _c.mutation.Enabled(); !ok {
+		v := libraryoptions.DefaultEnabled
+		_c.mutation.SetEnabled(v)
+	}
+	if _, ok := _c.mutation.EnablePhotos(); !ok {
+		v := libraryoptions.DefaultEnablePhotos
+		_c.mutation.SetEnablePhotos(v)
+	}
+	if _, ok := _c.mutation.EnableRealtimeMonitor(); !ok {
+		v := libraryoptions.DefaultEnableRealtimeMonitor
+		_c.mutation.SetEnableRealtimeMonitor(v)
+	}
+	if _, ok := _c.mutation.EnableLufsScan(); !ok {
+		v := libraryoptions.DefaultEnableLufsScan
+		_c.mutation.SetEnableLufsScan(v)
+	}
+	if _, ok := _c.mutation.EnableChapterImageExtraction(); !ok {
+		v := libraryoptions.DefaultEnableChapterImageExtraction
+		_c.mutation.SetEnableChapterImageExtraction(v)
+	}
+	if _, ok := _c.mutation.ExtractChapterImagesDuringLibraryScan(); !ok {
+		v := libraryoptions.DefaultExtractChapterImagesDuringLibraryScan
+		_c.mutation.SetExtractChapterImagesDuringLibraryScan(v)
+	}
+	if _, ok := _c.mutation.EnableTrickplayImageExtraction(); !ok {
+		v := libraryoptions.DefaultEnableTrickplayImageExtraction
+		_c.mutation.SetEnableTrickplayImageExtraction(v)
+	}
+	if _, ok := _c.mutation.ExtractTrickplayImagesDuringLibraryScan(); !ok {
+		v := libraryoptions.DefaultExtractTrickplayImagesDuringLibraryScan
+		_c.mutation.SetExtractTrickplayImagesDuringLibraryScan(v)
+	}
+	if _, ok := _c.mutation.SaveLocalMetadata(); !ok {
+		v := libraryoptions.DefaultSaveLocalMetadata
+		_c.mutation.SetSaveLocalMetadata(v)
+	}
+	if _, ok := _c.mutation.EnableInternetProviders(); !ok {
+		v := libraryoptions.DefaultEnableInternetProviders
+		_c.mutation.SetEnableInternetProviders(v)
+	}
+	if _, ok := _c.mutation.EnableAutomaticSeriesGrouping(); !ok {
+		v := libraryoptions.DefaultEnableAutomaticSeriesGrouping
+		_c.mutation.SetEnableAutomaticSeriesGrouping(v)
+	}
+	if _, ok := _c.mutation.EnableEmbeddedTitles(); !ok {
+		v := libraryoptions.DefaultEnableEmbeddedTitles
+		_c.mutation.SetEnableEmbeddedTitles(v)
+	}
+	if _, ok := _c.mutation.EnableEmbeddedExtrasTitles(); !ok {
+		v := libraryoptions.DefaultEnableEmbeddedExtrasTitles
+		_c.mutation.SetEnableEmbeddedExtrasTitles(v)
+	}
+	if _, ok := _c.mutation.EnableEmbeddedEpisodeInfos(); !ok {
+		v := libraryoptions.DefaultEnableEmbeddedEpisodeInfos
+		_c.mutation.SetEnableEmbeddedEpisodeInfos(v)
+	}
+	if _, ok := _c.mutation.SkipSubtitlesIfEmbeddedSubtitlesPresent(); !ok {
+		v := libraryoptions.DefaultSkipSubtitlesIfEmbeddedSubtitlesPresent
+		_c.mutation.SetSkipSubtitlesIfEmbeddedSubtitlesPresent(v)
+	}
+	if _, ok := _c.mutation.SkipSubtitlesIfAudioTrackMatches(); !ok {
+		v := libraryoptions.DefaultSkipSubtitlesIfAudioTrackMatches
+		_c.mutation.SetSkipSubtitlesIfAudioTrackMatches(v)
+	}
+	if _, ok := _c.mutation.RequirePerfectSubtitleMatch(); !ok {
+		v := libraryoptions.DefaultRequirePerfectSubtitleMatch
+		_c.mutation.SetRequirePerfectSubtitleMatch(v)
+	}
+	if _, ok := _c.mutation.SaveSubtitlesWithMedia(); !ok {
+		v := libraryoptions.DefaultSaveSubtitlesWithMedia
+		_c.mutation.SetSaveSubtitlesWithMedia(v)
+	}
+	if _, ok := _c.mutation.SaveLyricsWithMedia(); !ok {
+		v := libraryoptions.DefaultSaveLyricsWithMedia
+		_c.mutation.SetSaveLyricsWithMedia(v)
+	}
+	if _, ok := _c.mutation.SaveTrickplayWithMedia(); !ok {
+		v := libraryoptions.DefaultSaveTrickplayWithMedia
+		_c.mutation.SetSaveTrickplayWithMedia(v)
+	}
+	if _, ok := _c.mutation.PreferNonstandardArtistsTag(); !ok {
+		v := libraryoptions.DefaultPreferNonstandardArtistsTag
+		_c.mutation.SetPreferNonstandardArtistsTag(v)
+	}
+	if _, ok := _c.mutation.UseCustomTagDelimiters(); !ok {
+		v := libraryoptions.DefaultUseCustomTagDelimiters
+		_c.mutation.SetUseCustomTagDelimiters(v)
+	}
+	if _, ok := _c.mutation.AutomaticallyAddToCollection(); !ok {
+		v := libraryoptions.DefaultAutomaticallyAddToCollection
+		_c.mutation.SetAutomaticallyAddToCollection(v)
+	}
+	if _, ok := _c.mutation.AutomaticRefreshIntervalDays(); !ok {
+		v := libraryoptions.DefaultAutomaticRefreshIntervalDays
+		_c.mutation.SetAutomaticRefreshIntervalDays(v)
+	}
+	if _, ok := _c.mutation.PreferredMetadataLanguage(); !ok {
+		v := libraryoptions.DefaultPreferredMetadataLanguage
+		_c.mutation.SetPreferredMetadataLanguage(v)
+	}
+	if _, ok := _c.mutation.MetadataCountryCode(); !ok {
+		v := libraryoptions.DefaultMetadataCountryCode
+		_c.mutation.SetMetadataCountryCode(v)
+	}
+	if _, ok := _c.mutation.SeasonZeroDisplayName(); !ok {
+		v := libraryoptions.DefaultSeasonZeroDisplayName
+		_c.mutation.SetSeasonZeroDisplayName(v)
+	}
+	if _, ok := _c.mutation.AllowEmbeddedSubtitles(); !ok {
+		v := libraryoptions.DefaultAllowEmbeddedSubtitles
+		_c.mutation.SetAllowEmbeddedSubtitles(v)
+	}
+	if _, ok := _c.mutation.MetadataSavers(); !ok {
+		v := libraryoptions.DefaultMetadataSavers
+		_c.mutation.SetMetadataSavers(v)
+	}
+	if _, ok := _c.mutation.DisabledLocalMetadataReaders(); !ok {
+		v := libraryoptions.DefaultDisabledLocalMetadataReaders
+		_c.mutation.SetDisabledLocalMetadataReaders(v)
+	}
+	if _, ok := _c.mutation.LocalMetadataReaderOrder(); !ok {
+		v := libraryoptions.DefaultLocalMetadataReaderOrder
+		_c.mutation.SetLocalMetadataReaderOrder(v)
+	}
+	if _, ok := _c.mutation.DisabledSubtitleFetchers(); !ok {
+		v := libraryoptions.DefaultDisabledSubtitleFetchers
+		_c.mutation.SetDisabledSubtitleFetchers(v)
+	}
+	if _, ok := _c.mutation.SubtitleFetcherOrder(); !ok {
+		v := libraryoptions.DefaultSubtitleFetcherOrder
+		_c.mutation.SetSubtitleFetcherOrder(v)
+	}
+	if _, ok := _c.mutation.DisabledMediaSegmentProviders(); !ok {
+		v := libraryoptions.DefaultDisabledMediaSegmentProviders
+		_c.mutation.SetDisabledMediaSegmentProviders(v)
+	}
+	if _, ok := _c.mutation.MediaSegmentProviderOrder(); !ok {
+		v := libraryoptions.DefaultMediaSegmentProviderOrder
+		_c.mutation.SetMediaSegmentProviderOrder(v)
+	}
+	if _, ok := _c.mutation.SubtitleDownloadLanguages(); !ok {
+		v := libraryoptions.DefaultSubtitleDownloadLanguages
+		_c.mutation.SetSubtitleDownloadLanguages(v)
+	}
+	if _, ok := _c.mutation.DisabledLyricFetchers(); !ok {
+		v := libraryoptions.DefaultDisabledLyricFetchers
+		_c.mutation.SetDisabledLyricFetchers(v)
+	}
+	if _, ok := _c.mutation.LyricFetcherOrder(); !ok {
+		v := libraryoptions.DefaultLyricFetcherOrder
+		_c.mutation.SetLyricFetcherOrder(v)
+	}
+	if _, ok := _c.mutation.CustomTagDelimiters(); !ok {
+		v := libraryoptions.DefaultCustomTagDelimiters
+		_c.mutation.SetCustomTagDelimiters(v)
+	}
+	if _, ok := _c.mutation.DelimiterWhitelist(); !ok {
+		v := libraryoptions.DefaultDelimiterWhitelist
+		_c.mutation.SetDelimiterWhitelist(v)
+	}
+	if _, ok := _c.mutation.TypeOptions(); !ok {
+		v := libraryoptions.DefaultTypeOptions
+		_c.mutation.SetTypeOptions(v)
 	}
 }
 

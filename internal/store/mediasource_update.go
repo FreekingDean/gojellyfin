@@ -53,6 +53,20 @@ func (_u *MediaSourceUpdate) SetUpdatedAt(v time.Time) *MediaSourceUpdate {
 	return _u
 }
 
+// SetItemID sets the "item_id" field.
+func (_u *MediaSourceUpdate) SetItemID(v uuid.UUID) *MediaSourceUpdate {
+	_u.mutation.SetItemID(v)
+	return _u
+}
+
+// SetNillableItemID sets the "item_id" field if the given value is not nil.
+func (_u *MediaSourceUpdate) SetNillableItemID(v *uuid.UUID) *MediaSourceUpdate {
+	if v != nil {
+		_u.SetItemID(*v)
+	}
+	return _u
+}
+
 // SetProtocol sets the "protocol" field.
 func (_u *MediaSourceUpdate) SetProtocol(v mediasource.Protocol) *MediaSourceUpdate {
 	_u.mutation.SetProtocol(v)
@@ -570,12 +584,6 @@ func (_u *MediaSourceUpdate) ClearFormats() *MediaSourceUpdate {
 	return _u
 }
 
-// SetItemID sets the "item" edge to the Item entity by ID.
-func (_u *MediaSourceUpdate) SetItemID(id uuid.UUID) *MediaSourceUpdate {
-	_u.mutation.SetItemID(id)
-	return _u
-}
-
 // SetItem sets the "item" edge to the Item entity.
 func (_u *MediaSourceUpdate) SetItem(v *Item) *MediaSourceUpdate {
 	return _u.SetItemID(v.ID)
@@ -1063,6 +1071,20 @@ func (_u *MediaSourceUpdateOne) SetNillableCreatedAt(v *time.Time) *MediaSourceU
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *MediaSourceUpdateOne) SetUpdatedAt(v time.Time) *MediaSourceUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetItemID sets the "item_id" field.
+func (_u *MediaSourceUpdateOne) SetItemID(v uuid.UUID) *MediaSourceUpdateOne {
+	_u.mutation.SetItemID(v)
+	return _u
+}
+
+// SetNillableItemID sets the "item_id" field if the given value is not nil.
+func (_u *MediaSourceUpdateOne) SetNillableItemID(v *uuid.UUID) *MediaSourceUpdateOne {
+	if v != nil {
+		_u.SetItemID(*v)
+	}
 	return _u
 }
 
@@ -1580,12 +1602,6 @@ func (_u *MediaSourceUpdateOne) AppendFormats(v []string) *MediaSourceUpdateOne 
 // ClearFormats clears the value of the "formats" field.
 func (_u *MediaSourceUpdateOne) ClearFormats() *MediaSourceUpdateOne {
 	_u.mutation.ClearFormats()
-	return _u
-}
-
-// SetItemID sets the "item" edge to the Item entity by ID.
-func (_u *MediaSourceUpdateOne) SetItemID(id uuid.UUID) *MediaSourceUpdateOne {
-	_u.mutation.SetItemID(id)
 	return _u
 }
 

@@ -5,6 +5,7 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+	"github.com/google/uuid"
 )
 
 type MediaStream struct {
@@ -13,6 +14,8 @@ type MediaStream struct {
 
 func (MediaStream) Fields() []ent.Field {
 	return withDefaultFields(
+		field.UUID("source_id", uuid.UUID{}),
+
 		field.Enum("kind").Values(
 			"Audio", "Video", "Subtitle", "EmbeddedImage", "Data", "Lyric",
 		),
@@ -23,7 +26,7 @@ func (MediaStream) Fields() []ent.Field {
 		),
 		field.Enum("audio_spatial_format").Optional().Values("None", "DolbyAtmos", "DTSX"),
 
-		field.Int32("index"),
+		field.Int32("index").Default(0),
 		field.String("codec").Optional(),
 		field.String("codec_tag").Optional(),
 		field.String("profile").Optional(),
@@ -67,24 +70,24 @@ func (MediaStream) Fields() []ent.Field {
 		field.Float("real_frame_rate").Optional(),
 		field.Float("reference_frame_rate").Optional(),
 
-		field.Bool("is_default"),
-		field.Bool("is_forced"),
-		field.Bool("is_external"),
-		field.Bool("is_interlaced"),
-		field.Bool("is_anamorphic"),
-		field.Bool("is_avc"),
-		field.Bool("is_hearing_impaired"),
+		field.Bool("is_default").Default(false),
+		field.Bool("is_forced").Default(false),
+		field.Bool("is_external").Default(false),
+		field.Bool("is_interlaced").Default(false),
+		field.Bool("is_anamorphic").Default(false),
+		field.Bool("is_avc").Default(false),
+		field.Bool("is_hearing_impaired").Default(false),
 	)
 }
 
 func (MediaStream) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("source", MediaSource.Type).Ref("streams").Unique().Required(),
+		edge.From("source", MediaSource.Type).Ref("streams").Unique().Required().Field("source_id"),
 	}
 }
 
 func (MediaStream) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("index").Edges("source").Unique(),
+		index.Fields("source_id", "index").Unique(),
 	}
 }

@@ -53,6 +53,12 @@ func (_c *ImageCreate) SetNillableUpdatedAt(v *time.Time) *ImageCreate {
 	return _c
 }
 
+// SetItemID sets the "item_id" field.
+func (_c *ImageCreate) SetItemID(v uuid.UUID) *ImageCreate {
+	_c.mutation.SetItemID(v)
+	return _c
+}
+
 // SetKind sets the "kind" field.
 func (_c *ImageCreate) SetKind(v image.Kind) *ImageCreate {
 	_c.mutation.SetKind(v)
@@ -65,9 +71,23 @@ func (_c *ImageCreate) SetIndex(v int32) *ImageCreate {
 	return _c
 }
 
+// SetNillableIndex sets the "index" field if the given value is not nil.
+func (_c *ImageCreate) SetNillableIndex(v *int32) *ImageCreate {
+	if v != nil {
+		_c.SetIndex(*v)
+	}
+	return _c
+}
+
 // SetPath sets the "path" field.
 func (_c *ImageCreate) SetPath(v string) *ImageCreate {
 	_c.mutation.SetPath(v)
+	return _c
+}
+
+// SetTag sets the "tag" field.
+func (_c *ImageCreate) SetTag(v string) *ImageCreate {
+	_c.mutation.SetTag(v)
 	return _c
 }
 
@@ -133,12 +153,6 @@ func (_c *ImageCreate) SetID(v uuid.UUID) *ImageCreate {
 	return _c
 }
 
-// SetItemID sets the "item" edge to the Item entity by ID.
-func (_c *ImageCreate) SetItemID(id uuid.UUID) *ImageCreate {
-	_c.mutation.SetItemID(id)
-	return _c
-}
-
 // SetItem sets the "item" edge to the Item entity.
 func (_c *ImageCreate) SetItem(v *Item) *ImageCreate {
 	return _c.SetItemID(v.ID)
@@ -187,6 +201,10 @@ func (_c *ImageCreate) defaults() {
 		v := image.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Index(); !ok {
+		v := image.DefaultIndex
+		_c.mutation.SetIndex(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -196,6 +214,9 @@ func (_c *ImageCreate) check() error {
 	}
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`store: missing required field "Image.updated_at"`)}
+	}
+	if _, ok := _c.mutation.ItemID(); !ok {
+		return &ValidationError{Name: "item_id", err: errors.New(`store: missing required field "Image.item_id"`)}
 	}
 	if _, ok := _c.mutation.Kind(); !ok {
 		return &ValidationError{Name: "kind", err: errors.New(`store: missing required field "Image.kind"`)}
@@ -210,6 +231,9 @@ func (_c *ImageCreate) check() error {
 	}
 	if _, ok := _c.mutation.Path(); !ok {
 		return &ValidationError{Name: "path", err: errors.New(`store: missing required field "Image.path"`)}
+	}
+	if _, ok := _c.mutation.Tag(); !ok {
+		return &ValidationError{Name: "tag", err: errors.New(`store: missing required field "Image.tag"`)}
 	}
 	if len(_c.mutation.ItemIDs()) == 0 {
 		return &ValidationError{Name: "item", err: errors.New(`store: missing required edge "Image.item"`)}
@@ -270,6 +294,10 @@ func (_c *ImageCreate) createSpec() (*Image, *sqlgraph.CreateSpec) {
 		_spec.SetField(image.FieldPath, field.TypeString, value)
 		_node.Path = value
 	}
+	if value, ok := _c.mutation.Tag(); ok {
+		_spec.SetField(image.FieldTag, field.TypeString, value)
+		_node.Tag = value
+	}
 	if value, ok := _c.mutation.BlurHash(); ok {
 		_spec.SetField(image.FieldBlurHash, field.TypeString, value)
 		_node.BlurHash = value
@@ -300,7 +328,7 @@ func (_c *ImageCreate) createSpec() (*Image, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.item_images = &nodes[0]
+		_node.ItemID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -379,6 +407,18 @@ func (u *ImageUpsert) UpdateUpdatedAt() *ImageUpsert {
 	return u
 }
 
+// SetItemID sets the "item_id" field.
+func (u *ImageUpsert) SetItemID(v uuid.UUID) *ImageUpsert {
+	u.Set(image.FieldItemID, v)
+	return u
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *ImageUpsert) UpdateItemID() *ImageUpsert {
+	u.SetExcluded(image.FieldItemID)
+	return u
+}
+
 // SetKind sets the "kind" field.
 func (u *ImageUpsert) SetKind(v image.Kind) *ImageUpsert {
 	u.Set(image.FieldKind, v)
@@ -418,6 +458,18 @@ func (u *ImageUpsert) SetPath(v string) *ImageUpsert {
 // UpdatePath sets the "path" field to the value that was provided on create.
 func (u *ImageUpsert) UpdatePath() *ImageUpsert {
 	u.SetExcluded(image.FieldPath)
+	return u
+}
+
+// SetTag sets the "tag" field.
+func (u *ImageUpsert) SetTag(v string) *ImageUpsert {
+	u.Set(image.FieldTag, v)
+	return u
+}
+
+// UpdateTag sets the "tag" field to the value that was provided on create.
+func (u *ImageUpsert) UpdateTag() *ImageUpsert {
+	u.SetExcluded(image.FieldTag)
 	return u
 }
 
@@ -587,6 +639,20 @@ func (u *ImageUpsertOne) UpdateUpdatedAt() *ImageUpsertOne {
 	})
 }
 
+// SetItemID sets the "item_id" field.
+func (u *ImageUpsertOne) SetItemID(v uuid.UUID) *ImageUpsertOne {
+	return u.Update(func(s *ImageUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *ImageUpsertOne) UpdateItemID() *ImageUpsertOne {
+	return u.Update(func(s *ImageUpsert) {
+		s.UpdateItemID()
+	})
+}
+
 // SetKind sets the "kind" field.
 func (u *ImageUpsertOne) SetKind(v image.Kind) *ImageUpsertOne {
 	return u.Update(func(s *ImageUpsert) {
@@ -633,6 +699,20 @@ func (u *ImageUpsertOne) SetPath(v string) *ImageUpsertOne {
 func (u *ImageUpsertOne) UpdatePath() *ImageUpsertOne {
 	return u.Update(func(s *ImageUpsert) {
 		s.UpdatePath()
+	})
+}
+
+// SetTag sets the "tag" field.
+func (u *ImageUpsertOne) SetTag(v string) *ImageUpsertOne {
+	return u.Update(func(s *ImageUpsert) {
+		s.SetTag(v)
+	})
+}
+
+// UpdateTag sets the "tag" field to the value that was provided on create.
+func (u *ImageUpsertOne) UpdateTag() *ImageUpsertOne {
+	return u.Update(func(s *ImageUpsert) {
+		s.UpdateTag()
 	})
 }
 
@@ -984,6 +1064,20 @@ func (u *ImageUpsertBulk) UpdateUpdatedAt() *ImageUpsertBulk {
 	})
 }
 
+// SetItemID sets the "item_id" field.
+func (u *ImageUpsertBulk) SetItemID(v uuid.UUID) *ImageUpsertBulk {
+	return u.Update(func(s *ImageUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *ImageUpsertBulk) UpdateItemID() *ImageUpsertBulk {
+	return u.Update(func(s *ImageUpsert) {
+		s.UpdateItemID()
+	})
+}
+
 // SetKind sets the "kind" field.
 func (u *ImageUpsertBulk) SetKind(v image.Kind) *ImageUpsertBulk {
 	return u.Update(func(s *ImageUpsert) {
@@ -1030,6 +1124,20 @@ func (u *ImageUpsertBulk) SetPath(v string) *ImageUpsertBulk {
 func (u *ImageUpsertBulk) UpdatePath() *ImageUpsertBulk {
 	return u.Update(func(s *ImageUpsert) {
 		s.UpdatePath()
+	})
+}
+
+// SetTag sets the "tag" field.
+func (u *ImageUpsertBulk) SetTag(v string) *ImageUpsertBulk {
+	return u.Update(func(s *ImageUpsert) {
+		s.SetTag(v)
+	})
+}
+
+// UpdateTag sets the "tag" field to the value that was provided on create.
+func (u *ImageUpsertBulk) UpdateTag() *ImageUpsertBulk {
+	return u.Update(func(s *ImageUpsert) {
+		s.UpdateTag()
 	})
 }
 

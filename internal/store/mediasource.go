@@ -24,6 +24,8 @@ type MediaSource struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// ItemID holds the value of the "item_id" field.
+	ItemID uuid.UUID `json:"item_id,omitempty"`
 	// Protocol holds the value of the "protocol" field.
 	Protocol mediasource.Protocol `json:"protocol,omitempty"`
 	// EncoderProtocol holds the value of the "encoder_protocol" field.
@@ -84,9 +86,8 @@ type MediaSource struct {
 	Formats []string `json:"formats,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the MediaSourceQuery when eager-loading is set.
-	Edges              MediaSourceEdges `json:"edges"`
-	item_media_sources *uuid.UUID
-	selectValues       sql.SelectValues
+	Edges        MediaSourceEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // MediaSourceEdges holds the relations/edges for other nodes in the graph.
@@ -146,10 +147,8 @@ func (*MediaSource) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case mediasource.FieldCreatedAt, mediasource.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case mediasource.FieldID:
+		case mediasource.FieldID, mediasource.FieldItemID:
 			values[i] = new(uuid.UUID)
-		case mediasource.ForeignKeys[0]: // item_media_sources
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -182,6 +181,12 @@ func (_m *MediaSource) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
+			}
+		case mediasource.FieldItemID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field item_id", values[i])
+			} else if value != nil {
+				_m.ItemID = *value
 			}
 		case mediasource.FieldProtocol:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -359,13 +364,6 @@ func (_m *MediaSource) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field formats: %w", err)
 				}
 			}
-		case mediasource.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullScanner); !ok {
-				return fmt.Errorf("unexpected type %T for field item_media_sources", values[i])
-			} else if value.Valid {
-				_m.item_media_sources = new(uuid.UUID)
-				*_m.item_media_sources = *value.S.(*uuid.UUID)
-			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -422,6 +420,9 @@ func (_m *MediaSource) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
 	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("item_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ItemID))
 	builder.WriteString(", ")
 	builder.WriteString("protocol=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Protocol))

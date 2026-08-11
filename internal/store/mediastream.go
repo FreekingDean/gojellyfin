@@ -23,6 +23,8 @@ type MediaStream struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// SourceID holds the value of the "source_id" field.
+	SourceID uuid.UUID `json:"source_id,omitempty"`
 	// Kind holds the value of the "kind" field.
 	Kind mediastream.Kind `json:"kind,omitempty"`
 	// VideoRange holds the value of the "video_range" field.
@@ -127,9 +129,8 @@ type MediaStream struct {
 	IsHearingImpaired bool `json:"is_hearing_impaired,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the MediaStreamQuery when eager-loading is set.
-	Edges                MediaStreamEdges `json:"edges"`
-	media_source_streams *uuid.UUID
-	selectValues         sql.SelectValues
+	Edges        MediaStreamEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // MediaStreamEdges holds the relations/edges for other nodes in the graph.
@@ -167,10 +168,8 @@ func (*MediaStream) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case mediastream.FieldCreatedAt, mediastream.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case mediastream.FieldID:
+		case mediastream.FieldID, mediastream.FieldSourceID:
 			values[i] = new(uuid.UUID)
-		case mediastream.ForeignKeys[0]: // media_source_streams
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -203,6 +202,12 @@ func (_m *MediaStream) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
+			}
+		case mediastream.FieldSourceID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field source_id", values[i])
+			} else if value != nil {
+				_m.SourceID = *value
 			}
 		case mediastream.FieldKind:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -510,13 +515,6 @@ func (_m *MediaStream) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.IsHearingImpaired = value.Bool
 			}
-		case mediastream.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullScanner); !ok {
-				return fmt.Errorf("unexpected type %T for field media_source_streams", values[i])
-			} else if value.Valid {
-				_m.media_source_streams = new(uuid.UUID)
-				*_m.media_source_streams = *value.S.(*uuid.UUID)
-			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -563,6 +561,9 @@ func (_m *MediaStream) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
 	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("source_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SourceID))
 	builder.WriteString(", ")
 	builder.WriteString("kind=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Kind))

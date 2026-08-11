@@ -25,7 +25,6 @@ type MediaStreamQuery struct {
 	inters     []Interceptor
 	predicates []predicate.MediaStream
 	withSource *MediaSourceQuery
-	withFKs    bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -371,18 +370,11 @@ func (_q *MediaStreamQuery) prepareQuery(ctx context.Context) error {
 func (_q *MediaStreamQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*MediaStream, error) {
 	var (
 		nodes       = []*MediaStream{}
-		withFKs     = _q.withFKs
 		_spec       = _q.querySpec()
 		loadedTypes = [1]bool{
 			_q.withSource != nil,
 		}
 	)
-	if _q.withSource != nil {
-		withFKs = true
-	}
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, mediastream.ForeignKeys...)
-	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*MediaStream).scanValues(nil, columns)
 	}
@@ -414,10 +406,7 @@ func (_q *MediaStreamQuery) loadSource(ctx context.Context, query *MediaSourceQu
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*MediaStream)
 	for i := range nodes {
-		if nodes[i].media_source_streams == nil {
-			continue
-		}
-		fk := *nodes[i].media_source_streams
+		fk := nodes[i].SourceID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -434,7 +423,7 @@ func (_q *MediaStreamQuery) loadSource(ctx context.Context, query *MediaSourceQu
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "media_source_streams" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "source_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -467,6 +456,9 @@ func (_q *MediaStreamQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != mediastream.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withSource != nil {
+			_spec.Node.AddColumnOnce(mediastream.FieldSourceID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

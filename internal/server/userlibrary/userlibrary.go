@@ -89,7 +89,7 @@ func (s *Server) UpdateItemUserData(ctx context.Context, request api.UpdateItemU
 		datum.PlaybackPositionTicks = *req.PlaybackPositionTicks
 	}
 	if req.LastPlayedDate != nil {
-		datum.LastPlayedDate = req.LastPlayedDate
+		datum.LastPlayedAt = req.LastPlayedDate
 	}
 
 	if err := s.items.SaveUserItemDatum(ctx, datum); err != nil {
@@ -120,7 +120,7 @@ func (s *Server) savePlayed(ctx context.Context, itemID uuid.UUID, played bool) 
 	datum.PlaybackPositionTicks = 0
 	if played {
 		datum.PlayCount++
-		datum.LastPlayedDate = apiutil.Ptr(time.Now())
+		datum.LastPlayedAt = apiutil.Ptr(time.Now())
 	}
 
 	return datum, s.items.SaveUserItemDatum(ctx, datum)
@@ -132,5 +132,5 @@ func (s *Server) userItemDatum(ctx context.Context, itemID uuid.UUID) (*items.Da
 		return nil, auth.ErrUnauthorized
 	}
 
-	return s.items.GetUserItemDatum(ctx, userID, itemID)
+	return s.items.UserItemDatum(ctx, userID, itemID)
 }

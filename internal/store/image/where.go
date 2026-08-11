@@ -66,6 +66,11 @@ func UpdatedAt(v time.Time) predicate.Image {
 	return predicate.Image(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
+// ItemID applies equality check predicate on the "item_id" field. It's identical to ItemIDEQ.
+func ItemID(v uuid.UUID) predicate.Image {
+	return predicate.Image(sql.FieldEQ(FieldItemID, v))
+}
+
 // Index applies equality check predicate on the "index" field. It's identical to IndexEQ.
 func Index(v int32) predicate.Image {
 	return predicate.Image(sql.FieldEQ(FieldIndex, v))
@@ -74,6 +79,11 @@ func Index(v int32) predicate.Image {
 // Path applies equality check predicate on the "path" field. It's identical to PathEQ.
 func Path(v string) predicate.Image {
 	return predicate.Image(sql.FieldEQ(FieldPath, v))
+}
+
+// Tag applies equality check predicate on the "tag" field. It's identical to TagEQ.
+func Tag(v string) predicate.Image {
+	return predicate.Image(sql.FieldEQ(FieldTag, v))
 }
 
 // BlurHash applies equality check predicate on the "blur_hash" field. It's identical to BlurHashEQ.
@@ -174,6 +184,26 @@ func UpdatedAtLT(v time.Time) predicate.Image {
 // UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
 func UpdatedAtLTE(v time.Time) predicate.Image {
 	return predicate.Image(sql.FieldLTE(FieldUpdatedAt, v))
+}
+
+// ItemIDEQ applies the EQ predicate on the "item_id" field.
+func ItemIDEQ(v uuid.UUID) predicate.Image {
+	return predicate.Image(sql.FieldEQ(FieldItemID, v))
+}
+
+// ItemIDNEQ applies the NEQ predicate on the "item_id" field.
+func ItemIDNEQ(v uuid.UUID) predicate.Image {
+	return predicate.Image(sql.FieldNEQ(FieldItemID, v))
+}
+
+// ItemIDIn applies the In predicate on the "item_id" field.
+func ItemIDIn(vs ...uuid.UUID) predicate.Image {
+	return predicate.Image(sql.FieldIn(FieldItemID, vs...))
+}
+
+// ItemIDNotIn applies the NotIn predicate on the "item_id" field.
+func ItemIDNotIn(vs ...uuid.UUID) predicate.Image {
+	return predicate.Image(sql.FieldNotIn(FieldItemID, vs...))
 }
 
 // KindEQ applies the EQ predicate on the "kind" field.
@@ -299,6 +329,71 @@ func PathEqualFold(v string) predicate.Image {
 // PathContainsFold applies the ContainsFold predicate on the "path" field.
 func PathContainsFold(v string) predicate.Image {
 	return predicate.Image(sql.FieldContainsFold(FieldPath, v))
+}
+
+// TagEQ applies the EQ predicate on the "tag" field.
+func TagEQ(v string) predicate.Image {
+	return predicate.Image(sql.FieldEQ(FieldTag, v))
+}
+
+// TagNEQ applies the NEQ predicate on the "tag" field.
+func TagNEQ(v string) predicate.Image {
+	return predicate.Image(sql.FieldNEQ(FieldTag, v))
+}
+
+// TagIn applies the In predicate on the "tag" field.
+func TagIn(vs ...string) predicate.Image {
+	return predicate.Image(sql.FieldIn(FieldTag, vs...))
+}
+
+// TagNotIn applies the NotIn predicate on the "tag" field.
+func TagNotIn(vs ...string) predicate.Image {
+	return predicate.Image(sql.FieldNotIn(FieldTag, vs...))
+}
+
+// TagGT applies the GT predicate on the "tag" field.
+func TagGT(v string) predicate.Image {
+	return predicate.Image(sql.FieldGT(FieldTag, v))
+}
+
+// TagGTE applies the GTE predicate on the "tag" field.
+func TagGTE(v string) predicate.Image {
+	return predicate.Image(sql.FieldGTE(FieldTag, v))
+}
+
+// TagLT applies the LT predicate on the "tag" field.
+func TagLT(v string) predicate.Image {
+	return predicate.Image(sql.FieldLT(FieldTag, v))
+}
+
+// TagLTE applies the LTE predicate on the "tag" field.
+func TagLTE(v string) predicate.Image {
+	return predicate.Image(sql.FieldLTE(FieldTag, v))
+}
+
+// TagContains applies the Contains predicate on the "tag" field.
+func TagContains(v string) predicate.Image {
+	return predicate.Image(sql.FieldContains(FieldTag, v))
+}
+
+// TagHasPrefix applies the HasPrefix predicate on the "tag" field.
+func TagHasPrefix(v string) predicate.Image {
+	return predicate.Image(sql.FieldHasPrefix(FieldTag, v))
+}
+
+// TagHasSuffix applies the HasSuffix predicate on the "tag" field.
+func TagHasSuffix(v string) predicate.Image {
+	return predicate.Image(sql.FieldHasSuffix(FieldTag, v))
+}
+
+// TagEqualFold applies the EqualFold predicate on the "tag" field.
+func TagEqualFold(v string) predicate.Image {
+	return predicate.Image(sql.FieldEqualFold(FieldTag, v))
+}
+
+// TagContainsFold applies the ContainsFold predicate on the "tag" field.
+func TagContainsFold(v string) predicate.Image {
+	return predicate.Image(sql.FieldContainsFold(FieldTag, v))
 }
 
 // BlurHashEQ applies the EQ predicate on the "blur_hash" field.

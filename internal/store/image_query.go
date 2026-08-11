@@ -25,7 +25,6 @@ type ImageQuery struct {
 	inters     []Interceptor
 	predicates []predicate.Image
 	withItem   *ItemQuery
-	withFKs    bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -371,18 +370,11 @@ func (_q *ImageQuery) prepareQuery(ctx context.Context) error {
 func (_q *ImageQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Image, error) {
 	var (
 		nodes       = []*Image{}
-		withFKs     = _q.withFKs
 		_spec       = _q.querySpec()
 		loadedTypes = [1]bool{
 			_q.withItem != nil,
 		}
 	)
-	if _q.withItem != nil {
-		withFKs = true
-	}
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, image.ForeignKeys...)
-	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Image).scanValues(nil, columns)
 	}
@@ -414,10 +406,7 @@ func (_q *ImageQuery) loadItem(ctx context.Context, query *ItemQuery, nodes []*I
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*Image)
 	for i := range nodes {
-		if nodes[i].item_images == nil {
-			continue
-		}
-		fk := *nodes[i].item_images
+		fk := nodes[i].ItemID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -434,7 +423,7 @@ func (_q *ImageQuery) loadItem(ctx context.Context, query *ItemQuery, nodes []*I
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "item_images" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "item_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -467,6 +456,9 @@ func (_q *ImageQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != image.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withItem != nil {
+			_spec.Node.AddColumnOnce(image.FieldItemID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

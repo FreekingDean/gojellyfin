@@ -5,6 +5,7 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+	"github.com/google/uuid"
 )
 
 type Image struct {
@@ -13,12 +14,15 @@ type Image struct {
 
 func (Image) Fields() []ent.Field {
 	return withDefaultFields(
+		field.UUID("item_id", uuid.UUID{}),
+
 		field.Enum("kind").Values(
 			"Primary", "Art", "Backdrop", "Banner", "Logo", "Thumb", "Disc",
 			"Box", "Screenshot", "Menu", "Chapter", "BoxRear", "Profile",
 		),
-		field.Int32("index"),
+		field.Int32("index").Default(0),
 		field.String("path"),
+		field.String("tag"),
 		field.String("blur_hash").Optional(),
 		field.Int32("width").Optional(),
 		field.Int32("height").Optional(),
@@ -28,12 +32,12 @@ func (Image) Fields() []ent.Field {
 
 func (Image) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("item", Item.Type).Ref("images").Unique().Required(),
+		edge.From("item", Item.Type).Ref("images").Unique().Required().Field("item_id"),
 	}
 }
 
 func (Image) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("kind", "index").Edges("item").Unique(),
+		index.Fields("item_id", "kind", "index").Unique(),
 	}
 }

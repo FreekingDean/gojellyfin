@@ -2,95 +2,150 @@ package libraries
 
 import (
 	"context"
-	"errors"
-	"time"
+	"fmt"
+	"slices"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
+	"github.com/FreekingDean/gojellyfin/internal/store/entities"
+	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
+	optionsmodal "github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
+)
+
+type (
+	Library           = store.Library
+	Options           = store.LibraryOptions
+	CollectionType    = librarymodal.CollectionType
+	EmbeddedSubtitles = optionsmodal.AllowEmbeddedSubtitles
+	TypeOptions       = entities.TypeOptions
 )
 
 type Service struct {
-	db *gorm.DB
+	store *store.Client
 }
 
-func New(db *gorm.DB) *Service {
-	return &Service{db: db}
+func New(client *store.Client) *Service {
+	return &Service{store: client}
 }
 
-type Library struct {
-	ID             uuid.UUID `gorm:"type:uuid;default:gen_random_uuid()"`
-	Name           string    `gorm:"uniqueIndex"`
-	CollectionType string
-	Options        store.JSON
-	Paths          []LibraryPath `gorm:"foreignKey:LibraryID;constraint:OnDelete:CASCADE"`
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-}
+func (s *Service) CreateLibrary(ctx context.Context, name string, collectionType CollectionType, locations []string) (*Library, error) {
+	var id uuid.UUID
+	err := s.store.WithTx(ctx, func(tx *store.Tx) error {
+		library, err := tx.Library.Create().
+			SetName(name).
+			SetCollectionType(collectionType).
+			SetLocations(locations).
+			Save(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to create library: %w", err)
+		}
+		id = library.ID
 
-type LibraryPath struct {
-	ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid()"`
-	LibraryID uuid.UUID `gorm:"type:uuid;uniqueIndex:idx_library_paths_library_path"`
-	Path      string    `gorm:"uniqueIndex:idx_library_paths_library_path"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
+		if _, err := tx.LibraryOptions.Create().SetLibrary(library).Save(ctx); err != nil {
+			return fmt.Errorf("failed to create library options: %w", err)
+		}
 
-func (s *Service) CreateLibrary(ctx context.Context, library *Library) error {
-	return s.db.WithContext(ctx).Create(library).Error
-}
-
-func (s *Service) GetLibrary(ctx context.Context, id uuid.UUID) (*Library, error) {
-	var library Library
-	if err := s.db.WithContext(ctx).Preload("Paths").First(&library, "id = ?", id).Error; err != nil {
+		return nil
+	})
+	if err != nil {
 		return nil, err
 	}
 
-	return &library, nil
+	return s.Library(ctx, id)
 }
 
-func (s *Service) GetLibraryByName(ctx context.Context, name string) (*Library, error) {
-	var library Library
-	if err := s.db.WithContext(ctx).Preload("Paths").First(&library, "name = ?", name).Error; err != nil {
-		return nil, err
+func (s *Service) Library(ctx context.Context, id uuid.UUID) (*Library, error) {
+	library, err := s.store.Library.Query().
+		Where(librarymodal.ID(id)).
+		WithOptions().
+		Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query library: %w", err)
 	}
 
-	return &library, nil
+	return library, nil
 }
 
-func (s *Service) ListLibraries(ctx context.Context) ([]Library, error) {
-	var libraries []Library
-	if err := s.db.WithContext(ctx).Preload("Paths").Find(&libraries).Error; err != nil {
-		return nil, err
+func (s *Service) LibraryByName(ctx context.Context, name string) (*Library, error) {
+	library, err := s.store.Library.Query().
+		Where(librarymodal.Name(name)).
+		WithOptions().
+		Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query library by name: %w", err)
+	}
+
+	return library, nil
+}
+
+func (s *Service) ListLibraries(ctx context.Context) ([]*Library, error) {
+	libraries, err := s.store.Library.Query().
+		WithOptions().
+		Order(librarymodal.ByName()).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list libraries: %w", err)
 	}
 
 	return libraries, nil
 }
 
-func (s *Service) UpdateLibrary(ctx context.Context, library *Library) error {
-	return s.db.WithContext(ctx).Omit("Paths").Save(library).Error
+func (s *Service) Rename(ctx context.Context, id uuid.UUID, name string) error {
+	if err := s.store.Library.UpdateOneID(id).SetName(name).Exec(ctx); err != nil {
+		return fmt.Errorf("failed to rename library: %w", err)
+	}
+
+	return nil
 }
 
 func (s *Service) DeleteLibrary(ctx context.Context, id uuid.UUID) error {
-	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Delete(&LibraryPath{}, "library_id = ?", id).Error; err != nil {
-			return err
-		}
+	if err := s.store.Library.DeleteOneID(id).Exec(ctx); err != nil {
+		return fmt.Errorf("failed to delete library: %w", err)
+	}
 
-		return tx.Delete(&Library{}, "id = ?", id).Error
-	})
+	return nil
 }
 
-func (s *Service) AddLibraryPath(ctx context.Context, libraryID uuid.UUID, path string) error {
-	err := s.db.WithContext(ctx).Create(&LibraryPath{LibraryID: libraryID, Path: path}).Error
-	if errors.Is(err, gorm.ErrDuplicatedKey) {
+// The caller chains the fields it wants changed; every field has a
+// SetNillable form, which is the shape the api sends them in.
+func (s *Service) UpdateOptions(id uuid.UUID) *store.LibraryOptionsUpdate {
+	return s.store.LibraryOptions.Update().
+		Where(optionsmodal.HasLibraryWith(librarymodal.ID(id)))
+}
+
+func (s *Service) AddLocation(ctx context.Context, id uuid.UUID, path string) error {
+	library, err := s.Library(ctx, id)
+	if err != nil {
+		return err
+	}
+	if slices.Contains(library.Locations, path) {
 		return nil
 	}
 
-	return err
+	err = s.store.Library.UpdateOneID(id).
+		SetLocations(append(library.Locations, path)).
+		Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to add library location: %w", err)
+	}
+
+	return nil
 }
 
-func (s *Service) RemoveLibraryPath(ctx context.Context, libraryID uuid.UUID, path string) error {
-	return s.db.WithContext(ctx).Delete(&LibraryPath{}, "library_id = ? AND path = ?", libraryID, path).Error
+func (s *Service) RemoveLocation(ctx context.Context, id uuid.UUID, path string) error {
+	library, err := s.Library(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	locations := slices.DeleteFunc(slices.Clone(library.Locations), func(location string) bool {
+		return location == path
+	})
+
+	if err := s.store.Library.UpdateOneID(id).SetLocations(locations).Exec(ctx); err != nil {
+		return fmt.Errorf("failed to remove library location: %w", err)
+	}
+
+	return nil
 }

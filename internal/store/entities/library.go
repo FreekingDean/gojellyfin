@@ -12,12 +12,12 @@ type Library struct {
 
 func (Library) Fields() []ent.Field {
 	return withDefaultFields(
-		field.String("name"),
+		field.String("name").Unique(),
 		field.Enum("collection_type").Values(
 			"movies", "tvshows", "music", "musicvideos",
 			"homevideos", "boxsets", "books", "mixed",
-		),
-		field.JSON("locations", []string{}),
+		).Default("mixed"),
+		field.JSON("locations", []string{}).Default([]string{}),
 	)
 }
 

@@ -153,6 +153,10 @@ func init() {
 	image.DefaultUpdatedAt = imageDescUpdatedAt.Default.(func() time.Time)
 	// image.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	image.UpdateDefaultUpdatedAt = imageDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// imageDescIndex is the schema descriptor for index field.
+	imageDescIndex := imageFields[5].Descriptor()
+	// image.DefaultIndex holds the default value on creation for the index field.
+	image.DefaultIndex = imageDescIndex.Default.(int32)
 	itemFields := entities.Item{}.Fields()
 	_ = itemFields
 	// itemDescCreatedAt is the schema descriptor for created_at field.
@@ -165,6 +169,34 @@ func init() {
 	item.DefaultUpdatedAt = itemDescUpdatedAt.Default.(func() time.Time)
 	// item.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	item.UpdateDefaultUpdatedAt = itemDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// itemDescForcedSortName is the schema descriptor for forced_sort_name field.
+	itemDescForcedSortName := itemFields[15].Descriptor()
+	// item.DefaultForcedSortName holds the default value on creation for the forced_sort_name field.
+	item.DefaultForcedSortName = itemDescForcedSortName.Default.(bool)
+	// itemDescIsFolder is the schema descriptor for is_folder field.
+	itemDescIsFolder := itemFields[19].Descriptor()
+	// item.DefaultIsFolder holds the default value on creation for the is_folder field.
+	item.DefaultIsFolder = itemDescIsFolder.Default.(bool)
+	// itemDescIsPlaceholder is the schema descriptor for is_placeholder field.
+	itemDescIsPlaceholder := itemFields[20].Descriptor()
+	// item.DefaultIsPlaceholder holds the default value on creation for the is_placeholder field.
+	item.DefaultIsPlaceholder = itemDescIsPlaceholder.Default.(bool)
+	// itemDescLockData is the schema descriptor for lock_data field.
+	itemDescLockData := itemFields[21].Descriptor()
+	// item.DefaultLockData holds the default value on creation for the lock_data field.
+	item.DefaultLockData = itemDescLockData.Default.(bool)
+	// itemDescHasLyrics is the schema descriptor for has_lyrics field.
+	itemDescHasLyrics := itemFields[22].Descriptor()
+	// item.DefaultHasLyrics holds the default value on creation for the has_lyrics field.
+	item.DefaultHasLyrics = itemDescHasLyrics.Default.(bool)
+	// itemDescHasSubtitles is the schema descriptor for has_subtitles field.
+	itemDescHasSubtitles := itemFields[23].Descriptor()
+	// item.DefaultHasSubtitles holds the default value on creation for the has_subtitles field.
+	item.DefaultHasSubtitles = itemDescHasSubtitles.Default.(bool)
+	// itemDescEnableMediaSourceDisplay is the schema descriptor for enable_media_source_display field.
+	itemDescEnableMediaSourceDisplay := itemFields[24].Descriptor()
+	// item.DefaultEnableMediaSourceDisplay holds the default value on creation for the enable_media_source_display field.
+	item.DefaultEnableMediaSourceDisplay = itemDescEnableMediaSourceDisplay.Default.(bool)
 	libraryFields := entities.Library{}.Fields()
 	_ = libraryFields
 	// libraryDescCreatedAt is the schema descriptor for created_at field.
@@ -177,6 +209,10 @@ func init() {
 	library.DefaultUpdatedAt = libraryDescUpdatedAt.Default.(func() time.Time)
 	// library.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	library.UpdateDefaultUpdatedAt = libraryDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// libraryDescLocations is the schema descriptor for locations field.
+	libraryDescLocations := libraryFields[5].Descriptor()
+	// library.DefaultLocations holds the default value on creation for the locations field.
+	library.DefaultLocations = libraryDescLocations.Default.([]string)
 	libraryoptionsFields := entities.LibraryOptions{}.Fields()
 	_ = libraryoptionsFields
 	// libraryoptionsDescCreatedAt is the schema descriptor for created_at field.
@@ -189,6 +225,166 @@ func init() {
 	libraryoptions.DefaultUpdatedAt = libraryoptionsDescUpdatedAt.Default.(func() time.Time)
 	// libraryoptions.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	libraryoptions.UpdateDefaultUpdatedAt = libraryoptionsDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// libraryoptionsDescEnabled is the schema descriptor for enabled field.
+	libraryoptionsDescEnabled := libraryoptionsFields[3].Descriptor()
+	// libraryoptions.DefaultEnabled holds the default value on creation for the enabled field.
+	libraryoptions.DefaultEnabled = libraryoptionsDescEnabled.Default.(bool)
+	// libraryoptionsDescEnablePhotos is the schema descriptor for enable_photos field.
+	libraryoptionsDescEnablePhotos := libraryoptionsFields[4].Descriptor()
+	// libraryoptions.DefaultEnablePhotos holds the default value on creation for the enable_photos field.
+	libraryoptions.DefaultEnablePhotos = libraryoptionsDescEnablePhotos.Default.(bool)
+	// libraryoptionsDescEnableRealtimeMonitor is the schema descriptor for enable_realtime_monitor field.
+	libraryoptionsDescEnableRealtimeMonitor := libraryoptionsFields[5].Descriptor()
+	// libraryoptions.DefaultEnableRealtimeMonitor holds the default value on creation for the enable_realtime_monitor field.
+	libraryoptions.DefaultEnableRealtimeMonitor = libraryoptionsDescEnableRealtimeMonitor.Default.(bool)
+	// libraryoptionsDescEnableLufsScan is the schema descriptor for enable_lufs_scan field.
+	libraryoptionsDescEnableLufsScan := libraryoptionsFields[6].Descriptor()
+	// libraryoptions.DefaultEnableLufsScan holds the default value on creation for the enable_lufs_scan field.
+	libraryoptions.DefaultEnableLufsScan = libraryoptionsDescEnableLufsScan.Default.(bool)
+	// libraryoptionsDescEnableChapterImageExtraction is the schema descriptor for enable_chapter_image_extraction field.
+	libraryoptionsDescEnableChapterImageExtraction := libraryoptionsFields[7].Descriptor()
+	// libraryoptions.DefaultEnableChapterImageExtraction holds the default value on creation for the enable_chapter_image_extraction field.
+	libraryoptions.DefaultEnableChapterImageExtraction = libraryoptionsDescEnableChapterImageExtraction.Default.(bool)
+	// libraryoptionsDescExtractChapterImagesDuringLibraryScan is the schema descriptor for extract_chapter_images_during_library_scan field.
+	libraryoptionsDescExtractChapterImagesDuringLibraryScan := libraryoptionsFields[8].Descriptor()
+	// libraryoptions.DefaultExtractChapterImagesDuringLibraryScan holds the default value on creation for the extract_chapter_images_during_library_scan field.
+	libraryoptions.DefaultExtractChapterImagesDuringLibraryScan = libraryoptionsDescExtractChapterImagesDuringLibraryScan.Default.(bool)
+	// libraryoptionsDescEnableTrickplayImageExtraction is the schema descriptor for enable_trickplay_image_extraction field.
+	libraryoptionsDescEnableTrickplayImageExtraction := libraryoptionsFields[9].Descriptor()
+	// libraryoptions.DefaultEnableTrickplayImageExtraction holds the default value on creation for the enable_trickplay_image_extraction field.
+	libraryoptions.DefaultEnableTrickplayImageExtraction = libraryoptionsDescEnableTrickplayImageExtraction.Default.(bool)
+	// libraryoptionsDescExtractTrickplayImagesDuringLibraryScan is the schema descriptor for extract_trickplay_images_during_library_scan field.
+	libraryoptionsDescExtractTrickplayImagesDuringLibraryScan := libraryoptionsFields[10].Descriptor()
+	// libraryoptions.DefaultExtractTrickplayImagesDuringLibraryScan holds the default value on creation for the extract_trickplay_images_during_library_scan field.
+	libraryoptions.DefaultExtractTrickplayImagesDuringLibraryScan = libraryoptionsDescExtractTrickplayImagesDuringLibraryScan.Default.(bool)
+	// libraryoptionsDescSaveLocalMetadata is the schema descriptor for save_local_metadata field.
+	libraryoptionsDescSaveLocalMetadata := libraryoptionsFields[11].Descriptor()
+	// libraryoptions.DefaultSaveLocalMetadata holds the default value on creation for the save_local_metadata field.
+	libraryoptions.DefaultSaveLocalMetadata = libraryoptionsDescSaveLocalMetadata.Default.(bool)
+	// libraryoptionsDescEnableInternetProviders is the schema descriptor for enable_internet_providers field.
+	libraryoptionsDescEnableInternetProviders := libraryoptionsFields[12].Descriptor()
+	// libraryoptions.DefaultEnableInternetProviders holds the default value on creation for the enable_internet_providers field.
+	libraryoptions.DefaultEnableInternetProviders = libraryoptionsDescEnableInternetProviders.Default.(bool)
+	// libraryoptionsDescEnableAutomaticSeriesGrouping is the schema descriptor for enable_automatic_series_grouping field.
+	libraryoptionsDescEnableAutomaticSeriesGrouping := libraryoptionsFields[13].Descriptor()
+	// libraryoptions.DefaultEnableAutomaticSeriesGrouping holds the default value on creation for the enable_automatic_series_grouping field.
+	libraryoptions.DefaultEnableAutomaticSeriesGrouping = libraryoptionsDescEnableAutomaticSeriesGrouping.Default.(bool)
+	// libraryoptionsDescEnableEmbeddedTitles is the schema descriptor for enable_embedded_titles field.
+	libraryoptionsDescEnableEmbeddedTitles := libraryoptionsFields[14].Descriptor()
+	// libraryoptions.DefaultEnableEmbeddedTitles holds the default value on creation for the enable_embedded_titles field.
+	libraryoptions.DefaultEnableEmbeddedTitles = libraryoptionsDescEnableEmbeddedTitles.Default.(bool)
+	// libraryoptionsDescEnableEmbeddedExtrasTitles is the schema descriptor for enable_embedded_extras_titles field.
+	libraryoptionsDescEnableEmbeddedExtrasTitles := libraryoptionsFields[15].Descriptor()
+	// libraryoptions.DefaultEnableEmbeddedExtrasTitles holds the default value on creation for the enable_embedded_extras_titles field.
+	libraryoptions.DefaultEnableEmbeddedExtrasTitles = libraryoptionsDescEnableEmbeddedExtrasTitles.Default.(bool)
+	// libraryoptionsDescEnableEmbeddedEpisodeInfos is the schema descriptor for enable_embedded_episode_infos field.
+	libraryoptionsDescEnableEmbeddedEpisodeInfos := libraryoptionsFields[16].Descriptor()
+	// libraryoptions.DefaultEnableEmbeddedEpisodeInfos holds the default value on creation for the enable_embedded_episode_infos field.
+	libraryoptions.DefaultEnableEmbeddedEpisodeInfos = libraryoptionsDescEnableEmbeddedEpisodeInfos.Default.(bool)
+	// libraryoptionsDescSkipSubtitlesIfEmbeddedSubtitlesPresent is the schema descriptor for skip_subtitles_if_embedded_subtitles_present field.
+	libraryoptionsDescSkipSubtitlesIfEmbeddedSubtitlesPresent := libraryoptionsFields[17].Descriptor()
+	// libraryoptions.DefaultSkipSubtitlesIfEmbeddedSubtitlesPresent holds the default value on creation for the skip_subtitles_if_embedded_subtitles_present field.
+	libraryoptions.DefaultSkipSubtitlesIfEmbeddedSubtitlesPresent = libraryoptionsDescSkipSubtitlesIfEmbeddedSubtitlesPresent.Default.(bool)
+	// libraryoptionsDescSkipSubtitlesIfAudioTrackMatches is the schema descriptor for skip_subtitles_if_audio_track_matches field.
+	libraryoptionsDescSkipSubtitlesIfAudioTrackMatches := libraryoptionsFields[18].Descriptor()
+	// libraryoptions.DefaultSkipSubtitlesIfAudioTrackMatches holds the default value on creation for the skip_subtitles_if_audio_track_matches field.
+	libraryoptions.DefaultSkipSubtitlesIfAudioTrackMatches = libraryoptionsDescSkipSubtitlesIfAudioTrackMatches.Default.(bool)
+	// libraryoptionsDescRequirePerfectSubtitleMatch is the schema descriptor for require_perfect_subtitle_match field.
+	libraryoptionsDescRequirePerfectSubtitleMatch := libraryoptionsFields[19].Descriptor()
+	// libraryoptions.DefaultRequirePerfectSubtitleMatch holds the default value on creation for the require_perfect_subtitle_match field.
+	libraryoptions.DefaultRequirePerfectSubtitleMatch = libraryoptionsDescRequirePerfectSubtitleMatch.Default.(bool)
+	// libraryoptionsDescSaveSubtitlesWithMedia is the schema descriptor for save_subtitles_with_media field.
+	libraryoptionsDescSaveSubtitlesWithMedia := libraryoptionsFields[20].Descriptor()
+	// libraryoptions.DefaultSaveSubtitlesWithMedia holds the default value on creation for the save_subtitles_with_media field.
+	libraryoptions.DefaultSaveSubtitlesWithMedia = libraryoptionsDescSaveSubtitlesWithMedia.Default.(bool)
+	// libraryoptionsDescSaveLyricsWithMedia is the schema descriptor for save_lyrics_with_media field.
+	libraryoptionsDescSaveLyricsWithMedia := libraryoptionsFields[21].Descriptor()
+	// libraryoptions.DefaultSaveLyricsWithMedia holds the default value on creation for the save_lyrics_with_media field.
+	libraryoptions.DefaultSaveLyricsWithMedia = libraryoptionsDescSaveLyricsWithMedia.Default.(bool)
+	// libraryoptionsDescSaveTrickplayWithMedia is the schema descriptor for save_trickplay_with_media field.
+	libraryoptionsDescSaveTrickplayWithMedia := libraryoptionsFields[22].Descriptor()
+	// libraryoptions.DefaultSaveTrickplayWithMedia holds the default value on creation for the save_trickplay_with_media field.
+	libraryoptions.DefaultSaveTrickplayWithMedia = libraryoptionsDescSaveTrickplayWithMedia.Default.(bool)
+	// libraryoptionsDescPreferNonstandardArtistsTag is the schema descriptor for prefer_nonstandard_artists_tag field.
+	libraryoptionsDescPreferNonstandardArtistsTag := libraryoptionsFields[23].Descriptor()
+	// libraryoptions.DefaultPreferNonstandardArtistsTag holds the default value on creation for the prefer_nonstandard_artists_tag field.
+	libraryoptions.DefaultPreferNonstandardArtistsTag = libraryoptionsDescPreferNonstandardArtistsTag.Default.(bool)
+	// libraryoptionsDescUseCustomTagDelimiters is the schema descriptor for use_custom_tag_delimiters field.
+	libraryoptionsDescUseCustomTagDelimiters := libraryoptionsFields[24].Descriptor()
+	// libraryoptions.DefaultUseCustomTagDelimiters holds the default value on creation for the use_custom_tag_delimiters field.
+	libraryoptions.DefaultUseCustomTagDelimiters = libraryoptionsDescUseCustomTagDelimiters.Default.(bool)
+	// libraryoptionsDescAutomaticallyAddToCollection is the schema descriptor for automatically_add_to_collection field.
+	libraryoptionsDescAutomaticallyAddToCollection := libraryoptionsFields[25].Descriptor()
+	// libraryoptions.DefaultAutomaticallyAddToCollection holds the default value on creation for the automatically_add_to_collection field.
+	libraryoptions.DefaultAutomaticallyAddToCollection = libraryoptionsDescAutomaticallyAddToCollection.Default.(bool)
+	// libraryoptionsDescAutomaticRefreshIntervalDays is the schema descriptor for automatic_refresh_interval_days field.
+	libraryoptionsDescAutomaticRefreshIntervalDays := libraryoptionsFields[26].Descriptor()
+	// libraryoptions.DefaultAutomaticRefreshIntervalDays holds the default value on creation for the automatic_refresh_interval_days field.
+	libraryoptions.DefaultAutomaticRefreshIntervalDays = libraryoptionsDescAutomaticRefreshIntervalDays.Default.(int32)
+	// libraryoptionsDescPreferredMetadataLanguage is the schema descriptor for preferred_metadata_language field.
+	libraryoptionsDescPreferredMetadataLanguage := libraryoptionsFields[27].Descriptor()
+	// libraryoptions.DefaultPreferredMetadataLanguage holds the default value on creation for the preferred_metadata_language field.
+	libraryoptions.DefaultPreferredMetadataLanguage = libraryoptionsDescPreferredMetadataLanguage.Default.(string)
+	// libraryoptionsDescMetadataCountryCode is the schema descriptor for metadata_country_code field.
+	libraryoptionsDescMetadataCountryCode := libraryoptionsFields[28].Descriptor()
+	// libraryoptions.DefaultMetadataCountryCode holds the default value on creation for the metadata_country_code field.
+	libraryoptions.DefaultMetadataCountryCode = libraryoptionsDescMetadataCountryCode.Default.(string)
+	// libraryoptionsDescSeasonZeroDisplayName is the schema descriptor for season_zero_display_name field.
+	libraryoptionsDescSeasonZeroDisplayName := libraryoptionsFields[29].Descriptor()
+	// libraryoptions.DefaultSeasonZeroDisplayName holds the default value on creation for the season_zero_display_name field.
+	libraryoptions.DefaultSeasonZeroDisplayName = libraryoptionsDescSeasonZeroDisplayName.Default.(string)
+	// libraryoptionsDescMetadataSavers is the schema descriptor for metadata_savers field.
+	libraryoptionsDescMetadataSavers := libraryoptionsFields[31].Descriptor()
+	// libraryoptions.DefaultMetadataSavers holds the default value on creation for the metadata_savers field.
+	libraryoptions.DefaultMetadataSavers = libraryoptionsDescMetadataSavers.Default.([]string)
+	// libraryoptionsDescDisabledLocalMetadataReaders is the schema descriptor for disabled_local_metadata_readers field.
+	libraryoptionsDescDisabledLocalMetadataReaders := libraryoptionsFields[32].Descriptor()
+	// libraryoptions.DefaultDisabledLocalMetadataReaders holds the default value on creation for the disabled_local_metadata_readers field.
+	libraryoptions.DefaultDisabledLocalMetadataReaders = libraryoptionsDescDisabledLocalMetadataReaders.Default.([]string)
+	// libraryoptionsDescLocalMetadataReaderOrder is the schema descriptor for local_metadata_reader_order field.
+	libraryoptionsDescLocalMetadataReaderOrder := libraryoptionsFields[33].Descriptor()
+	// libraryoptions.DefaultLocalMetadataReaderOrder holds the default value on creation for the local_metadata_reader_order field.
+	libraryoptions.DefaultLocalMetadataReaderOrder = libraryoptionsDescLocalMetadataReaderOrder.Default.([]string)
+	// libraryoptionsDescDisabledSubtitleFetchers is the schema descriptor for disabled_subtitle_fetchers field.
+	libraryoptionsDescDisabledSubtitleFetchers := libraryoptionsFields[34].Descriptor()
+	// libraryoptions.DefaultDisabledSubtitleFetchers holds the default value on creation for the disabled_subtitle_fetchers field.
+	libraryoptions.DefaultDisabledSubtitleFetchers = libraryoptionsDescDisabledSubtitleFetchers.Default.([]string)
+	// libraryoptionsDescSubtitleFetcherOrder is the schema descriptor for subtitle_fetcher_order field.
+	libraryoptionsDescSubtitleFetcherOrder := libraryoptionsFields[35].Descriptor()
+	// libraryoptions.DefaultSubtitleFetcherOrder holds the default value on creation for the subtitle_fetcher_order field.
+	libraryoptions.DefaultSubtitleFetcherOrder = libraryoptionsDescSubtitleFetcherOrder.Default.([]string)
+	// libraryoptionsDescDisabledMediaSegmentProviders is the schema descriptor for disabled_media_segment_providers field.
+	libraryoptionsDescDisabledMediaSegmentProviders := libraryoptionsFields[36].Descriptor()
+	// libraryoptions.DefaultDisabledMediaSegmentProviders holds the default value on creation for the disabled_media_segment_providers field.
+	libraryoptions.DefaultDisabledMediaSegmentProviders = libraryoptionsDescDisabledMediaSegmentProviders.Default.([]string)
+	// libraryoptionsDescMediaSegmentProviderOrder is the schema descriptor for media_segment_provider_order field.
+	libraryoptionsDescMediaSegmentProviderOrder := libraryoptionsFields[37].Descriptor()
+	// libraryoptions.DefaultMediaSegmentProviderOrder holds the default value on creation for the media_segment_provider_order field.
+	libraryoptions.DefaultMediaSegmentProviderOrder = libraryoptionsDescMediaSegmentProviderOrder.Default.([]string)
+	// libraryoptionsDescSubtitleDownloadLanguages is the schema descriptor for subtitle_download_languages field.
+	libraryoptionsDescSubtitleDownloadLanguages := libraryoptionsFields[38].Descriptor()
+	// libraryoptions.DefaultSubtitleDownloadLanguages holds the default value on creation for the subtitle_download_languages field.
+	libraryoptions.DefaultSubtitleDownloadLanguages = libraryoptionsDescSubtitleDownloadLanguages.Default.([]string)
+	// libraryoptionsDescDisabledLyricFetchers is the schema descriptor for disabled_lyric_fetchers field.
+	libraryoptionsDescDisabledLyricFetchers := libraryoptionsFields[39].Descriptor()
+	// libraryoptions.DefaultDisabledLyricFetchers holds the default value on creation for the disabled_lyric_fetchers field.
+	libraryoptions.DefaultDisabledLyricFetchers = libraryoptionsDescDisabledLyricFetchers.Default.([]string)
+	// libraryoptionsDescLyricFetcherOrder is the schema descriptor for lyric_fetcher_order field.
+	libraryoptionsDescLyricFetcherOrder := libraryoptionsFields[40].Descriptor()
+	// libraryoptions.DefaultLyricFetcherOrder holds the default value on creation for the lyric_fetcher_order field.
+	libraryoptions.DefaultLyricFetcherOrder = libraryoptionsDescLyricFetcherOrder.Default.([]string)
+	// libraryoptionsDescCustomTagDelimiters is the schema descriptor for custom_tag_delimiters field.
+	libraryoptionsDescCustomTagDelimiters := libraryoptionsFields[41].Descriptor()
+	// libraryoptions.DefaultCustomTagDelimiters holds the default value on creation for the custom_tag_delimiters field.
+	libraryoptions.DefaultCustomTagDelimiters = libraryoptionsDescCustomTagDelimiters.Default.([]string)
+	// libraryoptionsDescDelimiterWhitelist is the schema descriptor for delimiter_whitelist field.
+	libraryoptionsDescDelimiterWhitelist := libraryoptionsFields[42].Descriptor()
+	// libraryoptions.DefaultDelimiterWhitelist holds the default value on creation for the delimiter_whitelist field.
+	libraryoptions.DefaultDelimiterWhitelist = libraryoptionsDescDelimiterWhitelist.Default.([]string)
+	// libraryoptionsDescTypeOptions is the schema descriptor for type_options field.
+	libraryoptionsDescTypeOptions := libraryoptionsFields[43].Descriptor()
+	// libraryoptions.DefaultTypeOptions holds the default value on creation for the type_options field.
+	libraryoptions.DefaultTypeOptions = libraryoptionsDescTypeOptions.Default.([]entities.TypeOptions)
 	listingsproviderFields := entities.ListingsProvider{}.Fields()
 	_ = listingsproviderFields
 	// listingsproviderDescCreatedAt is the schema descriptor for created_at field.
@@ -237,6 +433,54 @@ func init() {
 	mediasource.DefaultUpdatedAt = mediasourceDescUpdatedAt.Default.(func() time.Time)
 	// mediasource.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	mediasource.UpdateDefaultUpdatedAt = mediasourceDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// mediasourceDescIsRemote is the schema descriptor for is_remote field.
+	mediasourceDescIsRemote := mediasourceFields[18].Descriptor()
+	// mediasource.DefaultIsRemote holds the default value on creation for the is_remote field.
+	mediasource.DefaultIsRemote = mediasourceDescIsRemote.Default.(bool)
+	// mediasourceDescIsInfiniteStream is the schema descriptor for is_infinite_stream field.
+	mediasourceDescIsInfiniteStream := mediasourceFields[19].Descriptor()
+	// mediasource.DefaultIsInfiniteStream holds the default value on creation for the is_infinite_stream field.
+	mediasource.DefaultIsInfiniteStream = mediasourceDescIsInfiniteStream.Default.(bool)
+	// mediasourceDescSupportsTranscoding is the schema descriptor for supports_transcoding field.
+	mediasourceDescSupportsTranscoding := mediasourceFields[20].Descriptor()
+	// mediasource.DefaultSupportsTranscoding holds the default value on creation for the supports_transcoding field.
+	mediasource.DefaultSupportsTranscoding = mediasourceDescSupportsTranscoding.Default.(bool)
+	// mediasourceDescSupportsDirectStream is the schema descriptor for supports_direct_stream field.
+	mediasourceDescSupportsDirectStream := mediasourceFields[21].Descriptor()
+	// mediasource.DefaultSupportsDirectStream holds the default value on creation for the supports_direct_stream field.
+	mediasource.DefaultSupportsDirectStream = mediasourceDescSupportsDirectStream.Default.(bool)
+	// mediasourceDescSupportsDirectPlay is the schema descriptor for supports_direct_play field.
+	mediasourceDescSupportsDirectPlay := mediasourceFields[22].Descriptor()
+	// mediasource.DefaultSupportsDirectPlay holds the default value on creation for the supports_direct_play field.
+	mediasource.DefaultSupportsDirectPlay = mediasourceDescSupportsDirectPlay.Default.(bool)
+	// mediasourceDescSupportsProbing is the schema descriptor for supports_probing field.
+	mediasourceDescSupportsProbing := mediasourceFields[23].Descriptor()
+	// mediasource.DefaultSupportsProbing holds the default value on creation for the supports_probing field.
+	mediasource.DefaultSupportsProbing = mediasourceDescSupportsProbing.Default.(bool)
+	// mediasourceDescReadAtNativeFramerate is the schema descriptor for read_at_native_framerate field.
+	mediasourceDescReadAtNativeFramerate := mediasourceFields[24].Descriptor()
+	// mediasource.DefaultReadAtNativeFramerate holds the default value on creation for the read_at_native_framerate field.
+	mediasource.DefaultReadAtNativeFramerate = mediasourceDescReadAtNativeFramerate.Default.(bool)
+	// mediasourceDescIgnoreDts is the schema descriptor for ignore_dts field.
+	mediasourceDescIgnoreDts := mediasourceFields[25].Descriptor()
+	// mediasource.DefaultIgnoreDts holds the default value on creation for the ignore_dts field.
+	mediasource.DefaultIgnoreDts = mediasourceDescIgnoreDts.Default.(bool)
+	// mediasourceDescIgnoreIndex is the schema descriptor for ignore_index field.
+	mediasourceDescIgnoreIndex := mediasourceFields[26].Descriptor()
+	// mediasource.DefaultIgnoreIndex holds the default value on creation for the ignore_index field.
+	mediasource.DefaultIgnoreIndex = mediasourceDescIgnoreIndex.Default.(bool)
+	// mediasourceDescGenPtsInput is the schema descriptor for gen_pts_input field.
+	mediasourceDescGenPtsInput := mediasourceFields[27].Descriptor()
+	// mediasource.DefaultGenPtsInput holds the default value on creation for the gen_pts_input field.
+	mediasource.DefaultGenPtsInput = mediasourceDescGenPtsInput.Default.(bool)
+	// mediasourceDescRequiresLooping is the schema descriptor for requires_looping field.
+	mediasourceDescRequiresLooping := mediasourceFields[28].Descriptor()
+	// mediasource.DefaultRequiresLooping holds the default value on creation for the requires_looping field.
+	mediasource.DefaultRequiresLooping = mediasourceDescRequiresLooping.Default.(bool)
+	// mediasourceDescHasSegments is the schema descriptor for has_segments field.
+	mediasourceDescHasSegments := mediasourceFields[29].Descriptor()
+	// mediasource.DefaultHasSegments holds the default value on creation for the has_segments field.
+	mediasource.DefaultHasSegments = mediasourceDescHasSegments.Default.(bool)
 	mediastreamFields := entities.MediaStream{}.Fields()
 	_ = mediastreamFields
 	// mediastreamDescCreatedAt is the schema descriptor for created_at field.
@@ -249,6 +493,38 @@ func init() {
 	mediastream.DefaultUpdatedAt = mediastreamDescUpdatedAt.Default.(func() time.Time)
 	// mediastream.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	mediastream.UpdateDefaultUpdatedAt = mediastreamDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// mediastreamDescIndex is the schema descriptor for index field.
+	mediastreamDescIndex := mediastreamFields[8].Descriptor()
+	// mediastream.DefaultIndex holds the default value on creation for the index field.
+	mediastream.DefaultIndex = mediastreamDescIndex.Default.(int32)
+	// mediastreamDescIsDefault is the schema descriptor for is_default field.
+	mediastreamDescIsDefault := mediastreamFields[48].Descriptor()
+	// mediastream.DefaultIsDefault holds the default value on creation for the is_default field.
+	mediastream.DefaultIsDefault = mediastreamDescIsDefault.Default.(bool)
+	// mediastreamDescIsForced is the schema descriptor for is_forced field.
+	mediastreamDescIsForced := mediastreamFields[49].Descriptor()
+	// mediastream.DefaultIsForced holds the default value on creation for the is_forced field.
+	mediastream.DefaultIsForced = mediastreamDescIsForced.Default.(bool)
+	// mediastreamDescIsExternal is the schema descriptor for is_external field.
+	mediastreamDescIsExternal := mediastreamFields[50].Descriptor()
+	// mediastream.DefaultIsExternal holds the default value on creation for the is_external field.
+	mediastream.DefaultIsExternal = mediastreamDescIsExternal.Default.(bool)
+	// mediastreamDescIsInterlaced is the schema descriptor for is_interlaced field.
+	mediastreamDescIsInterlaced := mediastreamFields[51].Descriptor()
+	// mediastream.DefaultIsInterlaced holds the default value on creation for the is_interlaced field.
+	mediastream.DefaultIsInterlaced = mediastreamDescIsInterlaced.Default.(bool)
+	// mediastreamDescIsAnamorphic is the schema descriptor for is_anamorphic field.
+	mediastreamDescIsAnamorphic := mediastreamFields[52].Descriptor()
+	// mediastream.DefaultIsAnamorphic holds the default value on creation for the is_anamorphic field.
+	mediastream.DefaultIsAnamorphic = mediastreamDescIsAnamorphic.Default.(bool)
+	// mediastreamDescIsAvc is the schema descriptor for is_avc field.
+	mediastreamDescIsAvc := mediastreamFields[53].Descriptor()
+	// mediastream.DefaultIsAvc holds the default value on creation for the is_avc field.
+	mediastream.DefaultIsAvc = mediastreamDescIsAvc.Default.(bool)
+	// mediastreamDescIsHearingImpaired is the schema descriptor for is_hearing_impaired field.
+	mediastreamDescIsHearingImpaired := mediastreamFields[54].Descriptor()
+	// mediastream.DefaultIsHearingImpaired holds the default value on creation for the is_hearing_impaired field.
+	mediastream.DefaultIsHearingImpaired = mediastreamDescIsHearingImpaired.Default.(bool)
 	personFields := entities.Person{}.Fields()
 	_ = personFields
 	// personDescCreatedAt is the schema descriptor for created_at field.
@@ -465,6 +741,22 @@ func init() {
 	useritemdata.DefaultUpdatedAt = useritemdataDescUpdatedAt.Default.(func() time.Time)
 	// useritemdata.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	useritemdata.UpdateDefaultUpdatedAt = useritemdataDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// useritemdataDescPlayed is the schema descriptor for played field.
+	useritemdataDescPlayed := useritemdataFields[5].Descriptor()
+	// useritemdata.DefaultPlayed holds the default value on creation for the played field.
+	useritemdata.DefaultPlayed = useritemdataDescPlayed.Default.(bool)
+	// useritemdataDescIsFavorite is the schema descriptor for is_favorite field.
+	useritemdataDescIsFavorite := useritemdataFields[6].Descriptor()
+	// useritemdata.DefaultIsFavorite holds the default value on creation for the is_favorite field.
+	useritemdata.DefaultIsFavorite = useritemdataDescIsFavorite.Default.(bool)
+	// useritemdataDescPlayCount is the schema descriptor for play_count field.
+	useritemdataDescPlayCount := useritemdataFields[7].Descriptor()
+	// useritemdata.DefaultPlayCount holds the default value on creation for the play_count field.
+	useritemdata.DefaultPlayCount = useritemdataDescPlayCount.Default.(int32)
+	// useritemdataDescPlaybackPositionTicks is the schema descriptor for playback_position_ticks field.
+	useritemdataDescPlaybackPositionTicks := useritemdataFields[8].Descriptor()
+	// useritemdata.DefaultPlaybackPositionTicks holds the default value on creation for the playback_position_ticks field.
+	useritemdata.DefaultPlaybackPositionTicks = useritemdataDescPlaybackPositionTicks.Default.(int64)
 	userpolicyFields := entities.UserPolicy{}.Fields()
 	_ = userpolicyFields
 	// userpolicyDescCreatedAt is the schema descriptor for created_at field.

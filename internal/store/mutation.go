@@ -6697,6 +6697,7 @@ type ImageMutation struct {
 	index         *int32
 	addindex      *int32
 	_path         *string
+	tag           *string
 	blur_hash     *string
 	width         *int32
 	addwidth      *int32
@@ -6888,6 +6889,42 @@ func (m *ImageMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
+// SetItemID sets the "item_id" field.
+func (m *ImageMutation) SetItemID(u uuid.UUID) {
+	m.item = &u
+}
+
+// ItemID returns the value of the "item_id" field in the mutation.
+func (m *ImageMutation) ItemID() (r uuid.UUID, exists bool) {
+	v := m.item
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldItemID returns the old "item_id" field's value of the Image entity.
+// If the Image object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ImageMutation) OldItemID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldItemID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldItemID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldItemID: %w", err)
+	}
+	return oldValue.ItemID, nil
+}
+
+// ResetItemID resets all changes to the "item_id" field.
+func (m *ImageMutation) ResetItemID() {
+	m.item = nil
+}
+
 // SetKind sets the "kind" field.
 func (m *ImageMutation) SetKind(i image.Kind) {
 	m.kind = &i
@@ -7014,6 +7051,42 @@ func (m *ImageMutation) OldPath(ctx context.Context) (v string, err error) {
 // ResetPath resets all changes to the "path" field.
 func (m *ImageMutation) ResetPath() {
 	m._path = nil
+}
+
+// SetTag sets the "tag" field.
+func (m *ImageMutation) SetTag(s string) {
+	m.tag = &s
+}
+
+// Tag returns the value of the "tag" field in the mutation.
+func (m *ImageMutation) Tag() (r string, exists bool) {
+	v := m.tag
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTag returns the old "tag" field's value of the Image entity.
+// If the Image object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ImageMutation) OldTag(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTag is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTag requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTag: %w", err)
+	}
+	return oldValue.Tag, nil
+}
+
+// ResetTag resets all changes to the "tag" field.
+func (m *ImageMutation) ResetTag() {
+	m.tag = nil
 }
 
 // SetBlurHash sets the "blur_hash" field.
@@ -7275,27 +7348,15 @@ func (m *ImageMutation) ResetSize() {
 	delete(m.clearedFields, image.FieldSize)
 }
 
-// SetItemID sets the "item" edge to the Item entity by id.
-func (m *ImageMutation) SetItemID(id uuid.UUID) {
-	m.item = &id
-}
-
 // ClearItem clears the "item" edge to the Item entity.
 func (m *ImageMutation) ClearItem() {
 	m.cleareditem = true
+	m.clearedFields[image.FieldItemID] = struct{}{}
 }
 
 // ItemCleared reports if the "item" edge to the Item entity was cleared.
 func (m *ImageMutation) ItemCleared() bool {
 	return m.cleareditem
-}
-
-// ItemID returns the "item" edge ID in the mutation.
-func (m *ImageMutation) ItemID() (id uuid.UUID, exists bool) {
-	if m.item != nil {
-		return *m.item, true
-	}
-	return
 }
 
 // ItemIDs returns the "item" edge IDs in the mutation.
@@ -7348,12 +7409,15 @@ func (m *ImageMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ImageMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 11)
 	if m.created_at != nil {
 		fields = append(fields, image.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
 		fields = append(fields, image.FieldUpdatedAt)
+	}
+	if m.item != nil {
+		fields = append(fields, image.FieldItemID)
 	}
 	if m.kind != nil {
 		fields = append(fields, image.FieldKind)
@@ -7363,6 +7427,9 @@ func (m *ImageMutation) Fields() []string {
 	}
 	if m._path != nil {
 		fields = append(fields, image.FieldPath)
+	}
+	if m.tag != nil {
+		fields = append(fields, image.FieldTag)
 	}
 	if m.blur_hash != nil {
 		fields = append(fields, image.FieldBlurHash)
@@ -7388,12 +7455,16 @@ func (m *ImageMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case image.FieldUpdatedAt:
 		return m.UpdatedAt()
+	case image.FieldItemID:
+		return m.ItemID()
 	case image.FieldKind:
 		return m.Kind()
 	case image.FieldIndex:
 		return m.Index()
 	case image.FieldPath:
 		return m.Path()
+	case image.FieldTag:
+		return m.Tag()
 	case image.FieldBlurHash:
 		return m.BlurHash()
 	case image.FieldWidth:
@@ -7415,12 +7486,16 @@ func (m *ImageMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldCreatedAt(ctx)
 	case image.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
+	case image.FieldItemID:
+		return m.OldItemID(ctx)
 	case image.FieldKind:
 		return m.OldKind(ctx)
 	case image.FieldIndex:
 		return m.OldIndex(ctx)
 	case image.FieldPath:
 		return m.OldPath(ctx)
+	case image.FieldTag:
+		return m.OldTag(ctx)
 	case image.FieldBlurHash:
 		return m.OldBlurHash(ctx)
 	case image.FieldWidth:
@@ -7452,6 +7527,13 @@ func (m *ImageMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetUpdatedAt(v)
 		return nil
+	case image.FieldItemID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetItemID(v)
+		return nil
 	case image.FieldKind:
 		v, ok := value.(image.Kind)
 		if !ok {
@@ -7472,6 +7554,13 @@ func (m *ImageMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPath(v)
+		return nil
+	case image.FieldTag:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTag(v)
 		return nil
 	case image.FieldBlurHash:
 		v, ok := value.(string)
@@ -7634,6 +7723,9 @@ func (m *ImageMutation) ResetField(name string) error {
 	case image.FieldUpdatedAt:
 		m.ResetUpdatedAt()
 		return nil
+	case image.FieldItemID:
+		m.ResetItemID()
+		return nil
 	case image.FieldKind:
 		m.ResetKind()
 		return nil
@@ -7642,6 +7734,9 @@ func (m *ImageMutation) ResetField(name string) error {
 		return nil
 	case image.FieldPath:
 		m.ResetPath()
+		return nil
+	case image.FieldTag:
+		m.ResetTag()
 		return nil
 	case image.FieldBlurHash:
 		m.ResetBlurHash()
@@ -7764,6 +7859,8 @@ type ItemMutation struct {
 	premiere_date                   *time.Time
 	end_date                        *time.Time
 	last_media_added_at             *time.Time
+	date_modified                   *time.Time
+	probed_at                       *time.Time
 	production_year                 *int32
 	addproduction_year              *int32
 	official_rating                 *string
@@ -8036,6 +8133,104 @@ func (m *ItemMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error
 // ResetUpdatedAt resets all changes to the "updated_at" field.
 func (m *ItemMutation) ResetUpdatedAt() {
 	m.updated_at = nil
+}
+
+// SetLibraryID sets the "library_id" field.
+func (m *ItemMutation) SetLibraryID(u uuid.UUID) {
+	m.library = &u
+}
+
+// LibraryID returns the value of the "library_id" field in the mutation.
+func (m *ItemMutation) LibraryID() (r uuid.UUID, exists bool) {
+	v := m.library
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLibraryID returns the old "library_id" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldLibraryID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLibraryID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLibraryID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLibraryID: %w", err)
+	}
+	return oldValue.LibraryID, nil
+}
+
+// ClearLibraryID clears the value of the "library_id" field.
+func (m *ItemMutation) ClearLibraryID() {
+	m.library = nil
+	m.clearedFields[item.FieldLibraryID] = struct{}{}
+}
+
+// LibraryIDCleared returns if the "library_id" field was cleared in this mutation.
+func (m *ItemMutation) LibraryIDCleared() bool {
+	_, ok := m.clearedFields[item.FieldLibraryID]
+	return ok
+}
+
+// ResetLibraryID resets all changes to the "library_id" field.
+func (m *ItemMutation) ResetLibraryID() {
+	m.library = nil
+	delete(m.clearedFields, item.FieldLibraryID)
+}
+
+// SetParentID sets the "parent_id" field.
+func (m *ItemMutation) SetParentID(u uuid.UUID) {
+	m.parent = &u
+}
+
+// ParentID returns the value of the "parent_id" field in the mutation.
+func (m *ItemMutation) ParentID() (r uuid.UUID, exists bool) {
+	v := m.parent
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldParentID returns the old "parent_id" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldParentID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldParentID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldParentID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldParentID: %w", err)
+	}
+	return oldValue.ParentID, nil
+}
+
+// ClearParentID clears the value of the "parent_id" field.
+func (m *ItemMutation) ClearParentID() {
+	m.parent = nil
+	m.clearedFields[item.FieldParentID] = struct{}{}
+}
+
+// ParentIDCleared returns if the "parent_id" field was cleared in this mutation.
+func (m *ItemMutation) ParentIDCleared() bool {
+	_, ok := m.clearedFields[item.FieldParentID]
+	return ok
+}
+
+// ResetParentID resets all changes to the "parent_id" field.
+func (m *ItemMutation) ResetParentID() {
+	m.parent = nil
+	delete(m.clearedFields, item.FieldParentID)
 }
 
 // SetKind sets the "kind" field.
@@ -8892,7 +9087,7 @@ func (m *ItemMutation) PremiereDate() (r time.Time, exists bool) {
 // OldPremiereDate returns the old "premiere_date" field's value of the Item entity.
 // If the Item object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldPremiereDate(ctx context.Context) (v time.Time, err error) {
+func (m *ItemMutation) OldPremiereDate(ctx context.Context) (v *time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldPremiereDate is only allowed on UpdateOne operations")
 	}
@@ -8941,7 +9136,7 @@ func (m *ItemMutation) EndDate() (r time.Time, exists bool) {
 // OldEndDate returns the old "end_date" field's value of the Item entity.
 // If the Item object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldEndDate(ctx context.Context) (v time.Time, err error) {
+func (m *ItemMutation) OldEndDate(ctx context.Context) (v *time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldEndDate is only allowed on UpdateOne operations")
 	}
@@ -8990,7 +9185,7 @@ func (m *ItemMutation) LastMediaAddedAt() (r time.Time, exists bool) {
 // OldLastMediaAddedAt returns the old "last_media_added_at" field's value of the Item entity.
 // If the Item object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldLastMediaAddedAt(ctx context.Context) (v time.Time, err error) {
+func (m *ItemMutation) OldLastMediaAddedAt(ctx context.Context) (v *time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldLastMediaAddedAt is only allowed on UpdateOne operations")
 	}
@@ -9022,6 +9217,104 @@ func (m *ItemMutation) ResetLastMediaAddedAt() {
 	delete(m.clearedFields, item.FieldLastMediaAddedAt)
 }
 
+// SetDateModified sets the "date_modified" field.
+func (m *ItemMutation) SetDateModified(t time.Time) {
+	m.date_modified = &t
+}
+
+// DateModified returns the value of the "date_modified" field in the mutation.
+func (m *ItemMutation) DateModified() (r time.Time, exists bool) {
+	v := m.date_modified
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDateModified returns the old "date_modified" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldDateModified(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDateModified is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDateModified requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDateModified: %w", err)
+	}
+	return oldValue.DateModified, nil
+}
+
+// ClearDateModified clears the value of the "date_modified" field.
+func (m *ItemMutation) ClearDateModified() {
+	m.date_modified = nil
+	m.clearedFields[item.FieldDateModified] = struct{}{}
+}
+
+// DateModifiedCleared returns if the "date_modified" field was cleared in this mutation.
+func (m *ItemMutation) DateModifiedCleared() bool {
+	_, ok := m.clearedFields[item.FieldDateModified]
+	return ok
+}
+
+// ResetDateModified resets all changes to the "date_modified" field.
+func (m *ItemMutation) ResetDateModified() {
+	m.date_modified = nil
+	delete(m.clearedFields, item.FieldDateModified)
+}
+
+// SetProbedAt sets the "probed_at" field.
+func (m *ItemMutation) SetProbedAt(t time.Time) {
+	m.probed_at = &t
+}
+
+// ProbedAt returns the value of the "probed_at" field in the mutation.
+func (m *ItemMutation) ProbedAt() (r time.Time, exists bool) {
+	v := m.probed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProbedAt returns the old "probed_at" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldProbedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProbedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProbedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProbedAt: %w", err)
+	}
+	return oldValue.ProbedAt, nil
+}
+
+// ClearProbedAt clears the value of the "probed_at" field.
+func (m *ItemMutation) ClearProbedAt() {
+	m.probed_at = nil
+	m.clearedFields[item.FieldProbedAt] = struct{}{}
+}
+
+// ProbedAtCleared returns if the "probed_at" field was cleared in this mutation.
+func (m *ItemMutation) ProbedAtCleared() bool {
+	_, ok := m.clearedFields[item.FieldProbedAt]
+	return ok
+}
+
+// ResetProbedAt resets all changes to the "probed_at" field.
+func (m *ItemMutation) ResetProbedAt() {
+	m.probed_at = nil
+	delete(m.clearedFields, item.FieldProbedAt)
+}
+
 // SetProductionYear sets the "production_year" field.
 func (m *ItemMutation) SetProductionYear(i int32) {
 	m.production_year = &i
@@ -9040,7 +9333,7 @@ func (m *ItemMutation) ProductionYear() (r int32, exists bool) {
 // OldProductionYear returns the old "production_year" field's value of the Item entity.
 // If the Item object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldProductionYear(ctx context.Context) (v int32, err error) {
+func (m *ItemMutation) OldProductionYear(ctx context.Context) (v *int32, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldProductionYear is only allowed on UpdateOne operations")
 	}
@@ -9208,7 +9501,7 @@ func (m *ItemMutation) CriticRating() (r float64, exists bool) {
 // OldCriticRating returns the old "critic_rating" field's value of the Item entity.
 // If the Item object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldCriticRating(ctx context.Context) (v float64, err error) {
+func (m *ItemMutation) OldCriticRating(ctx context.Context) (v *float64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldCriticRating is only allowed on UpdateOne operations")
 	}
@@ -9278,7 +9571,7 @@ func (m *ItemMutation) CommunityRating() (r float64, exists bool) {
 // OldCommunityRating returns the old "community_rating" field's value of the Item entity.
 // If the Item object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldCommunityRating(ctx context.Context) (v float64, err error) {
+func (m *ItemMutation) OldCommunityRating(ctx context.Context) (v *float64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldCommunityRating is only allowed on UpdateOne operations")
 	}
@@ -9348,7 +9641,7 @@ func (m *ItemMutation) RunTimeTicks() (r int64, exists bool) {
 // OldRunTimeTicks returns the old "run_time_ticks" field's value of the Item entity.
 // If the Item object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldRunTimeTicks(ctx context.Context) (v int64, err error) {
+func (m *ItemMutation) OldRunTimeTicks(ctx context.Context) (v *int64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldRunTimeTicks is only allowed on UpdateOne operations")
 	}
@@ -9418,7 +9711,7 @@ func (m *ItemMutation) IndexNumber() (r int32, exists bool) {
 // OldIndexNumber returns the old "index_number" field's value of the Item entity.
 // If the Item object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldIndexNumber(ctx context.Context) (v int32, err error) {
+func (m *ItemMutation) OldIndexNumber(ctx context.Context) (v *int32, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldIndexNumber is only allowed on UpdateOne operations")
 	}
@@ -9488,7 +9781,7 @@ func (m *ItemMutation) IndexNumberEnd() (r int32, exists bool) {
 // OldIndexNumberEnd returns the old "index_number_end" field's value of the Item entity.
 // If the Item object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldIndexNumberEnd(ctx context.Context) (v int32, err error) {
+func (m *ItemMutation) OldIndexNumberEnd(ctx context.Context) (v *int32, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldIndexNumberEnd is only allowed on UpdateOne operations")
 	}
@@ -9558,7 +9851,7 @@ func (m *ItemMutation) ParentIndexNumber() (r int32, exists bool) {
 // OldParentIndexNumber returns the old "parent_index_number" field's value of the Item entity.
 // If the Item object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldParentIndexNumber(ctx context.Context) (v int32, err error) {
+func (m *ItemMutation) OldParentIndexNumber(ctx context.Context) (v *int32, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldParentIndexNumber is only allowed on UpdateOne operations")
 	}
@@ -9628,7 +9921,7 @@ func (m *ItemMutation) AirsBeforeSeasonNumber() (r int32, exists bool) {
 // OldAirsBeforeSeasonNumber returns the old "airs_before_season_number" field's value of the Item entity.
 // If the Item object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldAirsBeforeSeasonNumber(ctx context.Context) (v int32, err error) {
+func (m *ItemMutation) OldAirsBeforeSeasonNumber(ctx context.Context) (v *int32, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldAirsBeforeSeasonNumber is only allowed on UpdateOne operations")
 	}
@@ -9698,7 +9991,7 @@ func (m *ItemMutation) AirsAfterSeasonNumber() (r int32, exists bool) {
 // OldAirsAfterSeasonNumber returns the old "airs_after_season_number" field's value of the Item entity.
 // If the Item object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldAirsAfterSeasonNumber(ctx context.Context) (v int32, err error) {
+func (m *ItemMutation) OldAirsAfterSeasonNumber(ctx context.Context) (v *int32, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldAirsAfterSeasonNumber is only allowed on UpdateOne operations")
 	}
@@ -9768,7 +10061,7 @@ func (m *ItemMutation) AirsBeforeEpisodeNumber() (r int32, exists bool) {
 // OldAirsBeforeEpisodeNumber returns the old "airs_before_episode_number" field's value of the Item entity.
 // If the Item object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldAirsBeforeEpisodeNumber(ctx context.Context) (v int32, err error) {
+func (m *ItemMutation) OldAirsBeforeEpisodeNumber(ctx context.Context) (v *int32, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldAirsBeforeEpisodeNumber is only allowed on UpdateOne operations")
 	}
@@ -10099,7 +10392,7 @@ func (m *ItemMutation) Width() (r int32, exists bool) {
 // OldWidth returns the old "width" field's value of the Item entity.
 // If the Item object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldWidth(ctx context.Context) (v int32, err error) {
+func (m *ItemMutation) OldWidth(ctx context.Context) (v *int32, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldWidth is only allowed on UpdateOne operations")
 	}
@@ -10169,7 +10462,7 @@ func (m *ItemMutation) Height() (r int32, exists bool) {
 // OldHeight returns the old "height" field's value of the Item entity.
 // If the Item object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldHeight(ctx context.Context) (v int32, err error) {
+func (m *ItemMutation) OldHeight(ctx context.Context) (v *int32, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldHeight is only allowed on UpdateOne operations")
 	}
@@ -10763,27 +11056,15 @@ func (m *ItemMutation) ResetExternalUrls() {
 	delete(m.clearedFields, item.FieldExternalUrls)
 }
 
-// SetParentID sets the "parent" edge to the Item entity by id.
-func (m *ItemMutation) SetParentID(id uuid.UUID) {
-	m.parent = &id
-}
-
 // ClearParent clears the "parent" edge to the Item entity.
 func (m *ItemMutation) ClearParent() {
 	m.clearedparent = true
+	m.clearedFields[item.FieldParentID] = struct{}{}
 }
 
 // ParentCleared reports if the "parent" edge to the Item entity was cleared.
 func (m *ItemMutation) ParentCleared() bool {
-	return m.clearedparent
-}
-
-// ParentID returns the "parent" edge ID in the mutation.
-func (m *ItemMutation) ParentID() (id uuid.UUID, exists bool) {
-	if m.parent != nil {
-		return *m.parent, true
-	}
-	return
+	return m.ParentIDCleared() || m.clearedparent
 }
 
 // ParentIDs returns the "parent" edge IDs in the mutation.
@@ -10856,27 +11137,15 @@ func (m *ItemMutation) ResetChildren() {
 	m.removedchildren = nil
 }
 
-// SetLibraryID sets the "library" edge to the Library entity by id.
-func (m *ItemMutation) SetLibraryID(id uuid.UUID) {
-	m.library = &id
-}
-
 // ClearLibrary clears the "library" edge to the Library entity.
 func (m *ItemMutation) ClearLibrary() {
 	m.clearedlibrary = true
+	m.clearedFields[item.FieldLibraryID] = struct{}{}
 }
 
 // LibraryCleared reports if the "library" edge to the Library entity was cleared.
 func (m *ItemMutation) LibraryCleared() bool {
-	return m.clearedlibrary
-}
-
-// LibraryID returns the "library" edge ID in the mutation.
-func (m *ItemMutation) LibraryID() (id uuid.UUID, exists bool) {
-	if m.library != nil {
-		return *m.library, true
-	}
-	return
+	return m.LibraryIDCleared() || m.clearedlibrary
 }
 
 // LibraryIDs returns the "library" edge IDs in the mutation.
@@ -11616,12 +11885,18 @@ func (m *ItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemMutation) Fields() []string {
-	fields := make([]string, 0, 53)
+	fields := make([]string, 0, 57)
 	if m.created_at != nil {
 		fields = append(fields, item.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
 		fields = append(fields, item.FieldUpdatedAt)
+	}
+	if m.library != nil {
+		fields = append(fields, item.FieldLibraryID)
+	}
+	if m.parent != nil {
+		fields = append(fields, item.FieldParentID)
 	}
 	if m.kind != nil {
 		fields = append(fields, item.FieldKind)
@@ -11691,6 +11966,12 @@ func (m *ItemMutation) Fields() []string {
 	}
 	if m.last_media_added_at != nil {
 		fields = append(fields, item.FieldLastMediaAddedAt)
+	}
+	if m.date_modified != nil {
+		fields = append(fields, item.FieldDateModified)
+	}
+	if m.probed_at != nil {
+		fields = append(fields, item.FieldProbedAt)
 	}
 	if m.production_year != nil {
 		fields = append(fields, item.FieldProductionYear)
@@ -11788,6 +12069,10 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case item.FieldUpdatedAt:
 		return m.UpdatedAt()
+	case item.FieldLibraryID:
+		return m.LibraryID()
+	case item.FieldParentID:
+		return m.ParentID()
 	case item.FieldKind:
 		return m.Kind()
 	case item.FieldMediaType:
@@ -11834,6 +12119,10 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.EndDate()
 	case item.FieldLastMediaAddedAt:
 		return m.LastMediaAddedAt()
+	case item.FieldDateModified:
+		return m.DateModified()
+	case item.FieldProbedAt:
+		return m.ProbedAt()
 	case item.FieldProductionYear:
 		return m.ProductionYear()
 	case item.FieldOfficialRating:
@@ -11903,6 +12192,10 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldCreatedAt(ctx)
 	case item.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
+	case item.FieldLibraryID:
+		return m.OldLibraryID(ctx)
+	case item.FieldParentID:
+		return m.OldParentID(ctx)
 	case item.FieldKind:
 		return m.OldKind(ctx)
 	case item.FieldMediaType:
@@ -11949,6 +12242,10 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldEndDate(ctx)
 	case item.FieldLastMediaAddedAt:
 		return m.OldLastMediaAddedAt(ctx)
+	case item.FieldDateModified:
+		return m.OldDateModified(ctx)
+	case item.FieldProbedAt:
+		return m.OldProbedAt(ctx)
 	case item.FieldProductionYear:
 		return m.OldProductionYear(ctx)
 	case item.FieldOfficialRating:
@@ -12027,6 +12324,20 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedAt(v)
+		return nil
+	case item.FieldLibraryID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLibraryID(v)
+		return nil
+	case item.FieldParentID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetParentID(v)
 		return nil
 	case item.FieldKind:
 		v, ok := value.(item.Kind)
@@ -12188,6 +12499,20 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetLastMediaAddedAt(v)
+		return nil
+	case item.FieldDateModified:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDateModified(v)
+		return nil
+	case item.FieldProbedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProbedAt(v)
 		return nil
 	case item.FieldProductionYear:
 		v, ok := value.(int32)
@@ -12574,6 +12899,12 @@ func (m *ItemMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *ItemMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(item.FieldLibraryID) {
+		fields = append(fields, item.FieldLibraryID)
+	}
+	if m.FieldCleared(item.FieldParentID) {
+		fields = append(fields, item.FieldParentID)
+	}
 	if m.FieldCleared(item.FieldExtraType) {
 		fields = append(fields, item.FieldExtraType)
 	}
@@ -12609,6 +12940,12 @@ func (m *ItemMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(item.FieldLastMediaAddedAt) {
 		fields = append(fields, item.FieldLastMediaAddedAt)
+	}
+	if m.FieldCleared(item.FieldDateModified) {
+		fields = append(fields, item.FieldDateModified)
+	}
+	if m.FieldCleared(item.FieldProbedAt) {
+		fields = append(fields, item.FieldProbedAt)
 	}
 	if m.FieldCleared(item.FieldProductionYear) {
 		fields = append(fields, item.FieldProductionYear)
@@ -12708,6 +13045,12 @@ func (m *ItemMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *ItemMutation) ClearField(name string) error {
 	switch name {
+	case item.FieldLibraryID:
+		m.ClearLibraryID()
+		return nil
+	case item.FieldParentID:
+		m.ClearParentID()
+		return nil
 	case item.FieldExtraType:
 		m.ClearExtraType()
 		return nil
@@ -12743,6 +13086,12 @@ func (m *ItemMutation) ClearField(name string) error {
 		return nil
 	case item.FieldLastMediaAddedAt:
 		m.ClearLastMediaAddedAt()
+		return nil
+	case item.FieldDateModified:
+		m.ClearDateModified()
+		return nil
+	case item.FieldProbedAt:
+		m.ClearProbedAt()
 		return nil
 	case item.FieldProductionYear:
 		m.ClearProductionYear()
@@ -12842,6 +13191,12 @@ func (m *ItemMutation) ResetField(name string) error {
 	case item.FieldUpdatedAt:
 		m.ResetUpdatedAt()
 		return nil
+	case item.FieldLibraryID:
+		m.ResetLibraryID()
+		return nil
+	case item.FieldParentID:
+		m.ResetParentID()
+		return nil
 	case item.FieldKind:
 		m.ResetKind()
 		return nil
@@ -12910,6 +13265,12 @@ func (m *ItemMutation) ResetField(name string) error {
 		return nil
 	case item.FieldLastMediaAddedAt:
 		m.ResetLastMediaAddedAt()
+		return nil
+	case item.FieldDateModified:
+		m.ResetDateModified()
+		return nil
+	case item.FieldProbedAt:
+		m.ResetProbedAt()
 		return nil
 	case item.FieldProductionYear:
 		m.ResetProductionYear()
@@ -20861,6 +21222,42 @@ func (m *MediaSourceMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
+// SetItemID sets the "item_id" field.
+func (m *MediaSourceMutation) SetItemID(u uuid.UUID) {
+	m.item = &u
+}
+
+// ItemID returns the value of the "item_id" field in the mutation.
+func (m *MediaSourceMutation) ItemID() (r uuid.UUID, exists bool) {
+	v := m.item
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldItemID returns the old "item_id" field's value of the MediaSource entity.
+// If the MediaSource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MediaSourceMutation) OldItemID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldItemID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldItemID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldItemID: %w", err)
+	}
+	return oldValue.ItemID, nil
+}
+
+// ResetItemID resets all changes to the "item_id" field.
+func (m *MediaSourceMutation) ResetItemID() {
+	m.item = nil
+}
+
 // SetProtocol sets the "protocol" field.
 func (m *MediaSourceMutation) SetProtocol(value mediasource.Protocol) {
 	m.protocol = &value
@@ -22195,27 +22592,15 @@ func (m *MediaSourceMutation) ResetFormats() {
 	delete(m.clearedFields, mediasource.FieldFormats)
 }
 
-// SetItemID sets the "item" edge to the Item entity by id.
-func (m *MediaSourceMutation) SetItemID(id uuid.UUID) {
-	m.item = &id
-}
-
 // ClearItem clears the "item" edge to the Item entity.
 func (m *MediaSourceMutation) ClearItem() {
 	m.cleareditem = true
+	m.clearedFields[mediasource.FieldItemID] = struct{}{}
 }
 
 // ItemCleared reports if the "item" edge to the Item entity was cleared.
 func (m *MediaSourceMutation) ItemCleared() bool {
 	return m.cleareditem
-}
-
-// ItemID returns the "item" edge ID in the mutation.
-func (m *MediaSourceMutation) ItemID() (id uuid.UUID, exists bool) {
-	if m.item != nil {
-		return *m.item, true
-	}
-	return
 }
 
 // ItemIDs returns the "item" edge IDs in the mutation.
@@ -22376,12 +22761,15 @@ func (m *MediaSourceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *MediaSourceMutation) Fields() []string {
-	fields := make([]string, 0, 31)
+	fields := make([]string, 0, 32)
 	if m.created_at != nil {
 		fields = append(fields, mediasource.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
 		fields = append(fields, mediasource.FieldUpdatedAt)
+	}
+	if m.item != nil {
+		fields = append(fields, mediasource.FieldItemID)
 	}
 	if m.protocol != nil {
 		fields = append(fields, mediasource.FieldProtocol)
@@ -22482,6 +22870,8 @@ func (m *MediaSourceMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case mediasource.FieldUpdatedAt:
 		return m.UpdatedAt()
+	case mediasource.FieldItemID:
+		return m.ItemID()
 	case mediasource.FieldProtocol:
 		return m.Protocol()
 	case mediasource.FieldEncoderProtocol:
@@ -22553,6 +22943,8 @@ func (m *MediaSourceMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldCreatedAt(ctx)
 	case mediasource.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
+	case mediasource.FieldItemID:
+		return m.OldItemID(ctx)
 	case mediasource.FieldProtocol:
 		return m.OldProtocol(ctx)
 	case mediasource.FieldEncoderProtocol:
@@ -22633,6 +23025,13 @@ func (m *MediaSourceMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedAt(v)
+		return nil
+	case mediasource.FieldItemID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetItemID(v)
 		return nil
 	case mediasource.FieldProtocol:
 		v, ok := value.(mediasource.Protocol)
@@ -23035,6 +23434,9 @@ func (m *MediaSourceMutation) ResetField(name string) error {
 		return nil
 	case mediasource.FieldUpdatedAt:
 		m.ResetUpdatedAt()
+		return nil
+	case mediasource.FieldItemID:
+		m.ResetItemID()
 		return nil
 	case mediasource.FieldProtocol:
 		m.ResetProtocol()
@@ -23519,6 +23921,42 @@ func (m *MediaStreamMutation) OldUpdatedAt(ctx context.Context) (v time.Time, er
 // ResetUpdatedAt resets all changes to the "updated_at" field.
 func (m *MediaStreamMutation) ResetUpdatedAt() {
 	m.updated_at = nil
+}
+
+// SetSourceID sets the "source_id" field.
+func (m *MediaStreamMutation) SetSourceID(u uuid.UUID) {
+	m.source = &u
+}
+
+// SourceID returns the value of the "source_id" field in the mutation.
+func (m *MediaStreamMutation) SourceID() (r uuid.UUID, exists bool) {
+	v := m.source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSourceID returns the old "source_id" field's value of the MediaStream entity.
+// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MediaStreamMutation) OldSourceID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSourceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSourceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSourceID: %w", err)
+	}
+	return oldValue.SourceID, nil
+}
+
+// ResetSourceID resets all changes to the "source_id" field.
+func (m *MediaStreamMutation) ResetSourceID() {
+	m.source = nil
 }
 
 // SetKind sets the "kind" field.
@@ -26385,27 +26823,15 @@ func (m *MediaStreamMutation) ResetIsHearingImpaired() {
 	m.is_hearing_impaired = nil
 }
 
-// SetSourceID sets the "source" edge to the MediaSource entity by id.
-func (m *MediaStreamMutation) SetSourceID(id uuid.UUID) {
-	m.source = &id
-}
-
 // ClearSource clears the "source" edge to the MediaSource entity.
 func (m *MediaStreamMutation) ClearSource() {
 	m.clearedsource = true
+	m.clearedFields[mediastream.FieldSourceID] = struct{}{}
 }
 
 // SourceCleared reports if the "source" edge to the MediaSource entity was cleared.
 func (m *MediaStreamMutation) SourceCleared() bool {
 	return m.clearedsource
-}
-
-// SourceID returns the "source" edge ID in the mutation.
-func (m *MediaStreamMutation) SourceID() (id uuid.UUID, exists bool) {
-	if m.source != nil {
-		return *m.source, true
-	}
-	return
 }
 
 // SourceIDs returns the "source" edge IDs in the mutation.
@@ -26458,12 +26884,15 @@ func (m *MediaStreamMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *MediaStreamMutation) Fields() []string {
-	fields := make([]string, 0, 53)
+	fields := make([]string, 0, 54)
 	if m.created_at != nil {
 		fields = append(fields, mediastream.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
 		fields = append(fields, mediastream.FieldUpdatedAt)
+	}
+	if m.source != nil {
+		fields = append(fields, mediastream.FieldSourceID)
 	}
 	if m.kind != nil {
 		fields = append(fields, mediastream.FieldKind)
@@ -26630,6 +27059,8 @@ func (m *MediaStreamMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case mediastream.FieldUpdatedAt:
 		return m.UpdatedAt()
+	case mediastream.FieldSourceID:
+		return m.SourceID()
 	case mediastream.FieldKind:
 		return m.Kind()
 	case mediastream.FieldVideoRange:
@@ -26745,6 +27176,8 @@ func (m *MediaStreamMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldCreatedAt(ctx)
 	case mediastream.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
+	case mediastream.FieldSourceID:
+		return m.OldSourceID(ctx)
 	case mediastream.FieldKind:
 		return m.OldKind(ctx)
 	case mediastream.FieldVideoRange:
@@ -26869,6 +27302,13 @@ func (m *MediaStreamMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedAt(v)
+		return nil
+	case mediastream.FieldSourceID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSourceID(v)
 		return nil
 	case mediastream.FieldKind:
 		v, ok := value.(mediastream.Kind)
@@ -27815,6 +28255,9 @@ func (m *MediaStreamMutation) ResetField(name string) error {
 		return nil
 	case mediastream.FieldUpdatedAt:
 		m.ResetUpdatedAt()
+		return nil
+	case mediastream.FieldSourceID:
+		m.ResetSourceID()
 		return nil
 	case mediastream.FieldKind:
 		m.ResetKind()
@@ -42076,6 +42519,78 @@ func (m *UserItemDataMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
+// SetUserID sets the "user_id" field.
+func (m *UserItemDataMutation) SetUserID(u uuid.UUID) {
+	m.user = &u
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *UserItemDataMutation) UserID() (r uuid.UUID, exists bool) {
+	v := m.user
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the UserItemData entity.
+// If the UserItemData object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserItemDataMutation) OldUserID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *UserItemDataMutation) ResetUserID() {
+	m.user = nil
+}
+
+// SetItemID sets the "item_id" field.
+func (m *UserItemDataMutation) SetItemID(u uuid.UUID) {
+	m.item = &u
+}
+
+// ItemID returns the value of the "item_id" field in the mutation.
+func (m *UserItemDataMutation) ItemID() (r uuid.UUID, exists bool) {
+	v := m.item
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldItemID returns the old "item_id" field's value of the UserItemData entity.
+// If the UserItemData object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserItemDataMutation) OldItemID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldItemID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldItemID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldItemID: %w", err)
+	}
+	return oldValue.ItemID, nil
+}
+
+// ResetItemID resets all changes to the "item_id" field.
+func (m *UserItemDataMutation) ResetItemID() {
+	m.item = nil
+}
+
 // SetPlayed sets the "played" field.
 func (m *UserItemDataMutation) SetPlayed(b bool) {
 	m.played = &b
@@ -42278,7 +42793,7 @@ func (m *UserItemDataMutation) Rating() (r float64, exists bool) {
 // OldRating returns the old "rating" field's value of the UserItemData entity.
 // If the UserItemData object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserItemDataMutation) OldRating(ctx context.Context) (v float64, err error) {
+func (m *UserItemDataMutation) OldRating(ctx context.Context) (v *float64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldRating is only allowed on UpdateOne operations")
 	}
@@ -42396,7 +42911,7 @@ func (m *UserItemDataMutation) LastPlayedAt() (r time.Time, exists bool) {
 // OldLastPlayedAt returns the old "last_played_at" field's value of the UserItemData entity.
 // If the UserItemData object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserItemDataMutation) OldLastPlayedAt(ctx context.Context) (v time.Time, err error) {
+func (m *UserItemDataMutation) OldLastPlayedAt(ctx context.Context) (v *time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldLastPlayedAt is only allowed on UpdateOne operations")
 	}
@@ -42428,27 +42943,15 @@ func (m *UserItemDataMutation) ResetLastPlayedAt() {
 	delete(m.clearedFields, useritemdata.FieldLastPlayedAt)
 }
 
-// SetUserID sets the "user" edge to the User entity by id.
-func (m *UserItemDataMutation) SetUserID(id uuid.UUID) {
-	m.user = &id
-}
-
 // ClearUser clears the "user" edge to the User entity.
 func (m *UserItemDataMutation) ClearUser() {
 	m.cleareduser = true
+	m.clearedFields[useritemdata.FieldUserID] = struct{}{}
 }
 
 // UserCleared reports if the "user" edge to the User entity was cleared.
 func (m *UserItemDataMutation) UserCleared() bool {
 	return m.cleareduser
-}
-
-// UserID returns the "user" edge ID in the mutation.
-func (m *UserItemDataMutation) UserID() (id uuid.UUID, exists bool) {
-	if m.user != nil {
-		return *m.user, true
-	}
-	return
 }
 
 // UserIDs returns the "user" edge IDs in the mutation.
@@ -42467,27 +42970,15 @@ func (m *UserItemDataMutation) ResetUser() {
 	m.cleareduser = false
 }
 
-// SetItemID sets the "item" edge to the Item entity by id.
-func (m *UserItemDataMutation) SetItemID(id uuid.UUID) {
-	m.item = &id
-}
-
 // ClearItem clears the "item" edge to the Item entity.
 func (m *UserItemDataMutation) ClearItem() {
 	m.cleareditem = true
+	m.clearedFields[useritemdata.FieldItemID] = struct{}{}
 }
 
 // ItemCleared reports if the "item" edge to the Item entity was cleared.
 func (m *UserItemDataMutation) ItemCleared() bool {
 	return m.cleareditem
-}
-
-// ItemID returns the "item" edge ID in the mutation.
-func (m *UserItemDataMutation) ItemID() (id uuid.UUID, exists bool) {
-	if m.item != nil {
-		return *m.item, true
-	}
-	return
 }
 
 // ItemIDs returns the "item" edge IDs in the mutation.
@@ -42540,12 +43031,18 @@ func (m *UserItemDataMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserItemDataMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 11)
 	if m.created_at != nil {
 		fields = append(fields, useritemdata.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
 		fields = append(fields, useritemdata.FieldUpdatedAt)
+	}
+	if m.user != nil {
+		fields = append(fields, useritemdata.FieldUserID)
+	}
+	if m.item != nil {
+		fields = append(fields, useritemdata.FieldItemID)
 	}
 	if m.played != nil {
 		fields = append(fields, useritemdata.FieldPlayed)
@@ -42580,6 +43077,10 @@ func (m *UserItemDataMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case useritemdata.FieldUpdatedAt:
 		return m.UpdatedAt()
+	case useritemdata.FieldUserID:
+		return m.UserID()
+	case useritemdata.FieldItemID:
+		return m.ItemID()
 	case useritemdata.FieldPlayed:
 		return m.Played()
 	case useritemdata.FieldIsFavorite:
@@ -42607,6 +43108,10 @@ func (m *UserItemDataMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldCreatedAt(ctx)
 	case useritemdata.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
+	case useritemdata.FieldUserID:
+		return m.OldUserID(ctx)
+	case useritemdata.FieldItemID:
+		return m.OldItemID(ctx)
 	case useritemdata.FieldPlayed:
 		return m.OldPlayed(ctx)
 	case useritemdata.FieldIsFavorite:
@@ -42643,6 +43148,20 @@ func (m *UserItemDataMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedAt(v)
+		return nil
+	case useritemdata.FieldUserID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case useritemdata.FieldItemID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetItemID(v)
 		return nil
 	case useritemdata.FieldPlayed:
 		v, ok := value.(bool)
@@ -42807,6 +43326,12 @@ func (m *UserItemDataMutation) ResetField(name string) error {
 		return nil
 	case useritemdata.FieldUpdatedAt:
 		m.ResetUpdatedAt()
+		return nil
+	case useritemdata.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case useritemdata.FieldItemID:
+		m.ResetItemID()
 		return nil
 	case useritemdata.FieldPlayed:
 		m.ResetPlayed()

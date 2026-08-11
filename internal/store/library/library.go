@@ -44,7 +44,7 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "item" package.
 	ItemsInverseTable = "items"
 	// ItemsColumn is the table column denoting the items relation/edge.
-	ItemsColumn = "library_items"
+	ItemsColumn = "library_id"
 )
 
 // Columns holds all SQL columns for library fields.
@@ -74,10 +74,15 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultLocations holds the default value on creation for the "locations" field.
+	DefaultLocations []string
 )
 
 // CollectionType defines the type for the "collection_type" enum field.
 type CollectionType string
+
+// CollectionTypeMixed is the default value of the CollectionType enum.
+const DefaultCollectionType = CollectionTypeMixed
 
 // CollectionType values.
 const (
