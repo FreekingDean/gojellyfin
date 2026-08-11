@@ -56,9 +56,19 @@ var legacyRoutes = map[string]string{
 	"GET /Users/{userId}/Views":                           "/UserViews",
 	"GET /Users/{userId}/GroupingOptions":                 "/UserViews/GroupingOptions",
 	"GET /Users/{userId}/Suggestions":                     "/Items/Suggestions",
-	"POST /Users/{userId}/Configuration":                  "/Users/Configuration",
-	"POST /Users/{userId}/Password":                       "/Users/Password",
-	"POST /Users/{userId}":                                "/Users",
+	"GET /Users/{userId}/Images/{imageType}":              "/UserImage",
+	"HEAD /Users/{userId}/Images/{imageType}":             "/UserImage",
+	"POST /Users/{userId}/Images/{imageType}":             "/UserImage",
+	"DELETE /Users/{userId}/Images/{imageType}":           "/UserImage",
+	// Jellyfin drops the type and index itself: a user has one image, and its
+	// own legacy handlers document both parameters as unused.
+	"GET /Users/{userId}/Images/{imageType}/{imageIndex}":  "/UserImage",
+	"HEAD /Users/{userId}/Images/{imageType}/{imageIndex}": "/UserImage",
+	"POST /Users/{userId}/Images/{imageType}/{index}":      "/UserImage",
+	"DELETE /Users/{userId}/Images/{imageType}/{index}":    "/UserImage",
+	"POST /Users/{userId}/Configuration":                   "/Users/Configuration",
+	"POST /Users/{userId}/Password":                        "/Users/Password",
+	"POST /Users/{userId}":                                 "/Users",
 }
 
 var routeParam = regexp.MustCompile(`\{([^}]+)\}`)
