@@ -24,20 +24,7 @@ func (s *Server) GetDevices(ctx context.Context, request api.GetDevicesRequestOb
 
 	items := make([]api.DeviceInfoDto, 0, len(devices))
 	for _, device := range devices {
-		info := api.DeviceInfoDto{
-			Id:               apiutil.Ptr(device.ClientID),
-			Name:             apiutil.Ptr(device.Name),
-			CustomName:       apiutil.Ptr(device.CustomName),
-			AppName:          apiutil.Ptr(device.AppName),
-			AppVersion:       apiutil.Ptr(device.AppVersion),
-			DateLastActivity: apiutil.Ptr(device.LastActivityAt),
-			IconUrl:          apiutil.Ptr(device.IconURL),
-		}
-		if user := sessions.LastUser(device); user != nil {
-			info.LastUserId = &user.ID
-			info.LastUserName = apiutil.Ptr(user.Name)
-		}
-		items = append(items, info)
+		items = append(items, deviceInfoDto(device))
 	}
 
 	return api.GetDevices200JSONResponse{
@@ -45,4 +32,51 @@ func (s *Server) GetDevices(ctx context.Context, request api.GetDevicesRequestOb
 		StartIndex:       apiutil.Ptr(int32(0)),
 		TotalRecordCount: apiutil.Ptr(int32(len(items))),
 	}, nil
+}
+
+func (s *Server) GetDeviceInfo(ctx context.Context, request api.GetDeviceInfoRequestObject) (api.GetDeviceInfoResponseObject, error) {
+	device, err := s.sessions.DeviceByClientID(ctx, request.Params.Id)
+	if err != nil {
+		return api.GetDeviceInfo404JSONResponse{}, nil
+	}
+
+	return api.GetDeviceInfo200JSONResponse(deviceInfoDto(device)), nil
+}
+
+func (s *Server) GetDeviceOptions(ctx context.Context, request api.GetDeviceOptionsRequestObject) (api.GetDeviceOptionsResponseObject, error) {
+	device, err := s.sessions.DeviceByClientID(ctx, request.Params.Id)
+	if err != nil {
+		return api.GetDeviceOptions404JSONResponse{}, nil
+	}
+
+	return api.GetDeviceOptions200JSONResponse(deviceOptionsDto(device)), nil
+}
+
+func (s *Server) UpdateDeviceOptions(ctx context.Context, request api.UpdateDeviceOptionsRequestObject) (api.UpdateDeviceOptionsResponseObject, error) {
+	req := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
+	if req == nil {
+		return api.UpdateDeviceOptions403Response{}, nil
+	}
+
+	if _, err := s.sessions.DeviceByClientID(ctx, request.Params.Id); err != nil {
+		return api.UpdateDeviceOptions403Response{}, nil
+	}
+
+	if err := s.sessions.RenameDevice(ctx, request.Params.Id, req.CustomName); err != nil {
+		return nil, err
+	}
+
+	return api.UpdateDeviceOptions204Response{}, nil
+}
+
+func (s *Server) DeleteDevice(ctx context.Context, request api.DeleteDeviceRequestObject) (api.DeleteDeviceResponseObject, error) {
+	if _, err := s.sessions.DeviceByClientID(ctx, request.Params.Id); err != nil {
+		return api.DeleteDevice404JSONResponse{}, nil
+	}
+
+	if err := s.sessions.RemoveDevice(ctx, request.Params.Id); err != nil {
+		return nil, err
+	}
+
+	return api.DeleteDevice204Response{}, nil
 }
