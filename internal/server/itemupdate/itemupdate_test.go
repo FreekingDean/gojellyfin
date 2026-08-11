@@ -148,7 +148,7 @@ func TestUpdateItem(t *testing.T) {
 		SortName:       apiutil.Ptr("matrix, the"),
 		OriginalTitle:  apiutil.Ptr("The Matrix"),
 		Overview:       apiutil.Ptr("A hacker learns the truth."),
-		OfficialRating: apiutil.Ptr("r"),
+		OfficialRating: apiutil.Ptr("R"),
 		ProductionYear: apiutil.Ptr(int32(1999)),
 		PremiereDate:   &premiere,
 		IndexNumber:    apiutil.Ptr(int32(3)),
@@ -197,7 +197,7 @@ func TestUpdateItem(t *testing.T) {
 	}
 }
 
-func TestUpdateItemKeepsUnknownRating(t *testing.T) {
+func TestUpdateItemKeepsForeignRating(t *testing.T) {
 	fixture := newFixture(t)
 
 	fixture.update(t, fixture.itemID, api.BaseItemDto{OfficialRating: apiutil.Ptr("FSK 16")})

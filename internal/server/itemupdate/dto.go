@@ -69,13 +69,7 @@ func Metadata(req *api.BaseItemDto) items.Metadata {
 }
 
 func rating(value *string) *consts.Rating {
-	if value == nil {
-		return nil
-	}
-
-	parsed, _ := consts.ParseRating(*value)
-
-	return &parsed
+	return (*consts.Rating)(value)
 }
 
 func score(value *float32) *float64 {
