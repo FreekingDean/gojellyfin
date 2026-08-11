@@ -3,6 +3,7 @@ package server
 import (
 	"go.uber.org/fx"
 
+	"github.com/FreekingDean/gojellyfin/internal/apikeys"
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
@@ -10,6 +11,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/scanner"
 	"github.com/FreekingDean/gojellyfin/internal/server/activitylog"
+	"github.com/FreekingDean/gojellyfin/internal/server/apikey"
 	"github.com/FreekingDean/gojellyfin/internal/server/branding"
 	"github.com/FreekingDean/gojellyfin/internal/server/channels"
 	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
@@ -49,6 +51,7 @@ var Module = fx.Module(
 	"server",
 	fx.Provide(
 		// domains
+		apikeys.New,
 		auth.New,
 		sessions.New,
 		users.New,
@@ -58,6 +61,7 @@ var Module = fx.Module(
 		filesystem.New,
 
 		// one handler service per spec tag
+		apikey.New,
 		filter.New,
 		years.New,
 		search.New,
