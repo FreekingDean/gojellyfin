@@ -27,20 +27,28 @@ func (s *Service) Keys(ctx context.Context) ([]*ApiKey, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to list api keys: %w", err)
 	}
+
 	return keys, nil
 }
 
 func (s *Service) Create(ctx context.Context, appName, token string) (*ApiKey, error) {
-	return s.store.ApiKey.Create().
+	key, err := s.store.ApiKey.Create().
 		SetAppName(appName).
 		SetAccessToken(token).
 		Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create api key: %w", err)
+	}
+
+	return key, nil
 }
 
 func (s *Service) Revoke(ctx context.Context, token string) error {
-	_, err := s.store.ApiKey.Delete().
+	if _, err := s.store.ApiKey.Delete().
 		Where(apikeymodal.AccessToken(token)).
-		Exec(ctx)
+		Exec(ctx); err != nil {
+		return fmt.Errorf("failed to delete api key: %w", err)
+	}
 
-	return err
+	return nil
 }
