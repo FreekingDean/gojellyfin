@@ -29,6 +29,11 @@ var streamRoutes = []string{
 	"HEAD /Audio/{itemId}/stream.{container}",
 }
 
+var universalAudioRoutes = []string{
+	"GET /Audio/{itemId}/universal",
+	"HEAD /Audio/{itemId}/universal",
+}
+
 // Jellyfin serves these but hides them from its own OpenAPI document with
 // [ApiExplorerSettings(IgnoreApi = true)], so the generated routes cannot
 // carry them while clients still ask for them. Each maps to the documented
@@ -174,6 +179,9 @@ func Register(s *Server, apiServer *server.Server, sock *socket.Socket, streams 
 
 	for _, pattern := range streamRoutes {
 		m.HandleFunc(pattern, streams.Serve)
+	}
+	for _, pattern := range universalAudioRoutes {
+		m.HandleFunc(pattern, streams.ServeUniversal)
 	}
 	// Parameter binding failures answer 400 without reaching a handler, so this
 	// is the only place the reason is visible.

@@ -124,6 +124,28 @@ func (s *Service) MediaSource(ctx context.Context, itemID uuid.UUID) (*MediaSour
 	return source, nil
 }
 
+// Empty until the probe has run, so callers must treat it as unknown rather
+// than as a mismatch.
+func (s *Service) AudioCodec(ctx context.Context, itemID uuid.UUID) (string, error) {
+	codecs, err := s.store.MediaStream.Query().
+		Where(
+			streammodal.KindEQ(streammodal.KindAudio),
+			streammodal.HasSourceWith(sourcemodal.ItemID(itemID)),
+		).
+		Order(streammodal.ByIndex()).
+		Limit(1).
+		Select(streammodal.FieldCodec).
+		Strings(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to query audio codec: %w", err)
+	}
+	if len(codecs) == 0 {
+		return "", nil
+	}
+
+	return codecs[0], nil
+}
+
 // The probe is skipped unless the file changed since it last ran.
 func NeedsProbe(item *Item) bool {
 	return item.ProbedAt.IsZero() || item.ProbedAt.Before(item.DateModified)
