@@ -170,19 +170,19 @@ func (s *Server) UpdateStartupUser(
 	if err != nil {
 		return nil, err
 	}
-	if _, err := s.users.EnsureUser(ctx, *req.Name, hash, true); err != nil {
-		return nil, err
-	}
 
 	settings, err := configuration.ServerConfiguration(ctx, s.config)
 	if err != nil {
 		return nil, err
 	}
-	// The stored flag has to outlast the user this just created, which would
-	// otherwise make the rest of the wizard look like a completed install.
+	// Stored before the user exists: a database holding a user and no flag
+	// reads as a completed install, which would shut the rest of the wizard.
 	settings.IsStartupWizardCompleted = apiutil.Ptr(false)
 
 	if err := s.saveConfiguration(ctx, settings); err != nil {
+		return nil, err
+	}
+	if _, err := s.users.EnsureUser(ctx, *req.Name, hash, true); err != nil {
 		return nil, err
 	}
 
