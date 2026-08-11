@@ -13,4 +13,4 @@ Refactors and cleanups deferred out of a change. One line each.
 - `atlas migrate diff` is commented out in `internal/store/generate.go` because it needs Docker; schema changes mean running it by hand.
 - The scanner writes one `MediaSource` per item and replaces it wholesale on every probe, so nothing can hang off a source across scans yet (attachments, segments, trickplay).
 - `Item.width`/`height`/`aspect_ratio` and the chapter, credit, genre and studio edges are modelled but nothing populates them.
-- Jellyfin hides ~36 obsolete routes from its OpenAPI document with `[ApiExplorerSettings(IgnoreApi = true)]`, mostly the pre-10.9 `/Users/{userId}/…` spellings; only `GET /Users/{userId}/Items/{itemId}` is aliased so far. The rest 404 until a client is seen wanting one.
+- The legacy `/Users/{userId}/Images/{imageType}` routes have no alias: the documented replacement is `/UserImage`, which takes no image type or index, so the mapping would drop what the caller asked for. `POST /Users/{userId}/Authenticate` and `POST /Users/{userId}/EasyPassword` have no replacement at all.
