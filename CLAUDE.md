@@ -120,7 +120,7 @@ Anything a create has to supply on every call belongs in the schema as `.Default
 
 Ent's default delete action is `NO ACTION` for a required edge and `SET NULL` for an optional one, so a child row either blocks its parent's delete or is left orphaned with a dangling column. Owned rows carry `.Annotations(cascadeOnDelete)`, which only takes effect on the `edge.To` side — ent skips the inverse edge when it builds the foreign key, so on the self-referencing `children`/`parent` edge the annotation goes before `.From("parent")`. Deleting a library therefore takes its items with it, and a user takes their sessions and watch state; only activity log entries are left behind, keeping their history when the user or item goes away.
 
-Columns owned by a background process must be left out of an upsert's `DoUpdates` — the scan clobbering probe-owned columns like `run_time_ticks` was a real bug. The scan writes `date_modified`; the probe writes `container`, `run_time_ticks`, `probed_at` and the `MediaSource`.
+Columns owned by a background process must be left out of an upsert's `DoUpdates` — the scan clobbering probe-owned columns like `run_time_ticks` was a real bug. The scan writes `date_modified`; the probe writes `container`, `run_time_ticks`, `probed_at`, `tags`, the `MediaSource` and the genre, studio and credit edges, and rewrites all of them on every run, so the edges are cleared and re-added rather than merged.
 
 Ordering by a to-many edge makes ent group the query, so the sort column comes back unaggregated and Postgres rejects it. Query from the side that owns the column instead (see `items.ResumeItems`).
 

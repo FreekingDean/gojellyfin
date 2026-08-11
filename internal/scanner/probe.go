@@ -49,6 +49,7 @@ func (s *Scanner) probe(ctx context.Context, item *items.Item) error {
 		Size:         probe.Format.Bytes(),
 		Bitrate:      probe.Format.Bitrate(),
 		Streams:      streams,
+		Metadata:     metadata(probe),
 	})
 }
 

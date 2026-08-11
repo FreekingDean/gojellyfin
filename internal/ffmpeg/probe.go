@@ -13,10 +13,11 @@ type Probe struct {
 }
 
 type Format struct {
-	FormatName string `json:"format_name"`
-	Duration   string `json:"duration"`
-	Size       string `json:"size"`
-	BitRate    string `json:"bit_rate"`
+	FormatName string            `json:"format_name"`
+	Duration   string            `json:"duration"`
+	Size       string            `json:"size"`
+	BitRate    string            `json:"bit_rate"`
+	Tags       map[string]string `json:"tags"`
 }
 
 type Stream struct {
