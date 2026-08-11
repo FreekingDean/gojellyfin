@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/FreekingDean/gojellyfin/internal/items"
 )
 
 var (
@@ -14,16 +16,76 @@ var (
 	seasonPattern   = regexp.MustCompile(`(?i)^(?:season|series|s)[\s._\-]*(\d{1,3})$`)
 	specialsPattern = regexp.MustCompile(`(?i)^(?:specials?|season\s*0)$`)
 	articlePattern  = regexp.MustCompile(`(?i)^(the|a|an)\s+`)
+	languagePattern = regexp.MustCompile(`^[a-z]{2,3}$`)
 
 	videoExtensions = map[string]bool{
 		".mkv": true, ".mp4": true, ".m4v": true, ".avi": true, ".mov": true,
 		".wmv": true, ".flv": true, ".webm": true, ".mpg": true, ".mpeg": true,
 		".ts": true, ".m2ts": true, ".mts": true, ".ogv": true, ".3gp": true,
 	}
+
+	subtitleExtensions = map[string]bool{
+		".srt": true, ".vtt": true, ".ass": true, ".ssa": true, ".sub": true,
+	}
 )
 
 func isVideo(name string) bool {
 	return videoExtensions[strings.ToLower(filepath.Ext(name))]
+}
+
+func isSubtitle(name string) bool {
+	return subtitleExtensions[strings.ToLower(filepath.Ext(name))]
+}
+
+// parseSubtitle reads "Movie.Commentary.en.forced.srt" beside "Movie.mkv":
+// flags come last, a two or three letter language code before them, and
+// anything left over is the track title.
+func parseSubtitle(base, name string) (items.ExternalSubtitle, bool) {
+	if !isSubtitle(name) {
+		return items.ExternalSubtitle{}, false
+	}
+
+	remainder := stripExtension(name)
+	if !strings.EqualFold(remainder, base) && !strings.HasPrefix(strings.ToLower(remainder), strings.ToLower(base)+".") {
+		return items.ExternalSubtitle{}, false
+	}
+
+	subtitle := items.ExternalSubtitle{
+		Codec: strings.TrimPrefix(strings.ToLower(filepath.Ext(name)), "."),
+	}
+
+	tokens := make([]string, 0)
+	for _, token := range strings.Split(remainder[len(base):], ".") {
+		if token != "" {
+			tokens = append(tokens, strings.ToLower(token))
+		}
+	}
+
+	for len(tokens) > 0 && takeFlag(&subtitle, tokens[len(tokens)-1]) {
+		tokens = tokens[:len(tokens)-1]
+	}
+	if len(tokens) > 0 && languagePattern.MatchString(tokens[len(tokens)-1]) {
+		subtitle.Language = tokens[len(tokens)-1]
+		tokens = tokens[:len(tokens)-1]
+	}
+	subtitle.Title = clean(strings.Join(tokens, " "))
+
+	return subtitle, true
+}
+
+func takeFlag(subtitle *items.ExternalSubtitle, token string) bool {
+	switch token {
+	case "forced":
+		subtitle.IsForced = true
+	case "default":
+		subtitle.IsDefault = true
+	case "sdh", "hi", "cc":
+		subtitle.IsHearingImpaired = true
+	default:
+		return false
+	}
+
+	return true
 }
 
 func stripExtension(name string) string {

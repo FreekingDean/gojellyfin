@@ -129,7 +129,7 @@ func (s *Scanner) scanMovies(ctx context.Context, library *libraries.Library, ro
 			}
 		}
 
-		return s.probeMedia(ctx, item)
+		return s.scanMedia(ctx, item)
 	})
 
 	return seen, err
@@ -272,7 +272,19 @@ func (s *Scanner) upsertEpisode(ctx context.Context, library *libraries.Library,
 		log.Printf("artwork %s: %v", path, err)
 	}
 
-	return s.probeMedia(ctx, item)
+	return s.scanMedia(ctx, item)
+}
+
+func (s *Scanner) scanMedia(ctx context.Context, item *items.Item) error {
+	if err := s.probeMedia(ctx, item); err != nil {
+		return err
+	}
+
+	if err := s.scanSubtitles(ctx, item); err != nil {
+		log.Printf("subtitles %s: %v", item.Path, err)
+	}
+
+	return nil
 }
 
 func (s *Scanner) probeMedia(ctx context.Context, item *items.Item) error {
