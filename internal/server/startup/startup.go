@@ -21,10 +21,10 @@ func New(config *config.Service, users *users.Service) *Server {
 	return &Server{config: config, users: users}
 }
 
-// The wizard answers without a token so a fresh install can be set up, so
-// everything here refuses once the wizard is done. A database that has never
-// stored the flag counts as done as soon as it holds a user, which keeps an
-// install that predates the wizard closed.
+// The wizard answers without a token so that a fresh install can be set up,
+// which is why every handler here refuses once it is done. A database that
+// never stored the flag counts as done as soon as it holds a user, so an
+// install that predates the wizard stays closed.
 func Completed(ctx context.Context, store *config.Service, users *users.Service) (bool, error) {
 	value, err := store.Configuration(ctx, configuration.SystemConfigurationKey)
 	if err != nil {
