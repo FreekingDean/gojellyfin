@@ -30,6 +30,32 @@ func DisplayPreferencesDto(id string, prefs *displaypreferences.DisplayPreferenc
 	}
 }
 
+func Settings(req *api.DisplayPreferencesDto) displaypreferences.Settings {
+	settings := displaypreferences.Settings{
+		ViewType:           req.ViewType,
+		SortBy:             req.SortBy,
+		IndexBy:            req.IndexBy,
+		RememberIndexing:   req.RememberIndexing,
+		RememberSorting:    req.RememberSorting,
+		ShowBackdrop:       req.ShowBackdrop,
+		ShowSidebar:        req.ShowSidebar,
+		PrimaryImageHeight: req.PrimaryImageHeight,
+		PrimaryImageWidth:  req.PrimaryImageWidth,
+	}
+
+	if req.SortOrder != nil {
+		settings.SortOrder = apiutil.Ptr(displaypreferences.SortOrder(*req.SortOrder))
+	}
+	if req.ScrollDirection != nil {
+		settings.ScrollDirection = apiutil.Ptr(displaypreferences.ScrollDirection(*req.ScrollDirection))
+	}
+	if req.CustomPrefs != nil {
+		settings.CustomPrefs = apiutil.Ptr(customPrefs(*req.CustomPrefs))
+	}
+
+	return settings
+}
+
 func customPrefs(prefs map[string]*string) map[string]string {
 	stored := make(map[string]string, len(prefs))
 	for key, value := range prefs {

@@ -86,8 +86,45 @@ func (s *Service) existing(ctx context.Context, userID uuid.UUID, client string,
 	return prefs, nil
 }
 
-func (s *Service) Update(id uuid.UUID) *store.DisplayPreferencesUpdateOne {
-	return s.store.DisplayPreferences.UpdateOneID(id)
+type Settings struct {
+	ViewType           *string
+	SortBy             *string
+	IndexBy            *string
+	SortOrder          *SortOrder
+	ScrollDirection    *ScrollDirection
+	RememberIndexing   *bool
+	RememberSorting    *bool
+	ShowBackdrop       *bool
+	ShowSidebar        *bool
+	PrimaryImageHeight *int32
+	PrimaryImageWidth  *int32
+	CustomPrefs        *map[string]string
+}
+
+func (s *Service) UpdateSettings(ctx context.Context, id uuid.UUID, settings Settings) (*DisplayPreferences, error) {
+	update := s.store.DisplayPreferences.UpdateOneID(id).
+		SetNillableViewType(settings.ViewType).
+		SetNillableSortBy(settings.SortBy).
+		SetNillableIndexBy(settings.IndexBy).
+		SetNillableSortOrder(settings.SortOrder).
+		SetNillableScrollDirection(settings.ScrollDirection).
+		SetNillableRememberIndexing(settings.RememberIndexing).
+		SetNillableRememberSorting(settings.RememberSorting).
+		SetNillableShowBackdrop(settings.ShowBackdrop).
+		SetNillableShowSidebar(settings.ShowSidebar).
+		SetNillablePrimaryImageHeight(settings.PrimaryImageHeight).
+		SetNillablePrimaryImageWidth(settings.PrimaryImageWidth)
+
+	if settings.CustomPrefs != nil {
+		update.SetCustomPrefs(*settings.CustomPrefs)
+	}
+
+	prefs, err := update.Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update display preferences: %w", err)
+	}
+
+	return prefs, nil
 }
 
 func (s *Service) itemID(ctx context.Context, id string) (*uuid.UUID, error) {
