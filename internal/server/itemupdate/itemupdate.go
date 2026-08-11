@@ -32,7 +32,7 @@ func (s *Server) UpdateItem(ctx context.Context, request api.UpdateItemRequestOb
 		return api.UpdateItem404JSONResponse{}, nil
 	}
 
-	if err := s.saveMetadata(ctx, request.ItemId, req); err != nil {
+	if _, err := s.items.UpdateMetadata(ctx, request.ItemId, Metadata(req)); err != nil {
 		return nil, err
 	}
 

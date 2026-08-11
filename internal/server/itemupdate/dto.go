@@ -1,65 +1,58 @@
 package itemupdate
 
 import (
-	"context"
 	"strings"
 
-	"github.com/google/uuid"
-
+	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
-// The scanner owns date_modified and the probe owns container, run_time_ticks,
-// probed_at and the media sources, so the editor never writes them.
-func (s *Server) saveMetadata(ctx context.Context, id uuid.UUID, req *api.BaseItemDto) error {
-	update := s.items.UpdateMetadata(id).
-		SetNillableName(req.Name).
-		SetNillableOriginalTitle(req.OriginalTitle).
-		SetNillableSortName(req.SortName).
-		SetNillableOverview(req.Overview).
-		SetNillableOfficialRating(req.OfficialRating).
-		SetNillableCustomRating(req.CustomRating).
-		SetNillableCommunityRating(rating(req.CommunityRating)).
-		SetNillableCriticRating(rating(req.CriticRating)).
-		SetNillableProductionYear(req.ProductionYear).
-		SetNillablePremiereDate(req.PremiereDate).
-		SetNillableEndDate(req.EndDate).
-		SetNillableIndexNumber(req.IndexNumber).
-		SetNillableIndexNumberEnd(req.IndexNumberEnd).
-		SetNillableParentIndexNumber(req.ParentIndexNumber).
-		SetNillableAirsBeforeSeasonNumber(req.AirsBeforeSeasonNumber).
-		SetNillableAirsAfterSeasonNumber(req.AirsAfterSeasonNumber).
-		SetNillableAirsBeforeEpisodeNumber(req.AirsBeforeEpisodeNumber).
-		SetNillableStatus(req.Status).
-		SetNillableAirTime(req.AirTime).
-		SetNillableDisplayOrder(req.DisplayOrder).
-		SetNillableLockData(req.LockData).
-		SetNillablePreferredMetadataLanguage(req.PreferredMetadataLanguage).
-		SetNillablePreferredMetadataCountryCode(req.PreferredMetadataCountryCode)
+// Everything the editor may change; the columns the scanner and the probe own
+// have no home here on purpose.
+func Metadata(req *api.BaseItemDto) items.Metadata {
+	metadata := items.Metadata{
+		Name:                         req.Name,
+		OriginalTitle:                req.OriginalTitle,
+		SortName:                     req.SortName,
+		Overview:                     req.Overview,
+		OfficialRating:               req.OfficialRating,
+		CustomRating:                 req.CustomRating,
+		CommunityRating:              rating(req.CommunityRating),
+		CriticRating:                 rating(req.CriticRating),
+		ProductionYear:               req.ProductionYear,
+		PremiereDate:                 req.PremiereDate,
+		EndDate:                      req.EndDate,
+		IndexNumber:                  req.IndexNumber,
+		IndexNumberEnd:               req.IndexNumberEnd,
+		ParentIndexNumber:            req.ParentIndexNumber,
+		AirsBeforeSeasonNumber:       req.AirsBeforeSeasonNumber,
+		AirsAfterSeasonNumber:        req.AirsAfterSeasonNumber,
+		AirsBeforeEpisodeNumber:      req.AirsBeforeEpisodeNumber,
+		Status:                       req.Status,
+		AirTime:                      req.AirTime,
+		DisplayOrder:                 req.DisplayOrder,
+		LockData:                     req.LockData,
+		PreferredMetadataLanguage:    req.PreferredMetadataLanguage,
+		PreferredMetadataCountryCode: req.PreferredMetadataCountryCode,
+		Tags:                         req.Tags,
+		Taglines:                     req.Taglines,
+		ProductionLocations:          req.ProductionLocations,
+	}
 
-	if req.Tags != nil {
-		update.SetTags(*req.Tags)
-	}
-	if req.Taglines != nil {
-		update.SetTaglines(*req.Taglines)
-	}
-	if req.ProductionLocations != nil {
-		update.SetProductionLocations(*req.ProductionLocations)
-	}
 	if req.AirDays != nil {
 		days := make([]string, 0, len(*req.AirDays))
 		for _, day := range *req.AirDays {
 			days = append(days, string(day))
 		}
-		update.SetAirDays(days)
+		metadata.AirDays = &days
 	}
 	if req.LockedFields != nil {
 		fields := make([]string, 0, len(*req.LockedFields))
 		for _, field := range *req.LockedFields {
 			fields = append(fields, string(field))
 		}
-		update.SetLockedFields(fields)
+		metadata.LockedFields = &fields
 	}
 	if req.ProviderIds != nil {
 		providers := make(map[string]string, len(*req.ProviderIds))
@@ -68,10 +61,10 @@ func (s *Server) saveMetadata(ctx context.Context, id uuid.UUID, req *api.BaseIt
 				providers[name] = *value
 			}
 		}
-		update.SetProviderIds(providers)
+		metadata.ProviderIds = &providers
 	}
 
-	return update.Exec(ctx)
+	return metadata
 }
 
 func rating(value *float32) *float64 {
