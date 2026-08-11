@@ -40,6 +40,8 @@ Run `air` through `tee` so the log is both on screen and readable at `/tmp/gojel
 
 Requires a reachable Postgres. `DATABASE_URL` overrides the default DSN in `internal/store/fx.go` (`postgres://localhost:5432/gojellyfin_development?sslmode=disable`).
 
+`make test` needs one too — `internal/items` seeds real rows through `store.NewStore()` and fails rather than skipping when the database is unreachable, so a green run means the queries actually ran. Each test owns a library row and deletes it and its items on cleanup; point `DATABASE_URL` at a scratch database to keep development data out of it. CI runs the suite against a `postgres:16` service with `internal/store/migrations` applied by `atlas migrate apply`.
+
 Nothing migrates at startup. Schema changes mean editing `internal/store/entities`, running `make generate`, then generating and applying the SQL by hand from `internal/store` (the `atlas migrate diff` line in `generate.go` is commented out because it needs Docker):
 
 ```sh

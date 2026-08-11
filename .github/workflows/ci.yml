@@ -52,12 +52,38 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: gojellyfin
+          POSTGRES_PASSWORD: gojellyfin
+          POSTGRES_DB: gojellyfin_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgres://gojellyfin:gojellyfin@localhost:5432/gojellyfin_test?sslmode=disable
+
     steps:
       - uses: actions/checkout@v7
 
       - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
+
+      - uses: ariga/setup-atlas@v0
+
+      # Nothing migrates at startup, so the schema has to be applied before any
+      # test can reach it. Only `migrate diff` needs Docker; `apply` does not.
+      - name: Migrate
+        run: atlas migrate apply --dir "file://internal/store/migrations" --url "$DATABASE_URL"
 
       - name: Build
         run: go build ./...
