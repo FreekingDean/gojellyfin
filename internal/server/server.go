@@ -13,6 +13,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/environment"
 	"github.com/FreekingDean/gojellyfin/internal/server/filter"
 	"github.com/FreekingDean/gojellyfin/internal/server/genres"
+	"github.com/FreekingDean/gojellyfin/internal/server/image"
 	"github.com/FreekingDean/gojellyfin/internal/server/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/library"
 	"github.com/FreekingDean/gojellyfin/internal/server/librarystructure"
@@ -52,6 +53,7 @@ type (
 	SearchServer             = search.Server
 	StudiosServer            = studios.Server
 	GenresServer             = genres.Server
+	ImageServer              = image.Server
 	MusicGenresServer        = musicgenres.Server
 	PersonsServer            = persons.Server
 	LiveTvServer             = livetv.Server
@@ -88,6 +90,7 @@ type Server struct {
 	*SearchServer
 	*StudiosServer
 	*GenresServer
+	*ImageServer
 	*MusicGenresServer
 	*PersonsServer
 	*LiveTvServer
@@ -126,6 +129,7 @@ func New(
 	search *search.Server,
 	studios *studios.Server,
 	genres *genres.Server,
+	image *image.Server,
 	musicgenres *musicgenres.Server,
 	persons *persons.Server,
 	liveTv *livetv.Server,
@@ -161,6 +165,7 @@ func New(
 		SearchServer:             search,
 		StudiosServer:            studios,
 		GenresServer:             genres,
+		ImageServer:              image,
 		MusicGenresServer:        musicgenres,
 		PersonsServer:            persons,
 		LiveTvServer:             liveTv,

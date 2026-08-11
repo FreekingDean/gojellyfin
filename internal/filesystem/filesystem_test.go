@@ -3,6 +3,9 @@ package filesystem
 import (
 	"context"
 	"errors"
+	"io"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -62,6 +65,42 @@ func TestStat(t *testing.T) {
 	}
 	if file.Name != "readme.txt" || file.Dir {
 		t.Errorf("got %+v, want a file named readme.txt", file)
+	}
+}
+
+func TestOpen(t *testing.T) {
+	directory := t.TempDir()
+	path := filepath.Join(directory, "poster.jpg")
+	if err := os.WriteFile(path, []byte("poster-bytes"), 0o600); err != nil {
+		t.Fatalf("failed to write the file: %v", err)
+	}
+
+	body, size, err := New().Open(context.Background(), path)
+	if err != nil {
+		t.Fatalf("failed to open the file: %v", err)
+	}
+	defer func() { _ = body.Close() }()
+
+	content, err := io.ReadAll(body)
+	if err != nil {
+		t.Fatalf("failed to read the file: %v", err)
+	}
+	if string(content) != "poster-bytes" {
+		t.Errorf("content = %q, want poster-bytes", content)
+	}
+	if size != int64(len(content)) {
+		t.Errorf("size = %d, want %d", size, len(content))
+	}
+}
+
+func TestOpenErrors(t *testing.T) {
+	directory := t.TempDir()
+
+	if _, _, err := New().Open(context.Background(), filepath.Join(directory, "nope.jpg")); !errors.Is(err, ErrNotFound) {
+		t.Errorf("got %v, want ErrNotFound", err)
+	}
+	if _, _, err := New().Open(context.Background(), directory); !errors.Is(err, ErrNotFound) {
+		t.Errorf("got %v, want ErrNotFound", err)
 	}
 }
 
