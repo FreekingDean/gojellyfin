@@ -116,7 +116,9 @@ Ordering by a to-many edge makes ent group the query, so the sort column comes b
 
 `internal/auth` owns identity on the context — it puts it on and takes it off, and nothing else knows the keys exist. `middleware.Auth` only parses what the client sent (`Authorization: MediaBrowser …`, `X-Emby-Token`, `?api_key=`) and calls `auth.Authenticate`, which resolves the token through `sessions` and returns a context carrying the session.
 
-`auth.UserID` reads the session's user edge, so `sessions.ByToken` has to eager-load it; the foreign key is unexported and there is nothing to fall back on.
+`auth.UserID` reads the session's user edge, so `sessions.ByToken` has to eager-load it; the foreign key is unexported and there is nothing to fall back on. `auth.IsAdministrator` reads the policy hanging off that same user, which is why `ByToken` eager-loads it too, and it denies by default: a missing session, user or policy is not an administrator. It is the only admin check there is; operations the spec marks `RequiresElevation` should use it and return the operation's own 403 response rather than an error.
+
+`auth.Authorization` also carries the connection's `RemoteAddr`, which is the only thing `GetEndpointInfo` has to answer with — the strict handlers never see the `*http.Request`.
 
 Handlers read `auth.UserID(ctx)`, `auth.SessionFrom(ctx)`, `auth.AuthorizationFrom(ctx)` and return `auth.ErrUnauthorized`; `middleware.TokenFrom` is the only thing left in the middleware package that handlers touch, and only because websocket and media URLs cannot send headers.
 

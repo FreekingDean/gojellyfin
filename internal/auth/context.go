@@ -21,11 +21,12 @@ const (
 // What the caller presented. Parsed at the transport edge, but owned here so
 // handlers read it from this package rather than from the middleware.
 type Authorization struct {
-	Client   string
-	Device   string
-	DeviceID string
-	Version  string
-	Token    string
+	Client     string
+	Device     string
+	DeviceID   string
+	Version    string
+	Token      string
+	RemoteAddr string
 }
 
 func (a Authorization) DeviceInfo() sessions.DeviceInfo {
@@ -83,4 +84,13 @@ func UserID(ctx context.Context) uuid.UUID {
 	}
 
 	return uuid.Nil
+}
+
+func IsAdministrator(ctx context.Context) bool {
+	session := SessionFrom(ctx)
+	if session == nil || session.Edges.User == nil || session.Edges.User.Edges.Policy == nil {
+		return false
+	}
+
+	return session.Edges.User.Edges.Policy.IsAdministrator
 }

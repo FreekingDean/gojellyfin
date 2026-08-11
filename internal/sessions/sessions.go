@@ -80,7 +80,7 @@ func (s *Service) ByToken(ctx context.Context, token string) (*Session, error) {
 			sessionmodal.AccessToken(token),
 			sessionmodal.RevokedAtIsNil(),
 		).
-		WithUser().
+		WithUser(func(user *store.UserQuery) { user.WithPolicy() }).
 		WithDevice().
 		Only(ctx)
 	if err != nil {

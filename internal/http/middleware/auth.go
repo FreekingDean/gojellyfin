@@ -62,7 +62,7 @@ func parseAuthorization(r *http.Request) auth.Authorization {
 		header = r.Header.Get("X-Emby-Authorization")
 	}
 
-	authorization := auth.Authorization{}
+	authorization := auth.Authorization{RemoteAddr: r.RemoteAddr}
 	for _, pair := range strings.Split(strings.TrimPrefix(header, "MediaBrowser"), ",") {
 		key, value, ok := strings.Cut(pair, "=")
 		if !ok {
