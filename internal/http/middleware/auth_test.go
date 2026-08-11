@@ -1,9 +1,81 @@
 package middleware
 
 import (
+	"context"
+	"errors"
+	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/FreekingDean/gojellyfin/internal/auth"
+	"github.com/FreekingDean/gojellyfin/internal/server/api"
 )
+
+type setup bool
+
+func (s setup) Completed(context.Context) (bool, error) {
+	return bool(s), nil
+}
+
+func TestFirstTimeSetupOperationsCloseWithTheWizard(t *testing.T) {
+	tests := map[string]struct {
+		operation string
+		completed bool
+		handled   bool
+	}{
+		"startup before the wizard runs": {operation: "GetStartupConfiguration", completed: false, handled: true},
+		"startup after the wizard runs":  {operation: "GetStartupConfiguration", completed: true, handled: false},
+		"library setup before the wizard runs": {
+			operation: "GetVirtualFolders", completed: false, handled: true,
+		},
+		"library setup after the wizard runs": {
+			operation: "GetVirtualFolders", completed: true, handled: false,
+		},
+		"public stays open":      {operation: "GetPublicUsers", completed: true, handled: true},
+		"everything else shut":   {operation: "GetItems", completed: false, handled: false},
+		"unknown operation shut": {operation: "NotAnOperation", completed: false, handled: false},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			handled := false
+			handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+				handled = true
+
+				return nil, nil
+			}
+
+			middleware := NewAuth(auth.New(nil), setup(test.completed)).Middleware(handler, test.operation)
+			_, err := middleware(context.Background(), httptest.NewRecorder(), httptest.NewRequest("GET", "/", nil), nil)
+
+			if handled != test.handled {
+				t.Errorf("handler reached = %v, want %v", handled, test.handled)
+			}
+			if !test.handled && !errors.Is(err, auth.ErrUnauthorized) {
+				t.Errorf("err = %v, want %v", err, auth.ErrUnauthorized)
+			}
+		})
+	}
+}
+
+func TestFirstTimeSetupOperationsCoverTheWizard(t *testing.T) {
+	for _, operation := range []string{
+		"CompleteWizard",
+		"GetFirstUser",
+		"GetFirstUser2",
+		"GetStartupConfiguration",
+		"SetRemoteAccess",
+		"UpdateInitialConfiguration",
+		"UpdateStartupUser",
+	} {
+		if !api.FirstTimeSetupOperations[operation] {
+			t.Errorf("%s is not a first time setup operation", operation)
+		}
+		if api.PublicOperations[operation] {
+			t.Errorf("%s is public, so the wizard would never close", operation)
+		}
+	}
+}
 
 func TestTokenFromAcceptsEitherQuerySpelling(t *testing.T) {
 	tests := map[string]string{
