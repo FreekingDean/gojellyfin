@@ -57,6 +57,7 @@ func ItemDto(item *items.Item, childCount int32, imageTags map[string]string) ap
 		dto.ChildCount = apiutil.Ptr(childCount)
 	} else {
 		dto.MediaType = apiutil.Ptr(api.MediaType(item.MediaType))
+		dto.HasSubtitles = apiutil.Ptr(item.HasSubtitles)
 	}
 
 	return dto

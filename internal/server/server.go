@@ -32,6 +32,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/search"
 	"github.com/FreekingDean/gojellyfin/internal/server/session"
 	"github.com/FreekingDean/gojellyfin/internal/server/studios"
+	"github.com/FreekingDean/gojellyfin/internal/server/subtitle"
 	"github.com/FreekingDean/gojellyfin/internal/server/suggestions"
 	"github.com/FreekingDean/gojellyfin/internal/server/syncplay"
 	"github.com/FreekingDean/gojellyfin/internal/server/system"
@@ -85,6 +86,7 @@ type (
 	PackagesServer           = packages.Server
 	QuickConnectServer       = quickconnect.Server
 	SessionServer            = session.Server
+	SubtitleServer           = subtitle.Server
 	SuggestionsServer        = suggestions.Server
 	SyncPlayServer           = syncplay.Server
 	SystemServer             = system.Server
@@ -128,6 +130,7 @@ type Server struct {
 	*PackagesServer
 	*QuickConnectServer
 	*SessionServer
+	*SubtitleServer
 	*SuggestionsServer
 	*SyncPlayServer
 	*SystemServer
@@ -173,6 +176,7 @@ func New(
 	packages *packages.Server,
 	quickConnect *quickconnect.Server,
 	session *session.Server,
+	subtitles *subtitle.Server,
 	suggestions *suggestions.Server,
 	syncPlay *syncplay.Server,
 	system *system.Server,
@@ -215,6 +219,7 @@ func New(
 		PackagesServer:           packages,
 		QuickConnectServer:       quickConnect,
 		SessionServer:            session,
+		SubtitleServer:           subtitles,
 		SuggestionsServer:        suggestions,
 		SyncPlayServer:           syncPlay,
 		SystemServer:             system,
