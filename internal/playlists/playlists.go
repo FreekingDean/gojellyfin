@@ -3,7 +3,6 @@ package playlists
 import (
 	"context"
 	"fmt"
-	"slices"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
@@ -267,21 +266,46 @@ func (s *Service) MoveEntry(ctx context.Context, itemID, entryID uuid.UUID, newI
 			return err
 		}
 
-		entries, err := orderedEntries(ctx, tx.PlaylistEntry, playlist.ID)
+		entries := tx.PlaylistEntry.Query().Where(entrymodal.PlaylistID(playlist.ID))
+
+		count, err := entries.Clone().Count(ctx)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to count playlist entries: %w", err)
+		}
+		if newIndex < 0 || newIndex >= count {
+			return fmt.Errorf("index %d is outside playlist %s", newIndex, itemID)
 		}
 
-		current := slices.IndexFunc(entries, func(entry *Entry) bool { return entry.ID == entryID })
-		if current < 0 {
-			return fmt.Errorf("playlist %s has no entry %s", itemID, entryID)
+		entry, err := entries.Where(entrymodal.ID(entryID)).Only(ctx)
+		if err != nil {
+			return fmt.Errorf("playlist %s has no entry %s: %w", itemID, entryID, err)
 		}
 
-		moved := entries[current]
-		entries = slices.Delete(entries, current, current+1)
-		entries = slices.Insert(entries, min(max(newIndex, 0), len(entries)), moved)
+		from := entry.SortOrder
+		to := int32(newIndex)
+		if from == to {
+			return nil
+		}
 
-		return renumber(ctx, tx.PlaylistEntry, entries)
+		shifted := tx.PlaylistEntry.Update().Where(entrymodal.PlaylistID(playlist.ID))
+		if to < from {
+			shifted = shifted.
+				Where(entrymodal.SortOrderGTE(to), entrymodal.SortOrderLT(from)).
+				AddSortOrder(1)
+		} else {
+			shifted = shifted.
+				Where(entrymodal.SortOrderGT(from), entrymodal.SortOrderLTE(to)).
+				AddSortOrder(-1)
+		}
+		if _, err := shifted.Save(ctx); err != nil {
+			return fmt.Errorf("failed to shift playlist entries: %w", err)
+		}
+
+		if err := tx.PlaylistEntry.UpdateOne(entry).SetSortOrder(to).Exec(ctx); err != nil {
+			return fmt.Errorf("failed to move playlist entry: %w", err)
+		}
+
+		return nil
 	})
 }
 

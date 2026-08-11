@@ -376,8 +376,21 @@ func TestMoveEntry(t *testing.T) {
 		}
 	})
 
-	t.Run("clamps an index past the end", func(t *testing.T) {
-		if err := fixture.service.MoveEntry(ctx, playlistID, ids[1], 99); err != nil {
+	t.Run("rejects an index outside the playlist", func(t *testing.T) {
+		for _, index := range []int{-1, 4, 99} {
+			if err := fixture.service.MoveEntry(ctx, playlistID, ids[1], index); err == nil {
+				t.Errorf("moving to index %d succeeded", index)
+			}
+		}
+
+		want := []string{"Four", "Two", "One", "Three"}
+		if got := fixture.order(t, playlistID); !slices.Equal(got, want) {
+			t.Errorf("entries = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("moves an entry to the last index", func(t *testing.T) {
+		if err := fixture.service.MoveEntry(ctx, playlistID, ids[1], 3); err != nil {
 			t.Fatalf("failed to move the entry: %v", err)
 		}
 
