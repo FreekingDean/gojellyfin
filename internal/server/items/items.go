@@ -22,17 +22,23 @@ func New(items *items.Service, libraries *libraries.Service) *Server {
 }
 
 func (s *Server) GetItems(ctx context.Context, request api.GetItemsRequestObject) (api.GetItemsResponseObject, error) {
-	query, err := s.itemQuery(ctx, request.Params)
-	if err != nil {
-		return nil, err
-	}
-
-	result, err := s.queryResult(ctx, query)
+	result, err := s.QueryResult(ctx, request.Params)
 	if err != nil {
 		return nil, err
 	}
 
 	return api.GetItems200JSONResponse(result), nil
+}
+
+// Tags whose operation is an item query with the type pinned - Trailers,
+// Suggestions - go through here rather than rebuilding the translation.
+func (s *Server) QueryResult(ctx context.Context, params api.GetItemsParams) (api.BaseItemDtoQueryResult, error) {
+	query, err := s.itemQuery(ctx, params)
+	if err != nil {
+		return api.BaseItemDtoQueryResult{}, err
+	}
+
+	return s.queryResult(ctx, query)
 }
 
 func (s *Server) GetItem(ctx context.Context, request api.GetItemRequestObject) (api.GetItemResponseObject, error) {
@@ -100,6 +106,7 @@ func (s *Server) itemQuery(ctx context.Context, params api.GetItemsParams) (item
 	}
 
 	query.Kinds = dto.Kinds(params.IncludeItemTypes)
+	query.MediaTypes = dto.MediaTypes(params.MediaTypes)
 	if params.Ids != nil {
 		query.IDs = *params.Ids
 	}

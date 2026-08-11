@@ -132,6 +132,22 @@ func UserItemDataDto(datum *items.Datum) api.UserItemDataDto {
 	}
 }
 
+func MediaTypes(types *[]api.MediaType) []items.MediaType {
+	if types == nil {
+		return nil
+	}
+
+	mediaTypes := make([]items.MediaType, 0, len(*types))
+	for _, value := range *types {
+		mediaType := items.MediaType(value)
+		if items.ValidMediaType(mediaType) == nil {
+			mediaTypes = append(mediaTypes, mediaType)
+		}
+	}
+
+	return mediaTypes
+}
+
 func Kinds(types *[]api.BaseItemKind) []items.Kind {
 	if types == nil {
 		return nil
