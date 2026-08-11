@@ -21,6 +21,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/environment"
 	"github.com/FreekingDean/gojellyfin/internal/server/filter"
 	"github.com/FreekingDean/gojellyfin/internal/server/genres"
+	"github.com/FreekingDean/gojellyfin/internal/server/image"
 	serveritems "github.com/FreekingDean/gojellyfin/internal/server/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/library"
 	"github.com/FreekingDean/gojellyfin/internal/server/librarystructure"
@@ -67,6 +68,7 @@ var Module = fx.Module(
 		search.New,
 		studios.New,
 		genres.New,
+		image.New,
 		musicgenres.New,
 		persons.New,
 		activitylog.New,
