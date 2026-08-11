@@ -100,18 +100,10 @@ var Module = fx.Module(
 		New,
 	),
 	fx.Invoke(
-		registerTasks,
+		useScanner,
 	),
 )
 
-// Registered after construction: the scanner reads libraries, so taking it as
-// a constructor argument would make the object graph cyclic.
-func registerTasks(registry *tasks.Registry, scanner *scanner.Scanner) {
-	registry.Register(tasks.Definition{
-		ID:          library.ScanTaskID,
-		Name:        "Scan Media Library",
-		Description: "Scans the media libraries for new and changed files.",
-		Category:    "Library",
-		Run:         scanner.Scan,
-	})
+func useScanner(registry *tasks.Registry, scanner *scanner.Scanner) error {
+	return registry.UseRunner(tasks.LibraryScanID, scanner.Scan)
 }

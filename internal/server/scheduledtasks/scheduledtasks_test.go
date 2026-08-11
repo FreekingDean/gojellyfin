@@ -22,8 +22,8 @@ func TestGetTasks(t *testing.T) {
 	if len(infos) != 1 {
 		t.Fatalf("got %d tasks, want 1", len(infos))
 	}
-	if got := apiutil.Deref(infos[0].Id); got != "scan" {
-		t.Errorf("got id %q, want %q", got, "scan")
+	if got := apiutil.Deref(infos[0].Id); got != tasks.LibraryScanID {
+		t.Errorf("got id %q, want %q", got, tasks.LibraryScanID)
 	}
 	if got := apiutil.Deref(infos[0].State); got != api.TaskStateIdle {
 		t.Errorf("got state %q, want %q", got, api.TaskStateIdle)
@@ -70,18 +70,18 @@ func TestStartAndStopTask(t *testing.T) {
 		return ctx.Err()
 	})
 
-	started, err := server.StartTask(context.Background(), api.StartTaskRequestObject{TaskId: "scan"})
+	started, err := server.StartTask(context.Background(), api.StartTaskRequestObject{TaskId: tasks.LibraryScanID})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, ok := started.(api.StartTask204Response); !ok {
 		t.Fatalf("got %T, want a 204", started)
 	}
-	if got := apiutil.Deref(taskInfo(t, server, "scan").State); got != api.TaskStateRunning {
+	if got := apiutil.Deref(taskInfo(t, server, tasks.LibraryScanID).State); got != api.TaskStateRunning {
 		t.Fatalf("got state %q, want %q", got, api.TaskStateRunning)
 	}
 
-	stopped, err := server.StopTask(context.Background(), api.StopTaskRequestObject{TaskId: "scan"})
+	stopped, err := server.StopTask(context.Background(), api.StopTaskRequestObject{TaskId: tasks.LibraryScanID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,9 +94,9 @@ func TestStartAndStopTask(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatal("the task was never cancelled")
 	}
-	waitForIdle(t, registry, "scan")
+	waitForIdle(t, registry)
 
-	info := taskInfo(t, server, "scan")
+	info := taskInfo(t, server, tasks.LibraryScanID)
 	if got := apiutil.Deref(info.State); got != api.TaskStateIdle {
 		t.Errorf("got state %q, want %q", got, api.TaskStateIdle)
 	}
@@ -137,7 +137,7 @@ func TestUpdateTask(t *testing.T) {
 		DayOfWeek:       apiutil.Ptr(api.DayOfWeekSunday),
 	}}
 
-	response, err := server.UpdateTask(context.Background(), api.UpdateTaskRequestObject{TaskId: "scan", JSONBody: &body})
+	response, err := server.UpdateTask(context.Background(), api.UpdateTaskRequestObject{TaskId: tasks.LibraryScanID, JSONBody: &body})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -145,7 +145,7 @@ func TestUpdateTask(t *testing.T) {
 		t.Fatalf("got %T, want a 204", response)
 	}
 
-	triggers := apiutil.Deref(taskInfo(t, server, "scan").Triggers)
+	triggers := apiutil.Deref(taskInfo(t, server, tasks.LibraryScanID).Triggers)
 	if len(triggers) != 1 {
 		t.Fatalf("got %d triggers, want 1", len(triggers))
 	}
@@ -157,6 +157,24 @@ func TestUpdateTask(t *testing.T) {
 	}
 	if got := apiutil.Deref(triggers[0].DayOfWeek); got != api.DayOfWeekSunday {
 		t.Errorf("got day %q, want %q", got, api.DayOfWeekSunday)
+	}
+}
+
+func TestUpdateTaskWithoutBody(t *testing.T) {
+	server, registry := testServer(t, func(context.Context) error { return nil })
+	if err := registry.SetTriggers(tasks.LibraryScanID, []tasks.Trigger{{Type: "IntervalTrigger"}}); err != nil {
+		t.Fatal(err)
+	}
+
+	response, err := server.UpdateTask(context.Background(), api.UpdateTaskRequestObject{TaskId: tasks.LibraryScanID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := response.(api.UpdateTask204Response); !ok {
+		t.Fatalf("got %T, want a 204", response)
+	}
+	if triggers := apiutil.Deref(taskInfo(t, server, tasks.LibraryScanID).Triggers); len(triggers) != 0 {
+		t.Errorf("got %d triggers, want none", len(triggers))
 	}
 }
 
@@ -173,17 +191,13 @@ func TestUpdateUnknownTask(t *testing.T) {
 	}
 }
 
-func testServer(t *testing.T, run func(ctx context.Context) error) (*Server, *tasks.Registry) {
+func testServer(t *testing.T, run tasks.Runner) (*Server, *tasks.Registry) {
 	t.Helper()
 
 	registry := tasks.New()
-	registry.Register(tasks.Definition{
-		ID:          "scan",
-		Name:        "Scan Media Library",
-		Description: "Scans the media libraries for new and changed files.",
-		Category:    "Library",
-		Run:         run,
-	})
+	if err := registry.UseRunner(tasks.LibraryScanID, run); err != nil {
+		t.Fatal(err)
+	}
 
 	return New(registry), registry
 }
@@ -203,11 +217,11 @@ func taskInfo(t *testing.T, server *Server, id string) api.TaskInfo {
 	return api.TaskInfo(found)
 }
 
-func waitForIdle(t *testing.T, registry *tasks.Registry, id string) {
+func waitForIdle(t *testing.T, registry *tasks.Registry) {
 	t.Helper()
 
 	for deadline := time.Now().Add(time.Second); time.Now().Before(deadline); {
-		found, err := registry.Task(id)
+		found, err := registry.Task(tasks.LibraryScanID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -217,5 +231,5 @@ func waitForIdle(t *testing.T, registry *tasks.Registry, id string) {
 		time.Sleep(time.Millisecond)
 	}
 
-	t.Fatalf("task %q never went idle", id)
+	t.Fatalf("task %q never went idle", tasks.LibraryScanID)
 }

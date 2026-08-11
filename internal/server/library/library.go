@@ -9,8 +9,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/tasks"
 )
 
-const ScanTaskID = "RefreshLibrary"
-
 type Server struct {
 	items     *items.Service
 	libraries *libraries.Service
@@ -22,7 +20,7 @@ func New(items *items.Service, libraries *libraries.Service, registry *tasks.Reg
 }
 
 func (s *Server) RefreshLibrary(ctx context.Context, request api.RefreshLibraryRequestObject) (api.RefreshLibraryResponseObject, error) {
-	if err := s.registry.Start(ScanTaskID); err != nil {
+	if err := s.registry.Start(tasks.LibraryScanID); err != nil {
 		return nil, err
 	}
 

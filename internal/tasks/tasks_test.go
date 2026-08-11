@@ -8,23 +8,38 @@ import (
 	"time"
 )
 
+func TestDefaults(t *testing.T) {
+	infos := New().Tasks()
+	if len(infos) != 1 {
+		t.Fatalf("got %d tasks, want 1", len(infos))
+	}
+	if infos[0].ID != LibraryScanID {
+		t.Errorf("got id %q, want %q", infos[0].ID, LibraryScanID)
+	}
+	if infos[0].Name == "" || infos[0].Category == "" || infos[0].Description == "" {
+		t.Errorf("got %+v, want a described task", infos[0])
+	}
+	if infos[0].State != StateIdle || infos[0].LastResult != nil || len(infos[0].Triggers) != 0 {
+		t.Errorf("got %+v, want an idle task that never ran", infos[0])
+	}
+}
+
 func TestStartRunsToCompletion(t *testing.T) {
 	release := make(chan struct{})
-	registry := New()
-	registry.Register(Definition{ID: "scan", Name: "Scan", Run: func(context.Context) error {
+	registry := testRegistry(t, func(context.Context) error {
 		<-release
 		return nil
-	}})
+	})
 
-	if err := registry.Start("scan"); err != nil {
+	if err := registry.Start(LibraryScanID); err != nil {
 		t.Fatal(err)
 	}
-	if got := info(t, registry, "scan").State; got != StateRunning {
+	if got := info(t, registry).State; got != StateRunning {
 		t.Fatalf("got state %q, want %q", got, StateRunning)
 	}
 
 	close(release)
-	result := waitForIdle(t, registry, "scan")
+	result := waitForIdle(t, registry)
 	if result.Status != StatusCompleted {
 		t.Fatalf("got status %q, want %q", result.Status, StatusCompleted)
 	}
@@ -35,17 +50,16 @@ func TestStartRunsToCompletion(t *testing.T) {
 
 func TestStopCancelsRunningTask(t *testing.T) {
 	cancelled := make(chan struct{})
-	registry := New()
-	registry.Register(Definition{ID: "scan", Name: "Scan", Run: func(ctx context.Context) error {
+	registry := testRegistry(t, func(ctx context.Context) error {
 		<-ctx.Done()
 		close(cancelled)
 		return ctx.Err()
-	}})
+	})
 
-	if err := registry.Start("scan"); err != nil {
+	if err := registry.Start(LibraryScanID); err != nil {
 		t.Fatal(err)
 	}
-	if err := registry.Stop("scan"); err != nil {
+	if err := registry.Stop(LibraryScanID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -55,22 +69,21 @@ func TestStopCancelsRunningTask(t *testing.T) {
 		t.Fatal("the task was never cancelled")
 	}
 
-	if result := waitForIdle(t, registry, "scan"); result.Status != StatusCancelled {
+	if result := waitForIdle(t, registry); result.Status != StatusCancelled {
 		t.Fatalf("got status %q, want %q", result.Status, StatusCancelled)
 	}
 }
 
 func TestStartFailingTask(t *testing.T) {
-	registry := New()
-	registry.Register(Definition{ID: "scan", Name: "Scan", Run: func(context.Context) error {
+	registry := testRegistry(t, func(context.Context) error {
 		return errors.New("no such directory")
-	}})
+	})
 
-	if err := registry.Start("scan"); err != nil {
+	if err := registry.Start(LibraryScanID); err != nil {
 		t.Fatal(err)
 	}
 
-	result := waitForIdle(t, registry, "scan")
+	result := waitForIdle(t, registry)
 	if result.Status != StatusFailed {
 		t.Fatalf("got status %q, want %q", result.Status, StatusFailed)
 	}
@@ -82,50 +95,58 @@ func TestStartFailingTask(t *testing.T) {
 func TestStartWhileRunning(t *testing.T) {
 	release := make(chan struct{})
 	var runs atomic.Int32
-	registry := New()
-	registry.Register(Definition{ID: "scan", Name: "Scan", Run: func(context.Context) error {
+	registry := testRegistry(t, func(context.Context) error {
 		runs.Add(1)
 		<-release
 		return nil
-	}})
+	})
 
 	for range 2 {
-		if err := registry.Start("scan"); err != nil {
+		if err := registry.Start(LibraryScanID); err != nil {
 			t.Fatal(err)
 		}
 	}
 
 	close(release)
-	waitForIdle(t, registry, "scan")
+	waitForIdle(t, registry)
 	if got := runs.Load(); got != 1 {
 		t.Fatalf("got %d runs, want 1", got)
 	}
 }
 
-func TestStopIdleTask(t *testing.T) {
+func TestStartWithoutRunner(t *testing.T) {
 	registry := New()
-	registry.Register(Definition{ID: "scan", Name: "Scan", Run: func(context.Context) error { return nil }})
 
-	if err := registry.Stop("scan"); err != nil {
+	if err := registry.Start(LibraryScanID); err != nil {
 		t.Fatal(err)
 	}
-	if got := info(t, registry, "scan").State; got != StateIdle {
+	if got := info(t, registry).State; got != StateIdle {
+		t.Fatalf("got state %q, want %q", got, StateIdle)
+	}
+}
+
+func TestStopIdleTask(t *testing.T) {
+	registry := testRegistry(t, func(context.Context) error { return nil })
+
+	if err := registry.Stop(LibraryScanID); err != nil {
+		t.Fatal(err)
+	}
+	if got := info(t, registry).State; got != StateIdle {
 		t.Fatalf("got state %q, want %q", got, StateIdle)
 	}
 }
 
 func TestSetTriggers(t *testing.T) {
-	registry := New()
-	registry.Register(Definition{ID: "scan", Name: "Scan", Run: func(context.Context) error { return nil }})
+	registry := testRegistry(t, func(context.Context) error { return nil })
 
 	day := "Sunday"
 	interval := int64(36000000000)
 	triggers := []Trigger{{Type: "IntervalTrigger", IntervalTicks: &interval}, {Type: "WeeklyTrigger", DayOfWeek: &day}}
-	if err := registry.SetTriggers("scan", triggers); err != nil {
+	if err := registry.SetTriggers(LibraryScanID, triggers); err != nil {
 		t.Fatal(err)
 	}
 
-	stored := info(t, registry, "scan").Triggers
+	stored := info(t, registry).Triggers
 	if len(stored) != 2 {
 		t.Fatalf("got %d triggers, want 2", len(stored))
 	}
@@ -135,22 +156,12 @@ func TestSetTriggers(t *testing.T) {
 	if stored[1].Type != "WeeklyTrigger" || *stored[1].DayOfWeek != day {
 		t.Errorf("got trigger %+v, want the weekly trigger", stored[1])
 	}
-}
 
-func TestTasksSortedByName(t *testing.T) {
-	registry := New()
-	registry.Register(Definition{ID: "scan", Name: "Scan", Category: "Library"})
-	registry.Register(Definition{ID: "clean", Name: "Clean", Category: "Maintenance"})
-
-	infos := registry.Tasks()
-	if len(infos) != 2 {
-		t.Fatalf("got %d tasks, want 2", len(infos))
+	if err := registry.SetTriggers(LibraryScanID, nil); err != nil {
+		t.Fatal(err)
 	}
-	if infos[0].Name != "Clean" || infos[1].Name != "Scan" {
-		t.Fatalf("got %q then %q, want Clean then Scan", infos[0].Name, infos[1].Name)
-	}
-	if infos[0].State != StateIdle || infos[0].LastResult != nil {
-		t.Errorf("got %+v, want an idle task that never ran", infos[0])
+	if stored := info(t, registry).Triggers; len(stored) != 0 {
+		t.Errorf("got %d triggers, want none", len(stored))
 	}
 }
 
@@ -169,12 +180,26 @@ func TestUnknownTask(t *testing.T) {
 	if err := registry.SetTriggers("nope", nil); !errors.Is(err, ErrNotFound) {
 		t.Errorf("SetTriggers: got %v, want ErrNotFound", err)
 	}
+	if err := registry.UseRunner("nope", func(context.Context) error { return nil }); !errors.Is(err, ErrNotFound) {
+		t.Errorf("UseRunner: got %v, want ErrNotFound", err)
+	}
 }
 
-func info(t *testing.T, registry *Registry, id string) Info {
+func testRegistry(t *testing.T, run Runner) *Registry {
 	t.Helper()
 
-	found, err := registry.Task(id)
+	registry := New()
+	if err := registry.UseRunner(LibraryScanID, run); err != nil {
+		t.Fatal(err)
+	}
+
+	return registry
+}
+
+func info(t *testing.T, registry *Registry) Info {
+	t.Helper()
+
+	found, err := registry.Task(LibraryScanID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -182,18 +207,18 @@ func info(t *testing.T, registry *Registry, id string) Info {
 	return found
 }
 
-func waitForIdle(t *testing.T, registry *Registry, id string) Result {
+func waitForIdle(t *testing.T, registry *Registry) Result {
 	t.Helper()
 
 	for deadline := time.Now().Add(time.Second); time.Now().Before(deadline); {
-		found := info(t, registry, id)
+		found := info(t, registry)
 		if found.State == StateIdle && found.LastResult != nil {
 			return *found.LastResult
 		}
 		time.Sleep(time.Millisecond)
 	}
 
-	t.Fatalf("task %q never went idle", id)
+	t.Fatalf("task %q never went idle", LibraryScanID)
 
 	return Result{}
 }

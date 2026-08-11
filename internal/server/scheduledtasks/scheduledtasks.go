@@ -71,11 +71,8 @@ func (s *Server) StopTask(ctx context.Context, request api.StopTaskRequestObject
 
 func (s *Server) UpdateTask(ctx context.Context, request api.UpdateTaskRequestObject) (api.UpdateTaskResponseObject, error) {
 	body := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
-	if body == nil {
-		return api.UpdateTask404JSONResponse{}, nil
-	}
 
-	err := s.registry.SetTriggers(request.TaskId, Triggers(*body))
+	err := s.registry.SetTriggers(request.TaskId, Triggers(apiutil.Deref(body)))
 	if errors.Is(err, tasks.ErrNotFound) {
 		return api.UpdateTask404JSONResponse{}, nil
 	}

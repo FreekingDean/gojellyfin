@@ -28,13 +28,23 @@ const (
 	StatusFailed    Status = "Failed"
 )
 
-type Definition struct {
-	ID          string
-	Name        string
-	Description string
-	Category    string
-	Run         func(ctx context.Context) error
+const LibraryScanID = "RefreshLibrary"
+
+type Runner func(ctx context.Context) error
+
+type definition struct {
+	id          string
+	name        string
+	description string
+	category    string
 }
+
+var defaults = []definition{{
+	id:          LibraryScanID,
+	name:        "Scan Media Library",
+	description: "Scans the media libraries for new and changed files.",
+	category:    "Library",
+}}
 
 type Trigger struct {
 	Type            string
@@ -62,9 +72,10 @@ type Info struct {
 }
 
 type task struct {
-	definition Definition
+	definition definition
 
 	mu       sync.Mutex
+	run      Runner
 	state    State
 	last     *Result
 	triggers []Trigger
@@ -77,14 +88,25 @@ type Registry struct {
 }
 
 func New() *Registry {
-	return &Registry{tasks: make(map[string]*task)}
+	registry := &Registry{tasks: make(map[string]*task, len(defaults))}
+	for _, task := range defaults {
+		registry.tasks[task.id] = newTask(task)
+	}
+
+	return registry
 }
 
-func (r *Registry) Register(definition Definition) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+func (r *Registry) UseRunner(id string, run Runner) error {
+	found, err := r.lookup(id)
+	if err != nil {
+		return err
+	}
 
-	r.tasks[definition.ID] = &task{definition: definition, state: StateIdle}
+	found.mu.Lock()
+	defer found.mu.Unlock()
+	found.run = run
+
+	return nil
 }
 
 func (r *Registry) Tasks() []Info {
@@ -155,14 +177,19 @@ func (r *Registry) lookup(id string) (*task, error) {
 	return found, nil
 }
 
+func newTask(definition definition) *task {
+	return &task{definition: definition, state: StateIdle}
+}
+
 func (t *task) start() {
 	t.mu.Lock()
-	if t.state != StateIdle {
+	if t.state != StateIdle || t.run == nil {
 		t.mu.Unlock()
 		return
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
+	run := t.run
 	t.state = StateRunning
 	t.cancel = cancel
 	startedAt := time.Now()
@@ -170,7 +197,7 @@ func (t *task) start() {
 
 	go func() {
 		defer cancel()
-		t.finish(startedAt, t.definition.Run(ctx))
+		t.finish(startedAt, run(ctx))
 	}()
 }
 
@@ -208,10 +235,10 @@ func (t *task) info() Info {
 	defer t.mu.Unlock()
 
 	info := Info{
-		ID:          t.definition.ID,
-		Name:        t.definition.Name,
-		Description: t.definition.Description,
-		Category:    t.definition.Category,
+		ID:          t.definition.id,
+		Name:        t.definition.name,
+		Description: t.definition.description,
+		Category:    t.definition.category,
 		State:       t.state,
 		Triggers:    slices.Clone(t.triggers),
 	}
