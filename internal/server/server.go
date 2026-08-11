@@ -3,6 +3,7 @@ package server
 import (
 	"github.com/FreekingDean/gojellyfin/internal/server/activitylog"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
+	"github.com/FreekingDean/gojellyfin/internal/server/apikey"
 	"github.com/FreekingDean/gojellyfin/internal/server/branding"
 	"github.com/FreekingDean/gojellyfin/internal/server/channels"
 	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
@@ -45,6 +46,7 @@ type nestedUnimplemented struct {
 // Embedded field names are type names, so every tag service comes in under an
 // alias to keep them distinct.
 type (
+	ApiKeyServer             = apikey.Server
 	FilterServer             = filter.Server
 	YearsServer              = years.Server
 	SearchServer             = search.Server
@@ -80,6 +82,7 @@ type (
 )
 
 type Server struct {
+	*ApiKeyServer
 	*FilterServer
 	*YearsServer
 	*SearchServer
@@ -117,6 +120,7 @@ type Server struct {
 }
 
 func New(
+	apiKey *apikey.Server,
 	filter *filter.Server,
 	years *years.Server,
 	search *search.Server,
@@ -151,6 +155,7 @@ func New(
 	userViews *userviews.Server,
 ) *Server {
 	return &Server{
+		ApiKeyServer:             apiKey,
 		FilterServer:             filter,
 		YearsServer:              years,
 		SearchServer:             search,
