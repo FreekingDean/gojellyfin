@@ -440,6 +440,73 @@ func TestPermissions(t *testing.T) {
 	})
 }
 
+func TestBogusSharesAreRefused(t *testing.T) {
+	fixture := newFixture(t)
+
+	playlistID := fixture.create(t, api.CreatePlaylistDto{
+		Name:  ptr("Guarded"),
+		Users: &[]api.PlaylistUserPermissions{{UserId: &fixture.guestID}},
+	})
+
+	t.Run("create refuses an unknown user", func(t *testing.T) {
+		unknown := uuid.New()
+		response, err := fixture.server.CreatePlaylist(fixture.owner, api.CreatePlaylistRequestObject{
+			JSONBody: &api.CreatePlaylistDto{
+				Name:  ptr("Doomed"),
+				Users: &[]api.PlaylistUserPermissions{{UserId: &unknown}},
+			},
+		})
+		if err != nil {
+			t.Fatalf("failed to create the playlist: %v", err)
+		}
+		if _, ok := response.(api.CreatePlaylist403Response); !ok {
+			t.Fatalf("CreatePlaylist returned %T, want a 403", response)
+		}
+	})
+
+	t.Run("update refuses a share without a user id", func(t *testing.T) {
+		response, err := fixture.server.UpdatePlaylist(fixture.owner, api.UpdatePlaylistRequestObject{
+			PlaylistId: playlistID,
+			JSONBody:   &api.UpdatePlaylistDto{Users: &[]api.PlaylistUserPermissions{{CanEdit: ptr(true)}}},
+		})
+		if err != nil {
+			t.Fatalf("failed to update the playlist: %v", err)
+		}
+		if _, ok := response.(api.UpdatePlaylist403JSONResponse); !ok {
+			t.Fatalf("UpdatePlaylist returned %T, want a 403", response)
+		}
+	})
+
+	t.Run("the original shares survive", func(t *testing.T) {
+		response, err := fixture.server.GetPlaylistUsers(fixture.owner, api.GetPlaylistUsersRequestObject{PlaylistId: playlistID})
+		if err != nil {
+			t.Fatalf("failed to query the playlist users: %v", err)
+		}
+
+		users, ok := response.(api.GetPlaylistUsers200JSONResponse)
+		if !ok {
+			t.Fatalf("GetPlaylistUsers returned %T", response)
+		}
+		if len(users) != 1 || *users[0].UserId != fixture.guestID {
+			t.Errorf("users = %v, want the original share for %s", users, fixture.guestID)
+		}
+	})
+
+	t.Run("sharing with an unknown user is a 404", func(t *testing.T) {
+		response, err := fixture.server.UpdatePlaylistUser(fixture.owner, api.UpdatePlaylistUserRequestObject{
+			PlaylistId: playlistID,
+			UserId:     uuid.New(),
+			JSONBody:   &api.UpdatePlaylistUserDto{CanEdit: ptr(true)},
+		})
+		if err != nil {
+			t.Fatalf("failed to share the playlist: %v", err)
+		}
+		if _, ok := response.(api.UpdatePlaylistUser404JSONResponse); !ok {
+			t.Fatalf("UpdatePlaylistUser returned %T, want a 404", response)
+		}
+	})
+}
+
 func TestGetPlaylistNotFound(t *testing.T) {
 	fixture := newFixture(t)
 

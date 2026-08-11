@@ -2,6 +2,7 @@ package playlists
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -13,6 +14,7 @@ import (
 	playlistmodal "github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	entrymodal "github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	sharemodal "github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
+	usermodal "github.com/FreekingDean/gojellyfin/internal/store/user"
 )
 
 type (
@@ -25,7 +27,17 @@ type (
 
 const MediaTypeUnknown = itemmodal.MediaTypeUnknown
 
-var ValidMediaType = itemmodal.MediaTypeValidator
+var (
+	ValidMediaType = itemmodal.MediaTypeValidator
+
+	ErrInvalidShare = errors.New("invalid playlist share")
+)
+
+// Go cannot attach a method to the aliases the domains hand out, so the edge
+// reads live here rather than in the tag package.
+func EntryItem(entry *Entry) *Item {
+	return entry.Edges.Item
+}
 
 type Permission struct {
 	UserID  uuid.UUID
@@ -349,6 +361,10 @@ func (s *Service) SetShare(ctx context.Context, itemID uuid.UUID, permission Per
 			return err
 		}
 
+		if err := checkPermissions(ctx, tx.User, []Permission{permission}); err != nil {
+			return err
+		}
+
 		return upsertShare(ctx, tx.PlaylistShare, playlist.ID, permission)
 	})
 }
@@ -479,6 +495,10 @@ func renumber(ctx context.Context, client *store.PlaylistEntryClient, entries []
 }
 
 func replaceShares(ctx context.Context, tx *store.Tx, playlistID uuid.UUID, permissions []Permission) error {
+	if err := checkPermissions(ctx, tx.User, permissions); err != nil {
+		return err
+	}
+
 	if _, err := tx.PlaylistShare.Delete().
 		Where(sharemodal.PlaylistID(playlistID)).
 		Exec(ctx); err != nil {
@@ -504,6 +524,36 @@ func upsertShare(ctx context.Context, client *store.PlaylistShareClient, playlis
 		UpdateUpdatedAt().
 		Exec(ctx); err != nil {
 		return fmt.Errorf("failed to save playlist share: %w", err)
+	}
+
+	return nil
+}
+
+func checkPermissions(ctx context.Context, client *store.UserClient, permissions []Permission) error {
+	userIDs := make([]uuid.UUID, 0, len(permissions))
+	seen := make(map[uuid.UUID]bool, len(permissions))
+
+	for _, permission := range permissions {
+		if permission.UserID == uuid.Nil {
+			return fmt.Errorf("%w: no user id", ErrInvalidShare)
+		}
+		if seen[permission.UserID] {
+			return fmt.Errorf("%w: user %s appears twice", ErrInvalidShare, permission.UserID)
+		}
+		seen[permission.UserID] = true
+		userIDs = append(userIDs, permission.UserID)
+	}
+
+	if len(userIDs) == 0 {
+		return nil
+	}
+
+	found, err := client.Query().Where(usermodal.IDIn(userIDs...)).Count(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to count playlist share users: %w", err)
+	}
+	if found != len(userIDs) {
+		return fmt.Errorf("%w: unknown user", ErrInvalidShare)
 	}
 
 	return nil

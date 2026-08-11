@@ -2,6 +2,7 @@ package playlists
 
 import (
 	"context"
+	"errors"
 
 	"github.com/google/uuid"
 
@@ -53,6 +54,9 @@ func (s *Server) CreatePlaylist(ctx context.Context, request api.CreatePlaylistR
 	}
 
 	item, err := s.playlists.Create(ctx, params)
+	if errors.Is(err, playlists.ErrInvalidShare) {
+		return api.CreatePlaylist403Response{}, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -111,6 +115,10 @@ func (s *Server) UpdatePlaylist(ctx context.Context, request api.UpdatePlaylistR
 	}
 
 	if err := s.playlists.Update(ctx, request.PlaylistId, params); err != nil {
+		if errors.Is(err, playlists.ErrInvalidShare) {
+			return api.UpdatePlaylist403JSONResponse{}, nil
+		}
+
 		return nil, err
 	}
 
@@ -136,10 +144,11 @@ func (s *Server) GetPlaylistItems(ctx context.Context, request api.GetPlaylistIt
 	records := make([]*items.Item, 0, len(entries))
 	entryIDs := make([]string, 0, len(entries))
 	for _, entry := range entries {
-		if entry.Edges.Item == nil {
+		item := playlists.EntryItem(entry)
+		if item == nil {
 			continue
 		}
-		records = append(records, entry.Edges.Item)
+		records = append(records, item)
 		entryIDs = append(entryIDs, entry.ID.String())
 	}
 
@@ -278,6 +287,10 @@ func (s *Server) UpdatePlaylistUser(ctx context.Context, request api.UpdatePlayl
 
 	permission := playlists.Permission{UserID: request.UserId, CanEdit: apiutil.Deref(body.CanEdit)}
 	if err := s.playlists.SetShare(ctx, request.PlaylistId, permission); err != nil {
+		if errors.Is(err, playlists.ErrInvalidShare) {
+			return api.UpdatePlaylistUser404JSONResponse{}, nil
+		}
+
 		return nil, err
 	}
 

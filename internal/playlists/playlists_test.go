@@ -2,6 +2,7 @@ package playlists
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"testing"
@@ -530,6 +531,63 @@ func TestShares(t *testing.T) {
 	}
 	if _, err := fixture.service.ShareFor(ctx, playlistID, fixture.guestID); err == nil {
 		t.Error("querying the removed share succeeded")
+	}
+}
+
+func TestSharesAreValidated(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := context.Background()
+
+	playlistID := fixture.create(t, CreateParams{
+		Name:   "Guarded",
+		Shares: []Permission{{UserID: fixture.guestID}},
+	})
+
+	rejected := map[string][]Permission{
+		"no user id":   {{UserID: uuid.Nil}},
+		"unknown user": {{UserID: uuid.New()}},
+		"the same user twice": {
+			{UserID: fixture.guestID},
+			{UserID: fixture.guestID, CanEdit: true},
+		},
+	}
+
+	for name, permissions := range rejected {
+		t.Run(name, func(t *testing.T) {
+			err := fixture.service.Update(ctx, playlistID, UpdateParams{Shares: &permissions})
+			if !errors.Is(err, ErrInvalidShare) {
+				t.Fatalf("error = %v, want %v", err, ErrInvalidShare)
+			}
+
+			shares, err := fixture.service.Shares(ctx, playlistID)
+			if err != nil {
+				t.Fatalf("failed to query the shares: %v", err)
+			}
+			if len(shares) != 1 || shares[0].UserID != fixture.guestID || shares[0].CanEdit {
+				t.Errorf("shares = %v, want the original read-only share intact", shares)
+			}
+		})
+	}
+
+	t.Run("a single unknown share", func(t *testing.T) {
+		err := fixture.service.SetShare(ctx, playlistID, Permission{UserID: uuid.New()})
+		if !errors.Is(err, ErrInvalidShare) {
+			t.Fatalf("error = %v, want %v", err, ErrInvalidShare)
+		}
+	})
+}
+
+func TestCreateRejectsAnUnknownShare(t *testing.T) {
+	fixture := newFixture(t)
+
+	_, err := fixture.service.Create(context.Background(), CreateParams{
+		Name:      "Doomed",
+		MediaType: MediaTypeUnknown,
+		OwnerID:   fixture.ownerID,
+		Shares:    []Permission{{UserID: uuid.New()}},
+	})
+	if !errors.Is(err, ErrInvalidShare) {
+		t.Fatalf("error = %v, want %v", err, ErrInvalidShare)
 	}
 }
 
