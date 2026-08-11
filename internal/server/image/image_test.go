@@ -56,12 +56,6 @@ func newFixture(t *testing.T) *fixture {
 	}
 
 	t.Cleanup(func() {
-		if _, err := client.Image.Delete().Where(imagemodal.ItemID(item.ID)).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the images: %v", err)
-		}
-		if _, err := client.Item.Delete().Where(itemmodal.LibraryID(library.ID)).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the items: %v", err)
-		}
 		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the library: %v", err)
 		}
