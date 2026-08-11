@@ -6,6 +6,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/apikeys"
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/config"
+	"github.com/FreekingDean/gojellyfin/internal/displaypreferences"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
@@ -17,7 +18,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
 	"github.com/FreekingDean/gojellyfin/internal/server/dashboard"
 	"github.com/FreekingDean/gojellyfin/internal/server/devices"
-	"github.com/FreekingDean/gojellyfin/internal/server/displaypreferences"
+	serverdisplaypreferences "github.com/FreekingDean/gojellyfin/internal/server/displaypreferences"
 	"github.com/FreekingDean/gojellyfin/internal/server/environment"
 	"github.com/FreekingDean/gojellyfin/internal/server/filter"
 	"github.com/FreekingDean/gojellyfin/internal/server/genres"
@@ -59,6 +60,7 @@ var Module = fx.Module(
 		items.New,
 		libraries.New,
 		config.New,
+		displaypreferences.New,
 		filesystem.New,
 
 		// one handler service per spec tag
@@ -81,7 +83,7 @@ var Module = fx.Module(
 		livetv.New,
 		branding.New,
 		configuration.New,
-		displaypreferences.New,
+		serverdisplaypreferences.New,
 		serveritems.New,
 		library.New,
 		librarystructure.New,
