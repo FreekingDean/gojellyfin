@@ -106,6 +106,7 @@ func (s *Service) SaveProbe(ctx context.Context, item *Item, probe Probe) error 
 	})
 }
 
+// Nil until the probe has run, which the caller has to stand in for.
 func (s *Service) MediaSource(ctx context.Context, itemID uuid.UUID) (*MediaSource, error) {
 	source, err := s.store.MediaSource.Query().
 		Where(sourcemodal.ItemID(itemID)).
@@ -113,6 +114,9 @@ func (s *Service) MediaSource(ctx context.Context, itemID uuid.UUID) (*MediaSour
 			query.Order(streammodal.ByIndex())
 		}).
 		First(ctx)
+	if store.IsNotFound(err) {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to query media source: %w", err)
 	}

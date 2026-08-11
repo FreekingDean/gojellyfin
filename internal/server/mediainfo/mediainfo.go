@@ -66,6 +66,9 @@ func (s *Server) mediaSource(ctx context.Context, item *items.Item) (api.MediaSo
 	if err != nil {
 		return api.MediaSourceInfo{}, err
 	}
+	if source == nil {
+		return unprobedSource(item), nil
+	}
 
 	streams := source.Edges.Streams
 	converted := make([]api.MediaStream, 0, len(streams))
@@ -98,6 +101,32 @@ func (s *Server) mediaSource(ctx context.Context, item *items.Item) (api.MediaSo
 		DefaultAudioStreamIndex:    defaultStreamIndex(streams, streammodal.KindAudio),
 		DefaultSubtitleStreamIndex: defaultStreamIndex(streams, streammodal.KindSubtitle),
 	}, nil
+}
+
+// An item the probe has not reached yet still has to answer with something
+// playable, or the client refuses to start.
+func unprobedSource(item *items.Item) api.MediaSourceInfo {
+	return api.MediaSourceInfo{
+		Id:                   apiutil.Ptr(item.ID.String()),
+		Name:                 apiutil.Ptr(item.Name),
+		Path:                 apiutil.Ptr(item.Path),
+		Protocol:             apiutil.Ptr(api.MediaProtocolFile),
+		Type:                 apiutil.Ptr(api.MediaSourceTypeDefault),
+		Container:            apiutil.Ptr(item.Container),
+		RunTimeTicks:         item.RunTimeTicks,
+		MediaStreams:         &[]api.MediaStream{},
+		MediaAttachments:     &[]api.MediaAttachment{},
+		Formats:              &[]string{},
+		SupportsDirectPlay:   apiutil.Ptr(true),
+		SupportsDirectStream: apiutil.Ptr(true),
+		SupportsTranscoding:  apiutil.Ptr(false),
+		SupportsProbing:      apiutil.Ptr(true),
+		IsRemote:             apiutil.Ptr(false),
+		IsInfiniteStream:     apiutil.Ptr(false),
+		RequiresOpening:      apiutil.Ptr(false),
+		RequiresClosing:      apiutil.Ptr(false),
+		RequiresLooping:      apiutil.Ptr(false),
+	}
 }
 
 func mediaStreamDto(stream *items.MediaStream) api.MediaStream {

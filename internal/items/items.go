@@ -11,6 +11,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	datamodal "github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
 )
 
@@ -253,43 +254,49 @@ func (s *Service) DistinctYears(ctx context.Context, libraryID *uuid.UUID, kinds
 	return years, nil
 }
 
-// Items the user started and did not finish, most recently played first.
+// Items the user started and did not finish, most recently played first. The
+// query runs from the user data so the sort column is on the primary table;
+// ordering items by the edge makes ent aggregate it away.
 func (s *Service) ResumeItems(ctx context.Context, userID uuid.UUID, kinds []Kind, libraryID *uuid.UUID, startIndex, limit int) ([]*Item, int, error) {
-	items := s.store.Item.Query().
-		Where(
-			itemmodal.IsFolder(false),
-			itemmodal.HasUserDataWith(
-				datamodal.UserID(userID),
-				datamodal.PlaybackPositionTicksGT(0),
-				datamodal.Played(false),
-			),
-		)
-
+	playable := []predicate.Item{itemmodal.IsFolder(false)}
 	if len(kinds) > 0 {
-		items = items.Where(itemmodal.KindIn(kinds...))
+		playable = append(playable, itemmodal.KindIn(kinds...))
 	}
 	if libraryID != nil {
-		items = items.Where(itemmodal.LibraryID(*libraryID))
+		playable = append(playable, itemmodal.LibraryID(*libraryID))
 	}
 
-	total, err := items.Clone().Count(ctx)
+	data := s.store.UserItemData.Query().
+		Where(
+			datamodal.UserID(userID),
+			datamodal.PlaybackPositionTicksGT(0),
+			datamodal.Played(false),
+			datamodal.HasItemWith(playable...),
+		)
+
+	total, err := data.Clone().Count(ctx)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to count resume items: %w", err)
 	}
 
-	items = items.Order(itemmodal.ByUserData(
-		sql.OrderByField(datamodal.FieldLastPlayedAt, sql.OrderDesc(), sql.OrderNullsLast()),
-	))
+	data = data.Order(datamodal.ByLastPlayedAt(sql.OrderDesc(), sql.OrderNullsLast()))
 	if startIndex > 0 {
-		items = items.Offset(startIndex)
+		data = data.Offset(startIndex)
 	}
 	if limit > 0 {
-		items = items.Limit(limit)
+		data = data.Limit(limit)
 	}
 
-	records, err := items.All(ctx)
+	rows, err := data.WithItem().All(ctx)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to query resume items: %w", err)
+	}
+
+	records := make([]*Item, 0, len(rows))
+	for _, row := range rows {
+		if row.Edges.Item != nil {
+			records = append(records, row.Edges.Item)
+		}
 	}
 
 	return records, total, nil
