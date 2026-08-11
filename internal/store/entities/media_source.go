@@ -59,7 +59,7 @@ func (MediaSource) Fields() []ent.Field {
 func (MediaSource) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("item", Item.Type).Ref("media_sources").Unique().Required().Field("item_id"),
-		edge.To("streams", MediaStream.Type),
-		edge.To("attachments", MediaAttachment.Type),
+		edge.To("streams", MediaStream.Type).Annotations(cascadeOnDelete),
+		edge.To("attachments", MediaAttachment.Type).Annotations(cascadeOnDelete),
 	}
 }

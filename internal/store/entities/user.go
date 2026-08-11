@@ -23,13 +23,13 @@ func (User) Fields() []ent.Field {
 // Edges of the User.
 func (User) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("configuration", UserConfiguration.Type).Unique(),
-		edge.To("policy", UserPolicy.Type).Unique(),
-		edge.To("sessions", Session.Type),
-		edge.To("item_data", UserItemData.Type),
-		edge.To("display_preferences", DisplayPreferences.Type),
+		edge.To("configuration", UserConfiguration.Type).Unique().Annotations(cascadeOnDelete),
+		edge.To("policy", UserPolicy.Type).Unique().Annotations(cascadeOnDelete),
+		edge.To("sessions", Session.Type).Annotations(cascadeOnDelete),
+		edge.To("item_data", UserItemData.Type).Annotations(cascadeOnDelete),
+		edge.To("display_preferences", DisplayPreferences.Type).Annotations(cascadeOnDelete),
 		edge.To("activity_log_entries", ActivityLogEntry.Type),
-		edge.To("playlists", Playlist.Type),
-		edge.To("playlist_shares", PlaylistShare.Type),
+		edge.To("playlists", Playlist.Type).Annotations(cascadeOnDelete),
+		edge.To("playlist_shares", PlaylistShare.Type).Annotations(cascadeOnDelete),
 	}
 }

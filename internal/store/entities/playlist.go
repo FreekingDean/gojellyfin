@@ -23,7 +23,7 @@ func (Playlist) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("item", Item.Type).Ref("playlist").Unique().Required().Field("item_id"),
 		edge.From("owner", User.Type).Ref("playlists").Unique().Required().Field("owner_id"),
-		edge.To("entries", PlaylistEntry.Type),
-		edge.To("shares", PlaylistShare.Type),
+		edge.To("entries", PlaylistEntry.Type).Annotations(cascadeOnDelete),
+		edge.To("shares", PlaylistShare.Type).Annotations(cascadeOnDelete),
 	}
 }

@@ -9,6 +9,8 @@ import (
 	"github.com/google/uuid"
 )
 
+var cascadeOnDelete = entsql.OnDelete(entsql.Cascade)
+
 func withDefaultFields(fields ...ent.Field) []ent.Field {
 	return append([]ent.Field{
 		field.UUID("id", uuid.UUID{}).Annotations(
