@@ -10,6 +10,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 )
 
 type Server struct {
@@ -61,45 +62,75 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID) (api.Playba
 }
 
 func (s *Server) mediaSource(ctx context.Context, item *items.Item) (api.MediaSourceInfo, error) {
-	streams, err := s.items.ListMediaStreams(ctx, item.ID)
+	source, err := s.items.MediaSource(ctx, item.ID)
 	if err != nil {
 		return api.MediaSourceInfo{}, err
 	}
+	if source == nil {
+		return unprobedSource(item), nil
+	}
 
+	streams := source.Edges.Streams
 	converted := make([]api.MediaStream, 0, len(streams))
 	for _, stream := range streams {
-		converted = append(converted, mediaStreamDto(&stream))
+		converted = append(converted, mediaStreamDto(stream))
 	}
 
 	return api.MediaSourceInfo{
-		Id:                         apiutil.Ptr(item.ID.String()),
-		Name:                       apiutil.Ptr(item.Name),
-		Path:                       apiutil.Ptr(item.Path),
-		Protocol:                   apiutil.Ptr(api.MediaProtocolFile),
-		Type:                       apiutil.Ptr(api.MediaSourceTypeDefault),
-		Container:                  apiutil.Ptr(item.Container),
-		Size:                       apiutil.Ptr(item.Size),
-		Bitrate:                    apiutil.Ptr(item.Bitrate),
-		RunTimeTicks:               item.RunTimeTicks,
+		Id:                         apiutil.Ptr(source.ID.String()),
+		Name:                       apiutil.Ptr(source.Name),
+		Path:                       apiutil.Ptr(source.Path),
+		Protocol:                   apiutil.Ptr(api.MediaProtocol(source.Protocol)),
+		Type:                       apiutil.Ptr(api.MediaSourceType(source.Kind)),
+		Container:                  apiutil.Ptr(source.Container),
+		Size:                       apiutil.Ptr(source.Size),
+		Bitrate:                    apiutil.Ptr(source.Bitrate),
+		RunTimeTicks:               apiutil.Ptr(source.RunTimeTicks),
 		MediaStreams:               &converted,
 		MediaAttachments:           &[]api.MediaAttachment{},
 		Formats:                    &[]string{},
-		SupportsDirectPlay:         apiutil.Ptr(true),
-		SupportsDirectStream:       apiutil.Ptr(true),
-		SupportsTranscoding:        apiutil.Ptr(false),
-		SupportsProbing:            apiutil.Ptr(true),
-		IsRemote:                   apiutil.Ptr(false),
-		IsInfiniteStream:           apiutil.Ptr(false),
+		SupportsDirectPlay:         apiutil.Ptr(source.SupportsDirectPlay),
+		SupportsDirectStream:       apiutil.Ptr(source.SupportsDirectStream),
+		SupportsTranscoding:        apiutil.Ptr(source.SupportsTranscoding),
+		SupportsProbing:            apiutil.Ptr(source.SupportsProbing),
+		IsRemote:                   apiutil.Ptr(source.IsRemote),
+		IsInfiniteStream:           apiutil.Ptr(source.IsInfiniteStream),
 		RequiresOpening:            apiutil.Ptr(false),
 		RequiresClosing:            apiutil.Ptr(false),
-		RequiresLooping:            apiutil.Ptr(false),
-		DefaultAudioStreamIndex:    defaultStreamIndex(streams, "Audio"),
-		DefaultSubtitleStreamIndex: defaultStreamIndex(streams, "Subtitle"),
+		RequiresLooping:            apiutil.Ptr(source.RequiresLooping),
+		DefaultAudioStreamIndex:    defaultStreamIndex(streams, streammodal.KindAudio),
+		DefaultSubtitleStreamIndex: defaultStreamIndex(streams, streammodal.KindSubtitle),
 	}, nil
 }
 
+// An item the probe has not reached yet still has to answer with something
+// playable, or the client refuses to start.
+func unprobedSource(item *items.Item) api.MediaSourceInfo {
+	return api.MediaSourceInfo{
+		Id:                   apiutil.Ptr(item.ID.String()),
+		Name:                 apiutil.Ptr(item.Name),
+		Path:                 apiutil.Ptr(item.Path),
+		Protocol:             apiutil.Ptr(api.MediaProtocolFile),
+		Type:                 apiutil.Ptr(api.MediaSourceTypeDefault),
+		Container:            apiutil.Ptr(item.Container),
+		RunTimeTicks:         item.RunTimeTicks,
+		MediaStreams:         &[]api.MediaStream{},
+		MediaAttachments:     &[]api.MediaAttachment{},
+		Formats:              &[]string{},
+		SupportsDirectPlay:   apiutil.Ptr(true),
+		SupportsDirectStream: apiutil.Ptr(true),
+		SupportsTranscoding:  apiutil.Ptr(false),
+		SupportsProbing:      apiutil.Ptr(true),
+		IsRemote:             apiutil.Ptr(false),
+		IsInfiniteStream:     apiutil.Ptr(false),
+		RequiresOpening:      apiutil.Ptr(false),
+		RequiresClosing:      apiutil.Ptr(false),
+		RequiresLooping:      apiutil.Ptr(false),
+	}
+}
+
 func mediaStreamDto(stream *items.MediaStream) api.MediaStream {
-	kind := api.MediaStreamType(stream.Type)
+	kind := api.MediaStreamType(stream.Kind)
 
 	dto := api.MediaStream{
 		Index:                  apiutil.Ptr(stream.Index),
@@ -122,22 +153,22 @@ func mediaStreamDto(stream *items.MediaStream) api.MediaStream {
 	if stream.Title != "" {
 		dto.Title = apiutil.Ptr(stream.Title)
 	}
-	if stream.Bitrate > 0 {
-		dto.BitRate = apiutil.Ptr(stream.Bitrate)
+	if stream.BitRate > 0 {
+		dto.BitRate = apiutil.Ptr(stream.BitRate)
 	}
 	if stream.PixelFormat != "" {
 		dto.PixelFormat = apiutil.Ptr(stream.PixelFormat)
 	}
 	if stream.Level > 0 {
-		dto.Level = apiutil.Ptr(float64(stream.Level))
+		dto.Level = apiutil.Ptr(stream.Level)
 	}
 
-	switch stream.Type {
-	case "Video":
+	switch stream.Kind {
+	case streammodal.KindVideo:
 		dto.Width = apiutil.Ptr(stream.Width)
 		dto.Height = apiutil.Ptr(stream.Height)
 		dto.AspectRatio = apiutil.Ptr(aspectRatio(stream.Width, stream.Height))
-	case "Audio":
+	case streammodal.KindAudio:
 		dto.Channels = apiutil.Ptr(stream.Channels)
 		dto.SampleRate = apiutil.Ptr(stream.SampleRate)
 	}
@@ -146,10 +177,10 @@ func mediaStreamDto(stream *items.MediaStream) api.MediaStream {
 }
 
 func streamDisplayTitle(stream *items.MediaStream) string {
-	switch stream.Type {
-	case "Video":
+	switch stream.Kind {
+	case streammodal.KindVideo:
 		return fmt.Sprintf("%dx%d %s", stream.Width, stream.Height, stream.Codec)
-	case "Audio":
+	case streammodal.KindAudio:
 		if stream.Language != "" {
 			return fmt.Sprintf("%s %s", stream.Language, stream.Codec)
 		}
@@ -164,14 +195,14 @@ func streamDisplayTitle(stream *items.MediaStream) string {
 	}
 }
 
-func defaultStreamIndex(streams []items.MediaStream, kind string) *int32 {
+func defaultStreamIndex(streams []*items.MediaStream, kind items.StreamKind) *int32 {
 	for _, stream := range streams {
-		if stream.Type == kind && stream.IsDefault {
+		if stream.Kind == kind && stream.IsDefault {
 			return apiutil.Ptr(stream.Index)
 		}
 	}
 	for _, stream := range streams {
-		if stream.Type == kind {
+		if stream.Kind == kind {
 			return apiutil.Ptr(stream.Index)
 		}
 	}

@@ -18,7 +18,7 @@ func (s *Server) GetResumeItems(ctx context.Context, request api.GetResumeItemsR
 
 	records, total, err := s.items.ResumeItems(ctx,
 		auth.UserID(ctx),
-		itemTypes(request.Params.IncludeItemTypes),
+		serveritems.Kinds(request.Params.IncludeItemTypes),
 		request.Params.ParentId,
 		int(apiutil.Deref(request.Params.StartIndex)),
 		int(apiutil.Deref(request.Params.Limit)),
@@ -51,19 +51,6 @@ func wantsVideo(mediaTypes *[]api.MediaType) bool {
 	}
 
 	return false
-}
-
-func itemTypes(kinds *[]api.BaseItemKind) []string {
-	if kinds == nil {
-		return nil
-	}
-
-	types := make([]string, 0, len(*kinds))
-	for _, kind := range *kinds {
-		types = append(types, string(kind))
-	}
-
-	return types
 }
 
 func emptyResult() api.BaseItemDtoQueryResult {

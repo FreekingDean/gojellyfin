@@ -40,6 +40,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/userlibrary"
 	"github.com/FreekingDean/gojellyfin/internal/server/userviews"
 	"github.com/FreekingDean/gojellyfin/internal/server/years"
+	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
@@ -48,6 +49,7 @@ var Module = fx.Module(
 	fx.Provide(
 		// domains
 		auth.New,
+		sessions.New,
 		users.New,
 		items.New,
 		libraries.New,

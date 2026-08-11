@@ -5,31 +5,26 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	"github.com/FreekingDean/gojellyfin/internal/users"
+	"github.com/FreekingDean/gojellyfin/internal/sessions"
 )
 
 type Server struct {
-	auth  *auth.Service
-	users *users.Service
+	sessions *sessions.Service
 }
 
-func New(auth *auth.Service, users *users.Service) *Server {
-	return &Server{auth: auth, users: users}
+func New(sessions *sessions.Service) *Server {
+	return &Server{sessions: sessions}
 }
 
 func (s *Server) GetSessions(ctx context.Context, request api.GetSessionsRequestObject) (api.GetSessionsResponseObject, error) {
-	sessions, err := s.auth.ListSessions(ctx)
+	active, err := s.sessions.List(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	converted := make([]api.SessionInfoDto, 0, len(sessions))
-	for _, session := range sessions {
-		user, err := s.users.User(ctx, session.UserID)
-		if err != nil {
-			continue
-		}
-		converted = append(converted, *SessionDto(&session, user))
+	converted := make([]api.SessionInfoDto, 0, len(active))
+	for _, session := range active {
+		converted = append(converted, *SessionDto(session))
 	}
 
 	return api.GetSessions200JSONResponse(converted), nil
@@ -37,7 +32,7 @@ func (s *Server) GetSessions(ctx context.Context, request api.GetSessionsRequest
 
 func (s *Server) ReportSessionEnded(ctx context.Context, request api.ReportSessionEndedRequestObject) (api.ReportSessionEndedResponseObject, error) {
 	authorization := auth.AuthorizationFrom(ctx)
-	if err := s.auth.DeleteSessionByToken(ctx, authorization.Token); err != nil {
+	if err := s.sessions.DeleteByToken(ctx, authorization.Token); err != nil {
 		return nil, err
 	}
 

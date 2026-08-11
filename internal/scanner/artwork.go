@@ -19,18 +19,19 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
 )
 
 var imageExtensions = []string{".jpg", ".jpeg", ".png", ".webp"}
 
 // Artwork sits beside the media under conventional names. Order matters: the
 // first match for a type wins.
-var artworkNames = map[string][]string{
-	"Primary":  {"poster", "folder", "cover", "default", "movie", "show"},
-	"Backdrop": {"fanart", "backdrop", "background", "art"},
-	"Thumb":    {"thumb", "landscape"},
-	"Logo":     {"logo", "clearlogo"},
-	"Banner":   {"banner"},
+var artworkNames = map[items.ImageKind][]string{
+	imagemodal.KindPrimary:  {"poster", "folder", "cover", "default", "movie", "show"},
+	imagemodal.KindBackdrop: {"fanart", "backdrop", "background", "art"},
+	imagemodal.KindThumb:    {"thumb", "landscape"},
+	imagemodal.KindLogo:     {"logo", "clearlogo"},
+	imagemodal.KindBanner:   {"banner"},
 }
 
 // scanArtwork records the images belonging to one item. A folder item looks
@@ -46,14 +47,14 @@ func (s *Scanner) scanArtwork(ctx context.Context, itemID uuid.UUID, path string
 		return err
 	}
 
-	found := make([]items.ItemImage, 0)
-	for imageType, names := range artworkNames {
+	found := make([]items.Artwork, 0)
+	for kind, names := range artworkNames {
 		match := findArtwork(entries, directory, base, names)
 		if match == "" {
 			continue
 		}
 
-		image, err := describeImage(itemID, imageType, match)
+		image, err := describeImage(kind, match)
 		if err != nil {
 			continue
 		}
@@ -92,17 +93,16 @@ func findArtwork(entries []os.DirEntry, directory, base string, names []string) 
 	return ""
 }
 
-func describeImage(itemID uuid.UUID, imageType, path string) (items.ItemImage, error) {
+func describeImage(kind items.ImageKind, path string) (items.Artwork, error) {
 	info, err := os.Stat(path)
 	if err != nil {
-		return items.ItemImage{}, err
+		return items.Artwork{}, err
 	}
 
 	width, height := imageSize(path)
 
-	return items.ItemImage{
-		ItemID: itemID,
-		Type:   imageType,
+	return items.Artwork{
+		Kind:   kind,
 		Path:   path,
 		Tag:    imageTag(path, info.ModTime().UnixNano(), info.Size()),
 		Width:  int32(width),

@@ -2,7 +2,6 @@ package user
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	openapi_types "github.com/oapi-codegen/runtime/types"
@@ -12,16 +11,17 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	serversession "github.com/FreekingDean/gojellyfin/internal/server/session"
+	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
 type Server struct {
-	users *users.Service
-	auth  *auth.Service
+	users    *users.Service
+	sessions *sessions.Service
 }
 
-func New(users *users.Service, auth *auth.Service) *Server {
-	return &Server{users: users, auth: auth}
+func New(users *users.Service, sessions *sessions.Service) *Server {
+	return &Server{users: users, sessions: sessions}
 }
 
 func (s *Server) GetUsers(ctx context.Context, request api.GetUsersRequestObject) (api.GetUsersResponseObject, error) {
@@ -39,12 +39,7 @@ func (s *Server) GetCurrentUser(ctx context.Context, request api.GetCurrentUserR
 		return api.GetCurrentUser400JSONResponse{}, nil
 	}
 
-	dto, err := UserDto(user)
-	if err != nil {
-		return nil, err
-	}
-
-	return api.GetCurrentUser200JSONResponse(dto), nil
+	return api.GetCurrentUser200JSONResponse(UserDto(user)), nil
 }
 
 func (s *Server) GetUserById(ctx context.Context, request api.GetUserByIdRequestObject) (api.GetUserByIdResponseObject, error) {
@@ -53,12 +48,7 @@ func (s *Server) GetUserById(ctx context.Context, request api.GetUserByIdRequest
 		return api.GetUserById404JSONResponse{}, nil
 	}
 
-	dto, err := UserDto(user)
-	if err != nil {
-		return nil, err
-	}
-
-	return api.GetUserById200JSONResponse(dto), nil
+	return api.GetUserById200JSONResponse(UserDto(user)), nil
 }
 
 func (s *Server) GetPublicUsers(ctx context.Context, request api.GetPublicUsersRequestObject) (api.GetPublicUsersResponseObject, error) {
@@ -81,21 +71,12 @@ func (s *Server) CreateUserByName(ctx context.Context, request api.CreateUserByN
 		return nil, err
 	}
 
-	user := &users.User{
-		Name:         req.Name,
-		Username:     req.Name,
-		PasswordHash: hash,
-	}
-	if err := s.users.CreateUser(ctx, user); err != nil {
-		return nil, err
-	}
-
-	dto, err := UserDto(user)
+	user, err := s.users.CreateUser(ctx, req.Name, hash, false)
 	if err != nil {
 		return nil, err
 	}
 
-	return api.CreateUserByName200JSONResponse(dto), nil
+	return api.CreateUserByName200JSONResponse(UserDto(user)), nil
 }
 
 func (s *Server) UpdateUser(ctx context.Context, request api.UpdateUserRequestObject) (api.UpdateUserResponseObject, error) {
@@ -110,22 +91,19 @@ func (s *Server) UpdateUser(ctx context.Context, request api.UpdateUserRequestOb
 	}
 
 	if req.Name != nil {
-		user.Name = *req.Name
+		if err := s.users.Rename(ctx, user.ID, *req.Name); err != nil {
+			return nil, err
+		}
 	}
 	if req.Configuration != nil {
-		if user.Configuration, err = json.Marshal(req.Configuration); err != nil {
+		if err := s.saveConfiguration(ctx, user.ID, req.Configuration); err != nil {
 			return nil, err
 		}
 	}
 	if req.Policy != nil {
-		if user.Policy, err = json.Marshal(req.Policy); err != nil {
+		if err := s.savePolicy(ctx, user.ID, req.Policy); err != nil {
 			return nil, err
 		}
-		user.IsAdministrator = apiutil.Deref(req.Policy.IsAdministrator)
-	}
-
-	if err := s.users.UpdateUser(ctx, user); err != nil {
-		return nil, err
 	}
 
 	return api.UpdateUser204Response{}, nil
@@ -142,10 +120,7 @@ func (s *Server) UpdateUserConfiguration(ctx context.Context, request api.Update
 		return api.UpdateUserConfiguration403JSONResponse{}, nil
 	}
 
-	if user.Configuration, err = json.Marshal(req); err != nil {
-		return nil, err
-	}
-	if err := s.users.UpdateUser(ctx, user); err != nil {
+	if err := s.saveConfiguration(ctx, user.ID, req); err != nil {
 		return nil, err
 	}
 
@@ -163,12 +138,7 @@ func (s *Server) UpdateUserPolicy(ctx context.Context, request api.UpdateUserPol
 		return api.UpdateUserPolicy400JSONResponse{}, nil
 	}
 
-	if user.Policy, err = json.Marshal(req); err != nil {
-		return nil, err
-	}
-	user.IsAdministrator = apiutil.Deref(req.IsAdministrator)
-
-	if err := s.users.UpdateUser(ctx, user); err != nil {
+	if err := s.savePolicy(ctx, user.ID, req); err != nil {
 		return nil, err
 	}
 
@@ -193,10 +163,11 @@ func (s *Server) UpdateUserPassword(ctx context.Context, request api.UpdateUserP
 		}
 	}
 
-	if user.PasswordHash, err = auth.Hash(apiutil.Deref(req.NewPw)); err != nil {
+	hash, err := auth.Hash(apiutil.Deref(req.NewPw))
+	if err != nil {
 		return nil, err
 	}
-	if err := s.users.UpdateUser(ctx, user); err != nil {
+	if err := s.users.SetPassword(ctx, user.ID, hash); err != nil {
 		return nil, err
 	}
 
@@ -223,11 +194,7 @@ func (s *Server) listUserDtos(ctx context.Context) ([]api.UserDto, error) {
 
 	converted := make([]api.UserDto, 0, len(users))
 	for _, user := range users {
-		dto, err := UserDto(&user)
-		if err != nil {
-			return nil, err
-		}
-		converted = append(converted, dto)
+		converted = append(converted, UserDto(user))
 	}
 
 	return converted, nil
@@ -262,36 +229,22 @@ func (s *Server) AuthenticateUserByName(ctx context.Context, request api.Authent
 		return nil, err
 	}
 
-	now := time.Now()
-	authorization := auth.AuthorizationFrom(ctx)
-	session := &auth.Session{
-		UserID:           user.ID,
-		AccessToken:      token,
-		DeviceID:         authorization.DeviceID,
-		DeviceName:       authorization.Device,
-		Client:           authorization.Client,
-		AppVersion:       authorization.Version,
-		LastActivityDate: now,
-	}
-	if err := s.auth.CreateSession(ctx, session); err != nil {
+	session, err := s.sessions.Create(ctx, user.ID, token, auth.AuthorizationFrom(ctx).DeviceInfo())
+	if err != nil {
 		return nil, err
 	}
 
 	if err := s.users.TouchLogin(ctx, user.ID); err != nil {
 		return nil, err
 	}
-	user.LastLoginDate = &now
-	user.LastActivityDate = &now
-
-	dto, err := UserDto(user)
-	if err != nil {
-		return nil, err
-	}
+	now := time.Now()
+	user.LastLoginAt = now
+	user.LastActivityAt = now
 
 	return api.AuthenticateUserByName200JSONResponse{
 		AccessToken: apiutil.Ptr(token),
 		ServerId:    apiutil.Ptr(config.ServerID),
-		User:        &dto,
-		SessionInfo: serversession.SessionDto(session, user),
+		User:        apiutil.Ptr(UserDto(user)),
+		SessionInfo: serversession.SessionDto(session),
 	}, nil
 }

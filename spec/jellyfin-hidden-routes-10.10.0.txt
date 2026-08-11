@@ -1,0 +1,44 @@
+# Routes Jellyfin serves but hides from its OpenAPI document with
+# [ApiExplorerSettings(IgnoreApi = true)], so no version of the spec contains
+# them and the generated handlers cannot carry them. Extracted from the
+# v10.10.0 controller sources; regenerate when the vendored spec moves.
+#
+# internal/http maps these to their documented spelling. TestLegacyRoutesCoverJellyfin
+# fails if one appears here without an alias or a stated reason.
+
+GET /QuickConnect/Initiate
+POST /Users/{userId}
+POST /Users/{userId}/Authenticate
+POST /Users/{userId}/Configuration
+POST /Users/{userId}/EasyPassword
+DELETE /Users/{userId}/FavoriteItems/{itemId}
+POST /Users/{userId}/FavoriteItems/{itemId}
+GET /Users/{userId}/GroupingOptions
+DELETE /Users/{userId}/Images/{imageType}
+GET /Users/{userId}/Images/{imageType}
+HEAD /Users/{userId}/Images/{imageType}
+POST /Users/{userId}/Images/{imageType}
+GET /Users/{userId}/Images/{imageType}/{imageIndex}
+HEAD /Users/{userId}/Images/{imageType}/{imageIndex}
+DELETE /Users/{userId}/Images/{imageType}/{index}
+POST /Users/{userId}/Images/{imageType}/{index}
+GET /Users/{userId}/Items
+GET /Users/{userId}/Items/Latest
+GET /Users/{userId}/Items/Resume
+GET /Users/{userId}/Items/Root
+GET /Users/{userId}/Items/{itemId}
+GET /Users/{userId}/Items/{itemId}/Intros
+GET /Users/{userId}/Items/{itemId}/LocalTrailers
+DELETE /Users/{userId}/Items/{itemId}/Rating
+POST /Users/{userId}/Items/{itemId}/Rating
+GET /Users/{userId}/Items/{itemId}/SpecialFeatures
+GET /Users/{userId}/Items/{itemId}/UserData
+POST /Users/{userId}/Items/{itemId}/UserData
+POST /Users/{userId}/Password
+DELETE /Users/{userId}/PlayedItems/{itemId}
+POST /Users/{userId}/PlayedItems/{itemId}
+DELETE /Users/{userId}/PlayingItems/{itemId}
+POST /Users/{userId}/PlayingItems/{itemId}
+POST /Users/{userId}/PlayingItems/{itemId}/Progress
+GET /Users/{userId}/Suggestions
+GET /Users/{userId}/Views

@@ -8,7 +8,7 @@ import (
 )
 
 func (s *Server) GetItemCounts(ctx context.Context, request api.GetItemCountsRequestObject) (api.GetItemCountsResponseObject, error) {
-	counts, err := s.items.CountByType(ctx)
+	counts, err := s.items.CountByKind(ctx)
 	if err != nil {
 		return nil, err
 	}

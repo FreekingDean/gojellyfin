@@ -13,16 +13,8 @@ import (
 	"github.com/google/uuid"
 )
 
-var FolderTypes = map[string]bool{
-	"Series":           true,
-	"Season":           true,
-	"Folder":           true,
-	"CollectionFolder": true,
-}
-
 func ItemDto(item *items.Item, childCount int32, imageTags map[string]string) api.BaseItemDto {
-	kind := api.BaseItemKind(item.Type)
-	isFolder := FolderTypes[item.Type]
+	kind := api.BaseItemKind(item.Kind)
 
 	dto := api.BaseItemDto{
 		Id:                &item.ID,
@@ -31,7 +23,7 @@ func ItemDto(item *items.Item, childCount int32, imageTags map[string]string) ap
 		SortName:          apiutil.Ptr(item.SortName),
 		Type:              &kind,
 		Path:              apiutil.Ptr(item.Path),
-		IsFolder:          apiutil.Ptr(isFolder),
+		IsFolder:          apiutil.Ptr(item.IsFolder),
 		ParentId:          item.ParentID,
 		IndexNumber:       item.IndexNumber,
 		ParentIndexNumber: item.ParentIndexNumber,
@@ -39,7 +31,7 @@ func ItemDto(item *items.Item, childCount int32, imageTags map[string]string) ap
 		PremiereDate:      item.PremiereDate,
 		RunTimeTicks:      item.RunTimeTicks,
 		DateCreated:       apiutil.Ptr(item.CreatedAt),
-		LocationType:      apiutil.Ptr(api.FileSystem),
+		LocationType:      apiutil.Ptr(api.LocationType(item.LocationType)),
 		ImageTags:         &map[string]string{},
 		BackdropImageTags: &[]string{},
 	}
@@ -61,21 +53,21 @@ func ItemDto(item *items.Item, childCount int32, imageTags map[string]string) ap
 	if item.Overview != "" {
 		dto.Overview = apiutil.Ptr(item.Overview)
 	}
-	if isFolder {
+	if item.IsFolder {
 		dto.ChildCount = apiutil.Ptr(childCount)
 	} else {
-		dto.MediaType = apiutil.Ptr(api.MediaTypeVideo)
+		dto.MediaType = apiutil.Ptr(api.MediaType(item.MediaType))
 	}
 
 	return dto
 }
 
-func ItemDtos(ctx context.Context, store *items.Service, records []items.Item) ([]api.BaseItemDto, error) {
+func ItemDtos(ctx context.Context, store *items.Service, records []*items.Item) ([]api.BaseItemDto, error) {
 	folderIDs := make([]uuid.UUID, 0, len(records))
 	itemIDs := make([]uuid.UUID, 0, len(records))
 	for _, item := range records {
 		itemIDs = append(itemIDs, item.ID)
-		if FolderTypes[item.Type] {
+		if item.IsFolder {
 			folderIDs = append(folderIDs, item.ID)
 		}
 	}
@@ -90,7 +82,7 @@ func ItemDtos(ctx context.Context, store *items.Service, records []items.Item) (
 		return nil, err
 	}
 
-	userData := map[uuid.UUID]items.Datum{}
+	userData := map[uuid.UUID]*items.Datum{}
 	if userID := auth.UserID(ctx); userID != uuid.Nil {
 		if userData, err = store.ListUserItemData(ctx, userID, itemIDs); err != nil {
 			return nil, err
@@ -99,12 +91,12 @@ func ItemDtos(ctx context.Context, store *items.Service, records []items.Item) (
 
 	converted := make([]api.BaseItemDto, 0, len(records))
 	for _, item := range records {
-		dto := ItemDto(&item, counts[item.ID], imageTags[item.ID])
+		dto := ItemDto(item, counts[item.ID], imageTags[item.ID])
 		datum, ok := userData[item.ID]
 		if !ok {
-			datum = items.Datum{ItemID: item.ID}
+			datum = &items.Datum{ItemID: item.ID}
 		}
-		dto.UserData = apiutil.Ptr(UserItemDataDto(&datum))
+		dto.UserData = apiutil.Ptr(UserItemDataDto(datum))
 		converted = append(converted, dto)
 	}
 
@@ -163,6 +155,22 @@ func UserItemDataDto(datum *items.Datum) api.UserItemDataDto {
 		PlayCount:             apiutil.Ptr(datum.PlayCount),
 		IsFavorite:            apiutil.Ptr(datum.IsFavorite),
 		PlaybackPositionTicks: apiutil.Ptr(datum.PlaybackPositionTicks),
-		LastPlayedDate:        datum.LastPlayedDate,
+		LastPlayedDate:        datum.LastPlayedAt,
 	}
+}
+
+func Kinds(types *[]api.BaseItemKind) []items.Kind {
+	if types == nil {
+		return nil
+	}
+
+	kinds := make([]items.Kind, 0, len(*types))
+	for _, value := range *types {
+		kind := items.Kind(value)
+		if items.ValidKind(kind) == nil {
+			kinds = append(kinds, kind)
+		}
+	}
+
+	return kinds
 }

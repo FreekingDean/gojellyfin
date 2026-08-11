@@ -8,6 +8,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	serveritems "github.com/FreekingDean/gojellyfin/internal/server/items"
 )
 
 type Server struct {
@@ -19,7 +20,7 @@ func New(items *items.Service) *Server {
 }
 
 func (s *Server) GetYears(ctx context.Context, request api.GetYearsRequestObject) (api.GetYearsResponseObject, error) {
-	years, err := s.items.DistinctYears(ctx, request.Params.ParentId, itemTypes(request.Params.IncludeItemTypes))
+	years, err := s.items.DistinctYears(ctx, request.Params.ParentId, serveritems.Kinds(request.Params.IncludeItemTypes))
 	if err != nil {
 		return nil, err
 	}
@@ -53,17 +54,4 @@ func yearDto(year int32) api.BaseItemDto {
 		ImageTags:         &map[string]string{},
 		BackdropImageTags: &[]string{},
 	}
-}
-
-func itemTypes(kinds *[]api.BaseItemKind) []string {
-	if kinds == nil {
-		return nil
-	}
-
-	types := make([]string, 0, len(*kinds))
-	for _, kind := range *kinds {
-		types = append(types, string(kind))
-	}
-
-	return types
 }

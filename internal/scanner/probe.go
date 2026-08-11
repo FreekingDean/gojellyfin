@@ -5,43 +5,28 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/google/uuid"
-
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 )
 
 const ticksPerSecond = 10_000_000
 
-func (s *Scanner) probe(ctx context.Context, libraryID uuid.UUID, path string) error {
-	item, err := s.items.GetItemByPath(ctx, libraryID, path)
-	if err != nil {
-		return err
-	}
-	if item.ProbedAt != nil && !item.ProbedAt.Before(item.DateModified) {
+func (s *Scanner) probe(ctx context.Context, item *items.Item) error {
+	if !items.NeedsProbe(item) {
 		return nil
 	}
 
-	probe, err := ffmpeg.ProbeFile(ctx, path)
+	probe, err := ffmpeg.ProbeFile(ctx, item.Path)
 	if err != nil {
 		return err
 	}
 
-	item.RunTimeTicks = ptr(int64(probe.Format.Seconds() * ticksPerSecond))
-	item.Container = container(probe.Format.FormatName, path)
-	item.Size = probe.Format.Bytes()
-	item.Bitrate = probe.Format.Bitrate()
-
-	if err := s.items.SaveItemMedia(ctx, item); err != nil {
-		return err
-	}
-
-	streams := make([]items.MediaStream, 0, len(probe.Streams))
+	streams := make([]items.Stream, 0, len(probe.Streams))
 	for _, stream := range probe.Streams {
-		streams = append(streams, items.MediaStream{
-			ItemID:      item.ID,
+		streams = append(streams, items.Stream{
 			Index:       int32(stream.Index),
-			Type:        streamType(stream.CodecType),
+			Kind:        streamKind(stream.CodecType),
 			Codec:       stream.CodecName,
 			Profile:     stream.Profile,
 			Language:    stream.Language(),
@@ -52,13 +37,19 @@ func (s *Scanner) probe(ctx context.Context, libraryID uuid.UUID, path string) e
 			SampleRate:  stream.SampleRateHz(),
 			Bitrate:     stream.Bitrate(),
 			PixelFormat: stream.PixelFormat,
-			Level:       int32(stream.Level),
+			Level:       float64(stream.Level),
 			IsDefault:   stream.IsDefault(),
 			IsForced:    stream.IsForced(),
 		})
 	}
 
-	return s.items.ReplaceMediaStreams(ctx, item.ID, streams)
+	return s.items.SaveProbe(ctx, item, items.Probe{
+		Container:    container(probe.Format.FormatName, item.Path),
+		RunTimeTicks: int64(probe.Format.Seconds() * ticksPerSecond),
+		Size:         probe.Format.Bytes(),
+		Bitrate:      probe.Format.Bitrate(),
+		Streams:      streams,
+	})
 }
 
 // ffprobe reports muxer families like "matroska,webm"; the file extension picks
@@ -74,15 +65,15 @@ func container(formatName, path string) string {
 	return extension
 }
 
-func streamType(codecType string) string {
+func streamKind(codecType string) items.StreamKind {
 	switch codecType {
 	case "video":
-		return "Video"
+		return streammodal.KindVideo
 	case "audio":
-		return "Audio"
+		return streammodal.KindAudio
 	case "subtitle":
-		return "Subtitle"
+		return streammodal.KindSubtitle
 	default:
-		return "EmbeddedImage"
+		return streammodal.KindEmbeddedImage
 	}
 }

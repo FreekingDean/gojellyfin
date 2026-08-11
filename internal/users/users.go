@@ -2,88 +2,149 @@ package users
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 
-	"gorm.io/gorm"
-
 	"github.com/FreekingDean/gojellyfin/internal/store"
+	"github.com/FreekingDean/gojellyfin/internal/store/entities"
+	usermodal "github.com/FreekingDean/gojellyfin/internal/store/user"
+	configurationmodal "github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
+	policymodal "github.com/FreekingDean/gojellyfin/internal/store/userpolicy"
+)
+
+type (
+	User          = store.User
+	Configuration = store.UserConfiguration
+	Policy        = store.UserPolicy
+
+	SubtitleMode   = configurationmodal.SubtitleMode
+	SyncPlayAccess = policymodal.SyncPlayAccess
+	AccessSchedule = entities.AccessSchedule
 )
 
 type Service struct {
-	db *gorm.DB
+	store *store.Client
 }
 
-func New(db *gorm.DB) *Service {
-	return &Service{db: db}
+func New(client *store.Client) *Service {
+	return &Service{store: client}
 }
 
-type User struct {
-	ID               uuid.UUID `gorm:"type:uuid;default:gen_random_uuid()"`
-	Name             string
-	Username         string `gorm:"uniqueIndex"`
-	PasswordHash     string
-	IsAdministrator  bool
-	Configuration    store.JSON
-	Policy           store.JSON
-	LastLoginDate    *time.Time
-	LastActivityDate *time.Time
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
-}
+func (s *Service) CreateUser(ctx context.Context, name, passwordHash string, isAdministrator bool) (*User, error) {
+	var id uuid.UUID
+	err := s.store.WithTx(ctx, func(tx *store.Tx) error {
+		user, err := tx.User.Create().
+			SetName(name).
+			SetUsername(name).
+			SetPasswordHash(passwordHash).
+			Save(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to create user: %w", err)
+		}
+		id = user.ID
 
-func (s *Service) CreateUser(ctx context.Context, user *User) error {
-	return s.db.WithContext(ctx).Create(user).Error
+		if _, err := tx.UserConfiguration.Create().SetUser(user).Save(ctx); err != nil {
+			return fmt.Errorf("failed to create user configuration: %w", err)
+		}
+
+		_, err = tx.UserPolicy.Create().
+			SetUser(user).
+			SetIsAdministrator(isAdministrator).
+			SetEnableCollectionManagement(isAdministrator).
+			SetEnableContentDeletion(isAdministrator).
+			SetEnableRemoteControlOfOtherUsers(isAdministrator).
+			Save(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to create user policy: %w", err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return s.User(ctx, id)
 }
 
 func (s *Service) User(ctx context.Context, id uuid.UUID) (*User, error) {
-	var user User
-	if err := s.db.WithContext(ctx).First(&user, "id = ?", id).Error; err != nil {
-		return nil, err
+	user, err := s.query().Where(usermodal.ID(id)).Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query user: %w", err)
 	}
 
-	return &user, nil
+	return user, nil
 }
 
 func (s *Service) UserByUsername(ctx context.Context, username string) (*User, error) {
-	var user User
-	if err := s.db.WithContext(ctx).First(&user, "username = ?", username).Error; err != nil {
-		return nil, err
+	user, err := s.query().Where(usermodal.Username(username)).Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query user by username: %w", err)
 	}
 
-	return &user, nil
+	return user, nil
 }
 
-func (s *Service) Users(ctx context.Context) ([]User, error) {
-	var users []User
-	if err := s.db.WithContext(ctx).Find(&users).Error; err != nil {
-		return nil, err
+func (s *Service) Users(ctx context.Context) ([]*User, error) {
+	users, err := s.query().All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list users: %w", err)
 	}
 
 	return users, nil
 }
 
-func (s *Service) UpdateUser(ctx context.Context, user *User) error {
-	return s.db.WithContext(ctx).Save(user).Error
+func (s *Service) Rename(ctx context.Context, id uuid.UUID, name string) error {
+	if err := s.store.User.UpdateOneID(id).SetName(name).Exec(ctx); err != nil {
+		return fmt.Errorf("failed to rename user: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Service) SetPassword(ctx context.Context, id uuid.UUID, passwordHash string) error {
+	if err := s.store.User.UpdateOneID(id).SetPasswordHash(passwordHash).Exec(ctx); err != nil {
+		return fmt.Errorf("failed to set user password: %w", err)
+	}
+
+	return nil
+}
+
+// The caller chains the fields it wants changed; every field has a
+// SetNillable form, which is the shape the api sends them in.
+func (s *Service) UpdateConfiguration(id uuid.UUID) *store.UserConfigurationUpdate {
+	return s.store.UserConfiguration.Update().
+		Where(configurationmodal.HasUserWith(usermodal.ID(id)))
+}
+
+func (s *Service) UpdatePolicy(id uuid.UUID) *store.UserPolicyUpdate {
+	return s.store.UserPolicy.Update().
+		Where(policymodal.HasUserWith(usermodal.ID(id)))
 }
 
 func (s *Service) DeleteUser(ctx context.Context, id uuid.UUID) error {
-	return s.db.WithContext(ctx).Delete(&User{}, "id = ?", id).Error
+	if err := s.store.User.DeleteOneID(id).Exec(ctx); err != nil {
+		return fmt.Errorf("failed to delete user: %w", err)
+	}
+
+	return nil
 }
 
 func (s *Service) TouchLogin(ctx context.Context, id uuid.UUID) error {
 	now := time.Now()
-
-	return s.db.WithContext(ctx).Model(&User{}).Where("id = ?", id).
-		Updates(map[string]any{"last_login_date": now, "last_activity_date": now}).Error
-}
-
-func (s *Service) UserName(ctx context.Context, id uuid.UUID) string {
-	user, err := s.User(ctx, id)
+	err := s.store.User.UpdateOneID(id).
+		SetLastLoginAt(now).
+		SetLastActivityAt(now).
+		Exec(ctx)
 	if err != nil {
-		return ""
+		return fmt.Errorf("failed to touch user login: %w", err)
 	}
 
-	return user.Name
+	return nil
+}
+
+func (s *Service) query() *store.UserQuery {
+	return s.store.User.Query().WithConfiguration().WithPolicy()
 }

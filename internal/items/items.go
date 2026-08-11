@@ -2,109 +2,114 @@ package items
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
+
+	"github.com/FreekingDean/gojellyfin/internal/store"
+	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
+	datamodal "github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
 )
 
+type (
+	Item      = store.Item
+	Kind      = itemmodal.Kind
+	MediaType = itemmodal.MediaType
+)
+
+var ValidKind = itemmodal.KindValidator
+
 type Service struct {
-	db *gorm.DB
+	store *store.Client
 }
 
-func New(db *gorm.DB) *Service {
-	return &Service{db: db}
+func New(client *store.Client) *Service {
+	return &Service{store: client}
 }
 
-type Item struct {
-	ID                uuid.UUID  `gorm:"type:uuid;default:gen_random_uuid()"`
-	LibraryID         uuid.UUID  `gorm:"type:uuid;index;uniqueIndex:idx_items_library_path"`
-	ParentID          *uuid.UUID `gorm:"type:uuid;index"`
-	Type              string     `gorm:"index"`
+// What one pass of the scanner knows about a file. The probe owns the
+// remaining columns and must not be clobbered from here.
+type Scanned struct {
+	LibraryID         uuid.UUID
+	ParentID          *uuid.UUID
+	Kind              Kind
 	Name              string
-	SortName          string `gorm:"index"`
-	Path              string `gorm:"uniqueIndex:idx_items_library_path"`
-	Overview          string
+	SortName          string
+	Path              string
 	ProductionYear    *int32
 	IndexNumber       *int32
 	ParentIndexNumber *int32
-	PremiereDate      *time.Time
-	RunTimeTicks      *int64
-	Container         string
-	Size              int64
-	Bitrate           int32
-	ProbedAt          *time.Time
 	DateModified      time.Time
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
 }
 
-func (s *Service) UpsertItem(ctx context.Context, item *Item) error {
-	return s.db.WithContext(ctx).Clauses(clause.OnConflict{
-		Columns: []clause.Column{{Name: "library_id"}, {Name: "path"}},
-		// run_time_ticks, container, size, bitrate and probed_at belong to the
-		// probe, not the scan, and would be clobbered back to zero here.
-		DoUpdates: clause.AssignmentColumns([]string{
-			"parent_id", "type", "name", "sort_name", "overview", "production_year",
-			"index_number", "parent_index_number", "premiere_date",
-			"date_modified", "updated_at",
-		}),
-	}).Create(item).Error
+var folderKinds = map[Kind]bool{
+	itemmodal.KindSeries:           true,
+	itemmodal.KindSeason:           true,
+	itemmodal.KindFolder:           true,
+	itemmodal.KindCollectionFolder: true,
+	itemmodal.KindBoxSet:           true,
+	itemmodal.KindPlaylistsFolder:  true,
+	itemmodal.KindUserRootFolder:   true,
 }
 
-func (s *Service) SaveItemMedia(ctx context.Context, item *Item) error {
-	return s.db.WithContext(ctx).Model(&Item{}).Where("id = ?", item.ID).Updates(map[string]any{
-		"run_time_ticks": item.RunTimeTicks,
-		"container":      item.Container,
-		"size":           item.Size,
-		"bitrate":        item.Bitrate,
-		"probed_at":      time.Now(),
-	}).Error
+func (s *Service) SaveScanned(ctx context.Context, scanned Scanned) (*Item, error) {
+	isFolder := folderKinds[scanned.Kind]
+	mediaType := itemmodal.MediaTypeVideo
+	if isFolder {
+		mediaType = itemmodal.MediaTypeUnknown
+	}
+
+	id, err := s.store.Item.Create().
+		SetLibraryID(scanned.LibraryID).
+		SetNillableParentID(scanned.ParentID).
+		SetKind(scanned.Kind).
+		SetMediaType(mediaType).
+		SetIsFolder(isFolder).
+		SetName(scanned.Name).
+		SetSortName(scanned.SortName).
+		SetPath(scanned.Path).
+		SetNillableProductionYear(scanned.ProductionYear).
+		SetNillableIndexNumber(scanned.IndexNumber).
+		SetNillableParentIndexNumber(scanned.ParentIndexNumber).
+		SetDateModified(scanned.DateModified).
+		OnConflictColumns(itemmodal.FieldLibraryID, itemmodal.FieldPath).
+		UpdateParentID().
+		UpdateKind().
+		UpdateMediaType().
+		UpdateIsFolder().
+		UpdateName().
+		UpdateSortName().
+		UpdateProductionYear().
+		UpdateIndexNumber().
+		UpdateParentIndexNumber().
+		UpdateDateModified().
+		UpdateUpdatedAt().
+		ID(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to save scanned item: %w", err)
+	}
+
+	return s.ItemByID(ctx, id)
 }
 
 func (s *Service) ItemByID(ctx context.Context, id uuid.UUID) (*Item, error) {
-	var item Item
-	if err := s.db.WithContext(ctx).First(&item, "id = ?", id).Error; err != nil {
-		return nil, err
+	item, err := s.store.Item.Get(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query item: %w", err)
 	}
 
-	return &item, nil
-}
-
-func (s *Service) GetItemByPath(ctx context.Context, libraryID uuid.UUID, path string) (*Item, error) {
-	var item Item
-	if err := s.db.WithContext(ctx).First(&item, "library_id = ? AND path = ?", libraryID, path).Error; err != nil {
-		return nil, err
-	}
-
-	return &item, nil
-}
-
-func (s *Service) ListItemsByLibrary(ctx context.Context, libraryID uuid.UUID) ([]Item, error) {
-	var items []Item
-	if err := s.db.WithContext(ctx).Where("library_id = ?", libraryID).Order("sort_name").Find(&items).Error; err != nil {
-		return nil, err
-	}
-
-	return items, nil
-}
-
-func (s *Service) ListItemsByParent(ctx context.Context, parentID uuid.UUID) ([]Item, error) {
-	var items []Item
-	if err := s.db.WithContext(ctx).Where("parent_id = ?", parentID).Order("index_number, sort_name").Find(&items).Error; err != nil {
-		return nil, err
-	}
-
-	return items, nil
+	return item, nil
 }
 
 type ItemQuery struct {
 	LibraryID  *uuid.UUID
 	ParentID   *uuid.UUID
 	TopLevel   bool
-	Types      []string
+	Kinds      []Kind
 	IDs        []uuid.UUID
 	SearchTerm string
 	SortBy     []string
@@ -113,74 +118,75 @@ type ItemQuery struct {
 	Limit      int
 }
 
-var sortColumns = map[string]string{
-	"sortname":       "sort_name",
-	"name":           "sort_name",
-	"premieredate":   "premiere_date",
-	"productionyear": "production_year",
-	"datecreated":    "created_at",
-	"datemodified":   "date_modified",
-	"indexnumber":    "index_number",
-	"random":         "random()",
+var sortFields = map[string]string{
+	"sortname":       itemmodal.FieldSortName,
+	"name":           itemmodal.FieldSortName,
+	"premieredate":   itemmodal.FieldPremiereDate,
+	"productionyear": itemmodal.FieldProductionYear,
+	"datecreated":    itemmodal.FieldCreatedAt,
+	"datemodified":   itemmodal.FieldDateModified,
+	"indexnumber":    itemmodal.FieldIndexNumber,
 }
 
-func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]Item, int64, error) {
-	db := s.db.WithContext(ctx).Model(&Item{})
+func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int, error) {
+	items := s.store.Item.Query()
 
 	if query.LibraryID != nil {
-		db = db.Where("library_id = ?", *query.LibraryID)
+		items = items.Where(itemmodal.LibraryID(*query.LibraryID))
 	}
 	if query.TopLevel {
-		db = db.Where("parent_id IS NULL")
+		items = items.Where(itemmodal.ParentIDIsNil())
 	}
 	if query.ParentID != nil {
-		db = db.Where("parent_id = ?", *query.ParentID)
+		items = items.Where(itemmodal.ParentID(*query.ParentID))
 	}
-	if len(query.Types) > 0 {
-		db = db.Where("type IN ?", query.Types)
+	if len(query.Kinds) > 0 {
+		items = items.Where(itemmodal.KindIn(query.Kinds...))
 	}
 	if len(query.IDs) > 0 {
-		db = db.Where("id IN ?", query.IDs)
+		items = items.Where(itemmodal.IDIn(query.IDs...))
 	}
 	if query.SearchTerm != "" {
-		db = db.Where("name ILIKE ?", "%"+query.SearchTerm+"%")
+		items = items.Where(itemmodal.NameContainsFold(query.SearchTerm))
 	}
 
-	var total int64
-	if err := db.Count(&total).Error; err != nil {
-		return nil, 0, err
+	total, err := items.Clone().Count(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to count items: %w", err)
 	}
 
-	direction := " asc"
+	direction := sql.OrderAsc()
 	if query.Descending {
-		direction = " desc"
+		direction = sql.OrderDesc()
 	}
-	for _, sort := range query.SortBy {
-		column, ok := sortColumns[strings.ToLower(sort)]
-		if !ok {
+	for _, sortBy := range query.SortBy {
+		if strings.EqualFold(sortBy, "random") {
+			items = items.Order(orderRandom)
 			continue
 		}
-		if column == "random()" {
-			db = db.Order(column)
-			continue
+		if field, ok := sortFields[strings.ToLower(sortBy)]; ok {
+			items = items.Order(sql.OrderByField(field, direction).ToFunc())
 		}
-		db = db.Order(column + direction)
 	}
-	db = db.Order("sort_name" + direction)
+	items = items.Order(itemmodal.BySortName(direction))
 
 	if query.StartIndex > 0 {
-		db = db.Offset(query.StartIndex)
+		items = items.Offset(query.StartIndex)
 	}
 	if query.Limit > 0 {
-		db = db.Limit(query.Limit)
+		items = items.Limit(query.Limit)
 	}
 
-	var items []Item
-	if err := db.Find(&items).Error; err != nil {
-		return nil, 0, err
+	records, err := items.All(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to query items: %w", err)
 	}
 
-	return items, total, nil
+	return records, total, nil
+}
+
+func orderRandom(selector *sql.Selector) {
+	selector.OrderExpr(sql.Expr("random()"))
 }
 
 func (s *Service) CountChildren(ctx context.Context, parentIDs []uuid.UUID) (map[uuid.UUID]int32, error) {
@@ -190,149 +196,128 @@ func (s *Service) CountChildren(ctx context.Context, parentIDs []uuid.UUID) (map
 	}
 
 	var rows []struct {
-		ParentID uuid.UUID
-		Count    int32
+		ParentID uuid.UUID `json:"parent_id"`
+		Count    int       `json:"count"`
 	}
-	err := s.db.WithContext(ctx).Model(&Item{}).
-		Select("parent_id, count(*) as count").
-		Where("parent_id IN ?", parentIDs).
-		Group("parent_id").
-		Scan(&rows).Error
+	err := s.store.Item.Query().
+		Where(itemmodal.ParentIDIn(parentIDs...)).
+		GroupBy(itemmodal.FieldParentID).
+		Aggregate(store.Count()).
+		Scan(ctx, &rows)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to count children: %w", err)
 	}
 
 	for _, row := range rows {
-		counts[row.ParentID] = row.Count
+		counts[row.ParentID] = int32(row.Count)
 	}
 
 	return counts, nil
 }
 
 func (s *Service) DeleteItemsNotInPaths(ctx context.Context, libraryID uuid.UUID, paths []string) error {
-	query := s.db.WithContext(ctx).Where("library_id = ?", libraryID)
+	items := s.store.Item.Delete().Where(itemmodal.LibraryID(libraryID))
 	if len(paths) > 0 {
-		query = query.Where("path NOT IN ?", paths)
+		items = items.Where(itemmodal.PathNotIn(paths...))
 	}
 
-	return query.Delete(&Item{}).Error
+	if _, err := items.Exec(ctx); err != nil {
+		return fmt.Errorf("failed to delete missing items: %w", err)
+	}
+
+	return nil
 }
 
-func (s *Service) DistinctYears(ctx context.Context, libraryID *uuid.UUID, types []string) ([]int32, error) {
-	db := s.db.WithContext(ctx).Model(&Item{}).
-		Where("production_year IS NOT NULL")
+func (s *Service) DistinctYears(ctx context.Context, libraryID *uuid.UUID, kinds []Kind) ([]int32, error) {
+	items := s.store.Item.Query().Where(itemmodal.ProductionYearNotNil())
 	if libraryID != nil {
-		db = db.Where("library_id = ?", *libraryID)
+		items = items.Where(itemmodal.LibraryID(*libraryID))
 	}
-	if len(types) > 0 {
-		db = db.Where("type IN ?", types)
+	if len(kinds) > 0 {
+		items = items.Where(itemmodal.KindIn(kinds...))
 	}
 
-	var years []int32
-	if err := db.Distinct().Order("production_year").Pluck("production_year", &years).Error; err != nil {
-		return nil, err
+	values, err := items.
+		Order(itemmodal.ByProductionYear()).
+		Unique(true).
+		Select(itemmodal.FieldProductionYear).
+		Ints(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query distinct years: %w", err)
+	}
+
+	years := make([]int32, 0, len(values))
+	for _, value := range values {
+		years = append(years, int32(value))
 	}
 
 	return years, nil
 }
 
-// Items the user started and did not finish, most recently played first.
-func (s *Service) ResumeItems(ctx context.Context, userID uuid.UUID, types []string, libraryID *uuid.UUID, startIndex, limit int) ([]Item, int64, error) {
-	db := s.db.WithContext(ctx).Model(&Item{}).
-		Joins("JOIN user_item_data ON user_item_data.item_id = items.id AND user_item_data.user_id = ?", userID).
-		Where("user_item_data.playback_position_ticks > 0").
-		Where("user_item_data.played = ?", false).
-		// Only leaf items are playable, so only they can be resumed.
-		Where("items.type NOT IN ?", []string{"Series", "Season", "Folder", "CollectionFolder"})
-
-	if len(types) > 0 {
-		db = db.Where("items.type IN ?", types)
+// Items the user started and did not finish, most recently played first. The
+// query runs from the user data so the sort column is on the primary table;
+// ordering items by the edge makes ent aggregate it away.
+func (s *Service) ResumeItems(ctx context.Context, userID uuid.UUID, kinds []Kind, libraryID *uuid.UUID, startIndex, limit int) ([]*Item, int, error) {
+	playable := []predicate.Item{itemmodal.IsFolder(false)}
+	if len(kinds) > 0 {
+		playable = append(playable, itemmodal.KindIn(kinds...))
 	}
 	if libraryID != nil {
-		db = db.Where("items.library_id = ?", *libraryID)
+		playable = append(playable, itemmodal.LibraryID(*libraryID))
 	}
 
-	var total int64
-	if err := db.Count(&total).Error; err != nil {
-		return nil, 0, err
+	data := s.store.UserItemData.Query().
+		Where(
+			datamodal.UserID(userID),
+			datamodal.PlaybackPositionTicksGT(0),
+			datamodal.Played(false),
+			datamodal.HasItemWith(playable...),
+		)
+
+	total, err := data.Clone().Count(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to count resume items: %w", err)
 	}
 
-	db = db.Order("user_item_data.last_played_date DESC NULLS LAST")
+	data = data.Order(datamodal.ByLastPlayedAt(sql.OrderDesc(), sql.OrderNullsLast()))
 	if startIndex > 0 {
-		db = db.Offset(startIndex)
+		data = data.Offset(startIndex)
 	}
 	if limit > 0 {
-		db = db.Limit(limit)
+		data = data.Limit(limit)
 	}
 
-	var records []Item
-	if err := db.Find(&records).Error; err != nil {
-		return nil, 0, err
+	rows, err := data.WithItem().All(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to query resume items: %w", err)
+	}
+
+	records := make([]*Item, 0, len(rows))
+	for _, row := range rows {
+		if row.Edges.Item != nil {
+			records = append(records, row.Edges.Item)
+		}
 	}
 
 	return records, total, nil
 }
 
-// The earliest unwatched episode of each series the user has already started.
-func (s *Service) NextUpEpisodes(ctx context.Context, userID uuid.UUID, seriesID *uuid.UUID, limit int) ([]Item, error) {
-	if limit <= 0 {
-		limit = 24
+func (s *Service) CountByKind(ctx context.Context) (map[string]int32, error) {
+	var rows []struct {
+		Kind  string `json:"kind"`
+		Count int    `json:"count"`
 	}
-
-	// DISTINCT ON picks one row per series; the ORDER BY decides which.
-	query := `
-		SELECT DISTINCT ON (series.id) episodes.*
-		FROM items AS episodes
-		JOIN items AS seasons ON seasons.id = episodes.parent_id
-		JOIN items AS series ON series.id = seasons.parent_id
-		LEFT JOIN user_item_data AS data
-			ON data.item_id = episodes.id AND data.user_id = ?
-		WHERE episodes.type = 'Episode'
-			AND COALESCE(data.played, false) = false
-			-- Specials are not part of the running order.
-			AND COALESCE(episodes.parent_index_number, 0) > 0
-			AND EXISTS (
-				SELECT 1
-				FROM items AS watched
-				JOIN items AS watched_season ON watched_season.id = watched.parent_id
-				JOIN user_item_data AS watched_data
-					ON watched_data.item_id = watched.id AND watched_data.user_id = ?
-				WHERE watched_season.parent_id = series.id AND watched_data.played
-			)`
-	args := []any{userID, userID}
-
-	if seriesID != nil {
-		query += "\n\t\t\tAND series.id = ?"
-		args = append(args, *seriesID)
-	}
-
-	query += "\n\t\tORDER BY series.id, episodes.parent_index_number, episodes.index_number\n\t\tLIMIT ?"
-	args = append(args, limit)
-
-	var records []Item
-	err := s.db.WithContext(ctx).Raw(query, args...).Scan(&records).Error
-
-	return records, err
-}
-
-type typeCount struct {
-	Type  string
-	Count int32
-}
-
-func (s *Service) CountByType(ctx context.Context) (map[string]int32, error) {
-	var rows []typeCount
-	err := s.db.WithContext(ctx).Model(&Item{}).
-		Select("type, count(*) as count").
-		Group("type").
-		Scan(&rows).Error
+	err := s.store.Item.Query().
+		GroupBy(itemmodal.FieldKind).
+		Aggregate(store.Count()).
+		Scan(ctx, &rows)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to count items by kind: %w", err)
 	}
 
 	counts := make(map[string]int32, len(rows))
 	for _, row := range rows {
-		counts[row.Type] = row.Count
+		counts[row.Kind] = int32(row.Count)
 	}
 
 	return counts, nil

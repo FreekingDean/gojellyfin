@@ -1,0 +1,56 @@
+{{ define "fx" }}
+
+{{/* Add the base header for the generated file */}}
+{{ $pkg := base $.Config.Package }}
+{{ template "header" $ }}
+import (
+  "database/sql"
+  "os"
+
+  "entgo.io/ent/dialect"
+  entsql "entgo.io/ent/dialect/sql"
+  _ "github.com/jackc/pgx/v5/stdlib"
+
+	"github.com/FreekingDean/gojellyfin/internal/fx"
+)
+
+const defaultDatabaseURL = "postgres://localhost:5432/gojellyfin_development?sslmode=disable"
+
+var Module = fx.Module(
+	"store",
+  fx.Provide(NewStore, (*Store).Client),
+	fx.InvokeStartStop[*Store](),
+)
+
+type Store struct {
+  db *sql.DB
+  client *Client
+}
+
+func NewStore() (*Store, error) {
+  databaseURL := os.Getenv("DATABASE_URL")
+  if databaseURL == "" {
+    databaseURL = defaultDatabaseURL
+  }
+
+  db, err := sql.Open("pgx", databaseURL)
+  if err != nil {
+    return nil, fmt.Errorf("failed to connect to database: %w", err)
+  }
+
+  return &Store{db: db, client: NewClient(Driver(entsql.OpenDB(dialect.Postgres, db)))}, nil
+}
+
+func (s *Store) Client() *Client {
+  return s.client
+}
+
+func (s *Store) Start() error {
+  return s.db.Ping()
+}
+
+func (s *Store) Stop() error {
+  return s.client.Close()
+}
+
+{{ end }}

@@ -3,41 +3,41 @@ package devices
 import (
 	"context"
 
-	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
-	"github.com/FreekingDean/gojellyfin/internal/users"
+	"github.com/FreekingDean/gojellyfin/internal/sessions"
 )
 
 type Server struct {
-	auth  *auth.Service
-	users *users.Service
+	sessions *sessions.Service
 }
 
-func New(auth *auth.Service, users *users.Service) *Server {
-	return &Server{auth: auth, users: users}
+func New(sessions *sessions.Service) *Server {
+	return &Server{sessions: sessions}
 }
 
 func (s *Server) GetDevices(ctx context.Context, request api.GetDevicesRequestObject) (api.GetDevicesResponseObject, error) {
-	sessions, err := s.auth.Devices(ctx)
+	devices, err := s.sessions.Devices(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	items := make([]api.DeviceInfoDto, 0, len(sessions))
-	for _, session := range sessions {
-		device := api.DeviceInfoDto{
-			Id:               apiutil.Ptr(session.DeviceID),
-			Name:             apiutil.Ptr(session.DeviceName),
-			AppName:          apiutil.Ptr(session.Client),
-			AppVersion:       apiutil.Ptr(session.AppVersion),
-			DateLastActivity: apiutil.Ptr(session.LastActivityDate),
-			LastUserId:       apiutil.Ptr(session.UserID),
+	items := make([]api.DeviceInfoDto, 0, len(devices))
+	for _, device := range devices {
+		info := api.DeviceInfoDto{
+			Id:               apiutil.Ptr(device.ClientID),
+			Name:             apiutil.Ptr(device.Name),
+			CustomName:       apiutil.Ptr(device.CustomName),
+			AppName:          apiutil.Ptr(device.AppName),
+			AppVersion:       apiutil.Ptr(device.AppVersion),
+			DateLastActivity: apiutil.Ptr(device.LastActivityAt),
+			IconUrl:          apiutil.Ptr(device.IconURL),
 		}
-		if user, err := s.users.User(ctx, session.UserID); err == nil {
-			device.LastUserName = apiutil.Ptr(user.Name)
+		if user := sessions.LastUser(device); user != nil {
+			info.LastUserId = &user.ID
+			info.LastUserName = apiutil.Ptr(user.Name)
 		}
-		items = append(items, device)
+		items = append(items, info)
 	}
 
 	return api.GetDevices200JSONResponse{

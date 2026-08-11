@@ -2,14 +2,10 @@ package config
 
 import (
 	"context"
-	"errors"
-	"time"
-
-	"gorm.io/gorm"
-
-	"gorm.io/gorm/clause"
+	"encoding/json"
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
+	"github.com/FreekingDean/gojellyfin/internal/store/configuration"
 )
 
 // Server identity, shared by every DTO that carries a ServerId.
@@ -19,36 +15,32 @@ const (
 )
 
 type Service struct {
-	db *gorm.DB
+	client *store.Client
 }
 
-func New(db *gorm.DB) *Service {
-	return &Service{db: db}
+func New(client *store.Client) *Service {
+	return &Service{client: client}
 }
 
-type Configuration struct {
-	Key       string `gorm:"primaryKey"`
-	Value     store.JSON
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
-func (s *Service) Configuration(ctx context.Context, key string) (store.JSON, error) {
-	var configuration Configuration
-	err := s.db.WithContext(ctx).First(&configuration, "key = ?", key).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
+func (s *Service) Configuration(ctx context.Context, key string) (json.RawMessage, error) {
+	record, err := s.client.Configuration.Query().
+		Where(configuration.Key(key)).
+		Only(ctx)
+	if store.IsNotFound(err) {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
 
-	return configuration.Value, nil
+	return record.Value, nil
 }
 
-func (s *Service) SetConfiguration(ctx context.Context, key string, value store.JSON) error {
-	return s.db.WithContext(ctx).Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "key"}},
-		DoUpdates: clause.AssignmentColumns([]string{"value", "updated_at"}),
-	}).Create(&Configuration{Key: key, Value: value}).Error
+func (s *Service) SetConfiguration(ctx context.Context, key string, value json.RawMessage) error {
+	return s.client.Configuration.Create().
+		SetKey(key).
+		SetValue(value).
+		OnConflictColumns(configuration.FieldKey).
+		UpdateNewValues().
+		Exec(ctx)
 }
