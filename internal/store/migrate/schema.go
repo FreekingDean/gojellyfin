@@ -767,25 +767,6 @@ var (
 			},
 		},
 	}
-	// PluginsColumns holds the columns for the "plugins" table.
-	PluginsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "name", Type: field.TypeString},
-		{Name: "version", Type: field.TypeString},
-		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
-		{Name: "configuration_file_name", Type: field.TypeString, Nullable: true},
-		{Name: "status", Type: field.TypeEnum, Enums: []string{"Active", "Restart", "Deleted", "Superceded", "Malfunctioned", "NotSupported", "Disabled"}},
-		{Name: "can_uninstall", Type: field.TypeBool},
-		{Name: "has_image", Type: field.TypeBool},
-	}
-	// PluginsTable holds the schema information for the "plugins" table.
-	PluginsTable = &schema.Table{
-		Name:       "plugins",
-		Columns:    PluginsColumns,
-		PrimaryKey: []*schema.Column{PluginsColumns[0]},
-	}
 	// SeriesTimersColumns holds the columns for the "series_timers" table.
 	SeriesTimersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
@@ -1195,7 +1176,6 @@ var (
 		PlaylistsTable,
 		PlaylistEntriesTable,
 		PlaylistSharesTable,
-		PluginsTable,
 		SeriesTimersTable,
 		SessionsTable,
 		StudiosTable,

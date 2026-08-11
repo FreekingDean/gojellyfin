@@ -261,18 +261,6 @@ func (f PlaylistShareFunc) Mutate(ctx context.Context, m store.Mutation) (store.
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.PlaylistShareMutation", m)
 }
 
-// The PluginFunc type is an adapter to allow the use of ordinary
-// function as Plugin mutator.
-type PluginFunc func(context.Context, *store.PluginMutation) (store.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f PluginFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, error) {
-	if mv, ok := m.(*store.PluginMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.PluginMutation", m)
-}
-
 // The SeriesTimerFunc type is an adapter to allow the use of ordinary
 // function as SeriesTimer mutator.
 type SeriesTimerFunc func(context.Context, *store.SeriesTimerMutation) (store.Value, error)

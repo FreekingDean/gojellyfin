@@ -33,7 +33,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
-	"github.com/FreekingDean/gojellyfin/internal/store/plugin"
 	"github.com/FreekingDean/gojellyfin/internal/store/seriestimer"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
@@ -125,7 +124,6 @@ func checkColumn(t, c string) error {
 			playlist.Table:           playlist.ValidColumn,
 			playlistentry.Table:      playlistentry.ValidColumn,
 			playlistshare.Table:      playlistshare.ValidColumn,
-			plugin.Table:             plugin.ValidColumn,
 			seriestimer.Table:        seriestimer.ValidColumn,
 			session.Table:            session.ValidColumn,
 			studio.Table:             studio.ValidColumn,

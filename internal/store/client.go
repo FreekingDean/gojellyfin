@@ -37,7 +37,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
-	"github.com/FreekingDean/gojellyfin/internal/store/plugin"
 	"github.com/FreekingDean/gojellyfin/internal/store/seriestimer"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
@@ -99,8 +98,6 @@ type Client struct {
 	PlaylistEntry *PlaylistEntryClient
 	// PlaylistShare is the client for interacting with the PlaylistShare builders.
 	PlaylistShare *PlaylistShareClient
-	// Plugin is the client for interacting with the Plugin builders.
-	Plugin *PluginClient
 	// SeriesTimer is the client for interacting with the SeriesTimer builders.
 	SeriesTimer *SeriesTimerClient
 	// Session is the client for interacting with the Session builders.
@@ -153,7 +150,6 @@ func (c *Client) init() {
 	c.Playlist = NewPlaylistClient(c.config)
 	c.PlaylistEntry = NewPlaylistEntryClient(c.config)
 	c.PlaylistShare = NewPlaylistShareClient(c.config)
-	c.Plugin = NewPluginClient(c.config)
 	c.SeriesTimer = NewSeriesTimerClient(c.config)
 	c.Session = NewSessionClient(c.config)
 	c.Studio = NewStudioClient(c.config)
@@ -277,7 +273,6 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Playlist:           NewPlaylistClient(cfg),
 		PlaylistEntry:      NewPlaylistEntryClient(cfg),
 		PlaylistShare:      NewPlaylistShareClient(cfg),
-		Plugin:             NewPluginClient(cfg),
 		SeriesTimer:        NewSeriesTimerClient(cfg),
 		Session:            NewSessionClient(cfg),
 		Studio:             NewStudioClient(cfg),
@@ -328,7 +323,6 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Playlist:           NewPlaylistClient(cfg),
 		PlaylistEntry:      NewPlaylistEntryClient(cfg),
 		PlaylistShare:      NewPlaylistShareClient(cfg),
-		Plugin:             NewPluginClient(cfg),
 		SeriesTimer:        NewSeriesTimerClient(cfg),
 		Session:            NewSessionClient(cfg),
 		Studio:             NewStudioClient(cfg),
@@ -372,8 +366,8 @@ func (c *Client) Use(hooks ...Hook) {
 		c.DisplayPreferences, c.Genre, c.Image, c.Item, c.Library, c.LibraryOptions,
 		c.ListingsProvider, c.MediaAttachment, c.MediaSegment, c.MediaSource,
 		c.MediaStream, c.Person, c.Playlist, c.PlaylistEntry, c.PlaylistShare,
-		c.Plugin, c.SeriesTimer, c.Session, c.Studio, c.Timer, c.Trickplay,
-		c.TunerHost, c.User, c.UserConfiguration, c.UserItemData, c.UserPolicy,
+		c.SeriesTimer, c.Session, c.Studio, c.Timer, c.Trickplay, c.TunerHost, c.User,
+		c.UserConfiguration, c.UserItemData, c.UserPolicy,
 	} {
 		n.Use(hooks...)
 	}
@@ -387,8 +381,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.DisplayPreferences, c.Genre, c.Image, c.Item, c.Library, c.LibraryOptions,
 		c.ListingsProvider, c.MediaAttachment, c.MediaSegment, c.MediaSource,
 		c.MediaStream, c.Person, c.Playlist, c.PlaylistEntry, c.PlaylistShare,
-		c.Plugin, c.SeriesTimer, c.Session, c.Studio, c.Timer, c.Trickplay,
-		c.TunerHost, c.User, c.UserConfiguration, c.UserItemData, c.UserPolicy,
+		c.SeriesTimer, c.Session, c.Studio, c.Timer, c.Trickplay, c.TunerHost, c.User,
+		c.UserConfiguration, c.UserItemData, c.UserPolicy,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -439,8 +433,6 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.PlaylistEntry.mutate(ctx, m)
 	case *PlaylistShareMutation:
 		return c.PlaylistShare.mutate(ctx, m)
-	case *PluginMutation:
-		return c.Plugin.mutate(ctx, m)
 	case *SeriesTimerMutation:
 		return c.SeriesTimer.mutate(ctx, m)
 	case *SessionMutation:
@@ -3963,139 +3955,6 @@ func (c *PlaylistShareClient) mutate(ctx context.Context, m *PlaylistShareMutati
 	}
 }
 
-// PluginClient is a client for the Plugin schema.
-type PluginClient struct {
-	config
-}
-
-// NewPluginClient returns a client for the Plugin from the given config.
-func NewPluginClient(c config) *PluginClient {
-	return &PluginClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `plugin.Hooks(f(g(h())))`.
-func (c *PluginClient) Use(hooks ...Hook) {
-	c.hooks.Plugin = append(c.hooks.Plugin, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `plugin.Intercept(f(g(h())))`.
-func (c *PluginClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Plugin = append(c.inters.Plugin, interceptors...)
-}
-
-// Create returns a builder for creating a Plugin entity.
-func (c *PluginClient) Create() *PluginCreate {
-	mutation := newPluginMutation(c.config, OpCreate)
-	return &PluginCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of Plugin entities.
-func (c *PluginClient) CreateBulk(builders ...*PluginCreate) *PluginCreateBulk {
-	return &PluginCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *PluginClient) MapCreateBulk(slice any, setFunc func(*PluginCreate, int)) *PluginCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &PluginCreateBulk{err: fmt.Errorf("calling to PluginClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*PluginCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &PluginCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Plugin.
-func (c *PluginClient) Update() *PluginUpdate {
-	mutation := newPluginMutation(c.config, OpUpdate)
-	return &PluginUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *PluginClient) UpdateOne(_m *Plugin) *PluginUpdateOne {
-	mutation := newPluginMutation(c.config, OpUpdateOne, withPlugin(_m))
-	return &PluginUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *PluginClient) UpdateOneID(id uuid.UUID) *PluginUpdateOne {
-	mutation := newPluginMutation(c.config, OpUpdateOne, withPluginID(id))
-	return &PluginUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Plugin.
-func (c *PluginClient) Delete() *PluginDelete {
-	mutation := newPluginMutation(c.config, OpDelete)
-	return &PluginDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *PluginClient) DeleteOne(_m *Plugin) *PluginDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *PluginClient) DeleteOneID(id uuid.UUID) *PluginDeleteOne {
-	builder := c.Delete().Where(plugin.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &PluginDeleteOne{builder}
-}
-
-// Query returns a query builder for Plugin.
-func (c *PluginClient) Query() *PluginQuery {
-	return &PluginQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypePlugin},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a Plugin entity by its id.
-func (c *PluginClient) Get(ctx context.Context, id uuid.UUID) (*Plugin, error) {
-	return c.Query().Where(plugin.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *PluginClient) GetX(ctx context.Context, id uuid.UUID) *Plugin {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *PluginClient) Hooks() []Hook {
-	return c.hooks.Plugin
-}
-
-// Interceptors returns the client interceptors.
-func (c *PluginClient) Interceptors() []Interceptor {
-	return c.inters.Plugin
-}
-
-func (c *PluginClient) mutate(ctx context.Context, m *PluginMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&PluginCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&PluginUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&PluginUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&PluginDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("store: unknown Plugin mutation op: %q", m.Op())
-	}
-}
-
 // SeriesTimerClient is a client for the SeriesTimer schema.
 type SeriesTimerClient struct {
 	config
@@ -5720,16 +5579,16 @@ type (
 		ActivityLogEntry, ApiKey, Chapter, Configuration, Credit, Device,
 		DisplayPreferences, Genre, Image, Item, Library, LibraryOptions,
 		ListingsProvider, MediaAttachment, MediaSegment, MediaSource, MediaStream,
-		Person, Playlist, PlaylistEntry, PlaylistShare, Plugin, SeriesTimer, Session,
-		Studio, Timer, Trickplay, TunerHost, User, UserConfiguration, UserItemData,
+		Person, Playlist, PlaylistEntry, PlaylistShare, SeriesTimer, Session, Studio,
+		Timer, Trickplay, TunerHost, User, UserConfiguration, UserItemData,
 		UserPolicy []ent.Hook
 	}
 	inters struct {
 		ActivityLogEntry, ApiKey, Chapter, Configuration, Credit, Device,
 		DisplayPreferences, Genre, Image, Item, Library, LibraryOptions,
 		ListingsProvider, MediaAttachment, MediaSegment, MediaSource, MediaStream,
-		Person, Playlist, PlaylistEntry, PlaylistShare, Plugin, SeriesTimer, Session,
-		Studio, Timer, Trickplay, TunerHost, User, UserConfiguration, UserItemData,
+		Person, Playlist, PlaylistEntry, PlaylistShare, SeriesTimer, Session, Studio,
+		Timer, Trickplay, TunerHost, User, UserConfiguration, UserItemData,
 		UserPolicy []ent.Interceptor
 	}
 )
