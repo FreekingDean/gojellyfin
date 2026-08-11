@@ -19,7 +19,6 @@ type fixture struct {
 	server *Server
 	client *store.Client
 	userID uuid.UUID
-	// Seeded ahead of now so the window the tests read is theirs alone.
 	base time.Time
 	ids  []uuid.UUID
 }
