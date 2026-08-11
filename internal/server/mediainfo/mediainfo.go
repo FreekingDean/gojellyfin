@@ -1,9 +1,9 @@
 package mediainfo
 
 import (
-	"bytes"
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/google/uuid"
 
@@ -237,11 +237,26 @@ func newPlaySessionId() (string, error) {
 	return id.String(), nil
 }
 
+const (
+	defaultBitrateTestSize = 102400
+	maxBitrateTestSize     = 100_000_000
+)
+
+type zeroes struct{}
+
+func (zeroes) Read(p []byte) (int, error) {
+	clear(p)
+
+	return len(p), nil
+}
+
 func (s *Server) GetBitrateTestBytes(ctx context.Context, request api.GetBitrateTestBytesRequestObject) (api.GetBitrateTestBytesResponseObject, error) {
-	buf := bytes.NewBufferString("This is a test endpoint info response")
+	size := int64(apiutil.Deref(apiutil.OrElse(request.Params.Size, int32(defaultBitrateTestSize))))
+	size = min(max(size, 1), maxBitrateTestSize)
+
 	return api.GetBitrateTestBytes200ApplicationoctetStreamResponse{
-		Body:          buf,
-		ContentLength: int64(buf.Len()),
+		Body:          io.LimitReader(zeroes{}, size),
+		ContentLength: size,
 	}, nil
 }
 
