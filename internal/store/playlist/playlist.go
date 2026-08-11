@@ -18,10 +18,16 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// FieldItemID holds the string denoting the item_id field in the database.
+	FieldItemID = "item_id"
+	// FieldOwnerID holds the string denoting the owner_id field in the database.
+	FieldOwnerID = "owner_id"
 	// FieldOpenAccess holds the string denoting the open_access field in the database.
 	FieldOpenAccess = "open_access"
 	// EdgeItem holds the string denoting the item edge name in mutations.
 	EdgeItem = "item"
+	// EdgeOwner holds the string denoting the owner edge name in mutations.
+	EdgeOwner = "owner"
 	// EdgeEntries holds the string denoting the entries edge name in mutations.
 	EdgeEntries = "entries"
 	// EdgeShares holds the string denoting the shares edge name in mutations.
@@ -34,21 +40,28 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "item" package.
 	ItemInverseTable = "items"
 	// ItemColumn is the table column denoting the item relation/edge.
-	ItemColumn = "item_playlist"
+	ItemColumn = "item_id"
+	// OwnerTable is the table that holds the owner relation/edge.
+	OwnerTable = "playlists"
+	// OwnerInverseTable is the table name for the User entity.
+	// It exists in this package in order to avoid circular dependency with the "user" package.
+	OwnerInverseTable = "users"
+	// OwnerColumn is the table column denoting the owner relation/edge.
+	OwnerColumn = "owner_id"
 	// EntriesTable is the table that holds the entries relation/edge.
 	EntriesTable = "playlist_entries"
 	// EntriesInverseTable is the table name for the PlaylistEntry entity.
 	// It exists in this package in order to avoid circular dependency with the "playlistentry" package.
 	EntriesInverseTable = "playlist_entries"
 	// EntriesColumn is the table column denoting the entries relation/edge.
-	EntriesColumn = "playlist_entries"
+	EntriesColumn = "playlist_id"
 	// SharesTable is the table that holds the shares relation/edge.
 	SharesTable = "playlist_shares"
 	// SharesInverseTable is the table name for the PlaylistShare entity.
 	// It exists in this package in order to avoid circular dependency with the "playlistshare" package.
 	SharesInverseTable = "playlist_shares"
 	// SharesColumn is the table column denoting the shares relation/edge.
-	SharesColumn = "playlist_shares"
+	SharesColumn = "playlist_id"
 )
 
 // Columns holds all SQL columns for playlist fields.
@@ -56,24 +69,15 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
+	FieldItemID,
+	FieldOwnerID,
 	FieldOpenAccess,
-}
-
-// ForeignKeys holds the SQL foreign-keys that are owned by the "playlists"
-// table and are not defined as standalone fields in the schema.
-var ForeignKeys = []string{
-	"item_playlist",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
-			return true
-		}
-	}
-	for i := range ForeignKeys {
-		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -107,6 +111,16 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
+// ByItemID orders the results by the item_id field.
+func ByItemID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldItemID, opts...).ToFunc()
+}
+
+// ByOwnerID orders the results by the owner_id field.
+func ByOwnerID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOwnerID, opts...).ToFunc()
+}
+
 // ByOpenAccess orders the results by the open_access field.
 func ByOpenAccess(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldOpenAccess, opts...).ToFunc()
@@ -116,6 +130,13 @@ func ByOpenAccess(opts ...sql.OrderTermOption) OrderOption {
 func ByItemField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newItemStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByOwnerField orders the results by owner field.
+func ByOwnerField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOwnerStep(), sql.OrderByField(field, opts...))
 	}
 }
 
@@ -151,6 +172,13 @@ func newItemStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ItemInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2O, true, ItemTable, ItemColumn),
+	)
+}
+func newOwnerStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OwnerInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, OwnerTable, OwnerColumn),
 	)
 }
 func newEntriesStep() *sqlgraph.Step {

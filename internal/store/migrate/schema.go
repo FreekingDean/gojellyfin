@@ -672,7 +672,8 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "open_access", Type: field.TypeBool},
-		{Name: "item_playlist", Type: field.TypeUUID, Unique: true},
+		{Name: "item_id", Type: field.TypeUUID, Unique: true},
+		{Name: "owner_id", Type: field.TypeUUID},
 	}
 	// PlaylistsTable holds the schema information for the "playlists" table.
 	PlaylistsTable = &schema.Table{
@@ -686,6 +687,12 @@ var (
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
+			{
+				Symbol:     "playlists_users_playlists",
+				Columns:    []*schema.Column{PlaylistsColumns[5]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
 		},
 	}
 	// PlaylistEntriesColumns holds the columns for the "playlist_entries" table.
@@ -694,8 +701,8 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "sort_order", Type: field.TypeInt32},
-		{Name: "item_playlist_entries", Type: field.TypeUUID},
-		{Name: "playlist_entries", Type: field.TypeUUID},
+		{Name: "item_id", Type: field.TypeUUID},
+		{Name: "playlist_id", Type: field.TypeUUID},
 	}
 	// PlaylistEntriesTable holds the schema information for the "playlist_entries" table.
 	PlaylistEntriesTable = &schema.Table{
@@ -718,9 +725,9 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "playlistentry_sort_order_playlist_entries",
+				Name:    "playlistentry_playlist_id_sort_order",
 				Unique:  false,
-				Columns: []*schema.Column{PlaylistEntriesColumns[3], PlaylistEntriesColumns[5]},
+				Columns: []*schema.Column{PlaylistEntriesColumns[5], PlaylistEntriesColumns[3]},
 			},
 		},
 	}
@@ -730,8 +737,8 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "can_edit", Type: field.TypeBool},
-		{Name: "playlist_shares", Type: field.TypeUUID},
-		{Name: "user_playlist_shares", Type: field.TypeUUID},
+		{Name: "playlist_id", Type: field.TypeUUID},
+		{Name: "user_id", Type: field.TypeUUID},
 	}
 	// PlaylistSharesTable holds the schema information for the "playlist_shares" table.
 	PlaylistSharesTable = &schema.Table{
@@ -754,7 +761,7 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "playlistshare_playlist_shares_user_playlist_shares",
+				Name:    "playlistshare_playlist_id_user_id",
 				Unique:  true,
 				Columns: []*schema.Column{PlaylistSharesColumns[4], PlaylistSharesColumns[5]},
 			},
@@ -1221,6 +1228,7 @@ func init() {
 	MediaSourcesTable.ForeignKeys[0].RefTable = ItemsTable
 	MediaStreamsTable.ForeignKeys[0].RefTable = MediaSourcesTable
 	PlaylistsTable.ForeignKeys[0].RefTable = ItemsTable
+	PlaylistsTable.ForeignKeys[1].RefTable = UsersTable
 	PlaylistEntriesTable.ForeignKeys[0].RefTable = ItemsTable
 	PlaylistEntriesTable.ForeignKeys[1].RefTable = PlaylistsTable
 	PlaylistSharesTable.ForeignKeys[0].RefTable = PlaylistsTable

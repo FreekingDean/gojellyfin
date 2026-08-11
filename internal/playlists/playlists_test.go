@@ -13,14 +13,17 @@ import (
 	playlistmodal "github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	entrymodal "github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	sharemodal "github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
+	usermodal "github.com/FreekingDean/gojellyfin/internal/store/user"
 )
 
 type fixture struct {
 	service   *Service
 	client    *store.Client
 	libraryID uuid.UUID
-	userID    uuid.UUID
+	ownerID   uuid.UUID
+	guestID   uuid.UUID
 	created   []uuid.UUID
+	users     []uuid.UUID
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -36,33 +39,28 @@ func newFixture(t *testing.T) *fixture {
 
 	ctx := context.Background()
 	client := connection.Client()
-	unique := uuid.NewString()
 
-	library, err := client.Library.Create().SetName(t.Name() + "-" + unique).Save(ctx)
+	library, err := client.Library.Create().SetName(t.Name() + "-" + uuid.NewString()).Save(ctx)
 	if err != nil {
 		t.Fatalf("failed to create the library: %v", err)
 	}
 
-	user, err := client.User.Create().
-		SetName(t.Name()).
-		SetUsername(t.Name() + "-" + unique).
-		SetPasswordHash("hash").
-		Save(ctx)
-	if err != nil {
-		t.Fatalf("failed to create the user: %v", err)
-	}
-
-	fixture := &fixture{service: New(client), client: client, libraryID: library.ID, userID: user.ID}
+	fixture := &fixture{service: New(client), client: client, libraryID: library.ID}
+	fixture.ownerID = fixture.user(t, "owner")
+	fixture.guestID = fixture.user(t, "guest")
 
 	t.Cleanup(func() {
-		owned := playlistmodal.HasItemWith(itemmodal.IDIn(fixture.created...))
-		if _, err := client.PlaylistShare.Delete().Where(sharemodal.HasPlaylistWith(owned)).Exec(ctx); err != nil {
+		if _, err := client.PlaylistShare.Delete().
+			Where(sharemodal.HasPlaylistWith(playlistmodal.ItemIDIn(fixture.created...))).
+			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the shares: %v", err)
 		}
-		if _, err := client.PlaylistEntry.Delete().Where(entrymodal.HasPlaylistWith(owned)).Exec(ctx); err != nil {
+		if _, err := client.PlaylistEntry.Delete().
+			Where(entrymodal.HasPlaylistWith(playlistmodal.ItemIDIn(fixture.created...))).
+			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the entries: %v", err)
 		}
-		if _, err := client.Playlist.Delete().Where(owned).Exec(ctx); err != nil {
+		if _, err := client.Playlist.Delete().Where(playlistmodal.ItemIDIn(fixture.created...)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the playlists: %v", err)
 		}
 		if _, err := client.Item.Delete().Where(itemmodal.IDIn(fixture.created...)).Exec(ctx); err != nil {
@@ -71,8 +69,8 @@ func newFixture(t *testing.T) *fixture {
 		if _, err := client.Item.Delete().Where(itemmodal.LibraryID(library.ID)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the items: %v", err)
 		}
-		if err := client.User.DeleteOne(user).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the user: %v", err)
+		if _, err := client.User.Delete().Where(usermodal.IDIn(fixture.users...)).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the users: %v", err)
 		}
 		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the library: %v", err)
@@ -85,15 +83,33 @@ func newFixture(t *testing.T) *fixture {
 	return fixture
 }
 
-func (f *fixture) song(t *testing.T, name string) uuid.UUID {
+func (f *fixture) user(t *testing.T, name string) uuid.UUID {
+	t.Helper()
+
+	record, err := f.client.User.Create().
+		SetName(name).
+		SetUsername(fmt.Sprintf("%s-%s-%s", t.Name(), name, uuid.NewString())).
+		SetPasswordHash("hash").
+		Save(context.Background())
+	if err != nil {
+		t.Fatalf("failed to create the %s user: %v", name, err)
+	}
+	f.users = append(f.users, record.ID)
+
+	return record.ID
+}
+
+func (f *fixture) item(t *testing.T, name string, kind itemmodal.Kind, parentID *uuid.UUID) uuid.UUID {
 	t.Helper()
 
 	record, err := f.client.Item.Create().
 		SetLibraryID(f.libraryID).
-		SetKind(itemmodal.KindAudio).
+		SetKind(kind).
 		SetName(name).
 		SetSortName(name).
+		SetIsFolder(kind == itemmodal.KindSeries || kind == itemmodal.KindSeason).
 		SetPath(fmt.Sprintf("/%s/%s", f.libraryID, name)).
+		SetNillableParentID(parentID).
 		Save(context.Background())
 	if err != nil {
 		t.Fatalf("failed to create %q: %v", name, err)
@@ -107,7 +123,7 @@ func (f *fixture) songs(t *testing.T, names ...string) []uuid.UUID {
 
 	ids := make([]uuid.UUID, 0, len(names))
 	for _, name := range names {
-		ids = append(ids, f.song(t, name))
+		ids = append(ids, f.item(t, name, itemmodal.KindAudio, nil))
 	}
 
 	return ids
@@ -118,6 +134,9 @@ func (f *fixture) create(t *testing.T, params CreateParams) uuid.UUID {
 
 	if params.MediaType == "" {
 		params.MediaType = MediaTypeUnknown
+	}
+	if params.OwnerID == uuid.Nil {
+		params.OwnerID = f.ownerID
 	}
 
 	item, err := f.service.Create(context.Background(), params)
@@ -174,12 +193,15 @@ func TestCreate(t *testing.T) {
 		MediaType:  "Audio",
 		OpenAccess: true,
 		ItemIDs:    songs,
-		Shares:     []Permission{{UserID: fixture.userID, CanEdit: true}},
+		Shares:     []Permission{{UserID: fixture.guestID, CanEdit: true}},
 	})
 
 	playlist, err := fixture.service.PlaylistByItemID(ctx, playlistID)
 	if err != nil {
 		t.Fatalf("failed to query the playlist: %v", err)
+	}
+	if playlist.OwnerID != fixture.ownerID {
+		t.Errorf("owner = %s, want %s", playlist.OwnerID, fixture.ownerID)
 	}
 	if !playlist.OpenAccess {
 		t.Error("open access = false, want true")
@@ -194,9 +216,71 @@ func TestCreate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to query the shares: %v", err)
 	}
-	if len(shares) != 1 || shares[0].Edges.User.ID != fixture.userID || !shares[0].CanEdit {
-		t.Errorf("shares = %v, want one editable share for %s", shares, fixture.userID)
+	if len(shares) != 1 || shares[0].UserID != fixture.guestID || !shares[0].CanEdit {
+		t.Errorf("shares = %v, want one editable share for %s", shares, fixture.guestID)
 	}
+}
+
+func TestAccess(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := context.Background()
+
+	playlistID := fixture.create(t, CreateParams{Name: "Private"})
+
+	access := func(t *testing.T, userID uuid.UUID) Access {
+		t.Helper()
+
+		result, err := fixture.service.Access(ctx, playlistID, userID)
+		if err != nil {
+			t.Fatalf("failed to query access: %v", err)
+		}
+
+		return result
+	}
+
+	t.Run("the owner may do everything", func(t *testing.T) {
+		if got := access(t, fixture.ownerID); got != (Access{Owner: true, CanEdit: true, CanView: true}) {
+			t.Errorf("access = %+v, want full access", got)
+		}
+	})
+
+	t.Run("a stranger may do nothing", func(t *testing.T) {
+		if got := access(t, fixture.guestID); got != (Access{}) {
+			t.Errorf("access = %+v, want no access", got)
+		}
+	})
+
+	t.Run("a read-only share may view", func(t *testing.T) {
+		if err := fixture.service.SetShare(ctx, playlistID, Permission{UserID: fixture.guestID}); err != nil {
+			t.Fatalf("failed to add the share: %v", err)
+		}
+
+		if got := access(t, fixture.guestID); got != (Access{CanView: true}) {
+			t.Errorf("access = %+v, want view only", got)
+		}
+	})
+
+	t.Run("an editable share may edit but does not own", func(t *testing.T) {
+		if err := fixture.service.SetShare(ctx, playlistID, Permission{UserID: fixture.guestID, CanEdit: true}); err != nil {
+			t.Fatalf("failed to update the share: %v", err)
+		}
+
+		if got := access(t, fixture.guestID); got != (Access{CanEdit: true, CanView: true}) {
+			t.Errorf("access = %+v, want edit without ownership", got)
+		}
+	})
+
+	t.Run("an open playlist may be viewed by anyone", func(t *testing.T) {
+		open := fixture.create(t, CreateParams{Name: "Open", OpenAccess: true})
+
+		result, err := fixture.service.Access(ctx, open, fixture.guestID)
+		if err != nil {
+			t.Fatalf("failed to query access: %v", err)
+		}
+		if result != (Access{CanView: true}) {
+			t.Errorf("access = %+v, want view only", result)
+		}
+	})
 }
 
 func TestAddItems(t *testing.T) {
@@ -211,6 +295,30 @@ func TestAddItems(t *testing.T) {
 	}
 
 	want := []string{"One", "Two", "Three", "Four"}
+	if got := fixture.order(t, playlistID); !slices.Equal(got, want) {
+		t.Errorf("entries = %v, want %v", got, want)
+	}
+}
+
+func TestAddItemsExpandsFolders(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := context.Background()
+
+	series := fixture.item(t, "Series", itemmodal.KindSeries, nil)
+	seasonOne := fixture.item(t, "Season 1", itemmodal.KindSeason, &series)
+	seasonTwo := fixture.item(t, "Season 2", itemmodal.KindSeason, &series)
+	fixture.item(t, "S01E01", itemmodal.KindEpisode, &seasonOne)
+	fixture.item(t, "S01E02", itemmodal.KindEpisode, &seasonOne)
+	fixture.item(t, "S02E01", itemmodal.KindEpisode, &seasonTwo)
+
+	song := fixture.songs(t, "Zulu")
+	playlistID := fixture.create(t, CreateParams{Name: "Binge"})
+
+	if err := fixture.service.AddItems(ctx, playlistID, []uuid.UUID{series, song[0]}); err != nil {
+		t.Fatalf("failed to add the items: %v", err)
+	}
+
+	want := []string{"S01E01", "S01E02", "S02E01", "Zulu"}
 	if got := fixture.order(t, playlistID); !slices.Equal(got, want) {
 		t.Errorf("entries = %v, want %v", got, want)
 	}
@@ -340,7 +448,7 @@ func TestUpdate(t *testing.T) {
 		Name:       ptr("After"),
 		OpenAccess: ptr(true),
 		ItemIDs:    &replacement,
-		Shares:     &[]Permission{{UserID: fixture.userID}},
+		Shares:     &[]Permission{{UserID: fixture.guestID}},
 	})
 	if err != nil {
 		t.Fatalf("failed to update the playlist: %v", err)
@@ -374,14 +482,14 @@ func TestShares(t *testing.T) {
 
 	playlistID := fixture.create(t, CreateParams{Name: "Shared"})
 
-	if err := fixture.service.SetShare(ctx, playlistID, Permission{UserID: fixture.userID}); err != nil {
+	if err := fixture.service.SetShare(ctx, playlistID, Permission{UserID: fixture.guestID}); err != nil {
 		t.Fatalf("failed to add the share: %v", err)
 	}
-	if err := fixture.service.SetShare(ctx, playlistID, Permission{UserID: fixture.userID, CanEdit: true}); err != nil {
+	if err := fixture.service.SetShare(ctx, playlistID, Permission{UserID: fixture.guestID, CanEdit: true}); err != nil {
 		t.Fatalf("failed to update the share: %v", err)
 	}
 
-	share, err := fixture.service.ShareFor(ctx, playlistID, fixture.userID)
+	share, err := fixture.service.ShareFor(ctx, playlistID, fixture.guestID)
 	if err != nil {
 		t.Fatalf("failed to query the share: %v", err)
 	}
@@ -397,10 +505,10 @@ func TestShares(t *testing.T) {
 		t.Errorf("shares = %d, want 1", len(shares))
 	}
 
-	if err := fixture.service.RemoveShare(ctx, playlistID, fixture.userID); err != nil {
+	if err := fixture.service.RemoveShare(ctx, playlistID, fixture.guestID); err != nil {
 		t.Fatalf("failed to remove the share: %v", err)
 	}
-	if _, err := fixture.service.ShareFor(ctx, playlistID, fixture.userID); err == nil {
+	if _, err := fixture.service.ShareFor(ctx, playlistID, fixture.guestID); err == nil {
 		t.Error("querying the removed share succeeded")
 	}
 }

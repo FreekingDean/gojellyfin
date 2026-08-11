@@ -51,6 +51,34 @@ func (_u *PlaylistEntryUpdate) SetUpdatedAt(v time.Time) *PlaylistEntryUpdate {
 	return _u
 }
 
+// SetPlaylistID sets the "playlist_id" field.
+func (_u *PlaylistEntryUpdate) SetPlaylistID(v uuid.UUID) *PlaylistEntryUpdate {
+	_u.mutation.SetPlaylistID(v)
+	return _u
+}
+
+// SetNillablePlaylistID sets the "playlist_id" field if the given value is not nil.
+func (_u *PlaylistEntryUpdate) SetNillablePlaylistID(v *uuid.UUID) *PlaylistEntryUpdate {
+	if v != nil {
+		_u.SetPlaylistID(*v)
+	}
+	return _u
+}
+
+// SetItemID sets the "item_id" field.
+func (_u *PlaylistEntryUpdate) SetItemID(v uuid.UUID) *PlaylistEntryUpdate {
+	_u.mutation.SetItemID(v)
+	return _u
+}
+
+// SetNillableItemID sets the "item_id" field if the given value is not nil.
+func (_u *PlaylistEntryUpdate) SetNillableItemID(v *uuid.UUID) *PlaylistEntryUpdate {
+	if v != nil {
+		_u.SetItemID(*v)
+	}
+	return _u
+}
+
 // SetSortOrder sets the "sort_order" field.
 func (_u *PlaylistEntryUpdate) SetSortOrder(v int32) *PlaylistEntryUpdate {
 	_u.mutation.ResetSortOrder()
@@ -72,21 +100,9 @@ func (_u *PlaylistEntryUpdate) AddSortOrder(v int32) *PlaylistEntryUpdate {
 	return _u
 }
 
-// SetPlaylistID sets the "playlist" edge to the Playlist entity by ID.
-func (_u *PlaylistEntryUpdate) SetPlaylistID(id uuid.UUID) *PlaylistEntryUpdate {
-	_u.mutation.SetPlaylistID(id)
-	return _u
-}
-
 // SetPlaylist sets the "playlist" edge to the Playlist entity.
 func (_u *PlaylistEntryUpdate) SetPlaylist(v *Playlist) *PlaylistEntryUpdate {
 	return _u.SetPlaylistID(v.ID)
-}
-
-// SetItemID sets the "item" edge to the Item entity by ID.
-func (_u *PlaylistEntryUpdate) SetItemID(id uuid.UUID) *PlaylistEntryUpdate {
-	_u.mutation.SetItemID(id)
-	return _u
 }
 
 // SetItem sets the "item" edge to the Item entity.
@@ -280,6 +296,34 @@ func (_u *PlaylistEntryUpdateOne) SetUpdatedAt(v time.Time) *PlaylistEntryUpdate
 	return _u
 }
 
+// SetPlaylistID sets the "playlist_id" field.
+func (_u *PlaylistEntryUpdateOne) SetPlaylistID(v uuid.UUID) *PlaylistEntryUpdateOne {
+	_u.mutation.SetPlaylistID(v)
+	return _u
+}
+
+// SetNillablePlaylistID sets the "playlist_id" field if the given value is not nil.
+func (_u *PlaylistEntryUpdateOne) SetNillablePlaylistID(v *uuid.UUID) *PlaylistEntryUpdateOne {
+	if v != nil {
+		_u.SetPlaylistID(*v)
+	}
+	return _u
+}
+
+// SetItemID sets the "item_id" field.
+func (_u *PlaylistEntryUpdateOne) SetItemID(v uuid.UUID) *PlaylistEntryUpdateOne {
+	_u.mutation.SetItemID(v)
+	return _u
+}
+
+// SetNillableItemID sets the "item_id" field if the given value is not nil.
+func (_u *PlaylistEntryUpdateOne) SetNillableItemID(v *uuid.UUID) *PlaylistEntryUpdateOne {
+	if v != nil {
+		_u.SetItemID(*v)
+	}
+	return _u
+}
+
 // SetSortOrder sets the "sort_order" field.
 func (_u *PlaylistEntryUpdateOne) SetSortOrder(v int32) *PlaylistEntryUpdateOne {
 	_u.mutation.ResetSortOrder()
@@ -301,21 +345,9 @@ func (_u *PlaylistEntryUpdateOne) AddSortOrder(v int32) *PlaylistEntryUpdateOne 
 	return _u
 }
 
-// SetPlaylistID sets the "playlist" edge to the Playlist entity by ID.
-func (_u *PlaylistEntryUpdateOne) SetPlaylistID(id uuid.UUID) *PlaylistEntryUpdateOne {
-	_u.mutation.SetPlaylistID(id)
-	return _u
-}
-
 // SetPlaylist sets the "playlist" edge to the Playlist entity.
 func (_u *PlaylistEntryUpdateOne) SetPlaylist(v *Playlist) *PlaylistEntryUpdateOne {
 	return _u.SetPlaylistID(v.ID)
-}
-
-// SetItemID sets the "item" edge to the Item entity by ID.
-func (_u *PlaylistEntryUpdateOne) SetItemID(id uuid.UUID) *PlaylistEntryUpdateOne {
-	_u.mutation.SetItemID(id)
-	return _u
 }
 
 // SetItem sets the "item" edge to the Item entity.

@@ -11,9 +11,7 @@ import (
 func PlaylistDto(playlist *playlists.Playlist, entries []*playlists.Entry, shares []*playlists.Share) api.PlaylistDto {
 	itemIDs := make([]uuid.UUID, 0, len(entries))
 	for _, entry := range entries {
-		if entry.Edges.Item != nil {
-			itemIDs = append(itemIDs, entry.Edges.Item.ID)
-		}
+		itemIDs = append(itemIDs, entry.ItemID)
 	}
 
 	return api.PlaylistDto{
@@ -33,12 +31,10 @@ func UserPermissions(shares []*playlists.Share) []api.PlaylistUserPermissions {
 }
 
 func UserPermission(share *playlists.Share) api.PlaylistUserPermissions {
-	permission := api.PlaylistUserPermissions{CanEdit: apiutil.Ptr(share.CanEdit)}
-	if share.Edges.User != nil {
-		permission.UserId = &share.Edges.User.ID
+	return api.PlaylistUserPermissions{
+		UserId:  &share.UserID,
+		CanEdit: apiutil.Ptr(share.CanEdit),
 	}
-
-	return permission
 }
 
 func permissions(users *[]api.PlaylistUserPermissions) []playlists.Permission {

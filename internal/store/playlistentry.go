@@ -24,14 +24,16 @@ type PlaylistEntry struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// PlaylistID holds the value of the "playlist_id" field.
+	PlaylistID uuid.UUID `json:"playlist_id,omitempty"`
+	// ItemID holds the value of the "item_id" field.
+	ItemID uuid.UUID `json:"item_id,omitempty"`
 	// SortOrder holds the value of the "sort_order" field.
 	SortOrder int32 `json:"sort_order,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PlaylistEntryQuery when eager-loading is set.
-	Edges                 PlaylistEntryEdges `json:"edges"`
-	item_playlist_entries *uuid.UUID
-	playlist_entries      *uuid.UUID
-	selectValues          sql.SelectValues
+	Edges        PlaylistEntryEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // PlaylistEntryEdges holds the relations/edges for other nodes in the graph.
@@ -76,12 +78,8 @@ func (*PlaylistEntry) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case playlistentry.FieldCreatedAt, playlistentry.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case playlistentry.FieldID:
+		case playlistentry.FieldID, playlistentry.FieldPlaylistID, playlistentry.FieldItemID:
 			values[i] = new(uuid.UUID)
-		case playlistentry.ForeignKeys[0]: // item_playlist_entries
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case playlistentry.ForeignKeys[1]: // playlist_entries
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -115,25 +113,23 @@ func (_m *PlaylistEntry) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
 			}
+		case playlistentry.FieldPlaylistID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field playlist_id", values[i])
+			} else if value != nil {
+				_m.PlaylistID = *value
+			}
+		case playlistentry.FieldItemID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field item_id", values[i])
+			} else if value != nil {
+				_m.ItemID = *value
+			}
 		case playlistentry.FieldSortOrder:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field sort_order", values[i])
 			} else if value.Valid {
 				_m.SortOrder = int32(value.Int64)
-			}
-		case playlistentry.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullScanner); !ok {
-				return fmt.Errorf("unexpected type %T for field item_playlist_entries", values[i])
-			} else if value.Valid {
-				_m.item_playlist_entries = new(uuid.UUID)
-				*_m.item_playlist_entries = *value.S.(*uuid.UUID)
-			}
-		case playlistentry.ForeignKeys[1]:
-			if value, ok := values[i].(*sql.NullScanner); !ok {
-				return fmt.Errorf("unexpected type %T for field playlist_entries", values[i])
-			} else if value.Valid {
-				_m.playlist_entries = new(uuid.UUID)
-				*_m.playlist_entries = *value.S.(*uuid.UUID)
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -186,6 +182,12 @@ func (_m *PlaylistEntry) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
 	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("playlist_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PlaylistID))
+	builder.WriteString(", ")
+	builder.WriteString("item_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ItemID))
 	builder.WriteString(", ")
 	builder.WriteString("sort_order=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SortOrder))

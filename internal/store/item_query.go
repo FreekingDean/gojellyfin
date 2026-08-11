@@ -1438,7 +1438,9 @@ func (_q *ItemQuery) loadPlaylist(ctx context.Context, query *PlaylistQuery, nod
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
 	}
-	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(playlist.FieldItemID)
+	}
 	query.Where(predicate.Playlist(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(item.PlaylistColumn), fks...))
 	}))
@@ -1447,13 +1449,10 @@ func (_q *ItemQuery) loadPlaylist(ctx context.Context, query *PlaylistQuery, nod
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.item_playlist
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "item_playlist" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		fk := n.ItemID
+		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "item_playlist" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "item_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -1469,7 +1468,9 @@ func (_q *ItemQuery) loadPlaylistEntries(ctx context.Context, query *PlaylistEnt
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(playlistentry.FieldItemID)
+	}
 	query.Where(predicate.PlaylistEntry(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(item.PlaylistEntriesColumn), fks...))
 	}))
@@ -1478,13 +1479,10 @@ func (_q *ItemQuery) loadPlaylistEntries(ctx context.Context, query *PlaylistEnt
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.item_playlist_entries
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "item_playlist_entries" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		fk := n.ItemID
+		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "item_playlist_entries" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "item_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}

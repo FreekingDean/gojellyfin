@@ -16,6 +16,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
+	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/google/uuid"
 )
 
@@ -52,6 +53,34 @@ func (_u *PlaylistUpdate) SetUpdatedAt(v time.Time) *PlaylistUpdate {
 	return _u
 }
 
+// SetItemID sets the "item_id" field.
+func (_u *PlaylistUpdate) SetItemID(v uuid.UUID) *PlaylistUpdate {
+	_u.mutation.SetItemID(v)
+	return _u
+}
+
+// SetNillableItemID sets the "item_id" field if the given value is not nil.
+func (_u *PlaylistUpdate) SetNillableItemID(v *uuid.UUID) *PlaylistUpdate {
+	if v != nil {
+		_u.SetItemID(*v)
+	}
+	return _u
+}
+
+// SetOwnerID sets the "owner_id" field.
+func (_u *PlaylistUpdate) SetOwnerID(v uuid.UUID) *PlaylistUpdate {
+	_u.mutation.SetOwnerID(v)
+	return _u
+}
+
+// SetNillableOwnerID sets the "owner_id" field if the given value is not nil.
+func (_u *PlaylistUpdate) SetNillableOwnerID(v *uuid.UUID) *PlaylistUpdate {
+	if v != nil {
+		_u.SetOwnerID(*v)
+	}
+	return _u
+}
+
 // SetOpenAccess sets the "open_access" field.
 func (_u *PlaylistUpdate) SetOpenAccess(v bool) *PlaylistUpdate {
 	_u.mutation.SetOpenAccess(v)
@@ -66,15 +95,14 @@ func (_u *PlaylistUpdate) SetNillableOpenAccess(v *bool) *PlaylistUpdate {
 	return _u
 }
 
-// SetItemID sets the "item" edge to the Item entity by ID.
-func (_u *PlaylistUpdate) SetItemID(id uuid.UUID) *PlaylistUpdate {
-	_u.mutation.SetItemID(id)
-	return _u
-}
-
 // SetItem sets the "item" edge to the Item entity.
 func (_u *PlaylistUpdate) SetItem(v *Item) *PlaylistUpdate {
 	return _u.SetItemID(v.ID)
+}
+
+// SetOwner sets the "owner" edge to the User entity.
+func (_u *PlaylistUpdate) SetOwner(v *User) *PlaylistUpdate {
+	return _u.SetOwnerID(v.ID)
 }
 
 // AddEntryIDs adds the "entries" edge to the PlaylistEntry entity by IDs.
@@ -115,6 +143,12 @@ func (_u *PlaylistUpdate) Mutation() *PlaylistMutation {
 // ClearItem clears the "item" edge to the Item entity.
 func (_u *PlaylistUpdate) ClearItem() *PlaylistUpdate {
 	_u.mutation.ClearItem()
+	return _u
+}
+
+// ClearOwner clears the "owner" edge to the User entity.
+func (_u *PlaylistUpdate) ClearOwner() *PlaylistUpdate {
+	_u.mutation.ClearOwner()
 	return _u
 }
 
@@ -201,6 +235,9 @@ func (_u *PlaylistUpdate) check() error {
 	if _u.mutation.ItemCleared() && len(_u.mutation.ItemIDs()) > 0 {
 		return errors.New(`store: clearing a required unique edge "Playlist.item"`)
 	}
+	if _u.mutation.OwnerCleared() && len(_u.mutation.OwnerIDs()) > 0 {
+		return errors.New(`store: clearing a required unique edge "Playlist.owner"`)
+	}
 	return nil
 }
 
@@ -247,6 +284,35 @@ func (_u *PlaylistUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.OwnerCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   playlist.OwnerTable,
+			Columns: []string{playlist.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OwnerIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   playlist.OwnerTable,
+			Columns: []string{playlist.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -384,6 +450,34 @@ func (_u *PlaylistUpdateOne) SetUpdatedAt(v time.Time) *PlaylistUpdateOne {
 	return _u
 }
 
+// SetItemID sets the "item_id" field.
+func (_u *PlaylistUpdateOne) SetItemID(v uuid.UUID) *PlaylistUpdateOne {
+	_u.mutation.SetItemID(v)
+	return _u
+}
+
+// SetNillableItemID sets the "item_id" field if the given value is not nil.
+func (_u *PlaylistUpdateOne) SetNillableItemID(v *uuid.UUID) *PlaylistUpdateOne {
+	if v != nil {
+		_u.SetItemID(*v)
+	}
+	return _u
+}
+
+// SetOwnerID sets the "owner_id" field.
+func (_u *PlaylistUpdateOne) SetOwnerID(v uuid.UUID) *PlaylistUpdateOne {
+	_u.mutation.SetOwnerID(v)
+	return _u
+}
+
+// SetNillableOwnerID sets the "owner_id" field if the given value is not nil.
+func (_u *PlaylistUpdateOne) SetNillableOwnerID(v *uuid.UUID) *PlaylistUpdateOne {
+	if v != nil {
+		_u.SetOwnerID(*v)
+	}
+	return _u
+}
+
 // SetOpenAccess sets the "open_access" field.
 func (_u *PlaylistUpdateOne) SetOpenAccess(v bool) *PlaylistUpdateOne {
 	_u.mutation.SetOpenAccess(v)
@@ -398,15 +492,14 @@ func (_u *PlaylistUpdateOne) SetNillableOpenAccess(v *bool) *PlaylistUpdateOne {
 	return _u
 }
 
-// SetItemID sets the "item" edge to the Item entity by ID.
-func (_u *PlaylistUpdateOne) SetItemID(id uuid.UUID) *PlaylistUpdateOne {
-	_u.mutation.SetItemID(id)
-	return _u
-}
-
 // SetItem sets the "item" edge to the Item entity.
 func (_u *PlaylistUpdateOne) SetItem(v *Item) *PlaylistUpdateOne {
 	return _u.SetItemID(v.ID)
+}
+
+// SetOwner sets the "owner" edge to the User entity.
+func (_u *PlaylistUpdateOne) SetOwner(v *User) *PlaylistUpdateOne {
+	return _u.SetOwnerID(v.ID)
 }
 
 // AddEntryIDs adds the "entries" edge to the PlaylistEntry entity by IDs.
@@ -447,6 +540,12 @@ func (_u *PlaylistUpdateOne) Mutation() *PlaylistMutation {
 // ClearItem clears the "item" edge to the Item entity.
 func (_u *PlaylistUpdateOne) ClearItem() *PlaylistUpdateOne {
 	_u.mutation.ClearItem()
+	return _u
+}
+
+// ClearOwner clears the "owner" edge to the User entity.
+func (_u *PlaylistUpdateOne) ClearOwner() *PlaylistUpdateOne {
+	_u.mutation.ClearOwner()
 	return _u
 }
 
@@ -546,6 +645,9 @@ func (_u *PlaylistUpdateOne) check() error {
 	if _u.mutation.ItemCleared() && len(_u.mutation.ItemIDs()) > 0 {
 		return errors.New(`store: clearing a required unique edge "Playlist.item"`)
 	}
+	if _u.mutation.OwnerCleared() && len(_u.mutation.OwnerIDs()) > 0 {
+		return errors.New(`store: clearing a required unique edge "Playlist.owner"`)
+	}
 	return nil
 }
 
@@ -609,6 +711,35 @@ func (_u *PlaylistUpdateOne) sqlSave(ctx context.Context) (_node *Playlist, err 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.OwnerCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   playlist.OwnerTable,
+			Columns: []string{playlist.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OwnerIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   playlist.OwnerTable,
+			Columns: []string{playlist.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

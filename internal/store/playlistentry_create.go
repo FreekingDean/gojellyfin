@@ -54,6 +54,18 @@ func (_c *PlaylistEntryCreate) SetNillableUpdatedAt(v *time.Time) *PlaylistEntry
 	return _c
 }
 
+// SetPlaylistID sets the "playlist_id" field.
+func (_c *PlaylistEntryCreate) SetPlaylistID(v uuid.UUID) *PlaylistEntryCreate {
+	_c.mutation.SetPlaylistID(v)
+	return _c
+}
+
+// SetItemID sets the "item_id" field.
+func (_c *PlaylistEntryCreate) SetItemID(v uuid.UUID) *PlaylistEntryCreate {
+	_c.mutation.SetItemID(v)
+	return _c
+}
+
 // SetSortOrder sets the "sort_order" field.
 func (_c *PlaylistEntryCreate) SetSortOrder(v int32) *PlaylistEntryCreate {
 	_c.mutation.SetSortOrder(v)
@@ -66,21 +78,9 @@ func (_c *PlaylistEntryCreate) SetID(v uuid.UUID) *PlaylistEntryCreate {
 	return _c
 }
 
-// SetPlaylistID sets the "playlist" edge to the Playlist entity by ID.
-func (_c *PlaylistEntryCreate) SetPlaylistID(id uuid.UUID) *PlaylistEntryCreate {
-	_c.mutation.SetPlaylistID(id)
-	return _c
-}
-
 // SetPlaylist sets the "playlist" edge to the Playlist entity.
 func (_c *PlaylistEntryCreate) SetPlaylist(v *Playlist) *PlaylistEntryCreate {
 	return _c.SetPlaylistID(v.ID)
-}
-
-// SetItemID sets the "item" edge to the Item entity by ID.
-func (_c *PlaylistEntryCreate) SetItemID(id uuid.UUID) *PlaylistEntryCreate {
-	_c.mutation.SetItemID(id)
-	return _c
 }
 
 // SetItem sets the "item" edge to the Item entity.
@@ -140,6 +140,12 @@ func (_c *PlaylistEntryCreate) check() error {
 	}
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`store: missing required field "PlaylistEntry.updated_at"`)}
+	}
+	if _, ok := _c.mutation.PlaylistID(); !ok {
+		return &ValidationError{Name: "playlist_id", err: errors.New(`store: missing required field "PlaylistEntry.playlist_id"`)}
+	}
+	if _, ok := _c.mutation.ItemID(); !ok {
+		return &ValidationError{Name: "item_id", err: errors.New(`store: missing required field "PlaylistEntry.item_id"`)}
 	}
 	if _, ok := _c.mutation.SortOrder(); !ok {
 		return &ValidationError{Name: "sort_order", err: errors.New(`store: missing required field "PlaylistEntry.sort_order"`)}
@@ -212,7 +218,7 @@ func (_c *PlaylistEntryCreate) createSpec() (*PlaylistEntry, *sqlgraph.CreateSpe
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.playlist_entries = &nodes[0]
+		_node.PlaylistID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.ItemIDs(); len(nodes) > 0 {
@@ -229,7 +235,7 @@ func (_c *PlaylistEntryCreate) createSpec() (*PlaylistEntry, *sqlgraph.CreateSpe
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.item_playlist_entries = &nodes[0]
+		_node.ItemID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -305,6 +311,30 @@ func (u *PlaylistEntryUpsert) SetUpdatedAt(v time.Time) *PlaylistEntryUpsert {
 // UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
 func (u *PlaylistEntryUpsert) UpdateUpdatedAt() *PlaylistEntryUpsert {
 	u.SetExcluded(playlistentry.FieldUpdatedAt)
+	return u
+}
+
+// SetPlaylistID sets the "playlist_id" field.
+func (u *PlaylistEntryUpsert) SetPlaylistID(v uuid.UUID) *PlaylistEntryUpsert {
+	u.Set(playlistentry.FieldPlaylistID, v)
+	return u
+}
+
+// UpdatePlaylistID sets the "playlist_id" field to the value that was provided on create.
+func (u *PlaylistEntryUpsert) UpdatePlaylistID() *PlaylistEntryUpsert {
+	u.SetExcluded(playlistentry.FieldPlaylistID)
+	return u
+}
+
+// SetItemID sets the "item_id" field.
+func (u *PlaylistEntryUpsert) SetItemID(v uuid.UUID) *PlaylistEntryUpsert {
+	u.Set(playlistentry.FieldItemID, v)
+	return u
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *PlaylistEntryUpsert) UpdateItemID() *PlaylistEntryUpsert {
+	u.SetExcluded(playlistentry.FieldItemID)
 	return u
 }
 
@@ -399,6 +429,34 @@ func (u *PlaylistEntryUpsertOne) SetUpdatedAt(v time.Time) *PlaylistEntryUpsertO
 func (u *PlaylistEntryUpsertOne) UpdateUpdatedAt() *PlaylistEntryUpsertOne {
 	return u.Update(func(s *PlaylistEntryUpsert) {
 		s.UpdateUpdatedAt()
+	})
+}
+
+// SetPlaylistID sets the "playlist_id" field.
+func (u *PlaylistEntryUpsertOne) SetPlaylistID(v uuid.UUID) *PlaylistEntryUpsertOne {
+	return u.Update(func(s *PlaylistEntryUpsert) {
+		s.SetPlaylistID(v)
+	})
+}
+
+// UpdatePlaylistID sets the "playlist_id" field to the value that was provided on create.
+func (u *PlaylistEntryUpsertOne) UpdatePlaylistID() *PlaylistEntryUpsertOne {
+	return u.Update(func(s *PlaylistEntryUpsert) {
+		s.UpdatePlaylistID()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *PlaylistEntryUpsertOne) SetItemID(v uuid.UUID) *PlaylistEntryUpsertOne {
+	return u.Update(func(s *PlaylistEntryUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *PlaylistEntryUpsertOne) UpdateItemID() *PlaylistEntryUpsertOne {
+	return u.Update(func(s *PlaylistEntryUpsert) {
+		s.UpdateItemID()
 	})
 }
 
@@ -663,6 +721,34 @@ func (u *PlaylistEntryUpsertBulk) SetUpdatedAt(v time.Time) *PlaylistEntryUpsert
 func (u *PlaylistEntryUpsertBulk) UpdateUpdatedAt() *PlaylistEntryUpsertBulk {
 	return u.Update(func(s *PlaylistEntryUpsert) {
 		s.UpdateUpdatedAt()
+	})
+}
+
+// SetPlaylistID sets the "playlist_id" field.
+func (u *PlaylistEntryUpsertBulk) SetPlaylistID(v uuid.UUID) *PlaylistEntryUpsertBulk {
+	return u.Update(func(s *PlaylistEntryUpsert) {
+		s.SetPlaylistID(v)
+	})
+}
+
+// UpdatePlaylistID sets the "playlist_id" field to the value that was provided on create.
+func (u *PlaylistEntryUpsertBulk) UpdatePlaylistID() *PlaylistEntryUpsertBulk {
+	return u.Update(func(s *PlaylistEntryUpsert) {
+		s.UpdatePlaylistID()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *PlaylistEntryUpsertBulk) SetItemID(v uuid.UUID) *PlaylistEntryUpsertBulk {
+	return u.Update(func(s *PlaylistEntryUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *PlaylistEntryUpsertBulk) UpdateItemID() *PlaylistEntryUpsertBulk {
+	return u.Update(func(s *PlaylistEntryUpsert) {
+		s.UpdateItemID()
 	})
 }
 

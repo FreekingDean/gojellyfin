@@ -51,6 +51,34 @@ func (_u *PlaylistShareUpdate) SetUpdatedAt(v time.Time) *PlaylistShareUpdate {
 	return _u
 }
 
+// SetPlaylistID sets the "playlist_id" field.
+func (_u *PlaylistShareUpdate) SetPlaylistID(v uuid.UUID) *PlaylistShareUpdate {
+	_u.mutation.SetPlaylistID(v)
+	return _u
+}
+
+// SetNillablePlaylistID sets the "playlist_id" field if the given value is not nil.
+func (_u *PlaylistShareUpdate) SetNillablePlaylistID(v *uuid.UUID) *PlaylistShareUpdate {
+	if v != nil {
+		_u.SetPlaylistID(*v)
+	}
+	return _u
+}
+
+// SetUserID sets the "user_id" field.
+func (_u *PlaylistShareUpdate) SetUserID(v uuid.UUID) *PlaylistShareUpdate {
+	_u.mutation.SetUserID(v)
+	return _u
+}
+
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (_u *PlaylistShareUpdate) SetNillableUserID(v *uuid.UUID) *PlaylistShareUpdate {
+	if v != nil {
+		_u.SetUserID(*v)
+	}
+	return _u
+}
+
 // SetCanEdit sets the "can_edit" field.
 func (_u *PlaylistShareUpdate) SetCanEdit(v bool) *PlaylistShareUpdate {
 	_u.mutation.SetCanEdit(v)
@@ -65,21 +93,9 @@ func (_u *PlaylistShareUpdate) SetNillableCanEdit(v *bool) *PlaylistShareUpdate 
 	return _u
 }
 
-// SetPlaylistID sets the "playlist" edge to the Playlist entity by ID.
-func (_u *PlaylistShareUpdate) SetPlaylistID(id uuid.UUID) *PlaylistShareUpdate {
-	_u.mutation.SetPlaylistID(id)
-	return _u
-}
-
 // SetPlaylist sets the "playlist" edge to the Playlist entity.
 func (_u *PlaylistShareUpdate) SetPlaylist(v *Playlist) *PlaylistShareUpdate {
 	return _u.SetPlaylistID(v.ID)
-}
-
-// SetUserID sets the "user" edge to the User entity by ID.
-func (_u *PlaylistShareUpdate) SetUserID(id uuid.UUID) *PlaylistShareUpdate {
-	_u.mutation.SetUserID(id)
-	return _u
 }
 
 // SetUser sets the "user" edge to the User entity.
@@ -270,6 +286,34 @@ func (_u *PlaylistShareUpdateOne) SetUpdatedAt(v time.Time) *PlaylistShareUpdate
 	return _u
 }
 
+// SetPlaylistID sets the "playlist_id" field.
+func (_u *PlaylistShareUpdateOne) SetPlaylistID(v uuid.UUID) *PlaylistShareUpdateOne {
+	_u.mutation.SetPlaylistID(v)
+	return _u
+}
+
+// SetNillablePlaylistID sets the "playlist_id" field if the given value is not nil.
+func (_u *PlaylistShareUpdateOne) SetNillablePlaylistID(v *uuid.UUID) *PlaylistShareUpdateOne {
+	if v != nil {
+		_u.SetPlaylistID(*v)
+	}
+	return _u
+}
+
+// SetUserID sets the "user_id" field.
+func (_u *PlaylistShareUpdateOne) SetUserID(v uuid.UUID) *PlaylistShareUpdateOne {
+	_u.mutation.SetUserID(v)
+	return _u
+}
+
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (_u *PlaylistShareUpdateOne) SetNillableUserID(v *uuid.UUID) *PlaylistShareUpdateOne {
+	if v != nil {
+		_u.SetUserID(*v)
+	}
+	return _u
+}
+
 // SetCanEdit sets the "can_edit" field.
 func (_u *PlaylistShareUpdateOne) SetCanEdit(v bool) *PlaylistShareUpdateOne {
 	_u.mutation.SetCanEdit(v)
@@ -284,21 +328,9 @@ func (_u *PlaylistShareUpdateOne) SetNillableCanEdit(v *bool) *PlaylistShareUpda
 	return _u
 }
 
-// SetPlaylistID sets the "playlist" edge to the Playlist entity by ID.
-func (_u *PlaylistShareUpdateOne) SetPlaylistID(id uuid.UUID) *PlaylistShareUpdateOne {
-	_u.mutation.SetPlaylistID(id)
-	return _u
-}
-
 // SetPlaylist sets the "playlist" edge to the Playlist entity.
 func (_u *PlaylistShareUpdateOne) SetPlaylist(v *Playlist) *PlaylistShareUpdateOne {
 	return _u.SetPlaylistID(v.ID)
-}
-
-// SetUserID sets the "user" edge to the User entity by ID.
-func (_u *PlaylistShareUpdateOne) SetUserID(id uuid.UUID) *PlaylistShareUpdateOne {
-	_u.mutation.SetUserID(id)
-	return _u
 }
 
 // SetUser sets the "user" edge to the User entity.

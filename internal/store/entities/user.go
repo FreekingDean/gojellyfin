@@ -29,6 +29,7 @@ func (User) Edges() []ent.Edge {
 		edge.To("item_data", UserItemData.Type),
 		edge.To("display_preferences", DisplayPreferences.Type),
 		edge.To("activity_log_entries", ActivityLogEntry.Type),
+		edge.To("playlists", Playlist.Type),
 		edge.To("playlist_shares", PlaylistShare.Type),
 	}
 }

@@ -40,6 +40,8 @@ const (
 	EdgeDisplayPreferences = "display_preferences"
 	// EdgeActivityLogEntries holds the string denoting the activity_log_entries edge name in mutations.
 	EdgeActivityLogEntries = "activity_log_entries"
+	// EdgePlaylists holds the string denoting the playlists edge name in mutations.
+	EdgePlaylists = "playlists"
 	// EdgePlaylistShares holds the string denoting the playlist_shares edge name in mutations.
 	EdgePlaylistShares = "playlist_shares"
 	// Table holds the table name of the user in the database.
@@ -86,13 +88,20 @@ const (
 	ActivityLogEntriesInverseTable = "activity_log_entries"
 	// ActivityLogEntriesColumn is the table column denoting the activity_log_entries relation/edge.
 	ActivityLogEntriesColumn = "user_activity_log_entries"
+	// PlaylistsTable is the table that holds the playlists relation/edge.
+	PlaylistsTable = "playlists"
+	// PlaylistsInverseTable is the table name for the Playlist entity.
+	// It exists in this package in order to avoid circular dependency with the "playlist" package.
+	PlaylistsInverseTable = "playlists"
+	// PlaylistsColumn is the table column denoting the playlists relation/edge.
+	PlaylistsColumn = "owner_id"
 	// PlaylistSharesTable is the table that holds the playlist_shares relation/edge.
 	PlaylistSharesTable = "playlist_shares"
 	// PlaylistSharesInverseTable is the table name for the PlaylistShare entity.
 	// It exists in this package in order to avoid circular dependency with the "playlistshare" package.
 	PlaylistSharesInverseTable = "playlist_shares"
 	// PlaylistSharesColumn is the table column denoting the playlist_shares relation/edge.
-	PlaylistSharesColumn = "user_playlist_shares"
+	PlaylistSharesColumn = "user_id"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -239,6 +248,20 @@ func ByActivityLogEntries(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOptio
 	}
 }
 
+// ByPlaylistsCount orders the results by playlists count.
+func ByPlaylistsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newPlaylistsStep(), opts...)
+	}
+}
+
+// ByPlaylists orders the results by playlists terms.
+func ByPlaylists(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newPlaylistsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByPlaylistSharesCount orders the results by playlist_shares count.
 func ByPlaylistSharesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -292,6 +315,13 @@ func newActivityLogEntriesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ActivityLogEntriesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ActivityLogEntriesTable, ActivityLogEntriesColumn),
+	)
+}
+func newPlaylistsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(PlaylistsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, PlaylistsTable, PlaylistsColumn),
 	)
 }
 func newPlaylistSharesStep() *sqlgraph.Step {

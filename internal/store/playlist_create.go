@@ -16,6 +16,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
+	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/google/uuid"
 )
 
@@ -55,6 +56,18 @@ func (_c *PlaylistCreate) SetNillableUpdatedAt(v *time.Time) *PlaylistCreate {
 	return _c
 }
 
+// SetItemID sets the "item_id" field.
+func (_c *PlaylistCreate) SetItemID(v uuid.UUID) *PlaylistCreate {
+	_c.mutation.SetItemID(v)
+	return _c
+}
+
+// SetOwnerID sets the "owner_id" field.
+func (_c *PlaylistCreate) SetOwnerID(v uuid.UUID) *PlaylistCreate {
+	_c.mutation.SetOwnerID(v)
+	return _c
+}
+
 // SetOpenAccess sets the "open_access" field.
 func (_c *PlaylistCreate) SetOpenAccess(v bool) *PlaylistCreate {
 	_c.mutation.SetOpenAccess(v)
@@ -67,15 +80,14 @@ func (_c *PlaylistCreate) SetID(v uuid.UUID) *PlaylistCreate {
 	return _c
 }
 
-// SetItemID sets the "item" edge to the Item entity by ID.
-func (_c *PlaylistCreate) SetItemID(id uuid.UUID) *PlaylistCreate {
-	_c.mutation.SetItemID(id)
-	return _c
-}
-
 // SetItem sets the "item" edge to the Item entity.
 func (_c *PlaylistCreate) SetItem(v *Item) *PlaylistCreate {
 	return _c.SetItemID(v.ID)
+}
+
+// SetOwner sets the "owner" edge to the User entity.
+func (_c *PlaylistCreate) SetOwner(v *User) *PlaylistCreate {
+	return _c.SetOwnerID(v.ID)
 }
 
 // AddEntryIDs adds the "entries" edge to the PlaylistEntry entity by IDs.
@@ -161,11 +173,20 @@ func (_c *PlaylistCreate) check() error {
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`store: missing required field "Playlist.updated_at"`)}
 	}
+	if _, ok := _c.mutation.ItemID(); !ok {
+		return &ValidationError{Name: "item_id", err: errors.New(`store: missing required field "Playlist.item_id"`)}
+	}
+	if _, ok := _c.mutation.OwnerID(); !ok {
+		return &ValidationError{Name: "owner_id", err: errors.New(`store: missing required field "Playlist.owner_id"`)}
+	}
 	if _, ok := _c.mutation.OpenAccess(); !ok {
 		return &ValidationError{Name: "open_access", err: errors.New(`store: missing required field "Playlist.open_access"`)}
 	}
 	if len(_c.mutation.ItemIDs()) == 0 {
 		return &ValidationError{Name: "item", err: errors.New(`store: missing required edge "Playlist.item"`)}
+	}
+	if len(_c.mutation.OwnerIDs()) == 0 {
+		return &ValidationError{Name: "owner", err: errors.New(`store: missing required edge "Playlist.owner"`)}
 	}
 	return nil
 }
@@ -229,7 +250,24 @@ func (_c *PlaylistCreate) createSpec() (*Playlist, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.item_playlist = &nodes[0]
+		_node.ItemID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.OwnerIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   playlist.OwnerTable,
+			Columns: []string{playlist.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.OwnerID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.EntriesIDs(); len(nodes) > 0 {
@@ -340,6 +378,30 @@ func (u *PlaylistUpsert) UpdateUpdatedAt() *PlaylistUpsert {
 	return u
 }
 
+// SetItemID sets the "item_id" field.
+func (u *PlaylistUpsert) SetItemID(v uuid.UUID) *PlaylistUpsert {
+	u.Set(playlist.FieldItemID, v)
+	return u
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *PlaylistUpsert) UpdateItemID() *PlaylistUpsert {
+	u.SetExcluded(playlist.FieldItemID)
+	return u
+}
+
+// SetOwnerID sets the "owner_id" field.
+func (u *PlaylistUpsert) SetOwnerID(v uuid.UUID) *PlaylistUpsert {
+	u.Set(playlist.FieldOwnerID, v)
+	return u
+}
+
+// UpdateOwnerID sets the "owner_id" field to the value that was provided on create.
+func (u *PlaylistUpsert) UpdateOwnerID() *PlaylistUpsert {
+	u.SetExcluded(playlist.FieldOwnerID)
+	return u
+}
+
 // SetOpenAccess sets the "open_access" field.
 func (u *PlaylistUpsert) SetOpenAccess(v bool) *PlaylistUpsert {
 	u.Set(playlist.FieldOpenAccess, v)
@@ -425,6 +487,34 @@ func (u *PlaylistUpsertOne) SetUpdatedAt(v time.Time) *PlaylistUpsertOne {
 func (u *PlaylistUpsertOne) UpdateUpdatedAt() *PlaylistUpsertOne {
 	return u.Update(func(s *PlaylistUpsert) {
 		s.UpdateUpdatedAt()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *PlaylistUpsertOne) SetItemID(v uuid.UUID) *PlaylistUpsertOne {
+	return u.Update(func(s *PlaylistUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *PlaylistUpsertOne) UpdateItemID() *PlaylistUpsertOne {
+	return u.Update(func(s *PlaylistUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// SetOwnerID sets the "owner_id" field.
+func (u *PlaylistUpsertOne) SetOwnerID(v uuid.UUID) *PlaylistUpsertOne {
+	return u.Update(func(s *PlaylistUpsert) {
+		s.SetOwnerID(v)
+	})
+}
+
+// UpdateOwnerID sets the "owner_id" field to the value that was provided on create.
+func (u *PlaylistUpsertOne) UpdateOwnerID() *PlaylistUpsertOne {
+	return u.Update(func(s *PlaylistUpsert) {
+		s.UpdateOwnerID()
 	})
 }
 
@@ -682,6 +772,34 @@ func (u *PlaylistUpsertBulk) SetUpdatedAt(v time.Time) *PlaylistUpsertBulk {
 func (u *PlaylistUpsertBulk) UpdateUpdatedAt() *PlaylistUpsertBulk {
 	return u.Update(func(s *PlaylistUpsert) {
 		s.UpdateUpdatedAt()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *PlaylistUpsertBulk) SetItemID(v uuid.UUID) *PlaylistUpsertBulk {
+	return u.Update(func(s *PlaylistUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *PlaylistUpsertBulk) UpdateItemID() *PlaylistUpsertBulk {
+	return u.Update(func(s *PlaylistUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// SetOwnerID sets the "owner_id" field.
+func (u *PlaylistUpsertBulk) SetOwnerID(v uuid.UUID) *PlaylistUpsertBulk {
+	return u.Update(func(s *PlaylistUpsert) {
+		s.SetOwnerID(v)
+	})
+}
+
+// UpdateOwnerID sets the "owner_id" field to the value that was provided on create.
+func (u *PlaylistUpsertBulk) UpdateOwnerID() *PlaylistUpsertBulk {
+	return u.Update(func(s *PlaylistUpsert) {
+		s.UpdateOwnerID()
 	})
 }
 

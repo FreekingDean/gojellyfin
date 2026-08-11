@@ -18,6 +18,10 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// FieldPlaylistID holds the string denoting the playlist_id field in the database.
+	FieldPlaylistID = "playlist_id"
+	// FieldUserID holds the string denoting the user_id field in the database.
+	FieldUserID = "user_id"
 	// FieldCanEdit holds the string denoting the can_edit field in the database.
 	FieldCanEdit = "can_edit"
 	// EdgePlaylist holds the string denoting the playlist edge name in mutations.
@@ -32,14 +36,14 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "playlist" package.
 	PlaylistInverseTable = "playlists"
 	// PlaylistColumn is the table column denoting the playlist relation/edge.
-	PlaylistColumn = "playlist_shares"
+	PlaylistColumn = "playlist_id"
 	// UserTable is the table that holds the user relation/edge.
 	UserTable = "playlist_shares"
 	// UserInverseTable is the table name for the User entity.
 	// It exists in this package in order to avoid circular dependency with the "user" package.
 	UserInverseTable = "users"
 	// UserColumn is the table column denoting the user relation/edge.
-	UserColumn = "user_playlist_shares"
+	UserColumn = "user_id"
 )
 
 // Columns holds all SQL columns for playlistshare fields.
@@ -47,25 +51,15 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
+	FieldPlaylistID,
+	FieldUserID,
 	FieldCanEdit,
-}
-
-// ForeignKeys holds the SQL foreign-keys that are owned by the "playlist_shares"
-// table and are not defined as standalone fields in the schema.
-var ForeignKeys = []string{
-	"playlist_shares",
-	"user_playlist_shares",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
-			return true
-		}
-	}
-	for i := range ForeignKeys {
-		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -97,6 +91,16 @@ func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByUpdatedAt orders the results by the updated_at field.
 func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
+}
+
+// ByPlaylistID orders the results by the playlist_id field.
+func ByPlaylistID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPlaylistID, opts...).ToFunc()
+}
+
+// ByUserID orders the results by the user_id field.
+func ByUserID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUserID, opts...).ToFunc()
 }
 
 // ByCanEdit orders the results by the can_edit field.

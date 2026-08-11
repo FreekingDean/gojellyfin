@@ -54,11 +54,13 @@ type UserEdges struct {
 	DisplayPreferences []*DisplayPreferences `json:"display_preferences,omitempty"`
 	// ActivityLogEntries holds the value of the activity_log_entries edge.
 	ActivityLogEntries []*ActivityLogEntry `json:"activity_log_entries,omitempty"`
+	// Playlists holds the value of the playlists edge.
+	Playlists []*Playlist `json:"playlists,omitempty"`
 	// PlaylistShares holds the value of the playlist_shares edge.
 	PlaylistShares []*PlaylistShare `json:"playlist_shares,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [7]bool
+	loadedTypes [8]bool
 }
 
 // ConfigurationOrErr returns the Configuration value or an error if the edge
@@ -119,10 +121,19 @@ func (e UserEdges) ActivityLogEntriesOrErr() ([]*ActivityLogEntry, error) {
 	return nil, &NotLoadedError{edge: "activity_log_entries"}
 }
 
+// PlaylistsOrErr returns the Playlists value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) PlaylistsOrErr() ([]*Playlist, error) {
+	if e.loadedTypes[6] {
+		return e.Playlists, nil
+	}
+	return nil, &NotLoadedError{edge: "playlists"}
+}
+
 // PlaylistSharesOrErr returns the PlaylistShares value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) PlaylistSharesOrErr() ([]*PlaylistShare, error) {
-	if e.loadedTypes[6] {
+	if e.loadedTypes[7] {
 		return e.PlaylistShares, nil
 	}
 	return nil, &NotLoadedError{edge: "playlist_shares"}
@@ -243,6 +254,11 @@ func (_m *User) QueryDisplayPreferences() *DisplayPreferencesQuery {
 // QueryActivityLogEntries queries the "activity_log_entries" edge of the User entity.
 func (_m *User) QueryActivityLogEntries() *ActivityLogEntryQuery {
 	return NewUserClient(_m.config).QueryActivityLogEntries(_m)
+}
+
+// QueryPlaylists queries the "playlists" edge of the User entity.
+func (_m *User) QueryPlaylists() *PlaylistQuery {
+	return NewUserClient(_m.config).QueryPlaylists(_m)
 }
 
 // QueryPlaylistShares queries the "playlist_shares" edge of the User entity.

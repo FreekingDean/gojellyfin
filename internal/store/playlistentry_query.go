@@ -27,7 +27,6 @@ type PlaylistEntryQuery struct {
 	predicates   []predicate.PlaylistEntry
 	withPlaylist *PlaylistQuery
 	withItem     *ItemQuery
-	withFKs      bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -407,19 +406,12 @@ func (_q *PlaylistEntryQuery) prepareQuery(ctx context.Context) error {
 func (_q *PlaylistEntryQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*PlaylistEntry, error) {
 	var (
 		nodes       = []*PlaylistEntry{}
-		withFKs     = _q.withFKs
 		_spec       = _q.querySpec()
 		loadedTypes = [2]bool{
 			_q.withPlaylist != nil,
 			_q.withItem != nil,
 		}
 	)
-	if _q.withPlaylist != nil || _q.withItem != nil {
-		withFKs = true
-	}
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, playlistentry.ForeignKeys...)
-	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*PlaylistEntry).scanValues(nil, columns)
 	}
@@ -457,10 +449,7 @@ func (_q *PlaylistEntryQuery) loadPlaylist(ctx context.Context, query *PlaylistQ
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*PlaylistEntry)
 	for i := range nodes {
-		if nodes[i].playlist_entries == nil {
-			continue
-		}
-		fk := *nodes[i].playlist_entries
+		fk := nodes[i].PlaylistID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -477,7 +466,7 @@ func (_q *PlaylistEntryQuery) loadPlaylist(ctx context.Context, query *PlaylistQ
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "playlist_entries" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "playlist_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -489,10 +478,7 @@ func (_q *PlaylistEntryQuery) loadItem(ctx context.Context, query *ItemQuery, no
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*PlaylistEntry)
 	for i := range nodes {
-		if nodes[i].item_playlist_entries == nil {
-			continue
-		}
-		fk := *nodes[i].item_playlist_entries
+		fk := nodes[i].ItemID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -509,7 +495,7 @@ func (_q *PlaylistEntryQuery) loadItem(ctx context.Context, query *ItemQuery, no
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "item_playlist_entries" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "item_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -542,6 +528,12 @@ func (_q *PlaylistEntryQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != playlistentry.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withPlaylist != nil {
+			_spec.Node.AddColumnOnce(playlistentry.FieldPlaylistID)
+		}
+		if _q.withItem != nil {
+			_spec.Node.AddColumnOnce(playlistentry.FieldItemID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

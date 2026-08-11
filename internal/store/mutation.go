@@ -29330,6 +29330,8 @@ type PlaylistMutation struct {
 	clearedFields  map[string]struct{}
 	item           *uuid.UUID
 	cleareditem    bool
+	owner          *uuid.UUID
+	clearedowner   bool
 	entries        map[uuid.UUID]struct{}
 	removedentries map[uuid.UUID]struct{}
 	clearedentries bool
@@ -29517,6 +29519,78 @@ func (m *PlaylistMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
+// SetItemID sets the "item_id" field.
+func (m *PlaylistMutation) SetItemID(u uuid.UUID) {
+	m.item = &u
+}
+
+// ItemID returns the value of the "item_id" field in the mutation.
+func (m *PlaylistMutation) ItemID() (r uuid.UUID, exists bool) {
+	v := m.item
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldItemID returns the old "item_id" field's value of the Playlist entity.
+// If the Playlist object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PlaylistMutation) OldItemID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldItemID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldItemID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldItemID: %w", err)
+	}
+	return oldValue.ItemID, nil
+}
+
+// ResetItemID resets all changes to the "item_id" field.
+func (m *PlaylistMutation) ResetItemID() {
+	m.item = nil
+}
+
+// SetOwnerID sets the "owner_id" field.
+func (m *PlaylistMutation) SetOwnerID(u uuid.UUID) {
+	m.owner = &u
+}
+
+// OwnerID returns the value of the "owner_id" field in the mutation.
+func (m *PlaylistMutation) OwnerID() (r uuid.UUID, exists bool) {
+	v := m.owner
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOwnerID returns the old "owner_id" field's value of the Playlist entity.
+// If the Playlist object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PlaylistMutation) OldOwnerID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOwnerID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOwnerID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOwnerID: %w", err)
+	}
+	return oldValue.OwnerID, nil
+}
+
+// ResetOwnerID resets all changes to the "owner_id" field.
+func (m *PlaylistMutation) ResetOwnerID() {
+	m.owner = nil
+}
+
 // SetOpenAccess sets the "open_access" field.
 func (m *PlaylistMutation) SetOpenAccess(b bool) {
 	m.open_access = &b
@@ -29553,27 +29627,15 @@ func (m *PlaylistMutation) ResetOpenAccess() {
 	m.open_access = nil
 }
 
-// SetItemID sets the "item" edge to the Item entity by id.
-func (m *PlaylistMutation) SetItemID(id uuid.UUID) {
-	m.item = &id
-}
-
 // ClearItem clears the "item" edge to the Item entity.
 func (m *PlaylistMutation) ClearItem() {
 	m.cleareditem = true
+	m.clearedFields[playlist.FieldItemID] = struct{}{}
 }
 
 // ItemCleared reports if the "item" edge to the Item entity was cleared.
 func (m *PlaylistMutation) ItemCleared() bool {
 	return m.cleareditem
-}
-
-// ItemID returns the "item" edge ID in the mutation.
-func (m *PlaylistMutation) ItemID() (id uuid.UUID, exists bool) {
-	if m.item != nil {
-		return *m.item, true
-	}
-	return
 }
 
 // ItemIDs returns the "item" edge IDs in the mutation.
@@ -29590,6 +29652,33 @@ func (m *PlaylistMutation) ItemIDs() (ids []uuid.UUID) {
 func (m *PlaylistMutation) ResetItem() {
 	m.item = nil
 	m.cleareditem = false
+}
+
+// ClearOwner clears the "owner" edge to the User entity.
+func (m *PlaylistMutation) ClearOwner() {
+	m.clearedowner = true
+	m.clearedFields[playlist.FieldOwnerID] = struct{}{}
+}
+
+// OwnerCleared reports if the "owner" edge to the User entity was cleared.
+func (m *PlaylistMutation) OwnerCleared() bool {
+	return m.clearedowner
+}
+
+// OwnerIDs returns the "owner" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// OwnerID instead. It exists only for internal usage by the builders.
+func (m *PlaylistMutation) OwnerIDs() (ids []uuid.UUID) {
+	if id := m.owner; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetOwner resets all changes to the "owner" edge.
+func (m *PlaylistMutation) ResetOwner() {
+	m.owner = nil
+	m.clearedowner = false
 }
 
 // AddEntryIDs adds the "entries" edge to the PlaylistEntry entity by ids.
@@ -29734,12 +29823,18 @@ func (m *PlaylistMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PlaylistMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 5)
 	if m.created_at != nil {
 		fields = append(fields, playlist.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
 		fields = append(fields, playlist.FieldUpdatedAt)
+	}
+	if m.item != nil {
+		fields = append(fields, playlist.FieldItemID)
+	}
+	if m.owner != nil {
+		fields = append(fields, playlist.FieldOwnerID)
 	}
 	if m.open_access != nil {
 		fields = append(fields, playlist.FieldOpenAccess)
@@ -29756,6 +29851,10 @@ func (m *PlaylistMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case playlist.FieldUpdatedAt:
 		return m.UpdatedAt()
+	case playlist.FieldItemID:
+		return m.ItemID()
+	case playlist.FieldOwnerID:
+		return m.OwnerID()
 	case playlist.FieldOpenAccess:
 		return m.OpenAccess()
 	}
@@ -29771,6 +29870,10 @@ func (m *PlaylistMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldCreatedAt(ctx)
 	case playlist.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
+	case playlist.FieldItemID:
+		return m.OldItemID(ctx)
+	case playlist.FieldOwnerID:
+		return m.OldOwnerID(ctx)
 	case playlist.FieldOpenAccess:
 		return m.OldOpenAccess(ctx)
 	}
@@ -29795,6 +29898,20 @@ func (m *PlaylistMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedAt(v)
+		return nil
+	case playlist.FieldItemID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetItemID(v)
+		return nil
+	case playlist.FieldOwnerID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOwnerID(v)
 		return nil
 	case playlist.FieldOpenAccess:
 		v, ok := value.(bool)
@@ -29858,6 +29975,12 @@ func (m *PlaylistMutation) ResetField(name string) error {
 	case playlist.FieldUpdatedAt:
 		m.ResetUpdatedAt()
 		return nil
+	case playlist.FieldItemID:
+		m.ResetItemID()
+		return nil
+	case playlist.FieldOwnerID:
+		m.ResetOwnerID()
+		return nil
 	case playlist.FieldOpenAccess:
 		m.ResetOpenAccess()
 		return nil
@@ -29867,9 +29990,12 @@ func (m *PlaylistMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *PlaylistMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.item != nil {
 		edges = append(edges, playlist.EdgeItem)
+	}
+	if m.owner != nil {
+		edges = append(edges, playlist.EdgeOwner)
 	}
 	if m.entries != nil {
 		edges = append(edges, playlist.EdgeEntries)
@@ -29886,6 +30012,10 @@ func (m *PlaylistMutation) AddedIDs(name string) []ent.Value {
 	switch name {
 	case playlist.EdgeItem:
 		if id := m.item; id != nil {
+			return []ent.Value{*id}
+		}
+	case playlist.EdgeOwner:
+		if id := m.owner; id != nil {
 			return []ent.Value{*id}
 		}
 	case playlist.EdgeEntries:
@@ -29906,7 +30036,7 @@ func (m *PlaylistMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *PlaylistMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedentries != nil {
 		edges = append(edges, playlist.EdgeEntries)
 	}
@@ -29938,9 +30068,12 @@ func (m *PlaylistMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *PlaylistMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.cleareditem {
 		edges = append(edges, playlist.EdgeItem)
+	}
+	if m.clearedowner {
+		edges = append(edges, playlist.EdgeOwner)
 	}
 	if m.clearedentries {
 		edges = append(edges, playlist.EdgeEntries)
@@ -29957,6 +30090,8 @@ func (m *PlaylistMutation) EdgeCleared(name string) bool {
 	switch name {
 	case playlist.EdgeItem:
 		return m.cleareditem
+	case playlist.EdgeOwner:
+		return m.clearedowner
 	case playlist.EdgeEntries:
 		return m.clearedentries
 	case playlist.EdgeShares:
@@ -29972,6 +30107,9 @@ func (m *PlaylistMutation) ClearEdge(name string) error {
 	case playlist.EdgeItem:
 		m.ClearItem()
 		return nil
+	case playlist.EdgeOwner:
+		m.ClearOwner()
+		return nil
 	}
 	return fmt.Errorf("unknown Playlist unique edge %s", name)
 }
@@ -29982,6 +30120,9 @@ func (m *PlaylistMutation) ResetEdge(name string) error {
 	switch name {
 	case playlist.EdgeItem:
 		m.ResetItem()
+		return nil
+	case playlist.EdgeOwner:
+		m.ResetOwner()
 		return nil
 	case playlist.EdgeEntries:
 		m.ResetEntries()
@@ -30189,6 +30330,78 @@ func (m *PlaylistEntryMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
+// SetPlaylistID sets the "playlist_id" field.
+func (m *PlaylistEntryMutation) SetPlaylistID(u uuid.UUID) {
+	m.playlist = &u
+}
+
+// PlaylistID returns the value of the "playlist_id" field in the mutation.
+func (m *PlaylistEntryMutation) PlaylistID() (r uuid.UUID, exists bool) {
+	v := m.playlist
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPlaylistID returns the old "playlist_id" field's value of the PlaylistEntry entity.
+// If the PlaylistEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PlaylistEntryMutation) OldPlaylistID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPlaylistID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPlaylistID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPlaylistID: %w", err)
+	}
+	return oldValue.PlaylistID, nil
+}
+
+// ResetPlaylistID resets all changes to the "playlist_id" field.
+func (m *PlaylistEntryMutation) ResetPlaylistID() {
+	m.playlist = nil
+}
+
+// SetItemID sets the "item_id" field.
+func (m *PlaylistEntryMutation) SetItemID(u uuid.UUID) {
+	m.item = &u
+}
+
+// ItemID returns the value of the "item_id" field in the mutation.
+func (m *PlaylistEntryMutation) ItemID() (r uuid.UUID, exists bool) {
+	v := m.item
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldItemID returns the old "item_id" field's value of the PlaylistEntry entity.
+// If the PlaylistEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PlaylistEntryMutation) OldItemID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldItemID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldItemID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldItemID: %w", err)
+	}
+	return oldValue.ItemID, nil
+}
+
+// ResetItemID resets all changes to the "item_id" field.
+func (m *PlaylistEntryMutation) ResetItemID() {
+	m.item = nil
+}
+
 // SetSortOrder sets the "sort_order" field.
 func (m *PlaylistEntryMutation) SetSortOrder(i int32) {
 	m.sort_order = &i
@@ -30245,27 +30458,15 @@ func (m *PlaylistEntryMutation) ResetSortOrder() {
 	m.addsort_order = nil
 }
 
-// SetPlaylistID sets the "playlist" edge to the Playlist entity by id.
-func (m *PlaylistEntryMutation) SetPlaylistID(id uuid.UUID) {
-	m.playlist = &id
-}
-
 // ClearPlaylist clears the "playlist" edge to the Playlist entity.
 func (m *PlaylistEntryMutation) ClearPlaylist() {
 	m.clearedplaylist = true
+	m.clearedFields[playlistentry.FieldPlaylistID] = struct{}{}
 }
 
 // PlaylistCleared reports if the "playlist" edge to the Playlist entity was cleared.
 func (m *PlaylistEntryMutation) PlaylistCleared() bool {
 	return m.clearedplaylist
-}
-
-// PlaylistID returns the "playlist" edge ID in the mutation.
-func (m *PlaylistEntryMutation) PlaylistID() (id uuid.UUID, exists bool) {
-	if m.playlist != nil {
-		return *m.playlist, true
-	}
-	return
 }
 
 // PlaylistIDs returns the "playlist" edge IDs in the mutation.
@@ -30284,27 +30485,15 @@ func (m *PlaylistEntryMutation) ResetPlaylist() {
 	m.clearedplaylist = false
 }
 
-// SetItemID sets the "item" edge to the Item entity by id.
-func (m *PlaylistEntryMutation) SetItemID(id uuid.UUID) {
-	m.item = &id
-}
-
 // ClearItem clears the "item" edge to the Item entity.
 func (m *PlaylistEntryMutation) ClearItem() {
 	m.cleareditem = true
+	m.clearedFields[playlistentry.FieldItemID] = struct{}{}
 }
 
 // ItemCleared reports if the "item" edge to the Item entity was cleared.
 func (m *PlaylistEntryMutation) ItemCleared() bool {
 	return m.cleareditem
-}
-
-// ItemID returns the "item" edge ID in the mutation.
-func (m *PlaylistEntryMutation) ItemID() (id uuid.UUID, exists bool) {
-	if m.item != nil {
-		return *m.item, true
-	}
-	return
 }
 
 // ItemIDs returns the "item" edge IDs in the mutation.
@@ -30357,12 +30546,18 @@ func (m *PlaylistEntryMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PlaylistEntryMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 5)
 	if m.created_at != nil {
 		fields = append(fields, playlistentry.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
 		fields = append(fields, playlistentry.FieldUpdatedAt)
+	}
+	if m.playlist != nil {
+		fields = append(fields, playlistentry.FieldPlaylistID)
+	}
+	if m.item != nil {
+		fields = append(fields, playlistentry.FieldItemID)
 	}
 	if m.sort_order != nil {
 		fields = append(fields, playlistentry.FieldSortOrder)
@@ -30379,6 +30574,10 @@ func (m *PlaylistEntryMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case playlistentry.FieldUpdatedAt:
 		return m.UpdatedAt()
+	case playlistentry.FieldPlaylistID:
+		return m.PlaylistID()
+	case playlistentry.FieldItemID:
+		return m.ItemID()
 	case playlistentry.FieldSortOrder:
 		return m.SortOrder()
 	}
@@ -30394,6 +30593,10 @@ func (m *PlaylistEntryMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldCreatedAt(ctx)
 	case playlistentry.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
+	case playlistentry.FieldPlaylistID:
+		return m.OldPlaylistID(ctx)
+	case playlistentry.FieldItemID:
+		return m.OldItemID(ctx)
 	case playlistentry.FieldSortOrder:
 		return m.OldSortOrder(ctx)
 	}
@@ -30418,6 +30621,20 @@ func (m *PlaylistEntryMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedAt(v)
+		return nil
+	case playlistentry.FieldPlaylistID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPlaylistID(v)
+		return nil
+	case playlistentry.FieldItemID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetItemID(v)
 		return nil
 	case playlistentry.FieldSortOrder:
 		v, ok := value.(int32)
@@ -30495,6 +30712,12 @@ func (m *PlaylistEntryMutation) ResetField(name string) error {
 		return nil
 	case playlistentry.FieldUpdatedAt:
 		m.ResetUpdatedAt()
+		return nil
+	case playlistentry.FieldPlaylistID:
+		m.ResetPlaylistID()
+		return nil
+	case playlistentry.FieldItemID:
+		m.ResetItemID()
 		return nil
 	case playlistentry.FieldSortOrder:
 		m.ResetSortOrder()
@@ -30790,6 +31013,78 @@ func (m *PlaylistShareMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
+// SetPlaylistID sets the "playlist_id" field.
+func (m *PlaylistShareMutation) SetPlaylistID(u uuid.UUID) {
+	m.playlist = &u
+}
+
+// PlaylistID returns the value of the "playlist_id" field in the mutation.
+func (m *PlaylistShareMutation) PlaylistID() (r uuid.UUID, exists bool) {
+	v := m.playlist
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPlaylistID returns the old "playlist_id" field's value of the PlaylistShare entity.
+// If the PlaylistShare object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PlaylistShareMutation) OldPlaylistID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPlaylistID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPlaylistID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPlaylistID: %w", err)
+	}
+	return oldValue.PlaylistID, nil
+}
+
+// ResetPlaylistID resets all changes to the "playlist_id" field.
+func (m *PlaylistShareMutation) ResetPlaylistID() {
+	m.playlist = nil
+}
+
+// SetUserID sets the "user_id" field.
+func (m *PlaylistShareMutation) SetUserID(u uuid.UUID) {
+	m.user = &u
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *PlaylistShareMutation) UserID() (r uuid.UUID, exists bool) {
+	v := m.user
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the PlaylistShare entity.
+// If the PlaylistShare object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PlaylistShareMutation) OldUserID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *PlaylistShareMutation) ResetUserID() {
+	m.user = nil
+}
+
 // SetCanEdit sets the "can_edit" field.
 func (m *PlaylistShareMutation) SetCanEdit(b bool) {
 	m.can_edit = &b
@@ -30826,27 +31121,15 @@ func (m *PlaylistShareMutation) ResetCanEdit() {
 	m.can_edit = nil
 }
 
-// SetPlaylistID sets the "playlist" edge to the Playlist entity by id.
-func (m *PlaylistShareMutation) SetPlaylistID(id uuid.UUID) {
-	m.playlist = &id
-}
-
 // ClearPlaylist clears the "playlist" edge to the Playlist entity.
 func (m *PlaylistShareMutation) ClearPlaylist() {
 	m.clearedplaylist = true
+	m.clearedFields[playlistshare.FieldPlaylistID] = struct{}{}
 }
 
 // PlaylistCleared reports if the "playlist" edge to the Playlist entity was cleared.
 func (m *PlaylistShareMutation) PlaylistCleared() bool {
 	return m.clearedplaylist
-}
-
-// PlaylistID returns the "playlist" edge ID in the mutation.
-func (m *PlaylistShareMutation) PlaylistID() (id uuid.UUID, exists bool) {
-	if m.playlist != nil {
-		return *m.playlist, true
-	}
-	return
 }
 
 // PlaylistIDs returns the "playlist" edge IDs in the mutation.
@@ -30865,27 +31148,15 @@ func (m *PlaylistShareMutation) ResetPlaylist() {
 	m.clearedplaylist = false
 }
 
-// SetUserID sets the "user" edge to the User entity by id.
-func (m *PlaylistShareMutation) SetUserID(id uuid.UUID) {
-	m.user = &id
-}
-
 // ClearUser clears the "user" edge to the User entity.
 func (m *PlaylistShareMutation) ClearUser() {
 	m.cleareduser = true
+	m.clearedFields[playlistshare.FieldUserID] = struct{}{}
 }
 
 // UserCleared reports if the "user" edge to the User entity was cleared.
 func (m *PlaylistShareMutation) UserCleared() bool {
 	return m.cleareduser
-}
-
-// UserID returns the "user" edge ID in the mutation.
-func (m *PlaylistShareMutation) UserID() (id uuid.UUID, exists bool) {
-	if m.user != nil {
-		return *m.user, true
-	}
-	return
 }
 
 // UserIDs returns the "user" edge IDs in the mutation.
@@ -30938,12 +31209,18 @@ func (m *PlaylistShareMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PlaylistShareMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 5)
 	if m.created_at != nil {
 		fields = append(fields, playlistshare.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
 		fields = append(fields, playlistshare.FieldUpdatedAt)
+	}
+	if m.playlist != nil {
+		fields = append(fields, playlistshare.FieldPlaylistID)
+	}
+	if m.user != nil {
+		fields = append(fields, playlistshare.FieldUserID)
 	}
 	if m.can_edit != nil {
 		fields = append(fields, playlistshare.FieldCanEdit)
@@ -30960,6 +31237,10 @@ func (m *PlaylistShareMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case playlistshare.FieldUpdatedAt:
 		return m.UpdatedAt()
+	case playlistshare.FieldPlaylistID:
+		return m.PlaylistID()
+	case playlistshare.FieldUserID:
+		return m.UserID()
 	case playlistshare.FieldCanEdit:
 		return m.CanEdit()
 	}
@@ -30975,6 +31256,10 @@ func (m *PlaylistShareMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldCreatedAt(ctx)
 	case playlistshare.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
+	case playlistshare.FieldPlaylistID:
+		return m.OldPlaylistID(ctx)
+	case playlistshare.FieldUserID:
+		return m.OldUserID(ctx)
 	case playlistshare.FieldCanEdit:
 		return m.OldCanEdit(ctx)
 	}
@@ -30999,6 +31284,20 @@ func (m *PlaylistShareMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedAt(v)
+		return nil
+	case playlistshare.FieldPlaylistID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPlaylistID(v)
+		return nil
+	case playlistshare.FieldUserID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
 		return nil
 	case playlistshare.FieldCanEdit:
 		v, ok := value.(bool)
@@ -31061,6 +31360,12 @@ func (m *PlaylistShareMutation) ResetField(name string) error {
 		return nil
 	case playlistshare.FieldUpdatedAt:
 		m.ResetUpdatedAt()
+		return nil
+	case playlistshare.FieldPlaylistID:
+		m.ResetPlaylistID()
+		return nil
+	case playlistshare.FieldUserID:
+		m.ResetUserID()
 		return nil
 	case playlistshare.FieldCanEdit:
 		m.ResetCanEdit()
@@ -39584,6 +39889,9 @@ type UserMutation struct {
 	activity_log_entries        map[uuid.UUID]struct{}
 	removedactivity_log_entries map[uuid.UUID]struct{}
 	clearedactivity_log_entries bool
+	playlists                   map[uuid.UUID]struct{}
+	removedplaylists            map[uuid.UUID]struct{}
+	clearedplaylists            bool
 	playlist_shares             map[uuid.UUID]struct{}
 	removedplaylist_shares      map[uuid.UUID]struct{}
 	clearedplaylist_shares      bool
@@ -40268,6 +40576,60 @@ func (m *UserMutation) ResetActivityLogEntries() {
 	m.removedactivity_log_entries = nil
 }
 
+// AddPlaylistIDs adds the "playlists" edge to the Playlist entity by ids.
+func (m *UserMutation) AddPlaylistIDs(ids ...uuid.UUID) {
+	if m.playlists == nil {
+		m.playlists = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.playlists[ids[i]] = struct{}{}
+	}
+}
+
+// ClearPlaylists clears the "playlists" edge to the Playlist entity.
+func (m *UserMutation) ClearPlaylists() {
+	m.clearedplaylists = true
+}
+
+// PlaylistsCleared reports if the "playlists" edge to the Playlist entity was cleared.
+func (m *UserMutation) PlaylistsCleared() bool {
+	return m.clearedplaylists
+}
+
+// RemovePlaylistIDs removes the "playlists" edge to the Playlist entity by IDs.
+func (m *UserMutation) RemovePlaylistIDs(ids ...uuid.UUID) {
+	if m.removedplaylists == nil {
+		m.removedplaylists = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.playlists, ids[i])
+		m.removedplaylists[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedPlaylists returns the removed IDs of the "playlists" edge to the Playlist entity.
+func (m *UserMutation) RemovedPlaylistsIDs() (ids []uuid.UUID) {
+	for id := range m.removedplaylists {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// PlaylistsIDs returns the "playlists" edge IDs in the mutation.
+func (m *UserMutation) PlaylistsIDs() (ids []uuid.UUID) {
+	for id := range m.playlists {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetPlaylists resets all changes to the "playlists" edge.
+func (m *UserMutation) ResetPlaylists() {
+	m.playlists = nil
+	m.clearedplaylists = false
+	m.removedplaylists = nil
+}
+
 // AddPlaylistShareIDs adds the "playlist_shares" edge to the PlaylistShare entity by ids.
 func (m *UserMutation) AddPlaylistShareIDs(ids ...uuid.UUID) {
 	if m.playlist_shares == nil {
@@ -40572,7 +40934,7 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 8)
 	if m.configuration != nil {
 		edges = append(edges, user.EdgeConfiguration)
 	}
@@ -40590,6 +40952,9 @@ func (m *UserMutation) AddedEdges() []string {
 	}
 	if m.activity_log_entries != nil {
 		edges = append(edges, user.EdgeActivityLogEntries)
+	}
+	if m.playlists != nil {
+		edges = append(edges, user.EdgePlaylists)
 	}
 	if m.playlist_shares != nil {
 		edges = append(edges, user.EdgePlaylistShares)
@@ -40633,6 +40998,12 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgePlaylists:
+		ids := make([]ent.Value, 0, len(m.playlists))
+		for id := range m.playlists {
+			ids = append(ids, id)
+		}
+		return ids
 	case user.EdgePlaylistShares:
 		ids := make([]ent.Value, 0, len(m.playlist_shares))
 		for id := range m.playlist_shares {
@@ -40645,7 +41016,7 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 8)
 	if m.removedsessions != nil {
 		edges = append(edges, user.EdgeSessions)
 	}
@@ -40657,6 +41028,9 @@ func (m *UserMutation) RemovedEdges() []string {
 	}
 	if m.removedactivity_log_entries != nil {
 		edges = append(edges, user.EdgeActivityLogEntries)
+	}
+	if m.removedplaylists != nil {
+		edges = append(edges, user.EdgePlaylists)
 	}
 	if m.removedplaylist_shares != nil {
 		edges = append(edges, user.EdgePlaylistShares)
@@ -40692,6 +41066,12 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgePlaylists:
+		ids := make([]ent.Value, 0, len(m.removedplaylists))
+		for id := range m.removedplaylists {
+			ids = append(ids, id)
+		}
+		return ids
 	case user.EdgePlaylistShares:
 		ids := make([]ent.Value, 0, len(m.removedplaylist_shares))
 		for id := range m.removedplaylist_shares {
@@ -40704,7 +41084,7 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 8)
 	if m.clearedconfiguration {
 		edges = append(edges, user.EdgeConfiguration)
 	}
@@ -40722,6 +41102,9 @@ func (m *UserMutation) ClearedEdges() []string {
 	}
 	if m.clearedactivity_log_entries {
 		edges = append(edges, user.EdgeActivityLogEntries)
+	}
+	if m.clearedplaylists {
+		edges = append(edges, user.EdgePlaylists)
 	}
 	if m.clearedplaylist_shares {
 		edges = append(edges, user.EdgePlaylistShares)
@@ -40745,6 +41128,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 		return m.cleareddisplay_preferences
 	case user.EdgeActivityLogEntries:
 		return m.clearedactivity_log_entries
+	case user.EdgePlaylists:
+		return m.clearedplaylists
 	case user.EdgePlaylistShares:
 		return m.clearedplaylist_shares
 	}
@@ -40786,6 +41171,9 @@ func (m *UserMutation) ResetEdge(name string) error {
 		return nil
 	case user.EdgeActivityLogEntries:
 		m.ResetActivityLogEntries()
+		return nil
+	case user.EdgePlaylists:
+		m.ResetPlaylists()
 		return nil
 	case user.EdgePlaylistShares:
 		m.ResetPlaylistShares()

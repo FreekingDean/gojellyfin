@@ -27,7 +27,6 @@ type PlaylistShareQuery struct {
 	predicates   []predicate.PlaylistShare
 	withPlaylist *PlaylistQuery
 	withUser     *UserQuery
-	withFKs      bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -407,19 +406,12 @@ func (_q *PlaylistShareQuery) prepareQuery(ctx context.Context) error {
 func (_q *PlaylistShareQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*PlaylistShare, error) {
 	var (
 		nodes       = []*PlaylistShare{}
-		withFKs     = _q.withFKs
 		_spec       = _q.querySpec()
 		loadedTypes = [2]bool{
 			_q.withPlaylist != nil,
 			_q.withUser != nil,
 		}
 	)
-	if _q.withPlaylist != nil || _q.withUser != nil {
-		withFKs = true
-	}
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, playlistshare.ForeignKeys...)
-	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*PlaylistShare).scanValues(nil, columns)
 	}
@@ -457,10 +449,7 @@ func (_q *PlaylistShareQuery) loadPlaylist(ctx context.Context, query *PlaylistQ
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*PlaylistShare)
 	for i := range nodes {
-		if nodes[i].playlist_shares == nil {
-			continue
-		}
-		fk := *nodes[i].playlist_shares
+		fk := nodes[i].PlaylistID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -477,7 +466,7 @@ func (_q *PlaylistShareQuery) loadPlaylist(ctx context.Context, query *PlaylistQ
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "playlist_shares" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "playlist_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -489,10 +478,7 @@ func (_q *PlaylistShareQuery) loadUser(ctx context.Context, query *UserQuery, no
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*PlaylistShare)
 	for i := range nodes {
-		if nodes[i].user_playlist_shares == nil {
-			continue
-		}
-		fk := *nodes[i].user_playlist_shares
+		fk := nodes[i].UserID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -509,7 +495,7 @@ func (_q *PlaylistShareQuery) loadUser(ctx context.Context, query *UserQuery, no
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "user_playlist_shares" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "user_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -542,6 +528,12 @@ func (_q *PlaylistShareQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != playlistshare.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withPlaylist != nil {
+			_spec.Node.AddColumnOnce(playlistshare.FieldPlaylistID)
+		}
+		if _q.withUser != nil {
+			_spec.Node.AddColumnOnce(playlistshare.FieldUserID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

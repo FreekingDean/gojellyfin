@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/playlists"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
@@ -23,6 +24,11 @@ func New(playlists *playlists.Service, items *items.Service) *Server {
 
 // Query parameters are obsolete but take precedence over the body.
 func (s *Server) CreatePlaylist(ctx context.Context, request api.CreatePlaylistRequestObject) (api.CreatePlaylistResponseObject, error) {
+	owner := auth.UserID(ctx)
+	if owner == uuid.Nil {
+		return api.CreatePlaylist403Response{}, nil
+	}
+
 	body := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
 	if body == nil {
 		body = &api.CreatePlaylistDto{}
@@ -31,6 +37,7 @@ func (s *Server) CreatePlaylist(ctx context.Context, request api.CreatePlaylistR
 	params := playlists.CreateParams{
 		Name:       apiutil.Deref(body.Name),
 		MediaType:  mediaType(body.MediaType),
+		OwnerID:    owner,
 		OpenAccess: apiutil.Deref(body.IsPublic),
 		ItemIDs:    apiutil.Deref(body.Ids),
 		Shares:     permissions(body.Users),
@@ -54,9 +61,17 @@ func (s *Server) CreatePlaylist(ctx context.Context, request api.CreatePlaylistR
 }
 
 func (s *Server) GetPlaylist(ctx context.Context, request api.GetPlaylistRequestObject) (api.GetPlaylistResponseObject, error) {
-	playlist, err := s.playlists.PlaylistByItemID(ctx, request.PlaylistId)
+	access, err := s.access(ctx, request.PlaylistId)
 	if err != nil {
 		return api.GetPlaylist404JSONResponse{}, nil
+	}
+	if !access.CanView {
+		return api.GetPlaylist403Response{}, nil
+	}
+
+	playlist, err := s.playlists.PlaylistByItemID(ctx, request.PlaylistId)
+	if err != nil {
+		return nil, err
 	}
 
 	entries, _, err := s.playlists.Entries(ctx, request.PlaylistId, 0, 0)
@@ -78,6 +93,14 @@ func (s *Server) UpdatePlaylist(ctx context.Context, request api.UpdatePlaylistR
 		return api.UpdatePlaylist403JSONResponse{}, nil
 	}
 
+	access, err := s.access(ctx, request.PlaylistId)
+	if err != nil {
+		return api.UpdatePlaylist404JSONResponse{}, nil
+	}
+	if !access.CanEdit || (body.Users != nil && !access.Owner) {
+		return api.UpdatePlaylist403JSONResponse{}, nil
+	}
+
 	params := playlists.UpdateParams{
 		Name:       body.Name,
 		OpenAccess: body.IsPublic,
@@ -88,18 +111,26 @@ func (s *Server) UpdatePlaylist(ctx context.Context, request api.UpdatePlaylistR
 	}
 
 	if err := s.playlists.Update(ctx, request.PlaylistId, params); err != nil {
-		return api.UpdatePlaylist404JSONResponse{}, nil
+		return nil, err
 	}
 
 	return api.UpdatePlaylist204Response{}, nil
 }
 
 func (s *Server) GetPlaylistItems(ctx context.Context, request api.GetPlaylistItemsRequestObject) (api.GetPlaylistItemsResponseObject, error) {
+	access, err := s.access(ctx, request.PlaylistId)
+	if err != nil {
+		return api.GetPlaylistItems404JSONResponse{}, nil
+	}
+	if !access.CanView {
+		return api.GetPlaylistItems403JSONResponse{}, nil
+	}
+
 	startIndex := int(apiutil.Deref(request.Params.StartIndex))
 
 	entries, total, err := s.playlists.Entries(ctx, request.PlaylistId, startIndex, int(apiutil.Deref(request.Params.Limit)))
 	if err != nil {
-		return api.GetPlaylistItems404JSONResponse{}, nil
+		return nil, err
 	}
 
 	records := make([]*items.Item, 0, len(entries))
@@ -128,8 +159,16 @@ func (s *Server) GetPlaylistItems(ctx context.Context, request api.GetPlaylistIt
 }
 
 func (s *Server) AddItemToPlaylist(ctx context.Context, request api.AddItemToPlaylistRequestObject) (api.AddItemToPlaylistResponseObject, error) {
-	if err := s.playlists.AddItems(ctx, request.PlaylistId, apiutil.Deref(request.Params.Ids)); err != nil {
+	access, err := s.access(ctx, request.PlaylistId)
+	if err != nil {
 		return api.AddItemToPlaylist404JSONResponse{}, nil
+	}
+	if !access.CanEdit {
+		return api.AddItemToPlaylist403JSONResponse{}, nil
+	}
+
+	if err := s.playlists.AddItems(ctx, request.PlaylistId, apiutil.Deref(request.Params.Ids)); err != nil {
+		return nil, err
 	}
 
 	return api.AddItemToPlaylist204Response{}, nil
@@ -146,8 +185,16 @@ func (s *Server) RemoveItemFromPlaylist(ctx context.Context, request api.RemoveI
 		return api.RemoveItemFromPlaylist404JSONResponse{}, nil
 	}
 
-	if err := s.playlists.RemoveEntries(ctx, playlistID, entryIDs); err != nil {
+	access, err := s.access(ctx, playlistID)
+	if err != nil {
 		return api.RemoveItemFromPlaylist404JSONResponse{}, nil
+	}
+	if !access.CanEdit {
+		return api.RemoveItemFromPlaylist403JSONResponse{}, nil
+	}
+
+	if err := s.playlists.RemoveEntries(ctx, playlistID, entryIDs); err != nil {
+		return nil, err
 	}
 
 	return api.RemoveItemFromPlaylist204Response{}, nil
@@ -166,6 +213,14 @@ func (s *Server) MoveItem(ctx context.Context, request api.MoveItemRequestObject
 		return api.MoveItem404JSONResponse{}, nil
 	}
 
+	access, err := s.access(ctx, playlistID)
+	if err != nil {
+		return api.MoveItem404JSONResponse{}, nil
+	}
+	if !access.CanEdit {
+		return api.MoveItem403JSONResponse{}, nil
+	}
+
 	if err := s.playlists.MoveEntry(ctx, playlistID, entryID, int(request.NewIndex)); err != nil {
 		return api.MoveItem404JSONResponse{}, nil
 	}
@@ -174,15 +229,31 @@ func (s *Server) MoveItem(ctx context.Context, request api.MoveItemRequestObject
 }
 
 func (s *Server) GetPlaylistUsers(ctx context.Context, request api.GetPlaylistUsersRequestObject) (api.GetPlaylistUsersResponseObject, error) {
-	shares, err := s.playlists.Shares(ctx, request.PlaylistId)
+	access, err := s.access(ctx, request.PlaylistId)
 	if err != nil {
 		return api.GetPlaylistUsers404JSONResponse{}, nil
+	}
+	if !access.Owner {
+		return api.GetPlaylistUsers403JSONResponse{}, nil
+	}
+
+	shares, err := s.playlists.Shares(ctx, request.PlaylistId)
+	if err != nil {
+		return nil, err
 	}
 
 	return api.GetPlaylistUsers200JSONResponse(UserPermissions(shares)), nil
 }
 
 func (s *Server) GetPlaylistUser(ctx context.Context, request api.GetPlaylistUserRequestObject) (api.GetPlaylistUserResponseObject, error) {
+	access, err := s.access(ctx, request.PlaylistId)
+	if err != nil {
+		return api.GetPlaylistUser404JSONResponse{}, nil
+	}
+	if !access.Owner && request.UserId != auth.UserID(ctx) {
+		return api.GetPlaylistUser403JSONResponse{}, nil
+	}
+
 	share, err := s.playlists.ShareFor(ctx, request.PlaylistId, request.UserId)
 	if err != nil {
 		return api.GetPlaylistUser404JSONResponse{}, nil
@@ -197,20 +268,40 @@ func (s *Server) UpdatePlaylistUser(ctx context.Context, request api.UpdatePlayl
 		return api.UpdatePlaylistUser403JSONResponse{}, nil
 	}
 
+	access, err := s.access(ctx, request.PlaylistId)
+	if err != nil {
+		return api.UpdatePlaylistUser404JSONResponse{}, nil
+	}
+	if !access.Owner {
+		return api.UpdatePlaylistUser403JSONResponse{}, nil
+	}
+
 	permission := playlists.Permission{UserID: request.UserId, CanEdit: apiutil.Deref(body.CanEdit)}
 	if err := s.playlists.SetShare(ctx, request.PlaylistId, permission); err != nil {
-		return api.UpdatePlaylistUser404JSONResponse{}, nil
+		return nil, err
 	}
 
 	return api.UpdatePlaylistUser204Response{}, nil
 }
 
 func (s *Server) RemoveUserFromPlaylist(ctx context.Context, request api.RemoveUserFromPlaylistRequestObject) (api.RemoveUserFromPlaylistResponseObject, error) {
-	if err := s.playlists.RemoveShare(ctx, request.PlaylistId, request.UserId); err != nil {
+	access, err := s.access(ctx, request.PlaylistId)
+	if err != nil {
 		return api.RemoveUserFromPlaylist404JSONResponse{}, nil
+	}
+	if !access.Owner {
+		return api.RemoveUserFromPlaylist403JSONResponse{}, nil
+	}
+
+	if err := s.playlists.RemoveShare(ctx, request.PlaylistId, request.UserId); err != nil {
+		return nil, err
 	}
 
 	return api.RemoveUserFromPlaylist204Response{}, nil
+}
+
+func (s *Server) access(ctx context.Context, playlistID uuid.UUID) (playlists.Access, error) {
+	return s.playlists.Access(ctx, playlistID, auth.UserID(ctx))
 }
 
 func uuids(values *[]string) ([]uuid.UUID, error) {
