@@ -62,7 +62,7 @@ func (l *loggerImpl) write(ctx context.Context, level logLevel, msg string, args
 		fields = append(fields, zap.String("userID", ctx.UserID()))
 		//l.store.StoreActivityLog(...)
 	}
-	l.writer.Log(zapcore.Level(level), fmt.Sprintf(msg, args...))
+	l.writer.Log(zapcore.Level(level), fmt.Sprintf(msg, args...), fields...)
 }
 
 func (l *loggerImpl) Trace(ctx context.Context, msg string, args ...any) {

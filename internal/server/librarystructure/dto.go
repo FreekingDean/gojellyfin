@@ -108,7 +108,8 @@ func (s *Server) saveOptions(ctx context.Context, id uuid.UUID, req *api.Library
 		SetNillableEnableTrickplayImageExtraction(req.EnableTrickplayImageExtraction).
 		SetNillableExtractTrickplayImagesDuringLibraryScan(req.ExtractTrickplayImagesDuringLibraryScan).
 		SetNillableSaveLocalMetadata(req.SaveLocalMetadata).
-		SetNillableEnableInternetProviders(req.EnableInternetProviders).
+		// Deprecated upstream with no replacement, and clients still send it.
+		SetNillableEnableInternetProviders(req.EnableInternetProviders). //nolint:staticcheck
 		SetNillableEnableAutomaticSeriesGrouping(req.EnableAutomaticSeriesGrouping).
 		SetNillableEnableEmbeddedTitles(req.EnableEmbeddedTitles).
 		SetNillableEnableEmbeddedExtrasTitles(req.EnableEmbeddedExtrasTitles).

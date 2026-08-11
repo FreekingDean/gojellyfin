@@ -6,7 +6,48 @@ on:
     branches: [main]
 
 jobs:
-  check:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Format
+        run: |
+          gofmt -w internal cmd
+          git diff --exit-code
+
+      - name: Vet
+        run: go vet ./...
+
+      # Generated api code is excluded: it is ~95k lines emitted by oapi-codegen.
+      - name: Lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.12.2
+
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      # The api and the store are generated from the spec and the ent schema,
+      # so a diff here means someone hand-edited generated code or forgot to
+      # re-run generation after changing a source.
+      - name: Generate
+        run: go generate ./...
+
+      - name: No diff
+        run: git diff --exit-code
+
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -18,19 +59,5 @@ jobs:
       - name: Build
         run: go build ./...
 
-      - name: Format
-        run: |
-          go fmt ./...
-          git diff --exit-code
-
-      - name: Vet
-        run: go vet ./...
-
       - name: Test
         run: go test -race ./...
-
-      # Generated api code is excluded: it is ~95k lines emitted by oapi-codegen.
-      - name: Lint
-        uses: golangci/golangci-lint-action@v9
-        with:
-          version: v2.12.2

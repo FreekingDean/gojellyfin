@@ -4,9 +4,11 @@ import (
 	"context"
 )
 
+type contextKey int
+
 const (
-	userIDKey = "userIDKey"
-	actionKey = "actionKey"
+	userIDKey contextKey = iota
+	actionKey
 )
 
 type Context interface {
@@ -43,10 +45,12 @@ func (c *contextImpl) Action() string {
 	return zeroVal[string](c, actionKey)
 }
 
-func zeroVal[T any](c *contextImpl, key interface{}) T {
-	if action, ok := c.Value(actionKey).(T); ok {
-		return action
+func zeroVal[T any](c *contextImpl, key contextKey) T {
+	if value, ok := c.Value(key).(T); ok {
+		return value
 	}
+
 	var zero T
+
 	return zero
 }
