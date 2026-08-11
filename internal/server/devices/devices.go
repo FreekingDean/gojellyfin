@@ -24,7 +24,7 @@ func (s *Server) GetDevices(ctx context.Context, request api.GetDevicesRequestOb
 
 	items := make([]api.DeviceInfoDto, 0, len(devices))
 	for _, device := range devices {
-		items = append(items, DeviceInfoDto(device))
+		items = append(items, deviceInfoDto(device))
 	}
 
 	return api.GetDevices200JSONResponse{
@@ -40,7 +40,7 @@ func (s *Server) GetDeviceInfo(ctx context.Context, request api.GetDeviceInfoReq
 		return api.GetDeviceInfo404JSONResponse{}, nil
 	}
 
-	return api.GetDeviceInfo200JSONResponse(DeviceInfoDto(device)), nil
+	return api.GetDeviceInfo200JSONResponse(deviceInfoDto(device)), nil
 }
 
 func (s *Server) GetDeviceOptions(ctx context.Context, request api.GetDeviceOptionsRequestObject) (api.GetDeviceOptionsResponseObject, error) {
@@ -49,7 +49,7 @@ func (s *Server) GetDeviceOptions(ctx context.Context, request api.GetDeviceOpti
 		return api.GetDeviceOptions404JSONResponse{}, nil
 	}
 
-	return api.GetDeviceOptions200JSONResponse(DeviceOptionsDto(device)), nil
+	return api.GetDeviceOptions200JSONResponse(deviceOptionsDto(device)), nil
 }
 
 func (s *Server) UpdateDeviceOptions(ctx context.Context, request api.UpdateDeviceOptionsRequestObject) (api.UpdateDeviceOptionsResponseObject, error) {
@@ -62,10 +62,8 @@ func (s *Server) UpdateDeviceOptions(ctx context.Context, request api.UpdateDevi
 		return api.UpdateDeviceOptions403Response{}, nil
 	}
 
-	if req.CustomName != nil {
-		if err := s.sessions.RenameDevice(ctx, request.Params.Id, *req.CustomName); err != nil {
-			return nil, err
-		}
+	if err := s.sessions.RenameDevice(ctx, request.Params.Id, req.CustomName); err != nil {
+		return nil, err
 	}
 
 	return api.UpdateDeviceOptions204Response{}, nil

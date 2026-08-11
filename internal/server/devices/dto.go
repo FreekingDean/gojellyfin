@@ -6,7 +6,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 )
 
-func DeviceInfoDto(device *sessions.Device) api.DeviceInfoDto {
+func deviceInfoDto(device *sessions.Device) api.DeviceInfoDto {
 	info := api.DeviceInfoDto{
 		Id:               apiutil.Ptr(device.ClientID),
 		Name:             apiutil.Ptr(device.Name),
@@ -24,7 +24,7 @@ func DeviceInfoDto(device *sessions.Device) api.DeviceInfoDto {
 	return info
 }
 
-func DeviceOptionsDto(device *sessions.Device) api.DeviceOptionsDto {
+func deviceOptionsDto(device *sessions.Device) api.DeviceOptionsDto {
 	return api.DeviceOptionsDto{
 		DeviceId:   apiutil.Ptr(device.ClientID),
 		CustomName: apiutil.Ptr(device.CustomName),

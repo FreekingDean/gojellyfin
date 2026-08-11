@@ -41,10 +41,10 @@ func (s *Service) DeviceByClientID(ctx context.Context, clientID string) (*Devic
 	return device, nil
 }
 
-func (s *Service) RenameDevice(ctx context.Context, clientID, customName string) error {
+func (s *Service) RenameDevice(ctx context.Context, clientID string, customName *string) error {
 	_, err := s.store.Device.Update().
 		Where(devicemodal.ClientID(clientID)).
-		SetCustomName(customName).
+		SetNillableCustomName(customName).
 		Save(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to rename device: %w", err)
