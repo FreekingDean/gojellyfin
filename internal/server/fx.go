@@ -44,6 +44,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/userviews"
 	"github.com/FreekingDean/gojellyfin/internal/server/years"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
+	"github.com/FreekingDean/gojellyfin/internal/tasks"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
@@ -59,6 +60,7 @@ var Module = fx.Module(
 		libraries.New,
 		config.New,
 		filesystem.New,
+		tasks.New,
 
 		// one handler service per spec tag
 		apikey.New,
@@ -98,10 +100,18 @@ var Module = fx.Module(
 		New,
 	),
 	fx.Invoke(
-		useScanner,
+		registerTasks,
 	),
 )
 
-func useScanner(library *library.Server, scanner *scanner.Scanner) {
-	library.UseScanner(scanner)
+// Registered after construction: the scanner reads libraries, so taking it as
+// a constructor argument would make the object graph cyclic.
+func registerTasks(registry *tasks.Registry, scanner *scanner.Scanner) {
+	registry.Register(tasks.Definition{
+		ID:          library.ScanTaskID,
+		Name:        "Scan Media Library",
+		Description: "Scans the media libraries for new and changed files.",
+		Category:    "Library",
+		Run:         scanner.Scan,
+	})
 }

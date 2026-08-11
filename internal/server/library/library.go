@@ -2,39 +2,29 @@ package library
 
 import (
 	"context"
-	"log"
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
+	"github.com/FreekingDean/gojellyfin/internal/tasks"
 )
 
-type Scanner interface {
-	Scan(ctx context.Context) error
-}
+const ScanTaskID = "RefreshLibrary"
 
 type Server struct {
 	items     *items.Service
 	libraries *libraries.Service
-	scanner   Scanner
+	registry  *tasks.Registry
 }
 
-func New(items *items.Service, libraries *libraries.Service) *Server {
-	return &Server{items: items, libraries: libraries}
-}
-
-// Set after construction: the scanner reads libraries, so taking it as a
-// constructor argument would make the object graph cyclic.
-func (s *Server) UseScanner(scanner Scanner) {
-	s.scanner = scanner
+func New(items *items.Service, libraries *libraries.Service, registry *tasks.Registry) *Server {
+	return &Server{items: items, libraries: libraries, registry: registry}
 }
 
 func (s *Server) RefreshLibrary(ctx context.Context, request api.RefreshLibraryRequestObject) (api.RefreshLibraryResponseObject, error) {
-	go func() {
-		if err := s.scanner.Scan(context.Background()); err != nil {
-			log.Printf("refresh library: %v", err)
-		}
-	}()
+	if err := s.registry.Start(ScanTaskID); err != nil {
+		return nil, err
+	}
 
 	return api.RefreshLibrary204Response{}, nil
 }
