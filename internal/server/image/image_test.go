@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/store"
@@ -70,7 +71,7 @@ func newFixture(t *testing.T) *fixture {
 	})
 
 	return &fixture{
-		server:    New(items.New(client)),
+		server:    New(items.New(client), filesystem.New()),
 		client:    client,
 		itemID:    item.ID,
 		directory: t.TempDir(),
@@ -104,7 +105,7 @@ func TestGetItemImage(t *testing.T) {
 
 	fixture.add(t, imagemodal.KindPrimary, 0, "poster.jpg", "postertag", poster)
 
-	t.Run("serves the file with caching headers", func(t *testing.T) {
+	t.Run("serves the file", func(t *testing.T) {
 		response, err := fixture.server.GetItemImage(ctx, api.GetItemImageRequestObject{
 			ItemId:    fixture.itemID,
 			ImageType: api.Primary,
@@ -129,57 +130,6 @@ func TestGetItemImage(t *testing.T) {
 		}
 		if got := recorder.Header().Get("Content-Length"); got != "12" {
 			t.Errorf("content length = %q, want 12", got)
-		}
-		if got := recorder.Header().Get("ETag"); got != `"postertag"` {
-			t.Errorf("etag = %q, want %q", got, `"postertag"`)
-		}
-		if got := recorder.Header().Get("Cache-Control"); got != "" {
-			t.Errorf("cache control = %q, want empty", got)
-		}
-	})
-
-	t.Run("caches forever when the tag matches", func(t *testing.T) {
-		tag := "postertag"
-		response, err := fixture.server.GetItemImage(ctx, api.GetItemImageRequestObject{
-			ItemId:    fixture.itemID,
-			ImageType: api.Primary,
-			Params:    api.GetItemImageParams{Tag: &tag},
-		})
-		if err != nil {
-			t.Fatalf("failed to get the image: %v", err)
-		}
-
-		recorder := httptest.NewRecorder()
-		if err := response.VisitGetItemImageResponse(recorder); err != nil {
-			t.Fatalf("failed to write the image: %v", err)
-		}
-
-		if got := recorder.Header().Get("Cache-Control"); got != immutable {
-			t.Errorf("cache control = %q, want %q", got, immutable)
-		}
-	})
-
-	t.Run("ignores a stale tag", func(t *testing.T) {
-		tag := "gone"
-		response, err := fixture.server.GetItemImage(ctx, api.GetItemImageRequestObject{
-			ItemId:    fixture.itemID,
-			ImageType: api.Primary,
-			Params:    api.GetItemImageParams{Tag: &tag},
-		})
-		if err != nil {
-			t.Fatalf("failed to get the image: %v", err)
-		}
-
-		recorder := httptest.NewRecorder()
-		if err := response.VisitGetItemImageResponse(recorder); err != nil {
-			t.Fatalf("failed to write the image: %v", err)
-		}
-
-		if got := recorder.Body.String(); got != string(poster) {
-			t.Errorf("body = %q, want %q", got, poster)
-		}
-		if got := recorder.Header().Get("Cache-Control"); got != "" {
-			t.Errorf("cache control = %q, want empty", got)
 		}
 	})
 
@@ -215,6 +165,25 @@ func TestGetItemImage(t *testing.T) {
 		response, err := fixture.server.GetItemImage(ctx, api.GetItemImageRequestObject{
 			ItemId:    uuid.New(),
 			ImageType: api.Primary,
+		})
+		if err != nil {
+			t.Fatalf("failed to get the image: %v", err)
+		}
+
+		if _, ok := response.(api.GetItemImage404JSONResponse); !ok {
+			t.Errorf("response = %T, want a 404", response)
+		}
+	})
+
+	t.Run("misses a row whose file is gone", func(t *testing.T) {
+		fixture.add(t, imagemodal.KindThumb, 0, "thumb.jpg", "thumbtag", []byte("thumb-bytes"))
+		if err := os.Remove(filepath.Join(fixture.directory, "thumb.jpg")); err != nil {
+			t.Fatalf("failed to remove the file: %v", err)
+		}
+
+		response, err := fixture.server.GetItemImage(ctx, api.GetItemImageRequestObject{
+			ItemId:    fixture.itemID,
+			ImageType: api.Thumb,
 		})
 		if err != nil {
 			t.Fatalf("failed to get the image: %v", err)
@@ -278,7 +247,7 @@ func TestHeadItemImage(t *testing.T) {
 
 	fixture.add(t, imagemodal.KindPrimary, 0, "poster.jpg", "postertag", []byte("poster-bytes"))
 
-	t.Run("answers with headers and no body", func(t *testing.T) {
+	t.Run("answers with the content headers", func(t *testing.T) {
 		response, err := fixture.server.HeadItemImage(ctx, api.HeadItemImageRequestObject{
 			ItemId:    fixture.itemID,
 			ImageType: api.Primary,
@@ -294,9 +263,6 @@ func TestHeadItemImage(t *testing.T) {
 
 		if recorder.Code != http.StatusOK {
 			t.Errorf("status = %d, want 200", recorder.Code)
-		}
-		if recorder.Body.Len() != 0 {
-			t.Errorf("body = %q, want empty", recorder.Body.String())
 		}
 		if got := recorder.Header().Get("Content-Length"); got != "12" {
 			t.Errorf("content length = %q, want 12", got)

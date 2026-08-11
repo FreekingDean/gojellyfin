@@ -3,6 +3,10 @@ package filesystem
 import (
 	"context"
 	"errors"
+	"fmt"
+	"io"
+	"io/fs"
+	"os"
 	"strings"
 )
 
@@ -63,6 +67,32 @@ func (s *Service) Contents(ctx context.Context, path string) ([]File, error) {
 	}
 
 	return file.Files, nil
+}
+
+// The browse tree above describes what an administrator may pick from; the
+// bytes still live on the host until there is somewhere else to keep them.
+func (s *Service) Open(ctx context.Context, path string) (io.ReadCloser, int64, error) {
+	file, err := os.Open(path)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, 0, ErrNotFound
+	}
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to open %q: %w", path, err)
+	}
+
+	info, err := file.Stat()
+	if err != nil {
+		_ = file.Close()
+
+		return nil, 0, fmt.Errorf("failed to stat %q: %w", path, err)
+	}
+	if info.IsDir() {
+		_ = file.Close()
+
+		return nil, 0, ErrNotFound
+	}
+
+	return file, info.Size(), nil
 }
 
 func (s *Service) Stat(ctx context.Context, path string) (File, error) {
