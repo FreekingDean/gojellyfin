@@ -1,0 +1,76 @@
+package filesystem
+
+import (
+	"context"
+	"errors"
+	"testing"
+)
+
+func testService() *Service {
+	return &Service{root: File{
+		Name: Root,
+		Dir:  true,
+		Files: []File{
+			{Name: "media", Dir: true, Files: []File{
+				{Name: "movies", Dir: true},
+				{Name: "readme.txt"},
+			}},
+		},
+	}}
+}
+
+func TestContents(t *testing.T) {
+	for _, tc := range []struct {
+		path      string
+		wantNames []string
+	}{
+		{path: "/", wantNames: []string{"media"}},
+		{path: "", wantNames: []string{"media"}},
+		{path: "/media", wantNames: []string{"movies", "readme.txt"}},
+		{path: "/media/", wantNames: []string{"movies", "readme.txt"}},
+		{path: "/MEDIA", wantNames: []string{"movies", "readme.txt"}},
+		{path: "/media/movies", wantNames: nil},
+	} {
+		files, err := testService().Contents(context.Background(), tc.path)
+		if err != nil {
+			t.Fatalf("%q: %v", tc.path, err)
+		}
+		if len(files) != len(tc.wantNames) {
+			t.Fatalf("%q: got %d files, want %d", tc.path, len(files), len(tc.wantNames))
+		}
+		for i, want := range tc.wantNames {
+			if files[i].Name != want {
+				t.Errorf("%q: file %d is %q, want %q", tc.path, i, files[i].Name, want)
+			}
+		}
+	}
+}
+
+func TestContentsErrors(t *testing.T) {
+	if _, err := testService().Contents(context.Background(), "/nope"); !errors.Is(err, ErrNotFound) {
+		t.Errorf("got %v, want ErrNotFound", err)
+	}
+	if _, err := testService().Contents(context.Background(), "/media/readme.txt"); !errors.Is(err, ErrNotDirectory) {
+		t.Errorf("got %v, want ErrNotDirectory", err)
+	}
+}
+
+func TestStat(t *testing.T) {
+	file, err := testService().Stat(context.Background(), "/media/readme.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if file.Name != "readme.txt" || file.Dir {
+		t.Errorf("got %+v, want a file named readme.txt", file)
+	}
+}
+
+func TestDrives(t *testing.T) {
+	drives, err := New().Drives(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(drives) != 1 || drives[0].Name != Root || !drives[0].Dir {
+		t.Errorf("got %+v, want a single directory named %q", drives, Root)
+	}
+}
