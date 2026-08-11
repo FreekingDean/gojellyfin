@@ -72,6 +72,8 @@ Routing uses a hand-rolled `internal/http/mux`, not `http.ServeMux`, because Jel
 
 `GET /socket` is registered outside the generated API for the websocket keepalive loop (`internal/server/socket`).
 
+So are routes Jellyfin still serves but marks `[Obsolete]` and hides from its OpenAPI document, which is why they are missing from the spec while `jellyfin-web` still calls them — `GET /Users/{userId}/Items/{itemId}` is one. `legacyUserItem` in `internal/http/http.go` rewrites the path to its modern spelling and re-dispatches through the mux, so the alias costs a route rather than a handler. A 404 with a path the spec does not contain is the symptom.
+
 ### Domain services
 
 Three layers, split on what each is allowed to know:

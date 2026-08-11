@@ -26,6 +26,22 @@ var streamRoutes = []string{
 	"HEAD /Audio/{itemId}/stream.{container}",
 }
 
+// Jellyfin still serves this route but marks it obsolete and keeps it out of
+// the OpenAPI document, so it is missing from the generated routes while
+// jellyfin-web still calls it. The modern spelling carries the user in the
+// query string.
+func legacyUserItem(m *mux.Mux) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		query := r.URL.Query()
+		query.Set("userId", r.PathValue("userId"))
+
+		r.URL.Path = "/Items/" + r.PathValue("itemId")
+		r.URL.RawQuery = query.Encode()
+
+		m.ServeHTTP(w, r)
+	}
+}
+
 type Server struct {
 	s *http.Server
 
@@ -77,6 +93,7 @@ func New(m *mux.Mux, authMiddleware *middleware.Auth) *Server {
 func Register(s *Server, apiServer *server.Server, sock *socket.Socket, streams *stream.Handler, m *mux.Mux) {
 	h := api.NewStrictHandlerWithOptions(apiServer, s.apiMiddleware, s.apiOptions)
 	m.HandleFunc("GET /socket", sock.Handle)
+	m.HandleFunc("GET /Users/{userId}/Items/{itemId}", legacyUserItem(m))
 
 	for _, pattern := range streamRoutes {
 		m.HandleFunc(pattern, streams.Serve)
