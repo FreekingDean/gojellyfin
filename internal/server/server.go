@@ -29,6 +29,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/scheduledtasks"
 	"github.com/FreekingDean/gojellyfin/internal/server/search"
 	"github.com/FreekingDean/gojellyfin/internal/server/session"
+	"github.com/FreekingDean/gojellyfin/internal/server/startup"
 	"github.com/FreekingDean/gojellyfin/internal/server/studios"
 	"github.com/FreekingDean/gojellyfin/internal/server/syncplay"
 	"github.com/FreekingDean/gojellyfin/internal/server/system"
@@ -78,6 +79,7 @@ type (
 	PlaystateServer          = playstate.Server
 	QuickConnectServer       = quickconnect.Server
 	SessionServer            = session.Server
+	StartupServer            = startup.Server
 	SyncPlayServer           = syncplay.Server
 	SystemServer             = system.Server
 	UserServer               = user.Server
@@ -116,6 +118,7 @@ type Server struct {
 	*PlaystateServer
 	*QuickConnectServer
 	*SessionServer
+	*StartupServer
 	*SyncPlayServer
 	*SystemServer
 	*UserServer
@@ -156,6 +159,7 @@ func New(
 	playstate *playstate.Server,
 	quickConnect *quickconnect.Server,
 	session *session.Server,
+	startup *startup.Server,
 	syncPlay *syncplay.Server,
 	system *system.Server,
 	user *user.Server,
@@ -193,6 +197,7 @@ func New(
 		PlaystateServer:          playstate,
 		QuickConnectServer:       quickConnect,
 		SessionServer:            session,
+		StartupServer:            startup,
 		SyncPlayServer:           syncPlay,
 		SystemServer:             system,
 		UserServer:               user,

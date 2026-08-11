@@ -7,16 +7,19 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
+	"github.com/FreekingDean/gojellyfin/internal/server/startup"
 	systemsvc "github.com/FreekingDean/gojellyfin/internal/system"
+	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
 type Server struct {
 	config *config.Service
 	system systemsvc.Service
+	users  *users.Service
 }
 
-func New(config *config.Service, system systemsvc.Service) *Server {
-	return &Server{config: config, system: system}
+func New(config *config.Service, system systemsvc.Service, users *users.Service) *Server {
+	return &Server{config: config, system: system, users: users}
 }
 
 func (s *Server) GetPublicSystemInfo(
@@ -28,19 +31,29 @@ func (s *Server) GetPublicSystemInfo(
 		return nil, err
 	}
 
+	completed, err := startup.Completed(ctx, s.config, s.users)
+	if err != nil {
+		return nil, err
+	}
+
 	return api.GetPublicSystemInfo200JSONResponse{
 		Id:                     apiutil.Ptr(config.ServerID),
 		LocalAddress:           apiutil.Ptr(s.system.LocalAddress()),
 		ServerName:             configuration.ServerName,
 		ProductName:            apiutil.Ptr(s.system.ProductName()),
 		Version:                apiutil.Ptr(s.system.Version()),
-		StartupWizardCompleted: configuration.IsStartupWizardCompleted,
+		StartupWizardCompleted: apiutil.Ptr(completed),
 		OperatingSystem:        apiutil.Ptr(s.system.OperatingSystem()),
 	}, nil
 }
 
 func (s *Server) GetSystemInfo(ctx context.Context, request api.GetSystemInfoRequestObject) (api.GetSystemInfoResponseObject, error) {
 	configuration, err := configuration.ServerConfiguration(ctx, s.config)
+	if err != nil {
+		return nil, err
+	}
+
+	completed, err := startup.Completed(ctx, s.config, s.users)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +65,7 @@ func (s *Server) GetSystemInfo(ctx context.Context, request api.GetSystemInfoReq
 		ProductName:              apiutil.Ptr(s.system.ProductName()),
 		Version:                  apiutil.Ptr(s.system.Version()),
 		CastReceiverApplications: configuration.CastReceiverApplications,
-		StartupWizardCompleted:   configuration.IsStartupWizardCompleted,
+		StartupWizardCompleted:   apiutil.Ptr(completed),
 		HasPendingRestart:        apiutil.Ptr(false),
 		IsShuttingDown:           apiutil.Ptr(false),
 		SupportsLibraryMonitor:   apiutil.Ptr(true),

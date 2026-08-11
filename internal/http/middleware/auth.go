@@ -10,14 +10,21 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 )
 
+// Whether the startup wizard has run, which is the only thing that opens an
+// operation to an unauthenticated caller beyond the always public ones.
+type Setup interface {
+	Completed(ctx context.Context) (bool, error)
+}
+
 // Transport only: parse what the client sent and hand it to auth, which owns
 // the identity on the context.
 type Auth struct {
-	auth *auth.Service
+	auth  *auth.Service
+	setup Setup
 }
 
-func NewAuth(auth *auth.Service) *Auth {
-	return &Auth{auth: auth}
+func NewAuth(auth *auth.Service, setup Setup) *Auth {
+	return &Auth{auth: auth, setup: setup}
 }
 
 func (a *Auth) Middleware(f api.StrictHandlerFunc, operationID string) api.StrictHandlerFunc {
@@ -27,6 +34,16 @@ func (a *Auth) Middleware(f api.StrictHandlerFunc, operationID string) api.Stric
 
 		if api.PublicOperations[operationID] {
 			return f(ctx, w, r, request)
+		}
+
+		if api.FirstTimeSetupOperations[operationID] {
+			completed, err := a.setup.Completed(ctx)
+			if err != nil {
+				return nil, err
+			}
+			if !completed {
+				return f(ctx, w, r, request)
+			}
 		}
 
 		ctx, err := a.auth.Authenticate(ctx, authorization.Token)

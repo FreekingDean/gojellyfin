@@ -69,6 +69,21 @@ func (s *Service) CreateUser(ctx context.Context, name, passwordHash string, isA
 	return s.User(ctx, id)
 }
 
+func (s *Service) EnsureUser(ctx context.Context, name, passwordHash string, isAdministrator bool) (*User, error) {
+	user, err := s.query().Where(usermodal.Username(name)).Only(ctx)
+	if store.IsNotFound(err) {
+		return s.CreateUser(ctx, name, passwordHash, isAdministrator)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to query user by username: %w", err)
+	}
+	if err := s.SetPassword(ctx, user.ID, passwordHash); err != nil {
+		return nil, err
+	}
+
+	return s.User(ctx, user.ID)
+}
+
 func (s *Service) User(ctx context.Context, id uuid.UUID) (*User, error) {
 	user, err := s.query().Where(usermodal.ID(id)).Only(ctx)
 	if err != nil {
@@ -85,6 +100,27 @@ func (s *Service) UserByUsername(ctx context.Context, username string) (*User, e
 	}
 
 	return user, nil
+}
+
+func (s *Service) FirstUser(ctx context.Context) (*User, error) {
+	user, err := s.query().Order(store.Asc(usermodal.FieldCreatedAt)).First(ctx)
+	if store.IsNotFound(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to query the first user: %w", err)
+	}
+
+	return user, nil
+}
+
+func (s *Service) HasUsers(ctx context.Context) (bool, error) {
+	exists, err := s.store.User.Query().Exist(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to count users: %w", err)
+	}
+
+	return exists, nil
 }
 
 func (s *Service) Users(ctx context.Context) ([]*User, error) {
