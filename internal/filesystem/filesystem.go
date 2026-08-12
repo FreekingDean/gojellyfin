@@ -112,6 +112,14 @@ func (s *Service) List(ctx context.Context, path string) ([]File, error) {
 	return files, nil
 }
 
+func (s *Service) RemoveAll(ctx context.Context, path string) error {
+	if err := os.RemoveAll(path); err != nil {
+		return fmt.Errorf("failed to remove %q: %w", path, err)
+	}
+
+	return nil
+}
+
 func (s *Service) Stat(ctx context.Context, path string) (File, error) {
 	file := s.root
 	for _, name := range strings.Split(strings.Trim(path, Root), Root) {

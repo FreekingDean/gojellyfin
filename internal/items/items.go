@@ -108,6 +108,35 @@ func (s *Service) ItemByID(ctx context.Context, id uuid.UUID) (*Item, error) {
 	return item, nil
 }
 
+type Ancestry struct {
+	Parents   []*Item
+	LibraryID uuid.UUID
+}
+
+func (s *Service) Ancestors(ctx context.Context, id uuid.UUID) (*Ancestry, error) {
+	item, err := s.store.Item.Get(ctx, id)
+	if store.IsNotFound(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to query item: %w", err)
+	}
+
+	ancestry := &Ancestry{Parents: []*Item{}, LibraryID: item.LibraryID}
+	seen := map[uuid.UUID]bool{item.ID: true}
+	for item.ParentID != nil && !seen[*item.ParentID] {
+		parent, err := s.ItemByID(ctx, *item.ParentID)
+		if err != nil {
+			return nil, err
+		}
+		seen[parent.ID] = true
+		ancestry.Parents = append(ancestry.Parents, parent)
+		item = parent
+	}
+
+	return ancestry, nil
+}
+
 type ItemQuery struct {
 	LibraryID  *uuid.UUID
 	ParentID   *uuid.UUID

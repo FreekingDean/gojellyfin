@@ -3,7 +3,6 @@ package items
 import (
 	"context"
 
-	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
@@ -52,13 +51,7 @@ func (s *Server) GetItem(ctx context.Context, request api.GetItemRequestObject) 
 }
 
 func (s *Server) GetRootFolder(ctx context.Context, request api.GetRootFolderRequestObject) (api.GetRootFolderResponseObject, error) {
-	return api.GetRootFolder200JSONResponse{
-		Id:       apiutil.UID(config.RootFolderID),
-		Name:     apiutil.Ptr("Media Folders"),
-		ServerId: apiutil.Ptr(config.ServerID),
-		Type:     apiutil.Ptr(api.BaseItemKindFolder),
-		IsFolder: apiutil.Ptr(true),
-	}, nil
+	return api.GetRootFolder200JSONResponse(dto.RootView()), nil
 }
 
 func (s *Server) GetLatestMedia(ctx context.Context, request api.GetLatestMediaRequestObject) (api.GetLatestMediaResponseObject, error) {

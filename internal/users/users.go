@@ -96,6 +96,38 @@ func (s *Service) Users(ctx context.Context) ([]*User, error) {
 	return users, nil
 }
 
+func (s *Service) MayDeleteContent(ctx context.Context, id uuid.UUID) (bool, error) {
+	policy, err := s.policy(ctx, id)
+	if err != nil || policy == nil {
+		return false, err
+	}
+
+	return policy.IsAdministrator || policy.EnableContentDeletion, nil
+}
+
+func (s *Service) MayDownloadContent(ctx context.Context, id uuid.UUID) (bool, error) {
+	policy, err := s.policy(ctx, id)
+	if err != nil || policy == nil {
+		return false, err
+	}
+
+	return policy.IsAdministrator || policy.EnableContentDownloading, nil
+}
+
+func (s *Service) policy(ctx context.Context, id uuid.UUID) (*Policy, error) {
+	policy, err := s.store.UserPolicy.Query().
+		Where(policymodal.HasUserWith(usermodal.ID(id))).
+		Only(ctx)
+	if store.IsNotFound(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to query user policy: %w", err)
+	}
+
+	return policy, nil
+}
+
 func (s *Service) Rename(ctx context.Context, id uuid.UUID, name string) error {
 	if err := s.store.User.UpdateOneID(id).SetName(name).Exec(ctx); err != nil {
 		return fmt.Errorf("failed to rename user: %w", err)

@@ -136,6 +136,23 @@ func (s *Service) GroupableLibraries(ctx context.Context) ([]*Library, error) {
 	return libraries, nil
 }
 
+func (s *Service) PhysicalPaths(ctx context.Context) ([]string, error) {
+	libraries, err := s.store.Library.Query().
+		Select(librarymodal.FieldLocations).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query library paths: %w", err)
+	}
+
+	paths := []string{}
+	for _, library := range libraries {
+		paths = append(paths, library.Locations...)
+	}
+	slices.Sort(paths)
+
+	return slices.Compact(paths), nil
+}
+
 func (s *Service) Rename(ctx context.Context, id uuid.UUID, name string) error {
 	if err := s.store.Library.UpdateOneID(id).SetName(name).Exec(ctx); err != nil {
 		return fmt.Errorf("failed to rename library: %w", err)
