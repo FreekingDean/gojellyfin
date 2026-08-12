@@ -118,9 +118,9 @@ func (s *Service) ListLibraries(ctx context.Context) ([]*Library, error) {
 }
 
 var groupableCollectionTypes = []CollectionType{
-	librarymodal.CollectionTypeMovies,
-	librarymodal.CollectionTypeTvshows,
-	librarymodal.CollectionTypeMixed,
+	CollectionTypeMovies,
+	CollectionTypeTvshows,
+	CollectionTypeMixed,
 }
 
 func (s *Service) GroupableLibraries(ctx context.Context) ([]*Library, error) {
