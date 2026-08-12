@@ -30,7 +30,7 @@ func (s *Server) InitiateQuickConnect(ctx context.Context, request api.InitiateQ
 		return nil, err
 	}
 
-	return api.InitiateQuickConnect200JSONResponse(ResultDto(pending)), nil
+	return api.InitiateQuickConnect200JSONResponse(resultDto(pending)), nil
 }
 
 func (s *Server) GetQuickConnectState(ctx context.Context, request api.GetQuickConnectStateRequestObject) (api.GetQuickConnectStateResponseObject, error) {
@@ -39,7 +39,7 @@ func (s *Server) GetQuickConnectState(ctx context.Context, request api.GetQuickC
 		return api.GetQuickConnectState404JSONResponse{}, nil
 	}
 
-	return api.GetQuickConnectState200JSONResponse(ResultDto(pending)), nil
+	return api.GetQuickConnectState200JSONResponse(resultDto(pending)), nil
 }
 
 func (s *Server) AuthorizeQuickConnect(ctx context.Context, request api.AuthorizeQuickConnectRequestObject) (api.AuthorizeQuickConnectResponseObject, error) {

@@ -6,7 +6,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
-func ResultDto(request quickconnect.Request) api.QuickConnectResult {
+func resultDto(request quickconnect.Request) api.QuickConnectResult {
 	return api.QuickConnectResult{
 		Authenticated: apiutil.Ptr(request.Authenticated()),
 		Secret:        apiutil.Ptr(request.Secret),
