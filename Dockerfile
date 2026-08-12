@@ -7,8 +7,8 @@ RUN go mod download
 
 COPY . .
 
-# Generated code is committed, so the image never runs `go generate`: it needs
-# the codegen tools and the network.
+# Generated code is committed, so the image never runs `go generate`: it would
+# need the codegen tools and the network.
 ARG TARGETARCH
 ENV CGO_ENABLED=0 GOOS=linux
 RUN GOARCH=$TARGETARCH go build -o /out/ ./cmd/server ./cmd/tasks/migrate
