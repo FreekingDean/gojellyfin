@@ -13,9 +13,6 @@ Refactors and cleanups deferred out of a change. One line each.
 - `PostCapabilities` still 204s without writing; the columns it should fill (`playable_media_types`, `supported_commands`, `profile`, `supports_media_control`) now exist on `Device`.
 - `atlas migrate diff` is commented out in `internal/store/generate.go` because it needs Docker; schema changes mean running it by hand.
 - The scanner writes one `MediaSource` per item and replaces it wholesale on every probe, so nothing can hang off a source across scans yet (attachments, segments, trickplay).
-- `MediaSource` and `MediaStream` have no `ON DELETE CASCADE`, so deleting an item, or re-probing one (which clears its sources), fails once streams exist; both delete paths have to clear the children first.
-- `filesystem.Contents`/`Stat` browse the hardcoded tree in `defaultRoot` while `Open`/`List` read real disk, so the two halves of the service disagree about what exists; the tree has to become real before an administrator can browse to anything the scanner can see.
-- The scanner's own walks (`scanMovies`, `scanShows`, `scanSeries`, `scanArtwork`) and `server/stream`, which needs an `io.ReadSeeker` for range requests, are the last `os` calls left outside the filesystem service.
 - `Item.width`/`height`/`aspect_ratio` and the chapter, credit, genre and studio edges are modelled but nothing populates them.
 - `GET /QuickConnect/Initiate`, `POST /Users/{userId}/Authenticate` and `POST /Users/{userId}/EasyPassword` are the only hidden Jellyfin routes without an alias; the reasons are in `unaliased` in `internal/http/http_test.go`, which fails if any other one is added upstream.
 - Still 501 behind an alias: `UpdateUserItemRating`/`DeleteUserItemRating` (the `rating` and `likes` columns exist on `UserItemData`, so these are writable now) and the `GetUserImage`/`PostUserImage`/`DeleteUserImage` trio, which needs a user image on the model first.
