@@ -2,7 +2,7 @@
 set -e
 
 if [ "$MIGRATE_ON_START" = "true" ]; then
-	migrate
+	gojellyfin migrate
 fi
 
-exec "$@"
+exec gojellyfin "$@"

@@ -251,7 +251,7 @@ func (s *Server) AuthenticateUserByName(ctx context.Context, request api.Authent
 
 // Self-service reset needs a channel that reaches the account holder and
 // nobody else; this server has none, so it answers ContactAdmin and recovery
-// runs through cmd/tasks/resetpassword.
+// runs through `gojellyfin resetpassword`.
 func (s *Server) ForgotPassword(ctx context.Context, request api.ForgotPasswordRequestObject) (api.ForgotPasswordResponseObject, error) {
 	return api.ForgotPassword200JSONResponse{Action: apiutil.Ptr(api.ContactAdmin)}, nil
 }

@@ -3,14 +3,14 @@ package main
 import (
 	"encoding/csv"
 	"encoding/json"
-	"flag"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/spf13/cobra"
 )
 
 type document struct {
@@ -44,31 +44,36 @@ type parentalRating struct {
 
 const fallbackCode = "0-PREFER"
 
-func main() {
-	source := flag.String("source", "", "path to jellyfin's Emby.Server.Implementations/Localization")
-	out := flag.String("out", "", "file to write the merged document to")
-	flag.Parse()
+func localizationDataCommand() *cobra.Command {
+	var source, out string
 
-	if *source == "" || *out == "" {
-		flag.Usage()
-		os.Exit(2)
-	}
+	command := &cobra.Command{
+		Use:   "localizationdata",
+		Short: "Rebuild the vendored localization document from a Jellyfin checkout",
+		Args:  cobra.NoArgs,
+		RunE: func(*cobra.Command, []string) error {
+			doc, err := readDocument(source)
+			if err != nil {
+				return err
+			}
 
-	doc, err := build(*source)
-	if err != nil {
-		log.Fatal(err)
-	}
+			encoded, err := json.MarshalIndent(doc, "", "  ")
+			if err != nil {
+				return err
+			}
 
-	encoded, err := json.MarshalIndent(doc, "", "  ")
-	if err != nil {
-		log.Fatal(err)
+			return os.WriteFile(out, append(encoded, '\n'), 0o644)
+		},
 	}
-	if err := os.WriteFile(*out, append(encoded, '\n'), 0o644); err != nil {
-		log.Fatal(err)
-	}
+	command.Flags().StringVar(&source, "source", "", "path to jellyfin's Emby.Server.Implementations/Localization")
+	command.Flags().StringVar(&out, "out", "", "file to write the merged document to")
+	_ = command.MarkFlagRequired("source")
+	_ = command.MarkFlagRequired("out")
+
+	return command
 }
 
-func build(source string) (*document, error) {
+func readDocument(source string) (*document, error) {
 	countries, err := readCountries(filepath.Join(source, "countries.json"))
 	if err != nil {
 		return nil, err
