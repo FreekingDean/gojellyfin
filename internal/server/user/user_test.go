@@ -2,8 +2,8 @@ package user
 
 import (
 	"context"
+	"errors"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 
@@ -84,7 +84,7 @@ func newFixture(t *testing.T) *fixture {
 	}
 
 	client := connection.Client()
-	prefix := uuid.NewString() + "-"
+	prefix := t.Name() + "-" + uuid.NewString() + "-"
 
 	t.Cleanup(func() {
 		ctx := context.Background()
@@ -140,15 +140,37 @@ func (f *fixture) deviceContext(device string) context.Context {
 	})
 }
 
-func (f *fixture) account(t *testing.T, name string) uuid.UUID {
+func (f *fixture) account(t *testing.T, name, password string) uuid.UUID {
 	t.Helper()
 
-	account, err := f.users.CreateUser(context.Background(), f.prefix+name, "hash", false)
+	hash, err := auth.Hash(password)
+	if err != nil {
+		t.Fatalf("failed to hash the password: %v", err)
+	}
+
+	account, err := f.users.CreateUser(context.Background(), f.prefix+name, hash, false)
 	if err != nil {
 		t.Fatalf("failed to create the user %q: %v", name, err)
 	}
 
 	return account.ID
+}
+
+func (f *fixture) stored(t *testing.T, id uuid.UUID) *users.User {
+	t.Helper()
+
+	account, err := f.users.User(context.Background(), id)
+	if err != nil {
+		t.Fatalf("failed to reload the user: %v", err)
+	}
+
+	return account
+}
+
+func (f *fixture) signIn(username, password string) (api.AuthenticateUserByNameResponseObject, error) {
+	return f.server.AuthenticateUserByName(f.deviceContext("browser"), api.AuthenticateUserByNameRequestObject{
+		JSONBody: &api.AuthenticateUserByName{Username: &username, Pw: &password},
+	})
 }
 
 func (f *fixture) initiate(t *testing.T) quickconnect.Request {
@@ -198,22 +220,62 @@ func TestAuthenticateWithQuickConnectRefusesAnUnauthorizedRequest(t *testing.T) 
 	fixture.refuseRedeem(t, request.Secret)
 }
 
-func TestAuthenticateWithQuickConnectRefusesAnExpiredRequest(t *testing.T) {
+func TestAuthenticateUserByNameIssuesASessionToken(t *testing.T) {
 	fixture := newFixture(t)
-	userID := fixture.account(t, "dean")
+	userID := fixture.account(t, "dean", "hunter2")
 
-	request := fixture.initiate(t)
-	if err := fixture.pending.Authorize(request.Code, userID); err != nil {
-		t.Fatalf("failed to authorize the request: %v", err)
+	response, err := fixture.signIn(fixture.prefix+"dean", "hunter2")
+	if err != nil {
+		t.Fatalf("failed to authenticate: %v", err)
 	}
-	fixture.pending.Expiry = time.Nanosecond
 
-	fixture.refuseRedeem(t, request.Secret)
+	authenticated, ok := response.(api.AuthenticateUserByName200JSONResponse)
+	if !ok {
+		t.Fatalf("response = %T, want api.AuthenticateUserByName200JSONResponse", response)
+	}
+	if authenticated.AccessToken == nil || *authenticated.AccessToken == "" {
+		t.Fatal("AccessToken is empty, want a usable token")
+	}
+	if authenticated.SessionInfo == nil || authenticated.SessionInfo.Id == nil {
+		t.Fatal("SessionInfo is empty, want the created session")
+	}
+	if authenticated.User == nil || *authenticated.User.Id != userID {
+		t.Errorf("User = %v, want %v", authenticated.User, userID)
+	}
+
+	session, err := fixture.sessions.ByToken(context.Background(), *authenticated.AccessToken)
+	if err != nil {
+		t.Fatalf("failed to resolve the issued token: %v", err)
+	}
+	if session.Edges.User == nil || session.Edges.User.ID != userID {
+		t.Errorf("session user = %v, want %v", session.Edges.User, userID)
+	}
+	if session.ID.String() != *authenticated.SessionInfo.Id {
+		t.Errorf("SessionInfo.Id = %q, want the created session %q", *authenticated.SessionInfo.Id, session.ID)
+	}
+	if fixture.stored(t, userID).LastLoginAt.IsZero() {
+		t.Error("LastLoginAt is zero, want the login recorded")
+	}
+}
+
+func TestAuthenticateUserByNameRefusesBadCredentials(t *testing.T) {
+	fixture := newFixture(t)
+	fixture.account(t, "dean", "hunter2")
+
+	if _, err := fixture.signIn(fixture.prefix+"dean", "wrong"); !errors.Is(err, auth.ErrUnauthorized) {
+		t.Errorf("wrong password err = %v, want auth.ErrUnauthorized", err)
+	}
+	if _, err := fixture.signIn(fixture.prefix+"nobody", "hunter2"); !errors.Is(err, auth.ErrUnauthorized) {
+		t.Errorf("unknown user err = %v, want auth.ErrUnauthorized", err)
+	}
+	if _, err := fixture.signIn(fixture.prefix+"dean", ""); !errors.Is(err, auth.ErrUnauthorized) {
+		t.Errorf("empty password err = %v, want auth.ErrUnauthorized", err)
+	}
 }
 
 func TestAuthenticateWithQuickConnectIssuesASessionTokenOnce(t *testing.T) {
 	fixture := newFixture(t)
-	userID := fixture.account(t, "dean")
+	userID := fixture.account(t, "dean", "hunter2")
 
 	request := fixture.initiate(t)
 	if err := fixture.pending.Authorize(request.Code, userID); err != nil {

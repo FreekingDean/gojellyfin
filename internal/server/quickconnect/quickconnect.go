@@ -63,11 +63,11 @@ func (s *Server) AuthorizeQuickConnect(ctx context.Context, request api.Authoriz
 }
 
 func (s *Server) mayAuthorizeFor(ctx context.Context, userID, target uuid.UUID) error {
-	caller, err := s.users.User(ctx, userID)
+	administrator, err := s.users.IsAdministrator(ctx, userID)
 	if err != nil {
 		return err
 	}
-	if caller.Edges.Policy == nil || !caller.Edges.Policy.IsAdministrator {
+	if !administrator {
 		return auth.ErrUnauthorized
 	}
 

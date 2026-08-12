@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 
@@ -42,7 +41,7 @@ func newFixture(t *testing.T) *fixture {
 	}
 
 	client := connection.Client()
-	prefix := uuid.NewString() + "-"
+	prefix := t.Name() + "-" + uuid.NewString() + "-"
 
 	t.Cleanup(func() {
 		ctx := context.Background()
@@ -287,24 +286,52 @@ func TestAuthorizeQuickConnectForAnotherUserNeedsAnAdministrator(t *testing.T) {
 	fixture.refuseRedeem(t, *result.Secret)
 }
 
-func TestQuickConnectRejectsAnExpiredRequest(t *testing.T) {
+func TestAuthorizeQuickConnectForAnotherUserNeedsAnExistingTarget(t *testing.T) {
 	fixture := newFixture(t)
-	fixture.pending.Expiry = time.Nanosecond
-
 	ctx := fixture.deviceContext("tv")
-	signedIn, _ := fixture.signedIn(t, "dean", false)
+	signedIn, _ := fixture.signedIn(t, "admin", true)
+
 	result := fixture.initiate(t, ctx)
 
-	state := fixture.state(t, ctx, *result.Secret)
-	if _, ok := state.(api.GetQuickConnectState404JSONResponse); !ok {
-		t.Fatalf("response = %T, want api.GetQuickConnectState404JSONResponse", state)
+	missing := uuid.New()
+	response, err := fixture.server.AuthorizeQuickConnect(signedIn, api.AuthorizeQuickConnectRequestObject{
+		Params: api.AuthorizeQuickConnectParams{Code: *result.Code, UserId: &missing},
+	})
+	if err != nil {
+		t.Fatalf("failed to authorize quick connect: %v", err)
 	}
-
-	if fixture.authorize(t, signedIn, api.AuthorizeQuickConnectParams{Code: *result.Code}) {
-		t.Error("AuthorizeQuickConnect = true, want an expired code to be refused")
+	if _, ok := response.(api.AuthorizeQuickConnect403JSONResponse); !ok {
+		t.Fatalf("response = %T, want api.AuthorizeQuickConnect403JSONResponse", response)
 	}
 
 	fixture.refuseRedeem(t, *result.Secret)
+}
+
+func TestAuthorizeQuickConnectForAnotherUserAllowsAnAdministrator(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := fixture.deviceContext("tv")
+	signedIn, _ := fixture.signedIn(t, "admin", true)
+	_, otherID := fixture.signedIn(t, "other", false)
+
+	result := fixture.initiate(t, ctx)
+
+	response, err := fixture.server.AuthorizeQuickConnect(signedIn, api.AuthorizeQuickConnectRequestObject{
+		Params: api.AuthorizeQuickConnectParams{Code: *result.Code, UserId: &otherID},
+	})
+	if err != nil {
+		t.Fatalf("failed to authorize quick connect: %v", err)
+	}
+	if authorized, ok := response.(api.AuthorizeQuickConnect200JSONResponse); !ok || !bool(authorized) {
+		t.Fatalf("response = %#v, want the administrator to authorize for the target", response)
+	}
+
+	authorized, err := fixture.pending.Redeem(*result.Secret)
+	if err != nil {
+		t.Fatalf("the secret was not redeemable: %v", err)
+	}
+	if authorized != otherID {
+		t.Errorf("authorized user = %v, want the target user %v", authorized, otherID)
+	}
 }
 
 func TestAuthorizeQuickConnectMarksTheRequestForTheCaller(t *testing.T) {

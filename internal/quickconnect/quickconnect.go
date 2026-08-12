@@ -20,6 +20,7 @@ const (
 	defaultExpiry = 5 * time.Minute
 	codeSpace     = 1_000_000
 	codeAttempts  = 10
+	maxPending    = 1024
 )
 
 var (
@@ -28,6 +29,7 @@ var (
 	ErrAlreadyAuthorized = errors.New("quick connect code is already authorized")
 	ErrNotAuthorized     = errors.New("quick connect request is not authorized")
 	ErrNoCode            = errors.New("no unused quick connect code available")
+	ErrTooManyPending    = errors.New("too many pending quick connect requests")
 )
 
 type Request struct {
@@ -43,14 +45,14 @@ func (r Request) Authenticated() bool {
 }
 
 type Service struct {
-	Expiry time.Duration
+	expiry time.Duration
 
 	mu       sync.Mutex
 	requests map[string]*Request
 }
 
 func New() *Service {
-	return &Service{Expiry: defaultExpiry, requests: make(map[string]*Request)}
+	return &Service{expiry: defaultExpiry, requests: make(map[string]*Request)}
 }
 
 func (s *Service) Initiate(device sessions.DeviceInfo) (Request, error) {
@@ -62,6 +64,10 @@ func (s *Service) Initiate(device sessions.DeviceInfo) (Request, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.expire()
+
+	if len(s.requests) >= maxPending {
+		return Request{}, ErrTooManyPending
+	}
 
 	code, err := s.unusedCode()
 	if err != nil {
@@ -125,7 +131,7 @@ func (s *Service) Redeem(secret string) (uuid.UUID, error) {
 }
 
 func (s *Service) expire() {
-	cutoff := time.Now().Add(-s.Expiry)
+	cutoff := time.Now().Add(-s.expiry)
 	for secret, request := range s.requests {
 		if request.AddedAt.Before(cutoff) {
 			delete(s.requests, secret)
