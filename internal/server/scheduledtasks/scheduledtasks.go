@@ -27,7 +27,7 @@ func (s *Server) GetTasks(ctx context.Context, request api.GetTasksRequestObject
 	}
 
 	for _, info := range s.registry.Tasks() {
-		infos = append(infos, TaskInfo(info))
+		infos = append(infos, taskInfo(info))
 	}
 
 	return api.GetTasks200JSONResponse(infos), nil
@@ -42,7 +42,7 @@ func (s *Server) GetTask(ctx context.Context, request api.GetTaskRequestObject) 
 		return nil, err
 	}
 
-	return api.GetTask200JSONResponse(TaskInfo(info)), nil
+	return api.GetTask200JSONResponse(taskInfo(info)), nil
 }
 
 func (s *Server) StartTask(ctx context.Context, request api.StartTaskRequestObject) (api.StartTaskResponseObject, error) {
@@ -72,7 +72,7 @@ func (s *Server) StopTask(ctx context.Context, request api.StopTaskRequestObject
 func (s *Server) UpdateTask(ctx context.Context, request api.UpdateTaskRequestObject) (api.UpdateTaskResponseObject, error) {
 	body := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
 
-	err := s.registry.SetTriggers(request.TaskId, Triggers(apiutil.Deref(body)))
+	err := s.registry.SetTriggers(request.TaskId, triggers(apiutil.Deref(body)))
 	if errors.Is(err, tasks.ErrNotFound) {
 		return api.UpdateTask404JSONResponse{}, nil
 	}

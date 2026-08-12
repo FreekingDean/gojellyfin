@@ -77,7 +77,7 @@ func TestStartAndStopTask(t *testing.T) {
 	if _, ok := started.(api.StartTask204Response); !ok {
 		t.Fatalf("got %T, want a 204", started)
 	}
-	if got := apiutil.Deref(taskInfo(t, server, tasks.LibraryScanID).State); got != api.TaskStateRunning {
+	if got := apiutil.Deref(fetchTaskInfo(t, server, tasks.LibraryScanID).State); got != api.TaskStateRunning {
 		t.Fatalf("got state %q, want %q", got, api.TaskStateRunning)
 	}
 
@@ -96,7 +96,7 @@ func TestStartAndStopTask(t *testing.T) {
 	}
 	waitForIdle(t, registry)
 
-	info := taskInfo(t, server, tasks.LibraryScanID)
+	info := fetchTaskInfo(t, server, tasks.LibraryScanID)
 	if got := apiutil.Deref(info.State); got != api.TaskStateIdle {
 		t.Errorf("got state %q, want %q", got, api.TaskStateIdle)
 	}
@@ -145,7 +145,7 @@ func TestUpdateTask(t *testing.T) {
 		t.Fatalf("got %T, want a 204", response)
 	}
 
-	triggers := apiutil.Deref(taskInfo(t, server, tasks.LibraryScanID).Triggers)
+	triggers := apiutil.Deref(fetchTaskInfo(t, server, tasks.LibraryScanID).Triggers)
 	if len(triggers) != 1 {
 		t.Fatalf("got %d triggers, want 1", len(triggers))
 	}
@@ -173,7 +173,7 @@ func TestUpdateTaskWithoutBody(t *testing.T) {
 	if _, ok := response.(api.UpdateTask204Response); !ok {
 		t.Fatalf("got %T, want a 204", response)
 	}
-	if triggers := apiutil.Deref(taskInfo(t, server, tasks.LibraryScanID).Triggers); len(triggers) != 0 {
+	if triggers := apiutil.Deref(fetchTaskInfo(t, server, tasks.LibraryScanID).Triggers); len(triggers) != 0 {
 		t.Errorf("got %d triggers, want none", len(triggers))
 	}
 }
@@ -202,7 +202,7 @@ func testServer(t *testing.T, run tasks.Runner) (*Server, *tasks.Registry) {
 	return New(registry), registry
 }
 
-func taskInfo(t *testing.T, server *Server, id string) api.TaskInfo {
+func fetchTaskInfo(t *testing.T, server *Server, id string) api.TaskInfo {
 	t.Helper()
 
 	response, err := server.GetTask(context.Background(), api.GetTaskRequestObject{TaskId: id})

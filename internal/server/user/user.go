@@ -10,7 +10,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
-	serversession "github.com/FreekingDean/gojellyfin/internal/server/session"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
@@ -39,7 +39,7 @@ func (s *Server) GetCurrentUser(ctx context.Context, request api.GetCurrentUserR
 		return api.GetCurrentUser400JSONResponse{}, nil
 	}
 
-	return api.GetCurrentUser200JSONResponse(UserDto(user)), nil
+	return api.GetCurrentUser200JSONResponse(userDto(user)), nil
 }
 
 func (s *Server) GetUserById(ctx context.Context, request api.GetUserByIdRequestObject) (api.GetUserByIdResponseObject, error) {
@@ -48,7 +48,7 @@ func (s *Server) GetUserById(ctx context.Context, request api.GetUserByIdRequest
 		return api.GetUserById404JSONResponse{}, nil
 	}
 
-	return api.GetUserById200JSONResponse(UserDto(user)), nil
+	return api.GetUserById200JSONResponse(userDto(user)), nil
 }
 
 func (s *Server) GetPublicUsers(ctx context.Context, request api.GetPublicUsersRequestObject) (api.GetPublicUsersResponseObject, error) {
@@ -76,7 +76,7 @@ func (s *Server) CreateUserByName(ctx context.Context, request api.CreateUserByN
 		return nil, err
 	}
 
-	return api.CreateUserByName200JSONResponse(UserDto(user)), nil
+	return api.CreateUserByName200JSONResponse(userDto(user)), nil
 }
 
 func (s *Server) UpdateUser(ctx context.Context, request api.UpdateUserRequestObject) (api.UpdateUserResponseObject, error) {
@@ -194,7 +194,7 @@ func (s *Server) listUserDtos(ctx context.Context) ([]api.UserDto, error) {
 
 	converted := make([]api.UserDto, 0, len(users))
 	for _, user := range users {
-		converted = append(converted, UserDto(user))
+		converted = append(converted, userDto(user))
 	}
 
 	return converted, nil
@@ -244,7 +244,7 @@ func (s *Server) AuthenticateUserByName(ctx context.Context, request api.Authent
 	return api.AuthenticateUserByName200JSONResponse{
 		AccessToken: apiutil.Ptr(token),
 		ServerId:    apiutil.Ptr(config.ServerID),
-		User:        apiutil.Ptr(UserDto(user)),
-		SessionInfo: serversession.SessionDto(session),
+		User:        apiutil.Ptr(userDto(user)),
+		SessionInfo: dto.SessionDto(session),
 	}, nil
 }

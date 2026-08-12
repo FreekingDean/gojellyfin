@@ -6,7 +6,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
-	serveritems "github.com/FreekingDean/gojellyfin/internal/server/items"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 )
 
 type Server struct {
@@ -25,7 +25,7 @@ func (s *Server) GetUserViews(ctx context.Context, request api.GetUserViewsReque
 
 	views := make([]api.BaseItemDto, 0, len(libraries))
 	for _, library := range libraries {
-		views = append(views, serveritems.LibraryView(library))
+		views = append(views, dto.LibraryView(library))
 	}
 
 	return api.GetUserViews200JSONResponse{

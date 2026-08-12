@@ -11,7 +11,7 @@ import (
 )
 
 func virtualFolderInfo(library *libraries.Library) api.VirtualFolderInfo {
-	options := OptionsDto(library.Edges.Options)
+	options := optionsDto(library.Edges.Options)
 
 	pathInfos := make([]api.MediaPathInfo, 0, len(library.Locations))
 	for _, location := range library.Locations {
@@ -31,7 +31,7 @@ func virtualFolderInfo(library *libraries.Library) api.VirtualFolderInfo {
 	}
 }
 
-func OptionsDto(options *libraries.Options) api.LibraryOptions {
+func optionsDto(options *libraries.Options) api.LibraryOptions {
 	if options == nil {
 		return api.LibraryOptions{}
 	}

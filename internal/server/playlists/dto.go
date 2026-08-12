@@ -8,7 +8,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
-func PlaylistDto(playlist *playlists.Playlist, entries []*playlists.Entry, shares []*playlists.Share) api.PlaylistDto {
+func playlistDto(playlist *playlists.Playlist, entries []*playlists.Entry, shares []*playlists.Share) api.PlaylistDto {
 	itemIDs := make([]uuid.UUID, 0, len(entries))
 	for _, entry := range entries {
 		itemIDs = append(itemIDs, entry.ItemID)
@@ -17,20 +17,20 @@ func PlaylistDto(playlist *playlists.Playlist, entries []*playlists.Entry, share
 	return api.PlaylistDto{
 		ItemIds:    &itemIDs,
 		OpenAccess: apiutil.Ptr(playlist.OpenAccess),
-		Shares:     apiutil.Ptr(UserPermissions(shares)),
+		Shares:     apiutil.Ptr(userPermissions(shares)),
 	}
 }
 
-func UserPermissions(shares []*playlists.Share) []api.PlaylistUserPermissions {
+func userPermissions(shares []*playlists.Share) []api.PlaylistUserPermissions {
 	converted := make([]api.PlaylistUserPermissions, 0, len(shares))
 	for _, share := range shares {
-		converted = append(converted, UserPermission(share))
+		converted = append(converted, userPermission(share))
 	}
 
 	return converted
 }
 
-func UserPermission(share *playlists.Share) api.PlaylistUserPermissions {
+func userPermission(share *playlists.Share) api.PlaylistUserPermissions {
 	return api.PlaylistUserPermissions{
 		UserId:  &share.UserID,
 		CanEdit: apiutil.Ptr(share.CanEdit),

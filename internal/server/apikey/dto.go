@@ -8,7 +8,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
-func AuthenticationInfo(key *apikeys.ApiKey) api.AuthenticationInfo {
+func authenticationInfo(key *apikeys.ApiKey) api.AuthenticationInfo {
 	info := api.AuthenticationInfo{
 		AccessToken: apiutil.Ptr(key.AccessToken),
 		AppName:     apiutil.Ptr(key.AppName),

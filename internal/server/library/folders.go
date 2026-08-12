@@ -5,7 +5,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
-	serveritems "github.com/FreekingDean/gojellyfin/internal/server/items"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 )
 
 // The configured libraries, presented as the folders they are.
@@ -17,7 +17,7 @@ func (s *Server) GetMediaFolders(ctx context.Context, request api.GetMediaFolder
 
 	folders := make([]api.BaseItemDto, 0, len(records))
 	for _, library := range records {
-		folders = append(folders, serveritems.LibraryView(library))
+		folders = append(folders, dto.LibraryView(library))
 	}
 
 	return api.GetMediaFolders200JSONResponse{

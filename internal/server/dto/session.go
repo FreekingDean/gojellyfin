@@ -1,4 +1,4 @@
-package session
+package dto
 
 import (
 	"github.com/FreekingDean/gojellyfin/internal/config"

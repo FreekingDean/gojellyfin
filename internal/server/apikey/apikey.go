@@ -25,7 +25,7 @@ func (s *Server) GetKeys(ctx context.Context, request api.GetKeysRequestObject) 
 
 	infos := make([]api.AuthenticationInfo, 0, len(keys))
 	for _, key := range keys {
-		infos = append(infos, AuthenticationInfo(key))
+		infos = append(infos, authenticationInfo(key))
 	}
 
 	return api.GetKeys200JSONResponse{

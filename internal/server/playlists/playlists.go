@@ -11,7 +11,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/playlists"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
-	serveritems "github.com/FreekingDean/gojellyfin/internal/server/items"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 )
 
 type Server struct {
@@ -88,7 +88,7 @@ func (s *Server) GetPlaylist(ctx context.Context, request api.GetPlaylistRequest
 		return nil, err
 	}
 
-	return api.GetPlaylist200JSONResponse(PlaylistDto(playlist, entries, shares)), nil
+	return api.GetPlaylist200JSONResponse(playlistDto(playlist, entries, shares)), nil
 }
 
 func (s *Server) UpdatePlaylist(ctx context.Context, request api.UpdatePlaylistRequestObject) (api.UpdatePlaylistResponseObject, error) {
@@ -152,7 +152,7 @@ func (s *Server) GetPlaylistItems(ctx context.Context, request api.GetPlaylistIt
 		entryIDs = append(entryIDs, entry.ID.String())
 	}
 
-	converted, err := serveritems.ItemDtos(ctx, s.items, records)
+	converted, err := dto.ItemDtos(ctx, s.items, records)
 	if err != nil {
 		return nil, err
 	}
@@ -251,7 +251,7 @@ func (s *Server) GetPlaylistUsers(ctx context.Context, request api.GetPlaylistUs
 		return nil, err
 	}
 
-	return api.GetPlaylistUsers200JSONResponse(UserPermissions(shares)), nil
+	return api.GetPlaylistUsers200JSONResponse(userPermissions(shares)), nil
 }
 
 func (s *Server) GetPlaylistUser(ctx context.Context, request api.GetPlaylistUserRequestObject) (api.GetPlaylistUserResponseObject, error) {
@@ -268,7 +268,7 @@ func (s *Server) GetPlaylistUser(ctx context.Context, request api.GetPlaylistUse
 		return api.GetPlaylistUser404JSONResponse{}, nil
 	}
 
-	return api.GetPlaylistUser200JSONResponse(UserPermission(share)), nil
+	return api.GetPlaylistUser200JSONResponse(userPermission(share)), nil
 }
 
 func (s *Server) UpdatePlaylistUser(ctx context.Context, request api.UpdatePlaylistUserRequestObject) (api.UpdatePlaylistUserResponseObject, error) {

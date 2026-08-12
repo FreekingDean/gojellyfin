@@ -7,7 +7,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
-	serveritems "github.com/FreekingDean/gojellyfin/internal/server/items"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 )
 
 type Server struct {
@@ -28,7 +28,7 @@ func (s *Server) GetNextUp(ctx context.Context, request api.GetNextUpRequestObje
 		return nil, err
 	}
 
-	episodes, err := serveritems.ItemDtos(ctx, s.items, records)
+	episodes, err := dto.ItemDtos(ctx, s.items, records)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (s *Server) GetSeasons(ctx context.Context, request api.GetSeasonsRequestOb
 		return nil, err
 	}
 
-	seasons, err := serveritems.ItemDtos(ctx, s.items, records)
+	seasons, err := dto.ItemDtos(ctx, s.items, records)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (s *Server) GetEpisodes(ctx context.Context, request api.GetEpisodesRequest
 		return nil, err
 	}
 
-	episodes, err := serveritems.ItemDtos(ctx, s.items, records)
+	episodes, err := dto.ItemDtos(ctx, s.items, records)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func (s *Server) GetUpcomingEpisodes(ctx context.Context, request api.GetUpcomin
 		return nil, err
 	}
 
-	episodes, err := serveritems.ItemDtos(ctx, s.items, records)
+	episodes, err := dto.ItemDtos(ctx, s.items, records)
 	if err != nil {
 		return nil, err
 	}

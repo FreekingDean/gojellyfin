@@ -52,7 +52,7 @@ func (s *Server) GetNamedConfiguration(ctx context.Context, request api.GetNamed
 		return nil, err
 	}
 	if value == nil {
-		if value, err = json.Marshal(DefaultNamedConfiguration(key)); err != nil {
+		if value, err = json.Marshal(defaultNamedConfiguration(key)); err != nil {
 			return nil, err
 		}
 	}
@@ -83,5 +83,5 @@ func (s *Server) UpdateNamedConfiguration(ctx context.Context, request api.Updat
 }
 
 func (s *Server) GetDefaultMetadataOptions(ctx context.Context, request api.GetDefaultMetadataOptionsRequestObject) (api.GetDefaultMetadataOptionsResponseObject, error) {
-	return api.GetDefaultMetadataOptions200JSONResponse(DefaultMetadataOptions()), nil
+	return api.GetDefaultMetadataOptions200JSONResponse(defaultMetadataOptions()), nil
 }
