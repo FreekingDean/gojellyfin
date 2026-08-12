@@ -8,49 +8,25 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
-	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
+	"github.com/FreekingDean/gojellyfin/internal/setup"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
 type Server struct {
 	config *config.Service
+	setup  *setup.Service
 	users  *users.Service
 }
 
-func New(config *config.Service, users *users.Service) *Server {
-	return &Server{config: config, users: users}
-}
-
-func Completed(ctx context.Context, store *config.Service, users *users.Service) (bool, error) {
-	value, err := store.Configuration(ctx, configuration.SystemConfigurationKey)
-	if err != nil {
-		return false, err
-	}
-
-	var stored struct {
-		IsStartupWizardCompleted *bool
-	}
-	if value != nil {
-		if err := json.Unmarshal(value, &stored); err != nil {
-			return false, err
-		}
-	}
-	if stored.IsStartupWizardCompleted != nil {
-		return *stored.IsStartupWizardCompleted, nil
-	}
-
-	return users.HasUsers(ctx)
-}
-
-func (s *Server) Completed(ctx context.Context) (bool, error) {
-	return Completed(ctx, s.config, s.users)
+func New(config *config.Service, setup *setup.Service, users *users.Service) *Server {
+	return &Server{config: config, setup: setup, users: users}
 }
 
 func (s *Server) GetStartupConfiguration(
 	ctx context.Context,
 	request api.GetStartupConfigurationRequestObject,
 ) (api.GetStartupConfigurationResponseObject, error) {
-	completed, err := s.Completed(ctx)
+	completed, err := s.setup.Completed(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -58,19 +34,19 @@ func (s *Server) GetStartupConfiguration(
 		return api.GetStartupConfiguration403Response{}, nil
 	}
 
-	settings, err := configuration.ServerConfiguration(ctx, s.config)
+	culture, err := s.setup.Culture(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return api.GetStartupConfiguration200JSONResponse(StartupConfiguration(settings)), nil
+	return api.GetStartupConfiguration200JSONResponse(startupConfiguration(culture)), nil
 }
 
 func (s *Server) UpdateInitialConfiguration(
 	ctx context.Context,
 	request api.UpdateInitialConfigurationRequestObject,
 ) (api.UpdateInitialConfigurationResponseObject, error) {
-	completed, err := s.Completed(ctx)
+	completed, err := s.setup.Completed(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -83,22 +59,24 @@ func (s *Server) UpdateInitialConfiguration(
 		return api.UpdateInitialConfiguration403Response{}, nil
 	}
 
-	settings, err := configuration.ServerConfiguration(ctx, s.config)
+	culture, err := s.setup.Culture(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if req.UICulture != nil {
-		settings.UICulture = req.UICulture
+		culture.UICulture = *req.UICulture
 	}
 	if req.MetadataCountryCode != nil {
-		settings.MetadataCountryCode = req.MetadataCountryCode
+		culture.MetadataCountryCode = *req.MetadataCountryCode
 	}
 	if req.PreferredMetadataLanguage != nil {
-		settings.PreferredMetadataLanguage = req.PreferredMetadataLanguage
+		culture.PreferredMetadataLanguage = *req.PreferredMetadataLanguage
 	}
-	settings.IsStartupWizardCompleted = apiutil.Ptr(false)
 
-	if err := s.saveConfiguration(ctx, settings); err != nil {
+	if err := s.setup.SetCulture(ctx, culture); err != nil {
+		return nil, err
+	}
+	if err := s.keepWizardOpen(ctx); err != nil {
 		return nil, err
 	}
 
@@ -109,7 +87,7 @@ func (s *Server) GetFirstUser(
 	ctx context.Context,
 	request api.GetFirstUserRequestObject,
 ) (api.GetFirstUserResponseObject, error) {
-	completed, err := s.Completed(ctx)
+	completed, err := s.setup.Completed(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -122,14 +100,14 @@ func (s *Server) GetFirstUser(
 		return nil, err
 	}
 
-	return api.GetFirstUser200JSONResponse(StartupUser(user)), nil
+	return api.GetFirstUser200JSONResponse(startupUser(user)), nil
 }
 
 func (s *Server) GetFirstUser2(
 	ctx context.Context,
 	request api.GetFirstUser2RequestObject,
 ) (api.GetFirstUser2ResponseObject, error) {
-	completed, err := s.Completed(ctx)
+	completed, err := s.setup.Completed(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -142,14 +120,14 @@ func (s *Server) GetFirstUser2(
 		return nil, err
 	}
 
-	return api.GetFirstUser2200JSONResponse(StartupUser(user)), nil
+	return api.GetFirstUser2200JSONResponse(startupUser(user)), nil
 }
 
 func (s *Server) UpdateStartupUser(
 	ctx context.Context,
 	request api.UpdateStartupUserRequestObject,
 ) (api.UpdateStartupUserResponseObject, error) {
-	completed, err := s.Completed(ctx)
+	completed, err := s.setup.Completed(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +159,7 @@ func (s *Server) SetRemoteAccess(
 	ctx context.Context,
 	request api.SetRemoteAccessRequestObject,
 ) (api.SetRemoteAccessResponseObject, error) {
-	completed, err := s.Completed(ctx)
+	completed, err := s.setup.Completed(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +190,7 @@ func (s *Server) CompleteWizard(
 	ctx context.Context,
 	request api.CompleteWizardRequestObject,
 ) (api.CompleteWizardResponseObject, error) {
-	completed, err := s.Completed(ctx)
+	completed, err := s.setup.Completed(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -220,13 +198,7 @@ func (s *Server) CompleteWizard(
 		return api.CompleteWizard403Response{}, nil
 	}
 
-	settings, err := configuration.ServerConfiguration(ctx, s.config)
-	if err != nil {
-		return nil, err
-	}
-	settings.IsStartupWizardCompleted = apiutil.Ptr(true)
-
-	if err := s.saveConfiguration(ctx, settings); err != nil {
+	if err := s.setup.SetCompleted(ctx, true); err != nil {
 		return nil, err
 	}
 
@@ -234,20 +206,5 @@ func (s *Server) CompleteWizard(
 }
 
 func (s *Server) keepWizardOpen(ctx context.Context) error {
-	settings, err := configuration.ServerConfiguration(ctx, s.config)
-	if err != nil {
-		return err
-	}
-	settings.IsStartupWizardCompleted = apiutil.Ptr(false)
-
-	return s.saveConfiguration(ctx, settings)
-}
-
-func (s *Server) saveConfiguration(ctx context.Context, settings api.ServerConfiguration) error {
-	value, err := json.Marshal(settings)
-	if err != nil {
-		return err
-	}
-
-	return s.config.SetConfiguration(ctx, configuration.SystemConfigurationKey, value)
+	return s.setup.SetCompleted(ctx, false)
 }

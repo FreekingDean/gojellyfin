@@ -14,6 +14,11 @@ const (
 	RootFolderID = "e9d5075a555c1cbc394eec4cef295274"
 )
 
+const (
+	SystemConfigurationKey   = "system"
+	BrandingConfigurationKey = "branding"
+)
+
 type Service struct {
 	client *store.Client
 }

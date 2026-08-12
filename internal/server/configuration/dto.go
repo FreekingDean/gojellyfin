@@ -7,11 +7,12 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/setup"
 )
 
 const (
-	SystemConfigurationKey   = "system"
-	BrandingConfigurationKey = "branding"
+	SystemConfigurationKey   = config.SystemConfigurationKey
+	BrandingConfigurationKey = config.BrandingConfigurationKey
 )
 
 // Read helpers rather than methods, so any tag's handlers can use them.
@@ -48,9 +49,11 @@ func BrandingConfiguration(ctx context.Context, store *config.Service) (api.Bran
 }
 
 func defaultServerConfiguration() api.ServerConfiguration {
+	culture := setup.DefaultCulture()
+
 	return api.ServerConfiguration{
 		ServerName:                    apiutil.Ptr("gojellyfin"),
-		UICulture:                     apiutil.Ptr("en-US"),
+		UICulture:                     apiutil.Ptr(culture.UICulture),
 		IsStartupWizardCompleted:      apiutil.Ptr(true),
 		IsPortAuthorized:              apiutil.Ptr(true),
 		QuickConnectAvailable:         apiutil.Ptr(false),
@@ -58,8 +61,8 @@ func defaultServerConfiguration() api.ServerConfiguration {
 		EnableFolderView:              apiutil.Ptr(false),
 		EnableGroupingIntoCollections: apiutil.Ptr(false),
 		DisplaySpecialsWithinSeasons:  apiutil.Ptr(true),
-		PreferredMetadataLanguage:     apiutil.Ptr("en"),
-		MetadataCountryCode:           apiutil.Ptr("US"),
+		PreferredMetadataLanguage:     apiutil.Ptr(culture.PreferredMetadataLanguage),
+		MetadataCountryCode:           apiutil.Ptr(culture.MetadataCountryCode),
 		LogFileRetentionDays:          apiutil.Ptr(int32(3)),
 		ActivityLogRetentionDays:      apiutil.Ptr(int32(30)),
 		MinResumePct:                  apiutil.Ptr(int32(5)),

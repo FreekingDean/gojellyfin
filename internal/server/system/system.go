@@ -7,19 +7,18 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
-	"github.com/FreekingDean/gojellyfin/internal/server/startup"
+	"github.com/FreekingDean/gojellyfin/internal/setup"
 	systemsvc "github.com/FreekingDean/gojellyfin/internal/system"
-	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
 type Server struct {
 	config *config.Service
+	setup  *setup.Service
 	system systemsvc.Service
-	users  *users.Service
 }
 
-func New(config *config.Service, system systemsvc.Service, users *users.Service) *Server {
-	return &Server{config: config, system: system, users: users}
+func New(config *config.Service, setup *setup.Service, system systemsvc.Service) *Server {
+	return &Server{config: config, setup: setup, system: system}
 }
 
 func (s *Server) GetPublicSystemInfo(
@@ -31,7 +30,7 @@ func (s *Server) GetPublicSystemInfo(
 		return nil, err
 	}
 
-	completed, err := startup.Completed(ctx, s.config, s.users)
+	completed, err := s.setup.Completed(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +52,7 @@ func (s *Server) GetSystemInfo(ctx context.Context, request api.GetSystemInfoReq
 		return nil, err
 	}
 
-	completed, err := startup.Completed(ctx, s.config, s.users)
+	completed, err := s.setup.Completed(ctx)
 	if err != nil {
 		return nil, err
 	}

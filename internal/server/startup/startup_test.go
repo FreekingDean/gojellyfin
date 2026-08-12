@@ -11,7 +11,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
-	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
+	"github.com/FreekingDean/gojellyfin/internal/setup"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	configurationmodal "github.com/FreekingDean/gojellyfin/internal/store/configuration"
 	usermodal "github.com/FreekingDean/gojellyfin/internal/store/user"
@@ -21,6 +21,7 @@ import (
 type fixture struct {
 	server *Server
 	config *config.Service
+	setup  *setup.Service
 	users  *users.Service
 	client *store.Client
 }
@@ -37,11 +38,11 @@ func newFixture(t *testing.T) *fixture {
 	}
 
 	client := connection.Client()
-	system := snapshot(t, client, configuration.SystemConfigurationKey)
+	system := snapshot(t, client, config.SystemConfigurationKey)
 	network := snapshot(t, client, networkConfigurationKey)
 
 	t.Cleanup(func() {
-		restore(t, client, configuration.SystemConfigurationKey, system)
+		restore(t, client, config.SystemConfigurationKey, system)
 		restore(t, client, networkConfigurationKey, network)
 		if err := connection.Stop(); err != nil {
 			t.Errorf("failed to close the database: %v", err)
@@ -50,10 +51,12 @@ func newFixture(t *testing.T) *fixture {
 
 	configService := config.New(client)
 	usersService := users.New(client)
+	setupService := setup.New(configService, usersService)
 
 	return &fixture{
-		server: New(configService, usersService),
+		server: New(configService, setupService, usersService),
 		config: configService,
+		setup:  setupService,
 		users:  usersService,
 		client: client,
 	}
@@ -93,7 +96,7 @@ func (f *fixture) markCompleted(t *testing.T, completed bool) {
 	if err != nil {
 		t.Fatalf("failed to encode the configuration: %v", err)
 	}
-	if err := f.config.SetConfiguration(context.Background(), configuration.SystemConfigurationKey, value); err != nil {
+	if err := f.config.SetConfiguration(context.Background(), config.SystemConfigurationKey, value); err != nil {
 		t.Fatalf("failed to store the configuration: %v", err)
 	}
 }
@@ -101,7 +104,7 @@ func (f *fixture) markCompleted(t *testing.T, completed bool) {
 func (f *fixture) clearConfiguration(t *testing.T) {
 	t.Helper()
 
-	restore(t, f.client, configuration.SystemConfigurationKey, nil)
+	restore(t, f.client, config.SystemConfigurationKey, nil)
 }
 
 func (f *fixture) username(t *testing.T) string {
@@ -208,7 +211,7 @@ func TestCompleteWizardClosesTheWizard(t *testing.T) {
 		t.Fatalf("CompleteWizard answered %T, want 204", response)
 	}
 
-	completed, err := f.server.Completed(ctx)
+	completed, err := f.setup.Completed(ctx)
 	if err != nil {
 		t.Fatalf("Completed: %v", err)
 	}
@@ -370,7 +373,7 @@ func TestCompletedDefaultsToClosedOnAnInstallThatHoldsUsers(t *testing.T) {
 		t.Fatalf("failed to create the user: %v", err)
 	}
 
-	completed, err := f.server.Completed(ctx)
+	completed, err := f.setup.Completed(ctx)
 	if err != nil {
 		t.Fatalf("Completed: %v", err)
 	}
@@ -405,7 +408,7 @@ func TestUpdateStartupUserKeepsTheWizardOpen(t *testing.T) {
 		t.Fatalf("UpdateStartupUser: %v", err)
 	}
 
-	completed, err := f.server.Completed(ctx)
+	completed, err := f.setup.Completed(ctx)
 	if err != nil {
 		t.Fatalf("Completed: %v", err)
 	}

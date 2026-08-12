@@ -8,8 +8,8 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/http/mux"
 	"github.com/FreekingDean/gojellyfin/internal/server/socket"
-	"github.com/FreekingDean/gojellyfin/internal/server/startup"
 	"github.com/FreekingDean/gojellyfin/internal/server/stream"
+	"github.com/FreekingDean/gojellyfin/internal/setup"
 )
 
 var Module = fx.Module(
@@ -17,7 +17,7 @@ var Module = fx.Module(
 	mux.Module,
 	fx.Provide(
 		middleware.NewAuth,
-		func(startup *startup.Server) middleware.Setup { return startup },
+		func(setup *setup.Service) middleware.Setup { return setup },
 		socket.New,
 		stream.New,
 		New,

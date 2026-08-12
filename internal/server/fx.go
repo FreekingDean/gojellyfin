@@ -49,6 +49,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/userviews"
 	"github.com/FreekingDean/gojellyfin/internal/server/years"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
+	"github.com/FreekingDean/gojellyfin/internal/setup"
 	"github.com/FreekingDean/gojellyfin/internal/tasks"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
@@ -67,6 +68,7 @@ var Module = fx.Module(
 		config.New,
 		displaypreferences.New,
 		filesystem.New,
+		setup.New,
 		tasks.New,
 
 		// one handler service per spec tag

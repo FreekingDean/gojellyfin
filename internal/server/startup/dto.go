@@ -3,6 +3,7 @@ package startup
 import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/setup"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
@@ -15,15 +16,15 @@ type networkConfiguration struct {
 	EnableUPnP         bool `json:"EnableUPnP"`
 }
 
-func StartupConfiguration(settings api.ServerConfiguration) api.StartupConfigurationDto {
+func startupConfiguration(culture setup.Culture) api.StartupConfigurationDto {
 	return api.StartupConfigurationDto{
-		UICulture:                 settings.UICulture,
-		MetadataCountryCode:       settings.MetadataCountryCode,
-		PreferredMetadataLanguage: settings.PreferredMetadataLanguage,
+		UICulture:                 apiutil.Ptr(culture.UICulture),
+		MetadataCountryCode:       apiutil.Ptr(culture.MetadataCountryCode),
+		PreferredMetadataLanguage: apiutil.Ptr(culture.PreferredMetadataLanguage),
 	}
 }
 
-func StartupUser(user *users.User) api.StartupUserDto {
+func startupUser(user *users.User) api.StartupUserDto {
 	if user == nil {
 		return api.StartupUserDto{}
 	}
