@@ -122,6 +122,6 @@ Handlers read `auth.UserID(ctx)`, `auth.SessionFrom(ctx)`, `auth.AuthorizationFr
 
 ### Current state
 
-Users, sessions, devices, libraries, items and their user data are real rows; most other handlers still return hardcoded data or a 501.
+Users, sessions, devices, libraries, items and their user data are real rows, as are playlists, their entries and their shares; most other handlers still return hardcoded data or a 501.
 
 A fresh database has no way in through the API — `CreateUserByName` requires an administrator and nothing seeds one — so `cmd/tasks/adduser` creates the first one. It reads the password from stdin rather than a flag, which keeps it out of the shell history and the process list. One-off jobs that need the domain services rather than a running server belong beside it under `cmd/tasks`.
