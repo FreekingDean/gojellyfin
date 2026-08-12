@@ -8,8 +8,8 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
-func Metadata(req *api.BaseItemDto) items.Metadata {
-	metadata := items.Metadata{
+func metadata(req *api.BaseItemDto) items.Metadata {
+	converted := items.Metadata{
 		Name:                         req.Name,
 		OriginalTitle:                req.OriginalTitle,
 		SortName:                     req.SortName,
@@ -43,14 +43,14 @@ func Metadata(req *api.BaseItemDto) items.Metadata {
 		for _, day := range *req.AirDays {
 			days = append(days, string(day))
 		}
-		metadata.AirDays = &days
+		converted.AirDays = &days
 	}
 	if req.LockedFields != nil {
 		fields := make([]string, 0, len(*req.LockedFields))
 		for _, field := range *req.LockedFields {
 			fields = append(fields, string(field))
 		}
-		metadata.LockedFields = &fields
+		converted.LockedFields = &fields
 	}
 	if req.ProviderIds != nil {
 		providers := make(map[string]string, len(*req.ProviderIds))
@@ -59,10 +59,10 @@ func Metadata(req *api.BaseItemDto) items.Metadata {
 				providers[name] = *value
 			}
 		}
-		metadata.ProviderIds = &providers
+		converted.ProviderIds = &providers
 	}
 
-	return metadata
+	return converted
 }
 
 func rating(value *string) *consts.Rating {

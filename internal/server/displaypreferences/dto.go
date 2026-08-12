@@ -6,7 +6,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
-func DisplayPreferencesDto(id string, prefs *displaypreferences.DisplayPreferences) api.DisplayPreferencesDto {
+func displayPreferencesDto(id string, prefs *displaypreferences.DisplayPreferences) api.DisplayPreferencesDto {
 	custom := make(map[string]*string, len(prefs.CustomPrefs))
 	for key, value := range prefs.CustomPrefs {
 		custom[key] = apiutil.Ptr(value)
@@ -30,8 +30,8 @@ func DisplayPreferencesDto(id string, prefs *displaypreferences.DisplayPreferenc
 	}
 }
 
-func Settings(req *api.DisplayPreferencesDto) displaypreferences.Settings {
-	settings := displaypreferences.Settings{
+func settings(req *api.DisplayPreferencesDto) displaypreferences.Settings {
+	converted := displaypreferences.Settings{
 		ViewType:           req.ViewType,
 		SortBy:             req.SortBy,
 		IndexBy:            req.IndexBy,
@@ -44,16 +44,16 @@ func Settings(req *api.DisplayPreferencesDto) displaypreferences.Settings {
 	}
 
 	if req.SortOrder != nil {
-		settings.SortOrder = apiutil.Ptr(displaypreferences.SortOrder(*req.SortOrder))
+		converted.SortOrder = apiutil.Ptr(displaypreferences.SortOrder(*req.SortOrder))
 	}
 	if req.ScrollDirection != nil {
-		settings.ScrollDirection = apiutil.Ptr(displaypreferences.ScrollDirection(*req.ScrollDirection))
+		converted.ScrollDirection = apiutil.Ptr(displaypreferences.ScrollDirection(*req.ScrollDirection))
 	}
 	if req.CustomPrefs != nil {
-		settings.CustomPrefs = apiutil.Ptr(customPrefs(*req.CustomPrefs))
+		converted.CustomPrefs = apiutil.Ptr(customPrefs(*req.CustomPrefs))
 	}
 
-	return settings
+	return converted
 }
 
 func customPrefs(prefs map[string]*string) map[string]string {

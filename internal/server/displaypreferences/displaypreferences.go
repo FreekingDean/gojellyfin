@@ -24,7 +24,7 @@ func (s *Server) GetDisplayPreferences(ctx context.Context, request api.GetDispl
 		return nil, err
 	}
 
-	return api.GetDisplayPreferences200JSONResponse(DisplayPreferencesDto(request.DisplayPreferencesId, prefs)), nil
+	return api.GetDisplayPreferences200JSONResponse(displayPreferencesDto(request.DisplayPreferencesId, prefs)), nil
 }
 
 func (s *Server) UpdateDisplayPreferences(ctx context.Context, request api.UpdateDisplayPreferencesRequestObject) (api.UpdateDisplayPreferencesResponseObject, error) {
@@ -39,7 +39,7 @@ func (s *Server) UpdateDisplayPreferences(ctx context.Context, request api.Updat
 		return nil, err
 	}
 
-	if _, err := s.preferences.UpdateSettings(ctx, prefs.ID, Settings(req)); err != nil {
+	if _, err := s.preferences.UpdateSettings(ctx, prefs.ID, settings(req)); err != nil {
 		return nil, err
 	}
 

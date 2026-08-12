@@ -6,10 +6,10 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/tasks"
 )
 
-func TaskInfo(info tasks.Info) api.TaskInfo {
-	triggers := make([]api.TaskTriggerInfo, 0, len(info.Triggers))
+func taskInfo(info tasks.Info) api.TaskInfo {
+	converted := make([]api.TaskTriggerInfo, 0, len(info.Triggers))
 	for _, trigger := range info.Triggers {
-		triggers = append(triggers, api.TaskTriggerInfo{
+		converted = append(converted, api.TaskTriggerInfo{
 			Type:            apiutil.Ptr(trigger.Type),
 			IntervalTicks:   trigger.IntervalTicks,
 			TimeOfDayTicks:  trigger.TimeOfDayTicks,
@@ -26,13 +26,13 @@ func TaskInfo(info tasks.Info) api.TaskInfo {
 		Category:            apiutil.Ptr(info.Category),
 		IsHidden:            apiutil.Ptr(false),
 		State:               apiutil.Ptr(api.TaskState(info.State)),
-		Triggers:            &triggers,
+		Triggers:            &converted,
 		LastExecutionResult: taskResult(info),
 	}
 }
 
-func Triggers(infos []api.TaskTriggerInfo) []tasks.Trigger {
-	triggers := make([]tasks.Trigger, 0, len(infos))
+func triggers(infos []api.TaskTriggerInfo) []tasks.Trigger {
+	converted := make([]tasks.Trigger, 0, len(infos))
 	for _, info := range infos {
 		trigger := tasks.Trigger{
 			Type:            apiutil.Deref(info.Type),
@@ -43,10 +43,10 @@ func Triggers(infos []api.TaskTriggerInfo) []tasks.Trigger {
 		if info.DayOfWeek != nil {
 			trigger.DayOfWeek = apiutil.Ptr(string(*info.DayOfWeek))
 		}
-		triggers = append(triggers, trigger)
+		converted = append(converted, trigger)
 	}
 
-	return triggers
+	return converted
 }
 
 func taskResult(info tasks.Info) *api.TaskResult {

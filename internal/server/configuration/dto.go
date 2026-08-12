@@ -16,7 +16,7 @@ const (
 
 // Read helpers rather than methods, so any tag's handlers can use them.
 func ServerConfiguration(ctx context.Context, store *config.Service) (api.ServerConfiguration, error) {
-	configuration := DefaultServerConfiguration()
+	configuration := defaultServerConfiguration()
 
 	value, err := store.Configuration(ctx, SystemConfigurationKey)
 	if err != nil {
@@ -32,7 +32,7 @@ func ServerConfiguration(ctx context.Context, store *config.Service) (api.Server
 }
 
 func BrandingConfiguration(ctx context.Context, store *config.Service) (api.BrandingOptions, error) {
-	branding := DefaultBrandingOptions()
+	branding := defaultBrandingOptions()
 
 	value, err := store.Configuration(ctx, BrandingConfigurationKey)
 	if err != nil {
@@ -47,7 +47,7 @@ func BrandingConfiguration(ctx context.Context, store *config.Service) (api.Bran
 	return branding, nil
 }
 
-func DefaultServerConfiguration() api.ServerConfiguration {
+func defaultServerConfiguration() api.ServerConfiguration {
 	return api.ServerConfiguration{
 		ServerName:                    apiutil.Ptr("gojellyfin"),
 		UICulture:                     apiutil.Ptr("en-US"),
@@ -82,12 +82,12 @@ func DefaultServerConfiguration() api.ServerConfiguration {
 		PluginRepositories:            &[]api.RepositoryInfo{},
 		ContentTypes:                  &[]api.NameValuePair{},
 		PathSubstitutions:             &[]api.PathSubstitution{},
-		MetadataOptions:               &[]api.MetadataOptions{DefaultMetadataOptions()},
+		MetadataOptions:               &[]api.MetadataOptions{defaultMetadataOptions()},
 		CastReceiverApplications:      &[]api.CastReceiverApplication{},
 	}
 }
 
-func DefaultBrandingOptions() api.BrandingOptions {
+func defaultBrandingOptions() api.BrandingOptions {
 	return api.BrandingOptions{
 		CustomCss:           apiutil.Ptr(""),
 		LoginDisclaimer:     apiutil.Ptr("This is a go server mimicing jellyfin dont be afraid."),
@@ -95,7 +95,7 @@ func DefaultBrandingOptions() api.BrandingOptions {
 	}
 }
 
-func DefaultMetadataOptions() api.MetadataOptions {
+func defaultMetadataOptions() api.MetadataOptions {
 	return api.MetadataOptions{
 		ItemType:                 apiutil.Ptr(""),
 		DisabledMetadataFetchers: &[]string{},
@@ -107,13 +107,13 @@ func DefaultMetadataOptions() api.MetadataOptions {
 	}
 }
 
-func DefaultNamedConfiguration(key string) any {
+func defaultNamedConfiguration(key string) any {
 	switch key {
 	case BrandingConfigurationKey:
-		return DefaultBrandingOptions()
+		return defaultBrandingOptions()
 	case "metadata":
-		return DefaultMetadataOptions()
+		return defaultMetadataOptions()
 	default:
-		return DefaultServerConfiguration()
+		return defaultServerConfiguration()
 	}
 }

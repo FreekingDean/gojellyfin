@@ -11,7 +11,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
-func UserDto(user *users.User) api.UserDto {
+func userDto(user *users.User) api.UserDto {
 	if user == nil {
 		return api.UserDto{}
 	}
@@ -24,8 +24,8 @@ func UserDto(user *users.User) api.UserDto {
 		HasConfiguredEasyPassword: apiutil.Ptr(false),
 		HasConfiguredPassword:     apiutil.Ptr(user.PasswordHash != ""),
 		HasPassword:               apiutil.Ptr(user.PasswordHash != ""),
-		Configuration:             apiutil.Ptr(ConfigurationDto(user.Edges.Configuration)),
-		Policy:                    apiutil.Ptr(PolicyDto(user.Edges.Policy)),
+		Configuration:             apiutil.Ptr(configurationDto(user.Edges.Configuration)),
+		Policy:                    apiutil.Ptr(policyDto(user.Edges.Policy)),
 	}
 
 	if !user.LastLoginAt.IsZero() {
@@ -38,7 +38,7 @@ func UserDto(user *users.User) api.UserDto {
 	return dto
 }
 
-func ConfigurationDto(configuration *users.Configuration) api.UserConfiguration {
+func configurationDto(configuration *users.Configuration) api.UserConfiguration {
 	if configuration == nil {
 		return api.UserConfiguration{}
 	}
@@ -63,7 +63,7 @@ func ConfigurationDto(configuration *users.Configuration) api.UserConfiguration 
 	}
 }
 
-func PolicyDto(policy *users.Policy) api.UserPolicy {
+func policyDto(policy *users.Policy) api.UserPolicy {
 	if policy == nil {
 		return api.UserPolicy{}
 	}
