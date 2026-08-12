@@ -18,7 +18,8 @@ func New(preferences *displaypreferences.Service) *Server {
 }
 
 func (s *Server) GetDisplayPreferences(ctx context.Context, request api.GetDisplayPreferencesRequestObject) (api.GetDisplayPreferencesResponseObject, error) {
-	prefs, err := s.preferences.Preferences(ctx, auth.UserID(ctx), request.Params.Client, request.DisplayPreferencesId)
+	userID := apiutil.Deref(apiutil.OrElse(request.Params.UserId, auth.UserID(ctx)))
+	prefs, err := s.preferences.Preferences(ctx, userID, request.Params.Client, request.DisplayPreferencesId)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +33,8 @@ func (s *Server) UpdateDisplayPreferences(ctx context.Context, request api.Updat
 		return api.UpdateDisplayPreferences204Response{}, nil
 	}
 
-	prefs, err := s.preferences.Preferences(ctx, auth.UserID(ctx), request.Params.Client, request.DisplayPreferencesId)
+	userID := apiutil.Deref(apiutil.OrElse(request.Params.UserId, auth.UserID(ctx)))
+	prefs, err := s.preferences.Preferences(ctx, userID, request.Params.Client, request.DisplayPreferencesId)
 	if err != nil {
 		return nil, err
 	}
