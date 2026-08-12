@@ -27,10 +27,6 @@ func (Unimplemented) GetAlbumArtists(ctx context.Context, request GetAlbumArtist
 	return nil, ErrNotImplemented
 }
 
-func (Unimplemented) GetInstantMixFromArtists2(ctx context.Context, request GetInstantMixFromArtists2RequestObject) (GetInstantMixFromArtists2ResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
 func (Unimplemented) GetInstantMixFromArtists(ctx context.Context, request GetInstantMixFromArtistsRequestObject) (GetInstantMixFromArtistsResponseObject, error) {
 	return nil, ErrNotImplemented
 }
@@ -68,30 +64,6 @@ func (Unimplemented) SearchRemoteLyrics(ctx context.Context, request SearchRemot
 }
 
 func (Unimplemented) DownloadRemoteLyrics(ctx context.Context, request DownloadRemoteLyricsRequestObject) (DownloadRemoteLyricsResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (Unimplemented) GetHlsAudioSegmentLegacyAac(ctx context.Context, request GetHlsAudioSegmentLegacyAacRequestObject) (GetHlsAudioSegmentLegacyAacResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (Unimplemented) GetHlsAudioSegmentLegacyMp3(ctx context.Context, request GetHlsAudioSegmentLegacyMp3RequestObject) (GetHlsAudioSegmentLegacyMp3ResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (Unimplemented) GetHlsAudioSegment(ctx context.Context, request GetHlsAudioSegmentRequestObject) (GetHlsAudioSegmentResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (Unimplemented) GetVariantHlsAudioPlaylist(ctx context.Context, request GetVariantHlsAudioPlaylistRequestObject) (GetVariantHlsAudioPlaylistResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (Unimplemented) GetMasterHlsAudioPlaylist(ctx context.Context, request GetMasterHlsAudioPlaylistRequestObject) (GetMasterHlsAudioPlaylistResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (Unimplemented) HeadMasterHlsAudioPlaylist(ctx context.Context, request HeadMasterHlsAudioPlaylistRequestObject) (HeadMasterHlsAudioPlaylistResponseObject, error) {
 	return nil, ErrNotImplemented
 }
 
@@ -136,6 +108,22 @@ func (Unimplemented) GetPasswordResetProviders(ctx context.Context, request GetP
 }
 
 func (Unimplemented) GetAuthProviders(ctx context.Context, request GetAuthProvidersRequestObject) (GetAuthProvidersResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) ListBackups(ctx context.Context, request ListBackupsRequestObject) (ListBackupsResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) CreateBackup(ctx context.Context, request CreateBackupRequestObject) (CreateBackupResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) GetBackup(ctx context.Context, request GetBackupRequestObject) (GetBackupResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) StartRestoreBackup(ctx context.Context, request StartRestoreBackupRequestObject) (StartRestoreBackupResponseObject, error) {
 	return nil, ErrNotImplemented
 }
 
@@ -236,10 +224,6 @@ func (Unimplemented) GetDirectoryContents(ctx context.Context, request GetDirect
 }
 
 func (Unimplemented) GetDrives(ctx context.Context, request GetDrivesRequestObject) (GetDrivesResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (Unimplemented) GetNetworkShares(ctx context.Context, request GetNetworkSharesRequestObject) (GetNetworkSharesResponseObject, error) {
 	return nil, ErrNotImplemented
 }
 
@@ -375,11 +359,11 @@ func (Unimplemented) GetAncestors(ctx context.Context, request GetAncestorsReque
 	return nil, ErrNotImplemented
 }
 
-func (Unimplemented) UpdateItemContentType(ctx context.Context, request UpdateItemContentTypeRequestObject) (UpdateItemContentTypeResponseObject, error) {
+func (Unimplemented) GetItemCollections(ctx context.Context, request GetItemCollectionsRequestObject) (GetItemCollectionsResponseObject, error) {
 	return nil, ErrNotImplemented
 }
 
-func (Unimplemented) GetCriticReviews(ctx context.Context, request GetCriticReviewsRequestObject) (GetCriticReviewsResponseObject, error) {
+func (Unimplemented) UpdateItemContentType(ctx context.Context, request UpdateItemContentTypeRequestObject) (UpdateItemContentTypeResponseObject, error) {
 	return nil, ErrNotImplemented
 }
 
@@ -663,18 +647,6 @@ func (Unimplemented) GetRecordingFolders(ctx context.Context, request GetRecordi
 	return nil, ErrNotImplemented
 }
 
-func (Unimplemented) GetRecordingGroups(ctx context.Context, request GetRecordingGroupsRequestObject) (GetRecordingGroupsResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (Unimplemented) GetRecordingGroup(ctx context.Context, request GetRecordingGroupRequestObject) (GetRecordingGroupResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (Unimplemented) GetRecordingsSeries(ctx context.Context, request GetRecordingsSeriesRequestObject) (GetRecordingsSeriesResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
 func (Unimplemented) DeleteRecording(ctx context.Context, request DeleteRecordingRequestObject) (DeleteRecordingResponseObject, error) {
 	return nil, ErrNotImplemented
 }
@@ -779,10 +751,6 @@ func (Unimplemented) GetSimilarMovies(ctx context.Context, request GetSimilarMov
 	return nil, ErrNotImplemented
 }
 
-func (Unimplemented) GetMusicGenres(ctx context.Context, request GetMusicGenresRequestObject) (GetMusicGenresResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
 func (Unimplemented) GetInstantMixFromMusicGenreById(ctx context.Context, request GetInstantMixFromMusicGenreByIdRequestObject) (GetInstantMixFromMusicGenreByIdResponseObject, error) {
 	return nil, ErrNotImplemented
 }
@@ -852,18 +820,6 @@ func (Unimplemented) HeadPersonImageByIndex(ctx context.Context, request HeadPer
 }
 
 func (Unimplemented) GetBitrateTestBytes(ctx context.Context, request GetBitrateTestBytesRequestObject) (GetBitrateTestBytesResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (Unimplemented) OnPlaybackStopped(ctx context.Context, request OnPlaybackStoppedRequestObject) (OnPlaybackStoppedResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (Unimplemented) OnPlaybackStart(ctx context.Context, request OnPlaybackStartRequestObject) (OnPlaybackStartResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (Unimplemented) OnPlaybackProgress(ctx context.Context, request OnPlaybackProgressRequestObject) (OnPlaybackProgressResponseObject, error) {
 	return nil, ErrNotImplemented
 }
 
@@ -1239,6 +1195,10 @@ func (Unimplemented) SyncPlayUnpause(ctx context.Context, request SyncPlayUnpaus
 	return nil, ErrNotImplemented
 }
 
+func (Unimplemented) SyncPlayGetGroup(ctx context.Context, request SyncPlayGetGroupRequestObject) (SyncPlayGetGroupResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
 func (Unimplemented) GetLogEntries(ctx context.Context, request GetLogEntriesRequestObject) (GetLogEntriesResponseObject, error) {
 	return nil, ErrNotImplemented
 }
@@ -1248,6 +1208,10 @@ func (Unimplemented) GetConfiguration(ctx context.Context, request GetConfigurat
 }
 
 func (Unimplemented) UpdateConfiguration(ctx context.Context, request UpdateConfigurationRequestObject) (UpdateConfigurationResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) UpdateBrandingConfiguration(ctx context.Context, request UpdateBrandingConfigurationRequestObject) (UpdateBrandingConfigurationResponseObject, error) {
 	return nil, ErrNotImplemented
 }
 
@@ -1275,6 +1239,10 @@ func (Unimplemented) GetPublicSystemInfo(ctx context.Context, request GetPublicS
 	return nil, ErrNotImplemented
 }
 
+func (Unimplemented) GetSystemStorage(ctx context.Context, request GetSystemStorageRequestObject) (GetSystemStorageResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
 func (Unimplemented) GetServerLogs(ctx context.Context, request GetServerLogsRequestObject) (GetServerLogsResponseObject, error) {
 	return nil, ErrNotImplemented
 }
@@ -1296,14 +1264,6 @@ func (Unimplemented) RestartApplication(ctx context.Context, request RestartAppl
 }
 
 func (Unimplemented) ShutdownApplication(ctx context.Context, request ShutdownApplicationRequestObject) (ShutdownApplicationResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (Unimplemented) GetWakeOnLanInfo(ctx context.Context, request GetWakeOnLanInfoRequestObject) (GetWakeOnLanInfoResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (Unimplemented) TmdbClientConfiguration(ctx context.Context, request TmdbClientConfigurationRequestObject) (TmdbClientConfigurationResponseObject, error) {
 	return nil, ErrNotImplemented
 }
 
@@ -1431,10 +1391,6 @@ func (Unimplemented) UpdateUserPolicy(ctx context.Context, request UpdateUserPol
 	return nil, ErrNotImplemented
 }
 
-func (Unimplemented) StopEncodingProcess(ctx context.Context, request StopEncodingProcessRequestObject) (StopEncodingProcessResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
 func (Unimplemented) MergeVersions(ctx context.Context, request MergeVersionsRequestObject) (MergeVersionsResponseObject, error) {
 	return nil, ErrNotImplemented
 }
@@ -1460,34 +1416,6 @@ func (Unimplemented) GetTrickplayHlsPlaylist(ctx context.Context, request GetTri
 }
 
 func (Unimplemented) GetTrickplayTileImage(ctx context.Context, request GetTrickplayTileImageRequestObject) (GetTrickplayTileImageResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (Unimplemented) GetHlsPlaylistLegacy(ctx context.Context, request GetHlsPlaylistLegacyRequestObject) (GetHlsPlaylistLegacyResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (Unimplemented) GetHlsVideoSegmentLegacy(ctx context.Context, request GetHlsVideoSegmentLegacyRequestObject) (GetHlsVideoSegmentLegacyResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (Unimplemented) GetHlsVideoSegment(ctx context.Context, request GetHlsVideoSegmentRequestObject) (GetHlsVideoSegmentResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (Unimplemented) GetLiveHlsStream(ctx context.Context, request GetLiveHlsStreamRequestObject) (GetLiveHlsStreamResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (Unimplemented) GetVariantHlsVideoPlaylist(ctx context.Context, request GetVariantHlsVideoPlaylistRequestObject) (GetVariantHlsVideoPlaylistResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (Unimplemented) GetMasterHlsVideoPlaylist(ctx context.Context, request GetMasterHlsVideoPlaylistRequestObject) (GetMasterHlsVideoPlaylistResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (Unimplemented) HeadMasterHlsVideoPlaylist(ctx context.Context, request HeadMasterHlsVideoPlaylistRequestObject) (HeadMasterHlsVideoPlaylistResponseObject, error) {
 	return nil, ErrNotImplemented
 }
 

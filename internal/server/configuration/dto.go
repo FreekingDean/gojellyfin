@@ -31,16 +31,16 @@ func ServerConfiguration(ctx context.Context, store *config.Service) (api.Server
 	return configuration, nil
 }
 
-func BrandingConfiguration(ctx context.Context, store *config.Service) (api.BrandingOptions, error) {
+func BrandingConfiguration(ctx context.Context, store *config.Service) (api.BrandingOptionsDto, error) {
 	branding := defaultBrandingOptions()
 
 	value, err := store.Configuration(ctx, BrandingConfigurationKey)
 	if err != nil {
-		return api.BrandingOptions{}, err
+		return api.BrandingOptionsDto{}, err
 	}
 	if value != nil {
 		if err := json.Unmarshal(value, &branding); err != nil {
-			return api.BrandingOptions{}, err
+			return api.BrandingOptionsDto{}, err
 		}
 	}
 
@@ -49,46 +49,44 @@ func BrandingConfiguration(ctx context.Context, store *config.Service) (api.Bran
 
 func defaultServerConfiguration() api.ServerConfiguration {
 	return api.ServerConfiguration{
-		ServerName:                    apiutil.Ptr("gojellyfin"),
-		UICulture:                     apiutil.Ptr("en-US"),
-		IsStartupWizardCompleted:      apiutil.Ptr(true),
-		IsPortAuthorized:              apiutil.Ptr(true),
-		QuickConnectAvailable:         apiutil.Ptr(false),
-		EnableMetrics:                 apiutil.Ptr(false),
-		EnableFolderView:              apiutil.Ptr(false),
-		EnableGroupingIntoCollections: apiutil.Ptr(false),
-		DisplaySpecialsWithinSeasons:  apiutil.Ptr(true),
-		PreferredMetadataLanguage:     apiutil.Ptr("en"),
-		MetadataCountryCode:           apiutil.Ptr("US"),
-		LogFileRetentionDays:          apiutil.Ptr(int32(3)),
-		ActivityLogRetentionDays:      apiutil.Ptr(int32(30)),
-		MinResumePct:                  apiutil.Ptr(int32(5)),
-		MaxResumePct:                  apiutil.Ptr(int32(90)),
-		MinResumeDurationSeconds:      apiutil.Ptr(int32(300)),
-		MinAudiobookResume:            apiutil.Ptr(int32(5)),
-		MaxAudiobookResume:            apiutil.Ptr(int32(5)),
-		InactiveSessionThreshold:      apiutil.Ptr(int32(0)),
-		LibraryMonitorDelay:           apiutil.Ptr(int32(60)),
-		LibraryUpdateDuration:         apiutil.Ptr(int32(30)),
-		ImageExtractionTimeoutMs:      apiutil.Ptr(int32(0)),
-		RemoteClientBitrateLimit:      apiutil.Ptr(int32(0)),
-		AllowClientLogUpload:          apiutil.Ptr(true),
-		RemoveOldPlugins:              apiutil.Ptr(false),
-		SortReplaceCharacters:         &[]string{".", "+", "%"},
-		SortRemoveCharacters:          &[]string{",", "&", "-", "{", "}", "'"},
-		SortRemoveWords:               &[]string{"the", "a", "an"},
-		CorsHosts:                     &[]string{"*"},
-		CodecsUsed:                    &[]string{},
-		PluginRepositories:            &[]api.RepositoryInfo{},
-		ContentTypes:                  &[]api.NameValuePair{},
-		PathSubstitutions:             &[]api.PathSubstitution{},
-		MetadataOptions:               &[]api.MetadataOptions{defaultMetadataOptions()},
-		CastReceiverApplications:      &[]api.CastReceiverApplication{},
+		ServerName:                   apiutil.Ptr("gojellyfin"),
+		UICulture:                    apiutil.Ptr("en-US"),
+		IsStartupWizardCompleted:     apiutil.Ptr(true),
+		IsPortAuthorized:             apiutil.Ptr(true),
+		QuickConnectAvailable:        apiutil.Ptr(false),
+		EnableMetrics:                apiutil.Ptr(false),
+		EnableFolderView:             apiutil.Ptr(false),
+		DisplaySpecialsWithinSeasons: apiutil.Ptr(true),
+		PreferredMetadataLanguage:    apiutil.Ptr("en"),
+		MetadataCountryCode:          apiutil.Ptr("US"),
+		LogFileRetentionDays:         apiutil.Ptr(int32(3)),
+		ActivityLogRetentionDays:     apiutil.Ptr(int32(30)),
+		MinResumePct:                 apiutil.Ptr(int32(5)),
+		MaxResumePct:                 apiutil.Ptr(int32(90)),
+		MinResumeDurationSeconds:     apiutil.Ptr(int32(300)),
+		MinAudiobookResume:           apiutil.Ptr(int32(5)),
+		MaxAudiobookResume:           apiutil.Ptr(int32(5)),
+		InactiveSessionThreshold:     apiutil.Ptr(int32(0)),
+		LibraryMonitorDelay:          apiutil.Ptr(int32(60)),
+		LibraryUpdateDuration:        apiutil.Ptr(int32(30)),
+		ImageExtractionTimeoutMs:     apiutil.Ptr(int32(0)),
+		RemoteClientBitrateLimit:     apiutil.Ptr(int32(0)),
+		AllowClientLogUpload:         apiutil.Ptr(true),
+		SortReplaceCharacters:        &[]string{".", "+", "%"},
+		SortRemoveCharacters:         &[]string{",", "&", "-", "{", "}", "'"},
+		SortRemoveWords:              &[]string{"the", "a", "an"},
+		CorsHosts:                    &[]string{"*"},
+		CodecsUsed:                   &[]string{},
+		PluginRepositories:           &[]api.RepositoryInfo{},
+		ContentTypes:                 &[]api.NameValuePair{},
+		PathSubstitutions:            &[]api.PathSubstitution{},
+		MetadataOptions:              &[]api.MetadataOptions{defaultMetadataOptions()},
+		CastReceiverApplications:     &[]api.CastReceiverApplication{},
 	}
 }
 
-func defaultBrandingOptions() api.BrandingOptions {
-	return api.BrandingOptions{
+func defaultBrandingOptions() api.BrandingOptionsDto {
+	return api.BrandingOptionsDto{
 		CustomCss:           apiutil.Ptr(""),
 		LoginDisclaimer:     apiutil.Ptr("This is a go server mimicing jellyfin dont be afraid."),
 		SplashscreenEnabled: apiutil.Ptr(false),

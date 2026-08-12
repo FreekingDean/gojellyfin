@@ -131,7 +131,7 @@ func TestStartAndStopUnknownTask(t *testing.T) {
 func TestUpdateTask(t *testing.T) {
 	server, _ := testServer(t, func(context.Context) error { return nil })
 	body := api.UpdateTaskJSONRequestBody{{
-		Type:            apiutil.Ptr("IntervalTrigger"),
+		Type:            apiutil.Ptr(api.TaskTriggerInfoType("IntervalTrigger")),
 		IntervalTicks:   apiutil.Ptr(int64(36000000000)),
 		MaxRuntimeTicks: apiutil.Ptr(int64(3600000000)),
 		DayOfWeek:       apiutil.Ptr(api.DayOfWeekSunday),

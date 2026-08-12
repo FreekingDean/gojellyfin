@@ -70,12 +70,15 @@ func (s *Server) UpdateDeviceOptions(ctx context.Context, request api.UpdateDevi
 }
 
 func (s *Server) DeleteDevice(ctx context.Context, request api.DeleteDeviceRequestObject) (api.DeleteDeviceResponseObject, error) {
-	if _, err := s.sessions.DeviceByClientID(ctx, request.Params.Id); err != nil {
-		return api.DeleteDevice404JSONResponse{}, nil
+	ids := apiutil.Deref(request.Params.Id)
+	if len(ids) == 0 {
+		return api.DeleteDevice400JSONResponse{}, nil
 	}
 
-	if err := s.sessions.RemoveDevice(ctx, request.Params.Id); err != nil {
-		return nil, err
+	for _, id := range ids {
+		if err := s.sessions.RemoveDevice(ctx, id); err != nil {
+			return nil, err
+		}
 	}
 
 	return api.DeleteDevice204Response{}, nil

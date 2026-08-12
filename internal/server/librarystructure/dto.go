@@ -82,7 +82,6 @@ func optionsDto(options *libraries.Options) api.LibraryOptions {
 		DisabledSubtitleFetchers:                &options.DisabledSubtitleFetchers,
 		SubtitleFetcherOrder:                    &options.SubtitleFetcherOrder,
 		DisabledMediaSegmentProviders:           &options.DisabledMediaSegmentProviders,
-		MediaSegmentProvideOrder:                &options.MediaSegmentProviderOrder,
 		SubtitleDownloadLanguages:               &options.SubtitleDownloadLanguages,
 		DisabledLyricFetchers:                   &options.DisabledLyricFetchers,
 		LyricFetcherOrder:                       &options.LyricFetcherOrder,
@@ -148,9 +147,6 @@ func (s *Server) saveOptions(ctx context.Context, id uuid.UUID, req *api.Library
 	}
 	if req.DisabledMediaSegmentProviders != nil {
 		update.SetDisabledMediaSegmentProviders(*req.DisabledMediaSegmentProviders)
-	}
-	if req.MediaSegmentProvideOrder != nil {
-		update.SetMediaSegmentProviderOrder(*req.MediaSegmentProvideOrder)
 	}
 	if req.SubtitleDownloadLanguages != nil {
 		update.SetSubtitleDownloadLanguages(*req.SubtitleDownloadLanguages)

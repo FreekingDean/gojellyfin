@@ -214,7 +214,7 @@ func TestPlaylistRoundTrip(t *testing.T) {
 
 	songs := fixture.songs(t, "One", "Two", "Three", "Four")
 	playlistID := fixture.create(t, api.CreatePlaylistDto{
-		Name:     ptr("Road Trip"),
+		Name:     "Road Trip",
 		Ids:      &songs,
 		IsPublic: ptr(true),
 	})
@@ -309,8 +309,8 @@ func TestPlaylistRoundTrip(t *testing.T) {
 		if !*playlist.OpenAccess {
 			t.Error("open access = false, want true")
 		}
-		if len(*playlist.ItemIds) != 3 {
-			t.Errorf("item ids = %d, want 3", len(*playlist.ItemIds))
+		if len(playlist.ItemIds) != 3 {
+			t.Errorf("item ids = %d, want 3", len(playlist.ItemIds))
 		}
 	})
 }
@@ -319,7 +319,7 @@ func TestPermissions(t *testing.T) {
 	fixture := newFixture(t)
 
 	songs := fixture.songs(t, "One")
-	playlistID := fixture.create(t, api.CreatePlaylistDto{Name: ptr("Private"), Ids: &songs})
+	playlistID := fixture.create(t, api.CreatePlaylistDto{Name: "Private", Ids: &songs})
 
 	share := func(t *testing.T, canEdit bool) {
 		t.Helper()
@@ -354,7 +354,7 @@ func TestPermissions(t *testing.T) {
 
 	t.Run("an unauthenticated caller may not create", func(t *testing.T) {
 		response, err := fixture.server.CreatePlaylist(context.Background(), api.CreatePlaylistRequestObject{
-			JSONBody: &api.CreatePlaylistDto{Name: ptr("Anonymous")},
+			JSONBody: &api.CreatePlaylistDto{Name: "Anonymous"},
 		})
 		if err != nil {
 			t.Fatalf("failed to create the playlist: %v", err)
@@ -444,7 +444,7 @@ func TestBogusSharesAreRefused(t *testing.T) {
 	fixture := newFixture(t)
 
 	playlistID := fixture.create(t, api.CreatePlaylistDto{
-		Name:  ptr("Guarded"),
+		Name:  "Guarded",
 		Users: &[]api.PlaylistUserPermissions{{UserId: &fixture.guestID}},
 	})
 
@@ -452,7 +452,7 @@ func TestBogusSharesAreRefused(t *testing.T) {
 		unknown := uuid.New()
 		response, err := fixture.server.CreatePlaylist(fixture.owner, api.CreatePlaylistRequestObject{
 			JSONBody: &api.CreatePlaylistDto{
-				Name:  ptr("Doomed"),
+				Name:  "Doomed",
 				Users: &[]api.PlaylistUserPermissions{{UserId: &unknown}},
 			},
 		})

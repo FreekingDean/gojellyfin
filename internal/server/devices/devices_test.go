@@ -397,7 +397,7 @@ func TestDeleteDevice(t *testing.T) {
 		keptSession := fixture.addSession(t, kept, dean, time.Now())
 
 		response, err := fixture.server.DeleteDevice(ctx, api.DeleteDeviceRequestObject{
-			Params: api.DeleteDeviceParams{Id: clientID},
+			Params: api.DeleteDeviceParams{Id: &[]string{clientID}},
 		})
 		if err != nil {
 			t.Fatalf("failed to delete the device: %v", err)
@@ -431,16 +431,27 @@ func TestDeleteDevice(t *testing.T) {
 		}
 	})
 
-	t.Run("404s for an unknown device", func(t *testing.T) {
+	t.Run("succeeds for an unknown device", func(t *testing.T) {
 		response, err := fixture.server.DeleteDevice(ctx, api.DeleteDeviceRequestObject{
-			Params: api.DeleteDeviceParams{Id: "missing"},
+			Params: api.DeleteDeviceParams{Id: &[]string{"missing"}},
 		})
 		if err != nil {
 			t.Fatalf("failed to delete the device: %v", err)
 		}
 
-		if _, ok := response.(api.DeleteDevice404JSONResponse); !ok {
-			t.Errorf("response = %T, want api.DeleteDevice404JSONResponse", response)
+		if _, ok := response.(api.DeleteDevice204Response); !ok {
+			t.Errorf("response = %T, want api.DeleteDevice204Response", response)
+		}
+	})
+
+	t.Run("rejects a request with no device ids", func(t *testing.T) {
+		response, err := fixture.server.DeleteDevice(ctx, api.DeleteDeviceRequestObject{})
+		if err != nil {
+			t.Fatalf("failed to delete the device: %v", err)
+		}
+
+		if _, ok := response.(api.DeleteDevice400JSONResponse); !ok {
+			t.Errorf("response = %T, want api.DeleteDevice400JSONResponse", response)
 		}
 	})
 }

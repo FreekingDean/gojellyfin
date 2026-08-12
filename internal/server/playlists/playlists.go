@@ -36,7 +36,7 @@ func (s *Server) CreatePlaylist(ctx context.Context, request api.CreatePlaylistR
 	}
 
 	params := playlists.CreateParams{
-		Name:       apiutil.Deref(body.Name),
+		Name:       body.Name,
 		MediaType:  mediaType(body.MediaType),
 		OwnerID:    owner,
 		OpenAccess: apiutil.Deref(body.IsPublic),

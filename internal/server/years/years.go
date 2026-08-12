@@ -51,7 +51,7 @@ func yearDto(year int32) api.BaseItemDto {
 		Type:              apiutil.Ptr(api.BaseItemKindYear),
 		ProductionYear:    apiutil.Ptr(year),
 		IsFolder:          apiutil.Ptr(true),
-		ImageTags:         &map[string]string{},
+		ImageTags:         &map[string]*string{},
 		BackdropImageTags: &[]string{},
 	}
 }

@@ -20,7 +20,7 @@ const (
 	dst   = "unimplemented.gen.go"
 	iface = "StrictServerInterface"
 
-	specPath      = "../../../spec/jellyfin-openapi-10.10.0.json"
+	specPath      = "../../../spec/jellyfin-openapi-stable.json"
 	publicDst     = "public.gen.go"
 	queryParamDst = "queryparams.gen.go"
 )

@@ -65,6 +65,7 @@ func (s *Server) ReportPlaybackStopped(ctx context.Context, request api.ReportPl
 	return api.ReportPlaybackStopped204Response{}, nil
 }
 
+/*
 func (s *Server) OnPlaybackStart(ctx context.Context, request api.OnPlaybackStartRequestObject) (api.OnPlaybackStartResponseObject, error) {
 	if err := s.recordProgress(ctx, request.ItemId, 0); err != nil {
 		return nil, err
@@ -88,6 +89,7 @@ func (s *Server) OnPlaybackStopped(ctx context.Context, request api.OnPlaybackSt
 
 	return api.OnPlaybackStopped204Response{}, nil
 }
+*/
 
 func (s *Server) PingPlaybackSession(ctx context.Context, request api.PingPlaybackSessionRequestObject) (api.PingPlaybackSessionResponseObject, error) {
 	return api.PingPlaybackSession204Response{}, nil
