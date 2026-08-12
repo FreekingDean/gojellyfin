@@ -9,7 +9,10 @@ import (
 	creditmodal "github.com/FreekingDean/gojellyfin/internal/store/credit"
 )
 
-const nameDelimiters = ";/|"
+const (
+	nameDelimiters  = ";/|"
+	genreDelimiters = ";/|,"
+)
 
 var studioTags = []string{"studio", "publisher"}
 
@@ -37,20 +40,20 @@ func metadata(probe *ffmpeg.Probe) items.ContainerMetadata {
 	tags := containerTags(probe)
 
 	extracted := items.ContainerMetadata{
-		Genres:  splitGenres(tags["genre"]),
-		Tags:    splitNames(tags["keywords"]),
+		Genres:  splitOn(tags["genre"], genreDelimiters),
+		Tags:    splitOn(tags["keywords"], nameDelimiters),
 		Studios: make([]string, 0),
 		People:  make([]items.Person, 0),
 	}
 
 	for _, tag := range studioTags {
-		extracted.Studios = append(extracted.Studios, splitNames(tags[tag])...)
+		extracted.Studios = append(extracted.Studios, splitOn(tags[tag], nameDelimiters)...)
 	}
 	extracted.Studios = unique(extracted.Studios)
 
 	seen := make(map[items.Person]bool)
 	for _, credit := range creditTags {
-		for _, name := range splitNames(tags[credit.tag]) {
+		for _, name := range splitOn(tags[credit.tag], nameDelimiters) {
 			person := items.Person{Name: name, Kind: credit.kind}
 			if seen[person] {
 				continue
@@ -93,18 +96,10 @@ func tagKey(key string) string {
 	}, key)
 }
 
-func splitNames(value string) []string {
+func splitOn(value, delimiters string) []string {
 	return unique(strings.FieldsFunc(value, func(r rune) bool {
-		return strings.ContainsRune(nameDelimiters, r)
+		return strings.ContainsRune(delimiters, r)
 	}))
-}
-
-func splitGenres(value string) []string {
-	if strings.ContainsAny(value, nameDelimiters) {
-		return splitNames(value)
-	}
-
-	return unique(strings.Split(value, ","))
 }
 
 func unique(values []string) []string {

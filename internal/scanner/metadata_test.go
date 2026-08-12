@@ -20,9 +20,16 @@ func TestMetadataGenres(t *testing.T) {
 		{name: "semicolon separated", value: "Comedy; Drama", want: []string{"Comedy", "Drama"}},
 		{name: "pipe separated", value: "Comedy|Drama", want: []string{"Comedy", "Drama"}},
 		{name: "comma separated", value: "Comedy, Drama", want: []string{"Comedy", "Drama"}},
+		{name: "mixed delimiters", value: "Comedy, Drama; Action", want: []string{"Comedy", "Drama", "Action"}},
+		{name: "mixed slash and comma", value: "Comedy/Drama, Action", want: []string{"Comedy", "Drama", "Action"}},
 		{name: "repeated", value: "Comedy/Comedy", want: []string{"Comedy"}},
+		{name: "padded", value: "  Comedy ,  Drama  ", want: []string{"Comedy", "Drama"}},
+		{name: "empty segments", value: "Comedy;;Drama", want: []string{"Comedy", "Drama"}},
+		{name: "unicode", value: "アニメ, ドラマ", want: []string{"アニメ", "ドラマ"}},
+		{name: "multi word", value: "Science Fiction|Film Noir", want: []string{"Science Fiction", "Film Noir"}},
 		{name: "empty", value: "", want: []string{}},
 		{name: "blanks only", value: " / ", want: []string{}},
+		{name: "delimiters only", value: ",;|/", want: []string{}},
 	}
 
 	for _, test := range cases {
@@ -81,6 +88,28 @@ func TestMetadataPeople(t *testing.T) {
 	}
 	if got := metadata(probe).People; !slices.Equal(got, want) {
 		t.Errorf("people = %v, want %v", got, want)
+	}
+}
+
+func TestMetadataPeopleKeepCommas(t *testing.T) {
+	probe := &ffmpeg.Probe{Format: ffmpeg.Format{Tags: map[string]string{
+		"artist":    "Doe, John; Roe, Jane",
+		"composer":  "Bach, Johann Sebastian",
+		"publisher": "Warner Bros., Inc.",
+	}}}
+
+	got := metadata(probe)
+
+	want := []items.Person{
+		{Name: "Doe, John", Kind: creditmodal.KindArtist},
+		{Name: "Roe, Jane", Kind: creditmodal.KindArtist},
+		{Name: "Bach, Johann Sebastian", Kind: creditmodal.KindComposer},
+	}
+	if !slices.Equal(got.People, want) {
+		t.Errorf("people = %v, want %v", got.People, want)
+	}
+	if want := []string{"Warner Bros., Inc."}; !slices.Equal(got.Studios, want) {
+		t.Errorf("studios = %v, want %v", got.Studios, want)
 	}
 }
 
