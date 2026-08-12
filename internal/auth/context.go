@@ -18,14 +18,16 @@ const (
 	authorizationKey
 )
 
-// What the caller presented. Parsed at the transport edge, but owned here so
-// handlers read it from this package rather than from the middleware.
+// What the caller presented and where it connected from. Parsed at the
+// transport edge, but owned here so handlers read it from this package rather
+// than from the middleware.
 type Authorization struct {
-	Client   string
-	Device   string
-	DeviceID string
-	Version  string
-	Token    string
+	Client     string
+	Device     string
+	DeviceID   string
+	Version    string
+	Token      string
+	RemoteAddr string
 }
 
 func (a Authorization) DeviceInfo() sessions.DeviceInfo {

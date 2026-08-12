@@ -118,7 +118,9 @@ Ordering by a to-many edge makes ent group the query, so the sort column comes b
 
 `internal/auth` owns identity on the context — it puts it on and takes it off, and nothing else knows the keys exist. `middleware.Auth` only parses what the client sent (`Authorization: MediaBrowser …`, `X-Emby-Token`, `?api_key=`) and calls `auth.Authenticate`, which resolves the token through `sessions` and returns a context carrying the session.
 
-`auth.UserID` reads the session's user edge, so `sessions.ByToken` has to eager-load it; the foreign key is unexported and there is nothing to fall back on.
+`auth.UserID` reads the session's user edge, so `sessions.ByToken` has to eager-load it; the foreign key is unexported and there is nothing to fall back on. Nothing else hangs off that query — an edge is eager-loaded when a caller reads it, not in anticipation of one, because `ByToken` runs on every authenticated request and each edge costs another round trip.
+
+`auth.Authorization` carries the connection's `RemoteAddr` alongside what the client sent, because the strict handlers never see the `*http.Request` and `GetEndpointInfo` answers from the caller's address.
 
 Handlers read `auth.UserID(ctx)`, `auth.SessionFrom(ctx)`, `auth.AuthorizationFrom(ctx)` and return `auth.ErrUnauthorized`; `middleware.TokenFrom` is the only thing left in the middleware package that handlers touch, and only because websocket and media URLs cannot send headers.
 

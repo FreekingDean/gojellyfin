@@ -3,6 +3,7 @@ package system
 import (
 	"context"
 
+	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
@@ -62,7 +63,7 @@ func (s *Server) GetSystemInfo(ctx context.Context, request api.GetSystemInfoReq
 		//Deprecated
 		OperatingSystem:            apiutil.Ptr(s.system.OperatingSystem()),
 		OperatingSystemDisplayName: apiutil.Ptr(s.system.OperatingSystem()),
-		CanSelfRestart:             apiutil.Ptr(true),
+		CanSelfRestart:             apiutil.Ptr(false),
 		CanLaunchWebBrowser:        apiutil.Ptr(false),
 		WebPath:                    apiutil.Ptr("/gojelly/jellyfin-web"),
 		ItemsByNamePath:            apiutil.Ptr("/gojelly/items"),
@@ -74,4 +75,16 @@ func (s *Server) GetSystemInfo(ctx context.Context, request api.GetSystemInfoReq
 		EncoderLocation:            apiutil.Ptr(""),
 		SystemArchitecture:         apiutil.Ptr("amd64"),
 	}, nil
+}
+
+func (s *Server) GetPingSystem(ctx context.Context, request api.GetPingSystemRequestObject) (api.GetPingSystemResponseObject, error) {
+	return api.GetPingSystem200JSONResponse(s.system.ProductName()), nil
+}
+
+func (s *Server) PostPingSystem(ctx context.Context, request api.PostPingSystemRequestObject) (api.PostPingSystemResponseObject, error) {
+	return api.PostPingSystem200JSONResponse(s.system.ProductName()), nil
+}
+
+func (s *Server) GetEndpointInfo(ctx context.Context, request api.GetEndpointInfoRequestObject) (api.GetEndpointInfoResponseObject, error) {
+	return api.GetEndpointInfo200JSONResponse(endpointInfo(auth.AuthorizationFrom(ctx).RemoteAddr)), nil
 }

@@ -259,7 +259,3 @@ func (s *Server) GetBitrateTestBytes(ctx context.Context, request api.GetBitrate
 		ContentLength: size,
 	}, nil
 }
-
-func (s *Server) GetEndpointInfo(ctx context.Context, request api.GetEndpointInfoRequestObject) (api.GetEndpointInfoResponseObject, error) {
-	return api.GetEndpointInfo200JSONResponse{}, nil
-}
