@@ -67,11 +67,11 @@ func newFixture(t *testing.T) *fixture {
 	}
 }
 
-func (f *fixture) signIn(t *testing.T, name string, administrator bool) (context.Context, uuid.UUID) {
+func (f *fixture) signIn(t *testing.T, name string) (context.Context, uuid.UUID) {
 	t.Helper()
 
 	ctx := context.Background()
-	user, err := f.users.CreateUser(ctx, f.prefix+name, "hash", administrator)
+	user, err := f.users.CreateUser(ctx, f.prefix+name, "hash", false)
 	if err != nil {
 		t.Fatalf("failed to create the user %q: %v", name, err)
 	}
@@ -93,7 +93,7 @@ func (f *fixture) signIn(t *testing.T, name string, administrator bool) (context
 func TestUserID(t *testing.T) {
 	fixture := newFixture(t)
 
-	ctx, id := fixture.signIn(t, "Dean", false)
+	ctx, id := fixture.signIn(t, "Dean")
 	if got := UserID(ctx); got != id {
 		t.Errorf("UserID = %v, want %v", got, id)
 	}
@@ -102,26 +102,13 @@ func TestUserID(t *testing.T) {
 	}
 }
 
-func TestIsAdministrator(t *testing.T) {
+func TestAuthenticateRejectsAnUnknownToken(t *testing.T) {
 	fixture := newFixture(t)
 
-	t.Run("reads the policy off the authenticated session", func(t *testing.T) {
-		ctx, _ := fixture.signIn(t, "Admin", true)
-		if !IsAdministrator(ctx) {
-			t.Error("IsAdministrator = false, want true for an administrator")
-		}
-	})
-
-	t.Run("denies a user without the policy", func(t *testing.T) {
-		ctx, _ := fixture.signIn(t, "Viewer", false)
-		if IsAdministrator(ctx) {
-			t.Error("IsAdministrator = true, want false for a regular user")
-		}
-	})
-
-	t.Run("denies an anonymous context", func(t *testing.T) {
-		if IsAdministrator(context.Background()) {
-			t.Error("IsAdministrator = true, want false without a session")
-		}
-	})
+	if _, err := fixture.auth.Authenticate(context.Background(), ""); err != ErrUnauthorized {
+		t.Errorf("Authenticate = %v, want %v for an empty token", err, ErrUnauthorized)
+	}
+	if _, err := fixture.auth.Authenticate(context.Background(), uuid.NewString()); err != ErrUnauthorized {
+		t.Errorf("Authenticate = %v, want %v for an unknown token", err, ErrUnauthorized)
+	}
 }

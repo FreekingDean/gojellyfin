@@ -18,8 +18,9 @@ const (
 	authorizationKey
 )
 
-// What the caller presented. Parsed at the transport edge, but owned here so
-// handlers read it from this package rather than from the middleware.
+// What the caller presented and where it connected from. Parsed at the
+// transport edge, but owned here so handlers read it from this package rather
+// than from the middleware.
 type Authorization struct {
 	Client     string
 	Device     string
@@ -84,13 +85,4 @@ func UserID(ctx context.Context) uuid.UUID {
 	}
 
 	return uuid.Nil
-}
-
-func IsAdministrator(ctx context.Context) bool {
-	session := SessionFrom(ctx)
-	if session == nil || session.Edges.User == nil || session.Edges.User.Edges.Policy == nil {
-		return false
-	}
-
-	return session.Edges.User.Edges.Policy.IsAdministrator
 }
