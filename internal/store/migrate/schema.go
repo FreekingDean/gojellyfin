@@ -3,6 +3,7 @@
 package migrate
 
 import (
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/dialect/sql/schema"
 	"entgo.io/ent/schema/field"
 )
@@ -164,16 +165,16 @@ var (
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "client", Type: field.TypeString},
 		{Name: "view_type", Type: field.TypeString, Nullable: true},
-		{Name: "sort_by", Type: field.TypeString, Nullable: true},
+		{Name: "sort_by", Type: field.TypeString, Nullable: true, Default: "SortName"},
 		{Name: "index_by", Type: field.TypeString, Nullable: true},
-		{Name: "sort_order", Type: field.TypeEnum, Enums: []string{"Ascending", "Descending"}},
-		{Name: "scroll_direction", Type: field.TypeEnum, Enums: []string{"Horizontal", "Vertical"}},
-		{Name: "remember_indexing", Type: field.TypeBool},
-		{Name: "remember_sorting", Type: field.TypeBool},
-		{Name: "show_backdrop", Type: field.TypeBool},
-		{Name: "show_sidebar", Type: field.TypeBool},
-		{Name: "primary_image_height", Type: field.TypeInt32},
-		{Name: "primary_image_width", Type: field.TypeInt32},
+		{Name: "sort_order", Type: field.TypeEnum, Enums: []string{"Ascending", "Descending"}, Default: "Ascending"},
+		{Name: "scroll_direction", Type: field.TypeEnum, Enums: []string{"Horizontal", "Vertical"}, Default: "Horizontal"},
+		{Name: "remember_indexing", Type: field.TypeBool, Default: false},
+		{Name: "remember_sorting", Type: field.TypeBool, Default: false},
+		{Name: "show_backdrop", Type: field.TypeBool, Default: true},
+		{Name: "show_sidebar", Type: field.TypeBool, Default: false},
+		{Name: "primary_image_height", Type: field.TypeInt32, Default: 0},
+		{Name: "primary_image_width", Type: field.TypeInt32, Default: 0},
 		{Name: "custom_prefs", Type: field.TypeJSON, Nullable: true},
 		{Name: "item_display_preferences", Type: field.TypeUUID, Nullable: true},
 		{Name: "user_display_preferences", Type: field.TypeUUID},
@@ -202,6 +203,14 @@ var (
 				Name:    "displaypreferences_client_user_display_preferences_item_display_preferences",
 				Unique:  true,
 				Columns: []*schema.Column{DisplayPreferencesColumns[3], DisplayPreferencesColumns[17], DisplayPreferencesColumns[16]},
+			},
+			{
+				Name:    "displaypreferences_client_user_display_preferences",
+				Unique:  true,
+				Columns: []*schema.Column{DisplayPreferencesColumns[3], DisplayPreferencesColumns[17]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "item_display_preferences IS NULL",
+				},
 			},
 		},
 	}

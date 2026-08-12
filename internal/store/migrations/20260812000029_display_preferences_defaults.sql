@@ -1,0 +1,2 @@
+-- Modify "display_preferences" table
+ALTER TABLE "display_preferences" ALTER COLUMN "sort_by" SET DEFAULT 'SortName', ALTER COLUMN "sort_order" SET DEFAULT 'Ascending', ALTER COLUMN "scroll_direction" SET DEFAULT 'Horizontal', ALTER COLUMN "remember_indexing" SET DEFAULT false, ALTER COLUMN "remember_sorting" SET DEFAULT false, ALTER COLUMN "show_backdrop" SET DEFAULT true, ALTER COLUMN "show_sidebar" SET DEFAULT false, ALTER COLUMN "primary_image_height" SET DEFAULT 0, ALTER COLUMN "primary_image_width" SET DEFAULT 0;
