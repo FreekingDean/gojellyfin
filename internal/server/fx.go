@@ -10,6 +10,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
+	"github.com/FreekingDean/gojellyfin/internal/localization"
 	"github.com/FreekingDean/gojellyfin/internal/playlists"
 	"github.com/FreekingDean/gojellyfin/internal/scanner"
 	"github.com/FreekingDean/gojellyfin/internal/server/activitylog"
@@ -29,7 +30,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/library"
 	"github.com/FreekingDean/gojellyfin/internal/server/librarystructure"
 	"github.com/FreekingDean/gojellyfin/internal/server/livetv"
-	"github.com/FreekingDean/gojellyfin/internal/server/localization"
+	serverlocalization "github.com/FreekingDean/gojellyfin/internal/server/localization"
 	"github.com/FreekingDean/gojellyfin/internal/server/mediainfo"
 	"github.com/FreekingDean/gojellyfin/internal/server/musicgenres"
 	"github.com/FreekingDean/gojellyfin/internal/server/persons"
@@ -67,6 +68,7 @@ var Module = fx.Module(
 		displaypreferences.New,
 		filesystem.New,
 		tasks.New,
+		localization.New,
 
 		// one handler service per spec tag
 		apikey.New,
@@ -93,7 +95,7 @@ var Module = fx.Module(
 		library.New,
 		librarystructure.New,
 		itemupdate.New,
-		localization.New,
+		serverlocalization.New,
 		mediainfo.New,
 		serverplaylists.New,
 		playstate.New,

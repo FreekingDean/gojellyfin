@@ -11,6 +11,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
+	"github.com/FreekingDean/gojellyfin/internal/localization"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/store"
@@ -90,8 +91,13 @@ func newFixture(t *testing.T) *fixture {
 		t.Fatalf("failed to create the folder: %v", err)
 	}
 
+	service, err := localization.New()
+	if err != nil {
+		t.Fatalf("failed to load the localization data: %v", err)
+	}
+
 	return &fixture{
-		server:    New(items.New(client), libraries.New(client)),
+		server:    New(items.New(client), libraries.New(client), service),
 		client:    client,
 		libraryID: library.ID,
 		itemID:    record.ID,
