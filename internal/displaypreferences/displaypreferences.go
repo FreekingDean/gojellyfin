@@ -48,11 +48,15 @@ func (s *Service) Preferences(ctx context.Context, userID uuid.UUID, client, id 
 		}
 	}
 	if err != nil {
+		if store.IsConstraintError(err) {
+			if existing, qerr := query.First(ctx); qerr == nil {
+				return existing, nil
+			}
+		}
 		return nil, fmt.Errorf("failed to create display preferences: %w", err)
 	}
 
 	return prefs, nil
-}
 
 func (s *Service) existing(ctx context.Context, userID uuid.UUID, client string, itemID *uuid.UUID) (*DisplayPreferences, error) {
 	query := s.store.DisplayPreferences.Query().
