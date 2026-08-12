@@ -83,7 +83,7 @@ func (s *Server) GetSystemStorage(ctx context.Context, request api.GetSystemStor
 		CacheFolder:            storageDto("cache"),
 		ImageCacheFolder:       storageDto("imagecache"),
 		InternalMetadataFolder: storageDto("internalmetadata"),
-		Libraries:              []api.FolderStorageDto{},
+		Libraries:              []api.LibraryStorageDto{},
 		LogFolder:              storageDto("logs"),
 		TranscodingTempFolder:  storageDto("transcoding"),
 		WebFolder:              storageDto("web"),
@@ -93,11 +93,11 @@ func (s *Server) GetSystemStorage(ctx context.Context, request api.GetSystemStor
 
 func storageDto(name string) api.FolderStorageDto {
 	return api.FolderStorageDto{
-		DeviceId:    fmt.Sprintf("UUID-%s", name),
-		FreeSpace:   apituil.Ptr(int64(1000000000)),
+		DeviceId:    apiutil.Ptr(fmt.Sprintf("UUID-%s", name)),
+		FreeSpace:   apiutil.Ptr(int64(1000000000)),
 		Path:        fmt.Sprintf("/gojelly/%s", name),
-		StorageType: "Fixed",
-		UsedSpace:   apituil.Ptr(int64(100000000)),
+		StorageType: apiutil.Ptr("Fixed"),
+		UsedSpace:   apiutil.Ptr(int64(100000000)),
 	}
 }
 

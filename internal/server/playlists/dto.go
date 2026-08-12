@@ -15,9 +15,9 @@ func playlistDto(playlist *playlists.Playlist, entries []*playlists.Entry, share
 	}
 
 	return api.PlaylistDto{
-		ItemIds:    &itemIDs,
+		ItemIds:    itemIDs,
 		OpenAccess: apiutil.Ptr(playlist.OpenAccess),
-		Shares:     apiutil.Ptr(userPermissions(shares)),
+		Shares:     userPermissions(shares),
 	}
 }
 

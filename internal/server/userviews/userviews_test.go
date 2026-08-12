@@ -98,7 +98,7 @@ func TestGetUserViews(t *testing.T) {
 		CollectionType:    apiutil.Ptr(api.CollectionType(librarymodal.CollectionTypeMovies)),
 		IsFolder:          apiutil.Ptr(true),
 		LocationType:      apiutil.Ptr(api.FileSystem),
-		ImageTags:         &map[string]string{},
+		ImageTags:         &map[string]*string{},
 		BackdropImageTags: &[]string{},
 	}
 	if !reflect.DeepEqual(view, want) {

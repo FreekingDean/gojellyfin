@@ -10,7 +10,7 @@ func taskInfo(info tasks.Info) api.TaskInfo {
 	converted := make([]api.TaskTriggerInfo, 0, len(info.Triggers))
 	for _, trigger := range info.Triggers {
 		converted = append(converted, api.TaskTriggerInfo{
-			Type:            apiutil.Ptr(trigger.Type),
+			Type:            apiutil.Ptr(api.TaskTriggerInfoType(trigger.Type)),
 			IntervalTicks:   trigger.IntervalTicks,
 			TimeOfDayTicks:  trigger.TimeOfDayTicks,
 			MaxRuntimeTicks: trigger.MaxRuntimeTicks,
@@ -35,7 +35,7 @@ func triggers(infos []api.TaskTriggerInfo) []tasks.Trigger {
 	converted := make([]tasks.Trigger, 0, len(infos))
 	for _, info := range infos {
 		trigger := tasks.Trigger{
-			Type:            apiutil.Deref(info.Type),
+			Type:            string(apiutil.Deref(info.Type)),
 			IntervalTicks:   info.IntervalTicks,
 			TimeOfDayTicks:  info.TimeOfDayTicks,
 			MaxRuntimeTicks: info.MaxRuntimeTicks,

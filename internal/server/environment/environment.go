@@ -73,10 +73,6 @@ func (s *Server) GetDrives(ctx context.Context, request api.GetDrivesRequestObje
 	return api.GetDrives200JSONResponse(entries), nil
 }
 
-func (s *Server) GetNetworkShares(ctx context.Context, request api.GetNetworkSharesRequestObject) (api.GetNetworkSharesResponseObject, error) {
-	return api.GetNetworkShares200JSONResponse{}, nil
-}
-
 func (s *Server) GetParentPath(ctx context.Context, request api.GetParentPathRequestObject) (api.GetParentPathResponseObject, error) {
 	if request.Params.Path == "" {
 		return api.GetParentPath200JSONResponse(filesystem.Root), nil
