@@ -28,7 +28,7 @@ type fixture struct {
 	itemID uuid.UUID
 }
 
-func newFixture(t *testing.T) *fixture {
+func connect(t *testing.T) *store.Client {
 	t.Helper()
 
 	connection, err := store.NewStore()
@@ -38,8 +38,19 @@ func newFixture(t *testing.T) *fixture {
 	if err := connection.Start(); err != nil {
 		t.Fatalf("failed to reach the database, set DATABASE_URL: %v", err)
 	}
+	t.Cleanup(func() {
+		if err := connection.Stop(); err != nil {
+			t.Errorf("failed to close the database: %v", err)
+		}
+	})
 
-	client := connection.Client()
+	return connection.Client()
+}
+
+func newFixture(t *testing.T) *fixture {
+	t.Helper()
+
+	client := connect(t)
 	ctx := context.Background()
 	name := t.Name() + "-" + uuid.NewString()
 
@@ -96,9 +107,6 @@ func newFixture(t *testing.T) *fixture {
 		}
 		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the library: %v", err)
-		}
-		if err := connection.Stop(); err != nil {
-			t.Errorf("failed to close the database: %v", err)
 		}
 	})
 
@@ -225,13 +233,16 @@ func TestDisplayPreferencesConcurrentGets(t *testing.T) {
 
 	const callers = 8
 	var group sync.WaitGroup
+	start := make(chan struct{})
 	failures := make(chan error, callers)
 
 	for i := 0; i < callers; i++ {
+		caller := New(displaypreferences.New(connect(t)))
 		group.Add(1)
 		go func() {
 			defer group.Done()
-			_, err := fixture.server.GetDisplayPreferences(fixture.ctx, api.GetDisplayPreferencesRequestObject{
+			<-start
+			_, err := caller.GetDisplayPreferences(fixture.ctx, api.GetDisplayPreferencesRequestObject{
 				DisplayPreferencesId: "usersettings",
 				Params:               api.GetDisplayPreferencesParams{Client: "emby"},
 			})
@@ -239,6 +250,7 @@ func TestDisplayPreferencesConcurrentGets(t *testing.T) {
 		}()
 	}
 
+	close(start)
 	group.Wait()
 	close(failures)
 
