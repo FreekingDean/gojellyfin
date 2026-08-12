@@ -45,6 +45,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/userviews"
 	"github.com/FreekingDean/gojellyfin/internal/server/years"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
+	"github.com/FreekingDean/gojellyfin/internal/tasks"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
@@ -60,6 +61,7 @@ var Module = fx.Module(
 		libraries.New,
 		config.New,
 		filesystem.New,
+		tasks.New,
 
 		// one handler service per spec tag
 		apikey.New,
@@ -104,6 +106,6 @@ var Module = fx.Module(
 	),
 )
 
-func useScanner(library *library.Server, scanner *scanner.Scanner) {
-	library.UseScanner(scanner)
+func useScanner(registry *tasks.Registry, scanner *scanner.Scanner) error {
+	return registry.UseRunner(tasks.LibraryScanID, scanner.Scan)
 }
