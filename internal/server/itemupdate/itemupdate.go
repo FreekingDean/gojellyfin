@@ -7,18 +7,20 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
+	"github.com/FreekingDean/gojellyfin/internal/localization"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
-	"github.com/FreekingDean/gojellyfin/internal/server/localization"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 )
 
 type Server struct {
-	items     *items.Service
-	libraries *libraries.Service
+	items        *items.Service
+	libraries    *libraries.Service
+	localization *localization.Service
 }
 
-func New(items *items.Service, libraries *libraries.Service) *Server {
-	return &Server{items: items, libraries: libraries}
+func New(items *items.Service, libraries *libraries.Service, localization *localization.Service) *Server {
+	return &Server{items: items, libraries: libraries, localization: localization}
 }
 
 func (s *Server) UpdateItem(ctx context.Context, request api.UpdateItemRequestObject) (api.UpdateItemResponseObject, error) {
@@ -58,9 +60,9 @@ func (s *Server) GetMetadataEditorInfo(ctx context.Context, request api.GetMetad
 
 	info := api.MetadataEditorInfo{
 		ContentTypeOptions:    &[]api.NameValuePair{},
-		Countries:             apiutil.Ptr(localization.Countries()),
-		Cultures:              apiutil.Ptr(localization.Cultures()),
-		ParentalRatingOptions: apiutil.Ptr(localization.ParentalRatings()),
+		Countries:             apiutil.Ptr(dto.CountryInfos(s.localization.Countries())),
+		Cultures:              apiutil.Ptr(dto.CultureDtos(s.localization.Cultures())),
+		ParentalRatingOptions: apiutil.Ptr(dto.ParentalRatings(s.localization.ParentalRatings())),
 		ExternalIdInfos:       &[]api.ExternalIdInfo{},
 	}
 	if item.IsFolder {

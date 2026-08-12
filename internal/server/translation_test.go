@@ -13,9 +13,6 @@ import (
 var exportedTranslation = map[string]string{
 	"configuration.ServerConfiguration":   "read helper for system and branding, not translation",
 	"configuration.BrandingConfiguration": "read helper for branding, not translation",
-	"localization.Cultures":               "static table itemupdate serves back, not translation",
-	"localization.Countries":              "static table itemupdate serves back, not translation",
-	"localization.ParentalRatings":        "static table itemupdate serves back, not translation",
 }
 
 func TestTagPackagesKeepTranslationUnexported(t *testing.T) {

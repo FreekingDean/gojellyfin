@@ -1,0 +1,3497 @@
+{
+  "Countries": {
+    "029": {
+      "DisplayName": "Caribbean",
+      "ThreeLetterISOName": "029"
+    },
+    "419": {
+      "DisplayName": "Latin America",
+      "ThreeLetterISOName": "419"
+    },
+    "AE": {
+      "DisplayName": "U.A.E.",
+      "ThreeLetterISOName": "ARE"
+    },
+    "AF": {
+      "DisplayName": "Afghanistan",
+      "ThreeLetterISOName": "AFG"
+    },
+    "AL": {
+      "DisplayName": "Albania",
+      "ThreeLetterISOName": "ALB"
+    },
+    "AM": {
+      "DisplayName": "Armenia",
+      "ThreeLetterISOName": "ARM"
+    },
+    "AR": {
+      "DisplayName": "Argentina",
+      "ThreeLetterISOName": "ARG"
+    },
+    "AT": {
+      "DisplayName": "Austria",
+      "ThreeLetterISOName": "AUT"
+    },
+    "AU": {
+      "DisplayName": "Australia",
+      "ThreeLetterISOName": "AUS",
+      "ParentalRatings": [
+        {
+          "Name": "Exempt",
+          "Level": 0
+        },
+        {
+          "Name": "G",
+          "Level": 0
+        },
+        {
+          "Name": "7+",
+          "Level": 7
+        },
+        {
+          "Name": "PG",
+          "Level": 15
+        },
+        {
+          "Name": "M",
+          "Level": 15
+        },
+        {
+          "Name": "MA",
+          "Level": 15
+        },
+        {
+          "Name": "MA15+",
+          "Level": 15
+        },
+        {
+          "Name": "MA 15+",
+          "Level": 15
+        },
+        {
+          "Name": "16+",
+          "Level": 16
+        },
+        {
+          "Name": "R",
+          "Level": 18
+        },
+        {
+          "Name": "R18+",
+          "Level": 18
+        },
+        {
+          "Name": "R 18+",
+          "Level": 18
+        },
+        {
+          "Name": "18+",
+          "Level": 18
+        },
+        {
+          "Name": "X18+",
+          "Level": 1000
+        },
+        {
+          "Name": "X 18+",
+          "Level": 1000
+        },
+        {
+          "Name": "X",
+          "Level": 1000
+        },
+        {
+          "Name": "RC",
+          "Level": 1001
+        }
+      ]
+    },
+    "AZ": {
+      "DisplayName": "Azerbaijan",
+      "ThreeLetterISOName": "AZE"
+    },
+    "BA": {
+      "DisplayName": "Bosnia and Herzegovina",
+      "ThreeLetterISOName": "BIH"
+    },
+    "BD": {
+      "DisplayName": "Bangladesh",
+      "ThreeLetterISOName": "BGD"
+    },
+    "BE": {
+      "DisplayName": "Belgium",
+      "ThreeLetterISOName": "BEL",
+      "ParentalRatings": [
+        {
+          "Name": "AL",
+          "Level": 0
+        },
+        {
+          "Name": "KT",
+          "Level": 0
+        },
+        {
+          "Name": "TOUS",
+          "Level": 0
+        },
+        {
+          "Name": "MG6",
+          "Level": 6
+        },
+        {
+          "Name": "6",
+          "Level": 6
+        },
+        {
+          "Name": "9",
+          "Level": 9
+        },
+        {
+          "Name": "KNT",
+          "Level": 12
+        },
+        {
+          "Name": "12",
+          "Level": 12
+        },
+        {
+          "Name": "14",
+          "Level": 14
+        },
+        {
+          "Name": "16",
+          "Level": 16
+        },
+        {
+          "Name": "18",
+          "Level": 18
+        }
+      ]
+    },
+    "BG": {
+      "DisplayName": "Bulgaria",
+      "ThreeLetterISOName": "BGR"
+    },
+    "BH": {
+      "DisplayName": "Bahrain",
+      "ThreeLetterISOName": "BHR"
+    },
+    "BN": {
+      "DisplayName": "Brunei Darussalam",
+      "ThreeLetterISOName": "BRN"
+    },
+    "BO": {
+      "DisplayName": "Bolivia",
+      "ThreeLetterISOName": "BOL"
+    },
+    "BR": {
+      "DisplayName": "Brazil",
+      "ThreeLetterISOName": "BRA",
+      "ParentalRatings": [
+        {
+          "Name": "Livre",
+          "Level": 0
+        },
+        {
+          "Name": "L",
+          "Level": 0
+        },
+        {
+          "Name": "ER",
+          "Level": 9
+        },
+        {
+          "Name": "10",
+          "Level": 10
+        },
+        {
+          "Name": "12",
+          "Level": 12
+        },
+        {
+          "Name": "14",
+          "Level": 14
+        },
+        {
+          "Name": "16",
+          "Level": 16
+        },
+        {
+          "Name": "18",
+          "Level": 18
+        }
+      ]
+    },
+    "BW": {
+      "DisplayName": "Botswana",
+      "ThreeLetterISOName": "BWA"
+    },
+    "BY": {
+      "DisplayName": "Belarus",
+      "ThreeLetterISOName": "BLR"
+    },
+    "BZ": {
+      "DisplayName": "Belize",
+      "ThreeLetterISOName": "BLZ"
+    },
+    "CA": {
+      "DisplayName": "Canada",
+      "ThreeLetterISOName": "CAN",
+      "ParentalRatings": [
+        {
+          "Name": "E",
+          "Level": 0
+        },
+        {
+          "Name": "G",
+          "Level": 0
+        },
+        {
+          "Name": "TV-Y",
+          "Level": 0
+        },
+        {
+          "Name": "TV-G",
+          "Level": 0
+        },
+        {
+          "Name": "TV-Y7",
+          "Level": 7
+        },
+        {
+          "Name": "TV-Y7-FV",
+          "Level": 7
+        },
+        {
+          "Name": "PG",
+          "Level": 9
+        },
+        {
+          "Name": "TV-PG",
+          "Level": 9
+        },
+        {
+          "Name": "PG-13",
+          "Level": 13
+        },
+        {
+          "Name": "13+",
+          "Level": 13
+        },
+        {
+          "Name": "TV-14",
+          "Level": 14
+        },
+        {
+          "Name": "14A",
+          "Level": 14
+        },
+        {
+          "Name": "16+",
+          "Level": 16
+        },
+        {
+          "Name": "NC-17",
+          "Level": 17
+        },
+        {
+          "Name": "R",
+          "Level": 18
+        },
+        {
+          "Name": "TV-MA",
+          "Level": 18
+        },
+        {
+          "Name": "18A",
+          "Level": 18
+        },
+        {
+          "Name": "18+",
+          "Level": 18
+        },
+        {
+          "Name": "A",
+          "Level": 1000
+        },
+        {
+          "Name": "Prohibited",
+          "Level": 1001
+        }
+      ]
+    },
+    "CD": {
+      "DisplayName": "Congo [DRC]",
+      "ThreeLetterISOName": "COD"
+    },
+    "CH": {
+      "DisplayName": "Switzerland",
+      "ThreeLetterISOName": "CHE"
+    },
+    "CI": {
+      "DisplayName": "Ivory Coast",
+      "ThreeLetterISOName": "CIV"
+    },
+    "CL": {
+      "DisplayName": "Chile",
+      "ThreeLetterISOName": "CHL"
+    },
+    "CM": {
+      "DisplayName": "Cameroon",
+      "ThreeLetterISOName": "CMR"
+    },
+    "CN": {
+      "DisplayName": "People's Republic of China",
+      "ThreeLetterISOName": "CHN"
+    },
+    "CO": {
+      "DisplayName": "Colombia",
+      "ThreeLetterISOName": "COL",
+      "ParentalRatings": [
+        {
+          "Name": "T",
+          "Level": 0
+        },
+        {
+          "Name": "7",
+          "Level": 7
+        },
+        {
+          "Name": "12",
+          "Level": 12
+        },
+        {
+          "Name": "15",
+          "Level": 15
+        },
+        {
+          "Name": "18",
+          "Level": 18
+        },
+        {
+          "Name": "X",
+          "Level": 1000
+        },
+        {
+          "Name": "Prohibited",
+          "Level": 1001
+        }
+      ]
+    },
+    "CR": {
+      "DisplayName": "Costa Rica",
+      "ThreeLetterISOName": "CRI"
+    },
+    "CS": {
+      "DisplayName": "Serbia and Montenegro (Former)",
+      "ThreeLetterISOName": "SCG"
+    },
+    "CZ": {
+      "DisplayName": "Czech Republic",
+      "ThreeLetterISOName": "CZE"
+    },
+    "DE": {
+      "DisplayName": "Germany",
+      "ThreeLetterISOName": "DEU",
+      "ParentalRatings": [
+        {
+          "Name": "Educational",
+          "Level": 0
+        },
+        {
+          "Name": "Infoprogramm",
+          "Level": 0
+        },
+        {
+          "Name": "FSK-0",
+          "Level": 0
+        },
+        {
+          "Name": "FSK 0",
+          "Level": 0
+        },
+        {
+          "Name": "0",
+          "Level": 0
+        },
+        {
+          "Name": "FSK-6",
+          "Level": 6
+        },
+        {
+          "Name": "FSK 6",
+          "Level": 6
+        },
+        {
+          "Name": "6",
+          "Level": 6
+        },
+        {
+          "Name": "FSK-12",
+          "Level": 12
+        },
+        {
+          "Name": "FSK 12",
+          "Level": 12
+        },
+        {
+          "Name": "12",
+          "Level": 12
+        },
+        {
+          "Name": "FSK-16",
+          "Level": 16
+        },
+        {
+          "Name": "FSK 16",
+          "Level": 16
+        },
+        {
+          "Name": "16",
+          "Level": 16
+        },
+        {
+          "Name": "FSK-18",
+          "Level": 18
+        },
+        {
+          "Name": "FSK 18",
+          "Level": 18
+        },
+        {
+          "Name": "18",
+          "Level": 18
+        }
+      ]
+    },
+    "DK": {
+      "DisplayName": "Denmark",
+      "ThreeLetterISOName": "DNK",
+      "ParentalRatings": [
+        {
+          "Name": "F",
+          "Level": 0
+        },
+        {
+          "Name": "A",
+          "Level": 0
+        },
+        {
+          "Name": "7",
+          "Level": 7
+        },
+        {
+          "Name": "11",
+          "Level": 11
+        },
+        {
+          "Name": "12",
+          "Level": 12
+        },
+        {
+          "Name": "15",
+          "Level": 15
+        },
+        {
+          "Name": "16",
+          "Level": 16
+        }
+      ]
+    },
+    "DO": {
+      "DisplayName": "Dominican Republic",
+      "ThreeLetterISOName": "DOM"
+    },
+    "DZ": {
+      "DisplayName": "Algeria",
+      "ThreeLetterISOName": "DZA"
+    },
+    "EC": {
+      "DisplayName": "Ecuador",
+      "ThreeLetterISOName": "ECU"
+    },
+    "EE": {
+      "DisplayName": "Estonia",
+      "ThreeLetterISOName": "EST"
+    },
+    "EG": {
+      "DisplayName": "Egypt",
+      "ThreeLetterISOName": "EGY"
+    },
+    "ER": {
+      "DisplayName": "Eritrea",
+      "ThreeLetterISOName": "ERI"
+    },
+    "ES": {
+      "DisplayName": "Spain",
+      "ThreeLetterISOName": "ESP",
+      "ParentalRatings": [
+        {
+          "Name": "A",
+          "Level": 0
+        },
+        {
+          "Name": "A/fig",
+          "Level": 0
+        },
+        {
+          "Name": "A/i",
+          "Level": 0
+        },
+        {
+          "Name": "A/fig/i",
+          "Level": 0
+        },
+        {
+          "Name": "APTA",
+          "Level": 0
+        },
+        {
+          "Name": "ERI",
+          "Level": 0
+        },
+        {
+          "Name": "TP",
+          "Level": 0
+        },
+        {
+          "Name": "0+",
+          "Level": 0
+        },
+        {
+          "Name": "6+",
+          "Level": 6
+        },
+        {
+          "Name": "7/fig",
+          "Level": 7
+        },
+        {
+          "Name": "7/i",
+          "Level": 7
+        },
+        {
+          "Name": "7/i/fig",
+          "Level": 7
+        },
+        {
+          "Name": "7",
+          "Level": 7
+        },
+        {
+          "Name": "9+",
+          "Level": 9
+        },
+        {
+          "Name": "10",
+          "Level": 10
+        },
+        {
+          "Name": "12",
+          "Level": 12
+        },
+        {
+          "Name": "12/fig",
+          "Level": 12
+        },
+        {
+          "Name": "13",
+          "Level": 13
+        },
+        {
+          "Name": "14",
+          "Level": 14
+        },
+        {
+          "Name": "16",
+          "Level": 16
+        },
+        {
+          "Name": "16/fig",
+          "Level": 16
+        },
+        {
+          "Name": "18",
+          "Level": 18
+        },
+        {
+          "Name": "18/fig",
+          "Level": 18
+        },
+        {
+          "Name": "X",
+          "Level": 1000
+        },
+        {
+          "Name": "Banned",
+          "Level": 1001
+        }
+      ]
+    },
+    "ET": {
+      "DisplayName": "Ethiopia",
+      "ThreeLetterISOName": "ETH"
+    },
+    "FI": {
+      "DisplayName": "Finland",
+      "ThreeLetterISOName": "FIN",
+      "ParentalRatings": [
+        {
+          "Name": "S",
+          "Level": 0
+        },
+        {
+          "Name": "T",
+          "Level": 0
+        },
+        {
+          "Name": "K7",
+          "Level": 7
+        },
+        {
+          "Name": "7",
+          "Level": 7
+        },
+        {
+          "Name": "K12",
+          "Level": 12
+        },
+        {
+          "Name": "12",
+          "Level": 12
+        },
+        {
+          "Name": "K16",
+          "Level": 16
+        },
+        {
+          "Name": "16",
+          "Level": 16
+        },
+        {
+          "Name": "K18",
+          "Level": 18
+        },
+        {
+          "Name": "18",
+          "Level": 18
+        }
+      ]
+    },
+    "FO": {
+      "DisplayName": "Faroe Islands",
+      "ThreeLetterISOName": "FRO"
+    },
+    "FR": {
+      "DisplayName": "France",
+      "ThreeLetterISOName": "FRA",
+      "ParentalRatings": [
+        {
+          "Name": "Public Averti",
+          "Level": 0
+        },
+        {
+          "Name": "Tous Publics",
+          "Level": 0
+        },
+        {
+          "Name": "TP",
+          "Level": 0
+        },
+        {
+          "Name": "U",
+          "Level": 0
+        },
+        {
+          "Name": "0+",
+          "Level": 0
+        },
+        {
+          "Name": "6+",
+          "Level": 6
+        },
+        {
+          "Name": "9+",
+          "Level": 9
+        },
+        {
+          "Name": "10",
+          "Level": 10
+        },
+        {
+          "Name": "12",
+          "Level": 12
+        },
+        {
+          "Name": "14+",
+          "Level": 14
+        },
+        {
+          "Name": "16",
+          "Level": 16
+        },
+        {
+          "Name": "18",
+          "Level": 18
+        },
+        {
+          "Name": "X",
+          "Level": 1000
+        }
+      ]
+    },
+    "GB": {
+      "DisplayName": "United Kingdom",
+      "ThreeLetterISOName": "GBR",
+      "ParentalRatings": [
+        {
+          "Name": "All",
+          "Level": 0
+        },
+        {
+          "Name": "E",
+          "Level": 0
+        },
+        {
+          "Name": "G",
+          "Level": 0
+        },
+        {
+          "Name": "U",
+          "Level": 0
+        },
+        {
+          "Name": "0+",
+          "Level": 0
+        },
+        {
+          "Name": "6+",
+          "Level": 6
+        },
+        {
+          "Name": "7+",
+          "Level": 7
+        },
+        {
+          "Name": "PG",
+          "Level": 8
+        },
+        {
+          "Name": "9+",
+          "Level": 9
+        },
+        {
+          "Name": "12",
+          "Level": 12
+        },
+        {
+          "Name": "12+",
+          "Level": 12
+        },
+        {
+          "Name": "12A",
+          "Level": 12
+        },
+        {
+          "Name": "Teen",
+          "Level": 13
+        },
+        {
+          "Name": "13+",
+          "Level": 13
+        },
+        {
+          "Name": "14+",
+          "Level": 14
+        },
+        {
+          "Name": "15",
+          "Level": 15
+        },
+        {
+          "Name": "16",
+          "Level": 16
+        },
+        {
+          "Name": "Caution",
+          "Level": 18
+        },
+        {
+          "Name": "18",
+          "Level": 18
+        },
+        {
+          "Name": "Mature",
+          "Level": 1000
+        },
+        {
+          "Name": "Adult",
+          "Level": 1000
+        },
+        {
+          "Name": "R18",
+          "Level": 1000
+        }
+      ]
+    },
+    "GE": {
+      "DisplayName": "Georgia",
+      "ThreeLetterISOName": "GEO"
+    },
+    "GL": {
+      "DisplayName": "Greenland",
+      "ThreeLetterISOName": "GRL"
+    },
+    "GR": {
+      "DisplayName": "Greece",
+      "ThreeLetterISOName": "GRC"
+    },
+    "GT": {
+      "DisplayName": "Guatemala",
+      "ThreeLetterISOName": "GTM"
+    },
+    "HK": {
+      "DisplayName": "Hong Kong S.A.R.",
+      "ThreeLetterISOName": "HKG"
+    },
+    "HN": {
+      "DisplayName": "Honduras",
+      "ThreeLetterISOName": "HND"
+    },
+    "HR": {
+      "DisplayName": "Croatia",
+      "ThreeLetterISOName": "HRV"
+    },
+    "HT": {
+      "DisplayName": "Haiti",
+      "ThreeLetterISOName": "HTI"
+    },
+    "HU": {
+      "DisplayName": "Hungary",
+      "ThreeLetterISOName": "HUN"
+    },
+    "ID": {
+      "DisplayName": "Indonesia",
+      "ThreeLetterISOName": "IDN"
+    },
+    "IE": {
+      "DisplayName": "Ireland",
+      "ThreeLetterISOName": "IRL",
+      "ParentalRatings": [
+        {
+          "Name": "G",
+          "Level": 4
+        },
+        {
+          "Name": "PG",
+          "Level": 12
+        },
+        {
+          "Name": "12",
+          "Level": 12
+        },
+        {
+          "Name": "12A",
+          "Level": 12
+        },
+        {
+          "Name": "12PG",
+          "Level": 12
+        },
+        {
+          "Name": "15",
+          "Level": 15
+        },
+        {
+          "Name": "15A",
+          "Level": 15
+        },
+        {
+          "Name": "16",
+          "Level": 16
+        },
+        {
+          "Name": "18",
+          "Level": 18
+        }
+      ]
+    },
+    "IL": {
+      "DisplayName": "Israel",
+      "ThreeLetterISOName": "ISR"
+    },
+    "IN": {
+      "DisplayName": "India",
+      "ThreeLetterISOName": "IND"
+    },
+    "IQ": {
+      "DisplayName": "Iraq",
+      "ThreeLetterISOName": "IRQ"
+    },
+    "IR": {
+      "DisplayName": "Iran",
+      "ThreeLetterISOName": "IRN"
+    },
+    "IS": {
+      "DisplayName": "Iceland",
+      "ThreeLetterISOName": "ISL"
+    },
+    "IT": {
+      "DisplayName": "Italy",
+      "ThreeLetterISOName": "ITA"
+    },
+    "JM": {
+      "DisplayName": "Jamaica",
+      "ThreeLetterISOName": "JAM"
+    },
+    "JO": {
+      "DisplayName": "Jordan",
+      "ThreeLetterISOName": "JOR"
+    },
+    "JP": {
+      "DisplayName": "Japan",
+      "ThreeLetterISOName": "JPN",
+      "ParentalRatings": [
+        {
+          "Name": "A",
+          "Level": 0
+        },
+        {
+          "Name": "G",
+          "Level": 0
+        },
+        {
+          "Name": "B",
+          "Level": 12
+        },
+        {
+          "Name": "PG12",
+          "Level": 12
+        },
+        {
+          "Name": "C",
+          "Level": 15
+        },
+        {
+          "Name": "15+",
+          "Level": 15
+        },
+        {
+          "Name": "R15+",
+          "Level": 15
+        },
+        {
+          "Name": "16+",
+          "Level": 16
+        },
+        {
+          "Name": "D",
+          "Level": 17
+        },
+        {
+          "Name": "Z",
+          "Level": 18
+        },
+        {
+          "Name": "18+",
+          "Level": 18
+        }
+      ]
+    },
+    "KE": {
+      "DisplayName": "Kenya",
+      "ThreeLetterISOName": "KEN"
+    },
+    "KG": {
+      "DisplayName": "Kyrgyzstan",
+      "ThreeLetterISOName": "KGZ"
+    },
+    "KH": {
+      "DisplayName": "Cambodia",
+      "ThreeLetterISOName": "KHM"
+    },
+    "KR": {
+      "DisplayName": "Korea",
+      "ThreeLetterISOName": "KOR"
+    },
+    "KW": {
+      "DisplayName": "Kuwait",
+      "ThreeLetterISOName": "KWT"
+    },
+    "KZ": {
+      "DisplayName": "Kazakhstan",
+      "ThreeLetterISOName": "KAZ",
+      "ParentalRatings": [
+        {
+          "Name": "K",
+          "Level": 0
+        },
+        {
+          "Name": "БА",
+          "Level": 12
+        },
+        {
+          "Name": "Б14",
+          "Level": 14
+        },
+        {
+          "Name": "E16",
+          "Level": 16
+        },
+        {
+          "Name": "E18",
+          "Level": 18
+        },
+        {
+          "Name": "HA",
+          "Level": 18
+        }
+      ]
+    },
+    "LA": {
+      "DisplayName": "Lao P.D.R.",
+      "ThreeLetterISOName": "LAO"
+    },
+    "LB": {
+      "DisplayName": "Lebanon",
+      "ThreeLetterISOName": "LBN"
+    },
+    "LI": {
+      "DisplayName": "Liechtenstein",
+      "ThreeLetterISOName": "LIE"
+    },
+    "LK": {
+      "DisplayName": "Sri Lanka",
+      "ThreeLetterISOName": "LKA"
+    },
+    "LT": {
+      "DisplayName": "Lithuania",
+      "ThreeLetterISOName": "LTU"
+    },
+    "LU": {
+      "DisplayName": "Luxembourg",
+      "ThreeLetterISOName": "LUX"
+    },
+    "LV": {
+      "DisplayName": "Latvia",
+      "ThreeLetterISOName": "LVA"
+    },
+    "LY": {
+      "DisplayName": "Libya",
+      "ThreeLetterISOName": "LBY"
+    },
+    "MA": {
+      "DisplayName": "Morocco",
+      "ThreeLetterISOName": "MAR"
+    },
+    "MC": {
+      "DisplayName": "Principality of Monaco",
+      "ThreeLetterISOName": "MCO"
+    },
+    "MD": {
+      "DisplayName": "Republica Moldova",
+      "ThreeLetterISOName": "MDA"
+    },
+    "ME": {
+      "DisplayName": "Montenegro",
+      "ThreeLetterISOName": "MNE"
+    },
+    "MK": {
+      "DisplayName": "Macedonia (FYROM)",
+      "ThreeLetterISOName": "MKD"
+    },
+    "ML": {
+      "DisplayName": "Mali",
+      "ThreeLetterISOName": "MLI"
+    },
+    "MN": {
+      "DisplayName": "Mongolia",
+      "ThreeLetterISOName": "MNG"
+    },
+    "MO": {
+      "DisplayName": "Macao S.A.R.",
+      "ThreeLetterISOName": "MAC"
+    },
+    "MT": {
+      "DisplayName": "Malta",
+      "ThreeLetterISOName": "MLT"
+    },
+    "MV": {
+      "DisplayName": "Maldives",
+      "ThreeLetterISOName": "MDV"
+    },
+    "MX": {
+      "DisplayName": "Mexico",
+      "ThreeLetterISOName": "MEX",
+      "ParentalRatings": [
+        {
+          "Name": "A",
+          "Level": 0
+        },
+        {
+          "Name": "AA",
+          "Level": 0
+        },
+        {
+          "Name": "B",
+          "Level": 12
+        },
+        {
+          "Name": "B-15",
+          "Level": 15
+        },
+        {
+          "Name": "C",
+          "Level": 18
+        },
+        {
+          "Name": "D",
+          "Level": 1000
+        }
+      ]
+    },
+    "MY": {
+      "DisplayName": "Malaysia",
+      "ThreeLetterISOName": "MYS"
+    },
+    "NG": {
+      "DisplayName": "Nigeria",
+      "ThreeLetterISOName": "NGA"
+    },
+    "NI": {
+      "DisplayName": "Nicaragua",
+      "ThreeLetterISOName": "NIC"
+    },
+    "NL": {
+      "DisplayName": "Netherlands",
+      "ThreeLetterISOName": "NLD",
+      "ParentalRatings": [
+        {
+          "Name": "AL",
+          "Level": 0
+        },
+        {
+          "Name": "MG6",
+          "Level": 6
+        },
+        {
+          "Name": "6",
+          "Level": 6
+        },
+        {
+          "Name": "9",
+          "Level": 9
+        },
+        {
+          "Name": "12",
+          "Level": 12
+        },
+        {
+          "Name": "14",
+          "Level": 14
+        },
+        {
+          "Name": "16",
+          "Level": 16
+        },
+        {
+          "Name": "18",
+          "Level": 18
+        }
+      ]
+    },
+    "NO": {
+      "DisplayName": "Norway",
+      "ThreeLetterISOName": "NOR",
+      "ParentalRatings": [
+        {
+          "Name": "A",
+          "Level": 0
+        },
+        {
+          "Name": "6",
+          "Level": 6
+        },
+        {
+          "Name": "7",
+          "Level": 7
+        },
+        {
+          "Name": "9",
+          "Level": 9
+        },
+        {
+          "Name": "11",
+          "Level": 11
+        },
+        {
+          "Name": "12",
+          "Level": 12
+        },
+        {
+          "Name": "15",
+          "Level": 15
+        },
+        {
+          "Name": "18",
+          "Level": 18
+        },
+        {
+          "Name": "Not approved",
+          "Level": 1001
+        }
+      ]
+    },
+    "NP": {
+      "DisplayName": "Nepal",
+      "ThreeLetterISOName": "NPL"
+    },
+    "NZ": {
+      "DisplayName": "New Zealand",
+      "ThreeLetterISOName": "NZL",
+      "ParentalRatings": [
+        {
+          "Name": "Exempt",
+          "Level": 0
+        },
+        {
+          "Name": "G",
+          "Level": 0
+        },
+        {
+          "Name": "GY",
+          "Level": 13
+        },
+        {
+          "Name": "PG",
+          "Level": 13
+        },
+        {
+          "Name": "R13",
+          "Level": 13
+        },
+        {
+          "Name": "RP13",
+          "Level": 13
+        },
+        {
+          "Name": "R15",
+          "Level": 15
+        },
+        {
+          "Name": "M",
+          "Level": 16
+        },
+        {
+          "Name": "R16",
+          "Level": 16
+        },
+        {
+          "Name": "RP16",
+          "Level": 16
+        },
+        {
+          "Name": "GA",
+          "Level": 18
+        },
+        {
+          "Name": "R18",
+          "Level": 18
+        },
+        {
+          "Name": "MA",
+          "Level": 1000
+        },
+        {
+          "Name": "R",
+          "Level": 1001
+        },
+        {
+          "Name": "Objectionable",
+          "Level": 1001
+        }
+      ]
+    },
+    "OM": {
+      "DisplayName": "Oman",
+      "ThreeLetterISOName": "OMN"
+    },
+    "PA": {
+      "DisplayName": "Panama",
+      "ThreeLetterISOName": "PAN"
+    },
+    "PE": {
+      "DisplayName": "Peru",
+      "ThreeLetterISOName": "PER"
+    },
+    "PH": {
+      "DisplayName": "Philippines",
+      "ThreeLetterISOName": "PHL"
+    },
+    "PK": {
+      "DisplayName": "Islamic Republic of Pakistan",
+      "ThreeLetterISOName": "PAK"
+    },
+    "PL": {
+      "DisplayName": "Poland",
+      "ThreeLetterISOName": "POL"
+    },
+    "PR": {
+      "DisplayName": "Puerto Rico",
+      "ThreeLetterISOName": "PRI"
+    },
+    "PS": {
+      "DisplayName": "Palestine",
+      "ThreeLetterISOName": "PSE"
+    },
+    "PT": {
+      "DisplayName": "Portugal",
+      "ThreeLetterISOName": "PRT"
+    },
+    "PY": {
+      "DisplayName": "Paraguay",
+      "ThreeLetterISOName": "PRY"
+    },
+    "QA": {
+      "DisplayName": "Qatar",
+      "ThreeLetterISOName": "QAT"
+    },
+    "RE": {
+      "DisplayName": "Réunion",
+      "ThreeLetterISOName": "REU"
+    },
+    "RO": {
+      "DisplayName": "Romania",
+      "ThreeLetterISOName": "ROU",
+      "ParentalRatings": [
+        {
+          "Name": "AG",
+          "Level": 0
+        },
+        {
+          "Name": "AP-12",
+          "Level": 12
+        },
+        {
+          "Name": "N-15",
+          "Level": 15
+        },
+        {
+          "Name": "IM-18",
+          "Level": 18
+        },
+        {
+          "Name": "IM-18-XXX",
+          "Level": 1000
+        },
+        {
+          "Name": "IC",
+          "Level": 1001
+        }
+      ]
+    },
+    "RS": {
+      "DisplayName": "Serbia",
+      "ThreeLetterISOName": "SRB"
+    },
+    "RU": {
+      "DisplayName": "Russia",
+      "ThreeLetterISOName": "RUS",
+      "ParentalRatings": [
+        {
+          "Name": "0+",
+          "Level": 0
+        },
+        {
+          "Name": "6+",
+          "Level": 6
+        },
+        {
+          "Name": "12+",
+          "Level": 12
+        },
+        {
+          "Name": "16+",
+          "Level": 16
+        },
+        {
+          "Name": "18+",
+          "Level": 18
+        },
+        {
+          "Name": "Refused classification",
+          "Level": 1001
+        }
+      ]
+    },
+    "RW": {
+      "DisplayName": "Rwanda",
+      "ThreeLetterISOName": "RWA"
+    },
+    "SA": {
+      "DisplayName": "Saudi Arabia",
+      "ThreeLetterISOName": "SAU"
+    },
+    "SE": {
+      "DisplayName": "Sweden",
+      "ThreeLetterISOName": "SWE",
+      "ParentalRatings": [
+        {
+          "Name": "Alla",
+          "Level": 0
+        },
+        {
+          "Name": "Barntillåten",
+          "Level": 0
+        },
+        {
+          "Name": "Btl",
+          "Level": 0
+        },
+        {
+          "Name": "0+",
+          "Level": 0
+        },
+        {
+          "Name": "7",
+          "Level": 7
+        },
+        {
+          "Name": "9+",
+          "Level": 9
+        },
+        {
+          "Name": "10+",
+          "Level": 10
+        },
+        {
+          "Name": "11",
+          "Level": 11
+        },
+        {
+          "Name": "14",
+          "Level": 14
+        },
+        {
+          "Name": "15",
+          "Level": 15
+        }
+      ]
+    },
+    "SG": {
+      "DisplayName": "Singapore",
+      "ThreeLetterISOName": "SGP"
+    },
+    "SI": {
+      "DisplayName": "Slovenia",
+      "ThreeLetterISOName": "SVN"
+    },
+    "SK": {
+      "DisplayName": "Slovakia",
+      "ThreeLetterISOName": "SVK",
+      "ParentalRatings": [
+        {
+          "Name": "NR",
+          "Level": 0
+        },
+        {
+          "Name": "U",
+          "Level": 0
+        },
+        {
+          "Name": "7",
+          "Level": 7
+        },
+        {
+          "Name": "12",
+          "Level": 12
+        },
+        {
+          "Name": "15",
+          "Level": 15
+        },
+        {
+          "Name": "18",
+          "Level": 18
+        }
+      ]
+    },
+    "SN": {
+      "DisplayName": "Senegal",
+      "ThreeLetterISOName": "SEN"
+    },
+    "SO": {
+      "DisplayName": "Somalia",
+      "ThreeLetterISOName": "SOM"
+    },
+    "SV": {
+      "DisplayName": "El Salvador",
+      "ThreeLetterISOName": "SLV"
+    },
+    "SY": {
+      "DisplayName": "Syria",
+      "ThreeLetterISOName": "SYR"
+    },
+    "TH": {
+      "DisplayName": "Thailand",
+      "ThreeLetterISOName": "THA"
+    },
+    "TJ": {
+      "DisplayName": "Tajikistan",
+      "ThreeLetterISOName": "TAJ"
+    },
+    "TM": {
+      "DisplayName": "Turkmenistan",
+      "ThreeLetterISOName": "TKM"
+    },
+    "TN": {
+      "DisplayName": "Tunisia",
+      "ThreeLetterISOName": "TUN"
+    },
+    "TR": {
+      "DisplayName": "Turkey",
+      "ThreeLetterISOName": "TUR"
+    },
+    "TT": {
+      "DisplayName": "Trinidad and Tobago",
+      "ThreeLetterISOName": "TTO"
+    },
+    "TW": {
+      "DisplayName": "Taiwan",
+      "ThreeLetterISOName": "TWN"
+    },
+    "UA": {
+      "DisplayName": "Ukraine",
+      "ThreeLetterISOName": "UKR"
+    },
+    "US": {
+      "DisplayName": "United States",
+      "ThreeLetterISOName": "USA",
+      "ParentalRatings": [
+        {
+          "Name": "Approved",
+          "Level": 0
+        },
+        {
+          "Name": "G",
+          "Level": 0
+        },
+        {
+          "Name": "TV-G",
+          "Level": 0
+        },
+        {
+          "Name": "TV-Y",
+          "Level": 0
+        },
+        {
+          "Name": "TV-Y7",
+          "Level": 7
+        },
+        {
+          "Name": "TV-Y7-FV",
+          "Level": 7
+        },
+        {
+          "Name": "PG",
+          "Level": 10
+        },
+        {
+          "Name": "PG-13",
+          "Level": 13
+        },
+        {
+          "Name": "TV-PG",
+          "Level": 13
+        },
+        {
+          "Name": "TV-PG-D",
+          "Level": 13
+        },
+        {
+          "Name": "TV-PG-L",
+          "Level": 13
+        },
+        {
+          "Name": "TV-PG-S",
+          "Level": 13
+        },
+        {
+          "Name": "TV-PG-V",
+          "Level": 13
+        },
+        {
+          "Name": "TV-PG-DL",
+          "Level": 13
+        },
+        {
+          "Name": "TV-PG-DS",
+          "Level": 13
+        },
+        {
+          "Name": "TV-PG-DV",
+          "Level": 13
+        },
+        {
+          "Name": "TV-PG-LS",
+          "Level": 13
+        },
+        {
+          "Name": "TV-PG-LV",
+          "Level": 13
+        },
+        {
+          "Name": "TV-PG-SV",
+          "Level": 13
+        },
+        {
+          "Name": "TV-PG-DLS",
+          "Level": 13
+        },
+        {
+          "Name": "TV-PG-DLV",
+          "Level": 13
+        },
+        {
+          "Name": "TV-PG-DSV",
+          "Level": 13
+        },
+        {
+          "Name": "TV-PG-LSV",
+          "Level": 13
+        },
+        {
+          "Name": "TV-PG-DLSV",
+          "Level": 13
+        },
+        {
+          "Name": "TV-14",
+          "Level": 14
+        },
+        {
+          "Name": "TV-14-D",
+          "Level": 14
+        },
+        {
+          "Name": "TV-14-L",
+          "Level": 14
+        },
+        {
+          "Name": "TV-14-S",
+          "Level": 14
+        },
+        {
+          "Name": "TV-14-V",
+          "Level": 14
+        },
+        {
+          "Name": "TV-14-DL",
+          "Level": 14
+        },
+        {
+          "Name": "TV-14-DS",
+          "Level": 14
+        },
+        {
+          "Name": "TV-14-DV",
+          "Level": 14
+        },
+        {
+          "Name": "TV-14-LS",
+          "Level": 14
+        },
+        {
+          "Name": "TV-14-LV",
+          "Level": 14
+        },
+        {
+          "Name": "TV-14-SV",
+          "Level": 14
+        },
+        {
+          "Name": "TV-14-DLS",
+          "Level": 14
+        },
+        {
+          "Name": "TV-14-DLV",
+          "Level": 14
+        },
+        {
+          "Name": "TV-14-DSV",
+          "Level": 14
+        },
+        {
+          "Name": "TV-14-LSV",
+          "Level": 14
+        },
+        {
+          "Name": "TV-14-DLSV",
+          "Level": 14
+        },
+        {
+          "Name": "NC-17",
+          "Level": 17
+        },
+        {
+          "Name": "R",
+          "Level": 17
+        },
+        {
+          "Name": "TV-MA",
+          "Level": 17
+        },
+        {
+          "Name": "TV-MA-L",
+          "Level": 17
+        },
+        {
+          "Name": "TV-MA-S",
+          "Level": 17
+        },
+        {
+          "Name": "TV-MA-V",
+          "Level": 17
+        },
+        {
+          "Name": "TV-MA-LS",
+          "Level": 17
+        },
+        {
+          "Name": "TV-MA-LV",
+          "Level": 17
+        },
+        {
+          "Name": "TV-MA-SV",
+          "Level": 17
+        },
+        {
+          "Name": "TV-MA-LSV",
+          "Level": 17
+        }
+      ]
+    },
+    "UY": {
+      "DisplayName": "Uruguay",
+      "ThreeLetterISOName": "URY"
+    },
+    "UZ": {
+      "DisplayName": "Uzbekistan",
+      "ThreeLetterISOName": "UZB"
+    },
+    "VE": {
+      "DisplayName": "Bolivarian Republic of Venezuela",
+      "ThreeLetterISOName": "VEN"
+    },
+    "VN": {
+      "DisplayName": "Vietnam",
+      "ThreeLetterISOName": "VNM"
+    },
+    "YE": {
+      "DisplayName": "Yemen",
+      "ThreeLetterISOName": "YEM"
+    },
+    "ZA": {
+      "DisplayName": "South Africa",
+      "ThreeLetterISOName": "ZAF"
+    },
+    "ZW": {
+      "DisplayName": "Zimbabwe",
+      "ThreeLetterISOName": "ZWE"
+    }
+  },
+  "Cultures": [
+    {
+      "Name": "Afar",
+      "TwoLetterISOName": "aa",
+      "ThreeLetterISONames": [
+        "aar"
+      ]
+    },
+    {
+      "Name": "Abkhazian",
+      "TwoLetterISOName": "ab",
+      "ThreeLetterISONames": [
+        "abk"
+      ]
+    },
+    {
+      "Name": "Afrikaans",
+      "TwoLetterISOName": "af",
+      "ThreeLetterISONames": [
+        "afr"
+      ]
+    },
+    {
+      "Name": "Akan",
+      "TwoLetterISOName": "ak",
+      "ThreeLetterISONames": [
+        "aka"
+      ]
+    },
+    {
+      "Name": "Albanian",
+      "TwoLetterISOName": "sq",
+      "ThreeLetterISONames": [
+        "alb",
+        "sqi"
+      ]
+    },
+    {
+      "Name": "Amharic",
+      "TwoLetterISOName": "am",
+      "ThreeLetterISONames": [
+        "amh"
+      ]
+    },
+    {
+      "Name": "Arabic",
+      "TwoLetterISOName": "ar",
+      "ThreeLetterISONames": [
+        "ara"
+      ]
+    },
+    {
+      "Name": "Aragonese",
+      "TwoLetterISOName": "an",
+      "ThreeLetterISONames": [
+        "arg"
+      ]
+    },
+    {
+      "Name": "Armenian",
+      "TwoLetterISOName": "hy",
+      "ThreeLetterISONames": [
+        "arm",
+        "hye"
+      ]
+    },
+    {
+      "Name": "Assamese",
+      "TwoLetterISOName": "as",
+      "ThreeLetterISONames": [
+        "asm"
+      ]
+    },
+    {
+      "Name": "Avaric",
+      "TwoLetterISOName": "av",
+      "ThreeLetterISONames": [
+        "ava"
+      ]
+    },
+    {
+      "Name": "Avestan",
+      "TwoLetterISOName": "ae",
+      "ThreeLetterISONames": [
+        "ave"
+      ]
+    },
+    {
+      "Name": "Aymara",
+      "TwoLetterISOName": "ay",
+      "ThreeLetterISONames": [
+        "aym"
+      ]
+    },
+    {
+      "Name": "Azerbaijani",
+      "TwoLetterISOName": "az",
+      "ThreeLetterISONames": [
+        "aze"
+      ]
+    },
+    {
+      "Name": "Bashkir",
+      "TwoLetterISOName": "ba",
+      "ThreeLetterISONames": [
+        "bak"
+      ]
+    },
+    {
+      "Name": "Bambara",
+      "TwoLetterISOName": "bm",
+      "ThreeLetterISONames": [
+        "bam"
+      ]
+    },
+    {
+      "Name": "Basque",
+      "TwoLetterISOName": "eu",
+      "ThreeLetterISONames": [
+        "baq",
+        "eus"
+      ]
+    },
+    {
+      "Name": "Belarusian",
+      "TwoLetterISOName": "be",
+      "ThreeLetterISONames": [
+        "bel"
+      ]
+    },
+    {
+      "Name": "Bengali",
+      "TwoLetterISOName": "bn",
+      "ThreeLetterISONames": [
+        "ben"
+      ]
+    },
+    {
+      "Name": "Bihari languages",
+      "TwoLetterISOName": "bh",
+      "ThreeLetterISONames": [
+        "bih"
+      ]
+    },
+    {
+      "Name": "Bislama",
+      "TwoLetterISOName": "bi",
+      "ThreeLetterISONames": [
+        "bis"
+      ]
+    },
+    {
+      "Name": "Bosnian",
+      "TwoLetterISOName": "bs",
+      "ThreeLetterISONames": [
+        "bos"
+      ]
+    },
+    {
+      "Name": "Breton",
+      "TwoLetterISOName": "br",
+      "ThreeLetterISONames": [
+        "bre"
+      ]
+    },
+    {
+      "Name": "Bulgarian",
+      "TwoLetterISOName": "bg",
+      "ThreeLetterISONames": [
+        "bul"
+      ]
+    },
+    {
+      "Name": "Burmese",
+      "TwoLetterISOName": "my",
+      "ThreeLetterISONames": [
+        "bur",
+        "mya"
+      ]
+    },
+    {
+      "Name": "Catalan; Valencian",
+      "TwoLetterISOName": "ca",
+      "ThreeLetterISONames": [
+        "cat"
+      ]
+    },
+    {
+      "Name": "Chamorro",
+      "TwoLetterISOName": "ch",
+      "ThreeLetterISONames": [
+        "cha"
+      ]
+    },
+    {
+      "Name": "Chechen",
+      "TwoLetterISOName": "ce",
+      "ThreeLetterISONames": [
+        "che"
+      ]
+    },
+    {
+      "Name": "Chinese",
+      "TwoLetterISOName": "zh",
+      "ThreeLetterISONames": [
+        "chi",
+        "zho"
+      ]
+    },
+    {
+      "Name": "Chinese; Bilingual",
+      "TwoLetterISOName": "ze",
+      "ThreeLetterISONames": [
+        "chi",
+        "zho"
+      ]
+    },
+    {
+      "Name": "Chinese; Traditional",
+      "TwoLetterISOName": "zh-tw",
+      "ThreeLetterISONames": [
+        "chi",
+        "zho"
+      ]
+    },
+    {
+      "Name": "Chinese; Hong Kong",
+      "TwoLetterISOName": "zh-hk",
+      "ThreeLetterISONames": [
+        "chi",
+        "zho"
+      ]
+    },
+    {
+      "Name": "Church Slavic; Old Slavonic; Church Slavonic; Old Bulgarian; Old Church Slavonic",
+      "TwoLetterISOName": "cu",
+      "ThreeLetterISONames": [
+        "chu"
+      ]
+    },
+    {
+      "Name": "Chuvash",
+      "TwoLetterISOName": "cv",
+      "ThreeLetterISONames": [
+        "chv"
+      ]
+    },
+    {
+      "Name": "Cornish",
+      "TwoLetterISOName": "kw",
+      "ThreeLetterISONames": [
+        "cor"
+      ]
+    },
+    {
+      "Name": "Corsican",
+      "TwoLetterISOName": "co",
+      "ThreeLetterISONames": [
+        "cos"
+      ]
+    },
+    {
+      "Name": "Cree",
+      "TwoLetterISOName": "cr",
+      "ThreeLetterISONames": [
+        "cre"
+      ]
+    },
+    {
+      "Name": "Czech",
+      "TwoLetterISOName": "cs",
+      "ThreeLetterISONames": [
+        "cze",
+        "ces"
+      ]
+    },
+    {
+      "Name": "Danish",
+      "TwoLetterISOName": "da",
+      "ThreeLetterISONames": [
+        "dan"
+      ]
+    },
+    {
+      "Name": "Divehi; Dhivehi; Maldivian",
+      "TwoLetterISOName": "dv",
+      "ThreeLetterISONames": [
+        "div"
+      ]
+    },
+    {
+      "Name": "Dutch; Flemish",
+      "TwoLetterISOName": "nl",
+      "ThreeLetterISONames": [
+        "dut",
+        "nld"
+      ]
+    },
+    {
+      "Name": "Dzongkha",
+      "TwoLetterISOName": "dz",
+      "ThreeLetterISONames": [
+        "dzo"
+      ]
+    },
+    {
+      "Name": "English",
+      "TwoLetterISOName": "en",
+      "ThreeLetterISONames": [
+        "eng"
+      ]
+    },
+    {
+      "Name": "Esperanto",
+      "TwoLetterISOName": "eo",
+      "ThreeLetterISONames": [
+        "epo"
+      ]
+    },
+    {
+      "Name": "Estonian",
+      "TwoLetterISOName": "et",
+      "ThreeLetterISONames": [
+        "est"
+      ]
+    },
+    {
+      "Name": "Ewe",
+      "TwoLetterISOName": "ee",
+      "ThreeLetterISONames": [
+        "ewe"
+      ]
+    },
+    {
+      "Name": "Faroese",
+      "TwoLetterISOName": "fo",
+      "ThreeLetterISONames": [
+        "fao"
+      ]
+    },
+    {
+      "Name": "Fijian",
+      "TwoLetterISOName": "fj",
+      "ThreeLetterISONames": [
+        "fij"
+      ]
+    },
+    {
+      "Name": "Finnish",
+      "TwoLetterISOName": "fi",
+      "ThreeLetterISONames": [
+        "fin"
+      ]
+    },
+    {
+      "Name": "French",
+      "TwoLetterISOName": "fr",
+      "ThreeLetterISONames": [
+        "fre",
+        "fra"
+      ]
+    },
+    {
+      "Name": "French (Canada)",
+      "TwoLetterISOName": "fr-ca",
+      "ThreeLetterISONames": [
+        "frc"
+      ]
+    },
+    {
+      "Name": "Western Frisian",
+      "TwoLetterISOName": "fy",
+      "ThreeLetterISONames": [
+        "fry"
+      ]
+    },
+    {
+      "Name": "Fulah",
+      "TwoLetterISOName": "ff",
+      "ThreeLetterISONames": [
+        "ful"
+      ]
+    },
+    {
+      "Name": "Georgian",
+      "TwoLetterISOName": "ka",
+      "ThreeLetterISONames": [
+        "geo",
+        "kat"
+      ]
+    },
+    {
+      "Name": "German",
+      "TwoLetterISOName": "de",
+      "ThreeLetterISONames": [
+        "ger",
+        "deu"
+      ]
+    },
+    {
+      "Name": "Gaelic; Scottish Gaelic",
+      "TwoLetterISOName": "gd",
+      "ThreeLetterISONames": [
+        "gla"
+      ]
+    },
+    {
+      "Name": "Irish",
+      "TwoLetterISOName": "ga",
+      "ThreeLetterISONames": [
+        "gle"
+      ]
+    },
+    {
+      "Name": "Galician",
+      "TwoLetterISOName": "gl",
+      "ThreeLetterISONames": [
+        "glg"
+      ]
+    },
+    {
+      "Name": "Manx",
+      "TwoLetterISOName": "gv",
+      "ThreeLetterISONames": [
+        "glv"
+      ]
+    },
+    {
+      "Name": "Greek, Modern (1453-)",
+      "TwoLetterISOName": "el",
+      "ThreeLetterISONames": [
+        "gre",
+        "ell"
+      ]
+    },
+    {
+      "Name": "Guarani",
+      "TwoLetterISOName": "gn",
+      "ThreeLetterISONames": [
+        "grn"
+      ]
+    },
+    {
+      "Name": "Gujarati",
+      "TwoLetterISOName": "gu",
+      "ThreeLetterISONames": [
+        "guj"
+      ]
+    },
+    {
+      "Name": "Haitian; Haitian Creole",
+      "TwoLetterISOName": "ht",
+      "ThreeLetterISONames": [
+        "hat"
+      ]
+    },
+    {
+      "Name": "Hausa",
+      "TwoLetterISOName": "ha",
+      "ThreeLetterISONames": [
+        "hau"
+      ]
+    },
+    {
+      "Name": "Hebrew",
+      "TwoLetterISOName": "he",
+      "ThreeLetterISONames": [
+        "heb"
+      ]
+    },
+    {
+      "Name": "Herero",
+      "TwoLetterISOName": "hz",
+      "ThreeLetterISONames": [
+        "her"
+      ]
+    },
+    {
+      "Name": "Hindi",
+      "TwoLetterISOName": "hi",
+      "ThreeLetterISONames": [
+        "hin"
+      ]
+    },
+    {
+      "Name": "Hiri Motu",
+      "TwoLetterISOName": "ho",
+      "ThreeLetterISONames": [
+        "hmo"
+      ]
+    },
+    {
+      "Name": "Croatian",
+      "TwoLetterISOName": "hr",
+      "ThreeLetterISONames": [
+        "hrv"
+      ]
+    },
+    {
+      "Name": "Hungarian",
+      "TwoLetterISOName": "hu",
+      "ThreeLetterISONames": [
+        "hun"
+      ]
+    },
+    {
+      "Name": "Igbo",
+      "TwoLetterISOName": "ig",
+      "ThreeLetterISONames": [
+        "ibo"
+      ]
+    },
+    {
+      "Name": "Icelandic",
+      "TwoLetterISOName": "is",
+      "ThreeLetterISONames": [
+        "ice",
+        "isl"
+      ]
+    },
+    {
+      "Name": "Ido",
+      "TwoLetterISOName": "io",
+      "ThreeLetterISONames": [
+        "ido"
+      ]
+    },
+    {
+      "Name": "Sichuan Yi; Nuosu",
+      "TwoLetterISOName": "ii",
+      "ThreeLetterISONames": [
+        "iii"
+      ]
+    },
+    {
+      "Name": "Inuktitut",
+      "TwoLetterISOName": "iu",
+      "ThreeLetterISONames": [
+        "iku"
+      ]
+    },
+    {
+      "Name": "Interlingue; Occidental",
+      "TwoLetterISOName": "ie",
+      "ThreeLetterISONames": [
+        "ile"
+      ]
+    },
+    {
+      "Name": "Interlingua (International Auxiliary Language Association)",
+      "TwoLetterISOName": "ia",
+      "ThreeLetterISONames": [
+        "ina"
+      ]
+    },
+    {
+      "Name": "Indonesian",
+      "TwoLetterISOName": "id",
+      "ThreeLetterISONames": [
+        "ind"
+      ]
+    },
+    {
+      "Name": "Inupiaq",
+      "TwoLetterISOName": "ik",
+      "ThreeLetterISONames": [
+        "ipk"
+      ]
+    },
+    {
+      "Name": "Italian",
+      "TwoLetterISOName": "it",
+      "ThreeLetterISONames": [
+        "ita"
+      ]
+    },
+    {
+      "Name": "Javanese",
+      "TwoLetterISOName": "jv",
+      "ThreeLetterISONames": [
+        "jav"
+      ]
+    },
+    {
+      "Name": "Japanese",
+      "TwoLetterISOName": "ja",
+      "ThreeLetterISONames": [
+        "jpn"
+      ]
+    },
+    {
+      "Name": "Kalaallisut; Greenlandic",
+      "TwoLetterISOName": "kl",
+      "ThreeLetterISONames": [
+        "kal"
+      ]
+    },
+    {
+      "Name": "Kannada",
+      "TwoLetterISOName": "kn",
+      "ThreeLetterISONames": [
+        "kan"
+      ]
+    },
+    {
+      "Name": "Kashmiri",
+      "TwoLetterISOName": "ks",
+      "ThreeLetterISONames": [
+        "kas"
+      ]
+    },
+    {
+      "Name": "Kanuri",
+      "TwoLetterISOName": "kr",
+      "ThreeLetterISONames": [
+        "kau"
+      ]
+    },
+    {
+      "Name": "Kazakh",
+      "TwoLetterISOName": "kk",
+      "ThreeLetterISONames": [
+        "kaz"
+      ]
+    },
+    {
+      "Name": "Central Khmer",
+      "TwoLetterISOName": "km",
+      "ThreeLetterISONames": [
+        "khm"
+      ]
+    },
+    {
+      "Name": "Kikuyu; Gikuyu",
+      "TwoLetterISOName": "ki",
+      "ThreeLetterISONames": [
+        "kik"
+      ]
+    },
+    {
+      "Name": "Kinyarwanda",
+      "TwoLetterISOName": "rw",
+      "ThreeLetterISONames": [
+        "kin"
+      ]
+    },
+    {
+      "Name": "Kirghiz; Kyrgyz",
+      "TwoLetterISOName": "ky",
+      "ThreeLetterISONames": [
+        "kir"
+      ]
+    },
+    {
+      "Name": "Komi",
+      "TwoLetterISOName": "kv",
+      "ThreeLetterISONames": [
+        "kom"
+      ]
+    },
+    {
+      "Name": "Kongo",
+      "TwoLetterISOName": "kg",
+      "ThreeLetterISONames": [
+        "kon"
+      ]
+    },
+    {
+      "Name": "Korean",
+      "TwoLetterISOName": "ko",
+      "ThreeLetterISONames": [
+        "kor"
+      ]
+    },
+    {
+      "Name": "Kuanyama; Kwanyama",
+      "TwoLetterISOName": "kj",
+      "ThreeLetterISONames": [
+        "kua"
+      ]
+    },
+    {
+      "Name": "Kurdish",
+      "TwoLetterISOName": "ku",
+      "ThreeLetterISONames": [
+        "kur"
+      ]
+    },
+    {
+      "Name": "Lao",
+      "TwoLetterISOName": "lo",
+      "ThreeLetterISONames": [
+        "lao"
+      ]
+    },
+    {
+      "Name": "Latin",
+      "TwoLetterISOName": "la",
+      "ThreeLetterISONames": [
+        "lat"
+      ]
+    },
+    {
+      "Name": "Latvian",
+      "TwoLetterISOName": "lv",
+      "ThreeLetterISONames": [
+        "lav"
+      ]
+    },
+    {
+      "Name": "Limburgan; Limburger; Limburgish",
+      "TwoLetterISOName": "li",
+      "ThreeLetterISONames": [
+        "lim"
+      ]
+    },
+    {
+      "Name": "Lingala",
+      "TwoLetterISOName": "ln",
+      "ThreeLetterISONames": [
+        "lin"
+      ]
+    },
+    {
+      "Name": "Lithuanian",
+      "TwoLetterISOName": "lt",
+      "ThreeLetterISONames": [
+        "lit"
+      ]
+    },
+    {
+      "Name": "Luxembourgish; Letzeburgesch",
+      "TwoLetterISOName": "lb",
+      "ThreeLetterISONames": [
+        "ltz"
+      ]
+    },
+    {
+      "Name": "Luba-Katanga",
+      "TwoLetterISOName": "lu",
+      "ThreeLetterISONames": [
+        "lub"
+      ]
+    },
+    {
+      "Name": "Ganda",
+      "TwoLetterISOName": "lg",
+      "ThreeLetterISONames": [
+        "lug"
+      ]
+    },
+    {
+      "Name": "Macedonian",
+      "TwoLetterISOName": "mk",
+      "ThreeLetterISONames": [
+        "mac",
+        "mkd"
+      ]
+    },
+    {
+      "Name": "Marshallese",
+      "TwoLetterISOName": "mh",
+      "ThreeLetterISONames": [
+        "mah"
+      ]
+    },
+    {
+      "Name": "Malayalam",
+      "TwoLetterISOName": "ml",
+      "ThreeLetterISONames": [
+        "mal"
+      ]
+    },
+    {
+      "Name": "Maori",
+      "TwoLetterISOName": "mi",
+      "ThreeLetterISONames": [
+        "mao",
+        "mri"
+      ]
+    },
+    {
+      "Name": "Marathi",
+      "TwoLetterISOName": "mr",
+      "ThreeLetterISONames": [
+        "mar"
+      ]
+    },
+    {
+      "Name": "Malay",
+      "TwoLetterISOName": "ms",
+      "ThreeLetterISONames": [
+        "may",
+        "msa"
+      ]
+    },
+    {
+      "Name": "Malagasy",
+      "TwoLetterISOName": "mg",
+      "ThreeLetterISONames": [
+        "mlg"
+      ]
+    },
+    {
+      "Name": "Maltese",
+      "TwoLetterISOName": "mt",
+      "ThreeLetterISONames": [
+        "mlt"
+      ]
+    },
+    {
+      "Name": "Mongolian",
+      "TwoLetterISOName": "mn",
+      "ThreeLetterISONames": [
+        "mon"
+      ]
+    },
+    {
+      "Name": "Nauru",
+      "TwoLetterISOName": "na",
+      "ThreeLetterISONames": [
+        "nau"
+      ]
+    },
+    {
+      "Name": "Navajo; Navaho",
+      "TwoLetterISOName": "nv",
+      "ThreeLetterISONames": [
+        "nav"
+      ]
+    },
+    {
+      "Name": "Ndebele, South; South Ndebele",
+      "TwoLetterISOName": "nr",
+      "ThreeLetterISONames": [
+        "nbl"
+      ]
+    },
+    {
+      "Name": "Ndebele, North; North Ndebele",
+      "TwoLetterISOName": "nd",
+      "ThreeLetterISONames": [
+        "nde"
+      ]
+    },
+    {
+      "Name": "Ndonga",
+      "TwoLetterISOName": "ng",
+      "ThreeLetterISONames": [
+        "ndo"
+      ]
+    },
+    {
+      "Name": "Nepali",
+      "TwoLetterISOName": "ne",
+      "ThreeLetterISONames": [
+        "nep"
+      ]
+    },
+    {
+      "Name": "Norwegian Nynorsk; Nynorsk, Norwegian",
+      "TwoLetterISOName": "nn",
+      "ThreeLetterISONames": [
+        "nno"
+      ]
+    },
+    {
+      "Name": "Bokmål, Norwegian; Norwegian Bokmål",
+      "TwoLetterISOName": "nb",
+      "ThreeLetterISONames": [
+        "nob"
+      ]
+    },
+    {
+      "Name": "Norwegian",
+      "TwoLetterISOName": "no",
+      "ThreeLetterISONames": [
+        "nor"
+      ]
+    },
+    {
+      "Name": "Chichewa; Chewa; Nyanja",
+      "TwoLetterISOName": "ny",
+      "ThreeLetterISONames": [
+        "nya"
+      ]
+    },
+    {
+      "Name": "Occitan (post 1500); Provençal",
+      "TwoLetterISOName": "oc",
+      "ThreeLetterISONames": [
+        "oci"
+      ]
+    },
+    {
+      "Name": "Ojibwa",
+      "TwoLetterISOName": "oj",
+      "ThreeLetterISONames": [
+        "oji"
+      ]
+    },
+    {
+      "Name": "Oriya",
+      "TwoLetterISOName": "or",
+      "ThreeLetterISONames": [
+        "ori"
+      ]
+    },
+    {
+      "Name": "Oromo",
+      "TwoLetterISOName": "om",
+      "ThreeLetterISONames": [
+        "orm"
+      ]
+    },
+    {
+      "Name": "Ossetian; Ossetic",
+      "TwoLetterISOName": "os",
+      "ThreeLetterISONames": [
+        "oss"
+      ]
+    },
+    {
+      "Name": "Panjabi; Punjabi",
+      "TwoLetterISOName": "pa",
+      "ThreeLetterISONames": [
+        "pan"
+      ]
+    },
+    {
+      "Name": "Persian",
+      "TwoLetterISOName": "fa",
+      "ThreeLetterISONames": [
+        "per",
+        "fas"
+      ]
+    },
+    {
+      "Name": "Pali",
+      "TwoLetterISOName": "pi",
+      "ThreeLetterISONames": [
+        "pli"
+      ]
+    },
+    {
+      "Name": "Polish",
+      "TwoLetterISOName": "pl",
+      "ThreeLetterISONames": [
+        "pol"
+      ]
+    },
+    {
+      "Name": "Portuguese",
+      "TwoLetterISOName": "pt",
+      "ThreeLetterISONames": [
+        "por"
+      ]
+    },
+    {
+      "Name": "Portuguese (Portugal)",
+      "TwoLetterISOName": "pt-pt",
+      "ThreeLetterISONames": [
+        "pop"
+      ]
+    },
+    {
+      "Name": "Portuguese (Brazil)",
+      "TwoLetterISOName": "pt-br",
+      "ThreeLetterISONames": [
+        "pob"
+      ]
+    },
+    {
+      "Name": "Pushto; Pashto",
+      "TwoLetterISOName": "ps",
+      "ThreeLetterISONames": [
+        "pus"
+      ]
+    },
+    {
+      "Name": "Quechua",
+      "TwoLetterISOName": "qu",
+      "ThreeLetterISONames": [
+        "que"
+      ]
+    },
+    {
+      "Name": "Romansh",
+      "TwoLetterISOName": "rm",
+      "ThreeLetterISONames": [
+        "roh"
+      ]
+    },
+    {
+      "Name": "Romanian; Moldavian; Moldovan",
+      "TwoLetterISOName": "ro",
+      "ThreeLetterISONames": [
+        "rum",
+        "ron"
+      ]
+    },
+    {
+      "Name": "Rundi",
+      "TwoLetterISOName": "rn",
+      "ThreeLetterISONames": [
+        "run"
+      ]
+    },
+    {
+      "Name": "Russian",
+      "TwoLetterISOName": "ru",
+      "ThreeLetterISONames": [
+        "rus"
+      ]
+    },
+    {
+      "Name": "Sango",
+      "TwoLetterISOName": "sg",
+      "ThreeLetterISONames": [
+        "sag"
+      ]
+    },
+    {
+      "Name": "Sanskrit",
+      "TwoLetterISOName": "sa",
+      "ThreeLetterISONames": [
+        "san"
+      ]
+    },
+    {
+      "Name": "Sinhala; Sinhalese",
+      "TwoLetterISOName": "si",
+      "ThreeLetterISONames": [
+        "sin"
+      ]
+    },
+    {
+      "Name": "Slovak",
+      "TwoLetterISOName": "sk",
+      "ThreeLetterISONames": [
+        "slo",
+        "slk"
+      ]
+    },
+    {
+      "Name": "Slovenian",
+      "TwoLetterISOName": "sl",
+      "ThreeLetterISONames": [
+        "slv"
+      ]
+    },
+    {
+      "Name": "Northern Sami",
+      "TwoLetterISOName": "se",
+      "ThreeLetterISONames": [
+        "sme"
+      ]
+    },
+    {
+      "Name": "Samoan",
+      "TwoLetterISOName": "sm",
+      "ThreeLetterISONames": [
+        "smo"
+      ]
+    },
+    {
+      "Name": "Shona",
+      "TwoLetterISOName": "sn",
+      "ThreeLetterISONames": [
+        "sna"
+      ]
+    },
+    {
+      "Name": "Sindhi",
+      "TwoLetterISOName": "sd",
+      "ThreeLetterISONames": [
+        "snd"
+      ]
+    },
+    {
+      "Name": "Somali",
+      "TwoLetterISOName": "so",
+      "ThreeLetterISONames": [
+        "som"
+      ]
+    },
+    {
+      "Name": "Sotho, Southern",
+      "TwoLetterISOName": "st",
+      "ThreeLetterISONames": [
+        "sot"
+      ]
+    },
+    {
+      "Name": "Spanish; Latin",
+      "TwoLetterISOName": "es-mx",
+      "ThreeLetterISONames": [
+        "spa"
+      ]
+    },
+    {
+      "Name": "Spanish; Castilian",
+      "TwoLetterISOName": "es",
+      "ThreeLetterISONames": [
+        "spa"
+      ]
+    },
+    {
+      "Name": "Sardinian",
+      "TwoLetterISOName": "sc",
+      "ThreeLetterISONames": [
+        "srd"
+      ]
+    },
+    {
+      "Name": "Serbian",
+      "TwoLetterISOName": "sr",
+      "ThreeLetterISONames": [
+        "srp",
+        "scc"
+      ]
+    },
+    {
+      "Name": "Swati",
+      "TwoLetterISOName": "ss",
+      "ThreeLetterISONames": [
+        "ssw"
+      ]
+    },
+    {
+      "Name": "Sundanese",
+      "TwoLetterISOName": "su",
+      "ThreeLetterISONames": [
+        "sun"
+      ]
+    },
+    {
+      "Name": "Swahili",
+      "TwoLetterISOName": "sw",
+      "ThreeLetterISONames": [
+        "swa"
+      ]
+    },
+    {
+      "Name": "Swedish",
+      "TwoLetterISOName": "sv",
+      "ThreeLetterISONames": [
+        "swe"
+      ]
+    },
+    {
+      "Name": "Tahitian",
+      "TwoLetterISOName": "ty",
+      "ThreeLetterISONames": [
+        "tah"
+      ]
+    },
+    {
+      "Name": "Tamil",
+      "TwoLetterISOName": "ta",
+      "ThreeLetterISONames": [
+        "tam"
+      ]
+    },
+    {
+      "Name": "Tatar",
+      "TwoLetterISOName": "tt",
+      "ThreeLetterISONames": [
+        "tat"
+      ]
+    },
+    {
+      "Name": "Telugu",
+      "TwoLetterISOName": "te",
+      "ThreeLetterISONames": [
+        "tel"
+      ]
+    },
+    {
+      "Name": "Tajik",
+      "TwoLetterISOName": "tg",
+      "ThreeLetterISONames": [
+        "tgk"
+      ]
+    },
+    {
+      "Name": "Tagalog",
+      "TwoLetterISOName": "tl",
+      "ThreeLetterISONames": [
+        "tgl"
+      ]
+    },
+    {
+      "Name": "Thai",
+      "TwoLetterISOName": "th",
+      "ThreeLetterISONames": [
+        "tha"
+      ]
+    },
+    {
+      "Name": "Tibetan",
+      "TwoLetterISOName": "bo",
+      "ThreeLetterISONames": [
+        "tib",
+        "bod"
+      ]
+    },
+    {
+      "Name": "Tigrinya",
+      "TwoLetterISOName": "ti",
+      "ThreeLetterISONames": [
+        "tir"
+      ]
+    },
+    {
+      "Name": "Tonga (Tonga Islands)",
+      "TwoLetterISOName": "to",
+      "ThreeLetterISONames": [
+        "ton"
+      ]
+    },
+    {
+      "Name": "Tswana",
+      "TwoLetterISOName": "tn",
+      "ThreeLetterISONames": [
+        "tsn"
+      ]
+    },
+    {
+      "Name": "Tsonga",
+      "TwoLetterISOName": "ts",
+      "ThreeLetterISONames": [
+        "tso"
+      ]
+    },
+    {
+      "Name": "Turkmen",
+      "TwoLetterISOName": "tk",
+      "ThreeLetterISONames": [
+        "tuk"
+      ]
+    },
+    {
+      "Name": "Turkish",
+      "TwoLetterISOName": "tr",
+      "ThreeLetterISONames": [
+        "tur"
+      ]
+    },
+    {
+      "Name": "Twi",
+      "TwoLetterISOName": "tw",
+      "ThreeLetterISONames": [
+        "twi"
+      ]
+    },
+    {
+      "Name": "Uighur; Uyghur",
+      "TwoLetterISOName": "ug",
+      "ThreeLetterISONames": [
+        "uig"
+      ]
+    },
+    {
+      "Name": "Ukrainian",
+      "TwoLetterISOName": "uk",
+      "ThreeLetterISONames": [
+        "ukr"
+      ]
+    },
+    {
+      "Name": "Urdu",
+      "TwoLetterISOName": "ur",
+      "ThreeLetterISONames": [
+        "urd"
+      ]
+    },
+    {
+      "Name": "Uzbek",
+      "TwoLetterISOName": "uz",
+      "ThreeLetterISONames": [
+        "uzb"
+      ]
+    },
+    {
+      "Name": "Venda",
+      "TwoLetterISOName": "ve",
+      "ThreeLetterISONames": [
+        "ven"
+      ]
+    },
+    {
+      "Name": "Vietnamese",
+      "TwoLetterISOName": "vi",
+      "ThreeLetterISONames": [
+        "vie"
+      ]
+    },
+    {
+      "Name": "Volapük",
+      "TwoLetterISOName": "vo",
+      "ThreeLetterISONames": [
+        "vol"
+      ]
+    },
+    {
+      "Name": "Welsh",
+      "TwoLetterISOName": "cy",
+      "ThreeLetterISONames": [
+        "wel",
+        "cym"
+      ]
+    },
+    {
+      "Name": "Walloon",
+      "TwoLetterISOName": "wa",
+      "ThreeLetterISONames": [
+        "wln"
+      ]
+    },
+    {
+      "Name": "Wolof",
+      "TwoLetterISOName": "wo",
+      "ThreeLetterISONames": [
+        "wol"
+      ]
+    },
+    {
+      "Name": "Xhosa",
+      "TwoLetterISOName": "xh",
+      "ThreeLetterISONames": [
+        "xho"
+      ]
+    },
+    {
+      "Name": "Yiddish",
+      "TwoLetterISOName": "yi",
+      "ThreeLetterISONames": [
+        "yid"
+      ]
+    },
+    {
+      "Name": "Yoruba",
+      "TwoLetterISOName": "yo",
+      "ThreeLetterISONames": [
+        "yor"
+      ]
+    },
+    {
+      "Name": "Zhuang; Chuang",
+      "TwoLetterISOName": "za",
+      "ThreeLetterISONames": [
+        "zha"
+      ]
+    },
+    {
+      "Name": "Zulu",
+      "TwoLetterISOName": "zu",
+      "ThreeLetterISONames": [
+        "zul"
+      ]
+    }
+  ],
+  "Options": [
+    {
+      "Name": "Afrikaans",
+      "Value": "af"
+    },
+    {
+      "Name": "العربية",
+      "Value": "ar"
+    },
+    {
+      "Name": "Беларуская",
+      "Value": "be"
+    },
+    {
+      "Name": "Български",
+      "Value": "bg-BG"
+    },
+    {
+      "Name": "বাংলা (বাংলাদেশ)",
+      "Value": "bn"
+    },
+    {
+      "Name": "Català",
+      "Value": "ca"
+    },
+    {
+      "Name": "Čeština",
+      "Value": "cs"
+    },
+    {
+      "Name": "Cymraeg",
+      "Value": "cy"
+    },
+    {
+      "Name": "Dansk",
+      "Value": "da"
+    },
+    {
+      "Name": "Deutsch",
+      "Value": "de"
+    },
+    {
+      "Name": "English (United Kingdom)",
+      "Value": "en-GB"
+    },
+    {
+      "Name": "English",
+      "Value": "en-US"
+    },
+    {
+      "Name": "Ελληνικά",
+      "Value": "el"
+    },
+    {
+      "Name": "Esperanto",
+      "Value": "eo"
+    },
+    {
+      "Name": "Español",
+      "Value": "es"
+    },
+    {
+      "Name": "Español americano",
+      "Value": "es_419"
+    },
+    {
+      "Name": "Español (Argentina)",
+      "Value": "es-AR"
+    },
+    {
+      "Name": "Español (Dominicana)",
+      "Value": "es_DO"
+    },
+    {
+      "Name": "Español (México)",
+      "Value": "es-MX"
+    },
+    {
+      "Name": "Eesti",
+      "Value": "et"
+    },
+    {
+      "Name": "Basque",
+      "Value": "eu"
+    },
+    {
+      "Name": "فارسی",
+      "Value": "fa"
+    },
+    {
+      "Name": "Suomi",
+      "Value": "fi"
+    },
+    {
+      "Name": "Filipino",
+      "Value": "fil"
+    },
+    {
+      "Name": "Français",
+      "Value": "fr"
+    },
+    {
+      "Name": "Français (Canada)",
+      "Value": "fr-CA"
+    },
+    {
+      "Name": "Galego",
+      "Value": "gl"
+    },
+    {
+      "Name": "Schwiizerdütsch",
+      "Value": "gsw"
+    },
+    {
+      "Name": "עִבְרִית",
+      "Value": "he"
+    },
+    {
+      "Name": "हिन्दी",
+      "Value": "hi"
+    },
+    {
+      "Name": "Hrvatski",
+      "Value": "hr"
+    },
+    {
+      "Name": "Magyar",
+      "Value": "hu"
+    },
+    {
+      "Name": "Bahasa Indonesia",
+      "Value": "id"
+    },
+    {
+      "Name": "Íslenska",
+      "Value": "is"
+    },
+    {
+      "Name": "Italiano",
+      "Value": "it"
+    },
+    {
+      "Name": "日本語",
+      "Value": "ja"
+    },
+    {
+      "Name": "Qazaqşa",
+      "Value": "kk"
+    },
+    {
+      "Name": "한국어",
+      "Value": "ko"
+    },
+    {
+      "Name": "Lietuvių",
+      "Value": "lt"
+    },
+    {
+      "Name": "Latviešu",
+      "Value": "lv"
+    },
+    {
+      "Name": "Македонски",
+      "Value": "mk"
+    },
+    {
+      "Name": "മലയാളം",
+      "Value": "ml"
+    },
+    {
+      "Name": "मराठी",
+      "Value": "mr"
+    },
+    {
+      "Name": "Bahasa Melayu",
+      "Value": "ms"
+    },
+    {
+      "Name": "Norsk bokmål",
+      "Value": "nb"
+    },
+    {
+      "Name": "नेपाली",
+      "Value": "ne"
+    },
+    {
+      "Name": "Nederlands",
+      "Value": "nl"
+    },
+    {
+      "Name": "Norsk nynorsk",
+      "Value": "nn"
+    },
+    {
+      "Name": "ਪੰਜਾਬੀ",
+      "Value": "pa"
+    },
+    {
+      "Name": "Polski",
+      "Value": "pl"
+    },
+    {
+      "Name": "Pirate",
+      "Value": "pr"
+    },
+    {
+      "Name": "Português",
+      "Value": "pt"
+    },
+    {
+      "Name": "Português (Brasil)",
+      "Value": "pt-BR"
+    },
+    {
+      "Name": "Português (Portugal)",
+      "Value": "pt-PT"
+    },
+    {
+      "Name": "Românește",
+      "Value": "ro"
+    },
+    {
+      "Name": "Русский",
+      "Value": "ru"
+    },
+    {
+      "Name": "Slovenčina",
+      "Value": "sk"
+    },
+    {
+      "Name": "Slovenščina",
+      "Value": "sl-SI"
+    },
+    {
+      "Name": "Shqip",
+      "Value": "sq"
+    },
+    {
+      "Name": "Српски",
+      "Value": "sr"
+    },
+    {
+      "Name": "Svenska",
+      "Value": "sv"
+    },
+    {
+      "Name": "தமிழ்",
+      "Value": "ta"
+    },
+    {
+      "Name": "తెలుగు",
+      "Value": "te"
+    },
+    {
+      "Name": "ภาษาไทย",
+      "Value": "th"
+    },
+    {
+      "Name": "Türkçe",
+      "Value": "tr"
+    },
+    {
+      "Name": "Українська",
+      "Value": "uk"
+    },
+    {
+      "Name": "اُردُو",
+      "Value": "ur_PK"
+    },
+    {
+      "Name": "Tiếng Việt",
+      "Value": "vi"
+    },
+    {
+      "Name": "汉语 (简体字)",
+      "Value": "zh-CN"
+    },
+    {
+      "Name": "漢語 (繁體字)",
+      "Value": "zh-TW"
+    },
+    {
+      "Name": "廣東話 (香港)",
+      "Value": "zh-HK"
+    }
+  ],
+  "FallbackRatings": [
+    {
+      "Name": "E",
+      "Level": 0
+    },
+    {
+      "Name": "EC",
+      "Level": 0
+    },
+    {
+      "Name": "T",
+      "Level": 7
+    },
+    {
+      "Name": "M",
+      "Level": 18
+    },
+    {
+      "Name": "AO",
+      "Level": 18
+    },
+    {
+      "Name": "UR",
+      "Level": 18
+    },
+    {
+      "Name": "RP",
+      "Level": 18
+    },
+    {
+      "Name": "X",
+      "Level": 1000
+    },
+    {
+      "Name": "XX",
+      "Level": 1000
+    },
+    {
+      "Name": "XXX",
+      "Level": 1000
+    },
+    {
+      "Name": "XXXX",
+      "Level": 1000
+    }
+  ]
+}
