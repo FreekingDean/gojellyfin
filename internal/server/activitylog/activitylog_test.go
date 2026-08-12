@@ -19,8 +19,8 @@ type fixture struct {
 	server *Server
 	client *store.Client
 	userID uuid.UUID
-	base time.Time
-	ids  []uuid.UUID
+	future time.Time
+	ids    []uuid.UUID
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -48,7 +48,7 @@ func newFixture(t *testing.T) *fixture {
 		server: New(activity.New(client)),
 		client: client,
 		userID: user.ID,
-		base:   time.Now().Add(time.Hour).Truncate(time.Millisecond),
+		future: time.Now().Add(time.Hour).Truncate(time.Millisecond),
 	}
 
 	t.Cleanup(func() {
@@ -113,13 +113,13 @@ func names(result api.ActivityLogEntryQueryResult) []string {
 func TestGetLogEntries(t *testing.T) {
 	fixture := newFixture(t)
 
-	fixture.add(t, "Oldest", fixture.base, nil)
-	fixture.add(t, "Middle", fixture.base.Add(time.Minute), nil)
-	fixture.add(t, "Newest", fixture.base.Add(2*time.Minute), nil)
-	fixture.add(t, "By User", fixture.base.Add(3*time.Minute), &fixture.userID)
+	fixture.add(t, "Oldest", fixture.future, nil)
+	fixture.add(t, "Middle", fixture.future.Add(time.Minute), nil)
+	fixture.add(t, "Newest", fixture.future.Add(2*time.Minute), nil)
+	fixture.add(t, "By User", fixture.future.Add(3*time.Minute), &fixture.userID)
 
 	t.Run("returns the newest entry first", func(t *testing.T) {
-		result := fixture.get(t, api.GetLogEntriesParams{MinDate: &fixture.base})
+		result := fixture.get(t, api.GetLogEntriesParams{MinDate: &fixture.future})
 
 		want := []string{"By User", "Newest", "Middle", "Oldest"}
 		if got := names(result); !slices.Equal(got, want) {
@@ -132,7 +132,7 @@ func TestGetLogEntries(t *testing.T) {
 
 	t.Run("pages without changing the total", func(t *testing.T) {
 		result := fixture.get(t, api.GetLogEntriesParams{
-			MinDate:    &fixture.base,
+			MinDate:    &fixture.future,
 			StartIndex: apiutil.Ptr(int32(1)),
 			Limit:      apiutil.Ptr(int32(2)),
 		})
@@ -150,7 +150,7 @@ func TestGetLogEntries(t *testing.T) {
 	})
 
 	t.Run("drops entries before the minimum date", func(t *testing.T) {
-		minDate := fixture.base.Add(2 * time.Minute)
+		minDate := fixture.future.Add(2 * time.Minute)
 		result := fixture.get(t, api.GetLogEntriesParams{MinDate: &minDate})
 
 		want := []string{"By User", "Newest"}
@@ -163,7 +163,7 @@ func TestGetLogEntries(t *testing.T) {
 	})
 
 	t.Run("filters on having a user", func(t *testing.T) {
-		result := fixture.get(t, api.GetLogEntriesParams{MinDate: &fixture.base, HasUserId: apiutil.Ptr(true)})
+		result := fixture.get(t, api.GetLogEntriesParams{MinDate: &fixture.future, HasUserId: apiutil.Ptr(true)})
 
 		want := []string{"By User"}
 		if got := names(result); !slices.Equal(got, want) {
@@ -177,7 +177,7 @@ func TestGetLogEntries(t *testing.T) {
 	})
 
 	t.Run("filters on not having a user", func(t *testing.T) {
-		result := fixture.get(t, api.GetLogEntriesParams{MinDate: &fixture.base, HasUserId: apiutil.Ptr(false)})
+		result := fixture.get(t, api.GetLogEntriesParams{MinDate: &fixture.future, HasUserId: apiutil.Ptr(false)})
 
 		want := []string{"Newest", "Middle", "Oldest"}
 		if got := names(result); !slices.Equal(got, want) {
