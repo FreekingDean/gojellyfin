@@ -21,18 +21,29 @@ type (
 	TypeOptions       = entities.TypeOptions
 )
 
+const (
+	CollectionTypeMovies      = librarymodal.CollectionTypeMovies
+	CollectionTypeTvshows     = librarymodal.CollectionTypeTvshows
+	CollectionTypeMusic       = librarymodal.CollectionTypeMusic
+	CollectionTypeMusicvideos = librarymodal.CollectionTypeMusicvideos
+	CollectionTypeHomevideos  = librarymodal.CollectionTypeHomevideos
+	CollectionTypeBoxsets     = librarymodal.CollectionTypeBoxsets
+	CollectionTypeBooks       = librarymodal.CollectionTypeBooks
+	CollectionTypeMixed       = librarymodal.CollectionTypeMixed
+)
+
 var (
 	ValidCollectionType = librarymodal.CollectionTypeValidator
 
 	CollectionTypes = []CollectionType{
-		librarymodal.CollectionTypeMovies,
-		librarymodal.CollectionTypeTvshows,
-		librarymodal.CollectionTypeMusic,
-		librarymodal.CollectionTypeMusicvideos,
-		librarymodal.CollectionTypeHomevideos,
-		librarymodal.CollectionTypeBoxsets,
-		librarymodal.CollectionTypeBooks,
-		librarymodal.CollectionTypeMixed,
+		CollectionTypeMovies,
+		CollectionTypeTvshows,
+		CollectionTypeMusic,
+		CollectionTypeMusicvideos,
+		CollectionTypeHomevideos,
+		CollectionTypeBoxsets,
+		CollectionTypeBooks,
+		CollectionTypeMixed,
 	}
 )
 

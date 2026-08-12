@@ -10,9 +10,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/consts"
 )
 
-// Only the fields a metadata editor may change; the scanner owns
-// date_modified and the probe owns container, run_time_ticks, probed_at and
-// the media sources.
 type Metadata struct {
 	Name                         *string
 	OriginalTitle                *string

@@ -3,6 +3,8 @@ package itemupdate
 import (
 	"context"
 
+	"github.com/google/uuid"
+
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
@@ -65,8 +67,11 @@ func (s *Server) GetMetadataEditorInfo(ctx context.Context, request api.GetMetad
 		info.ContentTypeOptions = apiutil.Ptr(contentTypeOptions())
 	}
 
-	library, err := s.libraries.Library(ctx, item.LibraryID)
-	if err == nil {
+	if item.LibraryID != uuid.Nil {
+		library, err := s.libraries.Library(ctx, item.LibraryID)
+		if err != nil {
+			return nil, err
+		}
 		info.ContentType = contentType(library.CollectionType)
 	}
 

@@ -31,7 +31,6 @@ func (s *Server) GetParentalRatings(ctx context.Context, request api.GetParental
 	return api.GetParentalRatings200JSONResponse(ParentalRatings()), nil
 }
 
-// Read helpers rather than methods, so any tag's handlers can use them.
 func Cultures() []api.CultureDto {
 	return []api.CultureDto{
 		culture("English", "en", "eng"),

@@ -6,11 +6,8 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
-	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
 )
 
-// Everything the editor may change; the columns the scanner and the probe own
-// have no home here on purpose.
 func Metadata(req *api.BaseItemDto) items.Metadata {
 	metadata := items.Metadata{
 		Name:                         req.Name,
@@ -86,9 +83,8 @@ func supportedContentType(value *string) bool {
 	return contentType == "" || libraries.ValidCollectionType(contentType) == nil
 }
 
-// Mixed is the absence of a content type rather than one the api can name.
 func contentType(collectionType libraries.CollectionType) *api.CollectionType {
-	if collectionType == librarymodal.CollectionTypeMixed {
+	if collectionType == libraries.CollectionTypeMixed {
 		return nil
 	}
 
@@ -96,14 +92,14 @@ func contentType(collectionType libraries.CollectionType) *api.CollectionType {
 }
 
 var contentTypeNames = map[libraries.CollectionType]string{
-	librarymodal.CollectionTypeMovies:      "Movies",
-	librarymodal.CollectionTypeTvshows:     "Shows",
-	librarymodal.CollectionTypeMusic:       "Music",
-	librarymodal.CollectionTypeMusicvideos: "Music Videos",
-	librarymodal.CollectionTypeHomevideos:  "Home Videos",
-	librarymodal.CollectionTypeBoxsets:     "Box Sets",
-	librarymodal.CollectionTypeBooks:       "Books",
-	librarymodal.CollectionTypeMixed:       "Mixed",
+	libraries.CollectionTypeMovies:      "Movies",
+	libraries.CollectionTypeTvshows:     "Shows",
+	libraries.CollectionTypeMusic:       "Music",
+	libraries.CollectionTypeMusicvideos: "Music Videos",
+	libraries.CollectionTypeHomevideos:  "Home Videos",
+	libraries.CollectionTypeBoxsets:     "Box Sets",
+	libraries.CollectionTypeBooks:       "Books",
+	libraries.CollectionTypeMixed:       "Mixed",
 }
 
 func contentTypeOptions() []api.NameValuePair {

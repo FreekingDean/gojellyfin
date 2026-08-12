@@ -15,7 +15,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
 )
 
 var (
@@ -24,10 +23,11 @@ var (
 )
 
 type fixture struct {
-	server   *Server
-	client   *store.Client
-	itemID   uuid.UUID
-	folderID uuid.UUID
+	server    *Server
+	client    *store.Client
+	libraryID uuid.UUID
+	itemID    uuid.UUID
+	folderID  uuid.UUID
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -45,7 +45,7 @@ func newFixture(t *testing.T) *fixture {
 	client := connection.Client()
 	library, err := client.Library.Create().
 		SetName(t.Name() + "-" + uuid.NewString()).
-		SetCollectionType(librarymodal.CollectionTypeMovies).
+		SetCollectionType(libraries.CollectionTypeMovies).
 		Save(ctx)
 	if err != nil {
 		t.Fatalf("failed to create the library: %v", err)
@@ -91,10 +91,11 @@ func newFixture(t *testing.T) *fixture {
 	}
 
 	return &fixture{
-		server:   New(items.New(client), libraries.New(client)),
-		client:   client,
-		itemID:   record.ID,
-		folderID: folder.ID,
+		server:    New(items.New(client), libraries.New(client)),
+		client:    client,
+		libraryID: library.ID,
+		itemID:    record.ID,
+		folderID:  folder.ID,
 	}
 }
 
@@ -215,9 +216,15 @@ func TestUpdateItemKeepsProbedColumns(t *testing.T) {
 		Container:    apiutil.Ptr("mp4"),
 		RunTimeTicks: apiutil.Ptr(int64(1)),
 		Path:         apiutil.Ptr("/somewhere/else.mp4"),
+		Type:         apiutil.Ptr(api.BaseItemKindEpisode),
+		ParentId:     apiutil.Ptr(fixture.folderID),
+		MediaSources: &[]api.MediaSourceInfo{{Container: apiutil.Ptr("mp4")}},
 	})
 
 	record := fixture.item(t)
+	if record.Name != "Renamed" {
+		t.Errorf("name = %q, want %q", record.Name, "Renamed")
+	}
 	if record.Container != "mkv" {
 		t.Errorf("container = %q, want %q", record.Container, "mkv")
 	}
@@ -232,6 +239,20 @@ func TestUpdateItemKeepsProbedColumns(t *testing.T) {
 	}
 	if record.Path == "/somewhere/else.mp4" {
 		t.Error("path was written by the metadata editor")
+	}
+	if record.Kind != itemmodal.KindMovie {
+		t.Errorf("kind = %q, want %q", record.Kind, itemmodal.KindMovie)
+	}
+	if record.ParentID != nil {
+		t.Errorf("parent id = %v, want none", record.ParentID)
+	}
+	if record.LibraryID != fixture.libraryID {
+		t.Errorf("library id = %v, want %v", record.LibraryID, fixture.libraryID)
+	}
+	if sources, err := record.QueryMediaSources().Count(context.Background()); err != nil {
+		t.Fatalf("failed to count the media sources: %v", err)
+	} else if sources != 0 {
+		t.Errorf("media sources = %d, want none", sources)
 	}
 }
 
@@ -274,7 +295,7 @@ func TestGetMetadataEditorInfo(t *testing.T) {
 		for _, option := range apiutil.Deref(info.ContentTypeOptions) {
 			values = append(values, apiutil.Deref(option.Value))
 		}
-		if !slices.Contains(values, string(librarymodal.CollectionTypeMovies)) {
+		if !slices.Contains(values, string(libraries.CollectionTypeMovies)) {
 			t.Errorf("content type options = %v, want the supported collection types", values)
 		}
 		if len(values) != len(libraries.CollectionTypes) {
