@@ -69,9 +69,6 @@ type PlaylistEntry func(*sql.Selector)
 // PlaylistShare is the predicate function for playlistshare builders.
 type PlaylistShare func(*sql.Selector)
 
-// Plugin is the predicate function for plugin builders.
-type Plugin func(*sql.Selector)
-
 // SeriesTimer is the predicate function for seriestimer builders.
 type SeriesTimer func(*sql.Selector)
 

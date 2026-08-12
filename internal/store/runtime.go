@@ -27,7 +27,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
-	"github.com/FreekingDean/gojellyfin/internal/store/plugin"
 	"github.com/FreekingDean/gojellyfin/internal/store/seriestimer"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
@@ -601,18 +600,6 @@ func init() {
 	playlistshare.DefaultUpdatedAt = playlistshareDescUpdatedAt.Default.(func() time.Time)
 	// playlistshare.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	playlistshare.UpdateDefaultUpdatedAt = playlistshareDescUpdatedAt.UpdateDefault.(func() time.Time)
-	pluginFields := entities.Plugin{}.Fields()
-	_ = pluginFields
-	// pluginDescCreatedAt is the schema descriptor for created_at field.
-	pluginDescCreatedAt := pluginFields[1].Descriptor()
-	// plugin.DefaultCreatedAt holds the default value on creation for the created_at field.
-	plugin.DefaultCreatedAt = pluginDescCreatedAt.Default.(func() time.Time)
-	// pluginDescUpdatedAt is the schema descriptor for updated_at field.
-	pluginDescUpdatedAt := pluginFields[2].Descriptor()
-	// plugin.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	plugin.DefaultUpdatedAt = pluginDescUpdatedAt.Default.(func() time.Time)
-	// plugin.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	plugin.UpdateDefaultUpdatedAt = pluginDescUpdatedAt.UpdateDefault.(func() time.Time)
 	seriestimerFields := entities.SeriesTimer{}.Fields()
 	_ = seriestimerFields
 	// seriestimerDescCreatedAt is the schema descriptor for created_at field.
