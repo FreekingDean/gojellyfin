@@ -136,32 +136,21 @@ func (s *Service) GroupableLibraries(ctx context.Context) ([]*Library, error) {
 	return libraries, nil
 }
 
-// `locations` is a jsonb array, and unnesting one is beyond the query builder.
-const physicalPathsQuery = `
-	SELECT DISTINCT jsonb_array_elements_text(locations) AS path
-	FROM libraries
-	ORDER BY path`
-
 func (s *Service) PhysicalPaths(ctx context.Context) ([]string, error) {
-	rows, err := s.store.QueryContext(ctx, physicalPathsQuery)
+	libraries, err := s.store.Library.Query().
+		Select(librarymodal.FieldLocations).
+		All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query library paths: %w", err)
 	}
-	defer func() { _ = rows.Close() }()
 
 	paths := []string{}
-	for rows.Next() {
-		var path string
-		if err := rows.Scan(&path); err != nil {
-			return nil, fmt.Errorf("failed to scan a library path: %w", err)
-		}
-		paths = append(paths, path)
+	for _, library := range libraries {
+		paths = append(paths, library.Locations...)
 	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("failed to read the library paths: %w", err)
-	}
+	slices.Sort(paths)
 
-	return paths, nil
+	return slices.Compact(paths), nil
 }
 
 func (s *Service) Rename(ctx context.Context, id uuid.UUID, name string) error {
