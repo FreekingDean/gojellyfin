@@ -108,9 +108,25 @@ func (_c *DisplayPreferencesCreate) SetSortOrder(v displaypreferences.SortOrder)
 	return _c
 }
 
+// SetNillableSortOrder sets the "sort_order" field if the given value is not nil.
+func (_c *DisplayPreferencesCreate) SetNillableSortOrder(v *displaypreferences.SortOrder) *DisplayPreferencesCreate {
+	if v != nil {
+		_c.SetSortOrder(*v)
+	}
+	return _c
+}
+
 // SetScrollDirection sets the "scroll_direction" field.
 func (_c *DisplayPreferencesCreate) SetScrollDirection(v displaypreferences.ScrollDirection) *DisplayPreferencesCreate {
 	_c.mutation.SetScrollDirection(v)
+	return _c
+}
+
+// SetNillableScrollDirection sets the "scroll_direction" field if the given value is not nil.
+func (_c *DisplayPreferencesCreate) SetNillableScrollDirection(v *displaypreferences.ScrollDirection) *DisplayPreferencesCreate {
+	if v != nil {
+		_c.SetScrollDirection(*v)
+	}
 	return _c
 }
 
@@ -120,9 +136,25 @@ func (_c *DisplayPreferencesCreate) SetRememberIndexing(v bool) *DisplayPreferen
 	return _c
 }
 
+// SetNillableRememberIndexing sets the "remember_indexing" field if the given value is not nil.
+func (_c *DisplayPreferencesCreate) SetNillableRememberIndexing(v *bool) *DisplayPreferencesCreate {
+	if v != nil {
+		_c.SetRememberIndexing(*v)
+	}
+	return _c
+}
+
 // SetRememberSorting sets the "remember_sorting" field.
 func (_c *DisplayPreferencesCreate) SetRememberSorting(v bool) *DisplayPreferencesCreate {
 	_c.mutation.SetRememberSorting(v)
+	return _c
+}
+
+// SetNillableRememberSorting sets the "remember_sorting" field if the given value is not nil.
+func (_c *DisplayPreferencesCreate) SetNillableRememberSorting(v *bool) *DisplayPreferencesCreate {
+	if v != nil {
+		_c.SetRememberSorting(*v)
+	}
 	return _c
 }
 
@@ -132,9 +164,25 @@ func (_c *DisplayPreferencesCreate) SetShowBackdrop(v bool) *DisplayPreferencesC
 	return _c
 }
 
+// SetNillableShowBackdrop sets the "show_backdrop" field if the given value is not nil.
+func (_c *DisplayPreferencesCreate) SetNillableShowBackdrop(v *bool) *DisplayPreferencesCreate {
+	if v != nil {
+		_c.SetShowBackdrop(*v)
+	}
+	return _c
+}
+
 // SetShowSidebar sets the "show_sidebar" field.
 func (_c *DisplayPreferencesCreate) SetShowSidebar(v bool) *DisplayPreferencesCreate {
 	_c.mutation.SetShowSidebar(v)
+	return _c
+}
+
+// SetNillableShowSidebar sets the "show_sidebar" field if the given value is not nil.
+func (_c *DisplayPreferencesCreate) SetNillableShowSidebar(v *bool) *DisplayPreferencesCreate {
+	if v != nil {
+		_c.SetShowSidebar(*v)
+	}
 	return _c
 }
 
@@ -144,9 +192,25 @@ func (_c *DisplayPreferencesCreate) SetPrimaryImageHeight(v int32) *DisplayPrefe
 	return _c
 }
 
+// SetNillablePrimaryImageHeight sets the "primary_image_height" field if the given value is not nil.
+func (_c *DisplayPreferencesCreate) SetNillablePrimaryImageHeight(v *int32) *DisplayPreferencesCreate {
+	if v != nil {
+		_c.SetPrimaryImageHeight(*v)
+	}
+	return _c
+}
+
 // SetPrimaryImageWidth sets the "primary_image_width" field.
 func (_c *DisplayPreferencesCreate) SetPrimaryImageWidth(v int32) *DisplayPreferencesCreate {
 	_c.mutation.SetPrimaryImageWidth(v)
+	return _c
+}
+
+// SetNillablePrimaryImageWidth sets the "primary_image_width" field if the given value is not nil.
+func (_c *DisplayPreferencesCreate) SetNillablePrimaryImageWidth(v *int32) *DisplayPreferencesCreate {
+	if v != nil {
+		_c.SetPrimaryImageWidth(*v)
+	}
 	return _c
 }
 
@@ -234,6 +298,42 @@ func (_c *DisplayPreferencesCreate) defaults() {
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		v := displaypreferences.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
+	}
+	if _, ok := _c.mutation.SortBy(); !ok {
+		v := displaypreferences.DefaultSortBy
+		_c.mutation.SetSortBy(v)
+	}
+	if _, ok := _c.mutation.SortOrder(); !ok {
+		v := displaypreferences.DefaultSortOrder
+		_c.mutation.SetSortOrder(v)
+	}
+	if _, ok := _c.mutation.ScrollDirection(); !ok {
+		v := displaypreferences.DefaultScrollDirection
+		_c.mutation.SetScrollDirection(v)
+	}
+	if _, ok := _c.mutation.RememberIndexing(); !ok {
+		v := displaypreferences.DefaultRememberIndexing
+		_c.mutation.SetRememberIndexing(v)
+	}
+	if _, ok := _c.mutation.RememberSorting(); !ok {
+		v := displaypreferences.DefaultRememberSorting
+		_c.mutation.SetRememberSorting(v)
+	}
+	if _, ok := _c.mutation.ShowBackdrop(); !ok {
+		v := displaypreferences.DefaultShowBackdrop
+		_c.mutation.SetShowBackdrop(v)
+	}
+	if _, ok := _c.mutation.ShowSidebar(); !ok {
+		v := displaypreferences.DefaultShowSidebar
+		_c.mutation.SetShowSidebar(v)
+	}
+	if _, ok := _c.mutation.PrimaryImageHeight(); !ok {
+		v := displaypreferences.DefaultPrimaryImageHeight
+		_c.mutation.SetPrimaryImageHeight(v)
+	}
+	if _, ok := _c.mutation.PrimaryImageWidth(); !ok {
+		v := displaypreferences.DefaultPrimaryImageWidth
+		_c.mutation.SetPrimaryImageWidth(v)
 	}
 }
 

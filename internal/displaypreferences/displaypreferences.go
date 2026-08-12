@@ -41,15 +41,6 @@ func (s *Service) Preferences(ctx context.Context, userID uuid.UUID, client, id 
 		SetUserID(userID).
 		SetNillableItemID(itemID).
 		SetClient(client).
-		SetSortBy("SortName").
-		SetSortOrder(displaypreferencesmodal.SortOrderAscending).
-		SetScrollDirection(displaypreferencesmodal.ScrollDirectionHorizontal).
-		SetRememberIndexing(false).
-		SetRememberSorting(false).
-		SetShowBackdrop(true).
-		SetShowSidebar(false).
-		SetPrimaryImageHeight(0).
-		SetPrimaryImageWidth(0).
 		Save(ctx)
 	if store.IsConstraintError(err) {
 		if raced, requery := s.existing(ctx, userID, client, itemID); requery == nil && raced != nil {

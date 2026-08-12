@@ -116,10 +116,27 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultSortBy holds the default value on creation for the "sort_by" field.
+	DefaultSortBy string
+	// DefaultRememberIndexing holds the default value on creation for the "remember_indexing" field.
+	DefaultRememberIndexing bool
+	// DefaultRememberSorting holds the default value on creation for the "remember_sorting" field.
+	DefaultRememberSorting bool
+	// DefaultShowBackdrop holds the default value on creation for the "show_backdrop" field.
+	DefaultShowBackdrop bool
+	// DefaultShowSidebar holds the default value on creation for the "show_sidebar" field.
+	DefaultShowSidebar bool
+	// DefaultPrimaryImageHeight holds the default value on creation for the "primary_image_height" field.
+	DefaultPrimaryImageHeight int32
+	// DefaultPrimaryImageWidth holds the default value on creation for the "primary_image_width" field.
+	DefaultPrimaryImageWidth int32
 )
 
 // SortOrder defines the type for the "sort_order" enum field.
 type SortOrder string
+
+// SortOrderAscending is the default value of the SortOrder enum.
+const DefaultSortOrder = SortOrderAscending
 
 // SortOrder values.
 const (
@@ -143,6 +160,9 @@ func SortOrderValidator(so SortOrder) error {
 
 // ScrollDirection defines the type for the "scroll_direction" enum field.
 type ScrollDirection string
+
+// ScrollDirectionHorizontal is the default value of the ScrollDirection enum.
+const DefaultScrollDirection = ScrollDirectionHorizontal
 
 // ScrollDirection values.
 const (
