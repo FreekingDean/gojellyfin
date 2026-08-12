@@ -78,7 +78,7 @@ var (
 				Symbol:     "chapters_items_chapters",
 				Columns:    []*schema.Column{ChaptersColumns[7]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -117,13 +117,13 @@ var (
 				Symbol:     "credits_items_credits",
 				Columns:    []*schema.Column{CreditsColumns[6]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "credits_persons_credits",
 				Columns:    []*schema.Column{CreditsColumns[7]},
 				RefColumns: []*schema.Column{PersonsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{
@@ -189,13 +189,13 @@ var (
 				Symbol:     "display_preferences_items_display_preferences",
 				Columns:    []*schema.Column{DisplayPreferencesColumns[16]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "display_preferences_users_display_preferences",
 				Columns:    []*schema.Column{DisplayPreferencesColumns[17]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{
@@ -252,7 +252,7 @@ var (
 				Symbol:     "images_items_images",
 				Columns:    []*schema.Column{ImagesColumns[11]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{
@@ -334,13 +334,13 @@ var (
 				Symbol:     "items_items_children",
 				Columns:    []*schema.Column{ItemsColumns[56]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "items_libraries_items",
 				Columns:    []*schema.Column{ItemsColumns[57]},
 				RefColumns: []*schema.Column{LibrariesColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{
@@ -429,7 +429,7 @@ var (
 				Symbol:     "library_options_libraries_options",
 				Columns:    []*schema.Column{LibraryOptionsColumns[44]},
 				RefColumns: []*schema.Column{LibrariesColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -485,7 +485,7 @@ var (
 				Symbol:     "media_attachments_media_sources_attachments",
 				Columns:    []*schema.Column{MediaAttachmentsColumns[9]},
 				RefColumns: []*schema.Column{MediaSourcesColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{
@@ -516,7 +516,7 @@ var (
 				Symbol:     "media_segments_items_media_segments",
 				Columns:    []*schema.Column{MediaSegmentsColumns[6]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -566,7 +566,7 @@ var (
 				Symbol:     "media_sources_items_media_sources",
 				Columns:    []*schema.Column{MediaSourcesColumns[32]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -638,7 +638,7 @@ var (
 				Symbol:     "media_streams_media_sources_streams",
 				Columns:    []*schema.Column{MediaStreamsColumns[54]},
 				RefColumns: []*schema.Column{MediaSourcesColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{
@@ -685,13 +685,13 @@ var (
 				Symbol:     "playlists_items_playlist",
 				Columns:    []*schema.Column{PlaylistsColumns[4]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "playlists_users_playlists",
 				Columns:    []*schema.Column{PlaylistsColumns[5]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -714,13 +714,13 @@ var (
 				Symbol:     "playlist_entries_items_playlist_entries",
 				Columns:    []*schema.Column{PlaylistEntriesColumns[4]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "playlist_entries_playlists_entries",
 				Columns:    []*schema.Column{PlaylistEntriesColumns[5]},
 				RefColumns: []*schema.Column{PlaylistsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{
@@ -750,13 +750,13 @@ var (
 				Symbol:     "playlist_shares_playlists_shares",
 				Columns:    []*schema.Column{PlaylistSharesColumns[4]},
 				RefColumns: []*schema.Column{PlaylistsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "playlist_shares_users_playlist_shares",
 				Columns:    []*schema.Column{PlaylistSharesColumns[5]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{
@@ -824,13 +824,13 @@ var (
 				Symbol:     "sessions_devices_sessions",
 				Columns:    []*schema.Column{SessionsColumns[7]},
 				RefColumns: []*schema.Column{DevicesColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "sessions_users_sessions",
 				Columns:    []*schema.Column{SessionsColumns[8]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -912,7 +912,7 @@ var (
 				Symbol:     "trickplays_items_trickplays",
 				Columns:    []*schema.Column{TrickplaysColumns[10]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -992,7 +992,7 @@ var (
 				Symbol:     "user_configurations_users_configuration",
 				Columns:    []*schema.Column{UserConfigurationsColumns[19]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -1021,13 +1021,13 @@ var (
 				Symbol:     "user_item_data_items_user_data",
 				Columns:    []*schema.Column{UserItemDataColumns[10]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "user_item_data_users_item_data",
 				Columns:    []*schema.Column{UserItemDataColumns[11]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{
@@ -1099,7 +1099,7 @@ var (
 				Symbol:     "user_policies_users_policy",
 				Columns:    []*schema.Column{UserPoliciesColumns[47]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}

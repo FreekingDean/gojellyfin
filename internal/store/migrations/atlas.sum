@@ -1,4 +1,4 @@
-h1:IPXsSXvHBsnnQRViQ0BWdVaLM5anlqIPiKanU05+hxM=
+h1:7JMTpelpGnoAd6OvuS+MQfKkIAaV6IGp7O9jIy+i0Y8=
 20260808161932_schema.sql h1:TSsMFoNc1lu6mOmwk6WUpVAleagab51CYpT8AcXjFe8=
 20260809054423_schema.sql h1:V8LqoR24+BY3zT0+YlBHRxazmflw/ECnIQrC9e8FboE=
 20260809060012_configurations.sql h1:lWCojwN/ZmPBP/uS9aNCdmvBPXLv1rSc21+W+ZeyrJg=
@@ -7,3 +7,4 @@ h1:IPXsSXvHBsnnQRViQ0BWdVaLM5anlqIPiKanU05+hxM=
 20260812000029_display_preferences_defaults.sql h1:82uLmu0wBSCKUnJr/GBY9pDiajt0VlMfGjW7pCpKLI0=
 20260812004500_playlists.sql h1:ncRq30rRZBo+AZDBFD14D37VTOOA//ED0AtTmuVXAII=
 20260812004512_drop_plugins.sql h1:8sbY6HpN3RKZo4Ojm2ROgPvFQeX4HAfgdflVOGeg6ro=
+20260812011238_cascade_deletes.sql h1:S0qjdiX5dnUvMe644yZCliNMFDZLzYhAweN1LV5GPu0=

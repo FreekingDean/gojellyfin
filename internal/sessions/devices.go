@@ -54,20 +54,11 @@ func (s *Service) RenameDevice(ctx context.Context, clientID string, customName 
 }
 
 func (s *Service) RemoveDevice(ctx context.Context, clientID string) error {
-	return s.store.WithTx(ctx, func(tx *store.Tx) error {
-		_, err := tx.Session.Delete().
-			Where(sessionmodal.HasDeviceWith(devicemodal.ClientID(clientID))).
-			Exec(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to delete sessions for device: %w", err)
-		}
+	if _, err := s.store.Device.Delete().Where(devicemodal.ClientID(clientID)).Exec(ctx); err != nil {
+		return fmt.Errorf("failed to delete device: %w", err)
+	}
 
-		if _, err := tx.Device.Delete().Where(devicemodal.ClientID(clientID)).Exec(ctx); err != nil {
-			return fmt.Errorf("failed to delete device: %w", err)
-		}
-
-		return nil
-	})
+	return nil
 }
 
 func LastUser(device *Device) *User {

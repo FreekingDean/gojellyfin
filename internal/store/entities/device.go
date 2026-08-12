@@ -32,6 +32,6 @@ func (Device) Fields() []ent.Field {
 
 func (Device) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("sessions", Session.Type),
+		edge.To("sessions", Session.Type).Annotations(cascadeOnDelete),
 	}
 }

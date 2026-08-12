@@ -23,7 +23,7 @@ func (Library) Fields() []ent.Field {
 
 func (Library) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("options", LibraryOptions.Type).Unique(),
-		edge.To("items", Item.Type),
+		edge.To("options", LibraryOptions.Type).Unique().Annotations(cascadeOnDelete),
+		edge.To("items", Item.Type).Annotations(cascadeOnDelete),
 	}
 }
