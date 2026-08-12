@@ -1,0 +1,10 @@
+.air.toml
+.git
+.github
+.golangci.yml
+.worktrees
+.air
+*.log
+CLAUDE.md
+Makefile
+renovate.json

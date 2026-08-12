@@ -49,6 +49,10 @@ atlas migrate diff <name> --dir "file://migrations" --to "ent://entities" --dev-
 atlas migrate apply --dir "file://migrations" --url "$DATABASE_URL"
 ```
 
+`cmd/tasks/migrate` is the deployed spelling of that second line. It drives the `atlas` CLI rather than the Go SDK because the revision tracker that owns `atlas_schema_revisions` is not in the `ariga.io/atlas` module — it lives in the CLI repo under `cmd/atlas/internal/migrate/ent`, which nothing outside that repo can import. The migration directory is embedded through `internal/store/migrations`, so a deployed binary cannot drift from the schema it expects, and `atlas.sum` is still verified on every run.
+
+The `Dockerfile` carries the server, that command and the `atlas` binary, runs as a non-root user, and is built and pushed to `ghcr.io/freekingdean/gojellyfin` by `.github/workflows/docker.yml`. The entrypoint only migrates when `MIGRATE_ON_START=true`; unconditional migration on start is unsafe with rolling replicas, so the default is a one-off `docker run --rm <image> migrate`.
+
 ## Architecture
 
 ### Wiring: uber/fx
