@@ -7,6 +7,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 )
 
 type Server struct {
@@ -22,7 +23,7 @@ func (s *Server) GetGenres(ctx context.Context, request api.GetGenresRequestObje
 
 	named, total, err := s.items.DistinctGenres(ctx, items.MetadataQuery{
 		LibraryID:  request.Params.ParentId,
-		Kinds:      kinds(request.Params.IncludeItemTypes),
+		Kinds:      dto.Kinds(request.Params.IncludeItemTypes),
 		SearchTerm: apiutil.Deref(request.Params.SearchTerm),
 		StartIndex: int(startIndex),
 		Limit:      int(apiutil.Deref(request.Params.Limit)),
@@ -54,20 +55,4 @@ func genreDto(genre items.Named) api.BaseItemDto {
 		ImageTags:         &map[string]*string{},
 		BackdropImageTags: &[]string{},
 	}
-}
-
-func kinds(types *[]api.BaseItemKind) []items.Kind {
-	if types == nil {
-		return nil
-	}
-
-	valid := make([]items.Kind, 0, len(*types))
-	for _, value := range *types {
-		kind := items.Kind(value)
-		if items.ValidKind(kind) == nil {
-			valid = append(valid, kind)
-		}
-	}
-
-	return valid
 }

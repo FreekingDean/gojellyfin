@@ -172,12 +172,15 @@ func (s *Service) DistinctTags(ctx context.Context, query MetadataQuery) ([]stri
 		return nil, fmt.Errorf("failed to query tags: %w", err)
 	}
 
+	seen := make(map[string]bool)
 	tags := make([]string, 0, len(records))
 	for _, record := range records {
 		for _, tag := range record.Tags {
-			if !slices.Contains(tags, tag) {
-				tags = append(tags, tag)
+			if seen[tag] {
+				continue
 			}
+			seen[tag] = true
+			tags = append(tags, tag)
 		}
 	}
 	slices.Sort(tags)
