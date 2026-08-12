@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -21,7 +22,7 @@ import (
 )
 
 func TestForgotPassword(t *testing.T) {
-	server := New(nil, nil, nil)
+	server := New(nil, nil)
 
 	response, err := server.ForgotPassword(context.Background(), api.ForgotPasswordRequestObject{
 		JSONBody: &api.ForgotPasswordJSONRequestBody{EnteredUsername: "Dean"},
@@ -43,7 +44,7 @@ func TestForgotPassword(t *testing.T) {
 }
 
 func TestForgotPasswordPin(t *testing.T) {
-	server := New(nil, nil, nil)
+	server := New(nil, nil)
 
 	response, err := server.ForgotPasswordPin(context.Background(), api.ForgotPasswordPinRequestObject{
 		JSONBody: &api.ForgotPasswordPinJSONRequestBody{Pin: "0000"},
@@ -76,7 +77,7 @@ func TestAuthenticateUserByNameRecordsActivity(t *testing.T) {
 	ctx := context.Background()
 	client := connection.Client()
 	activities := activity.New(client)
-	server := New(users.New(client), sessions.New(client), activities)
+	server := New(users.New(client), sessions.New(client, activities))
 
 	username := t.Name() + "-" + uuid.NewString()
 	password := "hunter2"
@@ -120,6 +121,7 @@ func TestAuthenticateUserByNameRecordsActivity(t *testing.T) {
 		Version:  "10.10.0",
 	})
 
+	start := time.Now()
 	response, err := server.AuthenticateUserByName(ctx, api.AuthenticateUserByNameRequestObject{
 		JSONBody: &api.AuthenticateUserByNameJSONRequestBody{
 			Username: apiutil.Ptr(username),
@@ -139,12 +141,9 @@ func TestAuthenticateUserByNameRecordsActivity(t *testing.T) {
 		t.Fatal("access token is empty")
 	}
 
-	entries, total, err := activities.Entries(ctx, activity.Query{HasUserID: apiutil.Ptr(true)})
+	entries, _, err := activities.Entries(ctx, activity.Query{MinDate: &start, HasUserID: apiutil.Ptr(true)})
 	if err != nil {
 		t.Fatalf("failed to query the entries: %v", err)
-	}
-	if total < 1 {
-		t.Fatalf("total = %d, want at least 1", total)
 	}
 
 	found := 0

@@ -3,6 +3,7 @@ package activity
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -17,11 +18,7 @@ type (
 	Severity = entrymodal.Severity
 )
 
-const (
-	SeverityInformation = entrymodal.SeverityInformation
-	SeverityWarning     = entrymodal.SeverityWarning
-	SeverityError       = entrymodal.SeverityError
-)
+const SeverityInformation = entrymodal.SeverityInformation
 
 const (
 	KindAuthenticationSucceeded = "AuthenticationSucceeded"
@@ -54,8 +51,8 @@ func New(client *store.Client) *Service {
 	return &Service{store: client}
 }
 
-func (s *Service) Record(ctx context.Context, event Event) error {
-	_, err := s.store.ActivityLogEntry.Create().
+func (s *Service) Record(ctx context.Context, event Event) {
+	err := s.store.ActivityLogEntry.Create().
 		SetName(event.Name).
 		SetKind(event.Kind).
 		SetOverview(event.Overview).
@@ -63,12 +60,10 @@ func (s *Service) Record(ctx context.Context, event Event) error {
 		SetSeverity(event.Severity).
 		SetNillableUserID(event.UserID).
 		SetNillableItemID(event.ItemID).
-		Save(ctx)
+		Exec(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to record activity: %w", err)
+		log.Printf("record activity %q: %v", event.Kind, err)
 	}
-
-	return nil
 }
 
 func (s *Service) Entries(ctx context.Context, query Query) ([]*Entry, int, error) {

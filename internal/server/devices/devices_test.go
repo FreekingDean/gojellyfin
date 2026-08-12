@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
@@ -62,7 +63,7 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
-	return &fixture{server: New(sessions.New(client)), client: client, prefix: prefix}
+	return &fixture{server: New(sessions.New(client, activity.New(client))), client: client, prefix: prefix}
 }
 
 func (f *fixture) addDevice(t *testing.T, device deviceSeed) string {

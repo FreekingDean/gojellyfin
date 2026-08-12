@@ -2,9 +2,7 @@ package session
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/dto"
@@ -13,11 +11,10 @@ import (
 
 type Server struct {
 	sessions *sessions.Service
-	activity *activity.Service
 }
 
-func New(sessions *sessions.Service, activity *activity.Service) *Server {
-	return &Server{sessions: sessions, activity: activity}
+func New(sessions *sessions.Service) *Server {
+	return &Server{sessions: sessions}
 }
 
 func (s *Server) GetSessions(ctx context.Context, request api.GetSessionsRequestObject) (api.GetSessionsResponseObject, error) {
@@ -35,25 +32,8 @@ func (s *Server) GetSessions(ctx context.Context, request api.GetSessionsRequest
 }
 
 func (s *Server) ReportSessionEnded(ctx context.Context, request api.ReportSessionEndedRequestObject) (api.ReportSessionEndedResponseObject, error) {
-	session := auth.SessionFrom(ctx)
-	if session == nil || session.Edges.User == nil {
-		return nil, auth.ErrUnauthorized
-	}
-
 	authorization := auth.AuthorizationFrom(ctx)
 	if err := s.sessions.DeleteByToken(ctx, authorization.Token); err != nil {
-		return nil, err
-	}
-
-	user := session.Edges.User
-	err := s.activity.Record(ctx, activity.Event{
-		Name:          fmt.Sprintf("%s has disconnected", user.Username),
-		Kind:          activity.KindSessionEnded,
-		ShortOverview: authorization.Device,
-		Severity:      activity.SeverityInformation,
-		UserID:        &user.ID,
-	})
-	if err != nil {
 		return nil, err
 	}
 

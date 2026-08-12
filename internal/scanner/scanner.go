@@ -75,12 +75,14 @@ func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) e
 		return err
 	}
 
-	return s.activity.Record(ctx, activity.Event{
+	s.activity.Record(ctx, activity.Event{
 		Name:          fmt.Sprintf("%s scan completed", library.Name),
 		Kind:          activity.KindLibraryScanCompleted,
 		ShortOverview: fmt.Sprintf("%d items", len(seen)),
 		Severity:      activity.SeverityInformation,
 	})
+
+	return nil
 }
 
 func (s *Scanner) scanMovies(ctx context.Context, library *libraries.Library, root string) ([]string, error) {

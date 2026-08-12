@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
@@ -104,7 +105,7 @@ func (f *fixture) signIn(t *testing.T, name string, administrator bool) context.
 		t.Fatalf("failed to create the session: %v", err)
 	}
 
-	authenticated, err := auth.New(sessions.New(f.client)).Authenticate(ctx, token)
+	authenticated, err := auth.New(sessions.New(f.client, activity.New(f.client))).Authenticate(ctx, token)
 	if err != nil {
 		t.Fatalf("failed to authenticate: %v", err)
 	}
