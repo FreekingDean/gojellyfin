@@ -81,6 +81,16 @@ func (s *Service) EnsureUser(ctx context.Context, name, passwordHash string, isA
 		return nil, err
 	}
 
+	err = s.UpdatePolicy(user.ID).
+		SetIsAdministrator(isAdministrator).
+		SetEnableCollectionManagement(isAdministrator).
+		SetEnableContentDeletion(isAdministrator).
+		SetEnableRemoteControlOfOtherUsers(isAdministrator).
+		Exec(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to set user policy: %w", err)
+	}
+
 	return s.User(ctx, user.ID)
 }
 

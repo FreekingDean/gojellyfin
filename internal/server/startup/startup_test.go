@@ -323,6 +323,40 @@ func TestUpdateStartupUserResubmittedChangesThePassword(t *testing.T) {
 	}
 }
 
+func TestUpdateStartupUserPromotesAnExistingAccount(t *testing.T) {
+	f := newFixture(t)
+	f.markCompleted(t, false)
+
+	ctx := context.Background()
+	name := f.username(t)
+	hash, err := auth.Hash("hunter2")
+	if err != nil {
+		t.Fatalf("failed to hash the password: %v", err)
+	}
+	if _, err := f.users.CreateUser(ctx, name, hash, false); err != nil {
+		t.Fatalf("failed to create the user: %v", err)
+	}
+
+	password := "hunter3"
+	response, err := f.server.UpdateStartupUser(ctx, api.UpdateStartupUserRequestObject{
+		JSONBody: &api.UpdateStartupUserJSONRequestBody{Name: &name, Password: &password},
+	})
+	if err != nil {
+		t.Fatalf("UpdateStartupUser: %v", err)
+	}
+	if _, ok := response.(api.UpdateStartupUser204Response); !ok {
+		t.Fatalf("UpdateStartupUser answered %T, want 204", response)
+	}
+
+	user, err := f.users.UserByUsername(ctx, name)
+	if err != nil {
+		t.Fatalf("failed to read the user: %v", err)
+	}
+	if user.Edges.Policy == nil || !user.Edges.Policy.IsAdministrator {
+		t.Error("the wizard finished on a user that is not an administrator")
+	}
+}
+
 func TestCompletedDefaultsToClosedOnAnInstallThatHoldsUsers(t *testing.T) {
 	f := newFixture(t)
 	f.clearConfiguration(t)
