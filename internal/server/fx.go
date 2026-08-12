@@ -43,8 +43,11 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/search"
 	"github.com/FreekingDean/gojellyfin/internal/server/session"
 	"github.com/FreekingDean/gojellyfin/internal/server/studios"
+	"github.com/FreekingDean/gojellyfin/internal/server/suggestions"
 	"github.com/FreekingDean/gojellyfin/internal/server/syncplay"
 	"github.com/FreekingDean/gojellyfin/internal/server/system"
+	"github.com/FreekingDean/gojellyfin/internal/server/timesync"
+	"github.com/FreekingDean/gojellyfin/internal/server/trailers"
 	"github.com/FreekingDean/gojellyfin/internal/server/tvshows"
 	"github.com/FreekingDean/gojellyfin/internal/server/user"
 	"github.com/FreekingDean/gojellyfin/internal/server/userlibrary"
@@ -94,6 +97,9 @@ var Module = fx.Module(
 		configuration.New,
 		serverdisplaypreferences.New,
 		serveritems.New,
+		suggestions.New,
+		timesync.New,
+		trailers.New,
 		library.New,
 		librarystructure.New,
 		itemupdate.New,

@@ -21,7 +21,10 @@ type (
 	MediaType = itemmodal.MediaType
 )
 
-var ValidKind = itemmodal.KindValidator
+var (
+	ValidKind      = itemmodal.KindValidator
+	ValidMediaType = itemmodal.MediaTypeValidator
+)
 
 type Service struct {
 	store *store.Client
@@ -110,6 +113,7 @@ type ItemQuery struct {
 	ParentID   *uuid.UUID
 	TopLevel   bool
 	Kinds      []Kind
+	MediaTypes []MediaType
 	IDs        []uuid.UUID
 	SearchTerm string
 	SortBy     []string
@@ -142,6 +146,9 @@ func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int
 	}
 	if len(query.Kinds) > 0 {
 		items = items.Where(itemmodal.KindIn(query.Kinds...))
+	}
+	if len(query.MediaTypes) > 0 {
+		items = items.Where(itemmodal.MediaTypeIn(query.MediaTypes...))
 	}
 	if len(query.IDs) > 0 {
 		items = items.Where(itemmodal.IDIn(query.IDs...))

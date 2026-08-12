@@ -117,6 +117,25 @@ func (s *Service) ListLibraries(ctx context.Context) ([]*Library, error) {
 	return libraries, nil
 }
 
+var groupableCollectionTypes = []CollectionType{
+	CollectionTypeMovies,
+	CollectionTypeTvshows,
+	CollectionTypeMixed,
+}
+
+func (s *Service) GroupableLibraries(ctx context.Context) ([]*Library, error) {
+	libraries, err := s.store.Library.Query().
+		Where(librarymodal.CollectionTypeIn(groupableCollectionTypes...)).
+		WithOptions().
+		Order(librarymodal.ByName()).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list groupable libraries: %w", err)
+	}
+
+	return libraries, nil
+}
+
 func (s *Service) Rename(ctx context.Context, id uuid.UUID, name string) error {
 	if err := s.store.Library.UpdateOneID(id).SetName(name).Exec(ctx); err != nil {
 		return fmt.Errorf("failed to rename library: %w", err)
