@@ -10,8 +10,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 )
 
-// Whether the startup wizard has run, which is the only thing that opens an
-// operation to an unauthenticated caller beyond the always public ones.
 type Setup interface {
 	Completed(ctx context.Context) (bool, error)
 }

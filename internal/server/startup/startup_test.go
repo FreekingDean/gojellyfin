@@ -98,6 +98,12 @@ func (f *fixture) markCompleted(t *testing.T, completed bool) {
 	}
 }
 
+func (f *fixture) clearConfiguration(t *testing.T) {
+	t.Helper()
+
+	restore(t, f.client, configuration.SystemConfigurationKey, nil)
+}
+
 func (f *fixture) username(t *testing.T) string {
 	t.Helper()
 
@@ -285,26 +291,69 @@ func TestUpdateStartupUserCreatesAnAdministrator(t *testing.T) {
 	if verified, err := auth.Verify(password, user.PasswordHash); err != nil || !verified {
 		t.Errorf("the stored password does not verify: %v", err)
 	}
+}
 
-	// The wizard can be walked back, so a second submission updates rather
-	// than colliding with the account it just created.
+func TestUpdateStartupUserResubmittedChangesThePassword(t *testing.T) {
+	f := newFixture(t)
+	f.markCompleted(t, false)
+
+	ctx := context.Background()
+	name := f.username(t)
+	password := "hunter2"
 	changed := "hunter3"
-	response, err = f.server.UpdateStartupUser(ctx, api.UpdateStartupUserRequestObject{
-		JSONBody: &api.UpdateStartupUserJSONRequestBody{Name: &name, Password: &changed},
-	})
-	if err != nil {
-		t.Fatalf("UpdateStartupUser: %v", err)
-	}
-	if _, ok := response.(api.UpdateStartupUser204Response); !ok {
-		t.Fatalf("UpdateStartupUser answered %T, want 204", response)
+
+	for _, secret := range []string{password, changed} {
+		response, err := f.server.UpdateStartupUser(ctx, api.UpdateStartupUserRequestObject{
+			JSONBody: &api.UpdateStartupUserJSONRequestBody{Name: &name, Password: &secret},
+		})
+		if err != nil {
+			t.Fatalf("UpdateStartupUser: %v", err)
+		}
+		if _, ok := response.(api.UpdateStartupUser204Response); !ok {
+			t.Fatalf("UpdateStartupUser answered %T, want 204", response)
+		}
 	}
 
-	user, err = f.users.UserByUsername(ctx, name)
+	user, err := f.users.UserByUsername(ctx, name)
 	if err != nil {
 		t.Fatalf("failed to read the user: %v", err)
 	}
 	if verified, err := auth.Verify(changed, user.PasswordHash); err != nil || !verified {
 		t.Errorf("the changed password does not verify: %v", err)
+	}
+}
+
+func TestCompletedDefaultsToClosedOnAnInstallThatHoldsUsers(t *testing.T) {
+	f := newFixture(t)
+	f.clearConfiguration(t)
+
+	ctx := context.Background()
+	hash, err := auth.Hash("hunter2")
+	if err != nil {
+		t.Fatalf("failed to hash the password: %v", err)
+	}
+	if _, err := f.users.CreateUser(ctx, f.username(t), hash, true); err != nil {
+		t.Fatalf("failed to create the user: %v", err)
+	}
+
+	completed, err := f.server.Completed(ctx)
+	if err != nil {
+		t.Fatalf("Completed: %v", err)
+	}
+	if !completed {
+		t.Fatal("the wizard is open on an install that already holds users")
+	}
+
+	name := f.username(t)
+	password := "hunter3"
+	response, err := f.server.UpdateStartupUser(ctx, api.UpdateStartupUserRequestObject{
+		JSONBody: &api.UpdateStartupUserJSONRequestBody{Name: &name, Password: &password},
+	})
+	if err != nil {
+		t.Fatalf("UpdateStartupUser: %v", err)
+	}
+	if _, ok := response.(api.UpdateStartupUser403Response); !ok {
+		t.Errorf("UpdateStartupUser answered %T, want 403", response)
 	}
 }
 

@@ -21,10 +21,6 @@ func New(config *config.Service, users *users.Service) *Server {
 	return &Server{config: config, users: users}
 }
 
-// The wizard answers without a token so that a fresh install can be set up,
-// which is why every handler here refuses once it is done. A database that
-// never stored the flag counts as done as soon as it holds a user, so an
-// install that predates the wizard stays closed.
 func Completed(ctx context.Context, store *config.Service, users *users.Service) (bool, error) {
 	value, err := store.Configuration(ctx, configuration.SystemConfigurationKey)
 	if err != nil {
@@ -171,15 +167,7 @@ func (s *Server) UpdateStartupUser(
 		return nil, err
 	}
 
-	settings, err := configuration.ServerConfiguration(ctx, s.config)
-	if err != nil {
-		return nil, err
-	}
-	// Stored before the user exists: a database holding a user and no flag
-	// reads as a completed install, which would shut the rest of the wizard.
-	settings.IsStartupWizardCompleted = apiutil.Ptr(false)
-
-	if err := s.saveConfiguration(ctx, settings); err != nil {
+	if err := s.keepWizardOpen(ctx); err != nil {
 		return nil, err
 	}
 	if _, err := s.users.EnsureUser(ctx, *req.Name, hash, true); err != nil {
@@ -243,6 +231,16 @@ func (s *Server) CompleteWizard(
 	}
 
 	return api.CompleteWizard204Response{}, nil
+}
+
+func (s *Server) keepWizardOpen(ctx context.Context) error {
+	settings, err := configuration.ServerConfiguration(ctx, s.config)
+	if err != nil {
+		return err
+	}
+	settings.IsStartupWizardCompleted = apiutil.Ptr(false)
+
+	return s.saveConfiguration(ctx, settings)
 }
 
 func (s *Server) saveConfiguration(ctx context.Context, settings api.ServerConfiguration) error {

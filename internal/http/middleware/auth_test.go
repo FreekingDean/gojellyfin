@@ -11,10 +11,13 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 )
 
-type setup bool
+type setup struct {
+	completed bool
+	err       error
+}
 
 func (s setup) Completed(context.Context) (bool, error) {
-	return bool(s), nil
+	return s.completed, s.err
 }
 
 func TestFirstTimeSetupOperationsCloseWithTheWizard(t *testing.T) {
@@ -45,7 +48,7 @@ func TestFirstTimeSetupOperationsCloseWithTheWizard(t *testing.T) {
 				return nil, nil
 			}
 
-			middleware := NewAuth(auth.New(nil), setup(test.completed)).Middleware(handler, test.operation)
+			middleware := NewAuth(auth.New(nil), setup{completed: test.completed}).Middleware(handler, test.operation)
 			_, err := middleware(context.Background(), httptest.NewRecorder(), httptest.NewRequest("GET", "/", nil), nil)
 
 			if handled != test.handled {
@@ -55,6 +58,27 @@ func TestFirstTimeSetupOperationsCloseWithTheWizard(t *testing.T) {
 				t.Errorf("err = %v, want %v", err, auth.ErrUnauthorized)
 			}
 		})
+	}
+}
+
+func TestFirstTimeSetupOperationsStayShutWhenTheGateCannotBeRead(t *testing.T) {
+	unreadable := errors.New("failed to read the configuration")
+
+	handled := false
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		handled = true
+
+		return nil, nil
+	}
+
+	middleware := NewAuth(auth.New(nil), setup{err: unreadable}).Middleware(handler, "GetStartupConfiguration")
+	_, err := middleware(context.Background(), httptest.NewRecorder(), httptest.NewRequest("GET", "/", nil), nil)
+
+	if handled {
+		t.Error("the wizard opened while the gate could not be read")
+	}
+	if !errors.Is(err, unreadable) {
+		t.Errorf("err = %v, want %v", err, unreadable)
 	}
 }
 
