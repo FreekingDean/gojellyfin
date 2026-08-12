@@ -22,21 +22,12 @@ func New(items *items.Service, libraries *libraries.Service) *Server {
 }
 
 func (s *Server) GetItems(ctx context.Context, request api.GetItemsRequestObject) (api.GetItemsResponseObject, error) {
-	result, err := s.QueryResult(ctx, request.Params)
+	result, err := dto.QueryResult(ctx, s.items, s.libraries, request.Params)
 	if err != nil {
 		return nil, err
 	}
 
 	return api.GetItems200JSONResponse(result), nil
-}
-
-func (s *Server) QueryResult(ctx context.Context, params api.GetItemsParams) (api.BaseItemDtoQueryResult, error) {
-	query, err := s.itemQuery(ctx, params)
-	if err != nil {
-		return api.BaseItemDtoQueryResult{}, err
-	}
-
-	return s.queryResult(ctx, query)
 }
 
 func (s *Server) GetItem(ctx context.Context, request api.GetItemRequestObject) (api.GetItemResponseObject, error) {
@@ -92,49 +83,4 @@ func (s *Server) GetLatestMedia(ctx context.Context, request api.GetLatestMediaR
 	}
 
 	return api.GetLatestMedia200JSONResponse(converted), nil
-}
-
-func (s *Server) itemQuery(ctx context.Context, params api.GetItemsParams) (items.ItemQuery, error) {
-	query := items.ItemQuery{
-		SearchTerm: apiutil.Deref(params.SearchTerm),
-		StartIndex: int(apiutil.Deref(params.StartIndex)),
-		Limit:      int(apiutil.Deref(params.Limit)),
-		Descending: descending(params.SortOrder),
-		SortBy:     sortFields(params.SortBy),
-	}
-
-	query.Kinds = dto.Kinds(params.IncludeItemTypes)
-	query.MediaTypes = dto.MediaTypes(params.MediaTypes)
-	if params.Ids != nil {
-		query.IDs = *params.Ids
-	}
-
-	if params.ParentId != nil {
-		if library, err := s.libraries.Library(ctx, *params.ParentId); err == nil {
-			query.LibraryID = &library.ID
-			query.TopLevel = !apiutil.Deref(params.Recursive)
-		} else {
-			query.ParentID = params.ParentId
-		}
-	}
-
-	return query, nil
-}
-
-func (s *Server) queryResult(ctx context.Context, query items.ItemQuery) (api.BaseItemDtoQueryResult, error) {
-	records, total, err := s.items.QueryItems(ctx, query)
-	if err != nil {
-		return api.BaseItemDtoQueryResult{}, err
-	}
-
-	converted, err := dto.ItemDtos(ctx, s.items, records)
-	if err != nil {
-		return api.BaseItemDtoQueryResult{}, err
-	}
-
-	return api.BaseItemDtoQueryResult{
-		Items:            &converted,
-		StartIndex:       apiutil.Ptr(int32(query.StartIndex)),
-		TotalRecordCount: apiutil.Ptr(int32(total)),
-	}, nil
 }

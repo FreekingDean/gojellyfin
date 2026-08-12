@@ -11,7 +11,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	serveritems "github.com/FreekingDean/gojellyfin/internal/server/items"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
@@ -54,7 +53,7 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
-	server := New(serveritems.New(items.New(client), libraries.New(client)))
+	server := New(items.New(client), libraries.New(client))
 
 	return &fixture{server: server, client: client, library: library.ID, prefix: prefix}
 }
