@@ -3560,6 +3560,22 @@ func (c *PlaylistClient) QueryItem(_m *Playlist) *ItemQuery {
 	return query
 }
 
+// QueryOwner queries the owner edge of a Playlist.
+func (c *PlaylistClient) QueryOwner(_m *Playlist) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(playlist.Table, playlist.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, playlist.OwnerTable, playlist.OwnerColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryEntries queries the entries edge of a Playlist.
 func (c *PlaylistClient) QueryEntries(_m *Playlist) *PlaylistEntryQuery {
 	query := (&PlaylistEntryClient{config: c.config}).Query()
@@ -5171,6 +5187,22 @@ func (c *UserClient) QueryActivityLogEntries(_m *User) *ActivityLogEntryQuery {
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(activitylogentry.Table, activitylogentry.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.ActivityLogEntriesTable, user.ActivityLogEntriesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryPlaylists queries the playlists edge of a User.
+func (c *UserClient) QueryPlaylists(_m *User) *PlaylistQuery {
+	query := (&PlaylistClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(playlist.Table, playlist.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.PlaylistsTable, user.PlaylistsColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

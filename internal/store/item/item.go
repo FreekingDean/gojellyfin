@@ -247,14 +247,14 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "playlist" package.
 	PlaylistInverseTable = "playlists"
 	// PlaylistColumn is the table column denoting the playlist relation/edge.
-	PlaylistColumn = "item_playlist"
+	PlaylistColumn = "item_id"
 	// PlaylistEntriesTable is the table that holds the playlist_entries relation/edge.
 	PlaylistEntriesTable = "playlist_entries"
 	// PlaylistEntriesInverseTable is the table name for the PlaylistEntry entity.
 	// It exists in this package in order to avoid circular dependency with the "playlistentry" package.
 	PlaylistEntriesInverseTable = "playlist_entries"
 	// PlaylistEntriesColumn is the table column denoting the playlist_entries relation/edge.
-	PlaylistEntriesColumn = "item_playlist_entries"
+	PlaylistEntriesColumn = "item_id"
 	// GenresTable is the table that holds the genres relation/edge. The primary key declared below.
 	GenresTable = "item_genres"
 	// GenresInverseTable is the table name for the Genre entity.

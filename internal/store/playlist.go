@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
+	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/google/uuid"
 )
 
@@ -23,26 +24,31 @@ type Playlist struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// ItemID holds the value of the "item_id" field.
+	ItemID uuid.UUID `json:"item_id,omitempty"`
+	// OwnerID holds the value of the "owner_id" field.
+	OwnerID uuid.UUID `json:"owner_id,omitempty"`
 	// OpenAccess holds the value of the "open_access" field.
 	OpenAccess bool `json:"open_access,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PlaylistQuery when eager-loading is set.
-	Edges         PlaylistEdges `json:"edges"`
-	item_playlist *uuid.UUID
-	selectValues  sql.SelectValues
+	Edges        PlaylistEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // PlaylistEdges holds the relations/edges for other nodes in the graph.
 type PlaylistEdges struct {
 	// Item holds the value of the item edge.
 	Item *Item `json:"item,omitempty"`
+	// Owner holds the value of the owner edge.
+	Owner *User `json:"owner,omitempty"`
 	// Entries holds the value of the entries edge.
 	Entries []*PlaylistEntry `json:"entries,omitempty"`
 	// Shares holds the value of the shares edge.
 	Shares []*PlaylistShare `json:"shares,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // ItemOrErr returns the Item value or an error if the edge
@@ -56,10 +62,21 @@ func (e PlaylistEdges) ItemOrErr() (*Item, error) {
 	return nil, &NotLoadedError{edge: "item"}
 }
 
+// OwnerOrErr returns the Owner value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e PlaylistEdges) OwnerOrErr() (*User, error) {
+	if e.Owner != nil {
+		return e.Owner, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: user.Label}
+	}
+	return nil, &NotLoadedError{edge: "owner"}
+}
+
 // EntriesOrErr returns the Entries value or an error if the edge
 // was not loaded in eager-loading.
 func (e PlaylistEdges) EntriesOrErr() ([]*PlaylistEntry, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		return e.Entries, nil
 	}
 	return nil, &NotLoadedError{edge: "entries"}
@@ -68,7 +85,7 @@ func (e PlaylistEdges) EntriesOrErr() ([]*PlaylistEntry, error) {
 // SharesOrErr returns the Shares value or an error if the edge
 // was not loaded in eager-loading.
 func (e PlaylistEdges) SharesOrErr() ([]*PlaylistShare, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.Shares, nil
 	}
 	return nil, &NotLoadedError{edge: "shares"}
@@ -83,10 +100,8 @@ func (*Playlist) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case playlist.FieldCreatedAt, playlist.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case playlist.FieldID:
+		case playlist.FieldID, playlist.FieldItemID, playlist.FieldOwnerID:
 			values[i] = new(uuid.UUID)
-		case playlist.ForeignKeys[0]: // item_playlist
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -120,18 +135,23 @@ func (_m *Playlist) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
 			}
+		case playlist.FieldItemID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field item_id", values[i])
+			} else if value != nil {
+				_m.ItemID = *value
+			}
+		case playlist.FieldOwnerID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field owner_id", values[i])
+			} else if value != nil {
+				_m.OwnerID = *value
+			}
 		case playlist.FieldOpenAccess:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field open_access", values[i])
 			} else if value.Valid {
 				_m.OpenAccess = value.Bool
-			}
-		case playlist.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullScanner); !ok {
-				return fmt.Errorf("unexpected type %T for field item_playlist", values[i])
-			} else if value.Valid {
-				_m.item_playlist = new(uuid.UUID)
-				*_m.item_playlist = *value.S.(*uuid.UUID)
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -149,6 +169,11 @@ func (_m *Playlist) Value(name string) (ent.Value, error) {
 // QueryItem queries the "item" edge of the Playlist entity.
 func (_m *Playlist) QueryItem() *ItemQuery {
 	return NewPlaylistClient(_m.config).QueryItem(_m)
+}
+
+// QueryOwner queries the "owner" edge of the Playlist entity.
+func (_m *Playlist) QueryOwner() *UserQuery {
+	return NewPlaylistClient(_m.config).QueryOwner(_m)
 }
 
 // QueryEntries queries the "entries" edge of the Playlist entity.
@@ -189,6 +214,12 @@ func (_m *Playlist) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
 	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("item_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ItemID))
+	builder.WriteString(", ")
+	builder.WriteString("owner_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.OwnerID))
 	builder.WriteString(", ")
 	builder.WriteString("open_access=")
 	builder.WriteString(fmt.Sprintf("%v", _m.OpenAccess))

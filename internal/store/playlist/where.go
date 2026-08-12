@@ -66,6 +66,16 @@ func UpdatedAt(v time.Time) predicate.Playlist {
 	return predicate.Playlist(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
+// ItemID applies equality check predicate on the "item_id" field. It's identical to ItemIDEQ.
+func ItemID(v uuid.UUID) predicate.Playlist {
+	return predicate.Playlist(sql.FieldEQ(FieldItemID, v))
+}
+
+// OwnerID applies equality check predicate on the "owner_id" field. It's identical to OwnerIDEQ.
+func OwnerID(v uuid.UUID) predicate.Playlist {
+	return predicate.Playlist(sql.FieldEQ(FieldOwnerID, v))
+}
+
 // OpenAccess applies equality check predicate on the "open_access" field. It's identical to OpenAccessEQ.
 func OpenAccess(v bool) predicate.Playlist {
 	return predicate.Playlist(sql.FieldEQ(FieldOpenAccess, v))
@@ -151,6 +161,46 @@ func UpdatedAtLTE(v time.Time) predicate.Playlist {
 	return predicate.Playlist(sql.FieldLTE(FieldUpdatedAt, v))
 }
 
+// ItemIDEQ applies the EQ predicate on the "item_id" field.
+func ItemIDEQ(v uuid.UUID) predicate.Playlist {
+	return predicate.Playlist(sql.FieldEQ(FieldItemID, v))
+}
+
+// ItemIDNEQ applies the NEQ predicate on the "item_id" field.
+func ItemIDNEQ(v uuid.UUID) predicate.Playlist {
+	return predicate.Playlist(sql.FieldNEQ(FieldItemID, v))
+}
+
+// ItemIDIn applies the In predicate on the "item_id" field.
+func ItemIDIn(vs ...uuid.UUID) predicate.Playlist {
+	return predicate.Playlist(sql.FieldIn(FieldItemID, vs...))
+}
+
+// ItemIDNotIn applies the NotIn predicate on the "item_id" field.
+func ItemIDNotIn(vs ...uuid.UUID) predicate.Playlist {
+	return predicate.Playlist(sql.FieldNotIn(FieldItemID, vs...))
+}
+
+// OwnerIDEQ applies the EQ predicate on the "owner_id" field.
+func OwnerIDEQ(v uuid.UUID) predicate.Playlist {
+	return predicate.Playlist(sql.FieldEQ(FieldOwnerID, v))
+}
+
+// OwnerIDNEQ applies the NEQ predicate on the "owner_id" field.
+func OwnerIDNEQ(v uuid.UUID) predicate.Playlist {
+	return predicate.Playlist(sql.FieldNEQ(FieldOwnerID, v))
+}
+
+// OwnerIDIn applies the In predicate on the "owner_id" field.
+func OwnerIDIn(vs ...uuid.UUID) predicate.Playlist {
+	return predicate.Playlist(sql.FieldIn(FieldOwnerID, vs...))
+}
+
+// OwnerIDNotIn applies the NotIn predicate on the "owner_id" field.
+func OwnerIDNotIn(vs ...uuid.UUID) predicate.Playlist {
+	return predicate.Playlist(sql.FieldNotIn(FieldOwnerID, vs...))
+}
+
 // OpenAccessEQ applies the EQ predicate on the "open_access" field.
 func OpenAccessEQ(v bool) predicate.Playlist {
 	return predicate.Playlist(sql.FieldEQ(FieldOpenAccess, v))
@@ -176,6 +226,29 @@ func HasItem() predicate.Playlist {
 func HasItemWith(preds ...predicate.Item) predicate.Playlist {
 	return predicate.Playlist(func(s *sql.Selector) {
 		step := newItemStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasOwner applies the HasEdge predicate on the "owner" edge.
+func HasOwner() predicate.Playlist {
+	return predicate.Playlist(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, OwnerTable, OwnerColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOwnerWith applies the HasEdge predicate on the "owner" edge with a given conditions (other predicates).
+func HasOwnerWith(preds ...predicate.User) predicate.Playlist {
+	return predicate.Playlist(func(s *sql.Selector) {
+		step := newOwnerStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

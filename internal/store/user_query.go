@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/displaypreferences"
+	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
@@ -37,6 +38,7 @@ type UserQuery struct {
 	withItemData           *UserItemDataQuery
 	withDisplayPreferences *DisplayPreferencesQuery
 	withActivityLogEntries *ActivityLogEntryQuery
+	withPlaylists          *PlaylistQuery
 	withPlaylistShares     *PlaylistShareQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -199,6 +201,28 @@ func (_q *UserQuery) QueryActivityLogEntries() *ActivityLogEntryQuery {
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(activitylogentry.Table, activitylogentry.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.ActivityLogEntriesTable, user.ActivityLogEntriesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryPlaylists chains the current query on the "playlists" edge.
+func (_q *UserQuery) QueryPlaylists() *PlaylistQuery {
+	query := (&PlaylistClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(playlist.Table, playlist.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.PlaylistsTable, user.PlaylistsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -426,6 +450,7 @@ func (_q *UserQuery) Clone() *UserQuery {
 		withItemData:           _q.withItemData.Clone(),
 		withDisplayPreferences: _q.withDisplayPreferences.Clone(),
 		withActivityLogEntries: _q.withActivityLogEntries.Clone(),
+		withPlaylists:          _q.withPlaylists.Clone(),
 		withPlaylistShares:     _q.withPlaylistShares.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
@@ -496,6 +521,17 @@ func (_q *UserQuery) WithActivityLogEntries(opts ...func(*ActivityLogEntryQuery)
 		opt(query)
 	}
 	_q.withActivityLogEntries = query
+	return _q
+}
+
+// WithPlaylists tells the query-builder to eager-load the nodes that are connected to
+// the "playlists" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserQuery) WithPlaylists(opts ...func(*PlaylistQuery)) *UserQuery {
+	query := (&PlaylistClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withPlaylists = query
 	return _q
 }
 
@@ -588,13 +624,14 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	var (
 		nodes       = []*User{}
 		_spec       = _q.querySpec()
-		loadedTypes = [7]bool{
+		loadedTypes = [8]bool{
 			_q.withConfiguration != nil,
 			_q.withPolicy != nil,
 			_q.withSessions != nil,
 			_q.withItemData != nil,
 			_q.withDisplayPreferences != nil,
 			_q.withActivityLogEntries != nil,
+			_q.withPlaylists != nil,
 			_q.withPlaylistShares != nil,
 		}
 	)
@@ -655,6 +692,13 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		if err := _q.loadActivityLogEntries(ctx, query, nodes,
 			func(n *User) { n.Edges.ActivityLogEntries = []*ActivityLogEntry{} },
 			func(n *User, e *ActivityLogEntry) { n.Edges.ActivityLogEntries = append(n.Edges.ActivityLogEntries, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withPlaylists; query != nil {
+		if err := _q.loadPlaylists(ctx, query, nodes,
+			func(n *User) { n.Edges.Playlists = []*Playlist{} },
+			func(n *User, e *Playlist) { n.Edges.Playlists = append(n.Edges.Playlists, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -847,6 +891,36 @@ func (_q *UserQuery) loadActivityLogEntries(ctx context.Context, query *Activity
 	}
 	return nil
 }
+func (_q *UserQuery) loadPlaylists(ctx context.Context, query *PlaylistQuery, nodes []*User, init func(*User), assign func(*User, *Playlist)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(playlist.FieldOwnerID)
+	}
+	query.Where(predicate.Playlist(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.PlaylistsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.OwnerID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "owner_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 func (_q *UserQuery) loadPlaylistShares(ctx context.Context, query *PlaylistShareQuery, nodes []*User, init func(*User), assign func(*User, *PlaylistShare)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*User)
@@ -857,7 +931,9 @@ func (_q *UserQuery) loadPlaylistShares(ctx context.Context, query *PlaylistShar
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(playlistshare.FieldUserID)
+	}
 	query.Where(predicate.PlaylistShare(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(user.PlaylistSharesColumn), fks...))
 	}))
@@ -866,13 +942,10 @@ func (_q *UserQuery) loadPlaylistShares(ctx context.Context, query *PlaylistShar
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.user_playlist_shares
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "user_playlist_shares" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		fk := n.UserID
+		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "user_playlist_shares" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}

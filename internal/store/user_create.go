@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/displaypreferences"
+	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
@@ -207,6 +208,21 @@ func (_c *UserCreate) AddActivityLogEntries(v ...*ActivityLogEntry) *UserCreate 
 		ids[i] = v[i].ID
 	}
 	return _c.AddActivityLogEntryIDs(ids...)
+}
+
+// AddPlaylistIDs adds the "playlists" edge to the Playlist entity by IDs.
+func (_c *UserCreate) AddPlaylistIDs(ids ...uuid.UUID) *UserCreate {
+	_c.mutation.AddPlaylistIDs(ids...)
+	return _c
+}
+
+// AddPlaylists adds the "playlists" edges to the Playlist entity.
+func (_c *UserCreate) AddPlaylists(v ...*Playlist) *UserCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddPlaylistIDs(ids...)
 }
 
 // AddPlaylistShareIDs adds the "playlist_shares" edge to the PlaylistShare entity by IDs.
@@ -439,6 +455,22 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(activitylogentry.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.PlaylistsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PlaylistsTable,
+			Columns: []string{user.PlaylistsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(playlist.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

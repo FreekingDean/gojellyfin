@@ -1,0 +1,12 @@
+-- Modify "playlists" table
+ALTER TABLE "playlists" DROP CONSTRAINT IF EXISTS "playlists_items_playlist", DROP CONSTRAINT IF EXISTS "playlists_users_playlists", DROP COLUMN IF EXISTS "item_playlist", ADD COLUMN IF NOT EXISTS "item_id" uuid NOT NULL, ADD COLUMN IF NOT EXISTS "owner_id" uuid NOT NULL, ADD CONSTRAINT "playlists_items_playlist" FOREIGN KEY ("item_id") REFERENCES "items" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION, ADD CONSTRAINT "playlists_users_playlists" FOREIGN KEY ("owner_id") REFERENCES "users" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION;
+-- Create index "playlists_item_id_key" to table: "playlists"
+CREATE UNIQUE INDEX IF NOT EXISTS "playlists_item_id_key" ON "playlists" ("item_id");
+-- Modify "playlist_entries" table
+ALTER TABLE "playlist_entries" DROP CONSTRAINT IF EXISTS "playlist_entries_items_playlist_entries", DROP CONSTRAINT IF EXISTS "playlist_entries_playlists_entries", DROP COLUMN IF EXISTS "item_playlist_entries", DROP COLUMN IF EXISTS "playlist_entries", ADD COLUMN IF NOT EXISTS "item_id" uuid NOT NULL, ADD COLUMN IF NOT EXISTS "playlist_id" uuid NOT NULL, ADD CONSTRAINT "playlist_entries_items_playlist_entries" FOREIGN KEY ("item_id") REFERENCES "items" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION, ADD CONSTRAINT "playlist_entries_playlists_entries" FOREIGN KEY ("playlist_id") REFERENCES "playlists" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION;
+-- Create index "playlistentry_playlist_id_sort_order" to table: "playlist_entries"
+CREATE INDEX IF NOT EXISTS "playlistentry_playlist_id_sort_order" ON "playlist_entries" ("playlist_id", "sort_order");
+-- Modify "playlist_shares" table
+ALTER TABLE "playlist_shares" DROP CONSTRAINT IF EXISTS "playlist_shares_playlists_shares", DROP CONSTRAINT IF EXISTS "playlist_shares_users_playlist_shares", DROP COLUMN IF EXISTS "playlist_shares", DROP COLUMN IF EXISTS "user_playlist_shares", ADD COLUMN IF NOT EXISTS "playlist_id" uuid NOT NULL, ADD COLUMN IF NOT EXISTS "user_id" uuid NOT NULL, ADD CONSTRAINT "playlist_shares_playlists_shares" FOREIGN KEY ("playlist_id") REFERENCES "playlists" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION, ADD CONSTRAINT "playlist_shares_users_playlist_shares" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION;
+-- Create index "playlistshare_playlist_id_user_id" to table: "playlist_shares"
+CREATE UNIQUE INDEX IF NOT EXISTS "playlistshare_playlist_id_user_id" ON "playlist_shares" ("playlist_id", "user_id");

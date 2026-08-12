@@ -66,6 +66,16 @@ func UpdatedAt(v time.Time) predicate.PlaylistEntry {
 	return predicate.PlaylistEntry(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
+// PlaylistID applies equality check predicate on the "playlist_id" field. It's identical to PlaylistIDEQ.
+func PlaylistID(v uuid.UUID) predicate.PlaylistEntry {
+	return predicate.PlaylistEntry(sql.FieldEQ(FieldPlaylistID, v))
+}
+
+// ItemID applies equality check predicate on the "item_id" field. It's identical to ItemIDEQ.
+func ItemID(v uuid.UUID) predicate.PlaylistEntry {
+	return predicate.PlaylistEntry(sql.FieldEQ(FieldItemID, v))
+}
+
 // SortOrder applies equality check predicate on the "sort_order" field. It's identical to SortOrderEQ.
 func SortOrder(v int32) predicate.PlaylistEntry {
 	return predicate.PlaylistEntry(sql.FieldEQ(FieldSortOrder, v))
@@ -149,6 +159,46 @@ func UpdatedAtLT(v time.Time) predicate.PlaylistEntry {
 // UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
 func UpdatedAtLTE(v time.Time) predicate.PlaylistEntry {
 	return predicate.PlaylistEntry(sql.FieldLTE(FieldUpdatedAt, v))
+}
+
+// PlaylistIDEQ applies the EQ predicate on the "playlist_id" field.
+func PlaylistIDEQ(v uuid.UUID) predicate.PlaylistEntry {
+	return predicate.PlaylistEntry(sql.FieldEQ(FieldPlaylistID, v))
+}
+
+// PlaylistIDNEQ applies the NEQ predicate on the "playlist_id" field.
+func PlaylistIDNEQ(v uuid.UUID) predicate.PlaylistEntry {
+	return predicate.PlaylistEntry(sql.FieldNEQ(FieldPlaylistID, v))
+}
+
+// PlaylistIDIn applies the In predicate on the "playlist_id" field.
+func PlaylistIDIn(vs ...uuid.UUID) predicate.PlaylistEntry {
+	return predicate.PlaylistEntry(sql.FieldIn(FieldPlaylistID, vs...))
+}
+
+// PlaylistIDNotIn applies the NotIn predicate on the "playlist_id" field.
+func PlaylistIDNotIn(vs ...uuid.UUID) predicate.PlaylistEntry {
+	return predicate.PlaylistEntry(sql.FieldNotIn(FieldPlaylistID, vs...))
+}
+
+// ItemIDEQ applies the EQ predicate on the "item_id" field.
+func ItemIDEQ(v uuid.UUID) predicate.PlaylistEntry {
+	return predicate.PlaylistEntry(sql.FieldEQ(FieldItemID, v))
+}
+
+// ItemIDNEQ applies the NEQ predicate on the "item_id" field.
+func ItemIDNEQ(v uuid.UUID) predicate.PlaylistEntry {
+	return predicate.PlaylistEntry(sql.FieldNEQ(FieldItemID, v))
+}
+
+// ItemIDIn applies the In predicate on the "item_id" field.
+func ItemIDIn(vs ...uuid.UUID) predicate.PlaylistEntry {
+	return predicate.PlaylistEntry(sql.FieldIn(FieldItemID, vs...))
+}
+
+// ItemIDNotIn applies the NotIn predicate on the "item_id" field.
+func ItemIDNotIn(vs ...uuid.UUID) predicate.PlaylistEntry {
+	return predicate.PlaylistEntry(sql.FieldNotIn(FieldItemID, vs...))
 }
 
 // SortOrderEQ applies the EQ predicate on the "sort_order" field.

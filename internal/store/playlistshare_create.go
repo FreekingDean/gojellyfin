@@ -54,6 +54,18 @@ func (_c *PlaylistShareCreate) SetNillableUpdatedAt(v *time.Time) *PlaylistShare
 	return _c
 }
 
+// SetPlaylistID sets the "playlist_id" field.
+func (_c *PlaylistShareCreate) SetPlaylistID(v uuid.UUID) *PlaylistShareCreate {
+	_c.mutation.SetPlaylistID(v)
+	return _c
+}
+
+// SetUserID sets the "user_id" field.
+func (_c *PlaylistShareCreate) SetUserID(v uuid.UUID) *PlaylistShareCreate {
+	_c.mutation.SetUserID(v)
+	return _c
+}
+
 // SetCanEdit sets the "can_edit" field.
 func (_c *PlaylistShareCreate) SetCanEdit(v bool) *PlaylistShareCreate {
 	_c.mutation.SetCanEdit(v)
@@ -66,21 +78,9 @@ func (_c *PlaylistShareCreate) SetID(v uuid.UUID) *PlaylistShareCreate {
 	return _c
 }
 
-// SetPlaylistID sets the "playlist" edge to the Playlist entity by ID.
-func (_c *PlaylistShareCreate) SetPlaylistID(id uuid.UUID) *PlaylistShareCreate {
-	_c.mutation.SetPlaylistID(id)
-	return _c
-}
-
 // SetPlaylist sets the "playlist" edge to the Playlist entity.
 func (_c *PlaylistShareCreate) SetPlaylist(v *Playlist) *PlaylistShareCreate {
 	return _c.SetPlaylistID(v.ID)
-}
-
-// SetUserID sets the "user" edge to the User entity by ID.
-func (_c *PlaylistShareCreate) SetUserID(id uuid.UUID) *PlaylistShareCreate {
-	_c.mutation.SetUserID(id)
-	return _c
 }
 
 // SetUser sets the "user" edge to the User entity.
@@ -140,6 +140,12 @@ func (_c *PlaylistShareCreate) check() error {
 	}
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`store: missing required field "PlaylistShare.updated_at"`)}
+	}
+	if _, ok := _c.mutation.PlaylistID(); !ok {
+		return &ValidationError{Name: "playlist_id", err: errors.New(`store: missing required field "PlaylistShare.playlist_id"`)}
+	}
+	if _, ok := _c.mutation.UserID(); !ok {
+		return &ValidationError{Name: "user_id", err: errors.New(`store: missing required field "PlaylistShare.user_id"`)}
 	}
 	if _, ok := _c.mutation.CanEdit(); !ok {
 		return &ValidationError{Name: "can_edit", err: errors.New(`store: missing required field "PlaylistShare.can_edit"`)}
@@ -212,7 +218,7 @@ func (_c *PlaylistShareCreate) createSpec() (*PlaylistShare, *sqlgraph.CreateSpe
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.playlist_shares = &nodes[0]
+		_node.PlaylistID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
@@ -229,7 +235,7 @@ func (_c *PlaylistShareCreate) createSpec() (*PlaylistShare, *sqlgraph.CreateSpe
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.user_playlist_shares = &nodes[0]
+		_node.UserID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -305,6 +311,30 @@ func (u *PlaylistShareUpsert) SetUpdatedAt(v time.Time) *PlaylistShareUpsert {
 // UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
 func (u *PlaylistShareUpsert) UpdateUpdatedAt() *PlaylistShareUpsert {
 	u.SetExcluded(playlistshare.FieldUpdatedAt)
+	return u
+}
+
+// SetPlaylistID sets the "playlist_id" field.
+func (u *PlaylistShareUpsert) SetPlaylistID(v uuid.UUID) *PlaylistShareUpsert {
+	u.Set(playlistshare.FieldPlaylistID, v)
+	return u
+}
+
+// UpdatePlaylistID sets the "playlist_id" field to the value that was provided on create.
+func (u *PlaylistShareUpsert) UpdatePlaylistID() *PlaylistShareUpsert {
+	u.SetExcluded(playlistshare.FieldPlaylistID)
+	return u
+}
+
+// SetUserID sets the "user_id" field.
+func (u *PlaylistShareUpsert) SetUserID(v uuid.UUID) *PlaylistShareUpsert {
+	u.Set(playlistshare.FieldUserID, v)
+	return u
+}
+
+// UpdateUserID sets the "user_id" field to the value that was provided on create.
+func (u *PlaylistShareUpsert) UpdateUserID() *PlaylistShareUpsert {
+	u.SetExcluded(playlistshare.FieldUserID)
 	return u
 }
 
@@ -393,6 +423,34 @@ func (u *PlaylistShareUpsertOne) SetUpdatedAt(v time.Time) *PlaylistShareUpsertO
 func (u *PlaylistShareUpsertOne) UpdateUpdatedAt() *PlaylistShareUpsertOne {
 	return u.Update(func(s *PlaylistShareUpsert) {
 		s.UpdateUpdatedAt()
+	})
+}
+
+// SetPlaylistID sets the "playlist_id" field.
+func (u *PlaylistShareUpsertOne) SetPlaylistID(v uuid.UUID) *PlaylistShareUpsertOne {
+	return u.Update(func(s *PlaylistShareUpsert) {
+		s.SetPlaylistID(v)
+	})
+}
+
+// UpdatePlaylistID sets the "playlist_id" field to the value that was provided on create.
+func (u *PlaylistShareUpsertOne) UpdatePlaylistID() *PlaylistShareUpsertOne {
+	return u.Update(func(s *PlaylistShareUpsert) {
+		s.UpdatePlaylistID()
+	})
+}
+
+// SetUserID sets the "user_id" field.
+func (u *PlaylistShareUpsertOne) SetUserID(v uuid.UUID) *PlaylistShareUpsertOne {
+	return u.Update(func(s *PlaylistShareUpsert) {
+		s.SetUserID(v)
+	})
+}
+
+// UpdateUserID sets the "user_id" field to the value that was provided on create.
+func (u *PlaylistShareUpsertOne) UpdateUserID() *PlaylistShareUpsertOne {
+	return u.Update(func(s *PlaylistShareUpsert) {
+		s.UpdateUserID()
 	})
 }
 
@@ -650,6 +708,34 @@ func (u *PlaylistShareUpsertBulk) SetUpdatedAt(v time.Time) *PlaylistShareUpsert
 func (u *PlaylistShareUpsertBulk) UpdateUpdatedAt() *PlaylistShareUpsertBulk {
 	return u.Update(func(s *PlaylistShareUpsert) {
 		s.UpdateUpdatedAt()
+	})
+}
+
+// SetPlaylistID sets the "playlist_id" field.
+func (u *PlaylistShareUpsertBulk) SetPlaylistID(v uuid.UUID) *PlaylistShareUpsertBulk {
+	return u.Update(func(s *PlaylistShareUpsert) {
+		s.SetPlaylistID(v)
+	})
+}
+
+// UpdatePlaylistID sets the "playlist_id" field to the value that was provided on create.
+func (u *PlaylistShareUpsertBulk) UpdatePlaylistID() *PlaylistShareUpsertBulk {
+	return u.Update(func(s *PlaylistShareUpsert) {
+		s.UpdatePlaylistID()
+	})
+}
+
+// SetUserID sets the "user_id" field.
+func (u *PlaylistShareUpsertBulk) SetUserID(v uuid.UUID) *PlaylistShareUpsertBulk {
+	return u.Update(func(s *PlaylistShareUpsert) {
+		s.SetUserID(v)
+	})
+}
+
+// UpdateUserID sets the "user_id" field to the value that was provided on create.
+func (u *PlaylistShareUpsertBulk) UpdateUserID() *PlaylistShareUpsertBulk {
+	return u.Update(func(s *PlaylistShareUpsert) {
+		s.UpdateUserID()
 	})
 }
 

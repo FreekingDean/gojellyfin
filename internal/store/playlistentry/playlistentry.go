@@ -18,6 +18,10 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// FieldPlaylistID holds the string denoting the playlist_id field in the database.
+	FieldPlaylistID = "playlist_id"
+	// FieldItemID holds the string denoting the item_id field in the database.
+	FieldItemID = "item_id"
 	// FieldSortOrder holds the string denoting the sort_order field in the database.
 	FieldSortOrder = "sort_order"
 	// EdgePlaylist holds the string denoting the playlist edge name in mutations.
@@ -32,14 +36,14 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "playlist" package.
 	PlaylistInverseTable = "playlists"
 	// PlaylistColumn is the table column denoting the playlist relation/edge.
-	PlaylistColumn = "playlist_entries"
+	PlaylistColumn = "playlist_id"
 	// ItemTable is the table that holds the item relation/edge.
 	ItemTable = "playlist_entries"
 	// ItemInverseTable is the table name for the Item entity.
 	// It exists in this package in order to avoid circular dependency with the "item" package.
 	ItemInverseTable = "items"
 	// ItemColumn is the table column denoting the item relation/edge.
-	ItemColumn = "item_playlist_entries"
+	ItemColumn = "item_id"
 )
 
 // Columns holds all SQL columns for playlistentry fields.
@@ -47,25 +51,15 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
+	FieldPlaylistID,
+	FieldItemID,
 	FieldSortOrder,
-}
-
-// ForeignKeys holds the SQL foreign-keys that are owned by the "playlist_entries"
-// table and are not defined as standalone fields in the schema.
-var ForeignKeys = []string{
-	"item_playlist_entries",
-	"playlist_entries",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
-			return true
-		}
-	}
-	for i := range ForeignKeys {
-		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -97,6 +91,16 @@ func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByUpdatedAt orders the results by the updated_at field.
 func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
+}
+
+// ByPlaylistID orders the results by the playlist_id field.
+func ByPlaylistID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPlaylistID, opts...).ToFunc()
+}
+
+// ByItemID orders the results by the item_id field.
+func ByItemID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldItemID, opts...).ToFunc()
 }
 
 // BySortOrder orders the results by the sort_order field.

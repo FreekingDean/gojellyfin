@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/displaypreferences"
+	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
@@ -236,6 +237,21 @@ func (_u *UserUpdate) AddActivityLogEntries(v ...*ActivityLogEntry) *UserUpdate 
 	return _u.AddActivityLogEntryIDs(ids...)
 }
 
+// AddPlaylistIDs adds the "playlists" edge to the Playlist entity by IDs.
+func (_u *UserUpdate) AddPlaylistIDs(ids ...uuid.UUID) *UserUpdate {
+	_u.mutation.AddPlaylistIDs(ids...)
+	return _u
+}
+
+// AddPlaylists adds the "playlists" edges to the Playlist entity.
+func (_u *UserUpdate) AddPlaylists(v ...*Playlist) *UserUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddPlaylistIDs(ids...)
+}
+
 // AddPlaylistShareIDs adds the "playlist_shares" edge to the PlaylistShare entity by IDs.
 func (_u *UserUpdate) AddPlaylistShareIDs(ids ...uuid.UUID) *UserUpdate {
 	_u.mutation.AddPlaylistShareIDs(ids...)
@@ -350,6 +366,27 @@ func (_u *UserUpdate) RemoveActivityLogEntries(v ...*ActivityLogEntry) *UserUpda
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveActivityLogEntryIDs(ids...)
+}
+
+// ClearPlaylists clears all "playlists" edges to the Playlist entity.
+func (_u *UserUpdate) ClearPlaylists() *UserUpdate {
+	_u.mutation.ClearPlaylists()
+	return _u
+}
+
+// RemovePlaylistIDs removes the "playlists" edge to Playlist entities by IDs.
+func (_u *UserUpdate) RemovePlaylistIDs(ids ...uuid.UUID) *UserUpdate {
+	_u.mutation.RemovePlaylistIDs(ids...)
+	return _u
+}
+
+// RemovePlaylists removes "playlists" edges to Playlist entities.
+func (_u *UserUpdate) RemovePlaylists(v ...*Playlist) *UserUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemovePlaylistIDs(ids...)
 }
 
 // ClearPlaylistShares clears all "playlist_shares" edges to the PlaylistShare entity.
@@ -683,6 +720,51 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.PlaylistsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PlaylistsTable,
+			Columns: []string{user.PlaylistsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(playlist.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedPlaylistsIDs(); len(nodes) > 0 && !_u.mutation.PlaylistsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PlaylistsTable,
+			Columns: []string{user.PlaylistsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(playlist.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PlaylistsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PlaylistsTable,
+			Columns: []string{user.PlaylistsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(playlist.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _u.mutation.PlaylistSharesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -948,6 +1030,21 @@ func (_u *UserUpdateOne) AddActivityLogEntries(v ...*ActivityLogEntry) *UserUpda
 	return _u.AddActivityLogEntryIDs(ids...)
 }
 
+// AddPlaylistIDs adds the "playlists" edge to the Playlist entity by IDs.
+func (_u *UserUpdateOne) AddPlaylistIDs(ids ...uuid.UUID) *UserUpdateOne {
+	_u.mutation.AddPlaylistIDs(ids...)
+	return _u
+}
+
+// AddPlaylists adds the "playlists" edges to the Playlist entity.
+func (_u *UserUpdateOne) AddPlaylists(v ...*Playlist) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddPlaylistIDs(ids...)
+}
+
 // AddPlaylistShareIDs adds the "playlist_shares" edge to the PlaylistShare entity by IDs.
 func (_u *UserUpdateOne) AddPlaylistShareIDs(ids ...uuid.UUID) *UserUpdateOne {
 	_u.mutation.AddPlaylistShareIDs(ids...)
@@ -1062,6 +1159,27 @@ func (_u *UserUpdateOne) RemoveActivityLogEntries(v ...*ActivityLogEntry) *UserU
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveActivityLogEntryIDs(ids...)
+}
+
+// ClearPlaylists clears all "playlists" edges to the Playlist entity.
+func (_u *UserUpdateOne) ClearPlaylists() *UserUpdateOne {
+	_u.mutation.ClearPlaylists()
+	return _u
+}
+
+// RemovePlaylistIDs removes the "playlists" edge to Playlist entities by IDs.
+func (_u *UserUpdateOne) RemovePlaylistIDs(ids ...uuid.UUID) *UserUpdateOne {
+	_u.mutation.RemovePlaylistIDs(ids...)
+	return _u
+}
+
+// RemovePlaylists removes "playlists" edges to Playlist entities.
+func (_u *UserUpdateOne) RemovePlaylists(v ...*Playlist) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemovePlaylistIDs(ids...)
 }
 
 // ClearPlaylistShares clears all "playlist_shares" edges to the PlaylistShare entity.
@@ -1418,6 +1536,51 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(activitylogentry.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.PlaylistsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PlaylistsTable,
+			Columns: []string{user.PlaylistsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(playlist.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedPlaylistsIDs(); len(nodes) > 0 && !_u.mutation.PlaylistsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PlaylistsTable,
+			Columns: []string{user.PlaylistsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(playlist.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PlaylistsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PlaylistsTable,
+			Columns: []string{user.PlaylistsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(playlist.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

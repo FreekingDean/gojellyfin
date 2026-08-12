@@ -66,6 +66,16 @@ func UpdatedAt(v time.Time) predicate.PlaylistShare {
 	return predicate.PlaylistShare(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
+// PlaylistID applies equality check predicate on the "playlist_id" field. It's identical to PlaylistIDEQ.
+func PlaylistID(v uuid.UUID) predicate.PlaylistShare {
+	return predicate.PlaylistShare(sql.FieldEQ(FieldPlaylistID, v))
+}
+
+// UserID applies equality check predicate on the "user_id" field. It's identical to UserIDEQ.
+func UserID(v uuid.UUID) predicate.PlaylistShare {
+	return predicate.PlaylistShare(sql.FieldEQ(FieldUserID, v))
+}
+
 // CanEdit applies equality check predicate on the "can_edit" field. It's identical to CanEditEQ.
 func CanEdit(v bool) predicate.PlaylistShare {
 	return predicate.PlaylistShare(sql.FieldEQ(FieldCanEdit, v))
@@ -149,6 +159,46 @@ func UpdatedAtLT(v time.Time) predicate.PlaylistShare {
 // UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
 func UpdatedAtLTE(v time.Time) predicate.PlaylistShare {
 	return predicate.PlaylistShare(sql.FieldLTE(FieldUpdatedAt, v))
+}
+
+// PlaylistIDEQ applies the EQ predicate on the "playlist_id" field.
+func PlaylistIDEQ(v uuid.UUID) predicate.PlaylistShare {
+	return predicate.PlaylistShare(sql.FieldEQ(FieldPlaylistID, v))
+}
+
+// PlaylistIDNEQ applies the NEQ predicate on the "playlist_id" field.
+func PlaylistIDNEQ(v uuid.UUID) predicate.PlaylistShare {
+	return predicate.PlaylistShare(sql.FieldNEQ(FieldPlaylistID, v))
+}
+
+// PlaylistIDIn applies the In predicate on the "playlist_id" field.
+func PlaylistIDIn(vs ...uuid.UUID) predicate.PlaylistShare {
+	return predicate.PlaylistShare(sql.FieldIn(FieldPlaylistID, vs...))
+}
+
+// PlaylistIDNotIn applies the NotIn predicate on the "playlist_id" field.
+func PlaylistIDNotIn(vs ...uuid.UUID) predicate.PlaylistShare {
+	return predicate.PlaylistShare(sql.FieldNotIn(FieldPlaylistID, vs...))
+}
+
+// UserIDEQ applies the EQ predicate on the "user_id" field.
+func UserIDEQ(v uuid.UUID) predicate.PlaylistShare {
+	return predicate.PlaylistShare(sql.FieldEQ(FieldUserID, v))
+}
+
+// UserIDNEQ applies the NEQ predicate on the "user_id" field.
+func UserIDNEQ(v uuid.UUID) predicate.PlaylistShare {
+	return predicate.PlaylistShare(sql.FieldNEQ(FieldUserID, v))
+}
+
+// UserIDIn applies the In predicate on the "user_id" field.
+func UserIDIn(vs ...uuid.UUID) predicate.PlaylistShare {
+	return predicate.PlaylistShare(sql.FieldIn(FieldUserID, vs...))
+}
+
+// UserIDNotIn applies the NotIn predicate on the "user_id" field.
+func UserIDNotIn(vs ...uuid.UUID) predicate.PlaylistShare {
+	return predicate.PlaylistShare(sql.FieldNotIn(FieldUserID, vs...))
 }
 
 // CanEditEQ applies the EQ predicate on the "can_edit" field.

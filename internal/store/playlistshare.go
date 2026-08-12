@@ -24,14 +24,16 @@ type PlaylistShare struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// PlaylistID holds the value of the "playlist_id" field.
+	PlaylistID uuid.UUID `json:"playlist_id,omitempty"`
+	// UserID holds the value of the "user_id" field.
+	UserID uuid.UUID `json:"user_id,omitempty"`
 	// CanEdit holds the value of the "can_edit" field.
 	CanEdit bool `json:"can_edit,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PlaylistShareQuery when eager-loading is set.
-	Edges                PlaylistShareEdges `json:"edges"`
-	playlist_shares      *uuid.UUID
-	user_playlist_shares *uuid.UUID
-	selectValues         sql.SelectValues
+	Edges        PlaylistShareEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // PlaylistShareEdges holds the relations/edges for other nodes in the graph.
@@ -76,12 +78,8 @@ func (*PlaylistShare) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case playlistshare.FieldCreatedAt, playlistshare.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case playlistshare.FieldID:
+		case playlistshare.FieldID, playlistshare.FieldPlaylistID, playlistshare.FieldUserID:
 			values[i] = new(uuid.UUID)
-		case playlistshare.ForeignKeys[0]: // playlist_shares
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case playlistshare.ForeignKeys[1]: // user_playlist_shares
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -115,25 +113,23 @@ func (_m *PlaylistShare) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
 			}
+		case playlistshare.FieldPlaylistID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field playlist_id", values[i])
+			} else if value != nil {
+				_m.PlaylistID = *value
+			}
+		case playlistshare.FieldUserID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field user_id", values[i])
+			} else if value != nil {
+				_m.UserID = *value
+			}
 		case playlistshare.FieldCanEdit:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field can_edit", values[i])
 			} else if value.Valid {
 				_m.CanEdit = value.Bool
-			}
-		case playlistshare.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullScanner); !ok {
-				return fmt.Errorf("unexpected type %T for field playlist_shares", values[i])
-			} else if value.Valid {
-				_m.playlist_shares = new(uuid.UUID)
-				*_m.playlist_shares = *value.S.(*uuid.UUID)
-			}
-		case playlistshare.ForeignKeys[1]:
-			if value, ok := values[i].(*sql.NullScanner); !ok {
-				return fmt.Errorf("unexpected type %T for field user_playlist_shares", values[i])
-			} else if value.Valid {
-				_m.user_playlist_shares = new(uuid.UUID)
-				*_m.user_playlist_shares = *value.S.(*uuid.UUID)
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -186,6 +182,12 @@ func (_m *PlaylistShare) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
 	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("playlist_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PlaylistID))
+	builder.WriteString(", ")
+	builder.WriteString("user_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.UserID))
 	builder.WriteString(", ")
 	builder.WriteString("can_edit=")
 	builder.WriteString(fmt.Sprintf("%v", _m.CanEdit))
