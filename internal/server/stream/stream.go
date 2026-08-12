@@ -1,10 +1,11 @@
 package stream
 
 import (
-	"context"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -54,31 +55,49 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	container := r.PathValue("container")
-	if container != "" && !isStatic(r) && !strings.EqualFold(container, sourceContainer(item)) {
-		w.WriteHeader(http.StatusUnsupportedMediaType)
+	container := sourceContainer(item)
+	if requested := r.PathValue("container"); requested != "" && !isStatic(r) && !strings.EqualFold(requested, container) {
+		unsupported(w, r, container, requested)
 		return
 	}
 
 	h.serveFile(w, r, item)
 }
 
-// Upstream chooses between direct play, remux and transcode from the containers
-// the client declares it can play. Without an encoder only direct play is on
-// offer, so anything else is refused rather than answered with the wrong bytes.
 func (h *Handler) ServeUniversal(w http.ResponseWriter, r *http.Request) {
 	item, ok := h.item(w, r)
 	if !ok {
 		return
 	}
 
-	profiles := directPlayProfiles(r.URL.Query()["container"])
-	if len(profiles) > 0 && !h.directPlays(r.Context(), item, profiles) {
-		w.WriteHeader(http.StatusUnsupportedMediaType)
+	requested := r.URL.Query()["container"]
+	profiles := directPlayProfiles(requested)
+	if len(profiles) == 0 {
+		h.serveFile(w, r, item)
+		return
+	}
+
+	codec, err := h.items.AudioCodec(r.Context(), item.ID)
+	if err != nil {
+		log.Printf("failed to read the audio codec of %s: %v", item.Path, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	container := sourceContainer(item)
+	if !playable(profiles, container, codec) {
+		unsupported(w, r, describe(container, codec), strings.Join(requested, ","))
 		return
 	}
 
 	h.serveFile(w, r, item)
+}
+
+// A client that cannot take the source as it is gets the reason rather than the
+// wrong bytes, because there is no encoder to fall back on.
+func unsupported(w http.ResponseWriter, r *http.Request, source, requested string) {
+	log.Printf("no direct play for %s: the source is %s, the client accepts %s", r.URL.Path, source, requested)
+	http.Error(w, "no direct play: the source is "+source, http.StatusUnsupportedMediaType)
 }
 
 func (h *Handler) item(w http.ResponseWriter, r *http.Request) (*items.Item, bool) {
@@ -129,49 +148,53 @@ func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, item *items.
 	http.ServeContent(w, r, filepath.Base(item.Path), info.ModTime(), file)
 }
 
-// Clients declare each playable format as "container|codec", where the codec
-// half is optional.
+// Clients declare their playable formats the way upstream's device profile
+// parses them: a comma separated list of "container", each container followed
+// by a "|" for every codec it will accept in that container.
 type directPlayProfile struct {
 	container string
-	codec     string
+	codecs    []string
 }
 
 func directPlayProfiles(values []string) []directPlayProfile {
 	profiles := make([]directPlayProfile, 0, len(values))
 	for _, value := range values {
 		for _, entry := range strings.Split(value, ",") {
-			container, codec, _ := strings.Cut(strings.TrimSpace(entry), "|")
-			if container == "" {
+			parts := strings.FieldsFunc(strings.ToLower(strings.TrimSpace(entry)), func(r rune) bool {
+				return r == '|'
+			})
+			if len(parts) == 0 {
 				continue
 			}
 
-			profiles = append(profiles, directPlayProfile{
-				container: strings.ToLower(container),
-				codec:     strings.ToLower(codec),
-			})
+			profiles = append(profiles, directPlayProfile{container: parts[0], codecs: parts[1:]})
 		}
 	}
 
 	return profiles
 }
 
-func (h *Handler) directPlays(ctx context.Context, item *items.Item, profiles []directPlayProfile) bool {
-	container := sourceContainer(item)
-	codec, err := h.items.AudioCodec(ctx, item.ID)
-	if err != nil {
-		return false
-	}
-
+// An unprobed source has no codec to compare, which direct plays rather than
+// holding back a file the client most likely can play.
+func playable(profiles []directPlayProfile, container, codec string) bool {
 	for _, profile := range profiles {
 		if profile.container != container {
 			continue
 		}
-		if profile.codec == "" || codec == "" || profile.codec == codec {
+		if len(profile.codecs) == 0 || codec == "" || slices.Contains(profile.codecs, codec) {
 			return true
 		}
 	}
 
 	return false
+}
+
+func describe(container, codec string) string {
+	if codec == "" {
+		return container
+	}
+
+	return container + "|" + codec
 }
 
 func sourceContainer(item *items.Item) string {

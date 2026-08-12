@@ -106,16 +106,15 @@ func newFixture(t *testing.T) *fixture {
 	}
 }
 
-func (f *fixture) add(t *testing.T, name, codec string) uuid.UUID {
+func (f *fixture) scan(t *testing.T, name string) *items.Item {
 	t.Helper()
 
-	ctx := context.Background()
 	path := filepath.Join(t.TempDir(), name)
 	if err := os.WriteFile(path, song, 0o600); err != nil {
 		t.Fatalf("failed to write %q: %v", path, err)
 	}
 
-	item, err := f.items.SaveScanned(ctx, items.Scanned{
+	item, err := f.items.SaveScanned(context.Background(), items.Scanned{
 		LibraryID:    f.library,
 		Kind:         itemmodal.KindAudio,
 		Name:         name,
@@ -127,7 +126,14 @@ func (f *fixture) add(t *testing.T, name, codec string) uuid.UUID {
 		t.Fatalf("failed to save %q: %v", name, err)
 	}
 
-	err = f.items.SaveProbe(ctx, item, items.Probe{
+	return item
+}
+
+func (f *fixture) add(t *testing.T, name, codec string) uuid.UUID {
+	t.Helper()
+
+	item := f.scan(t, name)
+	err := f.items.SaveProbe(context.Background(), item, items.Probe{
 		Container: strings.TrimPrefix(filepath.Ext(name), "."),
 		Size:      int64(len(song)),
 		Streams:   []items.Stream{{Kind: streammodal.KindAudio, Codec: codec}},
@@ -254,6 +260,7 @@ func TestServeUniversal(t *testing.T) {
 	fixture := newFixture(t)
 	mp3 := fixture.add(t, "track.mp3", "mp3")
 	alac := fixture.add(t, "lossless.m4a", "alac")
+	unprobed := fixture.scan(t, "unprobed.mp3").ID
 
 	for _, tc := range []struct {
 		name      string
@@ -264,8 +271,11 @@ func TestServeUniversal(t *testing.T) {
 		{name: "no declared containers", item: mp3, want: http.StatusOK},
 		{name: "a declared container", item: mp3, container: "opus,mp3,flac", want: http.StatusOK},
 		{name: "a declared container and codec", item: mp3, container: "webm|opus,mp3|mp3", want: http.StatusOK},
+		{name: "a container declaring several codecs", item: alac, container: "m4a|aac|alac", want: http.StatusOK},
 		{name: "a container the source is not in", item: mp3, container: "opus,flac", want: http.StatusUnsupportedMediaType},
 		{name: "the container but not the codec", item: alac, container: "m4a|aac", want: http.StatusUnsupportedMediaType},
+		{name: "an unprobed source with an unknown codec", item: unprobed, container: "mp3|mp3", want: http.StatusOK},
+		{name: "an unprobed source in another container", item: unprobed, container: "flac|flac", want: http.StatusUnsupportedMediaType},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			target := "/Audio/" + tc.item.String() + "/universal?container=" + tc.container + "&"
@@ -284,4 +294,33 @@ func TestServeUniversal(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("sends no body for a head request", func(t *testing.T) {
+		target := "/Audio/" + mp3.String() + "/universal?container=mp3&"
+		recorder := httptest.NewRecorder()
+
+		fixture.handler.ServeUniversal(recorder, fixture.get(t, http.MethodHead, target, mp3))
+
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("status = %d, want %d", recorder.Code, http.StatusOK)
+		}
+		if recorder.Body.Len() != 0 {
+			t.Errorf("body = %q, want empty", recorder.Body.String())
+		}
+		if got := recorder.Header().Get("Content-Length"); got != strconv.Itoa(len(song)) {
+			t.Errorf("content length = %q, want %d", got, len(song))
+		}
+	})
+
+	t.Run("rejects an unauthenticated request", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/Audio/"+mp3.String()+"/universal", nil)
+		request.SetPathValue("itemId", mp3.String())
+		recorder := httptest.NewRecorder()
+
+		fixture.handler.ServeUniversal(recorder, request)
+
+		if recorder.Code != http.StatusUnauthorized {
+			t.Errorf("status = %d, want %d", recorder.Code, http.StatusUnauthorized)
+		}
+	})
 }

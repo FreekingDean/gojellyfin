@@ -124,8 +124,7 @@ func (s *Service) MediaSource(ctx context.Context, itemID uuid.UUID) (*MediaSour
 	return source, nil
 }
 
-// Empty until the probe has run, so callers must treat it as unknown rather
-// than as a mismatch.
+// Empty until the probe has run, which the caller has to treat as unknown.
 func (s *Service) AudioCodec(ctx context.Context, itemID uuid.UUID) (string, error) {
 	codecs, err := s.store.MediaStream.Query().
 		Where(
