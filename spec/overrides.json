@@ -1,0 +1,22 @@
+[
+  {
+    "pointer": "/paths/~1ClientLog~1Document/post/requestBody/content/text~1plain/schema",
+    "x-go-type": "[]byte",
+    "why": "A client log upload is opaque bytes. Upstream declares string/binary, which generates a named type the handler cannot convert a []byte to."
+  },
+  {
+    "pointer": "/paths/~1Audio~1{itemId}~1Lyrics/post/requestBody/content/text~1plain/schema",
+    "x-go-type": "[]byte",
+    "why": "An uploaded lyric file is opaque bytes. Same string/binary problem as the client log upload."
+  },
+  {
+    "pointer": "/paths/~1System~1Configuration~1{key}/get/responses/200/content/application~1json/schema",
+    "x-go-type": "map[string]interface{}",
+    "why": "A named configuration is a different shape per key, so the response is declared string/binary upstream and has to stay untyped here."
+  },
+  {
+    "pointer": "/components/schemas/DeviceProfile",
+    "x-go-type": "map[string]interface{}",
+    "why": "The device profile is forty-odd nested structs describing codecs we do not read. It is accepted opaquely and handed back unchanged."
+  }
+]
