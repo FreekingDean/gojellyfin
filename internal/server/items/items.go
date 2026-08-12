@@ -8,6 +8,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
@@ -44,10 +45,10 @@ func (s *Server) GetItem(ctx context.Context, request api.GetItemRequestObject) 
 			return api.GetItem403Response{}, nil
 		}
 
-		return api.GetItem200JSONResponse(LibraryView(library)), nil
+		return api.GetItem200JSONResponse(dto.LibraryView(library)), nil
 	}
 
-	converted, err := ItemDtos(ctx, s.items, []*items.Item{item})
+	converted, err := dto.ItemDtos(ctx, s.items, []*items.Item{item})
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +82,7 @@ func (s *Server) GetLatestMedia(ctx context.Context, request api.GetLatestMediaR
 		return nil, err
 	}
 
-	converted, err := ItemDtos(ctx, s.items, records)
+	converted, err := dto.ItemDtos(ctx, s.items, records)
 	if err != nil {
 		return nil, err
 	}
@@ -94,11 +95,11 @@ func (s *Server) itemQuery(ctx context.Context, params api.GetItemsParams) (item
 		SearchTerm: apiutil.Deref(params.SearchTerm),
 		StartIndex: int(apiutil.Deref(params.StartIndex)),
 		Limit:      int(apiutil.Deref(params.Limit)),
-		Descending: Descending(params.SortOrder),
-		SortBy:     SortFields(params.SortBy),
+		Descending: descending(params.SortOrder),
+		SortBy:     sortFields(params.SortBy),
 	}
 
-	query.Kinds = Kinds(params.IncludeItemTypes)
+	query.Kinds = dto.Kinds(params.IncludeItemTypes)
 	if params.Ids != nil {
 		query.IDs = *params.Ids
 	}
@@ -121,7 +122,7 @@ func (s *Server) queryResult(ctx context.Context, query items.ItemQuery) (api.Ba
 		return api.BaseItemDtoQueryResult{}, err
 	}
 
-	converted, err := ItemDtos(ctx, s.items, records)
+	converted, err := dto.ItemDtos(ctx, s.items, records)
 	if err != nil {
 		return api.BaseItemDtoQueryResult{}, err
 	}

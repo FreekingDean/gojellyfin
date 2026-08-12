@@ -6,7 +6,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
-	serveritems "github.com/FreekingDean/gojellyfin/internal/server/items"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 )
 
 type Server struct {
@@ -24,7 +24,7 @@ func (s *Server) GetSearchHints(ctx context.Context, request api.GetSearchHintsR
 		Limit:      int(apiutil.Deref(request.Params.Limit)),
 		SortBy:     []string{"SortName"},
 	}
-	query.Kinds = serveritems.Kinds(request.Params.IncludeItemTypes)
+	query.Kinds = dto.Kinds(request.Params.IncludeItemTypes)
 	if request.Params.ParentId != nil {
 		query.ParentID = request.Params.ParentId
 	}

@@ -11,7 +11,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/playlists"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
-	serveritems "github.com/FreekingDean/gojellyfin/internal/server/items"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 )
 
 type Server struct {
@@ -152,7 +152,7 @@ func (s *Server) GetPlaylistItems(ctx context.Context, request api.GetPlaylistIt
 		entryIDs = append(entryIDs, entry.ID.String())
 	}
 
-	converted, err := serveritems.ItemDtos(ctx, s.items, records)
+	converted, err := dto.ItemDtos(ctx, s.items, records)
 	if err != nil {
 		return nil, err
 	}

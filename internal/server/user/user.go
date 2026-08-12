@@ -10,7 +10,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
-	serversession "github.com/FreekingDean/gojellyfin/internal/server/session"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
@@ -245,6 +245,6 @@ func (s *Server) AuthenticateUserByName(ctx context.Context, request api.Authent
 		AccessToken: apiutil.Ptr(token),
 		ServerId:    apiutil.Ptr(config.ServerID),
 		User:        apiutil.Ptr(UserDto(user)),
-		SessionInfo: serversession.SessionDto(session),
+		SessionInfo: dto.SessionDto(session),
 	}, nil
 }

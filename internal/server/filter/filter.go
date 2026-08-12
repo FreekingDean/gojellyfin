@@ -5,7 +5,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	serveritems "github.com/FreekingDean/gojellyfin/internal/server/items"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 )
 
 type Server struct {
@@ -26,7 +26,7 @@ func (s *Server) GetQueryFilters(ctx context.Context, request api.GetQueryFilter
 // Only years are real: nothing extracts genres, tags or ratings yet, and the
 // client needs the shape regardless.
 func (s *Server) GetQueryFiltersLegacy(ctx context.Context, request api.GetQueryFiltersLegacyRequestObject) (api.GetQueryFiltersLegacyResponseObject, error) {
-	years, err := s.items.DistinctYears(ctx, request.Params.ParentId, serveritems.Kinds(request.Params.IncludeItemTypes))
+	years, err := s.items.DistinctYears(ctx, request.Params.ParentId, dto.Kinds(request.Params.IncludeItemTypes))
 	if err != nil {
 		return nil, err
 	}

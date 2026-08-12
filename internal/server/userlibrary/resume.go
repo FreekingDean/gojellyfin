@@ -6,7 +6,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
-	serveritems "github.com/FreekingDean/gojellyfin/internal/server/items"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 )
 
 func (s *Server) GetResumeItems(ctx context.Context, request api.GetResumeItemsRequestObject) (api.GetResumeItemsResponseObject, error) {
@@ -18,7 +18,7 @@ func (s *Server) GetResumeItems(ctx context.Context, request api.GetResumeItemsR
 
 	records, total, err := s.items.ResumeItems(ctx,
 		auth.UserID(ctx),
-		serveritems.Kinds(request.Params.IncludeItemTypes),
+		dto.Kinds(request.Params.IncludeItemTypes),
 		request.Params.ParentId,
 		int(apiutil.Deref(request.Params.StartIndex)),
 		int(apiutil.Deref(request.Params.Limit)),
@@ -27,7 +27,7 @@ func (s *Server) GetResumeItems(ctx context.Context, request api.GetResumeItemsR
 		return nil, err
 	}
 
-	items, err := serveritems.ItemDtos(ctx, s.items, records)
+	items, err := dto.ItemDtos(ctx, s.items, records)
 	if err != nil {
 		return nil, err
 	}
