@@ -36,7 +36,7 @@ func (s *Server) ValidatePath(ctx context.Context, request api.ValidatePathReque
 }
 
 func (s *Server) GetDirectoryContents(ctx context.Context, request api.GetDirectoryContentsRequestObject) (api.GetDirectoryContentsResponseObject, error) {
-	files, err := s.filesystem.Contents(ctx, request.Params.Path)
+	files, err := s.filesystem.List(ctx, request.Params.Path)
 	if err != nil {
 		return nil, err
 	}

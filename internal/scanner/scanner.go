@@ -2,6 +2,7 @@ package scanner
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -80,8 +81,10 @@ func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) e
 		switch library.CollectionType {
 		case librarymodal.CollectionTypeTvshows:
 			paths, err = s.scanShows(ctx, library, location)
-		default:
+		case librarymodal.CollectionTypeMovies:
 			paths, err = s.scanMovies(ctx, library, location)
+		default:
+			fmt.Errorf("unsupported collection type: %s", library.CollectionType)
 		}
 		if err != nil {
 			return err
