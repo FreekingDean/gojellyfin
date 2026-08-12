@@ -2,6 +2,7 @@ package system
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/config"
@@ -75,6 +76,29 @@ func (s *Server) GetSystemInfo(ctx context.Context, request api.GetSystemInfoReq
 		EncoderLocation:            apiutil.Ptr(""),
 		SystemArchitecture:         apiutil.Ptr("amd64"),
 	}, nil
+}
+
+func (s *Server) GetSystemStorage(ctx context.Context, request api.GetSystemStorageRequestObject) (api.GetSystemStorageResponseObject, error) {
+	return api.GetSystemStorage200JSONResponse{
+		CacheFolder:            storageDto("cache"),
+		ImageCacheFolder:       storageDto("imagecache"),
+		InternalMetadataFolder: storageDto("internalmetadata"),
+		Libraries:              []api.FolderStorageDto{},
+		LogFolder:              storageDto("logs"),
+		TranscodingTempFolder:  storageDto("transcoding"),
+		WebFolder:              storageDto("web"),
+		ProgramDataFolder:      storageDto("programdata"),
+	}, nil
+}
+
+func storageDto(name string) api.FolderStorageDto {
+	return api.FolderStorageDto{
+		DeviceId:    fmt.Sprintf("UUID-%s", name),
+		FreeSpace:   apituil.Ptr(int64(1000000000)),
+		Path:        fmt.Sprintf("/gojelly/%s", name),
+		StorageType: "Fixed",
+		UsedSpace:   apituil.Ptr(int64(100000000)),
+	}
 }
 
 func (s *Server) GetPingSystem(ctx context.Context, request api.GetPingSystemRequestObject) (api.GetPingSystemResponseObject, error) {

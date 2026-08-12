@@ -32,19 +32,19 @@ func ItemDto(item *items.Item, childCount int32, imageTags map[string]string) ap
 		RunTimeTicks:      item.RunTimeTicks,
 		DateCreated:       apiutil.Ptr(item.CreatedAt),
 		LocationType:      apiutil.Ptr(api.LocationType(item.LocationType)),
-		ImageTags:         &map[string]string{},
+		ImageTags:         &map[string]*string{},
 		BackdropImageTags: &[]string{},
 	}
 
 	if len(imageTags) > 0 {
-		tags := map[string]string{}
+		tags := map[string]*string{}
 		backdrops := []string{}
 		for imageType, tag := range imageTags {
 			if imageType == "Backdrop" {
 				backdrops = append(backdrops, tag)
 				continue
 			}
-			tags[imageType] = tag
+			tags[imageType] = &tag
 		}
 		dto.ImageTags = &tags
 		dto.BackdropImageTags = &backdrops
@@ -116,7 +116,7 @@ func LibraryView(library *libraries.Library) api.BaseItemDto {
 		CollectionType:    &collectionType,
 		IsFolder:          apiutil.Ptr(true),
 		LocationType:      apiutil.Ptr(api.FileSystem),
-		ImageTags:         &map[string]string{},
+		ImageTags:         &map[string]*string{},
 		BackdropImageTags: &[]string{},
 	}
 }
@@ -134,7 +134,7 @@ func RootView() api.BaseItemDto {
 func UserItemDataDto(datum *items.Datum) api.UserItemDataDto {
 	return api.UserItemDataDto{
 		ItemId:                &datum.ItemID,
-		Key:                   apiutil.Ptr(datum.ItemID.String()),
+		Key:                   datum.ItemID.String(),
 		Played:                apiutil.Ptr(datum.Played),
 		PlayCount:             apiutil.Ptr(datum.PlayCount),
 		IsFavorite:            apiutil.Ptr(datum.IsFavorite),
