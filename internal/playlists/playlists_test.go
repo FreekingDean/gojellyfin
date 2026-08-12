@@ -100,7 +100,7 @@ func (f *fixture) user(t *testing.T, name string) uuid.UUID {
 	return record.ID
 }
 
-func (f *fixture) item(t *testing.T, name string, kind itemmodal.Kind, parentID *uuid.UUID) uuid.UUID {
+func (f *fixture) item(t *testing.T, name string, kind itemmodal.Kind, parentID *uuid.UUID, index *int32) uuid.UUID {
 	t.Helper()
 
 	record, err := f.client.Item.Create().
@@ -111,6 +111,7 @@ func (f *fixture) item(t *testing.T, name string, kind itemmodal.Kind, parentID 
 		SetIsFolder(kind == itemmodal.KindSeries || kind == itemmodal.KindSeason).
 		SetPath(fmt.Sprintf("/%s/%s", f.libraryID, name)).
 		SetNillableParentID(parentID).
+		SetNillableIndexNumber(index).
 		Save(context.Background())
 	if err != nil {
 		t.Fatalf("failed to create %q: %v", name, err)
@@ -124,7 +125,7 @@ func (f *fixture) songs(t *testing.T, names ...string) []uuid.UUID {
 
 	ids := make([]uuid.UUID, 0, len(names))
 	for _, name := range names {
-		ids = append(ids, f.item(t, name, itemmodal.KindAudio, nil))
+		ids = append(ids, f.item(t, name, itemmodal.KindAudio, nil, nil))
 	}
 
 	return ids
@@ -301,25 +302,54 @@ func TestAddItems(t *testing.T) {
 	}
 }
 
-func TestAddItemsExpandsFolders(t *testing.T) {
+func TestFoldersExpandInIndexOrder(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
-	series := fixture.item(t, "Series", itemmodal.KindSeries, nil)
-	seasonOne := fixture.item(t, "Season 1", itemmodal.KindSeason, &series)
-	seasonTwo := fixture.item(t, "Season 2", itemmodal.KindSeason, &series)
-	fixture.item(t, "S01E01", itemmodal.KindEpisode, &seasonOne)
-	fixture.item(t, "S01E02", itemmodal.KindEpisode, &seasonOne)
-	fixture.item(t, "S02E01", itemmodal.KindEpisode, &seasonTwo)
+	series := fixture.item(t, "Series", itemmodal.KindSeries, nil, nil)
+	first := fixture.item(t, "Bravo", itemmodal.KindSeason, &series, ptr(int32(1)))
+	second := fixture.item(t, "Alpha", itemmodal.KindSeason, &series, ptr(int32(2)))
+	fixture.item(t, "Second", itemmodal.KindEpisode, &first, ptr(int32(1)))
+	fixture.item(t, "First", itemmodal.KindEpisode, &first, ptr(int32(2)))
+	fixture.item(t, "Solo", itemmodal.KindEpisode, &second, ptr(int32(1)))
 
 	song := fixture.songs(t, "Zulu")
-	playlistID := fixture.create(t, CreateParams{Name: "Binge"})
+	ids := []uuid.UUID{series, song[0]}
+	want := []string{"Second", "First", "Solo", "Zulu"}
 
-	if err := fixture.service.AddItems(ctx, playlistID, []uuid.UUID{series, song[0]}); err != nil {
-		t.Fatalf("failed to add the items: %v", err)
-	}
+	t.Run("adding a folder adds what is beneath it", func(t *testing.T) {
+		playlistID := fixture.create(t, CreateParams{Name: "Binge"})
 
-	want := []string{"S01E01", "S01E02", "S02E01", "Zulu"}
+		if err := fixture.service.AddItems(ctx, playlistID, ids); err != nil {
+			t.Fatalf("failed to add the items: %v", err)
+		}
+		if got := fixture.order(t, playlistID); !slices.Equal(got, want) {
+			t.Errorf("entries = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("replacing the items expands them too", func(t *testing.T) {
+		playlistID := fixture.create(t, CreateParams{Name: "Rebinge"})
+
+		if err := fixture.service.Update(ctx, playlistID, UpdateParams{ItemIDs: &ids}); err != nil {
+			t.Fatalf("failed to update the playlist: %v", err)
+		}
+		if got := fixture.order(t, playlistID); !slices.Equal(got, want) {
+			t.Errorf("entries = %v, want %v", got, want)
+		}
+	})
+}
+
+func TestUnknownItemsAreIgnored(t *testing.T) {
+	fixture := newFixture(t)
+
+	songs := fixture.songs(t, "One")
+	playlistID := fixture.create(t, CreateParams{
+		Name:    "Ghosts",
+		ItemIDs: []uuid.UUID{uuid.New(), songs[0], uuid.New()},
+	})
+
+	want := []string{"One"}
 	if got := fixture.order(t, playlistID); !slices.Equal(got, want) {
 		t.Errorf("entries = %v, want %v", got, want)
 	}

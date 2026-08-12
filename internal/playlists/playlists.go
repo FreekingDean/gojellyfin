@@ -179,12 +179,16 @@ func (s *Service) Update(ctx context.Context, itemID uuid.UUID, params UpdatePar
 		}
 
 		if params.ItemIDs != nil {
+			itemIDs, err := expand(ctx, tx.Item, *params.ItemIDs)
+			if err != nil {
+				return err
+			}
 			if _, err := tx.PlaylistEntry.Delete().
 				Where(entrymodal.PlaylistID(playlist.ID)).
 				Exec(ctx); err != nil {
 				return fmt.Errorf("failed to clear playlist entries: %w", err)
 			}
-			if err := appendEntries(ctx, tx.PlaylistEntry, playlist.ID, 0, *params.ItemIDs); err != nil {
+			if err := appendEntries(ctx, tx.PlaylistEntry, playlist.ID, 0, itemIDs); err != nil {
 				return err
 			}
 		}
@@ -426,7 +430,11 @@ func expand(ctx context.Context, client *store.ItemClient, itemIDs []uuid.UUID) 
 
 	expanded := make([]uuid.UUID, 0, len(itemIDs))
 	for _, itemID := range itemIDs {
-		if !folders[itemID] {
+		isFolder, known := folders[itemID]
+		if !known {
+			continue
+		}
+		if !isFolder {
 			expanded = append(expanded, itemID)
 			continue
 		}
@@ -444,7 +452,7 @@ func expand(ctx context.Context, client *store.ItemClient, itemIDs []uuid.UUID) 
 func descendants(ctx context.Context, client *store.ItemClient, folderID uuid.UUID) ([]uuid.UUID, error) {
 	children, err := client.Query().
 		Where(itemmodal.ParentID(folderID)).
-		Order(itemmodal.BySortName(sql.OrderAsc())).
+		Order(itemmodal.ByIndexNumber(sql.OrderNullsLast()), itemmodal.BySortName()).
 		All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query folder children: %w", err)
