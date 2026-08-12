@@ -21,6 +21,32 @@ type (
 	TypeOptions       = entities.TypeOptions
 )
 
+const (
+	CollectionTypeMovies      = librarymodal.CollectionTypeMovies
+	CollectionTypeTvshows     = librarymodal.CollectionTypeTvshows
+	CollectionTypeMusic       = librarymodal.CollectionTypeMusic
+	CollectionTypeMusicvideos = librarymodal.CollectionTypeMusicvideos
+	CollectionTypeHomevideos  = librarymodal.CollectionTypeHomevideos
+	CollectionTypeBoxsets     = librarymodal.CollectionTypeBoxsets
+	CollectionTypeBooks       = librarymodal.CollectionTypeBooks
+	CollectionTypeMixed       = librarymodal.CollectionTypeMixed
+)
+
+var (
+	ValidCollectionType = librarymodal.CollectionTypeValidator
+
+	CollectionTypes = []CollectionType{
+		CollectionTypeMovies,
+		CollectionTypeTvshows,
+		CollectionTypeMusic,
+		CollectionTypeMusicvideos,
+		CollectionTypeHomevideos,
+		CollectionTypeBoxsets,
+		CollectionTypeBooks,
+		CollectionTypeMixed,
+	}
+)
+
 type Service struct {
 	store *store.Client
 }

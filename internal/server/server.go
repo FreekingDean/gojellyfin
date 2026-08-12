@@ -15,6 +15,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/genres"
 	"github.com/FreekingDean/gojellyfin/internal/server/image"
 	"github.com/FreekingDean/gojellyfin/internal/server/items"
+	"github.com/FreekingDean/gojellyfin/internal/server/itemupdate"
 	"github.com/FreekingDean/gojellyfin/internal/server/library"
 	"github.com/FreekingDean/gojellyfin/internal/server/librarystructure"
 	"github.com/FreekingDean/gojellyfin/internal/server/livetv"
@@ -68,6 +69,7 @@ type (
 	ConfigurationServer      = configuration.Server
 	DisplayPreferencesServer = displaypreferences.Server
 	ItemsServer              = items.Server
+	ItemUpdateServer         = itemupdate.Server
 	LibraryServer            = library.Server
 	LibraryStructureServer   = librarystructure.Server
 	LocalizationServer       = localization.Server
@@ -105,6 +107,7 @@ type Server struct {
 	*ConfigurationServer
 	*DisplayPreferencesServer
 	*ItemsServer
+	*ItemUpdateServer
 	*LibraryServer
 	*LibraryStructureServer
 	*LocalizationServer
@@ -144,6 +147,7 @@ func New(
 	configuration *configuration.Server,
 	displayPreferences *displaypreferences.Server,
 	items *items.Server,
+	itemUpdate *itemupdate.Server,
 	library *library.Server,
 	libraryStructure *librarystructure.Server,
 	localization *localization.Server,
@@ -180,6 +184,7 @@ func New(
 		ConfigurationServer:      configuration,
 		DisplayPreferencesServer: displayPreferences,
 		ItemsServer:              items,
+		ItemUpdateServer:         itemUpdate,
 		LibraryServer:            library,
 		LibraryStructureServer:   libraryStructure,
 		LocalizationServer:       localization,
