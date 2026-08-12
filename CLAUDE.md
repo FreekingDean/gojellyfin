@@ -122,6 +122,8 @@ Ordering by a to-many edge makes ent group the query, so the sort column comes b
 
 `auth.Authorization` carries the connection's `RemoteAddr` alongside what the client sent, because the strict handlers never see the `*http.Request` and `GetEndpointInfo` answers from the caller's address.
 
+`ForgotPassword` answers `ContactAdmin` and `ForgotPasswordPin` refuses every pin, both without reading a request or touching the database. A pin is only as private as the channel that carries it, and the server has none — no mail, and the log and the pin file upstream writes are both read by whoever runs the box rather than by the account holder. Anything that issues a pin here hands account takeover to everyone who can read a shipped log. `cmd/tasks/resetpassword` is what `ContactAdmin` means: an operator with database access, reading the new password from stdin the way `adduser` does.
+
 Handlers read `auth.UserID(ctx)`, `auth.SessionFrom(ctx)`, `auth.AuthorizationFrom(ctx)` and return `auth.ErrUnauthorized`; `middleware.TokenFrom` is the only thing left in the middleware package that handlers touch, and only because websocket and media URLs cannot send headers.
 
 ### Current state
