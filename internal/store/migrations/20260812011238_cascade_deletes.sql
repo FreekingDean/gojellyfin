@@ -1,5 +1,5 @@
 -- Modify "items" table
-ALTER TABLE "items" DROP CONSTRAINT IF EXISTS "items_libraries_items", ADD CONSTRAINT "items_libraries_items" FOREIGN KEY ("library_id") REFERENCES "libraries" ("id") ON UPDATE NO ACTION ON DELETE CASCADE;
+ALTER TABLE "items" DROP CONSTRAINT IF EXISTS "items_items_children", DROP CONSTRAINT IF EXISTS "items_libraries_items", ADD CONSTRAINT "items_items_children" FOREIGN KEY ("parent_id") REFERENCES "items" ("id") ON UPDATE NO ACTION ON DELETE CASCADE, ADD CONSTRAINT "items_libraries_items" FOREIGN KEY ("library_id") REFERENCES "libraries" ("id") ON UPDATE NO ACTION ON DELETE CASCADE;
 -- Modify "chapters" table
 ALTER TABLE "chapters" DROP CONSTRAINT IF EXISTS "chapters_items_chapters", ADD CONSTRAINT "chapters_items_chapters" FOREIGN KEY ("item_chapters") REFERENCES "items" ("id") ON UPDATE NO ACTION ON DELETE CASCADE;
 -- Modify "credits" table

@@ -4,10 +4,42 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/uuid"
+
 	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 )
+
+func TestDeleteItemsNotInPathsTakesDescendants(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := context.Background()
+
+	series := fixture.add(t, seed{kind: itemmodal.KindSeries, name: "Series"})
+	season := fixture.add(t, seed{kind: itemmodal.KindSeason, name: "Season 1", parentID: &series, index: number(1)})
+	episode := fixture.add(t, seed{kind: itemmodal.KindEpisode, name: "S01E01", parentID: &season, index: number(1), parentIndex: number(1)})
+
+	kept := make([]string, 0, 2)
+	for _, id := range []uuid.UUID{season, episode} {
+		record, err := fixture.service.ItemByID(ctx, id)
+		if err != nil {
+			t.Fatalf("failed to load the item: %v", err)
+		}
+		kept = append(kept, record.Path)
+	}
+
+	if err := fixture.service.DeleteItemsNotInPaths(ctx, fixture.libraryID, kept); err != nil {
+		t.Fatalf("failed to prune the items: %v", err)
+	}
+
+	records, total, err := fixture.service.QueryItems(ctx, ItemQuery{LibraryID: &fixture.libraryID})
+	if err != nil {
+		t.Fatalf("failed to query the items: %v", err)
+	}
+	if total != 0 || len(records) != 0 {
+		t.Errorf("items = %v, want none", names(records))
+	}
+}
 
 func TestDeleteItemsNotInPathsWithImages(t *testing.T) {
 	fixture := newFixture(t)

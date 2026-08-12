@@ -334,7 +334,7 @@ var (
 				Symbol:     "items_items_children",
 				Columns:    []*schema.Column{ItemsColumns[56]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "items_libraries_items",
