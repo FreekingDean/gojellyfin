@@ -13,9 +13,6 @@ import (
 	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 )
 
-// A subtitle file found beside the media. The probe owns the streams inside the
-// container; these are the ones the scan found on disk and stores alongside
-// them.
 type ExternalSubtitle struct {
 	Path              string
 	Language          string
@@ -26,13 +23,18 @@ type ExternalSubtitle struct {
 	IsHearingImpaired bool
 }
 
+// External streams are indexed off the end of the container's own, so the
+// source row is locked for the whole rewrite; without it two writers allocate
+// the same index.
 func (s *Service) ReplaceExternalSubtitles(ctx context.Context, item *Item, subtitles []ExternalSubtitle) error {
 	return s.store.WithTx(ctx, func(tx *store.Tx) error {
-		source, err := tx.MediaSource.Query().Where(sourcemodal.ItemID(item.ID)).First(ctx)
+		source, err := tx.MediaSource.Query().
+			Where(sourcemodal.ItemID(item.ID)).
+			ForUpdate().
+			First(ctx)
 		if store.IsNotFound(err) && len(subtitles) == 0 {
 			return tx.Item.UpdateOneID(item.ID).SetHasSubtitles(false).Exec(ctx)
 		}
-		// The probe creates the source, and it only runs where ffmpeg does.
 		if store.IsNotFound(err) {
 			source, err = tx.MediaSource.Create().
 				SetItemID(item.ID).
@@ -106,7 +108,6 @@ func nextStreamIndex(ctx context.Context, tx *store.Tx, sourceID uuid.UUID) (int
 	return highest.Index + 1, nil
 }
 
-// Nil when the item has no subtitle stream at that index.
 func (s *Service) SubtitleStream(ctx context.Context, itemID uuid.UUID, index int32) (*MediaStream, error) {
 	stream, err := s.store.MediaStream.Query().
 		Where(

@@ -4,5 +4,5 @@
 
 package store
 
-//go:generate go run -mod=mod entgo.io/ent/cmd/ent generate --feature sql/versioned-migration,sql/upsert,sql/execquery --template ./templates ./entities
+//go:generate go run -mod=mod entgo.io/ent/cmd/ent generate --feature sql/versioned-migration,sql/upsert,sql/execquery,sql/lock --template ./templates ./entities
 //--go:generate atlas migrate diff schema --dir "file://migrations" --to "ent://entities" --dev-url "docker://postgres/16/dev?search_path=public"
