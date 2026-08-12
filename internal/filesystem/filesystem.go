@@ -95,6 +95,23 @@ func (s *Service) Open(ctx context.Context, path string) (io.ReadCloser, int64, 
 	return file, info.Size(), nil
 }
 
+func (s *Service) List(ctx context.Context, path string) ([]File, error) {
+	entries, err := os.ReadDir(path)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to list %q: %w", path, err)
+	}
+
+	files := make([]File, 0, len(entries))
+	for _, entry := range entries {
+		files = append(files, File{Name: entry.Name(), Dir: entry.IsDir()})
+	}
+
+	return files, nil
+}
+
 func (s *Service) Stat(ctx context.Context, path string) (File, error) {
 	file := s.root
 	for _, name := range strings.Split(strings.Trim(path, Root), Root) {

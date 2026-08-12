@@ -104,6 +104,37 @@ func TestOpenErrors(t *testing.T) {
 	}
 }
 
+func TestList(t *testing.T) {
+	directory := t.TempDir()
+	if err := os.WriteFile(filepath.Join(directory, "Movie.en.srt"), []byte("1"), 0o600); err != nil {
+		t.Fatalf("failed to write the file: %v", err)
+	}
+	if err := os.Mkdir(filepath.Join(directory, "Extras"), 0o700); err != nil {
+		t.Fatalf("failed to create the directory: %v", err)
+	}
+
+	files, err := New().List(context.Background(), directory)
+	if err != nil {
+		t.Fatalf("failed to list the directory: %v", err)
+	}
+
+	if len(files) != 2 {
+		t.Fatalf("files = %+v, want two entries", files)
+	}
+	if files[0].Name != "Extras" || !files[0].Dir {
+		t.Errorf("first = %+v, want the Extras directory", files[0])
+	}
+	if files[1].Name != "Movie.en.srt" || files[1].Dir {
+		t.Errorf("second = %+v, want the subtitle file", files[1])
+	}
+}
+
+func TestListErrors(t *testing.T) {
+	if _, err := New().List(context.Background(), filepath.Join(t.TempDir(), "nope")); !errors.Is(err, ErrNotFound) {
+		t.Errorf("got %v, want ErrNotFound", err)
+	}
+}
+
 func TestDrives(t *testing.T) {
 	drives, err := New().Drives(context.Background())
 	if err != nil {

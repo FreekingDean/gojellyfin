@@ -43,6 +43,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/search"
 	"github.com/FreekingDean/gojellyfin/internal/server/session"
 	"github.com/FreekingDean/gojellyfin/internal/server/studios"
+	"github.com/FreekingDean/gojellyfin/internal/server/subtitle"
 	"github.com/FreekingDean/gojellyfin/internal/server/suggestions"
 	"github.com/FreekingDean/gojellyfin/internal/server/syncplay"
 	"github.com/FreekingDean/gojellyfin/internal/server/system"
@@ -111,6 +112,7 @@ var Module = fx.Module(
 		packages.New,
 		quickconnect.New,
 		session.New,
+		subtitle.New,
 		syncplay.New,
 		system.New,
 		user.New,

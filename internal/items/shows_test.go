@@ -11,6 +11,8 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 )
 
 type fixture struct {
@@ -47,6 +49,16 @@ func newFixture(t *testing.T) *fixture {
 
 	t.Cleanup(func() {
 		ctx := context.Background()
+		if _, err := client.MediaStream.Delete().
+			Where(streammodal.HasSourceWith(sourcemodal.HasItemWith(itemmodal.LibraryID(library.ID)))).
+			Exec(ctx); err != nil {
+			t.Errorf("failed to delete the streams: %v", err)
+		}
+		if _, err := client.MediaSource.Delete().
+			Where(sourcemodal.HasItemWith(itemmodal.LibraryID(library.ID))).
+			Exec(ctx); err != nil {
+			t.Errorf("failed to delete the sources: %v", err)
+		}
 		if _, err := client.Item.Delete().Where(itemmodal.LibraryID(library.ID)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the items: %v", err)
 		}
