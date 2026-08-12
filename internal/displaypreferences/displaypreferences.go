@@ -57,7 +57,7 @@ func (s *Service) Preferences(ctx context.Context, userID uuid.UUID, client, id 
 	}
 
 	return prefs, nil
-
+}
 func (s *Service) existing(ctx context.Context, userID uuid.UUID, client string, itemID *uuid.UUID) (*DisplayPreferences, error) {
 	query := s.store.DisplayPreferences.Query().
 		Where(
