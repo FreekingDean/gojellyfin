@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/store"
@@ -101,7 +102,7 @@ func newFixture(t *testing.T) *fixture {
 	}
 
 	return &fixture{
-		server:    New(items.New(client)),
+		server:    New(items.New(client), filesystem.New()),
 		client:    client,
 		item:      item,
 		source:    source.ID,
@@ -362,6 +363,22 @@ func TestGetSubtitlePlaylist(t *testing.T) {
 		}, "\n")
 		if got := body(t, result.Body); got != want {
 			t.Errorf("playlist = %q, want %q", got, want)
+		}
+	})
+
+	t.Run("refuses a track it cannot segment into webvtt", func(t *testing.T) {
+		fixture.addEmbedded(t, 5)
+		fixture.addSubtitle(t, 6, "Blade Runner (1982).fr.ass", "[Script Info]")
+
+		for _, index := range []int32{5, 6} {
+			_, err := fixture.server.GetSubtitlePlaylist(ctx, api.GetSubtitlePlaylistRequestObject{
+				ItemId: fixture.item.ID,
+				Index:  index,
+				Params: api.GetSubtitlePlaylistParams{SegmentLength: 10},
+			})
+			if !errors.Is(err, api.ErrNotImplemented) {
+				t.Errorf("index %d: err = %v, want api.ErrNotImplemented", index, err)
+			}
 		}
 	})
 

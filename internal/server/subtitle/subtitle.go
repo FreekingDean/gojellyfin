@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"io"
 	"net/url"
-	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
+	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
@@ -26,11 +26,12 @@ var contentTypes = map[string]string{
 }
 
 type Server struct {
-	items *items.Service
+	items      *items.Service
+	filesystem *filesystem.Service
 }
 
-func New(items *items.Service) *Server {
-	return &Server{items: items}
+func New(items *items.Service, filesystem *filesystem.Service) *Server {
+	return &Server{items: items, filesystem: filesystem}
 }
 
 func (s *Server) GetSubtitle(ctx context.Context, request api.GetSubtitleRequestObject) (api.GetSubtitleResponseObject, error) {
@@ -69,34 +70,40 @@ func (s *Server) subtitle(ctx context.Context, itemID uuid.UUID, index int32, fo
 	if stream == nil {
 		return nil, "", 0, fmt.Errorf("item %s has no subtitle stream %d", itemID, index)
 	}
-	if !stream.IsExternal {
-		return nil, "", 0, fmt.Errorf("extracting an embedded subtitle needs ffmpeg: %w", api.ErrNotImplemented)
-	}
 
 	target := strings.ToLower(strings.TrimPrefix(format, "."))
-	source := strings.ToLower(strings.TrimPrefix(filepath.Ext(stream.Path), "."))
-	direct := source == target && window.whole()
-	if !direct && (!cueFormats[source] || !cueFormats[target]) {
-		return nil, "", 0, fmt.Errorf("converting %s subtitles to %s needs ffmpeg: %w", source, target, api.ErrNotImplemented)
+	direct := sourceFormat(stream) == target && window.whole()
+	if err := servable(stream, target, direct); err != nil {
+		return nil, "", 0, err
 	}
 
-	file, err := os.Open(stream.Path)
+	body, size, err := s.filesystem.Open(ctx, stream.Path)
 	if err != nil {
 		return nil, "", 0, fmt.Errorf("failed to open subtitle %s: %w", stream.Path, err)
 	}
 
-	if !direct {
-		return convert(file, target, window), contentTypes[target], 0, nil
+	if direct {
+		return body, contentTypes[target], size, nil
 	}
 
-	info, err := file.Stat()
-	if err != nil {
-		_ = file.Close()
+	return convert(body, target, window), contentTypes[target], 0, nil
+}
 
-		return nil, "", 0, fmt.Errorf("failed to stat subtitle %s: %w", stream.Path, err)
+func servable(stream *items.MediaStream, target string, direct bool) error {
+	if !stream.IsExternal {
+		return fmt.Errorf("extracting an embedded subtitle needs ffmpeg: %w", api.ErrNotImplemented)
 	}
 
-	return file, contentTypes[target], info.Size(), nil
+	source := sourceFormat(stream)
+	if !direct && (!cueFormats[source] || !cueFormats[target]) {
+		return fmt.Errorf("converting %s subtitles to %s needs ffmpeg: %w", source, target, api.ErrNotImplemented)
+	}
+
+	return nil
+}
+
+func sourceFormat(stream *items.MediaStream) string {
+	return strings.ToLower(strings.TrimPrefix(filepath.Ext(stream.Path), "."))
 }
 
 func (s *Server) GetSubtitlePlaylist(ctx context.Context, request api.GetSubtitlePlaylistRequestObject) (api.GetSubtitlePlaylistResponseObject, error) {
@@ -106,6 +113,9 @@ func (s *Server) GetSubtitlePlaylist(ctx context.Context, request api.GetSubtitl
 	}
 	if stream == nil {
 		return api.GetSubtitlePlaylist404JSONResponse{}, nil
+	}
+	if err := servable(stream, "vtt", false); err != nil {
+		return nil, err
 	}
 
 	item, err := s.items.ItemByID(ctx, request.ItemId)
@@ -127,8 +137,8 @@ func (s *Server) GetSubtitlePlaylist(ctx context.Context, request api.GetSubtitl
 	}, nil
 }
 
-// Each segment is fetched from GetSubtitle beside this playlist, so the entries
-// are relative to it.
+// The segments are fetched from GetSubtitle beside this playlist, and an HLS
+// player cannot send a header, so the token rides in the query.
 func playlist(runtime, segment int64, token string) string {
 	lines := []string{
 		"#EXTM3U",

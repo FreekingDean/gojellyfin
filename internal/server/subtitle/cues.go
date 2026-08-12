@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"os"
 	"strconv"
 	"strings"
 )
 
-const ticksPerSecond = 10_000_000
+const (
+	ticksPerSecond = 10_000_000
+	maxCueLine     = 1 << 20
+)
 
-// The formats we can read and write without ffmpeg.
 var cueFormats = map[string]bool{"srt": true, "vtt": true}
 
 type window struct {
@@ -51,13 +52,12 @@ type cue struct {
 	lines []string
 }
 
-// The file is read as it is written, so a subtitle never lands in memory whole.
-func convert(file *os.File, format string, window window) io.ReadCloser {
+func convert(source io.ReadCloser, format string, window window) io.ReadCloser {
 	reader, writer := io.Pipe()
 
 	go func() {
-		defer func() { _ = file.Close() }()
-		_ = writer.CloseWithError(writeCues(writer, file, format, window))
+		defer func() { _ = source.Close() }()
+		_ = writer.CloseWithError(writeCues(writer, source, format, window))
 	}()
 
 	return reader
@@ -70,6 +70,7 @@ func writeCues(out io.Writer, in io.Reader, format string, window window) error 
 	}
 
 	scanner := bufio.NewScanner(in)
+	scanner.Buffer(nil, maxCueLine)
 	number := 0
 	for {
 		next, ok := nextCue(scanner)
@@ -92,16 +93,20 @@ func writeCues(out io.Writer, in io.Reader, format string, window window) error 
 	return writer.Flush()
 }
 
+const (
+	vttHeader            = "WEBVTT\n\n"
+	vttHeaderWithTimeMap = "WEBVTT\nX-TIMESTAMP-MAP=MPEGTS:900000,LOCAL:00:00:00.000\n\n"
+)
+
 func header(format string, window window) string {
 	if format != "vtt" {
 		return ""
 	}
-	// Tells a HLS player where the segment's cues sit on the media timeline.
 	if window.addTimeMap {
-		return "WEBVTT\nX-TIMESTAMP-MAP=MPEGTS:900000,LOCAL:00:00:00.000\n\n"
+		return vttHeaderWithTimeMap
 	}
 
-	return "WEBVTT\n\n"
+	return vttHeader
 }
 
 func nextCue(scanner *bufio.Scanner) (cue, bool) {
@@ -136,9 +141,8 @@ func parseTiming(line string) (int64, int64, bool) {
 		return 0, 0, false
 	}
 
-	// WebVTT hangs cue settings off the end of the second timestamp.
-	fields := strings.Fields(to)
-	if len(fields) == 0 {
+	endAndCueSettings := strings.Fields(to)
+	if len(endAndCueSettings) == 0 {
 		return 0, 0, false
 	}
 
@@ -146,7 +150,7 @@ func parseTiming(line string) (int64, int64, bool) {
 	if !ok {
 		return 0, 0, false
 	}
-	end, ok := parseTimestamp(fields[0])
+	end, ok := parseTimestamp(endAndCueSettings[0])
 	if !ok {
 		return 0, 0, false
 	}
