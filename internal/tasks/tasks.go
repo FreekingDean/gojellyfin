@@ -10,7 +10,10 @@ import (
 	"time"
 )
 
-var ErrNotFound = errors.New("task not found")
+var (
+	ErrNotFound = errors.New("task not found")
+	ErrNoRunner = errors.New("task has no runner")
+)
 
 type State string
 
@@ -137,9 +140,8 @@ func (r *Registry) Start(id string) error {
 	if err != nil {
 		return err
 	}
-	found.start()
 
-	return nil
+	return found.start()
 }
 
 func (r *Registry) Stop(id string) error {
@@ -181,11 +183,15 @@ func newTask(definition definition) *task {
 	return &task{definition: definition, state: StateIdle}
 }
 
-func (t *task) start() {
+func (t *task) start() error {
 	t.mu.Lock()
-	if t.state != StateIdle || t.run == nil {
+	if t.run == nil {
 		t.mu.Unlock()
-		return
+		return ErrNoRunner
+	}
+	if t.state != StateIdle {
+		t.mu.Unlock()
+		return nil
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -199,6 +205,8 @@ func (t *task) start() {
 		defer cancel()
 		t.finish(startedAt, run(ctx))
 	}()
+
+	return nil
 }
 
 func (t *task) stop() {

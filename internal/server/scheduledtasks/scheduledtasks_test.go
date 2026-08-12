@@ -2,6 +2,7 @@ package scheduledtasks
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -125,6 +126,15 @@ func TestStartAndStopUnknownTask(t *testing.T) {
 	}
 	if _, ok := stopped.(api.StopTask404JSONResponse); !ok {
 		t.Errorf("got %T, want a 404", stopped)
+	}
+}
+
+func TestStartTaskWithoutRunner(t *testing.T) {
+	server := New(tasks.New())
+
+	_, err := server.StartTask(context.Background(), api.StartTaskRequestObject{TaskId: tasks.LibraryScanID})
+	if !errors.Is(err, tasks.ErrNoRunner) {
+		t.Fatalf("got %v, want ErrNoRunner", err)
 	}
 }
 

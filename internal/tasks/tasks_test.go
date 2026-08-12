@@ -117,11 +117,13 @@ func TestStartWhileRunning(t *testing.T) {
 func TestStartWithoutRunner(t *testing.T) {
 	registry := New()
 
-	if err := registry.Start(LibraryScanID); err != nil {
-		t.Fatal(err)
+	if err := registry.Start(LibraryScanID); !errors.Is(err, ErrNoRunner) {
+		t.Fatalf("got %v, want ErrNoRunner", err)
 	}
-	if got := info(t, registry).State; got != StateIdle {
-		t.Fatalf("got state %q, want %q", got, StateIdle)
+
+	found := info(t, registry)
+	if found.State != StateIdle || found.LastResult != nil {
+		t.Fatalf("got %+v, want an idle task that never ran", found)
 	}
 }
 
