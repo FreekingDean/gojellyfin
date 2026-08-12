@@ -6,7 +6,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
-func ActivityLogEntryDto(entry *activity.Entry) api.ActivityLogEntry {
+func entryDto(entry *activity.Entry) api.ActivityLogEntry {
 	dto := api.ActivityLogEntry{
 		Date:     apiutil.Ptr(entry.CreatedAt),
 		Name:     apiutil.Ptr(entry.Name),

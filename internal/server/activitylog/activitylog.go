@@ -31,7 +31,7 @@ func (s *Server) GetLogEntries(ctx context.Context, request api.GetLogEntriesReq
 
 	converted := make([]api.ActivityLogEntry, 0, len(entries))
 	for _, entry := range entries {
-		converted = append(converted, ActivityLogEntryDto(entry))
+		converted = append(converted, entryDto(entry))
 	}
 
 	return api.GetLogEntries200JSONResponse{
