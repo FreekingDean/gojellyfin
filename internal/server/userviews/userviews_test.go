@@ -2,14 +2,17 @@ package userviews
 
 import (
 	"context"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
+	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
 )
@@ -59,6 +62,50 @@ func (f *fixture) add(t *testing.T, collectionType librarymodal.CollectionType, 
 	}
 
 	return library.ID
+}
+
+// The view shape is a second copy of serveritems.LibraryView, which nothing
+// makes the compiler check; pinning every field here catches the two drifting.
+func TestGetUserViews(t *testing.T) {
+	fixture := newFixture(t)
+
+	id := fixture.add(t, librarymodal.CollectionTypeMovies, "Feature Films")
+
+	response, err := fixture.server.GetUserViews(context.Background(), api.GetUserViewsRequestObject{})
+	if err != nil {
+		t.Fatalf("failed to get the user views: %v", err)
+	}
+
+	result, ok := response.(api.GetUserViews200JSONResponse)
+	if !ok {
+		t.Fatalf("response = %T, want api.GetUserViews200JSONResponse", response)
+	}
+
+	var view api.BaseItemDto
+	for _, candidate := range *result.Items {
+		if *candidate.Id == id {
+			view = candidate
+		}
+	}
+	if view.Id == nil {
+		t.Fatalf("views do not contain the library %v", id)
+	}
+
+	want := api.BaseItemDto{
+		Id:                &id,
+		ServerId:          apiutil.Ptr(config.ServerID),
+		Name:              apiutil.Ptr(fixture.prefix + "Feature Films"),
+		SortName:          apiutil.Ptr(strings.ToLower(fixture.prefix + "Feature Films")),
+		Type:              apiutil.Ptr(api.BaseItemKindCollectionFolder),
+		CollectionType:    apiutil.Ptr(api.CollectionType(librarymodal.CollectionTypeMovies)),
+		IsFolder:          apiutil.Ptr(true),
+		LocationType:      apiutil.Ptr(api.FileSystem),
+		ImageTags:         &map[string]string{},
+		BackdropImageTags: &[]string{},
+	}
+	if !reflect.DeepEqual(view, want) {
+		t.Errorf("view = %+v, want %+v", view, want)
+	}
 }
 
 func TestGetGroupingOptions(t *testing.T) {

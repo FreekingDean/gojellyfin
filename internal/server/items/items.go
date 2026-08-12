@@ -30,8 +30,6 @@ func (s *Server) GetItems(ctx context.Context, request api.GetItemsRequestObject
 	return api.GetItems200JSONResponse(result), nil
 }
 
-// Tags whose operation is an item query with the type pinned - Trailers,
-// Suggestions - go through here rather than rebuilding the translation.
 func (s *Server) QueryResult(ctx context.Context, params api.GetItemsParams) (api.BaseItemDtoQueryResult, error) {
 	query, err := s.itemQuery(ctx, params)
 	if err != nil {
