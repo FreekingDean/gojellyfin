@@ -80,11 +80,7 @@ func (s *Socket) Handle(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			select {
-			case replies <- wsMessage{MessageType: "KeepAlive", MessageId: newGUID()}:
-			case <-done:
-				return
-			}
+			enqueue(replies, wsMessage{MessageType: "KeepAlive", MessageId: newGUID()})
 		}
 	}()
 
@@ -108,6 +104,15 @@ func (s *Socket) Handle(w http.ResponseWriter, r *http.Request) {
 		case <-done:
 			return
 		}
+	}
+}
+
+// Never blocks: the write loop owns the connection and may already be gone, so
+// a full buffer drops the reply rather than wedging the reader forever.
+func enqueue(out chan wsMessage, message wsMessage) {
+	select {
+	case out <- message:
+	default:
 	}
 }
 
