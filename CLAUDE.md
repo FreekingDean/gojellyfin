@@ -10,7 +10,7 @@ A Go reimplementation of a Jellyfin media server, serving the Jellyfin 10.10.0 H
 
 **Comments.** Don't write them. A comment is almost always a sign the code is messy or doing too much — simplify the code instead of explaining it. The rare exception is an external constraint that can't live in a name (why the mux is regex-based, why the websocket pings at 30s).
 
-**Paradigms.** Use what the codebase already does. Don't introduce a new pattern or a new dependency if the existing ones can carry the change, and never refactor toward a better paradigm mid-change. If something genuinely needs rework, add a line to `TODO.md` and move on.
+**Paradigms.** Use what the codebase already does. Don't introduce a new pattern or a new dependency if the existing ones can carry the change, and never refactor toward a better paradigm mid-change. If something genuinely needs rework, open a GitHub issue with `gh issue create` and move on. Deferred work is tracked in issues only — there is no TODO file. Write the issue for someone reading it in six months: the concrete detail and the file or symbol it concerns, not a one-line reminder. Decisions get filed the same way, worded as the standing decision and its reason so nobody re-litigates them.
 
 **Pull requests.** Never commit to `main`. Every change goes on a branch and lands through a PR for review, including one-line fixes and documentation. Push the branch and open the PR with `gh pr create` as soon as the work builds and boots.
 
