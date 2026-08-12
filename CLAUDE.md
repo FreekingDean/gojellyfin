@@ -49,6 +49,8 @@ atlas migrate diff <name> --dir "file://migrations" --to "ent://entities" --dev-
 atlas migrate apply --dir "file://migrations" --url "$DATABASE_URL"
 ```
 
+`cmd/tasks/migrate` is the deployed spelling of that second line. It drives the `atlas` CLI rather than the Go SDK because the revision tracker that owns `atlas_schema_revisions` is not in the `ariga.io/atlas` module — it lives in the CLI repo under `cmd/atlas/internal/migrate/ent`, which nothing outside that repo can import. The migration directory is embedded through `internal/store/migrations`, so a deployed binary cannot drift from the schema it expects, and `atlas.sum` is still verified on every run.
+
 ## Architecture
 
 ### Wiring: uber/fx
