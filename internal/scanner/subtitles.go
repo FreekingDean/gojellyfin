@@ -2,37 +2,43 @@ package scanner
 
 import (
 	"context"
-	"os"
 	"path/filepath"
 
+	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 )
 
-// scanSubtitles records the subtitle files sitting beside one media file. It
-// runs after the probe, which recreates the media source and takes the
-// container's own streams with it.
 func (s *Scanner) scanSubtitles(ctx context.Context, item *items.Item) error {
-	directory := filepath.Dir(item.Path)
-	base := stripExtension(filepath.Base(item.Path))
-
-	entries, err := os.ReadDir(directory)
+	found, err := subtitlesBeside(ctx, s.filesystem, item.Path)
 	if err != nil {
 		return err
 	}
 
+	return s.items.ReplaceExternalSubtitles(ctx, item, found)
+}
+
+func subtitlesBeside(ctx context.Context, files *filesystem.Service, path string) ([]items.ExternalSubtitle, error) {
+	directory := filepath.Dir(path)
+	base := stripExtension(filepath.Base(path))
+
+	entries, err := files.List(ctx, directory)
+	if err != nil {
+		return nil, err
+	}
+
 	found := make([]items.ExternalSubtitle, 0)
 	for _, entry := range entries {
-		if entry.IsDir() {
+		if entry.Dir {
 			continue
 		}
 
-		subtitle, ok := parseSubtitle(base, entry.Name())
+		subtitle, ok := parseSubtitle(base, entry.Name)
 		if !ok {
 			continue
 		}
-		subtitle.Path = filepath.Join(directory, entry.Name())
+		subtitle.Path = filepath.Join(directory, entry.Name)
 		found = append(found, subtitle)
 	}
 
-	return s.items.ReplaceExternalSubtitles(ctx, item, found)
+	return found, nil
 }

@@ -37,9 +37,6 @@ func isSubtitle(name string) bool {
 	return subtitleExtensions[strings.ToLower(filepath.Ext(name))]
 }
 
-// parseSubtitle reads "Movie.Commentary.en.forced.srt" beside "Movie.mkv":
-// flags come last, a two or three letter language code before them, and
-// anything left over is the track title.
 func parseSubtitle(base, name string) (items.ExternalSubtitle, bool) {
 	if !isSubtitle(name) {
 		return items.ExternalSubtitle{}, false

@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
+	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
@@ -18,15 +19,16 @@ import (
 )
 
 type Scanner struct {
-	items     *items.Service
-	libraries *libraries.Service
+	items      *items.Service
+	libraries  *libraries.Service
+	filesystem *filesystem.Service
 
 	mu      sync.Mutex
 	running bool
 }
 
-func New(items *items.Service, libraries *libraries.Service) *Scanner {
-	return &Scanner{items: items, libraries: libraries}
+func New(items *items.Service, libraries *libraries.Service, filesystem *filesystem.Service) *Scanner {
+	return &Scanner{items: items, libraries: libraries, filesystem: filesystem}
 }
 
 func (s *Scanner) Scan(ctx context.Context) error {
