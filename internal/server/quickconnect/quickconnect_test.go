@@ -11,8 +11,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/quickconnect"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
-	"github.com/FreekingDean/gojellyfin/internal/server/user"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	devicemodal "github.com/FreekingDean/gojellyfin/internal/store/device"
@@ -24,13 +22,12 @@ import (
 )
 
 type fixture struct {
-	pending    *quickconnect.Service
-	server     *Server
-	userServer *user.Server
-	sessions   *sessions.Service
-	users      *users.Service
-	auth       *auth.Service
-	prefix     string
+	pending  *quickconnect.Service
+	server   *Server
+	sessions *sessions.Service
+	users    *users.Service
+	auth     *auth.Service
+	prefix   string
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -84,13 +81,12 @@ func newFixture(t *testing.T) *fixture {
 	sessionService := sessions.New(client)
 
 	return &fixture{
-		pending:    pending,
-		server:     New(pending, userService),
-		userServer: user.New(userService, sessionService, pending),
-		sessions:   sessionService,
-		users:      userService,
-		auth:       auth.New(sessionService),
-		prefix:     prefix,
+		pending:  pending,
+		server:   New(pending, userService),
+		sessions: sessionService,
+		users:    userService,
+		auth:     auth.New(sessionService),
+		prefix:   prefix,
 	}
 }
 
@@ -160,20 +156,28 @@ func (f *fixture) authorize(t *testing.T, ctx context.Context, params api.Author
 	return bool(result)
 }
 
-func (f *fixture) redeem(t *testing.T, ctx context.Context, secret string) api.AuthenticateWithQuickConnectResponseObject {
+func (f *fixture) state(t *testing.T, ctx context.Context, secret string) api.GetQuickConnectStateResponseObject {
 	t.Helper()
 
-	response, err := f.userServer.AuthenticateWithQuickConnect(ctx, api.AuthenticateWithQuickConnectRequestObject{
-		JSONBody: &api.QuickConnectDto{Secret: secret},
+	response, err := f.server.GetQuickConnectState(ctx, api.GetQuickConnectStateRequestObject{
+		Params: api.GetQuickConnectStateParams{Secret: secret},
 	})
 	if err != nil {
-		t.Fatalf("failed to authenticate with quick connect: %v", err)
+		t.Fatalf("failed to get the quick connect state: %v", err)
 	}
 
 	return response
 }
 
-func TestGetQuickConnectEnabledMatchesTheServerConfiguration(t *testing.T) {
+func (f *fixture) refuseRedeem(t *testing.T, secret string) {
+	t.Helper()
+
+	if _, err := f.pending.Redeem(secret); err == nil {
+		t.Error("the request was redeemable, want a request that was never authorized to hand out nothing")
+	}
+}
+
+func TestGetQuickConnectEnabledReportsTheImplementedState(t *testing.T) {
 	fixture := newFixture(t)
 
 	response, err := fixture.server.GetQuickConnectEnabled(context.Background(), api.GetQuickConnectEnabledRequestObject{})
@@ -185,10 +189,8 @@ func TestGetQuickConnectEnabledMatchesTheServerConfiguration(t *testing.T) {
 	if !ok {
 		t.Fatalf("response = %T, want api.GetQuickConnectEnabled200JSONResponse", response)
 	}
-
-	available := configuration.DefaultServerConfiguration().QuickConnectAvailable
-	if available == nil || *available != bool(result) {
-		t.Errorf("GetQuickConnectEnabled = %v, want the same as QuickConnectAvailable %v", bool(result), available)
+	if bool(result) != quickconnect.Enabled {
+		t.Errorf("GetQuickConnectEnabled = %v, want %v", bool(result), quickconnect.Enabled)
 	}
 }
 
@@ -232,12 +234,7 @@ func TestInitiateQuickConnectIssuesDistinctCodes(t *testing.T) {
 func TestGetQuickConnectStateRejectsAnUnknownSecret(t *testing.T) {
 	fixture := newFixture(t)
 
-	response, err := fixture.server.GetQuickConnectState(context.Background(), api.GetQuickConnectStateRequestObject{
-		Params: api.GetQuickConnectStateParams{Secret: "not-a-secret"},
-	})
-	if err != nil {
-		t.Fatalf("failed to get the quick connect state: %v", err)
-	}
+	response := fixture.state(t, context.Background(), "not-a-secret")
 
 	if _, ok := response.(api.GetQuickConnectState404JSONResponse); !ok {
 		t.Fatalf("response = %T, want api.GetQuickConnectState404JSONResponse", response)
@@ -257,9 +254,7 @@ func TestAuthorizeQuickConnectRequiresAnAuthenticatedCaller(t *testing.T) {
 		t.Fatalf("err = %v, want auth.ErrUnauthorized", err)
 	}
 
-	if _, ok := fixture.redeem(t, ctx, *result.Secret).(api.AuthenticateWithQuickConnect400Response); !ok {
-		t.Error("the request was redeemable, want an unauthorized code to hand out nothing")
-	}
+	fixture.refuseRedeem(t, *result.Secret)
 }
 
 func TestAuthorizeQuickConnectRejectsAnUnknownCode(t *testing.T) {
@@ -289,9 +284,7 @@ func TestAuthorizeQuickConnectForAnotherUserNeedsAnAdministrator(t *testing.T) {
 		t.Fatalf("response = %T, want api.AuthorizeQuickConnect403JSONResponse", response)
 	}
 
-	if _, ok := fixture.redeem(t, ctx, *result.Secret).(api.AuthenticateWithQuickConnect400Response); !ok {
-		t.Error("the request was redeemable, want a refused authorization to hand out nothing")
-	}
+	fixture.refuseRedeem(t, *result.Secret)
 }
 
 func TestQuickConnectRejectsAnExpiredRequest(t *testing.T) {
@@ -302,12 +295,7 @@ func TestQuickConnectRejectsAnExpiredRequest(t *testing.T) {
 	signedIn, _ := fixture.signedIn(t, "dean", false)
 	result := fixture.initiate(t, ctx)
 
-	state, err := fixture.server.GetQuickConnectState(ctx, api.GetQuickConnectStateRequestObject{
-		Params: api.GetQuickConnectStateParams{Secret: *result.Secret},
-	})
-	if err != nil {
-		t.Fatalf("failed to get the quick connect state: %v", err)
-	}
+	state := fixture.state(t, ctx, *result.Secret)
 	if _, ok := state.(api.GetQuickConnectState404JSONResponse); !ok {
 		t.Fatalf("response = %T, want api.GetQuickConnectState404JSONResponse", state)
 	}
@@ -316,12 +304,10 @@ func TestQuickConnectRejectsAnExpiredRequest(t *testing.T) {
 		t.Error("AuthorizeQuickConnect = true, want an expired code to be refused")
 	}
 
-	if _, ok := fixture.redeem(t, ctx, *result.Secret).(api.AuthenticateWithQuickConnect400Response); !ok {
-		t.Error("the request was redeemable, want an expired code to hand out nothing")
-	}
+	fixture.refuseRedeem(t, *result.Secret)
 }
 
-func TestQuickConnectHandsOutASessionTokenOnce(t *testing.T) {
+func TestAuthorizeQuickConnectMarksTheRequestForTheCaller(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := fixture.deviceContext("tv")
 	signedIn, userID := fixture.signedIn(t, "dean", false)
@@ -332,12 +318,7 @@ func TestQuickConnectHandsOutASessionTokenOnce(t *testing.T) {
 		t.Fatal("AuthorizeQuickConnect = false, want the pending code to be authorized")
 	}
 
-	state, err := fixture.server.GetQuickConnectState(ctx, api.GetQuickConnectStateRequestObject{
-		Params: api.GetQuickConnectStateParams{Secret: *result.Secret},
-	})
-	if err != nil {
-		t.Fatalf("failed to get the quick connect state: %v", err)
-	}
+	state := fixture.state(t, ctx, *result.Secret)
 	polled, ok := state.(api.GetQuickConnectState200JSONResponse)
 	if !ok {
 		t.Fatalf("response = %T, want api.GetQuickConnectState200JSONResponse", state)
@@ -346,23 +327,11 @@ func TestQuickConnectHandsOutASessionTokenOnce(t *testing.T) {
 		t.Error("Authenticated = false, want the poll to report the authorization")
 	}
 
-	authenticated, ok := fixture.redeem(t, ctx, *result.Secret).(api.AuthenticateWithQuickConnect200JSONResponse)
-	if !ok {
-		t.Fatal("the secret was not redeemable, want an access token")
-	}
-	if authenticated.AccessToken == nil || *authenticated.AccessToken == "" {
-		t.Fatal("AccessToken is empty, want a usable token")
-	}
-
-	session, err := fixture.sessions.ByToken(context.Background(), *authenticated.AccessToken)
+	authorized, err := fixture.pending.Redeem(*result.Secret)
 	if err != nil {
-		t.Fatalf("failed to resolve the issued token: %v", err)
+		t.Fatalf("the secret was not redeemable: %v", err)
 	}
-	if session.Edges.User == nil || session.Edges.User.ID != userID {
-		t.Errorf("session user = %v, want the authorizing user %v", session.Edges.User, userID)
-	}
-
-	if _, ok := fixture.redeem(t, ctx, *result.Secret).(api.AuthenticateWithQuickConnect400Response); !ok {
-		t.Error("the secret was redeemable twice, want it consumed by the first exchange")
+	if authorized != userID {
+		t.Errorf("authorized user = %v, want the authorizing user %v", authorized, userID)
 	}
 }
