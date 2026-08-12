@@ -2,14 +2,12 @@ package user
 
 import (
 	"context"
-	"log"
 	"time"
 
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/config"
-	"github.com/FreekingDean/gojellyfin/internal/passwordresets"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	serversession "github.com/FreekingDean/gojellyfin/internal/server/session"
@@ -20,11 +18,10 @@ import (
 type Server struct {
 	users    *users.Service
 	sessions *sessions.Service
-	resets   *passwordresets.Service
 }
 
-func New(users *users.Service, sessions *sessions.Service, resets *passwordresets.Service) *Server {
-	return &Server{users: users, sessions: sessions, resets: resets}
+func New(users *users.Service, sessions *sessions.Service) *Server {
+	return &Server{users: users, sessions: sessions}
 }
 
 func (s *Server) GetUsers(ctx context.Context, request api.GetUsersRequestObject) (api.GetUsersResponseObject, error) {
@@ -252,73 +249,16 @@ func (s *Server) AuthenticateUserByName(ctx context.Context, request api.Authent
 	}, nil
 }
 
-// The response is the same whether or not the username exists, so a caller
-// cannot use it to learn which accounts are real.
+// Self-service reset needs a channel that reaches the account holder and
+// nobody else; this server has none, so it answers ContactAdmin and recovery
+// runs through cmd/tasks/resetpassword.
 func (s *Server) ForgotPassword(ctx context.Context, request api.ForgotPasswordRequestObject) (api.ForgotPasswordResponseObject, error) {
-	req := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
-	expiration := s.resets.Expiration()
-
-	if req != nil {
-		user, err := s.users.UserByUsername(ctx, req.EnteredUsername)
-		if err == nil && resettable(user) {
-			pin, err := s.resets.Start(user.ID)
-			if err != nil {
-				return nil, err
-			}
-			expiration = pin.Expires
-			log.Printf("password reset pin for %s: %s (expires %s)", user.Username, pin.Value, pin.Expires.Format(time.RFC3339))
-		}
-	}
-
-	return api.ForgotPassword200JSONResponse{
-		Action:            apiutil.Ptr(api.PinCode),
-		PinExpirationDate: apiutil.Ptr(expiration),
-		PinFile:           apiutil.Ptr(""),
-	}, nil
+	return api.ForgotPassword200JSONResponse{Action: apiutil.Ptr(api.ContactAdmin)}, nil
 }
 
 func (s *Server) ForgotPasswordPin(ctx context.Context, request api.ForgotPasswordPinRequestObject) (api.ForgotPasswordPinResponseObject, error) {
-	req := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
-	if req == nil {
-		return pinRefused(), nil
-	}
-
-	userID, ok := s.resets.Redeem(req.Pin)
-	if !ok {
-		return pinRefused(), nil
-	}
-
-	user, err := s.users.User(ctx, userID)
-	if err != nil {
-		return pinRefused(), nil
-	}
-
-	password, err := auth.NewToken()
-	if err != nil {
-		return nil, err
-	}
-	hash, err := auth.Hash(password)
-	if err != nil {
-		return nil, err
-	}
-	if err := s.users.SetPassword(ctx, user.ID, hash); err != nil {
-		return nil, err
-	}
-	log.Printf("password reset for %s: new password %s", user.Username, password)
-
-	return api.ForgotPasswordPin200JSONResponse{
-		Success:    apiutil.Ptr(true),
-		UsersReset: apiutil.Ptr([]string{user.Username}),
-	}, nil
-}
-
-func pinRefused() api.ForgotPasswordPin200JSONResponse {
 	return api.ForgotPasswordPin200JSONResponse{
 		Success:    apiutil.Ptr(false),
 		UsersReset: apiutil.Ptr([]string{}),
-	}
-}
-
-func resettable(user *users.User) bool {
-	return user.Edges.Policy != nil && !user.Edges.Policy.IsAdministrator
+	}, nil
 }

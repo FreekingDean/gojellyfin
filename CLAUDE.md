@@ -84,7 +84,7 @@ They register after the generated routes so a documented literal wins any overla
 
 Three layers, split on what each is allowed to know:
 
-- **`internal/{auth,sessions,users,items,libraries,config,passwordresets}` — domains.** Behaviour over the ent models, exposing a `Service` built with `New(client *store.Client)`. **A domain package must never import `internal/server/api` or `internal/http/middleware`.** That invariant is what the layout rests on; check it with `grep -rl 'server/api\|http/middleware' internal/<domain>/`, which must come back empty. `auth` owns hashing, tokens and request identity; `sessions` owns the active session and device rows, which are Jellyfin sessions rather than login state.
+- **`internal/{auth,sessions,users,items,libraries,config}` — domains.** Behaviour over the ent models, exposing a `Service` built with `New(client *store.Client)`. **A domain package must never import `internal/server/api` or `internal/http/middleware`.** That invariant is what the layout rests on; check it with `grep -rl 'server/api\|http/middleware' internal/<domain>/`, which must come back empty. `auth` owns hashing, tokens and request identity; `sessions` owns the active session and device rows, which are Jellyfin sessions rather than login state.
 - **`internal/server/<tag>` — one package per spec tag.** Named for the tag (`userlibrary`, `librarystructure`, `mediainfo`), holding exactly the operations that tag declares and a `Server` with the domain services it needs. Add a tag package by looking the operation up in the spec, not by guessing where it feels like it belongs — `AuthenticateUserByName` is a `User` operation, `GetBitrateTestBytes` is `MediaInfo`.
 - **`internal/server/apiutil`** — five generic helpers (`Ptr`, `Deref`, `OrElse`, `Body`, `UID`) and nothing else. It imports none of our packages, and no domain knowledge belongs in it; Go cannot alias generic functions, which is the only reason they are shared rather than copied.
 
@@ -118,7 +118,7 @@ Ordering by a to-many edge makes ent group the query, so the sort column comes b
 
 `auth.UserID` reads the session's user edge, so `sessions.ByToken` has to eager-load it; the foreign key is unexported and there is nothing to fall back on.
 
-Forgot-password pins live in `internal/passwordresets`, in memory rather than in a pin file or a table: a pin is single-use, expires with `DefaultTTL`, dies with the process, and reaches the user through the server log, which is why `ForgotPassword` refuses administrators. Redeeming one sets a fresh random password through the same `auth.Hash`/`users.SetPassword` path as `UpdateUserPassword`, rather than blanking the password the way upstream does.
+`ForgotPassword` answers `ContactAdmin` and `ForgotPasswordPin` refuses every pin, both without reading a request or touching the database. A pin is only as private as the channel that carries it, and the server has none — no mail, and the log and the pin file upstream writes are both read by whoever runs the box rather than by the account holder. Anything that issues a pin here hands account takeover to everyone who can read a shipped log. `cmd/tasks/resetpassword` is what `ContactAdmin` means: an operator with database access, reading the new password from stdin the way `adduser` does.
 
 Handlers read `auth.UserID(ctx)`, `auth.SessionFrom(ctx)`, `auth.AuthorizationFrom(ctx)` and return `auth.ErrUnauthorized`; `middleware.TokenFrom` is the only thing left in the middleware package that handlers touch, and only because websocket and media URLs cannot send headers.
 
