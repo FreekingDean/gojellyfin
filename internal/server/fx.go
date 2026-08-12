@@ -1,6 +1,8 @@
 package server
 
 import (
+	"context"
+
 	"go.uber.org/fx"
 
 	"github.com/FreekingDean/gojellyfin/internal/apikeys"
@@ -120,10 +122,20 @@ var Module = fx.Module(
 		New,
 	),
 	fx.Invoke(
-		useScanner,
+		registerLibraryScan,
 	),
 )
 
-func useScanner(registry *tasks.Registry, scanner *scanner.Scanner) error {
-	return registry.UseRunner(tasks.LibraryScanID, scanner.Scan)
+func registerLibraryScan(lc fx.Lifecycle, registry *tasks.Registry, scanner *scanner.Scanner) error {
+	if err := registry.UseRunner(tasks.LibraryScanID, scanner.Scan); err != nil {
+		return err
+	}
+
+	lc.Append(fx.Hook{
+		OnStart: func(context.Context) error {
+			return registry.Start(tasks.LibraryScanID)
+		},
+	})
+
+	return nil
 }

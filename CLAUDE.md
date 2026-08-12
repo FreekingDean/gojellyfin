@@ -96,7 +96,7 @@ Two naming traps, both of which cost real time: generated operation names occupy
 
 `internal/server` itself is only the composition root plus the transport edge (`api`, `socket`, `stream`).
 
-Cross-domain wiring uses interfaces declared by the *consumer* — `middleware.Sessions`, `libraries.Scanner`. Where that would make the object graph cyclic (libraries needs the scanner, the scanner reads libraries), the dependency is set after construction via `fx.Invoke` rather than in the constructor.
+Cross-domain wiring uses interfaces declared by the *consumer* — `middleware.Sessions`. Where taking the dependency as a constructor argument would make the object graph cyclic, it is set after construction via `fx.Invoke`: `registerLibraryScan` in `internal/server/fx.go` hands `scanner.Scan` to the task registry as the `tasks.LibraryScanID` runner and appends the lifecycle hook that starts it at boot, so the startup scan is the same task the dashboard and `RefreshLibrary` start.
 
 `server.Server` embeds each service, and embeds `api.Unimplemented` **one level deeper** through `nestedUnimplemented`. Go resolves a method at the shallowest depth where exactly one candidate exists, so a service at depth 1 wins and everything unimplemented falls through to the 501 stub at depth 2. Three things silently break this, all surfacing as a confusing "does not implement StrictServerInterface": a service embedding `api.Unimplemented` itself, two services declaring the same method, or flattening the wrapper. Embedded field names are type names, so each service is embedded through a local alias (`type UsersServer = users.Server`) to keep them distinct.
 

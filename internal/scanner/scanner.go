@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,9 +21,6 @@ type Scanner struct {
 	items      *items.Service
 	libraries  *libraries.Service
 	filesystem *filesystem.Service
-
-	mu      sync.Mutex
-	running bool
 }
 
 func New(items *items.Service, libraries *libraries.Service, filesystem *filesystem.Service) *Scanner {
@@ -32,42 +28,21 @@ func New(items *items.Service, libraries *libraries.Service, filesystem *filesys
 }
 
 func (s *Scanner) Scan(ctx context.Context) error {
-	if !s.start() {
-		return nil
-	}
-	defer s.finish()
-
 	libraries, err := s.libraries.ListLibraries(ctx)
 	if err != nil {
 		return err
 	}
 
 	for _, library := range libraries {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		if err := s.scanLibrary(ctx, library); err != nil {
 			log.Printf("scan %s: %v", library.Name, err)
 		}
 	}
 
-	return nil
-}
-
-func (s *Scanner) start() bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if s.running {
-		return false
-	}
-	s.running = true
-
-	return true
-}
-
-func (s *Scanner) finish() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	s.running = false
+	return ctx.Err()
 }
 
 func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) error {
@@ -97,8 +72,11 @@ func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) e
 func (s *Scanner) scanMovies(ctx context.Context, library *libraries.Library, root string) ([]string, error) {
 	seen := make([]string, 0)
 
-	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
-		if err != nil || entry.IsDir() || !isVideo(entry.Name()) {
+	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if walkErr != nil || entry.IsDir() || !isVideo(entry.Name()) {
 			return nil
 		}
 
@@ -146,6 +124,9 @@ func (s *Scanner) scanShows(ctx context.Context, library *libraries.Library, roo
 	}
 
 	for _, entry := range entries {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
 		if !entry.IsDir() {
 			continue
 		}
@@ -189,6 +170,10 @@ func (s *Scanner) scanSeries(ctx context.Context, library *libraries.Library, se
 	}
 
 	for _, entry := range entries {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+
 		path := filepath.Join(seriesPath, entry.Name())
 
 		if !entry.IsDir() {
@@ -231,6 +216,9 @@ func (s *Scanner) scanSeries(ctx context.Context, library *libraries.Library, se
 			return nil, err
 		}
 		for _, episode := range episodes {
+			if err := ctx.Err(); err != nil {
+				return nil, err
+			}
 			if episode.IsDir() || !isVideo(episode.Name()) {
 				continue
 			}
