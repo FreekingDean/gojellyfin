@@ -64,8 +64,6 @@ func (f *fixture) add(t *testing.T, collectionType librarymodal.CollectionType, 
 	return library.ID
 }
 
-// The view shape is a second copy of serveritems.LibraryView, which nothing
-// makes the compiler check; pinning every field here catches the two drifting.
 func TestGetUserViews(t *testing.T) {
 	fixture := newFixture(t)
 
