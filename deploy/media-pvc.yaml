@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gojellyfin-media
+  labels:
+    app.kubernetes.io/name: gojellyfin
+spec:
+  # ReadWriteMany is a requirement, not a preference. The API sends the
+  # transcoder the item's filesystem path straight out of the database
+  # (internal/server/stream/stream.go passes item.Path into transcode.Spec), so
+  # /media/... has to resolve to the same file in the API pod and in every
+  # transcoder pod. `gojellyfin transcoder --help` states it as "it needs the
+  # media mounted at the same paths the API sees".
+  #
+  # A ReadWriteOnce claim binds to one node and the transcoders scheduled
+  # elsewhere get nothing, which surfaces as ffmpeg failing to open a path the
+  # API can read perfectly well. On a single-node box the same-path rule is
+  # equally well satisfied by giving both workloads the same hostPath volume
+  # instead of this claim.
+  accessModes: [ReadWriteMany]
+  # Name the ReadWriteMany class here (NFS, CephFS, Filestore); the cluster
+  # default is usually ReadWriteOnce block storage and will bind wrong.
+  storageClassName: REPLACE_ME
+  resources:
+    requests:
+      storage: 1Ti

@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gojellyfin-api
+  labels:
+    app.kubernetes.io/name: gojellyfin
+    app.kubernetes.io/component: api
+spec:
+  # A transcode is one HTTP request from start to finish, with no session to
+  # map back to a worker, so a second replica breaks nothing.
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gojellyfin
+      app.kubernetes.io/component: api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: gojellyfin
+        app.kubernetes.io/component: api
+    spec:
+      containers:
+        - name: api
+          # Keep this tag identical to migrate-job.yaml's. The migrations are
+          # embedded in the binary, so two different tags mean the schema one
+          # image applied and the schema the other expects can differ.
+          image: ghcr.io/freekingdean/gojellyfin:latest
+          args: ["server"]
+          ports:
+            - name: http
+              containerPort: 8081
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: gojellyfin
+                  key: DATABASE_URL
+            # Same token every transcoder holds; sent as X-Transcoder-Token.
+            - name: TRANSCODER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: gojellyfin
+                  key: TRANSCODER_TOKEN
+            # Empty or unset turns transcoding off and audio a client cannot
+            # take goes back to answering 415, so a typo here is silent.
+            - name: TRANSCODER_WORKERS
+              valueFrom:
+                configMapKeyRef:
+                  name: gojellyfin
+                  key: TRANSCODER_WORKERS
+            # MIGRATE_ON_START is deliberately unset. entrypoint.sh would run
+            # the migrations before the server, which is unsafe with rolling
+            # replicas — every replica would race the same apply on every
+            # rollout. migrate-job.yaml is the one place they run.
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          # /System/Ping is the only endpoint that is both public
+          # (api.PublicOperations) and free of any database access, so it
+          # reports the process rather than its dependencies.
+          livenessProbe:
+            httpGet:
+              path: /System/Ping
+              port: http
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /System/Ping
+              port: http
+            periodSeconds: 10
+          # No runAsNonRoot: the image's USER is the name "gojellyfin" rather
+          # than a uid, and kubelet refuses to start a container whose
+          # non-rootness it cannot check numerically. The image drops privilege
+          # on its own.
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            # Identical mountPath to the transcoders'. The path stored on the
+            # item row is what the API hands them, so /media/... has to be the
+            # same file on both sides.
+            #
+            # Writable here where the transcoders get read-only: DeleteItem
+            # removes the file through filesystem.RemoveAll.
+            - name: media
+              mountPath: /media
+      volumes:
+        - name: media
+          persistentVolumeClaim:
+            claimName: gojellyfin-media
