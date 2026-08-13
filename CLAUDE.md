@@ -30,7 +30,7 @@ go test -run TestName ./internal/... # single test
 echo hunter2 | go run ./cmd/gojellyfin adduser Dean   # bootstrap the first user
 ```
 
-Everything ships as one cobra binary, `cmd/gojellyfin`, with a subcommand each for `server`, `migrate`, `adduser`, `resetpassword` and `localizationdata`. One binary means one image, so an operator task is `docker exec <container> gojellyfin adduser Dean` rather than a second image or a second build. The names stay flat and read as commands; a new task is a `<name>Command() *cobra.Command` constructor in a file of its own, added to the list in `main.go`.
+Everything ships as one cobra binary, `cmd/gojellyfin`, with a subcommand each for `server`, `worker`, `migrate`, `adduser`, `resetpassword` and `localizationdata`. One binary means one image, so an operator task is `docker exec <container> gojellyfin adduser Dean` rather than a second image or a second build. The names stay flat and read as commands; a new task is a `<name>Command() *cobra.Command` constructor in a file of its own, added to the list in `main.go`.
 
 Only two things are shared between them, both in `main.go`: `withStore` opens the store, starts it and closes it around a callback, and `readPassword` reads from stdin. Neither the DSN nor its default lives there — `store.DatabaseURL()` is the single source, which is why `migrate` can name the same database the server will use without repeating the string.
 
@@ -55,13 +55,13 @@ atlas migrate apply --dir "file://migrations" --url "$DATABASE_URL"
 
 `gojellyfin migrate` is the deployed spelling of that second line. It drives the `atlas` CLI rather than the Go SDK because the revision tracker that owns `atlas_schema_revisions` is not in the `ariga.io/atlas` module — it lives in the CLI repo under `cmd/atlas/internal/migrate/ent`, which nothing outside that repo can import. The migration directory is embedded through `internal/store/migrations`, so a deployed binary cannot drift from the schema it expects, and `atlas.sum` is still verified on every run.
 
-The `Dockerfile` carries that one binary and the `atlas` binary, runs as a non-root user, and is built and pushed to `ghcr.io/freekingdean/gojellyfin` by `.github/workflows/docker.yml`. `CMD` is `server`, so the image serves by default and any other subcommand is a `docker run` argument. `entrypoint.sh` survives the consolidation for one reason: it migrates first when `MIGRATE_ON_START=true`. That has to stay outside the binary, because it is deploy policy rather than server behaviour — unconditional migration on start is unsafe with rolling replicas, so the default is a one-off `docker run --rm <image> migrate`.
+The `Dockerfile` carries that one binary and the `atlas` binary, runs as a non-root user, and is built and pushed to `ghcr.io/freekingdean/gojellyfin` by `.github/workflows/docker.yml`. `CMD` is `server`, so the image serves by default and any other subcommand is a `docker run` argument — a job worker is the same image run as `worker`, which is the whole reason the queue is in Postgres rather than in the server's memory. `entrypoint.sh` survives the consolidation for one reason: it migrates first when `MIGRATE_ON_START=true`. That has to stay outside the binary, because it is deploy policy rather than server behaviour — unconditional migration on start is unsafe with rolling replicas, so the default is a one-off `docker run --rm <image> migrate`.
 
 ## Architecture
 
 ### Wiring: uber/fx
 
-Every package under `internal/` exposes a `Module` in its own `fx.go`; `cmd/gojellyfin/server.go` composes them into the one `fx.New(...).Run()` that the `server` subcommand is. fx wires the server, not the CLI — every other subcommand builds what it needs by hand, because a one-shot task does not want a lifecycle. New packages follow the same shape: `New` constructor in the package, `fx.Provide`/`fx.Invoke` in `fx.go`, `fx.Lifecycle` hooks in a `run` function for anything with start/stop semantics (see `internal/http/fx.go`, `internal/store/fx.go`).
+Every package under `internal/` exposes a `Module` in its own `fx.go`; `cmd/gojellyfin/server.go` composes them into the one `fx.New(...).Run()` that the `server` subcommand is. fx wires the long-running commands, not the CLI — `adduser` and the rest build what they need by hand, because a one-shot task does not want a lifecycle. `worker` is the second one that does: it wants ordered start, signal handling and an OnStop that drains, so it composes a smaller graph the same way rather than hand-rolling one. New packages follow the same shape: `New` constructor in the package, `fx.Provide`/`fx.Invoke` in `fx.go`, `fx.Lifecycle` hooks in a `run` function for anything with start/stop semantics (see `internal/http/fx.go`, `internal/store/fx.go`).
 
 ### API layer: generated, with an unimplemented base
 
@@ -92,7 +92,7 @@ They register after the generated routes so a documented literal wins any overla
 
 Three layers, split on what each is allowed to know:
 
-- **`internal/{auth,sessions,users,items,libraries,config}` — domains.** Behaviour over the ent models, exposing a `Service` built with `New(client *store.Client)`. **A domain package must never import `internal/server/api` or `internal/http/middleware`.** That invariant is what the layout rests on; check it with `grep -rl 'server/api\|http/middleware' internal/<domain>/`, which must come back empty. `auth` owns hashing, tokens and request identity; `sessions` owns the active session and device rows, which are Jellyfin sessions rather than login state.
+- **`internal/{auth,sessions,users,items,libraries,jobs,config}` — domains.** Behaviour over the ent models, exposing a `Service` built with `New(client *store.Client)`. **A domain package must never import `internal/server/api` or `internal/http/middleware`.** That invariant is what the layout rests on; check it with `grep -rl 'server/api\|http/middleware' internal/<domain>/`, which must come back empty. `auth` owns hashing, tokens and request identity; `sessions` owns the active session and device rows, which are Jellyfin sessions rather than login state; `jobs` owns the queue.
 - **`internal/server/<tag>` — one package per spec tag.** Named for the tag (`userlibrary`, `librarystructure`, `mediainfo`), holding exactly the operations that tag declares and a `Server` with the domain services it needs. Add a tag package by looking the operation up in the spec, not by guessing where it feels like it belongs — `AuthenticateUserByName` is a `User` operation, `GetBitrateTestBytes` is `MediaInfo`.
 - **`internal/server/apiutil`** — five generic helpers (`Ptr`, `Deref`, `OrElse`, `Body`, `UID`) and nothing else. It imports none of our packages, and no domain knowledge belongs in it; Go cannot alias generic functions, which is the only reason they are shared rather than copied.
 
@@ -123,6 +123,18 @@ Ent's default delete action is `NO ACTION` for a required edge and `SET NULL` fo
 Columns owned by a background process must be left out of an upsert's `DoUpdates` — the scan clobbering probe-owned columns like `run_time_ticks` was a real bug. The scan writes `date_modified`; the probe writes `container`, `run_time_ticks`, `probed_at` and the `MediaSource`.
 
 Ordering by a to-many edge makes ent group the query, so the sort column comes back unaggregated and Postgres rejects it. Query from the side that owns the column instead (see `items.ResumeItems`).
+
+### Background work
+
+`internal/jobs` is a general queue in Postgres and `internal/worker` runs it. The library scan is its first kind, not its shape: a job is a `kind`, a JSON `payload` and an attempt budget, so a second kind costs a `Definition` entry and a `Handle` call.
+
+`Lease` takes the next due job with `SELECT … FOR UPDATE SKIP LOCKED` and writes a `lease_expires_at`. Reclaim is the expiry, not a heartbeat table: a job whose lease has passed is simply due again, which is the same `WHERE` clause the queued case already needs and leaves no second liveness record to go stale. What keeps that safe is `attempt`, which increments on every lease and acts as a fencing token — a worker whose lease was reclaimed gets `ErrLeaseLost` from its next `Renew` or finish instead of writing over the run that replaced it. Nothing is at-most-once: a worker that hangs past its lease can still be running when the job is handed on, so a job kind must tolerate being started twice.
+
+The running worker renews on a third of the lease, and that one round trip also publishes progress and reads `cancel_requested`, so liveness, progress and cancellation cost one query rather than three. Cancellation latency is therefore a third of the lease — cancelling a queued job is immediate, cancelling a running one is a flag the holder sees on its next renew, and the API reports `Cancelling` in between.
+
+`dedupe_key` is a nullable unique column cleared when a job finishes, so at most one job of a kind is queued or running and the registry's old single-flight guard now holds across processes. `Enqueue` returns the existing job rather than failing, which is why pressing Start twice, `RefreshLibrary` and the boot hook all collapse into one row.
+
+A failed job retries on its own budget (`max_attempts`, default 3) with `30s << attempt` capped at ten minutes, and the last failure stays as a `Failed` row with its message, so the dashboard shows what broke instead of the task looking like it never ran. Shutdown is different from failure: `Stop` releases the in-flight job back to `Queued` and refunds the attempt, so draining costs nothing from the retry budget.
 
 ### Request identity
 
