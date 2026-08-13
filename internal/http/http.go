@@ -12,6 +12,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/http/mux"
+	"github.com/FreekingDean/gojellyfin/internal/http/web"
 	"github.com/FreekingDean/gojellyfin/internal/server"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/socket"
@@ -173,7 +174,7 @@ func New(m *mux.Mux, authMiddleware *middleware.Auth) *Server {
 	}
 }
 
-func Register(s *Server, apiServer *server.Server, sock *socket.Socket, streams *stream.Handler, m *mux.Mux) {
+func Register(s *Server, apiServer *server.Server, sock *socket.Socket, streams *stream.Handler, client *web.Handler, m *mux.Mux) {
 	h := api.NewStrictHandlerWithOptions(apiServer, s.apiMiddleware, s.apiOptions)
 	m.HandleFunc("GET /socket", sock.Handle)
 
@@ -198,6 +199,9 @@ func Register(s *Server, apiServer *server.Server, sock *socket.Socket, streams 
 	for _, pattern := range legacyPatterns() {
 		m.HandleFunc(pattern, legacyRoute(m, legacyRoutes[pattern]))
 	}
+	// Last of all: /web/* is a catch-all, so registering it any earlier would
+	// swallow the generated /web/ConfigurationPage routes.
+	client.Register(m)
 	for _, mw := range s.httpMiddleware {
 		finalHandler = mw(finalHandler)
 	}

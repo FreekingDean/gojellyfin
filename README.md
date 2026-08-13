@@ -17,6 +17,12 @@ make build test lint
 echo hunter2 | go run ./cmd/gojellyfin adduser Dean   # bootstrap the first user
 ```
 
+The image serves `jellyfin-web` at `/web/` on the same origin as the API, so a
+browser never makes a cross-origin call. A source checkout has no client on
+disk: the server logs that it found none and answers the API only. Point
+`JELLYFIN_WEB_ROOT` at an unpacked client to serve one locally, or set it empty
+to turn serving off in the image.
+
 `CLAUDE.md` carries the architecture and the reasoning behind it.
 
 ## Deployment
