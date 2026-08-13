@@ -61,7 +61,13 @@ The `Dockerfile` carries that one binary and the `atlas` binary, runs as a non-r
 
 ### Wiring: uber/fx
 
-Every package under `internal/` exposes a `Module` in its own `fx.go`; `cmd/gojellyfin/server.go` composes them into the one `fx.New(...).Run()` that the `server` subcommand is. fx wires the server, not the CLI — every other subcommand builds what it needs by hand, because a one-shot task does not want a lifecycle. New packages follow the same shape: `New` constructor in the package, `fx.Provide`/`fx.Invoke` in `fx.go`, `fx.Lifecycle` hooks in a `run` function for anything with start/stop semantics (see `internal/http/fx.go`, `internal/store/fx.go`).
+Every package under `internal/` exposes a `Module` in its own `fx.go`; `serverModules` in `cmd/gojellyfin/server.go` composes them into the one `fx.New(...).Run()` that the `server` subcommand is. fx wires the server, not the CLI — every other subcommand builds what it needs by hand, because a one-shot task does not want a lifecycle. New packages follow the same shape: `New` constructor in the package, `fx.Provide`/`fx.Invoke` in `fx.go`, `fx.Lifecycle` hooks in a `run` function for anything with start/stop semantics (see `internal/http/fx.go`, `internal/store/fx.go`).
+
+The command lists the domains one by one, but not the forty tag packages: `server.Module` aggregates those, so a tag module is named beside its thirty-nine siblings rather than in the composition root, and the command reads as the domains plus the API surface they are served through. Tag modules are named `server/<tag>` because five of them share a package name with a domain (`items`, `playlists`, `localization`, `displaypreferences`, `system`) and fx prints the module name. `internal/http` is the one module that still provides constructors from other packages — `middleware.NewAuth`, `socket.New`, `stream.New` — because those are the transport edge it owns rather than packages anything else composes.
+
+A binding that exists only because the object graph would otherwise be cyclic goes in the `fx.go` of the package that supplies the dependency, not the one that consumes it: `scanner`'s `useScanner` registers `Scanner.Scan` as the runner for `tasks.LibraryScanID`, so what the scanner is hooked into is answered by reading `internal/scanner/fx.go`.
+
+`TestServerModulesResolve` in `cmd/gojellyfin/server_test.go` runs `fx.ValidateApp` over `serverModules`. A missing provider is a runtime failure that a green build will not catch, and it is exactly what moving wiring around risks; `ValidateApp` checks the graph without opening a database or binding a port.
 
 ### API layer: generated, with an unimplemented base
 
@@ -104,7 +110,7 @@ Two naming traps, both of which cost real time: generated operation names occupy
 
 `internal/server` itself is only the composition root plus the transport edge (`api`, `socket`, `stream`).
 
-Cross-domain wiring uses interfaces declared by the *consumer* — `middleware.Sessions`, `libraries.Scanner`. Where that would make the object graph cyclic (libraries needs the scanner, the scanner reads libraries), the dependency is set after construction via `fx.Invoke` rather than in the constructor.
+Cross-domain wiring uses interfaces declared by the *consumer*, and where that would make the object graph cyclic the dependency is set after construction via `fx.Invoke` rather than in the constructor — see Wiring above for where those invokes live.
 
 `server.Server` embeds each service, and embeds `api.Unimplemented` **one level deeper** through `nestedUnimplemented`. Go resolves a method at the shallowest depth where exactly one candidate exists, so a service at depth 1 wins and everything unimplemented falls through to the 501 stub at depth 2. Three things silently break this, all surfacing as a confusing "does not implement StrictServerInterface": a service embedding `api.Unimplemented` itself, two services declaring the same method, or flattening the wrapper. Embedded field names are type names, so each service is embedded through a local alias (`type UsersServer = users.Server`) to keep them distinct.
 
