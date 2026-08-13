@@ -1,0 +1,70 @@
+# Two routes on one hostname, which is the whole point: the client and the API
+# share an origin, so the browser sends no cross-origin request and CORS never
+# enters it. Splitting them across two hostnames puts CORS back.
+#
+# Both values below have to be edited — this repository cannot guess either.
+# `hostnames` is the name the client is reached by, and `parentRefs` names the
+# Gateway and the namespace it lives in.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: gojellyfin-web
+  labels:
+    app.kubernetes.io/name: gojellyfin
+    app.kubernetes.io/component: web
+spec:
+  parentRefs:
+    - name: main
+      namespace: networking
+  hostnames:
+    - gojellyfin.example.com
+  rules:
+    # An exact match outranks any prefix, so this beats the API's `/` below
+    # without the two routes having to be ordered against each other. Serving
+    # the client from `/` instead would mean the API could never own a bare
+    # path again.
+    - matches:
+        - path:
+            type: Exact
+            value: /
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            path:
+              type: ReplaceFullPath
+              replaceFullPath: /web/
+            statusCode: 302
+    # No rewrite: nginx holds the client under a `web` directory, so the prefix
+    # the browser asks for is the prefix on disk.
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /web
+      backendRefs:
+        - name: gojellyfin-web
+          port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: gojellyfin-api
+  labels:
+    app.kubernetes.io/name: gojellyfin
+    app.kubernetes.io/component: api
+spec:
+  parentRefs:
+    - name: main
+      namespace: networking
+  hostnames:
+    - gojellyfin.example.com
+  rules:
+    # Everything the web route did not claim. The API owns paths at the root
+    # (`/System/Info/Public`, `/Users/AuthenticateByName`, `/socket`), so this
+    # cannot be narrowed to a prefix.
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: gojellyfin
+          port: 80
