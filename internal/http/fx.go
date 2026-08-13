@@ -9,14 +9,17 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/http/mux"
 	"github.com/FreekingDean/gojellyfin/internal/server/socket"
 	"github.com/FreekingDean/gojellyfin/internal/server/stream"
+	"github.com/FreekingDean/gojellyfin/internal/transcode"
 )
 
 var Module = fx.Module(
 	"http",
 	mux.Module,
+	transcode.Module,
 	fx.Provide(
 		middleware.NewAuth,
 		socket.New,
+		func(pool *transcode.Pool) stream.Transcoder { return pool },
 		stream.New,
 		New,
 	),

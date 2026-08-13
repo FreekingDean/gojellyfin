@@ -1,6 +1,8 @@
 package stream
 
 import (
+	"context"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -14,6 +16,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
+	"github.com/FreekingDean/gojellyfin/internal/transcode"
 )
 
 var contentTypes = map[string]string{
@@ -38,13 +41,21 @@ var contentTypes = map[string]string{
 	".wma":  "audio/x-ms-wma",
 }
 
-type Handler struct {
-	sessions *sessions.Service
-	items    *items.Service
+// A transcode runs on a worker in another container, which hands back the
+// output as one stream for the API to proxy.
+type Transcoder interface {
+	Enabled() bool
+	Open(ctx context.Context, spec transcode.Spec) (io.ReadCloser, error)
 }
 
-func New(sessions *sessions.Service, items *items.Service) *Handler {
-	return &Handler{sessions: sessions, items: items}
+type Handler struct {
+	sessions   *sessions.Service
+	items      *items.Service
+	transcoder Transcoder
+}
+
+func New(sessions *sessions.Service, items *items.Service, transcoder Transcoder) *Handler {
+	return &Handler{sessions: sessions, items: items, transcoder: transcoder}
 }
 
 // Registered ahead of the generated routes because the generated response type
@@ -57,6 +68,10 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 
 	container := sourceContainer(item)
 	if requested := r.PathValue("container"); requested != "" && !isStatic(r) && !strings.EqualFold(requested, container) {
+		if h.serveTranscode(w, r, item, []string{requested}) {
+			return
+		}
+
 		unsupported(w, r, container, requested)
 		return
 	}
@@ -86,11 +101,95 @@ func (h *Handler) ServeUniversal(w http.ResponseWriter, r *http.Request) {
 
 	container := sourceContainer(item)
 	if !playable(profiles, container, codec) {
+		containers := make([]string, 0, len(profiles))
+		for _, profile := range profiles {
+			containers = append(containers, profile.container)
+		}
+		if h.serveTranscode(w, r, item, containers) {
+			return
+		}
+
 		unsupported(w, r, describe(container, codec), strings.Join(requested, ","))
 		return
 	}
 
 	h.serveFile(w, r, item)
+}
+
+// Reports whether the response was answered by a transcode. Everything that
+// can fail is done before the first byte reaches the client, so the caller can
+// still refuse with a status when this comes back false.
+func (h *Handler) serveTranscode(w http.ResponseWriter, r *http.Request, item *items.Item, accepted []string) bool {
+	if !h.transcoder.Enabled() || !items.IsAudio(item) {
+		return false
+	}
+
+	container := transcode.Choose(candidates(r, accepted))
+	if container == "" {
+		return false
+	}
+
+	output, err := h.transcoder.Open(r.Context(), transcode.Spec{
+		Path:       item.Path,
+		Container:  container,
+		Bitrate:    audioBitrate(r),
+		StartTicks: startTicks(r),
+	})
+	if err != nil {
+		log.Printf("failed to transcode %s to %s: %v", item.Path, container, err)
+
+		return false
+	}
+	defer func() {
+		if err := output.Close(); err != nil {
+			log.Printf("transcode of %s ended: %v", item.Path, err)
+		}
+	}()
+
+	w.Header().Set("Content-Type", transcode.ContentType(container))
+	// The length is not known until the encode finishes, so there is nothing
+	// for a client to seek against.
+	w.Header().Set("Accept-Ranges", "none")
+	w.WriteHeader(http.StatusOK)
+
+	if _, err := transcode.Relay(w, output); err != nil {
+		log.Printf("transcode of %s stopped: %v", item.Path, err)
+	}
+
+	return true
+}
+
+// What the client asked to be transcoded to comes first, then the containers
+// it said it can play, which it can equally take over a plain response.
+func candidates(r *http.Request, accepted []string) []string {
+	query := r.URL.Query()
+
+	requested := query.Get("transcodingContainer")
+	if requested == "" || strings.EqualFold(query.Get("transcodingProtocol"), "hls") {
+		return accepted
+	}
+
+	return append([]string{requested}, accepted...)
+}
+
+func audioBitrate(r *http.Request) int32 {
+	query := r.URL.Query()
+	for _, name := range []string{"audioBitRate", "maxStreamingBitrate"} {
+		if bitrate, err := strconv.ParseInt(query.Get(name), 10, 32); err == nil && bitrate > 0 {
+			return int32(bitrate)
+		}
+	}
+
+	return 0
+}
+
+func startTicks(r *http.Request) int64 {
+	ticks, err := strconv.ParseInt(r.URL.Query().Get("startTimeTicks"), 10, 64)
+	if err != nil || ticks < 0 {
+		return 0
+	}
+
+	return ticks
 }
 
 // A client that cannot take the source as it is gets the reason rather than the

@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
+	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/mediasource"
 	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 )
@@ -148,4 +149,13 @@ func (s *Service) AudioCodec(ctx context.Context, itemID uuid.UUID) (string, err
 // The probe is skipped unless the file changed since it last ran.
 func NeedsProbe(item *Item) bool {
 	return item.ProbedAt.IsZero() || item.ProbedAt.Before(item.DateModified)
+}
+
+func IsAudio(item *Item) bool {
+	switch item.Kind {
+	case itemmodal.KindAudio, itemmodal.KindAudioBook:
+		return true
+	default:
+		return false
+	}
 }
