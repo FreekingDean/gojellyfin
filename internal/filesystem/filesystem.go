@@ -16,6 +16,7 @@ const Root = "/"
 var (
 	ErrNotFound     = errors.New("filesystem: not found")
 	ErrNotDirectory = errors.New("filesystem: not a directory")
+	ErrNotSupported = errors.New("filesystem: not supported")
 )
 
 type Service struct{}
@@ -83,7 +84,7 @@ func (s *Service) Open(ctx context.Context, path string) (io.ReadCloser, int64, 
 }
 
 func (s *Service) RemoveAll(ctx context.Context, path string) error {
-	return fmt.Errorf("filesystem: remove all %q: not implemented", path)
+	return fmt.Errorf("failed to remove %q: %w", path, ErrNotSupported)
 }
 
 func (s *Service) Stat(ctx context.Context, path string) (File, error) {
