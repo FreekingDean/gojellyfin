@@ -30,7 +30,7 @@ go test -run TestName ./internal/... # single test
 echo hunter2 | go run ./cmd/gojellyfin adduser Dean   # bootstrap the first user
 ```
 
-Everything ships as one cobra binary, `cmd/gojellyfin`, with a subcommand each for `server`, `migrate`, `adduser`, `resetpassword` and `localizationdata`. One binary means one image, so an operator task is `docker exec <container> gojellyfin adduser Dean` rather than a second image or a second build. The names stay flat and read as commands; a new task is a `<name>Command() *cobra.Command` constructor in a file of its own, added to the list in `main.go`.
+Everything ships as one cobra binary, `cmd/gojellyfin`, with a subcommand each for `server`, `transcoder`, `migrate`, `adduser`, `resetpassword` and `localizationdata`. One binary means one image, so an operator task is `docker exec <container> gojellyfin adduser Dean` rather than a second image or a second build. The names stay flat and read as commands; a new task is a `<name>Command() *cobra.Command` constructor in a file of its own, added to the list in `main.go`.
 
 Only two things are shared between them, both in `main.go`: `withStore` opens the store, starts it and closes it around a callback, and `readPassword` reads from stdin. Neither the DSN nor its default lives there — `store.DatabaseURL()` is the single source, which is why `migrate` can name the same database the server will use without repeating the string.
 
@@ -136,8 +136,22 @@ Ordering by a to-many edge makes ent group the query, so the sort column comes b
 
 Handlers read `auth.UserID(ctx)`, `auth.SessionFrom(ctx)`, `auth.AuthorizationFrom(ctx)` and return `auth.ErrUnauthorized`; `middleware.TokenFrom` is the only thing left in the middleware package that handlers touch, and only because websocket and media URLs cannot send headers.
 
+### Transcoding
+
+Audio a client cannot direct play is encoded by a worker in another container, never in the API process. `gojellyfin transcoder` is the same image and the same binary as the server, run as a second deployment, and `TRANSCODER_WORKERS` is the comma separated list of addresses the API round robins over; `TRANSCODER_TOKEN` authenticates the call, which matters because the request names a path for ffmpeg to open. With the list empty transcoding is off and the 415 refusal stands, so `make dev` behaves as it always did unless a worker is running beside it.
+
+`internal/transcode` is the API side — the format table, the ffmpeg argv and the pool that dials a worker. `internal/transcode/worker` is the other end, which runs ffmpeg and streams stdout back. `internal/server/stream` declares the `Transcoder` interface it needs rather than importing the pool's type, so the handler is testable without a worker.
+
+The output is one progressive HTTP response rather than HLS, and that is what keeps the design small: a transcode is a single request from start to finish, so no second request has to find the same ffmpeg process, there is nothing to map a session to a worker, and nothing breaks with a second API replica. HLS is what would force that question; the v12 spec carries no HLS path at all, and the decision to encode the worker in the play session id rather than store the mapping is recorded in #479.
+
+Both hops bind the process to the request. A client that goes away cancels the API's context, which closes the connection to the worker, which cancels the worker's request context, which kills ffmpeg. A client that merely stalls blocks ffmpeg on a full pipe instead, so a slow reader costs no CPU rather than racing ahead into a buffer. Nothing sweeps for orphans because nothing outlives the request that started it.
+
+The worker holds its response headers back until ffmpeg writes its first byte, so a source ffmpeg cannot read arrives as a status the pool can act on — it tries the next worker, and the handler can still answer 415 — instead of as an empty stream the client believes. After that byte the status is spent, so a worker dying mid-stream truncates the response and the client cannot tell (#480). Only containers ffmpeg can write to a non-seekable pipe are in the table, which rules out mp4; ogg is out for the second reason that it wants libvorbis, which not every ffmpeg build carries.
+
+The transcode tests run a real worker against real ffmpeg rather than a stub and ffprobe what comes back, so CI installs ffmpeg and a green run means bytes a player can decode.
+
 ### Current state
 
-Users, sessions, devices, libraries, items and their user data are real rows, as are playlists, their entries and their shares; most other handlers still return hardcoded data or a 501.
+Users, sessions, devices, libraries, items and their user data are real rows, as are playlists, their entries and their shares; most other handlers still return hardcoded data or a 501. Audio transcodes when a client cannot take the source; video is still direct play only (#481).
 
 A fresh database has no way in through the API — `CreateUserByName` requires an administrator and nothing seeds one — so `gojellyfin adduser` creates the first one. It reads the password from stdin rather than a flag, which keeps it out of the shell history and the process list; that is a security property, not a convenience, so it stays true of any command that takes a password. One-off jobs that need the domain services rather than a running server belong beside it as another subcommand under `cmd/gojellyfin`.
