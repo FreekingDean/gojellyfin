@@ -8,16 +8,21 @@ import (
 	"os"
 	"runtime"
 	"strconv"
+	"time"
 
 	"github.com/FreekingDean/gojellyfin/internal/transcode"
 )
 
-const defaultAddr = ":8082"
+const (
+	defaultAddr  = ":8082"
+	defaultStall = 30 * time.Second
+)
 
 type Server struct {
 	s     *http.Server
 	token string
 	jobs  chan struct{}
+	stall time.Duration
 }
 
 func New() *Server {
@@ -30,6 +35,7 @@ func New() *Server {
 		s:     &http.Server{Addr: addr},
 		token: os.Getenv("TRANSCODER_TOKEN"),
 		jobs:  make(chan struct{}, maxJobs()),
+		stall: stallTimeout(),
 	}
 
 	mux := http.NewServeMux()
@@ -57,6 +63,14 @@ func maxJobs() int {
 	return runtime.NumCPU()
 }
 
+func stallTimeout() time.Duration {
+	if timeout, err := time.ParseDuration(os.Getenv("TRANSCODER_STALL_TIMEOUT")); err == nil && timeout > 0 {
+		return timeout
+	}
+
+	return defaultStall
+}
+
 // The spec names a file for ffmpeg to open, so an unauthenticated caller could
 // read anything the worker can. The token is what keeps this to the API.
 func (s *Server) Handle(w http.ResponseWriter, r *http.Request) {
@@ -81,7 +95,10 @@ func (s *Server) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 	defer func() { <-s.jobs }()
 
-	output, err := start(r.Context(), spec)
+	ctx, cancel := context.WithCancel(r.Context())
+	defer cancel()
+
+	output, err := start(ctx, spec)
 	if err != nil {
 		log.Printf("failed to transcode %s to %s: %v", spec.Path, spec.Container, err)
 		http.Error(w, "failed to transcode", http.StatusInternalServerError)
@@ -96,7 +113,15 @@ func (s *Server) Handle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", transcode.ContentType(spec.Container))
 	w.WriteHeader(http.StatusOK)
 
-	if _, err := transcode.Relay(w, output); err != nil {
+	// Cancelling kills ffmpeg, and the deadline ends a write that is blocked on
+	// a client which stopped acknowledging, which cancelling on its own cannot.
+	kill := func() {
+		log.Printf("transcode of %s moved nothing in %s", spec.Path, s.stall)
+		cancel()
+		_ = http.NewResponseController(w).SetWriteDeadline(time.Now())
+	}
+
+	if _, err := transcode.Relay(w, untilStalled(ctx, output, s.stall, kill)); err != nil {
 		log.Printf("transcode of %s stopped: %v", spec.Path, err)
 	}
 }
