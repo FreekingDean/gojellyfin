@@ -11,7 +11,7 @@ COPY . .
 # need the codegen tools and the network.
 ARG TARGETARCH
 ENV CGO_ENABLED=0 GOOS=linux
-RUN GOARCH=$TARGETARCH go build -o /out/ ./cmd/server ./cmd/tasks/migrate
+RUN GOARCH=$TARGETARCH go build -o /out/ ./cmd/gojellyfin
 
 FROM arigaio/atlas:1.3.0 AS atlas
 

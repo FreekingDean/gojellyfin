@@ -27,13 +27,16 @@ type Store struct {
   client *Client
 }
 
-func NewStore() (*Store, error) {
-  databaseURL := os.Getenv("DATABASE_URL")
-  if databaseURL == "" {
-    databaseURL = defaultDatabaseURL
+func DatabaseURL() string {
+  if databaseURL := os.Getenv("DATABASE_URL"); databaseURL != "" {
+    return databaseURL
   }
 
-  db, err := sql.Open("pgx", databaseURL)
+  return defaultDatabaseURL
+}
+
+func NewStore() (*Store, error) {
+  db, err := sql.Open("pgx", DatabaseURL())
   if err != nil {
     return nil, fmt.Errorf("failed to connect to database: %w", err)
   }

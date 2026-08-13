@@ -27,8 +27,12 @@ make build test fmt
 make generate                        # regenerate the API from the spec and the store from the ent schema
 go test -run TestName ./internal/... # single test
 
-echo hunter2 | go run ./cmd/tasks/adduser -name Dean   # bootstrap the first user
+echo hunter2 | go run ./cmd/gojellyfin adduser Dean   # bootstrap the first user
 ```
+
+Everything ships as one cobra binary, `cmd/gojellyfin`, with a subcommand each for `server`, `migrate`, `adduser`, `resetpassword` and `localizationdata`. One binary means one image, so an operator task is `docker exec <container> gojellyfin adduser Dean` rather than a second image or a second build. The names stay flat and read as commands; a new task is a `<name>Command() *cobra.Command` constructor in a file of its own, added to the list in `main.go`.
+
+Only two things are shared between them, both in `main.go`: `withStore` opens the store, starts it and closes it around a callback, and `readPassword` reads from stdin. Neither the DSN nor its default lives there — `store.DatabaseURL()` is the single source, which is why `migrate` can name the same database the server will use without repeating the string.
 
 `make dev` and `make run` tee to `/tmp/gojellyfin.log`, so the log is on screen and readable by tooling at the same time.
 
@@ -36,7 +40,7 @@ echo hunter2 | go run ./cmd/tasks/adduser -name Dean   # bootstrap the first use
 
 Run `air` through `tee` so the log is both on screen and readable at `/tmp/gojellyfin.log`; the request log is the fastest way to find what a client actually calls.
 
-`air` owns `:8081` while it runs, so starting a second server alongside it fails with `ListenAndServe error: address already in use`. Check whether it is running with `pgrep -x air` (matching on a path fails — the process is just `air`), and the listener with `lsof -ti:8081 -sTCP:LISTEN` — without `-sTCP:LISTEN` it also matches browsers connected to the port, and killing those results is not what you want. An orphaned `.air/server` can outlive its supervisor and keep serving stale code.
+`air` owns `:8081` while it runs, so starting a second server alongside it fails with `ListenAndServe error: address already in use`. Check whether it is running with `pgrep -x air` (matching on a path fails — the process is just `air`), and the listener with `lsof -ti:8081 -sTCP:LISTEN` — without `-sTCP:LISTEN` it also matches browsers connected to the port, and killing those results is not what you want. An orphaned `.air/gojellyfin` can outlive its supervisor and keep serving stale code.
 
 Requires a reachable Postgres. `DATABASE_URL` overrides the default DSN in `internal/store/fx.go` (`postgres://localhost:5432/gojellyfin_development?sslmode=disable`).
 
@@ -49,15 +53,15 @@ atlas migrate diff <name> --dir "file://migrations" --to "ent://entities" --dev-
 atlas migrate apply --dir "file://migrations" --url "$DATABASE_URL"
 ```
 
-`cmd/tasks/migrate` is the deployed spelling of that second line. It drives the `atlas` CLI rather than the Go SDK because the revision tracker that owns `atlas_schema_revisions` is not in the `ariga.io/atlas` module — it lives in the CLI repo under `cmd/atlas/internal/migrate/ent`, which nothing outside that repo can import. The migration directory is embedded through `internal/store/migrations`, so a deployed binary cannot drift from the schema it expects, and `atlas.sum` is still verified on every run.
+`gojellyfin migrate` is the deployed spelling of that second line. It drives the `atlas` CLI rather than the Go SDK because the revision tracker that owns `atlas_schema_revisions` is not in the `ariga.io/atlas` module — it lives in the CLI repo under `cmd/atlas/internal/migrate/ent`, which nothing outside that repo can import. The migration directory is embedded through `internal/store/migrations`, so a deployed binary cannot drift from the schema it expects, and `atlas.sum` is still verified on every run.
 
-The `Dockerfile` carries the server, that command and the `atlas` binary, runs as a non-root user, and is built and pushed to `ghcr.io/freekingdean/gojellyfin` by `.github/workflows/docker.yml`. The entrypoint only migrates when `MIGRATE_ON_START=true`; unconditional migration on start is unsafe with rolling replicas, so the default is a one-off `docker run --rm <image> migrate`.
+The `Dockerfile` carries that one binary and the `atlas` binary, runs as a non-root user, and is built and pushed to `ghcr.io/freekingdean/gojellyfin` by `.github/workflows/docker.yml`. `CMD` is `server`, so the image serves by default and any other subcommand is a `docker run` argument. `entrypoint.sh` survives the consolidation for one reason: it migrates first when `MIGRATE_ON_START=true`. That has to stay outside the binary, because it is deploy policy rather than server behaviour — unconditional migration on start is unsafe with rolling replicas, so the default is a one-off `docker run --rm <image> migrate`.
 
 ## Architecture
 
 ### Wiring: uber/fx
 
-Every package under `internal/` exposes a `Module` in its own `fx.go`; `cmd/server/main.go` composes them. New packages follow the same shape: `New` constructor in the package, `fx.Provide`/`fx.Invoke` in `fx.go`, `fx.Lifecycle` hooks in a `run` function for anything with start/stop semantics (see `internal/http/fx.go`, `internal/store/fx.go`).
+Every package under `internal/` exposes a `Module` in its own `fx.go`; `cmd/gojellyfin/server.go` composes them into the one `fx.New(...).Run()` that the `server` subcommand is. fx wires the server, not the CLI — every other subcommand builds what it needs by hand, because a one-shot task does not want a lifecycle. New packages follow the same shape: `New` constructor in the package, `fx.Provide`/`fx.Invoke` in `fx.go`, `fx.Lifecycle` hooks in a `run` function for anything with start/stop semantics (see `internal/http/fx.go`, `internal/store/fx.go`).
 
 ### API layer: generated, with an unimplemented base
 
@@ -128,7 +132,7 @@ Ordering by a to-many edge makes ent group the query, so the sort column comes b
 
 `auth.Authorization` carries the connection's `RemoteAddr` alongside what the client sent, because the strict handlers never see the `*http.Request` and `GetEndpointInfo` answers from the caller's address.
 
-`ForgotPassword` answers `ContactAdmin` and `ForgotPasswordPin` refuses every pin, both without reading a request or touching the database. A pin is only as private as the channel that carries it, and the server has none — no mail, and the log and the pin file upstream writes are both read by whoever runs the box rather than by the account holder. Anything that issues a pin here hands account takeover to everyone who can read a shipped log. `cmd/tasks/resetpassword` is what `ContactAdmin` means: an operator with database access, reading the new password from stdin the way `adduser` does.
+`ForgotPassword` answers `ContactAdmin` and `ForgotPasswordPin` refuses every pin, both without reading a request or touching the database. A pin is only as private as the channel that carries it, and the server has none — no mail, and the log and the pin file upstream writes are both read by whoever runs the box rather than by the account holder. Anything that issues a pin here hands account takeover to everyone who can read a shipped log. `gojellyfin resetpassword` is what `ContactAdmin` means: an operator with database access, reading the new password from stdin the way `adduser` does.
 
 Handlers read `auth.UserID(ctx)`, `auth.SessionFrom(ctx)`, `auth.AuthorizationFrom(ctx)` and return `auth.ErrUnauthorized`; `middleware.TokenFrom` is the only thing left in the middleware package that handlers touch, and only because websocket and media URLs cannot send headers.
 
@@ -136,4 +140,4 @@ Handlers read `auth.UserID(ctx)`, `auth.SessionFrom(ctx)`, `auth.AuthorizationFr
 
 Users, sessions, devices, libraries, items and their user data are real rows, as are playlists, their entries and their shares; most other handlers still return hardcoded data or a 501.
 
-A fresh database has no way in through the API — `CreateUserByName` requires an administrator and nothing seeds one — so `cmd/tasks/adduser` creates the first one. It reads the password from stdin rather than a flag, which keeps it out of the shell history and the process list. One-off jobs that need the domain services rather than a running server belong beside it under `cmd/tasks`.
+A fresh database has no way in through the API — `CreateUserByName` requires an administrator and nothing seeds one — so `gojellyfin adduser` creates the first one. It reads the password from stdin rather than a flag, which keeps it out of the shell history and the process list; that is a security property, not a convenience, so it stays true of any command that takes a password. One-off jobs that need the domain services rather than a running server belong beside it as another subcommand under `cmd/gojellyfin`.

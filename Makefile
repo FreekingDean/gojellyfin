@@ -14,7 +14,7 @@ build: generate
 
 .PHONY: run
 run: build
-	go run ./cmd/server 2>&1 | tee $(LOG)
+	go run ./cmd/gojellyfin server 2>&1 | tee $(LOG)
 
 .PHONY: test
 test: build
