@@ -79,7 +79,61 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if h.needsAudioRemux(r, item) && h.serveRemux(w, r, item) {
+		return
+	}
+
 	h.serveFile(w, r, item)
+}
+
+// Chromium demuxes Matroska but ships no AC-3, E-AC-3, DTS or TrueHD decoder,
+// so a rip plays its picture and nothing else. Only the audio is re-encoded;
+// the video is copied.
+var browserAudio = map[string]bool{
+	"aac":       true,
+	"mp3":       true,
+	"opus":      true,
+	"vorbis":    true,
+	"flac":      true,
+	"pcm_s16le": true,
+	"pcm_s24le": true,
+}
+
+func (h *Handler) needsAudioRemux(r *http.Request, item *items.Item) bool {
+	if items.IsAudio(item) || isStatic(r) || !h.transcoder.Enabled() {
+		return false
+	}
+
+	codec, err := h.items.AudioCodec(r.Context(), item.ID)
+	if err != nil {
+		log.Printf("failed to read the audio codec of %s: %v", item.Path, err)
+
+		return false
+	}
+	if codec == "" {
+		return false
+	}
+
+	return !acceptedAudio(r)[strings.ToLower(codec)]
+}
+
+// A client that says what it can decode is believed; one that says nothing is
+// assumed to be a browser, because silence is a worse answer than an encode
+// nobody needed.
+func acceptedAudio(r *http.Request) map[string]bool {
+	raw := r.URL.Query().Get("audioCodec")
+	if raw == "" {
+		return browserAudio
+	}
+
+	accepted := make(map[string]bool)
+	for _, codec := range strings.Split(raw, ",") {
+		if codec = strings.ToLower(strings.TrimSpace(codec)); codec != "" {
+			accepted[codec] = true
+		}
+	}
+
+	return accepted
 }
 
 func (h *Handler) ServeUniversal(w http.ResponseWriter, r *http.Request) {
@@ -132,12 +186,30 @@ func (h *Handler) serveTranscode(w http.ResponseWriter, r *http.Request, item *i
 		return false
 	}
 
-	output, err := h.transcoder.Open(r.Context(), transcode.Spec{
+	return h.relay(w, r, item, transcode.Spec{
 		Path:       item.Path,
 		Container:  container,
 		Bitrate:    audioBitrate(r),
 		StartTicks: startTicks(r),
 	})
+}
+
+// The video is copied rather than encoded, so this costs a mux and an audio
+// encode rather than a transcode.
+func (h *Handler) serveRemux(w http.ResponseWriter, r *http.Request, item *items.Item) bool {
+	return h.relay(w, r, item, transcode.Spec{
+		Path:       item.Path,
+		Container:  transcode.VideoContainer,
+		Bitrate:    audioBitrate(r),
+		StartTicks: startTicks(r),
+		Video:      true,
+	})
+}
+
+func (h *Handler) relay(w http.ResponseWriter, r *http.Request, item *items.Item, spec transcode.Spec) bool {
+	container := spec.Container
+
+	output, err := h.transcoder.Open(r.Context(), spec)
 	if err != nil {
 		log.Printf("failed to transcode %s to %s: %v", item.Path, container, err)
 		if errors.Is(err, transcode.ErrBusy) {
