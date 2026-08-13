@@ -6,6 +6,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/http"
 	"github.com/FreekingDean/gojellyfin/internal/observability"
+	"github.com/FreekingDean/gojellyfin/internal/pprof"
 	"github.com/FreekingDean/gojellyfin/internal/scanner"
 	"github.com/FreekingDean/gojellyfin/internal/server"
 	"github.com/FreekingDean/gojellyfin/internal/store"
@@ -20,6 +21,7 @@ func serverCommand() *cobra.Command {
 		Run: func(*cobra.Command, []string) {
 			fx.New(
 				observability.Module,
+				pprof.Module,
 				store.Module,
 				system.Module,
 				scanner.Module,
