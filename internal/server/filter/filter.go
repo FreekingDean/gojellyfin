@@ -17,23 +17,58 @@ func New(items *items.Service) *Server {
 }
 
 func (s *Server) GetQueryFilters(ctx context.Context, request api.GetQueryFiltersRequestObject) (api.GetQueryFiltersResponseObject, error) {
-	return api.GetQueryFilters200JSONResponse{
-		Genres: &[]api.NameGuidPair{},
-		Tags:   &[]string{},
-	}, nil
-}
+	query := items.MetadataQuery{
+		LibraryID: request.Params.ParentId,
+		Kinds:     dto.Kinds(request.Params.IncludeItemTypes),
+	}
 
-// Only years are real: nothing extracts genres, tags or ratings yet, and the
-// client needs the shape regardless.
-func (s *Server) GetQueryFiltersLegacy(ctx context.Context, request api.GetQueryFiltersLegacyRequestObject) (api.GetQueryFiltersLegacyResponseObject, error) {
-	years, err := s.items.DistinctYears(ctx, request.Params.ParentId, dto.Kinds(request.Params.IncludeItemTypes))
+	named, _, err := s.items.DistinctGenres(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	tags, err := s.items.DistinctTags(ctx, query)
 	if err != nil {
 		return nil, err
 	}
 
+	genres := make([]api.NameGuidPair, 0, len(named))
+	for _, genre := range named {
+		genres = append(genres, api.NameGuidPair{Id: &genre.ID, Name: &genre.Name})
+	}
+
+	return api.GetQueryFilters200JSONResponse{
+		Genres: &genres,
+		Tags:   &tags,
+	}, nil
+}
+
+func (s *Server) GetQueryFiltersLegacy(ctx context.Context, request api.GetQueryFiltersLegacyRequestObject) (api.GetQueryFiltersLegacyResponseObject, error) {
+	query := items.MetadataQuery{
+		LibraryID: request.Params.ParentId,
+		Kinds:     dto.Kinds(request.Params.IncludeItemTypes),
+	}
+
+	years, err := s.items.DistinctYears(ctx, request.Params.ParentId, query.Kinds)
+	if err != nil {
+		return nil, err
+	}
+	named, _, err := s.items.DistinctGenres(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	tags, err := s.items.DistinctTags(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	genres := make([]string, 0, len(named))
+	for _, genre := range named {
+		genres = append(genres, genre.Name)
+	}
+
 	return api.GetQueryFiltersLegacy200JSONResponse{
-		Genres:          &[]string{},
-		Tags:            &[]string{},
+		Genres:          &genres,
+		Tags:            &tags,
 		OfficialRatings: &[]string{},
 		Years:           &years,
 	}, nil

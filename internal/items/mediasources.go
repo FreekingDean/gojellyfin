@@ -27,6 +27,7 @@ type Probe struct {
 	Size         int64
 	Bitrate      int32
 	Streams      []Stream
+	Metadata     ContainerMetadata
 }
 
 type Stream struct {
@@ -49,13 +50,31 @@ type Stream struct {
 
 func (s *Service) SaveProbe(ctx context.Context, item *Item, probe Probe) error {
 	return s.store.WithTx(ctx, func(tx *store.Tx) error {
-		err := tx.Item.UpdateOneID(item.ID).
+		genres, err := genreIDs(ctx, tx, probe.Metadata.Genres)
+		if err != nil {
+			return err
+		}
+		studios, err := studioIDs(ctx, tx, probe.Metadata.Studios)
+		if err != nil {
+			return err
+		}
+
+		err = tx.Item.UpdateOneID(item.ID).
 			SetContainer(probe.Container).
 			SetRunTimeTicks(probe.RunTimeTicks).
 			SetProbedAt(time.Now()).
+			SetTags(probe.Metadata.Tags).
+			ClearGenres().
+			AddGenreIDs(genres...).
+			ClearStudios().
+			AddStudioIDs(studios...).
 			Exec(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to save probed item: %w", err)
+		}
+
+		if err := saveCredits(ctx, tx, item.ID, probe.Metadata.People); err != nil {
+			return err
 		}
 
 		if _, err := tx.MediaSource.Delete().Where(sourcemodal.ItemID(item.ID)).Exec(ctx); err != nil {
