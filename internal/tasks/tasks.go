@@ -3,6 +3,7 @@ package tasks
 import (
 	"context"
 	"errors"
+	"fmt"
 	"maps"
 	"slices"
 	"strings"
@@ -213,6 +214,7 @@ func (t *task) stop() {
 }
 
 func (t *task) finish(startedAt time.Time, err error) {
+	fmt.Println("Task finished:", t.definition.name, "Error:", err)
 	t.mu.Lock()
 	defer t.mu.Unlock()
 

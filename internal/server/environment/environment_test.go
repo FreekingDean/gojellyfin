@@ -3,14 +3,130 @@ package environment
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 
+	"github.com/google/uuid"
+
+	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/sessions"
+	"github.com/FreekingDean/gojellyfin/internal/store"
+	devicemodal "github.com/FreekingDean/gojellyfin/internal/store/device"
+	sessionmodal "github.com/FreekingDean/gojellyfin/internal/store/session"
+	usermodal "github.com/FreekingDean/gojellyfin/internal/store/user"
+	configurationmodal "github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
+	policymodal "github.com/FreekingDean/gojellyfin/internal/store/userpolicy"
+	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
+type fixture struct {
+	server *Server
+	client *store.Client
+	prefix string
+}
+
+func newFixture(t *testing.T) *fixture {
+	t.Helper()
+
+	connection, err := store.NewStore()
+	if err != nil {
+		t.Fatalf("failed to open the database: %v", err)
+	}
+	if err := connection.Start(); err != nil {
+		t.Fatalf("failed to reach the database: %v", err)
+	}
+
+	client := connection.Client()
+	prefix := t.Name() + "-" + uuid.NewString() + "-"
+
+	t.Cleanup(func() {
+		ctx := context.Background()
+		if _, err := client.Session.Delete().
+			Where(sessionmodal.HasUserWith(usermodal.UsernameHasPrefix(prefix))).
+			Exec(ctx); err != nil {
+			t.Errorf("failed to delete the sessions: %v", err)
+		}
+		if _, err := client.Device.Delete().Where(devicemodal.ClientIDHasPrefix(prefix)).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the devices: %v", err)
+		}
+		if _, err := client.UserPolicy.Delete().
+			Where(policymodal.HasUserWith(usermodal.UsernameHasPrefix(prefix))).
+			Exec(ctx); err != nil {
+			t.Errorf("failed to delete the policies: %v", err)
+		}
+		if _, err := client.UserConfiguration.Delete().
+			Where(configurationmodal.HasUserWith(usermodal.UsernameHasPrefix(prefix))).
+			Exec(ctx); err != nil {
+			t.Errorf("failed to delete the configurations: %v", err)
+		}
+		if _, err := client.User.Delete().Where(usermodal.UsernameHasPrefix(prefix)).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the users: %v", err)
+		}
+		if err := connection.Stop(); err != nil {
+			t.Errorf("failed to close the database: %v", err)
+		}
+	})
+
+	return &fixture{server: New(filesystem.New(), users.New(client)), client: client, prefix: prefix}
+}
+
+func (f *fixture) signIn(t *testing.T, name string, administrator bool) context.Context {
+	t.Helper()
+
+	ctx := context.Background()
+	user, err := users.New(f.client).CreateUser(ctx, f.prefix+name, "hash", administrator)
+	if err != nil {
+		t.Fatalf("failed to create the user: %v", err)
+	}
+
+	device, err := f.client.Device.Create().
+		SetClientID(f.prefix + name).
+		SetName("Test").
+		SetAppName("Jellyfin Web").
+		SetAppVersion("10.10.0").
+		SetSupportsMediaControl(false).
+		SetSupportsPersistentIdentifier(false).
+		Save(ctx)
+	if err != nil {
+		t.Fatalf("failed to create the device: %v", err)
+	}
+
+	token := uuid.NewString()
+	if _, err := f.client.Session.Create().
+		SetUserID(user.ID).
+		SetDeviceID(device.ID).
+		SetAccessToken(token).
+		Save(ctx); err != nil {
+		t.Fatalf("failed to create the session: %v", err)
+	}
+
+	authenticated, err := auth.New(sessions.New(f.client)).Authenticate(ctx, token)
+	if err != nil {
+		t.Fatalf("failed to authenticate: %v", err)
+	}
+
+	return authenticated
+}
+
 func TestGetDirectoryContents(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := fixture.signIn(t, "admin", true)
+
+	media := t.TempDir()
+	movies := filepath.Join(media, "movies")
+	for _, name := range []string{"movies", "music", "shows"} {
+		if err := os.Mkdir(filepath.Join(media, name), 0o700); err != nil {
+			t.Fatalf("failed to create %q: %v", name, err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(movies, "Sintel (2010).mkv"), []byte("1"), 0o600); err != nil {
+		t.Fatalf("failed to write the media file: %v", err)
+	}
+
 	for _, tc := range []struct {
 		name      string
 		path      string
@@ -20,25 +136,25 @@ func TestGetDirectoryContents(t *testing.T) {
 		wantPaths []string
 	}{
 		{
-			name: "directories only", path: "/media", dirs: true,
+			name: "directories only", path: media, dirs: true,
 			wantNames: []string{"movies", "music", "shows"},
-			wantPaths: []string{"/media/movies", "/media/music", "/media/shows"},
+			wantPaths: []string{filepath.Join(media, "movies"), filepath.Join(media, "music"), filepath.Join(media, "shows")},
 		},
-		{name: "files excluded", path: "/media/movies", dirs: true},
+		{name: "files excluded", path: movies, dirs: true},
 		{
-			name: "files only", path: "/media/movies", files: true,
+			name: "files only", path: movies, files: true,
 			wantNames: []string{"Sintel (2010).mkv"},
-			wantPaths: []string{"/media/movies/Sintel (2010).mkv"},
+			wantPaths: []string{filepath.Join(movies, "Sintel (2010).mkv")},
 		},
 		{
-			name: "both", path: "/media/movies", files: true, dirs: true,
+			name: "both", path: movies, files: true, dirs: true,
 			wantNames: []string{"Sintel (2010).mkv"},
-			wantPaths: []string{"/media/movies/Sintel (2010).mkv"},
+			wantPaths: []string{filepath.Join(movies, "Sintel (2010).mkv")},
 		},
-		{name: "neither", path: "/media"},
+		{name: "neither", path: media},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			response, err := testServer().GetDirectoryContents(context.Background(), api.GetDirectoryContentsRequestObject{
+			response, err := fixture.server.GetDirectoryContents(ctx, api.GetDirectoryContentsRequestObject{
 				Params: api.GetDirectoryContentsParams{
 					Path:               tc.path,
 					IncludeFiles:       apiutil.Ptr(tc.files),
@@ -66,8 +182,11 @@ func TestGetDirectoryContents(t *testing.T) {
 }
 
 func TestGetDirectoryContentsMissingPath(t *testing.T) {
-	_, err := testServer().GetDirectoryContents(context.Background(), api.GetDirectoryContentsRequestObject{
-		Params: api.GetDirectoryContentsParams{Path: "/nope"},
+	fixture := newFixture(t)
+	ctx := fixture.signIn(t, "admin", true)
+
+	_, err := fixture.server.GetDirectoryContents(ctx, api.GetDirectoryContentsRequestObject{
+		Params: api.GetDirectoryContentsParams{Path: filepath.Join(t.TempDir(), "nope")},
 	})
 	if !errors.Is(err, filesystem.ErrNotFound) {
 		t.Fatalf("got %v, want ErrNotFound", err)
@@ -75,7 +194,10 @@ func TestGetDirectoryContentsMissingPath(t *testing.T) {
 }
 
 func TestGetDrives(t *testing.T) {
-	response, err := testServer().GetDrives(context.Background(), api.GetDrivesRequestObject{})
+	fixture := newFixture(t)
+	ctx := fixture.signIn(t, "admin", true)
+
+	response, err := fixture.server.GetDrives(ctx, api.GetDrivesRequestObject{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,6 +215,9 @@ func TestGetDrives(t *testing.T) {
 }
 
 func TestGetParentPath(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := fixture.signIn(t, "admin", true)
+
 	for path, want := range map[string]string{
 		"/media/movies": "/media",
 		"/media/":       "/",
@@ -100,7 +225,7 @@ func TestGetParentPath(t *testing.T) {
 		"/":             "/",
 		"":              "/",
 	} {
-		response, err := testServer().GetParentPath(context.Background(), api.GetParentPathRequestObject{
+		response, err := fixture.server.GetParentPath(ctx, api.GetParentPathRequestObject{
 			Params: api.GetParentPathParams{Path: path},
 		})
 		if err != nil {
@@ -113,7 +238,10 @@ func TestGetParentPath(t *testing.T) {
 }
 
 func TestGetDefaultDirectoryBrowser(t *testing.T) {
-	response, err := testServer().GetDefaultDirectoryBrowser(context.Background(), api.GetDefaultDirectoryBrowserRequestObject{})
+	fixture := newFixture(t)
+	ctx := fixture.signIn(t, "admin", true)
+
+	response, err := fixture.server.GetDefaultDirectoryBrowser(ctx, api.GetDefaultDirectoryBrowserRequestObject{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -122,6 +250,54 @@ func TestGetDefaultDirectoryBrowser(t *testing.T) {
 	}
 }
 
-func testServer() *Server {
-	return New(filesystem.New())
+func TestRefusesAUserWhoIsNotAnAdministrator(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := fixture.signIn(t, "viewer", false)
+	directory := t.TempDir()
+
+	contents, err := fixture.server.GetDirectoryContents(ctx, api.GetDirectoryContentsRequestObject{
+		Params: api.GetDirectoryContentsParams{Path: directory, IncludeDirectories: apiutil.Ptr(true)},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := contents.(api.GetDirectoryContents403Response); !ok {
+		t.Errorf("GetDirectoryContents = %T, want a 403", contents)
+	}
+
+	drives, err := fixture.server.GetDrives(ctx, api.GetDrivesRequestObject{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := drives.(api.GetDrives403Response); !ok {
+		t.Errorf("GetDrives = %T, want a 403", drives)
+	}
+
+	parent, err := fixture.server.GetParentPath(ctx, api.GetParentPathRequestObject{
+		Params: api.GetParentPathParams{Path: directory},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := parent.(api.GetParentPath403Response); !ok {
+		t.Errorf("GetParentPath = %T, want a 403", parent)
+	}
+
+	browser, err := fixture.server.GetDefaultDirectoryBrowser(ctx, api.GetDefaultDirectoryBrowserRequestObject{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := browser.(api.GetDefaultDirectoryBrowser403Response); !ok {
+		t.Errorf("GetDefaultDirectoryBrowser = %T, want a 403", browser)
+	}
+
+	validated, err := fixture.server.ValidatePath(ctx, api.ValidatePathRequestObject{
+		JSONBody: &api.ValidatePathDto{Path: apiutil.Ptr(directory)},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := validated.(api.ValidatePath403Response); !ok {
+		t.Errorf("ValidatePath = %T, want a 403", validated)
+	}
 }

@@ -2,10 +2,12 @@ package library
 
 import (
 	"context"
+	"errors"
 
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
+	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
@@ -19,7 +21,9 @@ func (s *Server) DeleteItem(ctx context.Context, request api.DeleteItemRequestOb
 		return api.DeleteItem403Response{}, nil
 	}
 
-	if err := s.deleteItems(ctx, []uuid.UUID{request.ItemId}); err != nil {
+	if err := s.deleteItems(ctx, []uuid.UUID{request.ItemId}); errors.Is(err, filesystem.ErrNotSupported) {
+		return api.DeleteItem403Response{}, nil
+	} else if err != nil {
 		return nil, err
 	}
 
@@ -35,7 +39,9 @@ func (s *Server) DeleteItems(ctx context.Context, request api.DeleteItemsRequest
 		return api.DeleteItems403Response{}, nil
 	}
 
-	if err := s.deleteItems(ctx, apiutil.Deref(request.Params.Ids)); err != nil {
+	if err := s.deleteItems(ctx, apiutil.Deref(request.Params.Ids)); errors.Is(err, filesystem.ErrNotSupported) {
+		return api.DeleteItems403Response{}, nil
+	} else if err != nil {
 		return nil, err
 	}
 

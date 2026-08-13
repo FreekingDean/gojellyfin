@@ -105,6 +105,15 @@ func (s *Service) MayDeleteContent(ctx context.Context, id uuid.UUID) (bool, err
 	return policy.IsAdministrator || policy.EnableContentDeletion, nil
 }
 
+func (s *Service) IsAdministrator(ctx context.Context, id uuid.UUID) (bool, error) {
+	policy, err := s.policy(ctx, id)
+	if err != nil || policy == nil {
+		return false, err
+	}
+
+	return policy.IsAdministrator, nil
+}
+
 func (s *Service) MayDownloadContent(ctx context.Context, id uuid.UUID) (bool, error) {
 	policy, err := s.policy(ctx, id)
 	if err != nil || policy == nil {

@@ -9,62 +9,33 @@ import (
 	"testing"
 )
 
-func testService() *Service {
-	return &Service{root: File{
-		Name: Root,
-		Dir:  true,
-		Files: []File{
-			{Name: "media", Dir: true, Files: []File{
-				{Name: "movies", Dir: true},
-				{Name: "readme.txt"},
-			}},
-		},
-	}}
-}
-
-func TestContents(t *testing.T) {
-	for _, tc := range []struct {
-		path      string
-		wantNames []string
-	}{
-		{path: "/", wantNames: []string{"media"}},
-		{path: "", wantNames: []string{"media"}},
-		{path: "/media", wantNames: []string{"movies", "readme.txt"}},
-		{path: "/media/", wantNames: []string{"movies", "readme.txt"}},
-		{path: "/MEDIA", wantNames: []string{"movies", "readme.txt"}},
-		{path: "/media/movies", wantNames: nil},
-	} {
-		files, err := testService().Contents(context.Background(), tc.path)
-		if err != nil {
-			t.Fatalf("%q: %v", tc.path, err)
-		}
-		if len(files) != len(tc.wantNames) {
-			t.Fatalf("%q: got %d files, want %d", tc.path, len(files), len(tc.wantNames))
-		}
-		for i, want := range tc.wantNames {
-			if files[i].Name != want {
-				t.Errorf("%q: file %d is %q, want %q", tc.path, i, files[i].Name, want)
-			}
-		}
-	}
-}
-
-func TestContentsErrors(t *testing.T) {
-	if _, err := testService().Contents(context.Background(), "/nope"); !errors.Is(err, ErrNotFound) {
-		t.Errorf("got %v, want ErrNotFound", err)
-	}
-	if _, err := testService().Contents(context.Background(), "/media/readme.txt"); !errors.Is(err, ErrNotDirectory) {
-		t.Errorf("got %v, want ErrNotDirectory", err)
-	}
-}
-
 func TestStat(t *testing.T) {
-	file, err := testService().Stat(context.Background(), "/media/readme.txt")
+	directory := t.TempDir()
+	path := filepath.Join(directory, "readme.txt")
+	if err := os.WriteFile(path, []byte("notes"), 0o600); err != nil {
+		t.Fatalf("failed to write the file: %v", err)
+	}
+
+	file, err := New().Stat(context.Background(), path)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if file.Name != "readme.txt" || file.Dir {
 		t.Errorf("got %+v, want a file named readme.txt", file)
+	}
+
+	directoryFile, err := New().Stat(context.Background(), directory)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !directoryFile.Dir {
+		t.Errorf("got %+v, want a directory", directoryFile)
+	}
+}
+
+func TestStatErrors(t *testing.T) {
+	if _, err := New().Stat(context.Background(), filepath.Join(t.TempDir(), "nope")); !errors.Is(err, ErrNotFound) {
+		t.Errorf("got %v, want ErrNotFound", err)
 	}
 }
 
@@ -129,9 +100,52 @@ func TestList(t *testing.T) {
 	}
 }
 
+func TestListSkipsHiddenFiles(t *testing.T) {
+	directory := t.TempDir()
+	for _, name := range []string{".DS_Store", "Movie.mkv", ".hidden"} {
+		if err := os.WriteFile(filepath.Join(directory, name), []byte("1"), 0o600); err != nil {
+			t.Fatalf("failed to write %q: %v", name, err)
+		}
+	}
+
+	files, err := New().List(context.Background(), directory)
+	if err != nil {
+		t.Fatalf("failed to list the directory: %v", err)
+	}
+
+	if len(files) != 1 || files[0].Name != "Movie.mkv" {
+		t.Errorf("files = %+v, want only Movie.mkv", files)
+	}
+}
+
 func TestListErrors(t *testing.T) {
-	if _, err := New().List(context.Background(), filepath.Join(t.TempDir(), "nope")); !errors.Is(err, ErrNotFound) {
-		t.Errorf("got %v, want ErrNotFound", err)
+	directory := t.TempDir()
+
+	if _, err := New().List(context.Background(), filepath.Join(directory, "nope")); !errors.Is(err, ErrNotFound) {
+		t.Errorf("missing path: got %v, want ErrNotFound", err)
+	}
+
+	path := filepath.Join(directory, "poster.jpg")
+	if err := os.WriteFile(path, []byte("1"), 0o600); err != nil {
+		t.Fatalf("failed to write the file: %v", err)
+	}
+	if _, err := New().List(context.Background(), path); !errors.Is(err, ErrNotDirectory) {
+		t.Errorf("file path: got %v, want ErrNotDirectory", err)
+	}
+}
+
+func TestRemoveAllIsNotImplemented(t *testing.T) {
+	directory := t.TempDir()
+	path := filepath.Join(directory, "keep.mkv")
+	if err := os.WriteFile(path, []byte("1"), 0o600); err != nil {
+		t.Fatalf("failed to write the file: %v", err)
+	}
+
+	if err := New().RemoveAll(context.Background(), path); err == nil {
+		t.Fatal("RemoveAll returned no error; if it is implemented now, this test needs replacing with one that asserts what it deletes")
+	}
+	if _, err := os.Stat(path); err != nil {
+		t.Errorf("the file was touched: %v", err)
 	}
 }
 
@@ -142,5 +156,19 @@ func TestDrives(t *testing.T) {
 	}
 	if len(drives) != 1 || drives[0].Name != Root || !drives[0].Dir {
 		t.Errorf("got %+v, want a single directory named %q", drives, Root)
+	}
+}
+
+func TestRelativePathsAreRejected(t *testing.T) {
+	for _, name := range []string{"", "relative/path", "../etc", "media/../../etc"} {
+		if _, err := New().Stat(context.Background(), name); !errors.Is(err, ErrNotFound) {
+			t.Errorf("Stat(%q) = %v, want ErrNotFound", name, err)
+		}
+		if _, err := New().List(context.Background(), name); !errors.Is(err, ErrNotFound) {
+			t.Errorf("List(%q) = %v, want ErrNotFound", name, err)
+		}
+		if _, _, err := New().Open(context.Background(), name); !errors.Is(err, ErrNotFound) {
+			t.Errorf("Open(%q) = %v, want ErrNotFound", name, err)
+		}
 	}
 }

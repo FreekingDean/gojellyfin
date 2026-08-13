@@ -313,19 +313,19 @@ func TestDeleteItem(t *testing.T) {
 		}
 	})
 
-	t.Run("takes the subtree and the media with it", func(t *testing.T) {
+	t.Run("refuses while the filesystem cannot remove media", func(t *testing.T) {
 		ctx := fixture.signIn(t, "admin", true)
 
 		response, err := fixture.server.DeleteItem(ctx, api.DeleteItemRequestObject{ItemId: series})
 		if err != nil {
 			t.Fatalf("failed to delete the item: %v", err)
 		}
-		if _, ok := response.(api.DeleteItem204Response); !ok {
-			t.Fatalf("response = %T, want api.DeleteItem204Response", response)
+		if _, ok := response.(api.DeleteItem403Response); !ok {
+			t.Fatalf("response = %T, want api.DeleteItem403Response", response)
 		}
 
-		if _, err := os.Stat(seriesPath); !os.IsNotExist(err) {
-			t.Errorf("the series directory is still on disk: %v", err)
+		if _, err := os.Stat(episodePath); err != nil {
+			t.Errorf("the media was removed even though the delete was refused: %v", err)
 		}
 
 		remaining, err := fixture.client.Item.Query().
@@ -334,8 +334,8 @@ func TestDeleteItem(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to count the remaining items: %v", err)
 		}
-		if remaining != 0 {
-			t.Errorf("remaining items = %d, want 0", remaining)
+		if remaining != 2 {
+			t.Errorf("remaining items = %d, want 2; a refused delete must not orphan rows", remaining)
 		}
 	})
 
