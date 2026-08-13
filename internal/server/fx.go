@@ -3,15 +3,6 @@ package server
 import (
 	"go.uber.org/fx"
 
-	"github.com/FreekingDean/gojellyfin/internal/apikeys"
-	"github.com/FreekingDean/gojellyfin/internal/auth"
-	"github.com/FreekingDean/gojellyfin/internal/config"
-	"github.com/FreekingDean/gojellyfin/internal/displaypreferences"
-	"github.com/FreekingDean/gojellyfin/internal/filesystem"
-	"github.com/FreekingDean/gojellyfin/internal/items"
-	"github.com/FreekingDean/gojellyfin/internal/libraries"
-	"github.com/FreekingDean/gojellyfin/internal/localization"
-	"github.com/FreekingDean/gojellyfin/internal/playlists"
 	"github.com/FreekingDean/gojellyfin/internal/scanner"
 	"github.com/FreekingDean/gojellyfin/internal/server/activitylog"
 	"github.com/FreekingDean/gojellyfin/internal/server/apikey"
@@ -53,28 +44,12 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/userlibrary"
 	"github.com/FreekingDean/gojellyfin/internal/server/userviews"
 	"github.com/FreekingDean/gojellyfin/internal/server/years"
-	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/tasks"
-	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
 var Module = fx.Module(
 	"server",
 	fx.Provide(
-		// domains
-		apikeys.New,
-		auth.New,
-		sessions.New,
-		users.New,
-		items.New,
-		libraries.New,
-		playlists.New,
-		config.New,
-		displaypreferences.New,
-		filesystem.New,
-		tasks.New,
-		localization.New,
-
 		// one handler service per spec tag
 		apikey.New,
 		filter.New,
