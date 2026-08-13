@@ -11,21 +11,21 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
 	"github.com/FreekingDean/gojellyfin/internal/server/dashboard"
 	"github.com/FreekingDean/gojellyfin/internal/server/devices"
-	serverdisplaypreferences "github.com/FreekingDean/gojellyfin/internal/server/displaypreferences"
+	"github.com/FreekingDean/gojellyfin/internal/server/displaypreferences"
 	"github.com/FreekingDean/gojellyfin/internal/server/environment"
 	"github.com/FreekingDean/gojellyfin/internal/server/filter"
 	"github.com/FreekingDean/gojellyfin/internal/server/genres"
 	"github.com/FreekingDean/gojellyfin/internal/server/image"
-	serveritems "github.com/FreekingDean/gojellyfin/internal/server/items"
+	"github.com/FreekingDean/gojellyfin/internal/server/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/itemupdate"
 	"github.com/FreekingDean/gojellyfin/internal/server/library"
 	"github.com/FreekingDean/gojellyfin/internal/server/librarystructure"
 	"github.com/FreekingDean/gojellyfin/internal/server/livetv"
-	serverlocalization "github.com/FreekingDean/gojellyfin/internal/server/localization"
+	"github.com/FreekingDean/gojellyfin/internal/server/localization"
 	"github.com/FreekingDean/gojellyfin/internal/server/mediainfo"
 	"github.com/FreekingDean/gojellyfin/internal/server/packages"
 	"github.com/FreekingDean/gojellyfin/internal/server/persons"
-	serverplaylists "github.com/FreekingDean/gojellyfin/internal/server/playlists"
+	"github.com/FreekingDean/gojellyfin/internal/server/playlists"
 	"github.com/FreekingDean/gojellyfin/internal/server/playstate"
 	"github.com/FreekingDean/gojellyfin/internal/server/plugins"
 	"github.com/FreekingDean/gojellyfin/internal/server/quickconnect"
@@ -49,49 +49,47 @@ import (
 
 var Module = fx.Module(
 	"server",
+	activitylog.Module,
+	apikey.Module,
+	branding.Module,
+	channels.Module,
+	configuration.Module,
+	dashboard.Module,
+	devices.Module,
+	displaypreferences.Module,
+	environment.Module,
+	filter.Module,
+	genres.Module,
+	image.Module,
+	items.Module,
+	itemupdate.Module,
+	library.Module,
+	librarystructure.Module,
+	livetv.Module,
+	localization.Module,
+	mediainfo.Module,
+	packages.Module,
+	persons.Module,
+	playlists.Module,
+	playstate.Module,
+	plugins.Module,
+	quickconnect.Module,
+	scheduledtasks.Module,
+	search.Module,
+	session.Module,
+	studios.Module,
+	subtitle.Module,
+	suggestions.Module,
+	syncplay.Module,
+	system.Module,
+	timesync.Module,
+	trailers.Module,
+	tvshows.Module,
+	user.Module,
+	userlibrary.Module,
+	userviews.Module,
+	years.Module,
 	fx.Provide(
-		// one handler service per spec tag
-		apikey.New,
-		filter.New,
-		years.New,
-		search.New,
-		studios.New,
-		genres.New,
-		image.New,
-		persons.New,
-		activitylog.New,
-		environment.New,
-		channels.New,
-		dashboard.New,
-		scheduledtasks.New,
-		devices.New,
-		tvshows.New,
-		livetv.New,
-		branding.New,
-		configuration.New,
-		serverdisplaypreferences.New,
-		serveritems.New,
-		suggestions.New,
-		timesync.New,
-		trailers.New,
-		library.New,
-		librarystructure.New,
-		itemupdate.New,
-		serverlocalization.New,
-		mediainfo.New,
-		serverplaylists.New,
-		playstate.New,
-		plugins.New,
-		packages.New,
-		quickconnect.New,
-		session.New,
-		subtitle.New,
-		syncplay.New,
-		system.New,
-		user.New,
-		userlibrary.New,
-		userviews.New,
-
 		New,
 	),
 	fx.Invoke(
