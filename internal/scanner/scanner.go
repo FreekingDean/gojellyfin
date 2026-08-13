@@ -84,7 +84,7 @@ func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) e
 		case librarymodal.CollectionTypeMovies:
 			paths, err = s.scanMovies(ctx, library, location)
 		default:
-			fmt.Errorf("unsupported collection type: %s", library.CollectionType)
+			err = fmt.Errorf("unsupported collection type: %s", library.CollectionType)
 		}
 		if err != nil {
 			return err

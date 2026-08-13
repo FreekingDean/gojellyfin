@@ -3,6 +3,8 @@ package environment
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
@@ -11,6 +13,17 @@ import (
 )
 
 func TestGetDirectoryContents(t *testing.T) {
+	media := t.TempDir()
+	movies := filepath.Join(media, "movies")
+	for _, name := range []string{"movies", "music", "shows"} {
+		if err := os.Mkdir(filepath.Join(media, name), 0o700); err != nil {
+			t.Fatalf("failed to create %q: %v", name, err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(movies, "Sintel (2010).mkv"), []byte("1"), 0o600); err != nil {
+		t.Fatalf("failed to write the media file: %v", err)
+	}
+
 	for _, tc := range []struct {
 		name      string
 		path      string
@@ -20,22 +33,22 @@ func TestGetDirectoryContents(t *testing.T) {
 		wantPaths []string
 	}{
 		{
-			name: "directories only", path: "/media", dirs: true,
+			name: "directories only", path: media, dirs: true,
 			wantNames: []string{"movies", "music", "shows"},
-			wantPaths: []string{"/media/movies", "/media/music", "/media/shows"},
+			wantPaths: []string{filepath.Join(media, "movies"), filepath.Join(media, "music"), filepath.Join(media, "shows")},
 		},
-		{name: "files excluded", path: "/media/movies", dirs: true},
+		{name: "files excluded", path: movies, dirs: true},
 		{
-			name: "files only", path: "/media/movies", files: true,
+			name: "files only", path: movies, files: true,
 			wantNames: []string{"Sintel (2010).mkv"},
-			wantPaths: []string{"/media/movies/Sintel (2010).mkv"},
+			wantPaths: []string{filepath.Join(movies, "Sintel (2010).mkv")},
 		},
 		{
-			name: "both", path: "/media/movies", files: true, dirs: true,
+			name: "both", path: movies, files: true, dirs: true,
 			wantNames: []string{"Sintel (2010).mkv"},
-			wantPaths: []string{"/media/movies/Sintel (2010).mkv"},
+			wantPaths: []string{filepath.Join(movies, "Sintel (2010).mkv")},
 		},
-		{name: "neither", path: "/media"},
+		{name: "neither", path: media},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			response, err := testServer().GetDirectoryContents(context.Background(), api.GetDirectoryContentsRequestObject{
@@ -67,7 +80,7 @@ func TestGetDirectoryContents(t *testing.T) {
 
 func TestGetDirectoryContentsMissingPath(t *testing.T) {
 	_, err := testServer().GetDirectoryContents(context.Background(), api.GetDirectoryContentsRequestObject{
-		Params: api.GetDirectoryContentsParams{Path: "/nope"},
+		Params: api.GetDirectoryContentsParams{Path: filepath.Join(t.TempDir(), "nope")},
 	})
 	if !errors.Is(err, filesystem.ErrNotFound) {
 		t.Fatalf("got %v, want ErrNotFound", err)
