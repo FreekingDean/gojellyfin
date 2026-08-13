@@ -1,0 +1,52 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gojellyfin-migrate
+  labels:
+    app.kubernetes.io/name: gojellyfin
+    app.kubernetes.io/component: migrate
+spec:
+  # Migrations are safe to re-run — atlas records what it has applied in
+  # atlas_schema_revisions and verifies atlas.sum on every run — so a retry
+  # costs nothing. A Job's pod spec is immutable, though, so re-running after
+  # this one has completed means bumping the image tag or deleting the Job
+  # first; the TTL below collects it an hour after it finishes, which usually
+  # gets there first.
+  ttlSecondsAfterFinished: 3600
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: gojellyfin
+        app.kubernetes.io/component: migrate
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          # Keep this tag identical to api-deployment.yaml's: the migrations
+          # are embedded in the binary, so the image that applies them is what
+          # decides which schema the API then expects. The atlas CLI it shells
+          # out to is in the image too.
+          image: ghcr.io/freekingdean/gojellyfin:latest
+          args: ["migrate"]
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: gojellyfin
+                  key: DATABASE_URL
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          # No runAsNonRoot: the image's USER is the name "gojellyfin" rather
+          # than a uid, and kubelet refuses to start a container whose
+          # non-rootness it cannot check numerically. The image drops privilege
+          # on its own.
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]

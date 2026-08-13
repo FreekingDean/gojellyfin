@@ -1,0 +1,22 @@
+# ClusterIP, and nothing beyond it: an Ingress needs a controller, a class and
+# a hostname this repository cannot guess, and a LoadBalancer picks a cloud.
+# This is the address to point either at — or `kubectl port-forward
+# svc/gojellyfin 8081:80` to reach it directly. Switching to
+# `type: LoadBalancer` here is the whole change if that is what the cluster
+# offers.
+apiVersion: v1
+kind: Service
+metadata:
+  name: gojellyfin
+  labels:
+    app.kubernetes.io/name: gojellyfin
+    app.kubernetes.io/component: api
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: gojellyfin
+    app.kubernetes.io/component: api
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
