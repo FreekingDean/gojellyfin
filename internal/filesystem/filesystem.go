@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"log"
 	"os"
 	"strings"
+	"syscall"
 )
 
 const Root = "/"
@@ -37,22 +37,27 @@ func (s *Service) Drives(ctx context.Context) ([]File, error) {
 
 func (s *Service) List(ctx context.Context, path string) ([]File, error) {
 	osFiles, err := os.ReadDir(path)
-	if err != nil {
-		log.Fatal(err)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, ErrNotFound
 	}
-	files := make([]File, len(osFiles))
-	for i, file := range osFiles {
+	if errors.Is(err, syscall.ENOTDIR) {
+		return nil, ErrNotDirectory
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to list %q: %w", path, err)
+	}
+
+	files := make([]File, 0, len(osFiles))
+	for _, file := range osFiles {
 		if strings.HasPrefix(file.Name(), ".") {
 			continue
 		}
-		files[i] = File{Name: file.Name(), Dir: file.IsDir()}
+		files = append(files, File{Name: file.Name(), Dir: file.IsDir()})
 	}
 
 	return files, nil
 }
 
-// The browse tree above describes what an administrator may pick from; the
-// bytes still live on the host until there is somewhere else to keep them.
 func (s *Service) Open(ctx context.Context, path string) (io.ReadCloser, int64, error) {
 	file, err := os.Open(path)
 	if errors.Is(err, fs.ErrNotExist) {
