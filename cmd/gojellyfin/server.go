@@ -10,6 +10,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	"github.com/FreekingDean/gojellyfin/internal/system"
+	"github.com/FreekingDean/gojellyfin/internal/worker"
 )
 
 func serverCommand() *cobra.Command {
@@ -22,6 +23,8 @@ func serverCommand() *cobra.Command {
 				observability.Module,
 				store.Module,
 				system.Module,
+				fx.Supply(worker.Options{}),
+				worker.Module,
 				scanner.Module,
 				server.Module,
 				http.Module,

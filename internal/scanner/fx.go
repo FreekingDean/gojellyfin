@@ -5,6 +5,9 @@ import (
 	"log"
 
 	"go.uber.org/fx"
+
+	"github.com/FreekingDean/gojellyfin/internal/jobs"
+	"github.com/FreekingDean/gojellyfin/internal/worker"
 )
 
 var Module = fx.Module(
@@ -13,18 +16,20 @@ var Module = fx.Module(
 		New,
 	),
 	fx.Invoke(
-		run,
+		register,
 	),
 )
 
-func run(lc fx.Lifecycle, s *Scanner) {
+func register(lc fx.Lifecycle, w *worker.Worker, s *Scanner, service *jobs.Service) {
+	w.Handle(jobs.LibraryScanKind, func(ctx context.Context, _ *jobs.Job, report jobs.Reporter) error {
+		return s.Scan(ctx, report)
+	})
+
 	lc.Append(fx.Hook{
-		OnStart: func(context.Context) error {
-			go func() {
-				if err := s.Scan(context.Background()); err != nil {
-					log.Printf("initial scan: %v", err)
-				}
-			}()
+		OnStart: func(ctx context.Context) error {
+			if _, err := service.Start(ctx, jobs.LibraryScanKind); err != nil {
+				log.Printf("initial scan: %v", err)
+			}
 
 			return nil
 		},

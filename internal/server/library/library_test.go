@@ -13,6 +13,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
@@ -27,7 +28,6 @@ import (
 	configurationmodal "github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
 	datamodal "github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
 	policymodal "github.com/FreekingDean/gojellyfin/internal/store/userpolicy"
-	"github.com/FreekingDean/gojellyfin/internal/tasks"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
@@ -113,7 +113,7 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
-	server := New(items.New(client), libraries.New(client), users.New(client), filesystem.New(), tasks.New())
+	server := New(items.New(client), libraries.New(client), users.New(client), filesystem.New(), jobs.New(client))
 
 	return &fixture{server: server, client: client, libraryID: library.ID, prefix: prefix}
 }

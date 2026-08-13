@@ -9,10 +9,10 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/displaypreferences"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/localization"
 	"github.com/FreekingDean/gojellyfin/internal/playlists"
-	"github.com/FreekingDean/gojellyfin/internal/scanner"
 	"github.com/FreekingDean/gojellyfin/internal/server/activitylog"
 	"github.com/FreekingDean/gojellyfin/internal/server/apikey"
 	"github.com/FreekingDean/gojellyfin/internal/server/branding"
@@ -54,7 +54,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/userviews"
 	"github.com/FreekingDean/gojellyfin/internal/server/years"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
-	"github.com/FreekingDean/gojellyfin/internal/tasks"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
@@ -72,7 +71,7 @@ var Module = fx.Module(
 		config.New,
 		displaypreferences.New,
 		filesystem.New,
-		tasks.New,
+		jobs.New,
 		localization.New,
 
 		// one handler service per spec tag
@@ -119,11 +118,4 @@ var Module = fx.Module(
 
 		New,
 	),
-	fx.Invoke(
-		useScanner,
-	),
 )
-
-func useScanner(registry *tasks.Registry, scanner *scanner.Scanner) error {
-	return registry.UseRunner(tasks.LibraryScanID, scanner.Scan)
-}
