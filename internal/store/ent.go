@@ -22,6 +22,8 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/genre"
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
+	"github.com/FreekingDean/gojellyfin/internal/store/job"
+	"github.com/FreekingDean/gojellyfin/internal/store/jobschedule"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
 	"github.com/FreekingDean/gojellyfin/internal/store/listingsprovider"
@@ -113,6 +115,8 @@ func checkColumn(t, c string) error {
 			genre.Table:              genre.ValidColumn,
 			image.Table:              image.ValidColumn,
 			item.Table:               item.ValidColumn,
+			job.Table:                job.ValidColumn,
+			jobschedule.Table:        jobschedule.ValidColumn,
 			library.Table:            library.ValidColumn,
 			libraryoptions.Table:     libraryoptions.ValidColumn,
 			listingsprovider.Table:   listingsprovider.ValidColumn,

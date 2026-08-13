@@ -356,6 +356,58 @@ var (
 			},
 		},
 	}
+	// JobsColumns holds the columns for the "jobs" table.
+	JobsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "kind", Type: field.TypeString},
+		{Name: "state", Type: field.TypeEnum, Enums: []string{"Queued", "Running", "Succeeded", "Failed", "Cancelled"}, Default: "Queued"},
+		{Name: "payload", Type: field.TypeJSON, Nullable: true},
+		{Name: "dedupe_key", Type: field.TypeString, Unique: true, Nullable: true},
+		{Name: "run_at", Type: field.TypeTime},
+		{Name: "attempt", Type: field.TypeInt, Default: 0},
+		{Name: "max_attempts", Type: field.TypeInt, Default: 3},
+		{Name: "progress", Type: field.TypeFloat64, Default: 0},
+		{Name: "cancel_requested", Type: field.TypeBool, Default: false},
+		{Name: "worker", Type: field.TypeString, Nullable: true},
+		{Name: "lease_expires_at", Type: field.TypeTime, Nullable: true},
+		{Name: "started_at", Type: field.TypeTime, Nullable: true},
+		{Name: "finished_at", Type: field.TypeTime, Nullable: true},
+		{Name: "error_message", Type: field.TypeString, Nullable: true, Size: 2147483647},
+	}
+	// JobsTable holds the schema information for the "jobs" table.
+	JobsTable = &schema.Table{
+		Name:       "jobs",
+		Columns:    JobsColumns,
+		PrimaryKey: []*schema.Column{JobsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "job_state_run_at",
+				Unique:  false,
+				Columns: []*schema.Column{JobsColumns[4], JobsColumns[7]},
+			},
+			{
+				Name:    "job_kind_state",
+				Unique:  false,
+				Columns: []*schema.Column{JobsColumns[3], JobsColumns[4]},
+			},
+		},
+	}
+	// JobSchedulesColumns holds the columns for the "job_schedules" table.
+	JobSchedulesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "kind", Type: field.TypeString, Unique: true},
+		{Name: "triggers", Type: field.TypeJSON},
+	}
+	// JobSchedulesTable holds the schema information for the "job_schedules" table.
+	JobSchedulesTable = &schema.Table{
+		Name:       "job_schedules",
+		Columns:    JobSchedulesColumns,
+		PrimaryKey: []*schema.Column{JobSchedulesColumns[0]},
+	}
 	// LibrariesColumns holds the columns for the "libraries" table.
 	LibrariesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
@@ -1165,6 +1217,8 @@ var (
 		GenresTable,
 		ImagesTable,
 		ItemsTable,
+		JobsTable,
+		JobSchedulesTable,
 		LibrariesTable,
 		LibraryOptionsTable,
 		ListingsProvidersTable,

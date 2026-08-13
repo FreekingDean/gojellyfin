@@ -16,6 +16,8 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/genre"
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
+	"github.com/FreekingDean/gojellyfin/internal/store/job"
+	"github.com/FreekingDean/gojellyfin/internal/store/jobschedule"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
 	"github.com/FreekingDean/gojellyfin/internal/store/listingsprovider"
@@ -224,6 +226,54 @@ func init() {
 	itemDescEnableMediaSourceDisplay := itemFields[24].Descriptor()
 	// item.DefaultEnableMediaSourceDisplay holds the default value on creation for the enable_media_source_display field.
 	item.DefaultEnableMediaSourceDisplay = itemDescEnableMediaSourceDisplay.Default.(bool)
+	jobFields := entities.Job{}.Fields()
+	_ = jobFields
+	// jobDescCreatedAt is the schema descriptor for created_at field.
+	jobDescCreatedAt := jobFields[1].Descriptor()
+	// job.DefaultCreatedAt holds the default value on creation for the created_at field.
+	job.DefaultCreatedAt = jobDescCreatedAt.Default.(func() time.Time)
+	// jobDescUpdatedAt is the schema descriptor for updated_at field.
+	jobDescUpdatedAt := jobFields[2].Descriptor()
+	// job.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	job.DefaultUpdatedAt = jobDescUpdatedAt.Default.(func() time.Time)
+	// job.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	job.UpdateDefaultUpdatedAt = jobDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// jobDescRunAt is the schema descriptor for run_at field.
+	jobDescRunAt := jobFields[7].Descriptor()
+	// job.DefaultRunAt holds the default value on creation for the run_at field.
+	job.DefaultRunAt = jobDescRunAt.Default.(func() time.Time)
+	// jobDescAttempt is the schema descriptor for attempt field.
+	jobDescAttempt := jobFields[8].Descriptor()
+	// job.DefaultAttempt holds the default value on creation for the attempt field.
+	job.DefaultAttempt = jobDescAttempt.Default.(int)
+	// jobDescMaxAttempts is the schema descriptor for max_attempts field.
+	jobDescMaxAttempts := jobFields[9].Descriptor()
+	// job.DefaultMaxAttempts holds the default value on creation for the max_attempts field.
+	job.DefaultMaxAttempts = jobDescMaxAttempts.Default.(int)
+	// jobDescProgress is the schema descriptor for progress field.
+	jobDescProgress := jobFields[10].Descriptor()
+	// job.DefaultProgress holds the default value on creation for the progress field.
+	job.DefaultProgress = jobDescProgress.Default.(float64)
+	// jobDescCancelRequested is the schema descriptor for cancel_requested field.
+	jobDescCancelRequested := jobFields[11].Descriptor()
+	// job.DefaultCancelRequested holds the default value on creation for the cancel_requested field.
+	job.DefaultCancelRequested = jobDescCancelRequested.Default.(bool)
+	jobscheduleFields := entities.JobSchedule{}.Fields()
+	_ = jobscheduleFields
+	// jobscheduleDescCreatedAt is the schema descriptor for created_at field.
+	jobscheduleDescCreatedAt := jobscheduleFields[1].Descriptor()
+	// jobschedule.DefaultCreatedAt holds the default value on creation for the created_at field.
+	jobschedule.DefaultCreatedAt = jobscheduleDescCreatedAt.Default.(func() time.Time)
+	// jobscheduleDescUpdatedAt is the schema descriptor for updated_at field.
+	jobscheduleDescUpdatedAt := jobscheduleFields[2].Descriptor()
+	// jobschedule.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	jobschedule.DefaultUpdatedAt = jobscheduleDescUpdatedAt.Default.(func() time.Time)
+	// jobschedule.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	jobschedule.UpdateDefaultUpdatedAt = jobscheduleDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// jobscheduleDescTriggers is the schema descriptor for triggers field.
+	jobscheduleDescTriggers := jobscheduleFields[4].Descriptor()
+	// jobschedule.DefaultTriggers holds the default value on creation for the triggers field.
+	jobschedule.DefaultTriggers = jobscheduleDescTriggers.Default.([]entities.JobTrigger)
 	libraryFields := entities.Library{}.Fields()
 	_ = libraryFields
 	// libraryDescCreatedAt is the schema descriptor for created_at field.

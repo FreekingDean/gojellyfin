@@ -36,6 +36,12 @@ type Image func(*sql.Selector)
 // Item is the predicate function for item builders.
 type Item func(*sql.Selector)
 
+// Job is the predicate function for job builders.
+type Job func(*sql.Selector)
+
+// JobSchedule is the predicate function for jobschedule builders.
+type JobSchedule func(*sql.Selector)
+
 // Library is the predicate function for library builders.
 type Library func(*sql.Selector)
 

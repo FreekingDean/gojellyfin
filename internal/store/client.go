@@ -26,6 +26,8 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/genre"
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
+	"github.com/FreekingDean/gojellyfin/internal/store/job"
+	"github.com/FreekingDean/gojellyfin/internal/store/jobschedule"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
 	"github.com/FreekingDean/gojellyfin/internal/store/listingsprovider"
@@ -76,6 +78,10 @@ type Client struct {
 	Image *ImageClient
 	// Item is the client for interacting with the Item builders.
 	Item *ItemClient
+	// Job is the client for interacting with the Job builders.
+	Job *JobClient
+	// JobSchedule is the client for interacting with the JobSchedule builders.
+	JobSchedule *JobScheduleClient
 	// Library is the client for interacting with the Library builders.
 	Library *LibraryClient
 	// LibraryOptions is the client for interacting with the LibraryOptions builders.
@@ -139,6 +145,8 @@ func (c *Client) init() {
 	c.Genre = NewGenreClient(c.config)
 	c.Image = NewImageClient(c.config)
 	c.Item = NewItemClient(c.config)
+	c.Job = NewJobClient(c.config)
+	c.JobSchedule = NewJobScheduleClient(c.config)
 	c.Library = NewLibraryClient(c.config)
 	c.LibraryOptions = NewLibraryOptionsClient(c.config)
 	c.ListingsProvider = NewListingsProviderClient(c.config)
@@ -262,6 +270,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Genre:              NewGenreClient(cfg),
 		Image:              NewImageClient(cfg),
 		Item:               NewItemClient(cfg),
+		Job:                NewJobClient(cfg),
+		JobSchedule:        NewJobScheduleClient(cfg),
 		Library:            NewLibraryClient(cfg),
 		LibraryOptions:     NewLibraryOptionsClient(cfg),
 		ListingsProvider:   NewListingsProviderClient(cfg),
@@ -312,6 +322,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Genre:              NewGenreClient(cfg),
 		Image:              NewImageClient(cfg),
 		Item:               NewItemClient(cfg),
+		Job:                NewJobClient(cfg),
+		JobSchedule:        NewJobScheduleClient(cfg),
 		Library:            NewLibraryClient(cfg),
 		LibraryOptions:     NewLibraryOptionsClient(cfg),
 		ListingsProvider:   NewListingsProviderClient(cfg),
@@ -363,11 +375,12 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.ActivityLogEntry, c.ApiKey, c.Chapter, c.Configuration, c.Credit, c.Device,
-		c.DisplayPreferences, c.Genre, c.Image, c.Item, c.Library, c.LibraryOptions,
-		c.ListingsProvider, c.MediaAttachment, c.MediaSegment, c.MediaSource,
-		c.MediaStream, c.Person, c.Playlist, c.PlaylistEntry, c.PlaylistShare,
-		c.SeriesTimer, c.Session, c.Studio, c.Timer, c.Trickplay, c.TunerHost, c.User,
-		c.UserConfiguration, c.UserItemData, c.UserPolicy,
+		c.DisplayPreferences, c.Genre, c.Image, c.Item, c.Job, c.JobSchedule,
+		c.Library, c.LibraryOptions, c.ListingsProvider, c.MediaAttachment,
+		c.MediaSegment, c.MediaSource, c.MediaStream, c.Person, c.Playlist,
+		c.PlaylistEntry, c.PlaylistShare, c.SeriesTimer, c.Session, c.Studio, c.Timer,
+		c.Trickplay, c.TunerHost, c.User, c.UserConfiguration, c.UserItemData,
+		c.UserPolicy,
 	} {
 		n.Use(hooks...)
 	}
@@ -378,11 +391,12 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.ActivityLogEntry, c.ApiKey, c.Chapter, c.Configuration, c.Credit, c.Device,
-		c.DisplayPreferences, c.Genre, c.Image, c.Item, c.Library, c.LibraryOptions,
-		c.ListingsProvider, c.MediaAttachment, c.MediaSegment, c.MediaSource,
-		c.MediaStream, c.Person, c.Playlist, c.PlaylistEntry, c.PlaylistShare,
-		c.SeriesTimer, c.Session, c.Studio, c.Timer, c.Trickplay, c.TunerHost, c.User,
-		c.UserConfiguration, c.UserItemData, c.UserPolicy,
+		c.DisplayPreferences, c.Genre, c.Image, c.Item, c.Job, c.JobSchedule,
+		c.Library, c.LibraryOptions, c.ListingsProvider, c.MediaAttachment,
+		c.MediaSegment, c.MediaSource, c.MediaStream, c.Person, c.Playlist,
+		c.PlaylistEntry, c.PlaylistShare, c.SeriesTimer, c.Session, c.Studio, c.Timer,
+		c.Trickplay, c.TunerHost, c.User, c.UserConfiguration, c.UserItemData,
+		c.UserPolicy,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -411,6 +425,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Image.mutate(ctx, m)
 	case *ItemMutation:
 		return c.Item.mutate(ctx, m)
+	case *JobMutation:
+		return c.Job.mutate(ctx, m)
+	case *JobScheduleMutation:
+		return c.JobSchedule.mutate(ctx, m)
 	case *LibraryMutation:
 		return c.Library.mutate(ctx, m)
 	case *LibraryOptionsMutation:
@@ -2201,6 +2219,272 @@ func (c *ItemClient) mutate(ctx context.Context, m *ItemMutation) (Value, error)
 		return (&ItemDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("store: unknown Item mutation op: %q", m.Op())
+	}
+}
+
+// JobClient is a client for the Job schema.
+type JobClient struct {
+	config
+}
+
+// NewJobClient returns a client for the Job from the given config.
+func NewJobClient(c config) *JobClient {
+	return &JobClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `job.Hooks(f(g(h())))`.
+func (c *JobClient) Use(hooks ...Hook) {
+	c.hooks.Job = append(c.hooks.Job, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `job.Intercept(f(g(h())))`.
+func (c *JobClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Job = append(c.inters.Job, interceptors...)
+}
+
+// Create returns a builder for creating a Job entity.
+func (c *JobClient) Create() *JobCreate {
+	mutation := newJobMutation(c.config, OpCreate)
+	return &JobCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Job entities.
+func (c *JobClient) CreateBulk(builders ...*JobCreate) *JobCreateBulk {
+	return &JobCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *JobClient) MapCreateBulk(slice any, setFunc func(*JobCreate, int)) *JobCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &JobCreateBulk{err: fmt.Errorf("calling to JobClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*JobCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &JobCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Job.
+func (c *JobClient) Update() *JobUpdate {
+	mutation := newJobMutation(c.config, OpUpdate)
+	return &JobUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *JobClient) UpdateOne(_m *Job) *JobUpdateOne {
+	mutation := newJobMutation(c.config, OpUpdateOne, withJob(_m))
+	return &JobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *JobClient) UpdateOneID(id uuid.UUID) *JobUpdateOne {
+	mutation := newJobMutation(c.config, OpUpdateOne, withJobID(id))
+	return &JobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Job.
+func (c *JobClient) Delete() *JobDelete {
+	mutation := newJobMutation(c.config, OpDelete)
+	return &JobDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *JobClient) DeleteOne(_m *Job) *JobDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *JobClient) DeleteOneID(id uuid.UUID) *JobDeleteOne {
+	builder := c.Delete().Where(job.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &JobDeleteOne{builder}
+}
+
+// Query returns a query builder for Job.
+func (c *JobClient) Query() *JobQuery {
+	return &JobQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeJob},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Job entity by its id.
+func (c *JobClient) Get(ctx context.Context, id uuid.UUID) (*Job, error) {
+	return c.Query().Where(job.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *JobClient) GetX(ctx context.Context, id uuid.UUID) *Job {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *JobClient) Hooks() []Hook {
+	return c.hooks.Job
+}
+
+// Interceptors returns the client interceptors.
+func (c *JobClient) Interceptors() []Interceptor {
+	return c.inters.Job
+}
+
+func (c *JobClient) mutate(ctx context.Context, m *JobMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&JobCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&JobUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&JobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&JobDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("store: unknown Job mutation op: %q", m.Op())
+	}
+}
+
+// JobScheduleClient is a client for the JobSchedule schema.
+type JobScheduleClient struct {
+	config
+}
+
+// NewJobScheduleClient returns a client for the JobSchedule from the given config.
+func NewJobScheduleClient(c config) *JobScheduleClient {
+	return &JobScheduleClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `jobschedule.Hooks(f(g(h())))`.
+func (c *JobScheduleClient) Use(hooks ...Hook) {
+	c.hooks.JobSchedule = append(c.hooks.JobSchedule, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `jobschedule.Intercept(f(g(h())))`.
+func (c *JobScheduleClient) Intercept(interceptors ...Interceptor) {
+	c.inters.JobSchedule = append(c.inters.JobSchedule, interceptors...)
+}
+
+// Create returns a builder for creating a JobSchedule entity.
+func (c *JobScheduleClient) Create() *JobScheduleCreate {
+	mutation := newJobScheduleMutation(c.config, OpCreate)
+	return &JobScheduleCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of JobSchedule entities.
+func (c *JobScheduleClient) CreateBulk(builders ...*JobScheduleCreate) *JobScheduleCreateBulk {
+	return &JobScheduleCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *JobScheduleClient) MapCreateBulk(slice any, setFunc func(*JobScheduleCreate, int)) *JobScheduleCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &JobScheduleCreateBulk{err: fmt.Errorf("calling to JobScheduleClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*JobScheduleCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &JobScheduleCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for JobSchedule.
+func (c *JobScheduleClient) Update() *JobScheduleUpdate {
+	mutation := newJobScheduleMutation(c.config, OpUpdate)
+	return &JobScheduleUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *JobScheduleClient) UpdateOne(_m *JobSchedule) *JobScheduleUpdateOne {
+	mutation := newJobScheduleMutation(c.config, OpUpdateOne, withJobSchedule(_m))
+	return &JobScheduleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *JobScheduleClient) UpdateOneID(id uuid.UUID) *JobScheduleUpdateOne {
+	mutation := newJobScheduleMutation(c.config, OpUpdateOne, withJobScheduleID(id))
+	return &JobScheduleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for JobSchedule.
+func (c *JobScheduleClient) Delete() *JobScheduleDelete {
+	mutation := newJobScheduleMutation(c.config, OpDelete)
+	return &JobScheduleDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *JobScheduleClient) DeleteOne(_m *JobSchedule) *JobScheduleDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *JobScheduleClient) DeleteOneID(id uuid.UUID) *JobScheduleDeleteOne {
+	builder := c.Delete().Where(jobschedule.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &JobScheduleDeleteOne{builder}
+}
+
+// Query returns a query builder for JobSchedule.
+func (c *JobScheduleClient) Query() *JobScheduleQuery {
+	return &JobScheduleQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeJobSchedule},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a JobSchedule entity by its id.
+func (c *JobScheduleClient) Get(ctx context.Context, id uuid.UUID) (*JobSchedule, error) {
+	return c.Query().Where(jobschedule.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *JobScheduleClient) GetX(ctx context.Context, id uuid.UUID) *JobSchedule {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *JobScheduleClient) Hooks() []Hook {
+	return c.hooks.JobSchedule
+}
+
+// Interceptors returns the client interceptors.
+func (c *JobScheduleClient) Interceptors() []Interceptor {
+	return c.inters.JobSchedule
+}
+
+func (c *JobScheduleClient) mutate(ctx context.Context, m *JobScheduleMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&JobScheduleCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&JobScheduleUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&JobScheduleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&JobScheduleDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("store: unknown JobSchedule mutation op: %q", m.Op())
 	}
 }
 
@@ -5577,19 +5861,19 @@ func (c *UserPolicyClient) mutate(ctx context.Context, m *UserPolicyMutation) (V
 type (
 	hooks struct {
 		ActivityLogEntry, ApiKey, Chapter, Configuration, Credit, Device,
-		DisplayPreferences, Genre, Image, Item, Library, LibraryOptions,
-		ListingsProvider, MediaAttachment, MediaSegment, MediaSource, MediaStream,
-		Person, Playlist, PlaylistEntry, PlaylistShare, SeriesTimer, Session, Studio,
-		Timer, Trickplay, TunerHost, User, UserConfiguration, UserItemData,
-		UserPolicy []ent.Hook
+		DisplayPreferences, Genre, Image, Item, Job, JobSchedule, Library,
+		LibraryOptions, ListingsProvider, MediaAttachment, MediaSegment, MediaSource,
+		MediaStream, Person, Playlist, PlaylistEntry, PlaylistShare, SeriesTimer,
+		Session, Studio, Timer, Trickplay, TunerHost, User, UserConfiguration,
+		UserItemData, UserPolicy []ent.Hook
 	}
 	inters struct {
 		ActivityLogEntry, ApiKey, Chapter, Configuration, Credit, Device,
-		DisplayPreferences, Genre, Image, Item, Library, LibraryOptions,
-		ListingsProvider, MediaAttachment, MediaSegment, MediaSource, MediaStream,
-		Person, Playlist, PlaylistEntry, PlaylistShare, SeriesTimer, Session, Studio,
-		Timer, Trickplay, TunerHost, User, UserConfiguration, UserItemData,
-		UserPolicy []ent.Interceptor
+		DisplayPreferences, Genre, Image, Item, Job, JobSchedule, Library,
+		LibraryOptions, ListingsProvider, MediaAttachment, MediaSegment, MediaSource,
+		MediaStream, Person, Playlist, PlaylistEntry, PlaylistShare, SeriesTimer,
+		Session, Studio, Timer, Trickplay, TunerHost, User, UserConfiguration,
+		UserItemData, UserPolicy []ent.Interceptor
 	}
 )
 

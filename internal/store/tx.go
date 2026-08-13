@@ -34,6 +34,10 @@ type Tx struct {
 	Image *ImageClient
 	// Item is the client for interacting with the Item builders.
 	Item *ItemClient
+	// Job is the client for interacting with the Job builders.
+	Job *JobClient
+	// JobSchedule is the client for interacting with the JobSchedule builders.
+	JobSchedule *JobScheduleClient
 	// Library is the client for interacting with the Library builders.
 	Library *LibraryClient
 	// LibraryOptions is the client for interacting with the LibraryOptions builders.
@@ -217,6 +221,8 @@ func (tx *Tx) init() {
 	tx.Genre = NewGenreClient(tx.config)
 	tx.Image = NewImageClient(tx.config)
 	tx.Item = NewItemClient(tx.config)
+	tx.Job = NewJobClient(tx.config)
+	tx.JobSchedule = NewJobScheduleClient(tx.config)
 	tx.Library = NewLibraryClient(tx.config)
 	tx.LibraryOptions = NewLibraryOptionsClient(tx.config)
 	tx.ListingsProvider = NewListingsProviderClient(tx.config)

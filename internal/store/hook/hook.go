@@ -129,6 +129,30 @@ func (f ItemFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, er
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.ItemMutation", m)
 }
 
+// The JobFunc type is an adapter to allow the use of ordinary
+// function as Job mutator.
+type JobFunc func(context.Context, *store.JobMutation) (store.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f JobFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, error) {
+	if mv, ok := m.(*store.JobMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.JobMutation", m)
+}
+
+// The JobScheduleFunc type is an adapter to allow the use of ordinary
+// function as JobSchedule mutator.
+type JobScheduleFunc func(context.Context, *store.JobScheduleMutation) (store.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f JobScheduleFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, error) {
+	if mv, ok := m.(*store.JobScheduleMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.JobScheduleMutation", m)
+}
+
 // The LibraryFunc type is an adapter to allow the use of ordinary
 // function as Library mutator.
 type LibraryFunc func(context.Context, *store.LibraryMutation) (store.Value, error)
