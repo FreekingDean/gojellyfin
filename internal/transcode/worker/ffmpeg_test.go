@@ -18,7 +18,7 @@ const sourceSeconds = 3
 
 // A real file rather than a fixture: the point of these tests is that ffmpeg
 // decoded something and re-encoded it, which a stub cannot show.
-func source(t *testing.T, name string) string {
+func source(t *testing.T, name string, seconds int) string {
 	t.Helper()
 
 	if !Available() {
@@ -28,7 +28,7 @@ func source(t *testing.T, name string) string {
 	path := filepath.Join(t.TempDir(), name)
 	generate := exec.Command("ffmpeg", "-nostdin", "-loglevel", "error",
 		"-f", "lavfi",
-		"-i", "sine=frequency=440:duration="+strconv.Itoa(sourceSeconds),
+		"-i", "sine=frequency=440:duration="+strconv.Itoa(seconds),
 		path,
 	)
 	if output, err := generate.CombinedOutput(); err != nil {
@@ -55,7 +55,7 @@ func probe(t *testing.T, body []byte, name string) *ffmpeg.Probe {
 }
 
 func TestStartTranscodesToEachSupportedContainer(t *testing.T) {
-	flac := source(t, "tone.flac")
+	flac := source(t, "tone.flac", sourceSeconds)
 
 	for container, codec := range map[string]string{
 		"mp3":  "mp3",
@@ -93,7 +93,7 @@ func TestStartTranscodesToEachSupportedContainer(t *testing.T) {
 }
 
 func TestStartSeeksToTheRequestedOffset(t *testing.T) {
-	flac := source(t, "tone.flac")
+	flac := source(t, "tone.flac", sourceSeconds)
 
 	output, err := start(context.Background(), transcode.Spec{
 		Path:       flac,
@@ -137,7 +137,7 @@ func TestStartRejectsAnUnsupportedContainer(t *testing.T) {
 // Nothing else stops the encode when a client goes away, so a cancelled
 // context has to be what takes the process with it.
 func TestStartStopsFfmpegWhenTheContextIsCancelled(t *testing.T) {
-	flac := source(t, "tone.flac")
+	flac := source(t, "tone.flac", sourceSeconds)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	output, err := start(ctx, transcode.Spec{Path: flac, Container: "mp3"})

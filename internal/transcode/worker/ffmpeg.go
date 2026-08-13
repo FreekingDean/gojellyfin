@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"sync/atomic"
 	"time"
 
 	"github.com/FreekingDean/gojellyfin/internal/transcode"
@@ -65,6 +66,51 @@ func (p *process) Close() error {
 	}
 
 	return nil
+}
+
+// A client that is only slow still takes a buffer's worth every so often, so
+// the relay keeps coming back for more and the gap between reads stays short.
+// Nothing moving at all is the other two cases: an encode that stopped
+// producing, and a client that vanished without closing its connection.
+func untilStalled(ctx context.Context, output io.Reader, timeout time.Duration, kill func()) io.Reader {
+	moving := &progress{output: output}
+	moving.last.Store(time.Now().UnixNano())
+
+	go moving.watch(ctx, timeout, kill)
+
+	return moving
+}
+
+type progress struct {
+	output io.Reader
+	last   atomic.Int64
+}
+
+func (p *progress) Read(b []byte) (int, error) {
+	n, err := p.output.Read(b)
+	if n > 0 {
+		p.last.Store(time.Now().UnixNano())
+	}
+
+	return n, err
+}
+
+func (p *progress) watch(ctx context.Context, timeout time.Duration, kill func()) {
+	ticker := time.NewTicker(timeout / 2)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case now := <-ticker.C:
+			if now.Sub(time.Unix(0, p.last.Load())) > timeout {
+				kill()
+
+				return
+			}
+		}
+	}
 }
 
 type tail struct {
