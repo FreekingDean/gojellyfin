@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"runtime"
+	"strconv"
 
 	"github.com/FreekingDean/gojellyfin/internal/transcode"
 )
@@ -15,6 +17,7 @@ const defaultAddr = ":8082"
 type Server struct {
 	s     *http.Server
 	token string
+	jobs  chan struct{}
 }
 
 func New() *Server {
@@ -26,6 +29,7 @@ func New() *Server {
 	worker := &Server{
 		s:     &http.Server{Addr: addr},
 		token: os.Getenv("TRANSCODER_TOKEN"),
+		jobs:  make(chan struct{}, maxJobs()),
 	}
 
 	mux := http.NewServeMux()
@@ -43,6 +47,16 @@ func New() *Server {
 	return worker
 }
 
+// An encode saturates about a core, so running more of them than there are
+// cores makes every stream slower without finishing any of them sooner.
+func maxJobs() int {
+	if jobs, err := strconv.Atoi(os.Getenv("TRANSCODER_JOBS")); err == nil && jobs > 0 {
+		return jobs
+	}
+
+	return runtime.NumCPU()
+}
+
 // The spec names a file for ffmpeg to open, so an unauthenticated caller could
 // read anything the worker can. The token is what keeps this to the API.
 func (s *Server) Handle(w http.ResponseWriter, r *http.Request) {
@@ -56,6 +70,16 @@ func (s *Server) Handle(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	// The pool reads any non-200 as "try the next worker", so refusing here is
+	// what turns its round robin into least loaded.
+	select {
+	case s.jobs <- struct{}{}:
+	default:
+		http.Error(w, "every job is taken", http.StatusServiceUnavailable)
+		return
+	}
+	defer func() { <-s.jobs }()
 
 	output, err := start(r.Context(), spec)
 	if err != nil {

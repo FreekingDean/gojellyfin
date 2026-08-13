@@ -2,6 +2,7 @@ package stream
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log"
 	"net/http"
@@ -18,6 +19,8 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/transcode"
 )
+
+const retryAfterSeconds = 10
 
 var contentTypes = map[string]string{
 	".mkv":  "video/x-matroska",
@@ -116,9 +119,9 @@ func (h *Handler) ServeUniversal(w http.ResponseWriter, r *http.Request) {
 	h.serveFile(w, r, item)
 }
 
-// Reports whether the response was answered by a transcode. Everything that
-// can fail is done before the first byte reaches the client, so the caller can
-// still refuse with a status when this comes back false.
+// Reports whether the response was answered here. Everything that can fail is
+// done before the first byte reaches the client, so the caller can still refuse
+// with a status when this comes back false.
 func (h *Handler) serveTranscode(w http.ResponseWriter, r *http.Request, item *items.Item, accepted []string) bool {
 	if !h.transcoder.Enabled() || !items.IsAudio(item) {
 		return false
@@ -137,6 +140,11 @@ func (h *Handler) serveTranscode(w http.ResponseWriter, r *http.Request, item *i
 	})
 	if err != nil {
 		log.Printf("failed to transcode %s to %s: %v", item.Path, container, err)
+		if errors.Is(err, transcode.ErrBusy) {
+			busy(w)
+
+			return true
+		}
 
 		return false
 	}
@@ -190,6 +198,14 @@ func startTicks(r *http.Request) int64 {
 	}
 
 	return ticks
+}
+
+// Every encoder is busy with someone else, which passes: the spec answers these
+// operations with a 503 and a Retry-After and has no 415 at all, so the client
+// is told to come back rather than that its device cannot play this.
+func busy(w http.ResponseWriter) {
+	w.Header().Set("Retry-After", strconv.Itoa(retryAfterSeconds))
+	http.Error(w, "every transcoder is busy", http.StatusServiceUnavailable)
 }
 
 // A client that cannot take the source as it is gets the reason rather than the

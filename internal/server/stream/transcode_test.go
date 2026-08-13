@@ -206,6 +206,33 @@ func TestServeUniversalRefusesWhenNoWorkerAnswers(t *testing.T) {
 	}
 }
 
+// Every worker being busy is temporary, so the client is told when to come
+// back rather than that its device cannot play this.
+func TestServeUniversalAnswersBusyWhenEveryWorkerIsFull(t *testing.T) {
+	fixture := newFixture(t)
+	id := fixture.addTone(t)
+
+	full := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "every job is taken", http.StatusServiceUnavailable)
+	}))
+	t.Cleanup(full.Close)
+
+	t.Setenv("TRANSCODER_WORKERS", full.URL)
+	fixture.handler.transcoder = transcode.NewPool()
+
+	recorder := httptest.NewRecorder()
+	target := "/Audio/" + id.String() + "/universal?container=mp3&"
+
+	fixture.handler.ServeUniversal(recorder, fixture.get(t, http.MethodGet, target, id))
+
+	if recorder.Code != http.StatusServiceUnavailable {
+		t.Fatalf("status = %d, want %d", recorder.Code, http.StatusServiceUnavailable)
+	}
+	if got := recorder.Header().Get("Retry-After"); got != "10" {
+		t.Errorf("retry after = %q, want 10", got)
+	}
+}
+
 func TestPoolIsDisabledWithoutWorkers(t *testing.T) {
 	t.Setenv("TRANSCODER_WORKERS", "")
 
