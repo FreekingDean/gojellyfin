@@ -3,6 +3,7 @@ package environment
 import (
 	"context"
 	"path"
+	"strings"
 
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
@@ -24,7 +25,12 @@ func (s *Server) ValidatePath(ctx context.Context, request api.ValidatePathReque
 		return api.ValidatePath404JSONResponse{}, nil
 	}
 
-	file, err := s.filesystem.Stat(ctx, *req.Path)
+	cleanPath := path.Clean(*req.Path)
+	if !path.IsAbs(cleanPath) || strings.Contains("/"+cleanPath+"/", "/../") {
+		return api.ValidatePath404JSONResponse{}, nil
+	}
+
+	file, err := s.filesystem.Stat(ctx, cleanPath)
 	if err != nil {
 		return api.ValidatePath404JSONResponse{}, nil
 	}
