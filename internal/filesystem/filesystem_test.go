@@ -158,3 +158,17 @@ func TestDrives(t *testing.T) {
 		t.Errorf("got %+v, want a single directory named %q", drives, Root)
 	}
 }
+
+func TestRelativePathsAreRejected(t *testing.T) {
+	for _, name := range []string{"", "relative/path", "../etc", "media/../../etc"} {
+		if _, err := New().Stat(context.Background(), name); !errors.Is(err, ErrNotFound) {
+			t.Errorf("Stat(%q) = %v, want ErrNotFound", name, err)
+		}
+		if _, err := New().List(context.Background(), name); !errors.Is(err, ErrNotFound) {
+			t.Errorf("List(%q) = %v, want ErrNotFound", name, err)
+		}
+		if _, _, err := New().Open(context.Background(), name); !errors.Is(err, ErrNotFound) {
+			t.Errorf("Open(%q) = %v, want ErrNotFound", name, err)
+		}
+	}
+}

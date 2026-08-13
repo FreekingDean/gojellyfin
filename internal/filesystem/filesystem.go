@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"strings"
 	"syscall"
 )
@@ -24,7 +25,6 @@ type Service struct{}
 type File struct {
 	Name string
 	Dir  bool
-	file *os.File
 }
 
 func New() *Service {
@@ -36,7 +36,12 @@ func (s *Service) Drives(ctx context.Context) ([]File, error) {
 	return []File{{Name: "/", Dir: true}}, nil
 }
 
-func (s *Service) List(ctx context.Context, path string) ([]File, error) {
+func (s *Service) List(ctx context.Context, name string) ([]File, error) {
+	path, err := resolve(name)
+	if err != nil {
+		return nil, err
+	}
+
 	osFiles, err := os.ReadDir(path)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, ErrNotFound
@@ -59,7 +64,12 @@ func (s *Service) List(ctx context.Context, path string) ([]File, error) {
 	return files, nil
 }
 
-func (s *Service) Open(ctx context.Context, path string) (io.ReadCloser, int64, error) {
+func (s *Service) Open(ctx context.Context, name string) (io.ReadCloser, int64, error) {
+	path, err := resolve(name)
+	if err != nil {
+		return nil, 0, err
+	}
+
 	file, err := os.Open(path)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, 0, ErrNotFound
@@ -87,7 +97,12 @@ func (s *Service) RemoveAll(ctx context.Context, path string) error {
 	return fmt.Errorf("failed to remove %q: %w", path, ErrNotSupported)
 }
 
-func (s *Service) Stat(ctx context.Context, path string) (File, error) {
+func (s *Service) Stat(ctx context.Context, name string) (File, error) {
+	path, err := resolve(name)
+	if err != nil {
+		return File{}, err
+	}
+
 	osFile, err := os.Stat(path)
 	if errors.Is(err, fs.ErrNotExist) {
 		return File{}, ErrNotFound
@@ -100,4 +115,19 @@ func (s *Service) Stat(ctx context.Context, path string) (File, error) {
 		Name: osFile.Name(),
 		Dir:  osFile.IsDir(),
 	}, nil
+}
+
+// Every path reaching the host arrives from a client, so it is cleaned and
+// held to an absolute path here rather than in each caller.
+func resolve(name string) (string, error) {
+	if name == "" {
+		return "", ErrNotFound
+	}
+
+	path := filepath.Clean(name)
+	if !filepath.IsAbs(path) || strings.Contains(path, "..") {
+		return "", ErrNotFound
+	}
+
+	return path, nil
 }
