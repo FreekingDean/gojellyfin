@@ -5,6 +5,8 @@ import (
 	"log"
 
 	"go.uber.org/fx"
+
+	"github.com/FreekingDean/gojellyfin/internal/tasks"
 )
 
 var Module = fx.Module(
@@ -13,9 +15,14 @@ var Module = fx.Module(
 		New,
 	),
 	fx.Invoke(
+		useScanner,
 		run,
 	),
 )
+
+func useScanner(registry *tasks.Registry, s *Scanner) error {
+	return registry.UseRunner(tasks.LibraryScanID, s.Scan)
+}
 
 func run(lc fx.Lifecycle, s *Scanner) {
 	lc.Append(fx.Hook{

@@ -3,7 +3,6 @@ package server
 import (
 	"go.uber.org/fx"
 
-	"github.com/FreekingDean/gojellyfin/internal/scanner"
 	"github.com/FreekingDean/gojellyfin/internal/server/activitylog"
 	"github.com/FreekingDean/gojellyfin/internal/server/apikey"
 	"github.com/FreekingDean/gojellyfin/internal/server/branding"
@@ -44,7 +43,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/userlibrary"
 	"github.com/FreekingDean/gojellyfin/internal/server/userviews"
 	"github.com/FreekingDean/gojellyfin/internal/server/years"
-	"github.com/FreekingDean/gojellyfin/internal/tasks"
 )
 
 var Module = fx.Module(
@@ -92,11 +90,4 @@ var Module = fx.Module(
 	fx.Provide(
 		New,
 	),
-	fx.Invoke(
-		useScanner,
-	),
 )
-
-func useScanner(registry *tasks.Registry, scanner *scanner.Scanner) error {
-	return registry.UseRunner(tasks.LibraryScanID, scanner.Scan)
-}
