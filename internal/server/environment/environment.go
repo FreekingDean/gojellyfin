@@ -5,21 +5,38 @@ import (
 	"path"
 	"strings"
 
+	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
 type Server struct {
 	filesystem *filesystem.Service
+	users      *users.Service
 }
 
-func New(filesystem *filesystem.Service) *Server {
-	return &Server{filesystem: filesystem}
+func New(filesystem *filesystem.Service, users *users.Service) *Server {
+	return &Server{filesystem: filesystem, users: users}
+}
+
+// Browsing the host is an administrator's job: upstream gates every operation
+// in this tag on FirstTimeSetupOrElevated.
+func (s *Server) elevated(ctx context.Context) (bool, error) {
+	return s.users.IsAdministrator(ctx, auth.UserID(ctx))
 }
 
 // Used by the dashboard before it will accept a media path.
 func (s *Server) ValidatePath(ctx context.Context, request api.ValidatePathRequestObject) (api.ValidatePathResponseObject, error) {
+	allowed, err := s.elevated(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !allowed {
+		return api.ValidatePath403Response{}, nil
+	}
+
 	req := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
 	if req == nil || req.Path == nil || *req.Path == "" {
 		return api.ValidatePath404JSONResponse{}, nil
@@ -42,6 +59,14 @@ func (s *Server) ValidatePath(ctx context.Context, request api.ValidatePathReque
 }
 
 func (s *Server) GetDirectoryContents(ctx context.Context, request api.GetDirectoryContentsRequestObject) (api.GetDirectoryContentsResponseObject, error) {
+	allowed, err := s.elevated(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !allowed {
+		return api.GetDirectoryContents403Response{}, nil
+	}
+
 	files, err := s.filesystem.List(ctx, request.Params.Path)
 	if err != nil {
 		return nil, err
@@ -66,6 +91,14 @@ func (s *Server) GetDirectoryContents(ctx context.Context, request api.GetDirect
 }
 
 func (s *Server) GetDrives(ctx context.Context, request api.GetDrivesRequestObject) (api.GetDrivesResponseObject, error) {
+	allowed, err := s.elevated(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !allowed {
+		return api.GetDrives403Response{}, nil
+	}
+
 	drives, err := s.filesystem.Drives(ctx)
 	if err != nil {
 		return nil, err
@@ -80,6 +113,14 @@ func (s *Server) GetDrives(ctx context.Context, request api.GetDrivesRequestObje
 }
 
 func (s *Server) GetParentPath(ctx context.Context, request api.GetParentPathRequestObject) (api.GetParentPathResponseObject, error) {
+	allowed, err := s.elevated(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !allowed {
+		return api.GetParentPath403Response{}, nil
+	}
+
 	if request.Params.Path == "" {
 		return api.GetParentPath200JSONResponse(filesystem.Root), nil
 	}
@@ -88,5 +129,13 @@ func (s *Server) GetParentPath(ctx context.Context, request api.GetParentPathReq
 }
 
 func (s *Server) GetDefaultDirectoryBrowser(ctx context.Context, request api.GetDefaultDirectoryBrowserRequestObject) (api.GetDefaultDirectoryBrowserResponseObject, error) {
+	allowed, err := s.elevated(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !allowed {
+		return api.GetDefaultDirectoryBrowser403Response{}, nil
+	}
+
 	return api.GetDefaultDirectoryBrowser200JSONResponse{Path: apiutil.Ptr(filesystem.Root)}, nil
 }
