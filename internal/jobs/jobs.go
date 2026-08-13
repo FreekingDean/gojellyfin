@@ -290,10 +290,6 @@ func (s *Service) JobByID(ctx context.Context, id uuid.UUID) (*Job, error) {
 	return job, nil
 }
 
-func (s *Service) Definitions() []Definition {
-	return definitions
-}
-
 func (s *Service) Summaries(ctx context.Context) ([]Summary, error) {
 	summaries := make([]Summary, 0, len(definitions))
 	for _, definition := range definitions {
