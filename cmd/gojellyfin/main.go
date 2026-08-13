@@ -20,6 +20,7 @@ func main() {
 	}
 	root.AddCommand(
 		serverCommand(),
+		transcoderCommand(),
 		migrateCommand(),
 		addUserCommand(),
 		resetPasswordCommand(),

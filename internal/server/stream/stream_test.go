@@ -3,6 +3,7 @@ package stream
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -22,16 +23,36 @@ import (
 	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
 	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/mediasource"
 	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
+	"github.com/FreekingDean/gojellyfin/internal/transcode"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
 var song = []byte("ID3 the quick brown fox jumps over the lazy dog")
 
 type fixture struct {
-	handler *Handler
-	items   *items.Service
-	library uuid.UUID
-	token   string
+	handler    *Handler
+	items      *items.Service
+	transcoder *stubTranscoder
+	library    uuid.UUID
+	token      string
+}
+
+// Off unless a test turns it on, which keeps direct play answering the way it
+// does with no worker configured.
+type stubTranscoder struct {
+	enabled bool
+	open    func(ctx context.Context, spec transcode.Spec) (io.ReadCloser, error)
+	spec    transcode.Spec
+}
+
+func (s *stubTranscoder) Enabled() bool {
+	return s.enabled
+}
+
+func (s *stubTranscoder) Open(ctx context.Context, spec transcode.Spec) (io.ReadCloser, error) {
+	s.spec = spec
+
+	return s.open(ctx, spec)
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -98,11 +119,14 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
+	transcoder := &stubTranscoder{}
+
 	return &fixture{
-		handler: New(sessionService, itemService),
-		items:   itemService,
-		library: library.ID,
-		token:   token,
+		handler:    New(sessionService, itemService, transcoder),
+		items:      itemService,
+		transcoder: transcoder,
+		library:    library.ID,
+		token:      token,
 	}
 }
 
