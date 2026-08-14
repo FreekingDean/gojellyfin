@@ -81,7 +81,7 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if h.needsAudioRemux(r, item) && h.serveRemux(w, r, item) {
+	if h.needsRemux(r, item) && h.serveRemux(w, r, item) {
 		return
 	}
 
@@ -101,9 +101,26 @@ var browserAudio = map[string]bool{
 	"pcm_s24le": true,
 }
 
-func (h *Handler) needsAudioRemux(r *http.Request, item *items.Item) bool {
+// Chromium parses Matroska only far enough to serve WebM, so an mkv a browser
+// cannot open is the container failing rather than anything inside it. Checking
+// the audio alone made a rip with AC-3 play, because it was remuxed, while the
+// same rip with AAC did not.
+var browserContainers = map[string]bool{
+	"mp4":  true,
+	"m4v":  true,
+	"webm": true,
+	"mov":  true,
+}
+
+func (h *Handler) needsRemux(r *http.Request, item *items.Item) bool {
 	if items.IsAudio(item) || isStatic(r) || !h.transcoder.Enabled() {
 		return false
+	}
+
+	// A nil set means the client stated no container restriction, which is not
+	// the same as stating none it can take.
+	if containers := acceptedContainers(r); containers != nil && !containers[sourceContainer(item)] {
+		return true
 	}
 
 	codec, err := h.items.AudioCodec(r.Context(), item.ID)
@@ -117,6 +134,28 @@ func (h *Handler) needsAudioRemux(r *http.Request, item *items.Item) bool {
 	}
 
 	return !acceptedAudio(r)[strings.ToLower(codec)]
+}
+
+// The browser assumption is only for a client that told us nothing at all. One
+// that named an audio codec has already said it is not a browser — ac3 is the
+// clearest example — so its silence about containers is silence, not a list.
+func acceptedContainers(r *http.Request) map[string]bool {
+	query := r.URL.Query()
+
+	if raw := query["container"]; len(raw) > 0 {
+		accepted := make(map[string]bool)
+		for _, profile := range directPlayProfiles(raw) {
+			accepted[profile.container] = true
+		}
+
+		return accepted
+	}
+
+	if query.Get("audioCodec") != "" {
+		return nil
+	}
+
+	return browserContainers
 }
 
 // A client that says what it can decode is believed; one that says nothing is
