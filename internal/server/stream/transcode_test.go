@@ -39,12 +39,12 @@ func (f *fixture) withEncoder(t *testing.T) {
 func (f *fixture) tonePath(t *testing.T, id uuid.UUID) string {
 	t.Helper()
 
-	record, err := f.items.ItemByID(context.Background(), id)
-	if err != nil {
-		t.Fatalf("failed to load the item: %v", err)
+	source, err := f.items.MediaSource(context.Background(), id)
+	if err != nil || source == nil {
+		t.Fatalf("failed to load the source: %v", err)
 	}
 
-	return record.Path
+	return source.Path
 }
 
 func (f *fixture) addTone(t *testing.T) uuid.UUID {
@@ -63,16 +63,16 @@ func (f *fixture) addTone(t *testing.T) uuid.UUID {
 	item, err := f.items.SaveScanned(context.Background(), items.Scanned{
 		LibraryID:    f.library,
 		Kind:         itemmodal.KindAudio,
+		Key:          "audio:tone",
 		Name:         "tone.flac",
 		SortName:     "tone.flac",
-		Path:         path,
 		DateModified: time.Now(),
 	})
 	if err != nil {
 		t.Fatalf("failed to save the source: %v", err)
 	}
 
-	err = f.items.SaveProbe(context.Background(), item, items.Probe{
+	err = f.items.SaveProbe(context.Background(), item, f.source(t, item.ID, path), items.Probe{
 		Container: "flac",
 		Streams:   []items.Stream{{Kind: streammodal.KindAudio, Codec: "flac"}},
 	})

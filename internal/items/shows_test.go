@@ -71,7 +71,7 @@ func (f *fixture) add(t *testing.T, item seed) uuid.UUID {
 		SetKind(item.kind).
 		SetName(item.name).
 		SetSortName(sortName).
-		SetPath(fmt.Sprintf("/%s/%s", f.libraryID, item.name)).
+		SetKey(fmt.Sprintf("test:%s", item.name)).
 		SetNillableParentID(item.parentID).
 		SetNillableIndexNumber(item.index).
 		SetNillableParentIndexNumber(item.parentIndex).
@@ -82,6 +82,22 @@ func (f *fixture) add(t *testing.T, item seed) uuid.UUID {
 	}
 
 	return record.ID
+}
+
+func (f *fixture) source(t *testing.T, itemID uuid.UUID, path string) *MediaSource {
+	t.Helper()
+
+	source, err := f.service.SaveSource(context.Background(), ScannedSource{
+		LibraryID: f.libraryID,
+		ItemID:    itemID,
+		Path:      path,
+		Name:      path,
+	})
+	if err != nil {
+		t.Fatalf("failed to create the media source: %v", err)
+	}
+
+	return source
 }
 
 func number(value int32) *int32 {

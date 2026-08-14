@@ -11,7 +11,7 @@ import (
 	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 )
 
-func TestDeleteItemsNotInPathsTakesDescendants(t *testing.T) {
+func TestDeleteItemsNotInKeysTakesDescendants(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -25,10 +25,10 @@ func TestDeleteItemsNotInPathsTakesDescendants(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to load the item: %v", err)
 		}
-		kept = append(kept, record.Path)
+		kept = append(kept, record.Key)
 	}
 
-	if err := fixture.service.DeleteItemsNotInPaths(ctx, fixture.libraryID, kept); err != nil {
+	if err := fixture.service.DeleteItemsNotInKeys(ctx, fixture.libraryID, kept); err != nil {
 		t.Fatalf("failed to prune the items: %v", err)
 	}
 
@@ -41,7 +41,7 @@ func TestDeleteItemsNotInPathsTakesDescendants(t *testing.T) {
 	}
 }
 
-func TestDeleteItemsNotInPathsWithImages(t *testing.T) {
+func TestDeleteItemsNotInKeysWithImages(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -58,7 +58,7 @@ func TestDeleteItemsNotInPathsWithImages(t *testing.T) {
 		t.Fatalf("failed to load the kept item: %v", err)
 	}
 
-	if err := fixture.service.DeleteItemsNotInPaths(ctx, fixture.libraryID, []string{survivor.Path}); err != nil {
+	if err := fixture.service.DeleteItemsNotInKeys(ctx, fixture.libraryID, []string{survivor.Key}); err != nil {
 		t.Fatalf("failed to prune the items: %v", err)
 	}
 
@@ -100,7 +100,8 @@ func TestSaveProbeReplacesStreams(t *testing.T) {
 			{Index: 1, Kind: streammodal.KindAudio, Codec: "aac"},
 		},
 	}
-	if err := fixture.service.SaveProbe(ctx, item, first); err != nil {
+	source := fixture.source(t, id, "/media/movie.mkv")
+	if err := fixture.service.SaveProbe(ctx, item, source, first); err != nil {
 		t.Fatalf("failed to save the first probe: %v", err)
 	}
 
@@ -109,18 +110,18 @@ func TestSaveProbeReplacesStreams(t *testing.T) {
 		RunTimeTicks: 200,
 		Streams:      []Stream{{Index: 0, Kind: streammodal.KindVideo, Codec: "hevc"}},
 	}
-	if err := fixture.service.SaveProbe(ctx, item, second); err != nil {
+	if err := fixture.service.SaveProbe(ctx, item, source, second); err != nil {
 		t.Fatalf("failed to save the second probe: %v", err)
 	}
 
-	source, err := fixture.service.MediaSource(ctx, id)
+	probed, err := fixture.service.MediaSource(ctx, id)
 	if err != nil {
 		t.Fatalf("failed to query the media source: %v", err)
 	}
-	if source == nil {
+	if probed == nil {
 		t.Fatal("media source = nil, want a probed source")
 	}
-	streams := source.Edges.Streams
+	streams := probed.Edges.Streams
 	if len(streams) != 1 {
 		t.Fatalf("streams = %d, want 1", len(streams))
 	}

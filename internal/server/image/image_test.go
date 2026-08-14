@@ -49,7 +49,7 @@ func newFixture(t *testing.T) *fixture {
 		SetKind(itemmodal.KindMovie).
 		SetName("Movie").
 		SetSortName("Movie").
-		SetPath(filepath.Join("/", library.ID.String(), "Movie.mkv")).
+		SetKey("test:movie").
 		Save(ctx)
 	if err != nil {
 		t.Fatalf("failed to create the item: %v", err)

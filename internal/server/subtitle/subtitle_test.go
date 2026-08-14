@@ -85,7 +85,7 @@ func newFixture(t *testing.T) *fixture {
 		SetKind(itemmodal.KindMovie).
 		SetName("Blade Runner").
 		SetSortName("blade runner").
-		SetPath(path).
+		SetKey("movie:blade-runner:1982").
 		SetRunTimeTicks(250_000_000).
 		Save(ctx)
 	if err != nil {
@@ -94,6 +94,7 @@ func newFixture(t *testing.T) *fixture {
 
 	source, err := client.MediaSource.Create().
 		SetItemID(item.ID).
+		SetLibraryID(library.ID).
 		SetName(filepath.Base(path)).
 		SetPath(path).
 		Save(ctx)

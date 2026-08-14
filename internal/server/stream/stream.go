@@ -66,14 +66,14 @@ func New(sessions *sessions.Service, items *items.Service, transcoder Transcoder
 // Registered ahead of the generated routes because the generated response type
 // always writes a complete 200, which would break seeking.
 func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
-	item, ok := h.item(w, r)
+	item, source, ok := h.item(w, r)
 	if !ok {
 		return
 	}
 
-	container := sourceContainer(item)
+	container := sourceContainer(item, source)
 	if requested := r.PathValue("container"); requested != "" && !isStatic(r) && !strings.EqualFold(requested, container) {
-		if h.serveTranscode(w, r, item, []string{requested}) {
+		if h.serveTranscode(w, r, item, source, []string{requested}) {
 			return
 		}
 
@@ -81,11 +81,11 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if h.needsRemux(r, item) && h.serveRemux(w, r, item) {
+	if h.needsRemux(r, item, source) && h.serveRemux(w, r, item, source) {
 		return
 	}
 
-	h.serveFile(w, r, item)
+	h.serveFile(w, r, source)
 }
 
 // Chromium demuxes Matroska but ships no AC-3, E-AC-3, DTS or TrueHD decoder,
@@ -112,20 +112,20 @@ var browserContainers = map[string]bool{
 	"mov":  true,
 }
 
-func (h *Handler) needsRemux(r *http.Request, item *items.Item) bool {
+func (h *Handler) needsRemux(r *http.Request, item *items.Item, source *items.MediaSource) bool {
 	if items.IsAudio(item) || isStatic(r) || !h.transcoder.Enabled() {
 		return false
 	}
 
 	// A nil set means the client stated no container restriction, which is not
 	// the same as stating none it can take.
-	if containers := acceptedContainers(r); containers != nil && !containers[sourceContainer(item)] {
+	if containers := acceptedContainers(r); containers != nil && !containers[sourceContainer(item, source)] {
 		return true
 	}
 
 	codec, err := h.items.AudioCodec(r.Context(), item.ID)
 	if err != nil {
-		log.Printf("failed to read the audio codec of %s: %v", item.Path, err)
+		log.Printf("failed to read the audio codec of %s: %v", item.Name, err)
 
 		return false
 	}
@@ -178,7 +178,7 @@ func acceptedAudio(r *http.Request) map[string]bool {
 }
 
 func (h *Handler) ServeUniversal(w http.ResponseWriter, r *http.Request) {
-	item, ok := h.item(w, r)
+	item, source, ok := h.item(w, r)
 	if !ok {
 		return
 	}
@@ -186,24 +186,24 @@ func (h *Handler) ServeUniversal(w http.ResponseWriter, r *http.Request) {
 	requested := r.URL.Query()["container"]
 	profiles := directPlayProfiles(requested)
 	if len(profiles) == 0 {
-		h.serveFile(w, r, item)
+		h.serveFile(w, r, source)
 		return
 	}
 
 	codec, err := h.items.AudioCodec(r.Context(), item.ID)
 	if err != nil {
-		log.Printf("failed to read the audio codec of %s: %v", item.Path, err)
+		log.Printf("failed to read the audio codec of %s: %v", item.Name, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	container := sourceContainer(item)
+	container := sourceContainer(item, source)
 	if !playable(profiles, container, codec) {
 		containers := make([]string, 0, len(profiles))
 		for _, profile := range profiles {
 			containers = append(containers, profile.container)
 		}
-		if h.serveTranscode(w, r, item, containers) {
+		if h.serveTranscode(w, r, item, source, containers) {
 			return
 		}
 
@@ -211,13 +211,13 @@ func (h *Handler) ServeUniversal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.serveFile(w, r, item)
+	h.serveFile(w, r, source)
 }
 
 // Reports whether the response was answered here. Everything that can fail is
 // done before the first byte reaches the client, so the caller can still refuse
 // with a status when this comes back false.
-func (h *Handler) serveTranscode(w http.ResponseWriter, r *http.Request, item *items.Item, accepted []string) bool {
+func (h *Handler) serveTranscode(w http.ResponseWriter, r *http.Request, item *items.Item, source *items.MediaSource, accepted []string) bool {
 	if !h.transcoder.Enabled() || !items.IsAudio(item) {
 		return false
 	}
@@ -227,8 +227,8 @@ func (h *Handler) serveTranscode(w http.ResponseWriter, r *http.Request, item *i
 		return false
 	}
 
-	return h.relay(w, r, item, transcode.Spec{
-		Path:       item.Path,
+	return h.relay(w, r, source, transcode.Spec{
+		Path:       source.Path,
 		Container:  container,
 		Bitrate:    audioBitrate(r),
 		StartTicks: startTicks(r),
@@ -237,9 +237,9 @@ func (h *Handler) serveTranscode(w http.ResponseWriter, r *http.Request, item *i
 
 // The video is copied rather than encoded, so this costs a mux and an audio
 // encode rather than a transcode.
-func (h *Handler) serveRemux(w http.ResponseWriter, r *http.Request, item *items.Item) bool {
-	return h.relay(w, r, item, transcode.Spec{
-		Path:       item.Path,
+func (h *Handler) serveRemux(w http.ResponseWriter, r *http.Request, item *items.Item, source *items.MediaSource) bool {
+	return h.relay(w, r, source, transcode.Spec{
+		Path:       source.Path,
 		Container:  transcode.VideoContainer,
 		Bitrate:    audioBitrate(r),
 		StartTicks: startTicks(r),
@@ -247,7 +247,7 @@ func (h *Handler) serveRemux(w http.ResponseWriter, r *http.Request, item *items
 	})
 }
 
-func (h *Handler) relay(w http.ResponseWriter, r *http.Request, item *items.Item, spec transcode.Spec) bool {
+func (h *Handler) relay(w http.ResponseWriter, r *http.Request, source *items.MediaSource, spec transcode.Spec) bool {
 	container := spec.Container
 
 	ctx, cancel := context.WithCancel(r.Context())
@@ -255,7 +255,7 @@ func (h *Handler) relay(w http.ResponseWriter, r *http.Request, item *items.Item
 
 	output, err := h.transcoder.Open(ctx, spec)
 	if err != nil {
-		log.Printf("failed to transcode %s to %s: %v", item.Path, container, err)
+		log.Printf("failed to transcode %s to %s: %v", source.Path, container, err)
 		if errors.Is(err, transcode.ErrBusy) {
 			busy(w)
 
@@ -266,7 +266,7 @@ func (h *Handler) relay(w http.ResponseWriter, r *http.Request, item *items.Item
 	}
 	defer func() {
 		if err := output.Close(); err != nil {
-			log.Printf("transcode of %s ended: %v", item.Path, err)
+			log.Printf("transcode of %s ended: %v", source.Path, err)
 		}
 	}()
 
@@ -279,14 +279,14 @@ func (h *Handler) relay(w http.ResponseWriter, r *http.Request, item *items.Item
 	// Cancelling reaps ffmpeg, and the deadline ends a write already blocked on
 	// a client that stopped acknowledging, which cancelling on its own cannot.
 	kill := func() {
-		log.Printf("transcode of %s moved nothing in %s", item.Path, h.transcoder.Stall())
+		log.Printf("transcode of %s moved nothing in %s", source.Path, h.transcoder.Stall())
 		cancel()
 		_ = http.NewResponseController(w).SetWriteDeadline(time.Now())
 	}
 
 	stalling := transcode.UntilStalled(ctx, output, h.transcoder.Stall(), kill)
 	if _, err := transcode.Relay(w, stalling); err != nil {
-		log.Printf("transcode of %s stopped: %v", item.Path, err)
+		log.Printf("transcode of %s stopped: %v", source.Path, err)
 	}
 
 	return true
@@ -340,34 +340,42 @@ func unsupported(w http.ResponseWriter, r *http.Request, source, requested strin
 	http.Error(w, "no direct play: the source is "+source, http.StatusUnsupportedMediaType)
 }
 
-func (h *Handler) item(w http.ResponseWriter, r *http.Request) (*items.Item, bool) {
+// The source carries the file, so an item with none is a folder or a title
+// whose files went away and there is nothing to play either way.
+func (h *Handler) item(w http.ResponseWriter, r *http.Request) (*items.Item, *items.MediaSource, bool) {
 	token := middleware.TokenFrom(r)
 	if token == "" {
 		w.WriteHeader(http.StatusUnauthorized)
-		return nil, false
+		return nil, nil, false
 	}
 	if _, err := h.sessions.ByToken(r.Context(), token); err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
-		return nil, false
+		return nil, nil, false
 	}
 
 	id, err := uuid.Parse(r.PathValue("itemId"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		return nil, false
+		return nil, nil, false
 	}
 
 	item, err := h.items.ItemByID(r.Context(), id)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
-		return nil, false
+		return nil, nil, false
 	}
 
-	return item, true
+	source, err := h.items.MediaSource(r.Context(), item.ID)
+	if err != nil || source == nil {
+		w.WriteHeader(http.StatusNotFound)
+		return nil, nil, false
+	}
+
+	return item, source, true
 }
 
-func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, item *items.Item) {
-	file, err := os.Open(item.Path)
+func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, source *items.MediaSource) {
+	file, err := os.Open(source.Path)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -380,12 +388,12 @@ func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, item *items.
 		return
 	}
 
-	if contentType, ok := contentTypes[strings.ToLower(filepath.Ext(item.Path))]; ok {
+	if contentType, ok := contentTypes[strings.ToLower(filepath.Ext(source.Path))]; ok {
 		w.Header().Set("Content-Type", contentType)
 	}
 	w.Header().Set("Accept-Ranges", "bytes")
 
-	http.ServeContent(w, r, filepath.Base(item.Path), info.ModTime(), file)
+	http.ServeContent(w, r, filepath.Base(source.Path), info.ModTime(), file)
 }
 
 // Clients declare their playable formats the way upstream's device profile
@@ -437,12 +445,15 @@ func describe(container, codec string) string {
 	return container + "|" + codec
 }
 
-func sourceContainer(item *items.Item) string {
+func sourceContainer(item *items.Item, source *items.MediaSource) string {
+	if source.Container != "" {
+		return strings.ToLower(source.Container)
+	}
 	if item.Container != "" {
 		return strings.ToLower(item.Container)
 	}
 
-	return strings.TrimPrefix(strings.ToLower(filepath.Ext(item.Path)), ".")
+	return strings.TrimPrefix(strings.ToLower(filepath.Ext(source.Path)), ".")
 }
 
 func isStatic(r *http.Request) bool {

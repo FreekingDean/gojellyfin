@@ -92,7 +92,12 @@ func (s *Server) openItemFile(ctx context.Context, id uuid.UUID) (*mediaFile, er
 	}
 
 	item := records[0]
-	body, size, err := s.filesystem.Open(ctx, item.Path)
+	source, err := s.items.MediaSource(ctx, item.ID)
+	if err != nil || source == nil {
+		return nil, err
+	}
+
+	body, size, err := s.filesystem.Open(ctx, source.Path)
 	if errors.Is(err, filesystem.ErrNotFound) {
 		return nil, nil
 	}
@@ -102,7 +107,7 @@ func (s *Server) openItemFile(ctx context.Context, id uuid.UUID) (*mediaFile, er
 
 	return &mediaFile{
 		body:        body,
-		contentType: contentType(item.Path),
+		contentType: contentType(source.Path),
 		length:      size,
 		audio:       api.MediaType(item.MediaType) == api.MediaTypeAudio,
 	}, nil

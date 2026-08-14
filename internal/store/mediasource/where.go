@@ -71,6 +71,11 @@ func ItemID(v uuid.UUID) predicate.MediaSource {
 	return predicate.MediaSource(sql.FieldEQ(FieldItemID, v))
 }
 
+// LibraryID applies equality check predicate on the "library_id" field. It's identical to LibraryIDEQ.
+func LibraryID(v uuid.UUID) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldEQ(FieldLibraryID, v))
+}
+
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
 func Name(v string) predicate.MediaSource {
 	return predicate.MediaSource(sql.FieldEQ(FieldName, v))
@@ -104,6 +109,16 @@ func RunTimeTicks(v int64) predicate.MediaSource {
 // Bitrate applies equality check predicate on the "bitrate" field. It's identical to BitrateEQ.
 func Bitrate(v int32) predicate.MediaSource {
 	return predicate.MediaSource(sql.FieldEQ(FieldBitrate, v))
+}
+
+// DateModified applies equality check predicate on the "date_modified" field. It's identical to DateModifiedEQ.
+func DateModified(v time.Time) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldEQ(FieldDateModified, v))
+}
+
+// ProbedAt applies equality check predicate on the "probed_at" field. It's identical to ProbedAtEQ.
+func ProbedAt(v time.Time) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldEQ(FieldProbedAt, v))
 }
 
 // IsRemote applies equality check predicate on the "is_remote" field. It's identical to IsRemoteEQ.
@@ -274,6 +289,26 @@ func ItemIDIn(vs ...uuid.UUID) predicate.MediaSource {
 // ItemIDNotIn applies the NotIn predicate on the "item_id" field.
 func ItemIDNotIn(vs ...uuid.UUID) predicate.MediaSource {
 	return predicate.MediaSource(sql.FieldNotIn(FieldItemID, vs...))
+}
+
+// LibraryIDEQ applies the EQ predicate on the "library_id" field.
+func LibraryIDEQ(v uuid.UUID) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldEQ(FieldLibraryID, v))
+}
+
+// LibraryIDNEQ applies the NEQ predicate on the "library_id" field.
+func LibraryIDNEQ(v uuid.UUID) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldNEQ(FieldLibraryID, v))
+}
+
+// LibraryIDIn applies the In predicate on the "library_id" field.
+func LibraryIDIn(vs ...uuid.UUID) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldIn(FieldLibraryID, vs...))
+}
+
+// LibraryIDNotIn applies the NotIn predicate on the "library_id" field.
+func LibraryIDNotIn(vs ...uuid.UUID) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldNotIn(FieldLibraryID, vs...))
 }
 
 // ProtocolEQ applies the EQ predicate on the "protocol" field.
@@ -896,6 +931,106 @@ func BitrateNotNil() predicate.MediaSource {
 	return predicate.MediaSource(sql.FieldNotNull(FieldBitrate))
 }
 
+// DateModifiedEQ applies the EQ predicate on the "date_modified" field.
+func DateModifiedEQ(v time.Time) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldEQ(FieldDateModified, v))
+}
+
+// DateModifiedNEQ applies the NEQ predicate on the "date_modified" field.
+func DateModifiedNEQ(v time.Time) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldNEQ(FieldDateModified, v))
+}
+
+// DateModifiedIn applies the In predicate on the "date_modified" field.
+func DateModifiedIn(vs ...time.Time) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldIn(FieldDateModified, vs...))
+}
+
+// DateModifiedNotIn applies the NotIn predicate on the "date_modified" field.
+func DateModifiedNotIn(vs ...time.Time) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldNotIn(FieldDateModified, vs...))
+}
+
+// DateModifiedGT applies the GT predicate on the "date_modified" field.
+func DateModifiedGT(v time.Time) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldGT(FieldDateModified, v))
+}
+
+// DateModifiedGTE applies the GTE predicate on the "date_modified" field.
+func DateModifiedGTE(v time.Time) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldGTE(FieldDateModified, v))
+}
+
+// DateModifiedLT applies the LT predicate on the "date_modified" field.
+func DateModifiedLT(v time.Time) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldLT(FieldDateModified, v))
+}
+
+// DateModifiedLTE applies the LTE predicate on the "date_modified" field.
+func DateModifiedLTE(v time.Time) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldLTE(FieldDateModified, v))
+}
+
+// DateModifiedIsNil applies the IsNil predicate on the "date_modified" field.
+func DateModifiedIsNil() predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldIsNull(FieldDateModified))
+}
+
+// DateModifiedNotNil applies the NotNil predicate on the "date_modified" field.
+func DateModifiedNotNil() predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldNotNull(FieldDateModified))
+}
+
+// ProbedAtEQ applies the EQ predicate on the "probed_at" field.
+func ProbedAtEQ(v time.Time) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldEQ(FieldProbedAt, v))
+}
+
+// ProbedAtNEQ applies the NEQ predicate on the "probed_at" field.
+func ProbedAtNEQ(v time.Time) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldNEQ(FieldProbedAt, v))
+}
+
+// ProbedAtIn applies the In predicate on the "probed_at" field.
+func ProbedAtIn(vs ...time.Time) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldIn(FieldProbedAt, vs...))
+}
+
+// ProbedAtNotIn applies the NotIn predicate on the "probed_at" field.
+func ProbedAtNotIn(vs ...time.Time) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldNotIn(FieldProbedAt, vs...))
+}
+
+// ProbedAtGT applies the GT predicate on the "probed_at" field.
+func ProbedAtGT(v time.Time) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldGT(FieldProbedAt, v))
+}
+
+// ProbedAtGTE applies the GTE predicate on the "probed_at" field.
+func ProbedAtGTE(v time.Time) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldGTE(FieldProbedAt, v))
+}
+
+// ProbedAtLT applies the LT predicate on the "probed_at" field.
+func ProbedAtLT(v time.Time) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldLT(FieldProbedAt, v))
+}
+
+// ProbedAtLTE applies the LTE predicate on the "probed_at" field.
+func ProbedAtLTE(v time.Time) predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldLTE(FieldProbedAt, v))
+}
+
+// ProbedAtIsNil applies the IsNil predicate on the "probed_at" field.
+func ProbedAtIsNil() predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldIsNull(FieldProbedAt))
+}
+
+// ProbedAtNotNil applies the NotNil predicate on the "probed_at" field.
+func ProbedAtNotNil() predicate.MediaSource {
+	return predicate.MediaSource(sql.FieldNotNull(FieldProbedAt))
+}
+
 // IsRemoteEQ applies the EQ predicate on the "is_remote" field.
 func IsRemoteEQ(v bool) predicate.MediaSource {
 	return predicate.MediaSource(sql.FieldEQ(FieldIsRemote, v))
@@ -1141,6 +1276,29 @@ func HasItem() predicate.MediaSource {
 func HasItemWith(preds ...predicate.Item) predicate.MediaSource {
 	return predicate.MediaSource(func(s *sql.Selector) {
 		step := newItemStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasLibrary applies the HasEdge predicate on the "library" edge.
+func HasLibrary() predicate.MediaSource {
+	return predicate.MediaSource(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, LibraryTable, LibraryColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasLibraryWith applies the HasEdge predicate on the "library" edge with a given conditions (other predicates).
+func HasLibraryWith(preds ...predicate.Library) predicate.MediaSource {
+	return predicate.MediaSource(func(s *sql.Selector) {
+		step := newLibraryStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

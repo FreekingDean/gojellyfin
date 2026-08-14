@@ -64,7 +64,7 @@ func (f *fixture) add(t *testing.T, kind itemmodal.Kind, name string) {
 		SetKind(kind).
 		SetName(name).
 		SetSortName(name).
-		SetPath("/" + f.library.String() + "/" + name).
+		SetKey("test:" + name).
 		Save(context.Background())
 	if err != nil {
 		t.Fatalf("failed to create %q: %v", name, err)

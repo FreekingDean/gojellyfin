@@ -80,7 +80,7 @@ func newFixture(t *testing.T) *fixture {
 		SetKind(itemmodal.KindMovie).
 		SetName(name).
 		SetSortName(name).
-		SetPath("/" + name).
+		SetKey("test:" + name).
 		Save(ctx)
 	if err != nil {
 		t.Fatalf("failed to create the item: %v", err)

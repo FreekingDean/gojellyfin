@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
+	"github.com/FreekingDean/gojellyfin/internal/store/library"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediaattachment"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
@@ -58,6 +59,12 @@ func (_c *MediaSourceCreate) SetNillableUpdatedAt(v *time.Time) *MediaSourceCrea
 // SetItemID sets the "item_id" field.
 func (_c *MediaSourceCreate) SetItemID(v uuid.UUID) *MediaSourceCreate {
 	_c.mutation.SetItemID(v)
+	return _c
+}
+
+// SetLibraryID sets the "library_id" field.
+func (_c *MediaSourceCreate) SetLibraryID(v uuid.UUID) *MediaSourceCreate {
+	_c.mutation.SetLibraryID(v)
 	return _c
 }
 
@@ -237,6 +244,34 @@ func (_c *MediaSourceCreate) SetBitrate(v int32) *MediaSourceCreate {
 func (_c *MediaSourceCreate) SetNillableBitrate(v *int32) *MediaSourceCreate {
 	if v != nil {
 		_c.SetBitrate(*v)
+	}
+	return _c
+}
+
+// SetDateModified sets the "date_modified" field.
+func (_c *MediaSourceCreate) SetDateModified(v time.Time) *MediaSourceCreate {
+	_c.mutation.SetDateModified(v)
+	return _c
+}
+
+// SetNillableDateModified sets the "date_modified" field if the given value is not nil.
+func (_c *MediaSourceCreate) SetNillableDateModified(v *time.Time) *MediaSourceCreate {
+	if v != nil {
+		_c.SetDateModified(*v)
+	}
+	return _c
+}
+
+// SetProbedAt sets the "probed_at" field.
+func (_c *MediaSourceCreate) SetProbedAt(v time.Time) *MediaSourceCreate {
+	_c.mutation.SetProbedAt(v)
+	return _c
+}
+
+// SetNillableProbedAt sets the "probed_at" field if the given value is not nil.
+func (_c *MediaSourceCreate) SetNillableProbedAt(v *time.Time) *MediaSourceCreate {
+	if v != nil {
+		_c.SetProbedAt(*v)
 	}
 	return _c
 }
@@ -454,6 +489,11 @@ func (_c *MediaSourceCreate) SetItem(v *Item) *MediaSourceCreate {
 	return _c.SetItemID(v.ID)
 }
 
+// SetLibrary sets the "library" edge to the Library entity.
+func (_c *MediaSourceCreate) SetLibrary(v *Library) *MediaSourceCreate {
+	return _c.SetLibraryID(v.ID)
+}
+
 // AddStreamIDs adds the "streams" edge to the MediaStream entity by IDs.
 func (_c *MediaSourceCreate) AddStreamIDs(ids ...uuid.UUID) *MediaSourceCreate {
 	_c.mutation.AddStreamIDs(ids...)
@@ -596,6 +636,9 @@ func (_c *MediaSourceCreate) check() error {
 	if _, ok := _c.mutation.ItemID(); !ok {
 		return &ValidationError{Name: "item_id", err: errors.New(`store: missing required field "MediaSource.item_id"`)}
 	}
+	if _, ok := _c.mutation.LibraryID(); !ok {
+		return &ValidationError{Name: "library_id", err: errors.New(`store: missing required field "MediaSource.library_id"`)}
+	}
 	if _, ok := _c.mutation.Protocol(); !ok {
 		return &ValidationError{Name: "protocol", err: errors.New(`store: missing required field "MediaSource.protocol"`)}
 	}
@@ -681,6 +724,9 @@ func (_c *MediaSourceCreate) check() error {
 	}
 	if len(_c.mutation.ItemIDs()) == 0 {
 		return &ValidationError{Name: "item", err: errors.New(`store: missing required edge "MediaSource.item"`)}
+	}
+	if len(_c.mutation.LibraryIDs()) == 0 {
+		return &ValidationError{Name: "library", err: errors.New(`store: missing required edge "MediaSource.library"`)}
 	}
 	return nil
 }
@@ -782,6 +828,14 @@ func (_c *MediaSourceCreate) createSpec() (*MediaSource, *sqlgraph.CreateSpec) {
 		_spec.SetField(mediasource.FieldBitrate, field.TypeInt32, value)
 		_node.Bitrate = value
 	}
+	if value, ok := _c.mutation.DateModified(); ok {
+		_spec.SetField(mediasource.FieldDateModified, field.TypeTime, value)
+		_node.DateModified = value
+	}
+	if value, ok := _c.mutation.ProbedAt(); ok {
+		_spec.SetField(mediasource.FieldProbedAt, field.TypeTime, value)
+		_node.ProbedAt = value
+	}
 	if value, ok := _c.mutation.IsRemote(); ok {
 		_spec.SetField(mediasource.FieldIsRemote, field.TypeBool, value)
 		_node.IsRemote = value
@@ -857,6 +911,23 @@ func (_c *MediaSourceCreate) createSpec() (*MediaSource, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.ItemID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.LibraryIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   mediasource.LibraryTable,
+			Columns: []string{mediasource.LibraryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(library.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.LibraryID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.StreamsIDs(); len(nodes) > 0 {
@@ -976,6 +1047,18 @@ func (u *MediaSourceUpsert) SetItemID(v uuid.UUID) *MediaSourceUpsert {
 // UpdateItemID sets the "item_id" field to the value that was provided on create.
 func (u *MediaSourceUpsert) UpdateItemID() *MediaSourceUpsert {
 	u.SetExcluded(mediasource.FieldItemID)
+	return u
+}
+
+// SetLibraryID sets the "library_id" field.
+func (u *MediaSourceUpsert) SetLibraryID(v uuid.UUID) *MediaSourceUpsert {
+	u.Set(mediasource.FieldLibraryID, v)
+	return u
+}
+
+// UpdateLibraryID sets the "library_id" field to the value that was provided on create.
+func (u *MediaSourceUpsert) UpdateLibraryID() *MediaSourceUpsert {
+	u.SetExcluded(mediasource.FieldLibraryID)
 	return u
 }
 
@@ -1222,6 +1305,42 @@ func (u *MediaSourceUpsert) AddBitrate(v int32) *MediaSourceUpsert {
 // ClearBitrate clears the value of the "bitrate" field.
 func (u *MediaSourceUpsert) ClearBitrate() *MediaSourceUpsert {
 	u.SetNull(mediasource.FieldBitrate)
+	return u
+}
+
+// SetDateModified sets the "date_modified" field.
+func (u *MediaSourceUpsert) SetDateModified(v time.Time) *MediaSourceUpsert {
+	u.Set(mediasource.FieldDateModified, v)
+	return u
+}
+
+// UpdateDateModified sets the "date_modified" field to the value that was provided on create.
+func (u *MediaSourceUpsert) UpdateDateModified() *MediaSourceUpsert {
+	u.SetExcluded(mediasource.FieldDateModified)
+	return u
+}
+
+// ClearDateModified clears the value of the "date_modified" field.
+func (u *MediaSourceUpsert) ClearDateModified() *MediaSourceUpsert {
+	u.SetNull(mediasource.FieldDateModified)
+	return u
+}
+
+// SetProbedAt sets the "probed_at" field.
+func (u *MediaSourceUpsert) SetProbedAt(v time.Time) *MediaSourceUpsert {
+	u.Set(mediasource.FieldProbedAt, v)
+	return u
+}
+
+// UpdateProbedAt sets the "probed_at" field to the value that was provided on create.
+func (u *MediaSourceUpsert) UpdateProbedAt() *MediaSourceUpsert {
+	u.SetExcluded(mediasource.FieldProbedAt)
+	return u
+}
+
+// ClearProbedAt clears the value of the "probed_at" field.
+func (u *MediaSourceUpsert) ClearProbedAt() *MediaSourceUpsert {
+	u.SetNull(mediasource.FieldProbedAt)
 	return u
 }
 
@@ -1525,6 +1644,20 @@ func (u *MediaSourceUpsertOne) UpdateItemID() *MediaSourceUpsertOne {
 	})
 }
 
+// SetLibraryID sets the "library_id" field.
+func (u *MediaSourceUpsertOne) SetLibraryID(v uuid.UUID) *MediaSourceUpsertOne {
+	return u.Update(func(s *MediaSourceUpsert) {
+		s.SetLibraryID(v)
+	})
+}
+
+// UpdateLibraryID sets the "library_id" field to the value that was provided on create.
+func (u *MediaSourceUpsertOne) UpdateLibraryID() *MediaSourceUpsertOne {
+	return u.Update(func(s *MediaSourceUpsert) {
+		s.UpdateLibraryID()
+	})
+}
+
 // SetProtocol sets the "protocol" field.
 func (u *MediaSourceUpsertOne) SetProtocol(v mediasource.Protocol) *MediaSourceUpsertOne {
 	return u.Update(func(s *MediaSourceUpsert) {
@@ -1809,6 +1942,48 @@ func (u *MediaSourceUpsertOne) UpdateBitrate() *MediaSourceUpsertOne {
 func (u *MediaSourceUpsertOne) ClearBitrate() *MediaSourceUpsertOne {
 	return u.Update(func(s *MediaSourceUpsert) {
 		s.ClearBitrate()
+	})
+}
+
+// SetDateModified sets the "date_modified" field.
+func (u *MediaSourceUpsertOne) SetDateModified(v time.Time) *MediaSourceUpsertOne {
+	return u.Update(func(s *MediaSourceUpsert) {
+		s.SetDateModified(v)
+	})
+}
+
+// UpdateDateModified sets the "date_modified" field to the value that was provided on create.
+func (u *MediaSourceUpsertOne) UpdateDateModified() *MediaSourceUpsertOne {
+	return u.Update(func(s *MediaSourceUpsert) {
+		s.UpdateDateModified()
+	})
+}
+
+// ClearDateModified clears the value of the "date_modified" field.
+func (u *MediaSourceUpsertOne) ClearDateModified() *MediaSourceUpsertOne {
+	return u.Update(func(s *MediaSourceUpsert) {
+		s.ClearDateModified()
+	})
+}
+
+// SetProbedAt sets the "probed_at" field.
+func (u *MediaSourceUpsertOne) SetProbedAt(v time.Time) *MediaSourceUpsertOne {
+	return u.Update(func(s *MediaSourceUpsert) {
+		s.SetProbedAt(v)
+	})
+}
+
+// UpdateProbedAt sets the "probed_at" field to the value that was provided on create.
+func (u *MediaSourceUpsertOne) UpdateProbedAt() *MediaSourceUpsertOne {
+	return u.Update(func(s *MediaSourceUpsert) {
+		s.UpdateProbedAt()
+	})
+}
+
+// ClearProbedAt clears the value of the "probed_at" field.
+func (u *MediaSourceUpsertOne) ClearProbedAt() *MediaSourceUpsertOne {
+	return u.Update(func(s *MediaSourceUpsert) {
+		s.ClearProbedAt()
 	})
 }
 
@@ -2314,6 +2489,20 @@ func (u *MediaSourceUpsertBulk) UpdateItemID() *MediaSourceUpsertBulk {
 	})
 }
 
+// SetLibraryID sets the "library_id" field.
+func (u *MediaSourceUpsertBulk) SetLibraryID(v uuid.UUID) *MediaSourceUpsertBulk {
+	return u.Update(func(s *MediaSourceUpsert) {
+		s.SetLibraryID(v)
+	})
+}
+
+// UpdateLibraryID sets the "library_id" field to the value that was provided on create.
+func (u *MediaSourceUpsertBulk) UpdateLibraryID() *MediaSourceUpsertBulk {
+	return u.Update(func(s *MediaSourceUpsert) {
+		s.UpdateLibraryID()
+	})
+}
+
 // SetProtocol sets the "protocol" field.
 func (u *MediaSourceUpsertBulk) SetProtocol(v mediasource.Protocol) *MediaSourceUpsertBulk {
 	return u.Update(func(s *MediaSourceUpsert) {
@@ -2598,6 +2787,48 @@ func (u *MediaSourceUpsertBulk) UpdateBitrate() *MediaSourceUpsertBulk {
 func (u *MediaSourceUpsertBulk) ClearBitrate() *MediaSourceUpsertBulk {
 	return u.Update(func(s *MediaSourceUpsert) {
 		s.ClearBitrate()
+	})
+}
+
+// SetDateModified sets the "date_modified" field.
+func (u *MediaSourceUpsertBulk) SetDateModified(v time.Time) *MediaSourceUpsertBulk {
+	return u.Update(func(s *MediaSourceUpsert) {
+		s.SetDateModified(v)
+	})
+}
+
+// UpdateDateModified sets the "date_modified" field to the value that was provided on create.
+func (u *MediaSourceUpsertBulk) UpdateDateModified() *MediaSourceUpsertBulk {
+	return u.Update(func(s *MediaSourceUpsert) {
+		s.UpdateDateModified()
+	})
+}
+
+// ClearDateModified clears the value of the "date_modified" field.
+func (u *MediaSourceUpsertBulk) ClearDateModified() *MediaSourceUpsertBulk {
+	return u.Update(func(s *MediaSourceUpsert) {
+		s.ClearDateModified()
+	})
+}
+
+// SetProbedAt sets the "probed_at" field.
+func (u *MediaSourceUpsertBulk) SetProbedAt(v time.Time) *MediaSourceUpsertBulk {
+	return u.Update(func(s *MediaSourceUpsert) {
+		s.SetProbedAt(v)
+	})
+}
+
+// UpdateProbedAt sets the "probed_at" field to the value that was provided on create.
+func (u *MediaSourceUpsertBulk) UpdateProbedAt() *MediaSourceUpsertBulk {
+	return u.Update(func(s *MediaSourceUpsert) {
+		s.UpdateProbedAt()
+	})
+}
+
+// ClearProbedAt clears the value of the "probed_at" field.
+func (u *MediaSourceUpsertBulk) ClearProbedAt() *MediaSourceUpsertBulk {
+	return u.Update(func(s *MediaSourceUpsert) {
+		s.ClearProbedAt()
 	})
 }
 

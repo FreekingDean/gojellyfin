@@ -185,6 +185,20 @@ func (_c *ItemCreate) SetNillableVideo3dFormat(v *item.Video3dFormat) *ItemCreat
 	return _c
 }
 
+// SetKey sets the "key" field.
+func (_c *ItemCreate) SetKey(v string) *ItemCreate {
+	_c.mutation.SetKey(v)
+	return _c
+}
+
+// SetNillableKey sets the "key" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableKey(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetKey(*v)
+	}
+	return _c
+}
+
 // SetName sets the "name" field.
 func (_c *ItemCreate) SetName(v string) *ItemCreate {
 	_c.mutation.SetName(v)
@@ -229,20 +243,6 @@ func (_c *ItemCreate) SetForcedSortName(v bool) *ItemCreate {
 func (_c *ItemCreate) SetNillableForcedSortName(v *bool) *ItemCreate {
 	if v != nil {
 		_c.SetForcedSortName(*v)
-	}
-	return _c
-}
-
-// SetPath sets the "path" field.
-func (_c *ItemCreate) SetPath(v string) *ItemCreate {
-	_c.mutation.SetPath(v)
-	return _c
-}
-
-// SetNillablePath sets the "path" field if the given value is not nil.
-func (_c *ItemCreate) SetNillablePath(v *string) *ItemCreate {
-	if v != nil {
-		_c.SetPath(*v)
 	}
 	return _c
 }
@@ -1238,6 +1238,10 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 		_spec.SetField(item.FieldVideo3dFormat, field.TypeEnum, value)
 		_node.Video3dFormat = value
 	}
+	if value, ok := _c.mutation.Key(); ok {
+		_spec.SetField(item.FieldKey, field.TypeString, value)
+		_node.Key = value
+	}
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(item.FieldName, field.TypeString, value)
 		_node.Name = value
@@ -1253,10 +1257,6 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ForcedSortName(); ok {
 		_spec.SetField(item.FieldForcedSortName, field.TypeBool, value)
 		_node.ForcedSortName = value
-	}
-	if value, ok := _c.mutation.Path(); ok {
-		_spec.SetField(item.FieldPath, field.TypeString, value)
-		_node.Path = value
 	}
 	if value, ok := _c.mutation.DeletedAt(); ok {
 		_spec.SetField(item.FieldDeletedAt, field.TypeTime, value)
@@ -1904,6 +1904,24 @@ func (u *ItemUpsert) ClearVideo3dFormat() *ItemUpsert {
 	return u
 }
 
+// SetKey sets the "key" field.
+func (u *ItemUpsert) SetKey(v string) *ItemUpsert {
+	u.Set(item.FieldKey, v)
+	return u
+}
+
+// UpdateKey sets the "key" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateKey() *ItemUpsert {
+	u.SetExcluded(item.FieldKey)
+	return u
+}
+
+// ClearKey clears the value of the "key" field.
+func (u *ItemUpsert) ClearKey() *ItemUpsert {
+	u.SetNull(item.FieldKey)
+	return u
+}
+
 // SetName sets the "name" field.
 func (u *ItemUpsert) SetName(v string) *ItemUpsert {
 	u.Set(item.FieldName, v)
@@ -1961,24 +1979,6 @@ func (u *ItemUpsert) SetForcedSortName(v bool) *ItemUpsert {
 // UpdateForcedSortName sets the "forced_sort_name" field to the value that was provided on create.
 func (u *ItemUpsert) UpdateForcedSortName() *ItemUpsert {
 	u.SetExcluded(item.FieldForcedSortName)
-	return u
-}
-
-// SetPath sets the "path" field.
-func (u *ItemUpsert) SetPath(v string) *ItemUpsert {
-	u.Set(item.FieldPath, v)
-	return u
-}
-
-// UpdatePath sets the "path" field to the value that was provided on create.
-func (u *ItemUpsert) UpdatePath() *ItemUpsert {
-	u.SetExcluded(item.FieldPath)
-	return u
-}
-
-// ClearPath clears the value of the "path" field.
-func (u *ItemUpsert) ClearPath() *ItemUpsert {
-	u.SetNull(item.FieldPath)
 	return u
 }
 
@@ -3024,6 +3024,27 @@ func (u *ItemUpsertOne) ClearVideo3dFormat() *ItemUpsertOne {
 	})
 }
 
+// SetKey sets the "key" field.
+func (u *ItemUpsertOne) SetKey(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetKey(v)
+	})
+}
+
+// UpdateKey sets the "key" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateKey() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateKey()
+	})
+}
+
+// ClearKey clears the value of the "key" field.
+func (u *ItemUpsertOne) ClearKey() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearKey()
+	})
+}
+
 // SetName sets the "name" field.
 func (u *ItemUpsertOne) SetName(v string) *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
@@ -3091,27 +3112,6 @@ func (u *ItemUpsertOne) SetForcedSortName(v bool) *ItemUpsertOne {
 func (u *ItemUpsertOne) UpdateForcedSortName() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.UpdateForcedSortName()
-	})
-}
-
-// SetPath sets the "path" field.
-func (u *ItemUpsertOne) SetPath(v string) *ItemUpsertOne {
-	return u.Update(func(s *ItemUpsert) {
-		s.SetPath(v)
-	})
-}
-
-// UpdatePath sets the "path" field to the value that was provided on create.
-func (u *ItemUpsertOne) UpdatePath() *ItemUpsertOne {
-	return u.Update(func(s *ItemUpsert) {
-		s.UpdatePath()
-	})
-}
-
-// ClearPath clears the value of the "path" field.
-func (u *ItemUpsertOne) ClearPath() *ItemUpsertOne {
-	return u.Update(func(s *ItemUpsert) {
-		s.ClearPath()
 	})
 }
 
@@ -4457,6 +4457,27 @@ func (u *ItemUpsertBulk) ClearVideo3dFormat() *ItemUpsertBulk {
 	})
 }
 
+// SetKey sets the "key" field.
+func (u *ItemUpsertBulk) SetKey(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetKey(v)
+	})
+}
+
+// UpdateKey sets the "key" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateKey() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateKey()
+	})
+}
+
+// ClearKey clears the value of the "key" field.
+func (u *ItemUpsertBulk) ClearKey() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearKey()
+	})
+}
+
 // SetName sets the "name" field.
 func (u *ItemUpsertBulk) SetName(v string) *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
@@ -4524,27 +4545,6 @@ func (u *ItemUpsertBulk) SetForcedSortName(v bool) *ItemUpsertBulk {
 func (u *ItemUpsertBulk) UpdateForcedSortName() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.UpdateForcedSortName()
-	})
-}
-
-// SetPath sets the "path" field.
-func (u *ItemUpsertBulk) SetPath(v string) *ItemUpsertBulk {
-	return u.Update(func(s *ItemUpsert) {
-		s.SetPath(v)
-	})
-}
-
-// UpdatePath sets the "path" field to the value that was provided on create.
-func (u *ItemUpsertBulk) UpdatePath() *ItemUpsertBulk {
-	return u.Update(func(s *ItemUpsert) {
-		s.UpdatePath()
-	})
-}
-
-// ClearPath clears the value of the "path" field.
-func (u *ItemUpsertBulk) ClearPath() *ItemUpsertBulk {
-	return u.Update(func(s *ItemUpsert) {
-		s.ClearPath()
 	})
 }
 

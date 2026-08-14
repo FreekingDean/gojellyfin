@@ -67,7 +67,7 @@ func (f *fixture) add(t *testing.T, kind itemmodal.Kind, mediaType itemmodal.Med
 		SetMediaType(mediaType).
 		SetName(f.prefix + name).
 		SetSortName(f.prefix + name).
-		SetPath("/" + f.library.String() + "/" + name).
+		SetKey("test:" + name).
 		Save(context.Background())
 	if err != nil {
 		t.Fatalf("failed to create %q: %v", name, err)
