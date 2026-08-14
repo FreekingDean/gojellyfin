@@ -1,4 +1,4 @@
-package worker
+package transcode
 
 import (
 	"context"
@@ -7,8 +7,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"testing"
-
-	"github.com/FreekingDean/gojellyfin/internal/transcode"
 )
 
 // What a rip actually looks like: video a browser decodes next to audio it does
@@ -39,9 +37,9 @@ func videoSource(t *testing.T, name string, seconds int) string {
 func TestRemuxKeepsTheVideoAndReEncodesTheAudio(t *testing.T) {
 	mkv := videoSource(t, "rip.mkv", sourceSeconds)
 
-	output, err := start(context.Background(), transcode.Spec{
+	output, err := start(context.Background(), Spec{
 		Path:      mkv,
-		Container: transcode.VideoContainer,
+		Container: VideoContainer,
 		Video:     true,
 	})
 	if err != nil {
@@ -80,11 +78,11 @@ func TestRemuxKeepsTheVideoAndReEncodesTheAudio(t *testing.T) {
 // Fragmented mp4 is the only mp4 ffmpeg can write to a pipe, so a plain mp4
 // muxer here would fail on close rather than on the first byte.
 func TestRemuxTargetsAContainerThatCarriesVideo(t *testing.T) {
-	if !transcode.CarriesVideo(transcode.VideoContainer) {
-		t.Fatalf("%q carries no video", transcode.VideoContainer)
+	if !CarriesVideo(VideoContainer) {
+		t.Fatalf("%q carries no video", VideoContainer)
 	}
 
-	spec := transcode.Spec{Path: "/media/rip.mkv", Container: "mp3", Video: true}
+	spec := Spec{Path: "/media/rip.mkv", Container: "mp3", Video: true}
 	if err := spec.Valid(); err == nil {
 		t.Error("an audio-only container was accepted for a video remux")
 	}

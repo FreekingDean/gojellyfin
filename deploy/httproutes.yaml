@@ -1,17 +1,15 @@
-# Two routes on one hostname, which is the whole point: the client and the API
-# share an origin, so the browser sends no cross-origin request and CORS never
-# enters it. Splitting them across two hostnames puts CORS back.
+# The streaming paths go to the transcode pods and everything else to the API.
+# That split is the whole of the transcoder: same image, same subcommand, and a
+# route deciding which pods run ffmpeg.
 #
 # Both values below have to be edited — this repository cannot guess either.
-# `hostnames` is the name the client is reached by, and `parentRefs` names the
-# Gateway and the namespace it lives in.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: gojellyfin-web
+  name: gojellyfin-transcode
   labels:
     app.kubernetes.io/name: gojellyfin
-    app.kubernetes.io/component: web
+    app.kubernetes.io/component: transcode
 spec:
   parentRefs:
     - name: main
@@ -19,29 +17,18 @@ spec:
   hostnames:
     - gojellyfin.example.com
   rules:
-    # An exact match outranks any prefix, so this beats the API's `/` below
-    # without the two routes having to be ordered against each other. Serving
-    # the client from `/` instead would mean the API could never own a bare
-    # path again.
-    - matches:
-        - path:
-            type: Exact
-            value: /
-      filters:
-        - type: RequestRedirect
-          requestRedirect:
-            path:
-              type: ReplaceFullPath
-              replaceFullPath: /web/
-            statusCode: 302
-    # No rewrite: nginx holds the client under a `web` directory, so the prefix
-    # the browser asks for is the prefix on disk.
+    # A longer prefix outranks a shorter one, so these win over the API's "/"
+    # without the two routes having to be ordered against each other.
     - matches:
         - path:
             type: PathPrefix
-            value: /web
+            value: /Videos
+        - path:
+            type: PathPrefix
+            value: /Audio
       backendRefs:
-        - name: gojellyfin-web
+        - name: gojellyfin-transcode
+          # The Service's port, not the container's.
           port: 80
 ---
 apiVersion: gateway.networking.k8s.io/v1
@@ -58,9 +45,8 @@ spec:
   hostnames:
     - gojellyfin.example.com
   rules:
-    # Everything the web route did not claim. The API owns paths at the root
-    # (`/System/Info/Public`, `/Users/AuthenticateByName`, `/socket`), so this
-    # cannot be narrowed to a prefix.
+    # Everything the transcode route did not claim. The API owns paths at the
+    # root, so this cannot be narrowed to a prefix.
     - matches:
         - path:
             type: PathPrefix

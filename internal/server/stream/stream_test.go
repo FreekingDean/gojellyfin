@@ -49,6 +49,10 @@ func (s *stubTranscoder) Enabled() bool {
 	return s.enabled
 }
 
+func (s *stubTranscoder) Stall() time.Duration {
+	return time.Minute
+}
+
 func (s *stubTranscoder) Open(ctx context.Context, spec transcode.Spec) (io.ReadCloser, error) {
 	s.spec = spec
 

@@ -1,4 +1,4 @@
-package worker
+package transcode
 
 import (
 	"bufio"
@@ -8,8 +8,6 @@ import (
 	"os/exec"
 	"sync/atomic"
 	"time"
-
-	"github.com/FreekingDean/gojellyfin/internal/transcode"
 )
 
 const stderrLimit = 4096
@@ -25,7 +23,7 @@ type process struct {
 // short file, so the first byte of output is what separates a transcode that
 // started from one that failed. Nothing is reported to the caller until it
 // arrives, which keeps a failure from reaching the client as an empty stream.
-func start(ctx context.Context, spec transcode.Spec) (io.ReadCloser, error) {
+func start(ctx context.Context, spec Spec) (io.ReadCloser, error) {
 	if err := spec.Valid(); err != nil {
 		return nil, err
 	}
@@ -72,7 +70,10 @@ func (p *process) Close() error {
 // the relay keeps coming back for more and the gap between reads stays short.
 // Nothing moving at all is the other two cases: an encode that stopped
 // producing, and a client that vanished without closing its connection.
-func untilStalled(ctx context.Context, output io.Reader, timeout time.Duration, kill func()) io.Reader {
+// UntilStalled wraps an encode so that nothing moving for the timeout kills it.
+// A client that is only slow still takes a buffer's worth every so often, so the
+// timer is reset by a read that moved something rather than by the pipe filling.
+func UntilStalled(ctx context.Context, output io.Reader, timeout time.Duration, kill func()) io.Reader {
 	moving := &progress{output: output}
 	moving.last.Store(time.Now().UnixNano())
 
