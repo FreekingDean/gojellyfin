@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 )
 
@@ -33,7 +34,12 @@ func main() {
 }
 
 func withStore(f func(*store.Client) error) error {
-	db, err := store.NewStore()
+	config, err := env.Load()
+	if err != nil {
+		return err
+	}
+
+	db, err := store.NewStore(config)
 	if err != nil {
 		return err
 	}

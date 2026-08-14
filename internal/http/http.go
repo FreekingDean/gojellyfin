@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/http/mux"
 	"github.com/FreekingDean/gojellyfin/internal/server"
@@ -133,14 +134,14 @@ type Server struct {
 	apiOptions     api.StrictHTTPServerOptions
 }
 
-func New(m *mux.Mux, authMiddleware *middleware.Auth, policies middleware.Policies) *Server {
+func New(config env.Config, m *mux.Mux, authMiddleware *middleware.Auth, policies middleware.Policies) *Server {
 	return &Server{
 		s: &http.Server{
 			Addr: ":8081",
 		},
 
 		httpMiddleware: []middleware.HttpMiddleware{
-			middleware.HttpCORS,
+			middleware.HttpCORS(config.CORSOrigins),
 			middleware.HttpLogging,
 			middleware.HttpCanonicalQuery,
 		},

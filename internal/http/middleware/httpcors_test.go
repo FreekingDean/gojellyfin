@@ -7,7 +7,7 @@ import (
 )
 
 func TestAllowOriginDefaultsToEveryOrigin(t *testing.T) {
-	allow := allowOrigin("")
+	allow := allowOrigin(nil)
 
 	for _, origin := range []string{"https://gojellyfin.example.dev", "http://localhost:8096"} {
 		if !allow(origin) {
@@ -17,7 +17,7 @@ func TestAllowOriginDefaultsToEveryOrigin(t *testing.T) {
 }
 
 func TestAllowOriginHonoursTheList(t *testing.T) {
-	allow := allowOrigin("https://gojellyfin.example.dev/, HTTP://LOCALHOST:8096")
+	allow := allowOrigin([]string{"https://gojellyfin.example.dev/", "HTTP://LOCALHOST:8096"})
 
 	for _, origin := range []string{"https://gojellyfin.example.dev", "http://localhost:8096"} {
 		if !allow(origin) {
@@ -38,7 +38,7 @@ func TestPreflightReflectsTheOrigin(t *testing.T) {
 	request.Header.Set("Access-Control-Request-Headers", "authorization")
 
 	recorder := httptest.NewRecorder()
-	HttpCORS(http.NotFoundHandler()).ServeHTTP(recorder, request)
+	HttpCORS(nil)(http.NotFoundHandler()).ServeHTTP(recorder, request)
 
 	if got := recorder.Header().Get("Access-Control-Allow-Origin"); got != "https://gojellyfin.example.dev" {
 		t.Errorf("Access-Control-Allow-Origin = %q, want the caller's origin", got)

@@ -2,33 +2,30 @@ package middleware
 
 import (
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/rs/cors"
 )
 
-func HttpCORS(next http.Handler) http.Handler {
-	c := cors.New(cors.Options{
-		AllowOriginFunc:  allowOrigin(os.Getenv("CORS_ORIGINS")),
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"*"},
-		AllowCredentials: true,
-	})
+func HttpCORS(origins []string) HttpMiddleware {
+	return func(next http.Handler) http.Handler {
+		c := cors.New(cors.Options{
+			AllowOriginFunc:  allowOrigin(origins),
+			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+			AllowedHeaders:   []string{"*"},
+			AllowCredentials: true,
+		})
 
-	return c.Handler(next)
+		return c.Handler(next)
+	}
 }
 
 // Clients are web apps on origins this server cannot know, so an unset list
 // reflects whatever origin asks. A literal "*" is not the same thing: a browser
 // rejects it on any credentialed request, which is every authenticated call.
-func allowOrigin(value string) func(string) bool {
-	origins := make(map[string]struct{})
-	for _, origin := range strings.Split(value, ",") {
-		origin = strings.TrimSpace(origin)
-		if origin == "" {
-			continue
-		}
+func allowOrigin(allowed []string) func(string) bool {
+	origins := make(map[string]struct{}, len(allowed))
+	for _, origin := range allowed {
 		origins[strings.ToLower(strings.TrimSuffix(origin, "/"))] = struct{}{}
 	}
 
