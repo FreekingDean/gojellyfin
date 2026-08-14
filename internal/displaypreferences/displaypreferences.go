@@ -124,7 +124,9 @@ func (s *Service) itemID(ctx context.Context, id string) (*uuid.UUID, error) {
 		return nil, nil
 	}
 
-	exists, err := s.store.Item.Query().Where(itemmodal.ID(parsed)).Exist(ctx)
+	exists, err := s.store.Item.Query().
+		Where(itemmodal.ID(parsed), itemmodal.DeletedAtIsNil()).
+		Exist(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to look up the display preferences item: %w", err)
 	}

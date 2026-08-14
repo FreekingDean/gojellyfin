@@ -280,6 +280,7 @@ var (
 		{Name: "sort_name", Type: field.TypeString, Nullable: true},
 		{Name: "forced_sort_name", Type: field.TypeBool, Default: false},
 		{Name: "path", Type: field.TypeString, Nullable: true},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true},
 		{Name: "container", Type: field.TypeString, Nullable: true},
 		{Name: "overview", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "is_folder", Type: field.TypeBool, Default: false},
@@ -332,13 +333,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "items_items_children",
-				Columns:    []*schema.Column{ItemsColumns[56]},
+				Columns:    []*schema.Column{ItemsColumns[57]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "items_libraries_items",
-				Columns:    []*schema.Column{ItemsColumns[57]},
+				Columns:    []*schema.Column{ItemsColumns[58]},
 				RefColumns: []*schema.Column{LibrariesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -347,12 +348,17 @@ var (
 			{
 				Name:    "item_library_id_path",
 				Unique:  true,
-				Columns: []*schema.Column{ItemsColumns[57], ItemsColumns[14]},
+				Columns: []*schema.Column{ItemsColumns[58], ItemsColumns[14]},
 			},
 			{
 				Name:    "item_kind_sort_name",
 				Unique:  false,
 				Columns: []*schema.Column{ItemsColumns[3], ItemsColumns[12]},
+			},
+			{
+				Name:    "item_deleted_at",
+				Unique:  false,
+				Columns: []*schema.Column{ItemsColumns[15]},
 			},
 		},
 	}

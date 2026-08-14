@@ -60,7 +60,7 @@ func (s *Service) NextUpEpisodes(ctx context.Context, userID uuid.UUID, seriesID
 		return nil, nil
 	}
 
-	records, err := s.store.Item.Query().Where(itemmodal.IDIn(ids...)).All(ctx)
+	records, err := s.query().Where(itemmodal.IDIn(ids...)).All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load next up episodes: %w", err)
 	}

@@ -7846,6 +7846,7 @@ type ItemMutation struct {
 	sort_name                       *string
 	forced_sort_name                *bool
 	_path                           *string
+	deleted_at                      *time.Time
 	container                       *string
 	overview                        *string
 	is_folder                       *bool
@@ -8752,6 +8753,55 @@ func (m *ItemMutation) PathCleared() bool {
 func (m *ItemMutation) ResetPath() {
 	m._path = nil
 	delete(m.clearedFields, item.FieldPath)
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (m *ItemMutation) SetDeletedAt(t time.Time) {
+	m.deleted_at = &t
+}
+
+// DeletedAt returns the value of the "deleted_at" field in the mutation.
+func (m *ItemMutation) DeletedAt() (r time.Time, exists bool) {
+	v := m.deleted_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeletedAt returns the old "deleted_at" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldDeletedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeletedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeletedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeletedAt: %w", err)
+	}
+	return oldValue.DeletedAt, nil
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (m *ItemMutation) ClearDeletedAt() {
+	m.deleted_at = nil
+	m.clearedFields[item.FieldDeletedAt] = struct{}{}
+}
+
+// DeletedAtCleared returns if the "deleted_at" field was cleared in this mutation.
+func (m *ItemMutation) DeletedAtCleared() bool {
+	_, ok := m.clearedFields[item.FieldDeletedAt]
+	return ok
+}
+
+// ResetDeletedAt resets all changes to the "deleted_at" field.
+func (m *ItemMutation) ResetDeletedAt() {
+	m.deleted_at = nil
+	delete(m.clearedFields, item.FieldDeletedAt)
 }
 
 // SetContainer sets the "container" field.
@@ -11883,7 +11933,7 @@ func (m *ItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemMutation) Fields() []string {
-	fields := make([]string, 0, 57)
+	fields := make([]string, 0, 58)
 	if m.created_at != nil {
 		fields = append(fields, item.FieldCreatedAt)
 	}
@@ -11931,6 +11981,9 @@ func (m *ItemMutation) Fields() []string {
 	}
 	if m._path != nil {
 		fields = append(fields, item.FieldPath)
+	}
+	if m.deleted_at != nil {
+		fields = append(fields, item.FieldDeletedAt)
 	}
 	if m.container != nil {
 		fields = append(fields, item.FieldContainer)
@@ -12095,6 +12148,8 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.ForcedSortName()
 	case item.FieldPath:
 		return m.Path()
+	case item.FieldDeletedAt:
+		return m.DeletedAt()
 	case item.FieldContainer:
 		return m.Container()
 	case item.FieldOverview:
@@ -12218,6 +12273,8 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldForcedSortName(ctx)
 	case item.FieldPath:
 		return m.OldPath(ctx)
+	case item.FieldDeletedAt:
+		return m.OldDeletedAt(ctx)
 	case item.FieldContainer:
 		return m.OldContainer(ctx)
 	case item.FieldOverview:
@@ -12420,6 +12477,13 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPath(v)
+		return nil
+	case item.FieldDeletedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeletedAt(v)
 		return nil
 	case item.FieldContainer:
 		v, ok := value.(string)
@@ -12924,6 +12988,9 @@ func (m *ItemMutation) ClearedFields() []string {
 	if m.FieldCleared(item.FieldPath) {
 		fields = append(fields, item.FieldPath)
 	}
+	if m.FieldCleared(item.FieldDeletedAt) {
+		fields = append(fields, item.FieldDeletedAt)
+	}
 	if m.FieldCleared(item.FieldContainer) {
 		fields = append(fields, item.FieldContainer)
 	}
@@ -13069,6 +13136,9 @@ func (m *ItemMutation) ClearField(name string) error {
 		return nil
 	case item.FieldPath:
 		m.ClearPath()
+		return nil
+	case item.FieldDeletedAt:
+		m.ClearDeletedAt()
 		return nil
 	case item.FieldContainer:
 		m.ClearContainer()
@@ -13230,6 +13300,9 @@ func (m *ItemMutation) ResetField(name string) error {
 		return nil
 	case item.FieldPath:
 		m.ResetPath()
+		return nil
+	case item.FieldDeletedAt:
+		m.ResetDeletedAt()
 		return nil
 	case item.FieldContainer:
 		m.ResetContainer()

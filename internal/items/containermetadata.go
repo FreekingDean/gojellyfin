@@ -163,7 +163,7 @@ func (s *Service) DistinctPeople(ctx context.Context, query MetadataQuery, kinds
 }
 
 func (s *Service) DistinctTags(ctx context.Context, query MetadataQuery) ([]string, error) {
-	records, err := s.store.Item.Query().
+	records, err := s.query().
 		Where(query.items()...).
 		Where(itemmodal.TagsNotNil()).
 		Select(itemmodal.FieldTags).
