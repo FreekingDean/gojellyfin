@@ -9,7 +9,10 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 )
 
-var ErrUnauthorized = errors.New("unauthorized")
+var (
+	ErrUnauthorized = errors.New("unauthorized")
+	ErrForbidden    = errors.New("forbidden")
+)
 
 type contextKey int
 
@@ -71,6 +74,10 @@ func AuthorizationFrom(ctx context.Context) Authorization {
 	authorization, _ := ctx.Value(authorizationKey).(Authorization)
 
 	return authorization
+}
+
+func ContextWithSession(ctx context.Context, session *sessions.Session) context.Context {
+	return context.WithValue(ctx, sessionKey, session)
 }
 
 func SessionFrom(ctx context.Context) *sessions.Session {
