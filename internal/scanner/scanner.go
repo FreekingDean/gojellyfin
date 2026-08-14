@@ -75,11 +75,17 @@ func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) e
 func (s *Scanner) scanMovies(ctx context.Context, library *libraries.Library, root string) ([]string, error) {
 	seen := make([]string, 0)
 
+	// A directory that cannot be read fails the whole scan. Skipping it would
+	// leave its files out of the seen set, and the caller deletes everything not
+	// in that set.
 	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
 		if walkErr := ctx.Err(); walkErr != nil {
 			return walkErr
 		}
-		if err != nil || entry.IsDir() || !isVideo(entry.Name()) {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() || !isVideo(entry.Name()) {
 			return nil
 		}
 
