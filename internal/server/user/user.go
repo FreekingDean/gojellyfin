@@ -51,10 +51,17 @@ func (s *Server) GetUserById(ctx context.Context, request api.GetUserByIdRequest
 	return api.GetUserById200JSONResponse(userDto(user)), nil
 }
 
+// Anonymous, so this answers the login screen and nothing more. The full dto
+// carries the policy, which would name the administrator to any caller.
 func (s *Server) GetPublicUsers(ctx context.Context, request api.GetPublicUsersRequestObject) (api.GetPublicUsersResponseObject, error) {
-	converted, err := s.listUserDtos(ctx)
+	records, err := s.users.Users(ctx)
 	if err != nil {
 		return nil, err
+	}
+
+	converted := make([]api.UserDto, 0, len(records))
+	for _, record := range records {
+		converted = append(converted, publicUserDto(record))
 	}
 
 	return api.GetPublicUsers200JSONResponse(converted), nil
@@ -100,11 +107,9 @@ func (s *Server) UpdateUser(ctx context.Context, request api.UpdateUserRequestOb
 			return nil, err
 		}
 	}
-	if req.Policy != nil {
-		if err := s.savePolicy(ctx, user.ID, req.Policy); err != nil {
-			return nil, err
-		}
-	}
+	// Policy is deliberately ignored. This operation is DefaultAuthorization,
+	// so honouring it here would hand every account the elevation that
+	// UpdateUserPolicy exists to guard.
 
 	return api.UpdateUser204Response{}, nil
 }
@@ -156,7 +161,18 @@ func (s *Server) UpdateUserPassword(ctx context.Context, request api.UpdateUserP
 		return api.UpdateUserPassword404JSONResponse{}, nil
 	}
 
-	if !apiutil.Deref(req.ResetPassword) {
+	// This operation is DefaultAuthorization, so the caller is only known to be
+	// signed in as somebody. Naming another user, and skipping the current
+	// password, are both an administrator's to do.
+	administrator, err := s.users.IsAdministrator(ctx, auth.UserID(ctx))
+	if err != nil {
+		return nil, err
+	}
+	if user.ID != auth.UserID(ctx) && !administrator {
+		return api.UpdateUserPassword403JSONResponse{}, nil
+	}
+
+	if !administrator || !apiutil.Deref(req.ResetPassword) {
 		matches, err := auth.Verify(apiutil.Deref(req.CurrentPw), user.PasswordHash)
 		if err != nil || !matches {
 			return api.UpdateUserPassword403JSONResponse{}, nil
