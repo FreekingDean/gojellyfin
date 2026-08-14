@@ -54,6 +54,8 @@ type Item struct {
 	ForcedSortName bool `json:"forced_sort_name,omitempty"`
 	// Path holds the value of the "path" field.
 	Path string `json:"path,omitempty"`
+	// DeletedAt holds the value of the "deleted_at" field.
+	DeletedAt *time.Time `json:"deleted_at,omitempty"`
 	// Container holds the value of the "container" field.
 	Container string `json:"container,omitempty"`
 	// Overview holds the value of the "overview" field.
@@ -348,7 +350,7 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case item.FieldKind, item.FieldMediaType, item.FieldLocationType, item.FieldExtraType, item.FieldVideoType, item.FieldIsoType, item.FieldVideo3dFormat, item.FieldName, item.FieldOriginalTitle, item.FieldSortName, item.FieldPath, item.FieldContainer, item.FieldOverview, item.FieldOfficialRating, item.FieldCustomRating, item.FieldStatus, item.FieldAirTime, item.FieldDisplayOrder, item.FieldAspectRatio, item.FieldPreferredMetadataLanguage, item.FieldPreferredMetadataCountryCode:
 			values[i] = new(sql.NullString)
-		case item.FieldCreatedAt, item.FieldUpdatedAt, item.FieldPremiereDate, item.FieldEndDate, item.FieldLastMediaAddedAt, item.FieldDateModified, item.FieldProbedAt:
+		case item.FieldCreatedAt, item.FieldUpdatedAt, item.FieldDeletedAt, item.FieldPremiereDate, item.FieldEndDate, item.FieldLastMediaAddedAt, item.FieldDateModified, item.FieldProbedAt:
 			values[i] = new(sql.NullTime)
 		case item.FieldID, item.FieldLibraryID:
 			values[i] = new(uuid.UUID)
@@ -469,6 +471,13 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field path", values[i])
 			} else if value.Valid {
 				_m.Path = value.String
+			}
+		case item.FieldDeletedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field deleted_at", values[i])
+			} else if value.Valid {
+				_m.DeletedAt = new(time.Time)
+				*_m.DeletedAt = value.Time
 			}
 		case item.FieldContainer:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -910,6 +919,11 @@ func (_m *Item) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("path=")
 	builder.WriteString(_m.Path)
+	builder.WriteString(", ")
+	if v := _m.DeletedAt; v != nil {
+		builder.WriteString("deleted_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("container=")
 	builder.WriteString(_m.Container)

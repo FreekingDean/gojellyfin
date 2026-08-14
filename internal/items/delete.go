@@ -50,7 +50,7 @@ func (s *Service) DeleteItem(ctx context.Context, id uuid.UUID) error {
 func (s *Service) subtree(ctx context.Context, root uuid.UUID) ([]uuid.UUID, error) {
 	ids := []uuid.UUID{root}
 	for frontier := ids; len(frontier) > 0; {
-		children, err := s.store.Item.Query().
+		children, err := s.query().
 			Where(itemmodal.ParentIDIn(frontier...), itemmodal.IDNotIn(ids...)).
 			IDs(ctx)
 		if err != nil {

@@ -247,6 +247,20 @@ func (_c *ItemCreate) SetNillablePath(v *string) *ItemCreate {
 	return _c
 }
 
+// SetDeletedAt sets the "deleted_at" field.
+func (_c *ItemCreate) SetDeletedAt(v time.Time) *ItemCreate {
+	_c.mutation.SetDeletedAt(v)
+	return _c
+}
+
+// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableDeletedAt(v *time.Time) *ItemCreate {
+	if v != nil {
+		_c.SetDeletedAt(*v)
+	}
+	return _c
+}
+
 // SetContainer sets the "container" field.
 func (_c *ItemCreate) SetContainer(v string) *ItemCreate {
 	_c.mutation.SetContainer(v)
@@ -1244,6 +1258,10 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 		_spec.SetField(item.FieldPath, field.TypeString, value)
 		_node.Path = value
 	}
+	if value, ok := _c.mutation.DeletedAt(); ok {
+		_spec.SetField(item.FieldDeletedAt, field.TypeTime, value)
+		_node.DeletedAt = &value
+	}
 	if value, ok := _c.mutation.Container(); ok {
 		_spec.SetField(item.FieldContainer, field.TypeString, value)
 		_node.Container = value
@@ -1961,6 +1979,24 @@ func (u *ItemUpsert) UpdatePath() *ItemUpsert {
 // ClearPath clears the value of the "path" field.
 func (u *ItemUpsert) ClearPath() *ItemUpsert {
 	u.SetNull(item.FieldPath)
+	return u
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (u *ItemUpsert) SetDeletedAt(v time.Time) *ItemUpsert {
+	u.Set(item.FieldDeletedAt, v)
+	return u
+}
+
+// UpdateDeletedAt sets the "deleted_at" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateDeletedAt() *ItemUpsert {
+	u.SetExcluded(item.FieldDeletedAt)
+	return u
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (u *ItemUpsert) ClearDeletedAt() *ItemUpsert {
+	u.SetNull(item.FieldDeletedAt)
 	return u
 }
 
@@ -3076,6 +3112,27 @@ func (u *ItemUpsertOne) UpdatePath() *ItemUpsertOne {
 func (u *ItemUpsertOne) ClearPath() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearPath()
+	})
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (u *ItemUpsertOne) SetDeletedAt(v time.Time) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetDeletedAt(v)
+	})
+}
+
+// UpdateDeletedAt sets the "deleted_at" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateDeletedAt() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateDeletedAt()
+	})
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (u *ItemUpsertOne) ClearDeletedAt() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearDeletedAt()
 	})
 }
 
@@ -4488,6 +4545,27 @@ func (u *ItemUpsertBulk) UpdatePath() *ItemUpsertBulk {
 func (u *ItemUpsertBulk) ClearPath() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearPath()
+	})
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (u *ItemUpsertBulk) SetDeletedAt(v time.Time) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetDeletedAt(v)
+	})
+}
+
+// UpdateDeletedAt sets the "deleted_at" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateDeletedAt() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateDeletedAt()
+	})
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (u *ItemUpsertBulk) ClearDeletedAt() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearDeletedAt()
 	})
 }
 

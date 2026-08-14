@@ -52,6 +52,7 @@ func (Item) Fields() []ent.Field {
 		field.String("sort_name").Optional(),
 		field.Bool("forced_sort_name").Default(false),
 		field.String("path").Optional(),
+		field.Time("deleted_at").Optional().Nillable(),
 		field.String("container").Optional(),
 		field.Text("overview").Optional(),
 
@@ -126,7 +127,11 @@ func (Item) Edges() []ent.Edge {
 
 func (Item) Indexes() []ent.Index {
 	return []ent.Index{
+		// Deliberately not partial on deleted_at: a file that comes back has to
+		// conflict with the row it left behind, because that row carries the id
+		// the watch state hangs off. The scan upsert clears deleted_at.
 		index.Fields("library_id", "path").Unique(),
 		index.Fields("kind", "sort_name"),
+		index.Fields("deleted_at"),
 	}
 }

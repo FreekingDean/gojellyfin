@@ -201,27 +201,27 @@ func init() {
 	// item.DefaultForcedSortName holds the default value on creation for the forced_sort_name field.
 	item.DefaultForcedSortName = itemDescForcedSortName.Default.(bool)
 	// itemDescIsFolder is the schema descriptor for is_folder field.
-	itemDescIsFolder := itemFields[19].Descriptor()
+	itemDescIsFolder := itemFields[20].Descriptor()
 	// item.DefaultIsFolder holds the default value on creation for the is_folder field.
 	item.DefaultIsFolder = itemDescIsFolder.Default.(bool)
 	// itemDescIsPlaceholder is the schema descriptor for is_placeholder field.
-	itemDescIsPlaceholder := itemFields[20].Descriptor()
+	itemDescIsPlaceholder := itemFields[21].Descriptor()
 	// item.DefaultIsPlaceholder holds the default value on creation for the is_placeholder field.
 	item.DefaultIsPlaceholder = itemDescIsPlaceholder.Default.(bool)
 	// itemDescLockData is the schema descriptor for lock_data field.
-	itemDescLockData := itemFields[21].Descriptor()
+	itemDescLockData := itemFields[22].Descriptor()
 	// item.DefaultLockData holds the default value on creation for the lock_data field.
 	item.DefaultLockData = itemDescLockData.Default.(bool)
 	// itemDescHasLyrics is the schema descriptor for has_lyrics field.
-	itemDescHasLyrics := itemFields[22].Descriptor()
+	itemDescHasLyrics := itemFields[23].Descriptor()
 	// item.DefaultHasLyrics holds the default value on creation for the has_lyrics field.
 	item.DefaultHasLyrics = itemDescHasLyrics.Default.(bool)
 	// itemDescHasSubtitles is the schema descriptor for has_subtitles field.
-	itemDescHasSubtitles := itemFields[23].Descriptor()
+	itemDescHasSubtitles := itemFields[24].Descriptor()
 	// item.DefaultHasSubtitles holds the default value on creation for the has_subtitles field.
 	item.DefaultHasSubtitles = itemDescHasSubtitles.Default.(bool)
 	// itemDescEnableMediaSourceDisplay is the schema descriptor for enable_media_source_display field.
-	itemDescEnableMediaSourceDisplay := itemFields[24].Descriptor()
+	itemDescEnableMediaSourceDisplay := itemFields[25].Descriptor()
 	// item.DefaultEnableMediaSourceDisplay holds the default value on creation for the enable_media_source_display field.
 	item.DefaultEnableMediaSourceDisplay = itemDescEnableMediaSourceDisplay.Default.(bool)
 	libraryFields := entities.Library{}.Fields()

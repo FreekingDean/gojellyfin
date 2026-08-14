@@ -91,6 +91,9 @@ func (s *Service) SaveScanned(ctx context.Context, scanned Scanned) (*Item, erro
 		UpdateParentIndexNumber().
 		UpdateDateModified().
 		UpdateUpdatedAt().
+		// The file is back, so the row it left behind is revived rather than
+		// replaced, which is what keeps the watch state attached to it.
+		ClearDeletedAt().
 		ID(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to save scanned item: %w", err)
@@ -100,7 +103,7 @@ func (s *Service) SaveScanned(ctx context.Context, scanned Scanned) (*Item, erro
 }
 
 func (s *Service) ItemByID(ctx context.Context, id uuid.UUID) (*Item, error) {
-	item, err := s.store.Item.Get(ctx, id)
+	item, err := s.query().Where(itemmodal.ID(id)).Only(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query item: %w", err)
 	}
@@ -162,7 +165,7 @@ var sortFields = map[string]string{
 }
 
 func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int, error) {
-	items := s.store.Item.Query()
+	items := s.query()
 
 	if query.LibraryID != nil {
 		items = items.Where(itemmodal.LibraryID(*query.LibraryID))
@@ -235,7 +238,7 @@ func (s *Service) CountChildren(ctx context.Context, parentIDs []uuid.UUID) (map
 		ParentID uuid.UUID `json:"parent_id"`
 		Count    int       `json:"count"`
 	}
-	err := s.store.Item.Query().
+	err := s.query().
 		Where(itemmodal.ParentIDIn(parentIDs...)).
 		GroupBy(itemmodal.FieldParentID).
 		Aggregate(store.Count()).
@@ -251,21 +254,55 @@ func (s *Service) CountChildren(ctx context.Context, parentIDs []uuid.UUID) (map
 	return counts, nil
 }
 
+// Every read goes through here, so a soft deleted row cannot come back in one
+// query because a caller forgot the predicate.
+func (s *Service) query() *store.ItemQuery {
+	return s.store.Item.Query().Where(itemmodal.DeletedAtIsNil())
+}
+
+// Soft, so that a volume which comes back brings its watch state with it. The
+// row keeps the id the user data hangs off, which is the whole reason a hard
+// delete cannot be undone.
 func (s *Service) DeleteItemsNotInPaths(ctx context.Context, libraryID uuid.UUID, paths []string) error {
-	items := s.store.Item.Delete().Where(itemmodal.LibraryID(libraryID))
+	missing := []predicate.Item{itemmodal.LibraryID(libraryID), itemmodal.DeletedAtIsNil()}
 	if len(paths) > 0 {
-		items = items.Where(itemmodal.PathNotIn(paths...))
+		missing = append(missing, itemmodal.PathNotIn(paths...))
 	}
 
-	if _, err := items.Exec(ctx); err != nil {
-		return fmt.Errorf("failed to delete missing items: %w", err)
+	if err := s.store.Item.Update().
+		Where(missing...).
+		SetDeletedAt(time.Now()).
+		Exec(ctx); err != nil {
+		return fmt.Errorf("failed to mark missing items deleted: %w", err)
 	}
 
-	return nil
+	return s.deleteOrphanedDescendants(ctx, libraryID)
+}
+
+// A parent going away takes its children, which the foreign key did on a hard
+// delete and cannot do on an update. Repeated because a series reaches its
+// episodes through its seasons.
+func (s *Service) deleteOrphanedDescendants(ctx context.Context, libraryID uuid.UUID) error {
+	for {
+		affected, err := s.store.Item.Update().
+			Where(
+				itemmodal.LibraryID(libraryID),
+				itemmodal.DeletedAtIsNil(),
+				itemmodal.HasParentWith(itemmodal.DeletedAtNotNil()),
+			).
+			SetDeletedAt(time.Now()).
+			Save(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to mark orphaned items deleted: %w", err)
+		}
+		if affected == 0 {
+			return nil
+		}
+	}
 }
 
 func (s *Service) DistinctYears(ctx context.Context, libraryID *uuid.UUID, kinds []Kind) ([]int32, error) {
-	items := s.store.Item.Query().Where(itemmodal.ProductionYearNotNil())
+	items := s.query().Where(itemmodal.ProductionYearNotNil())
 	if libraryID != nil {
 		items = items.Where(itemmodal.LibraryID(*libraryID))
 	}
@@ -343,7 +380,7 @@ func (s *Service) CountByKind(ctx context.Context) (map[string]int32, error) {
 		Kind  string `json:"kind"`
 		Count int    `json:"count"`
 	}
-	err := s.store.Item.Query().
+	err := s.query().
 		GroupBy(itemmodal.FieldKind).
 		Aggregate(store.Count()).
 		Scan(ctx, &rows)

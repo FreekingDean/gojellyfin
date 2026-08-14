@@ -70,12 +70,15 @@ func TestDeleteItemsNotInPathsWithImages(t *testing.T) {
 		t.Errorf("items = %v, want only the kept item", names(records))
 	}
 
+	// A sweep marks the row rather than deleting it, so the foreign key never
+	// fires and the artwork survives. That is deliberate: a volume that comes
+	// back needs nothing re-derived. The purge is what takes them.
 	images, err := fixture.service.Images(ctx, pruned)
 	if err != nil {
 		t.Fatalf("failed to query the images: %v", err)
 	}
-	if len(images) != 0 {
-		t.Errorf("images = %d, want 0", len(images))
+	if len(images) != 1 {
+		t.Errorf("images = %d, want the artwork kept for the item's return", len(images))
 	}
 }
 

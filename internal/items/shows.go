@@ -12,7 +12,7 @@ import (
 )
 
 func (s *Service) SeriesSeasons(ctx context.Context, seriesID uuid.UUID) ([]*Item, error) {
-	records, err := s.store.Item.Query().
+	records, err := s.query().
 		Where(
 			itemmodal.KindEQ(itemmodal.KindSeason),
 			itemmodal.ParentID(seriesID),
@@ -35,7 +35,7 @@ type EpisodeQuery struct {
 }
 
 func (s *Service) SeriesEpisodes(ctx context.Context, query EpisodeQuery) ([]*Item, int, error) {
-	episodes := s.store.Item.Query().Where(
+	episodes := s.query().Where(
 		itemmodal.KindEQ(itemmodal.KindEpisode),
 		itemmodal.HasParentWith(itemmodal.ParentID(query.SeriesID)),
 	)
@@ -72,7 +72,7 @@ func (s *Service) SeriesEpisodes(ctx context.Context, query EpisodeQuery) ([]*It
 }
 
 func (s *Service) UpcomingEpisodes(ctx context.Context, libraryID *uuid.UUID, startIndex, limit int) ([]*Item, int, error) {
-	episodes := s.store.Item.Query().Where(
+	episodes := s.query().Where(
 		itemmodal.KindEQ(itemmodal.KindEpisode),
 		itemmodal.PremiereDateGT(time.Now()),
 	)

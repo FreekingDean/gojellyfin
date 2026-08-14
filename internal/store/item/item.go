@@ -47,6 +47,8 @@ const (
 	FieldForcedSortName = "forced_sort_name"
 	// FieldPath holds the string denoting the path field in the database.
 	FieldPath = "path"
+	// FieldDeletedAt holds the string denoting the deleted_at field in the database.
+	FieldDeletedAt = "deleted_at"
 	// FieldContainer holds the string denoting the container field in the database.
 	FieldContainer = "container"
 	// FieldOverview holds the string denoting the overview field in the database.
@@ -286,6 +288,7 @@ var Columns = []string{
 	FieldSortName,
 	FieldForcedSortName,
 	FieldPath,
+	FieldDeletedAt,
 	FieldContainer,
 	FieldOverview,
 	FieldIsFolder,
@@ -679,6 +682,11 @@ func ByForcedSortName(opts ...sql.OrderTermOption) OrderOption {
 // ByPath orders the results by the path field.
 func ByPath(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPath, opts...).ToFunc()
+}
+
+// ByDeletedAt orders the results by the deleted_at field.
+func ByDeletedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeletedAt, opts...).ToFunc()
 }
 
 // ByContainer orders the results by the container field.
