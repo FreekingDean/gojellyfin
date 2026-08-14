@@ -158,6 +158,16 @@ func acceptedContainers(r *http.Request) map[string]bool {
 	return browserContainers
 }
 
+// What the client said it can take. Silence about a kind is silence, not a
+// refusal, so only a browser — which declares nothing at all — is held to the
+// tables above.
+func declared(r *http.Request) items.Playable {
+	return items.Playable{
+		Containers:  acceptedContainers(r),
+		AudioCodecs: acceptedAudio(r),
+	}
+}
+
 // A client that says what it can decode is believed; one that says nothing is
 // assumed to be a browser, because silence is a worse answer than an encode
 // nobody needed.
@@ -365,8 +375,14 @@ func (h *Handler) item(w http.ResponseWriter, r *http.Request) (*items.Item, *it
 		return nil, nil, false
 	}
 
-	source, err := h.items.MediaSource(r.Context(), item.ID)
-	if err != nil || source == nil {
+	sources, err := h.items.MediaSources(r.Context(), item.ID)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return nil, nil, false
+	}
+
+	source := items.PreferredSource(sources, declared(r))
+	if source == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return nil, nil, false
 	}

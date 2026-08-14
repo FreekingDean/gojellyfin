@@ -11,6 +11,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
+	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 )
 
@@ -92,9 +93,16 @@ func (s *Server) openItemFile(ctx context.Context, id uuid.UUID) (*mediaFile, er
 	}
 
 	item := records[0]
-	source, err := s.items.MediaSource(ctx, item.ID)
-	if err != nil || source == nil {
+	sources, err := s.items.MediaSources(ctx, item.ID)
+	if err != nil {
 		return nil, err
+	}
+
+	// A download is saving bytes rather than decoding them here, so the best
+	// copy wins; what the far end can play is its own problem.
+	source := items.BestSource(sources)
+	if source == nil {
+		return nil, nil
 	}
 
 	body, size, err := s.filesystem.Open(ctx, source.Path)
