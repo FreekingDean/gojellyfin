@@ -10,6 +10,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/socket"
 	"github.com/FreekingDean/gojellyfin/internal/server/stream"
 	"github.com/FreekingDean/gojellyfin/internal/transcode"
+	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
 var Module = fx.Module(
@@ -20,6 +21,7 @@ var Module = fx.Module(
 		middleware.NewAuth,
 		socket.New,
 		func(pool *transcode.Pool) stream.Transcoder { return pool },
+		func(service *users.Service) middleware.Policies { return service },
 		stream.New,
 		New,
 	),

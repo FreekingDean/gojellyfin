@@ -133,7 +133,7 @@ type Server struct {
 	apiOptions     api.StrictHTTPServerOptions
 }
 
-func New(m *mux.Mux, authMiddleware *middleware.Auth) *Server {
+func New(m *mux.Mux, authMiddleware *middleware.Auth, policies middleware.Policies) *Server {
 	return &Server{
 		s: &http.Server{
 			Addr: ":8081",
@@ -145,8 +145,12 @@ func New(m *mux.Mux, authMiddleware *middleware.Auth) *Server {
 			middleware.HttpCanonicalQuery,
 		},
 
+		// The generated wrapper folds these outward, so the last entry runs
+		// first: authentication has to sit below authorization here for the
+		// session to be on the context by the time the scopes are checked.
 		apiMiddleware: []api.StrictMiddlewareFunc{
 			middleware.OapiLogging,
+			middleware.Authorize(policies),
 			authMiddleware.Middleware,
 		},
 
@@ -165,6 +169,10 @@ func New(m *mux.Mux, authMiddleware *middleware.Auth) *Server {
 				}
 				if errors.Is(err, auth.ErrUnauthorized) {
 					http.Error(w, err.Error(), http.StatusUnauthorized)
+					return
+				}
+				if errors.Is(err, auth.ErrForbidden) {
+					http.Error(w, err.Error(), http.StatusForbidden)
 					return
 				}
 				http.Error(w, err.Error(), http.StatusInternalServerError)
