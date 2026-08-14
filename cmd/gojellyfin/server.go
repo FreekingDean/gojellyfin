@@ -22,6 +22,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	"github.com/FreekingDean/gojellyfin/internal/system"
+	"github.com/FreekingDean/gojellyfin/internal/tmdb"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
@@ -42,6 +43,7 @@ var serverModules = fx.Options(
 	scanner.Module,
 	sessions.Module,
 	system.Module,
+	tmdb.Module,
 	jobs.Module,
 	users.Module,
 
