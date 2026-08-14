@@ -21,6 +21,7 @@ func main() {
 	root.AddCommand(
 		serverCommand(),
 		transcoderCommand(),
+		workerCommand(),
 		migrateCommand(),
 		addUserCommand(),
 		resetPasswordCommand(),

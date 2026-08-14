@@ -1,0 +1,200 @@
+package jobs
+
+import (
+	"context"
+	"errors"
+	"os"
+	"time"
+
+	"go.temporal.io/api/enums/v1"
+	"go.temporal.io/api/serviceerror"
+	"go.temporal.io/sdk/client"
+)
+
+const TaskQueue = "gojellyfin"
+
+// Unset means background work is off, the way an empty TRANSCODER_WORKERS
+// means transcoding is off: a developer running the server alone gets a server,
+// not a dial error on every start.
+var ErrNotConfigured = errors.New("jobs: TEMPORAL_HOSTPORT is not set")
+
+var ErrNotFound = errors.New("jobs: no such job")
+
+type Client struct {
+	client client.Client
+}
+
+func NewClient() (*Client, error) {
+	address := os.Getenv("TEMPORAL_HOSTPORT")
+	if address == "" {
+		return &Client{}, nil
+	}
+
+	connected, err := client.Dial(client.Options{
+		HostPort:  address,
+		Namespace: namespace(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &Client{client: connected}, nil
+}
+
+func namespace() string {
+	if name := os.Getenv("TEMPORAL_NAMESPACE"); name != "" {
+		return name
+	}
+
+	return "gojellyfin_default"
+}
+
+func (c *Client) Enabled() bool {
+	return c.client != nil
+}
+
+func (c *Client) connection() (client.Client, error) {
+	if c.client == nil {
+		return nil, ErrNotConfigured
+	}
+
+	return c.client, nil
+}
+
+func (c *Client) Close() {
+	if c.client != nil {
+		c.client.Close()
+	}
+}
+
+type State string
+
+const (
+	StateIdle       State = "Idle"
+	StateRunning    State = "Running"
+	StateCancelling State = "Cancelling"
+)
+
+type Result struct {
+	Succeeded bool
+	Cancelled bool
+	StartedAt time.Time
+	EndedAt   time.Time
+}
+
+type Status struct {
+	Job   Job
+	State State
+	Last  *Result
+}
+
+type Service struct {
+	client   *Client
+	registry *Registry
+}
+
+func NewService(client *Client, registry *Registry) *Service {
+	return &Service{client: client, registry: registry}
+}
+
+func (s *Service) All(ctx context.Context) ([]Status, error) {
+	statuses := make([]Status, 0)
+	for _, job := range s.registry.All() {
+		status, err := s.status(ctx, job)
+		if err != nil {
+			return nil, err
+		}
+		statuses = append(statuses, status)
+	}
+
+	return statuses, nil
+}
+
+func (s *Service) Status(ctx context.Context, name string) (Status, error) {
+	job, err := s.registry.Find(name)
+	if err != nil {
+		return Status{}, err
+	}
+
+	return s.status(ctx, job)
+}
+
+// The job's name is the run's id, which is what makes it a singleton: the
+// engine refuses a second run under a name that is already going, so starting
+// twice is one run rather than two and needs no lock of ours.
+func (s *Service) Start(ctx context.Context, name string) error {
+	job, err := s.registry.Find(name)
+	if err != nil {
+		return err
+	}
+
+	connection, err := s.client.connection()
+	if err != nil {
+		return err
+	}
+
+	_, err = connection.ExecuteWorkflow(ctx, client.StartWorkflowOptions{
+		ID:                       job.Name(),
+		TaskQueue:                TaskQueue,
+		WorkflowExecutionTimeout: runTimeoutMax,
+		WorkflowIDReusePolicy:    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
+	}, job.Name())
+	if _, running := err.(*serviceerror.WorkflowExecutionAlreadyStarted); running {
+		return nil
+	}
+
+	return err
+}
+
+func (s *Service) Cancel(ctx context.Context, name string) error {
+	job, err := s.registry.Find(name)
+	if err != nil {
+		return err
+	}
+
+	connection, err := s.client.connection()
+	if err != nil {
+		return err
+	}
+
+	return connection.CancelWorkflow(ctx, job.Name(), "")
+}
+
+func (s *Service) status(ctx context.Context, job Job) (Status, error) {
+	status := Status{Job: job, State: StateIdle}
+
+	connection, err := s.client.connection()
+	if errors.Is(err, ErrNotConfigured) {
+		return status, nil
+	}
+	if err != nil {
+		return Status{}, err
+	}
+
+	described, err := connection.DescribeWorkflowExecution(ctx, job.Name(), "")
+	if _, missing := err.(*serviceerror.NotFound); missing {
+		return status, nil
+	}
+	if err != nil {
+		return Status{}, err
+	}
+
+	info := described.GetWorkflowExecutionInfo()
+	switch info.GetStatus() {
+	case enums.WORKFLOW_EXECUTION_STATUS_RUNNING:
+		status.State = StateRunning
+		return status, nil
+	case enums.WORKFLOW_EXECUTION_STATUS_CANCELED, enums.WORKFLOW_EXECUTION_STATUS_TERMINATED:
+		status.State = StateCancelling
+	}
+
+	status.Last = &Result{
+		Succeeded: info.GetStatus() == enums.WORKFLOW_EXECUTION_STATUS_COMPLETED,
+		Cancelled: info.GetStatus() == enums.WORKFLOW_EXECUTION_STATUS_CANCELED ||
+			info.GetStatus() == enums.WORKFLOW_EXECUTION_STATUS_TERMINATED,
+		StartedAt: info.GetStartTime().AsTime(),
+		EndedAt:   info.GetCloseTime().AsTime(),
+	}
+
+	return status, nil
+}

@@ -1,39 +1,17 @@
 package scanner
 
 import (
-	"context"
-	"log"
-
-	"go.uber.org/fx"
-
-	"github.com/FreekingDean/gojellyfin/internal/tasks"
+	"github.com/FreekingDean/gojellyfin/internal/fx"
+	"github.com/FreekingDean/gojellyfin/internal/jobs"
 )
 
 var Module = fx.Module(
 	"scanner",
-	fx.Provide(
-		New,
-	),
-	fx.Invoke(
-		useScanner,
-		run,
-	),
+	fx.Provide(New),
+	fx.Invoke(register),
 )
 
-func useScanner(registry *tasks.Registry, s *Scanner) error {
-	return registry.UseRunner(tasks.LibraryScanID, s.Scan)
-}
-
-func run(lc fx.Lifecycle, s *Scanner) {
-	lc.Append(fx.Hook{
-		OnStart: func(context.Context) error {
-			go func() {
-				if err := s.Scan(context.Background()); err != nil {
-					log.Printf("initial scan: %v", err)
-				}
-			}()
-
-			return nil
-		},
-	})
+// What the scanner is hooked into is answered by reading this file.
+func register(registry *jobs.Registry, scanner *Scanner) {
+	registry.Register(NewLibraryScan(scanner))
 }

@@ -30,7 +30,7 @@ go test -run TestName ./internal/... # single test
 echo hunter2 | go run ./cmd/gojellyfin adduser Dean   # bootstrap the first user
 ```
 
-Everything ships as one cobra binary, `cmd/gojellyfin`, with a subcommand each for `server`, `transcoder`, `migrate`, `adduser`, `resetpassword` and `localizationdata`. One binary means one image, so an operator task is `docker exec <container> gojellyfin adduser Dean` rather than a second image or a second build. The names stay flat and read as commands; a new task is a `<name>Command() *cobra.Command` constructor in a file of its own, added to the list in `main.go`.
+Everything ships as one cobra binary, `cmd/gojellyfin`, with a subcommand each for `server`, `transcoder`, `worker`, `migrate`, `adduser`, `resetpassword` and `localizationdata`. One binary means one image, so an operator task is `docker exec <container> gojellyfin adduser Dean` rather than a second image or a second build. The names stay flat and read as commands; a new task is a `<name>Command() *cobra.Command` constructor in a file of its own, added to the list in `main.go`.
 
 Only two things are shared between them, both in `main.go`: `withStore` opens the store, starts it and closes it around a callback, and `readPassword` reads from stdin. Neither the DSN nor its default lives there — `store.DatabaseURL()` is the single source, which is why `migrate` can name the same database the server will use without repeating the string.
 
@@ -55,19 +55,19 @@ atlas migrate apply --dir "file://migrations" --url "$DATABASE_URL"
 
 `gojellyfin migrate` is the deployed spelling of that second line. It drives the `atlas` CLI rather than the Go SDK because the revision tracker that owns `atlas_schema_revisions` is not in the `ariga.io/atlas` module — it lives in the CLI repo under `cmd/atlas/internal/migrate/ent`, which nothing outside that repo can import. The migration directory is embedded through `internal/store/migrations`, so a deployed binary cannot drift from the schema it expects, and `atlas.sum` is still verified on every run.
 
-The `Dockerfile` carries that one binary and the `atlas` binary, runs as a non-root user, and is built and pushed to `ghcr.io/freekingdean/gojellyfin` by `.github/workflows/docker.yml`. `CMD` is `server`, so the image serves by default and any other subcommand is a `docker run` argument. `entrypoint.sh` survives the consolidation for one reason: it migrates first when `MIGRATE_ON_START=true`. That has to stay outside the binary, because it is deploy policy rather than server behaviour — unconditional migration on start is unsafe with rolling replicas, so the default is a one-off `docker run --rm <image> migrate`.
+The `Dockerfile` carries that one binary and the `atlas` binary, runs as a non-root user, and is built and pushed to `ghcr.io/freekingdean/gojellyfin` by `.github/workflows/docker.yml`. `CMD` is `server`, so the image serves by default and any other subcommand is a `docker run` argument — a worker is the same image run as `worker`, which is the whole reason background work is a workflow rather than a goroutine in the server. `entrypoint.sh` survives the consolidation for one reason: it migrates first when `MIGRATE_ON_START=true`. That has to stay outside the binary, because it is deploy policy rather than server behaviour — unconditional migration on start is unsafe with rolling replicas, so the default is a one-off `docker run --rm <image> migrate`.
 
 ## Architecture
 
 ### Wiring: uber/fx
 
-Every package under `internal/` exposes a `Module` in its own `fx.go`; `serverModules` in `cmd/gojellyfin/server.go` composes them into the one `fx.New(...).Run()` that the `server` subcommand is. fx wires the server, not the CLI — every other subcommand builds what it needs by hand, because a one-shot task does not want a lifecycle. New packages follow the same shape: `New` constructor in the package, `fx.Provide`/`fx.Invoke` in `fx.go`, `fx.Lifecycle` hooks in a `run` function for anything with start/stop semantics (see `internal/http/fx.go`, `internal/store/fx.go`).
+Every package under `internal/` exposes a `Module` in its own `fx.go`; `serverModules` in `cmd/gojellyfin/server.go` composes them into the one `fx.New(...).Run()` that the `server` subcommand is. fx wires the long-running commands, not the CLI — `adduser` and the rest build what they need by hand, because a one-shot task does not want a lifecycle. `server`, `transcoder` and `worker` each compose their own graph. New packages follow the same shape: `New` constructor in the package, `fx.Provide`/`fx.Invoke` in `fx.go`, `fx.Lifecycle` hooks in a `run` function for anything with start/stop semantics (see `internal/http/fx.go`, `internal/store/fx.go`).
 
 The command lists the domains one by one, but not the forty tag packages: `server.Module` aggregates those, so a tag module is named beside its thirty-nine siblings rather than in the composition root, and the command reads as the domains plus the API surface they are served through. Tag modules are named `server/<tag>` because five of them share a package name with a domain (`items`, `playlists`, `localization`, `displaypreferences`, `system`) and fx prints the module name in its graph and its errors.
 
 A module aggregates another only where the second is part of the first's own edge, not as a shortcut past the command: `server.Module` takes the tag packages, and `http.Module` takes `mux` and `transcode` along with `middleware.NewAuth`, `socket.New` and `stream.New`, because those are the transport it owns. Each subcommand still composes its own list — `transcoder` takes `observability` and `transcode/worker` and no database at all, which is the point of it being a separate deployment.
 
-A binding that exists only because the object graph would otherwise be cyclic goes in the `fx.go` of the package that supplies the dependency, not the one that consumes it: `scanner`'s `useScanner` registers `Scanner.Scan` as the runner for `tasks.LibraryScanID`, so what the scanner is hooked into is answered by reading `internal/scanner/fx.go`.
+A binding that exists only because the object graph would otherwise be cyclic goes in the `fx.go` of the package that supplies the dependency, not the one that consumes it: `scanner`'s `register` hands its `LibraryScan` to the `jobs.Registry`, so what the scanner is hooked into is answered by reading `internal/scanner/fx.go`.
 
 `TestServerModulesResolve` in `cmd/gojellyfin/server_test.go` runs `fx.ValidateApp` over `serverModules`. A forgotten `Module` compiles cleanly — nothing references one except the list it belongs to — so the build cannot catch it and the server dies on start instead. `ValidateApp` checks the graph without opening a database or binding a port; dropping `mediainfo.Module` fails it with `missing type: *mediainfo.Server`.
 
@@ -100,7 +100,7 @@ They register after the generated routes so a documented literal wins any overla
 
 Three layers, split on what each is allowed to know:
 
-- **`internal/{auth,sessions,users,items,libraries,config}` — domains.** Behaviour over the ent models, exposing a `Service` built with `New(client *store.Client)`. **A domain package must never import `internal/server/api` or `internal/http/middleware`.** That invariant is what the layout rests on; check it with `grep -rl 'server/api\|http/middleware' internal/<domain>/`, which must come back empty. `auth` owns hashing, tokens and request identity; `sessions` owns the active session and device rows, which are Jellyfin sessions rather than login state.
+- **`internal/{auth,sessions,users,items,libraries,tasks,config}` — domains.** Behaviour over the ent models, exposing a `Service` built with `New(client *store.Client)`. **A domain package must never import `internal/server/api` or `internal/http/middleware`.** That invariant is what the layout rests on; check it with `grep -rl 'server/api\|http/middleware' internal/<domain>/`, which must come back empty. `auth` owns hashing, tokens and request identity; `sessions` owns the active session and device rows, which are Jellyfin sessions rather than login state; `tasks` owns the workflows the dashboard drives.
 - **`internal/server/<tag>` — one package per spec tag.** Named for the tag (`userlibrary`, `librarystructure`, `mediainfo`), holding exactly the operations that tag declares and a `Server` with the domain services it needs. Add a tag package by looking the operation up in the spec, not by guessing where it feels like it belongs — `AuthenticateUserByName` is a `User` operation, `GetBitrateTestBytes` is `MediaInfo`.
 - **`internal/server/apiutil`** — five generic helpers (`Ptr`, `Deref`, `OrElse`, `Body`, `UID`) and nothing else. It imports none of our packages, and no domain knowledge belongs in it; Go cannot alias generic functions, which is the only reason they are shared rather than copied.
 
@@ -131,6 +131,20 @@ Ent's default delete action is `NO ACTION` for a required edge and `SET NULL` fo
 Columns owned by a background process must be left out of an upsert's `DoUpdates` — the scan clobbering probe-owned columns like `run_time_ticks` was a real bug. The scan writes `date_modified`; the probe writes `container`, `run_time_ticks`, `probed_at`, `tags`, the `MediaSource` and the genre, studio and credit edges, and rewrites all of them on every run, so the edges are cleared and re-added rather than merged.
 
 Ordering by a to-many edge makes ent group the query, so the sort column comes back unaggregated and Postgres rejects it. Query from the side that owns the column instead (see `items.ResumeItems`).
+
+### Background work
+
+Background work runs as Temporal workflows in a separate deployment. `gojellyfin worker` is the same image and the same binary as the server, run as a second deployment, and `TEMPORAL_HOSTPORT` is the server it dials; `TEMPORAL_NAMESPACE` defaults to `default`. With the address unset, background work is off and the server still starts, the way an empty `TRANSCODER_WORKERS` leaves transcoding off — a developer running the server alone gets a server rather than a dial error.
+
+`internal/temporal` is the client and the worker; `internal/tasks` is the domain over them, and it is what the `ScheduledTasks` API is served from. A package declares what it runs beside the code that implements it: `scanner.Registration` names the workflow and its activities, and fx collects those into the worker through a value group, so the worker command lists no workflows of its own.
+
+**The task id is the workflow id.** That is what gives a task singleton semantics without a lock or a dedupe column — Temporal refuses a second execution under an id that is already running, so pressing Start twice, `RefreshLibrary` and a schedule all collapse into one run. It also means state is one `DescribeWorkflowExecution` on a known id rather than a search over history, which is why `internal/tasks` needs no visibility query and no stored mapping.
+
+The library scan fans its libraries out flat, because a library is a handful of rows. Per item work is what would need chunking into child workflows: a workflow has to replay its whole history, so a flat fan out of thousands of activities is the pattern Temporal's own guidance caps at a few hundred. Activities carry a bounded `RetryPolicy` — a library that cannot be read will not become readable by being asked again inside the same run — and heartbeat, so a scan that is merely slow is told apart from a worker that died.
+
+One failing library does not abandon the others. The workflow collects every future and logs the ones that failed, because the sweep a failed library skipped is safe to leave until the next run while the ones that succeeded are not worth losing.
+
+Triggers are not built. `UpdateTask` answers 501 rather than storing a schedule nobody reads; Temporal schedules are where they belong.
 
 ### Request identity
 

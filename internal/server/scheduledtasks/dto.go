@@ -1,78 +1,60 @@
 package scheduledtasks
 
 import (
+	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
-	"github.com/FreekingDean/gojellyfin/internal/tasks"
 )
 
-func taskInfo(info tasks.Info) api.TaskInfo {
-	converted := make([]api.TaskTriggerInfo, 0, len(info.Triggers))
-	for _, trigger := range info.Triggers {
-		converted = append(converted, api.TaskTriggerInfo{
-			Type:            apiutil.Ptr(api.TaskTriggerInfoType(trigger.Type)),
-			IntervalTicks:   trigger.IntervalTicks,
-			TimeOfDayTicks:  trigger.TimeOfDayTicks,
-			MaxRuntimeTicks: trigger.MaxRuntimeTicks,
-			DayOfWeek:       dayOfWeek(trigger.DayOfWeek),
-		})
-	}
+func taskInfo(status jobs.Status) api.TaskInfo {
+	triggers := make([]api.TaskTriggerInfo, 0)
 
 	return api.TaskInfo{
-		Id:                  apiutil.Ptr(info.ID),
-		Key:                 apiutil.Ptr(info.ID),
-		Name:                apiutil.Ptr(info.Name),
-		Description:         apiutil.Ptr(info.Description),
-		Category:            apiutil.Ptr(info.Category),
+		Id:                  apiutil.Ptr(status.Job.Name()),
+		Key:                 apiutil.Ptr(status.Job.Name()),
+		Name:                apiutil.Ptr(status.Job.Name()),
+		Description:         apiutil.Ptr(status.Job.Description()),
+		Category:            apiutil.Ptr(status.Job.Category()),
 		IsHidden:            apiutil.Ptr(false),
-		State:               apiutil.Ptr(api.TaskState(info.State)),
-		Triggers:            &converted,
-		LastExecutionResult: taskResult(info),
+		State:               apiutil.Ptr(taskState(status.State)),
+		Triggers:            &triggers,
+		LastExecutionResult: taskResult(status),
 	}
 }
 
-func triggers(infos []api.TaskTriggerInfo) []tasks.Trigger {
-	converted := make([]tasks.Trigger, 0, len(infos))
-	for _, info := range infos {
-		trigger := tasks.Trigger{
-			Type:            string(apiutil.Deref(info.Type)),
-			IntervalTicks:   info.IntervalTicks,
-			TimeOfDayTicks:  info.TimeOfDayTicks,
-			MaxRuntimeTicks: info.MaxRuntimeTicks,
-		}
-		if info.DayOfWeek != nil {
-			trigger.DayOfWeek = apiutil.Ptr(string(*info.DayOfWeek))
-		}
-		converted = append(converted, trigger)
+func taskState(state jobs.State) api.TaskState {
+	switch state {
+	case jobs.StateRunning:
+		return api.TaskStateRunning
+	case jobs.StateCancelling:
+		return api.TaskStateCancelling
+	default:
+		return api.TaskStateIdle
 	}
-
-	return converted
 }
 
-func taskResult(info tasks.Info) *api.TaskResult {
-	if info.LastResult == nil {
+func taskResult(status jobs.Status) *api.TaskResult {
+	if status.Last == nil {
 		return nil
 	}
 
-	result := &api.TaskResult{
-		Id:           apiutil.Ptr(info.ID),
-		Key:          apiutil.Ptr(info.ID),
-		Name:         apiutil.Ptr(info.Name),
-		StartTimeUtc: apiutil.Ptr(info.LastResult.StartedAt.UTC()),
-		EndTimeUtc:   apiutil.Ptr(info.LastResult.EndedAt.UTC()),
-		Status:       apiutil.Ptr(api.TaskCompletionStatus(info.LastResult.Status)),
+	return &api.TaskResult{
+		Id:           apiutil.Ptr(status.Job.Name()),
+		Key:          apiutil.Ptr(status.Job.Name()),
+		Name:         apiutil.Ptr(status.Job.Name()),
+		StartTimeUtc: apiutil.Ptr(status.Last.StartedAt.UTC()),
+		EndTimeUtc:   apiutil.Ptr(status.Last.EndedAt.UTC()),
+		Status:       apiutil.Ptr(completionStatus(status.Last)),
 	}
-	if info.LastResult.Error != "" {
-		result.ErrorMessage = apiutil.Ptr(info.LastResult.Error)
-	}
-
-	return result
 }
 
-func dayOfWeek(day *string) *api.DayOfWeek {
-	if day == nil {
-		return nil
+func completionStatus(result *jobs.Result) api.TaskCompletionStatus {
+	switch {
+	case result.Succeeded:
+		return api.TaskCompletionStatusCompleted
+	case result.Cancelled:
+		return api.TaskCompletionStatusCancelled
+	default:
+		return api.TaskCompletionStatusFailed
 	}
-
-	return apiutil.Ptr(api.DayOfWeek(*day))
 }
