@@ -21,6 +21,9 @@ func (s Spec) Query() url.Values {
 	if s.StartTicks > 0 {
 		query.Set("startTicks", strconv.FormatInt(s.StartTicks, 10))
 	}
+	if s.Video {
+		query.Set("video", "1")
+	}
 
 	return query
 }
@@ -29,6 +32,7 @@ func SpecFromQuery(query url.Values) (Spec, error) {
 	spec := Spec{
 		Path:      query.Get("path"),
 		Container: query.Get("container"),
+		Video:     query.Get("video") == "1",
 	}
 
 	if raw := query.Get("bitrate"); raw != "" {
