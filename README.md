@@ -4,8 +4,38 @@ A Go reimplementation of a Jellyfin media server, serving the Jellyfin 10.10.0
 HTTP API so that stock `jellyfin-web` and Jellyfin clients can talk to it.
 
 Everything ships as one binary, `cmd/gojellyfin`, with a subcommand each for
-`server`, `transcoder`, `migrate`, `adduser`, `resetpassword` and
+`server`, `transcoder`, `worker`, `migrate`, `adduser`, `resetpassword` and
 `localizationdata`.
+
+## What works
+
+| | |
+|---|---|
+| **Movies** | Scanned, played, and their metadata answered |
+| **TV** | Series, seasons and episodes, including next-up and resume |
+| **Library scanning** | Walks the tree, probes with ffprobe, sweeps what is gone |
+| **Background jobs** | Temporal workflows in a separate worker deployment |
+| **High availability** | The API is stateless — run as many replicas as you like |
+| **Automatic encoding** | Audio a client cannot decode is re-encoded on the fly; the video is copied, never transcoded |
+| Live TV | Not implemented |
+| Music | Not implemented — the scanner does not walk audio files |
+| SyncPlay | Not implemented |
+
+Two of those want a caveat rather than a tick.
+
+**Automatic encoding** covers the common case and no more. A rip whose video a
+browser *can* decode but whose audio it cannot — H.264 beside AC-3 or DTS, which
+is most of them — is remuxed to fragmented mp4 with the audio re-encoded and the
+video copied. Video the client genuinely cannot decode (HEVC, 10-bit H.264,
+VC-1) is refused with a 415 rather than transcoded, which is a deliberate
+position and not a gap to be filled: keep a second copy on disk instead. The
+choice is also not yet driven by the client's declared `DeviceProfile`, so it
+reads from a small table of what browsers decode.
+
+**High availability** means the API holds no per-request state and needs no
+session affinity — a transcode is one HTTP request from start to finish, so a
+second replica breaks nothing. It does not mean the database is replicated.
+
 
 ## Development
 
