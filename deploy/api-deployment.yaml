@@ -35,19 +35,6 @@ spec:
                 secretKeyRef:
                   name: gojellyfin
                   key: DATABASE_URL
-            # Same token every transcoder holds; sent as X-Transcoder-Token.
-            - name: TRANSCODER_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: gojellyfin
-                  key: TRANSCODER_TOKEN
-            # Empty or unset turns transcoding off and audio a client cannot
-            # take goes back to answering 415, so a typo here is silent.
-            - name: TRANSCODER_WORKERS
-              valueFrom:
-                configMapKeyRef:
-                  name: gojellyfin
-                  key: TRANSCODER_WORKERS
             # MIGRATE_ON_START is deliberately unset. entrypoint.sh would run
             # the migrations before the server, which is unsafe with rolling
             # replicas — every replica would race the same apply on every

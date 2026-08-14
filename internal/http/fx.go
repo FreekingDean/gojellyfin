@@ -20,7 +20,7 @@ var Module = fx.Module(
 	fx.Provide(
 		middleware.NewAuth,
 		socket.New,
-		func(pool *transcode.Pool) stream.Transcoder { return pool },
+		func(encoder *transcode.Encoder) stream.Transcoder { return encoder },
 		func(service *users.Service) middleware.Policies { return service },
 		stream.New,
 		New,

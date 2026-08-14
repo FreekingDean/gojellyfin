@@ -1,4 +1,4 @@
-package worker
+package transcode
 
 import (
 	"context"
@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
-	"github.com/FreekingDean/gojellyfin/internal/transcode"
 )
 
 const sourceSeconds = 3
@@ -64,7 +63,7 @@ func TestStartTranscodesToEachSupportedContainer(t *testing.T) {
 		"opus": "opus",
 	} {
 		t.Run(container, func(t *testing.T) {
-			output, err := start(context.Background(), transcode.Spec{Path: flac, Container: container})
+			output, err := start(context.Background(), Spec{Path: flac, Container: container})
 			if err != nil {
 				t.Fatalf("failed to start the transcode: %v", err)
 			}
@@ -95,7 +94,7 @@ func TestStartTranscodesToEachSupportedContainer(t *testing.T) {
 func TestStartSeeksToTheRequestedOffset(t *testing.T) {
 	flac := source(t, "tone.flac", sourceSeconds)
 
-	output, err := start(context.Background(), transcode.Spec{
+	output, err := start(context.Background(), Spec{
 		Path:       flac,
 		Container:  "mp3",
 		StartTicks: 2 * 10_000_000,
@@ -123,13 +122,13 @@ func TestStartRejectsASourceFfmpegCannotRead(t *testing.T) {
 	}
 
 	missing := filepath.Join(t.TempDir(), "absent.flac")
-	if _, err := start(context.Background(), transcode.Spec{Path: missing, Container: "mp3"}); err == nil {
+	if _, err := start(context.Background(), Spec{Path: missing, Container: "mp3"}); err == nil {
 		t.Fatal("a missing source started a transcode")
 	}
 }
 
 func TestStartRejectsAnUnsupportedContainer(t *testing.T) {
-	if _, err := start(context.Background(), transcode.Spec{Path: "/dev/null", Container: "mp4"}); err == nil {
+	if _, err := start(context.Background(), Spec{Path: "/dev/null", Container: "mp4"}); err == nil {
 		t.Fatal("an unwritable container started a transcode")
 	}
 }
@@ -140,7 +139,7 @@ func TestStartStopsFfmpegWhenTheContextIsCancelled(t *testing.T) {
 	flac := source(t, "tone.flac", sourceSeconds)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	output, err := start(ctx, transcode.Spec{Path: flac, Container: "mp3"})
+	output, err := start(ctx, Spec{Path: flac, Container: "mp3"})
 	if err != nil {
 		t.Fatalf("failed to start the transcode: %v", err)
 	}

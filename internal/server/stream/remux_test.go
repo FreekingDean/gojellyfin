@@ -14,7 +14,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
-	"github.com/FreekingDean/gojellyfin/internal/transcode/worker"
+	"github.com/FreekingDean/gojellyfin/internal/transcode"
 )
 
 // A rip as they actually arrive: h264 a browser plays beside ac3 it cannot
@@ -63,7 +63,7 @@ func (f *fixture) addRip(t *testing.T) uuid.UUID {
 
 func TestServeRemuxesAudioABrowserCannotDecode(t *testing.T) {
 	fixture := newFixture(t)
-	fixture.withWorker(t)
+	fixture.withEncoder(t)
 	id := fixture.addRip(t)
 
 	recorder := httptest.NewRecorder()
@@ -98,12 +98,12 @@ func TestServeRemuxesAudioABrowserCannotDecode(t *testing.T) {
 // The client is believed when it says it can decode the source, so a player
 // that handles ac3 still gets the file untouched.
 func TestServeLeavesAudioTheClientDeclaresAlone(t *testing.T) {
-	if !worker.Available() {
+	if !transcode.Available() {
 		t.Fatal("ffmpeg is not on PATH")
 	}
 
 	fixture := newFixture(t)
-	fixture.withWorker(t)
+	fixture.withEncoder(t)
 	id := fixture.addRip(t)
 
 	recorder := httptest.NewRecorder()
@@ -125,7 +125,7 @@ func TestServeLeavesAudioTheClientDeclaresAlone(t *testing.T) {
 
 func TestServeDirectPlaysWhenTheAudioIsAlreadyPlayable(t *testing.T) {
 	fixture := newFixture(t)
-	fixture.withWorker(t)
+	fixture.withEncoder(t)
 	id := fixture.addTone(t)
 
 	request := fixture.get(t, http.MethodGet, "/Audio/"+id.String()+"/stream?", id)

@@ -2,14 +2,12 @@ package stream
 
 import (
 	"context"
-	"errors"
 	"math"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 
@@ -20,29 +18,35 @@ import (
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/transcode"
-	"github.com/FreekingDean/gojellyfin/internal/transcode/worker"
 )
 
 const toneSeconds = 3
 
-// The whole path, with the pool talking HTTP to a worker that runs ffmpeg, so
-// what comes back is what a client would get rather than a stub's bytes.
-func (f *fixture) withWorker(t *testing.T) {
+// Real ffmpeg in this process, so what comes back is what a client would get
+// rather than a stub's bytes.
+func (f *fixture) withEncoder(t *testing.T) {
 	t.Helper()
 
-	if !worker.Available() {
+	if !transcode.Available() {
 		t.Fatal("ffmpeg is not on PATH")
 	}
 
-	server := httptest.NewServer(worker.New().Handler())
-	t.Cleanup(server.Close)
-
-	t.Setenv("TRANSCODER_WORKERS", server.URL)
-	f.handler.transcoder = transcode.NewPool()
+	f.handler.transcoder = transcode.NewEncoder(2, 0)
 }
 
 // A flac the client in these tests never declares, which is what makes the
 // server reach for an encoder instead of the file.
+func (f *fixture) tonePath(t *testing.T, id uuid.UUID) string {
+	t.Helper()
+
+	record, err := f.items.ItemByID(context.Background(), id)
+	if err != nil {
+		t.Fatalf("failed to load the item: %v", err)
+	}
+
+	return record.Path
+}
+
 func (f *fixture) addTone(t *testing.T) uuid.UUID {
 	t.Helper()
 
@@ -101,7 +105,7 @@ func decodable(t *testing.T, body []byte, name string) *ffmpeg.Probe {
 
 func TestServeUniversalTranscodes(t *testing.T) {
 	fixture := newFixture(t)
-	fixture.withWorker(t)
+	fixture.withEncoder(t)
 	id := fixture.addTone(t)
 
 	recorder := httptest.NewRecorder()
@@ -130,7 +134,7 @@ func TestServeUniversalTranscodes(t *testing.T) {
 
 func TestServeTranscodesTheRequestedContainer(t *testing.T) {
 	fixture := newFixture(t)
-	fixture.withWorker(t)
+	fixture.withEncoder(t)
 	id := fixture.addTone(t)
 
 	recorder := httptest.NewRecorder()
@@ -151,7 +155,7 @@ func TestServeTranscodesTheRequestedContainer(t *testing.T) {
 
 func TestServeUniversalHonoursStartTimeTicks(t *testing.T) {
 	fixture := newFixture(t)
-	fixture.withWorker(t)
+	fixture.withEncoder(t)
 	id := fixture.addTone(t)
 
 	recorder := httptest.NewRecorder()
@@ -171,7 +175,7 @@ func TestServeUniversalHonoursStartTimeTicks(t *testing.T) {
 // to stand rather than become a stream of something else.
 func TestServeUniversalRefusesAContainerNothingCanWrite(t *testing.T) {
 	fixture := newFixture(t)
-	fixture.withWorker(t)
+	fixture.withEncoder(t)
 	id := fixture.addTone(t)
 
 	recorder := httptest.NewRecorder()
@@ -184,41 +188,26 @@ func TestServeUniversalRefusesAContainerNothingCanWrite(t *testing.T) {
 	}
 }
 
-// A worker that is down has to surface as the refusal the client already knows
-// how to read, not as a truncated stream.
-func TestServeUniversalRefusesWhenNoWorkerAnswers(t *testing.T) {
+// Every slot on this pod being taken is temporary, so the client is told when
+// to come back rather than that its device cannot play this. It is also the
+// whole of the load balancing: the gateway reads the refusal and tries another
+// pod, with no pool and no shared state.
+func TestServeUniversalAnswersBusyWhenEverySlotIsTaken(t *testing.T) {
 	fixture := newFixture(t)
+	fixture.withEncoder(t)
 	id := fixture.addTone(t)
 
-	unreachable := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
-	unreachable.Close()
+	encoder := transcode.NewEncoder(1, 0)
+	fixture.handler.transcoder = encoder
 
-	t.Setenv("TRANSCODER_WORKERS", unreachable.URL)
-	fixture.handler.transcoder = transcode.NewPool()
-
-	recorder := httptest.NewRecorder()
-	target := "/Audio/" + id.String() + "/universal?container=mp3&"
-
-	fixture.handler.ServeUniversal(recorder, fixture.get(t, http.MethodGet, target, id))
-
-	if recorder.Code != http.StatusUnsupportedMediaType {
-		t.Fatalf("status = %d, want %d", recorder.Code, http.StatusUnsupportedMediaType)
+	held, err := encoder.Open(context.Background(), transcode.Spec{
+		Path:      fixture.tonePath(t, id),
+		Container: "mp3",
+	})
+	if err != nil {
+		t.Fatalf("failed to take the only slot: %v", err)
 	}
-}
-
-// Every worker being busy is temporary, so the client is told when to come
-// back rather than that its device cannot play this.
-func TestServeUniversalAnswersBusyWhenEveryWorkerIsFull(t *testing.T) {
-	fixture := newFixture(t)
-	id := fixture.addTone(t)
-
-	full := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		http.Error(w, "every job is taken", http.StatusServiceUnavailable)
-	}))
-	t.Cleanup(full.Close)
-
-	t.Setenv("TRANSCODER_WORKERS", full.URL)
-	fixture.handler.transcoder = transcode.NewPool()
+	t.Cleanup(func() { _ = held.Close() })
 
 	recorder := httptest.NewRecorder()
 	target := "/Audio/" + id.String() + "/universal?container=mp3&"
@@ -230,46 +219,5 @@ func TestServeUniversalAnswersBusyWhenEveryWorkerIsFull(t *testing.T) {
 	}
 	if got := recorder.Header().Get("Retry-After"); got != "10" {
 		t.Errorf("retry after = %q, want 10", got)
-	}
-}
-
-func TestPoolIsDisabledWithoutWorkers(t *testing.T) {
-	t.Setenv("TRANSCODER_WORKERS", "")
-
-	pool := transcode.NewPool()
-	if pool.Enabled() {
-		t.Fatal("the pool is enabled with no workers configured")
-	}
-	if _, err := pool.Open(context.Background(), transcode.Spec{Path: "/tmp/x.flac", Container: "mp3"}); !errors.Is(err, transcode.ErrNoWorker) {
-		t.Fatalf("err = %v, want %v", err, transcode.ErrNoWorker)
-	}
-}
-
-func TestPoolSpreadsAcrossWorkers(t *testing.T) {
-	seen := make(chan string, 4)
-	servers := make([]string, 0, 2)
-	for range 2 {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			seen <- r.Host
-			http.Error(w, "busy", http.StatusInternalServerError)
-		}))
-		t.Cleanup(server.Close)
-		servers = append(servers, server.URL)
-	}
-
-	t.Setenv("TRANSCODER_WORKERS", strings.Join(servers, ","))
-	pool := transcode.NewPool()
-
-	if _, err := pool.Open(context.Background(), transcode.Spec{Path: "/tmp/x.flac", Container: "mp3"}); !errors.Is(err, transcode.ErrNoWorker) {
-		t.Fatalf("err = %v, want %v", err, transcode.ErrNoWorker)
-	}
-	close(seen)
-
-	hosts := make(map[string]bool)
-	for host := range seen {
-		hosts[host] = true
-	}
-	if len(hosts) != 2 {
-		t.Fatalf("tried %d workers, want both", len(hosts))
 	}
 }

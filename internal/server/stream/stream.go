@@ -11,6 +11,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -49,6 +50,7 @@ var contentTypes = map[string]string{
 type Transcoder interface {
 	Enabled() bool
 	Open(ctx context.Context, spec transcode.Spec) (io.ReadCloser, error)
+	Stall() time.Duration
 }
 
 type Handler struct {
@@ -209,7 +211,10 @@ func (h *Handler) serveRemux(w http.ResponseWriter, r *http.Request, item *items
 func (h *Handler) relay(w http.ResponseWriter, r *http.Request, item *items.Item, spec transcode.Spec) bool {
 	container := spec.Container
 
-	output, err := h.transcoder.Open(r.Context(), spec)
+	ctx, cancel := context.WithCancel(r.Context())
+	defer cancel()
+
+	output, err := h.transcoder.Open(ctx, spec)
 	if err != nil {
 		log.Printf("failed to transcode %s to %s: %v", item.Path, container, err)
 		if errors.Is(err, transcode.ErrBusy) {
@@ -232,7 +237,16 @@ func (h *Handler) relay(w http.ResponseWriter, r *http.Request, item *items.Item
 	w.Header().Set("Accept-Ranges", "none")
 	w.WriteHeader(http.StatusOK)
 
-	if _, err := transcode.Relay(w, output); err != nil {
+	// Cancelling reaps ffmpeg, and the deadline ends a write already blocked on
+	// a client that stopped acknowledging, which cancelling on its own cannot.
+	kill := func() {
+		log.Printf("transcode of %s moved nothing in %s", item.Path, h.transcoder.Stall())
+		cancel()
+		_ = http.NewResponseController(w).SetWriteDeadline(time.Now())
+	}
+
+	stalling := transcode.UntilStalled(ctx, output, h.transcoder.Stall(), kill)
+	if _, err := transcode.Relay(w, stalling); err != nil {
 		log.Printf("transcode of %s stopped: %v", item.Path, err)
 	}
 
