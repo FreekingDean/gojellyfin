@@ -99,9 +99,6 @@ func newFixture(t *testing.T) *fixture {
 		if _, err := client.MediaSource.Delete().Where(inLibrary).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the media sources: %v", err)
 		}
-		if err := itemService.DeleteItemsNotInPaths(ctx, library.ID, nil); err != nil {
-			t.Errorf("failed to delete the items: %v", err)
-		}
 		if err := libraryService.DeleteLibrary(ctx, library.ID); err != nil {
 			t.Errorf("failed to delete the library: %v", err)
 		}

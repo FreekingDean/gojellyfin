@@ -2,6 +2,7 @@ package items
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -260,13 +261,22 @@ func (s *Service) query() *store.ItemQuery {
 	return s.store.Item.Query().Where(itemmodal.DeletedAtIsNil())
 }
 
+// A library that scanned to nothing is indistinguishable from one whose storage
+// went away, and the second is the common case, so neither sweeps the library.
+var ErrNothingScanned = errors.New("items: the scan found no files")
+
 // Soft, so that a volume which comes back brings its watch state with it. The
 // row keeps the id the user data hangs off, which is the whole reason a hard
 // delete cannot be undone.
 func (s *Service) DeleteItemsNotInPaths(ctx context.Context, libraryID uuid.UUID, paths []string) error {
-	missing := []predicate.Item{itemmodal.LibraryID(libraryID), itemmodal.DeletedAtIsNil()}
-	if len(paths) > 0 {
-		missing = append(missing, itemmodal.PathNotIn(paths...))
+	if len(paths) == 0 {
+		return ErrNothingScanned
+	}
+
+	missing := []predicate.Item{
+		itemmodal.LibraryID(libraryID),
+		itemmodal.DeletedAtIsNil(),
+		itemmodal.PathNotIn(paths...),
 	}
 
 	if err := s.store.Item.Update().
