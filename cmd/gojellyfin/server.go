@@ -11,6 +11,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/http"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/localization"
 	"github.com/FreekingDean/gojellyfin/internal/observability"
@@ -20,7 +21,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	"github.com/FreekingDean/gojellyfin/internal/system"
-	"github.com/FreekingDean/gojellyfin/internal/tasks"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
@@ -40,7 +40,7 @@ var serverModules = fx.Options(
 	scanner.Module,
 	sessions.Module,
 	system.Module,
-	tasks.Module,
+	jobs.Module,
 	users.Module,
 
 	server.Module,

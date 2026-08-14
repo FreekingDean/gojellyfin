@@ -7,9 +7,10 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
+	"github.com/FreekingDean/gojellyfin/internal/scanner"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	"github.com/FreekingDean/gojellyfin/internal/tasks"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
@@ -18,7 +19,7 @@ type Server struct {
 	libraries  *libraries.Service
 	users      *users.Service
 	filesystem *filesystem.Service
-	registry   *tasks.Registry
+	tasks      *jobs.Service
 }
 
 func New(
@@ -26,13 +27,13 @@ func New(
 	libraries *libraries.Service,
 	users *users.Service,
 	filesystem *filesystem.Service,
-	registry *tasks.Registry,
+	service *jobs.Service,
 ) *Server {
-	return &Server{items: items, libraries: libraries, users: users, filesystem: filesystem, registry: registry}
+	return &Server{items: items, libraries: libraries, users: users, filesystem: filesystem, tasks: service}
 }
 
 func (s *Server) RefreshLibrary(ctx context.Context, request api.RefreshLibraryRequestObject) (api.RefreshLibraryResponseObject, error) {
-	if err := s.registry.Start(tasks.LibraryScanID); err != nil {
+	if err := s.tasks.Start(ctx, scanner.RefreshLibraryJobID); err != nil {
 		return nil, err
 	}
 
