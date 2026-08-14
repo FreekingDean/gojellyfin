@@ -172,6 +172,20 @@ One failing library does not abandon the others. The workflow collects every fut
 
 Triggers are not built. `UpdateTask` answers 501 rather than storing a schedule nobody reads; Temporal schedules are where they belong.
 
+### Metadata providers
+
+`internal/tmdb` identifies items against TMDB and writes what it returns through `items.UpdateMetadata`. It is bring your own key: `TMDB_API_KEY` unset leaves the provider off and its job a no-op, so a developer running the server alone still gets a server. We deliberately embed no key of our own — there is then none to share, none to throttle and no attribution owed for one.
+
+It runs as its own job rather than inside the scan, and does **not** fan out per item. The work is IO bound on a rate limited API, so a step per item multiplies the request rate and finishes no sooner; one step loops over at most `batchSize` items, spaced by the client's own limiter and heartbeating between them. What a run leaves, the next run picks up.
+
+The batch is derived from the rows — `items.UnidentifiedItems` asks for items whose `provider_ids` is null — rather than handed over, so a crash re-asks the question instead of replaying a stale list. Writing those ids well is the point: item identity is otherwise name and year, which collides when two films share both.
+
+`lock_data` and `locked_fields` are Jellyfin's semantics and the provider honours both. `LockData` keeps an item out of the batch entirely; a field named in `LockedFields` is dropped from what is written, by the table in `locks.go`. The provider ids themselves survive a field lock, because they are identity rather than metadata and Jellyfin has no lock for them.
+
+Two requests per item, not more: the detail call carries `append_to_response=release_dates` (or `content_ratings,external_ids`), so the certification and the IMDb id arrive with the record instead of costing a third round trip. A 429 or a 5xx backs off and retries rather than failing the run; a 404 or an empty search is a miss, which is not an error because the title may be one TMDB gains later.
+
+The tests point the client at an `httptest.Server`, so a green run needs no key and CI never calls TMDB.
+
 ### Request identity
 
 `internal/auth` owns identity on the context — it puts it on and takes it off, and nothing else knows the keys exist. `middleware.Auth` only parses what the client sent (`Authorization: MediaBrowser …`, `X-Emby-Token`, `?api_key=`) and calls `auth.Authenticate`, which resolves the token through `sessions` and returns a context carrying the session.

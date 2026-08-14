@@ -32,6 +32,21 @@ func (e *TestEnvironment) ReplaceStep(step any, with any) {
 	e.env.RegisterActivityWithOptions(with, activity.RegisterOptions{Name: stepName(step)})
 }
 
+// RunStep runs one step the way the engine would. A step that heartbeats needs
+// an activity context to do it on, so calling the method directly panics where
+// this does not.
+func RunStep(t *testing.T, step any, args ...any) error {
+	t.Helper()
+
+	var suite testsuite.WorkflowTestSuite
+
+	env := suite.NewTestActivityEnvironment()
+	env.RegisterActivity(step)
+	_, err := env.ExecuteActivity(step, args...)
+
+	return err
+}
+
 func (e *TestEnvironment) Run(job Job) error {
 	e.env.ExecuteWorkflow(job.Run)
 

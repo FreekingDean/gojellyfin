@@ -2,7 +2,7 @@ package tmdb
 
 import "github.com/FreekingDean/gojellyfin/internal/jobs"
 
-const IdentifyItemsJobID = "IdentifyItems"
+const RefreshMetadataJobID = "RefreshMetadata"
 
 type Identify struct {
 	provider *Provider
@@ -12,7 +12,7 @@ func NewIdentify(provider *Provider) *Identify {
 	return &Identify{provider: provider}
 }
 
-func (i *Identify) Name() string     { return IdentifyItemsJobID }
+func (i *Identify) Name() string     { return RefreshMetadataJobID }
 func (i *Identify) Category() string { return "Library" }
 func (i *Identify) Description() string {
 	return "Identifies items against TMDB and fetches their metadata."
