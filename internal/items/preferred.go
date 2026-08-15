@@ -8,7 +8,6 @@ import (
 // a refusal: the client named no restriction, so none is imposed.
 type Playable struct {
 	Containers  map[string]bool
-	VideoCodecs map[string]bool
 	AudioCodecs map[string]bool
 }
 
@@ -68,16 +67,13 @@ func (p Playable) plays(source *MediaSource) bool {
 		return false
 	}
 
+	if p.AudioCodecs == nil {
+		return true
+	}
+
 	for _, stream := range source.Edges.Streams {
-		switch stream.Kind {
-		case streammodal.KindVideo:
-			if p.VideoCodecs != nil && !p.VideoCodecs[stream.Codec] {
-				return false
-			}
-		case streammodal.KindAudio:
-			if p.AudioCodecs != nil && !p.AudioCodecs[stream.Codec] {
-				return false
-			}
+		if stream.Kind == streammodal.KindAudio && !p.AudioCodecs[stream.Codec] {
+			return false
 		}
 	}
 

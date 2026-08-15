@@ -25,7 +25,6 @@ func TestPreferredSourceTakesCompatibilityOverQuality(t *testing.T) {
 
 	browser := Playable{
 		Containers:  map[string]bool{"mp4": true},
-		VideoCodecs: map[string]bool{"h264": true},
 		AudioCodecs: map[string]bool{"aac": true},
 	}
 
@@ -50,7 +49,7 @@ func TestPreferredSourceTreatsAnUnstatedKindAsNoRestriction(t *testing.T) {
 func TestPreferredSourceFallsBackWhenNothingPlays(t *testing.T) {
 	uhd := source("mkv", "hevc", "eac3", 60_000_000)
 
-	refuses := Playable{VideoCodecs: map[string]bool{"h264": true}}
+	refuses := Playable{Containers: map[string]bool{"mp4": true}}
 	if got := PreferredSource([]*MediaSource{uhd}, refuses); got != uhd {
 		t.Error("nothing playable returned no source at all")
 	}

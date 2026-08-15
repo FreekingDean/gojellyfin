@@ -71,7 +71,7 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	container := sourceContainer(item, source)
+	container := sourceContainer(source)
 	if requested := r.PathValue("container"); requested != "" && !isStatic(r) && !strings.EqualFold(requested, container) {
 		if h.serveTranscode(w, r, item, source, []string{requested}) {
 			return
@@ -81,7 +81,7 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if h.needsRemux(r, item, source) && h.serveRemux(w, r, item, source) {
+	if h.needsRemux(r, item, source) && h.serveRemux(w, r, source) {
 		return
 	}
 
@@ -119,7 +119,7 @@ func (h *Handler) needsRemux(r *http.Request, item *items.Item, source *items.Me
 
 	// A nil set means the client stated no container restriction, which is not
 	// the same as stating none it can take.
-	if containers := acceptedContainers(r); containers != nil && !containers[sourceContainer(item, source)] {
+	if containers := acceptedContainers(r); containers != nil && !containers[sourceContainer(source)] {
 		return true
 	}
 
@@ -156,16 +156,6 @@ func acceptedContainers(r *http.Request) map[string]bool {
 	}
 
 	return browserContainers
-}
-
-// What the client said it can take. Silence about a kind is silence, not a
-// refusal, so only a browser — which declares nothing at all — is held to the
-// tables above.
-func declared(r *http.Request) items.Playable {
-	return items.Playable{
-		Containers:  acceptedContainers(r),
-		AudioCodecs: acceptedAudio(r),
-	}
 }
 
 // A client that says what it can decode is believed; one that says nothing is
@@ -207,7 +197,7 @@ func (h *Handler) ServeUniversal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	container := sourceContainer(item, source)
+	container := sourceContainer(source)
 	if !playable(profiles, container, codec) {
 		containers := make([]string, 0, len(profiles))
 		for _, profile := range profiles {
@@ -247,7 +237,7 @@ func (h *Handler) serveTranscode(w http.ResponseWriter, r *http.Request, item *i
 
 // The video is copied rather than encoded, so this costs a mux and an audio
 // encode rather than a transcode.
-func (h *Handler) serveRemux(w http.ResponseWriter, r *http.Request, item *items.Item, source *items.MediaSource) bool {
+func (h *Handler) serveRemux(w http.ResponseWriter, r *http.Request, source *items.MediaSource) bool {
 	return h.relay(w, r, source, transcode.Spec{
 		Path:       source.Path,
 		Container:  transcode.VideoContainer,
@@ -381,7 +371,10 @@ func (h *Handler) item(w http.ResponseWriter, r *http.Request) (*items.Item, *it
 		return nil, nil, false
 	}
 
-	source := items.PreferredSource(sources, declared(r))
+	source := items.PreferredSource(sources, items.Playable{
+		Containers:  acceptedContainers(r),
+		AudioCodecs: acceptedAudio(r),
+	})
 	if source == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return nil, nil, false
@@ -461,12 +454,9 @@ func describe(container, codec string) string {
 	return container + "|" + codec
 }
 
-func sourceContainer(item *items.Item, source *items.MediaSource) string {
+func sourceContainer(source *items.MediaSource) string {
 	if source.Container != "" {
 		return strings.ToLower(source.Container)
-	}
-	if item.Container != "" {
-		return strings.ToLower(item.Container)
 	}
 
 	return strings.TrimPrefix(strings.ToLower(filepath.Ext(source.Path)), ".")
