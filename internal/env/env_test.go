@@ -1,29 +1,28 @@
 package env
 
 import (
-	"strings"
 	"testing"
 	"time"
 )
 
+const testDatabaseURL = "postgres://localhost:5432/test?sslmode=disable"
+
 func TestLoadDefaults(t *testing.T) {
 	for _, name := range []string{
-		"DATABASE_URL", "PUBLISHED_SERVER_URL", "CORS_ORIGINS",
+		"PUBLISHED_SERVER_URL", "CORS_ORIGINS",
 		"TRANSCODER_JOBS", "TRANSCODER_STALL_TIMEOUT",
 		"TEMPORAL_HOSTPORT", "TEMPORAL_NAMESPACE",
 		"HTTP_PORT",
 	} {
 		t.Setenv(name, "")
 	}
+	t.Setenv("DATABASE_URL", testDatabaseURL)
 
 	config, err := Load()
 	if err != nil {
-		t.Fatalf("an empty environment failed to load: %v", err)
+		t.Fatalf("an otherwise empty environment failed to load: %v", err)
 	}
 
-	if !strings.HasPrefix(config.DatabaseURL, "postgres://") {
-		t.Errorf("DatabaseURL = %q, want the development default", config.DatabaseURL)
-	}
 	if config.PublishedServerURL != "" {
 		t.Error("an address is advertised that the server cannot confirm")
 	}
@@ -44,6 +43,8 @@ func TestLoadDefaults(t *testing.T) {
 // Silently falling back to the default is how a typo in a manifest becomes a
 // capacity problem nobody can explain.
 func TestLoadRefusesMalformedValues(t *testing.T) {
+	t.Setenv("DATABASE_URL", testDatabaseURL)
+
 	t.Run("jobs", func(t *testing.T) {
 		t.Setenv("TRANSCODER_JOBS", "lots")
 		if _, err := Load(); err == nil {
@@ -80,7 +81,18 @@ func TestLoadRefusesMalformedValues(t *testing.T) {
 	})
 }
 
+// Dialing localhost because nobody said otherwise is how a process ends up
+// talking to the wrong database without anyone noticing.
+func TestLoadRequiresADatabaseURL(t *testing.T) {
+	t.Setenv("DATABASE_URL", "")
+
+	if _, err := Load(); err == nil {
+		t.Error("an unset DATABASE_URL was accepted")
+	}
+}
+
 func TestLoadReadsTheEnvironment(t *testing.T) {
+	t.Setenv("DATABASE_URL", testDatabaseURL)
 	t.Setenv("CORS_ORIGINS", "https://one.example, https://two.example ")
 	t.Setenv("TRANSCODER_JOBS", "4")
 	t.Setenv("TRANSCODER_STALL_TIMEOUT", "45s")

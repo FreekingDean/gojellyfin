@@ -1,6 +1,7 @@
 package env
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -9,7 +10,6 @@ import (
 )
 
 const (
-	defaultDatabaseURL       = "postgres://localhost:5432/gojellyfin_development?sslmode=disable"
 	defaultTemporalNamespace = "gojellyfin_default"
 	defaultHTTPPort          = 8081
 	maxPort                  = 65535
@@ -20,6 +20,8 @@ const (
 // struct rather than by grepping, and a package under test is handed a value
 // instead of having to set a variable.
 type Config struct {
+	// No default: a process that was not told which database to open should say
+	// so rather than quietly dial localhost. The Makefile sets it for dev.
 	DatabaseURL string `mapstructure:"DATABASE_URL"`
 
 	HTTPPort int `mapstructure:"HTTP_PORT"`
@@ -64,7 +66,6 @@ var keys = []string{
 
 func Load() (Config, error) {
 	v := viper.New()
-	v.SetDefault("DATABASE_URL", defaultDatabaseURL)
 	v.SetDefault("HTTP_PORT", defaultHTTPPort)
 	v.SetDefault("TEMPORAL_NAMESPACE", defaultTemporalNamespace)
 
@@ -92,6 +93,9 @@ func Load() (Config, error) {
 // the default is how a typo in a manifest becomes a capacity problem nobody
 // can explain.
 func (c Config) validate() error {
+	if c.DatabaseURL == "" {
+		return errors.New("DATABASE_URL is not set, so there is no database to open")
+	}
 	if c.HTTPPort < 1 || c.HTTPPort > maxPort {
 		return fmt.Errorf("HTTP_PORT must be a port between 1 and %d, got %d", maxPort, c.HTTPPort)
 	}
