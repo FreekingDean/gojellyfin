@@ -63,7 +63,19 @@ func TestMovieMapsWhatTmdbReturns(t *testing.T) {
 	}
 }
 
-func TestSeriesMapsWhatTmdbReturns(t *testing.T) {
+// A movie has no series status, so the column TMDB calls "Released" is left for
+// the series that actually has one.
+func TestMovieWritesNoSeriesStatus(t *testing.T) {
+	found, _, err := stub(t).Movie(context.Background(), "The Matrix", released(1999))
+	if err != nil {
+		t.Fatalf("the lookup failed: %v", err)
+	}
+	if found.Status != nil {
+		t.Errorf("Status = %v, want none written for a movie", *found.Status)
+	}
+}
+
+func TestSeriesMapsStatusToJellyfinsVocabulary(t *testing.T) {
 	found, matched, err := stub(t).Series(context.Background(), "Breaking Bad", released(2008))
 	if err != nil {
 		t.Fatalf("the lookup failed: %v", err)
@@ -72,11 +84,30 @@ func TestSeriesMapsWhatTmdbReturns(t *testing.T) {
 		t.Fatal("a title the stub carries did not match")
 	}
 
+	if found.Status == nil || *found.Status != "Ended" {
+		t.Errorf("Status = %v, want Ended", found.Status)
+	}
 	if found.OfficialRating == nil || *found.OfficialRating != "TV-MA" {
 		t.Errorf("OfficialRating = %v, want TV-MA", found.OfficialRating)
 	}
 	if found.EndDate == nil || found.EndDate.Year() != 2013 {
 		t.Errorf("EndDate = %v, want 2013-09-29", found.EndDate)
+	}
+}
+
+func TestSeriesStatusMapping(t *testing.T) {
+	for tmdbStatus, want := range map[string]string{
+		"Returning Series": "Continuing",
+		"Ended":            "Ended",
+		"Canceled":         "Ended",
+		"In Production":    "Unreleased",
+		"Planned":          "Unreleased",
+		"Pilot":            "Unreleased",
+		"Something New":    "",
+	} {
+		if got := seriesStatus(tmdbStatus); got != want {
+			t.Errorf("seriesStatus(%q) = %q, want %q", tmdbStatus, got, want)
+		}
 	}
 }
 

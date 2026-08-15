@@ -17,6 +17,22 @@ const (
 
 const ratingCountry = "US"
 
+// TMDB's vocabulary is its own; the column holds Jellyfin's SeriesStatus, and an
+// unmapped value is left unwritten rather than passed through as a status no
+// client knows. A movie has no series status at all, so it writes none.
+var statuses = map[string]string{
+	"Returning Series": "Continuing",
+	"Ended":            "Ended",
+	"Canceled":         "Ended",
+	"Planned":          "Unreleased",
+	"In Production":    "Unreleased",
+	"Pilot":            "Unreleased",
+}
+
+func seriesStatus(status string) string {
+	return statuses[status]
+}
+
 func movieMetadata(movie *Movie) items.Metadata {
 	premiere := date(movie.ReleaseDate)
 
@@ -24,7 +40,6 @@ func movieMetadata(movie *Movie) items.Metadata {
 		Name:                text(movie.Title),
 		OriginalTitle:       text(movie.OriginalTitle),
 		Overview:            text(movie.Overview),
-		Status:              text(movie.Status),
 		OfficialRating:      rating(movieCertification(movie)),
 		CommunityRating:     score(movie.VoteAverage),
 		PremiereDate:        premiere,
@@ -42,7 +57,7 @@ func seriesMetadata(series *Series) items.Metadata {
 		Name:                text(series.Name),
 		OriginalTitle:       text(series.OriginalName),
 		Overview:            text(series.Overview),
-		Status:              text(series.Status),
+		Status:              text(seriesStatus(series.Status)),
 		OfficialRating:      rating(seriesCertification(series)),
 		CommunityRating:     score(series.VoteAverage),
 		PremiereDate:        premiere,
