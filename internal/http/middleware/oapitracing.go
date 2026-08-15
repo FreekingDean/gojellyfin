@@ -6,22 +6,16 @@ import (
 	"slices"
 	"strings"
 
-	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/propagation"
-	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
-	"go.opentelemetry.io/otel/trace"
-
 	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 )
 
 type OapiTracing struct {
-	tracer     trace.Tracer
-	propagator propagation.TextMapPropagator
+	tracing *tracing.Tracing
 }
 
 func NewOapiTracing(t *tracing.Tracing) *OapiTracing {
-	return &OapiTracing{tracer: t.Tracer(), propagator: t.Propagator()}
+	return &OapiTracing{tracing: t}
 }
 
 func (t *OapiTracing) Middleware(f api.StrictHandlerFunc, operationID string) api.StrictHandlerFunc {
@@ -30,17 +24,12 @@ func (t *OapiTracing) Middleware(f api.StrictHandlerFunc, operationID string) ap
 			return f(ctx, w, r, request)
 		}
 
-		ctx = t.propagator.Extract(ctx, propagation.HeaderCarrier(r.Header))
-		ctx, span := t.tracer.Start(ctx, operationID,
-			trace.WithSpanKind(trace.SpanKindServer),
-			trace.WithAttributes(semconv.HTTPRequestMethodKey.String(r.Method)),
-		)
+		ctx, span := t.tracing.StartRequest(ctx, r.Header, operationID, r.Method)
 		defer span.End()
 
 		resp, err := f(ctx, w, r, request)
 		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, "")
+			span.Fail(err)
 		}
 
 		return resp, err

@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"testing"
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
@@ -22,7 +23,7 @@ func TestTracingMiddlewareIsOnlyInstalledWhenEnabled(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		if err := on.Stop(); err != nil {
+		if err := on.Stop(context.Background()); err != nil {
 			t.Errorf("stopping failed: %v", err)
 		}
 	})

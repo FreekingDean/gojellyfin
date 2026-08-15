@@ -2,6 +2,7 @@ package tracing
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
@@ -9,6 +10,14 @@ import (
 
 func configured(endpoint string) env.Config {
 	return env.Config{Tracing: env.Tracing{OTLPEndpoint: endpoint}}
+}
+
+func started(t *testing.T, tracing *Tracing) *Span {
+	t.Helper()
+
+	_, span := tracing.StartRequest(context.Background(), http.Header{}, "GetItems", http.MethodGet)
+
+	return span
 }
 
 // A developer running the server alone gets a server: no collector configured
@@ -24,24 +33,20 @@ func TestNoEndpointRecordsNothing(t *testing.T) {
 		t.Error("tracing reports itself enabled with no collector configured")
 	}
 
-	_, span := tracing.Tracer().Start(context.Background(), "check")
-	defer span.End()
+	started(t, tracing).End()
 
-	if span.IsRecording() {
-		t.Error("a span is recording with no collector configured")
-	}
-	if err := tracing.Stop(); err != nil {
+	if err := tracing.Stop(context.Background()); err != nil {
 		t.Errorf("stopping an unconfigured tracer failed: %v", err)
 	}
 }
 
-func TestAnEndpointRecords(t *testing.T) {
+func TestAnEndpointIsEnabled(t *testing.T) {
 	tracing, err := New(configured("http://collector.example:4318"))
 	if err != nil {
 		t.Fatalf("failed to build: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := tracing.Stop(); err != nil {
+		if err := tracing.Stop(context.Background()); err != nil {
 			t.Errorf("stopping failed: %v", err)
 		}
 	})
@@ -49,12 +54,19 @@ func TestAnEndpointRecords(t *testing.T) {
 	if !tracing.Enabled() {
 		t.Error("a collector is configured and tracing reports itself off")
 	}
+}
 
-	_, span := tracing.Tracer().Start(context.Background(), "check")
-	defer span.End()
+func TestRecordedKeepsTheSpan(t *testing.T) {
+	tracing, recorder := Recorded()
 
-	if !span.IsRecording() {
-		t.Error("a collector is configured and nothing is recorded")
+	started(t, tracing).End()
+
+	names := recorder.Names()
+	if len(names) != 1 || names[0] != "GetItems" {
+		t.Errorf("want one span named for the operation, got %v", names)
+	}
+	if method := recorder.Values()["http.request.method"]; method != http.MethodGet {
+		t.Errorf("http.request.method = %q, want GET", method)
 	}
 }
 

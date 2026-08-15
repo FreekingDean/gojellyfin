@@ -3,9 +3,11 @@ package tracing
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"net/url"
 	"time"
 
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -66,7 +68,32 @@ func (t *Tracing) Enabled() bool {
 	return t.provider != nil
 }
 
-func (t *Tracing) Tracer() trace.Tracer {
+// The request's own headers carry the caller's trace, which is the whole of
+// what makes this distributed rather than one span per process.
+func (t *Tracing) StartRequest(ctx context.Context, header http.Header, operation, method string) (context.Context, *Span) {
+	ctx = t.propagator.Extract(ctx, propagation.HeaderCarrier(header))
+	ctx, span := t.tracer().Start(ctx, operation,
+		trace.WithSpanKind(trace.SpanKindServer),
+		trace.WithAttributes(semconv.HTTPRequestMethodKey.String(method)),
+	)
+
+	return ctx, &Span{span: span}
+}
+
+type Span struct {
+	span trace.Span
+}
+
+func (s *Span) End() {
+	s.span.End()
+}
+
+func (s *Span) Fail(err error) {
+	s.span.RecordError(err)
+	s.span.SetStatus(codes.Error, "")
+}
+
+func (t *Tracing) tracer() trace.Tracer {
 	if t.provider == nil {
 		return noop.NewTracerProvider().Tracer(serviceName)
 	}
@@ -74,22 +101,14 @@ func (t *Tracing) Tracer() trace.Tracer {
 	return t.provider.Tracer(serviceName)
 }
 
-func (t *Tracing) Propagator() propagation.TextMapPropagator {
-	return t.propagator
-}
-
-func (t *Tracing) Start() error {
-	return nil
-}
-
 // A collector that has gone away must not hold the process open, so the flush
 // is bounded rather than waiting on the exporter's own retries.
-func (t *Tracing) Stop() error {
+func (t *Tracing) Stop(ctx context.Context) error {
 	if t.provider == nil {
 		return nil
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	ctx, cancel := context.WithTimeout(ctx, shutdownTimeout)
 	defer cancel()
 
 	return t.provider.Shutdown(ctx)
