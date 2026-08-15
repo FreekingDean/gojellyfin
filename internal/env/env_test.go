@@ -12,6 +12,7 @@ func TestLoadDefaults(t *testing.T) {
 		"PUBLISHED_SERVER_URL", "CORS_ORIGINS",
 		"TRANSCODER_JOBS", "TRANSCODER_STALL_TIMEOUT",
 		"TEMPORAL_HOSTPORT", "TEMPORAL_NAMESPACE",
+		"OTEL_EXPORTER_OTLP_ENDPOINT", "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
 		"HTTP_PORT",
 	} {
 		t.Setenv(name, "")
@@ -37,6 +38,54 @@ func TestLoadDefaults(t *testing.T) {
 	}
 	if config.HTTPPort != defaultHTTPPort {
 		t.Errorf("HTTPPort = %d, want %d", config.HTTPPort, defaultHTTPPort)
+	}
+	if config.Tracing.Endpoint() != "" {
+		t.Error("a collector was invented, so every start ships spans somewhere nobody asked for")
+	}
+}
+
+func TestTracesEndpointWinsOverTheGeneralOne(t *testing.T) {
+	t.Setenv("DATABASE_URL", testDatabaseURL)
+	t.Setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://general.example:4318")
+	t.Setenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "http://traces.example:4318/v1/traces")
+
+	config, err := Load()
+	if err != nil {
+		t.Fatalf("failed to load: %v", err)
+	}
+
+	if config.Tracing.Endpoint() != "http://traces.example:4318/v1/traces" {
+		t.Errorf("Endpoint() = %q, want the traces-specific one", config.Tracing.Endpoint())
+	}
+}
+
+func TestGeneralEndpointIsUsedAlone(t *testing.T) {
+	t.Setenv("DATABASE_URL", testDatabaseURL)
+	t.Setenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "")
+	t.Setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://general.example:4318")
+
+	config, err := Load()
+	if err != nil {
+		t.Fatalf("failed to load: %v", err)
+	}
+
+	if config.Tracing.Endpoint() != "http://general.example:4318" {
+		t.Errorf("Endpoint() = %q, want the general one", config.Tracing.Endpoint())
+	}
+}
+
+// The exporter answers an unparseable URL by logging and carrying on against
+// localhost, so a typo would otherwise be silent.
+func TestLoadRefusesAMalformedCollector(t *testing.T) {
+	t.Setenv("DATABASE_URL", testDatabaseURL)
+
+	for _, endpoint := range []string{"collector:4318", "grpc://collector:4318", "http://"} {
+		t.Run(endpoint, func(t *testing.T) {
+			t.Setenv("OTEL_EXPORTER_OTLP_ENDPOINT", endpoint)
+			if _, err := Load(); err == nil {
+				t.Errorf("%q was accepted", endpoint)
+			}
+		})
 	}
 }
 

@@ -2,7 +2,6 @@ package tracing
 
 import (
 	"context"
-	"os"
 	"time"
 
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
@@ -12,6 +11,8 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
 	"go.opentelemetry.io/otel/trace"
 	"go.opentelemetry.io/otel/trace/noop"
+
+	"github.com/FreekingDean/gojellyfin/internal/env"
 )
 
 const (
@@ -19,29 +20,23 @@ const (
 	shutdownTimeout = 5 * time.Second
 )
 
-// Unset means tracing is off, the way an empty TEMPORAL_HOSTPORT means
-// background work is off: a developer running the server alone gets a server,
-// not a dial error on every start.
-func endpoint() string {
-	if traces := os.Getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"); traces != "" {
-		return traces
-	}
-
-	return os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
-}
-
 type Tracing struct {
 	provider   *sdktrace.TracerProvider
 	propagator propagation.TextMapPropagator
 }
 
-func New() (*Tracing, error) {
+// No endpoint means tracing is off, the way an empty TEMPORAL_HOSTPORT means
+// background work is off: a developer running the server alone gets a server,
+// not a dial error on every start.
+func New(config env.Config) (*Tracing, error) {
 	tracing := &Tracing{propagator: propagation.TraceContext{}}
-	if endpoint() == "" {
+
+	endpoint := config.Tracing.Endpoint()
+	if endpoint == "" {
 		return tracing, nil
 	}
 
-	exporter, err := otlptracehttp.New(context.Background())
+	exporter, err := otlptracehttp.New(context.Background(), otlptracehttp.WithEndpointURL(endpoint))
 	if err != nil {
 		return nil, err
 	}

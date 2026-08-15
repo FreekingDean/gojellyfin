@@ -106,6 +106,18 @@ So are routes Jellyfin serves but hides from its own OpenAPI document with `[Api
 
 They register after the generated routes so a documented literal wins any overlap, and most-specific first: the mux matches in registration order with no notion of specificity, so `/Users/{userId}/Items/{itemId}` registered before `/Users/{userId}/Items/Resume` swallows it and passes "Resume" as an item id. `legacyPatterns` sorts by literal segments to keep that from depending on map order.
 
+### Tracing
+
+Every operation gets one span, named for its **operation id**. That is why the span sits on the `api.StrictMiddlewareFunc` layer rather than the stdlib one: only the inner layer is handed the operation id, and a span named for a route pattern or a raw path is much less useful. It is last in `apiMiddleware`, which the generated wrapper folds outermost, so it measures authentication and authorization too.
+
+`OTEL_EXPORTER_OTLP_ENDPOINT` and `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` are both read, the signal-specific one winning, which is the precedence the OTLP specification gives it — and it carries a whole path where the general one carries only a base, so `env.Tracing.Endpoint` picks one and the exporter is handed that rather than reading either itself. Neither set means tracing is off: no provider, a noop tracer, nothing dialed. The exporter answers a URL it cannot parse by logging and carrying on against its own default, so `validate` refuses a malformed one at start the way it refuses `TRANSCODER_JOBS=lots`.
+
+`internal/observability/tracing` is composed through `observability.Module`, which `server` and `worker` both list, and its shutdown is bounded — a collector that has gone away must not hold the process open.
+
+**Streaming endpoints are excluded.** `untracedRoots` in `internal/http/middleware/oapitracing.go` names `Videos` and `Audio`, the same two roots `deploy/httproutes.yaml` splits on, matched case-insensitively because the mux is. A progressive response runs for the length of the media, so a span covering one is open for hours — a leak rather than a trace. `GET /socket` needs no entry: it is registered outside the generated API, so it never reaches this layer. `TestStreamingRoutesAreNotTraced` is what keeps the exclusion from being incidental.
+
+Nothing the client sent goes on a span. The query string carries `api_key` and some paths carry names, so only the method and the operation id are recorded; `TestSpanCarriesNoRequestDetail` holds that, because traces ship to third-party backends.
+
 ### Domain services
 
 Three layers, split on what each is allowed to know:
