@@ -26,6 +26,13 @@ run: build
 test: build
 	go test ./...
 
+# Behind a tag so `make test` stays fast: this one creates a database, applies
+# the migrations and boots the whole server. `-count 1` because it has side
+# effects, so a cached pass would mean nothing ran.
+.PHONY: e2e
+e2e: build
+	go test -tags e2e -count 1 -timeout 5m ./cmd/gojellyfin/
+
 .PHONY: fmt
 fmt:
 	gofmt -w internal cmd
