@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
+	genremodal "github.com/FreekingDean/gojellyfin/internal/store/genre"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	datamodal "github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
@@ -58,14 +59,24 @@ var folderKinds = map[Kind]bool{
 	itemmodal.KindBoxSet:           true,
 	itemmodal.KindPlaylistsFolder:  true,
 	itemmodal.KindUserRootFolder:   true,
+	itemmodal.KindMusicArtist:      true,
+	itemmodal.KindMusicAlbum:       true,
+}
+
+func scannedMediaType(kind Kind) MediaType {
+	switch {
+	case folderKinds[kind]:
+		return itemmodal.MediaTypeUnknown
+	case kind == itemmodal.KindAudio || kind == itemmodal.KindAudioBook:
+		return itemmodal.MediaTypeAudio
+	default:
+		return itemmodal.MediaTypeVideo
+	}
 }
 
 func (s *Service) SaveScanned(ctx context.Context, scanned Scanned) (*Item, error) {
 	isFolder := folderKinds[scanned.Kind]
-	mediaType := itemmodal.MediaTypeVideo
-	if isFolder {
-		mediaType = itemmodal.MediaTypeUnknown
-	}
+	mediaType := scannedMediaType(scanned.Kind)
 
 	id, err := s.store.Item.Create().
 		SetLibraryID(scanned.LibraryID).
@@ -146,8 +157,12 @@ type ItemQuery struct {
 	ParentID   *uuid.UUID
 	TopLevel   bool
 	Kinds      []Kind
+	ChildKinds []Kind
 	MediaTypes []MediaType
 	IDs        []uuid.UUID
+	ArtistIDs  []uuid.UUID
+	AlbumIDs   []uuid.UUID
+	GenreIDs   []uuid.UUID
 	SearchTerm string
 	SortBy     []string
 	Descending bool
@@ -156,13 +171,14 @@ type ItemQuery struct {
 }
 
 var sortFields = map[string]string{
-	"sortname":       itemmodal.FieldSortName,
-	"name":           itemmodal.FieldSortName,
-	"premieredate":   itemmodal.FieldPremiereDate,
-	"productionyear": itemmodal.FieldProductionYear,
-	"datecreated":    itemmodal.FieldCreatedAt,
-	"datemodified":   itemmodal.FieldDateModified,
-	"indexnumber":    itemmodal.FieldIndexNumber,
+	"sortname":          itemmodal.FieldSortName,
+	"name":              itemmodal.FieldSortName,
+	"premieredate":      itemmodal.FieldPremiereDate,
+	"productionyear":    itemmodal.FieldProductionYear,
+	"datecreated":       itemmodal.FieldCreatedAt,
+	"datemodified":      itemmodal.FieldDateModified,
+	"indexnumber":       itemmodal.FieldIndexNumber,
+	"parentindexnumber": itemmodal.FieldParentIndexNumber,
 }
 
 func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int, error) {
@@ -180,11 +196,28 @@ func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int
 	if len(query.Kinds) > 0 {
 		items = items.Where(itemmodal.KindIn(query.Kinds...))
 	}
+	if len(query.ChildKinds) > 0 {
+		items = items.Where(itemmodal.HasChildrenWith(itemmodal.KindIn(query.ChildKinds...)))
+	}
 	if len(query.MediaTypes) > 0 {
 		items = items.Where(itemmodal.MediaTypeIn(query.MediaTypes...))
 	}
 	if len(query.IDs) > 0 {
 		items = items.Where(itemmodal.IDIn(query.IDs...))
+	}
+	if len(query.AlbumIDs) > 0 {
+		items = items.Where(itemmodal.ParentIDIn(query.AlbumIDs...))
+	}
+	// An artist owns its albums and, through them, its tracks, so one id
+	// answers for both without a second query.
+	if len(query.ArtistIDs) > 0 {
+		items = items.Where(itemmodal.Or(
+			itemmodal.ParentIDIn(query.ArtistIDs...),
+			itemmodal.HasParentWith(itemmodal.ParentIDIn(query.ArtistIDs...)),
+		))
+	}
+	if len(query.GenreIDs) > 0 {
+		items = items.Where(itemmodal.HasGenresWith(genremodal.IDIn(query.GenreIDs...)))
 	}
 	if query.SearchTerm != "" {
 		items = items.Where(itemmodal.NameContainsFold(query.SearchTerm))
