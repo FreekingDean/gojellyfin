@@ -31,8 +31,6 @@ type Config struct {
 	// cannot confirm sends the client somewhere it cannot reach.
 	PublishedServerURL string `mapstructure:"PUBLISHED_SERVER_URL"`
 
-	// Empty reflects whatever origin asks. A literal "*" is not equivalent:
-	// browsers reject it on credentialed requests.
 	CORSOrigins []string `mapstructure:"CORS_ORIGINS"`
 
 	Transcoder Transcoder `mapstructure:",squash"`
