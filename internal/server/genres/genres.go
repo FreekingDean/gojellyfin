@@ -3,7 +3,6 @@ package genres
 import (
 	"context"
 
-	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
@@ -34,7 +33,7 @@ func (s *Server) GetGenres(ctx context.Context, request api.GetGenresRequestObje
 
 	dtoList := make([]api.BaseItemDto, 0, len(named))
 	for _, genre := range named {
-		dtoList = append(dtoList, genreDto(genre))
+		dtoList = append(dtoList, dto.GenreDto(genre, api.BaseItemKindGenre))
 	}
 
 	return api.GetGenres200JSONResponse{
@@ -44,15 +43,11 @@ func (s *Server) GetGenres(ctx context.Context, request api.GetGenresRequestObje
 	}, nil
 }
 
-func genreDto(genre items.Named) api.BaseItemDto {
-	return api.BaseItemDto{
-		Id:                &genre.ID,
-		ServerId:          apiutil.Ptr(config.ServerID),
-		Name:              apiutil.Ptr(genre.Name),
-		SortName:          apiutil.Ptr(genre.Name),
-		Type:              apiutil.Ptr(api.BaseItemKindGenre),
-		IsFolder:          apiutil.Ptr(true),
-		ImageTags:         &map[string]*string{},
-		BackdropImageTags: &[]string{},
+func (s *Server) GetGenre(ctx context.Context, request api.GetGenreRequestObject) (api.GetGenreResponseObject, error) {
+	genre, err := s.items.GenreByName(ctx, request.GenreName)
+	if err != nil {
+		return nil, err
 	}
+
+	return api.GetGenre200JSONResponse(dto.GenreDto(genre, api.BaseItemKindGenre)), nil
 }
