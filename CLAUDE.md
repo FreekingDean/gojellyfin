@@ -174,17 +174,27 @@ Triggers are not built. `UpdateTask` answers 501 rather than storing a schedule 
 
 ### Metadata providers
 
-`internal/tmdb` identifies items against TMDB and writes what it returns through `items.UpdateMetadata`. It is bring your own key: `TMDB_API_KEY` unset leaves the provider off and its job a no-op, so a developer running the server alone still gets a server. We deliberately embed no key of our own — there is then none to share, none to throttle and no attribution owed for one.
+**`internal/metadata` is what anything else names; `internal/tmdb` is one implementation of it and nothing outside imports it.** The interface is declared by the consumer, in `metadata/provider.go`, and `metadata.Module` aggregates `tmdb.Module` the way `server.Module` aggregates its tag packages — so `server.go` and `worker.go` list `metadata.Module` and learn nothing about who answers. The scheduled task the dashboard shows says it identifies items, not who it asks.
 
-It runs as its own job rather than inside the scan, and does **not** fan out per item. The work is IO bound on a rate limited API, so a step per item multiplies the request rate and finishes no sooner; one step loops over at most `batchSize` items, spaced by the client's own limiter and heartbeating between them. What a run leaves, the next run picks up.
+That split is a rule, not a preference: **no package outside `internal/tmdb` may name TMDB.** Check it with `grep -rln 'internal/tmdb' --include='*.go' . | grep -v '^./internal/tmdb/'`, which must return `internal/metadata/fx.go` and nothing else.
+
+`metadata` owns the job, the batch loop and the locks table. `tmdb` owns the HTTP client, the rate limiter and the translation from TMDB's payloads into `items.Metadata` — including from TMDB's vocabulary into ours, which is why `Status` is mapped to Jellyfin's `Continuing`/`Ended`/`Unreleased` rather than passed through, and why a movie writes no series status at all.
+
+Two things keep the dependency pointing one way. A miss is a `false` return rather than a sentinel error, so the implementation never imports its consumer for one variable; and `Episode` takes the series' whole `ProviderIds` map, so each provider reads its own key out and no key name escapes the package that owns it.
+
+There is **one** provider and one binding — no fx value group and no priority order until a second provider exists to need them. The seam is the interface.
+
+It is bring your own key: `TMDB_API_KEY` unset leaves the provider disabled and the job a no-op, so a developer running the server alone still gets a server. We deliberately embed no key of our own — there is then none to share, none to throttle and no attribution owed for one.
+
+The job runs on its own rather than inside the scan, and does **not** fan out per item. The work is IO bound on a rate limited API, so a step per item multiplies the request rate and finishes no sooner; one step loops over at most `batchSize` items, spaced by the client's own limiter and heartbeating between them. What a run leaves, the next run picks up.
 
 The batch is derived from the rows — `items.UnidentifiedItems` asks for items whose `provider_ids` is null — rather than handed over, so a crash re-asks the question instead of replaying a stale list. Writing those ids well is the point: item identity is otherwise name and year, which collides when two films share both.
 
-`lock_data` and `locked_fields` are Jellyfin's semantics and the provider honours both. `LockData` keeps an item out of the batch entirely; a field named in `LockedFields` is dropped from what is written, by the table in `locks.go`. The provider ids themselves survive a field lock, because they are identity rather than metadata and Jellyfin has no lock for them.
+`lock_data` and `locked_fields` are Jellyfin's semantics and `metadata` honours both. `LockData` keeps an item out of the batch entirely; a field named in `LockedFields` is dropped from what is written, by the table in `locks.go`. The provider ids themselves survive a field lock, because they are identity rather than metadata and Jellyfin has no lock for them.
 
 Two requests per item, not more: the detail call carries `append_to_response=release_dates` (or `content_ratings,external_ids`), so the certification and the IMDb id arrive with the record instead of costing a third round trip. A 429 or a 5xx backs off and retries rather than failing the run; a 404 or an empty search is a miss, which is not an error because the title may be one TMDB gains later.
 
-The tests point the client at an `httptest.Server`, so a green run needs no key and CI never calls TMDB.
+The two packages test at their own seam: `metadata` runs the loop and the locks against a stub provider and a real database, and `tmdb` points its client at an `httptest.Server`. A green run needs no key and CI never calls TMDB.
 
 ### Request identity
 
