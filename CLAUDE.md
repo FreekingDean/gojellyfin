@@ -46,7 +46,7 @@ Requires a reachable Postgres. `DATABASE_URL` is required and the binary carries
 
 **`internal/env` is the only package that reads the environment.** It loads once into a `Config` that fx provides and every other package takes as a value, so the knobs are found by reading one struct rather than by grepping for `os.Getenv`, and a package under test is handed a value instead of having to set a variable. A one-shot subcommand calls `env.Load()` itself, because it has no lifecycle to hang it off.
 
-The reading is `viper`, bound to the environment only — no config file, no flags, no watching. Keys are bound explicitly from the list in `env.go` rather than through `AutomaticEnv`, because `Unmarshal` only populates keys viper already knows about, and the explicit list is what keeps the set greppable. The `mapstructure` tag on each field is the variable's name.
+The reading is `viper`, bound to the environment only — no config file, no flags, no watching. The `mapstructure` tag on each field is the variable's name, and `keys` walks `Config` to bind them, because `Unmarshal` only populates keys viper already knows about and `AutomaticEnv` does not register any. So a new variable is a new field and nothing else; `TestKeysCoverEveryVariable` names the whole set, which is where a rename shows up.
 
 A malformed value is refused at start rather than ignored. `TRANSCODER_JOBS=lots` used to fall through to the core count and `TRANSCODER_STALL_TIMEOUT=30` to thirty seconds, so a typo in a manifest became a capacity problem with nothing to point at.
 
@@ -144,7 +144,9 @@ Ordering by a to-many edge makes ent group the query, so the sort column comes b
 
 ### Background work
 
-Background work runs as Temporal workflows in a separate deployment. `gojellyfin worker` is the same image and the same binary as the server, run as a second deployment, and `TEMPORAL_HOSTPORT` is the server it dials; `TEMPORAL_NAMESPACE` defaults to `gojellyfin_default`. Both reach `internal/jobs` as `env.Config.Temporal` rather than through `os.Getenv`. With the address unset, background work is off and the server still starts — a developer running the server alone gets a server rather than a dial error.
+Background work runs as Temporal workflows in a separate deployment. `gojellyfin worker` is the same image and the same binary as the server, run as a second deployment, and `TEMPORAL_HOSTPORT` is the server it dials. Both reach `internal/jobs` as `env.Config.Temporal` rather than through `os.Getenv`. With the address unset, background work is off and the server still starts — a developer running the server alone gets a server rather than a dial error.
+
+`TEMPORAL_NAMESPACE` has no default, and `jobs.NewClient` refuses to build a client without one rather than `env` inventing it: a namespace is only required once there is a server to dial, and defaulting it silently puts every run in whichever namespace the constant happened to name. The check belongs with the client because that is what needs the value.
 
 `internal/temporal` is the client and the worker; `internal/tasks` is the domain over them, and it is what the `ScheduledTasks` API is served from. A package declares what it runs beside the code that implements it: `scanner.Registration` names the workflow and its activities, and fx collects those into the worker through a value group, so the worker command lists no workflows of its own.
 

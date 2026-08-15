@@ -7,6 +7,25 @@ import (
 	"time"
 )
 
+// The tags are the only place a variable is named, so this is what a rename or
+// a dropped field shows up as.
+func TestKeysCoverEveryVariable(t *testing.T) {
+	want := []string{
+		"DATABASE_URL",
+		"HTTP_PORT",
+		"PUBLISHED_SERVER_URL",
+		"CORS_ORIGINS",
+		"TRANSCODER_JOBS",
+		"TRANSCODER_STALL_TIMEOUT",
+		"TEMPORAL_HOSTPORT",
+		"TEMPORAL_NAMESPACE",
+	}
+
+	if got := keys(reflect.TypeOf(Config{})); !slices.Equal(got, want) {
+		t.Errorf("keys = %v, want %v", got, want)
+	}
+}
+
 const testDatabaseURL = "postgres://localhost:5432/test?sslmode=disable"
 
 func TestLoadDefaults(t *testing.T) {
@@ -34,8 +53,8 @@ func TestLoadDefaults(t *testing.T) {
 	if config.Temporal.HostPort != "" {
 		t.Error("a Temporal address was invented, so background work dials on every start")
 	}
-	if config.Temporal.Namespace != defaultTemporalNamespace {
-		t.Errorf("Namespace = %q, want %q", config.Temporal.Namespace, defaultTemporalNamespace)
+	if config.Temporal.Namespace != "" {
+		t.Error("a Temporal namespace was invented")
 	}
 	if config.HTTPPort != defaultHTTPPort {
 		t.Errorf("HTTPPort = %d, want %d", config.HTTPPort, defaultHTTPPort)
@@ -81,27 +100,6 @@ func TestLoadRefusesMalformedValues(t *testing.T) {
 			t.Error("a non numeric HTTP_PORT was accepted")
 		}
 	})
-}
-
-// An unbound key reads as unset however the manifest spells it, so a field
-// added to Config without a line in keys is a knob that silently does nothing.
-func TestEveryFieldIsBound(t *testing.T) {
-	var walk func(reflect.Type)
-	walk = func(structType reflect.Type) {
-		for i := range structType.NumField() {
-			field := structType.Field(i)
-			tag := field.Tag.Get("mapstructure")
-			if tag == ",squash" {
-				walk(field.Type)
-				continue
-			}
-			if !slices.Contains(keys, tag) {
-				t.Errorf("%s is not bound: add %q to keys", field.Name, tag)
-			}
-		}
-	}
-
-	walk(reflect.TypeOf(Config{}))
 }
 
 // Dialing localhost because nobody said otherwise is how a process ends up

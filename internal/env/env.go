@@ -3,6 +3,7 @@ package env
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
@@ -10,9 +11,8 @@ import (
 )
 
 const (
-	defaultTemporalNamespace = "gojellyfin_default"
-	defaultHTTPPort          = 8081
-	maxPort                  = 65535
+	defaultHTTPPort = 8081
+	maxPort         = 65535
 )
 
 // Config is everything this process reads from its environment, read once at
@@ -38,23 +38,27 @@ type Temporal struct {
 	Namespace string `mapstructure:"TEMPORAL_NAMESPACE"`
 }
 
-var keys = []string{
-	"DATABASE_URL",
-	"HTTP_PORT",
-	"PUBLISHED_SERVER_URL",
-	"CORS_ORIGINS",
-	"TRANSCODER_JOBS",
-	"TRANSCODER_STALL_TIMEOUT",
-	"TEMPORAL_HOSTPORT",
-	"TEMPORAL_NAMESPACE",
+// Unmarshal only populates keys viper already knows about, so every tag has to
+// be bound before it will read one.
+func keys(structType reflect.Type) []string {
+	names := make([]string, 0, structType.NumField())
+	for i := range structType.NumField() {
+		field := structType.Field(i)
+		if tag := field.Tag.Get("mapstructure"); tag != ",squash" {
+			names = append(names, tag)
+			continue
+		}
+		names = append(names, keys(field.Type)...)
+	}
+
+	return names
 }
 
 func Load() (Config, error) {
 	v := viper.New()
 	v.SetDefault("HTTP_PORT", defaultHTTPPort)
-	v.SetDefault("TEMPORAL_NAMESPACE", defaultTemporalNamespace)
 
-	for _, key := range keys {
+	for _, key := range keys(reflect.TypeOf(Config{})) {
 		if err := v.BindEnv(key); err != nil {
 			return Config{}, err
 		}
