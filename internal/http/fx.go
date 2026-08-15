@@ -7,6 +7,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/http/mux"
+	"github.com/FreekingDean/gojellyfin/internal/notify"
 	"github.com/FreekingDean/gojellyfin/internal/server/socket"
 	"github.com/FreekingDean/gojellyfin/internal/server/stream"
 	"github.com/FreekingDean/gojellyfin/internal/transcode"
@@ -27,9 +28,14 @@ var Module = fx.Module(
 	),
 	fx.Invoke(
 		Register,
+		deliver,
 		run,
 	),
 )
+
+func deliver(notifier *notify.Service, s *socket.Socket) {
+	notifier.Handle(s.Deliver)
+}
 
 func run(lc fx.Lifecycle, s *Server) {
 	lc.Append(fx.Hook{

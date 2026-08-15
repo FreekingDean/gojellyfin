@@ -20,19 +20,24 @@ type (
 
 var ErrNoGroup = errors.New("no such syncplay group")
 
+type Participant struct {
+	SessionID uuid.UUID
+	UserName  string
+}
+
 // Go cannot attach a method to the aliases the domain hands out, so the edge
-// walk to the member names lives here rather than in the tag package.
-func Participants(group *Group) []string {
-	names := make([]string, 0, len(group.Edges.Members))
+// walk lives here rather than in the tag package.
+func Participants(group *Group) []Participant {
+	participants := make([]Participant, 0, len(group.Edges.Members))
 	for _, member := range group.Edges.Members {
 		session := member.Edges.Session
 		if session == nil || session.Edges.User == nil {
 			continue
 		}
-		names = append(names, session.Edges.User.Name)
+		participants = append(participants, Participant{SessionID: session.ID, UserName: session.Edges.User.Name})
 	}
 
-	return names
+	return participants
 }
 
 type Service struct {
@@ -111,6 +116,20 @@ func (s *Service) GroupByID(ctx context.Context, groupID uuid.UUID) (*Group, err
 	}
 
 	return group, nil
+}
+
+func (s *Service) GroupBySessionID(ctx context.Context, sessionID uuid.UUID) (*Group, error) {
+	member, err := s.store.SyncPlayGroupMember.Query().
+		Where(membermodal.SessionID(sessionID)).
+		Only(ctx)
+	if store.IsNotFound(err) {
+		return nil, ErrNoGroup
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to query syncplay membership: %w", err)
+	}
+
+	return s.GroupByID(ctx, member.GroupID)
 }
 
 func join(ctx context.Context, tx *store.Tx, groupID, sessionID uuid.UUID) error {

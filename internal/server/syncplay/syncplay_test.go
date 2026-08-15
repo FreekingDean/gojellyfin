@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"sync"
 	"testing"
 
 	"github.com/google/uuid"
@@ -20,13 +21,53 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/syncplay"
 )
 
+type published struct {
+	sessionIDs []uuid.UUID
+	update     groupUpdate
+}
+
+// Stands in for notify so the tests assert what each member is told, which is
+// the half of the fan-out that does not need a second pod to observe.
+type recorder struct {
+	mu   sync.Mutex
+	sent []published
+}
+
+func (r *recorder) Publish(_ context.Context, sessionIDs []uuid.UUID, messageType string, data any) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if messageType != groupUpdateMessage {
+		return fmt.Errorf("unexpected message type %q", messageType)
+	}
+
+	r.sent = append(r.sent, published{sessionIDs: sessionIDs, update: data.(groupUpdate)})
+
+	return nil
+}
+
+func (r *recorder) of(updateType string) []published {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	var matching []published
+	for _, sent := range r.sent {
+		if sent.update.Type == updateType {
+			matching = append(matching, sent)
+		}
+	}
+
+	return matching
+}
+
 type fixture struct {
-	server   *Server
-	client   *store.Client
-	auth     *auth.Service
-	sessions *sessions.Service
-	users    []uuid.UUID
-	devices  []string
+	server    *Server
+	client    *store.Client
+	auth      *auth.Service
+	sessions  *sessions.Service
+	published *recorder
+	users     []uuid.UUID
+	devices   []string
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -44,11 +85,13 @@ func newFixture(t *testing.T) *fixture {
 	client := connection.Client()
 	sessionService := sessions.New(client)
 
+	recorded := &recorder{}
 	f := &fixture{
-		server:   New(syncplay.New(client)),
-		client:   client,
-		auth:     auth.New(sessionService),
-		sessions: sessionService,
+		server:    New(syncplay.New(client), recorded),
+		client:    client,
+		auth:      auth.New(sessionService),
+		sessions:  sessionService,
+		published: recorded,
 	}
 
 	t.Cleanup(func() {
@@ -192,18 +235,95 @@ func TestJoinGroupAddsAParticipant(t *testing.T) {
 	}
 }
 
-func TestJoinAnUnknownGroupIsRefused(t *testing.T) {
+func TestJoinAnUnknownGroupTellsOnlyTheJoiner(t *testing.T) {
 	f := newFixture(t)
 	owner := f.signIn(t, "owner")
+	missing := uuid.New()
 
 	response, err := f.server.SyncPlayJoinGroup(owner, api.SyncPlayJoinGroupRequestObject{
-		JSONBody: &api.JoinGroupRequestDto{GroupId: apiutil.Ptr(uuid.New())},
+		JSONBody: &api.JoinGroupRequestDto{GroupId: &missing},
 	})
 	if err != nil {
 		t.Fatalf("failed to join the group: %v", err)
 	}
-	if _, ok := response.(api.SyncPlayJoinGroup403Response); !ok {
+	if _, ok := response.(api.SyncPlayJoinGroup204Response); !ok {
 		t.Fatalf("SyncPlayJoinGroup returned %T", response)
+	}
+
+	refusals := f.published.of(groupDoesNotExist)
+	if len(refusals) != 1 {
+		t.Fatalf("published %d GroupDoesNotExist updates", len(refusals))
+	}
+	if !slices.Equal(refusals[0].sessionIDs, []uuid.UUID{auth.SessionFrom(owner).ID}) {
+		t.Fatalf("GroupDoesNotExist addressed to %v", refusals[0].sessionIDs)
+	}
+	if refusals[0].update.Data != missing.String() {
+		t.Fatalf("GroupDoesNotExist carried %v", refusals[0].update.Data)
+	}
+}
+
+func TestJoinTellsTheJoinerAndTheMembersApart(t *testing.T) {
+	f := newFixture(t)
+	owner := f.signIn(t, "owner")
+	guest := f.signIn(t, "guest")
+
+	created := f.create(t, owner, t.Name())
+	if _, err := f.server.SyncPlayJoinGroup(guest, api.SyncPlayJoinGroupRequestObject{
+		JSONBody: &api.JoinGroupRequestDto{GroupId: created.GroupId},
+	}); err != nil {
+		t.Fatalf("failed to join the group: %v", err)
+	}
+
+	joined := f.published.of(groupJoined)
+	if len(joined) != 2 {
+		t.Fatalf("published %d GroupJoined updates", len(joined))
+	}
+	if !slices.Equal(joined[1].sessionIDs, []uuid.UUID{auth.SessionFrom(guest).ID}) {
+		t.Fatalf("GroupJoined addressed to %v", joined[1].sessionIDs)
+	}
+
+	announced := f.published.of(userJoined)
+	if len(announced) != 1 {
+		t.Fatalf("published %d UserJoined updates", len(announced))
+	}
+	if !slices.Equal(announced[0].sessionIDs, []uuid.UUID{auth.SessionFrom(owner).ID}) {
+		t.Fatalf("UserJoined addressed to %v", announced[0].sessionIDs)
+	}
+	if announced[0].update.Data != "guest" {
+		t.Fatalf("UserJoined named %v", announced[0].update.Data)
+	}
+}
+
+func TestLeaveTellsTheRemainingMembers(t *testing.T) {
+	f := newFixture(t)
+	owner := f.signIn(t, "owner")
+	guest := f.signIn(t, "guest")
+
+	created := f.create(t, owner, t.Name())
+	if _, err := f.server.SyncPlayJoinGroup(guest, api.SyncPlayJoinGroupRequestObject{
+		JSONBody: &api.JoinGroupRequestDto{GroupId: created.GroupId},
+	}); err != nil {
+		t.Fatalf("failed to join the group: %v", err)
+	}
+
+	if _, err := f.server.SyncPlayLeaveGroup(guest, api.SyncPlayLeaveGroupRequestObject{}); err != nil {
+		t.Fatalf("failed to leave the group: %v", err)
+	}
+
+	left := f.published.of(groupLeft)
+	if len(left) != 1 || !slices.Equal(left[0].sessionIDs, []uuid.UUID{auth.SessionFrom(guest).ID}) {
+		t.Fatalf("GroupLeft published as %+v", left)
+	}
+
+	announced := f.published.of(userLeft)
+	if len(announced) != 1 {
+		t.Fatalf("published %d UserLeft updates", len(announced))
+	}
+	if !slices.Equal(announced[0].sessionIDs, []uuid.UUID{auth.SessionFrom(owner).ID}) {
+		t.Fatalf("UserLeft addressed to %v", announced[0].sessionIDs)
+	}
+	if announced[0].update.Data != "guest" {
+		t.Fatalf("UserLeft named %v", announced[0].update.Data)
 	}
 }
 

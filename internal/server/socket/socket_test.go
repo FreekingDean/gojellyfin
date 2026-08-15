@@ -2,6 +2,7 @@ package socket
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -11,14 +12,16 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 
+	"github.com/FreekingDean/gojellyfin/internal/notify"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 )
 
 type fixture struct {
-	socket   *Socket
-	token    string
-	returned chan struct{}
+	socket    *Socket
+	token     string
+	sessionID uuid.UUID
+	returned  chan struct{}
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -43,12 +46,13 @@ func newFixture(t *testing.T) *fixture {
 
 	service := sessions.New(client)
 	token := uuid.NewString()
-	if _, err := service.Create(ctx, user.ID, token, sessions.DeviceInfo{
+	session, err := service.Create(ctx, user.ID, token, sessions.DeviceInfo{
 		ID:         name,
 		Name:       name,
 		AppName:    "socket-test",
 		AppVersion: "1",
-	}); err != nil {
+	})
+	if err != nil {
 		t.Fatalf("failed to create the session: %v", err)
 	}
 
@@ -64,7 +68,12 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
-	return &fixture{socket: New(service), token: token, returned: make(chan struct{}, 1)}
+	return &fixture{
+		socket:    New(service),
+		token:     token,
+		sessionID: session.ID,
+		returned:  make(chan struct{}, 1),
+	}
 }
 
 func (f *fixture) connect(t *testing.T) *websocket.Conn {
@@ -179,4 +188,64 @@ func TestEnqueueDropsWhenTheBufferIsFull(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("want a full buffer to drop the reply rather than block the reader")
 	}
+}
+
+func TestDeliverReachesAConnectedSession(t *testing.T) {
+	f := newFixture(t)
+	conn := f.connect(t)
+	read(t, conn)
+
+	f.socket.Deliver(notify.Envelope{
+		SessionIDs: []uuid.UUID{f.sessionID},
+		Type:       "SyncPlayGroupUpdate",
+		Data:       json.RawMessage(`{"Type":"UserJoined"}`),
+	})
+
+	message := read(t, conn)
+	if message.MessageType != "SyncPlayGroupUpdate" {
+		t.Fatalf("want SyncPlayGroupUpdate, got %q", message.MessageType)
+	}
+
+	data, ok := message.Data.(map[string]any)
+	if !ok {
+		t.Fatalf("want the update data, got %T", message.Data)
+	}
+	if data["Type"] != "UserJoined" {
+		t.Fatalf("data is %v", data)
+	}
+}
+
+// A member on another pod, or on none, has no entry in the registry. Dropping
+// it must not hold up the members that are connected here.
+func TestDeliverSkipsASessionThatIsNotConnected(t *testing.T) {
+	f := newFixture(t)
+	conn := f.connect(t)
+	read(t, conn)
+
+	f.socket.Deliver(notify.Envelope{
+		SessionIDs: []uuid.UUID{uuid.New(), f.sessionID},
+		Type:       "SyncPlayGroupUpdate",
+		Data:       json.RawMessage(`{"Type":"UserLeft"}`),
+	})
+
+	if message := read(t, conn); message.MessageType != "SyncPlayGroupUpdate" {
+		t.Fatalf("want SyncPlayGroupUpdate, got %q", message.MessageType)
+	}
+}
+
+func TestDeliverAfterTheSocketClosesIsDropped(t *testing.T) {
+	f := newFixture(t)
+	conn := f.connect(t)
+	read(t, conn)
+
+	if err := conn.Close(); err != nil {
+		t.Fatalf("failed to close the socket: %v", err)
+	}
+	<-f.returned
+
+	f.socket.Deliver(notify.Envelope{
+		SessionIDs: []uuid.UUID{f.sessionID},
+		Type:       "SyncPlayGroupUpdate",
+		Data:       json.RawMessage(`{"Type":"UserLeft"}`),
+	})
 }
