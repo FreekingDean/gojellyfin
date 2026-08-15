@@ -14,9 +14,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/env"
 )
 
-// Unset means the provider is off, the way an empty TEMPORAL_HOSTPORT leaves
-// background work off. We ship no key of our own, so there is none to share,
-// none to throttle and no attribution owed for one.
 var ErrNotConfigured = errors.New("tmdb: TMDB_API_KEY is not set")
 
 var errNoMatch = errors.New("tmdb: nothing matched")

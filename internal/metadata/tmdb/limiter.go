@@ -6,9 +6,6 @@ import (
 	"time"
 )
 
-// A first pass over a thousand film library is the burst that finds TMDB's
-// ceiling, so every request through the client is spaced rather than every
-// caller being trusted to pace itself.
 type limiter struct {
 	mutex   sync.Mutex
 	spacing time.Duration

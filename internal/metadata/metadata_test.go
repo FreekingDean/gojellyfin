@@ -18,8 +18,6 @@ import (
 	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
 )
 
-// A provider answering from a table, so these tests cover the batch loop and
-// the locks without a transport of any kind.
 type stubProvider struct {
 	enabled bool
 
@@ -260,8 +258,6 @@ func TestIdentifyWalksASeriesToItsEpisode(t *testing.T) {
 		ParentIndexNumber: index(1),
 	})
 
-	// The episode is looked up under its series' ids, so it takes the run after
-	// the one that identified the series.
 	fixed.identify(t)
 	fixed.identify(t)
 
@@ -290,8 +286,6 @@ func TestIdentifyLeavesALockedItemAlone(t *testing.T) {
 		ProductionYear: index(1999),
 	}), items.Metadata{LockData: truth(true)})
 
-	// A second, unlocked item proves the run did something, so the locked one
-	// being untouched is not just an empty batch.
 	witness := fixed.add(t, items.Scanned{
 		Kind:           itemmodal.KindMovie,
 		Name:           "The Matrix",

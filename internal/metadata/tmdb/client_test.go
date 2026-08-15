@@ -62,8 +62,6 @@ func TestClientRefusesWithoutAKey(t *testing.T) {
 	}
 }
 
-// No key configured leaves the provider off rather than failing the start, so a
-// server without one is still a server.
 func TestClientIsOffWithoutAConfiguredKey(t *testing.T) {
 	if NewClient(env.Config{}).Enabled() {
 		t.Error("a client with no key configured reported itself enabled")

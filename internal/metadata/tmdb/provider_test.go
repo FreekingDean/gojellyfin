@@ -63,8 +63,6 @@ func TestMovieMapsWhatTmdbReturns(t *testing.T) {
 	}
 }
 
-// A movie has no series status, so the column TMDB calls "Released" is left for
-// the series that actually has one.
 func TestMovieWritesNoSeriesStatus(t *testing.T) {
 	found, _, err := stub(t).Movie(context.Background(), "The Matrix", released(1999))
 	if err != nil {
@@ -125,7 +123,6 @@ func TestEpisodeReadsTheSeriesIdThisProviderWrote(t *testing.T) {
 		t.Errorf("Name = %v, want Pilot", found.Name)
 	}
 
-	// Another provider's ids say nothing about where this one should look.
 	if _, matched, err := client.Episode(context.Background(), map[string]string{"Imdb": "tt0903747"}, 1, 1); err != nil || matched {
 		t.Errorf("matched = %v, err = %v, want a miss without a Tmdb id", matched, err)
 	}

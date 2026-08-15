@@ -8,8 +8,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 )
 
-// Jellyfin's own key names, so an id written here means the same thing to a
-// client as one written by upstream.
 const (
 	providerTmdb = "Tmdb"
 	providerImdb = "Imdb"
@@ -17,9 +15,6 @@ const (
 
 const ratingCountry = "US"
 
-// TMDB's vocabulary is its own; the column holds Jellyfin's SeriesStatus, and an
-// unmapped value is left unwritten rather than passed through as a status no
-// client knows. A movie has no series status at all, so it writes none.
 var statuses = map[string]string{
 	"Returning Series": "Continuing",
 	"Ended":            "Ended",

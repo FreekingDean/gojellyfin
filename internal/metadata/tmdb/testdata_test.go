@@ -47,8 +47,6 @@ const (
 	}`
 )
 
-// Searches answer on the title asked for rather than on the path, so a row this
-// package did not create misses instead of being handed the wrong film.
 var searches = map[string]string{
 	"The Matrix":   matrixSearch,
 	"Breaking Bad": breakingBadSearch,

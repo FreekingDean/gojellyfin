@@ -36,8 +36,6 @@ func (c *Client) Series(ctx context.Context, name string, year *int32) (items.Me
 	return seriesMetadata(found), true, nil
 }
 
-// The series is named by the ids already written against it, so this reads back
-// the one this provider wrote and ignores everyone else's.
 func (c *Client) Episode(ctx context.Context, series map[string]string, season, episode int32) (items.Metadata, bool, error) {
 	id, err := strconv.Atoi(series[providerTmdb])
 	if err != nil {
