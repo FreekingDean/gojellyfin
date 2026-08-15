@@ -4,7 +4,7 @@ A Go reimplementation of a Jellyfin media server, serving the Jellyfin 10.10.0
 HTTP API so that stock `jellyfin-web` and Jellyfin clients can talk to it.
 
 Everything ships as one binary, `cmd/gojellyfin`, with a subcommand each for
-`server`, `transcoder`, `worker`, `migrate`, `adduser`, `resetpassword` and
+`server`, `worker`, `migrate`, `adduser`, `resetpassword` and
 `localizationdata`.
 
 ## What works
