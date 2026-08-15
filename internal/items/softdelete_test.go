@@ -24,7 +24,6 @@ func TestDeleteItemsNotInPathsKeepsTheRow(t *testing.T) {
 		t.Error("a swept item is still readable")
 	}
 
-	// The row is what the watch state hangs off, so losing it loses the history.
 	record, err := fixture.service.store.Item.Get(ctx, id)
 	if err != nil {
 		t.Fatalf("the row was deleted rather than marked: %v", err)
@@ -66,7 +65,6 @@ func TestScanRevivesASweptItem(t *testing.T) {
 		t.Fatalf("failed to save the returning item: %v", err)
 	}
 
-	// A new row would orphan every reference the old one carried.
 	if second.ID != first.ID {
 		t.Errorf("the file came back as a new item: %s, was %s", second.ID, first.ID)
 	}
@@ -78,7 +76,6 @@ func TestScanRevivesASweptItem(t *testing.T) {
 	}
 }
 
-// The foreign key took descendants on a hard delete and cannot on an update.
 func TestDeleteItemsNotInPathsSweepsDescendants(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()

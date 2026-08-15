@@ -112,6 +112,20 @@ So are routes Jellyfin serves but hides from its own OpenAPI document with `[Api
 
 They register after the generated routes so a documented literal wins any overlap, and most-specific first: the mux matches in registration order with no notion of specificity, so `/Users/{userId}/Items/{itemId}` registered before `/Users/{userId}/Items/Resume` swallows it and passes "Resume" as an item id. `legacyPatterns` sorts by literal segments to keep that from depending on map order.
 
+### Tracing
+
+Every operation gets one span, named for its **operation id**. That is why the span sits on the `api.StrictMiddlewareFunc` layer rather than the stdlib one: only the inner layer is handed the operation id, and a span named for a route pattern or a raw path is much less useful. It is last in `apiMiddleware`, which the generated wrapper folds outermost, so it measures authentication and authorization too.
+
+`OTEL_EXPORTER_OTLP_ENDPOINT` is the only spelling read. The OTLP specification also defines a signal-specific `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`, and supporting both would mean carrying its precedence rule and its different path semantics for a second way to say the same thing; one prescribed variable is the standing decision. Unset means tracing is off: no provider, a noop tracer, nothing dialed, and `tracing.Enabled` false, which is what keeps the span middleware out of the stack entirely rather than wrapping every request in a tracer that discards it.
+
+The endpoint is checked in `tracing.New` rather than in `env.validate`, because what makes an OTLP endpoint valid is the exporter's business and `env` only knows it wants a string. The exporter answers a URL it cannot parse by logging and carrying on against its own localhost default, so a malformed one is refused at start instead.
+
+**`internal/observability/tracing` is the only package that imports otel.** A caller gets `StartRequest` and a `Span` with `End` and `Fail`, not a `trace.Tracer`, so the middleware names no otel type and the backend stays swappable; `Recorded` is the same seam for tests, handing back a `Recorder` that answers in span names and attribute values. It is composed through `observability.Module`, which `server` and `worker` both list, and it registers `OnStop` only — a provider is exporting from the moment it is built, so there is nothing to start. The flush is bounded on the way out, because a collector that has gone away must not hold the process open.
+
+**Streaming endpoints are excluded.** `streams` in `internal/http/middleware/oapitracing.go` names `Videos` and `Audio`, the same two roots `deploy/httproutes.yaml` splits on, matched case-insensitively because the mux is. A progressive response runs for the length of the media, so a span covering one is open for hours — a leak rather than a trace. `GET /socket` needs no entry: it is registered outside the generated API, so it never reaches this layer. `TestStreamingRoutesAreNotTraced` is what keeps the exclusion from being incidental.
+
+Nothing the client sent goes on a span. The query string carries `api_key` and some paths carry names, so only the method and the operation id are recorded; `TestSpanCarriesNoRequestDetail` holds that, because traces ship to third-party backends.
+
 ### Domain services
 
 Three layers, split on what each is allowed to know:

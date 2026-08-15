@@ -80,8 +80,6 @@ func (f *fixture) add(t *testing.T, kind itemmodal.Kind, mediaType itemmodal.Med
 	}
 }
 
-// The operation has no parent parameter, so the query sweeps every library and
-// the assertions have to look at this fixture's rows only.
 func (f *fixture) mine(t *testing.T, params api.GetSuggestionsParams) []string {
 	t.Helper()
 

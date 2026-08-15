@@ -38,8 +38,6 @@ type fixture struct {
 	token      string
 }
 
-// Off unless a test turns it on, which keeps direct play answering the way it
-// does with no worker configured.
 type stubTranscoder struct {
 	enabled bool
 	open    func(ctx context.Context, spec transcode.Spec) (io.ReadCloser, error)

@@ -25,6 +25,7 @@ type Config struct {
 	CORSOrigins        []string   `mapstructure:"CORS_ORIGINS"`
 	Transcoder         Transcoder `mapstructure:",squash"`
 	Temporal           Temporal   `mapstructure:",squash"`
+	Tracing            Tracing    `mapstructure:",squash"`
 }
 
 type Transcoder struct {
@@ -35,6 +36,10 @@ type Transcoder struct {
 type Temporal struct {
 	HostPort  string `mapstructure:"TEMPORAL_HOSTPORT"`
 	Namespace string `mapstructure:"TEMPORAL_NAMESPACE"`
+}
+
+type Tracing struct {
+	OTLPEndpoint string `mapstructure:"OTEL_EXPORTER_OTLP_ENDPOINT"`
 }
 
 func Load() (Config, error) {
@@ -70,7 +75,6 @@ func (c Config) validate() error {
 	if c.Transcoder.StallTimeout < 0 {
 		return fmt.Errorf("TRANSCODER_STALL_TIMEOUT must be a positive duration such as 30s, got %s", c.Transcoder.StallTimeout)
 	}
-
 	return nil
 }
 
