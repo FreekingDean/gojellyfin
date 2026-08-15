@@ -62,6 +62,10 @@ type Tx struct {
 	Session *SessionClient
 	// Studio is the client for interacting with the Studio builders.
 	Studio *StudioClient
+	// SyncPlayGroup is the client for interacting with the SyncPlayGroup builders.
+	SyncPlayGroup *SyncPlayGroupClient
+	// SyncPlayGroupMember is the client for interacting with the SyncPlayGroupMember builders.
+	SyncPlayGroupMember *SyncPlayGroupMemberClient
 	// Timer is the client for interacting with the Timer builders.
 	Timer *TimerClient
 	// Trickplay is the client for interacting with the Trickplay builders.
@@ -231,6 +235,8 @@ func (tx *Tx) init() {
 	tx.SeriesTimer = NewSeriesTimerClient(tx.config)
 	tx.Session = NewSessionClient(tx.config)
 	tx.Studio = NewStudioClient(tx.config)
+	tx.SyncPlayGroup = NewSyncPlayGroupClient(tx.config)
+	tx.SyncPlayGroupMember = NewSyncPlayGroupMemberClient(tx.config)
 	tx.Timer = NewTimerClient(tx.config)
 	tx.Trickplay = NewTrickplayClient(tx.config)
 	tx.TunerHost = NewTunerHostClient(tx.config)

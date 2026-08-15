@@ -40,6 +40,8 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/seriestimer"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
+	"github.com/FreekingDean/gojellyfin/internal/store/syncplaygroup"
+	"github.com/FreekingDean/gojellyfin/internal/store/syncplaygroupmember"
 	"github.com/FreekingDean/gojellyfin/internal/store/timer"
 	"github.com/FreekingDean/gojellyfin/internal/store/trickplay"
 	"github.com/FreekingDean/gojellyfin/internal/store/tunerhost"
@@ -104,6 +106,10 @@ type Client struct {
 	Session *SessionClient
 	// Studio is the client for interacting with the Studio builders.
 	Studio *StudioClient
+	// SyncPlayGroup is the client for interacting with the SyncPlayGroup builders.
+	SyncPlayGroup *SyncPlayGroupClient
+	// SyncPlayGroupMember is the client for interacting with the SyncPlayGroupMember builders.
+	SyncPlayGroupMember *SyncPlayGroupMemberClient
 	// Timer is the client for interacting with the Timer builders.
 	Timer *TimerClient
 	// Trickplay is the client for interacting with the Trickplay builders.
@@ -153,6 +159,8 @@ func (c *Client) init() {
 	c.SeriesTimer = NewSeriesTimerClient(c.config)
 	c.Session = NewSessionClient(c.config)
 	c.Studio = NewStudioClient(c.config)
+	c.SyncPlayGroup = NewSyncPlayGroupClient(c.config)
+	c.SyncPlayGroupMember = NewSyncPlayGroupMemberClient(c.config)
 	c.Timer = NewTimerClient(c.config)
 	c.Trickplay = NewTrickplayClient(c.config)
 	c.TunerHost = NewTunerHostClient(c.config)
@@ -250,39 +258,41 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:                ctx,
-		config:             cfg,
-		ActivityLogEntry:   NewActivityLogEntryClient(cfg),
-		ApiKey:             NewApiKeyClient(cfg),
-		Chapter:            NewChapterClient(cfg),
-		Configuration:      NewConfigurationClient(cfg),
-		Credit:             NewCreditClient(cfg),
-		Device:             NewDeviceClient(cfg),
-		DisplayPreferences: NewDisplayPreferencesClient(cfg),
-		Genre:              NewGenreClient(cfg),
-		Image:              NewImageClient(cfg),
-		Item:               NewItemClient(cfg),
-		Library:            NewLibraryClient(cfg),
-		LibraryOptions:     NewLibraryOptionsClient(cfg),
-		ListingsProvider:   NewListingsProviderClient(cfg),
-		MediaAttachment:    NewMediaAttachmentClient(cfg),
-		MediaSegment:       NewMediaSegmentClient(cfg),
-		MediaSource:        NewMediaSourceClient(cfg),
-		MediaStream:        NewMediaStreamClient(cfg),
-		Person:             NewPersonClient(cfg),
-		Playlist:           NewPlaylistClient(cfg),
-		PlaylistEntry:      NewPlaylistEntryClient(cfg),
-		PlaylistShare:      NewPlaylistShareClient(cfg),
-		SeriesTimer:        NewSeriesTimerClient(cfg),
-		Session:            NewSessionClient(cfg),
-		Studio:             NewStudioClient(cfg),
-		Timer:              NewTimerClient(cfg),
-		Trickplay:          NewTrickplayClient(cfg),
-		TunerHost:          NewTunerHostClient(cfg),
-		User:               NewUserClient(cfg),
-		UserConfiguration:  NewUserConfigurationClient(cfg),
-		UserItemData:       NewUserItemDataClient(cfg),
-		UserPolicy:         NewUserPolicyClient(cfg),
+		ctx:                 ctx,
+		config:              cfg,
+		ActivityLogEntry:    NewActivityLogEntryClient(cfg),
+		ApiKey:              NewApiKeyClient(cfg),
+		Chapter:             NewChapterClient(cfg),
+		Configuration:       NewConfigurationClient(cfg),
+		Credit:              NewCreditClient(cfg),
+		Device:              NewDeviceClient(cfg),
+		DisplayPreferences:  NewDisplayPreferencesClient(cfg),
+		Genre:               NewGenreClient(cfg),
+		Image:               NewImageClient(cfg),
+		Item:                NewItemClient(cfg),
+		Library:             NewLibraryClient(cfg),
+		LibraryOptions:      NewLibraryOptionsClient(cfg),
+		ListingsProvider:    NewListingsProviderClient(cfg),
+		MediaAttachment:     NewMediaAttachmentClient(cfg),
+		MediaSegment:        NewMediaSegmentClient(cfg),
+		MediaSource:         NewMediaSourceClient(cfg),
+		MediaStream:         NewMediaStreamClient(cfg),
+		Person:              NewPersonClient(cfg),
+		Playlist:            NewPlaylistClient(cfg),
+		PlaylistEntry:       NewPlaylistEntryClient(cfg),
+		PlaylistShare:       NewPlaylistShareClient(cfg),
+		SeriesTimer:         NewSeriesTimerClient(cfg),
+		Session:             NewSessionClient(cfg),
+		Studio:              NewStudioClient(cfg),
+		SyncPlayGroup:       NewSyncPlayGroupClient(cfg),
+		SyncPlayGroupMember: NewSyncPlayGroupMemberClient(cfg),
+		Timer:               NewTimerClient(cfg),
+		Trickplay:           NewTrickplayClient(cfg),
+		TunerHost:           NewTunerHostClient(cfg),
+		User:                NewUserClient(cfg),
+		UserConfiguration:   NewUserConfigurationClient(cfg),
+		UserItemData:        NewUserItemDataClient(cfg),
+		UserPolicy:          NewUserPolicyClient(cfg),
 	}, nil
 }
 
@@ -300,39 +310,41 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:                ctx,
-		config:             cfg,
-		ActivityLogEntry:   NewActivityLogEntryClient(cfg),
-		ApiKey:             NewApiKeyClient(cfg),
-		Chapter:            NewChapterClient(cfg),
-		Configuration:      NewConfigurationClient(cfg),
-		Credit:             NewCreditClient(cfg),
-		Device:             NewDeviceClient(cfg),
-		DisplayPreferences: NewDisplayPreferencesClient(cfg),
-		Genre:              NewGenreClient(cfg),
-		Image:              NewImageClient(cfg),
-		Item:               NewItemClient(cfg),
-		Library:            NewLibraryClient(cfg),
-		LibraryOptions:     NewLibraryOptionsClient(cfg),
-		ListingsProvider:   NewListingsProviderClient(cfg),
-		MediaAttachment:    NewMediaAttachmentClient(cfg),
-		MediaSegment:       NewMediaSegmentClient(cfg),
-		MediaSource:        NewMediaSourceClient(cfg),
-		MediaStream:        NewMediaStreamClient(cfg),
-		Person:             NewPersonClient(cfg),
-		Playlist:           NewPlaylistClient(cfg),
-		PlaylistEntry:      NewPlaylistEntryClient(cfg),
-		PlaylistShare:      NewPlaylistShareClient(cfg),
-		SeriesTimer:        NewSeriesTimerClient(cfg),
-		Session:            NewSessionClient(cfg),
-		Studio:             NewStudioClient(cfg),
-		Timer:              NewTimerClient(cfg),
-		Trickplay:          NewTrickplayClient(cfg),
-		TunerHost:          NewTunerHostClient(cfg),
-		User:               NewUserClient(cfg),
-		UserConfiguration:  NewUserConfigurationClient(cfg),
-		UserItemData:       NewUserItemDataClient(cfg),
-		UserPolicy:         NewUserPolicyClient(cfg),
+		ctx:                 ctx,
+		config:              cfg,
+		ActivityLogEntry:    NewActivityLogEntryClient(cfg),
+		ApiKey:              NewApiKeyClient(cfg),
+		Chapter:             NewChapterClient(cfg),
+		Configuration:       NewConfigurationClient(cfg),
+		Credit:              NewCreditClient(cfg),
+		Device:              NewDeviceClient(cfg),
+		DisplayPreferences:  NewDisplayPreferencesClient(cfg),
+		Genre:               NewGenreClient(cfg),
+		Image:               NewImageClient(cfg),
+		Item:                NewItemClient(cfg),
+		Library:             NewLibraryClient(cfg),
+		LibraryOptions:      NewLibraryOptionsClient(cfg),
+		ListingsProvider:    NewListingsProviderClient(cfg),
+		MediaAttachment:     NewMediaAttachmentClient(cfg),
+		MediaSegment:        NewMediaSegmentClient(cfg),
+		MediaSource:         NewMediaSourceClient(cfg),
+		MediaStream:         NewMediaStreamClient(cfg),
+		Person:              NewPersonClient(cfg),
+		Playlist:            NewPlaylistClient(cfg),
+		PlaylistEntry:       NewPlaylistEntryClient(cfg),
+		PlaylistShare:       NewPlaylistShareClient(cfg),
+		SeriesTimer:         NewSeriesTimerClient(cfg),
+		Session:             NewSessionClient(cfg),
+		Studio:              NewStudioClient(cfg),
+		SyncPlayGroup:       NewSyncPlayGroupClient(cfg),
+		SyncPlayGroupMember: NewSyncPlayGroupMemberClient(cfg),
+		Timer:               NewTimerClient(cfg),
+		Trickplay:           NewTrickplayClient(cfg),
+		TunerHost:           NewTunerHostClient(cfg),
+		User:                NewUserClient(cfg),
+		UserConfiguration:   NewUserConfigurationClient(cfg),
+		UserItemData:        NewUserItemDataClient(cfg),
+		UserPolicy:          NewUserPolicyClient(cfg),
 	}, nil
 }
 
@@ -366,8 +378,9 @@ func (c *Client) Use(hooks ...Hook) {
 		c.DisplayPreferences, c.Genre, c.Image, c.Item, c.Library, c.LibraryOptions,
 		c.ListingsProvider, c.MediaAttachment, c.MediaSegment, c.MediaSource,
 		c.MediaStream, c.Person, c.Playlist, c.PlaylistEntry, c.PlaylistShare,
-		c.SeriesTimer, c.Session, c.Studio, c.Timer, c.Trickplay, c.TunerHost, c.User,
-		c.UserConfiguration, c.UserItemData, c.UserPolicy,
+		c.SeriesTimer, c.Session, c.Studio, c.SyncPlayGroup, c.SyncPlayGroupMember,
+		c.Timer, c.Trickplay, c.TunerHost, c.User, c.UserConfiguration, c.UserItemData,
+		c.UserPolicy,
 	} {
 		n.Use(hooks...)
 	}
@@ -381,8 +394,9 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.DisplayPreferences, c.Genre, c.Image, c.Item, c.Library, c.LibraryOptions,
 		c.ListingsProvider, c.MediaAttachment, c.MediaSegment, c.MediaSource,
 		c.MediaStream, c.Person, c.Playlist, c.PlaylistEntry, c.PlaylistShare,
-		c.SeriesTimer, c.Session, c.Studio, c.Timer, c.Trickplay, c.TunerHost, c.User,
-		c.UserConfiguration, c.UserItemData, c.UserPolicy,
+		c.SeriesTimer, c.Session, c.Studio, c.SyncPlayGroup, c.SyncPlayGroupMember,
+		c.Timer, c.Trickplay, c.TunerHost, c.User, c.UserConfiguration, c.UserItemData,
+		c.UserPolicy,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -439,6 +453,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Session.mutate(ctx, m)
 	case *StudioMutation:
 		return c.Studio.mutate(ctx, m)
+	case *SyncPlayGroupMutation:
+		return c.SyncPlayGroup.mutate(ctx, m)
+	case *SyncPlayGroupMemberMutation:
+		return c.SyncPlayGroupMember.mutate(ctx, m)
 	case *TimerMutation:
 		return c.Timer.mutate(ctx, m)
 	case *TrickplayMutation:
@@ -4244,6 +4262,22 @@ func (c *SessionClient) QueryDevice(_m *Session) *DeviceQuery {
 	return query
 }
 
+// QuerySyncPlayMemberships queries the sync_play_memberships edge of a Session.
+func (c *SessionClient) QuerySyncPlayMemberships(_m *Session) *SyncPlayGroupMemberQuery {
+	query := (&SyncPlayGroupMemberClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(session.Table, session.FieldID, id),
+			sqlgraph.To(syncplaygroupmember.Table, syncplaygroupmember.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, session.SyncPlayMembershipsTable, session.SyncPlayMembershipsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *SessionClient) Hooks() []Hook {
 	return c.hooks.Session
@@ -4415,6 +4449,320 @@ func (c *StudioClient) mutate(ctx context.Context, m *StudioMutation) (Value, er
 		return (&StudioDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("store: unknown Studio mutation op: %q", m.Op())
+	}
+}
+
+// SyncPlayGroupClient is a client for the SyncPlayGroup schema.
+type SyncPlayGroupClient struct {
+	config
+}
+
+// NewSyncPlayGroupClient returns a client for the SyncPlayGroup from the given config.
+func NewSyncPlayGroupClient(c config) *SyncPlayGroupClient {
+	return &SyncPlayGroupClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `syncplaygroup.Hooks(f(g(h())))`.
+func (c *SyncPlayGroupClient) Use(hooks ...Hook) {
+	c.hooks.SyncPlayGroup = append(c.hooks.SyncPlayGroup, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `syncplaygroup.Intercept(f(g(h())))`.
+func (c *SyncPlayGroupClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SyncPlayGroup = append(c.inters.SyncPlayGroup, interceptors...)
+}
+
+// Create returns a builder for creating a SyncPlayGroup entity.
+func (c *SyncPlayGroupClient) Create() *SyncPlayGroupCreate {
+	mutation := newSyncPlayGroupMutation(c.config, OpCreate)
+	return &SyncPlayGroupCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SyncPlayGroup entities.
+func (c *SyncPlayGroupClient) CreateBulk(builders ...*SyncPlayGroupCreate) *SyncPlayGroupCreateBulk {
+	return &SyncPlayGroupCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SyncPlayGroupClient) MapCreateBulk(slice any, setFunc func(*SyncPlayGroupCreate, int)) *SyncPlayGroupCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SyncPlayGroupCreateBulk{err: fmt.Errorf("calling to SyncPlayGroupClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SyncPlayGroupCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SyncPlayGroupCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SyncPlayGroup.
+func (c *SyncPlayGroupClient) Update() *SyncPlayGroupUpdate {
+	mutation := newSyncPlayGroupMutation(c.config, OpUpdate)
+	return &SyncPlayGroupUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SyncPlayGroupClient) UpdateOne(_m *SyncPlayGroup) *SyncPlayGroupUpdateOne {
+	mutation := newSyncPlayGroupMutation(c.config, OpUpdateOne, withSyncPlayGroup(_m))
+	return &SyncPlayGroupUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SyncPlayGroupClient) UpdateOneID(id uuid.UUID) *SyncPlayGroupUpdateOne {
+	mutation := newSyncPlayGroupMutation(c.config, OpUpdateOne, withSyncPlayGroupID(id))
+	return &SyncPlayGroupUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SyncPlayGroup.
+func (c *SyncPlayGroupClient) Delete() *SyncPlayGroupDelete {
+	mutation := newSyncPlayGroupMutation(c.config, OpDelete)
+	return &SyncPlayGroupDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SyncPlayGroupClient) DeleteOne(_m *SyncPlayGroup) *SyncPlayGroupDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SyncPlayGroupClient) DeleteOneID(id uuid.UUID) *SyncPlayGroupDeleteOne {
+	builder := c.Delete().Where(syncplaygroup.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SyncPlayGroupDeleteOne{builder}
+}
+
+// Query returns a query builder for SyncPlayGroup.
+func (c *SyncPlayGroupClient) Query() *SyncPlayGroupQuery {
+	return &SyncPlayGroupQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSyncPlayGroup},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SyncPlayGroup entity by its id.
+func (c *SyncPlayGroupClient) Get(ctx context.Context, id uuid.UUID) (*SyncPlayGroup, error) {
+	return c.Query().Where(syncplaygroup.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SyncPlayGroupClient) GetX(ctx context.Context, id uuid.UUID) *SyncPlayGroup {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryMembers queries the members edge of a SyncPlayGroup.
+func (c *SyncPlayGroupClient) QueryMembers(_m *SyncPlayGroup) *SyncPlayGroupMemberQuery {
+	query := (&SyncPlayGroupMemberClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(syncplaygroup.Table, syncplaygroup.FieldID, id),
+			sqlgraph.To(syncplaygroupmember.Table, syncplaygroupmember.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, syncplaygroup.MembersTable, syncplaygroup.MembersColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *SyncPlayGroupClient) Hooks() []Hook {
+	return c.hooks.SyncPlayGroup
+}
+
+// Interceptors returns the client interceptors.
+func (c *SyncPlayGroupClient) Interceptors() []Interceptor {
+	return c.inters.SyncPlayGroup
+}
+
+func (c *SyncPlayGroupClient) mutate(ctx context.Context, m *SyncPlayGroupMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SyncPlayGroupCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SyncPlayGroupUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SyncPlayGroupUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SyncPlayGroupDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("store: unknown SyncPlayGroup mutation op: %q", m.Op())
+	}
+}
+
+// SyncPlayGroupMemberClient is a client for the SyncPlayGroupMember schema.
+type SyncPlayGroupMemberClient struct {
+	config
+}
+
+// NewSyncPlayGroupMemberClient returns a client for the SyncPlayGroupMember from the given config.
+func NewSyncPlayGroupMemberClient(c config) *SyncPlayGroupMemberClient {
+	return &SyncPlayGroupMemberClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `syncplaygroupmember.Hooks(f(g(h())))`.
+func (c *SyncPlayGroupMemberClient) Use(hooks ...Hook) {
+	c.hooks.SyncPlayGroupMember = append(c.hooks.SyncPlayGroupMember, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `syncplaygroupmember.Intercept(f(g(h())))`.
+func (c *SyncPlayGroupMemberClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SyncPlayGroupMember = append(c.inters.SyncPlayGroupMember, interceptors...)
+}
+
+// Create returns a builder for creating a SyncPlayGroupMember entity.
+func (c *SyncPlayGroupMemberClient) Create() *SyncPlayGroupMemberCreate {
+	mutation := newSyncPlayGroupMemberMutation(c.config, OpCreate)
+	return &SyncPlayGroupMemberCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SyncPlayGroupMember entities.
+func (c *SyncPlayGroupMemberClient) CreateBulk(builders ...*SyncPlayGroupMemberCreate) *SyncPlayGroupMemberCreateBulk {
+	return &SyncPlayGroupMemberCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SyncPlayGroupMemberClient) MapCreateBulk(slice any, setFunc func(*SyncPlayGroupMemberCreate, int)) *SyncPlayGroupMemberCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SyncPlayGroupMemberCreateBulk{err: fmt.Errorf("calling to SyncPlayGroupMemberClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SyncPlayGroupMemberCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SyncPlayGroupMemberCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SyncPlayGroupMember.
+func (c *SyncPlayGroupMemberClient) Update() *SyncPlayGroupMemberUpdate {
+	mutation := newSyncPlayGroupMemberMutation(c.config, OpUpdate)
+	return &SyncPlayGroupMemberUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SyncPlayGroupMemberClient) UpdateOne(_m *SyncPlayGroupMember) *SyncPlayGroupMemberUpdateOne {
+	mutation := newSyncPlayGroupMemberMutation(c.config, OpUpdateOne, withSyncPlayGroupMember(_m))
+	return &SyncPlayGroupMemberUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SyncPlayGroupMemberClient) UpdateOneID(id uuid.UUID) *SyncPlayGroupMemberUpdateOne {
+	mutation := newSyncPlayGroupMemberMutation(c.config, OpUpdateOne, withSyncPlayGroupMemberID(id))
+	return &SyncPlayGroupMemberUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SyncPlayGroupMember.
+func (c *SyncPlayGroupMemberClient) Delete() *SyncPlayGroupMemberDelete {
+	mutation := newSyncPlayGroupMemberMutation(c.config, OpDelete)
+	return &SyncPlayGroupMemberDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SyncPlayGroupMemberClient) DeleteOne(_m *SyncPlayGroupMember) *SyncPlayGroupMemberDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SyncPlayGroupMemberClient) DeleteOneID(id uuid.UUID) *SyncPlayGroupMemberDeleteOne {
+	builder := c.Delete().Where(syncplaygroupmember.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SyncPlayGroupMemberDeleteOne{builder}
+}
+
+// Query returns a query builder for SyncPlayGroupMember.
+func (c *SyncPlayGroupMemberClient) Query() *SyncPlayGroupMemberQuery {
+	return &SyncPlayGroupMemberQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSyncPlayGroupMember},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SyncPlayGroupMember entity by its id.
+func (c *SyncPlayGroupMemberClient) Get(ctx context.Context, id uuid.UUID) (*SyncPlayGroupMember, error) {
+	return c.Query().Where(syncplaygroupmember.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SyncPlayGroupMemberClient) GetX(ctx context.Context, id uuid.UUID) *SyncPlayGroupMember {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryGroup queries the group edge of a SyncPlayGroupMember.
+func (c *SyncPlayGroupMemberClient) QueryGroup(_m *SyncPlayGroupMember) *SyncPlayGroupQuery {
+	query := (&SyncPlayGroupClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(syncplaygroupmember.Table, syncplaygroupmember.FieldID, id),
+			sqlgraph.To(syncplaygroup.Table, syncplaygroup.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, syncplaygroupmember.GroupTable, syncplaygroupmember.GroupColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySession queries the session edge of a SyncPlayGroupMember.
+func (c *SyncPlayGroupMemberClient) QuerySession(_m *SyncPlayGroupMember) *SessionQuery {
+	query := (&SessionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(syncplaygroupmember.Table, syncplaygroupmember.FieldID, id),
+			sqlgraph.To(session.Table, session.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, syncplaygroupmember.SessionTable, syncplaygroupmember.SessionColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *SyncPlayGroupMemberClient) Hooks() []Hook {
+	return c.hooks.SyncPlayGroupMember
+}
+
+// Interceptors returns the client interceptors.
+func (c *SyncPlayGroupMemberClient) Interceptors() []Interceptor {
+	return c.inters.SyncPlayGroupMember
+}
+
+func (c *SyncPlayGroupMemberClient) mutate(ctx context.Context, m *SyncPlayGroupMemberMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SyncPlayGroupMemberCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SyncPlayGroupMemberUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SyncPlayGroupMemberUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SyncPlayGroupMemberDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("store: unknown SyncPlayGroupMember mutation op: %q", m.Op())
 	}
 }
 
@@ -5580,16 +5928,16 @@ type (
 		DisplayPreferences, Genre, Image, Item, Library, LibraryOptions,
 		ListingsProvider, MediaAttachment, MediaSegment, MediaSource, MediaStream,
 		Person, Playlist, PlaylistEntry, PlaylistShare, SeriesTimer, Session, Studio,
-		Timer, Trickplay, TunerHost, User, UserConfiguration, UserItemData,
-		UserPolicy []ent.Hook
+		SyncPlayGroup, SyncPlayGroupMember, Timer, Trickplay, TunerHost, User,
+		UserConfiguration, UserItemData, UserPolicy []ent.Hook
 	}
 	inters struct {
 		ActivityLogEntry, ApiKey, Chapter, Configuration, Credit, Device,
 		DisplayPreferences, Genre, Image, Item, Library, LibraryOptions,
 		ListingsProvider, MediaAttachment, MediaSegment, MediaSource, MediaStream,
 		Person, Playlist, PlaylistEntry, PlaylistShare, SeriesTimer, Session, Studio,
-		Timer, Trickplay, TunerHost, User, UserConfiguration, UserItemData,
-		UserPolicy []ent.Interceptor
+		SyncPlayGroup, SyncPlayGroupMember, Timer, Trickplay, TunerHost, User,
+		UserConfiguration, UserItemData, UserPolicy []ent.Interceptor
 	}
 )
 
