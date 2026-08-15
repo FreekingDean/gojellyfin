@@ -1,11 +1,15 @@
 package http
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/FreekingDean/gojellyfin/internal/env"
 )
 
 // The mux matches in registration order, so a parameter registered before a
@@ -108,4 +112,35 @@ func readHiddenRoutes(t *testing.T) []string {
 	}
 
 	return routes
+}
+
+// An unconfigured server serves no cross-origin access at all, rather than
+// configuring the middleware to allow every origin.
+func TestCORSIsOmittedWithoutConfiguredOrigins(t *testing.T) {
+	for _, test := range []struct {
+		name    string
+		origins []string
+		want    string
+	}{
+		{"unset", nil, ""},
+		{"configured", []string{"https://gojellyfin.example.dev"}, "https://gojellyfin.example.dev"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			handler := http.Handler(http.NotFoundHandler())
+			for _, mw := range newHTTPMiddleware(env.Config{CORSOrigins: test.origins}) {
+				handler = mw(handler)
+			}
+
+			request := httptest.NewRequest(http.MethodOptions, "/Users/AuthenticateByName", nil)
+			request.Header.Set("Origin", "https://gojellyfin.example.dev")
+			request.Header.Set("Access-Control-Request-Method", "POST")
+
+			recorder := httptest.NewRecorder()
+			handler.ServeHTTP(recorder, request)
+
+			if got := recorder.Header().Get("Access-Control-Allow-Origin"); got != test.want {
+				t.Errorf("Access-Control-Allow-Origin = %q, want %q", got, test.want)
+			}
+		})
+	}
 }

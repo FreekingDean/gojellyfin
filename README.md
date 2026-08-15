@@ -39,12 +39,14 @@ second replica breaks nothing. It does not mean the database is replicated.
 
 ## Development
 
-Needs a reachable Postgres; `DATABASE_URL` overrides the default DSN.
+Needs a reachable Postgres. `DATABASE_URL` is required — the binary carries no
+default — and the `Makefile` supplies the development one, so `make` targets
+work out of the box and an explicit `DATABASE_URL` still wins.
 
 ```sh
 make dev     # watch and restart on :8081
 make build test lint
-echo hunter2 | go run ./cmd/gojellyfin adduser Dean   # bootstrap the first user
+echo hunter2 | DATABASE_URL=... go run ./cmd/gojellyfin adduser Dean   # bootstrap the first user
 ```
 
 `CLAUDE.md` carries the architecture and the reasoning behind it.

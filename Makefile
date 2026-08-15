@@ -1,5 +1,11 @@
 LOG ?= /tmp/gojellyfin.log
 
+# The binary carries no default DSN, so the development one lives here. `?=`
+# leaves an existing DATABASE_URL alone, which is how CI and a scratch database
+# override it.
+DATABASE_URL ?= postgres://localhost:5432/gojellyfin_development?sslmode=disable
+export DATABASE_URL
+
 .PHONY: dev
 dev:
 	air 2>&1 | tee $(LOG)
