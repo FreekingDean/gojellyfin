@@ -1,11 +1,9 @@
 package transcode
 
 import (
-	"os"
-	"strconv"
-	"time"
-
 	"go.uber.org/fx"
+
+	"github.com/FreekingDean/gojellyfin/internal/env"
 )
 
 var Module = fx.Module(
@@ -13,18 +11,6 @@ var Module = fx.Module(
 	fx.Provide(New),
 )
 
-func New() *Encoder {
-	return NewEncoder(jobs(), stall())
-}
-
-func jobs() int {
-	value, _ := strconv.Atoi(os.Getenv("TRANSCODER_JOBS"))
-
-	return value
-}
-
-func stall() time.Duration {
-	value, _ := time.ParseDuration(os.Getenv("TRANSCODER_STALL_TIMEOUT"))
-
-	return value
+func New(config env.Config) *Encoder {
+	return NewEncoder(config.Transcoder.Jobs, config.Transcoder.StallTimeout)
 }
