@@ -18,10 +18,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/transcode"
 )
 
-// A rip as they actually arrive: h264 a browser plays beside ac3 it cannot
-// decode, which is the whole of the "video works, no sound" report.
-// An mkv whose audio a browser can already decode — the case the audio-only
-// check waved through.
 func (f *fixture) addPlayableAudioRip(t *testing.T) uuid.UUID {
 	t.Helper()
 
@@ -140,8 +136,6 @@ func TestServeRemuxesAudioABrowserCannotDecode(t *testing.T) {
 	}
 }
 
-// The client is believed when it says it can decode the source, so a player
-// that handles ac3 still gets the file untouched.
 func TestServeLeavesAudioTheClientDeclaresAlone(t *testing.T) {
 	if !transcode.Available() {
 		t.Fatal("ffmpeg is not on PATH")
@@ -190,8 +184,6 @@ func itemOf(t *testing.T, fixture *fixture, id uuid.UUID) *items.Item {
 	return item
 }
 
-// The gap that made a better encode play worse: an mkv whose audio is already
-// aac was direct played, and a browser cannot open the container.
 func TestServeRemuxesAContainerABrowserCannotOpen(t *testing.T) {
 	fixture := newFixture(t)
 	fixture.withEncoder(t)
@@ -212,7 +204,6 @@ func TestServeRemuxesAContainerABrowserCannotOpen(t *testing.T) {
 	}
 }
 
-// A client that declares mkv is believed and gets the file untouched.
 func TestServeLeavesAContainerTheClientDeclaresAlone(t *testing.T) {
 	fixture := newFixture(t)
 	fixture.withEncoder(t)

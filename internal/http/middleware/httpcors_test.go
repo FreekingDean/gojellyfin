@@ -20,8 +20,6 @@ func preflight(t *testing.T, origins []string, origin string) *httptest.Response
 	return recorder
 }
 
-// A browser rejects `Access-Control-Allow-Origin: *` on a credentialed request,
-// so a configured list has to name the caller back.
 func TestPreflightNamesTheCaller(t *testing.T) {
 	recorder := preflight(t, []string{"https://gojellyfin.example.dev"}, "https://gojellyfin.example.dev")
 

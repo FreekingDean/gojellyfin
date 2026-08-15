@@ -10,8 +10,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 )
 
-// One unreadable library must not abandon the others: the sweep it skipped is
-// safe to leave until the next run, the ones it did are not worth losing.
 func TestLibraryScanScansEveryLibraryDespiteAFailure(t *testing.T) {
 	env := jobs.NewTestEnvironment(t)
 	scan := NewLibraryScan(&Scanner{})
