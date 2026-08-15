@@ -38,20 +38,10 @@ type Temporal struct {
 }
 
 func Load() (Config, error) {
-	v := viper.New()
-	v.SetEnvPrefix("")
-	v.AutomaticEnv()
-
-	// AutomaticEnv redirects Get but registers nothing, and Unmarshal only
-	// reads keys viper already knows, so each one needs a default to exist.
-	v.SetDefault("DATABASE_URL", "")
+	v := viper.NewWithOptions(viper.ExperimentalBindStruct())
 	v.SetDefault("HTTP_PORT", defaultHTTPPort)
-	v.SetDefault("PUBLISHED_SERVER_URL", "")
-	v.SetDefault("CORS_ORIGINS", "")
-	v.SetDefault("TRANSCODER_JOBS", 0)
-	v.SetDefault("TRANSCODER_STALL_TIMEOUT", time.Duration(0))
-	v.SetDefault("TEMPORAL_HOSTPORT", "")
-	v.SetDefault("TEMPORAL_NAMESPACE", "")
+
+	v.AutomaticEnv()
 
 	var config Config
 	if err := v.Unmarshal(&config); err != nil {
