@@ -30,6 +30,8 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/seriestimer"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
+	"github.com/FreekingDean/gojellyfin/internal/store/syncplaygroup"
+	"github.com/FreekingDean/gojellyfin/internal/store/syncplaygroupmember"
 	"github.com/FreekingDean/gojellyfin/internal/store/timer"
 	"github.com/FreekingDean/gojellyfin/internal/store/trickplay"
 	"github.com/FreekingDean/gojellyfin/internal/store/tunerhost"
@@ -636,6 +638,30 @@ func init() {
 	studio.DefaultUpdatedAt = studioDescUpdatedAt.Default.(func() time.Time)
 	// studio.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	studio.UpdateDefaultUpdatedAt = studioDescUpdatedAt.UpdateDefault.(func() time.Time)
+	syncplaygroupFields := entities.SyncPlayGroup{}.Fields()
+	_ = syncplaygroupFields
+	// syncplaygroupDescCreatedAt is the schema descriptor for created_at field.
+	syncplaygroupDescCreatedAt := syncplaygroupFields[1].Descriptor()
+	// syncplaygroup.DefaultCreatedAt holds the default value on creation for the created_at field.
+	syncplaygroup.DefaultCreatedAt = syncplaygroupDescCreatedAt.Default.(func() time.Time)
+	// syncplaygroupDescUpdatedAt is the schema descriptor for updated_at field.
+	syncplaygroupDescUpdatedAt := syncplaygroupFields[2].Descriptor()
+	// syncplaygroup.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	syncplaygroup.DefaultUpdatedAt = syncplaygroupDescUpdatedAt.Default.(func() time.Time)
+	// syncplaygroup.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	syncplaygroup.UpdateDefaultUpdatedAt = syncplaygroupDescUpdatedAt.UpdateDefault.(func() time.Time)
+	syncplaygroupmemberFields := entities.SyncPlayGroupMember{}.Fields()
+	_ = syncplaygroupmemberFields
+	// syncplaygroupmemberDescCreatedAt is the schema descriptor for created_at field.
+	syncplaygroupmemberDescCreatedAt := syncplaygroupmemberFields[1].Descriptor()
+	// syncplaygroupmember.DefaultCreatedAt holds the default value on creation for the created_at field.
+	syncplaygroupmember.DefaultCreatedAt = syncplaygroupmemberDescCreatedAt.Default.(func() time.Time)
+	// syncplaygroupmemberDescUpdatedAt is the schema descriptor for updated_at field.
+	syncplaygroupmemberDescUpdatedAt := syncplaygroupmemberFields[2].Descriptor()
+	// syncplaygroupmember.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	syncplaygroupmember.DefaultUpdatedAt = syncplaygroupmemberDescUpdatedAt.Default.(func() time.Time)
+	// syncplaygroupmember.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	syncplaygroupmember.UpdateDefaultUpdatedAt = syncplaygroupmemberDescUpdatedAt.UpdateDefault.(func() time.Time)
 	timerFields := entities.Timer{}.Fields()
 	_ = timerFields
 	// timerDescCreatedAt is the schema descriptor for created_at field.

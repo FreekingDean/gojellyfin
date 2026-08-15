@@ -46,9 +46,11 @@ type SessionEdges struct {
 	User *User `json:"user,omitempty"`
 	// Device holds the value of the device edge.
 	Device *Device `json:"device,omitempty"`
+	// SyncPlayMemberships holds the value of the sync_play_memberships edge.
+	SyncPlayMemberships []*SyncPlayGroupMember `json:"sync_play_memberships,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // UserOrErr returns the User value or an error if the edge
@@ -71,6 +73,15 @@ func (e SessionEdges) DeviceOrErr() (*Device, error) {
 		return nil, &NotFoundError{label: device.Label}
 	}
 	return nil, &NotLoadedError{edge: "device"}
+}
+
+// SyncPlayMembershipsOrErr returns the SyncPlayMemberships value or an error if the edge
+// was not loaded in eager-loading.
+func (e SessionEdges) SyncPlayMembershipsOrErr() ([]*SyncPlayGroupMember, error) {
+	if e.loadedTypes[2] {
+		return e.SyncPlayMemberships, nil
+	}
+	return nil, &NotLoadedError{edge: "sync_play_memberships"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -180,6 +191,11 @@ func (_m *Session) QueryUser() *UserQuery {
 // QueryDevice queries the "device" edge of the Session entity.
 func (_m *Session) QueryDevice() *DeviceQuery {
 	return NewSessionClient(_m.config).QueryDevice(_m)
+}
+
+// QuerySyncPlayMemberships queries the "sync_play_memberships" edge of the Session entity.
+func (_m *Session) QuerySyncPlayMemberships() *SyncPlayGroupMemberQuery {
+	return NewSessionClient(_m.config).QuerySyncPlayMemberships(_m)
 }
 
 // Update returns a builder for updating this Session.

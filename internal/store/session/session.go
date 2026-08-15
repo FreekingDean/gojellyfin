@@ -30,6 +30,8 @@ const (
 	EdgeUser = "user"
 	// EdgeDevice holds the string denoting the device edge name in mutations.
 	EdgeDevice = "device"
+	// EdgeSyncPlayMemberships holds the string denoting the sync_play_memberships edge name in mutations.
+	EdgeSyncPlayMemberships = "sync_play_memberships"
 	// Table holds the table name of the session in the database.
 	Table = "sessions"
 	// UserTable is the table that holds the user relation/edge.
@@ -46,6 +48,13 @@ const (
 	DeviceInverseTable = "devices"
 	// DeviceColumn is the table column denoting the device relation/edge.
 	DeviceColumn = "device_sessions"
+	// SyncPlayMembershipsTable is the table that holds the sync_play_memberships relation/edge.
+	SyncPlayMembershipsTable = "sync_play_group_members"
+	// SyncPlayMembershipsInverseTable is the table name for the SyncPlayGroupMember entity.
+	// It exists in this package in order to avoid circular dependency with the "syncplaygroupmember" package.
+	SyncPlayMembershipsInverseTable = "sync_play_group_members"
+	// SyncPlayMembershipsColumn is the table column denoting the sync_play_memberships relation/edge.
+	SyncPlayMembershipsColumn = "session_id"
 )
 
 // Columns holds all SQL columns for session fields.
@@ -141,6 +150,20 @@ func ByDeviceField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newDeviceStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// BySyncPlayMembershipsCount orders the results by sync_play_memberships count.
+func BySyncPlayMembershipsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSyncPlayMembershipsStep(), opts...)
+	}
+}
+
+// BySyncPlayMemberships orders the results by sync_play_memberships terms.
+func BySyncPlayMemberships(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSyncPlayMembershipsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newUserStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -153,5 +176,12 @@ func newDeviceStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(DeviceInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, DeviceTable, DeviceColumn),
+	)
+}
+func newSyncPlayMembershipsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SyncPlayMembershipsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SyncPlayMembershipsTable, SyncPlayMembershipsColumn),
 	)
 }
