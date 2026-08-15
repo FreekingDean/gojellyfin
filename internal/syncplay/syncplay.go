@@ -35,7 +35,6 @@ func Participants(group *Group) []string {
 	return names
 }
 
-// A session is in at most one group, so joining a second one leaves the first.
 type Service struct {
 	store *store.Client
 }
@@ -64,8 +63,8 @@ func (s *Service) Create(ctx context.Context, name string, sessionID uuid.UUID) 
 	return s.GroupByID(ctx, groupID)
 }
 
-func (s *Service) Join(ctx context.Context, groupID, sessionID uuid.UUID) (*Group, error) {
-	err := s.store.WithTx(ctx, func(tx *store.Tx) error {
+func (s *Service) Join(ctx context.Context, groupID, sessionID uuid.UUID) error {
+	return s.store.WithTx(ctx, func(tx *store.Tx) error {
 		exists, err := tx.SyncPlayGroup.Query().Where(groupmodal.ID(groupID)).Exist(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to query syncplay group %s: %w", groupID, err)
@@ -76,11 +75,6 @@ func (s *Service) Join(ctx context.Context, groupID, sessionID uuid.UUID) (*Grou
 
 		return join(ctx, tx, groupID, sessionID)
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	return s.GroupByID(ctx, groupID)
 }
 
 func (s *Service) Leave(ctx context.Context, sessionID uuid.UUID) error {
@@ -119,20 +113,7 @@ func (s *Service) GroupByID(ctx context.Context, groupID uuid.UUID) (*Group, err
 	return group, nil
 }
 
-func (s *Service) GroupBySessionID(ctx context.Context, sessionID uuid.UUID) (*Group, error) {
-	member, err := s.store.SyncPlayGroupMember.Query().
-		Where(membermodal.SessionID(sessionID)).
-		Only(ctx)
-	if store.IsNotFound(err) {
-		return nil, ErrNoGroup
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to query syncplay membership: %w", err)
-	}
-
-	return s.GroupByID(ctx, member.GroupID)
-}
-
+// A session is in at most one group, so joining a second one leaves the first.
 func join(ctx context.Context, tx *store.Tx, groupID, sessionID uuid.UUID) error {
 	member, err := memberOf(ctx, tx, sessionID)
 	if err != nil {

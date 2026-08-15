@@ -50,7 +50,7 @@ func (s *Server) SyncPlayJoinGroup(ctx context.Context, request api.SyncPlayJoin
 		return api.SyncPlayJoinGroup403Response{}, nil
 	}
 
-	_, err := s.syncplay.Join(ctx, *body.GroupId, session.ID)
+	err := s.syncplay.Join(ctx, *body.GroupId, session.ID)
 	if errors.Is(err, syncplay.ErrNoGroup) {
 		return api.SyncPlayJoinGroup403Response{}, nil
 	}
