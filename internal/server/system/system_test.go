@@ -11,7 +11,7 @@ import (
 )
 
 func testServer() *Server {
-	return New(nil, systemsvc.New(env.MustLoad()))
+	return New(nil, systemsvc.New(env.Config{}))
 }
 
 func TestGetPingSystem(t *testing.T) {

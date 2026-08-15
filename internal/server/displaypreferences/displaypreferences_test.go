@@ -32,7 +32,12 @@ type fixture struct {
 func connect(t *testing.T) *store.Client {
 	t.Helper()
 
-	connection, err := store.NewStore(env.MustLoad())
+	config, err := env.Load()
+	if err != nil {
+		t.Fatalf("failed to read the environment: %v", err)
+	}
+
+	connection, err := store.NewStore(config)
 	if err != nil {
 		t.Fatalf("failed to open the database: %v", err)
 	}

@@ -112,14 +112,3 @@ func trimmed(values []string) []string {
 
 	return entries
 }
-
-// MustLoad is for tests and one-shot tools, where a bad environment should stop
-// the process rather than be threaded back to a caller that cannot act on it.
-func MustLoad() Config {
-	config, err := Load()
-	if err != nil {
-		panic(err)
-	}
-
-	return config
-}
