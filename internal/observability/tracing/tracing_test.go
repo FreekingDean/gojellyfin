@@ -34,7 +34,11 @@ func TestAnEndpointRecords(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to build: %v", err)
 	}
-	defer tracing.Stop()
+	t.Cleanup(func() {
+		if err := tracing.Stop(); err != nil {
+			t.Errorf("stopping failed: %v", err)
+		}
+	})
 
 	_, span := tracing.Tracer().Start(context.Background(), "check")
 	defer span.End()
