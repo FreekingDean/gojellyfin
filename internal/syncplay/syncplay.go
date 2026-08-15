@@ -113,7 +113,6 @@ func (s *Service) GroupByID(ctx context.Context, groupID uuid.UUID) (*Group, err
 	return group, nil
 }
 
-// A session is in at most one group, so joining a second one leaves the first.
 func join(ctx context.Context, tx *store.Tx, groupID, sessionID uuid.UUID) error {
 	member, err := memberOf(ctx, tx, sessionID)
 	if err != nil {
@@ -152,15 +151,17 @@ func memberOf(ctx context.Context, tx *store.Tx, sessionID uuid.UUID) (*Member, 
 	return member, nil
 }
 
-// The last member out disbands the group, so an abandoned group never shows up
-// in the list a client picks from.
 func leave(ctx context.Context, tx *store.Tx, member *Member) error {
 	if err := tx.SyncPlayGroupMember.DeleteOne(member).Exec(ctx); err != nil {
 		return fmt.Errorf("failed to leave syncplay group: %w", err)
 	}
 
+	return disbandIfEmpty(ctx, tx, member.GroupID)
+}
+
+func disbandIfEmpty(ctx context.Context, tx *store.Tx, groupID uuid.UUID) error {
 	remaining, err := tx.SyncPlayGroupMember.Query().
-		Where(membermodal.GroupID(member.GroupID)).
+		Where(membermodal.GroupID(groupID)).
 		Count(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to count syncplay members: %w", err)
@@ -169,7 +170,7 @@ func leave(ctx context.Context, tx *store.Tx, member *Member) error {
 		return nil
 	}
 
-	if err := tx.SyncPlayGroup.DeleteOneID(member.GroupID).Exec(ctx); err != nil {
+	if err := tx.SyncPlayGroup.DeleteOneID(groupID).Exec(ctx); err != nil {
 		return fmt.Errorf("failed to disband syncplay group: %w", err)
 	}
 
