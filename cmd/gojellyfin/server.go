@@ -15,6 +15,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/localization"
+	"github.com/FreekingDean/gojellyfin/internal/metadata"
 	"github.com/FreekingDean/gojellyfin/internal/observability"
 	"github.com/FreekingDean/gojellyfin/internal/playlists"
 	"github.com/FreekingDean/gojellyfin/internal/scanner"
@@ -22,7 +23,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	"github.com/FreekingDean/gojellyfin/internal/system"
-	"github.com/FreekingDean/gojellyfin/internal/tmdb"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
@@ -39,11 +39,11 @@ var serverModules = fx.Options(
 	items.Module,
 	libraries.Module,
 	localization.Module,
+	metadata.Module,
 	playlists.Module,
 	scanner.Module,
 	sessions.Module,
 	system.Module,
-	tmdb.Module,
 	jobs.Module,
 	users.Module,
 

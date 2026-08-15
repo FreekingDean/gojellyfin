@@ -1,20 +1,8 @@
 package tmdb
 
-import (
-	"github.com/FreekingDean/gojellyfin/internal/fx"
-	"github.com/FreekingDean/gojellyfin/internal/jobs"
-)
+import "github.com/FreekingDean/gojellyfin/internal/fx"
 
 var Module = fx.Module(
 	"tmdb",
-	fx.Provide(
-		NewClient,
-		New,
-	),
-	fx.Invoke(register),
+	fx.Provide(NewClient),
 )
-
-// What the provider is hooked into is answered by reading this file.
-func register(registry *jobs.Registry, provider *Provider) {
-	registry.Register(NewIdentify(provider))
-}

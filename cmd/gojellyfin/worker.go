@@ -9,10 +9,10 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
+	"github.com/FreekingDean/gojellyfin/internal/metadata"
 	"github.com/FreekingDean/gojellyfin/internal/observability"
 	"github.com/FreekingDean/gojellyfin/internal/scanner"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	"github.com/FreekingDean/gojellyfin/internal/tmdb"
 )
 
 var workerModules = fx.Options(
@@ -25,7 +25,7 @@ var workerModules = fx.Options(
 		filesystem.New,
 	),
 	scanner.Module,
-	tmdb.Module,
+	metadata.Module,
 	jobs.Module,
 	jobs.WorkerModule,
 )

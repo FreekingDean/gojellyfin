@@ -1,27 +1,27 @@
-package tmdb
+package metadata
 
 import "github.com/FreekingDean/gojellyfin/internal/jobs"
 
 const RefreshMetadataJobID = "RefreshMetadata"
 
 type Identify struct {
-	provider *Provider
+	service *Service
 }
 
-func NewIdentify(provider *Provider) *Identify {
-	return &Identify{provider: provider}
+func NewIdentify(service *Service) *Identify {
+	return &Identify{service: service}
 }
 
 func (i *Identify) Name() string     { return RefreshMetadataJobID }
 func (i *Identify) Category() string { return "Library" }
 func (i *Identify) Description() string {
-	return "Identifies items against TMDB and fetches their metadata."
+	return "Identifies items and fetches their metadata."
 }
 
 func (i *Identify) Steps() []any {
-	return []any{i.provider.IdentifyItems}
+	return []any{i.service.IdentifyItems}
 }
 
 func (i *Identify) Run(ctx jobs.Context) error {
-	return jobs.Step(ctx, i.provider.IdentifyItems).Get(nil)
+	return jobs.Step(ctx, i.service.IdentifyItems).Get(nil)
 }

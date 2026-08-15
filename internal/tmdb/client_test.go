@@ -25,7 +25,7 @@ func TestClientBacksOffOnTooManyRequests(t *testing.T) {
 	client := newClient(server.URL, "test-key")
 	client.delay = time.Millisecond
 
-	movie, err := client.Movie(context.Background(), 603)
+	movie, err := client.movie(context.Background(), 603)
 	if err != nil {
 		t.Fatalf("a refused request failed the run instead of backing off: %v", err)
 	}
@@ -47,7 +47,7 @@ func TestClientGivesUpAfterTooManyRefusals(t *testing.T) {
 	client := newClient(server.URL, "test-key")
 	client.delay = time.Millisecond
 
-	if _, err := client.Movie(context.Background(), 603); err == nil {
+	if _, err := client.movie(context.Background(), 603); err == nil {
 		t.Fatal("a permanently refused request answered without an error")
 	}
 }
@@ -55,7 +55,7 @@ func TestClientGivesUpAfterTooManyRefusals(t *testing.T) {
 func TestClientRefusesWithoutAKey(t *testing.T) {
 	client := newClient("http://127.0.0.1:0", "")
 
-	if _, err := client.Movie(context.Background(), 603); !errors.Is(err, ErrNotConfigured) {
+	if _, err := client.movie(context.Background(), 603); !errors.Is(err, ErrNotConfigured) {
 		t.Fatalf("err = %v, want ErrNotConfigured", err)
 	}
 }

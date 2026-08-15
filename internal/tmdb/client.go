@@ -55,7 +55,7 @@ func (c *Client) Enabled() bool {
 	return c.apiKey != ""
 }
 
-func (c *Client) SearchMovie(ctx context.Context, name string, year *int32) (int, error) {
+func (c *Client) searchMovie(ctx context.Context, name string, year *int32) (int, error) {
 	query := url.Values{"query": {name}}
 	if year != nil {
 		query.Set("year", strconv.FormatInt(int64(*year), 10))
@@ -64,7 +64,7 @@ func (c *Client) SearchMovie(ctx context.Context, name string, year *int32) (int
 	return c.search(ctx, "/3/search/movie", query)
 }
 
-func (c *Client) SearchSeries(ctx context.Context, name string, year *int32) (int, error) {
+func (c *Client) searchSeries(ctx context.Context, name string, year *int32) (int, error) {
 	query := url.Values{"query": {name}}
 	if year != nil {
 		query.Set("first_air_date_year", strconv.FormatInt(int64(*year), 10))
@@ -85,21 +85,21 @@ func (c *Client) search(ctx context.Context, path string, query url.Values) (int
 	return results.Results[0].ID, nil
 }
 
-func (c *Client) Movie(ctx context.Context, id int) (*Movie, error) {
+func (c *Client) movie(ctx context.Context, id int) (*Movie, error) {
 	movie := &Movie{}
 	query := url.Values{"append_to_response": {"release_dates"}}
 
 	return movie, c.get(ctx, fmt.Sprintf("/3/movie/%d", id), query, movie)
 }
 
-func (c *Client) Series(ctx context.Context, id int) (*Series, error) {
+func (c *Client) series(ctx context.Context, id int) (*Series, error) {
 	series := &Series{}
 	query := url.Values{"append_to_response": {"content_ratings,external_ids"}}
 
 	return series, c.get(ctx, fmt.Sprintf("/3/tv/%d", id), query, series)
 }
 
-func (c *Client) Episode(ctx context.Context, seriesID int, season, episode int32) (*Episode, error) {
+func (c *Client) episode(ctx context.Context, seriesID int, season, episode int32) (*Episode, error) {
 	found := &Episode{}
 	path := fmt.Sprintf("/3/tv/%d/season/%d/episode/%d", seriesID, season, episode)
 	query := url.Values{"append_to_response": {"external_ids"}}
