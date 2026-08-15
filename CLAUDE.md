@@ -182,4 +182,6 @@ The tests run real ffmpeg and ffprobe what comes back, so CI installs ffmpeg and
 
 Users, sessions, devices, libraries, items and their user data are real rows, as are playlists, their entries and their shares; most other handlers still return hardcoded data or a 501. Audio transcodes when a client cannot take the source; video is still direct play only (#481).
 
+Live TV has no tuner (#525), no guide ingest (#526) and no recordings or scheduling (#527), and the `tuner_host`, `timer`, `series_timer` and `listings_provider` tables are declared but unread. Its read paths still answer an empty result rather than a 501, because a 501 makes the web client retry the section on a loop while an empty result is both true and renderable; every write path and every by-id lookup stays 501.
+
 A fresh database has no way in through the API — `CreateUserByName` requires an administrator and nothing seeds one — so `gojellyfin adduser` creates the first one. It reads the password from stdin rather than a flag, which keeps it out of the shell history and the process list; that is a security property, not a convenience, so it stays true of any command that takes a password. One-off jobs that need the domain services rather than a running server belong beside it as another subcommand under `cmd/gojellyfin`.
