@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/FreekingDean/gojellyfin/internal/env"
 )
 
 func TestClientBacksOffOnTooManyRequests(t *testing.T) {
@@ -57,6 +59,17 @@ func TestClientRefusesWithoutAKey(t *testing.T) {
 
 	if _, err := client.movie(context.Background(), 603); !errors.Is(err, ErrNotConfigured) {
 		t.Fatalf("err = %v, want ErrNotConfigured", err)
+	}
+}
+
+// No key configured leaves the provider off rather than failing the start, so a
+// server without one is still a server.
+func TestClientIsOffWithoutAConfiguredKey(t *testing.T) {
+	if NewClient(env.Config{}).Enabled() {
+		t.Error("a client with no key configured reported itself enabled")
+	}
+	if !NewClient(env.Config{TMDB: env.TMDB{APIKey: "not-a-real-key"}}).Enabled() {
+		t.Error("a configured key did not reach the client")
 	}
 }
 

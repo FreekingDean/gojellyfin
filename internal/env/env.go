@@ -26,6 +26,7 @@ type Config struct {
 	Transcoder         Transcoder `mapstructure:",squash"`
 	Temporal           Temporal   `mapstructure:",squash"`
 	Tracing            Tracing    `mapstructure:",squash"`
+	TMDB               TMDB       `mapstructure:",squash"`
 }
 
 type Transcoder struct {
@@ -40,6 +41,10 @@ type Temporal struct {
 
 type Tracing struct {
 	OTLPEndpoint string `mapstructure:"OTEL_EXPORTER_OTLP_ENDPOINT"`
+}
+
+type TMDB struct {
+	APIKey string `mapstructure:"TMDB_API_KEY"`
 }
 
 func Load() (Config, error) {

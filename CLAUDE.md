@@ -176,7 +176,9 @@ Triggers are not built. `UpdateTask` answers 501 rather than storing a schedule 
 
 **`internal/metadata` is what anything else names; `internal/tmdb` is one implementation of it and nothing outside imports it.** The interface is declared by the consumer, in `metadata/provider.go`, and `metadata.Module` aggregates `tmdb.Module` the way `server.Module` aggregates its tag packages — so `server.go` and `worker.go` list `metadata.Module` and learn nothing about who answers. The scheduled task the dashboard shows says it identifies items, not who it asks.
 
-That split is a rule, not a preference: **no package outside `internal/tmdb` may name TMDB.** Check it with `grep -rln 'internal/tmdb' --include='*.go' . | grep -v '^./internal/tmdb/'`, which must return `internal/metadata/fx.go` and nothing else.
+That split is a rule, not a preference: **no package outside `internal/tmdb` may import it.** Check with `grep -rln 'internal/tmdb' --include='*.go' . | grep -v '^./internal/tmdb/'`, which must return `internal/metadata/fx.go` and nothing else.
+
+The rule is about imports, not about the letters T-M-D-B. `internal/env` carries a `TMDB` struct holding `TMDB_API_KEY`, and that is correct rather than a leak: `env` is the one place every variable this binary reads is written down, and the variable is named for the service whose key it is because that is what an operator puts in a manifest. A provider-neutral name would make the manifest lie and would break the moment a second provider needs a key of its own. `env` imports none of our packages, so naming a variable costs no coupling — the leak to avoid is a package reaching for `internal/tmdb`, and `metadata` still takes only the `Provider` interface.
 
 `metadata` owns the job, the batch loop and the locks table. `tmdb` owns the HTTP client, the rate limiter and the translation from TMDB's payloads into `items.Metadata` — including from TMDB's vocabulary into ours, which is why `Status` is mapped to Jellyfin's `Continuing`/`Ended`/`Unreleased` rather than passed through, and why a movie writes no series status at all.
 
@@ -184,7 +186,7 @@ Two things keep the dependency pointing one way. A miss is a `false` return rath
 
 There is **one** provider and one binding — no fx value group and no priority order until a second provider exists to need them. The seam is the interface.
 
-It is bring your own key: `TMDB_API_KEY` unset leaves the provider disabled and the job a no-op, so a developer running the server alone still gets a server. We deliberately embed no key of our own — there is then none to share, none to throttle and no attribution owed for one.
+It is bring your own key: `TMDB_API_KEY` reaches the client as `env.Config.TMDB.APIKey` rather than through `os.Getenv`, and unset leaves the provider disabled and the job a no-op, so a developer running the server alone still gets a server. An absent key is deliberately not a validation failure — `env` refuses a malformed value, not a missing optional one. We embed no key of our own: there is then none to share, none to throttle and no attribution owed for one.
 
 The job runs on its own rather than inside the scan, and does **not** fan out per item. The work is IO bound on a rate limited API, so a step per item multiplies the request rate and finishes no sooner; one step loops over at most `batchSize` items, spaced by the client's own limiter and heartbeating between them. What a run leaves, the next run picks up.
 

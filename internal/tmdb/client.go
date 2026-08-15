@@ -8,9 +8,10 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"time"
+
+	"github.com/FreekingDean/gojellyfin/internal/env"
 )
 
 // Unset means the provider is off, the way an empty TEMPORAL_HOSTPORT leaves
@@ -37,8 +38,8 @@ type Client struct {
 	delay   time.Duration
 }
 
-func NewClient() *Client {
-	return newClient(apiURL, os.Getenv("TMDB_API_KEY"))
+func NewClient(config env.Config) *Client {
+	return newClient(apiURL, config.TMDB.APIKey)
 }
 
 func newClient(baseURL, apiKey string) *Client {
