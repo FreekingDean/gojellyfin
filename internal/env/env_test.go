@@ -1,6 +1,8 @@
 package env
 
 import (
+	"reflect"
+	"slices"
 	"testing"
 	"time"
 )
@@ -79,6 +81,27 @@ func TestLoadRefusesMalformedValues(t *testing.T) {
 			t.Error("a non numeric HTTP_PORT was accepted")
 		}
 	})
+}
+
+// An unbound key reads as unset however the manifest spells it, so a field
+// added to Config without a line in keys is a knob that silently does nothing.
+func TestEveryFieldIsBound(t *testing.T) {
+	var walk func(reflect.Type)
+	walk = func(structType reflect.Type) {
+		for i := range structType.NumField() {
+			field := structType.Field(i)
+			tag := field.Tag.Get("mapstructure")
+			if tag == ",squash" {
+				walk(field.Type)
+				continue
+			}
+			if !slices.Contains(keys, tag) {
+				t.Errorf("%s is not bound: add %q to keys", field.Name, tag)
+			}
+		}
+	}
+
+	walk(reflect.TypeOf(Config{}))
 }
 
 // Dialing localhost because nobody said otherwise is how a process ends up
