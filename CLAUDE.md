@@ -32,7 +32,7 @@ echo hunter2 | go run ./cmd/gojellyfin adduser Dean   # bootstrap the first user
 
 Everything ships as one cobra binary, `cmd/gojellyfin`, with a subcommand each for `server`, `worker`, `migrate`, `adduser`, `resetpassword` and `localizationdata`. One binary means one image, so an operator task is `docker exec <container> gojellyfin adduser Dean` rather than a second image or a second build. The names stay flat and read as commands; a new task is a `<name>Command() *cobra.Command` constructor in a file of its own, added to the list in `main.go`.
 
-Only two things are shared between them, both in `main.go`: `withStore` opens the store, starts it and closes it around a callback, and `readPassword` reads from stdin. Neither the DSN nor its default lives there — `store.DatabaseURL()` is the single source, which is why `migrate` can name the same database the server will use without repeating the string.
+Only two things are shared between them, both in `main.go`: `withStore` opens the store, starts it and closes it around a callback, and `readPassword` reads from stdin. The DSN does not live there — `internal/env` is the single source, which is why `migrate` can name the same database the server will use without repeating the string.
 
 `make dev` and `make run` tee to `/tmp/gojellyfin.log`, so the log is on screen and readable by tooling at the same time.
 
@@ -42,7 +42,17 @@ Run `air` through `tee` so the log is both on screen and readable at `/tmp/gojel
 
 `air` owns `:8081` while it runs, so starting a second server alongside it fails with `ListenAndServe error: address already in use`. Check whether it is running with `pgrep -x air` (matching on a path fails — the process is just `air`), and the listener with `lsof -ti:8081 -sTCP:LISTEN` — without `-sTCP:LISTEN` it also matches browsers connected to the port, and killing those results is not what you want. An orphaned `.air/gojellyfin` can outlive its supervisor and keep serving stale code.
 
-Requires a reachable Postgres. `DATABASE_URL` overrides the default DSN in `internal/store/fx.go` (`postgres://localhost:5432/gojellyfin_development?sslmode=disable`).
+Requires a reachable Postgres. `DATABASE_URL` is required and the binary carries no default — a process that was not told which database to open fails at start rather than quietly dialing localhost. The development DSN (`postgres://localhost:5432/gojellyfin_development?sslmode=disable`) lives in the `Makefile` as a `?=`, so `make run`, `make dev` and `make test` supply it while an explicit `DATABASE_URL` still wins. Running `go test ./...` or the binary directly, outside `make`, means setting it yourself.
+
+**`internal/env` is the only package that reads the environment.** It loads once into a `Config` that fx provides and every other package takes as a value, so the knobs are found by reading one struct rather than by grepping for `os.Getenv`, and a package under test is handed a value instead of having to set a variable. A one-shot subcommand calls `env.Load()` itself, because it has no lifecycle to hang it off.
+
+The reading is `viper`, bound to the environment only — no config file, no flags, no watching. The `mapstructure` tag on each field is the variable's name, and `keys` walks `Config` to bind them, because `Unmarshal` only populates keys viper already knows about and `AutomaticEnv` does not register any. So a new variable is a new field and nothing else; `TestKeysCoverEveryVariable` names the whole set, which is where a rename shows up.
+
+A malformed value is refused at start rather than ignored. `TRANSCODER_JOBS=lots` used to fall through to the core count and `TRANSCODER_STALL_TIMEOUT=30` to thirty seconds, so a typo in a manifest became a capacity problem with nothing to point at.
+
+`HTTP_PORT` is what the server listens on and defaults to 8081, which is the port `air`, the `Dockerfile`, and every manifest in `deploy/` already name — the variable exists so a second process can be brought up beside them, not to move the default.
+
+`serverModules` and `workerModules` in `cmd/gojellyfin` both list `env.Module`, and `TestWorkerModulesResolve` guards the second the way `TestServerModulesResolve` guards the first — a command that composes its graph inline has nothing to validate, so the worker starting without a config it needs is only found by running it.
 
 `make test` needs one too — `internal/items` seeds real rows through `store.NewStore()` and fails rather than skipping when the database is unreachable, so a green run means the queries actually ran. Each test owns a library row and deletes it and its items on cleanup; point `DATABASE_URL` at a scratch database to keep development data out of it. CI runs the suite against a `postgres:16` service with `internal/store/migrations` applied by `atlas migrate apply`.
 
@@ -134,7 +144,9 @@ Ordering by a to-many edge makes ent group the query, so the sort column comes b
 
 ### Background work
 
-Background work runs as Temporal workflows in a separate deployment. `gojellyfin worker` is the same image and the same binary as the server, run as a second deployment, and `TEMPORAL_HOSTPORT` is the server it dials; `TEMPORAL_NAMESPACE` defaults to `default`. With the address unset, background work is off and the server still starts, the way an empty `TRANSCODER_WORKERS` leaves transcoding off — a developer running the server alone gets a server rather than a dial error.
+Background work runs as Temporal workflows in a separate deployment. `gojellyfin worker` is the same image and the same binary as the server, run as a second deployment, and `TEMPORAL_HOSTPORT` is the server it dials. Both reach `internal/jobs` as `env.Config.Temporal` rather than through `os.Getenv`. With the address unset, background work is off and the server still starts — a developer running the server alone gets a server rather than a dial error.
+
+`TEMPORAL_NAMESPACE` has no default, and `jobs.NewClient` refuses to build a client without one rather than `env` inventing it: a namespace is only required once there is a server to dial, and defaulting it silently puts every run in whichever namespace the constant happened to name. The check belongs with the client because that is what needs the value.
 
 `internal/temporal` is the client and the worker; `internal/tasks` is the domain over them, and it is what the `ScheduledTasks` API is served from. A package declares what it runs beside the code that implements it: `scanner.Registration` names the workflow and its activities, and fx collects those into the worker through a value group, so the worker command lists no workflows of its own.
 
@@ -181,5 +193,7 @@ The tests run real ffmpeg and ffprobe what comes back, so CI installs ffmpeg and
 ### Current state
 
 Users, sessions, devices, libraries, items and their user data are real rows, as are playlists, their entries and their shares; most other handlers still return hardcoded data or a 501. Audio transcodes when a client cannot take the source; video is still direct play only (#481).
+
+Live TV has no tuner (#525), no guide ingest (#526) and no recordings or scheduling (#527), and the `tuner_host`, `timer`, `series_timer` and `listings_provider` tables are declared but unread. Its read paths still answer an empty result rather than a 501, because a 501 makes the web client retry the section on a loop while an empty result is both true and renderable; every write path and every by-id lookup stays 501.
 
 A fresh database has no way in through the API — `CreateUserByName` requires an administrator and nothing seeds one — so `gojellyfin adduser` creates the first one. It reads the password from stdin rather than a flag, which keeps it out of the shell history and the process list; that is a security property, not a convenience, so it stays true of any command that takes a password. One-off jobs that need the domain services rather than a running server belong beside it as another subcommand under `cmd/gojellyfin`.

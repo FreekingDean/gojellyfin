@@ -35,6 +35,16 @@ spec:
                 secretKeyRef:
                   name: gojellyfin
                   key: DATABASE_URL
+            # Unset advertises no address at all. A client prefers
+            # LocalAddress when it believes it shares a network with the
+            # server, so naming one it cannot reach sends it nowhere.
+            - name: PUBLISHED_SERVER_URL
+              value: ""
+            # Comma separated. Unset reflects whatever origin asks; a literal
+            # "*" is not equivalent, because browsers reject it on
+            # credentialed requests.
+            - name: CORS_ORIGINS
+              value: ""
             # MIGRATE_ON_START is deliberately unset. entrypoint.sh would run
             # the migrations before the server, which is unsafe with rolling
             # replicas — every replica would race the same apply on every
