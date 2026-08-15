@@ -4,6 +4,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/activitylog"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apikey"
+	"github.com/FreekingDean/gojellyfin/internal/server/artists"
 	"github.com/FreekingDean/gojellyfin/internal/server/branding"
 	"github.com/FreekingDean/gojellyfin/internal/server/channels"
 	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
@@ -21,6 +22,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/livetv"
 	"github.com/FreekingDean/gojellyfin/internal/server/localization"
 	"github.com/FreekingDean/gojellyfin/internal/server/mediainfo"
+	"github.com/FreekingDean/gojellyfin/internal/server/musicgenres"
 	"github.com/FreekingDean/gojellyfin/internal/server/packages"
 	"github.com/FreekingDean/gojellyfin/internal/server/persons"
 	"github.com/FreekingDean/gojellyfin/internal/server/playlists"
@@ -54,6 +56,8 @@ type nestedUnimplemented struct {
 // alias to keep them distinct.
 type (
 	ApiKeyServer             = apikey.Server
+	ArtistsServer            = artists.Server
+	MusicGenresServer        = musicgenres.Server
 	FilterServer             = filter.Server
 	YearsServer              = years.Server
 	SearchServer             = search.Server
@@ -97,6 +101,8 @@ type (
 
 type Server struct {
 	*ApiKeyServer
+	*ArtistsServer
+	*MusicGenresServer
 	*FilterServer
 	*YearsServer
 	*SearchServer
@@ -142,6 +148,8 @@ type Server struct {
 
 func New(
 	apiKey *apikey.Server,
+	artists *artists.Server,
+	musicGenres *musicgenres.Server,
 	filter *filter.Server,
 	years *years.Server,
 	search *search.Server,
@@ -184,6 +192,8 @@ func New(
 ) *Server {
 	return &Server{
 		ApiKeyServer:             apiKey,
+		ArtistsServer:            artists,
+		MusicGenresServer:        musicGenres,
 		FilterServer:             filter,
 		YearsServer:              years,
 		SearchServer:             search,
