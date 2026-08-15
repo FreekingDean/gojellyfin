@@ -197,7 +197,10 @@ func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int
 		items = items.Where(itemmodal.KindIn(query.Kinds...))
 	}
 	if len(query.ChildKinds) > 0 {
-		items = items.Where(itemmodal.HasChildrenWith(itemmodal.KindIn(query.ChildKinds...)))
+		items = items.Where(itemmodal.HasChildrenWith(
+			itemmodal.KindIn(query.ChildKinds...),
+			itemmodal.DeletedAtIsNil(),
+		))
 	}
 	if len(query.MediaTypes) > 0 {
 		items = items.Where(itemmodal.MediaTypeIn(query.MediaTypes...))
