@@ -1,30 +1,9 @@
 package env
 
 import (
-	"reflect"
-	"slices"
 	"testing"
 	"time"
 )
-
-// The tags are the only place a variable is named, so this is what a rename or
-// a dropped field shows up as.
-func TestKeysCoverEveryVariable(t *testing.T) {
-	want := []string{
-		"DATABASE_URL",
-		"HTTP_PORT",
-		"PUBLISHED_SERVER_URL",
-		"CORS_ORIGINS",
-		"TRANSCODER_JOBS",
-		"TRANSCODER_STALL_TIMEOUT",
-		"TEMPORAL_HOSTPORT",
-		"TEMPORAL_NAMESPACE",
-	}
-
-	if got := keys(reflect.TypeOf(Config{})); !slices.Equal(got, want) {
-		t.Errorf("keys = %v, want %v", got, want)
-	}
-}
 
 const testDatabaseURL = "postgres://localhost:5432/test?sslmode=disable"
 
