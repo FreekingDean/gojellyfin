@@ -46,44 +46,71 @@ func (s *Scanner) Scan(ctx context.Context) error {
 	return ctx.Err()
 }
 
+// What the walk reached. A directory it could not read leaves that subtree out
+// of the paths, so the sweep has to stand down rather than delete files that
+// are still on disk.
+type walk struct {
+	paths      []string
+	unreadable int
+}
+
+func (w *walk) found(path string) {
+	w.paths = append(w.paths, path)
+}
+
+func (w *walk) skip(path string, err error) {
+	w.unreadable++
+	log.Printf("skipping %s: %v", path, err)
+}
+
+func (w *walk) complete() bool {
+	return w.unreadable == 0
+}
+
 func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) error {
-	seen := make([]string, 0)
+	found := &walk{paths: make([]string, 0)}
 
 	for _, location := range library.Locations {
-		var paths []string
 		var err error
 
 		switch library.CollectionType {
 		case librarymodal.CollectionTypeTvshows:
-			paths, err = s.scanShows(ctx, library, location)
+			err = s.scanShows(ctx, library, location, found)
 		case librarymodal.CollectionTypeMovies:
-			paths, err = s.scanMovies(ctx, library, location)
+			err = s.scanMovies(ctx, library, location, found)
 		default:
 			err = fmt.Errorf("unsupported collection type: %s", library.CollectionType)
 		}
 		if err != nil {
 			return err
 		}
-		seen = append(seen, paths...)
 	}
 
-	log.Printf("scanned %s: %d items", library.Name, len(seen))
+	log.Printf("scanned %s: %d items", library.Name, len(found.paths))
 
-	return s.items.DeleteItemsNotInPaths(ctx, library.ID, seen)
+	if !found.complete() {
+		log.Printf("not sweeping %s: %d directories could not be read", library.Name, found.unreadable)
+
+		return nil
+	}
+
+	return s.items.DeleteItemsNotInPaths(ctx, library.ID, found.paths)
 }
 
-func (s *Scanner) scanMovies(ctx context.Context, library *libraries.Library, root string) ([]string, error) {
-	seen := make([]string, 0)
-
-	// A directory that cannot be read fails the whole scan. Skipping it would
-	// leave its files out of the seen set, and the caller deletes everything not
-	// in that set.
-	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
+// The root failing is the library itself being unreachable, which is an
+// operational error rather than one bad directory, so it still fails the scan.
+func (s *Scanner) scanMovies(ctx context.Context, library *libraries.Library, root string, found *walk) error {
+	return filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
 		if walkErr := ctx.Err(); walkErr != nil {
 			return walkErr
 		}
 		if err != nil {
-			return err
+			if path == root {
+				return err
+			}
+			found.skip(path, err)
+
+			return nil
 		}
 		if entry.IsDir() || !isVideo(entry.Name()) {
 			return nil
@@ -107,7 +134,7 @@ func (s *Scanner) scanMovies(ctx context.Context, library *libraries.Library, ro
 		if err != nil {
 			return err
 		}
-		seen = append(seen, path)
+		found.found(path)
 
 		if err := s.scanArtwork(ctx, item.ID, path, false); err != nil {
 			log.Printf("artwork %s: %v", path, err)
@@ -120,21 +147,17 @@ func (s *Scanner) scanMovies(ctx context.Context, library *libraries.Library, ro
 
 		return s.scanMedia(ctx, item)
 	})
-
-	return seen, err
 }
 
-func (s *Scanner) scanShows(ctx context.Context, library *libraries.Library, root string) ([]string, error) {
-	seen := make([]string, 0)
-
+func (s *Scanner) scanShows(ctx context.Context, library *libraries.Library, root string, found *walk) error {
 	entries, err := os.ReadDir(root)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	for _, entry := range entries {
 		if err := ctx.Err(); err != nil {
-			return nil, err
+			return err
 		}
 		if !entry.IsDir() {
 			continue
@@ -152,35 +175,33 @@ func (s *Scanner) scanShows(ctx context.Context, library *libraries.Library, roo
 			DateModified:   modifiedAt(entry),
 		})
 		if err != nil {
-			return nil, err
+			return err
 		}
-		seen = append(seen, seriesPath)
+		found.found(seriesPath)
 
 		if err := s.scanArtwork(ctx, series.ID, seriesPath, true); err != nil {
 			log.Printf("artwork %s: %v", seriesPath, err)
 		}
 
-		paths, err := s.scanSeries(ctx, library, series.Name, series.ID, seriesPath)
-		if err != nil {
-			return nil, err
+		if err := s.scanSeries(ctx, library, series.Name, series.ID, seriesPath, found); err != nil {
+			return err
 		}
-		seen = append(seen, paths...)
 	}
 
-	return seen, nil
+	return nil
 }
 
-func (s *Scanner) scanSeries(ctx context.Context, library *libraries.Library, seriesName string, seriesID uuid.UUID, seriesPath string) ([]string, error) {
-	seen := make([]string, 0)
-
+func (s *Scanner) scanSeries(ctx context.Context, library *libraries.Library, seriesName string, seriesID uuid.UUID, seriesPath string, found *walk) error {
 	entries, err := os.ReadDir(seriesPath)
 	if err != nil {
-		return nil, err
+		found.skip(seriesPath, err)
+
+		return nil
 	}
 
 	for _, entry := range entries {
 		if err := ctx.Err(); err != nil {
-			return nil, err
+			return err
 		}
 
 		path := filepath.Join(seriesPath, entry.Name())
@@ -190,9 +211,9 @@ func (s *Scanner) scanSeries(ctx context.Context, library *libraries.Library, se
 				continue
 			}
 			if err := s.upsertEpisode(ctx, library, seriesName, seriesID, path, entry); err != nil {
-				return nil, err
+				return err
 			}
-			seen = append(seen, path)
+			found.found(path)
 			continue
 		}
 
@@ -212,9 +233,9 @@ func (s *Scanner) scanSeries(ctx context.Context, library *libraries.Library, se
 			DateModified: modifiedAt(entry),
 		})
 		if err != nil {
-			return nil, err
+			return err
 		}
-		seen = append(seen, path)
+		found.found(path)
 
 		if err := s.scanArtwork(ctx, season.ID, path, true); err != nil {
 			log.Printf("artwork %s: %v", path, err)
@@ -222,11 +243,13 @@ func (s *Scanner) scanSeries(ctx context.Context, library *libraries.Library, se
 
 		episodes, err := os.ReadDir(path)
 		if err != nil {
-			return nil, err
+			found.skip(path, err)
+
+			continue
 		}
 		for _, episode := range episodes {
 			if err := ctx.Err(); err != nil {
-				return nil, err
+				return err
 			}
 			if episode.IsDir() || !isVideo(episode.Name()) {
 				continue
@@ -234,13 +257,13 @@ func (s *Scanner) scanSeries(ctx context.Context, library *libraries.Library, se
 
 			episodePath := filepath.Join(path, episode.Name())
 			if err := s.upsertEpisode(ctx, library, seriesName, season.ID, episodePath, episode); err != nil {
-				return nil, err
+				return err
 			}
-			seen = append(seen, episodePath)
+			found.found(episodePath)
 		}
 	}
 
-	return seen, nil
+	return nil
 }
 
 func (s *Scanner) upsertEpisode(ctx context.Context, library *libraries.Library, seriesName string, parentID uuid.UUID, path string, entry os.DirEntry) error {
