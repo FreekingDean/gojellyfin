@@ -174,11 +174,11 @@ func parseTrack(name string) (disc, track *int32, title string) {
 		return nil, nil, title
 	}
 
-	number, err := strconv.Atoi(match[2])
+	number, err := strconv.ParseInt(match[2], 10, 32)
 	if err != nil {
 		return nil, nil, title
 	}
-	if side, err := strconv.Atoi(match[1]); err == nil {
+	if side, err := strconv.ParseInt(match[1], 10, 32); err == nil {
 		disc = ptr(int32(side))
 	}
 
@@ -192,7 +192,7 @@ func parseDisc(name string) (*int32, bool) {
 		return nil, false
 	}
 
-	number, err := strconv.Atoi(match[1])
+	number, err := strconv.ParseInt(match[1], 10, 32)
 	if err != nil {
 		return nil, false
 	}

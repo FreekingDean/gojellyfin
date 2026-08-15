@@ -67,7 +67,7 @@ func (s *Server) GetAlbumArtists(ctx context.Context, request api.GetAlbumArtist
 func (s *Server) GetArtistByName(ctx context.Context, request api.GetArtistByNameRequestObject) (api.GetArtistByNameResponseObject, error) {
 	artist, err := s.items.ItemByName(ctx, itemmodal.KindMusicArtist, request.Name)
 	if err != nil {
-		return nil, err
+		return api.GetArtistByName403Response{}, nil
 	}
 
 	converted, err := dto.ItemDtos(ctx, s.items, []*items.Item{artist})

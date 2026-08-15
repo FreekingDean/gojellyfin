@@ -46,7 +46,7 @@ func (s *Server) GetGenres(ctx context.Context, request api.GetGenresRequestObje
 func (s *Server) GetGenre(ctx context.Context, request api.GetGenreRequestObject) (api.GetGenreResponseObject, error) {
 	genre, err := s.items.GenreByName(ctx, request.GenreName)
 	if err != nil {
-		return nil, err
+		return api.GetGenre403Response{}, nil
 	}
 
 	return api.GetGenre200JSONResponse(dto.GenreDto(genre, api.BaseItemKindGenre)), nil
