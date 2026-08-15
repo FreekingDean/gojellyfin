@@ -35,7 +35,12 @@ func receive(t *testing.T, service *Service) chan Envelope {
 	t.Helper()
 
 	received := make(chan Envelope, 4)
-	service.Handle(func(envelope Envelope) { received <- envelope })
+	service.Handle(func(envelope Envelope) {
+		select {
+		case received <- envelope:
+		default:
+		}
+	})
 
 	return received
 }

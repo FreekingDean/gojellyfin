@@ -52,6 +52,9 @@ func New() (*Service, error) {
 	return &Service{pool: pool, done: make(chan struct{})}, nil
 }
 
+// Handlers run on the listener, in order, because a group's updates only make
+// sense in the order they happened. One that blocks therefore stalls delivery
+// for every other handler, so a handler must return without waiting.
 func (s *Service) Handle(handler Handler) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
