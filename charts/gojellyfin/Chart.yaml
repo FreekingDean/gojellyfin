@@ -1,0 +1,13 @@
+apiVersion: v2
+name: gojellyfin
+description: A Go reimplementation of a Jellyfin media server, serving the Jellyfin 10.10.0 HTTP API
+type: application
+version: 0.1.0
+appVersion: "latest"
+home: https://github.com/FreekingDean/gojellyfin
+sources:
+  - https://github.com/FreekingDean/gojellyfin
+keywords:
+  - jellyfin
+  - media
+kubeVersion: ">=1.25.0-0"
