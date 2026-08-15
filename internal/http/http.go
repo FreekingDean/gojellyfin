@@ -133,7 +133,7 @@ type Server struct {
 	apiOptions     api.StrictHTTPServerOptions
 }
 
-func New(m *mux.Mux, authMiddleware *middleware.Auth, policies middleware.Policies) *Server {
+func New(m *mux.Mux, authMiddleware *middleware.Auth, tracingMiddleware *middleware.OapiTracing, policies middleware.Policies) *Server {
 	return &Server{
 		s: &http.Server{
 			Addr: ":8081",
@@ -147,11 +147,13 @@ func New(m *mux.Mux, authMiddleware *middleware.Auth, policies middleware.Polici
 
 		// The generated wrapper folds these outward, so the last entry runs
 		// first: authentication has to sit below authorization here for the
-		// session to be on the context by the time the scopes are checked.
+		// session to be on the context by the time the scopes are checked,
+		// and the span sits above both so it measures them.
 		apiMiddleware: []api.StrictMiddlewareFunc{
 			middleware.OapiLogging,
 			middleware.Authorize(policies),
 			authMiddleware.Middleware,
+			tracingMiddleware.Middleware,
 		},
 
 		apiOptions: api.StrictHTTPServerOptions{
