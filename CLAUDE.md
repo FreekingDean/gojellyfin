@@ -46,7 +46,9 @@ Requires a reachable Postgres. `DATABASE_URL` overrides the default DSN in `inte
 
 **`internal/env` is the only package that reads the environment.** It loads once into a `Config` that fx provides and every other package takes as a value, so the knobs are found by reading one struct rather than by grepping for `os.Getenv`, and a package under test is handed a value instead of having to set a variable. A one-shot subcommand calls `env.Load()` itself, because it has no lifecycle to hang it off.
 
-A malformed value is refused at start rather than ignored. `TRANSCODER_JOBS=lots` used to fall through to the core count and `TRANSCODER_STALL_TIMEOUT=30` to thirty seconds, so a typo in a manifest became a capacity problem with nothing to point at. `deploy/configmap.yaml` lists every optional knob commented out, because a knob nobody knows about is a knob nobody sets.
+A malformed value is refused at start rather than ignored. `TRANSCODER_JOBS=lots` used to fall through to the core count and `TRANSCODER_STALL_TIMEOUT=30` to thirty seconds, so a typo in a manifest became a capacity problem with nothing to point at.
+
+`serverModules` and `workerModules` in `cmd/gojellyfin` both list `env.Module`, and `TestWorkerModulesResolve` guards the second the way `TestServerModulesResolve` guards the first — a command that composes its graph inline has nothing to validate, so the worker starting without a config it needs is only found by running it.
 
 `make test` needs one too — `internal/items` seeds real rows through `store.NewStore()` and fails rather than skipping when the database is unreachable, so a green run means the queries actually ran. Each test owns a library row and deletes it and its items on cleanup; point `DATABASE_URL` at a scratch database to keep development data out of it. CI runs the suite against a `postgres:16` service with `internal/store/migrations` applied by `atlas migrate apply`.
 
@@ -138,7 +140,7 @@ Ordering by a to-many edge makes ent group the query, so the sort column comes b
 
 ### Background work
 
-Background work runs as Temporal workflows in a separate deployment. `gojellyfin worker` is the same image and the same binary as the server, run as a second deployment, and `TEMPORAL_HOSTPORT` is the server it dials; `TEMPORAL_NAMESPACE` defaults to `default`. With the address unset, background work is off and the server still starts, the way an empty `TRANSCODER_WORKERS` leaves transcoding off — a developer running the server alone gets a server rather than a dial error.
+Background work runs as Temporal workflows in a separate deployment. `gojellyfin worker` is the same image and the same binary as the server, run as a second deployment, and `TEMPORAL_HOSTPORT` is the server it dials; `TEMPORAL_NAMESPACE` defaults to `gojellyfin_default`. Both reach `internal/jobs` as `env.Config.Temporal` rather than through `os.Getenv`. With the address unset, background work is off and the server still starts — a developer running the server alone gets a server rather than a dial error.
 
 `internal/temporal` is the client and the worker; `internal/tasks` is the domain over them, and it is what the `ScheduledTasks` API is served from. A package declares what it runs beside the code that implements it: `scanner.Registration` names the workflow and its activities, and fx collects those into the worker through a value group, so the worker command lists no workflows of its own.
 
