@@ -20,31 +20,20 @@ const (
 // struct rather than by grepping, and a package under test is handed a value
 // instead of having to set a variable.
 type Config struct {
-	DatabaseURL string `mapstructure:"DATABASE_URL"`
-
-	HTTPPort int `mapstructure:"HTTP_PORT"`
-
-	// Empty advertises no address at all. A client prefers LocalAddress when it
-	// believes it shares a network with the server, so naming one this server
-	// cannot confirm sends the client somewhere it cannot reach.
-	PublishedServerURL string `mapstructure:"PUBLISHED_SERVER_URL"`
-
-	CORSOrigins []string `mapstructure:"CORS_ORIGINS"`
-
-	Transcoder Transcoder `mapstructure:",squash"`
-
-	Temporal Temporal `mapstructure:",squash"`
+	DatabaseURL        string     `mapstructure:"DATABASE_URL"`
+	HTTPPort           int        `mapstructure:"HTTP_PORT"`
+	PublishedServerURL string     `mapstructure:"PUBLISHED_SERVER_URL"` // what the public endpoints declare the server on
+	CORSOrigins        []string   `mapstructure:"CORS_ORIGINS"`
+	Transcoder         Transcoder `mapstructure:",squash"`
+	Temporal           Temporal   `mapstructure:",squash"`
 }
 
 type Transcoder struct {
-	// Zero means the core count, because one encode saturates about a core.
 	Jobs         int           `mapstructure:"TRANSCODER_JOBS"`
 	StallTimeout time.Duration `mapstructure:"TRANSCODER_STALL_TIMEOUT"`
 }
 
 type Temporal struct {
-	// Empty leaves background work off rather than failing to start, so a
-	// developer running the server alone gets a server, not a dial error.
 	HostPort  string `mapstructure:"TEMPORAL_HOSTPORT"`
 	Namespace string `mapstructure:"TEMPORAL_NAMESPACE"`
 }
