@@ -16,6 +16,8 @@ const TaskQueue = "gojellyfin"
 
 var ErrNotConfigured = errors.New("jobs: TEMPORAL_HOSTPORT is not set")
 
+var ErrNoNamespace = errors.New("jobs: TEMPORAL_HOSTPORT is set but TEMPORAL_NAMESPACE is not")
+
 var ErrNotFound = errors.New("jobs: no such job")
 
 type Client struct {
@@ -25,6 +27,9 @@ type Client struct {
 func NewClient(config env.Config) (*Client, error) {
 	if config.Temporal.HostPort == "" {
 		return &Client{}, nil
+	}
+	if config.Temporal.Namespace == "" {
+		return nil, ErrNoNamespace
 	}
 
 	connected, err := client.Dial(client.Options{
