@@ -48,6 +48,8 @@ Requires a reachable Postgres. `DATABASE_URL` overrides the default DSN in `inte
 
 A malformed value is refused at start rather than ignored. `TRANSCODER_JOBS=lots` used to fall through to the core count and `TRANSCODER_STALL_TIMEOUT=30` to thirty seconds, so a typo in a manifest became a capacity problem with nothing to point at.
 
+`HTTP_PORT` is what the server listens on and defaults to 8081, which is the port `air`, the `Dockerfile`, and every manifest in `deploy/` already name — the variable exists so a second process can be brought up beside them, not to move the default.
+
 `serverModules` and `workerModules` in `cmd/gojellyfin` both list `env.Module`, and `TestWorkerModulesResolve` guards the second the way `TestServerModulesResolve` guards the first — a command that composes its graph inline has nothing to validate, so the worker starting without a config it needs is only found by running it.
 
 `make test` needs one too — `internal/items` seeds real rows through `store.NewStore()` and fails rather than skipping when the database is unreachable, so a green run means the queries actually ran. Each test owns a library row and deletes it and its items on cleanup; point `DATABASE_URL` at a scratch database to keep development data out of it. CI runs the suite against a `postgres:16` service with `internal/store/migrations` applied by `atlas migrate apply`.

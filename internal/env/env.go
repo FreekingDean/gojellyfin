@@ -11,6 +11,8 @@ import (
 const (
 	defaultDatabaseURL       = "postgres://localhost:5432/gojellyfin_development?sslmode=disable"
 	defaultTemporalNamespace = "gojellyfin_default"
+	defaultHTTPPort          = 8081
+	maxPort                  = 65535
 )
 
 // Config is everything this process reads from its environment, read once at
@@ -19,6 +21,8 @@ const (
 // value instead of having to set a variable.
 type Config struct {
 	DatabaseURL string
+
+	HTTPPort int
 
 	// Empty advertises no address at all. A client prefers LocalAddress when it
 	// believes it shares a network with the server, so naming one this server
@@ -59,6 +63,12 @@ func Load() (Config, error) {
 		},
 	}
 
+	httpPort, err := port("HTTP_PORT")
+	if err != nil {
+		return Config{}, err
+	}
+	config.HTTPPort = orElseNumber(httpPort, defaultHTTPPort)
+
 	jobs, err := number("TRANSCODER_JOBS")
 	if err != nil {
 		return Config{}, err
@@ -91,6 +101,18 @@ func number(name string) (int, error) {
 	return value, nil
 }
 
+func port(name string) (int, error) {
+	value, err := number(name)
+	if err != nil {
+		return 0, err
+	}
+	if value > maxPort {
+		return 0, fmt.Errorf("%s must be a port between 1 and %d, got %d", name, maxPort, value)
+	}
+
+	return value, nil
+}
+
 func duration(name string) (time.Duration, error) {
 	raw := os.Getenv(name)
 	if raw == "" {
@@ -118,6 +140,14 @@ func list(value string) []string {
 
 func orElse(value, fallback string) string {
 	if value == "" {
+		return fallback
+	}
+
+	return value
+}
+
+func orElseNumber(value, fallback int) int {
+	if value == 0 {
 		return fallback
 	}
 

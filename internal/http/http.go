@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"regexp"
@@ -137,7 +138,7 @@ type Server struct {
 func New(config env.Config, m *mux.Mux, authMiddleware *middleware.Auth, policies middleware.Policies) *Server {
 	return &Server{
 		s: &http.Server{
-			Addr: ":8081",
+			Addr: fmt.Sprintf(":%d", config.HTTPPort),
 		},
 
 		httpMiddleware: []middleware.HttpMiddleware{

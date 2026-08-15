@@ -11,6 +11,7 @@ func TestLoadDefaults(t *testing.T) {
 		"DATABASE_URL", "PUBLISHED_SERVER_URL", "CORS_ORIGINS",
 		"TRANSCODER_JOBS", "TRANSCODER_STALL_TIMEOUT",
 		"TEMPORAL_HOSTPORT", "TEMPORAL_NAMESPACE",
+		"HTTP_PORT",
 	} {
 		t.Setenv(name, "")
 	}
@@ -34,6 +35,9 @@ func TestLoadDefaults(t *testing.T) {
 	}
 	if config.Temporal.Namespace != defaultTemporalNamespace {
 		t.Errorf("Namespace = %q, want %q", config.Temporal.Namespace, defaultTemporalNamespace)
+	}
+	if config.HTTPPort != defaultHTTPPort {
+		t.Errorf("HTTPPort = %d, want %d", config.HTTPPort, defaultHTTPPort)
 	}
 }
 
@@ -60,6 +64,20 @@ func TestLoadRefusesMalformedValues(t *testing.T) {
 			t.Error("a negative TRANSCODER_JOBS was accepted")
 		}
 	})
+
+	t.Run("port out of range", func(t *testing.T) {
+		t.Setenv("HTTP_PORT", "70000")
+		if _, err := Load(); err == nil {
+			t.Error("an HTTP_PORT above 65535 was accepted")
+		}
+	})
+
+	t.Run("port is not a number", func(t *testing.T) {
+		t.Setenv("HTTP_PORT", "http")
+		if _, err := Load(); err == nil {
+			t.Error("a non numeric HTTP_PORT was accepted")
+		}
+	})
 }
 
 func TestLoadReadsTheEnvironment(t *testing.T) {
@@ -68,6 +86,7 @@ func TestLoadReadsTheEnvironment(t *testing.T) {
 	t.Setenv("TRANSCODER_STALL_TIMEOUT", "45s")
 	t.Setenv("TEMPORAL_HOSTPORT", "temporal:7233")
 	t.Setenv("TEMPORAL_NAMESPACE", "gojellyfin_production")
+	t.Setenv("HTTP_PORT", "9000")
 
 	config, err := Load()
 	if err != nil {
@@ -88,5 +107,8 @@ func TestLoadReadsTheEnvironment(t *testing.T) {
 	}
 	if config.Temporal.Namespace != "gojellyfin_production" {
 		t.Errorf("Namespace = %q, want gojellyfin_production", config.Temporal.Namespace)
+	}
+	if config.HTTPPort != 9000 {
+		t.Errorf("HTTPPort = %d, want 9000", config.HTTPPort)
 	}
 }
