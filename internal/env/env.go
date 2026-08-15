@@ -3,7 +3,6 @@ package env
 import (
 	"errors"
 	"fmt"
-	"reflect"
 	"strings"
 	"time"
 
@@ -38,31 +37,11 @@ type Temporal struct {
 	Namespace string `mapstructure:"TEMPORAL_NAMESPACE"`
 }
 
-// Unmarshal only populates keys viper already knows about, so every tag has to
-// be bound before it will read one.
-func keys(structType reflect.Type) []string {
-	names := make([]string, 0, structType.NumField())
-	for i := range structType.NumField() {
-		field := structType.Field(i)
-		if tag := field.Tag.Get("mapstructure"); tag != ",squash" {
-			names = append(names, tag)
-			continue
-		}
-		names = append(names, keys(field.Type)...)
-	}
-
-	return names
-}
-
 func Load() (Config, error) {
 	v := viper.New()
 	v.SetDefault("HTTP_PORT", defaultHTTPPort)
-
-	for _, key := range keys(reflect.TypeOf(Config{})) {
-		if err := v.BindEnv(key); err != nil {
-			return Config{}, err
-		}
-	}
+	v.SetEnvPrefix("")
+	v.AutomaticEnv()
 
 	var config Config
 	if err := v.Unmarshal(&config); err != nil {
