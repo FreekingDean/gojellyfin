@@ -13,7 +13,7 @@ import (
 
 // Nothing is reached that needs a service: the walk fails on its first call.
 func TestScanMoviesFailsOnAMissingRoot(t *testing.T) {
-	scanner := New(nil, nil, nil)
+	scanner := New(nil, nil, nil, nil)
 	library := &libraries.Library{ID: uuid.New()}
 
 	paths, err := scanner.scanMovies(context.Background(), library, filepath.Join(t.TempDir(), "unmounted"))
@@ -34,7 +34,7 @@ func TestScanMoviesFailsOnAnUnreadableDirectory(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = os.Chmod(locked, 0o700) })
 
-	scanner := New(nil, nil, nil)
+	scanner := New(nil, nil, nil, nil)
 	library := &libraries.Library{ID: uuid.New()}
 
 	if _, err := scanner.scanMovies(context.Background(), library, root); err == nil {

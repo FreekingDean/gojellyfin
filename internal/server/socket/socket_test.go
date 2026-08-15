@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 
+	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 )
@@ -41,7 +42,7 @@ func newFixture(t *testing.T) *fixture {
 		t.Fatalf("failed to create the user: %v", err)
 	}
 
-	service := sessions.New(client)
+	service := sessions.New(client, activity.New(client))
 	token := uuid.NewString()
 	if _, err := service.Create(ctx, user.ID, token, sessions.DeviceInfo{
 		ID:         name,
