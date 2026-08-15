@@ -1,0 +1,29 @@
+{{ .Chart.Name }} {{ .Chart.Version }} is installed as {{ .Release.Name }}.
+
+The API answers on http://{{ include "gojellyfin.fullname" . }}.{{ .Release.Namespace }}:{{ .Values.api.service.port }}, or:
+
+  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "gojellyfin.fullname" . }} 8081:{{ .Values.api.service.port }}
+
+DATABASE_URL comes from the Secret {{ include "gojellyfin.databaseSecretName" . }}, key {{ .Values.database.secretKey }}. Create it before the pods start:
+
+  kubectl --namespace {{ .Release.Namespace }} create secret generic {{ include "gojellyfin.databaseSecretName" . }} \
+    --from-literal {{ .Values.database.secretKey }}='postgres://user:password@host:5432/gojellyfin?sslmode=require'
+
+{{ if .Values.migration.enabled -}}
+Migrations ran as a pre-install/pre-upgrade hook.
+{{- else -}}
+Migrations did not run. Apply them from the same image tag before the API serves traffic:
+
+  kubectl --namespace {{ .Release.Namespace }} run gojellyfin-migrate --rm --attach --restart Never \
+    --image {{ include "gojellyfin.image" . }} \
+    --env DATABASE_URL="$DATABASE_URL" -- migrate
+
+or set migration.enabled=true to have the chart run it.
+{{- end }}
+
+A fresh database has no way in through the API, so create the first user:
+
+  kubectl --namespace {{ .Release.Namespace }} exec -i deploy/{{ include "gojellyfin.fullname" . }} -- gojellyfin adduser <name>
+{{ if not .Values.httpRoute.enabled }}
+httpRoute.enabled is false, so nothing outside the cluster reaches this release yet.
+{{- end }}

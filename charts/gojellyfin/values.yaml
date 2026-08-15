@@ -1,0 +1,260 @@
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  repository: ghcr.io/freekingdean/gojellyfin
+  # Empty takes the chart's appVersion. Every workload and the migration Job
+  # share it: the migrations are embedded in the binary, so two tags mean the
+  # schema one image applied and the schema the other expects can differ.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+# HTTP_PORT. The container port, the Service target and the probe port all
+# follow it.
+httpPort: 8081
+
+database:
+  # DATABASE_URL is required and the binary carries no default. Create the
+  # Secret yourself — `kubectl create secret generic <release> --from-literal
+  # DATABASE_URL=postgres://…` — so no credential ever passes through values.
+  # Empty names a Secret with the release's own fullname.
+  existingSecret: ""
+  secretKey: DATABASE_URL
+
+# PUBLISHED_SERVER_URL. Empty advertises no address at all; a client prefers
+# LocalAddress when it believes it shares a network with the server, so naming
+# one it cannot reach sends it nowhere.
+publishedServerURL: ""
+
+# CORS_ORIGINS, joined with commas. Empty reflects whatever origin asks; a
+# literal "*" is not equivalent, because browsers reject it on credentialed
+# requests.
+corsOrigins: []
+
+# TEMPORAL_HOSTPORT and TEMPORAL_NAMESPACE. With hostPort empty, background
+# work is off and the server still starts. Setting it requires a namespace —
+# the binary refuses to invent one.
+temporal:
+  hostPort: ""
+  namespace: ""
+
+# The media has to resolve to the same path in every pod that reads it: the API
+# hands ffmpeg the path stored on the item row.
+media:
+  mountPath: /media
+  # Name a claim you manage and the chart creates none.
+  existingClaim: ""
+  persistence:
+    # ReadWriteMany is a requirement, not a preference — a ReadWriteOnce claim
+    # binds to one node and the transcode pods scheduled elsewhere get nothing.
+    accessModes:
+      - ReadWriteMany
+    # Name a ReadWriteMany class (NFS, CephFS, Filestore); the cluster default
+    # is usually ReadWriteOnce block storage and binds wrong. Empty uses that
+    # default.
+    storageClassName: ""
+    size: 1Ti
+    annotations: {}
+
+# `gojellyfin migrate` as a pre-install/pre-upgrade hook. Off by default: see
+# the chart README for when running it inside the release is what you want and
+# when a one-off `kubectl run`/`docker run --rm <image> migrate` is. Migrating
+# unconditionally at container start (MIGRATE_ON_START) is deliberately not
+# offered — every replica would race the same apply on every rollout.
+migration:
+  enabled: false
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 3600
+  podAnnotations: {}
+  podSecurityContext: {}
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+api:
+  # A transcode is one HTTP request from start to finish, with no session to
+  # map back to a pod, so a second replica breaks nothing.
+  replicaCount: 2
+  # TRANSCODER_JOBS and TRANSCODER_STALL_TIMEOUT. Keep jobs at or below the cpu
+  # limit below: one encode saturates about a core, and a pod that accepts more
+  # than it can run makes every stream on it slower without finishing any
+  # sooner. The chart refuses to render when it exceeds the limit. Leaving it
+  # unset is worse than either — the binary then falls back to the count of
+  # cores on the node, which is not what the pod may use.
+  transcoderJobs: 1
+  transcoderStallTimeout: 30s
+  # Writable, unlike the transcode pods': DeleteItem removes the file.
+  mediaReadOnly: false
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+  # /System/Ping is the only endpoint that is both public and free of any
+  # database access, so it reports the process rather than its dependencies.
+  # The chart owns the path and the port; everything else is yours.
+  livenessProbe:
+    periodSeconds: 20
+  readinessProbe:
+    periodSeconds: 10
+  service:
+    type: ClusterIP
+    port: 80
+    annotations: {}
+  # No runAsNonRoot: the image's USER is the name "gojellyfin" rather than a
+  # uid, and kubelet refuses to start a container whose non-rootness it cannot
+  # check numerically. The image drops privilege on its own.
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+  podSecurityContext: {}
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# The same image and the same subcommand as the API. What makes these pods the
+# transcoders is the HTTPRoute, not a second binary or a second protocol.
+# Disabled, the API serves /Videos and /Audio itself.
+transcode:
+  enabled: true
+  replicaCount: 3
+  transcoderJobs: 2
+  transcoderStallTimeout: 30s
+  mediaReadOnly: true
+  resources:
+    requests:
+      cpu: "2"
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+  livenessProbe:
+    periodSeconds: 20
+    timeoutSeconds: 5
+    failureThreshold: 6
+  readinessProbe:
+    periodSeconds: 10
+  service:
+    type: ClusterIP
+    port: 80
+    annotations: {}
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+  podSecurityContext: {}
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# `gojellyfin worker` — the same image run as the Temporal worker. It needs
+# temporal.hostPort; without one it crash loops, so the chart refuses to render
+# an enabled worker that has nowhere to dial. It reads the media too: the scan
+# probes files with ffprobe.
+worker:
+  enabled: false
+  replicaCount: 1
+  mediaReadOnly: true
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+  podSecurityContext: {}
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# jellyfin-web is not published on its own — no image, no npm package, and the
+# releases carry no built assets — so an init container copies it out of the
+# all-in-one jellyfin image into an emptyDir and nginx serves the copy.
+web:
+  enabled: true
+  replicaCount: 2
+  client:
+    # Pin this to the API version the server implements. A client newer than
+    # the API calls endpoints that answer 501.
+    repository: jellyfin/jellyfin
+    tag: "10.10.0"
+    pullPolicy: IfNotPresent
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 256Mi
+  # The unprivileged image listens on 8080 and owns the directories nginx
+  # writes to, which is what lets runAsNonRoot hold. Stock nginx wants port 80
+  # and root.
+  image:
+    repository: nginxinc/nginx-unprivileged
+    tag: alpine
+    pullPolicy: IfNotPresent
+  containerPort: 8080
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 128Mi
+  livenessProbe:
+    periodSeconds: 20
+  readinessProbe:
+    periodSeconds: 10
+  service:
+    type: ClusterIP
+    port: 80
+    annotations: {}
+  securityContext:
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+  podSecurityContext: {}
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# Gateway API. Off by default: a parentRef names a Gateway this chart cannot
+# guess. /Videos and /Audio go to the transcode pods, /web to the client and
+# everything else to the API — a longer prefix outranks a shorter one, so the
+# routes need no ordering between them.
+httpRoute:
+  enabled: false
+  annotations: {}
+  parentRefs: []
+  # - name: main
+  #   namespace: networking
+  hostnames: []
+  # - gojellyfin.example.com

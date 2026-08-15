@@ -1,0 +1,65 @@
+{{- if .Values.worker.enabled }}
+{{- if not .Values.temporal.hostPort }}
+{{- fail "worker.enabled needs temporal.hostPort: a worker with nothing to dial crash loops" }}
+{{- end }}
+{{- $component := "worker" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gojellyfin.fullname" . }}-worker
+  labels:
+    {{- include "gojellyfin.labels" (dict "root" $ "component" $component) | nindent 4 }}
+spec:
+  replicas: {{ .Values.worker.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.worker.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.worker.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: worker
+          image: {{ include "gojellyfin.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: ["worker"]
+          env:
+            {{- include "gojellyfin.workerEnv" . | nindent 12 }}
+          {{- with .Values.worker.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.worker.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            {{- include "gojellyfin.mediaVolumeMount" (dict "root" $ "workload" .Values.worker) | nindent 12 }}
+      volumes:
+        {{- include "gojellyfin.mediaVolume" (dict "root" $) | nindent 8 }}
+      {{- with .Values.worker.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.worker.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.worker.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

@@ -1,0 +1,89 @@
+{{- if .Values.httpRoute.enabled }}
+{{- if not .Values.httpRoute.parentRefs }}
+{{- fail "httpRoute.enabled needs httpRoute.parentRefs: a route with no Gateway is attached to nothing" }}
+{{- end }}
+{{- if .Values.transcode.enabled }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ include "gojellyfin.fullname" . }}-transcode
+  labels:
+    {{- include "gojellyfin.labels" (dict "root" $ "component" "transcode") | nindent 4 }}
+  {{- with .Values.httpRoute.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  parentRefs:
+    {{- toYaml .Values.httpRoute.parentRefs | nindent 4 }}
+  {{- with .Values.httpRoute.hostnames }}
+  hostnames:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /Videos
+        - path:
+            type: PathPrefix
+            value: /Audio
+      backendRefs:
+        - name: {{ include "gojellyfin.fullname" . }}-transcode
+          port: {{ .Values.transcode.service.port }}
+---
+{{- end }}
+{{- if .Values.web.enabled }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ include "gojellyfin.fullname" . }}-web
+  labels:
+    {{- include "gojellyfin.labels" (dict "root" $ "component" "web") | nindent 4 }}
+  {{- with .Values.httpRoute.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  parentRefs:
+    {{- toYaml .Values.httpRoute.parentRefs | nindent 4 }}
+  {{- with .Values.httpRoute.hostnames }}
+  hostnames:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /web
+      backendRefs:
+        - name: {{ include "gojellyfin.fullname" . }}-web
+          port: {{ .Values.web.service.port }}
+---
+{{- end }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ include "gojellyfin.fullname" . }}
+  labels:
+    {{- include "gojellyfin.labels" (dict "root" $ "component" "api") | nindent 4 }}
+  {{- with .Values.httpRoute.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  parentRefs:
+    {{- toYaml .Values.httpRoute.parentRefs | nindent 4 }}
+  {{- with .Values.httpRoute.hostnames }}
+  hostnames:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: {{ include "gojellyfin.fullname" . }}
+          port: {{ .Values.api.service.port }}
+{{- end }}
