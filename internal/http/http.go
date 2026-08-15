@@ -135,17 +135,24 @@ type Server struct {
 	apiOptions     api.StrictHTTPServerOptions
 }
 
+// Unset origins means no cross-origin access rather than a permissive one, so
+// the middleware is left out entirely instead of being configured to allow all.
+func newHTTPMiddleware(config env.Config) []middleware.HttpMiddleware {
+	stack := make([]middleware.HttpMiddleware, 0, 3)
+	if len(config.CORSOrigins) > 0 {
+		stack = append(stack, middleware.HttpCORS(config.CORSOrigins))
+	}
+
+	return append(stack, middleware.HttpLogging, middleware.HttpCanonicalQuery)
+}
+
 func New(config env.Config, m *mux.Mux, authMiddleware *middleware.Auth, policies middleware.Policies) *Server {
 	return &Server{
 		s: &http.Server{
 			Addr: fmt.Sprintf(":%d", config.HTTPPort),
 		},
 
-		httpMiddleware: []middleware.HttpMiddleware{
-			middleware.HttpCORS(config.CORSOrigins),
-			middleware.HttpLogging,
-			middleware.HttpCanonicalQuery,
-		},
+		httpMiddleware: newHTTPMiddleware(config),
 
 		// The generated wrapper folds these outward, so the last entry runs
 		// first: authentication has to sit below authorization here for the
