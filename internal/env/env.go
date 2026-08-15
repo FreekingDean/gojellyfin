@@ -8,7 +8,10 @@ import (
 	"time"
 )
 
-const defaultDatabaseURL = "postgres://localhost:5432/gojellyfin_development?sslmode=disable"
+const (
+	defaultDatabaseURL       = "postgres://localhost:5432/gojellyfin_development?sslmode=disable"
+	defaultTemporalNamespace = "gojellyfin_default"
+)
 
 // Config is everything this process reads from its environment, read once at
 // start. Nothing else calls os.Getenv, so the knobs are discoverable by reading
@@ -27,6 +30,8 @@ type Config struct {
 	CORSOrigins []string
 
 	Transcoder Transcoder
+
+	Temporal Temporal
 }
 
 type Transcoder struct {
@@ -35,12 +40,23 @@ type Transcoder struct {
 	StallTimeout time.Duration
 }
 
+type Temporal struct {
+	// Empty leaves background work off rather than failing to start, so a
+	// developer running the server alone gets a server, not a dial error.
+	HostPort  string
+	Namespace string
+}
+
 func Load() (Config, error) {
 	config := Config{
 		DatabaseURL:        orElse(os.Getenv("DATABASE_URL"), defaultDatabaseURL),
 		PublishedServerURL: os.Getenv("PUBLISHED_SERVER_URL"),
 		CORSOrigins:        list(os.Getenv("CORS_ORIGINS")),
 		Transcoder:         Transcoder{},
+		Temporal: Temporal{
+			HostPort:  os.Getenv("TEMPORAL_HOSTPORT"),
+			Namespace: orElse(os.Getenv("TEMPORAL_NAMESPACE"), defaultTemporalNamespace),
+		},
 	}
 
 	jobs, err := number("TRANSCODER_JOBS")

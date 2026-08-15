@@ -3,19 +3,17 @@ package jobs
 import (
 	"context"
 	"errors"
-	"os"
 	"time"
 
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/api/serviceerror"
 	"go.temporal.io/sdk/client"
+
+	"github.com/FreekingDean/gojellyfin/internal/env"
 )
 
 const TaskQueue = "gojellyfin"
 
-// Unset means background work is off, the way an empty TRANSCODER_WORKERS
-// means transcoding is off: a developer running the server alone gets a server,
-// not a dial error on every start.
 var ErrNotConfigured = errors.New("jobs: TEMPORAL_HOSTPORT is not set")
 
 var ErrNotFound = errors.New("jobs: no such job")
@@ -24,29 +22,20 @@ type Client struct {
 	client client.Client
 }
 
-func NewClient() (*Client, error) {
-	address := os.Getenv("TEMPORAL_HOSTPORT")
-	if address == "" {
+func NewClient(config env.Config) (*Client, error) {
+	if config.Temporal.HostPort == "" {
 		return &Client{}, nil
 	}
 
 	connected, err := client.Dial(client.Options{
-		HostPort:  address,
-		Namespace: namespace(),
+		HostPort:  config.Temporal.HostPort,
+		Namespace: config.Temporal.Namespace,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	return &Client{client: connected}, nil
-}
-
-func namespace() string {
-	if name := os.Getenv("TEMPORAL_NAMESPACE"); name != "" {
-		return name
-	}
-
-	return "gojellyfin_default"
 }
 
 func (c *Client) Enabled() bool {
