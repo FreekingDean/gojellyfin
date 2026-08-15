@@ -8,6 +8,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/displaypreferences"
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/http"
 	"github.com/FreekingDean/gojellyfin/internal/items"
@@ -27,6 +28,7 @@ import (
 )
 
 var serverModules = fx.Options(
+	env.Module,
 	observability.Module,
 	store.Module,
 

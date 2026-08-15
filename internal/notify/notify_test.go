@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
+	"github.com/FreekingDean/gojellyfin/internal/env"
 )
 
 // Two services are two pools and two backends, which is what a second replica
@@ -14,7 +16,12 @@ import (
 func newService(t *testing.T) *Service {
 	t.Helper()
 
-	service, err := New()
+	config, err := env.Load()
+	if err != nil {
+		t.Fatalf("failed to read the environment: %v", err)
+	}
+
+	service, err := New(config)
 	if err != nil {
 		t.Fatalf("failed to open the notify pool: %v", err)
 	}

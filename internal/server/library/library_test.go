@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
@@ -48,7 +49,12 @@ type seed struct {
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
 
-	connection, err := store.NewStore()
+	config, err := env.Load()
+	if err != nil {
+		t.Fatalf("failed to read the environment: %v", err)
+	}
+
+	connection, err := store.NewStore(config)
 	if err != nil {
 		t.Fatalf("failed to open the database: %v", err)
 	}
@@ -423,8 +429,7 @@ func TestGetDownload(t *testing.T) {
 func disconnected(t *testing.T) *jobs.Client {
 	t.Helper()
 
-	t.Setenv("TEMPORAL_HOSTPORT", "")
-	client, err := jobs.NewClient()
+	client, err := jobs.NewClient(env.Config{})
 	if err != nil {
 		t.Fatalf("failed to build the temporal client: %v", err)
 	}

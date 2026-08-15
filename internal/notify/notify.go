@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/FreekingDean/gojellyfin/internal/store"
+	"github.com/FreekingDean/gojellyfin/internal/env"
 )
 
 const (
@@ -43,8 +43,8 @@ type Service struct {
 
 // LISTEN holds a connection for as long as it is listening, so this owns a pool
 // of its own rather than borrowing the one every query shares.
-func New() (*Service, error) {
-	pool, err := pgxpool.New(context.Background(), store.DatabaseURL())
+func New(config env.Config) (*Service, error) {
+	pool, err := pgxpool.New(context.Background(), config.DatabaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open the notify pool: %w", err)
 	}
