@@ -161,7 +161,7 @@ func (c *Client) do(ctx context.Context, address string) (response, error) {
 	if err != nil {
 		return response{}, err
 	}
-	defer answer.Body.Close()
+	defer func() { _ = answer.Body.Close() }()
 
 	body, err := io.ReadAll(answer.Body)
 	if err != nil {

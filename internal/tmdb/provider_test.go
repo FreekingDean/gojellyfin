@@ -92,7 +92,7 @@ func (f *fixture) answer(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
-	writer.Write([]byte(body))
+	_, _ = writer.Write([]byte(body))
 }
 
 func (f *fixture) requests() []string {

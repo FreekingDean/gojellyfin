@@ -18,7 +18,7 @@ func TestClientBacksOffOnTooManyRequests(t *testing.T) {
 
 			return
 		}
-		writer.Write([]byte(matrixDetail))
+		_, _ = writer.Write([]byte(matrixDetail))
 	}))
 	defer server.Close()
 
