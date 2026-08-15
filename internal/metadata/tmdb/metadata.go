@@ -4,6 +4,8 @@ import (
 	"strconv"
 	"time"
 
+	gotmdb "github.com/cyruzin/golang-tmdb"
+
 	"github.com/FreekingDean/gojellyfin/internal/consts"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 )
@@ -28,7 +30,7 @@ func seriesStatus(status string) string {
 	return statuses[status]
 }
 
-func movieMetadata(movie *Movie) items.Metadata {
+func movieMetadata(movie *gotmdb.MovieDetails) items.Metadata {
 	premiere := date(movie.ReleaseDate)
 
 	return items.Metadata{
@@ -45,7 +47,7 @@ func movieMetadata(movie *Movie) items.Metadata {
 	}
 }
 
-func seriesMetadata(series *Series) items.Metadata {
+func seriesMetadata(series *gotmdb.TVDetails) items.Metadata {
 	premiere := date(series.FirstAirDate)
 
 	metadata := items.Metadata{
@@ -59,7 +61,7 @@ func seriesMetadata(series *Series) items.Metadata {
 		ProductionYear:      year(premiere),
 		Taglines:            list(series.Tagline),
 		ProductionLocations: countries(series.ProductionCountries),
-		ProviderIds:         providerIDs(series.ID, series.ExternalIDs.IMDbID),
+		ProviderIds:         providerIDs(series.ID, seriesIMDbID(series)),
 	}
 
 	if !series.InProduction {
@@ -69,7 +71,7 @@ func seriesMetadata(series *Series) items.Metadata {
 	return metadata
 }
 
-func episodeMetadata(episode *Episode) items.Metadata {
+func episodeMetadata(episode *gotmdb.TVEpisodeDetails) items.Metadata {
 	premiere := date(episode.AirDate)
 
 	return items.Metadata{
@@ -78,13 +80,20 @@ func episodeMetadata(episode *Episode) items.Metadata {
 		CommunityRating: score(episode.VoteAverage),
 		PremiereDate:    premiere,
 		ProductionYear:  year(premiere),
-		ProviderIds:     providerIDs(episode.ID, episode.ExternalIDs.IMDbID),
+		ProviderIds:     providerIDs(episode.ID, episodeIMDbID(episode)),
 	}
 }
 
-func movieCertification(movie *Movie) string {
+func movieCertification(movie *gotmdb.MovieDetails) string {
+	if movie.MovieReleaseDatesAppend == nil || movie.ReleaseDates == nil {
+		return ""
+	}
+	if movie.ReleaseDates.MovieReleaseDatesResults == nil {
+		return ""
+	}
+
 	for _, released := range movie.ReleaseDates.Results {
-		if released.Country != ratingCountry {
+		if released.Iso3166_1 != ratingCountry {
 			continue
 		}
 		for _, release := range released.ReleaseDates {
@@ -97,9 +106,16 @@ func movieCertification(movie *Movie) string {
 	return ""
 }
 
-func seriesCertification(series *Series) string {
+func seriesCertification(series *gotmdb.TVDetails) string {
+	if series.TVContentRatingsAppend == nil || series.ContentRatings == nil {
+		return ""
+	}
+	if series.ContentRatings.TVContentRatingsResults == nil {
+		return ""
+	}
+
 	for _, rated := range series.ContentRatings.Results {
-		if rated.Country == ratingCountry && rated.Rating != "" {
+		if rated.Iso3166_1 == ratingCountry && rated.Rating != "" {
 			return rated.Rating
 		}
 	}
@@ -107,8 +123,24 @@ func seriesCertification(series *Series) string {
 	return ""
 }
 
-func providerIDs(tmdbID int, imdbID string) *map[string]string {
-	ids := map[string]string{providerTmdb: strconv.Itoa(tmdbID)}
+func seriesIMDbID(series *gotmdb.TVDetails) string {
+	if series.TVExternalIDsAppend == nil || series.TVExternalIDs == nil {
+		return ""
+	}
+
+	return series.IMDbID
+}
+
+func episodeIMDbID(episode *gotmdb.TVEpisodeDetails) string {
+	if episode.TVEpisodeExternalIDsAppend == nil || episode.ExternalIDs == nil {
+		return ""
+	}
+
+	return episode.ExternalIDs.IMDbID
+}
+
+func providerIDs(tmdbID int64, imdbID string) *map[string]string {
+	ids := map[string]string{providerTmdb: strconv.FormatInt(tmdbID, 10)}
 	if imdbID != "" {
 		ids[providerImdb] = imdbID
 	}
@@ -116,7 +148,7 @@ func providerIDs(tmdbID int, imdbID string) *map[string]string {
 	return &ids
 }
 
-func countries(named []country) *[]string {
+func countries(named []gotmdb.ProductionCountry) *[]string {
 	if len(named) == 0 {
 		return nil
 	}
@@ -172,10 +204,11 @@ func rating(value string) *consts.Rating {
 	return &official
 }
 
-func score(value float64) *float64 {
+func score(value float32) *float64 {
 	if value == 0 {
 		return nil
 	}
+	rated := float64(value)
 
-	return &value
+	return &rated
 }

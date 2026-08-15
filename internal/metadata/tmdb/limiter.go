@@ -27,8 +27,16 @@ func (l *limiter) wait(ctx context.Context) error {
 	l.mutex.Unlock()
 
 	if delay <= 0 {
-		return nil
+		return ctx.Err()
 	}
 
-	return sleep(ctx, delay)
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
+	}
 }
