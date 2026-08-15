@@ -15,12 +15,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 )
 
-// Everything under these two roots is a progressive response that runs for the
-// length of the media, so a span covering one is open for hours. They are the
-// same roots deploy/httproutes.yaml sends to the transcode pods, which is what
-// keeps the rule to one line instead of a list of operations.
-var untracedRoots = []string{"Videos", "Audio"}
-
 type OapiTracing struct {
 	tracer     trace.Tracer
 	propagator propagation.TextMapPropagator
@@ -53,12 +47,14 @@ func (t *OapiTracing) Middleware(f api.StrictHandlerFunc, operationID string) ap
 	}
 }
 
-// The mux matches case-insensitively, so /videos reaches the same handler as
-// /Videos and has to be excluded the same way.
+// Everything under these two roots is a progressive response that runs for the
+// length of the media, so a span covering one is open for hours. They are the
+// same roots deploy/httproutes.yaml sends to the transcode pods. The mux
+// matches case-insensitively, so /videos has to be excluded like /Videos.
 func streams(path string) bool {
 	root, _, _ := strings.Cut(strings.TrimPrefix(path, "/"), "/")
 
-	return slices.ContainsFunc(untracedRoots, func(untraced string) bool {
+	return slices.ContainsFunc([]string{"Videos", "Audio"}, func(untraced string) bool {
 		return strings.EqualFold(untraced, root)
 	})
 }

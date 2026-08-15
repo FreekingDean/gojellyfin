@@ -2,6 +2,8 @@ package tracing
 
 import (
 	"context"
+	"fmt"
+	"net/url"
 	"time"
 
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
@@ -31,9 +33,17 @@ type Tracing struct {
 func New(config env.Config) (*Tracing, error) {
 	tracing := &Tracing{propagator: propagation.TraceContext{}}
 
-	endpoint := config.Tracing.Endpoint()
+	endpoint := config.Tracing.OTLPEndpoint
 	if endpoint == "" {
 		return tracing, nil
+	}
+
+	// The exporter answers a URL it cannot parse by logging and carrying on
+	// against its own localhost default, so a typo would otherwise ship every
+	// trace nowhere with nothing to point at.
+	parsed, err := url.Parse(endpoint)
+	if err != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+		return nil, fmt.Errorf("OTEL_EXPORTER_OTLP_ENDPOINT must be an http or https URL such as http://collector:4318, got %q", endpoint)
 	}
 
 	exporter, err := otlptracehttp.New(context.Background(), otlptracehttp.WithEndpointURL(endpoint))
@@ -50,6 +60,10 @@ func New(config env.Config) (*Tracing, error) {
 	)
 
 	return tracing, nil
+}
+
+func (t *Tracing) Enabled() bool {
+	return t.provider != nil
 }
 
 func (t *Tracing) Tracer() trace.Tracer {

@@ -3,7 +3,6 @@ package env
 import (
 	"errors"
 	"fmt"
-	"net/url"
 	"strings"
 	"time"
 
@@ -40,20 +39,7 @@ type Temporal struct {
 }
 
 type Tracing struct {
-	OTLPEndpoint       string `mapstructure:"OTEL_EXPORTER_OTLP_ENDPOINT"`
-	OTLPTracesEndpoint string `mapstructure:"OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"`
-}
-
-// Both spellings are standard and the signal-specific one wins, which is the
-// precedence the OTLP specification gives it. It also carries the whole path
-// where the general one carries only the base, so the exporter is handed
-// whichever of the two is in force rather than both.
-func (t Tracing) Endpoint() string {
-	if t.OTLPTracesEndpoint != "" {
-		return t.OTLPTracesEndpoint
-	}
-
-	return t.OTLPEndpoint
+	OTLPEndpoint string `mapstructure:"OTEL_EXPORTER_OTLP_ENDPOINT"`
 }
 
 func Load() (Config, error) {
@@ -89,29 +75,6 @@ func (c Config) validate() error {
 	if c.Transcoder.StallTimeout < 0 {
 		return fmt.Errorf("TRANSCODER_STALL_TIMEOUT must be a positive duration such as 30s, got %s", c.Transcoder.StallTimeout)
 	}
-	if err := validEndpoint("OTEL_EXPORTER_OTLP_ENDPOINT", c.Tracing.OTLPEndpoint); err != nil {
-		return err
-	}
-	if err := validEndpoint("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", c.Tracing.OTLPTracesEndpoint); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// The exporter answers a URL it cannot parse by logging and carrying on
-// against its own default, so a typo here ships traces to localhost forever
-// with nothing to point at.
-func validEndpoint(variable, endpoint string) error {
-	if endpoint == "" {
-		return nil
-	}
-
-	parsed, err := url.Parse(endpoint)
-	if err != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {
-		return fmt.Errorf("%s must be an http or https URL such as http://collector:4318, got %q", variable, endpoint)
-	}
-
 	return nil
 }
 

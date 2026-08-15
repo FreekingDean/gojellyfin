@@ -14,6 +14,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/http/mux"
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 	"github.com/FreekingDean/gojellyfin/internal/server"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/socket"
@@ -146,7 +147,23 @@ func newHTTPMiddleware(config env.Config) []middleware.HttpMiddleware {
 	return append(stack, middleware.HttpLogging, middleware.HttpCanonicalQuery)
 }
 
-func New(config env.Config, m *mux.Mux, authMiddleware *middleware.Auth, tracingMiddleware *middleware.OapiTracing, policies middleware.Policies) *Server {
+// The generated wrapper folds these outward, so the last entry runs first:
+// authentication has to sit below authorization here for the session to be on
+// the context by the time the scopes are checked.
+func newAPIMiddleware(tracing *tracing.Tracing, tracingMiddleware *middleware.OapiTracing, authMiddleware *middleware.Auth, policies middleware.Policies) []api.StrictMiddlewareFunc {
+	stack := []api.StrictMiddlewareFunc{
+		middleware.OapiLogging,
+		middleware.Authorize(policies),
+		authMiddleware.Middleware,
+	}
+	if tracing.Enabled() {
+		stack = append(stack, tracingMiddleware.Middleware)
+	}
+
+	return stack
+}
+
+func New(config env.Config, m *mux.Mux, authMiddleware *middleware.Auth, tracing *tracing.Tracing, tracingMiddleware *middleware.OapiTracing, policies middleware.Policies) *Server {
 	return &Server{
 		s: &http.Server{
 			Addr: fmt.Sprintf(":%d", config.HTTPPort),
@@ -154,16 +171,7 @@ func New(config env.Config, m *mux.Mux, authMiddleware *middleware.Auth, tracing
 
 		httpMiddleware: newHTTPMiddleware(config),
 
-		// The generated wrapper folds these outward, so the last entry runs
-		// first: authentication has to sit below authorization here for the
-		// session to be on the context by the time the scopes are checked,
-		// and the span sits above both so it measures them.
-		apiMiddleware: []api.StrictMiddlewareFunc{
-			middleware.OapiLogging,
-			middleware.Authorize(policies),
-			authMiddleware.Middleware,
-			tracingMiddleware.Middleware,
-		},
+		apiMiddleware: newAPIMiddleware(tracing, tracingMiddleware, authMiddleware, policies),
 
 		apiOptions: api.StrictHTTPServerOptions{
 			// Body decoding failures answer 400 from inside the generated
