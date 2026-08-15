@@ -38,9 +38,6 @@ const (
 
 var movies = []string{"Fixture Alpha", "Fixture Beta"}
 
-// The whole boot: a scratch database, the migrations, the first user, a
-// library with items in it, and then the real fx graph the server subcommand
-// runs, driven over HTTP the way a client drives it.
 func TestSmoke(t *testing.T) {
 	isolate(t, scratchDatabase(t))
 
@@ -104,9 +101,7 @@ func TestSmoke(t *testing.T) {
 		}
 	})
 
-	// The path jellyfin-web actually asks for, which the spec does not
-	// document and internal/http aliases.
-	t.Run("the library lists its items", func(t *testing.T) {
+	t.Run("the library lists its items through the alias the web client asks for", func(t *testing.T) {
 		var items result
 		c.get(t, "/Users/"+session.User.Id+"/Items?parentId="+libraryID.String()+"&sortBy=SortName", http.StatusOK, &items)
 
@@ -203,8 +198,6 @@ func (c *client) do(t *testing.T, method, path string, body any, status int, int
 	}
 }
 
-// A BaseItemDto runs to a few kilobytes, and the reason a call failed is in
-// the first line of it.
 func excerpt(body []byte) string {
 	text := strings.TrimSpace(string(body))
 	if len(text) > 400 {
@@ -221,8 +214,6 @@ func (c *client) authorization() string {
 	)
 }
 
-// Browsers cannot set headers on a handshake, so the token goes in the query
-// string the way jellyfin-web sends it.
 func (c *client) socket(t *testing.T) {
 	t.Helper()
 
@@ -279,8 +270,6 @@ func authenticate(name, pw string) map[string]string {
 	return map[string]string{"Username": name, "Pw": pw}
 }
 
-// A database of its own, dropped on the way out, because the developer's
-// DATABASE_URL points at a library they want to keep.
 func scratchDatabase(t *testing.T) string {
 	t.Helper()
 
@@ -302,8 +291,8 @@ func scratchDatabase(t *testing.T) string {
 	return parsed.String()
 }
 
-// The identifier is generated here rather than sent by anyone, which is why it
-// is interpolated: Postgres does not parameterise a database name.
+// Postgres does not parameterise a database name, so the statement is
+// interpolated; the identifier is generated here rather than sent by anyone.
 func execute(t *testing.T, dsn, statement string) {
 	t.Helper()
 
@@ -318,9 +307,6 @@ func execute(t *testing.T, dsn, statement string) {
 	}
 }
 
-// Everything env.Config reads, so the run does not change with the shell it
-// was started from — a developer with TEMPORAL_HOSTPORT set would otherwise
-// have the server dial it.
 func isolate(t *testing.T, dsn string) {
 	t.Helper()
 
@@ -435,8 +421,6 @@ func open(t *testing.T) *store.Client {
 	return connection.Client()
 }
 
-// The same graph the server subcommand runs, so a module missing from
-// serverModules fails here rather than in production.
 func start(t *testing.T) string {
 	t.Helper()
 

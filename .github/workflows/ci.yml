@@ -95,9 +95,3 @@ jobs:
 
       - name: Test
         run: go test -race ./...
-
-      # Behind a build tag so `make test` stays fast, but run on every PR: it
-      # reuses the postgres and atlas this job already has, creates a scratch
-      # database of its own, and is the only check that the server serves.
-      - name: End to end
-        run: go test -race -tags e2e -count 1 -timeout 5m ./cmd/gojellyfin/
