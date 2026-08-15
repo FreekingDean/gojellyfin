@@ -10,13 +10,13 @@ import (
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
-func TestDeleteItemsNotInPathsKeepsTheRow(t *testing.T) {
+func TestDeleteItemsNotInKeysKeepsTheRow(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
 	id := fixture.add(t, seed{kind: itemmodal.KindMovie, name: "Gone"})
 
-	if err := fixture.service.DeleteItemsNotInPaths(ctx, fixture.libraryID, []string{"/somewhere/else.mkv"}); err != nil {
+	if err := fixture.service.DeleteItemsNotInKeys(ctx, fixture.libraryID, []string{"movie:elsewhere"}); err != nil {
 		t.Fatalf("failed to sweep: %v", err)
 	}
 
@@ -43,14 +43,14 @@ func TestScanRevivesASweptItem(t *testing.T) {
 		Kind:         itemmodal.KindMovie,
 		Name:         "Returns",
 		SortName:     "Returns",
-		Path:         "/media/returns.mkv",
+		Key:          "movie:returns",
 		DateModified: time.Now(),
 	})
 	if err != nil {
 		t.Fatalf("failed to save the item: %v", err)
 	}
 
-	if err := fixture.service.DeleteItemsNotInPaths(ctx, fixture.libraryID, []string{"/somewhere/else.mkv"}); err != nil {
+	if err := fixture.service.DeleteItemsNotInKeys(ctx, fixture.libraryID, []string{"movie:elsewhere"}); err != nil {
 		t.Fatalf("failed to sweep: %v", err)
 	}
 
@@ -59,7 +59,7 @@ func TestScanRevivesASweptItem(t *testing.T) {
 		Kind:         itemmodal.KindMovie,
 		Name:         "Returns",
 		SortName:     "Returns",
-		Path:         "/media/returns.mkv",
+		Key:          "movie:returns",
 		DateModified: time.Now(),
 	})
 	if err != nil {
@@ -79,7 +79,7 @@ func TestScanRevivesASweptItem(t *testing.T) {
 }
 
 // The foreign key took descendants on a hard delete and cannot on an update.
-func TestDeleteItemsNotInPathsSweepsDescendants(t *testing.T) {
+func TestDeleteItemsNotInKeysSweepsDescendants(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -93,10 +93,10 @@ func TestDeleteItemsNotInPathsSweepsDescendants(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to load the item: %v", err)
 		}
-		kept = append(kept, record.Path)
+		kept = append(kept, record.Key)
 	}
 
-	if err := fixture.service.DeleteItemsNotInPaths(ctx, fixture.libraryID, kept); err != nil {
+	if err := fixture.service.DeleteItemsNotInKeys(ctx, fixture.libraryID, kept); err != nil {
 		t.Fatalf("failed to sweep: %v", err)
 	}
 
@@ -105,6 +105,6 @@ func TestDeleteItemsNotInPathsSweepsDescendants(t *testing.T) {
 		t.Fatalf("failed to query the items: %v", err)
 	}
 	if total != 0 || len(records) != 0 {
-		t.Errorf("items = %v, want none: a season kept by path outlived its series", names(records))
+		t.Errorf("items = %v, want none: a season kept by key outlived its series", names(records))
 	}
 }

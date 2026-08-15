@@ -227,6 +227,26 @@ func (_u *ItemUpdate) ClearVideo3dFormat() *ItemUpdate {
 	return _u
 }
 
+// SetKey sets the "key" field.
+func (_u *ItemUpdate) SetKey(v string) *ItemUpdate {
+	_u.mutation.SetKey(v)
+	return _u
+}
+
+// SetNillableKey sets the "key" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableKey(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetKey(*v)
+	}
+	return _u
+}
+
+// ClearKey clears the value of the "key" field.
+func (_u *ItemUpdate) ClearKey() *ItemUpdate {
+	_u.mutation.ClearKey()
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *ItemUpdate) SetName(v string) *ItemUpdate {
 	_u.mutation.SetName(v)
@@ -292,26 +312,6 @@ func (_u *ItemUpdate) SetNillableForcedSortName(v *bool) *ItemUpdate {
 	if v != nil {
 		_u.SetForcedSortName(*v)
 	}
-	return _u
-}
-
-// SetPath sets the "path" field.
-func (_u *ItemUpdate) SetPath(v string) *ItemUpdate {
-	_u.mutation.SetPath(v)
-	return _u
-}
-
-// SetNillablePath sets the "path" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillablePath(v *string) *ItemUpdate {
-	if v != nil {
-		_u.SetPath(*v)
-	}
-	return _u
-}
-
-// ClearPath clears the value of the "path" field.
-func (_u *ItemUpdate) ClearPath() *ItemUpdate {
-	_u.mutation.ClearPath()
 	return _u
 }
 
@@ -1837,6 +1837,12 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.Video3dFormatCleared() {
 		_spec.ClearField(item.FieldVideo3dFormat, field.TypeEnum)
 	}
+	if value, ok := _u.mutation.Key(); ok {
+		_spec.SetField(item.FieldKey, field.TypeString, value)
+	}
+	if _u.mutation.KeyCleared() {
+		_spec.ClearField(item.FieldKey, field.TypeString)
+	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(item.FieldName, field.TypeString, value)
 	}
@@ -1854,12 +1860,6 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.ForcedSortName(); ok {
 		_spec.SetField(item.FieldForcedSortName, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.Path(); ok {
-		_spec.SetField(item.FieldPath, field.TypeString, value)
-	}
-	if _u.mutation.PathCleared() {
-		_spec.ClearField(item.FieldPath, field.TypeString)
 	}
 	if value, ok := _u.mutation.DeletedAt(); ok {
 		_spec.SetField(item.FieldDeletedAt, field.TypeTime, value)
@@ -3038,6 +3038,26 @@ func (_u *ItemUpdateOne) ClearVideo3dFormat() *ItemUpdateOne {
 	return _u
 }
 
+// SetKey sets the "key" field.
+func (_u *ItemUpdateOne) SetKey(v string) *ItemUpdateOne {
+	_u.mutation.SetKey(v)
+	return _u
+}
+
+// SetNillableKey sets the "key" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableKey(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetKey(*v)
+	}
+	return _u
+}
+
+// ClearKey clears the value of the "key" field.
+func (_u *ItemUpdateOne) ClearKey() *ItemUpdateOne {
+	_u.mutation.ClearKey()
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *ItemUpdateOne) SetName(v string) *ItemUpdateOne {
 	_u.mutation.SetName(v)
@@ -3103,26 +3123,6 @@ func (_u *ItemUpdateOne) SetNillableForcedSortName(v *bool) *ItemUpdateOne {
 	if v != nil {
 		_u.SetForcedSortName(*v)
 	}
-	return _u
-}
-
-// SetPath sets the "path" field.
-func (_u *ItemUpdateOne) SetPath(v string) *ItemUpdateOne {
-	_u.mutation.SetPath(v)
-	return _u
-}
-
-// SetNillablePath sets the "path" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillablePath(v *string) *ItemUpdateOne {
-	if v != nil {
-		_u.SetPath(*v)
-	}
-	return _u
-}
-
-// ClearPath clears the value of the "path" field.
-func (_u *ItemUpdateOne) ClearPath() *ItemUpdateOne {
-	_u.mutation.ClearPath()
 	return _u
 }
 
@@ -4678,6 +4678,12 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	if _u.mutation.Video3dFormatCleared() {
 		_spec.ClearField(item.FieldVideo3dFormat, field.TypeEnum)
 	}
+	if value, ok := _u.mutation.Key(); ok {
+		_spec.SetField(item.FieldKey, field.TypeString, value)
+	}
+	if _u.mutation.KeyCleared() {
+		_spec.ClearField(item.FieldKey, field.TypeString)
+	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(item.FieldName, field.TypeString, value)
 	}
@@ -4695,12 +4701,6 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	}
 	if value, ok := _u.mutation.ForcedSortName(); ok {
 		_spec.SetField(item.FieldForcedSortName, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.Path(); ok {
-		_spec.SetField(item.FieldPath, field.TypeString, value)
-	}
-	if _u.mutation.PathCleared() {
-		_spec.ClearField(item.FieldPath, field.TypeString)
 	}
 	if value, ok := _u.mutation.DeletedAt(); ok {
 		_spec.SetField(item.FieldDeletedAt, field.TypeTime, value)

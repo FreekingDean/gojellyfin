@@ -35,15 +35,15 @@ func New(client *store.Client) *Service {
 	return &Service{store: client}
 }
 
-// What one pass of the scanner knows about a file. The probe owns the
+// What one pass of the scanner knows about a title. The probe owns the
 // remaining columns and must not be clobbered from here.
 type Scanned struct {
 	LibraryID         uuid.UUID
 	ParentID          *uuid.UUID
 	Kind              Kind
+	Key               string
 	Name              string
 	SortName          string
-	Path              string
 	ProductionYear    *int32
 	IndexNumber       *int32
 	ParentIndexNumber *int32
@@ -73,14 +73,14 @@ func (s *Service) SaveScanned(ctx context.Context, scanned Scanned) (*Item, erro
 		SetKind(scanned.Kind).
 		SetMediaType(mediaType).
 		SetIsFolder(isFolder).
+		SetKey(scanned.Key).
 		SetName(scanned.Name).
 		SetSortName(scanned.SortName).
-		SetPath(scanned.Path).
 		SetNillableProductionYear(scanned.ProductionYear).
 		SetNillableIndexNumber(scanned.IndexNumber).
 		SetNillableParentIndexNumber(scanned.ParentIndexNumber).
 		SetDateModified(scanned.DateModified).
-		OnConflictColumns(itemmodal.FieldLibraryID, itemmodal.FieldPath).
+		OnConflictColumns(itemmodal.FieldLibraryID, itemmodal.FieldKey).
 		UpdateParentID().
 		UpdateKind().
 		UpdateMediaType().
@@ -268,15 +268,15 @@ var ErrNothingScanned = errors.New("items: the scan found no files")
 // Soft, so that a volume which comes back brings its watch state with it. The
 // row keeps the id the user data hangs off, which is the whole reason a hard
 // delete cannot be undone.
-func (s *Service) DeleteItemsNotInPaths(ctx context.Context, libraryID uuid.UUID, paths []string) error {
-	if len(paths) == 0 {
+func (s *Service) DeleteItemsNotInKeys(ctx context.Context, libraryID uuid.UUID, keys []string) error {
+	if len(keys) == 0 {
 		return ErrNothingScanned
 	}
 
 	missing := []predicate.Item{
 		itemmodal.LibraryID(libraryID),
 		itemmodal.DeletedAtIsNil(),
-		itemmodal.PathNotIn(paths...),
+		itemmodal.KeyNotIn(keys...),
 	}
 
 	if err := s.store.Item.Update().
