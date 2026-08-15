@@ -66,8 +66,6 @@ func TestPublicOperationsSkipAuthorization(t *testing.T) {
 	}
 }
 
-// The failure this exists to prevent: a re-vendored spec renames an operation,
-// it falls out of both tables, and it would otherwise be served unguarded.
 func TestAnUnknownOperationIsRefused(t *testing.T) {
 	err := run(t, &stubPolicies{allow: true}, "SomeOperationTheSpecNoLongerDeclares", context.Background())
 

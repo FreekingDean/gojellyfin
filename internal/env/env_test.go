@@ -40,8 +40,6 @@ func TestLoadDefaults(t *testing.T) {
 	}
 }
 
-// Silently falling back to the default is how a typo in a manifest becomes a
-// capacity problem nobody can explain.
 func TestLoadRefusesMalformedValues(t *testing.T) {
 	t.Setenv("DATABASE_URL", testDatabaseURL)
 
@@ -81,8 +79,6 @@ func TestLoadRefusesMalformedValues(t *testing.T) {
 	})
 }
 
-// Dialing localhost because nobody said otherwise is how a process ends up
-// talking to the wrong database without anyone noticing.
 func TestLoadRequiresADatabaseURL(t *testing.T) {
 	t.Setenv("DATABASE_URL", "")
 

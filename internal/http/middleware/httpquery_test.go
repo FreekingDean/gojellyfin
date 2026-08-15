@@ -13,8 +13,6 @@ func TestCanonicalQueryFixesCasing(t *testing.T) {
 	}
 }
 
-// Clients send `Param=` for undefined values, which the generated binding
-// rejects as an unparseable int or uuid.
 func TestCanonicalQueryDropsEmptyValues(t *testing.T) {
 	got, changed := canonicalQuery(url.Values{
 		"AudioStreamIndex": {""},
