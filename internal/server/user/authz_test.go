@@ -61,7 +61,7 @@ func newAccounts(t *testing.T) *accounts {
 		}
 	})
 
-	return &accounts{server: New(service, nil), admin: admin, member: member}
+	return &accounts{server: New(service, nil, nil), admin: admin, member: member}
 }
 
 func as(user *users.User) context.Context {

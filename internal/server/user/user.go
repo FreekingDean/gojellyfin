@@ -8,6 +8,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/config"
+	"github.com/FreekingDean/gojellyfin/internal/quickconnect"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/server/dto"
@@ -16,12 +17,13 @@ import (
 )
 
 type Server struct {
-	users    *users.Service
-	sessions *sessions.Service
+	users        *users.Service
+	sessions     *sessions.Service
+	quickconnect *quickconnect.Service
 }
 
-func New(users *users.Service, sessions *sessions.Service) *Server {
-	return &Server{users: users, sessions: sessions}
+func New(users *users.Service, sessions *sessions.Service, quickconnect *quickconnect.Service) *Server {
+	return &Server{users: users, sessions: sessions, quickconnect: quickconnect}
 }
 
 func (s *Server) GetUsers(ctx context.Context, request api.GetUsersRequestObject) (api.GetUsersResponseObject, error) {
@@ -240,24 +242,57 @@ func (s *Server) AuthenticateUserByName(ctx context.Context, request api.Authent
 		return nil, auth.ErrUnauthorized
 	}
 
-	token, err := auth.NewToken()
+	result, err := s.authenticate(ctx, user)
 	if err != nil {
 		return nil, err
+	}
+
+	return api.AuthenticateUserByName200JSONResponse(result), nil
+}
+
+func (s *Server) AuthenticateWithQuickConnect(ctx context.Context, request api.AuthenticateWithQuickConnectRequestObject) (api.AuthenticateWithQuickConnectResponseObject, error) {
+	req := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
+	if req == nil || req.Secret == "" {
+		return api.AuthenticateWithQuickConnect400Response{}, nil
+	}
+
+	userID, err := s.quickconnect.Redeem(req.Secret)
+	if err != nil {
+		return api.AuthenticateWithQuickConnect400Response{}, nil
+	}
+
+	user, err := s.users.User(ctx, userID)
+	if err != nil {
+		return api.AuthenticateWithQuickConnect400Response{}, nil
+	}
+
+	result, err := s.authenticate(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+
+	return api.AuthenticateWithQuickConnect200JSONResponse(result), nil
+}
+
+func (s *Server) authenticate(ctx context.Context, user *users.User) (api.AuthenticationResult, error) {
+	token, err := auth.NewToken()
+	if err != nil {
+		return api.AuthenticationResult{}, err
 	}
 
 	session, err := s.sessions.Create(ctx, user.ID, token, auth.AuthorizationFrom(ctx).DeviceInfo())
 	if err != nil {
-		return nil, err
+		return api.AuthenticationResult{}, err
 	}
 
 	if err := s.users.TouchLogin(ctx, user.ID); err != nil {
-		return nil, err
+		return api.AuthenticationResult{}, err
 	}
 	now := time.Now()
 	user.LastLoginAt = now
 	user.LastActivityAt = now
 
-	return api.AuthenticateUserByName200JSONResponse{
+	return api.AuthenticationResult{
 		AccessToken: apiutil.Ptr(token),
 		ServerId:    apiutil.Ptr(config.ServerID),
 		User:        apiutil.Ptr(userDto(user)),

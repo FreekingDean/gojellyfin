@@ -27,7 +27,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/playlists"
 	"github.com/FreekingDean/gojellyfin/internal/server/playstate"
 	"github.com/FreekingDean/gojellyfin/internal/server/plugins"
-	"github.com/FreekingDean/gojellyfin/internal/server/quickconnect"
+	serverquickconnect "github.com/FreekingDean/gojellyfin/internal/server/quickconnect"
 	"github.com/FreekingDean/gojellyfin/internal/server/scheduledtasks"
 	"github.com/FreekingDean/gojellyfin/internal/server/search"
 	"github.com/FreekingDean/gojellyfin/internal/server/session"
@@ -71,7 +71,7 @@ var Module = fx.Module(
 	playlists.Module,
 	playstate.Module,
 	plugins.Module,
-	quickconnect.Module,
+	serverquickconnect.Module,
 	scheduledtasks.Module,
 	search.Module,
 	session.Module,

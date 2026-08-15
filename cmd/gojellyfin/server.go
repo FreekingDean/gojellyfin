@@ -16,6 +16,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/localization"
 	"github.com/FreekingDean/gojellyfin/internal/observability"
 	"github.com/FreekingDean/gojellyfin/internal/playlists"
+	"github.com/FreekingDean/gojellyfin/internal/quickconnect"
 	"github.com/FreekingDean/gojellyfin/internal/scanner"
 	"github.com/FreekingDean/gojellyfin/internal/server"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
@@ -37,6 +38,7 @@ var serverModules = fx.Options(
 	libraries.Module,
 	localization.Module,
 	playlists.Module,
+	quickconnect.Module,
 	scanner.Module,
 	sessions.Module,
 	system.Module,
