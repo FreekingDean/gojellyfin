@@ -5,12 +5,13 @@ import (
 	"testing"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	systemsvc "github.com/FreekingDean/gojellyfin/internal/system"
 )
 
 func testServer() *Server {
-	return New(nil, systemsvc.New())
+	return New(nil, systemsvc.New(env.Config{}))
 }
 
 func TestGetPingSystem(t *testing.T) {

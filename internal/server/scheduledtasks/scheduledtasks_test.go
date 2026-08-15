@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
@@ -14,8 +15,7 @@ import (
 func newServer(t *testing.T) *Server {
 	t.Helper()
 
-	t.Setenv("TEMPORAL_HOSTPORT", "")
-	client, err := jobs.NewClient()
+	client, err := jobs.NewClient(env.Config{})
 	if err != nil {
 		t.Fatalf("failed to build the temporal client: %v", err)
 	}
