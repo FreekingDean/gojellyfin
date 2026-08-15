@@ -114,14 +114,14 @@ func TestSaveProbeReplacesStreams(t *testing.T) {
 		t.Fatalf("failed to save the second probe: %v", err)
 	}
 
-	probed, err := fixture.service.MediaSource(ctx, id)
+	probed, err := fixture.service.MediaSources(ctx, id)
 	if err != nil {
-		t.Fatalf("failed to query the media source: %v", err)
+		t.Fatalf("failed to query the media sources: %v", err)
 	}
-	if probed == nil {
-		t.Fatal("media source = nil, want a probed source")
+	if len(probed) != 1 {
+		t.Fatalf("media sources = %d, want the one probed source", len(probed))
 	}
-	streams := probed.Edges.Streams
+	streams := probed[0].Edges.Streams
 	if len(streams) != 1 {
 		t.Fatalf("streams = %d, want 1", len(streams))
 	}

@@ -177,31 +177,6 @@ func (s *Service) MediaSources(ctx context.Context, itemID uuid.UUID) ([]*MediaS
 	return sources, nil
 }
 
-// Nil for anything with no file behind it, which a folder always is and an item
-// whose files went away can be.
-func (s *Service) MediaSource(ctx context.Context, itemID uuid.UUID) (*MediaSource, error) {
-	sources, err := s.MediaSources(ctx, itemID)
-	if err != nil || len(sources) == 0 {
-		return nil, err
-	}
-
-	return sources[0], nil
-}
-
-func (s *Service) SourceByPath(ctx context.Context, libraryID uuid.UUID, path string) (*MediaSource, error) {
-	source, err := s.store.MediaSource.Query().
-		Where(sourcemodal.LibraryID(libraryID), sourcemodal.Path(path)).
-		Only(ctx)
-	if store.IsNotFound(err) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to query media source by path: %w", err)
-	}
-
-	return source, nil
-}
-
 // The primary file of each item, for list responses that would otherwise ask
 // per row.
 func (s *Service) PathsByItem(ctx context.Context, itemIDs []uuid.UUID) (map[uuid.UUID]string, error) {

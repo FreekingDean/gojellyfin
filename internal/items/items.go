@@ -48,7 +48,6 @@ type Scanned struct {
 	IndexNumber       *int32
 	ParentIndexNumber *int32
 	DateModified      time.Time
-	RunTimeTicks      int64
 }
 
 var folderKinds = map[Kind]bool{
@@ -68,18 +67,13 @@ func (s *Service) SaveScanned(ctx context.Context, scanned Scanned) (*Item, erro
 		mediaType = itemmodal.MediaTypeUnknown
 	}
 
-	key, err := s.cutKey(ctx, scanned)
-	if err != nil {
-		return nil, err
-	}
-
 	id, err := s.store.Item.Create().
 		SetLibraryID(scanned.LibraryID).
 		SetNillableParentID(scanned.ParentID).
 		SetKind(scanned.Kind).
 		SetMediaType(mediaType).
 		SetIsFolder(isFolder).
-		SetKey(key).
+		SetKey(scanned.Key).
 		SetName(scanned.Name).
 		SetSortName(scanned.SortName).
 		SetNillableProductionYear(scanned.ProductionYear).

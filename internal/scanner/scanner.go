@@ -302,27 +302,9 @@ func (s *Scanner) scanEpisode(ctx context.Context, library *libraries.Library, s
 	return nil
 }
 
-// The file is probed before the title it belongs to is decided, because which
-// item it joins turns on its runtime. An unchanged file keeps the runtime the
-// last probe stored rather than paying for ffprobe again.
 func (s *Scanner) scanFile(ctx context.Context, library *libraries.Library, path string, entry os.DirEntry, found *seen, scanned items.Scanned) (*items.Item, error) {
 	modified := modifiedAt(entry)
 	scanned.DateModified = modified
-
-	stored, err := s.items.SourceByPath(ctx, library.ID, path)
-	if err != nil {
-		return nil, err
-	}
-
-	probe, err := s.probeFile(ctx, stored, path, modified)
-	if err != nil {
-		log.Printf("probe %s: %v", path, err)
-	}
-	if probe != nil {
-		scanned.RunTimeTicks = probe.RunTimeTicks
-	} else if stored != nil {
-		scanned.RunTimeTicks = stored.RunTimeTicks
-	}
 
 	item, err := s.items.SaveScanned(ctx, scanned)
 	if err != nil {
@@ -342,6 +324,10 @@ func (s *Scanner) scanFile(ctx context.Context, library *libraries.Library, path
 		return nil, err
 	}
 
+	probe, err := s.probeFile(ctx, source, path, modified)
+	if err != nil {
+		log.Printf("probe %s: %v", path, err)
+	}
 	if probe != nil {
 		if err := s.items.SaveProbe(ctx, item, source, *probe); err != nil {
 			log.Printf("probe %s: %v", path, err)

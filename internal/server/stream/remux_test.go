@@ -182,12 +182,12 @@ func TestServeDirectPlaysWhenTheAudioIsAlreadyPlayable(t *testing.T) {
 func sourceOf(t *testing.T, fixture *fixture, id uuid.UUID) *items.MediaSource {
 	t.Helper()
 
-	source, err := fixture.items.MediaSource(context.Background(), id)
-	if err != nil || source == nil {
+	sources, err := fixture.items.MediaSources(context.Background(), id)
+	if err != nil || len(sources) == 0 {
 		t.Fatalf("failed to read the source: %v", err)
 	}
 
-	return source
+	return sources[0]
 }
 
 func itemOf(t *testing.T, fixture *fixture, id uuid.UUID) *items.Item {

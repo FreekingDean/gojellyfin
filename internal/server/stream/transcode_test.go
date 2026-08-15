@@ -39,12 +39,12 @@ func (f *fixture) withEncoder(t *testing.T) {
 func (f *fixture) tonePath(t *testing.T, id uuid.UUID) string {
 	t.Helper()
 
-	source, err := f.items.MediaSource(context.Background(), id)
-	if err != nil || source == nil {
+	sources, err := f.items.MediaSources(context.Background(), id)
+	if err != nil || len(sources) == 0 {
 		t.Fatalf("failed to load the source: %v", err)
 	}
 
-	return source.Path
+	return sources[0].Path
 }
 
 func (f *fixture) addTone(t *testing.T) uuid.UUID {
