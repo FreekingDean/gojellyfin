@@ -13,6 +13,7 @@ func TestLoadDefaults(t *testing.T) {
 		"TRANSCODER_JOBS", "TRANSCODER_STALL_TIMEOUT",
 		"TEMPORAL_HOSTPORT", "TEMPORAL_NAMESPACE",
 		"OTEL_EXPORTER_OTLP_ENDPOINT",
+		"TMDB_API_KEY",
 		"HTTP_PORT",
 	} {
 		t.Setenv(name, "")
@@ -41,6 +42,9 @@ func TestLoadDefaults(t *testing.T) {
 	}
 	if config.Tracing.OTLPEndpoint != "" {
 		t.Error("a collector was invented, so every start ships spans somewhere nobody asked for")
+	}
+	if config.TMDB.APIKey != "" {
+		t.Error("a TMDB key was invented, so a provider nobody configured would start calling out")
 	}
 }
 
@@ -99,6 +103,7 @@ func TestLoadReadsTheEnvironment(t *testing.T) {
 	t.Setenv("TEMPORAL_HOSTPORT", "temporal:7233")
 	t.Setenv("TEMPORAL_NAMESPACE", "gojellyfin_production")
 	t.Setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://collector:4318")
+	t.Setenv("TMDB_API_KEY", "not-a-real-key")
 	t.Setenv("HTTP_PORT", "9000")
 
 	config, err := Load()
@@ -126,5 +131,8 @@ func TestLoadReadsTheEnvironment(t *testing.T) {
 	}
 	if config.Tracing.OTLPEndpoint != "http://collector:4318" {
 		t.Errorf("OTLPEndpoint = %q, want http://collector:4318", config.Tracing.OTLPEndpoint)
+	}
+	if config.TMDB.APIKey != "not-a-real-key" {
+		t.Errorf("APIKey = %q, want the one the environment set", config.TMDB.APIKey)
 	}
 }
