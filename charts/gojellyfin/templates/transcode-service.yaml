@@ -1,0 +1,21 @@
+{{- if .Values.transcode.enabled }}
+{{- $component := "transcode" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "gojellyfin.fullname" . }}-transcode
+  labels:
+    {{- include "gojellyfin.labels" (dict "root" $ "component" $component) | nindent 4 }}
+  {{- with .Values.transcode.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.transcode.service.type }}
+  selector:
+    {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.transcode.service.port }}
+      targetPort: http
+{{- end }}

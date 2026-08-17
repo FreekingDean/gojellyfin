@@ -1,0 +1,77 @@
+{{- $component := "api" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gojellyfin.fullname" . }}
+  labels:
+    {{- include "gojellyfin.labels" (dict "root" $ "component" $component) | nindent 4 }}
+spec:
+  replicas: {{ .Values.api.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.api.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.api.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: server
+          image: {{ include "gojellyfin.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: ["server"]
+          ports:
+            - name: http
+              containerPort: {{ .Values.httpPort }}
+          env:
+            {{- include "gojellyfin.serverEnv" (dict "root" $ "workload" .Values.api "component" $component) | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /System/Ping
+              port: http
+            {{- with .Values.api.livenessProbe }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /System/Ping
+              port: http
+            {{- with .Values.api.readinessProbe }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.api.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.api.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            {{- include "gojellyfin.mediaVolumeMount" (dict "root" $ "workload" .Values.api) | nindent 12 }}
+      volumes:
+        {{- include "gojellyfin.mediaVolume" (dict "root" $) | nindent 8 }}
+      {{- with .Values.api.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.api.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.api.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

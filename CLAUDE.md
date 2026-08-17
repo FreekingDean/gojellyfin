@@ -50,7 +50,7 @@ The reading is `viper`, bound to the environment only — no config file, no fla
 
 A malformed value is refused at start rather than ignored. `TRANSCODER_JOBS=lots` used to fall through to the core count and `TRANSCODER_STALL_TIMEOUT=30` to thirty seconds, so a typo in a manifest became a capacity problem with nothing to point at.
 
-`HTTP_PORT` is what the server listens on and defaults to 8081, which is the port `air`, the `Dockerfile`, and every manifest in `deploy/` already name — the variable exists so a second process can be brought up beside them, not to move the default.
+`HTTP_PORT` is what the server listens on and defaults to 8081, which is the port `air`, the `Dockerfile`, and the chart in `charts/gojellyfin` already name — the variable exists so a second process can be brought up beside them, not to move the default.
 
 `serverModules` and `workerModules` in `cmd/gojellyfin` both list `env.Module`, and `TestWorkerModulesResolve` guards the second the way `TestServerModulesResolve` guards the first — a command that composes its graph inline has nothing to validate, so the worker starting without a config it needs is only found by running it.
 
@@ -66,6 +66,8 @@ atlas migrate apply --dir "file://migrations" --url "$DATABASE_URL"
 `gojellyfin migrate` is the deployed spelling of that second line. It drives the `atlas` CLI rather than the Go SDK because the revision tracker that owns `atlas_schema_revisions` is not in the `ariga.io/atlas` module — it lives in the CLI repo under `cmd/atlas/internal/migrate/ent`, which nothing outside that repo can import. The migration directory is embedded through `internal/store/migrations`, so a deployed binary cannot drift from the schema it expects, and `atlas.sum` is still verified on every run.
 
 The `Dockerfile` carries that one binary and the `atlas` binary, runs as a non-root user, and is built and pushed to `ghcr.io/freekingdean/gojellyfin` by `.github/workflows/docker.yml`. `CMD` is `server`, so the image serves by default and any other subcommand is a `docker run` argument — a worker is the same image run as `worker`, which is the whole reason background work is a workflow rather than a goroutine in the server. `entrypoint.sh` survives the consolidation for one reason: it migrates first when `MIGRATE_ON_START=true`. That has to stay outside the binary, because it is deploy policy rather than server behaviour — unconditional migration on start is unsafe with rolling replicas, so the default is a one-off `docker run --rm <image> migrate`.
+
+`charts/gojellyfin` is how that image is deployed — the API, the transcode pods, the worker and the `jellyfin-web` nginx, all from the one tag. It holds no credential: `DATABASE_URL` is a `secretKeyRef` into a Secret the operator creates, and `values.yaml` only names it. Two relationships the chart enforces with `fail` rather than documents, because both are silent in the cluster and loud nowhere else: `transcoderJobs` above a workload's cpu limit, and a worker with no `TEMPORAL_HOSTPORT` to dial. `MIGRATE_ON_START` is not exposed at all; migration is a one-off run, or an opt-in `pre-install,pre-upgrade` hook Job.
 
 ## Architecture
 
@@ -216,7 +218,7 @@ Handlers read `auth.UserID(ctx)`, `auth.SessionFrom(ctx)`, `auth.AuthorizationFr
 
 Audio a client cannot direct play is encoded by ffmpeg **in the process serving the request**. There is no worker protocol and no pool: the pod that serves the stream is the pod that encodes it.
 
-Which pods those are is a **routing decision**, not a protocol. `deploy/httproutes.yaml` sends `/Videos` and `/Audio` to `gojellyfin-transcode` and everything else to `gojellyfin`, and both deployments are the same image running the same `server` subcommand. A longer path prefix outranks a shorter one, so the split needs no ordering between the two routes.
+Which pods those are is a **routing decision**, not a protocol. The chart's `httproute.yaml` sends `/Videos` and `/Audio` to the transcode Service and everything else to the API's, and both deployments are the same image running the same `server` subcommand. A longer path prefix outranks a shorter one, so the split needs no ordering between the two routes.
 
 That deletes the whole of what used to sit between them — the address list, the token, the round robin, the second subcommand and the HTTP hop that carried an encode from one pod to another. It also halves the bytes moved inside the cluster: a transcode used to cross the network twice, worker to API and API to client, and now crosses once.
 
