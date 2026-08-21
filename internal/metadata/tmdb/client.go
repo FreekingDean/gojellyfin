@@ -36,7 +36,7 @@ func newClient(baseURL, apiKey string) (*Client, error) {
 		return client, nil
 	}
 
-	api, err := gotmdb.Init(apiKey)
+	api, err := gotmdb.InitV4(apiKey)
 	if err != nil {
 		return nil, err
 	}
