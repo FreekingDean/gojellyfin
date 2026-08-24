@@ -76,6 +76,9 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 		if h.serveTranscode(w, r, item, source, []string{requested}) {
 			return
 		}
+		if strings.EqualFold(requested, transcode.VideoContainer) && h.needsRemux(r, item, source) && h.serveRemux(w, r, source) {
+			return
+		}
 
 		unsupported(w, r, container, requested)
 		return

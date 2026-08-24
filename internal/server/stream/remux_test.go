@@ -194,6 +194,64 @@ func TestHandler_serveRemux(t *testing.T) {
 		}
 	})
 
+	t.Run("remuxes the container the transcoding url asks for", func(t *testing.T) {
+		fixture := newFixture(t)
+		fixture.withEncoder(t)
+		id := fixture.addRip(t)
+
+		recorder := httptest.NewRecorder()
+		target := "/Videos/" + id.String() + "/stream.mp4?container=mp4&playSessionId=abc&"
+		request := fixture.get(t, http.MethodGet, target, id)
+		request.SetPathValue("container", "mp4")
+
+		fixture.handler.Serve(recorder, request)
+
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("status = %d, want %d: %s", recorder.Code, http.StatusOK, recorder.Body)
+		}
+		if got := recorder.Header().Get("Content-Type"); got != "video/mp4" {
+			t.Errorf("content type = %q, want video/mp4", got)
+		}
+
+		probed := decodable(t, recorder.Body.Bytes(), "out.mp4")
+		if !strings.Contains(probed.Format.FormatName, "mp4") {
+			t.Errorf("container = %q, want mp4", probed.Format.FormatName)
+		}
+
+		var video, audio string
+		for _, stream := range probed.Streams {
+			switch stream.CodecType {
+			case "video":
+				video = stream.CodecName
+			case "audio":
+				audio = stream.CodecName
+			}
+		}
+
+		if video != "h264" {
+			t.Errorf("video is %q, want h264 copied through", video)
+		}
+		if audio != "aac" {
+			t.Errorf("audio is %q, want aac", audio)
+		}
+	})
+
+	t.Run("refuses a container it cannot remux into", func(t *testing.T) {
+		fixture := newFixture(t)
+		fixture.withEncoder(t)
+		id := fixture.addRip(t)
+
+		recorder := httptest.NewRecorder()
+		request := fixture.get(t, http.MethodGet, "/Videos/"+id.String()+"/stream.webm?", id)
+		request.SetPathValue("container", "webm")
+
+		fixture.handler.Serve(recorder, request)
+
+		if recorder.Code != http.StatusUnsupportedMediaType {
+			t.Errorf("status = %d, want %d", recorder.Code, http.StatusUnsupportedMediaType)
+		}
+	})
+
 	t.Run("leaves a container the client declares alone", func(t *testing.T) {
 		fixture := newFixture(t)
 		fixture.withEncoder(t)
