@@ -51,6 +51,7 @@ func (f future) Get(out any) error {
 const (
 	stepTimeout   = 6 * time.Hour
 	heartbeat     = 2 * time.Minute
+	stepQueued    = 10 * time.Minute
 	stepAttempts  = 3
 	runTimeoutMax = 24 * time.Hour
 )
@@ -62,6 +63,11 @@ func Step(ctx Context, step any, args ...any) Future {
 	ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
 		StartToCloseTimeout: stepTimeout,
 		HeartbeatTimeout:    heartbeat,
+		// Five heartbeat windows with nobody listening is nobody coming, and the
+		// engine will not retry past this by design: what a worker never claimed
+		// is re-derived by the next run rather than ambushing the next worker to
+		// boot, which is how a scan outlived the run that asked for it.
+		ScheduleToStartTimeout: stepQueued,
 		// Bounded: work that failed because its source is unreachable will not
 		// succeed by being retried inside the same run.
 		RetryPolicy: &sdktemporal.RetryPolicy{MaximumAttempts: stepAttempts},

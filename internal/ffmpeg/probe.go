@@ -3,8 +3,19 @@ package ffmpeg
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"os/exec"
 	"strconv"
+	"time"
+)
+
+// Shorter than the heartbeat window a step is given, so a file the reader
+// cannot get through fails the step rather than outliving it: an abandoned step
+// is never told to stop, and a read that has wedged has no loop to be told in.
+const (
+	probeTimeout   = 30 * time.Second
+	probeWaitDelay = time.Second
 )
 
 type Probe struct {
@@ -84,6 +95,13 @@ func (s Stream) IsForced() bool {
 }
 
 func ProbeFile(ctx context.Context, path string) (*Probe, error) {
+	return probeFile(ctx, path, probeTimeout)
+}
+
+func probeFile(ctx context.Context, path string, within time.Duration) (*Probe, error) {
+	ctx, cancel := context.WithTimeout(ctx, within)
+	defer cancel()
+
 	cmd := exec.CommandContext(ctx, "ffprobe",
 		"-v", "quiet",
 		"-print_format", "json",
@@ -91,10 +109,15 @@ func ProbeFile(ctx context.Context, path string) (*Probe, error) {
 		"-show_streams",
 		path,
 	)
+	cmd.WaitDelay = probeWaitDelay
 
 	output, err := cmd.Output()
 	if err != nil {
-		return nil, err
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			return nil, fmt.Errorf("ffprobe ran out of time reading %s", path)
+		}
+
+		return nil, fmt.Errorf("failed to probe %s: %w", path, err)
 	}
 
 	probe := &Probe{}

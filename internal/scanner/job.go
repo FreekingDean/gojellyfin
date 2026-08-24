@@ -160,6 +160,9 @@ func (s *Scanner) ProbeSource(ctx context.Context, id uuid.UUID) error {
 	}
 
 	jobs.Heartbeat(ctx, source.Path)
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 
 	probe, err := s.probeFile(ctx, source)
 	if err != nil {
@@ -167,6 +170,9 @@ func (s *Scanner) ProbeSource(ctx context.Context, id uuid.UUID) error {
 	}
 	if probe == nil {
 		return nil
+	}
+	if err := ctx.Err(); err != nil {
+		return err
 	}
 
 	item, err := s.items.ItemByID(ctx, source.ItemID)
