@@ -58,6 +58,10 @@ func (s *seen) complete() bool {
 func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) error {
 	found := &seen{}
 
+	if err := s.rekeyLegacy(ctx, library); err != nil {
+		return err
+	}
+
 	for _, location := range library.Locations {
 		var err error
 
