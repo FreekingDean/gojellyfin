@@ -2,6 +2,7 @@ package librarystructure
 
 import (
 	"context"
+	"slices"
 
 	"github.com/google/uuid"
 
@@ -9,6 +10,26 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
+
+func requestedPaths(params *[]string, options *api.LibraryOptions) []string {
+	paths := make([]string, 0)
+	add := func(path string) {
+		if path != "" && !slices.Contains(paths, path) {
+			paths = append(paths, path)
+		}
+	}
+
+	for _, path := range apiutil.Deref(params) {
+		add(path)
+	}
+	if options != nil && options.PathInfos != nil {
+		for _, info := range *options.PathInfos {
+			add(apiutil.Deref(info.Path))
+		}
+	}
+
+	return paths
+}
 
 func virtualFolderInfo(library *libraries.Library) api.VirtualFolderInfo {
 	options := optionsDto(library.Edges.Options)
