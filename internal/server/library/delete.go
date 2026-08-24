@@ -55,8 +55,14 @@ func (s *Server) deleteItems(ctx context.Context, ids []uuid.UUID) error {
 	}
 
 	for _, record := range records {
-		if err := s.filesystem.RemoveAll(ctx, record.Path); err != nil {
+		paths, err := s.items.SourcePaths(ctx, record.ID)
+		if err != nil {
 			return err
+		}
+		for _, path := range paths {
+			if err := s.filesystem.RemoveAll(ctx, path); err != nil {
+				return err
+			}
 		}
 		if err := s.items.DeleteItem(ctx, record.ID); err != nil {
 			return err

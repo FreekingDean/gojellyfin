@@ -4,17 +4,19 @@ import (
 	"context"
 	"path/filepath"
 
+	"github.com/google/uuid"
+
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 )
 
-func (s *Scanner) scanSubtitles(ctx context.Context, item *items.Item) error {
-	found, err := subtitlesBeside(ctx, s.filesystem, item.Path)
+func (s *Scanner) scanSubtitles(ctx context.Context, itemID uuid.UUID, source *items.MediaSource) error {
+	found, err := subtitlesBeside(ctx, s.filesystem, source.Path)
 	if err != nil {
 		return err
 	}
 
-	return s.items.ReplaceExternalSubtitles(ctx, item, found)
+	return s.items.ReplaceExternalSubtitles(ctx, itemID, source, found)
 }
 
 func subtitlesBeside(ctx context.Context, files *filesystem.Service, path string) ([]items.ExternalSubtitle, error) {
