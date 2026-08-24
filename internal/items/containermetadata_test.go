@@ -263,40 +263,37 @@ func TestDistinctGenresFilters(t *testing.T) {
 		t.Fatalf("failed to save the probe: %v", err)
 	}
 
-	t.Run("filters by item kind", func(t *testing.T) {
-		named, _, err := fixture.service.DistinctGenres(ctx, MetadataQuery{
-			LibraryID: &fixture.libraryID,
-			Kinds:     []Kind{itemmodal.KindEpisode},
-		})
-		if err != nil {
-			t.Fatalf("failed to query genres: %v", err)
-		}
-		if len(named) != 0 {
-			t.Errorf("genres = %v, want none", namesOf(named))
-		}
-	})
+	other := uuid.New()
 
-	t.Run("filters by search term", func(t *testing.T) {
-		named, _, err := fixture.service.DistinctGenres(ctx, MetadataQuery{
-			LibraryID:  &fixture.libraryID,
-			SearchTerm: "comedy",
-		})
-		if err != nil {
-			t.Fatalf("failed to query genres: %v", err)
-		}
-		if want := []string{fixture.name("Comedy")}; !slices.Equal(namesOf(named), want) {
-			t.Errorf("genres = %v, want %v", namesOf(named), want)
-		}
-	})
+	tests := []struct {
+		name  string
+		query MetadataQuery
+		want  []string
+	}{
+		{
+			name:  "filters by item kind",
+			query: MetadataQuery{LibraryID: &fixture.libraryID, Kinds: []Kind{itemmodal.KindEpisode}},
+		},
+		{
+			name:  "filters by search term",
+			query: MetadataQuery{LibraryID: &fixture.libraryID, SearchTerm: "comedy"},
+			want:  []string{fixture.name("Comedy")},
+		},
+		{
+			name:  "ignores other libraries",
+			query: MetadataQuery{LibraryID: &other},
+		},
+	}
 
-	t.Run("ignores other libraries", func(t *testing.T) {
-		other := uuid.New()
-		named, _, err := fixture.service.DistinctGenres(ctx, MetadataQuery{LibraryID: &other})
-		if err != nil {
-			t.Fatalf("failed to query genres: %v", err)
-		}
-		if len(named) != 0 {
-			t.Errorf("genres = %v, want none", namesOf(named))
-		}
-	})
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			named, _, err := fixture.service.DistinctGenres(ctx, test.query)
+			if err != nil {
+				t.Fatalf("failed to query genres: %v", err)
+			}
+			if got := namesOf(named); !slices.Equal(got, test.want) {
+				t.Errorf("genres = %v, want %v", got, test.want)
+			}
+		})
+	}
 }
