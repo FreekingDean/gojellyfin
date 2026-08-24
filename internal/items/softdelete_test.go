@@ -17,14 +17,14 @@ func TestService_SaveScanned(t *testing.T) {
 		Kind:         itemmodal.KindMovie,
 		Name:         "Returns",
 		SortName:     "Returns",
-		Path:         "/media/returns.mkv",
+		Key:          "movie:returns",
 		DateModified: time.Now(),
 	})
 	if err != nil {
 		t.Fatalf("failed to save the item: %v", err)
 	}
 
-	if err := fixture.service.DeleteItemsNotInPaths(ctx, fixture.libraryID, []string{"/somewhere/else.mkv"}); err != nil {
+	if err := fixture.service.DeleteItemsNotInKeys(ctx, fixture.libraryID, []string{"movie:elsewhere"}); err != nil {
 		t.Fatalf("failed to sweep: %v", err)
 	}
 
@@ -33,7 +33,7 @@ func TestService_SaveScanned(t *testing.T) {
 		Kind:         itemmodal.KindMovie,
 		Name:         "Returns",
 		SortName:     "Returns",
-		Path:         "/media/returns.mkv",
+		Key:          "movie:returns",
 		DateModified: time.Now(),
 	})
 	if err != nil {

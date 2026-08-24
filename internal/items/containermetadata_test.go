@@ -58,6 +58,15 @@ func (f *metadataFixture) item(t *testing.T, name string) *Item {
 	return record
 }
 
+func (f *metadataFixture) probe(t *testing.T, item *Item, probe Probe) {
+	t.Helper()
+
+	source := f.source(t, item.ID, "/media/"+item.ID.String()+".mkv")
+	if err := f.service.SaveProbe(context.Background(), item, source, probe); err != nil {
+		t.Fatalf("failed to save the probe: %v", err)
+	}
+}
+
 func (f *metadataFixture) query() MetadataQuery {
 	return MetadataQuery{LibraryID: &f.libraryID}
 }
@@ -93,9 +102,7 @@ func TestService_SaveProbe(t *testing.T) {
 				},
 			},
 		}
-		if err := fixture.service.SaveProbe(ctx, movie, probe); err != nil {
-			t.Fatalf("failed to save the probe: %v", err)
-		}
+		fixture.probe(t, movie, probe)
 
 		t.Run("populates the genres", func(t *testing.T) {
 			named, total, err := fixture.service.DistinctGenres(ctx, fixture.query())
@@ -160,9 +167,7 @@ func TestService_SaveProbe(t *testing.T) {
 		})
 
 		t.Run("re-probing changes nothing", func(t *testing.T) {
-			if err := fixture.service.SaveProbe(ctx, movie, probe); err != nil {
-				t.Fatalf("failed to save the probe: %v", err)
-			}
+			fixture.probe(t, movie, probe)
 
 			named, total, err := fixture.service.DistinctGenres(ctx, fixture.query())
 			if err != nil {
@@ -197,9 +202,7 @@ func TestService_SaveProbe(t *testing.T) {
 		t.Run("re-probing drops metadata the container no longer carries", func(t *testing.T) {
 			reduced := probe
 			reduced.Metadata = ContainerMetadata{Genres: []string{fixture.name("Comedy")}}
-			if err := fixture.service.SaveProbe(ctx, movie, reduced); err != nil {
-				t.Fatalf("failed to save the probe: %v", err)
-			}
+			fixture.probe(t, movie, reduced)
 
 			named, _, err := fixture.service.DistinctGenres(ctx, fixture.query())
 			if err != nil {
@@ -233,10 +236,7 @@ func TestService_SaveProbe(t *testing.T) {
 		shared := fixture.name("Comedy")
 
 		for _, name := range []string{"First", "Second"} {
-			probe := Probe{Metadata: ContainerMetadata{Genres: []string{shared}}}
-			if err := fixture.service.SaveProbe(ctx, fixture.item(t, name), probe); err != nil {
-				t.Fatalf("failed to save the probe for %q: %v", name, err)
-			}
+			fixture.probe(t, fixture.item(t, name), Probe{Metadata: ContainerMetadata{Genres: []string{shared}}})
 		}
 
 		rows, err := fixture.service.store.Genre.Query().Where(genremodal.Name(shared)).Count(ctx)
@@ -274,7 +274,8 @@ func TestService_SaveProbe(t *testing.T) {
 				{Index: 1, Kind: streammodal.KindAudio, Codec: "aac"},
 			},
 		}
-		if err := fixture.service.SaveProbe(ctx, item, first); err != nil {
+		source := fixture.source(t, id, "/media/movie.mkv")
+		if err := fixture.service.SaveProbe(ctx, item, source, first); err != nil {
 			t.Fatalf("failed to save the first probe: %v", err)
 		}
 
@@ -283,18 +284,18 @@ func TestService_SaveProbe(t *testing.T) {
 			RunTimeTicks: 200,
 			Streams:      []Stream{{Index: 0, Kind: streammodal.KindVideo, Codec: "hevc"}},
 		}
-		if err := fixture.service.SaveProbe(ctx, item, second); err != nil {
+		if err := fixture.service.SaveProbe(ctx, item, source, second); err != nil {
 			t.Fatalf("failed to save the second probe: %v", err)
 		}
 
-		source, err := fixture.service.MediaSource(ctx, id)
+		probed, err := fixture.service.MediaSources(ctx, id)
 		if err != nil {
-			t.Fatalf("failed to query the media source: %v", err)
+			t.Fatalf("failed to query the media sources: %v", err)
 		}
-		if source == nil {
-			t.Fatal("media source = nil, want a probed source")
+		if len(probed) != 1 {
+			t.Fatalf("media sources = %d, want the one probed source", len(probed))
 		}
-		streams := source.Edges.Streams
+		streams := probed[0].Edges.Streams
 		if len(streams) != 1 {
 			t.Fatalf("streams = %d, want 1", len(streams))
 		}
@@ -309,41 +310,42 @@ func TestService_DistinctGenres(t *testing.T) {
 	ctx := context.Background()
 
 	movie := fixture.item(t, "Movie")
-	if err := fixture.service.SaveProbe(ctx, movie, Probe{Metadata: ContainerMetadata{Genres: []string{fixture.name("Comedy")}}}); err != nil {
-		t.Fatalf("failed to save the probe: %v", err)
-	}
+	fixture.probe(t, movie, Probe{Metadata: ContainerMetadata{Genres: []string{fixture.name("Comedy")}}})
 
-	other := uuid.New()
-
-	tests := []struct {
-		name  string
-		query MetadataQuery
-		want  []string
-	}{
-		{
-			name:  "filters by item kind",
-			query: MetadataQuery{LibraryID: &fixture.libraryID, Kinds: []Kind{itemmodal.KindEpisode}},
-		},
-		{
-			name:  "filters by search term",
-			query: MetadataQuery{LibraryID: &fixture.libraryID, SearchTerm: "comedy"},
-			want:  []string{fixture.name("Comedy")},
-		},
-		{
-			name:  "ignores other libraries",
-			query: MetadataQuery{LibraryID: &other},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			named, _, err := fixture.service.DistinctGenres(ctx, test.query)
-			if err != nil {
-				t.Fatalf("failed to query genres: %v", err)
-			}
-			if got := namesOf(named); !slices.Equal(got, test.want) {
-				t.Errorf("genres = %v, want %v", got, test.want)
-			}
+	t.Run("filters by item kind", func(t *testing.T) {
+		named, _, err := fixture.service.DistinctGenres(ctx, MetadataQuery{
+			LibraryID: &fixture.libraryID,
+			Kinds:     []Kind{itemmodal.KindEpisode},
 		})
-	}
+		if err != nil {
+			t.Fatalf("failed to query genres: %v", err)
+		}
+		if len(named) != 0 {
+			t.Errorf("genres = %v, want none", namesOf(named))
+		}
+	})
+
+	t.Run("filters by search term", func(t *testing.T) {
+		named, _, err := fixture.service.DistinctGenres(ctx, MetadataQuery{
+			LibraryID:  &fixture.libraryID,
+			SearchTerm: "comedy",
+		})
+		if err != nil {
+			t.Fatalf("failed to query genres: %v", err)
+		}
+		if want := []string{fixture.name("Comedy")}; !slices.Equal(namesOf(named), want) {
+			t.Errorf("genres = %v, want %v", namesOf(named), want)
+		}
+	})
+
+	t.Run("ignores other libraries", func(t *testing.T) {
+		other := uuid.New()
+		named, _, err := fixture.service.DistinctGenres(ctx, MetadataQuery{LibraryID: &other})
+		if err != nil {
+			t.Fatalf("failed to query genres: %v", err)
+		}
+		if len(named) != 0 {
+			t.Errorf("genres = %v, want none", namesOf(named))
+		}
+	})
 }

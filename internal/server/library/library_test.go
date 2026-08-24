@@ -127,21 +127,28 @@ func newFixture(t *testing.T) *fixture {
 func (f *fixture) add(t *testing.T, item seed) uuid.UUID {
 	t.Helper()
 
-	path := item.path
-	if path == "" {
-		path = "/media/" + f.prefix + "/" + item.name
-	}
-
 	record, err := f.client.Item.Create().
 		SetLibraryID(f.libraryID).
 		SetKind(item.kind).
+		SetKey(f.prefix + ":" + item.name).
 		SetName(item.name).
 		SetSortName(item.name).
-		SetPath(path).
 		SetNillableParentID(item.parentID).
 		Save(context.Background())
 	if err != nil {
 		t.Fatalf("failed to create %q: %v", item.name, err)
+	}
+
+	if item.path != "" {
+		err := f.client.MediaSource.Create().
+			SetItemID(record.ID).
+			SetLibraryID(f.libraryID).
+			SetName(filepath.Base(item.path)).
+			SetPath(item.path).
+			Exec(context.Background())
+		if err != nil {
+			t.Fatalf("failed to create the source of %q: %v", item.name, err)
+		}
 	}
 
 	return record.ID
@@ -301,7 +308,7 @@ func TestServer_DeleteItem(t *testing.T) {
 		t.Fatalf("failed to create the episode: %v", err)
 	}
 
-	series := fixture.add(t, seed{kind: itemmodal.KindSeries, name: "Series", path: seriesPath})
+	series := fixture.add(t, seed{kind: itemmodal.KindSeries, name: "Series"})
 	episode := fixture.add(t, seed{kind: itemmodal.KindEpisode, name: "S01E01", parentID: &series, path: episodePath})
 
 	t.Run("refuses a user without the deletion policy", func(t *testing.T) {

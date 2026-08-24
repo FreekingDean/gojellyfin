@@ -37,16 +37,16 @@ func (f *fixture) addPlayableAudioRip(t *testing.T) uuid.UUID {
 	item, err := f.items.SaveScanned(context.Background(), items.Scanned{
 		LibraryID:    f.library,
 		Kind:         itemmodal.KindMovie,
+		Key:          "movie:playable",
 		Name:         "playable.mkv",
 		SortName:     "playable.mkv",
-		Path:         path,
 		DateModified: time.Now(),
 	})
 	if err != nil {
 		t.Fatalf("failed to save the source: %v", err)
 	}
 
-	err = f.items.SaveProbe(context.Background(), item, items.Probe{
+	err = f.items.SaveProbe(context.Background(), item, f.source(t, item.ID, path), items.Probe{
 		Container: "mkv",
 		Streams: []items.Stream{
 			{Index: 0, Kind: streammodal.KindVideo, Codec: "h264"},
@@ -79,16 +79,16 @@ func (f *fixture) addRip(t *testing.T) uuid.UUID {
 	item, err := f.items.SaveScanned(context.Background(), items.Scanned{
 		LibraryID:    f.library,
 		Kind:         itemmodal.KindMovie,
+		Key:          "movie:rip",
 		Name:         "rip.mkv",
 		SortName:     "rip.mkv",
-		Path:         path,
 		DateModified: time.Now(),
 	})
 	if err != nil {
 		t.Fatalf("failed to save the source: %v", err)
 	}
 
-	err = f.items.SaveProbe(context.Background(), item, items.Probe{
+	err = f.items.SaveProbe(context.Background(), item, f.source(t, item.ID, path), items.Probe{
 		Container: "mkv",
 		Streams: []items.Stream{
 			{Index: 0, Kind: streammodal.KindVideo, Codec: "h264"},
@@ -169,7 +169,7 @@ func TestHandler_serveRemux(t *testing.T) {
 		id := fixture.addTone(t)
 
 		request := fixture.get(t, http.MethodGet, "/Audio/"+id.String()+"/stream?", id)
-		if fixture.handler.needsRemux(request, itemOf(t, fixture, id)) {
+		if fixture.handler.needsRemux(request, itemOf(t, fixture, id), sourceOf(t, fixture, id)) {
 			t.Error("an audio item was sent for a video remux")
 		}
 	})
@@ -209,6 +209,17 @@ func TestHandler_serveRemux(t *testing.T) {
 			t.Error("a declared container was remuxed anyway")
 		}
 	})
+}
+
+func sourceOf(t *testing.T, fixture *fixture, id uuid.UUID) *items.MediaSource {
+	t.Helper()
+
+	sources, err := fixture.items.MediaSources(context.Background(), id)
+	if err != nil || len(sources) == 0 {
+		t.Fatalf("failed to read the source: %v", err)
+	}
+
+	return sources[0]
 }
 
 func itemOf(t *testing.T, fixture *fixture, id uuid.UUID) *items.Item {

@@ -75,7 +75,7 @@ func newFixture(t *testing.T) *fixture {
 		SetKind(itemmodal.KindMovie).
 		SetName("Original Name").
 		SetSortName("original name").
-		SetPath("/" + library.ID.String() + "/movie.mkv").
+		SetKey("movie:original-name").
 		SetContainer("mkv").
 		SetRunTimeTicks(72_000_000_000).
 		SetProbedAt(probedAt).
@@ -91,7 +91,7 @@ func newFixture(t *testing.T) *fixture {
 		SetIsFolder(true).
 		SetName("Folder").
 		SetSortName("folder").
-		SetPath("/" + library.ID.String() + "/folder").
+		SetKey("folder:folder").
 		Save(ctx)
 	if err != nil {
 		t.Fatalf("failed to create the folder: %v", err)
@@ -250,8 +250,8 @@ func TestServer_UpdateItem(t *testing.T) {
 		if !record.DateModified.Equal(dateModified) {
 			t.Errorf("date modified = %v, want %v", record.DateModified, dateModified)
 		}
-		if record.Path == "/somewhere/else.mp4" {
-			t.Error("path was written by the metadata editor")
+		if record.Key != "movie:original-name" {
+			t.Errorf("key = %q, want the scan's key: the metadata editor must not move an item's identity", record.Key)
 		}
 		if record.Kind != itemmodal.KindMovie {
 			t.Errorf("kind = %q, want %q", record.Kind, itemmodal.KindMovie)

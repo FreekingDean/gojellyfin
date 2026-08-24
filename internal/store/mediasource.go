@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
+	"github.com/FreekingDean/gojellyfin/internal/store/library"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
 	"github.com/google/uuid"
 )
@@ -26,6 +27,8 @@ type MediaSource struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// ItemID holds the value of the "item_id" field.
 	ItemID uuid.UUID `json:"item_id,omitempty"`
+	// LibraryID holds the value of the "library_id" field.
+	LibraryID uuid.UUID `json:"library_id,omitempty"`
 	// Protocol holds the value of the "protocol" field.
 	Protocol mediasource.Protocol `json:"protocol,omitempty"`
 	// EncoderProtocol holds the value of the "encoder_protocol" field.
@@ -54,6 +57,10 @@ type MediaSource struct {
 	RunTimeTicks int64 `json:"run_time_ticks,omitempty"`
 	// Bitrate holds the value of the "bitrate" field.
 	Bitrate int32 `json:"bitrate,omitempty"`
+	// DateModified holds the value of the "date_modified" field.
+	DateModified time.Time `json:"date_modified,omitempty"`
+	// ProbedAt holds the value of the "probed_at" field.
+	ProbedAt time.Time `json:"probed_at,omitempty"`
 	// IsRemote holds the value of the "is_remote" field.
 	IsRemote bool `json:"is_remote,omitempty"`
 	// IsInfiniteStream holds the value of the "is_infinite_stream" field.
@@ -94,13 +101,15 @@ type MediaSource struct {
 type MediaSourceEdges struct {
 	// Item holds the value of the item edge.
 	Item *Item `json:"item,omitempty"`
+	// Library holds the value of the library edge.
+	Library *Library `json:"library,omitempty"`
 	// Streams holds the value of the streams edge.
 	Streams []*MediaStream `json:"streams,omitempty"`
 	// Attachments holds the value of the attachments edge.
 	Attachments []*MediaAttachment `json:"attachments,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // ItemOrErr returns the Item value or an error if the edge
@@ -114,10 +123,21 @@ func (e MediaSourceEdges) ItemOrErr() (*Item, error) {
 	return nil, &NotLoadedError{edge: "item"}
 }
 
+// LibraryOrErr returns the Library value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e MediaSourceEdges) LibraryOrErr() (*Library, error) {
+	if e.Library != nil {
+		return e.Library, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: library.Label}
+	}
+	return nil, &NotLoadedError{edge: "library"}
+}
+
 // StreamsOrErr returns the Streams value or an error if the edge
 // was not loaded in eager-loading.
 func (e MediaSourceEdges) StreamsOrErr() ([]*MediaStream, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		return e.Streams, nil
 	}
 	return nil, &NotLoadedError{edge: "streams"}
@@ -126,7 +146,7 @@ func (e MediaSourceEdges) StreamsOrErr() ([]*MediaStream, error) {
 // AttachmentsOrErr returns the Attachments value or an error if the edge
 // was not loaded in eager-loading.
 func (e MediaSourceEdges) AttachmentsOrErr() ([]*MediaAttachment, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.Attachments, nil
 	}
 	return nil, &NotLoadedError{edge: "attachments"}
@@ -145,9 +165,9 @@ func (*MediaSource) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case mediasource.FieldProtocol, mediasource.FieldEncoderProtocol, mediasource.FieldKind, mediasource.FieldTimestamp, mediasource.FieldVideoType, mediasource.FieldIsoType, mediasource.FieldVideo3dFormat, mediasource.FieldName, mediasource.FieldPath, mediasource.FieldEncoderPath, mediasource.FieldContainer:
 			values[i] = new(sql.NullString)
-		case mediasource.FieldCreatedAt, mediasource.FieldUpdatedAt:
+		case mediasource.FieldCreatedAt, mediasource.FieldUpdatedAt, mediasource.FieldDateModified, mediasource.FieldProbedAt:
 			values[i] = new(sql.NullTime)
-		case mediasource.FieldID, mediasource.FieldItemID:
+		case mediasource.FieldID, mediasource.FieldItemID, mediasource.FieldLibraryID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -187,6 +207,12 @@ func (_m *MediaSource) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field item_id", values[i])
 			} else if value != nil {
 				_m.ItemID = *value
+			}
+		case mediasource.FieldLibraryID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field library_id", values[i])
+			} else if value != nil {
+				_m.LibraryID = *value
 			}
 		case mediasource.FieldProtocol:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -271,6 +297,18 @@ func (_m *MediaSource) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field bitrate", values[i])
 			} else if value.Valid {
 				_m.Bitrate = int32(value.Int64)
+			}
+		case mediasource.FieldDateModified:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field date_modified", values[i])
+			} else if value.Valid {
+				_m.DateModified = value.Time
+			}
+		case mediasource.FieldProbedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field probed_at", values[i])
+			} else if value.Valid {
+				_m.ProbedAt = value.Time
 			}
 		case mediasource.FieldIsRemote:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -382,6 +420,11 @@ func (_m *MediaSource) QueryItem() *ItemQuery {
 	return NewMediaSourceClient(_m.config).QueryItem(_m)
 }
 
+// QueryLibrary queries the "library" edge of the MediaSource entity.
+func (_m *MediaSource) QueryLibrary() *LibraryQuery {
+	return NewMediaSourceClient(_m.config).QueryLibrary(_m)
+}
+
 // QueryStreams queries the "streams" edge of the MediaSource entity.
 func (_m *MediaSource) QueryStreams() *MediaStreamQuery {
 	return NewMediaSourceClient(_m.config).QueryStreams(_m)
@@ -424,6 +467,9 @@ func (_m *MediaSource) String() string {
 	builder.WriteString("item_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ItemID))
 	builder.WriteString(", ")
+	builder.WriteString("library_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.LibraryID))
+	builder.WriteString(", ")
 	builder.WriteString("protocol=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Protocol))
 	builder.WriteString(", ")
@@ -465,6 +511,12 @@ func (_m *MediaSource) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("bitrate=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Bitrate))
+	builder.WriteString(", ")
+	builder.WriteString("date_modified=")
+	builder.WriteString(_m.DateModified.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("probed_at=")
+	builder.WriteString(_m.ProbedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("is_remote=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsRemote))

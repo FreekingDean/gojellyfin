@@ -12,11 +12,12 @@ import (
 	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 )
 
-func (f *fixture) probed(t *testing.T, streams ...Stream) *Item {
+func (f *fixture) probed(t *testing.T, streams ...Stream) (*Item, *MediaSource) {
 	t.Helper()
 
 	item := f.item(t, f.add(t, seed{kind: itemmodal.KindMovie, name: "Blade Runner"}))
-	err := f.service.SaveProbe(context.Background(), item, Probe{
+	source := f.source(t, item.ID, "/media/Blade Runner.mkv")
+	err := f.service.SaveProbe(context.Background(), item, source, Probe{
 		Container: "mkv",
 		Streams:   streams,
 	})
@@ -24,7 +25,7 @@ func (f *fixture) probed(t *testing.T, streams ...Stream) *Item {
 		t.Fatalf("failed to save the probe: %v", err)
 	}
 
-	return item
+	return item, source
 }
 
 func (f *fixture) item(t *testing.T, id uuid.UUID) *Item {
@@ -73,81 +74,79 @@ func indices(streams []*MediaStream) []int32 {
 }
 
 func TestService_ReplaceExternalSubtitles(t *testing.T) {
-	t.Run("indexes, re-runs and clears the external tracks", func(t *testing.T) {
-		fixture := newFixture(t)
-		ctx := context.Background()
+	fixture := newFixture(t)
+	ctx := context.Background()
 
-		item := fixture.probed(t,
-			Stream{Index: 0, Kind: streammodal.KindVideo, Codec: "h264"},
-			Stream{Index: 1, Kind: streammodal.KindAudio, Codec: "aac"},
-		)
+	item, source := fixture.probed(t,
+		Stream{Index: 0, Kind: streammodal.KindVideo, Codec: "h264"},
+		Stream{Index: 1, Kind: streammodal.KindAudio, Codec: "aac"},
+	)
 
-		english := ExternalSubtitle{Path: "/media/Blade Runner.en.srt", Language: "en", Codec: "srt"}
-		french := ExternalSubtitle{Path: "/media/Blade Runner.fr.srt", Language: "fr", Codec: "srt", IsForced: true}
+	english := ExternalSubtitle{Path: "/media/Blade Runner.en.srt", Language: "en", Codec: "srt"}
+	french := ExternalSubtitle{Path: "/media/Blade Runner.fr.srt", Language: "fr", Codec: "srt", IsForced: true}
 
-		t.Run("indexes the external tracks after the container's own", func(t *testing.T) {
-			if err := fixture.service.ReplaceExternalSubtitles(ctx, item, []ExternalSubtitle{english, french}); err != nil {
-				t.Fatalf("failed to replace the subtitles: %v", err)
-			}
+	t.Run("indexes the external tracks after the container's own", func(t *testing.T) {
+		if err := fixture.service.ReplaceExternalSubtitles(ctx, item.ID, source, []ExternalSubtitle{english, french}); err != nil {
+			t.Fatalf("failed to replace the subtitles: %v", err)
+		}
 
-			found := fixture.subtitles(t, item.ID)
-			if got := indices(found); len(got) != 2 || got[0] != 2 || got[1] != 3 {
-				t.Fatalf("indices = %v, want [2 3]", got)
-			}
-			if !found[0].IsExternal || found[0].Language != "en" {
-				t.Errorf("first track = %+v, want an external en track", found[0])
-			}
-			if !found[1].IsForced {
-				t.Error("the fr track should be forced")
-			}
-			if !fixture.item(t, item.ID).HasSubtitles {
-				t.Error("the item should have subtitles")
-			}
-		})
-
-		t.Run("keeps one row per file when it runs again", func(t *testing.T) {
-			if err := fixture.service.ReplaceExternalSubtitles(ctx, item, []ExternalSubtitle{english, french}); err != nil {
-				t.Fatalf("failed to replace the subtitles: %v", err)
-			}
-
-			if got := indices(fixture.subtitles(t, item.ID)); len(got) != 2 || got[0] != 2 || got[1] != 3 {
-				t.Fatalf("indices = %v, want [2 3]", got)
-			}
-		})
-
-		t.Run("drops a track that left the disk", func(t *testing.T) {
-			if err := fixture.service.ReplaceExternalSubtitles(ctx, item, []ExternalSubtitle{english}); err != nil {
-				t.Fatalf("failed to replace the subtitles: %v", err)
-			}
-
-			found := fixture.subtitles(t, item.ID)
-			if len(found) != 1 || found[0].Language != "en" {
-				t.Fatalf("subtitles = %v, want the en track alone", indices(found))
-			}
-		})
-
-		t.Run("clears the flag when the last track goes", func(t *testing.T) {
-			if err := fixture.service.ReplaceExternalSubtitles(ctx, item, nil); err != nil {
-				t.Fatalf("failed to replace the subtitles: %v", err)
-			}
-
-			if found := fixture.subtitles(t, item.ID); len(found) != 0 {
-				t.Errorf("subtitles = %v, want none", indices(found))
-			}
-			if fixture.item(t, item.ID).HasSubtitles {
-				t.Error("the item should no longer have subtitles")
-			}
-		})
+		found := fixture.subtitles(t, item.ID)
+		if got := indices(found); len(got) != 2 || got[0] != 2 || got[1] != 3 {
+			t.Fatalf("indices = %v, want [2 3]", got)
+		}
+		if !found[0].IsExternal || found[0].Language != "en" {
+			t.Errorf("first track = %+v, want an external en track", found[0])
+		}
+		if !found[1].IsForced {
+			t.Error("the fr track should be forced")
+		}
+		if !fixture.item(t, item.ID).HasSubtitles {
+			t.Error("the item should have subtitles")
+		}
 	})
 
+	t.Run("keeps one row per file when it runs again", func(t *testing.T) {
+		if err := fixture.service.ReplaceExternalSubtitles(ctx, item.ID, source, []ExternalSubtitle{english, french}); err != nil {
+			t.Fatalf("failed to replace the subtitles: %v", err)
+		}
+
+		if got := indices(fixture.subtitles(t, item.ID)); len(got) != 2 || got[0] != 2 || got[1] != 3 {
+			t.Fatalf("indices = %v, want [2 3]", got)
+		}
+	})
+
+	t.Run("drops a track that left the disk", func(t *testing.T) {
+		if err := fixture.service.ReplaceExternalSubtitles(ctx, item.ID, source, []ExternalSubtitle{english}); err != nil {
+			t.Fatalf("failed to replace the subtitles: %v", err)
+		}
+
+		found := fixture.subtitles(t, item.ID)
+		if len(found) != 1 || found[0].Language != "en" {
+			t.Fatalf("subtitles = %v, want the en track alone", indices(found))
+		}
+	})
+
+	t.Run("clears the flag when the last track goes", func(t *testing.T) {
+		if err := fixture.service.ReplaceExternalSubtitles(ctx, item.ID, source, nil); err != nil {
+			t.Fatalf("failed to replace the subtitles: %v", err)
+		}
+
+		if found := fixture.subtitles(t, item.ID); len(found) != 0 {
+			t.Errorf("subtitles = %v, want none", indices(found))
+		}
+		if fixture.item(t, item.ID).HasSubtitles {
+			t.Error("the item should no longer have subtitles")
+		}
+	})
 	t.Run("indexes from zero without a probed source", func(t *testing.T) {
 		fixture := newFixture(t)
 		ctx := context.Background()
 
 		item := fixture.item(t, fixture.add(t, seed{kind: itemmodal.KindMovie, name: "Unprobed"}))
+		source := fixture.source(t, item.ID, "/media/Unprobed.mkv")
 		subtitle := ExternalSubtitle{Path: "/media/Unprobed.en.srt", Language: "en", Codec: "srt"}
 
-		if err := fixture.service.ReplaceExternalSubtitles(ctx, item, []ExternalSubtitle{subtitle}); err != nil {
+		if err := fixture.service.ReplaceExternalSubtitles(ctx, item.ID, source, []ExternalSubtitle{subtitle}); err != nil {
 			t.Fatalf("failed to replace the subtitles: %v", err)
 		}
 
@@ -164,12 +163,12 @@ func TestService_ReplaceExternalSubtitles(t *testing.T) {
 		fixture := newFixture(t)
 		ctx := context.Background()
 
-		item := fixture.probed(t,
+		item, source := fixture.probed(t,
 			Stream{Index: 0, Kind: streammodal.KindVideo, Codec: "h264"},
 			Stream{Index: 1, Kind: streammodal.KindSubtitle, Codec: "subrip"},
 		)
 
-		if err := fixture.service.ReplaceExternalSubtitles(ctx, item, nil); err != nil {
+		if err := fixture.service.ReplaceExternalSubtitles(ctx, item.ID, source, nil); err != nil {
 			t.Fatalf("failed to replace the subtitles: %v", err)
 		}
 
@@ -185,7 +184,7 @@ func TestService_ReplaceExternalSubtitles(t *testing.T) {
 		fixture := newFixture(t)
 		ctx := context.Background()
 
-		item := fixture.probed(t, Stream{Index: 0, Kind: streammodal.KindVideo, Codec: "h264"})
+		item, source := fixture.probed(t, Stream{Index: 0, Kind: streammodal.KindVideo, Codec: "h264"})
 		subtitles := []ExternalSubtitle{
 			{Path: "/media/Blade Runner.en.srt", Language: "en", Codec: "srt"},
 			{Path: "/media/Blade Runner.fr.srt", Language: "fr", Codec: "srt"},
@@ -202,7 +201,7 @@ func TestService_ReplaceExternalSubtitles(t *testing.T) {
 				fixture.warmConnection(t)
 				connected.Done()
 				<-start
-				errs[i] = fixture.service.ReplaceExternalSubtitles(ctx, item, subtitles)
+				errs[i] = fixture.service.ReplaceExternalSubtitles(ctx, item.ID, source, subtitles)
 			}()
 		}
 		connected.Wait()
@@ -219,15 +218,16 @@ func TestService_ReplaceExternalSubtitles(t *testing.T) {
 			t.Errorf("indices = %v, want [1 2]", got)
 		}
 	})
+
 }
 
 func TestService_SubtitleStream(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
-	item := fixture.probed(t, Stream{Index: 0, Kind: streammodal.KindVideo, Codec: "h264"})
+	item, source := fixture.probed(t, Stream{Index: 0, Kind: streammodal.KindVideo, Codec: "h264"})
 	subtitle := ExternalSubtitle{Path: "/media/Blade Runner.en.srt", Language: "en", Codec: "srt"}
-	if err := fixture.service.ReplaceExternalSubtitles(ctx, item, []ExternalSubtitle{subtitle}); err != nil {
+	if err := fixture.service.ReplaceExternalSubtitles(ctx, item.ID, source, []ExternalSubtitle{subtitle}); err != nil {
 		t.Fatalf("failed to replace the subtitles: %v", err)
 	}
 

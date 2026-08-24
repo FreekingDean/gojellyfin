@@ -11,14 +11,14 @@ import (
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
-func TestService_DeleteItemsNotInPaths(t *testing.T) {
+func TestService_DeleteItemsNotInKeys(t *testing.T) {
 	t.Run("refuses an empty scan", func(t *testing.T) {
 		fixture := newFixture(t)
 		ctx := context.Background()
 
 		kept := fixture.add(t, seed{kind: itemmodal.KindMovie, name: "Kept"})
 
-		err := fixture.service.DeleteItemsNotInPaths(ctx, fixture.libraryID, nil)
+		err := fixture.service.DeleteItemsNotInKeys(ctx, fixture.libraryID, nil)
 		if !errors.Is(err, ErrNothingScanned) {
 			t.Fatalf("got %v, want ErrNothingScanned", err)
 		}
@@ -34,7 +34,7 @@ func TestService_DeleteItemsNotInPaths(t *testing.T) {
 
 		id := fixture.add(t, seed{kind: itemmodal.KindMovie, name: "Gone"})
 
-		if err := fixture.service.DeleteItemsNotInPaths(ctx, fixture.libraryID, []string{"/somewhere/else.mkv"}); err != nil {
+		if err := fixture.service.DeleteItemsNotInKeys(ctx, fixture.libraryID, []string{"movie:elsewhere"}); err != nil {
 			t.Fatalf("failed to sweep: %v", err)
 		}
 
@@ -65,10 +65,10 @@ func TestService_DeleteItemsNotInPaths(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to load the item: %v", err)
 			}
-			kept = append(kept, record.Path)
+			kept = append(kept, record.Key)
 		}
 
-		if err := fixture.service.DeleteItemsNotInPaths(ctx, fixture.libraryID, kept); err != nil {
+		if err := fixture.service.DeleteItemsNotInKeys(ctx, fixture.libraryID, kept); err != nil {
 			t.Fatalf("failed to sweep: %v", err)
 		}
 
@@ -77,7 +77,7 @@ func TestService_DeleteItemsNotInPaths(t *testing.T) {
 			t.Fatalf("failed to query the items: %v", err)
 		}
 		if total != 0 || len(records) != 0 {
-			t.Errorf("items = %v, want none: a season kept by path outlived its series", names(records))
+			t.Errorf("items = %v, want none: a season kept by key outlived its series", names(records))
 		}
 	})
 
@@ -95,10 +95,10 @@ func TestService_DeleteItemsNotInPaths(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to load the item: %v", err)
 			}
-			kept = append(kept, record.Path)
+			kept = append(kept, record.Key)
 		}
 
-		if err := fixture.service.DeleteItemsNotInPaths(ctx, fixture.libraryID, kept); err != nil {
+		if err := fixture.service.DeleteItemsNotInKeys(ctx, fixture.libraryID, kept); err != nil {
 			t.Fatalf("failed to prune the items: %v", err)
 		}
 
@@ -128,7 +128,7 @@ func TestService_DeleteItemsNotInPaths(t *testing.T) {
 			t.Fatalf("failed to load the kept item: %v", err)
 		}
 
-		if err := fixture.service.DeleteItemsNotInPaths(ctx, fixture.libraryID, []string{survivor.Path}); err != nil {
+		if err := fixture.service.DeleteItemsNotInKeys(ctx, fixture.libraryID, []string{survivor.Key}); err != nil {
 			t.Fatalf("failed to prune the items: %v", err)
 		}
 

@@ -7841,11 +7841,11 @@ type ItemMutation struct {
 	video_type                      *item.VideoType
 	iso_type                        *item.IsoType
 	video_3d_format                 *item.Video3dFormat
+	key                             *string
 	name                            *string
 	original_title                  *string
 	sort_name                       *string
 	forced_sort_name                *bool
-	_path                           *string
 	deleted_at                      *time.Time
 	container                       *string
 	overview                        *string
@@ -8536,6 +8536,55 @@ func (m *ItemMutation) ResetVideo3dFormat() {
 	delete(m.clearedFields, item.FieldVideo3dFormat)
 }
 
+// SetKey sets the "key" field.
+func (m *ItemMutation) SetKey(s string) {
+	m.key = &s
+}
+
+// Key returns the value of the "key" field in the mutation.
+func (m *ItemMutation) Key() (r string, exists bool) {
+	v := m.key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKey returns the old "key" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldKey(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKey: %w", err)
+	}
+	return oldValue.Key, nil
+}
+
+// ClearKey clears the value of the "key" field.
+func (m *ItemMutation) ClearKey() {
+	m.key = nil
+	m.clearedFields[item.FieldKey] = struct{}{}
+}
+
+// KeyCleared returns if the "key" field was cleared in this mutation.
+func (m *ItemMutation) KeyCleared() bool {
+	_, ok := m.clearedFields[item.FieldKey]
+	return ok
+}
+
+// ResetKey resets all changes to the "key" field.
+func (m *ItemMutation) ResetKey() {
+	m.key = nil
+	delete(m.clearedFields, item.FieldKey)
+}
+
 // SetName sets the "name" field.
 func (m *ItemMutation) SetName(s string) {
 	m.name = &s
@@ -8704,55 +8753,6 @@ func (m *ItemMutation) OldForcedSortName(ctx context.Context) (v bool, err error
 // ResetForcedSortName resets all changes to the "forced_sort_name" field.
 func (m *ItemMutation) ResetForcedSortName() {
 	m.forced_sort_name = nil
-}
-
-// SetPath sets the "path" field.
-func (m *ItemMutation) SetPath(s string) {
-	m._path = &s
-}
-
-// Path returns the value of the "path" field in the mutation.
-func (m *ItemMutation) Path() (r string, exists bool) {
-	v := m._path
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldPath returns the old "path" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldPath(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPath is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPath requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPath: %w", err)
-	}
-	return oldValue.Path, nil
-}
-
-// ClearPath clears the value of the "path" field.
-func (m *ItemMutation) ClearPath() {
-	m._path = nil
-	m.clearedFields[item.FieldPath] = struct{}{}
-}
-
-// PathCleared returns if the "path" field was cleared in this mutation.
-func (m *ItemMutation) PathCleared() bool {
-	_, ok := m.clearedFields[item.FieldPath]
-	return ok
-}
-
-// ResetPath resets all changes to the "path" field.
-func (m *ItemMutation) ResetPath() {
-	m._path = nil
-	delete(m.clearedFields, item.FieldPath)
 }
 
 // SetDeletedAt sets the "deleted_at" field.
@@ -11967,6 +11967,9 @@ func (m *ItemMutation) Fields() []string {
 	if m.video_3d_format != nil {
 		fields = append(fields, item.FieldVideo3dFormat)
 	}
+	if m.key != nil {
+		fields = append(fields, item.FieldKey)
+	}
 	if m.name != nil {
 		fields = append(fields, item.FieldName)
 	}
@@ -11978,9 +11981,6 @@ func (m *ItemMutation) Fields() []string {
 	}
 	if m.forced_sort_name != nil {
 		fields = append(fields, item.FieldForcedSortName)
-	}
-	if m._path != nil {
-		fields = append(fields, item.FieldPath)
 	}
 	if m.deleted_at != nil {
 		fields = append(fields, item.FieldDeletedAt)
@@ -12138,6 +12138,8 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.IsoType()
 	case item.FieldVideo3dFormat:
 		return m.Video3dFormat()
+	case item.FieldKey:
+		return m.Key()
 	case item.FieldName:
 		return m.Name()
 	case item.FieldOriginalTitle:
@@ -12146,8 +12148,6 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.SortName()
 	case item.FieldForcedSortName:
 		return m.ForcedSortName()
-	case item.FieldPath:
-		return m.Path()
 	case item.FieldDeletedAt:
 		return m.DeletedAt()
 	case item.FieldContainer:
@@ -12263,6 +12263,8 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldIsoType(ctx)
 	case item.FieldVideo3dFormat:
 		return m.OldVideo3dFormat(ctx)
+	case item.FieldKey:
+		return m.OldKey(ctx)
 	case item.FieldName:
 		return m.OldName(ctx)
 	case item.FieldOriginalTitle:
@@ -12271,8 +12273,6 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldSortName(ctx)
 	case item.FieldForcedSortName:
 		return m.OldForcedSortName(ctx)
-	case item.FieldPath:
-		return m.OldPath(ctx)
 	case item.FieldDeletedAt:
 		return m.OldDeletedAt(ctx)
 	case item.FieldContainer:
@@ -12443,6 +12443,13 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetVideo3dFormat(v)
 		return nil
+	case item.FieldKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKey(v)
+		return nil
 	case item.FieldName:
 		v, ok := value.(string)
 		if !ok {
@@ -12470,13 +12477,6 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetForcedSortName(v)
-		return nil
-	case item.FieldPath:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetPath(v)
 		return nil
 	case item.FieldDeletedAt:
 		v, ok := value.(time.Time)
@@ -12979,14 +12979,14 @@ func (m *ItemMutation) ClearedFields() []string {
 	if m.FieldCleared(item.FieldVideo3dFormat) {
 		fields = append(fields, item.FieldVideo3dFormat)
 	}
+	if m.FieldCleared(item.FieldKey) {
+		fields = append(fields, item.FieldKey)
+	}
 	if m.FieldCleared(item.FieldOriginalTitle) {
 		fields = append(fields, item.FieldOriginalTitle)
 	}
 	if m.FieldCleared(item.FieldSortName) {
 		fields = append(fields, item.FieldSortName)
-	}
-	if m.FieldCleared(item.FieldPath) {
-		fields = append(fields, item.FieldPath)
 	}
 	if m.FieldCleared(item.FieldDeletedAt) {
 		fields = append(fields, item.FieldDeletedAt)
@@ -13128,14 +13128,14 @@ func (m *ItemMutation) ClearField(name string) error {
 	case item.FieldVideo3dFormat:
 		m.ClearVideo3dFormat()
 		return nil
+	case item.FieldKey:
+		m.ClearKey()
+		return nil
 	case item.FieldOriginalTitle:
 		m.ClearOriginalTitle()
 		return nil
 	case item.FieldSortName:
 		m.ClearSortName()
-		return nil
-	case item.FieldPath:
-		m.ClearPath()
 		return nil
 	case item.FieldDeletedAt:
 		m.ClearDeletedAt()
@@ -13286,6 +13286,9 @@ func (m *ItemMutation) ResetField(name string) error {
 	case item.FieldVideo3dFormat:
 		m.ResetVideo3dFormat()
 		return nil
+	case item.FieldKey:
+		m.ResetKey()
+		return nil
 	case item.FieldName:
 		m.ResetName()
 		return nil
@@ -13297,9 +13300,6 @@ func (m *ItemMutation) ResetField(name string) error {
 		return nil
 	case item.FieldForcedSortName:
 		m.ResetForcedSortName()
-		return nil
-	case item.FieldPath:
-		m.ResetPath()
 		return nil
 	case item.FieldDeletedAt:
 		m.ResetDeletedAt()
@@ -13884,24 +13884,27 @@ func (m *ItemMutation) ResetEdge(name string) error {
 // LibraryMutation represents an operation that mutates the Library nodes in the graph.
 type LibraryMutation struct {
 	config
-	op              Op
-	typ             string
-	id              *uuid.UUID
-	created_at      *time.Time
-	updated_at      *time.Time
-	name            *string
-	collection_type *library.CollectionType
-	locations       *[]string
-	appendlocations []string
-	clearedFields   map[string]struct{}
-	options         *uuid.UUID
-	clearedoptions  bool
-	items           map[uuid.UUID]struct{}
-	removeditems    map[uuid.UUID]struct{}
-	cleareditems    bool
-	done            bool
-	oldValue        func(context.Context) (*Library, error)
-	predicates      []predicate.Library
+	op                   Op
+	typ                  string
+	id                   *uuid.UUID
+	created_at           *time.Time
+	updated_at           *time.Time
+	name                 *string
+	collection_type      *library.CollectionType
+	locations            *[]string
+	appendlocations      []string
+	clearedFields        map[string]struct{}
+	options              *uuid.UUID
+	clearedoptions       bool
+	items                map[uuid.UUID]struct{}
+	removeditems         map[uuid.UUID]struct{}
+	cleareditems         bool
+	media_sources        map[uuid.UUID]struct{}
+	removedmedia_sources map[uuid.UUID]struct{}
+	clearedmedia_sources bool
+	done                 bool
+	oldValue             func(context.Context) (*Library, error)
+	predicates           []predicate.Library
 }
 
 var _ ent.Mutation = (*LibraryMutation)(nil)
@@ -14296,6 +14299,60 @@ func (m *LibraryMutation) ResetItems() {
 	m.removeditems = nil
 }
 
+// AddMediaSourceIDs adds the "media_sources" edge to the MediaSource entity by ids.
+func (m *LibraryMutation) AddMediaSourceIDs(ids ...uuid.UUID) {
+	if m.media_sources == nil {
+		m.media_sources = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.media_sources[ids[i]] = struct{}{}
+	}
+}
+
+// ClearMediaSources clears the "media_sources" edge to the MediaSource entity.
+func (m *LibraryMutation) ClearMediaSources() {
+	m.clearedmedia_sources = true
+}
+
+// MediaSourcesCleared reports if the "media_sources" edge to the MediaSource entity was cleared.
+func (m *LibraryMutation) MediaSourcesCleared() bool {
+	return m.clearedmedia_sources
+}
+
+// RemoveMediaSourceIDs removes the "media_sources" edge to the MediaSource entity by IDs.
+func (m *LibraryMutation) RemoveMediaSourceIDs(ids ...uuid.UUID) {
+	if m.removedmedia_sources == nil {
+		m.removedmedia_sources = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.media_sources, ids[i])
+		m.removedmedia_sources[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedMediaSources returns the removed IDs of the "media_sources" edge to the MediaSource entity.
+func (m *LibraryMutation) RemovedMediaSourcesIDs() (ids []uuid.UUID) {
+	for id := range m.removedmedia_sources {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// MediaSourcesIDs returns the "media_sources" edge IDs in the mutation.
+func (m *LibraryMutation) MediaSourcesIDs() (ids []uuid.UUID) {
+	for id := range m.media_sources {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetMediaSources resets all changes to the "media_sources" edge.
+func (m *LibraryMutation) ResetMediaSources() {
+	m.media_sources = nil
+	m.clearedmedia_sources = false
+	m.removedmedia_sources = nil
+}
+
 // Where appends a list predicates to the LibraryMutation builder.
 func (m *LibraryMutation) Where(ps ...predicate.Library) {
 	m.predicates = append(m.predicates, ps...)
@@ -14497,12 +14554,15 @@ func (m *LibraryMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *LibraryMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.options != nil {
 		edges = append(edges, library.EdgeOptions)
 	}
 	if m.items != nil {
 		edges = append(edges, library.EdgeItems)
+	}
+	if m.media_sources != nil {
+		edges = append(edges, library.EdgeMediaSources)
 	}
 	return edges
 }
@@ -14521,15 +14581,24 @@ func (m *LibraryMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case library.EdgeMediaSources:
+		ids := make([]ent.Value, 0, len(m.media_sources))
+		for id := range m.media_sources {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *LibraryMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removeditems != nil {
 		edges = append(edges, library.EdgeItems)
+	}
+	if m.removedmedia_sources != nil {
+		edges = append(edges, library.EdgeMediaSources)
 	}
 	return edges
 }
@@ -14544,18 +14613,27 @@ func (m *LibraryMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case library.EdgeMediaSources:
+		ids := make([]ent.Value, 0, len(m.removedmedia_sources))
+		for id := range m.removedmedia_sources {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *LibraryMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedoptions {
 		edges = append(edges, library.EdgeOptions)
 	}
 	if m.cleareditems {
 		edges = append(edges, library.EdgeItems)
+	}
+	if m.clearedmedia_sources {
+		edges = append(edges, library.EdgeMediaSources)
 	}
 	return edges
 }
@@ -14568,6 +14646,8 @@ func (m *LibraryMutation) EdgeCleared(name string) bool {
 		return m.clearedoptions
 	case library.EdgeItems:
 		return m.cleareditems
+	case library.EdgeMediaSources:
+		return m.clearedmedia_sources
 	}
 	return false
 }
@@ -14592,6 +14672,9 @@ func (m *LibraryMutation) ResetEdge(name string) error {
 		return nil
 	case library.EdgeItems:
 		m.ResetItems()
+		return nil
+	case library.EdgeMediaSources:
+		m.ResetMediaSources()
 		return nil
 	}
 	return fmt.Errorf("unknown Library edge %s", name)
@@ -21085,6 +21168,8 @@ type MediaSourceMutation struct {
 	addrun_time_ticks                *int64
 	bitrate                          *int32
 	addbitrate                       *int32
+	date_modified                    *time.Time
+	probed_at                        *time.Time
 	is_remote                        *bool
 	is_infinite_stream               *bool
 	supports_transcoding             *bool
@@ -21106,6 +21191,8 @@ type MediaSourceMutation struct {
 	clearedFields                    map[string]struct{}
 	item                             *uuid.UUID
 	cleareditem                      bool
+	library                          *uuid.UUID
+	clearedlibrary                   bool
 	streams                          map[uuid.UUID]struct{}
 	removedstreams                   map[uuid.UUID]struct{}
 	clearedstreams                   bool
@@ -21327,6 +21414,42 @@ func (m *MediaSourceMutation) OldItemID(ctx context.Context) (v uuid.UUID, err e
 // ResetItemID resets all changes to the "item_id" field.
 func (m *MediaSourceMutation) ResetItemID() {
 	m.item = nil
+}
+
+// SetLibraryID sets the "library_id" field.
+func (m *MediaSourceMutation) SetLibraryID(u uuid.UUID) {
+	m.library = &u
+}
+
+// LibraryID returns the value of the "library_id" field in the mutation.
+func (m *MediaSourceMutation) LibraryID() (r uuid.UUID, exists bool) {
+	v := m.library
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLibraryID returns the old "library_id" field's value of the MediaSource entity.
+// If the MediaSource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MediaSourceMutation) OldLibraryID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLibraryID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLibraryID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLibraryID: %w", err)
+	}
+	return oldValue.LibraryID, nil
+}
+
+// ResetLibraryID resets all changes to the "library_id" field.
+func (m *MediaSourceMutation) ResetLibraryID() {
+	m.library = nil
 }
 
 // SetProtocol sets the "protocol" field.
@@ -22026,6 +22149,104 @@ func (m *MediaSourceMutation) ResetBitrate() {
 	delete(m.clearedFields, mediasource.FieldBitrate)
 }
 
+// SetDateModified sets the "date_modified" field.
+func (m *MediaSourceMutation) SetDateModified(t time.Time) {
+	m.date_modified = &t
+}
+
+// DateModified returns the value of the "date_modified" field in the mutation.
+func (m *MediaSourceMutation) DateModified() (r time.Time, exists bool) {
+	v := m.date_modified
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDateModified returns the old "date_modified" field's value of the MediaSource entity.
+// If the MediaSource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MediaSourceMutation) OldDateModified(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDateModified is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDateModified requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDateModified: %w", err)
+	}
+	return oldValue.DateModified, nil
+}
+
+// ClearDateModified clears the value of the "date_modified" field.
+func (m *MediaSourceMutation) ClearDateModified() {
+	m.date_modified = nil
+	m.clearedFields[mediasource.FieldDateModified] = struct{}{}
+}
+
+// DateModifiedCleared returns if the "date_modified" field was cleared in this mutation.
+func (m *MediaSourceMutation) DateModifiedCleared() bool {
+	_, ok := m.clearedFields[mediasource.FieldDateModified]
+	return ok
+}
+
+// ResetDateModified resets all changes to the "date_modified" field.
+func (m *MediaSourceMutation) ResetDateModified() {
+	m.date_modified = nil
+	delete(m.clearedFields, mediasource.FieldDateModified)
+}
+
+// SetProbedAt sets the "probed_at" field.
+func (m *MediaSourceMutation) SetProbedAt(t time.Time) {
+	m.probed_at = &t
+}
+
+// ProbedAt returns the value of the "probed_at" field in the mutation.
+func (m *MediaSourceMutation) ProbedAt() (r time.Time, exists bool) {
+	v := m.probed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProbedAt returns the old "probed_at" field's value of the MediaSource entity.
+// If the MediaSource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MediaSourceMutation) OldProbedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProbedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProbedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProbedAt: %w", err)
+	}
+	return oldValue.ProbedAt, nil
+}
+
+// ClearProbedAt clears the value of the "probed_at" field.
+func (m *MediaSourceMutation) ClearProbedAt() {
+	m.probed_at = nil
+	m.clearedFields[mediasource.FieldProbedAt] = struct{}{}
+}
+
+// ProbedAtCleared returns if the "probed_at" field was cleared in this mutation.
+func (m *MediaSourceMutation) ProbedAtCleared() bool {
+	_, ok := m.clearedFields[mediasource.FieldProbedAt]
+	return ok
+}
+
+// ResetProbedAt resets all changes to the "probed_at" field.
+func (m *MediaSourceMutation) ResetProbedAt() {
+	m.probed_at = nil
+	delete(m.clearedFields, mediasource.FieldProbedAt)
+}
+
 // SetIsRemote sets the "is_remote" field.
 func (m *MediaSourceMutation) SetIsRemote(b bool) {
 	m.is_remote = &b
@@ -22690,6 +22911,33 @@ func (m *MediaSourceMutation) ResetItem() {
 	m.cleareditem = false
 }
 
+// ClearLibrary clears the "library" edge to the Library entity.
+func (m *MediaSourceMutation) ClearLibrary() {
+	m.clearedlibrary = true
+	m.clearedFields[mediasource.FieldLibraryID] = struct{}{}
+}
+
+// LibraryCleared reports if the "library" edge to the Library entity was cleared.
+func (m *MediaSourceMutation) LibraryCleared() bool {
+	return m.clearedlibrary
+}
+
+// LibraryIDs returns the "library" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// LibraryID instead. It exists only for internal usage by the builders.
+func (m *MediaSourceMutation) LibraryIDs() (ids []uuid.UUID) {
+	if id := m.library; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetLibrary resets all changes to the "library" edge.
+func (m *MediaSourceMutation) ResetLibrary() {
+	m.library = nil
+	m.clearedlibrary = false
+}
+
 // AddStreamIDs adds the "streams" edge to the MediaStream entity by ids.
 func (m *MediaSourceMutation) AddStreamIDs(ids ...uuid.UUID) {
 	if m.streams == nil {
@@ -22832,7 +23080,7 @@ func (m *MediaSourceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *MediaSourceMutation) Fields() []string {
-	fields := make([]string, 0, 32)
+	fields := make([]string, 0, 35)
 	if m.created_at != nil {
 		fields = append(fields, mediasource.FieldCreatedAt)
 	}
@@ -22841,6 +23089,9 @@ func (m *MediaSourceMutation) Fields() []string {
 	}
 	if m.item != nil {
 		fields = append(fields, mediasource.FieldItemID)
+	}
+	if m.library != nil {
+		fields = append(fields, mediasource.FieldLibraryID)
 	}
 	if m.protocol != nil {
 		fields = append(fields, mediasource.FieldProtocol)
@@ -22883,6 +23134,12 @@ func (m *MediaSourceMutation) Fields() []string {
 	}
 	if m.bitrate != nil {
 		fields = append(fields, mediasource.FieldBitrate)
+	}
+	if m.date_modified != nil {
+		fields = append(fields, mediasource.FieldDateModified)
+	}
+	if m.probed_at != nil {
+		fields = append(fields, mediasource.FieldProbedAt)
 	}
 	if m.is_remote != nil {
 		fields = append(fields, mediasource.FieldIsRemote)
@@ -22943,6 +23200,8 @@ func (m *MediaSourceMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case mediasource.FieldItemID:
 		return m.ItemID()
+	case mediasource.FieldLibraryID:
+		return m.LibraryID()
 	case mediasource.FieldProtocol:
 		return m.Protocol()
 	case mediasource.FieldEncoderProtocol:
@@ -22971,6 +23230,10 @@ func (m *MediaSourceMutation) Field(name string) (ent.Value, bool) {
 		return m.RunTimeTicks()
 	case mediasource.FieldBitrate:
 		return m.Bitrate()
+	case mediasource.FieldDateModified:
+		return m.DateModified()
+	case mediasource.FieldProbedAt:
+		return m.ProbedAt()
 	case mediasource.FieldIsRemote:
 		return m.IsRemote()
 	case mediasource.FieldIsInfiniteStream:
@@ -23016,6 +23279,8 @@ func (m *MediaSourceMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldUpdatedAt(ctx)
 	case mediasource.FieldItemID:
 		return m.OldItemID(ctx)
+	case mediasource.FieldLibraryID:
+		return m.OldLibraryID(ctx)
 	case mediasource.FieldProtocol:
 		return m.OldProtocol(ctx)
 	case mediasource.FieldEncoderProtocol:
@@ -23044,6 +23309,10 @@ func (m *MediaSourceMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldRunTimeTicks(ctx)
 	case mediasource.FieldBitrate:
 		return m.OldBitrate(ctx)
+	case mediasource.FieldDateModified:
+		return m.OldDateModified(ctx)
+	case mediasource.FieldProbedAt:
+		return m.OldProbedAt(ctx)
 	case mediasource.FieldIsRemote:
 		return m.OldIsRemote(ctx)
 	case mediasource.FieldIsInfiniteStream:
@@ -23103,6 +23372,13 @@ func (m *MediaSourceMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetItemID(v)
+		return nil
+	case mediasource.FieldLibraryID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLibraryID(v)
 		return nil
 	case mediasource.FieldProtocol:
 		v, ok := value.(mediasource.Protocol)
@@ -23201,6 +23477,20 @@ func (m *MediaSourceMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetBitrate(v)
+		return nil
+	case mediasource.FieldDateModified:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDateModified(v)
+		return nil
+	case mediasource.FieldProbedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProbedAt(v)
 		return nil
 	case mediasource.FieldIsRemote:
 		v, ok := value.(bool)
@@ -23430,6 +23720,12 @@ func (m *MediaSourceMutation) ClearedFields() []string {
 	if m.FieldCleared(mediasource.FieldBitrate) {
 		fields = append(fields, mediasource.FieldBitrate)
 	}
+	if m.FieldCleared(mediasource.FieldDateModified) {
+		fields = append(fields, mediasource.FieldDateModified)
+	}
+	if m.FieldCleared(mediasource.FieldProbedAt) {
+		fields = append(fields, mediasource.FieldProbedAt)
+	}
 	if m.FieldCleared(mediasource.FieldDefaultAudioStreamIndex) {
 		fields = append(fields, mediasource.FieldDefaultAudioStreamIndex)
 	}
@@ -23483,6 +23779,12 @@ func (m *MediaSourceMutation) ClearField(name string) error {
 	case mediasource.FieldBitrate:
 		m.ClearBitrate()
 		return nil
+	case mediasource.FieldDateModified:
+		m.ClearDateModified()
+		return nil
+	case mediasource.FieldProbedAt:
+		m.ClearProbedAt()
+		return nil
 	case mediasource.FieldDefaultAudioStreamIndex:
 		m.ClearDefaultAudioStreamIndex()
 		return nil
@@ -23508,6 +23810,9 @@ func (m *MediaSourceMutation) ResetField(name string) error {
 		return nil
 	case mediasource.FieldItemID:
 		m.ResetItemID()
+		return nil
+	case mediasource.FieldLibraryID:
+		m.ResetLibraryID()
 		return nil
 	case mediasource.FieldProtocol:
 		m.ResetProtocol()
@@ -23550,6 +23855,12 @@ func (m *MediaSourceMutation) ResetField(name string) error {
 		return nil
 	case mediasource.FieldBitrate:
 		m.ResetBitrate()
+		return nil
+	case mediasource.FieldDateModified:
+		m.ResetDateModified()
+		return nil
+	case mediasource.FieldProbedAt:
+		m.ResetProbedAt()
 		return nil
 	case mediasource.FieldIsRemote:
 		m.ResetIsRemote()
@@ -23602,9 +23913,12 @@ func (m *MediaSourceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *MediaSourceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.item != nil {
 		edges = append(edges, mediasource.EdgeItem)
+	}
+	if m.library != nil {
+		edges = append(edges, mediasource.EdgeLibrary)
 	}
 	if m.streams != nil {
 		edges = append(edges, mediasource.EdgeStreams)
@@ -23621,6 +23935,10 @@ func (m *MediaSourceMutation) AddedIDs(name string) []ent.Value {
 	switch name {
 	case mediasource.EdgeItem:
 		if id := m.item; id != nil {
+			return []ent.Value{*id}
+		}
+	case mediasource.EdgeLibrary:
+		if id := m.library; id != nil {
 			return []ent.Value{*id}
 		}
 	case mediasource.EdgeStreams:
@@ -23641,7 +23959,7 @@ func (m *MediaSourceMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *MediaSourceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedstreams != nil {
 		edges = append(edges, mediasource.EdgeStreams)
 	}
@@ -23673,9 +23991,12 @@ func (m *MediaSourceMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *MediaSourceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.cleareditem {
 		edges = append(edges, mediasource.EdgeItem)
+	}
+	if m.clearedlibrary {
+		edges = append(edges, mediasource.EdgeLibrary)
 	}
 	if m.clearedstreams {
 		edges = append(edges, mediasource.EdgeStreams)
@@ -23692,6 +24013,8 @@ func (m *MediaSourceMutation) EdgeCleared(name string) bool {
 	switch name {
 	case mediasource.EdgeItem:
 		return m.cleareditem
+	case mediasource.EdgeLibrary:
+		return m.clearedlibrary
 	case mediasource.EdgeStreams:
 		return m.clearedstreams
 	case mediasource.EdgeAttachments:
@@ -23707,6 +24030,9 @@ func (m *MediaSourceMutation) ClearEdge(name string) error {
 	case mediasource.EdgeItem:
 		m.ClearItem()
 		return nil
+	case mediasource.EdgeLibrary:
+		m.ClearLibrary()
+		return nil
 	}
 	return fmt.Errorf("unknown MediaSource unique edge %s", name)
 }
@@ -23717,6 +24043,9 @@ func (m *MediaSourceMutation) ResetEdge(name string) error {
 	switch name {
 	case mediasource.EdgeItem:
 		m.ResetItem()
+		return nil
+	case mediasource.EdgeLibrary:
+		m.ResetLibrary()
 		return nil
 	case mediasource.EdgeStreams:
 		m.ResetStreams()

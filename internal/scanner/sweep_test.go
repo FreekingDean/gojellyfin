@@ -15,7 +15,7 @@ func TestScanner_scanMovies(t *testing.T) {
 	t.Run("fails on a missing root before it reaches a service", func(t *testing.T) {
 		scanner := New(nil, nil, nil)
 		library := &libraries.Library{ID: uuid.New()}
-		found := &walk{}
+		found := &seen{}
 
 		if err := scanner.scanMovies(context.Background(), library, filepath.Join(t.TempDir(), "unmounted"), found); err == nil {
 			t.Fatal("a missing root scanned clean, which the caller reads as an empty library")
@@ -36,7 +36,7 @@ func TestScanner_scanMovies(t *testing.T) {
 
 		scanner := New(nil, nil, nil)
 		library := &libraries.Library{ID: uuid.New()}
-		found := &walk{}
+		found := &seen{}
 
 		if err := scanner.scanMovies(context.Background(), library, root, found); err != nil {
 			t.Fatalf("an unreadable directory failed the whole library: %v", err)
@@ -48,12 +48,12 @@ func TestScanner_scanMovies(t *testing.T) {
 }
 
 func TestWalk_complete(t *testing.T) {
-	found := &walk{}
+	found := &seen{}
 	if !found.complete() {
 		t.Error("a walk that skipped nothing reported incomplete")
 	}
 
-	found.found("/library/readable/movie.mkv")
+	found.file("/library/readable/movie.mkv")
 	if !found.complete() {
 		t.Error("finding a file made the walk incomplete")
 	}
