@@ -15,8 +15,6 @@ import (
 
 const sourceSeconds = 3
 
-// A real file rather than a fixture: the point of these tests is that ffmpeg
-// decoded something and re-encoded it, which a stub cannot show.
 func source(t *testing.T, name string, seconds int) string {
 	t.Helper()
 
@@ -114,8 +112,6 @@ func TestStartSeeksToTheRequestedOffset(t *testing.T) {
 	}
 }
 
-// The failure has to arrive as an error rather than as a reader that returns
-// nothing, because the caller answers a status on the strength of it.
 func TestStartRejectsASourceFfmpegCannotRead(t *testing.T) {
 	if !Available() {
 		t.Fatal("ffmpeg is not on PATH")
@@ -133,8 +129,6 @@ func TestStartRejectsAnUnsupportedContainer(t *testing.T) {
 	}
 }
 
-// Nothing else stops the encode when a client goes away, so a cancelled
-// context has to be what takes the process with it.
 func TestStartStopsFfmpegWhenTheContextIsCancelled(t *testing.T) {
 	flac := source(t, "tone.flac", sourceSeconds)
 
@@ -150,8 +144,6 @@ func TestStartStopsFfmpegWhenTheContextIsCancelled(t *testing.T) {
 	if err := output.Close(); err == nil {
 		t.Fatal("the cancelled transcode exited cleanly")
 	}
-	// A killed process reports Signaled rather than Exited, so a non-nil state
-	// is what says it was reaped instead of left behind.
 	if process.cmd.ProcessState == nil {
 		t.Fatal("ffmpeg is still running")
 	}

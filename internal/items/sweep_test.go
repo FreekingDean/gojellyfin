@@ -8,16 +8,13 @@ import (
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
-// A library whose storage went away scans to nothing, which is the same input a
-// genuinely empty library gives. Emptying the library on that reading destroys
-// every item and the watch state hanging off it.
-func TestDeleteItemsNotInPathsRefusesAnEmptyScan(t *testing.T) {
+func TestDeleteItemsNotInKeysRefusesAnEmptyScan(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
 	kept := fixture.add(t, seed{kind: itemmodal.KindMovie, name: "Kept"})
 
-	err := fixture.service.DeleteItemsNotInPaths(ctx, fixture.libraryID, nil)
+	err := fixture.service.DeleteItemsNotInKeys(ctx, fixture.libraryID, nil)
 	if !errors.Is(err, ErrNothingScanned) {
 		t.Fatalf("got %v, want ErrNothingScanned", err)
 	}

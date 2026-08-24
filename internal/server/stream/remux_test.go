@@ -18,10 +18,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/transcode"
 )
 
-// A rip as they actually arrive: h264 a browser plays beside ac3 it cannot
-// decode, which is the whole of the "video works, no sound" report.
-// An mkv whose audio a browser can already decode — the case the audio-only
-// check waved through.
 func (f *fixture) addPlayableAudioRip(t *testing.T) uuid.UUID {
 	t.Helper()
 
@@ -41,16 +37,16 @@ func (f *fixture) addPlayableAudioRip(t *testing.T) uuid.UUID {
 	item, err := f.items.SaveScanned(context.Background(), items.Scanned{
 		LibraryID:    f.library,
 		Kind:         itemmodal.KindMovie,
+		Key:          "movie:playable",
 		Name:         "playable.mkv",
 		SortName:     "playable.mkv",
-		Path:         path,
 		DateModified: time.Now(),
 	})
 	if err != nil {
 		t.Fatalf("failed to save the source: %v", err)
 	}
 
-	err = f.items.SaveProbe(context.Background(), item, items.Probe{
+	err = f.items.SaveProbe(context.Background(), item, f.source(t, item.ID, path), items.Probe{
 		Container: "mkv",
 		Streams: []items.Stream{
 			{Index: 0, Kind: streammodal.KindVideo, Codec: "h264"},
@@ -83,16 +79,16 @@ func (f *fixture) addRip(t *testing.T) uuid.UUID {
 	item, err := f.items.SaveScanned(context.Background(), items.Scanned{
 		LibraryID:    f.library,
 		Kind:         itemmodal.KindMovie,
+		Key:          "movie:rip",
 		Name:         "rip.mkv",
 		SortName:     "rip.mkv",
-		Path:         path,
 		DateModified: time.Now(),
 	})
 	if err != nil {
 		t.Fatalf("failed to save the source: %v", err)
 	}
 
-	err = f.items.SaveProbe(context.Background(), item, items.Probe{
+	err = f.items.SaveProbe(context.Background(), item, f.source(t, item.ID, path), items.Probe{
 		Container: "mkv",
 		Streams: []items.Stream{
 			{Index: 0, Kind: streammodal.KindVideo, Codec: "h264"},
@@ -140,8 +136,6 @@ func TestServeRemuxesAudioABrowserCannotDecode(t *testing.T) {
 	}
 }
 
-// The client is believed when it says it can decode the source, so a player
-// that handles ac3 still gets the file untouched.
 func TestServeLeavesAudioTheClientDeclaresAlone(t *testing.T) {
 	if !transcode.Available() {
 		t.Fatal("ffmpeg is not on PATH")
@@ -174,9 +168,20 @@ func TestServeDirectPlaysWhenTheAudioIsAlreadyPlayable(t *testing.T) {
 	id := fixture.addTone(t)
 
 	request := fixture.get(t, http.MethodGet, "/Audio/"+id.String()+"/stream?", id)
-	if fixture.handler.needsRemux(request, itemOf(t, fixture, id)) {
+	if fixture.handler.needsRemux(request, itemOf(t, fixture, id), sourceOf(t, fixture, id)) {
 		t.Error("an audio item was sent for a video remux")
 	}
+}
+
+func sourceOf(t *testing.T, fixture *fixture, id uuid.UUID) *items.MediaSource {
+	t.Helper()
+
+	sources, err := fixture.items.MediaSources(context.Background(), id)
+	if err != nil || len(sources) == 0 {
+		t.Fatalf("failed to read the source: %v", err)
+	}
+
+	return sources[0]
 }
 
 func itemOf(t *testing.T, fixture *fixture, id uuid.UUID) *items.Item {
@@ -190,8 +195,6 @@ func itemOf(t *testing.T, fixture *fixture, id uuid.UUID) *items.Item {
 	return item
 }
 
-// The gap that made a better encode play worse: an mkv whose audio is already
-// aac was direct played, and a browser cannot open the container.
 func TestServeRemuxesAContainerABrowserCannotOpen(t *testing.T) {
 	fixture := newFixture(t)
 	fixture.withEncoder(t)
@@ -212,7 +215,6 @@ func TestServeRemuxesAContainerABrowserCannotOpen(t *testing.T) {
 	}
 }
 
-// A client that declares mkv is believed and gets the file untouched.
 func TestServeLeavesAContainerTheClientDeclaresAlone(t *testing.T) {
 	fixture := newFixture(t)
 	fixture.withEncoder(t)

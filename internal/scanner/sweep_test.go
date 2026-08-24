@@ -15,15 +15,13 @@ import (
 func TestScanMoviesFailsOnAMissingRoot(t *testing.T) {
 	scanner := New(nil, nil, nil)
 	library := &libraries.Library{ID: uuid.New()}
-	found := &walk{}
+	found := &seen{}
 
 	if err := scanner.scanMovies(context.Background(), library, filepath.Join(t.TempDir(), "unmounted"), found); err == nil {
 		t.Fatal("a missing root scanned clean, which the caller reads as an empty library")
 	}
 }
 
-// One directory nobody can read is not a reason to abandon the rest of the
-// library, so the walk carries on and reports that it was partial instead.
 func TestScanMoviesSkipsAnUnreadableDirectory(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("root reads a directory whatever its mode")
@@ -38,7 +36,7 @@ func TestScanMoviesSkipsAnUnreadableDirectory(t *testing.T) {
 
 	scanner := New(nil, nil, nil)
 	library := &libraries.Library{ID: uuid.New()}
-	found := &walk{}
+	found := &seen{}
 
 	if err := scanner.scanMovies(context.Background(), library, root, found); err != nil {
 		t.Fatalf("an unreadable directory failed the whole library: %v", err)
@@ -48,15 +46,13 @@ func TestScanMoviesSkipsAnUnreadableDirectory(t *testing.T) {
 	}
 }
 
-// The sweep deletes everything the walk did not report, so a partial walk must
-// not reach it.
 func TestWalkIsIncompleteUntilEveryDirectoryIsRead(t *testing.T) {
-	found := &walk{}
+	found := &seen{}
 	if !found.complete() {
 		t.Error("a walk that skipped nothing reported incomplete")
 	}
 
-	found.found("/library/readable/movie.mkv")
+	found.file("/library/readable/movie.mkv")
 	if !found.complete() {
 		t.Error("finding a file made the walk incomplete")
 	}

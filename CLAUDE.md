@@ -106,6 +106,20 @@ So are routes Jellyfin serves but hides from its own OpenAPI document with `[Api
 
 They register after the generated routes so a documented literal wins any overlap, and most-specific first: the mux matches in registration order with no notion of specificity, so `/Users/{userId}/Items/{itemId}` registered before `/Users/{userId}/Items/Resume` swallows it and passes "Resume" as an item id. `legacyPatterns` sorts by literal segments to keep that from depending on map order.
 
+### Tracing
+
+Every operation gets one span, named for its **operation id**. That is why the span sits on the `api.StrictMiddlewareFunc` layer rather than the stdlib one: only the inner layer is handed the operation id, and a span named for a route pattern or a raw path is much less useful. It is last in `apiMiddleware`, which the generated wrapper folds outermost, so it measures authentication and authorization too.
+
+`OTEL_EXPORTER_OTLP_ENDPOINT` is the only spelling read. The OTLP specification also defines a signal-specific `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`, and supporting both would mean carrying its precedence rule and its different path semantics for a second way to say the same thing; one prescribed variable is the standing decision. Unset means tracing is off: no provider, a noop tracer, nothing dialed, and `tracing.Enabled` false, which is what keeps the span middleware out of the stack entirely rather than wrapping every request in a tracer that discards it.
+
+The endpoint is checked in `tracing.New` rather than in `env.validate`, because what makes an OTLP endpoint valid is the exporter's business and `env` only knows it wants a string. The exporter answers a URL it cannot parse by logging and carrying on against its own localhost default, so a malformed one is refused at start instead.
+
+**`internal/observability/tracing` is the only package that imports otel.** A caller gets `StartRequest` and a `Span` with `End` and `Fail`, not a `trace.Tracer`, so the middleware names no otel type and the backend stays swappable; `Recorded` is the same seam for tests, handing back a `Recorder` that answers in span names and attribute values. It is composed through `observability.Module`, which `server` and `worker` both list, and it registers `OnStop` only — a provider is exporting from the moment it is built, so there is nothing to start. The flush is bounded on the way out, because a collector that has gone away must not hold the process open.
+
+**Streaming endpoints are excluded.** `streams` in `internal/http/middleware/oapitracing.go` names `Videos` and `Audio`, the same two roots `deploy/httproutes.yaml` splits on, matched case-insensitively because the mux is. A progressive response runs for the length of the media, so a span covering one is open for hours — a leak rather than a trace. `GET /socket` needs no entry: it is registered outside the generated API, so it never reaches this layer. `TestStreamingRoutesAreNotTraced` is what keeps the exclusion from being incidental.
+
+Nothing the client sent goes on a span. The query string carries `api_key` and some paths carry names, so only the method and the operation id are recorded; `TestSpanCarriesNoRequestDetail` holds that, because traces ship to third-party backends.
+
 ### Domain services
 
 Three layers, split on what each is allowed to know:
@@ -138,7 +152,21 @@ Anything a create has to supply on every call belongs in the schema as `.Default
 
 Ent's default delete action is `NO ACTION` for a required edge and `SET NULL` for an optional one, so a child row either blocks its parent's delete or is left orphaned with a dangling column. Owned rows carry `.Annotations(cascadeOnDelete)`, which only takes effect on the `edge.To` side — ent skips the inverse edge when it builds the foreign key, so on the self-referencing `children`/`parent` edge the annotation goes before `.From("parent")`. Deleting a library therefore takes its items with it, and a user takes their sessions and watch state; only activity log entries are left behind, keeping their history when the user or item goes away.
 
-Columns owned by a background process must be left out of an upsert's `DoUpdates` — the scan clobbering probe-owned columns like `run_time_ticks` was a real bug. The scan writes `date_modified`; the probe writes `container`, `run_time_ticks`, `probed_at`, `tags`, the `MediaSource` and the genre, studio and credit edges, and rewrites all of them on every run, so the edges are cleared and re-added rather than merged.
+**An `Item` is a title; a `MediaSource` is a file.** The item carries no path — its identity is `key`, unique with `library_id`, derived by the scanner from the name and year (`movie:the-matrix:1999`, `series:the-wire`, `season:the-wire:1`, `episode:the-wire:1:3`). Keying on location meant a moved file changed identity and a reorganised library lost every resume position and play count; a name-derived key survives the move. The key is internal — no endpoint takes one in its path and the 10.10.0 spec has no field to put one in, so clients only ever see the UUID. `MediaSource` owns the path, unique per library, and an item may have many, which is how a 4K and a 1080p rip of one film become one entry with two versions.
+
+The key is the whole of the grouping: two files whose names parse the same are two copies of one title, and a cut that is named differently on disk already parses to a key of its own. Nothing reads the runtime to second-guess that, so the scan needs no ordering between probing a file and deciding which item it belongs to.
+
+`probed_at` and `date_modified` live on the source, so an unchanged file costs no ffprobe.
+
+**Upgrading an install that predates the key is `migrate` plus a scan, and nothing else.** The migration stands the old path in as the key so no row is left keyless, and the scan rewrites it: `scanner.rekeyLegacy` derives the real key from columns the row already carries and updates in place, so the walk upserts onto the existing row rather than creating a sibling and every item id survives. That is what keeps watch state, favourites, resume positions and playlist entries attached — they reference items by id, and an upgrade that re-created rows would orphan all of them silently. It runs inside `scanLibrary` because it has to precede the sweep, which deletes by key; a one-shot subcommand would lose the race with a scheduled scan.
+
+Two old rows that derive one key are the duplicate the key exists to collapse, so `items.Merge` folds the second into the first rather than refusing: its files, its children and its playlist entries move over, and a user with data on both rows keeps whichever answer says the title was watched — played and favourite carry, the count and the position take the further of the two. Refusing would wedge the library instead of losing one row: the collision is on a unique index, so every later scan fails at the same item and that library never scans again.
+
+An item with more than one source has to pick one, and the two callers want opposite things. A stream takes `items.PreferredSource`, which is **compatibility over quality** — the best encode a client cannot decode is worse than the worse one it can — and falls back to the richest source when nothing matches, so the caller can still remux it or refuse with a status rather than handle a nil. A download takes `items.BestSource`, ignoring compatibility entirely, because the bytes are being saved rather than decoded and what the far end can play is its own problem. Matching is on container and audio codec only; a kind the client said nothing about is unrestricted rather than refused, so only a browser — which declares nothing — is held to the tables in `internal/server/stream`. Video codec is deliberately not part of it (#532), which is consistent with video being direct play only (#481).
+
+Columns owned by a background process must be left out of an upsert's `DoUpdates` — the scan clobbering probe-owned columns like `run_time_ticks` was a real bug. `SaveScanned` writes the item's `date_modified` and `SaveSource` the source's; the probe writes `container`, `run_time_ticks`, `size`, `bitrate`, `probed_at`, `tags`, the source's streams and the genre, studio and credit edges, and rewrites all of them on every run, so the edges are cleared and re-added rather than merged.
+
+The sweep is split the same way. Items are swept by key and **soft** deleted, because the row carries the id the watch state hangs off and a returning title has to land back on it; sources are swept by path and **hard** deleted, because nothing hangs off a source that a returning file would want back. Losing one of two copies therefore costs a source row and nothing else.
 
 Ordering by a to-many edge makes ent group the query, so the sort column comes back unaggregated and Postgres rejects it. Query from the side that owns the column instead (see `items.ResumeItems`).
 
@@ -157,6 +185,34 @@ The library scan fans its libraries out flat, because a library is a handful of 
 One failing library does not abandon the others. The workflow collects every future and logs the ones that failed, because the sweep a failed library skipped is safe to leave until the next run while the ones that succeeded are not worth losing.
 
 Triggers are not built. `UpdateTask` answers 501 rather than storing a schedule nobody reads; Temporal schedules are where they belong.
+
+### Metadata providers
+
+**`internal/metadata` is what anything else names; `internal/metadata/tmdb` is one implementation of it.** It sits under `metadata` because nothing outside `metadata` calls it, and the tree should say so. The interface is declared by the consumer, in `metadata/provider.go`, and `metadata.Module` aggregates `tmdb.Module` the way `server.Module` aggregates its tag packages — so `server.go` and `worker.go` list `metadata.Module` and learn nothing about who answers. The scheduled task the dashboard shows says it identifies items, not who it asks.
+
+That split is a rule, not a preference: **no package outside `internal/metadata` may import the provider.** Check with `grep -rln 'metadata/tmdb' --include='*.go' . | grep -v '^./internal/metadata/tmdb/'`, which must return `internal/metadata/fx.go` and nothing else.
+
+The rule is about imports, not about the letters T-M-D-B. `internal/env` carries a `TMDB` struct holding `TMDB_API_KEY`, and that is correct rather than a leak: `env` is the one place every variable this binary reads is written down, and the variable is named for the service whose key it is because that is what an operator puts in a manifest. A provider-neutral name would make the manifest lie and would break the moment a second provider needs a key of its own. `env` imports none of our packages, so naming a variable costs no coupling — the leak to avoid is a package reaching for the provider, and `metadata` still takes only the `Provider` interface.
+
+`metadata` owns the job, the batch loop and the locks. `tmdb` owns the calls and the translation from TMDB's payloads into `items.Metadata` — including from TMDB's vocabulary into ours, which is why `Status` is mapped to Jellyfin's `Continuing`/`Ended`/`Unreleased` rather than passed through, and why a movie writes no series status at all.
+
+The calls go through `github.com/cyruzin/golang-tmdb`, which models every payload this needs. Two of its behaviours are deliberately not used. Its `SetClientAutoRetry` retries a 429 in an unbounded loop and never retries a 5xx, so a `RoundTripper` in `retry.go` does the backoff with a bound; and every request it builds carries its own `context.Background`, so a cancelled run cannot interrupt one in flight — the limiter before each call is where cancellation lands, which bounds a cancelled step to a single request's timeout.
+
+Two things keep the dependency pointing one way. A miss is a `false` return rather than a sentinel error, so the implementation never imports its consumer for one variable; and `Episode` takes the series' whole `ProviderIds` map, so each provider reads its own key out and no key name escapes the package that owns it.
+
+There is **one** provider and one binding — no fx value group and no priority order until a second provider exists to need them. The seam is the interface.
+
+It is bring your own key: `TMDB_API_KEY` reaches the client as `env.Config.TMDB.APIKey` rather than through `os.Getenv`, and unset leaves the provider disabled and the job a no-op, so a developer running the server alone still gets a server. An absent key is deliberately not a validation failure — `env` refuses a malformed value, not a missing optional one. We embed no key of our own: there is then none to share, none to throttle and no attribution owed for one.
+
+The job runs on its own rather than inside the scan, and does **not** fan out per item. The work is IO bound on a rate limited API, so a step per item multiplies the request rate and finishes no sooner; one step loops over at most `batchSize` items, spaced by the client's own limiter and heartbeating between them. What a run leaves, the next run picks up.
+
+The batch is derived from the rows — `items.UnidentifiedItems` asks for items whose `provider_ids` is null — rather than handed over, so a crash re-asks the question instead of replaying a stale list. Writing those ids well is the point: item identity is otherwise name and year, which collides when two films share both.
+
+`lock_data` and `locked_fields` are Jellyfin's semantics and `metadata` honours both. `LockData` keeps an item out of the batch entirely; a field named in `LockedFields` is dropped from what is written, by `stripLockedFields`, which takes a pointer because it edits what it is handed and hiding that would hide an overwrite later. The provider ids themselves survive a field lock, because they are identity rather than metadata and Jellyfin has no lock for them.
+
+Two requests per item, not more: the detail call carries `append_to_response=release_dates` (or `content_ratings,external_ids`), so the certification and the IMDb id arrive with the record instead of costing a third round trip. A 429 or a 5xx backs off and retries rather than failing the run; a 404 or an empty search is a miss, which is not an error because the title may be one TMDB gains later.
+
+The two packages test at their own seam: `metadata` runs the loop and the locks against a stub provider and a real database, and `tmdb` points its client at an `httptest.Server`. A green run needs no key and CI never calls TMDB.
 
 ### Request identity
 
