@@ -2,6 +2,7 @@
 .air/
 .build/
 /gojellyfin
+.env
 e2e/node_modules/
 e2e/.build/
 e2e/.client/

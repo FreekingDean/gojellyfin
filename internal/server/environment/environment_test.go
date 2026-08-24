@@ -118,7 +118,7 @@ func (f *fixture) signIn(t *testing.T, name string, administrator bool) context.
 	return authenticated
 }
 
-func TestGetDirectoryContents(t *testing.T) {
+func TestServer_GetDirectoryContents(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := fixture.signIn(t, "admin", true)
 
@@ -185,21 +185,21 @@ func TestGetDirectoryContents(t *testing.T) {
 			}
 		})
 	}
-}
+	t.Run("a missing path is not found", func(t *testing.T) {
+		fixture := newFixture(t)
+		ctx := fixture.signIn(t, "admin", true)
 
-func TestGetDirectoryContentsMissingPath(t *testing.T) {
-	fixture := newFixture(t)
-	ctx := fixture.signIn(t, "admin", true)
-
-	_, err := fixture.server.GetDirectoryContents(ctx, api.GetDirectoryContentsRequestObject{
-		Params: api.GetDirectoryContentsParams{Path: filepath.Join(t.TempDir(), "nope")},
+		_, err := fixture.server.GetDirectoryContents(ctx, api.GetDirectoryContentsRequestObject{
+			Params: api.GetDirectoryContentsParams{Path: filepath.Join(t.TempDir(), "nope")},
+		})
+		if !errors.Is(err, filesystem.ErrNotFound) {
+			t.Fatalf("got %v, want ErrNotFound", err)
+		}
 	})
-	if !errors.Is(err, filesystem.ErrNotFound) {
-		t.Fatalf("got %v, want ErrNotFound", err)
-	}
+
 }
 
-func TestGetDrives(t *testing.T) {
+func TestServer_GetDrives(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := fixture.signIn(t, "admin", true)
 
@@ -220,7 +220,7 @@ func TestGetDrives(t *testing.T) {
 	}
 }
 
-func TestGetParentPath(t *testing.T) {
+func TestServer_GetParentPath(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := fixture.signIn(t, "admin", true)
 
@@ -243,7 +243,7 @@ func TestGetParentPath(t *testing.T) {
 	}
 }
 
-func TestGetDefaultDirectoryBrowser(t *testing.T) {
+func TestServer_GetDefaultDirectoryBrowser(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := fixture.signIn(t, "admin", true)
 
@@ -256,54 +256,56 @@ func TestGetDefaultDirectoryBrowser(t *testing.T) {
 	}
 }
 
-func TestRefusesAUserWhoIsNotAnAdministrator(t *testing.T) {
-	fixture := newFixture(t)
-	ctx := fixture.signIn(t, "viewer", false)
-	directory := t.TempDir()
+func TestServer(t *testing.T) {
+	t.Run("refuses a user who is not an administrator", func(t *testing.T) {
+		fixture := newFixture(t)
+		ctx := fixture.signIn(t, "viewer", false)
+		directory := t.TempDir()
 
-	contents, err := fixture.server.GetDirectoryContents(ctx, api.GetDirectoryContentsRequestObject{
-		Params: api.GetDirectoryContentsParams{Path: directory, IncludeDirectories: apiutil.Ptr(true)},
+		contents, err := fixture.server.GetDirectoryContents(ctx, api.GetDirectoryContentsRequestObject{
+			Params: api.GetDirectoryContentsParams{Path: directory, IncludeDirectories: apiutil.Ptr(true)},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, ok := contents.(api.GetDirectoryContents403Response); !ok {
+			t.Errorf("GetDirectoryContents = %T, want a 403", contents)
+		}
+
+		drives, err := fixture.server.GetDrives(ctx, api.GetDrivesRequestObject{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, ok := drives.(api.GetDrives403Response); !ok {
+			t.Errorf("GetDrives = %T, want a 403", drives)
+		}
+
+		parent, err := fixture.server.GetParentPath(ctx, api.GetParentPathRequestObject{
+			Params: api.GetParentPathParams{Path: directory},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, ok := parent.(api.GetParentPath403Response); !ok {
+			t.Errorf("GetParentPath = %T, want a 403", parent)
+		}
+
+		browser, err := fixture.server.GetDefaultDirectoryBrowser(ctx, api.GetDefaultDirectoryBrowserRequestObject{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, ok := browser.(api.GetDefaultDirectoryBrowser403Response); !ok {
+			t.Errorf("GetDefaultDirectoryBrowser = %T, want a 403", browser)
+		}
+
+		validated, err := fixture.server.ValidatePath(ctx, api.ValidatePathRequestObject{
+			JSONBody: &api.ValidatePathDto{Path: apiutil.Ptr(directory)},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, ok := validated.(api.ValidatePath403Response); !ok {
+			t.Errorf("ValidatePath = %T, want a 403", validated)
+		}
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, ok := contents.(api.GetDirectoryContents403Response); !ok {
-		t.Errorf("GetDirectoryContents = %T, want a 403", contents)
-	}
-
-	drives, err := fixture.server.GetDrives(ctx, api.GetDrivesRequestObject{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, ok := drives.(api.GetDrives403Response); !ok {
-		t.Errorf("GetDrives = %T, want a 403", drives)
-	}
-
-	parent, err := fixture.server.GetParentPath(ctx, api.GetParentPathRequestObject{
-		Params: api.GetParentPathParams{Path: directory},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, ok := parent.(api.GetParentPath403Response); !ok {
-		t.Errorf("GetParentPath = %T, want a 403", parent)
-	}
-
-	browser, err := fixture.server.GetDefaultDirectoryBrowser(ctx, api.GetDefaultDirectoryBrowserRequestObject{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, ok := browser.(api.GetDefaultDirectoryBrowser403Response); !ok {
-		t.Errorf("GetDefaultDirectoryBrowser = %T, want a 403", browser)
-	}
-
-	validated, err := fixture.server.ValidatePath(ctx, api.ValidatePathRequestObject{
-		JSONBody: &api.ValidatePathDto{Path: apiutil.Ptr(directory)},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, ok := validated.(api.ValidatePath403Response); !ok {
-		t.Errorf("ValidatePath = %T, want a 403", validated)
-	}
 }

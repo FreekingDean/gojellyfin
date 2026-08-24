@@ -52,7 +52,7 @@ A malformed value is refused at start rather than ignored. `TRANSCODER_JOBS=lots
 
 `HTTP_PORT` is what the server listens on and defaults to 8081, which is the port `air`, the `Dockerfile`, and every manifest in `deploy/` already name — the variable exists so a second process can be brought up beside them, not to move the default.
 
-`serverModules` and `workerModules` in `cmd/gojellyfin` both list `env.Module`, and `TestWorkerModulesResolve` guards the second the way `TestServerModulesResolve` guards the first — a command that composes its graph inline has nothing to validate, so the worker starting without a config it needs is only found by running it.
+`serverModules` and `workerModules` in `cmd/gojellyfin` both list `env.Module`, and `TestWorkerModules` guards the second the way `TestServerModules` guards the first — a command that composes its graph inline has nothing to validate, so the worker starting without a config it needs is only found by running it.
 
 `make test` needs one too — `internal/items` seeds real rows through `store.NewStore()` and fails rather than skipping when the database is unreachable, so a green run means the queries actually ran. Each test owns a library row and deletes it and its items on cleanup; point `DATABASE_URL` at a scratch database to keep development data out of it. CI runs the suite against a `postgres:16` service with `internal/store/migrations` applied by `atlas migrate apply`.
 
@@ -85,7 +85,7 @@ A module aggregates another only where the second is part of the first's own edg
 
 A binding that exists only because the object graph would otherwise be cyclic goes in the `fx.go` of the package that supplies the dependency, not the one that consumes it: `scanner`'s `register` hands its `LibraryScan` to the `jobs.Registry`, so what the scanner is hooked into is answered by reading `internal/scanner/fx.go`.
 
-`TestServerModulesResolve` in `cmd/gojellyfin/server_test.go` runs `fx.ValidateApp` over `serverModules`. A forgotten `Module` compiles cleanly — nothing references one except the list it belongs to — so the build cannot catch it and the server dies on start instead. `ValidateApp` checks the graph without opening a database or binding a port; dropping `mediainfo.Module` fails it with `missing type: *mediainfo.Server`.
+`TestServerModules` in `cmd/gojellyfin/server_test.go` runs `fx.ValidateApp` over `serverModules`. A forgotten `Module` compiles cleanly — nothing references one except the list it belongs to — so the build cannot catch it and the server dies on start instead. `ValidateApp` checks the graph without opening a database or binding a port; dropping `mediainfo.Module` fails it with `missing type: *mediainfo.Server`.
 
 ### API layer: generated, with an unimplemented base
 
@@ -106,7 +106,7 @@ Routing uses a hand-rolled `internal/http/mux`, not `http.ServeMux`, because Jel
 
 `GET /socket` is registered outside the generated API for the websocket keepalive loop (`internal/server/socket`).
 
-So are routes Jellyfin serves but hides from its own OpenAPI document with `[ApiExplorerSettings(IgnoreApi = true)]`. There are 36 of them, almost all the pre-10.9 `/Users/{userId}/…` spellings, and no version of the spec contains any of them — searching a newer spec will not find them either. `spec/jellyfin-hidden-routes-10.10.0.txt` is the extracted list, and `TestLegacyRoutesCoverJellyfin` fails if one of them has neither an alias nor a stated reason. `jellyfin-web` still calls some, so the symptom is a 404 for a path the spec does not define; the definition is in the controller source (`GET /Users/{userId}/Items/{itemId}` is `Jellyfin.Api/Controllers/UserLibraryController.cs`).
+So are routes Jellyfin serves but hides from its own OpenAPI document with `[ApiExplorerSettings(IgnoreApi = true)]`. There are 36 of them, almost all the pre-10.9 `/Users/{userId}/…` spellings, and no version of the spec contains any of them — searching a newer spec will not find them either. `spec/jellyfin-hidden-routes-10.10.0.txt` is the extracted list, and `TestLegacyRoutes` fails if one of them has neither an alias nor a stated reason. `jellyfin-web` still calls some, so the symptom is a 404 for a path the spec does not define; the definition is in the controller source (`GET /Users/{userId}/Items/{itemId}` is `Jellyfin.Api/Controllers/UserLibraryController.cs`).
 
 `legacyRoutes` in `internal/http/http.go` maps each to its documented spelling and re-dispatches through the mux, so an alias costs a table entry rather than a handler. `[Obsolete]` alone does **not** mean missing — most obsolete routes are still documented and already generated; only `IgnoreApi` hides them.
 
@@ -122,9 +122,9 @@ The endpoint is checked in `tracing.New` rather than in `env.validate`, because 
 
 **`internal/observability/tracing` is the only package that imports otel.** A caller gets `StartRequest` and a `Span` with `End` and `Fail`, not a `trace.Tracer`, so the middleware names no otel type and the backend stays swappable; `Recorded` is the same seam for tests, handing back a `Recorder` that answers in span names and attribute values. It is composed through `observability.Module`, which `server` and `worker` both list, and it registers `OnStop` only — a provider is exporting from the moment it is built, so there is nothing to start. The flush is bounded on the way out, because a collector that has gone away must not hold the process open.
 
-**Streaming endpoints are excluded.** `streams` in `internal/http/middleware/oapitracing.go` names `Videos` and `Audio`, the same two roots `deploy/httproutes.yaml` splits on, matched case-insensitively because the mux is. A progressive response runs for the length of the media, so a span covering one is open for hours — a leak rather than a trace. `GET /socket` needs no entry: it is registered outside the generated API, so it never reaches this layer. `TestStreamingRoutesAreNotTraced` is what keeps the exclusion from being incidental.
+**Streaming endpoints are excluded.** `streams` in `internal/http/middleware/oapitracing.go` names `Videos` and `Audio`, the same two roots `deploy/httproutes.yaml` splits on, matched case-insensitively because the mux is. A progressive response runs for the length of the media, so a span covering one is open for hours — a leak rather than a trace. `GET /socket` needs no entry: it is registered outside the generated API, so it never reaches this layer. The streaming case in `TestOapiTracing_Middleware` is what keeps the exclusion from being incidental.
 
-Nothing the client sent goes on a span. The query string carries `api_key` and some paths carry names, so only the method and the operation id are recorded; `TestSpanCarriesNoRequestDetail` holds that, because traces ship to third-party backends.
+Nothing the client sent goes on a span. The query string carries `api_key` and some paths carry names, so only the method and the operation id are recorded; `TestOapiTracing_Middleware` holds that, because traces ship to third-party backends.
 
 ### Domain services
 
@@ -136,7 +136,7 @@ Three layers, split on what each is allowed to know:
 
 **A tag package never imports another tag package.** Translation two or more tags need lives in **`internal/server/dto`** — `ItemDto`/`ItemDtos`/`LibraryView`/`UserItemDataDto`/`Kinds`/`SessionDto`/`CultureDtos`/`CountryInfos`/`ParentalRatings` today, in both directions, model→DTO and DTO→model. It may import `api`, `apiutil` and the domains, and it must never import a tag package. Domains cannot hold any of it, because they would have to import `api`.
 
-Translation a single tag uses stays in that tag's `dto.go` and is **unexported** — `user.userDto`, `playlists.playlistDto`, `scheduledtasks.taskInfo`. That is what gives the rule its teeth: **no exported translation function in a tag package**, so there is nothing for a second tag to reach for, and the second caller is the moment a helper moves to `dto`. `TestTagPackagesKeepTranslationUnexported` in `internal/server/translation_test.go` parses every tag package and fails on an exported function whose signature names an `api` type. Its exception table is the whole of the escape hatch: `configuration.ServerConfiguration`/`BrandingConfiguration` read stored config rather than translate. Adding a name there needs a reason, and a stale entry fails the test too.
+Translation a single tag uses stays in that tag's `dto.go` and is **unexported** — `user.userDto`, `playlists.playlistDto`, `scheduledtasks.taskInfo`. That is what gives the rule its teeth: **no exported translation function in a tag package**, so there is nothing for a second tag to reach for, and the second caller is the moment a helper moves to `dto`. `Test` in `internal/server/translation_test.go` parses every tag package and fails on an exported function whose signature names an `api` type. Its exception table is the whole of the escape hatch: `configuration.ServerConfiguration`/`BrandingConfiguration` read stored config rather than translate. Adding a name there needs a reason, and a stale entry fails the test too.
 
 Two naming traps, both of which cost real time: generated operation names occupy the method namespace, so domain queries need distinct names (`ItemByID`, not `GetItem`); and package names are easily shadowed by locals — `items []items.Item`, `dtos := make(...)`. Name the local something else.
 

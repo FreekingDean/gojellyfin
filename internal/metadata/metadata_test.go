@@ -218,160 +218,162 @@ func truth(value bool) *bool {
 	return &value
 }
 
-func TestIdentifyWritesAMovie(t *testing.T) {
-	fixed := newFixture(t)
-	movie := fixed.add(t, items.Scanned{
-		Kind:           itemmodal.KindMovie,
-		Name:           "The Matrix",
-		ProductionYear: index(1999),
+func TestService_IdentifyItems(t *testing.T) {
+	t.Run("writes a movie", func(t *testing.T) {
+		fixed := newFixture(t)
+		movie := fixed.add(t, items.Scanned{
+			Kind:           itemmodal.KindMovie,
+			Name:           "The Matrix",
+			ProductionYear: index(1999),
+		})
+
+		fixed.identify(t)
+
+		identified := fixed.reload(t, movie.ID)
+		if identified.ProviderIds["Stub"] != "603" {
+			t.Errorf("provider id = %q, want 603", identified.ProviderIds["Stub"])
+		}
+		if identified.OfficialRating != "R" {
+			t.Errorf("OfficialRating = %q, want R", identified.OfficialRating)
+		}
+		if !strings.HasPrefix(identified.Overview, "Set in the 22nd century") {
+			t.Errorf("Overview = %q, want the fetched one", identified.Overview)
+		}
+		if identified.PremiereDate == nil || identified.PremiereDate.Year() != 1999 {
+			t.Errorf("PremiereDate = %v, want 1999", identified.PremiereDate)
+		}
 	})
 
-	fixed.identify(t)
+	t.Run("walks a series to its episode", func(t *testing.T) {
+		fixed := newFixture(t)
+		series := fixed.add(t, items.Scanned{
+			Kind:           itemmodal.KindSeries,
+			Name:           "Breaking Bad",
+			ProductionYear: index(2008),
+		})
+		season := fixed.add(t, items.Scanned{
+			Kind:        itemmodal.KindSeason,
+			ParentID:    &series.ID,
+			Name:        "Season 1",
+			IndexNumber: index(1),
+		})
+		episode := fixed.add(t, items.Scanned{
+			Kind:              itemmodal.KindEpisode,
+			ParentID:          &season.ID,
+			Name:              "s01e01",
+			IndexNumber:       index(1),
+			ParentIndexNumber: index(1),
+		})
 
-	identified := fixed.reload(t, movie.ID)
-	if identified.ProviderIds["Stub"] != "603" {
-		t.Errorf("provider id = %q, want 603", identified.ProviderIds["Stub"])
-	}
-	if identified.OfficialRating != "R" {
-		t.Errorf("OfficialRating = %q, want R", identified.OfficialRating)
-	}
-	if !strings.HasPrefix(identified.Overview, "Set in the 22nd century") {
-		t.Errorf("Overview = %q, want the fetched one", identified.Overview)
-	}
-	if identified.PremiereDate == nil || identified.PremiereDate.Year() != 1999 {
-		t.Errorf("PremiereDate = %v, want 1999", identified.PremiereDate)
-	}
-}
+		fixed.identify(t)
+		fixed.identify(t)
 
-func TestIdentifyWalksASeriesToItsEpisode(t *testing.T) {
-	fixed := newFixture(t)
-	series := fixed.add(t, items.Scanned{
-		Kind:           itemmodal.KindSeries,
-		Name:           "Breaking Bad",
-		ProductionYear: index(2008),
-	})
-	season := fixed.add(t, items.Scanned{
-		Kind:        itemmodal.KindSeason,
-		ParentID:    &series.ID,
-		Name:        "Season 1",
-		IndexNumber: index(1),
-	})
-	episode := fixed.add(t, items.Scanned{
-		Kind:              itemmodal.KindEpisode,
-		ParentID:          &season.ID,
-		Name:              "s01e01",
-		IndexNumber:       index(1),
-		ParentIndexNumber: index(1),
-	})
+		identified := fixed.reload(t, series.ID)
+		if identified.ProviderIds["Stub"] != "1396" {
+			t.Errorf("series provider id = %q, want 1396", identified.ProviderIds["Stub"])
+		}
+		if identified.Status != "Ended" {
+			t.Errorf("series Status = %q, want Ended", identified.Status)
+		}
 
-	fixed.identify(t)
-	fixed.identify(t)
-
-	identified := fixed.reload(t, series.ID)
-	if identified.ProviderIds["Stub"] != "1396" {
-		t.Errorf("series provider id = %q, want 1396", identified.ProviderIds["Stub"])
-	}
-	if identified.Status != "Ended" {
-		t.Errorf("series Status = %q, want Ended", identified.Status)
-	}
-
-	aired := fixed.reload(t, episode.ID)
-	if aired.Name != "Pilot" {
-		t.Errorf("episode Name = %q, want Pilot", aired.Name)
-	}
-	if aired.ProviderIds["StubExternal"] != "tt0959621" {
-		t.Errorf("episode external id = %q, want tt0959621", aired.ProviderIds["StubExternal"])
-	}
-}
-
-func TestIdentifyLeavesALockedItemAlone(t *testing.T) {
-	fixed := newFixture(t)
-	locked := fixed.lock(t, fixed.add(t, items.Scanned{
-		Kind:           itemmodal.KindMovie,
-		Name:           "The Matrix",
-		ProductionYear: index(1999),
-	}), items.Metadata{LockData: truth(true)})
-
-	witness := fixed.add(t, items.Scanned{
-		Kind:           itemmodal.KindMovie,
-		Name:           "The Matrix",
-		Key:            "test:" + fixed.libraryID.String() + ":witness",
-		ProductionYear: index(1999),
+		aired := fixed.reload(t, episode.ID)
+		if aired.Name != "Pilot" {
+			t.Errorf("episode Name = %q, want Pilot", aired.Name)
+		}
+		if aired.ProviderIds["StubExternal"] != "tt0959621" {
+			t.Errorf("episode external id = %q, want tt0959621", aired.ProviderIds["StubExternal"])
+		}
 	})
 
-	fixed.identify(t)
+	t.Run("leaves a locked item alone", func(t *testing.T) {
+		fixed := newFixture(t)
+		locked := fixed.lock(t, fixed.add(t, items.Scanned{
+			Kind:           itemmodal.KindMovie,
+			Name:           "The Matrix",
+			ProductionYear: index(1999),
+		}), items.Metadata{LockData: truth(true)})
 
-	untouched := fixed.reload(t, locked.ID)
-	if untouched.ProviderIds != nil {
-		t.Errorf("ProviderIds = %v, want a locked item left alone", untouched.ProviderIds)
-	}
-	if untouched.Overview != "" {
-		t.Errorf("Overview = %q, want a locked item left alone", untouched.Overview)
-	}
-	if fixed.reload(t, witness.ID).ProviderIds["Stub"] != "603" {
-		t.Fatal("the run identified nothing, so the lock proves nothing")
-	}
-}
+		witness := fixed.add(t, items.Scanned{
+			Kind:           itemmodal.KindMovie,
+			Name:           "The Matrix",
+			Key:            "test:" + fixed.libraryID.String() + ":witness",
+			ProductionYear: index(1999),
+		})
 
-func TestIdentifyKeepsALockedField(t *testing.T) {
-	fixed := newFixture(t)
-	movie := fixed.lock(t, fixed.add(t, items.Scanned{
-		Kind:           itemmodal.KindMovie,
-		Name:           "The Matrix",
-		ProductionYear: index(1999),
-	}), items.Metadata{
-		Overview:     text("A summary somebody wrote by hand."),
-		LockedFields: &[]string{"Overview"},
+		fixed.identify(t)
+
+		untouched := fixed.reload(t, locked.ID)
+		if untouched.ProviderIds != nil {
+			t.Errorf("ProviderIds = %v, want a locked item left alone", untouched.ProviderIds)
+		}
+		if untouched.Overview != "" {
+			t.Errorf("Overview = %q, want a locked item left alone", untouched.Overview)
+		}
+		if fixed.reload(t, witness.ID).ProviderIds["Stub"] != "603" {
+			t.Fatal("the run identified nothing, so the lock proves nothing")
+		}
 	})
 
-	fixed.identify(t)
+	t.Run("keeps a locked field", func(t *testing.T) {
+		fixed := newFixture(t)
+		movie := fixed.lock(t, fixed.add(t, items.Scanned{
+			Kind:           itemmodal.KindMovie,
+			Name:           "The Matrix",
+			ProductionYear: index(1999),
+		}), items.Metadata{
+			Overview:     text("A summary somebody wrote by hand."),
+			LockedFields: &[]string{"Overview"},
+		})
 
-	identified := fixed.reload(t, movie.ID)
-	if identified.Overview != "A summary somebody wrote by hand." {
-		t.Errorf("Overview = %q, want the manual edit kept", identified.Overview)
-	}
-	if len(identified.Taglines) != 0 {
-		t.Errorf("Taglines = %v, want the Overview lock to cover them", identified.Taglines)
-	}
-	if identified.OfficialRating != "R" {
-		t.Errorf("OfficialRating = %q, want an unlocked field written", identified.OfficialRating)
-	}
-	if identified.ProviderIds["Stub"] != "603" {
-		t.Errorf("provider id = %q, want identity written through a field lock", identified.ProviderIds["Stub"])
-	}
-}
+		fixed.identify(t)
 
-func TestIdentifyDoesNothingWithoutAProvider(t *testing.T) {
-	fixed := newFixtureEnabled(t, false)
-	movie := fixed.add(t, items.Scanned{
-		Kind:           itemmodal.KindMovie,
-		Name:           "The Matrix",
-		ProductionYear: index(1999),
+		identified := fixed.reload(t, movie.ID)
+		if identified.Overview != "A summary somebody wrote by hand." {
+			t.Errorf("Overview = %q, want the manual edit kept", identified.Overview)
+		}
+		if len(identified.Taglines) != 0 {
+			t.Errorf("Taglines = %v, want the Overview lock to cover them", identified.Taglines)
+		}
+		if identified.OfficialRating != "R" {
+			t.Errorf("OfficialRating = %q, want an unlocked field written", identified.OfficialRating)
+		}
+		if identified.ProviderIds["Stub"] != "603" {
+			t.Errorf("provider id = %q, want identity written through a field lock", identified.ProviderIds["Stub"])
+		}
 	})
 
-	fixed.identify(t)
+	t.Run("does nothing without a provider", func(t *testing.T) {
+		fixed := newFixtureEnabled(t, false)
+		movie := fixed.add(t, items.Scanned{
+			Kind:           itemmodal.KindMovie,
+			Name:           "The Matrix",
+			ProductionYear: index(1999),
+		})
 
-	if asked := fixed.provider.requests(); len(asked) != 0 {
-		t.Errorf("requests = %v, want none from a disabled provider", asked)
-	}
-	if identified := fixed.reload(t, movie.ID); identified.ProviderIds != nil {
-		t.Errorf("ProviderIds = %v, want nothing written", identified.ProviderIds)
-	}
-}
+		fixed.identify(t)
 
-func TestIdentifyLeavesAnUnmatchedItemForTheNextRun(t *testing.T) {
-	fixed := newFixture(t)
-	unknown := fixed.add(t, items.Scanned{
-		Kind: itemmodal.KindMovie,
-		Name: "A Film Nobody Carries",
+		if asked := fixed.provider.requests(); len(asked) != 0 {
+			t.Errorf("requests = %v, want none from a disabled provider", asked)
+		}
+		if identified := fixed.reload(t, movie.ID); identified.ProviderIds != nil {
+			t.Errorf("ProviderIds = %v, want nothing written", identified.ProviderIds)
+		}
 	})
 
-	fixed.identify(t)
+	t.Run("leaves an unmatched item for the next run", func(t *testing.T) {
+		fixed := newFixture(t)
+		unknown := fixed.add(t, items.Scanned{
+			Kind: itemmodal.KindMovie,
+			Name: "A Film Nobody Carries",
+		})
 
-	if identified := fixed.reload(t, unknown.ID); identified.ProviderIds != nil {
-		t.Errorf("ProviderIds = %v, want a miss to write nothing", identified.ProviderIds)
-	}
-	if asked := fixed.provider.requests(); len(asked) != 1 {
-		t.Errorf("requests = %v, want the miss to have been asked once", asked)
-	}
+		fixed.identify(t)
+
+		if identified := fixed.reload(t, unknown.ID); identified.ProviderIds != nil {
+			t.Errorf("ProviderIds = %v, want a miss to write nothing", identified.ProviderIds)
+		}
+		if asked := fixed.provider.requests(); len(asked) != 1 {
+			t.Errorf("requests = %v, want the miss to have been asked once", asked)
+		}
+	})
 }

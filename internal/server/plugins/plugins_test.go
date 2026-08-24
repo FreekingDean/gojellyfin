@@ -8,7 +8,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 )
 
-func TestGetPluginsIsEmpty(t *testing.T) {
+func TestServer_GetPlugins(t *testing.T) {
 	response, err := New().GetPlugins(context.Background(), api.GetPluginsRequestObject{})
 	if err != nil {
 		t.Fatal(err)
@@ -19,7 +19,7 @@ func TestGetPluginsIsEmpty(t *testing.T) {
 	}
 }
 
-func TestEveryOtherOperationIsRefused(t *testing.T) {
+func TestServer(t *testing.T) {
 	server := New()
 	ctx := context.Background()
 

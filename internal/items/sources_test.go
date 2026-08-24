@@ -40,7 +40,7 @@ func (f *fixture) scanned(t *testing.T, key, path string) *Item {
 	return item
 }
 
-func TestOneKeyGroupsCopies(t *testing.T) {
+func TestService_SaveSource(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -61,7 +61,7 @@ func TestOneKeyGroupsCopies(t *testing.T) {
 	}
 }
 
-func TestSweepDropsAMissingSourceAndKeepsTheItem(t *testing.T) {
+func TestService_DeleteSourcesNotInPaths(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 

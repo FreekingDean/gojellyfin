@@ -15,7 +15,7 @@ import (
 	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/mediasource"
 )
 
-func TestGetGenres(t *testing.T) {
+func TestServer_GetGenres(t *testing.T) {
 	ctx := context.Background()
 
 	config, err := env.Load()
