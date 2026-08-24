@@ -1,19 +1,19 @@
-{{- if .Values.transcode.enabled }}
-{{- $component := "transcode" }}
+{{- if .Values.streaming.enabled }}
+{{- $component := "streaming" }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "gojellyfin.fullname" . }}-transcode
+  name: {{ include "gojellyfin.fullname" . }}-streaming
   labels:
     {{- include "gojellyfin.labels" (dict "root" $ "component" $component) | nindent 4 }}
 spec:
-  replicas: {{ .Values.transcode.replicaCount }}
+  replicas: {{ .Values.streaming.replicaCount }}
   selector:
     matchLabels:
       {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.transcode.podAnnotations }}
+      {{- with .Values.streaming.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -24,7 +24,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.transcode.podSecurityContext }}
+      {{- with .Values.streaming.podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -37,42 +37,42 @@ spec:
             - name: http
               containerPort: {{ .Values.httpPort }}
           env:
-            {{- include "gojellyfin.serverEnv" (dict "root" $ "workload" .Values.transcode "component" $component) | nindent 12 }}
+            {{- include "gojellyfin.serverEnv" (dict "root" $ "workload" .Values.streaming "component" $component) | nindent 12 }}
           livenessProbe:
             httpGet:
               path: /System/Ping
               port: http
-            {{- with .Values.transcode.livenessProbe }}
+            {{- with .Values.streaming.livenessProbe }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
           readinessProbe:
             httpGet:
               path: /System/Ping
               port: http
-            {{- with .Values.transcode.readinessProbe }}
+            {{- with .Values.streaming.readinessProbe }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
-          {{- with .Values.transcode.resources }}
+          {{- with .Values.streaming.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.transcode.securityContext }}
+          {{- with .Values.streaming.securityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            {{- include "gojellyfin.mediaVolumeMount" (dict "root" $ "workload" .Values.transcode) | nindent 12 }}
+            {{- include "gojellyfin.mediaVolumeMount" (dict "root" $ "workload" .Values.streaming) | nindent 12 }}
       volumes:
-        {{- include "gojellyfin.mediaVolume" (dict "root" $) | nindent 8 }}
-      {{- with .Values.transcode.nodeSelector }}
+        {{- include "gojellyfin.mediaVolume" . | nindent 8 }}
+      {{- with .Values.streaming.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.transcode.tolerations }}
+      {{- with .Values.streaming.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.transcode.affinity }}
+      {{- with .Values.streaming.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}

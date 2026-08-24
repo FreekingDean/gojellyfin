@@ -62,7 +62,7 @@ spec:
           volumeMounts:
             {{- include "gojellyfin.mediaVolumeMount" (dict "root" $ "workload" .Values.api) | nindent 12 }}
       volumes:
-        {{- include "gojellyfin.mediaVolume" (dict "root" $) | nindent 8 }}
+        {{- include "gojellyfin.mediaVolume" . | nindent 8 }}
       {{- with .Values.api.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
