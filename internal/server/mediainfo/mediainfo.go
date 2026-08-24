@@ -71,35 +71,21 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, profile api
 		MediaSources:  &sources,
 		PlaySessionId: apiutil.Ptr(session),
 	}
-	if nothingPlayable(sources) {
+
+	if len(sources) == 0 {
 		response.ErrorCode = apiutil.Ptr(api.NoCompatibleStream)
 	}
 
 	return response, nil
 }
 
-func nothingPlayable(sources []api.MediaSourceInfo) bool {
-	for _, source := range sources {
-		playable := apiutil.Deref(source.SupportsDirectPlay) ||
-			apiutil.Deref(source.SupportsDirectStream) ||
-			apiutil.Deref(source.SupportsTranscoding)
-		if playable {
-			return false
-		}
-	}
-
-	return true
-}
-
-// One entry per file, which is how a 4K and a 1080p copy of one film reach the
-// client as two versions of a single item.
 func (s *Server) mediaSources(ctx context.Context, item *items.Item, profile api.DeviceProfile, session string, startTicks int64) ([]api.MediaSourceInfo, error) {
 	sources, err := s.items.MediaSources(ctx, item.ID)
 	if err != nil {
 		return nil, err
 	}
 	if len(sources) == 0 {
-		return []api.MediaSourceInfo{unsourced(item)}, nil
+		return []api.MediaSourceInfo{}, nil
 	}
 
 	profiles := videoProfiles(profile)
