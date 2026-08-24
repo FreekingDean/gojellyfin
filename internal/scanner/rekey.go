@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
@@ -49,6 +50,8 @@ func (s *Scanner) rekeyLegacy(ctx context.Context, library *libraries.Library) e
 
 	carried, merged := 0, 0
 	for _, item := range legacy {
+		jobs.Heartbeat(ctx, item.Key)
+
 		key, ok := derivedKey(item, byID)
 		if !ok {
 			continue

@@ -85,3 +85,70 @@ func TestService_DeleteSourcesNotInPaths(t *testing.T) {
 		t.Errorf("losing one copy took the item and its watch state: %v", err)
 	}
 }
+
+func TestService_SourcesNeedingProbe(t *testing.T) {
+	t.Run("selects a file nothing has probed", func(t *testing.T) {
+		fixture := newFixture(t)
+		ctx := context.Background()
+
+		probed := fixture.scanned(t, "movie:the-matrix:1999", "/media/hd/The Matrix.mkv")
+		unread, err := fixture.service.SaveSource(ctx, ScannedSource{
+			LibraryID:    fixture.libraryID,
+			ItemID:       probed.ID,
+			Path:         "/media/4k/The Matrix.mkv",
+			Name:         "The Matrix.mkv",
+			DateModified: time.Now(),
+		})
+		if err != nil {
+			t.Fatalf("failed to save the unprobed source: %v", err)
+		}
+
+		outstanding, err := fixture.service.SourcesNeedingProbe(ctx, fixture.libraryID)
+		if err != nil {
+			t.Fatalf("failed to select the sources needing a probe: %v", err)
+		}
+		if len(outstanding) != 1 || outstanding[0] != unread.ID {
+			t.Fatalf("outstanding = %v, want the file nothing has probed", outstanding)
+		}
+	})
+
+	t.Run("selects a file that changed since its probe", func(t *testing.T) {
+		fixture := newFixture(t)
+		ctx := context.Background()
+
+		probed := fixture.scanned(t, "movie:the-matrix:1999", "/media/hd/The Matrix.mkv")
+		changed, err := fixture.service.SaveSource(ctx, ScannedSource{
+			LibraryID:    fixture.libraryID,
+			ItemID:       probed.ID,
+			Path:         "/media/hd/The Matrix.mkv",
+			Name:         "The Matrix.mkv",
+			DateModified: time.Now().Add(time.Hour),
+		})
+		if err != nil {
+			t.Fatalf("failed to touch the probed source: %v", err)
+		}
+
+		outstanding, err := fixture.service.SourcesNeedingProbe(ctx, fixture.libraryID)
+		if err != nil {
+			t.Fatalf("failed to select the sources needing a probe: %v", err)
+		}
+		if len(outstanding) != 1 || outstanding[0] != changed.ID {
+			t.Fatalf("outstanding = %v, want the file that changed since its probe", outstanding)
+		}
+	})
+
+	t.Run("leaves a file whose probe is newer than it is", func(t *testing.T) {
+		fixture := newFixture(t)
+		ctx := context.Background()
+
+		fixture.scanned(t, "movie:the-matrix:1999", "/media/hd/The Matrix.mkv")
+
+		outstanding, err := fixture.service.SourcesNeedingProbe(ctx, fixture.libraryID)
+		if err != nil {
+			t.Fatalf("failed to select the sources needing a probe: %v", err)
+		}
+		if len(outstanding) != 0 {
+			t.Fatalf("outstanding = %v, want nothing left to probe", outstanding)
+		}
+	})
+}

@@ -12,6 +12,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
@@ -25,24 +26,6 @@ type Scanner struct {
 
 func New(items *items.Service, libraries *libraries.Service, filesystem *filesystem.Service) *Scanner {
 	return &Scanner{items: items, libraries: libraries, filesystem: filesystem}
-}
-
-func (s *Scanner) Scan(ctx context.Context) error {
-	scanned, err := s.libraries.ListLibraries(ctx)
-	if err != nil {
-		return err
-	}
-
-	for _, library := range scanned {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		if err := s.scanLibrary(ctx, library); err != nil {
-			log.Printf("scan %s: %v", library.Name, err)
-		}
-	}
-
-	return ctx.Err()
 }
 
 // What one pass over a library found: the titles that still exist and the files
@@ -310,6 +293,8 @@ func (s *Scanner) scanFile(ctx context.Context, library *libraries.Library, path
 	modified := modifiedAt(entry)
 	scanned.DateModified = modified
 
+	jobs.Heartbeat(ctx, path)
+
 	item, err := s.items.SaveScanned(ctx, scanned)
 	if err != nil {
 		return nil, err
@@ -326,16 +311,6 @@ func (s *Scanner) scanFile(ctx context.Context, library *libraries.Library, path
 	})
 	if err != nil {
 		return nil, err
-	}
-
-	probe, err := s.probeFile(ctx, source, path, modified)
-	if err != nil {
-		log.Printf("probe %s: %v", path, err)
-	}
-	if probe != nil {
-		if err := s.items.SaveProbe(ctx, item, source, *probe); err != nil {
-			log.Printf("probe %s: %v", path, err)
-		}
 	}
 
 	if err := s.scanSubtitles(ctx, item.ID, source); err != nil {

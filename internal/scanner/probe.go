@@ -4,7 +4,6 @@ import (
 	"context"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/items"
@@ -15,12 +14,12 @@ const ticksPerSecond = 10_000_000
 
 // Nil when there is nothing new to learn: no ffmpeg on the box, or a file the
 // last probe already read.
-func (s *Scanner) probeFile(ctx context.Context, stored *items.MediaSource, path string, modified time.Time) (*items.Probe, error) {
-	if !ffmpeg.Available() || !items.NeedsProbe(stored, modified) {
+func (s *Scanner) probeFile(ctx context.Context, source *items.MediaSource) (*items.Probe, error) {
+	if !ffmpeg.Available() || !items.NeedsProbe(source) {
 		return nil, nil
 	}
 
-	probe, err := ffmpeg.ProbeFile(ctx, path)
+	probe, err := ffmpeg.ProbeFile(ctx, source.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +46,7 @@ func (s *Scanner) probeFile(ctx context.Context, stored *items.MediaSource, path
 	}
 
 	return &items.Probe{
-		Container:    container(probe.Format.FormatName, path),
+		Container:    container(probe.Format.FormatName, source.Path),
 		RunTimeTicks: int64(probe.Format.Seconds() * ticksPerSecond),
 		Size:         probe.Format.Bytes(),
 		Bitrate:      probe.Format.Bitrate(),

@@ -3,6 +3,7 @@ package jobs
 import (
 	"context"
 	errors "errors"
+	"fmt"
 	"time"
 
 	"go.temporal.io/sdk/activity"
@@ -20,13 +21,16 @@ type Context = workflow.Context
 
 // A Job is one unit of background work. Name is the id the dashboard drives it
 // by and the id the engine runs it under, which is what makes a job a singleton
-// without a lock — a second run under a name already running is refused.
+// without a lock — a second run under a name already running is refused. Steps
+// are what its body runs one at a time; Children are the nested bodies it fans
+// work out to, and both are declared here so the worker can run them.
 type Job interface {
 	Name() string
 	Description() string
 	Category() string
 	Run(ctx Context) error
 	Steps() []any
+	Children() []any
 }
 
 // A Future is a step that has been started and not yet waited on, so a body can
@@ -66,6 +70,23 @@ func Step(ctx Context, step any, args ...any) Future {
 	return future{ctx: ctx, future: workflow.ExecuteActivity(ctx, step, args...)}
 }
 
+// Child starts one of the job's nested bodies, which holds its own steps in its
+// own history: a body that fanned out thousands of steps would replay all of
+// them, and a handful of children each holding a hundred does not.
+//
+// The id is scoped to the run that started it, so the run before this one
+// cannot still hold the name, and a chunk started twice inside one run cannot
+// take the name of a sibling.
+func Child(ctx Context, child any, name string, args ...any) Future {
+	execution := workflow.GetInfo(ctx).WorkflowExecution
+	ctx = workflow.WithChildOptions(ctx, workflow.ChildWorkflowOptions{
+		WorkflowID:               fmt.Sprintf("%s/%s/%s", execution.ID, execution.RunID, name),
+		WorkflowExecutionTimeout: runTimeoutMax,
+	})
+
+	return future{ctx: ctx, future: workflow.ExecuteChildWorkflow(ctx, child, args...)}
+}
+
 // Logf records against the run rather than the process, and is replay aware, so
 // a body can say what it skipped without lying on every replay.
 func Logf(ctx Context, message string, args ...any) {
@@ -73,7 +94,12 @@ func Logf(ctx Context, message string, args ...any) {
 }
 
 // Heartbeat says a step is still moving, so a step that is merely slow is told
-// apart from a worker that died.
+// apart from a worker that died. It is a no-op outside a step, so the code a
+// step calls into can say where it has got to without knowing who called it.
 func Heartbeat(ctx context.Context, detail ...any) {
+	if !activity.IsActivity(ctx) {
+		return
+	}
+
 	activity.RecordHeartbeat(ctx, detail...)
 }
