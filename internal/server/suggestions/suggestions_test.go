@@ -112,31 +112,33 @@ func TestGetSuggestions(t *testing.T) {
 	fixture.add(t, itemmodal.KindSeries, itemmodal.MediaTypeUnknown, "Series")
 	fixture.add(t, itemmodal.KindAudio, itemmodal.MediaTypeAudio, "Song")
 
-	t.Run("filters by item type", func(t *testing.T) {
-		want := []string{"Movie One", "Movie Two"}
-		got := fixture.mine(t, api.GetSuggestionsParams{
-			Type: &[]api.BaseItemKind{api.BaseItemKindMovie},
-		})
-		if !slices.Equal(got, want) {
-			t.Errorf("suggestions = %v, want %v", got, want)
-		}
-	})
+	tests := []struct {
+		name   string
+		params api.GetSuggestionsParams
+		want   []string
+	}{
+		{
+			name:   "filters by item type",
+			params: api.GetSuggestionsParams{Type: &[]api.BaseItemKind{api.BaseItemKindMovie}},
+			want:   []string{"Movie One", "Movie Two"},
+		},
+		{
+			name:   "filters by media type",
+			params: api.GetSuggestionsParams{MediaType: &[]api.MediaType{api.MediaTypeAudio}},
+			want:   []string{"Song"},
+		},
+		{
+			name:   "returns every type when unfiltered",
+			params: api.GetSuggestionsParams{},
+			want:   []string{"Movie One", "Movie Two", "Series", "Song"},
+		},
+	}
 
-	t.Run("filters by media type", func(t *testing.T) {
-		want := []string{"Song"}
-		got := fixture.mine(t, api.GetSuggestionsParams{
-			MediaType: &[]api.MediaType{api.MediaTypeAudio},
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := fixture.mine(t, test.params); !slices.Equal(got, test.want) {
+				t.Errorf("suggestions = %v, want %v", got, test.want)
+			}
 		})
-		if !slices.Equal(got, want) {
-			t.Errorf("suggestions = %v, want %v", got, want)
-		}
-	})
-
-	t.Run("returns every type when unfiltered", func(t *testing.T) {
-		want := []string{"Movie One", "Movie Two", "Series", "Song"}
-		got := fixture.mine(t, api.GetSuggestionsParams{})
-		if !slices.Equal(got, want) {
-			t.Errorf("suggestions = %v, want %v", got, want)
-		}
-	})
+	}
 }

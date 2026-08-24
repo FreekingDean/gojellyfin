@@ -114,42 +114,50 @@ func TestGetTrailers(t *testing.T) {
 	fixture.add(t, itemmodal.KindMovie, "A Movie")
 	fixture.add(t, itemmodal.KindEpisode, "An Episode")
 
-	t.Run("returns only trailers", func(t *testing.T) {
-		result := fixture.get(t, api.GetTrailersParams{})
+	tests := []struct {
+		name           string
+		params         api.GetTrailersParams
+		want           []string
+		wantTotal      int32
+		wantStartIndex int32
+	}{
+		{
+			name:      "returns only trailers",
+			params:    api.GetTrailersParams{},
+			want:      []string{"Alpha Trailer", "Beta Trailer", "Gamma Trailer"},
+			wantTotal: 3,
+		},
+		{
+			name:      "filters by search term",
+			params:    api.GetTrailersParams{SearchTerm: apiutil.Ptr("beta")},
+			want:      []string{"Beta Trailer"},
+			wantTotal: 1,
+		},
+		{
+			name: "pages without changing the total",
+			params: api.GetTrailersParams{
+				StartIndex: apiutil.Ptr(int32(1)),
+				Limit:      apiutil.Ptr(int32(1)),
+			},
+			want:           []string{"Beta Trailer"},
+			wantTotal:      3,
+			wantStartIndex: 1,
+		},
+	}
 
-		want := []string{"Alpha Trailer", "Beta Trailer", "Gamma Trailer"}
-		if got := names(*result.Items); !slices.Equal(got, want) {
-			t.Errorf("trailers = %v, want %v", got, want)
-		}
-		if *result.TotalRecordCount != 3 {
-			t.Errorf("TotalRecordCount = %d, want 3", *result.TotalRecordCount)
-		}
-	})
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := fixture.get(t, test.params)
 
-	t.Run("filters by search term", func(t *testing.T) {
-		result := fixture.get(t, api.GetTrailersParams{SearchTerm: apiutil.Ptr("beta")})
-
-		want := []string{"Beta Trailer"}
-		if got := names(*result.Items); !slices.Equal(got, want) {
-			t.Errorf("trailers = %v, want %v", got, want)
-		}
-	})
-
-	t.Run("pages without changing the total", func(t *testing.T) {
-		result := fixture.get(t, api.GetTrailersParams{
-			StartIndex: apiutil.Ptr(int32(1)),
-			Limit:      apiutil.Ptr(int32(1)),
+			if got := names(*result.Items); !slices.Equal(got, test.want) {
+				t.Errorf("trailers = %v, want %v", got, test.want)
+			}
+			if *result.TotalRecordCount != test.wantTotal {
+				t.Errorf("TotalRecordCount = %d, want %d", *result.TotalRecordCount, test.wantTotal)
+			}
+			if *result.StartIndex != test.wantStartIndex {
+				t.Errorf("StartIndex = %d, want %d", *result.StartIndex, test.wantStartIndex)
+			}
 		})
-
-		want := []string{"Beta Trailer"}
-		if got := names(*result.Items); !slices.Equal(got, want) {
-			t.Errorf("trailers = %v, want %v", got, want)
-		}
-		if *result.TotalRecordCount != 3 {
-			t.Errorf("TotalRecordCount = %d, want 3", *result.TotalRecordCount)
-		}
-		if *result.StartIndex != 1 {
-			t.Errorf("StartIndex = %d, want 1", *result.StartIndex)
-		}
-	})
+	}
 }
