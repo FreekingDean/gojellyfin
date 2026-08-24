@@ -53,11 +53,6 @@ func (s *Server) GetPostedPlaybackInfo(ctx context.Context, request api.GetPoste
 	return api.GetPostedPlaybackInfo200JSONResponse(response), nil
 }
 
-// The client is handed one source and one url. Which file that is and what has
-// to change about it is the item service's question, not this one's; all that
-// happens here is parsing what the client declared, asking, and translating the
-// answer back. Nothing is invented when there is no answer: the client is told
-// no stream is compatible rather than handed a source that is not there.
 func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, profile api.DeviceProfile, startTicks int64) (api.PlaybackInfoResponse, error) {
 	item, err := s.items.ItemByID(ctx, itemID)
 	if err != nil {
@@ -95,10 +90,6 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, profile api
 	return response, nil
 }
 
-// The client is handed one url and no way to choose another. What it asks for
-// is an item; whether the answer is the file or a remux of it was decided by
-// the service, and the same container and codecs are what the handler serving
-// that url reads to reach the same answer.
 func served(dto *api.MediaSourceInfo, plan items.Plan, url string) {
 	dto.SupportsDirectPlay = apiutil.Ptr(false)
 	dto.SupportsDirectStream = apiutil.Ptr(false)

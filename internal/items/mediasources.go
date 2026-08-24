@@ -41,9 +41,6 @@ type Probe struct {
 	Metadata     ContainerMetadata
 }
 
-// A picture nobody could read the range of is left unset rather than called
-// SDR: an unread property has to stay unknown, because a client's conditions
-// are answered by passing what nobody probed rather than by guessing at it.
 func nillableRangeType(rangeType VideoRangeType) *VideoRangeType {
 	if rangeType == "" {
 		return nil

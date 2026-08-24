@@ -190,8 +190,6 @@ func (c Condition) holds(picture *MediaStream) bool {
 	}
 }
 
-// Silence on either side passes: a client that named nothing refuses nothing,
-// and a stream nobody probed is not held to a name nobody read.
 func lists(declared, value string) bool {
 	if declared == "" || value == "" {
 		return true

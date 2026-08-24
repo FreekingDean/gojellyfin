@@ -225,9 +225,6 @@ func (f *playbackFixture) answer(t *testing.T, id uuid.UUID, profile string, sta
 	return api.PlaybackInfoResponse(response.(api.GetPostedPlaybackInfo200JSONResponse))
 }
 
-// The url is followed exactly as the client would follow it: through the query
-// canonicalisation every request goes through, with the path values the mux
-// captures from the pattern.
 func (f *playbackFixture) follow(t *testing.T, rawURL string) *httptest.ResponseRecorder {
 	t.Helper()
 
@@ -266,9 +263,6 @@ func decoded(t *testing.T, body []byte) *ffmpeg.Probe {
 	return probed
 }
 
-// The md5 of one stream copied out of its container, which is equal on both
-// sides of a mux and different on either side of an encode. Reading the codec
-// name cannot tell those two apart: aac re-encoded to aac is still aac.
 func fingerprint(t *testing.T, path, stream string) string {
 	t.Helper()
 

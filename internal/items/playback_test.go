@@ -14,8 +14,6 @@ import (
 	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 )
 
-// What a browser declares. Kept narrow so a case that turns on one codec is
-// obvious from the table rather than from reading the profile.
 var chrome = Capabilities{
 	Profiles: []Profile{
 		{Container: "webm", VideoCodec: "vp8,vp9,av1", AudioCodec: "vorbis,opus"},
@@ -31,10 +29,6 @@ var chrome = Capabilities{
 	},
 }
 
-// The codec names jellyfin-web actually puts in its DirectPlayProfiles, read
-// off the vendored bundle rather than off the documentation, beside what
-// ffprobe reports for the same codec. They are the same strings, which is why
-// nothing here translates between the two vocabularies.
 var web = Capabilities{Profiles: []Profile{
 	{Container: "webm", VideoCodec: "vp8,vp9,av1", AudioCodec: "opus"},
 	{
@@ -263,10 +257,6 @@ func TestPlanFor(t *testing.T) {
 	})
 }
 
-// Dean's eight rows, each read as the question it actually asks: given these
-// files and this client, which file comes back. Rows a to c are one 4K file
-// under whatever plan it needs, d to f the 1080p beside it, and g and h the
-// picture encode nothing here can do.
 func TestService_SourceForOrder(t *testing.T) {
 	ctx := context.Background()
 

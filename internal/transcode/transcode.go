@@ -72,14 +72,10 @@ func Choose(containers []string) string {
 	return ""
 }
 
-// The codec the audio comes back as, which is what a client has to be able to
-// decode for the container to be worth choosing.
 func AudioCodec(container string) string {
 	return formats[strings.ToLower(container)].audio
 }
 
-// The same agreement as Choose, narrowed to containers that carry a picture,
-// which is what a video remux has to land in.
 func ChooseVideo(containers []string) string {
 	for _, container := range containers {
 		if CarriesVideo(container) {

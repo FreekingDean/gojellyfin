@@ -63,9 +63,8 @@ func configurationDto(configuration *users.Configuration) api.UserConfiguration 
 	}
 }
 
-// The picture is copied and never re-encoded (#481), and this is the policy
-// jellyfin-web reads to decide whether to offer a quality menu, so claiming it
-// puts a bitrate control on screen that changes nothing.
+// jellyfin-web gates its quality menu on this, and the picture is copied and
+// never re-encoded (#481).
 const encodesVideo = false
 
 func policyDto(policy *users.Policy) api.UserPolicy {

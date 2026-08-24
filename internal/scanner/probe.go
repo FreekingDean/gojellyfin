@@ -59,10 +59,6 @@ func (s *Scanner) probeFile(ctx context.Context, source *items.MediaSource) (*it
 	}, nil
 }
 
-// The transfer characteristic is what separates an HDR picture from an SDR one,
-// and it is the property a client's profile names. A file that carries none is
-// left unknown rather than called SDR, because a guess here is answered by
-// playing HDR through an SDR decoder, which does not fail loudly.
 func rangeType(transfer string) items.VideoRangeType {
 	switch strings.ToLower(strings.TrimSpace(transfer)) {
 	case "smpte2084":
@@ -76,9 +72,6 @@ func rangeType(transfer string) items.VideoRangeType {
 	}
 }
 
-// ffprobe names the field order of a progressive picture, and one of tt, bb, tb
-// or bt for the interlaced orders. Anything else is a picture it could not read
-// the order of, which is not the same as an interlaced one.
 func interlaced(order string) bool {
 	switch strings.ToLower(strings.TrimSpace(order)) {
 	case "tt", "bb", "tb", "bt":
@@ -88,8 +81,6 @@ func interlaced(order string) bool {
 	}
 }
 
-// Square pixels are written 1:1, and a file whose sample aspect ratio ffprobe
-// could not read is not an anamorphic one.
 func anamorphic(ratio string) bool {
 	switch ratio = strings.TrimSpace(ratio); ratio {
 	case "", "0:1", "1:1", "N/A":

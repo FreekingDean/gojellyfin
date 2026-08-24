@@ -23,10 +23,8 @@ type codecProfile struct {
 	}
 }
 
-// The spec types DeviceProfile as a free-form object, so what the client
-// declared is read back out of it rather than bound to a generated type. Only
-// the video lines are read: what a device can decode inside an mp3 says nothing
-// about what it can decode inside an mkv.
+// The vendored spec types DeviceProfile as a free-form object, so it is read
+// back out of json rather than bound to a generated type.
 func capabilities(profile api.DeviceProfile) items.Capabilities {
 	if len(profile) == 0 {
 		return items.Capabilities{}
@@ -73,9 +71,6 @@ func capabilities(profile api.DeviceProfile) items.Capabilities {
 	return items.Capabilities{Profiles: video, Conditions: conditions}
 }
 
-// The one url the client is given. It states the container and the two codecs
-// the response will carry, which is the same triple the stream handler reads to
-// decide what to copy and what to convert, so neither end has to guess.
 func streamURL(itemID uuid.UUID, plan items.Plan, token, session string, startTicks int64) string {
 	query := url.Values{
 		"mediaSourceId": {plan.Source.ID.String()},
@@ -97,9 +92,8 @@ func streamURL(itemID uuid.UUID, plan items.Plan, token, session string, startTi
 	return fmt.Sprintf("/Videos/%s/stream.%s?%s", itemID, plan.Container, query.Encode())
 }
 
-// jellyfin-web answers a playback error by asking for the stream all over
-// again, and stops only once the url it was handed refuses both stream copies.
-// Nothing downstream reads these two: they are what ends the retry.
+// jellyfin-web retries a playback error until the url refuses both stream
+// copies. Nothing here reads them; they are what ends the retry.
 func refuseStreamCopy(query url.Values) {
 	query.Set("allowVideoStreamCopy", "false")
 	query.Set("allowAudioStreamCopy", "false")
