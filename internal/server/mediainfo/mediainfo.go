@@ -67,10 +67,28 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, profile api
 		return api.PlaybackInfoResponse{}, err
 	}
 
-	return api.PlaybackInfoResponse{
+	response := api.PlaybackInfoResponse{
 		MediaSources:  &sources,
 		PlaySessionId: apiutil.Ptr(session),
-	}, nil
+	}
+	if unplayed(sources) {
+		response.ErrorCode = apiutil.Ptr(api.NoCompatibleStream)
+	}
+
+	return response, nil
+}
+
+func unplayed(sources []api.MediaSourceInfo) bool {
+	for _, source := range sources {
+		playable := apiutil.Deref(source.SupportsDirectPlay) ||
+			apiutil.Deref(source.SupportsDirectStream) ||
+			apiutil.Deref(source.SupportsTranscoding)
+		if playable {
+			return false
+		}
+	}
+
+	return true
 }
 
 // One entry per file, which is how a 4K and a 1080p copy of one film reach the
@@ -91,8 +109,11 @@ func (s *Server) mediaSources(ctx context.Context, item *items.Item, profile api
 	for _, source := range sources {
 		dto := mediaSourceDto(source)
 		if !items.IsAudio(item) {
-			delivered := plan(profiles, source)
-			served(&dto, delivered, streamURL(item.ID, source, delivered, token, session, startTicks))
+			if delivered := plan(profiles, source); delivered.refused {
+				unplayable(&dto)
+			} else {
+				served(&dto, delivered, streamURL(item.ID, source, delivered, token, session, startTicks))
+			}
 		}
 		converted = append(converted, dto)
 	}
@@ -103,6 +124,15 @@ func (s *Server) mediaSources(ctx context.Context, item *items.Item, profile api
 // The client is handed one url and no way to choose another. What it asks for
 // is an item; whether the answer is the file or a remux of it is decided here
 // and again by the handler that serves it, off the same container and codec.
+// The picture is copied and never encoded (#481), so a source nothing the
+// client declared can carry is answered as unplayable rather than handed over
+// as bytes it will not decode.
+func unplayable(dto *api.MediaSourceInfo) {
+	dto.SupportsDirectPlay = apiutil.Ptr(false)
+	dto.SupportsDirectStream = apiutil.Ptr(false)
+	dto.SupportsTranscoding = apiutil.Ptr(false)
+}
+
 func served(dto *api.MediaSourceInfo, delivered delivery, url string) {
 	dto.SupportsDirectPlay = apiutil.Ptr(false)
 	dto.SupportsDirectStream = apiutil.Ptr(false)

@@ -40,10 +40,16 @@ func profileFrom(t *testing.T, raw string) api.DeviceProfile {
 	return profile
 }
 
-func rip(container string, codecs ...string) *items.MediaSource {
+func rip(container string, audio ...string) *items.MediaSource {
+	return ripped(container, "h264", audio...)
+}
+
+func ripped(container, video string, audio ...string) *items.MediaSource {
 	source := &items.MediaSource{ID: uuid.New(), Container: container}
-	source.Edges.Streams = []*items.MediaStream{{Index: 0, Kind: streammodal.KindVideo, Codec: "h264"}}
-	for index, codec := range codecs {
+	if video != "" {
+		source.Edges.Streams = []*items.MediaStream{{Index: 0, Kind: streammodal.KindVideo, Codec: video}}
+	}
+	for index, codec := range audio {
 		source.Edges.Streams = append(source.Edges.Streams, &items.MediaStream{
 			Index: int32(index + 1),
 			Kind:  streammodal.KindAudio,
@@ -97,34 +103,62 @@ func TestPlan(t *testing.T) {
 		profile    string
 		source     *items.MediaSource
 		container  string
+		videoCodec string
 		audioCodec string
+		refused    bool
 	}{
 		{
-			name:       "a source the client declared is handed over as it is",
+			name:       "everything declared is handed over as it is",
 			profile:    chromeProfile,
 			source:     rip("mkv", "aac"),
 			container:  "mkv",
+			videoCodec: "h264",
 			audioCodec: "aac",
 		},
 		{
-			name:       "a source the client cannot decode lands in a container it declared",
+			name:       "codecs declared and the container not costs a mux and nothing else",
+			profile:    chromeProfile,
+			source:     rip("avi", "aac"),
+			container:  "mp4",
+			videoCodec: "h264",
+			audioCodec: "aac",
+		},
+		{
+			name:       "audio the client cannot decode is the one stream converted",
 			profile:    chromeProfile,
 			source:     rip("mkv", "ac3"),
 			container:  "mp4",
+			videoCodec: "h264",
 			audioCodec: "aac",
+		},
+		{
+			name:    "a picture nothing declared can carry is refused",
+			profile: chromeProfile,
+			source:  ripped("mkv", "mpeg4", "aac"),
+			refused: true,
 		},
 		{
 			name:       "a client declaring another container gets that one",
 			profile:    streamingStickProfile,
 			source:     rip("mkv", "ac3"),
 			container:  "ts",
+			videoCodec: "h264",
 			audioCodec: "aac",
 		},
 		{
 			name:       "a client that declared nothing keeps the source",
 			source:     rip("mkv", "ac3"),
 			container:  "mkv",
+			videoCodec: "h264",
 			audioCodec: "ac3",
+		},
+		{
+			name:       "an unprobed source is not refused for a codec nobody read",
+			profile:    chromeProfile,
+			source:     ripped("mkv", ""),
+			container:  "mkv",
+			videoCodec: "",
+			audioCodec: "",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -135,8 +169,17 @@ func TestPlan(t *testing.T) {
 
 			delivered := plan(profiles, tc.source)
 
+			if delivered.refused != tc.refused {
+				t.Fatalf("refused = %v, want %v", delivered.refused, tc.refused)
+			}
+			if tc.refused {
+				return
+			}
 			if delivered.container != tc.container {
 				t.Errorf("container = %q, want %q", delivered.container, tc.container)
+			}
+			if delivered.videoCodec != tc.videoCodec {
+				t.Errorf("video codec = %q, want %q", delivered.videoCodec, tc.videoCodec)
 			}
 			if delivered.audioCodec != tc.audioCodec {
 				t.Errorf("audio codec = %q, want %q", delivered.audioCodec, tc.audioCodec)
@@ -146,12 +189,27 @@ func TestPlan(t *testing.T) {
 
 	t.Run("a container the client declared that cannot be written down a pipe is passed over", func(t *testing.T) {
 		profiles := videoProfiles(profileFrom(t, `{"DirectPlayProfiles":[
-			{"Container": "webm", "Type": "Video", "AudioCodec": "opus"},
-			{"Container": "mp4", "Type": "Video", "AudioCodec": "aac"}
+			{"Container": "webm", "Type": "Video", "VideoCodec": "h264", "AudioCodec": "opus"},
+			{"Container": "mp4", "Type": "Video", "VideoCodec": "h264", "AudioCodec": "aac"}
 		]}`))
 
 		if got := plan(profiles, rip("mkv", "ac3")).container; got != "mp4" {
 			t.Errorf("container = %q, want mp4", got)
+		}
+	})
+
+	t.Run("a picture only an unwritable container declared is still carried", func(t *testing.T) {
+		profiles := videoProfiles(profileFrom(t, `{"DirectPlayProfiles":[
+			{"Container": "webm", "Type": "Video", "VideoCodec": "vp9", "AudioCodec": "opus"}
+		]}`))
+
+		delivered := plan(profiles, ripped("mkv", "vp9", "ac3"))
+
+		if delivered.refused {
+			t.Fatal("a picture the client declared was refused because of its container")
+		}
+		if delivered.container != "mp4" {
+			t.Errorf("container = %q, want mp4", delivered.container)
 		}
 	})
 }

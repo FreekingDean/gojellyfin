@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -48,6 +49,7 @@ type playbackFixture struct {
 	items   *items.Service
 	library uuid.UUID
 	token   string
+	paths   map[string]string
 }
 
 func newPlaybackFixture(t *testing.T) *playbackFixture {
@@ -126,24 +128,32 @@ func newPlaybackFixture(t *testing.T) *playbackFixture {
 		items:   itemService,
 		library: library.ID,
 		token:   token,
+		paths:   map[string]string{},
 	}
 }
 
 func (f *playbackFixture) rip(t *testing.T, name, audio string) uuid.UUID {
 	t.Helper()
 
+	return f.ripped(t, name, "libx264", "h264", audio)
+}
+
+func (f *playbackFixture) ripped(t *testing.T, name, encoder, video, audio string) uuid.UUID {
+	t.Helper()
+
 	path := filepath.Join(t.TempDir(), name)
 	generate := exec.Command("ffmpeg", "-nostdin", "-loglevel", "error",
 		"-f", "lavfi", "-i", "testsrc=size=320x240:rate=15:duration=4",
 		"-f", "lavfi", "-i", "sine=frequency=440:duration=4",
-		"-c:v", "libx264", "-pix_fmt", "yuv420p", "-g", "15",
+		"-c:v", encoder, "-pix_fmt", "yuv420p", "-g", "15",
 		"-c:a", audio,
 		"-shortest",
 		path,
 	)
 	if output, err := generate.CombinedOutput(); err != nil {
-		t.Skipf("this ffmpeg cannot build an h264/%s source: %v: %s", audio, err, output)
+		t.Skipf("this ffmpeg cannot build a %s/%s source: %v: %s", video, audio, err, output)
 	}
+	f.paths[name] = path
 
 	ctx := context.Background()
 	item, err := f.items.SaveScanned(ctx, items.Scanned{
@@ -172,7 +182,7 @@ func (f *playbackFixture) rip(t *testing.T, name, audio string) uuid.UUID {
 	err = f.items.SaveProbe(ctx, item, source, items.Probe{
 		Container: strings.TrimPrefix(filepath.Ext(name), "."),
 		Streams: []items.Stream{
-			{Index: 0, Kind: streammodal.KindVideo, Codec: "h264"},
+			{Index: 0, Kind: streammodal.KindVideo, Codec: video},
 			{Index: 1, Kind: streammodal.KindAudio, Codec: audio},
 		},
 	})
@@ -250,6 +260,31 @@ func decoded(t *testing.T, body []byte) *ffmpeg.Probe {
 	return probed
 }
 
+// The md5 of one stream copied out of its container, which is equal on both
+// sides of a mux and different on either side of an encode. Reading the codec
+// name cannot tell those two apart: aac re-encoded to aac is still aac.
+func fingerprint(t *testing.T, path, stream string) string {
+	t.Helper()
+
+	output, err := exec.Command("ffmpeg", "-v", "error", "-i", path, "-map", "0:"+stream, "-c", "copy", "-f", "md5", "-").Output()
+	if err != nil {
+		t.Fatalf("failed to fingerprint the %s of %s: %v", stream, path, err)
+	}
+
+	return strings.TrimSpace(string(output))
+}
+
+func received(t *testing.T, body []byte) string {
+	t.Helper()
+
+	path := filepath.Join(t.TempDir(), "received")
+	if err := os.WriteFile(path, body, 0o600); err != nil {
+		t.Fatalf("failed to write the response: %v", err)
+	}
+
+	return path
+}
+
 func codecs(probed *ffmpeg.Probe) (string, string) {
 	video, audio := "", ""
 	for _, track := range probed.Streams {
@@ -265,9 +300,35 @@ func codecs(probed *ffmpeg.Probe) (string, string) {
 }
 
 func TestPlayback(t *testing.T) {
-	t.Run("audio the client cannot decode comes back converted", func(t *testing.T) {
+	t.Run("everything the client declared is handed over untouched", func(t *testing.T) {
 		fixture := newPlaybackFixture(t)
-		id := fixture.rip(t, "rip.mkv", "ac3")
+		id := fixture.rip(t, "playable.mkv", "aac")
+
+		source := fixture.offer(t, id, chromeProfile, 0)
+		recorder := fixture.follow(t, apiutil.Deref(source.TranscodingUrl))
+
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("status = %d, want %d: %s", recorder.Code, http.StatusOK, recorder.Body)
+		}
+		if got := recorder.Header().Get("Content-Type"); got != "video/x-matroska" {
+			t.Errorf("content type = %q, want video/x-matroska", got)
+		}
+		if got := recorder.Header().Get("Accept-Ranges"); got != "bytes" {
+			t.Errorf("accept ranges = %q, want bytes, so the client seeks without asking again", got)
+		}
+
+		file, err := os.ReadFile(fixture.paths["playable.mkv"])
+		if err != nil {
+			t.Fatalf("failed to read the source: %v", err)
+		}
+		if !bytes.Equal(recorder.Body.Bytes(), file) {
+			t.Errorf("the response is %d bytes and the file is %d, want the file itself", recorder.Body.Len(), len(file))
+		}
+	})
+
+	t.Run("a container the client cannot open costs a mux and nothing else", func(t *testing.T) {
+		fixture := newPlaybackFixture(t)
+		id := fixture.rip(t, "boxed.mov", "aac")
 
 		source := fixture.offer(t, id, chromeProfile, 0)
 		recorder := fixture.follow(t, apiutil.Deref(source.TranscodingUrl))
@@ -285,17 +346,22 @@ func TestPlayback(t *testing.T) {
 		}
 
 		video, audio := codecs(probed)
-		if video != "h264" {
-			t.Errorf("video is %q, want h264 copied through", video)
+		if video != "h264" || audio != "aac" {
+			t.Errorf("streams are %q and %q, want them unchanged", video, audio)
 		}
-		if audio != "aac" {
-			t.Errorf("audio is %q, want aac", audio)
+
+		answered := received(t, recorder.Body.Bytes())
+		for _, stream := range []string{"v:0", "a:0"} {
+			source := fingerprint(t, fixture.paths["boxed.mov"], stream)
+			if got := fingerprint(t, answered, stream); got != source {
+				t.Errorf("%s was re-encoded: %s, want the source %s copied through", stream, got, source)
+			}
 		}
 	})
 
-	t.Run("a source the client can decode costs nothing to serve", func(t *testing.T) {
+	t.Run("audio the client cannot decode is the one stream converted", func(t *testing.T) {
 		fixture := newPlaybackFixture(t)
-		id := fixture.rip(t, "playable.mkv", "aac")
+		id := fixture.rip(t, "rip.mkv", "ac3")
 
 		source := fixture.offer(t, id, chromeProfile, 0)
 		recorder := fixture.follow(t, apiutil.Deref(source.TranscodingUrl))
@@ -303,21 +369,41 @@ func TestPlayback(t *testing.T) {
 		if recorder.Code != http.StatusOK {
 			t.Fatalf("status = %d, want %d: %s", recorder.Code, http.StatusOK, recorder.Body)
 		}
-		if got := recorder.Header().Get("Content-Type"); got != "video/x-matroska" {
-			t.Errorf("content type = %q, want video/x-matroska", got)
-		}
-		if got := recorder.Header().Get("Accept-Ranges"); got != "bytes" {
-			t.Errorf("accept ranges = %q, want bytes, so the client seeks without asking again", got)
+		if got := recorder.Header().Get("Content-Type"); got != "video/mp4" {
+			t.Errorf("content type = %q, want video/mp4", got)
 		}
 
-		probed := decoded(t, recorder.Body.Bytes())
-		if strings.Contains(probed.Format.FormatName, "mp4") {
-			t.Errorf("container = %q, want the source left alone", probed.Format.FormatName)
+		video, audio := codecs(decoded(t, recorder.Body.Bytes()))
+		if video != "h264" {
+			t.Errorf("video is %q, want h264", video)
+		}
+		if audio != "aac" {
+			t.Errorf("audio is %q, want aac", audio)
 		}
 
-		video, audio := codecs(probed)
-		if video != "h264" || audio != "aac" {
-			t.Errorf("streams are %q and %q, want them copied through", video, audio)
+		answered := received(t, recorder.Body.Bytes())
+		if got, want := fingerprint(t, answered, "v:0"), fingerprint(t, fixture.paths["rip.mkv"], "v:0"); got != want {
+			t.Errorf("the picture was re-encoded: %s, want the source %s copied through", got, want)
+		}
+		if got, want := fingerprint(t, answered, "a:0"), fingerprint(t, fixture.paths["rip.mkv"], "a:0"); got == want {
+			t.Error("the ac3 was copied through rather than converted")
+		}
+	})
+
+	t.Run("a picture nothing can convert is refused rather than sent", func(t *testing.T) {
+		fixture := newPlaybackFixture(t)
+		id := fixture.ripped(t, "oddball.mkv", "mpeg4", "mpeg4", "aac")
+
+		source := fixture.offer(t, id, chromeProfile, 0)
+		if source.TranscodingUrl != nil {
+			t.Errorf("a picture that cannot be encoded was handed over: %q", *source.TranscodingUrl)
+		}
+
+		target := "/Videos/" + id.String() + "/stream.mp4?container=mp4&videoCodec=h264&audioCodec=aac&api_key=" + fixture.token
+		recorder := fixture.follow(t, target)
+
+		if recorder.Code != http.StatusUnsupportedMediaType {
+			t.Fatalf("status = %d, want %d: %s", recorder.Code, http.StatusUnsupportedMediaType, recorder.Body)
 		}
 	})
 
@@ -342,16 +428,18 @@ func TestPlayback(t *testing.T) {
 
 		for _, tc := range []struct {
 			name        string
+			file        string
 			audio       string
 			profile     string
 			contentType string
 		}{
-			{name: "converted", audio: "ac3", profile: chromeProfile, contentType: "video/mp4"},
-			{name: "copied", audio: "aac", profile: chromeProfile, contentType: "video/x-matroska"},
-			{name: "undeclared", audio: "ac3", profile: "", contentType: "video/x-matroska"},
+			{name: "untouched", file: "untouched.mkv", audio: "aac", profile: chromeProfile, contentType: "video/x-matroska"},
+			{name: "muxed", file: "muxed.mov", audio: "aac", profile: chromeProfile, contentType: "video/mp4"},
+			{name: "converted", file: "converted.mkv", audio: "ac3", profile: chromeProfile, contentType: "video/mp4"},
+			{name: "undeclared", file: "undeclared.mkv", audio: "ac3", profile: "", contentType: "video/x-matroska"},
 		} {
 			t.Run(tc.name, func(t *testing.T) {
-				id := fixture.rip(t, tc.name+".mkv", tc.audio)
+				id := fixture.rip(t, tc.file, tc.audio)
 				source := fixture.offer(t, id, tc.profile, 0)
 
 				raw := apiutil.Deref(source.TranscodingUrl)

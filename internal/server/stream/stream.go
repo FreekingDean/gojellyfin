@@ -72,11 +72,16 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 	}
 
 	container := sourceContainer(source)
+	if !h.carriesVideo(r, item) {
+		undecodable(w, r, item)
+		return
+	}
+
 	if requested := r.PathValue("container"); requested != "" && !isStatic(r) && !strings.EqualFold(requested, container) {
 		if h.serveTranscode(w, r, item, source, []string{requested}) {
 			return
 		}
-		if h.needsRemux(r, item, source) && h.serveRemux(w, r, source) {
+		if h.needsRemux(r, item, source) && h.serveRemux(w, r, item, source) {
 			return
 		}
 
@@ -84,7 +89,7 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if h.needsRemux(r, item, source) && h.serveRemux(w, r, source) {
+	if h.needsRemux(r, item, source) && h.serveRemux(w, r, item, source) {
 		return
 	}
 
@@ -126,6 +131,13 @@ func (h *Handler) needsRemux(r *http.Request, item *items.Item, source *items.Me
 		return true
 	}
 
+	return h.convertsAudio(r, item)
+}
+
+// The one stream a remux can change. The picture is copied either way (#481),
+// so audio the client cannot decode is the only reason to re-encode anything,
+// and a container it cannot open on its own costs a mux and nothing more.
+func (h *Handler) convertsAudio(r *http.Request, item *items.Item) bool {
 	codec, err := h.items.AudioCodec(r.Context(), item.ID)
 	if err != nil {
 		log.Printf("failed to read the audio codec of %s: %v", item.Name, err)
@@ -137,6 +149,43 @@ func (h *Handler) needsRemux(r *http.Request, item *items.Item, source *items.Me
 	}
 
 	return !acceptedAudio(r)[strings.ToLower(codec)]
+}
+
+// Encoding a picture is #481, so a client that named the codecs it decodes and
+// left this one out is told its device cannot play the file rather than handed
+// a copy of a stream it will not decode.
+func (h *Handler) carriesVideo(r *http.Request, item *items.Item) bool {
+	accepted := acceptedVideo(r)
+	if accepted == nil {
+		return true
+	}
+
+	codec, err := h.items.VideoCodec(r.Context(), item.ID)
+	if err != nil {
+		log.Printf("failed to read the video codec of %s: %v", item.Name, err)
+
+		return true
+	}
+
+	return codec == "" || accepted[strings.ToLower(codec)]
+}
+
+// Silence here is silence: unlike audio there is no browser assumption to fall
+// back on, because a picture cannot be re-encoded to rescue a wrong guess.
+func acceptedVideo(r *http.Request) map[string]bool {
+	raw := r.URL.Query().Get("videoCodec")
+	if raw == "" {
+		return nil
+	}
+
+	accepted := make(map[string]bool)
+	for _, codec := range strings.Split(raw, ",") {
+		if codec = strings.ToLower(strings.TrimSpace(codec)); codec != "" {
+			accepted[codec] = true
+		}
+	}
+
+	return accepted
 }
 
 // The browser assumption is only for a client that told us nothing at all. One
@@ -240,7 +289,7 @@ func (h *Handler) serveTranscode(w http.ResponseWriter, r *http.Request, item *i
 
 // The video is copied rather than encoded, so this costs a mux and an audio
 // encode rather than a transcode.
-func (h *Handler) serveRemux(w http.ResponseWriter, r *http.Request, source *items.MediaSource) bool {
+func (h *Handler) serveRemux(w http.ResponseWriter, r *http.Request, item *items.Item, source *items.MediaSource) bool {
 	container := transcode.ChooseVideo([]string{r.PathValue("container"), transcode.VideoContainer})
 
 	return h.relay(w, r, source, transcode.Spec{
@@ -249,6 +298,7 @@ func (h *Handler) serveRemux(w http.ResponseWriter, r *http.Request, source *ite
 		Bitrate:    audioBitrate(r),
 		StartTicks: startTicks(r),
 		Video:      true,
+		CopyAudio:  !h.convertsAudio(r, item),
 	})
 }
 
@@ -336,6 +386,13 @@ func startTicks(r *http.Request) int64 {
 func busy(w http.ResponseWriter) {
 	w.Header().Set("Retry-After", strconv.Itoa(retryAfterSeconds))
 	http.Error(w, "every transcoder is busy", http.StatusServiceUnavailable)
+}
+
+// The picture is the one stream nothing here can convert, so the client is told
+// which codec its device is missing rather than sent a copy of it (#481).
+func undecodable(w http.ResponseWriter, r *http.Request, item *items.Item) {
+	log.Printf("no direct play for %s: %s carries a picture the client did not declare", r.URL.Path, item.Name)
+	http.Error(w, "no direct play: this device cannot decode the video", http.StatusUnsupportedMediaType)
 }
 
 // A client that cannot take the source as it is gets the reason rather than the

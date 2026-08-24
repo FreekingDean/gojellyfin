@@ -73,13 +73,19 @@ func newFixture(t *testing.T) *fixture {
 func (f *fixture) addRip(t *testing.T, kind items.Kind, container, codec string) uuid.UUID {
 	t.Helper()
 
+	return f.addRipped(t, kind, container, "h264", codec)
+}
+
+func (f *fixture) addRipped(t *testing.T, kind items.Kind, container, video, codec string) uuid.UUID {
+	t.Helper()
+
 	ctx := context.Background()
 	service := f.server.items
 
 	item, err := service.SaveScanned(ctx, items.Scanned{
 		LibraryID:    f.library,
 		Kind:         kind,
-		Key:          string(kind) + ":" + container + ":" + codec,
+		Key:          string(kind) + ":" + container + ":" + video + ":" + codec,
 		Name:         "rip." + container,
 		SortName:     "rip." + container,
 		DateModified: time.Now(),
@@ -102,7 +108,7 @@ func (f *fixture) addRip(t *testing.T, kind items.Kind, container, codec string)
 	err = service.SaveProbe(ctx, item, source, items.Probe{
 		Container: container,
 		Streams: []items.Stream{
-			{Index: 0, Kind: streammodal.KindVideo, Codec: "h264"},
+			{Index: 0, Kind: streammodal.KindVideo, Codec: video},
 			{Index: 1, Kind: streammodal.KindAudio, Codec: codec},
 		},
 	})
@@ -151,7 +157,7 @@ func afterPlaybackError(profile *api.DeviceProfile) *api.PlaybackInfoDto {
 	}
 }
 
-func (f *fixture) sources(t *testing.T, id uuid.UUID, body *api.PlaybackInfoDto) []api.MediaSourceInfo {
+func (f *fixture) answer(t *testing.T, id uuid.UUID, body *api.PlaybackInfoDto) api.PlaybackInfoResponse {
 	t.Helper()
 
 	ctx := auth.ContextWithAuthorization(context.Background(), auth.Authorization{Token: "the-token"})
@@ -168,7 +174,13 @@ func (f *fixture) sources(t *testing.T, id uuid.UUID, body *api.PlaybackInfoDto)
 		t.Fatalf("playback info answered %T, want a 200", response)
 	}
 
-	return *api.PlaybackInfoResponse(answered).MediaSources
+	return api.PlaybackInfoResponse(answered)
+}
+
+func (f *fixture) sources(t *testing.T, id uuid.UUID, body *api.PlaybackInfoDto) []api.MediaSourceInfo {
+	t.Helper()
+
+	return *f.answer(t, id, body).MediaSources
 }
 
 func (f *fixture) source(t *testing.T, id uuid.UUID, body *api.PlaybackInfoDto) api.MediaSourceInfo {
@@ -267,6 +279,47 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		}
 	})
 
+	t.Run("codecs declared and the container not is answered by a mux", func(t *testing.T) {
+		fixture := newFixture(t)
+		id := fixture.addRip(t, itemmodal.KindMovie, "avi", "aac")
+
+		source := fixture.source(t, id, firstPlay(&chrome))
+
+		if got := apiutil.Deref(source.TranscodingContainer); got != "mp4" {
+			t.Errorf("transcoding container = %q, want mp4", got)
+		}
+		if got := apiutil.Deref(source.TranscodingUrl); !strings.Contains(got, "audioCodec=aac") {
+			t.Errorf("transcoding url = %q, want the source audio kept", got)
+		}
+	})
+
+	t.Run("a picture nothing declared can carry is answered as unplayable", func(t *testing.T) {
+		fixture := newFixture(t)
+		id := fixture.addRipped(t, itemmodal.KindMovie, "mkv", "mpeg4", "aac")
+
+		answer := fixture.answer(t, id, firstPlay(&chrome))
+		source := (*answer.MediaSources)[0]
+
+		if source.TranscodingUrl != nil {
+			t.Errorf("a picture that cannot be encoded was handed over: %q", *source.TranscodingUrl)
+		}
+		if apiutil.Deref(source.SupportsDirectPlay) || apiutil.Deref(source.SupportsDirectStream) {
+			t.Error("the client was told it can play a picture it did not declare")
+		}
+		if got := apiutil.Deref(answer.ErrorCode); got != api.NoCompatibleStream {
+			t.Errorf("error code = %q, want %q", got, api.NoCompatibleStream)
+		}
+	})
+
+	t.Run("a playable source is not refused for one it has beside it", func(t *testing.T) {
+		fixture := newFixture(t)
+		id := fixture.addRip(t, itemmodal.KindMovie, "mkv", "ac3")
+
+		if fixture.answer(t, id, firstPlay(&chrome)).ErrorCode != nil {
+			t.Error("a source that can be muxed was answered as no compatible stream")
+		}
+	})
+
 	t.Run("a song is left to the audio path", func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.addRip(t, itemmodal.KindAudio, "flac", "flac")
@@ -299,6 +352,7 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 	t.Run("transcoding and a url to transcode from always travel together", func(t *testing.T) {
 		fixture := newFixture(t)
 		ids := []uuid.UUID{
+			fixture.addRipped(t, itemmodal.KindMovie, "mkv", "mpeg4", "aac"),
 			fixture.addRip(t, itemmodal.KindMovie, "mkv", "ac3"),
 			fixture.addRip(t, itemmodal.KindMovie, "mkv", "aac"),
 			fixture.addRip(t, itemmodal.KindAudio, "flac", "flac"),

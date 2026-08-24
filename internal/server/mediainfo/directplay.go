@@ -17,18 +17,25 @@ import (
 )
 
 // The spec types DeviceProfile as a free-form object, so what the client
-// declared is read back out of it rather than bound to a generated type.
+// declared is read back out of it rather than bound to a generated type. Each
+// entry is a triple, and which of the three fails is the whole of the decision:
+// a container costs a mux, an audio codec costs one encode, and a picture
+// cannot be encoded at all yet (#481).
 type playProfile struct {
 	Container  string
+	VideoCodec string
 	AudioCodec string
 	Type       string
 }
 
 // What the one url will answer with, which is also what the client is told to
-// expect: the source untouched, or the container and audio a remux lands in.
+// expect. A codec that matches the source is copied; one that does not is the
+// single stream being converted.
 type delivery struct {
 	container  string
+	videoCodec string
 	audioCodec string
+	refused    bool
 }
 
 func videoProfiles(profile api.DeviceProfile) []playProfile {
@@ -61,10 +68,9 @@ func directPlays(profiles []playProfile, source *items.MediaSource) bool {
 		return true
 	}
 
-	container := sourceContainer(source)
-	codec := strings.ToLower(firstAudioCodec(source))
+	container, video, audio := describe(source)
 	for _, profile := range profiles {
-		if lists(profile.Container, container) && (codec == "" || lists(profile.AudioCodec, codec)) {
+		if lists(profile.Container, container) && profile.decodes(video, audio) {
 			return true
 		}
 	}
@@ -72,35 +78,84 @@ func directPlays(profiles []playProfile, source *items.MediaSource) bool {
 	return false
 }
 
-func plan(profiles []playProfile, source *items.MediaSource) delivery {
-	if directPlays(profiles, source) {
-		return delivery{container: sourceContainer(source), audioCodec: firstAudioCodec(source)}
-	}
-
-	container := remuxContainer(profiles)
-
-	return delivery{container: container, audioCodec: transcode.AudioCodec(container)}
+func (p playProfile) decodes(video, audio string) bool {
+	return lists(p.VideoCodec, video) && lists(p.AudioCodec, audio)
 }
 
-// The container both ends agree on: one the client declared it can decode, and
-// one ffmpeg can write down a pipe that is never seeked. A client declaring
-// none leaves the default, which is what a browser takes.
-func remuxContainer(profiles []playProfile) string {
-	declared := make([]string, 0, len(profiles))
-	for _, profile := range profiles {
-		for _, container := range strings.Split(profile.Container, ",") {
-			container = strings.TrimSpace(container)
-			if lists(profile.AudioCodec, transcode.AudioCodec(container)) {
-				declared = append(declared, container)
-			}
+// The cheapest answer that works, in the order Dean asked for it: the file as
+// it is; the container changed with both streams copied into it; the audio
+// converted with the picture still copied. Converting a picture is #481, so a
+// picture nothing declared can carry is refused rather than sent as something
+// the client will not decode.
+func plan(profiles []playProfile, source *items.MediaSource) delivery {
+	container, video, audio := describe(source)
+
+	if directPlays(profiles, source) {
+		return copies(container, video, audio)
+	}
+
+	open := openTo(profiles, video)
+	if len(open) == 0 {
+		return delivery{refused: true}
+	}
+
+	for _, profile := range open {
+		if lists(profile.AudioCodec, audio) {
+			return copies(profile.Container, video, audio)
 		}
 	}
 
-	return transcode.ChooseVideo(append(declared, transcode.VideoContainer))
+	for _, profile := range open {
+		if converted := transcode.AudioCodec(profile.Container); lists(profile.AudioCodec, converted) {
+			return copies(profile.Container, video, converted)
+		}
+	}
+
+	return copies(transcode.VideoContainer, video, transcode.AudioCodec(transcode.VideoContainer))
+}
+
+func copies(container, video, audio string) delivery {
+	return delivery{container: container, videoCodec: video, audioCodec: audio}
+}
+
+// The containers the client declared that carry this picture and that ffmpeg
+// can write down a pipe that is never seeked, in the order the client declared
+// them. Empty means nothing it named can carry the picture at all.
+func openTo(profiles []playProfile, video string) []playProfile {
+	open := make([]playProfile, 0, len(profiles))
+	for _, profile := range profiles {
+		if !lists(profile.VideoCodec, video) {
+			continue
+		}
+		for _, container := range strings.Split(profile.Container, ",") {
+			if container = strings.TrimSpace(container); transcode.CarriesVideo(container) {
+				open = append(open, playProfile{
+					Container:  strings.ToLower(container),
+					VideoCodec: profile.VideoCodec,
+					AudioCodec: profile.AudioCodec,
+				})
+			}
+		}
+	}
+	if len(open) == 0 && carries(profiles, video) {
+		return []playProfile{{Container: transcode.VideoContainer}}
+	}
+
+	return open
+}
+
+func carries(profiles []playProfile, video string) bool {
+	for _, profile := range profiles {
+		if lists(profile.VideoCodec, video) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func lists(declared, value string) bool {
-	if declared == "" {
+	if declared == "" || value == "" {
 		return true
 	}
 
@@ -113,13 +168,17 @@ func lists(declared, value string) bool {
 	return false
 }
 
-// The track a remux keeps: ffmpeg maps the first audio stream, so that is the
-// one the client has to be able to decode.
-func firstAudioCodec(source *items.MediaSource) string {
+// The pair a remux keeps: ffmpeg maps the first stream of each kind, so those
+// are the two the client has to be able to decode.
+func describe(source *items.MediaSource) (string, string, string) {
+	return sourceContainer(source), firstCodec(source, streammodal.KindVideo), firstCodec(source, streammodal.KindAudio)
+}
+
+func firstCodec(source *items.MediaSource, kind items.StreamKind) string {
 	codec := ""
 	index := int32(0)
 	for _, stream := range source.Edges.Streams {
-		if stream.Kind != streammodal.KindAudio {
+		if stream.Kind != kind {
 			continue
 		}
 		if codec == "" || stream.Index < index {
@@ -138,15 +197,18 @@ func sourceContainer(source *items.MediaSource) string {
 	return strings.TrimPrefix(strings.ToLower(filepath.Ext(source.Path)), ".")
 }
 
-// The one url the client is given. It states the container and the audio the
-// response will carry, which is the same pair the stream handler reads to
-// decide between the file and a remux, so neither end has to guess.
+// The one url the client is given. It states the container and the two codecs
+// the response will carry, which is the same triple the stream handler reads to
+// decide what to copy and what to convert, so neither end has to guess.
 func streamURL(itemID uuid.UUID, source *items.MediaSource, delivered delivery, token, session string, startTicks int64) string {
 	query := url.Values{
 		"mediaSourceId": {source.ID.String()},
 		"container":     {delivered.container},
 		"playSessionId": {session},
 		"api_key":       {token},
+	}
+	if delivered.videoCodec != "" {
+		query.Set("videoCodec", delivered.videoCodec)
 	}
 	if delivered.audioCodec != "" {
 		query.Set("audioCodec", delivered.audioCodec)

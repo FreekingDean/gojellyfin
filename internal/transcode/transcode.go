@@ -14,6 +14,7 @@ type Spec struct {
 	Bitrate    int32
 	StartTicks int64
 	Video      bool
+	CopyAudio  bool
 }
 
 type format struct {
@@ -124,10 +125,13 @@ func (s Spec) Args() []string {
 	} else {
 		args = append(args, "-vn", "-map", "0:a:0")
 	}
-	args = append(args, "-c:a", target.codec)
-
-	if s.Bitrate > 0 {
-		args = append(args, "-b:a", strconv.FormatInt(int64(s.Bitrate), 10))
+	if s.CopyAudio {
+		args = append(args, "-c:a", "copy")
+	} else {
+		args = append(args, "-c:a", target.codec)
+		if s.Bitrate > 0 {
+			args = append(args, "-b:a", strconv.FormatInt(int64(s.Bitrate), 10))
+		}
 	}
 	args = append(args, target.muxerArgs...)
 
