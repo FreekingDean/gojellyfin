@@ -108,6 +108,20 @@ So are routes Jellyfin serves but hides from its own OpenAPI document with `[Api
 
 They register after the generated routes so a documented literal wins any overlap, and most-specific first: the mux matches in registration order with no notion of specificity, so `/Users/{userId}/Items/{itemId}` registered before `/Users/{userId}/Items/Resume` swallows it and passes "Resume" as an item id. `legacyPatterns` sorts by literal segments to keep that from depending on map order.
 
+### Tracing
+
+Every operation gets one span, named for its **operation id**. That is why the span sits on the `api.StrictMiddlewareFunc` layer rather than the stdlib one: only the inner layer is handed the operation id, and a span named for a route pattern or a raw path is much less useful. It is last in `apiMiddleware`, which the generated wrapper folds outermost, so it measures authentication and authorization too.
+
+`OTEL_EXPORTER_OTLP_ENDPOINT` is the only spelling read. The OTLP specification also defines a signal-specific `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`, and supporting both would mean carrying its precedence rule and its different path semantics for a second way to say the same thing; one prescribed variable is the standing decision. Unset means tracing is off: no provider, a noop tracer, nothing dialed, and `tracing.Enabled` false, which is what keeps the span middleware out of the stack entirely rather than wrapping every request in a tracer that discards it.
+
+The endpoint is checked in `tracing.New` rather than in `env.validate`, because what makes an OTLP endpoint valid is the exporter's business and `env` only knows it wants a string. The exporter answers a URL it cannot parse by logging and carrying on against its own localhost default, so a malformed one is refused at start instead.
+
+**`internal/observability/tracing` is the only package that imports otel.** A caller gets `StartRequest` and a `Span` with `End` and `Fail`, not a `trace.Tracer`, so the middleware names no otel type and the backend stays swappable; `Recorded` is the same seam for tests, handing back a `Recorder` that answers in span names and attribute values. It is composed through `observability.Module`, which `server` and `worker` both list, and it registers `OnStop` only — a provider is exporting from the moment it is built, so there is nothing to start. The flush is bounded on the way out, because a collector that has gone away must not hold the process open.
+
+**Streaming endpoints are excluded.** `streams` in `internal/http/middleware/oapitracing.go` names `Videos` and `Audio`, the same two roots `deploy/httproutes.yaml` splits on, matched case-insensitively because the mux is. A progressive response runs for the length of the media, so a span covering one is open for hours — a leak rather than a trace. `GET /socket` needs no entry: it is registered outside the generated API, so it never reaches this layer. `TestStreamingRoutesAreNotTraced` is what keeps the exclusion from being incidental.
+
+Nothing the client sent goes on a span. The query string carries `api_key` and some paths carry names, so only the method and the operation id are recorded; `TestSpanCarriesNoRequestDetail` holds that, because traces ship to third-party backends.
+
 ### Domain services
 
 Three layers, split on what each is allowed to know:
@@ -159,6 +173,34 @@ The library scan fans its libraries out flat, because a library is a handful of 
 One failing library does not abandon the others. The workflow collects every future and logs the ones that failed, because the sweep a failed library skipped is safe to leave until the next run while the ones that succeeded are not worth losing.
 
 Triggers are not built. `UpdateTask` answers 501 rather than storing a schedule nobody reads; Temporal schedules are where they belong.
+
+### Metadata providers
+
+**`internal/metadata` is what anything else names; `internal/metadata/tmdb` is one implementation of it.** It sits under `metadata` because nothing outside `metadata` calls it, and the tree should say so. The interface is declared by the consumer, in `metadata/provider.go`, and `metadata.Module` aggregates `tmdb.Module` the way `server.Module` aggregates its tag packages — so `server.go` and `worker.go` list `metadata.Module` and learn nothing about who answers. The scheduled task the dashboard shows says it identifies items, not who it asks.
+
+That split is a rule, not a preference: **no package outside `internal/metadata` may import the provider.** Check with `grep -rln 'metadata/tmdb' --include='*.go' . | grep -v '^./internal/metadata/tmdb/'`, which must return `internal/metadata/fx.go` and nothing else.
+
+The rule is about imports, not about the letters T-M-D-B. `internal/env` carries a `TMDB` struct holding `TMDB_API_KEY`, and that is correct rather than a leak: `env` is the one place every variable this binary reads is written down, and the variable is named for the service whose key it is because that is what an operator puts in a manifest. A provider-neutral name would make the manifest lie and would break the moment a second provider needs a key of its own. `env` imports none of our packages, so naming a variable costs no coupling — the leak to avoid is a package reaching for the provider, and `metadata` still takes only the `Provider` interface.
+
+`metadata` owns the job, the batch loop and the locks. `tmdb` owns the calls and the translation from TMDB's payloads into `items.Metadata` — including from TMDB's vocabulary into ours, which is why `Status` is mapped to Jellyfin's `Continuing`/`Ended`/`Unreleased` rather than passed through, and why a movie writes no series status at all.
+
+The calls go through `github.com/cyruzin/golang-tmdb`, which models every payload this needs. Two of its behaviours are deliberately not used. Its `SetClientAutoRetry` retries a 429 in an unbounded loop and never retries a 5xx, so a `RoundTripper` in `retry.go` does the backoff with a bound; and every request it builds carries its own `context.Background`, so a cancelled run cannot interrupt one in flight — the limiter before each call is where cancellation lands, which bounds a cancelled step to a single request's timeout.
+
+Two things keep the dependency pointing one way. A miss is a `false` return rather than a sentinel error, so the implementation never imports its consumer for one variable; and `Episode` takes the series' whole `ProviderIds` map, so each provider reads its own key out and no key name escapes the package that owns it.
+
+There is **one** provider and one binding — no fx value group and no priority order until a second provider exists to need them. The seam is the interface.
+
+It is bring your own key: `TMDB_API_KEY` reaches the client as `env.Config.TMDB.APIKey` rather than through `os.Getenv`, and unset leaves the provider disabled and the job a no-op, so a developer running the server alone still gets a server. An absent key is deliberately not a validation failure — `env` refuses a malformed value, not a missing optional one. We embed no key of our own: there is then none to share, none to throttle and no attribution owed for one.
+
+The job runs on its own rather than inside the scan, and does **not** fan out per item. The work is IO bound on a rate limited API, so a step per item multiplies the request rate and finishes no sooner; one step loops over at most `batchSize` items, spaced by the client's own limiter and heartbeating between them. What a run leaves, the next run picks up.
+
+The batch is derived from the rows — `items.UnidentifiedItems` asks for items whose `provider_ids` is null — rather than handed over, so a crash re-asks the question instead of replaying a stale list. Writing those ids well is the point: item identity is otherwise name and year, which collides when two films share both.
+
+`lock_data` and `locked_fields` are Jellyfin's semantics and `metadata` honours both. `LockData` keeps an item out of the batch entirely; a field named in `LockedFields` is dropped from what is written, by `stripLockedFields`, which takes a pointer because it edits what it is handed and hiding that would hide an overwrite later. The provider ids themselves survive a field lock, because they are identity rather than metadata and Jellyfin has no lock for them.
+
+Two requests per item, not more: the detail call carries `append_to_response=release_dates` (or `content_ratings,external_ids`), so the certification and the IMDb id arrive with the record instead of costing a third round trip. A 429 or a 5xx backs off and retries rather than failing the run; a 404 or an empty search is a miss, which is not an error because the title may be one TMDB gains later.
+
+The two packages test at their own seam: `metadata` runs the loop and the locks against a stub provider and a real database, and `tmdb` points its client at an `httptest.Server`. A green run needs no key and CI never calls TMDB.
 
 ### Request identity
 
