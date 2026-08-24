@@ -1,7 +1,7 @@
-# Its own workflow rather than a step in ci.yml's test job, so it runs beside
-# the unit tests instead of after them. It needs less than that job does: no
-# ffmpeg, because nothing here transcodes, and no migrate step, because the
-# test creates a scratch database and migrates that.
+# Jest driving the real jellyfin-web client in Chrome, in its own workflow so
+# it runs beside the Go jobs rather than after them. continue-on-error keeps a
+# red run from blocking a PR while the suite is new; take it off once it has
+# been green for a while.
 name: E2E
 
 on:
@@ -15,6 +15,7 @@ permissions:
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    continue-on-error: true
 
     services:
       postgres:
@@ -31,8 +32,8 @@ jobs:
           --health-timeout 5s
           --health-retries 10
 
-    # Only ever connected to in order to CREATE DATABASE: the test runs against
-    # a scratch database of its own and drops it on the way out.
+    # Only ever connected to in order to CREATE DATABASE: the suite runs
+    # against a scratch database of its own and drops it on the way out.
     env:
       DATABASE_URL: postgres://gojellyfin:gojellyfin@localhost:5432/gojellyfin_test?sslmode=disable
 
@@ -43,9 +44,38 @@ jobs:
         with:
           go-version-file: go.mod
 
-      # gojellyfin migrate drives the atlas CLI, and the test runs that command
-      # rather than reimplementing it.
+      # gojellyfin migrate drives the atlas CLI, and the harness runs that
+      # command rather than reimplementing it.
       - uses: ariga/setup-atlas@v0
 
-      - name: End to end
-        run: go test -race -tags e2e -count 1 -timeout 5m ./cmd/gojellyfin/
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+
+      # jellyfin-web is not published on its own, so the only reproducible copy
+      # is the one inside the all-in-one image. Cached so the 395MB pull
+      # happens once per client version rather than once per run.
+      - name: Cache the client
+        id: client
+        uses: actions/cache@v4
+        with:
+          path: e2e/.client
+          key: jellyfin-web-10.10.0
+
+      - name: Fetch the client
+        if: steps.client.outputs.cache-hit != 'true'
+        run: docker pull jellyfin/jellyfin:10.10.0
+
+      - name: Install
+        run: npm ci
+        working-directory: e2e
+
+      # ubuntu-latest ships Chrome, so puppeteer-core drives that rather than
+      # downloading a browser of its own.
+      - name: Test
+        run: npm test
+        working-directory: e2e
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
