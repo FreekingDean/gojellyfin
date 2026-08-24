@@ -25,7 +25,7 @@ func (s *Server) GetQuickConnectEnabled(ctx context.Context, request api.GetQuic
 }
 
 func (s *Server) InitiateQuickConnect(ctx context.Context, request api.InitiateQuickConnectRequestObject) (api.InitiateQuickConnectResponseObject, error) {
-	pending, err := s.quickconnect.Initiate(auth.AuthorizationFrom(ctx).DeviceInfo())
+	pending, err := s.quickconnect.Initiate(ctx, auth.AuthorizationFrom(ctx).DeviceInfo())
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func (s *Server) InitiateQuickConnect(ctx context.Context, request api.InitiateQ
 }
 
 func (s *Server) GetQuickConnectState(ctx context.Context, request api.GetQuickConnectStateRequestObject) (api.GetQuickConnectStateResponseObject, error) {
-	pending, err := s.quickconnect.Pending(request.Params.Secret)
+	pending, err := s.quickconnect.Pending(ctx, request.Params.Secret)
 	if err != nil {
 		return api.GetQuickConnectState404JSONResponse{}, nil
 	}
@@ -55,7 +55,7 @@ func (s *Server) AuthorizeQuickConnect(ctx context.Context, request api.Authoriz
 		userID = *target
 	}
 
-	if err := s.quickconnect.Authorize(request.Params.Code, userID); err != nil {
+	if err := s.quickconnect.Authorize(ctx, request.Params.Code, userID); err != nil {
 		return api.AuthorizeQuickConnect200JSONResponse(false), nil
 	}
 

@@ -256,7 +256,7 @@ func (s *Server) AuthenticateWithQuickConnect(ctx context.Context, request api.A
 		return api.AuthenticateWithQuickConnect400Response{}, nil
 	}
 
-	userID, err := s.quickconnect.Redeem(req.Secret)
+	userID, err := s.quickconnect.Redeem(ctx, req.Secret)
 	if err != nil {
 		return api.AuthenticateWithQuickConnect400Response{}, nil
 	}

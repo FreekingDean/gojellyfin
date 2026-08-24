@@ -1,26 +1,30 @@
 package quickconnect
 
 import (
+	"context"
 	"crypto/rand"
 	"errors"
 	"fmt"
 	"math/big"
-	"sync"
 	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
+	"github.com/FreekingDean/gojellyfin/internal/store"
+	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
+	requestmodal "github.com/FreekingDean/gojellyfin/internal/store/quickconnectrequest"
 )
 
 const Enabled = true
 
 const (
-	defaultExpiry = 5 * time.Minute
-	codeSpace     = 1_000_000
-	codeAttempts  = 10
-	maxPending    = 1024
+	defaultExpiry     = 10 * time.Minute
+	defaultMaxPending = 1024
+	codeFloor         = 100_000
+	codeSpace         = 900_000
+	codeAttempts      = 10
 )
 
 var (
@@ -32,135 +36,160 @@ var (
 	ErrTooManyPending    = errors.New("too many pending quick connect requests")
 )
 
-type Request struct {
-	Secret       string
-	Code         string
-	Device       sessions.DeviceInfo
-	AddedAt      time.Time
-	AuthorizedBy uuid.UUID
-}
-
-func (r Request) Authenticated() bool {
-	return r.AuthorizedBy != uuid.Nil
-}
+type Request = store.QuickConnectRequest
 
 type Service struct {
-	expiry time.Duration
-
-	mu       sync.Mutex
-	requests map[string]*Request
+	store      *store.Client
+	expiry     time.Duration
+	maxPending int
 }
 
-func New() *Service {
-	return &Service{expiry: defaultExpiry, requests: make(map[string]*Request)}
+func New(client *store.Client) *Service {
+	return &Service{store: client, expiry: defaultExpiry, maxPending: defaultMaxPending}
 }
 
-func (s *Service) Initiate(device sessions.DeviceInfo) (Request, error) {
-	secret, err := auth.NewToken()
+func (s *Service) Initiate(ctx context.Context, device sessions.DeviceInfo) (*Request, error) {
+	if err := s.sweep(ctx); err != nil {
+		return nil, err
+	}
+
+	pending, err := s.store.QuickConnectRequest.Query().Where(live()).Count(ctx)
 	if err != nil {
-		return Request{}, err
+		return nil, fmt.Errorf("failed to count the pending quick connect requests: %w", err)
+	}
+	if pending >= s.maxPending {
+		return nil, ErrTooManyPending
 	}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.expire()
+	for range codeAttempts {
+		secret, err := auth.NewToken()
+		if err != nil {
+			return nil, err
+		}
 
-	if len(s.requests) >= maxPending {
-		return Request{}, ErrTooManyPending
-	}
+		code, err := newCode()
+		if err != nil {
+			return nil, err
+		}
 
-	code, err := s.unusedCode()
-	if err != nil {
-		return Request{}, err
-	}
-
-	request := &Request{Secret: secret, Code: code, Device: device, AddedAt: time.Now()}
-	s.requests[secret] = request
-
-	return *request, nil
-}
-
-func (s *Service) Pending(secret string) (Request, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.expire()
-
-	request, ok := s.requests[secret]
-	if !ok {
-		return Request{}, ErrUnknownSecret
-	}
-
-	return *request, nil
-}
-
-func (s *Service) Authorize(code string, userID uuid.UUID) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.expire()
-
-	for _, request := range s.requests {
-		if request.Code != code {
+		request, err := s.store.QuickConnectRequest.Create().
+			SetSecret(secret).
+			SetCode(code).
+			SetDeviceID(device.ID).
+			SetDeviceName(device.Name).
+			SetAppName(device.AppName).
+			SetAppVersion(device.AppVersion).
+			SetExpiresAt(time.Now().Add(s.expiry)).
+			Save(ctx)
+		if store.IsConstraintError(err) {
 			continue
 		}
-		if request.Authenticated() {
-			return ErrAlreadyAuthorized
+		if err != nil {
+			return nil, fmt.Errorf("failed to create the quick connect request: %w", err)
 		}
-		request.AuthorizedBy = userID
 
+		return request, nil
+	}
+
+	return nil, ErrNoCode
+}
+
+func (s *Service) Pending(ctx context.Context, secret string) (*Request, error) {
+	request, err := s.store.QuickConnectRequest.Query().
+		Where(requestmodal.Secret(secret), live()).
+		Only(ctx)
+	if store.IsNotFound(err) {
+		return nil, ErrUnknownSecret
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to query the quick connect request: %w", err)
+	}
+
+	return request, nil
+}
+
+func (s *Service) Authorize(ctx context.Context, code string, userID uuid.UUID) error {
+	authorized, err := s.store.QuickConnectRequest.Update().
+		Where(requestmodal.Code(code), live(), requestmodal.AuthorizedByIDIsNil()).
+		SetAuthorizedByID(userID).
+		Save(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to authorize the quick connect request: %w", err)
+	}
+	if authorized > 0 {
 		return nil
+	}
+
+	taken, err := s.store.QuickConnectRequest.Query().
+		Where(requestmodal.Code(code), live()).
+		Exist(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to query the quick connect request: %w", err)
+	}
+	if taken {
+		return ErrAlreadyAuthorized
 	}
 
 	return ErrUnknownCode
 }
 
-func (s *Service) Redeem(secret string) (uuid.UUID, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.expire()
+func (s *Service) Redeem(ctx context.Context, secret string) (uuid.UUID, error) {
+	var userID uuid.UUID
 
-	request, ok := s.requests[secret]
-	if !ok {
-		return uuid.Nil, ErrUnknownSecret
-	}
-	if !request.Authenticated() {
-		return uuid.Nil, ErrNotAuthorized
-	}
-	delete(s.requests, secret)
-
-	return request.AuthorizedBy, nil
-}
-
-func (s *Service) expire() {
-	cutoff := time.Now().Add(-s.expiry)
-	for secret, request := range s.requests {
-		if request.AddedAt.Before(cutoff) {
-			delete(s.requests, secret)
+	err := s.store.WithTx(ctx, func(tx *store.Tx) error {
+		request, err := tx.QuickConnectRequest.Query().
+			Where(requestmodal.Secret(secret), live()).
+			Only(ctx)
+		if store.IsNotFound(err) {
+			return ErrUnknownSecret
 		}
-	}
-}
-
-func (s *Service) unusedCode() (string, error) {
-	for range codeAttempts {
-		n, err := rand.Int(rand.Reader, big.NewInt(codeSpace))
 		if err != nil {
-			return "", err
+			return fmt.Errorf("failed to query the quick connect request: %w", err)
+		}
+		if request.AuthorizedByID == uuid.Nil {
+			return ErrNotAuthorized
 		}
 
-		code := fmt.Sprintf("%06d", n.Int64())
-		if !s.codeInUse(code) {
-			return code, nil
+		spent, err := tx.QuickConnectRequest.Delete().
+			Where(requestmodal.ID(request.ID)).
+			Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to spend the quick connect request: %w", err)
 		}
+		if spent == 0 {
+			return ErrUnknownSecret
+		}
+
+		userID = request.AuthorizedByID
+
+		return nil
+	})
+	if err != nil {
+		return uuid.Nil, err
 	}
 
-	return "", ErrNoCode
+	return userID, nil
 }
 
-func (s *Service) codeInUse(code string) bool {
-	for _, request := range s.requests {
-		if request.Code == code {
-			return true
-		}
+func (s *Service) sweep(ctx context.Context) error {
+	if _, err := s.store.QuickConnectRequest.Delete().
+		Where(requestmodal.ExpiresAtLTE(time.Now())).
+		Exec(ctx); err != nil {
+		return fmt.Errorf("failed to sweep the expired quick connect requests: %w", err)
 	}
 
-	return false
+	return nil
+}
+
+func live() predicate.QuickConnectRequest {
+	return requestmodal.ExpiresAtGT(time.Now())
+}
+
+func newCode() (string, error) {
+	n, err := rand.Int(rand.Reader, big.NewInt(codeSpace))
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%d", codeFloor+n.Int64()), nil
 }

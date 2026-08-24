@@ -8,11 +8,13 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/quickconnect"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	devicemodal "github.com/FreekingDean/gojellyfin/internal/store/device"
+	requestmodal "github.com/FreekingDean/gojellyfin/internal/store/quickconnectrequest"
 	sessionmodal "github.com/FreekingDean/gojellyfin/internal/store/session"
 	usermodal "github.com/FreekingDean/gojellyfin/internal/store/user"
 	configurationmodal "github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
@@ -75,7 +77,12 @@ type fixture struct {
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
 
-	connection, err := store.NewStore()
+	config, err := env.Load()
+	if err != nil {
+		t.Fatalf("failed to read the environment: %v", err)
+	}
+
+	connection, err := store.NewStore(config)
 	if err != nil {
 		t.Fatalf("failed to open the database: %v", err)
 	}
@@ -108,6 +115,11 @@ func newFixture(t *testing.T) *fixture {
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the user configurations: %v", err)
 		}
+		if _, err := client.QuickConnectRequest.Delete().
+			Where(requestmodal.DeviceIDHasPrefix(prefix)).
+			Exec(ctx); err != nil {
+			t.Errorf("failed to delete the quick connect requests: %v", err)
+		}
 		if _, err := client.User.Delete().
 			Where(usermodal.UsernameHasPrefix(prefix)).
 			Exec(ctx); err != nil {
@@ -118,7 +130,7 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
-	pending := quickconnect.New()
+	pending := quickconnect.New(client)
 	userService := users.New(client)
 	sessionService := sessions.New(client)
 
@@ -173,10 +185,10 @@ func (f *fixture) signIn(username, password string) (api.AuthenticateUserByNameR
 	})
 }
 
-func (f *fixture) initiate(t *testing.T) quickconnect.Request {
+func (f *fixture) initiate(t *testing.T) *quickconnect.Request {
 	t.Helper()
 
-	request, err := f.pending.Initiate(sessions.DeviceInfo{ID: f.prefix + "tv", Name: "tv", AppName: "Jellyfin Web"})
+	request, err := f.pending.Initiate(context.Background(), sessions.DeviceInfo{ID: f.prefix + "tv", Name: "tv", AppName: "Jellyfin Web"})
 	if err != nil {
 		t.Fatalf("failed to initiate quick connect: %v", err)
 	}
@@ -278,7 +290,7 @@ func TestAuthenticateWithQuickConnectIssuesASessionTokenOnce(t *testing.T) {
 	userID := fixture.account(t, "dean", "hunter2")
 
 	request := fixture.initiate(t)
-	if err := fixture.pending.Authorize(request.Code, userID); err != nil {
+	if err := fixture.pending.Authorize(context.Background(), request.Code, userID); err != nil {
 		t.Fatalf("failed to authorize the request: %v", err)
 	}
 
