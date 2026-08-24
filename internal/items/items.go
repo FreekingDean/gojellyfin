@@ -422,3 +422,52 @@ func (s *Service) CountByKind(ctx context.Context) (map[string]int32, error) {
 
 	return counts, nil
 }
+
+// Items carrying the identity the key migration stood in for them: the path the
+// row used to be keyed on, which no derivation would ever produce. Empty once a
+// library has been rescanned, so the scan pays one indexed lookup to find that
+// out.
+func (s *Service) LegacyKeyedItems(ctx context.Context, libraryID uuid.UUID) ([]*Item, error) {
+	records, err := s.query().
+		Where(
+			itemmodal.LibraryID(libraryID),
+			itemmodal.Not(itemmodal.Or(derivedKeys()...)),
+		).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query legacy keyed items: %w", err)
+	}
+
+	return records, nil
+}
+
+// Every item of a library, which the rekey needs so a season can read the name
+// and year off the series it hangs under.
+func (s *Service) ItemsInLibrary(ctx context.Context, libraryID uuid.UUID) ([]*Item, error) {
+	records, err := s.query().Where(itemmodal.LibraryID(libraryID)).All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query the items of a library: %w", err)
+	}
+
+	return records, nil
+}
+
+func (s *Service) Rekey(ctx context.Context, id uuid.UUID, key string) error {
+	if err := s.store.Item.UpdateOneID(id).SetKey(key).Exec(ctx); err != nil {
+		return fmt.Errorf("failed to rekey %s: %w", id, err)
+	}
+
+	return nil
+}
+
+// A derived key names the kind it belongs to; the migration's stand-in is a
+// path and names nothing, which is what tells the two apart.
+func derivedKeys() []predicate.Item {
+	kinds := []Kind{itemmodal.KindMovie, itemmodal.KindSeries, itemmodal.KindSeason, itemmodal.KindEpisode}
+	prefixes := make([]predicate.Item, 0, len(kinds))
+	for _, kind := range kinds {
+		prefixes = append(prefixes, itemmodal.KeyHasPrefix(strings.ToLower(string(kind))+":"))
+	}
+
+	return prefixes
+}
