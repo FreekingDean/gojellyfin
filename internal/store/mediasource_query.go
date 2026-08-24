@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
+	"github.com/FreekingDean/gojellyfin/internal/store/library"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediaattachment"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
@@ -29,6 +30,7 @@ type MediaSourceQuery struct {
 	inters          []Interceptor
 	predicates      []predicate.MediaSource
 	withItem        *ItemQuery
+	withLibrary     *LibraryQuery
 	withStreams     *MediaStreamQuery
 	withAttachments *MediaAttachmentQuery
 	modifiers       []func(*sql.Selector)
@@ -83,6 +85,28 @@ func (_q *MediaSourceQuery) QueryItem() *ItemQuery {
 			sqlgraph.From(mediasource.Table, mediasource.FieldID, selector),
 			sqlgraph.To(item.Table, item.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, mediasource.ItemTable, mediasource.ItemColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryLibrary chains the current query on the "library" edge.
+func (_q *MediaSourceQuery) QueryLibrary() *LibraryQuery {
+	query := (&LibraryClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(mediasource.Table, mediasource.FieldID, selector),
+			sqlgraph.To(library.Table, library.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, mediasource.LibraryTable, mediasource.LibraryColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -327,6 +351,7 @@ func (_q *MediaSourceQuery) Clone() *MediaSourceQuery {
 		inters:          append([]Interceptor{}, _q.inters...),
 		predicates:      append([]predicate.MediaSource{}, _q.predicates...),
 		withItem:        _q.withItem.Clone(),
+		withLibrary:     _q.withLibrary.Clone(),
 		withStreams:     _q.withStreams.Clone(),
 		withAttachments: _q.withAttachments.Clone(),
 		// clone intermediate query.
@@ -343,6 +368,17 @@ func (_q *MediaSourceQuery) WithItem(opts ...func(*ItemQuery)) *MediaSourceQuery
 		opt(query)
 	}
 	_q.withItem = query
+	return _q
+}
+
+// WithLibrary tells the query-builder to eager-load the nodes that are connected to
+// the "library" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *MediaSourceQuery) WithLibrary(opts ...func(*LibraryQuery)) *MediaSourceQuery {
+	query := (&LibraryClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withLibrary = query
 	return _q
 }
 
@@ -446,8 +482,9 @@ func (_q *MediaSourceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 	var (
 		nodes       = []*MediaSource{}
 		_spec       = _q.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			_q.withItem != nil,
+			_q.withLibrary != nil,
 			_q.withStreams != nil,
 			_q.withAttachments != nil,
 		}
@@ -476,6 +513,12 @@ func (_q *MediaSourceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 	if query := _q.withItem; query != nil {
 		if err := _q.loadItem(ctx, query, nodes, nil,
 			func(n *MediaSource, e *Item) { n.Edges.Item = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withLibrary; query != nil {
+		if err := _q.loadLibrary(ctx, query, nodes, nil,
+			func(n *MediaSource, e *Library) { n.Edges.Library = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -518,6 +561,35 @@ func (_q *MediaSourceQuery) loadItem(ctx context.Context, query *ItemQuery, node
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "item_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *MediaSourceQuery) loadLibrary(ctx context.Context, query *LibraryQuery, nodes []*MediaSource, init func(*MediaSource), assign func(*MediaSource, *Library)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*MediaSource)
+	for i := range nodes {
+		fk := nodes[i].LibraryID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(library.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "library_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -617,6 +689,9 @@ func (_q *MediaSourceQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withItem != nil {
 			_spec.Node.AddColumnOnce(mediasource.FieldItemID)
+		}
+		if _q.withLibrary != nil {
+			_spec.Node.AddColumnOnce(mediasource.FieldLibraryID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

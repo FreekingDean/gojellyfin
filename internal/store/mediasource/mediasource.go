@@ -21,6 +21,8 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldItemID holds the string denoting the item_id field in the database.
 	FieldItemID = "item_id"
+	// FieldLibraryID holds the string denoting the library_id field in the database.
+	FieldLibraryID = "library_id"
 	// FieldProtocol holds the string denoting the protocol field in the database.
 	FieldProtocol = "protocol"
 	// FieldEncoderProtocol holds the string denoting the encoder_protocol field in the database.
@@ -49,6 +51,10 @@ const (
 	FieldRunTimeTicks = "run_time_ticks"
 	// FieldBitrate holds the string denoting the bitrate field in the database.
 	FieldBitrate = "bitrate"
+	// FieldDateModified holds the string denoting the date_modified field in the database.
+	FieldDateModified = "date_modified"
+	// FieldProbedAt holds the string denoting the probed_at field in the database.
+	FieldProbedAt = "probed_at"
 	// FieldIsRemote holds the string denoting the is_remote field in the database.
 	FieldIsRemote = "is_remote"
 	// FieldIsInfiniteStream holds the string denoting the is_infinite_stream field in the database.
@@ -81,6 +87,8 @@ const (
 	FieldFormats = "formats"
 	// EdgeItem holds the string denoting the item edge name in mutations.
 	EdgeItem = "item"
+	// EdgeLibrary holds the string denoting the library edge name in mutations.
+	EdgeLibrary = "library"
 	// EdgeStreams holds the string denoting the streams edge name in mutations.
 	EdgeStreams = "streams"
 	// EdgeAttachments holds the string denoting the attachments edge name in mutations.
@@ -94,6 +102,13 @@ const (
 	ItemInverseTable = "items"
 	// ItemColumn is the table column denoting the item relation/edge.
 	ItemColumn = "item_id"
+	// LibraryTable is the table that holds the library relation/edge.
+	LibraryTable = "media_sources"
+	// LibraryInverseTable is the table name for the Library entity.
+	// It exists in this package in order to avoid circular dependency with the "library" package.
+	LibraryInverseTable = "libraries"
+	// LibraryColumn is the table column denoting the library relation/edge.
+	LibraryColumn = "library_id"
 	// StreamsTable is the table that holds the streams relation/edge.
 	StreamsTable = "media_streams"
 	// StreamsInverseTable is the table name for the MediaStream entity.
@@ -116,6 +131,7 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldItemID,
+	FieldLibraryID,
 	FieldProtocol,
 	FieldEncoderProtocol,
 	FieldKind,
@@ -130,6 +146,8 @@ var Columns = []string{
 	FieldSize,
 	FieldRunTimeTicks,
 	FieldBitrate,
+	FieldDateModified,
+	FieldProbedAt,
 	FieldIsRemote,
 	FieldIsInfiniteStream,
 	FieldSupportsTranscoding,
@@ -397,6 +415,11 @@ func ByItemID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldItemID, opts...).ToFunc()
 }
 
+// ByLibraryID orders the results by the library_id field.
+func ByLibraryID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLibraryID, opts...).ToFunc()
+}
+
 // ByProtocol orders the results by the protocol field.
 func ByProtocol(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldProtocol, opts...).ToFunc()
@@ -465,6 +488,16 @@ func ByRunTimeTicks(opts ...sql.OrderTermOption) OrderOption {
 // ByBitrate orders the results by the bitrate field.
 func ByBitrate(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBitrate, opts...).ToFunc()
+}
+
+// ByDateModified orders the results by the date_modified field.
+func ByDateModified(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDateModified, opts...).ToFunc()
+}
+
+// ByProbedAt orders the results by the probed_at field.
+func ByProbedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProbedAt, opts...).ToFunc()
 }
 
 // ByIsRemote orders the results by the is_remote field.
@@ -544,6 +577,13 @@ func ByItemField(field string, opts ...sql.OrderTermOption) OrderOption {
 	}
 }
 
+// ByLibraryField orders the results by library field.
+func ByLibraryField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newLibraryStep(), sql.OrderByField(field, opts...))
+	}
+}
+
 // ByStreamsCount orders the results by streams count.
 func ByStreamsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -576,6 +616,13 @@ func newItemStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ItemInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, ItemTable, ItemColumn),
+	)
+}
+func newLibraryStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(LibraryInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, LibraryTable, LibraryColumn),
 	)
 }
 func newStreamsStep() *sqlgraph.Step {
