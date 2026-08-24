@@ -83,79 +83,81 @@ func (r *run) fails(id uuid.UUID, because string) {
 	r.failing[id] = errors.New(because)
 }
 
-func TestLibraryScanScansEveryLibraryDespiteAFailure(t *testing.T) {
-	first, second := uuid.New(), uuid.New()
-	running := newRun(t, first, second)
-	running.fails(first, "the volume is not mounted")
+func TestLibraryScan_Run(t *testing.T) {
+	t.Run("a library that cannot be read does not abandon the others", func(t *testing.T) {
+		first, second := uuid.New(), uuid.New()
+		running := newRun(t, first, second)
+		running.fails(first, "the volume is not mounted")
 
-	if err := running.env.Run(running.scan); err != nil {
-		t.Fatalf("a failing library failed the whole scan: %v", err)
-	}
-	if len(running.walked) != 1 || running.walked[0] != second {
-		t.Errorf("scanned = %v, want only the readable library", running.walked)
-	}
-}
-
-func TestLibraryScanDoesNotProbeALibraryItCouldNotWalk(t *testing.T) {
-	library := uuid.New()
-	running := newRun(t, library)
-	running.needing(library, 3)
-	running.fails(library, "the volume is not mounted")
-
-	if err := running.env.Run(running.scan); err != nil {
-		t.Fatalf("the scan failed: %v", err)
-	}
-	if len(running.probed) != 0 {
-		t.Errorf("probed = %v, want nothing from an unwalked library", running.probed)
-	}
-}
-
-func TestLibraryScanProbesEverySelectedSourceInChunks(t *testing.T) {
-	library := uuid.New()
-	running := newRun(t, library)
-	selected := running.needing(library, probeChunkSize*2+5)
-
-	if err := running.env.Run(running.scan); err != nil {
-		t.Fatalf("the scan failed: %v", err)
-	}
-	if len(running.probed) != len(selected) {
-		t.Errorf("probed %d sources, want %d", len(running.probed), len(selected))
-	}
-
-	children := running.env.Children()
-	if len(children) != 3 {
-		t.Errorf("children = %d, want one per chunk of %d", len(children), probeChunkSize)
-	}
-
-	named := map[string]bool{}
-	for _, id := range children {
-		if named[id] {
-			t.Fatalf("two chunks ran under the id %s", id)
+		if err := running.env.Run(running.scan); err != nil {
+			t.Fatalf("a failing library failed the whole scan: %v", err)
 		}
-		named[id] = true
-	}
-
-	probed := map[uuid.UUID]bool{}
-	for _, id := range running.probed {
-		probed[id] = true
-	}
-	for _, id := range selected {
-		if !probed[id] {
-			t.Fatalf("source %s was selected and never probed", id)
+		if len(running.walked) != 1 || running.walked[0] != second {
+			t.Errorf("scanned = %v, want only the readable library", running.walked)
 		}
-	}
-}
+	})
 
-func TestLibraryScanProbesTheRestOfAChunkDespiteAFailure(t *testing.T) {
-	library := uuid.New()
-	running := newRun(t, library)
-	selected := running.needing(library, 3)
-	running.fails(selected[0], "ffprobe found no streams")
+	t.Run("a library that could not be walked is not probed", func(t *testing.T) {
+		library := uuid.New()
+		running := newRun(t, library)
+		running.needing(library, 3)
+		running.fails(library, "the volume is not mounted")
 
-	if err := running.env.Run(running.scan); err != nil {
-		t.Fatalf("a failing probe failed the whole scan: %v", err)
-	}
-	if len(running.probed) != len(selected)-1 {
-		t.Errorf("probed = %v, want the two readable files", running.probed)
-	}
+		if err := running.env.Run(running.scan); err != nil {
+			t.Fatalf("the scan failed: %v", err)
+		}
+		if len(running.probed) != 0 {
+			t.Errorf("probed = %v, want nothing from a library with no structure written", running.probed)
+		}
+	})
+
+	t.Run("every selected file is probed, a hundred to a child run", func(t *testing.T) {
+		library := uuid.New()
+		running := newRun(t, library)
+		selected := running.needing(library, probeChunkSize*2+5)
+
+		if err := running.env.Run(running.scan); err != nil {
+			t.Fatalf("the scan failed: %v", err)
+		}
+		if len(running.probed) != len(selected) {
+			t.Errorf("probed %d sources, want %d", len(running.probed), len(selected))
+		}
+
+		probed := map[uuid.UUID]bool{}
+		for _, id := range running.probed {
+			probed[id] = true
+		}
+		for _, id := range selected {
+			if !probed[id] {
+				t.Fatalf("source %s was selected and never probed", id)
+			}
+		}
+
+		children := running.env.Children()
+		if len(children) != 3 {
+			t.Errorf("children = %d, want one per chunk of %d", len(children), probeChunkSize)
+		}
+
+		named := map[string]bool{}
+		for _, id := range children {
+			if named[id] {
+				t.Fatalf("two chunks ran under the id %s", id)
+			}
+			named[id] = true
+		}
+	})
+
+	t.Run("a file ffprobe cannot read does not abandon its chunk", func(t *testing.T) {
+		library := uuid.New()
+		running := newRun(t, library)
+		selected := running.needing(library, 3)
+		running.fails(selected[0], "ffprobe found no streams")
+
+		if err := running.env.Run(running.scan); err != nil {
+			t.Fatalf("a failing probe failed the whole scan: %v", err)
+		}
+		if len(running.probed) != len(selected)-1 {
+			t.Errorf("probed = %v, want the two readable files", running.probed)
+		}
+	})
 }

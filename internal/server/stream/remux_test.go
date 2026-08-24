@@ -102,75 +102,113 @@ func (f *fixture) addRip(t *testing.T) uuid.UUID {
 	return item.ID
 }
 
-func TestServeRemuxesAudioABrowserCannotDecode(t *testing.T) {
-	fixture := newFixture(t)
-	fixture.withEncoder(t)
-	id := fixture.addRip(t)
+func TestHandler_serveRemux(t *testing.T) {
+	t.Run("remuxes audio a browser cannot decode", func(t *testing.T) {
+		fixture := newFixture(t)
+		fixture.withEncoder(t)
+		id := fixture.addRip(t)
 
-	recorder := httptest.NewRecorder()
-	request := fixture.get(t, http.MethodGet, "/Videos/"+id.String()+"/stream?", id)
+		recorder := httptest.NewRecorder()
+		request := fixture.get(t, http.MethodGet, "/Videos/"+id.String()+"/stream?", id)
 
-	fixture.handler.Serve(recorder, request)
+		fixture.handler.Serve(recorder, request)
 
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("status = %d, want %d: %s", recorder.Code, http.StatusOK, recorder.Body)
-	}
-
-	probed := decodable(t, recorder.Body.Bytes(), "out.mp4")
-
-	var video, audio string
-	for _, stream := range probed.Streams {
-		switch stream.CodecType {
-		case "video":
-			video = stream.CodecName
-		case "audio":
-			audio = stream.CodecName
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("status = %d, want %d: %s", recorder.Code, http.StatusOK, recorder.Body)
 		}
-	}
 
-	if video != "h264" {
-		t.Errorf("video is %q, want h264 copied through", video)
-	}
-	if audio != "aac" {
-		t.Errorf("audio is %q, want aac", audio)
-	}
-}
+		probed := decodable(t, recorder.Body.Bytes(), "out.mp4")
 
-func TestServeLeavesAudioTheClientDeclaresAlone(t *testing.T) {
-	if !transcode.Available() {
-		t.Fatal("ffmpeg is not on PATH")
-	}
-
-	fixture := newFixture(t)
-	fixture.withEncoder(t)
-	id := fixture.addRip(t)
-
-	recorder := httptest.NewRecorder()
-	request := fixture.get(t, http.MethodGet, "/Videos/"+id.String()+"/stream?audioCodec=ac3,aac&", id)
-
-	fixture.handler.Serve(recorder, request)
-
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("status = %d, want %d", recorder.Code, http.StatusOK)
-	}
-
-	probed := decodable(t, recorder.Body.Bytes(), "out.mkv")
-	for _, stream := range probed.Streams {
-		if stream.CodecType == "audio" && stream.CodecName != "ac3" {
-			t.Errorf("audio is %q, want the ac3 source passed through", stream.CodecName)
+		var video, audio string
+		for _, stream := range probed.Streams {
+			switch stream.CodecType {
+			case "video":
+				video = stream.CodecName
+			case "audio":
+				audio = stream.CodecName
+			}
 		}
-	}
-}
 
-func TestServeDirectPlaysWhenTheAudioIsAlreadyPlayable(t *testing.T) {
-	fixture := newFixture(t)
-	fixture.withEncoder(t)
-	id := fixture.addTone(t)
+		if video != "h264" {
+			t.Errorf("video is %q, want h264 copied through", video)
+		}
+		if audio != "aac" {
+			t.Errorf("audio is %q, want aac", audio)
+		}
+	})
 
-	request := fixture.get(t, http.MethodGet, "/Audio/"+id.String()+"/stream?", id)
-	if fixture.handler.needsRemux(request, itemOf(t, fixture, id), sourceOf(t, fixture, id)) {
-		t.Error("an audio item was sent for a video remux")
-	}
+	t.Run("leaves audio the client declares alone", func(t *testing.T) {
+		if !transcode.Available() {
+			t.Fatal("ffmpeg is not on PATH")
+		}
+
+		fixture := newFixture(t)
+		fixture.withEncoder(t)
+		id := fixture.addRip(t)
+
+		recorder := httptest.NewRecorder()
+		request := fixture.get(t, http.MethodGet, "/Videos/"+id.String()+"/stream?audioCodec=ac3,aac&", id)
+
+		fixture.handler.Serve(recorder, request)
+
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("status = %d, want %d", recorder.Code, http.StatusOK)
+		}
+
+		probed := decodable(t, recorder.Body.Bytes(), "out.mkv")
+		for _, stream := range probed.Streams {
+			if stream.CodecType == "audio" && stream.CodecName != "ac3" {
+				t.Errorf("audio is %q, want the ac3 source passed through", stream.CodecName)
+			}
+		}
+	})
+
+	t.Run("direct plays when the audio is already playable", func(t *testing.T) {
+		fixture := newFixture(t)
+		fixture.withEncoder(t)
+		id := fixture.addTone(t)
+
+		request := fixture.get(t, http.MethodGet, "/Audio/"+id.String()+"/stream?", id)
+		if fixture.handler.needsRemux(request, itemOf(t, fixture, id), sourceOf(t, fixture, id)) {
+			t.Error("an audio item was sent for a video remux")
+		}
+	})
+
+	t.Run("remuxes a container a browser cannot open", func(t *testing.T) {
+		fixture := newFixture(t)
+		fixture.withEncoder(t)
+		id := fixture.addPlayableAudioRip(t)
+
+		recorder := httptest.NewRecorder()
+		request := fixture.get(t, http.MethodGet, "/Videos/"+id.String()+"/stream?", id)
+
+		fixture.handler.Serve(recorder, request)
+
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("status = %d, want %d: %s", recorder.Code, http.StatusOK, recorder.Body)
+		}
+
+		probed := decodable(t, recorder.Body.Bytes(), "out.mp4")
+		if !strings.Contains(probed.Format.FormatName, "mp4") {
+			t.Errorf("container = %q, want mp4 — the mkv was served as it is", probed.Format.FormatName)
+		}
+	})
+
+	t.Run("leaves a container the client declares alone", func(t *testing.T) {
+		fixture := newFixture(t)
+		fixture.withEncoder(t)
+		id := fixture.addPlayableAudioRip(t)
+
+		recorder := httptest.NewRecorder()
+		request := fixture.get(t, http.MethodGet, "/Videos/"+id.String()+"/stream?container=mkv&", id)
+
+		fixture.handler.Serve(recorder, request)
+
+		probed := decodable(t, recorder.Body.Bytes(), "out.mkv")
+		if strings.Contains(probed.Format.FormatName, "mp4") {
+			t.Error("a declared container was remuxed anyway")
+		}
+	})
 }
 
 func sourceOf(t *testing.T, fixture *fixture, id uuid.UUID) *items.MediaSource {
@@ -193,40 +231,4 @@ func itemOf(t *testing.T, fixture *fixture, id uuid.UUID) *items.Item {
 	}
 
 	return item
-}
-
-func TestServeRemuxesAContainerABrowserCannotOpen(t *testing.T) {
-	fixture := newFixture(t)
-	fixture.withEncoder(t)
-	id := fixture.addPlayableAudioRip(t)
-
-	recorder := httptest.NewRecorder()
-	request := fixture.get(t, http.MethodGet, "/Videos/"+id.String()+"/stream?", id)
-
-	fixture.handler.Serve(recorder, request)
-
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("status = %d, want %d: %s", recorder.Code, http.StatusOK, recorder.Body)
-	}
-
-	probed := decodable(t, recorder.Body.Bytes(), "out.mp4")
-	if !strings.Contains(probed.Format.FormatName, "mp4") {
-		t.Errorf("container = %q, want mp4 — the mkv was served as it is", probed.Format.FormatName)
-	}
-}
-
-func TestServeLeavesAContainerTheClientDeclaresAlone(t *testing.T) {
-	fixture := newFixture(t)
-	fixture.withEncoder(t)
-	id := fixture.addPlayableAudioRip(t)
-
-	recorder := httptest.NewRecorder()
-	request := fixture.get(t, http.MethodGet, "/Videos/"+id.String()+"/stream?container=mkv&", id)
-
-	fixture.handler.Serve(recorder, request)
-
-	probed := decodable(t, recorder.Body.Bytes(), "out.mkv")
-	if strings.Contains(probed.Format.FormatName, "mp4") {
-		t.Error("a declared container was remuxed anyway")
-	}
 }

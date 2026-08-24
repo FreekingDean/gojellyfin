@@ -119,7 +119,7 @@ func names(records []*Item) []string {
 	return found
 }
 
-func TestSeriesSeasons(t *testing.T) {
+func TestService_SeriesSeasons(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -144,7 +144,7 @@ func TestSeriesSeasons(t *testing.T) {
 	}
 }
 
-func TestSeriesEpisodes(t *testing.T) {
+func TestService_SeriesEpisodes(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -161,68 +161,56 @@ func TestSeriesEpisodes(t *testing.T) {
 	fixture.add(t, seed{kind: itemmodal.KindVideo, name: "Behind The Scenes", parentID: &seasonOne, index: number(1), parentIndex: number(1)})
 	fixture.add(t, seed{kind: itemmodal.KindEpisode, name: "Elsewhere", parentID: &otherSeason, index: number(1), parentIndex: number(1)})
 
-	t.Run("orders by season then episode", func(t *testing.T) {
-		records, total, err := fixture.service.SeriesEpisodes(ctx, EpisodeQuery{SeriesID: series})
-		if err != nil {
-			t.Fatalf("failed to query episodes: %v", err)
-		}
+	tests := []struct {
+		name      string
+		query     EpisodeQuery
+		want      []string
+		wantTotal int
+	}{
+		{
+			name:      "orders by season then episode",
+			query:     EpisodeQuery{SeriesID: series},
+			want:      []string{"S01E01", "S01E02", "S02E01", "S02 Extra"},
+			wantTotal: 4,
+		},
+		{
+			name:      "filters by season id",
+			query:     EpisodeQuery{SeriesID: series, SeasonID: &seasonTwo},
+			want:      []string{"S02E01", "S02 Extra"},
+			wantTotal: 2,
+		},
+		{
+			name:      "filters by season number",
+			query:     EpisodeQuery{SeriesID: series, Season: number(1)},
+			want:      []string{"S01E01", "S01E02"},
+			wantTotal: 2,
+		},
+		{
+			name:      "pages without changing the total",
+			query:     EpisodeQuery{SeriesID: series, StartIndex: 1, Limit: 2},
+			want:      []string{"S01E02", "S02E01"},
+			wantTotal: 4,
+		},
+	}
 
-		want := []string{"S01E01", "S01E02", "S02E01", "S02 Extra"}
-		if got := names(records); !slices.Equal(got, want) {
-			t.Errorf("episodes = %v, want %v", got, want)
-		}
-		if total != 4 {
-			t.Errorf("total = %d, want 4", total)
-		}
-	})
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			records, total, err := fixture.service.SeriesEpisodes(ctx, test.query)
+			if err != nil {
+				t.Fatalf("failed to query episodes: %v", err)
+			}
 
-	t.Run("filters by season id", func(t *testing.T) {
-		records, total, err := fixture.service.SeriesEpisodes(ctx, EpisodeQuery{SeriesID: series, SeasonID: &seasonTwo})
-		if err != nil {
-			t.Fatalf("failed to query episodes: %v", err)
-		}
-
-		want := []string{"S02E01", "S02 Extra"}
-		if got := names(records); !slices.Equal(got, want) {
-			t.Errorf("episodes = %v, want %v", got, want)
-		}
-		if total != 2 {
-			t.Errorf("total = %d, want 2", total)
-		}
-	})
-
-	t.Run("filters by season number", func(t *testing.T) {
-		records, total, err := fixture.service.SeriesEpisodes(ctx, EpisodeQuery{SeriesID: series, Season: number(1)})
-		if err != nil {
-			t.Fatalf("failed to query episodes: %v", err)
-		}
-
-		want := []string{"S01E01", "S01E02"}
-		if got := names(records); !slices.Equal(got, want) {
-			t.Errorf("episodes = %v, want %v", got, want)
-		}
-		if total != 2 {
-			t.Errorf("total = %d, want 2", total)
-		}
-	})
-
-	t.Run("pages without changing the total", func(t *testing.T) {
-		records, total, err := fixture.service.SeriesEpisodes(ctx, EpisodeQuery{SeriesID: series, StartIndex: 1, Limit: 2})
-		if err != nil {
-			t.Fatalf("failed to query episodes: %v", err)
-		}
-
-		want := []string{"S01E02", "S02E01"}
-		if got := names(records); !slices.Equal(got, want) {
-			t.Errorf("episodes = %v, want %v", got, want)
-		}
-		if total != 4 {
-			t.Errorf("total = %d, want 4", total)
-		}
-	})
+			if got := names(records); !slices.Equal(got, test.want) {
+				t.Errorf("episodes = %v, want %v", got, test.want)
+			}
+			if total != test.wantTotal {
+				t.Errorf("total = %d, want %d", total, test.wantTotal)
+			}
+		})
+	}
 }
 
-func TestUpcomingEpisodes(t *testing.T) {
+func TestService_UpcomingEpisodes(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -239,33 +227,40 @@ func TestUpcomingEpisodes(t *testing.T) {
 	fixture.add(t, seed{kind: itemmodal.KindEpisode, name: "Aired", parentID: &season, index: number(1), premiere: &aired})
 	fixture.add(t, seed{kind: itemmodal.KindEpisode, name: "Undated", parentID: &season, index: number(4)})
 
-	t.Run("returns only unaired episodes", func(t *testing.T) {
-		records, total, err := fixture.service.UpcomingEpisodes(ctx, &fixture.libraryID, 0, 0)
-		if err != nil {
-			t.Fatalf("failed to query upcoming episodes: %v", err)
-		}
+	tests := []struct {
+		name       string
+		startIndex int
+		limit      int
+		want       []string
+		wantTotal  int
+	}{
+		{
+			name:      "returns only unaired episodes",
+			want:      []string{"Soon", "Later"},
+			wantTotal: 2,
+		},
+		{
+			name:       "pages without changing the total",
+			startIndex: 1,
+			limit:      1,
+			want:       []string{"Later"},
+			wantTotal:  2,
+		},
+	}
 
-		want := []string{"Soon", "Later"}
-		if got := names(records); !slices.Equal(got, want) {
-			t.Errorf("upcoming = %v, want %v", got, want)
-		}
-		if total != 2 {
-			t.Errorf("total = %d, want 2", total)
-		}
-	})
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			records, total, err := fixture.service.UpcomingEpisodes(ctx, &fixture.libraryID, test.startIndex, test.limit)
+			if err != nil {
+				t.Fatalf("failed to query upcoming episodes: %v", err)
+			}
 
-	t.Run("pages without changing the total", func(t *testing.T) {
-		records, total, err := fixture.service.UpcomingEpisodes(ctx, &fixture.libraryID, 1, 1)
-		if err != nil {
-			t.Fatalf("failed to query upcoming episodes: %v", err)
-		}
-
-		want := []string{"Later"}
-		if got := names(records); !slices.Equal(got, want) {
-			t.Errorf("upcoming = %v, want %v", got, want)
-		}
-		if total != 2 {
-			t.Errorf("total = %d, want 2", total)
-		}
-	})
+			if got := names(records); !slices.Equal(got, test.want) {
+				t.Errorf("upcoming = %v, want %v", got, test.want)
+			}
+			if total != test.wantTotal {
+				t.Errorf("total = %d, want %d", total, test.wantTotal)
+			}
+		})
+	}
 }

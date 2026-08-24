@@ -10,7 +10,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
-func TestGetCultures(t *testing.T) {
+func TestServer_GetCultures(t *testing.T) {
 	response, err := testServer(t).GetCultures(context.Background(), api.GetCulturesRequestObject{})
 	if err != nil {
 		t.Fatal(err)
@@ -57,7 +57,7 @@ func TestGetCultures(t *testing.T) {
 	}
 }
 
-func TestGetCountries(t *testing.T) {
+func TestServer_GetCountries(t *testing.T) {
 	response, err := testServer(t).GetCountries(context.Background(), api.GetCountriesRequestObject{})
 	if err != nil {
 		t.Fatal(err)
@@ -84,7 +84,7 @@ func TestGetCountries(t *testing.T) {
 	}
 }
 
-func TestGetLocalizationOptions(t *testing.T) {
+func TestServer_GetLocalizationOptions(t *testing.T) {
 	response, err := testServer(t).GetLocalizationOptions(context.Background(), api.GetLocalizationOptionsRequestObject{})
 	if err != nil {
 		t.Fatal(err)
@@ -108,7 +108,7 @@ func TestGetLocalizationOptions(t *testing.T) {
 	}
 }
 
-func TestGetParentalRatings(t *testing.T) {
+func TestServer_GetParentalRatings(t *testing.T) {
 	response, err := testServer(t).GetParentalRatings(context.Background(), api.GetParentalRatingsRequestObject{})
 	if err != nil {
 		t.Fatal(err)

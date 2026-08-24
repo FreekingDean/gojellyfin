@@ -201,7 +201,7 @@ func names(dtos []api.BaseItemDto) []string {
 	return found
 }
 
-func TestGetPhysicalPaths(t *testing.T) {
+func TestServer_GetPhysicalPaths(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -233,7 +233,7 @@ func TestGetPhysicalPaths(t *testing.T) {
 	}
 }
 
-func TestGetAncestors(t *testing.T) {
+func TestServer_GetAncestors(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -275,7 +275,7 @@ func TestGetAncestors(t *testing.T) {
 	})
 }
 
-func TestGetSimilarItems(t *testing.T) {
+func TestServer_GetSimilarItems(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -295,7 +295,7 @@ func TestGetSimilarItems(t *testing.T) {
 	}
 }
 
-func TestDeleteItem(t *testing.T) {
+func TestServer_DeleteItem(t *testing.T) {
 	fixture := newFixture(t)
 
 	directory := t.TempDir()
@@ -365,7 +365,7 @@ func TestDeleteItem(t *testing.T) {
 	})
 }
 
-func TestGetDownload(t *testing.T) {
+func TestServer_GetDownload(t *testing.T) {
 	fixture := newFixture(t)
 
 	path := filepath.Join(t.TempDir(), "Movie.mkv")
