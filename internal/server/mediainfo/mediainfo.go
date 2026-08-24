@@ -2,8 +2,10 @@ package mediainfo
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"log"
 
 	"github.com/google/uuid"
 
@@ -51,6 +53,11 @@ func (s *Server) GetPostedPlaybackInfo(ctx context.Context, request api.GetPoste
 	return api.GetPostedPlaybackInfo200JSONResponse(response), nil
 }
 
+// The client is handed one source and one url. Which file that is and what has
+// to change about it is the item service's question, not this one's; all that
+// happens here is parsing what the client declared, asking, and translating the
+// answer back. Nothing is invented when there is no answer: the client is told
+// no stream is compatible rather than handed a source that is not there.
 func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, profile api.DeviceProfile, startTicks int64) (api.PlaybackInfoResponse, error) {
 	item, err := s.items.ItemByID(ctx, itemID)
 	if err != nil {
@@ -62,69 +69,42 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, profile api
 		return api.PlaybackInfoResponse{}, err
 	}
 
-	sources, err := s.mediaSources(ctx, item, profile, session, startTicks)
+	response := api.PlaybackInfoResponse{
+		MediaSources:  &[]api.MediaSourceInfo{},
+		PlaySessionId: apiutil.Ptr(session),
+	}
+
+	plan, err := s.items.SourceFor(ctx, itemID, capabilities(profile))
+	if errors.Is(err, items.ErrNoSource) || errors.Is(err, items.ErrNoPlayable) {
+		log.Printf("nothing to play for %s: %v", item.Name, err)
+		response.ErrorCode = apiutil.Ptr(api.NoCompatibleStream)
+
+		return response, nil
+	}
 	if err != nil {
 		return api.PlaybackInfoResponse{}, err
 	}
 
-	response := api.PlaybackInfoResponse{
-		MediaSources:  &sources,
-		PlaySessionId: apiutil.Ptr(session),
+	dto := mediaSourceDto(plan.Source)
+	if !items.IsAudio(item) {
+		served(&dto, plan, streamURL(itemID, plan, auth.AuthorizationFrom(ctx).Token, session, startTicks))
 	}
 
-	if len(sources) == 0 {
-		response.ErrorCode = apiutil.Ptr(api.NoCompatibleStream)
-	}
+	response.MediaSources = &[]api.MediaSourceInfo{dto}
 
 	return response, nil
 }
 
-func (s *Server) mediaSources(ctx context.Context, item *items.Item, profile api.DeviceProfile, session string, startTicks int64) ([]api.MediaSourceInfo, error) {
-	sources, err := s.items.MediaSources(ctx, item.ID)
-	if err != nil {
-		return nil, err
-	}
-	if len(sources) == 0 {
-		return []api.MediaSourceInfo{}, nil
-	}
-
-	profiles := videoProfiles(profile)
-	token := auth.AuthorizationFrom(ctx).Token
-
-	converted := make([]api.MediaSourceInfo, 0, len(sources))
-	for _, source := range sources {
-		dto := mediaSourceDto(source)
-		if !items.IsAudio(item) {
-			if delivered := plan(profiles, source); delivered.refused {
-				unplayable(&dto)
-			} else {
-				served(&dto, delivered, streamURL(item.ID, source, delivered, token, session, startTicks))
-			}
-		}
-		converted = append(converted, dto)
-	}
-
-	return converted, nil
-}
-
 // The client is handed one url and no way to choose another. What it asks for
-// is an item; whether the answer is the file or a remux of it is decided here
-// and again by the handler that serves it, off the same container and codec.
-// The picture is copied and never encoded (#481), so a source nothing the
-// client declared can carry is answered as unplayable rather than handed over
-// as bytes it will not decode.
-func unplayable(dto *api.MediaSourceInfo) {
-	dto.SupportsDirectPlay = apiutil.Ptr(false)
-	dto.SupportsDirectStream = apiutil.Ptr(false)
-	dto.SupportsTranscoding = apiutil.Ptr(false)
-}
-
-func served(dto *api.MediaSourceInfo, delivered delivery, url string) {
+// is an item; whether the answer is the file or a remux of it was decided by
+// the service, and the same container and codecs are what the handler serving
+// that url reads to reach the same answer.
+func served(dto *api.MediaSourceInfo, plan items.Plan, url string) {
 	dto.SupportsDirectPlay = apiutil.Ptr(false)
 	dto.SupportsDirectStream = apiutil.Ptr(false)
 	dto.SupportsTranscoding = apiutil.Ptr(true)
 	dto.TranscodingUrl = apiutil.Ptr(url)
-	dto.TranscodingContainer = apiutil.Ptr(delivered.container)
+	dto.TranscodingContainer = apiutil.Ptr(plan.Container)
 	dto.TranscodingSubProtocol = apiutil.Ptr(api.MediaStreamProtocolHttp)
 }
 
@@ -159,31 +139,6 @@ func mediaSourceDto(source *items.MediaSource) api.MediaSourceInfo {
 		RequiresLooping:            apiutil.Ptr(source.RequiresLooping),
 		DefaultAudioStreamIndex:    defaultStreamIndex(streams, streammodal.KindAudio),
 		DefaultSubtitleStreamIndex: defaultStreamIndex(streams, streammodal.KindSubtitle),
-	}
-}
-
-// An item the scan has not reached yet still has to answer with something
-// playable, or the client refuses to start.
-func unsourced(item *items.Item) api.MediaSourceInfo {
-	return api.MediaSourceInfo{
-		Id:                   apiutil.Ptr(item.ID.String()),
-		Name:                 apiutil.Ptr(item.Name),
-		Protocol:             apiutil.Ptr(api.MediaProtocolFile),
-		Type:                 apiutil.Ptr(api.MediaSourceTypeDefault),
-		Container:            apiutil.Ptr(item.Container),
-		RunTimeTicks:         item.RunTimeTicks,
-		MediaStreams:         &[]api.MediaStream{},
-		MediaAttachments:     &[]api.MediaAttachment{},
-		Formats:              &[]string{},
-		SupportsDirectPlay:   apiutil.Ptr(true),
-		SupportsDirectStream: apiutil.Ptr(true),
-		SupportsTranscoding:  apiutil.Ptr(false),
-		SupportsProbing:      apiutil.Ptr(true),
-		IsRemote:             apiutil.Ptr(false),
-		IsInfiniteStream:     apiutil.Ptr(false),
-		RequiresOpening:      apiutil.Ptr(false),
-		RequiresClosing:      apiutil.Ptr(false),
-		RequiresLooping:      apiutil.Ptr(false),
 	}
 }
 
