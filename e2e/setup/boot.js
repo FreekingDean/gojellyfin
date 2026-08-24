@@ -137,6 +137,8 @@ function clean(overrides) {
     TRANSCODER_STALL_TIMEOUT: '',
     TEMPORAL_HOSTPORT: '',
     TEMPORAL_NAMESPACE: '',
+    OTEL_EXPORTER_OTLP_ENDPOINT: '',
+    TMDB_API_KEY: '',
     ...overrides,
   };
 }

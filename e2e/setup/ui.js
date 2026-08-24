@@ -50,19 +50,36 @@ async function text(page) {
 // The client routes on the hash, so a landing is a hash change rather than a
 // navigation puppeteer can wait on.
 async function waitForRoute(page, fragment, timeout = 30000) {
-  await page.waitForFunction(
+  await waitFor(
+    page,
     (want) => window.location.hash.includes(want),
-    { timeout },
     fragment,
+    timeout,
+    () => `the client never routed to ${fragment}`,
   );
 }
 
 async function waitForText(page, wanted, timeout = 30000) {
-  await page.waitForFunction(
+  await waitFor(
+    page,
     (want) => document.body.innerText.includes(want),
-    { timeout },
     wanted,
+    timeout,
+    () => `the page never showed ${JSON.stringify(wanted)}`,
   );
+}
+
+// A bare puppeteer timeout says only that 30 seconds passed, so what the page
+// was showing instead is read back and reported.
+async function waitFor(page, predicate, argument, timeout, describe) {
+  try {
+    await page.waitForFunction(predicate, { timeout }, argument);
+  } catch (error) {
+    if (error.name !== 'TimeoutError') {
+      throw error;
+    }
+    throw new Error(`${describe()}. It was at ${page.url()} showing:\n${await text(page)}`);
+  }
 }
 
 async function signInAndLand(page) {
