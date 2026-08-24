@@ -83,8 +83,6 @@ func (r *run) fails(id uuid.UUID, because string) {
 	r.failing[id] = errors.New(because)
 }
 
-// One unreadable library must not abandon the others: the sweep it skipped is
-// safe to leave until the next run, the ones it did are not worth losing.
 func TestLibraryScanScansEveryLibraryDespiteAFailure(t *testing.T) {
 	first, second := uuid.New(), uuid.New()
 	running := newRun(t, first, second)
@@ -98,8 +96,6 @@ func TestLibraryScanScansEveryLibraryDespiteAFailure(t *testing.T) {
 	}
 }
 
-// A library that could not be walked has no structure to hang a probe off, so
-// nothing is selected from it either.
 func TestLibraryScanDoesNotProbeALibraryItCouldNotWalk(t *testing.T) {
 	library := uuid.New()
 	running := newRun(t, library)
@@ -114,8 +110,6 @@ func TestLibraryScanDoesNotProbeALibraryItCouldNotWalk(t *testing.T) {
 	}
 }
 
-// Every file the predicate selected is probed, and no single history holds them
-// all: the parent records children and each child records its own probes.
 func TestLibraryScanProbesEverySelectedSourceInChunks(t *testing.T) {
 	library := uuid.New()
 	running := newRun(t, library)
@@ -152,8 +146,6 @@ func TestLibraryScanProbesEverySelectedSourceInChunks(t *testing.T) {
 	}
 }
 
-// A file ffprobe cannot read is one file, not the chunk it happened to land in
-// and not the run it belongs to.
 func TestLibraryScanProbesTheRestOfAChunkDespiteAFailure(t *testing.T) {
 	library := uuid.New()
 	running := newRun(t, library)

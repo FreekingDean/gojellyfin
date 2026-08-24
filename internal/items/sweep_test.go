@@ -8,9 +8,6 @@ import (
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
-// A library whose storage went away scans to nothing, which is the same input a
-// genuinely empty library gives. Emptying the library on that reading destroys
-// every item and the watch state hanging off it.
 func TestDeleteItemsNotInKeysRefusesAnEmptyScan(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()

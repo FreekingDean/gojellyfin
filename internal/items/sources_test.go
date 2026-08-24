@@ -41,8 +41,6 @@ func (f *fixture) scanned(t *testing.T, key, path string) *Item {
 	return item
 }
 
-// Two files that derive one key are two copies of one title, which is the whole
-// point of the key: a 4K and a 1080p rip become one entry with two sources.
 func TestOneKeyGroupsCopies(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
@@ -89,8 +87,6 @@ func TestSweepDropsAMissingSourceAndKeepsTheItem(t *testing.T) {
 	}
 }
 
-// What is outstanding is read back from the rows: a file the probe has never
-// read and a file that changed since it did, and nothing else.
 func TestSourcesNeedingProbeSelectsTheUnreadAndTheChanged(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()

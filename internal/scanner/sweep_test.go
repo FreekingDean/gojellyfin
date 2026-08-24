@@ -22,8 +22,6 @@ func TestScanMoviesFailsOnAMissingRoot(t *testing.T) {
 	}
 }
 
-// One directory nobody can read is not a reason to abandon the rest of the
-// library, so the walk carries on and reports that it was partial instead.
 func TestScanMoviesSkipsAnUnreadableDirectory(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("root reads a directory whatever its mode")
@@ -48,8 +46,6 @@ func TestScanMoviesSkipsAnUnreadableDirectory(t *testing.T) {
 	}
 }
 
-// The sweep deletes everything the walk did not report, so a partial walk must
-// not reach it.
 func TestWalkIsIncompleteUntilEveryDirectoryIsRead(t *testing.T) {
 	found := &seen{}
 	if !found.complete() {
