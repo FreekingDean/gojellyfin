@@ -2,6 +2,7 @@ package mediainfo
 
 import (
 	"context"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -108,7 +109,7 @@ func (f *fixture) addRipped(t *testing.T, kind items.Kind, container, video, cod
 	err = service.SaveProbe(ctx, item, source, items.Probe{
 		Container: container,
 		Streams: []items.Stream{
-			{Index: 0, Kind: streammodal.KindVideo, Codec: video},
+			{Index: 0, Kind: streammodal.KindVideo, Codec: video, Height: 1080, Width: 1920},
 			{Index: 1, Kind: streammodal.KindAudio, Codec: codec},
 		},
 	})
@@ -117,6 +118,40 @@ func (f *fixture) addRipped(t *testing.T, kind items.Kind, container, video, cod
 	}
 
 	return item.ID
+}
+
+func (f *fixture) addCopy(t *testing.T, id uuid.UUID, path, video, audio string, height int32) {
+	t.Helper()
+
+	ctx := context.Background()
+	service := f.server.items
+
+	item, err := service.ItemByID(ctx, id)
+	if err != nil {
+		t.Fatalf("failed to read the item: %v", err)
+	}
+
+	source, err := service.SaveSource(ctx, items.ScannedSource{
+		LibraryID:    f.library,
+		ItemID:       id,
+		Path:         path,
+		Name:         path,
+		DateModified: time.Now(),
+	})
+	if err != nil {
+		t.Fatalf("failed to save the source: %v", err)
+	}
+
+	err = service.SaveProbe(ctx, item, source, items.Probe{
+		Container: strings.TrimPrefix(filepath.Ext(path), "."),
+		Streams: []items.Stream{
+			{Index: 0, Kind: streammodal.KindVideo, Codec: video, Height: height, Width: height * 16 / 9},
+			{Index: 1, Kind: streammodal.KindAudio, Codec: audio},
+		},
+	})
+	if err != nil {
+		t.Fatalf("failed to probe the source: %v", err)
+	}
 }
 
 func (f *fixture) unscanned(t *testing.T) uuid.UUID {
@@ -214,6 +249,16 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		}
 	})
 
+	t.Run("an item with several files answers with one of them", func(t *testing.T) {
+		fixture := newFixture(t)
+		id := fixture.addRip(t, itemmodal.KindMovie, "mkv", "aac")
+		fixture.addCopy(t, id, "/media/second.mkv", "h264", "aac", 1080)
+
+		if got := len(fixture.sources(t, id, firstPlay(&chrome))); got != 1 {
+			t.Errorf("answered with %d sources, want the one the client should play", got)
+		}
+	})
+
 	t.Run("audio the client cannot decode is answered in a container it can", func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.addRip(t, itemmodal.KindMovie, "mkv", "ac3")
@@ -253,6 +298,20 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		}
 	})
 
+	t.Run("codecs declared and the container not is answered by a mux", func(t *testing.T) {
+		fixture := newFixture(t)
+		id := fixture.addRip(t, itemmodal.KindMovie, "avi", "aac")
+
+		source := fixture.source(t, id, firstPlay(&chrome))
+
+		if got := apiutil.Deref(source.TranscodingContainer); got != "mp4" {
+			t.Errorf("transcoding container = %q, want mp4", got)
+		}
+		if got := apiutil.Deref(source.TranscodingUrl); !strings.Contains(got, "audioCodec=aac") {
+			t.Errorf("transcoding url = %q, want the source audio kept", got)
+		}
+	})
+
 	t.Run("a client that declared nothing is handed the source", func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.addRip(t, itemmodal.KindMovie, "mkv", "ac3")
@@ -279,32 +338,28 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		}
 	})
 
-	t.Run("codecs declared and the container not is answered by a mux", func(t *testing.T) {
-		fixture := newFixture(t)
-		id := fixture.addRip(t, itemmodal.KindMovie, "avi", "aac")
-
-		source := fixture.source(t, id, firstPlay(&chrome))
-
-		if got := apiutil.Deref(source.TranscodingContainer); got != "mp4" {
-			t.Errorf("transcoding container = %q, want mp4", got)
-		}
-		if got := apiutil.Deref(source.TranscodingUrl); !strings.Contains(got, "audioCodec=aac") {
-			t.Errorf("transcoding url = %q, want the source audio kept", got)
-		}
-	})
-
-	t.Run("a picture nothing declared can carry is answered as unplayable", func(t *testing.T) {
+	t.Run("a picture nothing declared can carry is answered as no compatible stream", func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.addRipped(t, itemmodal.KindMovie, "mkv", "mpeg4", "aac")
 
 		answer := fixture.answer(t, id, firstPlay(&chrome))
-		source := (*answer.MediaSources)[0]
 
-		if source.TranscodingUrl != nil {
-			t.Errorf("a picture that cannot be encoded was handed over: %q", *source.TranscodingUrl)
+		if got := len(*answer.MediaSources); got != 0 {
+			t.Errorf("answered with %d sources, want none the client cannot play", got)
 		}
-		if apiutil.Deref(source.SupportsDirectPlay) || apiutil.Deref(source.SupportsDirectStream) {
-			t.Error("the client was told it can play a picture it did not declare")
+		if got := apiutil.Deref(answer.ErrorCode); got != api.NoCompatibleStream {
+			t.Errorf("error code = %q, want %q", got, api.NoCompatibleStream)
+		}
+	})
+
+	t.Run("an item with no file behind it is answered as no compatible stream", func(t *testing.T) {
+		fixture := newFixture(t)
+		id := fixture.unscanned(t)
+
+		answer := fixture.answer(t, id, firstPlay(&chrome))
+
+		if got := len(*answer.MediaSources); got != 0 {
+			t.Errorf("answered with %d sources, want none invented for a file that is not there", got)
 		}
 		if got := apiutil.Deref(answer.ErrorCode); got != api.NoCompatibleStream {
 			t.Errorf("error code = %q, want %q", got, api.NoCompatibleStream)
@@ -328,24 +383,6 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 
 		if source.TranscodingUrl != nil {
 			t.Errorf("a song was sent for a video remux: %q", *source.TranscodingUrl)
-		}
-	})
-
-	t.Run("every source offers a way to play", func(t *testing.T) {
-		fixture := newFixture(t)
-		for _, id := range []uuid.UUID{
-			fixture.addRip(t, itemmodal.KindMovie, "mkv", "ac3"),
-			fixture.addRip(t, itemmodal.KindAudio, "flac", "flac"),
-			fixture.unscanned(t),
-		} {
-			for _, source := range fixture.sources(t, id, firstPlay(&chrome)) {
-				playable := apiutil.Deref(source.SupportsDirectPlay) ||
-					apiutil.Deref(source.SupportsDirectStream) ||
-					apiutil.Deref(source.SupportsTranscoding)
-				if !playable {
-					t.Errorf("source %q offers no way to play", apiutil.Deref(source.Name))
-				}
-			}
 		}
 	})
 

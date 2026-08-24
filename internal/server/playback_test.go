@@ -196,6 +196,17 @@ func (f *playbackFixture) ripped(t *testing.T, name, encoder, video, audio strin
 func (f *playbackFixture) offer(t *testing.T, id uuid.UUID, profile string, startTicks int64) api.MediaSourceInfo {
 	t.Helper()
 
+	sources := *f.answer(t, id, profile, startTicks).MediaSources
+	if len(sources) != 1 {
+		t.Fatalf("got %d media sources, want 1", len(sources))
+	}
+
+	return sources[0]
+}
+
+func (f *playbackFixture) answer(t *testing.T, id uuid.UUID, profile string, startTicks int64) api.PlaybackInfoResponse {
+	t.Helper()
+
 	body := &api.PlaybackInfoDto{StartTimeTicks: apiutil.Ptr(startTicks)}
 	if profile != "" {
 		var declared api.DeviceProfile
@@ -211,12 +222,7 @@ func (f *playbackFixture) offer(t *testing.T, id uuid.UUID, profile string, star
 		t.Fatalf("failed to answer playback info: %v", err)
 	}
 
-	sources := *api.PlaybackInfoResponse(response.(api.GetPostedPlaybackInfo200JSONResponse)).MediaSources
-	if len(sources) != 1 {
-		t.Fatalf("got %d media sources, want 1", len(sources))
-	}
-
-	return sources[0]
+	return api.PlaybackInfoResponse(response.(api.GetPostedPlaybackInfo200JSONResponse))
 }
 
 // The url is followed exactly as the client would follow it: through the query
@@ -394,9 +400,12 @@ func TestPlayback(t *testing.T) {
 		fixture := newPlaybackFixture(t)
 		id := fixture.ripped(t, "oddball.mkv", "mpeg4", "mpeg4", "aac")
 
-		source := fixture.offer(t, id, chromeProfile, 0)
-		if source.TranscodingUrl != nil {
-			t.Errorf("a picture that cannot be encoded was handed over: %q", *source.TranscodingUrl)
+		answer := fixture.answer(t, id, chromeProfile, 0)
+		if got := len(*answer.MediaSources); got != 0 {
+			t.Errorf("answered with %d sources, want none for a picture nothing here can make", got)
+		}
+		if got := apiutil.Deref(answer.ErrorCode); got != api.NoCompatibleStream {
+			t.Errorf("error code = %q, want %q", got, api.NoCompatibleStream)
 		}
 
 		target := "/Videos/" + id.String() + "/stream.mp4?container=mp4&videoCodec=h264&audioCodec=aac&api_key=" + fixture.token
