@@ -61,6 +61,13 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID) (api.Playba
 	}, nil
 }
 
+// jellyfin-web answers a playback error by asking for the stream again, and
+// only stops once the url it is given names AllowVideoStreamCopy=false, which
+// is a thing only a TranscodingUrl carries. Nothing here builds one, so a
+// source that claims transcoding buys an unbounded retry rather than a
+// transcode.
+const offersTranscoding = false
+
 // One entry per file, which is how a 4K and a 1080p copy of one film reach the
 // client as two versions of a single item.
 func (s *Server) mediaSources(ctx context.Context, item *items.Item) ([]api.MediaSourceInfo, error) {
@@ -102,7 +109,7 @@ func mediaSourceDto(source *items.MediaSource) api.MediaSourceInfo {
 		Formats:                    &[]string{},
 		SupportsDirectPlay:         apiutil.Ptr(source.SupportsDirectPlay),
 		SupportsDirectStream:       apiutil.Ptr(source.SupportsDirectStream),
-		SupportsTranscoding:        apiutil.Ptr(source.SupportsTranscoding),
+		SupportsTranscoding:        apiutil.Ptr(offersTranscoding),
 		SupportsProbing:            apiutil.Ptr(source.SupportsProbing),
 		IsRemote:                   apiutil.Ptr(source.IsRemote),
 		IsInfiniteStream:           apiutil.Ptr(source.IsInfiniteStream),
@@ -129,7 +136,7 @@ func unsourced(item *items.Item) api.MediaSourceInfo {
 		Formats:              &[]string{},
 		SupportsDirectPlay:   apiutil.Ptr(true),
 		SupportsDirectStream: apiutil.Ptr(true),
-		SupportsTranscoding:  apiutil.Ptr(false),
+		SupportsTranscoding:  apiutil.Ptr(offersTranscoding),
 		SupportsProbing:      apiutil.Ptr(true),
 		IsRemote:             apiutil.Ptr(false),
 		IsInfiniteStream:     apiutil.Ptr(false),
