@@ -14,11 +14,13 @@ type Spec struct {
 	Bitrate    int32
 	StartTicks int64
 	Video      bool
+	CopyAudio  bool
 }
 
 type format struct {
 	muxer       string
 	codec       string
+	audio       string
 	contentType string
 	muxerArgs   []string
 	video       bool
@@ -30,13 +32,14 @@ type format struct {
 // which is what a video remux has to land in. ogg is missing for a second
 // reason — it wants libvorbis, which not every ffmpeg build carries.
 var formats = map[string]format{
-	"mp3":  {muxer: "mp3", codec: "libmp3lame", contentType: "audio/mpeg"},
-	"aac":  {muxer: "adts", codec: "aac", contentType: "audio/aac"},
-	"ts":   {muxer: "mpegts", codec: "aac", contentType: "video/mp2t", video: true},
-	"opus": {muxer: "opus", codec: "libopus", contentType: "audio/opus"},
+	"mp3":  {muxer: "mp3", codec: "libmp3lame", audio: "mp3", contentType: "audio/mpeg"},
+	"aac":  {muxer: "adts", codec: "aac", audio: "aac", contentType: "audio/aac"},
+	"ts":   {muxer: "mpegts", codec: "aac", audio: "aac", contentType: "video/mp2t", video: true},
+	"opus": {muxer: "opus", codec: "libopus", audio: "opus", contentType: "audio/opus"},
 	"mp4": {
 		muxer:       "mp4",
 		codec:       "aac",
+		audio:       "aac",
 		contentType: "video/mp4",
 		muxerArgs:   []string{"-movflags", "frag_keyframe+empty_moov+default_base_moof"},
 		video:       true,
@@ -67,6 +70,10 @@ func Choose(containers []string) string {
 	}
 
 	return ""
+}
+
+func AudioCodec(container string) string {
+	return formats[strings.ToLower(container)].audio
 }
 
 func ContentType(container string) string {
@@ -104,10 +111,13 @@ func (s Spec) Args() []string {
 	} else {
 		args = append(args, "-vn", "-map", "0:a:0")
 	}
-	args = append(args, "-c:a", target.codec)
-
-	if s.Bitrate > 0 {
-		args = append(args, "-b:a", strconv.FormatInt(int64(s.Bitrate), 10))
+	if s.CopyAudio {
+		args = append(args, "-c:a", "copy")
+	} else {
+		args = append(args, "-c:a", target.codec)
+		if s.Bitrate > 0 {
+			args = append(args, "-b:a", strconv.FormatInt(int64(s.Bitrate), 10))
+		}
 	}
 	args = append(args, target.muxerArgs...)
 

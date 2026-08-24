@@ -32,20 +32,24 @@ type Format struct {
 }
 
 type Stream struct {
-	Index        int               `json:"index"`
-	CodecName    string            `json:"codec_name"`
-	CodecType    string            `json:"codec_type"`
-	Profile      string            `json:"profile"`
-	Width        int               `json:"width"`
-	Height       int               `json:"height"`
-	Channels     int               `json:"channels"`
-	SampleRate   string            `json:"sample_rate"`
-	BitRate      string            `json:"bit_rate"`
-	AvgFrameRate string            `json:"avg_frame_rate"`
-	PixelFormat  string            `json:"pix_fmt"`
-	Level        int               `json:"level"`
-	Disposition  map[string]int    `json:"disposition"`
-	Tags         map[string]string `json:"tags"`
+	Index          int               `json:"index"`
+	CodecName      string            `json:"codec_name"`
+	CodecType      string            `json:"codec_type"`
+	Profile        string            `json:"profile"`
+	Width          int               `json:"width"`
+	Height         int               `json:"height"`
+	Channels       int               `json:"channels"`
+	SampleRate     string            `json:"sample_rate"`
+	BitRate        string            `json:"bit_rate"`
+	AvgFrameRate   string            `json:"avg_frame_rate"`
+	PixelFormat    string            `json:"pix_fmt"`
+	ColorTransfer  string            `json:"color_transfer"`
+	ColorPrimaries string            `json:"color_primaries"`
+	FieldOrder     string            `json:"field_order"`
+	AspectRatio    string            `json:"sample_aspect_ratio"`
+	Level          int               `json:"level"`
+	Disposition    map[string]int    `json:"disposition"`
+	Tags           map[string]string `json:"tags"`
 }
 
 func (f Format) Seconds() float64 {

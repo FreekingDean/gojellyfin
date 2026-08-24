@@ -42,6 +42,10 @@ func (s *Scanner) probeFile(ctx context.Context, source *items.MediaSource) (*it
 			Level:       float64(stream.Level),
 			IsDefault:   stream.IsDefault(),
 			IsForced:    stream.IsForced(),
+
+			RangeType:    rangeType(stream.ColorTransfer),
+			IsInterlaced: interlaced(stream.FieldOrder),
+			IsAnamorphic: anamorphic(stream.AspectRatio),
 		})
 	}
 
@@ -53,6 +57,37 @@ func (s *Scanner) probeFile(ctx context.Context, source *items.MediaSource) (*it
 		Streams:      streams,
 		Metadata:     metadata(probe),
 	}, nil
+}
+
+func rangeType(transfer string) items.VideoRangeType {
+	switch strings.ToLower(strings.TrimSpace(transfer)) {
+	case "smpte2084":
+		return streammodal.VideoRangeTypeHDR10
+	case "arib-std-b67":
+		return streammodal.VideoRangeTypeHLG
+	case "":
+		return ""
+	default:
+		return streammodal.VideoRangeTypeSDR
+	}
+}
+
+func interlaced(order string) bool {
+	switch strings.ToLower(strings.TrimSpace(order)) {
+	case "tt", "bb", "tb", "bt":
+		return true
+	default:
+		return false
+	}
+}
+
+func anamorphic(ratio string) bool {
+	switch ratio = strings.TrimSpace(ratio); ratio {
+	case "", "0:1", "1:1", "N/A":
+		return false
+	default:
+		return true
+	}
 }
 
 // ffprobe reports muxer families like "matroska,webm"; the file extension picks

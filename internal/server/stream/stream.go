@@ -72,109 +72,21 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 	}
 
 	container := sourceContainer(source)
-	if requested := r.PathValue("container"); requested != "" && !isStatic(r) && !strings.EqualFold(requested, container) {
+	requested := r.PathValue("container")
+	if requested == "" || isStatic(r) || strings.EqualFold(requested, container) {
+		h.serveFile(w, r, source)
+		return
+	}
+
+	if items.IsAudio(item) {
 		if h.serveTranscode(w, r, item, source, []string{requested}) {
 			return
 		}
-
-		unsupported(w, r, container, requested)
+	} else if h.serveRemux(w, r, item, source) {
 		return
 	}
 
-	if h.needsRemux(r, item, source) && h.serveRemux(w, r, source) {
-		return
-	}
-
-	h.serveFile(w, r, source)
-}
-
-// Chromium demuxes Matroska but ships no AC-3, E-AC-3, DTS or TrueHD decoder,
-// so a rip plays its picture and nothing else. Only the audio is re-encoded;
-// the video is copied.
-var browserAudio = map[string]bool{
-	"aac":       true,
-	"mp3":       true,
-	"opus":      true,
-	"vorbis":    true,
-	"flac":      true,
-	"pcm_s16le": true,
-	"pcm_s24le": true,
-}
-
-// Chromium parses Matroska only far enough to serve WebM, so an mkv a browser
-// cannot open is the container failing rather than anything inside it. Checking
-// the audio alone made a rip with AC-3 play, because it was remuxed, while the
-// same rip with AAC did not.
-var browserContainers = map[string]bool{
-	"mp4":  true,
-	"m4v":  true,
-	"webm": true,
-	"mov":  true,
-}
-
-func (h *Handler) needsRemux(r *http.Request, item *items.Item, source *items.MediaSource) bool {
-	if items.IsAudio(item) || isStatic(r) || !h.transcoder.Enabled() {
-		return false
-	}
-
-	// A nil set means the client stated no container restriction, which is not
-	// the same as stating none it can take.
-	if containers := acceptedContainers(r); containers != nil && !containers[sourceContainer(source)] {
-		return true
-	}
-
-	codec, err := h.items.AudioCodec(r.Context(), item.ID)
-	if err != nil {
-		log.Printf("failed to read the audio codec of %s: %v", item.Name, err)
-
-		return false
-	}
-	if codec == "" {
-		return false
-	}
-
-	return !acceptedAudio(r)[strings.ToLower(codec)]
-}
-
-// The browser assumption is only for a client that told us nothing at all. One
-// that named an audio codec has already said it is not a browser — ac3 is the
-// clearest example — so its silence about containers is silence, not a list.
-func acceptedContainers(r *http.Request) map[string]bool {
-	query := r.URL.Query()
-
-	if raw := query["container"]; len(raw) > 0 {
-		accepted := make(map[string]bool)
-		for _, profile := range directPlayProfiles(raw) {
-			accepted[profile.container] = true
-		}
-
-		return accepted
-	}
-
-	if query.Get("audioCodec") != "" {
-		return nil
-	}
-
-	return browserContainers
-}
-
-// A client that says what it can decode is believed; one that says nothing is
-// assumed to be a browser, because silence is a worse answer than an encode
-// nobody needed.
-func acceptedAudio(r *http.Request) map[string]bool {
-	raw := r.URL.Query().Get("audioCodec")
-	if raw == "" {
-		return browserAudio
-	}
-
-	accepted := make(map[string]bool)
-	for _, codec := range strings.Split(raw, ",") {
-		if codec = strings.ToLower(strings.TrimSpace(codec)); codec != "" {
-			accepted[codec] = true
-		}
-	}
-
-	return accepted
+	unsupported(w, r, container, requested)
 }
 
 func (h *Handler) ServeUniversal(w http.ResponseWriter, r *http.Request) {
@@ -235,15 +147,28 @@ func (h *Handler) serveTranscode(w http.ResponseWriter, r *http.Request, item *i
 	})
 }
 
-// The video is copied rather than encoded, so this costs a mux and an audio
-// encode rather than a transcode.
-func (h *Handler) serveRemux(w http.ResponseWriter, r *http.Request, source *items.MediaSource) bool {
+func (h *Handler) serveRemux(w http.ResponseWriter, r *http.Request, item *items.Item, source *items.MediaSource) bool {
+	if !h.transcoder.Enabled() {
+		return false
+	}
+
+	codec, err := h.items.AudioCodec(r.Context(), item.ID)
+	if err != nil {
+		log.Printf("failed to read the audio codec of %s: %v", item.Name, err)
+	}
+	asked := strings.TrimSpace(r.URL.Query().Get("audioCodec"))
+	container := r.PathValue("container")
+	if !transcode.CarriesVideo(container) {
+		container = transcode.VideoContainer
+	}
+
 	return h.relay(w, r, source, transcode.Spec{
 		Path:       source.Path,
-		Container:  transcode.VideoContainer,
+		Container:  strings.ToLower(container),
 		Bitrate:    audioBitrate(r),
 		StartTicks: startTicks(r),
 		Video:      true,
+		CopyAudio:  asked != "" && codec != "" && strings.EqualFold(asked, codec),
 	})
 }
 
@@ -371,10 +296,14 @@ func (h *Handler) item(w http.ResponseWriter, r *http.Request) (*items.Item, *it
 		return nil, nil, false
 	}
 
-	source := items.PreferredSource(sources, items.Playable{
-		Containers:  acceptedContainers(r),
-		AudioCodecs: acceptedAudio(r),
-	})
+	source := items.BestSource(sources)
+	if asked, err := uuid.Parse(r.URL.Query().Get("mediaSourceId")); err == nil {
+		for _, candidate := range sources {
+			if candidate.ID == asked {
+				source = candidate
+			}
+		}
+	}
 	if source == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return nil, nil, false
