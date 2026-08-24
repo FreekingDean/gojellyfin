@@ -62,29 +62,43 @@ app.kubernetes.io/managed-by: {{ .root.Release.Service }}
 {{- end }}
 {{- end }}
 
-{{- define "gojellyfin.workerEnv" -}}
-{{- include "gojellyfin.databaseEnv" . }}
+{{- define "gojellyfin.sharedEnv" -}}
+{{- with .Values.tmdb.existingSecret }}
+- name: TMDB_API_KEY
+  valueFrom:
+    secretKeyRef:
+      name: {{ . }}
+      key: {{ $.Values.tmdb.secretKey }}
+{{- end }}
+{{- with .Values.tracing.otlpEndpoint }}
+- name: OTEL_EXPORTER_OTLP_ENDPOINT
+  value: {{ . | quote }}
+{{- end }}
 {{- include "gojellyfin.temporalEnv" . }}
 {{- end }}
 
+{{- define "gojellyfin.workerEnv" -}}
+{{- include "gojellyfin.databaseEnv" . }}
+{{- include "gojellyfin.sharedEnv" . }}
+{{- end }}
+
 {{- define "gojellyfin.serverEnv" -}}
-{{- include "gojellyfin.checkTranscoderJobs" . }}
 {{- include "gojellyfin.databaseEnv" .root }}
 - name: HTTP_PORT
   value: {{ .root.Values.httpPort | quote }}
-{{- with .root.Values.publishedServerURL }}
+{{- with .root.Values.hostname }}
 - name: PUBLISHED_SERVER_URL
-  value: {{ . | quote }}
+  value: {{ printf "https://%s" . | quote }}
 {{- end }}
-{{- with .root.Values.corsOrigins }}
+{{- if .root.Values.cors.enabled }}
 - name: CORS_ORIGINS
-  value: {{ join "," . | quote }}
+  value: {{ .root.Values.cors.origin | quote }}
 {{- end }}
 - name: TRANSCODER_JOBS
-  value: {{ .workload.transcoderJobs | quote }}
+  value: {{ include "gojellyfin.transcoderJobs" .workload | quote }}
 - name: TRANSCODER_STALL_TIMEOUT
   value: {{ .workload.transcoderStallTimeout | quote }}
-{{- include "gojellyfin.temporalEnv" .root }}
+{{- include "gojellyfin.sharedEnv" .root }}
 {{- end }}
 
 {{- define "gojellyfin.cpuCores" -}}
@@ -96,23 +110,22 @@ app.kubernetes.io/managed-by: {{ .root.Release.Service }}
 {{- end -}}
 {{- end }}
 
-{{- define "gojellyfin.checkTranscoderJobs" -}}
-{{- $limit := dig "limits" "cpu" "" .workload.resources -}}
-{{- if $limit -}}
-{{- if gt (float64 .workload.transcoderJobs) (float64 (include "gojellyfin.cpuCores" $limit)) -}}
-{{- fail (printf "%s.transcoderJobs is %v with a cpu limit of %v: one encode saturates about a core, so a pod that accepts more than it can run makes every stream on it slower without finishing any sooner" .component .workload.transcoderJobs $limit) -}}
+{{- define "gojellyfin.transcoderJobs" -}}
+{{- if .transcoderJobs -}}
+{{- .transcoderJobs -}}
+{{- else -}}
+{{- $cores := int (floor (float64 (include "gojellyfin.cpuCores" (dig "requests" "cpu" "1" .resources)))) -}}
+{{- max $cores 1 -}}
 {{- end -}}
-{{- end -}}
-{{- end }}
-
-{{- define "gojellyfin.mediaClaimName" -}}
-{{- default (printf "%s-media" (include "gojellyfin.fullname" .)) .Values.media.existingClaim }}
 {{- end }}
 
 {{- define "gojellyfin.mediaVolume" -}}
 - name: media
-  persistentVolumeClaim:
-    claimName: {{ include "gojellyfin.mediaClaimName" .root }}
+{{- if .Values.media.volume }}
+  {{- toYaml .Values.media.volume | nindent 2 }}
+{{- else }}
+  emptyDir: {}
+{{- end }}
 {{- end }}
 
 {{- define "gojellyfin.mediaVolumeMount" -}}

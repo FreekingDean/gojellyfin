@@ -62,16 +62,17 @@ kubectl create secret generic gojellyfin --from-literal DATABASE_URL='postgres:/
 helm install gojellyfin ./charts/gojellyfin
 ```
 
-It is one image run as up to four workloads: the API, the transcode pods, the
-Temporal worker and nginx serving `jellyfin-web`. The transcode pods are the
-same `server` subcommand as the API — what makes them the transcoders is the
+It is one image run as up to four workloads: the API, the streaming pods, the
+Temporal worker and nginx serving `jellyfin-web`. The streaming pods are the
+same `server` subcommand as the API — what makes them the streaming pods is the
 route, which sends `/Videos` and `/Audio` to them, so the pod that serves the
 stream is the pod that runs ffmpeg.
 
-The one thing they must agree on is the media. The API hands ffmpeg the item's
-filesystem path straight out of the database, so the volume has to be mounted at
-the same path in every pod that reads it — read-write for the API, which deletes
-files, read-only everywhere else.
+The one thing they must agree on is the media, which is yours: the chart mounts
+whatever volume `media.volume` names and creates no storage of its own. The API
+hands ffmpeg the item's filesystem path straight out of the database, so it has
+to be the same media at the same path in every pod — read-write for the API,
+which deletes files, read-only everywhere else.
 
 Migrations never run at startup unless `MIGRATE_ON_START=true`, which is unsafe
 with rolling replicas, so the chart does not offer it. Run `gojellyfin migrate`

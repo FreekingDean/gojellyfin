@@ -27,3 +27,7 @@ A fresh database has no way in through the API, so create the first user:
 {{ if not .Values.httpRoute.enabled }}
 httpRoute.enabled is false, so nothing outside the cluster reaches this release yet.
 {{- end }}
+{{- if not .Values.media.volume }}
+
+media.volume is empty, so the pods mounted an emptyDir — a library with nothing in it. Point it at the volume the media already lives on.
+{{- end }}

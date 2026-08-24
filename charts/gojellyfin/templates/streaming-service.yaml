@@ -1,21 +1,21 @@
-{{- if .Values.transcode.enabled }}
-{{- $component := "transcode" }}
+{{- if .Values.streaming.enabled }}
+{{- $component := "streaming" }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "gojellyfin.fullname" . }}-transcode
+  name: {{ include "gojellyfin.fullname" . }}-streaming
   labels:
     {{- include "gojellyfin.labels" (dict "root" $ "component" $component) | nindent 4 }}
-  {{- with .Values.transcode.service.annotations }}
+  {{- with .Values.streaming.service.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  type: {{ .Values.transcode.service.type }}
+  type: {{ .Values.streaming.service.type }}
   selector:
     {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 4 }}
   ports:
     - name: http
-      port: {{ .Values.transcode.service.port }}
+      port: {{ .Values.streaming.service.port }}
       targetPort: http
 {{- end }}
