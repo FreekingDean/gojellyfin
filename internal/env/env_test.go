@@ -12,6 +12,8 @@ func TestLoadDefaults(t *testing.T) {
 		"PUBLISHED_SERVER_URL", "CORS_ORIGINS",
 		"TRANSCODER_JOBS", "TRANSCODER_STALL_TIMEOUT",
 		"TEMPORAL_HOSTPORT", "TEMPORAL_NAMESPACE",
+		"OTEL_EXPORTER_OTLP_ENDPOINT",
+		"TMDB_API_KEY",
 		"HTTP_PORT",
 	} {
 		t.Setenv(name, "")
@@ -38,10 +40,14 @@ func TestLoadDefaults(t *testing.T) {
 	if config.HTTPPort != defaultHTTPPort {
 		t.Errorf("HTTPPort = %d, want %d", config.HTTPPort, defaultHTTPPort)
 	}
+	if config.Tracing.OTLPEndpoint != "" {
+		t.Error("a collector was invented, so every start ships spans somewhere nobody asked for")
+	}
+	if config.TMDB.APIKey != "" {
+		t.Error("a TMDB key was invented, so a provider nobody configured would start calling out")
+	}
 }
 
-// Silently falling back to the default is how a typo in a manifest becomes a
-// capacity problem nobody can explain.
 func TestLoadRefusesMalformedValues(t *testing.T) {
 	t.Setenv("DATABASE_URL", testDatabaseURL)
 
@@ -81,8 +87,6 @@ func TestLoadRefusesMalformedValues(t *testing.T) {
 	})
 }
 
-// Dialing localhost because nobody said otherwise is how a process ends up
-// talking to the wrong database without anyone noticing.
 func TestLoadRequiresADatabaseURL(t *testing.T) {
 	t.Setenv("DATABASE_URL", "")
 
@@ -98,6 +102,8 @@ func TestLoadReadsTheEnvironment(t *testing.T) {
 	t.Setenv("TRANSCODER_STALL_TIMEOUT", "45s")
 	t.Setenv("TEMPORAL_HOSTPORT", "temporal:7233")
 	t.Setenv("TEMPORAL_NAMESPACE", "gojellyfin_production")
+	t.Setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://collector:4318")
+	t.Setenv("TMDB_API_KEY", "not-a-real-key")
 	t.Setenv("HTTP_PORT", "9000")
 
 	config, err := Load()
@@ -122,5 +128,11 @@ func TestLoadReadsTheEnvironment(t *testing.T) {
 	}
 	if config.HTTPPort != 9000 {
 		t.Errorf("HTTPPort = %d, want 9000", config.HTTPPort)
+	}
+	if config.Tracing.OTLPEndpoint != "http://collector:4318" {
+		t.Errorf("OTLPEndpoint = %q, want http://collector:4318", config.Tracing.OTLPEndpoint)
+	}
+	if config.TMDB.APIKey != "not-a-real-key" {
+		t.Errorf("APIKey = %q, want the one the environment set", config.TMDB.APIKey)
 	}
 }

@@ -27,8 +27,6 @@ func TestKeysSurviveAMove(t *testing.T) {
 	}
 }
 
-// Two rips of one film differ only in where they sit, so nothing about the
-// location may reach the key.
 func TestKeysIgnoreTheLocation(t *testing.T) {
 	first, year := parseTitle("The Matrix (1999)")
 	second, otherYear := parseTitle("The.Matrix.1999")

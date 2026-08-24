@@ -22,8 +22,6 @@ import (
 
 const toneSeconds = 3
 
-// Real ffmpeg in this process, so what comes back is what a client would get
-// rather than a stub's bytes.
 func (f *fixture) withEncoder(t *testing.T) {
 	t.Helper()
 
@@ -34,8 +32,6 @@ func (f *fixture) withEncoder(t *testing.T) {
 	f.handler.transcoder = transcode.NewEncoder(2, 0)
 }
 
-// A flac the client in these tests never declares, which is what makes the
-// server reach for an encoder instead of the file.
 func (f *fixture) tonePath(t *testing.T, id uuid.UUID) string {
 	t.Helper()
 
@@ -171,8 +167,6 @@ func TestServeUniversalHonoursStartTimeTicks(t *testing.T) {
 	}
 }
 
-// The client asked for a container no encoder here writes, so the refusal has
-// to stand rather than become a stream of something else.
 func TestServeUniversalRefusesAContainerNothingCanWrite(t *testing.T) {
 	fixture := newFixture(t)
 	fixture.withEncoder(t)
@@ -188,10 +182,6 @@ func TestServeUniversalRefusesAContainerNothingCanWrite(t *testing.T) {
 	}
 }
 
-// Every slot on this pod being taken is temporary, so the client is told when
-// to come back rather than that its device cannot play this. It is also the
-// whole of the load balancing: the gateway reads the refusal and tries another
-// pod, with no pool and no shared state.
 func TestServeUniversalAnswersBusyWhenEverySlotIsTaken(t *testing.T) {
 	fixture := newFixture(t)
 	fixture.withEncoder(t)

@@ -141,6 +141,23 @@ func (s *Service) Ancestors(ctx context.Context, id uuid.UUID) (*Ancestry, error
 	return ancestry, nil
 }
 
+func (s *Service) UnidentifiedItems(ctx context.Context, kinds []Kind, limit int) ([]*Item, error) {
+	records, err := s.query().
+		Where(
+			itemmodal.KindIn(kinds...),
+			itemmodal.LockData(false),
+			itemmodal.ProviderIdsIsNil(),
+		).
+		Order(itemmodal.ByUpdatedAt()).
+		Limit(limit).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query unidentified items: %w", err)
+	}
+
+	return records, nil
+}
+
 type ItemQuery struct {
 	LibraryID  *uuid.UUID
 	ParentID   *uuid.UUID

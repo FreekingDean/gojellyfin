@@ -431,8 +431,6 @@ func TestGetDownload(t *testing.T) {
 	})
 }
 
-// Background work is off unless TEMPORAL_HOSTPORT names a server, which is what
-// these tests want: the library handlers under test start no workflows.
 func disconnected(t *testing.T) *jobs.Client {
 	t.Helper()
 

@@ -41,15 +41,20 @@ func (s *Server) AddVirtualFolder(ctx context.Context, request api.AddVirtualFol
 		collectionType = libraries.CollectionType(*request.Params.CollectionType)
 	}
 
-	library, err := s.libraries.CreateLibrary(ctx, *request.Params.Name, collectionType, apiutil.Deref(request.Params.Paths))
+	var options *api.LibraryOptions
+	if req := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody); req != nil {
+		options = req.LibraryOptions
+	}
+
+	locations := requestedPaths(request.Params.Paths, options)
+
+	library, err := s.libraries.CreateLibrary(ctx, *request.Params.Name, collectionType, locations)
 	if err != nil {
 		return nil, err
 	}
 
-	if req := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody); req != nil {
-		if err := s.saveOptions(ctx, library.ID, req.LibraryOptions); err != nil {
-			return nil, err
-		}
+	if err := s.saveOptions(ctx, library.ID, options); err != nil {
+		return nil, err
 	}
 
 	return api.AddVirtualFolder204Response{}, nil

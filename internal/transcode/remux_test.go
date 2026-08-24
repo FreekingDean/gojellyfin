@@ -9,8 +9,6 @@ import (
 	"testing"
 )
 
-// What a rip actually looks like: video a browser decodes next to audio it does
-// not. A fixture cannot show that the video survived untouched.
 func videoSource(t *testing.T, name string, seconds int) string {
 	t.Helper()
 
@@ -75,8 +73,6 @@ func TestRemuxKeepsTheVideoAndReEncodesTheAudio(t *testing.T) {
 	}
 }
 
-// Fragmented mp4 is the only mp4 ffmpeg can write to a pipe, so a plain mp4
-// muxer here would fail on close rather than on the first byte.
 func TestRemuxTargetsAContainerThatCarriesVideo(t *testing.T) {
 	if !CarriesVideo(VideoContainer) {
 		t.Fatalf("%q carries no video", VideoContainer)

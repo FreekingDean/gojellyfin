@@ -95,8 +95,6 @@ func changePassword(t *testing.T, server *Server, ctx context.Context, target uu
 	return response
 }
 
-// The takeover: name the administrator, ask for a reset, and the current
-// password is never checked.
 func TestAMemberCannotResetAnotherAccountsPassword(t *testing.T) {
 	accounts := newAccounts(t)
 
@@ -151,8 +149,6 @@ func TestAnAdministratorResetsWithoutTheCurrentPassword(t *testing.T) {
 	}
 }
 
-// The second door onto elevation: UpdateUser is DefaultAuthorization, so it
-// must not carry a policy at all.
 func TestUpdateUserIgnoresPolicy(t *testing.T) {
 	accounts := newAccounts(t)
 	ctx := as(accounts.member)

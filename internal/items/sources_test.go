@@ -40,8 +40,6 @@ func (f *fixture) scanned(t *testing.T, key, path string) *Item {
 	return item
 }
 
-// Two files that derive one key are two copies of one title, which is the whole
-// point of the key: a 4K and a 1080p rip become one entry with two sources.
 func TestOneKeyGroupsCopies(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
