@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
+	"unicode"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
+	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
@@ -125,15 +128,27 @@ func seed() error {
 		return err
 	}
 
+	catalogue := items.New(client)
 	for _, name := range movies {
-		_, err := client.Item.Create().
-			SetLibraryID(record.ID).
-			SetKind(itemmodal.KindMovie).
-			SetMediaType(itemmodal.MediaTypeVideo).
-			SetName(name).
-			SetSortName(strings.ToLower(name)).
-			SetPath("/fixtures/" + name + ".mkv").
-			Save(ctx)
+		item, err := catalogue.SaveScanned(ctx, items.Scanned{
+			LibraryID:    record.ID,
+			Kind:         itemmodal.KindMovie,
+			Key:          "movie:" + slugify(name),
+			Name:         name,
+			SortName:     strings.ToLower(name),
+			DateModified: time.Now(),
+		})
+		if err != nil {
+			return err
+		}
+
+		_, err = catalogue.SaveSource(ctx, items.ScannedSource{
+			LibraryID:    record.ID,
+			ItemID:       item.ID,
+			Path:         "/fixtures/" + name + ".mkv",
+			Name:         name,
+			DateModified: time.Now(),
+		})
 		if err != nil {
 			return err
 		}
@@ -142,4 +157,25 @@ func seed() error {
 	fmt.Println(record.ID)
 
 	return nil
+}
+
+// The scanner derives a key from the title and keeps it unexported, so this
+// mirrors the shape rather than sharing it. Two fixtures must not slug alike:
+// one key is one title, and they would seed as a single item.
+func slugify(name string) string {
+	var slug strings.Builder
+	separated := false
+	for _, letter := range strings.ToLower(name) {
+		if !unicode.IsLetter(letter) && !unicode.IsDigit(letter) {
+			separated = slug.Len() > 0
+			continue
+		}
+		if separated {
+			slug.WriteByte('-')
+			separated = false
+		}
+		slug.WriteRune(letter)
+	}
+
+	return slug.String()
 }
