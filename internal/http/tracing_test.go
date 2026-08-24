@@ -9,8 +9,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 )
 
-// With no collector configured the span middleware is left out of the stack
-// entirely rather than wrapping every request in a tracer that discards it.
 func TestNewAPIMiddleware(t *testing.T) {
 	off, err := tracing.New(env.Config{})
 	if err != nil {
@@ -34,6 +32,6 @@ func TestNewAPIMiddleware(t *testing.T) {
 	configured := newAPIMiddleware(on, middleware.NewOapiTracing(on), auth, nil)
 
 	if len(configured) != len(unconfigured)+1 {
-		t.Errorf("stack is %d with a collector and %d without, want one more", len(configured), len(unconfigured))
+		t.Errorf("stack is %d with a collector and %d without, want the span middleware added only when one is configured", len(configured), len(unconfigured))
 	}
 }

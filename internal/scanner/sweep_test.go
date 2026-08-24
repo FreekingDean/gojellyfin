@@ -12,8 +12,7 @@ import (
 )
 
 func TestScanner_scanMovies(t *testing.T) {
-	// Nothing is reached that needs a service: the walk fails on its first call.
-	t.Run("fails on a missing root", func(t *testing.T) {
+	t.Run("fails on a missing root before it reaches a service", func(t *testing.T) {
 		scanner := New(nil, nil, nil)
 		library := &libraries.Library{ID: uuid.New()}
 		found := &walk{}

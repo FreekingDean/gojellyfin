@@ -21,10 +21,7 @@ func started(t *testing.T, tracing *Tracing) *Span {
 }
 
 func TestNew(t *testing.T) {
-	// A developer running the server alone gets a server: no collector configured
-	// means no provider to shut down and a tracer that records nothing, so nothing
-	// is held and nothing is dialed.
-	t.Run("no endpoint records nothing", func(t *testing.T) {
+	t.Run("no endpoint records nothing and holds no provider to shut down", func(t *testing.T) {
 		tracing, err := New(env.Config{})
 		if err != nil {
 			t.Fatalf("an unconfigured collector failed to build: %v", err)
@@ -57,9 +54,7 @@ func TestNew(t *testing.T) {
 		}
 	})
 
-	// The exporter answers an unparseable URL by logging and carrying on against
-	// localhost, so a typo would otherwise be silent.
-	t.Run("a malformed endpoint is refused", func(t *testing.T) {
+	t.Run("a malformed endpoint is refused rather than silently exported to localhost", func(t *testing.T) {
 		for _, endpoint := range []string{"collector:4318", "grpc://collector:4318", "http://", "not a url"} {
 			t.Run(endpoint, func(t *testing.T) {
 				if _, err := New(configured(endpoint)); err == nil {

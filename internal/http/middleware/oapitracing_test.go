@@ -26,8 +26,6 @@ func recorded(t *testing.T, operationID, method, target string) *tracing.Recorde
 	return recorder
 }
 
-// A span held open for the length of a transcode is a leak rather than a
-// trace, so the streaming roots must produce none at all.
 func TestOapiTracing_Middleware(t *testing.T) {
 	t.Run("a span held open for a transcode is a leak, so streaming roots produce none", func(t *testing.T) {
 		paths := []string{
@@ -65,6 +63,3 @@ func TestOapiTracing_Middleware(t *testing.T) {
 		}
 	})
 }
-
-// Nothing the client sent may reach a span: the query string carries api_key
-// and the path carries names in some routes.
