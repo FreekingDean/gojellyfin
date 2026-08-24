@@ -35,3 +35,50 @@ func TestKeysIgnoreTheLocation(t *testing.T) {
 		t.Errorf("%q and %q derive different keys", movieKey(first, year), movieKey(second, otherYear))
 	}
 }
+
+func TestMusicKeysSeparateTracksThatShareATitle(t *testing.T) {
+	album := albumSlug("queen", "A Night at the Opera", ptr(int32(1975)))
+
+	tests := []struct {
+		name string
+		got  string
+		want string
+	}{
+		{"artist", musicArtistKey(titleSlug("Queen", nil)), "musicartist:queen"},
+		{"album", musicAlbumKey(album), "musicalbum:queen:a-night-at-the-opera:1975"},
+		{"track", audioKey(album, nil, ptr(int32(3)), "Love of My Life"), "audio:queen:a-night-at-the-opera:1975:1:3"},
+		{"track on a second disc", audioKey(album, ptr(int32(2)), ptr(int32(3)), "Love of My Life"), "audio:queen:a-night-at-the-opera:1975:2:3"},
+		{"unnumbered track", audioKey(album, nil, nil, "Love of My Life"), "audio:queen:a-night-at-the-opera:1975:love-of-my-life"},
+		{"track with no album", audioKey("queen", nil, nil, "Loose Track"), "audio:queen:loose-track"},
+		{"track with nothing above it", audioKey("", nil, nil, "Root Level"), "audio:root-level"},
+	}
+
+	for _, test := range tests {
+		if test.got != test.want {
+			t.Errorf("%s = %q, want %q", test.name, test.got, test.want)
+		}
+	}
+}
+
+// Two recordings of one song are told apart by their position, and the same
+// song on a compilation is told apart by its album, so neither folds into the
+// other the way two encodes of one track are meant to.
+func TestMusicKeysDistinguishVersionsAndCompilations(t *testing.T) {
+	album := albumSlug("queen", "A Night at the Opera", nil)
+	compilation := albumSlug("various-artists", "Greatest Hits", nil)
+
+	original := audioKey(album, nil, ptr(int32(5)), "Love of My Life")
+	reprise := audioKey(album, nil, ptr(int32(12)), "Love of My Life")
+	if original == reprise {
+		t.Errorf("two versions on one album share the key %q", original)
+	}
+
+	if elsewhere := audioKey(compilation, nil, ptr(int32(5)), "Love of My Life"); elsewhere == original {
+		t.Errorf("the same song on a compilation shares the key %q", original)
+	}
+
+	flac, mp3 := audioKey(album, nil, ptr(int32(5)), "Love of My Life"), audioKey(album, nil, ptr(int32(5)), "Love of My Life")
+	if flac != mp3 {
+		t.Errorf("two encodes of one track derive different keys, %q and %q", flac, mp3)
+	}
+}

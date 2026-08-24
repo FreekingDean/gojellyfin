@@ -583,7 +583,10 @@ func union(kept, folded *store.UserItemData) *store.UserItemDataUpdateOne {
 // A derived key names the kind it belongs to; the migration's stand-in is a
 // path and names nothing, which is what tells the two apart.
 func derivedKeys() []predicate.Item {
-	kinds := []Kind{itemmodal.KindMovie, itemmodal.KindSeries, itemmodal.KindSeason, itemmodal.KindEpisode}
+	kinds := []Kind{
+		itemmodal.KindMovie, itemmodal.KindSeries, itemmodal.KindSeason, itemmodal.KindEpisode,
+		itemmodal.KindMusicArtist, itemmodal.KindMusicAlbum, itemmodal.KindAudio,
+	}
 	prefixes := make([]predicate.Item, 0, len(kinds))
 	for _, kind := range kinds {
 		prefixes = append(prefixes, itemmodal.KeyHasPrefix(strings.ToLower(string(kind))+":"))

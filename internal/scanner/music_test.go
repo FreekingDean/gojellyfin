@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
+	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/store"
@@ -148,12 +149,15 @@ func TestScanMusicBuildsTheArtistAlbumTrackChain(t *testing.T) {
 	}
 
 	service := items.New(client)
-	found := &walk{}
-	if err := New(service, nil, nil).scanMusic(ctx, &libraries.Library{ID: library.ID}, root, found); err != nil {
+	found := &seen{}
+	if err := New(service, nil, filesystem.New()).scanMusic(ctx, &libraries.Library{ID: library.ID}, root, found); err != nil {
 		t.Fatalf("failed to scan the music: %v", err)
 	}
-	if len(found.paths) != 6 {
-		t.Fatalf("found = %d paths, want 6", len(found.paths))
+	if len(found.keys) != 6 {
+		t.Fatalf("titles = %d, want 6 (one artist, one album, four tracks)", len(found.keys))
+	}
+	if len(found.paths) != 4 {
+		t.Fatalf("files = %d, want 4", len(found.paths))
 	}
 
 	artist, err := service.ItemByName(ctx, itemmodal.KindMusicArtist, "Queen")
@@ -209,5 +213,97 @@ func TestScanMusicBuildsTheArtistAlbumTrackChain(t *testing.T) {
 	}
 	if orphan.ParentID != nil {
 		t.Errorf("root level track parent = %v, want nil", orphan.ParentID)
+	}
+}
+
+// Two encodes of one track are one entry with two files, which is what the key
+// exists to collapse. Two different songs are not, even when they sit in the
+// same album.
+func TestScanMusicFoldsTwoEncodesOfOneTrack(t *testing.T) {
+	ctx := context.Background()
+
+	config, err := env.Load()
+	if err != nil {
+		t.Fatalf("failed to read the environment: %v", err)
+	}
+
+	connection, err := store.NewStore(config)
+	if err != nil {
+		t.Fatalf("failed to open the database: %v", err)
+	}
+	if err := connection.Start(); err != nil {
+		t.Fatalf("failed to reach the database, set DATABASE_URL: %v", err)
+	}
+
+	client := connection.Client()
+	library, err := client.Library.Create().SetName(t.Name() + "-" + uuid.NewString()).Save(ctx)
+	if err != nil {
+		t.Fatalf("failed to create the library: %v", err)
+	}
+
+	t.Cleanup(func() {
+		owned := itemmodal.LibraryID(library.ID)
+		if _, err := client.MediaSource.Delete().Where(sourcemodal.HasItemWith(owned)).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the media sources: %v", err)
+		}
+		if _, err := client.Item.Delete().Where(owned).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the items: %v", err)
+		}
+		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the library: %v", err)
+		}
+		if err := connection.Stop(); err != nil {
+			t.Errorf("failed to close the database: %v", err)
+		}
+	})
+
+	root := t.TempDir()
+	for _, name := range []string{
+		"Nirvana/Nevermind/01 - Smells Like Teen Spirit.flac",
+		"Nirvana/Nevermind/01 - Smells Like Teen Spirit.mp3",
+		"Nirvana/Nevermind/02 - In Bloom.mp3",
+	} {
+		path := filepath.Join(root, name)
+		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+			t.Fatalf("failed to create %q: %v", name, err)
+		}
+		if err := os.WriteFile(path, []byte("x"), 0o600); err != nil {
+			t.Fatalf("failed to write %q: %v", name, err)
+		}
+	}
+
+	service := items.New(client)
+	found := &seen{}
+	if err := New(service, nil, filesystem.New()).scanMusic(ctx, &libraries.Library{ID: library.ID}, root, found); err != nil {
+		t.Fatalf("failed to scan the music: %v", err)
+	}
+
+	tracks, _, err := service.QueryItems(ctx, items.ItemQuery{
+		LibraryID: &library.ID,
+		Kinds:     []items.Kind{itemmodal.KindAudio},
+	})
+	if err != nil {
+		t.Fatalf("failed to query the tracks: %v", err)
+	}
+	if len(tracks) != 2 {
+		t.Fatalf("tracks = %d, want 2", len(tracks))
+	}
+
+	byName := make(map[string]*items.Item, len(tracks))
+	for _, track := range tracks {
+		byName[track.Name] = track
+	}
+
+	folded, ok := byName["Smells Like Teen Spirit"]
+	if !ok {
+		t.Fatalf("the folded track is missing, got %v", byName)
+	}
+
+	sources, err := service.MediaSources(ctx, folded.ID)
+	if err != nil {
+		t.Fatalf("failed to query the sources: %v", err)
+	}
+	if len(sources) != 2 {
+		t.Errorf("sources = %d, want 2, so both encodes stay playable", len(sources))
 	}
 }

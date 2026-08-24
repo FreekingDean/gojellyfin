@@ -55,7 +55,7 @@ func TestItemDtosCarryTheAlbumAndArtistOfATrack(t *testing.T) {
 			Kind:      kind,
 			Name:      itemName,
 			SortName:  itemName,
-			Path:      "/" + itemName,
+			Key:       "test:" + itemName,
 		})
 		if err != nil {
 			t.Fatalf("failed to save %q: %v", itemName, err)

@@ -83,7 +83,7 @@ func (f *fixture) save(t *testing.T, kind items.Kind, name string, parentID *uui
 		Kind:      kind,
 		Name:      name,
 		SortName:  name,
-		Path:      "/" + name,
+		Key:       "test:" + name,
 	})
 	if err != nil {
 		t.Fatalf("failed to save %q: %v", name, err)

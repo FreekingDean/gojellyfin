@@ -13,7 +13,7 @@ import (
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
-func (s *Scanner) scanMusic(ctx context.Context, library *libraries.Library, root string, found *walk) error {
+func (s *Scanner) scanMusic(ctx context.Context, library *libraries.Library, root string, found *seen) error {
 	entries, err := os.ReadDir(root)
 	if err != nil {
 		return err
@@ -30,32 +30,32 @@ func (s *Scanner) scanMusic(ctx context.Context, library *libraries.Library, roo
 			if !isAudio(entry.Name()) {
 				continue
 			}
-			if err := s.upsertTrack(ctx, library, nil, nil, path, entry); err != nil {
+			if err := s.scanTrack(ctx, library, nil, "", nil, path, entry, found); err != nil {
 				return err
 			}
-			found.found(path)
 			continue
 		}
 
 		name := clean(entry.Name())
+		slug := titleSlug(name, nil)
 		artist, err := s.items.SaveScanned(ctx, items.Scanned{
 			LibraryID:    library.ID,
 			Kind:         itemmodal.KindMusicArtist,
+			Key:          musicArtistKey(slug),
 			Name:         name,
 			SortName:     sortName(name),
-			Path:         path,
 			DateModified: modifiedAt(entry),
 		})
 		if err != nil {
 			return err
 		}
-		found.found(path)
+		found.title(artist)
 
 		if err := s.scanArtwork(ctx, artist.ID, path, true); err != nil {
 			log.Printf("artwork %s: %v", path, err)
 		}
 
-		if err := s.scanArtist(ctx, library, artist.ID, path, found); err != nil {
+		if err := s.scanArtist(ctx, library, artist.ID, slug, path, found); err != nil {
 			return err
 		}
 	}
@@ -63,7 +63,7 @@ func (s *Scanner) scanMusic(ctx context.Context, library *libraries.Library, roo
 	return nil
 }
 
-func (s *Scanner) scanArtist(ctx context.Context, library *libraries.Library, artistID uuid.UUID, artistPath string, found *walk) error {
+func (s *Scanner) scanArtist(ctx context.Context, library *libraries.Library, artistID uuid.UUID, artist, artistPath string, found *seen) error {
 	entries, err := os.ReadDir(artistPath)
 	if err != nil {
 		found.skip(artistPath, err)
@@ -82,34 +82,34 @@ func (s *Scanner) scanArtist(ctx context.Context, library *libraries.Library, ar
 			if !isAudio(entry.Name()) {
 				continue
 			}
-			if err := s.upsertTrack(ctx, library, &artistID, nil, path, entry); err != nil {
+			if err := s.scanTrack(ctx, library, &artistID, artist, nil, path, entry, found); err != nil {
 				return err
 			}
-			found.found(path)
 			continue
 		}
 
 		name, year := parseTitle(entry.Name())
+		slug := albumSlug(artist, name, year)
 		album, err := s.items.SaveScanned(ctx, items.Scanned{
 			LibraryID:      library.ID,
 			ParentID:       &artistID,
 			Kind:           itemmodal.KindMusicAlbum,
+			Key:            musicAlbumKey(slug),
 			Name:           name,
 			SortName:       sortName(name),
-			Path:           path,
 			ProductionYear: year,
 			DateModified:   modifiedAt(entry),
 		})
 		if err != nil {
 			return err
 		}
-		found.found(path)
+		found.title(album)
 
 		if err := s.scanArtwork(ctx, album.ID, path, true); err != nil {
 			log.Printf("artwork %s: %v", path, err)
 		}
 
-		if err := s.scanAlbum(ctx, library, album.ID, path, nil, found); err != nil {
+		if err := s.scanAlbum(ctx, library, album.ID, slug, path, nil, found); err != nil {
 			return err
 		}
 	}
@@ -119,7 +119,7 @@ func (s *Scanner) scanArtist(ctx context.Context, library *libraries.Library, ar
 
 // A disc directory carries its number down to the tracks and is the only
 // nesting an album recurses into, so a stray folder cannot walk forever.
-func (s *Scanner) scanAlbum(ctx context.Context, library *libraries.Library, albumID uuid.UUID, albumPath string, disc *int32, found *walk) error {
+func (s *Scanner) scanAlbum(ctx context.Context, library *libraries.Library, albumID uuid.UUID, album, albumPath string, disc *int32, found *seen) error {
 	entries, err := os.ReadDir(albumPath)
 	if err != nil {
 		found.skip(albumPath, err)
@@ -139,7 +139,7 @@ func (s *Scanner) scanAlbum(ctx context.Context, library *libraries.Library, alb
 			if !ok || disc != nil {
 				continue
 			}
-			if err := s.scanAlbum(ctx, library, albumID, path, number, found); err != nil {
+			if err := s.scanAlbum(ctx, library, albumID, album, path, number, found); err != nil {
 				return err
 			}
 			continue
@@ -148,31 +148,29 @@ func (s *Scanner) scanAlbum(ctx context.Context, library *libraries.Library, alb
 		if !isAudio(entry.Name()) {
 			continue
 		}
-		if err := s.upsertTrack(ctx, library, &albumID, disc, path, entry); err != nil {
+		if err := s.scanTrack(ctx, library, &albumID, album, disc, path, entry, found); err != nil {
 			return err
 		}
-		found.found(path)
 	}
 
 	return nil
 }
 
-func (s *Scanner) upsertTrack(ctx context.Context, library *libraries.Library, parentID *uuid.UUID, disc *int32, path string, entry os.DirEntry) error {
+func (s *Scanner) scanTrack(ctx context.Context, library *libraries.Library, parentID *uuid.UUID, scope string, disc *int32, path string, entry os.DirEntry, found *seen) error {
 	side, number, title := parseTrack(entry.Name())
 	if side == nil {
 		side = disc
 	}
 
-	item, err := s.items.SaveScanned(ctx, items.Scanned{
+	item, err := s.scanFile(ctx, library, path, entry, found, items.Scanned{
 		LibraryID:         library.ID,
 		ParentID:          parentID,
 		Kind:              itemmodal.KindAudio,
+		Key:               audioKey(scope, side, number, title),
 		Name:              title,
 		SortName:          sortName(title),
-		Path:              path,
 		IndexNumber:       number,
 		ParentIndexNumber: side,
-		DateModified:      modifiedAt(entry),
 	})
 	if err != nil {
 		return err
@@ -182,5 +180,5 @@ func (s *Scanner) upsertTrack(ctx context.Context, library *libraries.Library, p
 		log.Printf("artwork %s: %v", path, err)
 	}
 
-	return s.probeMedia(ctx, item)
+	return nil
 }

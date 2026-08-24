@@ -254,6 +254,46 @@ func episodeKey(slug string, season, episode *int32, title string) string {
 	return fmt.Sprintf("episode:%s:%d:%d", slug, *season, *episode)
 }
 
+func musicArtistKey(slug string) string {
+	return "musicartist:" + slug
+}
+
+func musicAlbumKey(slug string) string {
+	return "musicalbum:" + slug
+}
+
+// A track is keyed by its position under its album, so two recordings of one
+// song stay apart while a flac and an mp3 of the same track become two files of
+// one item. A track with no number falls back to its title the way an unnumbered
+// episode does.
+func audioKey(scope string, disc, track *int32, title string) string {
+	if track == nil {
+		return keyOf("audio", scope, slugify(title))
+	}
+
+	side := int32(1)
+	if disc != nil {
+		side = *disc
+	}
+
+	return keyOf("audio", scope, fmt.Sprintf("%d:%d", side, *track))
+}
+
+func albumSlug(artist string, name string, year *int32) string {
+	return keyOf(artist, titleSlug(name, year))
+}
+
+func keyOf(parts ...string) string {
+	kept := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if part != "" {
+			kept = append(kept, part)
+		}
+	}
+
+	return strings.Join(kept, ":")
+}
+
 func titleSlug(name string, year *int32) string {
 	if year == nil {
 		return slugify(name)
