@@ -20,6 +20,7 @@ async function open() {
   const page = await context.newPage();
 
   await page.setViewport({ width: 1280, height: 900 });
+  await keepOnOrigin(page);
 
   return {
     page,
@@ -28,6 +29,22 @@ async function open() {
       browser.disconnect();
     },
   };
+}
+
+// The client asks gstatic.com for the Chromecast sender, which would make a
+// run depend on the network and on Google being up.
+async function keepOnOrigin(page) {
+  const origin = harness().baseUrl;
+
+  await page.setRequestInterception(true);
+  page.on('request', (request) => {
+    if (request.url().startsWith(origin)) {
+      request.continue();
+      return;
+    }
+
+    request.abort();
+  });
 }
 
 async function loadLogin(page) {
@@ -41,6 +58,11 @@ async function signIn(page, password = harness().password) {
   await page.waitForSelector('#txtManualPassword', { visible: true });
   await page.type('#txtManualPassword', password);
   await page.click('button[type=submit]');
+}
+
+async function signInAndLand(page) {
+  await signIn(page);
+  await waitForRoute(page, 'home.html');
 }
 
 async function text(page) {
@@ -59,6 +81,9 @@ async function waitForRoute(page, fragment, timeout = 30000) {
   );
 }
 
+// It answers with the text that satisfied it, because the client swaps views
+// by hiding one and showing the next: reading the page again afterwards can
+// land in the gap where neither is on screen.
 async function waitForText(page, wanted, timeout = 30000) {
   await waitFor(
     page,
@@ -67,10 +92,32 @@ async function waitForText(page, wanted, timeout = 30000) {
     timeout,
     () => `the page never showed ${JSON.stringify(wanted)}`,
   );
+
+  return text(page);
 }
 
-// A bare puppeteer timeout says only that 30 seconds passed, so what the page
-// was showing instead is read back and reported.
+async function textOf(page, selector, timeout = 30000) {
+  await waitFor(
+    page,
+    (want) => {
+      const found = Array.from(document.querySelectorAll(want)).find((element) => element.offsetParent !== null);
+
+      return Boolean(found && found.innerText.trim());
+    },
+    selector,
+    timeout,
+    () => `nothing visible matched ${selector}`,
+  );
+
+  return page.$$eval(selector, (elements) => {
+    const found = elements.find((element) => element.offsetParent !== null);
+
+    return found ? found.innerText.trim() : '';
+  });
+}
+
+// A bare puppeteer timeout says only that thirty seconds passed, so what the
+// page was showing instead is read back and reported.
 async function waitFor(page, predicate, argument, timeout, describe) {
   try {
     await page.waitForFunction(predicate, { timeout }, argument);
@@ -78,13 +125,9 @@ async function waitFor(page, predicate, argument, timeout, describe) {
     if (error.name !== 'TimeoutError') {
       throw error;
     }
+
     throw new Error(`${describe()}. It was at ${page.url()} showing:\n${await text(page)}`);
   }
 }
 
-async function signInAndLand(page) {
-  await signIn(page);
-  await waitForRoute(page, 'home.html');
-}
-
-module.exports = { harness, open, loadLogin, signIn, signInAndLand, text, waitForRoute, waitForText };
+module.exports = { harness, open, loadLogin, signIn, signInAndLand, text, textOf, waitForRoute, waitForText };
