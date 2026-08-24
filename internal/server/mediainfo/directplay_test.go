@@ -23,6 +23,19 @@ const chromeProfile = `{
 	]
 }`
 
+// The codec names jellyfin-web actually puts in its DirectPlayProfiles, read
+// off the vendored bundle rather than off the documentation, beside what
+// ffprobe reports for the same codec. They are the same strings, which is why
+// nothing here translates between the two vocabularies.
+const webProfile = `{
+	"DirectPlayProfiles": [
+		{"Container": "webm", "Type": "Video", "VideoCodec": "vp8,vp9,av1", "AudioCodec": "opus"},
+		{"Container": "mp4,m4v", "Type": "Video",
+			"VideoCodec": "h264,hevc,mpeg2video,vc1,msmpeg4v2,vp9,av1",
+			"AudioCodec": "aac,mp3,ac3,eac3,mp2,dca,dts,pcm_s16le,pcm_s24le,truehd,aac_latm,opus,flac,alac,vorbis"}
+	]
+}`
+
 const streamingStickProfile = `{
 	"DirectPlayProfiles": [
 		{"Container": "ts", "Type": "Video", "VideoCodec": "h264", "AudioCodec": "aac"}
@@ -84,6 +97,46 @@ func TestDirectPlays(t *testing.T) {
 		})
 	}
 
+	t.Run("the names the client writes are the names the probe wrote", func(t *testing.T) {
+		declared := videoProfiles(profileFrom(t, webProfile))
+
+		for _, tc := range []struct {
+			name   string
+			source *items.MediaSource
+			want   bool
+		}{
+			{name: "hevc, which the client spells the same way", source: ripped("mp4", "hevc", "aac"), want: true},
+			{name: "mpeg2video, not mpeg2", source: ripped("mp4", "mpeg2video", "aac"), want: true},
+			{name: "msmpeg4v2, which is the one the client names", source: ripped("mp4", "msmpeg4v2", "aac"), want: true},
+			{name: "vc1", source: ripped("mp4", "vc1", "aac"), want: true},
+			{name: "dca, which the client lists beside dts itself", source: ripped("mp4", "h264", "dca"), want: true},
+			{name: "eac3, not ec-3", source: ripped("mp4", "h264", "eac3"), want: true},
+			{name: "truehd", source: ripped("mp4", "h264", "truehd"), want: true},
+			{name: "aac_latm", source: ripped("mp4", "h264", "aac_latm"), want: true},
+			{name: "pcm_s16le", source: ripped("mp4", "h264", "pcm_s16le"), want: true},
+			{name: "a profile shouting its codec", source: ripped("mp4", "HEVC", "AAC"), want: true},
+			{name: "a picture the client never named", source: ripped("mp4", "theora", "aac"), want: false},
+			{name: "audio the client never named", source: ripped("mp4", "h264", "wmav2"), want: false},
+		} {
+			t.Run(tc.name, func(t *testing.T) {
+				if got := directPlays(declared, tc.source); got != tc.want {
+					t.Errorf("directPlays = %v, want %v", got, tc.want)
+				}
+			})
+		}
+	})
+
+	t.Run("a stream nobody probed is never refused for a codec nobody read", func(t *testing.T) {
+		declared := videoProfiles(profileFrom(t, webProfile))
+
+		if !directPlays(declared, ripped("mp4", "", "")) {
+			t.Error("a source with no probed codecs was refused")
+		}
+		if !directPlays(videoProfiles(profileFrom(t, `{"DirectPlayProfiles":[{"Container":"mp4","Type":"Video"}]}`)), rip("mp4", "ac3")) {
+			t.Error("a profile that named no codecs was read as naming none it takes")
+		}
+	})
+
 	t.Run("a client that declared nothing is left alone", func(t *testing.T) {
 		if !directPlays(videoProfiles(nil), rip("mkv", "ac3")) {
 			t.Error("a source was refused to a client with no profile")
@@ -135,6 +188,12 @@ func TestPlan(t *testing.T) {
 			name:    "a picture nothing declared can carry is refused",
 			profile: chromeProfile,
 			source:  ripped("mkv", "mpeg4", "aac"),
+			refused: true,
+		},
+		{
+			name:    "a picture the real client never names is refused",
+			profile: webProfile,
+			source:  ripped("mkv", "theora", "aac"),
 			refused: true,
 		},
 		{
