@@ -154,8 +154,8 @@ func (f *fixture) add(t *testing.T, scanned items.Scanned) *items.Item {
 	if scanned.SortName == "" {
 		scanned.SortName = scanned.Name
 	}
-	if scanned.Path == "" {
-		scanned.Path = "/" + f.libraryID.String() + "/" + scanned.Name
+	if scanned.Key == "" {
+		scanned.Key = "test:" + f.libraryID.String() + ":" + scanned.Name
 	}
 
 	added, err := f.items.SaveScanned(context.Background(), scanned)
@@ -295,7 +295,7 @@ func TestIdentifyLeavesALockedItemAlone(t *testing.T) {
 	witness := fixed.add(t, items.Scanned{
 		Kind:           itemmodal.KindMovie,
 		Name:           "The Matrix",
-		Path:           "/" + fixed.libraryID.String() + "/witness",
+		Key:            "test:" + fixed.libraryID.String() + ":witness",
 		ProductionYear: index(1999),
 	})
 

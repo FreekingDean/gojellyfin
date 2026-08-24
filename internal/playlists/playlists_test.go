@@ -115,7 +115,7 @@ func (f *fixture) item(t *testing.T, name string, kind itemmodal.Kind, parentID 
 		SetName(name).
 		SetSortName(name).
 		SetIsFolder(kind == itemmodal.KindSeries || kind == itemmodal.KindSeason).
-		SetPath(fmt.Sprintf("/%s/%s", f.libraryID, name)).
+		SetKey(fmt.Sprintf("test:%s", name)).
 		SetNillableParentID(parentID).
 		SetNillableIndexNumber(index).
 		Save(context.Background())

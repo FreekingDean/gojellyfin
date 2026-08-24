@@ -12,6 +12,8 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	entrymodal "github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	datamodal "github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
 )
@@ -35,15 +37,15 @@ func New(client *store.Client) *Service {
 	return &Service{store: client}
 }
 
-// What one pass of the scanner knows about a file. The probe owns the
+// What one pass of the scanner knows about a title. The probe owns the
 // remaining columns and must not be clobbered from here.
 type Scanned struct {
 	LibraryID         uuid.UUID
 	ParentID          *uuid.UUID
 	Kind              Kind
+	Key               string
 	Name              string
 	SortName          string
-	Path              string
 	ProductionYear    *int32
 	IndexNumber       *int32
 	ParentIndexNumber *int32
@@ -73,14 +75,14 @@ func (s *Service) SaveScanned(ctx context.Context, scanned Scanned) (*Item, erro
 		SetKind(scanned.Kind).
 		SetMediaType(mediaType).
 		SetIsFolder(isFolder).
+		SetKey(scanned.Key).
 		SetName(scanned.Name).
 		SetSortName(scanned.SortName).
-		SetPath(scanned.Path).
 		SetNillableProductionYear(scanned.ProductionYear).
 		SetNillableIndexNumber(scanned.IndexNumber).
 		SetNillableParentIndexNumber(scanned.ParentIndexNumber).
 		SetDateModified(scanned.DateModified).
-		OnConflictColumns(itemmodal.FieldLibraryID, itemmodal.FieldPath).
+		OnConflictColumns(itemmodal.FieldLibraryID, itemmodal.FieldKey).
 		UpdateParentID().
 		UpdateKind().
 		UpdateMediaType().
@@ -285,15 +287,15 @@ var ErrNothingScanned = errors.New("items: the scan found no files")
 // Soft, so that a volume which comes back brings its watch state with it. The
 // row keeps the id the user data hangs off, which is the whole reason a hard
 // delete cannot be undone.
-func (s *Service) DeleteItemsNotInPaths(ctx context.Context, libraryID uuid.UUID, paths []string) error {
-	if len(paths) == 0 {
+func (s *Service) DeleteItemsNotInKeys(ctx context.Context, libraryID uuid.UUID, keys []string) error {
+	if len(keys) == 0 {
 		return ErrNothingScanned
 	}
 
 	missing := []predicate.Item{
 		itemmodal.LibraryID(libraryID),
 		itemmodal.DeletedAtIsNil(),
-		itemmodal.PathNotIn(paths...),
+		itemmodal.KeyNotIn(keys...),
 	}
 
 	if err := s.store.Item.Update().
@@ -421,4 +423,135 @@ func (s *Service) CountByKind(ctx context.Context) (map[string]int32, error) {
 	}
 
 	return counts, nil
+}
+
+// Items carrying the identity the key migration stood in for them: the path the
+// row used to be keyed on, which no derivation would ever produce. Empty once a
+// library has been rescanned, so the scan pays one indexed lookup to find that
+// out.
+func (s *Service) LegacyKeyedItems(ctx context.Context, libraryID uuid.UUID) ([]*Item, error) {
+	records, err := s.query().
+		Where(
+			itemmodal.LibraryID(libraryID),
+			itemmodal.Not(itemmodal.Or(derivedKeys()...)),
+		).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query legacy keyed items: %w", err)
+	}
+
+	return records, nil
+}
+
+// Every item of a library, which the rekey needs so a season can read the name
+// and year off the series it hangs under.
+func (s *Service) ItemsInLibrary(ctx context.Context, libraryID uuid.UUID) ([]*Item, error) {
+	records, err := s.query().Where(itemmodal.LibraryID(libraryID)).All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query the items of a library: %w", err)
+	}
+
+	return records, nil
+}
+
+func (s *Service) Rekey(ctx context.Context, id uuid.UUID, key string) error {
+	if err := s.store.Item.UpdateOneID(id).SetKey(key).Exec(ctx); err != nil {
+		return fmt.Errorf("failed to rekey %s: %w", id, err)
+	}
+
+	return nil
+}
+
+// Two rows that derive one key are the two copies of one title the key exists
+// to collapse, so the second is folded into the first rather than refused: its
+// files, its children and its playlist entries move over, and its watch state
+// moves wherever the survivor has none of its own. Refusing would leave a
+// library that can never scan again, because the collision is on a unique index
+// the next run hits just as hard.
+func (s *Service) Merge(ctx context.Context, from, into uuid.UUID) error {
+	err := s.store.WithTx(ctx, func(tx *store.Tx) error {
+		kept, err := tx.UserItemData.Query().Where(datamodal.ItemID(into)).All(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to query the surviving item's user data: %w", err)
+		}
+
+		survivor := make(map[uuid.UUID]*store.UserItemData, len(kept))
+		for _, datum := range kept {
+			survivor[datum.UserID] = datum
+		}
+
+		folded, err := tx.UserItemData.Query().Where(datamodal.ItemID(from)).All(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to query the duplicate's user data: %w", err)
+		}
+
+		clashed := make([]uuid.UUID, 0, len(folded))
+		for _, datum := range folded {
+			existing, clash := survivor[datum.UserID]
+			if !clash {
+				continue
+			}
+			clashed = append(clashed, datum.UserID)
+			if err := union(existing, datum).Exec(ctx); err != nil {
+				return fmt.Errorf("failed to fold the duplicate's user data: %w", err)
+			}
+		}
+
+		if len(clashed) > 0 {
+			if _, err := tx.UserItemData.Delete().
+				Where(datamodal.ItemID(from), datamodal.UserIDIn(clashed...)).
+				Exec(ctx); err != nil {
+				return fmt.Errorf("failed to drop the folded user data: %w", err)
+			}
+		}
+
+		if err := tx.UserItemData.Update().Where(datamodal.ItemID(from)).SetItemID(into).Exec(ctx); err != nil {
+			return fmt.Errorf("failed to move the user data: %w", err)
+		}
+		if err := tx.PlaylistEntry.Update().Where(entrymodal.ItemID(from)).SetItemID(into).Exec(ctx); err != nil {
+			return fmt.Errorf("failed to move the playlist entries: %w", err)
+		}
+		if err := tx.MediaSource.Update().Where(sourcemodal.ItemID(from)).SetItemID(into).Exec(ctx); err != nil {
+			return fmt.Errorf("failed to move the media sources: %w", err)
+		}
+		if err := tx.Item.Update().Where(itemmodal.ParentID(from)).SetParentID(into).Exec(ctx); err != nil {
+			return fmt.Errorf("failed to move the children: %w", err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return s.DeleteItem(ctx, from)
+}
+
+// Neither row is more true than the other, so the merged datum is whichever
+// answer says the title was watched: played and favourite carry, and the counts
+// and the position take the further of the two.
+func union(kept, folded *store.UserItemData) *store.UserItemDataUpdateOne {
+	update := kept.Update().
+		SetPlayed(kept.Played || folded.Played).
+		SetIsFavorite(kept.IsFavorite || folded.IsFavorite).
+		SetPlayCount(max(kept.PlayCount, folded.PlayCount)).
+		SetPlaybackPositionTicks(max(kept.PlaybackPositionTicks, folded.PlaybackPositionTicks))
+
+	if folded.LastPlayedAt != nil && (kept.LastPlayedAt == nil || folded.LastPlayedAt.After(*kept.LastPlayedAt)) {
+		update = update.SetLastPlayedAt(*folded.LastPlayedAt)
+	}
+
+	return update
+}
+
+// A derived key names the kind it belongs to; the migration's stand-in is a
+// path and names nothing, which is what tells the two apart.
+func derivedKeys() []predicate.Item {
+	kinds := []Kind{itemmodal.KindMovie, itemmodal.KindSeries, itemmodal.KindSeason, itemmodal.KindEpisode}
+	prefixes := make([]predicate.Item, 0, len(kinds))
+	for _, kind := range kinds {
+		prefixes = append(prefixes, itemmodal.KeyHasPrefix(strings.ToLower(string(kind))+":"))
+	}
+
+	return prefixes
 }
