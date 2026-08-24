@@ -188,6 +188,17 @@ Migrations are safe to re-run either way — atlas records what it has applied i
 costs nothing. The Job and the pods must run the same image tag, and the chart
 gives them the same one.
 
+Some upgrades are `migrate` **plus a scan**, because the migration only stands a
+value in and the scan is what writes the real one. The scan runs on the worker,
+which is off by default here, so an upgrade with `migration.enabled=true` and no
+worker leaves that half undone. The release that moved probe state onto the
+media source (#551) is one of these, and its first scan re-probes every file
+rather than skipping the unchanged ones: `probed_at` is NULL on every source the
+migration created, and that is exactly what "needs probing" means. It is a
+one-off, but it is ffprobe over the whole library on a worker whose defaults are
+sized for steady state — give `worker.resources` more cpu for that run, or leave
+it and let the run take longer.
+
 ### Routing
 
 | Value | Default | Description |
