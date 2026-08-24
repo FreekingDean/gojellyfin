@@ -71,14 +71,14 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, profile api
 		MediaSources:  &sources,
 		PlaySessionId: apiutil.Ptr(session),
 	}
-	if unplayed(sources) {
+	if nothingPlayable(sources) {
 		response.ErrorCode = apiutil.Ptr(api.NoCompatibleStream)
 	}
 
 	return response, nil
 }
 
-func unplayed(sources []api.MediaSourceInfo) bool {
+func nothingPlayable(sources []api.MediaSourceInfo) bool {
 	for _, source := range sources {
 		playable := apiutil.Deref(source.SupportsDirectPlay) ||
 			apiutil.Deref(source.SupportsDirectStream) ||
