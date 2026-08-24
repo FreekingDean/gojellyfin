@@ -275,11 +275,11 @@ var (
 		{Name: "video_type", Type: field.TypeEnum, Nullable: true, Enums: []string{"VideoFile", "Iso", "Dvd", "BluRay"}},
 		{Name: "iso_type", Type: field.TypeEnum, Nullable: true, Enums: []string{"Dvd", "BluRay"}},
 		{Name: "video_3d_format", Type: field.TypeEnum, Nullable: true, Enums: []string{"HalfSideBySide", "FullSideBySide", "FullTopAndBottom", "HalfTopAndBottom", "MVC"}},
+		{Name: "key", Type: field.TypeString, Nullable: true},
 		{Name: "name", Type: field.TypeString},
 		{Name: "original_title", Type: field.TypeString, Nullable: true},
 		{Name: "sort_name", Type: field.TypeString, Nullable: true},
 		{Name: "forced_sort_name", Type: field.TypeBool, Default: false},
-		{Name: "path", Type: field.TypeString, Nullable: true},
 		{Name: "deleted_at", Type: field.TypeTime, Nullable: true},
 		{Name: "container", Type: field.TypeString, Nullable: true},
 		{Name: "overview", Type: field.TypeString, Nullable: true, Size: 2147483647},
@@ -346,14 +346,14 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "item_library_id_path",
+				Name:    "item_library_id_key",
 				Unique:  true,
-				Columns: []*schema.Column{ItemsColumns[58], ItemsColumns[14]},
+				Columns: []*schema.Column{ItemsColumns[58], ItemsColumns[10]},
 			},
 			{
 				Name:    "item_kind_sort_name",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[3], ItemsColumns[12]},
+				Columns: []*schema.Column{ItemsColumns[3], ItemsColumns[13]},
 			},
 			{
 				Name:    "item_deleted_at",
@@ -545,6 +545,8 @@ var (
 		{Name: "size", Type: field.TypeInt64, Nullable: true},
 		{Name: "run_time_ticks", Type: field.TypeInt64, Nullable: true},
 		{Name: "bitrate", Type: field.TypeInt32, Nullable: true},
+		{Name: "date_modified", Type: field.TypeTime, Nullable: true},
+		{Name: "probed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "is_remote", Type: field.TypeBool, Default: false},
 		{Name: "is_infinite_stream", Type: field.TypeBool, Default: false},
 		{Name: "supports_transcoding", Type: field.TypeBool, Default: true},
@@ -561,6 +563,7 @@ var (
 		{Name: "default_subtitle_stream_index", Type: field.TypeInt32, Nullable: true},
 		{Name: "formats", Type: field.TypeJSON, Nullable: true},
 		{Name: "item_id", Type: field.TypeUUID},
+		{Name: "library_id", Type: field.TypeUUID},
 	}
 	// MediaSourcesTable holds the schema information for the "media_sources" table.
 	MediaSourcesTable = &schema.Table{
@@ -570,9 +573,22 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "media_sources_items_media_sources",
-				Columns:    []*schema.Column{MediaSourcesColumns[32]},
+				Columns:    []*schema.Column{MediaSourcesColumns[34]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "media_sources_libraries_media_sources",
+				Columns:    []*schema.Column{MediaSourcesColumns[35]},
+				RefColumns: []*schema.Column{LibrariesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "mediasource_library_id_path",
+				Unique:  true,
+				Columns: []*schema.Column{MediaSourcesColumns[35], MediaSourcesColumns[11]},
 			},
 		},
 	}
@@ -1263,6 +1279,7 @@ func init() {
 	MediaAttachmentsTable.ForeignKeys[0].RefTable = MediaSourcesTable
 	MediaSegmentsTable.ForeignKeys[0].RefTable = ItemsTable
 	MediaSourcesTable.ForeignKeys[0].RefTable = ItemsTable
+	MediaSourcesTable.ForeignKeys[1].RefTable = LibrariesTable
 	MediaStreamsTable.ForeignKeys[0].RefTable = MediaSourcesTable
 	PlaylistsTable.ForeignKeys[0].RefTable = ItemsTable
 	PlaylistsTable.ForeignKeys[1].RefTable = UsersTable

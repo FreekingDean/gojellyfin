@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
+	"github.com/FreekingDean/gojellyfin/internal/store/library"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediaattachment"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
@@ -63,6 +64,20 @@ func (_u *MediaSourceUpdate) SetItemID(v uuid.UUID) *MediaSourceUpdate {
 func (_u *MediaSourceUpdate) SetNillableItemID(v *uuid.UUID) *MediaSourceUpdate {
 	if v != nil {
 		_u.SetItemID(*v)
+	}
+	return _u
+}
+
+// SetLibraryID sets the "library_id" field.
+func (_u *MediaSourceUpdate) SetLibraryID(v uuid.UUID) *MediaSourceUpdate {
+	_u.mutation.SetLibraryID(v)
+	return _u
+}
+
+// SetNillableLibraryID sets the "library_id" field if the given value is not nil.
+func (_u *MediaSourceUpdate) SetNillableLibraryID(v *uuid.UUID) *MediaSourceUpdate {
+	if v != nil {
+		_u.SetLibraryID(*v)
 	}
 	return _u
 }
@@ -344,6 +359,46 @@ func (_u *MediaSourceUpdate) ClearBitrate() *MediaSourceUpdate {
 	return _u
 }
 
+// SetDateModified sets the "date_modified" field.
+func (_u *MediaSourceUpdate) SetDateModified(v time.Time) *MediaSourceUpdate {
+	_u.mutation.SetDateModified(v)
+	return _u
+}
+
+// SetNillableDateModified sets the "date_modified" field if the given value is not nil.
+func (_u *MediaSourceUpdate) SetNillableDateModified(v *time.Time) *MediaSourceUpdate {
+	if v != nil {
+		_u.SetDateModified(*v)
+	}
+	return _u
+}
+
+// ClearDateModified clears the value of the "date_modified" field.
+func (_u *MediaSourceUpdate) ClearDateModified() *MediaSourceUpdate {
+	_u.mutation.ClearDateModified()
+	return _u
+}
+
+// SetProbedAt sets the "probed_at" field.
+func (_u *MediaSourceUpdate) SetProbedAt(v time.Time) *MediaSourceUpdate {
+	_u.mutation.SetProbedAt(v)
+	return _u
+}
+
+// SetNillableProbedAt sets the "probed_at" field if the given value is not nil.
+func (_u *MediaSourceUpdate) SetNillableProbedAt(v *time.Time) *MediaSourceUpdate {
+	if v != nil {
+		_u.SetProbedAt(*v)
+	}
+	return _u
+}
+
+// ClearProbedAt clears the value of the "probed_at" field.
+func (_u *MediaSourceUpdate) ClearProbedAt() *MediaSourceUpdate {
+	_u.mutation.ClearProbedAt()
+	return _u
+}
+
 // SetIsRemote sets the "is_remote" field.
 func (_u *MediaSourceUpdate) SetIsRemote(v bool) *MediaSourceUpdate {
 	_u.mutation.SetIsRemote(v)
@@ -589,6 +644,11 @@ func (_u *MediaSourceUpdate) SetItem(v *Item) *MediaSourceUpdate {
 	return _u.SetItemID(v.ID)
 }
 
+// SetLibrary sets the "library" edge to the Library entity.
+func (_u *MediaSourceUpdate) SetLibrary(v *Library) *MediaSourceUpdate {
+	return _u.SetLibraryID(v.ID)
+}
+
 // AddStreamIDs adds the "streams" edge to the MediaStream entity by IDs.
 func (_u *MediaSourceUpdate) AddStreamIDs(ids ...uuid.UUID) *MediaSourceUpdate {
 	_u.mutation.AddStreamIDs(ids...)
@@ -627,6 +687,12 @@ func (_u *MediaSourceUpdate) Mutation() *MediaSourceMutation {
 // ClearItem clears the "item" edge to the Item entity.
 func (_u *MediaSourceUpdate) ClearItem() *MediaSourceUpdate {
 	_u.mutation.ClearItem()
+	return _u
+}
+
+// ClearLibrary clears the "library" edge to the Library entity.
+func (_u *MediaSourceUpdate) ClearLibrary() *MediaSourceUpdate {
+	_u.mutation.ClearLibrary()
 	return _u
 }
 
@@ -748,6 +814,9 @@ func (_u *MediaSourceUpdate) check() error {
 	if _u.mutation.ItemCleared() && len(_u.mutation.ItemIDs()) > 0 {
 		return errors.New(`store: clearing a required unique edge "MediaSource.item"`)
 	}
+	if _u.mutation.LibraryCleared() && len(_u.mutation.LibraryIDs()) > 0 {
+		return errors.New(`store: clearing a required unique edge "MediaSource.library"`)
+	}
 	return nil
 }
 
@@ -850,6 +919,18 @@ func (_u *MediaSourceUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	if _u.mutation.BitrateCleared() {
 		_spec.ClearField(mediasource.FieldBitrate, field.TypeInt32)
 	}
+	if value, ok := _u.mutation.DateModified(); ok {
+		_spec.SetField(mediasource.FieldDateModified, field.TypeTime, value)
+	}
+	if _u.mutation.DateModifiedCleared() {
+		_spec.ClearField(mediasource.FieldDateModified, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ProbedAt(); ok {
+		_spec.SetField(mediasource.FieldProbedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ProbedAtCleared() {
+		_spec.ClearField(mediasource.FieldProbedAt, field.TypeTime)
+	}
 	if value, ok := _u.mutation.IsRemote(); ok {
 		_spec.SetField(mediasource.FieldIsRemote, field.TypeBool, value)
 	}
@@ -937,6 +1018,35 @@ func (_u *MediaSourceUpdate) sqlSave(ctx context.Context) (_node int, err error)
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.LibraryCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   mediasource.LibraryTable,
+			Columns: []string{mediasource.LibraryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(library.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.LibraryIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   mediasource.LibraryTable,
+			Columns: []string{mediasource.LibraryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(library.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1084,6 +1194,20 @@ func (_u *MediaSourceUpdateOne) SetItemID(v uuid.UUID) *MediaSourceUpdateOne {
 func (_u *MediaSourceUpdateOne) SetNillableItemID(v *uuid.UUID) *MediaSourceUpdateOne {
 	if v != nil {
 		_u.SetItemID(*v)
+	}
+	return _u
+}
+
+// SetLibraryID sets the "library_id" field.
+func (_u *MediaSourceUpdateOne) SetLibraryID(v uuid.UUID) *MediaSourceUpdateOne {
+	_u.mutation.SetLibraryID(v)
+	return _u
+}
+
+// SetNillableLibraryID sets the "library_id" field if the given value is not nil.
+func (_u *MediaSourceUpdateOne) SetNillableLibraryID(v *uuid.UUID) *MediaSourceUpdateOne {
+	if v != nil {
+		_u.SetLibraryID(*v)
 	}
 	return _u
 }
@@ -1365,6 +1489,46 @@ func (_u *MediaSourceUpdateOne) ClearBitrate() *MediaSourceUpdateOne {
 	return _u
 }
 
+// SetDateModified sets the "date_modified" field.
+func (_u *MediaSourceUpdateOne) SetDateModified(v time.Time) *MediaSourceUpdateOne {
+	_u.mutation.SetDateModified(v)
+	return _u
+}
+
+// SetNillableDateModified sets the "date_modified" field if the given value is not nil.
+func (_u *MediaSourceUpdateOne) SetNillableDateModified(v *time.Time) *MediaSourceUpdateOne {
+	if v != nil {
+		_u.SetDateModified(*v)
+	}
+	return _u
+}
+
+// ClearDateModified clears the value of the "date_modified" field.
+func (_u *MediaSourceUpdateOne) ClearDateModified() *MediaSourceUpdateOne {
+	_u.mutation.ClearDateModified()
+	return _u
+}
+
+// SetProbedAt sets the "probed_at" field.
+func (_u *MediaSourceUpdateOne) SetProbedAt(v time.Time) *MediaSourceUpdateOne {
+	_u.mutation.SetProbedAt(v)
+	return _u
+}
+
+// SetNillableProbedAt sets the "probed_at" field if the given value is not nil.
+func (_u *MediaSourceUpdateOne) SetNillableProbedAt(v *time.Time) *MediaSourceUpdateOne {
+	if v != nil {
+		_u.SetProbedAt(*v)
+	}
+	return _u
+}
+
+// ClearProbedAt clears the value of the "probed_at" field.
+func (_u *MediaSourceUpdateOne) ClearProbedAt() *MediaSourceUpdateOne {
+	_u.mutation.ClearProbedAt()
+	return _u
+}
+
 // SetIsRemote sets the "is_remote" field.
 func (_u *MediaSourceUpdateOne) SetIsRemote(v bool) *MediaSourceUpdateOne {
 	_u.mutation.SetIsRemote(v)
@@ -1610,6 +1774,11 @@ func (_u *MediaSourceUpdateOne) SetItem(v *Item) *MediaSourceUpdateOne {
 	return _u.SetItemID(v.ID)
 }
 
+// SetLibrary sets the "library" edge to the Library entity.
+func (_u *MediaSourceUpdateOne) SetLibrary(v *Library) *MediaSourceUpdateOne {
+	return _u.SetLibraryID(v.ID)
+}
+
 // AddStreamIDs adds the "streams" edge to the MediaStream entity by IDs.
 func (_u *MediaSourceUpdateOne) AddStreamIDs(ids ...uuid.UUID) *MediaSourceUpdateOne {
 	_u.mutation.AddStreamIDs(ids...)
@@ -1648,6 +1817,12 @@ func (_u *MediaSourceUpdateOne) Mutation() *MediaSourceMutation {
 // ClearItem clears the "item" edge to the Item entity.
 func (_u *MediaSourceUpdateOne) ClearItem() *MediaSourceUpdateOne {
 	_u.mutation.ClearItem()
+	return _u
+}
+
+// ClearLibrary clears the "library" edge to the Library entity.
+func (_u *MediaSourceUpdateOne) ClearLibrary() *MediaSourceUpdateOne {
+	_u.mutation.ClearLibrary()
 	return _u
 }
 
@@ -1782,6 +1957,9 @@ func (_u *MediaSourceUpdateOne) check() error {
 	if _u.mutation.ItemCleared() && len(_u.mutation.ItemIDs()) > 0 {
 		return errors.New(`store: clearing a required unique edge "MediaSource.item"`)
 	}
+	if _u.mutation.LibraryCleared() && len(_u.mutation.LibraryIDs()) > 0 {
+		return errors.New(`store: clearing a required unique edge "MediaSource.library"`)
+	}
 	return nil
 }
 
@@ -1901,6 +2079,18 @@ func (_u *MediaSourceUpdateOne) sqlSave(ctx context.Context) (_node *MediaSource
 	if _u.mutation.BitrateCleared() {
 		_spec.ClearField(mediasource.FieldBitrate, field.TypeInt32)
 	}
+	if value, ok := _u.mutation.DateModified(); ok {
+		_spec.SetField(mediasource.FieldDateModified, field.TypeTime, value)
+	}
+	if _u.mutation.DateModifiedCleared() {
+		_spec.ClearField(mediasource.FieldDateModified, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ProbedAt(); ok {
+		_spec.SetField(mediasource.FieldProbedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ProbedAtCleared() {
+		_spec.ClearField(mediasource.FieldProbedAt, field.TypeTime)
+	}
 	if value, ok := _u.mutation.IsRemote(); ok {
 		_spec.SetField(mediasource.FieldIsRemote, field.TypeBool, value)
 	}
@@ -1988,6 +2178,35 @@ func (_u *MediaSourceUpdateOne) sqlSave(ctx context.Context) (_node *MediaSource
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.LibraryCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   mediasource.LibraryTable,
+			Columns: []string{mediasource.LibraryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(library.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.LibraryIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   mediasource.LibraryTable,
+			Columns: []string{mediasource.LibraryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(library.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

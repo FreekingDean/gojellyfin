@@ -157,7 +157,7 @@ func (f *fixture) songs(t *testing.T, names ...string) []uuid.UUID {
 			SetKind(itemmodal.KindAudio).
 			SetName(name).
 			SetSortName(name).
-			SetPath(fmt.Sprintf("/%s/%s", f.libraryID, name)).
+			SetKey(fmt.Sprintf("test:%s", name)).
 			Save(context.Background())
 		if err != nil {
 			t.Fatalf("failed to create %q: %v", name, err)

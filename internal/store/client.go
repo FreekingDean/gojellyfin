@@ -2362,6 +2362,22 @@ func (c *LibraryClient) QueryItems(_m *Library) *ItemQuery {
 	return query
 }
 
+// QueryMediaSources queries the media_sources edge of a Library.
+func (c *LibraryClient) QueryMediaSources(_m *Library) *MediaSourceQuery {
+	query := (&MediaSourceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(library.Table, library.FieldID, id),
+			sqlgraph.To(mediasource.Table, mediasource.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, library.MediaSourcesTable, library.MediaSourcesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *LibraryClient) Hooks() []Hook {
 	return c.hooks.Library
@@ -3084,6 +3100,22 @@ func (c *MediaSourceClient) QueryItem(_m *MediaSource) *ItemQuery {
 			sqlgraph.From(mediasource.Table, mediasource.FieldID, id),
 			sqlgraph.To(item.Table, item.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, mediasource.ItemTable, mediasource.ItemColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryLibrary queries the library edge of a MediaSource.
+func (c *MediaSourceClient) QueryLibrary(_m *MediaSource) *LibraryQuery {
+	query := (&LibraryClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(mediasource.Table, mediasource.FieldID, id),
+			sqlgraph.To(library.Table, library.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, mediasource.LibraryTable, mediasource.LibraryColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

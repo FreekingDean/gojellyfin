@@ -57,6 +57,15 @@ func (f *metadataFixture) item(t *testing.T, name string) *Item {
 	return record
 }
 
+func (f *metadataFixture) probe(t *testing.T, item *Item, probe Probe) {
+	t.Helper()
+
+	source := f.source(t, item.ID, "/media/"+item.ID.String()+".mkv")
+	if err := f.service.SaveProbe(context.Background(), item, source, probe); err != nil {
+		t.Fatalf("failed to save the probe: %v", err)
+	}
+}
+
 func (f *metadataFixture) query() MetadataQuery {
 	return MetadataQuery{LibraryID: &f.libraryID}
 }
@@ -91,9 +100,7 @@ func TestSaveProbeMetadata(t *testing.T) {
 			},
 		},
 	}
-	if err := fixture.service.SaveProbe(ctx, movie, probe); err != nil {
-		t.Fatalf("failed to save the probe: %v", err)
-	}
+	fixture.probe(t, movie, probe)
 
 	t.Run("populates the genres", func(t *testing.T) {
 		named, total, err := fixture.service.DistinctGenres(ctx, fixture.query())
@@ -158,9 +165,7 @@ func TestSaveProbeMetadata(t *testing.T) {
 	})
 
 	t.Run("re-probing changes nothing", func(t *testing.T) {
-		if err := fixture.service.SaveProbe(ctx, movie, probe); err != nil {
-			t.Fatalf("failed to save the probe: %v", err)
-		}
+		fixture.probe(t, movie, probe)
 
 		named, total, err := fixture.service.DistinctGenres(ctx, fixture.query())
 		if err != nil {
@@ -195,9 +200,7 @@ func TestSaveProbeMetadata(t *testing.T) {
 	t.Run("re-probing drops metadata the container no longer carries", func(t *testing.T) {
 		reduced := probe
 		reduced.Metadata = ContainerMetadata{Genres: []string{fixture.name("Comedy")}}
-		if err := fixture.service.SaveProbe(ctx, movie, reduced); err != nil {
-			t.Fatalf("failed to save the probe: %v", err)
-		}
+		fixture.probe(t, movie, reduced)
 
 		named, _, err := fixture.service.DistinctGenres(ctx, fixture.query())
 		if err != nil {
@@ -231,10 +234,7 @@ func TestSaveProbeSharedGenre(t *testing.T) {
 	shared := fixture.name("Comedy")
 
 	for _, name := range []string{"First", "Second"} {
-		probe := Probe{Metadata: ContainerMetadata{Genres: []string{shared}}}
-		if err := fixture.service.SaveProbe(ctx, fixture.item(t, name), probe); err != nil {
-			t.Fatalf("failed to save the probe for %q: %v", name, err)
-		}
+		fixture.probe(t, fixture.item(t, name), Probe{Metadata: ContainerMetadata{Genres: []string{shared}}})
 	}
 
 	rows, err := fixture.service.store.Genre.Query().Where(genremodal.Name(shared)).Count(ctx)
@@ -259,9 +259,7 @@ func TestDistinctGenresFilters(t *testing.T) {
 	ctx := context.Background()
 
 	movie := fixture.item(t, "Movie")
-	if err := fixture.service.SaveProbe(ctx, movie, Probe{Metadata: ContainerMetadata{Genres: []string{fixture.name("Comedy")}}}); err != nil {
-		t.Fatalf("failed to save the probe: %v", err)
-	}
+	fixture.probe(t, movie, Probe{Metadata: ContainerMetadata{Genres: []string{fixture.name("Comedy")}}})
 
 	t.Run("filters by item kind", func(t *testing.T) {
 		named, _, err := fixture.service.DistinctGenres(ctx, MetadataQuery{

@@ -12,9 +12,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/env"
 )
 
-// The mux matches in registration order, so a parameter registered before a
-// literal it can match swallows it: /Users/{userId}/Items/{itemId} would take
-// /Users/{userId}/Items/Resume and hand "Resume" over as an item id.
 func TestLegacyPatternsPutLiteralsBeforeParameters(t *testing.T) {
 	patterns := legacyPatterns()
 
@@ -40,9 +37,6 @@ func TestLegacyPatternsAreStable(t *testing.T) {
 	}
 }
 
-// Whether a request matching pattern would also match candidate, which is only
-// true when candidate is the same shape with a parameter where pattern has a
-// literal.
 func shadows(candidate, pattern string) bool {
 	a := strings.Split(candidate, "/")
 	b := strings.Split(pattern, "/")
@@ -64,8 +58,6 @@ func shadows(candidate, pattern string) bool {
 	return loose
 }
 
-// Routes deliberately left without an alias, and why. Anything else in
-// spec/jellyfin-hidden-routes-10.10.0.txt has to be in legacyRoutes.
 var unaliased = map[string]string{
 	"GET /QuickConnect/Initiate":        "the documented form is POST, so this is a method change rather than a path rewrite",
 	"POST /Users/{userId}/Authenticate": "authenticating by user id has no documented replacement; AuthenticateByName takes a username",
@@ -114,8 +106,6 @@ func readHiddenRoutes(t *testing.T) []string {
 	return routes
 }
 
-// An unconfigured server serves no cross-origin access at all, rather than
-// configuring the middleware to allow every origin.
 func TestCORSIsOmittedWithoutConfiguredOrigins(t *testing.T) {
 	for _, test := range []struct {
 		name    string
