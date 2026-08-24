@@ -18,6 +18,8 @@ type (
 	MediaSource = store.MediaSource
 	MediaStream = store.MediaStream
 	StreamKind  = streammodal.Kind
+
+	VideoRangeType = streammodal.VideoRangeType
 )
 
 // Where one file of a title lives. The probe owns the rest of the row.
@@ -39,6 +41,17 @@ type Probe struct {
 	Metadata     ContainerMetadata
 }
 
+// A picture nobody could read the range of is left unset rather than called
+// SDR: an unread property has to stay unknown, because a client's conditions
+// are answered by passing what nobody probed rather than by guessing at it.
+func nillableRangeType(rangeType VideoRangeType) *VideoRangeType {
+	if rangeType == "" {
+		return nil
+	}
+
+	return &rangeType
+}
+
 type Stream struct {
 	Index       int32
 	Kind        StreamKind
@@ -55,6 +68,10 @@ type Stream struct {
 	Level       float64
 	IsDefault   bool
 	IsForced    bool
+
+	RangeType    VideoRangeType
+	IsInterlaced bool
+	IsAnamorphic bool
 }
 
 // The probe columns are left out of the update: a file that has not changed
@@ -151,7 +168,10 @@ func (s *Service) SaveProbe(ctx context.Context, item *Item, source *MediaSource
 				SetPixelFormat(stream.PixelFormat).
 				SetLevel(stream.Level).
 				SetIsDefault(stream.IsDefault).
-				SetIsForced(stream.IsForced))
+				SetIsForced(stream.IsForced).
+				SetNillableVideoRangeType(nillableRangeType(stream.RangeType)).
+				SetIsInterlaced(stream.IsInterlaced).
+				SetIsAnamorphic(stream.IsAnamorphic))
 		}
 		if err := tx.MediaStream.CreateBulk(builders...).Exec(ctx); err != nil {
 			return fmt.Errorf("failed to create media streams: %w", err)
