@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
@@ -160,6 +161,36 @@ func (s *Service) SaveProbe(ctx context.Context, item *Item, source *MediaSource
 	})
 }
 
+func (s *Service) SourceByID(ctx context.Context, id uuid.UUID) (*MediaSource, error) {
+	source, err := s.store.MediaSource.Get(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query media source %s: %w", id, err)
+	}
+
+	return source, nil
+}
+
+// The files whose probe is missing or older than the file itself. Work is
+// selected from the rows rather than remembered from the walk that wrote them,
+// so a run that died can be told what is outstanding rather than replaying it.
+func (s *Service) SourcesNeedingProbe(ctx context.Context, libraryID uuid.UUID) ([]uuid.UUID, error) {
+	ids, err := s.store.MediaSource.Query().
+		Where(
+			sourcemodal.LibraryID(libraryID),
+			func(selector *sql.Selector) {
+				probed, modified := selector.C(sourcemodal.FieldProbedAt), selector.C(sourcemodal.FieldDateModified)
+				selector.Where(sql.Or(sql.IsNull(probed), sql.ColumnsLT(probed, modified)))
+			},
+		).
+		Order(sourcemodal.ByPath()).
+		IDs(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query the sources needing a probe: %w", err)
+	}
+
+	return ids, nil
+}
+
 // Every file the item plays from, oldest first, so a caller that can only use
 // one takes the first and the ordering does not shift under it.
 func (s *Service) MediaSources(ctx context.Context, itemID uuid.UUID) ([]*MediaSource, error) {
@@ -258,9 +289,11 @@ func (s *Service) AudioCodec(ctx context.Context, itemID uuid.UUID) (string, err
 	return codecs[0], nil
 }
 
-// The probe is skipped unless the file changed since it last ran.
-func NeedsProbe(source *MediaSource, modified time.Time) bool {
-	return source == nil || source.ProbedAt.IsZero() || source.ProbedAt.Before(modified)
+// The same question SourcesNeedingProbe asks of the whole library, asked of one
+// row: the selection and the probe are minutes apart and the file can have been
+// read in between.
+func NeedsProbe(source *MediaSource) bool {
+	return source == nil || source.ProbedAt.IsZero() || source.ProbedAt.Before(source.DateModified)
 }
 
 func IsAudio(item *Item) bool {

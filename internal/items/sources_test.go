@@ -2,6 +2,7 @@ package items
 
 import (
 	"context"
+	"slices"
 	"testing"
 	"time"
 
@@ -85,5 +86,54 @@ func TestSweepDropsAMissingSourceAndKeepsTheItem(t *testing.T) {
 	}
 	if _, err := fixture.service.ItemByID(ctx, item.ID); err != nil {
 		t.Errorf("losing one copy took the item and its watch state: %v", err)
+	}
+}
+
+// What is outstanding is read back from the rows: a file the probe has never
+// read and a file that changed since it did, and nothing else.
+func TestSourcesNeedingProbeSelectsTheUnreadAndTheChanged(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := context.Background()
+
+	probed := fixture.scanned(t, "movie:the-matrix:1999", "/media/hd/The Matrix.mkv")
+	unread, err := fixture.service.SaveSource(ctx, ScannedSource{
+		LibraryID:    fixture.libraryID,
+		ItemID:       probed.ID,
+		Path:         "/media/4k/The Matrix.mkv",
+		Name:         "The Matrix.mkv",
+		DateModified: time.Now(),
+	})
+	if err != nil {
+		t.Fatalf("failed to save the unprobed source: %v", err)
+	}
+
+	outstanding, err := fixture.service.SourcesNeedingProbe(ctx, fixture.libraryID)
+	if err != nil {
+		t.Fatalf("failed to select the sources needing a probe: %v", err)
+	}
+	if len(outstanding) != 1 || outstanding[0] != unread.ID {
+		t.Fatalf("outstanding = %v, want the file nothing has probed", outstanding)
+	}
+
+	changed, err := fixture.service.SaveSource(ctx, ScannedSource{
+		LibraryID:    fixture.libraryID,
+		ItemID:       probed.ID,
+		Path:         "/media/hd/The Matrix.mkv",
+		Name:         "The Matrix.mkv",
+		DateModified: time.Now().Add(time.Hour),
+	})
+	if err != nil {
+		t.Fatalf("failed to touch the probed source: %v", err)
+	}
+
+	outstanding, err = fixture.service.SourcesNeedingProbe(ctx, fixture.libraryID)
+	if err != nil {
+		t.Fatalf("failed to select the sources needing a probe: %v", err)
+	}
+	if len(outstanding) != 2 {
+		t.Fatalf("outstanding = %v, want the changed file back in the selection", outstanding)
+	}
+	if !slices.Contains(outstanding, changed.ID) {
+		t.Errorf("a file that changed since its probe was not selected")
 	}
 }

@@ -3,6 +3,7 @@ package scanner
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 
 	"github.com/google/uuid"
@@ -10,31 +11,159 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 )
 
-// One unreadable library must not abandon the others: the sweep it skipped is
-// safe to leave until the next run, the ones it did are not worth losing.
-func TestLibraryScanScansEveryLibraryDespiteAFailure(t *testing.T) {
-	env := jobs.NewTestEnvironment(t)
-	scan := NewLibraryScan(&Scanner{})
+type run struct {
+	scan      *LibraryScan
+	env       *jobs.TestEnvironment
+	libraries []uuid.UUID
+	sources   map[uuid.UUID][]uuid.UUID
 
-	first, second := uuid.New(), uuid.New()
-	scanned := make([]uuid.UUID, 0, 2)
+	mutex   sync.Mutex
+	walked  []uuid.UUID
+	probed  []uuid.UUID
+	failing map[uuid.UUID]error
+}
 
-	env.ReplaceStep(scan.scanner.ListLibraries, func(context.Context) ([]uuid.UUID, error) {
-		return []uuid.UUID{first, second}, nil
+func newRun(t *testing.T, libraries ...uuid.UUID) *run {
+	t.Helper()
+
+	running := &run{
+		scan:      NewLibraryScan(&Scanner{}),
+		env:       jobs.NewTestEnvironment(t),
+		libraries: libraries,
+		sources:   map[uuid.UUID][]uuid.UUID{},
+		failing:   map[uuid.UUID]error{},
+	}
+
+	running.env.ReplaceStep(running.scan.scanner.ListLibraries, func(context.Context) ([]uuid.UUID, error) {
+		return running.libraries, nil
 	})
-	env.ReplaceStep(scan.scanner.ScanLibrary, func(_ context.Context, id uuid.UUID) error {
-		if id == first {
-			return errors.New("the volume is not mounted")
+	running.env.ReplaceStep(running.scan.scanner.ScanLibrary, func(_ context.Context, id uuid.UUID) error {
+		running.mutex.Lock()
+		defer running.mutex.Unlock()
+
+		if err := running.failing[id]; err != nil {
+			return err
 		}
-		scanned = append(scanned, id)
+		running.walked = append(running.walked, id)
+
+		return nil
+	})
+	running.env.ReplaceStep(running.scan.scanner.UnprobedSources, func(_ context.Context, id uuid.UUID) ([]uuid.UUID, error) {
+		running.mutex.Lock()
+		defer running.mutex.Unlock()
+
+		return running.sources[id], nil
+	})
+	running.env.ReplaceStep(running.scan.scanner.ProbeSource, func(_ context.Context, id uuid.UUID) error {
+		running.mutex.Lock()
+		defer running.mutex.Unlock()
+
+		if err := running.failing[id]; err != nil {
+			return err
+		}
+		running.probed = append(running.probed, id)
 
 		return nil
 	})
 
-	if err := env.Run(scan); err != nil {
+	return running
+}
+
+func (r *run) needing(library uuid.UUID, count int) []uuid.UUID {
+	ids := make([]uuid.UUID, 0, count)
+	for range count {
+		ids = append(ids, uuid.New())
+	}
+	r.sources[library] = ids
+
+	return ids
+}
+
+func (r *run) fails(id uuid.UUID, because string) {
+	r.failing[id] = errors.New(because)
+}
+
+// One unreadable library must not abandon the others: the sweep it skipped is
+// safe to leave until the next run, the ones it did are not worth losing.
+func TestLibraryScanScansEveryLibraryDespiteAFailure(t *testing.T) {
+	first, second := uuid.New(), uuid.New()
+	running := newRun(t, first, second)
+	running.fails(first, "the volume is not mounted")
+
+	if err := running.env.Run(running.scan); err != nil {
 		t.Fatalf("a failing library failed the whole scan: %v", err)
 	}
-	if len(scanned) != 1 || scanned[0] != second {
-		t.Errorf("scanned = %v, want only the readable library", scanned)
+	if len(running.walked) != 1 || running.walked[0] != second {
+		t.Errorf("scanned = %v, want only the readable library", running.walked)
+	}
+}
+
+// A library that could not be walked has no structure to hang a probe off, so
+// nothing is selected from it either.
+func TestLibraryScanDoesNotProbeALibraryItCouldNotWalk(t *testing.T) {
+	library := uuid.New()
+	running := newRun(t, library)
+	running.needing(library, 3)
+	running.fails(library, "the volume is not mounted")
+
+	if err := running.env.Run(running.scan); err != nil {
+		t.Fatalf("the scan failed: %v", err)
+	}
+	if len(running.probed) != 0 {
+		t.Errorf("probed = %v, want nothing from an unwalked library", running.probed)
+	}
+}
+
+// Every file the predicate selected is probed, and no single history holds them
+// all: the parent records children and each child records its own probes.
+func TestLibraryScanProbesEverySelectedSourceInChunks(t *testing.T) {
+	library := uuid.New()
+	running := newRun(t, library)
+	selected := running.needing(library, probeChunkSize*2+5)
+
+	if err := running.env.Run(running.scan); err != nil {
+		t.Fatalf("the scan failed: %v", err)
+	}
+	if len(running.probed) != len(selected) {
+		t.Errorf("probed %d sources, want %d", len(running.probed), len(selected))
+	}
+
+	children := running.env.Children()
+	if len(children) != 3 {
+		t.Errorf("children = %d, want one per chunk of %d", len(children), probeChunkSize)
+	}
+
+	named := map[string]bool{}
+	for _, id := range children {
+		if named[id] {
+			t.Fatalf("two chunks ran under the id %s", id)
+		}
+		named[id] = true
+	}
+
+	probed := map[uuid.UUID]bool{}
+	for _, id := range running.probed {
+		probed[id] = true
+	}
+	for _, id := range selected {
+		if !probed[id] {
+			t.Fatalf("source %s was selected and never probed", id)
+		}
+	}
+}
+
+// A file ffprobe cannot read is one file, not the chunk it happened to land in
+// and not the run it belongs to.
+func TestLibraryScanProbesTheRestOfAChunkDespiteAFailure(t *testing.T) {
+	library := uuid.New()
+	running := newRun(t, library)
+	selected := running.needing(library, 3)
+	running.fails(selected[0], "ffprobe found no streams")
+
+	if err := running.env.Run(running.scan); err != nil {
+		t.Fatalf("a failing probe failed the whole scan: %v", err)
+	}
+	if len(running.probed) != len(selected)-1 {
+		t.Errorf("probed = %v, want the two readable files", running.probed)
 	}
 }
