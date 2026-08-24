@@ -50,7 +50,6 @@ type Plan struct {
 	Source     *MediaSource
 	Change     Change
 	Container  string
-	VideoCodec string
 	AudioCodec string
 }
 
@@ -95,7 +94,7 @@ func (s *Service) SourceFor(ctx context.Context, itemID uuid.UUID, can Capabilit
 func (c Capabilities) plan(source *MediaSource) Plan {
 	picture, sound := stream(source, streammodal.KindVideo), stream(source, streammodal.KindAudio)
 	video, audio := codec(picture), codec(sound)
-	plan := Plan{Source: source, Container: container(source), VideoCodec: video, AudioCodec: audio}
+	plan := Plan{Source: source, Container: container(source), AudioCodec: audio}
 	if len(c.Profiles) == 0 {
 		return plan
 	}

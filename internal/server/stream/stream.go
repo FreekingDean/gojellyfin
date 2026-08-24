@@ -157,10 +157,14 @@ func (h *Handler) serveRemux(w http.ResponseWriter, r *http.Request, item *items
 		log.Printf("failed to read the audio codec of %s: %v", item.Name, err)
 	}
 	asked := strings.TrimSpace(r.URL.Query().Get("audioCodec"))
+	container := r.PathValue("container")
+	if !transcode.CarriesVideo(container) {
+		container = transcode.VideoContainer
+	}
 
 	return h.relay(w, r, source, transcode.Spec{
 		Path:       source.Path,
-		Container:  transcode.ChooseVideo([]string{r.PathValue("container"), transcode.VideoContainer}),
+		Container:  strings.ToLower(container),
 		Bitrate:    audioBitrate(r),
 		StartTicks: startTicks(r),
 		Video:      true,

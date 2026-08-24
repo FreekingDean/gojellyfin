@@ -59,21 +59,21 @@ func TestCapabilities(t *testing.T) {
 	})
 }
 
-func planFor(container, video, audio string) items.Plan {
+func planFor(container, audio string) items.Plan {
 	source := &items.MediaSource{ID: uuid.New(), Container: "mkv"}
 	source.Edges.Streams = []*items.MediaStream{
 		{Index: 0, Kind: streammodal.KindVideo, Codec: "h264"},
 		{Index: 1, Kind: streammodal.KindAudio, Codec: "ac3"},
 	}
 
-	return items.Plan{Source: source, Container: container, VideoCodec: video, AudioCodec: audio}
+	return items.Plan{Source: source, Container: container, AudioCodec: audio}
 }
 
 func TestStreamURL(t *testing.T) {
 	item := uuid.New()
 
 	t.Run("the suffix names the container the response will carry", func(t *testing.T) {
-		plan := planFor("mp4", "h264", "aac")
+		plan := planFor("mp4", "aac")
 
 		path, values := splitURL(t, streamURL(item, plan, "the-token", "the-session", 0))
 
@@ -86,12 +86,9 @@ func TestStreamURL(t *testing.T) {
 		if got := values.Get("audioCodec"); got != "aac" {
 			t.Errorf("audio codec = %q, want aac", got)
 		}
-		if got := values.Get("videoCodec"); got != "h264" {
-			t.Errorf("video codec = %q, want h264", got)
-		}
 	})
 
-	untouched := planFor("mkv", "h264", "ac3")
+	untouched := planFor("mkv", "ac3")
 
 	t.Run("the client is given no way to ask for the source instead", func(t *testing.T) {
 		_, values := splitURL(t, streamURL(item, untouched, "the-token", "the-session", 0))

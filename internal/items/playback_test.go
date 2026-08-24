@@ -77,7 +77,6 @@ func TestPlanFor(t *testing.T) {
 		source     *MediaSource
 		change     Change
 		container  string
-		videoCodec string
 		audioCodec string
 	}{
 		{
@@ -86,7 +85,6 @@ func TestPlanFor(t *testing.T) {
 			source:     rip("mkv", "aac"),
 			change:     ChangeNone,
 			container:  "mkv",
-			videoCodec: "h264",
 			audioCodec: "aac",
 		},
 		{
@@ -95,7 +93,6 @@ func TestPlanFor(t *testing.T) {
 			source:     rip("avi", "aac"),
 			change:     ChangeContainer,
 			container:  "mp4",
-			videoCodec: "h264",
 			audioCodec: "aac",
 		},
 		{
@@ -104,7 +101,6 @@ func TestPlanFor(t *testing.T) {
 			source:     rip("mkv", "ac3"),
 			change:     ChangeAudio,
 			container:  "mp4",
-			videoCodec: "h264",
 			audioCodec: "aac",
 		},
 		{
@@ -113,7 +109,6 @@ func TestPlanFor(t *testing.T) {
 			source:     rip("mkv", "ac3"),
 			change:     ChangeAudio,
 			container:  "ts",
-			videoCodec: "h264",
 			audioCodec: "aac",
 		},
 		{
@@ -121,7 +116,6 @@ func TestPlanFor(t *testing.T) {
 			source:     rip("mkv", "ac3"),
 			change:     ChangeNone,
 			container:  "mkv",
-			videoCodec: "h264",
 			audioCodec: "ac3",
 		},
 		{
@@ -130,7 +124,6 @@ func TestPlanFor(t *testing.T) {
 			source:     hdr(rip("mkv", "aac")),
 			change:     ChangeVideo,
 			container:  "mkv",
-			videoCodec: "h264",
 			audioCodec: "aac",
 		},
 		{
@@ -139,7 +132,6 @@ func TestPlanFor(t *testing.T) {
 			source:     hdr(rip("mkv", "ac3")),
 			change:     ChangeVideoAudio,
 			container:  "mkv",
-			videoCodec: "h264",
 			audioCodec: "ac3",
 		},
 		{
@@ -148,7 +140,6 @@ func TestPlanFor(t *testing.T) {
 			source:     ripped("mkv", "mpeg4", 1080, "aac"),
 			change:     ChangeVideo,
 			container:  "mkv",
-			videoCodec: "mpeg4",
 			audioCodec: "aac",
 		},
 		{
@@ -157,7 +148,6 @@ func TestPlanFor(t *testing.T) {
 			source:     ripped("mkv", "mpeg4", 1080, "ac3"),
 			change:     ChangeVideoAudio,
 			container:  "mkv",
-			videoCodec: "mpeg4",
 			audioCodec: "ac3",
 		},
 		{
@@ -166,7 +156,6 @@ func TestPlanFor(t *testing.T) {
 			source:     ripped("mkv", "theora", 1080, "aac"),
 			change:     ChangeVideo,
 			container:  "mkv",
-			videoCodec: "theora",
 			audioCodec: "aac",
 		},
 		{
@@ -175,7 +164,6 @@ func TestPlanFor(t *testing.T) {
 			source:     ripped("mkv", "", 0),
 			change:     ChangeNone,
 			container:  "mkv",
-			videoCodec: "",
 			audioCodec: "",
 		},
 	} {
@@ -187,9 +175,6 @@ func TestPlanFor(t *testing.T) {
 			}
 			if plan.Container != tc.container {
 				t.Errorf("container = %q, want %q", plan.Container, tc.container)
-			}
-			if plan.VideoCodec != tc.videoCodec {
-				t.Errorf("video codec = %q, want %q", plan.VideoCodec, tc.videoCodec)
 			}
 			if plan.AudioCodec != tc.audioCodec {
 				t.Errorf("audio codec = %q, want %q", plan.AudioCodec, tc.audioCodec)

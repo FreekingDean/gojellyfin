@@ -76,16 +76,6 @@ func AudioCodec(container string) string {
 	return formats[strings.ToLower(container)].audio
 }
 
-func ChooseVideo(containers []string) string {
-	for _, container := range containers {
-		if CarriesVideo(container) {
-			return strings.ToLower(container)
-		}
-	}
-
-	return ""
-}
-
 func ContentType(container string) string {
 	return formats[strings.ToLower(container)].contentType
 }
