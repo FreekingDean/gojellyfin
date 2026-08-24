@@ -45,7 +45,7 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID) (api.Playba
 		return api.PlaybackInfoResponse{}, err
 	}
 
-	source, err := s.mediaSource(ctx, item)
+	sources, err := s.mediaSources(ctx, item)
 	if err != nil {
 		return api.PlaybackInfoResponse{}, err
 	}
@@ -56,20 +56,31 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID) (api.Playba
 	}
 
 	return api.PlaybackInfoResponse{
-		MediaSources:  &[]api.MediaSourceInfo{source},
+		MediaSources:  &sources,
 		PlaySessionId: apiutil.Ptr(session),
 	}, nil
 }
 
-func (s *Server) mediaSource(ctx context.Context, item *items.Item) (api.MediaSourceInfo, error) {
-	source, err := s.items.MediaSource(ctx, item.ID)
+// One entry per file, which is how a 4K and a 1080p copy of one film reach the
+// client as two versions of a single item.
+func (s *Server) mediaSources(ctx context.Context, item *items.Item) ([]api.MediaSourceInfo, error) {
+	sources, err := s.items.MediaSources(ctx, item.ID)
 	if err != nil {
-		return api.MediaSourceInfo{}, err
+		return nil, err
 	}
-	if source == nil {
-		return unprobedSource(item), nil
+	if len(sources) == 0 {
+		return []api.MediaSourceInfo{unsourced(item)}, nil
 	}
 
+	converted := make([]api.MediaSourceInfo, 0, len(sources))
+	for _, source := range sources {
+		converted = append(converted, mediaSourceDto(source))
+	}
+
+	return converted, nil
+}
+
+func mediaSourceDto(source *items.MediaSource) api.MediaSourceInfo {
 	streams := source.Edges.Streams
 	converted := make([]api.MediaStream, 0, len(streams))
 	for _, stream := range streams {
@@ -100,16 +111,15 @@ func (s *Server) mediaSource(ctx context.Context, item *items.Item) (api.MediaSo
 		RequiresLooping:            apiutil.Ptr(source.RequiresLooping),
 		DefaultAudioStreamIndex:    defaultStreamIndex(streams, streammodal.KindAudio),
 		DefaultSubtitleStreamIndex: defaultStreamIndex(streams, streammodal.KindSubtitle),
-	}, nil
+	}
 }
 
-// An item the probe has not reached yet still has to answer with something
+// An item the scan has not reached yet still has to answer with something
 // playable, or the client refuses to start.
-func unprobedSource(item *items.Item) api.MediaSourceInfo {
+func unsourced(item *items.Item) api.MediaSourceInfo {
 	return api.MediaSourceInfo{
 		Id:                   apiutil.Ptr(item.ID.String()),
 		Name:                 apiutil.Ptr(item.Name),
-		Path:                 apiutil.Ptr(item.Path),
 		Protocol:             apiutil.Ptr(api.MediaProtocolFile),
 		Type:                 apiutil.Ptr(api.MediaSourceTypeDefault),
 		Container:            apiutil.Ptr(item.Container),

@@ -42,9 +42,11 @@ type LibraryEdges struct {
 	Options *LibraryOptions `json:"options,omitempty"`
 	// Items holds the value of the items edge.
 	Items []*Item `json:"items,omitempty"`
+	// MediaSources holds the value of the media_sources edge.
+	MediaSources []*MediaSource `json:"media_sources,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // OptionsOrErr returns the Options value or an error if the edge
@@ -65,6 +67,15 @@ func (e LibraryEdges) ItemsOrErr() ([]*Item, error) {
 		return e.Items, nil
 	}
 	return nil, &NotLoadedError{edge: "items"}
+}
+
+// MediaSourcesOrErr returns the MediaSources value or an error if the edge
+// was not loaded in eager-loading.
+func (e LibraryEdges) MediaSourcesOrErr() ([]*MediaSource, error) {
+	if e.loadedTypes[2] {
+		return e.MediaSources, nil
+	}
+	return nil, &NotLoadedError{edge: "media_sources"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -154,6 +165,11 @@ func (_m *Library) QueryOptions() *LibraryOptionsQuery {
 // QueryItems queries the "items" edge of the Library entity.
 func (_m *Library) QueryItems() *ItemQuery {
 	return NewLibraryClient(_m.config).QueryItems(_m)
+}
+
+// QueryMediaSources queries the "media_sources" edge of the Library entity.
+func (_m *Library) QueryMediaSources() *MediaSourceQuery {
+	return NewLibraryClient(_m.config).QueryMediaSources(_m)
 }
 
 // Update returns a builder for updating this Library.

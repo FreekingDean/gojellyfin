@@ -4,6 +4,7 @@ import (
 	"context"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/items"
@@ -12,14 +13,16 @@ import (
 
 const ticksPerSecond = 10_000_000
 
-func (s *Scanner) probe(ctx context.Context, item *items.Item) error {
-	if !items.NeedsProbe(item) {
-		return nil
+// Nil when there is nothing new to learn: no ffmpeg on the box, or a file the
+// last probe already read.
+func (s *Scanner) probeFile(ctx context.Context, stored *items.MediaSource, path string, modified time.Time) (*items.Probe, error) {
+	if !ffmpeg.Available() || !items.NeedsProbe(stored, modified) {
+		return nil, nil
 	}
 
-	probe, err := ffmpeg.ProbeFile(ctx, item.Path)
+	probe, err := ffmpeg.ProbeFile(ctx, path)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	streams := make([]items.Stream, 0, len(probe.Streams))
@@ -43,14 +46,14 @@ func (s *Scanner) probe(ctx context.Context, item *items.Item) error {
 		})
 	}
 
-	return s.items.SaveProbe(ctx, item, items.Probe{
-		Container:    container(probe.Format.FormatName, item.Path),
+	return &items.Probe{
+		Container:    container(probe.Format.FormatName, path),
 		RunTimeTicks: int64(probe.Format.Seconds() * ticksPerSecond),
 		Size:         probe.Format.Bytes(),
 		Bitrate:      probe.Format.Bitrate(),
 		Streams:      streams,
 		Metadata:     metadata(probe),
-	})
+	}, nil
 }
 
 // ffprobe reports muxer families like "matroska,webm"; the file extension picks

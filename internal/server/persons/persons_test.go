@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/store"
@@ -18,7 +19,12 @@ import (
 func TestGetPersons(t *testing.T) {
 	ctx := context.Background()
 
-	connection, err := store.NewStore()
+	config, err := env.Load()
+	if err != nil {
+		t.Fatalf("failed to read the environment: %v", err)
+	}
+
+	connection, err := store.NewStore(config)
 	if err != nil {
 		t.Fatalf("failed to open the database: %v", err)
 	}
@@ -61,7 +67,7 @@ func TestGetPersons(t *testing.T) {
 		Kind:      itemmodal.KindMovie,
 		Name:      prefix + "Movie",
 		SortName:  prefix + "Movie",
-		Path:      "/" + prefix + "Movie",
+		Key:       "test:" + prefix + "movie",
 	})
 	if err != nil {
 		t.Fatalf("failed to save the item: %v", err)
@@ -73,7 +79,16 @@ func TestGetPersons(t *testing.T) {
 		{Name: director, Kind: creditmodal.KindDirector},
 		{Name: writer, Kind: creditmodal.KindWriter},
 	}}}
-	if err := service.SaveProbe(ctx, movie, probe); err != nil {
+	source, err := service.SaveSource(ctx, items.ScannedSource{
+		LibraryID: library.ID,
+		ItemID:    movie.ID,
+		Path:      "/media/" + prefix + "Movie.mkv",
+		Name:      prefix + "Movie",
+	})
+	if err != nil {
+		t.Fatalf("failed to save the media source: %v", err)
+	}
+	if err := service.SaveProbe(ctx, movie, source, probe); err != nil {
 		t.Fatalf("failed to save the probe: %v", err)
 	}
 

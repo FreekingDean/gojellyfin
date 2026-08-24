@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
@@ -25,7 +26,12 @@ type fixture struct {
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
 
-	connection, err := store.NewStore()
+	config, err := env.Load()
+	if err != nil {
+		t.Fatalf("failed to read the environment: %v", err)
+	}
+
+	connection, err := store.NewStore(config)
 	if err != nil {
 		t.Fatalf("failed to open the database: %v", err)
 	}
@@ -67,15 +73,13 @@ func (f *fixture) add(t *testing.T, kind itemmodal.Kind, mediaType itemmodal.Med
 		SetMediaType(mediaType).
 		SetName(f.prefix + name).
 		SetSortName(f.prefix + name).
-		SetPath("/" + f.library.String() + "/" + name).
+		SetKey("test:" + name).
 		Save(context.Background())
 	if err != nil {
 		t.Fatalf("failed to create %q: %v", name, err)
 	}
 }
 
-// The operation has no parent parameter, so the query sweeps every library and
-// the assertions have to look at this fixture's rows only.
 func (f *fixture) mine(t *testing.T, params api.GetSuggestionsParams) []string {
 	t.Helper()
 

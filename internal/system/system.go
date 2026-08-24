@@ -1,6 +1,6 @@
 package system
 
-import "os"
+import "github.com/FreekingDean/gojellyfin/internal/env"
 
 type Service interface {
 	LocalAddress() string
@@ -23,9 +23,9 @@ var (
 // Clients switch to LocalAddress when they believe they are on the same
 // network, so an address this server cannot confirm is worse than none: they
 // stop talking to the address that reached them and never come back.
-func New() Service {
+func New(config env.Config) Service {
 	return serviceImpl{
-		localAddress:    os.Getenv("PUBLISHED_SERVER_URL"),
+		localAddress:    config.PublishedServerURL,
 		version:         VERSION,
 		operatingSystem: "linux",
 		productName:     "Jellyfin Server",

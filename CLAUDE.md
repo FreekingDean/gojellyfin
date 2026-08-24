@@ -32,7 +32,7 @@ echo hunter2 | go run ./cmd/gojellyfin adduser Dean   # bootstrap the first user
 
 Everything ships as one cobra binary, `cmd/gojellyfin`, with a subcommand each for `server`, `worker`, `migrate`, `adduser`, `resetpassword` and `localizationdata`. One binary means one image, so an operator task is `docker exec <container> gojellyfin adduser Dean` rather than a second image or a second build. The names stay flat and read as commands; a new task is a `<name>Command() *cobra.Command` constructor in a file of its own, added to the list in `main.go`.
 
-Only two things are shared between them, both in `main.go`: `withStore` opens the store, starts it and closes it around a callback, and `readPassword` reads from stdin. Neither the DSN nor its default lives there — `store.DatabaseURL()` is the single source, which is why `migrate` can name the same database the server will use without repeating the string.
+Only two things are shared between them, both in `main.go`: `withStore` opens the store, starts it and closes it around a callback, and `readPassword` reads from stdin. The DSN does not live there — `internal/env` is the single source, which is why `migrate` can name the same database the server will use without repeating the string.
 
 `make dev` and `make run` tee to `/tmp/gojellyfin.log`, so the log is on screen and readable by tooling at the same time.
 
@@ -42,7 +42,17 @@ Run `air` through `tee` so the log is both on screen and readable at `/tmp/gojel
 
 `air` owns `:8081` while it runs, so starting a second server alongside it fails with `ListenAndServe error: address already in use`. Check whether it is running with `pgrep -x air` (matching on a path fails — the process is just `air`), and the listener with `lsof -ti:8081 -sTCP:LISTEN` — without `-sTCP:LISTEN` it also matches browsers connected to the port, and killing those results is not what you want. An orphaned `.air/gojellyfin` can outlive its supervisor and keep serving stale code.
 
-Requires a reachable Postgres. `DATABASE_URL` overrides the default DSN in `internal/store/fx.go` (`postgres://localhost:5432/gojellyfin_development?sslmode=disable`).
+Requires a reachable Postgres. `DATABASE_URL` is required and the binary carries no default — a process that was not told which database to open fails at start rather than quietly dialing localhost. The development DSN (`postgres://localhost:5432/gojellyfin_development?sslmode=disable`) lives in the `Makefile` as a `?=`, so `make run`, `make dev` and `make test` supply it while an explicit `DATABASE_URL` still wins. Running `go test ./...` or the binary directly, outside `make`, means setting it yourself.
+
+**`internal/env` is the only package that reads the environment.** It loads once into a `Config` that fx provides and every other package takes as a value, so the knobs are found by reading one struct rather than by grepping for `os.Getenv`, and a package under test is handed a value instead of having to set a variable. A one-shot subcommand calls `env.Load()` itself, because it has no lifecycle to hang it off.
+
+The reading is `viper`, bound to the environment only — no config file, no flags, no watching. The `mapstructure` tag on each field is the variable's name, and `keys` walks `Config` to bind them, because `Unmarshal` only populates keys viper already knows about and `AutomaticEnv` does not register any. So a new variable is a new field and nothing else; `TestKeysCoverEveryVariable` names the whole set, which is where a rename shows up.
+
+A malformed value is refused at start rather than ignored. `TRANSCODER_JOBS=lots` used to fall through to the core count and `TRANSCODER_STALL_TIMEOUT=30` to thirty seconds, so a typo in a manifest became a capacity problem with nothing to point at.
+
+`HTTP_PORT` is what the server listens on and defaults to 8081, which is the port `air`, the `Dockerfile`, and every manifest in `deploy/` already name — the variable exists so a second process can be brought up beside them, not to move the default.
+
+`serverModules` and `workerModules` in `cmd/gojellyfin` both list `env.Module`, and `TestWorkerModulesResolve` guards the second the way `TestServerModulesResolve` guards the first — a command that composes its graph inline has nothing to validate, so the worker starting without a config it needs is only found by running it.
 
 `make test` needs one too — `internal/items` seeds real rows through `store.NewStore()` and fails rather than skipping when the database is unreachable, so a green run means the queries actually ran. Each test owns a library row and deletes it and its items on cleanup; point `DATABASE_URL` at a scratch database to keep development data out of it. CI runs the suite against a `postgres:16` service with `internal/store/migrations` applied by `atlas migrate apply`.
 
@@ -96,6 +106,20 @@ So are routes Jellyfin serves but hides from its own OpenAPI document with `[Api
 
 They register after the generated routes so a documented literal wins any overlap, and most-specific first: the mux matches in registration order with no notion of specificity, so `/Users/{userId}/Items/{itemId}` registered before `/Users/{userId}/Items/Resume` swallows it and passes "Resume" as an item id. `legacyPatterns` sorts by literal segments to keep that from depending on map order.
 
+### Tracing
+
+Every operation gets one span, named for its **operation id**. That is why the span sits on the `api.StrictMiddlewareFunc` layer rather than the stdlib one: only the inner layer is handed the operation id, and a span named for a route pattern or a raw path is much less useful. It is last in `apiMiddleware`, which the generated wrapper folds outermost, so it measures authentication and authorization too.
+
+`OTEL_EXPORTER_OTLP_ENDPOINT` is the only spelling read. The OTLP specification also defines a signal-specific `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`, and supporting both would mean carrying its precedence rule and its different path semantics for a second way to say the same thing; one prescribed variable is the standing decision. Unset means tracing is off: no provider, a noop tracer, nothing dialed, and `tracing.Enabled` false, which is what keeps the span middleware out of the stack entirely rather than wrapping every request in a tracer that discards it.
+
+The endpoint is checked in `tracing.New` rather than in `env.validate`, because what makes an OTLP endpoint valid is the exporter's business and `env` only knows it wants a string. The exporter answers a URL it cannot parse by logging and carrying on against its own localhost default, so a malformed one is refused at start instead.
+
+**`internal/observability/tracing` is the only package that imports otel.** A caller gets `StartRequest` and a `Span` with `End` and `Fail`, not a `trace.Tracer`, so the middleware names no otel type and the backend stays swappable; `Recorded` is the same seam for tests, handing back a `Recorder` that answers in span names and attribute values. It is composed through `observability.Module`, which `server` and `worker` both list, and it registers `OnStop` only — a provider is exporting from the moment it is built, so there is nothing to start. The flush is bounded on the way out, because a collector that has gone away must not hold the process open.
+
+**Streaming endpoints are excluded.** `streams` in `internal/http/middleware/oapitracing.go` names `Videos` and `Audio`, the same two roots `deploy/httproutes.yaml` splits on, matched case-insensitively because the mux is. A progressive response runs for the length of the media, so a span covering one is open for hours — a leak rather than a trace. `GET /socket` needs no entry: it is registered outside the generated API, so it never reaches this layer. `TestStreamingRoutesAreNotTraced` is what keeps the exclusion from being incidental.
+
+Nothing the client sent goes on a span. The query string carries `api_key` and some paths carry names, so only the method and the operation id are recorded; `TestSpanCarriesNoRequestDetail` holds that, because traces ship to third-party backends.
+
 ### Domain services
 
 Three layers, split on what each is allowed to know:
@@ -128,13 +152,29 @@ Anything a create has to supply on every call belongs in the schema as `.Default
 
 Ent's default delete action is `NO ACTION` for a required edge and `SET NULL` for an optional one, so a child row either blocks its parent's delete or is left orphaned with a dangling column. Owned rows carry `.Annotations(cascadeOnDelete)`, which only takes effect on the `edge.To` side — ent skips the inverse edge when it builds the foreign key, so on the self-referencing `children`/`parent` edge the annotation goes before `.From("parent")`. Deleting a library therefore takes its items with it, and a user takes their sessions and watch state; only activity log entries are left behind, keeping their history when the user or item goes away.
 
-Columns owned by a background process must be left out of an upsert's `DoUpdates` — the scan clobbering probe-owned columns like `run_time_ticks` was a real bug. The scan writes `date_modified`; the probe writes `container`, `run_time_ticks`, `probed_at`, `tags`, the `MediaSource` and the genre, studio and credit edges, and rewrites all of them on every run, so the edges are cleared and re-added rather than merged.
+**An `Item` is a title; a `MediaSource` is a file.** The item carries no path — its identity is `key`, unique with `library_id`, derived by the scanner from the name and year (`movie:the-matrix:1999`, `series:the-wire`, `season:the-wire:1`, `episode:the-wire:1:3`). Keying on location meant a moved file changed identity and a reorganised library lost every resume position and play count; a name-derived key survives the move. The key is internal — no endpoint takes one in its path and the 10.10.0 spec has no field to put one in, so clients only ever see the UUID. `MediaSource` owns the path, unique per library, and an item may have many, which is how a 4K and a 1080p rip of one film become one entry with two versions.
+
+The key is the whole of the grouping: two files whose names parse the same are two copies of one title, and a cut that is named differently on disk already parses to a key of its own. Nothing reads the runtime to second-guess that, so the scan needs no ordering between probing a file and deciding which item it belongs to.
+
+`probed_at` and `date_modified` live on the source, so an unchanged file costs no ffprobe.
+
+**Upgrading an install that predates the key is `migrate` plus a scan, and nothing else.** The migration stands the old path in as the key so no row is left keyless, and the scan rewrites it: `scanner.rekeyLegacy` derives the real key from columns the row already carries and updates in place, so the walk upserts onto the existing row rather than creating a sibling and every item id survives. That is what keeps watch state, favourites, resume positions and playlist entries attached — they reference items by id, and an upgrade that re-created rows would orphan all of them silently. It runs inside `scanLibrary` because it has to precede the sweep, which deletes by key; a one-shot subcommand would lose the race with a scheduled scan.
+
+Two old rows that derive one key are the duplicate the key exists to collapse, so `items.Merge` folds the second into the first rather than refusing: its files, its children and its playlist entries move over, and a user with data on both rows keeps whichever answer says the title was watched — played and favourite carry, the count and the position take the further of the two. Refusing would wedge the library instead of losing one row: the collision is on a unique index, so every later scan fails at the same item and that library never scans again.
+
+An item with more than one source has to pick one, and the two callers want opposite things. A stream takes `items.PreferredSource`, which is **compatibility over quality** — the best encode a client cannot decode is worse than the worse one it can — and falls back to the richest source when nothing matches, so the caller can still remux it or refuse with a status rather than handle a nil. A download takes `items.BestSource`, ignoring compatibility entirely, because the bytes are being saved rather than decoded and what the far end can play is its own problem. Matching is on container and audio codec only; a kind the client said nothing about is unrestricted rather than refused, so only a browser — which declares nothing — is held to the tables in `internal/server/stream`. Video codec is deliberately not part of it (#532), which is consistent with video being direct play only (#481).
+
+Columns owned by a background process must be left out of an upsert's `DoUpdates` — the scan clobbering probe-owned columns like `run_time_ticks` was a real bug. `SaveScanned` writes the item's `date_modified` and `SaveSource` the source's; the probe writes `container`, `run_time_ticks`, `size`, `bitrate`, `probed_at`, `tags`, the source's streams and the genre, studio and credit edges, and rewrites all of them on every run, so the edges are cleared and re-added rather than merged.
+
+The sweep is split the same way. Items are swept by key and **soft** deleted, because the row carries the id the watch state hangs off and a returning title has to land back on it; sources are swept by path and **hard** deleted, because nothing hangs off a source that a returning file would want back. Losing one of two copies therefore costs a source row and nothing else.
 
 Ordering by a to-many edge makes ent group the query, so the sort column comes back unaggregated and Postgres rejects it. Query from the side that owns the column instead (see `items.ResumeItems`).
 
 ### Background work
 
-Background work runs as Temporal workflows in a separate deployment. `gojellyfin worker` is the same image and the same binary as the server, run as a second deployment, and `TEMPORAL_HOSTPORT` is the server it dials; `TEMPORAL_NAMESPACE` defaults to `default`. With the address unset, background work is off and the server still starts, the way an empty `TRANSCODER_WORKERS` leaves transcoding off — a developer running the server alone gets a server rather than a dial error.
+Background work runs as Temporal workflows in a separate deployment. `gojellyfin worker` is the same image and the same binary as the server, run as a second deployment, and `TEMPORAL_HOSTPORT` is the server it dials. Both reach `internal/jobs` as `env.Config.Temporal` rather than through `os.Getenv`. With the address unset, background work is off and the server still starts — a developer running the server alone gets a server rather than a dial error.
+
+`TEMPORAL_NAMESPACE` has no default, and `jobs.NewClient` refuses to build a client without one rather than `env` inventing it: a namespace is only required once there is a server to dial, and defaulting it silently puts every run in whichever namespace the constant happened to name. The check belongs with the client because that is what needs the value.
 
 `internal/temporal` is the client and the worker; `internal/tasks` is the domain over them, and it is what the `ScheduledTasks` API is served from. A package declares what it runs beside the code that implements it: `scanner.Registration` names the workflow and its activities, and fx collects those into the worker through a value group, so the worker command lists no workflows of its own.
 
@@ -145,6 +185,34 @@ The library scan fans its libraries out flat, because a library is a handful of 
 One failing library does not abandon the others. The workflow collects every future and logs the ones that failed, because the sweep a failed library skipped is safe to leave until the next run while the ones that succeeded are not worth losing.
 
 Triggers are not built. `UpdateTask` answers 501 rather than storing a schedule nobody reads; Temporal schedules are where they belong.
+
+### Metadata providers
+
+**`internal/metadata` is what anything else names; `internal/metadata/tmdb` is one implementation of it.** It sits under `metadata` because nothing outside `metadata` calls it, and the tree should say so. The interface is declared by the consumer, in `metadata/provider.go`, and `metadata.Module` aggregates `tmdb.Module` the way `server.Module` aggregates its tag packages — so `server.go` and `worker.go` list `metadata.Module` and learn nothing about who answers. The scheduled task the dashboard shows says it identifies items, not who it asks.
+
+That split is a rule, not a preference: **no package outside `internal/metadata` may import the provider.** Check with `grep -rln 'metadata/tmdb' --include='*.go' . | grep -v '^./internal/metadata/tmdb/'`, which must return `internal/metadata/fx.go` and nothing else.
+
+The rule is about imports, not about the letters T-M-D-B. `internal/env` carries a `TMDB` struct holding `TMDB_API_KEY`, and that is correct rather than a leak: `env` is the one place every variable this binary reads is written down, and the variable is named for the service whose key it is because that is what an operator puts in a manifest. A provider-neutral name would make the manifest lie and would break the moment a second provider needs a key of its own. `env` imports none of our packages, so naming a variable costs no coupling — the leak to avoid is a package reaching for the provider, and `metadata` still takes only the `Provider` interface.
+
+`metadata` owns the job, the batch loop and the locks. `tmdb` owns the calls and the translation from TMDB's payloads into `items.Metadata` — including from TMDB's vocabulary into ours, which is why `Status` is mapped to Jellyfin's `Continuing`/`Ended`/`Unreleased` rather than passed through, and why a movie writes no series status at all.
+
+The calls go through `github.com/cyruzin/golang-tmdb`, which models every payload this needs. Two of its behaviours are deliberately not used. Its `SetClientAutoRetry` retries a 429 in an unbounded loop and never retries a 5xx, so a `RoundTripper` in `retry.go` does the backoff with a bound; and every request it builds carries its own `context.Background`, so a cancelled run cannot interrupt one in flight — the limiter before each call is where cancellation lands, which bounds a cancelled step to a single request's timeout.
+
+Two things keep the dependency pointing one way. A miss is a `false` return rather than a sentinel error, so the implementation never imports its consumer for one variable; and `Episode` takes the series' whole `ProviderIds` map, so each provider reads its own key out and no key name escapes the package that owns it.
+
+There is **one** provider and one binding — no fx value group and no priority order until a second provider exists to need them. The seam is the interface.
+
+It is bring your own key: `TMDB_API_KEY` reaches the client as `env.Config.TMDB.APIKey` rather than through `os.Getenv`, and unset leaves the provider disabled and the job a no-op, so a developer running the server alone still gets a server. An absent key is deliberately not a validation failure — `env` refuses a malformed value, not a missing optional one. We embed no key of our own: there is then none to share, none to throttle and no attribution owed for one.
+
+The job runs on its own rather than inside the scan, and does **not** fan out per item. The work is IO bound on a rate limited API, so a step per item multiplies the request rate and finishes no sooner; one step loops over at most `batchSize` items, spaced by the client's own limiter and heartbeating between them. What a run leaves, the next run picks up.
+
+The batch is derived from the rows — `items.UnidentifiedItems` asks for items whose `provider_ids` is null — rather than handed over, so a crash re-asks the question instead of replaying a stale list. Writing those ids well is the point: item identity is otherwise name and year, which collides when two films share both.
+
+`lock_data` and `locked_fields` are Jellyfin's semantics and `metadata` honours both. `LockData` keeps an item out of the batch entirely; a field named in `LockedFields` is dropped from what is written, by `stripLockedFields`, which takes a pointer because it edits what it is handed and hiding that would hide an overwrite later. The provider ids themselves survive a field lock, because they are identity rather than metadata and Jellyfin has no lock for them.
+
+Two requests per item, not more: the detail call carries `append_to_response=release_dates` (or `content_ratings,external_ids`), so the certification and the IMDb id arrive with the record instead of costing a third round trip. A 429 or a 5xx backs off and retries rather than failing the run; a 404 or an empty search is a miss, which is not an error because the title may be one TMDB gains later.
+
+The two packages test at their own seam: `metadata` runs the loop and the locks against a stub provider and a real database, and `tmdb` points its client at an `httptest.Server`. A green run needs no key and CI never calls TMDB.
 
 ### Request identity
 
@@ -181,5 +249,7 @@ The tests run real ffmpeg and ffprobe what comes back, so CI installs ffmpeg and
 ### Current state
 
 Users, sessions, devices, libraries, items and their user data are real rows, as are playlists, their entries and their shares; most other handlers still return hardcoded data or a 501. Audio transcodes when a client cannot take the source; video is still direct play only (#481).
+
+Live TV has no tuner (#525), no guide ingest (#526) and no recordings or scheduling (#527), and the `tuner_host`, `timer`, `series_timer` and `listings_provider` tables are declared but unread. Its read paths still answer an empty result rather than a 501, because a 501 makes the web client retry the section on a loop while an empty result is both true and renderable; every write path and every by-id lookup stays 501.
 
 A fresh database has no way in through the API — `CreateUserByName` requires an administrator and nothing seeds one — so `gojellyfin adduser` creates the first one. It reads the password from stdin rather than a flag, which keeps it out of the shell history and the process list; that is a security property, not a convenience, so it stays true of any command that takes a password. One-off jobs that need the domain services rather than a running server belong beside it as another subcommand under `cmd/gojellyfin`.

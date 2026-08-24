@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"regexp"
@@ -10,8 +11,10 @@ import (
 	"strings"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/http/mux"
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 	"github.com/FreekingDean/gojellyfin/internal/server"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/socket"
@@ -133,26 +136,42 @@ type Server struct {
 	apiOptions     api.StrictHTTPServerOptions
 }
 
-func New(m *mux.Mux, authMiddleware *middleware.Auth, policies middleware.Policies) *Server {
+// Unset origins means no cross-origin access rather than a permissive one, so
+// the middleware is left out entirely instead of being configured to allow all.
+func newHTTPMiddleware(config env.Config) []middleware.HttpMiddleware {
+	stack := make([]middleware.HttpMiddleware, 0, 3)
+	if len(config.CORSOrigins) > 0 {
+		stack = append(stack, middleware.HttpCORS(config.CORSOrigins))
+	}
+
+	return append(stack, middleware.HttpLogging, middleware.HttpCanonicalQuery)
+}
+
+// The generated wrapper folds these outward, so the last entry runs first:
+// authentication has to sit below authorization here for the session to be on
+// the context by the time the scopes are checked.
+func newAPIMiddleware(tracing *tracing.Tracing, tracingMiddleware *middleware.OapiTracing, authMiddleware *middleware.Auth, policies middleware.Policies) []api.StrictMiddlewareFunc {
+	stack := []api.StrictMiddlewareFunc{
+		middleware.OapiLogging,
+		middleware.Authorize(policies),
+		authMiddleware.Middleware,
+	}
+	if tracing.Enabled() {
+		stack = append(stack, tracingMiddleware.Middleware)
+	}
+
+	return stack
+}
+
+func New(config env.Config, m *mux.Mux, authMiddleware *middleware.Auth, tracing *tracing.Tracing, tracingMiddleware *middleware.OapiTracing, policies middleware.Policies) *Server {
 	return &Server{
 		s: &http.Server{
-			Addr: ":8081",
+			Addr: fmt.Sprintf(":%d", config.HTTPPort),
 		},
 
-		httpMiddleware: []middleware.HttpMiddleware{
-			middleware.HttpCORS,
-			middleware.HttpLogging,
-			middleware.HttpCanonicalQuery,
-		},
+		httpMiddleware: newHTTPMiddleware(config),
 
-		// The generated wrapper folds these outward, so the last entry runs
-		// first: authentication has to sit below authorization here for the
-		// session to be on the context by the time the scopes are checked.
-		apiMiddleware: []api.StrictMiddlewareFunc{
-			middleware.OapiLogging,
-			middleware.Authorize(policies),
-			authMiddleware.Middleware,
-		},
+		apiMiddleware: newAPIMiddleware(tracing, tracingMiddleware, authMiddleware, policies),
 
 		apiOptions: api.StrictHTTPServerOptions{
 			// Body decoding failures answer 400 from inside the generated

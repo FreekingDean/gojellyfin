@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/FreekingDean/gojellyfin/internal/store"
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/store/migrations"
 )
 
@@ -29,7 +29,12 @@ func migrateCommand() *cobra.Command {
 			}
 			defer func() { _ = os.RemoveAll(dir) }()
 
-			apply := exec.CommandContext(cmd.Context(), atlas, "migrate", "apply", "--dir", "file://"+dir, "--url", store.DatabaseURL())
+			config, err := env.Load()
+			if err != nil {
+				return err
+			}
+
+			apply := exec.CommandContext(cmd.Context(), atlas, "migrate", "apply", "--dir", "file://"+dir, "--url", config.DatabaseURL)
 			apply.Stdout = os.Stdout
 			apply.Stderr = os.Stderr
 			if err := apply.Run(); err != nil {

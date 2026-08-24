@@ -4,18 +4,16 @@ import (
 	"context"
 	"testing"
 
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
-// Unconfigured is a state the server has to answer in, not an error: a
-// developer running without a Temporal server still opens the dashboard.
 func newServer(t *testing.T) *Server {
 	t.Helper()
 
-	t.Setenv("TEMPORAL_HOSTPORT", "")
-	client, err := jobs.NewClient()
+	client, err := jobs.NewClient(env.Config{})
 	if err != nil {
 		t.Fatalf("failed to build the temporal client: %v", err)
 	}
@@ -94,8 +92,6 @@ func TestUnknownTasksAreNotFound(t *testing.T) {
 	}
 }
 
-// A stand in so the handler has something to list without dragging the scanner
-// and its database in.
 type scanJob struct{}
 
 func (scanJob) Name() string        { return "RefreshLibrary" }

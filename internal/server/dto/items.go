@@ -13,7 +13,9 @@ import (
 	"github.com/google/uuid"
 )
 
-func ItemDto(item *items.Item, childCount int32, imageTags map[string]string) api.BaseItemDto {
+// The path is the item's primary source rather than a column on the item, so a
+// caller that has not loaded one passes the empty string.
+func ItemDto(item *items.Item, path string, childCount int32, imageTags map[string]string) api.BaseItemDto {
 	kind := api.BaseItemKind(item.Kind)
 
 	dto := api.BaseItemDto{
@@ -22,7 +24,7 @@ func ItemDto(item *items.Item, childCount int32, imageTags map[string]string) ap
 		Name:              apiutil.Ptr(item.Name),
 		SortName:          apiutil.Ptr(item.SortName),
 		Type:              &kind,
-		Path:              apiutil.Ptr(item.Path),
+		Path:              apiutil.Ptr(path),
 		IsFolder:          apiutil.Ptr(item.IsFolder),
 		ParentId:          item.ParentID,
 		IndexNumber:       item.IndexNumber,
@@ -83,6 +85,11 @@ func ItemDtos(ctx context.Context, store *items.Service, records []*items.Item) 
 		return nil, err
 	}
 
+	paths, err := store.PathsByItem(ctx, itemIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	userData := map[uuid.UUID]*items.Datum{}
 	if userID := auth.UserID(ctx); userID != uuid.Nil {
 		if userData, err = store.ListUserItemData(ctx, userID, itemIDs); err != nil {
@@ -92,7 +99,7 @@ func ItemDtos(ctx context.Context, store *items.Service, records []*items.Item) 
 
 	converted := make([]api.BaseItemDto, 0, len(records))
 	for _, item := range records {
-		dto := ItemDto(item, counts[item.ID], imageTags[item.ID])
+		dto := ItemDto(item, paths[item.ID], counts[item.ID], imageTags[item.ID])
 		datum, ok := userData[item.ID]
 		if !ok {
 			datum = &items.Datum{ItemID: item.ID}

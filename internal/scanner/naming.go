@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
 )
@@ -173,6 +174,61 @@ func episodeTitle(seriesName string, season, episode *int32) string {
 	}
 
 	return fmt.Sprintf("%s S%02dE%02d", seriesName, *season, *episode)
+}
+
+// The identity of a title, and the whole reason an item no longer knows where
+// its bytes are: a file that moves keeps the key it had, so the watch state
+// moves with it, and two files that derive the same key are two copies of one
+// title. Nothing outside the database ever sees it — no endpoint takes a key in
+// its path and the 10.10.0 spec has no field to put one in.
+func movieKey(name string, year *int32) string {
+	return "movie:" + titleSlug(name, year)
+}
+
+func seriesKey(slug string) string {
+	return "series:" + slug
+}
+
+func seasonKey(slug string, number *int32) string {
+	if number == nil {
+		return "season:" + slug
+	}
+
+	return fmt.Sprintf("season:%s:%d", slug, *number)
+}
+
+func episodeKey(slug string, season, episode *int32, title string) string {
+	if season == nil || episode == nil {
+		return "episode:" + slug + ":" + slugify(title)
+	}
+
+	return fmt.Sprintf("episode:%s:%d:%d", slug, *season, *episode)
+}
+
+func titleSlug(name string, year *int32) string {
+	if year == nil {
+		return slugify(name)
+	}
+
+	return fmt.Sprintf("%s:%d", slugify(name), *year)
+}
+
+func slugify(name string) string {
+	var slug strings.Builder
+	separated := false
+	for _, letter := range strings.ToLower(name) {
+		if !unicode.IsLetter(letter) && !unicode.IsDigit(letter) {
+			separated = slug.Len() > 0
+			continue
+		}
+		if separated {
+			slug.WriteByte('-')
+			separated = false
+		}
+		slug.WriteRune(letter)
+	}
+
+	return slug.String()
 }
 
 func sortName(name string) string {

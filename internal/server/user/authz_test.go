@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
@@ -23,7 +24,12 @@ type accounts struct {
 func newAccounts(t *testing.T) *accounts {
 	t.Helper()
 
-	connection, err := store.NewStore()
+	config, err := env.Load()
+	if err != nil {
+		t.Fatalf("failed to read the environment: %v", err)
+	}
+
+	connection, err := store.NewStore(config)
 	if err != nil {
 		t.Fatalf("failed to open the database: %v", err)
 	}
@@ -89,8 +95,6 @@ func changePassword(t *testing.T, server *Server, ctx context.Context, target uu
 	return response
 }
 
-// The takeover: name the administrator, ask for a reset, and the current
-// password is never checked.
 func TestAMemberCannotResetAnotherAccountsPassword(t *testing.T) {
 	accounts := newAccounts(t)
 
@@ -145,8 +149,6 @@ func TestAnAdministratorResetsWithoutTheCurrentPassword(t *testing.T) {
 	}
 }
 
-// The second door onto elevation: UpdateUser is DefaultAuthorization, so it
-// must not carry a policy at all.
 func TestUpdateUserIgnoresPolicy(t *testing.T) {
 	accounts := newAccounts(t)
 	ctx := as(accounts.member)

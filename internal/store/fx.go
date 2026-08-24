@@ -5,16 +5,14 @@ package store
 import (
 	"database/sql"
 	"fmt"
-	"os"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
 	_ "github.com/jackc/pgx/v5/stdlib"
 
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/fx"
 )
-
-const defaultDatabaseURL = "postgres://localhost:5432/gojellyfin_development?sslmode=disable"
 
 var Module = fx.Module(
 	"store",
@@ -27,16 +25,8 @@ type Store struct {
 	client *Client
 }
 
-func DatabaseURL() string {
-	if databaseURL := os.Getenv("DATABASE_URL"); databaseURL != "" {
-		return databaseURL
-	}
-
-	return defaultDatabaseURL
-}
-
-func NewStore() (*Store, error) {
-	db, err := sql.Open("pgx", DatabaseURL())
+func NewStore(config env.Config) (*Store, error) {
+	db, err := sql.Open("pgx", config.DatabaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}

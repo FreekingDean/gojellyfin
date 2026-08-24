@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
@@ -41,7 +42,12 @@ type fixture struct {
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
 
-	connection, err := store.NewStore()
+	config, err := env.Load()
+	if err != nil {
+		t.Fatalf("failed to read the environment: %v", err)
+	}
+
+	connection, err := store.NewStore(config)
 	if err != nil {
 		t.Fatalf("failed to open the database: %v", err)
 	}
@@ -85,7 +91,7 @@ func newFixture(t *testing.T) *fixture {
 		SetKind(itemmodal.KindMovie).
 		SetName("Blade Runner").
 		SetSortName("blade runner").
-		SetPath(path).
+		SetKey("movie:blade-runner:1982").
 		SetRunTimeTicks(250_000_000).
 		Save(ctx)
 	if err != nil {
@@ -94,6 +100,7 @@ func newFixture(t *testing.T) *fixture {
 
 	source, err := client.MediaSource.Create().
 		SetItemID(item.ID).
+		SetLibraryID(library.ID).
 		SetName(filepath.Base(path)).
 		SetPath(path).
 		Save(ctx)

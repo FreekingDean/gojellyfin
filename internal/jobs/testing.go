@@ -32,6 +32,18 @@ func (e *TestEnvironment) ReplaceStep(step any, with any) {
 	e.env.RegisterActivityWithOptions(with, activity.RegisterOptions{Name: stepName(step)})
 }
 
+func RunStep(t *testing.T, step any, args ...any) error {
+	t.Helper()
+
+	var suite testsuite.WorkflowTestSuite
+
+	env := suite.NewTestActivityEnvironment()
+	env.RegisterActivity(step)
+	_, err := env.ExecuteActivity(step, args...)
+
+	return err
+}
+
 func (e *TestEnvironment) Run(job Job) error {
 	e.env.ExecuteWorkflow(job.Run)
 

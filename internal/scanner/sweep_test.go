@@ -15,14 +15,14 @@ import (
 func TestScanMoviesFailsOnAMissingRoot(t *testing.T) {
 	scanner := New(nil, nil, nil)
 	library := &libraries.Library{ID: uuid.New()}
+	found := &seen{}
 
-	paths, err := scanner.scanMovies(context.Background(), library, filepath.Join(t.TempDir(), "unmounted"))
-	if err == nil {
-		t.Fatalf("a missing root scanned clean and returned %d paths, which the caller reads as an empty library", len(paths))
+	if err := scanner.scanMovies(context.Background(), library, filepath.Join(t.TempDir(), "unmounted"), found); err == nil {
+		t.Fatal("a missing root scanned clean, which the caller reads as an empty library")
 	}
 }
 
-func TestScanMoviesFailsOnAnUnreadableDirectory(t *testing.T) {
+func TestScanMoviesSkipsAnUnreadableDirectory(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("root reads a directory whatever its mode")
 	}
@@ -36,8 +36,29 @@ func TestScanMoviesFailsOnAnUnreadableDirectory(t *testing.T) {
 
 	scanner := New(nil, nil, nil)
 	library := &libraries.Library{ID: uuid.New()}
+	found := &seen{}
 
-	if _, err := scanner.scanMovies(context.Background(), library, root); err == nil {
-		t.Error("an unreadable directory was skipped, leaving its files out of the seen set")
+	if err := scanner.scanMovies(context.Background(), library, root, found); err != nil {
+		t.Fatalf("an unreadable directory failed the whole library: %v", err)
+	}
+	if found.complete() {
+		t.Error("the walk reported complete, so the caller would sweep files it never reached")
+	}
+}
+
+func TestWalkIsIncompleteUntilEveryDirectoryIsRead(t *testing.T) {
+	found := &seen{}
+	if !found.complete() {
+		t.Error("a walk that skipped nothing reported incomplete")
+	}
+
+	found.file("/library/readable/movie.mkv")
+	if !found.complete() {
+		t.Error("finding a file made the walk incomplete")
+	}
+
+	found.skip("/library/unreadable", os.ErrPermission)
+	if found.complete() {
+		t.Error("a skipped directory left the walk reporting complete")
 	}
 }
