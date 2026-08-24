@@ -13,6 +13,16 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 )
 
+type codecProfile struct {
+	Type       string
+	Codec      string
+	Conditions []struct {
+		Condition string
+		Property  string
+		Value     string
+	}
+}
+
 // The spec types DeviceProfile as a free-form object, so what the client
 // declared is read back out of it rather than bound to a generated type. Only
 // the video lines are read: what a device can decode inside an mp3 says nothing
@@ -32,6 +42,7 @@ func capabilities(profile api.DeviceProfile) items.Capabilities {
 			items.Profile
 			Type string
 		}
+		CodecProfiles []codecProfile
 	}
 	if err := json.Unmarshal(declared, &parsed); err != nil {
 		return items.Capabilities{}
@@ -44,7 +55,32 @@ func capabilities(profile api.DeviceProfile) items.Capabilities {
 		}
 	}
 
-	return items.Capabilities{Profiles: video}
+	return items.Capabilities{Profiles: video, Codecs: codecConditions(parsed.CodecProfiles)}
+}
+
+// What the client needs to be true of a picture beyond naming its codec. Only
+// the video lines are read: a condition on the sound inside a video is a
+// separate question this does not answer yet.
+func codecConditions(declared []codecProfile) []items.CodecCondition {
+	conditions := make([]items.CodecCondition, 0, len(declared))
+	for _, entry := range declared {
+		if !strings.EqualFold(entry.Type, string(api.DlnaProfileTypeVideo)) || len(entry.Conditions) == 0 {
+			continue
+		}
+
+		read := make([]items.Condition, 0, len(entry.Conditions))
+		for _, condition := range entry.Conditions {
+			read = append(read, items.Condition{
+				Property: condition.Property,
+				Verb:     condition.Condition,
+				Value:    condition.Value,
+			})
+		}
+
+		conditions = append(conditions, items.CodecCondition{Codec: entry.Codec, Conditions: read})
+	}
+
+	return conditions
 }
 
 // The one url the client is given. It states the container and the two codecs

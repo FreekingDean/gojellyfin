@@ -16,11 +16,25 @@ import (
 
 // What a browser declares. Kept narrow so a case that turns on one codec is
 // obvious from the table rather than from reading the profile.
-var chrome = Capabilities{Profiles: []Profile{
-	{Container: "webm", VideoCodec: "vp8,vp9,av1", AudioCodec: "vorbis,opus"},
-	{Container: "mp4,m4v", VideoCodec: "h264,vp8,vp9,av1", AudioCodec: "aac,mp3,opus,flac,vorbis"},
-	{Container: "mkv", VideoCodec: "h264,vp8,vp9,av1", AudioCodec: "aac,mp3,opus,flac,vorbis"},
-}}
+var chrome = Capabilities{
+	Profiles: []Profile{
+		{Container: "webm", VideoCodec: "vp8,vp9,av1", AudioCodec: "vorbis,opus"},
+		{Container: "mp4,m4v", VideoCodec: "h264,vp8,vp9,av1", AudioCodec: "aac,mp3,opus,flac,vorbis"},
+		{Container: "mkv", VideoCodec: "h264,vp8,vp9,av1", AudioCodec: "aac,mp3,opus,flac,vorbis"},
+	},
+	// The conditions jellyfin-web writes beside h264, read off the vendored
+	// bundle: a codec name on its own is not what the client said it decodes.
+	Codecs: []CodecCondition{{
+		Codec: "h264",
+		Conditions: []Condition{
+			{Property: "IsAnamorphic", Verb: NotEquals, Value: "true"},
+			{Property: "VideoProfile", Verb: EqualsAny, Value: "high|main|baseline|constrained baseline"},
+			{Property: "VideoRangeType", Verb: EqualsAny, Value: "SDR"},
+			{Property: "VideoLevel", Verb: LessThanEqual, Value: "52"},
+			{Property: "IsInterlaced", Verb: NotEquals, Value: "true"},
+		},
+	}},
+}
 
 // The codec names jellyfin-web actually puts in its DirectPlayProfiles, read
 // off the vendored bundle rather than off the documentation, beside what
@@ -57,6 +71,12 @@ func ripped(container, video string, height int32, audio ...string) *MediaSource
 			Codec: codec,
 		})
 	}
+
+	return source
+}
+
+func hdr(source *MediaSource) *MediaSource {
+	source.Edges.Streams[0].VideoRangeType = streammodal.VideoRangeTypeHDR10
 
 	return source
 }
@@ -111,6 +131,24 @@ func TestPlanFor(t *testing.T) {
 			name:       "a client that declared nothing keeps the source",
 			source:     rip("mkv", "ac3"),
 			change:     ChangeNone,
+			container:  "mkv",
+			videoCodec: "h264",
+			audioCodec: "ac3",
+		},
+		{
+			name:       "an HDR picture where the client decodes SDR only",
+			can:        chrome,
+			source:     hdr(rip("mkv", "aac")),
+			change:     ChangeVideo,
+			container:  "mkv",
+			videoCodec: "h264",
+			audioCodec: "aac",
+		},
+		{
+			name:       "an HDR picture beside audio the client also cannot decode",
+			can:        chrome,
+			source:     hdr(rip("mkv", "ac3")),
+			change:     ChangeVideoAudio,
 			container:  "mkv",
 			videoCodec: "h264",
 			audioCodec: "ac3",
@@ -289,6 +327,12 @@ func planAt(height int32, change Change) Plan {
 func (f *fixture) copy(t *testing.T, item *Item, path, video, audio string, height int32) {
 	t.Helper()
 
+	f.copyRanged(t, item, path, video, audio, height, "")
+}
+
+func (f *fixture) copyRanged(t *testing.T, item *Item, path, video, audio string, height int32, rangeType VideoRangeType) {
+	t.Helper()
+
 	ctx := context.Background()
 	source, err := f.service.SaveSource(ctx, ScannedSource{
 		LibraryID: f.libraryID,
@@ -300,7 +344,14 @@ func (f *fixture) copy(t *testing.T, item *Item, path, video, audio string, heig
 		t.Fatalf("failed to save the source of %q: %v", path, err)
 	}
 
-	streams := []Stream{{Index: 0, Kind: streammodal.KindVideo, Codec: video, Height: height, Width: height * 16 / 9}}
+	streams := []Stream{{
+		Index:     0,
+		Kind:      streammodal.KindVideo,
+		Codec:     video,
+		Height:    height,
+		Width:     height * 16 / 9,
+		RangeType: rangeType,
+	}}
 	if audio != "" {
 		streams = append(streams, Stream{Index: 1, Kind: streammodal.KindAudio, Codec: audio})
 	}
@@ -392,6 +443,48 @@ func TestService_SourceFor(t *testing.T) {
 
 		if _, err := fixture.service.SourceFor(ctx, film.ID, chrome); !errors.Is(err, ErrNoPlayable) {
 			t.Errorf("err = %v, want %v", err, ErrNoPlayable)
+		}
+	})
+
+	t.Run("an SDR client gets the 1080p rather than the HDR 4K beside it", func(t *testing.T) {
+		fixture := newFixture(t)
+		film := fixture.film(t, "movie:hdr-tiers")
+		fixture.copyRanged(t, film, "/media/uhd.mkv", "h264", "aac", 2160, streammodal.VideoRangeTypeHDR10)
+		fixture.copyRanged(t, film, "/media/hd.mkv", "h264", "aac", 1080, streammodal.VideoRangeTypeSDR)
+
+		plan, err := fixture.service.SourceFor(ctx, film.ID, chrome)
+		if err != nil {
+			t.Fatalf("failed to choose a source: %v", err)
+		}
+		if plan.Source.Path != "/media/hd.mkv" {
+			t.Errorf("chose %q, want the SDR copy the client can actually decode", plan.Source.Path)
+		}
+		if plan.Change != ChangeNone {
+			t.Errorf("change = %v, want the SDR copy handed over untouched", plan.Change)
+		}
+	})
+
+	t.Run("refuses when the only copy is one the client cannot decode", func(t *testing.T) {
+		fixture := newFixture(t)
+		film := fixture.film(t, "movie:hdr-only")
+		fixture.copyRanged(t, film, "/media/only.mkv", "h264", "aac", 2160, streammodal.VideoRangeTypeHDR10)
+
+		if _, err := fixture.service.SourceFor(ctx, film.ID, chrome); !errors.Is(err, ErrNoPlayable) {
+			t.Errorf("err = %v, want %v", err, ErrNoPlayable)
+		}
+	})
+
+	t.Run("a copy the probe never read the range of is still offered", func(t *testing.T) {
+		fixture := newFixture(t)
+		film := fixture.film(t, "movie:unread-range")
+		fixture.copy(t, film, "/media/only.mkv", "h264", "aac", 1080)
+
+		plan, err := fixture.service.SourceFor(ctx, film.ID, chrome)
+		if err != nil {
+			t.Fatalf("a file whose range nobody probed was refused: %v", err)
+		}
+		if plan.Change != ChangeNone {
+			t.Errorf("change = %v, want %v", plan.Change, ChangeNone)
 		}
 	})
 

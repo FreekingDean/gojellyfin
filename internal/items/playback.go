@@ -27,6 +27,7 @@ type Profile struct {
 // refusal: a client that declared nothing is handed its source untouched.
 type Capabilities struct {
 	Profiles []Profile
+	Codecs   []CodecCondition
 }
 
 // What has to change about a file before this client can play it, cheapest
@@ -157,12 +158,14 @@ func (c Capabilities) planFor(source *MediaSource) Plan {
 	container, video, audio := describe(source)
 	plan := Plan{Source: source, Container: container, VideoCodec: video, AudioCodec: audio}
 
-	if len(c.Profiles) == 0 || c.takes(container, video, audio) {
+	if len(c.Profiles) == 0 {
 		return plan
 	}
 
-	open := c.openTo(video)
-	if len(open) == 0 {
+	// A picture the client will not decode is not rescued by a different
+	// container or by converting the sound beside it, so the two rungs a mux
+	// can reach are not open to it at all.
+	if !c.carries(video) || !c.satisfies(source) {
 		plan.Change = ChangeVideo
 		if !c.decodesAudio(audio) {
 			plan.Change = ChangeVideoAudio
@@ -170,6 +173,12 @@ func (c Capabilities) planFor(source *MediaSource) Plan {
 
 		return plan
 	}
+
+	if c.takes(container, video, audio) {
+		return plan
+	}
+
+	open := c.openTo(video)
 
 	for _, profile := range open {
 		if lists(profile.AudioCodec, audio) {
@@ -233,7 +242,7 @@ func (c Capabilities) openTo(video string) []Profile {
 			}
 		}
 	}
-	if len(open) == 0 && c.carries(video) {
+	if len(open) == 0 {
 		return []Profile{{Container: transcode.VideoContainer, AudioCodec: c.audioWith(video)}}
 	}
 
