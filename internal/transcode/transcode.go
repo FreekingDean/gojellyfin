@@ -19,6 +19,7 @@ type Spec struct {
 type format struct {
 	muxer       string
 	codec       string
+	audio       string
 	contentType string
 	muxerArgs   []string
 	video       bool
@@ -30,13 +31,14 @@ type format struct {
 // which is what a video remux has to land in. ogg is missing for a second
 // reason — it wants libvorbis, which not every ffmpeg build carries.
 var formats = map[string]format{
-	"mp3":  {muxer: "mp3", codec: "libmp3lame", contentType: "audio/mpeg"},
-	"aac":  {muxer: "adts", codec: "aac", contentType: "audio/aac"},
-	"ts":   {muxer: "mpegts", codec: "aac", contentType: "video/mp2t", video: true},
-	"opus": {muxer: "opus", codec: "libopus", contentType: "audio/opus"},
+	"mp3":  {muxer: "mp3", codec: "libmp3lame", audio: "mp3", contentType: "audio/mpeg"},
+	"aac":  {muxer: "adts", codec: "aac", audio: "aac", contentType: "audio/aac"},
+	"ts":   {muxer: "mpegts", codec: "aac", audio: "aac", contentType: "video/mp2t", video: true},
+	"opus": {muxer: "opus", codec: "libopus", audio: "opus", contentType: "audio/opus"},
 	"mp4": {
 		muxer:       "mp4",
 		codec:       "aac",
+		audio:       "aac",
 		contentType: "video/mp4",
 		muxerArgs:   []string{"-movflags", "frag_keyframe+empty_moov+default_base_moof"},
 		video:       true,
@@ -62,6 +64,24 @@ func Supported(container string) bool {
 func Choose(containers []string) string {
 	for _, container := range containers {
 		if Supported(container) {
+			return strings.ToLower(container)
+		}
+	}
+
+	return ""
+}
+
+// The codec the audio comes back as, which is what a client has to be able to
+// decode for the container to be worth choosing.
+func AudioCodec(container string) string {
+	return formats[strings.ToLower(container)].audio
+}
+
+// The same agreement as Choose, narrowed to containers that carry a picture,
+// which is what a video remux has to land in.
+func ChooseVideo(containers []string) string {
+	for _, container := range containers {
+		if CarriesVideo(container) {
 			return strings.ToLower(container)
 		}
 	}

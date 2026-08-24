@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
@@ -22,7 +23,7 @@ func New(items *items.Service) *Server {
 }
 
 func (s *Server) GetPlaybackInfo(ctx context.Context, request api.GetPlaybackInfoRequestObject) (api.GetPlaybackInfoResponseObject, error) {
-	response, err := s.playbackInfo(ctx, request.ItemId)
+	response, err := s.playbackInfo(ctx, request.ItemId, nil, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +32,18 @@ func (s *Server) GetPlaybackInfo(ctx context.Context, request api.GetPlaybackInf
 }
 
 func (s *Server) GetPostedPlaybackInfo(ctx context.Context, request api.GetPostedPlaybackInfoRequestObject) (api.GetPostedPlaybackInfoResponseObject, error) {
-	response, err := s.playbackInfo(ctx, request.ItemId)
+	var profile api.DeviceProfile
+	startTicks := apiutil.Deref(request.Params.StartTimeTicks)
+	if body := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody); body != nil {
+		if body.DeviceProfile != nil {
+			profile = *body.DeviceProfile
+		}
+		if body.StartTimeTicks != nil {
+			startTicks = *body.StartTimeTicks
+		}
+	}
+
+	response, err := s.playbackInfo(ctx, request.ItemId, profile, startTicks)
 	if err != nil {
 		return nil, err
 	}
@@ -39,18 +51,18 @@ func (s *Server) GetPostedPlaybackInfo(ctx context.Context, request api.GetPoste
 	return api.GetPostedPlaybackInfo200JSONResponse(response), nil
 }
 
-func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID) (api.PlaybackInfoResponse, error) {
+func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, profile api.DeviceProfile, startTicks int64) (api.PlaybackInfoResponse, error) {
 	item, err := s.items.ItemByID(ctx, itemID)
 	if err != nil {
 		return api.PlaybackInfoResponse{}, err
 	}
 
-	sources, err := s.mediaSources(ctx, item)
+	session, err := newPlaySessionId()
 	if err != nil {
 		return api.PlaybackInfoResponse{}, err
 	}
 
-	session, err := newPlaySessionId()
+	sources, err := s.mediaSources(ctx, item, profile, session, startTicks)
 	if err != nil {
 		return api.PlaybackInfoResponse{}, err
 	}
@@ -63,7 +75,7 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID) (api.Playba
 
 // One entry per file, which is how a 4K and a 1080p copy of one film reach the
 // client as two versions of a single item.
-func (s *Server) mediaSources(ctx context.Context, item *items.Item) ([]api.MediaSourceInfo, error) {
+func (s *Server) mediaSources(ctx context.Context, item *items.Item, profile api.DeviceProfile, session string, startTicks int64) ([]api.MediaSourceInfo, error) {
 	sources, err := s.items.MediaSources(ctx, item.ID)
 	if err != nil {
 		return nil, err
@@ -72,12 +84,32 @@ func (s *Server) mediaSources(ctx context.Context, item *items.Item) ([]api.Medi
 		return []api.MediaSourceInfo{unsourced(item)}, nil
 	}
 
+	profiles := videoProfiles(profile)
+	token := auth.AuthorizationFrom(ctx).Token
+
 	converted := make([]api.MediaSourceInfo, 0, len(sources))
 	for _, source := range sources {
-		converted = append(converted, mediaSourceDto(source))
+		dto := mediaSourceDto(source)
+		if !items.IsAudio(item) {
+			delivered := plan(profiles, source)
+			served(&dto, delivered, streamURL(item.ID, source, delivered, token, session, startTicks))
+		}
+		converted = append(converted, dto)
 	}
 
 	return converted, nil
+}
+
+// The client is handed one url and no way to choose another. What it asks for
+// is an item; whether the answer is the file or a remux of it is decided here
+// and again by the handler that serves it, off the same container and codec.
+func served(dto *api.MediaSourceInfo, delivered delivery, url string) {
+	dto.SupportsDirectPlay = apiutil.Ptr(false)
+	dto.SupportsDirectStream = apiutil.Ptr(false)
+	dto.SupportsTranscoding = apiutil.Ptr(true)
+	dto.TranscodingUrl = apiutil.Ptr(url)
+	dto.TranscodingContainer = apiutil.Ptr(delivered.container)
+	dto.TranscodingSubProtocol = apiutil.Ptr(api.MediaStreamProtocolHttp)
 }
 
 func mediaSourceDto(source *items.MediaSource) api.MediaSourceInfo {
@@ -102,7 +134,7 @@ func mediaSourceDto(source *items.MediaSource) api.MediaSourceInfo {
 		Formats:                    &[]string{},
 		SupportsDirectPlay:         apiutil.Ptr(source.SupportsDirectPlay),
 		SupportsDirectStream:       apiutil.Ptr(source.SupportsDirectStream),
-		SupportsTranscoding:        apiutil.Ptr(source.SupportsTranscoding),
+		SupportsTranscoding:        apiutil.Ptr(false),
 		SupportsProbing:            apiutil.Ptr(source.SupportsProbing),
 		IsRemote:                   apiutil.Ptr(source.IsRemote),
 		IsInfiniteStream:           apiutil.Ptr(source.IsInfiniteStream),

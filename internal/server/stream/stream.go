@@ -76,6 +76,9 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 		if h.serveTranscode(w, r, item, source, []string{requested}) {
 			return
 		}
+		if h.needsRemux(r, item, source) && h.serveRemux(w, r, source) {
+			return
+		}
 
 		unsupported(w, r, container, requested)
 		return
@@ -113,7 +116,7 @@ var browserContainers = map[string]bool{
 }
 
 func (h *Handler) needsRemux(r *http.Request, item *items.Item, source *items.MediaSource) bool {
-	if items.IsAudio(item) || isStatic(r) || !h.transcoder.Enabled() {
+	if items.IsAudio(item) || !h.transcoder.Enabled() {
 		return false
 	}
 
@@ -238,9 +241,11 @@ func (h *Handler) serveTranscode(w http.ResponseWriter, r *http.Request, item *i
 // The video is copied rather than encoded, so this costs a mux and an audio
 // encode rather than a transcode.
 func (h *Handler) serveRemux(w http.ResponseWriter, r *http.Request, source *items.MediaSource) bool {
+	container := transcode.ChooseVideo([]string{r.PathValue("container"), transcode.VideoContainer})
+
 	return h.relay(w, r, source, transcode.Spec{
 		Path:       source.Path,
-		Container:  transcode.VideoContainer,
+		Container:  container,
 		Bitrate:    audioBitrate(r),
 		StartTicks: startTicks(r),
 		Video:      true,

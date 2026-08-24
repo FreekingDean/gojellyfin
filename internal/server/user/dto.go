@@ -63,6 +63,11 @@ func configurationDto(configuration *users.Configuration) api.UserConfiguration 
 	}
 }
 
+// The picture is copied and never re-encoded (#481), and this is the policy
+// jellyfin-web reads to decide whether to offer a quality menu, so claiming it
+// puts a bitrate control on screen that changes nothing.
+const encodesVideo = false
+
 func policyDto(policy *users.Policy) api.UserPolicy {
 	if policy == nil {
 		return api.UserPolicy{}
@@ -97,7 +102,7 @@ func policyDto(policy *users.Policy) api.UserPolicy {
 		EnableLiveTvAccess:               apiutil.Ptr(policy.EnableLiveTvAccess),
 		EnableMediaPlayback:              apiutil.Ptr(policy.EnableMediaPlayback),
 		EnableAudioPlaybackTranscoding:   apiutil.Ptr(policy.EnableAudioPlaybackTranscoding),
-		EnableVideoPlaybackTranscoding:   apiutil.Ptr(policy.EnableVideoPlaybackTranscoding),
+		EnableVideoPlaybackTranscoding:   apiutil.Ptr(encodesVideo),
 		EnablePlaybackRemuxing:           apiutil.Ptr(policy.EnablePlaybackRemuxing),
 		ForceRemoteSourceTranscoding:     apiutil.Ptr(policy.ForceRemoteSourceTranscoding),
 		EnableContentDeletion:            apiutil.Ptr(policy.EnableContentDeletion),
