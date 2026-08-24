@@ -261,6 +261,18 @@ func (f PlaylistShareFunc) Mutate(ctx context.Context, m store.Mutation) (store.
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.PlaylistShareMutation", m)
 }
 
+// The QuickConnectRequestFunc type is an adapter to allow the use of ordinary
+// function as QuickConnectRequest mutator.
+type QuickConnectRequestFunc func(context.Context, *store.QuickConnectRequestMutation) (store.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f QuickConnectRequestFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, error) {
+	if mv, ok := m.(*store.QuickConnectRequestMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.QuickConnectRequestMutation", m)
+}
+
 // The SeriesTimerFunc type is an adapter to allow the use of ordinary
 // function as SeriesTimer mutator.
 type SeriesTimerFunc func(context.Context, *store.SeriesTimerMutation) (store.Value, error)

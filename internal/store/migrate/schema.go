@@ -789,6 +789,34 @@ var (
 			},
 		},
 	}
+	// QuickConnectRequestsColumns holds the columns for the "quick_connect_requests" table.
+	QuickConnectRequestsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "secret", Type: field.TypeString, Unique: true},
+		{Name: "code", Type: field.TypeString, Unique: true},
+		{Name: "device_id", Type: field.TypeString},
+		{Name: "device_name", Type: field.TypeString},
+		{Name: "app_name", Type: field.TypeString},
+		{Name: "app_version", Type: field.TypeString},
+		{Name: "expires_at", Type: field.TypeTime},
+		{Name: "authorized_by_id", Type: field.TypeUUID, Nullable: true},
+	}
+	// QuickConnectRequestsTable holds the schema information for the "quick_connect_requests" table.
+	QuickConnectRequestsTable = &schema.Table{
+		Name:       "quick_connect_requests",
+		Columns:    QuickConnectRequestsColumns,
+		PrimaryKey: []*schema.Column{QuickConnectRequestsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "quick_connect_requests_users_quick_connect_requests",
+				Columns:    []*schema.Column{QuickConnectRequestsColumns[10]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// SeriesTimersColumns holds the columns for the "series_timers" table.
 	SeriesTimersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
@@ -1198,6 +1226,7 @@ var (
 		PlaylistsTable,
 		PlaylistEntriesTable,
 		PlaylistSharesTable,
+		QuickConnectRequestsTable,
 		SeriesTimersTable,
 		SessionsTable,
 		StudiosTable,
@@ -1236,6 +1265,7 @@ func init() {
 	PlaylistEntriesTable.ForeignKeys[1].RefTable = PlaylistsTable
 	PlaylistSharesTable.ForeignKeys[0].RefTable = PlaylistsTable
 	PlaylistSharesTable.ForeignKeys[1].RefTable = UsersTable
+	QuickConnectRequestsTable.ForeignKeys[0].RefTable = UsersTable
 	SessionsTable.ForeignKeys[0].RefTable = DevicesTable
 	SessionsTable.ForeignKeys[1].RefTable = UsersTable
 	TimersTable.ForeignKeys[0].RefTable = SeriesTimersTable

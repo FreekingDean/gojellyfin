@@ -33,6 +33,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
+	"github.com/FreekingDean/gojellyfin/internal/store/quickconnectrequest"
 	"github.com/FreekingDean/gojellyfin/internal/store/seriestimer"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
@@ -103,37 +104,38 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			activitylogentry.Table:   activitylogentry.ValidColumn,
-			apikey.Table:             apikey.ValidColumn,
-			chapter.Table:            chapter.ValidColumn,
-			configuration.Table:      configuration.ValidColumn,
-			credit.Table:             credit.ValidColumn,
-			device.Table:             device.ValidColumn,
-			displaypreferences.Table: displaypreferences.ValidColumn,
-			genre.Table:              genre.ValidColumn,
-			image.Table:              image.ValidColumn,
-			item.Table:               item.ValidColumn,
-			library.Table:            library.ValidColumn,
-			libraryoptions.Table:     libraryoptions.ValidColumn,
-			listingsprovider.Table:   listingsprovider.ValidColumn,
-			mediaattachment.Table:    mediaattachment.ValidColumn,
-			mediasegment.Table:       mediasegment.ValidColumn,
-			mediasource.Table:        mediasource.ValidColumn,
-			mediastream.Table:        mediastream.ValidColumn,
-			person.Table:             person.ValidColumn,
-			playlist.Table:           playlist.ValidColumn,
-			playlistentry.Table:      playlistentry.ValidColumn,
-			playlistshare.Table:      playlistshare.ValidColumn,
-			seriestimer.Table:        seriestimer.ValidColumn,
-			session.Table:            session.ValidColumn,
-			studio.Table:             studio.ValidColumn,
-			timer.Table:              timer.ValidColumn,
-			trickplay.Table:          trickplay.ValidColumn,
-			tunerhost.Table:          tunerhost.ValidColumn,
-			user.Table:               user.ValidColumn,
-			userconfiguration.Table:  userconfiguration.ValidColumn,
-			useritemdata.Table:       useritemdata.ValidColumn,
-			userpolicy.Table:         userpolicy.ValidColumn,
+			activitylogentry.Table:    activitylogentry.ValidColumn,
+			apikey.Table:              apikey.ValidColumn,
+			chapter.Table:             chapter.ValidColumn,
+			configuration.Table:       configuration.ValidColumn,
+			credit.Table:              credit.ValidColumn,
+			device.Table:              device.ValidColumn,
+			displaypreferences.Table:  displaypreferences.ValidColumn,
+			genre.Table:               genre.ValidColumn,
+			image.Table:               image.ValidColumn,
+			item.Table:                item.ValidColumn,
+			library.Table:             library.ValidColumn,
+			libraryoptions.Table:      libraryoptions.ValidColumn,
+			listingsprovider.Table:    listingsprovider.ValidColumn,
+			mediaattachment.Table:     mediaattachment.ValidColumn,
+			mediasegment.Table:        mediasegment.ValidColumn,
+			mediasource.Table:         mediasource.ValidColumn,
+			mediastream.Table:         mediastream.ValidColumn,
+			person.Table:              person.ValidColumn,
+			playlist.Table:            playlist.ValidColumn,
+			playlistentry.Table:       playlistentry.ValidColumn,
+			playlistshare.Table:       playlistshare.ValidColumn,
+			quickconnectrequest.Table: quickconnectrequest.ValidColumn,
+			seriestimer.Table:         seriestimer.ValidColumn,
+			session.Table:             session.ValidColumn,
+			studio.Table:              studio.ValidColumn,
+			timer.Table:               timer.ValidColumn,
+			trickplay.Table:           trickplay.ValidColumn,
+			tunerhost.Table:           tunerhost.ValidColumn,
+			user.Table:                user.ValidColumn,
+			userconfiguration.Table:   userconfiguration.ValidColumn,
+			useritemdata.Table:        useritemdata.ValidColumn,
+			userpolicy.Table:          userpolicy.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

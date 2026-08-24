@@ -27,6 +27,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
+	"github.com/FreekingDean/gojellyfin/internal/store/quickconnectrequest"
 	"github.com/FreekingDean/gojellyfin/internal/store/seriestimer"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
@@ -600,6 +601,18 @@ func init() {
 	playlistshare.DefaultUpdatedAt = playlistshareDescUpdatedAt.Default.(func() time.Time)
 	// playlistshare.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	playlistshare.UpdateDefaultUpdatedAt = playlistshareDescUpdatedAt.UpdateDefault.(func() time.Time)
+	quickconnectrequestFields := entities.QuickConnectRequest{}.Fields()
+	_ = quickconnectrequestFields
+	// quickconnectrequestDescCreatedAt is the schema descriptor for created_at field.
+	quickconnectrequestDescCreatedAt := quickconnectrequestFields[1].Descriptor()
+	// quickconnectrequest.DefaultCreatedAt holds the default value on creation for the created_at field.
+	quickconnectrequest.DefaultCreatedAt = quickconnectrequestDescCreatedAt.Default.(func() time.Time)
+	// quickconnectrequestDescUpdatedAt is the schema descriptor for updated_at field.
+	quickconnectrequestDescUpdatedAt := quickconnectrequestFields[2].Descriptor()
+	// quickconnectrequest.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	quickconnectrequest.DefaultUpdatedAt = quickconnectrequestDescUpdatedAt.Default.(func() time.Time)
+	// quickconnectrequest.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	quickconnectrequest.UpdateDefaultUpdatedAt = quickconnectrequestDescUpdatedAt.UpdateDefault.(func() time.Time)
 	seriestimerFields := entities.SeriesTimer{}.Fields()
 	_ = seriestimerFields
 	// seriestimerDescCreatedAt is the schema descriptor for created_at field.

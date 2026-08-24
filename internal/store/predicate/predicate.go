@@ -69,6 +69,9 @@ type PlaylistEntry func(*sql.Selector)
 // PlaylistShare is the predicate function for playlistshare builders.
 type PlaylistShare func(*sql.Selector)
 
+// QuickConnectRequest is the predicate function for quickconnectrequest builders.
+type QuickConnectRequest func(*sql.Selector)
+
 // SeriesTimer is the predicate function for seriestimer builders.
 type SeriesTimer func(*sql.Selector)
 

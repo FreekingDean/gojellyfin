@@ -58,9 +58,11 @@ type UserEdges struct {
 	Playlists []*Playlist `json:"playlists,omitempty"`
 	// PlaylistShares holds the value of the playlist_shares edge.
 	PlaylistShares []*PlaylistShare `json:"playlist_shares,omitempty"`
+	// QuickConnectRequests holds the value of the quick_connect_requests edge.
+	QuickConnectRequests []*QuickConnectRequest `json:"quick_connect_requests,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [8]bool
+	loadedTypes [9]bool
 }
 
 // ConfigurationOrErr returns the Configuration value or an error if the edge
@@ -137,6 +139,15 @@ func (e UserEdges) PlaylistSharesOrErr() ([]*PlaylistShare, error) {
 		return e.PlaylistShares, nil
 	}
 	return nil, &NotLoadedError{edge: "playlist_shares"}
+}
+
+// QuickConnectRequestsOrErr returns the QuickConnectRequests value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) QuickConnectRequestsOrErr() ([]*QuickConnectRequest, error) {
+	if e.loadedTypes[8] {
+		return e.QuickConnectRequests, nil
+	}
+	return nil, &NotLoadedError{edge: "quick_connect_requests"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -264,6 +275,11 @@ func (_m *User) QueryPlaylists() *PlaylistQuery {
 // QueryPlaylistShares queries the "playlist_shares" edge of the User entity.
 func (_m *User) QueryPlaylistShares() *PlaylistShareQuery {
 	return NewUserClient(_m.config).QueryPlaylistShares(_m)
+}
+
+// QueryQuickConnectRequests queries the "quick_connect_requests" edge of the User entity.
+func (_m *User) QueryQuickConnectRequests() *QuickConnectRequestQuery {
+	return NewUserClient(_m.config).QueryQuickConnectRequests(_m)
 }
 
 // Update returns a builder for updating this User.
