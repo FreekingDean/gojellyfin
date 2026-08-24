@@ -80,7 +80,6 @@ func (l *LibraryScan) probe(ctx jobs.Context, libraries []uuid.UUID) error {
 		selections = append(selections, jobs.Step(ctx, l.scanner.UnprobedSources, id))
 	}
 
-	names := make([]string, 0)
 	chunks := make([]jobs.Future, 0)
 	for index, selection := range selections {
 		var sources []uuid.UUID
@@ -93,15 +92,15 @@ func (l *LibraryScan) probe(ctx jobs.Context, libraries []uuid.UUID) error {
 		number := 0
 		for chunk := range slices.Chunk(sources, probeChunkSize) {
 			name := fmt.Sprintf("probe-%s-%d", libraries[index], number)
-			names = append(names, name)
 			chunks = append(chunks, jobs.Child(ctx, l.ProbeChunk, name, chunk))
 			number++
 		}
 	}
 
-	for index, chunk := range chunks {
+	// The engine names the failing chunk in the error it hands back.
+	for _, chunk := range chunks {
 		if err := chunk.Get(nil); err != nil {
-			jobs.Logf(ctx, "probe chunk failed", "chunk", names[index], "error", err)
+			jobs.Logf(ctx, "probe chunk failed", "error", err)
 		}
 	}
 
