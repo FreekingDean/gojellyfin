@@ -117,36 +117,40 @@ func locations(t *testing.T, server *Server, name string) []string {
 	return nil
 }
 
-func TestAddVirtualFolderStoresPathInfosFromTheBody(t *testing.T) {
-	server, name := newServer(t)
-
-	addVirtualFolder(t, server, name, nil, pathInfos("/media/movies"))
-
-	if found := locations(t, server, name); !slices.Equal(found, []string{"/media/movies"}) {
-		t.Errorf("Locations = %v, want [/media/movies]", found)
+func TestAddVirtualFolder(t *testing.T) {
+	tests := []struct {
+		name  string
+		paths *[]string
+		infos *[]api.MediaPathInfo
+		want  []string
+	}{
+		{
+			name:  "stores the path infos from the body",
+			infos: pathInfos("/media/movies"),
+			want:  []string{"/media/movies"},
+		},
+		{
+			name:  "stores the paths from the query",
+			paths: apiutil.Ptr([]string{"/media/movies"}),
+			want:  []string{"/media/movies"},
+		},
+		{
+			name:  "unions both spellings",
+			paths: apiutil.Ptr([]string{"/media/movies", "/media/shared"}),
+			infos: pathInfos("/media/shared", "/media/extra", ""),
+			want:  []string{"/media/movies", "/media/shared", "/media/extra"},
+		},
 	}
-}
 
-func TestAddVirtualFolderStoresPathsFromTheQuery(t *testing.T) {
-	server, name := newServer(t)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			server, name := newServer(t)
 
-	addVirtualFolder(t, server, name, apiutil.Ptr([]string{"/media/movies"}), nil)
+			addVirtualFolder(t, server, name, test.paths, test.infos)
 
-	if found := locations(t, server, name); !slices.Equal(found, []string{"/media/movies"}) {
-		t.Errorf("Locations = %v, want [/media/movies]", found)
-	}
-}
-
-func TestAddVirtualFolderUnionsBothSpellings(t *testing.T) {
-	server, name := newServer(t)
-
-	addVirtualFolder(t, server, name,
-		apiutil.Ptr([]string{"/media/movies", "/media/shared"}),
-		pathInfos("/media/shared", "/media/extra", ""),
-	)
-
-	want := []string{"/media/movies", "/media/shared", "/media/extra"}
-	if found := locations(t, server, name); !slices.Equal(found, want) {
-		t.Errorf("Locations = %v, want %v", found, want)
+			if found := locations(t, server, name); !slices.Equal(found, test.want) {
+				t.Errorf("Locations = %v, want %v", found, test.want)
+			}
+		})
 	}
 }
