@@ -26,6 +26,12 @@ run: build
 test: build
 	go test ./...
 
+# Jest driving the real jellyfin-web client in Chrome. Apart from `make test`
+# because it wants Node, Docker and a browser.
+.PHONY: e2e
+e2e:
+	cd e2e && npm ci && npm test
+
 .PHONY: fmt
 fmt:
 	gofmt -w internal cmd
