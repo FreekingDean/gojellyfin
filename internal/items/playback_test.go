@@ -22,18 +22,13 @@ var chrome = Capabilities{
 		{Container: "mp4,m4v", VideoCodec: "h264,vp8,vp9,av1", AudioCodec: "aac,mp3,opus,flac,vorbis"},
 		{Container: "mkv", VideoCodec: "h264,vp8,vp9,av1", AudioCodec: "aac,mp3,opus,flac,vorbis"},
 	},
-	// The conditions jellyfin-web writes beside h264, read off the vendored
-	// bundle: a codec name on its own is not what the client said it decodes.
-	Codecs: []CodecCondition{{
-		Codec: "h264",
-		Conditions: []Condition{
-			{Property: "IsAnamorphic", Verb: NotEquals, Value: "true"},
-			{Property: "VideoProfile", Verb: EqualsAny, Value: "high|main|baseline|constrained baseline"},
-			{Property: "VideoRangeType", Verb: EqualsAny, Value: "SDR"},
-			{Property: "VideoLevel", Verb: LessThanEqual, Value: "52"},
-			{Property: "IsInterlaced", Verb: NotEquals, Value: "true"},
-		},
-	}},
+	Conditions: []Condition{
+		{Codec: "h264", Property: "IsAnamorphic", Verb: "NotEquals", Value: "true"},
+		{Codec: "h264", Property: "VideoProfile", Verb: "EqualsAny", Value: "high|main|baseline|constrained baseline"},
+		{Codec: "h264", Property: "VideoRangeType", Verb: "EqualsAny", Value: "SDR"},
+		{Codec: "h264", Property: "VideoLevel", Verb: "LessThanEqual", Value: "52"},
+		{Codec: "h264", Property: "IsInterlaced", Verb: "NotEquals", Value: "true"},
+	},
 }
 
 // The codec names jellyfin-web actually puts in its DirectPlayProfiles, read
@@ -191,7 +186,7 @@ func TestPlanFor(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			plan := tc.can.planFor(tc.source)
+			plan := tc.can.plan(tc.source)
 
 			if plan.Change != tc.change {
 				t.Errorf("change = %v, want %v", plan.Change, tc.change)
@@ -228,7 +223,7 @@ func TestPlanFor(t *testing.T) {
 			{name: "audio the client never named", source: ripped("mp4", "h264", 1080, "wmav2"), want: ChangeAudio},
 		} {
 			t.Run(tc.name, func(t *testing.T) {
-				if got := web.planFor(tc.source).Change; got != tc.want {
+				if got := web.plan(tc.source).Change; got != tc.want {
 					t.Errorf("change = %v, want %v", got, tc.want)
 				}
 			})
@@ -238,7 +233,7 @@ func TestPlanFor(t *testing.T) {
 	t.Run("a profile that named no codecs named none it refuses", func(t *testing.T) {
 		open := Capabilities{Profiles: []Profile{{Container: "mp4"}}}
 
-		if got := open.planFor(rip("mp4", "ac3")).Change; got != ChangeNone {
+		if got := open.plan(rip("mp4", "ac3")).Change; got != ChangeNone {
 			t.Errorf("change = %v, want %v", got, ChangeNone)
 		}
 	})
@@ -249,7 +244,7 @@ func TestPlanFor(t *testing.T) {
 			{Container: "mp4", VideoCodec: "h264", AudioCodec: "aac"},
 		}}
 
-		if got := can.planFor(rip("mkv", "ac3")).Container; got != "mp4" {
+		if got := can.plan(rip("mkv", "ac3")).Container; got != "mp4" {
 			t.Errorf("container = %q, want mp4", got)
 		}
 	})
@@ -257,7 +252,7 @@ func TestPlanFor(t *testing.T) {
 	t.Run("a picture only an unwritable container declared is still carried", func(t *testing.T) {
 		can := Capabilities{Profiles: []Profile{{Container: "webm", VideoCodec: "vp9", AudioCodec: "opus"}}}
 
-		plan := can.planFor(ripped("mkv", "vp9", 1080, "ac3"))
+		plan := can.plan(ripped("mkv", "vp9", 1080, "ac3"))
 
 		if plan.Change != ChangeAudio {
 			t.Errorf("change = %v, want %v", plan.Change, ChangeAudio)
@@ -272,64 +267,111 @@ func TestPlanFor(t *testing.T) {
 // files and this client, which file comes back. Rows a to c are one 4K file
 // under whatever plan it needs, d to f the 1080p beside it, and g and h the
 // picture encode nothing here can do.
-func TestCapabilities_best(t *testing.T) {
-	uhd := func(video, audio string) *MediaSource { return ripped("mkv", video, 2160, audio) }
-	hd := func(video, audio string) *MediaSource { return ripped("mkv", video, 1080, audio) }
-	boxed := func(video, audio string) *MediaSource { return ripped("avi", video, 2160, audio) }
+func TestService_SourceForOrder(t *testing.T) {
+	ctx := context.Background()
+
+	type copy struct {
+		path   string
+		video  string
+		audio  string
+		height int32
+		hdr    bool
+	}
 
 	for _, tc := range []struct {
 		name    string
-		sources []*MediaSource
-		want    int
+		copies  []copy
+		want    string
 		change  Change
+		refused bool
 	}{
 		{
-			name:    "a) the 4K plays untouched",
-			sources: []*MediaSource{uhd("h264", "aac"), hd("h264", "aac")},
-			change:  ChangeNone,
+			name:   "a) the 4K plays untouched",
+			copies: []copy{{path: "/uhd.mkv", video: "h264", audio: "aac", height: 2160}, {path: "/hd.mkv", video: "h264", audio: "aac", height: 1080}},
+			want:   "/uhd.mkv",
+			change: ChangeNone,
 		},
 		{
-			name:    "b) the 4K needs a mux and still comes first",
-			sources: []*MediaSource{boxed("h264", "aac"), hd("h264", "aac")},
-			change:  ChangeContainer,
+			name:   "b) the 4K needs a mux and still comes first",
+			copies: []copy{{path: "/uhd.avi", video: "h264", audio: "aac", height: 2160}, {path: "/hd.mkv", video: "h264", audio: "aac", height: 1080}},
+			want:   "/uhd.avi",
+			change: ChangeContainer,
 		},
 		{
-			name:    "c) the 4K needs its audio converted and still beats a 1080p that does not",
-			sources: []*MediaSource{uhd("h264", "ac3"), hd("h264", "aac")},
-			change:  ChangeAudio,
+			name:   "c) the 4K needs its audio converted and still beats a 1080p that does not",
+			copies: []copy{{path: "/uhd.mkv", video: "h264", audio: "ac3", height: 2160}, {path: "/hd.mkv", video: "h264", audio: "aac", height: 1080}},
+			want:   "/uhd.mkv",
+			change: ChangeAudio,
 		},
 		{
-			name:    "d) the 1080p plays untouched once the 4K needs a picture encode",
-			sources: []*MediaSource{uhd("mpeg4", "aac"), hd("h264", "aac")},
-			want:    1,
-			change:  ChangeNone,
+			name:   "d) the 1080p plays untouched once the 4K needs a picture encode",
+			copies: []copy{{path: "/uhd.mkv", video: "mpeg4", audio: "aac", height: 2160}, {path: "/hd.mkv", video: "h264", audio: "aac", height: 1080}},
+			want:   "/hd.mkv",
+			change: ChangeNone,
 		},
 		{
-			name:    "e) the 1080p needs a mux",
-			sources: []*MediaSource{uhd("mpeg4", "aac"), ripped("avi", "h264", 1080, "aac")},
-			want:    1,
-			change:  ChangeContainer,
+			name:   "e) the 1080p needs a mux",
+			copies: []copy{{path: "/uhd.mkv", video: "mpeg4", audio: "aac", height: 2160}, {path: "/hd.avi", video: "h264", audio: "aac", height: 1080}},
+			want:   "/hd.avi",
+			change: ChangeContainer,
 		},
 		{
-			name:    "f) the 1080p needs its audio converted",
-			sources: []*MediaSource{uhd("mpeg4", "aac"), hd("h264", "ac3")},
-			want:    1,
-			change:  ChangeAudio,
+			name:   "f) the 1080p needs its audio converted",
+			copies: []copy{{path: "/uhd.mkv", video: "mpeg4", audio: "aac", height: 2160}, {path: "/hd.mkv", video: "h264", audio: "ac3", height: 1080}},
+			want:   "/hd.mkv",
+			change: ChangeAudio,
 		},
 		{
-			name:    "an HDR 4K falls through to the SDR 1080p beside it",
-			sources: []*MediaSource{hdr(uhd("h264", "aac")), hd("h264", "aac")},
-			want:    1,
-			change:  ChangeNone,
+			name:    "g) a picture encode with audio the client decodes is nothing this can serve",
+			copies:  []copy{{path: "/only.mkv", video: "mpeg4", audio: "aac", height: 1080}},
+			refused: true,
+		},
+		{
+			name:    "h) a picture encode with audio it does not is no different",
+			copies:  []copy{{path: "/only.mkv", video: "mpeg4", audio: "ac3", height: 1080}},
+			refused: true,
+		},
+		{
+			name:   "an HDR 4K falls through to the SDR 1080p beside it",
+			copies: []copy{{path: "/uhd.mkv", video: "h264", audio: "aac", height: 2160, hdr: true}, {path: "/hd.mkv", video: "h264", audio: "aac", height: 1080}},
+			want:   "/hd.mkv",
+			change: ChangeNone,
+		},
+		{
+			name:    "an HDR 4K with nothing beside it",
+			copies:  []copy{{path: "/only.mkv", video: "h264", audio: "aac", height: 2160, hdr: true}},
+			refused: true,
+		},
+		{
+			name:   "a file nobody probed is still answered",
+			copies: []copy{{path: "/only.mkv"}},
+			want:   "/only.mkv",
+			change: ChangeNone,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			plan, err := chrome.best(tc.sources)
+			fixture := newFixture(t)
+			film := fixture.film(t, tc.name)
+			for _, file := range tc.copies {
+				rangeType := VideoRangeType("")
+				if file.hdr {
+					rangeType = streammodal.VideoRangeTypeHDR10
+				}
+				fixture.copyRanged(t, film, file.path, file.video, file.audio, file.height, rangeType)
+			}
+
+			plan, err := fixture.service.SourceFor(ctx, film.ID, chrome)
+			if tc.refused {
+				if !errors.Is(err, ErrNoPlayable) {
+					t.Fatalf("err = %v, want %v", err, ErrNoPlayable)
+				}
+				return
+			}
 			if err != nil {
 				t.Fatalf("nothing was chosen: %v", err)
 			}
-			if plan.Source != tc.sources[tc.want] {
-				t.Errorf("chose the wrong file: change %v", plan.Change)
+			if plan.Source.Path != tc.want {
+				t.Errorf("chose %q, want %q", plan.Source.Path, tc.want)
 			}
 			if plan.Change != tc.change {
 				t.Errorf("change = %v, want %v", plan.Change, tc.change)
@@ -337,48 +379,19 @@ func TestCapabilities_best(t *testing.T) {
 		})
 	}
 
-	t.Run("g and h) a picture encode is nothing this can serve", func(t *testing.T) {
-		for _, name := range []string{"g) with audio the client decodes", "h) with audio it does not"} {
-			audio := "aac"
-			if strings.Contains(name, "does not") {
-				audio = "ac3"
-			}
-
-			t.Run(name, func(t *testing.T) {
-				sources := []*MediaSource{uhd("mpeg4", audio), hd("mpeg4", audio)}
-
-				if _, err := chrome.best(sources); !errors.Is(err, ErrNoPlayable) {
-					t.Errorf("err = %v, want %v", err, ErrNoPlayable)
-				}
-			})
-		}
-	})
-
-	t.Run("a file nobody probed is not passed over for a short one that was", func(t *testing.T) {
-		unprobed := ripped("mkv", "", 0)
-		short := ripped("mkv", "h264", 480, "aac")
-
-		plan, err := chrome.best([]*MediaSource{unprobed, short})
-		if err != nil {
-			t.Fatalf("nothing was chosen: %v", err)
-		}
-		if plan.Source != unprobed {
-			t.Error("a source the probe has not reached tiered below a small one it had read")
-		}
-	})
-
 	t.Run("the richer encode of two at one resolution", func(t *testing.T) {
-		thin := hd("h264", "aac")
-		fat := hd("h264", "aac")
-		thin.Bitrate = 4_000_000
-		fat.Bitrate = 20_000_000
+		fixture := newFixture(t)
+		film := fixture.film(t, "movie:bitrates")
+		fixture.copy(t, film, "/thin.mkv", "h264", "aac", 1080)
+		fixture.copy(t, film, "/fat.mkv", "h264", "aac", 1080)
+		fixture.bitrate(t, film, "/fat.mkv", 20_000_000)
 
-		plan, err := chrome.best([]*MediaSource{thin, fat})
+		plan, err := fixture.service.SourceFor(ctx, film.ID, chrome)
 		if err != nil {
 			t.Fatalf("nothing was chosen: %v", err)
 		}
-		if plan.Source != fat {
-			t.Error("the thinner encode was chosen at the same resolution")
+		if plan.Source.Path != "/fat.mkv" {
+			t.Errorf("chose %q, want the richer encode", plan.Source.Path)
 		}
 	})
 }
@@ -418,6 +431,23 @@ func (f *fixture) copyRanged(t *testing.T, item *Item, path, video, audio string
 	probe := Probe{Container: strings.TrimPrefix(filepath.Ext(path), "."), Streams: streams}
 	if err := f.service.SaveProbe(ctx, item, source, probe); err != nil {
 		t.Fatalf("failed to probe %q: %v", path, err)
+	}
+}
+
+func (f *fixture) bitrate(t *testing.T, item *Item, path string, bitrate int32) {
+	t.Helper()
+
+	sources, err := f.service.MediaSources(context.Background(), item.ID)
+	if err != nil {
+		t.Fatalf("failed to read the sources: %v", err)
+	}
+	for _, source := range sources {
+		if source.Path != path {
+			continue
+		}
+		if err := f.service.store.MediaSource.UpdateOne(source).SetBitrate(bitrate).Exec(context.Background()); err != nil {
+			t.Fatalf("failed to set the bitrate: %v", err)
+		}
 	}
 }
 

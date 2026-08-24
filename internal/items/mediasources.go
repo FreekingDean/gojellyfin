@@ -290,19 +290,9 @@ func (s *Service) DeleteSourcesNotInPaths(ctx context.Context, libraryID uuid.UU
 
 // Empty until the probe has run, which the caller has to treat as unknown.
 func (s *Service) AudioCodec(ctx context.Context, itemID uuid.UUID) (string, error) {
-	return s.firstCodec(ctx, itemID, streammodal.KindAudio)
-}
-
-// The picture ffmpeg would map, which is the one a client has to be able to
-// decode: nothing here can re-encode it.
-func (s *Service) VideoCodec(ctx context.Context, itemID uuid.UUID) (string, error) {
-	return s.firstCodec(ctx, itemID, streammodal.KindVideo)
-}
-
-func (s *Service) firstCodec(ctx context.Context, itemID uuid.UUID, kind StreamKind) (string, error) {
 	codecs, err := s.store.MediaStream.Query().
 		Where(
-			streammodal.KindEQ(kind),
+			streammodal.KindEQ(streammodal.KindAudio),
 			streammodal.HasSourceWith(sourcemodal.ItemID(itemID)),
 		).
 		Order(streammodal.ByIndex()).
@@ -310,7 +300,7 @@ func (s *Service) firstCodec(ctx context.Context, itemID uuid.UUID, kind StreamK
 		Select(streammodal.FieldCodec).
 		Strings(ctx)
 	if err != nil {
-		return "", fmt.Errorf("failed to query %s codec: %w", kind, err)
+		return "", fmt.Errorf("failed to query audio codec: %w", err)
 	}
 	if len(codecs) == 0 {
 		return "", nil

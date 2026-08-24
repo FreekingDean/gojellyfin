@@ -55,32 +55,22 @@ func capabilities(profile api.DeviceProfile) items.Capabilities {
 		}
 	}
 
-	return items.Capabilities{Profiles: video, Codecs: codecConditions(parsed.CodecProfiles)}
-}
-
-// What the client needs to be true of a picture beyond naming its codec. Only
-// the video lines are read: a condition on the sound inside a video is a
-// separate question this does not answer yet.
-func codecConditions(declared []codecProfile) []items.CodecCondition {
-	conditions := make([]items.CodecCondition, 0, len(declared))
-	for _, entry := range declared {
-		if !strings.EqualFold(entry.Type, string(api.DlnaProfileTypeVideo)) || len(entry.Conditions) == 0 {
+	conditions := make([]items.Condition, 0, len(parsed.CodecProfiles))
+	for _, entry := range parsed.CodecProfiles {
+		if !strings.EqualFold(entry.Type, string(api.DlnaProfileTypeVideo)) {
 			continue
 		}
-
-		read := make([]items.Condition, 0, len(entry.Conditions))
 		for _, condition := range entry.Conditions {
-			read = append(read, items.Condition{
+			conditions = append(conditions, items.Condition{
+				Codec:    entry.Codec,
 				Property: condition.Property,
 				Verb:     condition.Condition,
 				Value:    condition.Value,
 			})
 		}
-
-		conditions = append(conditions, items.CodecCondition{Codec: entry.Codec, Conditions: read})
 	}
 
-	return conditions
+	return items.Capabilities{Profiles: video, Conditions: conditions}
 }
 
 // The one url the client is given. It states the container and the two codecs

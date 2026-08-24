@@ -408,12 +408,6 @@ func TestPlayback(t *testing.T) {
 			t.Errorf("error code = %q, want %q", got, api.NoCompatibleStream)
 		}
 
-		target := "/Videos/" + id.String() + "/stream.mp4?container=mp4&videoCodec=h264&audioCodec=aac&api_key=" + fixture.token
-		recorder := fixture.follow(t, target)
-
-		if recorder.Code != http.StatusUnsupportedMediaType {
-			t.Fatalf("status = %d, want %d: %s", recorder.Code, http.StatusUnsupportedMediaType, recorder.Body)
-		}
 	})
 
 	t.Run("a client that declared nothing gets the file untouched", func(t *testing.T) {
