@@ -35,17 +35,40 @@ func (s *Scanner) rekeyLegacy(ctx context.Context, library *libraries.Library) e
 		byID[item.ID] = item
 	}
 
+	stale := make(map[uuid.UUID]bool, len(legacy))
+	for _, item := range legacy {
+		stale[item.ID] = true
+	}
+
+	holder := make(map[string]uuid.UUID, len(all))
+	for _, item := range all {
+		if !stale[item.ID] {
+			holder[item.Key] = item.ID
+		}
+	}
+
+	carried, merged := 0, 0
 	for _, item := range legacy {
 		key, ok := derivedKey(item, byID)
 		if !ok {
 			continue
 		}
+		if existing, taken := holder[key]; taken {
+			if err := s.items.Merge(ctx, item.ID, existing); err != nil {
+				return err
+			}
+			merged++
+
+			continue
+		}
 		if err := s.items.Rekey(ctx, item.ID, key); err != nil {
 			return err
 		}
+		holder[key] = item.ID
+		carried++
 	}
 
-	log.Printf("rekeyed %s: %d items carried forward", library.Name, len(legacy))
+	log.Printf("rekeyed %s: %d items carried forward, %d merged into a copy of the same title", library.Name, carried, merged)
 
 	return nil
 }
