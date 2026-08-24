@@ -151,7 +151,7 @@ func (f *fixture) mine(items []api.DeviceInfoDto) []api.DeviceInfoDto {
 	return found
 }
 
-func TestGetDevices(t *testing.T) {
+func TestServer_GetDevices(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -181,7 +181,7 @@ func TestGetDevices(t *testing.T) {
 	}
 }
 
-func TestGetDeviceInfo(t *testing.T) {
+func TestServer_GetDeviceInfo(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -275,7 +275,7 @@ func TestGetDeviceInfo(t *testing.T) {
 	})
 }
 
-func TestGetDeviceOptions(t *testing.T) {
+func TestServer_GetDeviceOptions(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -316,7 +316,7 @@ func TestGetDeviceOptions(t *testing.T) {
 	})
 }
 
-func TestUpdateDeviceOptions(t *testing.T) {
+func TestServer_UpdateDeviceOptions(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -378,24 +378,24 @@ func TestUpdateDeviceOptions(t *testing.T) {
 			}
 		})
 	}
-}
+	t.Run("refuses an unknown device", func(t *testing.T) {
+		fixture := newFixture(t)
 
-func TestUpdateDeviceOptionsRefusesAnUnknownDevice(t *testing.T) {
-	fixture := newFixture(t)
-
-	response, err := fixture.server.UpdateDeviceOptions(context.Background(), api.UpdateDeviceOptionsRequestObject{
-		Params:   api.UpdateDeviceOptionsParams{Id: "missing"},
-		JSONBody: &api.DeviceOptionsDto{CustomName: ptr("After")},
+		response, err := fixture.server.UpdateDeviceOptions(context.Background(), api.UpdateDeviceOptionsRequestObject{
+			Params:   api.UpdateDeviceOptionsParams{Id: "missing"},
+			JSONBody: &api.DeviceOptionsDto{CustomName: ptr("After")},
+		})
+		if err != nil {
+			t.Fatalf("failed to update the device options: %v", err)
+		}
+		if !isUpdateForbidden(response) {
+			t.Errorf("response = %T, want api.UpdateDeviceOptions403Response", response)
+		}
 	})
-	if err != nil {
-		t.Fatalf("failed to update the device options: %v", err)
-	}
-	if !isUpdateForbidden(response) {
-		t.Errorf("response = %T, want api.UpdateDeviceOptions403Response", response)
-	}
+
 }
 
-func TestDeleteDevice(t *testing.T) {
+func TestServer_DeleteDevice(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 

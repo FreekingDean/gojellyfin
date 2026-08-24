@@ -33,9 +33,10 @@ func setEnvironment(t *testing.T, env map[string]string) {
 
 func TestLoad(t *testing.T) {
 	tests := []struct {
-		name string
-		env  map[string]string
-		want Config
+		name    string
+		env     map[string]string
+		want    Config
+		wantErr bool
 	}{
 		{
 			name: "an otherwise empty environment invents nothing",
@@ -71,6 +72,36 @@ func TestLoad(t *testing.T) {
 				TMDB:               TMDB{APIKey: "not-a-real-key"},
 			},
 		},
+		{
+			name:    "refuses an unset DATABASE_URL",
+			env:     map[string]string{},
+			wantErr: true,
+		},
+		{
+			name:    "refuses a non numeric TRANSCODER_JOBS",
+			env:     map[string]string{"DATABASE_URL": testDatabaseURL, "TRANSCODER_JOBS": "lots"},
+			wantErr: true,
+		},
+		{
+			name:    "refuses a negative TRANSCODER_JOBS",
+			env:     map[string]string{"DATABASE_URL": testDatabaseURL, "TRANSCODER_JOBS": "-2"},
+			wantErr: true,
+		},
+		{
+			name:    "refuses a unitless TRANSCODER_STALL_TIMEOUT",
+			env:     map[string]string{"DATABASE_URL": testDatabaseURL, "TRANSCODER_STALL_TIMEOUT": "30"},
+			wantErr: true,
+		},
+		{
+			name:    "refuses a non numeric HTTP_PORT",
+			env:     map[string]string{"DATABASE_URL": testDatabaseURL, "HTTP_PORT": "http"},
+			wantErr: true,
+		},
+		{
+			name:    "refuses an HTTP_PORT above 65535",
+			env:     map[string]string{"DATABASE_URL": testDatabaseURL, "HTTP_PORT": "70000"},
+			wantErr: true,
+		},
 	}
 
 	for _, test := range tests {
@@ -79,50 +110,14 @@ func TestLoad(t *testing.T) {
 
 			config, err := Load()
 
+			if test.wantErr {
+				assert.Error(t, err)
+
+				return
+			}
+
 			require.NoError(t, err)
 			assert.Equal(t, test.want, config)
-		})
-	}
-}
-
-func TestLoadRefuses(t *testing.T) {
-	tests := []struct {
-		name string
-		env  map[string]string
-	}{
-		{
-			name: "an unset DATABASE_URL",
-			env:  map[string]string{},
-		},
-		{
-			name: "a non numeric TRANSCODER_JOBS",
-			env:  map[string]string{"DATABASE_URL": testDatabaseURL, "TRANSCODER_JOBS": "lots"},
-		},
-		{
-			name: "a negative TRANSCODER_JOBS",
-			env:  map[string]string{"DATABASE_URL": testDatabaseURL, "TRANSCODER_JOBS": "-2"},
-		},
-		{
-			name: "a unitless TRANSCODER_STALL_TIMEOUT",
-			env:  map[string]string{"DATABASE_URL": testDatabaseURL, "TRANSCODER_STALL_TIMEOUT": "30"},
-		},
-		{
-			name: "a non numeric HTTP_PORT",
-			env:  map[string]string{"DATABASE_URL": testDatabaseURL, "HTTP_PORT": "http"},
-		},
-		{
-			name: "an HTTP_PORT above 65535",
-			env:  map[string]string{"DATABASE_URL": testDatabaseURL, "HTTP_PORT": "70000"},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			setEnvironment(t, test.env)
-
-			_, err := Load()
-
-			assert.Error(t, err)
 		})
 	}
 }

@@ -104,7 +104,7 @@ func (f *fixture) mine(t *testing.T, params api.GetSuggestionsParams) []string {
 	return found
 }
 
-func TestGetSuggestions(t *testing.T) {
+func TestServer_GetSuggestions(t *testing.T) {
 	fixture := newFixture(t)
 
 	fixture.add(t, itemmodal.KindMovie, itemmodal.MediaTypeVideo, "Movie One")

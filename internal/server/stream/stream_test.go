@@ -183,7 +183,7 @@ func (f *fixture) get(t *testing.T, method, target string, id uuid.UUID) *http.R
 	return request
 }
 
-func TestServe(t *testing.T) {
+func TestHandler_Serve(t *testing.T) {
 	fixture := newFixture(t)
 	id := fixture.add(t, "track.mp3", "mp3")
 	target := "/Audio/" + id.String() + "/stream?"
@@ -253,39 +253,39 @@ func TestServe(t *testing.T) {
 			t.Errorf("status = %d, want %d", recorder.Code, http.StatusUnauthorized)
 		}
 	})
+	t.Run("by container", func(t *testing.T) {
+		fixture := newFixture(t)
+		id := fixture.add(t, "track.flac", "flac")
+
+		for _, tc := range []struct {
+			name      string
+			container string
+			query     string
+			want      int
+		}{
+			{name: "the container the source is in", container: "flac", want: http.StatusOK},
+			{name: "the same container in another case", container: "FLAC", want: http.StatusOK},
+			{name: "a container needing a transcode", container: "mp3", want: http.StatusUnsupportedMediaType},
+			{name: "a container overridden by static", container: "mp3", query: "static=true", want: http.StatusOK},
+		} {
+			t.Run(tc.name, func(t *testing.T) {
+				target := "/Audio/" + id.String() + "/stream." + tc.container + "?" + tc.query + "&"
+				request := fixture.get(t, http.MethodGet, target, id)
+				request.SetPathValue("container", tc.container)
+				recorder := httptest.NewRecorder()
+
+				fixture.handler.Serve(recorder, request)
+
+				if recorder.Code != tc.want {
+					t.Errorf("status = %d, want %d", recorder.Code, tc.want)
+				}
+			})
+		}
+	})
+
 }
 
-func TestServeByContainer(t *testing.T) {
-	fixture := newFixture(t)
-	id := fixture.add(t, "track.flac", "flac")
-
-	for _, tc := range []struct {
-		name      string
-		container string
-		query     string
-		want      int
-	}{
-		{name: "the container the source is in", container: "flac", want: http.StatusOK},
-		{name: "the same container in another case", container: "FLAC", want: http.StatusOK},
-		{name: "a container needing a transcode", container: "mp3", want: http.StatusUnsupportedMediaType},
-		{name: "a container overridden by static", container: "mp3", query: "static=true", want: http.StatusOK},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			target := "/Audio/" + id.String() + "/stream." + tc.container + "?" + tc.query + "&"
-			request := fixture.get(t, http.MethodGet, target, id)
-			request.SetPathValue("container", tc.container)
-			recorder := httptest.NewRecorder()
-
-			fixture.handler.Serve(recorder, request)
-
-			if recorder.Code != tc.want {
-				t.Errorf("status = %d, want %d", recorder.Code, tc.want)
-			}
-		})
-	}
-}
-
-func TestServeUniversal(t *testing.T) {
+func TestHandler_ServeUniversal(t *testing.T) {
 	fixture := newFixture(t)
 	mp3 := fixture.add(t, "track.mp3", "mp3")
 	alac := fixture.add(t, "lossless.m4a", "alac")

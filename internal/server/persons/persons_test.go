@@ -17,7 +17,7 @@ import (
 	personmodal "github.com/FreekingDean/gojellyfin/internal/store/person"
 )
 
-func TestGetPersons(t *testing.T) {
+func TestServer_GetPersons(t *testing.T) {
 	ctx := context.Background()
 
 	config, err := env.Load()

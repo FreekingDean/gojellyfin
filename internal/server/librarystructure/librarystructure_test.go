@@ -117,7 +117,7 @@ func locations(t *testing.T, server *Server, name string) []string {
 	return nil
 }
 
-func TestAddVirtualFolder(t *testing.T) {
+func TestServer_AddVirtualFolder(t *testing.T) {
 	tests := []struct {
 		name  string
 		paths *[]string

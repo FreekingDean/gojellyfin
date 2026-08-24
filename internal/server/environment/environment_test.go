@@ -118,7 +118,7 @@ func (f *fixture) signIn(t *testing.T, name string, administrator bool) context.
 	return authenticated
 }
 
-func TestGetDirectoryContents(t *testing.T) {
+func TestServer_GetDirectoryContents(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := fixture.signIn(t, "admin", true)
 
@@ -185,21 +185,21 @@ func TestGetDirectoryContents(t *testing.T) {
 			}
 		})
 	}
-}
+	t.Run("a missing path is not found", func(t *testing.T) {
+		fixture := newFixture(t)
+		ctx := fixture.signIn(t, "admin", true)
 
-func TestGetDirectoryContentsMissingPath(t *testing.T) {
-	fixture := newFixture(t)
-	ctx := fixture.signIn(t, "admin", true)
-
-	_, err := fixture.server.GetDirectoryContents(ctx, api.GetDirectoryContentsRequestObject{
-		Params: api.GetDirectoryContentsParams{Path: filepath.Join(t.TempDir(), "nope")},
+		_, err := fixture.server.GetDirectoryContents(ctx, api.GetDirectoryContentsRequestObject{
+			Params: api.GetDirectoryContentsParams{Path: filepath.Join(t.TempDir(), "nope")},
+		})
+		if !errors.Is(err, filesystem.ErrNotFound) {
+			t.Fatalf("got %v, want ErrNotFound", err)
+		}
 	})
-	if !errors.Is(err, filesystem.ErrNotFound) {
-		t.Fatalf("got %v, want ErrNotFound", err)
-	}
+
 }
 
-func TestGetDrives(t *testing.T) {
+func TestServer_GetDrives(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := fixture.signIn(t, "admin", true)
 
@@ -220,7 +220,7 @@ func TestGetDrives(t *testing.T) {
 	}
 }
 
-func TestGetParentPath(t *testing.T) {
+func TestServer_GetParentPath(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := fixture.signIn(t, "admin", true)
 
@@ -243,7 +243,7 @@ func TestGetParentPath(t *testing.T) {
 	}
 }
 
-func TestGetDefaultDirectoryBrowser(t *testing.T) {
+func TestServer_GetDefaultDirectoryBrowser(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := fixture.signIn(t, "admin", true)
 
@@ -256,7 +256,7 @@ func TestGetDefaultDirectoryBrowser(t *testing.T) {
 	}
 }
 
-func TestRefusesAUserWhoIsNotAnAdministrator(t *testing.T) {
+func TestServer(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := fixture.signIn(t, "viewer", false)
 	directory := t.TempDir()

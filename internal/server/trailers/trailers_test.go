@@ -105,7 +105,7 @@ func names(items []api.BaseItemDto) []string {
 	return found
 }
 
-func TestGetTrailers(t *testing.T) {
+func TestServer_GetTrailers(t *testing.T) {
 	fixture := newFixture(t)
 
 	fixture.add(t, itemmodal.KindTrailer, "Alpha Trailer")

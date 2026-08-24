@@ -11,7 +11,7 @@ import (
 
 // With no collector configured the span middleware is left out of the stack
 // entirely rather than wrapping every request in a tracer that discards it.
-func TestTracingMiddlewareIsOnlyInstalledWhenEnabled(t *testing.T) {
+func TestNewAPIMiddleware(t *testing.T) {
 	off, err := tracing.New(env.Config{})
 	if err != nil {
 		t.Fatal(err)

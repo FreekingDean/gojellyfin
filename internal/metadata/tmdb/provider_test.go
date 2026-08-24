@@ -43,39 +43,47 @@ func released(value int32) *int32 {
 	return &value
 }
 
-func TestMovieMapsWhatTmdbReturns(t *testing.T) {
-	found, matched, err := stub(t).Movie(context.Background(), "The Matrix", released(1999))
-	if err != nil {
-		t.Fatalf("the lookup failed: %v", err)
-	}
-	if !matched {
-		t.Fatal("a title the stub carries did not match")
-	}
+func TestClient_Movie(t *testing.T) {
+	t.Run("maps what Tmdb returns", func(t *testing.T) {
+		found, matched, err := stub(t).Movie(context.Background(), "The Matrix", released(1999))
+		if err != nil {
+			t.Fatalf("the lookup failed: %v", err)
+		}
+		if !matched {
+			t.Fatal("a title the stub carries did not match")
+		}
 
-	if ids := *found.ProviderIds; ids[providerTmdb] != "603" || ids[providerImdb] != "tt0133093" {
-		t.Errorf("ProviderIds = %v, want the Tmdb and Imdb ids", ids)
-	}
-	if found.OfficialRating == nil || *found.OfficialRating != "R" {
-		t.Errorf("OfficialRating = %v, want R", found.OfficialRating)
-	}
-	if found.CommunityRating == nil || *found.CommunityRating < 8.19 || *found.CommunityRating > 8.21 {
-		t.Errorf("CommunityRating = %v, want 8.2", found.CommunityRating)
-	}
-	if found.PremiereDate == nil || found.PremiereDate.Year() != 1999 {
-		t.Errorf("PremiereDate = %v, want 1999-03-30", found.PremiereDate)
-	}
-	if found.Taglines == nil || (*found.Taglines)[0] != "Welcome to the Real World." {
-		t.Errorf("Taglines = %v, want the fetched one", found.Taglines)
-	}
-	if found.ProductionLocations == nil || (*found.ProductionLocations)[0] != "United States of America" {
-		t.Errorf("ProductionLocations = %v, want the fetched one", found.ProductionLocations)
-	}
-	if found.Status != nil {
-		t.Errorf("Status = %v, want none written for a movie", *found.Status)
-	}
+		if ids := *found.ProviderIds; ids[providerTmdb] != "603" || ids[providerImdb] != "tt0133093" {
+			t.Errorf("ProviderIds = %v, want the Tmdb and Imdb ids", ids)
+		}
+		if found.OfficialRating == nil || *found.OfficialRating != "R" {
+			t.Errorf("OfficialRating = %v, want R", found.OfficialRating)
+		}
+		if found.CommunityRating == nil || *found.CommunityRating < 8.19 || *found.CommunityRating > 8.21 {
+			t.Errorf("CommunityRating = %v, want 8.2", found.CommunityRating)
+		}
+		if found.PremiereDate == nil || found.PremiereDate.Year() != 1999 {
+			t.Errorf("PremiereDate = %v, want 1999-03-30", found.PremiereDate)
+		}
+		if found.Taglines == nil || (*found.Taglines)[0] != "Welcome to the Real World." {
+			t.Errorf("Taglines = %v, want the fetched one", found.Taglines)
+		}
+		if found.ProductionLocations == nil || (*found.ProductionLocations)[0] != "United States of America" {
+			t.Errorf("ProductionLocations = %v, want the fetched one", found.ProductionLocations)
+		}
+		if found.Status != nil {
+			t.Errorf("Status = %v, want none written for a movie", *found.Status)
+		}
+	})
+
+	t.Run("answers a miss without an error", func(t *testing.T) {
+		if _, matched, err := stub(t).Movie(context.Background(), "A Film Nobody Carries", nil); err != nil || matched {
+			t.Errorf("matched = %v, err = %v, want a clean miss", matched, err)
+		}
+	})
 }
 
-func TestSeriesMapsStatusToJellyfinsVocabulary(t *testing.T) {
+func TestClient_Series(t *testing.T) {
 	found, matched, err := stub(t).Series(context.Background(), "Breaking Bad", released(2008))
 	if err != nil {
 		t.Fatalf("the lookup failed: %v", err)
@@ -98,7 +106,7 @@ func TestSeriesMapsStatusToJellyfinsVocabulary(t *testing.T) {
 	}
 }
 
-func TestSeriesStatusMapping(t *testing.T) {
+func TestSeriesStatus(t *testing.T) {
 	for tmdbStatus, want := range map[string]string{
 		"Returning Series": "Continuing",
 		"Ended":            "Ended",
@@ -114,7 +122,7 @@ func TestSeriesStatusMapping(t *testing.T) {
 	}
 }
 
-func TestEpisodeReadsTheSeriesIdThisProviderWrote(t *testing.T) {
+func TestClient_Episode(t *testing.T) {
 	client := stub(t)
 
 	found, matched, err := client.Episode(context.Background(), map[string]string{providerTmdb: "1396"}, 1, 1)
@@ -136,13 +144,7 @@ func TestEpisodeReadsTheSeriesIdThisProviderWrote(t *testing.T) {
 	}
 }
 
-func TestMissIsNotAnError(t *testing.T) {
-	if _, matched, err := stub(t).Movie(context.Background(), "A Film Nobody Carries", nil); err != nil || matched {
-		t.Errorf("matched = %v, err = %v, want a clean miss", matched, err)
-	}
-}
-
-func TestClientIsOffWithoutAConfiguredKey(t *testing.T) {
+func TestNewClient(t *testing.T) {
 	off, err := NewClient(env.Config{})
 	if err != nil {
 		t.Fatalf("an unconfigured client failed to build: %v", err)

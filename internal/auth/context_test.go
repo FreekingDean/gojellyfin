@@ -108,7 +108,7 @@ func TestUserID(t *testing.T) {
 	}
 }
 
-func TestAuthenticateRejectsAnUnknownToken(t *testing.T) {
+func TestService_Authenticate(t *testing.T) {
 	fixture := newFixture(t)
 
 	if _, err := fixture.auth.Authenticate(context.Background(), ""); err != ErrUnauthorized {

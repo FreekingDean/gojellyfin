@@ -20,7 +20,7 @@ func preflight(t *testing.T, origins []string, origin string) *httptest.Response
 	return recorder
 }
 
-func TestPreflight(t *testing.T) {
+func TestHttpCORS(t *testing.T) {
 	tests := []struct {
 		name            string
 		origins         []string

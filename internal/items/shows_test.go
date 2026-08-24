@@ -103,7 +103,7 @@ func names(records []*Item) []string {
 	return found
 }
 
-func TestSeriesSeasons(t *testing.T) {
+func TestService_SeriesSeasons(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -128,7 +128,7 @@ func TestSeriesSeasons(t *testing.T) {
 	}
 }
 
-func TestSeriesEpisodes(t *testing.T) {
+func TestService_SeriesEpisodes(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -194,7 +194,7 @@ func TestSeriesEpisodes(t *testing.T) {
 	}
 }
 
-func TestUpcomingEpisodes(t *testing.T) {
+func TestService_UpcomingEpisodes(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 

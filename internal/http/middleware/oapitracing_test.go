@@ -28,40 +28,43 @@ func recorded(t *testing.T, operationID, method, target string) *tracing.Recorde
 
 // A span held open for the length of a transcode is a leak rather than a
 // trace, so the streaming roots must produce none at all.
-func TestStreamingRoutesAreNotTraced(t *testing.T) {
-	paths := []string{
-		"/Videos/6f1b/stream",
-		"/Videos/6f1b/stream.mkv",
-		"/videos/6f1b/stream",
-		"/Audio/6f1b/stream",
-		"/Audio/6f1b/stream.mp3",
-		"/Audio/6f1b/universal",
-		"/audio/6f1b/universal",
-	}
-
-	for _, path := range paths {
-		if names := recorded(t, "GetVideoStream", http.MethodGet, path).Names(); len(names) != 0 {
-			t.Errorf("%q: want no span, got %v", path, names)
+func TestOapiTracing_Middleware(t *testing.T) {
+	t.Run("a span held open for a transcode is a leak, so streaming roots produce none", func(t *testing.T) {
+		paths := []string{
+			"/Videos/6f1b/stream",
+			"/Videos/6f1b/stream.mkv",
+			"/videos/6f1b/stream",
+			"/Audio/6f1b/stream",
+			"/Audio/6f1b/stream.mp3",
+			"/Audio/6f1b/universal",
+			"/audio/6f1b/universal",
 		}
-	}
-}
 
-func TestOperationIDNamesTheSpan(t *testing.T) {
-	names := recorded(t, "GetItems", http.MethodGet, "/Items?userId=6f1b").Names()
+		for _, path := range paths {
+			if names := recorded(t, "GetVideoStream", http.MethodGet, path).Names(); len(names) != 0 {
+				t.Errorf("%q: want no span, got %v", path, names)
+			}
+		}
+	})
 
-	if len(names) != 1 || names[0] != "GetItems" {
-		t.Errorf("want one span named for the operation, got %v", names)
-	}
+	t.Run("the operation id names the span", func(t *testing.T) {
+		names := recorded(t, "GetItems", http.MethodGet, "/Items?userId=6f1b").Names()
+
+		if len(names) != 1 || names[0] != "GetItems" {
+			t.Errorf("want one span named for the operation, got %v", names)
+		}
+	})
+
+	t.Run("nothing the client sent reaches the span", func(t *testing.T) {
+		values := recorded(t, "GetItems", http.MethodGet, "/Items?api_key=hunter2&searchTerm=secret").Values()
+
+		for key, value := range values {
+			if value == "hunter2" || value == "secret" {
+				t.Errorf("%s carries %q", key, value)
+			}
+		}
+	})
 }
 
 // Nothing the client sent may reach a span: the query string carries api_key
 // and the path carries names in some routes.
-func TestSpanCarriesNoRequestDetail(t *testing.T) {
-	values := recorded(t, "GetItems", http.MethodGet, "/Items?api_key=hunter2&searchTerm=secret").Values()
-
-	for key, value := range values {
-		if value == "hunter2" || value == "secret" {
-			t.Errorf("%s carries %q", key, value)
-		}
-	}
-}

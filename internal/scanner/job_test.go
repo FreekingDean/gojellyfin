@@ -10,7 +10,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 )
 
-func TestLibraryScanScansEveryLibraryDespiteAFailure(t *testing.T) {
+func TestLibraryScan_Run(t *testing.T) {
 	env := jobs.NewTestEnvironment(t)
 	scan := NewLibraryScan(&Scanner{})
 
