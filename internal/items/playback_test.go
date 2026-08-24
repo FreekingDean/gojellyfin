@@ -268,60 +268,119 @@ func TestPlanFor(t *testing.T) {
 	})
 }
 
-// The order Dean specified, read back as the eight rows he wrote it as:
-// resolution decides first and what has to change breaks the tie, except that
-// a picture needing an encode ranks below everything and only at the shortest
-// source it applies to.
-func TestRanked(t *testing.T) {
-	uhd := func(change Change) Plan { return planAt(2160, change) }
-	hd := func(change Change) Plan { return planAt(1080, change) }
+// Dean's eight rows, each read as the question it actually asks: given these
+// files and this client, which file comes back. Rows a to c are one 4K file
+// under whatever plan it needs, d to f the 1080p beside it, and g and h the
+// picture encode nothing here can do.
+func TestCapabilities_best(t *testing.T) {
+	uhd := func(video, audio string) *MediaSource { return ripped("mkv", video, 2160, audio) }
+	hd := func(video, audio string) *MediaSource { return ripped("mkv", video, 1080, audio) }
+	boxed := func(video, audio string) *MediaSource { return ripped("avi", video, 2160, audio) }
 
 	for _, tc := range []struct {
-		name  string
-		plans []Plan
-		want  Plan
+		name    string
+		sources []*MediaSource
+		want    int
+		change  Change
 	}{
-		{name: "a) 4k untouched over everything", plans: []Plan{hd(ChangeNone), uhd(ChangeNone)}, want: uhd(ChangeNone)},
-		{name: "b) 4k muxed over 4k audio converted", plans: []Plan{uhd(ChangeAudio), uhd(ChangeContainer)}, want: uhd(ChangeContainer)},
-		{name: "c) 4k audio converted over 1080 untouched", plans: []Plan{hd(ChangeNone), uhd(ChangeAudio)}, want: uhd(ChangeAudio)},
-		{name: "d) 1080 untouched when 4k needs a picture encode", plans: []Plan{uhd(ChangeVideo), hd(ChangeNone)}, want: hd(ChangeNone)},
-		{name: "e) 1080 muxed over 1080 audio converted", plans: []Plan{hd(ChangeAudio), hd(ChangeContainer)}, want: hd(ChangeContainer)},
-		{name: "f) 1080 audio converted over any picture encode", plans: []Plan{uhd(ChangeVideo), hd(ChangeAudio)}, want: hd(ChangeAudio)},
-		{name: "g) the shortest picture encode, not the tallest", plans: []Plan{uhd(ChangeVideo), hd(ChangeVideo)}, want: hd(ChangeVideo)},
-		{name: "h) audio comes with the picture only when it has to", plans: []Plan{hd(ChangeVideoAudio), hd(ChangeVideo)}, want: hd(ChangeVideo)},
+		{
+			name:    "a) the 4K plays untouched",
+			sources: []*MediaSource{uhd("h264", "aac"), hd("h264", "aac")},
+			change:  ChangeNone,
+		},
+		{
+			name:    "b) the 4K needs a mux and still comes first",
+			sources: []*MediaSource{boxed("h264", "aac"), hd("h264", "aac")},
+			change:  ChangeContainer,
+		},
+		{
+			name:    "c) the 4K needs its audio converted and still beats a 1080p that does not",
+			sources: []*MediaSource{uhd("h264", "ac3"), hd("h264", "aac")},
+			change:  ChangeAudio,
+		},
+		{
+			name:    "d) the 1080p plays untouched once the 4K needs a picture encode",
+			sources: []*MediaSource{uhd("mpeg4", "aac"), hd("h264", "aac")},
+			want:    1,
+			change:  ChangeNone,
+		},
+		{
+			name:    "e) the 1080p needs a mux",
+			sources: []*MediaSource{uhd("mpeg4", "aac"), ripped("avi", "h264", 1080, "aac")},
+			want:    1,
+			change:  ChangeContainer,
+		},
+		{
+			name:    "f) the 1080p needs its audio converted",
+			sources: []*MediaSource{uhd("mpeg4", "aac"), hd("h264", "ac3")},
+			want:    1,
+			change:  ChangeAudio,
+		},
+		{
+			name:    "an HDR 4K falls through to the SDR 1080p beside it",
+			sources: []*MediaSource{hdr(uhd("h264", "aac")), hd("h264", "aac")},
+			want:    1,
+			change:  ChangeNone,
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			got := ranked(tc.plans)
-
-			if got.Change != tc.want.Change || got.height() != tc.want.height() {
-				t.Errorf("chose %dp %v, want %dp %v", got.height(), got.Change, tc.want.height(), tc.want.Change)
+			plan, err := chrome.best(tc.sources)
+			if err != nil {
+				t.Fatalf("nothing was chosen: %v", err)
+			}
+			if plan.Source != tc.sources[tc.want] {
+				t.Errorf("chose the wrong file: change %v", plan.Change)
+			}
+			if plan.Change != tc.change {
+				t.Errorf("change = %v, want %v", plan.Change, tc.change)
 			}
 		})
 	}
 
-	t.Run("a file nobody probed is not ranked below one that was", func(t *testing.T) {
-		unprobed := Plan{Source: ripped("mkv", "", 0)}
-		probed := Plan{Source: ripped("mkv", "h264", 1080, "ac3"), Change: ChangeAudio}
+	t.Run("g and h) a picture encode is nothing this can serve", func(t *testing.T) {
+		for _, name := range []string{"g) with audio the client decodes", "h) with audio it does not"} {
+			audio := "aac"
+			if strings.Contains(name, "does not") {
+				audio = "ac3"
+			}
 
-		if got := ranked([]Plan{probed, unprobed}); got.Source != unprobed.Source {
-			t.Error("a source the probe has not reached tiered as a short one and lost to an encode")
+			t.Run(name, func(t *testing.T) {
+				sources := []*MediaSource{uhd("mpeg4", audio), hd("mpeg4", audio)}
+
+				if _, err := chrome.best(sources); !errors.Is(err, ErrNoPlayable) {
+					t.Errorf("err = %v, want %v", err, ErrNoPlayable)
+				}
+			})
+		}
+	})
+
+	t.Run("a file nobody probed is not passed over for a short one that was", func(t *testing.T) {
+		unprobed := ripped("mkv", "", 0)
+		short := ripped("mkv", "h264", 480, "aac")
+
+		plan, err := chrome.best([]*MediaSource{unprobed, short})
+		if err != nil {
+			t.Fatalf("nothing was chosen: %v", err)
+		}
+		if plan.Source != unprobed {
+			t.Error("a source the probe has not reached tiered below a small one it had read")
 		}
 	})
 
 	t.Run("the richer encode of two at one resolution", func(t *testing.T) {
-		thin := Plan{Source: ripped("mkv", "h264", 1080, "aac")}
-		fat := Plan{Source: ripped("mkv", "h264", 1080, "aac")}
-		fat.Source.Bitrate = 20_000_000
-		thin.Source.Bitrate = 4_000_000
+		thin := hd("h264", "aac")
+		fat := hd("h264", "aac")
+		thin.Bitrate = 4_000_000
+		fat.Bitrate = 20_000_000
 
-		if got := ranked([]Plan{thin, fat}); got.Source != fat.Source {
-			t.Error("the thinner encode was chosen at the same resolution and cost")
+		plan, err := chrome.best([]*MediaSource{thin, fat})
+		if err != nil {
+			t.Fatalf("nothing was chosen: %v", err)
+		}
+		if plan.Source != fat {
+			t.Error("the thinner encode was chosen at the same resolution")
 		}
 	})
-}
-
-func planAt(height int32, change Change) Plan {
-	return Plan{Source: ripped("mkv", "h264", height, "aac"), Change: change}
 }
 
 func (f *fixture) copy(t *testing.T, item *Item, path, video, audio string, height int32) {

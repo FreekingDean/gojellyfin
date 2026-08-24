@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/google/uuid"
@@ -66,11 +66,9 @@ var (
 // SourceFor answers the whole of the playback question: of the files behind
 // this item, which one, and what has to change about it.
 //
-// Resolution decides first and the cost of playing it breaks the tie, so a 4K
-// that needs its audio converted beats a 1080p that plays untouched. A picture
-// that has to be re-encoded is the exception: it ranks below every source that
-// needs no encode, and only the smallest such source is ranked at all, because
-// the encode discards the extra resolution anyway.
+// The taller picture is tried first and the first one that can be served wins,
+// so a 4K needing its audio converted is answered before a 1080p that plays
+// untouched, and a 4K the client cannot decode at all falls through to it.
 func (s *Service) SourceFor(ctx context.Context, itemID uuid.UUID, can Capabilities) (Plan, error) {
 	sources, err := s.MediaSources(ctx, itemID)
 	if err != nil {
@@ -80,64 +78,47 @@ func (s *Service) SourceFor(ctx context.Context, itemID uuid.UUID, can Capabilit
 		return Plan{}, ErrNoSource
 	}
 
-	plans := make([]Plan, 0, len(sources))
-	for _, source := range sources {
-		plans = append(plans, can.planFor(source))
-	}
-
-	best := ranked(plans)
-	if !best.Change.Available() {
-		return Plan{}, ErrNoPlayable
-	}
-
-	return best, nil
+	return can.best(sources)
 }
 
-// The order the ladder is written in: a source needing no encode outranks one
-// that does whatever its resolution, then the taller picture wins, then the
-// cheaper change, then the richer encode of the two.
-func ranked(plans []Plan) Plan {
+// The first file that works, tallest first. There is no ranking to build,
+// because a source's plan is already the least that has to change about it: the
+// first source whose plan can be served is the answer, and a source needing a
+// picture encode is simply passed over, which is what puts it last without
+// anything having to say so.
+func (c Capabilities) best(sources []*MediaSource) (Plan, error) {
 	tallest := int32(0)
-	for _, plan := range plans {
-		tallest = max(tallest, plan.height())
+	for _, source := range sources {
+		tallest = max(tallest, height(source))
 	}
 
-	shortest := tallest
-	for _, plan := range plans {
-		if !plan.Change.Available() {
-			shortest = min(shortest, plan.tier(tallest))
+	ordered := slices.Clone(sources)
+	slices.SortStableFunc(ordered, func(source, than *MediaSource) int {
+		if mine, theirs := tier(source, tallest), tier(than, tallest); mine != theirs {
+			return int(theirs - mine)
 		}
-	}
-
-	sort.SliceStable(plans, func(i, j int) bool {
-		left, right := plans[i], plans[j]
-		if left.Change.Available() != right.Change.Available() {
-			return left.Change.Available()
+		switch {
+		case richer(source, than):
+			return -1
+		case richer(than, source):
+			return 1
+		default:
+			return 0
 		}
-		if lheight, rheight := left.tier(tallest), right.tier(tallest); lheight != rheight {
-			return lheight > rheight
-		}
-		if left.Change != right.Change {
-			return left.Change < right.Change
-		}
-
-		return richer(left.Source, right.Source)
 	})
 
-	for _, plan := range plans {
-		if plan.Change.Available() || plan.tier(tallest) == shortest {
-			return plan
+	for _, source := range ordered {
+		if plan := c.planFor(source); plan.Change.Available() {
+			return plan, nil
 		}
 	}
 
-	return plans[0]
+	return Plan{}, ErrNoPlayable
 }
 
-func (p Plan) height() int32 {
-	for _, stream := range p.Source.Edges.Streams {
-		if stream.Kind == streammodal.KindVideo {
-			return stream.Height
-		}
+func height(source *MediaSource) int32 {
+	if picture := videoStream(source); picture != nil {
+		return picture.Height
 	}
 
 	return 0
@@ -146,8 +127,8 @@ func (p Plan) height() int32 {
 // A file nobody has probed has no dimensions, which is not the same as being a
 // small one. It tiers with the tallest rather than below everything, so an item
 // the probe has not reached is still answered.
-func (p Plan) tier(tallest int32) int32 {
-	if height := p.height(); height > 0 {
+func tier(source *MediaSource, tallest int32) int32 {
+	if height := height(source); height > 0 {
 		return height
 	}
 
