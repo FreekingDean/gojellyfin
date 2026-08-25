@@ -5,6 +5,7 @@ import "github.com/FreekingDean/gojellyfin/internal/env"
 type Service interface {
 	LocalAddress() string
 	OperatingSystem() string
+	PackageName() string
 	ProductName() string
 	Version() string
 }
@@ -12,13 +13,10 @@ type Service interface {
 type serviceImpl struct {
 	localAddress    string
 	operatingSystem string
+	packageName     string
 	productName     string
 	version         string
 }
-
-var (
-	VERSION = "10.10.0"
-)
 
 // Clients switch to LocalAddress when they believe they are on the same
 // network, so an address this server cannot confirm is worse than none: they
@@ -26,14 +24,19 @@ var (
 func New(config env.Config) Service {
 	return serviceImpl{
 		localAddress:    config.PublishedServerURL,
-		version:         VERSION,
+		version:         JellyfinVersion,
 		operatingSystem: "linux",
+		packageName:     Build(),
 		productName:     "Jellyfin Server",
 	}
 }
 
 func (s serviceImpl) LocalAddress() string {
 	return s.localAddress
+}
+
+func (s serviceImpl) PackageName() string {
+	return s.packageName
 }
 
 func (s serviceImpl) ProductName() string {
