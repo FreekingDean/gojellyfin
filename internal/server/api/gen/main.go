@@ -25,9 +25,6 @@ const (
 	policyDst     = "policies.gen.go"
 	queryParamDst = "queryparams.gen.go"
 
-	// internal/system answers the version to clients and may not import the
-	// api package, so the constant is written into it rather than read from
-	// here.
 	versionDst = "../../system/jellyfinversion.gen.go"
 	versionPkg = "system"
 )
@@ -85,11 +82,6 @@ const JellyfinVersion = %q
 	write(versionDst, out.Bytes())
 }
 
-// Upstream's [Authorize(Policy = ...)] attributes reach the document as scopes
-// on each operation's security block, so the table the server authorizes
-// against is generated rather than maintained by hand. An operation missing
-// from both this and PublicOperations is refused at request time, and the
-// generator fails rather than emitting a partial table.
 func writeOperationPolicies(pkg string, methods *ast.FieldList) {
 	methodNames := make(map[string]string, methods.NumFields())
 	for _, m := range methods.List {
@@ -149,9 +141,6 @@ func writeOperationPolicies(pkg string, methods *ast.FieldList) {
 		}
 	}
 
-	// An operation the middleware cannot find in either table is refused, so a
-	// method the spec stopped declaring has to fail here rather than answer 403
-	// to every caller at runtime.
 	for _, name := range methodNames {
 		if _, ok := policies[name]; ok {
 			continue
@@ -215,9 +204,6 @@ type Unimplemented struct{}
 	write(dst, out.Bytes())
 }
 
-// oapi-codegen normalizes operation ids into Go method names, so the spec's
-// GetBrandingCss_2 becomes GetBrandingCss2. The middleware only ever sees the
-// normalized form.
 func writePublicOperations(pkg string, methods *ast.FieldList) {
 	methodNames := make(map[string]string, methods.NumFields())
 	for _, m := range methods.List {
@@ -281,9 +267,6 @@ var PublicOperations = map[string]bool{
 	write(publicDst, out.Bytes())
 }
 
-// Jellyfin clients send query parameters in PascalCase while the spec declares
-// them camelCase, and the generated binding is case sensitive. This maps a
-// lowercased name back to the spelling the binding expects.
 func writeQueryParameters(pkg string) {
 	b, err := os.ReadFile(specPath)
 	if err != nil {
