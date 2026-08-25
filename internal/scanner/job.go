@@ -45,7 +45,7 @@ func (l *LibraryScan) Children() []any {
 
 // A library is a handful of rows, so the walk fans out flat. What follows it is
 // per file and there are thousands, so the probes fan out through children.
-func (l *LibraryScan) Run(ctx jobs.Context) error {
+func (l *LibraryScan) Run(ctx jobs.Context, _ jobs.Options) error {
 	var libraries []uuid.UUID
 	if err := jobs.Step(ctx, l.scanner.ListLibraries).Get(&libraries); err != nil {
 		return err

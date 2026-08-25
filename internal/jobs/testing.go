@@ -60,12 +60,12 @@ func RunStep(t *testing.T, step any, args ...any) error {
 	return err
 }
 
-func (e *TestEnvironment) Run(job Job) error {
+func (e *TestEnvironment) Run(job Job, options Options) error {
 	for _, child := range job.Children() {
 		e.env.RegisterWorkflow(child)
 	}
 
-	e.env.ExecuteWorkflow(job.Run)
+	e.env.ExecuteWorkflow(job.Run, options)
 
 	if !e.env.IsWorkflowCompleted() {
 		return errNotCompleted

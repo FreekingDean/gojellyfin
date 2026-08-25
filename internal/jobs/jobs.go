@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
+
 	"go.temporal.io/sdk/activity"
 
 	sdktemporal "go.temporal.io/sdk/temporal"
@@ -19,6 +21,16 @@ var errNotCompleted = errors.New("jobs: the job did not complete")
 
 type Context = workflow.Context
 
+// What a run was asked for. The zero value is the scheduled case: whatever the
+// job does left to itself, over everything it owns.
+type Options struct {
+	// Redo work that has already been done once, rather than only picking up
+	// what is outstanding.
+	Force bool
+	// The library or item the run is about. Nil is everything.
+	Scope uuid.UUID
+}
+
 // A Job is one unit of background work. Name is the id the dashboard drives it
 // by and the id the engine runs it under, which is what makes a job a singleton
 // without a lock — a second run under a name already running is refused. Steps
@@ -28,7 +40,7 @@ type Job interface {
 	Name() string
 	Description() string
 	Category() string
-	Run(ctx Context) error
+	Run(ctx Context, options Options) error
 	Steps() []any
 	Children() []any
 }

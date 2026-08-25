@@ -101,6 +101,6 @@ func (scanJob) Description() string { return "Scans the media libraries." }
 func (scanJob) Category() string    { return "Library" }
 func (scanJob) Steps() []any        { return nil }
 func (scanJob) Children() []any     { return nil }
-func (scanJob) Run(jobs.Context) error {
+func (scanJob) Run(jobs.Context, jobs.Options) error {
 	return nil
 }

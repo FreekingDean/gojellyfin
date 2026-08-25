@@ -143,21 +143,34 @@ func (s *Service) Ancestors(ctx context.Context, id uuid.UUID) (*Ancestry, error
 	return ancestry, nil
 }
 
-func (s *Service) UnidentifiedItems(ctx context.Context, kinds []Kind, limit int) ([]*Item, error) {
-	records, err := s.query().
-		Where(
-			itemmodal.KindIn(kinds...),
-			itemmodal.LockData(false),
-			itemmodal.ProviderIdsIsNil(),
-		).
-		Order(itemmodal.ByUpdatedAt()).
-		Limit(limit).
-		All(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query unidentified items: %w", err)
+// What still needs a metadata lookup. Without force that is an item nothing has
+// matched yet; with it, everything in scope is fetched again. Ordered by id
+// rather than by a column the run writes, so the list does not reshuffle
+// underneath the caller walking it.
+func (s *Service) ItemsNeedingMetadata(ctx context.Context, kinds []Kind, force bool, scope uuid.UUID) ([]uuid.UUID, error) {
+	query := s.query().Where(itemmodal.KindIn(kinds...), itemmodal.LockData(false))
+	if !force {
+		query = query.Where(itemmodal.ProviderIdsIsNil())
+	}
+	// One id can name a library or an item, because that is what the client
+	// sends. An item takes its descendants with it, and two levels covers the
+	// deepest thing worth identifying: a series holds seasons which hold
+	// episodes.
+	if scope != uuid.Nil {
+		query = query.Where(itemmodal.Or(
+			itemmodal.LibraryID(scope),
+			itemmodal.ID(scope),
+			itemmodal.HasParentWith(itemmodal.ID(scope)),
+			itemmodal.HasParentWith(itemmodal.HasParentWith(itemmodal.ID(scope))),
+		))
 	}
 
-	return records, nil
+	ids, err := query.Order(itemmodal.ByID()).IDs(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query the items needing metadata: %w", err)
+	}
+
+	return ids, nil
 }
 
 type ItemQuery struct {

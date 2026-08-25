@@ -89,7 +89,7 @@ func TestLibraryScan_Run(t *testing.T) {
 		running := newRun(t, first, second)
 		running.fails(first, "the volume is not mounted")
 
-		if err := running.env.Run(running.scan); err != nil {
+		if err := running.env.Run(running.scan, jobs.Options{}); err != nil {
 			t.Fatalf("a failing library failed the whole scan: %v", err)
 		}
 		if len(running.walked) != 1 || running.walked[0] != second {
@@ -103,7 +103,7 @@ func TestLibraryScan_Run(t *testing.T) {
 		running.needing(library, 3)
 		running.fails(library, "the volume is not mounted")
 
-		if err := running.env.Run(running.scan); err != nil {
+		if err := running.env.Run(running.scan, jobs.Options{}); err != nil {
 			t.Fatalf("the scan failed: %v", err)
 		}
 		if len(running.probed) != 0 {
@@ -116,7 +116,7 @@ func TestLibraryScan_Run(t *testing.T) {
 		running := newRun(t, library)
 		selected := running.needing(library, probeChunkSize*2+5)
 
-		if err := running.env.Run(running.scan); err != nil {
+		if err := running.env.Run(running.scan, jobs.Options{}); err != nil {
 			t.Fatalf("the scan failed: %v", err)
 		}
 		if len(running.probed) != len(selected) {
@@ -153,7 +153,7 @@ func TestLibraryScan_Run(t *testing.T) {
 		selected := running.needing(library, 3)
 		running.fails(selected[0], "ffprobe found no streams")
 
-		if err := running.env.Run(running.scan); err != nil {
+		if err := running.env.Run(running.scan, jobs.Options{}); err != nil {
 			t.Fatalf("a failing probe failed the whole scan: %v", err)
 		}
 		if len(running.probed) != len(selected)-1 {
