@@ -28,6 +28,10 @@ module.exports = async function globalSetup() {
       password: app.password,
       library: app.library,
       movies: app.movies,
+      shows: app.shows,
+      series: app.series,
+      season: app.season,
+      episodes: app.episodes,
       browserWSEndpoint: browser.wsEndpoint(),
     }),
   );

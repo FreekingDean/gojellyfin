@@ -114,6 +114,24 @@ func (s *Service) ItemByID(ctx context.Context, id uuid.UUID) (*Item, error) {
 	return item, nil
 }
 
+func (s *Service) ItemsByIDs(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID]*Item, error) {
+	found := make(map[uuid.UUID]*Item, len(ids))
+	if len(ids) == 0 {
+		return found, nil
+	}
+
+	records, err := s.query().Where(itemmodal.IDIn(ids...)).All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query items by id: %w", err)
+	}
+
+	for _, record := range records {
+		found[record.ID] = record
+	}
+
+	return found, nil
+}
+
 type Ancestry struct {
 	Parents   []*Item
 	LibraryID uuid.UUID
