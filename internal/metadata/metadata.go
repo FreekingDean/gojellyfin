@@ -3,6 +3,7 @@ package metadata
 import (
 	"context"
 	"log"
+	"slices"
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
@@ -13,6 +14,7 @@ import (
 var identifiable = []items.Kind{
 	itemmodal.KindMovie,
 	itemmodal.KindSeries,
+	itemmodal.KindSeason,
 	itemmodal.KindEpisode,
 }
 
@@ -39,6 +41,9 @@ func (s *Service) IdentifyItems(ctx context.Context, options jobs.Options) error
 	if err != nil {
 		return err
 	}
+	slices.SortStableFunc(pending, func(one, two *items.Item) int {
+		return slices.Index(identifiable, one.Kind) - slices.Index(identifiable, two.Kind)
+	})
 
 	for _, id := range pending {
 		if err := ctx.Err(); err != nil {
@@ -84,11 +89,26 @@ func (s *Service) fetch(ctx context.Context, pendingItem *items.Item) (items.Met
 		return s.provider.Movie(ctx, pendingItem.Name, pendingItem.ProductionYear)
 	case itemmodal.KindSeries:
 		return s.provider.Series(ctx, pendingItem.Name, pendingItem.ProductionYear)
+	case itemmodal.KindSeason:
+		return s.fetchSeason(ctx, pendingItem)
 	case itemmodal.KindEpisode:
 		return s.fetchEpisode(ctx, pendingItem)
 	}
 
 	return items.Metadata{}, false, nil
+}
+
+func (s *Service) fetchSeason(ctx context.Context, pendingItem *items.Item) (items.Metadata, bool, error) {
+	if pendingItem.IndexNumber == nil {
+		return items.Metadata{}, false, nil
+	}
+
+	series, err := s.seriesIDs(ctx, pendingItem)
+	if err != nil || series == nil {
+		return items.Metadata{}, false, err
+	}
+
+	return s.provider.Season(ctx, series, *pendingItem.IndexNumber)
 }
 
 func (s *Service) fetchEpisode(ctx context.Context, pendingItem *items.Item) (items.Metadata, bool, error) {

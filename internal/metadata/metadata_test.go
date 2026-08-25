@@ -82,6 +82,29 @@ func (s *stubProvider) Series(_ context.Context, name string, _ *int32) (items.M
 	}, true, nil
 }
 
+func (s *stubProvider) Season(_ context.Context, series map[string]string, season int32) (items.Metadata, bool, error) {
+	s.record("season:" + series["Stub"])
+	if series["Stub"] != "1396" || season > 1 {
+		return items.Metadata{}, false, nil
+	}
+	if season == 0 {
+		return items.Metadata{
+			Name:        text("Specials"),
+			ProviderIds: &map[string]string{"Stub": "3577"},
+		}, true, nil
+	}
+
+	aired := time.Date(2008, time.January, 20, 0, 0, 0, 0, time.UTC)
+
+	return items.Metadata{
+		Name:           text("Season 1"),
+		Overview:       text("Walter White turns to a life of crime."),
+		PremiereDate:   &aired,
+		ProductionYear: index(2008),
+		ProviderIds:    &map[string]string{"Stub": "3572"},
+	}, true, nil
+}
+
 func (s *stubProvider) Episode(_ context.Context, series map[string]string, season, episode int32) (items.Metadata, bool, error) {
 	s.record("episode:" + series["Stub"])
 	if series["Stub"] != "1396" || season != 1 || episode != 1 {
@@ -290,7 +313,6 @@ func TestService_IdentifyItems(t *testing.T) {
 		})
 
 		fixed.identify(t)
-		fixed.identify(t)
 
 		identified := fixed.reload(t, series.ID)
 		if identified.ProviderIds["Stub"] != "1396" {
@@ -300,12 +322,142 @@ func TestService_IdentifyItems(t *testing.T) {
 			t.Errorf("series Status = %q, want Ended", identified.Status)
 		}
 
+		numbered := fixed.reload(t, season.ID)
+		if numbered.Name != "Season 1" {
+			t.Errorf("season Name = %q, want Season 1", numbered.Name)
+		}
+		if !strings.HasPrefix(numbered.Overview, "Walter White turns") {
+			t.Errorf("season Overview = %q, want the fetched one", numbered.Overview)
+		}
+		if numbered.PremiereDate == nil || numbered.PremiereDate.Year() != 2008 {
+			t.Errorf("season PremiereDate = %v, want 2008", numbered.PremiereDate)
+		}
+		if numbered.ProviderIds["Stub"] != "3572" {
+			t.Errorf("season provider id = %q, want 3572", numbered.ProviderIds["Stub"])
+		}
+		if numbered.SortName != "Season 1" {
+			t.Errorf("season SortName = %q, want the scanned one kept", numbered.SortName)
+		}
+
 		aired := fixed.reload(t, episode.ID)
 		if aired.Name != "Pilot" {
 			t.Errorf("episode Name = %q, want Pilot", aired.Name)
 		}
 		if aired.ProviderIds["StubExternal"] != "tt0959621" {
 			t.Errorf("episode external id = %q, want tt0959621", aired.ProviderIds["StubExternal"])
+		}
+	})
+
+	t.Run("identifies a parent listed after its children", func(t *testing.T) {
+		fixed := newFixture(t)
+		series := fixed.add(t, items.Scanned{
+			Kind:           itemmodal.KindSeries,
+			Name:           "Breaking Bad",
+			ProductionYear: index(2008),
+		})
+		season := fixed.add(t, items.Scanned{
+			Kind:        itemmodal.KindSeason,
+			ParentID:    &series.ID,
+			Name:        "Season 1",
+			IndexNumber: index(1),
+		})
+		episode := fixed.add(t, items.Scanned{
+			Kind:              itemmodal.KindEpisode,
+			ParentID:          &season.ID,
+			Name:              "s01e01",
+			IndexNumber:       index(1),
+			ParentIndexNumber: index(1),
+		})
+		fixed.lock(t, series, items.Metadata{})
+
+		fixed.identify(t)
+
+		if identified := fixed.reload(t, season.ID); identified.ProviderIds["Stub"] != "3572" {
+			t.Errorf("season provider id = %q, want the series identified first", identified.ProviderIds["Stub"])
+		}
+		if identified := fixed.reload(t, episode.ID); identified.Name != "Pilot" {
+			t.Errorf("episode Name = %q, want the series identified first", identified.Name)
+		}
+	})
+
+	t.Run("identifies specials as season zero", func(t *testing.T) {
+		fixed := newFixture(t)
+		series := fixed.add(t, items.Scanned{
+			Kind:           itemmodal.KindSeries,
+			Name:           "Breaking Bad",
+			ProductionYear: index(2008),
+		})
+		specials := fixed.add(t, items.Scanned{
+			Kind:        itemmodal.KindSeason,
+			ParentID:    &series.ID,
+			Name:        "Specials",
+			IndexNumber: index(0),
+		})
+
+		fixed.identify(t)
+
+		identified := fixed.reload(t, specials.ID)
+		if identified.ProviderIds["Stub"] != "3577" {
+			t.Errorf("specials provider id = %q, want 3577", identified.ProviderIds["Stub"])
+		}
+	})
+
+	t.Run("keeps an unmatched season out of its episode", func(t *testing.T) {
+		fixed := newFixture(t)
+		series := fixed.add(t, items.Scanned{
+			Kind:           itemmodal.KindSeries,
+			Name:           "Breaking Bad",
+			ProductionYear: index(2008),
+		})
+		season := fixed.add(t, items.Scanned{
+			Kind:        itemmodal.KindSeason,
+			ParentID:    &series.ID,
+			Name:        "Season 9",
+			IndexNumber: index(9),
+		})
+		episode := fixed.add(t, items.Scanned{
+			Kind:              itemmodal.KindEpisode,
+			ParentID:          &season.ID,
+			Name:              "s01e01",
+			IndexNumber:       index(1),
+			ParentIndexNumber: index(1),
+		})
+
+		fixed.identify(t)
+
+		if unmatched := fixed.reload(t, season.ID); unmatched.ProviderIds != nil {
+			t.Errorf("season ProviderIds = %v, want a miss to write nothing", unmatched.ProviderIds)
+		}
+		if aired := fixed.reload(t, episode.ID); aired.Name != "Pilot" {
+			t.Errorf("episode Name = %q, want an unmatched season not to reach it", aired.Name)
+		}
+	})
+
+	t.Run("keeps a locked season field", func(t *testing.T) {
+		fixed := newFixture(t)
+		series := fixed.add(t, items.Scanned{
+			Kind:           itemmodal.KindSeries,
+			Name:           "Breaking Bad",
+			ProductionYear: index(2008),
+		})
+		season := fixed.lock(t, fixed.add(t, items.Scanned{
+			Kind:        itemmodal.KindSeason,
+			ParentID:    &series.ID,
+			Name:        "The One With The Chemistry",
+			IndexNumber: index(1),
+		}), items.Metadata{LockedFields: &[]string{"Name"}})
+
+		fixed.identify(t)
+
+		identified := fixed.reload(t, season.ID)
+		if identified.Name != "The One With The Chemistry" {
+			t.Errorf("season Name = %q, want the manual edit kept", identified.Name)
+		}
+		if !strings.HasPrefix(identified.Overview, "Walter White turns") {
+			t.Errorf("season Overview = %q, want an unlocked field written", identified.Overview)
+		}
+		if identified.ProviderIds["Stub"] != "3572" {
+			t.Errorf("season provider id = %q, want identity written through a field lock", identified.ProviderIds["Stub"])
 		}
 	})
 

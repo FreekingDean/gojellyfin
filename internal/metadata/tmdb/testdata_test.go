@@ -35,6 +35,25 @@ const (
 		"content_ratings": {"results": [{"iso_3166_1": "US", "rating": "TV-MA"}]}
 	}`
 
+	breakingBadSeasonOne = `{
+		"id": 3572,
+		"name": "Season 1",
+		"overview": "High school chemistry teacher Walter White's life is suddenly transformed.",
+		"air_date": "2008-01-20",
+		"season_number": 1,
+		"poster_path": "/1BP4xYv9ZG4ZVHkL7ocOziBbSYH.jpg",
+		"vote_average": 8.3
+	}`
+
+	breakingBadSpecials = `{
+		"id": 3577,
+		"name": "Specials",
+		"overview": "",
+		"air_date": "2009-02-17",
+		"season_number": 0,
+		"poster_path": "/40dT79mDEZwXkQiZNBgSaydQFDP.jpg"
+	}`
+
 	breakingBadPilot = `{
 		"id": 62085,
 		"name": "Pilot",
@@ -55,5 +74,7 @@ var searches = map[string]string{
 var details = map[string]string{
 	"/3/movie/603":                  matrixDetail,
 	"/3/tv/1396":                    breakingBadDetail,
+	"/3/tv/1396/season/0":           breakingBadSpecials,
+	"/3/tv/1396/season/1":           breakingBadSeasonOne,
 	"/3/tv/1396/season/1/episode/1": breakingBadPilot,
 }

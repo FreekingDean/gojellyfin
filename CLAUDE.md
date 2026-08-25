@@ -210,7 +210,7 @@ The rule is about imports, not about the letters T-M-D-B. `internal/env` carries
 
 The calls go through `github.com/cyruzin/golang-tmdb`, which models every payload this needs. Two of its behaviours are deliberately not used. Its `SetClientAutoRetry` retries a 429 in an unbounded loop and never retries a 5xx, so a `RoundTripper` in `retry.go` does the backoff with a bound; and every request it builds carries its own `context.Background`, so a cancelled run cannot interrupt one in flight — the limiter before each call is where cancellation lands, which bounds a cancelled step to a single request's timeout.
 
-Two things keep the dependency pointing one way. A miss is a `false` return rather than a sentinel error, so the implementation never imports its consumer for one variable; and `Episode` takes the series' whole `ProviderIds` map, so each provider reads its own key out and no key name escapes the package that owns it.
+Two things keep the dependency pointing one way. A miss is a `false` return rather than a sentinel error, so the implementation never imports its consumer for one variable; and `Season` and `Episode` take the series' whole `ProviderIds` map, so each provider reads its own key out and no key name escapes the package that owns it.
 
 There is **one** provider and one binding — no fx value group and no priority order until a second provider exists to need them. The seam is the interface.
 
@@ -219,6 +219,10 @@ It is bring your own key: `TMDB_API_KEY` reaches the client as `env.Config.TMDB.
 The job runs on its own rather than inside the scan, and does **not** fan out per item. The work is IO bound on a rate limited API, so a step per item multiplies the request rate and finishes no sooner; one step loops over at most `batchSize` items, spaced by the client's own limiter and heartbeating between them. What a run leaves, the next run picks up.
 
 The batch is derived from the rows — `items.UnidentifiedItems` asks for items whose `provider_ids` is null — rather than handed over, so a crash re-asks the question instead of replaying a stale list. Writing those ids well is the point: item identity is otherwise name and year, which collides when two films share both.
+
+A season and an episode are looked up through their series' ids rather than by name, so the series has to be identified first. `identifiable` is written parent first and the batch is sorted by position in it, which is what makes one run enough — the rows come back oldest first, and a series edited since its episodes were scanned would otherwise be reached after them and leave the whole show for the next run. Both walk `items.Ancestors` for the `Series`, so a season that matched nothing costs its episodes nothing. Specials are season zero on both sides and need no case of their own.
+
+Nothing fetches artwork. A provider's poster is a URL, and an `Image` row is a path to a file the scan found beside the media, so storing one means downloading and caching it — that is #576, not this.
 
 `lock_data` and `locked_fields` are Jellyfin's semantics and `metadata` honours both. `LockData` keeps an item out of the batch entirely; a field named in `LockedFields` is dropped from what is written, by `stripLockedFields`, which takes a pointer because it edits what it is handed and hiding that would hide an overwrite later. The provider ids themselves survive a field lock, because they are identity rather than metadata and Jellyfin has no lock for them.
 
