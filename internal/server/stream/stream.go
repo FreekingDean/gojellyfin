@@ -45,8 +45,6 @@ var contentTypes = map[string]string{
 	".wma":  "audio/x-ms-wma",
 }
 
-// A transcode runs on a worker in another container, which hands back the
-// output as one stream for the API to proxy.
 type Transcoder interface {
 	Enabled() bool
 	Open(ctx context.Context, spec transcode.Spec) (io.ReadCloser, error)
@@ -63,8 +61,6 @@ func New(sessions *sessions.Service, items *items.Service, transcoder Transcoder
 	return &Handler{sessions: sessions, items: items, transcoder: transcoder}
 }
 
-// Registered ahead of the generated routes because the generated response type
-// always writes a complete 200, which would break seeking.
 func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 	item, source, ok := h.item(w, r)
 	if !ok {
@@ -126,9 +122,6 @@ func (h *Handler) ServeUniversal(w http.ResponseWriter, r *http.Request) {
 	h.serveFile(w, r, source)
 }
 
-// Reports whether the response was answered here. Everything that can fail is
-// done before the first byte reaches the client, so the caller can still refuse
-// with a status when this comes back false.
 func (h *Handler) serveTranscode(w http.ResponseWriter, r *http.Request, item *items.Item, source *items.MediaSource, accepted []string) bool {
 	if !h.transcoder.Enabled() || !items.IsAudio(item) {
 		return false
@@ -196,13 +189,9 @@ func (h *Handler) relay(w http.ResponseWriter, r *http.Request, source *items.Me
 	}()
 
 	w.Header().Set("Content-Type", transcode.ContentType(container))
-	// The length is not known until the encode finishes, so there is nothing
-	// for a client to seek against.
 	w.Header().Set("Accept-Ranges", "none")
 	w.WriteHeader(http.StatusOK)
 
-	// Cancelling reaps ffmpeg, and the deadline ends a write already blocked on
-	// a client that stopped acknowledging, which cancelling on its own cannot.
 	kill := func() {
 		log.Printf("transcode of %s moved nothing in %s", source.Path, h.transcoder.Stall())
 		cancel()
@@ -217,8 +206,6 @@ func (h *Handler) relay(w http.ResponseWriter, r *http.Request, source *items.Me
 	return true
 }
 
-// What the client asked to be transcoded to comes first, then the containers
-// it said it can play, which it can equally take over a plain response.
 func candidates(r *http.Request, accepted []string) []string {
 	query := r.URL.Query()
 
@@ -250,23 +237,16 @@ func startTicks(r *http.Request) int64 {
 	return ticks
 }
 
-// Every encoder is busy with someone else, which passes: the spec answers these
-// operations with a 503 and a Retry-After and has no 415 at all, so the client
-// is told to come back rather than that its device cannot play this.
 func busy(w http.ResponseWriter) {
 	w.Header().Set("Retry-After", strconv.Itoa(retryAfterSeconds))
 	http.Error(w, "every transcoder is busy", http.StatusServiceUnavailable)
 }
 
-// A client that cannot take the source as it is gets the reason rather than the
-// wrong bytes, because there is no encoder to fall back on.
 func unsupported(w http.ResponseWriter, r *http.Request, source, requested string) {
 	log.Printf("no direct play for %s: the source is %s, the client accepts %s", r.URL.Path, source, requested)
 	http.Error(w, "no direct play: the source is "+source, http.StatusUnsupportedMediaType)
 }
 
-// The source carries the file, so an item with none is a folder or a title
-// whose files went away and there is nothing to play either way.
 func (h *Handler) item(w http.ResponseWriter, r *http.Request) (*items.Item, *items.MediaSource, bool) {
 	token := middleware.TokenFrom(r)
 	if token == "" {
@@ -334,9 +314,6 @@ func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, source *item
 	http.ServeContent(w, r, filepath.Base(source.Path), info.ModTime(), file)
 }
 
-// Clients declare their playable formats the way upstream's device profile
-// parses them: a comma separated list of "container", each container followed
-// by a "|" for every codec it will accept in that container.
 type directPlayProfile struct {
 	container string
 	codecs    []string
@@ -360,8 +337,6 @@ func directPlayProfiles(values []string) []directPlayProfile {
 	return profiles
 }
 
-// An unprobed source has no codec to compare, which direct plays rather than
-// holding back a file the client most likely can play.
 func playable(profiles []directPlayProfile, container, codec string) bool {
 	for _, profile := range profiles {
 		if profile.container != container {

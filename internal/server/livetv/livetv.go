@@ -9,9 +9,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 )
 
-// There is no tuner and no guide, so the read paths answer an empty result
-// rather than 501: a 501 makes the web client retry the section forever, while
-// an empty result is both true and something it can render.
 type Server struct{}
 
 func New() *Server {

@@ -62,7 +62,6 @@ func (s *Server) GetSystemInfo(ctx context.Context, request api.GetSystemInfoReq
 		WebSocketPortNumber:      apiutil.Ptr(int32(8082)),
 		CompletedInstallations:   apiutil.Ptr([]api.InstallationInfo{}),
 
-		//Deprecated
 		OperatingSystem:            apiutil.Ptr(s.system.OperatingSystem()),
 		OperatingSystemDisplayName: apiutil.Ptr(s.system.OperatingSystem()),
 		CanSelfRestart:             apiutil.Ptr(false),

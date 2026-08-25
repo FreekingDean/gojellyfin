@@ -19,8 +19,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
-// The registry holds only the job the case expects, so a handler that started
-// the other one fails on the lookup rather than on the missing connection.
 type namedJob string
 
 func (n namedJob) Name() string                             { return string(n) }

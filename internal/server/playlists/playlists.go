@@ -23,7 +23,6 @@ func New(playlists *playlists.Service, items *items.Service) *Server {
 	return &Server{playlists: playlists, items: items}
 }
 
-// Query parameters are obsolete but take precedence over the body.
 func (s *Server) CreatePlaylist(ctx context.Context, request api.CreatePlaylistRequestObject) (api.CreatePlaylistResponseObject, error) {
 	owner := auth.UserID(ctx)
 	if owner == uuid.Nil {
@@ -209,8 +208,6 @@ func (s *Server) RemoveItemFromPlaylist(ctx context.Context, request api.RemoveI
 	return api.RemoveItemFromPlaylist204Response{}, nil
 }
 
-// The item id is the playlist entry id clients read back as PlaylistItemId, so
-// the same item can sit in a playlist more than once.
 func (s *Server) MoveItem(ctx context.Context, request api.MoveItemRequestObject) (api.MoveItemResponseObject, error) {
 	playlistID, err := uuid.Parse(request.PlaylistId)
 	if err != nil {

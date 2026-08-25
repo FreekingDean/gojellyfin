@@ -1,6 +1,3 @@
-// Package apiutil holds the small generic helpers every tag package needs at
-// the api boundary. Go cannot alias generic functions, so they live here rather
-// than being copied into each package. No domain knowledge belongs in here.
 package apiutil
 
 import (
@@ -29,7 +26,6 @@ func OrElse[T any](v *T, fallback T) *T {
 	return v
 }
 
-// oapi-codegen splits a JSON body across two fields depending on content type.
 func Body[T any](jsonBody, wildcardBody *T) *T {
 	if jsonBody != nil {
 		return jsonBody
