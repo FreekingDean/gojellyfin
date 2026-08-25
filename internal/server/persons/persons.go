@@ -3,10 +3,10 @@ package persons
 import (
 	"context"
 
-	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 )
 
 type Server struct {
@@ -29,7 +29,7 @@ func (s *Server) GetPersons(ctx context.Context, request api.GetPersonsRequestOb
 
 	dtoList := make([]api.BaseItemDto, 0, len(named))
 	for _, person := range named {
-		dtoList = append(dtoList, personDto(person))
+		dtoList = append(dtoList, dto.NamedItem(person, api.BaseItemKindPerson, false))
 	}
 
 	return api.GetPersons200JSONResponse{
@@ -37,19 +37,6 @@ func (s *Server) GetPersons(ctx context.Context, request api.GetPersonsRequestOb
 		StartIndex:       apiutil.Ptr(int32(0)),
 		TotalRecordCount: apiutil.Ptr(int32(total)),
 	}, nil
-}
-
-func personDto(person items.Named) api.BaseItemDto {
-	return api.BaseItemDto{
-		Id:                &person.ID,
-		ServerId:          apiutil.Ptr(config.ServerID),
-		Name:              apiutil.Ptr(person.Name),
-		SortName:          apiutil.Ptr(person.Name),
-		Type:              apiutil.Ptr(api.BaseItemKindPerson),
-		IsFolder:          apiutil.Ptr(false),
-		ImageTags:         &map[string]*string{},
-		BackdropImageTags: &[]string{},
-	}
 }
 
 func creditKinds(types *[]string) []items.CreditKind {
