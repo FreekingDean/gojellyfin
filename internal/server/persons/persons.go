@@ -23,7 +23,7 @@ func (s *Server) GetPersons(ctx context.Context, request api.GetPersonsRequestOb
 		ItemID:     request.Params.AppearsInItemId,
 		SearchTerm: apiutil.Deref(request.Params.SearchTerm),
 		Limit:      int(apiutil.Deref(request.Params.Limit)),
-	}, dto.CreditKinds(request.Params.PersonTypes))
+	}, dto.Accepted(request.Params.PersonTypes, items.ValidCreditKind))
 	if err != nil {
 		return nil, err
 	}

@@ -150,19 +150,11 @@ func UserItemDataDto(datum *items.Datum) api.UserItemDataDto {
 	}
 }
 
-func MediaTypes(types *[]api.MediaType) []items.MediaType {
-	return accepted[api.MediaType, items.MediaType](types, items.ValidMediaType)
-}
-
 func Kinds(types *[]api.BaseItemKind) []items.Kind {
-	return accepted[api.BaseItemKind, items.Kind](types, items.ValidKind)
+	return Accepted(types, items.ValidKind)
 }
 
-func CreditKinds(types *[]string) []items.CreditKind {
-	return accepted[string, items.CreditKind](types, items.ValidCreditKind)
-}
-
-func accepted[From ~string, To ~string](values *[]From, valid func(To) error) []To {
+func Accepted[From ~string, To ~string](values *[]From, valid func(To) error) []To {
 	if values == nil {
 		return nil
 	}

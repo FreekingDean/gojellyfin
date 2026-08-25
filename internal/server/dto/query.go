@@ -37,7 +37,7 @@ func ItemQuery(ctx context.Context, collections *libraries.Service, params api.G
 		Descending: Descending(params.SortOrder),
 		SortBy:     SortFields(params.SortBy),
 		Kinds:      Kinds(params.IncludeItemTypes),
-		MediaTypes: MediaTypes(params.MediaTypes),
+		MediaTypes: Accepted(params.MediaTypes, items.ValidMediaType),
 	}
 
 	if params.Ids != nil {
