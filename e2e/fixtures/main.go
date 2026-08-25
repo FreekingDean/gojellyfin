@@ -93,8 +93,6 @@ func scratchName() (string, error) {
 	return name, nil
 }
 
-// Postgres does not parameterise a database name; scratchName is what keeps
-// the interpolation an identifier.
 func admin(statement string) error {
 	dsn := os.Getenv("ADMIN_DATABASE_URL")
 	if dsn == "" {
@@ -228,9 +226,6 @@ func file(ctx context.Context, catalogue *items.Service, libraryID, itemID uuid.
 	return err
 }
 
-// The scanner derives a key from the title and keeps it unexported, so this
-// mirrors the shape rather than sharing it. Two fixtures must not slug alike:
-// one key is one title, and they would seed as a single item.
 func slugify(name string) string {
 	var slug strings.Builder
 	separated := false

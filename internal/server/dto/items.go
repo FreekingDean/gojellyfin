@@ -13,8 +13,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// The path is the item's primary source rather than a column on the item, so a
-// caller that has not loaded one passes the empty string.
 func ItemDto(item *items.Item, path string, childCount int32, imageTags map[string]string) api.BaseItemDto {
 	kind := api.BaseItemKind(item.Kind)
 

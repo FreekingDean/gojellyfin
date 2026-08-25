@@ -22,9 +22,6 @@ type ExternalSubtitle struct {
 	IsHearingImpaired bool
 }
 
-// External streams are indexed off the end of the container's own, so the
-// source row is locked for the whole rewrite; without it two writers allocate
-// the same index.
 func (s *Service) ReplaceExternalSubtitles(ctx context.Context, itemID uuid.UUID, source *MediaSource, subtitles []ExternalSubtitle) error {
 	return s.store.WithTx(ctx, func(tx *store.Tx) error {
 		if _, err := tx.MediaSource.Query().

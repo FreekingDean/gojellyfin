@@ -127,9 +127,6 @@ func (Item) Edges() []ent.Edge {
 
 func (Item) Indexes() []ent.Index {
 	return []ent.Index{
-		// Deliberately not partial on deleted_at: a title that comes back has to
-		// conflict with the row it left behind, because that row carries the id
-		// the watch state hangs off. The scan upsert clears deleted_at.
 		index.Fields("library_id", "key").Unique(),
 		index.Fields("kind", "sort_name"),
 		index.Fields("deleted_at"),

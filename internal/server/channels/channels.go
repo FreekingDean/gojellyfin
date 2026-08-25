@@ -7,7 +7,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 )
 
-// Channels come from plugins, which are not supported.
 type Server struct{}
 
 func New() *Server {

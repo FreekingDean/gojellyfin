@@ -153,8 +153,6 @@ func (s *Service) SetPassword(ctx context.Context, id uuid.UUID, passwordHash st
 	return nil
 }
 
-// The caller chains the fields it wants changed; every field has a
-// SetNillable form, which is the shape the api sends them in.
 func (s *Service) UpdateConfiguration(id uuid.UUID) *store.UserConfigurationUpdate {
 	return s.store.UserConfiguration.Update().
 		Where(configurationmodal.HasUserWith(usermodal.ID(id)))

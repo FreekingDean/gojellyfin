@@ -78,6 +78,5 @@ func (s *Server) UpdateTask(ctx context.Context, request api.UpdateTaskRequestOb
 		return api.UpdateTask404JSONResponse{}, nil
 	}
 
-	// Triggers are Temporal schedules, which this change does not build.
 	return nil, api.ErrNotImplemented
 }

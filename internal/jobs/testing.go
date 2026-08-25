@@ -12,9 +12,6 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-// A TestEnvironment runs a job's body without a server, so a test can assert
-// what the body does with steps that fail. It exists here so that a test, like
-// the code it covers, never names the workflow engine.
 type TestEnvironment struct {
 	env      *testsuite.TestWorkflowEnvironment
 	children []string
@@ -35,15 +32,10 @@ func NewTestEnvironment(t *testing.T) *TestEnvironment {
 	return environment
 }
 
-// The ids of the nested runs the body started, so a test can say that work was
-// chunked rather than fanned out flat.
 func (e *TestEnvironment) Children() []string {
 	return e.children
 }
 
-// ReplaceStep stands a fake in for one of the job's steps. The step is named by
-// the function it replaces rather than by a string, so a renamed step is a
-// compile error here too.
 func (e *TestEnvironment) ReplaceStep(step any, with any) {
 	e.env.RegisterActivityWithOptions(with, activity.RegisterOptions{Name: stepName(step)})
 }
@@ -74,8 +66,6 @@ func (e *TestEnvironment) Run(job Job, options Options) error {
 	return e.env.GetWorkflowError()
 }
 
-// The engine names an activity after its function, and a method value carries a
-// -fm suffix that has to come off for the two to agree.
 func stepName(step any) string {
 	full := runtime.FuncForPC(reflect.ValueOf(step).Pointer()).Name()
 	name := full[strings.LastIndex(full, ".")+1:]

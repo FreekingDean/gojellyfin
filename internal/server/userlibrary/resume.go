@@ -10,8 +10,6 @@ import (
 )
 
 func (s *Server) GetResumeItems(ctx context.Context, request api.GetResumeItemsRequestObject) (api.GetResumeItemsResponseObject, error) {
-	// Everything scanned so far is video; asking for Book or Audio can only
-	// ever be empty.
 	if !wantsVideo(request.Params.MediaTypes) {
 		return api.GetResumeItems200JSONResponse(dto.EmptyItems()), nil
 	}

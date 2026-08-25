@@ -22,7 +22,6 @@ type (
 	VideoRangeType = streammodal.VideoRangeType
 )
 
-// Where one file of a title lives. The probe owns the rest of the row.
 type ScannedSource struct {
 	LibraryID    uuid.UUID
 	ItemID       uuid.UUID
@@ -31,7 +30,6 @@ type ScannedSource struct {
 	DateModified time.Time
 }
 
-// What ffprobe found. The scan owns everything else on the item.
 type Probe struct {
 	Container    string
 	RunTimeTicks int64
@@ -71,9 +69,6 @@ type Stream struct {
 	IsAnamorphic bool
 }
 
-// The probe columns are left out of the update: a file that has not changed
-// keeps the runtime and streams the last probe wrote, and that runtime is what
-// decided which item the file belongs to.
 func (s *Service) SaveSource(ctx context.Context, scanned ScannedSource) (*MediaSource, error) {
 	id, err := s.store.MediaSource.Create().
 		SetLibraryID(scanned.LibraryID).
@@ -187,9 +182,6 @@ func (s *Service) SourceByID(ctx context.Context, id uuid.UUID) (*MediaSource, e
 	return source, nil
 }
 
-// The files whose probe is missing or older than the file itself. Work is
-// selected from the rows rather than remembered from the walk that wrote them,
-// so a run that died can be told what is outstanding rather than replaying it.
 func (s *Service) SourcesNeedingProbe(ctx context.Context, libraryID uuid.UUID) ([]uuid.UUID, error) {
 	ids, err := s.store.MediaSource.Query().
 		Where(
@@ -208,8 +200,6 @@ func (s *Service) SourcesNeedingProbe(ctx context.Context, libraryID uuid.UUID) 
 	return ids, nil
 }
 
-// Every file the item plays from, oldest first, so a caller that can only use
-// one takes the first and the ordering does not shift under it.
 func (s *Service) MediaSources(ctx context.Context, itemID uuid.UUID) ([]*MediaSource, error) {
 	sources, err := s.store.MediaSource.Query().
 		Where(sourcemodal.ItemID(itemID)).
@@ -225,8 +215,6 @@ func (s *Service) MediaSources(ctx context.Context, itemID uuid.UUID) ([]*MediaS
 	return sources, nil
 }
 
-// The primary file of each item, for list responses that would otherwise ask
-// per row.
 func (s *Service) PathsByItem(ctx context.Context, itemIDs []uuid.UUID) (map[uuid.UUID]string, error) {
 	paths := map[uuid.UUID]string{}
 	if len(itemIDs) == 0 {
@@ -250,8 +238,6 @@ func (s *Service) PathsByItem(ctx context.Context, itemIDs []uuid.UUID) (map[uui
 	return paths, nil
 }
 
-// Every file under an item, including the ones its children play from, which is
-// what deleting a series has to reach.
 func (s *Service) SourcePaths(ctx context.Context, id uuid.UUID) ([]string, error) {
 	ids, err := s.subtree(ctx, id)
 	if err != nil {
@@ -270,8 +256,6 @@ func (s *Service) SourcePaths(ctx context.Context, id uuid.UUID) ([]string, erro
 	return paths, nil
 }
 
-// A source carries no watch state, so a file that goes away takes its row with
-// it; the item keeps the id everything else hangs off and is swept separately.
 func (s *Service) DeleteSourcesNotInPaths(ctx context.Context, libraryID uuid.UUID, paths []string) error {
 	missing := s.store.MediaSource.Delete().Where(sourcemodal.LibraryID(libraryID))
 	if len(paths) > 0 {
@@ -285,7 +269,6 @@ func (s *Service) DeleteSourcesNotInPaths(ctx context.Context, libraryID uuid.UU
 	return nil
 }
 
-// Empty until the probe has run, which the caller has to treat as unknown.
 func (s *Service) AudioCodec(ctx context.Context, itemID uuid.UUID) (string, error) {
 	codecs, err := s.store.MediaStream.Query().
 		Where(
@@ -306,9 +289,6 @@ func (s *Service) AudioCodec(ctx context.Context, itemID uuid.UUID) (string, err
 	return codecs[0], nil
 }
 
-// The same question SourcesNeedingProbe asks of the whole library, asked of one
-// row: the selection and the probe are minutes apart and the file can have been
-// read in between.
 func NeedsProbe(source *MediaSource) bool {
 	return source == nil || source.ProbedAt.IsZero() || source.ProbedAt.Before(source.DateModified)
 }

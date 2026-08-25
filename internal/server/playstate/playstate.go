@@ -11,8 +11,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// Below this fraction of the runtime a stop is treated as an abandoned resume
-// point; above it the item counts as watched.
 const playedThreshold = 0.9
 
 type Server struct {

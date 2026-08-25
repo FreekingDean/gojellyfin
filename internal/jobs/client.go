@@ -113,9 +113,6 @@ func (s *Service) Status(ctx context.Context, name string) (Status, error) {
 	return s.status(ctx, job)
 }
 
-// The job's name is the run's id, which is what makes it a singleton: the
-// engine refuses a second run under a name that is already going, so starting
-// twice is one run rather than two and needs no lock of ours.
 func (s *Service) Start(ctx context.Context, name string, options Options) error {
 	job, err := s.registry.Find(name)
 	if err != nil {

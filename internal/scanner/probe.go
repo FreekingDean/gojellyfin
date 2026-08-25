@@ -11,7 +11,6 @@ import (
 
 const ticksPerSecond = 10_000_000
 
-// Nil when the last probe already read this file.
 func (s *Scanner) probeFile(ctx context.Context, source *items.MediaSource) (*items.Probe, error) {
 	if !items.NeedsProbe(source) {
 		return nil, nil
@@ -88,8 +87,6 @@ func anamorphic(ratio string) bool {
 	}
 }
 
-// ffprobe reports muxer families like "matroska,webm"; the file extension picks
-// the one clients should be told about.
 func container(formatName, path string) string {
 	extension := strings.TrimPrefix(strings.ToLower(filepath.Ext(path)), ".")
 	for _, name := range strings.Split(formatName, ",") {

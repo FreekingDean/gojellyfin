@@ -142,7 +142,6 @@ func (s *Service) resolve(path string) (string, error) {
 	}
 
 	for _, root := range s.rootDirs {
-		// NOTE: string based prefix detection is not perfect, see https://github.com/golang/go/issues/18358
 		if strings.HasPrefix(path, root) {
 			return path, nil
 		}

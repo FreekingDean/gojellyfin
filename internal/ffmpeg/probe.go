@@ -9,9 +9,6 @@ import (
 	"time"
 )
 
-// Shorter than the heartbeat window a step is given, so a file the reader
-// cannot get through fails the step rather than outliving it: an abandoned step
-// is never told to stop, and a read that has wedged has no loop to be told in.
 const (
 	probeTimeout   = 30 * time.Second
 	probeWaitDelay = time.Second
