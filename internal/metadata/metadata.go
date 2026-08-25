@@ -27,9 +27,6 @@ func New(provider Provider, service *items.Service) *Service {
 	return &Service{provider: provider, items: service}
 }
 
-// The whole outstanding list rather than a page of it: the provider is rate
-// limited to one request at a time inside this process, so chunking wins no
-// parallelism and a cap only means pressing Start again.
 func (s *Service) IdentifyItems(ctx context.Context, options jobs.Options) error {
 	if !s.provider.Enabled() {
 		log.Print("metadata: no provider is configured, nothing to identify against")

@@ -37,8 +37,6 @@ func New(client *store.Client) *Service {
 	return &Service{store: client}
 }
 
-// What one pass of the scanner knows about a title. The probe owns the
-// remaining columns and must not be clobbered from here.
 type Scanned struct {
 	LibraryID         uuid.UUID
 	ParentID          *uuid.UUID
@@ -94,8 +92,6 @@ func (s *Service) SaveScanned(ctx context.Context, scanned Scanned) (*Item, erro
 		UpdateParentIndexNumber().
 		UpdateDateModified().
 		UpdateUpdatedAt().
-		// The file is back, so the row it left behind is revived rather than
-		// replaced, which is what keeps the watch state attached to it.
 		ClearDeletedAt().
 		ID(ctx)
 	if err != nil {
@@ -161,19 +157,11 @@ func (s *Service) Ancestors(ctx context.Context, id uuid.UUID) (*Ancestry, error
 	return ancestry, nil
 }
 
-// What still needs a metadata lookup. Without force that is an item nothing has
-// matched yet; with it, everything in scope is fetched again. Ordered by id
-// rather than by a column the run writes, so the list does not reshuffle
-// underneath the caller walking it.
 func (s *Service) ItemsNeedingMetadata(ctx context.Context, kinds []Kind, force bool, scope uuid.UUID) ([]uuid.UUID, error) {
 	query := s.query().Where(itemmodal.KindIn(kinds...), itemmodal.LockData(false))
 	if !force {
 		query = query.Where(itemmodal.ProviderIdsIsNil())
 	}
-	// One id can name a library or an item, because that is what the client
-	// sends. An item takes its descendants with it, and two levels covers the
-	// deepest thing worth identifying: a series holds seasons which hold
-	// episodes.
 	if scope != uuid.Nil {
 		query = query.Where(itemmodal.Or(
 			itemmodal.LibraryID(scope),
@@ -305,19 +293,12 @@ func (s *Service) CountChildren(ctx context.Context, parentIDs []uuid.UUID) (map
 	return counts, nil
 }
 
-// Every read goes through here, so a soft deleted row cannot come back in one
-// query because a caller forgot the predicate.
 func (s *Service) query() *store.ItemQuery {
 	return s.store.Item.Query().Where(itemmodal.DeletedAtIsNil())
 }
 
-// A library that scanned to nothing is indistinguishable from one whose storage
-// went away, and the second is the common case, so neither sweeps the library.
 var ErrNothingScanned = errors.New("items: the scan found no files")
 
-// Soft, so that a volume which comes back brings its watch state with it. The
-// row keeps the id the user data hangs off, which is the whole reason a hard
-// delete cannot be undone.
 func (s *Service) DeleteItemsNotInKeys(ctx context.Context, libraryID uuid.UUID, keys []string) error {
 	if len(keys) == 0 {
 		return ErrNothingScanned
@@ -339,9 +320,6 @@ func (s *Service) DeleteItemsNotInKeys(ctx context.Context, libraryID uuid.UUID,
 	return s.deleteOrphanedDescendants(ctx, libraryID)
 }
 
-// A parent going away takes its children, which the foreign key did on a hard
-// delete and cannot do on an update. Repeated because a series reaches its
-// episodes through its seasons.
 func (s *Service) deleteOrphanedDescendants(ctx context.Context, libraryID uuid.UUID) error {
 	for {
 		affected, err := s.store.Item.Update().
@@ -387,9 +365,6 @@ func (s *Service) DistinctYears(ctx context.Context, libraryID *uuid.UUID, kinds
 	return years, nil
 }
 
-// Items the user started and did not finish, most recently played first. The
-// query runs from the user data so the sort column is on the primary table;
-// ordering items by the edge makes ent aggregate it away.
 func (s *Service) ResumeItems(ctx context.Context, userID uuid.UUID, kinds []Kind, libraryID *uuid.UUID, startIndex, limit int) ([]*Item, int, error) {
 	playable := []predicate.Item{itemmodal.IsFolder(false)}
 	if len(kinds) > 0 {
@@ -456,10 +431,6 @@ func (s *Service) CountByKind(ctx context.Context) (map[string]int32, error) {
 	return counts, nil
 }
 
-// Items carrying the identity the key migration stood in for them: the path the
-// row used to be keyed on, which no derivation would ever produce. Empty once a
-// library has been rescanned, so the scan pays one indexed lookup to find that
-// out.
 func (s *Service) LegacyKeyedItems(ctx context.Context, libraryID uuid.UUID) ([]*Item, error) {
 	records, err := s.query().
 		Where(
@@ -474,8 +445,6 @@ func (s *Service) LegacyKeyedItems(ctx context.Context, libraryID uuid.UUID) ([]
 	return records, nil
 }
 
-// Every item of a library, which the rekey needs so a season can read the name
-// and year off the series it hangs under.
 func (s *Service) ItemsInLibrary(ctx context.Context, libraryID uuid.UUID) ([]*Item, error) {
 	records, err := s.query().Where(itemmodal.LibraryID(libraryID)).All(ctx)
 	if err != nil {
@@ -493,12 +462,6 @@ func (s *Service) Rekey(ctx context.Context, id uuid.UUID, key string) error {
 	return nil
 }
 
-// Two rows that derive one key are the two copies of one title the key exists
-// to collapse, so the second is folded into the first rather than refused: its
-// files, its children and its playlist entries move over, and its watch state
-// moves wherever the survivor has none of its own. Refusing would leave a
-// library that can never scan again, because the collision is on a unique index
-// the next run hits just as hard.
 func (s *Service) Merge(ctx context.Context, from, into uuid.UUID) error {
 	err := s.store.WithTx(ctx, func(tx *store.Tx) error {
 		kept, err := tx.UserItemData.Query().Where(datamodal.ItemID(into)).All(ctx)
@@ -558,9 +521,6 @@ func (s *Service) Merge(ctx context.Context, from, into uuid.UUID) error {
 	return s.DeleteItem(ctx, from)
 }
 
-// Neither row is more true than the other, so the merged datum is whichever
-// answer says the title was watched: played and favourite carry, and the counts
-// and the position take the further of the two.
 func union(kept, folded *store.UserItemData) *store.UserItemDataUpdateOne {
 	update := kept.Update().
 		SetPlayed(kept.Played || folded.Played).
@@ -575,8 +535,6 @@ func union(kept, folded *store.UserItemData) *store.UserItemDataUpdateOne {
 	return update
 }
 
-// A derived key names the kind it belongs to; the migration's stand-in is a
-// path and names nothing, which is what tells the two apart.
 func derivedKeys() []predicate.Item {
 	kinds := []Kind{itemmodal.KindMovie, itemmodal.KindSeries, itemmodal.KindSeason, itemmodal.KindEpisode}
 	prefixes := make([]predicate.Item, 0, len(kinds))
