@@ -12,9 +12,9 @@ import (
 )
 
 func TestProbeFile(t *testing.T) {
-	ffmpeg, err := New()
-	if err != nil {
-		t.Skipf("ffprobe is not on PATH: %v", err)
+	ffmpeg := New()
+	if ffmpeg.probe == "" {
+		t.Skip("ffprobe is not on PATH")
 	}
 
 	t.Run("reads what ffprobe reports about a real file", func(t *testing.T) {

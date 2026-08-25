@@ -64,6 +64,10 @@ func (d *Disposition) UnmarshalJSON(data []byte) error {
 }
 
 func (ffmpeg *FFMpeg) ProbeFile(ctx context.Context, path string) (*Probe, error) {
+	if ffmpeg.probe == "" {
+		return nil, ErrNotAvailable
+	}
+
 	ctx, cancel := context.WithTimeout(ctx, probeTimeout)
 	defer cancel()
 

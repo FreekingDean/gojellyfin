@@ -1,18 +1,18 @@
 package ffmpeg
 
-import "os/exec"
+import (
+	"errors"
+	"os/exec"
+)
+
+var ErrNotAvailable = errors.New("ffprobe is not installed")
 
 type FFMpeg struct {
 	probe string
 }
 
-func New() (*FFMpeg, error) {
-	path, err := exec.LookPath("ffprobe")
-	if err != nil {
-		return nil, err
-	}
+func New() *FFMpeg {
+	path, _ := exec.LookPath("ffprobe")
 
-	return &FFMpeg{
-		probe: path,
-	}, nil
+	return &FFMpeg{probe: path}
 }

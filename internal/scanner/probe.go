@@ -2,9 +2,11 @@ package scanner
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
 	"strings"
 
+	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 )
@@ -17,6 +19,9 @@ func (s *Scanner) probeFile(ctx context.Context, source *items.MediaSource) (*it
 	}
 
 	probe, err := s.ffmpeg.ProbeFile(ctx, source.Path)
+	if errors.Is(err, ffmpeg.ErrNotAvailable) {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}

@@ -255,12 +255,7 @@ func decoded(t *testing.T, body []byte) *ffmpeg.Probe {
 		t.Fatalf("failed to write the response: %v", err)
 	}
 
-	prober, err := ffmpeg.New()
-	if err != nil {
-		t.Fatalf("ffprobe is not on PATH: %v", err)
-	}
-
-	probed, err := prober.ProbeFile(context.Background(), path)
+	probed, err := ffmpeg.New().ProbeFile(context.Background(), path)
 	if err != nil {
 		t.Fatalf("the response is not decodable: %v", err)
 	}

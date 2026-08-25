@@ -13,10 +13,7 @@ import (
 func encoded(t *testing.T, name string, args ...string) *ffmpeg.Stream {
 	t.Helper()
 
-	prober, err := ffmpeg.New()
-	if err != nil {
-		t.Skipf("ffprobe is not on PATH: %v", err)
-	}
+	prober := ffmpeg.New()
 
 	path := filepath.Join(t.TempDir(), name)
 	build := append([]string{
