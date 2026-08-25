@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A Go reimplementation of a Jellyfin media server, serving the Jellyfin 10.10.0 HTTP API so that stock `jellyfin-web` and Jellyfin clients can talk to it.
+A Go reimplementation of a Jellyfin media server, serving the Jellyfin 12.0.0 HTTP API so that stock `jellyfin-web` and Jellyfin clients can talk to it.
 
 ## Rules
 
@@ -96,7 +96,9 @@ A binding that exists only because the object graph would otherwise be cyclic go
 
 `server.Server` embeds `api.Unimplemented`, so it satisfies the full interface while only the endpoints actually written exist as real methods. **Implementing an endpoint means adding a method to `internal/server` that shadows the embedded stub.** `ErrNotImplemented` is mapped to HTTP 501 by the response error handler in `internal/http/http.go`.
 
-`spec/jellyfin-openapi-10.10.0.json` is the vendored upstream spec, locally patched with `x-go-type` overrides where upstream types generate badly. Re-vendoring the spec means re-applying those patches.
+`spec/jellyfin-openapi-stable.json` is the vendored upstream spec and `spec/overrides.json` the `x-go-type` overrides `specpatch` applies to it where upstream types generate badly, so re-vendoring means replacing one file rather than re-applying patches by hand.
+
+**The announced API version comes from the spec.** `system.JellyfinVersion` is the version this server reports to clients and `gen` writes it into `internal/system/jellyfinversion.gen.go` from the spec's `info.version`, because a second copy maintained by hand is how it came to claim 10.10.0 while the spec said 12.0.0. `internal/system` may not import `api`, which is why the generator writes across rather than the domain reading `GetSwagger()`. It is not a free field: `jellyfin-web` refuses a server whose `Version` is below the `@jellyfin/sdk` minimum of `10.9.0` with `ServerUpdateNeeded`, and its discovery scores a `ProductName` other than `Jellyfin Server` as unusable.
 
 ### Request path
 
@@ -106,7 +108,7 @@ Routing uses a hand-rolled `internal/http/mux`, not `http.ServeMux`, because Jel
 
 `GET /socket` is registered outside the generated API for the websocket keepalive loop (`internal/server/socket`).
 
-So are routes Jellyfin serves but hides from its own OpenAPI document with `[ApiExplorerSettings(IgnoreApi = true)]`. There are 36 of them, almost all the pre-10.9 `/Users/{userId}/…` spellings, and no version of the spec contains any of them — searching a newer spec will not find them either. `spec/jellyfin-hidden-routes-10.10.0.txt` is the extracted list, and `TestLegacyRoutes` fails if one of them has neither an alias nor a stated reason. `jellyfin-web` still calls some, so the symptom is a 404 for a path the spec does not define; the definition is in the controller source (`GET /Users/{userId}/Items/{itemId}` is `Jellyfin.Api/Controllers/UserLibraryController.cs`).
+So are routes Jellyfin serves but hides from its own OpenAPI document with `[ApiExplorerSettings(IgnoreApi = true)]`. There are 36 of them, almost all the pre-10.9 `/Users/{userId}/…` spellings, and no version of the spec contains any of them — searching a newer spec will not find them either. `spec/jellyfin-hidden-routes-10.10.0.txt` is the extracted list, and `TestLegacyRoutes` fails if one of them has neither an alias nor a stated reason. It is still the 10.10.0 extraction while the spec is 12.0.0, and the two have drifted (#TBD). `jellyfin-web` still calls some, so the symptom is a 404 for a path the spec does not define; the definition is in the controller source (`GET /Users/{userId}/Items/{itemId}` is `Jellyfin.Api/Controllers/UserLibraryController.cs`).
 
 `legacyRoutes` in `internal/http/http.go` maps each to its documented spelling and re-dispatches through the mux, so an alias costs a table entry rather than a handler. `[Obsolete]` alone does **not** mean missing — most obsolete routes are still documented and already generated; only `IgnoreApi` hides them.
 
@@ -158,7 +160,7 @@ Anything a create has to supply on every call belongs in the schema as `.Default
 
 Ent's default delete action is `NO ACTION` for a required edge and `SET NULL` for an optional one, so a child row either blocks its parent's delete or is left orphaned with a dangling column. Owned rows carry `.Annotations(cascadeOnDelete)`, which only takes effect on the `edge.To` side — ent skips the inverse edge when it builds the foreign key, so on the self-referencing `children`/`parent` edge the annotation goes before `.From("parent")`. Deleting a library therefore takes its items with it, and a user takes their sessions and watch state; only activity log entries are left behind, keeping their history when the user or item goes away.
 
-**An `Item` is a title; a `MediaSource` is a file.** The item carries no path — its identity is `key`, unique with `library_id`, derived by the scanner from the name and year (`movie:the-matrix:1999`, `series:the-wire`, `season:the-wire:1`, `episode:the-wire:1:3`). Keying on location meant a moved file changed identity and a reorganised library lost every resume position and play count; a name-derived key survives the move. The key is internal — no endpoint takes one in its path and the 10.10.0 spec has no field to put one in, so clients only ever see the UUID. `MediaSource` owns the path, unique per library, and an item may have many, which is how a 4K and a 1080p rip of one film become one entry with two versions.
+**An `Item` is a title; a `MediaSource` is a file.** The item carries no path — its identity is `key`, unique with `library_id`, derived by the scanner from the name and year (`movie:the-matrix:1999`, `series:the-wire`, `season:the-wire:1`, `episode:the-wire:1:3`). Keying on location meant a moved file changed identity and a reorganised library lost every resume position and play count; a name-derived key survives the move. The key is internal — no endpoint takes one in its path and the spec has no field to put one in, so clients only ever see the UUID. `MediaSource` owns the path, unique per library, and an item may have many, which is how a 4K and a 1080p rip of one film become one entry with two versions.
 
 The key is the whole of the grouping: two files whose names parse the same are two copies of one title, and a cut that is named differently on disk already parses to a key of its own. Nothing reads the runtime to second-guess that, so the scan needs no ordering between probing a file and deciding which item it belongs to.
 

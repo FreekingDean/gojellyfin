@@ -16,17 +16,13 @@ type serviceImpl struct {
 	version         string
 }
 
-var (
-	VERSION = "10.10.0"
-)
-
 // Clients switch to LocalAddress when they believe they are on the same
 // network, so an address this server cannot confirm is worse than none: they
 // stop talking to the address that reached them and never come back.
 func New(config env.Config) Service {
 	return serviceImpl{
 		localAddress:    config.PublishedServerURL,
-		version:         VERSION,
+		version:         JellyfinVersion,
 		operatingSystem: "linux",
 		productName:     "Jellyfin Server",
 	}
