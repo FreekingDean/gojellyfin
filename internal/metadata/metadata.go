@@ -3,7 +3,6 @@ package metadata
 import (
 	"context"
 	"log"
-	"slices"
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
@@ -11,6 +10,10 @@ import (
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
+// Parents before children: a season resolves its series through the series'
+// provider ids and an episode through the season's, so one identified after its
+// child leaves that child a miss until the next run. The query hands the batch
+// back in this order.
 var identifiable = []items.Kind{
 	itemmodal.KindMovie,
 	itemmodal.KindSeries,
@@ -41,9 +44,6 @@ func (s *Service) IdentifyItems(ctx context.Context, options jobs.Options) error
 	if err != nil {
 		return err
 	}
-	slices.SortStableFunc(pending, func(one, two *items.Item) int {
-		return slices.Index(identifiable, one.Kind) - slices.Index(identifiable, two.Kind)
-	})
 
 	for _, id := range pending {
 		if err := ctx.Err(); err != nil {
