@@ -2,8 +2,6 @@ package system
 
 import "fmt"
 
-// Set with -ldflags -X by the Makefile and the Dockerfile; a plain `go build`
-// leaves the defaults.
 var (
 	buildVersion = "dev"
 	buildCommit  = "unknown"

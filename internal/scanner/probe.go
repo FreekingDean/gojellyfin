@@ -12,8 +12,6 @@ import (
 
 const ticksPerSecond = 10_000_000
 
-// Nil when there is nothing new to learn: no ffmpeg on the box, or a file the
-// last probe already read.
 func (s *Scanner) probeFile(ctx context.Context, source *items.MediaSource) (*items.Probe, error) {
 	if !ffmpeg.Available() || !items.NeedsProbe(source) {
 		return nil, nil
@@ -90,8 +88,6 @@ func anamorphic(ratio string) bool {
 	}
 }
 
-// ffprobe reports muxer families like "matroska,webm"; the file extension picks
-// the one clients should be told about.
 func container(formatName, path string) string {
 	extension := strings.TrimPrefix(strings.ToLower(filepath.Ext(path)), ".")
 	for _, name := range strings.Split(formatName, ",") {

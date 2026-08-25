@@ -21,13 +21,10 @@ func New(filesystem *filesystem.Service, users *users.Service) *Server {
 	return &Server{filesystem: filesystem, users: users}
 }
 
-// Browsing the host is an administrator's job: upstream gates every operation
-// in this tag on FirstTimeSetupOrElevated.
 func (s *Server) elevated(ctx context.Context) (bool, error) {
 	return s.users.IsAdministrator(ctx, auth.UserID(ctx))
 }
 
-// Used by the dashboard before it will accept a media path.
 func (s *Server) ValidatePath(ctx context.Context, request api.ValidatePathRequestObject) (api.ValidatePathResponseObject, error) {
 	allowed, err := s.elevated(ctx)
 	if err != nil {

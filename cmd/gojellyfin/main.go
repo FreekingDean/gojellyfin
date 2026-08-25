@@ -56,8 +56,6 @@ func withStore(f func(*store.Client) error) error {
 	return f(db.Client())
 }
 
-// Piping the password in keeps it out of the shell history and the process
-// list, which a flag would not.
 func readPassword() (string, error) {
 	fmt.Fprint(os.Stderr, "password: ")
 	password, err := bufio.NewReader(os.Stdin).ReadString('\n')

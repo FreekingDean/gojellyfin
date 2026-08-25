@@ -13,8 +13,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 )
 
-// The vendored spec types DeviceProfile as a free-form object, so it is read
-// back out of json rather than bound to a generated type.
 func capabilities(profile api.DeviceProfile) items.Capabilities {
 	if len(profile) == 0 {
 		return items.Capabilities{}
@@ -82,8 +80,6 @@ func streamURL(itemID uuid.UUID, plan items.Plan, token, session string, startTi
 	if startTicks > 0 {
 		query.Set("startTimeTicks", strconv.FormatInt(startTicks, 10))
 	}
-	// jellyfin-web retries a playback error until the url refuses both stream
-	// copies. Nothing here reads them; they are what ends the retry.
 	query.Set("allowVideoStreamCopy", "false")
 	query.Set("allowAudioStreamCopy", "false")
 

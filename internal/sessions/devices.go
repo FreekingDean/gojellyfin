@@ -11,8 +11,6 @@ import (
 	sessionmodal "github.com/FreekingDean/gojellyfin/internal/store/session"
 )
 
-// Newest activity first, with each device's sessions ordered the same way so
-// the first one carries the user that last used it.
 func (s *Service) Devices(ctx context.Context) ([]*Device, error) {
 	devices, err := s.store.Device.Query().
 		Order(devicemodal.ByLastActivityAt(sql.OrderDesc())).

@@ -10,10 +10,6 @@ import (
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
-// Parents before children: a season resolves its series through the series'
-// provider ids and an episode through the season's, so one identified after its
-// child leaves that child a miss until the next run. The query hands the batch
-// back in this order.
 var identifiable = []items.Kind{
 	itemmodal.KindMovie,
 	itemmodal.KindSeries,
@@ -30,9 +26,6 @@ func New(provider Provider, service *items.Service) *Service {
 	return &Service{provider: provider, items: service}
 }
 
-// The whole outstanding list rather than a page of it: the provider is rate
-// limited to one request at a time inside this process, so chunking wins no
-// parallelism and a cap only means pressing Start again.
 func (s *Service) IdentifyItems(ctx context.Context, options jobs.Options) error {
 	if !s.provider.Enabled() {
 		log.Print("metadata: no provider is configured, nothing to identify against")

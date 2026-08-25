@@ -9,8 +9,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
-// Theme songs and videos are extras sitting alongside the media. The scanner
-// does not collect them, so every item reports none.
 func (s *Server) GetThemeMedia(ctx context.Context, request api.GetThemeMediaRequestObject) (api.GetThemeMediaResponseObject, error) {
 	return api.GetThemeMedia200JSONResponse{
 		ThemeVideosResult:     apiutil.Ptr(themeMedia(request.ItemId)),

@@ -63,8 +63,6 @@ func configurationDto(configuration *users.Configuration) api.UserConfiguration 
 	}
 }
 
-// jellyfin-web gates its quality menu on this, and the picture is copied and
-// never re-encoded (#481).
 const encodesVideo = false
 
 func policyDto(policy *users.Policy) api.UserPolicy {
@@ -252,8 +250,6 @@ func (s *Server) savePolicy(ctx context.Context, id uuid.UUID, req *api.UserPoli
 	return update.Exec(ctx)
 }
 
-// What a sign-in screen needs and no more: no policy, no configuration, and
-// nothing about when the account was last used.
 func publicUserDto(user *users.User) api.UserDto {
 	if user == nil {
 		return api.UserDto{}
