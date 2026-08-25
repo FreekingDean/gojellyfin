@@ -25,6 +25,7 @@ func main() {
 		migrateCommand(),
 		addUserCommand(),
 		resetPasswordCommand(),
+		importCommand(),
 		localizationDataCommand(),
 	)
 
