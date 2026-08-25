@@ -82,3 +82,11 @@ func SortFields(sortBy *[]api.ItemSortBy) []string {
 
 	return fields
 }
+
+func EmptyItems() api.BaseItemDtoQueryResult {
+	return api.BaseItemDtoQueryResult{
+		Items:            &[]api.BaseItemDto{},
+		StartIndex:       apiutil.Ptr(int32(0)),
+		TotalRecordCount: apiutil.Ptr(int32(0)),
+	}
+}
