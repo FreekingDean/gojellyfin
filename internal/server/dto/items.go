@@ -151,33 +151,28 @@ func UserItemDataDto(datum *items.Datum) api.UserItemDataDto {
 }
 
 func MediaTypes(types *[]api.MediaType) []items.MediaType {
-	if types == nil {
-		return nil
-	}
-
-	mediaTypes := make([]items.MediaType, 0, len(*types))
-	for _, value := range *types {
-		mediaType := items.MediaType(value)
-		if items.ValidMediaType(mediaType) == nil {
-			mediaTypes = append(mediaTypes, mediaType)
-		}
-	}
-
-	return mediaTypes
+	return accepted[api.MediaType, items.MediaType](types, items.ValidMediaType)
 }
 
 func Kinds(types *[]api.BaseItemKind) []items.Kind {
-	if types == nil {
+	return accepted[api.BaseItemKind, items.Kind](types, items.ValidKind)
+}
+
+func CreditKinds(types *[]string) []items.CreditKind {
+	return accepted[string, items.CreditKind](types, items.ValidCreditKind)
+}
+
+func accepted[From ~string, To ~string](values *[]From, valid func(To) error) []To {
+	if values == nil {
 		return nil
 	}
 
-	kinds := make([]items.Kind, 0, len(*types))
-	for _, value := range *types {
-		kind := items.Kind(value)
-		if items.ValidKind(kind) == nil {
-			kinds = append(kinds, kind)
+	converted := make([]To, 0, len(*values))
+	for _, value := range *values {
+		if to := To(value); valid(to) == nil {
+			converted = append(converted, to)
 		}
 	}
 
-	return kinds
+	return converted
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 )
 
 type Server struct {
@@ -22,7 +23,7 @@ func (s *Server) GetPersons(ctx context.Context, request api.GetPersonsRequestOb
 		ItemID:     request.Params.AppearsInItemId,
 		SearchTerm: apiutil.Deref(request.Params.SearchTerm),
 		Limit:      int(apiutil.Deref(request.Params.Limit)),
-	}, creditKinds(request.Params.PersonTypes))
+	}, dto.CreditKinds(request.Params.PersonTypes))
 	if err != nil {
 		return nil, err
 	}
@@ -50,20 +51,4 @@ func personDto(person items.Named) api.BaseItemDto {
 		ImageTags:         &map[string]*string{},
 		BackdropImageTags: &[]string{},
 	}
-}
-
-func creditKinds(types *[]string) []items.CreditKind {
-	if types == nil {
-		return nil
-	}
-
-	valid := make([]items.CreditKind, 0, len(*types))
-	for _, value := range *types {
-		kind := items.CreditKind(value)
-		if items.ValidCreditKind(kind) == nil {
-			valid = append(valid, kind)
-		}
-	}
-
-	return valid
 }
