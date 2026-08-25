@@ -21,6 +21,7 @@ var settings = []string{
 	"TEMPORAL_NAMESPACE",
 	"OTEL_EXPORTER_OTLP_ENDPOINT",
 	"TMDB_API_KEY",
+	"MEDIA_DIRECTORIES",
 }
 
 func setEnvironment(t *testing.T, env map[string]string) {
@@ -42,9 +43,10 @@ func TestLoad(t *testing.T) {
 			name: "an otherwise empty environment invents nothing",
 			env:  map[string]string{"DATABASE_URL": testDatabaseURL},
 			want: Config{
-				DatabaseURL: testDatabaseURL,
-				HTTPPort:    defaultHTTPPort,
-				CORSOrigins: []string{},
+				DatabaseURL:      testDatabaseURL,
+				HTTPPort:         defaultHTTPPort,
+				CORSOrigins:      []string{},
+				MediaDirectories: []string{"/"},
 			},
 		},
 		{
@@ -60,6 +62,7 @@ func TestLoad(t *testing.T) {
 				"TEMPORAL_NAMESPACE":          "gojellyfin_production",
 				"OTEL_EXPORTER_OTLP_ENDPOINT": "http://collector:4318",
 				"TMDB_API_KEY":                "not-a-real-key",
+				"MEDIA_DIRECTORIES":           "/media, /library ",
 			},
 			want: Config{
 				DatabaseURL:        testDatabaseURL,
@@ -70,6 +73,7 @@ func TestLoad(t *testing.T) {
 				Temporal:           Temporal{HostPort: "temporal:7233", Namespace: "gojellyfin_production"},
 				Tracing:            Tracing{OTLPEndpoint: "http://collector:4318"},
 				TMDB:               TMDB{APIKey: "not-a-real-key"},
+				MediaDirectories:   []string{"/media", "/library"},
 			},
 		},
 		{

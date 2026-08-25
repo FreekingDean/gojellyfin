@@ -22,7 +22,7 @@ func TestProbeFile(t *testing.T) {
 		build := exec.Command("ffmpeg", "-nostdin", "-loglevel", "error",
 			"-f", "lavfi", "-i", "testsrc=size=320x240:rate=30:duration=1",
 			"-f", "lavfi", "-i", "sine=frequency=440:duration=1",
-			"-c:v", "libx264", "-c:a", "aac", "-shortest", path,
+			"-c:v", "libx264", "-c:a", "aac", "-disposition:a:0", "default", "-shortest", path,
 		)
 		if output, err := build.CombinedOutput(); err != nil {
 			t.Skipf("this ffmpeg cannot build the fixture: %v: %s", err, output)
@@ -54,14 +54,24 @@ func TestProbeFile(t *testing.T) {
 			t.Fatalf("streams = %d, want a picture and a sound", len(probe.Streams))
 		}
 		for _, stream := range probe.Streams {
-			if !stream.Disposition.Default {
-				t.Errorf("%s stream is not default", stream.CodecType)
+			if stream.Disposition.Forced {
+				t.Errorf("%s stream reads as forced", stream.CodecType)
 			}
-			if stream.CodecType == "audio" && stream.SampleRate != 44100 {
-				t.Errorf("sample rate = %d, want 44100", stream.SampleRate)
-			}
-			if stream.CodecType == "video" && (stream.Width != 320 || stream.Height != 240) {
-				t.Errorf("size = %dx%d, want 320x240", stream.Width, stream.Height)
+			switch stream.CodecType {
+			case "audio":
+				if !stream.Disposition.Default {
+					t.Error("the audio stream ffmpeg marked default does not read as default")
+				}
+				if stream.SampleRate != 44100 {
+					t.Errorf("sample rate = %d, want 44100", stream.SampleRate)
+				}
+			case "video":
+				if stream.Disposition.Default {
+					t.Error("the video stream reads as default when ffmpeg marked only the audio")
+				}
+				if stream.Width != 320 || stream.Height != 240 {
+					t.Errorf("size = %dx%d, want 320x240", stream.Width, stream.Height)
+				}
 			}
 		}
 	})
