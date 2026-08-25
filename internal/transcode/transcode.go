@@ -26,11 +26,6 @@ type format struct {
 	video       bool
 }
 
-// Only containers ffmpeg can write to a non-seekable pipe. Plain mp4 rewrites
-// the moov atom on close and so is not one of them; fragmented mp4 is, and it
-// is the only container carrying H.264 next to AAC that a browser will play,
-// which is what a video remux has to land in. ogg is missing for a second
-// reason — it wants libvorbis, which not every ffmpeg build carries.
 var formats = map[string]format{
 	"mp3":  {muxer: "mp3", codec: "libmp3lame", audio: "mp3", contentType: "audio/mpeg"},
 	"aac":  {muxer: "adts", codec: "aac", audio: "aac", contentType: "audio/aac"},
@@ -46,8 +41,6 @@ var formats = map[string]format{
 	},
 }
 
-// The container a remux lands in when the video is kept as it is and only the
-// audio is re-encoded.
 const VideoContainer = "mp4"
 
 func CarriesVideo(container string) bool {
@@ -60,8 +53,6 @@ func Supported(container string) bool {
 	return ok
 }
 
-// The client lists what it accepts in preference order, so the first container
-// this server can also write is the one both ends agree on.
 func Choose(containers []string) string {
 	for _, container := range containers {
 		if Supported(container) {
@@ -105,8 +96,6 @@ func (s Spec) Args() []string {
 
 	args = append(args, "-i", s.Path)
 	if s.Video {
-		// The video is copied rather than encoded: the browser can already
-		// decode it, and only the audio track is unplayable.
 		args = append(args, "-map", "0:v:0", "-map", "0:a:0", "-c:v", "copy")
 	} else {
 		args = append(args, "-vn", "-map", "0:a:0")

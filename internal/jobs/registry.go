@@ -1,8 +1,5 @@
 package jobs
 
-// A Registry is what a package registers its jobs with. Both deployments hold
-// one: the worker runs what is in it, and the server lists and starts what is
-// in it, so a job is declared once and both ends of it agree.
 type Registry struct {
 	jobs []Job
 }
