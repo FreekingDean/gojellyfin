@@ -52,6 +52,7 @@ func (s *Server) GetSystemInfo(ctx context.Context, request api.GetSystemInfoReq
 		LocalAddress:             apiutil.Ptr(s.system.LocalAddress()),
 		ServerName:               configuration.ServerName,
 		ProductName:              apiutil.Ptr(s.system.ProductName()),
+		PackageName:              apiutil.Ptr(s.system.PackageName()),
 		Version:                  apiutil.Ptr(s.system.Version()),
 		CastReceiverApplications: configuration.CastReceiverApplications,
 		StartupWizardCompleted:   configuration.IsStartupWizardCompleted,
