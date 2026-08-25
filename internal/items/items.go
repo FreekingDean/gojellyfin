@@ -171,7 +171,18 @@ func (s *Service) ItemsNeedingMetadata(ctx context.Context, kinds []Kind, force 
 		))
 	}
 
-	ids, err := query.Order(itemmodal.ByID()).IDs(ctx)
+	ranks := make([]string, 0, len(kinds))
+	for rank, kind := range kinds {
+		ranks = append(ranks, fmt.Sprintf("WHEN '%s' THEN %d", kind, rank))
+	}
+
+	ids, err := query.
+		Order(func(selector *sql.Selector) {
+			selector.OrderExpr(sql.Expr(fmt.Sprintf(
+				"CASE %s %s END", selector.C(itemmodal.FieldKind), strings.Join(ranks, " "),
+			)))
+		}, itemmodal.ByID()).
+		IDs(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query the items needing metadata: %w", err)
 	}

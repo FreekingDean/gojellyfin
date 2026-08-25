@@ -3,7 +3,6 @@ package metadata
 import (
 	"context"
 	"log"
-	"slices"
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
@@ -38,9 +37,6 @@ func (s *Service) IdentifyItems(ctx context.Context, options jobs.Options) error
 	if err != nil {
 		return err
 	}
-	slices.SortStableFunc(pending, func(one, two *items.Item) int {
-		return slices.Index(identifiable, one.Kind) - slices.Index(identifiable, two.Kind)
-	})
 
 	for _, id := range pending {
 		if err := ctx.Err(); err != nil {
