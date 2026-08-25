@@ -5,6 +5,7 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
+	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
@@ -22,6 +23,7 @@ var workerModules = fx.Options(
 	fx.Provide(
 		items.New,
 		libraries.New,
+		ffmpeg.Module,
 		filesystem.New,
 	),
 	scanner.Module,

@@ -3,15 +3,14 @@
 // than being copied into each package. No domain knowledge belongs in here.
 package apiutil
 
-import (
-	"github.com/google/uuid"
-	openapi_types "github.com/oapi-codegen/runtime/types"
-)
-
+// Ptr returns a pointer to the given value. This is useful for creating pointers
+// to literals.
 func Ptr[T any](v T) *T {
 	return &v
 }
 
+// Deref returns the value pointed to by the given pointer. If the pointer is nil,
+// it returns the zero value of the type.
 func Deref[T any](v *T) T {
 	if v == nil {
 		var zero T
@@ -21,12 +20,14 @@ func Deref[T any](v *T) T {
 	return *v
 }
 
-func OrElse[T any](v *T, fallback T) *T {
+// OrElse returns the value pointed to by the given pointer. If the pointer is nil,
+// it returns the fallback value.
+func OrElse[T any](v *T, fallback T) T {
 	if v == nil {
-		return &fallback
+		return fallback
 	}
 
-	return v
+	return *v
 }
 
 // oapi-codegen splits a JSON body across two fields depending on content type.
@@ -36,9 +37,4 @@ func Body[T any](jsonBody, wildcardBody *T) *T {
 	}
 
 	return wildcardBody
-}
-
-func UID(s string) *openapi_types.UUID {
-	u := uuid.MustParse(s)
-	return &u
 }

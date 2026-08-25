@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
-	"strconv"
 	"time"
 )
 
@@ -25,9 +24,9 @@ type Probe struct {
 
 type Format struct {
 	FormatName string            `json:"format_name"`
-	Duration   string            `json:"duration"`
-	Size       string            `json:"size"`
-	BitRate    string            `json:"bit_rate"`
+	Duration   int               `json:"duration,string"`
+	Size       int               `json:"size,string"`
+	BitRate    int               `json:"bit_rate,string"`
 	Tags       map[string]string `json:"tags"`
 }
 
@@ -39,74 +38,41 @@ type Stream struct {
 	Width          int               `json:"width"`
 	Height         int               `json:"height"`
 	Channels       int               `json:"channels"`
-	SampleRate     string            `json:"sample_rate"`
-	BitRate        string            `json:"bit_rate"`
-	AvgFrameRate   string            `json:"avg_frame_rate"`
+	SampleRate     int               `json:"sample_rate,string"`
+	BitRate        int               `json:"bit_rate,string"`
+	AvgFrameRate   int               `json:"avg_frame_rate,string"`
 	PixelFormat    string            `json:"pix_fmt"`
 	ColorTransfer  string            `json:"color_transfer"`
 	ColorPrimaries string            `json:"color_primaries"`
 	FieldOrder     string            `json:"field_order"`
 	AspectRatio    string            `json:"sample_aspect_ratio"`
 	Level          int               `json:"level"`
-	Disposition    map[string]int    `json:"disposition"`
+	Disposition    Disposition       `json:"disposition"`
 	Tags           map[string]string `json:"tags"`
 }
 
-func (f Format) Seconds() float64 {
-	seconds, _ := strconv.ParseFloat(f.Duration, 64)
-
-	return seconds
+type Disposition struct {
+	Default bool `json:"default"`
+	Forced  bool `json:"forced"`
 }
 
-func (f Format) Bytes() int64 {
-	size, _ := strconv.ParseInt(f.Size, 10, 64)
+func (d *Disposition) UnmarshalJSON(data []byte) error {
+	var raw map[string]int
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
 
-	return size
+	d.Default = raw["default"] == 1
+	d.Forced = raw["forced"] == 1
+
+	return nil
 }
 
-func (f Format) Bitrate() int32 {
-	bitrate, _ := strconv.Atoi(f.BitRate)
-
-	return int32(bitrate)
-}
-
-func (s Stream) Bitrate() int32 {
-	bitrate, _ := strconv.Atoi(s.BitRate)
-
-	return int32(bitrate)
-}
-
-func (s Stream) SampleRateHz() int32 {
-	rate, _ := strconv.Atoi(s.SampleRate)
-
-	return int32(rate)
-}
-
-func (s Stream) Language() string {
-	return s.Tags["language"]
-}
-
-func (s Stream) Title() string {
-	return s.Tags["title"]
-}
-
-func (s Stream) IsDefault() bool {
-	return s.Disposition["default"] == 1
-}
-
-func (s Stream) IsForced() bool {
-	return s.Disposition["forced"] == 1
-}
-
-func ProbeFile(ctx context.Context, path string) (*Probe, error) {
-	return probeFile(ctx, path, probeTimeout)
-}
-
-func probeFile(ctx context.Context, path string, within time.Duration) (*Probe, error) {
-	ctx, cancel := context.WithTimeout(ctx, within)
+func (ffmpeg *FFMpeg) ProbeFile(ctx context.Context, path string) (*Probe, error) {
+	ctx, cancel := context.WithTimeout(ctx, probeTimeout)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "ffprobe",
+	cmd := exec.CommandContext(ctx, ffmpeg.probe,
 		"-v", "quiet",
 		"-print_format", "json",
 		"-show_format",
@@ -130,10 +96,4 @@ func probeFile(ctx context.Context, path string, within time.Duration) (*Probe, 
 	}
 
 	return probe, nil
-}
-
-func Available() bool {
-	_, err := exec.LookPath("ffprobe")
-
-	return err == nil
 }
