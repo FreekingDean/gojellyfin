@@ -162,8 +162,12 @@ func (s *Service) Ancestors(ctx context.Context, id uuid.UUID) (*Ancestry, error
 }
 
 // What still needs a metadata lookup. Without force that is an item nothing has
-// matched yet; with it, everything in scope is fetched again. Ordered by id
-// rather than by a column the run writes, so the list does not reshuffle
+// matched yet; with it, everything in scope is fetched again.
+//
+// The batch comes back in the order the kinds are listed in, so a caller that
+// needs parents before children says so by listing them that way. The enum's
+// own order is alphabetical and would hand back episodes first. Ties break on
+// id rather than on a column the run writes, so the list does not reshuffle
 // underneath the caller walking it.
 func (s *Service) ItemsNeedingMetadata(ctx context.Context, kinds []Kind, force bool, scope uuid.UUID) ([]uuid.UUID, error) {
 	query := s.query().Where(itemmodal.KindIn(kinds...), itemmodal.LockData(false))
@@ -183,7 +187,18 @@ func (s *Service) ItemsNeedingMetadata(ctx context.Context, kinds []Kind, force 
 		))
 	}
 
-	ids, err := query.Order(itemmodal.ByID()).IDs(ctx)
+	ranks := make([]string, 0, len(kinds))
+	for rank, kind := range kinds {
+		ranks = append(ranks, fmt.Sprintf("WHEN '%s' THEN %d", kind, rank))
+	}
+
+	ids, err := query.
+		Order(func(selector *sql.Selector) {
+			selector.OrderExpr(sql.Expr(fmt.Sprintf(
+				"CASE %s %s END", selector.C(itemmodal.FieldKind), strings.Join(ranks, " "),
+			)))
+		}, itemmodal.ByID()).
+		IDs(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query the items needing metadata: %w", err)
 	}
