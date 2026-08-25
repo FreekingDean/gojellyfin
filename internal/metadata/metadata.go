@@ -39,7 +39,9 @@ func (s *Service) IdentifyItems(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	parentsFirst(pending)
+	slices.SortStableFunc(pending, func(one, two *items.Item) int {
+		return slices.Index(identifiable, one.Kind) - slices.Index(identifiable, two.Kind)
+	})
 
 	for _, pendingItem := range pending {
 		if err := ctx.Err(); err != nil {
@@ -123,10 +125,4 @@ func (s *Service) seriesIDs(ctx context.Context, pendingItem *items.Item) (map[s
 	}
 
 	return nil, nil
-}
-
-func parentsFirst(pending []*items.Item) {
-	slices.SortStableFunc(pending, func(one, two *items.Item) int {
-		return slices.Index(identifiable, one.Kind) - slices.Index(identifiable, two.Kind)
-	})
 }
