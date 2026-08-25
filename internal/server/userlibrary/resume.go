@@ -13,7 +13,7 @@ func (s *Server) GetResumeItems(ctx context.Context, request api.GetResumeItemsR
 	// Everything scanned so far is video; asking for Book or Audio can only
 	// ever be empty.
 	if !wantsVideo(request.Params.MediaTypes) {
-		return api.GetResumeItems200JSONResponse(emptyResult()), nil
+		return api.GetResumeItems200JSONResponse(dto.EmptyItems()), nil
 	}
 
 	records, total, err := s.items.ResumeItems(ctx,
@@ -51,12 +51,4 @@ func wantsVideo(mediaTypes *[]api.MediaType) bool {
 	}
 
 	return false
-}
-
-func emptyResult() api.BaseItemDtoQueryResult {
-	return api.BaseItemDtoQueryResult{
-		Items:            &[]api.BaseItemDto{},
-		StartIndex:       apiutil.Ptr(int32(0)),
-		TotalRecordCount: apiutil.Ptr(int32(0)),
-	}
 }

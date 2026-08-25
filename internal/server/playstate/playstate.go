@@ -4,25 +4,16 @@ import (
 	"context"
 	"time"
 
-	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 	"github.com/google/uuid"
 )
 
 // Below this fraction of the runtime a stop is treated as an abandoned resume
 // point; above it the item counts as watched.
 const playedThreshold = 0.9
-
-func (s *Server) userItemDatum(ctx context.Context, itemID uuid.UUID) (*items.Datum, error) {
-	userID := auth.UserID(ctx)
-	if userID == uuid.Nil {
-		return nil, auth.ErrUnauthorized
-	}
-
-	return s.items.UserItemDatum(ctx, userID, itemID)
-}
 
 type Server struct {
 	items *items.Service
@@ -96,7 +87,7 @@ func (s *Server) PingPlaybackSession(ctx context.Context, request api.PingPlayba
 }
 
 func (s *Server) recordProgress(ctx context.Context, itemID uuid.UUID, position int64) error {
-	datum, err := s.userItemDatum(ctx, itemID)
+	datum, err := dto.CurrentUserDatum(ctx, s.items, itemID)
 	if err != nil {
 		return err
 	}
@@ -108,7 +99,7 @@ func (s *Server) recordProgress(ctx context.Context, itemID uuid.UUID, position 
 }
 
 func (s *Server) recordStop(ctx context.Context, itemID uuid.UUID, position int64) error {
-	datum, err := s.userItemDatum(ctx, itemID)
+	datum, err := dto.CurrentUserDatum(ctx, s.items, itemID)
 	if err != nil {
 		return err
 	}
