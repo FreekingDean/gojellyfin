@@ -156,26 +156,15 @@ func seed() error {
 		}
 	}
 
-	if err := seedShows(ctx, client); err != nil {
-		return err
-	}
-
-	fmt.Println(record.ID)
-
-	return nil
-}
-
-func seedShows(ctx context.Context, client *store.Client) error {
-	record, err := libraries.New(client).CreateLibrary(ctx, shows, libraries.CollectionTypeTvshows, []string{"/fixtures/shows"})
+	shown, err := libraries.New(client).CreateLibrary(ctx, shows, libraries.CollectionTypeTvshows, []string{"/fixtures/shows"})
 	if err != nil {
 		return err
 	}
 
-	catalogue := items.New(client)
 	number := int32(1)
 
 	show, err := catalogue.SaveScanned(ctx, items.Scanned{
-		LibraryID:    record.ID,
+		LibraryID:    shown.ID,
 		Kind:         itemmodal.KindSeries,
 		Key:          "series:" + slugify(series),
 		Name:         series,
@@ -187,7 +176,7 @@ func seedShows(ctx context.Context, client *store.Client) error {
 	}
 
 	first, err := catalogue.SaveScanned(ctx, items.Scanned{
-		LibraryID:    record.ID,
+		LibraryID:    shown.ID,
 		ParentID:     &show.ID,
 		Kind:         itemmodal.KindSeason,
 		Key:          "season:" + slugify(series) + ":1",
@@ -203,7 +192,7 @@ func seedShows(ctx context.Context, client *store.Client) error {
 	for index, name := range episodes {
 		position := int32(index + 1)
 		item, err := catalogue.SaveScanned(ctx, items.Scanned{
-			LibraryID:         record.ID,
+			LibraryID:         shown.ID,
 			ParentID:          &first.ID,
 			Kind:              itemmodal.KindEpisode,
 			Key:               fmt.Sprintf("episode:%s:1:%d", slugify(series), position),
@@ -217,10 +206,12 @@ func seedShows(ctx context.Context, client *store.Client) error {
 			return err
 		}
 
-		if err := file(ctx, catalogue, record.ID, item.ID, name); err != nil {
+		if err := file(ctx, catalogue, shown.ID, item.ID, name); err != nil {
 			return err
 		}
 	}
+
+	fmt.Println(record.ID)
 
 	return nil
 }

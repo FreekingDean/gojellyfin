@@ -11,20 +11,12 @@ import (
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
-var showKinds = map[items.Kind]bool{
-	itemmodal.KindSeason:  true,
-	itemmodal.KindEpisode: true,
-}
-
 func applyShowFields(ctx context.Context, store *items.Service, records []*items.Item, converted []api.BaseItemDto) error {
 	parentIDs := make([]uuid.UUID, 0, len(records))
 	for _, record := range records {
-		if record.ParentID != nil && showKinds[record.Kind] {
+		if record.ParentID != nil {
 			parentIDs = append(parentIDs, *record.ParentID)
 		}
-	}
-	if len(parentIDs) == 0 {
-		return nil
 	}
 
 	parents, err := store.ItemsByIDs(ctx, parentIDs)
@@ -47,7 +39,7 @@ func applyShowFields(ctx context.Context, store *items.Service, records []*items
 	seriesByIndex := map[int]*items.Item{}
 	seriesIDs := make([]uuid.UUID, 0, len(records))
 	for index, record := range records {
-		if record.ParentID == nil || !showKinds[record.Kind] {
+		if record.ParentID == nil {
 			continue
 		}
 
