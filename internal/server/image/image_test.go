@@ -71,7 +71,7 @@ func newFixture(t *testing.T) *fixture {
 	})
 
 	return &fixture{
-		server:    New(items.New(client), filesystem.New()),
+		server:    New(items.New(client), filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}})),
 		client:    client,
 		itemID:    item.ID,
 		directory: t.TempDir(),

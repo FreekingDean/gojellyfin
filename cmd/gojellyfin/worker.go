@@ -20,10 +20,10 @@ var workerModules = fx.Options(
 	env.Module,
 	observability.Module,
 	store.Module,
+	ffmpeg.Module,
 	fx.Provide(
 		items.New,
 		libraries.New,
-		ffmpeg.Module,
 		filesystem.New,
 	),
 	scanner.Module,

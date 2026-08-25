@@ -119,7 +119,7 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
-	server := New(items.New(client), libraries.New(client), users.New(client), filesystem.New(), jobs.NewService(disconnected(t), jobs.NewRegistry()))
+	server := New(items.New(client), libraries.New(client), users.New(client), filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}), jobs.NewService(disconnected(t), jobs.NewRegistry()))
 
 	return &fixture{server: server, client: client, libraryID: library.ID, prefix: prefix}
 }

@@ -270,7 +270,7 @@ func (zeroes) Read(p []byte) (int, error) {
 }
 
 func (s *Server) GetBitrateTestBytes(ctx context.Context, request api.GetBitrateTestBytesRequestObject) (api.GetBitrateTestBytesResponseObject, error) {
-	size := int64(apiutil.Deref(apiutil.OrElse(request.Params.Size, int32(defaultBitrateTestSize))))
+	size := int64(apiutil.OrElse(request.Params.Size, int32(defaultBitrateTestSize)))
 	size = min(max(size, 1), maxBitrateTestSize)
 
 	return api.GetBitrateTestBytes200ApplicationoctetStreamResponse{

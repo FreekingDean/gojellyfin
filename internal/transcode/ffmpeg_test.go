@@ -43,7 +43,12 @@ func probe(t *testing.T, body []byte, name string) *ffmpeg.Probe {
 		t.Fatalf("failed to write the output: %v", err)
 	}
 
-	probed, err := ffmpeg.ProbeFile(context.Background(), path)
+	prober, err := ffmpeg.New()
+	if err != nil {
+		t.Fatalf("ffprobe is not on PATH: %v", err)
+	}
+
+	probed, err := prober.ProbeFile(context.Background(), path)
 	if err != nil {
 		t.Fatalf("the output is not decodable: %v", err)
 	}
@@ -83,7 +88,7 @@ func TestStart(t *testing.T) {
 				if got := probed.Streams[0].CodecName; got != codec {
 					t.Errorf("the output is %q, want %q", got, codec)
 				}
-				if seconds := probed.Format.Seconds(); math.Abs(seconds-sourceSeconds) > 1 {
+				if seconds := probed.Format.Duration; math.Abs(seconds-sourceSeconds) > 1 {
 					t.Errorf("the output is %.2fs long, want about %ds", seconds, sourceSeconds)
 				}
 			})
@@ -108,7 +113,7 @@ func TestStart(t *testing.T) {
 			t.Fatalf("failed to read the transcode: %v", err)
 		}
 
-		if seconds := probe(t, body, "out.mp3").Format.Seconds(); seconds > sourceSeconds-1 {
+		if seconds := probe(t, body, "out.mp3").Format.Duration; seconds > sourceSeconds-1 {
 			t.Errorf("seeking 2s into a %ds source produced %.2fs", sourceSeconds, seconds)
 		}
 	})

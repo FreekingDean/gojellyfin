@@ -59,7 +59,7 @@ func (s *Server) GetLatestMedia(ctx context.Context, request api.GetLatestMediaR
 		Kinds:      []items.Kind{itemmodal.KindMovie, itemmodal.KindSeries},
 		SortBy:     []string{"DateCreated"},
 		Descending: true,
-		Limit:      int(apiutil.Deref(apiutil.OrElse(request.Params.Limit, int32(20)))),
+		Limit:      int(apiutil.OrElse(request.Params.Limit, int32(20))),
 	}
 	if request.Params.ParentId != nil {
 		query.LibraryID = request.Params.ParentId

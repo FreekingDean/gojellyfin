@@ -91,7 +91,12 @@ func decodable(t *testing.T, body []byte, name string) *ffmpeg.Probe {
 		t.Fatalf("failed to write the response: %v", err)
 	}
 
-	probed, err := ffmpeg.ProbeFile(context.Background(), path)
+	prober, err := ffmpeg.New()
+	if err != nil {
+		t.Fatalf("ffprobe is not on PATH: %v", err)
+	}
+
+	probed, err := prober.ProbeFile(context.Background(), path)
 	if err != nil {
 		t.Fatalf("the response is not decodable: %v", err)
 	}
@@ -124,7 +129,7 @@ func TestHandler_serveTranscode(t *testing.T) {
 		if len(probed.Streams) == 0 || probed.Streams[0].CodecName != "mp3" {
 			t.Fatalf("the response is not mp3: %+v", probed.Streams)
 		}
-		if seconds := probed.Format.Seconds(); math.Abs(seconds-toneSeconds) > 1 {
+		if seconds := probed.Format.Duration; math.Abs(seconds-toneSeconds) > 1 {
 			t.Errorf("the response is %.2fs long, want about %ds", seconds, toneSeconds)
 		}
 	})
@@ -163,7 +168,7 @@ func TestHandler_serveTranscode(t *testing.T) {
 		if recorder.Code != http.StatusOK {
 			t.Fatalf("status = %d, want %d: %s", recorder.Code, http.StatusOK, recorder.Body)
 		}
-		if seconds := decodable(t, recorder.Body.Bytes(), "out.mp3").Format.Seconds(); seconds > toneSeconds-1 {
+		if seconds := decodable(t, recorder.Body.Bytes(), "out.mp3").Format.Duration; seconds > toneSeconds-1 {
 			t.Errorf("seeking 2s into a %ds source produced %.2fs", toneSeconds, seconds)
 		}
 	})

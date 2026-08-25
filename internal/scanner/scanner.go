@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
@@ -22,10 +23,11 @@ type Scanner struct {
 	items      *items.Service
 	libraries  *libraries.Service
 	filesystem *filesystem.Service
+	ffmpeg     *ffmpeg.FFMpeg
 }
 
-func New(items *items.Service, libraries *libraries.Service, filesystem *filesystem.Service) *Scanner {
-	return &Scanner{items: items, libraries: libraries, filesystem: filesystem}
+func New(items *items.Service, libraries *libraries.Service, filesystem *filesystem.Service, ffmpeg *ffmpeg.FFMpeg) *Scanner {
+	return &Scanner{items: items, libraries: libraries, filesystem: filesystem, ffmpeg: ffmpeg}
 }
 
 // What one pass over a library found: the titles that still exist and the files

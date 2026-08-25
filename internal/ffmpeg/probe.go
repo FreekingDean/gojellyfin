@@ -24,31 +24,29 @@ type Probe struct {
 
 type Format struct {
 	FormatName string            `json:"format_name"`
-	Duration   int               `json:"duration,string"`
-	Size       int               `json:"size,string"`
-	BitRate    int               `json:"bit_rate,string"`
+	Duration   float64           `json:"duration,string"`
+	Size       int64             `json:"size,string"`
+	BitRate    int32             `json:"bit_rate,string"`
 	Tags       map[string]string `json:"tags"`
 }
 
 type Stream struct {
-	Index          int               `json:"index"`
-	CodecName      string            `json:"codec_name"`
-	CodecType      string            `json:"codec_type"`
-	Profile        string            `json:"profile"`
-	Width          int               `json:"width"`
-	Height         int               `json:"height"`
-	Channels       int               `json:"channels"`
-	SampleRate     int               `json:"sample_rate,string"`
-	BitRate        int               `json:"bit_rate,string"`
-	AvgFrameRate   int               `json:"avg_frame_rate,string"`
-	PixelFormat    string            `json:"pix_fmt"`
-	ColorTransfer  string            `json:"color_transfer"`
-	ColorPrimaries string            `json:"color_primaries"`
-	FieldOrder     string            `json:"field_order"`
-	AspectRatio    string            `json:"sample_aspect_ratio"`
-	Level          int               `json:"level"`
-	Disposition    Disposition       `json:"disposition"`
-	Tags           map[string]string `json:"tags"`
+	Index         int32             `json:"index"`
+	CodecName     string            `json:"codec_name"`
+	CodecType     string            `json:"codec_type"`
+	Profile       string            `json:"profile"`
+	Width         int32             `json:"width"`
+	Height        int32             `json:"height"`
+	Channels      int32             `json:"channels"`
+	SampleRate    int32             `json:"sample_rate,string"`
+	BitRate       int32             `json:"bit_rate,string"`
+	PixelFormat   string            `json:"pix_fmt"`
+	ColorTransfer string            `json:"color_transfer"`
+	FieldOrder    string            `json:"field_order"`
+	AspectRatio   string            `json:"sample_aspect_ratio"`
+	Level         float64           `json:"level"`
+	Disposition   Disposition       `json:"disposition"`
+	Tags          map[string]string `json:"tags"`
 }
 
 type Disposition struct {
