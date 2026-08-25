@@ -117,8 +117,6 @@ func (s *Service) Stat(ctx context.Context, name string) (File, error) {
 	}, nil
 }
 
-// Every path reaching the host arrives from a client, so it is cleaned and
-// held to an absolute path here rather than in each caller.
 func resolve(name string) (string, error) {
 	if name == "" {
 		return "", ErrNotFound
