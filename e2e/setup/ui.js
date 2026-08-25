@@ -75,25 +75,38 @@ async function waitForRoute(page, fragment, timeout = 30000) {
   await waitFor(
     page,
     (want) => window.location.hash.includes(want),
-    fragment,
+    [fragment],
     timeout,
     () => `the client never routed to ${fragment}`,
   );
 }
 
-// It answers with the text that satisfied it, because the client swaps views
-// by hiding one and showing the next: reading the page again afterwards can
-// land in the gap where neither is on screen.
-async function waitForText(page, wanted, timeout = 30000) {
-  await waitFor(
+// It answers with the text that satisfied it rather than reading the page a
+// second time, because the client swaps views by hiding one and showing the
+// next and leaves the outgoing one in the DOM: a second read can land in the
+// gap where neither is on screen.
+//
+// `within` scopes the wait to a view that is on screen, so text the outgoing
+// view still carries cannot satisfy a wait meant for the incoming one. The
+// pages carry stable ids (#loginPage, #indexPage, #moviesPage); without it the
+// whole body is read, which is what anything outside a view needs.
+async function waitForText(page, wanted, within = '', timeout = 30000) {
+  return waitFor(
     page,
-    (want) => document.body.innerText.includes(want),
-    wanted,
-    timeout,
-    () => `the page never showed ${JSON.stringify(wanted)}`,
-  );
+    (want, selector) => {
+      const shown = selector
+        ? Array.from(document.querySelectorAll(selector))
+            .filter((view) => view.offsetParent !== null)
+            .map((view) => view.innerText)
+            .join('\n')
+        : document.body.innerText;
 
-  return text(page);
+      return shown.includes(want) ? shown : null;
+    },
+    [wanted, within],
+    timeout,
+    () => `${within || 'the page'} never showed ${JSON.stringify(wanted)}`,
+  );
 }
 
 async function textOf(page, selector, timeout = 30000) {
@@ -104,7 +117,7 @@ async function textOf(page, selector, timeout = 30000) {
 
       return Boolean(found && found.innerText.trim());
     },
-    selector,
+    [selector],
     timeout,
     () => `nothing visible matched ${selector}`,
   );
@@ -118,9 +131,11 @@ async function textOf(page, selector, timeout = 30000) {
 
 // A bare puppeteer timeout says only that thirty seconds passed, so what the
 // page was showing instead is read back and reported.
-async function waitFor(page, predicate, argument, timeout, describe) {
+async function waitFor(page, predicate, args, timeout, describe) {
   try {
-    await page.waitForFunction(predicate, { timeout }, argument);
+    const satisfied = await page.waitForFunction(predicate, { timeout }, ...args);
+
+    return await satisfied.jsonValue();
   } catch (error) {
     if (error.name !== 'TimeoutError') {
       throw error;
