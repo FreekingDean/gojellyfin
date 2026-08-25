@@ -2,6 +2,8 @@ package metadata
 
 import (
 	"context"
+	"errors"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -18,6 +20,10 @@ import (
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
 )
+
+const unreachable = "A Film The Provider Cannot Reach"
+
+var errUnreachable = errors.New("the provider is unreachable")
 
 type stubProvider struct {
 	enabled bool
@@ -43,6 +49,9 @@ func (s *stubProvider) requests() []string {
 
 func (s *stubProvider) Movie(_ context.Context, name string, _ *int32) (items.Metadata, bool, error) {
 	s.record("movie:" + name)
+	if name == unreachable {
+		return items.Metadata{}, false, errUnreachable
+	}
 	if name != "The Matrix" {
 		return items.Metadata{}, false, nil
 	}
@@ -188,10 +197,25 @@ func (f *fixture) reload(t *testing.T, id uuid.UUID) *items.Item {
 	return reloaded
 }
 
+func (f *fixture) identified(t *testing.T, added *items.Item, overview string) *items.Item {
+	t.Helper()
+
+	return f.lock(t, added, items.Metadata{
+		Overview:    text(overview),
+		ProviderIds: &map[string]string{"Stub": "603"},
+	})
+}
+
 func (f *fixture) identify(t *testing.T) {
 	t.Helper()
 
-	if err := jobs.RunStep(t, f.service.IdentifyItems); err != nil {
+	f.run(t, jobs.Options{})
+}
+
+func (f *fixture) run(t *testing.T, options jobs.Options) {
+	t.Helper()
+
+	if err := jobs.RunStep(t, f.service.IdentifyItems, options); err != nil {
 		t.Fatalf("identification failed: %v", err)
 	}
 }
@@ -374,6 +398,204 @@ func TestService_IdentifyItems(t *testing.T) {
 		}
 		if asked := fixed.provider.requests(); len(asked) != 1 {
 			t.Errorf("requests = %v, want the miss to have been asked once", asked)
+		}
+	})
+}
+
+func TestService_IdentifyItems_Force(t *testing.T) {
+	t.Run("looks an identified item up again", func(t *testing.T) {
+		fixed := newFixture(t)
+		movie := fixed.identified(t, fixed.add(t, items.Scanned{
+			Kind:           itemmodal.KindMovie,
+			Name:           "The Matrix",
+			ProductionYear: index(1999),
+		}), "Whatever the last provider said.")
+
+		fixed.run(t, jobs.Options{Force: true})
+
+		refreshed := fixed.reload(t, movie.ID)
+		if !strings.HasPrefix(refreshed.Overview, "Set in the 22nd century") {
+			t.Errorf("Overview = %q, want the refetched one", refreshed.Overview)
+		}
+		if refreshed.OfficialRating != "R" {
+			t.Errorf("OfficialRating = %q, want R", refreshed.OfficialRating)
+		}
+	})
+
+	t.Run("leaves an identified item alone without it", func(t *testing.T) {
+		fixed := newFixture(t)
+		movie := fixed.identified(t, fixed.add(t, items.Scanned{
+			Kind:           itemmodal.KindMovie,
+			Name:           "The Matrix",
+			ProductionYear: index(1999),
+		}), "Whatever the last provider said.")
+
+		fixed.identify(t)
+
+		if left := fixed.reload(t, movie.ID); left.Overview != "Whatever the last provider said." {
+			t.Errorf("Overview = %q, want an identified item left alone", left.Overview)
+		}
+		if requests := fixed.provider.requests(); len(requests) != 0 {
+			t.Errorf("requests = %v, want nothing fetched", requests)
+		}
+	})
+
+	t.Run("keeps a locked field", func(t *testing.T) {
+		fixed := newFixture(t)
+		movie := fixed.lock(t, fixed.add(t, items.Scanned{
+			Kind:           itemmodal.KindMovie,
+			Name:           "The Matrix",
+			ProductionYear: index(1999),
+		}), items.Metadata{
+			Overview:     text("A summary somebody wrote by hand."),
+			LockedFields: &[]string{"Overview"},
+			ProviderIds:  &map[string]string{"Stub": "603"},
+		})
+
+		fixed.run(t, jobs.Options{Force: true})
+
+		refreshed := fixed.reload(t, movie.ID)
+		if refreshed.Overview != "A summary somebody wrote by hand." {
+			t.Errorf("Overview = %q, want the lock to survive a forced refresh", refreshed.Overview)
+		}
+		if refreshed.OfficialRating != "R" {
+			t.Errorf("OfficialRating = %q, want an unlocked field refreshed", refreshed.OfficialRating)
+		}
+	})
+
+	t.Run("carries on past an item the provider cannot reach", func(t *testing.T) {
+		fixed := newFixture(t)
+		unreachableItem := fixed.identified(t, fixed.add(t, items.Scanned{
+			Kind: itemmodal.KindMovie,
+			Name: unreachable,
+		}), "Whatever the last provider said.")
+		reachable := fixed.identified(t, fixed.add(t, items.Scanned{
+			Kind:           itemmodal.KindMovie,
+			Name:           "The Matrix",
+			Key:            "test:" + fixed.libraryID.String() + ":reachable",
+			ProductionYear: index(1999),
+		}), "Whatever the last provider said.")
+
+		fixed.run(t, jobs.Options{Force: true})
+
+		if failed := fixed.reload(t, unreachableItem.ID); failed.Overview != "Whatever the last provider said." {
+			t.Errorf("Overview = %q, want a failed fetch to write nothing", failed.Overview)
+		}
+		if done := fixed.reload(t, reachable.ID); !strings.HasPrefix(done.Overview, "Set in the 22nd century") {
+			t.Error("the run stopped at the unreachable item, want it to carry on")
+		}
+	})
+
+	t.Run("refreshes past the old two hundred item cap", func(t *testing.T) {
+		fixed := newFixture(t)
+
+		ids := make([]uuid.UUID, 0, 205)
+		for number := range 205 {
+			added := fixed.identified(t, fixed.add(t, items.Scanned{
+				Kind:           itemmodal.KindMovie,
+				Name:           "The Matrix",
+				Key:            "test:" + fixed.libraryID.String() + ":" + strconv.Itoa(number),
+				ProductionYear: index(1999),
+			}), "Whatever the last provider said.")
+			ids = append(ids, added.ID)
+		}
+
+		fixed.run(t, jobs.Options{Force: true})
+
+		for _, id := range ids {
+			if refreshed := fixed.reload(t, id); !strings.HasPrefix(refreshed.Overview, "Set in the 22nd century") {
+				t.Fatalf("Overview = %q, want one run to drain the whole library", refreshed.Overview)
+			}
+		}
+	})
+}
+
+func TestService_IdentifyItems_Scope(t *testing.T) {
+	t.Run("refreshes only the item it names", func(t *testing.T) {
+		fixed := newFixture(t)
+		asked := fixed.identified(t, fixed.add(t, items.Scanned{
+			Kind:           itemmodal.KindMovie,
+			Name:           "The Matrix",
+			ProductionYear: index(1999),
+		}), "Whatever the last provider said.")
+		elsewhere := fixed.identified(t, fixed.add(t, items.Scanned{
+			Kind:           itemmodal.KindMovie,
+			Name:           "The Matrix",
+			Key:            "test:" + fixed.libraryID.String() + ":elsewhere",
+			ProductionYear: index(1999),
+		}), "Whatever the last provider said.")
+
+		fixed.run(t, jobs.Options{Force: true, Scope: asked.ID})
+
+		if refreshed := fixed.reload(t, asked.ID); !strings.HasPrefix(refreshed.Overview, "Set in the 22nd century") {
+			t.Errorf("Overview = %q, want the named item refreshed", refreshed.Overview)
+		}
+		if left := fixed.reload(t, elsewhere.ID); left.Overview != "Whatever the last provider said." {
+			t.Errorf("Overview = %q, want an item outside the scope left alone", left.Overview)
+		}
+	})
+
+	t.Run("follows a series down to its episodes", func(t *testing.T) {
+		fixed := newFixture(t)
+		series := fixed.add(t, items.Scanned{
+			Kind:           itemmodal.KindSeries,
+			Name:           "Breaking Bad",
+			ProductionYear: index(2008),
+		})
+		season := fixed.add(t, items.Scanned{
+			Kind:        itemmodal.KindSeason,
+			ParentID:    &series.ID,
+			Name:        "Season 1",
+			IndexNumber: index(1),
+		})
+		episode := fixed.add(t, items.Scanned{
+			Kind:              itemmodal.KindEpisode,
+			ParentID:          &season.ID,
+			Name:              "s01e01",
+			IndexNumber:       index(1),
+			ParentIndexNumber: index(1),
+		})
+		elsewhere := fixed.identified(t, fixed.add(t, items.Scanned{
+			Kind:           itemmodal.KindMovie,
+			Name:           "The Matrix",
+			ProductionYear: index(1999),
+		}), "Whatever the last provider said.")
+
+		scope := jobs.Options{Force: true, Scope: series.ID}
+		fixed.run(t, scope)
+		fixed.run(t, scope)
+
+		if identified := fixed.reload(t, series.ID); identified.ProviderIds["Stub"] != "1396" {
+			t.Errorf("series provider id = %q, want the scoped series identified", identified.ProviderIds["Stub"])
+		}
+		if aired := fixed.reload(t, episode.ID); aired.Name != "Pilot" {
+			t.Errorf("episode Name = %q, want the episode under the scope identified", aired.Name)
+		}
+		if left := fixed.reload(t, elsewhere.ID); left.Overview != "Whatever the last provider said." {
+			t.Errorf("Overview = %q, want an item outside the scope left alone", left.Overview)
+		}
+	})
+
+	t.Run("refreshes everything in a library it names", func(t *testing.T) {
+		fixed := newFixture(t)
+		first := fixed.identified(t, fixed.add(t, items.Scanned{
+			Kind:           itemmodal.KindMovie,
+			Name:           "The Matrix",
+			ProductionYear: index(1999),
+		}), "Whatever the last provider said.")
+		second := fixed.identified(t, fixed.add(t, items.Scanned{
+			Kind:           itemmodal.KindMovie,
+			Name:           "The Matrix",
+			Key:            "test:" + fixed.libraryID.String() + ":second",
+			ProductionYear: index(1999),
+		}), "Whatever the last provider said.")
+
+		fixed.run(t, jobs.Options{Force: true, Scope: fixed.libraryID})
+
+		for _, id := range []uuid.UUID{first.ID, second.ID} {
+			if refreshed := fixed.reload(t, id); !strings.HasPrefix(refreshed.Overview, "Set in the 22nd century") {
+				t.Errorf("Overview = %q, want everything in the library refreshed", refreshed.Overview)
+			}
 		}
 	})
 }
