@@ -114,7 +114,6 @@ func (Item) Edges() []ent.Edge {
 		edge.To("chapters", Chapter.Type).Annotations(cascadeOnDelete),
 		edge.To("images", Image.Type).Annotations(cascadeOnDelete),
 		edge.To("user_data", UserItemData.Type).Annotations(cascadeOnDelete),
-		edge.To("display_preferences", DisplayPreferences.Type).Annotations(cascadeOnDelete),
 		edge.To("activity_log_entries", ActivityLogEntry.Type),
 		edge.To("trickplays", Trickplay.Type).Annotations(cascadeOnDelete),
 		edge.To("media_segments", MediaSegment.Type).Annotations(cascadeOnDelete),

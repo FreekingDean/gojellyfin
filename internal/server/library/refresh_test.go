@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
@@ -38,7 +39,7 @@ func (f *fixture) expecting(t *testing.T, job string) *Server {
 		items.New(f.client),
 		libraries.New(f.client),
 		users.New(f.client),
-		filesystem.New(),
+		filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}),
 		jobs.NewService(disconnected(t), registry),
 	)
 }

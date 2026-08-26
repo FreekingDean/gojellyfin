@@ -13,7 +13,7 @@ import (
 
 func TestScanner_scanMovies(t *testing.T) {
 	t.Run("fails on a missing root before it reaches a service", func(t *testing.T) {
-		scanner := New(nil, nil, nil)
+		scanner := New(nil, nil, nil, nil)
 		library := &libraries.Library{ID: uuid.New()}
 		found := &seen{}
 
@@ -34,7 +34,7 @@ func TestScanner_scanMovies(t *testing.T) {
 		}
 		t.Cleanup(func() { _ = os.Chmod(locked, 0o700) })
 
-		scanner := New(nil, nil, nil)
+		scanner := New(nil, nil, nil, nil)
 		library := &libraries.Library{ID: uuid.New()}
 		found := &seen{}
 

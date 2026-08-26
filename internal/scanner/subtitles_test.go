@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 )
 
@@ -27,7 +28,7 @@ func TestSubtitlesBeside(t *testing.T) {
 			t.Fatalf("failed to create the directory: %v", err)
 		}
 
-		found, err := subtitlesBeside(context.Background(), filesystem.New(), filepath.Join(directory, "Blade Runner (1982).mkv"))
+		found, err := subtitlesBeside(context.Background(), filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}), filepath.Join(directory, "Blade Runner (1982).mkv"))
 		if err != nil {
 			t.Fatalf("failed to discover the subtitles: %v", err)
 		}
@@ -49,7 +50,7 @@ func TestSubtitlesBeside(t *testing.T) {
 	t.Run("answers nothing for a missing directory", func(t *testing.T) {
 		path := filepath.Join(t.TempDir(), "gone", "Movie.mkv")
 
-		if _, err := subtitlesBeside(context.Background(), filesystem.New(), path); err == nil {
+		if _, err := subtitlesBeside(context.Background(), filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}), path); err == nil {
 			t.Error("want an error for a directory that is not there")
 		}
 	})

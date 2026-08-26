@@ -77,7 +77,7 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
-	return &fixture{server: New(filesystem.New(), users.New(client)), client: client, prefix: prefix}
+	return &fixture{server: New(filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}), users.New(client)), client: client, prefix: prefix}
 }
 
 func (f *fixture) signIn(t *testing.T, name string, administrator bool) context.Context {

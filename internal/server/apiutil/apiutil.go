@@ -1,10 +1,5 @@
 package apiutil
 
-import (
-	"github.com/google/uuid"
-	openapi_types "github.com/oapi-codegen/runtime/types"
-)
-
 func Ptr[T any](v T) *T {
 	return &v
 }
@@ -18,12 +13,12 @@ func Deref[T any](v *T) T {
 	return *v
 }
 
-func OrElse[T any](v *T, fallback T) *T {
+func OrElse[T any](v *T, fallback T) T {
 	if v == nil {
-		return &fallback
+		return fallback
 	}
 
-	return v
+	return *v
 }
 
 func Body[T any](jsonBody, wildcardBody *T) *T {
@@ -32,9 +27,4 @@ func Body[T any](jsonBody, wildcardBody *T) *T {
 	}
 
 	return wildcardBody
-}
-
-func UID(s string) *openapi_types.UUID {
-	u := uuid.MustParse(s)
-	return &u
 }

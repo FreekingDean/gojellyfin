@@ -13,9 +13,7 @@ import (
 func encoded(t *testing.T, name string, args ...string) *ffmpeg.Stream {
 	t.Helper()
 
-	if !ffmpeg.Available() {
-		t.Skip("ffmpeg is not on PATH")
-	}
+	prober := ffmpeg.New()
 
 	path := filepath.Join(t.TempDir(), name)
 	build := append([]string{
@@ -27,7 +25,7 @@ func encoded(t *testing.T, name string, args ...string) *ffmpeg.Stream {
 		t.Skipf("this ffmpeg cannot build %s: %v: %s", name, err, output)
 	}
 
-	probe, err := ffmpeg.ProbeFile(context.Background(), path)
+	probe, err := prober.ProbeFile(context.Background(), path)
 	if err != nil {
 		t.Fatalf("failed to probe %s: %v", name, err)
 	}

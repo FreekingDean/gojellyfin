@@ -255,7 +255,7 @@ func decoded(t *testing.T, body []byte) *ffmpeg.Probe {
 		t.Fatalf("failed to write the response: %v", err)
 	}
 
-	probed, err := ffmpeg.ProbeFile(context.Background(), path)
+	probed, err := ffmpeg.New().ProbeFile(context.Background(), path)
 	if err != nil {
 		t.Fatalf("the response is not decodable: %v", err)
 	}
@@ -473,8 +473,8 @@ func TestPlayback(t *testing.T) {
 			t.Fatalf("status = %d, want %d: %s", recorder.Code, http.StatusOK, recorder.Body)
 		}
 
-		whole := decoded(t, fixture.follow(t, apiutil.Deref(fixture.offer(t, id, chromeProfile, 0).TranscodingUrl)).Body.Bytes()).Format.Seconds()
-		remaining := decoded(t, recorder.Body.Bytes()).Format.Seconds()
+		whole := decoded(t, fixture.follow(t, apiutil.Deref(fixture.offer(t, id, chromeProfile, 0).TranscodingUrl)).Body.Bytes()).Format.Duration
+		remaining := decoded(t, recorder.Body.Bytes()).Format.Duration
 
 		if remaining <= 0 || remaining > whole-1 {
 			t.Errorf("the response runs %.2fs of the %.2fs source, want the seek to have skipped most of it", remaining, whole)

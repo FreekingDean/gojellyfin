@@ -23,6 +23,7 @@ type Config struct {
 	Temporal           Temporal   `mapstructure:",squash"`
 	Tracing            Tracing    `mapstructure:",squash"`
 	TMDB               TMDB       `mapstructure:",squash"`
+	MediaDirectories   []string   `mapstructure:"MEDIA_DIRECTORIES"`
 }
 
 type Transcoder struct {
@@ -46,6 +47,7 @@ type TMDB struct {
 func Load() (Config, error) {
 	v := viper.NewWithOptions(viper.ExperimentalBindStruct())
 	v.SetDefault("HTTP_PORT", defaultHTTPPort)
+	v.SetDefault("MEDIA_DIRECTORIES", []string{"/"})
 
 	v.AutomaticEnv()
 
@@ -55,6 +57,7 @@ func Load() (Config, error) {
 	}
 
 	config.CORSOrigins = trimmed(config.CORSOrigins)
+	config.MediaDirectories = trimmed(config.MediaDirectories)
 
 	if err := config.validate(); err != nil {
 		return Config{}, err

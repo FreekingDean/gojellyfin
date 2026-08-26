@@ -7,7 +7,17 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/FreekingDean/gojellyfin/internal/env"
 )
+
+func service(roots ...string) *Service {
+	if len(roots) == 0 {
+		roots = []string{Root}
+	}
+
+	return New(env.Config{MediaDirectories: roots})
+}
 
 func TestService_Stat(t *testing.T) {
 	t.Run("describes a file and a directory", func(t *testing.T) {
@@ -17,7 +27,7 @@ func TestService_Stat(t *testing.T) {
 			t.Fatalf("failed to write the file: %v", err)
 		}
 
-		file, err := New().Stat(context.Background(), path)
+		file, err := service().Stat(context.Background(), path)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -25,7 +35,7 @@ func TestService_Stat(t *testing.T) {
 			t.Errorf("got %+v, want a file named readme.txt", file)
 		}
 
-		directoryFile, err := New().Stat(context.Background(), directory)
+		directoryFile, err := service().Stat(context.Background(), directory)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -35,7 +45,7 @@ func TestService_Stat(t *testing.T) {
 	})
 
 	t.Run("misses a path that is not there", func(t *testing.T) {
-		if _, err := New().Stat(context.Background(), filepath.Join(t.TempDir(), "nope")); !errors.Is(err, ErrNotFound) {
+		if _, err := service().Stat(context.Background(), filepath.Join(t.TempDir(), "nope")); !errors.Is(err, ErrNotFound) {
 			t.Errorf("got %v, want ErrNotFound", err)
 		}
 	})
@@ -49,7 +59,7 @@ func TestService_Open(t *testing.T) {
 			t.Fatalf("failed to write the file: %v", err)
 		}
 
-		body, size, err := New().Open(context.Background(), path)
+		body, size, err := service().Open(context.Background(), path)
 		if err != nil {
 			t.Fatalf("failed to open the file: %v", err)
 		}
@@ -70,10 +80,10 @@ func TestService_Open(t *testing.T) {
 	t.Run("misses a missing file and a directory", func(t *testing.T) {
 		directory := t.TempDir()
 
-		if _, _, err := New().Open(context.Background(), filepath.Join(directory, "nope.jpg")); !errors.Is(err, ErrNotFound) {
+		if _, _, err := service().Open(context.Background(), filepath.Join(directory, "nope.jpg")); !errors.Is(err, ErrNotFound) {
 			t.Errorf("got %v, want ErrNotFound", err)
 		}
-		if _, _, err := New().Open(context.Background(), directory); !errors.Is(err, ErrNotFound) {
+		if _, _, err := service().Open(context.Background(), directory); !errors.Is(err, ErrNotFound) {
 			t.Errorf("got %v, want ErrNotFound", err)
 		}
 	})
@@ -89,7 +99,7 @@ func TestService_List(t *testing.T) {
 			t.Fatalf("failed to create the directory: %v", err)
 		}
 
-		files, err := New().List(context.Background(), directory)
+		files, err := service().List(context.Background(), directory)
 		if err != nil {
 			t.Fatalf("failed to list the directory: %v", err)
 		}
@@ -113,7 +123,7 @@ func TestService_List(t *testing.T) {
 			}
 		}
 
-		files, err := New().List(context.Background(), directory)
+		files, err := service().List(context.Background(), directory)
 		if err != nil {
 			t.Fatalf("failed to list the directory: %v", err)
 		}
@@ -126,7 +136,7 @@ func TestService_List(t *testing.T) {
 	t.Run("misses a missing path and refuses a file", func(t *testing.T) {
 		directory := t.TempDir()
 
-		if _, err := New().List(context.Background(), filepath.Join(directory, "nope")); !errors.Is(err, ErrNotFound) {
+		if _, err := service().List(context.Background(), filepath.Join(directory, "nope")); !errors.Is(err, ErrNotFound) {
 			t.Errorf("missing path: got %v, want ErrNotFound", err)
 		}
 
@@ -134,7 +144,7 @@ func TestService_List(t *testing.T) {
 		if err := os.WriteFile(path, []byte("1"), 0o600); err != nil {
 			t.Fatalf("failed to write the file: %v", err)
 		}
-		if _, err := New().List(context.Background(), path); !errors.Is(err, ErrNotDirectory) {
+		if _, err := service().List(context.Background(), path); !errors.Is(err, ErrNotDirectory) {
 			t.Errorf("file path: got %v, want ErrNotDirectory", err)
 		}
 	})
@@ -147,7 +157,7 @@ func TestService_RemoveAll(t *testing.T) {
 		t.Fatalf("failed to write the file: %v", err)
 	}
 
-	if err := New().RemoveAll(context.Background(), path); err == nil {
+	if err := service().RemoveAll(context.Background(), path); err == nil {
 		t.Fatal("RemoveAll returned no error; if it is implemented now, this test needs replacing with one that asserts what it deletes")
 	}
 	if _, err := os.Stat(path); err != nil {
@@ -156,7 +166,7 @@ func TestService_RemoveAll(t *testing.T) {
 }
 
 func TestService_Drives(t *testing.T) {
-	drives, err := New().Drives(context.Background())
+	drives, err := service().Drives(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -166,14 +176,19 @@ func TestService_Drives(t *testing.T) {
 }
 
 func TestResolve(t *testing.T) {
+	outside := t.TempDir()
+	if _, err := service(t.TempDir()).Stat(context.Background(), outside); !errors.Is(err, ErrNotFound) {
+		t.Errorf("Stat(%q) = %v, want a path outside the media directories refused", outside, err)
+	}
+
 	for _, name := range []string{"", "relative/path", "../etc", "media/../../etc"} {
-		if _, err := New().Stat(context.Background(), name); !errors.Is(err, ErrNotFound) {
+		if _, err := service().Stat(context.Background(), name); !errors.Is(err, ErrNotFound) {
 			t.Errorf("Stat(%q) = %v, want ErrNotFound", name, err)
 		}
-		if _, err := New().List(context.Background(), name); !errors.Is(err, ErrNotFound) {
+		if _, err := service().List(context.Background(), name); !errors.Is(err, ErrNotFound) {
 			t.Errorf("List(%q) = %v, want ErrNotFound", name, err)
 		}
-		if _, _, err := New().Open(context.Background(), name); !errors.Is(err, ErrNotFound) {
+		if _, _, err := service().Open(context.Background(), name); !errors.Is(err, ErrNotFound) {
 			t.Errorf("Open(%q) = %v, want ErrNotFound", name, err)
 		}
 	}

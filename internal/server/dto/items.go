@@ -132,7 +132,7 @@ func LibraryView(library *libraries.Library) api.BaseItemDto {
 
 func RootView() api.BaseItemDto {
 	return api.BaseItemDto{
-		Id:       apiutil.UID(config.RootFolderID),
+		Id:       apiutil.Ptr(config.RootFolderUID),
 		Name:     apiutil.Ptr("Media Folders"),
 		ServerId: apiutil.Ptr(config.ServerID),
 		Type:     apiutil.Ptr(api.BaseItemKindFolder),
