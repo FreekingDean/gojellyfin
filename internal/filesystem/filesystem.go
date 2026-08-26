@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+
+	"github.com/FreekingDean/gojellyfin/internal/env"
 )
 
 const Root = "/"
@@ -20,24 +22,32 @@ var (
 	ErrNotSupported = errors.New("filesystem: not supported")
 )
 
-type Service struct{}
+type Service struct {
+	rootDirs []string
+}
 
 type File struct {
 	Name string
 	Dir  bool
 }
 
-func New() *Service {
-	s := &Service{}
+func New(cfg env.Config) *Service {
+	s := &Service{
+		rootDirs: cfg.MediaDirectories,
+	}
 	return s
 }
 
 func (s *Service) Drives(ctx context.Context) ([]File, error) {
-	return []File{{Name: "/", Dir: true}}, nil
+	files := make([]File, len(s.rootDirs))
+	for i, dir := range s.rootDirs {
+		files[i] = File{Name: dir, Dir: true}
+	}
+	return files, nil
 }
 
 func (s *Service) List(ctx context.Context, name string) ([]File, error) {
-	path, err := resolve(name)
+	path, err := s.resolve(name)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +75,7 @@ func (s *Service) List(ctx context.Context, name string) ([]File, error) {
 }
 
 func (s *Service) Open(ctx context.Context, name string) (io.ReadCloser, int64, error) {
-	path, err := resolve(name)
+	path, err := s.resolve(name)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -98,7 +108,7 @@ func (s *Service) RemoveAll(ctx context.Context, path string) error {
 }
 
 func (s *Service) Stat(ctx context.Context, name string) (File, error) {
-	path, err := resolve(name)
+	path, err := s.resolve(name)
 	if err != nil {
 		return File{}, err
 	}
@@ -117,17 +127,25 @@ func (s *Service) Stat(ctx context.Context, name string) (File, error) {
 	}, nil
 }
 
-// Every path reaching the host arrives from a client, so it is cleaned and
-// held to an absolute path here rather than in each caller.
-func resolve(name string) (string, error) {
-	if name == "" {
+func (s *Service) resolve(path string) (string, error) {
+	if path == "" {
 		return "", ErrNotFound
 	}
 
-	path := filepath.Clean(name)
-	if !filepath.IsAbs(path) || strings.Contains(path, "..") {
+	if strings.Contains(path, "..") {
 		return "", ErrNotFound
 	}
 
-	return path, nil
+	path = filepath.Clean(path)
+	if !filepath.IsAbs(path) {
+		return "", ErrNotFound
+	}
+
+	for _, root := range s.rootDirs {
+		if strings.HasPrefix(path, root) {
+			return path, nil
+		}
+	}
+
+	return "", ErrNotFound
 }

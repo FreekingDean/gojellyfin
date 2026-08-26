@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestNothingElseImportsTheWorkflowEngine(t *testing.T) {
+func Test(t *testing.T) {
 	root := filepath.Join("..", "..")
 
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {

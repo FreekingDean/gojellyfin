@@ -113,10 +113,7 @@ func (s *Service) Status(ctx context.Context, name string) (Status, error) {
 	return s.status(ctx, job)
 }
 
-// The job's name is the run's id, which is what makes it a singleton: the
-// engine refuses a second run under a name that is already going, so starting
-// twice is one run rather than two and needs no lock of ours.
-func (s *Service) Start(ctx context.Context, name string) error {
+func (s *Service) Start(ctx context.Context, name string, options Options) error {
 	job, err := s.registry.Find(name)
 	if err != nil {
 		return err
@@ -132,7 +129,7 @@ func (s *Service) Start(ctx context.Context, name string) error {
 		TaskQueue:                TaskQueue,
 		WorkflowExecutionTimeout: runTimeoutMax,
 		WorkflowIDReusePolicy:    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
-	}, job.Name())
+	}, job.Name(), options)
 	if _, running := err.(*serviceerror.WorkflowExecutionAlreadyStarted); running {
 		return nil
 	}

@@ -4,10 +4,9 @@ import (
 	"context"
 
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 )
 
-// Channels come from plugins, which are not supported.
 type Server struct{}
 
 func New() *Server {
@@ -15,9 +14,5 @@ func New() *Server {
 }
 
 func (s *Server) GetChannels(ctx context.Context, request api.GetChannelsRequestObject) (api.GetChannelsResponseObject, error) {
-	return api.GetChannels200JSONResponse{
-		Items:            &[]api.BaseItemDto{},
-		StartIndex:       apiutil.Ptr(int32(0)),
-		TotalRecordCount: apiutil.Ptr(int32(0)),
-	}, nil
+	return api.GetChannels200JSONResponse(dto.EmptyItems()), nil
 }

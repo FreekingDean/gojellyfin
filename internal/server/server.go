@@ -46,14 +46,10 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/years"
 )
 
-// Tag services sit one level shallower than the fallback, so a registered
-// service wins the selector and everything else falls through to Unimplemented.
 type nestedUnimplemented struct {
 	api.Unimplemented
 }
 
-// Embedded field names are type names, so every tag service comes in under an
-// alias to keep them distinct.
 type (
 	ApiKeyServer             = apikey.Server
 	ArtistsServer            = artists.Server

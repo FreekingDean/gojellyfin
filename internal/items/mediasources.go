@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
@@ -17,9 +18,10 @@ type (
 	MediaSource = store.MediaSource
 	MediaStream = store.MediaStream
 	StreamKind  = streammodal.Kind
+
+	VideoRangeType = streammodal.VideoRangeType
 )
 
-// Where one file of a title lives. The probe owns the rest of the row.
 type ScannedSource struct {
 	LibraryID    uuid.UUID
 	ItemID       uuid.UUID
@@ -28,7 +30,6 @@ type ScannedSource struct {
 	DateModified time.Time
 }
 
-// What ffprobe found. The scan owns everything else on the item.
 type Probe struct {
 	Container    string
 	RunTimeTicks int64
@@ -36,6 +37,14 @@ type Probe struct {
 	Bitrate      int32
 	Streams      []Stream
 	Metadata     ContainerMetadata
+}
+
+func nillableRangeType(rangeType VideoRangeType) *VideoRangeType {
+	if rangeType == "" {
+		return nil
+	}
+
+	return &rangeType
 }
 
 type Stream struct {
@@ -54,11 +63,12 @@ type Stream struct {
 	Level       float64
 	IsDefault   bool
 	IsForced    bool
+
+	RangeType    VideoRangeType
+	IsInterlaced bool
+	IsAnamorphic bool
 }
 
-// The probe columns are left out of the update: a file that has not changed
-// keeps the runtime and streams the last probe wrote, and that runtime is what
-// decided which item the file belongs to.
 func (s *Service) SaveSource(ctx context.Context, scanned ScannedSource) (*MediaSource, error) {
 	id, err := s.store.MediaSource.Create().
 		SetLibraryID(scanned.LibraryID).
@@ -150,7 +160,10 @@ func (s *Service) SaveProbe(ctx context.Context, item *Item, source *MediaSource
 				SetPixelFormat(stream.PixelFormat).
 				SetLevel(stream.Level).
 				SetIsDefault(stream.IsDefault).
-				SetIsForced(stream.IsForced))
+				SetIsForced(stream.IsForced).
+				SetNillableVideoRangeType(nillableRangeType(stream.RangeType)).
+				SetIsInterlaced(stream.IsInterlaced).
+				SetIsAnamorphic(stream.IsAnamorphic))
 		}
 		if err := tx.MediaStream.CreateBulk(builders...).Exec(ctx); err != nil {
 			return fmt.Errorf("failed to create media streams: %w", err)
@@ -160,8 +173,33 @@ func (s *Service) SaveProbe(ctx context.Context, item *Item, source *MediaSource
 	})
 }
 
-// Every file the item plays from, oldest first, so a caller that can only use
-// one takes the first and the ordering does not shift under it.
+func (s *Service) SourceByID(ctx context.Context, id uuid.UUID) (*MediaSource, error) {
+	source, err := s.store.MediaSource.Get(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query media source %s: %w", id, err)
+	}
+
+	return source, nil
+}
+
+func (s *Service) SourcesNeedingProbe(ctx context.Context, libraryID uuid.UUID) ([]uuid.UUID, error) {
+	ids, err := s.store.MediaSource.Query().
+		Where(
+			sourcemodal.LibraryID(libraryID),
+			func(selector *sql.Selector) {
+				probed, modified := selector.C(sourcemodal.FieldProbedAt), selector.C(sourcemodal.FieldDateModified)
+				selector.Where(sql.Or(sql.IsNull(probed), sql.ColumnsLT(probed, modified)))
+			},
+		).
+		Order(sourcemodal.ByPath()).
+		IDs(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query the sources needing a probe: %w", err)
+	}
+
+	return ids, nil
+}
+
 func (s *Service) MediaSources(ctx context.Context, itemID uuid.UUID) ([]*MediaSource, error) {
 	sources, err := s.store.MediaSource.Query().
 		Where(sourcemodal.ItemID(itemID)).
@@ -177,8 +215,6 @@ func (s *Service) MediaSources(ctx context.Context, itemID uuid.UUID) ([]*MediaS
 	return sources, nil
 }
 
-// The primary file of each item, for list responses that would otherwise ask
-// per row.
 func (s *Service) PathsByItem(ctx context.Context, itemIDs []uuid.UUID) (map[uuid.UUID]string, error) {
 	paths := map[uuid.UUID]string{}
 	if len(itemIDs) == 0 {
@@ -202,8 +238,6 @@ func (s *Service) PathsByItem(ctx context.Context, itemIDs []uuid.UUID) (map[uui
 	return paths, nil
 }
 
-// Every file under an item, including the ones its children play from, which is
-// what deleting a series has to reach.
 func (s *Service) SourcePaths(ctx context.Context, id uuid.UUID) ([]string, error) {
 	ids, err := s.subtree(ctx, id)
 	if err != nil {
@@ -222,8 +256,6 @@ func (s *Service) SourcePaths(ctx context.Context, id uuid.UUID) ([]string, erro
 	return paths, nil
 }
 
-// A source carries no watch state, so a file that goes away takes its row with
-// it; the item keeps the id everything else hangs off and is swept separately.
 func (s *Service) DeleteSourcesNotInPaths(ctx context.Context, libraryID uuid.UUID, paths []string) error {
 	missing := s.store.MediaSource.Delete().Where(sourcemodal.LibraryID(libraryID))
 	if len(paths) > 0 {
@@ -237,7 +269,6 @@ func (s *Service) DeleteSourcesNotInPaths(ctx context.Context, libraryID uuid.UU
 	return nil
 }
 
-// Empty until the probe has run, which the caller has to treat as unknown.
 func (s *Service) AudioCodec(ctx context.Context, itemID uuid.UUID) (string, error) {
 	codecs, err := s.store.MediaStream.Query().
 		Where(
@@ -258,9 +289,8 @@ func (s *Service) AudioCodec(ctx context.Context, itemID uuid.UUID) (string, err
 	return codecs[0], nil
 }
 
-// The probe is skipped unless the file changed since it last ran.
-func NeedsProbe(source *MediaSource, modified time.Time) bool {
-	return source == nil || source.ProbedAt.IsZero() || source.ProbedAt.Before(modified)
+func NeedsProbe(source *MediaSource) bool {
+	return source == nil || source.ProbedAt.IsZero() || source.ProbedAt.Before(source.DateModified)
 }
 
 func IsAudio(item *Item) bool {

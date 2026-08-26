@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
+	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
@@ -150,7 +151,7 @@ func TestScanMusicBuildsTheArtistAlbumTrackChain(t *testing.T) {
 
 	service := items.New(client)
 	found := &seen{}
-	if err := New(service, nil, filesystem.New()).scanMusic(ctx, &libraries.Library{ID: library.ID}, root, found); err != nil {
+	if err := New(service, nil, filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}), ffmpeg.New()).scanMusic(ctx, &libraries.Library{ID: library.ID}, root, found); err != nil {
 		t.Fatalf("failed to scan the music: %v", err)
 	}
 	if len(found.keys) != 6 {
@@ -274,7 +275,7 @@ func TestScanMusicFoldsTwoEncodesOfOneTrack(t *testing.T) {
 
 	service := items.New(client)
 	found := &seen{}
-	if err := New(service, nil, filesystem.New()).scanMusic(ctx, &libraries.Library{ID: library.ID}, root, found); err != nil {
+	if err := New(service, nil, filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}), ffmpeg.New()).scanMusic(ctx, &libraries.Library{ID: library.ID}, root, found); err != nil {
 		t.Fatalf("failed to scan the music: %v", err)
 	}
 

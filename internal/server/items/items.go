@@ -32,8 +32,6 @@ func (s *Server) GetItems(ctx context.Context, request api.GetItemsRequestObject
 func (s *Server) GetItem(ctx context.Context, request api.GetItemRequestObject) (api.GetItemResponseObject, error) {
 	item, err := s.items.ItemByID(ctx, request.ItemId)
 	if err != nil {
-		// Clients navigate into a library by asking for it as an item, but
-		// libraries are rows in their own table rather than items.
 		library, libraryErr := s.libraries.Library(ctx, request.ItemId)
 		if libraryErr != nil {
 			return api.GetItem403Response{}, nil
@@ -59,7 +57,7 @@ func (s *Server) GetLatestMedia(ctx context.Context, request api.GetLatestMediaR
 		Kinds:      []items.Kind{itemmodal.KindMovie, itemmodal.KindSeries},
 		SortBy:     []string{"DateCreated"},
 		Descending: true,
-		Limit:      int(apiutil.Deref(apiutil.OrElse(request.Params.Limit, int32(20)))),
+		Limit:      int(apiutil.OrElse(request.Params.Limit, int32(20))),
 	}
 	if request.Params.ParentId != nil {
 		query.LibraryID = request.Params.ParentId

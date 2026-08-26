@@ -6,6 +6,15 @@ LOG ?= /tmp/gojellyfin.log
 DATABASE_URL ?= postgres://localhost:5432/gojellyfin_development?sslmode=disable
 export DATABASE_URL
 
+# gojellyfin's own build, stamped into internal/system. The Jellyfin API
+# version is a different fact and comes from the vendored spec.
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
+DATE ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+
+STAMP := github.com/FreekingDean/gojellyfin/internal/system
+LDFLAGS := -X $(STAMP).buildVersion=$(VERSION) -X $(STAMP).buildCommit=$(COMMIT) -X $(STAMP).buildDate=$(DATE)
+
 .PHONY: dev
 dev:
 	air 2>&1 | tee $(LOG)
@@ -16,15 +25,21 @@ generate:
 
 .PHONY: build
 build: generate
-	go build ./...
+	go build -ldflags "$(LDFLAGS)" ./...
 
 .PHONY: run
 run: build
-	go run ./cmd/gojellyfin server 2>&1 | tee $(LOG)
+	go run -ldflags "$(LDFLAGS)" ./cmd/gojellyfin server 2>&1 | tee $(LOG)
 
 .PHONY: test
 test: build
 	go test ./...
+
+# Jest driving the real jellyfin-web client in Chrome. Apart from `make test`
+# because it wants Node, Docker and a browser.
+.PHONY: e2e
+e2e:
+	cd e2e && npm ci && npm test
 
 .PHONY: fmt
 fmt:

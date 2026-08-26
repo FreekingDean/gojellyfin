@@ -13,8 +13,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// The path is the item's primary source rather than a column on the item, so a
-// caller that has not loaded one passes the empty string.
 func ItemDto(item *items.Item, path string, childCount int32, imageTags map[string]string) api.BaseItemDto {
 	kind := api.BaseItemKind(item.Kind)
 
@@ -108,6 +106,10 @@ func ItemDtos(ctx context.Context, store *items.Service, records []*items.Item) 
 		converted = append(converted, dto)
 	}
 
+	if err := applyShowFields(ctx, store, records, converted); err != nil {
+		return nil, err
+	}
+
 	if err := applyMusicFields(ctx, store, records, converted); err != nil {
 		return nil, err
 	}
@@ -134,7 +136,7 @@ func LibraryView(library *libraries.Library) api.BaseItemDto {
 
 func RootView() api.BaseItemDto {
 	return api.BaseItemDto{
-		Id:       apiutil.UID(config.RootFolderID),
+		Id:       apiutil.Ptr(config.RootFolderUID),
 		Name:     apiutil.Ptr("Media Folders"),
 		ServerId: apiutil.Ptr(config.ServerID),
 		Type:     apiutil.Ptr(api.BaseItemKindFolder),

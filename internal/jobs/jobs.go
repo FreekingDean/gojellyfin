@@ -3,7 +3,10 @@ package jobs
 import (
 	"context"
 	errors "errors"
+	"fmt"
 	"time"
+
+	"github.com/google/uuid"
 
 	"go.temporal.io/sdk/activity"
 
@@ -11,26 +14,24 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-// Context is what a job's body is handed. It is aliased so that nothing outside
-// this package imports the workflow engine: a job is written against Job,
-// Context and Step, and the engine is an implementation detail of this package.
 var errNotCompleted = errors.New("jobs: the job did not complete")
 
 type Context = workflow.Context
 
-// A Job is one unit of background work. Name is the id the dashboard drives it
-// by and the id the engine runs it under, which is what makes a job a singleton
-// without a lock — a second run under a name already running is refused.
+type Options struct {
+	Force bool
+	Scope uuid.UUID
+}
+
 type Job interface {
 	Name() string
 	Description() string
 	Category() string
-	Run(ctx Context) error
+	Run(ctx Context, options Options) error
 	Steps() []any
+	Children() []any
 }
 
-// A Future is a step that has been started and not yet waited on, so a body can
-// start several and collect them afterwards.
 type Future interface {
 	Get(out any) error
 }
@@ -47,33 +48,40 @@ func (f future) Get(out any) error {
 const (
 	stepTimeout   = 6 * time.Hour
 	heartbeat     = 2 * time.Minute
+	stepQueued    = 10 * time.Minute
 	stepAttempts  = 3
 	runTimeoutMax = 24 * time.Hour
 )
 
-// Step starts one of the job's steps. The step is named by its function rather
-// than by a string, so a renamed method is a compile error instead of a job
-// that fails at run time looking for something that no longer exists.
 func Step(ctx Context, step any, args ...any) Future {
 	ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
-		StartToCloseTimeout: stepTimeout,
-		HeartbeatTimeout:    heartbeat,
-		// Bounded: work that failed because its source is unreachable will not
-		// succeed by being retried inside the same run.
-		RetryPolicy: &sdktemporal.RetryPolicy{MaximumAttempts: stepAttempts},
+		StartToCloseTimeout:    stepTimeout,
+		HeartbeatTimeout:       heartbeat,
+		ScheduleToStartTimeout: stepQueued,
+		RetryPolicy:            &sdktemporal.RetryPolicy{MaximumAttempts: stepAttempts},
 	})
 
 	return future{ctx: ctx, future: workflow.ExecuteActivity(ctx, step, args...)}
 }
 
-// Logf records against the run rather than the process, and is replay aware, so
-// a body can say what it skipped without lying on every replay.
+func Child(ctx Context, child any, name string, args ...any) Future {
+	execution := workflow.GetInfo(ctx).WorkflowExecution
+	ctx = workflow.WithChildOptions(ctx, workflow.ChildWorkflowOptions{
+		WorkflowID:               fmt.Sprintf("%s/%s/%s", execution.ID, execution.RunID, name),
+		WorkflowExecutionTimeout: runTimeoutMax,
+	})
+
+	return future{ctx: ctx, future: workflow.ExecuteChildWorkflow(ctx, child, args...)}
+}
+
 func Logf(ctx Context, message string, args ...any) {
 	workflow.GetLogger(ctx).Info(message, args...)
 }
 
-// Heartbeat says a step is still moving, so a step that is merely slow is told
-// apart from a worker that died.
 func Heartbeat(ctx context.Context, detail ...any) {
+	if !activity.IsActivity(ctx) {
+		return
+	}
+
 	activity.RecordHeartbeat(ctx, detail...)
 }

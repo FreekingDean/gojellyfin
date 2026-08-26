@@ -2,30 +2,42 @@ package auth
 
 import "testing"
 
-func TestVerifyAcceptsHashedPassword(t *testing.T) {
+func TestVerify(t *testing.T) {
 	hash, err := Hash("hunter2")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	ok, err := Verify("hunter2", hash)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !ok {
-		t.Error("want match for correct password")
-	}
+	t.Run("matches the password it was made from", func(t *testing.T) {
+		ok, err := Verify("hunter2", hash)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !ok {
+			t.Error("want match for correct password")
+		}
+	})
 
-	ok, err = Verify("hunter3", hash)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if ok {
-		t.Error("want no match for wrong password")
-	}
+	t.Run("refuses another password", func(t *testing.T) {
+		ok, err := Verify("hunter3", hash)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if ok {
+			t.Error("want no match for wrong password")
+		}
+	})
+
+	t.Run("errors on a malformed hash", func(t *testing.T) {
+		for _, malformed := range []string{"", "hunter2", "$1$AA$BB"} {
+			if _, err := Verify("hunter2", malformed); err == nil {
+				t.Errorf("want error for %q", malformed)
+			}
+		}
+	})
 }
 
-func TestHashIsSaltedPerCall(t *testing.T) {
+func TestHash(t *testing.T) {
 	a, err := Hash("hunter2")
 	if err != nil {
 		t.Fatal(err)
@@ -38,13 +50,5 @@ func TestHashIsSaltedPerCall(t *testing.T) {
 
 	if a == b {
 		t.Error("want distinct hashes for the same password")
-	}
-}
-
-func TestVerifyRejectsMalformedHash(t *testing.T) {
-	for _, hash := range []string{"", "hunter2", "$1$AA$BB"} {
-		if _, err := Verify("hunter2", hash); err == nil {
-			t.Errorf("want error for %q", hash)
-		}
 	}
 }

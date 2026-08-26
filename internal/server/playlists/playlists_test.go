@@ -215,305 +215,307 @@ func names(records []api.BaseItemDto) []string {
 	return found
 }
 
-func TestPlaylistRoundTrip(t *testing.T) {
-	fixture := newFixture(t)
+func TestServer(t *testing.T) {
+	t.Run("a playlist round trip", func(t *testing.T) {
+		fixture := newFixture(t)
 
-	songs := fixture.songs(t, "One", "Two", "Three", "Four")
-	playlistID := fixture.create(t, api.CreatePlaylistDto{
-		Name:     "Road Trip",
-		Ids:      &songs,
-		IsPublic: ptr(true),
-	})
+		songs := fixture.songs(t, "One", "Two", "Three", "Four")
+		playlistID := fixture.create(t, api.CreatePlaylistDto{
+			Name:     "Road Trip",
+			Ids:      &songs,
+			IsPublic: ptr(true),
+		})
 
-	t.Run("returns the items in order with their entry ids", func(t *testing.T) {
-		records := fixture.items(t, playlistID)
+		t.Run("returns the items in order with their entry ids", func(t *testing.T) {
+			records := fixture.items(t, playlistID)
 
-		want := []string{"One", "Two", "Three", "Four"}
-		if got := names(records); !slices.Equal(got, want) {
-			t.Errorf("items = %v, want %v", got, want)
-		}
-		for _, record := range records {
-			if record.PlaylistItemId == nil {
-				t.Fatalf("%q has no playlist item id", *record.Name)
+			want := []string{"One", "Two", "Three", "Four"}
+			if got := names(records); !slices.Equal(got, want) {
+				t.Errorf("items = %v, want %v", got, want)
 			}
-			if _, err := uuid.Parse(*record.PlaylistItemId); err != nil {
-				t.Errorf("playlist item id %q is not a uuid", *record.PlaylistItemId)
+			for _, record := range records {
+				if record.PlaylistItemId == nil {
+					t.Fatalf("%q has no playlist item id", *record.Name)
+				}
+				if _, err := uuid.Parse(*record.PlaylistItemId); err != nil {
+					t.Errorf("playlist item id %q is not a uuid", *record.PlaylistItemId)
+				}
+			}
+		})
+
+		t.Run("adds items to the end", func(t *testing.T) {
+			extra := fixture.songs(t, "Five")
+			response, err := fixture.server.AddItemToPlaylist(fixture.owner, api.AddItemToPlaylistRequestObject{
+				PlaylistId: playlistID,
+				Params:     api.AddItemToPlaylistParams{Ids: &extra},
+			})
+			if err != nil {
+				t.Fatalf("failed to add the item: %v", err)
+			}
+			if _, ok := response.(api.AddItemToPlaylist204Response); !ok {
+				t.Fatalf("AddItemToPlaylist returned %T", response)
+			}
+
+			want := []string{"One", "Two", "Three", "Four", "Five"}
+			if got := names(fixture.items(t, playlistID)); !slices.Equal(got, want) {
+				t.Errorf("items = %v, want %v", got, want)
+			}
+		})
+
+		t.Run("moves an entry by its entry id", func(t *testing.T) {
+			records := fixture.items(t, playlistID)
+			response, err := fixture.server.MoveItem(fixture.owner, api.MoveItemRequestObject{
+				PlaylistId: playlistID.String(),
+				ItemId:     *records[4].PlaylistItemId,
+				NewIndex:   1,
+			})
+			if err != nil {
+				t.Fatalf("failed to move the entry: %v", err)
+			}
+			if _, ok := response.(api.MoveItem204Response); !ok {
+				t.Fatalf("MoveItem returned %T", response)
+			}
+
+			want := []string{"One", "Five", "Two", "Three", "Four"}
+			if got := names(fixture.items(t, playlistID)); !slices.Equal(got, want) {
+				t.Errorf("items = %v, want %v", got, want)
+			}
+		})
+
+		t.Run("removes entries by their entry ids", func(t *testing.T) {
+			records := fixture.items(t, playlistID)
+			entryIDs := []string{*records[0].PlaylistItemId, *records[2].PlaylistItemId}
+
+			response, err := fixture.server.RemoveItemFromPlaylist(fixture.owner, api.RemoveItemFromPlaylistRequestObject{
+				PlaylistId: playlistID.String(),
+				Params:     api.RemoveItemFromPlaylistParams{EntryIds: &entryIDs},
+			})
+			if err != nil {
+				t.Fatalf("failed to remove the entries: %v", err)
+			}
+			if _, ok := response.(api.RemoveItemFromPlaylist204Response); !ok {
+				t.Fatalf("RemoveItemFromPlaylist returned %T", response)
+			}
+
+			want := []string{"Five", "Three", "Four"}
+			if got := names(fixture.items(t, playlistID)); !slices.Equal(got, want) {
+				t.Errorf("items = %v, want %v", got, want)
+			}
+		})
+
+		t.Run("reports the remaining items and access", func(t *testing.T) {
+			response, err := fixture.server.GetPlaylist(fixture.owner, api.GetPlaylistRequestObject{PlaylistId: playlistID})
+			if err != nil {
+				t.Fatalf("failed to query the playlist: %v", err)
+			}
+
+			playlist, ok := response.(api.GetPlaylist200JSONResponse)
+			if !ok {
+				t.Fatalf("GetPlaylist returned %T", response)
+			}
+			if !*playlist.OpenAccess {
+				t.Error("open access = false, want true")
+			}
+			if len(playlist.ItemIds) != 3 {
+				t.Errorf("item ids = %d, want 3", len(playlist.ItemIds))
+			}
+		})
+	})
+
+	t.Run("permissions", func(t *testing.T) {
+		fixture := newFixture(t)
+
+		songs := fixture.songs(t, "One")
+		playlistID := fixture.create(t, api.CreatePlaylistDto{Name: "Private", Ids: &songs})
+
+		share := func(t *testing.T, canEdit bool) {
+			t.Helper()
+
+			response, err := fixture.server.UpdatePlaylistUser(fixture.owner, api.UpdatePlaylistUserRequestObject{
+				PlaylistId: playlistID,
+				UserId:     fixture.guestID,
+				JSONBody:   &api.UpdatePlaylistUserDto{CanEdit: ptr(canEdit)},
+			})
+			if err != nil {
+				t.Fatalf("failed to share the playlist: %v", err)
+			}
+			if _, ok := response.(api.UpdatePlaylistUser204Response); !ok {
+				t.Fatalf("UpdatePlaylistUser returned %T", response)
 			}
 		}
-	})
 
-	t.Run("adds items to the end", func(t *testing.T) {
-		extra := fixture.songs(t, "Five")
-		response, err := fixture.server.AddItemToPlaylist(fixture.owner, api.AddItemToPlaylistRequestObject{
-			PlaylistId: playlistID,
-			Params:     api.AddItemToPlaylistParams{Ids: &extra},
+		add := func(t *testing.T, ctx context.Context) api.AddItemToPlaylistResponseObject {
+			t.Helper()
+
+			extra := fixture.songs(t, uuid.NewString())
+			response, err := fixture.server.AddItemToPlaylist(ctx, api.AddItemToPlaylistRequestObject{
+				PlaylistId: playlistID,
+				Params:     api.AddItemToPlaylistParams{Ids: &extra},
+			})
+			if err != nil {
+				t.Fatalf("failed to add the item: %v", err)
+			}
+
+			return response
+		}
+
+		t.Run("an unauthenticated caller may not create", func(t *testing.T) {
+			response, err := fixture.server.CreatePlaylist(context.Background(), api.CreatePlaylistRequestObject{
+				JSONBody: &api.CreatePlaylistDto{Name: "Anonymous"},
+			})
+			if err != nil {
+				t.Fatalf("failed to create the playlist: %v", err)
+			}
+			if _, ok := response.(api.CreatePlaylist403Response); !ok {
+				t.Fatalf("CreatePlaylist returned %T, want a 403", response)
+			}
 		})
-		if err != nil {
-			t.Fatalf("failed to add the item: %v", err)
-		}
-		if _, ok := response.(api.AddItemToPlaylist204Response); !ok {
-			t.Fatalf("AddItemToPlaylist returned %T", response)
-		}
 
-		want := []string{"One", "Two", "Three", "Four", "Five"}
-		if got := names(fixture.items(t, playlistID)); !slices.Equal(got, want) {
-			t.Errorf("items = %v, want %v", got, want)
-		}
-	})
+		t.Run("a stranger may not read or write", func(t *testing.T) {
+			response, err := fixture.server.GetPlaylist(fixture.guest, api.GetPlaylistRequestObject{PlaylistId: playlistID})
+			if err != nil {
+				t.Fatalf("failed to query the playlist: %v", err)
+			}
+			if _, ok := response.(api.GetPlaylist403Response); !ok {
+				t.Fatalf("GetPlaylist returned %T, want a 403", response)
+			}
 
-	t.Run("moves an entry by its entry id", func(t *testing.T) {
-		records := fixture.items(t, playlistID)
-		response, err := fixture.server.MoveItem(fixture.owner, api.MoveItemRequestObject{
-			PlaylistId: playlistID.String(),
-			ItemId:     *records[4].PlaylistItemId,
-			NewIndex:   1,
+			if got := add(t, fixture.guest); got == nil {
+				t.Fatal("AddItemToPlaylist returned nothing")
+			} else if _, ok := got.(api.AddItemToPlaylist403JSONResponse); !ok {
+				t.Fatalf("AddItemToPlaylist returned %T, want a 403", got)
+			}
 		})
-		if err != nil {
-			t.Fatalf("failed to move the entry: %v", err)
-		}
-		if _, ok := response.(api.MoveItem204Response); !ok {
-			t.Fatalf("MoveItem returned %T", response)
-		}
 
-		want := []string{"One", "Five", "Two", "Three", "Four"}
-		if got := names(fixture.items(t, playlistID)); !slices.Equal(got, want) {
-			t.Errorf("items = %v, want %v", got, want)
-		}
-	})
+		t.Run("a read-only share may read but not write", func(t *testing.T) {
+			share(t, false)
 
-	t.Run("removes entries by their entry ids", func(t *testing.T) {
-		records := fixture.items(t, playlistID)
-		entryIDs := []string{*records[0].PlaylistItemId, *records[2].PlaylistItemId}
+			response, err := fixture.server.GetPlaylistItems(fixture.guest, api.GetPlaylistItemsRequestObject{PlaylistId: playlistID})
+			if err != nil {
+				t.Fatalf("failed to query the playlist items: %v", err)
+			}
+			if _, ok := response.(api.GetPlaylistItems200JSONResponse); !ok {
+				t.Fatalf("GetPlaylistItems returned %T, want a 200", response)
+			}
 
-		response, err := fixture.server.RemoveItemFromPlaylist(fixture.owner, api.RemoveItemFromPlaylistRequestObject{
-			PlaylistId: playlistID.String(),
-			Params:     api.RemoveItemFromPlaylistParams{EntryIds: &entryIDs},
+			if got := add(t, fixture.guest); got == nil {
+				t.Fatal("AddItemToPlaylist returned nothing")
+			} else if _, ok := got.(api.AddItemToPlaylist403JSONResponse); !ok {
+				t.Fatalf("AddItemToPlaylist returned %T, want a 403", got)
+			}
 		})
-		if err != nil {
-			t.Fatalf("failed to remove the entries: %v", err)
-		}
-		if _, ok := response.(api.RemoveItemFromPlaylist204Response); !ok {
-			t.Fatalf("RemoveItemFromPlaylist returned %T", response)
-		}
 
-		want := []string{"Five", "Three", "Four"}
-		if got := names(fixture.items(t, playlistID)); !slices.Equal(got, want) {
-			t.Errorf("items = %v, want %v", got, want)
-		}
+		t.Run("an editable share may write", func(t *testing.T) {
+			share(t, true)
+
+			if _, ok := add(t, fixture.guest).(api.AddItemToPlaylist204Response); !ok {
+				t.Error("an editable share could not add an item")
+			}
+		})
+
+		t.Run("only the owner manages users", func(t *testing.T) {
+			response, err := fixture.server.GetPlaylistUsers(fixture.guest, api.GetPlaylistUsersRequestObject{PlaylistId: playlistID})
+			if err != nil {
+				t.Fatalf("failed to query the playlist users: %v", err)
+			}
+			if _, ok := response.(api.GetPlaylistUsers403JSONResponse); !ok {
+				t.Fatalf("GetPlaylistUsers returned %T, want a 403", response)
+			}
+
+			removal, err := fixture.server.RemoveUserFromPlaylist(fixture.guest, api.RemoveUserFromPlaylistRequestObject{
+				PlaylistId: playlistID,
+				UserId:     fixture.guestID,
+			})
+			if err != nil {
+				t.Fatalf("failed to remove the user: %v", err)
+			}
+			if _, ok := removal.(api.RemoveUserFromPlaylist403JSONResponse); !ok {
+				t.Fatalf("RemoveUserFromPlaylist returned %T, want a 403", removal)
+			}
+
+			owned, err := fixture.server.GetPlaylistUsers(fixture.owner, api.GetPlaylistUsersRequestObject{PlaylistId: playlistID})
+			if err != nil {
+				t.Fatalf("failed to query the playlist users: %v", err)
+			}
+			users, ok := owned.(api.GetPlaylistUsers200JSONResponse)
+			if !ok {
+				t.Fatalf("GetPlaylistUsers returned %T, want a 200", owned)
+			}
+			if len(users) != 1 || *users[0].UserId != fixture.guestID || !*users[0].CanEdit {
+				t.Errorf("users = %v, want one editable share for %s", users, fixture.guestID)
+			}
+		})
 	})
 
-	t.Run("reports the remaining items and access", func(t *testing.T) {
-		response, err := fixture.server.GetPlaylist(fixture.owner, api.GetPlaylistRequestObject{PlaylistId: playlistID})
-		if err != nil {
-			t.Fatalf("failed to query the playlist: %v", err)
-		}
+	t.Run("bogus shares are refused", func(t *testing.T) {
+		fixture := newFixture(t)
 
-		playlist, ok := response.(api.GetPlaylist200JSONResponse)
-		if !ok {
-			t.Fatalf("GetPlaylist returned %T", response)
-		}
-		if !*playlist.OpenAccess {
-			t.Error("open access = false, want true")
-		}
-		if len(playlist.ItemIds) != 3 {
-			t.Errorf("item ids = %d, want 3", len(playlist.ItemIds))
-		}
+		playlistID := fixture.create(t, api.CreatePlaylistDto{
+			Name:  "Guarded",
+			Users: &[]api.PlaylistUserPermissions{{UserId: &fixture.guestID}},
+		})
+
+		t.Run("create refuses an unknown user", func(t *testing.T) {
+			unknown := uuid.New()
+			response, err := fixture.server.CreatePlaylist(fixture.owner, api.CreatePlaylistRequestObject{
+				JSONBody: &api.CreatePlaylistDto{
+					Name:  "Doomed",
+					Users: &[]api.PlaylistUserPermissions{{UserId: &unknown}},
+				},
+			})
+			if err != nil {
+				t.Fatalf("failed to create the playlist: %v", err)
+			}
+			if _, ok := response.(api.CreatePlaylist403Response); !ok {
+				t.Fatalf("CreatePlaylist returned %T, want a 403", response)
+			}
+		})
+
+		t.Run("update refuses a share without a user id", func(t *testing.T) {
+			response, err := fixture.server.UpdatePlaylist(fixture.owner, api.UpdatePlaylistRequestObject{
+				PlaylistId: playlistID,
+				JSONBody:   &api.UpdatePlaylistDto{Users: &[]api.PlaylistUserPermissions{{CanEdit: ptr(true)}}},
+			})
+			if err != nil {
+				t.Fatalf("failed to update the playlist: %v", err)
+			}
+			if _, ok := response.(api.UpdatePlaylist403JSONResponse); !ok {
+				t.Fatalf("UpdatePlaylist returned %T, want a 403", response)
+			}
+		})
+
+		t.Run("the original shares survive", func(t *testing.T) {
+			response, err := fixture.server.GetPlaylistUsers(fixture.owner, api.GetPlaylistUsersRequestObject{PlaylistId: playlistID})
+			if err != nil {
+				t.Fatalf("failed to query the playlist users: %v", err)
+			}
+
+			users, ok := response.(api.GetPlaylistUsers200JSONResponse)
+			if !ok {
+				t.Fatalf("GetPlaylistUsers returned %T", response)
+			}
+			if len(users) != 1 || *users[0].UserId != fixture.guestID {
+				t.Errorf("users = %v, want the original share for %s", users, fixture.guestID)
+			}
+		})
+
+		t.Run("sharing with an unknown user is a 404", func(t *testing.T) {
+			response, err := fixture.server.UpdatePlaylistUser(fixture.owner, api.UpdatePlaylistUserRequestObject{
+				PlaylistId: playlistID,
+				UserId:     uuid.New(),
+				JSONBody:   &api.UpdatePlaylistUserDto{CanEdit: ptr(true)},
+			})
+			if err != nil {
+				t.Fatalf("failed to share the playlist: %v", err)
+			}
+			if _, ok := response.(api.UpdatePlaylistUser404JSONResponse); !ok {
+				t.Fatalf("UpdatePlaylistUser returned %T, want a 404", response)
+			}
+		})
 	})
 }
 
-func TestPermissions(t *testing.T) {
-	fixture := newFixture(t)
-
-	songs := fixture.songs(t, "One")
-	playlistID := fixture.create(t, api.CreatePlaylistDto{Name: "Private", Ids: &songs})
-
-	share := func(t *testing.T, canEdit bool) {
-		t.Helper()
-
-		response, err := fixture.server.UpdatePlaylistUser(fixture.owner, api.UpdatePlaylistUserRequestObject{
-			PlaylistId: playlistID,
-			UserId:     fixture.guestID,
-			JSONBody:   &api.UpdatePlaylistUserDto{CanEdit: ptr(canEdit)},
-		})
-		if err != nil {
-			t.Fatalf("failed to share the playlist: %v", err)
-		}
-		if _, ok := response.(api.UpdatePlaylistUser204Response); !ok {
-			t.Fatalf("UpdatePlaylistUser returned %T", response)
-		}
-	}
-
-	add := func(t *testing.T, ctx context.Context) api.AddItemToPlaylistResponseObject {
-		t.Helper()
-
-		extra := fixture.songs(t, uuid.NewString())
-		response, err := fixture.server.AddItemToPlaylist(ctx, api.AddItemToPlaylistRequestObject{
-			PlaylistId: playlistID,
-			Params:     api.AddItemToPlaylistParams{Ids: &extra},
-		})
-		if err != nil {
-			t.Fatalf("failed to add the item: %v", err)
-		}
-
-		return response
-	}
-
-	t.Run("an unauthenticated caller may not create", func(t *testing.T) {
-		response, err := fixture.server.CreatePlaylist(context.Background(), api.CreatePlaylistRequestObject{
-			JSONBody: &api.CreatePlaylistDto{Name: "Anonymous"},
-		})
-		if err != nil {
-			t.Fatalf("failed to create the playlist: %v", err)
-		}
-		if _, ok := response.(api.CreatePlaylist403Response); !ok {
-			t.Fatalf("CreatePlaylist returned %T, want a 403", response)
-		}
-	})
-
-	t.Run("a stranger may not read or write", func(t *testing.T) {
-		response, err := fixture.server.GetPlaylist(fixture.guest, api.GetPlaylistRequestObject{PlaylistId: playlistID})
-		if err != nil {
-			t.Fatalf("failed to query the playlist: %v", err)
-		}
-		if _, ok := response.(api.GetPlaylist403Response); !ok {
-			t.Fatalf("GetPlaylist returned %T, want a 403", response)
-		}
-
-		if got := add(t, fixture.guest); got == nil {
-			t.Fatal("AddItemToPlaylist returned nothing")
-		} else if _, ok := got.(api.AddItemToPlaylist403JSONResponse); !ok {
-			t.Fatalf("AddItemToPlaylist returned %T, want a 403", got)
-		}
-	})
-
-	t.Run("a read-only share may read but not write", func(t *testing.T) {
-		share(t, false)
-
-		response, err := fixture.server.GetPlaylistItems(fixture.guest, api.GetPlaylistItemsRequestObject{PlaylistId: playlistID})
-		if err != nil {
-			t.Fatalf("failed to query the playlist items: %v", err)
-		}
-		if _, ok := response.(api.GetPlaylistItems200JSONResponse); !ok {
-			t.Fatalf("GetPlaylistItems returned %T, want a 200", response)
-		}
-
-		if got := add(t, fixture.guest); got == nil {
-			t.Fatal("AddItemToPlaylist returned nothing")
-		} else if _, ok := got.(api.AddItemToPlaylist403JSONResponse); !ok {
-			t.Fatalf("AddItemToPlaylist returned %T, want a 403", got)
-		}
-	})
-
-	t.Run("an editable share may write", func(t *testing.T) {
-		share(t, true)
-
-		if _, ok := add(t, fixture.guest).(api.AddItemToPlaylist204Response); !ok {
-			t.Error("an editable share could not add an item")
-		}
-	})
-
-	t.Run("only the owner manages users", func(t *testing.T) {
-		response, err := fixture.server.GetPlaylistUsers(fixture.guest, api.GetPlaylistUsersRequestObject{PlaylistId: playlistID})
-		if err != nil {
-			t.Fatalf("failed to query the playlist users: %v", err)
-		}
-		if _, ok := response.(api.GetPlaylistUsers403JSONResponse); !ok {
-			t.Fatalf("GetPlaylistUsers returned %T, want a 403", response)
-		}
-
-		removal, err := fixture.server.RemoveUserFromPlaylist(fixture.guest, api.RemoveUserFromPlaylistRequestObject{
-			PlaylistId: playlistID,
-			UserId:     fixture.guestID,
-		})
-		if err != nil {
-			t.Fatalf("failed to remove the user: %v", err)
-		}
-		if _, ok := removal.(api.RemoveUserFromPlaylist403JSONResponse); !ok {
-			t.Fatalf("RemoveUserFromPlaylist returned %T, want a 403", removal)
-		}
-
-		owned, err := fixture.server.GetPlaylistUsers(fixture.owner, api.GetPlaylistUsersRequestObject{PlaylistId: playlistID})
-		if err != nil {
-			t.Fatalf("failed to query the playlist users: %v", err)
-		}
-		users, ok := owned.(api.GetPlaylistUsers200JSONResponse)
-		if !ok {
-			t.Fatalf("GetPlaylistUsers returned %T, want a 200", owned)
-		}
-		if len(users) != 1 || *users[0].UserId != fixture.guestID || !*users[0].CanEdit {
-			t.Errorf("users = %v, want one editable share for %s", users, fixture.guestID)
-		}
-	})
-}
-
-func TestBogusSharesAreRefused(t *testing.T) {
-	fixture := newFixture(t)
-
-	playlistID := fixture.create(t, api.CreatePlaylistDto{
-		Name:  "Guarded",
-		Users: &[]api.PlaylistUserPermissions{{UserId: &fixture.guestID}},
-	})
-
-	t.Run("create refuses an unknown user", func(t *testing.T) {
-		unknown := uuid.New()
-		response, err := fixture.server.CreatePlaylist(fixture.owner, api.CreatePlaylistRequestObject{
-			JSONBody: &api.CreatePlaylistDto{
-				Name:  "Doomed",
-				Users: &[]api.PlaylistUserPermissions{{UserId: &unknown}},
-			},
-		})
-		if err != nil {
-			t.Fatalf("failed to create the playlist: %v", err)
-		}
-		if _, ok := response.(api.CreatePlaylist403Response); !ok {
-			t.Fatalf("CreatePlaylist returned %T, want a 403", response)
-		}
-	})
-
-	t.Run("update refuses a share without a user id", func(t *testing.T) {
-		response, err := fixture.server.UpdatePlaylist(fixture.owner, api.UpdatePlaylistRequestObject{
-			PlaylistId: playlistID,
-			JSONBody:   &api.UpdatePlaylistDto{Users: &[]api.PlaylistUserPermissions{{CanEdit: ptr(true)}}},
-		})
-		if err != nil {
-			t.Fatalf("failed to update the playlist: %v", err)
-		}
-		if _, ok := response.(api.UpdatePlaylist403JSONResponse); !ok {
-			t.Fatalf("UpdatePlaylist returned %T, want a 403", response)
-		}
-	})
-
-	t.Run("the original shares survive", func(t *testing.T) {
-		response, err := fixture.server.GetPlaylistUsers(fixture.owner, api.GetPlaylistUsersRequestObject{PlaylistId: playlistID})
-		if err != nil {
-			t.Fatalf("failed to query the playlist users: %v", err)
-		}
-
-		users, ok := response.(api.GetPlaylistUsers200JSONResponse)
-		if !ok {
-			t.Fatalf("GetPlaylistUsers returned %T", response)
-		}
-		if len(users) != 1 || *users[0].UserId != fixture.guestID {
-			t.Errorf("users = %v, want the original share for %s", users, fixture.guestID)
-		}
-	})
-
-	t.Run("sharing with an unknown user is a 404", func(t *testing.T) {
-		response, err := fixture.server.UpdatePlaylistUser(fixture.owner, api.UpdatePlaylistUserRequestObject{
-			PlaylistId: playlistID,
-			UserId:     uuid.New(),
-			JSONBody:   &api.UpdatePlaylistUserDto{CanEdit: ptr(true)},
-		})
-		if err != nil {
-			t.Fatalf("failed to share the playlist: %v", err)
-		}
-		if _, ok := response.(api.UpdatePlaylistUser404JSONResponse); !ok {
-			t.Fatalf("UpdatePlaylistUser returned %T, want a 404", response)
-		}
-	})
-}
-
-func TestGetPlaylistNotFound(t *testing.T) {
+func TestServer_GetPlaylist(t *testing.T) {
 	fixture := newFixture(t)
 
 	response, err := fixture.server.GetPlaylist(fixture.owner, api.GetPlaylistRequestObject{PlaylistId: uuid.New()})

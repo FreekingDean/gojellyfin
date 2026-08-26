@@ -33,7 +33,7 @@ func (s *Server) GetGenres(ctx context.Context, request api.GetGenresRequestObje
 
 	dtoList := make([]api.BaseItemDto, 0, len(named))
 	for _, genre := range named {
-		dtoList = append(dtoList, dto.GenreDto(genre, api.BaseItemKindGenre))
+		dtoList = append(dtoList, dto.NamedItem(genre, api.BaseItemKindGenre, true))
 	}
 
 	return api.GetGenres200JSONResponse{
@@ -49,5 +49,5 @@ func (s *Server) GetGenre(ctx context.Context, request api.GetGenreRequestObject
 		return api.GetGenre403Response{}, nil
 	}
 
-	return api.GetGenre200JSONResponse(dto.GenreDto(genre, api.BaseItemKindGenre)), nil
+	return api.GetGenre200JSONResponse(dto.NamedItem(genre, api.BaseItemKindGenre, true)), nil
 }

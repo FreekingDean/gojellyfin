@@ -8,11 +8,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 )
 
-// Two things the generated binding cannot cope with on its own: Jellyfin
-// clients send query parameters in PascalCase while the spec declares them
-// camelCase, and they send `Param=` with an empty value where a value is
-// undefined, which fails to parse as an int or a uuid and answers 400. Upstream
-// treats empty as absent, so it is dropped here.
 func HttpCanonicalQuery(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.RawQuery != "" {

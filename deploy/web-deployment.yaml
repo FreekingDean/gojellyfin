@@ -27,8 +27,11 @@ spec:
         app.kubernetes.io/component: web
     spec:
       initContainers:
-        # Pin this to the API version the server implements — system.VERSION.
-        # A client newer than the API calls endpoints that answer 501.
+        # Pin this to a released client, not to system.JellyfinVersion: the
+        # server announces the 12.0.0 API the vendored spec declares, but 12
+        # has no released all-in-one image to copy a client out of, and a
+        # client newer than what is implemented calls endpoints that answer
+        # 501. 10.10.0 is what `make e2e` drives.
         - name: client
           image: jellyfin/jellyfin:10.10.0
           command: ["cp", "-a", "/jellyfin/jellyfin-web/.", "/client/"]

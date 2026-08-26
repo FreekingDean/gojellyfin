@@ -103,7 +103,6 @@ func stripExtension(name string) string {
 	return strings.TrimSuffix(name, filepath.Ext(name))
 }
 
-// parseTitle splits a trailing release year off a movie or series name.
 func parseTitle(name string) (string, *int32) {
 	name = clean(name)
 
@@ -120,8 +119,6 @@ func parseTitle(name string) (string, *int32) {
 	return clean(match[1]), ptr(int32(year))
 }
 
-// parseEpisode pulls season and episode numbers out of names like
-// "Show S01E02 Title" or "Show 1x02".
 func parseEpisode(name string) (season, episode *int32, title string, ok bool) {
 	match := episodePattern.FindStringSubmatch(stripExtension(name))
 	if match == nil {
@@ -145,7 +142,6 @@ func parseEpisode(name string) (season, episode *int32, title string, ok bool) {
 	return ptr(int32(seasonNumber)), ptr(int32(episodeNumber)), clean(match[6]), true
 }
 
-// parseSeason reads a season number from a directory name.
 func parseSeason(name string) (*int32, bool) {
 	name = clean(name)
 	if specialsPattern.MatchString(name) {
@@ -225,11 +221,6 @@ func episodeTitle(seriesName string, season, episode *int32) string {
 	return fmt.Sprintf("%s S%02dE%02d", seriesName, *season, *episode)
 }
 
-// The identity of a title, and the whole reason an item no longer knows where
-// its bytes are: a file that moves keeps the key it had, so the watch state
-// moves with it, and two files that derive the same key are two copies of one
-// title. Nothing outside the database ever sees it — no endpoint takes a key in
-// its path and the 10.10.0 spec has no field to put one in.
 func movieKey(name string, year *int32) string {
 	return "movie:" + titleSlug(name, year)
 }
