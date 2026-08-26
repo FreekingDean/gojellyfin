@@ -12,7 +12,7 @@ import (
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
-func TestItemDtosCarryTheAlbumAndArtistOfATrack(t *testing.T) {
+func TestItemDtos_Music(t *testing.T) {
 	ctx := context.Background()
 
 	config, err := env.Load()
@@ -73,25 +73,29 @@ func TestItemDtosCarryTheAlbumAndArtistOfATrack(t *testing.T) {
 		t.Fatalf("failed to convert the items: %v", err)
 	}
 
-	song := converted[0]
-	if song.Album == nil || *song.Album != album.Name {
-		t.Errorf("album = %v, want %s", song.Album, album.Name)
-	}
-	if song.AlbumId == nil || *song.AlbumId != album.ID {
-		t.Errorf("album id = %v, want %s", song.AlbumId, album.ID)
-	}
-	if song.AlbumArtist == nil || *song.AlbumArtist != artist.Name {
-		t.Errorf("album artist = %v, want %s", song.AlbumArtist, artist.Name)
-	}
-	if song.ArtistItems == nil || len(*song.ArtistItems) != 1 || *(*song.ArtistItems)[0].Id != artist.ID {
-		t.Errorf("artist items = %v, want the artist", song.ArtistItems)
-	}
+	t.Run("a track carries its album and its artist", func(t *testing.T) {
+		song := converted[0]
+		if song.Album == nil || *song.Album != album.Name {
+			t.Errorf("album = %v, want %s", song.Album, album.Name)
+		}
+		if song.AlbumId == nil || *song.AlbumId != album.ID {
+			t.Errorf("album id = %v, want %s", song.AlbumId, album.ID)
+		}
+		if song.AlbumArtist == nil || *song.AlbumArtist != artist.Name {
+			t.Errorf("album artist = %v, want %s", song.AlbumArtist, artist.Name)
+		}
+		if song.ArtistItems == nil || len(*song.ArtistItems) != 1 || *(*song.ArtistItems)[0].Id != artist.ID {
+			t.Errorf("artist items = %v, want the artist", song.ArtistItems)
+		}
+	})
 
-	record := converted[1]
-	if record.Album != nil {
-		t.Errorf("an album has no album of its own, got %v", record.Album)
-	}
-	if record.AlbumArtist == nil || *record.AlbumArtist != artist.Name {
-		t.Errorf("album artist = %v, want %s", record.AlbumArtist, artist.Name)
-	}
+	t.Run("an album carries its artist and no album of its own", func(t *testing.T) {
+		record := converted[1]
+		if record.Album != nil {
+			t.Errorf("album = %v, want nothing", record.Album)
+		}
+		if record.AlbumArtist == nil || *record.AlbumArtist != artist.Name {
+			t.Errorf("album artist = %v, want %s", record.AlbumArtist, artist.Name)
+		}
+	})
 }

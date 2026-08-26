@@ -17,9 +17,6 @@ var musicKinds = map[items.Kind]bool{
 	itemmodal.KindMusicAlbum: true,
 }
 
-// The album a track belongs to and the artist that album belongs to are its
-// parent and its grandparent, which is where the scan put them, so a page of
-// tracks costs one query per level rather than one per row.
 func applyMusicFields(ctx context.Context, store *items.Service, records []*items.Item, converted []api.BaseItemDto) error {
 	parentIDs := make([]uuid.UUID, 0, len(records))
 	for _, record := range records {

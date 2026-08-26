@@ -46,8 +46,6 @@ func (s *Server) GetArtists(ctx context.Context, request api.GetArtistsRequestOb
 	return api.GetArtists200JSONResponse(result), nil
 }
 
-// An album artist is an artist a scanned album sits under, which is the whole
-// of the distinction a folder layout can carry.
 func (s *Server) GetAlbumArtists(ctx context.Context, request api.GetAlbumArtistsRequestObject) (api.GetAlbumArtistsResponseObject, error) {
 	result, err := s.query(ctx, scope{
 		parentID:   request.Params.ParentId,

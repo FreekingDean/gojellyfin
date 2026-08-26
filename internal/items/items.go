@@ -272,8 +272,6 @@ func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int
 	if len(query.AlbumIDs) > 0 {
 		items = items.Where(itemmodal.ParentIDIn(query.AlbumIDs...))
 	}
-	// An artist owns its albums and, through them, its tracks, so one id
-	// answers for both without a second query.
 	if len(query.ArtistIDs) > 0 {
 		items = items.Where(itemmodal.Or(
 			itemmodal.ParentIDIn(query.ArtistIDs...),

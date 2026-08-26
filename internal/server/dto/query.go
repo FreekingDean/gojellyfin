@@ -63,8 +63,6 @@ func ItemQuery(ctx context.Context, collections *libraries.Service, params api.G
 	return query
 }
 
-// A client navigates into a library by its id the same way it navigates into a
-// folder, and only one of the two is an item row.
 func ScopeToParent(ctx context.Context, collections *libraries.Service, query *items.ItemQuery, parentID *uuid.UUID, recursive bool) {
 	if parentID == nil {
 		return

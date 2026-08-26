@@ -59,49 +59,62 @@ func TestEpisodeKey(t *testing.T) {
 	})
 }
 
-func TestMusicKeysSeparateTracksThatShareATitle(t *testing.T) {
-	album := albumSlug("queen", "A Night at the Opera", ptr(int32(1975)))
-
-	tests := []struct {
-		name string
-		got  string
-		want string
-	}{
-		{"artist", musicArtistKey(titleSlug("Queen", nil)), "musicartist:queen"},
-		{"album", musicAlbumKey(album), "musicalbum:queen:a-night-at-the-opera:1975"},
-		{"track", audioKey(album, nil, ptr(int32(3)), "Love of My Life"), "audio:queen:a-night-at-the-opera:1975:1:3"},
-		{"track on a second disc", audioKey(album, ptr(int32(2)), ptr(int32(3)), "Love of My Life"), "audio:queen:a-night-at-the-opera:1975:2:3"},
-		{"unnumbered track", audioKey(album, nil, nil, "Love of My Life"), "audio:queen:a-night-at-the-opera:1975:love-of-my-life"},
-		{"track with no album", audioKey("queen", nil, nil, "Loose Track"), "audio:queen:loose-track"},
-		{"track with nothing above it", audioKey("", nil, nil, "Root Level"), "audio:root-level"},
-	}
-
-	for _, test := range tests {
-		if test.got != test.want {
-			t.Errorf("%s = %q, want %q", test.name, test.got, test.want)
-		}
-	}
+func TestMusicArtistKey(t *testing.T) {
+	checkKeys(t, []keyCase{
+		{"plain", musicArtistKey(titleSlug("Queen", nil)), "musicartist:queen"},
+	})
 }
 
-// Two recordings of one song are told apart by their position, and the same
-// song on a compilation is told apart by its album, so neither folds into the
-// other the way two encodes of one track are meant to.
-func TestMusicKeysDistinguishVersionsAndCompilations(t *testing.T) {
-	album := albumSlug("queen", "A Night at the Opera", nil)
-	compilation := albumSlug("various-artists", "Greatest Hits", nil)
+func TestMusicAlbumKey(t *testing.T) {
+	checkKeys(t, []keyCase{
+		{"with a year", musicAlbumKey(albumSlug("queen", "A Night at the Opera", ptr(int32(1975)))), "musicalbum:queen:a-night-at-the-opera:1975"},
+		{"without a year", musicAlbumKey(albumSlug("queen", "A Night at the Opera", nil)), "musicalbum:queen:a-night-at-the-opera"},
+	})
+}
 
-	original := audioKey(album, nil, ptr(int32(5)), "Love of My Life")
-	reprise := audioKey(album, nil, ptr(int32(12)), "Love of My Life")
-	if original == reprise {
-		t.Errorf("two versions on one album share the key %q", original)
-	}
+func TestAudioKey(t *testing.T) {
+	album := albumSlug("queen", "A Night at the Opera", ptr(int32(1975)))
 
-	if elsewhere := audioKey(compilation, nil, ptr(int32(5)), "Love of My Life"); elsewhere == original {
-		t.Errorf("the same song on a compilation shares the key %q", original)
-	}
+	checkKeys(t, []keyCase{
+		{"numbered", audioKey(album, nil, ptr(int32(3)), "Love of My Life"), "audio:queen:a-night-at-the-opera:1975:1:3:love-of-my-life"},
+		{"on a second disc", audioKey(album, ptr(int32(2)), ptr(int32(3)), "Love of My Life"), "audio:queen:a-night-at-the-opera:1975:2:3:love-of-my-life"},
+		{"unnumbered", audioKey(album, nil, nil, "Love of My Life"), "audio:queen:a-night-at-the-opera:1975:love-of-my-life"},
+		{"with no album above it", audioKey("queen", nil, nil, "Loose Track"), "audio:queen:loose-track"},
+		{"with nothing above it", audioKey("", nil, nil, "Root Level"), "audio:root-level"},
+	})
 
-	flac, mp3 := audioKey(album, nil, ptr(int32(5)), "Love of My Life"), audioKey(album, nil, ptr(int32(5)), "Love of My Life")
-	if flac != mp3 {
-		t.Errorf("two encodes of one track derive different keys, %q and %q", flac, mp3)
-	}
+	t.Run("separates two versions of one song on one album", func(t *testing.T) {
+		original := audioKey(album, nil, ptr(int32(5)), "Love of My Life")
+		reprise := audioKey(album, nil, ptr(int32(12)), "Love of My Life")
+
+		if original == reprise {
+			t.Errorf("two versions on one album share the key %q", original)
+		}
+	})
+
+	t.Run("separates the same song on a compilation", func(t *testing.T) {
+		compilation := albumSlug("various-artists", "Greatest Hits", nil)
+
+		if elsewhere := audioKey(compilation, nil, ptr(int32(5)), "Love of My Life"); elsewhere == audioKey(album, nil, ptr(int32(5)), "Love of My Life") {
+			t.Errorf("the same song on a compilation derives %q, which the album already holds", elsewhere)
+		}
+	})
+
+	t.Run("separates two numbered singles that share a number", func(t *testing.T) {
+		if first, second := audioKey("queen", nil, ptr(int32(1)), "A"), audioKey("queen", nil, ptr(int32(1)), "B"); first == second {
+			t.Errorf("two singles numbered 1 share the key %q", first)
+		}
+		if first, second := audioKey("", nil, ptr(int32(1)), "A"), audioKey("", nil, ptr(int32(1)), "B"); first == second {
+			t.Errorf("two root level tracks numbered 1 share the key %q", first)
+		}
+	})
+
+	t.Run("folds two encodes of one track", func(t *testing.T) {
+		flac := audioKey(album, nil, ptr(int32(5)), "Love of My Life")
+		mp3 := audioKey(album, nil, ptr(int32(5)), "Love of My Life")
+
+		if flac != mp3 {
+			t.Errorf("two encodes derive different keys, %q and %q", flac, mp3)
+		}
+	})
 }

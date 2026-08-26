@@ -92,7 +92,7 @@ func (f *fixture) save(t *testing.T, kind items.Kind, name string, parentID *uui
 	return record
 }
 
-func TestGetArtists(t *testing.T) {
+func TestServer_GetArtists(t *testing.T) {
 	fixture := newFixture(t)
 
 	response, err := fixture.server.GetArtists(context.Background(), api.GetArtistsRequestObject{
@@ -119,9 +119,7 @@ func TestGetArtists(t *testing.T) {
 	}
 }
 
-// The singleton artist has no album under it, which is the only thing that
-// separates an artist from an album artist here.
-func TestGetAlbumArtists(t *testing.T) {
+func TestServer_GetAlbumArtists(t *testing.T) {
 	fixture := newFixture(t)
 
 	response, err := fixture.server.GetAlbumArtists(context.Background(), api.GetAlbumArtistsRequestObject{
@@ -143,7 +141,7 @@ func TestGetAlbumArtists(t *testing.T) {
 	}
 }
 
-func TestGetArtistByName(t *testing.T) {
+func TestServer_GetArtistByName(t *testing.T) {
 	fixture := newFixture(t)
 
 	response, err := fixture.server.GetArtistByName(context.Background(), api.GetArtistByNameRequestObject{

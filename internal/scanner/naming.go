@@ -18,7 +18,7 @@ var (
 	specialsPattern = regexp.MustCompile(`(?i)^(?:specials?|season\s*0)$`)
 	articlePattern  = regexp.MustCompile(`(?i)^(the|a|an)\s+`)
 	languagePattern = regexp.MustCompile(`^[a-z]{2,3}$`)
-	trackPattern    = regexp.MustCompile(`^(?:(\d{1,2})[\s\-]+)?(\d{1,3})[\s\-]+(.+)$`)
+	trackPattern    = regexp.MustCompile(`^(?:(\d{1,2})-)?(\d{1,3})[\s\-]+(.+)$`)
 	discPattern     = regexp.MustCompile(`(?i)^(?:disc|disk|cd|volume|vol)[\s\-]*(\d{1,2})$`)
 
 	videoExtensions = map[string]bool{
@@ -161,8 +161,6 @@ func parseSeason(name string) (*int32, bool) {
 	return ptr(int32(number)), true
 }
 
-// parseTrack pulls a disc and track number off names like "01 - Title" or
-// "1-05 Title".
 func parseTrack(name string) (disc, track *int32, title string) {
 	title = clean(stripExtension(name))
 
@@ -182,7 +180,6 @@ func parseTrack(name string) (disc, track *int32, title string) {
 	return disc, ptr(int32(number)), clean(match[3])
 }
 
-// parseDisc reads a disc number from a directory inside an album.
 func parseDisc(name string) (*int32, bool) {
 	match := discPattern.FindStringSubmatch(clean(name))
 	if match == nil {
@@ -253,10 +250,6 @@ func musicAlbumKey(slug string) string {
 	return "musicalbum:" + slug
 }
 
-// A track is keyed by its position under its album, so two recordings of one
-// song stay apart while a flac and an mp3 of the same track become two files of
-// one item. A track with no number falls back to its title the way an unnumbered
-// episode does.
 func audioKey(scope string, disc, track *int32, title string) string {
 	if track == nil {
 		return keyOf("audio", scope, slugify(title))
@@ -267,7 +260,7 @@ func audioKey(scope string, disc, track *int32, title string) string {
 		side = *disc
 	}
 
-	return keyOf("audio", scope, fmt.Sprintf("%d:%d", side, *track))
+	return keyOf("audio", scope, fmt.Sprintf("%d:%d", side, *track), slugify(title))
 }
 
 func albumSlug(artist string, name string, year *int32) string {

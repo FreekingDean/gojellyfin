@@ -117,8 +117,6 @@ func (s *Scanner) scanArtist(ctx context.Context, library *libraries.Library, ar
 	return nil
 }
 
-// A disc directory carries its number down to the tracks and is the only
-// nesting an album recurses into, so a stray folder cannot walk forever.
 func (s *Scanner) scanAlbum(ctx context.Context, library *libraries.Library, albumID uuid.UUID, album, albumPath string, disc *int32, found *seen) error {
 	entries, err := os.ReadDir(albumPath)
 	if err != nil {
