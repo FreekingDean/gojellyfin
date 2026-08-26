@@ -174,6 +174,49 @@ func TestScanArtwork(t *testing.T) {
 		}
 	})
 
+	t.Run("keeps the first file's poster when both files carry one", func(t *testing.T) {
+		root := t.TempDir()
+		movieFolder(t, root, "Sicario (2015)",
+			"Sicario (2015) - 1080p.mkv",
+			"Sicario (2015) - 1080p-poster.jpg",
+			"Sicario (2015) - 4K.mkv",
+			"Sicario (2015) - 4K-poster.jpg",
+		)
+
+		found := newFixture(t, root).scan(t)
+
+		if found[imagemodal.KindPrimary] != "Sicario (2015) - 1080p-poster.jpg" {
+			t.Errorf("primary = %q, want the first file walked to win", found[imagemodal.KindPrimary])
+		}
+	})
+
+	t.Run("keeps artwork when the walk cannot read a directory", func(t *testing.T) {
+		if os.Geteuid() == 0 {
+			t.Skip("root reads a directory whatever its mode")
+		}
+
+		root := t.TempDir()
+		movieFolder(t, root, "Arrival (2016)",
+			"Arrival (2016).mkv",
+			"poster.jpg",
+		)
+
+		fixture := newFixture(t, root)
+		if found := fixture.scan(t); found[imagemodal.KindPrimary] != "poster.jpg" {
+			t.Fatalf("primary = %q, want the folder poster", found[imagemodal.KindPrimary])
+		}
+
+		folder := filepath.Join(root, "Arrival (2016)")
+		if err := os.Chmod(folder, 0o000); err != nil {
+			t.Fatalf("failed to lock the folder: %v", err)
+		}
+		t.Cleanup(func() { _ = os.Chmod(folder, 0o700) })
+
+		if found := fixture.scan(t); found[imagemodal.KindPrimary] != "poster.jpg" {
+			t.Errorf("primary = %q, want the poster a partial walk cannot see left alone", found[imagemodal.KindPrimary])
+		}
+	})
+
 	t.Run("drops artwork the operator deleted from disk", func(t *testing.T) {
 		root := t.TempDir()
 		movieFolder(t, root, "Alien (1979)",

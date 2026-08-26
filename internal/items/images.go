@@ -8,6 +8,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
+	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
 type (
@@ -53,6 +54,38 @@ func (s *Service) ReplaceImages(ctx context.Context, itemID uuid.UUID, artwork [
 
 		return nil
 	})
+}
+
+func (s *Service) SaveImage(ctx context.Context, itemID uuid.UUID, artwork Artwork) error {
+	err := s.store.Image.Create().
+		SetItemID(itemID).
+		SetKind(artwork.Kind).
+		SetPath(artwork.Path).
+		SetTag(artwork.Tag).
+		SetWidth(artwork.Width).
+		SetHeight(artwork.Height).
+		SetSize(artwork.Size).
+		OnConflictColumns(imagemodal.FieldItemID, imagemodal.FieldKind, imagemodal.FieldIndex).
+		DoNothing().
+		Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to save image: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Service) DeleteImagesNotInPaths(ctx context.Context, libraryID uuid.UUID, paths []string) error {
+	missing := s.store.Image.Delete().Where(imagemodal.HasItemWith(itemmodal.LibraryID(libraryID)))
+	if len(paths) > 0 {
+		missing = missing.Where(imagemodal.PathNotIn(paths...))
+	}
+
+	if _, err := missing.Exec(ctx); err != nil {
+		return fmt.Errorf("failed to delete missing images: %w", err)
+	}
+
+	return nil
 }
 
 func (s *Service) Images(ctx context.Context, itemID uuid.UUID) ([]*Image, error) {
