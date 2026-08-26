@@ -225,6 +225,34 @@ httpRoute:
       namespace: gateway-system
 ```
 
+**`/web` is two things, and a naive prefix route breaks one of them.** It is
+where the client is served, and it is also where two API endpoints live:
+`/web/ConfigurationPage` and `/web/ConfigurationPages`. `jellyfin-web` calls the
+second on every dashboard load to build the admin left-nav, so a gateway that
+sends all of `/web` to the client has nginx look for a file named
+`ConfigurationPages`, 404, and the dashboard's plugin pages disappear. The chart
+carries an `Exact` rule for each of the two back to the API service, which the
+Gateway API spec resolves ahead of any prefix match — "Across all rules
+specified on applicable Routes, precedence must be given to the match having:
+'Exact' path match" — before path length, route age or list order is consulted,
+so the three routes need no ordering between them. Writing your own gateway
+config means carrying those two exceptions with it.
+
+They are rendered whether or not `web.enabled` is set. With the client off they
+are merely redundant with `/`, and they still point at the API, which this chart
+always deploys; with a client served from outside the chart they are what keeps
+the dashboard working.
+
+Two properties of Gateway API path matching are worth knowing here. Matching is
+**by whole path element**, so `/Videos` cannot catch a path like `/VideosFoo`.
+And it is **case-sensitive**, while this server's own mux is deliberately not —
+a client that spells a stream path in another case simply lands on the API pods,
+which run the same binary and answer it, bounded by `api.transcoderJobs` rather
+than by `streaming.transcoderJobs`. For the same reason, the non-stream paths
+that live under those prefixes — `/Videos/{id}/Subtitles`, `/Audio/{id}/Lyrics`,
+`/Videos/MergeVersions` — are served correctly by the streaming pods: they are
+full API pods that happen to be the ones running ffmpeg.
+
 There is no Ingress template: an Ingress needs a controller and a class this
 repository cannot guess, and the routing split the streaming pods depend on is
 already expressed in Gateway API terms.

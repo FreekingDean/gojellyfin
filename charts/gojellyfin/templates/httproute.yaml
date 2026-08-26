@@ -81,6 +81,16 @@ spec:
   rules:
     - matches:
         - path:
+            type: Exact
+            value: /web/ConfigurationPage
+        - path:
+            type: Exact
+            value: /web/ConfigurationPages
+      backendRefs:
+        - name: {{ include "gojellyfin.fullname" . }}
+          port: {{ .Values.api.service.port }}
+    - matches:
+        - path:
             type: PathPrefix
             value: /
       backendRefs:
