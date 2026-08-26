@@ -22,6 +22,8 @@ func (i *Identify) Steps() []any {
 	return []any{i.service.IdentifyItems}
 }
 
-func (i *Identify) Run(ctx jobs.Context) error {
-	return jobs.Step(ctx, i.service.IdentifyItems).Get(nil)
+func (i *Identify) Children() []any { return nil }
+
+func (i *Identify) Run(ctx jobs.Context, options jobs.Options) error {
+	return jobs.Step(ctx, i.service.IdentifyItems, options).Get(nil)
 }

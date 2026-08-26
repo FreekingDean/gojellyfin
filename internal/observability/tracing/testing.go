@@ -6,8 +6,6 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 )
 
-// Recorded is a Tracing that keeps its spans in memory, so a caller can assert
-// on what it produced without a collector and without reaching for otel.
 func Recorded() (*Tracing, *Recorder) {
 	recorder := tracetest.NewSpanRecorder()
 
@@ -30,8 +28,6 @@ func (r *Recorder) Names() []string {
 	return names
 }
 
-// Every attribute value recorded, which is what a test asserting that nothing
-// the client sent reached a span has to look through.
 func (r *Recorder) Values() map[string]string {
 	values := make(map[string]string)
 	for _, span := range r.recorder.Ended() {

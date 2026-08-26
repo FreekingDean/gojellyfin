@@ -169,8 +169,6 @@ func (s *Service) DeleteLibrary(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-// The caller chains the fields it wants changed; every field has a
-// SetNillable form, which is the shape the api sends them in.
 func (s *Service) UpdateOptions(id uuid.UUID) *store.LibraryOptionsUpdate {
 	return s.store.LibraryOptions.Update().
 		Where(optionsmodal.HasLibraryWith(librarymodal.ID(id)))

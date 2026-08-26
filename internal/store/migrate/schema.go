@@ -3,7 +3,6 @@
 package migrate
 
 import (
-	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/dialect/sql/schema"
 	"entgo.io/ent/schema/field"
 )
@@ -163,6 +162,7 @@ var (
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "reference_id", Type: field.TypeString},
 		{Name: "client", Type: field.TypeString},
 		{Name: "view_type", Type: field.TypeString, Nullable: true},
 		{Name: "sort_by", Type: field.TypeString, Nullable: true, Default: "SortName"},
@@ -176,8 +176,7 @@ var (
 		{Name: "primary_image_height", Type: field.TypeInt32, Default: 0},
 		{Name: "primary_image_width", Type: field.TypeInt32, Default: 0},
 		{Name: "custom_prefs", Type: field.TypeJSON, Nullable: true},
-		{Name: "item_display_preferences", Type: field.TypeUUID, Nullable: true},
-		{Name: "user_display_preferences", Type: field.TypeUUID},
+		{Name: "user_id", Type: field.TypeUUID},
 	}
 	// DisplayPreferencesTable holds the schema information for the "display_preferences" table.
 	DisplayPreferencesTable = &schema.Table{
@@ -185,12 +184,6 @@ var (
 		Columns:    DisplayPreferencesColumns,
 		PrimaryKey: []*schema.Column{DisplayPreferencesColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "display_preferences_items_display_preferences",
-				Columns:    []*schema.Column{DisplayPreferencesColumns[16]},
-				RefColumns: []*schema.Column{ItemsColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
 			{
 				Symbol:     "display_preferences_users_display_preferences",
 				Columns:    []*schema.Column{DisplayPreferencesColumns[17]},
@@ -200,17 +193,9 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "displaypreferences_client_user_display_preferences_item_display_preferences",
+				Name:    "displaypreferences_user_id_reference_id_client",
 				Unique:  true,
-				Columns: []*schema.Column{DisplayPreferencesColumns[3], DisplayPreferencesColumns[17], DisplayPreferencesColumns[16]},
-			},
-			{
-				Name:    "displaypreferences_client_user_display_preferences",
-				Unique:  true,
-				Columns: []*schema.Column{DisplayPreferencesColumns[3], DisplayPreferencesColumns[17]},
-				Annotation: &entsql.IndexAnnotation{
-					Where: "item_display_preferences IS NULL",
-				},
+				Columns: []*schema.Column{DisplayPreferencesColumns[17], DisplayPreferencesColumns[3], DisplayPreferencesColumns[4]},
 			},
 		},
 	}
@@ -1270,8 +1255,7 @@ func init() {
 	ChaptersTable.ForeignKeys[0].RefTable = ItemsTable
 	CreditsTable.ForeignKeys[0].RefTable = ItemsTable
 	CreditsTable.ForeignKeys[1].RefTable = PersonsTable
-	DisplayPreferencesTable.ForeignKeys[0].RefTable = ItemsTable
-	DisplayPreferencesTable.ForeignKeys[1].RefTable = UsersTable
+	DisplayPreferencesTable.ForeignKeys[0].RefTable = UsersTable
 	ImagesTable.ForeignKeys[0].RefTable = ItemsTable
 	ItemsTable.ForeignKeys[0].RefTable = ItemsTable
 	ItemsTable.ForeignKeys[1].RefTable = LibrariesTable

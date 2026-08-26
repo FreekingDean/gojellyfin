@@ -13,7 +13,6 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/displaypreferences"
-	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/google/uuid"
 )
@@ -51,6 +50,18 @@ func (_c *DisplayPreferencesCreate) SetNillableUpdatedAt(v *time.Time) *DisplayP
 	if v != nil {
 		_c.SetUpdatedAt(*v)
 	}
+	return _c
+}
+
+// SetUserID sets the "user_id" field.
+func (_c *DisplayPreferencesCreate) SetUserID(v uuid.UUID) *DisplayPreferencesCreate {
+	_c.mutation.SetUserID(v)
+	return _c
+}
+
+// SetReferenceID sets the "reference_id" field.
+func (_c *DisplayPreferencesCreate) SetReferenceID(v string) *DisplayPreferencesCreate {
+	_c.mutation.SetReferenceID(v)
 	return _c
 }
 
@@ -226,34 +237,9 @@ func (_c *DisplayPreferencesCreate) SetID(v uuid.UUID) *DisplayPreferencesCreate
 	return _c
 }
 
-// SetUserID sets the "user" edge to the User entity by ID.
-func (_c *DisplayPreferencesCreate) SetUserID(id uuid.UUID) *DisplayPreferencesCreate {
-	_c.mutation.SetUserID(id)
-	return _c
-}
-
 // SetUser sets the "user" edge to the User entity.
 func (_c *DisplayPreferencesCreate) SetUser(v *User) *DisplayPreferencesCreate {
 	return _c.SetUserID(v.ID)
-}
-
-// SetItemID sets the "item" edge to the Item entity by ID.
-func (_c *DisplayPreferencesCreate) SetItemID(id uuid.UUID) *DisplayPreferencesCreate {
-	_c.mutation.SetItemID(id)
-	return _c
-}
-
-// SetNillableItemID sets the "item" edge to the Item entity by ID if the given value is not nil.
-func (_c *DisplayPreferencesCreate) SetNillableItemID(id *uuid.UUID) *DisplayPreferencesCreate {
-	if id != nil {
-		_c = _c.SetItemID(*id)
-	}
-	return _c
-}
-
-// SetItem sets the "item" edge to the Item entity.
-func (_c *DisplayPreferencesCreate) SetItem(v *Item) *DisplayPreferencesCreate {
-	return _c.SetItemID(v.ID)
 }
 
 // Mutation returns the DisplayPreferencesMutation object of the builder.
@@ -345,6 +331,12 @@ func (_c *DisplayPreferencesCreate) check() error {
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`store: missing required field "DisplayPreferences.updated_at"`)}
 	}
+	if _, ok := _c.mutation.UserID(); !ok {
+		return &ValidationError{Name: "user_id", err: errors.New(`store: missing required field "DisplayPreferences.user_id"`)}
+	}
+	if _, ok := _c.mutation.ReferenceID(); !ok {
+		return &ValidationError{Name: "reference_id", err: errors.New(`store: missing required field "DisplayPreferences.reference_id"`)}
+	}
 	if _, ok := _c.mutation.GetClient(); !ok {
 		return &ValidationError{Name: "client", err: errors.New(`store: missing required field "DisplayPreferences.client"`)}
 	}
@@ -429,6 +421,10 @@ func (_c *DisplayPreferencesCreate) createSpec() (*DisplayPreferences, *sqlgraph
 		_spec.SetField(displaypreferences.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
+	if value, ok := _c.mutation.ReferenceID(); ok {
+		_spec.SetField(displaypreferences.FieldReferenceID, field.TypeString, value)
+		_node.ReferenceID = value
+	}
 	if value, ok := _c.mutation.GetClient(); ok {
 		_spec.SetField(displaypreferences.FieldClient, field.TypeString, value)
 		_node.Client = value
@@ -495,24 +491,7 @@ func (_c *DisplayPreferencesCreate) createSpec() (*DisplayPreferences, *sqlgraph
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.user_display_preferences = &nodes[0]
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := _c.mutation.ItemIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   displaypreferences.ItemTable,
-			Columns: []string{displaypreferences.ItemColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_node.item_display_preferences = &nodes[0]
+		_node.UserID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -588,6 +567,30 @@ func (u *DisplayPreferencesUpsert) SetUpdatedAt(v time.Time) *DisplayPreferences
 // UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
 func (u *DisplayPreferencesUpsert) UpdateUpdatedAt() *DisplayPreferencesUpsert {
 	u.SetExcluded(displaypreferences.FieldUpdatedAt)
+	return u
+}
+
+// SetUserID sets the "user_id" field.
+func (u *DisplayPreferencesUpsert) SetUserID(v uuid.UUID) *DisplayPreferencesUpsert {
+	u.Set(displaypreferences.FieldUserID, v)
+	return u
+}
+
+// UpdateUserID sets the "user_id" field to the value that was provided on create.
+func (u *DisplayPreferencesUpsert) UpdateUserID() *DisplayPreferencesUpsert {
+	u.SetExcluded(displaypreferences.FieldUserID)
+	return u
+}
+
+// SetReferenceID sets the "reference_id" field.
+func (u *DisplayPreferencesUpsert) SetReferenceID(v string) *DisplayPreferencesUpsert {
+	u.Set(displaypreferences.FieldReferenceID, v)
+	return u
+}
+
+// UpdateReferenceID sets the "reference_id" field to the value that was provided on create.
+func (u *DisplayPreferencesUpsert) UpdateReferenceID() *DisplayPreferencesUpsert {
+	u.SetExcluded(displaypreferences.FieldReferenceID)
 	return u
 }
 
@@ -856,6 +859,34 @@ func (u *DisplayPreferencesUpsertOne) SetUpdatedAt(v time.Time) *DisplayPreferen
 func (u *DisplayPreferencesUpsertOne) UpdateUpdatedAt() *DisplayPreferencesUpsertOne {
 	return u.Update(func(s *DisplayPreferencesUpsert) {
 		s.UpdateUpdatedAt()
+	})
+}
+
+// SetUserID sets the "user_id" field.
+func (u *DisplayPreferencesUpsertOne) SetUserID(v uuid.UUID) *DisplayPreferencesUpsertOne {
+	return u.Update(func(s *DisplayPreferencesUpsert) {
+		s.SetUserID(v)
+	})
+}
+
+// UpdateUserID sets the "user_id" field to the value that was provided on create.
+func (u *DisplayPreferencesUpsertOne) UpdateUserID() *DisplayPreferencesUpsertOne {
+	return u.Update(func(s *DisplayPreferencesUpsert) {
+		s.UpdateUserID()
+	})
+}
+
+// SetReferenceID sets the "reference_id" field.
+func (u *DisplayPreferencesUpsertOne) SetReferenceID(v string) *DisplayPreferencesUpsertOne {
+	return u.Update(func(s *DisplayPreferencesUpsert) {
+		s.SetReferenceID(v)
+	})
+}
+
+// UpdateReferenceID sets the "reference_id" field to the value that was provided on create.
+func (u *DisplayPreferencesUpsertOne) UpdateReferenceID() *DisplayPreferencesUpsertOne {
+	return u.Update(func(s *DisplayPreferencesUpsert) {
+		s.UpdateReferenceID()
 	})
 }
 
@@ -1323,6 +1354,34 @@ func (u *DisplayPreferencesUpsertBulk) SetUpdatedAt(v time.Time) *DisplayPrefere
 func (u *DisplayPreferencesUpsertBulk) UpdateUpdatedAt() *DisplayPreferencesUpsertBulk {
 	return u.Update(func(s *DisplayPreferencesUpsert) {
 		s.UpdateUpdatedAt()
+	})
+}
+
+// SetUserID sets the "user_id" field.
+func (u *DisplayPreferencesUpsertBulk) SetUserID(v uuid.UUID) *DisplayPreferencesUpsertBulk {
+	return u.Update(func(s *DisplayPreferencesUpsert) {
+		s.SetUserID(v)
+	})
+}
+
+// UpdateUserID sets the "user_id" field to the value that was provided on create.
+func (u *DisplayPreferencesUpsertBulk) UpdateUserID() *DisplayPreferencesUpsertBulk {
+	return u.Update(func(s *DisplayPreferencesUpsert) {
+		s.UpdateUserID()
+	})
+}
+
+// SetReferenceID sets the "reference_id" field.
+func (u *DisplayPreferencesUpsertBulk) SetReferenceID(v string) *DisplayPreferencesUpsertBulk {
+	return u.Update(func(s *DisplayPreferencesUpsert) {
+		s.SetReferenceID(v)
+	})
+}
+
+// UpdateReferenceID sets the "reference_id" field to the value that was provided on create.
+func (u *DisplayPreferencesUpsertBulk) UpdateReferenceID() *DisplayPreferencesUpsertBulk {
+	return u.Update(func(s *DisplayPreferencesUpsert) {
+		s.UpdateReferenceID()
 	})
 }
 

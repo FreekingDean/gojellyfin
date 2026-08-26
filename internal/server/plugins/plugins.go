@@ -6,8 +6,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 )
 
-// Plugins are not supported, so nothing is ever installed: reads come back
-// empty and anything that would mutate an installation is refused.
 type Server struct{}
 
 func New() *Server {

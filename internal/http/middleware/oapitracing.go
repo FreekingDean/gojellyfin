@@ -36,10 +36,6 @@ func (t *OapiTracing) Middleware(f api.StrictHandlerFunc, operationID string) ap
 	}
 }
 
-// Everything under these two roots is a progressive response that runs for the
-// length of the media, so a span covering one is open for hours. They are the
-// same roots deploy/httproutes.yaml sends to the transcode pods. The mux
-// matches case-insensitively, so /videos has to be excluded like /Videos.
 func streams(path string) bool {
 	root, _, _ := strings.Cut(strings.TrimPrefix(path, "/"), "/")
 

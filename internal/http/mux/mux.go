@@ -75,21 +75,19 @@ func compile(pattern string) (*regexp.Regexp, error) {
 	b.WriteString("(?i)^")
 	for _, s := range strings.Split(strings.Trim(pattern, "/"), "/") {
 		b.WriteString("/")
-		if s == "*" { // catch-all, e.g. /web/*  — swallows remaining slashes
+		if s == "*" {
 			b.WriteString("(?P<rest>.*)")
 			continue
 		}
 		b.WriteString(compileSegment(s))
 	}
-	b.WriteString("/?$") // tolerate a trailing slash for free
+	b.WriteString("/?$")
 	reg, err := regexp.Compile(b.String())
 	return reg, err
 }
 
 var paramPattern = regexp.MustCompile(`\{([^}]+)\}`)
 
-// A segment can mix literals and captures, as in stream.{container}, so the
-// literal parts are escaped around each capture rather than whole-segment.
 func compileSegment(segment string) string {
 	var b strings.Builder
 

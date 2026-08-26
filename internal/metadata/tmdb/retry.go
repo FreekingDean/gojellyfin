@@ -13,8 +13,6 @@ const (
 	retryDelayMax = 30 * time.Second
 )
 
-// The library retries a 429 in an unbounded loop and never retries a 5xx, so
-// the pacing lives here instead of in its autoRetry.
 type retrying struct {
 	base     http.RoundTripper
 	attempts int

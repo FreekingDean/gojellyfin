@@ -18,11 +18,9 @@ import (
 const (
 	channel       = "gojellyfin_socket"
 	retryInterval = time.Second
+	maxPayload    = 7500
 )
 
-// Every pod receives every envelope, so the sessions it is meant for travel in
-// the payload: a pod drops the ones it does not hold without asking the
-// database who was in the group.
 type Envelope struct {
 	SessionIDs []uuid.UUID     `json:"SessionIds"`
 	Type       string          `json:"Type"`
@@ -41,8 +39,6 @@ type Service struct {
 	done   chan struct{}
 }
 
-// LISTEN holds a connection for as long as it is listening, so this owns a pool
-// of its own rather than borrowing the one every query shares.
 func New(config env.Config) (*Service, error) {
 	pool, err := pgxpool.New(context.Background(), config.DatabaseURL)
 	if err != nil {
@@ -52,9 +48,6 @@ func New(config env.Config) (*Service, error) {
 	return &Service{pool: pool, done: make(chan struct{})}, nil
 }
 
-// Handlers run on the listener, in order, because a group's updates only make
-// sense in the order they happened. One that blocks therefore stalls delivery
-// for every other handler, so a handler must return without waiting.
 func (s *Service) Handle(handler Handler) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -72,13 +65,35 @@ func (s *Service) Publish(ctx context.Context, sessionIDs []uuid.UUID, messageTy
 		return fmt.Errorf("failed to encode %s data: %w", messageType, err)
 	}
 
-	payload, err := json.Marshal(Envelope{SessionIDs: sessionIDs, Type: messageType, Data: encoded})
-	if err != nil {
-		return fmt.Errorf("failed to encode %s envelope: %w", messageType, err)
-	}
+	for start := 0; start < len(sessionIDs); {
+		size := len(sessionIDs) - start
 
-	if _, err := s.pool.Exec(ctx, "select pg_notify($1, $2)", channel, string(payload)); err != nil {
-		return fmt.Errorf("failed to publish %s: %w", messageType, err)
+		var payload []byte
+		for {
+			payload, err = json.Marshal(Envelope{
+				SessionIDs: sessionIDs[start : start+size],
+				Type:       messageType,
+				Data:       encoded,
+			})
+			if err != nil {
+				return fmt.Errorf("failed to encode %s envelope: %w", messageType, err)
+			}
+			if len(payload) <= maxPayload || size == 1 {
+				break
+			}
+
+			size /= 2
+		}
+
+		if len(payload) > maxPayload {
+			return fmt.Errorf("a single %s recipient needs %d bytes, over the %d a notification allows", messageType, len(payload), maxPayload)
+		}
+
+		if _, err := s.pool.Exec(ctx, "select pg_notify($1, $2)", channel, string(payload)); err != nil {
+			return fmt.Errorf("failed to publish %s: %w", messageType, err)
+		}
+
+		start += size
 	}
 
 	return nil
@@ -109,8 +124,6 @@ func (s *Service) Stop() error {
 	return nil
 }
 
-// LISTEN is issued before Start returns, so an envelope published immediately
-// after startup is not lost to a listener that has not registered yet.
 func (s *Service) listen(ctx context.Context) (*pgxpool.Conn, error) {
 	conn, err := s.pool.Acquire(ctx)
 	if err != nil {
@@ -126,17 +139,22 @@ func (s *Service) listen(ctx context.Context) (*pgxpool.Conn, error) {
 	return conn, nil
 }
 
-// Losing the connection is how a dropped listener is noticed, so releasing it
-// and acquiring another is the reconnect.
 func (s *Service) run(ctx context.Context, conn *pgxpool.Conn) {
 	defer close(s.done)
 
+	var lost time.Time
+
 	for {
 		if conn != nil {
-			if err := s.receive(ctx, conn); err != nil && ctx.Err() == nil {
-				log.Printf("notify listener: %v", err)
-			}
+			err := s.receive(ctx, conn)
 			conn.Release()
+
+			if ctx.Err() != nil {
+				return
+			}
+
+			lost = time.Now()
+			log.Printf("notify listener lost, updates for sessions on this pod are dropped until it reconnects: %v", err)
 		}
 
 		select {
@@ -147,13 +165,17 @@ func (s *Service) run(ctx context.Context, conn *pgxpool.Conn) {
 
 		next, err := s.listen(ctx)
 		if err != nil {
-			if ctx.Err() == nil {
-				log.Printf("notify listener: %v", err)
+			if ctx.Err() != nil {
+				return
 			}
+
 			conn = nil
+			log.Printf("notify listener cannot reconnect: %v", err)
 
 			continue
 		}
+
+		log.Printf("notify listener reconnected after %s, updates published in that window were missed", time.Since(lost).Round(time.Millisecond))
 
 		conn = next
 	}

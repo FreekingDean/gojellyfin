@@ -10,8 +10,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 )
 
-// Transport only: parse what the client sent and hand it to auth, which owns
-// the identity on the context.
 type Auth struct {
 	auth *auth.Service
 }
@@ -38,10 +36,6 @@ func (a *Auth) Middleware(f api.StrictHandlerFunc, operationID string) api.Stric
 	}
 }
 
-// Media URLs and websocket handshakes cannot carry an Authorization header, so
-// clients fall back to a query parameter. jellyfin-web sends ApiKey, older Emby
-// clients send api_key, and neither casing is canonicalised for these routes
-// because they are registered outside the generated API.
 func TokenFrom(r *http.Request) string {
 	if token := parseAuthorization(r).Token; token != "" {
 		return token
@@ -70,7 +64,6 @@ func parseAuthorization(r *http.Request) auth.Authorization {
 		}
 
 		value = strings.Trim(strings.TrimSpace(value), `"`)
-		// Clients percent-encode these, so "Jellyfin%20Web" arrives verbatim.
 		if decoded, err := url.QueryUnescape(value); err == nil {
 			value = decoded
 		}

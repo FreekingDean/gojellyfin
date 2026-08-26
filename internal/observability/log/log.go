@@ -22,7 +22,6 @@ type Logger interface {
 type loggerImpl struct {
 	writer   *zap.Logger
 	internal bool
-	//store
 }
 
 func New() (Logger, error) {
@@ -33,7 +32,6 @@ func New() (Logger, error) {
 	return &loggerImpl{
 		writer:   logger,
 		internal: false,
-		//store
 	}, err
 }
 
@@ -55,12 +53,9 @@ const (
 )
 
 func (l *loggerImpl) write(ctx context.Context, level logLevel, msg string, args ...any) {
-	// Implement the actual logging logic here.
-	// This is a placeholder implementation.
 	fields := []zap.Field{}
 	if !l.internal {
 		fields = append(fields, zap.String("userID", ctx.UserID()))
-		//l.store.StoreActivityLog(...)
 	}
 	l.writer.Log(zapcore.Level(level), fmt.Sprintf(msg, args...), fields...)
 }

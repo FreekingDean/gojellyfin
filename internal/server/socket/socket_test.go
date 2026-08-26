@@ -119,67 +119,69 @@ func read(t *testing.T, conn *websocket.Conn) wsMessage {
 	return message
 }
 
-func TestForceKeepAliveOpensTheSocket(t *testing.T) {
-	conn := newFixture(t).connect(t)
+func TestSocket_Handle(t *testing.T) {
+	t.Run("ForceKeepAlive opens the socket", func(t *testing.T) {
+		conn := newFixture(t).connect(t)
 
-	message := read(t, conn)
-	if message.MessageType != "ForceKeepAlive" {
-		t.Errorf("want ForceKeepAlive first, got %q", message.MessageType)
-	}
-	if message.Data != float64(keepAliveTimeout) {
-		t.Errorf("want the timeout advertised as %d, got %v", keepAliveTimeout, message.Data)
-	}
-	if message.MessageId == "" {
-		t.Error("want a message id")
-	}
+		message := read(t, conn)
+		if message.MessageType != "ForceKeepAlive" {
+			t.Errorf("want ForceKeepAlive first, got %q", message.MessageType)
+		}
+		if message.Data != float64(keepAliveTimeout) {
+			t.Errorf("want the timeout advertised as %d, got %v", keepAliveTimeout, message.Data)
+		}
+		if message.MessageId == "" {
+			t.Error("want a message id")
+		}
+	})
+
+	t.Run("a KeepAlive is answered", func(t *testing.T) {
+		conn := newFixture(t).connect(t)
+		read(t, conn)
+
+		if err := conn.WriteJSON(wsMessage{MessageType: "KeepAlive", MessageId: newGUID()}); err != nil {
+			t.Fatalf("failed to write to the socket: %v", err)
+		}
+
+		if message := read(t, conn); message.MessageType != "KeepAlive" {
+			t.Errorf("want a KeepAlive reply, got %q", message.MessageType)
+		}
+	})
+
+	t.Run("an unknown message is ignored", func(t *testing.T) {
+		conn := newFixture(t).connect(t)
+		read(t, conn)
+
+		if err := conn.WriteJSON(wsMessage{MessageType: "SessionsStart", MessageId: newGUID()}); err != nil {
+			t.Fatalf("failed to write to the socket: %v", err)
+		}
+		if err := conn.WriteJSON(wsMessage{MessageType: "KeepAlive", MessageId: newGUID()}); err != nil {
+			t.Fatalf("failed to write to the socket: %v", err)
+		}
+
+		if message := read(t, conn); message.MessageType != "KeepAlive" {
+			t.Errorf("want the unknown message skipped and the KeepAlive answered, got %q", message.MessageType)
+		}
+	})
+
+	t.Run("it returns when the connection closes", func(t *testing.T) {
+		fixture := newFixture(t)
+		conn := fixture.connect(t)
+		read(t, conn)
+
+		if err := conn.Close(); err != nil {
+			t.Fatalf("failed to close the connection: %v", err)
+		}
+
+		select {
+		case <-fixture.returned:
+		case <-time.After(5 * time.Second):
+			t.Fatal("want Handle to return once the connection is gone")
+		}
+	})
 }
 
-func TestKeepAliveIsAnswered(t *testing.T) {
-	conn := newFixture(t).connect(t)
-	read(t, conn)
-
-	if err := conn.WriteJSON(wsMessage{MessageType: "KeepAlive", MessageId: newGUID()}); err != nil {
-		t.Fatalf("failed to write to the socket: %v", err)
-	}
-
-	if message := read(t, conn); message.MessageType != "KeepAlive" {
-		t.Errorf("want a KeepAlive reply, got %q", message.MessageType)
-	}
-}
-
-func TestAnUnknownMessageIsIgnored(t *testing.T) {
-	conn := newFixture(t).connect(t)
-	read(t, conn)
-
-	if err := conn.WriteJSON(wsMessage{MessageType: "SessionsStart", MessageId: newGUID()}); err != nil {
-		t.Fatalf("failed to write to the socket: %v", err)
-	}
-	if err := conn.WriteJSON(wsMessage{MessageType: "KeepAlive", MessageId: newGUID()}); err != nil {
-		t.Fatalf("failed to write to the socket: %v", err)
-	}
-
-	if message := read(t, conn); message.MessageType != "KeepAlive" {
-		t.Errorf("want the unknown message skipped and the KeepAlive answered, got %q", message.MessageType)
-	}
-}
-
-func TestHandleReturnsWhenTheConnectionCloses(t *testing.T) {
-	fixture := newFixture(t)
-	conn := fixture.connect(t)
-	read(t, conn)
-
-	if err := conn.Close(); err != nil {
-		t.Fatalf("failed to close the connection: %v", err)
-	}
-
-	select {
-	case <-fixture.returned:
-	case <-time.After(5 * time.Second):
-		t.Fatal("want Handle to return once the connection is gone")
-	}
-}
-
-func TestEnqueueDropsWhenTheBufferIsFull(t *testing.T) {
+func TestEnqueue(t *testing.T) {
 	out := make(chan wsMessage, 1)
 	enqueue(out, wsMessage{MessageType: "KeepAlive"})
 
@@ -196,62 +198,62 @@ func TestEnqueueDropsWhenTheBufferIsFull(t *testing.T) {
 	}
 }
 
-func TestDeliverReachesAConnectedSession(t *testing.T) {
-	f := newFixture(t)
-	conn := f.connect(t)
-	read(t, conn)
+func TestSocket_Deliver(t *testing.T) {
+	t.Run("a connected session receives the envelope", func(t *testing.T) {
+		f := newFixture(t)
+		conn := f.connect(t)
+		read(t, conn)
 
-	f.socket.Deliver(notify.Envelope{
-		SessionIDs: []uuid.UUID{f.sessionID},
-		Type:       "SyncPlayGroupUpdate",
-		Data:       json.RawMessage(`{"Type":"UserJoined"}`),
+		f.socket.Deliver(notify.Envelope{
+			SessionIDs: []uuid.UUID{f.sessionID},
+			Type:       "SyncPlayGroupUpdate",
+			Data:       json.RawMessage(`{"Type":"UserJoined"}`),
+		})
+
+		message := read(t, conn)
+		if message.MessageType != "SyncPlayGroupUpdate" {
+			t.Fatalf("MessageType = %q, want SyncPlayGroupUpdate", message.MessageType)
+		}
+
+		data, ok := message.Data.(map[string]any)
+		if !ok {
+			t.Fatalf("Data = %T, want the update object", message.Data)
+		}
+		if data["Type"] != "UserJoined" {
+			t.Fatalf("data = %v, want UserJoined", data)
+		}
 	})
 
-	message := read(t, conn)
-	if message.MessageType != "SyncPlayGroupUpdate" {
-		t.Fatalf("want SyncPlayGroupUpdate, got %q", message.MessageType)
-	}
+	t.Run("a session held by another pod is skipped without stalling the rest", func(t *testing.T) {
+		f := newFixture(t)
+		conn := f.connect(t)
+		read(t, conn)
 
-	data, ok := message.Data.(map[string]any)
-	if !ok {
-		t.Fatalf("want the update data, got %T", message.Data)
-	}
-	if data["Type"] != "UserJoined" {
-		t.Fatalf("data is %v", data)
-	}
-}
+		f.socket.Deliver(notify.Envelope{
+			SessionIDs: []uuid.UUID{uuid.New(), f.sessionID},
+			Type:       "SyncPlayGroupUpdate",
+			Data:       json.RawMessage(`{"Type":"UserLeft"}`),
+		})
 
-// A member on another pod, or on none, has no entry in the registry. Dropping
-// it must not hold up the members that are connected here.
-func TestDeliverSkipsASessionThatIsNotConnected(t *testing.T) {
-	f := newFixture(t)
-	conn := f.connect(t)
-	read(t, conn)
-
-	f.socket.Deliver(notify.Envelope{
-		SessionIDs: []uuid.UUID{uuid.New(), f.sessionID},
-		Type:       "SyncPlayGroupUpdate",
-		Data:       json.RawMessage(`{"Type":"UserLeft"}`),
+		if message := read(t, conn); message.MessageType != "SyncPlayGroupUpdate" {
+			t.Fatalf("MessageType = %q, want SyncPlayGroupUpdate", message.MessageType)
+		}
 	})
 
-	if message := read(t, conn); message.MessageType != "SyncPlayGroupUpdate" {
-		t.Fatalf("want SyncPlayGroupUpdate, got %q", message.MessageType)
-	}
-}
+	t.Run("delivering after the socket closes is dropped", func(t *testing.T) {
+		f := newFixture(t)
+		conn := f.connect(t)
+		read(t, conn)
 
-func TestDeliverAfterTheSocketClosesIsDropped(t *testing.T) {
-	f := newFixture(t)
-	conn := f.connect(t)
-	read(t, conn)
+		if err := conn.Close(); err != nil {
+			t.Fatalf("failed to close the socket: %v", err)
+		}
+		<-f.returned
 
-	if err := conn.Close(); err != nil {
-		t.Fatalf("failed to close the socket: %v", err)
-	}
-	<-f.returned
-
-	f.socket.Deliver(notify.Envelope{
-		SessionIDs: []uuid.UUID{f.sessionID},
-		Type:       "SyncPlayGroupUpdate",
-		Data:       json.RawMessage(`{"Type":"UserLeft"}`),
+		f.socket.Deliver(notify.Envelope{
+			SessionIDs: []uuid.UUID{f.sessionID},
+			Type:       "SyncPlayGroupUpdate",
+			Data:       json.RawMessage(`{"Type":"UserLeft"}`),
+		})
 	})
 }

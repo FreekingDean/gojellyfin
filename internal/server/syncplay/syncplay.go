@@ -10,11 +10,10 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/syncplay"
 )
 
-// Declared here rather than taken from notify so the tag package depends on
-// what it sends, not on how it reaches the other pods.
 type Publisher interface {
 	Publish(ctx context.Context, sessionIDs []uuid.UUID, messageType string, data any) error
 }
@@ -39,14 +38,14 @@ func (s *Server) SyncPlayCreateGroup(ctx context.Context, request api.SyncPlayCr
 		body = &api.NewGroupRequestDto{}
 	}
 
-	group, err := s.syncplay.Create(ctx, apiutil.Deref(body.GroupName), session.ID)
+	joined, err := s.syncplay.Create(ctx, apiutil.Deref(body.GroupName), session.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	s.publish(ctx, []uuid.UUID{session.ID}, group.ID, groupJoined, groupInfo(group))
+	s.announce(ctx, session, joined)
 
-	return api.SyncPlayCreateGroup200JSONResponse(groupInfo(group)), nil
+	return api.SyncPlayCreateGroup200JSONResponse(groupInfo(joined.Group)), nil
 }
 
 func (s *Server) SyncPlayJoinGroup(ctx context.Context, request api.SyncPlayJoinGroupRequestObject) (api.SyncPlayJoinGroupResponseObject, error) {
@@ -62,7 +61,7 @@ func (s *Server) SyncPlayJoinGroup(ctx context.Context, request api.SyncPlayJoin
 
 	groupID := *body.GroupId
 
-	err := s.syncplay.Join(ctx, groupID, session.ID)
+	joined, err := s.syncplay.Join(ctx, groupID, session.ID)
 	if errors.Is(err, syncplay.ErrNoGroup) {
 		s.publish(ctx, []uuid.UUID{session.ID}, groupID, groupDoesNotExist, groupID.String())
 
@@ -72,14 +71,7 @@ func (s *Server) SyncPlayJoinGroup(ctx context.Context, request api.SyncPlayJoin
 		return nil, err
 	}
 
-	group, err := s.syncplay.GroupByID(ctx, groupID)
-	if err != nil {
-		return nil, err
-	}
-
-	participants := syncplay.Participants(group)
-	s.publish(ctx, []uuid.UUID{session.ID}, groupID, groupJoined, groupInfo(group))
-	s.publish(ctx, sessionIDs(participants, session.ID), groupID, userJoined, userNameOf(participants, session.ID))
+	s.announce(ctx, session, joined)
 
 	return api.SyncPlayJoinGroup204Response{}, nil
 }
@@ -90,22 +82,13 @@ func (s *Server) SyncPlayLeaveGroup(ctx context.Context, request api.SyncPlayLea
 		return api.SyncPlayLeaveGroup401Response{}, nil
 	}
 
-	group, err := s.syncplay.GroupBySessionID(ctx, session.ID)
-	if errors.Is(err, syncplay.ErrNoGroup) {
-		return api.SyncPlayLeaveGroup204Response{}, nil
-	}
+	left, err := s.syncplay.Leave(ctx, session.ID)
 	if err != nil {
 		return nil, err
 	}
-
-	participants := syncplay.Participants(group)
-
-	if err := s.syncplay.Leave(ctx, session.ID); err != nil {
-		return nil, err
+	if left != nil {
+		s.depart(ctx, session, left)
 	}
-
-	s.publish(ctx, []uuid.UUID{session.ID}, group.ID, groupLeft, group.ID.String())
-	s.publish(ctx, sessionIDs(participants, session.ID), group.ID, userLeft, userNameOf(participants, session.ID))
 
 	return api.SyncPlayLeaveGroup204Response{}, nil
 }
@@ -131,10 +114,31 @@ func (s *Server) SyncPlayGetGroup(ctx context.Context, request api.SyncPlayGetGr
 	return api.SyncPlayGetGroup200JSONResponse(groupInfo(group)), nil
 }
 
-// An update nobody can be told about does not undo the membership change that
-// already committed, so a failed publish is logged and the request still
-// answers what it did.
+func (s *Server) announce(ctx context.Context, session *sessions.Session, joined syncplay.Joined) {
+	if joined.Left != nil {
+		s.depart(ctx, session, joined.Left)
+	}
+
+	s.publish(ctx, []uuid.UUID{session.ID}, joined.Group.ID, groupJoined, groupInfo(joined.Group))
+
+	if joined.Rejoined {
+		return
+	}
+
+	others := sessionIDs(syncplay.Participants(joined.Group), session.ID)
+	s.publish(ctx, others, joined.Group.ID, userJoined, userName(session))
+}
+
+func (s *Server) depart(ctx context.Context, session *sessions.Session, left *syncplay.Departure) {
+	s.publish(ctx, []uuid.UUID{session.ID}, left.GroupID, groupLeft, left.GroupID.String())
+	s.publish(ctx, sessionIDs(left.Remaining, session.ID), left.GroupID, userLeft, userName(session))
+}
+
 func (s *Server) publish(ctx context.Context, sessionIDs []uuid.UUID, groupID uuid.UUID, updateType string, data any) {
+	if len(sessionIDs) == 0 {
+		return
+	}
+
 	update := groupUpdate{GroupId: groupID, Type: updateType, Data: data}
 
 	if err := s.publisher.Publish(ctx, sessionIDs, groupUpdateMessage, update); err != nil {

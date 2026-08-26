@@ -21,9 +21,6 @@ const (
 	authorizationKey
 )
 
-// What the caller presented and where it connected from. Parsed at the
-// transport edge, but owned here so handlers read it from this package rather
-// than from the middleware.
 type Authorization struct {
 	Client     string
 	Device     string
@@ -50,9 +47,6 @@ func New(sessions *sessions.Service) *Service {
 	return &Service{sessions: sessions}
 }
 
-// Authenticate resolves a token and returns a context carrying the session.
-// This package puts the identity on the context and takes it back off; nothing
-// else should know the keys exist.
 func (s *Service) Authenticate(ctx context.Context, token string) (context.Context, error) {
 	if token == "" {
 		return ctx, ErrUnauthorized

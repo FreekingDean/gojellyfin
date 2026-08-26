@@ -71,6 +71,19 @@ func seriesMetadata(series *gotmdb.TVDetails) items.Metadata {
 	return metadata
 }
 
+func seasonMetadata(season *gotmdb.TVSeasonDetails) items.Metadata {
+	premiere := date(season.AirDate)
+
+	return items.Metadata{
+		Name:            text(season.Name),
+		Overview:        text(season.Overview),
+		CommunityRating: score(season.VoteAverage),
+		PremiereDate:    premiere,
+		ProductionYear:  year(premiere),
+		ProviderIds:     providerIDs(season.ID, ""),
+	}
+}
+
 func episodeMetadata(episode *gotmdb.TVEpisodeDetails) items.Metadata {
 	premiere := date(episode.AirDate)
 

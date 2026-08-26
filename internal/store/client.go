@@ -1494,22 +1494,6 @@ func (c *DisplayPreferencesClient) QueryUser(_m *DisplayPreferences) *UserQuery 
 	return query
 }
 
-// QueryItem queries the item edge of a DisplayPreferences.
-func (c *DisplayPreferencesClient) QueryItem(_m *DisplayPreferences) *ItemQuery {
-	query := (&ItemClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(displaypreferences.Table, displaypreferences.FieldID, id),
-			sqlgraph.To(item.Table, item.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, displaypreferences.ItemTable, displaypreferences.ItemColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // Hooks returns the client hooks.
 func (c *DisplayPreferencesClient) Hooks() []Hook {
 	return c.hooks.DisplayPreferences
@@ -2062,22 +2046,6 @@ func (c *ItemClient) QueryUserData(_m *Item) *UserItemDataQuery {
 			sqlgraph.From(item.Table, item.FieldID, id),
 			sqlgraph.To(useritemdata.Table, useritemdata.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, item.UserDataTable, item.UserDataColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryDisplayPreferences queries the display_preferences edge of a Item.
-func (c *ItemClient) QueryDisplayPreferences(_m *Item) *DisplayPreferencesQuery {
-	query := (&DisplayPreferencesClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(item.Table, item.FieldID, id),
-			sqlgraph.To(displaypreferences.Table, displaypreferences.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, item.DisplayPreferencesTable, item.DisplayPreferencesColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

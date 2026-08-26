@@ -17,15 +17,12 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 )
 
-// The client treats an unanswered KeepAlive as a dead socket and reconnects, so
-// the timeout is advertised as 60s and ForceKeepAlive is pushed at half that.
 const (
 	keepAliveTimeout  = 60
 	keepAliveInterval = 30 * time.Second
 )
 
 var upgrader = websocket.Upgrader{
-	// jellyfin-web is same-origin in prod; relax for dev, tighten later
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
@@ -46,9 +43,6 @@ func New(sessions *sessions.Service) *Socket {
 	return &Socket{sessions: sessions, clients: make(map[uuid.UUID][]chan wsMessage)}
 }
 
-// A session connected to another pod, or to none at all, has no entry here and
-// is skipped; enqueue never blocks, so neither can stall the members that are
-// connected.
 func (s *Socket) Deliver(envelope notify.Envelope) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -79,8 +73,6 @@ func (s *Socket) register(sessionID uuid.UUID, out chan wsMessage) func() {
 	}
 }
 
-// Browsers cannot set headers on a websocket handshake, so clients pass the
-// access token as a query parameter instead.
 func (s *Socket) Handle(w http.ResponseWriter, r *http.Request) {
 	token := middleware.TokenFrom(r)
 	if token == "" {
@@ -100,8 +92,6 @@ func (s *Socket) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 	defer func() { _ = conn.Close() }()
 
-	// Gorilla allows one concurrent writer, so replies are funnelled to the
-	// write loop below rather than sent from the reader.
 	replies := make(chan wsMessage, 8)
 	done := make(chan struct{})
 
@@ -150,8 +140,6 @@ func (s *Socket) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Never blocks: the write loop owns the connection and may already be gone, so
-// a full buffer drops the reply rather than wedging the reader forever.
 func enqueue(out chan wsMessage, message wsMessage) {
 	select {
 	case out <- message:
@@ -166,5 +154,5 @@ func forceKeepAlive() wsMessage {
 func newGUID() string {
 	b := make([]byte, 16)
 	_, _ = rand.Read(b)
-	return hex.EncodeToString(b) // 32 hex chars, no dashes — matches Jellyfin's format
+	return hex.EncodeToString(b)
 }

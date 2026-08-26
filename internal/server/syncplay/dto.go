@@ -5,11 +5,10 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/syncplay"
 )
 
-// The spec models these as SyncPlayGroupUpdate and its variants, but nothing in
-// it references them, so oapi-codegen prunes them and they are declared here.
 const (
 	groupUpdateMessage = "SyncPlayGroupUpdate"
 
@@ -68,12 +67,10 @@ func sessionIDs(participants []syncplay.Participant, except uuid.UUID) []uuid.UU
 	return ids
 }
 
-func userNameOf(participants []syncplay.Participant, sessionID uuid.UUID) string {
-	for _, participant := range participants {
-		if participant.SessionID == sessionID {
-			return participant.UserName
-		}
+func userName(session *sessions.Session) string {
+	if session.Edges.User == nil {
+		return ""
 	}
 
-	return ""
+	return session.Edges.User.Name
 }

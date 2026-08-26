@@ -70,7 +70,7 @@ func (f *fixture) add(t *testing.T, collectionType librarymodal.CollectionType, 
 	return library.ID
 }
 
-func TestGetUserViews(t *testing.T) {
+func TestServer_GetUserViews(t *testing.T) {
 	fixture := newFixture(t)
 
 	id := fixture.add(t, librarymodal.CollectionTypeMovies, "Feature Films")
@@ -112,7 +112,7 @@ func TestGetUserViews(t *testing.T) {
 	}
 }
 
-func TestGetGroupingOptions(t *testing.T) {
+func TestServer_GetGroupingOptions(t *testing.T) {
 	fixture := newFixture(t)
 
 	movies := fixture.add(t, librarymodal.CollectionTypeMovies, "Movies")
