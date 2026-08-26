@@ -30,12 +30,7 @@ var artworkNames = map[items.ImageKind][]string{
 	imagemodal.KindBanner:   {"banner"},
 }
 
-func (s *Scanner) scanArtwork(ctx context.Context, itemID uuid.UUID, path string, isFolder bool) error {
-	directory, base := path, ""
-	if !isFolder {
-		directory, base = filepath.Dir(path), stripExtension(filepath.Base(path))
-	}
-
+func (s *Scanner) scanArtwork(ctx context.Context, itemID uuid.UUID, directory, base string, folder bool) error {
 	entries, err := os.ReadDir(directory)
 	if err != nil {
 		return err
@@ -43,7 +38,20 @@ func (s *Scanner) scanArtwork(ctx context.Context, itemID uuid.UUID, path string
 
 	found := make([]items.Artwork, 0)
 	for kind, names := range artworkNames {
-		match := findArtwork(entries, directory, base, names)
+		stems := make([]string, 0, len(names)*2+1)
+		if base != "" {
+			for _, name := range names {
+				stems = append(stems, strings.ToLower(base)+"-"+name)
+			}
+			if kind == imagemodal.KindPrimary {
+				stems = append(stems, strings.ToLower(base))
+			}
+		}
+		if folder {
+			stems = append(stems, names...)
+		}
+
+		match := findArtwork(entries, directory, stems)
 		if match == "" {
 			continue
 		}
@@ -58,23 +66,13 @@ func (s *Scanner) scanArtwork(ctx context.Context, itemID uuid.UUID, path string
 	return s.items.ReplaceImages(ctx, itemID, found)
 }
 
-func findArtwork(entries []os.DirEntry, directory, base string, names []string) string {
-	for _, name := range names {
+func findArtwork(entries []os.DirEntry, directory string, stems []string) string {
+	for _, stem := range stems {
 		for _, entry := range entries {
-			if entry.IsDir() {
+			if entry.IsDir() || !isImage(entry.Name()) {
 				continue
 			}
-
-			candidate := strings.ToLower(stripExtension(entry.Name()))
-			if !isImage(entry.Name()) {
-				continue
-			}
-
-			switch {
-			case base == "" && candidate == name:
-			case base != "" && candidate == strings.ToLower(base)+"-"+name:
-			case base != "" && candidate == strings.ToLower(base) && name == "poster":
-			default:
+			if strings.ToLower(stripExtension(entry.Name())) != stem {
 				continue
 			}
 

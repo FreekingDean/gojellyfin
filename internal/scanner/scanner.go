@@ -108,8 +108,9 @@ func (s *Scanner) scanMovies(ctx context.Context, library *libraries.Library, ro
 			return nil
 		}
 
+		parent := filepath.Dir(path)
 		title := stripExtension(entry.Name())
-		if parent := filepath.Dir(path); parent != root {
+		if parent != root {
 			title = filepath.Base(parent)
 		}
 
@@ -126,13 +127,8 @@ func (s *Scanner) scanMovies(ctx context.Context, library *libraries.Library, ro
 			return err
 		}
 
-		if err := s.scanArtwork(ctx, item.ID, path, false); err != nil {
+		if err := s.scanArtwork(ctx, item.ID, parent, stripExtension(entry.Name()), parent != root); err != nil {
 			log.Printf("artwork %s: %v", path, err)
-		}
-		if parent := filepath.Dir(path); parent != root {
-			if err := s.scanArtwork(ctx, item.ID, parent, true); err != nil {
-				log.Printf("artwork %s: %v", parent, err)
-			}
 		}
 
 		return nil
@@ -170,7 +166,7 @@ func (s *Scanner) scanShows(ctx context.Context, library *libraries.Library, roo
 		}
 		found.title(series)
 
-		if err := s.scanArtwork(ctx, series.ID, seriesPath, true); err != nil {
+		if err := s.scanArtwork(ctx, series.ID, seriesPath, "", true); err != nil {
 			log.Printf("artwork %s: %v", seriesPath, err)
 		}
 
@@ -227,7 +223,7 @@ func (s *Scanner) scanSeries(ctx context.Context, library *libraries.Library, se
 		}
 		found.title(season)
 
-		if err := s.scanArtwork(ctx, season.ID, path, true); err != nil {
+		if err := s.scanArtwork(ctx, season.ID, path, "", true); err != nil {
 			log.Printf("artwork %s: %v", path, err)
 		}
 
@@ -278,7 +274,7 @@ func (s *Scanner) scanEpisode(ctx context.Context, library *libraries.Library, s
 		return err
 	}
 
-	if err := s.scanArtwork(ctx, item.ID, path, false); err != nil {
+	if err := s.scanArtwork(ctx, item.ID, filepath.Dir(path), stripExtension(entry.Name()), false); err != nil {
 		log.Printf("artwork %s: %v", path, err)
 	}
 
