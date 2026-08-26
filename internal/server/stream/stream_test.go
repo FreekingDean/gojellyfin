@@ -15,6 +15,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
@@ -80,7 +81,7 @@ func newFixture(t *testing.T) *fixture {
 
 	itemService := items.New(client)
 	libraryService := libraries.New(client)
-	sessionService := sessions.New(client)
+	sessionService := sessions.New(client, activity.New(client))
 	userService := users.New(client)
 
 	library, err := libraryService.CreateLibrary(ctx, unique, librarymodal.CollectionTypeMusic, nil)

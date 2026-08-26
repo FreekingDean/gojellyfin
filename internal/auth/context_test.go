@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
@@ -63,7 +64,7 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
-	sessionService := sessions.New(client)
+	sessionService := sessions.New(client, activity.New(client))
 
 	return &fixture{
 		auth:     New(sessionService),

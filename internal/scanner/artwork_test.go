@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
@@ -64,7 +65,7 @@ func newFixture(t *testing.T, root string) *fixture {
 
 	service := items.New(client)
 
-	return &fixture{scanner: New(service, libraries.New(client), filesystem.New(config), ffmpeg.New()), items: service, record: record}
+	return &fixture{scanner: New(service, libraries.New(client), filesystem.New(config), ffmpeg.New(), activity.New(client)), items: service, record: record}
 }
 
 func (f *fixture) scan(t *testing.T) map[items.ImageKind]string {

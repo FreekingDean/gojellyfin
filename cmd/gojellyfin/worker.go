@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
 
+	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
@@ -21,6 +22,7 @@ var workerModules = fx.Options(
 	observability.Module,
 	store.Module,
 	ffmpeg.Module,
+	activity.Module,
 	fx.Provide(
 		items.New,
 		libraries.New,

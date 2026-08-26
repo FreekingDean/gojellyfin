@@ -15,6 +15,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
@@ -78,7 +79,7 @@ func newPlaybackFixture(t *testing.T) *playbackFixture {
 
 	itemService := items.New(client)
 	libraryService := libraries.New(client)
-	sessionService := sessions.New(client)
+	sessionService := sessions.New(client, activity.New(client))
 	userService := users.New(client)
 
 	library, err := libraryService.CreateLibrary(ctx, unique, librarymodal.CollectionTypeMovies, nil)

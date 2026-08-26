@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	devicemodal "github.com/FreekingDean/gojellyfin/internal/store/device"
 	sessionmodal "github.com/FreekingDean/gojellyfin/internal/store/session"
@@ -26,11 +27,12 @@ type DeviceInfo struct {
 }
 
 type Service struct {
-	store *store.Client
+	store    *store.Client
+	activity *activity.Service
 }
 
-func New(client *store.Client) *Service {
-	return &Service{store: client}
+func New(client *store.Client, activity *activity.Service) *Service {
+	return &Service{store: client, activity: activity}
 }
 
 func (s *Service) Create(ctx context.Context, userID uuid.UUID, token string, device DeviceInfo) (*Session, error) {
@@ -70,7 +72,20 @@ func (s *Service) Create(ctx context.Context, userID uuid.UUID, token string, de
 		return nil, err
 	}
 
-	return s.ByToken(ctx, token)
+	session, err := s.ByToken(ctx, token)
+	if err != nil {
+		return nil, err
+	}
+
+	s.activity.Record(ctx, activity.Event{
+		Name:          fmt.Sprintf("%s has been authenticated", session.Edges.User.Username),
+		Kind:          activity.KindAuthenticationSucceeded,
+		ShortOverview: device.Name,
+		Severity:      activity.SeverityInformation,
+		UserID:        &userID,
+	})
+
+	return session, nil
 }
 
 func (s *Service) ByToken(ctx context.Context, token string) (*Session, error) {
@@ -103,11 +118,23 @@ func (s *Service) List(ctx context.Context) ([]*Session, error) {
 }
 
 func (s *Service) DeleteByToken(ctx context.Context, token string) error {
-	_, err := s.store.Session.Delete().
-		Where(sessionmodal.AccessToken(token)).
-		Exec(ctx)
-	if err != nil {
+	session, err := s.ByToken(ctx, token)
+	if err != nil && !store.IsNotFound(err) {
+		return err
+	}
+
+	if _, err := s.store.Session.Delete().Where(sessionmodal.AccessToken(token)).Exec(ctx); err != nil {
 		return fmt.Errorf("failed to delete session by token: %w", err)
+	}
+
+	if session != nil {
+		s.activity.Record(ctx, activity.Event{
+			Name:          fmt.Sprintf("%s has disconnected", session.Edges.User.Username),
+			Kind:          activity.KindSessionEnded,
+			ShortOverview: session.Edges.Device.Name,
+			Severity:      activity.SeverityInformation,
+			UserID:        &session.Edges.User.ID,
+		})
 	}
 
 	return nil

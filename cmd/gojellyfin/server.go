@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
 
+	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/apikeys"
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/config"
@@ -32,6 +33,7 @@ var serverModules = fx.Options(
 	observability.Module,
 	store.Module,
 
+	activity.Module,
 	apikeys.Module,
 	auth.Module,
 	config.Module,
