@@ -5,15 +5,15 @@ metadata:
   name: {{ include "gojellyfin.fullname" . }}
   labels:
     {{- include "gojellyfin.labels" (dict "root" $ "component" $component) | nindent 4 }}
-  {{- with .Values.api.service.annotations }}
+  {{- with .Values.service.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  type: {{ .Values.api.service.type }}
+  type: {{ .Values.service.type }}
   selector:
     {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 4 }}
   ports:
     - name: http
-      port: {{ .Values.api.service.port }}
+      port: {{ .Values.service.port }}
       targetPort: http

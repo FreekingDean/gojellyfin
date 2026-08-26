@@ -1,8 +1,8 @@
 {{ .Chart.Name }} {{ .Chart.Version }} is installed as {{ .Release.Name }}.
 
-The API answers on http://{{ include "gojellyfin.fullname" . }}.{{ .Release.Namespace }}:{{ .Values.api.service.port }}, or:
+The API answers on http://{{ include "gojellyfin.fullname" . }}.{{ .Release.Namespace }}:{{ .Values.service.port }}, or:
 
-  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "gojellyfin.fullname" . }} 8081:{{ .Values.api.service.port }}
+  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "gojellyfin.fullname" . }} 8081:{{ .Values.service.port }}
 
 DATABASE_URL comes from the Secret {{ include "gojellyfin.databaseSecretName" . }}, key {{ .Values.database.secretKey }}. Create it before the pods start:
 

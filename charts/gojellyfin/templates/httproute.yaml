@@ -30,7 +30,7 @@ spec:
             value: /Audio
       backendRefs:
         - name: {{ include "gojellyfin.fullname" . }}-streaming
-          port: {{ .Values.streaming.service.port }}
+          port: {{ .Values.service.port }}
 ---
 {{- end }}
 {{- if .Values.web.enabled }}
@@ -58,7 +58,7 @@ spec:
             value: /web
       backendRefs:
         - name: {{ include "gojellyfin.fullname" . }}-web
-          port: {{ .Values.web.service.port }}
+          port: {{ .Values.service.port }}
 ---
 {{- end }}
 apiVersion: gateway.networking.k8s.io/v1
@@ -88,12 +88,12 @@ spec:
             value: /web/ConfigurationPages
       backendRefs:
         - name: {{ include "gojellyfin.fullname" . }}
-          port: {{ .Values.api.service.port }}
+          port: {{ .Values.service.port }}
     - matches:
         - path:
             type: PathPrefix
             value: /
       backendRefs:
         - name: {{ include "gojellyfin.fullname" . }}
-          port: {{ .Values.api.service.port }}
+          port: {{ .Values.service.port }}
 {{- end }}

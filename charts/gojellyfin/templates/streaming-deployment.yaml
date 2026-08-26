@@ -1,5 +1,6 @@
 {{- if .Values.streaming.enabled }}
 {{- $component := "streaming" }}
+{{- $pod := mergeOverwrite (deepCopy (default dict .Values.pod)) (default dict .Values.streaming.pod) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -7,73 +8,54 @@ metadata:
   labels:
     {{- include "gojellyfin.labels" (dict "root" $ "component" $component) | nindent 4 }}
 spec:
-  replicas: {{ .Values.streaming.replicaCount }}
+  replicas: {{ .Values.streaming.replicas }}
   selector:
     matchLabels:
       {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.streaming.podAnnotations }}
+      {{- with $pod.annotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
         {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 8 }}
     spec:
-      {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.streaming.podSecurityContext }}
-      securityContext:
-        {{- toYaml . | nindent 8 }}
+      {{- with (include "gojellyfin.podSpec" $pod | trim) }}
+      {{- . | nindent 6 }}
       {{- end }}
       containers:
         - name: server
           image: {{ include "gojellyfin.image" . }}
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          imagePullPolicy: {{ include "gojellyfin.imagePullPolicy" . }}
           args: ["server"]
           ports:
             - name: http
               containerPort: {{ .Values.httpPort }}
           env:
-            {{- include "gojellyfin.serverEnv" (dict "root" $ "workload" .Values.streaming "component" $component) | nindent 12 }}
+            {{- include "gojellyfin.serverEnv" (dict "root" $ "workload" .Values.streaming) | nindent 12 }}
           livenessProbe:
             httpGet:
               path: /System/Ping
               port: http
-            {{- with .Values.streaming.livenessProbe }}
-            {{- toYaml . | nindent 12 }}
-            {{- end }}
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
           readinessProbe:
             httpGet:
               path: /System/Ping
               port: http
-            {{- with .Values.streaming.readinessProbe }}
-            {{- toYaml . | nindent 12 }}
-            {{- end }}
+            periodSeconds: 10
           {{- with .Values.streaming.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.streaming.securityContext }}
+          {{- with $pod.containerSecurityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            {{- include "gojellyfin.mediaVolumeMount" (dict "root" $ "workload" .Values.streaming) | nindent 12 }}
+            {{- include "gojellyfin.mediaVolumeMount" (dict "root" $ "readOnly" true) | nindent 12 }}
       volumes:
         {{- include "gojellyfin.mediaVolume" . | nindent 8 }}
-      {{- with .Values.streaming.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.streaming.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.streaming.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
 {{- end }}

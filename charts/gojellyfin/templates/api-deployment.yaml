@@ -1,4 +1,5 @@
 {{- $component := "api" }}
+{{- $pod := mergeOverwrite (deepCopy (default dict .Values.pod)) (default dict .Values.api.pod) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -6,72 +7,51 @@ metadata:
   labels:
     {{- include "gojellyfin.labels" (dict "root" $ "component" $component) | nindent 4 }}
 spec:
-  replicas: {{ .Values.api.replicaCount }}
+  replicas: {{ .Values.api.replicas }}
   selector:
     matchLabels:
       {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.api.podAnnotations }}
+      {{- with $pod.annotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
         {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 8 }}
     spec:
-      {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.api.podSecurityContext }}
-      securityContext:
-        {{- toYaml . | nindent 8 }}
+      {{- with (include "gojellyfin.podSpec" $pod | trim) }}
+      {{- . | nindent 6 }}
       {{- end }}
       containers:
         - name: server
           image: {{ include "gojellyfin.image" . }}
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          imagePullPolicy: {{ include "gojellyfin.imagePullPolicy" . }}
           args: ["server"]
           ports:
             - name: http
               containerPort: {{ .Values.httpPort }}
           env:
-            {{- include "gojellyfin.serverEnv" (dict "root" $ "workload" .Values.api "component" $component) | nindent 12 }}
+            {{- include "gojellyfin.serverEnv" (dict "root" $ "workload" .Values.api) | nindent 12 }}
           livenessProbe:
             httpGet:
               path: /System/Ping
               port: http
-            {{- with .Values.api.livenessProbe }}
-            {{- toYaml . | nindent 12 }}
-            {{- end }}
+            periodSeconds: 20
           readinessProbe:
             httpGet:
               path: /System/Ping
               port: http
-            {{- with .Values.api.readinessProbe }}
-            {{- toYaml . | nindent 12 }}
-            {{- end }}
+            periodSeconds: 10
           {{- with .Values.api.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.api.securityContext }}
+          {{- with $pod.containerSecurityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            {{- include "gojellyfin.mediaVolumeMount" (dict "root" $ "workload" .Values.api) | nindent 12 }}
+            {{- include "gojellyfin.mediaVolumeMount" (dict "root" $ "readOnly" false) | nindent 12 }}
       volumes:
         {{- include "gojellyfin.mediaVolume" . | nindent 8 }}
-      {{- with .Values.api.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.api.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.api.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
