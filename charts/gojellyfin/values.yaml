@@ -1,19 +1,25 @@
 nameOverride: ""
 fullnameOverride: ""
 
+# The name clients reach the server by. The routes match it and
+# PUBLISHED_SERVER_URL advertises it; empty advertises no address at all, which
+# is deliberate — a client that is handed an address it cannot reach stops
+# talking to the one that did reach it.
+hostname: ""
+# What the gateway in front of this listens on, and the only thing it is used
+# for. http here is not an oversight to fix: advertising https over a plain
+# listener is the same lost client as advertising a wrong hostname.
+scheme: https
+
 image:
   repository: ghcr.io/freekingdean/gojellyfin
   # Empty takes the chart's appVersion. Every workload and the migration Job
   # share it: the migrations are embedded in the binary, so two tags mean the
   # schema one image applied and the schema the other expects can differ.
   tag: ""
-  pullPolicy: IfNotPresent
-
-imagePullSecrets: []
-
-# The name clients reach the server by. The routes match it and
-# PUBLISHED_SERVER_URL advertises it; empty advertises no address at all.
-hostname: ""
+  # Empty is Always for a tag that moves and IfNotPresent for one that does
+  # not, so a node that has already pulled `latest` still sees a new build.
+  pullPolicy: ""
 
 # HTTP_PORT.
 httpPort: 8081
@@ -32,7 +38,9 @@ tmdb:
   secretKey: TMDB_API_KEY
 
 # CORS_ORIGINS. Off reflects whatever origin asks; a literal "*" is not
-# equivalent, because browsers reject it on credentialed requests.
+# equivalent, because browsers reject it on credentialed requests. Enabled
+# needs an origin — the chart refuses to render a restriction that would
+# restrict nothing.
 cors:
   enabled: false
   origin: ""
@@ -47,9 +55,11 @@ temporal:
   hostPort: ""
   namespace: ""
 
-# The media the server reads, mounted from wherever it already lives — a claim,
-# an NFS export, a hostPath. Whatever it is has to be the same media at the
-# same path in every pod, because the API hands ffmpeg the path on the item row.
+# The media the server reads, mounted from wherever it already lives. Whatever
+# it is has to be the same media at the same path in every pod, because the API
+# hands ffmpeg the path on the item row. The API mounts it writable and every
+# other workload read-only, which is a property of what each one does rather
+# than a choice to make here.
 media:
   mountPath: /media
   # MEDIA_DIRECTORIES, the roots the library browser offers when a library is
@@ -65,15 +75,6 @@ media:
 # to always migrate yourself.
 migration:
   enabled: false
-  backoffLimit: 3
-  ttlSecondsAfterFinished: 3600
-  podAnnotations: {}
-  podSecurityContext: {}
-  securityContext:
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop:
-        - ALL
   resources:
     requests:
       cpu: 100m
@@ -81,17 +82,39 @@ migration:
     limits:
       cpu: 500m
       memory: 256Mi
+
+# Every Service this chart creates. They are ClusterIP addresses for the routes
+# below to name; an Ingress needs a controller and a class this chart cannot
+# guess.
+service:
+  type: ClusterIP
+  port: 80
+  annotations: {}
+
+# Merged into every pod the chart renders. A workload's own `pod:` overrides
+# this key by key, which is the escape hatch for anything the chart does not
+# name: a toleration, a runtime class, a topology constraint.
+pod:
+  annotations: {}
+  imagePullSecrets: []
+  securityContext: {}
+  # No runAsNonRoot: the image's USER is a name rather than a uid, and kubelet
+  # refuses to start a container whose non-rootness it cannot check
+  # numerically. The image drops privilege on its own.
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   nodeSelector: {}
   tolerations: []
   affinity: {}
 
 api:
-  replicaCount: 2
+  replicas: 2
   # TRANSCODER_JOBS. Empty follows the cpu request, one encode to a core.
   transcoderJobs: ""
   transcoderStallTimeout: 30s
-  # The only workload that may write: deleting an item is an API path.
-  mediaReadOnly: false
   resources:
     requests:
       cpu: 200m
@@ -99,29 +122,7 @@ api:
     limits:
       cpu: "1"
       memory: 1Gi
-  # Merged onto a fixed httpGet of /System/Ping, the only endpoint that is both
-  # public and free of any database access.
-  livenessProbe:
-    periodSeconds: 20
-  readinessProbe:
-    periodSeconds: 10
-  service:
-    type: ClusterIP
-    port: 80
-    annotations: {}
-  # No runAsNonRoot: the image's USER is a name rather than a uid, and kubelet
-  # refuses to start a container whose non-rootness it cannot check
-  # numerically. The image drops privilege on its own.
-  securityContext:
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop:
-        - ALL
-  podSecurityContext: {}
-  podAnnotations: {}
-  nodeSelector: {}
-  tolerations: []
-  affinity: {}
+  pod: {}
 
 # The same image and the same subcommand as the API. What makes these pods the
 # streaming pods is the route: /Videos and /Audio go to them, so the pod that
@@ -129,10 +130,9 @@ api:
 # paths itself.
 streaming:
   enabled: true
-  replicaCount: 3
+  replicas: 3
   transcoderJobs: ""
   transcoderStallTimeout: 30s
-  mediaReadOnly: true
   resources:
     requests:
       cpu: "2"
@@ -140,33 +140,13 @@ streaming:
     limits:
       cpu: "2"
       memory: 2Gi
-  livenessProbe:
-    periodSeconds: 20
-    timeoutSeconds: 5
-    failureThreshold: 6
-  readinessProbe:
-    periodSeconds: 10
-  service:
-    type: ClusterIP
-    port: 80
-    annotations: {}
-  securityContext:
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop:
-        - ALL
-  podSecurityContext: {}
-  podAnnotations: {}
-  nodeSelector: {}
-  tolerations: []
-  affinity: {}
+  pod: {}
 
 # `gojellyfin worker` — the Temporal worker. It needs temporal.hostPort;
 # without one it crash loops, so the chart refuses to render it.
 worker:
   enabled: false
-  replicaCount: 1
-  mediaReadOnly: true
+  replicas: 1
   resources:
     requests:
       cpu: 200m
@@ -174,23 +154,14 @@ worker:
     limits:
       cpu: "1"
       memory: 1Gi
-  securityContext:
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop:
-        - ALL
-  podSecurityContext: {}
-  podAnnotations: {}
-  nodeSelector: {}
-  tolerations: []
-  affinity: {}
+  pod: {}
 
 # jellyfin-web is not published on its own — no image, no npm package, and the
 # releases carry no built assets — so an init container copies it out of the
 # all-in-one jellyfin image into an emptyDir and nginx serves the copy.
 web:
   enabled: true
-  replicaCount: 2
+  replicas: 2
   client:
     # Pin this to a released client, not to the API version the server
     # announces: that is 12.0.0 out of the vendored spec, 12 has no released
@@ -199,7 +170,7 @@ web:
     # drives.
     repository: jellyfin/jellyfin
     tag: "10.10.0"
-    pullPolicy: IfNotPresent
+    pullPolicy: ""
     resources:
       requests:
         cpu: 50m
@@ -211,38 +182,20 @@ web:
   image:
     repository: nginxinc/nginx-unprivileged
     tag: alpine
-    pullPolicy: IfNotPresent
-  containerPort: 8080
+    pullPolicy: ""
   resources:
     requests:
       cpu: 10m
       memory: 32Mi
     limits:
       memory: 128Mi
-  livenessProbe:
-    periodSeconds: 20
-  readinessProbe:
-    periodSeconds: 10
-  service:
-    type: ClusterIP
-    port: 80
-    annotations: {}
-  securityContext:
-    runAsNonRoot: true
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop:
-        - ALL
-  podSecurityContext: {}
-  podAnnotations: {}
-  nodeSelector: {}
-  tolerations: []
-  affinity: {}
+  pod:
+    containerSecurityContext:
+      runAsNonRoot: true
 
 # Gateway API. Off by default: a parentRef names a Gateway this chart cannot
 # guess. /Videos and /Audio go to the streaming pods, /web to the client and
-# everything else to the API — a longer prefix outranks a shorter one, so the
-# routes need no ordering between them.
+# everything else to the API, plus the two API paths that live under /web.
 httpRoute:
   enabled: false
   annotations: {}

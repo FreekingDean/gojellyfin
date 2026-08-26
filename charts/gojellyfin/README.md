@@ -50,6 +50,35 @@ owns no storage. Point `media.volume` at whatever the media already lives on.
 
 ## Values
 
+The chart aims to be configured in the concepts an operator has — a hostname, a
+volume the media lives on, how many replicas, how much cpu — rather than in
+Kubernetes fields it would then own forever. Everything a pod needs that is not
+one of those lives under `pod`, in one generic block rather than twenty named
+values.
+
+### The smallest install
+
+```yaml
+hostname: media.example.com
+database:
+  existingSecret: gojellyfin-db
+media:
+  volume:
+    persistentVolumeClaim:
+      claimName: media
+httpRoute:
+  enabled: true
+  parentRefs:
+    - name: my-gateway
+      namespace: gateway-system
+```
+
+Four things, and only the first two are strictly required. `database.existingSecret`
+can be dropped if the Secret is named after the release. `media.volume` can be
+dropped, and you get an `emptyDir` — a library with nothing in it. `httpRoute`
+can be dropped if something other than Gateway API fronts the Services. Nothing
+else has to be set for a working install.
+
 ### Image and naming
 
 | Value | Default | Description |
@@ -57,9 +86,8 @@ owns no storage. Point `media.volume` at whatever the media already lives on.
 | `nameOverride` | `""` | Replaces the chart name in resource names and labels |
 | `fullnameOverride` | `""` | Replaces the whole generated name |
 | `image.repository` | `ghcr.io/freekingdean/gojellyfin` | The one image every gojellyfin workload runs |
-| `image.tag` | `""` | Empty takes the chart's `appVersion`, which is `latest` because the repository carries no version tags yet (#555). The API, the worker and the migration Job all use it — the migrations are embedded in the binary, so two tags mean the schema one image applied and the schema the other expects can differ. Which build is actually running is stamped into the binary at image build time and answered as `SystemInfo.PackageName`, so a rolled-back tag can be confirmed rather than assumed |
-| `image.pullPolicy` | `IfNotPresent` | |
-| `imagePullSecrets` | `[]` | Applied to every pod |
+| `image.tag` | `""` | Empty takes the chart's `appVersion`, which is `latest` because the repository carries no version tags yet (#555). The API, the streaming pods, the worker and the migration Job all use it — the migrations are embedded in the binary, so two tags mean the schema one image applied and the schema the other expects can differ. Which build is actually running is stamped into the binary at image build time and answered as `SystemInfo.PackageName` |
+| `image.pullPolicy` | `""` | Empty is `Always` for a tag that moves and `IfNotPresent` for one that does not. A node that has already pulled `latest` would otherwise keep serving that build across every rollout, which is the same drift a shared tag is meant to prevent |
 
 ### Server environment
 
@@ -68,14 +96,15 @@ reads the environment.
 
 | Value | Environment variable | Default | Description |
 |---|---|---|---|
-| `hostname` | `PUBLISHED_SERVER_URL` | `""` | The name clients reach the server by. The routes match it, and the public endpoints advertise `https://<hostname>`. Empty advertises no address at all — a client prefers `LocalAddress` when it believes it shares a network with the server, so naming one it cannot reach sends it nowhere |
+| `hostname` | `PUBLISHED_SERVER_URL` | `""` | The name clients reach the server by. The routes match it, and the public endpoints advertise `<scheme>://<hostname>`. Empty advertises no address at all — a client prefers `LocalAddress` when it believes it shares a network with the server, so naming one it cannot reach sends it nowhere |
+| `scheme` | | `https` | What the gateway in front of this listens on, and the only thing it is used for. Advertising `https` over a plain listener loses a client exactly as advertising a wrong hostname does |
 | `httpPort` | `HTTP_PORT` | `8081` | What the server listens on. The container port, the Service target and the probes follow it |
 | `database.existingSecret` | `DATABASE_URL` | `""` | Secret holding the URL. Empty means the release's own fullname |
 | `database.secretKey` | — | `DATABASE_URL` | Key within that Secret |
 | `tmdb.existingSecret` | `TMDB_API_KEY` | `""` | Secret holding the TMDB key. Empty sets no key and metadata lookups fail |
 | `tmdb.secretKey` | — | `TMDB_API_KEY` | Key within that Secret |
 | `cors.enabled` | `CORS_ORIGINS` | `false` | Off reflects whatever origin asks; a literal `*` is not equivalent, because browsers reject it on credentialed requests |
-| `cors.origin` | | `""` | The one origin allowed when enabled |
+| `cors.origin` | | `""` | The one origin allowed when enabled. Enabling without one refuses to render: an empty value reflects every origin, so the restriction would restrict nothing |
 | `tracing.otlpEndpoint` | `OTEL_EXPORTER_OTLP_ENDPOINT` | `""` | Empty exports no traces |
 | `media.directories` | `MEDIA_DIRECTORIES` | `[]` | The roots the library browser offers; empty follows `media.mountPath` |
 | `temporal.hostPort` | `TEMPORAL_HOSTPORT` | `""` | Empty turns background work off and the server still starts |
@@ -103,44 +132,70 @@ use.
 
 ### Workloads
 
-Each of `api`, `streaming`, `worker` and `web` takes the same shape:
-`replicaCount`, `resources`, `podAnnotations`, `podSecurityContext`,
-`securityContext`, `nodeSelector`, `tolerations` and `affinity`.
-
 | Value | Default | Description |
 |---|---|---|
-| `api.replicaCount` | `2` | The API holds no per-request state and needs no session affinity |
-| `api.resources` | 200m/256Mi, limits 1 cpu/1Gi | |
-| `api.mediaReadOnly` | `false` | The API is the only workload that may write, because deleting an item is an API path. `filesystem.RemoveAll` answers 403 today, so nothing writes yet |
-| `api.livenessProbe`, `api.readinessProbe` | `periodSeconds` 20 / 10 | Merged onto a fixed `httpGet` of `/System/Ping` — the only endpoint that is both public and free of any database access, so it reports the process rather than its dependencies |
-| `api.service.type`, `.port`, `.annotations` | `ClusterIP`, `80`, `{}` | An Ingress needs a controller this chart cannot guess; `httpRoute` below is the supported edge |
-| `api.securityContext` | no privilege escalation, drops ALL | No `runAsNonRoot`: the image's `USER` is a name rather than a uid and kubelet refuses to start a container whose non-rootness it cannot check numerically. The image drops privilege on its own |
+| `api.replicas` | `2` | The API holds no per-request state and needs no session affinity |
+| `api.resources` | 200m/256Mi, limits 1 cpu/1Gi | Also decides the encode slots, above |
 | `streaming.enabled` | `true` | Disabled, the API serves `/Videos` and `/Audio` itself |
-| `streaming.replicaCount` | `3` | |
-| `streaming.resources` | 2 cpu/512Mi, limits 2 cpu/2Gi | The request is what decides the encode slots |
-| `streaming.mediaReadOnly` | `true` | Nothing here deletes a file |
-| `streaming.livenessProbe` | period 20, timeout 5, 6 failures | Looser than the API's: a pod at capacity is busy, not broken |
-| `streaming.readinessProbe`, `streaming.service.*` | as the API's | |
+| `streaming.replicas` | `3` | |
+| `streaming.resources` | 2 cpu/512Mi, limits 2 cpu/2Gi | |
 | `worker.enabled` | `false` | Needs `temporal.hostPort`; the chart refuses to render an enabled worker with nothing to dial, because it would only crash loop |
-| `worker.replicaCount` | `1` | |
+| `worker.replicas` | `1` | |
 | `worker.resources` | 200m/256Mi, limits 1 cpu/1Gi | |
-| `worker.mediaReadOnly` | `true` | The scan reads the tree and probes files with ffprobe |
 | `web.enabled` | `true` | |
-| `web.replicaCount` | `2` | |
-| `web.client.repository`, `.tag` | `jellyfin/jellyfin`, `10.10.0` | `jellyfin-web` is not published on its own — no image, no npm package, no built assets in its releases — so an init container copies it out of the all-in-one image into an emptyDir. Pin it to a released client rather than to the announced API version: the server says 12.0.0 out of the vendored spec, 12 has no released all-in-one image, and a client newer than what is implemented calls endpoints that answer 501. 10.10.0 is what `make e2e` drives |
+| `web.replicas` | `2` | |
+| `web.client.repository`, `.tag`, `.pullPolicy` | `jellyfin/jellyfin`, `10.10.0`, `""` | `jellyfin-web` is not published on its own — no image, no npm package, no built assets in its releases — so an init container copies it out of the all-in-one image into an emptyDir. Pin it to a released client rather than to the announced API version: the server says 12.0.0 out of the vendored spec, 12 has no released all-in-one image, and a client newer than what is implemented calls endpoints that answer 501. 10.10.0 is what `make e2e` drives |
 | `web.client.resources` | 50m/64Mi, limit 256Mi | |
-| `web.image.repository`, `.tag` | `nginxinc/nginx-unprivileged`, `alpine` | The unprivileged image listens on 8080 and owns the directories nginx writes to, which is what lets `runAsNonRoot` hold |
-| `web.containerPort` | `8080` | |
+| `web.image.repository`, `.tag`, `.pullPolicy` | `nginxinc/nginx-unprivileged`, `alpine`, `""` | The unprivileged image listens on 8080 and owns the directories nginx writes to, which is what lets `runAsNonRoot` hold. The port is not a value: nothing here rewrites nginx's config, so it listens on 8080 whatever a value said |
 | `web.resources` | 10m/32Mi, limit 128Mi | |
-| `web.livenessProbe`, `web.readinessProbe` | `periodSeconds` 20 / 10 | Merged onto a fixed `httpGet` of `/web/index.html` |
-| `web.service.*` | `ClusterIP`, `80` | |
 
-### Media
+What the chart owns rather than exposing: the probes (`/System/Ping` is the only
+endpoint that is both public and free of any database access, and the streaming
+pods get a looser liveness because a pod at capacity is busy rather than broken),
+and which workloads mount the media writable — the API does because deleting an
+item is an API path, and nothing else has a reason to.
+
+### Pods
+
+`pod` is merged into every pod the chart renders, and each workload's own `pod`
+overrides it key by key. Every key except `annotations` and
+`containerSecurityContext` is passed through to the pod spec verbatim, so
+anything Kubernetes accepts there works without the chart naming it.
 
 | Value | Default | Description |
 |---|---|---|
+| `pod.annotations` | `{}` | On the pod template's metadata |
+| `pod.containerSecurityContext` | no privilege escalation, drops ALL | On each container. No `runAsNonRoot` for the gojellyfin containers: the image's `USER` is a name rather than a uid and kubelet refuses to start a container whose non-rootness it cannot check numerically. The image drops privilege on its own; the nginx one can and does, through `web.pod` |
+| `pod.securityContext` | `{}` | Pod-level, passed through |
+| `pod.imagePullSecrets` | `[]` | Passed through |
+| `pod.nodeSelector`, `.tolerations`, `.affinity` | empty | Passed through, and named here only because they are the common ones |
+
+```yaml
+pod:
+  nodeSelector:
+    kubernetes.io/arch: amd64
+streaming:
+  pod:
+    runtimeClassName: gvisor
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/component: streaming
+```
+
+Neither `runtimeClassName` nor `topologySpreadConstraints` is a value this chart
+declares. That is the point: the chart does not have to grow a value, and your
+`values.yaml` does not have to wait for it to.
+
+### Services and media
+
+| Value | Default | Description |
+|---|---|---|
+| `service.type`, `.port`, `.annotations` | `ClusterIP`, `80`, `{}` | Applied to all three Services. An Ingress needs a controller this chart cannot guess; `httpRoute` below is the supported edge |
 | `media.mountPath` | `/media` | The same in every workload, by construction: the API hands ffmpeg the path stored on the item row, so the media has to resolve to the same path in every pod that reads it |
-| `media.directories` | `[]` | `MEDIA_DIRECTORIES` — the roots the library browser offers when a library is added. Empty offers `mountPath`, so the browser starts where the media is rather than at `/`, which is the binary's own default |
 | `media.volume` | `{}` | Any volume source — `persistentVolumeClaim`, `nfs`, `hostPath`. Empty mounts an `emptyDir`, which is a library with nothing in it |
 
 ```yaml
@@ -160,10 +215,7 @@ reads perfectly well.
 | Value | Default | Description |
 |---|---|---|
 | `migration.enabled` | `false` | Runs `gojellyfin migrate` as a `pre-install,pre-upgrade` hook Job. A release that carries a migration defaults it to true |
-| `migration.backoffLimit` | `3` | |
-| `migration.ttlSecondsAfterFinished` | `3600` | |
-| `migration.resources` | 100m/128Mi, limits 500m/256Mi | |
-| `migration.podAnnotations`, `.podSecurityContext`, `.securityContext`, `.nodeSelector`, `.tolerations`, `.affinity` | | As the workloads |
+| `migration.resources` | 100m/128Mi, limits 500m/256Mi | The Job takes its pod plumbing from `pod`, and its retries and TTL from the chart |
 
 Nothing migrates at startup. The image's `entrypoint.sh` will migrate when
 `MIGRATE_ON_START=true`, and the chart does not offer it: every replica would

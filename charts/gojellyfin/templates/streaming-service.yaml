@@ -6,16 +6,16 @@ metadata:
   name: {{ include "gojellyfin.fullname" . }}-streaming
   labels:
     {{- include "gojellyfin.labels" (dict "root" $ "component" $component) | nindent 4 }}
-  {{- with .Values.streaming.service.annotations }}
+  {{- with .Values.service.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  type: {{ .Values.streaming.service.type }}
+  type: {{ .Values.service.type }}
   selector:
     {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 4 }}
   ports:
     - name: http
-      port: {{ .Values.streaming.service.port }}
+      port: {{ .Values.service.port }}
       targetPort: http
 {{- end }}

@@ -1,5 +1,6 @@
 {{- if .Values.web.enabled }}
 {{- $component := "web" }}
+{{- $pod := mergeOverwrite (deepCopy (default dict .Values.pod)) (default dict .Values.web.pod) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -7,31 +8,26 @@ metadata:
   labels:
     {{- include "gojellyfin.labels" (dict "root" $ "component" $component) | nindent 4 }}
 spec:
-  replicas: {{ .Values.web.replicaCount }}
+  replicas: {{ .Values.web.replicas }}
   selector:
     matchLabels:
       {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.web.podAnnotations }}
+      {{- with $pod.annotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
         {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 8 }}
     spec:
-      {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.web.podSecurityContext }}
-      securityContext:
-        {{- toYaml . | nindent 8 }}
+      {{- with (include "gojellyfin.podSpec" $pod | trim) }}
+      {{- . | nindent 6 }}
       {{- end }}
       initContainers:
         - name: client
           image: {{ printf "%s:%s" .Values.web.client.repository .Values.web.client.tag }}
-          imagePullPolicy: {{ .Values.web.client.pullPolicy }}
+          imagePullPolicy: {{ include "gojellyfin.pullPolicy" (dict "policy" .Values.web.client.pullPolicy "tag" .Values.web.client.tag) }}
           command: ["cp", "-a", "/jellyfin/jellyfin-web/.", "/client/"]
           volumeMounts:
             - name: client
@@ -43,10 +39,10 @@ spec:
       containers:
         - name: nginx
           image: {{ printf "%s:%s" .Values.web.image.repository .Values.web.image.tag }}
-          imagePullPolicy: {{ .Values.web.image.pullPolicy }}
+          imagePullPolicy: {{ include "gojellyfin.pullPolicy" (dict "policy" .Values.web.image.pullPolicy "tag" .Values.web.image.tag) }}
           ports:
             - name: http
-              containerPort: {{ .Values.web.containerPort }}
+              containerPort: 8080
           volumeMounts:
             - name: client
               mountPath: /usr/share/nginx/html/web
@@ -55,37 +51,21 @@ spec:
             httpGet:
               path: /web/index.html
               port: http
-            {{- with .Values.web.livenessProbe }}
-            {{- toYaml . | nindent 12 }}
-            {{- end }}
+            periodSeconds: 20
           readinessProbe:
             httpGet:
               path: /web/index.html
               port: http
-            {{- with .Values.web.readinessProbe }}
-            {{- toYaml . | nindent 12 }}
-            {{- end }}
+            periodSeconds: 10
           {{- with .Values.web.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.web.securityContext }}
+          {{- with $pod.containerSecurityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
       volumes:
         - name: client
           emptyDir: {}
-      {{- with .Values.web.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.web.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.web.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
 {{- end }}

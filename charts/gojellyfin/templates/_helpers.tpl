@@ -34,8 +34,38 @@ app.kubernetes.io/version: {{ . | quote }}
 app.kubernetes.io/managed-by: {{ .root.Release.Service }}
 {{- end }}
 
+{{- define "gojellyfin.tag" -}}
+{{- default .Chart.AppVersion .Values.image.tag }}
+{{- end }}
+
 {{- define "gojellyfin.image" -}}
-{{- printf "%s:%s" .Values.image.repository (default .Chart.AppVersion .Values.image.tag) }}
+{{- printf "%s:%s" .Values.image.repository (include "gojellyfin.tag" .) }}
+{{- end }}
+
+{{- define "gojellyfin.pullPolicy" -}}
+{{- if .policy -}}
+{{- .policy -}}
+{{- else if eq (toString .tag) "latest" -}}
+Always
+{{- else -}}
+IfNotPresent
+{{- end -}}
+{{- end }}
+
+{{- define "gojellyfin.imagePullPolicy" -}}
+{{- include "gojellyfin.pullPolicy" (dict "policy" .Values.image.pullPolicy "tag" (include "gojellyfin.tag" .)) }}
+{{- end }}
+
+{{- define "gojellyfin.podSpec" -}}
+{{- range $field, $value := omit . "annotations" "containerSecurityContext" }}
+{{- if $value }}
+{{ $field }}:
+{{- if or (kindIs "map" $value) (kindIs "slice" $value) }}
+{{- toYaml $value | nindent 2 }}
+{{- else }} {{ $value }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- end }}
 
 {{- define "gojellyfin.databaseSecretName" -}}
@@ -92,9 +122,12 @@ app.kubernetes.io/managed-by: {{ .root.Release.Service }}
   value: {{ .root.Values.httpPort | quote }}
 {{- with .root.Values.hostname }}
 - name: PUBLISHED_SERVER_URL
-  value: {{ printf "https://%s" . | quote }}
+  value: {{ printf "%s://%s" $.root.Values.scheme . | quote }}
 {{- end }}
 {{- if .root.Values.cors.enabled }}
+{{- if not .root.Values.cors.origin }}
+{{- fail "cors.enabled needs cors.origin: an empty origin reflects whatever origin asks, so the restriction would restrict nothing" }}
+{{- end }}
 - name: CORS_ORIGINS
   value: {{ .root.Values.cors.origin | quote }}
 {{- end }}
@@ -118,7 +151,7 @@ app.kubernetes.io/managed-by: {{ .root.Release.Service }}
 {{- if .transcoderJobs -}}
 {{- .transcoderJobs -}}
 {{- else -}}
-{{- $cores := int (floor (float64 (include "gojellyfin.cpuCores" (dig "requests" "cpu" "1" .resources)))) -}}
+{{- $cores := int (floor (float64 (include "gojellyfin.cpuCores" (dig "requests" "cpu" "1" (.resources | default dict))))) -}}
 {{- max $cores 1 -}}
 {{- end -}}
 {{- end }}
@@ -135,5 +168,5 @@ app.kubernetes.io/managed-by: {{ .root.Release.Service }}
 {{- define "gojellyfin.mediaVolumeMount" -}}
 - name: media
   mountPath: {{ .root.Values.media.mountPath }}
-  readOnly: {{ .workload.mediaReadOnly }}
+  readOnly: {{ .readOnly }}
 {{- end }}
