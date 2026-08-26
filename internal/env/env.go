@@ -14,19 +14,16 @@ const (
 	maxPort         = 65535
 )
 
-// Config is everything this process reads from its environment, read once at
-// start. Nothing else reads it, so the knobs are discoverable by reading one
-// struct rather than by grepping, and a package under test is handed a value
-// instead of having to set a variable.
 type Config struct {
 	DatabaseURL        string     `mapstructure:"DATABASE_URL"`
 	HTTPPort           int        `mapstructure:"HTTP_PORT"`
-	PublishedServerURL string     `mapstructure:"PUBLISHED_SERVER_URL"` // what the public endpoints declare the server on
+	PublishedServerURL string     `mapstructure:"PUBLISHED_SERVER_URL"`
 	CORSOrigins        []string   `mapstructure:"CORS_ORIGINS"`
 	Transcoder         Transcoder `mapstructure:",squash"`
 	Temporal           Temporal   `mapstructure:",squash"`
 	Tracing            Tracing    `mapstructure:",squash"`
 	TMDB               TMDB       `mapstructure:",squash"`
+	MediaDirectories   []string   `mapstructure:"MEDIA_DIRECTORIES"`
 }
 
 type Transcoder struct {
@@ -50,6 +47,7 @@ type TMDB struct {
 func Load() (Config, error) {
 	v := viper.NewWithOptions(viper.ExperimentalBindStruct())
 	v.SetDefault("HTTP_PORT", defaultHTTPPort)
+	v.SetDefault("MEDIA_DIRECTORIES", []string{"/"})
 
 	v.AutomaticEnv()
 
@@ -59,6 +57,7 @@ func Load() (Config, error) {
 	}
 
 	config.CORSOrigins = trimmed(config.CORSOrigins)
+	config.MediaDirectories = trimmed(config.MediaDirectories)
 
 	if err := config.validate(); err != nil {
 		return Config{}, err

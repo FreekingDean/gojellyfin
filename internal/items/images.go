@@ -17,7 +17,6 @@ type (
 
 var ValidImageKind = imagemodal.KindValidator
 
-// One artwork file found beside the media.
 type Artwork struct {
 	Kind   ImageKind
 	Path   string

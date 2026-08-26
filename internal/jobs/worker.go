@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"log"
+	"runtime"
 
 	"go.temporal.io/sdk/worker"
 	"go.temporal.io/sdk/workflow"
@@ -23,9 +24,14 @@ func (w *Worker) Start() error {
 		return err
 	}
 
-	w.worker = worker.New(connection, TaskQueue, worker.Options{})
+	w.worker = worker.New(connection, TaskQueue, worker.Options{
+		MaxConcurrentActivityExecutionSize: runtime.GOMAXPROCS(0),
+	})
 	for _, job := range w.registry.All() {
 		w.worker.RegisterWorkflowWithOptions(job.Run, workflow.RegisterOptions{Name: job.Name()})
+		for _, child := range job.Children() {
+			w.worker.RegisterWorkflow(child)
+		}
 		for _, step := range job.Steps() {
 			w.worker.RegisterActivity(step)
 		}

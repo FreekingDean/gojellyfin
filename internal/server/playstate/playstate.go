@@ -4,25 +4,14 @@ import (
 	"context"
 	"time"
 
-	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 	"github.com/google/uuid"
 )
 
-// Below this fraction of the runtime a stop is treated as an abandoned resume
-// point; above it the item counts as watched.
 const playedThreshold = 0.9
-
-func (s *Server) userItemDatum(ctx context.Context, itemID uuid.UUID) (*items.Datum, error) {
-	userID := auth.UserID(ctx)
-	if userID == uuid.Nil {
-		return nil, auth.ErrUnauthorized
-	}
-
-	return s.items.UserItemDatum(ctx, userID, itemID)
-}
 
 type Server struct {
 	items *items.Service
@@ -65,38 +54,12 @@ func (s *Server) ReportPlaybackStopped(ctx context.Context, request api.ReportPl
 	return api.ReportPlaybackStopped204Response{}, nil
 }
 
-/*
-func (s *Server) OnPlaybackStart(ctx context.Context, request api.OnPlaybackStartRequestObject) (api.OnPlaybackStartResponseObject, error) {
-	if err := s.recordProgress(ctx, request.ItemId, 0); err != nil {
-		return nil, err
-	}
-
-	return api.OnPlaybackStart204Response{}, nil
-}
-
-func (s *Server) OnPlaybackProgress(ctx context.Context, request api.OnPlaybackProgressRequestObject) (api.OnPlaybackProgressResponseObject, error) {
-	if err := s.recordProgress(ctx, request.ItemId, apiutil.Deref(request.Params.PositionTicks)); err != nil {
-		return nil, err
-	}
-
-	return api.OnPlaybackProgress204Response{}, nil
-}
-
-func (s *Server) OnPlaybackStopped(ctx context.Context, request api.OnPlaybackStoppedRequestObject) (api.OnPlaybackStoppedResponseObject, error) {
-	if err := s.recordStop(ctx, request.ItemId, apiutil.Deref(request.Params.PositionTicks)); err != nil {
-		return nil, err
-	}
-
-	return api.OnPlaybackStopped204Response{}, nil
-}
-*/
-
 func (s *Server) PingPlaybackSession(ctx context.Context, request api.PingPlaybackSessionRequestObject) (api.PingPlaybackSessionResponseObject, error) {
 	return api.PingPlaybackSession204Response{}, nil
 }
 
 func (s *Server) recordProgress(ctx context.Context, itemID uuid.UUID, position int64) error {
-	datum, err := s.userItemDatum(ctx, itemID)
+	datum, err := dto.CurrentUserDatum(ctx, s.items, itemID)
 	if err != nil {
 		return err
 	}
@@ -108,7 +71,7 @@ func (s *Server) recordProgress(ctx context.Context, itemID uuid.UUID, position 
 }
 
 func (s *Server) recordStop(ctx context.Context, itemID uuid.UUID, position int64) error {
-	datum, err := s.userItemDatum(ctx, itemID)
+	datum, err := dto.CurrentUserDatum(ctx, s.items, itemID)
 	if err != nil {
 		return err
 	}

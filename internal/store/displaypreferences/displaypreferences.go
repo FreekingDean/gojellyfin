@@ -19,6 +19,10 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// FieldUserID holds the string denoting the user_id field in the database.
+	FieldUserID = "user_id"
+	// FieldReferenceID holds the string denoting the reference_id field in the database.
+	FieldReferenceID = "reference_id"
 	// FieldClient holds the string denoting the client field in the database.
 	FieldClient = "client"
 	// FieldViewType holds the string denoting the view_type field in the database.
@@ -47,8 +51,6 @@ const (
 	FieldCustomPrefs = "custom_prefs"
 	// EdgeUser holds the string denoting the user edge name in mutations.
 	EdgeUser = "user"
-	// EdgeItem holds the string denoting the item edge name in mutations.
-	EdgeItem = "item"
 	// Table holds the table name of the displaypreferences in the database.
 	Table = "display_preferences"
 	// UserTable is the table that holds the user relation/edge.
@@ -57,14 +59,7 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "user" package.
 	UserInverseTable = "users"
 	// UserColumn is the table column denoting the user relation/edge.
-	UserColumn = "user_display_preferences"
-	// ItemTable is the table that holds the item relation/edge.
-	ItemTable = "display_preferences"
-	// ItemInverseTable is the table name for the Item entity.
-	// It exists in this package in order to avoid circular dependency with the "item" package.
-	ItemInverseTable = "items"
-	// ItemColumn is the table column denoting the item relation/edge.
-	ItemColumn = "item_display_preferences"
+	UserColumn = "user_id"
 )
 
 // Columns holds all SQL columns for displaypreferences fields.
@@ -72,6 +67,8 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
+	FieldUserID,
+	FieldReferenceID,
 	FieldClient,
 	FieldViewType,
 	FieldSortBy,
@@ -87,22 +84,10 @@ var Columns = []string{
 	FieldCustomPrefs,
 }
 
-// ForeignKeys holds the SQL foreign-keys that are owned by the "display_preferences"
-// table and are not defined as standalone fields in the schema.
-var ForeignKeys = []string{
-	"item_display_preferences",
-	"user_display_preferences",
-}
-
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
-			return true
-		}
-	}
-	for i := range ForeignKeys {
-		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -202,6 +187,16 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
+// ByUserID orders the results by the user_id field.
+func ByUserID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUserID, opts...).ToFunc()
+}
+
+// ByReferenceID orders the results by the reference_id field.
+func ByReferenceID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReferenceID, opts...).ToFunc()
+}
+
 // ByClient orders the results by the client field.
 func ByClient(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldClient, opts...).ToFunc()
@@ -268,24 +263,10 @@ func ByUserField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newUserStep(), sql.OrderByField(field, opts...))
 	}
 }
-
-// ByItemField orders the results by item field.
-func ByItemField(field string, opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newItemStep(), sql.OrderByField(field, opts...))
-	}
-}
 func newUserStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(UserInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
-	)
-}
-func newItemStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(ItemInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2O, true, ItemTable, ItemColumn),
 	)
 }

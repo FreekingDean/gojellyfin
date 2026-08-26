@@ -20,29 +20,45 @@ func preflight(t *testing.T, origins []string, origin string) *httptest.Response
 	return recorder
 }
 
-func TestPreflightNamesTheCaller(t *testing.T) {
-	recorder := preflight(t, []string{"https://gojellyfin.example.dev"}, "https://gojellyfin.example.dev")
-
-	if got := recorder.Header().Get("Access-Control-Allow-Origin"); got != "https://gojellyfin.example.dev" {
-		t.Errorf("Access-Control-Allow-Origin = %q, want the caller's origin", got)
+func TestHttpCORS(t *testing.T) {
+	tests := []struct {
+		name            string
+		origins         []string
+		origin          string
+		wantOrigin      string
+		wantCredentials string
+	}{
+		{
+			name:            "names the caller",
+			origins:         []string{"https://gojellyfin.example.dev"},
+			origin:          "https://gojellyfin.example.dev",
+			wantOrigin:      "https://gojellyfin.example.dev",
+			wantCredentials: "true",
+		},
+		{
+			name:    "refuses an origin outside the list",
+			origins: []string{"https://gojellyfin.example.dev"},
+			origin:  "https://evil.example.dev",
+		},
+		{
+			name:            "matches an origin case insensitively",
+			origins:         []string{"HTTPS://GoJellyfin.Example.Dev"},
+			origin:          "https://gojellyfin.example.dev",
+			wantOrigin:      "https://gojellyfin.example.dev",
+			wantCredentials: "true",
+		},
 	}
-	if got := recorder.Header().Get("Access-Control-Allow-Credentials"); got != "true" {
-		t.Errorf("Access-Control-Allow-Credentials = %q, want true", got)
-	}
-}
 
-func TestPreflightRefusesAnOriginOutsideTheList(t *testing.T) {
-	recorder := preflight(t, []string{"https://gojellyfin.example.dev"}, "https://evil.example.dev")
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			recorder := preflight(t, test.origins, test.origin)
 
-	if got := recorder.Header().Get("Access-Control-Allow-Origin"); got != "" {
-		t.Errorf("Access-Control-Allow-Origin = %q, want it absent", got)
-	}
-}
-
-func TestPreflightMatchesAnOriginCaseInsensitively(t *testing.T) {
-	recorder := preflight(t, []string{"HTTPS://GoJellyfin.Example.Dev"}, "https://gojellyfin.example.dev")
-
-	if got := recorder.Header().Get("Access-Control-Allow-Origin"); got != "https://gojellyfin.example.dev" {
-		t.Errorf("Access-Control-Allow-Origin = %q, want the caller's origin", got)
+			if got := recorder.Header().Get("Access-Control-Allow-Origin"); got != test.wantOrigin {
+				t.Errorf("Access-Control-Allow-Origin = %q, want %q", got, test.wantOrigin)
+			}
+			if got := recorder.Header().Get("Access-Control-Allow-Credentials"); got != test.wantCredentials {
+				t.Errorf("Access-Control-Allow-Credentials = %q, want %q", got, test.wantCredentials)
+			}
+		})
 	}
 }

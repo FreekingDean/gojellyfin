@@ -8,7 +8,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 )
 
-// The configured libraries, presented as the folders they are.
 func (s *Server) GetMediaFolders(ctx context.Context, request api.GetMediaFoldersRequestObject) (api.GetMediaFoldersResponseObject, error) {
 	records, err := s.libraries.ListLibraries(ctx)
 	if err != nil {
@@ -27,8 +26,6 @@ func (s *Server) GetMediaFolders(ctx context.Context, request api.GetMediaFolder
 	}, nil
 }
 
-// Nothing supplies metadata, subtitles or lyrics yet, so there is nothing to
-// choose between.
 func (s *Server) GetLibraryOptionsInfo(ctx context.Context, request api.GetLibraryOptionsInfoRequestObject) (api.GetLibraryOptionsInfoResponseObject, error) {
 	return api.GetLibraryOptionsInfo200JSONResponse{
 		MetadataSavers:   &[]api.LibraryOptionInfoDto{},

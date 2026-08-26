@@ -9,7 +9,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 )
 
-func TestReadPathsAnswerAnEmptyQueryResult(t *testing.T) {
+func TestServer(t *testing.T) {
 	s := New()
 	ctx := context.Background()
 
@@ -50,7 +50,7 @@ func TestReadPathsAnswerAnEmptyQueryResult(t *testing.T) {
 	}
 }
 
-func TestGetTunerHostTypesAnswersAnEmptyArray(t *testing.T) {
+func TestServer_GetTunerHostTypes(t *testing.T) {
 	response, err := New().GetTunerHostTypes(context.Background(), api.GetTunerHostTypesRequestObject{})
 	if err != nil {
 		t.Fatal(err)

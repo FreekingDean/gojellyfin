@@ -130,31 +130,31 @@ func init() {
 	// displaypreferences.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	displaypreferences.UpdateDefaultUpdatedAt = displaypreferencesDescUpdatedAt.UpdateDefault.(func() time.Time)
 	// displaypreferencesDescSortBy is the schema descriptor for sort_by field.
-	displaypreferencesDescSortBy := displaypreferencesFields[5].Descriptor()
+	displaypreferencesDescSortBy := displaypreferencesFields[7].Descriptor()
 	// displaypreferences.DefaultSortBy holds the default value on creation for the sort_by field.
 	displaypreferences.DefaultSortBy = displaypreferencesDescSortBy.Default.(string)
 	// displaypreferencesDescRememberIndexing is the schema descriptor for remember_indexing field.
-	displaypreferencesDescRememberIndexing := displaypreferencesFields[9].Descriptor()
+	displaypreferencesDescRememberIndexing := displaypreferencesFields[11].Descriptor()
 	// displaypreferences.DefaultRememberIndexing holds the default value on creation for the remember_indexing field.
 	displaypreferences.DefaultRememberIndexing = displaypreferencesDescRememberIndexing.Default.(bool)
 	// displaypreferencesDescRememberSorting is the schema descriptor for remember_sorting field.
-	displaypreferencesDescRememberSorting := displaypreferencesFields[10].Descriptor()
+	displaypreferencesDescRememberSorting := displaypreferencesFields[12].Descriptor()
 	// displaypreferences.DefaultRememberSorting holds the default value on creation for the remember_sorting field.
 	displaypreferences.DefaultRememberSorting = displaypreferencesDescRememberSorting.Default.(bool)
 	// displaypreferencesDescShowBackdrop is the schema descriptor for show_backdrop field.
-	displaypreferencesDescShowBackdrop := displaypreferencesFields[11].Descriptor()
+	displaypreferencesDescShowBackdrop := displaypreferencesFields[13].Descriptor()
 	// displaypreferences.DefaultShowBackdrop holds the default value on creation for the show_backdrop field.
 	displaypreferences.DefaultShowBackdrop = displaypreferencesDescShowBackdrop.Default.(bool)
 	// displaypreferencesDescShowSidebar is the schema descriptor for show_sidebar field.
-	displaypreferencesDescShowSidebar := displaypreferencesFields[12].Descriptor()
+	displaypreferencesDescShowSidebar := displaypreferencesFields[14].Descriptor()
 	// displaypreferences.DefaultShowSidebar holds the default value on creation for the show_sidebar field.
 	displaypreferences.DefaultShowSidebar = displaypreferencesDescShowSidebar.Default.(bool)
 	// displaypreferencesDescPrimaryImageHeight is the schema descriptor for primary_image_height field.
-	displaypreferencesDescPrimaryImageHeight := displaypreferencesFields[13].Descriptor()
+	displaypreferencesDescPrimaryImageHeight := displaypreferencesFields[15].Descriptor()
 	// displaypreferences.DefaultPrimaryImageHeight holds the default value on creation for the primary_image_height field.
 	displaypreferences.DefaultPrimaryImageHeight = displaypreferencesDescPrimaryImageHeight.Default.(int32)
 	// displaypreferencesDescPrimaryImageWidth is the schema descriptor for primary_image_width field.
-	displaypreferencesDescPrimaryImageWidth := displaypreferencesFields[14].Descriptor()
+	displaypreferencesDescPrimaryImageWidth := displaypreferencesFields[16].Descriptor()
 	// displaypreferences.DefaultPrimaryImageWidth holds the default value on creation for the primary_image_width field.
 	displaypreferences.DefaultPrimaryImageWidth = displaypreferencesDescPrimaryImageWidth.Default.(int32)
 	genreFields := entities.Genre{}.Fields()

@@ -162,8 +162,6 @@ type ItemEdges struct {
 	Images []*Image `json:"images,omitempty"`
 	// UserData holds the value of the user_data edge.
 	UserData []*UserItemData `json:"user_data,omitempty"`
-	// DisplayPreferences holds the value of the display_preferences edge.
-	DisplayPreferences []*DisplayPreferences `json:"display_preferences,omitempty"`
 	// ActivityLogEntries holds the value of the activity_log_entries edge.
 	ActivityLogEntries []*ActivityLogEntry `json:"activity_log_entries,omitempty"`
 	// Trickplays holds the value of the trickplays edge.
@@ -180,7 +178,7 @@ type ItemEdges struct {
 	Studios []*Studio `json:"studios,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [16]bool
+	loadedTypes [15]bool
 }
 
 // ParentOrErr returns the Parent value or an error if the edge
@@ -259,19 +257,10 @@ func (e ItemEdges) UserDataOrErr() ([]*UserItemData, error) {
 	return nil, &NotLoadedError{edge: "user_data"}
 }
 
-// DisplayPreferencesOrErr returns the DisplayPreferences value or an error if the edge
-// was not loaded in eager-loading.
-func (e ItemEdges) DisplayPreferencesOrErr() ([]*DisplayPreferences, error) {
-	if e.loadedTypes[8] {
-		return e.DisplayPreferences, nil
-	}
-	return nil, &NotLoadedError{edge: "display_preferences"}
-}
-
 // ActivityLogEntriesOrErr returns the ActivityLogEntries value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) ActivityLogEntriesOrErr() ([]*ActivityLogEntry, error) {
-	if e.loadedTypes[9] {
+	if e.loadedTypes[8] {
 		return e.ActivityLogEntries, nil
 	}
 	return nil, &NotLoadedError{edge: "activity_log_entries"}
@@ -280,7 +269,7 @@ func (e ItemEdges) ActivityLogEntriesOrErr() ([]*ActivityLogEntry, error) {
 // TrickplaysOrErr returns the Trickplays value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) TrickplaysOrErr() ([]*Trickplay, error) {
-	if e.loadedTypes[10] {
+	if e.loadedTypes[9] {
 		return e.Trickplays, nil
 	}
 	return nil, &NotLoadedError{edge: "trickplays"}
@@ -289,7 +278,7 @@ func (e ItemEdges) TrickplaysOrErr() ([]*Trickplay, error) {
 // MediaSegmentsOrErr returns the MediaSegments value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) MediaSegmentsOrErr() ([]*MediaSegment, error) {
-	if e.loadedTypes[11] {
+	if e.loadedTypes[10] {
 		return e.MediaSegments, nil
 	}
 	return nil, &NotLoadedError{edge: "media_segments"}
@@ -300,7 +289,7 @@ func (e ItemEdges) MediaSegmentsOrErr() ([]*MediaSegment, error) {
 func (e ItemEdges) PlaylistOrErr() (*Playlist, error) {
 	if e.Playlist != nil {
 		return e.Playlist, nil
-	} else if e.loadedTypes[12] {
+	} else if e.loadedTypes[11] {
 		return nil, &NotFoundError{label: playlist.Label}
 	}
 	return nil, &NotLoadedError{edge: "playlist"}
@@ -309,7 +298,7 @@ func (e ItemEdges) PlaylistOrErr() (*Playlist, error) {
 // PlaylistEntriesOrErr returns the PlaylistEntries value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) PlaylistEntriesOrErr() ([]*PlaylistEntry, error) {
-	if e.loadedTypes[13] {
+	if e.loadedTypes[12] {
 		return e.PlaylistEntries, nil
 	}
 	return nil, &NotLoadedError{edge: "playlist_entries"}
@@ -318,7 +307,7 @@ func (e ItemEdges) PlaylistEntriesOrErr() ([]*PlaylistEntry, error) {
 // GenresOrErr returns the Genres value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) GenresOrErr() ([]*Genre, error) {
-	if e.loadedTypes[14] {
+	if e.loadedTypes[13] {
 		return e.Genres, nil
 	}
 	return nil, &NotLoadedError{edge: "genres"}
@@ -327,7 +316,7 @@ func (e ItemEdges) GenresOrErr() ([]*Genre, error) {
 // StudiosOrErr returns the Studios value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) StudiosOrErr() ([]*Studio, error) {
-	if e.loadedTypes[15] {
+	if e.loadedTypes[14] {
 		return e.Studios, nil
 	}
 	return nil, &NotLoadedError{edge: "studios"}
@@ -805,11 +794,6 @@ func (_m *Item) QueryImages() *ImageQuery {
 // QueryUserData queries the "user_data" edge of the Item entity.
 func (_m *Item) QueryUserData() *UserItemDataQuery {
 	return NewItemClient(_m.config).QueryUserData(_m)
-}
-
-// QueryDisplayPreferences queries the "display_preferences" edge of the Item entity.
-func (_m *Item) QueryDisplayPreferences() *DisplayPreferencesQuery {
-	return NewItemClient(_m.config).QueryDisplayPreferences(_m)
 }
 
 // QueryActivityLogEntries queries the "activity_log_entries" edge of the Item entity.

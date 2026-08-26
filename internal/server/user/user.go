@@ -53,8 +53,6 @@ func (s *Server) GetUserById(ctx context.Context, request api.GetUserByIdRequest
 	return api.GetUserById200JSONResponse(userDto(user)), nil
 }
 
-// Anonymous, so this answers the login screen and nothing more. The full dto
-// carries the policy, which would name the administrator to any caller.
 func (s *Server) GetPublicUsers(ctx context.Context, request api.GetPublicUsersRequestObject) (api.GetPublicUsersResponseObject, error) {
 	records, err := s.users.Users(ctx)
 	if err != nil {
@@ -109,9 +107,6 @@ func (s *Server) UpdateUser(ctx context.Context, request api.UpdateUserRequestOb
 			return nil, err
 		}
 	}
-	// Policy is deliberately ignored. This operation is DefaultAuthorization,
-	// so honouring it here would hand every account the elevation that
-	// UpdateUserPolicy exists to guard.
 
 	return api.UpdateUser204Response{}, nil
 }
@@ -163,9 +158,6 @@ func (s *Server) UpdateUserPassword(ctx context.Context, request api.UpdateUserP
 		return api.UpdateUserPassword404JSONResponse{}, nil
 	}
 
-	// This operation is DefaultAuthorization, so the caller is only known to be
-	// signed in as somebody. Naming another user, and skipping the current
-	// password, are both an administrator's to do.
 	administrator, err := s.users.IsAdministrator(ctx, auth.UserID(ctx))
 	if err != nil {
 		return nil, err
@@ -300,9 +292,6 @@ func (s *Server) authenticate(ctx context.Context, user *users.User) (api.Authen
 	}, nil
 }
 
-// Self-service reset needs a channel that reaches the account holder and
-// nobody else; this server has none, so it answers ContactAdmin and recovery
-// runs through `gojellyfin resetpassword`.
 func (s *Server) ForgotPassword(ctx context.Context, request api.ForgotPasswordRequestObject) (api.ForgotPasswordResponseObject, error) {
 	return api.ForgotPassword200JSONResponse{Action: apiutil.Ptr(api.ContactAdmin)}, nil
 }

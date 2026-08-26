@@ -11,7 +11,6 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/FreekingDean/gojellyfin/internal/store/displaypreferences"
-	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/google/uuid"
 )
@@ -25,6 +24,10 @@ type DisplayPreferences struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// UserID holds the value of the "user_id" field.
+	UserID uuid.UUID `json:"user_id,omitempty"`
+	// ReferenceID holds the value of the "reference_id" field.
+	ReferenceID string `json:"reference_id,omitempty"`
 	// Client holds the value of the "client" field.
 	Client string `json:"client,omitempty"`
 	// ViewType holds the value of the "view_type" field.
@@ -53,21 +56,17 @@ type DisplayPreferences struct {
 	CustomPrefs map[string]string `json:"custom_prefs,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the DisplayPreferencesQuery when eager-loading is set.
-	Edges                    DisplayPreferencesEdges `json:"edges"`
-	item_display_preferences *uuid.UUID
-	user_display_preferences *uuid.UUID
-	selectValues             sql.SelectValues
+	Edges        DisplayPreferencesEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // DisplayPreferencesEdges holds the relations/edges for other nodes in the graph.
 type DisplayPreferencesEdges struct {
 	// User holds the value of the user edge.
 	User *User `json:"user,omitempty"`
-	// Item holds the value of the item edge.
-	Item *Item `json:"item,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [1]bool
 }
 
 // UserOrErr returns the User value or an error if the edge
@@ -81,17 +80,6 @@ func (e DisplayPreferencesEdges) UserOrErr() (*User, error) {
 	return nil, &NotLoadedError{edge: "user"}
 }
 
-// ItemOrErr returns the Item value or an error if the edge
-// was not loaded in eager-loading, or loaded but was not found.
-func (e DisplayPreferencesEdges) ItemOrErr() (*Item, error) {
-	if e.Item != nil {
-		return e.Item, nil
-	} else if e.loadedTypes[1] {
-		return nil, &NotFoundError{label: item.Label}
-	}
-	return nil, &NotLoadedError{edge: "item"}
-}
-
 // scanValues returns the types for scanning values from sql.Rows.
 func (*DisplayPreferences) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -103,16 +91,12 @@ func (*DisplayPreferences) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case displaypreferences.FieldPrimaryImageHeight, displaypreferences.FieldPrimaryImageWidth:
 			values[i] = new(sql.NullInt64)
-		case displaypreferences.FieldClient, displaypreferences.FieldViewType, displaypreferences.FieldSortBy, displaypreferences.FieldIndexBy, displaypreferences.FieldSortOrder, displaypreferences.FieldScrollDirection:
+		case displaypreferences.FieldReferenceID, displaypreferences.FieldClient, displaypreferences.FieldViewType, displaypreferences.FieldSortBy, displaypreferences.FieldIndexBy, displaypreferences.FieldSortOrder, displaypreferences.FieldScrollDirection:
 			values[i] = new(sql.NullString)
 		case displaypreferences.FieldCreatedAt, displaypreferences.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case displaypreferences.FieldID:
+		case displaypreferences.FieldID, displaypreferences.FieldUserID:
 			values[i] = new(uuid.UUID)
-		case displaypreferences.ForeignKeys[0]: // item_display_preferences
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case displaypreferences.ForeignKeys[1]: // user_display_preferences
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -145,6 +129,18 @@ func (_m *DisplayPreferences) assignValues(columns []string, values []any) error
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
+			}
+		case displaypreferences.FieldUserID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field user_id", values[i])
+			} else if value != nil {
+				_m.UserID = *value
+			}
+		case displaypreferences.FieldReferenceID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field reference_id", values[i])
+			} else if value.Valid {
+				_m.ReferenceID = value.String
 			}
 		case displaypreferences.FieldClient:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -226,20 +222,6 @@ func (_m *DisplayPreferences) assignValues(columns []string, values []any) error
 					return fmt.Errorf("unmarshal field custom_prefs: %w", err)
 				}
 			}
-		case displaypreferences.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullScanner); !ok {
-				return fmt.Errorf("unexpected type %T for field item_display_preferences", values[i])
-			} else if value.Valid {
-				_m.item_display_preferences = new(uuid.UUID)
-				*_m.item_display_preferences = *value.S.(*uuid.UUID)
-			}
-		case displaypreferences.ForeignKeys[1]:
-			if value, ok := values[i].(*sql.NullScanner); !ok {
-				return fmt.Errorf("unexpected type %T for field user_display_preferences", values[i])
-			} else if value.Valid {
-				_m.user_display_preferences = new(uuid.UUID)
-				*_m.user_display_preferences = *value.S.(*uuid.UUID)
-			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -256,11 +238,6 @@ func (_m *DisplayPreferences) Value(name string) (ent.Value, error) {
 // QueryUser queries the "user" edge of the DisplayPreferences entity.
 func (_m *DisplayPreferences) QueryUser() *UserQuery {
 	return NewDisplayPreferencesClient(_m.config).QueryUser(_m)
-}
-
-// QueryItem queries the "item" edge of the DisplayPreferences entity.
-func (_m *DisplayPreferences) QueryItem() *ItemQuery {
-	return NewDisplayPreferencesClient(_m.config).QueryItem(_m)
 }
 
 // Update returns a builder for updating this DisplayPreferences.
@@ -291,6 +268,12 @@ func (_m *DisplayPreferences) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
 	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("user_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.UserID))
+	builder.WriteString(", ")
+	builder.WriteString("reference_id=")
+	builder.WriteString(_m.ReferenceID)
 	builder.WriteString(", ")
 	builder.WriteString("client=")
 	builder.WriteString(_m.Client)

@@ -22,7 +22,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
-func TestForgotPassword(t *testing.T) {
+func TestServer_ForgotPassword(t *testing.T) {
 	server := New(nil, nil, nil)
 
 	response, err := server.ForgotPassword(context.Background(), api.ForgotPasswordRequestObject{
@@ -44,7 +44,7 @@ func TestForgotPassword(t *testing.T) {
 	}
 }
 
-func TestForgotPasswordPin(t *testing.T) {
+func TestServer_ForgotPasswordPin(t *testing.T) {
 	server := New(nil, nil, nil)
 
 	response, err := server.ForgotPasswordPin(context.Background(), api.ForgotPasswordPinRequestObject{

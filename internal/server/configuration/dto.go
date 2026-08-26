@@ -15,7 +15,6 @@ const (
 	BrandingConfigurationKey = "branding"
 )
 
-// Read helpers rather than methods, so any tag's handlers can use them.
 func ServerConfiguration(ctx context.Context, store *config.Service) (api.ServerConfiguration, error) {
 	configuration := defaultServerConfiguration()
 

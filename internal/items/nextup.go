@@ -9,8 +9,6 @@ import (
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
-// DISTINCT ON picks one row per series and the ORDER BY decides which, which
-// is why this is not expressed through the query builder.
 const nextUpQuery = `
 	SELECT DISTINCT ON (series.id) episodes.id
 	FROM items AS episodes
@@ -33,7 +31,6 @@ const nextUpQuery = `
 	ORDER BY series.id, episodes.parent_index_number, episodes.index_number
 	LIMIT $3`
 
-// The earliest unwatched episode of each series the user has already started.
 func (s *Service) NextUpEpisodes(ctx context.Context, userID uuid.UUID, seriesID *uuid.UUID, limit int) ([]*Item, error) {
 	if limit <= 0 {
 		limit = 24

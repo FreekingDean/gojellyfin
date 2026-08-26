@@ -36,7 +36,7 @@ func newClient(baseURL, apiKey string) (*Client, error) {
 		return client, nil
 	}
 
-	api, err := gotmdb.Init(apiKey)
+	api, err := gotmdb.InitV4(apiKey)
 	if err != nil {
 		return nil, err
 	}
@@ -113,17 +113,23 @@ func (c *Client) Series(ctx context.Context, name string, year *int32) (items.Me
 	return seriesMetadata(series), true, nil
 }
 
-func (c *Client) Episode(ctx context.Context, series map[string]string, season, episode int32) (items.Metadata, bool, error) {
-	if !c.Enabled() {
-		return items.Metadata{}, false, ErrNotConfigured
+func (c *Client) Season(ctx context.Context, series map[string]string, season int32) (items.Metadata, bool, error) {
+	id, err := c.seriesID(ctx, series)
+	if err != nil || id == 0 {
+		return items.Metadata{}, false, err
 	}
 
-	id, err := strconv.Atoi(series[providerTmdb])
+	found, err := c.api.GetTVSeasonDetails(id, int(season), nil)
 	if err != nil {
-		return items.Metadata{}, false, nil
+		return missed(err)
 	}
 
-	if err := c.wait(ctx); err != nil {
+	return seasonMetadata(found), true, nil
+}
+
+func (c *Client) Episode(ctx context.Context, series map[string]string, season, episode int32) (items.Metadata, bool, error) {
+	id, err := c.seriesID(ctx, series)
+	if err != nil || id == 0 {
 		return items.Metadata{}, false, err
 	}
 
@@ -133,6 +139,19 @@ func (c *Client) Episode(ctx context.Context, series map[string]string, season, 
 	}
 
 	return episodeMetadata(found), true, nil
+}
+
+func (c *Client) seriesID(ctx context.Context, series map[string]string) (int, error) {
+	if !c.Enabled() {
+		return 0, ErrNotConfigured
+	}
+
+	id, err := strconv.Atoi(series[providerTmdb])
+	if err != nil {
+		return 0, nil
+	}
+
+	return id, c.wait(ctx)
 }
 
 func (c *Client) search(

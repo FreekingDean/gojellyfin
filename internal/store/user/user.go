@@ -82,7 +82,7 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "displaypreferences" package.
 	DisplayPreferencesInverseTable = "display_preferences"
 	// DisplayPreferencesColumn is the table column denoting the display_preferences relation/edge.
-	DisplayPreferencesColumn = "user_display_preferences"
+	DisplayPreferencesColumn = "user_id"
 	// ActivityLogEntriesTable is the table that holds the activity_log_entries relation/edge.
 	ActivityLogEntriesTable = "activity_log_entries"
 	// ActivityLogEntriesInverseTable is the table name for the ActivityLogEntry entity.

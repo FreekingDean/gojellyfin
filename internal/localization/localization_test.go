@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestCultures(t *testing.T) {
+func TestService_Cultures(t *testing.T) {
 	cultures := testService(t).Cultures()
 	if len(cultures) != 191 {
 		t.Fatalf("got %d cultures, want 191", len(cultures))
@@ -27,49 +27,51 @@ func TestCultures(t *testing.T) {
 	}
 }
 
-func TestCountries(t *testing.T) {
+func TestService_Countries(t *testing.T) {
 	countries := testService(t).Countries()
 	if len(countries) != 139 {
 		t.Fatalf("got %d countries, want 139", len(countries))
 	}
-	for code, want := range map[string]Country{
-		"US": {Name: "US", DisplayName: "United States", TwoLetterISOName: "US", ThreeLetterISOName: "USA"},
-		"GB": {Name: "GB", DisplayName: "United Kingdom", TwoLetterISOName: "GB", ThreeLetterISOName: "GBR"},
-		"JP": {Name: "JP", DisplayName: "Japan", TwoLetterISOName: "JP", ThreeLetterISOName: "JPN"},
-		"AF": {Name: "AF", DisplayName: "Afghanistan", TwoLetterISOName: "AF", ThreeLetterISOName: "AFG"},
-	} {
-		index := slices.IndexFunc(countries, func(c Country) bool { return c.TwoLetterISOName == code })
-		if index < 0 {
-			t.Fatalf("%q missing", code)
+
+	t.Run("carry their ISO names and rating tables", func(t *testing.T) {
+		for code, want := range map[string]Country{
+			"US": {Name: "US", DisplayName: "United States", TwoLetterISOName: "US", ThreeLetterISOName: "USA"},
+			"GB": {Name: "GB", DisplayName: "United Kingdom", TwoLetterISOName: "GB", ThreeLetterISOName: "GBR"},
+			"JP": {Name: "JP", DisplayName: "Japan", TwoLetterISOName: "JP", ThreeLetterISOName: "JPN"},
+			"AF": {Name: "AF", DisplayName: "Afghanistan", TwoLetterISOName: "AF", ThreeLetterISOName: "AFG"},
+		} {
+			index := slices.IndexFunc(countries, func(c Country) bool { return c.TwoLetterISOName == code })
+			if index < 0 {
+				t.Fatalf("%q missing", code)
+			}
+
+			got := countries[index]
+			if got.Name != want.Name || got.DisplayName != want.DisplayName || got.ThreeLetterISOName != want.ThreeLetterISOName {
+				t.Errorf("%q: got %+v, want %+v", code, got, want)
+			}
 		}
 
-		got := countries[index]
-		if got.Name != want.Name || got.DisplayName != want.DisplayName || got.ThreeLetterISOName != want.ThreeLetterISOName {
-			t.Errorf("%q: got %+v, want %+v", code, got, want)
+		ratingTables := 0
+		for _, country := range countries {
+			if len(country.ParentalRatings) > 0 {
+				ratingTables++
+			}
 		}
-	}
+		if ratingTables != 23 {
+			t.Errorf("got %d countries with a rating table, want 23", ratingTables)
+		}
+	})
 
-	ratingTables := 0
-	for _, country := range countries {
-		if len(country.ParentalRatings) > 0 {
-			ratingTables++
+	t.Run("are sorted by display name", func(t *testing.T) {
+		if !slices.IsSortedFunc(countries, func(a, b Country) int {
+			return cmp.Compare(a.DisplayName, b.DisplayName)
+		}) {
+			t.Error("countries are not sorted by display name")
 		}
-	}
-	if ratingTables != 23 {
-		t.Errorf("got %d countries with a rating table, want 23", ratingTables)
-	}
+	})
 }
 
-func TestCountriesSortedByDisplayName(t *testing.T) {
-	countries := testService(t).Countries()
-	if !slices.IsSortedFunc(countries, func(a, b Country) int {
-		return cmp.Compare(a.DisplayName, b.DisplayName)
-	}) {
-		t.Error("countries are not sorted by display name")
-	}
-}
-
-func TestOptions(t *testing.T) {
+func TestService_Options(t *testing.T) {
 	options := testService(t).Options()
 	if len(options) != 71 {
 		t.Fatalf("got %d options, want 71", len(options))
@@ -86,7 +88,7 @@ func TestOptions(t *testing.T) {
 	}
 }
 
-func TestParentalRatingsFor(t *testing.T) {
+func TestService_ParentalRatingsFor(t *testing.T) {
 	for _, tc := range []struct {
 		country string
 		count   int
@@ -123,14 +125,14 @@ func TestParentalRatingsFor(t *testing.T) {
 	}
 }
 
-func TestParentalRatingsDefaultsToUnitedStates(t *testing.T) {
+func TestService_ParentalRatings(t *testing.T) {
 	service := testService(t)
 	if len(service.ParentalRatings()) != len(service.ParentalRatingsFor("US")) {
 		t.Error("the default ratings are not the United States ratings")
 	}
 }
 
-func TestRatingLevel(t *testing.T) {
+func TestService_RatingLevel(t *testing.T) {
 	service := testService(t)
 	for name, want := range map[string]int{
 		"PG-13":  13,
