@@ -116,7 +116,7 @@ func names(result api.ActivityLogEntryQueryResult) []string {
 	return found
 }
 
-func TestGetLogEntries(t *testing.T) {
+func TestServer_GetLogEntries(t *testing.T) {
 	fixture := newFixture(t)
 
 	fixture.add(t, "Oldest", fixture.future, nil)
@@ -160,6 +160,19 @@ func TestGetLogEntries(t *testing.T) {
 		result := fixture.get(t, api.GetLogEntriesParams{MinDate: &minDate})
 
 		want := []string{"By User", "Newest"}
+		if got := names(result); !slices.Equal(got, want) {
+			t.Errorf("entries = %v, want %v", got, want)
+		}
+		if total := apiutil.Deref(result.TotalRecordCount); total != 2 {
+			t.Errorf("total = %d, want 2", total)
+		}
+	})
+
+	t.Run("bounds the window at both ends", func(t *testing.T) {
+		maxDate := fixture.future.Add(time.Minute)
+		result := fixture.get(t, api.GetLogEntriesParams{MinDate: &fixture.future, MaxDate: &maxDate})
+
+		want := []string{"Middle", "Oldest"}
 		if got := names(result); !slices.Equal(got, want) {
 			t.Errorf("entries = %v, want %v", got, want)
 		}

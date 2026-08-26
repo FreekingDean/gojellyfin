@@ -40,6 +40,7 @@ type Query struct {
 	StartIndex int
 	Limit      int
 	MinDate    *time.Time
+	MaxDate    *time.Time
 	HasUserID  *bool
 }
 
@@ -70,6 +71,9 @@ func (s *Service) Entries(ctx context.Context, query Query) ([]*Entry, int, erro
 	entries := s.store.ActivityLogEntry.Query()
 	if query.MinDate != nil {
 		entries = entries.Where(entrymodal.CreatedAtGTE(*query.MinDate))
+	}
+	if query.MaxDate != nil {
+		entries = entries.Where(entrymodal.CreatedAtLTE(*query.MaxDate))
 	}
 	if query.HasUserID != nil {
 		if *query.HasUserID {

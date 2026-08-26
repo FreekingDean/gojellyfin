@@ -23,6 +23,7 @@ func (s *Server) GetLogEntries(ctx context.Context, request api.GetLogEntriesReq
 		StartIndex: int(startIndex),
 		Limit:      int(apiutil.Deref(request.Params.Limit)),
 		MinDate:    request.Params.MinDate,
+		MaxDate:    request.Params.MaxDate,
 		HasUserID:  request.Params.HasUserId,
 	})
 	if err != nil {
