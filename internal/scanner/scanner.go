@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
@@ -24,10 +25,11 @@ type Scanner struct {
 	libraries  *libraries.Service
 	filesystem *filesystem.Service
 	ffmpeg     *ffmpeg.FFMpeg
+	activity   *activity.Service
 }
 
-func New(items *items.Service, libraries *libraries.Service, filesystem *filesystem.Service, ffmpeg *ffmpeg.FFMpeg) *Scanner {
-	return &Scanner{items: items, libraries: libraries, filesystem: filesystem, ffmpeg: ffmpeg}
+func New(items *items.Service, libraries *libraries.Service, filesystem *filesystem.Service, ffmpeg *ffmpeg.FFMpeg, activity *activity.Service) *Scanner {
+	return &Scanner{items: items, libraries: libraries, filesystem: filesystem, ffmpeg: ffmpeg, activity: activity}
 }
 
 type seen struct {
@@ -88,7 +90,18 @@ func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) e
 		return err
 	}
 
-	return s.items.DeleteSourcesNotInPaths(ctx, library.ID, found.paths)
+	if err := s.items.DeleteSourcesNotInPaths(ctx, library.ID, found.paths); err != nil {
+		return err
+	}
+
+	s.activity.Record(ctx, activity.Event{
+		Name:          fmt.Sprintf("%s scan completed", library.Name),
+		Kind:          activity.KindLibraryScanCompleted,
+		ShortOverview: fmt.Sprintf("%d items, %d files", len(found.keys), len(found.paths)),
+		Severity:      activity.SeverityInformation,
+	})
+
+	return nil
 }
 
 func (s *Scanner) scanMovies(ctx context.Context, library *libraries.Library, root string, found *seen) error {
