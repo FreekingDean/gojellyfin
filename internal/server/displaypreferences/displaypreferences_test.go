@@ -225,6 +225,32 @@ func TestServer_UpdateDisplayPreferences(t *testing.T) {
 		}
 	})
 
+	t.Run("a second save replaces the first", func(t *testing.T) {
+		fixture := newFixture(t)
+
+		fixture.save(t, "usersettings", "emby", api.DisplayPreferencesDto{
+			ViewType:    apiutil.Ptr("Poster"),
+			SortBy:      apiutil.Ptr("DateCreated"),
+			ShowSidebar: apiutil.Ptr(true),
+		})
+		fixture.save(t, "usersettings", "emby", api.DisplayPreferencesDto{ViewType: apiutil.Ptr("List")})
+
+		dto := fixture.load(t, "usersettings", "emby")
+
+		if got := apiutil.Deref(dto.ViewType); got != "List" {
+			t.Errorf("ViewType = %q, want %q", got, "List")
+		}
+		if got := apiutil.Deref(dto.SortBy); got != "SortName" {
+			t.Errorf("SortBy = %q, want the default %q", got, "SortName")
+		}
+		if got := apiutil.Deref(dto.ShowSidebar); got {
+			t.Error("ShowSidebar = true, want the default false")
+		}
+		if got := fixture.rows(t); got != 1 {
+			t.Errorf("rows = %d, want 1", got)
+		}
+	})
+
 	t.Run("keys on the id and the client", func(t *testing.T) {
 		fixture := newFixture(t)
 
