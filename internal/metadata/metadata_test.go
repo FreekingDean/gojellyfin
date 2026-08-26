@@ -238,6 +238,10 @@ func (f *fixture) identify(t *testing.T) {
 func (f *fixture) run(t *testing.T, options jobs.Options) {
 	t.Helper()
 
+	if options.Scope == uuid.Nil {
+		options.Scope = f.libraryID
+	}
+
 	if err := jobs.RunStep(t, f.service.IdentifyItems, options); err != nil {
 		t.Fatalf("identification failed: %v", err)
 	}
