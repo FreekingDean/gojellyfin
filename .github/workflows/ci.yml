@@ -32,6 +32,46 @@ jobs:
         with:
           version: v2.12.2
 
+  chart:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: azure/setup-helm@v4
+
+      - name: Lint
+        run: helm lint --strict charts/gojellyfin
+
+      # The combinations that have to keep rendering. A chart is only exercised
+      # by being rendered, and nothing else here would notice a template that
+      # stopped.
+      - name: Render
+        run: |
+          set -e
+          render() { helm template gojellyfin charts/gojellyfin "$@" > /dev/null; }
+          render
+          render --set streaming.enabled=false
+          render --set web.enabled=false
+          render --set worker.enabled=true --set temporal.hostPort=temporal:7233 --set temporal.namespace=default
+          render --set migration.enabled=true
+          render --set hostname=example.test --set httpRoute.enabled=true --set httpRoute.parentRefs[0].name=gateway
+          render --set cors.enabled=true --set cors.origin=https://example.test
+          render --set pod=null --set api.resources=null
+
+      # The chart refuses three combinations that would deploy something quietly
+      # broken. A guard nothing tests is a guard that stops firing.
+      - name: Refuse what cannot work
+        run: |
+          refuses() {
+            if helm template gojellyfin charts/gojellyfin "$@" > /dev/null 2>&1; then
+              echo "rendered instead of failing: $*"
+              exit 1
+            fi
+          }
+          refuses --set cors.enabled=true
+          refuses --set worker.enabled=true
+          refuses --set temporal.hostPort=temporal:7233
+
   generate:
     runs-on: ubuntu-latest
     steps:
