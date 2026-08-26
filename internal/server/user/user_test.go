@@ -217,98 +217,99 @@ func (f *fixture) refuseRedeem(t *testing.T, secret string) {
 	}
 }
 
-func TestAuthenticateWithQuickConnectNeedsASecret(t *testing.T) {
+func TestServer_AuthenticateUserByName(t *testing.T) {
 	fixture := newFixture(t)
 
-	fixture.refuseRedeem(t, "")
-	fixture.refuseRedeem(t, "not-a-secret")
+	t.Run("issues a session token the request can be resolved by", func(t *testing.T) {
+		userID := fixture.account(t, "dean", "hunter2")
+
+		response, err := fixture.signIn(fixture.prefix+"dean", "hunter2")
+		if err != nil {
+			t.Fatalf("failed to authenticate: %v", err)
+		}
+
+		authenticated, ok := response.(api.AuthenticateUserByName200JSONResponse)
+		if !ok {
+			t.Fatalf("response = %T, want api.AuthenticateUserByName200JSONResponse", response)
+		}
+		if authenticated.AccessToken == nil || *authenticated.AccessToken == "" {
+			t.Fatal("AccessToken is empty, want a usable token")
+		}
+		if authenticated.SessionInfo == nil || authenticated.SessionInfo.Id == nil {
+			t.Fatal("SessionInfo is empty, want the created session")
+		}
+		if authenticated.User == nil || *authenticated.User.Id != userID {
+			t.Errorf("User = %v, want %v", authenticated.User, userID)
+		}
+
+		session, err := fixture.sessions.ByToken(context.Background(), *authenticated.AccessToken)
+		if err != nil {
+			t.Fatalf("failed to resolve the issued token: %v", err)
+		}
+		if session.Edges.User == nil || session.Edges.User.ID != userID {
+			t.Errorf("session user = %v, want %v", session.Edges.User, userID)
+		}
+		if session.ID.String() != *authenticated.SessionInfo.Id {
+			t.Errorf("SessionInfo.Id = %q, want the created session %q", *authenticated.SessionInfo.Id, session.ID)
+		}
+		if fixture.stored(t, userID).LastLoginAt.IsZero() {
+			t.Error("LastLoginAt is zero, want the login recorded")
+		}
+	})
+
+	t.Run("refuses credentials that do not match", func(t *testing.T) {
+		fixture.account(t, "bad", "hunter2")
+
+		if _, err := fixture.signIn(fixture.prefix+"bad", "wrong"); !errors.Is(err, auth.ErrUnauthorized) {
+			t.Errorf("wrong password err = %v, want auth.ErrUnauthorized", err)
+		}
+		if _, err := fixture.signIn(fixture.prefix+"nobody", "hunter2"); !errors.Is(err, auth.ErrUnauthorized) {
+			t.Errorf("unknown user err = %v, want auth.ErrUnauthorized", err)
+		}
+		if _, err := fixture.signIn(fixture.prefix+"bad", ""); !errors.Is(err, auth.ErrUnauthorized) {
+			t.Errorf("empty password err = %v, want auth.ErrUnauthorized", err)
+		}
+	})
 }
 
-func TestAuthenticateWithQuickConnectRefusesAnUnauthorizedRequest(t *testing.T) {
+func TestServer_AuthenticateWithQuickConnect(t *testing.T) {
 	fixture := newFixture(t)
 
-	request := fixture.initiate(t)
+	t.Run("refuses a secret nobody was issued", func(t *testing.T) {
+		fixture.refuseRedeem(t, "")
+		fixture.refuseRedeem(t, "not-a-secret")
+	})
 
-	fixture.refuseRedeem(t, request.Secret)
-}
+	t.Run("refuses a request nobody authorized", func(t *testing.T) {
+		request := fixture.initiate(t)
 
-func TestAuthenticateUserByNameIssuesASessionToken(t *testing.T) {
-	fixture := newFixture(t)
-	userID := fixture.account(t, "dean", "hunter2")
+		fixture.refuseRedeem(t, request.Secret)
+	})
 
-	response, err := fixture.signIn(fixture.prefix+"dean", "hunter2")
-	if err != nil {
-		t.Fatalf("failed to authenticate: %v", err)
-	}
+	t.Run("issues a session token for the authorizing user once", func(t *testing.T) {
+		userID := fixture.account(t, "dean", "hunter2")
 
-	authenticated, ok := response.(api.AuthenticateUserByName200JSONResponse)
-	if !ok {
-		t.Fatalf("response = %T, want api.AuthenticateUserByName200JSONResponse", response)
-	}
-	if authenticated.AccessToken == nil || *authenticated.AccessToken == "" {
-		t.Fatal("AccessToken is empty, want a usable token")
-	}
-	if authenticated.SessionInfo == nil || authenticated.SessionInfo.Id == nil {
-		t.Fatal("SessionInfo is empty, want the created session")
-	}
-	if authenticated.User == nil || *authenticated.User.Id != userID {
-		t.Errorf("User = %v, want %v", authenticated.User, userID)
-	}
+		request := fixture.initiate(t)
+		if err := fixture.pending.Authorize(context.Background(), request.Code, userID); err != nil {
+			t.Fatalf("failed to authorize the request: %v", err)
+		}
 
-	session, err := fixture.sessions.ByToken(context.Background(), *authenticated.AccessToken)
-	if err != nil {
-		t.Fatalf("failed to resolve the issued token: %v", err)
-	}
-	if session.Edges.User == nil || session.Edges.User.ID != userID {
-		t.Errorf("session user = %v, want %v", session.Edges.User, userID)
-	}
-	if session.ID.String() != *authenticated.SessionInfo.Id {
-		t.Errorf("SessionInfo.Id = %q, want the created session %q", *authenticated.SessionInfo.Id, session.ID)
-	}
-	if fixture.stored(t, userID).LastLoginAt.IsZero() {
-		t.Error("LastLoginAt is zero, want the login recorded")
-	}
-}
+		authenticated, ok := fixture.redeem(t, request.Secret).(api.AuthenticateWithQuickConnect200JSONResponse)
+		if !ok {
+			t.Fatal("the secret was not redeemable, want an access token")
+		}
+		if authenticated.AccessToken == nil || *authenticated.AccessToken == "" {
+			t.Fatal("AccessToken is empty, want a usable token")
+		}
 
-func TestAuthenticateUserByNameRefusesBadCredentials(t *testing.T) {
-	fixture := newFixture(t)
-	fixture.account(t, "dean", "hunter2")
+		session, err := fixture.sessions.ByToken(context.Background(), *authenticated.AccessToken)
+		if err != nil {
+			t.Fatalf("failed to resolve the issued token: %v", err)
+		}
+		if session.Edges.User == nil || session.Edges.User.ID != userID {
+			t.Errorf("session user = %v, want the authorizing user %v", session.Edges.User, userID)
+		}
 
-	if _, err := fixture.signIn(fixture.prefix+"dean", "wrong"); !errors.Is(err, auth.ErrUnauthorized) {
-		t.Errorf("wrong password err = %v, want auth.ErrUnauthorized", err)
-	}
-	if _, err := fixture.signIn(fixture.prefix+"nobody", "hunter2"); !errors.Is(err, auth.ErrUnauthorized) {
-		t.Errorf("unknown user err = %v, want auth.ErrUnauthorized", err)
-	}
-	if _, err := fixture.signIn(fixture.prefix+"dean", ""); !errors.Is(err, auth.ErrUnauthorized) {
-		t.Errorf("empty password err = %v, want auth.ErrUnauthorized", err)
-	}
-}
-
-func TestAuthenticateWithQuickConnectIssuesASessionTokenOnce(t *testing.T) {
-	fixture := newFixture(t)
-	userID := fixture.account(t, "dean", "hunter2")
-
-	request := fixture.initiate(t)
-	if err := fixture.pending.Authorize(context.Background(), request.Code, userID); err != nil {
-		t.Fatalf("failed to authorize the request: %v", err)
-	}
-
-	authenticated, ok := fixture.redeem(t, request.Secret).(api.AuthenticateWithQuickConnect200JSONResponse)
-	if !ok {
-		t.Fatal("the secret was not redeemable, want an access token")
-	}
-	if authenticated.AccessToken == nil || *authenticated.AccessToken == "" {
-		t.Fatal("AccessToken is empty, want a usable token")
-	}
-
-	session, err := fixture.sessions.ByToken(context.Background(), *authenticated.AccessToken)
-	if err != nil {
-		t.Fatalf("failed to resolve the issued token: %v", err)
-	}
-	if session.Edges.User == nil || session.Edges.User.ID != userID {
-		t.Errorf("session user = %v, want the authorizing user %v", session.Edges.User, userID)
-	}
-
-	fixture.refuseRedeem(t, request.Secret)
+		fixture.refuseRedeem(t, request.Secret)
+	})
 }

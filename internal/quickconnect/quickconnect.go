@@ -21,10 +21,10 @@ const Enabled = true
 
 const (
 	defaultExpiry     = 10 * time.Minute
-	defaultMaxPending = 1024
 	codeFloor         = 100_000
 	codeSpace         = 900_000
 	codeAttempts      = 10
+	defaultMaxPending = codeSpace / codeAttempts
 )
 
 var (

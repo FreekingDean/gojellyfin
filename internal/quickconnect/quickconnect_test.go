@@ -112,249 +112,285 @@ func (f *fixture) initiate(t *testing.T, service *Service) *Request {
 	return request
 }
 
-func TestInitiateDescribesAFreshRequest(t *testing.T) {
+func TestService_Initiate(t *testing.T) {
 	fixture := newFixture(t)
+	ctx := context.Background()
 
-	request := fixture.initiate(t, fixture.service)
+	t.Run("describes the device that asked", func(t *testing.T) {
+		request := fixture.initiate(t, fixture.service)
 
-	if request.AuthorizedByID != uuid.Nil {
-		t.Error("AuthorizedByID is set, want a fresh request to be unauthorized")
-	}
-	if len(request.Code) != 6 {
-		t.Errorf("Code = %q, want six digits", request.Code)
-	}
-	if len(request.Secret) < 32 {
-		t.Errorf("Secret = %q, want an unguessable value", request.Secret)
-	}
-	if request.DeviceID != fixture.prefix+"tv" || request.AppName != "Jellyfin Web" {
-		t.Errorf("device = %q/%q, want the initiating device", request.DeviceID, request.AppName)
-	}
-	if request.ExpiresAt.Sub(request.CreatedAt) < defaultExpiry-time.Second {
-		t.Errorf("ExpiresAt = %v, want %v after CreatedAt %v", request.ExpiresAt, defaultExpiry, request.CreatedAt)
-	}
-}
-
-func TestInitiateIssuesDistinctSecretsAndCodes(t *testing.T) {
-	fixture := newFixture(t)
-
-	first := fixture.initiate(t, fixture.service)
-	second := fixture.initiate(t, fixture.service)
-
-	if first.Secret == second.Secret {
-		t.Error("Secret repeated, want a fresh secret per request")
-	}
-	if first.Code == second.Code {
-		t.Errorf("Code = %q twice, want pending codes to be distinct", first.Code)
-	}
-}
-
-func TestInitiateBoundsThePendingRequests(t *testing.T) {
-	fixture := newFixture(t)
-	service := fixture.bounded(4)
-
-	var err error
-	for range 5 {
-		if _, err = service.Initiate(context.Background(), fixture.device("tv")); err != nil {
-			break
+		if request.AuthorizedByID != uuid.Nil {
+			t.Error("AuthorizedByID is set, want a fresh request to be unauthorized")
 		}
-	}
+		if len(request.Code) != 6 {
+			t.Errorf("Code = %q, want six digits", request.Code)
+		}
+		if len(request.Secret) < 32 {
+			t.Errorf("Secret = %q, want an unguessable value", request.Secret)
+		}
+		if request.DeviceID != fixture.prefix+"tv" || request.AppName != "Jellyfin Web" {
+			t.Errorf("device = %q/%q, want the initiating device", request.DeviceID, request.AppName)
+		}
+	})
 
-	if !errors.Is(err, ErrTooManyPending) {
-		t.Fatalf("err = %v, want ErrTooManyPending", err)
-	}
-}
+	t.Run("expires the request the way upstream does", func(t *testing.T) {
+		request := fixture.initiate(t, fixture.service)
 
-func TestPendingIsVisibleToAnotherReplica(t *testing.T) {
-	fixture := newFixture(t)
-	initiating := fixture.service
-	authorizing := fixture.replica(t)
-	redeeming := fixture.replica(t)
-	userID := fixture.account(t, "dean")
-	ctx := context.Background()
+		if request.ExpiresAt.Sub(request.CreatedAt) < defaultExpiry-time.Second {
+			t.Errorf("ExpiresAt = %v, want %v after CreatedAt %v", request.ExpiresAt, defaultExpiry, request.CreatedAt)
+		}
+	})
 
-	request := fixture.initiate(t, initiating)
+	t.Run("issues a distinct secret and code each time", func(t *testing.T) {
+		first := fixture.initiate(t, fixture.service)
+		second := fixture.initiate(t, fixture.service)
 
-	polled, err := authorizing.Pending(ctx, request.Secret)
-	if err != nil {
-		t.Fatalf("a replica that did not initiate could not poll: %v", err)
-	}
-	if polled.Code != request.Code {
-		t.Errorf("Code = %q, want the initiated code %q", polled.Code, request.Code)
-	}
+		if first.Secret == second.Secret {
+			t.Error("Secret repeated, want a fresh secret per request")
+		}
+		if first.Code == second.Code {
+			t.Errorf("Code = %q twice, want pending codes to be distinct", first.Code)
+		}
+	})
 
-	if err := authorizing.Authorize(ctx, request.Code, userID); err != nil {
-		t.Fatalf("a replica that did not initiate could not authorize: %v", err)
-	}
+	t.Run("refuses once the pending requests reach the cap", func(t *testing.T) {
+		service := fixture.bounded(4)
 
-	polled, err = initiating.Pending(ctx, request.Secret)
-	if err != nil {
-		t.Fatalf("failed to poll: %v", err)
-	}
-	if polled.AuthorizedByID != userID {
-		t.Errorf("AuthorizedByID = %v, want the authorizing user %v", polled.AuthorizedByID, userID)
-	}
-
-	redeemed, err := redeeming.Redeem(ctx, request.Secret)
-	if err != nil {
-		t.Fatalf("a replica that did not initiate could not redeem: %v", err)
-	}
-	if redeemed != userID {
-		t.Errorf("redeemed user = %v, want %v", redeemed, userID)
-	}
-}
-
-func TestTheCodeIsNotThePollCredential(t *testing.T) {
-	fixture := newFixture(t)
-	ctx := context.Background()
-
-	request := fixture.initiate(t, fixture.service)
-	if err := fixture.service.Authorize(ctx, request.Code, fixture.account(t, "dean")); err != nil {
-		t.Fatalf("failed to authorize: %v", err)
-	}
-
-	if _, err := fixture.service.Pending(ctx, request.Code); !errors.Is(err, ErrUnknownSecret) {
-		t.Errorf("Pending(code) err = %v, want ErrUnknownSecret", err)
-	}
-	if _, err := fixture.service.Redeem(ctx, request.Code); !errors.Is(err, ErrUnknownSecret) {
-		t.Errorf("Redeem(code) err = %v, want ErrUnknownSecret", err)
-	}
-}
-
-func TestAuthorizeCannotDistinguishUnknownExpiredAndUsedCodes(t *testing.T) {
-	fixture := newFixture(t)
-	userID := fixture.account(t, "dean")
-	ctx := context.Background()
-
-	expiring := fixture.initiate(t, fixture.expiring(time.Nanosecond))
-
-	redeemed := fixture.initiate(t, fixture.service)
-	if err := fixture.service.Authorize(ctx, redeemed.Code, userID); err != nil {
-		t.Fatalf("failed to authorize: %v", err)
-	}
-	if _, err := fixture.service.Redeem(ctx, redeemed.Secret); err != nil {
-		t.Fatalf("failed to redeem: %v", err)
-	}
-
-	if err := fixture.service.Authorize(ctx, "000000", userID); !errors.Is(err, ErrUnknownCode) {
-		t.Errorf("unknown code err = %v, want ErrUnknownCode", err)
-	}
-	if err := fixture.service.Authorize(ctx, expiring.Code, userID); !errors.Is(err, ErrUnknownCode) {
-		t.Errorf("expired code err = %v, want ErrUnknownCode", err)
-	}
-	if err := fixture.service.Authorize(ctx, redeemed.Code, userID); !errors.Is(err, ErrUnknownCode) {
-		t.Errorf("redeemed code err = %v, want ErrUnknownCode", err)
-	}
-}
-
-func TestAuthorizeRefusesToRebindAPendingCode(t *testing.T) {
-	fixture := newFixture(t)
-	userID := fixture.account(t, "dean")
-	other := fixture.account(t, "other")
-	ctx := context.Background()
-
-	request := fixture.initiate(t, fixture.service)
-	if err := fixture.service.Authorize(ctx, request.Code, userID); err != nil {
-		t.Fatalf("failed to authorize: %v", err)
-	}
-
-	if err := fixture.replica(t).Authorize(ctx, request.Code, other); !errors.Is(err, ErrAlreadyAuthorized) {
-		t.Fatalf("err = %v, want ErrAlreadyAuthorized", err)
-	}
-
-	authorized, err := fixture.service.Redeem(ctx, request.Secret)
-	if err != nil {
-		t.Fatalf("failed to redeem: %v", err)
-	}
-	if authorized != userID {
-		t.Errorf("authorized user = %v, want the first authorizing user %v", authorized, userID)
-	}
-}
-
-func TestRedeemRefusesAnUnauthorizedRequest(t *testing.T) {
-	fixture := newFixture(t)
-
-	request := fixture.initiate(t, fixture.service)
-
-	if _, err := fixture.service.Redeem(context.Background(), request.Secret); !errors.Is(err, ErrNotAuthorized) {
-		t.Fatalf("err = %v, want ErrNotAuthorized", err)
-	}
-}
-
-func TestRedeemRefusesAnExpiredRequest(t *testing.T) {
-	fixture := newFixture(t)
-	userID := fixture.account(t, "dean")
-	ctx := context.Background()
-
-	request := fixture.initiate(t, fixture.expiring(time.Nanosecond))
-
-	if err := fixture.service.Authorize(ctx, request.Code, userID); !errors.Is(err, ErrUnknownCode) {
-		t.Fatalf("err = %v, want an expired code to be unauthorizable", err)
-	}
-	if _, err := fixture.service.Redeem(ctx, request.Secret); !errors.Is(err, ErrUnknownSecret) {
-		t.Fatalf("err = %v, want ErrUnknownSecret", err)
-	}
-}
-
-func TestRedeemIsSingleUseAcrossReplicas(t *testing.T) {
-	fixture := newFixture(t)
-	userID := fixture.account(t, "dean")
-	ctx := context.Background()
-
-	request := fixture.initiate(t, fixture.service)
-	if err := fixture.service.Authorize(ctx, request.Code, userID); err != nil {
-		t.Fatalf("failed to authorize: %v", err)
-	}
-
-	replicas := []*Service{fixture.service, fixture.replica(t), fixture.replica(t), fixture.replica(t)}
-	redeemed := make([]uuid.UUID, len(replicas))
-	failures := make([]error, len(replicas))
-
-	var group sync.WaitGroup
-	for i, replica := range replicas {
-		group.Add(1)
-		go func() {
-			defer group.Done()
-
-			redeemed[i], failures[i] = replica.Redeem(ctx, request.Secret)
-		}()
-	}
-	group.Wait()
-
-	handed := 0
-	for i, err := range failures {
-		if err == nil {
-			handed++
-
-			if redeemed[i] != userID {
-				t.Errorf("redeemed user = %v, want %v", redeemed[i], userID)
+		var err error
+		for range 5 {
+			if _, err = service.Initiate(ctx, fixture.device("tv")); err != nil {
+				break
 			}
+		}
 
-			continue
+		if !errors.Is(err, ErrTooManyPending) {
+			t.Fatalf("err = %v, want ErrTooManyPending", err)
 		}
-		if !errors.Is(err, ErrUnknownSecret) {
-			t.Errorf("err = %v, want ErrUnknownSecret for a spent secret", err)
+	})
+
+	t.Run("keeps the cap well under the code space", func(t *testing.T) {
+		if defaultMaxPending*codeAttempts > codeSpace {
+			t.Errorf("maxPending = %d, want the collision retries to stay cheap against %d codes", defaultMaxPending, codeSpace)
 		}
-	}
-	if handed != 1 {
-		t.Fatalf("the secret was redeemed %d times, want exactly once", handed)
-	}
+	})
 }
 
-func TestDeletingTheUserDropsTheAuthorization(t *testing.T) {
+func TestService_Pending(t *testing.T) {
 	fixture := newFixture(t)
-	userID := fixture.account(t, "dean")
 	ctx := context.Background()
 
-	request := fixture.initiate(t, fixture.service)
-	if err := fixture.service.Authorize(ctx, request.Code, userID); err != nil {
-		t.Fatalf("failed to authorize: %v", err)
-	}
+	t.Run("answers the secret it issued", func(t *testing.T) {
+		request := fixture.initiate(t, fixture.service)
 
-	if err := fixture.client.User.DeleteOneID(userID).Exec(ctx); err != nil {
-		t.Fatalf("failed to delete the user: %v", err)
-	}
+		polled, err := fixture.service.Pending(ctx, request.Secret)
+		if err != nil {
+			t.Fatalf("failed to poll: %v", err)
+		}
+		if polled.Code != request.Code {
+			t.Errorf("Code = %q, want %q", polled.Code, request.Code)
+		}
+	})
 
-	if _, err := fixture.service.Redeem(ctx, request.Secret); !errors.Is(err, ErrUnknownSecret) {
-		t.Fatalf("err = %v, want the authorization to go with the user", err)
-	}
+	t.Run("does not take the code in place of the secret", func(t *testing.T) {
+		request := fixture.initiate(t, fixture.service)
+
+		if _, err := fixture.service.Pending(ctx, request.Code); !errors.Is(err, ErrUnknownSecret) {
+			t.Errorf("err = %v, want ErrUnknownSecret", err)
+		}
+	})
+
+	t.Run("refuses an expired request without waiting for a sweep", func(t *testing.T) {
+		request := fixture.initiate(t, fixture.expiring(time.Nanosecond))
+
+		if _, err := fixture.service.Pending(ctx, request.Secret); !errors.Is(err, ErrUnknownSecret) {
+			t.Errorf("err = %v, want ErrUnknownSecret", err)
+		}
+	})
+}
+
+func TestService_Authorize(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := context.Background()
+
+	t.Run("cannot tell unknown, expired and spent codes apart", func(t *testing.T) {
+		userID := fixture.account(t, "dean")
+
+		expiring := fixture.initiate(t, fixture.expiring(time.Nanosecond))
+
+		spent := fixture.initiate(t, fixture.service)
+		if err := fixture.service.Authorize(ctx, spent.Code, userID); err != nil {
+			t.Fatalf("failed to authorize: %v", err)
+		}
+		if _, err := fixture.service.Redeem(ctx, spent.Secret); err != nil {
+			t.Fatalf("failed to redeem: %v", err)
+		}
+
+		if err := fixture.service.Authorize(ctx, "000000", userID); !errors.Is(err, ErrUnknownCode) {
+			t.Errorf("unknown code err = %v, want ErrUnknownCode", err)
+		}
+		if err := fixture.service.Authorize(ctx, expiring.Code, userID); !errors.Is(err, ErrUnknownCode) {
+			t.Errorf("expired code err = %v, want ErrUnknownCode", err)
+		}
+		if err := fixture.service.Authorize(ctx, spent.Code, userID); !errors.Is(err, ErrUnknownCode) {
+			t.Errorf("spent code err = %v, want ErrUnknownCode", err)
+		}
+	})
+
+	t.Run("refuses to rebind a code another replica took", func(t *testing.T) {
+		userID := fixture.account(t, "first")
+		other := fixture.account(t, "second")
+
+		request := fixture.initiate(t, fixture.service)
+		if err := fixture.service.Authorize(ctx, request.Code, userID); err != nil {
+			t.Fatalf("failed to authorize: %v", err)
+		}
+
+		if err := fixture.replica(t).Authorize(ctx, request.Code, other); !errors.Is(err, ErrAlreadyAuthorized) {
+			t.Fatalf("err = %v, want ErrAlreadyAuthorized", err)
+		}
+
+		authorized, err := fixture.service.Redeem(ctx, request.Secret)
+		if err != nil {
+			t.Fatalf("failed to redeem: %v", err)
+		}
+		if authorized != userID {
+			t.Errorf("authorized user = %v, want the first authorizing user %v", authorized, userID)
+		}
+	})
+}
+
+func TestService_Redeem(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := context.Background()
+
+	t.Run("refuses a request nobody authorized", func(t *testing.T) {
+		request := fixture.initiate(t, fixture.service)
+
+		if _, err := fixture.service.Redeem(ctx, request.Secret); !errors.Is(err, ErrNotAuthorized) {
+			t.Fatalf("err = %v, want ErrNotAuthorized", err)
+		}
+	})
+
+	t.Run("does not take the code in place of the secret", func(t *testing.T) {
+		request := fixture.initiate(t, fixture.service)
+		if err := fixture.service.Authorize(ctx, request.Code, fixture.account(t, "dean")); err != nil {
+			t.Fatalf("failed to authorize: %v", err)
+		}
+
+		if _, err := fixture.service.Redeem(ctx, request.Code); !errors.Is(err, ErrUnknownSecret) {
+			t.Errorf("err = %v, want ErrUnknownSecret", err)
+		}
+	})
+
+	t.Run("refuses an expired request without waiting for a sweep", func(t *testing.T) {
+		request := fixture.initiate(t, fixture.expiring(time.Nanosecond))
+
+		if err := fixture.service.Authorize(ctx, request.Code, fixture.account(t, "expired")); !errors.Is(err, ErrUnknownCode) {
+			t.Fatalf("err = %v, want an expired code to be unauthorizable", err)
+		}
+		if _, err := fixture.service.Redeem(ctx, request.Secret); !errors.Is(err, ErrUnknownSecret) {
+			t.Fatalf("err = %v, want ErrUnknownSecret", err)
+		}
+	})
+
+	t.Run("drops the authorization when the user goes", func(t *testing.T) {
+		userID := fixture.account(t, "leaving")
+
+		request := fixture.initiate(t, fixture.service)
+		if err := fixture.service.Authorize(ctx, request.Code, userID); err != nil {
+			t.Fatalf("failed to authorize: %v", err)
+		}
+		if err := fixture.client.User.DeleteOneID(userID).Exec(ctx); err != nil {
+			t.Fatalf("failed to delete the user: %v", err)
+		}
+
+		if _, err := fixture.service.Redeem(ctx, request.Secret); !errors.Is(err, ErrUnknownSecret) {
+			t.Fatalf("err = %v, want the authorization to go with the user", err)
+		}
+	})
+}
+
+func TestServiceAcrossReplicas(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := context.Background()
+
+	t.Run("carries a request from the replica that issued it to the ones that finish it", func(t *testing.T) {
+		initiating := fixture.service
+		authorizing := fixture.replica(t)
+		redeeming := fixture.replica(t)
+		userID := fixture.account(t, "dean")
+
+		request := fixture.initiate(t, initiating)
+
+		polled, err := authorizing.Pending(ctx, request.Secret)
+		if err != nil {
+			t.Fatalf("a replica that did not initiate could not poll: %v", err)
+		}
+		if polled.Code != request.Code {
+			t.Errorf("Code = %q, want the initiated code %q", polled.Code, request.Code)
+		}
+
+		if err := authorizing.Authorize(ctx, request.Code, userID); err != nil {
+			t.Fatalf("a replica that did not initiate could not authorize: %v", err)
+		}
+
+		polled, err = initiating.Pending(ctx, request.Secret)
+		if err != nil {
+			t.Fatalf("failed to poll: %v", err)
+		}
+		if polled.AuthorizedByID != userID {
+			t.Errorf("AuthorizedByID = %v, want the authorizing user %v", polled.AuthorizedByID, userID)
+		}
+
+		redeemed, err := redeeming.Redeem(ctx, request.Secret)
+		if err != nil {
+			t.Fatalf("a replica that did not initiate could not redeem: %v", err)
+		}
+		if redeemed != userID {
+			t.Errorf("redeemed user = %v, want %v", redeemed, userID)
+		}
+	})
+
+	t.Run("hands the secret to exactly one of the replicas racing for it", func(t *testing.T) {
+		userID := fixture.account(t, "racer")
+
+		request := fixture.initiate(t, fixture.service)
+		if err := fixture.service.Authorize(ctx, request.Code, userID); err != nil {
+			t.Fatalf("failed to authorize: %v", err)
+		}
+
+		replicas := []*Service{fixture.service, fixture.replica(t), fixture.replica(t), fixture.replica(t)}
+		redeemed := make([]uuid.UUID, len(replicas))
+		failures := make([]error, len(replicas))
+
+		var group sync.WaitGroup
+		for i, replica := range replicas {
+			group.Add(1)
+			go func() {
+				defer group.Done()
+
+				redeemed[i], failures[i] = replica.Redeem(ctx, request.Secret)
+			}()
+		}
+		group.Wait()
+
+		handed := 0
+		for i, err := range failures {
+			if err == nil {
+				handed++
+
+				if redeemed[i] != userID {
+					t.Errorf("redeemed user = %v, want %v", redeemed[i], userID)
+				}
+
+				continue
+			}
+			if !errors.Is(err, ErrUnknownSecret) {
+				t.Errorf("err = %v, want ErrUnknownSecret for a spent secret", err)
+			}
+		}
+		if handed != 1 {
+			t.Fatalf("the secret was redeemed %d times, want exactly once", handed)
+		}
+	})
 }

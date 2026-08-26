@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	openapi_types "github.com/oapi-codegen/runtime/types"
@@ -249,13 +250,16 @@ func (s *Server) AuthenticateWithQuickConnect(ctx context.Context, request api.A
 	}
 
 	userID, err := s.quickconnect.Redeem(ctx, req.Secret)
-	if err != nil {
+	if errors.Is(err, quickconnect.ErrUnknownSecret) || errors.Is(err, quickconnect.ErrNotAuthorized) {
 		return api.AuthenticateWithQuickConnect400Response{}, nil
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	user, err := s.users.User(ctx, userID)
 	if err != nil {
-		return api.AuthenticateWithQuickConnect400Response{}, nil
+		return nil, err
 	}
 
 	result, err := s.authenticate(ctx, user)
