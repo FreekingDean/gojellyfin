@@ -210,8 +210,8 @@ func TestRunImport(t *testing.T) {
 		fixture.addUser(t, "guest", "")
 
 		report := fixture.run(t, 0, false)
-		if len(report.noPassword) != 1 {
-			t.Fatalf("noPassword = %v, want one user", report.noPassword)
+		if len(report.needingReset) != 1 {
+			t.Fatalf("needingReset = %v, want one user", report.needingReset)
 		}
 
 		if matches, _ := auth.Verify("", fixture.user(t, "guest").PasswordHash); matches {
@@ -372,6 +372,76 @@ func TestRunImport(t *testing.T) {
 		}
 	})
 
+	t.Run("refuses to hand a local account the source's tokens", func(t *testing.T) {
+		fixture := newImportFixture(t)
+		if _, err := users.New(fixture.client).
+			CreateUser(context.Background(), fixture.prefix+"shared", "already-set", true); err != nil {
+			t.Fatalf("failed to seed the existing user: %v", err)
+		}
+
+		id := fixture.addUser(t, "shared", importedHash)
+		fixture.addPermission(t, id, permissionIsAdministrator, false)
+		token := uuid.NewString()
+		fixture.addDevice(t, id, "Television", token, time.Now(), true)
+
+		report := fixture.run(t, 0, false)
+		if report.sessions != 0 {
+			t.Errorf("sessions = %d, want none", report.sessions)
+		}
+		if len(report.claimed) != 1 || report.claimed[0] != "Television" {
+			t.Errorf("claimed = %v, want the one device", report.claimed)
+		}
+		if _, err := sessions.New(fixture.client).ByToken(context.Background(), token); err == nil {
+			t.Error("a token from the source signs in as the local account of the same name")
+		}
+	})
+
+	t.Run("leaves a session revoked here revoked", func(t *testing.T) {
+		fixture := newImportFixture(t)
+		id := fixture.addUser(t, "viewer", importedHash)
+		token := uuid.NewString()
+		fixture.addDevice(t, id, "Television", token, time.Now(), true)
+
+		fixture.run(t, 0, false)
+
+		ctx := context.Background()
+		revoked, err := fixture.client.Session.Update().
+			Where(sessionmodal.AccessToken(token)).
+			SetRevokedAt(time.Now()).
+			Save(ctx)
+		if err != nil || revoked != 1 {
+			t.Fatalf("failed to revoke the session: %v", err)
+		}
+
+		fixture.run(t, 0, false)
+
+		if _, err := sessions.New(fixture.client).ByToken(ctx, token); err == nil {
+			t.Error("a second import brought a revoked token back to life")
+		}
+	})
+
+	t.Run("refuses a device whose timestamp it cannot read", func(t *testing.T) {
+		fixture := newImportFixture(t)
+		id := fixture.addUser(t, "viewer", importedHash)
+		if _, err := fixture.source.Exec(`
+			INSERT INTO Devices (AccessToken, AppName, AppVersion, DateCreated, DateLastActivity,
+				DateModified, DeviceId, DeviceName, IsActive, UserId)
+			VALUES (?, 'Test Client', '1.2.3', '', 'the day before yesterday', '', ?, 'Broken', 1, ?)`,
+			uuid.NewString(), fixture.prefix+"broken", id.String()); err != nil {
+			t.Fatalf("failed to seed the device: %v", err)
+		}
+
+		source, err := openReadOnly(filepath.Join(fixture.from, jellyfinDatabase))
+		if err != nil {
+			t.Fatalf("failed to open the source: %v", err)
+		}
+		defer func() { _ = source.Close() }()
+
+		if _, err := runImport(context.Background(), source, fixture.client, 0, true); err == nil {
+			t.Error("an unreadable timestamp was folded into the report rather than refused")
+		}
+	})
+
 	t.Run("writes nothing on a dry run", func(t *testing.T) {
 		fixture := newImportFixture(t)
 		id := fixture.addUser(t, "viewer", importedHash)
@@ -416,12 +486,12 @@ func TestRunImport(t *testing.T) {
 
 func TestImportReport_Lines(t *testing.T) {
 	report := &importReport{
-		created:    []string{"one"},
-		existing:   []string{"two"},
-		noPassword: []string{"one"},
-		sessions:   3,
-		stale:      2,
-		orphaned:   []string{"Stranger"},
+		created:      []string{"one"},
+		existing:     []string{"two"},
+		needingReset: []string{"one"},
+		sessions:     3,
+		stale:        2,
+		orphaned:     []string{"Stranger"},
 	}
 
 	t.Run("names everything it skipped", func(t *testing.T) {

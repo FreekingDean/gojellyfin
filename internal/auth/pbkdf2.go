@@ -12,9 +12,6 @@ import (
 	"strings"
 )
 
-// Jellyfin writes its password hashes as a PHC string with the salt and the
-// hash in hex rather than base64: $<id>$iterations=<n>$<salt>$<hash>. Verifying
-// one is what lets an imported user keep the password they already had.
 const jellyfinPrefix = "$PBKDF2"
 
 func isJellyfinHash(encoded string) bool {

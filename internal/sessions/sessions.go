@@ -113,9 +113,6 @@ func (s *Service) DeleteByToken(ctx context.Context, token string) error {
 	return nil
 }
 
-// An imported device keeps the token its clients already hold, so a signed in
-// television stays signed in. Both rows are upserted on the identifier the
-// foreign install issued, which is what lets the import be re-run.
 func (s *Service) Import(ctx context.Context, userID uuid.UUID, token string, device DeviceInfo, lastActivity time.Time) error {
 	return s.store.WithTx(ctx, func(tx *store.Tx) error {
 		deviceID, err := tx.Device.Create().
@@ -143,7 +140,6 @@ func (s *Service) Import(ctx context.Context, userID uuid.UUID, token string, de
 			SetLastActivityAt(lastActivity).
 			OnConflictColumns(sessionmodal.FieldAccessToken).
 			UpdateLastActivityAt().
-			ClearRevokedAt().
 			Exec(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to import session: %w", err)

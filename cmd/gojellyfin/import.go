@@ -12,10 +12,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
-
-	// Pure Go, so reading a foreign SQLite file still builds without cgo.
 	_ "modernc.org/sqlite"
 
+	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	"github.com/FreekingDean/gojellyfin/internal/users"
@@ -23,8 +22,6 @@ import (
 
 const jellyfinDatabase = "jellyfin.db"
 
-// Jellyfin's PermissionKind, whose numbering the Permissions table stores. The
-// order is the enum's, so iota is the mapping.
 const (
 	permissionIsAdministrator = iota
 	permissionIsHidden
@@ -52,8 +49,6 @@ const (
 	permissionEnableLyricManagement
 )
 
-// Both enums are stored as their ordinal and spelled the same either side, so
-// the position in the list is the translation.
 var (
 	subtitleModes   = []users.SubtitleMode{"Default", "Always", "OnlyForced", "None", "Smart"}
 	syncPlayAccess  = []users.SyncPlayAccess{"CreateAndJoinGroups", "JoinGroups", "None"}
@@ -78,12 +73,14 @@ func importCommand() *cobra.Command {
 			"their devices and their access tokens here. The file is opened read only\n" +
 			"and never written to.\n\n" +
 			"A user is matched by username, a device by its client id and a session by\n" +
-			"its access token, so running this twice imports nothing twice and a user\n" +
-			"who already exists here is left exactly as they are.\n\n" +
-			"Imported tokens keep working, which is what keeps a signed in television\n" +
-			"signed in — and means a token taken from the old install signs in here\n" +
-			"too. Jellyfin expires none of them, so --active-days is where that line\n" +
-			"gets drawn.",
+			"its access token, so running this twice imports nothing twice. A user who\n" +
+			"already exists here is left exactly as they are and their devices are\n" +
+			"skipped, because a name that matches is not proof the two accounts are\n" +
+			"the same person and a carried token would sign one in as the other.\n\n" +
+			"An imported token keeps working, which is what keeps a signed in\n" +
+			"television signed in — and means a token taken from the old install signs\n" +
+			"in here too. Jellyfin expires none of them, so --active-days is where\n" +
+			"that line gets drawn.",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			path := filepath.Join(from, jellyfinDatabase)
@@ -123,8 +120,6 @@ func openReadOnly(path string) (*sql.DB, error) {
 		return nil, fmt.Errorf("failed to resolve %q: %w", path, err)
 	}
 
-	// query_only is the second lock on the door: mode=ro already refuses a
-	// write, and neither leaves the source install anything to recover from.
 	db, err := sql.Open("sqlite", "file:"+absolute+"?mode=ro&_pragma=query_only(1)")
 	if err != nil {
 		return nil, fmt.Errorf("failed to open %q: %w", path, err)
@@ -182,12 +177,13 @@ type jellyfinDevice struct {
 }
 
 type importReport struct {
-	created    []string
-	existing   []string
-	noPassword []string
-	sessions   int
-	stale      int
-	orphaned   []string
+	created      []string
+	existing     []string
+	needingReset []string
+	sessions     int
+	stale        int
+	claimed      []string
+	orphaned     []string
 }
 
 func runImport(ctx context.Context, source *sql.DB, client *store.Client, activeDays int, dryRun bool) (*importReport, error) {
@@ -195,31 +191,36 @@ func runImport(ctx context.Context, source *sql.DB, client *store.Client, active
 	if err != nil {
 		return nil, err
 	}
+	devices, err := readDevices(ctx, source)
+	if err != nil {
+		return nil, err
+	}
 
-	report := &importReport{}
 	service := users.New(client)
-
 	present, err := service.Users(ctx)
 	if err != nil {
 		return nil, err
 	}
-	byUsername := make(map[string]uuid.UUID, len(present))
+	byUsername := make(map[string]bool, len(present))
 	for _, user := range present {
-		byUsername[strings.ToLower(user.Username)] = user.ID
+		byUsername[strings.ToLower(user.Username)] = true
 	}
 
+	report := &importReport{}
 	imported := make(map[uuid.UUID]uuid.UUID, len(found))
+	claimed := make(map[uuid.UUID]bool, len(found))
+
 	for _, user := range found {
-		if id, ok := byUsername[strings.ToLower(user.username)]; ok {
+		if byUsername[strings.ToLower(user.username)] {
 			report.existing = append(report.existing, user.username)
-			imported[user.id] = id
+			claimed[user.id] = true
 
 			continue
 		}
 
 		report.created = append(report.created, user.username)
 		if user.passwordHash == "" {
-			report.noPassword = append(report.noPassword, user.username)
+			report.needingReset = append(report.needingReset, user.username)
 		}
 		if dryRun {
 			imported[user.id] = uuid.Nil
@@ -234,11 +235,6 @@ func runImport(ctx context.Context, source *sql.DB, client *store.Client, active
 		imported[user.id] = id
 	}
 
-	devices, err := readDevices(ctx, source)
-	if err != nil {
-		return nil, err
-	}
-
 	cutoff := time.Time{}
 	if activeDays > 0 {
 		cutoff = time.Now().AddDate(0, 0, -activeDays)
@@ -251,6 +247,11 @@ func runImport(ctx context.Context, source *sql.DB, client *store.Client, active
 
 			continue
 		}
+		if claimed[device.userID] {
+			report.claimed = append(report.claimed, device.info.Name)
+
+			continue
+		}
 
 		id, ok := imported[device.userID]
 		if !ok {
@@ -260,7 +261,7 @@ func runImport(ctx context.Context, source *sql.DB, client *store.Client, active
 		}
 
 		report.sessions++
-		if dryRun || id == uuid.Nil {
+		if dryRun {
 			continue
 		}
 
@@ -272,9 +273,6 @@ func runImport(ctx context.Context, source *sql.DB, client *store.Client, active
 	return report, nil
 }
 
-// A user arrives whole: the hash they already had so their password still
-// works, and every permission the source recorded, because falling back to our
-// defaults would quietly hand a restricted account the run of the server.
 func createUser(ctx context.Context, service *users.Service, user jellyfinUser) (uuid.UUID, error) {
 	created, err := service.CreateUser(ctx, user.username, user.passwordHash, user.permissions[permissionIsAdministrator])
 	if err != nil {
@@ -384,11 +382,12 @@ func readUsers(ctx context.Context, source *sql.DB) ([]jellyfinUser, error) {
 			return nil, fmt.Errorf("failed to read the id of %q: %w", user.username, err)
 		}
 		if lockout.Valid {
-			user.loginAttemptsBeforeLockout = ptr(int32(lockout.Int64))
+			user.loginAttemptsBeforeLockout = apiutil.Ptr(int32(lockout.Int64))
 		}
 		if bitrate.Valid {
-			user.remoteClientBitrateLimit = ptr(int32(bitrate.Int64))
+			user.remoteClientBitrateLimit = apiutil.Ptr(int32(bitrate.Int64))
 		}
+
 		found = append(found, user)
 	}
 	if err := rows.Err(); err != nil {
@@ -429,7 +428,7 @@ func readPermissions(ctx context.Context, source *sql.DB) (map[uuid.UUID]map[int
 
 		id, err := uuid.Parse(owner)
 		if err != nil {
-			continue
+			return nil, fmt.Errorf("failed to read the user of a permission: %w", err)
 		}
 		if permissions[id] == nil {
 			permissions[id] = map[int]bool{}
@@ -443,8 +442,6 @@ func readPermissions(ctx context.Context, source *sql.DB) (map[uuid.UUID]map[int
 	return permissions, nil
 }
 
-// Only the devices Jellyfin still counts as signed in: it clears IsActive on
-// the way out, so an inactive row is a token that was already revoked there.
 func readDevices(ctx context.Context, source *sql.DB) ([]jellyfinDevice, error) {
 	rows, err := source.QueryContext(ctx, `
 		SELECT UserId, AccessToken, DeviceId, DeviceName, AppName, AppVersion, DateLastActivity
@@ -458,8 +455,7 @@ func readDevices(ctx context.Context, source *sql.DB) ([]jellyfinDevice, error) 
 	devices := make([]jellyfinDevice, 0)
 	for rows.Next() {
 		var device jellyfinDevice
-		var owner string
-		var lastActivity sql.NullString
+		var owner, lastActivity string
 
 		err := rows.Scan(&owner, &device.token, &device.info.ID, &device.info.Name,
 			&device.info.AppName, &device.info.AppVersion, &lastActivity)
@@ -469,10 +465,11 @@ func readDevices(ctx context.Context, source *sql.DB) ([]jellyfinDevice, error) 
 
 		device.userID, err = uuid.Parse(owner)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read the user of a device: %w", err)
+			return nil, fmt.Errorf("failed to read the user of the device %q: %w", device.info.Name, err)
 		}
-		if seen := jellyfinTime(lastActivity); seen != nil {
-			device.lastActivity = *seen
+		device.lastActivity, err = jellyfinTime(lastActivity)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read when the device %q was last seen: %w", device.info.Name, err)
 		}
 
 		devices = append(devices, device)
@@ -484,24 +481,14 @@ func readDevices(ctx context.Context, source *sql.DB) ([]jellyfinDevice, error) 
 	return devices, nil
 }
 
-// EF Core writes a DateTime into a TEXT column without a zone, and every one
-// Jellyfin stores is UTC.
-func jellyfinTime(value sql.NullString) *time.Time {
-	if !value.Valid || value.String == "" {
-		return nil
-	}
-
+func jellyfinTime(value string) (time.Time, error) {
 	for _, layout := range jellyfinLayouts {
-		if parsed, err := time.Parse(layout, value.String); err == nil {
-			return ptr(parsed.UTC())
+		if parsed, err := time.Parse(layout, value); err == nil {
+			return parsed.UTC(), nil
 		}
 	}
 
-	return nil
-}
-
-func ptr[T any](value T) *T {
-	return &value
+	return time.Time{}, fmt.Errorf("%q matches none of %v", value, jellyfinLayouts)
 }
 
 func (r *importReport) lines(dryRun bool) []string {
@@ -514,8 +501,9 @@ func (r *importReport) lines(dryRun bool) []string {
 		fmt.Sprintf("users:    %s %d, left %d already here alone", verb, len(r.created), len(r.existing)),
 		fmt.Sprintf("sessions: %s %d, skipped %d last seen too long ago", verb, r.sessions, r.stale),
 	}
-	lines = append(lines, listed("these users had no password and cannot sign in until `gojellyfin resetpassword` is run for them:", r.noPassword)...)
+	lines = append(lines, listed("these users had no password and cannot sign in until `gojellyfin resetpassword` is run for them:", r.needingReset)...)
 	lines = append(lines, listed("these users were already here and were left exactly as they are, password included:", r.existing)...)
+	lines = append(lines, listed("these devices belong to a user who was already here, so their tokens were not carried and the device has to sign in again:", r.claimed)...)
 	lines = append(lines, listed("these devices name a user the source database does not hold, so their sessions were skipped:", r.orphaned)...)
 
 	return lines
