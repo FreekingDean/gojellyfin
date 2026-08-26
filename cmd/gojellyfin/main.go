@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -11,6 +12,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/store"
+	"github.com/FreekingDean/gojellyfin/internal/system"
 )
 
 func main() {
@@ -18,6 +20,9 @@ func main() {
 		Use:          "gojellyfin",
 		Short:        "A Jellyfin media server and the operator tasks that go with it",
 		SilenceUsage: true,
+		PersistentPreRun: func(*cobra.Command, []string) {
+			log.Print(system.Build())
+		},
 	}
 	root.AddCommand(
 		serverCommand(),
@@ -52,8 +57,6 @@ func withStore(f func(*store.Client) error) error {
 	return f(db.Client())
 }
 
-// Piping the password in keeps it out of the shell history and the process
-// list, which a flag would not.
 func readPassword() (string, error) {
 	fmt.Fprint(os.Stderr, "password: ")
 	password, err := bufio.NewReader(os.Stdin).ReadString('\n')

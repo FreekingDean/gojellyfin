@@ -12,7 +12,6 @@ import (
 
 type Datum = store.UserItemData
 
-// A user who has never touched an item still needs a datum to report.
 func (s *Service) UserItemDatum(ctx context.Context, userID, itemID uuid.UUID) (*Datum, error) {
 	datum, err := s.store.UserItemData.Query().
 		Where(datamodal.UserID(userID), datamodal.ItemID(itemID)).

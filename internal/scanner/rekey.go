@@ -12,14 +12,6 @@ import (
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
-// Items keyed before the key existed carry the path the migration stood in for
-// them. Deriving their real key here, rather than letting the walk create fresh
-// rows beside them, is what keeps a resume position and a playlist entry
-// attached to the title they were made against: the walk then upserts onto the
-// row that is already there.
-//
-// It runs before the walk because the sweep at the end deletes by key, and it
-// costs one indexed lookup once a library has been rescanned.
 func (s *Scanner) rekeyLegacy(ctx context.Context, library *libraries.Library) error {
 	legacy, err := s.items.LegacyKeyedItems(ctx, library.ID)
 	if err != nil || len(legacy) == 0 {
@@ -76,8 +68,6 @@ func (s *Scanner) rekeyLegacy(ctx context.Context, library *libraries.Library) e
 	return nil
 }
 
-// The name and year the old scan parsed are still on the row, so the key comes
-// off the item's own columns rather than off the path it used to be keyed on.
 func derivedKey(item *items.Item, byID map[uuid.UUID]*items.Item) (string, bool) {
 	switch item.Kind {
 	case itemmodal.KindMovie:

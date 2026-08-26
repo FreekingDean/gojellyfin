@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
@@ -22,16 +23,13 @@ type Scanner struct {
 	items      *items.Service
 	libraries  *libraries.Service
 	filesystem *filesystem.Service
+	ffmpeg     *ffmpeg.FFMpeg
 }
 
-func New(items *items.Service, libraries *libraries.Service, filesystem *filesystem.Service) *Scanner {
-	return &Scanner{items: items, libraries: libraries, filesystem: filesystem}
+func New(items *items.Service, libraries *libraries.Service, filesystem *filesystem.Service, ffmpeg *ffmpeg.FFMpeg) *Scanner {
+	return &Scanner{items: items, libraries: libraries, filesystem: filesystem, ffmpeg: ffmpeg}
 }
 
-// What one pass over a library found: the titles that still exist and the files
-// they play from. The two are swept separately, because a file going away does
-// not have to take the title's watch state with it. A directory the walk could
-// not read leaves its subtree out of both, so neither sweep runs.
 type seen struct {
 	keys       []string
 	paths      []string
@@ -93,8 +91,6 @@ func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) e
 	return s.items.DeleteSourcesNotInPaths(ctx, library.ID, found.paths)
 }
 
-// The root failing is the library itself being unreachable, which is an
-// operational error rather than one bad directory, so it still fails the scan.
 func (s *Scanner) scanMovies(ctx context.Context, library *libraries.Library, root string, found *seen) error {
 	return filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
 		if walkErr := ctx.Err(); walkErr != nil {

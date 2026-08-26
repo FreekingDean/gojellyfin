@@ -13,6 +13,7 @@ import (
 var identifiable = []items.Kind{
 	itemmodal.KindMovie,
 	itemmodal.KindSeries,
+	itemmodal.KindSeason,
 	itemmodal.KindEpisode,
 }
 
@@ -25,9 +26,6 @@ func New(provider Provider, service *items.Service) *Service {
 	return &Service{provider: provider, items: service}
 }
 
-// The whole outstanding list rather than a page of it: the provider is rate
-// limited to one request at a time inside this process, so chunking wins no
-// parallelism and a cap only means pressing Start again.
 func (s *Service) IdentifyItems(ctx context.Context, options jobs.Options) error {
 	if !s.provider.Enabled() {
 		log.Print("metadata: no provider is configured, nothing to identify against")
@@ -84,11 +82,26 @@ func (s *Service) fetch(ctx context.Context, pendingItem *items.Item) (items.Met
 		return s.provider.Movie(ctx, pendingItem.Name, pendingItem.ProductionYear)
 	case itemmodal.KindSeries:
 		return s.provider.Series(ctx, pendingItem.Name, pendingItem.ProductionYear)
+	case itemmodal.KindSeason:
+		return s.fetchSeason(ctx, pendingItem)
 	case itemmodal.KindEpisode:
 		return s.fetchEpisode(ctx, pendingItem)
 	}
 
 	return items.Metadata{}, false, nil
+}
+
+func (s *Service) fetchSeason(ctx context.Context, pendingItem *items.Item) (items.Metadata, bool, error) {
+	if pendingItem.IndexNumber == nil {
+		return items.Metadata{}, false, nil
+	}
+
+	series, err := s.seriesIDs(ctx, pendingItem)
+	if err != nil || series == nil {
+		return items.Metadata{}, false, err
+	}
+
+	return s.provider.Season(ctx, series, *pendingItem.IndexNumber)
 }
 
 func (s *Service) fetchEpisode(ctx context.Context, pendingItem *items.Item) (items.Metadata, bool, error) {

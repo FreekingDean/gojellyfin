@@ -14,6 +14,10 @@ const USERNAME = 'smoke';
 const PASSWORD = 'smoke-password';
 const LIBRARY = 'Smoke Movies';
 const MOVIES = ['Fixture Alpha', 'Fixture Beta'];
+const SHOWS = 'Smoke Shows';
+const SERIES = 'Fixture Show';
+const SEASON = 'Season 1';
+const EPISODES = ['Fixture Pilot', 'Fixture Second'];
 
 const CLIENT_IMAGE = 'jellyfin/jellyfin:10.10.0';
 
@@ -63,6 +67,10 @@ async function boot() {
     password: PASSWORD,
     library: LIBRARY,
     movies: MOVIES,
+    shows: SHOWS,
+    series: SERIES,
+    season: SEASON,
+    episodes: EPISODES,
     serverLog: () => log.join(''),
     async stop() {
       await new Promise((resolve) => front.close(resolve));

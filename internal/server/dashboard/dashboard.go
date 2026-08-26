@@ -6,7 +6,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 )
 
-// Configuration pages are contributed by plugins, and plugins are not supported.
 type Server struct{}
 
 func New() *Server {

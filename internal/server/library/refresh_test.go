@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
@@ -19,8 +20,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
-// The registry holds only the job the case expects, so a handler that started
-// the other one fails on the lookup rather than on the missing connection.
 type namedJob string
 
 func (n namedJob) Name() string                             { return string(n) }
@@ -40,7 +39,7 @@ func (f *fixture) expecting(t *testing.T, job string) *Server {
 		items.New(f.client),
 		libraries.New(f.client),
 		users.New(f.client),
-		filesystem.New(),
+		filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}),
 		jobs.NewService(disconnected(t), registry),
 	)
 }

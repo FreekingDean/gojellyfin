@@ -2,6 +2,7 @@ package scanner
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
 	"strings"
 
@@ -12,14 +13,15 @@ import (
 
 const ticksPerSecond = 10_000_000
 
-// Nil when there is nothing new to learn: no ffmpeg on the box, or a file the
-// last probe already read.
 func (s *Scanner) probeFile(ctx context.Context, source *items.MediaSource) (*items.Probe, error) {
-	if !ffmpeg.Available() || !items.NeedsProbe(source) {
+	if !items.NeedsProbe(source) {
 		return nil, nil
 	}
 
-	probe, err := ffmpeg.ProbeFile(ctx, source.Path)
+	probe, err := s.ffmpeg.ProbeFile(ctx, source.Path)
+	if errors.Is(err, ffmpeg.ErrNotAvailable) {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -27,21 +29,21 @@ func (s *Scanner) probeFile(ctx context.Context, source *items.MediaSource) (*it
 	streams := make([]items.Stream, 0, len(probe.Streams))
 	for _, stream := range probe.Streams {
 		streams = append(streams, items.Stream{
-			Index:       int32(stream.Index),
+			Index:       stream.Index,
 			Kind:        streamKind(stream.CodecType),
 			Codec:       stream.CodecName,
 			Profile:     stream.Profile,
-			Language:    stream.Language(),
-			Title:       stream.Title(),
-			Width:       int32(stream.Width),
-			Height:      int32(stream.Height),
-			Channels:    int32(stream.Channels),
-			SampleRate:  stream.SampleRateHz(),
-			Bitrate:     stream.Bitrate(),
+			Language:    stream.Tags["language"],
+			Title:       stream.Tags["title"],
+			Width:       stream.Width,
+			Height:      stream.Height,
+			Channels:    stream.Channels,
+			SampleRate:  stream.SampleRate,
+			Bitrate:     stream.BitRate,
 			PixelFormat: stream.PixelFormat,
-			Level:       float64(stream.Level),
-			IsDefault:   stream.IsDefault(),
-			IsForced:    stream.IsForced(),
+			Level:       stream.Level,
+			IsDefault:   stream.Disposition.Default,
+			IsForced:    stream.Disposition.Forced,
 
 			RangeType:    rangeType(stream.ColorTransfer),
 			IsInterlaced: interlaced(stream.FieldOrder),
@@ -51,9 +53,9 @@ func (s *Scanner) probeFile(ctx context.Context, source *items.MediaSource) (*it
 
 	return &items.Probe{
 		Container:    container(probe.Format.FormatName, source.Path),
-		RunTimeTicks: int64(probe.Format.Seconds() * ticksPerSecond),
-		Size:         probe.Format.Bytes(),
-		Bitrate:      probe.Format.Bitrate(),
+		RunTimeTicks: int64(probe.Format.Duration * ticksPerSecond),
+		Size:         probe.Format.Size,
+		Bitrate:      probe.Format.BitRate,
 		Streams:      streams,
 		Metadata:     metadata(probe),
 	}, nil
@@ -90,8 +92,6 @@ func anamorphic(ratio string) bool {
 	}
 }
 
-// ffprobe reports muxer families like "matroska,webm"; the file extension picks
-// the one clients should be told about.
 func container(formatName, path string) string {
 	extension := strings.TrimPrefix(strings.ToLower(filepath.Ext(path)), ".")
 	for _, name := range strings.Split(formatName, ",") {

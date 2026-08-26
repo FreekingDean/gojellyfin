@@ -122,6 +122,57 @@ func TestSeriesStatus(t *testing.T) {
 	}
 }
 
+func TestClient_Season(t *testing.T) {
+	client := stub(t)
+
+	t.Run("maps what Tmdb returns", func(t *testing.T) {
+		found, matched, err := client.Season(context.Background(), map[string]string{providerTmdb: "1396"}, 1)
+		if err != nil {
+			t.Fatalf("the lookup failed: %v", err)
+		}
+		if !matched {
+			t.Fatal("a season the stub carries did not match")
+		}
+		if found.Name == nil || *found.Name != "Season 1" {
+			t.Errorf("Name = %v, want Season 1", found.Name)
+		}
+		if found.Overview == nil || !strings.HasPrefix(*found.Overview, "High school chemistry teacher") {
+			t.Errorf("Overview = %v, want the fetched one", found.Overview)
+		}
+		if found.PremiereDate == nil || found.PremiereDate.Year() != 2008 {
+			t.Errorf("PremiereDate = %v, want 2008-01-20", found.PremiereDate)
+		}
+		if found.ProductionYear == nil || *found.ProductionYear != 2008 {
+			t.Errorf("ProductionYear = %v, want 2008", found.ProductionYear)
+		}
+		if ids := *found.ProviderIds; ids[providerTmdb] != "3572" {
+			t.Errorf("ProviderIds = %v, want the season Tmdb id", ids)
+		}
+	})
+
+	t.Run("asks for specials as season zero", func(t *testing.T) {
+		found, matched, err := client.Season(context.Background(), map[string]string{providerTmdb: "1396"}, 0)
+		if err != nil {
+			t.Fatalf("the lookup failed: %v", err)
+		}
+		if !matched {
+			t.Fatal("specials did not match")
+		}
+		if found.Name == nil || *found.Name != "Specials" {
+			t.Errorf("Name = %v, want Specials", found.Name)
+		}
+	})
+
+	t.Run("answers a miss without an error", func(t *testing.T) {
+		if _, matched, err := client.Season(context.Background(), map[string]string{providerTmdb: "1396"}, 9); err != nil || matched {
+			t.Errorf("matched = %v, err = %v, want a clean miss", matched, err)
+		}
+		if _, matched, err := client.Season(context.Background(), map[string]string{"Imdb": "tt0903747"}, 1); err != nil || matched {
+			t.Errorf("matched = %v, err = %v, want a miss without a Tmdb id", matched, err)
+		}
+	})
+}
+
 func TestClient_Episode(t *testing.T) {
 	client := stub(t)
 

@@ -13,7 +13,6 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/displaypreferences"
-	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/google/uuid"
@@ -27,8 +26,6 @@ type DisplayPreferencesQuery struct {
 	inters     []Interceptor
 	predicates []predicate.DisplayPreferences
 	withUser   *UserQuery
-	withItem   *ItemQuery
-	withFKs    bool
 	modifiers  []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -81,28 +78,6 @@ func (_q *DisplayPreferencesQuery) QueryUser() *UserQuery {
 			sqlgraph.From(displaypreferences.Table, displaypreferences.FieldID, selector),
 			sqlgraph.To(user.Table, user.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, displaypreferences.UserTable, displaypreferences.UserColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryItem chains the current query on the "item" edge.
-func (_q *DisplayPreferencesQuery) QueryItem() *ItemQuery {
-	query := (&ItemClient{config: _q.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := _q.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(displaypreferences.Table, displaypreferences.FieldID, selector),
-			sqlgraph.To(item.Table, item.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, displaypreferences.ItemTable, displaypreferences.ItemColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -303,7 +278,6 @@ func (_q *DisplayPreferencesQuery) Clone() *DisplayPreferencesQuery {
 		inters:     append([]Interceptor{}, _q.inters...),
 		predicates: append([]predicate.DisplayPreferences{}, _q.predicates...),
 		withUser:   _q.withUser.Clone(),
-		withItem:   _q.withItem.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -318,17 +292,6 @@ func (_q *DisplayPreferencesQuery) WithUser(opts ...func(*UserQuery)) *DisplayPr
 		opt(query)
 	}
 	_q.withUser = query
-	return _q
-}
-
-// WithItem tells the query-builder to eager-load the nodes that are connected to
-// the "item" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *DisplayPreferencesQuery) WithItem(opts ...func(*ItemQuery)) *DisplayPreferencesQuery {
-	query := (&ItemClient{config: _q.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	_q.withItem = query
 	return _q
 }
 
@@ -409,19 +372,11 @@ func (_q *DisplayPreferencesQuery) prepareQuery(ctx context.Context) error {
 func (_q *DisplayPreferencesQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*DisplayPreferences, error) {
 	var (
 		nodes       = []*DisplayPreferences{}
-		withFKs     = _q.withFKs
 		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [1]bool{
 			_q.withUser != nil,
-			_q.withItem != nil,
 		}
 	)
-	if _q.withUser != nil || _q.withItem != nil {
-		withFKs = true
-	}
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, displaypreferences.ForeignKeys...)
-	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*DisplayPreferences).scanValues(nil, columns)
 	}
@@ -449,12 +404,6 @@ func (_q *DisplayPreferencesQuery) sqlAll(ctx context.Context, hooks ...queryHoo
 			return nil, err
 		}
 	}
-	if query := _q.withItem; query != nil {
-		if err := _q.loadItem(ctx, query, nodes, nil,
-			func(n *DisplayPreferences, e *Item) { n.Edges.Item = e }); err != nil {
-			return nil, err
-		}
-	}
 	return nodes, nil
 }
 
@@ -462,10 +411,7 @@ func (_q *DisplayPreferencesQuery) loadUser(ctx context.Context, query *UserQuer
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*DisplayPreferences)
 	for i := range nodes {
-		if nodes[i].user_display_preferences == nil {
-			continue
-		}
-		fk := *nodes[i].user_display_preferences
+		fk := nodes[i].UserID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -482,39 +428,7 @@ func (_q *DisplayPreferencesQuery) loadUser(ctx context.Context, query *UserQuer
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "user_display_preferences" returned %v`, n.ID)
-		}
-		for i := range nodes {
-			assign(nodes[i], n)
-		}
-	}
-	return nil
-}
-func (_q *DisplayPreferencesQuery) loadItem(ctx context.Context, query *ItemQuery, nodes []*DisplayPreferences, init func(*DisplayPreferences), assign func(*DisplayPreferences, *Item)) error {
-	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*DisplayPreferences)
-	for i := range nodes {
-		if nodes[i].item_display_preferences == nil {
-			continue
-		}
-		fk := *nodes[i].item_display_preferences
-		if _, ok := nodeids[fk]; !ok {
-			ids = append(ids, fk)
-		}
-		nodeids[fk] = append(nodeids[fk], nodes[i])
-	}
-	if len(ids) == 0 {
-		return nil
-	}
-	query.Where(item.IDIn(ids...))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		nodes, ok := nodeids[n.ID]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "item_display_preferences" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "user_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -550,6 +464,9 @@ func (_q *DisplayPreferencesQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != displaypreferences.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withUser != nil {
+			_spec.Node.AddColumnOnce(displaypreferences.FieldUserID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

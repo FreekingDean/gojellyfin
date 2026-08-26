@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
@@ -21,7 +20,7 @@ func New(items *items.Service) *Server {
 }
 
 func (s *Server) GetItemUserData(ctx context.Context, request api.GetItemUserDataRequestObject) (api.GetItemUserDataResponseObject, error) {
-	datum, err := s.userItemDatum(ctx, request.ItemId)
+	datum, err := dto.CurrentUserDatum(ctx, s.items, request.ItemId)
 	if err != nil {
 		return api.GetItemUserData404JSONResponse{}, nil
 	}
@@ -71,7 +70,7 @@ func (s *Server) UpdateItemUserData(ctx context.Context, request api.UpdateItemU
 		return api.UpdateItemUserData404JSONResponse{}, nil
 	}
 
-	datum, err := s.userItemDatum(ctx, request.ItemId)
+	datum, err := dto.CurrentUserDatum(ctx, s.items, request.ItemId)
 	if err != nil {
 		return api.UpdateItemUserData404JSONResponse{}, nil
 	}
@@ -100,7 +99,7 @@ func (s *Server) UpdateItemUserData(ctx context.Context, request api.UpdateItemU
 }
 
 func (s *Server) saveFavorite(ctx context.Context, itemID uuid.UUID, favorite bool) (*items.Datum, error) {
-	datum, err := s.userItemDatum(ctx, itemID)
+	datum, err := dto.CurrentUserDatum(ctx, s.items, itemID)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +110,7 @@ func (s *Server) saveFavorite(ctx context.Context, itemID uuid.UUID, favorite bo
 }
 
 func (s *Server) savePlayed(ctx context.Context, itemID uuid.UUID, played bool) (*items.Datum, error) {
-	datum, err := s.userItemDatum(ctx, itemID)
+	datum, err := dto.CurrentUserDatum(ctx, s.items, itemID)
 	if err != nil {
 		return nil, err
 	}
@@ -124,13 +123,4 @@ func (s *Server) savePlayed(ctx context.Context, itemID uuid.UUID, played bool) 
 	}
 
 	return datum, s.items.SaveUserItemDatum(ctx, datum)
-}
-
-func (s *Server) userItemDatum(ctx context.Context, itemID uuid.UUID) (*items.Datum, error) {
-	userID := auth.UserID(ctx)
-	if userID == uuid.Nil {
-		return nil, auth.ErrUnauthorized
-	}
-
-	return s.items.UserItemDatum(ctx, userID, itemID)
 }

@@ -66,8 +66,6 @@ func metadata(probe *ffmpeg.Probe) items.ContainerMetadata {
 	return extracted
 }
 
-// Some containers hang the tags off the media stream rather than the format,
-// and the format wins where both carry the same key.
 func containerTags(probe *ffmpeg.Probe) map[string]string {
 	tags := make(map[string]string)
 

@@ -15,7 +15,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/chapter"
 	"github.com/FreekingDean/gojellyfin/internal/store/credit"
-	"github.com/FreekingDean/gojellyfin/internal/store/displaypreferences"
 	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 	"github.com/FreekingDean/gojellyfin/internal/store/genre"
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
@@ -885,21 +884,6 @@ func (_c *ItemCreate) AddUserData(v ...*UserItemData) *ItemCreate {
 	return _c.AddUserDatumIDs(ids...)
 }
 
-// AddDisplayPreferenceIDs adds the "display_preferences" edge to the DisplayPreferences entity by IDs.
-func (_c *ItemCreate) AddDisplayPreferenceIDs(ids ...uuid.UUID) *ItemCreate {
-	_c.mutation.AddDisplayPreferenceIDs(ids...)
-	return _c
-}
-
-// AddDisplayPreferences adds the "display_preferences" edges to the DisplayPreferences entity.
-func (_c *ItemCreate) AddDisplayPreferences(v ...*DisplayPreferences) *ItemCreate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _c.AddDisplayPreferenceIDs(ids...)
-}
-
 // AddActivityLogEntryIDs adds the "activity_log_entries" edge to the ActivityLogEntry entity by IDs.
 func (_c *ItemCreate) AddActivityLogEntryIDs(ids ...uuid.UUID) *ItemCreate {
 	_c.mutation.AddActivityLogEntryIDs(ids...)
@@ -1549,22 +1533,6 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(useritemdata.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := _c.mutation.DisplayPreferencesIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.DisplayPreferencesTable,
-			Columns: []string{item.DisplayPreferencesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(displaypreferences.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

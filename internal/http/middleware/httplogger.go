@@ -35,8 +35,6 @@ func HttpLogging(next http.Handler) http.Handler {
 		lrw := &loggingResponseWriter{ResponseWriter: w, statusCode: http.StatusOK}
 		next.ServeHTTP(lrw, r)
 
-		// Everything that failed, including the 400s the generated parameter
-		// binding answers before any handler or operation logger runs.
 		if lrw.statusCode >= http.StatusBadRequest || lrw.statusCode == 0 {
 			log.Printf("%s %s %d %s", r.Method, r.RequestURI, lrw.statusCode, time.Since(start))
 		}

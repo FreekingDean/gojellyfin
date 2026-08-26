@@ -33,8 +33,6 @@ var (
 	ErrInvalidShare = errors.New("invalid playlist share")
 )
 
-// Go cannot attach a method to the aliases the domains hand out, so the edge
-// reads live here rather than in the tag package.
 func EntryItem(entry *Entry) *Item {
 	return entry.Edges.Item
 }
@@ -44,8 +42,6 @@ type Permission struct {
 	CanEdit bool
 }
 
-// What a caller may do with a playlist. The owner is not a share row, so
-// ownership is answered from the playlist itself.
 type Access struct {
 	Owner   bool
 	CanEdit bool
@@ -68,8 +64,6 @@ type UpdateParams struct {
 	Shares     *[]Permission
 }
 
-// A playlist is an item, and clients address it by its item id, so every method
-// here takes the item id rather than the playlist row id.
 type Service struct {
 	store *store.Client
 }
@@ -411,8 +405,6 @@ func orderedEntries(ctx context.Context, client *store.PlaylistEntryClient, play
 	return entries, nil
 }
 
-// Jellyfin turns a folder id into the playable items beneath it, however deep,
-// so adding an album or a series adds its tracks or episodes.
 func expand(ctx context.Context, client *store.ItemClient, itemIDs []uuid.UUID) ([]uuid.UUID, error) {
 	if len(itemIDs) == 0 {
 		return nil, nil

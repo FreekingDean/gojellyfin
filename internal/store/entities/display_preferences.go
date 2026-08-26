@@ -2,10 +2,10 @@ package entities
 
 import (
 	"entgo.io/ent"
-	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+	"github.com/google/uuid"
 )
 
 type DisplayPreferences struct {
@@ -14,6 +14,8 @@ type DisplayPreferences struct {
 
 func (DisplayPreferences) Fields() []ent.Field {
 	return withDefaultFields(
+		field.UUID("user_id", uuid.UUID{}),
+		field.String("reference_id"),
 		field.String("client"),
 		field.String("view_type").Optional(),
 		field.String("sort_by").Optional().Default("SortName"),
@@ -32,15 +34,12 @@ func (DisplayPreferences) Fields() []ent.Field {
 
 func (DisplayPreferences) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("user", User.Type).Ref("display_preferences").Unique().Required(),
-		edge.From("item", Item.Type).Ref("display_preferences").Unique(),
+		edge.From("user", User.Type).Ref("display_preferences").Unique().Required().Field("user_id"),
 	}
 }
 
 func (DisplayPreferences) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("client").Edges("user", "item").Unique(),
-		index.Fields("client").Edges("user").Unique().
-			Annotations(entsql.IndexWhere("item_display_preferences IS NULL")),
+		index.Fields("user_id", "reference_id", "client").Unique(),
 	}
 }

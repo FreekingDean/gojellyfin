@@ -9,6 +9,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
@@ -18,9 +19,17 @@ import (
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
-const library = "Smoke Movies"
+const (
+	library = "Smoke Movies"
+	shows   = "Smoke Shows"
+	series  = "Fixture Show"
+	season  = "Season 1"
+)
 
-var movies = []string{"Fixture Alpha", "Fixture Beta"}
+var (
+	movies   = []string{"Fixture Alpha", "Fixture Beta"}
+	episodes = []string{"Fixture Pilot", "Fixture Second"}
+)
 
 func main() {
 	if len(os.Args) < 2 {
@@ -84,8 +93,6 @@ func scratchName() (string, error) {
 	return name, nil
 }
 
-// Postgres does not parameterise a database name; scratchName is what keeps
-// the interpolation an identifier.
 func admin(statement string) error {
 	dsn := os.Getenv("ADMIN_DATABASE_URL")
 	if dsn == "" {
@@ -142,14 +149,62 @@ func seed() error {
 			return err
 		}
 
-		_, err = catalogue.SaveSource(ctx, items.ScannedSource{
-			LibraryID:    record.ID,
-			ItemID:       item.ID,
-			Path:         "/fixtures/" + name + ".mkv",
-			Name:         name,
-			DateModified: time.Now(),
+		if err := file(ctx, catalogue, record.ID, item.ID, name); err != nil {
+			return err
+		}
+	}
+
+	shown, err := libraries.New(client).CreateLibrary(ctx, shows, libraries.CollectionTypeTvshows, []string{"/fixtures/shows"})
+	if err != nil {
+		return err
+	}
+
+	number := int32(1)
+
+	show, err := catalogue.SaveScanned(ctx, items.Scanned{
+		LibraryID:    shown.ID,
+		Kind:         itemmodal.KindSeries,
+		Key:          "series:" + slugify(series),
+		Name:         series,
+		SortName:     strings.ToLower(series),
+		DateModified: time.Now(),
+	})
+	if err != nil {
+		return err
+	}
+
+	first, err := catalogue.SaveScanned(ctx, items.Scanned{
+		LibraryID:    shown.ID,
+		ParentID:     &show.ID,
+		Kind:         itemmodal.KindSeason,
+		Key:          "season:" + slugify(series) + ":1",
+		Name:         season,
+		SortName:     strings.ToLower(season),
+		IndexNumber:  &number,
+		DateModified: time.Now(),
+	})
+	if err != nil {
+		return err
+	}
+
+	for index, name := range episodes {
+		position := int32(index + 1)
+		item, err := catalogue.SaveScanned(ctx, items.Scanned{
+			LibraryID:         shown.ID,
+			ParentID:          &first.ID,
+			Kind:              itemmodal.KindEpisode,
+			Key:               fmt.Sprintf("episode:%s:1:%d", slugify(series), position),
+			Name:              name,
+			SortName:          strings.ToLower(name),
+			IndexNumber:       &position,
+			ParentIndexNumber: &number,
+			DateModified:      time.Now(),
 		})
 		if err != nil {
+			return err
+		}
+
+		if err := file(ctx, catalogue, shown.ID, item.ID, name); err != nil {
 			return err
 		}
 	}
@@ -159,9 +214,18 @@ func seed() error {
 	return nil
 }
 
-// The scanner derives a key from the title and keeps it unexported, so this
-// mirrors the shape rather than sharing it. Two fixtures must not slug alike:
-// one key is one title, and they would seed as a single item.
+func file(ctx context.Context, catalogue *items.Service, libraryID, itemID uuid.UUID, name string) error {
+	_, err := catalogue.SaveSource(ctx, items.ScannedSource{
+		LibraryID:    libraryID,
+		ItemID:       itemID,
+		Path:         "/fixtures/" + name + ".mkv",
+		Name:         name,
+		DateModified: time.Now(),
+	})
+
+	return err
+}
+
 func slugify(name string) string {
 	var slug strings.Builder
 	separated := false
