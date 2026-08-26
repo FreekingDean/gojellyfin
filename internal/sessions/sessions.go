@@ -119,7 +119,7 @@ func (s *Service) List(ctx context.Context) ([]*Session, error) {
 
 func (s *Service) DeleteByToken(ctx context.Context, token string) error {
 	session, err := s.ByToken(ctx, token)
-	if err != nil {
+	if err != nil && !store.IsNotFound(err) {
 		return err
 	}
 
@@ -127,13 +127,15 @@ func (s *Service) DeleteByToken(ctx context.Context, token string) error {
 		return fmt.Errorf("failed to delete session by token: %w", err)
 	}
 
-	s.activity.Record(ctx, activity.Event{
-		Name:          fmt.Sprintf("%s has disconnected", session.Edges.User.Username),
-		Kind:          activity.KindSessionEnded,
-		ShortOverview: session.Edges.Device.Name,
-		Severity:      activity.SeverityInformation,
-		UserID:        &session.Edges.User.ID,
-	})
+	if session != nil {
+		s.activity.Record(ctx, activity.Event{
+			Name:          fmt.Sprintf("%s has disconnected", session.Edges.User.Username),
+			Kind:          activity.KindSessionEnded,
+			ShortOverview: session.Edges.Device.Name,
+			Severity:      activity.SeverityInformation,
+			UserID:        &session.Edges.User.ID,
+		})
+	}
 
 	return nil
 }
