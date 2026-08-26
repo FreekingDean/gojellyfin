@@ -118,9 +118,9 @@ func TestService_DeleteItemsNotInKeys(t *testing.T) {
 		kept := fixture.add(t, seed{kind: itemmodal.KindMovie, name: "Kept"})
 		pruned := fixture.add(t, seed{kind: itemmodal.KindMovie, name: "Pruned"})
 
-		artwork := []Artwork{{Kind: imagemodal.KindPrimary, Path: "/artwork/poster.jpg", Tag: "tag"}}
-		if err := fixture.service.ReplaceImages(ctx, pruned, artwork); err != nil {
-			t.Fatalf("failed to save the images: %v", err)
+		artwork := Artwork{Kind: imagemodal.KindPrimary, Path: "/artwork/poster.jpg", Tag: "tag"}
+		if err := fixture.service.SaveImage(ctx, pruned, artwork); err != nil {
+			t.Fatalf("failed to save the image: %v", err)
 		}
 
 		survivor, err := fixture.service.ItemByID(ctx, kept)
