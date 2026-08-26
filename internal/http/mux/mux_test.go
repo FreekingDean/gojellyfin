@@ -43,7 +43,7 @@ func TestMux_ServeHTTP(t *testing.T) {
 				}
 			})
 
-			m.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", test.path, nil))
+			m.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, test.path, nil))
 			if matched != test.match {
 				t.Errorf("%s matched %s = %v, want %v", test.pattern, test.path, matched, test.match)
 			}
@@ -55,12 +55,12 @@ func TestMux_ServeHTTP(t *testing.T) {
 		matched := false
 		m.HandleFunc("POST /Items", func(http.ResponseWriter, *http.Request) { matched = true })
 
-		m.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", "/Items", nil))
+		m.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/Items", nil))
 		if matched {
 			t.Error("GET matched a POST route")
 		}
 
-		m.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("POST", "/Items", nil))
+		m.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodPost, "/Items", nil))
 		if !matched {
 			t.Error("POST did not match a POST route")
 		}

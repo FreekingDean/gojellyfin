@@ -84,13 +84,14 @@ func (f *fixture) connect(t *testing.T) *websocket.Conn {
 	server := httptest.NewServer(http.HandlerFunc(handler))
 	t.Cleanup(server.Close)
 
-	conn, _, err := websocket.DefaultDialer.Dial(
+	conn, response, err := websocket.DefaultDialer.Dial(
 		"ws"+strings.TrimPrefix(server.URL, "http")+"/socket?api_key="+f.token,
 		nil,
 	)
 	if err != nil {
 		t.Fatalf("failed to dial the socket: %v", err)
 	}
+	defer func() { _ = response.Body.Close() }()
 	t.Cleanup(func() { _ = conn.Close() })
 
 	return conn
