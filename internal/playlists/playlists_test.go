@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 	playlistmodal "github.com/FreekingDean/gojellyfin/internal/store/playlist"
@@ -30,7 +31,12 @@ type fixture struct {
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
 
-	connection, err := store.NewStore()
+	config, err := env.Load()
+	if err != nil {
+		t.Fatalf("failed to read the environment: %v", err)
+	}
+
+	connection, err := store.NewStore(config)
 	if err != nil {
 		t.Fatalf("failed to open the database: %v", err)
 	}
@@ -109,7 +115,7 @@ func (f *fixture) item(t *testing.T, name string, kind itemmodal.Kind, parentID 
 		SetName(name).
 		SetSortName(name).
 		SetIsFolder(kind == itemmodal.KindSeries || kind == itemmodal.KindSeason).
-		SetPath(fmt.Sprintf("/%s/%s", f.libraryID, name)).
+		SetKey(fmt.Sprintf("test:%s", name)).
 		SetNillableParentID(parentID).
 		SetNillableIndexNumber(index).
 		Save(context.Background())
@@ -185,7 +191,7 @@ func (f *fixture) entryIDs(t *testing.T, playlistID uuid.UUID) []uuid.UUID {
 	return ids
 }
 
-func TestCreate(t *testing.T) {
+func TestService_Create(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -223,7 +229,7 @@ func TestCreate(t *testing.T) {
 	}
 }
 
-func TestAccess(t *testing.T) {
+func TestService_Access(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -285,99 +291,103 @@ func TestAccess(t *testing.T) {
 	})
 }
 
-func TestAddItems(t *testing.T) {
-	fixture := newFixture(t)
-	ctx := context.Background()
+func TestService_AddItems(t *testing.T) {
+	t.Run("appends to the end", func(t *testing.T) {
+		fixture := newFixture(t)
+		ctx := context.Background()
 
-	songs := fixture.songs(t, "One", "Two", "Three", "Four")
-	playlistID := fixture.create(t, CreateParams{Name: "Mix", ItemIDs: songs[:2]})
+		songs := fixture.songs(t, "One", "Two", "Three", "Four")
+		playlistID := fixture.create(t, CreateParams{Name: "Mix", ItemIDs: songs[:2]})
 
-	if err := fixture.service.AddItems(ctx, playlistID, songs[2:]); err != nil {
-		t.Fatalf("failed to add the items: %v", err)
-	}
-
-	want := []string{"One", "Two", "Three", "Four"}
-	if got := fixture.order(t, playlistID); !slices.Equal(got, want) {
-		t.Errorf("entries = %v, want %v", got, want)
-	}
-}
-
-func TestFoldersExpandInIndexOrder(t *testing.T) {
-	fixture := newFixture(t)
-	ctx := context.Background()
-
-	series := fixture.item(t, "Series", itemmodal.KindSeries, nil, nil)
-	first := fixture.item(t, "Bravo", itemmodal.KindSeason, &series, ptr(int32(1)))
-	second := fixture.item(t, "Alpha", itemmodal.KindSeason, &series, ptr(int32(2)))
-	fixture.item(t, "Second", itemmodal.KindEpisode, &first, ptr(int32(1)))
-	fixture.item(t, "First", itemmodal.KindEpisode, &first, ptr(int32(2)))
-	fixture.item(t, "Solo", itemmodal.KindEpisode, &second, ptr(int32(1)))
-
-	song := fixture.songs(t, "Zulu")
-	ids := []uuid.UUID{series, song[0]}
-	want := []string{"Second", "First", "Solo", "Zulu"}
-
-	t.Run("adding a folder adds what is beneath it", func(t *testing.T) {
-		playlistID := fixture.create(t, CreateParams{Name: "Binge"})
-
-		if err := fixture.service.AddItems(ctx, playlistID, ids); err != nil {
+		if err := fixture.service.AddItems(ctx, playlistID, songs[2:]); err != nil {
 			t.Fatalf("failed to add the items: %v", err)
 		}
+
+		want := []string{"One", "Two", "Three", "Four"}
 		if got := fixture.order(t, playlistID); !slices.Equal(got, want) {
 			t.Errorf("entries = %v, want %v", got, want)
 		}
 	})
 
-	t.Run("replacing the items expands them too", func(t *testing.T) {
-		playlistID := fixture.create(t, CreateParams{Name: "Rebinge"})
+	t.Run("keeps duplicates", func(t *testing.T) {
+		fixture := newFixture(t)
+		ctx := context.Background()
 
-		if err := fixture.service.Update(ctx, playlistID, UpdateParams{ItemIDs: &ids}); err != nil {
-			t.Fatalf("failed to update the playlist: %v", err)
+		songs := fixture.songs(t, "One")
+		playlistID := fixture.create(t, CreateParams{Name: "Repeat", ItemIDs: songs})
+
+		if err := fixture.service.AddItems(ctx, playlistID, songs); err != nil {
+			t.Fatalf("failed to add the items: %v", err)
 		}
+
+		want := []string{"One", "One"}
+		if got := fixture.order(t, playlistID); !slices.Equal(got, want) {
+			t.Errorf("entries = %v, want %v", got, want)
+		}
+
+		ids := fixture.entryIDs(t, playlistID)
+		if ids[0] == ids[1] {
+			t.Error("the two entries share an id")
+		}
+	})
+}
+
+func TestExpand(t *testing.T) {
+	t.Run("folders expand in index order", func(t *testing.T) {
+		fixture := newFixture(t)
+		ctx := context.Background()
+
+		series := fixture.item(t, "Series", itemmodal.KindSeries, nil, nil)
+		first := fixture.item(t, "Bravo", itemmodal.KindSeason, &series, ptr(int32(1)))
+		second := fixture.item(t, "Alpha", itemmodal.KindSeason, &series, ptr(int32(2)))
+		fixture.item(t, "Second", itemmodal.KindEpisode, &first, ptr(int32(1)))
+		fixture.item(t, "First", itemmodal.KindEpisode, &first, ptr(int32(2)))
+		fixture.item(t, "Solo", itemmodal.KindEpisode, &second, ptr(int32(1)))
+
+		song := fixture.songs(t, "Zulu")
+		ids := []uuid.UUID{series, song[0]}
+		want := []string{"Second", "First", "Solo", "Zulu"}
+
+		t.Run("adding a folder adds what is beneath it", func(t *testing.T) {
+			playlistID := fixture.create(t, CreateParams{Name: "Binge"})
+
+			if err := fixture.service.AddItems(ctx, playlistID, ids); err != nil {
+				t.Fatalf("failed to add the items: %v", err)
+			}
+			if got := fixture.order(t, playlistID); !slices.Equal(got, want) {
+				t.Errorf("entries = %v, want %v", got, want)
+			}
+		})
+
+		t.Run("replacing the items expands them too", func(t *testing.T) {
+			playlistID := fixture.create(t, CreateParams{Name: "Rebinge"})
+
+			if err := fixture.service.Update(ctx, playlistID, UpdateParams{ItemIDs: &ids}); err != nil {
+				t.Fatalf("failed to update the playlist: %v", err)
+			}
+			if got := fixture.order(t, playlistID); !slices.Equal(got, want) {
+				t.Errorf("entries = %v, want %v", got, want)
+			}
+		})
+	})
+
+	t.Run("unknown items are ignored", func(t *testing.T) {
+		fixture := newFixture(t)
+
+		songs := fixture.songs(t, "One")
+		playlistID := fixture.create(t, CreateParams{
+			Name:    "Ghosts",
+			ItemIDs: []uuid.UUID{uuid.New(), songs[0], uuid.New()},
+		})
+
+		want := []string{"One"}
 		if got := fixture.order(t, playlistID); !slices.Equal(got, want) {
 			t.Errorf("entries = %v, want %v", got, want)
 		}
 	})
 }
 
-func TestUnknownItemsAreIgnored(t *testing.T) {
-	fixture := newFixture(t)
-
-	songs := fixture.songs(t, "One")
-	playlistID := fixture.create(t, CreateParams{
-		Name:    "Ghosts",
-		ItemIDs: []uuid.UUID{uuid.New(), songs[0], uuid.New()},
-	})
-
-	want := []string{"One"}
-	if got := fixture.order(t, playlistID); !slices.Equal(got, want) {
-		t.Errorf("entries = %v, want %v", got, want)
-	}
-}
-
-func TestAddItemsKeepsDuplicates(t *testing.T) {
-	fixture := newFixture(t)
-	ctx := context.Background()
-
-	songs := fixture.songs(t, "One")
-	playlistID := fixture.create(t, CreateParams{Name: "Repeat", ItemIDs: songs})
-
-	if err := fixture.service.AddItems(ctx, playlistID, songs); err != nil {
-		t.Fatalf("failed to add the items: %v", err)
-	}
-
-	want := []string{"One", "One"}
-	if got := fixture.order(t, playlistID); !slices.Equal(got, want) {
-		t.Errorf("entries = %v, want %v", got, want)
-	}
-
-	ids := fixture.entryIDs(t, playlistID)
-	if ids[0] == ids[1] {
-		t.Error("the two entries share an id")
-	}
-}
-
-func TestMoveEntry(t *testing.T) {
+func TestService_MoveEntry(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -438,7 +448,7 @@ func TestMoveEntry(t *testing.T) {
 	})
 }
 
-func TestRemoveEntries(t *testing.T) {
+func TestService_RemoveEntries(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -463,7 +473,7 @@ func TestRemoveEntries(t *testing.T) {
 	}
 }
 
-func TestEntriesPages(t *testing.T) {
+func TestService_Entries(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -487,7 +497,7 @@ func TestEntriesPages(t *testing.T) {
 	}
 }
 
-func TestUpdate(t *testing.T) {
+func TestService_Update(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -527,7 +537,7 @@ func TestUpdate(t *testing.T) {
 	}
 }
 
-func TestShares(t *testing.T) {
+func TestService_Shares(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -564,61 +574,63 @@ func TestShares(t *testing.T) {
 	}
 }
 
-func TestSharesAreValidated(t *testing.T) {
-	fixture := newFixture(t)
-	ctx := context.Background()
+func TestCheckPermissions(t *testing.T) {
+	t.Run("shares are validated on update", func(t *testing.T) {
+		fixture := newFixture(t)
+		ctx := context.Background()
 
-	playlistID := fixture.create(t, CreateParams{
-		Name:   "Guarded",
-		Shares: []Permission{{UserID: fixture.guestID}},
-	})
+		playlistID := fixture.create(t, CreateParams{
+			Name:   "Guarded",
+			Shares: []Permission{{UserID: fixture.guestID}},
+		})
 
-	rejected := map[string][]Permission{
-		"no user id":   {{UserID: uuid.Nil}},
-		"unknown user": {{UserID: uuid.New()}},
-		"the same user twice": {
-			{UserID: fixture.guestID},
-			{UserID: fixture.guestID, CanEdit: true},
-		},
-	}
+		rejected := map[string][]Permission{
+			"no user id":   {{UserID: uuid.Nil}},
+			"unknown user": {{UserID: uuid.New()}},
+			"the same user twice": {
+				{UserID: fixture.guestID},
+				{UserID: fixture.guestID, CanEdit: true},
+			},
+		}
 
-	for name, permissions := range rejected {
-		t.Run(name, func(t *testing.T) {
-			err := fixture.service.Update(ctx, playlistID, UpdateParams{Shares: &permissions})
+		for name, permissions := range rejected {
+			t.Run(name, func(t *testing.T) {
+				err := fixture.service.Update(ctx, playlistID, UpdateParams{Shares: &permissions})
+				if !errors.Is(err, ErrInvalidShare) {
+					t.Fatalf("error = %v, want %v", err, ErrInvalidShare)
+				}
+
+				shares, err := fixture.service.Shares(ctx, playlistID)
+				if err != nil {
+					t.Fatalf("failed to query the shares: %v", err)
+				}
+				if len(shares) != 1 || shares[0].UserID != fixture.guestID || shares[0].CanEdit {
+					t.Errorf("shares = %v, want the original read-only share intact", shares)
+				}
+			})
+		}
+
+		t.Run("a single unknown share", func(t *testing.T) {
+			err := fixture.service.SetShare(ctx, playlistID, Permission{UserID: uuid.New()})
 			if !errors.Is(err, ErrInvalidShare) {
 				t.Fatalf("error = %v, want %v", err, ErrInvalidShare)
 			}
-
-			shares, err := fixture.service.Shares(ctx, playlistID)
-			if err != nil {
-				t.Fatalf("failed to query the shares: %v", err)
-			}
-			if len(shares) != 1 || shares[0].UserID != fixture.guestID || shares[0].CanEdit {
-				t.Errorf("shares = %v, want the original read-only share intact", shares)
-			}
 		})
-	}
+	})
 
-	t.Run("a single unknown share", func(t *testing.T) {
-		err := fixture.service.SetShare(ctx, playlistID, Permission{UserID: uuid.New()})
+	t.Run("create rejects an unknown share", func(t *testing.T) {
+		fixture := newFixture(t)
+
+		_, err := fixture.service.Create(context.Background(), CreateParams{
+			Name:      "Doomed",
+			MediaType: MediaTypeUnknown,
+			OwnerID:   fixture.ownerID,
+			Shares:    []Permission{{UserID: uuid.New()}},
+		})
 		if !errors.Is(err, ErrInvalidShare) {
 			t.Fatalf("error = %v, want %v", err, ErrInvalidShare)
 		}
 	})
-}
-
-func TestCreateRejectsAnUnknownShare(t *testing.T) {
-	fixture := newFixture(t)
-
-	_, err := fixture.service.Create(context.Background(), CreateParams{
-		Name:      "Doomed",
-		MediaType: MediaTypeUnknown,
-		OwnerID:   fixture.ownerID,
-		Shares:    []Permission{{UserID: uuid.New()}},
-	})
-	if !errors.Is(err, ErrInvalidShare) {
-		t.Fatalf("error = %v, want %v", err, ErrInvalidShare)
-	}
 }
 
 func ptr[T any](value T) *T {

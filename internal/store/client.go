@@ -1476,22 +1476,6 @@ func (c *DisplayPreferencesClient) QueryUser(_m *DisplayPreferences) *UserQuery 
 	return query
 }
 
-// QueryItem queries the item edge of a DisplayPreferences.
-func (c *DisplayPreferencesClient) QueryItem(_m *DisplayPreferences) *ItemQuery {
-	query := (&ItemClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(displaypreferences.Table, displaypreferences.FieldID, id),
-			sqlgraph.To(item.Table, item.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, displaypreferences.ItemTable, displaypreferences.ItemColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // Hooks returns the client hooks.
 func (c *DisplayPreferencesClient) Hooks() []Hook {
 	return c.hooks.DisplayPreferences
@@ -2051,22 +2035,6 @@ func (c *ItemClient) QueryUserData(_m *Item) *UserItemDataQuery {
 	return query
 }
 
-// QueryDisplayPreferences queries the display_preferences edge of a Item.
-func (c *ItemClient) QueryDisplayPreferences(_m *Item) *DisplayPreferencesQuery {
-	query := (&DisplayPreferencesClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(item.Table, item.FieldID, id),
-			sqlgraph.To(displaypreferences.Table, displaypreferences.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, item.DisplayPreferencesTable, item.DisplayPreferencesColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // QueryActivityLogEntries queries the activity_log_entries edge of a Item.
 func (c *ItemClient) QueryActivityLogEntries(_m *Item) *ActivityLogEntryQuery {
 	query := (&ActivityLogEntryClient{config: c.config}).Query()
@@ -2337,6 +2305,22 @@ func (c *LibraryClient) QueryItems(_m *Library) *ItemQuery {
 			sqlgraph.From(library.Table, library.FieldID, id),
 			sqlgraph.To(item.Table, item.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, library.ItemsTable, library.ItemsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryMediaSources queries the media_sources edge of a Library.
+func (c *LibraryClient) QueryMediaSources(_m *Library) *MediaSourceQuery {
+	query := (&MediaSourceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(library.Table, library.FieldID, id),
+			sqlgraph.To(mediasource.Table, mediasource.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, library.MediaSourcesTable, library.MediaSourcesColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -3066,6 +3050,22 @@ func (c *MediaSourceClient) QueryItem(_m *MediaSource) *ItemQuery {
 			sqlgraph.From(mediasource.Table, mediasource.FieldID, id),
 			sqlgraph.To(item.Table, item.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, mediasource.ItemTable, mediasource.ItemColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryLibrary queries the library edge of a MediaSource.
+func (c *MediaSourceClient) QueryLibrary(_m *MediaSource) *LibraryQuery {
+	query := (&LibraryClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(mediasource.Table, mediasource.FieldID, id),
+			sqlgraph.To(library.Table, library.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, mediasource.LibraryTable, mediasource.LibraryColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

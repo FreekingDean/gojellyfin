@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/config"
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
@@ -26,7 +27,12 @@ type fixture struct {
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
 
-	connection, err := store.NewStore()
+	config, err := env.Load()
+	if err != nil {
+		t.Fatalf("failed to read the environment: %v", err)
+	}
+
+	connection, err := store.NewStore(config)
 	if err != nil {
 		t.Fatalf("failed to open the database: %v", err)
 	}
@@ -64,7 +70,7 @@ func (f *fixture) add(t *testing.T, collectionType librarymodal.CollectionType, 
 	return library.ID
 }
 
-func TestGetUserViews(t *testing.T) {
+func TestServer_GetUserViews(t *testing.T) {
 	fixture := newFixture(t)
 
 	id := fixture.add(t, librarymodal.CollectionTypeMovies, "Feature Films")
@@ -106,7 +112,7 @@ func TestGetUserViews(t *testing.T) {
 	}
 }
 
-func TestGetGroupingOptions(t *testing.T) {
+func TestServer_GetGroupingOptions(t *testing.T) {
 	fixture := newFixture(t)
 
 	movies := fixture.add(t, librarymodal.CollectionTypeMovies, "Movies")

@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/localization"
@@ -34,7 +35,12 @@ type fixture struct {
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
 
-	connection, err := store.NewStore()
+	config, err := env.Load()
+	if err != nil {
+		t.Fatalf("failed to read the environment: %v", err)
+	}
+
+	connection, err := store.NewStore(config)
 	if err != nil {
 		t.Fatalf("failed to open the database: %v", err)
 	}
@@ -69,7 +75,7 @@ func newFixture(t *testing.T) *fixture {
 		SetKind(itemmodal.KindMovie).
 		SetName("Original Name").
 		SetSortName("original name").
-		SetPath("/" + library.ID.String() + "/movie.mkv").
+		SetKey("movie:original-name").
 		SetContainer("mkv").
 		SetRunTimeTicks(72_000_000_000).
 		SetProbedAt(probedAt).
@@ -85,7 +91,7 @@ func newFixture(t *testing.T) *fixture {
 		SetIsFolder(true).
 		SetName("Folder").
 		SetSortName("folder").
-		SetPath("/" + library.ID.String() + "/folder").
+		SetKey("folder:folder").
 		Save(ctx)
 	if err != nil {
 		t.Fatalf("failed to create the folder: %v", err)
@@ -146,132 +152,134 @@ func (f *fixture) editorInfo(t *testing.T, id uuid.UUID) api.GetMetadataEditorIn
 	return info
 }
 
-func TestUpdateItem(t *testing.T) {
-	fixture := newFixture(t)
-	premiere := time.Date(1999, 3, 31, 0, 0, 0, 0, time.UTC)
+func TestServer_UpdateItem(t *testing.T) {
+	t.Run("writes the editable fields", func(t *testing.T) {
+		fixture := newFixture(t)
+		premiere := time.Date(1999, 3, 31, 0, 0, 0, 0, time.UTC)
 
-	response := fixture.update(t, fixture.itemID, api.BaseItemDto{
-		Name:           apiutil.Ptr("The Matrix"),
-		SortName:       apiutil.Ptr("matrix, the"),
-		OriginalTitle:  apiutil.Ptr("The Matrix"),
-		Overview:       apiutil.Ptr("A hacker learns the truth."),
-		OfficialRating: apiutil.Ptr("R"),
-		ProductionYear: apiutil.Ptr(int32(1999)),
-		PremiereDate:   &premiere,
-		IndexNumber:    apiutil.Ptr(int32(3)),
-		LockData:       apiutil.Ptr(true),
-		Tags:           &[]string{"cyberpunk", "classic"},
-		ProviderIds:    &map[string]*string{"Imdb": apiutil.Ptr("tt0133093")},
-		LockedFields:   &[]api.MetadataField{api.MetadataFieldName, api.MetadataFieldOverview},
-	})
-	if _, ok := response.(api.UpdateItem204Response); !ok {
-		t.Fatalf("response = %T, want UpdateItem204Response", response)
-	}
+		response := fixture.update(t, fixture.itemID, api.BaseItemDto{
+			Name:           apiutil.Ptr("The Matrix"),
+			SortName:       apiutil.Ptr("matrix, the"),
+			OriginalTitle:  apiutil.Ptr("The Matrix"),
+			Overview:       apiutil.Ptr("A hacker learns the truth."),
+			OfficialRating: apiutil.Ptr("R"),
+			ProductionYear: apiutil.Ptr(int32(1999)),
+			PremiereDate:   &premiere,
+			IndexNumber:    apiutil.Ptr(int32(3)),
+			LockData:       apiutil.Ptr(true),
+			Tags:           &[]string{"cyberpunk", "classic"},
+			ProviderIds:    &map[string]*string{"Imdb": apiutil.Ptr("tt0133093")},
+			LockedFields:   &[]api.MetadataField{api.MetadataFieldName, api.MetadataFieldOverview},
+		})
+		if _, ok := response.(api.UpdateItem204Response); !ok {
+			t.Fatalf("response = %T, want UpdateItem204Response", response)
+		}
 
-	record := fixture.item(t)
-	if record.Name != "The Matrix" {
-		t.Errorf("name = %q, want %q", record.Name, "The Matrix")
-	}
-	if record.SortName != "matrix, the" {
-		t.Errorf("sort name = %q, want %q", record.SortName, "matrix, the")
-	}
-	if record.Overview != "A hacker learns the truth." {
-		t.Errorf("overview = %q, want the updated overview", record.Overview)
-	}
-	if record.OfficialRating != "R" {
-		t.Errorf("official rating = %q, want %q", record.OfficialRating, "R")
-	}
-	if apiutil.Deref(record.ProductionYear) != 1999 {
-		t.Errorf("production year = %v, want 1999", record.ProductionYear)
-	}
-	if record.PremiereDate == nil || !record.PremiereDate.Equal(premiere) {
-		t.Errorf("premiere date = %v, want %v", record.PremiereDate, premiere)
-	}
-	if apiutil.Deref(record.IndexNumber) != 3 {
-		t.Errorf("index number = %v, want 3", record.IndexNumber)
-	}
-	if !record.LockData {
-		t.Error("lock data = false, want true")
-	}
-	if want := []string{"cyberpunk", "classic"}; !slices.Equal(record.Tags, want) {
-		t.Errorf("tags = %v, want %v", record.Tags, want)
-	}
-	if want := []string{"Name", "Overview"}; !slices.Equal(record.LockedFields, want) {
-		t.Errorf("locked fields = %v, want %v", record.LockedFields, want)
-	}
-	if want := map[string]string{"Imdb": "tt0133093"}; !maps.Equal(record.ProviderIds, want) {
-		t.Errorf("provider ids = %v, want %v", record.ProviderIds, want)
-	}
-}
-
-func TestUpdateItemKeepsForeignRating(t *testing.T) {
-	fixture := newFixture(t)
-
-	fixture.update(t, fixture.itemID, api.BaseItemDto{OfficialRating: apiutil.Ptr("FSK 16")})
-
-	if record := fixture.item(t); record.OfficialRating != "FSK 16" {
-		t.Errorf("official rating = %q, want %q", record.OfficialRating, "FSK 16")
-	}
-}
-
-func TestUpdateItemKeepsProbedColumns(t *testing.T) {
-	fixture := newFixture(t)
-
-	fixture.update(t, fixture.itemID, api.BaseItemDto{
-		Name:         apiutil.Ptr("Renamed"),
-		Container:    apiutil.Ptr("mp4"),
-		RunTimeTicks: apiutil.Ptr(int64(1)),
-		Path:         apiutil.Ptr("/somewhere/else.mp4"),
-		Type:         apiutil.Ptr(api.BaseItemKindEpisode),
-		ParentId:     apiutil.Ptr(fixture.folderID),
-		MediaSources: &[]api.MediaSourceInfo{{Container: apiutil.Ptr("mp4")}},
+		record := fixture.item(t)
+		if record.Name != "The Matrix" {
+			t.Errorf("name = %q, want %q", record.Name, "The Matrix")
+		}
+		if record.SortName != "matrix, the" {
+			t.Errorf("sort name = %q, want %q", record.SortName, "matrix, the")
+		}
+		if record.Overview != "A hacker learns the truth." {
+			t.Errorf("overview = %q, want the updated overview", record.Overview)
+		}
+		if record.OfficialRating != "R" {
+			t.Errorf("official rating = %q, want %q", record.OfficialRating, "R")
+		}
+		if apiutil.Deref(record.ProductionYear) != 1999 {
+			t.Errorf("production year = %v, want 1999", record.ProductionYear)
+		}
+		if record.PremiereDate == nil || !record.PremiereDate.Equal(premiere) {
+			t.Errorf("premiere date = %v, want %v", record.PremiereDate, premiere)
+		}
+		if apiutil.Deref(record.IndexNumber) != 3 {
+			t.Errorf("index number = %v, want 3", record.IndexNumber)
+		}
+		if !record.LockData {
+			t.Error("lock data = false, want true")
+		}
+		if want := []string{"cyberpunk", "classic"}; !slices.Equal(record.Tags, want) {
+			t.Errorf("tags = %v, want %v", record.Tags, want)
+		}
+		if want := []string{"Name", "Overview"}; !slices.Equal(record.LockedFields, want) {
+			t.Errorf("locked fields = %v, want %v", record.LockedFields, want)
+		}
+		if want := map[string]string{"Imdb": "tt0133093"}; !maps.Equal(record.ProviderIds, want) {
+			t.Errorf("provider ids = %v, want %v", record.ProviderIds, want)
+		}
 	})
 
-	record := fixture.item(t)
-	if record.Name != "Renamed" {
-		t.Errorf("name = %q, want %q", record.Name, "Renamed")
-	}
-	if record.Container != "mkv" {
-		t.Errorf("container = %q, want %q", record.Container, "mkv")
-	}
-	if apiutil.Deref(record.RunTimeTicks) != 72_000_000_000 {
-		t.Errorf("run time ticks = %v, want 72000000000", record.RunTimeTicks)
-	}
-	if !record.ProbedAt.Equal(probedAt) {
-		t.Errorf("probed at = %v, want %v", record.ProbedAt, probedAt)
-	}
-	if !record.DateModified.Equal(dateModified) {
-		t.Errorf("date modified = %v, want %v", record.DateModified, dateModified)
-	}
-	if record.Path == "/somewhere/else.mp4" {
-		t.Error("path was written by the metadata editor")
-	}
-	if record.Kind != itemmodal.KindMovie {
-		t.Errorf("kind = %q, want %q", record.Kind, itemmodal.KindMovie)
-	}
-	if record.ParentID != nil {
-		t.Errorf("parent id = %v, want none", record.ParentID)
-	}
-	if record.LibraryID != fixture.libraryID {
-		t.Errorf("library id = %v, want %v", record.LibraryID, fixture.libraryID)
-	}
-	if sources, err := record.QueryMediaSources().Count(context.Background()); err != nil {
-		t.Fatalf("failed to count the media sources: %v", err)
-	} else if sources != 0 {
-		t.Errorf("media sources = %d, want none", sources)
-	}
+	t.Run("keeps a foreign rating", func(t *testing.T) {
+		fixture := newFixture(t)
+
+		fixture.update(t, fixture.itemID, api.BaseItemDto{OfficialRating: apiutil.Ptr("FSK 16")})
+
+		if record := fixture.item(t); record.OfficialRating != "FSK 16" {
+			t.Errorf("official rating = %q, want %q", record.OfficialRating, "FSK 16")
+		}
+	})
+
+	t.Run("keeps the probed columns", func(t *testing.T) {
+		fixture := newFixture(t)
+
+		fixture.update(t, fixture.itemID, api.BaseItemDto{
+			Name:         apiutil.Ptr("Renamed"),
+			Container:    apiutil.Ptr("mp4"),
+			RunTimeTicks: apiutil.Ptr(int64(1)),
+			Path:         apiutil.Ptr("/somewhere/else.mp4"),
+			Type:         apiutil.Ptr(api.BaseItemKindEpisode),
+			ParentId:     apiutil.Ptr(fixture.folderID),
+			MediaSources: &[]api.MediaSourceInfo{{Container: apiutil.Ptr("mp4")}},
+		})
+
+		record := fixture.item(t)
+		if record.Name != "Renamed" {
+			t.Errorf("name = %q, want %q", record.Name, "Renamed")
+		}
+		if record.Container != "mkv" {
+			t.Errorf("container = %q, want %q", record.Container, "mkv")
+		}
+		if apiutil.Deref(record.RunTimeTicks) != 72_000_000_000 {
+			t.Errorf("run time ticks = %v, want 72000000000", record.RunTimeTicks)
+		}
+		if !record.ProbedAt.Equal(probedAt) {
+			t.Errorf("probed at = %v, want %v", record.ProbedAt, probedAt)
+		}
+		if !record.DateModified.Equal(dateModified) {
+			t.Errorf("date modified = %v, want %v", record.DateModified, dateModified)
+		}
+		if record.Key != "movie:original-name" {
+			t.Errorf("key = %q, want the scan's key: the metadata editor must not move an item's identity", record.Key)
+		}
+		if record.Kind != itemmodal.KindMovie {
+			t.Errorf("kind = %q, want %q", record.Kind, itemmodal.KindMovie)
+		}
+		if record.ParentID != nil {
+			t.Errorf("parent id = %v, want none", record.ParentID)
+		}
+		if record.LibraryID != fixture.libraryID {
+			t.Errorf("library id = %v, want %v", record.LibraryID, fixture.libraryID)
+		}
+		if sources, err := record.QueryMediaSources().Count(context.Background()); err != nil {
+			t.Fatalf("failed to count the media sources: %v", err)
+		} else if sources != 0 {
+			t.Errorf("media sources = %d, want none", sources)
+		}
+	})
+
+	t.Run("answers 404 for an unknown item", func(t *testing.T) {
+		fixture := newFixture(t)
+
+		response := fixture.update(t, uuid.New(), api.BaseItemDto{Name: apiutil.Ptr("Nowhere")})
+		if _, ok := response.(api.UpdateItem404JSONResponse); !ok {
+			t.Fatalf("response = %T, want UpdateItem404JSONResponse", response)
+		}
+	})
 }
 
-func TestUpdateItemUnknownItem(t *testing.T) {
-	fixture := newFixture(t)
-
-	response := fixture.update(t, uuid.New(), api.BaseItemDto{Name: apiutil.Ptr("Nowhere")})
-	if _, ok := response.(api.UpdateItem404JSONResponse); !ok {
-		t.Fatalf("response = %T, want UpdateItem404JSONResponse", response)
-	}
-}
-
-func TestGetMetadataEditorInfo(t *testing.T) {
+func TestServer_GetMetadataEditorInfo(t *testing.T) {
 	fixture := newFixture(t)
 
 	t.Run("describes the item", func(t *testing.T) {
@@ -320,7 +328,7 @@ func TestGetMetadataEditorInfo(t *testing.T) {
 	})
 }
 
-func TestUpdateItemContentType(t *testing.T) {
+func TestServer_UpdateItemContentType(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 

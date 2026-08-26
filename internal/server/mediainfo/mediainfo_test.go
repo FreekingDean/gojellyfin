@@ -9,7 +9,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
-func TestGetBitrateTestBytes(t *testing.T) {
+func TestServer_GetBitrateTestBytes(t *testing.T) {
 	for _, tc := range []struct {
 		name string
 		size *int32

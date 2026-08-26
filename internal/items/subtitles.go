@@ -3,7 +3,6 @@ package items
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
@@ -23,30 +22,16 @@ type ExternalSubtitle struct {
 	IsHearingImpaired bool
 }
 
-// External streams are indexed off the end of the container's own, so the
-// source row is locked for the whole rewrite; without it two writers allocate
-// the same index.
-func (s *Service) ReplaceExternalSubtitles(ctx context.Context, item *Item, subtitles []ExternalSubtitle) error {
+func (s *Service) ReplaceExternalSubtitles(ctx context.Context, itemID uuid.UUID, source *MediaSource, subtitles []ExternalSubtitle) error {
 	return s.store.WithTx(ctx, func(tx *store.Tx) error {
-		source, err := tx.MediaSource.Query().
-			Where(sourcemodal.ItemID(item.ID)).
+		if _, err := tx.MediaSource.Query().
+			Where(sourcemodal.ID(source.ID)).
 			ForUpdate().
-			First(ctx)
-		if store.IsNotFound(err) && len(subtitles) == 0 {
-			return tx.Item.UpdateOneID(item.ID).SetHasSubtitles(false).Exec(ctx)
-		}
-		if store.IsNotFound(err) {
-			source, err = tx.MediaSource.Create().
-				SetItemID(item.ID).
-				SetName(filepath.Base(item.Path)).
-				SetPath(item.Path).
-				Save(ctx)
-		}
-		if err != nil {
-			return fmt.Errorf("failed to resolve the media source: %w", err)
+			Only(ctx); err != nil {
+			return fmt.Errorf("failed to lock the media source: %w", err)
 		}
 
-		_, err = tx.MediaStream.Delete().
+		_, err := tx.MediaStream.Delete().
 			Where(
 				streammodal.SourceID(source.ID),
 				streammodal.KindEQ(streammodal.KindSubtitle),
@@ -83,13 +68,16 @@ func (s *Service) ReplaceExternalSubtitles(ctx context.Context, item *Item, subt
 		}
 
 		count, err := tx.MediaStream.Query().
-			Where(streammodal.SourceID(source.ID), streammodal.KindEQ(streammodal.KindSubtitle)).
+			Where(
+				streammodal.HasSourceWith(sourcemodal.ItemID(itemID)),
+				streammodal.KindEQ(streammodal.KindSubtitle),
+			).
 			Count(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to count subtitles: %w", err)
 		}
 
-		return tx.Item.UpdateOneID(item.ID).SetHasSubtitles(count > 0).Exec(ctx)
+		return tx.Item.UpdateOneID(itemID).SetHasSubtitles(count > 0).Exec(ctx)
 	})
 }
 

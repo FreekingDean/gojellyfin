@@ -4,18 +4,16 @@ import (
 	"context"
 	"testing"
 
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
-// Unconfigured is a state the server has to answer in, not an error: a
-// developer running without a Temporal server still opens the dashboard.
 func newServer(t *testing.T) *Server {
 	t.Helper()
 
-	t.Setenv("TEMPORAL_HOSTPORT", "")
-	client, err := jobs.NewClient()
+	client, err := jobs.NewClient(env.Config{})
 	if err != nil {
 		t.Fatalf("failed to build the temporal client: %v", err)
 	}
@@ -26,46 +24,48 @@ func newServer(t *testing.T) *Server {
 	return New(jobs.NewService(client, registry))
 }
 
-func TestGetTasksListsTheDefinitions(t *testing.T) {
-	response, err := newServer(t).GetTasks(context.Background(), api.GetTasksRequestObject{})
-	if err != nil {
-		t.Fatalf("GetTasks returned %v", err)
-	}
-
-	infos, ok := response.(api.GetTasks200JSONResponse)
-	if !ok {
-		t.Fatalf("response = %T, want api.GetTasks200JSONResponse", response)
-	}
-	if len(infos) == 0 {
-		t.Fatal("no tasks were listed")
-	}
-	if got := apiutil.Deref(infos[0].Id); got != (scanJob{}).Name() {
-		t.Errorf("id = %q, want %q", got, (scanJob{}).Name())
-	}
-	if got := apiutil.Deref(infos[0].State); got != api.TaskStateIdle {
-		t.Errorf("state = %q, want Idle with nothing running", got)
-	}
-}
-
-func TestGetTasksFiltered(t *testing.T) {
-	server := newServer(t)
-	ctx := context.Background()
-
-	for _, params := range []api.GetTasksParams{
-		{IsHidden: apiutil.Ptr(true)},
-		{IsEnabled: apiutil.Ptr(false)},
-	} {
-		response, err := server.GetTasks(ctx, api.GetTasksRequestObject{Params: params})
+func TestServer_GetTasks(t *testing.T) {
+	t.Run("lists the definitions", func(t *testing.T) {
+		response, err := newServer(t).GetTasks(context.Background(), api.GetTasksRequestObject{})
 		if err != nil {
 			t.Fatalf("GetTasks returned %v", err)
 		}
-		if infos, _ := response.(api.GetTasks200JSONResponse); len(infos) != 0 {
-			t.Errorf("params %+v listed %d tasks, want none", params, len(infos))
+
+		infos, ok := response.(api.GetTasks200JSONResponse)
+		if !ok {
+			t.Fatalf("response = %T, want api.GetTasks200JSONResponse", response)
 		}
-	}
+		if len(infos) == 0 {
+			t.Fatal("no tasks were listed")
+		}
+		if got := apiutil.Deref(infos[0].Id); got != (scanJob{}).Name() {
+			t.Errorf("id = %q, want %q", got, (scanJob{}).Name())
+		}
+		if got := apiutil.Deref(infos[0].State); got != api.TaskStateIdle {
+			t.Errorf("state = %q, want Idle with nothing running", got)
+		}
+	})
+
+	t.Run("filters", func(t *testing.T) {
+		server := newServer(t)
+		ctx := context.Background()
+
+		for _, params := range []api.GetTasksParams{
+			{IsHidden: apiutil.Ptr(true)},
+			{IsEnabled: apiutil.Ptr(false)},
+		} {
+			response, err := server.GetTasks(ctx, api.GetTasksRequestObject{Params: params})
+			if err != nil {
+				t.Fatalf("GetTasks returned %v", err)
+			}
+			if infos, _ := response.(api.GetTasks200JSONResponse); len(infos) != 0 {
+				t.Errorf("params %+v listed %d tasks, want none", params, len(infos))
+			}
+		}
+	})
 }
 
-func TestUnknownTasksAreNotFound(t *testing.T) {
+func TestServer(t *testing.T) {
 	server := newServer(t)
 	ctx := context.Background()
 
@@ -94,14 +94,13 @@ func TestUnknownTasksAreNotFound(t *testing.T) {
 	}
 }
 
-// A stand in so the handler has something to list without dragging the scanner
-// and its database in.
 type scanJob struct{}
 
 func (scanJob) Name() string        { return "RefreshLibrary" }
 func (scanJob) Description() string { return "Scans the media libraries." }
 func (scanJob) Category() string    { return "Library" }
 func (scanJob) Steps() []any        { return nil }
-func (scanJob) Run(jobs.Context) error {
+func (scanJob) Children() []any     { return nil }
+func (scanJob) Run(jobs.Context, jobs.Options) error {
 	return nil
 }

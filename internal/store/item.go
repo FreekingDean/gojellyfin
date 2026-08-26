@@ -44,6 +44,8 @@ type Item struct {
 	IsoType item.IsoType `json:"iso_type,omitempty"`
 	// Video3dFormat holds the value of the "video_3d_format" field.
 	Video3dFormat item.Video3dFormat `json:"video_3d_format,omitempty"`
+	// Key holds the value of the "key" field.
+	Key string `json:"key,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// OriginalTitle holds the value of the "original_title" field.
@@ -52,8 +54,6 @@ type Item struct {
 	SortName string `json:"sort_name,omitempty"`
 	// ForcedSortName holds the value of the "forced_sort_name" field.
 	ForcedSortName bool `json:"forced_sort_name,omitempty"`
-	// Path holds the value of the "path" field.
-	Path string `json:"path,omitempty"`
 	// DeletedAt holds the value of the "deleted_at" field.
 	DeletedAt *time.Time `json:"deleted_at,omitempty"`
 	// Container holds the value of the "container" field.
@@ -162,8 +162,6 @@ type ItemEdges struct {
 	Images []*Image `json:"images,omitempty"`
 	// UserData holds the value of the user_data edge.
 	UserData []*UserItemData `json:"user_data,omitempty"`
-	// DisplayPreferences holds the value of the display_preferences edge.
-	DisplayPreferences []*DisplayPreferences `json:"display_preferences,omitempty"`
 	// ActivityLogEntries holds the value of the activity_log_entries edge.
 	ActivityLogEntries []*ActivityLogEntry `json:"activity_log_entries,omitempty"`
 	// Trickplays holds the value of the trickplays edge.
@@ -180,7 +178,7 @@ type ItemEdges struct {
 	Studios []*Studio `json:"studios,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [16]bool
+	loadedTypes [15]bool
 }
 
 // ParentOrErr returns the Parent value or an error if the edge
@@ -259,19 +257,10 @@ func (e ItemEdges) UserDataOrErr() ([]*UserItemData, error) {
 	return nil, &NotLoadedError{edge: "user_data"}
 }
 
-// DisplayPreferencesOrErr returns the DisplayPreferences value or an error if the edge
-// was not loaded in eager-loading.
-func (e ItemEdges) DisplayPreferencesOrErr() ([]*DisplayPreferences, error) {
-	if e.loadedTypes[8] {
-		return e.DisplayPreferences, nil
-	}
-	return nil, &NotLoadedError{edge: "display_preferences"}
-}
-
 // ActivityLogEntriesOrErr returns the ActivityLogEntries value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) ActivityLogEntriesOrErr() ([]*ActivityLogEntry, error) {
-	if e.loadedTypes[9] {
+	if e.loadedTypes[8] {
 		return e.ActivityLogEntries, nil
 	}
 	return nil, &NotLoadedError{edge: "activity_log_entries"}
@@ -280,7 +269,7 @@ func (e ItemEdges) ActivityLogEntriesOrErr() ([]*ActivityLogEntry, error) {
 // TrickplaysOrErr returns the Trickplays value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) TrickplaysOrErr() ([]*Trickplay, error) {
-	if e.loadedTypes[10] {
+	if e.loadedTypes[9] {
 		return e.Trickplays, nil
 	}
 	return nil, &NotLoadedError{edge: "trickplays"}
@@ -289,7 +278,7 @@ func (e ItemEdges) TrickplaysOrErr() ([]*Trickplay, error) {
 // MediaSegmentsOrErr returns the MediaSegments value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) MediaSegmentsOrErr() ([]*MediaSegment, error) {
-	if e.loadedTypes[11] {
+	if e.loadedTypes[10] {
 		return e.MediaSegments, nil
 	}
 	return nil, &NotLoadedError{edge: "media_segments"}
@@ -300,7 +289,7 @@ func (e ItemEdges) MediaSegmentsOrErr() ([]*MediaSegment, error) {
 func (e ItemEdges) PlaylistOrErr() (*Playlist, error) {
 	if e.Playlist != nil {
 		return e.Playlist, nil
-	} else if e.loadedTypes[12] {
+	} else if e.loadedTypes[11] {
 		return nil, &NotFoundError{label: playlist.Label}
 	}
 	return nil, &NotLoadedError{edge: "playlist"}
@@ -309,7 +298,7 @@ func (e ItemEdges) PlaylistOrErr() (*Playlist, error) {
 // PlaylistEntriesOrErr returns the PlaylistEntries value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) PlaylistEntriesOrErr() ([]*PlaylistEntry, error) {
-	if e.loadedTypes[13] {
+	if e.loadedTypes[12] {
 		return e.PlaylistEntries, nil
 	}
 	return nil, &NotLoadedError{edge: "playlist_entries"}
@@ -318,7 +307,7 @@ func (e ItemEdges) PlaylistEntriesOrErr() ([]*PlaylistEntry, error) {
 // GenresOrErr returns the Genres value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) GenresOrErr() ([]*Genre, error) {
-	if e.loadedTypes[14] {
+	if e.loadedTypes[13] {
 		return e.Genres, nil
 	}
 	return nil, &NotLoadedError{edge: "genres"}
@@ -327,7 +316,7 @@ func (e ItemEdges) GenresOrErr() ([]*Genre, error) {
 // StudiosOrErr returns the Studios value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) StudiosOrErr() ([]*Studio, error) {
-	if e.loadedTypes[15] {
+	if e.loadedTypes[14] {
 		return e.Studios, nil
 	}
 	return nil, &NotLoadedError{edge: "studios"}
@@ -348,7 +337,7 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case item.FieldProductionYear, item.FieldRunTimeTicks, item.FieldIndexNumber, item.FieldIndexNumberEnd, item.FieldParentIndexNumber, item.FieldAirsBeforeSeasonNumber, item.FieldAirsAfterSeasonNumber, item.FieldAirsBeforeEpisodeNumber, item.FieldWidth, item.FieldHeight:
 			values[i] = new(sql.NullInt64)
-		case item.FieldKind, item.FieldMediaType, item.FieldLocationType, item.FieldExtraType, item.FieldVideoType, item.FieldIsoType, item.FieldVideo3dFormat, item.FieldName, item.FieldOriginalTitle, item.FieldSortName, item.FieldPath, item.FieldContainer, item.FieldOverview, item.FieldOfficialRating, item.FieldCustomRating, item.FieldStatus, item.FieldAirTime, item.FieldDisplayOrder, item.FieldAspectRatio, item.FieldPreferredMetadataLanguage, item.FieldPreferredMetadataCountryCode:
+		case item.FieldKind, item.FieldMediaType, item.FieldLocationType, item.FieldExtraType, item.FieldVideoType, item.FieldIsoType, item.FieldVideo3dFormat, item.FieldKey, item.FieldName, item.FieldOriginalTitle, item.FieldSortName, item.FieldContainer, item.FieldOverview, item.FieldOfficialRating, item.FieldCustomRating, item.FieldStatus, item.FieldAirTime, item.FieldDisplayOrder, item.FieldAspectRatio, item.FieldPreferredMetadataLanguage, item.FieldPreferredMetadataCountryCode:
 			values[i] = new(sql.NullString)
 		case item.FieldCreatedAt, item.FieldUpdatedAt, item.FieldDeletedAt, item.FieldPremiereDate, item.FieldEndDate, item.FieldLastMediaAddedAt, item.FieldDateModified, item.FieldProbedAt:
 			values[i] = new(sql.NullTime)
@@ -442,6 +431,12 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Video3dFormat = item.Video3dFormat(value.String)
 			}
+		case item.FieldKey:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field key", values[i])
+			} else if value.Valid {
+				_m.Key = value.String
+			}
 		case item.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
@@ -465,12 +460,6 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field forced_sort_name", values[i])
 			} else if value.Valid {
 				_m.ForcedSortName = value.Bool
-			}
-		case item.FieldPath:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field path", values[i])
-			} else if value.Valid {
-				_m.Path = value.String
 			}
 		case item.FieldDeletedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -807,11 +796,6 @@ func (_m *Item) QueryUserData() *UserItemDataQuery {
 	return NewItemClient(_m.config).QueryUserData(_m)
 }
 
-// QueryDisplayPreferences queries the "display_preferences" edge of the Item entity.
-func (_m *Item) QueryDisplayPreferences() *DisplayPreferencesQuery {
-	return NewItemClient(_m.config).QueryDisplayPreferences(_m)
-}
-
 // QueryActivityLogEntries queries the "activity_log_entries" edge of the Item entity.
 func (_m *Item) QueryActivityLogEntries() *ActivityLogEntryQuery {
 	return NewItemClient(_m.config).QueryActivityLogEntries(_m)
@@ -905,6 +889,9 @@ func (_m *Item) String() string {
 	builder.WriteString("video_3d_format=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Video3dFormat))
 	builder.WriteString(", ")
+	builder.WriteString("key=")
+	builder.WriteString(_m.Key)
+	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)
 	builder.WriteString(", ")
@@ -916,9 +903,6 @@ func (_m *Item) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("forced_sort_name=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ForcedSortName))
-	builder.WriteString(", ")
-	builder.WriteString("path=")
-	builder.WriteString(_m.Path)
 	builder.WriteString(", ")
 	if v := _m.DeletedAt; v != nil {
 		builder.WriteString("deleted_at=")

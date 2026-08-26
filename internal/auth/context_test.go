@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/activity"
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	devicemodal "github.com/FreekingDean/gojellyfin/internal/store/device"
@@ -25,7 +26,12 @@ type fixture struct {
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
 
-	connection, err := store.NewStore()
+	config, err := env.Load()
+	if err != nil {
+		t.Fatalf("failed to read the environment: %v", err)
+	}
+
+	connection, err := store.NewStore(config)
 	if err != nil {
 		t.Fatalf("failed to open the database: %v", err)
 	}
@@ -103,7 +109,7 @@ func TestUserID(t *testing.T) {
 	}
 }
 
-func TestAuthenticateRejectsAnUnknownToken(t *testing.T) {
+func TestService_Authenticate(t *testing.T) {
 	fixture := newFixture(t)
 
 	if _, err := fixture.auth.Authenticate(context.Background(), ""); err != ErrUnauthorized {

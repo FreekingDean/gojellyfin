@@ -13,8 +13,6 @@ var Module = fx.Module(
 	),
 )
 
-// Only the worker command takes this: the server starts jobs and never runs
-// them, which is the whole reason the worker is a separate deployment.
 var WorkerModule = fx.Module(
 	"jobs/worker",
 	fx.Provide(NewWorker),

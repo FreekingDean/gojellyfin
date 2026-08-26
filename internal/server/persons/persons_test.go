@@ -2,10 +2,12 @@ package persons
 
 import (
 	"context"
+	"slices"
 	"testing"
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/store"
@@ -15,10 +17,15 @@ import (
 	personmodal "github.com/FreekingDean/gojellyfin/internal/store/person"
 )
 
-func TestGetPersons(t *testing.T) {
+func TestServer_GetPersons(t *testing.T) {
 	ctx := context.Background()
 
-	connection, err := store.NewStore()
+	config, err := env.Load()
+	if err != nil {
+		t.Fatalf("failed to read the environment: %v", err)
+	}
+
+	connection, err := store.NewStore(config)
 	if err != nil {
 		t.Fatalf("failed to open the database: %v", err)
 	}
@@ -61,7 +68,7 @@ func TestGetPersons(t *testing.T) {
 		Kind:      itemmodal.KindMovie,
 		Name:      prefix + "Movie",
 		SortName:  prefix + "Movie",
-		Path:      "/" + prefix + "Movie",
+		Key:       "test:" + prefix + "movie",
 	})
 	if err != nil {
 		t.Fatalf("failed to save the item: %v", err)
@@ -73,64 +80,78 @@ func TestGetPersons(t *testing.T) {
 		{Name: director, Kind: creditmodal.KindDirector},
 		{Name: writer, Kind: creditmodal.KindWriter},
 	}}}
-	if err := service.SaveProbe(ctx, movie, probe); err != nil {
+	source, err := service.SaveSource(ctx, items.ScannedSource{
+		LibraryID: library.ID,
+		ItemID:    movie.ID,
+		Path:      "/media/" + prefix + "Movie.mkv",
+		Name:      prefix + "Movie",
+	})
+	if err != nil {
+		t.Fatalf("failed to save the media source: %v", err)
+	}
+	if err := service.SaveProbe(ctx, movie, source, probe); err != nil {
 		t.Fatalf("failed to save the probe: %v", err)
 	}
 
 	server := New(service)
 
-	t.Run("returns the credited people", func(t *testing.T) {
-		result := getPersons(t, server, api.GetPersonsParams{AppearsInItemId: &movie.ID})
+	writerOnly := []string{string(creditmodal.KindWriter)}
+	unknownKind := []string{"NotAKind"}
+	term := "director"
+	otherItem := uuid.New()
 
-		if got := namesOf(result); len(got) != 2 || got[0] != director || got[1] != writer {
-			t.Fatalf("people = %v, want [%s %s]", got, director, writer)
-		}
-		if dto := (*result.Items)[0]; dto.Type == nil || *dto.Type != api.BaseItemKindPerson {
-			t.Errorf("type = %v, want %s", dto.Type, api.BaseItemKindPerson)
-		}
-		if dto := (*result.Items)[0]; dto.Id == nil || *dto.Id == uuid.Nil {
-			t.Errorf("id = %v, want a person id", dto.Id)
-		}
-	})
+	tests := []struct {
+		name   string
+		params api.GetPersonsParams
+		want   []string
+	}{
+		{
+			name:   "returns the credited people",
+			params: api.GetPersonsParams{AppearsInItemId: &movie.ID},
+			want:   []string{director, writer},
+		},
+		{
+			name:   "filters by person type",
+			params: api.GetPersonsParams{AppearsInItemId: &movie.ID, PersonTypes: &writerOnly},
+			want:   []string{writer},
+		},
+		{
+			name:   "ignores unknown person types",
+			params: api.GetPersonsParams{AppearsInItemId: &movie.ID, PersonTypes: &unknownKind},
+			want:   []string{director, writer},
+		},
+		{
+			name:   "filters by search term",
+			params: api.GetPersonsParams{AppearsInItemId: &movie.ID, SearchTerm: &term},
+			want:   []string{director},
+		},
+		{
+			name:   "ignores other items",
+			params: api.GetPersonsParams{AppearsInItemId: &otherItem},
+			want:   nil,
+		},
+	}
 
-	t.Run("filters by person type", func(t *testing.T) {
-		types := []string{string(creditmodal.KindWriter)}
-		result := getPersons(t, server, api.GetPersonsParams{AppearsInItemId: &movie.ID, PersonTypes: &types})
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := getPersons(t, server, test.params)
 
-		if got := namesOf(result); len(got) != 1 || got[0] != writer {
-			t.Errorf("people = %v, want [%s]", got, writer)
-		}
-	})
-
-	t.Run("ignores unknown person types", func(t *testing.T) {
-		types := []string{"NotAKind"}
-		result := getPersons(t, server, api.GetPersonsParams{AppearsInItemId: &movie.ID, PersonTypes: &types})
-
-		if got := namesOf(result); len(got) != 2 {
-			t.Errorf("people = %v, want both", got)
-		}
-	})
-
-	t.Run("filters by search term", func(t *testing.T) {
-		term := "director"
-		result := getPersons(t, server, api.GetPersonsParams{AppearsInItemId: &movie.ID, SearchTerm: &term})
-
-		if got := namesOf(result); len(got) != 1 || got[0] != director {
-			t.Errorf("people = %v, want [%s]", got, director)
-		}
-	})
-
-	t.Run("ignores other items", func(t *testing.T) {
-		other := uuid.New()
-		result := getPersons(t, server, api.GetPersonsParams{AppearsInItemId: &other})
-
-		if got := namesOf(result); len(got) != 0 {
-			t.Errorf("people = %v, want none", got)
-		}
-		if result.TotalRecordCount == nil || *result.TotalRecordCount != 0 {
-			t.Errorf("total = %v, want 0", result.TotalRecordCount)
-		}
-	})
+			if got := namesOf(result); !slices.Equal(got, test.want) {
+				t.Fatalf("people = %v, want %v", got, test.want)
+			}
+			if result.TotalRecordCount == nil || int(*result.TotalRecordCount) != len(test.want) {
+				t.Errorf("total = %v, want %d", result.TotalRecordCount, len(test.want))
+			}
+			for _, dto := range *result.Items {
+				if dto.Type == nil || *dto.Type != api.BaseItemKindPerson {
+					t.Errorf("type = %v, want %s", dto.Type, api.BaseItemKindPerson)
+				}
+				if dto.Id == nil || *dto.Id == uuid.Nil {
+					t.Errorf("id = %v, want a person id", dto.Id)
+				}
+			}
+		})
+	}
 }
 
 func getPersons(t *testing.T, server *Server, params api.GetPersonsParams) api.GetPersons200JSONResponse {

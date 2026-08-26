@@ -16,7 +16,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/chapter"
 	"github.com/FreekingDean/gojellyfin/internal/store/credit"
-	"github.com/FreekingDean/gojellyfin/internal/store/displaypreferences"
 	"github.com/FreekingDean/gojellyfin/internal/store/genre"
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
@@ -47,7 +46,6 @@ type ItemQuery struct {
 	withChapters           *ChapterQuery
 	withImages             *ImageQuery
 	withUserData           *UserItemDataQuery
-	withDisplayPreferences *DisplayPreferencesQuery
 	withActivityLogEntries *ActivityLogEntryQuery
 	withTrickplays         *TrickplayQuery
 	withMediaSegments      *MediaSegmentQuery
@@ -261,28 +259,6 @@ func (_q *ItemQuery) QueryUserData() *UserItemDataQuery {
 			sqlgraph.From(item.Table, item.FieldID, selector),
 			sqlgraph.To(useritemdata.Table, useritemdata.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, item.UserDataTable, item.UserDataColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryDisplayPreferences chains the current query on the "display_preferences" edge.
-func (_q *ItemQuery) QueryDisplayPreferences() *DisplayPreferencesQuery {
-	query := (&DisplayPreferencesClient{config: _q.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := _q.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(item.Table, item.FieldID, selector),
-			sqlgraph.To(displaypreferences.Table, displaypreferences.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, item.DisplayPreferencesTable, item.DisplayPreferencesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -644,7 +620,6 @@ func (_q *ItemQuery) Clone() *ItemQuery {
 		withChapters:           _q.withChapters.Clone(),
 		withImages:             _q.withImages.Clone(),
 		withUserData:           _q.withUserData.Clone(),
-		withDisplayPreferences: _q.withDisplayPreferences.Clone(),
 		withActivityLogEntries: _q.withActivityLogEntries.Clone(),
 		withTrickplays:         _q.withTrickplays.Clone(),
 		withMediaSegments:      _q.withMediaSegments.Clone(),
@@ -743,17 +718,6 @@ func (_q *ItemQuery) WithUserData(opts ...func(*UserItemDataQuery)) *ItemQuery {
 		opt(query)
 	}
 	_q.withUserData = query
-	return _q
-}
-
-// WithDisplayPreferences tells the query-builder to eager-load the nodes that are connected to
-// the "display_preferences" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *ItemQuery) WithDisplayPreferences(opts ...func(*DisplayPreferencesQuery)) *ItemQuery {
-	query := (&DisplayPreferencesClient{config: _q.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	_q.withDisplayPreferences = query
 	return _q
 }
 
@@ -912,7 +876,7 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 	var (
 		nodes       = []*Item{}
 		_spec       = _q.querySpec()
-		loadedTypes = [16]bool{
+		loadedTypes = [15]bool{
 			_q.withParent != nil,
 			_q.withChildren != nil,
 			_q.withLibrary != nil,
@@ -921,7 +885,6 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 			_q.withChapters != nil,
 			_q.withImages != nil,
 			_q.withUserData != nil,
-			_q.withDisplayPreferences != nil,
 			_q.withActivityLogEntries != nil,
 			_q.withTrickplays != nil,
 			_q.withMediaSegments != nil,
@@ -1003,15 +966,6 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 		if err := _q.loadUserData(ctx, query, nodes,
 			func(n *Item) { n.Edges.UserData = []*UserItemData{} },
 			func(n *Item, e *UserItemData) { n.Edges.UserData = append(n.Edges.UserData, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := _q.withDisplayPreferences; query != nil {
-		if err := _q.loadDisplayPreferences(ctx, query, nodes,
-			func(n *Item) { n.Edges.DisplayPreferences = []*DisplayPreferences{} },
-			func(n *Item, e *DisplayPreferences) {
-				n.Edges.DisplayPreferences = append(n.Edges.DisplayPreferences, e)
-			}); err != nil {
 			return nil, err
 		}
 	}
@@ -1307,37 +1261,6 @@ func (_q *ItemQuery) loadUserData(ctx context.Context, query *UserItemDataQuery,
 		node, ok := nodeids[fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "item_id" returned %v for node %v`, fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (_q *ItemQuery) loadDisplayPreferences(ctx context.Context, query *DisplayPreferencesQuery, nodes []*Item, init func(*Item), assign func(*Item, *DisplayPreferences)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Item)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	query.withFKs = true
-	query.Where(predicate.DisplayPreferences(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(item.DisplayPreferencesColumn), fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.item_display_preferences
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "item_display_preferences" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "item_display_preferences" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

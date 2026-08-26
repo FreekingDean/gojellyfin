@@ -10,6 +10,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/auth"
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
@@ -21,7 +22,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
-func TestForgotPassword(t *testing.T) {
+func TestServer_ForgotPassword(t *testing.T) {
 	server := New(nil, nil)
 
 	response, err := server.ForgotPassword(context.Background(), api.ForgotPasswordRequestObject{
@@ -43,7 +44,7 @@ func TestForgotPassword(t *testing.T) {
 	}
 }
 
-func TestForgotPasswordPin(t *testing.T) {
+func TestServer_ForgotPasswordPin(t *testing.T) {
 	server := New(nil, nil)
 
 	response, err := server.ForgotPasswordPin(context.Background(), api.ForgotPasswordPinRequestObject{
@@ -66,7 +67,12 @@ func TestForgotPasswordPin(t *testing.T) {
 }
 
 func TestAuthenticateUserByNameRecordsActivity(t *testing.T) {
-	connection, err := store.NewStore()
+	config, err := env.Load()
+	if err != nil {
+		t.Fatalf("failed to read the environment: %v", err)
+	}
+
+	connection, err := store.NewStore(config)
 	if err != nil {
 		t.Fatalf("failed to open the database: %v", err)
 	}

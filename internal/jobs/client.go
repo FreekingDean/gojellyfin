@@ -3,20 +3,20 @@ package jobs
 import (
 	"context"
 	"errors"
-	"os"
 	"time"
 
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/api/serviceerror"
 	"go.temporal.io/sdk/client"
+
+	"github.com/FreekingDean/gojellyfin/internal/env"
 )
 
 const TaskQueue = "gojellyfin"
 
-// Unset means background work is off, the way an empty TRANSCODER_WORKERS
-// means transcoding is off: a developer running the server alone gets a server,
-// not a dial error on every start.
 var ErrNotConfigured = errors.New("jobs: TEMPORAL_HOSTPORT is not set")
+
+var ErrNoNamespace = errors.New("jobs: TEMPORAL_HOSTPORT is set but TEMPORAL_NAMESPACE is not")
 
 var ErrNotFound = errors.New("jobs: no such job")
 
@@ -24,29 +24,23 @@ type Client struct {
 	client client.Client
 }
 
-func NewClient() (*Client, error) {
-	address := os.Getenv("TEMPORAL_HOSTPORT")
-	if address == "" {
+func NewClient(config env.Config) (*Client, error) {
+	if config.Temporal.HostPort == "" {
 		return &Client{}, nil
+	}
+	if config.Temporal.Namespace == "" {
+		return nil, ErrNoNamespace
 	}
 
 	connected, err := client.Dial(client.Options{
-		HostPort:  address,
-		Namespace: namespace(),
+		HostPort:  config.Temporal.HostPort,
+		Namespace: config.Temporal.Namespace,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	return &Client{client: connected}, nil
-}
-
-func namespace() string {
-	if name := os.Getenv("TEMPORAL_NAMESPACE"); name != "" {
-		return name
-	}
-
-	return "gojellyfin_default"
 }
 
 func (c *Client) Enabled() bool {
@@ -119,10 +113,7 @@ func (s *Service) Status(ctx context.Context, name string) (Status, error) {
 	return s.status(ctx, job)
 }
 
-// The job's name is the run's id, which is what makes it a singleton: the
-// engine refuses a second run under a name that is already going, so starting
-// twice is one run rather than two and needs no lock of ours.
-func (s *Service) Start(ctx context.Context, name string) error {
+func (s *Service) Start(ctx context.Context, name string, options Options) error {
 	job, err := s.registry.Find(name)
 	if err != nil {
 		return err
@@ -138,7 +129,7 @@ func (s *Service) Start(ctx context.Context, name string) error {
 		TaskQueue:                TaskQueue,
 		WorkflowExecutionTimeout: runTimeoutMax,
 		WorkflowIDReusePolicy:    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
-	}, job.Name())
+	}, job.Name(), options)
 	if _, running := err.(*serviceerror.WorkflowExecutionAlreadyStarted); running {
 		return nil
 	}

@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
@@ -41,7 +42,12 @@ type fixture struct {
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
 
-	connection, err := store.NewStore()
+	config, err := env.Load()
+	if err != nil {
+		t.Fatalf("failed to read the environment: %v", err)
+	}
+
+	connection, err := store.NewStore(config)
 	if err != nil {
 		t.Fatalf("failed to open the database: %v", err)
 	}
@@ -85,7 +91,7 @@ func newFixture(t *testing.T) *fixture {
 		SetKind(itemmodal.KindMovie).
 		SetName("Blade Runner").
 		SetSortName("blade runner").
-		SetPath(path).
+		SetKey("movie:blade-runner:1982").
 		SetRunTimeTicks(250_000_000).
 		Save(ctx)
 	if err != nil {
@@ -94,6 +100,7 @@ func newFixture(t *testing.T) *fixture {
 
 	source, err := client.MediaSource.Create().
 		SetItemID(item.ID).
+		SetLibraryID(library.ID).
 		SetName(filepath.Base(path)).
 		SetPath(path).
 		Save(ctx)
@@ -102,7 +109,7 @@ func newFixture(t *testing.T) *fixture {
 	}
 
 	return &fixture{
-		server:    New(items.New(client), filesystem.New()),
+		server:    New(items.New(client), filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}})),
 		client:    client,
 		item:      item,
 		source:    source.ID,
@@ -157,175 +164,171 @@ func body(t *testing.T, reader io.Reader) string {
 	return string(content)
 }
 
-func TestGetSubtitle(t *testing.T) {
-	fixture := newFixture(t)
-	ctx := context.Background()
+func TestServer_GetSubtitle(t *testing.T) {
+	t.Run("serves what it can read", func(t *testing.T) {
+		fixture := newFixture(t)
+		ctx := context.Background()
 
-	fixture.addSubtitle(t, 2, "Blade Runner (1982).en.srt", srtFile)
+		fixture.addSubtitle(t, 2, "Blade Runner (1982).en.srt", srtFile)
 
-	t.Run("serves the file untouched when the format matches", func(t *testing.T) {
-		response, err := fixture.server.GetSubtitle(ctx, api.GetSubtitleRequestObject{
-			RouteItemId: fixture.item.ID,
-			RouteIndex:  2,
-			RouteFormat: "srt",
-		})
-		if err != nil {
-			t.Fatalf("failed to get the subtitle: %v", err)
+		tests := []struct {
+			name            string
+			index           int32
+			format          string
+			wantContentType string
+			wantLength      int64
+			wantBody        string
+		}{
+			{
+				name:            "serves the file untouched when the format matches",
+				index:           2,
+				format:          "srt",
+				wantContentType: "application/x-subrip",
+				wantLength:      int64(len(srtFile)),
+				wantBody:        srtFile,
+			},
+			{
+				name:            "converts to webvtt",
+				index:           2,
+				format:          "vtt",
+				wantContentType: "text/vtt",
+				wantBody:        "WEBVTT\n\n00:00:01.000 --> 00:00:04.000\nIt's not my fault.\n\n00:00:12.500 --> 00:00:15.000\nWake up.\nTime to die.\n\n",
+			},
 		}
 
-		result, ok := response.(api.GetSubtitle200TextResponse)
-		if !ok {
-			t.Fatalf("response = %T, want api.GetSubtitle200TextResponse", response)
-		}
-		if result.ContentType != "application/x-subrip" {
-			t.Errorf("ContentType = %q, want application/x-subrip", result.ContentType)
-		}
-		if result.ContentLength != int64(len(srtFile)) {
-			t.Errorf("ContentLength = %d, want %d", result.ContentLength, len(srtFile))
-		}
-		if got := body(t, result.Body); got != srtFile {
-			t.Errorf("body = %q, want the file as it is on disk", got)
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				response, err := fixture.server.GetSubtitle(ctx, api.GetSubtitleRequestObject{
+					RouteItemId: fixture.item.ID,
+					RouteIndex:  test.index,
+					RouteFormat: test.format,
+				})
+				if err != nil {
+					t.Fatalf("failed to get the subtitle: %v", err)
+				}
+
+				result, ok := response.(api.GetSubtitle200TextResponse)
+				if !ok {
+					t.Fatalf("response = %T, want api.GetSubtitle200TextResponse", response)
+				}
+				if result.ContentType != test.wantContentType {
+					t.Errorf("ContentType = %q, want %q", result.ContentType, test.wantContentType)
+				}
+				if result.ContentLength != test.wantLength {
+					t.Errorf("ContentLength = %d, want %d", result.ContentLength, test.wantLength)
+				}
+				if got := body(t, result.Body); got != test.wantBody {
+					t.Errorf("body = %q, want %q", got, test.wantBody)
+				}
+			})
 		}
 	})
 
-	t.Run("converts to webvtt", func(t *testing.T) {
-		response, err := fixture.server.GetSubtitle(ctx, api.GetSubtitleRequestObject{
-			RouteItemId: fixture.item.ID,
-			RouteIndex:  2,
-			RouteFormat: "vtt",
-		})
-		if err != nil {
-			t.Fatalf("failed to get the subtitle: %v", err)
-		}
+	t.Run("needs ffmpeg", func(t *testing.T) {
+		fixture := newFixture(t)
+		ctx := context.Background()
 
-		result, ok := response.(api.GetSubtitle200TextResponse)
-		if !ok {
-			t.Fatalf("response = %T, want api.GetSubtitle200TextResponse", response)
-		}
-		if result.ContentType != "text/vtt" {
-			t.Errorf("ContentType = %q, want text/vtt", result.ContentType)
-		}
-
-		want := "WEBVTT\n\n00:00:01.000 --> 00:00:04.000\nIt's not my fault.\n\n00:00:12.500 --> 00:00:15.000\nWake up.\nTime to die.\n\n"
-		if got := body(t, result.Body); got != want {
-			t.Errorf("body = %q, want %q", got, want)
-		}
-	})
-
-	t.Run("refuses to extract an embedded track", func(t *testing.T) {
 		fixture.addEmbedded(t, 3)
-
-		_, err := fixture.server.GetSubtitle(ctx, api.GetSubtitleRequestObject{
-			RouteItemId: fixture.item.ID,
-			RouteIndex:  3,
-			RouteFormat: "vtt",
-		})
-		if !errors.Is(err, api.ErrNotImplemented) {
-			t.Errorf("err = %v, want api.ErrNotImplemented", err)
-		}
-	})
-
-	t.Run("refuses a conversion it cannot do", func(t *testing.T) {
 		fixture.addSubtitle(t, 4, "Blade Runner (1982).fr.ass", "[Script Info]")
 
-		_, err := fixture.server.GetSubtitle(ctx, api.GetSubtitleRequestObject{
-			RouteItemId: fixture.item.ID,
-			RouteIndex:  4,
-			RouteFormat: "vtt",
-		})
-		if !errors.Is(err, api.ErrNotImplemented) {
-			t.Errorf("err = %v, want api.ErrNotImplemented", err)
+		tests := []struct {
+			name  string
+			index int32
+		}{
+			{name: "refuses to extract an embedded track", index: 3},
+			{name: "refuses a conversion it cannot do", index: 4},
+		}
+
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				_, err := fixture.server.GetSubtitle(ctx, api.GetSubtitleRequestObject{
+					RouteItemId: fixture.item.ID,
+					RouteIndex:  test.index,
+					RouteFormat: "vtt",
+				})
+				if !errors.Is(err, api.ErrNotImplemented) {
+					t.Errorf("err = %v, want api.ErrNotImplemented", err)
+				}
+			})
 		}
 	})
 
 	t.Run("fails for an index that is not a subtitle", func(t *testing.T) {
-		if _, err := fixture.server.GetSubtitle(ctx, api.GetSubtitleRequestObject{
+		fixture := newFixture(t)
+
+		_, err := fixture.server.GetSubtitle(context.Background(), api.GetSubtitleRequestObject{
 			RouteItemId: fixture.item.ID,
 			RouteIndex:  9,
 			RouteFormat: "vtt",
-		}); err == nil {
+		})
+		if err == nil {
 			t.Error("want an error for a missing stream")
 		}
 	})
 }
 
-func TestGetSubtitleWithTicks(t *testing.T) {
+func TestServer_GetSubtitleWithTicks(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
 	fixture.addSubtitle(t, 0, "Blade Runner (1982).en.srt", srtFile)
 
-	t.Run("drops earlier cues and rebases the rest", func(t *testing.T) {
-		response, err := fixture.server.GetSubtitleWithTicks(ctx, api.GetSubtitleWithTicksRequestObject{
-			RouteItemId:             fixture.item.ID,
-			RouteIndex:              0,
-			RouteFormat:             "vtt",
-			RouteStartPositionTicks: 100_000_000,
+	copyTimestamps := true
+	end := int64(50_000_000)
+
+	tests := []struct {
+		name     string
+		format   string
+		start    int64
+		params   api.GetSubtitleWithTicksParams
+		wantBody string
+	}{
+		{
+			name:     "drops earlier cues and rebases the rest",
+			format:   "vtt",
+			start:    100_000_000,
+			wantBody: "WEBVTT\n\n00:00:02.500 --> 00:00:05.000\nWake up.\nTime to die.\n\n",
+		},
+		{
+			name:     "keeps the original timestamps when asked",
+			format:   "srt",
+			start:    100_000_000,
+			params:   api.GetSubtitleWithTicksParams{CopyTimestamps: &copyTimestamps},
+			wantBody: "1\n00:00:12,500 --> 00:00:15,000\nWake up.\nTime to die.\n\n",
+		},
+		{
+			name:     "stops at the end of the window",
+			format:   "vtt",
+			params:   api.GetSubtitleWithTicksParams{EndPositionTicks: &end},
+			wantBody: "WEBVTT\n\n00:00:01.000 --> 00:00:04.000\nIt's not my fault.\n\n",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			response, err := fixture.server.GetSubtitleWithTicks(ctx, api.GetSubtitleWithTicksRequestObject{
+				RouteItemId:             fixture.item.ID,
+				RouteIndex:              0,
+				RouteFormat:             test.format,
+				RouteStartPositionTicks: test.start,
+				Params:                  test.params,
+			})
+			if err != nil {
+				t.Fatalf("failed to get the subtitle: %v", err)
+			}
+
+			result, ok := response.(api.GetSubtitleWithTicks200TextResponse)
+			if !ok {
+				t.Fatalf("response = %T, want api.GetSubtitleWithTicks200TextResponse", response)
+			}
+			if got := body(t, result.Body); got != test.wantBody {
+				t.Errorf("body = %q, want %q", got, test.wantBody)
+			}
 		})
-		if err != nil {
-			t.Fatalf("failed to get the subtitle: %v", err)
-		}
-
-		result, ok := response.(api.GetSubtitleWithTicks200TextResponse)
-		if !ok {
-			t.Fatalf("response = %T, want api.GetSubtitleWithTicks200TextResponse", response)
-		}
-
-		want := "WEBVTT\n\n00:00:02.500 --> 00:00:05.000\nWake up.\nTime to die.\n\n"
-		if got := body(t, result.Body); got != want {
-			t.Errorf("body = %q, want %q", got, want)
-		}
-	})
-
-	t.Run("keeps the original timestamps when asked", func(t *testing.T) {
-		copyTimestamps := true
-		response, err := fixture.server.GetSubtitleWithTicks(ctx, api.GetSubtitleWithTicksRequestObject{
-			RouteItemId:             fixture.item.ID,
-			RouteIndex:              0,
-			RouteFormat:             "srt",
-			RouteStartPositionTicks: 100_000_000,
-			Params:                  api.GetSubtitleWithTicksParams{CopyTimestamps: &copyTimestamps},
-		})
-		if err != nil {
-			t.Fatalf("failed to get the subtitle: %v", err)
-		}
-
-		result, ok := response.(api.GetSubtitleWithTicks200TextResponse)
-		if !ok {
-			t.Fatalf("response = %T, want api.GetSubtitleWithTicks200TextResponse", response)
-		}
-
-		want := "1\n00:00:12,500 --> 00:00:15,000\nWake up.\nTime to die.\n\n"
-		if got := body(t, result.Body); got != want {
-			t.Errorf("body = %q, want %q", got, want)
-		}
-	})
-
-	t.Run("stops at the end of the window", func(t *testing.T) {
-		end := int64(50_000_000)
-		response, err := fixture.server.GetSubtitleWithTicks(ctx, api.GetSubtitleWithTicksRequestObject{
-			RouteItemId: fixture.item.ID,
-			RouteIndex:  0,
-			RouteFormat: "vtt",
-			Params:      api.GetSubtitleWithTicksParams{EndPositionTicks: &end},
-		})
-		if err != nil {
-			t.Fatalf("failed to get the subtitle: %v", err)
-		}
-
-		result, ok := response.(api.GetSubtitleWithTicks200TextResponse)
-		if !ok {
-			t.Fatalf("response = %T, want api.GetSubtitleWithTicks200TextResponse", response)
-		}
-
-		want := "WEBVTT\n\n00:00:01.000 --> 00:00:04.000\nIt's not my fault.\n\n"
-		if got := body(t, result.Body); got != want {
-			t.Errorf("body = %q, want %q", got, want)
-		}
-	})
+	}
 }
 
-func TestGetSubtitlePlaylist(t *testing.T) {
+func TestServer_GetSubtitlePlaylist(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 

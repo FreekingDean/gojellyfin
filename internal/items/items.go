@@ -12,6 +12,8 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	entrymodal "github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	datamodal "github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
 )
@@ -35,15 +37,13 @@ func New(client *store.Client) *Service {
 	return &Service{store: client}
 }
 
-// What one pass of the scanner knows about a file. The probe owns the
-// remaining columns and must not be clobbered from here.
 type Scanned struct {
 	LibraryID         uuid.UUID
 	ParentID          *uuid.UUID
 	Kind              Kind
+	Key               string
 	Name              string
 	SortName          string
-	Path              string
 	ProductionYear    *int32
 	IndexNumber       *int32
 	ParentIndexNumber *int32
@@ -73,14 +73,14 @@ func (s *Service) SaveScanned(ctx context.Context, scanned Scanned) (*Item, erro
 		SetKind(scanned.Kind).
 		SetMediaType(mediaType).
 		SetIsFolder(isFolder).
+		SetKey(scanned.Key).
 		SetName(scanned.Name).
 		SetSortName(scanned.SortName).
-		SetPath(scanned.Path).
 		SetNillableProductionYear(scanned.ProductionYear).
 		SetNillableIndexNumber(scanned.IndexNumber).
 		SetNillableParentIndexNumber(scanned.ParentIndexNumber).
 		SetDateModified(scanned.DateModified).
-		OnConflictColumns(itemmodal.FieldLibraryID, itemmodal.FieldPath).
+		OnConflictColumns(itemmodal.FieldLibraryID, itemmodal.FieldKey).
 		UpdateParentID().
 		UpdateKind().
 		UpdateMediaType().
@@ -92,8 +92,6 @@ func (s *Service) SaveScanned(ctx context.Context, scanned Scanned) (*Item, erro
 		UpdateParentIndexNumber().
 		UpdateDateModified().
 		UpdateUpdatedAt().
-		// The file is back, so the row it left behind is revived rather than
-		// replaced, which is what keeps the watch state attached to it.
 		ClearDeletedAt().
 		ID(ctx)
 	if err != nil {
@@ -110,6 +108,24 @@ func (s *Service) ItemByID(ctx context.Context, id uuid.UUID) (*Item, error) {
 	}
 
 	return item, nil
+}
+
+func (s *Service) ItemsByIDs(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID]*Item, error) {
+	found := make(map[uuid.UUID]*Item, len(ids))
+	if len(ids) == 0 {
+		return found, nil
+	}
+
+	records, err := s.query().Where(itemmodal.IDIn(ids...)).All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query items by id: %w", err)
+	}
+
+	for _, record := range records {
+		found[record.ID] = record
+	}
+
+	return found, nil
 }
 
 type Ancestry struct {
@@ -139,6 +155,39 @@ func (s *Service) Ancestors(ctx context.Context, id uuid.UUID) (*Ancestry, error
 	}
 
 	return ancestry, nil
+}
+
+func (s *Service) ItemsNeedingMetadata(ctx context.Context, kinds []Kind, force bool, scope uuid.UUID) ([]uuid.UUID, error) {
+	query := s.query().Where(itemmodal.KindIn(kinds...), itemmodal.LockData(false))
+	if !force {
+		query = query.Where(itemmodal.ProviderIdsIsNil())
+	}
+	if scope != uuid.Nil {
+		query = query.Where(itemmodal.Or(
+			itemmodal.LibraryID(scope),
+			itemmodal.ID(scope),
+			itemmodal.HasParentWith(itemmodal.ID(scope)),
+			itemmodal.HasParentWith(itemmodal.HasParentWith(itemmodal.ID(scope))),
+		))
+	}
+
+	ranks := make([]string, 0, len(kinds))
+	for rank, kind := range kinds {
+		ranks = append(ranks, fmt.Sprintf("WHEN '%s' THEN %d", kind, rank))
+	}
+
+	ids, err := query.
+		Order(func(selector *sql.Selector) {
+			selector.OrderExpr(sql.Expr(fmt.Sprintf(
+				"CASE %s %s END", selector.C(itemmodal.FieldKind), strings.Join(ranks, " "),
+			)))
+		}, itemmodal.ByID()).
+		IDs(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query the items needing metadata: %w", err)
+	}
+
+	return ids, nil
 }
 
 type ItemQuery struct {
@@ -255,28 +304,21 @@ func (s *Service) CountChildren(ctx context.Context, parentIDs []uuid.UUID) (map
 	return counts, nil
 }
 
-// Every read goes through here, so a soft deleted row cannot come back in one
-// query because a caller forgot the predicate.
 func (s *Service) query() *store.ItemQuery {
 	return s.store.Item.Query().Where(itemmodal.DeletedAtIsNil())
 }
 
-// A library that scanned to nothing is indistinguishable from one whose storage
-// went away, and the second is the common case, so neither sweeps the library.
 var ErrNothingScanned = errors.New("items: the scan found no files")
 
-// Soft, so that a volume which comes back brings its watch state with it. The
-// row keeps the id the user data hangs off, which is the whole reason a hard
-// delete cannot be undone.
-func (s *Service) DeleteItemsNotInPaths(ctx context.Context, libraryID uuid.UUID, paths []string) error {
-	if len(paths) == 0 {
+func (s *Service) DeleteItemsNotInKeys(ctx context.Context, libraryID uuid.UUID, keys []string) error {
+	if len(keys) == 0 {
 		return ErrNothingScanned
 	}
 
 	missing := []predicate.Item{
 		itemmodal.LibraryID(libraryID),
 		itemmodal.DeletedAtIsNil(),
-		itemmodal.PathNotIn(paths...),
+		itemmodal.KeyNotIn(keys...),
 	}
 
 	if err := s.store.Item.Update().
@@ -289,9 +331,6 @@ func (s *Service) DeleteItemsNotInPaths(ctx context.Context, libraryID uuid.UUID
 	return s.deleteOrphanedDescendants(ctx, libraryID)
 }
 
-// A parent going away takes its children, which the foreign key did on a hard
-// delete and cannot do on an update. Repeated because a series reaches its
-// episodes through its seasons.
 func (s *Service) deleteOrphanedDescendants(ctx context.Context, libraryID uuid.UUID) error {
 	for {
 		affected, err := s.store.Item.Update().
@@ -337,9 +376,6 @@ func (s *Service) DistinctYears(ctx context.Context, libraryID *uuid.UUID, kinds
 	return years, nil
 }
 
-// Items the user started and did not finish, most recently played first. The
-// query runs from the user data so the sort column is on the primary table;
-// ordering items by the edge makes ent aggregate it away.
 func (s *Service) ResumeItems(ctx context.Context, userID uuid.UUID, kinds []Kind, libraryID *uuid.UUID, startIndex, limit int) ([]*Item, int, error) {
 	playable := []predicate.Item{itemmodal.IsFolder(false)}
 	if len(kinds) > 0 {
@@ -404,4 +440,118 @@ func (s *Service) CountByKind(ctx context.Context) (map[string]int32, error) {
 	}
 
 	return counts, nil
+}
+
+func (s *Service) LegacyKeyedItems(ctx context.Context, libraryID uuid.UUID) ([]*Item, error) {
+	records, err := s.query().
+		Where(
+			itemmodal.LibraryID(libraryID),
+			itemmodal.Not(itemmodal.Or(derivedKeys()...)),
+		).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query legacy keyed items: %w", err)
+	}
+
+	return records, nil
+}
+
+func (s *Service) ItemsInLibrary(ctx context.Context, libraryID uuid.UUID) ([]*Item, error) {
+	records, err := s.query().Where(itemmodal.LibraryID(libraryID)).All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query the items of a library: %w", err)
+	}
+
+	return records, nil
+}
+
+func (s *Service) Rekey(ctx context.Context, id uuid.UUID, key string) error {
+	if err := s.store.Item.UpdateOneID(id).SetKey(key).Exec(ctx); err != nil {
+		return fmt.Errorf("failed to rekey %s: %w", id, err)
+	}
+
+	return nil
+}
+
+func (s *Service) Merge(ctx context.Context, from, into uuid.UUID) error {
+	err := s.store.WithTx(ctx, func(tx *store.Tx) error {
+		kept, err := tx.UserItemData.Query().Where(datamodal.ItemID(into)).All(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to query the surviving item's user data: %w", err)
+		}
+
+		survivor := make(map[uuid.UUID]*store.UserItemData, len(kept))
+		for _, datum := range kept {
+			survivor[datum.UserID] = datum
+		}
+
+		folded, err := tx.UserItemData.Query().Where(datamodal.ItemID(from)).All(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to query the duplicate's user data: %w", err)
+		}
+
+		clashed := make([]uuid.UUID, 0, len(folded))
+		for _, datum := range folded {
+			existing, clash := survivor[datum.UserID]
+			if !clash {
+				continue
+			}
+			clashed = append(clashed, datum.UserID)
+			if err := union(existing, datum).Exec(ctx); err != nil {
+				return fmt.Errorf("failed to fold the duplicate's user data: %w", err)
+			}
+		}
+
+		if len(clashed) > 0 {
+			if _, err := tx.UserItemData.Delete().
+				Where(datamodal.ItemID(from), datamodal.UserIDIn(clashed...)).
+				Exec(ctx); err != nil {
+				return fmt.Errorf("failed to drop the folded user data: %w", err)
+			}
+		}
+
+		if err := tx.UserItemData.Update().Where(datamodal.ItemID(from)).SetItemID(into).Exec(ctx); err != nil {
+			return fmt.Errorf("failed to move the user data: %w", err)
+		}
+		if err := tx.PlaylistEntry.Update().Where(entrymodal.ItemID(from)).SetItemID(into).Exec(ctx); err != nil {
+			return fmt.Errorf("failed to move the playlist entries: %w", err)
+		}
+		if err := tx.MediaSource.Update().Where(sourcemodal.ItemID(from)).SetItemID(into).Exec(ctx); err != nil {
+			return fmt.Errorf("failed to move the media sources: %w", err)
+		}
+		if err := tx.Item.Update().Where(itemmodal.ParentID(from)).SetParentID(into).Exec(ctx); err != nil {
+			return fmt.Errorf("failed to move the children: %w", err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return s.DeleteItem(ctx, from)
+}
+
+func union(kept, folded *store.UserItemData) *store.UserItemDataUpdateOne {
+	update := kept.Update().
+		SetPlayed(kept.Played || folded.Played).
+		SetIsFavorite(kept.IsFavorite || folded.IsFavorite).
+		SetPlayCount(max(kept.PlayCount, folded.PlayCount)).
+		SetPlaybackPositionTicks(max(kept.PlaybackPositionTicks, folded.PlaybackPositionTicks))
+
+	if folded.LastPlayedAt != nil && (kept.LastPlayedAt == nil || folded.LastPlayedAt.After(*kept.LastPlayedAt)) {
+		update = update.SetLastPlayedAt(*folded.LastPlayedAt)
+	}
+
+	return update
+}
+
+func derivedKeys() []predicate.Item {
+	kinds := []Kind{itemmodal.KindMovie, itemmodal.KindSeries, itemmodal.KindSeason, itemmodal.KindEpisode}
+	prefixes := make([]predicate.Item, 0, len(kinds))
+	for _, kind := range kinds {
+		prefixes = append(prefixes, itemmodal.KeyHasPrefix(strings.ToLower(string(kind))+":"))
+	}
+
+	return prefixes
 }

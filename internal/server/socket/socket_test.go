@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/websocket"
 
 	"github.com/FreekingDean/gojellyfin/internal/activity"
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 )
@@ -25,7 +26,12 @@ type fixture struct {
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
 
-	connection, err := store.NewStore()
+	config, err := env.Load()
+	if err != nil {
+		t.Fatalf("failed to read the environment: %v", err)
+	}
+
+	connection, err := store.NewStore(config)
 	if err != nil {
 		t.Fatalf("failed to open the database: %v", err)
 	}
@@ -105,67 +111,69 @@ func read(t *testing.T, conn *websocket.Conn) wsMessage {
 	return message
 }
 
-func TestForceKeepAliveOpensTheSocket(t *testing.T) {
-	conn := newFixture(t).connect(t)
+func TestSocket_Handle(t *testing.T) {
+	t.Run("ForceKeepAlive opens the socket", func(t *testing.T) {
+		conn := newFixture(t).connect(t)
 
-	message := read(t, conn)
-	if message.MessageType != "ForceKeepAlive" {
-		t.Errorf("want ForceKeepAlive first, got %q", message.MessageType)
-	}
-	if message.Data != float64(keepAliveTimeout) {
-		t.Errorf("want the timeout advertised as %d, got %v", keepAliveTimeout, message.Data)
-	}
-	if message.MessageId == "" {
-		t.Error("want a message id")
-	}
+		message := read(t, conn)
+		if message.MessageType != "ForceKeepAlive" {
+			t.Errorf("want ForceKeepAlive first, got %q", message.MessageType)
+		}
+		if message.Data != float64(keepAliveTimeout) {
+			t.Errorf("want the timeout advertised as %d, got %v", keepAliveTimeout, message.Data)
+		}
+		if message.MessageId == "" {
+			t.Error("want a message id")
+		}
+	})
+
+	t.Run("a KeepAlive is answered", func(t *testing.T) {
+		conn := newFixture(t).connect(t)
+		read(t, conn)
+
+		if err := conn.WriteJSON(wsMessage{MessageType: "KeepAlive", MessageId: newGUID()}); err != nil {
+			t.Fatalf("failed to write to the socket: %v", err)
+		}
+
+		if message := read(t, conn); message.MessageType != "KeepAlive" {
+			t.Errorf("want a KeepAlive reply, got %q", message.MessageType)
+		}
+	})
+
+	t.Run("an unknown message is ignored", func(t *testing.T) {
+		conn := newFixture(t).connect(t)
+		read(t, conn)
+
+		if err := conn.WriteJSON(wsMessage{MessageType: "SessionsStart", MessageId: newGUID()}); err != nil {
+			t.Fatalf("failed to write to the socket: %v", err)
+		}
+		if err := conn.WriteJSON(wsMessage{MessageType: "KeepAlive", MessageId: newGUID()}); err != nil {
+			t.Fatalf("failed to write to the socket: %v", err)
+		}
+
+		if message := read(t, conn); message.MessageType != "KeepAlive" {
+			t.Errorf("want the unknown message skipped and the KeepAlive answered, got %q", message.MessageType)
+		}
+	})
+
+	t.Run("it returns when the connection closes", func(t *testing.T) {
+		fixture := newFixture(t)
+		conn := fixture.connect(t)
+		read(t, conn)
+
+		if err := conn.Close(); err != nil {
+			t.Fatalf("failed to close the connection: %v", err)
+		}
+
+		select {
+		case <-fixture.returned:
+		case <-time.After(5 * time.Second):
+			t.Fatal("want Handle to return once the connection is gone")
+		}
+	})
 }
 
-func TestKeepAliveIsAnswered(t *testing.T) {
-	conn := newFixture(t).connect(t)
-	read(t, conn)
-
-	if err := conn.WriteJSON(wsMessage{MessageType: "KeepAlive", MessageId: newGUID()}); err != nil {
-		t.Fatalf("failed to write to the socket: %v", err)
-	}
-
-	if message := read(t, conn); message.MessageType != "KeepAlive" {
-		t.Errorf("want a KeepAlive reply, got %q", message.MessageType)
-	}
-}
-
-func TestAnUnknownMessageIsIgnored(t *testing.T) {
-	conn := newFixture(t).connect(t)
-	read(t, conn)
-
-	if err := conn.WriteJSON(wsMessage{MessageType: "SessionsStart", MessageId: newGUID()}); err != nil {
-		t.Fatalf("failed to write to the socket: %v", err)
-	}
-	if err := conn.WriteJSON(wsMessage{MessageType: "KeepAlive", MessageId: newGUID()}); err != nil {
-		t.Fatalf("failed to write to the socket: %v", err)
-	}
-
-	if message := read(t, conn); message.MessageType != "KeepAlive" {
-		t.Errorf("want the unknown message skipped and the KeepAlive answered, got %q", message.MessageType)
-	}
-}
-
-func TestHandleReturnsWhenTheConnectionCloses(t *testing.T) {
-	fixture := newFixture(t)
-	conn := fixture.connect(t)
-	read(t, conn)
-
-	if err := conn.Close(); err != nil {
-		t.Fatalf("failed to close the connection: %v", err)
-	}
-
-	select {
-	case <-fixture.returned:
-	case <-time.After(5 * time.Second):
-		t.Fatal("want Handle to return once the connection is gone")
-	}
-}
-
-func TestEnqueueDropsWhenTheBufferIsFull(t *testing.T) {
+func TestEnqueue(t *testing.T) {
 	out := make(chan wsMessage, 1)
 	enqueue(out, wsMessage{MessageType: "KeepAlive"})
 

@@ -15,6 +15,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
+	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
 	"github.com/google/uuid"
 )
 
@@ -118,6 +119,21 @@ func (_c *LibraryCreate) AddItems(v ...*Item) *LibraryCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddItemIDs(ids...)
+}
+
+// AddMediaSourceIDs adds the "media_sources" edge to the MediaSource entity by IDs.
+func (_c *LibraryCreate) AddMediaSourceIDs(ids ...uuid.UUID) *LibraryCreate {
+	_c.mutation.AddMediaSourceIDs(ids...)
+	return _c
+}
+
+// AddMediaSources adds the "media_sources" edges to the MediaSource entity.
+func (_c *LibraryCreate) AddMediaSources(v ...*MediaSource) *LibraryCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddMediaSourceIDs(ids...)
 }
 
 // Mutation returns the LibraryMutation object of the builder.
@@ -276,6 +292,22 @@ func (_c *LibraryCreate) createSpec() (*Library, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.MediaSourcesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   library.MediaSourcesTable,
+			Columns: []string{library.MediaSourcesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(mediasource.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

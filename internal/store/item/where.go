@@ -76,6 +76,11 @@ func ParentID(v uuid.UUID) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldParentID, v))
 }
 
+// Key applies equality check predicate on the "key" field. It's identical to KeyEQ.
+func Key(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldKey, v))
+}
+
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
 func Name(v string) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldName, v))
@@ -94,11 +99,6 @@ func SortName(v string) predicate.Item {
 // ForcedSortName applies equality check predicate on the "forced_sort_name" field. It's identical to ForcedSortNameEQ.
 func ForcedSortName(v bool) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldForcedSortName, v))
-}
-
-// Path applies equality check predicate on the "path" field. It's identical to PathEQ.
-func Path(v string) predicate.Item {
-	return predicate.Item(sql.FieldEQ(FieldPath, v))
 }
 
 // DeletedAt applies equality check predicate on the "deleted_at" field. It's identical to DeletedAtEQ.
@@ -596,6 +596,81 @@ func Video3dFormatNotNil() predicate.Item {
 	return predicate.Item(sql.FieldNotNull(FieldVideo3dFormat))
 }
 
+// KeyEQ applies the EQ predicate on the "key" field.
+func KeyEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldKey, v))
+}
+
+// KeyNEQ applies the NEQ predicate on the "key" field.
+func KeyNEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldKey, v))
+}
+
+// KeyIn applies the In predicate on the "key" field.
+func KeyIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldKey, vs...))
+}
+
+// KeyNotIn applies the NotIn predicate on the "key" field.
+func KeyNotIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldKey, vs...))
+}
+
+// KeyGT applies the GT predicate on the "key" field.
+func KeyGT(v string) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldKey, v))
+}
+
+// KeyGTE applies the GTE predicate on the "key" field.
+func KeyGTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldKey, v))
+}
+
+// KeyLT applies the LT predicate on the "key" field.
+func KeyLT(v string) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldKey, v))
+}
+
+// KeyLTE applies the LTE predicate on the "key" field.
+func KeyLTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldKey, v))
+}
+
+// KeyContains applies the Contains predicate on the "key" field.
+func KeyContains(v string) predicate.Item {
+	return predicate.Item(sql.FieldContains(FieldKey, v))
+}
+
+// KeyHasPrefix applies the HasPrefix predicate on the "key" field.
+func KeyHasPrefix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasPrefix(FieldKey, v))
+}
+
+// KeyHasSuffix applies the HasSuffix predicate on the "key" field.
+func KeyHasSuffix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasSuffix(FieldKey, v))
+}
+
+// KeyIsNil applies the IsNil predicate on the "key" field.
+func KeyIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldKey))
+}
+
+// KeyNotNil applies the NotNil predicate on the "key" field.
+func KeyNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldKey))
+}
+
+// KeyEqualFold applies the EqualFold predicate on the "key" field.
+func KeyEqualFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldEqualFold(FieldKey, v))
+}
+
+// KeyContainsFold applies the ContainsFold predicate on the "key" field.
+func KeyContainsFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldContainsFold(FieldKey, v))
+}
+
 // NameEQ applies the EQ predicate on the "name" field.
 func NameEQ(v string) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldName, v))
@@ -819,81 +894,6 @@ func ForcedSortNameEQ(v bool) predicate.Item {
 // ForcedSortNameNEQ applies the NEQ predicate on the "forced_sort_name" field.
 func ForcedSortNameNEQ(v bool) predicate.Item {
 	return predicate.Item(sql.FieldNEQ(FieldForcedSortName, v))
-}
-
-// PathEQ applies the EQ predicate on the "path" field.
-func PathEQ(v string) predicate.Item {
-	return predicate.Item(sql.FieldEQ(FieldPath, v))
-}
-
-// PathNEQ applies the NEQ predicate on the "path" field.
-func PathNEQ(v string) predicate.Item {
-	return predicate.Item(sql.FieldNEQ(FieldPath, v))
-}
-
-// PathIn applies the In predicate on the "path" field.
-func PathIn(vs ...string) predicate.Item {
-	return predicate.Item(sql.FieldIn(FieldPath, vs...))
-}
-
-// PathNotIn applies the NotIn predicate on the "path" field.
-func PathNotIn(vs ...string) predicate.Item {
-	return predicate.Item(sql.FieldNotIn(FieldPath, vs...))
-}
-
-// PathGT applies the GT predicate on the "path" field.
-func PathGT(v string) predicate.Item {
-	return predicate.Item(sql.FieldGT(FieldPath, v))
-}
-
-// PathGTE applies the GTE predicate on the "path" field.
-func PathGTE(v string) predicate.Item {
-	return predicate.Item(sql.FieldGTE(FieldPath, v))
-}
-
-// PathLT applies the LT predicate on the "path" field.
-func PathLT(v string) predicate.Item {
-	return predicate.Item(sql.FieldLT(FieldPath, v))
-}
-
-// PathLTE applies the LTE predicate on the "path" field.
-func PathLTE(v string) predicate.Item {
-	return predicate.Item(sql.FieldLTE(FieldPath, v))
-}
-
-// PathContains applies the Contains predicate on the "path" field.
-func PathContains(v string) predicate.Item {
-	return predicate.Item(sql.FieldContains(FieldPath, v))
-}
-
-// PathHasPrefix applies the HasPrefix predicate on the "path" field.
-func PathHasPrefix(v string) predicate.Item {
-	return predicate.Item(sql.FieldHasPrefix(FieldPath, v))
-}
-
-// PathHasSuffix applies the HasSuffix predicate on the "path" field.
-func PathHasSuffix(v string) predicate.Item {
-	return predicate.Item(sql.FieldHasSuffix(FieldPath, v))
-}
-
-// PathIsNil applies the IsNil predicate on the "path" field.
-func PathIsNil() predicate.Item {
-	return predicate.Item(sql.FieldIsNull(FieldPath))
-}
-
-// PathNotNil applies the NotNil predicate on the "path" field.
-func PathNotNil() predicate.Item {
-	return predicate.Item(sql.FieldNotNull(FieldPath))
-}
-
-// PathEqualFold applies the EqualFold predicate on the "path" field.
-func PathEqualFold(v string) predicate.Item {
-	return predicate.Item(sql.FieldEqualFold(FieldPath, v))
-}
-
-// PathContainsFold applies the ContainsFold predicate on the "path" field.
-func PathContainsFold(v string) predicate.Item {
-	return predicate.Item(sql.FieldContainsFold(FieldPath, v))
 }
 
 // DeletedAtEQ applies the EQ predicate on the "deleted_at" field.
@@ -2902,29 +2902,6 @@ func HasUserData() predicate.Item {
 func HasUserDataWith(preds ...predicate.UserItemData) predicate.Item {
 	return predicate.Item(func(s *sql.Selector) {
 		step := newUserDataStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
-// HasDisplayPreferences applies the HasEdge predicate on the "display_preferences" edge.
-func HasDisplayPreferences() predicate.Item {
-	return predicate.Item(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, DisplayPreferencesTable, DisplayPreferencesColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasDisplayPreferencesWith applies the HasEdge predicate on the "display_preferences" edge with a given conditions (other predicates).
-func HasDisplayPreferencesWith(preds ...predicate.DisplayPreferences) predicate.Item {
-	return predicate.Item(func(s *sql.Selector) {
-		step := newDisplayPreferencesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

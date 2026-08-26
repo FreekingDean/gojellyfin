@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/activity"
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
@@ -35,7 +36,12 @@ type deviceSeed struct {
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
 
-	connection, err := store.NewStore()
+	config, err := env.Load()
+	if err != nil {
+		t.Fatalf("failed to read the environment: %v", err)
+	}
+
+	connection, err := store.NewStore(config)
 	if err != nil {
 		t.Fatalf("failed to open the database: %v", err)
 	}
@@ -146,7 +152,7 @@ func (f *fixture) mine(items []api.DeviceInfoDto) []api.DeviceInfoDto {
 	return found
 }
 
-func TestGetDevices(t *testing.T) {
+func TestServer_GetDevices(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -176,7 +182,7 @@ func TestGetDevices(t *testing.T) {
 	}
 }
 
-func TestGetDeviceInfo(t *testing.T) {
+func TestServer_GetDeviceInfo(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -270,7 +276,7 @@ func TestGetDeviceInfo(t *testing.T) {
 	})
 }
 
-func TestGetDeviceOptions(t *testing.T) {
+func TestServer_GetDeviceOptions(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -311,77 +317,86 @@ func TestGetDeviceOptions(t *testing.T) {
 	})
 }
 
-func TestUpdateDeviceOptions(t *testing.T) {
+func TestServer_UpdateDeviceOptions(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
-	update := func(clientID string, body *api.DeviceOptionsDto) api.UpdateDeviceOptionsResponseObject {
-		t.Helper()
+	tests := []struct {
+		name          string
+		seed          deviceSeed
+		body          *api.DeviceOptionsDto
+		wantForbidden bool
+		wantStored    string
+	}{
+		{
+			name:       "writes the custom name",
+			seed:       deviceSeed{name: "Renamed", customName: "Before"},
+			body:       &api.DeviceOptionsDto{CustomName: ptr("After")},
+			wantStored: "After",
+		},
+		{
+			name:       "leaves the stored name alone when omitted",
+			seed:       deviceSeed{name: "Untouched", customName: "Keep Me"},
+			body:       &api.DeviceOptionsDto{},
+			wantStored: "Keep Me",
+		},
+		{
+			name: "clears the stored name when explicitly empty",
+			seed: deviceSeed{name: "Cleared", customName: "Drop Me"},
+			body: &api.DeviceOptionsDto{CustomName: ptr("")},
+		},
+		{
+			name:          "refuses an empty body",
+			seed:          deviceSeed{name: "NoBody", customName: "Keep Me"},
+			body:          nil,
+			wantForbidden: true,
+			wantStored:    "Keep Me",
+		},
+	}
 
-		response, err := fixture.server.UpdateDeviceOptions(ctx, api.UpdateDeviceOptionsRequestObject{
-			Params:   api.UpdateDeviceOptionsParams{Id: clientID},
-			JSONBody: body,
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			clientID := fixture.addDevice(t, test.seed)
+
+			response, err := fixture.server.UpdateDeviceOptions(ctx, api.UpdateDeviceOptionsRequestObject{
+				Params:   api.UpdateDeviceOptionsParams{Id: clientID},
+				JSONBody: test.body,
+			})
+			if err != nil {
+				t.Fatalf("failed to update the device options: %v", err)
+			}
+
+			if test.wantForbidden {
+				if !isUpdateForbidden(response) {
+					t.Fatalf("response = %T, want api.UpdateDeviceOptions403Response", response)
+				}
+			} else if _, ok := response.(api.UpdateDeviceOptions204Response); !ok {
+				t.Fatalf("response = %T, want api.UpdateDeviceOptions204Response", response)
+			}
+
+			if got := fixture.storedCustomName(t, clientID); got != test.wantStored {
+				t.Errorf("CustomName = %q, want %q", got, test.wantStored)
+			}
+		})
+	}
+	t.Run("refuses an unknown device", func(t *testing.T) {
+		fixture := newFixture(t)
+
+		response, err := fixture.server.UpdateDeviceOptions(context.Background(), api.UpdateDeviceOptionsRequestObject{
+			Params:   api.UpdateDeviceOptionsParams{Id: "missing"},
+			JSONBody: &api.DeviceOptionsDto{CustomName: ptr("After")},
 		})
 		if err != nil {
 			t.Fatalf("failed to update the device options: %v", err)
 		}
-
-		return response
-	}
-
-	t.Run("writes the custom name", func(t *testing.T) {
-		clientID := fixture.addDevice(t, deviceSeed{name: "Renamed", customName: "Before"})
-
-		response := update(clientID, &api.DeviceOptionsDto{CustomName: ptr("After")})
-		if _, ok := response.(api.UpdateDeviceOptions204Response); !ok {
-			t.Fatalf("response = %T, want api.UpdateDeviceOptions204Response", response)
-		}
-
-		if got := fixture.storedCustomName(t, clientID); got != "After" {
-			t.Errorf("CustomName = %q, want %q", got, "After")
-		}
-	})
-
-	t.Run("leaves the stored name alone when omitted", func(t *testing.T) {
-		clientID := fixture.addDevice(t, deviceSeed{name: "Untouched", customName: "Keep Me"})
-
-		response := update(clientID, &api.DeviceOptionsDto{})
-		if _, ok := response.(api.UpdateDeviceOptions204Response); !ok {
-			t.Fatalf("response = %T, want api.UpdateDeviceOptions204Response", response)
-		}
-
-		if got := fixture.storedCustomName(t, clientID); got != "Keep Me" {
-			t.Errorf("CustomName = %q, want %q", got, "Keep Me")
-		}
-	})
-
-	t.Run("clears the stored name when explicitly empty", func(t *testing.T) {
-		clientID := fixture.addDevice(t, deviceSeed{name: "Cleared", customName: "Drop Me"})
-
-		update(clientID, &api.DeviceOptionsDto{CustomName: ptr("")})
-
-		if got := fixture.storedCustomName(t, clientID); got != "" {
-			t.Errorf("CustomName = %q, want empty", got)
-		}
-	})
-
-	t.Run("refuses an empty body", func(t *testing.T) {
-		clientID := fixture.addDevice(t, deviceSeed{name: "NoBody"})
-
-		if response := update(clientID, nil); !isUpdateForbidden(response) {
-			t.Errorf("response = %T, want api.UpdateDeviceOptions403Response", response)
-		}
-	})
-
-	t.Run("refuses an unknown device", func(t *testing.T) {
-		response := update("missing", &api.DeviceOptionsDto{CustomName: ptr("After")})
 		if !isUpdateForbidden(response) {
 			t.Errorf("response = %T, want api.UpdateDeviceOptions403Response", response)
 		}
 	})
+
 }
 
-func TestDeleteDevice(t *testing.T) {
+func TestServer_DeleteDevice(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 

@@ -9,12 +9,15 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/displaypreferences"
+	"github.com/FreekingDean/gojellyfin/internal/env"
+	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/http"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/localization"
+	"github.com/FreekingDean/gojellyfin/internal/metadata"
 	"github.com/FreekingDean/gojellyfin/internal/observability"
 	"github.com/FreekingDean/gojellyfin/internal/playlists"
 	"github.com/FreekingDean/gojellyfin/internal/scanner"
@@ -26,6 +29,7 @@ import (
 )
 
 var serverModules = fx.Options(
+	env.Module,
 	observability.Module,
 	store.Module,
 
@@ -34,10 +38,12 @@ var serverModules = fx.Options(
 	auth.Module,
 	config.Module,
 	displaypreferences.Module,
+	ffmpeg.Module,
 	filesystem.Module,
 	items.Module,
 	libraries.Module,
 	localization.Module,
+	metadata.Module,
 	playlists.Module,
 	scanner.Module,
 	sessions.Module,

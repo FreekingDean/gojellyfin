@@ -129,31 +129,31 @@ func init() {
 	// displaypreferences.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	displaypreferences.UpdateDefaultUpdatedAt = displaypreferencesDescUpdatedAt.UpdateDefault.(func() time.Time)
 	// displaypreferencesDescSortBy is the schema descriptor for sort_by field.
-	displaypreferencesDescSortBy := displaypreferencesFields[5].Descriptor()
+	displaypreferencesDescSortBy := displaypreferencesFields[7].Descriptor()
 	// displaypreferences.DefaultSortBy holds the default value on creation for the sort_by field.
 	displaypreferences.DefaultSortBy = displaypreferencesDescSortBy.Default.(string)
 	// displaypreferencesDescRememberIndexing is the schema descriptor for remember_indexing field.
-	displaypreferencesDescRememberIndexing := displaypreferencesFields[9].Descriptor()
+	displaypreferencesDescRememberIndexing := displaypreferencesFields[11].Descriptor()
 	// displaypreferences.DefaultRememberIndexing holds the default value on creation for the remember_indexing field.
 	displaypreferences.DefaultRememberIndexing = displaypreferencesDescRememberIndexing.Default.(bool)
 	// displaypreferencesDescRememberSorting is the schema descriptor for remember_sorting field.
-	displaypreferencesDescRememberSorting := displaypreferencesFields[10].Descriptor()
+	displaypreferencesDescRememberSorting := displaypreferencesFields[12].Descriptor()
 	// displaypreferences.DefaultRememberSorting holds the default value on creation for the remember_sorting field.
 	displaypreferences.DefaultRememberSorting = displaypreferencesDescRememberSorting.Default.(bool)
 	// displaypreferencesDescShowBackdrop is the schema descriptor for show_backdrop field.
-	displaypreferencesDescShowBackdrop := displaypreferencesFields[11].Descriptor()
+	displaypreferencesDescShowBackdrop := displaypreferencesFields[13].Descriptor()
 	// displaypreferences.DefaultShowBackdrop holds the default value on creation for the show_backdrop field.
 	displaypreferences.DefaultShowBackdrop = displaypreferencesDescShowBackdrop.Default.(bool)
 	// displaypreferencesDescShowSidebar is the schema descriptor for show_sidebar field.
-	displaypreferencesDescShowSidebar := displaypreferencesFields[12].Descriptor()
+	displaypreferencesDescShowSidebar := displaypreferencesFields[14].Descriptor()
 	// displaypreferences.DefaultShowSidebar holds the default value on creation for the show_sidebar field.
 	displaypreferences.DefaultShowSidebar = displaypreferencesDescShowSidebar.Default.(bool)
 	// displaypreferencesDescPrimaryImageHeight is the schema descriptor for primary_image_height field.
-	displaypreferencesDescPrimaryImageHeight := displaypreferencesFields[13].Descriptor()
+	displaypreferencesDescPrimaryImageHeight := displaypreferencesFields[15].Descriptor()
 	// displaypreferences.DefaultPrimaryImageHeight holds the default value on creation for the primary_image_height field.
 	displaypreferences.DefaultPrimaryImageHeight = displaypreferencesDescPrimaryImageHeight.Default.(int32)
 	// displaypreferencesDescPrimaryImageWidth is the schema descriptor for primary_image_width field.
-	displaypreferencesDescPrimaryImageWidth := displaypreferencesFields[14].Descriptor()
+	displaypreferencesDescPrimaryImageWidth := displaypreferencesFields[16].Descriptor()
 	// displaypreferences.DefaultPrimaryImageWidth holds the default value on creation for the primary_image_width field.
 	displaypreferences.DefaultPrimaryImageWidth = displaypreferencesDescPrimaryImageWidth.Default.(int32)
 	genreFields := entities.Genre{}.Fields()
@@ -197,7 +197,7 @@ func init() {
 	// item.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	item.UpdateDefaultUpdatedAt = itemDescUpdatedAt.UpdateDefault.(func() time.Time)
 	// itemDescForcedSortName is the schema descriptor for forced_sort_name field.
-	itemDescForcedSortName := itemFields[15].Descriptor()
+	itemDescForcedSortName := itemFields[16].Descriptor()
 	// item.DefaultForcedSortName holds the default value on creation for the forced_sort_name field.
 	item.DefaultForcedSortName = itemDescForcedSortName.Default.(bool)
 	// itemDescIsFolder is the schema descriptor for is_folder field.
@@ -461,51 +461,51 @@ func init() {
 	// mediasource.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	mediasource.UpdateDefaultUpdatedAt = mediasourceDescUpdatedAt.UpdateDefault.(func() time.Time)
 	// mediasourceDescIsRemote is the schema descriptor for is_remote field.
-	mediasourceDescIsRemote := mediasourceFields[18].Descriptor()
+	mediasourceDescIsRemote := mediasourceFields[21].Descriptor()
 	// mediasource.DefaultIsRemote holds the default value on creation for the is_remote field.
 	mediasource.DefaultIsRemote = mediasourceDescIsRemote.Default.(bool)
 	// mediasourceDescIsInfiniteStream is the schema descriptor for is_infinite_stream field.
-	mediasourceDescIsInfiniteStream := mediasourceFields[19].Descriptor()
+	mediasourceDescIsInfiniteStream := mediasourceFields[22].Descriptor()
 	// mediasource.DefaultIsInfiniteStream holds the default value on creation for the is_infinite_stream field.
 	mediasource.DefaultIsInfiniteStream = mediasourceDescIsInfiniteStream.Default.(bool)
 	// mediasourceDescSupportsTranscoding is the schema descriptor for supports_transcoding field.
-	mediasourceDescSupportsTranscoding := mediasourceFields[20].Descriptor()
+	mediasourceDescSupportsTranscoding := mediasourceFields[23].Descriptor()
 	// mediasource.DefaultSupportsTranscoding holds the default value on creation for the supports_transcoding field.
 	mediasource.DefaultSupportsTranscoding = mediasourceDescSupportsTranscoding.Default.(bool)
 	// mediasourceDescSupportsDirectStream is the schema descriptor for supports_direct_stream field.
-	mediasourceDescSupportsDirectStream := mediasourceFields[21].Descriptor()
+	mediasourceDescSupportsDirectStream := mediasourceFields[24].Descriptor()
 	// mediasource.DefaultSupportsDirectStream holds the default value on creation for the supports_direct_stream field.
 	mediasource.DefaultSupportsDirectStream = mediasourceDescSupportsDirectStream.Default.(bool)
 	// mediasourceDescSupportsDirectPlay is the schema descriptor for supports_direct_play field.
-	mediasourceDescSupportsDirectPlay := mediasourceFields[22].Descriptor()
+	mediasourceDescSupportsDirectPlay := mediasourceFields[25].Descriptor()
 	// mediasource.DefaultSupportsDirectPlay holds the default value on creation for the supports_direct_play field.
 	mediasource.DefaultSupportsDirectPlay = mediasourceDescSupportsDirectPlay.Default.(bool)
 	// mediasourceDescSupportsProbing is the schema descriptor for supports_probing field.
-	mediasourceDescSupportsProbing := mediasourceFields[23].Descriptor()
+	mediasourceDescSupportsProbing := mediasourceFields[26].Descriptor()
 	// mediasource.DefaultSupportsProbing holds the default value on creation for the supports_probing field.
 	mediasource.DefaultSupportsProbing = mediasourceDescSupportsProbing.Default.(bool)
 	// mediasourceDescReadAtNativeFramerate is the schema descriptor for read_at_native_framerate field.
-	mediasourceDescReadAtNativeFramerate := mediasourceFields[24].Descriptor()
+	mediasourceDescReadAtNativeFramerate := mediasourceFields[27].Descriptor()
 	// mediasource.DefaultReadAtNativeFramerate holds the default value on creation for the read_at_native_framerate field.
 	mediasource.DefaultReadAtNativeFramerate = mediasourceDescReadAtNativeFramerate.Default.(bool)
 	// mediasourceDescIgnoreDts is the schema descriptor for ignore_dts field.
-	mediasourceDescIgnoreDts := mediasourceFields[25].Descriptor()
+	mediasourceDescIgnoreDts := mediasourceFields[28].Descriptor()
 	// mediasource.DefaultIgnoreDts holds the default value on creation for the ignore_dts field.
 	mediasource.DefaultIgnoreDts = mediasourceDescIgnoreDts.Default.(bool)
 	// mediasourceDescIgnoreIndex is the schema descriptor for ignore_index field.
-	mediasourceDescIgnoreIndex := mediasourceFields[26].Descriptor()
+	mediasourceDescIgnoreIndex := mediasourceFields[29].Descriptor()
 	// mediasource.DefaultIgnoreIndex holds the default value on creation for the ignore_index field.
 	mediasource.DefaultIgnoreIndex = mediasourceDescIgnoreIndex.Default.(bool)
 	// mediasourceDescGenPtsInput is the schema descriptor for gen_pts_input field.
-	mediasourceDescGenPtsInput := mediasourceFields[27].Descriptor()
+	mediasourceDescGenPtsInput := mediasourceFields[30].Descriptor()
 	// mediasource.DefaultGenPtsInput holds the default value on creation for the gen_pts_input field.
 	mediasource.DefaultGenPtsInput = mediasourceDescGenPtsInput.Default.(bool)
 	// mediasourceDescRequiresLooping is the schema descriptor for requires_looping field.
-	mediasourceDescRequiresLooping := mediasourceFields[28].Descriptor()
+	mediasourceDescRequiresLooping := mediasourceFields[31].Descriptor()
 	// mediasource.DefaultRequiresLooping holds the default value on creation for the requires_looping field.
 	mediasource.DefaultRequiresLooping = mediasourceDescRequiresLooping.Default.(bool)
 	// mediasourceDescHasSegments is the schema descriptor for has_segments field.
-	mediasourceDescHasSegments := mediasourceFields[29].Descriptor()
+	mediasourceDescHasSegments := mediasourceFields[32].Descriptor()
 	// mediasource.DefaultHasSegments holds the default value on creation for the has_segments field.
 	mediasource.DefaultHasSegments = mediasourceDescHasSegments.Default.(bool)
 	mediastreamFields := entities.MediaStream{}.Fields()

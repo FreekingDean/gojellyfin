@@ -10,6 +10,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/displaypreferences"
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
@@ -17,7 +18,6 @@ import (
 	devicemodal "github.com/FreekingDean/gojellyfin/internal/store/device"
 	displaypreferencesmodal "github.com/FreekingDean/gojellyfin/internal/store/displaypreferences"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	usermodal "github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
@@ -32,7 +32,12 @@ type fixture struct {
 func connect(t *testing.T) *store.Client {
 	t.Helper()
 
-	connection, err := store.NewStore()
+	config, err := env.Load()
+	if err != nil {
+		t.Fatalf("failed to read the environment: %v", err)
+	}
+
+	connection, err := store.NewStore(config)
 	if err != nil {
 		t.Fatalf("failed to open the database: %v", err)
 	}
@@ -81,7 +86,7 @@ func newFixture(t *testing.T) *fixture {
 		SetKind(itemmodal.KindMovie).
 		SetName(name).
 		SetSortName(name).
-		SetPath("/" + name).
+		SetKey("test:" + name).
 		Save(ctx)
 	if err != nil {
 		t.Fatalf("failed to create the item: %v", err)
@@ -90,7 +95,7 @@ func newFixture(t *testing.T) *fixture {
 	t.Cleanup(func() {
 		ctx := context.Background()
 		if _, err := client.DisplayPreferences.Delete().
-			Where(displaypreferencesmodal.HasUserWith(usermodal.ID(user.ID))).
+			Where(displaypreferencesmodal.UserID(user.ID)).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the display preferences: %v", err)
 		}
@@ -155,138 +160,179 @@ func (f *fixture) load(t *testing.T, id, client string) api.DisplayPreferencesDt
 	return api.DisplayPreferencesDto(dto)
 }
 
-func TestDisplayPreferencesRoundTrip(t *testing.T) {
-	fixture := newFixture(t)
+func (f *fixture) rows(t *testing.T) int {
+	t.Helper()
 
-	fixture.save(t, "usersettings", "emby", api.DisplayPreferencesDto{
-		ViewType:          apiutil.Ptr("Poster"),
-		SortBy:            apiutil.Ptr("DateCreated"),
-		IndexBy:           apiutil.Ptr("Genre"),
-		SortOrder:         apiutil.Ptr(api.SortOrder("Descending")),
-		ScrollDirection:   apiutil.Ptr(api.ScrollDirection("Vertical")),
-		RememberSorting:   apiutil.Ptr(true),
-		ShowSidebar:       apiutil.Ptr(true),
-		CustomPrefs:       &map[string]*string{"landing-movies": apiutil.Ptr("suggestions")},
-		PrimaryImageWidth: apiutil.Ptr(int32(320)),
-	})
-
-	dto := fixture.load(t, "usersettings", "emby")
-
-	if got := apiutil.Deref(dto.Id); got != "usersettings" {
-		t.Errorf("Id = %q, want %q", got, "usersettings")
-	}
-	if got := apiutil.Deref(dto.Client); got != "emby" {
-		t.Errorf("Client = %q, want %q", got, "emby")
-	}
-	if got := apiutil.Deref(dto.ViewType); got != "Poster" {
-		t.Errorf("ViewType = %q, want %q", got, "Poster")
-	}
-	if got := apiutil.Deref(dto.SortBy); got != "DateCreated" {
-		t.Errorf("SortBy = %q, want %q", got, "DateCreated")
-	}
-	if got := apiutil.Deref(dto.IndexBy); got != "Genre" {
-		t.Errorf("IndexBy = %q, want %q", got, "Genre")
-	}
-	if got := apiutil.Deref(dto.SortOrder); got != api.SortOrder("Descending") {
-		t.Errorf("SortOrder = %q, want %q", got, "Descending")
-	}
-	if got := apiutil.Deref(dto.ScrollDirection); got != api.ScrollDirection("Vertical") {
-		t.Errorf("ScrollDirection = %q, want %q", got, "Vertical")
-	}
-	if got := apiutil.Deref(dto.RememberSorting); !got {
-		t.Error("RememberSorting = false, want true")
-	}
-	if got := apiutil.Deref(dto.ShowSidebar); !got {
-		t.Error("ShowSidebar = false, want true")
-	}
-	if got := apiutil.Deref(dto.PrimaryImageWidth); got != 320 {
-		t.Errorf("PrimaryImageWidth = %d, want 320", got)
-	}
-	if got := apiutil.Deref(apiutil.Deref(dto.CustomPrefs)["landing-movies"]); got != "suggestions" {
-		t.Errorf("CustomPrefs[landing-movies] = %q, want %q", got, "suggestions")
-	}
-}
-
-func TestDisplayPreferencesKeying(t *testing.T) {
-	fixture := newFixture(t)
-
-	fixture.save(t, "usersettings", "emby", api.DisplayPreferencesDto{ViewType: apiutil.Ptr("Poster")})
-	fixture.save(t, "usersettings", "android", api.DisplayPreferencesDto{ViewType: apiutil.Ptr("List")})
-	fixture.save(t, fixture.itemID.String(), "emby", api.DisplayPreferencesDto{ViewType: apiutil.Ptr("Thumb")})
-
-	for _, want := range []struct {
-		id       string
-		client   string
-		viewType string
-	}{
-		{id: "usersettings", client: "emby", viewType: "Poster"},
-		{id: "usersettings", client: "android", viewType: "List"},
-		{id: fixture.itemID.String(), client: "emby", viewType: "Thumb"},
-	} {
-		if got := apiutil.Deref(fixture.load(t, want.id, want.client).ViewType); got != want.viewType {
-			t.Errorf("ViewType for %q on %q = %q, want %q", want.id, want.client, got, want.viewType)
-		}
-	}
-}
-
-func TestDisplayPreferencesConcurrentGets(t *testing.T) {
-	fixture := newFixture(t)
-
-	const callers = 8
-	var group sync.WaitGroup
-	start := make(chan struct{})
-	failures := make(chan error, callers)
-
-	for i := 0; i < callers; i++ {
-		caller := New(displaypreferences.New(connect(t)))
-		group.Add(1)
-		go func() {
-			defer group.Done()
-			<-start
-			_, err := caller.GetDisplayPreferences(fixture.ctx, api.GetDisplayPreferencesRequestObject{
-				DisplayPreferencesId: "usersettings",
-				Params:               api.GetDisplayPreferencesParams{Client: "emby"},
-			})
-			failures <- err
-		}()
-	}
-
-	close(start)
-	group.Wait()
-	close(failures)
-
-	for err := range failures {
-		if err != nil {
-			t.Fatalf("concurrent get failed: %v", err)
-		}
-	}
-
-	count, err := fixture.client.DisplayPreferences.Query().
-		Where(displaypreferencesmodal.HasUserWith(usermodal.ID(fixture.userID))).
+	count, err := f.client.DisplayPreferences.Query().
+		Where(displaypreferencesmodal.UserID(f.userID)).
 		Count(context.Background())
 	if err != nil {
 		t.Fatalf("failed to count the display preferences: %v", err)
 	}
-	if count != 1 {
-		t.Errorf("rows = %d, want 1", count)
-	}
+
+	return count
 }
 
-func TestDisplayPreferencesDefaults(t *testing.T) {
-	fixture := newFixture(t)
+func TestServer_UpdateDisplayPreferences(t *testing.T) {
+	t.Run("round trips every field", func(t *testing.T) {
+		fixture := newFixture(t)
 
-	dto := fixture.load(t, "usersettings", "emby")
+		fixture.save(t, "usersettings", "emby", api.DisplayPreferencesDto{
+			ViewType:          apiutil.Ptr("Poster"),
+			SortBy:            apiutil.Ptr("DateCreated"),
+			IndexBy:           apiutil.Ptr("Genre"),
+			SortOrder:         apiutil.Ptr(api.SortOrder("Descending")),
+			ScrollDirection:   apiutil.Ptr(api.ScrollDirection("Vertical")),
+			RememberSorting:   apiutil.Ptr(true),
+			ShowSidebar:       apiutil.Ptr(true),
+			CustomPrefs:       &map[string]*string{"landing-movies": apiutil.Ptr("suggestions")},
+			PrimaryImageWidth: apiutil.Ptr(int32(320)),
+		})
 
-	if got := apiutil.Deref(dto.SortBy); got != "SortName" {
-		t.Errorf("SortBy = %q, want %q", got, "SortName")
-	}
-	if got := apiutil.Deref(dto.SortOrder); got != api.SortOrder("Ascending") {
-		t.Errorf("SortOrder = %q, want %q", got, "Ascending")
-	}
-	if got := apiutil.Deref(dto.ScrollDirection); got != api.ScrollDirection("Horizontal") {
-		t.Errorf("ScrollDirection = %q, want %q", got, "Horizontal")
-	}
-	if got := apiutil.Deref(dto.ShowBackdrop); !got {
-		t.Error("ShowBackdrop = false, want true")
-	}
+		dto := fixture.load(t, "usersettings", "emby")
+
+		if got := apiutil.Deref(dto.Id); got != "usersettings" {
+			t.Errorf("Id = %q, want %q", got, "usersettings")
+		}
+		if got := apiutil.Deref(dto.Client); got != "emby" {
+			t.Errorf("Client = %q, want %q", got, "emby")
+		}
+		if got := apiutil.Deref(dto.ViewType); got != "Poster" {
+			t.Errorf("ViewType = %q, want %q", got, "Poster")
+		}
+		if got := apiutil.Deref(dto.SortBy); got != "DateCreated" {
+			t.Errorf("SortBy = %q, want %q", got, "DateCreated")
+		}
+		if got := apiutil.Deref(dto.IndexBy); got != "Genre" {
+			t.Errorf("IndexBy = %q, want %q", got, "Genre")
+		}
+		if got := apiutil.Deref(dto.SortOrder); got != api.SortOrder("Descending") {
+			t.Errorf("SortOrder = %q, want %q", got, "Descending")
+		}
+		if got := apiutil.Deref(dto.ScrollDirection); got != api.ScrollDirection("Vertical") {
+			t.Errorf("ScrollDirection = %q, want %q", got, "Vertical")
+		}
+		if got := apiutil.Deref(dto.RememberSorting); !got {
+			t.Error("RememberSorting = false, want true")
+		}
+		if got := apiutil.Deref(dto.ShowSidebar); !got {
+			t.Error("ShowSidebar = false, want true")
+		}
+		if got := apiutil.Deref(dto.PrimaryImageWidth); got != 320 {
+			t.Errorf("PrimaryImageWidth = %d, want 320", got)
+		}
+		if got := apiutil.Deref(apiutil.Deref(dto.CustomPrefs)["landing-movies"]); got != "suggestions" {
+			t.Errorf("CustomPrefs[landing-movies] = %q, want %q", got, "suggestions")
+		}
+	})
+
+	t.Run("a second save replaces the first", func(t *testing.T) {
+		fixture := newFixture(t)
+
+		fixture.save(t, "usersettings", "emby", api.DisplayPreferencesDto{
+			ViewType:    apiutil.Ptr("Poster"),
+			SortBy:      apiutil.Ptr("DateCreated"),
+			ShowSidebar: apiutil.Ptr(true),
+		})
+		fixture.save(t, "usersettings", "emby", api.DisplayPreferencesDto{ViewType: apiutil.Ptr("List")})
+
+		dto := fixture.load(t, "usersettings", "emby")
+
+		if got := apiutil.Deref(dto.ViewType); got != "List" {
+			t.Errorf("ViewType = %q, want %q", got, "List")
+		}
+		if got := apiutil.Deref(dto.SortBy); got != "SortName" {
+			t.Errorf("SortBy = %q, want the default %q", got, "SortName")
+		}
+		if got := apiutil.Deref(dto.ShowSidebar); got {
+			t.Error("ShowSidebar = true, want the default false")
+		}
+		if got := fixture.rows(t); got != 1 {
+			t.Errorf("rows = %d, want 1", got)
+		}
+	})
+
+	t.Run("keys on the id and the client", func(t *testing.T) {
+		fixture := newFixture(t)
+
+		fixture.save(t, "usersettings", "emby", api.DisplayPreferencesDto{ViewType: apiutil.Ptr("Poster")})
+		fixture.save(t, "usersettings", "android", api.DisplayPreferencesDto{ViewType: apiutil.Ptr("List")})
+		fixture.save(t, fixture.itemID.String(), "emby", api.DisplayPreferencesDto{ViewType: apiutil.Ptr("Thumb")})
+
+		for _, want := range []struct {
+			id       string
+			client   string
+			viewType string
+		}{
+			{id: "usersettings", client: "emby", viewType: "Poster"},
+			{id: "usersettings", client: "android", viewType: "List"},
+			{id: fixture.itemID.String(), client: "emby", viewType: "Thumb"},
+		} {
+			if got := apiutil.Deref(fixture.load(t, want.id, want.client).ViewType); got != want.viewType {
+				t.Errorf("ViewType for %q on %q = %q, want %q", want.id, want.client, got, want.viewType)
+			}
+		}
+	})
+
+	t.Run("concurrent saves leave one row", func(t *testing.T) {
+		fixture := newFixture(t)
+
+		const callers = 8
+		var group sync.WaitGroup
+		start := make(chan struct{})
+		failures := make(chan error, callers)
+
+		for i := 0; i < callers; i++ {
+			caller := New(displaypreferences.New(connect(t)))
+			group.Add(1)
+			go func() {
+				defer group.Done()
+				<-start
+				_, err := caller.UpdateDisplayPreferences(fixture.ctx, api.UpdateDisplayPreferencesRequestObject{
+					DisplayPreferencesId: "usersettings",
+					Params:               api.UpdateDisplayPreferencesParams{Client: "emby"},
+					JSONBody:             &api.DisplayPreferencesDto{ViewType: apiutil.Ptr("Poster")},
+				})
+				failures <- err
+			}()
+		}
+
+		close(start)
+		group.Wait()
+		close(failures)
+
+		for err := range failures {
+			if err != nil {
+				t.Fatalf("concurrent save failed: %v", err)
+			}
+		}
+
+		if got := fixture.rows(t); got != 1 {
+			t.Errorf("rows = %d, want 1", got)
+		}
+	})
+}
+
+func TestServer_GetDisplayPreferences(t *testing.T) {
+	t.Run("answers the defaults for a user who saved nothing", func(t *testing.T) {
+		fixture := newFixture(t)
+
+		dto := fixture.load(t, "usersettings", "emby")
+
+		if got := apiutil.Deref(dto.SortBy); got != "SortName" {
+			t.Errorf("SortBy = %q, want %q", got, "SortName")
+		}
+		if got := apiutil.Deref(dto.SortOrder); got != api.SortOrder("Ascending") {
+			t.Errorf("SortOrder = %q, want %q", got, "Ascending")
+		}
+		if got := apiutil.Deref(dto.ScrollDirection); got != api.ScrollDirection("Horizontal") {
+			t.Errorf("ScrollDirection = %q, want %q", got, "Horizontal")
+		}
+		if got := apiutil.Deref(dto.ShowBackdrop); !got {
+			t.Error("ShowBackdrop = false, want true")
+		}
+		if got := fixture.rows(t); got != 0 {
+			t.Errorf("rows = %d, want 0", got)
+		}
+	})
 }

@@ -1,16 +1,12 @@
 package transcode
 
 import (
-	"context"
-	"io"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"testing"
 )
 
-// What a rip actually looks like: video a browser decodes next to audio it does
-// not. A fixture cannot show that the video survived untouched.
 func videoSource(t *testing.T, name string, seconds int) string {
 	t.Helper()
 
@@ -34,50 +30,7 @@ func videoSource(t *testing.T, name string, seconds int) string {
 	return path
 }
 
-func TestRemuxKeepsTheVideoAndReEncodesTheAudio(t *testing.T) {
-	mkv := videoSource(t, "rip.mkv", sourceSeconds)
-
-	output, err := start(context.Background(), Spec{
-		Path:      mkv,
-		Container: VideoContainer,
-		Video:     true,
-	})
-	if err != nil {
-		t.Fatalf("failed to start the remux: %v", err)
-	}
-	defer func() { _ = output.Close() }()
-
-	body, err := io.ReadAll(output)
-	if err != nil {
-		t.Fatalf("failed to read the remux: %v", err)
-	}
-	if len(body) == 0 {
-		t.Fatal("the remux produced no bytes")
-	}
-
-	probed := probe(t, body, "out.mp4")
-
-	var video, audio string
-	for _, stream := range probed.Streams {
-		switch stream.CodecType {
-		case "video":
-			video = stream.CodecName
-		case "audio":
-			audio = stream.CodecName
-		}
-	}
-
-	if video != "h264" {
-		t.Errorf("video is %q, want h264 copied through untouched", video)
-	}
-	if audio != "aac" {
-		t.Errorf("audio is %q, want aac — the whole point is that ac3 is gone", audio)
-	}
-}
-
-// Fragmented mp4 is the only mp4 ffmpeg can write to a pipe, so a plain mp4
-// muxer here would fail on close rather than on the first byte.
-func TestRemuxTargetsAContainerThatCarriesVideo(t *testing.T) {
+func TestSpec_Valid(t *testing.T) {
 	if !CarriesVideo(VideoContainer) {
 		t.Fatalf("%q carries no video", VideoContainer)
 	}

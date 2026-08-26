@@ -137,8 +137,6 @@ func (s *Server) GetSubtitlePlaylist(ctx context.Context, request api.GetSubtitl
 	}, nil
 }
 
-// The segments are fetched from GetSubtitle beside this playlist, and an HLS
-// player cannot send a header, so the token rides in the query.
 func playlist(runtime, segment int64, token string) string {
 	lines := []string{
 		"#EXTM3U",

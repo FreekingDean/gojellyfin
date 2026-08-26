@@ -47,11 +47,11 @@ func (Item) Fields() []ent.Field {
 			"HalfTopAndBottom", "MVC",
 		),
 
+		field.String("key").Optional(),
 		field.String("name"),
 		field.String("original_title").Optional(),
 		field.String("sort_name").Optional(),
 		field.Bool("forced_sort_name").Default(false),
-		field.String("path").Optional(),
 		field.Time("deleted_at").Optional().Nillable(),
 		field.String("container").Optional(),
 		field.Text("overview").Optional(),
@@ -114,7 +114,6 @@ func (Item) Edges() []ent.Edge {
 		edge.To("chapters", Chapter.Type).Annotations(cascadeOnDelete),
 		edge.To("images", Image.Type).Annotations(cascadeOnDelete),
 		edge.To("user_data", UserItemData.Type).Annotations(cascadeOnDelete),
-		edge.To("display_preferences", DisplayPreferences.Type).Annotations(cascadeOnDelete),
 		edge.To("activity_log_entries", ActivityLogEntry.Type),
 		edge.To("trickplays", Trickplay.Type).Annotations(cascadeOnDelete),
 		edge.To("media_segments", MediaSegment.Type).Annotations(cascadeOnDelete),
@@ -127,10 +126,7 @@ func (Item) Edges() []ent.Edge {
 
 func (Item) Indexes() []ent.Index {
 	return []ent.Index{
-		// Deliberately not partial on deleted_at: a file that comes back has to
-		// conflict with the row it left behind, because that row carries the id
-		// the watch state hangs off. The scan upsert clears deleted_at.
-		index.Fields("library_id", "path").Unique(),
+		index.Fields("library_id", "key").Unique(),
 		index.Fields("kind", "sort_name"),
 		index.Fields("deleted_at"),
 	}

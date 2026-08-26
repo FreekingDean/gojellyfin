@@ -2,11 +2,14 @@ package mediainfo
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"log"
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
@@ -22,7 +25,7 @@ func New(items *items.Service) *Server {
 }
 
 func (s *Server) GetPlaybackInfo(ctx context.Context, request api.GetPlaybackInfoRequestObject) (api.GetPlaybackInfoResponseObject, error) {
-	response, err := s.playbackInfo(ctx, request.ItemId)
+	response, err := s.playbackInfo(ctx, request.ItemId, nil, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +34,18 @@ func (s *Server) GetPlaybackInfo(ctx context.Context, request api.GetPlaybackInf
 }
 
 func (s *Server) GetPostedPlaybackInfo(ctx context.Context, request api.GetPostedPlaybackInfoRequestObject) (api.GetPostedPlaybackInfoResponseObject, error) {
-	response, err := s.playbackInfo(ctx, request.ItemId)
+	var profile api.DeviceProfile
+	startTicks := apiutil.Deref(request.Params.StartTimeTicks)
+	if body := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody); body != nil {
+		if body.DeviceProfile != nil {
+			profile = *body.DeviceProfile
+		}
+		if body.StartTimeTicks != nil {
+			startTicks = *body.StartTimeTicks
+		}
+	}
+
+	response, err := s.playbackInfo(ctx, request.ItemId, profile, startTicks)
 	if err != nil {
 		return nil, err
 	}
@@ -39,13 +53,8 @@ func (s *Server) GetPostedPlaybackInfo(ctx context.Context, request api.GetPoste
 	return api.GetPostedPlaybackInfo200JSONResponse(response), nil
 }
 
-func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID) (api.PlaybackInfoResponse, error) {
+func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, profile api.DeviceProfile, startTicks int64) (api.PlaybackInfoResponse, error) {
 	item, err := s.items.ItemByID(ctx, itemID)
-	if err != nil {
-		return api.PlaybackInfoResponse{}, err
-	}
-
-	source, err := s.mediaSource(ctx, item)
 	if err != nil {
 		return api.PlaybackInfoResponse{}, err
 	}
@@ -55,21 +64,42 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID) (api.Playba
 		return api.PlaybackInfoResponse{}, err
 	}
 
-	return api.PlaybackInfoResponse{
-		MediaSources:  &[]api.MediaSourceInfo{source},
+	response := api.PlaybackInfoResponse{
+		MediaSources:  &[]api.MediaSourceInfo{},
 		PlaySessionId: apiutil.Ptr(session),
-	}, nil
+	}
+
+	plan, err := s.items.SourceFor(ctx, itemID, capabilities(profile))
+	if errors.Is(err, items.ErrNoSource) || errors.Is(err, items.ErrNoPlayable) {
+		log.Printf("nothing to play for %s: %v", item.Name, err)
+		response.ErrorCode = apiutil.Ptr(api.NoCompatibleStream)
+
+		return response, nil
+	}
+	if err != nil {
+		return api.PlaybackInfoResponse{}, err
+	}
+
+	dto := mediaSourceDto(plan.Source)
+	if !items.IsAudio(item) {
+		served(&dto, plan, streamURL(itemID, plan, auth.AuthorizationFrom(ctx).Token, session, startTicks))
+	}
+
+	response.MediaSources = &[]api.MediaSourceInfo{dto}
+
+	return response, nil
 }
 
-func (s *Server) mediaSource(ctx context.Context, item *items.Item) (api.MediaSourceInfo, error) {
-	source, err := s.items.MediaSource(ctx, item.ID)
-	if err != nil {
-		return api.MediaSourceInfo{}, err
-	}
-	if source == nil {
-		return unprobedSource(item), nil
-	}
+func served(dto *api.MediaSourceInfo, plan items.Plan, url string) {
+	dto.SupportsDirectPlay = apiutil.Ptr(false)
+	dto.SupportsDirectStream = apiutil.Ptr(false)
+	dto.SupportsTranscoding = apiutil.Ptr(true)
+	dto.TranscodingUrl = apiutil.Ptr(url)
+	dto.TranscodingContainer = apiutil.Ptr(plan.Container)
+	dto.TranscodingSubProtocol = apiutil.Ptr(api.MediaStreamProtocolHttp)
+}
 
+func mediaSourceDto(source *items.MediaSource) api.MediaSourceInfo {
 	streams := source.Edges.Streams
 	converted := make([]api.MediaStream, 0, len(streams))
 	for _, stream := range streams {
@@ -91,7 +121,7 @@ func (s *Server) mediaSource(ctx context.Context, item *items.Item) (api.MediaSo
 		Formats:                    &[]string{},
 		SupportsDirectPlay:         apiutil.Ptr(source.SupportsDirectPlay),
 		SupportsDirectStream:       apiutil.Ptr(source.SupportsDirectStream),
-		SupportsTranscoding:        apiutil.Ptr(source.SupportsTranscoding),
+		SupportsTranscoding:        apiutil.Ptr(false),
 		SupportsProbing:            apiutil.Ptr(source.SupportsProbing),
 		IsRemote:                   apiutil.Ptr(source.IsRemote),
 		IsInfiniteStream:           apiutil.Ptr(source.IsInfiniteStream),
@@ -100,32 +130,6 @@ func (s *Server) mediaSource(ctx context.Context, item *items.Item) (api.MediaSo
 		RequiresLooping:            apiutil.Ptr(source.RequiresLooping),
 		DefaultAudioStreamIndex:    defaultStreamIndex(streams, streammodal.KindAudio),
 		DefaultSubtitleStreamIndex: defaultStreamIndex(streams, streammodal.KindSubtitle),
-	}, nil
-}
-
-// An item the probe has not reached yet still has to answer with something
-// playable, or the client refuses to start.
-func unprobedSource(item *items.Item) api.MediaSourceInfo {
-	return api.MediaSourceInfo{
-		Id:                   apiutil.Ptr(item.ID.String()),
-		Name:                 apiutil.Ptr(item.Name),
-		Path:                 apiutil.Ptr(item.Path),
-		Protocol:             apiutil.Ptr(api.MediaProtocolFile),
-		Type:                 apiutil.Ptr(api.MediaSourceTypeDefault),
-		Container:            apiutil.Ptr(item.Container),
-		RunTimeTicks:         item.RunTimeTicks,
-		MediaStreams:         &[]api.MediaStream{},
-		MediaAttachments:     &[]api.MediaAttachment{},
-		Formats:              &[]string{},
-		SupportsDirectPlay:   apiutil.Ptr(true),
-		SupportsDirectStream: apiutil.Ptr(true),
-		SupportsTranscoding:  apiutil.Ptr(false),
-		SupportsProbing:      apiutil.Ptr(true),
-		IsRemote:             apiutil.Ptr(false),
-		IsInfiniteStream:     apiutil.Ptr(false),
-		RequiresOpening:      apiutil.Ptr(false),
-		RequiresClosing:      apiutil.Ptr(false),
-		RequiresLooping:      apiutil.Ptr(false),
 	}
 }
 
@@ -266,7 +270,7 @@ func (zeroes) Read(p []byte) (int, error) {
 }
 
 func (s *Server) GetBitrateTestBytes(ctx context.Context, request api.GetBitrateTestBytesRequestObject) (api.GetBitrateTestBytesResponseObject, error) {
-	size := int64(apiutil.Deref(apiutil.OrElse(request.Params.Size, int32(defaultBitrateTestSize))))
+	size := int64(apiutil.OrElse(request.Params.Size, int32(defaultBitrateTestSize)))
 	size = min(max(size, 1), maxBitrateTestSize)
 
 	return api.GetBitrateTestBytes200ApplicationoctetStreamResponse{

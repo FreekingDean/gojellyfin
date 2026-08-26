@@ -6,14 +6,14 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
-func displayPreferencesDto(id string, prefs *displaypreferences.DisplayPreferences) api.DisplayPreferencesDto {
+func displayPreferencesDto(prefs *displaypreferences.DisplayPreferences) api.DisplayPreferencesDto {
 	custom := make(map[string]*string, len(prefs.CustomPrefs))
 	for key, value := range prefs.CustomPrefs {
 		custom[key] = apiutil.Ptr(value)
 	}
 
 	return api.DisplayPreferencesDto{
-		Id:                 apiutil.Ptr(id),
+		Id:                 apiutil.Ptr(prefs.ReferenceID),
 		Client:             apiutil.Ptr(prefs.Client),
 		ViewType:           apiutil.Ptr(prefs.ViewType),
 		SortBy:             apiutil.Ptr(prefs.SortBy),

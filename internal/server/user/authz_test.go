@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
@@ -23,7 +24,12 @@ type accounts struct {
 func newAccounts(t *testing.T) *accounts {
 	t.Helper()
 
-	connection, err := store.NewStore()
+	config, err := env.Load()
+	if err != nil {
+		t.Fatalf("failed to read the environment: %v", err)
+	}
+
+	connection, err := store.NewStore(config)
 	if err != nil {
 		t.Fatalf("failed to open the database: %v", err)
 	}
@@ -89,65 +95,63 @@ func changePassword(t *testing.T, server *Server, ctx context.Context, target uu
 	return response
 }
 
-// The takeover: name the administrator, ask for a reset, and the current
-// password is never checked.
-func TestAMemberCannotResetAnotherAccountsPassword(t *testing.T) {
-	accounts := newAccounts(t)
+func TestServer_UpdateUserPassword(t *testing.T) {
+	t.Run("a member cannot reset another accounts password", func(t *testing.T) {
+		accounts := newAccounts(t)
 
-	response := changePassword(t, accounts.server, as(accounts.member), accounts.admin.ID, true)
-	if _, refused := response.(api.UpdateUserPassword403JSONResponse); !refused {
-		t.Fatalf("response = %T, want 403: a member reset the administrator's password", response)
-	}
+		response := changePassword(t, accounts.server, as(accounts.member), accounts.admin.ID, true)
+		if _, refused := response.(api.UpdateUserPassword403JSONResponse); !refused {
+			t.Fatalf("response = %T, want 403: a member reset the administrator's password", response)
+		}
 
-	after, err := accounts.server.users.User(context.Background(), accounts.admin.ID)
-	if err != nil {
-		t.Fatalf("failed to reload the administrator: %v", err)
-	}
-	if matches, _ := auth.Verify("new-password", after.PasswordHash); matches {
-		t.Error("the administrator's password was changed")
-	}
-}
-
-func TestAMemberCannotSkipItsOwnCurrentPassword(t *testing.T) {
-	accounts := newAccounts(t)
-
-	response, err := accounts.server.UpdateUserPassword(as(accounts.member), api.UpdateUserPasswordRequestObject{
-		Params: api.UpdateUserPasswordParams{UserId: &accounts.member.ID},
-		JSONBody: &api.UpdateUserPasswordJSONRequestBody{
-			CurrentPw:     apiutil.Ptr("not-the-password"),
-			NewPw:         apiutil.Ptr("new-password"),
-			ResetPassword: apiutil.Ptr(true),
-		},
+		after, err := accounts.server.users.User(context.Background(), accounts.admin.ID)
+		if err != nil {
+			t.Fatalf("failed to reload the administrator: %v", err)
+		}
+		if matches, _ := auth.Verify("new-password", after.PasswordHash); matches {
+			t.Error("the administrator's password was changed")
+		}
 	})
-	if err != nil {
-		t.Fatalf("UpdateUserPassword returned %v", err)
-	}
-	if _, refused := response.(api.UpdateUserPassword403JSONResponse); !refused {
-		t.Errorf("response = %T, want 403", response)
-	}
+
+	t.Run("a member cannot skip its own current password", func(t *testing.T) {
+		accounts := newAccounts(t)
+
+		response, err := accounts.server.UpdateUserPassword(as(accounts.member), api.UpdateUserPasswordRequestObject{
+			Params: api.UpdateUserPasswordParams{UserId: &accounts.member.ID},
+			JSONBody: &api.UpdateUserPasswordJSONRequestBody{
+				CurrentPw:     apiutil.Ptr("not-the-password"),
+				NewPw:         apiutil.Ptr("new-password"),
+				ResetPassword: apiutil.Ptr(true),
+			},
+		})
+		if err != nil {
+			t.Fatalf("UpdateUserPassword returned %v", err)
+		}
+		if _, refused := response.(api.UpdateUserPassword403JSONResponse); !refused {
+			t.Errorf("response = %T, want 403", response)
+		}
+	})
+
+	t.Run("a member changes its own password", func(t *testing.T) {
+		accounts := newAccounts(t)
+
+		response := changePassword(t, accounts.server, as(accounts.member), accounts.member.ID, false)
+		if _, ok := response.(api.UpdateUserPassword204Response); !ok {
+			t.Fatalf("response = %T, want 204", response)
+		}
+	})
+
+	t.Run("an administrator resets without the current password", func(t *testing.T) {
+		accounts := newAccounts(t)
+
+		response := changePassword(t, accounts.server, as(accounts.admin), accounts.member.ID, true)
+		if _, ok := response.(api.UpdateUserPassword204Response); !ok {
+			t.Fatalf("response = %T, want 204", response)
+		}
+	})
 }
 
-func TestAMemberChangesItsOwnPassword(t *testing.T) {
-	accounts := newAccounts(t)
-
-	response := changePassword(t, accounts.server, as(accounts.member), accounts.member.ID, false)
-	if _, ok := response.(api.UpdateUserPassword204Response); !ok {
-		t.Fatalf("response = %T, want 204", response)
-	}
-}
-
-func TestAnAdministratorResetsWithoutTheCurrentPassword(t *testing.T) {
-	accounts := newAccounts(t)
-
-	response := changePassword(t, accounts.server, as(accounts.admin), accounts.member.ID, true)
-	if _, ok := response.(api.UpdateUserPassword204Response); !ok {
-		t.Fatalf("response = %T, want 204", response)
-	}
-}
-
-// The second door onto elevation: UpdateUser is DefaultAuthorization, so it
-// must not carry a policy at all.
-func TestUpdateUserIgnoresPolicy(t *testing.T) {
+func TestServer_UpdateUser(t *testing.T) {
 	accounts := newAccounts(t)
 	ctx := as(accounts.member)
 
@@ -170,7 +174,7 @@ func TestUpdateUserIgnoresPolicy(t *testing.T) {
 	}
 }
 
-func TestPublicUsersCarryNoPolicy(t *testing.T) {
+func TestServer_GetPublicUsers(t *testing.T) {
 	accounts := newAccounts(t)
 
 	response, err := accounts.server.GetPublicUsers(context.Background(), api.GetPublicUsersRequestObject{})

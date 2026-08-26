@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/store"
@@ -14,10 +15,15 @@ import (
 	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/mediasource"
 )
 
-func TestGetGenres(t *testing.T) {
+func TestServer_GetGenres(t *testing.T) {
 	ctx := context.Background()
 
-	connection, err := store.NewStore()
+	config, err := env.Load()
+	if err != nil {
+		t.Fatalf("failed to read the environment: %v", err)
+	}
+
+	connection, err := store.NewStore(config)
 	if err != nil {
 		t.Fatalf("failed to open the database: %v", err)
 	}
@@ -57,12 +63,21 @@ func TestGetGenres(t *testing.T) {
 		Kind:      itemmodal.KindMovie,
 		Name:      name,
 		SortName:  name,
-		Path:      "/" + name,
+		Key:       "test:" + name,
 	})
 	if err != nil {
 		t.Fatalf("failed to save the item: %v", err)
 	}
-	if err := service.SaveProbe(ctx, movie, items.Probe{Metadata: items.ContainerMetadata{Genres: []string{name}}}); err != nil {
+	source, err := service.SaveSource(ctx, items.ScannedSource{
+		LibraryID: library.ID,
+		ItemID:    movie.ID,
+		Path:      "/media/" + name + ".mkv",
+		Name:      name,
+	})
+	if err != nil {
+		t.Fatalf("failed to save the media source: %v", err)
+	}
+	if err := service.SaveProbe(ctx, movie, source, items.Probe{Metadata: items.ContainerMetadata{Genres: []string{name}}}); err != nil {
 		t.Fatalf("failed to save the probe: %v", err)
 	}
 

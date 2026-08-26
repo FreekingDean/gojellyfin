@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/activity"
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	entrymodal "github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
 	devicemodal "github.com/FreekingDean/gojellyfin/internal/store/device"
@@ -18,7 +19,12 @@ import (
 )
 
 func TestSessionsRecordActivity(t *testing.T) {
-	connection, err := store.NewStore()
+	config, err := env.Load()
+	if err != nil {
+		t.Fatalf("failed to read the environment: %v", err)
+	}
+
+	connection, err := store.NewStore(config)
 	if err != nil {
 		t.Fatalf("failed to open the database: %v", err)
 	}

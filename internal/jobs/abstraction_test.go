@@ -9,10 +9,7 @@ import (
 	"testing"
 )
 
-// The engine is an implementation detail of this package. A job is written
-// against Job, Context and Step, so an import of the SDK anywhere else is the
-// abstraction leaking and would have to be undone to swap the engine.
-func TestNothingElseImportsTheWorkflowEngine(t *testing.T) {
+func Test(t *testing.T) {
 	root := filepath.Join("..", "..")
 
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {

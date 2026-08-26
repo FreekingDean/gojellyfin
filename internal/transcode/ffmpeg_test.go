@@ -15,8 +15,6 @@ import (
 
 const sourceSeconds = 3
 
-// A real file rather than a fixture: the point of these tests is that ffmpeg
-// decoded something and re-encoded it, which a stub cannot show.
 func source(t *testing.T, name string, seconds int) string {
 	t.Helper()
 
@@ -45,7 +43,7 @@ func probe(t *testing.T, body []byte, name string) *ffmpeg.Probe {
 		t.Fatalf("failed to write the output: %v", err)
 	}
 
-	probed, err := ffmpeg.ProbeFile(context.Background(), path)
+	probed, err := ffmpeg.New().ProbeFile(context.Background(), path)
 	if err != nil {
 		t.Fatalf("the output is not decodable: %v", err)
 	}
@@ -53,106 +51,143 @@ func probe(t *testing.T, body []byte, name string) *ffmpeg.Probe {
 	return probed
 }
 
-func TestStartTranscodesToEachSupportedContainer(t *testing.T) {
-	flac := source(t, "tone.flac", sourceSeconds)
+func TestStart(t *testing.T) {
+	t.Run("transcodes to each supported container", func(t *testing.T) {
+		flac := source(t, "tone.flac", sourceSeconds)
 
-	for container, codec := range map[string]string{
-		"mp3":  "mp3",
-		"aac":  "aac",
-		"ts":   "aac",
-		"opus": "opus",
-	} {
-		t.Run(container, func(t *testing.T) {
-			output, err := start(context.Background(), Spec{Path: flac, Container: container})
-			if err != nil {
-				t.Fatalf("failed to start the transcode: %v", err)
-			}
-			defer func() { _ = output.Close() }()
+		for container, codec := range map[string]string{
+			"mp3":  "mp3",
+			"aac":  "aac",
+			"ts":   "aac",
+			"opus": "opus",
+		} {
+			t.Run(container, func(t *testing.T) {
+				output, err := start(context.Background(), Spec{Path: flac, Container: container})
+				if err != nil {
+					t.Fatalf("failed to start the transcode: %v", err)
+				}
+				defer func() { _ = output.Close() }()
 
-			body, err := io.ReadAll(output)
-			if err != nil {
-				t.Fatalf("failed to read the transcode: %v", err)
-			}
-			if len(body) == 0 {
-				t.Fatal("the transcode produced no bytes")
-			}
+				body, err := io.ReadAll(output)
+				if err != nil {
+					t.Fatalf("failed to read the transcode: %v", err)
+				}
+				if len(body) == 0 {
+					t.Fatal("the transcode produced no bytes")
+				}
 
-			probed := probe(t, body, "out."+container)
-			if len(probed.Streams) == 0 {
-				t.Fatal("the output has no streams")
-			}
-			if got := probed.Streams[0].CodecName; got != codec {
-				t.Errorf("the output is %q, want %q", got, codec)
-			}
-			if seconds := probed.Format.Seconds(); math.Abs(seconds-sourceSeconds) > 1 {
-				t.Errorf("the output is %.2fs long, want about %ds", seconds, sourceSeconds)
-			}
-		})
-	}
-}
-
-func TestStartSeeksToTheRequestedOffset(t *testing.T) {
-	flac := source(t, "tone.flac", sourceSeconds)
-
-	output, err := start(context.Background(), Spec{
-		Path:       flac,
-		Container:  "mp3",
-		StartTicks: 2 * 10_000_000,
+				probed := probe(t, body, "out."+container)
+				if len(probed.Streams) == 0 {
+					t.Fatal("the output has no streams")
+				}
+				if got := probed.Streams[0].CodecName; got != codec {
+					t.Errorf("the output is %q, want %q", got, codec)
+				}
+				if seconds := probed.Format.Duration; math.Abs(seconds-sourceSeconds) > 1 {
+					t.Errorf("the output is %.2fs long, want about %ds", seconds, sourceSeconds)
+				}
+			})
+		}
 	})
-	if err != nil {
-		t.Fatalf("failed to start the transcode: %v", err)
-	}
-	defer func() { _ = output.Close() }()
 
-	body, err := io.ReadAll(output)
-	if err != nil {
-		t.Fatalf("failed to read the transcode: %v", err)
-	}
+	t.Run("seeks to the requested offset", func(t *testing.T) {
+		flac := source(t, "tone.flac", sourceSeconds)
 
-	if seconds := probe(t, body, "out.mp3").Format.Seconds(); seconds > sourceSeconds-1 {
-		t.Errorf("seeking 2s into a %ds source produced %.2fs", sourceSeconds, seconds)
-	}
-}
+		output, err := start(context.Background(), Spec{
+			Path:       flac,
+			Container:  "mp3",
+			StartTicks: 2 * 10_000_000,
+		})
+		if err != nil {
+			t.Fatalf("failed to start the transcode: %v", err)
+		}
+		defer func() { _ = output.Close() }()
 
-// The failure has to arrive as an error rather than as a reader that returns
-// nothing, because the caller answers a status on the strength of it.
-func TestStartRejectsASourceFfmpegCannotRead(t *testing.T) {
-	if !Available() {
-		t.Fatal("ffmpeg is not on PATH")
-	}
+		body, err := io.ReadAll(output)
+		if err != nil {
+			t.Fatalf("failed to read the transcode: %v", err)
+		}
 
-	missing := filepath.Join(t.TempDir(), "absent.flac")
-	if _, err := start(context.Background(), Spec{Path: missing, Container: "mp3"}); err == nil {
-		t.Fatal("a missing source started a transcode")
-	}
-}
+		if seconds := probe(t, body, "out.mp3").Format.Duration; seconds > sourceSeconds-1 {
+			t.Errorf("seeking 2s into a %ds source produced %.2fs", sourceSeconds, seconds)
+		}
+	})
 
-func TestStartRejectsAnUnsupportedContainer(t *testing.T) {
-	if _, err := start(context.Background(), Spec{Path: "/dev/null", Container: "mp4"}); err == nil {
-		t.Fatal("an unwritable container started a transcode")
-	}
-}
+	t.Run("rejects a source ffmpeg cannot read", func(t *testing.T) {
+		if !Available() {
+			t.Fatal("ffmpeg is not on PATH")
+		}
 
-// Nothing else stops the encode when a client goes away, so a cancelled
-// context has to be what takes the process with it.
-func TestStartStopsFfmpegWhenTheContextIsCancelled(t *testing.T) {
-	flac := source(t, "tone.flac", sourceSeconds)
+		missing := filepath.Join(t.TempDir(), "absent.flac")
+		if _, err := start(context.Background(), Spec{Path: missing, Container: "mp3"}); err == nil {
+			t.Fatal("a missing source started a transcode")
+		}
+	})
 
-	ctx, cancel := context.WithCancel(context.Background())
-	output, err := start(ctx, Spec{Path: flac, Container: "mp3"})
-	if err != nil {
-		t.Fatalf("failed to start the transcode: %v", err)
-	}
+	t.Run("rejects an unsupported container", func(t *testing.T) {
+		if _, err := start(context.Background(), Spec{Path: "/dev/null", Container: "mp4"}); err == nil {
+			t.Fatal("an unwritable container started a transcode")
+		}
+	})
 
-	process := output.(*process)
-	cancel()
+	t.Run("stops ffmpeg when the context is cancelled", func(t *testing.T) {
+		flac := source(t, "tone.flac", sourceSeconds)
 
-	if err := output.Close(); err == nil {
-		t.Fatal("the cancelled transcode exited cleanly")
-	}
-	// A killed process reports Signaled rather than Exited, so a non-nil state
-	// is what says it was reaped instead of left behind.
-	if process.cmd.ProcessState == nil {
-		t.Fatal("ffmpeg is still running")
-	}
+		ctx, cancel := context.WithCancel(context.Background())
+		output, err := start(ctx, Spec{Path: flac, Container: "mp3"})
+		if err != nil {
+			t.Fatalf("failed to start the transcode: %v", err)
+		}
+
+		process := output.(*process)
+		cancel()
+
+		if err := output.Close(); err == nil {
+			t.Fatal("the cancelled transcode exited cleanly")
+		}
+		if process.cmd.ProcessState == nil {
+			t.Fatal("ffmpeg is still running")
+		}
+	})
+
+	t.Run("a remux keeps the video and re-encodes the audio", func(t *testing.T) {
+		mkv := videoSource(t, "rip.mkv", sourceSeconds)
+
+		output, err := start(context.Background(), Spec{
+			Path:      mkv,
+			Container: VideoContainer,
+			Video:     true,
+		})
+		if err != nil {
+			t.Fatalf("failed to start the remux: %v", err)
+		}
+		defer func() { _ = output.Close() }()
+
+		body, err := io.ReadAll(output)
+		if err != nil {
+			t.Fatalf("failed to read the remux: %v", err)
+		}
+		if len(body) == 0 {
+			t.Fatal("the remux produced no bytes")
+		}
+
+		probed := probe(t, body, "out.mp4")
+
+		var video, audio string
+		for _, stream := range probed.Streams {
+			switch stream.CodecType {
+			case "video":
+				video = stream.CodecName
+			case "audio":
+				audio = stream.CodecName
+			}
+		}
+
+		if video != "h264" {
+			t.Errorf("video is %q, want h264 copied through untouched", video)
+		}
+		if audio != "aac" {
+			t.Errorf("audio is %q, want aac — the whole point is that ac3 is gone", audio)
+		}
+	})
 }

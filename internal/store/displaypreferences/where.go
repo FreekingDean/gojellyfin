@@ -66,6 +66,16 @@ func UpdatedAt(v time.Time) predicate.DisplayPreferences {
 	return predicate.DisplayPreferences(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
+// UserID applies equality check predicate on the "user_id" field. It's identical to UserIDEQ.
+func UserID(v uuid.UUID) predicate.DisplayPreferences {
+	return predicate.DisplayPreferences(sql.FieldEQ(FieldUserID, v))
+}
+
+// ReferenceID applies equality check predicate on the "reference_id" field. It's identical to ReferenceIDEQ.
+func ReferenceID(v string) predicate.DisplayPreferences {
+	return predicate.DisplayPreferences(sql.FieldEQ(FieldReferenceID, v))
+}
+
 // Client applies equality check predicate on the "client" field. It's identical to ClientEQ.
 func Client(v string) predicate.DisplayPreferences {
 	return predicate.DisplayPreferences(sql.FieldEQ(FieldClient, v))
@@ -194,6 +204,91 @@ func UpdatedAtLT(v time.Time) predicate.DisplayPreferences {
 // UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
 func UpdatedAtLTE(v time.Time) predicate.DisplayPreferences {
 	return predicate.DisplayPreferences(sql.FieldLTE(FieldUpdatedAt, v))
+}
+
+// UserIDEQ applies the EQ predicate on the "user_id" field.
+func UserIDEQ(v uuid.UUID) predicate.DisplayPreferences {
+	return predicate.DisplayPreferences(sql.FieldEQ(FieldUserID, v))
+}
+
+// UserIDNEQ applies the NEQ predicate on the "user_id" field.
+func UserIDNEQ(v uuid.UUID) predicate.DisplayPreferences {
+	return predicate.DisplayPreferences(sql.FieldNEQ(FieldUserID, v))
+}
+
+// UserIDIn applies the In predicate on the "user_id" field.
+func UserIDIn(vs ...uuid.UUID) predicate.DisplayPreferences {
+	return predicate.DisplayPreferences(sql.FieldIn(FieldUserID, vs...))
+}
+
+// UserIDNotIn applies the NotIn predicate on the "user_id" field.
+func UserIDNotIn(vs ...uuid.UUID) predicate.DisplayPreferences {
+	return predicate.DisplayPreferences(sql.FieldNotIn(FieldUserID, vs...))
+}
+
+// ReferenceIDEQ applies the EQ predicate on the "reference_id" field.
+func ReferenceIDEQ(v string) predicate.DisplayPreferences {
+	return predicate.DisplayPreferences(sql.FieldEQ(FieldReferenceID, v))
+}
+
+// ReferenceIDNEQ applies the NEQ predicate on the "reference_id" field.
+func ReferenceIDNEQ(v string) predicate.DisplayPreferences {
+	return predicate.DisplayPreferences(sql.FieldNEQ(FieldReferenceID, v))
+}
+
+// ReferenceIDIn applies the In predicate on the "reference_id" field.
+func ReferenceIDIn(vs ...string) predicate.DisplayPreferences {
+	return predicate.DisplayPreferences(sql.FieldIn(FieldReferenceID, vs...))
+}
+
+// ReferenceIDNotIn applies the NotIn predicate on the "reference_id" field.
+func ReferenceIDNotIn(vs ...string) predicate.DisplayPreferences {
+	return predicate.DisplayPreferences(sql.FieldNotIn(FieldReferenceID, vs...))
+}
+
+// ReferenceIDGT applies the GT predicate on the "reference_id" field.
+func ReferenceIDGT(v string) predicate.DisplayPreferences {
+	return predicate.DisplayPreferences(sql.FieldGT(FieldReferenceID, v))
+}
+
+// ReferenceIDGTE applies the GTE predicate on the "reference_id" field.
+func ReferenceIDGTE(v string) predicate.DisplayPreferences {
+	return predicate.DisplayPreferences(sql.FieldGTE(FieldReferenceID, v))
+}
+
+// ReferenceIDLT applies the LT predicate on the "reference_id" field.
+func ReferenceIDLT(v string) predicate.DisplayPreferences {
+	return predicate.DisplayPreferences(sql.FieldLT(FieldReferenceID, v))
+}
+
+// ReferenceIDLTE applies the LTE predicate on the "reference_id" field.
+func ReferenceIDLTE(v string) predicate.DisplayPreferences {
+	return predicate.DisplayPreferences(sql.FieldLTE(FieldReferenceID, v))
+}
+
+// ReferenceIDContains applies the Contains predicate on the "reference_id" field.
+func ReferenceIDContains(v string) predicate.DisplayPreferences {
+	return predicate.DisplayPreferences(sql.FieldContains(FieldReferenceID, v))
+}
+
+// ReferenceIDHasPrefix applies the HasPrefix predicate on the "reference_id" field.
+func ReferenceIDHasPrefix(v string) predicate.DisplayPreferences {
+	return predicate.DisplayPreferences(sql.FieldHasPrefix(FieldReferenceID, v))
+}
+
+// ReferenceIDHasSuffix applies the HasSuffix predicate on the "reference_id" field.
+func ReferenceIDHasSuffix(v string) predicate.DisplayPreferences {
+	return predicate.DisplayPreferences(sql.FieldHasSuffix(FieldReferenceID, v))
+}
+
+// ReferenceIDEqualFold applies the EqualFold predicate on the "reference_id" field.
+func ReferenceIDEqualFold(v string) predicate.DisplayPreferences {
+	return predicate.DisplayPreferences(sql.FieldEqualFold(FieldReferenceID, v))
+}
+
+// ReferenceIDContainsFold applies the ContainsFold predicate on the "reference_id" field.
+func ReferenceIDContainsFold(v string) predicate.DisplayPreferences {
+	return predicate.DisplayPreferences(sql.FieldContainsFold(FieldReferenceID, v))
 }
 
 // ClientEQ applies the EQ predicate on the "client" field.
@@ -671,29 +766,6 @@ func HasUser() predicate.DisplayPreferences {
 func HasUserWith(preds ...predicate.User) predicate.DisplayPreferences {
 	return predicate.DisplayPreferences(func(s *sql.Selector) {
 		step := newUserStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
-// HasItem applies the HasEdge predicate on the "item" edge.
-func HasItem() predicate.DisplayPreferences {
-	return predicate.DisplayPreferences(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, ItemTable, ItemColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasItemWith applies the HasEdge predicate on the "item" edge with a given conditions (other predicates).
-func HasItemWith(preds ...predicate.Item) predicate.DisplayPreferences {
-	return predicate.DisplayPreferences(func(s *sql.Selector) {
-		step := newItemStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

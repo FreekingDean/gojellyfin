@@ -8,7 +8,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 )
 
-func TestGetUtcTime(t *testing.T) {
+func TestServer_GetUtcTime(t *testing.T) {
 	before := time.Now().UTC()
 
 	response, err := New().GetUtcTime(context.Background(), api.GetUtcTimeRequestObject{})

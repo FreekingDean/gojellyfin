@@ -19,7 +19,7 @@ func New(service *jobs.Service) *Server {
 
 func (s *Server) GetTasks(ctx context.Context, request api.GetTasksRequestObject) (api.GetTasksResponseObject, error) {
 	hiddenOnly := apiutil.Deref(request.Params.IsHidden)
-	disabledOnly := !apiutil.Deref(apiutil.OrElse(request.Params.IsEnabled, true))
+	disabledOnly := !apiutil.OrElse(request.Params.IsEnabled, true)
 
 	infos := make([]api.TaskInfo, 0)
 	if hiddenOnly || disabledOnly {
@@ -50,7 +50,7 @@ func (s *Server) GetTask(ctx context.Context, request api.GetTaskRequestObject) 
 }
 
 func (s *Server) StartTask(ctx context.Context, request api.StartTaskRequestObject) (api.StartTaskResponseObject, error) {
-	err := s.jobs.Start(ctx, request.TaskId)
+	err := s.jobs.Start(ctx, request.TaskId, jobs.Options{})
 	if errors.Is(err, jobs.ErrNotFound) {
 		return api.StartTask404JSONResponse{}, nil
 	}
@@ -78,6 +78,5 @@ func (s *Server) UpdateTask(ctx context.Context, request api.UpdateTaskRequestOb
 		return api.UpdateTask404JSONResponse{}, nil
 	}
 
-	// Triggers are Temporal schedules, which this change does not build.
 	return nil, api.ErrNotImplemented
 }

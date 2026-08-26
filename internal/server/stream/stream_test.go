@@ -16,6 +16,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/activity"
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
@@ -38,8 +39,6 @@ type fixture struct {
 	token      string
 }
 
-// Off unless a test turns it on, which keeps direct play answering the way it
-// does with no worker configured.
 type stubTranscoder struct {
 	enabled bool
 	open    func(ctx context.Context, spec transcode.Spec) (io.ReadCloser, error)
@@ -63,7 +62,12 @@ func (s *stubTranscoder) Open(ctx context.Context, spec transcode.Spec) (io.Read
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
 
-	connection, err := store.NewStore()
+	config, err := env.Load()
+	if err != nil {
+		t.Fatalf("failed to read the environment: %v", err)
+	}
+
+	connection, err := store.NewStore(config)
 	if err != nil {
 		t.Fatalf("failed to open the database: %v", err)
 	}
@@ -132,7 +136,7 @@ func newFixture(t *testing.T) *fixture {
 	}
 }
 
-func (f *fixture) scan(t *testing.T, name string) *items.Item {
+func (f *fixture) scan(t *testing.T, name string) (*items.Item, *items.MediaSource) {
 	t.Helper()
 
 	path := filepath.Join(t.TempDir(), name)
@@ -143,23 +147,40 @@ func (f *fixture) scan(t *testing.T, name string) *items.Item {
 	item, err := f.items.SaveScanned(context.Background(), items.Scanned{
 		LibraryID:    f.library,
 		Kind:         itemmodal.KindAudio,
+		Key:          "audio:" + name,
 		Name:         name,
 		SortName:     name,
-		Path:         path,
 		DateModified: time.Now(),
 	})
 	if err != nil {
 		t.Fatalf("failed to save %q: %v", name, err)
 	}
 
-	return item
+	return item, f.source(t, item.ID, path)
+}
+
+func (f *fixture) source(t *testing.T, itemID uuid.UUID, path string) *items.MediaSource {
+	t.Helper()
+
+	source, err := f.items.SaveSource(context.Background(), items.ScannedSource{
+		LibraryID:    f.library,
+		ItemID:       itemID,
+		Path:         path,
+		Name:         filepath.Base(path),
+		DateModified: time.Now(),
+	})
+	if err != nil {
+		t.Fatalf("failed to save the source of %q: %v", path, err)
+	}
+
+	return source
 }
 
 func (f *fixture) add(t *testing.T, name, codec string) uuid.UUID {
 	t.Helper()
 
-	item := f.scan(t, name)
-	err := f.items.SaveProbe(context.Background(), item, items.Probe{
+	item, source := f.scan(t, name)
+	err := f.items.SaveProbe(context.Background(), item, source, items.Probe{
 		Container: strings.TrimPrefix(filepath.Ext(name), "."),
 		Size:      int64(len(song)),
 		Streams:   []items.Stream{{Kind: streammodal.KindAudio, Codec: codec}},
@@ -180,7 +201,7 @@ func (f *fixture) get(t *testing.T, method, target string, id uuid.UUID) *http.R
 	return request
 }
 
-func TestServe(t *testing.T) {
+func TestHandler_Serve(t *testing.T) {
 	fixture := newFixture(t)
 	id := fixture.add(t, "track.mp3", "mp3")
 	target := "/Audio/" + id.String() + "/stream?"
@@ -250,43 +271,44 @@ func TestServe(t *testing.T) {
 			t.Errorf("status = %d, want %d", recorder.Code, http.StatusUnauthorized)
 		}
 	})
+	t.Run("by container", func(t *testing.T) {
+		fixture := newFixture(t)
+		id := fixture.add(t, "track.flac", "flac")
+
+		for _, tc := range []struct {
+			name      string
+			container string
+			query     string
+			want      int
+		}{
+			{name: "the container the source is in", container: "flac", want: http.StatusOK},
+			{name: "the same container in another case", container: "FLAC", want: http.StatusOK},
+			{name: "a container needing a transcode", container: "mp3", want: http.StatusUnsupportedMediaType},
+			{name: "a container overridden by static", container: "mp3", query: "static=true", want: http.StatusOK},
+		} {
+			t.Run(tc.name, func(t *testing.T) {
+				target := "/Audio/" + id.String() + "/stream." + tc.container + "?" + tc.query + "&"
+				request := fixture.get(t, http.MethodGet, target, id)
+				request.SetPathValue("container", tc.container)
+				recorder := httptest.NewRecorder()
+
+				fixture.handler.Serve(recorder, request)
+
+				if recorder.Code != tc.want {
+					t.Errorf("status = %d, want %d", recorder.Code, tc.want)
+				}
+			})
+		}
+	})
+
 }
 
-func TestServeByContainer(t *testing.T) {
-	fixture := newFixture(t)
-	id := fixture.add(t, "track.flac", "flac")
-
-	for _, tc := range []struct {
-		name      string
-		container string
-		query     string
-		want      int
-	}{
-		{name: "the container the source is in", container: "flac", want: http.StatusOK},
-		{name: "the same container in another case", container: "FLAC", want: http.StatusOK},
-		{name: "a container needing a transcode", container: "mp3", want: http.StatusUnsupportedMediaType},
-		{name: "a container overridden by static", container: "mp3", query: "static=true", want: http.StatusOK},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			target := "/Audio/" + id.String() + "/stream." + tc.container + "?" + tc.query + "&"
-			request := fixture.get(t, http.MethodGet, target, id)
-			request.SetPathValue("container", tc.container)
-			recorder := httptest.NewRecorder()
-
-			fixture.handler.Serve(recorder, request)
-
-			if recorder.Code != tc.want {
-				t.Errorf("status = %d, want %d", recorder.Code, tc.want)
-			}
-		})
-	}
-}
-
-func TestServeUniversal(t *testing.T) {
+func TestHandler_ServeUniversal(t *testing.T) {
 	fixture := newFixture(t)
 	mp3 := fixture.add(t, "track.mp3", "mp3")
 	alac := fixture.add(t, "lossless.m4a", "alac")
-	unprobed := fixture.scan(t, "unprobed.mp3").ID
+	unprobedItem, _ := fixture.scan(t, "unprobed.mp3")
+	unprobed := unprobedItem.ID
 
 	for _, tc := range []struct {
 		name      string

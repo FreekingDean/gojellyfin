@@ -19,6 +19,7 @@ var Module = fx.Module(
 	transcode.Module,
 	fx.Provide(
 		middleware.NewAuth,
+		middleware.NewOapiTracing,
 		socket.New,
 		func(encoder *transcode.Encoder) stream.Transcoder { return encoder },
 		func(service *users.Service) middleware.Policies { return service },

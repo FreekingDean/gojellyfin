@@ -54,57 +54,57 @@ func authenticated() context.Context {
 	return auth.ContextWithSession(context.Background(), session)
 }
 
-func TestPublicOperationsSkipAuthorization(t *testing.T) {
-	var operationID string
-	for name := range api.PublicOperations {
-		operationID = name
-		break
-	}
+func TestAuthorize(t *testing.T) {
+	t.Run("a public operation skips authorization", func(t *testing.T) {
+		var operationID string
+		for name := range api.PublicOperations {
+			operationID = name
+			break
+		}
 
-	if err := run(t, &stubPolicies{}, operationID, context.Background()); err != nil {
-		t.Errorf("a public operation was refused: %v", err)
-	}
-}
+		if err := run(t, &stubPolicies{}, operationID, context.Background()); err != nil {
+			t.Errorf("a public operation was refused: %v", err)
+		}
+	})
 
-// The failure this exists to prevent: a re-vendored spec renames an operation,
-// it falls out of both tables, and it would otherwise be served unguarded.
-func TestAnUnknownOperationIsRefused(t *testing.T) {
-	err := run(t, &stubPolicies{allow: true}, "SomeOperationTheSpecNoLongerDeclares", context.Background())
+	t.Run("an unknown operation is refused", func(t *testing.T) {
+		err := run(t, &stubPolicies{allow: true}, "SomeOperationTheSpecNoLongerDeclares", context.Background())
 
-	if !errors.Is(err, auth.ErrForbidden) {
-		t.Errorf("got %v, want ErrForbidden", err)
-	}
-}
+		if !errors.Is(err, auth.ErrForbidden) {
+			t.Errorf("got %v, want ErrForbidden", err)
+		}
+	})
 
-func TestAnUnauthenticatedCallerIsRefused(t *testing.T) {
-	err := run(t, &stubPolicies{allow: true}, "UpdateUserPolicy", context.Background())
+	t.Run("an unauthenticated caller is refused", func(t *testing.T) {
+		err := run(t, &stubPolicies{allow: true}, "UpdateUserPolicy", context.Background())
 
-	if !errors.Is(err, auth.ErrUnauthorized) {
-		t.Errorf("got %v, want ErrUnauthorized", err)
-	}
-}
+		if !errors.Is(err, auth.ErrUnauthorized) {
+			t.Errorf("got %v, want ErrUnauthorized", err)
+		}
+	})
 
-func TestTheOperationScopesAreHandedToThePolicies(t *testing.T) {
-	policies := &stubPolicies{allow: true}
-	ctx := authenticated()
+	t.Run("the operation scopes are handed to the policies", func(t *testing.T) {
+		policies := &stubPolicies{allow: true}
+		ctx := authenticated()
 
-	if err := run(t, policies, "UpdateUserPolicy", ctx); err != nil {
-		t.Fatalf("an allowed caller was refused: %v", err)
-	}
+		if err := run(t, policies, "UpdateUserPolicy", ctx); err != nil {
+			t.Fatalf("an allowed caller was refused: %v", err)
+		}
 
-	if len(policies.scopes) == 0 {
-		t.Fatal("no scopes were checked")
-	}
-	if policies.scopes[0] != "RequiresElevation" {
-		t.Errorf("scopes = %v, want RequiresElevation", policies.scopes)
-	}
-}
+		if len(policies.scopes) == 0 {
+			t.Fatal("no scopes were checked")
+		}
+		if policies.scopes[0] != "RequiresElevation" {
+			t.Errorf("scopes = %v, want RequiresElevation", policies.scopes)
+		}
+	})
 
-func TestARefusedCallerGetsForbidden(t *testing.T) {
-	ctx := authenticated()
+	t.Run("a refused caller gets forbidden", func(t *testing.T) {
+		ctx := authenticated()
 
-	err := run(t, &stubPolicies{allow: false}, "UpdateUserPolicy", ctx)
-	if !errors.Is(err, auth.ErrForbidden) {
-		t.Errorf("got %v, want ErrForbidden", err)
-	}
+		err := run(t, &stubPolicies{allow: false}, "UpdateUserPolicy", ctx)
+		if !errors.Is(err, auth.ErrForbidden) {
+			t.Errorf("got %v, want ErrForbidden", err)
+		}
+	})
 }

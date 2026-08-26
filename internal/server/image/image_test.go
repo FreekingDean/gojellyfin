@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
@@ -28,7 +29,12 @@ type fixture struct {
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
 
-	connection, err := store.NewStore()
+	config, err := env.Load()
+	if err != nil {
+		t.Fatalf("failed to read the environment: %v", err)
+	}
+
+	connection, err := store.NewStore(config)
 	if err != nil {
 		t.Fatalf("failed to open the database: %v", err)
 	}
@@ -49,7 +55,7 @@ func newFixture(t *testing.T) *fixture {
 		SetKind(itemmodal.KindMovie).
 		SetName("Movie").
 		SetSortName("Movie").
-		SetPath(filepath.Join("/", library.ID.String(), "Movie.mkv")).
+		SetKey("test:movie").
 		Save(ctx)
 	if err != nil {
 		t.Fatalf("failed to create the item: %v", err)
@@ -65,7 +71,7 @@ func newFixture(t *testing.T) *fixture {
 	})
 
 	return &fixture{
-		server:    New(items.New(client), filesystem.New()),
+		server:    New(items.New(client), filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}})),
 		client:    client,
 		itemID:    item.ID,
 		directory: t.TempDir(),
@@ -92,15 +98,14 @@ func (f *fixture) add(t *testing.T, kind items.ImageKind, index int32, name, tag
 	}
 }
 
-func TestGetItemImage(t *testing.T) {
+func TestServer_GetItemImage(t *testing.T) {
 	fixture := newFixture(t)
-	ctx := context.Background()
 	poster := []byte("poster-bytes")
 
-	fixture.add(t, imagemodal.KindPrimary, 0, "poster.jpg", "postertag", poster)
-
 	t.Run("serves the file", func(t *testing.T) {
-		response, err := fixture.server.GetItemImage(ctx, api.GetItemImageRequestObject{
+		fixture.add(t, imagemodal.KindPrimary, 0, "poster.jpg", "postertag", poster)
+
+		response, err := fixture.server.GetItemImage(context.Background(), api.GetItemImageRequestObject{
 			ItemId:    fixture.itemID,
 			ImageType: api.Primary,
 		})
@@ -127,69 +132,47 @@ func TestGetItemImage(t *testing.T) {
 		}
 	})
 
-	t.Run("misses an image the item does not have", func(t *testing.T) {
-		response, err := fixture.server.GetItemImage(ctx, api.GetItemImageRequestObject{
-			ItemId:    fixture.itemID,
-			ImageType: api.Logo,
-		})
-		if err != nil {
-			t.Fatalf("failed to get the image: %v", err)
-		}
+	t.Run("misses", func(t *testing.T) {
+		fixture := newFixture(t)
+		ctx := context.Background()
 
-		if _, ok := response.(api.GetItemImage404JSONResponse); !ok {
-			t.Errorf("response = %T, want a 404", response)
-		}
-	})
-
-	t.Run("misses an unknown image type", func(t *testing.T) {
-		response, err := fixture.server.GetItemImage(ctx, api.GetItemImageRequestObject{
-			ItemId:    fixture.itemID,
-			ImageType: api.ImageType("Nonsense"),
-		})
-		if err != nil {
-			t.Fatalf("failed to get the image: %v", err)
-		}
-
-		if _, ok := response.(api.GetItemImage404JSONResponse); !ok {
-			t.Errorf("response = %T, want a 404", response)
-		}
-	})
-
-	t.Run("misses an unknown item", func(t *testing.T) {
-		response, err := fixture.server.GetItemImage(ctx, api.GetItemImageRequestObject{
-			ItemId:    uuid.New(),
-			ImageType: api.Primary,
-		})
-		if err != nil {
-			t.Fatalf("failed to get the image: %v", err)
-		}
-
-		if _, ok := response.(api.GetItemImage404JSONResponse); !ok {
-			t.Errorf("response = %T, want a 404", response)
-		}
-	})
-
-	t.Run("misses a row whose file is gone", func(t *testing.T) {
+		fixture.add(t, imagemodal.KindPrimary, 0, "poster.jpg", "postertag", []byte("poster-bytes"))
 		fixture.add(t, imagemodal.KindThumb, 0, "thumb.jpg", "thumbtag", []byte("thumb-bytes"))
 		if err := os.Remove(filepath.Join(fixture.directory, "thumb.jpg")); err != nil {
 			t.Fatalf("failed to remove the file: %v", err)
 		}
 
-		response, err := fixture.server.GetItemImage(ctx, api.GetItemImageRequestObject{
-			ItemId:    fixture.itemID,
-			ImageType: api.Thumb,
-		})
-		if err != nil {
-			t.Fatalf("failed to get the image: %v", err)
+		tests := []struct {
+			name      string
+			itemID    uuid.UUID
+			imageType api.ImageType
+		}{
+			{name: "an image the item does not have", itemID: fixture.itemID, imageType: api.Logo},
+			{name: "an unknown image type", itemID: fixture.itemID, imageType: api.ImageType("Nonsense")},
+			{name: "an unknown item", itemID: uuid.New(), imageType: api.Primary},
+			{name: "a row whose file is gone", itemID: fixture.itemID, imageType: api.Thumb},
 		}
 
-		if _, ok := response.(api.GetItemImage404JSONResponse); !ok {
-			t.Errorf("response = %T, want a 404", response)
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				response, err := fixture.server.GetItemImage(ctx, api.GetItemImageRequestObject{
+					ItemId:    test.itemID,
+					ImageType: test.imageType,
+				})
+				if err != nil {
+					t.Fatalf("failed to get the image: %v", err)
+				}
+
+				if _, ok := response.(api.GetItemImage404JSONResponse); !ok {
+					t.Errorf("response = %T, want a 404", response)
+				}
+			})
 		}
 	})
+
 }
 
-func TestGetItemImageByIndex(t *testing.T) {
+func TestServer_GetItemImageByIndex(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -235,7 +218,7 @@ func TestGetItemImageByIndex(t *testing.T) {
 	})
 }
 
-func TestHeadItemImage(t *testing.T) {
+func TestServer_HeadItemImage(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 

@@ -19,7 +19,6 @@ type (
 	User    = store.User
 )
 
-// What the client told us about itself when it authenticated.
 type DeviceInfo struct {
 	ID         string
 	Name       string

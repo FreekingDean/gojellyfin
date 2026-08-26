@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
 )
@@ -89,7 +90,6 @@ func stripExtension(name string) string {
 	return strings.TrimSuffix(name, filepath.Ext(name))
 }
 
-// parseTitle splits a trailing release year off a movie or series name.
 func parseTitle(name string) (string, *int32) {
 	name = clean(name)
 
@@ -106,8 +106,6 @@ func parseTitle(name string) (string, *int32) {
 	return clean(match[1]), ptr(int32(year))
 }
 
-// parseEpisode pulls season and episode numbers out of names like
-// "Show S01E02 Title" or "Show 1x02".
 func parseEpisode(name string) (season, episode *int32, title string, ok bool) {
 	match := episodePattern.FindStringSubmatch(stripExtension(name))
 	if match == nil {
@@ -131,7 +129,6 @@ func parseEpisode(name string) (season, episode *int32, title string, ok bool) {
 	return ptr(int32(seasonNumber)), ptr(int32(episodeNumber)), clean(match[6]), true
 }
 
-// parseSeason reads a season number from a directory name.
 func parseSeason(name string) (*int32, bool) {
 	name = clean(name)
 	if specialsPattern.MatchString(name) {
@@ -173,6 +170,56 @@ func episodeTitle(seriesName string, season, episode *int32) string {
 	}
 
 	return fmt.Sprintf("%s S%02dE%02d", seriesName, *season, *episode)
+}
+
+func movieKey(name string, year *int32) string {
+	return "movie:" + titleSlug(name, year)
+}
+
+func seriesKey(slug string) string {
+	return "series:" + slug
+}
+
+func seasonKey(slug string, number *int32) string {
+	if number == nil {
+		return "season:" + slug
+	}
+
+	return fmt.Sprintf("season:%s:%d", slug, *number)
+}
+
+func episodeKey(slug string, season, episode *int32, title string) string {
+	if season == nil || episode == nil {
+		return "episode:" + slug + ":" + slugify(title)
+	}
+
+	return fmt.Sprintf("episode:%s:%d:%d", slug, *season, *episode)
+}
+
+func titleSlug(name string, year *int32) string {
+	if year == nil {
+		return slugify(name)
+	}
+
+	return fmt.Sprintf("%s:%d", slugify(name), *year)
+}
+
+func slugify(name string) string {
+	var slug strings.Builder
+	separated := false
+	for _, letter := range strings.ToLower(name) {
+		if !unicode.IsLetter(letter) && !unicode.IsDigit(letter) {
+			separated = slug.Len() > 0
+			continue
+		}
+		if separated {
+			slug.WriteByte('-')
+			separated = false
+		}
+		slug.WriteRune(letter)
+	}
+
+	return slug.String()
 }
 
 func sortName(name string) string {
