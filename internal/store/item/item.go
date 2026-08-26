@@ -147,8 +147,6 @@ const (
 	EdgeImages = "images"
 	// EdgeUserData holds the string denoting the user_data edge name in mutations.
 	EdgeUserData = "user_data"
-	// EdgeDisplayPreferences holds the string denoting the display_preferences edge name in mutations.
-	EdgeDisplayPreferences = "display_preferences"
 	// EdgeActivityLogEntries holds the string denoting the activity_log_entries edge name in mutations.
 	EdgeActivityLogEntries = "activity_log_entries"
 	// EdgeTrickplays holds the string denoting the trickplays edge name in mutations.
@@ -215,13 +213,6 @@ const (
 	UserDataInverseTable = "user_item_data"
 	// UserDataColumn is the table column denoting the user_data relation/edge.
 	UserDataColumn = "item_id"
-	// DisplayPreferencesTable is the table that holds the display_preferences relation/edge.
-	DisplayPreferencesTable = "display_preferences"
-	// DisplayPreferencesInverseTable is the table name for the DisplayPreferences entity.
-	// It exists in this package in order to avoid circular dependency with the "displaypreferences" package.
-	DisplayPreferencesInverseTable = "display_preferences"
-	// DisplayPreferencesColumn is the table column denoting the display_preferences relation/edge.
-	DisplayPreferencesColumn = "item_display_preferences"
 	// ActivityLogEntriesTable is the table that holds the activity_log_entries relation/edge.
 	ActivityLogEntriesTable = "activity_log_entries"
 	// ActivityLogEntriesInverseTable is the table name for the ActivityLogEntry entity.
@@ -957,20 +948,6 @@ func ByUserData(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
-// ByDisplayPreferencesCount orders the results by display_preferences count.
-func ByDisplayPreferencesCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newDisplayPreferencesStep(), opts...)
-	}
-}
-
-// ByDisplayPreferences orders the results by display_preferences terms.
-func ByDisplayPreferences(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newDisplayPreferencesStep(), append([]sql.OrderTerm{term}, terms...)...)
-	}
-}
-
 // ByActivityLogEntriesCount orders the results by activity_log_entries count.
 func ByActivityLogEntriesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -1115,13 +1092,6 @@ func newUserDataStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(UserDataInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, UserDataTable, UserDataColumn),
-	)
-}
-func newDisplayPreferencesStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(DisplayPreferencesInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, DisplayPreferencesTable, DisplayPreferencesColumn),
 	)
 }
 func newActivityLogEntriesStep() *sqlgraph.Step {

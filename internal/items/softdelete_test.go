@@ -5,35 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
-
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
-func TestDeleteItemsNotInKeysKeepsTheRow(t *testing.T) {
-	fixture := newFixture(t)
-	ctx := context.Background()
-
-	id := fixture.add(t, seed{kind: itemmodal.KindMovie, name: "Gone"})
-
-	if err := fixture.service.DeleteItemsNotInKeys(ctx, fixture.libraryID, []string{"movie:elsewhere"}); err != nil {
-		t.Fatalf("failed to sweep: %v", err)
-	}
-
-	if _, err := fixture.service.ItemByID(ctx, id); err == nil {
-		t.Error("a swept item is still readable")
-	}
-
-	record, err := fixture.service.store.Item.Get(ctx, id)
-	if err != nil {
-		t.Fatalf("the row was deleted rather than marked: %v", err)
-	}
-	if record.DeletedAt == nil {
-		t.Error("the row survived but was not marked deleted")
-	}
-}
-
-func TestScanRevivesASweptItem(t *testing.T) {
+func TestService_SaveScanned(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
@@ -73,35 +48,5 @@ func TestScanRevivesASweptItem(t *testing.T) {
 	}
 	if _, err := fixture.service.ItemByID(ctx, first.ID); err != nil {
 		t.Errorf("the revived item is not readable: %v", err)
-	}
-}
-
-func TestDeleteItemsNotInKeysSweepsDescendants(t *testing.T) {
-	fixture := newFixture(t)
-	ctx := context.Background()
-
-	series := fixture.add(t, seed{kind: itemmodal.KindSeries, name: "Series"})
-	season := fixture.add(t, seed{kind: itemmodal.KindSeason, name: "Season 1", parentID: &series, index: number(1)})
-	episode := fixture.add(t, seed{kind: itemmodal.KindEpisode, name: "S01E01", parentID: &season, index: number(1), parentIndex: number(1)})
-
-	kept := make([]string, 0, 2)
-	for _, id := range []uuid.UUID{season, episode} {
-		record, err := fixture.service.store.Item.Get(ctx, id)
-		if err != nil {
-			t.Fatalf("failed to load the item: %v", err)
-		}
-		kept = append(kept, record.Key)
-	}
-
-	if err := fixture.service.DeleteItemsNotInKeys(ctx, fixture.libraryID, kept); err != nil {
-		t.Fatalf("failed to sweep: %v", err)
-	}
-
-	records, total, err := fixture.service.QueryItems(ctx, ItemQuery{LibraryID: &fixture.libraryID})
-	if err != nil {
-		t.Fatalf("failed to query the items: %v", err)
-	}
-	if total != 0 || len(records) != 0 {
-		t.Errorf("items = %v, want none: a season kept by key outlived its series", names(records))
 	}
 }

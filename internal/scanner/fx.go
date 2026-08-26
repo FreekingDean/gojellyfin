@@ -11,7 +11,6 @@ var Module = fx.Module(
 	fx.Invoke(register),
 )
 
-// What the scanner is hooked into is answered by reading this file.
 func register(registry *jobs.Registry, scanner *Scanner) {
 	registry.Register(NewLibraryScan(scanner))
 }

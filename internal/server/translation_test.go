@@ -15,7 +15,7 @@ var exportedTranslation = map[string]string{
 	"configuration.BrandingConfiguration": "read helper for branding, not translation",
 }
 
-func TestTagPackagesKeepTranslationUnexported(t *testing.T) {
+func Test(t *testing.T) {
 	entries, err := os.ReadDir(".")
 	if err != nil {
 		t.Fatalf("failed to read the tag packages: %v", err)

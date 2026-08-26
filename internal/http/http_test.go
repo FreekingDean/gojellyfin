@@ -12,29 +12,31 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/env"
 )
 
-func TestLegacyPatternsPutLiteralsBeforeParameters(t *testing.T) {
-	patterns := legacyPatterns()
+func TestLegacyPatterns(t *testing.T) {
+	t.Run("registers literals before the parameters they shadow", func(t *testing.T) {
+		patterns := legacyPatterns()
 
-	for _, pattern := range patterns {
-		for _, other := range patterns {
-			if pattern == other || !shadows(other, pattern) {
-				continue
-			}
+		for _, pattern := range patterns {
+			for _, other := range patterns {
+				if pattern == other || !shadows(other, pattern) {
+					continue
+				}
 
-			if slices.Index(patterns, other) < slices.Index(patterns, pattern) {
-				t.Errorf("%q is registered before %q and swallows it", other, pattern)
+				if slices.Index(patterns, other) < slices.Index(patterns, pattern) {
+					t.Errorf("%q is registered before %q and swallows it", other, pattern)
+				}
 			}
 		}
-	}
-}
+	})
 
-func TestLegacyPatternsAreStable(t *testing.T) {
-	first := legacyPatterns()
-	for range 20 {
-		if !slices.Equal(first, legacyPatterns()) {
-			t.Fatal("want a stable order, got one that varies per call")
+	t.Run("returns the same order on every call", func(t *testing.T) {
+		first := legacyPatterns()
+		for range 20 {
+			if !slices.Equal(first, legacyPatterns()) {
+				t.Fatal("want a stable order, got one that varies per call")
+			}
 		}
-	}
+	})
 }
 
 func shadows(candidate, pattern string) bool {
@@ -64,7 +66,7 @@ var unaliased = map[string]string{
 	"POST /Users/{userId}/EasyPassword": "easy passwords were removed, with nothing to forward to",
 }
 
-func TestLegacyRoutesCoverJellyfin(t *testing.T) {
+func TestLegacyRoutes(t *testing.T) {
 	hidden := readHiddenRoutes(t)
 
 	for _, route := range hidden {
@@ -106,7 +108,7 @@ func readHiddenRoutes(t *testing.T) []string {
 	return routes
 }
 
-func TestCORSIsOmittedWithoutConfiguredOrigins(t *testing.T) {
+func TestNewHTTPMiddleware(t *testing.T) {
 	for _, test := range []struct {
 		name    string
 		origins []string

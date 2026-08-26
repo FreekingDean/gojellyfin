@@ -18,13 +18,14 @@ func New(preferences *displaypreferences.Service) *Server {
 }
 
 func (s *Server) GetDisplayPreferences(ctx context.Context, request api.GetDisplayPreferencesRequestObject) (api.GetDisplayPreferencesResponseObject, error) {
-	userID := apiutil.Deref(apiutil.OrElse(request.Params.UserId, auth.UserID(ctx)))
-	prefs, err := s.preferences.Preferences(ctx, userID, request.Params.Client, request.DisplayPreferencesId)
+	userID := apiutil.OrElse(request.Params.UserId, auth.UserID(ctx))
+
+	prefs, err := s.preferences.Get(ctx, userID, request.DisplayPreferencesId, request.Params.Client)
 	if err != nil {
 		return nil, err
 	}
 
-	return api.GetDisplayPreferences200JSONResponse(displayPreferencesDto(request.DisplayPreferencesId, prefs)), nil
+	return api.GetDisplayPreferences200JSONResponse(displayPreferencesDto(prefs)), nil
 }
 
 func (s *Server) UpdateDisplayPreferences(ctx context.Context, request api.UpdateDisplayPreferencesRequestObject) (api.UpdateDisplayPreferencesResponseObject, error) {
@@ -33,13 +34,9 @@ func (s *Server) UpdateDisplayPreferences(ctx context.Context, request api.Updat
 		return api.UpdateDisplayPreferences204Response{}, nil
 	}
 
-	userID := apiutil.Deref(apiutil.OrElse(request.Params.UserId, auth.UserID(ctx)))
-	prefs, err := s.preferences.Preferences(ctx, userID, request.Params.Client, request.DisplayPreferencesId)
-	if err != nil {
-		return nil, err
-	}
+	userID := apiutil.OrElse(request.Params.UserId, auth.UserID(ctx))
 
-	if _, err := s.preferences.UpdateSettings(ctx, prefs.ID, settings(req)); err != nil {
+	if err := s.preferences.Update(ctx, userID, request.DisplayPreferencesId, request.Params.Client, settings(req)); err != nil {
 		return nil, err
 	}
 

@@ -63,6 +63,10 @@ app.kubernetes.io/managed-by: {{ .root.Release.Service }}
 {{- end }}
 
 {{- define "gojellyfin.sharedEnv" -}}
+{{- with (default (list .Values.media.mountPath) .Values.media.directories) }}
+- name: MEDIA_DIRECTORIES
+  value: {{ join "," . | quote }}
+{{- end }}
 {{- with .Values.tmdb.existingSecret }}
 - name: TMDB_API_KEY
   valueFrom:

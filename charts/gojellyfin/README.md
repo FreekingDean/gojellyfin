@@ -57,7 +57,7 @@ owns no storage. Point `media.volume` at whatever the media already lives on.
 | `nameOverride` | `""` | Replaces the chart name in resource names and labels |
 | `fullnameOverride` | `""` | Replaces the whole generated name |
 | `image.repository` | `ghcr.io/freekingdean/gojellyfin` | The one image every gojellyfin workload runs |
-| `image.tag` | `""` | Empty takes the chart's `appVersion`. The API, the worker and the migration Job all use it — the migrations are embedded in the binary, so two tags mean the schema one image applied and the schema the other expects can differ |
+| `image.tag` | `""` | Empty takes the chart's `appVersion`, which is `latest` because the repository carries no version tags yet (#555). The API, the worker and the migration Job all use it — the migrations are embedded in the binary, so two tags mean the schema one image applied and the schema the other expects can differ. Which build is actually running is stamped into the binary at image build time and answered as `SystemInfo.PackageName`, so a rolled-back tag can be confirmed rather than assumed |
 | `image.pullPolicy` | `IfNotPresent` | |
 | `imagePullSecrets` | `[]` | Applied to every pod |
 
@@ -77,6 +77,7 @@ reads the environment.
 | `cors.enabled` | `CORS_ORIGINS` | `false` | Off reflects whatever origin asks; a literal `*` is not equivalent, because browsers reject it on credentialed requests |
 | `cors.origin` | | `""` | The one origin allowed when enabled |
 | `tracing.otlpEndpoint` | `OTEL_EXPORTER_OTLP_ENDPOINT` | `""` | Empty exports no traces |
+| `media.directories` | `MEDIA_DIRECTORIES` | `[]` | The roots the library browser offers; empty follows `media.mountPath` |
 | `temporal.hostPort` | `TEMPORAL_HOSTPORT` | `""` | Empty turns background work off and the server still starts |
 | `temporal.namespace` | `TEMPORAL_NAMESPACE` | `""` | Required once `hostPort` is set; the binary refuses to invent one, and so does the chart |
 | `api.transcoderJobs`, `streaming.transcoderJobs` | `TRANSCODER_JOBS` | `""` | Concurrent encodes on one pod. Empty follows the cpu request |
@@ -110,7 +111,7 @@ Each of `api`, `streaming`, `worker` and `web` takes the same shape:
 |---|---|---|
 | `api.replicaCount` | `2` | The API holds no per-request state and needs no session affinity |
 | `api.resources` | 200m/256Mi, limits 1 cpu/1Gi | |
-| `api.mediaReadOnly` | `false` | Writable because `DeleteItem` removes the file |
+| `api.mediaReadOnly` | `false` | The API is the only workload that may write, because deleting an item is an API path. `filesystem.RemoveAll` answers 403 today, so nothing writes yet |
 | `api.livenessProbe`, `api.readinessProbe` | `periodSeconds` 20 / 10 | Merged onto a fixed `httpGet` of `/System/Ping` — the only endpoint that is both public and free of any database access, so it reports the process rather than its dependencies |
 | `api.service.type`, `.port`, `.annotations` | `ClusterIP`, `80`, `{}` | An Ingress needs a controller this chart cannot guess; `httpRoute` below is the supported edge |
 | `api.securityContext` | no privilege escalation, drops ALL | No `runAsNonRoot`: the image's `USER` is a name rather than a uid and kubelet refuses to start a container whose non-rootness it cannot check numerically. The image drops privilege on its own |
@@ -126,7 +127,7 @@ Each of `api`, `streaming`, `worker` and `web` takes the same shape:
 | `worker.mediaReadOnly` | `true` | The scan reads the tree and probes files with ffprobe |
 | `web.enabled` | `true` | |
 | `web.replicaCount` | `2` | |
-| `web.client.repository`, `.tag` | `jellyfin/jellyfin`, `10.10.0` | `jellyfin-web` is not published on its own — no image, no npm package, no built assets in its releases — so an init container copies it out of the all-in-one image into an emptyDir. Pin the tag to the API version the server implements; a newer client calls endpoints that answer 501 |
+| `web.client.repository`, `.tag` | `jellyfin/jellyfin`, `10.10.0` | `jellyfin-web` is not published on its own — no image, no npm package, no built assets in its releases — so an init container copies it out of the all-in-one image into an emptyDir. Pin it to a released client rather than to the announced API version: the server says 12.0.0 out of the vendored spec, 12 has no released all-in-one image, and a client newer than what is implemented calls endpoints that answer 501. 10.10.0 is what `make e2e` drives |
 | `web.client.resources` | 50m/64Mi, limit 256Mi | |
 | `web.image.repository`, `.tag` | `nginxinc/nginx-unprivileged`, `alpine` | The unprivileged image listens on 8080 and owns the directories nginx writes to, which is what lets `runAsNonRoot` hold |
 | `web.containerPort` | `8080` | |
@@ -139,6 +140,7 @@ Each of `api`, `streaming`, `worker` and `web` takes the same shape:
 | Value | Default | Description |
 |---|---|---|
 | `media.mountPath` | `/media` | The same in every workload, by construction: the API hands ffmpeg the path stored on the item row, so the media has to resolve to the same path in every pod that reads it |
+| `media.directories` | `[]` | `MEDIA_DIRECTORIES` — the roots the library browser offers when a library is added. Empty offers `mountPath`, so the browser starts where the media is rather than at `/`, which is the binary's own default |
 | `media.volume` | `{}` | Any volume source — `persistentVolumeClaim`, `nfs`, `hostPath`. Empty mounts an `emptyDir`, which is a library with nothing in it |
 
 ```yaml

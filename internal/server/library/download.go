@@ -98,8 +98,6 @@ func (s *Server) openItemFile(ctx context.Context, id uuid.UUID) (*mediaFile, er
 		return nil, err
 	}
 
-	// A download is saving bytes rather than decoding them here, so the best
-	// copy wins; what the far end can play is its own problem.
 	source := items.BestSource(sources)
 	if source == nil {
 		return nil, nil

@@ -45,8 +45,6 @@ var contentTypes = map[string]string{
 	".wma":  "audio/x-ms-wma",
 }
 
-// A transcode runs on a worker in another container, which hands back the
-// output as one stream for the API to proxy.
 type Transcoder interface {
 	Enabled() bool
 	Open(ctx context.Context, spec transcode.Spec) (io.ReadCloser, error)
@@ -63,8 +61,6 @@ func New(sessions *sessions.Service, items *items.Service, transcoder Transcoder
 	return &Handler{sessions: sessions, items: items, transcoder: transcoder}
 }
 
-// Registered ahead of the generated routes because the generated response type
-// always writes a complete 200, which would break seeking.
 func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 	item, source, ok := h.item(w, r)
 	if !ok {
@@ -72,109 +68,21 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 	}
 
 	container := sourceContainer(source)
-	if requested := r.PathValue("container"); requested != "" && !isStatic(r) && !strings.EqualFold(requested, container) {
+	requested := r.PathValue("container")
+	if requested == "" || isStatic(r) || strings.EqualFold(requested, container) {
+		h.serveFile(w, r, source)
+		return
+	}
+
+	if items.IsAudio(item) {
 		if h.serveTranscode(w, r, item, source, []string{requested}) {
 			return
 		}
-
-		unsupported(w, r, container, requested)
+	} else if h.serveRemux(w, r, item, source) {
 		return
 	}
 
-	if h.needsRemux(r, item, source) && h.serveRemux(w, r, source) {
-		return
-	}
-
-	h.serveFile(w, r, source)
-}
-
-// Chromium demuxes Matroska but ships no AC-3, E-AC-3, DTS or TrueHD decoder,
-// so a rip plays its picture and nothing else. Only the audio is re-encoded;
-// the video is copied.
-var browserAudio = map[string]bool{
-	"aac":       true,
-	"mp3":       true,
-	"opus":      true,
-	"vorbis":    true,
-	"flac":      true,
-	"pcm_s16le": true,
-	"pcm_s24le": true,
-}
-
-// Chromium parses Matroska only far enough to serve WebM, so an mkv a browser
-// cannot open is the container failing rather than anything inside it. Checking
-// the audio alone made a rip with AC-3 play, because it was remuxed, while the
-// same rip with AAC did not.
-var browserContainers = map[string]bool{
-	"mp4":  true,
-	"m4v":  true,
-	"webm": true,
-	"mov":  true,
-}
-
-func (h *Handler) needsRemux(r *http.Request, item *items.Item, source *items.MediaSource) bool {
-	if items.IsAudio(item) || isStatic(r) || !h.transcoder.Enabled() {
-		return false
-	}
-
-	// A nil set means the client stated no container restriction, which is not
-	// the same as stating none it can take.
-	if containers := acceptedContainers(r); containers != nil && !containers[sourceContainer(source)] {
-		return true
-	}
-
-	codec, err := h.items.AudioCodec(r.Context(), item.ID)
-	if err != nil {
-		log.Printf("failed to read the audio codec of %s: %v", item.Name, err)
-
-		return false
-	}
-	if codec == "" {
-		return false
-	}
-
-	return !acceptedAudio(r)[strings.ToLower(codec)]
-}
-
-// The browser assumption is only for a client that told us nothing at all. One
-// that named an audio codec has already said it is not a browser — ac3 is the
-// clearest example — so its silence about containers is silence, not a list.
-func acceptedContainers(r *http.Request) map[string]bool {
-	query := r.URL.Query()
-
-	if raw := query["container"]; len(raw) > 0 {
-		accepted := make(map[string]bool)
-		for _, profile := range directPlayProfiles(raw) {
-			accepted[profile.container] = true
-		}
-
-		return accepted
-	}
-
-	if query.Get("audioCodec") != "" {
-		return nil
-	}
-
-	return browserContainers
-}
-
-// A client that says what it can decode is believed; one that says nothing is
-// assumed to be a browser, because silence is a worse answer than an encode
-// nobody needed.
-func acceptedAudio(r *http.Request) map[string]bool {
-	raw := r.URL.Query().Get("audioCodec")
-	if raw == "" {
-		return browserAudio
-	}
-
-	accepted := make(map[string]bool)
-	for _, codec := range strings.Split(raw, ",") {
-		if codec = strings.ToLower(strings.TrimSpace(codec)); codec != "" {
-			accepted[codec] = true
-		}
-	}
-
-	return accepted
+	unsupported(w, r, container, requested)
 }
 
 func (h *Handler) ServeUniversal(w http.ResponseWriter, r *http.Request) {
@@ -214,9 +122,6 @@ func (h *Handler) ServeUniversal(w http.ResponseWriter, r *http.Request) {
 	h.serveFile(w, r, source)
 }
 
-// Reports whether the response was answered here. Everything that can fail is
-// done before the first byte reaches the client, so the caller can still refuse
-// with a status when this comes back false.
 func (h *Handler) serveTranscode(w http.ResponseWriter, r *http.Request, item *items.Item, source *items.MediaSource, accepted []string) bool {
 	if !h.transcoder.Enabled() || !items.IsAudio(item) {
 		return false
@@ -235,15 +140,28 @@ func (h *Handler) serveTranscode(w http.ResponseWriter, r *http.Request, item *i
 	})
 }
 
-// The video is copied rather than encoded, so this costs a mux and an audio
-// encode rather than a transcode.
-func (h *Handler) serveRemux(w http.ResponseWriter, r *http.Request, source *items.MediaSource) bool {
+func (h *Handler) serveRemux(w http.ResponseWriter, r *http.Request, item *items.Item, source *items.MediaSource) bool {
+	if !h.transcoder.Enabled() {
+		return false
+	}
+
+	codec, err := h.items.AudioCodec(r.Context(), item.ID)
+	if err != nil {
+		log.Printf("failed to read the audio codec of %s: %v", item.Name, err)
+	}
+	asked := strings.TrimSpace(r.URL.Query().Get("audioCodec"))
+	container := r.PathValue("container")
+	if !transcode.CarriesVideo(container) {
+		container = transcode.VideoContainer
+	}
+
 	return h.relay(w, r, source, transcode.Spec{
 		Path:       source.Path,
-		Container:  transcode.VideoContainer,
+		Container:  strings.ToLower(container),
 		Bitrate:    audioBitrate(r),
 		StartTicks: startTicks(r),
 		Video:      true,
+		CopyAudio:  asked != "" && codec != "" && strings.EqualFold(asked, codec),
 	})
 }
 
@@ -271,13 +189,9 @@ func (h *Handler) relay(w http.ResponseWriter, r *http.Request, source *items.Me
 	}()
 
 	w.Header().Set("Content-Type", transcode.ContentType(container))
-	// The length is not known until the encode finishes, so there is nothing
-	// for a client to seek against.
 	w.Header().Set("Accept-Ranges", "none")
 	w.WriteHeader(http.StatusOK)
 
-	// Cancelling reaps ffmpeg, and the deadline ends a write already blocked on
-	// a client that stopped acknowledging, which cancelling on its own cannot.
 	kill := func() {
 		log.Printf("transcode of %s moved nothing in %s", source.Path, h.transcoder.Stall())
 		cancel()
@@ -292,8 +206,6 @@ func (h *Handler) relay(w http.ResponseWriter, r *http.Request, source *items.Me
 	return true
 }
 
-// What the client asked to be transcoded to comes first, then the containers
-// it said it can play, which it can equally take over a plain response.
 func candidates(r *http.Request, accepted []string) []string {
 	query := r.URL.Query()
 
@@ -325,23 +237,16 @@ func startTicks(r *http.Request) int64 {
 	return ticks
 }
 
-// Every encoder is busy with someone else, which passes: the spec answers these
-// operations with a 503 and a Retry-After and has no 415 at all, so the client
-// is told to come back rather than that its device cannot play this.
 func busy(w http.ResponseWriter) {
 	w.Header().Set("Retry-After", strconv.Itoa(retryAfterSeconds))
 	http.Error(w, "every transcoder is busy", http.StatusServiceUnavailable)
 }
 
-// A client that cannot take the source as it is gets the reason rather than the
-// wrong bytes, because there is no encoder to fall back on.
 func unsupported(w http.ResponseWriter, r *http.Request, source, requested string) {
 	log.Printf("no direct play for %s: the source is %s, the client accepts %s", r.URL.Path, source, requested)
 	http.Error(w, "no direct play: the source is "+source, http.StatusUnsupportedMediaType)
 }
 
-// The source carries the file, so an item with none is a folder or a title
-// whose files went away and there is nothing to play either way.
 func (h *Handler) item(w http.ResponseWriter, r *http.Request) (*items.Item, *items.MediaSource, bool) {
 	token := middleware.TokenFrom(r)
 	if token == "" {
@@ -371,10 +276,14 @@ func (h *Handler) item(w http.ResponseWriter, r *http.Request) (*items.Item, *it
 		return nil, nil, false
 	}
 
-	source := items.PreferredSource(sources, items.Playable{
-		Containers:  acceptedContainers(r),
-		AudioCodecs: acceptedAudio(r),
-	})
+	source := items.BestSource(sources)
+	if asked, err := uuid.Parse(r.URL.Query().Get("mediaSourceId")); err == nil {
+		for _, candidate := range sources {
+			if candidate.ID == asked {
+				source = candidate
+			}
+		}
+	}
 	if source == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return nil, nil, false
@@ -405,9 +314,6 @@ func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, source *item
 	http.ServeContent(w, r, filepath.Base(source.Path), info.ModTime(), file)
 }
 
-// Clients declare their playable formats the way upstream's device profile
-// parses them: a comma separated list of "container", each container followed
-// by a "|" for every codec it will accept in that container.
 type directPlayProfile struct {
 	container string
 	codecs    []string
@@ -431,8 +337,6 @@ func directPlayProfiles(values []string) []directPlayProfile {
 	return profiles
 }
 
-// An unprobed source has no codec to compare, which direct plays rather than
-// holding back a file the client most likely can play.
 func playable(profiles []directPlayProfile, container, codec string) bool {
 	for _, profile := range profiles {
 		if profile.container != container {

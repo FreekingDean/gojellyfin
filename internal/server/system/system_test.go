@@ -14,7 +14,7 @@ func testServer() *Server {
 	return New(nil, systemsvc.New(env.Config{}))
 }
 
-func TestGetPingSystem(t *testing.T) {
+func TestServer_GetPingSystem(t *testing.T) {
 	response, err := testServer().GetPingSystem(context.Background(), api.GetPingSystemRequestObject{})
 	if err != nil {
 		t.Fatalf("failed to ping: %v", err)
@@ -29,7 +29,7 @@ func TestGetPingSystem(t *testing.T) {
 	}
 }
 
-func TestPostPingSystem(t *testing.T) {
+func TestServer_PostPingSystem(t *testing.T) {
 	response, err := testServer().PostPingSystem(context.Background(), api.PostPingSystemRequestObject{})
 	if err != nil {
 		t.Fatalf("failed to ping: %v", err)
@@ -44,7 +44,7 @@ func TestPostPingSystem(t *testing.T) {
 	}
 }
 
-func TestGetEndpointInfo(t *testing.T) {
+func TestServer_GetEndpointInfo(t *testing.T) {
 	for _, tc := range []struct {
 		name        string
 		remoteAddr  string

@@ -6,14 +6,14 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
+	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
-
-const batchSize = 200
 
 var identifiable = []items.Kind{
 	itemmodal.KindMovie,
 	itemmodal.KindSeries,
+	itemmodal.KindSeason,
 	itemmodal.KindEpisode,
 }
 
@@ -26,20 +26,30 @@ func New(provider Provider, service *items.Service) *Service {
 	return &Service{provider: provider, items: service}
 }
 
-func (s *Service) IdentifyItems(ctx context.Context) error {
+func (s *Service) IdentifyItems(ctx context.Context, options jobs.Options) error {
 	if !s.provider.Enabled() {
 		log.Print("metadata: no provider is configured, nothing to identify against")
 
 		return nil
 	}
 
-	pending, err := s.items.UnidentifiedItems(ctx, identifiable, batchSize)
+	pending, err := s.items.ItemsNeedingMetadata(ctx, identifiable, options.Force, options.Scope)
 	if err != nil {
 		return err
 	}
 
-	for _, pendingItem := range pending {
+	for _, id := range pending {
 		if err := ctx.Err(); err != nil {
+			return err
+		}
+
+		jobs.Heartbeat(ctx, id)
+
+		pendingItem, err := s.items.ItemByID(ctx, id)
+		if store.IsNotFound(err) {
+			continue
+		}
+		if err != nil {
 			return err
 		}
 
@@ -72,11 +82,26 @@ func (s *Service) fetch(ctx context.Context, pendingItem *items.Item) (items.Met
 		return s.provider.Movie(ctx, pendingItem.Name, pendingItem.ProductionYear)
 	case itemmodal.KindSeries:
 		return s.provider.Series(ctx, pendingItem.Name, pendingItem.ProductionYear)
+	case itemmodal.KindSeason:
+		return s.fetchSeason(ctx, pendingItem)
 	case itemmodal.KindEpisode:
 		return s.fetchEpisode(ctx, pendingItem)
 	}
 
 	return items.Metadata{}, false, nil
+}
+
+func (s *Service) fetchSeason(ctx context.Context, pendingItem *items.Item) (items.Metadata, bool, error) {
+	if pendingItem.IndexNumber == nil {
+		return items.Metadata{}, false, nil
+	}
+
+	series, err := s.seriesIDs(ctx, pendingItem)
+	if err != nil || series == nil {
+		return items.Metadata{}, false, err
+	}
+
+	return s.provider.Season(ctx, series, *pendingItem.IndexNumber)
 }
 
 func (s *Service) fetchEpisode(ctx context.Context, pendingItem *items.Item) (items.Metadata, bool, error) {

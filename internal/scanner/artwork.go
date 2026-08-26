@@ -10,8 +10,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	// Registers the decoders image.DecodeConfig needs to read artwork
-	// dimensions; without them every image reports 0x0.
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
@@ -24,8 +22,6 @@ import (
 
 var imageExtensions = []string{".jpg", ".jpeg", ".png", ".webp"}
 
-// Artwork sits beside the media under conventional names. Order matters: the
-// first match for a type wins.
 var artworkNames = map[items.ImageKind][]string{
 	imagemodal.KindPrimary:  {"poster", "folder", "cover", "default", "movie", "show"},
 	imagemodal.KindBackdrop: {"fanart", "backdrop", "background", "art"},
@@ -34,8 +30,6 @@ var artworkNames = map[items.ImageKind][]string{
 	imagemodal.KindBanner:   {"banner"},
 }
 
-// scanArtwork records the images belonging to one item. A folder item looks
-// inside itself; a file item looks beside itself for art named after the file.
 func (s *Scanner) scanArtwork(ctx context.Context, itemID uuid.UUID, path string, isFolder bool) error {
 	directory, base := path, ""
 	if !isFolder {
@@ -76,8 +70,6 @@ func findArtwork(entries []os.DirEntry, directory, base string, names []string) 
 				continue
 			}
 
-			// "poster.jpg" beside a folder, or "Movie (1982)-poster.jpg"
-			// beside the file it belongs to.
 			switch {
 			case base == "" && candidate == name:
 			case base != "" && candidate == strings.ToLower(base)+"-"+name:
@@ -111,8 +103,6 @@ func describeImage(kind items.ImageKind, path string) (items.Artwork, error) {
 	}, nil
 }
 
-// The tag is what the client caches against, so it must change when the file
-// does.
 func imageTag(path string, modified, size int64) string {
 	sum := sha1.Sum([]byte(fmt.Sprintf("%s:%d:%d", path, modified, size)))
 

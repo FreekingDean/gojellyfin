@@ -15,7 +15,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/chapter"
 	"github.com/FreekingDean/gojellyfin/internal/store/credit"
-	"github.com/FreekingDean/gojellyfin/internal/store/displaypreferences"
 	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 	"github.com/FreekingDean/gojellyfin/internal/store/genre"
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
@@ -1290,21 +1289,6 @@ func (_u *ItemUpdate) AddUserData(v ...*UserItemData) *ItemUpdate {
 	return _u.AddUserDatumIDs(ids...)
 }
 
-// AddDisplayPreferenceIDs adds the "display_preferences" edge to the DisplayPreferences entity by IDs.
-func (_u *ItemUpdate) AddDisplayPreferenceIDs(ids ...uuid.UUID) *ItemUpdate {
-	_u.mutation.AddDisplayPreferenceIDs(ids...)
-	return _u
-}
-
-// AddDisplayPreferences adds the "display_preferences" edges to the DisplayPreferences entity.
-func (_u *ItemUpdate) AddDisplayPreferences(v ...*DisplayPreferences) *ItemUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddDisplayPreferenceIDs(ids...)
-}
-
 // AddActivityLogEntryIDs adds the "activity_log_entries" edge to the ActivityLogEntry entity by IDs.
 func (_u *ItemUpdate) AddActivityLogEntryIDs(ids ...uuid.UUID) *ItemUpdate {
 	_u.mutation.AddActivityLogEntryIDs(ids...)
@@ -1555,27 +1539,6 @@ func (_u *ItemUpdate) RemoveUserData(v ...*UserItemData) *ItemUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveUserDatumIDs(ids...)
-}
-
-// ClearDisplayPreferences clears all "display_preferences" edges to the DisplayPreferences entity.
-func (_u *ItemUpdate) ClearDisplayPreferences() *ItemUpdate {
-	_u.mutation.ClearDisplayPreferences()
-	return _u
-}
-
-// RemoveDisplayPreferenceIDs removes the "display_preferences" edge to DisplayPreferences entities by IDs.
-func (_u *ItemUpdate) RemoveDisplayPreferenceIDs(ids ...uuid.UUID) *ItemUpdate {
-	_u.mutation.RemoveDisplayPreferenceIDs(ids...)
-	return _u
-}
-
-// RemoveDisplayPreferences removes "display_preferences" edges to DisplayPreferences entities.
-func (_u *ItemUpdate) RemoveDisplayPreferences(v ...*DisplayPreferences) *ItemUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveDisplayPreferenceIDs(ids...)
 }
 
 // ClearActivityLogEntries clears all "activity_log_entries" edges to the ActivityLogEntry entity.
@@ -2485,51 +2448,6 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(useritemdata.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.DisplayPreferencesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.DisplayPreferencesTable,
-			Columns: []string{item.DisplayPreferencesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(displaypreferences.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedDisplayPreferencesIDs(); len(nodes) > 0 && !_u.mutation.DisplayPreferencesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.DisplayPreferencesTable,
-			Columns: []string{item.DisplayPreferencesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(displaypreferences.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.DisplayPreferencesIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.DisplayPreferencesTable,
-			Columns: []string{item.DisplayPreferencesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(displaypreferences.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -4101,21 +4019,6 @@ func (_u *ItemUpdateOne) AddUserData(v ...*UserItemData) *ItemUpdateOne {
 	return _u.AddUserDatumIDs(ids...)
 }
 
-// AddDisplayPreferenceIDs adds the "display_preferences" edge to the DisplayPreferences entity by IDs.
-func (_u *ItemUpdateOne) AddDisplayPreferenceIDs(ids ...uuid.UUID) *ItemUpdateOne {
-	_u.mutation.AddDisplayPreferenceIDs(ids...)
-	return _u
-}
-
-// AddDisplayPreferences adds the "display_preferences" edges to the DisplayPreferences entity.
-func (_u *ItemUpdateOne) AddDisplayPreferences(v ...*DisplayPreferences) *ItemUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddDisplayPreferenceIDs(ids...)
-}
-
 // AddActivityLogEntryIDs adds the "activity_log_entries" edge to the ActivityLogEntry entity by IDs.
 func (_u *ItemUpdateOne) AddActivityLogEntryIDs(ids ...uuid.UUID) *ItemUpdateOne {
 	_u.mutation.AddActivityLogEntryIDs(ids...)
@@ -4366,27 +4269,6 @@ func (_u *ItemUpdateOne) RemoveUserData(v ...*UserItemData) *ItemUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveUserDatumIDs(ids...)
-}
-
-// ClearDisplayPreferences clears all "display_preferences" edges to the DisplayPreferences entity.
-func (_u *ItemUpdateOne) ClearDisplayPreferences() *ItemUpdateOne {
-	_u.mutation.ClearDisplayPreferences()
-	return _u
-}
-
-// RemoveDisplayPreferenceIDs removes the "display_preferences" edge to DisplayPreferences entities by IDs.
-func (_u *ItemUpdateOne) RemoveDisplayPreferenceIDs(ids ...uuid.UUID) *ItemUpdateOne {
-	_u.mutation.RemoveDisplayPreferenceIDs(ids...)
-	return _u
-}
-
-// RemoveDisplayPreferences removes "display_preferences" edges to DisplayPreferences entities.
-func (_u *ItemUpdateOne) RemoveDisplayPreferences(v ...*DisplayPreferences) *ItemUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveDisplayPreferenceIDs(ids...)
 }
 
 // ClearActivityLogEntries clears all "activity_log_entries" edges to the ActivityLogEntry entity.
@@ -5326,51 +5208,6 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(useritemdata.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.DisplayPreferencesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.DisplayPreferencesTable,
-			Columns: []string{item.DisplayPreferencesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(displaypreferences.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedDisplayPreferencesIDs(); len(nodes) > 0 && !_u.mutation.DisplayPreferencesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.DisplayPreferencesTable,
-			Columns: []string{item.DisplayPreferencesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(displaypreferences.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.DisplayPreferencesIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.DisplayPreferencesTable,
-			Columns: []string{item.DisplayPreferencesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(displaypreferences.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

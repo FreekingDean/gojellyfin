@@ -52,6 +52,10 @@ temporal:
 # same path in every pod, because the API hands ffmpeg the path on the item row.
 media:
   mountPath: /media
+  # MEDIA_DIRECTORIES, the roots the library browser offers when a library is
+  # added. Empty offers mountPath, so the browser starts where the media is
+  # rather than at / as the binary's own default does.
+  directories: []
   # Any volume source: persistentVolumeClaim, nfs, hostPath. Empty mounts an
   # emptyDir, which is a library with nothing in it.
   volume: {}
@@ -86,7 +90,7 @@ api:
   # TRANSCODER_JOBS. Empty follows the cpu request, one encode to a core.
   transcoderJobs: ""
   transcoderStallTimeout: 30s
-  # Writable, unlike the streaming pods': DeleteItem removes the file.
+  # The only workload that may write: deleting an item is an API path.
   mediaReadOnly: false
   resources:
     requests:
@@ -188,8 +192,11 @@ web:
   enabled: true
   replicaCount: 2
   client:
-    # Pin this to the API version the server implements. A client newer than
-    # the API calls endpoints that answer 501.
+    # Pin this to a released client, not to the API version the server
+    # announces: that is 12.0.0 out of the vendored spec, 12 has no released
+    # all-in-one image to copy a client out of, and a client newer than what is
+    # implemented calls endpoints that answer 501. 10.10.0 is what `make e2e`
+    # drives.
     repository: jellyfin/jellyfin
     tag: "10.10.0"
     pullPolicy: IfNotPresent

@@ -12,7 +12,6 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/displaypreferences"
-	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/google/uuid"
@@ -48,6 +47,34 @@ func (_u *DisplayPreferencesUpdate) SetNillableCreatedAt(v *time.Time) *DisplayP
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *DisplayPreferencesUpdate) SetUpdatedAt(v time.Time) *DisplayPreferencesUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetUserID sets the "user_id" field.
+func (_u *DisplayPreferencesUpdate) SetUserID(v uuid.UUID) *DisplayPreferencesUpdate {
+	_u.mutation.SetUserID(v)
+	return _u
+}
+
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (_u *DisplayPreferencesUpdate) SetNillableUserID(v *uuid.UUID) *DisplayPreferencesUpdate {
+	if v != nil {
+		_u.SetUserID(*v)
+	}
+	return _u
+}
+
+// SetReferenceID sets the "reference_id" field.
+func (_u *DisplayPreferencesUpdate) SetReferenceID(v string) *DisplayPreferencesUpdate {
+	_u.mutation.SetReferenceID(v)
+	return _u
+}
+
+// SetNillableReferenceID sets the "reference_id" field if the given value is not nil.
+func (_u *DisplayPreferencesUpdate) SetNillableReferenceID(v *string) *DisplayPreferencesUpdate {
+	if v != nil {
+		_u.SetReferenceID(*v)
+	}
 	return _u
 }
 
@@ -263,34 +290,9 @@ func (_u *DisplayPreferencesUpdate) ClearCustomPrefs() *DisplayPreferencesUpdate
 	return _u
 }
 
-// SetUserID sets the "user" edge to the User entity by ID.
-func (_u *DisplayPreferencesUpdate) SetUserID(id uuid.UUID) *DisplayPreferencesUpdate {
-	_u.mutation.SetUserID(id)
-	return _u
-}
-
 // SetUser sets the "user" edge to the User entity.
 func (_u *DisplayPreferencesUpdate) SetUser(v *User) *DisplayPreferencesUpdate {
 	return _u.SetUserID(v.ID)
-}
-
-// SetItemID sets the "item" edge to the Item entity by ID.
-func (_u *DisplayPreferencesUpdate) SetItemID(id uuid.UUID) *DisplayPreferencesUpdate {
-	_u.mutation.SetItemID(id)
-	return _u
-}
-
-// SetNillableItemID sets the "item" edge to the Item entity by ID if the given value is not nil.
-func (_u *DisplayPreferencesUpdate) SetNillableItemID(id *uuid.UUID) *DisplayPreferencesUpdate {
-	if id != nil {
-		_u = _u.SetItemID(*id)
-	}
-	return _u
-}
-
-// SetItem sets the "item" edge to the Item entity.
-func (_u *DisplayPreferencesUpdate) SetItem(v *Item) *DisplayPreferencesUpdate {
-	return _u.SetItemID(v.ID)
 }
 
 // Mutation returns the DisplayPreferencesMutation object of the builder.
@@ -301,12 +303,6 @@ func (_u *DisplayPreferencesUpdate) Mutation() *DisplayPreferencesMutation {
 // ClearUser clears the "user" edge to the User entity.
 func (_u *DisplayPreferencesUpdate) ClearUser() *DisplayPreferencesUpdate {
 	_u.mutation.ClearUser()
-	return _u
-}
-
-// ClearItem clears the "item" edge to the Item entity.
-func (_u *DisplayPreferencesUpdate) ClearItem() *DisplayPreferencesUpdate {
-	_u.mutation.ClearItem()
 	return _u
 }
 
@@ -381,6 +377,9 @@ func (_u *DisplayPreferencesUpdate) sqlSave(ctx context.Context) (_node int, err
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(displaypreferences.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.ReferenceID(); ok {
+		_spec.SetField(displaypreferences.FieldReferenceID, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.GetClient(); ok {
 		_spec.SetField(displaypreferences.FieldClient, field.TypeString, value)
@@ -468,35 +467,6 @@ func (_u *DisplayPreferencesUpdate) sqlSave(ctx context.Context) (_node int, err
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.ItemCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   displaypreferences.ItemTable,
-			Columns: []string{displaypreferences.ItemColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.ItemIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   displaypreferences.ItemTable,
-			Columns: []string{displaypreferences.ItemColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{displaypreferences.Label}
@@ -534,6 +504,34 @@ func (_u *DisplayPreferencesUpdateOne) SetNillableCreatedAt(v *time.Time) *Displ
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *DisplayPreferencesUpdateOne) SetUpdatedAt(v time.Time) *DisplayPreferencesUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetUserID sets the "user_id" field.
+func (_u *DisplayPreferencesUpdateOne) SetUserID(v uuid.UUID) *DisplayPreferencesUpdateOne {
+	_u.mutation.SetUserID(v)
+	return _u
+}
+
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (_u *DisplayPreferencesUpdateOne) SetNillableUserID(v *uuid.UUID) *DisplayPreferencesUpdateOne {
+	if v != nil {
+		_u.SetUserID(*v)
+	}
+	return _u
+}
+
+// SetReferenceID sets the "reference_id" field.
+func (_u *DisplayPreferencesUpdateOne) SetReferenceID(v string) *DisplayPreferencesUpdateOne {
+	_u.mutation.SetReferenceID(v)
+	return _u
+}
+
+// SetNillableReferenceID sets the "reference_id" field if the given value is not nil.
+func (_u *DisplayPreferencesUpdateOne) SetNillableReferenceID(v *string) *DisplayPreferencesUpdateOne {
+	if v != nil {
+		_u.SetReferenceID(*v)
+	}
 	return _u
 }
 
@@ -749,34 +747,9 @@ func (_u *DisplayPreferencesUpdateOne) ClearCustomPrefs() *DisplayPreferencesUpd
 	return _u
 }
 
-// SetUserID sets the "user" edge to the User entity by ID.
-func (_u *DisplayPreferencesUpdateOne) SetUserID(id uuid.UUID) *DisplayPreferencesUpdateOne {
-	_u.mutation.SetUserID(id)
-	return _u
-}
-
 // SetUser sets the "user" edge to the User entity.
 func (_u *DisplayPreferencesUpdateOne) SetUser(v *User) *DisplayPreferencesUpdateOne {
 	return _u.SetUserID(v.ID)
-}
-
-// SetItemID sets the "item" edge to the Item entity by ID.
-func (_u *DisplayPreferencesUpdateOne) SetItemID(id uuid.UUID) *DisplayPreferencesUpdateOne {
-	_u.mutation.SetItemID(id)
-	return _u
-}
-
-// SetNillableItemID sets the "item" edge to the Item entity by ID if the given value is not nil.
-func (_u *DisplayPreferencesUpdateOne) SetNillableItemID(id *uuid.UUID) *DisplayPreferencesUpdateOne {
-	if id != nil {
-		_u = _u.SetItemID(*id)
-	}
-	return _u
-}
-
-// SetItem sets the "item" edge to the Item entity.
-func (_u *DisplayPreferencesUpdateOne) SetItem(v *Item) *DisplayPreferencesUpdateOne {
-	return _u.SetItemID(v.ID)
 }
 
 // Mutation returns the DisplayPreferencesMutation object of the builder.
@@ -787,12 +760,6 @@ func (_u *DisplayPreferencesUpdateOne) Mutation() *DisplayPreferencesMutation {
 // ClearUser clears the "user" edge to the User entity.
 func (_u *DisplayPreferencesUpdateOne) ClearUser() *DisplayPreferencesUpdateOne {
 	_u.mutation.ClearUser()
-	return _u
-}
-
-// ClearItem clears the "item" edge to the Item entity.
-func (_u *DisplayPreferencesUpdateOne) ClearItem() *DisplayPreferencesUpdateOne {
-	_u.mutation.ClearItem()
 	return _u
 }
 
@@ -898,6 +865,9 @@ func (_u *DisplayPreferencesUpdateOne) sqlSave(ctx context.Context) (_node *Disp
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(displaypreferences.FieldUpdatedAt, field.TypeTime, value)
 	}
+	if value, ok := _u.mutation.ReferenceID(); ok {
+		_spec.SetField(displaypreferences.FieldReferenceID, field.TypeString, value)
+	}
 	if value, ok := _u.mutation.GetClient(); ok {
 		_spec.SetField(displaypreferences.FieldClient, field.TypeString, value)
 	}
@@ -977,35 +947,6 @@ func (_u *DisplayPreferencesUpdateOne) sqlSave(ctx context.Context) (_node *Disp
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.ItemCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   displaypreferences.ItemTable,
-			Columns: []string{displaypreferences.ItemColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.ItemIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   displaypreferences.ItemTable,
-			Columns: []string{displaypreferences.ItemColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

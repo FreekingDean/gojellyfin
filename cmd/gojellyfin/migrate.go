@@ -46,8 +46,6 @@ func migrateCommand() *cobra.Command {
 	}
 }
 
-// The migrations ship inside the binary so a deployed image cannot drift from
-// the code that expects the schema.
 func unpack() (string, error) {
 	dir, err := os.MkdirTemp("", "gojellyfin-migrations")
 	if err != nil {
