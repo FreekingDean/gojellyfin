@@ -17,7 +17,6 @@ import (
 	devicemodal "github.com/FreekingDean/gojellyfin/internal/store/device"
 	displaypreferencesmodal "github.com/FreekingDean/gojellyfin/internal/store/displaypreferences"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	usermodal "github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
@@ -95,7 +94,7 @@ func newFixture(t *testing.T) *fixture {
 	t.Cleanup(func() {
 		ctx := context.Background()
 		if _, err := client.DisplayPreferences.Delete().
-			Where(displaypreferencesmodal.HasUserWith(usermodal.ID(user.ID))).
+			Where(displaypreferencesmodal.UserID(user.ID)).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the display preferences: %v", err)
 		}
@@ -158,6 +157,19 @@ func (f *fixture) load(t *testing.T, id, client string) api.DisplayPreferencesDt
 	}
 
 	return api.DisplayPreferencesDto(dto)
+}
+
+func (f *fixture) rows(t *testing.T) int {
+	t.Helper()
+
+	count, err := f.client.DisplayPreferences.Query().
+		Where(displaypreferencesmodal.UserID(f.userID)).
+		Count(context.Background())
+	if err != nil {
+		t.Fatalf("failed to count the display preferences: %v", err)
+	}
+
+	return count
 }
 
 func TestServer_UpdateDisplayPreferences(t *testing.T) {
@@ -234,10 +246,8 @@ func TestServer_UpdateDisplayPreferences(t *testing.T) {
 			}
 		}
 	})
-}
 
-func TestServer_GetDisplayPreferences(t *testing.T) {
-	t.Run("concurrent gets leave one row", func(t *testing.T) {
+	t.Run("concurrent saves leave one row", func(t *testing.T) {
 		fixture := newFixture(t)
 
 		const callers = 8
@@ -251,9 +261,10 @@ func TestServer_GetDisplayPreferences(t *testing.T) {
 			go func() {
 				defer group.Done()
 				<-start
-				_, err := caller.GetDisplayPreferences(fixture.ctx, api.GetDisplayPreferencesRequestObject{
+				_, err := caller.UpdateDisplayPreferences(fixture.ctx, api.UpdateDisplayPreferencesRequestObject{
 					DisplayPreferencesId: "usersettings",
-					Params:               api.GetDisplayPreferencesParams{Client: "emby"},
+					Params:               api.UpdateDisplayPreferencesParams{Client: "emby"},
+					JSONBody:             &api.DisplayPreferencesDto{ViewType: apiutil.Ptr("Poster")},
 				})
 				failures <- err
 			}()
@@ -265,21 +276,17 @@ func TestServer_GetDisplayPreferences(t *testing.T) {
 
 		for err := range failures {
 			if err != nil {
-				t.Fatalf("concurrent get failed: %v", err)
+				t.Fatalf("concurrent save failed: %v", err)
 			}
 		}
 
-		count, err := fixture.client.DisplayPreferences.Query().
-			Where(displaypreferencesmodal.HasUserWith(usermodal.ID(fixture.userID))).
-			Count(context.Background())
-		if err != nil {
-			t.Fatalf("failed to count the display preferences: %v", err)
-		}
-		if count != 1 {
-			t.Errorf("rows = %d, want 1", count)
+		if got := fixture.rows(t); got != 1 {
+			t.Errorf("rows = %d, want 1", got)
 		}
 	})
+}
 
+func TestServer_GetDisplayPreferences(t *testing.T) {
 	t.Run("answers the defaults for a user who saved nothing", func(t *testing.T) {
 		fixture := newFixture(t)
 
@@ -296,6 +303,9 @@ func TestServer_GetDisplayPreferences(t *testing.T) {
 		}
 		if got := apiutil.Deref(dto.ShowBackdrop); !got {
 			t.Error("ShowBackdrop = false, want true")
+		}
+		if got := fixture.rows(t); got != 0 {
+			t.Errorf("rows = %d, want 0", got)
 		}
 	})
 }

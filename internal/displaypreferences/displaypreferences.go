@@ -8,8 +8,6 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	displaypreferencesmodal "github.com/FreekingDean/gojellyfin/internal/store/displaypreferences"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	usermodal "github.com/FreekingDean/gojellyfin/internal/store/user"
 )
 
 type (
@@ -26,25 +24,36 @@ func New(client *store.Client) *Service {
 	return &Service{store: client}
 }
 
-func (s *Service) Get(ctx context.Context, userID uuid.UUID, refID uuid.UUID, client string) (*DisplayPreferences, error) {
+func (s *Service) Get(ctx context.Context, userID uuid.UUID, referenceID, client string) (*DisplayPreferences, error) {
 	prefs, err := s.store.DisplayPreferences.Query().Where(
+		displaypreferencesmodal.UserID(userID),
+		displaypreferencesmodal.ReferenceID(referenceID),
 		displaypreferencesmodal.Client(client),
-		displaypreferencesmodal.HasUserWith(usermodal.ID(userID)),
-		displaypreferencesmodal.HasItemWith(itemmodal.ID(refID)),
 	).First(ctx)
 	if store.IsNotFound(err) {
-		return &DisplayPreferences{
-			Edges: store.DisplayPreferencesEdges{
-				User: &store.User{ID: userID},
-				Item: &store.Item{ID: refID},
-			},
-			Client: client,
-		}, nil
+		return defaults(userID, referenceID, client), nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to query display preferences: %w", err)
 	}
 
 	return prefs, nil
+}
+
+func defaults(userID uuid.UUID, referenceID, client string) *DisplayPreferences {
+	return &DisplayPreferences{
+		UserID:             userID,
+		ReferenceID:        referenceID,
+		Client:             client,
+		SortBy:             displaypreferencesmodal.DefaultSortBy,
+		SortOrder:          displaypreferencesmodal.DefaultSortOrder,
+		ScrollDirection:    displaypreferencesmodal.DefaultScrollDirection,
+		RememberIndexing:   displaypreferencesmodal.DefaultRememberIndexing,
+		RememberSorting:    displaypreferencesmodal.DefaultRememberSorting,
+		ShowBackdrop:       displaypreferencesmodal.DefaultShowBackdrop,
+		ShowSidebar:        displaypreferencesmodal.DefaultShowSidebar,
+		PrimaryImageHeight: displaypreferencesmodal.DefaultPrimaryImageHeight,
+		PrimaryImageWidth:  displaypreferencesmodal.DefaultPrimaryImageWidth,
+	}
 }
 
 type Settings struct {
@@ -65,67 +74,36 @@ type Settings struct {
 func (s *Service) Update(
 	ctx context.Context,
 	userID uuid.UUID,
-	refID uuid.UUID,
+	referenceID string,
 	client string,
 	settings Settings,
 ) error {
 	upsert := s.store.DisplayPreferences.Create().
-		SetClient(client).
 		SetUserID(userID).
-		SetItemID(refID).
-		OnConflictColumns(
-			displaypreferencesmodal.FieldClient,
-			displaypreferencesmodal.EdgeUser,
-			displaypreferencesmodal.EdgeItem,
-		)
-
-	if settings.ViewType != nil {
-		upsert.SetViewType(*settings.ViewType)
-	}
-
-	if settings.SortBy != nil {
-		upsert.SetSortBy(*settings.SortBy)
-	}
-
-	if settings.IndexBy != nil {
-		upsert.SetIndexBy(*settings.IndexBy)
-	}
-
-	if settings.SortOrder != nil {
-		upsert.SetSortOrder(*settings.SortOrder)
-	}
-
-	if settings.ScrollDirection != nil {
-		upsert.SetScrollDirection(*settings.ScrollDirection)
-	}
-
-	if settings.RememberIndexing != nil {
-		upsert.SetRememberIndexing(*settings.RememberIndexing)
-	}
-
-	if settings.RememberSorting != nil {
-		upsert.SetRememberSorting(*settings.RememberSorting)
-	}
-
-	if settings.ShowBackdrop != nil {
-		upsert.SetShowBackdrop(*settings.ShowBackdrop)
-	}
-
-	if settings.ShowSidebar != nil {
-		upsert.SetShowSidebar(*settings.ShowSidebar)
-	}
-
-	if settings.PrimaryImageHeight != nil {
-		upsert.SetPrimaryImageHeight(*settings.PrimaryImageHeight)
-	}
-
-	if settings.PrimaryImageWidth != nil {
-		upsert.SetPrimaryImageWidth(*settings.PrimaryImageWidth)
-	}
+		SetReferenceID(referenceID).
+		SetClient(client).
+		SetNillableViewType(settings.ViewType).
+		SetNillableSortBy(settings.SortBy).
+		SetNillableIndexBy(settings.IndexBy).
+		SetNillableSortOrder(settings.SortOrder).
+		SetNillableScrollDirection(settings.ScrollDirection).
+		SetNillableRememberIndexing(settings.RememberIndexing).
+		SetNillableRememberSorting(settings.RememberSorting).
+		SetNillableShowBackdrop(settings.ShowBackdrop).
+		SetNillableShowSidebar(settings.ShowSidebar).
+		SetNillablePrimaryImageHeight(settings.PrimaryImageHeight).
+		SetNillablePrimaryImageWidth(settings.PrimaryImageWidth)
 
 	if settings.CustomPrefs != nil {
 		upsert.SetCustomPrefs(*settings.CustomPrefs)
 	}
 
-	return upsert.Exec(ctx)
+	return upsert.
+		OnConflictColumns(
+			displaypreferencesmodal.FieldUserID,
+			displaypreferencesmodal.FieldReferenceID,
+			displaypreferencesmodal.FieldClient,
+		).
+		UpdateNewValues().
+		Exec(ctx)
 }

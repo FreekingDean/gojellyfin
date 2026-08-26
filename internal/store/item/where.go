@@ -2910,29 +2910,6 @@ func HasUserDataWith(preds ...predicate.UserItemData) predicate.Item {
 	})
 }
 
-// HasDisplayPreferences applies the HasEdge predicate on the "display_preferences" edge.
-func HasDisplayPreferences() predicate.Item {
-	return predicate.Item(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, DisplayPreferencesTable, DisplayPreferencesColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasDisplayPreferencesWith applies the HasEdge predicate on the "display_preferences" edge with a given conditions (other predicates).
-func HasDisplayPreferencesWith(preds ...predicate.DisplayPreferences) predicate.Item {
-	return predicate.Item(func(s *sql.Selector) {
-		step := newDisplayPreferencesStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
 // HasActivityLogEntries applies the HasEdge predicate on the "activity_log_entries" edge.
 func HasActivityLogEntries() predicate.Item {
 	return predicate.Item(func(s *sql.Selector) {
