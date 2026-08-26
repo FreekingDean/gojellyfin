@@ -1,7 +1,6 @@
 package scanner
 
 import (
-	"context"
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
@@ -30,13 +29,13 @@ var artworkNames = map[items.ImageKind][]string{
 	imagemodal.KindBanner:   {"banner"},
 }
 
-func (s *Scanner) scanArtwork(ctx context.Context, itemID uuid.UUID, directory, base string, folder bool) error {
+func scanArtwork(itemID uuid.UUID, directory, base string, folder bool, found *seen) error {
 	entries, err := os.ReadDir(directory)
 	if err != nil {
 		return err
 	}
 
-	found := make([]items.Artwork, 0)
+	images := make([]items.Artwork, 0)
 	for kind, names := range artworkNames {
 		stems := make([]string, 0, len(names)*2+1)
 		if base != "" {
@@ -60,10 +59,11 @@ func (s *Scanner) scanArtwork(ctx context.Context, itemID uuid.UUID, directory, 
 		if err != nil {
 			continue
 		}
-		found = append(found, image)
+		images = append(images, image)
 	}
+	found.images(itemID, images)
 
-	return s.items.ReplaceImages(ctx, itemID, found)
+	return nil
 }
 
 func findArtwork(entries []os.DirEntry, directory string, stems []string) string {

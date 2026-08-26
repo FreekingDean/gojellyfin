@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -33,6 +34,7 @@ func New(items *items.Service, libraries *libraries.Service, filesystem *filesys
 type seen struct {
 	keys       []string
 	paths      []string
+	artwork    map[uuid.UUID][]items.Artwork
 	unreadable int
 }
 
@@ -42,6 +44,21 @@ func (s *seen) title(item *items.Item) {
 
 func (s *seen) file(path string) {
 	s.paths = append(s.paths, path)
+}
+
+func (s *seen) images(itemID uuid.UUID, images []items.Artwork) {
+	if s.artwork == nil {
+		s.artwork = map[uuid.UUID][]items.Artwork{}
+	}
+
+	kept := s.artwork[itemID]
+	for _, image := range images {
+		if slices.ContainsFunc(kept, func(existing items.Artwork) bool { return existing.Kind == image.Kind }) {
+			continue
+		}
+		kept = append(kept, image)
+	}
+	s.artwork[itemID] = kept
 }
 
 func (s *seen) skip(path string, err error) {
@@ -77,6 +94,12 @@ func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) e
 	}
 
 	log.Printf("scanned %s: %d items, %d files", library.Name, len(found.keys), len(found.paths))
+
+	for itemID, artwork := range found.artwork {
+		if err := s.items.ReplaceImages(ctx, itemID, artwork); err != nil {
+			log.Printf("artwork %s: %v", itemID, err)
+		}
+	}
 
 	if !found.complete() {
 		log.Printf("not sweeping %s: %d directories could not be read", library.Name, found.unreadable)
@@ -127,7 +150,7 @@ func (s *Scanner) scanMovies(ctx context.Context, library *libraries.Library, ro
 			return err
 		}
 
-		if err := s.scanArtwork(ctx, item.ID, parent, stripExtension(entry.Name()), parent != root); err != nil {
+		if err := scanArtwork(item.ID, parent, stripExtension(entry.Name()), parent != root, found); err != nil {
 			log.Printf("artwork %s: %v", path, err)
 		}
 
@@ -166,7 +189,7 @@ func (s *Scanner) scanShows(ctx context.Context, library *libraries.Library, roo
 		}
 		found.title(series)
 
-		if err := s.scanArtwork(ctx, series.ID, seriesPath, "", true); err != nil {
+		if err := scanArtwork(series.ID, seriesPath, "", true, found); err != nil {
 			log.Printf("artwork %s: %v", seriesPath, err)
 		}
 
@@ -223,7 +246,7 @@ func (s *Scanner) scanSeries(ctx context.Context, library *libraries.Library, se
 		}
 		found.title(season)
 
-		if err := s.scanArtwork(ctx, season.ID, path, "", true); err != nil {
+		if err := scanArtwork(season.ID, path, "", true, found); err != nil {
 			log.Printf("artwork %s: %v", path, err)
 		}
 
@@ -274,7 +297,7 @@ func (s *Scanner) scanEpisode(ctx context.Context, library *libraries.Library, s
 		return err
 	}
 
-	if err := s.scanArtwork(ctx, item.ID, filepath.Dir(path), stripExtension(entry.Name()), false); err != nil {
+	if err := scanArtwork(item.ID, filepath.Dir(path), stripExtension(entry.Name()), false, found); err != nil {
 		log.Printf("artwork %s: %v", path, err)
 	}
 
