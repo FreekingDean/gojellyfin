@@ -5,15 +5,43 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
+	"github.com/FreekingDean/gojellyfin/internal/items"
+	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
 )
+
+type stubbed struct {
+	client *Client
+
+	mutex sync.Mutex
+	asked []string
+}
+
+func (s *stubbed) requests() []string {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	return append([]string(nil), s.asked...)
+}
 
 func stub(t *testing.T) *Client {
 	t.Helper()
 
+	return newStub(t).client
+}
+
+func newStub(t *testing.T) *stubbed {
+	t.Helper()
+
+	stubbing := &stubbed{}
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		stubbing.mutex.Lock()
+		stubbing.asked = append(stubbing.asked, request.URL.Path)
+		stubbing.mutex.Unlock()
+
 		body, found := details[request.URL.Path]
 		if strings.HasPrefix(request.URL.Path, "/3/search/") {
 			body, found = searches[request.URL.Query().Get("query")]
@@ -35,8 +63,21 @@ func stub(t *testing.T) *Client {
 	if err != nil {
 		t.Fatalf("failed to build the client: %v", err)
 	}
+	stubbing.client = client
 
-	return client
+	return stubbing
+}
+
+func artworkURL(t *testing.T, found []items.RemoteImage, kind items.ImageKind) string {
+	t.Helper()
+
+	for _, reference := range found {
+		if reference.Kind == kind {
+			return reference.URL
+		}
+	}
+
+	return ""
 }
 
 func released(value int32) *int32 {
@@ -215,4 +256,68 @@ func TestNewClient(t *testing.T) {
 	if !on.Enabled() {
 		t.Error("a configured key did not reach the client")
 	}
+}
+
+func TestClient_Artwork(t *testing.T) {
+	t.Run("names a movie's poster and backdrop", func(t *testing.T) {
+		found, _, err := stub(t).Movie(context.Background(), "The Matrix", released(1999))
+		if err != nil {
+			t.Fatalf("the lookup failed: %v", err)
+		}
+
+		poster := "https://image.tmdb.org/t/p/w780/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg"
+		if got := artworkURL(t, found.Images, imagemodal.KindPrimary); got != poster {
+			t.Errorf("poster = %q, want %q", got, poster)
+		}
+
+		backdrop := "https://image.tmdb.org/t/p/w1280/ByDf0zjLSumz1MP1cDEo2JmHkrn.jpg"
+		if got := artworkURL(t, found.Images, imagemodal.KindBackdrop); got != backdrop {
+			t.Errorf("backdrop = %q, want %q", got, backdrop)
+		}
+	})
+
+	t.Run("names an episode's still as its poster", func(t *testing.T) {
+		series := map[string]string{providerTmdb: "1396"}
+		found, _, err := stub(t).Episode(context.Background(), series, 1, 1)
+		if err != nil {
+			t.Fatalf("the lookup failed: %v", err)
+		}
+
+		still := "https://image.tmdb.org/t/p/w300/ydlY3iPfeOAvu8gVqrxPoMvzNCn.jpg"
+		if got := artworkURL(t, found.Images, imagemodal.KindPrimary); got != still {
+			t.Errorf("still = %q, want %q", got, still)
+		}
+	})
+
+	t.Run("names nothing for a title carrying no artwork", func(t *testing.T) {
+		series := map[string]string{providerTmdb: "1396"}
+		found, _, err := stub(t).Season(context.Background(), series, 0)
+		if err != nil {
+			t.Fatalf("the lookup failed: %v", err)
+		}
+		if len(found.Images) != 1 {
+			t.Errorf("Images = %v, want the poster alone", found.Images)
+		}
+	})
+
+	t.Run("reads the image configuration once a process", func(t *testing.T) {
+		stubbing := newStub(t)
+
+		if _, _, err := stubbing.client.Movie(context.Background(), "The Matrix", released(1999)); err != nil {
+			t.Fatalf("the first lookup failed: %v", err)
+		}
+		if _, _, err := stubbing.client.Series(context.Background(), "Breaking Bad", released(2008)); err != nil {
+			t.Fatalf("the second lookup failed: %v", err)
+		}
+
+		read := 0
+		for _, path := range stubbing.requests() {
+			if path == "/3/configuration" {
+				read++
+			}
+		}
+		if read != 1 {
+			t.Errorf("configuration reads = %d, want one for the whole process", read)
+		}
+	})
 }
