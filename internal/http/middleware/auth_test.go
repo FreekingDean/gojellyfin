@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"testing"
 )
@@ -16,14 +17,14 @@ func TestTokenFrom(t *testing.T) {
 		}
 
 		for target, want := range tests {
-			if got := TokenFrom(httptest.NewRequest("GET", target, nil)); got != want {
+			if got := TokenFrom(httptest.NewRequest(http.MethodGet, target, nil)); got != want {
 				t.Errorf("TokenFrom(%q) = %q, want %q", target, got, want)
 			}
 		}
 	})
 
 	t.Run("prefers the header", func(t *testing.T) {
-		r := httptest.NewRequest("GET", "/socket?ApiKey=fromquery", nil)
+		r := httptest.NewRequest(http.MethodGet, "/socket?ApiKey=fromquery", nil)
 		r.Header.Set("Authorization", `MediaBrowser Token="fromheader", Client="test"`)
 
 		if got := TokenFrom(r); got != "fromheader" {
@@ -32,7 +33,7 @@ func TestTokenFrom(t *testing.T) {
 	})
 
 	t.Run("decodes percent encoding", func(t *testing.T) {
-		r := httptest.NewRequest("GET", "/", nil)
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
 		r.Header.Set("Authorization", `MediaBrowser Client="Jellyfin%20Web", Token="a%2Bb"`)
 
 		if got := TokenFrom(r); got != "a+b" {

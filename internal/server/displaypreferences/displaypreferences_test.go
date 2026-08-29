@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/displaypreferences"
 	"github.com/FreekingDean/gojellyfin/internal/env"
@@ -64,7 +65,7 @@ func newFixture(t *testing.T) *fixture {
 		t.Fatalf("failed to create the user: %v", err)
 	}
 
-	sessionService := sessions.New(client)
+	sessionService := sessions.New(client, activity.New(client))
 	token := uuid.NewString()
 	if _, err := sessionService.Create(ctx, user.ID, token, sessions.DeviceInfo{ID: name, Name: name}); err != nil {
 		t.Fatalf("failed to create the session: %v", err)

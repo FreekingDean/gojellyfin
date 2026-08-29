@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
@@ -88,7 +89,7 @@ func newFixture(t *testing.T) *fixture {
 
 	ctx := context.Background()
 	client := connection.Client()
-	sessionService := sessions.New(client)
+	sessionService := sessions.New(client, activity.New(client))
 
 	recorded := &recorder{}
 	f := &fixture{

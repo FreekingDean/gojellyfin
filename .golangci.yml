@@ -4,6 +4,31 @@ run:
   timeout: 5m
 
 linters:
+  default: standard
+  enable:
+    - bodyclose
+    - copyloopvar
+    - durationcheck
+    - errname
+    - errorlint
+    - fatcontext
+    - gocheckcompilerdirectives
+    - gocritic
+    - makezero
+    - misspell
+    - nestif
+    - nilnesserr
+    - nolintlint
+    - reassign
+    - rowserrcheck
+    - sqlclosecheck
+    - thelper
+    - usestdlibvars
+    - usetesting
+    - wastedassign
+  settings:
+    nolintlint:
+      require-specific: true
   exclusions:
     paths:
       # Emitted by oapi-codegen and the local gen tool; not ours to lint.

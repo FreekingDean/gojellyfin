@@ -15,6 +15,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 	"github.com/FreekingDean/gojellyfin/internal/store/genre"
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
+	"github.com/FreekingDean/gojellyfin/internal/store/imageblob"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
@@ -186,6 +187,18 @@ func init() {
 	imageDescIndex := imageFields[5].Descriptor()
 	// image.DefaultIndex holds the default value on creation for the index field.
 	image.DefaultIndex = imageDescIndex.Default.(int32)
+	imageblobFields := entities.ImageBlob{}.Fields()
+	_ = imageblobFields
+	// imageblobDescCreatedAt is the schema descriptor for created_at field.
+	imageblobDescCreatedAt := imageblobFields[1].Descriptor()
+	// imageblob.DefaultCreatedAt holds the default value on creation for the created_at field.
+	imageblob.DefaultCreatedAt = imageblobDescCreatedAt.Default.(func() time.Time)
+	// imageblobDescUpdatedAt is the schema descriptor for updated_at field.
+	imageblobDescUpdatedAt := imageblobFields[2].Descriptor()
+	// imageblob.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	imageblob.DefaultUpdatedAt = imageblobDescUpdatedAt.Default.(func() time.Time)
+	// imageblob.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	imageblob.UpdateDefaultUpdatedAt = imageblobDescUpdatedAt.UpdateDefault.(func() time.Time)
 	itemFields := entities.Item{}.Fields()
 	_ = itemFields
 	// itemDescCreatedAt is the schema descriptor for created_at field.

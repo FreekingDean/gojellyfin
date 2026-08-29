@@ -2,10 +2,12 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
@@ -63,7 +65,7 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
-	sessionService := sessions.New(client)
+	sessionService := sessions.New(client, activity.New(client))
 
 	return &fixture{
 		auth:     New(sessionService),
@@ -111,10 +113,10 @@ func TestUserID(t *testing.T) {
 func TestService_Authenticate(t *testing.T) {
 	fixture := newFixture(t)
 
-	if _, err := fixture.auth.Authenticate(context.Background(), ""); err != ErrUnauthorized {
+	if _, err := fixture.auth.Authenticate(context.Background(), ""); !errors.Is(err, ErrUnauthorized) {
 		t.Errorf("Authenticate = %v, want %v for an empty token", err, ErrUnauthorized)
 	}
-	if _, err := fixture.auth.Authenticate(context.Background(), uuid.NewString()); err != ErrUnauthorized {
+	if _, err := fixture.auth.Authenticate(context.Background(), uuid.NewString()); !errors.Is(err, ErrUnauthorized) {
 		t.Errorf("Authenticate = %v, want %v for an unknown token", err, ErrUnauthorized)
 	}
 }

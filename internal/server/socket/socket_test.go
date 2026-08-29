@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 
+	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/notify"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
@@ -50,7 +51,7 @@ func newFixture(t *testing.T) *fixture {
 		t.Fatalf("failed to create the user: %v", err)
 	}
 
-	service := sessions.New(client)
+	service := sessions.New(client, activity.New(client))
 	token := uuid.NewString()
 	session, err := service.Create(ctx, user.ID, token, sessions.DeviceInfo{
 		ID:         name,
@@ -92,13 +93,14 @@ func (f *fixture) connect(t *testing.T) *websocket.Conn {
 	server := httptest.NewServer(http.HandlerFunc(handler))
 	t.Cleanup(server.Close)
 
-	conn, _, err := websocket.DefaultDialer.Dial(
+	conn, response, err := websocket.DefaultDialer.Dial(
 		"ws"+strings.TrimPrefix(server.URL, "http")+"/socket?api_key="+f.token,
 		nil,
 	)
 	if err != nil {
 		t.Fatalf("failed to dial the socket: %v", err)
 	}
+	defer func() { _ = response.Body.Close() }()
 	t.Cleanup(func() { _ = conn.Close() })
 
 	return conn

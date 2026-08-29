@@ -21,6 +21,7 @@ func (Image) Fields() []ent.Field {
 			"Box", "Screenshot", "Menu", "Chapter", "BoxRear", "Profile",
 		),
 		field.Int32("index").Default(0),
+		field.Enum("source").Values("Local", "Remote").Default("Local"),
 		field.String("path"),
 		field.String("tag"),
 		field.String("blur_hash").Optional(),

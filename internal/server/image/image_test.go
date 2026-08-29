@@ -1,6 +1,7 @@
 package image
 
 import (
+	"bytes"
 	"context"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/artwork"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
@@ -22,6 +24,7 @@ import (
 type fixture struct {
 	server    *Server
 	client    *store.Client
+	artwork   artwork.Store
 	itemID    uuid.UUID
 	directory string
 }
@@ -70,11 +73,40 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
+	stored := artwork.New(client)
+
 	return &fixture{
-		server:    New(items.New(client), filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}})),
+		server:    New(items.New(client), filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}), stored),
 		client:    client,
+		artwork:   stored,
 		itemID:    item.ID,
 		directory: t.TempDir(),
+	}
+}
+
+func (f *fixture) store(t *testing.T, kind items.ImageKind, index int32, key, tag string, content []byte) {
+	t.Helper()
+
+	ctx := context.Background()
+	if err := f.artwork.Put(ctx, key, bytes.NewReader(content)); err != nil {
+		t.Fatalf("failed to store %q: %v", key, err)
+	}
+	t.Cleanup(func() {
+		if err := f.artwork.Delete(ctx, key); err != nil {
+			t.Errorf("failed to clean up %q: %v", key, err)
+		}
+	})
+
+	_, err := f.client.Image.Create().
+		SetItemID(f.itemID).
+		SetKind(kind).
+		SetIndex(index).
+		SetSource(imagemodal.SourceRemote).
+		SetPath(key).
+		SetTag(tag).
+		Save(ctx)
+	if err != nil {
+		t.Fatalf("failed to create the image row: %v", err)
 	}
 }
 
@@ -260,6 +292,62 @@ func TestServer_HeadItemImage(t *testing.T) {
 		}
 
 		if _, ok := response.(api.HeadItemImageByIndex404JSONResponse); !ok {
+			t.Errorf("response = %T, want a 404", response)
+		}
+	})
+}
+
+func TestServer_GetItemImage_stored(t *testing.T) {
+	fixture := newFixture(t)
+	poster := []byte("stored-poster-bytes")
+
+	t.Run("serves the bytes the artwork store holds", func(t *testing.T) {
+		fixture.store(t, imagemodal.KindPrimary, 0, "artwork/"+fixture.itemID.String()+"/Primary/0.jpg", "storedtag", poster)
+
+		response, err := fixture.server.GetItemImage(context.Background(), api.GetItemImageRequestObject{
+			ItemId:    fixture.itemID,
+			ImageType: api.Primary,
+		})
+		if err != nil {
+			t.Fatalf("failed to get the image: %v", err)
+		}
+
+		recorder := httptest.NewRecorder()
+		if err := response.VisitGetItemImageResponse(recorder); err != nil {
+			t.Fatalf("failed to write the image: %v", err)
+		}
+
+		if recorder.Code != http.StatusOK {
+			t.Errorf("status = %d, want 200", recorder.Code)
+		}
+		if got := recorder.Body.String(); got != string(poster) {
+			t.Errorf("body = %q, want %q", got, poster)
+		}
+		if got := recorder.Header().Get("Content-Type"); got != "image/jpeg" {
+			t.Errorf("content type = %q, want the type the key's extension names", got)
+		}
+		if got := recorder.Header().Get("Content-Length"); got != "19" {
+			t.Errorf("content length = %q, want 19", got)
+		}
+	})
+
+	t.Run("misses a row whose bytes are gone", func(t *testing.T) {
+		fixture := newFixture(t)
+		key := "artwork/" + fixture.itemID.String() + "/Thumb/0.jpg"
+		fixture.store(t, imagemodal.KindThumb, 0, key, "storedtag", poster)
+		if err := fixture.artwork.Delete(context.Background(), key); err != nil {
+			t.Fatalf("failed to delete the bytes: %v", err)
+		}
+
+		response, err := fixture.server.GetItemImage(context.Background(), api.GetItemImageRequestObject{
+			ItemId:    fixture.itemID,
+			ImageType: api.Thumb,
+		})
+		if err != nil {
+			t.Fatalf("failed to get the image: %v", err)
+		}
+
+		if _, ok := response.(api.GetItemImage404JSONResponse); !ok {
 			t.Errorf("response = %T, want a 404", response)
 		}
 	})

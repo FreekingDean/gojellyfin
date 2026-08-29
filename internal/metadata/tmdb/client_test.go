@@ -10,10 +10,11 @@ import (
 
 func TestRetrying_RoundTrip(t *testing.T) {
 	t.Run("backs off on too many requests", func(t *testing.T) {
-		attempts := 0
+		episode := "/3/tv/1396/season/1/episode/1"
+		attempts := map[string]int{}
 		server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-			attempts++
-			if attempts < 3 {
+			attempts[request.URL.Path]++
+			if attempts[request.URL.Path] < 3 {
 				writer.WriteHeader(http.StatusTooManyRequests)
 
 				return
@@ -42,8 +43,8 @@ func TestRetrying_RoundTrip(t *testing.T) {
 		if found.Name == nil || *found.Name != "Pilot" {
 			t.Errorf("Name = %v, want Pilot", found.Name)
 		}
-		if attempts != 3 {
-			t.Errorf("attempts = %d, want the two refusals retried", attempts)
+		if attempts[episode] != 3 {
+			t.Errorf("attempts = %d, want the two refusals retried", attempts[episode])
 		}
 	})
 
