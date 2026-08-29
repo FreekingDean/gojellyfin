@@ -1,0 +1,17 @@
+apiVersion: v2
+name: gojellyfin
+description: A Go reimplementation of a Jellyfin media server, serving the Jellyfin 12.0.0 HTTP API
+type: application
+version: 0.1.0
+# The image tag the chart defaults to. There are no version tags on the
+# repository yet, so latest is what docker.yml publishes from main; the build
+# actually running is stamped into the binary and answered as
+# SystemInfo.PackageName. Pin both when the chart is published (#555).
+appVersion: "latest"
+home: https://github.com/FreekingDean/gojellyfin
+sources:
+  - https://github.com/FreekingDean/gojellyfin
+keywords:
+  - jellyfin
+  - media
+kubeVersion: ">=1.25.0-0"

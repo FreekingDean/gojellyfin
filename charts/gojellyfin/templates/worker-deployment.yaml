@@ -1,0 +1,49 @@
+{{- if .Values.worker.enabled }}
+{{- if not .Values.temporal.hostPort }}
+{{- fail "worker.enabled needs temporal.hostPort: a worker with nothing to dial crash loops" }}
+{{- end }}
+{{- $component := "worker" }}
+{{- $pod := mergeOverwrite (deepCopy (default dict .Values.pod)) (default dict .Values.worker.pod) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gojellyfin.fullname" . }}-worker
+  labels:
+    {{- include "gojellyfin.labels" (dict "root" $ "component" $component) | nindent 4 }}
+spec:
+  replicas: {{ .Values.worker.replicas }}
+  selector:
+    matchLabels:
+      {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 6 }}
+  template:
+    metadata:
+      {{- with $pod.annotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 8 }}
+    spec:
+      {{- with (include "gojellyfin.podSpec" $pod | trim) }}
+      {{- . | nindent 6 }}
+      {{- end }}
+      containers:
+        - name: worker
+          image: {{ include "gojellyfin.image" . }}
+          imagePullPolicy: {{ include "gojellyfin.imagePullPolicy" . }}
+          args: ["worker"]
+          env:
+            {{- include "gojellyfin.workerEnv" . | nindent 12 }}
+          {{- with .Values.worker.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $pod.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            {{- include "gojellyfin.mediaVolumeMount" (dict "root" $ "readOnly" true) | nindent 12 }}
+      volumes:
+        {{- include "gojellyfin.mediaVolume" . | nindent 8 }}
+{{- end }}

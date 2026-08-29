@@ -1,0 +1,57 @@
+{{- $component := "api" }}
+{{- $pod := mergeOverwrite (deepCopy (default dict .Values.pod)) (default dict .Values.api.pod) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gojellyfin.fullname" . }}
+  labels:
+    {{- include "gojellyfin.labels" (dict "root" $ "component" $component) | nindent 4 }}
+spec:
+  replicas: {{ .Values.api.replicas }}
+  selector:
+    matchLabels:
+      {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 6 }}
+  template:
+    metadata:
+      {{- with $pod.annotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 8 }}
+    spec:
+      {{- with (include "gojellyfin.podSpec" $pod | trim) }}
+      {{- . | nindent 6 }}
+      {{- end }}
+      containers:
+        - name: server
+          image: {{ include "gojellyfin.image" . }}
+          imagePullPolicy: {{ include "gojellyfin.imagePullPolicy" . }}
+          args: ["server"]
+          ports:
+            - name: http
+              containerPort: {{ .Values.httpPort }}
+          env:
+            {{- include "gojellyfin.serverEnv" (dict "root" $ "workload" .Values.api) | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /System/Ping
+              port: http
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /System/Ping
+              port: http
+            periodSeconds: 10
+          {{- with .Values.api.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $pod.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            {{- include "gojellyfin.mediaVolumeMount" (dict "root" $ "readOnly" false) | nindent 12 }}
+      volumes:
+        {{- include "gojellyfin.mediaVolume" . | nindent 8 }}

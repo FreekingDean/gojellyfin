@@ -19,7 +19,7 @@ const TYPES = {
   '.webmanifest': 'application/manifest+json',
 };
 
-// One origin, the way deploy/httproutes.yaml serves it: /web is a file on
+// One origin, the way the chart's httproute.yaml serves it: /web is a file on
 // disk and everything else is the API. Two would mean CORS and the client's
 // server picker before any assertion.
 function start({ webRoot, apiPort }) {

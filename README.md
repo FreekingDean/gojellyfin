@@ -4,7 +4,7 @@ A Go reimplementation of a Jellyfin media server, serving the Jellyfin 12.0.0
 HTTP API so that stock `jellyfin-web` and Jellyfin clients can talk to it.
 
 Everything ships as one binary, `cmd/gojellyfin`, with a subcommand each for
-`server`, `transcoder`, `worker`, `migrate`, `adduser`, `resetpassword` and
+`server`, `worker`, `migrate`, `adduser`, `resetpassword` and
 `localizationdata`.
 
 ## What works
@@ -54,23 +54,27 @@ echo hunter2 | DATABASE_URL=... go run ./cmd/gojellyfin adduser Dean   # bootstr
 
 ## Deployment
 
-`deploy/` holds plain Kubernetes manifests for the shape this runs in — no Helm
-and no Kustomize, so `kubectl apply -f deploy/` is the whole of it once
-`secret.yaml.example` has been copied, filled in and applied.
+`charts/gojellyfin` is a Helm chart for the shape this runs in. Create the
+Secret holding `DATABASE_URL` — the chart carries no credential — and install:
 
-It is two processes out of the one image. `gojellyfin server` answers the API on
-:8081 and owns the database. `gojellyfin transcoder` runs ffmpeg on behalf of
-the API and streams the output back over :8082, as its own workload so that a
-runaway encode cannot starve the request path; it holds no database credentials
-at all. The API finds the workers through `TRANSCODER_WORKERS` and round robins
-over them, authenticating with a shared `TRANSCODER_TOKEN`.
+```sh
+kubectl create secret generic gojellyfin --from-literal DATABASE_URL='postgres://…'
+helm install gojellyfin ./charts/gojellyfin
+```
 
-The one thing the two must agree on is the media. The API sends a worker the
-item's filesystem path straight out of the database, so the media volume has to
-be mounted at the same path in both — read-write for the API, read-only for the
-workers.
+It is one image run as up to four workloads: the API, the streaming pods, the
+Temporal worker and nginx serving `jellyfin-web`. The streaming pods are the
+same `server` subcommand as the API — what makes them the streaming pods is the
+route, which sends `/Videos` and `/Audio` to them, so the pod that serves the
+stream is the pod that runs ffmpeg.
+
+The one thing they must agree on is the media, which is yours: the chart mounts
+whatever volume `media.volume` names and creates no storage of its own. The API
+hands ffmpeg the item's filesystem path straight out of the database, so it has
+to be the same media at the same path in every pod — read-write for the API,
+which deletes files, read-only everywhere else.
 
 Migrations never run at startup unless `MIGRATE_ON_START=true`, which is unsafe
-with rolling replicas. `deploy/migrate-job.yaml` runs `gojellyfin migrate` as a
-one-off Job instead; the migrations are embedded in the binary, so the Job and
-the API must run the same image tag.
+with rolling replicas, so the chart does not offer it. Run `gojellyfin migrate`
+as a one-off or set `migration.enabled=true` for a pre-upgrade hook Job;
+`charts/gojellyfin/README.md` documents the tradeoff and every other value.
