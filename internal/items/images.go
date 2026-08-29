@@ -2,6 +2,8 @@ package items
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -33,8 +35,25 @@ type Artwork struct {
 	Size   int64
 }
 
+type RemoteImage struct {
+	Kind ImageKind
+	URL  string
+}
+
 func (s *Service) SaveImage(ctx context.Context, itemID uuid.UUID, artwork Artwork) error {
-	err := s.store.Image.Create().
+	_, err := s.store.Image.Delete().
+		Where(
+			imagemodal.ItemID(itemID),
+			imagemodal.KindEQ(artwork.Kind),
+			imagemodal.Index(0),
+			imagemodal.SourceEQ(imagemodal.SourceRemote),
+		).
+		Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to displace downloaded image: %w", err)
+	}
+
+	err = s.store.Image.Create().
 		SetItemID(itemID).
 		SetKind(artwork.Kind).
 		SetPath(artwork.Path).
@@ -45,8 +64,44 @@ func (s *Service) SaveImage(ctx context.Context, itemID uuid.UUID, artwork Artwo
 		OnConflictColumns(imagemodal.FieldItemID, imagemodal.FieldKind, imagemodal.FieldIndex).
 		DoNothing().
 		Exec(ctx)
-	if err != nil {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return fmt.Errorf("failed to save image: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Service) SaveDownloadedImage(ctx context.Context, itemID uuid.UUID, artwork Artwork) error {
+	replaced, err := s.store.Image.Update().
+		Where(
+			imagemodal.ItemID(itemID),
+			imagemodal.KindEQ(artwork.Kind),
+			imagemodal.Index(0),
+			imagemodal.SourceEQ(imagemodal.SourceRemote),
+		).
+		SetPath(artwork.Path).
+		SetTag(artwork.Tag).
+		SetSize(artwork.Size).
+		Save(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to replace downloaded image: %w", err)
+	}
+	if replaced > 0 {
+		return nil
+	}
+
+	err = s.store.Image.Create().
+		SetItemID(itemID).
+		SetKind(artwork.Kind).
+		SetSource(imagemodal.SourceRemote).
+		SetPath(artwork.Path).
+		SetTag(artwork.Tag).
+		SetSize(artwork.Size).
+		OnConflictColumns(imagemodal.FieldItemID, imagemodal.FieldKind, imagemodal.FieldIndex).
+		DoNothing().
+		Exec(ctx)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return fmt.Errorf("failed to save downloaded image: %w", err)
 	}
 
 	return nil
