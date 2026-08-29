@@ -1,6 +1,7 @@
 const ui = require('../setup/ui');
 
 const HOME = '#indexPage';
+const SECTIONS = /\/(Similar|SpecialFeatures|LocalTrailers|Intros)$/i;
 
 describe('the library', () => {
   let session;
@@ -35,12 +36,15 @@ describe('the library', () => {
 
   it('opens an item and shows its detail page', async () => {
     const [alpha] = ui.harness().movies;
+    const asked = record(session.page);
+
     await ui.waitForText(session.page, alpha, HOME);
     await click(session.page, alpha);
 
     await ui.waitForRoute(session.page, 'details');
 
     expect(await ui.textOf(session.page, 'h1.itemName')).toBe(alpha);
+    expect(asked).toEqual(['Similar 200']);
   });
 });
 
@@ -54,4 +58,17 @@ function click(page, label) {
 
     card.click();
   }, label);
+}
+
+function record(page) {
+  const asked = [];
+
+  page.on('response', (response) => {
+    const path = new URL(response.url()).pathname;
+    if (SECTIONS.test(path)) {
+      asked.push(`${path.split('/').pop()} ${response.status()}`);
+    }
+  });
+
+  return asked;
 }
