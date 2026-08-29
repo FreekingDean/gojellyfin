@@ -142,7 +142,8 @@ func (s *Service) resolve(path string) (string, error) {
 	}
 
 	for _, root := range s.rootDirs {
-		if strings.HasPrefix(path, root) {
+		relative, err := filepath.Rel(root, path)
+		if err == nil && relative != ".." && !strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
 			return path, nil
 		}
 	}
