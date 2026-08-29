@@ -153,6 +153,18 @@ func (s *Service) PhysicalPaths(ctx context.Context) ([]string, error) {
 	return slices.Compact(paths), nil
 }
 
+func ImageKey(id uuid.UUID, tag string) string {
+	return fmt.Sprintf("libraries/%s/Primary/%s.jpg", id, tag)
+}
+
+func (s *Service) SetImageTag(ctx context.Context, id uuid.UUID, tag string) error {
+	if err := s.store.Library.UpdateOneID(id).SetImageTag(tag).Exec(ctx); err != nil {
+		return fmt.Errorf("failed to save the library image: %w", err)
+	}
+
+	return nil
+}
+
 func (s *Service) Rename(ctx context.Context, id uuid.UUID, name string) error {
 	if err := s.store.Library.UpdateOneID(id).SetName(name).Exec(ctx); err != nil {
 		return fmt.Errorf("failed to rename library: %w", err)

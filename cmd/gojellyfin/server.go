@@ -8,6 +8,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/apikeys"
 	"github.com/FreekingDean/gojellyfin/internal/artwork"
 	"github.com/FreekingDean/gojellyfin/internal/auth"
+	"github.com/FreekingDean/gojellyfin/internal/collage"
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/displaypreferences"
 	"github.com/FreekingDean/gojellyfin/internal/env"
@@ -38,6 +39,7 @@ var serverModules = fx.Options(
 	apikeys.Module,
 	artwork.Module,
 	auth.Module,
+	collage.Module,
 	config.Module,
 	displaypreferences.Module,
 	ffmpeg.Module,

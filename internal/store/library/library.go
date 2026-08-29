@@ -25,6 +25,8 @@ const (
 	FieldCollectionType = "collection_type"
 	// FieldLocations holds the string denoting the locations field in the database.
 	FieldLocations = "locations"
+	// FieldImageTag holds the string denoting the image_tag field in the database.
+	FieldImageTag = "image_tag"
 	// EdgeOptions holds the string denoting the options edge name in mutations.
 	EdgeOptions = "options"
 	// EdgeItems holds the string denoting the items edge name in mutations.
@@ -64,6 +66,7 @@ var Columns = []string{
 	FieldName,
 	FieldCollectionType,
 	FieldLocations,
+	FieldImageTag,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -85,6 +88,8 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// DefaultLocations holds the default value on creation for the "locations" field.
 	DefaultLocations []string
+	// DefaultImageTag holds the default value on creation for the "image_tag" field.
+	DefaultImageTag string
 )
 
 // CollectionType defines the type for the "collection_type" enum field.
@@ -145,6 +150,11 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 // ByCollectionType orders the results by the collection_type field.
 func ByCollectionType(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCollectionType, opts...).ToFunc()
+}
+
+// ByImageTag orders the results by the image_tag field.
+func ByImageTag(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldImageTag, opts...).ToFunc()
 }
 
 // ByOptionsField orders the results by options field.

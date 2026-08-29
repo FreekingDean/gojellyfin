@@ -15,6 +15,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
@@ -26,6 +27,7 @@ type fixture struct {
 	client    *store.Client
 	artwork   artwork.Store
 	itemID    uuid.UUID
+	libraryID uuid.UUID
 	directory string
 }
 
@@ -76,10 +78,16 @@ func newFixture(t *testing.T) *fixture {
 	stored := artwork.New(client)
 
 	return &fixture{
-		server:    New(items.New(client), filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}), stored),
+		server: New(
+			items.New(client),
+			libraries.New(client),
+			filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}),
+			stored,
+		),
 		client:    client,
 		artwork:   stored,
 		itemID:    item.ID,
+		libraryID: library.ID,
 		directory: t.TempDir(),
 	}
 }

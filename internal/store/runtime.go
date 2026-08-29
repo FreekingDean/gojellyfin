@@ -253,6 +253,10 @@ func init() {
 	libraryDescLocations := libraryFields[5].Descriptor()
 	// library.DefaultLocations holds the default value on creation for the locations field.
 	library.DefaultLocations = libraryDescLocations.Default.([]string)
+	// libraryDescImageTag is the schema descriptor for image_tag field.
+	libraryDescImageTag := libraryFields[6].Descriptor()
+	// library.DefaultImageTag holds the default value on creation for the image_tag field.
+	library.DefaultImageTag = libraryDescImageTag.Default.(string)
 	libraryoptionsFields := entities.LibraryOptions{}.Fields()
 	_ = libraryoptionsFields
 	// libraryoptionsDescCreatedAt is the schema descriptor for created_at field.

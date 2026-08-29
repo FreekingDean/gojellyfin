@@ -9,18 +9,20 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/artwork"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
 type Server struct {
 	items      *items.Service
+	libraries  *libraries.Service
 	filesystem *filesystem.Service
 	artwork    artwork.Store
 }
 
-func New(items *items.Service, filesystem *filesystem.Service, artwork artwork.Store) *Server {
-	return &Server{items: items, filesystem: filesystem, artwork: artwork}
+func New(items *items.Service, catalogue *libraries.Service, filesystem *filesystem.Service, artwork artwork.Store) *Server {
+	return &Server{items: items, libraries: catalogue, filesystem: filesystem, artwork: artwork}
 }
 
 func (s *Server) GetItemImage(ctx context.Context, request api.GetItemImageRequestObject) (api.GetItemImageResponseObject, error) {
@@ -83,7 +85,7 @@ func (s *Server) open(ctx context.Context, itemID uuid.UUID, imageType api.Image
 
 	record, err := s.items.Image(ctx, itemID, kind, index)
 	if err != nil {
-		return imageFile{}, false
+		return s.openLibrary(ctx, itemID, kind, index)
 	}
 
 	body, size, ok := s.read(ctx, record)
@@ -92,6 +94,25 @@ func (s *Server) open(ctx context.Context, itemID uuid.UUID, imageType api.Image
 	}
 
 	return imageFile{body: body, contentType: contentType(record.Path), length: size}, true
+}
+
+func (s *Server) openLibrary(ctx context.Context, id uuid.UUID, kind items.ImageKind, index int32) (imageFile, bool) {
+	if kind != items.ImageKindPrimary || index != 0 {
+		return imageFile{}, false
+	}
+
+	library, err := s.libraries.Library(ctx, id)
+	if err != nil || library.ImageTag == "" {
+		return imageFile{}, false
+	}
+
+	key := libraries.ImageKey(library.ID, library.ImageTag)
+	body, size, found, err := s.artwork.Open(ctx, key)
+	if err != nil || !found {
+		return imageFile{}, false
+	}
+
+	return imageFile{body: body, contentType: contentType(key), length: size}, true
 }
 
 func (s *Server) read(ctx context.Context, record *items.Image) (io.ReadCloser, int64, bool) {

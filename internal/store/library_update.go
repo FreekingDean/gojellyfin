@@ -93,6 +93,20 @@ func (_u *LibraryUpdate) AppendLocations(v []string) *LibraryUpdate {
 	return _u
 }
 
+// SetImageTag sets the "image_tag" field.
+func (_u *LibraryUpdate) SetImageTag(v string) *LibraryUpdate {
+	_u.mutation.SetImageTag(v)
+	return _u
+}
+
+// SetNillableImageTag sets the "image_tag" field if the given value is not nil.
+func (_u *LibraryUpdate) SetNillableImageTag(v *string) *LibraryUpdate {
+	if v != nil {
+		_u.SetImageTag(*v)
+	}
+	return _u
+}
+
 // SetOptionsID sets the "options" edge to the LibraryOptions entity by ID.
 func (_u *LibraryUpdate) SetOptionsID(id uuid.UUID) *LibraryUpdate {
 	_u.mutation.SetOptionsID(id)
@@ -272,6 +286,9 @@ func (_u *LibraryUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, library.FieldLocations, value)
 		})
+	}
+	if value, ok := _u.mutation.ImageTag(); ok {
+		_spec.SetField(library.FieldImageTag, field.TypeString, value)
 	}
 	if _u.mutation.OptionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -469,6 +486,20 @@ func (_u *LibraryUpdateOne) SetLocations(v []string) *LibraryUpdateOne {
 // AppendLocations appends value to the "locations" field.
 func (_u *LibraryUpdateOne) AppendLocations(v []string) *LibraryUpdateOne {
 	_u.mutation.AppendLocations(v)
+	return _u
+}
+
+// SetImageTag sets the "image_tag" field.
+func (_u *LibraryUpdateOne) SetImageTag(v string) *LibraryUpdateOne {
+	_u.mutation.SetImageTag(v)
+	return _u
+}
+
+// SetNillableImageTag sets the "image_tag" field if the given value is not nil.
+func (_u *LibraryUpdateOne) SetNillableImageTag(v *string) *LibraryUpdateOne {
+	if v != nil {
+		_u.SetImageTag(*v)
+	}
 	return _u
 }
 
@@ -681,6 +712,9 @@ func (_u *LibraryUpdateOne) sqlSave(ctx context.Context) (_node *Library, err er
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, library.FieldLocations, value)
 		})
+	}
+	if value, ok := _u.mutation.ImageTag(); ok {
+		_spec.SetField(library.FieldImageTag, field.TypeString, value)
 	}
 	if _u.mutation.OptionsCleared() {
 		edge := &sqlgraph.EdgeSpec{

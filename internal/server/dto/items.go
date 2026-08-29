@@ -116,7 +116,7 @@ func ItemDtos(ctx context.Context, store *items.Service, records []*items.Item) 
 func LibraryView(library *libraries.Library) api.BaseItemDto {
 	collectionType := api.CollectionType(library.CollectionType)
 
-	return api.BaseItemDto{
+	view := api.BaseItemDto{
 		Id:                &library.ID,
 		ServerId:          apiutil.Ptr(config.ServerID),
 		Name:              apiutil.Ptr(library.Name),
@@ -128,6 +128,12 @@ func LibraryView(library *libraries.Library) api.BaseItemDto {
 		ImageTags:         &map[string]*string{},
 		BackdropImageTags: &[]string{},
 	}
+
+	if library.ImageTag != "" {
+		view.ImageTags = &map[string]*string{"Primary": &library.ImageTag}
+	}
+
+	return view
 }
 
 func RootView() api.BaseItemDto {
