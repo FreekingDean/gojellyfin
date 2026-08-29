@@ -14,6 +14,7 @@ func NewIdentify(service *Service) *Identify {
 
 func (i *Identify) Name() string     { return RefreshMetadataJobID }
 func (i *Identify) Category() string { return "Library" }
+func (i *Identify) Queue() string    { return "gojellyfin-metadata" }
 func (i *Identify) Description() string {
 	return "Identifies items and fetches their metadata."
 }
