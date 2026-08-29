@@ -3,8 +3,10 @@ package tmdb
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	gotmdb "github.com/cyruzin/golang-tmdb"
@@ -24,6 +26,10 @@ const (
 type Client struct {
 	api     *gotmdb.Client
 	limiter *limiter
+
+	mutex     sync.Mutex
+	imageBase string
+	described bool
 }
 
 func NewClient(config env.Config) (*Client, error) {
@@ -82,7 +88,7 @@ func (c *Client) Movie(ctx context.Context, name string, year *int32) (items.Met
 		return missed(err)
 	}
 
-	return movieMetadata(movie), true, nil
+	return movieMetadata(movie, c.images(ctx)), true, nil
 }
 
 func (c *Client) Series(ctx context.Context, name string, year *int32) (items.Metadata, bool, error) {
@@ -110,7 +116,7 @@ func (c *Client) Series(ctx context.Context, name string, year *int32) (items.Me
 		return missed(err)
 	}
 
-	return seriesMetadata(series), true, nil
+	return seriesMetadata(series, c.images(ctx)), true, nil
 }
 
 func (c *Client) Season(ctx context.Context, series map[string]string, season int32) (items.Metadata, bool, error) {
@@ -124,7 +130,7 @@ func (c *Client) Season(ctx context.Context, series map[string]string, season in
 		return missed(err)
 	}
 
-	return seasonMetadata(found), true, nil
+	return seasonMetadata(found, c.images(ctx)), true, nil
 }
 
 func (c *Client) Episode(ctx context.Context, series map[string]string, season, episode int32) (items.Metadata, bool, error) {
@@ -138,7 +144,7 @@ func (c *Client) Episode(ctx context.Context, series map[string]string, season, 
 		return missed(err)
 	}
 
-	return episodeMetadata(found), true, nil
+	return episodeMetadata(found, c.images(ctx)), true, nil
 }
 
 func (c *Client) seriesID(ctx context.Context, series map[string]string) (int, error) {
@@ -179,6 +185,30 @@ func (c *Client) search(
 	}
 
 	return found, err
+}
+
+func (c *Client) images(ctx context.Context) string {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	if c.described {
+		return c.imageBase
+	}
+	if err := c.wait(ctx); err != nil {
+		return ""
+	}
+
+	described, err := c.api.GetConfigurationAPI()
+	if err != nil {
+		log.Printf("tmdb: no artwork this run, the configuration could not be read: %v", err)
+
+		return ""
+	}
+
+	c.imageBase = described.Images.SecureBaseURL
+	c.described = true
+
+	return c.imageBase
 }
 
 func (c *Client) wait(ctx context.Context) error {

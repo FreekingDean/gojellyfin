@@ -3,12 +3,17 @@ package metadata
 import (
 	"context"
 	"log"
+	"net/http"
+	"time"
 
+	"github.com/FreekingDean/gojellyfin/internal/artwork"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
+
+const downloadTimeout = 30 * time.Second
 
 var identifiable = []items.Kind{
 	itemmodal.KindMovie,
@@ -18,12 +23,19 @@ var identifiable = []items.Kind{
 }
 
 type Service struct {
-	provider Provider
-	items    *items.Service
+	provider  Provider
+	items     *items.Service
+	artwork   artwork.Store
+	downloads *http.Client
 }
 
-func New(provider Provider, service *items.Service) *Service {
-	return &Service{provider: provider, items: service}
+func New(provider Provider, service *items.Service, store artwork.Store) *Service {
+	return &Service{
+		provider:  provider,
+		items:     service,
+		artwork:   store,
+		downloads: &http.Client{Timeout: downloadTimeout},
+	}
 }
 
 func (s *Service) IdentifyItems(ctx context.Context, options jobs.Options) error {
@@ -71,9 +83,13 @@ func (s *Service) identify(ctx context.Context, pendingItem *items.Item) error {
 
 	stripLockedFields(&found, pendingItem.LockedFields)
 
-	_, err = s.items.UpdateMetadata(ctx, pendingItem.ID, found)
+	if _, err := s.items.UpdateMetadata(ctx, pendingItem.ID, found); err != nil {
+		return err
+	}
 
-	return err
+	s.saveArtwork(ctx, pendingItem, found.Images)
+
+	return nil
 }
 
 func (s *Service) fetch(ctx context.Context, pendingItem *items.Item) (items.Metadata, bool, error) {
