@@ -80,7 +80,7 @@ func addVirtualFolder(t *testing.T, server *Server, name string, params *[]strin
 	}
 }
 
-func locations(t *testing.T, server *Server, name string) []string {
+func virtualFolder(t *testing.T, server *Server, name string) api.VirtualFolderInfo {
 	t.Helper()
 
 	response, err := server.GetVirtualFolders(context.Background(), api.GetVirtualFoldersRequestObject{})
@@ -94,27 +94,32 @@ func locations(t *testing.T, server *Server, name string) []string {
 	}
 
 	for _, folder := range folders {
-		if apiutil.Deref(folder.Name) != name {
-			continue
+		if apiutil.Deref(folder.Name) == name {
+			return folder
 		}
-
-		found := apiutil.Deref(folder.Locations)
-		infos := apiutil.Deref(folder.LibraryOptions.PathInfos)
-
-		reported := make([]string, 0, len(infos))
-		for _, info := range infos {
-			reported = append(reported, apiutil.Deref(info.Path))
-		}
-		if !slices.Equal(found, reported) {
-			t.Errorf("PathInfos = %v, want the same as Locations %v", reported, found)
-		}
-
-		return found
 	}
 
 	t.Fatalf("library %q was not returned", name)
 
-	return nil
+	return api.VirtualFolderInfo{}
+}
+
+func locations(t *testing.T, server *Server, name string) []string {
+	t.Helper()
+
+	folder := virtualFolder(t, server, name)
+	found := apiutil.Deref(folder.Locations)
+	infos := apiutil.Deref(folder.LibraryOptions.PathInfos)
+
+	reported := make([]string, 0, len(infos))
+	for _, info := range infos {
+		reported = append(reported, apiutil.Deref(info.Path))
+	}
+	if !slices.Equal(found, reported) {
+		t.Errorf("PathInfos = %v, want the same as Locations %v", reported, found)
+	}
+
+	return found
 }
 
 func TestServer_AddVirtualFolder(t *testing.T) {
@@ -152,5 +157,92 @@ func TestServer_AddVirtualFolder(t *testing.T) {
 				t.Errorf("Locations = %v, want %v", found, test.want)
 			}
 		})
+	}
+}
+
+func updateLibraryOptions(t *testing.T, server *Server, name string, options *api.LibraryOptions) {
+	t.Helper()
+
+	id, err := uuid.Parse(apiutil.Deref(virtualFolder(t, server, name).ItemId))
+	if err != nil {
+		t.Fatalf("failed to read the library id: %v", err)
+	}
+
+	response, err := server.UpdateLibraryOptions(context.Background(), api.UpdateLibraryOptionsRequestObject{
+		JSONBody: &api.UpdateLibraryOptionsJSONRequestBody{
+			Id:             &id,
+			LibraryOptions: options,
+		},
+	})
+	if err != nil {
+		t.Fatalf("failed to update the library options: %v", err)
+	}
+	if _, ok := response.(api.UpdateLibraryOptions204Response); !ok {
+		t.Fatalf("response = %T, want 204", response)
+	}
+}
+
+func TestServer_UpdateLibraryOptions(t *testing.T) {
+	tests := []struct {
+		name    string
+		options *api.LibraryOptions
+		want    []string
+	}{
+		{
+			name:    "gains a folder the dashboard added",
+			options: &api.LibraryOptions{PathInfos: pathInfos("/media/movies", "/media/second")},
+			want:    []string{"/media/movies", "/media/second"},
+		},
+		{
+			name:    "leaves the folders alone when the body carries none",
+			options: &api.LibraryOptions{},
+			want:    []string{"/media/movies"},
+		},
+		{
+			name:    "leaves the folders alone when the body carries an empty list",
+			options: &api.LibraryOptions{PathInfos: pathInfos()},
+			want:    []string{"/media/movies"},
+		},
+		{
+			name:    "leaves the folders alone when the body names nothing but blanks",
+			options: &api.LibraryOptions{PathInfos: pathInfos("")},
+			want:    []string{"/media/movies"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			server, name := newServer(t)
+			addVirtualFolder(t, server, name, nil, pathInfos("/media/movies"))
+
+			updateLibraryOptions(t, server, name, test.options)
+
+			if found := locations(t, server, name); !slices.Equal(found, test.want) {
+				t.Errorf("Locations = %v, want %v", found, test.want)
+			}
+		})
+	}
+}
+
+func TestServer_RemoveMediaPath(t *testing.T) {
+	server, name := newServer(t)
+	addVirtualFolder(t, server, name, nil, pathInfos("/media/movies", "/media/second"))
+
+	response, err := server.RemoveMediaPath(context.Background(), api.RemoveMediaPathRequestObject{
+		Params: api.RemoveMediaPathParams{
+			Name: apiutil.Ptr(name),
+			Path: apiutil.Ptr("/media/second"),
+		},
+	})
+	if err != nil {
+		t.Fatalf("failed to remove the media path: %v", err)
+	}
+	if _, ok := response.(api.RemoveMediaPath204Response); !ok {
+		t.Fatalf("response = %T, want 204", response)
+	}
+
+	want := []string{"/media/movies"}
+	if found := locations(t, server, name); !slices.Equal(found, want) {
+		t.Errorf("Locations = %v, want %v", found, want)
 	}
 }

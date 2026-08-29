@@ -193,6 +193,14 @@ func (s *Service) AddLocation(ctx context.Context, id uuid.UUID, path string) er
 	return nil
 }
 
+func (s *Service) SetLocations(ctx context.Context, id uuid.UUID, paths []string) error {
+	if err := s.store.Library.UpdateOneID(id).SetLocations(paths).Exec(ctx); err != nil {
+		return fmt.Errorf("failed to set library locations: %w", err)
+	}
+
+	return nil
+}
+
 func (s *Service) RemoveLocation(ctx context.Context, id uuid.UUID, path string) error {
 	library, err := s.Library(ctx, id)
 	if err != nil {
