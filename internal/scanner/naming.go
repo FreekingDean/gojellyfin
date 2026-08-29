@@ -18,11 +18,20 @@ var (
 	specialsPattern = regexp.MustCompile(`(?i)^(?:specials?|season\s*0)$`)
 	articlePattern  = regexp.MustCompile(`(?i)^(the|a|an)\s+`)
 	languagePattern = regexp.MustCompile(`^[a-z]{2,3}$`)
+	trackPattern    = regexp.MustCompile(`^(?:(\d{1,2})-)?(\d{1,3})[\s\-]+(.+)$`)
+	discPattern     = regexp.MustCompile(`(?i)^(?:disc|disk|cd|volume|vol)[\s\-]*(\d{1,2})$`)
 
 	videoExtensions = map[string]bool{
 		".mkv": true, ".mp4": true, ".m4v": true, ".avi": true, ".mov": true,
 		".wmv": true, ".flv": true, ".webm": true, ".mpg": true, ".mpeg": true,
 		".ts": true, ".m2ts": true, ".mts": true, ".ogv": true, ".3gp": true,
+	}
+
+	audioExtensions = map[string]bool{
+		".mp3": true, ".flac": true, ".m4a": true, ".m4b": true, ".aac": true,
+		".ogg": true, ".oga": true, ".opus": true, ".wav": true, ".wma": true,
+		".alac": true, ".aiff": true, ".aif": true, ".ape": true, ".mka": true,
+		".dsf": true, ".wv": true,
 	}
 
 	subtitleExtensions = map[string]bool{
@@ -32,6 +41,10 @@ var (
 
 func isVideo(name string) bool {
 	return videoExtensions[strings.ToLower(filepath.Ext(name))]
+}
+
+func isAudio(name string) bool {
+	return audioExtensions[strings.ToLower(filepath.Ext(name))]
 }
 
 func isSubtitle(name string) bool {
@@ -148,6 +161,39 @@ func parseSeason(name string) (*int32, bool) {
 	return ptr(int32(number)), true
 }
 
+func parseTrack(name string) (disc, track *int32, title string) {
+	title = clean(stripExtension(name))
+
+	match := trackPattern.FindStringSubmatch(title)
+	if match == nil || clean(match[3]) == "" {
+		return nil, nil, title
+	}
+
+	number, err := strconv.ParseInt(match[2], 10, 32)
+	if err != nil {
+		return nil, nil, title
+	}
+	if side, err := strconv.ParseInt(match[1], 10, 32); err == nil {
+		disc = ptr(int32(side))
+	}
+
+	return disc, ptr(int32(number)), clean(match[3])
+}
+
+func parseDisc(name string) (*int32, bool) {
+	match := discPattern.FindStringSubmatch(clean(name))
+	if match == nil {
+		return nil, false
+	}
+
+	number, err := strconv.ParseInt(match[1], 10, 32)
+	if err != nil {
+		return nil, false
+	}
+
+	return ptr(int32(number)), true
+}
+
 func seasonName(number *int32) string {
 	if number == nil || *number == 0 {
 		return "Specials"
@@ -194,6 +240,42 @@ func episodeKey(slug string, season, episode *int32, title string) string {
 	}
 
 	return fmt.Sprintf("episode:%s:%d:%d", slug, *season, *episode)
+}
+
+func musicArtistKey(slug string) string {
+	return "musicartist:" + slug
+}
+
+func musicAlbumKey(slug string) string {
+	return "musicalbum:" + slug
+}
+
+func audioKey(scope string, disc, track *int32, title string) string {
+	if track == nil {
+		return keyOf("audio", scope, slugify(title))
+	}
+
+	side := int32(1)
+	if disc != nil {
+		side = *disc
+	}
+
+	return keyOf("audio", scope, fmt.Sprintf("%d:%d", side, *track), slugify(title))
+}
+
+func albumSlug(artist string, name string, year *int32) string {
+	return keyOf(artist, titleSlug(name, year))
+}
+
+func keyOf(parts ...string) string {
+	kept := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if part != "" {
+			kept = append(kept, part)
+		}
+	}
+
+	return strings.Join(kept, ":")
 }
 
 func titleSlug(name string, year *int32) string {

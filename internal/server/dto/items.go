@@ -110,6 +110,10 @@ func ItemDtos(ctx context.Context, store *items.Service, records []*items.Item) 
 		return nil, err
 	}
 
+	if err := applyMusicFields(ctx, store, records, converted); err != nil {
+		return nil, err
+	}
+
 	return converted, nil
 }
 
