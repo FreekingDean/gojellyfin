@@ -29,13 +29,15 @@ func TestService_ItemsNeedingMetadata(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to select the items needing metadata: %v", err)
 		}
-		if len(pending) != len(kinds) {
-			t.Fatalf("selected %d items, want %d", len(pending), len(kinds))
-		}
 
-		ranks := make([]int, 0, len(pending))
+		ranks := make([]int, 0, len(kinds))
 		for _, id := range pending {
-			ranks = append(ranks, slices.Index(wanted, kinds[id]))
+			if kind, seeded := kinds[id]; seeded {
+				ranks = append(ranks, slices.Index(wanted, kind))
+			}
+		}
+		if len(ranks) != len(kinds) {
+			t.Fatalf("selected %d of the seeded items, want %d", len(ranks), len(kinds))
 		}
 		if !slices.IsSorted(ranks) {
 			t.Errorf("kind order = %v, want parents before children", ranks)

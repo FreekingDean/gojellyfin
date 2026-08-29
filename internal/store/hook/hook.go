@@ -117,6 +117,18 @@ func (f ImageFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, e
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.ImageMutation", m)
 }
 
+// The ImageBlobFunc type is an adapter to allow the use of ordinary
+// function as ImageBlob mutator.
+type ImageBlobFunc func(context.Context, *store.ImageBlobMutation) (store.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ImageBlobFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, error) {
+	if mv, ok := m.(*store.ImageBlobMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.ImageBlobMutation", m)
+}
+
 // The ItemFunc type is an adapter to allow the use of ordinary
 // function as Item mutator.
 type ItemFunc func(context.Context, *store.ItemMutation) (store.Value, error)

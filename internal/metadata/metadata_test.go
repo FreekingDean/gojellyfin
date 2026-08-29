@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/artwork"
 	"github.com/FreekingDean/gojellyfin/internal/consts"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
@@ -27,6 +28,7 @@ var errUnreachable = errors.New("the provider is unreachable")
 
 type stubProvider struct {
 	enabled bool
+	images  []items.RemoteImage
 
 	mutex sync.Mutex
 	asked []string
@@ -66,6 +68,7 @@ func (s *stubProvider) Movie(_ context.Context, name string, _ *int32) (items.Me
 		PremiereDate:    &premiere,
 		Taglines:        &[]string{"Welcome to the Real World."},
 		ProviderIds:     &map[string]string{"Stub": "603", "StubExternal": "tt0133093"},
+		Images:          s.images,
 	}, true, nil
 }
 
@@ -121,6 +124,7 @@ type fixture struct {
 	items     *items.Service
 	service   *Service
 	provider  *stubProvider
+	artwork   artwork.Store
 	libraryID uuid.UUID
 }
 
@@ -158,8 +162,13 @@ func newFixtureEnabled(t *testing.T, enabled bool) *fixture {
 		t.Fatalf("failed to create the library: %v", err)
 	}
 
+	provider := &stubProvider{enabled: enabled}
+	service := items.New(client)
+	stored := artwork.New(client)
+
 	t.Cleanup(func() {
 		ctx := context.Background()
+		dropStoredArtwork(t, service, stored, library.ID)
 		if err := catalogue.DeleteLibrary(ctx, library.ID); err != nil {
 			t.Errorf("failed to delete the library: %v", err)
 		}
@@ -168,14 +177,41 @@ func newFixtureEnabled(t *testing.T, enabled bool) *fixture {
 		}
 	})
 
-	provider := &stubProvider{enabled: enabled}
-	service := items.New(client)
-
 	return &fixture{
 		items:     service,
-		service:   New(provider, service),
+		service:   New(provider, service, stored),
 		provider:  provider,
+		artwork:   stored,
 		libraryID: library.ID,
+	}
+}
+
+func dropStoredArtwork(t *testing.T, service *items.Service, stored artwork.Store, libraryID uuid.UUID) {
+	t.Helper()
+
+	ctx := context.Background()
+	records, _, err := service.QueryItems(ctx, items.ItemQuery{LibraryID: &libraryID})
+	if err != nil {
+		t.Errorf("failed to list the items: %v", err)
+
+		return
+	}
+
+	for _, record := range records {
+		images, err := service.Images(ctx, record.ID)
+		if err != nil {
+			t.Errorf("failed to list the images: %v", err)
+
+			continue
+		}
+		for _, image := range images {
+			if image.Source != items.ImageSourceRemote {
+				continue
+			}
+			if err := stored.Delete(ctx, image.Path); err != nil {
+				t.Errorf("failed to delete the artwork: %v", err)
+			}
+		}
 	}
 }
 
@@ -237,6 +273,10 @@ func (f *fixture) identify(t *testing.T) {
 
 func (f *fixture) run(t *testing.T, options jobs.Options) {
 	t.Helper()
+
+	if options.Scope == uuid.Nil {
+		options.Scope = f.libraryID
+	}
 
 	if err := jobs.RunStep(t, f.service.IdentifyItems, options); err != nil {
 		t.Fatalf("identification failed: %v", err)

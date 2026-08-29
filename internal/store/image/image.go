@@ -25,6 +25,8 @@ const (
 	FieldKind = "kind"
 	// FieldIndex holds the string denoting the index field in the database.
 	FieldIndex = "index"
+	// FieldSource holds the string denoting the source field in the database.
+	FieldSource = "source"
 	// FieldPath holds the string denoting the path field in the database.
 	FieldPath = "path"
 	// FieldTag holds the string denoting the tag field in the database.
@@ -58,6 +60,7 @@ var Columns = []string{
 	FieldItemID,
 	FieldKind,
 	FieldIndex,
+	FieldSource,
 	FieldPath,
 	FieldTag,
 	FieldBlurHash,
@@ -121,6 +124,32 @@ func KindValidator(k Kind) error {
 	}
 }
 
+// Source defines the type for the "source" enum field.
+type Source string
+
+// SourceLocal is the default value of the Source enum.
+const DefaultSource = SourceLocal
+
+// Source values.
+const (
+	SourceLocal  Source = "Local"
+	SourceRemote Source = "Remote"
+)
+
+func (s Source) String() string {
+	return string(s)
+}
+
+// SourceValidator is a validator for the "source" field enum values. It is called by the builders before save.
+func SourceValidator(s Source) error {
+	switch s {
+	case SourceLocal, SourceRemote:
+		return nil
+	default:
+		return fmt.Errorf("image: invalid enum value for source field: %q", s)
+	}
+}
+
 // OrderOption defines the ordering options for the Image queries.
 type OrderOption func(*sql.Selector)
 
@@ -152,6 +181,11 @@ func ByKind(opts ...sql.OrderTermOption) OrderOption {
 // ByIndex orders the results by the index field.
 func ByIndex(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIndex, opts...).ToFunc()
+}
+
+// BySource orders the results by the source field.
+func BySource(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSource, opts...).ToFunc()
 }
 
 // ByPath orders the results by the path field.

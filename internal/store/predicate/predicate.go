@@ -33,6 +33,9 @@ type Genre func(*sql.Selector)
 // Image is the predicate function for image builders.
 type Image func(*sql.Selector)
 
+// ImageBlob is the predicate function for imageblob builders.
+type ImageBlob func(*sql.Selector)
+
 // Item is the predicate function for item builders.
 type Item func(*sql.Selector)
 

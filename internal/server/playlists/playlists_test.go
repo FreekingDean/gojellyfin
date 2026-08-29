@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
@@ -62,7 +63,7 @@ func newFixture(t *testing.T) *fixture {
 		t.Fatalf("failed to create the library: %v", err)
 	}
 
-	sessionService := sessions.New(client)
+	sessionService := sessions.New(client, activity.New(client))
 	fixture := &fixture{
 		server:    New(playlists.New(client), items.New(client)),
 		client:    client,

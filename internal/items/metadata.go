@@ -40,6 +40,7 @@ type Metadata struct {
 	ProductionLocations          *[]string
 	LockedFields                 *[]string
 	ProviderIds                  *map[string]string
+	Images                       []RemoteImage
 }
 
 func (s *Service) UpdateMetadata(ctx context.Context, id uuid.UUID, metadata Metadata) (*Item, error) {

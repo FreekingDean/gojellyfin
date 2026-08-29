@@ -8,6 +8,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/consts"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
 )
 
 const (
@@ -16,6 +17,12 @@ const (
 )
 
 const ratingCountry = "US"
+
+const (
+	posterSize   = "w780"
+	backdropSize = "w1280"
+	stillSize    = "w300"
+)
 
 var statuses = map[string]string{
 	"Returning Series": "Continuing",
@@ -30,7 +37,7 @@ func seriesStatus(status string) string {
 	return statuses[status]
 }
 
-func movieMetadata(movie *gotmdb.MovieDetails) items.Metadata {
+func movieMetadata(movie *gotmdb.MovieDetails, base string) items.Metadata {
 	premiere := date(movie.ReleaseDate)
 
 	return items.Metadata{
@@ -44,10 +51,14 @@ func movieMetadata(movie *gotmdb.MovieDetails) items.Metadata {
 		Taglines:            list(movie.Tagline),
 		ProductionLocations: countries(movie.ProductionCountries),
 		ProviderIds:         providerIDs(movie.ID, movie.IMDbID),
+		Images: artwork(
+			remote(imagemodal.KindPrimary, base, posterSize, movie.PosterPath),
+			remote(imagemodal.KindBackdrop, base, backdropSize, movie.BackdropPath),
+		),
 	}
 }
 
-func seriesMetadata(series *gotmdb.TVDetails) items.Metadata {
+func seriesMetadata(series *gotmdb.TVDetails, base string) items.Metadata {
 	premiere := date(series.FirstAirDate)
 
 	metadata := items.Metadata{
@@ -62,6 +73,10 @@ func seriesMetadata(series *gotmdb.TVDetails) items.Metadata {
 		Taglines:            list(series.Tagline),
 		ProductionLocations: countries(series.ProductionCountries),
 		ProviderIds:         providerIDs(series.ID, seriesIMDbID(series)),
+		Images: artwork(
+			remote(imagemodal.KindPrimary, base, posterSize, series.PosterPath),
+			remote(imagemodal.KindBackdrop, base, backdropSize, series.BackdropPath),
+		),
 	}
 
 	if !series.InProduction {
@@ -71,7 +86,7 @@ func seriesMetadata(series *gotmdb.TVDetails) items.Metadata {
 	return metadata
 }
 
-func seasonMetadata(season *gotmdb.TVSeasonDetails) items.Metadata {
+func seasonMetadata(season *gotmdb.TVSeasonDetails, base string) items.Metadata {
 	premiere := date(season.AirDate)
 
 	return items.Metadata{
@@ -81,10 +96,11 @@ func seasonMetadata(season *gotmdb.TVSeasonDetails) items.Metadata {
 		PremiereDate:    premiere,
 		ProductionYear:  year(premiere),
 		ProviderIds:     providerIDs(season.ID, ""),
+		Images:          artwork(remote(imagemodal.KindPrimary, base, posterSize, season.PosterPath)),
 	}
 }
 
-func episodeMetadata(episode *gotmdb.TVEpisodeDetails) items.Metadata {
+func episodeMetadata(episode *gotmdb.TVEpisodeDetails, base string) items.Metadata {
 	premiere := date(episode.AirDate)
 
 	return items.Metadata{
@@ -94,6 +110,7 @@ func episodeMetadata(episode *gotmdb.TVEpisodeDetails) items.Metadata {
 		PremiereDate:    premiere,
 		ProductionYear:  year(premiere),
 		ProviderIds:     providerIDs(episode.ID, episodeIMDbID(episode)),
+		Images:          artwork(remote(imagemodal.KindPrimary, base, stillSize, episode.StillPath)),
 	}
 }
 
@@ -150,6 +167,28 @@ func episodeIMDbID(episode *gotmdb.TVEpisodeDetails) string {
 	}
 
 	return episode.ExternalIDs.IMDbID
+}
+
+func remote(kind items.ImageKind, base, size, path string) items.RemoteImage {
+	if base == "" || path == "" {
+		return items.RemoteImage{}
+	}
+
+	return items.RemoteImage{Kind: kind, URL: base + size + path}
+}
+
+func artwork(references ...items.RemoteImage) []items.RemoteImage {
+	found := make([]items.RemoteImage, 0, len(references))
+	for _, reference := range references {
+		if reference.URL != "" {
+			found = append(found, reference)
+		}
+	}
+	if len(found) == 0 {
+		return nil
+	}
+
+	return found
 }
 
 func providerIDs(tmdbID int64, imdbID string) *map[string]string {

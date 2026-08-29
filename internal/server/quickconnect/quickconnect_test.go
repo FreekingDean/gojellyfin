@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/quickconnect"
@@ -89,7 +90,7 @@ func newFixture(t *testing.T) *fixture {
 
 	pending := quickconnect.New(client)
 	userService := users.New(client)
-	sessionService := sessions.New(client)
+	sessionService := sessions.New(client, activity.New(client))
 
 	return &fixture{
 		pending:  pending,

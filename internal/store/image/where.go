@@ -266,6 +266,26 @@ func IndexLTE(v int32) predicate.Image {
 	return predicate.Image(sql.FieldLTE(FieldIndex, v))
 }
 
+// SourceEQ applies the EQ predicate on the "source" field.
+func SourceEQ(v Source) predicate.Image {
+	return predicate.Image(sql.FieldEQ(FieldSource, v))
+}
+
+// SourceNEQ applies the NEQ predicate on the "source" field.
+func SourceNEQ(v Source) predicate.Image {
+	return predicate.Image(sql.FieldNEQ(FieldSource, v))
+}
+
+// SourceIn applies the In predicate on the "source" field.
+func SourceIn(vs ...Source) predicate.Image {
+	return predicate.Image(sql.FieldIn(FieldSource, vs...))
+}
+
+// SourceNotIn applies the NotIn predicate on the "source" field.
+func SourceNotIn(vs ...Source) predicate.Image {
+	return predicate.Image(sql.FieldNotIn(FieldSource, vs...))
+}
+
 // PathEQ applies the EQ predicate on the "path" field.
 func PathEQ(v string) predicate.Image {
 	return predicate.Image(sql.FieldEQ(FieldPath, v))

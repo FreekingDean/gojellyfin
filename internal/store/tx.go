@@ -32,6 +32,8 @@ type Tx struct {
 	Genre *GenreClient
 	// Image is the client for interacting with the Image builders.
 	Image *ImageClient
+	// ImageBlob is the client for interacting with the ImageBlob builders.
+	ImageBlob *ImageBlobClient
 	// Item is the client for interacting with the Item builders.
 	Item *ItemClient
 	// Library is the client for interacting with the Library builders.
@@ -218,6 +220,7 @@ func (tx *Tx) init() {
 	tx.DisplayPreferences = NewDisplayPreferencesClient(tx.config)
 	tx.Genre = NewGenreClient(tx.config)
 	tx.Image = NewImageClient(tx.config)
+	tx.ImageBlob = NewImageBlobClient(tx.config)
 	tx.Item = NewItemClient(tx.config)
 	tx.Library = NewLibraryClient(tx.config)
 	tx.LibraryOptions = NewLibraryOptionsClient(tx.config)
