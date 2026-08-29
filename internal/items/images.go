@@ -12,8 +12,14 @@ import (
 )
 
 type (
-	Image     = store.Image
-	ImageKind = imagemodal.Kind
+	Image       = store.Image
+	ImageKind   = imagemodal.Kind
+	ImageSource = imagemodal.Source
+)
+
+const (
+	ImageSourceLocal  = imagemodal.SourceLocal
+	ImageSourceRemote = imagemodal.SourceRemote
 )
 
 var ValidImageKind = imagemodal.KindValidator
@@ -47,7 +53,10 @@ func (s *Service) SaveImage(ctx context.Context, itemID uuid.UUID, artwork Artwo
 }
 
 func (s *Service) DeleteImagesNotInPaths(ctx context.Context, libraryID uuid.UUID, paths []string) error {
-	missing := s.store.Image.Delete().Where(imagemodal.HasItemWith(itemmodal.LibraryID(libraryID)))
+	missing := s.store.Image.Delete().Where(
+		imagemodal.HasItemWith(itemmodal.LibraryID(libraryID)),
+		imagemodal.SourceEQ(imagemodal.SourceLocal),
+	)
 	if len(paths) > 0 {
 		missing = missing.Where(imagemodal.PathNotIn(paths...))
 	}

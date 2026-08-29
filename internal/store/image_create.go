@@ -79,6 +79,20 @@ func (_c *ImageCreate) SetNillableIndex(v *int32) *ImageCreate {
 	return _c
 }
 
+// SetSource sets the "source" field.
+func (_c *ImageCreate) SetSource(v image.Source) *ImageCreate {
+	_c.mutation.SetSource(v)
+	return _c
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (_c *ImageCreate) SetNillableSource(v *image.Source) *ImageCreate {
+	if v != nil {
+		_c.SetSource(*v)
+	}
+	return _c
+}
+
 // SetPath sets the "path" field.
 func (_c *ImageCreate) SetPath(v string) *ImageCreate {
 	_c.mutation.SetPath(v)
@@ -205,6 +219,10 @@ func (_c *ImageCreate) defaults() {
 		v := image.DefaultIndex
 		_c.mutation.SetIndex(v)
 	}
+	if _, ok := _c.mutation.Source(); !ok {
+		v := image.DefaultSource
+		_c.mutation.SetSource(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -228,6 +246,14 @@ func (_c *ImageCreate) check() error {
 	}
 	if _, ok := _c.mutation.Index(); !ok {
 		return &ValidationError{Name: "index", err: errors.New(`store: missing required field "Image.index"`)}
+	}
+	if _, ok := _c.mutation.Source(); !ok {
+		return &ValidationError{Name: "source", err: errors.New(`store: missing required field "Image.source"`)}
+	}
+	if v, ok := _c.mutation.Source(); ok {
+		if err := image.SourceValidator(v); err != nil {
+			return &ValidationError{Name: "source", err: fmt.Errorf(`store: validator failed for field "Image.source": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.Path(); !ok {
 		return &ValidationError{Name: "path", err: errors.New(`store: missing required field "Image.path"`)}
@@ -289,6 +315,10 @@ func (_c *ImageCreate) createSpec() (*Image, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Index(); ok {
 		_spec.SetField(image.FieldIndex, field.TypeInt32, value)
 		_node.Index = value
+	}
+	if value, ok := _c.mutation.Source(); ok {
+		_spec.SetField(image.FieldSource, field.TypeEnum, value)
+		_node.Source = value
 	}
 	if value, ok := _c.mutation.Path(); ok {
 		_spec.SetField(image.FieldPath, field.TypeString, value)
@@ -446,6 +476,18 @@ func (u *ImageUpsert) UpdateIndex() *ImageUpsert {
 // AddIndex adds v to the "index" field.
 func (u *ImageUpsert) AddIndex(v int32) *ImageUpsert {
 	u.Add(image.FieldIndex, v)
+	return u
+}
+
+// SetSource sets the "source" field.
+func (u *ImageUpsert) SetSource(v image.Source) *ImageUpsert {
+	u.Set(image.FieldSource, v)
+	return u
+}
+
+// UpdateSource sets the "source" field to the value that was provided on create.
+func (u *ImageUpsert) UpdateSource() *ImageUpsert {
+	u.SetExcluded(image.FieldSource)
 	return u
 }
 
@@ -685,6 +727,20 @@ func (u *ImageUpsertOne) AddIndex(v int32) *ImageUpsertOne {
 func (u *ImageUpsertOne) UpdateIndex() *ImageUpsertOne {
 	return u.Update(func(s *ImageUpsert) {
 		s.UpdateIndex()
+	})
+}
+
+// SetSource sets the "source" field.
+func (u *ImageUpsertOne) SetSource(v image.Source) *ImageUpsertOne {
+	return u.Update(func(s *ImageUpsert) {
+		s.SetSource(v)
+	})
+}
+
+// UpdateSource sets the "source" field to the value that was provided on create.
+func (u *ImageUpsertOne) UpdateSource() *ImageUpsertOne {
+	return u.Update(func(s *ImageUpsert) {
+		s.UpdateSource()
 	})
 }
 
@@ -1110,6 +1166,20 @@ func (u *ImageUpsertBulk) AddIndex(v int32) *ImageUpsertBulk {
 func (u *ImageUpsertBulk) UpdateIndex() *ImageUpsertBulk {
 	return u.Update(func(s *ImageUpsert) {
 		s.UpdateIndex()
+	})
+}
+
+// SetSource sets the "source" field.
+func (u *ImageUpsertBulk) SetSource(v image.Source) *ImageUpsertBulk {
+	return u.Update(func(s *ImageUpsert) {
+		s.SetSource(v)
+	})
+}
+
+// UpdateSource sets the "source" field to the value that was provided on create.
+func (u *ImageUpsertBulk) UpdateSource() *ImageUpsertBulk {
+	return u.Update(func(s *ImageUpsert) {
+		s.UpdateSource()
 	})
 }
 

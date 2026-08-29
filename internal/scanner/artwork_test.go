@@ -25,6 +25,7 @@ import (
 type fixture struct {
 	scanner *Scanner
 	items   *items.Service
+	client  *store.Client
 	record  *libraries.Library
 }
 
@@ -65,7 +66,35 @@ func newFixture(t *testing.T, root string) *fixture {
 
 	service := items.New(client)
 
-	return &fixture{scanner: New(service, libraries.New(client), filesystem.New(config), ffmpeg.New(), activity.New(client)), items: service, record: record}
+	return &fixture{
+		scanner: New(service, libraries.New(client), filesystem.New(config), ffmpeg.New(), activity.New(client)),
+		items:   service,
+		client:  client,
+		record:  record,
+	}
+}
+
+func (f *fixture) storeArtwork(t *testing.T, kind items.ImageKind, key string) {
+	t.Helper()
+
+	records, err := f.items.ItemsInLibrary(context.Background(), f.record.ID)
+	if err != nil {
+		t.Fatalf("failed to read the library back: %v", err)
+	}
+	if len(records) != 1 {
+		t.Fatalf("items = %d, want the one movie scanned", len(records))
+	}
+
+	_, err = f.client.Image.Create().
+		SetItemID(records[0].ID).
+		SetKind(kind).
+		SetSource(imagemodal.SourceRemote).
+		SetPath(key).
+		SetTag("downloaded").
+		Save(context.Background())
+	if err != nil {
+		t.Fatalf("failed to create the downloaded image row: %v", err)
+	}
 }
 
 func (f *fixture) scan(t *testing.T) map[items.ImageKind]string {
@@ -236,6 +265,35 @@ func TestScanArtwork(t *testing.T) {
 
 		if found := fixture.scan(t); len(found) != 0 {
 			t.Errorf("images = %v, want the deleted poster gone", found)
+		}
+	})
+}
+
+func TestScanArtwork_sweep(t *testing.T) {
+	t.Run("keeps artwork the scan did not write", func(t *testing.T) {
+		root := t.TempDir()
+		movieFolder(t, root, "Dune (2021)",
+			"Dune (2021).mkv",
+			"poster.jpg",
+		)
+
+		fixture := newFixture(t, root)
+		if found := fixture.scan(t); found[imagemodal.KindPrimary] != "poster.jpg" {
+			t.Fatalf("primary = %q, want the folder poster", found[imagemodal.KindPrimary])
+		}
+
+		fixture.storeArtwork(t, imagemodal.KindBackdrop, "artwork/dune/Backdrop/0.jpg")
+
+		if err := os.Remove(filepath.Join(root, "Dune (2021)", "poster.jpg")); err != nil {
+			t.Fatalf("failed to delete the poster: %v", err)
+		}
+
+		found := fixture.scan(t)
+		if _, ok := found[imagemodal.KindPrimary]; ok {
+			t.Errorf("primary = %q, want the deleted poster swept", found[imagemodal.KindPrimary])
+		}
+		if found[imagemodal.KindBackdrop] != "0.jpg" {
+			t.Errorf("backdrop = %q, want the downloaded backdrop the scan never wrote", found[imagemodal.KindBackdrop])
 		}
 	})
 }

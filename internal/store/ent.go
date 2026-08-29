@@ -21,6 +21,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/displaypreferences"
 	"github.com/FreekingDean/gojellyfin/internal/store/genre"
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
+	"github.com/FreekingDean/gojellyfin/internal/store/imageblob"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
@@ -112,6 +113,7 @@ func checkColumn(t, c string) error {
 			displaypreferences.Table: displaypreferences.ValidColumn,
 			genre.Table:              genre.ValidColumn,
 			image.Table:              image.ValidColumn,
+			imageblob.Table:          imageblob.ValidColumn,
 			item.Table:               item.ValidColumn,
 			library.Table:            library.ValidColumn,
 			libraryoptions.Table:     libraryoptions.ValidColumn,
