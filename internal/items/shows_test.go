@@ -161,6 +161,12 @@ func TestService_SeriesEpisodes(t *testing.T) {
 	fixture.add(t, seed{kind: itemmodal.KindVideo, name: "Behind The Scenes", parentID: &seasonOne, index: number(1), parentIndex: number(1)})
 	fixture.add(t, seed{kind: itemmodal.KindEpisode, name: "Elsewhere", parentID: &otherSeason, index: number(1), parentIndex: number(1)})
 
+	flat := fixture.add(t, seed{kind: itemmodal.KindSeries, name: "Flat Series"})
+	flatSeason := fixture.add(t, seed{kind: itemmodal.KindSeason, name: "Flat Season 2", parentID: &flat, index: number(2)})
+
+	fixture.add(t, seed{kind: itemmodal.KindEpisode, name: "Loose S01E01", parentID: &flat, index: number(1), parentIndex: number(1)})
+	fixture.add(t, seed{kind: itemmodal.KindEpisode, name: "Foldered S02E01", parentID: &flatSeason, index: number(1), parentIndex: number(2)})
+
 	tests := []struct {
 		name      string
 		query     EpisodeQuery
@@ -190,6 +196,12 @@ func TestService_SeriesEpisodes(t *testing.T) {
 			query:     EpisodeQuery{SeriesID: series, StartIndex: 1, Limit: 2},
 			want:      []string{"S01E02", "S02E01"},
 			wantTotal: 4,
+		},
+		{
+			name:      "finds episodes loose in the series folder",
+			query:     EpisodeQuery{SeriesID: flat},
+			want:      []string{"Loose S01E01", "Foldered S02E01"},
+			wantTotal: 2,
 		},
 	}
 
