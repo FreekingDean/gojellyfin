@@ -85,14 +85,12 @@ func (s *Service) SaveScanned(ctx context.Context, scanned Scanned) (*Item, erro
 		UpdateKind().
 		UpdateMediaType().
 		UpdateIsFolder().
-		UpdateName().
-		UpdateSortName().
-		UpdateProductionYear().
 		UpdateIndexNumber().
 		UpdateParentIndexNumber().
 		UpdateDateModified().
 		UpdateUpdatedAt().
 		ClearDeletedAt().
+		Update(unclaimedTitle).
 		ID(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to save scanned item: %w", err)

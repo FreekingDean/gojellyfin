@@ -24,6 +24,7 @@ func ItemDto(item *items.Item, path string, childCount int32, imageTags map[stri
 		Type:              &kind,
 		Path:              apiutil.Ptr(path),
 		IsFolder:          apiutil.Ptr(item.IsFolder),
+		LockData:          apiutil.Ptr(item.LockData),
 		ParentId:          item.ParentID,
 		IndexNumber:       item.IndexNumber,
 		ParentIndexNumber: item.ParentIndexNumber,
@@ -52,6 +53,13 @@ func ItemDto(item *items.Item, path string, childCount int32, imageTags map[stri
 
 	if item.Overview != "" {
 		dto.Overview = apiutil.Ptr(item.Overview)
+	}
+	if len(item.LockedFields) > 0 {
+		locked := make([]api.MetadataField, 0, len(item.LockedFields))
+		for _, field := range item.LockedFields {
+			locked = append(locked, api.MetadataField(field))
+		}
+		dto.LockedFields = &locked
 	}
 	if item.IsFolder {
 		dto.ChildCount = apiutil.Ptr(childCount)

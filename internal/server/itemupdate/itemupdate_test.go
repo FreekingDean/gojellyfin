@@ -269,6 +269,29 @@ func TestServer_UpdateItem(t *testing.T) {
 		}
 	})
 
+	t.Run("claims the title it retitles", func(t *testing.T) {
+		fixture := newFixture(t)
+
+		fixture.update(t, fixture.itemID, api.BaseItemDto{Name: apiutil.Ptr("The Matrix")})
+
+		if want := []string{"Name"}; !slices.Equal(fixture.item(t).LockedFields, want) {
+			t.Errorf("locked fields = %v, want %v: a rescan would take the edit back", fixture.item(t).LockedFields, want)
+		}
+	})
+
+	t.Run("leaves an untouched title to the scan", func(t *testing.T) {
+		fixture := newFixture(t)
+
+		fixture.update(t, fixture.itemID, api.BaseItemDto{
+			Name:     apiutil.Ptr("Original Name"),
+			Overview: apiutil.Ptr("A synopsis."),
+		})
+
+		if locked := fixture.item(t).LockedFields; len(locked) != 0 {
+			t.Errorf("locked fields = %v, want none", locked)
+		}
+	})
+
 	t.Run("answers 404 for an unknown item", func(t *testing.T) {
 		fixture := newFixture(t)
 

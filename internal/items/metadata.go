@@ -3,12 +3,24 @@ package items
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/consts"
+	"github.com/FreekingDean/gojellyfin/internal/store"
+	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
+
+const LockedName = "Name"
+
+var titleColumns = []string{
+	itemmodal.FieldName,
+	itemmodal.FieldSortName,
+	itemmodal.FieldProductionYear,
+}
 
 type Metadata struct {
 	Name                         *string
@@ -94,4 +106,51 @@ func (s *Service) UpdateMetadata(ctx context.Context, id uuid.UUID, metadata Met
 	}
 
 	return item, nil
+}
+
+func unclaimedTitle(upsert *store.ItemUpsert) {
+	kept := upsert.Table()
+	excluded := sql.Dialect(upsert.Dialect()).Table("excluded")
+	unclaimed := fmt.Sprintf(
+		"%s IS NULL AND NOT %s AND NOT COALESCE(%s @> '[%q]', false)",
+		kept.C(itemmodal.FieldProviderIds),
+		kept.C(itemmodal.FieldLockData),
+		kept.C(itemmodal.FieldLockedFields),
+		LockedName,
+	)
+
+	for _, column := range titleColumns {
+		upsert.Set(column, sql.Expr(fmt.Sprintf(
+			"CASE WHEN %s THEN %s ELSE %s END", unclaimed, excluded.C(column), kept.C(column),
+		)))
+	}
+}
+
+func (s *Service) EditMetadata(ctx context.Context, item *Item, metadata Metadata) (*Item, error) {
+	if retitled(item, metadata) {
+		locked := item.LockedFields
+		if metadata.LockedFields != nil {
+			locked = *metadata.LockedFields
+		}
+		if !slices.Contains(locked, LockedName) {
+			locked = append(slices.Clone(locked), LockedName)
+		}
+		metadata.LockedFields = &locked
+	}
+
+	return s.UpdateMetadata(ctx, item.ID, metadata)
+}
+
+func retitled(item *Item, metadata Metadata) bool {
+	if metadata.Name != nil && *metadata.Name != item.Name {
+		return true
+	}
+	if metadata.SortName != nil && *metadata.SortName != item.SortName {
+		return true
+	}
+	if metadata.ProductionYear == nil {
+		return false
+	}
+
+	return item.ProductionYear == nil || *metadata.ProductionYear != *item.ProductionYear
 }
