@@ -2,6 +2,8 @@ package items
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -62,7 +64,7 @@ func (s *Service) SaveImage(ctx context.Context, itemID uuid.UUID, artwork Artwo
 		OnConflictColumns(imagemodal.FieldItemID, imagemodal.FieldKind, imagemodal.FieldIndex).
 		DoNothing().
 		Exec(ctx)
-	if err != nil {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return fmt.Errorf("failed to save image: %w", err)
 	}
 
@@ -98,7 +100,7 @@ func (s *Service) SaveDownloadedImage(ctx context.Context, itemID uuid.UUID, art
 		OnConflictColumns(imagemodal.FieldItemID, imagemodal.FieldKind, imagemodal.FieldIndex).
 		DoNothing().
 		Exec(ctx)
-	if err != nil {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return fmt.Errorf("failed to save downloaded image: %w", err)
 	}
 
