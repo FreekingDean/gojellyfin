@@ -2,10 +2,12 @@ package user
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
@@ -16,9 +18,11 @@ import (
 )
 
 type accounts struct {
-	server *Server
-	admin  *users.User
-	member *users.User
+	server   *Server
+	users    *users.Service
+	sessions *sessions.Service
+	admin    *users.User
+	member   *users.User
 }
 
 func newAccounts(t *testing.T) *accounts {
@@ -42,7 +46,9 @@ func newAccounts(t *testing.T) *accounts {
 		}
 	})
 
-	service := users.New(connection.Client())
+	client := connection.Client()
+	service := users.New(client)
+	tokens := sessions.New(client, activity.New(client))
 	ctx := context.Background()
 
 	hash, err := auth.Hash("current-password")
@@ -67,7 +73,25 @@ func newAccounts(t *testing.T) *accounts {
 		}
 	})
 
-	return &accounts{server: New(service, nil), admin: admin, member: member}
+	return &accounts{
+		server:   New(service, tokens),
+		users:    service,
+		sessions: tokens,
+		admin:    admin,
+		member:   member,
+	}
+}
+
+func (a *accounts) tokenFor(t *testing.T, user *users.User) string {
+	t.Helper()
+
+	token := uuid.NewString()
+	device := sessions.DeviceInfo{ID: uuid.NewString(), Name: "Firefox", AppName: "Jellyfin Web", AppVersion: "10.10.0"}
+	if _, err := a.sessions.Create(context.Background(), user.ID, token, device); err != nil {
+		t.Fatalf("failed to create the session: %v", err)
+	}
+
+	return token
 }
 
 func as(user *users.User) context.Context {
@@ -197,5 +221,61 @@ func TestServer_GetPublicUsers(t *testing.T) {
 		if dto.Configuration != nil {
 			t.Errorf("%v carries a configuration", dto.Name)
 		}
+	}
+}
+
+func TestServer_UpdateUserPasswordRevokesSessions(t *testing.T) {
+	accounts := newAccounts(t)
+	ctx := context.Background()
+	token := accounts.tokenFor(t, accounts.member)
+
+	if _, err := accounts.sessions.ByToken(ctx, token); err != nil {
+		t.Fatalf("the token did not work before the change: %v", err)
+	}
+
+	response := changePassword(t, accounts.server, as(accounts.member), accounts.member.ID, false)
+	if _, ok := response.(api.UpdateUserPassword204Response); !ok {
+		t.Fatalf("response = %T, want 204", response)
+	}
+
+	if _, err := accounts.sessions.ByToken(ctx, token); err == nil {
+		t.Error("a token issued before the password change still works")
+	}
+}
+
+func TestServer_AuthenticateUserByNameRefusesADisabledAccount(t *testing.T) {
+	accounts := newAccounts(t)
+	ctx := context.Background()
+
+	if err := accounts.users.UpdatePolicy(accounts.member.ID).SetIsDisabled(true).Exec(ctx); err != nil {
+		t.Fatalf("failed to disable the member: %v", err)
+	}
+
+	_, err := accounts.server.AuthenticateUserByName(ctx, api.AuthenticateUserByNameRequestObject{
+		JSONBody: &api.AuthenticateUserByNameJSONRequestBody{
+			Username: apiutil.Ptr(accounts.member.Username),
+			Pw:       apiutil.Ptr("current-password"),
+		},
+	})
+	if !errors.Is(err, auth.ErrUnauthorized) {
+		t.Errorf("AuthenticateUserByName = %v, want ErrUnauthorized: a disabled account minted a token", err)
+	}
+}
+
+func TestServer_DisablingAnAccountStopsItsSessions(t *testing.T) {
+	accounts := newAccounts(t)
+	ctx := context.Background()
+	token := accounts.tokenFor(t, accounts.member)
+
+	if _, err := accounts.sessions.ByToken(ctx, token); err != nil {
+		t.Fatalf("the token did not work before the account was disabled: %v", err)
+	}
+
+	if err := accounts.users.UpdatePolicy(accounts.member.ID).SetIsDisabled(true).Exec(ctx); err != nil {
+		t.Fatalf("failed to disable the member: %v", err)
+	}
+
+	if _, err := accounts.sessions.ByToken(ctx, token); err == nil {
+		t.Error("a disabled account's existing session is still honoured")
 	}
 }
