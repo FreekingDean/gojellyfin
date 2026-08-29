@@ -29,6 +29,8 @@ type Image struct {
 	Kind image.Kind `json:"kind,omitempty"`
 	// Index holds the value of the "index" field.
 	Index int32 `json:"index,omitempty"`
+	// Source holds the value of the "source" field.
+	Source image.Source `json:"source,omitempty"`
 	// Path holds the value of the "path" field.
 	Path string `json:"path,omitempty"`
 	// Tag holds the value of the "tag" field.
@@ -74,7 +76,7 @@ func (*Image) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case image.FieldIndex, image.FieldWidth, image.FieldHeight, image.FieldSize:
 			values[i] = new(sql.NullInt64)
-		case image.FieldKind, image.FieldPath, image.FieldTag, image.FieldBlurHash:
+		case image.FieldKind, image.FieldSource, image.FieldPath, image.FieldTag, image.FieldBlurHash:
 			values[i] = new(sql.NullString)
 		case image.FieldCreatedAt, image.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -130,6 +132,12 @@ func (_m *Image) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field index", values[i])
 			} else if value.Valid {
 				_m.Index = int32(value.Int64)
+			}
+		case image.FieldSource:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field source", values[i])
+			} else if value.Valid {
+				_m.Source = image.Source(value.String)
 			}
 		case image.FieldPath:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -222,6 +230,9 @@ func (_m *Image) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("index=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Index))
+	builder.WriteString(", ")
+	builder.WriteString("source=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Source))
 	builder.WriteString(", ")
 	builder.WriteString("path=")
 	builder.WriteString(_m.Path)

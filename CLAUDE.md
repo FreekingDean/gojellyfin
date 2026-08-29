@@ -241,13 +241,23 @@ The batch is derived from the rows — `items.UnidentifiedItems` asks for items 
 
 A season and an episode are looked up through their series' ids rather than by name, so the series has to be identified first. `identifiable` is written parent first and the batch is sorted by position in it, which is what makes one run enough — the rows come back oldest first, and a series edited since its episodes were scanned would otherwise be reached after them and leave the whole show for the next run. Both walk `items.Ancestors` for the `Series`, so a season that matched nothing costs its episodes nothing. Specials are season zero on both sides and need no case of their own.
 
-Nothing fetches artwork. A provider's poster is a URL, and an `Image` row is a path to a file the scan found beside the media, so storing one means downloading and caching it — that is #576, not this.
+Nothing fetches artwork. A provider's poster is a URL, and the bytes have somewhere to go now (see Artwork storage), but downloading one is #576 rather than this.
 
 `lock_data` and `locked_fields` are Jellyfin's semantics and `metadata` honours both. `LockData` keeps an item out of the batch entirely; a field named in `LockedFields` is dropped from what is written, by `stripLockedFields`, which takes a pointer because it edits what it is handed and hiding that would hide an overwrite later. The provider ids themselves survive a field lock, because they are identity rather than metadata and Jellyfin has no lock for them.
 
 Two requests per item, not more: the detail call carries `append_to_response=release_dates` (or `content_ratings,external_ids`), so the certification and the IMDb id arrive with the record instead of costing a third round trip. A 429 or a 5xx backs off and retries rather than failing the run; a 404 or an empty search is a miss, which is not an error because the title may be one TMDB gains later.
 
 The two packages test at their own seam: `metadata` runs the loop and the locks against a stub provider and a real database, and `tmdb` points its client at an `httptest.Server`. A green run needs no key and CI never calls TMDB.
+
+### Artwork storage
+
+**`internal/artwork` is what anything else names; `internal/artwork/postgres` is one implementation of it.** `Store` is the seam — `Put`, `Open` and `Delete` over a string key — and `artwork.New` is the one place that picks who answers, so `server/image` takes a `Store` and learns nothing about where the bytes are. **No package outside `internal/artwork` may import the backend**, and `TestBackendStaysBehindArtwork` in `internal/artwork/boundary_test.go` fails naming any file elsewhere that does. An object store is then a second `New` case rather than a rewrite.
+
+`Open` answers a miss with `false` rather than a sentinel error, for the same reason `metadata.Provider` does: a sentinel in `artwork` would make the backend import its consumer and close the cycle `artwork.New` already opens the other way.
+
+The bytes live in `image_blobs`, keyed by the storage key, **not** in a column on `image`. Item queries and DTO building read image rows constantly, and a `bytea` on that table would drag a poster along with every grid. Nothing joins the two: the row's `path` is the key, which is what keeps the backend swappable and what lets `server/image` keep deriving the content type from the key's extension. `data` is `SET STORAGE EXTERNAL`, because JPEG and PNG are already compressed and the default `EXTENDED` spends a pglz pass that cannot shrink them. A whole object is read into memory on the way out — fine for a poster, and the bound to state before anything larger is stored this way.
+
+**`image.source` is the ownership split.** `Local` means a file the scan found beside the media and the row points at it in place; `Remote` means bytes in the store. `items.DeleteImagesNotInPaths` sweeps `Local` only, so the scan deletes what the scan wrote and a downloaded poster survives a walk that never saw a file for it. Nothing writes a `Remote` row yet (#576).
 
 ### Request identity
 

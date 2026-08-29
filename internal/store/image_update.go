@@ -99,6 +99,20 @@ func (_u *ImageUpdate) AddIndex(v int32) *ImageUpdate {
 	return _u
 }
 
+// SetSource sets the "source" field.
+func (_u *ImageUpdate) SetSource(v image.Source) *ImageUpdate {
+	_u.mutation.SetSource(v)
+	return _u
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (_u *ImageUpdate) SetNillableSource(v *image.Source) *ImageUpdate {
+	if v != nil {
+		_u.SetSource(*v)
+	}
+	return _u
+}
+
 // SetPath sets the "path" field.
 func (_u *ImageUpdate) SetPath(v string) *ImageUpdate {
 	_u.mutation.SetPath(v)
@@ -287,6 +301,11 @@ func (_u *ImageUpdate) check() error {
 			return &ValidationError{Name: "kind", err: fmt.Errorf(`store: validator failed for field "Image.kind": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Source(); ok {
+		if err := image.SourceValidator(v); err != nil {
+			return &ValidationError{Name: "source", err: fmt.Errorf(`store: validator failed for field "Image.source": %w`, err)}
+		}
+	}
 	if _u.mutation.ItemCleared() && len(_u.mutation.ItemIDs()) > 0 {
 		return errors.New(`store: clearing a required unique edge "Image.item"`)
 	}
@@ -319,6 +338,9 @@ func (_u *ImageUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedIndex(); ok {
 		_spec.AddField(image.FieldIndex, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.Source(); ok {
+		_spec.SetField(image.FieldSource, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.Path(); ok {
 		_spec.SetField(image.FieldPath, field.TypeString, value)
@@ -474,6 +496,20 @@ func (_u *ImageUpdateOne) SetNillableIndex(v *int32) *ImageUpdateOne {
 // AddIndex adds value to the "index" field.
 func (_u *ImageUpdateOne) AddIndex(v int32) *ImageUpdateOne {
 	_u.mutation.AddIndex(v)
+	return _u
+}
+
+// SetSource sets the "source" field.
+func (_u *ImageUpdateOne) SetSource(v image.Source) *ImageUpdateOne {
+	_u.mutation.SetSource(v)
+	return _u
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (_u *ImageUpdateOne) SetNillableSource(v *image.Source) *ImageUpdateOne {
+	if v != nil {
+		_u.SetSource(*v)
+	}
 	return _u
 }
 
@@ -678,6 +714,11 @@ func (_u *ImageUpdateOne) check() error {
 			return &ValidationError{Name: "kind", err: fmt.Errorf(`store: validator failed for field "Image.kind": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Source(); ok {
+		if err := image.SourceValidator(v); err != nil {
+			return &ValidationError{Name: "source", err: fmt.Errorf(`store: validator failed for field "Image.source": %w`, err)}
+		}
+	}
 	if _u.mutation.ItemCleared() && len(_u.mutation.ItemIDs()) > 0 {
 		return errors.New(`store: clearing a required unique edge "Image.item"`)
 	}
@@ -727,6 +768,9 @@ func (_u *ImageUpdateOne) sqlSave(ctx context.Context) (_node *Image, err error)
 	}
 	if value, ok := _u.mutation.AddedIndex(); ok {
 		_spec.AddField(image.FieldIndex, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.Source(); ok {
+		_spec.SetField(image.FieldSource, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.Path(); ok {
 		_spec.SetField(image.FieldPath, field.TypeString, value)
