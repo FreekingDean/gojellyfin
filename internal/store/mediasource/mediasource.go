@@ -55,18 +55,6 @@ const (
 	FieldDateModified = "date_modified"
 	// FieldProbedAt holds the string denoting the probed_at field in the database.
 	FieldProbedAt = "probed_at"
-	// FieldIsRemote holds the string denoting the is_remote field in the database.
-	FieldIsRemote = "is_remote"
-	// FieldIsInfiniteStream holds the string denoting the is_infinite_stream field in the database.
-	FieldIsInfiniteStream = "is_infinite_stream"
-	// FieldSupportsTranscoding holds the string denoting the supports_transcoding field in the database.
-	FieldSupportsTranscoding = "supports_transcoding"
-	// FieldSupportsDirectStream holds the string denoting the supports_direct_stream field in the database.
-	FieldSupportsDirectStream = "supports_direct_stream"
-	// FieldSupportsDirectPlay holds the string denoting the supports_direct_play field in the database.
-	FieldSupportsDirectPlay = "supports_direct_play"
-	// FieldSupportsProbing holds the string denoting the supports_probing field in the database.
-	FieldSupportsProbing = "supports_probing"
 	// FieldReadAtNativeFramerate holds the string denoting the read_at_native_framerate field in the database.
 	FieldReadAtNativeFramerate = "read_at_native_framerate"
 	// FieldIgnoreDts holds the string denoting the ignore_dts field in the database.
@@ -75,8 +63,6 @@ const (
 	FieldIgnoreIndex = "ignore_index"
 	// FieldGenPtsInput holds the string denoting the gen_pts_input field in the database.
 	FieldGenPtsInput = "gen_pts_input"
-	// FieldRequiresLooping holds the string denoting the requires_looping field in the database.
-	FieldRequiresLooping = "requires_looping"
 	// FieldHasSegments holds the string denoting the has_segments field in the database.
 	FieldHasSegments = "has_segments"
 	// FieldDefaultAudioStreamIndex holds the string denoting the default_audio_stream_index field in the database.
@@ -148,17 +134,10 @@ var Columns = []string{
 	FieldBitrate,
 	FieldDateModified,
 	FieldProbedAt,
-	FieldIsRemote,
-	FieldIsInfiniteStream,
-	FieldSupportsTranscoding,
-	FieldSupportsDirectStream,
-	FieldSupportsDirectPlay,
-	FieldSupportsProbing,
 	FieldReadAtNativeFramerate,
 	FieldIgnoreDts,
 	FieldIgnoreIndex,
 	FieldGenPtsInput,
-	FieldRequiresLooping,
 	FieldHasSegments,
 	FieldDefaultAudioStreamIndex,
 	FieldDefaultSubtitleStreamIndex,
@@ -182,18 +161,6 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
-	// DefaultIsRemote holds the default value on creation for the "is_remote" field.
-	DefaultIsRemote bool
-	// DefaultIsInfiniteStream holds the default value on creation for the "is_infinite_stream" field.
-	DefaultIsInfiniteStream bool
-	// DefaultSupportsTranscoding holds the default value on creation for the "supports_transcoding" field.
-	DefaultSupportsTranscoding bool
-	// DefaultSupportsDirectStream holds the default value on creation for the "supports_direct_stream" field.
-	DefaultSupportsDirectStream bool
-	// DefaultSupportsDirectPlay holds the default value on creation for the "supports_direct_play" field.
-	DefaultSupportsDirectPlay bool
-	// DefaultSupportsProbing holds the default value on creation for the "supports_probing" field.
-	DefaultSupportsProbing bool
 	// DefaultReadAtNativeFramerate holds the default value on creation for the "read_at_native_framerate" field.
 	DefaultReadAtNativeFramerate bool
 	// DefaultIgnoreDts holds the default value on creation for the "ignore_dts" field.
@@ -202,8 +169,6 @@ var (
 	DefaultIgnoreIndex bool
 	// DefaultGenPtsInput holds the default value on creation for the "gen_pts_input" field.
 	DefaultGenPtsInput bool
-	// DefaultRequiresLooping holds the default value on creation for the "requires_looping" field.
-	DefaultRequiresLooping bool
 	// DefaultHasSegments holds the default value on creation for the "has_segments" field.
 	DefaultHasSegments bool
 )
@@ -500,36 +465,6 @@ func ByProbedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldProbedAt, opts...).ToFunc()
 }
 
-// ByIsRemote orders the results by the is_remote field.
-func ByIsRemote(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldIsRemote, opts...).ToFunc()
-}
-
-// ByIsInfiniteStream orders the results by the is_infinite_stream field.
-func ByIsInfiniteStream(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldIsInfiniteStream, opts...).ToFunc()
-}
-
-// BySupportsTranscoding orders the results by the supports_transcoding field.
-func BySupportsTranscoding(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSupportsTranscoding, opts...).ToFunc()
-}
-
-// BySupportsDirectStream orders the results by the supports_direct_stream field.
-func BySupportsDirectStream(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSupportsDirectStream, opts...).ToFunc()
-}
-
-// BySupportsDirectPlay orders the results by the supports_direct_play field.
-func BySupportsDirectPlay(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSupportsDirectPlay, opts...).ToFunc()
-}
-
-// BySupportsProbing orders the results by the supports_probing field.
-func BySupportsProbing(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSupportsProbing, opts...).ToFunc()
-}
-
 // ByReadAtNativeFramerate orders the results by the read_at_native_framerate field.
 func ByReadAtNativeFramerate(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldReadAtNativeFramerate, opts...).ToFunc()
@@ -548,11 +483,6 @@ func ByIgnoreIndex(opts ...sql.OrderTermOption) OrderOption {
 // ByGenPtsInput orders the results by the gen_pts_input field.
 func ByGenPtsInput(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldGenPtsInput, opts...).ToFunc()
-}
-
-// ByRequiresLooping orders the results by the requires_looping field.
-func ByRequiresLooping(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldRequiresLooping, opts...).ToFunc()
 }
 
 // ByHasSegments orders the results by the has_segments field.

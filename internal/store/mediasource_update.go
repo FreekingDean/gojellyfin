@@ -399,90 +399,6 @@ func (_u *MediaSourceUpdate) ClearProbedAt() *MediaSourceUpdate {
 	return _u
 }
 
-// SetIsRemote sets the "is_remote" field.
-func (_u *MediaSourceUpdate) SetIsRemote(v bool) *MediaSourceUpdate {
-	_u.mutation.SetIsRemote(v)
-	return _u
-}
-
-// SetNillableIsRemote sets the "is_remote" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableIsRemote(v *bool) *MediaSourceUpdate {
-	if v != nil {
-		_u.SetIsRemote(*v)
-	}
-	return _u
-}
-
-// SetIsInfiniteStream sets the "is_infinite_stream" field.
-func (_u *MediaSourceUpdate) SetIsInfiniteStream(v bool) *MediaSourceUpdate {
-	_u.mutation.SetIsInfiniteStream(v)
-	return _u
-}
-
-// SetNillableIsInfiniteStream sets the "is_infinite_stream" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableIsInfiniteStream(v *bool) *MediaSourceUpdate {
-	if v != nil {
-		_u.SetIsInfiniteStream(*v)
-	}
-	return _u
-}
-
-// SetSupportsTranscoding sets the "supports_transcoding" field.
-func (_u *MediaSourceUpdate) SetSupportsTranscoding(v bool) *MediaSourceUpdate {
-	_u.mutation.SetSupportsTranscoding(v)
-	return _u
-}
-
-// SetNillableSupportsTranscoding sets the "supports_transcoding" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableSupportsTranscoding(v *bool) *MediaSourceUpdate {
-	if v != nil {
-		_u.SetSupportsTranscoding(*v)
-	}
-	return _u
-}
-
-// SetSupportsDirectStream sets the "supports_direct_stream" field.
-func (_u *MediaSourceUpdate) SetSupportsDirectStream(v bool) *MediaSourceUpdate {
-	_u.mutation.SetSupportsDirectStream(v)
-	return _u
-}
-
-// SetNillableSupportsDirectStream sets the "supports_direct_stream" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableSupportsDirectStream(v *bool) *MediaSourceUpdate {
-	if v != nil {
-		_u.SetSupportsDirectStream(*v)
-	}
-	return _u
-}
-
-// SetSupportsDirectPlay sets the "supports_direct_play" field.
-func (_u *MediaSourceUpdate) SetSupportsDirectPlay(v bool) *MediaSourceUpdate {
-	_u.mutation.SetSupportsDirectPlay(v)
-	return _u
-}
-
-// SetNillableSupportsDirectPlay sets the "supports_direct_play" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableSupportsDirectPlay(v *bool) *MediaSourceUpdate {
-	if v != nil {
-		_u.SetSupportsDirectPlay(*v)
-	}
-	return _u
-}
-
-// SetSupportsProbing sets the "supports_probing" field.
-func (_u *MediaSourceUpdate) SetSupportsProbing(v bool) *MediaSourceUpdate {
-	_u.mutation.SetSupportsProbing(v)
-	return _u
-}
-
-// SetNillableSupportsProbing sets the "supports_probing" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableSupportsProbing(v *bool) *MediaSourceUpdate {
-	if v != nil {
-		_u.SetSupportsProbing(*v)
-	}
-	return _u
-}
-
 // SetReadAtNativeFramerate sets the "read_at_native_framerate" field.
 func (_u *MediaSourceUpdate) SetReadAtNativeFramerate(v bool) *MediaSourceUpdate {
 	_u.mutation.SetReadAtNativeFramerate(v)
@@ -535,20 +451,6 @@ func (_u *MediaSourceUpdate) SetGenPtsInput(v bool) *MediaSourceUpdate {
 func (_u *MediaSourceUpdate) SetNillableGenPtsInput(v *bool) *MediaSourceUpdate {
 	if v != nil {
 		_u.SetGenPtsInput(*v)
-	}
-	return _u
-}
-
-// SetRequiresLooping sets the "requires_looping" field.
-func (_u *MediaSourceUpdate) SetRequiresLooping(v bool) *MediaSourceUpdate {
-	_u.mutation.SetRequiresLooping(v)
-	return _u
-}
-
-// SetNillableRequiresLooping sets the "requires_looping" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableRequiresLooping(v *bool) *MediaSourceUpdate {
-	if v != nil {
-		_u.SetRequiresLooping(*v)
 	}
 	return _u
 }
@@ -931,24 +833,6 @@ func (_u *MediaSourceUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	if _u.mutation.ProbedAtCleared() {
 		_spec.ClearField(mediasource.FieldProbedAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.IsRemote(); ok {
-		_spec.SetField(mediasource.FieldIsRemote, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.IsInfiniteStream(); ok {
-		_spec.SetField(mediasource.FieldIsInfiniteStream, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.SupportsTranscoding(); ok {
-		_spec.SetField(mediasource.FieldSupportsTranscoding, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.SupportsDirectStream(); ok {
-		_spec.SetField(mediasource.FieldSupportsDirectStream, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.SupportsDirectPlay(); ok {
-		_spec.SetField(mediasource.FieldSupportsDirectPlay, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.SupportsProbing(); ok {
-		_spec.SetField(mediasource.FieldSupportsProbing, field.TypeBool, value)
-	}
 	if value, ok := _u.mutation.ReadAtNativeFramerate(); ok {
 		_spec.SetField(mediasource.FieldReadAtNativeFramerate, field.TypeBool, value)
 	}
@@ -960,9 +844,6 @@ func (_u *MediaSourceUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	}
 	if value, ok := _u.mutation.GenPtsInput(); ok {
 		_spec.SetField(mediasource.FieldGenPtsInput, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.RequiresLooping(); ok {
-		_spec.SetField(mediasource.FieldRequiresLooping, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.HasSegments(); ok {
 		_spec.SetField(mediasource.FieldHasSegments, field.TypeBool, value)
@@ -1529,90 +1410,6 @@ func (_u *MediaSourceUpdateOne) ClearProbedAt() *MediaSourceUpdateOne {
 	return _u
 }
 
-// SetIsRemote sets the "is_remote" field.
-func (_u *MediaSourceUpdateOne) SetIsRemote(v bool) *MediaSourceUpdateOne {
-	_u.mutation.SetIsRemote(v)
-	return _u
-}
-
-// SetNillableIsRemote sets the "is_remote" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableIsRemote(v *bool) *MediaSourceUpdateOne {
-	if v != nil {
-		_u.SetIsRemote(*v)
-	}
-	return _u
-}
-
-// SetIsInfiniteStream sets the "is_infinite_stream" field.
-func (_u *MediaSourceUpdateOne) SetIsInfiniteStream(v bool) *MediaSourceUpdateOne {
-	_u.mutation.SetIsInfiniteStream(v)
-	return _u
-}
-
-// SetNillableIsInfiniteStream sets the "is_infinite_stream" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableIsInfiniteStream(v *bool) *MediaSourceUpdateOne {
-	if v != nil {
-		_u.SetIsInfiniteStream(*v)
-	}
-	return _u
-}
-
-// SetSupportsTranscoding sets the "supports_transcoding" field.
-func (_u *MediaSourceUpdateOne) SetSupportsTranscoding(v bool) *MediaSourceUpdateOne {
-	_u.mutation.SetSupportsTranscoding(v)
-	return _u
-}
-
-// SetNillableSupportsTranscoding sets the "supports_transcoding" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableSupportsTranscoding(v *bool) *MediaSourceUpdateOne {
-	if v != nil {
-		_u.SetSupportsTranscoding(*v)
-	}
-	return _u
-}
-
-// SetSupportsDirectStream sets the "supports_direct_stream" field.
-func (_u *MediaSourceUpdateOne) SetSupportsDirectStream(v bool) *MediaSourceUpdateOne {
-	_u.mutation.SetSupportsDirectStream(v)
-	return _u
-}
-
-// SetNillableSupportsDirectStream sets the "supports_direct_stream" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableSupportsDirectStream(v *bool) *MediaSourceUpdateOne {
-	if v != nil {
-		_u.SetSupportsDirectStream(*v)
-	}
-	return _u
-}
-
-// SetSupportsDirectPlay sets the "supports_direct_play" field.
-func (_u *MediaSourceUpdateOne) SetSupportsDirectPlay(v bool) *MediaSourceUpdateOne {
-	_u.mutation.SetSupportsDirectPlay(v)
-	return _u
-}
-
-// SetNillableSupportsDirectPlay sets the "supports_direct_play" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableSupportsDirectPlay(v *bool) *MediaSourceUpdateOne {
-	if v != nil {
-		_u.SetSupportsDirectPlay(*v)
-	}
-	return _u
-}
-
-// SetSupportsProbing sets the "supports_probing" field.
-func (_u *MediaSourceUpdateOne) SetSupportsProbing(v bool) *MediaSourceUpdateOne {
-	_u.mutation.SetSupportsProbing(v)
-	return _u
-}
-
-// SetNillableSupportsProbing sets the "supports_probing" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableSupportsProbing(v *bool) *MediaSourceUpdateOne {
-	if v != nil {
-		_u.SetSupportsProbing(*v)
-	}
-	return _u
-}
-
 // SetReadAtNativeFramerate sets the "read_at_native_framerate" field.
 func (_u *MediaSourceUpdateOne) SetReadAtNativeFramerate(v bool) *MediaSourceUpdateOne {
 	_u.mutation.SetReadAtNativeFramerate(v)
@@ -1665,20 +1462,6 @@ func (_u *MediaSourceUpdateOne) SetGenPtsInput(v bool) *MediaSourceUpdateOne {
 func (_u *MediaSourceUpdateOne) SetNillableGenPtsInput(v *bool) *MediaSourceUpdateOne {
 	if v != nil {
 		_u.SetGenPtsInput(*v)
-	}
-	return _u
-}
-
-// SetRequiresLooping sets the "requires_looping" field.
-func (_u *MediaSourceUpdateOne) SetRequiresLooping(v bool) *MediaSourceUpdateOne {
-	_u.mutation.SetRequiresLooping(v)
-	return _u
-}
-
-// SetNillableRequiresLooping sets the "requires_looping" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableRequiresLooping(v *bool) *MediaSourceUpdateOne {
-	if v != nil {
-		_u.SetRequiresLooping(*v)
 	}
 	return _u
 }
@@ -2091,24 +1874,6 @@ func (_u *MediaSourceUpdateOne) sqlSave(ctx context.Context) (_node *MediaSource
 	if _u.mutation.ProbedAtCleared() {
 		_spec.ClearField(mediasource.FieldProbedAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.IsRemote(); ok {
-		_spec.SetField(mediasource.FieldIsRemote, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.IsInfiniteStream(); ok {
-		_spec.SetField(mediasource.FieldIsInfiniteStream, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.SupportsTranscoding(); ok {
-		_spec.SetField(mediasource.FieldSupportsTranscoding, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.SupportsDirectStream(); ok {
-		_spec.SetField(mediasource.FieldSupportsDirectStream, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.SupportsDirectPlay(); ok {
-		_spec.SetField(mediasource.FieldSupportsDirectPlay, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.SupportsProbing(); ok {
-		_spec.SetField(mediasource.FieldSupportsProbing, field.TypeBool, value)
-	}
 	if value, ok := _u.mutation.ReadAtNativeFramerate(); ok {
 		_spec.SetField(mediasource.FieldReadAtNativeFramerate, field.TypeBool, value)
 	}
@@ -2120,9 +1885,6 @@ func (_u *MediaSourceUpdateOne) sqlSave(ctx context.Context) (_node *MediaSource
 	}
 	if value, ok := _u.mutation.GenPtsInput(); ok {
 		_spec.SetField(mediasource.FieldGenPtsInput, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.RequiresLooping(); ok {
-		_spec.SetField(mediasource.FieldRequiresLooping, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.HasSegments(); ok {
 		_spec.SetField(mediasource.FieldHasSegments, field.TypeBool, value)

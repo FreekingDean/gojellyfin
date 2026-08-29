@@ -67,7 +67,7 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	container := sourceContainer(source)
+	container := items.Container(source)
 	requested := r.PathValue("container")
 	if requested == "" || isStatic(r) || strings.EqualFold(requested, container) {
 		h.serveFile(w, r, source)
@@ -78,7 +78,7 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 		if h.serveTranscode(w, r, item, source, []string{requested}) {
 			return
 		}
-	} else if h.serveRemux(w, r, item, source) {
+	} else if h.serveRemux(w, r, source) {
 		return
 	}
 
@@ -98,14 +98,7 @@ func (h *Handler) ServeUniversal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	codec, err := h.items.AudioCodec(r.Context(), item.ID)
-	if err != nil {
-		log.Printf("failed to read the audio codec of %s: %v", item.Name, err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	container := sourceContainer(source)
+	container, codec := items.Container(source), items.AudioCodec(source)
 	if !playable(profiles, container, codec) {
 		containers := make([]string, 0, len(profiles))
 		for _, profile := range profiles {
@@ -140,15 +133,11 @@ func (h *Handler) serveTranscode(w http.ResponseWriter, r *http.Request, item *i
 	})
 }
 
-func (h *Handler) serveRemux(w http.ResponseWriter, r *http.Request, item *items.Item, source *items.MediaSource) bool {
+func (h *Handler) serveRemux(w http.ResponseWriter, r *http.Request, source *items.MediaSource) bool {
 	if !h.transcoder.Enabled() {
 		return false
 	}
 
-	codec, err := h.items.AudioCodec(r.Context(), item.ID)
-	if err != nil {
-		log.Printf("failed to read the audio codec of %s: %v", item.Name, err)
-	}
 	asked := strings.TrimSpace(r.URL.Query().Get("audioCodec"))
 	container := r.PathValue("container")
 	if !transcode.CarriesVideo(container) {
@@ -161,7 +150,7 @@ func (h *Handler) serveRemux(w http.ResponseWriter, r *http.Request, item *items
 		Bitrate:    audioBitrate(r),
 		StartTicks: startTicks(r),
 		Video:      true,
-		CopyAudio:  asked != "" && codec != "" && strings.EqualFold(asked, codec),
+		CopyAudio:  asked != "" && strings.EqualFold(asked, items.AudioCodec(source)),
 	})
 }
 
@@ -356,14 +345,6 @@ func describe(container, codec string) string {
 	}
 
 	return container + "|" + codec
-}
-
-func sourceContainer(source *items.MediaSource) string {
-	if source.Container != "" {
-		return strings.ToLower(source.Container)
-	}
-
-	return strings.TrimPrefix(strings.ToLower(filepath.Ext(source.Path)), ".")
 }
 
 func isStatic(r *http.Request) bool {

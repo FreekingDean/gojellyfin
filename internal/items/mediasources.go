@@ -269,26 +269,6 @@ func (s *Service) DeleteSourcesNotInPaths(ctx context.Context, libraryID uuid.UU
 	return nil
 }
 
-func (s *Service) AudioCodec(ctx context.Context, itemID uuid.UUID) (string, error) {
-	codecs, err := s.store.MediaStream.Query().
-		Where(
-			streammodal.KindEQ(streammodal.KindAudio),
-			streammodal.HasSourceWith(sourcemodal.ItemID(itemID)),
-		).
-		Order(streammodal.ByIndex()).
-		Limit(1).
-		Select(streammodal.FieldCodec).
-		Strings(ctx)
-	if err != nil {
-		return "", fmt.Errorf("failed to query audio codec: %w", err)
-	}
-	if len(codecs) == 0 {
-		return "", nil
-	}
-
-	return codecs[0], nil
-}
-
 func NeedsProbe(source *MediaSource) bool {
 	return source == nil || source.ProbedAt.IsZero() || source.ProbedAt.Before(source.DateModified)
 }

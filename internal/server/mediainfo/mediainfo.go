@@ -25,7 +25,7 @@ func New(items *items.Service) *Server {
 }
 
 func (s *Server) GetPlaybackInfo(ctx context.Context, request api.GetPlaybackInfoRequestObject) (api.GetPlaybackInfoResponseObject, error) {
-	response, err := s.playbackInfo(ctx, request.ItemId, nil, 0)
+	response, err := s.playbackInfo(ctx, request.ItemId, api.PlaybackInfoDto{})
 	if err != nil {
 		return nil, err
 	}
@@ -34,18 +34,23 @@ func (s *Server) GetPlaybackInfo(ctx context.Context, request api.GetPlaybackInf
 }
 
 func (s *Server) GetPostedPlaybackInfo(ctx context.Context, request api.GetPostedPlaybackInfoRequestObject) (api.GetPostedPlaybackInfoResponseObject, error) {
-	var profile api.DeviceProfile
-	startTicks := apiutil.Deref(request.Params.StartTimeTicks)
+	asked := api.PlaybackInfoDto{
+		StartTimeTicks: request.Params.StartTimeTicks,
+		MediaSourceId:  request.Params.MediaSourceId,
+	}
 	if body := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody); body != nil {
 		if body.DeviceProfile != nil {
-			profile = *body.DeviceProfile
+			asked.DeviceProfile = body.DeviceProfile
 		}
 		if body.StartTimeTicks != nil {
-			startTicks = *body.StartTimeTicks
+			asked.StartTimeTicks = body.StartTimeTicks
+		}
+		if body.MediaSourceId != nil {
+			asked.MediaSourceId = body.MediaSourceId
 		}
 	}
 
-	response, err := s.playbackInfo(ctx, request.ItemId, profile, startTicks)
+	response, err := s.playbackInfo(ctx, request.ItemId, asked)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +58,7 @@ func (s *Server) GetPostedPlaybackInfo(ctx context.Context, request api.GetPoste
 	return api.GetPostedPlaybackInfo200JSONResponse(response), nil
 }
 
-func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, profile api.DeviceProfile, startTicks int64) (api.PlaybackInfoResponse, error) {
+func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, asked api.PlaybackInfoDto) (api.PlaybackInfoResponse, error) {
 	item, err := s.items.ItemByID(ctx, itemID)
 	if err != nil {
 		return api.PlaybackInfoResponse{}, err
@@ -69,7 +74,13 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, profile api
 		PlaySessionId: apiutil.Ptr(session),
 	}
 
-	plan, err := s.items.SourceFor(ctx, itemID, capabilities(profile))
+	var profile api.DeviceProfile
+	if asked.DeviceProfile != nil {
+		profile = *asked.DeviceProfile
+	}
+	named, _ := uuid.Parse(apiutil.Deref(asked.MediaSourceId))
+
+	plan, err := s.items.SourceFor(ctx, itemID, named, capabilities(profile))
 	if errors.Is(err, items.ErrNoSource) || errors.Is(err, items.ErrNoPlayable) {
 		log.Printf("nothing to play for %s: %v", item.Name, err)
 		response.ErrorCode = apiutil.Ptr(api.NoCompatibleStream)
@@ -82,7 +93,7 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, profile api
 
 	dto := mediaSourceDto(plan.Source)
 	if !items.IsAudio(item) {
-		served(&dto, plan, streamURL(itemID, plan, auth.AuthorizationFrom(ctx).Token, session, startTicks))
+		served(&dto, plan, streamURL(itemID, plan, auth.AuthorizationFrom(ctx).Token, session, apiutil.Deref(asked.StartTimeTicks)))
 	}
 
 	response.MediaSources = &[]api.MediaSourceInfo{dto}
@@ -119,15 +130,15 @@ func mediaSourceDto(source *items.MediaSource) api.MediaSourceInfo {
 		MediaStreams:               &converted,
 		MediaAttachments:           &[]api.MediaAttachment{},
 		Formats:                    &[]string{},
-		SupportsDirectPlay:         apiutil.Ptr(source.SupportsDirectPlay),
-		SupportsDirectStream:       apiutil.Ptr(source.SupportsDirectStream),
+		SupportsDirectPlay:         apiutil.Ptr(true),
+		SupportsDirectStream:       apiutil.Ptr(true),
 		SupportsTranscoding:        apiutil.Ptr(false),
-		SupportsProbing:            apiutil.Ptr(source.SupportsProbing),
-		IsRemote:                   apiutil.Ptr(source.IsRemote),
-		IsInfiniteStream:           apiutil.Ptr(source.IsInfiniteStream),
+		SupportsProbing:            apiutil.Ptr(false),
+		IsRemote:                   apiutil.Ptr(false),
+		IsInfiniteStream:           apiutil.Ptr(false),
 		RequiresOpening:            apiutil.Ptr(false),
 		RequiresClosing:            apiutil.Ptr(false),
-		RequiresLooping:            apiutil.Ptr(source.RequiresLooping),
+		RequiresLooping:            apiutil.Ptr(false),
 		DefaultAudioStreamIndex:    defaultStreamIndex(streams, streammodal.KindAudio),
 		DefaultSubtitleStreamIndex: defaultStreamIndex(streams, streammodal.KindSubtitle),
 	}

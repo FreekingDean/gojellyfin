@@ -142,6 +142,25 @@ func (f *playbackFixture) rip(t *testing.T, name, audio string) uuid.UUID {
 func (f *playbackFixture) ripped(t *testing.T, name, encoder, video, audio string) uuid.UUID {
 	t.Helper()
 
+	item, err := f.items.SaveScanned(context.Background(), items.Scanned{
+		LibraryID:    f.library,
+		Kind:         itemmodal.KindMovie,
+		Key:          "movie:" + name + ":" + audio,
+		Name:         name,
+		SortName:     name,
+		DateModified: time.Now(),
+	})
+	if err != nil {
+		t.Fatalf("failed to save the item: %v", err)
+	}
+	f.beside(t, item.ID, name, encoder, video, audio)
+
+	return item.ID
+}
+
+func (f *playbackFixture) beside(t *testing.T, id uuid.UUID, name, encoder, video, audio string) uuid.UUID {
+	t.Helper()
+
 	path := filepath.Join(t.TempDir(), name)
 	generate := exec.Command("ffmpeg", "-nostdin", "-loglevel", "error",
 		"-f", "lavfi", "-i", "testsrc=size=320x240:rate=15:duration=4",
@@ -157,21 +176,14 @@ func (f *playbackFixture) ripped(t *testing.T, name, encoder, video, audio strin
 	f.paths[name] = path
 
 	ctx := context.Background()
-	item, err := f.items.SaveScanned(ctx, items.Scanned{
-		LibraryID:    f.library,
-		Kind:         itemmodal.KindMovie,
-		Key:          "movie:" + name + ":" + audio,
-		Name:         name,
-		SortName:     name,
-		DateModified: time.Now(),
-	})
+	item, err := f.items.ItemByID(ctx, id)
 	if err != nil {
-		t.Fatalf("failed to save the item: %v", err)
+		t.Fatalf("failed to read the item: %v", err)
 	}
 
 	source, err := f.items.SaveSource(ctx, items.ScannedSource{
 		LibraryID:    f.library,
-		ItemID:       item.ID,
+		ItemID:       id,
 		Path:         path,
 		Name:         name,
 		DateModified: time.Now(),
@@ -191,13 +203,13 @@ func (f *playbackFixture) ripped(t *testing.T, name, encoder, video, audio strin
 		t.Fatalf("failed to probe the source: %v", err)
 	}
 
-	return item.ID
+	return source.ID
 }
 
-func (f *playbackFixture) offer(t *testing.T, id uuid.UUID, profile string, startTicks int64) api.MediaSourceInfo {
+func (f *playbackFixture) offer(t *testing.T, id, named uuid.UUID, profile string, startTicks int64) api.MediaSourceInfo {
 	t.Helper()
 
-	sources := *f.answer(t, id, profile, startTicks).MediaSources
+	sources := *f.answer(t, id, named, profile, startTicks).MediaSources
 	if len(sources) != 1 {
 		t.Fatalf("got %d media sources, want 1", len(sources))
 	}
@@ -205,10 +217,13 @@ func (f *playbackFixture) offer(t *testing.T, id uuid.UUID, profile string, star
 	return sources[0]
 }
 
-func (f *playbackFixture) answer(t *testing.T, id uuid.UUID, profile string, startTicks int64) api.PlaybackInfoResponse {
+func (f *playbackFixture) answer(t *testing.T, id, named uuid.UUID, profile string, startTicks int64) api.PlaybackInfoResponse {
 	t.Helper()
 
 	body := &api.PlaybackInfoDto{StartTimeTicks: apiutil.Ptr(startTicks)}
+	if named != uuid.Nil {
+		body.MediaSourceId = apiutil.Ptr(named.String())
+	}
 	if profile != "" {
 		var declared api.DeviceProfile
 		if err := json.Unmarshal([]byte(profile), &declared); err != nil {
@@ -305,7 +320,7 @@ func TestPlayback(t *testing.T) {
 		fixture := newPlaybackFixture(t)
 		id := fixture.rip(t, "playable.mkv", "aac")
 
-		source := fixture.offer(t, id, chromeProfile, 0)
+		source := fixture.offer(t, id, uuid.Nil, chromeProfile, 0)
 		recorder := fixture.follow(t, apiutil.Deref(source.TranscodingUrl))
 
 		if recorder.Code != http.StatusOK {
@@ -331,7 +346,7 @@ func TestPlayback(t *testing.T) {
 		fixture := newPlaybackFixture(t)
 		id := fixture.rip(t, "boxed.mov", "aac")
 
-		source := fixture.offer(t, id, chromeProfile, 0)
+		source := fixture.offer(t, id, uuid.Nil, chromeProfile, 0)
 		recorder := fixture.follow(t, apiutil.Deref(source.TranscodingUrl))
 
 		if recorder.Code != http.StatusOK {
@@ -364,7 +379,7 @@ func TestPlayback(t *testing.T) {
 		fixture := newPlaybackFixture(t)
 		id := fixture.rip(t, "rip.mkv", "ac3")
 
-		source := fixture.offer(t, id, chromeProfile, 0)
+		source := fixture.offer(t, id, uuid.Nil, chromeProfile, 0)
 		recorder := fixture.follow(t, apiutil.Deref(source.TranscodingUrl))
 
 		if recorder.Code != http.StatusOK {
@@ -391,11 +406,55 @@ func TestPlayback(t *testing.T) {
 		}
 	})
 
+	t.Run("the version the client picked is the version its bytes come from", func(t *testing.T) {
+		fixture := newPlaybackFixture(t)
+		id := fixture.rip(t, "converted.mkv", "ac3")
+		picked := fixture.beside(t, id, "untouched.mkv", "libx264", "h264", "aac")
+
+		source := fixture.offer(t, id, picked, chromeProfile, 0)
+		if got := apiutil.Deref(source.Id); got != picked.String() {
+			t.Fatalf("answered source %q, want the version the client picked", got)
+		}
+
+		recorder := fixture.follow(t, apiutil.Deref(source.TranscodingUrl))
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("status = %d, want %d: %s", recorder.Code, http.StatusOK, recorder.Body)
+		}
+
+		file, err := os.ReadFile(fixture.paths["untouched.mkv"])
+		if err != nil {
+			t.Fatalf("failed to read the version the client picked: %v", err)
+		}
+		if !bytes.Equal(recorder.Body.Bytes(), file) {
+			t.Errorf("the response is %d bytes and the version the client picked is %d", recorder.Body.Len(), len(file))
+		}
+	})
+
+	t.Run("the audio kept is the picked version's own", func(t *testing.T) {
+		fixture := newPlaybackFixture(t)
+		id := fixture.rip(t, "beside.mkv", "ac3")
+		picked := fixture.beside(t, id, "boxed.mov", "libx264", "h264", "aac")
+
+		source := fixture.offer(t, id, picked, chromeProfile, 0)
+		recorder := fixture.follow(t, apiutil.Deref(source.TranscodingUrl))
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("status = %d, want %d: %s", recorder.Code, http.StatusOK, recorder.Body)
+		}
+
+		answered := received(t, recorder.Body.Bytes())
+		for _, stream := range []string{"v:0", "a:0"} {
+			want := fingerprint(t, fixture.paths["boxed.mov"], stream)
+			if got := fingerprint(t, answered, stream); got != want {
+				t.Errorf("%s = %s, want the picked version's own %s copied through", stream, got, want)
+			}
+		}
+	})
+
 	t.Run("a picture nothing can convert is refused rather than sent", func(t *testing.T) {
 		fixture := newPlaybackFixture(t)
 		id := fixture.ripped(t, "oddball.mkv", "mpeg4", "mpeg4", "aac")
 
-		answer := fixture.answer(t, id, chromeProfile, 0)
+		answer := fixture.answer(t, id, uuid.Nil, chromeProfile, 0)
 		if got := len(*answer.MediaSources); got != 0 {
 			t.Errorf("answered with %d sources, want none for a picture nothing here can make", got)
 		}
@@ -409,7 +468,7 @@ func TestPlayback(t *testing.T) {
 		fixture := newPlaybackFixture(t)
 		id := fixture.rip(t, "rip.mkv", "ac3")
 
-		source := fixture.offer(t, id, "", 0)
+		source := fixture.offer(t, id, uuid.Nil, "", 0)
 		recorder := fixture.follow(t, apiutil.Deref(source.TranscodingUrl))
 
 		if recorder.Code != http.StatusOK {
@@ -438,7 +497,7 @@ func TestPlayback(t *testing.T) {
 		} {
 			t.Run(tc.name, func(t *testing.T) {
 				id := fixture.rip(t, tc.file, tc.audio)
-				source := fixture.offer(t, id, tc.profile, 0)
+				source := fixture.offer(t, id, uuid.Nil, tc.profile, 0)
 
 				raw := apiutil.Deref(source.TranscodingUrl)
 				path, query, _ := strings.Cut(raw, "?")
@@ -463,7 +522,7 @@ func TestPlayback(t *testing.T) {
 		fixture := newPlaybackFixture(t)
 		id := fixture.rip(t, "rip.mkv", "ac3")
 
-		source := fixture.offer(t, id, chromeProfile, 30_000_000)
+		source := fixture.offer(t, id, uuid.Nil, chromeProfile, 30_000_000)
 		raw := apiutil.Deref(source.TranscodingUrl)
 		if !strings.Contains(raw, "startTimeTicks=30000000") {
 			t.Fatalf("url = %q, want the position the client seeked to", raw)
@@ -474,7 +533,7 @@ func TestPlayback(t *testing.T) {
 			t.Fatalf("status = %d, want %d: %s", recorder.Code, http.StatusOK, recorder.Body)
 		}
 
-		whole := decoded(t, fixture.follow(t, apiutil.Deref(fixture.offer(t, id, chromeProfile, 0).TranscodingUrl)).Body.Bytes()).Format.Duration
+		whole := decoded(t, fixture.follow(t, apiutil.Deref(fixture.offer(t, id, uuid.Nil, chromeProfile, 0).TranscodingUrl)).Body.Bytes()).Format.Duration
 		remaining := decoded(t, recorder.Body.Bytes()).Format.Duration
 
 		if remaining <= 0 || remaining > whole-1 {

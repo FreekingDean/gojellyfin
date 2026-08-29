@@ -40,17 +40,10 @@ func (MediaSource) Fields() []ent.Field {
 		field.Time("date_modified").Optional(),
 		field.Time("probed_at").Optional(),
 
-		field.Bool("is_remote").Default(false),
-		field.Bool("is_infinite_stream").Default(false),
-		field.Bool("supports_transcoding").Default(true),
-		field.Bool("supports_direct_stream").Default(true),
-		field.Bool("supports_direct_play").Default(true),
-		field.Bool("supports_probing").Default(true),
 		field.Bool("read_at_native_framerate").Default(false),
 		field.Bool("ignore_dts").Default(false),
 		field.Bool("ignore_index").Default(false),
 		field.Bool("gen_pts_input").Default(false),
-		field.Bool("requires_looping").Default(false),
 		field.Bool("has_segments").Default(false),
 
 		field.Int32("default_audio_stream_index").Optional(),
