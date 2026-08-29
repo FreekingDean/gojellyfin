@@ -36,6 +36,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
+	"github.com/FreekingDean/gojellyfin/internal/store/quickconnectrequest"
 	"github.com/FreekingDean/gojellyfin/internal/store/seriestimer"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
@@ -58,38 +59,39 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeActivityLogEntry   = "ActivityLogEntry"
-	TypeApiKey             = "ApiKey"
-	TypeChapter            = "Chapter"
-	TypeConfiguration      = "Configuration"
-	TypeCredit             = "Credit"
-	TypeDevice             = "Device"
-	TypeDisplayPreferences = "DisplayPreferences"
-	TypeGenre              = "Genre"
-	TypeImage              = "Image"
-	TypeImageBlob          = "ImageBlob"
-	TypeItem               = "Item"
-	TypeLibrary            = "Library"
-	TypeLibraryOptions     = "LibraryOptions"
-	TypeListingsProvider   = "ListingsProvider"
-	TypeMediaAttachment    = "MediaAttachment"
-	TypeMediaSegment       = "MediaSegment"
-	TypeMediaSource        = "MediaSource"
-	TypeMediaStream        = "MediaStream"
-	TypePerson             = "Person"
-	TypePlaylist           = "Playlist"
-	TypePlaylistEntry      = "PlaylistEntry"
-	TypePlaylistShare      = "PlaylistShare"
-	TypeSeriesTimer        = "SeriesTimer"
-	TypeSession            = "Session"
-	TypeStudio             = "Studio"
-	TypeTimer              = "Timer"
-	TypeTrickplay          = "Trickplay"
-	TypeTunerHost          = "TunerHost"
-	TypeUser               = "User"
-	TypeUserConfiguration  = "UserConfiguration"
-	TypeUserItemData       = "UserItemData"
-	TypeUserPolicy         = "UserPolicy"
+	TypeActivityLogEntry    = "ActivityLogEntry"
+	TypeApiKey              = "ApiKey"
+	TypeChapter             = "Chapter"
+	TypeConfiguration       = "Configuration"
+	TypeCredit              = "Credit"
+	TypeDevice              = "Device"
+	TypeDisplayPreferences  = "DisplayPreferences"
+	TypeGenre               = "Genre"
+	TypeImage               = "Image"
+	TypeImageBlob           = "ImageBlob"
+	TypeItem                = "Item"
+	TypeLibrary             = "Library"
+	TypeLibraryOptions      = "LibraryOptions"
+	TypeListingsProvider    = "ListingsProvider"
+	TypeMediaAttachment     = "MediaAttachment"
+	TypeMediaSegment        = "MediaSegment"
+	TypeMediaSource         = "MediaSource"
+	TypeMediaStream         = "MediaStream"
+	TypePerson              = "Person"
+	TypePlaylist            = "Playlist"
+	TypePlaylistEntry       = "PlaylistEntry"
+	TypePlaylistShare       = "PlaylistShare"
+	TypeQuickConnectRequest = "QuickConnectRequest"
+	TypeSeriesTimer         = "SeriesTimer"
+	TypeSession             = "Session"
+	TypeStudio              = "Studio"
+	TypeTimer               = "Timer"
+	TypeTrickplay           = "Trickplay"
+	TypeTunerHost           = "TunerHost"
+	TypeUser                = "User"
+	TypeUserConfiguration   = "UserConfiguration"
+	TypeUserItemData        = "UserItemData"
+	TypeUserPolicy          = "UserPolicy"
 )
 
 // ActivityLogEntryMutation represents an operation that mutates the ActivityLogEntry nodes in the graph.
@@ -32369,6 +32371,900 @@ func (m *PlaylistShareMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown PlaylistShare edge %s", name)
 }
 
+// QuickConnectRequestMutation represents an operation that mutates the QuickConnectRequest nodes in the graph.
+type QuickConnectRequestMutation struct {
+	config
+	op                   Op
+	typ                  string
+	id                   *uuid.UUID
+	created_at           *time.Time
+	updated_at           *time.Time
+	secret               *string
+	code                 *string
+	device_id            *string
+	device_name          *string
+	app_name             *string
+	app_version          *string
+	expires_at           *time.Time
+	clearedFields        map[string]struct{}
+	authorized_by        *uuid.UUID
+	clearedauthorized_by bool
+	done                 bool
+	oldValue             func(context.Context) (*QuickConnectRequest, error)
+	predicates           []predicate.QuickConnectRequest
+}
+
+var _ ent.Mutation = (*QuickConnectRequestMutation)(nil)
+
+// quickconnectrequestOption allows management of the mutation configuration using functional options.
+type quickconnectrequestOption func(*QuickConnectRequestMutation)
+
+// newQuickConnectRequestMutation creates new mutation for the QuickConnectRequest entity.
+func newQuickConnectRequestMutation(c config, op Op, opts ...quickconnectrequestOption) *QuickConnectRequestMutation {
+	m := &QuickConnectRequestMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeQuickConnectRequest,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withQuickConnectRequestID sets the ID field of the mutation.
+func withQuickConnectRequestID(id uuid.UUID) quickconnectrequestOption {
+	return func(m *QuickConnectRequestMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *QuickConnectRequest
+		)
+		m.oldValue = func(ctx context.Context) (*QuickConnectRequest, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().QuickConnectRequest.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withQuickConnectRequest sets the old QuickConnectRequest of the mutation.
+func withQuickConnectRequest(node *QuickConnectRequest) quickconnectrequestOption {
+	return func(m *QuickConnectRequestMutation) {
+		m.oldValue = func(context.Context) (*QuickConnectRequest, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m QuickConnectRequestMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m QuickConnectRequestMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("store: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of QuickConnectRequest entities.
+func (m *QuickConnectRequestMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *QuickConnectRequestMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *QuickConnectRequestMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().QuickConnectRequest.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *QuickConnectRequestMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *QuickConnectRequestMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the QuickConnectRequest entity.
+// If the QuickConnectRequest object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QuickConnectRequestMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *QuickConnectRequestMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *QuickConnectRequestMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *QuickConnectRequestMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the QuickConnectRequest entity.
+// If the QuickConnectRequest object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QuickConnectRequestMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *QuickConnectRequestMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetSecret sets the "secret" field.
+func (m *QuickConnectRequestMutation) SetSecret(s string) {
+	m.secret = &s
+}
+
+// Secret returns the value of the "secret" field in the mutation.
+func (m *QuickConnectRequestMutation) Secret() (r string, exists bool) {
+	v := m.secret
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSecret returns the old "secret" field's value of the QuickConnectRequest entity.
+// If the QuickConnectRequest object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QuickConnectRequestMutation) OldSecret(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSecret is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSecret requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSecret: %w", err)
+	}
+	return oldValue.Secret, nil
+}
+
+// ResetSecret resets all changes to the "secret" field.
+func (m *QuickConnectRequestMutation) ResetSecret() {
+	m.secret = nil
+}
+
+// SetCode sets the "code" field.
+func (m *QuickConnectRequestMutation) SetCode(s string) {
+	m.code = &s
+}
+
+// Code returns the value of the "code" field in the mutation.
+func (m *QuickConnectRequestMutation) Code() (r string, exists bool) {
+	v := m.code
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCode returns the old "code" field's value of the QuickConnectRequest entity.
+// If the QuickConnectRequest object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QuickConnectRequestMutation) OldCode(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCode: %w", err)
+	}
+	return oldValue.Code, nil
+}
+
+// ResetCode resets all changes to the "code" field.
+func (m *QuickConnectRequestMutation) ResetCode() {
+	m.code = nil
+}
+
+// SetDeviceID sets the "device_id" field.
+func (m *QuickConnectRequestMutation) SetDeviceID(s string) {
+	m.device_id = &s
+}
+
+// DeviceID returns the value of the "device_id" field in the mutation.
+func (m *QuickConnectRequestMutation) DeviceID() (r string, exists bool) {
+	v := m.device_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeviceID returns the old "device_id" field's value of the QuickConnectRequest entity.
+// If the QuickConnectRequest object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QuickConnectRequestMutation) OldDeviceID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeviceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeviceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeviceID: %w", err)
+	}
+	return oldValue.DeviceID, nil
+}
+
+// ResetDeviceID resets all changes to the "device_id" field.
+func (m *QuickConnectRequestMutation) ResetDeviceID() {
+	m.device_id = nil
+}
+
+// SetDeviceName sets the "device_name" field.
+func (m *QuickConnectRequestMutation) SetDeviceName(s string) {
+	m.device_name = &s
+}
+
+// DeviceName returns the value of the "device_name" field in the mutation.
+func (m *QuickConnectRequestMutation) DeviceName() (r string, exists bool) {
+	v := m.device_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeviceName returns the old "device_name" field's value of the QuickConnectRequest entity.
+// If the QuickConnectRequest object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QuickConnectRequestMutation) OldDeviceName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeviceName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeviceName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeviceName: %w", err)
+	}
+	return oldValue.DeviceName, nil
+}
+
+// ResetDeviceName resets all changes to the "device_name" field.
+func (m *QuickConnectRequestMutation) ResetDeviceName() {
+	m.device_name = nil
+}
+
+// SetAppName sets the "app_name" field.
+func (m *QuickConnectRequestMutation) SetAppName(s string) {
+	m.app_name = &s
+}
+
+// AppName returns the value of the "app_name" field in the mutation.
+func (m *QuickConnectRequestMutation) AppName() (r string, exists bool) {
+	v := m.app_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAppName returns the old "app_name" field's value of the QuickConnectRequest entity.
+// If the QuickConnectRequest object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QuickConnectRequestMutation) OldAppName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAppName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAppName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAppName: %w", err)
+	}
+	return oldValue.AppName, nil
+}
+
+// ResetAppName resets all changes to the "app_name" field.
+func (m *QuickConnectRequestMutation) ResetAppName() {
+	m.app_name = nil
+}
+
+// SetAppVersion sets the "app_version" field.
+func (m *QuickConnectRequestMutation) SetAppVersion(s string) {
+	m.app_version = &s
+}
+
+// AppVersion returns the value of the "app_version" field in the mutation.
+func (m *QuickConnectRequestMutation) AppVersion() (r string, exists bool) {
+	v := m.app_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAppVersion returns the old "app_version" field's value of the QuickConnectRequest entity.
+// If the QuickConnectRequest object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QuickConnectRequestMutation) OldAppVersion(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAppVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAppVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAppVersion: %w", err)
+	}
+	return oldValue.AppVersion, nil
+}
+
+// ResetAppVersion resets all changes to the "app_version" field.
+func (m *QuickConnectRequestMutation) ResetAppVersion() {
+	m.app_version = nil
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (m *QuickConnectRequestMutation) SetExpiresAt(t time.Time) {
+	m.expires_at = &t
+}
+
+// ExpiresAt returns the value of the "expires_at" field in the mutation.
+func (m *QuickConnectRequestMutation) ExpiresAt() (r time.Time, exists bool) {
+	v := m.expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiresAt returns the old "expires_at" field's value of the QuickConnectRequest entity.
+// If the QuickConnectRequest object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QuickConnectRequestMutation) OldExpiresAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiresAt: %w", err)
+	}
+	return oldValue.ExpiresAt, nil
+}
+
+// ResetExpiresAt resets all changes to the "expires_at" field.
+func (m *QuickConnectRequestMutation) ResetExpiresAt() {
+	m.expires_at = nil
+}
+
+// SetAuthorizedByID sets the "authorized_by_id" field.
+func (m *QuickConnectRequestMutation) SetAuthorizedByID(u uuid.UUID) {
+	m.authorized_by = &u
+}
+
+// AuthorizedByID returns the value of the "authorized_by_id" field in the mutation.
+func (m *QuickConnectRequestMutation) AuthorizedByID() (r uuid.UUID, exists bool) {
+	v := m.authorized_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAuthorizedByID returns the old "authorized_by_id" field's value of the QuickConnectRequest entity.
+// If the QuickConnectRequest object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QuickConnectRequestMutation) OldAuthorizedByID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAuthorizedByID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAuthorizedByID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAuthorizedByID: %w", err)
+	}
+	return oldValue.AuthorizedByID, nil
+}
+
+// ClearAuthorizedByID clears the value of the "authorized_by_id" field.
+func (m *QuickConnectRequestMutation) ClearAuthorizedByID() {
+	m.authorized_by = nil
+	m.clearedFields[quickconnectrequest.FieldAuthorizedByID] = struct{}{}
+}
+
+// AuthorizedByIDCleared returns if the "authorized_by_id" field was cleared in this mutation.
+func (m *QuickConnectRequestMutation) AuthorizedByIDCleared() bool {
+	_, ok := m.clearedFields[quickconnectrequest.FieldAuthorizedByID]
+	return ok
+}
+
+// ResetAuthorizedByID resets all changes to the "authorized_by_id" field.
+func (m *QuickConnectRequestMutation) ResetAuthorizedByID() {
+	m.authorized_by = nil
+	delete(m.clearedFields, quickconnectrequest.FieldAuthorizedByID)
+}
+
+// ClearAuthorizedBy clears the "authorized_by" edge to the User entity.
+func (m *QuickConnectRequestMutation) ClearAuthorizedBy() {
+	m.clearedauthorized_by = true
+	m.clearedFields[quickconnectrequest.FieldAuthorizedByID] = struct{}{}
+}
+
+// AuthorizedByCleared reports if the "authorized_by" edge to the User entity was cleared.
+func (m *QuickConnectRequestMutation) AuthorizedByCleared() bool {
+	return m.AuthorizedByIDCleared() || m.clearedauthorized_by
+}
+
+// AuthorizedByIDs returns the "authorized_by" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// AuthorizedByID instead. It exists only for internal usage by the builders.
+func (m *QuickConnectRequestMutation) AuthorizedByIDs() (ids []uuid.UUID) {
+	if id := m.authorized_by; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetAuthorizedBy resets all changes to the "authorized_by" edge.
+func (m *QuickConnectRequestMutation) ResetAuthorizedBy() {
+	m.authorized_by = nil
+	m.clearedauthorized_by = false
+}
+
+// Where appends a list predicates to the QuickConnectRequestMutation builder.
+func (m *QuickConnectRequestMutation) Where(ps ...predicate.QuickConnectRequest) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the QuickConnectRequestMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *QuickConnectRequestMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.QuickConnectRequest, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *QuickConnectRequestMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *QuickConnectRequestMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (QuickConnectRequest).
+func (m *QuickConnectRequestMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *QuickConnectRequestMutation) Fields() []string {
+	fields := make([]string, 0, 10)
+	if m.created_at != nil {
+		fields = append(fields, quickconnectrequest.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, quickconnectrequest.FieldUpdatedAt)
+	}
+	if m.secret != nil {
+		fields = append(fields, quickconnectrequest.FieldSecret)
+	}
+	if m.code != nil {
+		fields = append(fields, quickconnectrequest.FieldCode)
+	}
+	if m.device_id != nil {
+		fields = append(fields, quickconnectrequest.FieldDeviceID)
+	}
+	if m.device_name != nil {
+		fields = append(fields, quickconnectrequest.FieldDeviceName)
+	}
+	if m.app_name != nil {
+		fields = append(fields, quickconnectrequest.FieldAppName)
+	}
+	if m.app_version != nil {
+		fields = append(fields, quickconnectrequest.FieldAppVersion)
+	}
+	if m.expires_at != nil {
+		fields = append(fields, quickconnectrequest.FieldExpiresAt)
+	}
+	if m.authorized_by != nil {
+		fields = append(fields, quickconnectrequest.FieldAuthorizedByID)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *QuickConnectRequestMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case quickconnectrequest.FieldCreatedAt:
+		return m.CreatedAt()
+	case quickconnectrequest.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case quickconnectrequest.FieldSecret:
+		return m.Secret()
+	case quickconnectrequest.FieldCode:
+		return m.Code()
+	case quickconnectrequest.FieldDeviceID:
+		return m.DeviceID()
+	case quickconnectrequest.FieldDeviceName:
+		return m.DeviceName()
+	case quickconnectrequest.FieldAppName:
+		return m.AppName()
+	case quickconnectrequest.FieldAppVersion:
+		return m.AppVersion()
+	case quickconnectrequest.FieldExpiresAt:
+		return m.ExpiresAt()
+	case quickconnectrequest.FieldAuthorizedByID:
+		return m.AuthorizedByID()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *QuickConnectRequestMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case quickconnectrequest.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case quickconnectrequest.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case quickconnectrequest.FieldSecret:
+		return m.OldSecret(ctx)
+	case quickconnectrequest.FieldCode:
+		return m.OldCode(ctx)
+	case quickconnectrequest.FieldDeviceID:
+		return m.OldDeviceID(ctx)
+	case quickconnectrequest.FieldDeviceName:
+		return m.OldDeviceName(ctx)
+	case quickconnectrequest.FieldAppName:
+		return m.OldAppName(ctx)
+	case quickconnectrequest.FieldAppVersion:
+		return m.OldAppVersion(ctx)
+	case quickconnectrequest.FieldExpiresAt:
+		return m.OldExpiresAt(ctx)
+	case quickconnectrequest.FieldAuthorizedByID:
+		return m.OldAuthorizedByID(ctx)
+	}
+	return nil, fmt.Errorf("unknown QuickConnectRequest field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *QuickConnectRequestMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case quickconnectrequest.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case quickconnectrequest.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case quickconnectrequest.FieldSecret:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSecret(v)
+		return nil
+	case quickconnectrequest.FieldCode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCode(v)
+		return nil
+	case quickconnectrequest.FieldDeviceID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeviceID(v)
+		return nil
+	case quickconnectrequest.FieldDeviceName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeviceName(v)
+		return nil
+	case quickconnectrequest.FieldAppName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAppName(v)
+		return nil
+	case quickconnectrequest.FieldAppVersion:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAppVersion(v)
+		return nil
+	case quickconnectrequest.FieldExpiresAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiresAt(v)
+		return nil
+	case quickconnectrequest.FieldAuthorizedByID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAuthorizedByID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown QuickConnectRequest field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *QuickConnectRequestMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *QuickConnectRequestMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *QuickConnectRequestMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown QuickConnectRequest numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *QuickConnectRequestMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(quickconnectrequest.FieldAuthorizedByID) {
+		fields = append(fields, quickconnectrequest.FieldAuthorizedByID)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *QuickConnectRequestMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *QuickConnectRequestMutation) ClearField(name string) error {
+	switch name {
+	case quickconnectrequest.FieldAuthorizedByID:
+		m.ClearAuthorizedByID()
+		return nil
+	}
+	return fmt.Errorf("unknown QuickConnectRequest nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *QuickConnectRequestMutation) ResetField(name string) error {
+	switch name {
+	case quickconnectrequest.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case quickconnectrequest.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case quickconnectrequest.FieldSecret:
+		m.ResetSecret()
+		return nil
+	case quickconnectrequest.FieldCode:
+		m.ResetCode()
+		return nil
+	case quickconnectrequest.FieldDeviceID:
+		m.ResetDeviceID()
+		return nil
+	case quickconnectrequest.FieldDeviceName:
+		m.ResetDeviceName()
+		return nil
+	case quickconnectrequest.FieldAppName:
+		m.ResetAppName()
+		return nil
+	case quickconnectrequest.FieldAppVersion:
+		m.ResetAppVersion()
+		return nil
+	case quickconnectrequest.FieldExpiresAt:
+		m.ResetExpiresAt()
+		return nil
+	case quickconnectrequest.FieldAuthorizedByID:
+		m.ResetAuthorizedByID()
+		return nil
+	}
+	return fmt.Errorf("unknown QuickConnectRequest field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *QuickConnectRequestMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.authorized_by != nil {
+		edges = append(edges, quickconnectrequest.EdgeAuthorizedBy)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *QuickConnectRequestMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case quickconnectrequest.EdgeAuthorizedBy:
+		if id := m.authorized_by; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *QuickConnectRequestMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *QuickConnectRequestMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *QuickConnectRequestMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedauthorized_by {
+		edges = append(edges, quickconnectrequest.EdgeAuthorizedBy)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *QuickConnectRequestMutation) EdgeCleared(name string) bool {
+	switch name {
+	case quickconnectrequest.EdgeAuthorizedBy:
+		return m.clearedauthorized_by
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *QuickConnectRequestMutation) ClearEdge(name string) error {
+	switch name {
+	case quickconnectrequest.EdgeAuthorizedBy:
+		m.ClearAuthorizedBy()
+		return nil
+	}
+	return fmt.Errorf("unknown QuickConnectRequest unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *QuickConnectRequestMutation) ResetEdge(name string) error {
+	switch name {
+	case quickconnectrequest.EdgeAuthorizedBy:
+		m.ResetAuthorizedBy()
+		return nil
+	}
+	return fmt.Errorf("unknown QuickConnectRequest edge %s", name)
+}
+
 // SeriesTimerMutation represents an operation that mutates the SeriesTimer nodes in the graph.
 type SeriesTimerMutation struct {
 	config
@@ -39960,42 +40856,45 @@ func (m *TunerHostMutation) ResetEdge(name string) error {
 // UserMutation represents an operation that mutates the User nodes in the graph.
 type UserMutation struct {
 	config
-	op                          Op
-	typ                         string
-	id                          *uuid.UUID
-	created_at                  *time.Time
-	updated_at                  *time.Time
-	name                        *string
-	username                    *string
-	password_hash               *string
-	last_login_at               *time.Time
-	last_activity_at            *time.Time
-	clearedFields               map[string]struct{}
-	configuration               *uuid.UUID
-	clearedconfiguration        bool
-	policy                      *uuid.UUID
-	clearedpolicy               bool
-	sessions                    map[uuid.UUID]struct{}
-	removedsessions             map[uuid.UUID]struct{}
-	clearedsessions             bool
-	item_data                   map[uuid.UUID]struct{}
-	removeditem_data            map[uuid.UUID]struct{}
-	cleareditem_data            bool
-	display_preferences         map[uuid.UUID]struct{}
-	removeddisplay_preferences  map[uuid.UUID]struct{}
-	cleareddisplay_preferences  bool
-	activity_log_entries        map[uuid.UUID]struct{}
-	removedactivity_log_entries map[uuid.UUID]struct{}
-	clearedactivity_log_entries bool
-	playlists                   map[uuid.UUID]struct{}
-	removedplaylists            map[uuid.UUID]struct{}
-	clearedplaylists            bool
-	playlist_shares             map[uuid.UUID]struct{}
-	removedplaylist_shares      map[uuid.UUID]struct{}
-	clearedplaylist_shares      bool
-	done                        bool
-	oldValue                    func(context.Context) (*User, error)
-	predicates                  []predicate.User
+	op                            Op
+	typ                           string
+	id                            *uuid.UUID
+	created_at                    *time.Time
+	updated_at                    *time.Time
+	name                          *string
+	username                      *string
+	password_hash                 *string
+	last_login_at                 *time.Time
+	last_activity_at              *time.Time
+	clearedFields                 map[string]struct{}
+	configuration                 *uuid.UUID
+	clearedconfiguration          bool
+	policy                        *uuid.UUID
+	clearedpolicy                 bool
+	sessions                      map[uuid.UUID]struct{}
+	removedsessions               map[uuid.UUID]struct{}
+	clearedsessions               bool
+	item_data                     map[uuid.UUID]struct{}
+	removeditem_data              map[uuid.UUID]struct{}
+	cleareditem_data              bool
+	display_preferences           map[uuid.UUID]struct{}
+	removeddisplay_preferences    map[uuid.UUID]struct{}
+	cleareddisplay_preferences    bool
+	activity_log_entries          map[uuid.UUID]struct{}
+	removedactivity_log_entries   map[uuid.UUID]struct{}
+	clearedactivity_log_entries   bool
+	playlists                     map[uuid.UUID]struct{}
+	removedplaylists              map[uuid.UUID]struct{}
+	clearedplaylists              bool
+	playlist_shares               map[uuid.UUID]struct{}
+	removedplaylist_shares        map[uuid.UUID]struct{}
+	clearedplaylist_shares        bool
+	quick_connect_requests        map[uuid.UUID]struct{}
+	removedquick_connect_requests map[uuid.UUID]struct{}
+	clearedquick_connect_requests bool
+	done                          bool
+	oldValue                      func(context.Context) (*User, error)
+	predicates                    []predicate.User
 }
 
 var _ ent.Mutation = (*UserMutation)(nil)
@@ -40782,6 +41681,60 @@ func (m *UserMutation) ResetPlaylistShares() {
 	m.removedplaylist_shares = nil
 }
 
+// AddQuickConnectRequestIDs adds the "quick_connect_requests" edge to the QuickConnectRequest entity by ids.
+func (m *UserMutation) AddQuickConnectRequestIDs(ids ...uuid.UUID) {
+	if m.quick_connect_requests == nil {
+		m.quick_connect_requests = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.quick_connect_requests[ids[i]] = struct{}{}
+	}
+}
+
+// ClearQuickConnectRequests clears the "quick_connect_requests" edge to the QuickConnectRequest entity.
+func (m *UserMutation) ClearQuickConnectRequests() {
+	m.clearedquick_connect_requests = true
+}
+
+// QuickConnectRequestsCleared reports if the "quick_connect_requests" edge to the QuickConnectRequest entity was cleared.
+func (m *UserMutation) QuickConnectRequestsCleared() bool {
+	return m.clearedquick_connect_requests
+}
+
+// RemoveQuickConnectRequestIDs removes the "quick_connect_requests" edge to the QuickConnectRequest entity by IDs.
+func (m *UserMutation) RemoveQuickConnectRequestIDs(ids ...uuid.UUID) {
+	if m.removedquick_connect_requests == nil {
+		m.removedquick_connect_requests = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.quick_connect_requests, ids[i])
+		m.removedquick_connect_requests[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedQuickConnectRequests returns the removed IDs of the "quick_connect_requests" edge to the QuickConnectRequest entity.
+func (m *UserMutation) RemovedQuickConnectRequestsIDs() (ids []uuid.UUID) {
+	for id := range m.removedquick_connect_requests {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// QuickConnectRequestsIDs returns the "quick_connect_requests" edge IDs in the mutation.
+func (m *UserMutation) QuickConnectRequestsIDs() (ids []uuid.UUID) {
+	for id := range m.quick_connect_requests {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetQuickConnectRequests resets all changes to the "quick_connect_requests" edge.
+func (m *UserMutation) ResetQuickConnectRequests() {
+	m.quick_connect_requests = nil
+	m.clearedquick_connect_requests = false
+	m.removedquick_connect_requests = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -41032,7 +41985,7 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 9)
 	if m.configuration != nil {
 		edges = append(edges, user.EdgeConfiguration)
 	}
@@ -41056,6 +42009,9 @@ func (m *UserMutation) AddedEdges() []string {
 	}
 	if m.playlist_shares != nil {
 		edges = append(edges, user.EdgePlaylistShares)
+	}
+	if m.quick_connect_requests != nil {
+		edges = append(edges, user.EdgeQuickConnectRequests)
 	}
 	return edges
 }
@@ -41108,13 +42064,19 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeQuickConnectRequests:
+		ids := make([]ent.Value, 0, len(m.quick_connect_requests))
+		for id := range m.quick_connect_requests {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 9)
 	if m.removedsessions != nil {
 		edges = append(edges, user.EdgeSessions)
 	}
@@ -41132,6 +42094,9 @@ func (m *UserMutation) RemovedEdges() []string {
 	}
 	if m.removedplaylist_shares != nil {
 		edges = append(edges, user.EdgePlaylistShares)
+	}
+	if m.removedquick_connect_requests != nil {
+		edges = append(edges, user.EdgeQuickConnectRequests)
 	}
 	return edges
 }
@@ -41176,13 +42141,19 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeQuickConnectRequests:
+		ids := make([]ent.Value, 0, len(m.removedquick_connect_requests))
+		for id := range m.removedquick_connect_requests {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 9)
 	if m.clearedconfiguration {
 		edges = append(edges, user.EdgeConfiguration)
 	}
@@ -41207,6 +42178,9 @@ func (m *UserMutation) ClearedEdges() []string {
 	if m.clearedplaylist_shares {
 		edges = append(edges, user.EdgePlaylistShares)
 	}
+	if m.clearedquick_connect_requests {
+		edges = append(edges, user.EdgeQuickConnectRequests)
+	}
 	return edges
 }
 
@@ -41230,6 +42204,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 		return m.clearedplaylists
 	case user.EdgePlaylistShares:
 		return m.clearedplaylist_shares
+	case user.EdgeQuickConnectRequests:
+		return m.clearedquick_connect_requests
 	}
 	return false
 }
@@ -41275,6 +42251,9 @@ func (m *UserMutation) ResetEdge(name string) error {
 		return nil
 	case user.EdgePlaylistShares:
 		m.ResetPlaylistShares()
+		return nil
+	case user.EdgeQuickConnectRequests:
+		m.ResetQuickConnectRequests()
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)

@@ -58,6 +58,8 @@ type Tx struct {
 	PlaylistEntry *PlaylistEntryClient
 	// PlaylistShare is the client for interacting with the PlaylistShare builders.
 	PlaylistShare *PlaylistShareClient
+	// QuickConnectRequest is the client for interacting with the QuickConnectRequest builders.
+	QuickConnectRequest *QuickConnectRequestClient
 	// SeriesTimer is the client for interacting with the SeriesTimer builders.
 	SeriesTimer *SeriesTimerClient
 	// Session is the client for interacting with the Session builders.
@@ -231,6 +233,7 @@ func (tx *Tx) init() {
 	tx.Playlist = NewPlaylistClient(tx.config)
 	tx.PlaylistEntry = NewPlaylistEntryClient(tx.config)
 	tx.PlaylistShare = NewPlaylistShareClient(tx.config)
+	tx.QuickConnectRequest = NewQuickConnectRequestClient(tx.config)
 	tx.SeriesTimer = NewSeriesTimerClient(tx.config)
 	tx.Session = NewSessionClient(tx.config)
 	tx.Studio = NewStudioClient(tx.config)

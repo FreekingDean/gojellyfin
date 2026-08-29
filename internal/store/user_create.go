@@ -16,6 +16,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/displaypreferences"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
+	"github.com/FreekingDean/gojellyfin/internal/store/quickconnectrequest"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
@@ -238,6 +239,21 @@ func (_c *UserCreate) AddPlaylistShares(v ...*PlaylistShare) *UserCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddPlaylistShareIDs(ids...)
+}
+
+// AddQuickConnectRequestIDs adds the "quick_connect_requests" edge to the QuickConnectRequest entity by IDs.
+func (_c *UserCreate) AddQuickConnectRequestIDs(ids ...uuid.UUID) *UserCreate {
+	_c.mutation.AddQuickConnectRequestIDs(ids...)
+	return _c
+}
+
+// AddQuickConnectRequests adds the "quick_connect_requests" edges to the QuickConnectRequest entity.
+func (_c *UserCreate) AddQuickConnectRequests(v ...*QuickConnectRequest) *UserCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddQuickConnectRequestIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -487,6 +503,22 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(playlistshare.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.QuickConnectRequestsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.QuickConnectRequestsTable,
+			Columns: []string{user.QuickConnectRequestsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(quickconnectrequest.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

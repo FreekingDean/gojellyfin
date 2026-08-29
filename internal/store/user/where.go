@@ -650,6 +650,29 @@ func HasPlaylistSharesWith(preds ...predicate.PlaylistShare) predicate.User {
 	})
 }
 
+// HasQuickConnectRequests applies the HasEdge predicate on the "quick_connect_requests" edge.
+func HasQuickConnectRequests() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, QuickConnectRequestsTable, QuickConnectRequestsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasQuickConnectRequestsWith applies the HasEdge predicate on the "quick_connect_requests" edge with a given conditions (other predicates).
+func HasQuickConnectRequestsWith(preds ...predicate.QuickConnectRequest) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newQuickConnectRequestsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.User) predicate.User {
 	return predicate.User(sql.AndPredicates(predicates...))
