@@ -11,6 +11,8 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	devicemodel "github.com/FreekingDean/gojellyfin/internal/store/device"
 	sessionmodel "github.com/FreekingDean/gojellyfin/internal/store/session"
+	usermodel "github.com/FreekingDean/gojellyfin/internal/store/user"
+	policymodel "github.com/FreekingDean/gojellyfin/internal/store/userpolicy"
 )
 
 type (
@@ -86,6 +88,7 @@ func (s *Service) ByToken(ctx context.Context, token string) (*Session, error) {
 		Where(
 			sessionmodel.AccessToken(token),
 			sessionmodel.RevokedAtIsNil(),
+			sessionmodel.HasUserWith(usermodel.Not(usermodel.HasPolicyWith(policymodel.IsDisabled(true)))),
 		).
 		WithUser().
 		WithDevice().
@@ -108,6 +111,21 @@ func (s *Service) List(ctx context.Context) ([]*Session, error) {
 	}
 
 	return sessions, nil
+}
+
+func (s *Service) RevokeForUser(ctx context.Context, userID uuid.UUID) error {
+	_, err := s.store.Session.Update().
+		Where(
+			sessionmodel.HasUserWith(usermodel.ID(userID)),
+			sessionmodel.RevokedAtIsNil(),
+		).
+		SetRevokedAt(time.Now()).
+		Save(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to revoke sessions for user: %w", err)
+	}
+
+	return nil
 }
 
 func (s *Service) DeleteByToken(ctx context.Context, token string) error {
