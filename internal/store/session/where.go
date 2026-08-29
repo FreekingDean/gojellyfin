@@ -452,6 +452,29 @@ func HasDeviceWith(preds ...predicate.Device) predicate.Session {
 	})
 }
 
+// HasSyncPlayMemberships applies the HasEdge predicate on the "sync_play_memberships" edge.
+func HasSyncPlayMemberships() predicate.Session {
+	return predicate.Session(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SyncPlayMembershipsTable, SyncPlayMembershipsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSyncPlayMembershipsWith applies the HasEdge predicate on the "sync_play_memberships" edge with a given conditions (other predicates).
+func HasSyncPlayMembershipsWith(preds ...predicate.SyncPlayGroupMember) predicate.Session {
+	return predicate.Session(func(s *sql.Selector) {
+		step := newSyncPlayMembershipsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Session) predicate.Session {
 	return predicate.Session(sql.AndPredicates(predicates...))

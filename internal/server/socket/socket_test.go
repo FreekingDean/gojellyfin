@@ -2,6 +2,7 @@ package socket
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -13,14 +14,16 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/env"
+	"github.com/FreekingDean/gojellyfin/internal/notify"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 )
 
 type fixture struct {
-	socket   *Socket
-	token    string
-	returned chan struct{}
+	socket    *Socket
+	token     string
+	sessionID uuid.UUID
+	returned  chan struct{}
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -50,12 +53,13 @@ func newFixture(t *testing.T) *fixture {
 
 	service := sessions.New(client, activity.New(client))
 	token := uuid.NewString()
-	if _, err := service.Create(ctx, user.ID, token, sessions.DeviceInfo{
+	session, err := service.Create(ctx, user.ID, token, sessions.DeviceInfo{
 		ID:         name,
 		Name:       name,
 		AppName:    "socket-test",
 		AppVersion: "1",
-	}); err != nil {
+	})
+	if err != nil {
 		t.Fatalf("failed to create the session: %v", err)
 	}
 
@@ -71,7 +75,12 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
-	return &fixture{socket: New(service), token: token, returned: make(chan struct{}, 1)}
+	return &fixture{
+		socket:    New(service),
+		token:     token,
+		sessionID: session.ID,
+		returned:  make(chan struct{}, 1),
+	}
 }
 
 func (f *fixture) connect(t *testing.T) *websocket.Conn {
@@ -189,4 +198,64 @@ func TestEnqueue(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("want a full buffer to drop the reply rather than block the reader")
 	}
+}
+
+func TestSocket_Deliver(t *testing.T) {
+	t.Run("a connected session receives the envelope", func(t *testing.T) {
+		f := newFixture(t)
+		conn := f.connect(t)
+		read(t, conn)
+
+		f.socket.Deliver(notify.Envelope{
+			SessionIDs: []uuid.UUID{f.sessionID},
+			Type:       "SyncPlayGroupUpdate",
+			Data:       json.RawMessage(`{"Type":"UserJoined"}`),
+		})
+
+		message := read(t, conn)
+		if message.MessageType != "SyncPlayGroupUpdate" {
+			t.Fatalf("MessageType = %q, want SyncPlayGroupUpdate", message.MessageType)
+		}
+
+		data, ok := message.Data.(map[string]any)
+		if !ok {
+			t.Fatalf("Data = %T, want the update object", message.Data)
+		}
+		if data["Type"] != "UserJoined" {
+			t.Fatalf("data = %v, want UserJoined", data)
+		}
+	})
+
+	t.Run("a session held by another pod is skipped without stalling the rest", func(t *testing.T) {
+		f := newFixture(t)
+		conn := f.connect(t)
+		read(t, conn)
+
+		f.socket.Deliver(notify.Envelope{
+			SessionIDs: []uuid.UUID{uuid.New(), f.sessionID},
+			Type:       "SyncPlayGroupUpdate",
+			Data:       json.RawMessage(`{"Type":"UserLeft"}`),
+		})
+
+		if message := read(t, conn); message.MessageType != "SyncPlayGroupUpdate" {
+			t.Fatalf("MessageType = %q, want SyncPlayGroupUpdate", message.MessageType)
+		}
+	})
+
+	t.Run("delivering after the socket closes is dropped", func(t *testing.T) {
+		f := newFixture(t)
+		conn := f.connect(t)
+		read(t, conn)
+
+		if err := conn.Close(); err != nil {
+			t.Fatalf("failed to close the socket: %v", err)
+		}
+		<-f.returned
+
+		f.socket.Deliver(notify.Envelope{
+			SessionIDs: []uuid.UUID{f.sessionID},
+			Type:       "SyncPlayGroupUpdate",
+			Data:       json.RawMessage(`{"Type":"UserLeft"}`),
+		})
+	})
 }
