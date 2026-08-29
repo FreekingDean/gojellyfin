@@ -139,3 +139,39 @@ func (s *Service) DeleteByToken(ctx context.Context, token string) error {
 
 	return nil
 }
+
+func (s *Service) Import(ctx context.Context, userID uuid.UUID, token string, device DeviceInfo, lastActivity time.Time) error {
+	return s.store.WithTx(ctx, func(tx *store.Tx) error {
+		deviceID, err := tx.Device.Create().
+			SetClientID(device.ID).
+			SetName(device.Name).
+			SetAppName(device.AppName).
+			SetAppVersion(device.AppVersion).
+			SetSupportsMediaControl(false).
+			SetSupportsPersistentIdentifier(false).
+			SetLastActivityAt(lastActivity).
+			OnConflictColumns(devicemodal.FieldClientID).
+			UpdateName().
+			UpdateAppName().
+			UpdateAppVersion().
+			UpdateLastActivityAt().
+			ID(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to import device: %w", err)
+		}
+
+		err = tx.Session.Create().
+			SetUserID(userID).
+			SetDeviceID(deviceID).
+			SetAccessToken(token).
+			SetLastActivityAt(lastActivity).
+			OnConflictColumns(sessionmodal.FieldAccessToken).
+			UpdateLastActivityAt().
+			Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to import session: %w", err)
+		}
+
+		return nil
+	})
+}
