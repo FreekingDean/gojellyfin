@@ -9,6 +9,7 @@ import (
 	"image"
 	"io"
 	"log"
+	"strings"
 
 	"github.com/google/uuid"
 
@@ -145,10 +146,12 @@ func fingerprint(chosen []*items.Image) string {
 		return ""
 	}
 
-	sum := sha1.New()
+	selected := make([]string, 0, len(chosen))
 	for _, record := range chosen {
-		fmt.Fprintf(sum, "%s:%s\n", record.ID, record.Tag)
+		selected = append(selected, record.ID.String()+":"+record.Tag)
 	}
 
-	return hex.EncodeToString(sum.Sum(nil))
+	sum := sha1.Sum([]byte(strings.Join(selected, "\n")))
+
+	return hex.EncodeToString(sum[:])
 }

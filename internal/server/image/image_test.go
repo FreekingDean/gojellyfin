@@ -24,6 +24,7 @@ import (
 
 type fixture struct {
 	server    *Server
+	libraries *libraries.Service
 	client    *store.Client
 	artwork   artwork.Store
 	itemID    uuid.UUID
@@ -84,6 +85,7 @@ func newFixture(t *testing.T) *fixture {
 			filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}),
 			stored,
 		),
+		libraries: libraries.New(client),
 		client:    client,
 		artwork:   stored,
 		itemID:    item.ID,
@@ -172,6 +174,48 @@ func TestServer_GetItemImage(t *testing.T) {
 		}
 	})
 
+	t.Run("serves a library's collage under the library's own id", func(t *testing.T) {
+		fixture := newFixture(t)
+		ctx := context.Background()
+		collage := []byte("collage-bytes")
+
+		key := libraries.ImageKey(fixture.libraryID, "collagetag")
+		if err := fixture.artwork.Put(ctx, key, bytes.NewReader(collage)); err != nil {
+			t.Fatalf("failed to store the collage: %v", err)
+		}
+		t.Cleanup(func() {
+			if err := fixture.artwork.Delete(ctx, key); err != nil {
+				t.Errorf("failed to clean up the collage: %v", err)
+			}
+		})
+		if err := fixture.libraries.SetImageTag(ctx, fixture.libraryID, "collagetag"); err != nil {
+			t.Fatalf("failed to tag the library: %v", err)
+		}
+
+		response, err := fixture.server.GetItemImage(ctx, api.GetItemImageRequestObject{
+			ItemId:    fixture.libraryID,
+			ImageType: api.Primary,
+		})
+		if err != nil {
+			t.Fatalf("failed to get the image: %v", err)
+		}
+
+		recorder := httptest.NewRecorder()
+		if err := response.VisitGetItemImageResponse(recorder); err != nil {
+			t.Fatalf("failed to write the image: %v", err)
+		}
+
+		if recorder.Code != http.StatusOK {
+			t.Errorf("status = %d, want 200", recorder.Code)
+		}
+		if got := recorder.Body.String(); got != string(collage) {
+			t.Errorf("body = %q, want %q", got, collage)
+		}
+		if got := recorder.Header().Get("Content-Type"); got != "image/jpeg" {
+			t.Errorf("content type = %q, want image/jpeg", got)
+		}
+	})
+
 	t.Run("misses", func(t *testing.T) {
 		fixture := newFixture(t)
 		ctx := context.Background()
@@ -191,6 +235,8 @@ func TestServer_GetItemImage(t *testing.T) {
 			{name: "an unknown image type", itemID: fixture.itemID, imageType: api.ImageType("Nonsense")},
 			{name: "an unknown item", itemID: uuid.New(), imageType: api.Primary},
 			{name: "a row whose file is gone", itemID: fixture.itemID, imageType: api.Thumb},
+			{name: "a library with no collage", itemID: fixture.libraryID, imageType: api.Primary},
+			{name: "an image type a library never has", itemID: fixture.libraryID, imageType: api.Thumb},
 		}
 
 		for _, test := range tests {
