@@ -112,7 +112,7 @@ func mediaSourceDto(source *items.MediaSource) api.MediaSourceInfo {
 		Path:                       apiutil.Ptr(source.Path),
 		Protocol:                   apiutil.Ptr(api.MediaProtocol(source.Protocol)),
 		Type:                       apiutil.Ptr(api.MediaSourceType(source.Kind)),
-		Container:                  apiutil.Ptr(source.Container),
+		Container:                  apiutil.Ptr(items.Container(source)),
 		Size:                       apiutil.Ptr(source.Size),
 		Bitrate:                    apiutil.Ptr(source.Bitrate),
 		RunTimeTicks:               apiutil.Ptr(source.RunTimeTicks),

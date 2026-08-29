@@ -154,6 +154,38 @@ func (f *fixture) addCopy(t *testing.T, id uuid.UUID, path, video, audio string,
 	}
 }
 
+func (f *fixture) addUnprobed(t *testing.T, kind items.Kind, container string) uuid.UUID {
+	t.Helper()
+
+	ctx := context.Background()
+	service := f.server.items
+
+	item, err := service.SaveScanned(ctx, items.Scanned{
+		LibraryID:    f.library,
+		Kind:         kind,
+		Key:          string(kind) + ":unprobed:" + container,
+		Name:         "unprobed." + container,
+		SortName:     "unprobed." + container,
+		DateModified: time.Now(),
+	})
+	if err != nil {
+		t.Fatalf("failed to save the item: %v", err)
+	}
+
+	_, err = service.SaveSource(ctx, items.ScannedSource{
+		LibraryID:    f.library,
+		ItemID:       item.ID,
+		Path:         "/media/unprobed." + container,
+		Name:         "unprobed." + container,
+		DateModified: time.Now(),
+	})
+	if err != nil {
+		t.Fatalf("failed to save the source: %v", err)
+	}
+
+	return item.ID
+}
+
 func (f *fixture) unscanned(t *testing.T) uuid.UUID {
 	t.Helper()
 
@@ -450,6 +482,23 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 
 		if fixture.answer(t, id, firstPlay(&chrome)).ErrorCode != nil {
 			t.Error("a source that can be muxed was answered as no compatible stream")
+		}
+	})
+
+	t.Run("a file the probe has not reached is named by the extension it carries", func(t *testing.T) {
+		fixture := newFixture(t)
+		movie := fixture.addUnprobed(t, itemmodal.KindMovie, "mkv")
+		song := fixture.addUnprobed(t, itemmodal.KindAudio, "flac")
+
+		film := fixture.source(t, movie, firstPlay(&chrome))
+		if got := apiutil.Deref(film.Container); got != "mkv" {
+			t.Errorf("container = %q, want the extension the client appends to stream.", got)
+		}
+		if got := apiutil.Deref(film.TranscodingUrl); !strings.HasPrefix(got, "/Videos/"+movie.String()+"/stream.mkv?") {
+			t.Errorf("transcoding url = %q, want a stream.mkv under the item", got)
+		}
+		if got := apiutil.Deref(fixture.source(t, song, firstPlay(&chrome)).Container); got != "flac" {
+			t.Errorf("container = %q, want the extension the client appends to stream.", got)
 		}
 	})
 
