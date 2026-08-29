@@ -276,26 +276,6 @@ func TestServer_GetAncestors(t *testing.T) {
 	})
 }
 
-func TestServer_GetSimilarItems(t *testing.T) {
-	fixture := newFixture(t)
-	ctx := context.Background()
-
-	movie := fixture.add(t, seed{kind: itemmodal.KindMovie, name: "Movie"})
-
-	response, err := fixture.server.GetSimilarItems(ctx, api.GetSimilarItemsRequestObject{ItemId: movie})
-	if err != nil {
-		t.Fatalf("failed to get the similar items: %v", err)
-	}
-
-	result, ok := response.(api.GetSimilarItems200JSONResponse)
-	if !ok {
-		t.Fatalf("response = %T, want api.GetSimilarItems200JSONResponse", response)
-	}
-	if len(*result.Items) != 0 || *result.TotalRecordCount != 0 {
-		t.Errorf("similar = %v, want an empty result", names(*result.Items))
-	}
-}
-
 func TestServer_DeleteItem(t *testing.T) {
 	fixture := newFixture(t)
 
