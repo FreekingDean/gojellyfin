@@ -8,7 +8,7 @@ A Go reimplementation of a Jellyfin media server, serving the Jellyfin 12.0.0 HT
 
 ## Rules
 
-**Comments.** Don't write them, and there is no exception. A comment is almost always a sign the code is messy or doing too much — simplify the code instead of explaining it. Where an external constraint genuinely cannot live in a name, it goes in the External constraints section below rather than beside the code. `//go:` directives, `//nolint` and generated headers are not comments and stay.
+**Comments.** Don't write them, and there is no exception. A comment is almost always a sign the code is messy or doing too much — simplify the code instead of explaining it. Where an external constraint genuinely cannot live in a name, it goes in the External constraints section below rather than beside the code. `//go:` directives, `//nolint` and generated headers are not comments and stay. `TestNoComments` in `cmd/gojellyfin` parses every file under `cmd` and `internal` and fails on anything else, so the rule is the build's rather than a reviewer's; a generated file is skipped by its own `DO NOT EDIT.` header.
 
 **Paradigms.** Use what the codebase already does. Don't introduce a new pattern or a new dependency if the existing ones can carry the change, and never refactor toward a better paradigm mid-change. If something genuinely needs rework, open a GitHub issue with `gh issue create` and move on. Deferred work is tracked in issues only — there is no TODO file. Write the issue for someone reading it in six months: the concrete detail and the file or symbol it concerns, not a one-line reminder. Decisions get filed the same way, worded as the standing decision and its reason so nobody re-litigates them.
 
@@ -24,6 +24,7 @@ A Go reimplementation of a Jellyfin media server, serving the Jellyfin 12.0.0 HT
 make dev                             # watch and restart (go install github.com/air-verse/air@latest)
 make run                             # run once, no watching
 make build test fmt
+make lint                            # gofmt, go vet, golangci-lint
 make generate                        # regenerate the API from the spec and the store from the ent schema
 go test -run TestName ./internal/... # single test
 
@@ -38,6 +39,8 @@ Three things are shared between them, all in `main.go`: `withStore` opens the st
 
 `build` depends on `generate`, and `run` and `test` depend on `build`, so the generated code is never stale. The watch loop is the exception: `air` only builds, because regenerating re-emits ~95k lines on every save.
 
+`make lint` is `gofmt`, `go vet` and the `golangci-lint` version `.github/workflows/ci.yml` pins. `.golangci.yml` enables the standard set plus the linters the tree already passes clean, so a green run means zero issues rather than a tolerated backlog. `funlen`, `gocyclo`, `revive`, `wrapcheck` and `paralleltest` are deliberately out because each has one — 53 functions over `funlen`'s default, 47 of them tests — and enabling a rule alongside exclusions wide enough to pass it leaves a rule nobody is held to. Those backlogs are #612's.
+
 Run `air` through `tee` so the log is both on screen and readable at `/tmp/gojellyfin.log`; the request log is the fastest way to find what a client actually calls.
 
 `air` owns `:8081` while it runs, so starting a second server alongside it fails with `ListenAndServe error: address already in use`. Check whether it is running with `pgrep -x air` (matching on a path fails — the process is just `air`), and the listener with `lsof -ti:8081 -sTCP:LISTEN` — without `-sTCP:LISTEN` it also matches browsers connected to the port, and killing those results is not what you want. An orphaned `.air/gojellyfin` can outlive its supervisor and keep serving stale code.
@@ -46,7 +49,7 @@ Requires a reachable Postgres. `DATABASE_URL` is required and the binary carries
 
 **`internal/env` is the only package that reads the environment.** It loads once into a `Config` that fx provides and every other package takes as a value, so the knobs are found by reading one struct rather than by grepping for `os.Getenv`, and a package under test is handed a value instead of having to set a variable. A one-shot subcommand calls `env.Load()` itself, because it has no lifecycle to hang it off.
 
-The reading is `viper`, bound to the environment only — no config file, no flags, no watching. The `mapstructure` tag on each field is the variable's name, and `keys` walks `Config` to bind them, because `Unmarshal` only populates keys viper already knows about and `AutomaticEnv` does not register any. So a new variable is a new field and nothing else; `TestKeysCoverEveryVariable` names the whole set, which is where a rename shows up.
+The reading is `viper`, bound to the environment only — no config file, no flags, no watching. The `mapstructure` tag on each field is the variable's name, and `keys` walks `Config` to bind them, because `Unmarshal` only populates keys viper already knows about and `AutomaticEnv` does not register any. So a new variable is a new field and nothing else; `TestKeysCoverEveryVariable` names the whole set, which is where a rename shows up, and `TestEnvIsTheOnlyReaderOfTheEnvironment` fails on an `os.Getenv` or a `viper` import anywhere else.
 
 A malformed value is refused at start rather than ignored. `TRANSCODER_JOBS=lots` used to fall through to the core count and `TRANSCODER_STALL_TIMEOUT=30` to thirty seconds, so a typo in a manifest became a capacity problem with nothing to point at.
 
@@ -62,7 +65,7 @@ It picks its port by binding `:0` and reading the number back into `HTTP_PORT`, 
 
 **There is no browser in this one.** `jellyfin-web` is not published anywhere a test can fetch it directly: no npm package, no built assets on its releases, and the only place the built client exists is inside the all-in-one `jellyfin/jellyfin` image (see the comment in `deploy/web-deployment.yaml`), which is 395MB and has to be unpacked to get at a directory of static files. So the smoke test is written against the API, which is the contract the client talks to. A real integration test that boots the client on top of it is wanted and tracked in #558 — that is a second test rather than a change to this one, because what the two catch is different: this one fails when the server stops serving, and that one fails when the client stops being able to use what it serves.
 
-Nothing migrates at startup. Schema changes mean editing `internal/store/entities`, running `make generate`, then generating and applying the SQL by hand from `internal/store` (the `atlas migrate diff` line in `generate.go` is commented out because it needs Docker):
+Nothing migrates at startup. Schema changes mean editing `internal/store/entities`, running `make generate`, then generating and applying the SQL by hand from `internal/store` (`atlas migrate diff` is not a `go:generate` line in `generate.go` because it needs Docker):
 
 ```sh
 atlas migrate diff <name> --dir "file://migrations" --to "ent://entities" --dev-url "docker://postgres/16/dev?search_path=public"
@@ -136,7 +139,7 @@ Every operation gets one span, named for its **operation id**. That is why the s
 
 The endpoint is checked in `tracing.New` rather than in `env.validate`, because what makes an OTLP endpoint valid is the exporter's business and `env` only knows it wants a string. The exporter answers a URL it cannot parse by logging and carrying on against its own localhost default, so a malformed one is refused at start instead.
 
-**`internal/observability/tracing` is the only package that imports otel.** A caller gets `StartRequest` and a `Span` with `End` and `Fail`, not a `trace.Tracer`, so the middleware names no otel type and the backend stays swappable; `Recorded` is the same seam for tests, handing back a `Recorder` that answers in span names and attribute values. It is composed through `observability.Module`, which `server` and `worker` both list, and it registers `OnStop` only — a provider is exporting from the moment it is built, so there is nothing to start. The flush is bounded on the way out, because a collector that has gone away must not hold the process open.
+**`internal/observability/tracing` is the only package that imports otel.** A caller gets `StartRequest` and a `Span` with `End` and `Fail`, not a `trace.Tracer`, so the middleware names no otel type and the backend stays swappable; `Recorded` is the same seam for tests, handing back a `Recorder` that answers in span names and attribute values; `TestOtelStaysBehindTracing` fails on an otel import from anywhere else. It is composed through `observability.Module`, which `server` and `worker` both list, and it registers `OnStop` only — a provider is exporting from the moment it is built, so there is nothing to start. The flush is bounded on the way out, because a collector that has gone away must not hold the process open.
 
 **Streaming endpoints are excluded.** `streams` in `internal/http/middleware/oapitracing.go` names `Videos` and `Audio`, the same two roots `deploy/httproutes.yaml` splits on, matched case-insensitively because the mux is. A progressive response runs for the length of the media, so a span covering one is open for hours — a leak rather than a trace. `GET /socket` needs no entry: it is registered outside the generated API, so it never reaches this layer. The streaming case in `TestOapiTracing_Middleware` is what keeps the exclusion from being incidental.
 
@@ -146,7 +149,7 @@ Nothing the client sent goes on a span. The query string carries `api_key` and s
 
 Three layers, split on what each is allowed to know:
 
-- **`internal/{auth,sessions,users,items,libraries,tasks,config}` — domains.** Behaviour over the ent models, exposing a `Service` built with `New(client *store.Client)`. **A domain package must never import `internal/server/api` or `internal/http/middleware`.** That invariant is what the layout rests on; check it with `grep -rl 'server/api\|http/middleware' internal/<domain>/`, which must come back empty. `auth` owns hashing, tokens and request identity; `sessions` owns the active session and device rows, which are Jellyfin sessions rather than login state; `tasks` owns the workflows the dashboard drives.
+- **`internal/{auth,sessions,users,items,libraries,tasks,config}` — domains.** Behaviour over the ent models, exposing a `Service` built with `New(client *store.Client)`. **A domain package must never import `internal/server/api` or `internal/http/middleware`.** That invariant is what the layout rests on, and `TestDomainsImportNoAPIOrMiddleware` in `internal/server/layering_test.go` is what holds it: it walks `cmd` and `internal` outside those two directories and fails naming the file and the import. `auth` owns hashing, tokens and request identity; `sessions` owns the active session and device rows, which are Jellyfin sessions rather than login state; `tasks` owns the workflows the dashboard drives.
 - **`internal/server/<tag>` — one package per spec tag.** Named for the tag (`userlibrary`, `librarystructure`, `mediainfo`), holding exactly the operations that tag declares and a `Server` with the domain services it needs. Add a tag package by looking the operation up in the spec, not by guessing where it feels like it belongs — `AuthenticateUserByName` is a `User` operation, `GetBitrateTestBytes` is `MediaInfo`.
 - **`internal/server/apiutil`** — four generic helpers (`Ptr`, `Deref`, `OrElse`, `Body`) and nothing else. It imports none of our packages, and no domain knowledge belongs in it; Go cannot alias generic functions, which is the only reason they are shared rather than copied.
 
@@ -218,7 +221,7 @@ Triggers are not built. `UpdateTask` answers 501 rather than storing a schedule 
 
 **`internal/metadata` is what anything else names; `internal/metadata/tmdb` is one implementation of it.** It sits under `metadata` because nothing outside `metadata` calls it, and the tree should say so. The interface is declared by the consumer, in `metadata/provider.go`, and `metadata.Module` aggregates `tmdb.Module` the way `server.Module` aggregates its tag packages — so `server.go` and `worker.go` list `metadata.Module` and learn nothing about who answers. The scheduled task the dashboard shows says it identifies items, not who it asks.
 
-That split is a rule, not a preference: **no package outside `internal/metadata` may import the provider.** Check with `grep -rln 'metadata/tmdb' --include='*.go' . | grep -v '^./internal/metadata/tmdb/'`, which must return `internal/metadata/fx.go` and nothing else.
+That split is a rule, not a preference: **no package outside `internal/metadata` may import the provider.** `TestProviderStaysBehindMetadata` in `internal/metadata/boundary_test.go` fails naming any file elsewhere that imports it.
 
 The rule is about imports, not about the letters T-M-D-B. `internal/env` carries a `TMDB` struct holding `TMDB_API_KEY`, and that is correct rather than a leak: `env` is the one place every variable this binary reads is written down, and the variable is named for the service whose key it is because that is what an operator puts in a manifest. A provider-neutral name would make the manifest lie and would break the moment a second provider needs a key of its own. `env` imports none of our packages, so naming a variable costs no coupling — the leak to avoid is a package reaching for the provider, and `metadata` still takes only the `Provider` interface.
 

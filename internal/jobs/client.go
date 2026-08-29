@@ -130,7 +130,8 @@ func (s *Service) Start(ctx context.Context, name string, options Options) error
 		WorkflowExecutionTimeout: runTimeoutMax,
 		WorkflowIDReusePolicy:    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 	}, job.Name(), options)
-	if _, running := err.(*serviceerror.WorkflowExecutionAlreadyStarted); running {
+	var running *serviceerror.WorkflowExecutionAlreadyStarted
+	if errors.As(err, &running) {
 		return nil
 	}
 
@@ -163,7 +164,8 @@ func (s *Service) status(ctx context.Context, job Job) (Status, error) {
 	}
 
 	described, err := connection.DescribeWorkflowExecution(ctx, job.Name(), "")
-	if _, missing := err.(*serviceerror.NotFound); missing {
+	var missing *serviceerror.NotFound
+	if errors.As(err, &missing) {
 		return status, nil
 	}
 	if err != nil {
