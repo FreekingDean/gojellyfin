@@ -81,20 +81,6 @@ func (_c *LibraryCreate) SetLocations(v []string) *LibraryCreate {
 	return _c
 }
 
-// SetImageTag sets the "image_tag" field.
-func (_c *LibraryCreate) SetImageTag(v string) *LibraryCreate {
-	_c.mutation.SetImageTag(v)
-	return _c
-}
-
-// SetNillableImageTag sets the "image_tag" field if the given value is not nil.
-func (_c *LibraryCreate) SetNillableImageTag(v *string) *LibraryCreate {
-	if v != nil {
-		_c.SetImageTag(*v)
-	}
-	return _c
-}
-
 // SetID sets the "id" field.
 func (_c *LibraryCreate) SetID(v uuid.UUID) *LibraryCreate {
 	_c.mutation.SetID(v)
@@ -201,10 +187,6 @@ func (_c *LibraryCreate) defaults() {
 		v := library.DefaultLocations
 		_c.mutation.SetLocations(v)
 	}
-	if _, ok := _c.mutation.ImageTag(); !ok {
-		v := library.DefaultImageTag
-		_c.mutation.SetImageTag(v)
-	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -228,9 +210,6 @@ func (_c *LibraryCreate) check() error {
 	}
 	if _, ok := _c.mutation.Locations(); !ok {
 		return &ValidationError{Name: "locations", err: errors.New(`store: missing required field "Library.locations"`)}
-	}
-	if _, ok := _c.mutation.ImageTag(); !ok {
-		return &ValidationError{Name: "image_tag", err: errors.New(`store: missing required field "Library.image_tag"`)}
 	}
 	return nil
 }
@@ -287,10 +266,6 @@ func (_c *LibraryCreate) createSpec() (*Library, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Locations(); ok {
 		_spec.SetField(library.FieldLocations, field.TypeJSON, value)
 		_node.Locations = value
-	}
-	if value, ok := _c.mutation.ImageTag(); ok {
-		_spec.SetField(library.FieldImageTag, field.TypeString, value)
-		_node.ImageTag = value
 	}
 	if nodes := _c.mutation.OptionsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -452,18 +427,6 @@ func (u *LibraryUpsert) UpdateLocations() *LibraryUpsert {
 	return u
 }
 
-// SetImageTag sets the "image_tag" field.
-func (u *LibraryUpsert) SetImageTag(v string) *LibraryUpsert {
-	u.Set(library.FieldImageTag, v)
-	return u
-}
-
-// UpdateImageTag sets the "image_tag" field to the value that was provided on create.
-func (u *LibraryUpsert) UpdateImageTag() *LibraryUpsert {
-	u.SetExcluded(library.FieldImageTag)
-	return u
-}
-
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -579,20 +542,6 @@ func (u *LibraryUpsertOne) SetLocations(v []string) *LibraryUpsertOne {
 func (u *LibraryUpsertOne) UpdateLocations() *LibraryUpsertOne {
 	return u.Update(func(s *LibraryUpsert) {
 		s.UpdateLocations()
-	})
-}
-
-// SetImageTag sets the "image_tag" field.
-func (u *LibraryUpsertOne) SetImageTag(v string) *LibraryUpsertOne {
-	return u.Update(func(s *LibraryUpsert) {
-		s.SetImageTag(v)
-	})
-}
-
-// UpdateImageTag sets the "image_tag" field to the value that was provided on create.
-func (u *LibraryUpsertOne) UpdateImageTag() *LibraryUpsertOne {
-	return u.Update(func(s *LibraryUpsert) {
-		s.UpdateImageTag()
 	})
 }
 
@@ -878,20 +827,6 @@ func (u *LibraryUpsertBulk) SetLocations(v []string) *LibraryUpsertBulk {
 func (u *LibraryUpsertBulk) UpdateLocations() *LibraryUpsertBulk {
 	return u.Update(func(s *LibraryUpsert) {
 		s.UpdateLocations()
-	})
-}
-
-// SetImageTag sets the "image_tag" field.
-func (u *LibraryUpsertBulk) SetImageTag(v string) *LibraryUpsertBulk {
-	return u.Update(func(s *LibraryUpsert) {
-		s.SetImageTag(v)
-	})
-}
-
-// UpdateImageTag sets the "image_tag" field to the value that was provided on create.
-func (u *LibraryUpsertBulk) UpdateImageTag() *LibraryUpsertBulk {
-	return u.Update(func(s *LibraryUpsert) {
-		s.UpdateImageTag()
 	})
 }
 

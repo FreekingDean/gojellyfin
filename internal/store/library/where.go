@@ -71,11 +71,6 @@ func Name(v string) predicate.Library {
 	return predicate.Library(sql.FieldEQ(FieldName, v))
 }
 
-// ImageTag applies equality check predicate on the "image_tag" field. It's identical to ImageTagEQ.
-func ImageTag(v string) predicate.Library {
-	return predicate.Library(sql.FieldEQ(FieldImageTag, v))
-}
-
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Library {
 	return predicate.Library(sql.FieldEQ(FieldCreatedAt, v))
@@ -239,71 +234,6 @@ func CollectionTypeIn(vs ...CollectionType) predicate.Library {
 // CollectionTypeNotIn applies the NotIn predicate on the "collection_type" field.
 func CollectionTypeNotIn(vs ...CollectionType) predicate.Library {
 	return predicate.Library(sql.FieldNotIn(FieldCollectionType, vs...))
-}
-
-// ImageTagEQ applies the EQ predicate on the "image_tag" field.
-func ImageTagEQ(v string) predicate.Library {
-	return predicate.Library(sql.FieldEQ(FieldImageTag, v))
-}
-
-// ImageTagNEQ applies the NEQ predicate on the "image_tag" field.
-func ImageTagNEQ(v string) predicate.Library {
-	return predicate.Library(sql.FieldNEQ(FieldImageTag, v))
-}
-
-// ImageTagIn applies the In predicate on the "image_tag" field.
-func ImageTagIn(vs ...string) predicate.Library {
-	return predicate.Library(sql.FieldIn(FieldImageTag, vs...))
-}
-
-// ImageTagNotIn applies the NotIn predicate on the "image_tag" field.
-func ImageTagNotIn(vs ...string) predicate.Library {
-	return predicate.Library(sql.FieldNotIn(FieldImageTag, vs...))
-}
-
-// ImageTagGT applies the GT predicate on the "image_tag" field.
-func ImageTagGT(v string) predicate.Library {
-	return predicate.Library(sql.FieldGT(FieldImageTag, v))
-}
-
-// ImageTagGTE applies the GTE predicate on the "image_tag" field.
-func ImageTagGTE(v string) predicate.Library {
-	return predicate.Library(sql.FieldGTE(FieldImageTag, v))
-}
-
-// ImageTagLT applies the LT predicate on the "image_tag" field.
-func ImageTagLT(v string) predicate.Library {
-	return predicate.Library(sql.FieldLT(FieldImageTag, v))
-}
-
-// ImageTagLTE applies the LTE predicate on the "image_tag" field.
-func ImageTagLTE(v string) predicate.Library {
-	return predicate.Library(sql.FieldLTE(FieldImageTag, v))
-}
-
-// ImageTagContains applies the Contains predicate on the "image_tag" field.
-func ImageTagContains(v string) predicate.Library {
-	return predicate.Library(sql.FieldContains(FieldImageTag, v))
-}
-
-// ImageTagHasPrefix applies the HasPrefix predicate on the "image_tag" field.
-func ImageTagHasPrefix(v string) predicate.Library {
-	return predicate.Library(sql.FieldHasPrefix(FieldImageTag, v))
-}
-
-// ImageTagHasSuffix applies the HasSuffix predicate on the "image_tag" field.
-func ImageTagHasSuffix(v string) predicate.Library {
-	return predicate.Library(sql.FieldHasSuffix(FieldImageTag, v))
-}
-
-// ImageTagEqualFold applies the EqualFold predicate on the "image_tag" field.
-func ImageTagEqualFold(v string) predicate.Library {
-	return predicate.Library(sql.FieldEqualFold(FieldImageTag, v))
-}
-
-// ImageTagContainsFold applies the ContainsFold predicate on the "image_tag" field.
-func ImageTagContainsFold(v string) predicate.Library {
-	return predicate.Library(sql.FieldContainsFold(FieldImageTag, v))
 }
 
 // HasOptions applies the HasEdge predicate on the "options" edge.

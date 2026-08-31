@@ -377,7 +377,6 @@ var (
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "collection_type", Type: field.TypeEnum, Enums: []string{"movies", "tvshows", "music", "musicvideos", "homevideos", "boxsets", "books", "mixed"}, Default: "mixed"},
 		{Name: "locations", Type: field.TypeJSON},
-		{Name: "image_tag", Type: field.TypeString, Default: ""},
 	}
 	// LibrariesTable holds the schema information for the "libraries" table.
 	LibrariesTable = &schema.Table{

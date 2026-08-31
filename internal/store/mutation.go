@@ -14396,7 +14396,6 @@ type LibraryMutation struct {
 	collection_type      *library.CollectionType
 	locations            *[]string
 	appendlocations      []string
-	image_tag            *string
 	clearedFields        map[string]struct{}
 	options              *uuid.UUID
 	clearedoptions       bool
@@ -14710,42 +14709,6 @@ func (m *LibraryMutation) ResetLocations() {
 	m.appendlocations = nil
 }
 
-// SetImageTag sets the "image_tag" field.
-func (m *LibraryMutation) SetImageTag(s string) {
-	m.image_tag = &s
-}
-
-// ImageTag returns the value of the "image_tag" field in the mutation.
-func (m *LibraryMutation) ImageTag() (r string, exists bool) {
-	v := m.image_tag
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldImageTag returns the old "image_tag" field's value of the Library entity.
-// If the Library object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *LibraryMutation) OldImageTag(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldImageTag is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldImageTag requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldImageTag: %w", err)
-	}
-	return oldValue.ImageTag, nil
-}
-
-// ResetImageTag resets all changes to the "image_tag" field.
-func (m *LibraryMutation) ResetImageTag() {
-	m.image_tag = nil
-}
-
 // SetOptionsID sets the "options" edge to the LibraryOptions entity by id.
 func (m *LibraryMutation) SetOptionsID(id uuid.UUID) {
 	m.options = &id
@@ -14927,7 +14890,7 @@ func (m *LibraryMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *LibraryMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 5)
 	if m.created_at != nil {
 		fields = append(fields, library.FieldCreatedAt)
 	}
@@ -14942,9 +14905,6 @@ func (m *LibraryMutation) Fields() []string {
 	}
 	if m.locations != nil {
 		fields = append(fields, library.FieldLocations)
-	}
-	if m.image_tag != nil {
-		fields = append(fields, library.FieldImageTag)
 	}
 	return fields
 }
@@ -14964,8 +14924,6 @@ func (m *LibraryMutation) Field(name string) (ent.Value, bool) {
 		return m.CollectionType()
 	case library.FieldLocations:
 		return m.Locations()
-	case library.FieldImageTag:
-		return m.ImageTag()
 	}
 	return nil, false
 }
@@ -14985,8 +14943,6 @@ func (m *LibraryMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldCollectionType(ctx)
 	case library.FieldLocations:
 		return m.OldLocations(ctx)
-	case library.FieldImageTag:
-		return m.OldImageTag(ctx)
 	}
 	return nil, fmt.Errorf("unknown Library field %s", name)
 }
@@ -15030,13 +14986,6 @@ func (m *LibraryMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetLocations(v)
-		return nil
-	case library.FieldImageTag:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetImageTag(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Library field %s", name)
@@ -15101,9 +15050,6 @@ func (m *LibraryMutation) ResetField(name string) error {
 		return nil
 	case library.FieldLocations:
 		m.ResetLocations()
-		return nil
-	case library.FieldImageTag:
-		m.ResetImageTag()
 		return nil
 	}
 	return fmt.Errorf("unknown Library field %s", name)

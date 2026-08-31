@@ -3,6 +3,10 @@ package image
 import (
 	"bytes"
 	"context"
+	"image"
+	"image/color"
+	"image/jpeg"
+	"image/png"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -12,10 +16,10 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/artwork"
+	"github.com/FreekingDean/gojellyfin/internal/collage"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
-	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
@@ -24,7 +28,6 @@ import (
 
 type fixture struct {
 	server    *Server
-	libraries *libraries.Service
 	client    *store.Client
 	artwork   artwork.Store
 	itemID    uuid.UUID
@@ -77,15 +80,11 @@ func newFixture(t *testing.T) *fixture {
 	})
 
 	stored := artwork.New(client)
+	records := items.New(client)
+	files := filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}})
 
 	return &fixture{
-		server: New(
-			items.New(client),
-			libraries.New(client),
-			filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}),
-			stored,
-		),
-		libraries: libraries.New(client),
+		server:    New(records, collage.New(records, files, stored), files, stored),
 		client:    client,
 		artwork:   stored,
 		itemID:    item.ID,
@@ -140,6 +139,24 @@ func (f *fixture) add(t *testing.T, kind items.ImageKind, index int32, name, tag
 	}
 }
 
+func painted(t *testing.T) []byte {
+	t.Helper()
+
+	poster := image.NewRGBA(image.Rect(0, 0, 200, 300))
+	for x := range 200 {
+		for y := range 300 {
+			poster.SetRGBA(x, y, color.RGBA{R: 200, G: 30, B: 30, A: 255})
+		}
+	}
+
+	written := &bytes.Buffer{}
+	if err := png.Encode(written, poster); err != nil {
+		t.Fatalf("failed to encode the poster: %v", err)
+	}
+
+	return written.Bytes()
+}
+
 func TestServer_GetItemImage(t *testing.T) {
 	fixture := newFixture(t)
 	poster := []byte("poster-bytes")
@@ -177,20 +194,8 @@ func TestServer_GetItemImage(t *testing.T) {
 	t.Run("serves a library's collage under the library's own id", func(t *testing.T) {
 		fixture := newFixture(t)
 		ctx := context.Background()
-		collage := []byte("collage-bytes")
 
-		key := libraries.ImageKey(fixture.libraryID, "collagetag")
-		if err := fixture.artwork.Put(ctx, key, bytes.NewReader(collage)); err != nil {
-			t.Fatalf("failed to store the collage: %v", err)
-		}
-		t.Cleanup(func() {
-			if err := fixture.artwork.Delete(ctx, key); err != nil {
-				t.Errorf("failed to clean up the collage: %v", err)
-			}
-		})
-		if err := fixture.libraries.SetImageTag(ctx, fixture.libraryID, "collagetag"); err != nil {
-			t.Fatalf("failed to tag the library: %v", err)
-		}
+		fixture.store(t, imagemodal.KindPrimary, 0, "items/"+fixture.itemID.String()+"/Primary/poster.png", "postertag", painted(t))
 
 		response, err := fixture.server.GetItemImage(ctx, api.GetItemImageRequestObject{
 			ItemId:    fixture.libraryID,
@@ -208,11 +213,11 @@ func TestServer_GetItemImage(t *testing.T) {
 		if recorder.Code != http.StatusOK {
 			t.Errorf("status = %d, want 200", recorder.Code)
 		}
-		if got := recorder.Body.String(); got != string(collage) {
-			t.Errorf("body = %q, want %q", got, collage)
-		}
 		if got := recorder.Header().Get("Content-Type"); got != "image/jpeg" {
 			t.Errorf("content type = %q, want image/jpeg", got)
+		}
+		if _, err := jpeg.Decode(recorder.Body); err != nil {
+			t.Errorf("failed to decode the collage: %v", err)
 		}
 	})
 

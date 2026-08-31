@@ -6,7 +6,6 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/artwork"
-	"github.com/FreekingDean/gojellyfin/internal/collage"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
@@ -31,7 +30,6 @@ var workerModules = fx.Options(
 		libraries.New,
 		filesystem.New,
 	),
-	collage.Module,
 	scanner.Module,
 	metadata.Module,
 	jobs.Module,

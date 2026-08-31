@@ -1,111 +1,114 @@
 package collage
 
 import (
-	"bytes"
 	"context"
-	"crypto/sha1"
-	"encoding/hex"
 	"fmt"
 	"image"
 	"io"
 	"log"
-	"strings"
+	"sync"
+	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/artwork"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
-	"github.com/FreekingDean/gojellyfin/internal/jobs"
-	"github.com/FreekingDean/gojellyfin/internal/libraries"
 )
 
-const posterLimit = 16 << 20
+const (
+	ContentType = "image/jpeg"
+	Tag         = "collage"
+
+	posterLimit = 16 << 20
+	lifetime    = 15 * time.Minute
+)
+
+type held struct {
+	body  []byte
+	built time.Time
+}
 
 type Service struct {
-	libraries  *libraries.Service
 	items      *items.Service
 	filesystem *filesystem.Service
 	artwork    artwork.Store
+
+	building sync.Mutex
+	mutex    sync.RWMutex
+	cache    map[uuid.UUID]held
+	now      func() time.Time
 }
 
-func New(catalogue *libraries.Service, records *items.Service, files *filesystem.Service, stored artwork.Store) *Service {
-	return &Service{libraries: catalogue, items: records, filesystem: files, artwork: stored}
+func New(records *items.Service, files *filesystem.Service, stored artwork.Store) *Service {
+	return &Service{
+		items:      records,
+		filesystem: files,
+		artwork:    stored,
+		cache:      map[uuid.UUID]held{},
+		now:        time.Now,
+	}
 }
 
-func (s *Service) Libraries(ctx context.Context) ([]uuid.UUID, error) {
-	catalogued, err := s.libraries.ListLibraries(ctx)
+func (s *Service) Image(ctx context.Context, libraryID uuid.UUID) ([]byte, bool) {
+	if body, ok := s.cached(libraryID); ok {
+		return body, true
+	}
+
+	s.building.Lock()
+	defer s.building.Unlock()
+
+	if body, ok := s.cached(libraryID); ok {
+		return body, true
+	}
+
+	body, err := s.build(ctx, libraryID)
+	if err != nil {
+		log.Printf("collage %s: %v", libraryID, err)
+
+		return nil, false
+	}
+	if len(body) == 0 {
+		return nil, false
+	}
+
+	s.mutex.Lock()
+	s.cache[libraryID] = held{body: body, built: s.now()}
+	s.mutex.Unlock()
+
+	return body, true
+}
+
+func (s *Service) cached(libraryID uuid.UUID) ([]byte, bool) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	entry, ok := s.cache[libraryID]
+
+	return entry.body, ok && s.now().Sub(entry.built) < lifetime
+}
+
+func (s *Service) build(ctx context.Context, libraryID uuid.UUID) ([]byte, error) {
+	chosen, err := s.items.LibraryPosters(ctx, libraryID, cells)
 	if err != nil {
 		return nil, err
-	}
-
-	ids := make([]uuid.UUID, 0, len(catalogued))
-	for _, library := range catalogued {
-		ids = append(ids, library.ID)
-	}
-
-	return ids, nil
-}
-
-func (s *Service) BuildLibraryImage(ctx context.Context, id uuid.UUID) error {
-	library, err := s.libraries.Library(ctx, id)
-	if err != nil {
-		return err
-	}
-
-	jobs.Heartbeat(ctx, library.Name)
-
-	chosen, err := s.items.LibraryPosters(ctx, id, cells)
-	if err != nil {
-		return err
-	}
-
-	tag := fingerprint(chosen)
-	if tag == library.ImageTag {
-		return nil
-	}
-	if tag == "" {
-		return s.replace(ctx, library, "", nil)
 	}
 
 	posters := make([]image.Image, 0, len(chosen))
 	for _, record := range chosen {
 		poster, err := s.decode(ctx, record)
 		if err != nil {
-			log.Printf("collage %s poster: %v", library.Name, err)
+			log.Printf("collage %s poster: %v", libraryID, err)
 
 			continue
 		}
 		posters = append(posters, poster)
 	}
 	if len(posters) == 0 {
-		return nil
+		return nil, nil
 	}
 
-	body, err := compose(posters)
-	if err != nil {
-		return fmt.Errorf("failed to compose the %s collage: %w", library.Name, err)
-	}
-
-	return s.replace(ctx, library, tag, body)
-}
-
-func (s *Service) replace(ctx context.Context, library *libraries.Library, tag string, body []byte) error {
-	if tag != "" {
-		if err := s.artwork.Put(ctx, libraries.ImageKey(library.ID, tag), bytes.NewReader(body)); err != nil {
-			return err
-		}
-	}
-
-	if err := s.libraries.SetImageTag(ctx, library.ID, tag); err != nil {
-		return err
-	}
-
-	if library.ImageTag == "" {
-		return nil
-	}
-
-	return s.artwork.Delete(ctx, libraries.ImageKey(library.ID, library.ImageTag))
+	return compose(posters)
 }
 
 func (s *Service) decode(ctx context.Context, record *items.Image) (image.Image, error) {
@@ -139,19 +142,4 @@ func (s *Service) open(ctx context.Context, record *items.Image) (io.ReadCloser,
 	}
 
 	return body, nil
-}
-
-func fingerprint(chosen []*items.Image) string {
-	if len(chosen) == 0 {
-		return ""
-	}
-
-	selected := make([]string, 0, len(chosen))
-	for _, record := range chosen {
-		selected = append(selected, record.ID.String()+":"+record.Tag)
-	}
-
-	sum := sha1.Sum([]byte(strings.Join(selected, "\n")))
-
-	return hex.EncodeToString(sum[:])
 }

@@ -1,28 +1,29 @@
 package image
 
 import (
+	"bytes"
 	"context"
 	"io"
 
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/artwork"
+	"github.com/FreekingDean/gojellyfin/internal/collage"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
-	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
 type Server struct {
 	items      *items.Service
-	libraries  *libraries.Service
+	collage    *collage.Service
 	filesystem *filesystem.Service
 	artwork    artwork.Store
 }
 
-func New(items *items.Service, catalogue *libraries.Service, filesystem *filesystem.Service, artwork artwork.Store) *Server {
-	return &Server{items: items, libraries: catalogue, filesystem: filesystem, artwork: artwork}
+func New(items *items.Service, collages *collage.Service, filesystem *filesystem.Service, artwork artwork.Store) *Server {
+	return &Server{items: items, collage: collages, filesystem: filesystem, artwork: artwork}
 }
 
 func (s *Server) GetItemImage(ctx context.Context, request api.GetItemImageRequestObject) (api.GetItemImageResponseObject, error) {
@@ -101,18 +102,16 @@ func (s *Server) openLibrary(ctx context.Context, id uuid.UUID, kind items.Image
 		return imageFile{}, false
 	}
 
-	library, err := s.libraries.Library(ctx, id)
-	if err != nil || library.ImageTag == "" {
+	body, ok := s.collage.Image(ctx, id)
+	if !ok {
 		return imageFile{}, false
 	}
 
-	key := libraries.ImageKey(library.ID, library.ImageTag)
-	body, size, found, err := s.artwork.Open(ctx, key)
-	if err != nil || !found {
-		return imageFile{}, false
-	}
-
-	return imageFile{body: body, contentType: contentType(key), length: size}, true
+	return imageFile{
+		body:        io.NopCloser(bytes.NewReader(body)),
+		contentType: collage.ContentType,
+		length:      int64(len(body)),
+	}, true
 }
 
 func (s *Server) read(ctx context.Context, record *items.Image) (io.ReadCloser, int64, bool) {

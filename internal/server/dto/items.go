@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
+	"github.com/FreekingDean/gojellyfin/internal/collage"
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
@@ -116,7 +117,7 @@ func ItemDtos(ctx context.Context, store *items.Service, records []*items.Item) 
 func LibraryView(library *libraries.Library) api.BaseItemDto {
 	collectionType := api.CollectionType(library.CollectionType)
 
-	view := api.BaseItemDto{
+	return api.BaseItemDto{
 		Id:                &library.ID,
 		ServerId:          apiutil.Ptr(config.ServerID),
 		Name:              apiutil.Ptr(library.Name),
@@ -125,15 +126,9 @@ func LibraryView(library *libraries.Library) api.BaseItemDto {
 		CollectionType:    &collectionType,
 		IsFolder:          apiutil.Ptr(true),
 		LocationType:      apiutil.Ptr(api.FileSystem),
-		ImageTags:         &map[string]*string{},
+		ImageTags:         &map[string]*string{"Primary": apiutil.Ptr(collage.Tag)},
 		BackdropImageTags: &[]string{},
 	}
-
-	if library.ImageTag != "" {
-		view.ImageTags = &map[string]*string{"Primary": &library.ImageTag}
-	}
-
-	return view
 }
 
 func RootView() api.BaseItemDto {

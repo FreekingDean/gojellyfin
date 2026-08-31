@@ -30,8 +30,6 @@ type Library struct {
 	CollectionType library.CollectionType `json:"collection_type,omitempty"`
 	// Locations holds the value of the "locations" field.
 	Locations []string `json:"locations,omitempty"`
-	// ImageTag holds the value of the "image_tag" field.
-	ImageTag string `json:"image_tag,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the LibraryQuery when eager-loading is set.
 	Edges        LibraryEdges `json:"edges"`
@@ -87,7 +85,7 @@ func (*Library) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case library.FieldLocations:
 			values[i] = new([]byte)
-		case library.FieldName, library.FieldCollectionType, library.FieldImageTag:
+		case library.FieldName, library.FieldCollectionType:
 			values[i] = new(sql.NullString)
 		case library.FieldCreatedAt, library.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -145,12 +143,6 @@ func (_m *Library) assignValues(columns []string, values []any) error {
 				if err := json.Unmarshal(*value, &_m.Locations); err != nil {
 					return fmt.Errorf("unmarshal field locations: %w", err)
 				}
-			}
-		case library.FieldImageTag:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field image_tag", values[i])
-			} else if value.Valid {
-				_m.ImageTag = value.String
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -217,9 +209,6 @@ func (_m *Library) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("locations=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Locations))
-	builder.WriteString(", ")
-	builder.WriteString("image_tag=")
-	builder.WriteString(_m.ImageTag)
 	builder.WriteByte(')')
 	return builder.String()
 }

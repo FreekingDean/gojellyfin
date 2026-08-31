@@ -18,7 +18,6 @@ func (Library) Fields() []ent.Field {
 			"homevideos", "boxsets", "books", "mixed",
 		).Default("mixed"),
 		field.JSON("locations", []string{}).Default([]string{}),
-		field.String("image_tag").Default(""),
 	)
 }
 
