@@ -58,7 +58,7 @@ var (
 	ErrNoPlayable = errors.New("no file can be played as this client asked")
 )
 
-func (s *Service) SourceFor(ctx context.Context, itemID, named uuid.UUID, can Capabilities) (Plan, error) {
+func (s *Service) SourceFor(ctx context.Context, itemID uuid.UUID, can Capabilities) (Plan, error) {
 	sources, err := s.MediaSources(ctx, itemID)
 	if err != nil {
 		return Plan{}, err
@@ -81,14 +81,6 @@ func (s *Service) SourceFor(ctx context.Context, itemID, named uuid.UUID, can Ca
 
 		return 0
 	})
-
-	for _, source := range ordered {
-		if source.ID == named {
-			ordered = []*MediaSource{source}
-
-			break
-		}
-	}
 
 	for _, source := range ordered {
 		if plan := can.plan(source); plan.Change.Available() {

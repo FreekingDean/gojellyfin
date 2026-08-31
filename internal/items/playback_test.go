@@ -335,7 +335,7 @@ func TestService_SourceForOrder(t *testing.T) {
 				fixture.copyRanged(t, film, file.path, file.video, file.audio, file.height, rangeType)
 			}
 
-			plan, err := fixture.service.SourceFor(ctx, film.ID, uuid.Nil, chrome)
+			plan, err := fixture.service.SourceFor(ctx, film.ID, chrome)
 			if tc.refused {
 				if !errors.Is(err, ErrNoPlayable) {
 					t.Fatalf("err = %v, want %v", err, ErrNoPlayable)
@@ -361,7 +361,7 @@ func TestService_SourceForOrder(t *testing.T) {
 		fixture.copy(t, film, "/fat.mkv", "h264", "aac", 1080)
 		fixture.bitrate(t, film, "/fat.mkv", 20_000_000)
 
-		plan, err := fixture.service.SourceFor(ctx, film.ID, uuid.Nil, chrome)
+		plan, err := fixture.service.SourceFor(ctx, film.ID, chrome)
 		if err != nil {
 			t.Fatalf("nothing was chosen: %v", err)
 		}
@@ -426,23 +426,6 @@ func (f *fixture) bitrate(t *testing.T, item *Item, path string, bitrate int32) 
 	}
 }
 
-func (f *fixture) sourceID(t *testing.T, item *Item, path string) uuid.UUID {
-	t.Helper()
-
-	sources, err := f.service.MediaSources(context.Background(), item.ID)
-	if err != nil {
-		t.Fatalf("failed to read the sources: %v", err)
-	}
-	for _, source := range sources {
-		if source.Path == path {
-			return source.ID
-		}
-	}
-	t.Fatalf("the fixture has no source at %q", path)
-
-	return uuid.Nil
-}
-
 func (f *fixture) film(t *testing.T, key string) *Item {
 	t.Helper()
 
@@ -475,7 +458,7 @@ func TestService_SourceFor(t *testing.T) {
 			t.Fatalf("the fixture has %d sources: %v", len(sources), err)
 		}
 
-		plan, err := fixture.service.SourceFor(ctx, film.ID, uuid.Nil, chrome)
+		plan, err := fixture.service.SourceFor(ctx, film.ID, chrome)
 		if err != nil {
 			t.Fatalf("failed to choose a source: %v", err)
 		}
@@ -490,7 +473,7 @@ func TestService_SourceFor(t *testing.T) {
 		fixture.copy(t, film, "/media/uhd.mkv", "h264", "ac3", 2160)
 		fixture.copy(t, film, "/media/hd.mkv", "h264", "aac", 1080)
 
-		plan, err := fixture.service.SourceFor(ctx, film.ID, uuid.Nil, chrome)
+		plan, err := fixture.service.SourceFor(ctx, film.ID, chrome)
 		if err != nil {
 			t.Fatalf("failed to choose a source: %v", err)
 		}
@@ -508,7 +491,7 @@ func TestService_SourceFor(t *testing.T) {
 		fixture.copy(t, film, "/media/uhd.mkv", "mpeg4", "aac", 2160)
 		fixture.copy(t, film, "/media/hd.mkv", "h264", "aac", 1080)
 
-		plan, err := fixture.service.SourceFor(ctx, film.ID, uuid.Nil, chrome)
+		plan, err := fixture.service.SourceFor(ctx, film.ID, chrome)
 		if err != nil {
 			t.Fatalf("failed to choose a source: %v", err)
 		}
@@ -522,7 +505,7 @@ func TestService_SourceFor(t *testing.T) {
 		film := fixture.film(t, "movie:unencodable")
 		fixture.copy(t, film, "/media/only.mkv", "mpeg4", "aac", 1080)
 
-		if _, err := fixture.service.SourceFor(ctx, film.ID, uuid.Nil, chrome); !errors.Is(err, ErrNoPlayable) {
+		if _, err := fixture.service.SourceFor(ctx, film.ID, chrome); !errors.Is(err, ErrNoPlayable) {
 			t.Errorf("err = %v, want %v", err, ErrNoPlayable)
 		}
 	})
@@ -533,7 +516,7 @@ func TestService_SourceFor(t *testing.T) {
 		fixture.copyRanged(t, film, "/media/uhd.mkv", "h264", "aac", 2160, streammodal.VideoRangeTypeHDR10)
 		fixture.copyRanged(t, film, "/media/hd.mkv", "h264", "aac", 1080, streammodal.VideoRangeTypeSDR)
 
-		plan, err := fixture.service.SourceFor(ctx, film.ID, uuid.Nil, chrome)
+		plan, err := fixture.service.SourceFor(ctx, film.ID, chrome)
 		if err != nil {
 			t.Fatalf("failed to choose a source: %v", err)
 		}
@@ -550,7 +533,7 @@ func TestService_SourceFor(t *testing.T) {
 		film := fixture.film(t, "movie:hdr-only")
 		fixture.copyRanged(t, film, "/media/only.mkv", "h264", "aac", 2160, streammodal.VideoRangeTypeHDR10)
 
-		if _, err := fixture.service.SourceFor(ctx, film.ID, uuid.Nil, chrome); !errors.Is(err, ErrNoPlayable) {
+		if _, err := fixture.service.SourceFor(ctx, film.ID, chrome); !errors.Is(err, ErrNoPlayable) {
 			t.Errorf("err = %v, want %v", err, ErrNoPlayable)
 		}
 	})
@@ -560,7 +543,7 @@ func TestService_SourceFor(t *testing.T) {
 		film := fixture.film(t, "movie:unread-range")
 		fixture.copy(t, film, "/media/only.mkv", "h264", "aac", 1080)
 
-		plan, err := fixture.service.SourceFor(ctx, film.ID, uuid.Nil, chrome)
+		plan, err := fixture.service.SourceFor(ctx, film.ID, chrome)
 		if err != nil {
 			t.Fatalf("a file whose range nobody probed was refused: %v", err)
 		}
@@ -573,7 +556,7 @@ func TestService_SourceFor(t *testing.T) {
 		fixture := newFixture(t)
 		film := fixture.film(t, "movie:nofile")
 
-		if _, err := fixture.service.SourceFor(ctx, film.ID, uuid.Nil, chrome); !errors.Is(err, ErrNoSource) {
+		if _, err := fixture.service.SourceFor(ctx, film.ID, chrome); !errors.Is(err, ErrNoSource) {
 			t.Errorf("err = %v, want %v", err, ErrNoSource)
 		}
 	})
@@ -583,58 +566,12 @@ func TestService_SourceFor(t *testing.T) {
 		film := fixture.film(t, "movie:silent-client")
 		fixture.copy(t, film, "/media/only.mkv", "mpeg4", "ac3", 1080)
 
-		plan, err := fixture.service.SourceFor(ctx, film.ID, uuid.Nil, Capabilities{})
+		plan, err := fixture.service.SourceFor(ctx, film.ID, Capabilities{})
 		if err != nil {
 			t.Fatalf("failed to choose a source: %v", err)
 		}
 		if plan.Change != ChangeNone {
 			t.Errorf("change = %v, want %v", plan.Change, ChangeNone)
-		}
-	})
-}
-
-func TestService_SourceForNamed(t *testing.T) {
-	ctx := context.Background()
-
-	t.Run("the file the client named is the file it is planned", func(t *testing.T) {
-		fixture := newFixture(t)
-		film := fixture.film(t, "movie:named")
-		fixture.copy(t, film, "/uhd.mkv", "h264", "aac", 2160)
-		fixture.copy(t, film, "/hd.mkv", "h264", "aac", 1080)
-
-		plan, err := fixture.service.SourceFor(ctx, film.ID, fixture.sourceID(t, film, "/hd.mkv"), chrome)
-		if err != nil {
-			t.Fatalf("nothing was chosen: %v", err)
-		}
-		if plan.Source.Path != "/hd.mkv" {
-			t.Errorf("chose %q, want the version the client named", plan.Source.Path)
-		}
-	})
-
-	t.Run("a file the client named that cannot be served is not swapped for the one beside it", func(t *testing.T) {
-		fixture := newFixture(t)
-		film := fixture.film(t, "movie:named-refused")
-		fixture.copy(t, film, "/uhd.mkv", "mpeg4", "aac", 2160)
-		fixture.copy(t, film, "/hd.mkv", "h264", "aac", 1080)
-
-		_, err := fixture.service.SourceFor(ctx, film.ID, fixture.sourceID(t, film, "/uhd.mkv"), chrome)
-		if !errors.Is(err, ErrNoPlayable) {
-			t.Errorf("err = %v, want %v rather than a version the client did not ask for", err, ErrNoPlayable)
-		}
-	})
-
-	t.Run("an id the item does not carry is answered as if the client named none", func(t *testing.T) {
-		fixture := newFixture(t)
-		film := fixture.film(t, "movie:named-missing")
-		fixture.copy(t, film, "/uhd.mkv", "h264", "aac", 2160)
-		fixture.copy(t, film, "/hd.mkv", "h264", "aac", 1080)
-
-		plan, err := fixture.service.SourceFor(ctx, film.ID, uuid.New(), chrome)
-		if err != nil {
-			t.Fatalf("nothing was chosen: %v", err)
-		}
-		if plan.Source.Path != "/uhd.mkv" {
-			t.Errorf("chose %q, want the tallest", plan.Source.Path)
 		}
 	})
 }

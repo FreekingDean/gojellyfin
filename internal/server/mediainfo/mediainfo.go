@@ -25,7 +25,7 @@ func New(items *items.Service) *Server {
 }
 
 func (s *Server) GetPlaybackInfo(ctx context.Context, request api.GetPlaybackInfoRequestObject) (api.GetPlaybackInfoResponseObject, error) {
-	response, err := s.playbackInfo(ctx, request.ItemId, api.PlaybackInfoDto{})
+	response, err := s.playbackInfo(ctx, request.ItemId, nil, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -34,23 +34,18 @@ func (s *Server) GetPlaybackInfo(ctx context.Context, request api.GetPlaybackInf
 }
 
 func (s *Server) GetPostedPlaybackInfo(ctx context.Context, request api.GetPostedPlaybackInfoRequestObject) (api.GetPostedPlaybackInfoResponseObject, error) {
-	asked := api.PlaybackInfoDto{
-		StartTimeTicks: request.Params.StartTimeTicks,
-		MediaSourceId:  request.Params.MediaSourceId,
-	}
+	var profile api.DeviceProfile
+	startTicks := apiutil.Deref(request.Params.StartTimeTicks)
 	if body := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody); body != nil {
 		if body.DeviceProfile != nil {
-			asked.DeviceProfile = body.DeviceProfile
+			profile = *body.DeviceProfile
 		}
 		if body.StartTimeTicks != nil {
-			asked.StartTimeTicks = body.StartTimeTicks
-		}
-		if body.MediaSourceId != nil {
-			asked.MediaSourceId = body.MediaSourceId
+			startTicks = *body.StartTimeTicks
 		}
 	}
 
-	response, err := s.playbackInfo(ctx, request.ItemId, asked)
+	response, err := s.playbackInfo(ctx, request.ItemId, profile, startTicks)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +53,7 @@ func (s *Server) GetPostedPlaybackInfo(ctx context.Context, request api.GetPoste
 	return api.GetPostedPlaybackInfo200JSONResponse(response), nil
 }
 
-func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, asked api.PlaybackInfoDto) (api.PlaybackInfoResponse, error) {
+func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, profile api.DeviceProfile, startTicks int64) (api.PlaybackInfoResponse, error) {
 	item, err := s.items.ItemByID(ctx, itemID)
 	if err != nil {
 		return api.PlaybackInfoResponse{}, err
@@ -74,13 +69,7 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, asked api.P
 		PlaySessionId: apiutil.Ptr(session),
 	}
 
-	var profile api.DeviceProfile
-	if asked.DeviceProfile != nil {
-		profile = *asked.DeviceProfile
-	}
-	named, _ := uuid.Parse(apiutil.Deref(asked.MediaSourceId))
-
-	plan, err := s.items.SourceFor(ctx, itemID, named, capabilities(profile))
+	plan, err := s.items.SourceFor(ctx, itemID, capabilities(profile))
 	if errors.Is(err, items.ErrNoSource) || errors.Is(err, items.ErrNoPlayable) {
 		log.Printf("nothing to play for %s: %v", item.Name, err)
 		response.ErrorCode = apiutil.Ptr(api.NoCompatibleStream)
@@ -93,7 +82,7 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, asked api.P
 
 	dto := mediaSourceDto(plan.Source)
 	if !items.IsAudio(item) {
-		served(&dto, plan, streamURL(itemID, plan, auth.AuthorizationFrom(ctx).Token, session, apiutil.Deref(asked.StartTimeTicks)))
+		served(&dto, plan, streamURL(itemID, plan, auth.AuthorizationFrom(ctx).Token, session, startTicks))
 	}
 
 	response.MediaSources = &[]api.MediaSourceInfo{dto}

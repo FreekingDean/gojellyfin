@@ -279,68 +279,27 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		}
 	})
 
-	t.Run("the version the client named is the version it is answered", func(t *testing.T) {
+	t.Run("the version the client names is not the client's to choose", func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.addRip(t, itemmodal.KindMovie, "mkv", "aac")
 		fixture.addCopy(t, id, "/media/uhd.mkv", "h264", "aac", 2160)
-
-		if got := apiutil.Deref(fixture.source(t, id, firstPlay(&chrome)).Path); got != "/media/uhd.mkv" {
-			t.Fatalf("a client that named nothing was answered %q, want the tallest", got)
-		}
-
 		named := fixture.sourceID(t, id, "/media/rip.mkv")
+
 		body := firstPlay(&chrome)
 		body.MediaSourceId = apiutil.Ptr(named)
-
-		source := fixture.source(t, id, body)
-
-		if got := apiutil.Deref(source.Id); got != named {
-			t.Errorf("answered source %q, want the version the client named", got)
-		}
-		if got := apiutil.Deref(source.Path); got != "/media/rip.mkv" {
-			t.Errorf("answered the file at %q, want the one the client named", got)
-		}
-		if got := apiutil.Deref(source.TranscodingUrl); !strings.Contains(got, "mediaSourceId="+named) {
-			t.Errorf("transcoding url = %q, want it to name the version the client asked for", got)
-		}
-	})
-
-	t.Run("the version is taken from the query when the body names none", func(t *testing.T) {
-		fixture := newFixture(t)
-		id := fixture.addRip(t, itemmodal.KindMovie, "mkv", "aac")
-		fixture.addCopy(t, id, "/media/uhd.mkv", "h264", "aac", 2160)
-		named := fixture.sourceID(t, id, "/media/rip.mkv")
 
 		answer := fixture.answered(t, api.GetPostedPlaybackInfoRequestObject{
 			ItemId:   id,
 			Params:   api.GetPostedPlaybackInfoParams{MediaSourceId: apiutil.Ptr(named)},
-			JSONBody: firstPlay(&chrome),
+			JSONBody: body,
 		})
 
 		sources := *answer.MediaSources
 		if len(sources) != 1 {
 			t.Fatalf("got %d media sources, want 1", len(sources))
 		}
-		if got := apiutil.Deref(sources[0].Id); got != named {
-			t.Errorf("answered source %q, want the version the query named", got)
-		}
-	})
-
-	t.Run("a version the client named that cannot be served is not swapped for the one beside it", func(t *testing.T) {
-		fixture := newFixture(t)
-		id := fixture.addRip(t, itemmodal.KindMovie, "mkv", "aac")
-		fixture.addCopy(t, id, "/media/mpeg4.mkv", "mpeg4", "aac", 2160)
-
-		body := firstPlay(&chrome)
-		body.MediaSourceId = apiutil.Ptr(fixture.sourceID(t, id, "/media/mpeg4.mkv"))
-
-		answer := fixture.answer(t, id, body)
-
-		if got := len(*answer.MediaSources); got != 0 {
-			t.Errorf("answered with %d sources, want none the client did not ask for", got)
-		}
-		if got := apiutil.Deref(answer.ErrorCode); got != api.NoCompatibleStream {
-			t.Errorf("error code = %q, want %q", got, api.NoCompatibleStream)
+		if got := apiutil.Deref(sources[0].Path); got != "/media/uhd.mkv" {
+			t.Errorf("answered the file at %q, want the one this server chose", got)
 		}
 	})
 
