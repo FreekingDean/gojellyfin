@@ -76,6 +76,8 @@ atlas migrate apply --dir "file://migrations" --url "$DATABASE_URL"
 
 The `Dockerfile` carries that one binary and the `atlas` binary, runs as a non-root user, and is built and pushed to `ghcr.io/freekingdean/gojellyfin` by `.github/workflows/docker.yml`. `CMD` is `server`, so the image serves by default and any other subcommand is a `docker run` argument — a worker is the same image run as `worker`, which is the whole reason background work is a workflow rather than a goroutine in the server. `entrypoint.sh` survives the consolidation for one reason: it migrates first when `MIGRATE_ON_START=true`. That has to stay outside the binary, because it is deploy policy rather than server behaviour — unconditional migration on start is unsafe with rolling replicas, so the default is a one-off `docker run --rm <image> migrate`.
 
+**Every merge to `main` is a release.** The build reads the highest `v0.0.*` tag, adds one to the patch, tags the image with that version alongside `latest` and the commit sha, and pushes `v0.0.X` only after the image is pushed, so a failed build burns no version. The version is computed in the run rather than pushed first and built off the tag, because a tag pushed with `GITHUB_TOKEN` starts no workflow — building on the tag would need a PAT and a second run to publish what the first already built. `concurrency: docker-<ref>` serialises the runs on `main`, since two merges reading the same highest tag would derive the same version and the second `git push` would fail after its image was already published. Manually pushing a `v*` tag still builds and publishes through the `type=semver` patterns, which is the escape hatch for a minor or a major.
+
 ## Architecture
 
 ### Wiring: uber/fx
