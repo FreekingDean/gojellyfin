@@ -37,7 +37,10 @@ type EpisodeQuery struct {
 func (s *Service) SeriesEpisodes(ctx context.Context, query EpisodeQuery) ([]*Item, int, error) {
 	episodes := s.query().Where(
 		itemmodal.KindEQ(itemmodal.KindEpisode),
-		itemmodal.HasParentWith(itemmodal.ParentID(query.SeriesID)),
+		itemmodal.Or(
+			itemmodal.ParentID(query.SeriesID),
+			itemmodal.HasParentWith(itemmodal.ParentID(query.SeriesID)),
+		),
 	)
 	if query.SeasonID != nil {
 		episodes = episodes.Where(itemmodal.ParentID(*query.SeasonID))

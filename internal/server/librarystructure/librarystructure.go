@@ -105,6 +105,12 @@ func (s *Server) UpdateLibraryOptions(ctx context.Context, request api.UpdateLib
 		return nil, err
 	}
 
+	if paths := requestedPaths(nil, req.LibraryOptions); len(paths) > 0 {
+		if err := s.libraries.SetLocations(ctx, library.ID, paths); err != nil {
+			return nil, err
+		}
+	}
+
 	return api.UpdateLibraryOptions204Response{}, nil
 }
 
