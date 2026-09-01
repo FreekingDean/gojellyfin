@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/collage"
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
@@ -104,7 +105,7 @@ func TestServer_GetUserViews(t *testing.T) {
 		CollectionType:    apiutil.Ptr(api.CollectionType(librarymodal.CollectionTypeMovies)),
 		IsFolder:          apiutil.Ptr(true),
 		LocationType:      apiutil.Ptr(api.FileSystem),
-		ImageTags:         &map[string]*string{},
+		ImageTags:         &map[string]*string{"Primary": apiutil.Ptr(collage.Tag)},
 		BackdropImageTags: &[]string{},
 	}
 	if !reflect.DeepEqual(view, want) {

@@ -1,12 +1,14 @@
 package image
 
 import (
+	"bytes"
 	"context"
 	"io"
 
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/artwork"
+	"github.com/FreekingDean/gojellyfin/internal/collage"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
@@ -15,12 +17,13 @@ import (
 
 type Server struct {
 	items      *items.Service
+	collage    *collage.Service
 	filesystem *filesystem.Service
 	artwork    artwork.Store
 }
 
-func New(items *items.Service, filesystem *filesystem.Service, artwork artwork.Store) *Server {
-	return &Server{items: items, filesystem: filesystem, artwork: artwork}
+func New(items *items.Service, collages *collage.Service, filesystem *filesystem.Service, artwork artwork.Store) *Server {
+	return &Server{items: items, collage: collages, filesystem: filesystem, artwork: artwork}
 }
 
 func (s *Server) GetItemImage(ctx context.Context, request api.GetItemImageRequestObject) (api.GetItemImageResponseObject, error) {
@@ -83,7 +86,7 @@ func (s *Server) open(ctx context.Context, itemID uuid.UUID, imageType api.Image
 
 	record, err := s.items.Image(ctx, itemID, kind, index)
 	if err != nil {
-		return imageFile{}, false
+		return s.openLibrary(ctx, itemID, kind, index)
 	}
 
 	body, size, ok := s.read(ctx, record)
@@ -92,6 +95,23 @@ func (s *Server) open(ctx context.Context, itemID uuid.UUID, imageType api.Image
 	}
 
 	return imageFile{body: body, contentType: contentType(record.Path), length: size}, true
+}
+
+func (s *Server) openLibrary(ctx context.Context, id uuid.UUID, kind items.ImageKind, index int32) (imageFile, bool) {
+	if kind != items.ImageKindPrimary || index != 0 {
+		return imageFile{}, false
+	}
+
+	body, ok := s.collage.Image(ctx, id)
+	if !ok {
+		return imageFile{}, false
+	}
+
+	return imageFile{
+		body:        io.NopCloser(bytes.NewReader(body)),
+		contentType: collage.ContentType,
+		length:      int64(len(body)),
+	}, true
 }
 
 func (s *Server) read(ctx context.Context, record *items.Image) (io.ReadCloser, int64, bool) {

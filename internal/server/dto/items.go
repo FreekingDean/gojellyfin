@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
+	"github.com/FreekingDean/gojellyfin/internal/collage"
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
@@ -125,7 +126,7 @@ func LibraryView(library *libraries.Library) api.BaseItemDto {
 		CollectionType:    &collectionType,
 		IsFolder:          apiutil.Ptr(true),
 		LocationType:      apiutil.Ptr(api.FileSystem),
-		ImageTags:         &map[string]*string{},
+		ImageTags:         &map[string]*string{"Primary": apiutil.Ptr(collage.Tag)},
 		BackdropImageTags: &[]string{},
 	}
 }

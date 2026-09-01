@@ -2,10 +2,11 @@ package items
 
 import (
 	"context"
-	"database/sql"
+	stdsql "database/sql"
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
@@ -20,6 +21,8 @@ type (
 )
 
 const (
+	ImageKindPrimary = imagemodal.KindPrimary
+
 	ImageSourceLocal  = imagemodal.SourceLocal
 	ImageSourceRemote = imagemodal.SourceRemote
 )
@@ -64,7 +67,7 @@ func (s *Service) SaveImage(ctx context.Context, itemID uuid.UUID, artwork Artwo
 		OnConflictColumns(imagemodal.FieldItemID, imagemodal.FieldKind, imagemodal.FieldIndex).
 		DoNothing().
 		Exec(ctx)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err != nil && !errors.Is(err, stdsql.ErrNoRows) {
 		return fmt.Errorf("failed to save image: %w", err)
 	}
 
@@ -100,7 +103,7 @@ func (s *Service) SaveDownloadedImage(ctx context.Context, itemID uuid.UUID, art
 		OnConflictColumns(imagemodal.FieldItemID, imagemodal.FieldKind, imagemodal.FieldIndex).
 		DoNothing().
 		Exec(ctx)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err != nil && !errors.Is(err, stdsql.ErrNoRows) {
 		return fmt.Errorf("failed to save downloaded image: %w", err)
 	}
 
@@ -171,4 +174,25 @@ func (s *Service) ImageTagsByItem(ctx context.Context, itemIDs []uuid.UUID) (map
 	}
 
 	return tags, nil
+}
+
+func (s *Service) LibraryPosters(ctx context.Context, libraryID uuid.UUID, limit int) ([]*Image, error) {
+	posters, err := s.store.Image.Query().
+		Where(
+			imagemodal.KindEQ(imagemodal.KindPrimary),
+			imagemodal.Index(0),
+			imagemodal.HasItemWith(
+				itemmodal.LibraryID(libraryID),
+				itemmodal.DeletedAtIsNil(),
+				itemmodal.ParentIDIsNil(),
+			),
+		).
+		Order(imagemodal.ByCreatedAt(sql.OrderDesc()), imagemodal.ByID()).
+		Limit(limit).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query library posters: %w", err)
+	}
+
+	return posters, nil
 }
