@@ -554,17 +554,10 @@ var (
 		{Name: "bitrate", Type: field.TypeInt32, Nullable: true},
 		{Name: "date_modified", Type: field.TypeTime, Nullable: true},
 		{Name: "probed_at", Type: field.TypeTime, Nullable: true},
-		{Name: "is_remote", Type: field.TypeBool, Default: false},
-		{Name: "is_infinite_stream", Type: field.TypeBool, Default: false},
-		{Name: "supports_transcoding", Type: field.TypeBool, Default: true},
-		{Name: "supports_direct_stream", Type: field.TypeBool, Default: true},
-		{Name: "supports_direct_play", Type: field.TypeBool, Default: true},
-		{Name: "supports_probing", Type: field.TypeBool, Default: true},
 		{Name: "read_at_native_framerate", Type: field.TypeBool, Default: false},
 		{Name: "ignore_dts", Type: field.TypeBool, Default: false},
 		{Name: "ignore_index", Type: field.TypeBool, Default: false},
 		{Name: "gen_pts_input", Type: field.TypeBool, Default: false},
-		{Name: "requires_looping", Type: field.TypeBool, Default: false},
 		{Name: "has_segments", Type: field.TypeBool, Default: false},
 		{Name: "default_audio_stream_index", Type: field.TypeInt32, Nullable: true},
 		{Name: "default_subtitle_stream_index", Type: field.TypeInt32, Nullable: true},
@@ -580,13 +573,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "media_sources_items_media_sources",
-				Columns:    []*schema.Column{MediaSourcesColumns[34]},
+				Columns:    []*schema.Column{MediaSourcesColumns[27]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "media_sources_libraries_media_sources",
-				Columns:    []*schema.Column{MediaSourcesColumns[35]},
+				Columns:    []*schema.Column{MediaSourcesColumns[28]},
 				RefColumns: []*schema.Column{LibrariesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -595,7 +588,7 @@ var (
 			{
 				Name:    "mediasource_library_id_path",
 				Unique:  true,
-				Columns: []*schema.Column{MediaSourcesColumns[35], MediaSourcesColumns[11]},
+				Columns: []*schema.Column{MediaSourcesColumns[28], MediaSourcesColumns[11]},
 			},
 		},
 	}

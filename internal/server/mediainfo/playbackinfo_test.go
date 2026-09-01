@@ -192,14 +192,34 @@ func afterPlaybackError(profile *api.DeviceProfile) *api.PlaybackInfoDto {
 	}
 }
 
+func (f *fixture) sourceID(t *testing.T, id uuid.UUID, path string) string {
+	t.Helper()
+
+	sources, err := f.server.items.MediaSources(context.Background(), id)
+	if err != nil {
+		t.Fatalf("failed to read the sources: %v", err)
+	}
+	for _, source := range sources {
+		if source.Path == path {
+			return source.ID.String()
+		}
+	}
+	t.Fatalf("the fixture has no source at %q", path)
+
+	return ""
+}
+
 func (f *fixture) answer(t *testing.T, id uuid.UUID, body *api.PlaybackInfoDto) api.PlaybackInfoResponse {
 	t.Helper()
 
+	return f.answered(t, api.GetPostedPlaybackInfoRequestObject{ItemId: id, JSONBody: body})
+}
+
+func (f *fixture) answered(t *testing.T, request api.GetPostedPlaybackInfoRequestObject) api.PlaybackInfoResponse {
+	t.Helper()
+
 	ctx := auth.ContextWithAuthorization(context.Background(), auth.Authorization{Token: "the-token"})
-	response, err := f.server.GetPostedPlaybackInfo(ctx, api.GetPostedPlaybackInfoRequestObject{
-		ItemId:   id,
-		JSONBody: body,
-	})
+	response, err := f.server.GetPostedPlaybackInfo(ctx, request)
 	if err != nil {
 		t.Fatalf("failed to answer playback info: %v", err)
 	}
@@ -256,6 +276,64 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 
 		if got := len(fixture.sources(t, id, firstPlay(&chrome))); got != 1 {
 			t.Errorf("answered with %d sources, want the one the client should play", got)
+		}
+	})
+
+	t.Run("the version the client names is not the client's to choose", func(t *testing.T) {
+		fixture := newFixture(t)
+		id := fixture.addRip(t, itemmodal.KindMovie, "mkv", "aac")
+		fixture.addCopy(t, id, "/media/uhd.mkv", "h264", "aac", 2160)
+		named := fixture.sourceID(t, id, "/media/rip.mkv")
+
+		body := firstPlay(&chrome)
+		body.MediaSourceId = apiutil.Ptr(named)
+
+		answer := fixture.answered(t, api.GetPostedPlaybackInfoRequestObject{
+			ItemId:   id,
+			Params:   api.GetPostedPlaybackInfoParams{MediaSourceId: apiutil.Ptr(named)},
+			JSONBody: body,
+		})
+
+		sources := *answer.MediaSources
+		if len(sources) != 1 {
+			t.Fatalf("got %d media sources, want 1", len(sources))
+		}
+		if got := apiutil.Deref(sources[0].Path); got != "/media/uhd.mkv" {
+			t.Errorf("answered the file at %q, want the one this server chose", got)
+		}
+	})
+
+	t.Run("nothing is answered as a stream that has to be opened, looped or probed", func(t *testing.T) {
+		fixture := newFixture(t)
+		for _, id := range []uuid.UUID{
+			fixture.addRip(t, itemmodal.KindMovie, "mkv", "ac3"),
+			fixture.addRip(t, itemmodal.KindAudio, "flac", "flac"),
+		} {
+			source := fixture.source(t, id, firstPlay(&chrome))
+
+			for name, claimed := range map[string]*bool{
+				"IsRemote":         source.IsRemote,
+				"IsInfiniteStream": source.IsInfiniteStream,
+				"RequiresOpening":  source.RequiresOpening,
+				"RequiresClosing":  source.RequiresClosing,
+				"RequiresLooping":  source.RequiresLooping,
+				"SupportsProbing":  source.SupportsProbing,
+			} {
+				if apiutil.Deref(claimed) {
+					t.Errorf("%s is true for a file on this server's disk, which nothing here determined", name)
+				}
+			}
+		}
+	})
+
+	t.Run("a song is answered with a way to reach its bytes", func(t *testing.T) {
+		fixture := newFixture(t)
+		id := fixture.addRip(t, itemmodal.KindAudio, "flac", "flac")
+
+		source := fixture.source(t, id, firstPlay(&chrome))
+
+		if !apiutil.Deref(source.SupportsDirectPlay) && !apiutil.Deref(source.SupportsDirectStream) {
+			t.Error("a song was answered with no way to reach it, which jellyfin-web reports as no compatible stream")
 		}
 	})
 

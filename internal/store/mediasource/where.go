@@ -121,36 +121,6 @@ func ProbedAt(v time.Time) predicate.MediaSource {
 	return predicate.MediaSource(sql.FieldEQ(FieldProbedAt, v))
 }
 
-// IsRemote applies equality check predicate on the "is_remote" field. It's identical to IsRemoteEQ.
-func IsRemote(v bool) predicate.MediaSource {
-	return predicate.MediaSource(sql.FieldEQ(FieldIsRemote, v))
-}
-
-// IsInfiniteStream applies equality check predicate on the "is_infinite_stream" field. It's identical to IsInfiniteStreamEQ.
-func IsInfiniteStream(v bool) predicate.MediaSource {
-	return predicate.MediaSource(sql.FieldEQ(FieldIsInfiniteStream, v))
-}
-
-// SupportsTranscoding applies equality check predicate on the "supports_transcoding" field. It's identical to SupportsTranscodingEQ.
-func SupportsTranscoding(v bool) predicate.MediaSource {
-	return predicate.MediaSource(sql.FieldEQ(FieldSupportsTranscoding, v))
-}
-
-// SupportsDirectStream applies equality check predicate on the "supports_direct_stream" field. It's identical to SupportsDirectStreamEQ.
-func SupportsDirectStream(v bool) predicate.MediaSource {
-	return predicate.MediaSource(sql.FieldEQ(FieldSupportsDirectStream, v))
-}
-
-// SupportsDirectPlay applies equality check predicate on the "supports_direct_play" field. It's identical to SupportsDirectPlayEQ.
-func SupportsDirectPlay(v bool) predicate.MediaSource {
-	return predicate.MediaSource(sql.FieldEQ(FieldSupportsDirectPlay, v))
-}
-
-// SupportsProbing applies equality check predicate on the "supports_probing" field. It's identical to SupportsProbingEQ.
-func SupportsProbing(v bool) predicate.MediaSource {
-	return predicate.MediaSource(sql.FieldEQ(FieldSupportsProbing, v))
-}
-
 // ReadAtNativeFramerate applies equality check predicate on the "read_at_native_framerate" field. It's identical to ReadAtNativeFramerateEQ.
 func ReadAtNativeFramerate(v bool) predicate.MediaSource {
 	return predicate.MediaSource(sql.FieldEQ(FieldReadAtNativeFramerate, v))
@@ -169,11 +139,6 @@ func IgnoreIndex(v bool) predicate.MediaSource {
 // GenPtsInput applies equality check predicate on the "gen_pts_input" field. It's identical to GenPtsInputEQ.
 func GenPtsInput(v bool) predicate.MediaSource {
 	return predicate.MediaSource(sql.FieldEQ(FieldGenPtsInput, v))
-}
-
-// RequiresLooping applies equality check predicate on the "requires_looping" field. It's identical to RequiresLoopingEQ.
-func RequiresLooping(v bool) predicate.MediaSource {
-	return predicate.MediaSource(sql.FieldEQ(FieldRequiresLooping, v))
 }
 
 // HasSegments applies equality check predicate on the "has_segments" field. It's identical to HasSegmentsEQ.
@@ -1031,66 +996,6 @@ func ProbedAtNotNil() predicate.MediaSource {
 	return predicate.MediaSource(sql.FieldNotNull(FieldProbedAt))
 }
 
-// IsRemoteEQ applies the EQ predicate on the "is_remote" field.
-func IsRemoteEQ(v bool) predicate.MediaSource {
-	return predicate.MediaSource(sql.FieldEQ(FieldIsRemote, v))
-}
-
-// IsRemoteNEQ applies the NEQ predicate on the "is_remote" field.
-func IsRemoteNEQ(v bool) predicate.MediaSource {
-	return predicate.MediaSource(sql.FieldNEQ(FieldIsRemote, v))
-}
-
-// IsInfiniteStreamEQ applies the EQ predicate on the "is_infinite_stream" field.
-func IsInfiniteStreamEQ(v bool) predicate.MediaSource {
-	return predicate.MediaSource(sql.FieldEQ(FieldIsInfiniteStream, v))
-}
-
-// IsInfiniteStreamNEQ applies the NEQ predicate on the "is_infinite_stream" field.
-func IsInfiniteStreamNEQ(v bool) predicate.MediaSource {
-	return predicate.MediaSource(sql.FieldNEQ(FieldIsInfiniteStream, v))
-}
-
-// SupportsTranscodingEQ applies the EQ predicate on the "supports_transcoding" field.
-func SupportsTranscodingEQ(v bool) predicate.MediaSource {
-	return predicate.MediaSource(sql.FieldEQ(FieldSupportsTranscoding, v))
-}
-
-// SupportsTranscodingNEQ applies the NEQ predicate on the "supports_transcoding" field.
-func SupportsTranscodingNEQ(v bool) predicate.MediaSource {
-	return predicate.MediaSource(sql.FieldNEQ(FieldSupportsTranscoding, v))
-}
-
-// SupportsDirectStreamEQ applies the EQ predicate on the "supports_direct_stream" field.
-func SupportsDirectStreamEQ(v bool) predicate.MediaSource {
-	return predicate.MediaSource(sql.FieldEQ(FieldSupportsDirectStream, v))
-}
-
-// SupportsDirectStreamNEQ applies the NEQ predicate on the "supports_direct_stream" field.
-func SupportsDirectStreamNEQ(v bool) predicate.MediaSource {
-	return predicate.MediaSource(sql.FieldNEQ(FieldSupportsDirectStream, v))
-}
-
-// SupportsDirectPlayEQ applies the EQ predicate on the "supports_direct_play" field.
-func SupportsDirectPlayEQ(v bool) predicate.MediaSource {
-	return predicate.MediaSource(sql.FieldEQ(FieldSupportsDirectPlay, v))
-}
-
-// SupportsDirectPlayNEQ applies the NEQ predicate on the "supports_direct_play" field.
-func SupportsDirectPlayNEQ(v bool) predicate.MediaSource {
-	return predicate.MediaSource(sql.FieldNEQ(FieldSupportsDirectPlay, v))
-}
-
-// SupportsProbingEQ applies the EQ predicate on the "supports_probing" field.
-func SupportsProbingEQ(v bool) predicate.MediaSource {
-	return predicate.MediaSource(sql.FieldEQ(FieldSupportsProbing, v))
-}
-
-// SupportsProbingNEQ applies the NEQ predicate on the "supports_probing" field.
-func SupportsProbingNEQ(v bool) predicate.MediaSource {
-	return predicate.MediaSource(sql.FieldNEQ(FieldSupportsProbing, v))
-}
-
 // ReadAtNativeFramerateEQ applies the EQ predicate on the "read_at_native_framerate" field.
 func ReadAtNativeFramerateEQ(v bool) predicate.MediaSource {
 	return predicate.MediaSource(sql.FieldEQ(FieldReadAtNativeFramerate, v))
@@ -1129,16 +1034,6 @@ func GenPtsInputEQ(v bool) predicate.MediaSource {
 // GenPtsInputNEQ applies the NEQ predicate on the "gen_pts_input" field.
 func GenPtsInputNEQ(v bool) predicate.MediaSource {
 	return predicate.MediaSource(sql.FieldNEQ(FieldGenPtsInput, v))
-}
-
-// RequiresLoopingEQ applies the EQ predicate on the "requires_looping" field.
-func RequiresLoopingEQ(v bool) predicate.MediaSource {
-	return predicate.MediaSource(sql.FieldEQ(FieldRequiresLooping, v))
-}
-
-// RequiresLoopingNEQ applies the NEQ predicate on the "requires_looping" field.
-func RequiresLoopingNEQ(v bool) predicate.MediaSource {
-	return predicate.MediaSource(sql.FieldNEQ(FieldRequiresLooping, v))
 }
 
 // HasSegmentsEQ applies the EQ predicate on the "has_segments" field.

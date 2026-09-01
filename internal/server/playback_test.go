@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -142,9 +143,29 @@ func (f *playbackFixture) rip(t *testing.T, name, audio string) uuid.UUID {
 func (f *playbackFixture) ripped(t *testing.T, name, encoder, video, audio string) uuid.UUID {
 	t.Helper()
 
+	item, err := f.items.SaveScanned(context.Background(), items.Scanned{
+		LibraryID:    f.library,
+		Kind:         itemmodal.KindMovie,
+		Key:          "movie:" + name + ":" + audio,
+		Name:         name,
+		SortName:     name,
+		DateModified: time.Now(),
+	})
+	if err != nil {
+		t.Fatalf("failed to save the item: %v", err)
+	}
+	f.beside(t, item.ID, name, encoder, video, audio, "320x240")
+
+	return item.ID
+}
+
+func (f *playbackFixture) beside(t *testing.T, id uuid.UUID, name, encoder, video, audio, size string) uuid.UUID {
+	t.Helper()
+
+	width, height := dimensions(t, size)
 	path := filepath.Join(t.TempDir(), name)
 	generate := exec.Command("ffmpeg", "-nostdin", "-loglevel", "error",
-		"-f", "lavfi", "-i", "testsrc=size=320x240:rate=15:duration=4",
+		"-f", "lavfi", "-i", "testsrc=size="+size+":rate=15:duration=4",
 		"-f", "lavfi", "-i", "sine=frequency=440:duration=4",
 		"-c:v", encoder, "-pix_fmt", "yuv420p", "-g", "15",
 		"-c:a", audio,
@@ -157,21 +178,14 @@ func (f *playbackFixture) ripped(t *testing.T, name, encoder, video, audio strin
 	f.paths[name] = path
 
 	ctx := context.Background()
-	item, err := f.items.SaveScanned(ctx, items.Scanned{
-		LibraryID:    f.library,
-		Kind:         itemmodal.KindMovie,
-		Key:          "movie:" + name + ":" + audio,
-		Name:         name,
-		SortName:     name,
-		DateModified: time.Now(),
-	})
+	item, err := f.items.ItemByID(ctx, id)
 	if err != nil {
-		t.Fatalf("failed to save the item: %v", err)
+		t.Fatalf("failed to read the item: %v", err)
 	}
 
 	source, err := f.items.SaveSource(ctx, items.ScannedSource{
 		LibraryID:    f.library,
-		ItemID:       item.ID,
+		ItemID:       id,
 		Path:         path,
 		Name:         name,
 		DateModified: time.Now(),
@@ -183,7 +197,7 @@ func (f *playbackFixture) ripped(t *testing.T, name, encoder, video, audio strin
 	err = f.items.SaveProbe(ctx, item, source, items.Probe{
 		Container: strings.TrimPrefix(filepath.Ext(name), "."),
 		Streams: []items.Stream{
-			{Index: 0, Kind: streammodal.KindVideo, Codec: video},
+			{Index: 0, Kind: streammodal.KindVideo, Codec: video, Width: width, Height: height},
 			{Index: 1, Kind: streammodal.KindAudio, Codec: audio},
 		},
 	})
@@ -191,7 +205,7 @@ func (f *playbackFixture) ripped(t *testing.T, name, encoder, video, audio strin
 		t.Fatalf("failed to probe the source: %v", err)
 	}
 
-	return item.ID
+	return source.ID
 }
 
 func (f *playbackFixture) offer(t *testing.T, id uuid.UUID, profile string, startTicks int64) api.MediaSourceInfo {
@@ -284,6 +298,17 @@ func received(t *testing.T, body []byte) string {
 	}
 
 	return path
+}
+
+func dimensions(t *testing.T, size string) (int32, int32) {
+	t.Helper()
+
+	width, height := 0, 0
+	if _, err := fmt.Sscanf(size, "%dx%d", &width, &height); err != nil {
+		t.Fatalf("failed to read the size %q: %v", size, err)
+	}
+
+	return int32(width), int32(height)
 }
 
 func codecs(probed *ffmpeg.Probe) (string, string) {
@@ -388,6 +413,50 @@ func TestPlayback(t *testing.T) {
 		}
 		if got, want := fingerprint(t, answered, "a:0"), fingerprint(t, fixture.paths["rip.mkv"], "a:0"); got == want {
 			t.Error("the ac3 was copied through rather than converted")
+		}
+	})
+
+	t.Run("the version this server chose is the version its bytes come from", func(t *testing.T) {
+		fixture := newPlaybackFixture(t)
+		id := fixture.rip(t, "converted.mkv", "ac3")
+		chosen := fixture.beside(t, id, "untouched.mkv", "libx264", "h264", "aac", "640x480")
+
+		source := fixture.offer(t, id, chromeProfile, 0)
+		if got := apiutil.Deref(source.Id); got != chosen.String() {
+			t.Fatalf("answered source %q, want the version this server chose", got)
+		}
+
+		recorder := fixture.follow(t, apiutil.Deref(source.TranscodingUrl))
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("status = %d, want %d: %s", recorder.Code, http.StatusOK, recorder.Body)
+		}
+
+		file, err := os.ReadFile(fixture.paths["untouched.mkv"])
+		if err != nil {
+			t.Fatalf("failed to read the version this server chose: %v", err)
+		}
+		if !bytes.Equal(recorder.Body.Bytes(), file) {
+			t.Errorf("the response is %d bytes and the version this server chose is %d", recorder.Body.Len(), len(file))
+		}
+	})
+
+	t.Run("the audio kept is the served version's own", func(t *testing.T) {
+		fixture := newPlaybackFixture(t)
+		id := fixture.rip(t, "beside.mkv", "ac3")
+		fixture.beside(t, id, "boxed.mov", "libx264", "h264", "aac", "640x480")
+
+		source := fixture.offer(t, id, chromeProfile, 0)
+		recorder := fixture.follow(t, apiutil.Deref(source.TranscodingUrl))
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("status = %d, want %d: %s", recorder.Code, http.StatusOK, recorder.Body)
+		}
+
+		answered := received(t, recorder.Body.Bytes())
+		for _, stream := range []string{"v:0", "a:0"} {
+			want := fingerprint(t, fixture.paths["boxed.mov"], stream)
+			if got := fingerprint(t, answered, stream); got != want {
+				t.Errorf("%s = %s, want the served version's own %s copied through", stream, got, want)
+			}
 		}
 	})
 

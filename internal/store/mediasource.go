@@ -61,18 +61,6 @@ type MediaSource struct {
 	DateModified time.Time `json:"date_modified,omitempty"`
 	// ProbedAt holds the value of the "probed_at" field.
 	ProbedAt time.Time `json:"probed_at,omitempty"`
-	// IsRemote holds the value of the "is_remote" field.
-	IsRemote bool `json:"is_remote,omitempty"`
-	// IsInfiniteStream holds the value of the "is_infinite_stream" field.
-	IsInfiniteStream bool `json:"is_infinite_stream,omitempty"`
-	// SupportsTranscoding holds the value of the "supports_transcoding" field.
-	SupportsTranscoding bool `json:"supports_transcoding,omitempty"`
-	// SupportsDirectStream holds the value of the "supports_direct_stream" field.
-	SupportsDirectStream bool `json:"supports_direct_stream,omitempty"`
-	// SupportsDirectPlay holds the value of the "supports_direct_play" field.
-	SupportsDirectPlay bool `json:"supports_direct_play,omitempty"`
-	// SupportsProbing holds the value of the "supports_probing" field.
-	SupportsProbing bool `json:"supports_probing,omitempty"`
 	// ReadAtNativeFramerate holds the value of the "read_at_native_framerate" field.
 	ReadAtNativeFramerate bool `json:"read_at_native_framerate,omitempty"`
 	// IgnoreDts holds the value of the "ignore_dts" field.
@@ -81,8 +69,6 @@ type MediaSource struct {
 	IgnoreIndex bool `json:"ignore_index,omitempty"`
 	// GenPtsInput holds the value of the "gen_pts_input" field.
 	GenPtsInput bool `json:"gen_pts_input,omitempty"`
-	// RequiresLooping holds the value of the "requires_looping" field.
-	RequiresLooping bool `json:"requires_looping,omitempty"`
 	// HasSegments holds the value of the "has_segments" field.
 	HasSegments bool `json:"has_segments,omitempty"`
 	// DefaultAudioStreamIndex holds the value of the "default_audio_stream_index" field.
@@ -159,7 +145,7 @@ func (*MediaSource) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case mediasource.FieldFormats:
 			values[i] = new([]byte)
-		case mediasource.FieldIsRemote, mediasource.FieldIsInfiniteStream, mediasource.FieldSupportsTranscoding, mediasource.FieldSupportsDirectStream, mediasource.FieldSupportsDirectPlay, mediasource.FieldSupportsProbing, mediasource.FieldReadAtNativeFramerate, mediasource.FieldIgnoreDts, mediasource.FieldIgnoreIndex, mediasource.FieldGenPtsInput, mediasource.FieldRequiresLooping, mediasource.FieldHasSegments:
+		case mediasource.FieldReadAtNativeFramerate, mediasource.FieldIgnoreDts, mediasource.FieldIgnoreIndex, mediasource.FieldGenPtsInput, mediasource.FieldHasSegments:
 			values[i] = new(sql.NullBool)
 		case mediasource.FieldSize, mediasource.FieldRunTimeTicks, mediasource.FieldBitrate, mediasource.FieldDefaultAudioStreamIndex, mediasource.FieldDefaultSubtitleStreamIndex:
 			values[i] = new(sql.NullInt64)
@@ -310,42 +296,6 @@ func (_m *MediaSource) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ProbedAt = value.Time
 			}
-		case mediasource.FieldIsRemote:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field is_remote", values[i])
-			} else if value.Valid {
-				_m.IsRemote = value.Bool
-			}
-		case mediasource.FieldIsInfiniteStream:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field is_infinite_stream", values[i])
-			} else if value.Valid {
-				_m.IsInfiniteStream = value.Bool
-			}
-		case mediasource.FieldSupportsTranscoding:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field supports_transcoding", values[i])
-			} else if value.Valid {
-				_m.SupportsTranscoding = value.Bool
-			}
-		case mediasource.FieldSupportsDirectStream:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field supports_direct_stream", values[i])
-			} else if value.Valid {
-				_m.SupportsDirectStream = value.Bool
-			}
-		case mediasource.FieldSupportsDirectPlay:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field supports_direct_play", values[i])
-			} else if value.Valid {
-				_m.SupportsDirectPlay = value.Bool
-			}
-		case mediasource.FieldSupportsProbing:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field supports_probing", values[i])
-			} else if value.Valid {
-				_m.SupportsProbing = value.Bool
-			}
 		case mediasource.FieldReadAtNativeFramerate:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field read_at_native_framerate", values[i])
@@ -369,12 +319,6 @@ func (_m *MediaSource) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field gen_pts_input", values[i])
 			} else if value.Valid {
 				_m.GenPtsInput = value.Bool
-			}
-		case mediasource.FieldRequiresLooping:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field requires_looping", values[i])
-			} else if value.Valid {
-				_m.RequiresLooping = value.Bool
 			}
 		case mediasource.FieldHasSegments:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -518,24 +462,6 @@ func (_m *MediaSource) String() string {
 	builder.WriteString("probed_at=")
 	builder.WriteString(_m.ProbedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
-	builder.WriteString("is_remote=")
-	builder.WriteString(fmt.Sprintf("%v", _m.IsRemote))
-	builder.WriteString(", ")
-	builder.WriteString("is_infinite_stream=")
-	builder.WriteString(fmt.Sprintf("%v", _m.IsInfiniteStream))
-	builder.WriteString(", ")
-	builder.WriteString("supports_transcoding=")
-	builder.WriteString(fmt.Sprintf("%v", _m.SupportsTranscoding))
-	builder.WriteString(", ")
-	builder.WriteString("supports_direct_stream=")
-	builder.WriteString(fmt.Sprintf("%v", _m.SupportsDirectStream))
-	builder.WriteString(", ")
-	builder.WriteString("supports_direct_play=")
-	builder.WriteString(fmt.Sprintf("%v", _m.SupportsDirectPlay))
-	builder.WriteString(", ")
-	builder.WriteString("supports_probing=")
-	builder.WriteString(fmt.Sprintf("%v", _m.SupportsProbing))
-	builder.WriteString(", ")
 	builder.WriteString("read_at_native_framerate=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ReadAtNativeFramerate))
 	builder.WriteString(", ")
@@ -547,9 +473,6 @@ func (_m *MediaSource) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("gen_pts_input=")
 	builder.WriteString(fmt.Sprintf("%v", _m.GenPtsInput))
-	builder.WriteString(", ")
-	builder.WriteString("requires_looping=")
-	builder.WriteString(fmt.Sprintf("%v", _m.RequiresLooping))
 	builder.WriteString(", ")
 	builder.WriteString("has_segments=")
 	builder.WriteString(fmt.Sprintf("%v", _m.HasSegments))

@@ -21673,17 +21673,10 @@ type MediaSourceMutation struct {
 	addbitrate                       *int32
 	date_modified                    *time.Time
 	probed_at                        *time.Time
-	is_remote                        *bool
-	is_infinite_stream               *bool
-	supports_transcoding             *bool
-	supports_direct_stream           *bool
-	supports_direct_play             *bool
-	supports_probing                 *bool
 	read_at_native_framerate         *bool
 	ignore_dts                       *bool
 	ignore_index                     *bool
 	gen_pts_input                    *bool
-	requires_looping                 *bool
 	has_segments                     *bool
 	default_audio_stream_index       *int32
 	adddefault_audio_stream_index    *int32
@@ -22750,222 +22743,6 @@ func (m *MediaSourceMutation) ResetProbedAt() {
 	delete(m.clearedFields, mediasource.FieldProbedAt)
 }
 
-// SetIsRemote sets the "is_remote" field.
-func (m *MediaSourceMutation) SetIsRemote(b bool) {
-	m.is_remote = &b
-}
-
-// IsRemote returns the value of the "is_remote" field in the mutation.
-func (m *MediaSourceMutation) IsRemote() (r bool, exists bool) {
-	v := m.is_remote
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldIsRemote returns the old "is_remote" field's value of the MediaSource entity.
-// If the MediaSource object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaSourceMutation) OldIsRemote(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldIsRemote is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldIsRemote requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldIsRemote: %w", err)
-	}
-	return oldValue.IsRemote, nil
-}
-
-// ResetIsRemote resets all changes to the "is_remote" field.
-func (m *MediaSourceMutation) ResetIsRemote() {
-	m.is_remote = nil
-}
-
-// SetIsInfiniteStream sets the "is_infinite_stream" field.
-func (m *MediaSourceMutation) SetIsInfiniteStream(b bool) {
-	m.is_infinite_stream = &b
-}
-
-// IsInfiniteStream returns the value of the "is_infinite_stream" field in the mutation.
-func (m *MediaSourceMutation) IsInfiniteStream() (r bool, exists bool) {
-	v := m.is_infinite_stream
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldIsInfiniteStream returns the old "is_infinite_stream" field's value of the MediaSource entity.
-// If the MediaSource object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaSourceMutation) OldIsInfiniteStream(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldIsInfiniteStream is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldIsInfiniteStream requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldIsInfiniteStream: %w", err)
-	}
-	return oldValue.IsInfiniteStream, nil
-}
-
-// ResetIsInfiniteStream resets all changes to the "is_infinite_stream" field.
-func (m *MediaSourceMutation) ResetIsInfiniteStream() {
-	m.is_infinite_stream = nil
-}
-
-// SetSupportsTranscoding sets the "supports_transcoding" field.
-func (m *MediaSourceMutation) SetSupportsTranscoding(b bool) {
-	m.supports_transcoding = &b
-}
-
-// SupportsTranscoding returns the value of the "supports_transcoding" field in the mutation.
-func (m *MediaSourceMutation) SupportsTranscoding() (r bool, exists bool) {
-	v := m.supports_transcoding
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldSupportsTranscoding returns the old "supports_transcoding" field's value of the MediaSource entity.
-// If the MediaSource object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaSourceMutation) OldSupportsTranscoding(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldSupportsTranscoding is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldSupportsTranscoding requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldSupportsTranscoding: %w", err)
-	}
-	return oldValue.SupportsTranscoding, nil
-}
-
-// ResetSupportsTranscoding resets all changes to the "supports_transcoding" field.
-func (m *MediaSourceMutation) ResetSupportsTranscoding() {
-	m.supports_transcoding = nil
-}
-
-// SetSupportsDirectStream sets the "supports_direct_stream" field.
-func (m *MediaSourceMutation) SetSupportsDirectStream(b bool) {
-	m.supports_direct_stream = &b
-}
-
-// SupportsDirectStream returns the value of the "supports_direct_stream" field in the mutation.
-func (m *MediaSourceMutation) SupportsDirectStream() (r bool, exists bool) {
-	v := m.supports_direct_stream
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldSupportsDirectStream returns the old "supports_direct_stream" field's value of the MediaSource entity.
-// If the MediaSource object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaSourceMutation) OldSupportsDirectStream(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldSupportsDirectStream is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldSupportsDirectStream requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldSupportsDirectStream: %w", err)
-	}
-	return oldValue.SupportsDirectStream, nil
-}
-
-// ResetSupportsDirectStream resets all changes to the "supports_direct_stream" field.
-func (m *MediaSourceMutation) ResetSupportsDirectStream() {
-	m.supports_direct_stream = nil
-}
-
-// SetSupportsDirectPlay sets the "supports_direct_play" field.
-func (m *MediaSourceMutation) SetSupportsDirectPlay(b bool) {
-	m.supports_direct_play = &b
-}
-
-// SupportsDirectPlay returns the value of the "supports_direct_play" field in the mutation.
-func (m *MediaSourceMutation) SupportsDirectPlay() (r bool, exists bool) {
-	v := m.supports_direct_play
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldSupportsDirectPlay returns the old "supports_direct_play" field's value of the MediaSource entity.
-// If the MediaSource object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaSourceMutation) OldSupportsDirectPlay(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldSupportsDirectPlay is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldSupportsDirectPlay requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldSupportsDirectPlay: %w", err)
-	}
-	return oldValue.SupportsDirectPlay, nil
-}
-
-// ResetSupportsDirectPlay resets all changes to the "supports_direct_play" field.
-func (m *MediaSourceMutation) ResetSupportsDirectPlay() {
-	m.supports_direct_play = nil
-}
-
-// SetSupportsProbing sets the "supports_probing" field.
-func (m *MediaSourceMutation) SetSupportsProbing(b bool) {
-	m.supports_probing = &b
-}
-
-// SupportsProbing returns the value of the "supports_probing" field in the mutation.
-func (m *MediaSourceMutation) SupportsProbing() (r bool, exists bool) {
-	v := m.supports_probing
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldSupportsProbing returns the old "supports_probing" field's value of the MediaSource entity.
-// If the MediaSource object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaSourceMutation) OldSupportsProbing(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldSupportsProbing is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldSupportsProbing requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldSupportsProbing: %w", err)
-	}
-	return oldValue.SupportsProbing, nil
-}
-
-// ResetSupportsProbing resets all changes to the "supports_probing" field.
-func (m *MediaSourceMutation) ResetSupportsProbing() {
-	m.supports_probing = nil
-}
-
 // SetReadAtNativeFramerate sets the "read_at_native_framerate" field.
 func (m *MediaSourceMutation) SetReadAtNativeFramerate(b bool) {
 	m.read_at_native_framerate = &b
@@ -23108,42 +22885,6 @@ func (m *MediaSourceMutation) OldGenPtsInput(ctx context.Context) (v bool, err e
 // ResetGenPtsInput resets all changes to the "gen_pts_input" field.
 func (m *MediaSourceMutation) ResetGenPtsInput() {
 	m.gen_pts_input = nil
-}
-
-// SetRequiresLooping sets the "requires_looping" field.
-func (m *MediaSourceMutation) SetRequiresLooping(b bool) {
-	m.requires_looping = &b
-}
-
-// RequiresLooping returns the value of the "requires_looping" field in the mutation.
-func (m *MediaSourceMutation) RequiresLooping() (r bool, exists bool) {
-	v := m.requires_looping
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldRequiresLooping returns the old "requires_looping" field's value of the MediaSource entity.
-// If the MediaSource object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaSourceMutation) OldRequiresLooping(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldRequiresLooping is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldRequiresLooping requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldRequiresLooping: %w", err)
-	}
-	return oldValue.RequiresLooping, nil
-}
-
-// ResetRequiresLooping resets all changes to the "requires_looping" field.
-func (m *MediaSourceMutation) ResetRequiresLooping() {
-	m.requires_looping = nil
 }
 
 // SetHasSegments sets the "has_segments" field.
@@ -23583,7 +23324,7 @@ func (m *MediaSourceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *MediaSourceMutation) Fields() []string {
-	fields := make([]string, 0, 35)
+	fields := make([]string, 0, 28)
 	if m.created_at != nil {
 		fields = append(fields, mediasource.FieldCreatedAt)
 	}
@@ -23644,24 +23385,6 @@ func (m *MediaSourceMutation) Fields() []string {
 	if m.probed_at != nil {
 		fields = append(fields, mediasource.FieldProbedAt)
 	}
-	if m.is_remote != nil {
-		fields = append(fields, mediasource.FieldIsRemote)
-	}
-	if m.is_infinite_stream != nil {
-		fields = append(fields, mediasource.FieldIsInfiniteStream)
-	}
-	if m.supports_transcoding != nil {
-		fields = append(fields, mediasource.FieldSupportsTranscoding)
-	}
-	if m.supports_direct_stream != nil {
-		fields = append(fields, mediasource.FieldSupportsDirectStream)
-	}
-	if m.supports_direct_play != nil {
-		fields = append(fields, mediasource.FieldSupportsDirectPlay)
-	}
-	if m.supports_probing != nil {
-		fields = append(fields, mediasource.FieldSupportsProbing)
-	}
 	if m.read_at_native_framerate != nil {
 		fields = append(fields, mediasource.FieldReadAtNativeFramerate)
 	}
@@ -23673,9 +23396,6 @@ func (m *MediaSourceMutation) Fields() []string {
 	}
 	if m.gen_pts_input != nil {
 		fields = append(fields, mediasource.FieldGenPtsInput)
-	}
-	if m.requires_looping != nil {
-		fields = append(fields, mediasource.FieldRequiresLooping)
 	}
 	if m.has_segments != nil {
 		fields = append(fields, mediasource.FieldHasSegments)
@@ -23737,18 +23457,6 @@ func (m *MediaSourceMutation) Field(name string) (ent.Value, bool) {
 		return m.DateModified()
 	case mediasource.FieldProbedAt:
 		return m.ProbedAt()
-	case mediasource.FieldIsRemote:
-		return m.IsRemote()
-	case mediasource.FieldIsInfiniteStream:
-		return m.IsInfiniteStream()
-	case mediasource.FieldSupportsTranscoding:
-		return m.SupportsTranscoding()
-	case mediasource.FieldSupportsDirectStream:
-		return m.SupportsDirectStream()
-	case mediasource.FieldSupportsDirectPlay:
-		return m.SupportsDirectPlay()
-	case mediasource.FieldSupportsProbing:
-		return m.SupportsProbing()
 	case mediasource.FieldReadAtNativeFramerate:
 		return m.ReadAtNativeFramerate()
 	case mediasource.FieldIgnoreDts:
@@ -23757,8 +23465,6 @@ func (m *MediaSourceMutation) Field(name string) (ent.Value, bool) {
 		return m.IgnoreIndex()
 	case mediasource.FieldGenPtsInput:
 		return m.GenPtsInput()
-	case mediasource.FieldRequiresLooping:
-		return m.RequiresLooping()
 	case mediasource.FieldHasSegments:
 		return m.HasSegments()
 	case mediasource.FieldDefaultAudioStreamIndex:
@@ -23816,18 +23522,6 @@ func (m *MediaSourceMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldDateModified(ctx)
 	case mediasource.FieldProbedAt:
 		return m.OldProbedAt(ctx)
-	case mediasource.FieldIsRemote:
-		return m.OldIsRemote(ctx)
-	case mediasource.FieldIsInfiniteStream:
-		return m.OldIsInfiniteStream(ctx)
-	case mediasource.FieldSupportsTranscoding:
-		return m.OldSupportsTranscoding(ctx)
-	case mediasource.FieldSupportsDirectStream:
-		return m.OldSupportsDirectStream(ctx)
-	case mediasource.FieldSupportsDirectPlay:
-		return m.OldSupportsDirectPlay(ctx)
-	case mediasource.FieldSupportsProbing:
-		return m.OldSupportsProbing(ctx)
 	case mediasource.FieldReadAtNativeFramerate:
 		return m.OldReadAtNativeFramerate(ctx)
 	case mediasource.FieldIgnoreDts:
@@ -23836,8 +23530,6 @@ func (m *MediaSourceMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldIgnoreIndex(ctx)
 	case mediasource.FieldGenPtsInput:
 		return m.OldGenPtsInput(ctx)
-	case mediasource.FieldRequiresLooping:
-		return m.OldRequiresLooping(ctx)
 	case mediasource.FieldHasSegments:
 		return m.OldHasSegments(ctx)
 	case mediasource.FieldDefaultAudioStreamIndex:
@@ -23995,48 +23687,6 @@ func (m *MediaSourceMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetProbedAt(v)
 		return nil
-	case mediasource.FieldIsRemote:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetIsRemote(v)
-		return nil
-	case mediasource.FieldIsInfiniteStream:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetIsInfiniteStream(v)
-		return nil
-	case mediasource.FieldSupportsTranscoding:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetSupportsTranscoding(v)
-		return nil
-	case mediasource.FieldSupportsDirectStream:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetSupportsDirectStream(v)
-		return nil
-	case mediasource.FieldSupportsDirectPlay:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetSupportsDirectPlay(v)
-		return nil
-	case mediasource.FieldSupportsProbing:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetSupportsProbing(v)
-		return nil
 	case mediasource.FieldReadAtNativeFramerate:
 		v, ok := value.(bool)
 		if !ok {
@@ -24064,13 +23714,6 @@ func (m *MediaSourceMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetGenPtsInput(v)
-		return nil
-	case mediasource.FieldRequiresLooping:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetRequiresLooping(v)
 		return nil
 	case mediasource.FieldHasSegments:
 		v, ok := value.(bool)
@@ -24365,24 +24008,6 @@ func (m *MediaSourceMutation) ResetField(name string) error {
 	case mediasource.FieldProbedAt:
 		m.ResetProbedAt()
 		return nil
-	case mediasource.FieldIsRemote:
-		m.ResetIsRemote()
-		return nil
-	case mediasource.FieldIsInfiniteStream:
-		m.ResetIsInfiniteStream()
-		return nil
-	case mediasource.FieldSupportsTranscoding:
-		m.ResetSupportsTranscoding()
-		return nil
-	case mediasource.FieldSupportsDirectStream:
-		m.ResetSupportsDirectStream()
-		return nil
-	case mediasource.FieldSupportsDirectPlay:
-		m.ResetSupportsDirectPlay()
-		return nil
-	case mediasource.FieldSupportsProbing:
-		m.ResetSupportsProbing()
-		return nil
 	case mediasource.FieldReadAtNativeFramerate:
 		m.ResetReadAtNativeFramerate()
 		return nil
@@ -24394,9 +24019,6 @@ func (m *MediaSourceMutation) ResetField(name string) error {
 		return nil
 	case mediasource.FieldGenPtsInput:
 		m.ResetGenPtsInput()
-		return nil
-	case mediasource.FieldRequiresLooping:
-		m.ResetRequiresLooping()
 		return nil
 	case mediasource.FieldHasSegments:
 		m.ResetHasSegments()

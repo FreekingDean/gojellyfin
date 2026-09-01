@@ -276,90 +276,6 @@ func (_c *MediaSourceCreate) SetNillableProbedAt(v *time.Time) *MediaSourceCreat
 	return _c
 }
 
-// SetIsRemote sets the "is_remote" field.
-func (_c *MediaSourceCreate) SetIsRemote(v bool) *MediaSourceCreate {
-	_c.mutation.SetIsRemote(v)
-	return _c
-}
-
-// SetNillableIsRemote sets the "is_remote" field if the given value is not nil.
-func (_c *MediaSourceCreate) SetNillableIsRemote(v *bool) *MediaSourceCreate {
-	if v != nil {
-		_c.SetIsRemote(*v)
-	}
-	return _c
-}
-
-// SetIsInfiniteStream sets the "is_infinite_stream" field.
-func (_c *MediaSourceCreate) SetIsInfiniteStream(v bool) *MediaSourceCreate {
-	_c.mutation.SetIsInfiniteStream(v)
-	return _c
-}
-
-// SetNillableIsInfiniteStream sets the "is_infinite_stream" field if the given value is not nil.
-func (_c *MediaSourceCreate) SetNillableIsInfiniteStream(v *bool) *MediaSourceCreate {
-	if v != nil {
-		_c.SetIsInfiniteStream(*v)
-	}
-	return _c
-}
-
-// SetSupportsTranscoding sets the "supports_transcoding" field.
-func (_c *MediaSourceCreate) SetSupportsTranscoding(v bool) *MediaSourceCreate {
-	_c.mutation.SetSupportsTranscoding(v)
-	return _c
-}
-
-// SetNillableSupportsTranscoding sets the "supports_transcoding" field if the given value is not nil.
-func (_c *MediaSourceCreate) SetNillableSupportsTranscoding(v *bool) *MediaSourceCreate {
-	if v != nil {
-		_c.SetSupportsTranscoding(*v)
-	}
-	return _c
-}
-
-// SetSupportsDirectStream sets the "supports_direct_stream" field.
-func (_c *MediaSourceCreate) SetSupportsDirectStream(v bool) *MediaSourceCreate {
-	_c.mutation.SetSupportsDirectStream(v)
-	return _c
-}
-
-// SetNillableSupportsDirectStream sets the "supports_direct_stream" field if the given value is not nil.
-func (_c *MediaSourceCreate) SetNillableSupportsDirectStream(v *bool) *MediaSourceCreate {
-	if v != nil {
-		_c.SetSupportsDirectStream(*v)
-	}
-	return _c
-}
-
-// SetSupportsDirectPlay sets the "supports_direct_play" field.
-func (_c *MediaSourceCreate) SetSupportsDirectPlay(v bool) *MediaSourceCreate {
-	_c.mutation.SetSupportsDirectPlay(v)
-	return _c
-}
-
-// SetNillableSupportsDirectPlay sets the "supports_direct_play" field if the given value is not nil.
-func (_c *MediaSourceCreate) SetNillableSupportsDirectPlay(v *bool) *MediaSourceCreate {
-	if v != nil {
-		_c.SetSupportsDirectPlay(*v)
-	}
-	return _c
-}
-
-// SetSupportsProbing sets the "supports_probing" field.
-func (_c *MediaSourceCreate) SetSupportsProbing(v bool) *MediaSourceCreate {
-	_c.mutation.SetSupportsProbing(v)
-	return _c
-}
-
-// SetNillableSupportsProbing sets the "supports_probing" field if the given value is not nil.
-func (_c *MediaSourceCreate) SetNillableSupportsProbing(v *bool) *MediaSourceCreate {
-	if v != nil {
-		_c.SetSupportsProbing(*v)
-	}
-	return _c
-}
-
 // SetReadAtNativeFramerate sets the "read_at_native_framerate" field.
 func (_c *MediaSourceCreate) SetReadAtNativeFramerate(v bool) *MediaSourceCreate {
 	_c.mutation.SetReadAtNativeFramerate(v)
@@ -412,20 +328,6 @@ func (_c *MediaSourceCreate) SetGenPtsInput(v bool) *MediaSourceCreate {
 func (_c *MediaSourceCreate) SetNillableGenPtsInput(v *bool) *MediaSourceCreate {
 	if v != nil {
 		_c.SetGenPtsInput(*v)
-	}
-	return _c
-}
-
-// SetRequiresLooping sets the "requires_looping" field.
-func (_c *MediaSourceCreate) SetRequiresLooping(v bool) *MediaSourceCreate {
-	_c.mutation.SetRequiresLooping(v)
-	return _c
-}
-
-// SetNillableRequiresLooping sets the "requires_looping" field if the given value is not nil.
-func (_c *MediaSourceCreate) SetNillableRequiresLooping(v *bool) *MediaSourceCreate {
-	if v != nil {
-		_c.SetRequiresLooping(*v)
 	}
 	return _c
 }
@@ -575,30 +477,6 @@ func (_c *MediaSourceCreate) defaults() {
 		v := mediasource.DefaultKind
 		_c.mutation.SetKind(v)
 	}
-	if _, ok := _c.mutation.IsRemote(); !ok {
-		v := mediasource.DefaultIsRemote
-		_c.mutation.SetIsRemote(v)
-	}
-	if _, ok := _c.mutation.IsInfiniteStream(); !ok {
-		v := mediasource.DefaultIsInfiniteStream
-		_c.mutation.SetIsInfiniteStream(v)
-	}
-	if _, ok := _c.mutation.SupportsTranscoding(); !ok {
-		v := mediasource.DefaultSupportsTranscoding
-		_c.mutation.SetSupportsTranscoding(v)
-	}
-	if _, ok := _c.mutation.SupportsDirectStream(); !ok {
-		v := mediasource.DefaultSupportsDirectStream
-		_c.mutation.SetSupportsDirectStream(v)
-	}
-	if _, ok := _c.mutation.SupportsDirectPlay(); !ok {
-		v := mediasource.DefaultSupportsDirectPlay
-		_c.mutation.SetSupportsDirectPlay(v)
-	}
-	if _, ok := _c.mutation.SupportsProbing(); !ok {
-		v := mediasource.DefaultSupportsProbing
-		_c.mutation.SetSupportsProbing(v)
-	}
 	if _, ok := _c.mutation.ReadAtNativeFramerate(); !ok {
 		v := mediasource.DefaultReadAtNativeFramerate
 		_c.mutation.SetReadAtNativeFramerate(v)
@@ -614,10 +492,6 @@ func (_c *MediaSourceCreate) defaults() {
 	if _, ok := _c.mutation.GenPtsInput(); !ok {
 		v := mediasource.DefaultGenPtsInput
 		_c.mutation.SetGenPtsInput(v)
-	}
-	if _, ok := _c.mutation.RequiresLooping(); !ok {
-		v := mediasource.DefaultRequiresLooping
-		_c.mutation.SetRequiresLooping(v)
 	}
 	if _, ok := _c.mutation.HasSegments(); !ok {
 		v := mediasource.DefaultHasSegments
@@ -686,24 +560,6 @@ func (_c *MediaSourceCreate) check() error {
 	if _, ok := _c.mutation.Path(); !ok {
 		return &ValidationError{Name: "path", err: errors.New(`store: missing required field "MediaSource.path"`)}
 	}
-	if _, ok := _c.mutation.IsRemote(); !ok {
-		return &ValidationError{Name: "is_remote", err: errors.New(`store: missing required field "MediaSource.is_remote"`)}
-	}
-	if _, ok := _c.mutation.IsInfiniteStream(); !ok {
-		return &ValidationError{Name: "is_infinite_stream", err: errors.New(`store: missing required field "MediaSource.is_infinite_stream"`)}
-	}
-	if _, ok := _c.mutation.SupportsTranscoding(); !ok {
-		return &ValidationError{Name: "supports_transcoding", err: errors.New(`store: missing required field "MediaSource.supports_transcoding"`)}
-	}
-	if _, ok := _c.mutation.SupportsDirectStream(); !ok {
-		return &ValidationError{Name: "supports_direct_stream", err: errors.New(`store: missing required field "MediaSource.supports_direct_stream"`)}
-	}
-	if _, ok := _c.mutation.SupportsDirectPlay(); !ok {
-		return &ValidationError{Name: "supports_direct_play", err: errors.New(`store: missing required field "MediaSource.supports_direct_play"`)}
-	}
-	if _, ok := _c.mutation.SupportsProbing(); !ok {
-		return &ValidationError{Name: "supports_probing", err: errors.New(`store: missing required field "MediaSource.supports_probing"`)}
-	}
 	if _, ok := _c.mutation.ReadAtNativeFramerate(); !ok {
 		return &ValidationError{Name: "read_at_native_framerate", err: errors.New(`store: missing required field "MediaSource.read_at_native_framerate"`)}
 	}
@@ -715,9 +571,6 @@ func (_c *MediaSourceCreate) check() error {
 	}
 	if _, ok := _c.mutation.GenPtsInput(); !ok {
 		return &ValidationError{Name: "gen_pts_input", err: errors.New(`store: missing required field "MediaSource.gen_pts_input"`)}
-	}
-	if _, ok := _c.mutation.RequiresLooping(); !ok {
-		return &ValidationError{Name: "requires_looping", err: errors.New(`store: missing required field "MediaSource.requires_looping"`)}
 	}
 	if _, ok := _c.mutation.HasSegments(); !ok {
 		return &ValidationError{Name: "has_segments", err: errors.New(`store: missing required field "MediaSource.has_segments"`)}
@@ -836,30 +689,6 @@ func (_c *MediaSourceCreate) createSpec() (*MediaSource, *sqlgraph.CreateSpec) {
 		_spec.SetField(mediasource.FieldProbedAt, field.TypeTime, value)
 		_node.ProbedAt = value
 	}
-	if value, ok := _c.mutation.IsRemote(); ok {
-		_spec.SetField(mediasource.FieldIsRemote, field.TypeBool, value)
-		_node.IsRemote = value
-	}
-	if value, ok := _c.mutation.IsInfiniteStream(); ok {
-		_spec.SetField(mediasource.FieldIsInfiniteStream, field.TypeBool, value)
-		_node.IsInfiniteStream = value
-	}
-	if value, ok := _c.mutation.SupportsTranscoding(); ok {
-		_spec.SetField(mediasource.FieldSupportsTranscoding, field.TypeBool, value)
-		_node.SupportsTranscoding = value
-	}
-	if value, ok := _c.mutation.SupportsDirectStream(); ok {
-		_spec.SetField(mediasource.FieldSupportsDirectStream, field.TypeBool, value)
-		_node.SupportsDirectStream = value
-	}
-	if value, ok := _c.mutation.SupportsDirectPlay(); ok {
-		_spec.SetField(mediasource.FieldSupportsDirectPlay, field.TypeBool, value)
-		_node.SupportsDirectPlay = value
-	}
-	if value, ok := _c.mutation.SupportsProbing(); ok {
-		_spec.SetField(mediasource.FieldSupportsProbing, field.TypeBool, value)
-		_node.SupportsProbing = value
-	}
 	if value, ok := _c.mutation.ReadAtNativeFramerate(); ok {
 		_spec.SetField(mediasource.FieldReadAtNativeFramerate, field.TypeBool, value)
 		_node.ReadAtNativeFramerate = value
@@ -875,10 +704,6 @@ func (_c *MediaSourceCreate) createSpec() (*MediaSource, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.GenPtsInput(); ok {
 		_spec.SetField(mediasource.FieldGenPtsInput, field.TypeBool, value)
 		_node.GenPtsInput = value
-	}
-	if value, ok := _c.mutation.RequiresLooping(); ok {
-		_spec.SetField(mediasource.FieldRequiresLooping, field.TypeBool, value)
-		_node.RequiresLooping = value
 	}
 	if value, ok := _c.mutation.HasSegments(); ok {
 		_spec.SetField(mediasource.FieldHasSegments, field.TypeBool, value)
@@ -1344,78 +1169,6 @@ func (u *MediaSourceUpsert) ClearProbedAt() *MediaSourceUpsert {
 	return u
 }
 
-// SetIsRemote sets the "is_remote" field.
-func (u *MediaSourceUpsert) SetIsRemote(v bool) *MediaSourceUpsert {
-	u.Set(mediasource.FieldIsRemote, v)
-	return u
-}
-
-// UpdateIsRemote sets the "is_remote" field to the value that was provided on create.
-func (u *MediaSourceUpsert) UpdateIsRemote() *MediaSourceUpsert {
-	u.SetExcluded(mediasource.FieldIsRemote)
-	return u
-}
-
-// SetIsInfiniteStream sets the "is_infinite_stream" field.
-func (u *MediaSourceUpsert) SetIsInfiniteStream(v bool) *MediaSourceUpsert {
-	u.Set(mediasource.FieldIsInfiniteStream, v)
-	return u
-}
-
-// UpdateIsInfiniteStream sets the "is_infinite_stream" field to the value that was provided on create.
-func (u *MediaSourceUpsert) UpdateIsInfiniteStream() *MediaSourceUpsert {
-	u.SetExcluded(mediasource.FieldIsInfiniteStream)
-	return u
-}
-
-// SetSupportsTranscoding sets the "supports_transcoding" field.
-func (u *MediaSourceUpsert) SetSupportsTranscoding(v bool) *MediaSourceUpsert {
-	u.Set(mediasource.FieldSupportsTranscoding, v)
-	return u
-}
-
-// UpdateSupportsTranscoding sets the "supports_transcoding" field to the value that was provided on create.
-func (u *MediaSourceUpsert) UpdateSupportsTranscoding() *MediaSourceUpsert {
-	u.SetExcluded(mediasource.FieldSupportsTranscoding)
-	return u
-}
-
-// SetSupportsDirectStream sets the "supports_direct_stream" field.
-func (u *MediaSourceUpsert) SetSupportsDirectStream(v bool) *MediaSourceUpsert {
-	u.Set(mediasource.FieldSupportsDirectStream, v)
-	return u
-}
-
-// UpdateSupportsDirectStream sets the "supports_direct_stream" field to the value that was provided on create.
-func (u *MediaSourceUpsert) UpdateSupportsDirectStream() *MediaSourceUpsert {
-	u.SetExcluded(mediasource.FieldSupportsDirectStream)
-	return u
-}
-
-// SetSupportsDirectPlay sets the "supports_direct_play" field.
-func (u *MediaSourceUpsert) SetSupportsDirectPlay(v bool) *MediaSourceUpsert {
-	u.Set(mediasource.FieldSupportsDirectPlay, v)
-	return u
-}
-
-// UpdateSupportsDirectPlay sets the "supports_direct_play" field to the value that was provided on create.
-func (u *MediaSourceUpsert) UpdateSupportsDirectPlay() *MediaSourceUpsert {
-	u.SetExcluded(mediasource.FieldSupportsDirectPlay)
-	return u
-}
-
-// SetSupportsProbing sets the "supports_probing" field.
-func (u *MediaSourceUpsert) SetSupportsProbing(v bool) *MediaSourceUpsert {
-	u.Set(mediasource.FieldSupportsProbing, v)
-	return u
-}
-
-// UpdateSupportsProbing sets the "supports_probing" field to the value that was provided on create.
-func (u *MediaSourceUpsert) UpdateSupportsProbing() *MediaSourceUpsert {
-	u.SetExcluded(mediasource.FieldSupportsProbing)
-	return u
-}
-
 // SetReadAtNativeFramerate sets the "read_at_native_framerate" field.
 func (u *MediaSourceUpsert) SetReadAtNativeFramerate(v bool) *MediaSourceUpsert {
 	u.Set(mediasource.FieldReadAtNativeFramerate, v)
@@ -1461,18 +1214,6 @@ func (u *MediaSourceUpsert) SetGenPtsInput(v bool) *MediaSourceUpsert {
 // UpdateGenPtsInput sets the "gen_pts_input" field to the value that was provided on create.
 func (u *MediaSourceUpsert) UpdateGenPtsInput() *MediaSourceUpsert {
 	u.SetExcluded(mediasource.FieldGenPtsInput)
-	return u
-}
-
-// SetRequiresLooping sets the "requires_looping" field.
-func (u *MediaSourceUpsert) SetRequiresLooping(v bool) *MediaSourceUpsert {
-	u.Set(mediasource.FieldRequiresLooping, v)
-	return u
-}
-
-// UpdateRequiresLooping sets the "requires_looping" field to the value that was provided on create.
-func (u *MediaSourceUpsert) UpdateRequiresLooping() *MediaSourceUpsert {
-	u.SetExcluded(mediasource.FieldRequiresLooping)
 	return u
 }
 
@@ -1987,90 +1728,6 @@ func (u *MediaSourceUpsertOne) ClearProbedAt() *MediaSourceUpsertOne {
 	})
 }
 
-// SetIsRemote sets the "is_remote" field.
-func (u *MediaSourceUpsertOne) SetIsRemote(v bool) *MediaSourceUpsertOne {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.SetIsRemote(v)
-	})
-}
-
-// UpdateIsRemote sets the "is_remote" field to the value that was provided on create.
-func (u *MediaSourceUpsertOne) UpdateIsRemote() *MediaSourceUpsertOne {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.UpdateIsRemote()
-	})
-}
-
-// SetIsInfiniteStream sets the "is_infinite_stream" field.
-func (u *MediaSourceUpsertOne) SetIsInfiniteStream(v bool) *MediaSourceUpsertOne {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.SetIsInfiniteStream(v)
-	})
-}
-
-// UpdateIsInfiniteStream sets the "is_infinite_stream" field to the value that was provided on create.
-func (u *MediaSourceUpsertOne) UpdateIsInfiniteStream() *MediaSourceUpsertOne {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.UpdateIsInfiniteStream()
-	})
-}
-
-// SetSupportsTranscoding sets the "supports_transcoding" field.
-func (u *MediaSourceUpsertOne) SetSupportsTranscoding(v bool) *MediaSourceUpsertOne {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.SetSupportsTranscoding(v)
-	})
-}
-
-// UpdateSupportsTranscoding sets the "supports_transcoding" field to the value that was provided on create.
-func (u *MediaSourceUpsertOne) UpdateSupportsTranscoding() *MediaSourceUpsertOne {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.UpdateSupportsTranscoding()
-	})
-}
-
-// SetSupportsDirectStream sets the "supports_direct_stream" field.
-func (u *MediaSourceUpsertOne) SetSupportsDirectStream(v bool) *MediaSourceUpsertOne {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.SetSupportsDirectStream(v)
-	})
-}
-
-// UpdateSupportsDirectStream sets the "supports_direct_stream" field to the value that was provided on create.
-func (u *MediaSourceUpsertOne) UpdateSupportsDirectStream() *MediaSourceUpsertOne {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.UpdateSupportsDirectStream()
-	})
-}
-
-// SetSupportsDirectPlay sets the "supports_direct_play" field.
-func (u *MediaSourceUpsertOne) SetSupportsDirectPlay(v bool) *MediaSourceUpsertOne {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.SetSupportsDirectPlay(v)
-	})
-}
-
-// UpdateSupportsDirectPlay sets the "supports_direct_play" field to the value that was provided on create.
-func (u *MediaSourceUpsertOne) UpdateSupportsDirectPlay() *MediaSourceUpsertOne {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.UpdateSupportsDirectPlay()
-	})
-}
-
-// SetSupportsProbing sets the "supports_probing" field.
-func (u *MediaSourceUpsertOne) SetSupportsProbing(v bool) *MediaSourceUpsertOne {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.SetSupportsProbing(v)
-	})
-}
-
-// UpdateSupportsProbing sets the "supports_probing" field to the value that was provided on create.
-func (u *MediaSourceUpsertOne) UpdateSupportsProbing() *MediaSourceUpsertOne {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.UpdateSupportsProbing()
-	})
-}
-
 // SetReadAtNativeFramerate sets the "read_at_native_framerate" field.
 func (u *MediaSourceUpsertOne) SetReadAtNativeFramerate(v bool) *MediaSourceUpsertOne {
 	return u.Update(func(s *MediaSourceUpsert) {
@@ -2124,20 +1781,6 @@ func (u *MediaSourceUpsertOne) SetGenPtsInput(v bool) *MediaSourceUpsertOne {
 func (u *MediaSourceUpsertOne) UpdateGenPtsInput() *MediaSourceUpsertOne {
 	return u.Update(func(s *MediaSourceUpsert) {
 		s.UpdateGenPtsInput()
-	})
-}
-
-// SetRequiresLooping sets the "requires_looping" field.
-func (u *MediaSourceUpsertOne) SetRequiresLooping(v bool) *MediaSourceUpsertOne {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.SetRequiresLooping(v)
-	})
-}
-
-// UpdateRequiresLooping sets the "requires_looping" field to the value that was provided on create.
-func (u *MediaSourceUpsertOne) UpdateRequiresLooping() *MediaSourceUpsertOne {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.UpdateRequiresLooping()
 	})
 }
 
@@ -2832,90 +2475,6 @@ func (u *MediaSourceUpsertBulk) ClearProbedAt() *MediaSourceUpsertBulk {
 	})
 }
 
-// SetIsRemote sets the "is_remote" field.
-func (u *MediaSourceUpsertBulk) SetIsRemote(v bool) *MediaSourceUpsertBulk {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.SetIsRemote(v)
-	})
-}
-
-// UpdateIsRemote sets the "is_remote" field to the value that was provided on create.
-func (u *MediaSourceUpsertBulk) UpdateIsRemote() *MediaSourceUpsertBulk {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.UpdateIsRemote()
-	})
-}
-
-// SetIsInfiniteStream sets the "is_infinite_stream" field.
-func (u *MediaSourceUpsertBulk) SetIsInfiniteStream(v bool) *MediaSourceUpsertBulk {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.SetIsInfiniteStream(v)
-	})
-}
-
-// UpdateIsInfiniteStream sets the "is_infinite_stream" field to the value that was provided on create.
-func (u *MediaSourceUpsertBulk) UpdateIsInfiniteStream() *MediaSourceUpsertBulk {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.UpdateIsInfiniteStream()
-	})
-}
-
-// SetSupportsTranscoding sets the "supports_transcoding" field.
-func (u *MediaSourceUpsertBulk) SetSupportsTranscoding(v bool) *MediaSourceUpsertBulk {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.SetSupportsTranscoding(v)
-	})
-}
-
-// UpdateSupportsTranscoding sets the "supports_transcoding" field to the value that was provided on create.
-func (u *MediaSourceUpsertBulk) UpdateSupportsTranscoding() *MediaSourceUpsertBulk {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.UpdateSupportsTranscoding()
-	})
-}
-
-// SetSupportsDirectStream sets the "supports_direct_stream" field.
-func (u *MediaSourceUpsertBulk) SetSupportsDirectStream(v bool) *MediaSourceUpsertBulk {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.SetSupportsDirectStream(v)
-	})
-}
-
-// UpdateSupportsDirectStream sets the "supports_direct_stream" field to the value that was provided on create.
-func (u *MediaSourceUpsertBulk) UpdateSupportsDirectStream() *MediaSourceUpsertBulk {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.UpdateSupportsDirectStream()
-	})
-}
-
-// SetSupportsDirectPlay sets the "supports_direct_play" field.
-func (u *MediaSourceUpsertBulk) SetSupportsDirectPlay(v bool) *MediaSourceUpsertBulk {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.SetSupportsDirectPlay(v)
-	})
-}
-
-// UpdateSupportsDirectPlay sets the "supports_direct_play" field to the value that was provided on create.
-func (u *MediaSourceUpsertBulk) UpdateSupportsDirectPlay() *MediaSourceUpsertBulk {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.UpdateSupportsDirectPlay()
-	})
-}
-
-// SetSupportsProbing sets the "supports_probing" field.
-func (u *MediaSourceUpsertBulk) SetSupportsProbing(v bool) *MediaSourceUpsertBulk {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.SetSupportsProbing(v)
-	})
-}
-
-// UpdateSupportsProbing sets the "supports_probing" field to the value that was provided on create.
-func (u *MediaSourceUpsertBulk) UpdateSupportsProbing() *MediaSourceUpsertBulk {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.UpdateSupportsProbing()
-	})
-}
-
 // SetReadAtNativeFramerate sets the "read_at_native_framerate" field.
 func (u *MediaSourceUpsertBulk) SetReadAtNativeFramerate(v bool) *MediaSourceUpsertBulk {
 	return u.Update(func(s *MediaSourceUpsert) {
@@ -2969,20 +2528,6 @@ func (u *MediaSourceUpsertBulk) SetGenPtsInput(v bool) *MediaSourceUpsertBulk {
 func (u *MediaSourceUpsertBulk) UpdateGenPtsInput() *MediaSourceUpsertBulk {
 	return u.Update(func(s *MediaSourceUpsert) {
 		s.UpdateGenPtsInput()
-	})
-}
-
-// SetRequiresLooping sets the "requires_looping" field.
-func (u *MediaSourceUpsertBulk) SetRequiresLooping(v bool) *MediaSourceUpsertBulk {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.SetRequiresLooping(v)
-	})
-}
-
-// UpdateRequiresLooping sets the "requires_looping" field to the value that was provided on create.
-func (u *MediaSourceUpsertBulk) UpdateRequiresLooping() *MediaSourceUpsertBulk {
-	return u.Update(func(s *MediaSourceUpsert) {
-		s.UpdateRequiresLooping()
 	})
 }
 
