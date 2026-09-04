@@ -7,15 +7,15 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/FreekingDean/gojellyfin/internal/sources/arr"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
 
 const (
-	testTimeout  = 10 * time.Second
-	statusPath   = "api/v3/system/status"
-	apiKeyHeader = "X-Api-Key"
+	testTimeout = 10 * time.Second
+	listTimeout = 2 * time.Minute
 
 	KindRadarr = sourcemodel.KindRadarr
 	KindSonarr = sourcemodel.KindSonarr
@@ -23,24 +23,29 @@ const (
 
 type Service struct {
 	client *http.Client
+	lister *http.Client
 	store  *store.Client
 }
 
 func New(store *store.Client) *Service {
 	return &Service{
 		client: &http.Client{Timeout: testTimeout},
+		lister: &http.Client{Timeout: listTimeout},
 		store:  store,
 	}
 }
 
 type (
+	Kind        = sourcemodel.Kind
 	Source      = store.Source
 	PathMapping = entities.SourcePathMapping
 	Library     = entities.SourceLibrary
 )
 
 func (s *Service) List(ctx context.Context) ([]Source, error) {
-	sourcePtr, err := s.store.Source.Query().All(ctx)
+	sourcePtr, err := s.store.Source.Query().
+		Order(sourcemodel.ByName()).
+		All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -96,13 +101,13 @@ func (s *Service) Test(ctx context.Context, apiURL, apiKey string) error {
 		return fmt.Errorf("no host in %q", apiURL)
 	}
 
-	target := parsed.JoinPath(statusPath)
+	target := parsed.JoinPath(arr.StatusPath)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target.String(), nil)
 	if err != nil {
 		return err
 	}
-	req.Header.Set(apiKeyHeader, apiKey)
+	req.Header.Set(arr.APIKeyName, apiKey)
 
 	resp, err := s.client.Do(req)
 	if err != nil {

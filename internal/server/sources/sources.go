@@ -3,10 +3,16 @@ package sources
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/sources"
+)
+
+const (
+	radarrKind api.SourceKind = "Radarr"
+	sonarrKind api.SourceKind = "Sonarr"
 )
 
 type Server struct {
@@ -61,6 +67,7 @@ func (s *Server) GoJellyfinListSources(ctx context.Context, request api.GoJellyf
 		}
 		resp[i] = api.Source{
 			Name:         apiutil.Ptr(source.Name),
+			Kind:         apiutil.Ptr(apiKind(source.Kind)),
 			Url:          apiutil.Ptr(source.URL),
 			ApiKey:       apiutil.Ptr(source.APIKey),
 			PathMappings: apiutil.Ptr(pathMappings),
@@ -93,18 +100,28 @@ func unreachable(reason string) api.GoJellyfinTestSource200JSONResponse {
 	}
 }
 
-func paramsToModel(req api.Source) sources.Source {
-	kindStr := apiutil.Deref(req.Kind)
-	kind := sources.KindRadarr
-	if kindStr == "sonarr" {
-		kind = sources.KindSonarr
+func apiKind(kind sources.Kind) api.SourceKind {
+	if kind == sources.KindSonarr {
+		return sonarrKind
 	}
 
+	return radarrKind
+}
+
+func modelKind(kind api.SourceKind) sources.Kind {
+	if strings.EqualFold(string(kind), string(sonarrKind)) {
+		return sources.KindSonarr
+	}
+
+	return sources.KindRadarr
+}
+
+func paramsToModel(req api.Source) sources.Source {
 	pathMappings := apiutil.Deref(req.PathMappings)
 	libraries := apiutil.Deref(req.Libraries)
 	source := sources.Source{
 		Name:         apiutil.Deref(req.Name),
-		Kind:         kind,
+		Kind:         modelKind(apiutil.Deref(req.Kind)),
 		URL:          apiutil.Deref(req.Url),
 		APIKey:       apiutil.Deref(req.ApiKey),
 		PathMappings: make([]sources.PathMapping, len(pathMappings)),

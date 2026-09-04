@@ -27,7 +27,7 @@ func NewLibraryScan(scanner *Scanner) *LibraryScan {
 func (l *LibraryScan) Name() string     { return RefreshLibraryJobID }
 func (l *LibraryScan) Category() string { return "Library" }
 func (l *LibraryScan) Description() string {
-	return "Scans the media libraries for new and changed files."
+	return "Reads the libraries from their Sonarr and Radarr sources."
 }
 
 func (l *LibraryScan) Steps() []any {

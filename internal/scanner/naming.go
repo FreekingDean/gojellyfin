@@ -12,27 +12,13 @@ import (
 )
 
 var (
-	yearPattern     = regexp.MustCompile(`^(.*?)[\s._\-]*[\(\[]?((?:19|20)\d{2})[\)\]]?[\s._\-]*$`)
-	episodePattern  = regexp.MustCompile(`(?i)^(.*?)[\s._\-]*(?:s(\d{1,3})[\s._\-]*e(\d{1,4})|(\d{1,2})x(\d{1,4}))[\s._\-]*(.*)$`)
-	seasonPattern   = regexp.MustCompile(`(?i)^(?:season|series|s)[\s._\-]*(\d{1,3})$`)
-	specialsPattern = regexp.MustCompile(`(?i)^(?:specials?|season\s*0)$`)
 	articlePattern  = regexp.MustCompile(`(?i)^(the|a|an)\s+`)
 	languagePattern = regexp.MustCompile(`^[a-z]{2,3}$`)
-
-	videoExtensions = map[string]bool{
-		".mkv": true, ".mp4": true, ".m4v": true, ".avi": true, ".mov": true,
-		".wmv": true, ".flv": true, ".webm": true, ".mpg": true, ".mpeg": true,
-		".ts": true, ".m2ts": true, ".mts": true, ".ogv": true, ".3gp": true,
-	}
 
 	subtitleExtensions = map[string]bool{
 		".srt": true, ".vtt": true, ".ass": true, ".ssa": true, ".sub": true,
 	}
 )
-
-func isVideo(name string) bool {
-	return videoExtensions[strings.ToLower(filepath.Ext(name))]
-}
 
 func isSubtitle(name string) bool {
 	return subtitleExtensions[strings.ToLower(filepath.Ext(name))]
@@ -90,64 +76,6 @@ func stripExtension(name string) string {
 	return strings.TrimSuffix(name, filepath.Ext(name))
 }
 
-func parseTitle(name string) (string, *int32) {
-	name = clean(name)
-
-	match := yearPattern.FindStringSubmatch(name)
-	if match == nil || clean(match[1]) == "" {
-		return name, nil
-	}
-
-	year, err := strconv.Atoi(match[2])
-	if err != nil {
-		return name, nil
-	}
-
-	return clean(match[1]), ptr(int32(year))
-}
-
-func parseEpisode(name string) (season, episode *int32, title string, ok bool) {
-	match := episodePattern.FindStringSubmatch(stripExtension(name))
-	if match == nil {
-		return nil, nil, "", false
-	}
-
-	seasonText, episodeText := match[2], match[3]
-	if seasonText == "" {
-		seasonText, episodeText = match[4], match[5]
-	}
-
-	seasonNumber, err := strconv.Atoi(seasonText)
-	if err != nil {
-		return nil, nil, "", false
-	}
-	episodeNumber, err := strconv.Atoi(episodeText)
-	if err != nil {
-		return nil, nil, "", false
-	}
-
-	return ptr(int32(seasonNumber)), ptr(int32(episodeNumber)), clean(match[6]), true
-}
-
-func parseSeason(name string) (*int32, bool) {
-	name = clean(name)
-	if specialsPattern.MatchString(name) {
-		return ptr(int32(0)), true
-	}
-
-	match := seasonPattern.FindStringSubmatch(name)
-	if match == nil {
-		return nil, false
-	}
-
-	number, err := strconv.Atoi(match[1])
-	if err != nil {
-		return nil, false
-	}
-
-	return ptr(int32(number)), true
-}
-
 func seasonName(number *int32) string {
 	if number == nil || *number == 0 {
 		return "Specials"
@@ -164,12 +92,15 @@ func seasonSortName(number *int32) string {
 	return fmt.Sprintf("%04d", *number)
 }
 
-func episodeTitle(seriesName string, season, episode *int32) string {
-	if season == nil || episode == nil {
-		return seriesName
+func episodeName(name string, number *int32) string {
+	if name != "" {
+		return name
+	}
+	if number == nil {
+		return "Episode"
 	}
 
-	return fmt.Sprintf("%s S%02dE%02d", seriesName, *season, *episode)
+	return "Episode " + strconv.Itoa(int(*number))
 }
 
 func movieKey(name string, year *int32) string {
@@ -230,8 +161,4 @@ func clean(name string) string {
 	name = strings.NewReplacer(".", " ", "_", " ").Replace(name)
 
 	return strings.TrimSpace(strings.Join(strings.Fields(name), " "))
-}
-
-func ptr[T any](v T) *T {
-	return &v
 }

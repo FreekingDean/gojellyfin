@@ -3,12 +3,17 @@ package scanner
 import (
 	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
 	"image"
 	"image/color"
 	"image/png"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -18,15 +23,25 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
+	"github.com/FreekingDean/gojellyfin/internal/sources"
 	"github.com/FreekingDean/gojellyfin/internal/store"
+	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
+	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
+
+type movie struct {
+	title string
+	year  int32
+	file  string
+}
 
 type fixture struct {
 	scanner *Scanner
 	items   *items.Service
 	client  *store.Client
 	record  *libraries.Library
+	bound   int
 }
 
 func newFixture(t *testing.T, root string) *fixture {
@@ -67,11 +82,57 @@ func newFixture(t *testing.T, root string) *fixture {
 	service := items.New(client)
 
 	return &fixture{
-		scanner: New(service, libraries.New(client), filesystem.New(config), ffmpeg.New(), activity.New(client)),
+		scanner: New(service, libraries.New(client), sources.New(client), filesystem.New(config), ffmpeg.New(), activity.New(client)),
 		items:   service,
 		client:  client,
 		record:  record,
 	}
+}
+
+func (f *fixture) radarr(t *testing.T, movies ...movie) *fixture {
+	t.Helper()
+
+	payload := make([]map[string]any, 0, len(movies))
+	for _, entry := range movies {
+		payload = append(payload, map[string]any{
+			"title":   entry.title,
+			"year":    entry.year,
+			"path":    filepath.Dir(entry.file),
+			"hasFile": true,
+			"tags":    []int{},
+			"movieFile": map[string]any{
+				"path":      entry.file,
+				"size":      1,
+				"dateAdded": time.Now().UTC(),
+			},
+		})
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(payload)
+	}))
+	t.Cleanup(server.Close)
+
+	record, err := f.client.Source.Create().
+		SetName(fmt.Sprintf("%s-%d", f.record.Name, f.bound)).
+		SetURL(server.URL).
+		SetAPIKey("key").
+		SetKind(sourcemodal.KindRadarr).
+		SetLibraries([]entities.SourceLibrary{{ID: f.record.ID.String()}}).
+		Save(context.Background())
+	if err != nil {
+		t.Fatalf("failed to create the source: %v", err)
+	}
+	f.bound++
+
+	t.Cleanup(func() {
+		if err := f.client.Source.DeleteOne(record).Exec(context.Background()); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
+		}
+	})
+
+	return f
 }
 
 func (f *fixture) storeArtwork(t *testing.T, kind items.ImageKind, key string) {
@@ -125,6 +186,10 @@ func (f *fixture) scan(t *testing.T) map[items.ImageKind]string {
 	return artwork
 }
 
+func at(root, folder, file string) string {
+	return filepath.Join(root, folder, file)
+}
+
 func movieFolder(t *testing.T, root, name string, files ...string) {
 	t.Helper()
 
@@ -163,7 +228,9 @@ func TestScanArtwork(t *testing.T) {
 			"The Matrix (1999)-poster.jpg",
 		)
 
-		found := newFixture(t, root).scan(t)
+		found := newFixture(t, root).
+			radarr(t, movie{"The Matrix", 1999, at(root, "The Matrix (1999)", "The Matrix (1999).mkv")}).
+			scan(t)
 
 		if found[imagemodal.KindPrimary] != "The Matrix (1999)-poster.jpg" {
 			t.Errorf("primary = %q, want the sidecar poster", found[imagemodal.KindPrimary])
@@ -179,7 +246,9 @@ func TestScanArtwork(t *testing.T) {
 			"fanart.jpg",
 		)
 
-		found := newFixture(t, root).scan(t)
+		found := newFixture(t, root).
+			radarr(t, movie{"Heat", 1995, at(root, "Heat (1995)", "Heat (1995).mkv")}).
+			scan(t)
 
 		if found[imagemodal.KindPrimary] != "Heat (1995)-poster.jpg" {
 			t.Errorf("primary = %q, want the sidecar to win", found[imagemodal.KindPrimary])
@@ -197,10 +266,13 @@ func TestScanArtwork(t *testing.T) {
 			"Blade Runner (1982) - 4K.mkv",
 		)
 
-		found := newFixture(t, root).scan(t)
+		found := newFixture(t, root).
+			radarr(t, movie{"Blade Runner", 1982, at(root, "Blade Runner (1982)", "Blade Runner (1982) - 1080p.mkv")}).
+			radarr(t, movie{"Blade Runner", 1982, at(root, "Blade Runner (1982)", "Blade Runner (1982) - 4K.mkv")}).
+			scan(t)
 
 		if found[imagemodal.KindPrimary] != "Blade Runner (1982) - 1080p-poster.jpg" {
-			t.Errorf("primary = %q, want the poster the first file carried", found[imagemodal.KindPrimary])
+			t.Errorf("primary = %q, want the poster the first source carried", found[imagemodal.KindPrimary])
 		}
 	})
 
@@ -213,10 +285,13 @@ func TestScanArtwork(t *testing.T) {
 			"Sicario (2015) - 4K-poster.jpg",
 		)
 
-		found := newFixture(t, root).scan(t)
+		found := newFixture(t, root).
+			radarr(t, movie{"Sicario", 2015, at(root, "Sicario (2015)", "Sicario (2015) - 1080p.mkv")}).
+			radarr(t, movie{"Sicario", 2015, at(root, "Sicario (2015)", "Sicario (2015) - 4K.mkv")}).
+			scan(t)
 
 		if found[imagemodal.KindPrimary] != "Sicario (2015) - 1080p-poster.jpg" {
-			t.Errorf("primary = %q, want the first file walked to win", found[imagemodal.KindPrimary])
+			t.Errorf("primary = %q, want the first source listed to win", found[imagemodal.KindPrimary])
 		}
 	})
 
@@ -231,7 +306,8 @@ func TestScanArtwork(t *testing.T) {
 			"poster.jpg",
 		)
 
-		fixture := newFixture(t, root)
+		fixture := newFixture(t, root).
+			radarr(t, movie{"Arrival", 2016, at(root, "Arrival (2016)", "Arrival (2016).mkv")})
 		if found := fixture.scan(t); found[imagemodal.KindPrimary] != "poster.jpg" {
 			t.Fatalf("primary = %q, want the folder poster", found[imagemodal.KindPrimary])
 		}
@@ -254,7 +330,8 @@ func TestScanArtwork(t *testing.T) {
 			"poster.jpg",
 		)
 
-		fixture := newFixture(t, root)
+		fixture := newFixture(t, root).
+			radarr(t, movie{"Alien", 1979, at(root, "Alien (1979)", "Alien (1979).mkv")})
 		if found := fixture.scan(t); found[imagemodal.KindPrimary] != "poster.jpg" {
 			t.Fatalf("primary = %q, want the folder poster", found[imagemodal.KindPrimary])
 		}
@@ -277,7 +354,8 @@ func TestScanArtwork_sweep(t *testing.T) {
 			"poster.jpg",
 		)
 
-		fixture := newFixture(t, root)
+		fixture := newFixture(t, root).
+			radarr(t, movie{"Dune", 2021, at(root, "Dune (2021)", "Dune (2021).mkv")})
 		if found := fixture.scan(t); found[imagemodal.KindPrimary] != "poster.jpg" {
 			t.Fatalf("primary = %q, want the folder poster", found[imagemodal.KindPrimary])
 		}

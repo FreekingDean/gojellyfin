@@ -2,6 +2,10 @@ package scanner
 
 import "testing"
 
+func ptr[T any](v T) *T {
+	return &v
+}
+
 type keyCase struct {
 	name string
 	got  string
@@ -26,15 +30,6 @@ func TestMovieKey(t *testing.T) {
 		{"without a year", movieKey("The Matrix", nil), "movie:the-matrix"},
 		{"punctuation", movieKey("Amélie: A Film!", ptr(int32(2001))), "movie:amélie-a-film:2001"},
 		{"separators collapse", movieKey("W.A.L.L - E", nil), "movie:w-a-l-l-e"},
-	})
-
-	t.Run("ignores the location the file was found at", func(t *testing.T) {
-		first, year := parseTitle("The Matrix (1999)")
-		second, otherYear := parseTitle("The.Matrix.1999")
-
-		if movieKey(first, year) != movieKey(second, otherYear) {
-			t.Errorf("%q and %q derive different keys", movieKey(first, year), movieKey(second, otherYear))
-		}
 	})
 }
 

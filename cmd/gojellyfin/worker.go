@@ -15,6 +15,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/metadata"
 	"github.com/FreekingDean/gojellyfin/internal/observability"
 	"github.com/FreekingDean/gojellyfin/internal/scanner"
+	"github.com/FreekingDean/gojellyfin/internal/sources"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 )
 
@@ -30,6 +31,7 @@ var workerModules = fx.Options(
 		libraries.New,
 		filesystem.New,
 	),
+	sources.Module,
 	scanner.Module,
 	metadata.Module,
 	jobs.Module,
