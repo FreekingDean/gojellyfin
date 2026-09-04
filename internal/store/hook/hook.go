@@ -297,6 +297,18 @@ func (f SessionFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value,
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.SessionMutation", m)
 }
 
+// The SourceFunc type is an adapter to allow the use of ordinary
+// function as Source mutator.
+type SourceFunc func(context.Context, *store.SourceMutation) (store.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SourceFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, error) {
+	if mv, ok := m.(*store.SourceMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.SourceMutation", m)
+}
+
 // The StudioFunc type is an adapter to allow the use of ordinary
 // function as Studio mutator.
 type StudioFunc func(context.Context, *store.StudioMutation) (store.Value, error)

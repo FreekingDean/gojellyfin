@@ -856,6 +856,24 @@ var (
 			},
 		},
 	}
+	// SourcesColumns holds the columns for the "sources" table.
+	SourcesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "url", Type: field.TypeString, Unique: true},
+		{Name: "api_key", Type: field.TypeString},
+		{Name: "path_mappings", Type: field.TypeJSON, Nullable: true},
+		{Name: "libraries", Type: field.TypeJSON, Nullable: true},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"radarr", "sonarr", "lidarr", "readarr", "bazarr"}},
+	}
+	// SourcesTable holds the schema information for the "sources" table.
+	SourcesTable = &schema.Table{
+		Name:       "sources",
+		Columns:    SourcesColumns,
+		PrimaryKey: []*schema.Column{SourcesColumns[0]},
+	}
 	// StudiosColumns holds the columns for the "studios" table.
 	StudiosColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
@@ -1201,6 +1219,7 @@ var (
 		PlaylistSharesTable,
 		SeriesTimersTable,
 		SessionsTable,
+		SourcesTable,
 		StudiosTable,
 		TimersTable,
 		TrickplaysTable,

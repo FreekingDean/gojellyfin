@@ -25,6 +25,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/scanner"
 	"github.com/FreekingDean/gojellyfin/internal/server"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
+	"github.com/FreekingDean/gojellyfin/internal/sources"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	"github.com/FreekingDean/gojellyfin/internal/system"
 	"github.com/FreekingDean/gojellyfin/internal/users"
@@ -50,6 +51,7 @@ var serverModules = fx.Options(
 	metadata.Module,
 	playlists.Module,
 	scanner.Module,
+	sources.Module,
 	sessions.Module,
 	system.Module,
 	jobs.Module,

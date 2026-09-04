@@ -40,6 +40,7 @@ var PublicOperations = map[string]bool{
 	"GetUtcTime":                    true,
 	"GetVideoStream":                true,
 	"GetVideoStreamByContainer":     true,
+	"GoJellyfinListSources":         true,
 	"HeadArtistImage":               true,
 	"HeadAudioStream":               true,
 	"HeadAudioStreamByContainer":    true,

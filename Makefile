@@ -15,10 +15,6 @@ DATE ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 STAMP := github.com/FreekingDean/gojellyfin/internal/system
 LDFLAGS := -X $(STAMP).buildVersion=$(VERSION) -X $(STAMP).buildCommit=$(COMMIT) -X $(STAMP).buildDate=$(DATE)
 
-.PHONY: dev
-dev:
-	air 2>&1 | tee $(LOG)
-
 .PHONY: generate
 generate:
 	go generate ./...
@@ -30,6 +26,14 @@ build: generate
 .PHONY: run
 run: build
 	go run -ldflags "$(LDFLAGS)" ./cmd/gojellyfin server 2>&1 | tee $(LOG)
+
+.PHONY: dev
+dev: migrate build
+	CORS_ORIGINS="*" go run -ldflags "$(LDFLAGS)" ./cmd/gojellyfin server 2>&1 | tee $(LOG)
+
+.PHONY: migrate
+migrate: build
+	go run -ldflags "$(LDFLAGS)" ./cmd/gojellyfin migrate
 
 .PHONY: test
 test: build

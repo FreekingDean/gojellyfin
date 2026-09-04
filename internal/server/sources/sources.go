@@ -1,0 +1,126 @@
+package sources
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/FreekingDean/gojellyfin/internal/server/api"
+	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/sources"
+)
+
+type Server struct {
+	sources *sources.Service
+}
+
+func New(sources *sources.Service) *Server {
+	return &Server{
+		sources: sources,
+	}
+}
+
+func (s *Server) GoJellyfinUpdateSources(ctx context.Context, request api.GoJellyfinUpdateSourcesRequestObject) (api.GoJellyfinUpdateSourcesResponseObject, error) {
+	if request.Body == nil {
+		return nil, fmt.Errorf("no request body")
+	}
+	req := *request.Body
+
+	reqSources := make([]sources.Source, len(req))
+	for i, source := range req {
+		reqSources[i] = paramsToModel(source)
+	}
+	err := s.sources.Update(ctx, reqSources)
+	if err != nil {
+		return nil, err
+	}
+
+	return api.GoJellyfinUpdateSources204Response{}, nil
+}
+
+func (s *Server) GoJellyfinListSources(ctx context.Context, request api.GoJellyfinListSourcesRequestObject) (api.GoJellyfinListSourcesResponseObject, error) {
+	sources, err := s.sources.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := make([]api.Source, len(sources))
+	for i, source := range sources {
+		pathMappings := make([]api.SourcePathMapping, len(source.PathMappings))
+		for j, mapping := range source.PathMappings {
+			pathMappings[j] = api.SourcePathMapping{
+				SourcePath: apiutil.Ptr(mapping.SourcePath),
+				TargetPath: apiutil.Ptr(mapping.TargetPath),
+			}
+		}
+		libraries := make([]api.SourceLibrary, len(source.Libraries))
+		for j, library := range source.Libraries {
+			libraries[j] = api.SourceLibrary{
+				Id:        apiutil.Ptr(library.ID),
+				TagFilter: apiutil.Ptr(library.TagFilter),
+			}
+		}
+		resp[i] = api.Source{
+			Name:         apiutil.Ptr(source.Name),
+			Url:          apiutil.Ptr(source.URL),
+			ApiKey:       apiutil.Ptr(source.APIKey),
+			PathMappings: apiutil.Ptr(pathMappings),
+			Libraries:    apiutil.Ptr(libraries),
+		}
+	}
+
+	return api.GoJellyfinListSources200JSONResponse(resp), nil
+}
+
+func (s *Server) GoJellyfinTestSource(ctx context.Context, request api.GoJellyfinTestSourceRequestObject) (api.GoJellyfinTestSourceResponseObject, error) {
+	if request.Body == nil {
+		return unreachable("no request body"), nil
+	}
+
+	err := s.sources.Test(ctx, request.Body.Url, request.Body.ApiKey)
+	if err != nil {
+		return unreachable(err.Error()), nil
+	}
+
+	return api.GoJellyfinTestSource200JSONResponse{
+		Reachable: true,
+	}, nil
+}
+
+func unreachable(reason string) api.GoJellyfinTestSource200JSONResponse {
+	return api.GoJellyfinTestSource200JSONResponse{
+		Reachable: false,
+		Error:     apiutil.Ptr(reason),
+	}
+}
+
+func paramsToModel(req api.Source) sources.Source {
+	kindStr := apiutil.Deref(req.Kind)
+	kind := sources.KindRadarr
+	if kindStr == "sonarr" {
+		kind = sources.KindSonarr
+	}
+
+	pathMappings := apiutil.Deref(req.PathMappings)
+	libraries := apiutil.Deref(req.Libraries)
+	source := sources.Source{
+		Name:         apiutil.Deref(req.Name),
+		Kind:         kind,
+		URL:          apiutil.Deref(req.Url),
+		APIKey:       apiutil.Deref(req.ApiKey),
+		PathMappings: make([]sources.PathMapping, len(pathMappings)),
+		Libraries:    make([]sources.Library, len(libraries)),
+	}
+	for j, mapping := range pathMappings {
+		source.PathMappings[j] = sources.PathMapping{
+			SourcePath: apiutil.Deref(mapping.SourcePath),
+			TargetPath: apiutil.Deref(mapping.TargetPath),
+		}
+	}
+	for j, library := range libraries {
+		source.Libraries[j] = sources.Library{
+			ID:        apiutil.Deref(library.Id),
+			TagFilter: apiutil.Deref(library.TagFilter),
+		}
+	}
+	return source
+}

@@ -40,6 +40,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
 	"github.com/FreekingDean/gojellyfin/internal/store/seriestimer"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
+	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
 	"github.com/FreekingDean/gojellyfin/internal/store/timer"
 	"github.com/FreekingDean/gojellyfin/internal/store/trickplay"
@@ -105,6 +106,8 @@ type Client struct {
 	SeriesTimer *SeriesTimerClient
 	// Session is the client for interacting with the Session builders.
 	Session *SessionClient
+	// Source is the client for interacting with the Source builders.
+	Source *SourceClient
 	// Studio is the client for interacting with the Studio builders.
 	Studio *StudioClient
 	// Timer is the client for interacting with the Timer builders.
@@ -156,6 +159,7 @@ func (c *Client) init() {
 	c.PlaylistShare = NewPlaylistShareClient(c.config)
 	c.SeriesTimer = NewSeriesTimerClient(c.config)
 	c.Session = NewSessionClient(c.config)
+	c.Source = NewSourceClient(c.config)
 	c.Studio = NewStudioClient(c.config)
 	c.Timer = NewTimerClient(c.config)
 	c.Trickplay = NewTrickplayClient(c.config)
@@ -280,6 +284,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		PlaylistShare:      NewPlaylistShareClient(cfg),
 		SeriesTimer:        NewSeriesTimerClient(cfg),
 		Session:            NewSessionClient(cfg),
+		Source:             NewSourceClient(cfg),
 		Studio:             NewStudioClient(cfg),
 		Timer:              NewTimerClient(cfg),
 		Trickplay:          NewTrickplayClient(cfg),
@@ -331,6 +336,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		PlaylistShare:      NewPlaylistShareClient(cfg),
 		SeriesTimer:        NewSeriesTimerClient(cfg),
 		Session:            NewSessionClient(cfg),
+		Source:             NewSourceClient(cfg),
 		Studio:             NewStudioClient(cfg),
 		Timer:              NewTimerClient(cfg),
 		Trickplay:          NewTrickplayClient(cfg),
@@ -372,8 +378,9 @@ func (c *Client) Use(hooks ...Hook) {
 		c.DisplayPreferences, c.Genre, c.Image, c.ImageBlob, c.Item, c.Library,
 		c.LibraryOptions, c.ListingsProvider, c.MediaAttachment, c.MediaSegment,
 		c.MediaSource, c.MediaStream, c.Person, c.Playlist, c.PlaylistEntry,
-		c.PlaylistShare, c.SeriesTimer, c.Session, c.Studio, c.Timer, c.Trickplay,
-		c.TunerHost, c.User, c.UserConfiguration, c.UserItemData, c.UserPolicy,
+		c.PlaylistShare, c.SeriesTimer, c.Session, c.Source, c.Studio, c.Timer,
+		c.Trickplay, c.TunerHost, c.User, c.UserConfiguration, c.UserItemData,
+		c.UserPolicy,
 	} {
 		n.Use(hooks...)
 	}
@@ -387,8 +394,9 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.DisplayPreferences, c.Genre, c.Image, c.ImageBlob, c.Item, c.Library,
 		c.LibraryOptions, c.ListingsProvider, c.MediaAttachment, c.MediaSegment,
 		c.MediaSource, c.MediaStream, c.Person, c.Playlist, c.PlaylistEntry,
-		c.PlaylistShare, c.SeriesTimer, c.Session, c.Studio, c.Timer, c.Trickplay,
-		c.TunerHost, c.User, c.UserConfiguration, c.UserItemData, c.UserPolicy,
+		c.PlaylistShare, c.SeriesTimer, c.Session, c.Source, c.Studio, c.Timer,
+		c.Trickplay, c.TunerHost, c.User, c.UserConfiguration, c.UserItemData,
+		c.UserPolicy,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -445,6 +453,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.SeriesTimer.mutate(ctx, m)
 	case *SessionMutation:
 		return c.Session.mutate(ctx, m)
+	case *SourceMutation:
+		return c.Source.mutate(ctx, m)
 	case *StudioMutation:
 		return c.Studio.mutate(ctx, m)
 	case *TimerMutation:
@@ -4410,6 +4420,139 @@ func (c *SessionClient) mutate(ctx context.Context, m *SessionMutation) (Value, 
 	}
 }
 
+// SourceClient is a client for the Source schema.
+type SourceClient struct {
+	config
+}
+
+// NewSourceClient returns a client for the Source from the given config.
+func NewSourceClient(c config) *SourceClient {
+	return &SourceClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `source.Hooks(f(g(h())))`.
+func (c *SourceClient) Use(hooks ...Hook) {
+	c.hooks.Source = append(c.hooks.Source, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `source.Intercept(f(g(h())))`.
+func (c *SourceClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Source = append(c.inters.Source, interceptors...)
+}
+
+// Create returns a builder for creating a Source entity.
+func (c *SourceClient) Create() *SourceCreate {
+	mutation := newSourceMutation(c.config, OpCreate)
+	return &SourceCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Source entities.
+func (c *SourceClient) CreateBulk(builders ...*SourceCreate) *SourceCreateBulk {
+	return &SourceCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SourceClient) MapCreateBulk(slice any, setFunc func(*SourceCreate, int)) *SourceCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SourceCreateBulk{err: fmt.Errorf("calling to SourceClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SourceCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SourceCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Source.
+func (c *SourceClient) Update() *SourceUpdate {
+	mutation := newSourceMutation(c.config, OpUpdate)
+	return &SourceUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SourceClient) UpdateOne(_m *Source) *SourceUpdateOne {
+	mutation := newSourceMutation(c.config, OpUpdateOne, withSource(_m))
+	return &SourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SourceClient) UpdateOneID(id uuid.UUID) *SourceUpdateOne {
+	mutation := newSourceMutation(c.config, OpUpdateOne, withSourceID(id))
+	return &SourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Source.
+func (c *SourceClient) Delete() *SourceDelete {
+	mutation := newSourceMutation(c.config, OpDelete)
+	return &SourceDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SourceClient) DeleteOne(_m *Source) *SourceDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SourceClient) DeleteOneID(id uuid.UUID) *SourceDeleteOne {
+	builder := c.Delete().Where(source.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SourceDeleteOne{builder}
+}
+
+// Query returns a query builder for Source.
+func (c *SourceClient) Query() *SourceQuery {
+	return &SourceQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSource},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Source entity by its id.
+func (c *SourceClient) Get(ctx context.Context, id uuid.UUID) (*Source, error) {
+	return c.Query().Where(source.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SourceClient) GetX(ctx context.Context, id uuid.UUID) *Source {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *SourceClient) Hooks() []Hook {
+	return c.hooks.Source
+}
+
+// Interceptors returns the client interceptors.
+func (c *SourceClient) Interceptors() []Interceptor {
+	return c.inters.Source
+}
+
+func (c *SourceClient) mutate(ctx context.Context, m *SourceMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SourceCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SourceUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SourceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("store: unknown Source mutation op: %q", m.Op())
+	}
+}
+
 // StudioClient is a client for the Studio schema.
 type StudioClient struct {
 	config
@@ -5720,16 +5863,16 @@ type (
 		ActivityLogEntry, ApiKey, Chapter, Configuration, Credit, Device,
 		DisplayPreferences, Genre, Image, ImageBlob, Item, Library, LibraryOptions,
 		ListingsProvider, MediaAttachment, MediaSegment, MediaSource, MediaStream,
-		Person, Playlist, PlaylistEntry, PlaylistShare, SeriesTimer, Session, Studio,
-		Timer, Trickplay, TunerHost, User, UserConfiguration, UserItemData,
+		Person, Playlist, PlaylistEntry, PlaylistShare, SeriesTimer, Session, Source,
+		Studio, Timer, Trickplay, TunerHost, User, UserConfiguration, UserItemData,
 		UserPolicy []ent.Hook
 	}
 	inters struct {
 		ActivityLogEntry, ApiKey, Chapter, Configuration, Credit, Device,
 		DisplayPreferences, Genre, Image, ImageBlob, Item, Library, LibraryOptions,
 		ListingsProvider, MediaAttachment, MediaSegment, MediaSource, MediaStream,
-		Person, Playlist, PlaylistEntry, PlaylistShare, SeriesTimer, Session, Studio,
-		Timer, Trickplay, TunerHost, User, UserConfiguration, UserItemData,
+		Person, Playlist, PlaylistEntry, PlaylistShare, SeriesTimer, Session, Source,
+		Studio, Timer, Trickplay, TunerHost, User, UserConfiguration, UserItemData,
 		UserPolicy []ent.Interceptor
 	}
 )

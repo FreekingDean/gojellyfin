@@ -62,6 +62,8 @@ type Tx struct {
 	SeriesTimer *SeriesTimerClient
 	// Session is the client for interacting with the Session builders.
 	Session *SessionClient
+	// Source is the client for interacting with the Source builders.
+	Source *SourceClient
 	// Studio is the client for interacting with the Studio builders.
 	Studio *StudioClient
 	// Timer is the client for interacting with the Timer builders.
@@ -233,6 +235,7 @@ func (tx *Tx) init() {
 	tx.PlaylistShare = NewPlaylistShareClient(tx.config)
 	tx.SeriesTimer = NewSeriesTimerClient(tx.config)
 	tx.Session = NewSessionClient(tx.config)
+	tx.Source = NewSourceClient(tx.config)
 	tx.Studio = NewStudioClient(tx.config)
 	tx.Timer = NewTimerClient(tx.config)
 	tx.Trickplay = NewTrickplayClient(tx.config)

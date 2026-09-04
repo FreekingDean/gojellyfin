@@ -30,6 +30,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
 	"github.com/FreekingDean/gojellyfin/internal/store/seriestimer"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
+	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
 	"github.com/FreekingDean/gojellyfin/internal/store/timer"
 	"github.com/FreekingDean/gojellyfin/internal/store/trickplay"
@@ -609,6 +610,18 @@ func init() {
 	session.DefaultUpdatedAt = sessionDescUpdatedAt.Default.(func() time.Time)
 	// session.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	session.UpdateDefaultUpdatedAt = sessionDescUpdatedAt.UpdateDefault.(func() time.Time)
+	sourceFields := entities.Source{}.Fields()
+	_ = sourceFields
+	// sourceDescCreatedAt is the schema descriptor for created_at field.
+	sourceDescCreatedAt := sourceFields[1].Descriptor()
+	// source.DefaultCreatedAt holds the default value on creation for the created_at field.
+	source.DefaultCreatedAt = sourceDescCreatedAt.Default.(func() time.Time)
+	// sourceDescUpdatedAt is the schema descriptor for updated_at field.
+	sourceDescUpdatedAt := sourceFields[2].Descriptor()
+	// source.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	source.DefaultUpdatedAt = sourceDescUpdatedAt.Default.(func() time.Time)
+	// source.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	source.UpdateDefaultUpdatedAt = sourceDescUpdatedAt.UpdateDefault.(func() time.Time)
 	studioFields := entities.Studio{}.Fields()
 	_ = studioFields
 	// studioDescCreatedAt is the schema descriptor for created_at field.

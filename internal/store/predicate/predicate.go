@@ -78,6 +78,9 @@ type SeriesTimer func(*sql.Selector)
 // Session is the predicate function for session builders.
 type Session func(*sql.Selector)
 
+// Source is the predicate function for source builders.
+type Source func(*sql.Selector)
+
 // Studio is the predicate function for studio builders.
 type Studio func(*sql.Selector)
 
