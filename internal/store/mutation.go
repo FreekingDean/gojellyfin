@@ -22742,7 +22742,7 @@ type SourceMutation struct {
 	updated_at       *time.Time
 	name             *string
 	url              *string
-	api_key          *string
+	api_key_variable *string
 	kind             *source.Kind
 	clearedFields    map[string]struct{}
 	libraries        map[uuid.UUID]struct{}
@@ -23001,40 +23001,40 @@ func (m *SourceMutation) ResetURL() {
 	m.url = nil
 }
 
-// SetAPIKey sets the "api_key" field.
-func (m *SourceMutation) SetAPIKey(s string) {
-	m.api_key = &s
+// SetAPIKeyVariable sets the "api_key_variable" field.
+func (m *SourceMutation) SetAPIKeyVariable(s string) {
+	m.api_key_variable = &s
 }
 
-// APIKey returns the value of the "api_key" field in the mutation.
-func (m *SourceMutation) APIKey() (r string, exists bool) {
-	v := m.api_key
+// APIKeyVariable returns the value of the "api_key_variable" field in the mutation.
+func (m *SourceMutation) APIKeyVariable() (r string, exists bool) {
+	v := m.api_key_variable
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldAPIKey returns the old "api_key" field's value of the Source entity.
+// OldAPIKeyVariable returns the old "api_key_variable" field's value of the Source entity.
 // If the Source object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SourceMutation) OldAPIKey(ctx context.Context) (v string, err error) {
+func (m *SourceMutation) OldAPIKeyVariable(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldAPIKey is only allowed on UpdateOne operations")
+		return v, errors.New("OldAPIKeyVariable is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldAPIKey requires an ID field in the mutation")
+		return v, errors.New("OldAPIKeyVariable requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAPIKey: %w", err)
+		return v, fmt.Errorf("querying old value for OldAPIKeyVariable: %w", err)
 	}
-	return oldValue.APIKey, nil
+	return oldValue.APIKeyVariable, nil
 }
 
-// ResetAPIKey resets all changes to the "api_key" field.
-func (m *SourceMutation) ResetAPIKey() {
-	m.api_key = nil
+// ResetAPIKeyVariable resets all changes to the "api_key_variable" field.
+func (m *SourceMutation) ResetAPIKeyVariable() {
+	m.api_key_variable = nil
 }
 
 // SetKind sets the "kind" field.
@@ -23174,8 +23174,8 @@ func (m *SourceMutation) Fields() []string {
 	if m.url != nil {
 		fields = append(fields, source.FieldURL)
 	}
-	if m.api_key != nil {
-		fields = append(fields, source.FieldAPIKey)
+	if m.api_key_variable != nil {
+		fields = append(fields, source.FieldAPIKeyVariable)
 	}
 	if m.kind != nil {
 		fields = append(fields, source.FieldKind)
@@ -23196,8 +23196,8 @@ func (m *SourceMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case source.FieldURL:
 		return m.URL()
-	case source.FieldAPIKey:
-		return m.APIKey()
+	case source.FieldAPIKeyVariable:
+		return m.APIKeyVariable()
 	case source.FieldKind:
 		return m.Kind()
 	}
@@ -23217,8 +23217,8 @@ func (m *SourceMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldName(ctx)
 	case source.FieldURL:
 		return m.OldURL(ctx)
-	case source.FieldAPIKey:
-		return m.OldAPIKey(ctx)
+	case source.FieldAPIKeyVariable:
+		return m.OldAPIKeyVariable(ctx)
 	case source.FieldKind:
 		return m.OldKind(ctx)
 	}
@@ -23258,12 +23258,12 @@ func (m *SourceMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetURL(v)
 		return nil
-	case source.FieldAPIKey:
+	case source.FieldAPIKeyVariable:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetAPIKey(v)
+		m.SetAPIKeyVariable(v)
 		return nil
 	case source.FieldKind:
 		v, ok := value.(source.Kind)
@@ -23333,8 +23333,8 @@ func (m *SourceMutation) ResetField(name string) error {
 	case source.FieldURL:
 		m.ResetURL()
 		return nil
-	case source.FieldAPIKey:
-		m.ResetAPIKey()
+	case source.FieldAPIKeyVariable:
+		m.ResetAPIKeyVariable()
 		return nil
 	case source.FieldKind:
 		m.ResetKind()

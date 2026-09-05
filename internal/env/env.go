@@ -3,6 +3,7 @@ package env
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -12,6 +13,8 @@ import (
 const (
 	defaultHTTPPort = 8081
 	maxPort         = 65535
+
+	SourceAPIKeyPrefix = "SOURCE_API_KEY_"
 )
 
 type Config struct {
@@ -24,6 +27,8 @@ type Config struct {
 	Tracing            Tracing    `mapstructure:",squash"`
 	TMDB               TMDB       `mapstructure:",squash"`
 	MediaDirectories   []string   `mapstructure:"MEDIA_DIRECTORIES"`
+
+	SourceAPIKeys map[string]string `mapstructure:"-"`
 }
 
 type Transcoder struct {
@@ -58,6 +63,7 @@ func Load() (Config, error) {
 
 	config.CORSOrigins = trimmed(config.CORSOrigins)
 	config.MediaDirectories = trimmed(config.MediaDirectories)
+	config.SourceAPIKeys = sourceAPIKeys()
 
 	if err := config.validate(); err != nil {
 		return Config{}, err
@@ -80,6 +86,23 @@ func (c Config) validate() error {
 		return fmt.Errorf("TRANSCODER_STALL_TIMEOUT must be a positive duration such as 30s, got %s", c.Transcoder.StallTimeout)
 	}
 	return nil
+}
+
+func sourceAPIKeys() map[string]string {
+	found := map[string]string{}
+	for _, entry := range os.Environ() {
+		name, value, split := strings.Cut(entry, "=")
+		if !split || value == "" || !ValidSourceAPIKeyVariable(name) {
+			continue
+		}
+		found[name] = value
+	}
+
+	return found
+}
+
+func ValidSourceAPIKeyVariable(name string) bool {
+	return strings.HasPrefix(name, SourceAPIKeyPrefix) && len(name) > len(SourceAPIKeyPrefix)
 }
 
 func trimmed(values []string) []string {

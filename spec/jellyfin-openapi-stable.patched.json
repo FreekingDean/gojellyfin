@@ -47245,8 +47245,9 @@
             "type": "string",
             "description": "Base address of the instance, without a trailing slash."
           },
-          "ApiKey": {
-            "type": "string"
+          "ApiKeyVariable": {
+            "type": "string",
+            "description": "Name of the environment variable holding the API key. Must begin with SOURCE_API_KEY_."
           },
           "Libraries": {
             "type": "array",
@@ -47291,7 +47292,7 @@
         "required": [
           "Kind",
           "Url",
-          "ApiKey"
+          "ApiKeyVariable"
         ],
         "properties": {
           "Kind": {
@@ -47301,8 +47302,9 @@
             "type": "string",
             "description": "Base address of the instance, without a trailing slash."
           },
-          "ApiKey": {
-            "type": "string"
+          "ApiKeyVariable": {
+            "type": "string",
+            "description": "Name of the environment variable holding the API key. Must begin with SOURCE_API_KEY_."
           }
         }
       }, "SourceTestResult": {

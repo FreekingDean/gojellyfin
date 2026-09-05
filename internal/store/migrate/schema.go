@@ -679,7 +679,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "url", Type: field.TypeString, Unique: true},
-		{Name: "api_key", Type: field.TypeString},
+		{Name: "api_key_variable", Type: field.TypeString},
 		{Name: "kind", Type: field.TypeEnum, Enums: []string{"radarr", "sonarr", "lidarr", "readarr", "bazarr"}},
 	}
 	// SourcesTable holds the schema information for the "sources" table.

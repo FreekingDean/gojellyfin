@@ -1,6 +1,8 @@
 package env
 
 import (
+	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -27,8 +29,16 @@ var settings = []string{
 func setEnvironment(t *testing.T, env map[string]string) {
 	t.Helper()
 
+	for _, entry := range os.Environ() {
+		if name, _, split := strings.Cut(entry, "="); split && strings.HasPrefix(name, SourceAPIKeyPrefix) {
+			t.Setenv(name, "")
+		}
+	}
 	for _, name := range settings {
 		t.Setenv(name, env[name])
+	}
+	for name, value := range env {
+		t.Setenv(name, value)
 	}
 }
 
@@ -47,6 +57,7 @@ func TestLoad(t *testing.T) {
 				HTTPPort:         defaultHTTPPort,
 				CORSOrigins:      []string{},
 				MediaDirectories: []string{"/"},
+				SourceAPIKeys:    map[string]string{},
 			},
 		},
 		{
@@ -74,6 +85,30 @@ func TestLoad(t *testing.T) {
 				Tracing:            Tracing{OTLPEndpoint: "http://collector:4318"},
 				TMDB:               TMDB{APIKey: "not-a-real-key"},
 				MediaDirectories:   []string{"/media", "/library"},
+				SourceAPIKeys:      map[string]string{},
+			},
+		},
+		{
+			name: "collects only the prefixed source api keys",
+			env: map[string]string{
+				"DATABASE_URL":             testDatabaseURL,
+				"SOURCE_API_KEY_RADARR":    "radarr-key",
+				"SOURCE_API_KEY_SONARR_4K": "sonarr-key",
+				"SOURCE_API_KEY_":          "no-name",
+				"SOURCE_API_KEY_EMPTY":     "",
+				"TMDB_API_KEY":             "not-a-real-key",
+				"RADARR_API_KEY":           "unprefixed",
+			},
+			want: Config{
+				DatabaseURL:      testDatabaseURL,
+				HTTPPort:         defaultHTTPPort,
+				CORSOrigins:      []string{},
+				MediaDirectories: []string{"/"},
+				TMDB:             TMDB{APIKey: "not-a-real-key"},
+				SourceAPIKeys: map[string]string{
+					"SOURCE_API_KEY_RADARR":    "radarr-key",
+					"SOURCE_API_KEY_SONARR_4K": "sonarr-key",
+				},
 			},
 		},
 		{

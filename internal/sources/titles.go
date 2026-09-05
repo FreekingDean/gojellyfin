@@ -245,7 +245,11 @@ func get[T any](ctx context.Context, s *Service, source Source, path string, que
 	if err != nil {
 		return out, err
 	}
-	req.Header.Set(arr.APIKeyName, source.APIKey)
+	apiKey, err := s.APIKey(source.APIKeyVariable)
+	if err != nil {
+		return out, err
+	}
+	req.Header.Set(arr.APIKeyName, apiKey)
 
 	resp, err := s.lister.Do(req)
 	if err != nil {

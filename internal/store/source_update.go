@@ -78,16 +78,16 @@ func (_u *SourceUpdate) SetNillableURL(v *string) *SourceUpdate {
 	return _u
 }
 
-// SetAPIKey sets the "api_key" field.
-func (_u *SourceUpdate) SetAPIKey(v string) *SourceUpdate {
-	_u.mutation.SetAPIKey(v)
+// SetAPIKeyVariable sets the "api_key_variable" field.
+func (_u *SourceUpdate) SetAPIKeyVariable(v string) *SourceUpdate {
+	_u.mutation.SetAPIKeyVariable(v)
 	return _u
 }
 
-// SetNillableAPIKey sets the "api_key" field if the given value is not nil.
-func (_u *SourceUpdate) SetNillableAPIKey(v *string) *SourceUpdate {
+// SetNillableAPIKeyVariable sets the "api_key_variable" field if the given value is not nil.
+func (_u *SourceUpdate) SetNillableAPIKeyVariable(v *string) *SourceUpdate {
 	if v != nil {
-		_u.SetAPIKey(*v)
+		_u.SetAPIKeyVariable(*v)
 	}
 	return _u
 }
@@ -217,8 +217,8 @@ func (_u *SourceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.URL(); ok {
 		_spec.SetField(source.FieldURL, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.APIKey(); ok {
-		_spec.SetField(source.FieldAPIKey, field.TypeString, value)
+	if value, ok := _u.mutation.APIKeyVariable(); ok {
+		_spec.SetField(source.FieldAPIKeyVariable, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Kind(); ok {
 		_spec.SetField(source.FieldKind, field.TypeEnum, value)
@@ -336,16 +336,16 @@ func (_u *SourceUpdateOne) SetNillableURL(v *string) *SourceUpdateOne {
 	return _u
 }
 
-// SetAPIKey sets the "api_key" field.
-func (_u *SourceUpdateOne) SetAPIKey(v string) *SourceUpdateOne {
-	_u.mutation.SetAPIKey(v)
+// SetAPIKeyVariable sets the "api_key_variable" field.
+func (_u *SourceUpdateOne) SetAPIKeyVariable(v string) *SourceUpdateOne {
+	_u.mutation.SetAPIKeyVariable(v)
 	return _u
 }
 
-// SetNillableAPIKey sets the "api_key" field if the given value is not nil.
-func (_u *SourceUpdateOne) SetNillableAPIKey(v *string) *SourceUpdateOne {
+// SetNillableAPIKeyVariable sets the "api_key_variable" field if the given value is not nil.
+func (_u *SourceUpdateOne) SetNillableAPIKeyVariable(v *string) *SourceUpdateOne {
 	if v != nil {
-		_u.SetAPIKey(*v)
+		_u.SetAPIKeyVariable(*v)
 	}
 	return _u
 }
@@ -505,8 +505,8 @@ func (_u *SourceUpdateOne) sqlSave(ctx context.Context) (_node *Source, err erro
 	if value, ok := _u.mutation.URL(); ok {
 		_spec.SetField(source.FieldURL, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.APIKey(); ok {
-		_spec.SetField(source.FieldAPIKey, field.TypeString, value)
+	if value, ok := _u.mutation.APIKeyVariable(); ok {
+		_spec.SetField(source.FieldAPIKeyVariable, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Kind(); ok {
 		_spec.SetField(source.FieldKind, field.TypeEnum, value)

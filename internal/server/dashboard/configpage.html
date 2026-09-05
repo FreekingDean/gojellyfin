@@ -61,9 +61,14 @@
             </div>
 
             <div class="inputContainer">
-                <label class="inputLabel inputLabelUnfocused">API key</label>
-                <input type="password" data-id="txtApiKey" class="emby-input" autocomplete="off" />
-                <div class="fieldDescription">Settings &rarr; General &rarr; Security in Sonarr or Radarr.</div>
+                <label class="inputLabel inputLabelUnfocused">API key variable</label>
+                <input type="text" data-id="txtApiKeyVariable" class="emby-input" autocomplete="off"
+                       placeholder="SOURCE_API_KEY_RADARR" />
+                <div class="fieldDescription">
+                    The name of an environment variable on the server holding the key, not the key itself.
+                    It must begin with SOURCE_API_KEY_. Take the key from Settings &rarr; General &rarr; Security
+                    in Sonarr or Radarr and set it on the server, then name the variable here.
+                </div>
             </div>
 
             <div class="flex align-items-center" style="gap:1em;margin-bottom:1.5em">
@@ -168,7 +173,7 @@
                 card.querySelector('[data-id=txtName]').value = connection.Name || '';
                 card.querySelector('[data-id=selKind]').value = connection.Kind || 'radarr';
                 card.querySelector('[data-id=txtUrl]').value = connection.Url || '';
-                card.querySelector('[data-id=txtApiKey]').value = connection.ApiKey || '';
+                card.querySelector('[data-id=txtApiKeyVariable]').value = connection.ApiKeyVariable || '';
 
                 card.querySelector('[data-id=selKind]').addEventListener('change', function (e) {
                     card.querySelectorAll('[data-id=selLibrary]').forEach(function (select) {
@@ -209,7 +214,7 @@
                     Name: card.querySelector('[data-id=txtName]').value.trim(),
                     Kind: card.querySelector('[data-id=selKind]').value,
                     Url: card.querySelector('[data-id=txtUrl]').value.trim().replace(/\/+$/, ''),
-                    ApiKey: card.querySelector('[data-id=txtApiKey]').value.trim(),
+                    ApiKeyVariable: card.querySelector('[data-id=txtApiKeyVariable]').value.trim(),
                     Libraries: libraries
                 };
             },
@@ -229,7 +234,11 @@
                 window.ApiClient.ajax({
                     type: 'POST',
                     url: window.ApiClient.getUrl('GoJellyfin/Sources/Test'),
-                    data: JSON.stringify({ Kind: connection.Kind, Url: connection.Url, ApiKey: connection.ApiKey }),
+                    data: JSON.stringify({
+                        Kind: connection.Kind,
+                        Url: connection.Url,
+                        ApiKeyVariable: connection.ApiKeyVariable
+                    }),
                     contentType: 'application/json',
                     dataType: 'json'
                 }).then(function (response) {

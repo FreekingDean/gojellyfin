@@ -76,9 +76,9 @@ func URL(v string) predicate.Source {
 	return predicate.Source(sql.FieldEQ(FieldURL, v))
 }
 
-// APIKey applies equality check predicate on the "api_key" field. It's identical to APIKeyEQ.
-func APIKey(v string) predicate.Source {
-	return predicate.Source(sql.FieldEQ(FieldAPIKey, v))
+// APIKeyVariable applies equality check predicate on the "api_key_variable" field. It's identical to APIKeyVariableEQ.
+func APIKeyVariable(v string) predicate.Source {
+	return predicate.Source(sql.FieldEQ(FieldAPIKeyVariable, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -291,69 +291,69 @@ func URLContainsFold(v string) predicate.Source {
 	return predicate.Source(sql.FieldContainsFold(FieldURL, v))
 }
 
-// APIKeyEQ applies the EQ predicate on the "api_key" field.
-func APIKeyEQ(v string) predicate.Source {
-	return predicate.Source(sql.FieldEQ(FieldAPIKey, v))
+// APIKeyVariableEQ applies the EQ predicate on the "api_key_variable" field.
+func APIKeyVariableEQ(v string) predicate.Source {
+	return predicate.Source(sql.FieldEQ(FieldAPIKeyVariable, v))
 }
 
-// APIKeyNEQ applies the NEQ predicate on the "api_key" field.
-func APIKeyNEQ(v string) predicate.Source {
-	return predicate.Source(sql.FieldNEQ(FieldAPIKey, v))
+// APIKeyVariableNEQ applies the NEQ predicate on the "api_key_variable" field.
+func APIKeyVariableNEQ(v string) predicate.Source {
+	return predicate.Source(sql.FieldNEQ(FieldAPIKeyVariable, v))
 }
 
-// APIKeyIn applies the In predicate on the "api_key" field.
-func APIKeyIn(vs ...string) predicate.Source {
-	return predicate.Source(sql.FieldIn(FieldAPIKey, vs...))
+// APIKeyVariableIn applies the In predicate on the "api_key_variable" field.
+func APIKeyVariableIn(vs ...string) predicate.Source {
+	return predicate.Source(sql.FieldIn(FieldAPIKeyVariable, vs...))
 }
 
-// APIKeyNotIn applies the NotIn predicate on the "api_key" field.
-func APIKeyNotIn(vs ...string) predicate.Source {
-	return predicate.Source(sql.FieldNotIn(FieldAPIKey, vs...))
+// APIKeyVariableNotIn applies the NotIn predicate on the "api_key_variable" field.
+func APIKeyVariableNotIn(vs ...string) predicate.Source {
+	return predicate.Source(sql.FieldNotIn(FieldAPIKeyVariable, vs...))
 }
 
-// APIKeyGT applies the GT predicate on the "api_key" field.
-func APIKeyGT(v string) predicate.Source {
-	return predicate.Source(sql.FieldGT(FieldAPIKey, v))
+// APIKeyVariableGT applies the GT predicate on the "api_key_variable" field.
+func APIKeyVariableGT(v string) predicate.Source {
+	return predicate.Source(sql.FieldGT(FieldAPIKeyVariable, v))
 }
 
-// APIKeyGTE applies the GTE predicate on the "api_key" field.
-func APIKeyGTE(v string) predicate.Source {
-	return predicate.Source(sql.FieldGTE(FieldAPIKey, v))
+// APIKeyVariableGTE applies the GTE predicate on the "api_key_variable" field.
+func APIKeyVariableGTE(v string) predicate.Source {
+	return predicate.Source(sql.FieldGTE(FieldAPIKeyVariable, v))
 }
 
-// APIKeyLT applies the LT predicate on the "api_key" field.
-func APIKeyLT(v string) predicate.Source {
-	return predicate.Source(sql.FieldLT(FieldAPIKey, v))
+// APIKeyVariableLT applies the LT predicate on the "api_key_variable" field.
+func APIKeyVariableLT(v string) predicate.Source {
+	return predicate.Source(sql.FieldLT(FieldAPIKeyVariable, v))
 }
 
-// APIKeyLTE applies the LTE predicate on the "api_key" field.
-func APIKeyLTE(v string) predicate.Source {
-	return predicate.Source(sql.FieldLTE(FieldAPIKey, v))
+// APIKeyVariableLTE applies the LTE predicate on the "api_key_variable" field.
+func APIKeyVariableLTE(v string) predicate.Source {
+	return predicate.Source(sql.FieldLTE(FieldAPIKeyVariable, v))
 }
 
-// APIKeyContains applies the Contains predicate on the "api_key" field.
-func APIKeyContains(v string) predicate.Source {
-	return predicate.Source(sql.FieldContains(FieldAPIKey, v))
+// APIKeyVariableContains applies the Contains predicate on the "api_key_variable" field.
+func APIKeyVariableContains(v string) predicate.Source {
+	return predicate.Source(sql.FieldContains(FieldAPIKeyVariable, v))
 }
 
-// APIKeyHasPrefix applies the HasPrefix predicate on the "api_key" field.
-func APIKeyHasPrefix(v string) predicate.Source {
-	return predicate.Source(sql.FieldHasPrefix(FieldAPIKey, v))
+// APIKeyVariableHasPrefix applies the HasPrefix predicate on the "api_key_variable" field.
+func APIKeyVariableHasPrefix(v string) predicate.Source {
+	return predicate.Source(sql.FieldHasPrefix(FieldAPIKeyVariable, v))
 }
 
-// APIKeyHasSuffix applies the HasSuffix predicate on the "api_key" field.
-func APIKeyHasSuffix(v string) predicate.Source {
-	return predicate.Source(sql.FieldHasSuffix(FieldAPIKey, v))
+// APIKeyVariableHasSuffix applies the HasSuffix predicate on the "api_key_variable" field.
+func APIKeyVariableHasSuffix(v string) predicate.Source {
+	return predicate.Source(sql.FieldHasSuffix(FieldAPIKeyVariable, v))
 }
 
-// APIKeyEqualFold applies the EqualFold predicate on the "api_key" field.
-func APIKeyEqualFold(v string) predicate.Source {
-	return predicate.Source(sql.FieldEqualFold(FieldAPIKey, v))
+// APIKeyVariableEqualFold applies the EqualFold predicate on the "api_key_variable" field.
+func APIKeyVariableEqualFold(v string) predicate.Source {
+	return predicate.Source(sql.FieldEqualFold(FieldAPIKeyVariable, v))
 }
 
-// APIKeyContainsFold applies the ContainsFold predicate on the "api_key" field.
-func APIKeyContainsFold(v string) predicate.Source {
-	return predicate.Source(sql.FieldContainsFold(FieldAPIKey, v))
+// APIKeyVariableContainsFold applies the ContainsFold predicate on the "api_key_variable" field.
+func APIKeyVariableContainsFold(v string) predicate.Source {
+	return predicate.Source(sql.FieldContainsFold(FieldAPIKeyVariable, v))
 }
 
 // KindEQ applies the EQ predicate on the "kind" field.

@@ -65,9 +65,9 @@ func (_c *SourceCreate) SetURL(v string) *SourceCreate {
 	return _c
 }
 
-// SetAPIKey sets the "api_key" field.
-func (_c *SourceCreate) SetAPIKey(v string) *SourceCreate {
-	_c.mutation.SetAPIKey(v)
+// SetAPIKeyVariable sets the "api_key_variable" field.
+func (_c *SourceCreate) SetAPIKeyVariable(v string) *SourceCreate {
+	_c.mutation.SetAPIKeyVariable(v)
 	return _c
 }
 
@@ -157,8 +157,8 @@ func (_c *SourceCreate) check() error {
 	if _, ok := _c.mutation.URL(); !ok {
 		return &ValidationError{Name: "url", err: errors.New(`store: missing required field "Source.url"`)}
 	}
-	if _, ok := _c.mutation.APIKey(); !ok {
-		return &ValidationError{Name: "api_key", err: errors.New(`store: missing required field "Source.api_key"`)}
+	if _, ok := _c.mutation.APIKeyVariable(); !ok {
+		return &ValidationError{Name: "api_key_variable", err: errors.New(`store: missing required field "Source.api_key_variable"`)}
 	}
 	if _, ok := _c.mutation.Kind(); !ok {
 		return &ValidationError{Name: "kind", err: errors.New(`store: missing required field "Source.kind"`)}
@@ -220,9 +220,9 @@ func (_c *SourceCreate) createSpec() (*Source, *sqlgraph.CreateSpec) {
 		_spec.SetField(source.FieldURL, field.TypeString, value)
 		_node.URL = value
 	}
-	if value, ok := _c.mutation.APIKey(); ok {
-		_spec.SetField(source.FieldAPIKey, field.TypeString, value)
-		_node.APIKey = value
+	if value, ok := _c.mutation.APIKeyVariable(); ok {
+		_spec.SetField(source.FieldAPIKeyVariable, field.TypeString, value)
+		_node.APIKeyVariable = value
 	}
 	if value, ok := _c.mutation.Kind(); ok {
 		_spec.SetField(source.FieldKind, field.TypeEnum, value)
@@ -344,15 +344,15 @@ func (u *SourceUpsert) UpdateURL() *SourceUpsert {
 	return u
 }
 
-// SetAPIKey sets the "api_key" field.
-func (u *SourceUpsert) SetAPIKey(v string) *SourceUpsert {
-	u.Set(source.FieldAPIKey, v)
+// SetAPIKeyVariable sets the "api_key_variable" field.
+func (u *SourceUpsert) SetAPIKeyVariable(v string) *SourceUpsert {
+	u.Set(source.FieldAPIKeyVariable, v)
 	return u
 }
 
-// UpdateAPIKey sets the "api_key" field to the value that was provided on create.
-func (u *SourceUpsert) UpdateAPIKey() *SourceUpsert {
-	u.SetExcluded(source.FieldAPIKey)
+// UpdateAPIKeyVariable sets the "api_key_variable" field to the value that was provided on create.
+func (u *SourceUpsert) UpdateAPIKeyVariable() *SourceUpsert {
+	u.SetExcluded(source.FieldAPIKeyVariable)
 	return u
 }
 
@@ -472,17 +472,17 @@ func (u *SourceUpsertOne) UpdateURL() *SourceUpsertOne {
 	})
 }
 
-// SetAPIKey sets the "api_key" field.
-func (u *SourceUpsertOne) SetAPIKey(v string) *SourceUpsertOne {
+// SetAPIKeyVariable sets the "api_key_variable" field.
+func (u *SourceUpsertOne) SetAPIKeyVariable(v string) *SourceUpsertOne {
 	return u.Update(func(s *SourceUpsert) {
-		s.SetAPIKey(v)
+		s.SetAPIKeyVariable(v)
 	})
 }
 
-// UpdateAPIKey sets the "api_key" field to the value that was provided on create.
-func (u *SourceUpsertOne) UpdateAPIKey() *SourceUpsertOne {
+// UpdateAPIKeyVariable sets the "api_key_variable" field to the value that was provided on create.
+func (u *SourceUpsertOne) UpdateAPIKeyVariable() *SourceUpsertOne {
 	return u.Update(func(s *SourceUpsert) {
-		s.UpdateAPIKey()
+		s.UpdateAPIKeyVariable()
 	})
 }
 
@@ -771,17 +771,17 @@ func (u *SourceUpsertBulk) UpdateURL() *SourceUpsertBulk {
 	})
 }
 
-// SetAPIKey sets the "api_key" field.
-func (u *SourceUpsertBulk) SetAPIKey(v string) *SourceUpsertBulk {
+// SetAPIKeyVariable sets the "api_key_variable" field.
+func (u *SourceUpsertBulk) SetAPIKeyVariable(v string) *SourceUpsertBulk {
 	return u.Update(func(s *SourceUpsert) {
-		s.SetAPIKey(v)
+		s.SetAPIKeyVariable(v)
 	})
 }
 
-// UpdateAPIKey sets the "api_key" field to the value that was provided on create.
-func (u *SourceUpsertBulk) UpdateAPIKey() *SourceUpsertBulk {
+// UpdateAPIKeyVariable sets the "api_key_variable" field to the value that was provided on create.
+func (u *SourceUpsertBulk) UpdateAPIKeyVariable() *SourceUpsertBulk {
 	return u.Update(func(s *SourceUpsert) {
-		s.UpdateAPIKey()
+		s.UpdateAPIKeyVariable()
 	})
 }
 

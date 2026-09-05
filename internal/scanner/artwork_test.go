@@ -46,6 +46,8 @@ type fixture struct {
 func newFixture(t *testing.T, root string) *fixture {
 	t.Helper()
 
+	t.Setenv(env.SourceAPIKeyPrefix+"TEST", "key")
+
 	config, err := env.Load()
 	if err != nil {
 		t.Fatalf("failed to read the environment: %v", err)
@@ -81,7 +83,7 @@ func newFixture(t *testing.T, root string) *fixture {
 	service := items.New(client)
 
 	return &fixture{
-		scanner: New(service, libraries.New(client), sources.New(client), filesystem.New(config), ffmpeg.New(), activity.New(client)),
+		scanner: New(service, libraries.New(client), sources.New(client, config), filesystem.New(config), ffmpeg.New(), activity.New(client)),
 		items:   service,
 		client:  client,
 		record:  record,
@@ -116,7 +118,7 @@ func (f *fixture) radarr(t *testing.T, movies ...movie) *fixture {
 	record, err := f.client.Source.Create().
 		SetName(fmt.Sprintf("%s-%d", f.record.Name, f.bound)).
 		SetURL(server.URL).
-		SetAPIKey("key").
+		SetAPIKeyVariable(env.SourceAPIKeyPrefix + "TEST").
 		SetKind(sourcemodal.KindRadarr).
 		Save(context.Background())
 	if err != nil {

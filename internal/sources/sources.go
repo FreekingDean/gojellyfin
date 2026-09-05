@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/sources/arr"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	librarysourcemodel "github.com/FreekingDean/gojellyfin/internal/store/librarysource"
@@ -29,14 +30,29 @@ type Service struct {
 	client *http.Client
 	lister *http.Client
 	store  *store.Client
+	config env.Config
 }
 
-func New(store *store.Client) *Service {
+func New(store *store.Client, config env.Config) *Service {
 	return &Service{
 		client: &http.Client{Timeout: testTimeout},
 		lister: &http.Client{Timeout: listTimeout},
 		store:  store,
+		config: config,
 	}
+}
+
+func (s *Service) APIKey(variable string) (string, error) {
+	if !env.ValidSourceAPIKeyVariable(variable) {
+		return "", fmt.Errorf("%q is not an API key variable: the name must begin with %s", variable, env.SourceAPIKeyPrefix)
+	}
+
+	key := s.config.SourceAPIKeys[variable]
+	if key == "" {
+		return "", fmt.Errorf("%s is not set on this server", variable)
+	}
+
+	return key, nil
 }
 
 type (
@@ -136,10 +152,17 @@ func (s *Service) Update(ctx context.Context, configured []Configured) error {
 		}
 
 		for _, entry := range configured {
+			if !env.ValidSourceAPIKeyVariable(entry.Source.APIKeyVariable) {
+				return fmt.Errorf(
+					"%s names %q as its API key variable, which must begin with %s",
+					entry.Source.Name, entry.Source.APIKeyVariable, env.SourceAPIKeyPrefix,
+				)
+			}
+
 			id, err := tx.Source.Create().
 				SetName(entry.Source.Name).
 				SetURL(entry.Source.URL).
-				SetAPIKey(entry.Source.APIKey).
+				SetAPIKeyVariable(entry.Source.APIKeyVariable).
 				SetKind(entry.Source.Kind).
 				OnConflictColumns(sourcemodel.FieldName).
 				UpdateNewValues().
@@ -171,7 +194,12 @@ func (s *Service) Update(ctx context.Context, configured []Configured) error {
 	})
 }
 
-func (s *Service) Test(ctx context.Context, apiURL, apiKey string) error {
+func (s *Service) Test(ctx context.Context, apiURL, variable string) error {
+	apiKey, err := s.APIKey(variable)
+	if err != nil {
+		return err
+	}
+
 	parsed, err := url.Parse(apiURL)
 	if err != nil {
 		return err

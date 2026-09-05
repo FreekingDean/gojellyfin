@@ -74,7 +74,7 @@ func (s *Server) GoJellyfinTestSource(
 		return unreachable("no request body"), nil
 	}
 
-	if err := s.sources.Test(ctx, request.Body.Url, request.Body.ApiKey); err != nil {
+	if err := s.sources.Test(ctx, request.Body.Url, request.Body.ApiKeyVariable); err != nil {
 		return unreachable(err.Error()), nil
 	}
 
@@ -102,11 +102,11 @@ func modelToParams(entry sources.Configured) api.Source {
 	}
 
 	return api.Source{
-		Name:      apiutil.Ptr(entry.Source.Name),
-		Kind:      apiutil.Ptr(apiKind(entry.Source.Kind)),
-		Url:       apiutil.Ptr(entry.Source.URL),
-		ApiKey:    apiutil.Ptr(entry.Source.APIKey),
-		Libraries: apiutil.Ptr(bound),
+		Name:           apiutil.Ptr(entry.Source.Name),
+		Kind:           apiutil.Ptr(apiKind(entry.Source.Kind)),
+		Url:            apiutil.Ptr(entry.Source.URL),
+		ApiKeyVariable: apiutil.Ptr(entry.Source.APIKeyVariable),
+		Libraries:      apiutil.Ptr(bound),
 	}
 }
 
@@ -119,10 +119,10 @@ func paramsToModel(req api.Source) (sources.Configured, error) {
 	bound := apiutil.Deref(req.Libraries)
 	entry := sources.Configured{
 		Source: sources.Source{
-			Name:   apiutil.Deref(req.Name),
-			Kind:   kind,
-			URL:    apiutil.Deref(req.Url),
-			APIKey: apiutil.Deref(req.ApiKey),
+			Name:           apiutil.Deref(req.Name),
+			Kind:           kind,
+			URL:            apiutil.Deref(req.Url),
+			APIKeyVariable: apiutil.Deref(req.ApiKeyVariable),
 		},
 		Libraries: make([]sources.Library, len(bound)),
 	}

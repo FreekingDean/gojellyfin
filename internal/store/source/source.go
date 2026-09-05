@@ -23,8 +23,8 @@ const (
 	FieldName = "name"
 	// FieldURL holds the string denoting the url field in the database.
 	FieldURL = "url"
-	// FieldAPIKey holds the string denoting the api_key field in the database.
-	FieldAPIKey = "api_key"
+	// FieldAPIKeyVariable holds the string denoting the api_key_variable field in the database.
+	FieldAPIKeyVariable = "api_key_variable"
 	// FieldKind holds the string denoting the kind field in the database.
 	FieldKind = "kind"
 	// EdgeLibraries holds the string denoting the libraries edge name in mutations.
@@ -47,7 +47,7 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldName,
 	FieldURL,
-	FieldAPIKey,
+	FieldAPIKeyVariable,
 	FieldKind,
 }
 
@@ -124,9 +124,9 @@ func ByURL(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldURL, opts...).ToFunc()
 }
 
-// ByAPIKey orders the results by the api_key field.
-func ByAPIKey(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldAPIKey, opts...).ToFunc()
+// ByAPIKeyVariable orders the results by the api_key_variable field.
+func ByAPIKeyVariable(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAPIKeyVariable, opts...).ToFunc()
 }
 
 // ByKind orders the results by the kind field.

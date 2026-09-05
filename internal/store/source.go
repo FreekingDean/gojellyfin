@@ -26,8 +26,8 @@ type Source struct {
 	Name string `json:"name,omitempty"`
 	// URL holds the value of the "url" field.
 	URL string `json:"url,omitempty"`
-	// APIKey holds the value of the "api_key" field.
-	APIKey string `json:"-"`
+	// APIKeyVariable holds the value of the "api_key_variable" field.
+	APIKeyVariable string `json:"api_key_variable,omitempty"`
 	// Kind holds the value of the "kind" field.
 	Kind source.Kind `json:"kind,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -59,7 +59,7 @@ func (*Source) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case source.FieldName, source.FieldURL, source.FieldAPIKey, source.FieldKind:
+		case source.FieldName, source.FieldURL, source.FieldAPIKeyVariable, source.FieldKind:
 			values[i] = new(sql.NullString)
 		case source.FieldCreatedAt, source.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -110,11 +110,11 @@ func (_m *Source) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.URL = value.String
 			}
-		case source.FieldAPIKey:
+		case source.FieldAPIKeyVariable:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field api_key", values[i])
+				return fmt.Errorf("unexpected type %T for field api_key_variable", values[i])
 			} else if value.Valid {
-				_m.APIKey = value.String
+				_m.APIKeyVariable = value.String
 			}
 		case source.FieldKind:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -175,7 +175,8 @@ func (_m *Source) String() string {
 	builder.WriteString("url=")
 	builder.WriteString(_m.URL)
 	builder.WriteString(", ")
-	builder.WriteString("api_key=<sensitive>")
+	builder.WriteString("api_key_variable=")
+	builder.WriteString(_m.APIKeyVariable)
 	builder.WriteString(", ")
 	builder.WriteString("kind=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Kind))
