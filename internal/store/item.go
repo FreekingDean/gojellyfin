@@ -91,8 +91,8 @@ type ItemEdges struct {
 	Children []*Item `json:"children,omitempty"`
 	// Library holds the value of the library edge.
 	Library *Library `json:"library,omitempty"`
-	// MediaSources holds the value of the media_sources edge.
-	MediaSources []*MediaSource `json:"media_sources,omitempty"`
+	// ItemSources holds the value of the item_sources edge.
+	ItemSources []*ItemSource `json:"item_sources,omitempty"`
 	// Credits holds the value of the credits edge.
 	Credits []*Credit `json:"credits,omitempty"`
 	// Images holds the value of the images edge.
@@ -145,13 +145,13 @@ func (e ItemEdges) LibraryOrErr() (*Library, error) {
 	return nil, &NotLoadedError{edge: "library"}
 }
 
-// MediaSourcesOrErr returns the MediaSources value or an error if the edge
+// ItemSourcesOrErr returns the ItemSources value or an error if the edge
 // was not loaded in eager-loading.
-func (e ItemEdges) MediaSourcesOrErr() ([]*MediaSource, error) {
+func (e ItemEdges) ItemSourcesOrErr() ([]*ItemSource, error) {
 	if e.loadedTypes[3] {
-		return e.MediaSources, nil
+		return e.ItemSources, nil
 	}
-	return nil, &NotLoadedError{edge: "media_sources"}
+	return nil, &NotLoadedError{edge: "item_sources"}
 }
 
 // CreditsOrErr returns the Credits value or an error if the edge
@@ -483,9 +483,9 @@ func (_m *Item) QueryLibrary() *LibraryQuery {
 	return NewItemClient(_m.config).QueryLibrary(_m)
 }
 
-// QueryMediaSources queries the "media_sources" edge of the Item entity.
-func (_m *Item) QueryMediaSources() *MediaSourceQuery {
-	return NewItemClient(_m.config).QueryMediaSources(_m)
+// QueryItemSources queries the "item_sources" edge of the Item entity.
+func (_m *Item) QueryItemSources() *ItemSourceQuery {
+	return NewItemClient(_m.config).QueryItemSources(_m)
 }
 
 // QueryCredits queries the "credits" edge of the Item entity.

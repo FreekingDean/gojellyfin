@@ -26,6 +26,7 @@ import (
 	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
 	optionsmodal "github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
 	sessionmodal "github.com/FreekingDean/gojellyfin/internal/store/session"
+	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/source"
 	usermodal "github.com/FreekingDean/gojellyfin/internal/store/user"
 	configurationmodal "github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
 	datamodal "github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
@@ -34,10 +35,11 @@ import (
 )
 
 type fixture struct {
-	server    *Server
-	client    *store.Client
-	libraryID uuid.UUID
-	prefix    string
+	server     *Server
+	client     *store.Client
+	libraryID  uuid.UUID
+	prefix     string
+	downloader uuid.UUID
 }
 
 type seed struct {
@@ -122,7 +124,25 @@ func newFixture(t *testing.T) *fixture {
 
 	server := New(items.New(client), libraries.New(client), users.New(client), filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}), jobs.NewService(disconnected(t), jobs.NewRegistry()))
 
-	return &fixture{server: server, client: client, libraryID: library.ID, prefix: prefix}
+	downloader, err := client.Source.Create().
+		SetName(t.Name() + "-" + uuid.NewString()).
+		SetURL("http://" + uuid.NewString() + ".invalid").
+		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
+		SetKind(sourcemodal.KindRadarr).
+		SetRootPath("/media").
+		SetLocalPath("/media").
+		Save(context.Background())
+	if err != nil {
+		t.Fatalf("failed to create the source: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := client.Source.DeleteOne(downloader).Exec(context.Background()); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
+		}
+	})
+
+	return &fixture{
+		downloader: downloader.ID, server: server, client: client, libraryID: library.ID, prefix: prefix}
 }
 
 func (f *fixture) add(t *testing.T, item seed) uuid.UUID {
@@ -141,9 +161,9 @@ func (f *fixture) add(t *testing.T, item seed) uuid.UUID {
 	}
 
 	if item.path != "" {
-		err := f.client.MediaSource.Create().
+		err := f.client.ItemSource.Create().
 			SetItemID(record.ID).
-			SetLibraryID(f.libraryID).
+			SetSourceID(f.downloader).
 			SetName(filepath.Base(item.path)).
 			SetPath(item.path).
 			Exec(context.Background())

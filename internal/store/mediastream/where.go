@@ -66,9 +66,9 @@ func UpdatedAt(v time.Time) predicate.MediaStream {
 	return predicate.MediaStream(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
-// SourceID applies equality check predicate on the "source_id" field. It's identical to SourceIDEQ.
-func SourceID(v uuid.UUID) predicate.MediaStream {
-	return predicate.MediaStream(sql.FieldEQ(FieldSourceID, v))
+// ItemSourceID applies equality check predicate on the "item_source_id" field. It's identical to ItemSourceIDEQ.
+func ItemSourceID(v uuid.UUID) predicate.MediaStream {
+	return predicate.MediaStream(sql.FieldEQ(FieldItemSourceID, v))
 }
 
 // Index applies equality check predicate on the "index" field. It's identical to IndexEQ.
@@ -246,24 +246,24 @@ func UpdatedAtLTE(v time.Time) predicate.MediaStream {
 	return predicate.MediaStream(sql.FieldLTE(FieldUpdatedAt, v))
 }
 
-// SourceIDEQ applies the EQ predicate on the "source_id" field.
-func SourceIDEQ(v uuid.UUID) predicate.MediaStream {
-	return predicate.MediaStream(sql.FieldEQ(FieldSourceID, v))
+// ItemSourceIDEQ applies the EQ predicate on the "item_source_id" field.
+func ItemSourceIDEQ(v uuid.UUID) predicate.MediaStream {
+	return predicate.MediaStream(sql.FieldEQ(FieldItemSourceID, v))
 }
 
-// SourceIDNEQ applies the NEQ predicate on the "source_id" field.
-func SourceIDNEQ(v uuid.UUID) predicate.MediaStream {
-	return predicate.MediaStream(sql.FieldNEQ(FieldSourceID, v))
+// ItemSourceIDNEQ applies the NEQ predicate on the "item_source_id" field.
+func ItemSourceIDNEQ(v uuid.UUID) predicate.MediaStream {
+	return predicate.MediaStream(sql.FieldNEQ(FieldItemSourceID, v))
 }
 
-// SourceIDIn applies the In predicate on the "source_id" field.
-func SourceIDIn(vs ...uuid.UUID) predicate.MediaStream {
-	return predicate.MediaStream(sql.FieldIn(FieldSourceID, vs...))
+// ItemSourceIDIn applies the In predicate on the "item_source_id" field.
+func ItemSourceIDIn(vs ...uuid.UUID) predicate.MediaStream {
+	return predicate.MediaStream(sql.FieldIn(FieldItemSourceID, vs...))
 }
 
-// SourceIDNotIn applies the NotIn predicate on the "source_id" field.
-func SourceIDNotIn(vs ...uuid.UUID) predicate.MediaStream {
-	return predicate.MediaStream(sql.FieldNotIn(FieldSourceID, vs...))
+// ItemSourceIDNotIn applies the NotIn predicate on the "item_source_id" field.
+func ItemSourceIDNotIn(vs ...uuid.UUID) predicate.MediaStream {
+	return predicate.MediaStream(sql.FieldNotIn(FieldItemSourceID, vs...))
 }
 
 // KindEQ applies the EQ predicate on the "kind" field.
@@ -1178,7 +1178,7 @@ func HasSource() predicate.MediaStream {
 }
 
 // HasSourceWith applies the HasEdge predicate on the "source" edge with a given conditions (other predicates).
-func HasSourceWith(preds ...predicate.MediaSource) predicate.MediaStream {
+func HasSourceWith(preds ...predicate.ItemSource) predicate.MediaStream {
 	return predicate.MediaStream(func(s *sql.Selector) {
 		step := newSourceStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {

@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
@@ -92,6 +93,46 @@ func (_u *SourceUpdate) SetNillableAPIKeyVariable(v *string) *SourceUpdate {
 	return _u
 }
 
+// SetRootPath sets the "root_path" field.
+func (_u *SourceUpdate) SetRootPath(v string) *SourceUpdate {
+	_u.mutation.SetRootPath(v)
+	return _u
+}
+
+// SetNillableRootPath sets the "root_path" field if the given value is not nil.
+func (_u *SourceUpdate) SetNillableRootPath(v *string) *SourceUpdate {
+	if v != nil {
+		_u.SetRootPath(*v)
+	}
+	return _u
+}
+
+// ClearRootPath clears the value of the "root_path" field.
+func (_u *SourceUpdate) ClearRootPath() *SourceUpdate {
+	_u.mutation.ClearRootPath()
+	return _u
+}
+
+// SetLocalPath sets the "local_path" field.
+func (_u *SourceUpdate) SetLocalPath(v string) *SourceUpdate {
+	_u.mutation.SetLocalPath(v)
+	return _u
+}
+
+// SetNillableLocalPath sets the "local_path" field if the given value is not nil.
+func (_u *SourceUpdate) SetNillableLocalPath(v *string) *SourceUpdate {
+	if v != nil {
+		_u.SetLocalPath(*v)
+	}
+	return _u
+}
+
+// ClearLocalPath clears the value of the "local_path" field.
+func (_u *SourceUpdate) ClearLocalPath() *SourceUpdate {
+	_u.mutation.ClearLocalPath()
+	return _u
+}
+
 // SetKind sets the "kind" field.
 func (_u *SourceUpdate) SetKind(v source.Kind) *SourceUpdate {
 	_u.mutation.SetKind(v)
@@ -121,6 +162,21 @@ func (_u *SourceUpdate) AddLibraries(v ...*LibrarySource) *SourceUpdate {
 	return _u.AddLibraryIDs(ids...)
 }
 
+// AddFileIDs adds the "files" edge to the ItemSource entity by IDs.
+func (_u *SourceUpdate) AddFileIDs(ids ...uuid.UUID) *SourceUpdate {
+	_u.mutation.AddFileIDs(ids...)
+	return _u
+}
+
+// AddFiles adds the "files" edges to the ItemSource entity.
+func (_u *SourceUpdate) AddFiles(v ...*ItemSource) *SourceUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddFileIDs(ids...)
+}
+
 // Mutation returns the SourceMutation object of the builder.
 func (_u *SourceUpdate) Mutation() *SourceMutation {
 	return _u.mutation
@@ -145,6 +201,27 @@ func (_u *SourceUpdate) RemoveLibraries(v ...*LibrarySource) *SourceUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveLibraryIDs(ids...)
+}
+
+// ClearFiles clears all "files" edges to the ItemSource entity.
+func (_u *SourceUpdate) ClearFiles() *SourceUpdate {
+	_u.mutation.ClearFiles()
+	return _u
+}
+
+// RemoveFileIDs removes the "files" edge to ItemSource entities by IDs.
+func (_u *SourceUpdate) RemoveFileIDs(ids ...uuid.UUID) *SourceUpdate {
+	_u.mutation.RemoveFileIDs(ids...)
+	return _u
+}
+
+// RemoveFiles removes "files" edges to ItemSource entities.
+func (_u *SourceUpdate) RemoveFiles(v ...*ItemSource) *SourceUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveFileIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -220,6 +297,18 @@ func (_u *SourceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.APIKeyVariable(); ok {
 		_spec.SetField(source.FieldAPIKeyVariable, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.RootPath(); ok {
+		_spec.SetField(source.FieldRootPath, field.TypeString, value)
+	}
+	if _u.mutation.RootPathCleared() {
+		_spec.ClearField(source.FieldRootPath, field.TypeString)
+	}
+	if value, ok := _u.mutation.LocalPath(); ok {
+		_spec.SetField(source.FieldLocalPath, field.TypeString, value)
+	}
+	if _u.mutation.LocalPathCleared() {
+		_spec.ClearField(source.FieldLocalPath, field.TypeString)
+	}
 	if value, ok := _u.mutation.Kind(); ok {
 		_spec.SetField(source.FieldKind, field.TypeEnum, value)
 	}
@@ -261,6 +350,51 @@ func (_u *SourceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(librarysource.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.FilesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.FilesTable,
+			Columns: []string{source.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedFilesIDs(); len(nodes) > 0 && !_u.mutation.FilesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.FilesTable,
+			Columns: []string{source.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.FilesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.FilesTable,
+			Columns: []string{source.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -350,6 +484,46 @@ func (_u *SourceUpdateOne) SetNillableAPIKeyVariable(v *string) *SourceUpdateOne
 	return _u
 }
 
+// SetRootPath sets the "root_path" field.
+func (_u *SourceUpdateOne) SetRootPath(v string) *SourceUpdateOne {
+	_u.mutation.SetRootPath(v)
+	return _u
+}
+
+// SetNillableRootPath sets the "root_path" field if the given value is not nil.
+func (_u *SourceUpdateOne) SetNillableRootPath(v *string) *SourceUpdateOne {
+	if v != nil {
+		_u.SetRootPath(*v)
+	}
+	return _u
+}
+
+// ClearRootPath clears the value of the "root_path" field.
+func (_u *SourceUpdateOne) ClearRootPath() *SourceUpdateOne {
+	_u.mutation.ClearRootPath()
+	return _u
+}
+
+// SetLocalPath sets the "local_path" field.
+func (_u *SourceUpdateOne) SetLocalPath(v string) *SourceUpdateOne {
+	_u.mutation.SetLocalPath(v)
+	return _u
+}
+
+// SetNillableLocalPath sets the "local_path" field if the given value is not nil.
+func (_u *SourceUpdateOne) SetNillableLocalPath(v *string) *SourceUpdateOne {
+	if v != nil {
+		_u.SetLocalPath(*v)
+	}
+	return _u
+}
+
+// ClearLocalPath clears the value of the "local_path" field.
+func (_u *SourceUpdateOne) ClearLocalPath() *SourceUpdateOne {
+	_u.mutation.ClearLocalPath()
+	return _u
+}
+
 // SetKind sets the "kind" field.
 func (_u *SourceUpdateOne) SetKind(v source.Kind) *SourceUpdateOne {
 	_u.mutation.SetKind(v)
@@ -379,6 +553,21 @@ func (_u *SourceUpdateOne) AddLibraries(v ...*LibrarySource) *SourceUpdateOne {
 	return _u.AddLibraryIDs(ids...)
 }
 
+// AddFileIDs adds the "files" edge to the ItemSource entity by IDs.
+func (_u *SourceUpdateOne) AddFileIDs(ids ...uuid.UUID) *SourceUpdateOne {
+	_u.mutation.AddFileIDs(ids...)
+	return _u
+}
+
+// AddFiles adds the "files" edges to the ItemSource entity.
+func (_u *SourceUpdateOne) AddFiles(v ...*ItemSource) *SourceUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddFileIDs(ids...)
+}
+
 // Mutation returns the SourceMutation object of the builder.
 func (_u *SourceUpdateOne) Mutation() *SourceMutation {
 	return _u.mutation
@@ -403,6 +592,27 @@ func (_u *SourceUpdateOne) RemoveLibraries(v ...*LibrarySource) *SourceUpdateOne
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveLibraryIDs(ids...)
+}
+
+// ClearFiles clears all "files" edges to the ItemSource entity.
+func (_u *SourceUpdateOne) ClearFiles() *SourceUpdateOne {
+	_u.mutation.ClearFiles()
+	return _u
+}
+
+// RemoveFileIDs removes the "files" edge to ItemSource entities by IDs.
+func (_u *SourceUpdateOne) RemoveFileIDs(ids ...uuid.UUID) *SourceUpdateOne {
+	_u.mutation.RemoveFileIDs(ids...)
+	return _u
+}
+
+// RemoveFiles removes "files" edges to ItemSource entities.
+func (_u *SourceUpdateOne) RemoveFiles(v ...*ItemSource) *SourceUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveFileIDs(ids...)
 }
 
 // Where appends a list predicates to the SourceUpdate builder.
@@ -508,6 +718,18 @@ func (_u *SourceUpdateOne) sqlSave(ctx context.Context) (_node *Source, err erro
 	if value, ok := _u.mutation.APIKeyVariable(); ok {
 		_spec.SetField(source.FieldAPIKeyVariable, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.RootPath(); ok {
+		_spec.SetField(source.FieldRootPath, field.TypeString, value)
+	}
+	if _u.mutation.RootPathCleared() {
+		_spec.ClearField(source.FieldRootPath, field.TypeString)
+	}
+	if value, ok := _u.mutation.LocalPath(); ok {
+		_spec.SetField(source.FieldLocalPath, field.TypeString, value)
+	}
+	if _u.mutation.LocalPathCleared() {
+		_spec.ClearField(source.FieldLocalPath, field.TypeString)
+	}
 	if value, ok := _u.mutation.Kind(); ok {
 		_spec.SetField(source.FieldKind, field.TypeEnum, value)
 	}
@@ -549,6 +771,51 @@ func (_u *SourceUpdateOne) sqlSave(ctx context.Context) (_node *Source, err erro
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(librarysource.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.FilesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.FilesTable,
+			Columns: []string{source.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedFilesIDs(); len(nodes) > 0 && !_u.mutation.FilesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.FilesTable,
+			Columns: []string{source.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.FilesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.FilesTable,
+			Columns: []string{source.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

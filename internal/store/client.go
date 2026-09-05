@@ -26,10 +26,10 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
 	"github.com/FreekingDean/gojellyfin/internal/store/imageblob"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
+	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
 	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/person"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
@@ -71,14 +71,14 @@ type Client struct {
 	ImageBlob *ImageBlobClient
 	// Item is the client for interacting with the Item builders.
 	Item *ItemClient
+	// ItemSource is the client for interacting with the ItemSource builders.
+	ItemSource *ItemSourceClient
 	// Library is the client for interacting with the Library builders.
 	Library *LibraryClient
 	// LibraryOptions is the client for interacting with the LibraryOptions builders.
 	LibraryOptions *LibraryOptionsClient
 	// LibrarySource is the client for interacting with the LibrarySource builders.
 	LibrarySource *LibrarySourceClient
-	// MediaSource is the client for interacting with the MediaSource builders.
-	MediaSource *MediaSourceClient
 	// MediaStream is the client for interacting with the MediaStream builders.
 	MediaStream *MediaStreamClient
 	// Person is the client for interacting with the Person builders.
@@ -124,10 +124,10 @@ func (c *Client) init() {
 	c.Image = NewImageClient(c.config)
 	c.ImageBlob = NewImageBlobClient(c.config)
 	c.Item = NewItemClient(c.config)
+	c.ItemSource = NewItemSourceClient(c.config)
 	c.Library = NewLibraryClient(c.config)
 	c.LibraryOptions = NewLibraryOptionsClient(c.config)
 	c.LibrarySource = NewLibrarySourceClient(c.config)
-	c.MediaSource = NewMediaSourceClient(c.config)
 	c.MediaStream = NewMediaStreamClient(c.config)
 	c.Person = NewPersonClient(c.config)
 	c.Playlist = NewPlaylistClient(c.config)
@@ -242,10 +242,10 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Image:              NewImageClient(cfg),
 		ImageBlob:          NewImageBlobClient(cfg),
 		Item:               NewItemClient(cfg),
+		ItemSource:         NewItemSourceClient(cfg),
 		Library:            NewLibraryClient(cfg),
 		LibraryOptions:     NewLibraryOptionsClient(cfg),
 		LibrarySource:      NewLibrarySourceClient(cfg),
-		MediaSource:        NewMediaSourceClient(cfg),
 		MediaStream:        NewMediaStreamClient(cfg),
 		Person:             NewPersonClient(cfg),
 		Playlist:           NewPlaylistClient(cfg),
@@ -287,10 +287,10 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Image:              NewImageClient(cfg),
 		ImageBlob:          NewImageBlobClient(cfg),
 		Item:               NewItemClient(cfg),
+		ItemSource:         NewItemSourceClient(cfg),
 		Library:            NewLibraryClient(cfg),
 		LibraryOptions:     NewLibraryOptionsClient(cfg),
 		LibrarySource:      NewLibrarySourceClient(cfg),
-		MediaSource:        NewMediaSourceClient(cfg),
 		MediaStream:        NewMediaStreamClient(cfg),
 		Person:             NewPersonClient(cfg),
 		Playlist:           NewPlaylistClient(cfg),
@@ -333,8 +333,8 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.ActivityLogEntry, c.ApiKey, c.Configuration, c.Credit, c.Device,
-		c.DisplayPreferences, c.Genre, c.Image, c.ImageBlob, c.Item, c.Library,
-		c.LibraryOptions, c.LibrarySource, c.MediaSource, c.MediaStream, c.Person,
+		c.DisplayPreferences, c.Genre, c.Image, c.ImageBlob, c.Item, c.ItemSource,
+		c.Library, c.LibraryOptions, c.LibrarySource, c.MediaStream, c.Person,
 		c.Playlist, c.PlaylistEntry, c.PlaylistShare, c.Session, c.Source, c.Studio,
 		c.User, c.UserConfiguration, c.UserItemData, c.UserPolicy,
 	} {
@@ -347,8 +347,8 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.ActivityLogEntry, c.ApiKey, c.Configuration, c.Credit, c.Device,
-		c.DisplayPreferences, c.Genre, c.Image, c.ImageBlob, c.Item, c.Library,
-		c.LibraryOptions, c.LibrarySource, c.MediaSource, c.MediaStream, c.Person,
+		c.DisplayPreferences, c.Genre, c.Image, c.ImageBlob, c.Item, c.ItemSource,
+		c.Library, c.LibraryOptions, c.LibrarySource, c.MediaStream, c.Person,
 		c.Playlist, c.PlaylistEntry, c.PlaylistShare, c.Session, c.Source, c.Studio,
 		c.User, c.UserConfiguration, c.UserItemData, c.UserPolicy,
 	} {
@@ -379,14 +379,14 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ImageBlob.mutate(ctx, m)
 	case *ItemMutation:
 		return c.Item.mutate(ctx, m)
+	case *ItemSourceMutation:
+		return c.ItemSource.mutate(ctx, m)
 	case *LibraryMutation:
 		return c.Library.mutate(ctx, m)
 	case *LibraryOptionsMutation:
 		return c.LibraryOptions.mutate(ctx, m)
 	case *LibrarySourceMutation:
 		return c.LibrarySource.mutate(ctx, m)
-	case *MediaSourceMutation:
-		return c.MediaSource.mutate(ctx, m)
 	case *MediaStreamMutation:
 		return c.MediaStream.mutate(ctx, m)
 	case *PersonMutation:
@@ -1897,15 +1897,15 @@ func (c *ItemClient) QueryLibrary(_m *Item) *LibraryQuery {
 	return query
 }
 
-// QueryMediaSources queries the media_sources edge of a Item.
-func (c *ItemClient) QueryMediaSources(_m *Item) *MediaSourceQuery {
-	query := (&MediaSourceClient{config: c.config}).Query()
+// QueryItemSources queries the item_sources edge of a Item.
+func (c *ItemClient) QueryItemSources(_m *Item) *ItemSourceQuery {
+	query := (&ItemSourceClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(item.Table, item.FieldID, id),
-			sqlgraph.To(mediasource.Table, mediasource.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, item.MediaSourcesTable, item.MediaSourcesColumn),
+			sqlgraph.To(itemsource.Table, itemsource.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.ItemSourcesTable, item.ItemSourcesColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -2066,6 +2066,187 @@ func (c *ItemClient) mutate(ctx context.Context, m *ItemMutation) (Value, error)
 	}
 }
 
+// ItemSourceClient is a client for the ItemSource schema.
+type ItemSourceClient struct {
+	config
+}
+
+// NewItemSourceClient returns a client for the ItemSource from the given config.
+func NewItemSourceClient(c config) *ItemSourceClient {
+	return &ItemSourceClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `itemsource.Hooks(f(g(h())))`.
+func (c *ItemSourceClient) Use(hooks ...Hook) {
+	c.hooks.ItemSource = append(c.hooks.ItemSource, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `itemsource.Intercept(f(g(h())))`.
+func (c *ItemSourceClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ItemSource = append(c.inters.ItemSource, interceptors...)
+}
+
+// Create returns a builder for creating a ItemSource entity.
+func (c *ItemSourceClient) Create() *ItemSourceCreate {
+	mutation := newItemSourceMutation(c.config, OpCreate)
+	return &ItemSourceCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ItemSource entities.
+func (c *ItemSourceClient) CreateBulk(builders ...*ItemSourceCreate) *ItemSourceCreateBulk {
+	return &ItemSourceCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ItemSourceClient) MapCreateBulk(slice any, setFunc func(*ItemSourceCreate, int)) *ItemSourceCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ItemSourceCreateBulk{err: fmt.Errorf("calling to ItemSourceClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ItemSourceCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ItemSourceCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ItemSource.
+func (c *ItemSourceClient) Update() *ItemSourceUpdate {
+	mutation := newItemSourceMutation(c.config, OpUpdate)
+	return &ItemSourceUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ItemSourceClient) UpdateOne(_m *ItemSource) *ItemSourceUpdateOne {
+	mutation := newItemSourceMutation(c.config, OpUpdateOne, withItemSource(_m))
+	return &ItemSourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ItemSourceClient) UpdateOneID(id uuid.UUID) *ItemSourceUpdateOne {
+	mutation := newItemSourceMutation(c.config, OpUpdateOne, withItemSourceID(id))
+	return &ItemSourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ItemSource.
+func (c *ItemSourceClient) Delete() *ItemSourceDelete {
+	mutation := newItemSourceMutation(c.config, OpDelete)
+	return &ItemSourceDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ItemSourceClient) DeleteOne(_m *ItemSource) *ItemSourceDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ItemSourceClient) DeleteOneID(id uuid.UUID) *ItemSourceDeleteOne {
+	builder := c.Delete().Where(itemsource.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ItemSourceDeleteOne{builder}
+}
+
+// Query returns a query builder for ItemSource.
+func (c *ItemSourceClient) Query() *ItemSourceQuery {
+	return &ItemSourceQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeItemSource},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ItemSource entity by its id.
+func (c *ItemSourceClient) Get(ctx context.Context, id uuid.UUID) (*ItemSource, error) {
+	return c.Query().Where(itemsource.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ItemSourceClient) GetX(ctx context.Context, id uuid.UUID) *ItemSource {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryItem queries the item edge of a ItemSource.
+func (c *ItemSourceClient) QueryItem(_m *ItemSource) *ItemQuery {
+	query := (&ItemClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(itemsource.Table, itemsource.FieldID, id),
+			sqlgraph.To(item.Table, item.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, itemsource.ItemTable, itemsource.ItemColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySource queries the source edge of a ItemSource.
+func (c *ItemSourceClient) QuerySource(_m *ItemSource) *SourceQuery {
+	query := (&SourceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(itemsource.Table, itemsource.FieldID, id),
+			sqlgraph.To(source.Table, source.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, itemsource.SourceTable, itemsource.SourceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryStreams queries the streams edge of a ItemSource.
+func (c *ItemSourceClient) QueryStreams(_m *ItemSource) *MediaStreamQuery {
+	query := (&MediaStreamClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(itemsource.Table, itemsource.FieldID, id),
+			sqlgraph.To(mediastream.Table, mediastream.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, itemsource.StreamsTable, itemsource.StreamsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ItemSourceClient) Hooks() []Hook {
+	return c.hooks.ItemSource
+}
+
+// Interceptors returns the client interceptors.
+func (c *ItemSourceClient) Interceptors() []Interceptor {
+	return c.inters.ItemSource
+}
+
+func (c *ItemSourceClient) mutate(ctx context.Context, m *ItemSourceMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ItemSourceCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ItemSourceUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ItemSourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ItemSourceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("store: unknown ItemSource mutation op: %q", m.Op())
+	}
+}
+
 // LibraryClient is a client for the Library schema.
 type LibraryClient struct {
 	config
@@ -2199,22 +2380,6 @@ func (c *LibraryClient) QueryItems(_m *Library) *ItemQuery {
 			sqlgraph.From(library.Table, library.FieldID, id),
 			sqlgraph.To(item.Table, item.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, library.ItemsTable, library.ItemsColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryMediaSources queries the media_sources edge of a Library.
-func (c *LibraryClient) QueryMediaSources(_m *Library) *MediaSourceQuery {
-	query := (&MediaSourceClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(library.Table, library.FieldID, id),
-			sqlgraph.To(mediasource.Table, mediasource.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, library.MediaSourcesTable, library.MediaSourcesColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -2577,187 +2742,6 @@ func (c *LibrarySourceClient) mutate(ctx context.Context, m *LibrarySourceMutati
 	}
 }
 
-// MediaSourceClient is a client for the MediaSource schema.
-type MediaSourceClient struct {
-	config
-}
-
-// NewMediaSourceClient returns a client for the MediaSource from the given config.
-func NewMediaSourceClient(c config) *MediaSourceClient {
-	return &MediaSourceClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `mediasource.Hooks(f(g(h())))`.
-func (c *MediaSourceClient) Use(hooks ...Hook) {
-	c.hooks.MediaSource = append(c.hooks.MediaSource, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `mediasource.Intercept(f(g(h())))`.
-func (c *MediaSourceClient) Intercept(interceptors ...Interceptor) {
-	c.inters.MediaSource = append(c.inters.MediaSource, interceptors...)
-}
-
-// Create returns a builder for creating a MediaSource entity.
-func (c *MediaSourceClient) Create() *MediaSourceCreate {
-	mutation := newMediaSourceMutation(c.config, OpCreate)
-	return &MediaSourceCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of MediaSource entities.
-func (c *MediaSourceClient) CreateBulk(builders ...*MediaSourceCreate) *MediaSourceCreateBulk {
-	return &MediaSourceCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *MediaSourceClient) MapCreateBulk(slice any, setFunc func(*MediaSourceCreate, int)) *MediaSourceCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &MediaSourceCreateBulk{err: fmt.Errorf("calling to MediaSourceClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*MediaSourceCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &MediaSourceCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for MediaSource.
-func (c *MediaSourceClient) Update() *MediaSourceUpdate {
-	mutation := newMediaSourceMutation(c.config, OpUpdate)
-	return &MediaSourceUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *MediaSourceClient) UpdateOne(_m *MediaSource) *MediaSourceUpdateOne {
-	mutation := newMediaSourceMutation(c.config, OpUpdateOne, withMediaSource(_m))
-	return &MediaSourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *MediaSourceClient) UpdateOneID(id uuid.UUID) *MediaSourceUpdateOne {
-	mutation := newMediaSourceMutation(c.config, OpUpdateOne, withMediaSourceID(id))
-	return &MediaSourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for MediaSource.
-func (c *MediaSourceClient) Delete() *MediaSourceDelete {
-	mutation := newMediaSourceMutation(c.config, OpDelete)
-	return &MediaSourceDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *MediaSourceClient) DeleteOne(_m *MediaSource) *MediaSourceDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *MediaSourceClient) DeleteOneID(id uuid.UUID) *MediaSourceDeleteOne {
-	builder := c.Delete().Where(mediasource.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &MediaSourceDeleteOne{builder}
-}
-
-// Query returns a query builder for MediaSource.
-func (c *MediaSourceClient) Query() *MediaSourceQuery {
-	return &MediaSourceQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeMediaSource},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a MediaSource entity by its id.
-func (c *MediaSourceClient) Get(ctx context.Context, id uuid.UUID) (*MediaSource, error) {
-	return c.Query().Where(mediasource.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *MediaSourceClient) GetX(ctx context.Context, id uuid.UUID) *MediaSource {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryItem queries the item edge of a MediaSource.
-func (c *MediaSourceClient) QueryItem(_m *MediaSource) *ItemQuery {
-	query := (&ItemClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(mediasource.Table, mediasource.FieldID, id),
-			sqlgraph.To(item.Table, item.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, mediasource.ItemTable, mediasource.ItemColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryLibrary queries the library edge of a MediaSource.
-func (c *MediaSourceClient) QueryLibrary(_m *MediaSource) *LibraryQuery {
-	query := (&LibraryClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(mediasource.Table, mediasource.FieldID, id),
-			sqlgraph.To(library.Table, library.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, mediasource.LibraryTable, mediasource.LibraryColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryStreams queries the streams edge of a MediaSource.
-func (c *MediaSourceClient) QueryStreams(_m *MediaSource) *MediaStreamQuery {
-	query := (&MediaStreamClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(mediasource.Table, mediasource.FieldID, id),
-			sqlgraph.To(mediastream.Table, mediastream.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, mediasource.StreamsTable, mediasource.StreamsColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *MediaSourceClient) Hooks() []Hook {
-	return c.hooks.MediaSource
-}
-
-// Interceptors returns the client interceptors.
-func (c *MediaSourceClient) Interceptors() []Interceptor {
-	return c.inters.MediaSource
-}
-
-func (c *MediaSourceClient) mutate(ctx context.Context, m *MediaSourceMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&MediaSourceCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&MediaSourceUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&MediaSourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&MediaSourceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("store: unknown MediaSource mutation op: %q", m.Op())
-	}
-}
-
 // MediaStreamClient is a client for the MediaStream schema.
 type MediaStreamClient struct {
 	config
@@ -2867,13 +2851,13 @@ func (c *MediaStreamClient) GetX(ctx context.Context, id uuid.UUID) *MediaStream
 }
 
 // QuerySource queries the source edge of a MediaStream.
-func (c *MediaStreamClient) QuerySource(_m *MediaStream) *MediaSourceQuery {
-	query := (&MediaSourceClient{config: c.config}).Query()
+func (c *MediaStreamClient) QuerySource(_m *MediaStream) *ItemSourceQuery {
+	query := (&ItemSourceClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(mediastream.Table, mediastream.FieldID, id),
-			sqlgraph.To(mediasource.Table, mediasource.FieldID),
+			sqlgraph.To(itemsource.Table, itemsource.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, mediastream.SourceTable, mediastream.SourceColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
@@ -3872,6 +3856,22 @@ func (c *SourceClient) QueryLibraries(_m *Source) *LibrarySourceQuery {
 	return query
 }
 
+// QueryFiles queries the files edge of a Source.
+func (c *SourceClient) QueryFiles(_m *Source) *ItemSourceQuery {
+	query := (&ItemSourceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(source.Table, source.FieldID, id),
+			sqlgraph.To(itemsource.Table, itemsource.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, source.FilesTable, source.FilesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *SourceClient) Hooks() []Hook {
 	return c.hooks.Source
@@ -4774,15 +4774,15 @@ func (c *UserPolicyClient) mutate(ctx context.Context, m *UserPolicyMutation) (V
 type (
 	hooks struct {
 		ActivityLogEntry, ApiKey, Configuration, Credit, Device, DisplayPreferences,
-		Genre, Image, ImageBlob, Item, Library, LibraryOptions, LibrarySource,
-		MediaSource, MediaStream, Person, Playlist, PlaylistEntry, PlaylistShare,
+		Genre, Image, ImageBlob, Item, ItemSource, Library, LibraryOptions,
+		LibrarySource, MediaStream, Person, Playlist, PlaylistEntry, PlaylistShare,
 		Session, Source, Studio, User, UserConfiguration, UserItemData,
 		UserPolicy []ent.Hook
 	}
 	inters struct {
 		ActivityLogEntry, ApiKey, Configuration, Credit, Device, DisplayPreferences,
-		Genre, Image, ImageBlob, Item, Library, LibraryOptions, LibrarySource,
-		MediaSource, MediaStream, Person, Playlist, PlaylistEntry, PlaylistShare,
+		Genre, Image, ImageBlob, Item, ItemSource, Library, LibraryOptions,
+		LibrarySource, MediaStream, Person, Playlist, PlaylistEntry, PlaylistShare,
 		Session, Source, Studio, User, UserConfiguration, UserItemData,
 		UserPolicy []ent.Interceptor
 	}

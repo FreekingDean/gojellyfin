@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 )
 

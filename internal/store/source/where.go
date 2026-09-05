@@ -81,6 +81,16 @@ func APIKeyVariable(v string) predicate.Source {
 	return predicate.Source(sql.FieldEQ(FieldAPIKeyVariable, v))
 }
 
+// RootPath applies equality check predicate on the "root_path" field. It's identical to RootPathEQ.
+func RootPath(v string) predicate.Source {
+	return predicate.Source(sql.FieldEQ(FieldRootPath, v))
+}
+
+// LocalPath applies equality check predicate on the "local_path" field. It's identical to LocalPathEQ.
+func LocalPath(v string) predicate.Source {
+	return predicate.Source(sql.FieldEQ(FieldLocalPath, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Source {
 	return predicate.Source(sql.FieldEQ(FieldCreatedAt, v))
@@ -356,6 +366,156 @@ func APIKeyVariableContainsFold(v string) predicate.Source {
 	return predicate.Source(sql.FieldContainsFold(FieldAPIKeyVariable, v))
 }
 
+// RootPathEQ applies the EQ predicate on the "root_path" field.
+func RootPathEQ(v string) predicate.Source {
+	return predicate.Source(sql.FieldEQ(FieldRootPath, v))
+}
+
+// RootPathNEQ applies the NEQ predicate on the "root_path" field.
+func RootPathNEQ(v string) predicate.Source {
+	return predicate.Source(sql.FieldNEQ(FieldRootPath, v))
+}
+
+// RootPathIn applies the In predicate on the "root_path" field.
+func RootPathIn(vs ...string) predicate.Source {
+	return predicate.Source(sql.FieldIn(FieldRootPath, vs...))
+}
+
+// RootPathNotIn applies the NotIn predicate on the "root_path" field.
+func RootPathNotIn(vs ...string) predicate.Source {
+	return predicate.Source(sql.FieldNotIn(FieldRootPath, vs...))
+}
+
+// RootPathGT applies the GT predicate on the "root_path" field.
+func RootPathGT(v string) predicate.Source {
+	return predicate.Source(sql.FieldGT(FieldRootPath, v))
+}
+
+// RootPathGTE applies the GTE predicate on the "root_path" field.
+func RootPathGTE(v string) predicate.Source {
+	return predicate.Source(sql.FieldGTE(FieldRootPath, v))
+}
+
+// RootPathLT applies the LT predicate on the "root_path" field.
+func RootPathLT(v string) predicate.Source {
+	return predicate.Source(sql.FieldLT(FieldRootPath, v))
+}
+
+// RootPathLTE applies the LTE predicate on the "root_path" field.
+func RootPathLTE(v string) predicate.Source {
+	return predicate.Source(sql.FieldLTE(FieldRootPath, v))
+}
+
+// RootPathContains applies the Contains predicate on the "root_path" field.
+func RootPathContains(v string) predicate.Source {
+	return predicate.Source(sql.FieldContains(FieldRootPath, v))
+}
+
+// RootPathHasPrefix applies the HasPrefix predicate on the "root_path" field.
+func RootPathHasPrefix(v string) predicate.Source {
+	return predicate.Source(sql.FieldHasPrefix(FieldRootPath, v))
+}
+
+// RootPathHasSuffix applies the HasSuffix predicate on the "root_path" field.
+func RootPathHasSuffix(v string) predicate.Source {
+	return predicate.Source(sql.FieldHasSuffix(FieldRootPath, v))
+}
+
+// RootPathIsNil applies the IsNil predicate on the "root_path" field.
+func RootPathIsNil() predicate.Source {
+	return predicate.Source(sql.FieldIsNull(FieldRootPath))
+}
+
+// RootPathNotNil applies the NotNil predicate on the "root_path" field.
+func RootPathNotNil() predicate.Source {
+	return predicate.Source(sql.FieldNotNull(FieldRootPath))
+}
+
+// RootPathEqualFold applies the EqualFold predicate on the "root_path" field.
+func RootPathEqualFold(v string) predicate.Source {
+	return predicate.Source(sql.FieldEqualFold(FieldRootPath, v))
+}
+
+// RootPathContainsFold applies the ContainsFold predicate on the "root_path" field.
+func RootPathContainsFold(v string) predicate.Source {
+	return predicate.Source(sql.FieldContainsFold(FieldRootPath, v))
+}
+
+// LocalPathEQ applies the EQ predicate on the "local_path" field.
+func LocalPathEQ(v string) predicate.Source {
+	return predicate.Source(sql.FieldEQ(FieldLocalPath, v))
+}
+
+// LocalPathNEQ applies the NEQ predicate on the "local_path" field.
+func LocalPathNEQ(v string) predicate.Source {
+	return predicate.Source(sql.FieldNEQ(FieldLocalPath, v))
+}
+
+// LocalPathIn applies the In predicate on the "local_path" field.
+func LocalPathIn(vs ...string) predicate.Source {
+	return predicate.Source(sql.FieldIn(FieldLocalPath, vs...))
+}
+
+// LocalPathNotIn applies the NotIn predicate on the "local_path" field.
+func LocalPathNotIn(vs ...string) predicate.Source {
+	return predicate.Source(sql.FieldNotIn(FieldLocalPath, vs...))
+}
+
+// LocalPathGT applies the GT predicate on the "local_path" field.
+func LocalPathGT(v string) predicate.Source {
+	return predicate.Source(sql.FieldGT(FieldLocalPath, v))
+}
+
+// LocalPathGTE applies the GTE predicate on the "local_path" field.
+func LocalPathGTE(v string) predicate.Source {
+	return predicate.Source(sql.FieldGTE(FieldLocalPath, v))
+}
+
+// LocalPathLT applies the LT predicate on the "local_path" field.
+func LocalPathLT(v string) predicate.Source {
+	return predicate.Source(sql.FieldLT(FieldLocalPath, v))
+}
+
+// LocalPathLTE applies the LTE predicate on the "local_path" field.
+func LocalPathLTE(v string) predicate.Source {
+	return predicate.Source(sql.FieldLTE(FieldLocalPath, v))
+}
+
+// LocalPathContains applies the Contains predicate on the "local_path" field.
+func LocalPathContains(v string) predicate.Source {
+	return predicate.Source(sql.FieldContains(FieldLocalPath, v))
+}
+
+// LocalPathHasPrefix applies the HasPrefix predicate on the "local_path" field.
+func LocalPathHasPrefix(v string) predicate.Source {
+	return predicate.Source(sql.FieldHasPrefix(FieldLocalPath, v))
+}
+
+// LocalPathHasSuffix applies the HasSuffix predicate on the "local_path" field.
+func LocalPathHasSuffix(v string) predicate.Source {
+	return predicate.Source(sql.FieldHasSuffix(FieldLocalPath, v))
+}
+
+// LocalPathIsNil applies the IsNil predicate on the "local_path" field.
+func LocalPathIsNil() predicate.Source {
+	return predicate.Source(sql.FieldIsNull(FieldLocalPath))
+}
+
+// LocalPathNotNil applies the NotNil predicate on the "local_path" field.
+func LocalPathNotNil() predicate.Source {
+	return predicate.Source(sql.FieldNotNull(FieldLocalPath))
+}
+
+// LocalPathEqualFold applies the EqualFold predicate on the "local_path" field.
+func LocalPathEqualFold(v string) predicate.Source {
+	return predicate.Source(sql.FieldEqualFold(FieldLocalPath, v))
+}
+
+// LocalPathContainsFold applies the ContainsFold predicate on the "local_path" field.
+func LocalPathContainsFold(v string) predicate.Source {
+	return predicate.Source(sql.FieldContainsFold(FieldLocalPath, v))
+}
+
 // KindEQ applies the EQ predicate on the "kind" field.
 func KindEQ(v Kind) predicate.Source {
 	return predicate.Source(sql.FieldEQ(FieldKind, v))
@@ -391,6 +551,29 @@ func HasLibraries() predicate.Source {
 func HasLibrariesWith(preds ...predicate.LibrarySource) predicate.Source {
 	return predicate.Source(func(s *sql.Selector) {
 		step := newLibrariesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasFiles applies the HasEdge predicate on the "files" edge.
+func HasFiles() predicate.Source {
+	return predicate.Source(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, FilesTable, FilesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasFilesWith applies the HasEdge predicate on the "files" edge with a given conditions (other predicates).
+func HasFilesWith(preds ...predicate.ItemSource) predicate.Source {
+	return predicate.Source(func(s *sql.Selector) {
+		step := newFilesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

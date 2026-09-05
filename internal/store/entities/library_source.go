@@ -17,8 +17,6 @@ func (LibrarySource) Fields() []ent.Field {
 		field.UUID("library_id", uuid.UUID{}),
 		field.UUID("source_id", uuid.UUID{}),
 		field.String("tag_filter").Optional(),
-		field.String("source_path").Optional(),
-		field.String("target_path").Optional(),
 	)
 }
 

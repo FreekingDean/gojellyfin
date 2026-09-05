@@ -18,8 +18,8 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/genre"
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
+	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
@@ -38,7 +38,7 @@ type ItemQuery struct {
 	withParent             *ItemQuery
 	withChildren           *ItemQuery
 	withLibrary            *LibraryQuery
-	withMediaSources       *MediaSourceQuery
+	withItemSources        *ItemSourceQuery
 	withCredits            *CreditQuery
 	withImages             *ImageQuery
 	withUserData           *UserItemDataQuery
@@ -150,9 +150,9 @@ func (_q *ItemQuery) QueryLibrary() *LibraryQuery {
 	return query
 }
 
-// QueryMediaSources chains the current query on the "media_sources" edge.
-func (_q *ItemQuery) QueryMediaSources() *MediaSourceQuery {
-	query := (&MediaSourceClient{config: _q.config}).Query()
+// QueryItemSources chains the current query on the "item_sources" edge.
+func (_q *ItemQuery) QueryItemSources() *ItemSourceQuery {
+	query := (&ItemSourceClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -163,8 +163,8 @@ func (_q *ItemQuery) QueryMediaSources() *MediaSourceQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(item.Table, item.FieldID, selector),
-			sqlgraph.To(mediasource.Table, mediasource.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, item.MediaSourcesTable, item.MediaSourcesColumn),
+			sqlgraph.To(itemsource.Table, itemsource.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.ItemSourcesTable, item.ItemSourcesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -543,7 +543,7 @@ func (_q *ItemQuery) Clone() *ItemQuery {
 		withParent:             _q.withParent.Clone(),
 		withChildren:           _q.withChildren.Clone(),
 		withLibrary:            _q.withLibrary.Clone(),
-		withMediaSources:       _q.withMediaSources.Clone(),
+		withItemSources:        _q.withItemSources.Clone(),
 		withCredits:            _q.withCredits.Clone(),
 		withImages:             _q.withImages.Clone(),
 		withUserData:           _q.withUserData.Clone(),
@@ -591,14 +591,14 @@ func (_q *ItemQuery) WithLibrary(opts ...func(*LibraryQuery)) *ItemQuery {
 	return _q
 }
 
-// WithMediaSources tells the query-builder to eager-load the nodes that are connected to
-// the "media_sources" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *ItemQuery) WithMediaSources(opts ...func(*MediaSourceQuery)) *ItemQuery {
-	query := (&MediaSourceClient{config: _q.config}).Query()
+// WithItemSources tells the query-builder to eager-load the nodes that are connected to
+// the "item_sources" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemQuery) WithItemSources(opts ...func(*ItemSourceQuery)) *ItemQuery {
+	query := (&ItemSourceClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withMediaSources = query
+	_q.withItemSources = query
 	return _q
 }
 
@@ -772,7 +772,7 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 			_q.withParent != nil,
 			_q.withChildren != nil,
 			_q.withLibrary != nil,
-			_q.withMediaSources != nil,
+			_q.withItemSources != nil,
 			_q.withCredits != nil,
 			_q.withImages != nil,
 			_q.withUserData != nil,
@@ -823,10 +823,10 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 			return nil, err
 		}
 	}
-	if query := _q.withMediaSources; query != nil {
-		if err := _q.loadMediaSources(ctx, query, nodes,
-			func(n *Item) { n.Edges.MediaSources = []*MediaSource{} },
-			func(n *Item, e *MediaSource) { n.Edges.MediaSources = append(n.Edges.MediaSources, e) }); err != nil {
+	if query := _q.withItemSources; query != nil {
+		if err := _q.loadItemSources(ctx, query, nodes,
+			func(n *Item) { n.Edges.ItemSources = []*ItemSource{} },
+			func(n *Item, e *ItemSource) { n.Edges.ItemSources = append(n.Edges.ItemSources, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -982,7 +982,7 @@ func (_q *ItemQuery) loadLibrary(ctx context.Context, query *LibraryQuery, nodes
 	}
 	return nil
 }
-func (_q *ItemQuery) loadMediaSources(ctx context.Context, query *MediaSourceQuery, nodes []*Item, init func(*Item), assign func(*Item, *MediaSource)) error {
+func (_q *ItemQuery) loadItemSources(ctx context.Context, query *ItemSourceQuery, nodes []*Item, init func(*Item), assign func(*Item, *ItemSource)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*Item)
 	for i := range nodes {
@@ -993,10 +993,10 @@ func (_q *ItemQuery) loadMediaSources(ctx context.Context, query *MediaSourceQue
 		}
 	}
 	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(mediasource.FieldItemID)
+		query.ctx.AppendFieldOnce(itemsource.FieldItemID)
 	}
-	query.Where(predicate.MediaSource(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(item.MediaSourcesColumn), fks...))
+	query.Where(predicate.ItemSource(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(item.ItemSourcesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

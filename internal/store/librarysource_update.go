@@ -99,46 +99,6 @@ func (_u *LibrarySourceUpdate) ClearTagFilter() *LibrarySourceUpdate {
 	return _u
 }
 
-// SetSourcePath sets the "source_path" field.
-func (_u *LibrarySourceUpdate) SetSourcePath(v string) *LibrarySourceUpdate {
-	_u.mutation.SetSourcePath(v)
-	return _u
-}
-
-// SetNillableSourcePath sets the "source_path" field if the given value is not nil.
-func (_u *LibrarySourceUpdate) SetNillableSourcePath(v *string) *LibrarySourceUpdate {
-	if v != nil {
-		_u.SetSourcePath(*v)
-	}
-	return _u
-}
-
-// ClearSourcePath clears the value of the "source_path" field.
-func (_u *LibrarySourceUpdate) ClearSourcePath() *LibrarySourceUpdate {
-	_u.mutation.ClearSourcePath()
-	return _u
-}
-
-// SetTargetPath sets the "target_path" field.
-func (_u *LibrarySourceUpdate) SetTargetPath(v string) *LibrarySourceUpdate {
-	_u.mutation.SetTargetPath(v)
-	return _u
-}
-
-// SetNillableTargetPath sets the "target_path" field if the given value is not nil.
-func (_u *LibrarySourceUpdate) SetNillableTargetPath(v *string) *LibrarySourceUpdate {
-	if v != nil {
-		_u.SetTargetPath(*v)
-	}
-	return _u
-}
-
-// ClearTargetPath clears the value of the "target_path" field.
-func (_u *LibrarySourceUpdate) ClearTargetPath() *LibrarySourceUpdate {
-	_u.mutation.ClearTargetPath()
-	return _u
-}
-
 // SetLibrary sets the "library" edge to the Library entity.
 func (_u *LibrarySourceUpdate) SetLibrary(v *Library) *LibrarySourceUpdate {
 	return _u.SetLibraryID(v.ID)
@@ -236,18 +196,6 @@ func (_u *LibrarySourceUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	}
 	if _u.mutation.TagFilterCleared() {
 		_spec.ClearField(librarysource.FieldTagFilter, field.TypeString)
-	}
-	if value, ok := _u.mutation.SourcePath(); ok {
-		_spec.SetField(librarysource.FieldSourcePath, field.TypeString, value)
-	}
-	if _u.mutation.SourcePathCleared() {
-		_spec.ClearField(librarysource.FieldSourcePath, field.TypeString)
-	}
-	if value, ok := _u.mutation.TargetPath(); ok {
-		_spec.SetField(librarysource.FieldTargetPath, field.TypeString, value)
-	}
-	if _u.mutation.TargetPathCleared() {
-		_spec.ClearField(librarysource.FieldTargetPath, field.TypeString)
 	}
 	if _u.mutation.LibraryCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -395,46 +343,6 @@ func (_u *LibrarySourceUpdateOne) ClearTagFilter() *LibrarySourceUpdateOne {
 	return _u
 }
 
-// SetSourcePath sets the "source_path" field.
-func (_u *LibrarySourceUpdateOne) SetSourcePath(v string) *LibrarySourceUpdateOne {
-	_u.mutation.SetSourcePath(v)
-	return _u
-}
-
-// SetNillableSourcePath sets the "source_path" field if the given value is not nil.
-func (_u *LibrarySourceUpdateOne) SetNillableSourcePath(v *string) *LibrarySourceUpdateOne {
-	if v != nil {
-		_u.SetSourcePath(*v)
-	}
-	return _u
-}
-
-// ClearSourcePath clears the value of the "source_path" field.
-func (_u *LibrarySourceUpdateOne) ClearSourcePath() *LibrarySourceUpdateOne {
-	_u.mutation.ClearSourcePath()
-	return _u
-}
-
-// SetTargetPath sets the "target_path" field.
-func (_u *LibrarySourceUpdateOne) SetTargetPath(v string) *LibrarySourceUpdateOne {
-	_u.mutation.SetTargetPath(v)
-	return _u
-}
-
-// SetNillableTargetPath sets the "target_path" field if the given value is not nil.
-func (_u *LibrarySourceUpdateOne) SetNillableTargetPath(v *string) *LibrarySourceUpdateOne {
-	if v != nil {
-		_u.SetTargetPath(*v)
-	}
-	return _u
-}
-
-// ClearTargetPath clears the value of the "target_path" field.
-func (_u *LibrarySourceUpdateOne) ClearTargetPath() *LibrarySourceUpdateOne {
-	_u.mutation.ClearTargetPath()
-	return _u
-}
-
 // SetLibrary sets the "library" edge to the Library entity.
 func (_u *LibrarySourceUpdateOne) SetLibrary(v *Library) *LibrarySourceUpdateOne {
 	return _u.SetLibraryID(v.ID)
@@ -562,18 +470,6 @@ func (_u *LibrarySourceUpdateOne) sqlSave(ctx context.Context) (_node *LibrarySo
 	}
 	if _u.mutation.TagFilterCleared() {
 		_spec.ClearField(librarysource.FieldTagFilter, field.TypeString)
-	}
-	if value, ok := _u.mutation.SourcePath(); ok {
-		_spec.SetField(librarysource.FieldSourcePath, field.TypeString, value)
-	}
-	if _u.mutation.SourcePathCleared() {
-		_spec.ClearField(librarysource.FieldSourcePath, field.TypeString)
-	}
-	if value, ok := _u.mutation.TargetPath(); ok {
-		_spec.SetField(librarysource.FieldTargetPath, field.TypeString, value)
-	}
-	if _u.mutation.TargetPathCleared() {
-		_spec.ClearField(librarysource.FieldTargetPath, field.TypeString)
 	}
 	if _u.mutation.LibraryCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -67,11 +68,18 @@ func (s *Service) movies(ctx context.Context, binding Binding) ([]Title, error) 
 			continue
 		}
 
+		found, err := file(binding.Source, movie.File)
+		if err != nil {
+			log.Printf("skipping %s: %v", movie.Title, err)
+
+			continue
+		}
+
 		titles = append(titles, Title{
 			Kind:  itemmodel.KindMovie,
 			Name:  movie.Title,
 			Year:  released(movie.Year),
-			Files: []File{file(binding.Library, movie.File)},
+			Files: []File{found},
 		})
 	}
 
@@ -106,7 +114,7 @@ func (s *Service) series(ctx context.Context, binding Binding) ([]Title, error) 
 			return nil, err
 		}
 
-		children := seasons(binding.Library, episodes)
+		children := seasons(binding.Source, episodes)
 		if len(children) == 0 {
 			continue
 		}
@@ -122,7 +130,7 @@ func (s *Service) series(ctx context.Context, binding Binding) ([]Title, error) 
 	return titles, nil
 }
 
-func seasons(bound Library, episodes []sonarr.Episode) []Title {
+func seasons(source Source, episodes []sonarr.Episode) []Title {
 	numbers := make([]int32, 0)
 	byNumber := map[int32][]Title{}
 
@@ -130,6 +138,14 @@ func seasons(bound Library, episodes []sonarr.Episode) []Title {
 		if !episode.HasFile {
 			continue
 		}
+
+		found, err := file(source, episode.File)
+		if err != nil {
+			log.Printf("skipping %s: %v", episode.Title, err)
+
+			continue
+		}
+
 		if _, ok := byNumber[episode.SeasonNumber]; !ok {
 			numbers = append(numbers, episode.SeasonNumber)
 		}
@@ -139,7 +155,7 @@ func seasons(bound Library, episodes []sonarr.Episode) []Title {
 			Name:        episode.Title,
 			Index:       ptr(episode.EpisodeNumber),
 			ParentIndex: ptr(episode.SeasonNumber),
-			Files:       []File{file(bound, episode.File)},
+			Files:       []File{found},
 		})
 	}
 
@@ -176,24 +192,26 @@ func (s *Service) tagFilter(ctx context.Context, binding Binding) (func([]int) b
 	return nil, fmt.Errorf("%s has no tag %q", binding.Source.Name, binding.Library.TagFilter)
 }
 
-func file(bound Library, from arr.File) File {
-	return File{
-		Path:         mapPath(bound, from.Path),
-		DateModified: from.DateAdded,
+func file(source Source, from arr.File) (File, error) {
+	path, err := Localise(source, from.Path)
+	if err != nil {
+		return File{}, err
 	}
+
+	return File{Path: path, DateModified: from.DateAdded}, nil
 }
 
-func mapPath(bound Library, path string) string {
-	if bound.SourcePath == "" {
-		return path
+func Localise(source Source, path string) (string, error) {
+	root := strings.TrimSuffix(source.RootPath, string(filepath.Separator))
+	if root == "" {
+		return "", fmt.Errorf("%s names no root path", source.Name)
 	}
 
-	prefix := strings.TrimSuffix(bound.SourcePath, string(filepath.Separator))
-	if path != prefix && !strings.HasPrefix(path, prefix+string(filepath.Separator)) {
-		return path
+	if path != root && !strings.HasPrefix(path, root+string(filepath.Separator)) {
+		return "", fmt.Errorf("%s reported %q, which is outside its root %s", source.Name, path, root)
 	}
 
-	return filepath.Join(bound.TargetPath, strings.TrimPrefix(path, prefix))
+	return filepath.Join(source.LocalPath, strings.TrimPrefix(path, root)), nil
 }
 
 func released(year int32) *int32 {

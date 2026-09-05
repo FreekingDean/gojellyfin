@@ -13,7 +13,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	creditmodal "github.com/FreekingDean/gojellyfin/internal/store/credit"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	personmodal "github.com/FreekingDean/gojellyfin/internal/store/person"
 )
 
@@ -67,7 +67,7 @@ func TestServer_GetPersons(t *testing.T) {
 		if _, err := client.Credit.Delete().Where(creditmodal.HasItemWith(owned)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the credits: %v", err)
 		}
-		if _, err := client.MediaSource.Delete().Where(sourcemodal.HasItemWith(owned)).Exec(ctx); err != nil {
+		if _, err := client.ItemSource.Delete().Where(sourcemodal.HasItemWith(owned)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the media sources: %v", err)
 		}
 		if _, err := client.Item.Delete().Where(owned).Exec(ctx); err != nil {

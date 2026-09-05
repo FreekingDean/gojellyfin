@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
@@ -27,6 +28,7 @@ type SourceQuery struct {
 	inters        []Interceptor
 	predicates    []predicate.Source
 	withLibraries *LibrarySourceQuery
+	withFiles     *ItemSourceQuery
 	modifiers     []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -79,6 +81,28 @@ func (_q *SourceQuery) QueryLibraries() *LibrarySourceQuery {
 			sqlgraph.From(source.Table, source.FieldID, selector),
 			sqlgraph.To(librarysource.Table, librarysource.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, source.LibrariesTable, source.LibrariesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryFiles chains the current query on the "files" edge.
+func (_q *SourceQuery) QueryFiles() *ItemSourceQuery {
+	query := (&ItemSourceClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(source.Table, source.FieldID, selector),
+			sqlgraph.To(itemsource.Table, itemsource.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, source.FilesTable, source.FilesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -279,6 +303,7 @@ func (_q *SourceQuery) Clone() *SourceQuery {
 		inters:        append([]Interceptor{}, _q.inters...),
 		predicates:    append([]predicate.Source{}, _q.predicates...),
 		withLibraries: _q.withLibraries.Clone(),
+		withFiles:     _q.withFiles.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -293,6 +318,17 @@ func (_q *SourceQuery) WithLibraries(opts ...func(*LibrarySourceQuery)) *SourceQ
 		opt(query)
 	}
 	_q.withLibraries = query
+	return _q
+}
+
+// WithFiles tells the query-builder to eager-load the nodes that are connected to
+// the "files" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *SourceQuery) WithFiles(opts ...func(*ItemSourceQuery)) *SourceQuery {
+	query := (&ItemSourceClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withFiles = query
 	return _q
 }
 
@@ -374,8 +410,9 @@ func (_q *SourceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Sourc
 	var (
 		nodes       = []*Source{}
 		_spec       = _q.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			_q.withLibraries != nil,
+			_q.withFiles != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -406,6 +443,13 @@ func (_q *SourceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Sourc
 			return nil, err
 		}
 	}
+	if query := _q.withFiles; query != nil {
+		if err := _q.loadFiles(ctx, query, nodes,
+			func(n *Source) { n.Edges.Files = []*ItemSource{} },
+			func(n *Source, e *ItemSource) { n.Edges.Files = append(n.Edges.Files, e) }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
 }
 
@@ -424,6 +468,36 @@ func (_q *SourceQuery) loadLibraries(ctx context.Context, query *LibrarySourceQu
 	}
 	query.Where(predicate.LibrarySource(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(source.LibrariesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.SourceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "source_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *SourceQuery) loadFiles(ctx context.Context, query *ItemSourceQuery, nodes []*Source, init func(*Source), assign func(*Source, *ItemSource)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Source)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(itemsource.FieldSourceID)
+	}
+	query.Where(predicate.ItemSource(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(source.FilesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

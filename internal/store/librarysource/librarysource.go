@@ -24,10 +24,6 @@ const (
 	FieldSourceID = "source_id"
 	// FieldTagFilter holds the string denoting the tag_filter field in the database.
 	FieldTagFilter = "tag_filter"
-	// FieldSourcePath holds the string denoting the source_path field in the database.
-	FieldSourcePath = "source_path"
-	// FieldTargetPath holds the string denoting the target_path field in the database.
-	FieldTargetPath = "target_path"
 	// EdgeLibrary holds the string denoting the library edge name in mutations.
 	EdgeLibrary = "library"
 	// EdgeSource holds the string denoting the source edge name in mutations.
@@ -58,8 +54,6 @@ var Columns = []string{
 	FieldLibraryID,
 	FieldSourceID,
 	FieldTagFilter,
-	FieldSourcePath,
-	FieldTargetPath,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -112,16 +106,6 @@ func BySourceID(opts ...sql.OrderTermOption) OrderOption {
 // ByTagFilter orders the results by the tag_filter field.
 func ByTagFilter(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTagFilter, opts...).ToFunc()
-}
-
-// BySourcePath orders the results by the source_path field.
-func BySourcePath(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSourcePath, opts...).ToFunc()
-}
-
-// ByTargetPath orders the results by the target_path field.
-func ByTargetPath(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldTargetPath, opts...).ToFunc()
 }
 
 // ByLibraryField orders the results by library field.

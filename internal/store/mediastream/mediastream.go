@@ -19,8 +19,8 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
-	// FieldSourceID holds the string denoting the source_id field in the database.
-	FieldSourceID = "source_id"
+	// FieldItemSourceID holds the string denoting the item_source_id field in the database.
+	FieldItemSourceID = "item_source_id"
 	// FieldKind holds the string denoting the kind field in the database.
 	FieldKind = "kind"
 	// FieldVideoRangeType holds the string denoting the video_range_type field in the database.
@@ -69,11 +69,11 @@ const (
 	Table = "media_streams"
 	// SourceTable is the table that holds the source relation/edge.
 	SourceTable = "media_streams"
-	// SourceInverseTable is the table name for the MediaSource entity.
-	// It exists in this package in order to avoid circular dependency with the "mediasource" package.
-	SourceInverseTable = "media_sources"
+	// SourceInverseTable is the table name for the ItemSource entity.
+	// It exists in this package in order to avoid circular dependency with the "itemsource" package.
+	SourceInverseTable = "item_sources"
 	// SourceColumn is the table column denoting the source relation/edge.
-	SourceColumn = "source_id"
+	SourceColumn = "item_source_id"
 )
 
 // Columns holds all SQL columns for mediastream fields.
@@ -81,7 +81,7 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
-	FieldSourceID,
+	FieldItemSourceID,
 	FieldKind,
 	FieldVideoRangeType,
 	FieldIndex,
@@ -213,9 +213,9 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
-// BySourceID orders the results by the source_id field.
-func BySourceID(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSourceID, opts...).ToFunc()
+// ByItemSourceID orders the results by the item_source_id field.
+func ByItemSourceID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldItemSourceID, opts...).ToFunc()
 }
 
 // ByKind orders the results by the kind field.

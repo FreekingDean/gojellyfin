@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/google/uuid"
 )
@@ -23,8 +23,8 @@ type MediaStream struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
-	// SourceID holds the value of the "source_id" field.
-	SourceID uuid.UUID `json:"source_id,omitempty"`
+	// ItemSourceID holds the value of the "item_source_id" field.
+	ItemSourceID uuid.UUID `json:"item_source_id,omitempty"`
 	// Kind holds the value of the "kind" field.
 	Kind mediastream.Kind `json:"kind,omitempty"`
 	// VideoRangeType holds the value of the "video_range_type" field.
@@ -76,7 +76,7 @@ type MediaStream struct {
 // MediaStreamEdges holds the relations/edges for other nodes in the graph.
 type MediaStreamEdges struct {
 	// Source holds the value of the source edge.
-	Source *MediaSource `json:"source,omitempty"`
+	Source *ItemSource `json:"source,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
@@ -84,11 +84,11 @@ type MediaStreamEdges struct {
 
 // SourceOrErr returns the Source value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e MediaStreamEdges) SourceOrErr() (*MediaSource, error) {
+func (e MediaStreamEdges) SourceOrErr() (*ItemSource, error) {
 	if e.Source != nil {
 		return e.Source, nil
 	} else if e.loadedTypes[0] {
-		return nil, &NotFoundError{label: mediasource.Label}
+		return nil, &NotFoundError{label: itemsource.Label}
 	}
 	return nil, &NotLoadedError{edge: "source"}
 }
@@ -108,7 +108,7 @@ func (*MediaStream) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case mediastream.FieldCreatedAt, mediastream.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case mediastream.FieldID, mediastream.FieldSourceID:
+		case mediastream.FieldID, mediastream.FieldItemSourceID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -143,11 +143,11 @@ func (_m *MediaStream) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
 			}
-		case mediastream.FieldSourceID:
+		case mediastream.FieldItemSourceID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
-				return fmt.Errorf("unexpected type %T for field source_id", values[i])
+				return fmt.Errorf("unexpected type %T for field item_source_id", values[i])
 			} else if value != nil {
-				_m.SourceID = *value
+				_m.ItemSourceID = *value
 			}
 		case mediastream.FieldKind:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -289,7 +289,7 @@ func (_m *MediaStream) Value(name string) (ent.Value, error) {
 }
 
 // QuerySource queries the "source" edge of the MediaStream entity.
-func (_m *MediaStream) QuerySource() *MediaSourceQuery {
+func (_m *MediaStream) QuerySource() *ItemSourceQuery {
 	return NewMediaStreamClient(_m.config).QuerySource(_m)
 }
 
@@ -322,8 +322,8 @@ func (_m *MediaStream) String() string {
 	builder.WriteString("updated_at=")
 	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
-	builder.WriteString("source_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.SourceID))
+	builder.WriteString("item_source_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ItemSourceID))
 	builder.WriteString(", ")
 	builder.WriteString("kind=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Kind))

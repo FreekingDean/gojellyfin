@@ -48,16 +48,29 @@ func New(
 
 type seen struct {
 	keys       []string
-	paths      []string
+	paths      map[uuid.UUID][]string
 	unreadable int
+}
+
+func found() *seen {
+	return &seen{paths: map[uuid.UUID][]string{}}
 }
 
 func (s *seen) title(item *items.Item) {
 	s.keys = append(s.keys, item.Key)
 }
 
-func (s *seen) file(path string) {
-	s.paths = append(s.paths, path)
+func (s *seen) file(source uuid.UUID, path string) {
+	s.paths[source] = append(s.paths[source], path)
+}
+
+func (s *seen) files() int {
+	total := 0
+	for _, paths := range s.paths {
+		total += len(paths)
+	}
+
+	return total
 }
 
 func (s *seen) skip(name string, err error) {
@@ -70,7 +83,7 @@ func (s *seen) complete() bool {
 }
 
 func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) error {
-	found := &seen{}
+	found := found()
 
 	if err := s.rekeyLegacy(ctx, library); err != nil {
 		return err
@@ -95,13 +108,13 @@ func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) e
 		}
 
 		for _, title := range titles {
-			if err := s.saveTitle(ctx, library, nil, "", title, found); err != nil {
+			if err := s.saveTitle(ctx, library, binding.Source.ID, nil, "", title, found); err != nil {
 				return err
 			}
 		}
 	}
 
-	log.Printf("scanned %s: %d items, %d files", library.Name, len(found.keys), len(found.paths))
+	log.Printf("scanned %s: %d items, %d files", library.Name, len(found.keys), found.files())
 
 	if !found.complete() {
 		log.Printf("not sweeping %s: %d could not be read", library.Name, found.unreadable)
@@ -113,14 +126,16 @@ func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) e
 		return err
 	}
 
-	if err := s.items.DeleteSourcesNotInPaths(ctx, library.ID, found.paths); err != nil {
-		return err
+	for source, paths := range found.paths {
+		if err := s.items.DeleteSourcesNotInPaths(ctx, source, paths); err != nil {
+			return err
+		}
 	}
 
 	s.activity.Record(ctx, activity.Event{
 		Name:          fmt.Sprintf("%s scan completed", library.Name),
 		Kind:          activity.KindLibraryScanCompleted,
-		ShortOverview: fmt.Sprintf("%d items, %d files", len(found.keys), len(found.paths)),
+		ShortOverview: fmt.Sprintf("%d items, %d files", len(found.keys), found.files()),
 		Severity:      activity.SeverityInformation,
 	})
 
@@ -130,6 +145,7 @@ func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) e
 func (s *Scanner) saveTitle(
 	ctx context.Context,
 	library *libraries.Library,
+	source uuid.UUID,
 	parent *uuid.UUID,
 	slug string,
 	title sources.Title,
@@ -178,13 +194,13 @@ func (s *Scanner) saveTitle(
 	found.title(item)
 
 	for _, file := range title.Files {
-		if err := s.saveFile(ctx, library, item, file, found); err != nil {
+		if err := s.saveFile(ctx, source, item, file, found); err != nil {
 			return err
 		}
 	}
 
 	for _, child := range title.Children {
-		if err := s.saveTitle(ctx, library, &item.ID, slug, child, found); err != nil {
+		if err := s.saveTitle(ctx, library, source, &item.ID, slug, child, found); err != nil {
 			return err
 		}
 	}
@@ -194,16 +210,16 @@ func (s *Scanner) saveTitle(
 
 func (s *Scanner) saveFile(
 	ctx context.Context,
-	library *libraries.Library,
+	sourceID uuid.UUID,
 	item *items.Item,
 	file sources.File,
 	found *seen,
 ) error {
 	jobs.Heartbeat(ctx, file.Path)
-	found.file(file.Path)
+	found.file(sourceID, file.Path)
 
 	source, err := s.items.SaveSource(ctx, items.ScannedSource{
-		LibraryID:    library.ID,
+		SourceID:     sourceID,
 		ItemID:       item.ID,
 		Path:         file.Path,
 		Name:         filepath.Base(file.Path),

@@ -25,10 +25,16 @@ const (
 	FieldURL = "url"
 	// FieldAPIKeyVariable holds the string denoting the api_key_variable field in the database.
 	FieldAPIKeyVariable = "api_key_variable"
+	// FieldRootPath holds the string denoting the root_path field in the database.
+	FieldRootPath = "root_path"
+	// FieldLocalPath holds the string denoting the local_path field in the database.
+	FieldLocalPath = "local_path"
 	// FieldKind holds the string denoting the kind field in the database.
 	FieldKind = "kind"
 	// EdgeLibraries holds the string denoting the libraries edge name in mutations.
 	EdgeLibraries = "libraries"
+	// EdgeFiles holds the string denoting the files edge name in mutations.
+	EdgeFiles = "files"
 	// Table holds the table name of the source in the database.
 	Table = "sources"
 	// LibrariesTable is the table that holds the libraries relation/edge.
@@ -38,6 +44,13 @@ const (
 	LibrariesInverseTable = "library_sources"
 	// LibrariesColumn is the table column denoting the libraries relation/edge.
 	LibrariesColumn = "source_id"
+	// FilesTable is the table that holds the files relation/edge.
+	FilesTable = "item_sources"
+	// FilesInverseTable is the table name for the ItemSource entity.
+	// It exists in this package in order to avoid circular dependency with the "itemsource" package.
+	FilesInverseTable = "item_sources"
+	// FilesColumn is the table column denoting the files relation/edge.
+	FilesColumn = "source_id"
 )
 
 // Columns holds all SQL columns for source fields.
@@ -48,6 +61,8 @@ var Columns = []string{
 	FieldName,
 	FieldURL,
 	FieldAPIKeyVariable,
+	FieldRootPath,
+	FieldLocalPath,
 	FieldKind,
 }
 
@@ -129,6 +144,16 @@ func ByAPIKeyVariable(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAPIKeyVariable, opts...).ToFunc()
 }
 
+// ByRootPath orders the results by the root_path field.
+func ByRootPath(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRootPath, opts...).ToFunc()
+}
+
+// ByLocalPath orders the results by the local_path field.
+func ByLocalPath(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLocalPath, opts...).ToFunc()
+}
+
 // ByKind orders the results by the kind field.
 func ByKind(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldKind, opts...).ToFunc()
@@ -147,10 +172,31 @@ func ByLibraries(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newLibrariesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByFilesCount orders the results by files count.
+func ByFilesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newFilesStep(), opts...)
+	}
+}
+
+// ByFiles orders the results by files terms.
+func ByFiles(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newFilesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newLibrariesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(LibrariesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, LibrariesTable, LibrariesColumn),
+	)
+}
+func newFilesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(FilesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, FilesTable, FilesColumn),
 	)
 }

@@ -12,34 +12,34 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
-	"github.com/FreekingDean/gojellyfin/internal/store/library"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
+	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/google/uuid"
 )
 
-// MediaSourceUpdate is the builder for updating MediaSource entities.
-type MediaSourceUpdate struct {
+// ItemSourceUpdate is the builder for updating ItemSource entities.
+type ItemSourceUpdate struct {
 	config
 	hooks    []Hook
-	mutation *MediaSourceMutation
+	mutation *ItemSourceMutation
 }
 
-// Where appends a list predicates to the MediaSourceUpdate builder.
-func (_u *MediaSourceUpdate) Where(ps ...predicate.MediaSource) *MediaSourceUpdate {
+// Where appends a list predicates to the ItemSourceUpdate builder.
+func (_u *ItemSourceUpdate) Where(ps ...predicate.ItemSource) *ItemSourceUpdate {
 	_u.mutation.Where(ps...)
 	return _u
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (_u *MediaSourceUpdate) SetCreatedAt(v time.Time) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) SetCreatedAt(v time.Time) *ItemSourceUpdate {
 	_u.mutation.SetCreatedAt(v)
 	return _u
 }
 
 // SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableCreatedAt(v *time.Time) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) SetNillableCreatedAt(v *time.Time) *ItemSourceUpdate {
 	if v != nil {
 		_u.SetCreatedAt(*v)
 	}
@@ -47,47 +47,47 @@ func (_u *MediaSourceUpdate) SetNillableCreatedAt(v *time.Time) *MediaSourceUpda
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (_u *MediaSourceUpdate) SetUpdatedAt(v time.Time) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) SetUpdatedAt(v time.Time) *ItemSourceUpdate {
 	_u.mutation.SetUpdatedAt(v)
 	return _u
 }
 
 // SetItemID sets the "item_id" field.
-func (_u *MediaSourceUpdate) SetItemID(v uuid.UUID) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) SetItemID(v uuid.UUID) *ItemSourceUpdate {
 	_u.mutation.SetItemID(v)
 	return _u
 }
 
 // SetNillableItemID sets the "item_id" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableItemID(v *uuid.UUID) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) SetNillableItemID(v *uuid.UUID) *ItemSourceUpdate {
 	if v != nil {
 		_u.SetItemID(*v)
 	}
 	return _u
 }
 
-// SetLibraryID sets the "library_id" field.
-func (_u *MediaSourceUpdate) SetLibraryID(v uuid.UUID) *MediaSourceUpdate {
-	_u.mutation.SetLibraryID(v)
+// SetSourceID sets the "source_id" field.
+func (_u *ItemSourceUpdate) SetSourceID(v uuid.UUID) *ItemSourceUpdate {
+	_u.mutation.SetSourceID(v)
 	return _u
 }
 
-// SetNillableLibraryID sets the "library_id" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableLibraryID(v *uuid.UUID) *MediaSourceUpdate {
+// SetNillableSourceID sets the "source_id" field if the given value is not nil.
+func (_u *ItemSourceUpdate) SetNillableSourceID(v *uuid.UUID) *ItemSourceUpdate {
 	if v != nil {
-		_u.SetLibraryID(*v)
+		_u.SetSourceID(*v)
 	}
 	return _u
 }
 
 // SetName sets the "name" field.
-func (_u *MediaSourceUpdate) SetName(v string) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) SetName(v string) *ItemSourceUpdate {
 	_u.mutation.SetName(v)
 	return _u
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableName(v *string) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) SetNillableName(v *string) *ItemSourceUpdate {
 	if v != nil {
 		_u.SetName(*v)
 	}
@@ -95,13 +95,13 @@ func (_u *MediaSourceUpdate) SetNillableName(v *string) *MediaSourceUpdate {
 }
 
 // SetPath sets the "path" field.
-func (_u *MediaSourceUpdate) SetPath(v string) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) SetPath(v string) *ItemSourceUpdate {
 	_u.mutation.SetPath(v)
 	return _u
 }
 
 // SetNillablePath sets the "path" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillablePath(v *string) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) SetNillablePath(v *string) *ItemSourceUpdate {
 	if v != nil {
 		_u.SetPath(*v)
 	}
@@ -109,13 +109,13 @@ func (_u *MediaSourceUpdate) SetNillablePath(v *string) *MediaSourceUpdate {
 }
 
 // SetContainer sets the "container" field.
-func (_u *MediaSourceUpdate) SetContainer(v string) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) SetContainer(v string) *ItemSourceUpdate {
 	_u.mutation.SetContainer(v)
 	return _u
 }
 
 // SetNillableContainer sets the "container" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableContainer(v *string) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) SetNillableContainer(v *string) *ItemSourceUpdate {
 	if v != nil {
 		_u.SetContainer(*v)
 	}
@@ -123,20 +123,20 @@ func (_u *MediaSourceUpdate) SetNillableContainer(v *string) *MediaSourceUpdate 
 }
 
 // ClearContainer clears the value of the "container" field.
-func (_u *MediaSourceUpdate) ClearContainer() *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) ClearContainer() *ItemSourceUpdate {
 	_u.mutation.ClearContainer()
 	return _u
 }
 
 // SetSize sets the "size" field.
-func (_u *MediaSourceUpdate) SetSize(v int64) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) SetSize(v int64) *ItemSourceUpdate {
 	_u.mutation.ResetSize()
 	_u.mutation.SetSize(v)
 	return _u
 }
 
 // SetNillableSize sets the "size" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableSize(v *int64) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) SetNillableSize(v *int64) *ItemSourceUpdate {
 	if v != nil {
 		_u.SetSize(*v)
 	}
@@ -144,26 +144,26 @@ func (_u *MediaSourceUpdate) SetNillableSize(v *int64) *MediaSourceUpdate {
 }
 
 // AddSize adds value to the "size" field.
-func (_u *MediaSourceUpdate) AddSize(v int64) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) AddSize(v int64) *ItemSourceUpdate {
 	_u.mutation.AddSize(v)
 	return _u
 }
 
 // ClearSize clears the value of the "size" field.
-func (_u *MediaSourceUpdate) ClearSize() *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) ClearSize() *ItemSourceUpdate {
 	_u.mutation.ClearSize()
 	return _u
 }
 
 // SetRunTimeTicks sets the "run_time_ticks" field.
-func (_u *MediaSourceUpdate) SetRunTimeTicks(v int64) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) SetRunTimeTicks(v int64) *ItemSourceUpdate {
 	_u.mutation.ResetRunTimeTicks()
 	_u.mutation.SetRunTimeTicks(v)
 	return _u
 }
 
 // SetNillableRunTimeTicks sets the "run_time_ticks" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableRunTimeTicks(v *int64) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) SetNillableRunTimeTicks(v *int64) *ItemSourceUpdate {
 	if v != nil {
 		_u.SetRunTimeTicks(*v)
 	}
@@ -171,26 +171,26 @@ func (_u *MediaSourceUpdate) SetNillableRunTimeTicks(v *int64) *MediaSourceUpdat
 }
 
 // AddRunTimeTicks adds value to the "run_time_ticks" field.
-func (_u *MediaSourceUpdate) AddRunTimeTicks(v int64) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) AddRunTimeTicks(v int64) *ItemSourceUpdate {
 	_u.mutation.AddRunTimeTicks(v)
 	return _u
 }
 
 // ClearRunTimeTicks clears the value of the "run_time_ticks" field.
-func (_u *MediaSourceUpdate) ClearRunTimeTicks() *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) ClearRunTimeTicks() *ItemSourceUpdate {
 	_u.mutation.ClearRunTimeTicks()
 	return _u
 }
 
 // SetBitrate sets the "bitrate" field.
-func (_u *MediaSourceUpdate) SetBitrate(v int32) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) SetBitrate(v int32) *ItemSourceUpdate {
 	_u.mutation.ResetBitrate()
 	_u.mutation.SetBitrate(v)
 	return _u
 }
 
 // SetNillableBitrate sets the "bitrate" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableBitrate(v *int32) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) SetNillableBitrate(v *int32) *ItemSourceUpdate {
 	if v != nil {
 		_u.SetBitrate(*v)
 	}
@@ -198,25 +198,25 @@ func (_u *MediaSourceUpdate) SetNillableBitrate(v *int32) *MediaSourceUpdate {
 }
 
 // AddBitrate adds value to the "bitrate" field.
-func (_u *MediaSourceUpdate) AddBitrate(v int32) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) AddBitrate(v int32) *ItemSourceUpdate {
 	_u.mutation.AddBitrate(v)
 	return _u
 }
 
 // ClearBitrate clears the value of the "bitrate" field.
-func (_u *MediaSourceUpdate) ClearBitrate() *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) ClearBitrate() *ItemSourceUpdate {
 	_u.mutation.ClearBitrate()
 	return _u
 }
 
 // SetDateModified sets the "date_modified" field.
-func (_u *MediaSourceUpdate) SetDateModified(v time.Time) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) SetDateModified(v time.Time) *ItemSourceUpdate {
 	_u.mutation.SetDateModified(v)
 	return _u
 }
 
 // SetNillableDateModified sets the "date_modified" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableDateModified(v *time.Time) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) SetNillableDateModified(v *time.Time) *ItemSourceUpdate {
 	if v != nil {
 		_u.SetDateModified(*v)
 	}
@@ -224,19 +224,19 @@ func (_u *MediaSourceUpdate) SetNillableDateModified(v *time.Time) *MediaSourceU
 }
 
 // ClearDateModified clears the value of the "date_modified" field.
-func (_u *MediaSourceUpdate) ClearDateModified() *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) ClearDateModified() *ItemSourceUpdate {
 	_u.mutation.ClearDateModified()
 	return _u
 }
 
 // SetProbedAt sets the "probed_at" field.
-func (_u *MediaSourceUpdate) SetProbedAt(v time.Time) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) SetProbedAt(v time.Time) *ItemSourceUpdate {
 	_u.mutation.SetProbedAt(v)
 	return _u
 }
 
 // SetNillableProbedAt sets the "probed_at" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableProbedAt(v *time.Time) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) SetNillableProbedAt(v *time.Time) *ItemSourceUpdate {
 	if v != nil {
 		_u.SetProbedAt(*v)
 	}
@@ -244,29 +244,29 @@ func (_u *MediaSourceUpdate) SetNillableProbedAt(v *time.Time) *MediaSourceUpdat
 }
 
 // ClearProbedAt clears the value of the "probed_at" field.
-func (_u *MediaSourceUpdate) ClearProbedAt() *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) ClearProbedAt() *ItemSourceUpdate {
 	_u.mutation.ClearProbedAt()
 	return _u
 }
 
 // SetItem sets the "item" edge to the Item entity.
-func (_u *MediaSourceUpdate) SetItem(v *Item) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) SetItem(v *Item) *ItemSourceUpdate {
 	return _u.SetItemID(v.ID)
 }
 
-// SetLibrary sets the "library" edge to the Library entity.
-func (_u *MediaSourceUpdate) SetLibrary(v *Library) *MediaSourceUpdate {
-	return _u.SetLibraryID(v.ID)
+// SetSource sets the "source" edge to the Source entity.
+func (_u *ItemSourceUpdate) SetSource(v *Source) *ItemSourceUpdate {
+	return _u.SetSourceID(v.ID)
 }
 
 // AddStreamIDs adds the "streams" edge to the MediaStream entity by IDs.
-func (_u *MediaSourceUpdate) AddStreamIDs(ids ...uuid.UUID) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) AddStreamIDs(ids ...uuid.UUID) *ItemSourceUpdate {
 	_u.mutation.AddStreamIDs(ids...)
 	return _u
 }
 
 // AddStreams adds the "streams" edges to the MediaStream entity.
-func (_u *MediaSourceUpdate) AddStreams(v ...*MediaStream) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) AddStreams(v ...*MediaStream) *ItemSourceUpdate {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
@@ -274,37 +274,37 @@ func (_u *MediaSourceUpdate) AddStreams(v ...*MediaStream) *MediaSourceUpdate {
 	return _u.AddStreamIDs(ids...)
 }
 
-// Mutation returns the MediaSourceMutation object of the builder.
-func (_u *MediaSourceUpdate) Mutation() *MediaSourceMutation {
+// Mutation returns the ItemSourceMutation object of the builder.
+func (_u *ItemSourceUpdate) Mutation() *ItemSourceMutation {
 	return _u.mutation
 }
 
 // ClearItem clears the "item" edge to the Item entity.
-func (_u *MediaSourceUpdate) ClearItem() *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) ClearItem() *ItemSourceUpdate {
 	_u.mutation.ClearItem()
 	return _u
 }
 
-// ClearLibrary clears the "library" edge to the Library entity.
-func (_u *MediaSourceUpdate) ClearLibrary() *MediaSourceUpdate {
-	_u.mutation.ClearLibrary()
+// ClearSource clears the "source" edge to the Source entity.
+func (_u *ItemSourceUpdate) ClearSource() *ItemSourceUpdate {
+	_u.mutation.ClearSource()
 	return _u
 }
 
 // ClearStreams clears all "streams" edges to the MediaStream entity.
-func (_u *MediaSourceUpdate) ClearStreams() *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) ClearStreams() *ItemSourceUpdate {
 	_u.mutation.ClearStreams()
 	return _u
 }
 
 // RemoveStreamIDs removes the "streams" edge to MediaStream entities by IDs.
-func (_u *MediaSourceUpdate) RemoveStreamIDs(ids ...uuid.UUID) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) RemoveStreamIDs(ids ...uuid.UUID) *ItemSourceUpdate {
 	_u.mutation.RemoveStreamIDs(ids...)
 	return _u
 }
 
 // RemoveStreams removes "streams" edges to MediaStream entities.
-func (_u *MediaSourceUpdate) RemoveStreams(v ...*MediaStream) *MediaSourceUpdate {
+func (_u *ItemSourceUpdate) RemoveStreams(v ...*MediaStream) *ItemSourceUpdate {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
@@ -313,13 +313,13 @@ func (_u *MediaSourceUpdate) RemoveStreams(v ...*MediaStream) *MediaSourceUpdate
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (_u *MediaSourceUpdate) Save(ctx context.Context) (int, error) {
+func (_u *ItemSourceUpdate) Save(ctx context.Context) (int, error) {
 	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_u *MediaSourceUpdate) SaveX(ctx context.Context) int {
+func (_u *ItemSourceUpdate) SaveX(ctx context.Context) int {
 	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
@@ -328,42 +328,42 @@ func (_u *MediaSourceUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (_u *MediaSourceUpdate) Exec(ctx context.Context) error {
+func (_u *ItemSourceUpdate) Exec(ctx context.Context) error {
 	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_u *MediaSourceUpdate) ExecX(ctx context.Context) {
+func (_u *ItemSourceUpdate) ExecX(ctx context.Context) {
 	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (_u *MediaSourceUpdate) defaults() {
+func (_u *ItemSourceUpdate) defaults() {
 	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := mediasource.UpdateDefaultUpdatedAt()
+		v := itemsource.UpdateDefaultUpdatedAt()
 		_u.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_u *MediaSourceUpdate) check() error {
+func (_u *ItemSourceUpdate) check() error {
 	if _u.mutation.ItemCleared() && len(_u.mutation.ItemIDs()) > 0 {
-		return errors.New(`store: clearing a required unique edge "MediaSource.item"`)
+		return errors.New(`store: clearing a required unique edge "ItemSource.item"`)
 	}
-	if _u.mutation.LibraryCleared() && len(_u.mutation.LibraryIDs()) > 0 {
-		return errors.New(`store: clearing a required unique edge "MediaSource.library"`)
+	if _u.mutation.SourceCleared() && len(_u.mutation.SourceIDs()) > 0 {
+		return errors.New(`store: clearing a required unique edge "ItemSource.source"`)
 	}
 	return nil
 }
 
-func (_u *MediaSourceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+func (_u *ItemSourceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if err := _u.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(mediasource.Table, mediasource.Columns, sqlgraph.NewFieldSpec(mediasource.FieldID, field.TypeUUID))
+	_spec := sqlgraph.NewUpdateSpec(itemsource.Table, itemsource.Columns, sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID))
 	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -372,68 +372,68 @@ func (_u *MediaSourceUpdate) sqlSave(ctx context.Context) (_node int, err error)
 		}
 	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(mediasource.FieldCreatedAt, field.TypeTime, value)
+		_spec.SetField(itemsource.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
-		_spec.SetField(mediasource.FieldUpdatedAt, field.TypeTime, value)
+		_spec.SetField(itemsource.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
-		_spec.SetField(mediasource.FieldName, field.TypeString, value)
+		_spec.SetField(itemsource.FieldName, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Path(); ok {
-		_spec.SetField(mediasource.FieldPath, field.TypeString, value)
+		_spec.SetField(itemsource.FieldPath, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Container(); ok {
-		_spec.SetField(mediasource.FieldContainer, field.TypeString, value)
+		_spec.SetField(itemsource.FieldContainer, field.TypeString, value)
 	}
 	if _u.mutation.ContainerCleared() {
-		_spec.ClearField(mediasource.FieldContainer, field.TypeString)
+		_spec.ClearField(itemsource.FieldContainer, field.TypeString)
 	}
 	if value, ok := _u.mutation.Size(); ok {
-		_spec.SetField(mediasource.FieldSize, field.TypeInt64, value)
+		_spec.SetField(itemsource.FieldSize, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.AddedSize(); ok {
-		_spec.AddField(mediasource.FieldSize, field.TypeInt64, value)
+		_spec.AddField(itemsource.FieldSize, field.TypeInt64, value)
 	}
 	if _u.mutation.SizeCleared() {
-		_spec.ClearField(mediasource.FieldSize, field.TypeInt64)
+		_spec.ClearField(itemsource.FieldSize, field.TypeInt64)
 	}
 	if value, ok := _u.mutation.RunTimeTicks(); ok {
-		_spec.SetField(mediasource.FieldRunTimeTicks, field.TypeInt64, value)
+		_spec.SetField(itemsource.FieldRunTimeTicks, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.AddedRunTimeTicks(); ok {
-		_spec.AddField(mediasource.FieldRunTimeTicks, field.TypeInt64, value)
+		_spec.AddField(itemsource.FieldRunTimeTicks, field.TypeInt64, value)
 	}
 	if _u.mutation.RunTimeTicksCleared() {
-		_spec.ClearField(mediasource.FieldRunTimeTicks, field.TypeInt64)
+		_spec.ClearField(itemsource.FieldRunTimeTicks, field.TypeInt64)
 	}
 	if value, ok := _u.mutation.Bitrate(); ok {
-		_spec.SetField(mediasource.FieldBitrate, field.TypeInt32, value)
+		_spec.SetField(itemsource.FieldBitrate, field.TypeInt32, value)
 	}
 	if value, ok := _u.mutation.AddedBitrate(); ok {
-		_spec.AddField(mediasource.FieldBitrate, field.TypeInt32, value)
+		_spec.AddField(itemsource.FieldBitrate, field.TypeInt32, value)
 	}
 	if _u.mutation.BitrateCleared() {
-		_spec.ClearField(mediasource.FieldBitrate, field.TypeInt32)
+		_spec.ClearField(itemsource.FieldBitrate, field.TypeInt32)
 	}
 	if value, ok := _u.mutation.DateModified(); ok {
-		_spec.SetField(mediasource.FieldDateModified, field.TypeTime, value)
+		_spec.SetField(itemsource.FieldDateModified, field.TypeTime, value)
 	}
 	if _u.mutation.DateModifiedCleared() {
-		_spec.ClearField(mediasource.FieldDateModified, field.TypeTime)
+		_spec.ClearField(itemsource.FieldDateModified, field.TypeTime)
 	}
 	if value, ok := _u.mutation.ProbedAt(); ok {
-		_spec.SetField(mediasource.FieldProbedAt, field.TypeTime, value)
+		_spec.SetField(itemsource.FieldProbedAt, field.TypeTime, value)
 	}
 	if _u.mutation.ProbedAtCleared() {
-		_spec.ClearField(mediasource.FieldProbedAt, field.TypeTime)
+		_spec.ClearField(itemsource.FieldProbedAt, field.TypeTime)
 	}
 	if _u.mutation.ItemCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   mediasource.ItemTable,
-			Columns: []string{mediasource.ItemColumn},
+			Table:   itemsource.ItemTable,
+			Columns: []string{itemsource.ItemColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
@@ -445,8 +445,8 @@ func (_u *MediaSourceUpdate) sqlSave(ctx context.Context) (_node int, err error)
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   mediasource.ItemTable,
-			Columns: []string{mediasource.ItemColumn},
+			Table:   itemsource.ItemTable,
+			Columns: []string{itemsource.ItemColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
@@ -457,28 +457,28 @@ func (_u *MediaSourceUpdate) sqlSave(ctx context.Context) (_node int, err error)
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.LibraryCleared() {
+	if _u.mutation.SourceCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   mediasource.LibraryTable,
-			Columns: []string{mediasource.LibraryColumn},
+			Table:   itemsource.SourceTable,
+			Columns: []string{itemsource.SourceColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(library.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(source.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.LibraryIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.SourceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   mediasource.LibraryTable,
-			Columns: []string{mediasource.LibraryColumn},
+			Table:   itemsource.SourceTable,
+			Columns: []string{itemsource.SourceColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(library.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(source.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -490,8 +490,8 @@ func (_u *MediaSourceUpdate) sqlSave(ctx context.Context) (_node int, err error)
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   mediasource.StreamsTable,
-			Columns: []string{mediasource.StreamsColumn},
+			Table:   itemsource.StreamsTable,
+			Columns: []string{itemsource.StreamsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(mediastream.FieldID, field.TypeUUID),
@@ -503,8 +503,8 @@ func (_u *MediaSourceUpdate) sqlSave(ctx context.Context) (_node int, err error)
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   mediasource.StreamsTable,
-			Columns: []string{mediasource.StreamsColumn},
+			Table:   itemsource.StreamsTable,
+			Columns: []string{itemsource.StreamsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(mediastream.FieldID, field.TypeUUID),
@@ -519,8 +519,8 @@ func (_u *MediaSourceUpdate) sqlSave(ctx context.Context) (_node int, err error)
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   mediasource.StreamsTable,
-			Columns: []string{mediasource.StreamsColumn},
+			Table:   itemsource.StreamsTable,
+			Columns: []string{itemsource.StreamsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(mediastream.FieldID, field.TypeUUID),
@@ -533,7 +533,7 @@ func (_u *MediaSourceUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
-			err = &NotFoundError{mediasource.Label}
+			err = &NotFoundError{itemsource.Label}
 		} else if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -543,22 +543,22 @@ func (_u *MediaSourceUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	return _node, nil
 }
 
-// MediaSourceUpdateOne is the builder for updating a single MediaSource entity.
-type MediaSourceUpdateOne struct {
+// ItemSourceUpdateOne is the builder for updating a single ItemSource entity.
+type ItemSourceUpdateOne struct {
 	config
 	fields   []string
 	hooks    []Hook
-	mutation *MediaSourceMutation
+	mutation *ItemSourceMutation
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (_u *MediaSourceUpdateOne) SetCreatedAt(v time.Time) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) SetCreatedAt(v time.Time) *ItemSourceUpdateOne {
 	_u.mutation.SetCreatedAt(v)
 	return _u
 }
 
 // SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableCreatedAt(v *time.Time) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) SetNillableCreatedAt(v *time.Time) *ItemSourceUpdateOne {
 	if v != nil {
 		_u.SetCreatedAt(*v)
 	}
@@ -566,47 +566,47 @@ func (_u *MediaSourceUpdateOne) SetNillableCreatedAt(v *time.Time) *MediaSourceU
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (_u *MediaSourceUpdateOne) SetUpdatedAt(v time.Time) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) SetUpdatedAt(v time.Time) *ItemSourceUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
 	return _u
 }
 
 // SetItemID sets the "item_id" field.
-func (_u *MediaSourceUpdateOne) SetItemID(v uuid.UUID) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) SetItemID(v uuid.UUID) *ItemSourceUpdateOne {
 	_u.mutation.SetItemID(v)
 	return _u
 }
 
 // SetNillableItemID sets the "item_id" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableItemID(v *uuid.UUID) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) SetNillableItemID(v *uuid.UUID) *ItemSourceUpdateOne {
 	if v != nil {
 		_u.SetItemID(*v)
 	}
 	return _u
 }
 
-// SetLibraryID sets the "library_id" field.
-func (_u *MediaSourceUpdateOne) SetLibraryID(v uuid.UUID) *MediaSourceUpdateOne {
-	_u.mutation.SetLibraryID(v)
+// SetSourceID sets the "source_id" field.
+func (_u *ItemSourceUpdateOne) SetSourceID(v uuid.UUID) *ItemSourceUpdateOne {
+	_u.mutation.SetSourceID(v)
 	return _u
 }
 
-// SetNillableLibraryID sets the "library_id" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableLibraryID(v *uuid.UUID) *MediaSourceUpdateOne {
+// SetNillableSourceID sets the "source_id" field if the given value is not nil.
+func (_u *ItemSourceUpdateOne) SetNillableSourceID(v *uuid.UUID) *ItemSourceUpdateOne {
 	if v != nil {
-		_u.SetLibraryID(*v)
+		_u.SetSourceID(*v)
 	}
 	return _u
 }
 
 // SetName sets the "name" field.
-func (_u *MediaSourceUpdateOne) SetName(v string) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) SetName(v string) *ItemSourceUpdateOne {
 	_u.mutation.SetName(v)
 	return _u
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableName(v *string) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) SetNillableName(v *string) *ItemSourceUpdateOne {
 	if v != nil {
 		_u.SetName(*v)
 	}
@@ -614,13 +614,13 @@ func (_u *MediaSourceUpdateOne) SetNillableName(v *string) *MediaSourceUpdateOne
 }
 
 // SetPath sets the "path" field.
-func (_u *MediaSourceUpdateOne) SetPath(v string) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) SetPath(v string) *ItemSourceUpdateOne {
 	_u.mutation.SetPath(v)
 	return _u
 }
 
 // SetNillablePath sets the "path" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillablePath(v *string) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) SetNillablePath(v *string) *ItemSourceUpdateOne {
 	if v != nil {
 		_u.SetPath(*v)
 	}
@@ -628,13 +628,13 @@ func (_u *MediaSourceUpdateOne) SetNillablePath(v *string) *MediaSourceUpdateOne
 }
 
 // SetContainer sets the "container" field.
-func (_u *MediaSourceUpdateOne) SetContainer(v string) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) SetContainer(v string) *ItemSourceUpdateOne {
 	_u.mutation.SetContainer(v)
 	return _u
 }
 
 // SetNillableContainer sets the "container" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableContainer(v *string) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) SetNillableContainer(v *string) *ItemSourceUpdateOne {
 	if v != nil {
 		_u.SetContainer(*v)
 	}
@@ -642,20 +642,20 @@ func (_u *MediaSourceUpdateOne) SetNillableContainer(v *string) *MediaSourceUpda
 }
 
 // ClearContainer clears the value of the "container" field.
-func (_u *MediaSourceUpdateOne) ClearContainer() *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) ClearContainer() *ItemSourceUpdateOne {
 	_u.mutation.ClearContainer()
 	return _u
 }
 
 // SetSize sets the "size" field.
-func (_u *MediaSourceUpdateOne) SetSize(v int64) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) SetSize(v int64) *ItemSourceUpdateOne {
 	_u.mutation.ResetSize()
 	_u.mutation.SetSize(v)
 	return _u
 }
 
 // SetNillableSize sets the "size" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableSize(v *int64) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) SetNillableSize(v *int64) *ItemSourceUpdateOne {
 	if v != nil {
 		_u.SetSize(*v)
 	}
@@ -663,26 +663,26 @@ func (_u *MediaSourceUpdateOne) SetNillableSize(v *int64) *MediaSourceUpdateOne 
 }
 
 // AddSize adds value to the "size" field.
-func (_u *MediaSourceUpdateOne) AddSize(v int64) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) AddSize(v int64) *ItemSourceUpdateOne {
 	_u.mutation.AddSize(v)
 	return _u
 }
 
 // ClearSize clears the value of the "size" field.
-func (_u *MediaSourceUpdateOne) ClearSize() *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) ClearSize() *ItemSourceUpdateOne {
 	_u.mutation.ClearSize()
 	return _u
 }
 
 // SetRunTimeTicks sets the "run_time_ticks" field.
-func (_u *MediaSourceUpdateOne) SetRunTimeTicks(v int64) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) SetRunTimeTicks(v int64) *ItemSourceUpdateOne {
 	_u.mutation.ResetRunTimeTicks()
 	_u.mutation.SetRunTimeTicks(v)
 	return _u
 }
 
 // SetNillableRunTimeTicks sets the "run_time_ticks" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableRunTimeTicks(v *int64) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) SetNillableRunTimeTicks(v *int64) *ItemSourceUpdateOne {
 	if v != nil {
 		_u.SetRunTimeTicks(*v)
 	}
@@ -690,26 +690,26 @@ func (_u *MediaSourceUpdateOne) SetNillableRunTimeTicks(v *int64) *MediaSourceUp
 }
 
 // AddRunTimeTicks adds value to the "run_time_ticks" field.
-func (_u *MediaSourceUpdateOne) AddRunTimeTicks(v int64) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) AddRunTimeTicks(v int64) *ItemSourceUpdateOne {
 	_u.mutation.AddRunTimeTicks(v)
 	return _u
 }
 
 // ClearRunTimeTicks clears the value of the "run_time_ticks" field.
-func (_u *MediaSourceUpdateOne) ClearRunTimeTicks() *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) ClearRunTimeTicks() *ItemSourceUpdateOne {
 	_u.mutation.ClearRunTimeTicks()
 	return _u
 }
 
 // SetBitrate sets the "bitrate" field.
-func (_u *MediaSourceUpdateOne) SetBitrate(v int32) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) SetBitrate(v int32) *ItemSourceUpdateOne {
 	_u.mutation.ResetBitrate()
 	_u.mutation.SetBitrate(v)
 	return _u
 }
 
 // SetNillableBitrate sets the "bitrate" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableBitrate(v *int32) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) SetNillableBitrate(v *int32) *ItemSourceUpdateOne {
 	if v != nil {
 		_u.SetBitrate(*v)
 	}
@@ -717,25 +717,25 @@ func (_u *MediaSourceUpdateOne) SetNillableBitrate(v *int32) *MediaSourceUpdateO
 }
 
 // AddBitrate adds value to the "bitrate" field.
-func (_u *MediaSourceUpdateOne) AddBitrate(v int32) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) AddBitrate(v int32) *ItemSourceUpdateOne {
 	_u.mutation.AddBitrate(v)
 	return _u
 }
 
 // ClearBitrate clears the value of the "bitrate" field.
-func (_u *MediaSourceUpdateOne) ClearBitrate() *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) ClearBitrate() *ItemSourceUpdateOne {
 	_u.mutation.ClearBitrate()
 	return _u
 }
 
 // SetDateModified sets the "date_modified" field.
-func (_u *MediaSourceUpdateOne) SetDateModified(v time.Time) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) SetDateModified(v time.Time) *ItemSourceUpdateOne {
 	_u.mutation.SetDateModified(v)
 	return _u
 }
 
 // SetNillableDateModified sets the "date_modified" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableDateModified(v *time.Time) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) SetNillableDateModified(v *time.Time) *ItemSourceUpdateOne {
 	if v != nil {
 		_u.SetDateModified(*v)
 	}
@@ -743,19 +743,19 @@ func (_u *MediaSourceUpdateOne) SetNillableDateModified(v *time.Time) *MediaSour
 }
 
 // ClearDateModified clears the value of the "date_modified" field.
-func (_u *MediaSourceUpdateOne) ClearDateModified() *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) ClearDateModified() *ItemSourceUpdateOne {
 	_u.mutation.ClearDateModified()
 	return _u
 }
 
 // SetProbedAt sets the "probed_at" field.
-func (_u *MediaSourceUpdateOne) SetProbedAt(v time.Time) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) SetProbedAt(v time.Time) *ItemSourceUpdateOne {
 	_u.mutation.SetProbedAt(v)
 	return _u
 }
 
 // SetNillableProbedAt sets the "probed_at" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableProbedAt(v *time.Time) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) SetNillableProbedAt(v *time.Time) *ItemSourceUpdateOne {
 	if v != nil {
 		_u.SetProbedAt(*v)
 	}
@@ -763,29 +763,29 @@ func (_u *MediaSourceUpdateOne) SetNillableProbedAt(v *time.Time) *MediaSourceUp
 }
 
 // ClearProbedAt clears the value of the "probed_at" field.
-func (_u *MediaSourceUpdateOne) ClearProbedAt() *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) ClearProbedAt() *ItemSourceUpdateOne {
 	_u.mutation.ClearProbedAt()
 	return _u
 }
 
 // SetItem sets the "item" edge to the Item entity.
-func (_u *MediaSourceUpdateOne) SetItem(v *Item) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) SetItem(v *Item) *ItemSourceUpdateOne {
 	return _u.SetItemID(v.ID)
 }
 
-// SetLibrary sets the "library" edge to the Library entity.
-func (_u *MediaSourceUpdateOne) SetLibrary(v *Library) *MediaSourceUpdateOne {
-	return _u.SetLibraryID(v.ID)
+// SetSource sets the "source" edge to the Source entity.
+func (_u *ItemSourceUpdateOne) SetSource(v *Source) *ItemSourceUpdateOne {
+	return _u.SetSourceID(v.ID)
 }
 
 // AddStreamIDs adds the "streams" edge to the MediaStream entity by IDs.
-func (_u *MediaSourceUpdateOne) AddStreamIDs(ids ...uuid.UUID) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) AddStreamIDs(ids ...uuid.UUID) *ItemSourceUpdateOne {
 	_u.mutation.AddStreamIDs(ids...)
 	return _u
 }
 
 // AddStreams adds the "streams" edges to the MediaStream entity.
-func (_u *MediaSourceUpdateOne) AddStreams(v ...*MediaStream) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) AddStreams(v ...*MediaStream) *ItemSourceUpdateOne {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
@@ -793,37 +793,37 @@ func (_u *MediaSourceUpdateOne) AddStreams(v ...*MediaStream) *MediaSourceUpdate
 	return _u.AddStreamIDs(ids...)
 }
 
-// Mutation returns the MediaSourceMutation object of the builder.
-func (_u *MediaSourceUpdateOne) Mutation() *MediaSourceMutation {
+// Mutation returns the ItemSourceMutation object of the builder.
+func (_u *ItemSourceUpdateOne) Mutation() *ItemSourceMutation {
 	return _u.mutation
 }
 
 // ClearItem clears the "item" edge to the Item entity.
-func (_u *MediaSourceUpdateOne) ClearItem() *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) ClearItem() *ItemSourceUpdateOne {
 	_u.mutation.ClearItem()
 	return _u
 }
 
-// ClearLibrary clears the "library" edge to the Library entity.
-func (_u *MediaSourceUpdateOne) ClearLibrary() *MediaSourceUpdateOne {
-	_u.mutation.ClearLibrary()
+// ClearSource clears the "source" edge to the Source entity.
+func (_u *ItemSourceUpdateOne) ClearSource() *ItemSourceUpdateOne {
+	_u.mutation.ClearSource()
 	return _u
 }
 
 // ClearStreams clears all "streams" edges to the MediaStream entity.
-func (_u *MediaSourceUpdateOne) ClearStreams() *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) ClearStreams() *ItemSourceUpdateOne {
 	_u.mutation.ClearStreams()
 	return _u
 }
 
 // RemoveStreamIDs removes the "streams" edge to MediaStream entities by IDs.
-func (_u *MediaSourceUpdateOne) RemoveStreamIDs(ids ...uuid.UUID) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) RemoveStreamIDs(ids ...uuid.UUID) *ItemSourceUpdateOne {
 	_u.mutation.RemoveStreamIDs(ids...)
 	return _u
 }
 
 // RemoveStreams removes "streams" edges to MediaStream entities.
-func (_u *MediaSourceUpdateOne) RemoveStreams(v ...*MediaStream) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) RemoveStreams(v ...*MediaStream) *ItemSourceUpdateOne {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
@@ -831,27 +831,27 @@ func (_u *MediaSourceUpdateOne) RemoveStreams(v ...*MediaStream) *MediaSourceUpd
 	return _u.RemoveStreamIDs(ids...)
 }
 
-// Where appends a list predicates to the MediaSourceUpdate builder.
-func (_u *MediaSourceUpdateOne) Where(ps ...predicate.MediaSource) *MediaSourceUpdateOne {
+// Where appends a list predicates to the ItemSourceUpdate builder.
+func (_u *ItemSourceUpdateOne) Where(ps ...predicate.ItemSource) *ItemSourceUpdateOne {
 	_u.mutation.Where(ps...)
 	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (_u *MediaSourceUpdateOne) Select(field string, fields ...string) *MediaSourceUpdateOne {
+func (_u *ItemSourceUpdateOne) Select(field string, fields ...string) *ItemSourceUpdateOne {
 	_u.fields = append([]string{field}, fields...)
 	return _u
 }
 
-// Save executes the query and returns the updated MediaSource entity.
-func (_u *MediaSourceUpdateOne) Save(ctx context.Context) (*MediaSource, error) {
+// Save executes the query and returns the updated ItemSource entity.
+func (_u *ItemSourceUpdateOne) Save(ctx context.Context) (*ItemSource, error) {
 	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_u *MediaSourceUpdateOne) SaveX(ctx context.Context) *MediaSource {
+func (_u *ItemSourceUpdateOne) SaveX(ctx context.Context) *ItemSource {
 	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
@@ -860,55 +860,55 @@ func (_u *MediaSourceUpdateOne) SaveX(ctx context.Context) *MediaSource {
 }
 
 // Exec executes the query on the entity.
-func (_u *MediaSourceUpdateOne) Exec(ctx context.Context) error {
+func (_u *ItemSourceUpdateOne) Exec(ctx context.Context) error {
 	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_u *MediaSourceUpdateOne) ExecX(ctx context.Context) {
+func (_u *ItemSourceUpdateOne) ExecX(ctx context.Context) {
 	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (_u *MediaSourceUpdateOne) defaults() {
+func (_u *ItemSourceUpdateOne) defaults() {
 	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := mediasource.UpdateDefaultUpdatedAt()
+		v := itemsource.UpdateDefaultUpdatedAt()
 		_u.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_u *MediaSourceUpdateOne) check() error {
+func (_u *ItemSourceUpdateOne) check() error {
 	if _u.mutation.ItemCleared() && len(_u.mutation.ItemIDs()) > 0 {
-		return errors.New(`store: clearing a required unique edge "MediaSource.item"`)
+		return errors.New(`store: clearing a required unique edge "ItemSource.item"`)
 	}
-	if _u.mutation.LibraryCleared() && len(_u.mutation.LibraryIDs()) > 0 {
-		return errors.New(`store: clearing a required unique edge "MediaSource.library"`)
+	if _u.mutation.SourceCleared() && len(_u.mutation.SourceIDs()) > 0 {
+		return errors.New(`store: clearing a required unique edge "ItemSource.source"`)
 	}
 	return nil
 }
 
-func (_u *MediaSourceUpdateOne) sqlSave(ctx context.Context) (_node *MediaSource, err error) {
+func (_u *ItemSourceUpdateOne) sqlSave(ctx context.Context) (_node *ItemSource, err error) {
 	if err := _u.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(mediasource.Table, mediasource.Columns, sqlgraph.NewFieldSpec(mediasource.FieldID, field.TypeUUID))
+	_spec := sqlgraph.NewUpdateSpec(itemsource.Table, itemsource.Columns, sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID))
 	id, ok := _u.mutation.ID()
 	if !ok {
-		return nil, &ValidationError{Name: "id", err: errors.New(`store: missing "MediaSource.id" for update`)}
+		return nil, &ValidationError{Name: "id", err: errors.New(`store: missing "ItemSource.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
 	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
-		_spec.Node.Columns = append(_spec.Node.Columns, mediasource.FieldID)
+		_spec.Node.Columns = append(_spec.Node.Columns, itemsource.FieldID)
 		for _, f := range fields {
-			if !mediasource.ValidColumn(f) {
+			if !itemsource.ValidColumn(f) {
 				return nil, &ValidationError{Name: f, err: fmt.Errorf("store: invalid field %q for query", f)}
 			}
-			if f != mediasource.FieldID {
+			if f != itemsource.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, f)
 			}
 		}
@@ -921,68 +921,68 @@ func (_u *MediaSourceUpdateOne) sqlSave(ctx context.Context) (_node *MediaSource
 		}
 	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(mediasource.FieldCreatedAt, field.TypeTime, value)
+		_spec.SetField(itemsource.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
-		_spec.SetField(mediasource.FieldUpdatedAt, field.TypeTime, value)
+		_spec.SetField(itemsource.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
-		_spec.SetField(mediasource.FieldName, field.TypeString, value)
+		_spec.SetField(itemsource.FieldName, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Path(); ok {
-		_spec.SetField(mediasource.FieldPath, field.TypeString, value)
+		_spec.SetField(itemsource.FieldPath, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Container(); ok {
-		_spec.SetField(mediasource.FieldContainer, field.TypeString, value)
+		_spec.SetField(itemsource.FieldContainer, field.TypeString, value)
 	}
 	if _u.mutation.ContainerCleared() {
-		_spec.ClearField(mediasource.FieldContainer, field.TypeString)
+		_spec.ClearField(itemsource.FieldContainer, field.TypeString)
 	}
 	if value, ok := _u.mutation.Size(); ok {
-		_spec.SetField(mediasource.FieldSize, field.TypeInt64, value)
+		_spec.SetField(itemsource.FieldSize, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.AddedSize(); ok {
-		_spec.AddField(mediasource.FieldSize, field.TypeInt64, value)
+		_spec.AddField(itemsource.FieldSize, field.TypeInt64, value)
 	}
 	if _u.mutation.SizeCleared() {
-		_spec.ClearField(mediasource.FieldSize, field.TypeInt64)
+		_spec.ClearField(itemsource.FieldSize, field.TypeInt64)
 	}
 	if value, ok := _u.mutation.RunTimeTicks(); ok {
-		_spec.SetField(mediasource.FieldRunTimeTicks, field.TypeInt64, value)
+		_spec.SetField(itemsource.FieldRunTimeTicks, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.AddedRunTimeTicks(); ok {
-		_spec.AddField(mediasource.FieldRunTimeTicks, field.TypeInt64, value)
+		_spec.AddField(itemsource.FieldRunTimeTicks, field.TypeInt64, value)
 	}
 	if _u.mutation.RunTimeTicksCleared() {
-		_spec.ClearField(mediasource.FieldRunTimeTicks, field.TypeInt64)
+		_spec.ClearField(itemsource.FieldRunTimeTicks, field.TypeInt64)
 	}
 	if value, ok := _u.mutation.Bitrate(); ok {
-		_spec.SetField(mediasource.FieldBitrate, field.TypeInt32, value)
+		_spec.SetField(itemsource.FieldBitrate, field.TypeInt32, value)
 	}
 	if value, ok := _u.mutation.AddedBitrate(); ok {
-		_spec.AddField(mediasource.FieldBitrate, field.TypeInt32, value)
+		_spec.AddField(itemsource.FieldBitrate, field.TypeInt32, value)
 	}
 	if _u.mutation.BitrateCleared() {
-		_spec.ClearField(mediasource.FieldBitrate, field.TypeInt32)
+		_spec.ClearField(itemsource.FieldBitrate, field.TypeInt32)
 	}
 	if value, ok := _u.mutation.DateModified(); ok {
-		_spec.SetField(mediasource.FieldDateModified, field.TypeTime, value)
+		_spec.SetField(itemsource.FieldDateModified, field.TypeTime, value)
 	}
 	if _u.mutation.DateModifiedCleared() {
-		_spec.ClearField(mediasource.FieldDateModified, field.TypeTime)
+		_spec.ClearField(itemsource.FieldDateModified, field.TypeTime)
 	}
 	if value, ok := _u.mutation.ProbedAt(); ok {
-		_spec.SetField(mediasource.FieldProbedAt, field.TypeTime, value)
+		_spec.SetField(itemsource.FieldProbedAt, field.TypeTime, value)
 	}
 	if _u.mutation.ProbedAtCleared() {
-		_spec.ClearField(mediasource.FieldProbedAt, field.TypeTime)
+		_spec.ClearField(itemsource.FieldProbedAt, field.TypeTime)
 	}
 	if _u.mutation.ItemCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   mediasource.ItemTable,
-			Columns: []string{mediasource.ItemColumn},
+			Table:   itemsource.ItemTable,
+			Columns: []string{itemsource.ItemColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
@@ -994,8 +994,8 @@ func (_u *MediaSourceUpdateOne) sqlSave(ctx context.Context) (_node *MediaSource
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   mediasource.ItemTable,
-			Columns: []string{mediasource.ItemColumn},
+			Table:   itemsource.ItemTable,
+			Columns: []string{itemsource.ItemColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
@@ -1006,28 +1006,28 @@ func (_u *MediaSourceUpdateOne) sqlSave(ctx context.Context) (_node *MediaSource
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.LibraryCleared() {
+	if _u.mutation.SourceCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   mediasource.LibraryTable,
-			Columns: []string{mediasource.LibraryColumn},
+			Table:   itemsource.SourceTable,
+			Columns: []string{itemsource.SourceColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(library.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(source.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.LibraryIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.SourceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   mediasource.LibraryTable,
-			Columns: []string{mediasource.LibraryColumn},
+			Table:   itemsource.SourceTable,
+			Columns: []string{itemsource.SourceColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(library.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(source.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1039,8 +1039,8 @@ func (_u *MediaSourceUpdateOne) sqlSave(ctx context.Context) (_node *MediaSource
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   mediasource.StreamsTable,
-			Columns: []string{mediasource.StreamsColumn},
+			Table:   itemsource.StreamsTable,
+			Columns: []string{itemsource.StreamsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(mediastream.FieldID, field.TypeUUID),
@@ -1052,8 +1052,8 @@ func (_u *MediaSourceUpdateOne) sqlSave(ctx context.Context) (_node *MediaSource
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   mediasource.StreamsTable,
-			Columns: []string{mediasource.StreamsColumn},
+			Table:   itemsource.StreamsTable,
+			Columns: []string{itemsource.StreamsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(mediastream.FieldID, field.TypeUUID),
@@ -1068,8 +1068,8 @@ func (_u *MediaSourceUpdateOne) sqlSave(ctx context.Context) (_node *MediaSource
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   mediasource.StreamsTable,
-			Columns: []string{mediasource.StreamsColumn},
+			Table:   itemsource.StreamsTable,
+			Columns: []string{itemsource.StreamsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(mediastream.FieldID, field.TypeUUID),
@@ -1080,12 +1080,12 @@ func (_u *MediaSourceUpdateOne) sqlSave(ctx context.Context) (_node *MediaSource
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &MediaSource{config: _u.config}
+	_node = &ItemSource{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
 	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
-			err = &NotFoundError{mediasource.Label}
+			err = &NotFoundError{itemsource.Label}
 		} else if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}

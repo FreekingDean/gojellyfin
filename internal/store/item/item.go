@@ -77,8 +77,8 @@ const (
 	EdgeChildren = "children"
 	// EdgeLibrary holds the string denoting the library edge name in mutations.
 	EdgeLibrary = "library"
-	// EdgeMediaSources holds the string denoting the media_sources edge name in mutations.
-	EdgeMediaSources = "media_sources"
+	// EdgeItemSources holds the string denoting the item_sources edge name in mutations.
+	EdgeItemSources = "item_sources"
 	// EdgeCredits holds the string denoting the credits edge name in mutations.
 	EdgeCredits = "credits"
 	// EdgeImages holds the string denoting the images edge name in mutations.
@@ -112,13 +112,13 @@ const (
 	LibraryInverseTable = "libraries"
 	// LibraryColumn is the table column denoting the library relation/edge.
 	LibraryColumn = "library_id"
-	// MediaSourcesTable is the table that holds the media_sources relation/edge.
-	MediaSourcesTable = "media_sources"
-	// MediaSourcesInverseTable is the table name for the MediaSource entity.
-	// It exists in this package in order to avoid circular dependency with the "mediasource" package.
-	MediaSourcesInverseTable = "media_sources"
-	// MediaSourcesColumn is the table column denoting the media_sources relation/edge.
-	MediaSourcesColumn = "item_id"
+	// ItemSourcesTable is the table that holds the item_sources relation/edge.
+	ItemSourcesTable = "item_sources"
+	// ItemSourcesInverseTable is the table name for the ItemSource entity.
+	// It exists in this package in order to avoid circular dependency with the "itemsource" package.
+	ItemSourcesInverseTable = "item_sources"
+	// ItemSourcesColumn is the table column denoting the item_sources relation/edge.
+	ItemSourcesColumn = "item_id"
 	// CreditsTable is the table that holds the credits relation/edge.
 	CreditsTable = "credits"
 	// CreditsInverseTable is the table name for the Credit entity.
@@ -483,17 +483,17 @@ func ByLibraryField(field string, opts ...sql.OrderTermOption) OrderOption {
 	}
 }
 
-// ByMediaSourcesCount orders the results by media_sources count.
-func ByMediaSourcesCount(opts ...sql.OrderTermOption) OrderOption {
+// ByItemSourcesCount orders the results by item_sources count.
+func ByItemSourcesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newMediaSourcesStep(), opts...)
+		sqlgraph.OrderByNeighborsCount(s, newItemSourcesStep(), opts...)
 	}
 }
 
-// ByMediaSources orders the results by media_sources terms.
-func ByMediaSources(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+// ByItemSources orders the results by item_sources terms.
+func ByItemSources(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newMediaSourcesStep(), append([]sql.OrderTerm{term}, terms...)...)
+		sqlgraph.OrderByNeighborTerms(s, newItemSourcesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
@@ -622,11 +622,11 @@ func newLibraryStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.M2O, true, LibraryTable, LibraryColumn),
 	)
 }
-func newMediaSourcesStep() *sqlgraph.Step {
+func newItemSourcesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(MediaSourcesInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, MediaSourcesTable, MediaSourcesColumn),
+		sqlgraph.To(ItemSourcesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ItemSourcesTable, ItemSourcesColumn),
 	)
 }
 func newCreditsStep() *sqlgraph.Step {

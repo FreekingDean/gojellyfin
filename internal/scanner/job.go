@@ -34,27 +34,28 @@ func (l *LibraryScan) Run(ctx context.Context) error {
 		return err
 	}
 
-	scanned := make([]uuid.UUID, 0, len(libraries))
 	for _, id := range libraries {
 		if err := l.scanner.ScanLibrary(ctx, id); err != nil {
 			log.Printf("library scan failed %s: %v", id, err)
-
-			continue
 		}
-		scanned = append(scanned, id)
 	}
 
-	for _, id := range scanned {
-		if err := l.probe(ctx, id); err != nil {
-			log.Printf("probe failed %s: %v", id, err)
+	configured, err := l.scanner.sources.List(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range configured {
+		if err := l.probe(ctx, entry.Source.ID); err != nil {
+			log.Printf("probe failed %s: %v", entry.Source.Name, err)
 		}
 	}
 
 	return nil
 }
 
-func (l *LibraryScan) probe(ctx context.Context, library uuid.UUID) error {
-	sources, err := l.scanner.UnprobedSources(ctx, library)
+func (l *LibraryScan) probe(ctx context.Context, source uuid.UUID) error {
+	files, err := l.scanner.UnprobedSources(ctx, source)
 	if err != nil {
 		return err
 	}
@@ -62,10 +63,10 @@ func (l *LibraryScan) probe(ctx context.Context, library uuid.UUID) error {
 	group, probing := errgroup.WithContext(ctx)
 	group.SetLimit(runtime.GOMAXPROCS(0))
 
-	for _, source := range sources {
+	for _, file := range files {
 		group.Go(func() error {
-			if err := l.scanner.ProbeSource(probing, source); err != nil && !store.IsNotFound(err) {
-				log.Printf("probe failed %s: %v", source, err)
+			if err := l.scanner.ProbeSource(probing, file); err != nil && !store.IsNotFound(err) {
+				log.Printf("probe failed %s: %v", file, err)
 			}
 
 			return probing.Err()

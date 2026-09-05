@@ -64,7 +64,7 @@ func (Item) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("children", Item.Type).Annotations(cascadeOnDelete).From("parent").Unique().Field("parent_id"),
 		edge.From("library", Library.Type).Ref("items").Unique().Field("library_id"),
-		edge.To("media_sources", MediaSource.Type).Annotations(cascadeOnDelete),
+		edge.To("item_sources", ItemSource.Type).Annotations(cascadeOnDelete),
 		edge.To("credits", Credit.Type).Annotations(cascadeOnDelete),
 		edge.To("images", Image.Type).Annotations(cascadeOnDelete),
 		edge.To("user_data", UserItemData.Type).Annotations(cascadeOnDelete),

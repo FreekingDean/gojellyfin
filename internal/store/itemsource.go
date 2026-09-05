@@ -10,13 +10,13 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
-	"github.com/FreekingDean/gojellyfin/internal/store/library"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/google/uuid"
 )
 
-// MediaSource is the model entity for the MediaSource schema.
-type MediaSource struct {
+// ItemSource is the model entity for the ItemSource schema.
+type ItemSource struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
@@ -26,8 +26,8 @@ type MediaSource struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// ItemID holds the value of the "item_id" field.
 	ItemID uuid.UUID `json:"item_id,omitempty"`
-	// LibraryID holds the value of the "library_id" field.
-	LibraryID uuid.UUID `json:"library_id,omitempty"`
+	// SourceID holds the value of the "source_id" field.
+	SourceID uuid.UUID `json:"source_id,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Path holds the value of the "path" field.
@@ -45,17 +45,17 @@ type MediaSource struct {
 	// ProbedAt holds the value of the "probed_at" field.
 	ProbedAt time.Time `json:"probed_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
-	// The values are being populated by the MediaSourceQuery when eager-loading is set.
-	Edges        MediaSourceEdges `json:"edges"`
+	// The values are being populated by the ItemSourceQuery when eager-loading is set.
+	Edges        ItemSourceEdges `json:"edges"`
 	selectValues sql.SelectValues
 }
 
-// MediaSourceEdges holds the relations/edges for other nodes in the graph.
-type MediaSourceEdges struct {
+// ItemSourceEdges holds the relations/edges for other nodes in the graph.
+type ItemSourceEdges struct {
 	// Item holds the value of the item edge.
 	Item *Item `json:"item,omitempty"`
-	// Library holds the value of the library edge.
-	Library *Library `json:"library,omitempty"`
+	// Source holds the value of the source edge.
+	Source *Source `json:"source,omitempty"`
 	// Streams holds the value of the streams edge.
 	Streams []*MediaStream `json:"streams,omitempty"`
 	// loadedTypes holds the information for reporting if a
@@ -65,7 +65,7 @@ type MediaSourceEdges struct {
 
 // ItemOrErr returns the Item value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e MediaSourceEdges) ItemOrErr() (*Item, error) {
+func (e ItemSourceEdges) ItemOrErr() (*Item, error) {
 	if e.Item != nil {
 		return e.Item, nil
 	} else if e.loadedTypes[0] {
@@ -74,20 +74,20 @@ func (e MediaSourceEdges) ItemOrErr() (*Item, error) {
 	return nil, &NotLoadedError{edge: "item"}
 }
 
-// LibraryOrErr returns the Library value or an error if the edge
+// SourceOrErr returns the Source value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e MediaSourceEdges) LibraryOrErr() (*Library, error) {
-	if e.Library != nil {
-		return e.Library, nil
+func (e ItemSourceEdges) SourceOrErr() (*Source, error) {
+	if e.Source != nil {
+		return e.Source, nil
 	} else if e.loadedTypes[1] {
-		return nil, &NotFoundError{label: library.Label}
+		return nil, &NotFoundError{label: source.Label}
 	}
-	return nil, &NotLoadedError{edge: "library"}
+	return nil, &NotLoadedError{edge: "source"}
 }
 
 // StreamsOrErr returns the Streams value or an error if the edge
 // was not loaded in eager-loading.
-func (e MediaSourceEdges) StreamsOrErr() ([]*MediaStream, error) {
+func (e ItemSourceEdges) StreamsOrErr() ([]*MediaStream, error) {
 	if e.loadedTypes[2] {
 		return e.Streams, nil
 	}
@@ -95,17 +95,17 @@ func (e MediaSourceEdges) StreamsOrErr() ([]*MediaStream, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*MediaSource) scanValues(columns []string) ([]any, error) {
+func (*ItemSource) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case mediasource.FieldSize, mediasource.FieldRunTimeTicks, mediasource.FieldBitrate:
+		case itemsource.FieldSize, itemsource.FieldRunTimeTicks, itemsource.FieldBitrate:
 			values[i] = new(sql.NullInt64)
-		case mediasource.FieldName, mediasource.FieldPath, mediasource.FieldContainer:
+		case itemsource.FieldName, itemsource.FieldPath, itemsource.FieldContainer:
 			values[i] = new(sql.NullString)
-		case mediasource.FieldCreatedAt, mediasource.FieldUpdatedAt, mediasource.FieldDateModified, mediasource.FieldProbedAt:
+		case itemsource.FieldCreatedAt, itemsource.FieldUpdatedAt, itemsource.FieldDateModified, itemsource.FieldProbedAt:
 			values[i] = new(sql.NullTime)
-		case mediasource.FieldID, mediasource.FieldItemID, mediasource.FieldLibraryID:
+		case itemsource.FieldID, itemsource.FieldItemID, itemsource.FieldSourceID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -115,86 +115,86 @@ func (*MediaSource) scanValues(columns []string) ([]any, error) {
 }
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
-// to the MediaSource fields.
-func (_m *MediaSource) assignValues(columns []string, values []any) error {
+// to the ItemSource fields.
+func (_m *ItemSource) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
 	for i := range columns {
 		switch columns[i] {
-		case mediasource.FieldID:
+		case itemsource.FieldID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
 				_m.ID = *value
 			}
-		case mediasource.FieldCreatedAt:
+		case itemsource.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
 				_m.CreatedAt = value.Time
 			}
-		case mediasource.FieldUpdatedAt:
+		case itemsource.FieldUpdatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
 			}
-		case mediasource.FieldItemID:
+		case itemsource.FieldItemID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field item_id", values[i])
 			} else if value != nil {
 				_m.ItemID = *value
 			}
-		case mediasource.FieldLibraryID:
+		case itemsource.FieldSourceID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
-				return fmt.Errorf("unexpected type %T for field library_id", values[i])
+				return fmt.Errorf("unexpected type %T for field source_id", values[i])
 			} else if value != nil {
-				_m.LibraryID = *value
+				_m.SourceID = *value
 			}
-		case mediasource.FieldName:
+		case itemsource.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				_m.Name = value.String
 			}
-		case mediasource.FieldPath:
+		case itemsource.FieldPath:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field path", values[i])
 			} else if value.Valid {
 				_m.Path = value.String
 			}
-		case mediasource.FieldContainer:
+		case itemsource.FieldContainer:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field container", values[i])
 			} else if value.Valid {
 				_m.Container = value.String
 			}
-		case mediasource.FieldSize:
+		case itemsource.FieldSize:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field size", values[i])
 			} else if value.Valid {
 				_m.Size = value.Int64
 			}
-		case mediasource.FieldRunTimeTicks:
+		case itemsource.FieldRunTimeTicks:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field run_time_ticks", values[i])
 			} else if value.Valid {
 				_m.RunTimeTicks = value.Int64
 			}
-		case mediasource.FieldBitrate:
+		case itemsource.FieldBitrate:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field bitrate", values[i])
 			} else if value.Valid {
 				_m.Bitrate = int32(value.Int64)
 			}
-		case mediasource.FieldDateModified:
+		case itemsource.FieldDateModified:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field date_modified", values[i])
 			} else if value.Valid {
 				_m.DateModified = value.Time
 			}
-		case mediasource.FieldProbedAt:
+		case itemsource.FieldProbedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field probed_at", values[i])
 			} else if value.Valid {
@@ -207,49 +207,49 @@ func (_m *MediaSource) assignValues(columns []string, values []any) error {
 	return nil
 }
 
-// Value returns the ent.Value that was dynamically selected and assigned to the MediaSource.
+// Value returns the ent.Value that was dynamically selected and assigned to the ItemSource.
 // This includes values selected through modifiers, order, etc.
-func (_m *MediaSource) Value(name string) (ent.Value, error) {
+func (_m *ItemSource) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
 }
 
-// QueryItem queries the "item" edge of the MediaSource entity.
-func (_m *MediaSource) QueryItem() *ItemQuery {
-	return NewMediaSourceClient(_m.config).QueryItem(_m)
+// QueryItem queries the "item" edge of the ItemSource entity.
+func (_m *ItemSource) QueryItem() *ItemQuery {
+	return NewItemSourceClient(_m.config).QueryItem(_m)
 }
 
-// QueryLibrary queries the "library" edge of the MediaSource entity.
-func (_m *MediaSource) QueryLibrary() *LibraryQuery {
-	return NewMediaSourceClient(_m.config).QueryLibrary(_m)
+// QuerySource queries the "source" edge of the ItemSource entity.
+func (_m *ItemSource) QuerySource() *SourceQuery {
+	return NewItemSourceClient(_m.config).QuerySource(_m)
 }
 
-// QueryStreams queries the "streams" edge of the MediaSource entity.
-func (_m *MediaSource) QueryStreams() *MediaStreamQuery {
-	return NewMediaSourceClient(_m.config).QueryStreams(_m)
+// QueryStreams queries the "streams" edge of the ItemSource entity.
+func (_m *ItemSource) QueryStreams() *MediaStreamQuery {
+	return NewItemSourceClient(_m.config).QueryStreams(_m)
 }
 
-// Update returns a builder for updating this MediaSource.
-// Note that you need to call MediaSource.Unwrap() before calling this method if this MediaSource
+// Update returns a builder for updating this ItemSource.
+// Note that you need to call ItemSource.Unwrap() before calling this method if this ItemSource
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (_m *MediaSource) Update() *MediaSourceUpdateOne {
-	return NewMediaSourceClient(_m.config).UpdateOne(_m)
+func (_m *ItemSource) Update() *ItemSourceUpdateOne {
+	return NewItemSourceClient(_m.config).UpdateOne(_m)
 }
 
-// Unwrap unwraps the MediaSource entity that was returned from a transaction after it was closed,
+// Unwrap unwraps the ItemSource entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (_m *MediaSource) Unwrap() *MediaSource {
+func (_m *ItemSource) Unwrap() *ItemSource {
 	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
-		panic("store: MediaSource is not a transactional entity")
+		panic("store: ItemSource is not a transactional entity")
 	}
 	_m.config.driver = _tx.drv
 	return _m
 }
 
 // String implements the fmt.Stringer.
-func (_m *MediaSource) String() string {
+func (_m *ItemSource) String() string {
 	var builder strings.Builder
-	builder.WriteString("MediaSource(")
+	builder.WriteString("ItemSource(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
@@ -260,8 +260,8 @@ func (_m *MediaSource) String() string {
 	builder.WriteString("item_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ItemID))
 	builder.WriteString(", ")
-	builder.WriteString("library_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.LibraryID))
+	builder.WriteString("source_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SourceID))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)
@@ -290,5 +290,5 @@ func (_m *MediaSource) String() string {
 	return builder.String()
 }
 
-// MediaSources is a parsable slice of MediaSource.
-type MediaSources []*MediaSource
+// ItemSources is a parsable slice of ItemSource.
+type ItemSources []*ItemSource

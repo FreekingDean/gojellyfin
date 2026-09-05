@@ -17,8 +17,8 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/genre"
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
+	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
@@ -409,19 +409,19 @@ func (_c *ItemCreate) SetLibrary(v *Library) *ItemCreate {
 	return _c.SetLibraryID(v.ID)
 }
 
-// AddMediaSourceIDs adds the "media_sources" edge to the MediaSource entity by IDs.
-func (_c *ItemCreate) AddMediaSourceIDs(ids ...uuid.UUID) *ItemCreate {
-	_c.mutation.AddMediaSourceIDs(ids...)
+// AddItemSourceIDs adds the "item_sources" edge to the ItemSource entity by IDs.
+func (_c *ItemCreate) AddItemSourceIDs(ids ...uuid.UUID) *ItemCreate {
+	_c.mutation.AddItemSourceIDs(ids...)
 	return _c
 }
 
-// AddMediaSources adds the "media_sources" edges to the MediaSource entity.
-func (_c *ItemCreate) AddMediaSources(v ...*MediaSource) *ItemCreate {
+// AddItemSources adds the "item_sources" edges to the ItemSource entity.
+func (_c *ItemCreate) AddItemSources(v ...*ItemSource) *ItemCreate {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _c.AddMediaSourceIDs(ids...)
+	return _c.AddItemSourceIDs(ids...)
 }
 
 // AddCreditIDs adds the "credits" edge to the Credit entity by IDs.
@@ -835,15 +835,15 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 		_node.LibraryID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := _c.mutation.MediaSourcesIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.ItemSourcesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   item.MediaSourcesTable,
-			Columns: []string{item.MediaSourcesColumn},
+			Table:   item.ItemSourcesTable,
+			Columns: []string{item.ItemSourcesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasource.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

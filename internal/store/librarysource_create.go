@@ -80,34 +80,6 @@ func (_c *LibrarySourceCreate) SetNillableTagFilter(v *string) *LibrarySourceCre
 	return _c
 }
 
-// SetSourcePath sets the "source_path" field.
-func (_c *LibrarySourceCreate) SetSourcePath(v string) *LibrarySourceCreate {
-	_c.mutation.SetSourcePath(v)
-	return _c
-}
-
-// SetNillableSourcePath sets the "source_path" field if the given value is not nil.
-func (_c *LibrarySourceCreate) SetNillableSourcePath(v *string) *LibrarySourceCreate {
-	if v != nil {
-		_c.SetSourcePath(*v)
-	}
-	return _c
-}
-
-// SetTargetPath sets the "target_path" field.
-func (_c *LibrarySourceCreate) SetTargetPath(v string) *LibrarySourceCreate {
-	_c.mutation.SetTargetPath(v)
-	return _c
-}
-
-// SetNillableTargetPath sets the "target_path" field if the given value is not nil.
-func (_c *LibrarySourceCreate) SetNillableTargetPath(v *string) *LibrarySourceCreate {
-	if v != nil {
-		_c.SetTargetPath(*v)
-	}
-	return _c
-}
-
 // SetID sets the "id" field.
 func (_c *LibrarySourceCreate) SetID(v uuid.UUID) *LibrarySourceCreate {
 	_c.mutation.SetID(v)
@@ -236,14 +208,6 @@ func (_c *LibrarySourceCreate) createSpec() (*LibrarySource, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.TagFilter(); ok {
 		_spec.SetField(librarysource.FieldTagFilter, field.TypeString, value)
 		_node.TagFilter = value
-	}
-	if value, ok := _c.mutation.SourcePath(); ok {
-		_spec.SetField(librarysource.FieldSourcePath, field.TypeString, value)
-		_node.SourcePath = value
-	}
-	if value, ok := _c.mutation.TargetPath(); ok {
-		_spec.SetField(librarysource.FieldTargetPath, field.TypeString, value)
-		_node.TargetPath = value
 	}
 	if nodes := _c.mutation.LibraryIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -397,42 +361,6 @@ func (u *LibrarySourceUpsert) ClearTagFilter() *LibrarySourceUpsert {
 	return u
 }
 
-// SetSourcePath sets the "source_path" field.
-func (u *LibrarySourceUpsert) SetSourcePath(v string) *LibrarySourceUpsert {
-	u.Set(librarysource.FieldSourcePath, v)
-	return u
-}
-
-// UpdateSourcePath sets the "source_path" field to the value that was provided on create.
-func (u *LibrarySourceUpsert) UpdateSourcePath() *LibrarySourceUpsert {
-	u.SetExcluded(librarysource.FieldSourcePath)
-	return u
-}
-
-// ClearSourcePath clears the value of the "source_path" field.
-func (u *LibrarySourceUpsert) ClearSourcePath() *LibrarySourceUpsert {
-	u.SetNull(librarysource.FieldSourcePath)
-	return u
-}
-
-// SetTargetPath sets the "target_path" field.
-func (u *LibrarySourceUpsert) SetTargetPath(v string) *LibrarySourceUpsert {
-	u.Set(librarysource.FieldTargetPath, v)
-	return u
-}
-
-// UpdateTargetPath sets the "target_path" field to the value that was provided on create.
-func (u *LibrarySourceUpsert) UpdateTargetPath() *LibrarySourceUpsert {
-	u.SetExcluded(librarysource.FieldTargetPath)
-	return u
-}
-
-// ClearTargetPath clears the value of the "target_path" field.
-func (u *LibrarySourceUpsert) ClearTargetPath() *LibrarySourceUpsert {
-	u.SetNull(librarysource.FieldTargetPath)
-	return u
-}
-
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -555,48 +483,6 @@ func (u *LibrarySourceUpsertOne) UpdateTagFilter() *LibrarySourceUpsertOne {
 func (u *LibrarySourceUpsertOne) ClearTagFilter() *LibrarySourceUpsertOne {
 	return u.Update(func(s *LibrarySourceUpsert) {
 		s.ClearTagFilter()
-	})
-}
-
-// SetSourcePath sets the "source_path" field.
-func (u *LibrarySourceUpsertOne) SetSourcePath(v string) *LibrarySourceUpsertOne {
-	return u.Update(func(s *LibrarySourceUpsert) {
-		s.SetSourcePath(v)
-	})
-}
-
-// UpdateSourcePath sets the "source_path" field to the value that was provided on create.
-func (u *LibrarySourceUpsertOne) UpdateSourcePath() *LibrarySourceUpsertOne {
-	return u.Update(func(s *LibrarySourceUpsert) {
-		s.UpdateSourcePath()
-	})
-}
-
-// ClearSourcePath clears the value of the "source_path" field.
-func (u *LibrarySourceUpsertOne) ClearSourcePath() *LibrarySourceUpsertOne {
-	return u.Update(func(s *LibrarySourceUpsert) {
-		s.ClearSourcePath()
-	})
-}
-
-// SetTargetPath sets the "target_path" field.
-func (u *LibrarySourceUpsertOne) SetTargetPath(v string) *LibrarySourceUpsertOne {
-	return u.Update(func(s *LibrarySourceUpsert) {
-		s.SetTargetPath(v)
-	})
-}
-
-// UpdateTargetPath sets the "target_path" field to the value that was provided on create.
-func (u *LibrarySourceUpsertOne) UpdateTargetPath() *LibrarySourceUpsertOne {
-	return u.Update(func(s *LibrarySourceUpsert) {
-		s.UpdateTargetPath()
-	})
-}
-
-// ClearTargetPath clears the value of the "target_path" field.
-func (u *LibrarySourceUpsertOne) ClearTargetPath() *LibrarySourceUpsertOne {
-	return u.Update(func(s *LibrarySourceUpsert) {
-		s.ClearTargetPath()
 	})
 }
 
@@ -889,48 +775,6 @@ func (u *LibrarySourceUpsertBulk) UpdateTagFilter() *LibrarySourceUpsertBulk {
 func (u *LibrarySourceUpsertBulk) ClearTagFilter() *LibrarySourceUpsertBulk {
 	return u.Update(func(s *LibrarySourceUpsert) {
 		s.ClearTagFilter()
-	})
-}
-
-// SetSourcePath sets the "source_path" field.
-func (u *LibrarySourceUpsertBulk) SetSourcePath(v string) *LibrarySourceUpsertBulk {
-	return u.Update(func(s *LibrarySourceUpsert) {
-		s.SetSourcePath(v)
-	})
-}
-
-// UpdateSourcePath sets the "source_path" field to the value that was provided on create.
-func (u *LibrarySourceUpsertBulk) UpdateSourcePath() *LibrarySourceUpsertBulk {
-	return u.Update(func(s *LibrarySourceUpsert) {
-		s.UpdateSourcePath()
-	})
-}
-
-// ClearSourcePath clears the value of the "source_path" field.
-func (u *LibrarySourceUpsertBulk) ClearSourcePath() *LibrarySourceUpsertBulk {
-	return u.Update(func(s *LibrarySourceUpsert) {
-		s.ClearSourcePath()
-	})
-}
-
-// SetTargetPath sets the "target_path" field.
-func (u *LibrarySourceUpsertBulk) SetTargetPath(v string) *LibrarySourceUpsertBulk {
-	return u.Update(func(s *LibrarySourceUpsert) {
-		s.SetTargetPath(v)
-	})
-}
-
-// UpdateTargetPath sets the "target_path" field to the value that was provided on create.
-func (u *LibrarySourceUpsertBulk) UpdateTargetPath() *LibrarySourceUpsertBulk {
-	return u.Update(func(s *LibrarySourceUpsert) {
-		s.UpdateTargetPath()
-	})
-}
-
-// ClearTargetPath clears the value of the "target_path" field.
-func (u *LibrarySourceUpsertBulk) ClearTargetPath() *LibrarySourceUpsertBulk {
-	return u.Update(func(s *LibrarySourceUpsert) {
-		s.ClearTargetPath()
 	})
 }
 

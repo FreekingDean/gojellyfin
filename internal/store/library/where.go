@@ -282,29 +282,6 @@ func HasItemsWith(preds ...predicate.Item) predicate.Library {
 	})
 }
 
-// HasMediaSources applies the HasEdge predicate on the "media_sources" edge.
-func HasMediaSources() predicate.Library {
-	return predicate.Library(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, MediaSourcesTable, MediaSourcesColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasMediaSourcesWith applies the HasEdge predicate on the "media_sources" edge with a given conditions (other predicates).
-func HasMediaSourcesWith(preds ...predicate.MediaSource) predicate.Library {
-	return predicate.Library(func(s *sql.Selector) {
-		step := newMediaSourcesStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
 // HasSources applies the HasEdge predicate on the "sources" edge.
 func HasSources() predicate.Library {
 	return predicate.Library(func(s *sql.Selector) {

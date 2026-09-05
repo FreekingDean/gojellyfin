@@ -12,11 +12,37 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
 
 type fixture struct {
 	service   *Service
+	client    *store.Client
 	libraryID uuid.UUID
+	sourceID  uuid.UUID
+}
+
+func (f *fixture) downloader(t *testing.T) uuid.UUID {
+	t.Helper()
+
+	record, err := f.client.Source.Create().
+		SetName(t.Name() + "-" + uuid.NewString()).
+		SetURL("http://" + uuid.NewString() + ".invalid").
+		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
+		SetKind(sourcemodal.KindRadarr).
+		SetRootPath("/media").
+		SetLocalPath("/media").
+		Save(context.Background())
+	if err != nil {
+		t.Fatalf("failed to create the source: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := f.client.Source.DeleteOne(record).Exec(context.Background()); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
+		}
+	})
+
+	return record.ID
 }
 
 type seed struct {
@@ -51,8 +77,24 @@ func newFixture(t *testing.T) *fixture {
 		t.Fatalf("failed to create the library: %v", err)
 	}
 
+	name := t.Name() + "-" + uuid.NewString()
+	downloader, err := client.Source.Create().
+		SetName(name).
+		SetURL("http://" + uuid.NewString() + ".invalid").
+		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
+		SetKind(sourcemodal.KindRadarr).
+		SetRootPath("/media").
+		SetLocalPath("/media").
+		Save(context.Background())
+	if err != nil {
+		t.Fatalf("failed to create the source: %v", err)
+	}
+
 	t.Cleanup(func() {
 		ctx := context.Background()
+		if err := client.Source.DeleteOne(downloader).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
+		}
 		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the library: %v", err)
 		}
@@ -61,7 +103,7 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
-	return &fixture{service: New(client), libraryID: library.ID}
+	return &fixture{service: New(client), client: client, libraryID: library.ID, sourceID: downloader.ID}
 }
 
 func (f *fixture) add(t *testing.T, item seed) uuid.UUID {
@@ -94,10 +136,10 @@ func (f *fixture) source(t *testing.T, itemID uuid.UUID, path string) *MediaSour
 	t.Helper()
 
 	source, err := f.service.SaveSource(context.Background(), ScannedSource{
-		LibraryID: f.libraryID,
-		ItemID:    itemID,
-		Path:      path,
-		Name:      path,
+		SourceID: f.sourceID,
+		ItemID:   itemID,
+		Path:     path,
+		Name:     path,
 	})
 	if err != nil {
 		t.Fatalf("failed to create the media source: %v", err)

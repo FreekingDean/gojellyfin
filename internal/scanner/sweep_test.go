@@ -3,15 +3,17 @@ package scanner
 import (
 	"os"
 	"testing"
+
+	"github.com/google/uuid"
 )
 
 func TestWalk_complete(t *testing.T) {
-	found := &seen{}
+	found := found()
 	if !found.complete() {
 		t.Error("a walk that skipped nothing reported incomplete")
 	}
 
-	found.file("/library/readable/movie.mkv")
+	found.file(uuid.New(), "/library/readable/movie.mkv")
 	if !found.complete() {
 		t.Error("finding a file made the walk incomplete")
 	}

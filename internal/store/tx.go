@@ -34,14 +34,14 @@ type Tx struct {
 	ImageBlob *ImageBlobClient
 	// Item is the client for interacting with the Item builders.
 	Item *ItemClient
+	// ItemSource is the client for interacting with the ItemSource builders.
+	ItemSource *ItemSourceClient
 	// Library is the client for interacting with the Library builders.
 	Library *LibraryClient
 	// LibraryOptions is the client for interacting with the LibraryOptions builders.
 	LibraryOptions *LibraryOptionsClient
 	// LibrarySource is the client for interacting with the LibrarySource builders.
 	LibrarySource *LibrarySourceClient
-	// MediaSource is the client for interacting with the MediaSource builders.
-	MediaSource *MediaSourceClient
 	// MediaStream is the client for interacting with the MediaStream builders.
 	MediaStream *MediaStreamClient
 	// Person is the client for interacting with the Person builders.
@@ -207,10 +207,10 @@ func (tx *Tx) init() {
 	tx.Image = NewImageClient(tx.config)
 	tx.ImageBlob = NewImageBlobClient(tx.config)
 	tx.Item = NewItemClient(tx.config)
+	tx.ItemSource = NewItemSourceClient(tx.config)
 	tx.Library = NewLibraryClient(tx.config)
 	tx.LibraryOptions = NewLibraryOptionsClient(tx.config)
 	tx.LibrarySource = NewLibrarySourceClient(tx.config)
-	tx.MediaSource = NewMediaSourceClient(tx.config)
 	tx.MediaStream = NewMediaStreamClient(tx.config)
 	tx.Person = NewPersonClient(tx.config)
 	tx.Playlist = NewPlaylistClient(tx.config)

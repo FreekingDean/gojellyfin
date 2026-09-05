@@ -12,7 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/google/uuid"
 )
@@ -53,9 +53,9 @@ func (_c *MediaStreamCreate) SetNillableUpdatedAt(v *time.Time) *MediaStreamCrea
 	return _c
 }
 
-// SetSourceID sets the "source_id" field.
-func (_c *MediaStreamCreate) SetSourceID(v uuid.UUID) *MediaStreamCreate {
-	_c.mutation.SetSourceID(v)
+// SetItemSourceID sets the "item_source_id" field.
+func (_c *MediaStreamCreate) SetItemSourceID(v uuid.UUID) *MediaStreamCreate {
+	_c.mutation.SetItemSourceID(v)
 	return _c
 }
 
@@ -351,8 +351,14 @@ func (_c *MediaStreamCreate) SetID(v uuid.UUID) *MediaStreamCreate {
 	return _c
 }
 
-// SetSource sets the "source" edge to the MediaSource entity.
-func (_c *MediaStreamCreate) SetSource(v *MediaSource) *MediaStreamCreate {
+// SetSourceID sets the "source" edge to the ItemSource entity by ID.
+func (_c *MediaStreamCreate) SetSourceID(id uuid.UUID) *MediaStreamCreate {
+	_c.mutation.SetSourceID(id)
+	return _c
+}
+
+// SetSource sets the "source" edge to the ItemSource entity.
+func (_c *MediaStreamCreate) SetSource(v *ItemSource) *MediaStreamCreate {
 	return _c.SetSourceID(v.ID)
 }
 
@@ -437,8 +443,8 @@ func (_c *MediaStreamCreate) check() error {
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`store: missing required field "MediaStream.updated_at"`)}
 	}
-	if _, ok := _c.mutation.SourceID(); !ok {
-		return &ValidationError{Name: "source_id", err: errors.New(`store: missing required field "MediaStream.source_id"`)}
+	if _, ok := _c.mutation.ItemSourceID(); !ok {
+		return &ValidationError{Name: "item_source_id", err: errors.New(`store: missing required field "MediaStream.item_source_id"`)}
 	}
 	if _, ok := _c.mutation.Kind(); !ok {
 		return &ValidationError{Name: "kind", err: errors.New(`store: missing required field "MediaStream.kind"`)}
@@ -613,13 +619,13 @@ func (_c *MediaStreamCreate) createSpec() (*MediaStream, *sqlgraph.CreateSpec) {
 			Columns: []string{mediastream.SourceColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasource.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.SourceID = nodes[0]
+		_node.ItemSourceID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -698,15 +704,15 @@ func (u *MediaStreamUpsert) UpdateUpdatedAt() *MediaStreamUpsert {
 	return u
 }
 
-// SetSourceID sets the "source_id" field.
-func (u *MediaStreamUpsert) SetSourceID(v uuid.UUID) *MediaStreamUpsert {
-	u.Set(mediastream.FieldSourceID, v)
+// SetItemSourceID sets the "item_source_id" field.
+func (u *MediaStreamUpsert) SetItemSourceID(v uuid.UUID) *MediaStreamUpsert {
+	u.Set(mediastream.FieldItemSourceID, v)
 	return u
 }
 
-// UpdateSourceID sets the "source_id" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateSourceID() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldSourceID)
+// UpdateItemSourceID sets the "item_source_id" field to the value that was provided on create.
+func (u *MediaStreamUpsert) UpdateItemSourceID() *MediaStreamUpsert {
+	u.SetExcluded(mediastream.FieldItemSourceID)
 	return u
 }
 
@@ -1158,17 +1164,17 @@ func (u *MediaStreamUpsertOne) UpdateUpdatedAt() *MediaStreamUpsertOne {
 	})
 }
 
-// SetSourceID sets the "source_id" field.
-func (u *MediaStreamUpsertOne) SetSourceID(v uuid.UUID) *MediaStreamUpsertOne {
+// SetItemSourceID sets the "item_source_id" field.
+func (u *MediaStreamUpsertOne) SetItemSourceID(v uuid.UUID) *MediaStreamUpsertOne {
 	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetSourceID(v)
+		s.SetItemSourceID(v)
 	})
 }
 
-// UpdateSourceID sets the "source_id" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateSourceID() *MediaStreamUpsertOne {
+// UpdateItemSourceID sets the "item_source_id" field to the value that was provided on create.
+func (u *MediaStreamUpsertOne) UpdateItemSourceID() *MediaStreamUpsertOne {
 	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateSourceID()
+		s.UpdateItemSourceID()
 	})
 }
 
@@ -1849,17 +1855,17 @@ func (u *MediaStreamUpsertBulk) UpdateUpdatedAt() *MediaStreamUpsertBulk {
 	})
 }
 
-// SetSourceID sets the "source_id" field.
-func (u *MediaStreamUpsertBulk) SetSourceID(v uuid.UUID) *MediaStreamUpsertBulk {
+// SetItemSourceID sets the "item_source_id" field.
+func (u *MediaStreamUpsertBulk) SetItemSourceID(v uuid.UUID) *MediaStreamUpsertBulk {
 	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetSourceID(v)
+		s.SetItemSourceID(v)
 	})
 }
 
-// UpdateSourceID sets the "source_id" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateSourceID() *MediaStreamUpsertBulk {
+// UpdateItemSourceID sets the "item_source_id" field to the value that was provided on create.
+func (u *MediaStreamUpsertBulk) UpdateItemSourceID() *MediaStreamUpsertBulk {
 	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateSourceID()
+		s.UpdateItemSourceID()
 	})
 }
 

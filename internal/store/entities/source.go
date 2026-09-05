@@ -15,6 +15,8 @@ func (Source) Fields() []ent.Field {
 		field.String("name").Unique(),
 		field.String("url").Unique(),
 		field.String("api_key_variable"),
+		field.String("root_path").Optional(),
+		field.String("local_path").Optional(),
 		field.Enum("kind").Values("radarr", "sonarr", "lidarr", "readarr", "bazarr"),
 	)
 }
@@ -22,5 +24,6 @@ func (Source) Fields() []ent.Field {
 func (Source) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("libraries", LibrarySource.Type).Annotations(cascadeOnDelete),
+		edge.To("files", ItemSource.Type).Annotations(cascadeOnDelete),
 	}
 }

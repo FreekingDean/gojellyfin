@@ -129,6 +129,18 @@ func (f ItemFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, er
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.ItemMutation", m)
 }
 
+// The ItemSourceFunc type is an adapter to allow the use of ordinary
+// function as ItemSource mutator.
+type ItemSourceFunc func(context.Context, *store.ItemSourceMutation) (store.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ItemSourceFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, error) {
+	if mv, ok := m.(*store.ItemSourceMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.ItemSourceMutation", m)
+}
+
 // The LibraryFunc type is an adapter to allow the use of ordinary
 // function as Library mutator.
 type LibraryFunc func(context.Context, *store.LibraryMutation) (store.Value, error)
@@ -163,18 +175,6 @@ func (f LibrarySourceFunc) Mutate(ctx context.Context, m store.Mutation) (store.
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.LibrarySourceMutation", m)
-}
-
-// The MediaSourceFunc type is an adapter to allow the use of ordinary
-// function as MediaSource mutator.
-type MediaSourceFunc func(context.Context, *store.MediaSourceMutation) (store.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f MediaSourceFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, error) {
-	if mv, ok := m.(*store.MediaSourceMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.MediaSourceMutation", m)
 }
 
 // The MediaStreamFunc type is an adapter to allow the use of ordinary

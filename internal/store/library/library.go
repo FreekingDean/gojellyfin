@@ -29,8 +29,6 @@ const (
 	EdgeOptions = "options"
 	// EdgeItems holds the string denoting the items edge name in mutations.
 	EdgeItems = "items"
-	// EdgeMediaSources holds the string denoting the media_sources edge name in mutations.
-	EdgeMediaSources = "media_sources"
 	// EdgeSources holds the string denoting the sources edge name in mutations.
 	EdgeSources = "sources"
 	// Table holds the table name of the library in the database.
@@ -49,13 +47,6 @@ const (
 	ItemsInverseTable = "items"
 	// ItemsColumn is the table column denoting the items relation/edge.
 	ItemsColumn = "library_id"
-	// MediaSourcesTable is the table that holds the media_sources relation/edge.
-	MediaSourcesTable = "media_sources"
-	// MediaSourcesInverseTable is the table name for the MediaSource entity.
-	// It exists in this package in order to avoid circular dependency with the "mediasource" package.
-	MediaSourcesInverseTable = "media_sources"
-	// MediaSourcesColumn is the table column denoting the media_sources relation/edge.
-	MediaSourcesColumn = "library_id"
 	// SourcesTable is the table that holds the sources relation/edge.
 	SourcesTable = "library_sources"
 	// SourcesInverseTable is the table name for the LibrarySource entity.
@@ -177,20 +168,6 @@ func ByItems(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
-// ByMediaSourcesCount orders the results by media_sources count.
-func ByMediaSourcesCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newMediaSourcesStep(), opts...)
-	}
-}
-
-// ByMediaSources orders the results by media_sources terms.
-func ByMediaSources(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newMediaSourcesStep(), append([]sql.OrderTerm{term}, terms...)...)
-	}
-}
-
 // BySourcesCount orders the results by sources count.
 func BySourcesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -216,13 +193,6 @@ func newItemsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ItemsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ItemsTable, ItemsColumn),
-	)
-}
-func newMediaSourcesStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(MediaSourcesInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, MediaSourcesTable, MediaSourcesColumn),
 	)
 }
 func newSourcesStep() *sqlgraph.Step {

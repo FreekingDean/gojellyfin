@@ -23,9 +23,10 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
-	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/mediasource"
 	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
+	downloadermodal "github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/FreekingDean/gojellyfin/internal/transcode"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
@@ -38,6 +39,8 @@ type fixture struct {
 	transcoder *stubTranscoder
 	library    uuid.UUID
 	token      string
+	downloader uuid.UUID
+	client     *store.Client
 }
 
 type stubTranscoder struct {
@@ -106,7 +109,7 @@ func newFixture(t *testing.T) *fixture {
 		if _, err := client.MediaStream.Delete().Where(streammodal.HasSourceWith(inLibrary)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the media streams: %v", err)
 		}
-		if _, err := client.MediaSource.Delete().Where(inLibrary).Exec(ctx); err != nil {
+		if _, err := client.ItemSource.Delete().Where(inLibrary).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the media sources: %v", err)
 		}
 		if err := libraryService.DeleteLibrary(ctx, library.ID); err != nil {
@@ -128,7 +131,26 @@ func newFixture(t *testing.T) *fixture {
 
 	transcoder := &stubTranscoder{}
 
+	downloader, err := client.Source.Create().
+		SetName(t.Name() + "-" + uuid.NewString()).
+		SetURL("http://" + uuid.NewString() + ".invalid").
+		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
+		SetKind(downloadermodal.KindRadarr).
+		SetRootPath("/media").
+		SetLocalPath("/media").
+		Save(context.Background())
+	if err != nil {
+		t.Fatalf("failed to create the source: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := client.Source.DeleteOne(downloader).Exec(context.Background()); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
+		}
+	})
+
 	return &fixture{
+		downloader: downloader.ID,
+		client:     client,
 		handler:    New(sessionService, itemService, filesystem.New(config), transcoder),
 		items:      itemService,
 		transcoder: transcoder,
@@ -164,7 +186,7 @@ func (f *fixture) source(t *testing.T, itemID uuid.UUID, path string) *items.Med
 	t.Helper()
 
 	source, err := f.items.SaveSource(context.Background(), items.ScannedSource{
-		LibraryID:    f.library,
+		SourceID:     f.newDownloader(t),
 		ItemID:       itemID,
 		Path:         path,
 		Name:         filepath.Base(path),
@@ -372,4 +394,27 @@ func TestHandler_ServeUniversal(t *testing.T) {
 			t.Errorf("status = %d, want %d", recorder.Code, http.StatusUnauthorized)
 		}
 	})
+}
+
+func (f *fixture) newDownloader(t *testing.T) uuid.UUID {
+	t.Helper()
+
+	record, err := f.client.Source.Create().
+		SetName(t.Name() + "-" + uuid.NewString()).
+		SetURL("http://" + uuid.NewString() + ".invalid").
+		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
+		SetKind(downloadermodal.KindRadarr).
+		SetRootPath("/media").
+		SetLocalPath("/media").
+		Save(context.Background())
+	if err != nil {
+		t.Fatalf("failed to create the source: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := f.client.Source.DeleteOne(record).Exec(context.Background()); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
+		}
+	})
+
+	return record.ID
 }

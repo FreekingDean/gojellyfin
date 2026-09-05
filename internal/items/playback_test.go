@@ -382,10 +382,10 @@ func (f *fixture) copyRanged(t *testing.T, item *Item, path, video, audio string
 
 	ctx := context.Background()
 	source, err := f.service.SaveSource(ctx, ScannedSource{
-		LibraryID: f.libraryID,
-		ItemID:    item.ID,
-		Path:      path,
-		Name:      path,
+		SourceID: f.downloader(t),
+		ItemID:   item.ID,
+		Path:     path,
+		Name:     path,
 	})
 	if err != nil {
 		t.Fatalf("failed to save the source of %q: %v", path, err)
@@ -420,7 +420,7 @@ func (f *fixture) bitrate(t *testing.T, item *Item, path string, bitrate int32) 
 		if source.Path != path {
 			continue
 		}
-		if err := f.service.store.MediaSource.UpdateOne(source).SetBitrate(bitrate).Exec(context.Background()); err != nil {
+		if err := f.service.store.ItemSource.UpdateOne(source).SetBitrate(bitrate).Exec(context.Background()); err != nil {
 			t.Fatalf("failed to set the bitrate: %v", err)
 		}
 	}

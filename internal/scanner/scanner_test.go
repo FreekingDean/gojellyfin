@@ -34,6 +34,7 @@ type fixture struct {
 	items   *items.Service
 	client  *store.Client
 	record  *libraries.Library
+	root    string
 	bound   int
 }
 
@@ -81,6 +82,7 @@ func newFixture(t *testing.T, root string) *fixture {
 		items:   service,
 		client:  client,
 		record:  record,
+		root:    root,
 	}
 }
 
@@ -114,6 +116,8 @@ func (f *fixture) radarr(t *testing.T, reported *[]movie) *fixture {
 		SetURL(server.URL).
 		SetAPIKeyVariable(env.SourceAPIKeyPrefix + "TEST").
 		SetKind(sourcemodal.KindRadarr).
+		SetRootPath(f.root).
+		SetLocalPath(f.root).
 		Save(context.Background())
 	if err != nil {
 		t.Fatalf("failed to create the source: %v", err)

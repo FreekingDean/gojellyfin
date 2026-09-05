@@ -252,7 +252,7 @@ func TestServer_UpdateItem(t *testing.T) {
 		if record.LibraryID != fixture.libraryID {
 			t.Errorf("library id = %v, want %v", record.LibraryID, fixture.libraryID)
 		}
-		if sources, err := record.QueryMediaSources().Count(context.Background()); err != nil {
+		if sources, err := record.QueryItemSources().Count(context.Background()); err != nil {
 			t.Fatalf("failed to count the media sources: %v", err)
 		} else if sources != 0 {
 			t.Errorf("media sources = %d, want none", sources)

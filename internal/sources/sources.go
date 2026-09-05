@@ -61,10 +61,8 @@ type (
 )
 
 type Library struct {
-	ID         uuid.UUID
-	TagFilter  string
-	SourcePath string
-	TargetPath string
+	ID        uuid.UUID
+	TagFilter string
 }
 
 type Configured struct {
@@ -131,10 +129,8 @@ func libraries(records []*store.LibrarySource) []Library {
 
 func library(record *store.LibrarySource) Library {
 	return Library{
-		ID:         record.LibraryID,
-		TagFilter:  record.TagFilter,
-		SourcePath: record.SourcePath,
-		TargetPath: record.TargetPath,
+		ID:        record.LibraryID,
+		TagFilter: record.TagFilter,
 	}
 }
 
@@ -151,6 +147,10 @@ func (s *Service) Update(ctx context.Context, configured []Configured) error {
 			return err
 		}
 
+		if err := roots(configured); err != nil {
+			return err
+		}
+
 		for _, entry := range configured {
 			if !env.ValidSourceAPIKeyVariable(entry.Source.APIKeyVariable) {
 				return fmt.Errorf(
@@ -164,6 +164,8 @@ func (s *Service) Update(ctx context.Context, configured []Configured) error {
 				SetURL(entry.Source.URL).
 				SetAPIKeyVariable(entry.Source.APIKeyVariable).
 				SetKind(entry.Source.Kind).
+				SetRootPath(entry.Source.RootPath).
+				SetLocalPath(entry.Source.LocalPath).
 				OnConflictColumns(sourcemodel.FieldName).
 				UpdateNewValues().
 				ID(ctx)
@@ -182,8 +184,6 @@ func (s *Service) Update(ctx context.Context, configured []Configured) error {
 					SetSourceID(id).
 					SetLibraryID(bound.ID).
 					SetTagFilter(bound.TagFilter).
-					SetSourcePath(bound.SourcePath).
-					SetTargetPath(bound.TargetPath).
 					Exec(ctx); err != nil {
 					return err
 				}
@@ -192,6 +192,34 @@ func (s *Service) Update(ctx context.Context, configured []Configured) error {
 
 		return nil
 	})
+}
+
+func roots(configured []Configured) error {
+	for i, entry := range configured {
+		if entry.Source.RootPath == "" {
+			return fmt.Errorf("%s names no root path, so nothing it reports can be placed", entry.Source.Name)
+		}
+
+		for _, other := range configured[i+1:] {
+			if overlaps(entry.Source.RootPath, other.Source.RootPath) {
+				return fmt.Errorf(
+					"%s and %s both claim %s: a downloader owns a directory of its own",
+					entry.Source.Name, other.Source.Name, entry.Source.RootPath,
+				)
+			}
+		}
+	}
+
+	return nil
+}
+
+func overlaps(one, other string) bool {
+	one = strings.TrimSuffix(one, "/")
+	other = strings.TrimSuffix(other, "/")
+
+	return one == other ||
+		strings.HasPrefix(one, other+"/") ||
+		strings.HasPrefix(other, one+"/")
 }
 
 func (s *Service) Test(ctx context.Context, apiURL, variable string) error {

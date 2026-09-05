@@ -313,6 +313,54 @@ var (
 			},
 		},
 	}
+	// ItemSourcesColumns holds the columns for the "item_sources" table.
+	ItemSourcesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString},
+		{Name: "path", Type: field.TypeString},
+		{Name: "container", Type: field.TypeString, Nullable: true},
+		{Name: "size", Type: field.TypeInt64, Nullable: true},
+		{Name: "run_time_ticks", Type: field.TypeInt64, Nullable: true},
+		{Name: "bitrate", Type: field.TypeInt32, Nullable: true},
+		{Name: "date_modified", Type: field.TypeTime, Nullable: true},
+		{Name: "probed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "item_id", Type: field.TypeUUID},
+		{Name: "source_id", Type: field.TypeUUID},
+	}
+	// ItemSourcesTable holds the schema information for the "item_sources" table.
+	ItemSourcesTable = &schema.Table{
+		Name:       "item_sources",
+		Columns:    ItemSourcesColumns,
+		PrimaryKey: []*schema.Column{ItemSourcesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "item_sources_items_item_sources",
+				Columns:    []*schema.Column{ItemSourcesColumns[11]},
+				RefColumns: []*schema.Column{ItemsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "item_sources_sources_files",
+				Columns:    []*schema.Column{ItemSourcesColumns[12]},
+				RefColumns: []*schema.Column{SourcesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "itemsource_item_id_source_id",
+				Unique:  true,
+				Columns: []*schema.Column{ItemSourcesColumns[11], ItemSourcesColumns[12]},
+			},
+			{
+				Name:    "itemsource_path",
+				Unique:  true,
+				Columns: []*schema.Column{ItemSourcesColumns[4]},
+			},
+		},
+	}
 	// LibrariesColumns holds the columns for the "libraries" table.
 	LibrariesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
@@ -396,8 +444,6 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "tag_filter", Type: field.TypeString, Nullable: true},
-		{Name: "source_path", Type: field.TypeString, Nullable: true},
-		{Name: "target_path", Type: field.TypeString, Nullable: true},
 		{Name: "library_id", Type: field.TypeUUID},
 		{Name: "source_id", Type: field.TypeUUID},
 	}
@@ -409,13 +455,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "library_sources_libraries_sources",
-				Columns:    []*schema.Column{LibrarySourcesColumns[6]},
+				Columns:    []*schema.Column{LibrarySourcesColumns[4]},
 				RefColumns: []*schema.Column{LibrariesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "library_sources_sources_libraries",
-				Columns:    []*schema.Column{LibrarySourcesColumns[7]},
+				Columns:    []*schema.Column{LibrarySourcesColumns[5]},
 				RefColumns: []*schema.Column{SourcesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -424,55 +470,12 @@ var (
 			{
 				Name:    "librarysource_library_id_source_id",
 				Unique:  true,
-				Columns: []*schema.Column{LibrarySourcesColumns[6], LibrarySourcesColumns[7]},
+				Columns: []*schema.Column{LibrarySourcesColumns[4], LibrarySourcesColumns[5]},
 			},
 			{
 				Name:    "librarysource_source_id",
 				Unique:  false,
-				Columns: []*schema.Column{LibrarySourcesColumns[7]},
-			},
-		},
-	}
-	// MediaSourcesColumns holds the columns for the "media_sources" table.
-	MediaSourcesColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "name", Type: field.TypeString},
-		{Name: "path", Type: field.TypeString},
-		{Name: "container", Type: field.TypeString, Nullable: true},
-		{Name: "size", Type: field.TypeInt64, Nullable: true},
-		{Name: "run_time_ticks", Type: field.TypeInt64, Nullable: true},
-		{Name: "bitrate", Type: field.TypeInt32, Nullable: true},
-		{Name: "date_modified", Type: field.TypeTime, Nullable: true},
-		{Name: "probed_at", Type: field.TypeTime, Nullable: true},
-		{Name: "item_id", Type: field.TypeUUID},
-		{Name: "library_id", Type: field.TypeUUID},
-	}
-	// MediaSourcesTable holds the schema information for the "media_sources" table.
-	MediaSourcesTable = &schema.Table{
-		Name:       "media_sources",
-		Columns:    MediaSourcesColumns,
-		PrimaryKey: []*schema.Column{MediaSourcesColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "media_sources_items_media_sources",
-				Columns:    []*schema.Column{MediaSourcesColumns[11]},
-				RefColumns: []*schema.Column{ItemsColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-			{
-				Symbol:     "media_sources_libraries_media_sources",
-				Columns:    []*schema.Column{MediaSourcesColumns[12]},
-				RefColumns: []*schema.Column{LibrariesColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-		},
-		Indexes: []*schema.Index{
-			{
-				Name:    "mediasource_library_id_path",
-				Unique:  true,
-				Columns: []*schema.Column{MediaSourcesColumns[12], MediaSourcesColumns[4]},
+				Columns: []*schema.Column{LibrarySourcesColumns[5]},
 			},
 		},
 	}
@@ -502,7 +505,7 @@ var (
 		{Name: "is_interlaced", Type: field.TypeBool, Default: false},
 		{Name: "is_anamorphic", Type: field.TypeBool, Default: false},
 		{Name: "is_hearing_impaired", Type: field.TypeBool, Default: false},
-		{Name: "source_id", Type: field.TypeUUID},
+		{Name: "item_source_id", Type: field.TypeUUID},
 	}
 	// MediaStreamsTable holds the schema information for the "media_streams" table.
 	MediaStreamsTable = &schema.Table{
@@ -511,15 +514,15 @@ var (
 		PrimaryKey: []*schema.Column{MediaStreamsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "media_streams_media_sources_streams",
+				Symbol:     "media_streams_item_sources_streams",
 				Columns:    []*schema.Column{MediaStreamsColumns[24]},
-				RefColumns: []*schema.Column{MediaSourcesColumns[0]},
+				RefColumns: []*schema.Column{ItemSourcesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "mediastream_source_id_index",
+				Name:    "mediastream_item_source_id_index",
 				Unique:  true,
 				Columns: []*schema.Column{MediaStreamsColumns[24], MediaStreamsColumns[5]},
 			},
@@ -679,6 +682,8 @@ var (
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "url", Type: field.TypeString, Unique: true},
 		{Name: "api_key_variable", Type: field.TypeString},
+		{Name: "root_path", Type: field.TypeString, Nullable: true},
+		{Name: "local_path", Type: field.TypeString, Nullable: true},
 		{Name: "kind", Type: field.TypeEnum, Enums: []string{"radarr", "sonarr", "lidarr", "readarr", "bazarr"}},
 	}
 	// SourcesTable holds the schema information for the "sources" table.
@@ -923,10 +928,10 @@ var (
 		ImagesTable,
 		ImageBlobsTable,
 		ItemsTable,
+		ItemSourcesTable,
 		LibrariesTable,
 		LibraryOptionsTable,
 		LibrarySourcesTable,
-		MediaSourcesTable,
 		MediaStreamsTable,
 		PersonsTable,
 		PlaylistsTable,
@@ -953,12 +958,12 @@ func init() {
 	ImagesTable.ForeignKeys[0].RefTable = ItemsTable
 	ItemsTable.ForeignKeys[0].RefTable = ItemsTable
 	ItemsTable.ForeignKeys[1].RefTable = LibrariesTable
+	ItemSourcesTable.ForeignKeys[0].RefTable = ItemsTable
+	ItemSourcesTable.ForeignKeys[1].RefTable = SourcesTable
 	LibraryOptionsTable.ForeignKeys[0].RefTable = LibrariesTable
 	LibrarySourcesTable.ForeignKeys[0].RefTable = LibrariesTable
 	LibrarySourcesTable.ForeignKeys[1].RefTable = SourcesTable
-	MediaSourcesTable.ForeignKeys[0].RefTable = ItemsTable
-	MediaSourcesTable.ForeignKeys[1].RefTable = LibrariesTable
-	MediaStreamsTable.ForeignKeys[0].RefTable = MediaSourcesTable
+	MediaStreamsTable.ForeignKeys[0].RefTable = ItemSourcesTable
 	PlaylistsTable.ForeignKeys[0].RefTable = ItemsTable
 	PlaylistsTable.ForeignKeys[1].RefTable = UsersTable
 	PlaylistEntriesTable.ForeignKeys[0].RefTable = ItemsTable

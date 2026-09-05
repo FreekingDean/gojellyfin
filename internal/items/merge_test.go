@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	datamodal "github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
 )
 
@@ -31,7 +31,7 @@ func TestService_Merge(t *testing.T) {
 		entry := fixture.playlistEntry(t, watcher, duplicate)
 
 		source, err := fixture.service.SaveSource(ctx, ScannedSource{
-			LibraryID:    fixture.libraryID,
+			SourceID:     fixture.sourceID,
 			ItemID:       duplicate,
 			Path:         "/library/folded.mkv",
 			Name:         "folded.mkv",
@@ -90,7 +90,7 @@ func TestService_Merge(t *testing.T) {
 			t.Errorf("the playlist entry points at %s, want the survivor %s", record.ItemID, survivor)
 		}
 
-		kept, err := fixture.service.store.MediaSource.Query().Where(sourcemodal.ID(source.ID)).Only(ctx)
+		kept, err := fixture.service.store.ItemSource.Query().Where(sourcemodal.ID(source.ID)).Only(ctx)
 		if err != nil {
 			t.Fatalf("failed to read the source: %v", err)
 		}

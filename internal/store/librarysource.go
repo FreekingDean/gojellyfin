@@ -30,10 +30,6 @@ type LibrarySource struct {
 	SourceID uuid.UUID `json:"source_id,omitempty"`
 	// TagFilter holds the value of the "tag_filter" field.
 	TagFilter string `json:"tag_filter,omitempty"`
-	// SourcePath holds the value of the "source_path" field.
-	SourcePath string `json:"source_path,omitempty"`
-	// TargetPath holds the value of the "target_path" field.
-	TargetPath string `json:"target_path,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the LibrarySourceQuery when eager-loading is set.
 	Edges        LibrarySourceEdges `json:"edges"`
@@ -78,7 +74,7 @@ func (*LibrarySource) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case librarysource.FieldTagFilter, librarysource.FieldSourcePath, librarysource.FieldTargetPath:
+		case librarysource.FieldTagFilter:
 			values[i] = new(sql.NullString)
 		case librarysource.FieldCreatedAt, librarysource.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -134,18 +130,6 @@ func (_m *LibrarySource) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field tag_filter", values[i])
 			} else if value.Valid {
 				_m.TagFilter = value.String
-			}
-		case librarysource.FieldSourcePath:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field source_path", values[i])
-			} else if value.Valid {
-				_m.SourcePath = value.String
-			}
-		case librarysource.FieldTargetPath:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field target_path", values[i])
-			} else if value.Valid {
-				_m.TargetPath = value.String
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -207,12 +191,6 @@ func (_m *LibrarySource) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("tag_filter=")
 	builder.WriteString(_m.TagFilter)
-	builder.WriteString(", ")
-	builder.WriteString("source_path=")
-	builder.WriteString(_m.SourcePath)
-	builder.WriteString(", ")
-	builder.WriteString("target_path=")
-	builder.WriteString(_m.TargetPath)
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -28,6 +28,10 @@ type Source struct {
 	URL string `json:"url,omitempty"`
 	// APIKeyVariable holds the value of the "api_key_variable" field.
 	APIKeyVariable string `json:"api_key_variable,omitempty"`
+	// RootPath holds the value of the "root_path" field.
+	RootPath string `json:"root_path,omitempty"`
+	// LocalPath holds the value of the "local_path" field.
+	LocalPath string `json:"local_path,omitempty"`
 	// Kind holds the value of the "kind" field.
 	Kind source.Kind `json:"kind,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -40,9 +44,11 @@ type Source struct {
 type SourceEdges struct {
 	// Libraries holds the value of the libraries edge.
 	Libraries []*LibrarySource `json:"libraries,omitempty"`
+	// Files holds the value of the files edge.
+	Files []*ItemSource `json:"files,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // LibrariesOrErr returns the Libraries value or an error if the edge
@@ -54,12 +60,21 @@ func (e SourceEdges) LibrariesOrErr() ([]*LibrarySource, error) {
 	return nil, &NotLoadedError{edge: "libraries"}
 }
 
+// FilesOrErr returns the Files value or an error if the edge
+// was not loaded in eager-loading.
+func (e SourceEdges) FilesOrErr() ([]*ItemSource, error) {
+	if e.loadedTypes[1] {
+		return e.Files, nil
+	}
+	return nil, &NotLoadedError{edge: "files"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Source) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case source.FieldName, source.FieldURL, source.FieldAPIKeyVariable, source.FieldKind:
+		case source.FieldName, source.FieldURL, source.FieldAPIKeyVariable, source.FieldRootPath, source.FieldLocalPath, source.FieldKind:
 			values[i] = new(sql.NullString)
 		case source.FieldCreatedAt, source.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -116,6 +131,18 @@ func (_m *Source) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.APIKeyVariable = value.String
 			}
+		case source.FieldRootPath:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field root_path", values[i])
+			} else if value.Valid {
+				_m.RootPath = value.String
+			}
+		case source.FieldLocalPath:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field local_path", values[i])
+			} else if value.Valid {
+				_m.LocalPath = value.String
+			}
 		case source.FieldKind:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field kind", values[i])
@@ -138,6 +165,11 @@ func (_m *Source) Value(name string) (ent.Value, error) {
 // QueryLibraries queries the "libraries" edge of the Source entity.
 func (_m *Source) QueryLibraries() *LibrarySourceQuery {
 	return NewSourceClient(_m.config).QueryLibraries(_m)
+}
+
+// QueryFiles queries the "files" edge of the Source entity.
+func (_m *Source) QueryFiles() *ItemSourceQuery {
+	return NewSourceClient(_m.config).QueryFiles(_m)
 }
 
 // Update returns a builder for updating this Source.
@@ -177,6 +209,12 @@ func (_m *Source) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("api_key_variable=")
 	builder.WriteString(_m.APIKeyVariable)
+	builder.WriteString(", ")
+	builder.WriteString("root_path=")
+	builder.WriteString(_m.RootPath)
+	builder.WriteString(", ")
+	builder.WriteString("local_path=")
+	builder.WriteString(_m.LocalPath)
 	builder.WriteString(", ")
 	builder.WriteString("kind=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Kind))

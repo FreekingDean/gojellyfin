@@ -12,7 +12,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	genremodal "github.com/FreekingDean/gojellyfin/internal/store/genre"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 )
 
 func TestServer_GetGenres(t *testing.T) {
@@ -40,7 +40,7 @@ func TestServer_GetGenres(t *testing.T) {
 
 	t.Cleanup(func() {
 		owned := itemmodal.LibraryID(library.ID)
-		if _, err := client.MediaSource.Delete().Where(sourcemodal.HasItemWith(owned)).Exec(ctx); err != nil {
+		if _, err := client.ItemSource.Delete().Where(sourcemodal.HasItemWith(owned)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the media sources: %v", err)
 		}
 		if _, err := client.Item.Delete().Where(owned).Exec(ctx); err != nil {

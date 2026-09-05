@@ -17,8 +17,9 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
+	downloadermodal "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
 
 const srtFile = `1
@@ -32,11 +33,12 @@ Time to die.
 `
 
 type fixture struct {
-	server    *Server
-	client    *store.Client
-	item      *items.Item
-	source    uuid.UUID
-	directory string
+	server     *Server
+	client     *store.Client
+	item       *items.Item
+	source     uuid.UUID
+	directory  string
+	downloader uuid.UUID
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -68,7 +70,7 @@ func newFixture(t *testing.T) *fixture {
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the streams: %v", err)
 		}
-		if _, err := client.MediaSource.Delete().
+		if _, err := client.ItemSource.Delete().
 			Where(sourcemodal.HasItemWith(itemmodal.LibraryID(library.ID))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the sources: %v", err)
@@ -81,6 +83,23 @@ func newFixture(t *testing.T) *fixture {
 		}
 		if err := connection.Stop(); err != nil {
 			t.Errorf("failed to close the database: %v", err)
+		}
+	})
+
+	downloader, err := client.Source.Create().
+		SetName(t.Name() + "-" + uuid.NewString()).
+		SetURL("http://" + uuid.NewString() + ".invalid").
+		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
+		SetKind(downloadermodal.KindRadarr).
+		SetRootPath("/media").
+		SetLocalPath("/media").
+		Save(context.Background())
+	if err != nil {
+		t.Fatalf("failed to create the source: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := client.Source.DeleteOne(downloader).Exec(context.Background()); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
 		}
 	})
 
@@ -98,9 +117,9 @@ func newFixture(t *testing.T) *fixture {
 		t.Fatalf("failed to create the item: %v", err)
 	}
 
-	source, err := client.MediaSource.Create().
+	source, err := client.ItemSource.Create().
 		SetItemID(item.ID).
-		SetLibraryID(library.ID).
+		SetSourceID(downloader.ID).
 		SetName(filepath.Base(path)).
 		SetPath(path).
 		Save(ctx)
@@ -109,11 +128,12 @@ func newFixture(t *testing.T) *fixture {
 	}
 
 	return &fixture{
-		server:    New(items.New(client), filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}})),
-		client:    client,
-		item:      item,
-		source:    source.ID,
-		directory: directory,
+		downloader: downloader.ID,
+		server:     New(items.New(client), filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}})),
+		client:     client,
+		item:       item,
+		source:     source.ID,
+		directory:  directory,
 	}
 }
 

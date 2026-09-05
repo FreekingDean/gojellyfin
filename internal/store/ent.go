@@ -22,10 +22,10 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
 	"github.com/FreekingDean/gojellyfin/internal/store/imageblob"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
+	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
 	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/person"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
@@ -108,10 +108,10 @@ func checkColumn(t, c string) error {
 			image.Table:              image.ValidColumn,
 			imageblob.Table:          imageblob.ValidColumn,
 			item.Table:               item.ValidColumn,
+			itemsource.Table:         itemsource.ValidColumn,
 			library.Table:            library.ValidColumn,
 			libraryoptions.Table:     libraryoptions.ValidColumn,
 			librarysource.Table:      librarysource.ValidColumn,
-			mediasource.Table:        mediasource.ValidColumn,
 			mediastream.Table:        mediastream.ValidColumn,
 			person.Table:             person.ValidColumn,
 			playlist.Table:           playlist.ValidColumn,

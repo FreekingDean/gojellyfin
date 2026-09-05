@@ -176,6 +176,14 @@
             "type": "string",
             "description": "Name of the environment variable holding the API key. Must begin with SOURCE_API_KEY_."
           },
+          "RootPath": {
+            "type": "string",
+            "description": "Directory this instance reports its files under."
+          },
+          "LocalPath": {
+            "type": "string",
+            "description": "Directory this server opens those files at."
+          },
           "Libraries": {
             "type": "array",
             "items": {
@@ -212,16 +220,6 @@
           "TagFilter": {
             "type": "string",
             "nullable": true
-          },
-          "SourcePath": {
-            "type": "string",
-            "nullable": true,
-            "description": "Path prefix as Sonarr or Radarr reports it."
-          },
-          "TargetPath": {
-            "type": "string",
-            "nullable": true,
-            "description": "Path prefix this server opens the file at."
           }
         }
       }

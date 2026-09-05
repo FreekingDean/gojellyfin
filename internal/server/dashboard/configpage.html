@@ -60,6 +60,19 @@
                 <div class="fieldDescription">The address this server reaches the instance on, not the one your browser uses.</div>
             </div>
 
+            <div class="flex align-items-center" style="gap:1em;flex-wrap:wrap">
+                <div class="inputContainer" style="flex:1 1 16em">
+                    <label class="inputLabel inputLabelUnfocused">Root path</label>
+                    <input type="text" data-id="txtRootPath" class="emby-input" placeholder="/data/movies" />
+                    <div class="fieldDescription">The directory this instance reports its files under. One instance owns one directory, and two instances may not overlap.</div>
+                </div>
+                <div class="inputContainer" style="flex:1 1 16em">
+                    <label class="inputLabel inputLabelUnfocused">Path on this server</label>
+                    <input type="text" data-id="txtLocalPath" class="emby-input" placeholder="/media/movies" />
+                    <div class="fieldDescription">Where this server opens those same files. The same value if they share a filesystem.</div>
+                </div>
+            </div>
+
             <div class="inputContainer">
                 <label class="inputLabel inputLabelUnfocused">API key variable</label>
                 <input type="text" data-id="txtApiKeyVariable" class="emby-input" autocomplete="off"
@@ -86,10 +99,8 @@
             <table style="width:100%">
                 <thead>
                     <tr>
-                        <th style="text-align:left;width:28%">Library</th>
-                        <th style="text-align:left;width:16%">Tag filter</th>
-                        <th style="text-align:left;width:26%">Path Prefix in Sonarr/Radarr</th>
-                        <th style="text-align:left;width:26%">Path Prefix on this server</th>
+                        <th style="text-align:left;width:60%">Library</th>
+                        <th style="text-align:left;width:40%">Tag filter</th>
                         <th style="text-align:right"></th>
                     </tr>
                 </thead>
@@ -108,12 +119,6 @@
             </td>
             <td style="vertical-align:top;padding-right:1em">
                 <input type="text" data-id="txtTag" class="emby-input" placeholder="4k" />
-            </td>
-            <td style="vertical-align:top;padding-right:1em">
-                <input type="text" data-id="txtSourcePath" class="emby-input" placeholder="/data/movies (leave empty if same)" />
-            </td>
-            <td style="vertical-align:top;padding-right:1em">
-                <input type="text" data-id="txtTargetPath" class="emby-input" placeholder="/media/movies (leave empty if same)" />
             </td>
             <td style="vertical-align:top;text-align:right">
                 <button is="emby-button" data-id="removeBinding" type="button" class="raised raised-mini">
@@ -154,8 +159,6 @@
                 const kind = card.querySelector('[data-id=selKind]').value;
 
                 row.querySelector('[data-id=txtTag]').value = binding.TagFilter || '';
-                row.querySelector('[data-id=txtSourcePath]').value = binding.SourcePath || '';
-                row.querySelector('[data-id=txtTargetPath]').value = binding.TargetPath || '';
                 window.GoJellyfinSources.fillLibraries(row.querySelector('[data-id=selLibrary]'), kind, binding.Id);
 
                 row.querySelector('[data-id=removeBinding]').addEventListener('click', function () {
@@ -174,6 +177,8 @@
                 card.querySelector('[data-id=selKind]').value = connection.Kind || 'radarr';
                 card.querySelector('[data-id=txtUrl]').value = connection.Url || '';
                 card.querySelector('[data-id=txtApiKeyVariable]').value = connection.ApiKeyVariable || '';
+                card.querySelector('[data-id=txtRootPath]').value = connection.RootPath || '';
+                card.querySelector('[data-id=txtLocalPath]').value = connection.LocalPath || '';
 
                 card.querySelector('[data-id=selKind]').addEventListener('change', function (e) {
                     card.querySelectorAll('[data-id=selLibrary]').forEach(function (select) {
@@ -204,9 +209,7 @@
                 const libraries = Array.prototype.map.call(card.querySelectorAll('[data-id=bindingsHost] tr'), function (row) {
                     return {
                         Id: row.querySelector('[data-id=selLibrary]').value,
-                        TagFilter: row.querySelector('[data-id=txtTag]').value.trim(),
-                        SourcePath: row.querySelector('[data-id=txtSourcePath]').value.trim(),
-                        TargetPath: row.querySelector('[data-id=txtTargetPath]').value.trim()
+                        TagFilter: row.querySelector('[data-id=txtTag]').value.trim()
                     };
                 });
 
@@ -215,6 +218,8 @@
                     Kind: card.querySelector('[data-id=selKind]').value,
                     Url: card.querySelector('[data-id=txtUrl]').value.trim().replace(/\/+$/, ''),
                     ApiKeyVariable: card.querySelector('[data-id=txtApiKeyVariable]').value.trim(),
+                    RootPath: card.querySelector('[data-id=txtRootPath]').value.trim(),
+                    LocalPath: card.querySelector('[data-id=txtLocalPath]').value.trim(),
                     Libraries: libraries
                 };
             },

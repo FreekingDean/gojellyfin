@@ -8,14 +8,14 @@ import (
 	"github.com/google/uuid"
 )
 
-type MediaSource struct {
+type ItemSource struct {
 	ent.Schema
 }
 
-func (MediaSource) Fields() []ent.Field {
+func (ItemSource) Fields() []ent.Field {
 	return withDefaultFields(
 		field.UUID("item_id", uuid.UUID{}),
-		field.UUID("library_id", uuid.UUID{}),
+		field.UUID("source_id", uuid.UUID{}),
 
 		field.String("name"),
 		field.String("path"),
@@ -28,16 +28,17 @@ func (MediaSource) Fields() []ent.Field {
 	)
 }
 
-func (MediaSource) Edges() []ent.Edge {
+func (ItemSource) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("item", Item.Type).Ref("media_sources").Unique().Required().Field("item_id"),
-		edge.From("library", Library.Type).Ref("media_sources").Unique().Required().Field("library_id"),
+		edge.From("item", Item.Type).Ref("item_sources").Unique().Required().Field("item_id"),
+		edge.From("source", Source.Type).Ref("files").Unique().Required().Field("source_id"),
 		edge.To("streams", MediaStream.Type).Annotations(cascadeOnDelete),
 	}
 }
 
-func (MediaSource) Indexes() []ent.Index {
+func (ItemSource) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("library_id", "path").Unique(),
+		index.Fields("item_id", "source_id").Unique(),
+		index.Fields("path").Unique(),
 	}
 }

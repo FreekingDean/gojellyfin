@@ -11,7 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/google/uuid"
@@ -50,16 +50,16 @@ func (_u *MediaStreamUpdate) SetUpdatedAt(v time.Time) *MediaStreamUpdate {
 	return _u
 }
 
-// SetSourceID sets the "source_id" field.
-func (_u *MediaStreamUpdate) SetSourceID(v uuid.UUID) *MediaStreamUpdate {
-	_u.mutation.SetSourceID(v)
+// SetItemSourceID sets the "item_source_id" field.
+func (_u *MediaStreamUpdate) SetItemSourceID(v uuid.UUID) *MediaStreamUpdate {
+	_u.mutation.SetItemSourceID(v)
 	return _u
 }
 
-// SetNillableSourceID sets the "source_id" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableSourceID(v *uuid.UUID) *MediaStreamUpdate {
+// SetNillableItemSourceID sets the "item_source_id" field if the given value is not nil.
+func (_u *MediaStreamUpdate) SetNillableItemSourceID(v *uuid.UUID) *MediaStreamUpdate {
 	if v != nil {
-		_u.SetSourceID(*v)
+		_u.SetItemSourceID(*v)
 	}
 	return _u
 }
@@ -485,8 +485,14 @@ func (_u *MediaStreamUpdate) SetNillableIsHearingImpaired(v *bool) *MediaStreamU
 	return _u
 }
 
-// SetSource sets the "source" edge to the MediaSource entity.
-func (_u *MediaStreamUpdate) SetSource(v *MediaSource) *MediaStreamUpdate {
+// SetSourceID sets the "source" edge to the ItemSource entity by ID.
+func (_u *MediaStreamUpdate) SetSourceID(id uuid.UUID) *MediaStreamUpdate {
+	_u.mutation.SetSourceID(id)
+	return _u
+}
+
+// SetSource sets the "source" edge to the ItemSource entity.
+func (_u *MediaStreamUpdate) SetSource(v *ItemSource) *MediaStreamUpdate {
 	return _u.SetSourceID(v.ID)
 }
 
@@ -495,7 +501,7 @@ func (_u *MediaStreamUpdate) Mutation() *MediaStreamMutation {
 	return _u.mutation
 }
 
-// ClearSource clears the "source" edge to the MediaSource entity.
+// ClearSource clears the "source" edge to the ItemSource entity.
 func (_u *MediaStreamUpdate) ClearSource() *MediaStreamUpdate {
 	_u.mutation.ClearSource()
 	return _u
@@ -704,7 +710,7 @@ func (_u *MediaStreamUpdate) sqlSave(ctx context.Context) (_node int, err error)
 			Columns: []string{mediastream.SourceColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasource.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -717,7 +723,7 @@ func (_u *MediaStreamUpdate) sqlSave(ctx context.Context) (_node int, err error)
 			Columns: []string{mediastream.SourceColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasource.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -765,16 +771,16 @@ func (_u *MediaStreamUpdateOne) SetUpdatedAt(v time.Time) *MediaStreamUpdateOne 
 	return _u
 }
 
-// SetSourceID sets the "source_id" field.
-func (_u *MediaStreamUpdateOne) SetSourceID(v uuid.UUID) *MediaStreamUpdateOne {
-	_u.mutation.SetSourceID(v)
+// SetItemSourceID sets the "item_source_id" field.
+func (_u *MediaStreamUpdateOne) SetItemSourceID(v uuid.UUID) *MediaStreamUpdateOne {
+	_u.mutation.SetItemSourceID(v)
 	return _u
 }
 
-// SetNillableSourceID sets the "source_id" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableSourceID(v *uuid.UUID) *MediaStreamUpdateOne {
+// SetNillableItemSourceID sets the "item_source_id" field if the given value is not nil.
+func (_u *MediaStreamUpdateOne) SetNillableItemSourceID(v *uuid.UUID) *MediaStreamUpdateOne {
 	if v != nil {
-		_u.SetSourceID(*v)
+		_u.SetItemSourceID(*v)
 	}
 	return _u
 }
@@ -1200,8 +1206,14 @@ func (_u *MediaStreamUpdateOne) SetNillableIsHearingImpaired(v *bool) *MediaStre
 	return _u
 }
 
-// SetSource sets the "source" edge to the MediaSource entity.
-func (_u *MediaStreamUpdateOne) SetSource(v *MediaSource) *MediaStreamUpdateOne {
+// SetSourceID sets the "source" edge to the ItemSource entity by ID.
+func (_u *MediaStreamUpdateOne) SetSourceID(id uuid.UUID) *MediaStreamUpdateOne {
+	_u.mutation.SetSourceID(id)
+	return _u
+}
+
+// SetSource sets the "source" edge to the ItemSource entity.
+func (_u *MediaStreamUpdateOne) SetSource(v *ItemSource) *MediaStreamUpdateOne {
 	return _u.SetSourceID(v.ID)
 }
 
@@ -1210,7 +1222,7 @@ func (_u *MediaStreamUpdateOne) Mutation() *MediaStreamMutation {
 	return _u.mutation
 }
 
-// ClearSource clears the "source" edge to the MediaSource entity.
+// ClearSource clears the "source" edge to the ItemSource entity.
 func (_u *MediaStreamUpdateOne) ClearSource() *MediaStreamUpdateOne {
 	_u.mutation.ClearSource()
 	return _u
@@ -1449,7 +1461,7 @@ func (_u *MediaStreamUpdateOne) sqlSave(ctx context.Context) (_node *MediaStream
 			Columns: []string{mediastream.SourceColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasource.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1462,7 +1474,7 @@ func (_u *MediaStreamUpdateOne) sqlSave(ctx context.Context) (_node *MediaStream
 			Columns: []string{mediastream.SourceColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasource.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

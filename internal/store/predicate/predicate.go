@@ -36,6 +36,9 @@ type ImageBlob func(*sql.Selector)
 // Item is the predicate function for item builders.
 type Item func(*sql.Selector)
 
+// ItemSource is the predicate function for itemsource builders.
+type ItemSource func(*sql.Selector)
+
 // Library is the predicate function for library builders.
 type Library func(*sql.Selector)
 
@@ -44,9 +47,6 @@ type LibraryOptions func(*sql.Selector)
 
 // LibrarySource is the predicate function for librarysource builders.
 type LibrarySource func(*sql.Selector)
-
-// MediaSource is the predicate function for mediasource builders.
-type MediaSource func(*sql.Selector)
 
 // MediaStream is the predicate function for mediastream builders.
 type MediaStream func(*sql.Selector)

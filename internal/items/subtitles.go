@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 )
 
@@ -24,7 +24,7 @@ type ExternalSubtitle struct {
 
 func (s *Service) ReplaceExternalSubtitles(ctx context.Context, itemID uuid.UUID, source *MediaSource, subtitles []ExternalSubtitle) error {
 	return s.store.WithTx(ctx, func(tx *store.Tx) error {
-		if _, err := tx.MediaSource.Query().
+		if _, err := tx.ItemSource.Query().
 			Where(sourcemodal.ID(source.ID)).
 			ForUpdate().
 			Only(ctx); err != nil {
@@ -33,7 +33,7 @@ func (s *Service) ReplaceExternalSubtitles(ctx context.Context, itemID uuid.UUID
 
 		_, err := tx.MediaStream.Delete().
 			Where(
-				streammodal.SourceID(source.ID),
+				streammodal.ItemSourceID(source.ID),
 				streammodal.KindEQ(streammodal.KindSubtitle),
 				streammodal.IsExternal(true),
 			).
@@ -83,7 +83,7 @@ func (s *Service) ReplaceExternalSubtitles(ctx context.Context, itemID uuid.UUID
 
 func nextStreamIndex(ctx context.Context, tx *store.Tx, sourceID uuid.UUID) (int32, error) {
 	highest, err := tx.MediaStream.Query().
-		Where(streammodal.SourceID(sourceID)).
+		Where(streammodal.ItemSourceID(sourceID)).
 		Order(streammodal.ByIndex(sql.OrderDesc())).
 		First(ctx)
 	if store.IsNotFound(err) {

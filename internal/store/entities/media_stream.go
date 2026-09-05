@@ -14,7 +14,7 @@ type MediaStream struct {
 
 func (MediaStream) Fields() []ent.Field {
 	return withDefaultFields(
-		field.UUID("source_id", uuid.UUID{}),
+		field.UUID("item_source_id", uuid.UUID{}),
 
 		field.Enum("kind").Values(
 			"Audio", "Video", "Subtitle", "EmbeddedImage", "Data", "Lyric",
@@ -50,12 +50,12 @@ func (MediaStream) Fields() []ent.Field {
 
 func (MediaStream) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("source", MediaSource.Type).Ref("streams").Unique().Required().Field("source_id"),
+		edge.From("source", ItemSource.Type).Ref("streams").Unique().Required().Field("item_source_id"),
 	}
 }
 
 func (MediaStream) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("source_id", "index").Unique(),
+		index.Fields("item_source_id", "index").Unique(),
 	}
 }

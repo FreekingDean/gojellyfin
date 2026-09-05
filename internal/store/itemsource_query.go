@@ -14,22 +14,22 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
-	"github.com/FreekingDean/gojellyfin/internal/store/library"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
+	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/google/uuid"
 )
 
-// MediaSourceQuery is the builder for querying MediaSource entities.
-type MediaSourceQuery struct {
+// ItemSourceQuery is the builder for querying ItemSource entities.
+type ItemSourceQuery struct {
 	config
 	ctx         *QueryContext
-	order       []mediasource.OrderOption
+	order       []itemsource.OrderOption
 	inters      []Interceptor
-	predicates  []predicate.MediaSource
+	predicates  []predicate.ItemSource
 	withItem    *ItemQuery
-	withLibrary *LibraryQuery
+	withSource  *SourceQuery
 	withStreams *MediaStreamQuery
 	modifiers   []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
@@ -37,39 +37,39 @@ type MediaSourceQuery struct {
 	path func(context.Context) (*sql.Selector, error)
 }
 
-// Where adds a new predicate for the MediaSourceQuery builder.
-func (_q *MediaSourceQuery) Where(ps ...predicate.MediaSource) *MediaSourceQuery {
+// Where adds a new predicate for the ItemSourceQuery builder.
+func (_q *ItemSourceQuery) Where(ps ...predicate.ItemSource) *ItemSourceQuery {
 	_q.predicates = append(_q.predicates, ps...)
 	return _q
 }
 
 // Limit the number of records to be returned by this query.
-func (_q *MediaSourceQuery) Limit(limit int) *MediaSourceQuery {
+func (_q *ItemSourceQuery) Limit(limit int) *ItemSourceQuery {
 	_q.ctx.Limit = &limit
 	return _q
 }
 
 // Offset to start from.
-func (_q *MediaSourceQuery) Offset(offset int) *MediaSourceQuery {
+func (_q *ItemSourceQuery) Offset(offset int) *ItemSourceQuery {
 	_q.ctx.Offset = &offset
 	return _q
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
-func (_q *MediaSourceQuery) Unique(unique bool) *MediaSourceQuery {
+func (_q *ItemSourceQuery) Unique(unique bool) *ItemSourceQuery {
 	_q.ctx.Unique = &unique
 	return _q
 }
 
 // Order specifies how the records should be ordered.
-func (_q *MediaSourceQuery) Order(o ...mediasource.OrderOption) *MediaSourceQuery {
+func (_q *ItemSourceQuery) Order(o ...itemsource.OrderOption) *ItemSourceQuery {
 	_q.order = append(_q.order, o...)
 	return _q
 }
 
 // QueryItem chains the current query on the "item" edge.
-func (_q *MediaSourceQuery) QueryItem() *ItemQuery {
+func (_q *ItemSourceQuery) QueryItem() *ItemQuery {
 	query := (&ItemClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
@@ -80,9 +80,9 @@ func (_q *MediaSourceQuery) QueryItem() *ItemQuery {
 			return nil, err
 		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(mediasource.Table, mediasource.FieldID, selector),
+			sqlgraph.From(itemsource.Table, itemsource.FieldID, selector),
 			sqlgraph.To(item.Table, item.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, mediasource.ItemTable, mediasource.ItemColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, itemsource.ItemTable, itemsource.ItemColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -90,9 +90,9 @@ func (_q *MediaSourceQuery) QueryItem() *ItemQuery {
 	return query
 }
 
-// QueryLibrary chains the current query on the "library" edge.
-func (_q *MediaSourceQuery) QueryLibrary() *LibraryQuery {
-	query := (&LibraryClient{config: _q.config}).Query()
+// QuerySource chains the current query on the "source" edge.
+func (_q *ItemSourceQuery) QuerySource() *SourceQuery {
+	query := (&SourceClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -102,9 +102,9 @@ func (_q *MediaSourceQuery) QueryLibrary() *LibraryQuery {
 			return nil, err
 		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(mediasource.Table, mediasource.FieldID, selector),
-			sqlgraph.To(library.Table, library.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, mediasource.LibraryTable, mediasource.LibraryColumn),
+			sqlgraph.From(itemsource.Table, itemsource.FieldID, selector),
+			sqlgraph.To(source.Table, source.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, itemsource.SourceTable, itemsource.SourceColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -113,7 +113,7 @@ func (_q *MediaSourceQuery) QueryLibrary() *LibraryQuery {
 }
 
 // QueryStreams chains the current query on the "streams" edge.
-func (_q *MediaSourceQuery) QueryStreams() *MediaStreamQuery {
+func (_q *ItemSourceQuery) QueryStreams() *MediaStreamQuery {
 	query := (&MediaStreamClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
@@ -124,9 +124,9 @@ func (_q *MediaSourceQuery) QueryStreams() *MediaStreamQuery {
 			return nil, err
 		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(mediasource.Table, mediasource.FieldID, selector),
+			sqlgraph.From(itemsource.Table, itemsource.FieldID, selector),
 			sqlgraph.To(mediastream.Table, mediastream.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, mediasource.StreamsTable, mediasource.StreamsColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, itemsource.StreamsTable, itemsource.StreamsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -134,21 +134,21 @@ func (_q *MediaSourceQuery) QueryStreams() *MediaStreamQuery {
 	return query
 }
 
-// First returns the first MediaSource entity from the query.
-// Returns a *NotFoundError when no MediaSource was found.
-func (_q *MediaSourceQuery) First(ctx context.Context) (*MediaSource, error) {
+// First returns the first ItemSource entity from the query.
+// Returns a *NotFoundError when no ItemSource was found.
+func (_q *ItemSourceQuery) First(ctx context.Context) (*ItemSource, error) {
 	nodes, err := _q.Limit(1).All(setContextOp(ctx, _q.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
-		return nil, &NotFoundError{mediasource.Label}
+		return nil, &NotFoundError{itemsource.Label}
 	}
 	return nodes[0], nil
 }
 
 // FirstX is like First, but panics if an error occurs.
-func (_q *MediaSourceQuery) FirstX(ctx context.Context) *MediaSource {
+func (_q *ItemSourceQuery) FirstX(ctx context.Context) *ItemSource {
 	node, err := _q.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -156,22 +156,22 @@ func (_q *MediaSourceQuery) FirstX(ctx context.Context) *MediaSource {
 	return node
 }
 
-// FirstID returns the first MediaSource ID from the query.
-// Returns a *NotFoundError when no MediaSource ID was found.
-func (_q *MediaSourceQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+// FirstID returns the first ItemSource ID from the query.
+// Returns a *NotFoundError when no ItemSource ID was found.
+func (_q *ItemSourceQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
 	if ids, err = _q.Limit(1).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
-		err = &NotFoundError{mediasource.Label}
+		err = &NotFoundError{itemsource.Label}
 		return
 	}
 	return ids[0], nil
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (_q *MediaSourceQuery) FirstIDX(ctx context.Context) uuid.UUID {
+func (_q *ItemSourceQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := _q.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -179,10 +179,10 @@ func (_q *MediaSourceQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	return id
 }
 
-// Only returns a single MediaSource entity found by the query, ensuring it only returns one.
-// Returns a *NotSingularError when more than one MediaSource entity is found.
-// Returns a *NotFoundError when no MediaSource entities are found.
-func (_q *MediaSourceQuery) Only(ctx context.Context) (*MediaSource, error) {
+// Only returns a single ItemSource entity found by the query, ensuring it only returns one.
+// Returns a *NotSingularError when more than one ItemSource entity is found.
+// Returns a *NotFoundError when no ItemSource entities are found.
+func (_q *ItemSourceQuery) Only(ctx context.Context) (*ItemSource, error) {
 	nodes, err := _q.Limit(2).All(setContextOp(ctx, _q.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
@@ -191,14 +191,14 @@ func (_q *MediaSourceQuery) Only(ctx context.Context) (*MediaSource, error) {
 	case 1:
 		return nodes[0], nil
 	case 0:
-		return nil, &NotFoundError{mediasource.Label}
+		return nil, &NotFoundError{itemsource.Label}
 	default:
-		return nil, &NotSingularError{mediasource.Label}
+		return nil, &NotSingularError{itemsource.Label}
 	}
 }
 
 // OnlyX is like Only, but panics if an error occurs.
-func (_q *MediaSourceQuery) OnlyX(ctx context.Context) *MediaSource {
+func (_q *ItemSourceQuery) OnlyX(ctx context.Context) *ItemSource {
 	node, err := _q.Only(ctx)
 	if err != nil {
 		panic(err)
@@ -206,10 +206,10 @@ func (_q *MediaSourceQuery) OnlyX(ctx context.Context) *MediaSource {
 	return node
 }
 
-// OnlyID is like Only, but returns the only MediaSource ID in the query.
-// Returns a *NotSingularError when more than one MediaSource ID is found.
+// OnlyID is like Only, but returns the only ItemSource ID in the query.
+// Returns a *NotSingularError when more than one ItemSource ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (_q *MediaSourceQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+func (_q *ItemSourceQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
 	if ids, err = _q.Limit(2).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
@@ -218,15 +218,15 @@ func (_q *MediaSourceQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error
 	case 1:
 		id = ids[0]
 	case 0:
-		err = &NotFoundError{mediasource.Label}
+		err = &NotFoundError{itemsource.Label}
 	default:
-		err = &NotSingularError{mediasource.Label}
+		err = &NotSingularError{itemsource.Label}
 	}
 	return
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (_q *MediaSourceQuery) OnlyIDX(ctx context.Context) uuid.UUID {
+func (_q *ItemSourceQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := _q.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -234,18 +234,18 @@ func (_q *MediaSourceQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	return id
 }
 
-// All executes the query and returns a list of MediaSources.
-func (_q *MediaSourceQuery) All(ctx context.Context) ([]*MediaSource, error) {
+// All executes the query and returns a list of ItemSources.
+func (_q *ItemSourceQuery) All(ctx context.Context) ([]*ItemSource, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryAll)
 	if err := _q.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	qr := querierAll[[]*MediaSource, *MediaSourceQuery]()
-	return withInterceptors[[]*MediaSource](ctx, _q, qr, _q.inters)
+	qr := querierAll[[]*ItemSource, *ItemSourceQuery]()
+	return withInterceptors[[]*ItemSource](ctx, _q, qr, _q.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
-func (_q *MediaSourceQuery) AllX(ctx context.Context) []*MediaSource {
+func (_q *ItemSourceQuery) AllX(ctx context.Context) []*ItemSource {
 	nodes, err := _q.All(ctx)
 	if err != nil {
 		panic(err)
@@ -253,20 +253,20 @@ func (_q *MediaSourceQuery) AllX(ctx context.Context) []*MediaSource {
 	return nodes
 }
 
-// IDs executes the query and returns a list of MediaSource IDs.
-func (_q *MediaSourceQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+// IDs executes the query and returns a list of ItemSource IDs.
+func (_q *ItemSourceQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 	if _q.ctx.Unique == nil && _q.path != nil {
 		_q.Unique(true)
 	}
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryIDs)
-	if err = _q.Select(mediasource.FieldID).Scan(ctx, &ids); err != nil {
+	if err = _q.Select(itemsource.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (_q *MediaSourceQuery) IDsX(ctx context.Context) []uuid.UUID {
+func (_q *ItemSourceQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := _q.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -275,16 +275,16 @@ func (_q *MediaSourceQuery) IDsX(ctx context.Context) []uuid.UUID {
 }
 
 // Count returns the count of the given query.
-func (_q *MediaSourceQuery) Count(ctx context.Context) (int, error) {
+func (_q *ItemSourceQuery) Count(ctx context.Context) (int, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryCount)
 	if err := _q.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return withInterceptors[int](ctx, _q, querierCount[*MediaSourceQuery](), _q.inters)
+	return withInterceptors[int](ctx, _q, querierCount[*ItemSourceQuery](), _q.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
-func (_q *MediaSourceQuery) CountX(ctx context.Context) int {
+func (_q *ItemSourceQuery) CountX(ctx context.Context) int {
 	count, err := _q.Count(ctx)
 	if err != nil {
 		panic(err)
@@ -293,7 +293,7 @@ func (_q *MediaSourceQuery) CountX(ctx context.Context) int {
 }
 
 // Exist returns true if the query has elements in the graph.
-func (_q *MediaSourceQuery) Exist(ctx context.Context) (bool, error) {
+func (_q *ItemSourceQuery) Exist(ctx context.Context) (bool, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryExist)
 	switch _, err := _q.FirstID(ctx); {
 	case IsNotFound(err):
@@ -306,7 +306,7 @@ func (_q *MediaSourceQuery) Exist(ctx context.Context) (bool, error) {
 }
 
 // ExistX is like Exist, but panics if an error occurs.
-func (_q *MediaSourceQuery) ExistX(ctx context.Context) bool {
+func (_q *ItemSourceQuery) ExistX(ctx context.Context) bool {
 	exist, err := _q.Exist(ctx)
 	if err != nil {
 		panic(err)
@@ -314,20 +314,20 @@ func (_q *MediaSourceQuery) ExistX(ctx context.Context) bool {
 	return exist
 }
 
-// Clone returns a duplicate of the MediaSourceQuery builder, including all associated steps. It can be
+// Clone returns a duplicate of the ItemSourceQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
-func (_q *MediaSourceQuery) Clone() *MediaSourceQuery {
+func (_q *ItemSourceQuery) Clone() *ItemSourceQuery {
 	if _q == nil {
 		return nil
 	}
-	return &MediaSourceQuery{
+	return &ItemSourceQuery{
 		config:      _q.config,
 		ctx:         _q.ctx.Clone(),
-		order:       append([]mediasource.OrderOption{}, _q.order...),
+		order:       append([]itemsource.OrderOption{}, _q.order...),
 		inters:      append([]Interceptor{}, _q.inters...),
-		predicates:  append([]predicate.MediaSource{}, _q.predicates...),
+		predicates:  append([]predicate.ItemSource{}, _q.predicates...),
 		withItem:    _q.withItem.Clone(),
-		withLibrary: _q.withLibrary.Clone(),
+		withSource:  _q.withSource.Clone(),
 		withStreams: _q.withStreams.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
@@ -337,7 +337,7 @@ func (_q *MediaSourceQuery) Clone() *MediaSourceQuery {
 
 // WithItem tells the query-builder to eager-load the nodes that are connected to
 // the "item" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *MediaSourceQuery) WithItem(opts ...func(*ItemQuery)) *MediaSourceQuery {
+func (_q *ItemSourceQuery) WithItem(opts ...func(*ItemQuery)) *ItemSourceQuery {
 	query := (&ItemClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
@@ -346,20 +346,20 @@ func (_q *MediaSourceQuery) WithItem(opts ...func(*ItemQuery)) *MediaSourceQuery
 	return _q
 }
 
-// WithLibrary tells the query-builder to eager-load the nodes that are connected to
-// the "library" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *MediaSourceQuery) WithLibrary(opts ...func(*LibraryQuery)) *MediaSourceQuery {
-	query := (&LibraryClient{config: _q.config}).Query()
+// WithSource tells the query-builder to eager-load the nodes that are connected to
+// the "source" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemSourceQuery) WithSource(opts ...func(*SourceQuery)) *ItemSourceQuery {
+	query := (&SourceClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withLibrary = query
+	_q.withSource = query
 	return _q
 }
 
 // WithStreams tells the query-builder to eager-load the nodes that are connected to
 // the "streams" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *MediaSourceQuery) WithStreams(opts ...func(*MediaStreamQuery)) *MediaSourceQuery {
+func (_q *ItemSourceQuery) WithStreams(opts ...func(*MediaStreamQuery)) *ItemSourceQuery {
 	query := (&MediaStreamClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
@@ -378,15 +378,15 @@ func (_q *MediaSourceQuery) WithStreams(opts ...func(*MediaStreamQuery)) *MediaS
 //		Count int `json:"count,omitempty"`
 //	}
 //
-//	client.MediaSource.Query().
-//		GroupBy(mediasource.FieldCreatedAt).
+//	client.ItemSource.Query().
+//		GroupBy(itemsource.FieldCreatedAt).
 //		Aggregate(store.Count()).
 //		Scan(ctx, &v)
-func (_q *MediaSourceQuery) GroupBy(field string, fields ...string) *MediaSourceGroupBy {
+func (_q *ItemSourceQuery) GroupBy(field string, fields ...string) *ItemSourceGroupBy {
 	_q.ctx.Fields = append([]string{field}, fields...)
-	grbuild := &MediaSourceGroupBy{build: _q}
+	grbuild := &ItemSourceGroupBy{build: _q}
 	grbuild.flds = &_q.ctx.Fields
-	grbuild.label = mediasource.Label
+	grbuild.label = itemsource.Label
 	grbuild.scan = grbuild.Scan
 	return grbuild
 }
@@ -400,23 +400,23 @@ func (_q *MediaSourceQuery) GroupBy(field string, fields ...string) *MediaSource
 //		CreatedAt time.Time `json:"created_at,omitempty"`
 //	}
 //
-//	client.MediaSource.Query().
-//		Select(mediasource.FieldCreatedAt).
+//	client.ItemSource.Query().
+//		Select(itemsource.FieldCreatedAt).
 //		Scan(ctx, &v)
-func (_q *MediaSourceQuery) Select(fields ...string) *MediaSourceSelect {
+func (_q *ItemSourceQuery) Select(fields ...string) *ItemSourceSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
-	sbuild := &MediaSourceSelect{MediaSourceQuery: _q}
-	sbuild.label = mediasource.Label
+	sbuild := &ItemSourceSelect{ItemSourceQuery: _q}
+	sbuild.label = itemsource.Label
 	sbuild.flds, sbuild.scan = &_q.ctx.Fields, sbuild.Scan
 	return sbuild
 }
 
-// Aggregate returns a MediaSourceSelect configured with the given aggregations.
-func (_q *MediaSourceQuery) Aggregate(fns ...AggregateFunc) *MediaSourceSelect {
+// Aggregate returns a ItemSourceSelect configured with the given aggregations.
+func (_q *ItemSourceQuery) Aggregate(fns ...AggregateFunc) *ItemSourceSelect {
 	return _q.Select().Aggregate(fns...)
 }
 
-func (_q *MediaSourceQuery) prepareQuery(ctx context.Context) error {
+func (_q *ItemSourceQuery) prepareQuery(ctx context.Context) error {
 	for _, inter := range _q.inters {
 		if inter == nil {
 			return fmt.Errorf("store: uninitialized interceptor (forgotten import store/runtime?)")
@@ -428,7 +428,7 @@ func (_q *MediaSourceQuery) prepareQuery(ctx context.Context) error {
 		}
 	}
 	for _, f := range _q.ctx.Fields {
-		if !mediasource.ValidColumn(f) {
+		if !itemsource.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("store: invalid field %q for query", f)}
 		}
 	}
@@ -442,21 +442,21 @@ func (_q *MediaSourceQuery) prepareQuery(ctx context.Context) error {
 	return nil
 }
 
-func (_q *MediaSourceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*MediaSource, error) {
+func (_q *ItemSourceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*ItemSource, error) {
 	var (
-		nodes       = []*MediaSource{}
+		nodes       = []*ItemSource{}
 		_spec       = _q.querySpec()
 		loadedTypes = [3]bool{
 			_q.withItem != nil,
-			_q.withLibrary != nil,
+			_q.withSource != nil,
 			_q.withStreams != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
-		return (*MediaSource).scanValues(nil, columns)
+		return (*ItemSource).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
-		node := &MediaSource{config: _q.config}
+		node := &ItemSource{config: _q.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
@@ -475,29 +475,29 @@ func (_q *MediaSourceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 	}
 	if query := _q.withItem; query != nil {
 		if err := _q.loadItem(ctx, query, nodes, nil,
-			func(n *MediaSource, e *Item) { n.Edges.Item = e }); err != nil {
+			func(n *ItemSource, e *Item) { n.Edges.Item = e }); err != nil {
 			return nil, err
 		}
 	}
-	if query := _q.withLibrary; query != nil {
-		if err := _q.loadLibrary(ctx, query, nodes, nil,
-			func(n *MediaSource, e *Library) { n.Edges.Library = e }); err != nil {
+	if query := _q.withSource; query != nil {
+		if err := _q.loadSource(ctx, query, nodes, nil,
+			func(n *ItemSource, e *Source) { n.Edges.Source = e }); err != nil {
 			return nil, err
 		}
 	}
 	if query := _q.withStreams; query != nil {
 		if err := _q.loadStreams(ctx, query, nodes,
-			func(n *MediaSource) { n.Edges.Streams = []*MediaStream{} },
-			func(n *MediaSource, e *MediaStream) { n.Edges.Streams = append(n.Edges.Streams, e) }); err != nil {
+			func(n *ItemSource) { n.Edges.Streams = []*MediaStream{} },
+			func(n *ItemSource, e *MediaStream) { n.Edges.Streams = append(n.Edges.Streams, e) }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (_q *MediaSourceQuery) loadItem(ctx context.Context, query *ItemQuery, nodes []*MediaSource, init func(*MediaSource), assign func(*MediaSource, *Item)) error {
+func (_q *ItemSourceQuery) loadItem(ctx context.Context, query *ItemQuery, nodes []*ItemSource, init func(*ItemSource), assign func(*ItemSource, *Item)) error {
 	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*MediaSource)
+	nodeids := make(map[uuid.UUID][]*ItemSource)
 	for i := range nodes {
 		fk := nodes[i].ItemID
 		if _, ok := nodeids[fk]; !ok {
@@ -524,11 +524,11 @@ func (_q *MediaSourceQuery) loadItem(ctx context.Context, query *ItemQuery, node
 	}
 	return nil
 }
-func (_q *MediaSourceQuery) loadLibrary(ctx context.Context, query *LibraryQuery, nodes []*MediaSource, init func(*MediaSource), assign func(*MediaSource, *Library)) error {
+func (_q *ItemSourceQuery) loadSource(ctx context.Context, query *SourceQuery, nodes []*ItemSource, init func(*ItemSource), assign func(*ItemSource, *Source)) error {
 	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*MediaSource)
+	nodeids := make(map[uuid.UUID][]*ItemSource)
 	for i := range nodes {
-		fk := nodes[i].LibraryID
+		fk := nodes[i].SourceID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -537,7 +537,7 @@ func (_q *MediaSourceQuery) loadLibrary(ctx context.Context, query *LibraryQuery
 	if len(ids) == 0 {
 		return nil
 	}
-	query.Where(library.IDIn(ids...))
+	query.Where(source.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
@@ -545,7 +545,7 @@ func (_q *MediaSourceQuery) loadLibrary(ctx context.Context, query *LibraryQuery
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "library_id" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "source_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -553,9 +553,9 @@ func (_q *MediaSourceQuery) loadLibrary(ctx context.Context, query *LibraryQuery
 	}
 	return nil
 }
-func (_q *MediaSourceQuery) loadStreams(ctx context.Context, query *MediaStreamQuery, nodes []*MediaSource, init func(*MediaSource), assign func(*MediaSource, *MediaStream)) error {
+func (_q *ItemSourceQuery) loadStreams(ctx context.Context, query *MediaStreamQuery, nodes []*ItemSource, init func(*ItemSource), assign func(*ItemSource, *MediaStream)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*MediaSource)
+	nodeids := make(map[uuid.UUID]*ItemSource)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -564,27 +564,27 @@ func (_q *MediaSourceQuery) loadStreams(ctx context.Context, query *MediaStreamQ
 		}
 	}
 	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(mediastream.FieldSourceID)
+		query.ctx.AppendFieldOnce(mediastream.FieldItemSourceID)
 	}
 	query.Where(predicate.MediaStream(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(mediasource.StreamsColumn), fks...))
+		s.Where(sql.InValues(s.C(itemsource.StreamsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.SourceID
+		fk := n.ItemSourceID
 		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "source_id" returned %v for node %v`, fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "item_source_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}
 	return nil
 }
 
-func (_q *MediaSourceQuery) sqlCount(ctx context.Context) (int, error) {
+func (_q *ItemSourceQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
 	if len(_q.modifiers) > 0 {
 		_spec.Modifiers = _q.modifiers
@@ -596,8 +596,8 @@ func (_q *MediaSourceQuery) sqlCount(ctx context.Context) (int, error) {
 	return sqlgraph.CountNodes(ctx, _q.driver, _spec)
 }
 
-func (_q *MediaSourceQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(mediasource.Table, mediasource.Columns, sqlgraph.NewFieldSpec(mediasource.FieldID, field.TypeUUID))
+func (_q *ItemSourceQuery) querySpec() *sqlgraph.QuerySpec {
+	_spec := sqlgraph.NewQuerySpec(itemsource.Table, itemsource.Columns, sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID))
 	_spec.From = _q.sql
 	if unique := _q.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
@@ -606,17 +606,17 @@ func (_q *MediaSourceQuery) querySpec() *sqlgraph.QuerySpec {
 	}
 	if fields := _q.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
-		_spec.Node.Columns = append(_spec.Node.Columns, mediasource.FieldID)
+		_spec.Node.Columns = append(_spec.Node.Columns, itemsource.FieldID)
 		for i := range fields {
-			if fields[i] != mediasource.FieldID {
+			if fields[i] != itemsource.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
 		}
 		if _q.withItem != nil {
-			_spec.Node.AddColumnOnce(mediasource.FieldItemID)
+			_spec.Node.AddColumnOnce(itemsource.FieldItemID)
 		}
-		if _q.withLibrary != nil {
-			_spec.Node.AddColumnOnce(mediasource.FieldLibraryID)
+		if _q.withSource != nil {
+			_spec.Node.AddColumnOnce(itemsource.FieldSourceID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {
@@ -642,12 +642,12 @@ func (_q *MediaSourceQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (_q *MediaSourceQuery) sqlQuery(ctx context.Context) *sql.Selector {
+func (_q *ItemSourceQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(_q.driver.Dialect())
-	t1 := builder.Table(mediasource.Table)
+	t1 := builder.Table(itemsource.Table)
 	columns := _q.ctx.Fields
 	if len(columns) == 0 {
-		columns = mediasource.Columns
+		columns = itemsource.Columns
 	}
 	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if _q.sql != nil {
@@ -680,7 +680,7 @@ func (_q *MediaSourceQuery) sqlQuery(ctx context.Context) *sql.Selector {
 // ForUpdate locks the selected rows against concurrent updates, and prevent them from being
 // updated, deleted or "selected ... for update" by other sessions, until the transaction is
 // either committed or rolled-back.
-func (_q *MediaSourceQuery) ForUpdate(opts ...sql.LockOption) *MediaSourceQuery {
+func (_q *ItemSourceQuery) ForUpdate(opts ...sql.LockOption) *ItemSourceQuery {
 	if _q.driver.Dialect() == dialect.Postgres {
 		_q.Unique(false)
 	}
@@ -693,7 +693,7 @@ func (_q *MediaSourceQuery) ForUpdate(opts ...sql.LockOption) *MediaSourceQuery 
 // ForShare behaves similarly to ForUpdate, except that it acquires a shared mode lock
 // on any rows that are read. Other sessions can read the rows, but cannot modify them
 // until your transaction commits.
-func (_q *MediaSourceQuery) ForShare(opts ...sql.LockOption) *MediaSourceQuery {
+func (_q *ItemSourceQuery) ForShare(opts ...sql.LockOption) *ItemSourceQuery {
 	if _q.driver.Dialect() == dialect.Postgres {
 		_q.Unique(false)
 	}
@@ -703,28 +703,28 @@ func (_q *MediaSourceQuery) ForShare(opts ...sql.LockOption) *MediaSourceQuery {
 	return _q
 }
 
-// MediaSourceGroupBy is the group-by builder for MediaSource entities.
-type MediaSourceGroupBy struct {
+// ItemSourceGroupBy is the group-by builder for ItemSource entities.
+type ItemSourceGroupBy struct {
 	selector
-	build *MediaSourceQuery
+	build *ItemSourceQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
-func (_g *MediaSourceGroupBy) Aggregate(fns ...AggregateFunc) *MediaSourceGroupBy {
+func (_g *ItemSourceGroupBy) Aggregate(fns ...AggregateFunc) *ItemSourceGroupBy {
 	_g.fns = append(_g.fns, fns...)
 	return _g
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_g *MediaSourceGroupBy) Scan(ctx context.Context, v any) error {
+func (_g *ItemSourceGroupBy) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, _g.build.ctx, ent.OpQueryGroupBy)
 	if err := _g.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*MediaSourceQuery, *MediaSourceGroupBy](ctx, _g.build, _g, _g.build.inters, v)
+	return scanWithInterceptors[*ItemSourceQuery, *ItemSourceGroupBy](ctx, _g.build, _g, _g.build.inters, v)
 }
 
-func (_g *MediaSourceGroupBy) sqlScan(ctx context.Context, root *MediaSourceQuery, v any) error {
+func (_g *ItemSourceGroupBy) sqlScan(ctx context.Context, root *ItemSourceQuery, v any) error {
 	selector := root.sqlQuery(ctx).Select()
 	aggregation := make([]string, 0, len(_g.fns))
 	for _, fn := range _g.fns {
@@ -751,28 +751,28 @@ func (_g *MediaSourceGroupBy) sqlScan(ctx context.Context, root *MediaSourceQuer
 	return sql.ScanSlice(rows, v)
 }
 
-// MediaSourceSelect is the builder for selecting fields of MediaSource entities.
-type MediaSourceSelect struct {
-	*MediaSourceQuery
+// ItemSourceSelect is the builder for selecting fields of ItemSource entities.
+type ItemSourceSelect struct {
+	*ItemSourceQuery
 	selector
 }
 
 // Aggregate adds the given aggregation functions to the selector query.
-func (_s *MediaSourceSelect) Aggregate(fns ...AggregateFunc) *MediaSourceSelect {
+func (_s *ItemSourceSelect) Aggregate(fns ...AggregateFunc) *ItemSourceSelect {
 	_s.fns = append(_s.fns, fns...)
 	return _s
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_s *MediaSourceSelect) Scan(ctx context.Context, v any) error {
+func (_s *ItemSourceSelect) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, _s.ctx, ent.OpQuerySelect)
 	if err := _s.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*MediaSourceQuery, *MediaSourceSelect](ctx, _s.MediaSourceQuery, _s, _s.inters, v)
+	return scanWithInterceptors[*ItemSourceQuery, *ItemSourceSelect](ctx, _s.ItemSourceQuery, _s, _s.inters, v)
 }
 
-func (_s *MediaSourceSelect) sqlScan(ctx context.Context, root *MediaSourceQuery, v any) error {
+func (_s *ItemSourceSelect) sqlScan(ctx context.Context, root *ItemSourceQuery, v any) error {
 	selector := root.sqlQuery(ctx)
 	aggregation := make([]string, 0, len(_s.fns))
 	for _, fn := range _s.fns {

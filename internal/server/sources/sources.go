@@ -94,10 +94,8 @@ func modelToParams(entry sources.Configured) api.Source {
 	bound := make([]api.SourceLibrary, len(entry.Libraries))
 	for i, library := range entry.Libraries {
 		bound[i] = api.SourceLibrary{
-			Id:         library.ID,
-			TagFilter:  apiutil.Ptr(library.TagFilter),
-			SourcePath: apiutil.Ptr(library.SourcePath),
-			TargetPath: apiutil.Ptr(library.TargetPath),
+			Id:        library.ID,
+			TagFilter: apiutil.Ptr(library.TagFilter),
 		}
 	}
 
@@ -105,6 +103,8 @@ func modelToParams(entry sources.Configured) api.Source {
 		Name:           apiutil.Ptr(entry.Source.Name),
 		Kind:           apiutil.Ptr(apiKind(entry.Source.Kind)),
 		Url:            apiutil.Ptr(entry.Source.URL),
+		RootPath:       apiutil.Ptr(entry.Source.RootPath),
+		LocalPath:      apiutil.Ptr(entry.Source.LocalPath),
 		ApiKeyVariable: apiutil.Ptr(entry.Source.APIKeyVariable),
 		Libraries:      apiutil.Ptr(bound),
 	}
@@ -122,6 +122,8 @@ func paramsToModel(req api.Source) (sources.Configured, error) {
 			Name:           apiutil.Deref(req.Name),
 			Kind:           kind,
 			URL:            apiutil.Deref(req.Url),
+			RootPath:       apiutil.Deref(req.RootPath),
+			LocalPath:      apiutil.Deref(req.LocalPath),
 			APIKeyVariable: apiutil.Deref(req.ApiKeyVariable),
 		},
 		Libraries: make([]sources.Library, len(bound)),
@@ -129,10 +131,8 @@ func paramsToModel(req api.Source) (sources.Configured, error) {
 
 	for i, library := range bound {
 		entry.Libraries[i] = sources.Library{
-			ID:         library.Id,
-			TagFilter:  apiutil.Deref(library.TagFilter),
-			SourcePath: apiutil.Deref(library.SourcePath),
-			TargetPath: apiutil.Deref(library.TargetPath),
+			ID:        library.Id,
+			TagFilter: apiutil.Deref(library.TagFilter),
 		}
 	}
 

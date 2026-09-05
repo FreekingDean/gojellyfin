@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/google/uuid"
@@ -71,6 +72,34 @@ func (_c *SourceCreate) SetAPIKeyVariable(v string) *SourceCreate {
 	return _c
 }
 
+// SetRootPath sets the "root_path" field.
+func (_c *SourceCreate) SetRootPath(v string) *SourceCreate {
+	_c.mutation.SetRootPath(v)
+	return _c
+}
+
+// SetNillableRootPath sets the "root_path" field if the given value is not nil.
+func (_c *SourceCreate) SetNillableRootPath(v *string) *SourceCreate {
+	if v != nil {
+		_c.SetRootPath(*v)
+	}
+	return _c
+}
+
+// SetLocalPath sets the "local_path" field.
+func (_c *SourceCreate) SetLocalPath(v string) *SourceCreate {
+	_c.mutation.SetLocalPath(v)
+	return _c
+}
+
+// SetNillableLocalPath sets the "local_path" field if the given value is not nil.
+func (_c *SourceCreate) SetNillableLocalPath(v *string) *SourceCreate {
+	if v != nil {
+		_c.SetLocalPath(*v)
+	}
+	return _c
+}
+
 // SetKind sets the "kind" field.
 func (_c *SourceCreate) SetKind(v source.Kind) *SourceCreate {
 	_c.mutation.SetKind(v)
@@ -96,6 +125,21 @@ func (_c *SourceCreate) AddLibraries(v ...*LibrarySource) *SourceCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddLibraryIDs(ids...)
+}
+
+// AddFileIDs adds the "files" edge to the ItemSource entity by IDs.
+func (_c *SourceCreate) AddFileIDs(ids ...uuid.UUID) *SourceCreate {
+	_c.mutation.AddFileIDs(ids...)
+	return _c
+}
+
+// AddFiles adds the "files" edges to the ItemSource entity.
+func (_c *SourceCreate) AddFiles(v ...*ItemSource) *SourceCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddFileIDs(ids...)
 }
 
 // Mutation returns the SourceMutation object of the builder.
@@ -224,6 +268,14 @@ func (_c *SourceCreate) createSpec() (*Source, *sqlgraph.CreateSpec) {
 		_spec.SetField(source.FieldAPIKeyVariable, field.TypeString, value)
 		_node.APIKeyVariable = value
 	}
+	if value, ok := _c.mutation.RootPath(); ok {
+		_spec.SetField(source.FieldRootPath, field.TypeString, value)
+		_node.RootPath = value
+	}
+	if value, ok := _c.mutation.LocalPath(); ok {
+		_spec.SetField(source.FieldLocalPath, field.TypeString, value)
+		_node.LocalPath = value
+	}
 	if value, ok := _c.mutation.Kind(); ok {
 		_spec.SetField(source.FieldKind, field.TypeEnum, value)
 		_node.Kind = value
@@ -237,6 +289,22 @@ func (_c *SourceCreate) createSpec() (*Source, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(librarysource.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.FilesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.FilesTable,
+			Columns: []string{source.FilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -353,6 +421,42 @@ func (u *SourceUpsert) SetAPIKeyVariable(v string) *SourceUpsert {
 // UpdateAPIKeyVariable sets the "api_key_variable" field to the value that was provided on create.
 func (u *SourceUpsert) UpdateAPIKeyVariable() *SourceUpsert {
 	u.SetExcluded(source.FieldAPIKeyVariable)
+	return u
+}
+
+// SetRootPath sets the "root_path" field.
+func (u *SourceUpsert) SetRootPath(v string) *SourceUpsert {
+	u.Set(source.FieldRootPath, v)
+	return u
+}
+
+// UpdateRootPath sets the "root_path" field to the value that was provided on create.
+func (u *SourceUpsert) UpdateRootPath() *SourceUpsert {
+	u.SetExcluded(source.FieldRootPath)
+	return u
+}
+
+// ClearRootPath clears the value of the "root_path" field.
+func (u *SourceUpsert) ClearRootPath() *SourceUpsert {
+	u.SetNull(source.FieldRootPath)
+	return u
+}
+
+// SetLocalPath sets the "local_path" field.
+func (u *SourceUpsert) SetLocalPath(v string) *SourceUpsert {
+	u.Set(source.FieldLocalPath, v)
+	return u
+}
+
+// UpdateLocalPath sets the "local_path" field to the value that was provided on create.
+func (u *SourceUpsert) UpdateLocalPath() *SourceUpsert {
+	u.SetExcluded(source.FieldLocalPath)
+	return u
+}
+
+// ClearLocalPath clears the value of the "local_path" field.
+func (u *SourceUpsert) ClearLocalPath() *SourceUpsert {
+	u.SetNull(source.FieldLocalPath)
 	return u
 }
 
@@ -483,6 +587,48 @@ func (u *SourceUpsertOne) SetAPIKeyVariable(v string) *SourceUpsertOne {
 func (u *SourceUpsertOne) UpdateAPIKeyVariable() *SourceUpsertOne {
 	return u.Update(func(s *SourceUpsert) {
 		s.UpdateAPIKeyVariable()
+	})
+}
+
+// SetRootPath sets the "root_path" field.
+func (u *SourceUpsertOne) SetRootPath(v string) *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.SetRootPath(v)
+	})
+}
+
+// UpdateRootPath sets the "root_path" field to the value that was provided on create.
+func (u *SourceUpsertOne) UpdateRootPath() *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.UpdateRootPath()
+	})
+}
+
+// ClearRootPath clears the value of the "root_path" field.
+func (u *SourceUpsertOne) ClearRootPath() *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.ClearRootPath()
+	})
+}
+
+// SetLocalPath sets the "local_path" field.
+func (u *SourceUpsertOne) SetLocalPath(v string) *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.SetLocalPath(v)
+	})
+}
+
+// UpdateLocalPath sets the "local_path" field to the value that was provided on create.
+func (u *SourceUpsertOne) UpdateLocalPath() *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.UpdateLocalPath()
+	})
+}
+
+// ClearLocalPath clears the value of the "local_path" field.
+func (u *SourceUpsertOne) ClearLocalPath() *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.ClearLocalPath()
 	})
 }
 
@@ -782,6 +928,48 @@ func (u *SourceUpsertBulk) SetAPIKeyVariable(v string) *SourceUpsertBulk {
 func (u *SourceUpsertBulk) UpdateAPIKeyVariable() *SourceUpsertBulk {
 	return u.Update(func(s *SourceUpsert) {
 		s.UpdateAPIKeyVariable()
+	})
+}
+
+// SetRootPath sets the "root_path" field.
+func (u *SourceUpsertBulk) SetRootPath(v string) *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.SetRootPath(v)
+	})
+}
+
+// UpdateRootPath sets the "root_path" field to the value that was provided on create.
+func (u *SourceUpsertBulk) UpdateRootPath() *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.UpdateRootPath()
+	})
+}
+
+// ClearRootPath clears the value of the "root_path" field.
+func (u *SourceUpsertBulk) ClearRootPath() *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.ClearRootPath()
+	})
+}
+
+// SetLocalPath sets the "local_path" field.
+func (u *SourceUpsertBulk) SetLocalPath(v string) *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.SetLocalPath(v)
+	})
+}
+
+// UpdateLocalPath sets the "local_path" field to the value that was provided on create.
+func (u *SourceUpsertBulk) UpdateLocalPath() *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.UpdateLocalPath()
+	})
+}
+
+// ClearLocalPath clears the value of the "local_path" field.
+func (u *SourceUpsertBulk) ClearLocalPath() *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.ClearLocalPath()
 	})
 }
 
