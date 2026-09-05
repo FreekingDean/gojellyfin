@@ -12,7 +12,6 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
-	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
@@ -141,7 +140,7 @@ func TestService_IdentifyItems_Artwork(t *testing.T) {
 
 		fixed.matrix(t)
 		fixed.identify(t)
-		fixed.run(t, jobs.Options{Force: true})
+		fixed.run(t, uuid.Nil, true)
 
 		if asked := served.requests(); len(asked) != 1 {
 			t.Errorf("requests = %v, want the poster fetched once", asked)
@@ -160,7 +159,7 @@ func TestService_IdentifyItems_Artwork(t *testing.T) {
 
 		second, body := served.serve(t, "/t/p/w780/matrix-remastered.png")
 		fixed.provider.images = []items.RemoteImage{{Kind: imagemodal.KindPrimary, URL: second}}
-		fixed.run(t, jobs.Options{Force: true})
+		fixed.run(t, uuid.Nil, true)
 
 		record := fixed.poster(t, movie.ID)
 		if record.Path == was.Path {

@@ -15,6 +15,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
@@ -54,15 +55,21 @@ type Transcoder interface {
 type Handler struct {
 	sessions   *sessions.Service
 	items      *items.Service
+	files      *filesystem.Service
 	transcoder Transcoder
 }
 
-func New(sessions *sessions.Service, items *items.Service, transcoder Transcoder) *Handler {
-	return &Handler{sessions: sessions, items: items, transcoder: transcoder}
+func New(
+	sessions *sessions.Service,
+	items *items.Service,
+	files *filesystem.Service,
+	transcoder Transcoder,
+) *Handler {
+	return &Handler{sessions: sessions, items: items, files: files, transcoder: transcoder}
 }
 
 func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
-	item, source, ok := h.item(w, r)
+	item, source, path, ok := h.item(w, r)
 	if !ok {
 		return
 	}
@@ -70,15 +77,15 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 	container := items.Container(source)
 	requested := r.PathValue("container")
 	if requested == "" || isStatic(r) || strings.EqualFold(requested, container) {
-		h.serveFile(w, r, source)
+		h.serveFile(w, r, path)
 		return
 	}
 
 	if items.IsAudio(item) {
-		if h.serveTranscode(w, r, item, source, []string{requested}) {
+		if h.serveTranscode(w, r, item, source, path, []string{requested}) {
 			return
 		}
-	} else if h.serveRemux(w, r, source) {
+	} else if h.serveRemux(w, r, source, path) {
 		return
 	}
 
@@ -86,7 +93,7 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ServeUniversal(w http.ResponseWriter, r *http.Request) {
-	item, source, ok := h.item(w, r)
+	item, source, path, ok := h.item(w, r)
 	if !ok {
 		return
 	}
@@ -94,7 +101,7 @@ func (h *Handler) ServeUniversal(w http.ResponseWriter, r *http.Request) {
 	requested := r.URL.Query()["container"]
 	profiles := directPlayProfiles(requested)
 	if len(profiles) == 0 {
-		h.serveFile(w, r, source)
+		h.serveFile(w, r, path)
 		return
 	}
 
@@ -104,7 +111,7 @@ func (h *Handler) ServeUniversal(w http.ResponseWriter, r *http.Request) {
 		for _, profile := range profiles {
 			containers = append(containers, profile.container)
 		}
-		if h.serveTranscode(w, r, item, source, containers) {
+		if h.serveTranscode(w, r, item, source, path, containers) {
 			return
 		}
 
@@ -112,10 +119,17 @@ func (h *Handler) ServeUniversal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.serveFile(w, r, source)
+	h.serveFile(w, r, path)
 }
 
-func (h *Handler) serveTranscode(w http.ResponseWriter, r *http.Request, item *items.Item, source *items.MediaSource, accepted []string) bool {
+func (h *Handler) serveTranscode(
+	w http.ResponseWriter,
+	r *http.Request,
+	item *items.Item,
+	source *items.MediaSource,
+	path string,
+	accepted []string,
+) bool {
 	if !h.transcoder.Enabled() || !items.IsAudio(item) {
 		return false
 	}
@@ -126,14 +140,14 @@ func (h *Handler) serveTranscode(w http.ResponseWriter, r *http.Request, item *i
 	}
 
 	return h.relay(w, r, source, transcode.Spec{
-		Path:       source.Path,
+		Path:       path,
 		Container:  container,
 		Bitrate:    audioBitrate(r),
 		StartTicks: startTicks(r),
 	})
 }
 
-func (h *Handler) serveRemux(w http.ResponseWriter, r *http.Request, source *items.MediaSource) bool {
+func (h *Handler) serveRemux(w http.ResponseWriter, r *http.Request, source *items.MediaSource, path string) bool {
 	if !h.transcoder.Enabled() {
 		return false
 	}
@@ -145,7 +159,7 @@ func (h *Handler) serveRemux(w http.ResponseWriter, r *http.Request, source *ite
 	}
 
 	return h.relay(w, r, source, transcode.Spec{
-		Path:       source.Path,
+		Path:       path,
 		Container:  strings.ToLower(container),
 		Bitrate:    audioBitrate(r),
 		StartTicks: startTicks(r),
@@ -236,33 +250,33 @@ func unsupported(w http.ResponseWriter, r *http.Request, source, requested strin
 	http.Error(w, "no direct play: the source is "+source, http.StatusUnsupportedMediaType)
 }
 
-func (h *Handler) item(w http.ResponseWriter, r *http.Request) (*items.Item, *items.MediaSource, bool) {
+func (h *Handler) item(w http.ResponseWriter, r *http.Request) (*items.Item, *items.MediaSource, string, bool) {
 	token := middleware.TokenFrom(r)
 	if token == "" {
 		w.WriteHeader(http.StatusUnauthorized)
-		return nil, nil, false
+		return nil, nil, "", false
 	}
 	if _, err := h.sessions.ByToken(r.Context(), token); err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
-		return nil, nil, false
+		return nil, nil, "", false
 	}
 
 	id, err := uuid.Parse(r.PathValue("itemId"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		return nil, nil, false
+		return nil, nil, "", false
 	}
 
 	item, err := h.items.ItemByID(r.Context(), id)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
-		return nil, nil, false
+		return nil, nil, "", false
 	}
 
 	sources, err := h.items.MediaSources(r.Context(), item.ID)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
-		return nil, nil, false
+		return nil, nil, "", false
 	}
 
 	source := items.BestSource(sources)
@@ -275,14 +289,22 @@ func (h *Handler) item(w http.ResponseWriter, r *http.Request) (*items.Item, *it
 	}
 	if source == nil {
 		w.WriteHeader(http.StatusNotFound)
-		return nil, nil, false
+		return nil, nil, "", false
 	}
 
-	return item, source, true
+	path, err := h.files.Resolve(source.Path)
+	if err != nil {
+		log.Printf("refusing %s: %q is outside the directories this server serves", r.URL.Path, source.Path)
+		w.WriteHeader(http.StatusNotFound)
+
+		return nil, nil, "", false
+	}
+
+	return item, source, path, true
 }
 
-func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, source *items.MediaSource) {
-	file, err := os.Open(source.Path)
+func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, path string) {
+	file, err := os.Open(path)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -295,12 +317,12 @@ func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, source *item
 		return
 	}
 
-	if contentType, ok := contentTypes[strings.ToLower(filepath.Ext(source.Path))]; ok {
+	if contentType, ok := contentTypes[strings.ToLower(filepath.Ext(path))]; ok {
 		w.Header().Set("Content-Type", contentType)
 	}
 	w.Header().Set("Accept-Ranges", "bytes")
 
-	http.ServeContent(w, r, filepath.Base(source.Path), info.ModTime(), file)
+	http.ServeContent(w, r, filepath.Base(path), info.ModTime(), file)
 }
 
 type directPlayProfile struct {

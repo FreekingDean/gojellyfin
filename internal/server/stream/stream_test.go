@@ -17,6 +17,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/env"
+	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
@@ -128,7 +129,7 @@ func newFixture(t *testing.T) *fixture {
 	transcoder := &stubTranscoder{}
 
 	return &fixture{
-		handler:    New(sessionService, itemService, transcoder),
+		handler:    New(sessionService, itemService, filesystem.New(config), transcoder),
 		items:      itemService,
 		transcoder: transcoder,
 		library:    library.ID,

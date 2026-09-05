@@ -19,14 +19,14 @@ func (s *Server) RefreshItem(ctx context.Context, request api.RefreshItemRequest
 
 	switch apiutil.Deref(request.Params.MetadataRefreshMode) {
 	case api.MetadataRefreshModeDefault, api.MetadataRefreshModeValidationOnly:
-		if err := s.tasks.Start(ctx, scanner.RefreshLibraryJobID, jobs.Options{}); err != nil {
+		if err := s.tasks.Start(ctx, scanner.RefreshLibraryJobID); err != nil {
 			return nil, err
 		}
 	case api.MetadataRefreshModeFullRefresh:
-		if err := s.tasks.Start(ctx, metadata.RefreshMetadataJobID, jobs.Options{
-			Scope: request.ItemId,
-			Force: apiutil.Deref(request.Params.ReplaceAllMetadata),
-		}); err != nil {
+		if err := s.tasks.Start(ctx, metadata.RefreshMetadataJobID,
+			jobs.With(metadata.ParamScope, request.ItemId),
+			jobs.With(metadata.ParamForce, apiutil.Deref(request.Params.ReplaceAllMetadata)),
+		); err != nil {
 			return nil, err
 		}
 	}

@@ -88,8 +88,8 @@
                     <tr>
                         <th style="text-align:left;width:28%">Library</th>
                         <th style="text-align:left;width:16%">Tag filter</th>
-                        <th style="text-align:left;width:26%">Path in Sonarr/Radarr</th>
-                        <th style="text-align:left;width:26%">Path on this server</th>
+                        <th style="text-align:left;width:26%">Path Prefix in Sonarr/Radarr</th>
+                        <th style="text-align:left;width:26%">Path Prefix on this server</th>
                         <th style="text-align:right"></th>
                     </tr>
                 </thead>
@@ -110,10 +110,10 @@
                 <input type="text" data-id="txtTag" class="emby-input" placeholder="4k" />
             </td>
             <td style="vertical-align:top;padding-right:1em">
-                <input type="text" data-id="txtSourcePath" class="emby-input" placeholder="/data/movies" />
+                <input type="text" data-id="txtSourcePath" class="emby-input" placeholder="/data/movies (leave empty if same)" />
             </td>
             <td style="vertical-align:top;padding-right:1em">
-                <input type="text" data-id="txtTargetPath" class="emby-input" placeholder="/media/movies" />
+                <input type="text" data-id="txtTargetPath" class="emby-input" placeholder="/media/movies (leave empty if same)" />
             </td>
             <td style="vertical-align:top;text-align:right">
                 <button is="emby-button" data-id="removeBinding" type="button" class="raised raised-mini">

@@ -50,7 +50,7 @@ func (s *Server) GetTask(ctx context.Context, request api.GetTaskRequestObject) 
 }
 
 func (s *Server) StartTask(ctx context.Context, request api.StartTaskRequestObject) (api.StartTaskResponseObject, error) {
-	err := s.jobs.Start(ctx, request.TaskId, jobs.Options{})
+	err := s.jobs.Start(ctx, request.TaskId)
 	if errors.Is(err, jobs.ErrNotFound) {
 		return api.StartTask404JSONResponse{}, nil
 	}

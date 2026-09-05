@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/FreekingDean/gojellyfin/internal/artwork"
+	"github.com/google/uuid"
+
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/store"
@@ -38,14 +40,14 @@ func New(provider Provider, service *items.Service, store artwork.Store) *Servic
 	}
 }
 
-func (s *Service) IdentifyItems(ctx context.Context, options jobs.Options) error {
+func (s *Service) IdentifyItems(ctx context.Context, scope uuid.UUID, force bool) error {
 	if !s.provider.Enabled() {
 		log.Print("metadata: no provider is configured, nothing to identify against")
 
 		return nil
 	}
 
-	pending, err := s.items.ItemsNeedingMetadata(ctx, identifiable, options.Force, options.Scope)
+	pending, err := s.items.ItemsNeedingMetadata(ctx, identifiable, force, scope)
 	if err != nil {
 		return err
 	}

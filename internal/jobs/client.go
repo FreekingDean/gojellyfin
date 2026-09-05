@@ -82,6 +82,32 @@ type Status struct {
 	Last  *Result
 }
 
+func (c *Client) Enqueue(ctx context.Context, name string, params ...Param) error {
+	connection, err := c.connection()
+	if err != nil {
+		return err
+	}
+
+	held := make(Params, len(params))
+	for _, param := range params {
+		held[param.Name] = param.Value
+	}
+
+	_, err = connection.ExecuteWorkflow(ctx, client.StartWorkflowOptions{
+		ID:                       held.id(name),
+		TaskQueue:                TaskQueue,
+		WorkflowExecutionTimeout: runTimeoutMax,
+		WorkflowIDReusePolicy:    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
+	}, runWorkflow, name, held)
+
+	var running *serviceerror.WorkflowExecutionAlreadyStarted
+	if errors.As(err, &running) {
+		return nil
+	}
+
+	return err
+}
+
 type Service struct {
 	client   *Client
 	registry *Registry
@@ -113,29 +139,12 @@ func (s *Service) Status(ctx context.Context, name string) (Status, error) {
 	return s.status(ctx, job)
 }
 
-func (s *Service) Start(ctx context.Context, name string, options Options) error {
-	job, err := s.registry.Find(name)
-	if err != nil {
+func (s *Service) Start(ctx context.Context, name string, params ...Param) error {
+	if _, err := s.registry.Find(name); err != nil {
 		return err
 	}
 
-	connection, err := s.client.connection()
-	if err != nil {
-		return err
-	}
-
-	_, err = connection.ExecuteWorkflow(ctx, client.StartWorkflowOptions{
-		ID:                       job.Name(),
-		TaskQueue:                TaskQueue,
-		WorkflowExecutionTimeout: runTimeoutMax,
-		WorkflowIDReusePolicy:    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
-	}, job.Name(), options)
-	var running *serviceerror.WorkflowExecutionAlreadyStarted
-	if errors.As(err, &running) {
-		return nil
-	}
-
-	return err
+	return s.client.Enqueue(ctx, name, params...)
 }
 
 func (s *Service) Cancel(ctx context.Context, name string) error {

@@ -2,50 +2,21 @@ package jobs
 
 import (
 	"context"
-	errors "errors"
+	"encoding/json"
 	"fmt"
+	"maps"
+	"slices"
+	"strings"
 	"time"
 
-	"github.com/google/uuid"
-
 	"go.temporal.io/sdk/activity"
-
 	sdktemporal "go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
-var errNotCompleted = errors.New("jobs: the job did not complete")
-
-type Context = workflow.Context
-
-type Options struct {
-	Force bool
-	Scope uuid.UUID
-}
-
-type Job interface {
-	Name() string
-	Description() string
-	Category() string
-	Run(ctx Context, options Options) error
-	Steps() []any
-	Children() []any
-}
-
-type Future interface {
-	Get(out any) error
-}
-
-type future struct {
-	ctx    Context
-	future workflow.Future
-}
-
-func (f future) Get(out any) error {
-	return f.future.Get(f.ctx, out)
-}
-
 const (
+	runWorkflow = "RunJob"
+
 	stepTimeout   = 6 * time.Hour
 	heartbeat     = 2 * time.Minute
 	stepQueued    = 10 * time.Minute
@@ -53,7 +24,92 @@ const (
 	runTimeoutMax = 24 * time.Hour
 )
 
-func Step(ctx Context, step any, args ...any) Future {
+type Job interface {
+	Name() string
+	Category() string
+	Description() string
+	Run(ctx context.Context) error
+}
+
+type Params map[string]string
+
+type Param struct {
+	Name  string
+	Value string
+}
+
+func With[T any](name string, value T) Param {
+	encoded, err := json.Marshal(value)
+	if err != nil {
+		return Param{Name: name, Value: ""}
+	}
+
+	return Param{Name: name, Value: string(encoded)}
+}
+
+func (p Params) id(name string) string {
+	if len(p) == 0 {
+		return name
+	}
+
+	parts := make([]string, 0, len(p))
+	for _, key := range slices.Sorted(maps.Keys(p)) {
+		parts = append(parts, strings.Trim(p[key], `"`))
+	}
+
+	return name + ":" + strings.Join(parts, ":")
+}
+
+type paramsKey struct{}
+
+type enqueuerKey struct{}
+
+type Enqueuer interface {
+	Enqueue(ctx context.Context, name string, params ...Param) error
+}
+
+func withJob(ctx context.Context, params Params, enqueuer Enqueuer) context.Context {
+	ctx = context.WithValue(ctx, paramsKey{}, params)
+
+	return context.WithValue(ctx, enqueuerKey{}, enqueuer)
+}
+
+func GetParam[T any](ctx context.Context, name string) (T, error) {
+	var out T
+
+	params, ok := ctx.Value(paramsKey{}).(Params)
+	if !ok {
+		return out, fmt.Errorf("jobs: %q was asked for outside a job", name)
+	}
+
+	raw, held := params[name]
+	if !held {
+		return out, nil
+	}
+
+	if err := json.Unmarshal([]byte(raw), &out); err != nil {
+		return out, fmt.Errorf("jobs: %q is not a %T: %w", name, out, err)
+	}
+
+	return out, nil
+}
+
+func Enqueue(ctx context.Context, name string, params ...Param) error {
+	enqueuer, ok := ctx.Value(enqueuerKey{}).(Enqueuer)
+	if !ok {
+		return fmt.Errorf("jobs: %q was enqueued outside a job", name)
+	}
+
+	return enqueuer.Enqueue(ctx, name, params...)
+}
+
+func Heartbeat(ctx context.Context, detail ...any) {
+	if activity.IsActivity(ctx) {
+		activity.RecordHeartbeat(ctx, detail...)
+	}
+}
+
+func run(ctx workflow.Context, name string, params Params) error {
 	ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
 		StartToCloseTimeout:    stepTimeout,
 		HeartbeatTimeout:       heartbeat,
@@ -61,27 +117,5 @@ func Step(ctx Context, step any, args ...any) Future {
 		RetryPolicy:            &sdktemporal.RetryPolicy{MaximumAttempts: stepAttempts},
 	})
 
-	return future{ctx: ctx, future: workflow.ExecuteActivity(ctx, step, args...)}
-}
-
-func Child(ctx Context, child any, name string, args ...any) Future {
-	execution := workflow.GetInfo(ctx).WorkflowExecution
-	ctx = workflow.WithChildOptions(ctx, workflow.ChildWorkflowOptions{
-		WorkflowID:               fmt.Sprintf("%s/%s/%s", execution.ID, execution.RunID, name),
-		WorkflowExecutionTimeout: runTimeoutMax,
-	})
-
-	return future{ctx: ctx, future: workflow.ExecuteChildWorkflow(ctx, child, args...)}
-}
-
-func Logf(ctx Context, message string, args ...any) {
-	workflow.GetLogger(ctx).Info(message, args...)
-}
-
-func Heartbeat(ctx context.Context, detail ...any) {
-	if !activity.IsActivity(ctx) {
-		return
-	}
-
-	activity.RecordHeartbeat(ctx, detail...)
+	return workflow.ExecuteActivity(ctx, name, params).Get(ctx, nil)
 }

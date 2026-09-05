@@ -2,19 +2,17 @@ package scanner
 
 import (
 	"context"
-	"fmt"
-	"slices"
+	"log"
+	"runtime"
 
 	"github.com/google/uuid"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 )
 
-const (
-	RefreshLibraryJobID = "RefreshLibrary"
-	probeChunkSize      = 100
-)
+const RefreshLibraryJobID = "RefreshLibrary"
 
 type LibraryScan struct {
 	scanner *Scanner
@@ -30,83 +28,51 @@ func (l *LibraryScan) Description() string {
 	return "Reads the libraries from their Sonarr and Radarr sources."
 }
 
-func (l *LibraryScan) Steps() []any {
-	return []any{
-		l.scanner.ListLibraries,
-		l.scanner.ScanLibrary,
-		l.scanner.UnprobedSources,
-		l.scanner.ProbeSource,
-	}
-}
-
-func (l *LibraryScan) Children() []any {
-	return []any{l.ProbeChunk}
-}
-
-func (l *LibraryScan) Run(ctx jobs.Context, _ jobs.Options) error {
-	var libraries []uuid.UUID
-	if err := jobs.Step(ctx, l.scanner.ListLibraries).Get(&libraries); err != nil {
+func (l *LibraryScan) Run(ctx context.Context) error {
+	libraries, err := l.scanner.ListLibraries(ctx)
+	if err != nil {
 		return err
 	}
 
-	scans := make([]jobs.Future, 0, len(libraries))
+	scanned := make([]uuid.UUID, 0, len(libraries))
 	for _, id := range libraries {
-		scans = append(scans, jobs.Step(ctx, l.scanner.ScanLibrary, id))
-	}
-
-	walked := make([]uuid.UUID, 0, len(libraries))
-	for index, scan := range scans {
-		if err := scan.Get(nil); err != nil {
-			jobs.Logf(ctx, "library scan failed", "library", libraries[index], "error", err)
+		if err := l.scanner.ScanLibrary(ctx, id); err != nil {
+			log.Printf("library scan failed %s: %v", id, err)
 
 			continue
 		}
-		walked = append(walked, libraries[index])
+		scanned = append(scanned, id)
 	}
 
-	return l.probe(ctx, walked)
-}
-
-func (l *LibraryScan) probe(ctx jobs.Context, libraries []uuid.UUID) error {
-	selections := make([]jobs.Future, 0, len(libraries))
-	for _, id := range libraries {
-		selections = append(selections, jobs.Step(ctx, l.scanner.UnprobedSources, id))
-	}
-
-	chunks := make([]jobs.Future, 0)
-	for index, selection := range selections {
-		var sources []uuid.UUID
-		if err := selection.Get(&sources); err != nil {
-			jobs.Logf(ctx, "probe selection failed", "library", libraries[index], "error", err)
-
-			continue
-		}
-
-		number := 0
-		for chunk := range slices.Chunk(sources, probeChunkSize) {
-			name := fmt.Sprintf("probe-%s-%d", libraries[index], number)
-			chunks = append(chunks, jobs.Child(ctx, l.ProbeChunk, name, chunk))
-			number++
-		}
-	}
-
-	for _, chunk := range chunks {
-		if err := chunk.Get(nil); err != nil {
-			jobs.Logf(ctx, "probe chunk failed", "error", err)
+	for _, id := range scanned {
+		if err := l.probe(ctx, id); err != nil {
+			log.Printf("probe failed %s: %v", id, err)
 		}
 	}
 
 	return nil
 }
 
-func (l *LibraryScan) ProbeChunk(ctx jobs.Context, sources []uuid.UUID) error {
-	for _, id := range sources {
-		if err := jobs.Step(ctx, l.scanner.ProbeSource, id).Get(nil); err != nil {
-			jobs.Logf(ctx, "probe failed", "source", id, "error", err)
-		}
+func (l *LibraryScan) probe(ctx context.Context, library uuid.UUID) error {
+	sources, err := l.scanner.UnprobedSources(ctx, library)
+	if err != nil {
+		return err
 	}
 
-	return nil
+	group, probing := errgroup.WithContext(ctx)
+	group.SetLimit(runtime.GOMAXPROCS(0))
+
+	for _, source := range sources {
+		group.Go(func() error {
+			if err := l.scanner.ProbeSource(probing, source); err != nil && !store.IsNotFound(err) {
+				log.Printf("probe failed %s: %v", source, err)
+			}
+
+			return probing.Err()
+		})
+	}
+
+	return group.Wait()
 }
 
 func (s *Scanner) ListLibraries(ctx context.Context) ([]uuid.UUID, error) {

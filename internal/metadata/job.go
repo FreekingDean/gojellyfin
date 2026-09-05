@@ -1,8 +1,19 @@
 package metadata
 
-import "github.com/FreekingDean/gojellyfin/internal/jobs"
+import (
+	"context"
 
-const RefreshMetadataJobID = "RefreshMetadata"
+	"github.com/google/uuid"
+
+	"github.com/FreekingDean/gojellyfin/internal/jobs"
+)
+
+const (
+	RefreshMetadataJobID = "RefreshMetadata"
+
+	ParamScope = "scope"
+	ParamForce = "force"
+)
 
 type Identify struct {
 	service *Service
@@ -18,12 +29,16 @@ func (i *Identify) Description() string {
 	return "Identifies items and fetches their metadata."
 }
 
-func (i *Identify) Steps() []any {
-	return []any{i.service.IdentifyItems}
-}
+func (i *Identify) Run(ctx context.Context) error {
+	scope, err := jobs.GetParam[uuid.UUID](ctx, ParamScope)
+	if err != nil {
+		return err
+	}
 
-func (i *Identify) Children() []any { return nil }
+	force, err := jobs.GetParam[bool](ctx, ParamForce)
+	if err != nil {
+		return err
+	}
 
-func (i *Identify) Run(ctx jobs.Context, options jobs.Options) error {
-	return jobs.Step(ctx, i.service.IdentifyItems, options).Get(nil)
+	return i.service.IdentifyItems(ctx, scope, force)
 }

@@ -15,7 +15,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/consts"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
-	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
@@ -265,17 +264,17 @@ func (f *fixture) identified(t *testing.T, added *items.Item, overview string) *
 func (f *fixture) identify(t *testing.T) {
 	t.Helper()
 
-	f.run(t, jobs.Options{})
+	f.run(t, uuid.Nil, false)
 }
 
-func (f *fixture) run(t *testing.T, options jobs.Options) {
+func (f *fixture) run(t *testing.T, scope uuid.UUID, force bool) {
 	t.Helper()
 
-	if options.Scope == uuid.Nil {
-		options.Scope = f.libraryID
+	if scope == uuid.Nil {
+		scope = f.libraryID
 	}
 
-	if err := jobs.RunStep(t, f.service.IdentifyItems, options); err != nil {
+	if err := f.service.IdentifyItems(context.Background(), scope, force); err != nil {
 		t.Fatalf("identification failed: %v", err)
 	}
 }
@@ -600,7 +599,7 @@ func TestService_IdentifyItems_Force(t *testing.T) {
 			ProductionYear: index(1999),
 		}), "Whatever the last provider said.")
 
-		fixed.run(t, jobs.Options{Force: true})
+		fixed.run(t, uuid.Nil, true)
 
 		refreshed := fixed.reload(t, movie.ID)
 		if !strings.HasPrefix(refreshed.Overview, "Set in the 22nd century") {
@@ -641,7 +640,7 @@ func TestService_IdentifyItems_Force(t *testing.T) {
 			ProviderIds:  &map[string]string{"Stub": "603"},
 		})
 
-		fixed.run(t, jobs.Options{Force: true})
+		fixed.run(t, uuid.Nil, true)
 
 		refreshed := fixed.reload(t, movie.ID)
 		if refreshed.Overview != "A summary somebody wrote by hand." {
@@ -665,7 +664,7 @@ func TestService_IdentifyItems_Force(t *testing.T) {
 			ProductionYear: index(1999),
 		}), "Whatever the last provider said.")
 
-		fixed.run(t, jobs.Options{Force: true})
+		fixed.run(t, uuid.Nil, true)
 
 		if failed := fixed.reload(t, unreachableItem.ID); failed.Overview != "Whatever the last provider said." {
 			t.Errorf("Overview = %q, want a failed fetch to write nothing", failed.Overview)
@@ -689,7 +688,7 @@ func TestService_IdentifyItems_Force(t *testing.T) {
 			ids = append(ids, added.ID)
 		}
 
-		fixed.run(t, jobs.Options{Force: true})
+		fixed.run(t, uuid.Nil, true)
 
 		for _, id := range ids {
 			if refreshed := fixed.reload(t, id); !strings.HasPrefix(refreshed.Overview, "Set in the 22nd century") {
@@ -714,7 +713,7 @@ func TestService_IdentifyItems_Scope(t *testing.T) {
 			ProductionYear: index(1999),
 		}), "Whatever the last provider said.")
 
-		fixed.run(t, jobs.Options{Force: true, Scope: asked.ID})
+		fixed.run(t, asked.ID, true)
 
 		if refreshed := fixed.reload(t, asked.ID); !strings.HasPrefix(refreshed.Overview, "Set in the 22nd century") {
 			t.Errorf("Overview = %q, want the named item refreshed", refreshed.Overview)
@@ -750,9 +749,8 @@ func TestService_IdentifyItems_Scope(t *testing.T) {
 			ProductionYear: index(1999),
 		}), "Whatever the last provider said.")
 
-		scope := jobs.Options{Force: true, Scope: series.ID}
-		fixed.run(t, scope)
-		fixed.run(t, scope)
+		fixed.run(t, series.ID, true)
+		fixed.run(t, series.ID, true)
 
 		if identified := fixed.reload(t, series.ID); identified.ProviderIds["Stub"] != "1396" {
 			t.Errorf("series provider id = %q, want the scoped series identified", identified.ProviderIds["Stub"])
@@ -779,7 +777,7 @@ func TestService_IdentifyItems_Scope(t *testing.T) {
 			ProductionYear: index(1999),
 		}), "Whatever the last provider said.")
 
-		fixed.run(t, jobs.Options{Force: true, Scope: fixed.libraryID})
+		fixed.run(t, fixed.libraryID, true)
 
 		for _, id := range []uuid.UUID{first.ID, second.ID} {
 			if refreshed := fixed.reload(t, id); !strings.HasPrefix(refreshed.Overview, "Set in the 22nd century") {
