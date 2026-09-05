@@ -3,7 +3,6 @@
 package store
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -29,26 +28,10 @@ type MediaSource struct {
 	ItemID uuid.UUID `json:"item_id,omitempty"`
 	// LibraryID holds the value of the "library_id" field.
 	LibraryID uuid.UUID `json:"library_id,omitempty"`
-	// Protocol holds the value of the "protocol" field.
-	Protocol mediasource.Protocol `json:"protocol,omitempty"`
-	// EncoderProtocol holds the value of the "encoder_protocol" field.
-	EncoderProtocol mediasource.EncoderProtocol `json:"encoder_protocol,omitempty"`
-	// Kind holds the value of the "kind" field.
-	Kind mediasource.Kind `json:"kind,omitempty"`
-	// Timestamp holds the value of the "timestamp" field.
-	Timestamp mediasource.Timestamp `json:"timestamp,omitempty"`
-	// VideoType holds the value of the "video_type" field.
-	VideoType mediasource.VideoType `json:"video_type,omitempty"`
-	// IsoType holds the value of the "iso_type" field.
-	IsoType mediasource.IsoType `json:"iso_type,omitempty"`
-	// Video3dFormat holds the value of the "video_3d_format" field.
-	Video3dFormat mediasource.Video3dFormat `json:"video_3d_format,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Path holds the value of the "path" field.
 	Path string `json:"path,omitempty"`
-	// EncoderPath holds the value of the "encoder_path" field.
-	EncoderPath string `json:"encoder_path,omitempty"`
 	// Container holds the value of the "container" field.
 	Container string `json:"container,omitempty"`
 	// Size holds the value of the "size" field.
@@ -61,22 +44,6 @@ type MediaSource struct {
 	DateModified time.Time `json:"date_modified,omitempty"`
 	// ProbedAt holds the value of the "probed_at" field.
 	ProbedAt time.Time `json:"probed_at,omitempty"`
-	// ReadAtNativeFramerate holds the value of the "read_at_native_framerate" field.
-	ReadAtNativeFramerate bool `json:"read_at_native_framerate,omitempty"`
-	// IgnoreDts holds the value of the "ignore_dts" field.
-	IgnoreDts bool `json:"ignore_dts,omitempty"`
-	// IgnoreIndex holds the value of the "ignore_index" field.
-	IgnoreIndex bool `json:"ignore_index,omitempty"`
-	// GenPtsInput holds the value of the "gen_pts_input" field.
-	GenPtsInput bool `json:"gen_pts_input,omitempty"`
-	// HasSegments holds the value of the "has_segments" field.
-	HasSegments bool `json:"has_segments,omitempty"`
-	// DefaultAudioStreamIndex holds the value of the "default_audio_stream_index" field.
-	DefaultAudioStreamIndex int32 `json:"default_audio_stream_index,omitempty"`
-	// DefaultSubtitleStreamIndex holds the value of the "default_subtitle_stream_index" field.
-	DefaultSubtitleStreamIndex int32 `json:"default_subtitle_stream_index,omitempty"`
-	// Formats holds the value of the "formats" field.
-	Formats []string `json:"formats,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the MediaSourceQuery when eager-loading is set.
 	Edges        MediaSourceEdges `json:"edges"`
@@ -132,13 +99,9 @@ func (*MediaSource) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case mediasource.FieldFormats:
-			values[i] = new([]byte)
-		case mediasource.FieldReadAtNativeFramerate, mediasource.FieldIgnoreDts, mediasource.FieldIgnoreIndex, mediasource.FieldGenPtsInput, mediasource.FieldHasSegments:
-			values[i] = new(sql.NullBool)
-		case mediasource.FieldSize, mediasource.FieldRunTimeTicks, mediasource.FieldBitrate, mediasource.FieldDefaultAudioStreamIndex, mediasource.FieldDefaultSubtitleStreamIndex:
+		case mediasource.FieldSize, mediasource.FieldRunTimeTicks, mediasource.FieldBitrate:
 			values[i] = new(sql.NullInt64)
-		case mediasource.FieldProtocol, mediasource.FieldEncoderProtocol, mediasource.FieldKind, mediasource.FieldTimestamp, mediasource.FieldVideoType, mediasource.FieldIsoType, mediasource.FieldVideo3dFormat, mediasource.FieldName, mediasource.FieldPath, mediasource.FieldEncoderPath, mediasource.FieldContainer:
+		case mediasource.FieldName, mediasource.FieldPath, mediasource.FieldContainer:
 			values[i] = new(sql.NullString)
 		case mediasource.FieldCreatedAt, mediasource.FieldUpdatedAt, mediasource.FieldDateModified, mediasource.FieldProbedAt:
 			values[i] = new(sql.NullTime)
@@ -189,48 +152,6 @@ func (_m *MediaSource) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				_m.LibraryID = *value
 			}
-		case mediasource.FieldProtocol:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field protocol", values[i])
-			} else if value.Valid {
-				_m.Protocol = mediasource.Protocol(value.String)
-			}
-		case mediasource.FieldEncoderProtocol:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field encoder_protocol", values[i])
-			} else if value.Valid {
-				_m.EncoderProtocol = mediasource.EncoderProtocol(value.String)
-			}
-		case mediasource.FieldKind:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field kind", values[i])
-			} else if value.Valid {
-				_m.Kind = mediasource.Kind(value.String)
-			}
-		case mediasource.FieldTimestamp:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field timestamp", values[i])
-			} else if value.Valid {
-				_m.Timestamp = mediasource.Timestamp(value.String)
-			}
-		case mediasource.FieldVideoType:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field video_type", values[i])
-			} else if value.Valid {
-				_m.VideoType = mediasource.VideoType(value.String)
-			}
-		case mediasource.FieldIsoType:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field iso_type", values[i])
-			} else if value.Valid {
-				_m.IsoType = mediasource.IsoType(value.String)
-			}
-		case mediasource.FieldVideo3dFormat:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field video_3d_format", values[i])
-			} else if value.Valid {
-				_m.Video3dFormat = mediasource.Video3dFormat(value.String)
-			}
 		case mediasource.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
@@ -242,12 +163,6 @@ func (_m *MediaSource) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field path", values[i])
 			} else if value.Valid {
 				_m.Path = value.String
-			}
-		case mediasource.FieldEncoderPath:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field encoder_path", values[i])
-			} else if value.Valid {
-				_m.EncoderPath = value.String
 			}
 		case mediasource.FieldContainer:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -284,56 +199,6 @@ func (_m *MediaSource) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field probed_at", values[i])
 			} else if value.Valid {
 				_m.ProbedAt = value.Time
-			}
-		case mediasource.FieldReadAtNativeFramerate:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field read_at_native_framerate", values[i])
-			} else if value.Valid {
-				_m.ReadAtNativeFramerate = value.Bool
-			}
-		case mediasource.FieldIgnoreDts:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field ignore_dts", values[i])
-			} else if value.Valid {
-				_m.IgnoreDts = value.Bool
-			}
-		case mediasource.FieldIgnoreIndex:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field ignore_index", values[i])
-			} else if value.Valid {
-				_m.IgnoreIndex = value.Bool
-			}
-		case mediasource.FieldGenPtsInput:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field gen_pts_input", values[i])
-			} else if value.Valid {
-				_m.GenPtsInput = value.Bool
-			}
-		case mediasource.FieldHasSegments:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field has_segments", values[i])
-			} else if value.Valid {
-				_m.HasSegments = value.Bool
-			}
-		case mediasource.FieldDefaultAudioStreamIndex:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field default_audio_stream_index", values[i])
-			} else if value.Valid {
-				_m.DefaultAudioStreamIndex = int32(value.Int64)
-			}
-		case mediasource.FieldDefaultSubtitleStreamIndex:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field default_subtitle_stream_index", values[i])
-			} else if value.Valid {
-				_m.DefaultSubtitleStreamIndex = int32(value.Int64)
-			}
-		case mediasource.FieldFormats:
-			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field formats", values[i])
-			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &_m.Formats); err != nil {
-					return fmt.Errorf("unmarshal field formats: %w", err)
-				}
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -398,35 +263,11 @@ func (_m *MediaSource) String() string {
 	builder.WriteString("library_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.LibraryID))
 	builder.WriteString(", ")
-	builder.WriteString("protocol=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Protocol))
-	builder.WriteString(", ")
-	builder.WriteString("encoder_protocol=")
-	builder.WriteString(fmt.Sprintf("%v", _m.EncoderProtocol))
-	builder.WriteString(", ")
-	builder.WriteString("kind=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Kind))
-	builder.WriteString(", ")
-	builder.WriteString("timestamp=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Timestamp))
-	builder.WriteString(", ")
-	builder.WriteString("video_type=")
-	builder.WriteString(fmt.Sprintf("%v", _m.VideoType))
-	builder.WriteString(", ")
-	builder.WriteString("iso_type=")
-	builder.WriteString(fmt.Sprintf("%v", _m.IsoType))
-	builder.WriteString(", ")
-	builder.WriteString("video_3d_format=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Video3dFormat))
-	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)
 	builder.WriteString(", ")
 	builder.WriteString("path=")
 	builder.WriteString(_m.Path)
-	builder.WriteString(", ")
-	builder.WriteString("encoder_path=")
-	builder.WriteString(_m.EncoderPath)
 	builder.WriteString(", ")
 	builder.WriteString("container=")
 	builder.WriteString(_m.Container)
@@ -445,30 +286,6 @@ func (_m *MediaSource) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("probed_at=")
 	builder.WriteString(_m.ProbedAt.Format(time.ANSIC))
-	builder.WriteString(", ")
-	builder.WriteString("read_at_native_framerate=")
-	builder.WriteString(fmt.Sprintf("%v", _m.ReadAtNativeFramerate))
-	builder.WriteString(", ")
-	builder.WriteString("ignore_dts=")
-	builder.WriteString(fmt.Sprintf("%v", _m.IgnoreDts))
-	builder.WriteString(", ")
-	builder.WriteString("ignore_index=")
-	builder.WriteString(fmt.Sprintf("%v", _m.IgnoreIndex))
-	builder.WriteString(", ")
-	builder.WriteString("gen_pts_input=")
-	builder.WriteString(fmt.Sprintf("%v", _m.GenPtsInput))
-	builder.WriteString(", ")
-	builder.WriteString("has_segments=")
-	builder.WriteString(fmt.Sprintf("%v", _m.HasSegments))
-	builder.WriteString(", ")
-	builder.WriteString("default_audio_stream_index=")
-	builder.WriteString(fmt.Sprintf("%v", _m.DefaultAudioStreamIndex))
-	builder.WriteString(", ")
-	builder.WriteString("default_subtitle_stream_index=")
-	builder.WriteString(fmt.Sprintf("%v", _m.DefaultSubtitleStreamIndex))
-	builder.WriteString(", ")
-	builder.WriteString("formats=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Formats))
 	builder.WriteByte(')')
 	return builder.String()
 }

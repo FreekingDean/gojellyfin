@@ -10,7 +10,6 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
@@ -81,134 +80,6 @@ func (_u *MediaSourceUpdate) SetNillableLibraryID(v *uuid.UUID) *MediaSourceUpda
 	return _u
 }
 
-// SetProtocol sets the "protocol" field.
-func (_u *MediaSourceUpdate) SetProtocol(v mediasource.Protocol) *MediaSourceUpdate {
-	_u.mutation.SetProtocol(v)
-	return _u
-}
-
-// SetNillableProtocol sets the "protocol" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableProtocol(v *mediasource.Protocol) *MediaSourceUpdate {
-	if v != nil {
-		_u.SetProtocol(*v)
-	}
-	return _u
-}
-
-// SetEncoderProtocol sets the "encoder_protocol" field.
-func (_u *MediaSourceUpdate) SetEncoderProtocol(v mediasource.EncoderProtocol) *MediaSourceUpdate {
-	_u.mutation.SetEncoderProtocol(v)
-	return _u
-}
-
-// SetNillableEncoderProtocol sets the "encoder_protocol" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableEncoderProtocol(v *mediasource.EncoderProtocol) *MediaSourceUpdate {
-	if v != nil {
-		_u.SetEncoderProtocol(*v)
-	}
-	return _u
-}
-
-// ClearEncoderProtocol clears the value of the "encoder_protocol" field.
-func (_u *MediaSourceUpdate) ClearEncoderProtocol() *MediaSourceUpdate {
-	_u.mutation.ClearEncoderProtocol()
-	return _u
-}
-
-// SetKind sets the "kind" field.
-func (_u *MediaSourceUpdate) SetKind(v mediasource.Kind) *MediaSourceUpdate {
-	_u.mutation.SetKind(v)
-	return _u
-}
-
-// SetNillableKind sets the "kind" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableKind(v *mediasource.Kind) *MediaSourceUpdate {
-	if v != nil {
-		_u.SetKind(*v)
-	}
-	return _u
-}
-
-// SetTimestamp sets the "timestamp" field.
-func (_u *MediaSourceUpdate) SetTimestamp(v mediasource.Timestamp) *MediaSourceUpdate {
-	_u.mutation.SetTimestamp(v)
-	return _u
-}
-
-// SetNillableTimestamp sets the "timestamp" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableTimestamp(v *mediasource.Timestamp) *MediaSourceUpdate {
-	if v != nil {
-		_u.SetTimestamp(*v)
-	}
-	return _u
-}
-
-// ClearTimestamp clears the value of the "timestamp" field.
-func (_u *MediaSourceUpdate) ClearTimestamp() *MediaSourceUpdate {
-	_u.mutation.ClearTimestamp()
-	return _u
-}
-
-// SetVideoType sets the "video_type" field.
-func (_u *MediaSourceUpdate) SetVideoType(v mediasource.VideoType) *MediaSourceUpdate {
-	_u.mutation.SetVideoType(v)
-	return _u
-}
-
-// SetNillableVideoType sets the "video_type" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableVideoType(v *mediasource.VideoType) *MediaSourceUpdate {
-	if v != nil {
-		_u.SetVideoType(*v)
-	}
-	return _u
-}
-
-// ClearVideoType clears the value of the "video_type" field.
-func (_u *MediaSourceUpdate) ClearVideoType() *MediaSourceUpdate {
-	_u.mutation.ClearVideoType()
-	return _u
-}
-
-// SetIsoType sets the "iso_type" field.
-func (_u *MediaSourceUpdate) SetIsoType(v mediasource.IsoType) *MediaSourceUpdate {
-	_u.mutation.SetIsoType(v)
-	return _u
-}
-
-// SetNillableIsoType sets the "iso_type" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableIsoType(v *mediasource.IsoType) *MediaSourceUpdate {
-	if v != nil {
-		_u.SetIsoType(*v)
-	}
-	return _u
-}
-
-// ClearIsoType clears the value of the "iso_type" field.
-func (_u *MediaSourceUpdate) ClearIsoType() *MediaSourceUpdate {
-	_u.mutation.ClearIsoType()
-	return _u
-}
-
-// SetVideo3dFormat sets the "video_3d_format" field.
-func (_u *MediaSourceUpdate) SetVideo3dFormat(v mediasource.Video3dFormat) *MediaSourceUpdate {
-	_u.mutation.SetVideo3dFormat(v)
-	return _u
-}
-
-// SetNillableVideo3dFormat sets the "video_3d_format" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableVideo3dFormat(v *mediasource.Video3dFormat) *MediaSourceUpdate {
-	if v != nil {
-		_u.SetVideo3dFormat(*v)
-	}
-	return _u
-}
-
-// ClearVideo3dFormat clears the value of the "video_3d_format" field.
-func (_u *MediaSourceUpdate) ClearVideo3dFormat() *MediaSourceUpdate {
-	_u.mutation.ClearVideo3dFormat()
-	return _u
-}
-
 // SetName sets the "name" field.
 func (_u *MediaSourceUpdate) SetName(v string) *MediaSourceUpdate {
 	_u.mutation.SetName(v)
@@ -234,26 +105,6 @@ func (_u *MediaSourceUpdate) SetNillablePath(v *string) *MediaSourceUpdate {
 	if v != nil {
 		_u.SetPath(*v)
 	}
-	return _u
-}
-
-// SetEncoderPath sets the "encoder_path" field.
-func (_u *MediaSourceUpdate) SetEncoderPath(v string) *MediaSourceUpdate {
-	_u.mutation.SetEncoderPath(v)
-	return _u
-}
-
-// SetNillableEncoderPath sets the "encoder_path" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableEncoderPath(v *string) *MediaSourceUpdate {
-	if v != nil {
-		_u.SetEncoderPath(*v)
-	}
-	return _u
-}
-
-// ClearEncoderPath clears the value of the "encoder_path" field.
-func (_u *MediaSourceUpdate) ClearEncoderPath() *MediaSourceUpdate {
-	_u.mutation.ClearEncoderPath()
 	return _u
 }
 
@@ -398,148 +249,6 @@ func (_u *MediaSourceUpdate) ClearProbedAt() *MediaSourceUpdate {
 	return _u
 }
 
-// SetReadAtNativeFramerate sets the "read_at_native_framerate" field.
-func (_u *MediaSourceUpdate) SetReadAtNativeFramerate(v bool) *MediaSourceUpdate {
-	_u.mutation.SetReadAtNativeFramerate(v)
-	return _u
-}
-
-// SetNillableReadAtNativeFramerate sets the "read_at_native_framerate" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableReadAtNativeFramerate(v *bool) *MediaSourceUpdate {
-	if v != nil {
-		_u.SetReadAtNativeFramerate(*v)
-	}
-	return _u
-}
-
-// SetIgnoreDts sets the "ignore_dts" field.
-func (_u *MediaSourceUpdate) SetIgnoreDts(v bool) *MediaSourceUpdate {
-	_u.mutation.SetIgnoreDts(v)
-	return _u
-}
-
-// SetNillableIgnoreDts sets the "ignore_dts" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableIgnoreDts(v *bool) *MediaSourceUpdate {
-	if v != nil {
-		_u.SetIgnoreDts(*v)
-	}
-	return _u
-}
-
-// SetIgnoreIndex sets the "ignore_index" field.
-func (_u *MediaSourceUpdate) SetIgnoreIndex(v bool) *MediaSourceUpdate {
-	_u.mutation.SetIgnoreIndex(v)
-	return _u
-}
-
-// SetNillableIgnoreIndex sets the "ignore_index" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableIgnoreIndex(v *bool) *MediaSourceUpdate {
-	if v != nil {
-		_u.SetIgnoreIndex(*v)
-	}
-	return _u
-}
-
-// SetGenPtsInput sets the "gen_pts_input" field.
-func (_u *MediaSourceUpdate) SetGenPtsInput(v bool) *MediaSourceUpdate {
-	_u.mutation.SetGenPtsInput(v)
-	return _u
-}
-
-// SetNillableGenPtsInput sets the "gen_pts_input" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableGenPtsInput(v *bool) *MediaSourceUpdate {
-	if v != nil {
-		_u.SetGenPtsInput(*v)
-	}
-	return _u
-}
-
-// SetHasSegments sets the "has_segments" field.
-func (_u *MediaSourceUpdate) SetHasSegments(v bool) *MediaSourceUpdate {
-	_u.mutation.SetHasSegments(v)
-	return _u
-}
-
-// SetNillableHasSegments sets the "has_segments" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableHasSegments(v *bool) *MediaSourceUpdate {
-	if v != nil {
-		_u.SetHasSegments(*v)
-	}
-	return _u
-}
-
-// SetDefaultAudioStreamIndex sets the "default_audio_stream_index" field.
-func (_u *MediaSourceUpdate) SetDefaultAudioStreamIndex(v int32) *MediaSourceUpdate {
-	_u.mutation.ResetDefaultAudioStreamIndex()
-	_u.mutation.SetDefaultAudioStreamIndex(v)
-	return _u
-}
-
-// SetNillableDefaultAudioStreamIndex sets the "default_audio_stream_index" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableDefaultAudioStreamIndex(v *int32) *MediaSourceUpdate {
-	if v != nil {
-		_u.SetDefaultAudioStreamIndex(*v)
-	}
-	return _u
-}
-
-// AddDefaultAudioStreamIndex adds value to the "default_audio_stream_index" field.
-func (_u *MediaSourceUpdate) AddDefaultAudioStreamIndex(v int32) *MediaSourceUpdate {
-	_u.mutation.AddDefaultAudioStreamIndex(v)
-	return _u
-}
-
-// ClearDefaultAudioStreamIndex clears the value of the "default_audio_stream_index" field.
-func (_u *MediaSourceUpdate) ClearDefaultAudioStreamIndex() *MediaSourceUpdate {
-	_u.mutation.ClearDefaultAudioStreamIndex()
-	return _u
-}
-
-// SetDefaultSubtitleStreamIndex sets the "default_subtitle_stream_index" field.
-func (_u *MediaSourceUpdate) SetDefaultSubtitleStreamIndex(v int32) *MediaSourceUpdate {
-	_u.mutation.ResetDefaultSubtitleStreamIndex()
-	_u.mutation.SetDefaultSubtitleStreamIndex(v)
-	return _u
-}
-
-// SetNillableDefaultSubtitleStreamIndex sets the "default_subtitle_stream_index" field if the given value is not nil.
-func (_u *MediaSourceUpdate) SetNillableDefaultSubtitleStreamIndex(v *int32) *MediaSourceUpdate {
-	if v != nil {
-		_u.SetDefaultSubtitleStreamIndex(*v)
-	}
-	return _u
-}
-
-// AddDefaultSubtitleStreamIndex adds value to the "default_subtitle_stream_index" field.
-func (_u *MediaSourceUpdate) AddDefaultSubtitleStreamIndex(v int32) *MediaSourceUpdate {
-	_u.mutation.AddDefaultSubtitleStreamIndex(v)
-	return _u
-}
-
-// ClearDefaultSubtitleStreamIndex clears the value of the "default_subtitle_stream_index" field.
-func (_u *MediaSourceUpdate) ClearDefaultSubtitleStreamIndex() *MediaSourceUpdate {
-	_u.mutation.ClearDefaultSubtitleStreamIndex()
-	return _u
-}
-
-// SetFormats sets the "formats" field.
-func (_u *MediaSourceUpdate) SetFormats(v []string) *MediaSourceUpdate {
-	_u.mutation.SetFormats(v)
-	return _u
-}
-
-// AppendFormats appends value to the "formats" field.
-func (_u *MediaSourceUpdate) AppendFormats(v []string) *MediaSourceUpdate {
-	_u.mutation.AppendFormats(v)
-	return _u
-}
-
-// ClearFormats clears the value of the "formats" field.
-func (_u *MediaSourceUpdate) ClearFormats() *MediaSourceUpdate {
-	_u.mutation.ClearFormats()
-	return _u
-}
-
 // SetItem sets the "item" edge to the Item entity.
 func (_u *MediaSourceUpdate) SetItem(v *Item) *MediaSourceUpdate {
 	return _u.SetItemID(v.ID)
@@ -641,41 +350,6 @@ func (_u *MediaSourceUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *MediaSourceUpdate) check() error {
-	if v, ok := _u.mutation.Protocol(); ok {
-		if err := mediasource.ProtocolValidator(v); err != nil {
-			return &ValidationError{Name: "protocol", err: fmt.Errorf(`store: validator failed for field "MediaSource.protocol": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.EncoderProtocol(); ok {
-		if err := mediasource.EncoderProtocolValidator(v); err != nil {
-			return &ValidationError{Name: "encoder_protocol", err: fmt.Errorf(`store: validator failed for field "MediaSource.encoder_protocol": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.Kind(); ok {
-		if err := mediasource.KindValidator(v); err != nil {
-			return &ValidationError{Name: "kind", err: fmt.Errorf(`store: validator failed for field "MediaSource.kind": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.Timestamp(); ok {
-		if err := mediasource.TimestampValidator(v); err != nil {
-			return &ValidationError{Name: "timestamp", err: fmt.Errorf(`store: validator failed for field "MediaSource.timestamp": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.VideoType(); ok {
-		if err := mediasource.VideoTypeValidator(v); err != nil {
-			return &ValidationError{Name: "video_type", err: fmt.Errorf(`store: validator failed for field "MediaSource.video_type": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.IsoType(); ok {
-		if err := mediasource.IsoTypeValidator(v); err != nil {
-			return &ValidationError{Name: "iso_type", err: fmt.Errorf(`store: validator failed for field "MediaSource.iso_type": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.Video3dFormat(); ok {
-		if err := mediasource.Video3dFormatValidator(v); err != nil {
-			return &ValidationError{Name: "video_3d_format", err: fmt.Errorf(`store: validator failed for field "MediaSource.video_3d_format": %w`, err)}
-		}
-	}
 	if _u.mutation.ItemCleared() && len(_u.mutation.ItemIDs()) > 0 {
 		return errors.New(`store: clearing a required unique edge "MediaSource.item"`)
 	}
@@ -703,53 +377,11 @@ func (_u *MediaSourceUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(mediasource.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := _u.mutation.Protocol(); ok {
-		_spec.SetField(mediasource.FieldProtocol, field.TypeEnum, value)
-	}
-	if value, ok := _u.mutation.EncoderProtocol(); ok {
-		_spec.SetField(mediasource.FieldEncoderProtocol, field.TypeEnum, value)
-	}
-	if _u.mutation.EncoderProtocolCleared() {
-		_spec.ClearField(mediasource.FieldEncoderProtocol, field.TypeEnum)
-	}
-	if value, ok := _u.mutation.Kind(); ok {
-		_spec.SetField(mediasource.FieldKind, field.TypeEnum, value)
-	}
-	if value, ok := _u.mutation.Timestamp(); ok {
-		_spec.SetField(mediasource.FieldTimestamp, field.TypeEnum, value)
-	}
-	if _u.mutation.TimestampCleared() {
-		_spec.ClearField(mediasource.FieldTimestamp, field.TypeEnum)
-	}
-	if value, ok := _u.mutation.VideoType(); ok {
-		_spec.SetField(mediasource.FieldVideoType, field.TypeEnum, value)
-	}
-	if _u.mutation.VideoTypeCleared() {
-		_spec.ClearField(mediasource.FieldVideoType, field.TypeEnum)
-	}
-	if value, ok := _u.mutation.IsoType(); ok {
-		_spec.SetField(mediasource.FieldIsoType, field.TypeEnum, value)
-	}
-	if _u.mutation.IsoTypeCleared() {
-		_spec.ClearField(mediasource.FieldIsoType, field.TypeEnum)
-	}
-	if value, ok := _u.mutation.Video3dFormat(); ok {
-		_spec.SetField(mediasource.FieldVideo3dFormat, field.TypeEnum, value)
-	}
-	if _u.mutation.Video3dFormatCleared() {
-		_spec.ClearField(mediasource.FieldVideo3dFormat, field.TypeEnum)
-	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(mediasource.FieldName, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Path(); ok {
 		_spec.SetField(mediasource.FieldPath, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.EncoderPath(); ok {
-		_spec.SetField(mediasource.FieldEncoderPath, field.TypeString, value)
-	}
-	if _u.mutation.EncoderPathCleared() {
-		_spec.ClearField(mediasource.FieldEncoderPath, field.TypeString)
 	}
 	if value, ok := _u.mutation.Container(); ok {
 		_spec.SetField(mediasource.FieldContainer, field.TypeString, value)
@@ -795,50 +427,6 @@ func (_u *MediaSourceUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	}
 	if _u.mutation.ProbedAtCleared() {
 		_spec.ClearField(mediasource.FieldProbedAt, field.TypeTime)
-	}
-	if value, ok := _u.mutation.ReadAtNativeFramerate(); ok {
-		_spec.SetField(mediasource.FieldReadAtNativeFramerate, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.IgnoreDts(); ok {
-		_spec.SetField(mediasource.FieldIgnoreDts, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.IgnoreIndex(); ok {
-		_spec.SetField(mediasource.FieldIgnoreIndex, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.GenPtsInput(); ok {
-		_spec.SetField(mediasource.FieldGenPtsInput, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.HasSegments(); ok {
-		_spec.SetField(mediasource.FieldHasSegments, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.DefaultAudioStreamIndex(); ok {
-		_spec.SetField(mediasource.FieldDefaultAudioStreamIndex, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedDefaultAudioStreamIndex(); ok {
-		_spec.AddField(mediasource.FieldDefaultAudioStreamIndex, field.TypeInt32, value)
-	}
-	if _u.mutation.DefaultAudioStreamIndexCleared() {
-		_spec.ClearField(mediasource.FieldDefaultAudioStreamIndex, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.DefaultSubtitleStreamIndex(); ok {
-		_spec.SetField(mediasource.FieldDefaultSubtitleStreamIndex, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedDefaultSubtitleStreamIndex(); ok {
-		_spec.AddField(mediasource.FieldDefaultSubtitleStreamIndex, field.TypeInt32, value)
-	}
-	if _u.mutation.DefaultSubtitleStreamIndexCleared() {
-		_spec.ClearField(mediasource.FieldDefaultSubtitleStreamIndex, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.Formats(); ok {
-		_spec.SetField(mediasource.FieldFormats, field.TypeJSON, value)
-	}
-	if value, ok := _u.mutation.AppendedFormats(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, mediasource.FieldFormats, value)
-		})
-	}
-	if _u.mutation.FormatsCleared() {
-		_spec.ClearField(mediasource.FieldFormats, field.TypeJSON)
 	}
 	if _u.mutation.ItemCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1011,134 +599,6 @@ func (_u *MediaSourceUpdateOne) SetNillableLibraryID(v *uuid.UUID) *MediaSourceU
 	return _u
 }
 
-// SetProtocol sets the "protocol" field.
-func (_u *MediaSourceUpdateOne) SetProtocol(v mediasource.Protocol) *MediaSourceUpdateOne {
-	_u.mutation.SetProtocol(v)
-	return _u
-}
-
-// SetNillableProtocol sets the "protocol" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableProtocol(v *mediasource.Protocol) *MediaSourceUpdateOne {
-	if v != nil {
-		_u.SetProtocol(*v)
-	}
-	return _u
-}
-
-// SetEncoderProtocol sets the "encoder_protocol" field.
-func (_u *MediaSourceUpdateOne) SetEncoderProtocol(v mediasource.EncoderProtocol) *MediaSourceUpdateOne {
-	_u.mutation.SetEncoderProtocol(v)
-	return _u
-}
-
-// SetNillableEncoderProtocol sets the "encoder_protocol" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableEncoderProtocol(v *mediasource.EncoderProtocol) *MediaSourceUpdateOne {
-	if v != nil {
-		_u.SetEncoderProtocol(*v)
-	}
-	return _u
-}
-
-// ClearEncoderProtocol clears the value of the "encoder_protocol" field.
-func (_u *MediaSourceUpdateOne) ClearEncoderProtocol() *MediaSourceUpdateOne {
-	_u.mutation.ClearEncoderProtocol()
-	return _u
-}
-
-// SetKind sets the "kind" field.
-func (_u *MediaSourceUpdateOne) SetKind(v mediasource.Kind) *MediaSourceUpdateOne {
-	_u.mutation.SetKind(v)
-	return _u
-}
-
-// SetNillableKind sets the "kind" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableKind(v *mediasource.Kind) *MediaSourceUpdateOne {
-	if v != nil {
-		_u.SetKind(*v)
-	}
-	return _u
-}
-
-// SetTimestamp sets the "timestamp" field.
-func (_u *MediaSourceUpdateOne) SetTimestamp(v mediasource.Timestamp) *MediaSourceUpdateOne {
-	_u.mutation.SetTimestamp(v)
-	return _u
-}
-
-// SetNillableTimestamp sets the "timestamp" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableTimestamp(v *mediasource.Timestamp) *MediaSourceUpdateOne {
-	if v != nil {
-		_u.SetTimestamp(*v)
-	}
-	return _u
-}
-
-// ClearTimestamp clears the value of the "timestamp" field.
-func (_u *MediaSourceUpdateOne) ClearTimestamp() *MediaSourceUpdateOne {
-	_u.mutation.ClearTimestamp()
-	return _u
-}
-
-// SetVideoType sets the "video_type" field.
-func (_u *MediaSourceUpdateOne) SetVideoType(v mediasource.VideoType) *MediaSourceUpdateOne {
-	_u.mutation.SetVideoType(v)
-	return _u
-}
-
-// SetNillableVideoType sets the "video_type" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableVideoType(v *mediasource.VideoType) *MediaSourceUpdateOne {
-	if v != nil {
-		_u.SetVideoType(*v)
-	}
-	return _u
-}
-
-// ClearVideoType clears the value of the "video_type" field.
-func (_u *MediaSourceUpdateOne) ClearVideoType() *MediaSourceUpdateOne {
-	_u.mutation.ClearVideoType()
-	return _u
-}
-
-// SetIsoType sets the "iso_type" field.
-func (_u *MediaSourceUpdateOne) SetIsoType(v mediasource.IsoType) *MediaSourceUpdateOne {
-	_u.mutation.SetIsoType(v)
-	return _u
-}
-
-// SetNillableIsoType sets the "iso_type" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableIsoType(v *mediasource.IsoType) *MediaSourceUpdateOne {
-	if v != nil {
-		_u.SetIsoType(*v)
-	}
-	return _u
-}
-
-// ClearIsoType clears the value of the "iso_type" field.
-func (_u *MediaSourceUpdateOne) ClearIsoType() *MediaSourceUpdateOne {
-	_u.mutation.ClearIsoType()
-	return _u
-}
-
-// SetVideo3dFormat sets the "video_3d_format" field.
-func (_u *MediaSourceUpdateOne) SetVideo3dFormat(v mediasource.Video3dFormat) *MediaSourceUpdateOne {
-	_u.mutation.SetVideo3dFormat(v)
-	return _u
-}
-
-// SetNillableVideo3dFormat sets the "video_3d_format" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableVideo3dFormat(v *mediasource.Video3dFormat) *MediaSourceUpdateOne {
-	if v != nil {
-		_u.SetVideo3dFormat(*v)
-	}
-	return _u
-}
-
-// ClearVideo3dFormat clears the value of the "video_3d_format" field.
-func (_u *MediaSourceUpdateOne) ClearVideo3dFormat() *MediaSourceUpdateOne {
-	_u.mutation.ClearVideo3dFormat()
-	return _u
-}
-
 // SetName sets the "name" field.
 func (_u *MediaSourceUpdateOne) SetName(v string) *MediaSourceUpdateOne {
 	_u.mutation.SetName(v)
@@ -1164,26 +624,6 @@ func (_u *MediaSourceUpdateOne) SetNillablePath(v *string) *MediaSourceUpdateOne
 	if v != nil {
 		_u.SetPath(*v)
 	}
-	return _u
-}
-
-// SetEncoderPath sets the "encoder_path" field.
-func (_u *MediaSourceUpdateOne) SetEncoderPath(v string) *MediaSourceUpdateOne {
-	_u.mutation.SetEncoderPath(v)
-	return _u
-}
-
-// SetNillableEncoderPath sets the "encoder_path" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableEncoderPath(v *string) *MediaSourceUpdateOne {
-	if v != nil {
-		_u.SetEncoderPath(*v)
-	}
-	return _u
-}
-
-// ClearEncoderPath clears the value of the "encoder_path" field.
-func (_u *MediaSourceUpdateOne) ClearEncoderPath() *MediaSourceUpdateOne {
-	_u.mutation.ClearEncoderPath()
 	return _u
 }
 
@@ -1328,148 +768,6 @@ func (_u *MediaSourceUpdateOne) ClearProbedAt() *MediaSourceUpdateOne {
 	return _u
 }
 
-// SetReadAtNativeFramerate sets the "read_at_native_framerate" field.
-func (_u *MediaSourceUpdateOne) SetReadAtNativeFramerate(v bool) *MediaSourceUpdateOne {
-	_u.mutation.SetReadAtNativeFramerate(v)
-	return _u
-}
-
-// SetNillableReadAtNativeFramerate sets the "read_at_native_framerate" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableReadAtNativeFramerate(v *bool) *MediaSourceUpdateOne {
-	if v != nil {
-		_u.SetReadAtNativeFramerate(*v)
-	}
-	return _u
-}
-
-// SetIgnoreDts sets the "ignore_dts" field.
-func (_u *MediaSourceUpdateOne) SetIgnoreDts(v bool) *MediaSourceUpdateOne {
-	_u.mutation.SetIgnoreDts(v)
-	return _u
-}
-
-// SetNillableIgnoreDts sets the "ignore_dts" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableIgnoreDts(v *bool) *MediaSourceUpdateOne {
-	if v != nil {
-		_u.SetIgnoreDts(*v)
-	}
-	return _u
-}
-
-// SetIgnoreIndex sets the "ignore_index" field.
-func (_u *MediaSourceUpdateOne) SetIgnoreIndex(v bool) *MediaSourceUpdateOne {
-	_u.mutation.SetIgnoreIndex(v)
-	return _u
-}
-
-// SetNillableIgnoreIndex sets the "ignore_index" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableIgnoreIndex(v *bool) *MediaSourceUpdateOne {
-	if v != nil {
-		_u.SetIgnoreIndex(*v)
-	}
-	return _u
-}
-
-// SetGenPtsInput sets the "gen_pts_input" field.
-func (_u *MediaSourceUpdateOne) SetGenPtsInput(v bool) *MediaSourceUpdateOne {
-	_u.mutation.SetGenPtsInput(v)
-	return _u
-}
-
-// SetNillableGenPtsInput sets the "gen_pts_input" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableGenPtsInput(v *bool) *MediaSourceUpdateOne {
-	if v != nil {
-		_u.SetGenPtsInput(*v)
-	}
-	return _u
-}
-
-// SetHasSegments sets the "has_segments" field.
-func (_u *MediaSourceUpdateOne) SetHasSegments(v bool) *MediaSourceUpdateOne {
-	_u.mutation.SetHasSegments(v)
-	return _u
-}
-
-// SetNillableHasSegments sets the "has_segments" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableHasSegments(v *bool) *MediaSourceUpdateOne {
-	if v != nil {
-		_u.SetHasSegments(*v)
-	}
-	return _u
-}
-
-// SetDefaultAudioStreamIndex sets the "default_audio_stream_index" field.
-func (_u *MediaSourceUpdateOne) SetDefaultAudioStreamIndex(v int32) *MediaSourceUpdateOne {
-	_u.mutation.ResetDefaultAudioStreamIndex()
-	_u.mutation.SetDefaultAudioStreamIndex(v)
-	return _u
-}
-
-// SetNillableDefaultAudioStreamIndex sets the "default_audio_stream_index" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableDefaultAudioStreamIndex(v *int32) *MediaSourceUpdateOne {
-	if v != nil {
-		_u.SetDefaultAudioStreamIndex(*v)
-	}
-	return _u
-}
-
-// AddDefaultAudioStreamIndex adds value to the "default_audio_stream_index" field.
-func (_u *MediaSourceUpdateOne) AddDefaultAudioStreamIndex(v int32) *MediaSourceUpdateOne {
-	_u.mutation.AddDefaultAudioStreamIndex(v)
-	return _u
-}
-
-// ClearDefaultAudioStreamIndex clears the value of the "default_audio_stream_index" field.
-func (_u *MediaSourceUpdateOne) ClearDefaultAudioStreamIndex() *MediaSourceUpdateOne {
-	_u.mutation.ClearDefaultAudioStreamIndex()
-	return _u
-}
-
-// SetDefaultSubtitleStreamIndex sets the "default_subtitle_stream_index" field.
-func (_u *MediaSourceUpdateOne) SetDefaultSubtitleStreamIndex(v int32) *MediaSourceUpdateOne {
-	_u.mutation.ResetDefaultSubtitleStreamIndex()
-	_u.mutation.SetDefaultSubtitleStreamIndex(v)
-	return _u
-}
-
-// SetNillableDefaultSubtitleStreamIndex sets the "default_subtitle_stream_index" field if the given value is not nil.
-func (_u *MediaSourceUpdateOne) SetNillableDefaultSubtitleStreamIndex(v *int32) *MediaSourceUpdateOne {
-	if v != nil {
-		_u.SetDefaultSubtitleStreamIndex(*v)
-	}
-	return _u
-}
-
-// AddDefaultSubtitleStreamIndex adds value to the "default_subtitle_stream_index" field.
-func (_u *MediaSourceUpdateOne) AddDefaultSubtitleStreamIndex(v int32) *MediaSourceUpdateOne {
-	_u.mutation.AddDefaultSubtitleStreamIndex(v)
-	return _u
-}
-
-// ClearDefaultSubtitleStreamIndex clears the value of the "default_subtitle_stream_index" field.
-func (_u *MediaSourceUpdateOne) ClearDefaultSubtitleStreamIndex() *MediaSourceUpdateOne {
-	_u.mutation.ClearDefaultSubtitleStreamIndex()
-	return _u
-}
-
-// SetFormats sets the "formats" field.
-func (_u *MediaSourceUpdateOne) SetFormats(v []string) *MediaSourceUpdateOne {
-	_u.mutation.SetFormats(v)
-	return _u
-}
-
-// AppendFormats appends value to the "formats" field.
-func (_u *MediaSourceUpdateOne) AppendFormats(v []string) *MediaSourceUpdateOne {
-	_u.mutation.AppendFormats(v)
-	return _u
-}
-
-// ClearFormats clears the value of the "formats" field.
-func (_u *MediaSourceUpdateOne) ClearFormats() *MediaSourceUpdateOne {
-	_u.mutation.ClearFormats()
-	return _u
-}
-
 // SetItem sets the "item" edge to the Item entity.
 func (_u *MediaSourceUpdateOne) SetItem(v *Item) *MediaSourceUpdateOne {
 	return _u.SetItemID(v.ID)
@@ -1584,41 +882,6 @@ func (_u *MediaSourceUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *MediaSourceUpdateOne) check() error {
-	if v, ok := _u.mutation.Protocol(); ok {
-		if err := mediasource.ProtocolValidator(v); err != nil {
-			return &ValidationError{Name: "protocol", err: fmt.Errorf(`store: validator failed for field "MediaSource.protocol": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.EncoderProtocol(); ok {
-		if err := mediasource.EncoderProtocolValidator(v); err != nil {
-			return &ValidationError{Name: "encoder_protocol", err: fmt.Errorf(`store: validator failed for field "MediaSource.encoder_protocol": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.Kind(); ok {
-		if err := mediasource.KindValidator(v); err != nil {
-			return &ValidationError{Name: "kind", err: fmt.Errorf(`store: validator failed for field "MediaSource.kind": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.Timestamp(); ok {
-		if err := mediasource.TimestampValidator(v); err != nil {
-			return &ValidationError{Name: "timestamp", err: fmt.Errorf(`store: validator failed for field "MediaSource.timestamp": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.VideoType(); ok {
-		if err := mediasource.VideoTypeValidator(v); err != nil {
-			return &ValidationError{Name: "video_type", err: fmt.Errorf(`store: validator failed for field "MediaSource.video_type": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.IsoType(); ok {
-		if err := mediasource.IsoTypeValidator(v); err != nil {
-			return &ValidationError{Name: "iso_type", err: fmt.Errorf(`store: validator failed for field "MediaSource.iso_type": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.Video3dFormat(); ok {
-		if err := mediasource.Video3dFormatValidator(v); err != nil {
-			return &ValidationError{Name: "video_3d_format", err: fmt.Errorf(`store: validator failed for field "MediaSource.video_3d_format": %w`, err)}
-		}
-	}
 	if _u.mutation.ItemCleared() && len(_u.mutation.ItemIDs()) > 0 {
 		return errors.New(`store: clearing a required unique edge "MediaSource.item"`)
 	}
@@ -1663,53 +926,11 @@ func (_u *MediaSourceUpdateOne) sqlSave(ctx context.Context) (_node *MediaSource
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(mediasource.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := _u.mutation.Protocol(); ok {
-		_spec.SetField(mediasource.FieldProtocol, field.TypeEnum, value)
-	}
-	if value, ok := _u.mutation.EncoderProtocol(); ok {
-		_spec.SetField(mediasource.FieldEncoderProtocol, field.TypeEnum, value)
-	}
-	if _u.mutation.EncoderProtocolCleared() {
-		_spec.ClearField(mediasource.FieldEncoderProtocol, field.TypeEnum)
-	}
-	if value, ok := _u.mutation.Kind(); ok {
-		_spec.SetField(mediasource.FieldKind, field.TypeEnum, value)
-	}
-	if value, ok := _u.mutation.Timestamp(); ok {
-		_spec.SetField(mediasource.FieldTimestamp, field.TypeEnum, value)
-	}
-	if _u.mutation.TimestampCleared() {
-		_spec.ClearField(mediasource.FieldTimestamp, field.TypeEnum)
-	}
-	if value, ok := _u.mutation.VideoType(); ok {
-		_spec.SetField(mediasource.FieldVideoType, field.TypeEnum, value)
-	}
-	if _u.mutation.VideoTypeCleared() {
-		_spec.ClearField(mediasource.FieldVideoType, field.TypeEnum)
-	}
-	if value, ok := _u.mutation.IsoType(); ok {
-		_spec.SetField(mediasource.FieldIsoType, field.TypeEnum, value)
-	}
-	if _u.mutation.IsoTypeCleared() {
-		_spec.ClearField(mediasource.FieldIsoType, field.TypeEnum)
-	}
-	if value, ok := _u.mutation.Video3dFormat(); ok {
-		_spec.SetField(mediasource.FieldVideo3dFormat, field.TypeEnum, value)
-	}
-	if _u.mutation.Video3dFormatCleared() {
-		_spec.ClearField(mediasource.FieldVideo3dFormat, field.TypeEnum)
-	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(mediasource.FieldName, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Path(); ok {
 		_spec.SetField(mediasource.FieldPath, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.EncoderPath(); ok {
-		_spec.SetField(mediasource.FieldEncoderPath, field.TypeString, value)
-	}
-	if _u.mutation.EncoderPathCleared() {
-		_spec.ClearField(mediasource.FieldEncoderPath, field.TypeString)
 	}
 	if value, ok := _u.mutation.Container(); ok {
 		_spec.SetField(mediasource.FieldContainer, field.TypeString, value)
@@ -1755,50 +976,6 @@ func (_u *MediaSourceUpdateOne) sqlSave(ctx context.Context) (_node *MediaSource
 	}
 	if _u.mutation.ProbedAtCleared() {
 		_spec.ClearField(mediasource.FieldProbedAt, field.TypeTime)
-	}
-	if value, ok := _u.mutation.ReadAtNativeFramerate(); ok {
-		_spec.SetField(mediasource.FieldReadAtNativeFramerate, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.IgnoreDts(); ok {
-		_spec.SetField(mediasource.FieldIgnoreDts, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.IgnoreIndex(); ok {
-		_spec.SetField(mediasource.FieldIgnoreIndex, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.GenPtsInput(); ok {
-		_spec.SetField(mediasource.FieldGenPtsInput, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.HasSegments(); ok {
-		_spec.SetField(mediasource.FieldHasSegments, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.DefaultAudioStreamIndex(); ok {
-		_spec.SetField(mediasource.FieldDefaultAudioStreamIndex, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedDefaultAudioStreamIndex(); ok {
-		_spec.AddField(mediasource.FieldDefaultAudioStreamIndex, field.TypeInt32, value)
-	}
-	if _u.mutation.DefaultAudioStreamIndexCleared() {
-		_spec.ClearField(mediasource.FieldDefaultAudioStreamIndex, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.DefaultSubtitleStreamIndex(); ok {
-		_spec.SetField(mediasource.FieldDefaultSubtitleStreamIndex, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedDefaultSubtitleStreamIndex(); ok {
-		_spec.AddField(mediasource.FieldDefaultSubtitleStreamIndex, field.TypeInt32, value)
-	}
-	if _u.mutation.DefaultSubtitleStreamIndexCleared() {
-		_spec.ClearField(mediasource.FieldDefaultSubtitleStreamIndex, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.Formats(); ok {
-		_spec.SetField(mediasource.FieldFormats, field.TypeJSON, value)
-	}
-	if value, ok := _u.mutation.AppendedFormats(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, mediasource.FieldFormats, value)
-		})
-	}
-	if _u.mutation.FormatsCleared() {
-		_spec.ClearField(mediasource.FieldFormats, field.TypeJSON)
 	}
 	if _u.mutation.ItemCleared() {
 		edge := &sqlgraph.EdgeSpec{

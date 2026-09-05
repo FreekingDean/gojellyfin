@@ -78,26 +78,6 @@ func (_u *MediaStreamUpdate) SetNillableKind(v *mediastream.Kind) *MediaStreamUp
 	return _u
 }
 
-// SetVideoRange sets the "video_range" field.
-func (_u *MediaStreamUpdate) SetVideoRange(v mediastream.VideoRange) *MediaStreamUpdate {
-	_u.mutation.SetVideoRange(v)
-	return _u
-}
-
-// SetNillableVideoRange sets the "video_range" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableVideoRange(v *mediastream.VideoRange) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetVideoRange(*v)
-	}
-	return _u
-}
-
-// ClearVideoRange clears the value of the "video_range" field.
-func (_u *MediaStreamUpdate) ClearVideoRange() *MediaStreamUpdate {
-	_u.mutation.ClearVideoRange()
-	return _u
-}
-
 // SetVideoRangeType sets the "video_range_type" field.
 func (_u *MediaStreamUpdate) SetVideoRangeType(v mediastream.VideoRangeType) *MediaStreamUpdate {
 	_u.mutation.SetVideoRangeType(v)
@@ -115,26 +95,6 @@ func (_u *MediaStreamUpdate) SetNillableVideoRangeType(v *mediastream.VideoRange
 // ClearVideoRangeType clears the value of the "video_range_type" field.
 func (_u *MediaStreamUpdate) ClearVideoRangeType() *MediaStreamUpdate {
 	_u.mutation.ClearVideoRangeType()
-	return _u
-}
-
-// SetAudioSpatialFormat sets the "audio_spatial_format" field.
-func (_u *MediaStreamUpdate) SetAudioSpatialFormat(v mediastream.AudioSpatialFormat) *MediaStreamUpdate {
-	_u.mutation.SetAudioSpatialFormat(v)
-	return _u
-}
-
-// SetNillableAudioSpatialFormat sets the "audio_spatial_format" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableAudioSpatialFormat(v *mediastream.AudioSpatialFormat) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetAudioSpatialFormat(*v)
-	}
-	return _u
-}
-
-// ClearAudioSpatialFormat clears the value of the "audio_spatial_format" field.
-func (_u *MediaStreamUpdate) ClearAudioSpatialFormat() *MediaStreamUpdate {
-	_u.mutation.ClearAudioSpatialFormat()
 	return _u
 }
 
@@ -176,26 +136,6 @@ func (_u *MediaStreamUpdate) SetNillableCodec(v *string) *MediaStreamUpdate {
 // ClearCodec clears the value of the "codec" field.
 func (_u *MediaStreamUpdate) ClearCodec() *MediaStreamUpdate {
 	_u.mutation.ClearCodec()
-	return _u
-}
-
-// SetCodecTag sets the "codec_tag" field.
-func (_u *MediaStreamUpdate) SetCodecTag(v string) *MediaStreamUpdate {
-	_u.mutation.SetCodecTag(v)
-	return _u
-}
-
-// SetNillableCodecTag sets the "codec_tag" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableCodecTag(v *string) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetCodecTag(*v)
-	}
-	return _u
-}
-
-// ClearCodecTag clears the value of the "codec_tag" field.
-func (_u *MediaStreamUpdate) ClearCodecTag() *MediaStreamUpdate {
-	_u.mutation.ClearCodecTag()
 	return _u
 }
 
@@ -259,26 +199,6 @@ func (_u *MediaStreamUpdate) ClearTitle() *MediaStreamUpdate {
 	return _u
 }
 
-// SetComment sets the "comment" field.
-func (_u *MediaStreamUpdate) SetComment(v string) *MediaStreamUpdate {
-	_u.mutation.SetComment(v)
-	return _u
-}
-
-// SetNillableComment sets the "comment" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableComment(v *string) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetComment(*v)
-	}
-	return _u
-}
-
-// ClearComment clears the value of the "comment" field.
-func (_u *MediaStreamUpdate) ClearComment() *MediaStreamUpdate {
-	_u.mutation.ClearComment()
-	return _u
-}
-
 // SetPath sets the "path" field.
 func (_u *MediaStreamUpdate) SetPath(v string) *MediaStreamUpdate {
 	_u.mutation.SetPath(v)
@@ -319,402 +239,6 @@ func (_u *MediaStreamUpdate) ClearPixelFormat() *MediaStreamUpdate {
 	return _u
 }
 
-// SetAspectRatio sets the "aspect_ratio" field.
-func (_u *MediaStreamUpdate) SetAspectRatio(v string) *MediaStreamUpdate {
-	_u.mutation.SetAspectRatio(v)
-	return _u
-}
-
-// SetNillableAspectRatio sets the "aspect_ratio" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableAspectRatio(v *string) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetAspectRatio(*v)
-	}
-	return _u
-}
-
-// ClearAspectRatio clears the value of the "aspect_ratio" field.
-func (_u *MediaStreamUpdate) ClearAspectRatio() *MediaStreamUpdate {
-	_u.mutation.ClearAspectRatio()
-	return _u
-}
-
-// SetChannelLayout sets the "channel_layout" field.
-func (_u *MediaStreamUpdate) SetChannelLayout(v string) *MediaStreamUpdate {
-	_u.mutation.SetChannelLayout(v)
-	return _u
-}
-
-// SetNillableChannelLayout sets the "channel_layout" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableChannelLayout(v *string) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetChannelLayout(*v)
-	}
-	return _u
-}
-
-// ClearChannelLayout clears the value of the "channel_layout" field.
-func (_u *MediaStreamUpdate) ClearChannelLayout() *MediaStreamUpdate {
-	_u.mutation.ClearChannelLayout()
-	return _u
-}
-
-// SetTimeBase sets the "time_base" field.
-func (_u *MediaStreamUpdate) SetTimeBase(v string) *MediaStreamUpdate {
-	_u.mutation.SetTimeBase(v)
-	return _u
-}
-
-// SetNillableTimeBase sets the "time_base" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableTimeBase(v *string) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetTimeBase(*v)
-	}
-	return _u
-}
-
-// ClearTimeBase clears the value of the "time_base" field.
-func (_u *MediaStreamUpdate) ClearTimeBase() *MediaStreamUpdate {
-	_u.mutation.ClearTimeBase()
-	return _u
-}
-
-// SetNalLengthSize sets the "nal_length_size" field.
-func (_u *MediaStreamUpdate) SetNalLengthSize(v string) *MediaStreamUpdate {
-	_u.mutation.SetNalLengthSize(v)
-	return _u
-}
-
-// SetNillableNalLengthSize sets the "nal_length_size" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableNalLengthSize(v *string) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetNalLengthSize(*v)
-	}
-	return _u
-}
-
-// ClearNalLengthSize clears the value of the "nal_length_size" field.
-func (_u *MediaStreamUpdate) ClearNalLengthSize() *MediaStreamUpdate {
-	_u.mutation.ClearNalLengthSize()
-	return _u
-}
-
-// SetVideoDoviTitle sets the "video_dovi_title" field.
-func (_u *MediaStreamUpdate) SetVideoDoviTitle(v string) *MediaStreamUpdate {
-	_u.mutation.SetVideoDoviTitle(v)
-	return _u
-}
-
-// SetNillableVideoDoviTitle sets the "video_dovi_title" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableVideoDoviTitle(v *string) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetVideoDoviTitle(*v)
-	}
-	return _u
-}
-
-// ClearVideoDoviTitle clears the value of the "video_dovi_title" field.
-func (_u *MediaStreamUpdate) ClearVideoDoviTitle() *MediaStreamUpdate {
-	_u.mutation.ClearVideoDoviTitle()
-	return _u
-}
-
-// SetColorRange sets the "color_range" field.
-func (_u *MediaStreamUpdate) SetColorRange(v string) *MediaStreamUpdate {
-	_u.mutation.SetColorRange(v)
-	return _u
-}
-
-// SetNillableColorRange sets the "color_range" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableColorRange(v *string) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetColorRange(*v)
-	}
-	return _u
-}
-
-// ClearColorRange clears the value of the "color_range" field.
-func (_u *MediaStreamUpdate) ClearColorRange() *MediaStreamUpdate {
-	_u.mutation.ClearColorRange()
-	return _u
-}
-
-// SetColorSpace sets the "color_space" field.
-func (_u *MediaStreamUpdate) SetColorSpace(v string) *MediaStreamUpdate {
-	_u.mutation.SetColorSpace(v)
-	return _u
-}
-
-// SetNillableColorSpace sets the "color_space" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableColorSpace(v *string) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetColorSpace(*v)
-	}
-	return _u
-}
-
-// ClearColorSpace clears the value of the "color_space" field.
-func (_u *MediaStreamUpdate) ClearColorSpace() *MediaStreamUpdate {
-	_u.mutation.ClearColorSpace()
-	return _u
-}
-
-// SetColorTransfer sets the "color_transfer" field.
-func (_u *MediaStreamUpdate) SetColorTransfer(v string) *MediaStreamUpdate {
-	_u.mutation.SetColorTransfer(v)
-	return _u
-}
-
-// SetNillableColorTransfer sets the "color_transfer" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableColorTransfer(v *string) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetColorTransfer(*v)
-	}
-	return _u
-}
-
-// ClearColorTransfer clears the value of the "color_transfer" field.
-func (_u *MediaStreamUpdate) ClearColorTransfer() *MediaStreamUpdate {
-	_u.mutation.ClearColorTransfer()
-	return _u
-}
-
-// SetColorPrimaries sets the "color_primaries" field.
-func (_u *MediaStreamUpdate) SetColorPrimaries(v string) *MediaStreamUpdate {
-	_u.mutation.SetColorPrimaries(v)
-	return _u
-}
-
-// SetNillableColorPrimaries sets the "color_primaries" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableColorPrimaries(v *string) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetColorPrimaries(*v)
-	}
-	return _u
-}
-
-// ClearColorPrimaries clears the value of the "color_primaries" field.
-func (_u *MediaStreamUpdate) ClearColorPrimaries() *MediaStreamUpdate {
-	_u.mutation.ClearColorPrimaries()
-	return _u
-}
-
-// SetDvVersionMajor sets the "dv_version_major" field.
-func (_u *MediaStreamUpdate) SetDvVersionMajor(v int32) *MediaStreamUpdate {
-	_u.mutation.ResetDvVersionMajor()
-	_u.mutation.SetDvVersionMajor(v)
-	return _u
-}
-
-// SetNillableDvVersionMajor sets the "dv_version_major" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableDvVersionMajor(v *int32) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetDvVersionMajor(*v)
-	}
-	return _u
-}
-
-// AddDvVersionMajor adds value to the "dv_version_major" field.
-func (_u *MediaStreamUpdate) AddDvVersionMajor(v int32) *MediaStreamUpdate {
-	_u.mutation.AddDvVersionMajor(v)
-	return _u
-}
-
-// ClearDvVersionMajor clears the value of the "dv_version_major" field.
-func (_u *MediaStreamUpdate) ClearDvVersionMajor() *MediaStreamUpdate {
-	_u.mutation.ClearDvVersionMajor()
-	return _u
-}
-
-// SetDvVersionMinor sets the "dv_version_minor" field.
-func (_u *MediaStreamUpdate) SetDvVersionMinor(v int32) *MediaStreamUpdate {
-	_u.mutation.ResetDvVersionMinor()
-	_u.mutation.SetDvVersionMinor(v)
-	return _u
-}
-
-// SetNillableDvVersionMinor sets the "dv_version_minor" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableDvVersionMinor(v *int32) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetDvVersionMinor(*v)
-	}
-	return _u
-}
-
-// AddDvVersionMinor adds value to the "dv_version_minor" field.
-func (_u *MediaStreamUpdate) AddDvVersionMinor(v int32) *MediaStreamUpdate {
-	_u.mutation.AddDvVersionMinor(v)
-	return _u
-}
-
-// ClearDvVersionMinor clears the value of the "dv_version_minor" field.
-func (_u *MediaStreamUpdate) ClearDvVersionMinor() *MediaStreamUpdate {
-	_u.mutation.ClearDvVersionMinor()
-	return _u
-}
-
-// SetDvProfile sets the "dv_profile" field.
-func (_u *MediaStreamUpdate) SetDvProfile(v int32) *MediaStreamUpdate {
-	_u.mutation.ResetDvProfile()
-	_u.mutation.SetDvProfile(v)
-	return _u
-}
-
-// SetNillableDvProfile sets the "dv_profile" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableDvProfile(v *int32) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetDvProfile(*v)
-	}
-	return _u
-}
-
-// AddDvProfile adds value to the "dv_profile" field.
-func (_u *MediaStreamUpdate) AddDvProfile(v int32) *MediaStreamUpdate {
-	_u.mutation.AddDvProfile(v)
-	return _u
-}
-
-// ClearDvProfile clears the value of the "dv_profile" field.
-func (_u *MediaStreamUpdate) ClearDvProfile() *MediaStreamUpdate {
-	_u.mutation.ClearDvProfile()
-	return _u
-}
-
-// SetDvLevel sets the "dv_level" field.
-func (_u *MediaStreamUpdate) SetDvLevel(v int32) *MediaStreamUpdate {
-	_u.mutation.ResetDvLevel()
-	_u.mutation.SetDvLevel(v)
-	return _u
-}
-
-// SetNillableDvLevel sets the "dv_level" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableDvLevel(v *int32) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetDvLevel(*v)
-	}
-	return _u
-}
-
-// AddDvLevel adds value to the "dv_level" field.
-func (_u *MediaStreamUpdate) AddDvLevel(v int32) *MediaStreamUpdate {
-	_u.mutation.AddDvLevel(v)
-	return _u
-}
-
-// ClearDvLevel clears the value of the "dv_level" field.
-func (_u *MediaStreamUpdate) ClearDvLevel() *MediaStreamUpdate {
-	_u.mutation.ClearDvLevel()
-	return _u
-}
-
-// SetRpuPresentFlag sets the "rpu_present_flag" field.
-func (_u *MediaStreamUpdate) SetRpuPresentFlag(v int32) *MediaStreamUpdate {
-	_u.mutation.ResetRpuPresentFlag()
-	_u.mutation.SetRpuPresentFlag(v)
-	return _u
-}
-
-// SetNillableRpuPresentFlag sets the "rpu_present_flag" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableRpuPresentFlag(v *int32) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetRpuPresentFlag(*v)
-	}
-	return _u
-}
-
-// AddRpuPresentFlag adds value to the "rpu_present_flag" field.
-func (_u *MediaStreamUpdate) AddRpuPresentFlag(v int32) *MediaStreamUpdate {
-	_u.mutation.AddRpuPresentFlag(v)
-	return _u
-}
-
-// ClearRpuPresentFlag clears the value of the "rpu_present_flag" field.
-func (_u *MediaStreamUpdate) ClearRpuPresentFlag() *MediaStreamUpdate {
-	_u.mutation.ClearRpuPresentFlag()
-	return _u
-}
-
-// SetElPresentFlag sets the "el_present_flag" field.
-func (_u *MediaStreamUpdate) SetElPresentFlag(v int32) *MediaStreamUpdate {
-	_u.mutation.ResetElPresentFlag()
-	_u.mutation.SetElPresentFlag(v)
-	return _u
-}
-
-// SetNillableElPresentFlag sets the "el_present_flag" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableElPresentFlag(v *int32) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetElPresentFlag(*v)
-	}
-	return _u
-}
-
-// AddElPresentFlag adds value to the "el_present_flag" field.
-func (_u *MediaStreamUpdate) AddElPresentFlag(v int32) *MediaStreamUpdate {
-	_u.mutation.AddElPresentFlag(v)
-	return _u
-}
-
-// ClearElPresentFlag clears the value of the "el_present_flag" field.
-func (_u *MediaStreamUpdate) ClearElPresentFlag() *MediaStreamUpdate {
-	_u.mutation.ClearElPresentFlag()
-	return _u
-}
-
-// SetBlPresentFlag sets the "bl_present_flag" field.
-func (_u *MediaStreamUpdate) SetBlPresentFlag(v int32) *MediaStreamUpdate {
-	_u.mutation.ResetBlPresentFlag()
-	_u.mutation.SetBlPresentFlag(v)
-	return _u
-}
-
-// SetNillableBlPresentFlag sets the "bl_present_flag" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableBlPresentFlag(v *int32) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetBlPresentFlag(*v)
-	}
-	return _u
-}
-
-// AddBlPresentFlag adds value to the "bl_present_flag" field.
-func (_u *MediaStreamUpdate) AddBlPresentFlag(v int32) *MediaStreamUpdate {
-	_u.mutation.AddBlPresentFlag(v)
-	return _u
-}
-
-// ClearBlPresentFlag clears the value of the "bl_present_flag" field.
-func (_u *MediaStreamUpdate) ClearBlPresentFlag() *MediaStreamUpdate {
-	_u.mutation.ClearBlPresentFlag()
-	return _u
-}
-
-// SetDvBlSignalCompatibilityID sets the "dv_bl_signal_compatibility_id" field.
-func (_u *MediaStreamUpdate) SetDvBlSignalCompatibilityID(v int32) *MediaStreamUpdate {
-	_u.mutation.ResetDvBlSignalCompatibilityID()
-	_u.mutation.SetDvBlSignalCompatibilityID(v)
-	return _u
-}
-
-// SetNillableDvBlSignalCompatibilityID sets the "dv_bl_signal_compatibility_id" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableDvBlSignalCompatibilityID(v *int32) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetDvBlSignalCompatibilityID(*v)
-	}
-	return _u
-}
-
-// AddDvBlSignalCompatibilityID adds value to the "dv_bl_signal_compatibility_id" field.
-func (_u *MediaStreamUpdate) AddDvBlSignalCompatibilityID(v int32) *MediaStreamUpdate {
-	_u.mutation.AddDvBlSignalCompatibilityID(v)
-	return _u
-}
-
-// ClearDvBlSignalCompatibilityID clears the value of the "dv_bl_signal_compatibility_id" field.
-func (_u *MediaStreamUpdate) ClearDvBlSignalCompatibilityID() *MediaStreamUpdate {
-	_u.mutation.ClearDvBlSignalCompatibilityID()
-	return _u
-}
-
 // SetBitRate sets the "bit_rate" field.
 func (_u *MediaStreamUpdate) SetBitRate(v int32) *MediaStreamUpdate {
 	_u.mutation.ResetBitRate()
@@ -739,87 +263,6 @@ func (_u *MediaStreamUpdate) AddBitRate(v int32) *MediaStreamUpdate {
 // ClearBitRate clears the value of the "bit_rate" field.
 func (_u *MediaStreamUpdate) ClearBitRate() *MediaStreamUpdate {
 	_u.mutation.ClearBitRate()
-	return _u
-}
-
-// SetBitDepth sets the "bit_depth" field.
-func (_u *MediaStreamUpdate) SetBitDepth(v int32) *MediaStreamUpdate {
-	_u.mutation.ResetBitDepth()
-	_u.mutation.SetBitDepth(v)
-	return _u
-}
-
-// SetNillableBitDepth sets the "bit_depth" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableBitDepth(v *int32) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetBitDepth(*v)
-	}
-	return _u
-}
-
-// AddBitDepth adds value to the "bit_depth" field.
-func (_u *MediaStreamUpdate) AddBitDepth(v int32) *MediaStreamUpdate {
-	_u.mutation.AddBitDepth(v)
-	return _u
-}
-
-// ClearBitDepth clears the value of the "bit_depth" field.
-func (_u *MediaStreamUpdate) ClearBitDepth() *MediaStreamUpdate {
-	_u.mutation.ClearBitDepth()
-	return _u
-}
-
-// SetRefFrames sets the "ref_frames" field.
-func (_u *MediaStreamUpdate) SetRefFrames(v int32) *MediaStreamUpdate {
-	_u.mutation.ResetRefFrames()
-	_u.mutation.SetRefFrames(v)
-	return _u
-}
-
-// SetNillableRefFrames sets the "ref_frames" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableRefFrames(v *int32) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetRefFrames(*v)
-	}
-	return _u
-}
-
-// AddRefFrames adds value to the "ref_frames" field.
-func (_u *MediaStreamUpdate) AddRefFrames(v int32) *MediaStreamUpdate {
-	_u.mutation.AddRefFrames(v)
-	return _u
-}
-
-// ClearRefFrames clears the value of the "ref_frames" field.
-func (_u *MediaStreamUpdate) ClearRefFrames() *MediaStreamUpdate {
-	_u.mutation.ClearRefFrames()
-	return _u
-}
-
-// SetPacketLength sets the "packet_length" field.
-func (_u *MediaStreamUpdate) SetPacketLength(v int32) *MediaStreamUpdate {
-	_u.mutation.ResetPacketLength()
-	_u.mutation.SetPacketLength(v)
-	return _u
-}
-
-// SetNillablePacketLength sets the "packet_length" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillablePacketLength(v *int32) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetPacketLength(*v)
-	}
-	return _u
-}
-
-// AddPacketLength adds value to the "packet_length" field.
-func (_u *MediaStreamUpdate) AddPacketLength(v int32) *MediaStreamUpdate {
-	_u.mutation.AddPacketLength(v)
-	return _u
-}
-
-// ClearPacketLength clears the value of the "packet_length" field.
-func (_u *MediaStreamUpdate) ClearPacketLength() *MediaStreamUpdate {
-	_u.mutation.ClearPacketLength()
 	return _u
 }
 
@@ -931,60 +374,6 @@ func (_u *MediaStreamUpdate) ClearHeight() *MediaStreamUpdate {
 	return _u
 }
 
-// SetRotation sets the "rotation" field.
-func (_u *MediaStreamUpdate) SetRotation(v int32) *MediaStreamUpdate {
-	_u.mutation.ResetRotation()
-	_u.mutation.SetRotation(v)
-	return _u
-}
-
-// SetNillableRotation sets the "rotation" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableRotation(v *int32) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetRotation(*v)
-	}
-	return _u
-}
-
-// AddRotation adds value to the "rotation" field.
-func (_u *MediaStreamUpdate) AddRotation(v int32) *MediaStreamUpdate {
-	_u.mutation.AddRotation(v)
-	return _u
-}
-
-// ClearRotation clears the value of the "rotation" field.
-func (_u *MediaStreamUpdate) ClearRotation() *MediaStreamUpdate {
-	_u.mutation.ClearRotation()
-	return _u
-}
-
-// SetScore sets the "score" field.
-func (_u *MediaStreamUpdate) SetScore(v int32) *MediaStreamUpdate {
-	_u.mutation.ResetScore()
-	_u.mutation.SetScore(v)
-	return _u
-}
-
-// SetNillableScore sets the "score" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableScore(v *int32) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetScore(*v)
-	}
-	return _u
-}
-
-// AddScore adds value to the "score" field.
-func (_u *MediaStreamUpdate) AddScore(v int32) *MediaStreamUpdate {
-	_u.mutation.AddScore(v)
-	return _u
-}
-
-// ClearScore clears the value of the "score" field.
-func (_u *MediaStreamUpdate) ClearScore() *MediaStreamUpdate {
-	_u.mutation.ClearScore()
-	return _u
-}
-
 // SetLevel sets the "level" field.
 func (_u *MediaStreamUpdate) SetLevel(v float64) *MediaStreamUpdate {
 	_u.mutation.ResetLevel()
@@ -1009,87 +398,6 @@ func (_u *MediaStreamUpdate) AddLevel(v float64) *MediaStreamUpdate {
 // ClearLevel clears the value of the "level" field.
 func (_u *MediaStreamUpdate) ClearLevel() *MediaStreamUpdate {
 	_u.mutation.ClearLevel()
-	return _u
-}
-
-// SetAverageFrameRate sets the "average_frame_rate" field.
-func (_u *MediaStreamUpdate) SetAverageFrameRate(v float64) *MediaStreamUpdate {
-	_u.mutation.ResetAverageFrameRate()
-	_u.mutation.SetAverageFrameRate(v)
-	return _u
-}
-
-// SetNillableAverageFrameRate sets the "average_frame_rate" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableAverageFrameRate(v *float64) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetAverageFrameRate(*v)
-	}
-	return _u
-}
-
-// AddAverageFrameRate adds value to the "average_frame_rate" field.
-func (_u *MediaStreamUpdate) AddAverageFrameRate(v float64) *MediaStreamUpdate {
-	_u.mutation.AddAverageFrameRate(v)
-	return _u
-}
-
-// ClearAverageFrameRate clears the value of the "average_frame_rate" field.
-func (_u *MediaStreamUpdate) ClearAverageFrameRate() *MediaStreamUpdate {
-	_u.mutation.ClearAverageFrameRate()
-	return _u
-}
-
-// SetRealFrameRate sets the "real_frame_rate" field.
-func (_u *MediaStreamUpdate) SetRealFrameRate(v float64) *MediaStreamUpdate {
-	_u.mutation.ResetRealFrameRate()
-	_u.mutation.SetRealFrameRate(v)
-	return _u
-}
-
-// SetNillableRealFrameRate sets the "real_frame_rate" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableRealFrameRate(v *float64) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetRealFrameRate(*v)
-	}
-	return _u
-}
-
-// AddRealFrameRate adds value to the "real_frame_rate" field.
-func (_u *MediaStreamUpdate) AddRealFrameRate(v float64) *MediaStreamUpdate {
-	_u.mutation.AddRealFrameRate(v)
-	return _u
-}
-
-// ClearRealFrameRate clears the value of the "real_frame_rate" field.
-func (_u *MediaStreamUpdate) ClearRealFrameRate() *MediaStreamUpdate {
-	_u.mutation.ClearRealFrameRate()
-	return _u
-}
-
-// SetReferenceFrameRate sets the "reference_frame_rate" field.
-func (_u *MediaStreamUpdate) SetReferenceFrameRate(v float64) *MediaStreamUpdate {
-	_u.mutation.ResetReferenceFrameRate()
-	_u.mutation.SetReferenceFrameRate(v)
-	return _u
-}
-
-// SetNillableReferenceFrameRate sets the "reference_frame_rate" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableReferenceFrameRate(v *float64) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetReferenceFrameRate(*v)
-	}
-	return _u
-}
-
-// AddReferenceFrameRate adds value to the "reference_frame_rate" field.
-func (_u *MediaStreamUpdate) AddReferenceFrameRate(v float64) *MediaStreamUpdate {
-	_u.mutation.AddReferenceFrameRate(v)
-	return _u
-}
-
-// ClearReferenceFrameRate clears the value of the "reference_frame_rate" field.
-func (_u *MediaStreamUpdate) ClearReferenceFrameRate() *MediaStreamUpdate {
-	_u.mutation.ClearReferenceFrameRate()
 	return _u
 }
 
@@ -1159,20 +467,6 @@ func (_u *MediaStreamUpdate) SetIsAnamorphic(v bool) *MediaStreamUpdate {
 func (_u *MediaStreamUpdate) SetNillableIsAnamorphic(v *bool) *MediaStreamUpdate {
 	if v != nil {
 		_u.SetIsAnamorphic(*v)
-	}
-	return _u
-}
-
-// SetIsAvc sets the "is_avc" field.
-func (_u *MediaStreamUpdate) SetIsAvc(v bool) *MediaStreamUpdate {
-	_u.mutation.SetIsAvc(v)
-	return _u
-}
-
-// SetNillableIsAvc sets the "is_avc" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableIsAvc(v *bool) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetIsAvc(*v)
 	}
 	return _u
 }
@@ -1250,19 +544,9 @@ func (_u *MediaStreamUpdate) check() error {
 			return &ValidationError{Name: "kind", err: fmt.Errorf(`store: validator failed for field "MediaStream.kind": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.VideoRange(); ok {
-		if err := mediastream.VideoRangeValidator(v); err != nil {
-			return &ValidationError{Name: "video_range", err: fmt.Errorf(`store: validator failed for field "MediaStream.video_range": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.VideoRangeType(); ok {
 		if err := mediastream.VideoRangeTypeValidator(v); err != nil {
 			return &ValidationError{Name: "video_range_type", err: fmt.Errorf(`store: validator failed for field "MediaStream.video_range_type": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.AudioSpatialFormat(); ok {
-		if err := mediastream.AudioSpatialFormatValidator(v); err != nil {
-			return &ValidationError{Name: "audio_spatial_format", err: fmt.Errorf(`store: validator failed for field "MediaStream.audio_spatial_format": %w`, err)}
 		}
 	}
 	if _u.mutation.SourceCleared() && len(_u.mutation.SourceIDs()) > 0 {
@@ -1292,23 +576,11 @@ func (_u *MediaStreamUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	if value, ok := _u.mutation.Kind(); ok {
 		_spec.SetField(mediastream.FieldKind, field.TypeEnum, value)
 	}
-	if value, ok := _u.mutation.VideoRange(); ok {
-		_spec.SetField(mediastream.FieldVideoRange, field.TypeEnum, value)
-	}
-	if _u.mutation.VideoRangeCleared() {
-		_spec.ClearField(mediastream.FieldVideoRange, field.TypeEnum)
-	}
 	if value, ok := _u.mutation.VideoRangeType(); ok {
 		_spec.SetField(mediastream.FieldVideoRangeType, field.TypeEnum, value)
 	}
 	if _u.mutation.VideoRangeTypeCleared() {
 		_spec.ClearField(mediastream.FieldVideoRangeType, field.TypeEnum)
-	}
-	if value, ok := _u.mutation.AudioSpatialFormat(); ok {
-		_spec.SetField(mediastream.FieldAudioSpatialFormat, field.TypeEnum, value)
-	}
-	if _u.mutation.AudioSpatialFormatCleared() {
-		_spec.ClearField(mediastream.FieldAudioSpatialFormat, field.TypeEnum)
 	}
 	if value, ok := _u.mutation.Index(); ok {
 		_spec.SetField(mediastream.FieldIndex, field.TypeInt32, value)
@@ -1321,12 +593,6 @@ func (_u *MediaStreamUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	}
 	if _u.mutation.CodecCleared() {
 		_spec.ClearField(mediastream.FieldCodec, field.TypeString)
-	}
-	if value, ok := _u.mutation.CodecTag(); ok {
-		_spec.SetField(mediastream.FieldCodecTag, field.TypeString, value)
-	}
-	if _u.mutation.CodecTagCleared() {
-		_spec.ClearField(mediastream.FieldCodecTag, field.TypeString)
 	}
 	if value, ok := _u.mutation.Profile(); ok {
 		_spec.SetField(mediastream.FieldProfile, field.TypeString, value)
@@ -1346,12 +612,6 @@ func (_u *MediaStreamUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	if _u.mutation.TitleCleared() {
 		_spec.ClearField(mediastream.FieldTitle, field.TypeString)
 	}
-	if value, ok := _u.mutation.Comment(); ok {
-		_spec.SetField(mediastream.FieldComment, field.TypeString, value)
-	}
-	if _u.mutation.CommentCleared() {
-		_spec.ClearField(mediastream.FieldComment, field.TypeString)
-	}
 	if value, ok := _u.mutation.Path(); ok {
 		_spec.SetField(mediastream.FieldPath, field.TypeString, value)
 	}
@@ -1364,132 +624,6 @@ func (_u *MediaStreamUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	if _u.mutation.PixelFormatCleared() {
 		_spec.ClearField(mediastream.FieldPixelFormat, field.TypeString)
 	}
-	if value, ok := _u.mutation.AspectRatio(); ok {
-		_spec.SetField(mediastream.FieldAspectRatio, field.TypeString, value)
-	}
-	if _u.mutation.AspectRatioCleared() {
-		_spec.ClearField(mediastream.FieldAspectRatio, field.TypeString)
-	}
-	if value, ok := _u.mutation.ChannelLayout(); ok {
-		_spec.SetField(mediastream.FieldChannelLayout, field.TypeString, value)
-	}
-	if _u.mutation.ChannelLayoutCleared() {
-		_spec.ClearField(mediastream.FieldChannelLayout, field.TypeString)
-	}
-	if value, ok := _u.mutation.TimeBase(); ok {
-		_spec.SetField(mediastream.FieldTimeBase, field.TypeString, value)
-	}
-	if _u.mutation.TimeBaseCleared() {
-		_spec.ClearField(mediastream.FieldTimeBase, field.TypeString)
-	}
-	if value, ok := _u.mutation.NalLengthSize(); ok {
-		_spec.SetField(mediastream.FieldNalLengthSize, field.TypeString, value)
-	}
-	if _u.mutation.NalLengthSizeCleared() {
-		_spec.ClearField(mediastream.FieldNalLengthSize, field.TypeString)
-	}
-	if value, ok := _u.mutation.VideoDoviTitle(); ok {
-		_spec.SetField(mediastream.FieldVideoDoviTitle, field.TypeString, value)
-	}
-	if _u.mutation.VideoDoviTitleCleared() {
-		_spec.ClearField(mediastream.FieldVideoDoviTitle, field.TypeString)
-	}
-	if value, ok := _u.mutation.ColorRange(); ok {
-		_spec.SetField(mediastream.FieldColorRange, field.TypeString, value)
-	}
-	if _u.mutation.ColorRangeCleared() {
-		_spec.ClearField(mediastream.FieldColorRange, field.TypeString)
-	}
-	if value, ok := _u.mutation.ColorSpace(); ok {
-		_spec.SetField(mediastream.FieldColorSpace, field.TypeString, value)
-	}
-	if _u.mutation.ColorSpaceCleared() {
-		_spec.ClearField(mediastream.FieldColorSpace, field.TypeString)
-	}
-	if value, ok := _u.mutation.ColorTransfer(); ok {
-		_spec.SetField(mediastream.FieldColorTransfer, field.TypeString, value)
-	}
-	if _u.mutation.ColorTransferCleared() {
-		_spec.ClearField(mediastream.FieldColorTransfer, field.TypeString)
-	}
-	if value, ok := _u.mutation.ColorPrimaries(); ok {
-		_spec.SetField(mediastream.FieldColorPrimaries, field.TypeString, value)
-	}
-	if _u.mutation.ColorPrimariesCleared() {
-		_spec.ClearField(mediastream.FieldColorPrimaries, field.TypeString)
-	}
-	if value, ok := _u.mutation.DvVersionMajor(); ok {
-		_spec.SetField(mediastream.FieldDvVersionMajor, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedDvVersionMajor(); ok {
-		_spec.AddField(mediastream.FieldDvVersionMajor, field.TypeInt32, value)
-	}
-	if _u.mutation.DvVersionMajorCleared() {
-		_spec.ClearField(mediastream.FieldDvVersionMajor, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.DvVersionMinor(); ok {
-		_spec.SetField(mediastream.FieldDvVersionMinor, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedDvVersionMinor(); ok {
-		_spec.AddField(mediastream.FieldDvVersionMinor, field.TypeInt32, value)
-	}
-	if _u.mutation.DvVersionMinorCleared() {
-		_spec.ClearField(mediastream.FieldDvVersionMinor, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.DvProfile(); ok {
-		_spec.SetField(mediastream.FieldDvProfile, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedDvProfile(); ok {
-		_spec.AddField(mediastream.FieldDvProfile, field.TypeInt32, value)
-	}
-	if _u.mutation.DvProfileCleared() {
-		_spec.ClearField(mediastream.FieldDvProfile, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.DvLevel(); ok {
-		_spec.SetField(mediastream.FieldDvLevel, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedDvLevel(); ok {
-		_spec.AddField(mediastream.FieldDvLevel, field.TypeInt32, value)
-	}
-	if _u.mutation.DvLevelCleared() {
-		_spec.ClearField(mediastream.FieldDvLevel, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.RpuPresentFlag(); ok {
-		_spec.SetField(mediastream.FieldRpuPresentFlag, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedRpuPresentFlag(); ok {
-		_spec.AddField(mediastream.FieldRpuPresentFlag, field.TypeInt32, value)
-	}
-	if _u.mutation.RpuPresentFlagCleared() {
-		_spec.ClearField(mediastream.FieldRpuPresentFlag, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.ElPresentFlag(); ok {
-		_spec.SetField(mediastream.FieldElPresentFlag, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedElPresentFlag(); ok {
-		_spec.AddField(mediastream.FieldElPresentFlag, field.TypeInt32, value)
-	}
-	if _u.mutation.ElPresentFlagCleared() {
-		_spec.ClearField(mediastream.FieldElPresentFlag, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.BlPresentFlag(); ok {
-		_spec.SetField(mediastream.FieldBlPresentFlag, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedBlPresentFlag(); ok {
-		_spec.AddField(mediastream.FieldBlPresentFlag, field.TypeInt32, value)
-	}
-	if _u.mutation.BlPresentFlagCleared() {
-		_spec.ClearField(mediastream.FieldBlPresentFlag, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.DvBlSignalCompatibilityID(); ok {
-		_spec.SetField(mediastream.FieldDvBlSignalCompatibilityID, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedDvBlSignalCompatibilityID(); ok {
-		_spec.AddField(mediastream.FieldDvBlSignalCompatibilityID, field.TypeInt32, value)
-	}
-	if _u.mutation.DvBlSignalCompatibilityIDCleared() {
-		_spec.ClearField(mediastream.FieldDvBlSignalCompatibilityID, field.TypeInt32)
-	}
 	if value, ok := _u.mutation.BitRate(); ok {
 		_spec.SetField(mediastream.FieldBitRate, field.TypeInt32, value)
 	}
@@ -1498,33 +632,6 @@ func (_u *MediaStreamUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	}
 	if _u.mutation.BitRateCleared() {
 		_spec.ClearField(mediastream.FieldBitRate, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.BitDepth(); ok {
-		_spec.SetField(mediastream.FieldBitDepth, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedBitDepth(); ok {
-		_spec.AddField(mediastream.FieldBitDepth, field.TypeInt32, value)
-	}
-	if _u.mutation.BitDepthCleared() {
-		_spec.ClearField(mediastream.FieldBitDepth, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.RefFrames(); ok {
-		_spec.SetField(mediastream.FieldRefFrames, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedRefFrames(); ok {
-		_spec.AddField(mediastream.FieldRefFrames, field.TypeInt32, value)
-	}
-	if _u.mutation.RefFramesCleared() {
-		_spec.ClearField(mediastream.FieldRefFrames, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.PacketLength(); ok {
-		_spec.SetField(mediastream.FieldPacketLength, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedPacketLength(); ok {
-		_spec.AddField(mediastream.FieldPacketLength, field.TypeInt32, value)
-	}
-	if _u.mutation.PacketLengthCleared() {
-		_spec.ClearField(mediastream.FieldPacketLength, field.TypeInt32)
 	}
 	if value, ok := _u.mutation.Channels(); ok {
 		_spec.SetField(mediastream.FieldChannels, field.TypeInt32, value)
@@ -1562,24 +669,6 @@ func (_u *MediaStreamUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	if _u.mutation.HeightCleared() {
 		_spec.ClearField(mediastream.FieldHeight, field.TypeInt32)
 	}
-	if value, ok := _u.mutation.Rotation(); ok {
-		_spec.SetField(mediastream.FieldRotation, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedRotation(); ok {
-		_spec.AddField(mediastream.FieldRotation, field.TypeInt32, value)
-	}
-	if _u.mutation.RotationCleared() {
-		_spec.ClearField(mediastream.FieldRotation, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.Score(); ok {
-		_spec.SetField(mediastream.FieldScore, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedScore(); ok {
-		_spec.AddField(mediastream.FieldScore, field.TypeInt32, value)
-	}
-	if _u.mutation.ScoreCleared() {
-		_spec.ClearField(mediastream.FieldScore, field.TypeInt32)
-	}
 	if value, ok := _u.mutation.Level(); ok {
 		_spec.SetField(mediastream.FieldLevel, field.TypeFloat64, value)
 	}
@@ -1588,33 +677,6 @@ func (_u *MediaStreamUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	}
 	if _u.mutation.LevelCleared() {
 		_spec.ClearField(mediastream.FieldLevel, field.TypeFloat64)
-	}
-	if value, ok := _u.mutation.AverageFrameRate(); ok {
-		_spec.SetField(mediastream.FieldAverageFrameRate, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.AddedAverageFrameRate(); ok {
-		_spec.AddField(mediastream.FieldAverageFrameRate, field.TypeFloat64, value)
-	}
-	if _u.mutation.AverageFrameRateCleared() {
-		_spec.ClearField(mediastream.FieldAverageFrameRate, field.TypeFloat64)
-	}
-	if value, ok := _u.mutation.RealFrameRate(); ok {
-		_spec.SetField(mediastream.FieldRealFrameRate, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.AddedRealFrameRate(); ok {
-		_spec.AddField(mediastream.FieldRealFrameRate, field.TypeFloat64, value)
-	}
-	if _u.mutation.RealFrameRateCleared() {
-		_spec.ClearField(mediastream.FieldRealFrameRate, field.TypeFloat64)
-	}
-	if value, ok := _u.mutation.ReferenceFrameRate(); ok {
-		_spec.SetField(mediastream.FieldReferenceFrameRate, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.AddedReferenceFrameRate(); ok {
-		_spec.AddField(mediastream.FieldReferenceFrameRate, field.TypeFloat64, value)
-	}
-	if _u.mutation.ReferenceFrameRateCleared() {
-		_spec.ClearField(mediastream.FieldReferenceFrameRate, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.IsDefault(); ok {
 		_spec.SetField(mediastream.FieldIsDefault, field.TypeBool, value)
@@ -1630,9 +692,6 @@ func (_u *MediaStreamUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	}
 	if value, ok := _u.mutation.IsAnamorphic(); ok {
 		_spec.SetField(mediastream.FieldIsAnamorphic, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.IsAvc(); ok {
-		_spec.SetField(mediastream.FieldIsAvc, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.IsHearingImpaired(); ok {
 		_spec.SetField(mediastream.FieldIsHearingImpaired, field.TypeBool, value)
@@ -1734,26 +793,6 @@ func (_u *MediaStreamUpdateOne) SetNillableKind(v *mediastream.Kind) *MediaStrea
 	return _u
 }
 
-// SetVideoRange sets the "video_range" field.
-func (_u *MediaStreamUpdateOne) SetVideoRange(v mediastream.VideoRange) *MediaStreamUpdateOne {
-	_u.mutation.SetVideoRange(v)
-	return _u
-}
-
-// SetNillableVideoRange sets the "video_range" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableVideoRange(v *mediastream.VideoRange) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetVideoRange(*v)
-	}
-	return _u
-}
-
-// ClearVideoRange clears the value of the "video_range" field.
-func (_u *MediaStreamUpdateOne) ClearVideoRange() *MediaStreamUpdateOne {
-	_u.mutation.ClearVideoRange()
-	return _u
-}
-
 // SetVideoRangeType sets the "video_range_type" field.
 func (_u *MediaStreamUpdateOne) SetVideoRangeType(v mediastream.VideoRangeType) *MediaStreamUpdateOne {
 	_u.mutation.SetVideoRangeType(v)
@@ -1771,26 +810,6 @@ func (_u *MediaStreamUpdateOne) SetNillableVideoRangeType(v *mediastream.VideoRa
 // ClearVideoRangeType clears the value of the "video_range_type" field.
 func (_u *MediaStreamUpdateOne) ClearVideoRangeType() *MediaStreamUpdateOne {
 	_u.mutation.ClearVideoRangeType()
-	return _u
-}
-
-// SetAudioSpatialFormat sets the "audio_spatial_format" field.
-func (_u *MediaStreamUpdateOne) SetAudioSpatialFormat(v mediastream.AudioSpatialFormat) *MediaStreamUpdateOne {
-	_u.mutation.SetAudioSpatialFormat(v)
-	return _u
-}
-
-// SetNillableAudioSpatialFormat sets the "audio_spatial_format" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableAudioSpatialFormat(v *mediastream.AudioSpatialFormat) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetAudioSpatialFormat(*v)
-	}
-	return _u
-}
-
-// ClearAudioSpatialFormat clears the value of the "audio_spatial_format" field.
-func (_u *MediaStreamUpdateOne) ClearAudioSpatialFormat() *MediaStreamUpdateOne {
-	_u.mutation.ClearAudioSpatialFormat()
 	return _u
 }
 
@@ -1832,26 +851,6 @@ func (_u *MediaStreamUpdateOne) SetNillableCodec(v *string) *MediaStreamUpdateOn
 // ClearCodec clears the value of the "codec" field.
 func (_u *MediaStreamUpdateOne) ClearCodec() *MediaStreamUpdateOne {
 	_u.mutation.ClearCodec()
-	return _u
-}
-
-// SetCodecTag sets the "codec_tag" field.
-func (_u *MediaStreamUpdateOne) SetCodecTag(v string) *MediaStreamUpdateOne {
-	_u.mutation.SetCodecTag(v)
-	return _u
-}
-
-// SetNillableCodecTag sets the "codec_tag" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableCodecTag(v *string) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetCodecTag(*v)
-	}
-	return _u
-}
-
-// ClearCodecTag clears the value of the "codec_tag" field.
-func (_u *MediaStreamUpdateOne) ClearCodecTag() *MediaStreamUpdateOne {
-	_u.mutation.ClearCodecTag()
 	return _u
 }
 
@@ -1915,26 +914,6 @@ func (_u *MediaStreamUpdateOne) ClearTitle() *MediaStreamUpdateOne {
 	return _u
 }
 
-// SetComment sets the "comment" field.
-func (_u *MediaStreamUpdateOne) SetComment(v string) *MediaStreamUpdateOne {
-	_u.mutation.SetComment(v)
-	return _u
-}
-
-// SetNillableComment sets the "comment" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableComment(v *string) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetComment(*v)
-	}
-	return _u
-}
-
-// ClearComment clears the value of the "comment" field.
-func (_u *MediaStreamUpdateOne) ClearComment() *MediaStreamUpdateOne {
-	_u.mutation.ClearComment()
-	return _u
-}
-
 // SetPath sets the "path" field.
 func (_u *MediaStreamUpdateOne) SetPath(v string) *MediaStreamUpdateOne {
 	_u.mutation.SetPath(v)
@@ -1975,402 +954,6 @@ func (_u *MediaStreamUpdateOne) ClearPixelFormat() *MediaStreamUpdateOne {
 	return _u
 }
 
-// SetAspectRatio sets the "aspect_ratio" field.
-func (_u *MediaStreamUpdateOne) SetAspectRatio(v string) *MediaStreamUpdateOne {
-	_u.mutation.SetAspectRatio(v)
-	return _u
-}
-
-// SetNillableAspectRatio sets the "aspect_ratio" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableAspectRatio(v *string) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetAspectRatio(*v)
-	}
-	return _u
-}
-
-// ClearAspectRatio clears the value of the "aspect_ratio" field.
-func (_u *MediaStreamUpdateOne) ClearAspectRatio() *MediaStreamUpdateOne {
-	_u.mutation.ClearAspectRatio()
-	return _u
-}
-
-// SetChannelLayout sets the "channel_layout" field.
-func (_u *MediaStreamUpdateOne) SetChannelLayout(v string) *MediaStreamUpdateOne {
-	_u.mutation.SetChannelLayout(v)
-	return _u
-}
-
-// SetNillableChannelLayout sets the "channel_layout" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableChannelLayout(v *string) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetChannelLayout(*v)
-	}
-	return _u
-}
-
-// ClearChannelLayout clears the value of the "channel_layout" field.
-func (_u *MediaStreamUpdateOne) ClearChannelLayout() *MediaStreamUpdateOne {
-	_u.mutation.ClearChannelLayout()
-	return _u
-}
-
-// SetTimeBase sets the "time_base" field.
-func (_u *MediaStreamUpdateOne) SetTimeBase(v string) *MediaStreamUpdateOne {
-	_u.mutation.SetTimeBase(v)
-	return _u
-}
-
-// SetNillableTimeBase sets the "time_base" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableTimeBase(v *string) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetTimeBase(*v)
-	}
-	return _u
-}
-
-// ClearTimeBase clears the value of the "time_base" field.
-func (_u *MediaStreamUpdateOne) ClearTimeBase() *MediaStreamUpdateOne {
-	_u.mutation.ClearTimeBase()
-	return _u
-}
-
-// SetNalLengthSize sets the "nal_length_size" field.
-func (_u *MediaStreamUpdateOne) SetNalLengthSize(v string) *MediaStreamUpdateOne {
-	_u.mutation.SetNalLengthSize(v)
-	return _u
-}
-
-// SetNillableNalLengthSize sets the "nal_length_size" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableNalLengthSize(v *string) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetNalLengthSize(*v)
-	}
-	return _u
-}
-
-// ClearNalLengthSize clears the value of the "nal_length_size" field.
-func (_u *MediaStreamUpdateOne) ClearNalLengthSize() *MediaStreamUpdateOne {
-	_u.mutation.ClearNalLengthSize()
-	return _u
-}
-
-// SetVideoDoviTitle sets the "video_dovi_title" field.
-func (_u *MediaStreamUpdateOne) SetVideoDoviTitle(v string) *MediaStreamUpdateOne {
-	_u.mutation.SetVideoDoviTitle(v)
-	return _u
-}
-
-// SetNillableVideoDoviTitle sets the "video_dovi_title" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableVideoDoviTitle(v *string) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetVideoDoviTitle(*v)
-	}
-	return _u
-}
-
-// ClearVideoDoviTitle clears the value of the "video_dovi_title" field.
-func (_u *MediaStreamUpdateOne) ClearVideoDoviTitle() *MediaStreamUpdateOne {
-	_u.mutation.ClearVideoDoviTitle()
-	return _u
-}
-
-// SetColorRange sets the "color_range" field.
-func (_u *MediaStreamUpdateOne) SetColorRange(v string) *MediaStreamUpdateOne {
-	_u.mutation.SetColorRange(v)
-	return _u
-}
-
-// SetNillableColorRange sets the "color_range" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableColorRange(v *string) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetColorRange(*v)
-	}
-	return _u
-}
-
-// ClearColorRange clears the value of the "color_range" field.
-func (_u *MediaStreamUpdateOne) ClearColorRange() *MediaStreamUpdateOne {
-	_u.mutation.ClearColorRange()
-	return _u
-}
-
-// SetColorSpace sets the "color_space" field.
-func (_u *MediaStreamUpdateOne) SetColorSpace(v string) *MediaStreamUpdateOne {
-	_u.mutation.SetColorSpace(v)
-	return _u
-}
-
-// SetNillableColorSpace sets the "color_space" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableColorSpace(v *string) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetColorSpace(*v)
-	}
-	return _u
-}
-
-// ClearColorSpace clears the value of the "color_space" field.
-func (_u *MediaStreamUpdateOne) ClearColorSpace() *MediaStreamUpdateOne {
-	_u.mutation.ClearColorSpace()
-	return _u
-}
-
-// SetColorTransfer sets the "color_transfer" field.
-func (_u *MediaStreamUpdateOne) SetColorTransfer(v string) *MediaStreamUpdateOne {
-	_u.mutation.SetColorTransfer(v)
-	return _u
-}
-
-// SetNillableColorTransfer sets the "color_transfer" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableColorTransfer(v *string) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetColorTransfer(*v)
-	}
-	return _u
-}
-
-// ClearColorTransfer clears the value of the "color_transfer" field.
-func (_u *MediaStreamUpdateOne) ClearColorTransfer() *MediaStreamUpdateOne {
-	_u.mutation.ClearColorTransfer()
-	return _u
-}
-
-// SetColorPrimaries sets the "color_primaries" field.
-func (_u *MediaStreamUpdateOne) SetColorPrimaries(v string) *MediaStreamUpdateOne {
-	_u.mutation.SetColorPrimaries(v)
-	return _u
-}
-
-// SetNillableColorPrimaries sets the "color_primaries" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableColorPrimaries(v *string) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetColorPrimaries(*v)
-	}
-	return _u
-}
-
-// ClearColorPrimaries clears the value of the "color_primaries" field.
-func (_u *MediaStreamUpdateOne) ClearColorPrimaries() *MediaStreamUpdateOne {
-	_u.mutation.ClearColorPrimaries()
-	return _u
-}
-
-// SetDvVersionMajor sets the "dv_version_major" field.
-func (_u *MediaStreamUpdateOne) SetDvVersionMajor(v int32) *MediaStreamUpdateOne {
-	_u.mutation.ResetDvVersionMajor()
-	_u.mutation.SetDvVersionMajor(v)
-	return _u
-}
-
-// SetNillableDvVersionMajor sets the "dv_version_major" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableDvVersionMajor(v *int32) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetDvVersionMajor(*v)
-	}
-	return _u
-}
-
-// AddDvVersionMajor adds value to the "dv_version_major" field.
-func (_u *MediaStreamUpdateOne) AddDvVersionMajor(v int32) *MediaStreamUpdateOne {
-	_u.mutation.AddDvVersionMajor(v)
-	return _u
-}
-
-// ClearDvVersionMajor clears the value of the "dv_version_major" field.
-func (_u *MediaStreamUpdateOne) ClearDvVersionMajor() *MediaStreamUpdateOne {
-	_u.mutation.ClearDvVersionMajor()
-	return _u
-}
-
-// SetDvVersionMinor sets the "dv_version_minor" field.
-func (_u *MediaStreamUpdateOne) SetDvVersionMinor(v int32) *MediaStreamUpdateOne {
-	_u.mutation.ResetDvVersionMinor()
-	_u.mutation.SetDvVersionMinor(v)
-	return _u
-}
-
-// SetNillableDvVersionMinor sets the "dv_version_minor" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableDvVersionMinor(v *int32) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetDvVersionMinor(*v)
-	}
-	return _u
-}
-
-// AddDvVersionMinor adds value to the "dv_version_minor" field.
-func (_u *MediaStreamUpdateOne) AddDvVersionMinor(v int32) *MediaStreamUpdateOne {
-	_u.mutation.AddDvVersionMinor(v)
-	return _u
-}
-
-// ClearDvVersionMinor clears the value of the "dv_version_minor" field.
-func (_u *MediaStreamUpdateOne) ClearDvVersionMinor() *MediaStreamUpdateOne {
-	_u.mutation.ClearDvVersionMinor()
-	return _u
-}
-
-// SetDvProfile sets the "dv_profile" field.
-func (_u *MediaStreamUpdateOne) SetDvProfile(v int32) *MediaStreamUpdateOne {
-	_u.mutation.ResetDvProfile()
-	_u.mutation.SetDvProfile(v)
-	return _u
-}
-
-// SetNillableDvProfile sets the "dv_profile" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableDvProfile(v *int32) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetDvProfile(*v)
-	}
-	return _u
-}
-
-// AddDvProfile adds value to the "dv_profile" field.
-func (_u *MediaStreamUpdateOne) AddDvProfile(v int32) *MediaStreamUpdateOne {
-	_u.mutation.AddDvProfile(v)
-	return _u
-}
-
-// ClearDvProfile clears the value of the "dv_profile" field.
-func (_u *MediaStreamUpdateOne) ClearDvProfile() *MediaStreamUpdateOne {
-	_u.mutation.ClearDvProfile()
-	return _u
-}
-
-// SetDvLevel sets the "dv_level" field.
-func (_u *MediaStreamUpdateOne) SetDvLevel(v int32) *MediaStreamUpdateOne {
-	_u.mutation.ResetDvLevel()
-	_u.mutation.SetDvLevel(v)
-	return _u
-}
-
-// SetNillableDvLevel sets the "dv_level" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableDvLevel(v *int32) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetDvLevel(*v)
-	}
-	return _u
-}
-
-// AddDvLevel adds value to the "dv_level" field.
-func (_u *MediaStreamUpdateOne) AddDvLevel(v int32) *MediaStreamUpdateOne {
-	_u.mutation.AddDvLevel(v)
-	return _u
-}
-
-// ClearDvLevel clears the value of the "dv_level" field.
-func (_u *MediaStreamUpdateOne) ClearDvLevel() *MediaStreamUpdateOne {
-	_u.mutation.ClearDvLevel()
-	return _u
-}
-
-// SetRpuPresentFlag sets the "rpu_present_flag" field.
-func (_u *MediaStreamUpdateOne) SetRpuPresentFlag(v int32) *MediaStreamUpdateOne {
-	_u.mutation.ResetRpuPresentFlag()
-	_u.mutation.SetRpuPresentFlag(v)
-	return _u
-}
-
-// SetNillableRpuPresentFlag sets the "rpu_present_flag" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableRpuPresentFlag(v *int32) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetRpuPresentFlag(*v)
-	}
-	return _u
-}
-
-// AddRpuPresentFlag adds value to the "rpu_present_flag" field.
-func (_u *MediaStreamUpdateOne) AddRpuPresentFlag(v int32) *MediaStreamUpdateOne {
-	_u.mutation.AddRpuPresentFlag(v)
-	return _u
-}
-
-// ClearRpuPresentFlag clears the value of the "rpu_present_flag" field.
-func (_u *MediaStreamUpdateOne) ClearRpuPresentFlag() *MediaStreamUpdateOne {
-	_u.mutation.ClearRpuPresentFlag()
-	return _u
-}
-
-// SetElPresentFlag sets the "el_present_flag" field.
-func (_u *MediaStreamUpdateOne) SetElPresentFlag(v int32) *MediaStreamUpdateOne {
-	_u.mutation.ResetElPresentFlag()
-	_u.mutation.SetElPresentFlag(v)
-	return _u
-}
-
-// SetNillableElPresentFlag sets the "el_present_flag" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableElPresentFlag(v *int32) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetElPresentFlag(*v)
-	}
-	return _u
-}
-
-// AddElPresentFlag adds value to the "el_present_flag" field.
-func (_u *MediaStreamUpdateOne) AddElPresentFlag(v int32) *MediaStreamUpdateOne {
-	_u.mutation.AddElPresentFlag(v)
-	return _u
-}
-
-// ClearElPresentFlag clears the value of the "el_present_flag" field.
-func (_u *MediaStreamUpdateOne) ClearElPresentFlag() *MediaStreamUpdateOne {
-	_u.mutation.ClearElPresentFlag()
-	return _u
-}
-
-// SetBlPresentFlag sets the "bl_present_flag" field.
-func (_u *MediaStreamUpdateOne) SetBlPresentFlag(v int32) *MediaStreamUpdateOne {
-	_u.mutation.ResetBlPresentFlag()
-	_u.mutation.SetBlPresentFlag(v)
-	return _u
-}
-
-// SetNillableBlPresentFlag sets the "bl_present_flag" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableBlPresentFlag(v *int32) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetBlPresentFlag(*v)
-	}
-	return _u
-}
-
-// AddBlPresentFlag adds value to the "bl_present_flag" field.
-func (_u *MediaStreamUpdateOne) AddBlPresentFlag(v int32) *MediaStreamUpdateOne {
-	_u.mutation.AddBlPresentFlag(v)
-	return _u
-}
-
-// ClearBlPresentFlag clears the value of the "bl_present_flag" field.
-func (_u *MediaStreamUpdateOne) ClearBlPresentFlag() *MediaStreamUpdateOne {
-	_u.mutation.ClearBlPresentFlag()
-	return _u
-}
-
-// SetDvBlSignalCompatibilityID sets the "dv_bl_signal_compatibility_id" field.
-func (_u *MediaStreamUpdateOne) SetDvBlSignalCompatibilityID(v int32) *MediaStreamUpdateOne {
-	_u.mutation.ResetDvBlSignalCompatibilityID()
-	_u.mutation.SetDvBlSignalCompatibilityID(v)
-	return _u
-}
-
-// SetNillableDvBlSignalCompatibilityID sets the "dv_bl_signal_compatibility_id" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableDvBlSignalCompatibilityID(v *int32) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetDvBlSignalCompatibilityID(*v)
-	}
-	return _u
-}
-
-// AddDvBlSignalCompatibilityID adds value to the "dv_bl_signal_compatibility_id" field.
-func (_u *MediaStreamUpdateOne) AddDvBlSignalCompatibilityID(v int32) *MediaStreamUpdateOne {
-	_u.mutation.AddDvBlSignalCompatibilityID(v)
-	return _u
-}
-
-// ClearDvBlSignalCompatibilityID clears the value of the "dv_bl_signal_compatibility_id" field.
-func (_u *MediaStreamUpdateOne) ClearDvBlSignalCompatibilityID() *MediaStreamUpdateOne {
-	_u.mutation.ClearDvBlSignalCompatibilityID()
-	return _u
-}
-
 // SetBitRate sets the "bit_rate" field.
 func (_u *MediaStreamUpdateOne) SetBitRate(v int32) *MediaStreamUpdateOne {
 	_u.mutation.ResetBitRate()
@@ -2395,87 +978,6 @@ func (_u *MediaStreamUpdateOne) AddBitRate(v int32) *MediaStreamUpdateOne {
 // ClearBitRate clears the value of the "bit_rate" field.
 func (_u *MediaStreamUpdateOne) ClearBitRate() *MediaStreamUpdateOne {
 	_u.mutation.ClearBitRate()
-	return _u
-}
-
-// SetBitDepth sets the "bit_depth" field.
-func (_u *MediaStreamUpdateOne) SetBitDepth(v int32) *MediaStreamUpdateOne {
-	_u.mutation.ResetBitDepth()
-	_u.mutation.SetBitDepth(v)
-	return _u
-}
-
-// SetNillableBitDepth sets the "bit_depth" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableBitDepth(v *int32) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetBitDepth(*v)
-	}
-	return _u
-}
-
-// AddBitDepth adds value to the "bit_depth" field.
-func (_u *MediaStreamUpdateOne) AddBitDepth(v int32) *MediaStreamUpdateOne {
-	_u.mutation.AddBitDepth(v)
-	return _u
-}
-
-// ClearBitDepth clears the value of the "bit_depth" field.
-func (_u *MediaStreamUpdateOne) ClearBitDepth() *MediaStreamUpdateOne {
-	_u.mutation.ClearBitDepth()
-	return _u
-}
-
-// SetRefFrames sets the "ref_frames" field.
-func (_u *MediaStreamUpdateOne) SetRefFrames(v int32) *MediaStreamUpdateOne {
-	_u.mutation.ResetRefFrames()
-	_u.mutation.SetRefFrames(v)
-	return _u
-}
-
-// SetNillableRefFrames sets the "ref_frames" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableRefFrames(v *int32) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetRefFrames(*v)
-	}
-	return _u
-}
-
-// AddRefFrames adds value to the "ref_frames" field.
-func (_u *MediaStreamUpdateOne) AddRefFrames(v int32) *MediaStreamUpdateOne {
-	_u.mutation.AddRefFrames(v)
-	return _u
-}
-
-// ClearRefFrames clears the value of the "ref_frames" field.
-func (_u *MediaStreamUpdateOne) ClearRefFrames() *MediaStreamUpdateOne {
-	_u.mutation.ClearRefFrames()
-	return _u
-}
-
-// SetPacketLength sets the "packet_length" field.
-func (_u *MediaStreamUpdateOne) SetPacketLength(v int32) *MediaStreamUpdateOne {
-	_u.mutation.ResetPacketLength()
-	_u.mutation.SetPacketLength(v)
-	return _u
-}
-
-// SetNillablePacketLength sets the "packet_length" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillablePacketLength(v *int32) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetPacketLength(*v)
-	}
-	return _u
-}
-
-// AddPacketLength adds value to the "packet_length" field.
-func (_u *MediaStreamUpdateOne) AddPacketLength(v int32) *MediaStreamUpdateOne {
-	_u.mutation.AddPacketLength(v)
-	return _u
-}
-
-// ClearPacketLength clears the value of the "packet_length" field.
-func (_u *MediaStreamUpdateOne) ClearPacketLength() *MediaStreamUpdateOne {
-	_u.mutation.ClearPacketLength()
 	return _u
 }
 
@@ -2587,60 +1089,6 @@ func (_u *MediaStreamUpdateOne) ClearHeight() *MediaStreamUpdateOne {
 	return _u
 }
 
-// SetRotation sets the "rotation" field.
-func (_u *MediaStreamUpdateOne) SetRotation(v int32) *MediaStreamUpdateOne {
-	_u.mutation.ResetRotation()
-	_u.mutation.SetRotation(v)
-	return _u
-}
-
-// SetNillableRotation sets the "rotation" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableRotation(v *int32) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetRotation(*v)
-	}
-	return _u
-}
-
-// AddRotation adds value to the "rotation" field.
-func (_u *MediaStreamUpdateOne) AddRotation(v int32) *MediaStreamUpdateOne {
-	_u.mutation.AddRotation(v)
-	return _u
-}
-
-// ClearRotation clears the value of the "rotation" field.
-func (_u *MediaStreamUpdateOne) ClearRotation() *MediaStreamUpdateOne {
-	_u.mutation.ClearRotation()
-	return _u
-}
-
-// SetScore sets the "score" field.
-func (_u *MediaStreamUpdateOne) SetScore(v int32) *MediaStreamUpdateOne {
-	_u.mutation.ResetScore()
-	_u.mutation.SetScore(v)
-	return _u
-}
-
-// SetNillableScore sets the "score" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableScore(v *int32) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetScore(*v)
-	}
-	return _u
-}
-
-// AddScore adds value to the "score" field.
-func (_u *MediaStreamUpdateOne) AddScore(v int32) *MediaStreamUpdateOne {
-	_u.mutation.AddScore(v)
-	return _u
-}
-
-// ClearScore clears the value of the "score" field.
-func (_u *MediaStreamUpdateOne) ClearScore() *MediaStreamUpdateOne {
-	_u.mutation.ClearScore()
-	return _u
-}
-
 // SetLevel sets the "level" field.
 func (_u *MediaStreamUpdateOne) SetLevel(v float64) *MediaStreamUpdateOne {
 	_u.mutation.ResetLevel()
@@ -2665,87 +1113,6 @@ func (_u *MediaStreamUpdateOne) AddLevel(v float64) *MediaStreamUpdateOne {
 // ClearLevel clears the value of the "level" field.
 func (_u *MediaStreamUpdateOne) ClearLevel() *MediaStreamUpdateOne {
 	_u.mutation.ClearLevel()
-	return _u
-}
-
-// SetAverageFrameRate sets the "average_frame_rate" field.
-func (_u *MediaStreamUpdateOne) SetAverageFrameRate(v float64) *MediaStreamUpdateOne {
-	_u.mutation.ResetAverageFrameRate()
-	_u.mutation.SetAverageFrameRate(v)
-	return _u
-}
-
-// SetNillableAverageFrameRate sets the "average_frame_rate" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableAverageFrameRate(v *float64) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetAverageFrameRate(*v)
-	}
-	return _u
-}
-
-// AddAverageFrameRate adds value to the "average_frame_rate" field.
-func (_u *MediaStreamUpdateOne) AddAverageFrameRate(v float64) *MediaStreamUpdateOne {
-	_u.mutation.AddAverageFrameRate(v)
-	return _u
-}
-
-// ClearAverageFrameRate clears the value of the "average_frame_rate" field.
-func (_u *MediaStreamUpdateOne) ClearAverageFrameRate() *MediaStreamUpdateOne {
-	_u.mutation.ClearAverageFrameRate()
-	return _u
-}
-
-// SetRealFrameRate sets the "real_frame_rate" field.
-func (_u *MediaStreamUpdateOne) SetRealFrameRate(v float64) *MediaStreamUpdateOne {
-	_u.mutation.ResetRealFrameRate()
-	_u.mutation.SetRealFrameRate(v)
-	return _u
-}
-
-// SetNillableRealFrameRate sets the "real_frame_rate" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableRealFrameRate(v *float64) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetRealFrameRate(*v)
-	}
-	return _u
-}
-
-// AddRealFrameRate adds value to the "real_frame_rate" field.
-func (_u *MediaStreamUpdateOne) AddRealFrameRate(v float64) *MediaStreamUpdateOne {
-	_u.mutation.AddRealFrameRate(v)
-	return _u
-}
-
-// ClearRealFrameRate clears the value of the "real_frame_rate" field.
-func (_u *MediaStreamUpdateOne) ClearRealFrameRate() *MediaStreamUpdateOne {
-	_u.mutation.ClearRealFrameRate()
-	return _u
-}
-
-// SetReferenceFrameRate sets the "reference_frame_rate" field.
-func (_u *MediaStreamUpdateOne) SetReferenceFrameRate(v float64) *MediaStreamUpdateOne {
-	_u.mutation.ResetReferenceFrameRate()
-	_u.mutation.SetReferenceFrameRate(v)
-	return _u
-}
-
-// SetNillableReferenceFrameRate sets the "reference_frame_rate" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableReferenceFrameRate(v *float64) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetReferenceFrameRate(*v)
-	}
-	return _u
-}
-
-// AddReferenceFrameRate adds value to the "reference_frame_rate" field.
-func (_u *MediaStreamUpdateOne) AddReferenceFrameRate(v float64) *MediaStreamUpdateOne {
-	_u.mutation.AddReferenceFrameRate(v)
-	return _u
-}
-
-// ClearReferenceFrameRate clears the value of the "reference_frame_rate" field.
-func (_u *MediaStreamUpdateOne) ClearReferenceFrameRate() *MediaStreamUpdateOne {
-	_u.mutation.ClearReferenceFrameRate()
 	return _u
 }
 
@@ -2815,20 +1182,6 @@ func (_u *MediaStreamUpdateOne) SetIsAnamorphic(v bool) *MediaStreamUpdateOne {
 func (_u *MediaStreamUpdateOne) SetNillableIsAnamorphic(v *bool) *MediaStreamUpdateOne {
 	if v != nil {
 		_u.SetIsAnamorphic(*v)
-	}
-	return _u
-}
-
-// SetIsAvc sets the "is_avc" field.
-func (_u *MediaStreamUpdateOne) SetIsAvc(v bool) *MediaStreamUpdateOne {
-	_u.mutation.SetIsAvc(v)
-	return _u
-}
-
-// SetNillableIsAvc sets the "is_avc" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableIsAvc(v *bool) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetIsAvc(*v)
 	}
 	return _u
 }
@@ -2919,19 +1272,9 @@ func (_u *MediaStreamUpdateOne) check() error {
 			return &ValidationError{Name: "kind", err: fmt.Errorf(`store: validator failed for field "MediaStream.kind": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.VideoRange(); ok {
-		if err := mediastream.VideoRangeValidator(v); err != nil {
-			return &ValidationError{Name: "video_range", err: fmt.Errorf(`store: validator failed for field "MediaStream.video_range": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.VideoRangeType(); ok {
 		if err := mediastream.VideoRangeTypeValidator(v); err != nil {
 			return &ValidationError{Name: "video_range_type", err: fmt.Errorf(`store: validator failed for field "MediaStream.video_range_type": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.AudioSpatialFormat(); ok {
-		if err := mediastream.AudioSpatialFormatValidator(v); err != nil {
-			return &ValidationError{Name: "audio_spatial_format", err: fmt.Errorf(`store: validator failed for field "MediaStream.audio_spatial_format": %w`, err)}
 		}
 	}
 	if _u.mutation.SourceCleared() && len(_u.mutation.SourceIDs()) > 0 {
@@ -2978,23 +1321,11 @@ func (_u *MediaStreamUpdateOne) sqlSave(ctx context.Context) (_node *MediaStream
 	if value, ok := _u.mutation.Kind(); ok {
 		_spec.SetField(mediastream.FieldKind, field.TypeEnum, value)
 	}
-	if value, ok := _u.mutation.VideoRange(); ok {
-		_spec.SetField(mediastream.FieldVideoRange, field.TypeEnum, value)
-	}
-	if _u.mutation.VideoRangeCleared() {
-		_spec.ClearField(mediastream.FieldVideoRange, field.TypeEnum)
-	}
 	if value, ok := _u.mutation.VideoRangeType(); ok {
 		_spec.SetField(mediastream.FieldVideoRangeType, field.TypeEnum, value)
 	}
 	if _u.mutation.VideoRangeTypeCleared() {
 		_spec.ClearField(mediastream.FieldVideoRangeType, field.TypeEnum)
-	}
-	if value, ok := _u.mutation.AudioSpatialFormat(); ok {
-		_spec.SetField(mediastream.FieldAudioSpatialFormat, field.TypeEnum, value)
-	}
-	if _u.mutation.AudioSpatialFormatCleared() {
-		_spec.ClearField(mediastream.FieldAudioSpatialFormat, field.TypeEnum)
 	}
 	if value, ok := _u.mutation.Index(); ok {
 		_spec.SetField(mediastream.FieldIndex, field.TypeInt32, value)
@@ -3007,12 +1338,6 @@ func (_u *MediaStreamUpdateOne) sqlSave(ctx context.Context) (_node *MediaStream
 	}
 	if _u.mutation.CodecCleared() {
 		_spec.ClearField(mediastream.FieldCodec, field.TypeString)
-	}
-	if value, ok := _u.mutation.CodecTag(); ok {
-		_spec.SetField(mediastream.FieldCodecTag, field.TypeString, value)
-	}
-	if _u.mutation.CodecTagCleared() {
-		_spec.ClearField(mediastream.FieldCodecTag, field.TypeString)
 	}
 	if value, ok := _u.mutation.Profile(); ok {
 		_spec.SetField(mediastream.FieldProfile, field.TypeString, value)
@@ -3032,12 +1357,6 @@ func (_u *MediaStreamUpdateOne) sqlSave(ctx context.Context) (_node *MediaStream
 	if _u.mutation.TitleCleared() {
 		_spec.ClearField(mediastream.FieldTitle, field.TypeString)
 	}
-	if value, ok := _u.mutation.Comment(); ok {
-		_spec.SetField(mediastream.FieldComment, field.TypeString, value)
-	}
-	if _u.mutation.CommentCleared() {
-		_spec.ClearField(mediastream.FieldComment, field.TypeString)
-	}
 	if value, ok := _u.mutation.Path(); ok {
 		_spec.SetField(mediastream.FieldPath, field.TypeString, value)
 	}
@@ -3050,132 +1369,6 @@ func (_u *MediaStreamUpdateOne) sqlSave(ctx context.Context) (_node *MediaStream
 	if _u.mutation.PixelFormatCleared() {
 		_spec.ClearField(mediastream.FieldPixelFormat, field.TypeString)
 	}
-	if value, ok := _u.mutation.AspectRatio(); ok {
-		_spec.SetField(mediastream.FieldAspectRatio, field.TypeString, value)
-	}
-	if _u.mutation.AspectRatioCleared() {
-		_spec.ClearField(mediastream.FieldAspectRatio, field.TypeString)
-	}
-	if value, ok := _u.mutation.ChannelLayout(); ok {
-		_spec.SetField(mediastream.FieldChannelLayout, field.TypeString, value)
-	}
-	if _u.mutation.ChannelLayoutCleared() {
-		_spec.ClearField(mediastream.FieldChannelLayout, field.TypeString)
-	}
-	if value, ok := _u.mutation.TimeBase(); ok {
-		_spec.SetField(mediastream.FieldTimeBase, field.TypeString, value)
-	}
-	if _u.mutation.TimeBaseCleared() {
-		_spec.ClearField(mediastream.FieldTimeBase, field.TypeString)
-	}
-	if value, ok := _u.mutation.NalLengthSize(); ok {
-		_spec.SetField(mediastream.FieldNalLengthSize, field.TypeString, value)
-	}
-	if _u.mutation.NalLengthSizeCleared() {
-		_spec.ClearField(mediastream.FieldNalLengthSize, field.TypeString)
-	}
-	if value, ok := _u.mutation.VideoDoviTitle(); ok {
-		_spec.SetField(mediastream.FieldVideoDoviTitle, field.TypeString, value)
-	}
-	if _u.mutation.VideoDoviTitleCleared() {
-		_spec.ClearField(mediastream.FieldVideoDoviTitle, field.TypeString)
-	}
-	if value, ok := _u.mutation.ColorRange(); ok {
-		_spec.SetField(mediastream.FieldColorRange, field.TypeString, value)
-	}
-	if _u.mutation.ColorRangeCleared() {
-		_spec.ClearField(mediastream.FieldColorRange, field.TypeString)
-	}
-	if value, ok := _u.mutation.ColorSpace(); ok {
-		_spec.SetField(mediastream.FieldColorSpace, field.TypeString, value)
-	}
-	if _u.mutation.ColorSpaceCleared() {
-		_spec.ClearField(mediastream.FieldColorSpace, field.TypeString)
-	}
-	if value, ok := _u.mutation.ColorTransfer(); ok {
-		_spec.SetField(mediastream.FieldColorTransfer, field.TypeString, value)
-	}
-	if _u.mutation.ColorTransferCleared() {
-		_spec.ClearField(mediastream.FieldColorTransfer, field.TypeString)
-	}
-	if value, ok := _u.mutation.ColorPrimaries(); ok {
-		_spec.SetField(mediastream.FieldColorPrimaries, field.TypeString, value)
-	}
-	if _u.mutation.ColorPrimariesCleared() {
-		_spec.ClearField(mediastream.FieldColorPrimaries, field.TypeString)
-	}
-	if value, ok := _u.mutation.DvVersionMajor(); ok {
-		_spec.SetField(mediastream.FieldDvVersionMajor, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedDvVersionMajor(); ok {
-		_spec.AddField(mediastream.FieldDvVersionMajor, field.TypeInt32, value)
-	}
-	if _u.mutation.DvVersionMajorCleared() {
-		_spec.ClearField(mediastream.FieldDvVersionMajor, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.DvVersionMinor(); ok {
-		_spec.SetField(mediastream.FieldDvVersionMinor, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedDvVersionMinor(); ok {
-		_spec.AddField(mediastream.FieldDvVersionMinor, field.TypeInt32, value)
-	}
-	if _u.mutation.DvVersionMinorCleared() {
-		_spec.ClearField(mediastream.FieldDvVersionMinor, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.DvProfile(); ok {
-		_spec.SetField(mediastream.FieldDvProfile, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedDvProfile(); ok {
-		_spec.AddField(mediastream.FieldDvProfile, field.TypeInt32, value)
-	}
-	if _u.mutation.DvProfileCleared() {
-		_spec.ClearField(mediastream.FieldDvProfile, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.DvLevel(); ok {
-		_spec.SetField(mediastream.FieldDvLevel, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedDvLevel(); ok {
-		_spec.AddField(mediastream.FieldDvLevel, field.TypeInt32, value)
-	}
-	if _u.mutation.DvLevelCleared() {
-		_spec.ClearField(mediastream.FieldDvLevel, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.RpuPresentFlag(); ok {
-		_spec.SetField(mediastream.FieldRpuPresentFlag, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedRpuPresentFlag(); ok {
-		_spec.AddField(mediastream.FieldRpuPresentFlag, field.TypeInt32, value)
-	}
-	if _u.mutation.RpuPresentFlagCleared() {
-		_spec.ClearField(mediastream.FieldRpuPresentFlag, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.ElPresentFlag(); ok {
-		_spec.SetField(mediastream.FieldElPresentFlag, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedElPresentFlag(); ok {
-		_spec.AddField(mediastream.FieldElPresentFlag, field.TypeInt32, value)
-	}
-	if _u.mutation.ElPresentFlagCleared() {
-		_spec.ClearField(mediastream.FieldElPresentFlag, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.BlPresentFlag(); ok {
-		_spec.SetField(mediastream.FieldBlPresentFlag, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedBlPresentFlag(); ok {
-		_spec.AddField(mediastream.FieldBlPresentFlag, field.TypeInt32, value)
-	}
-	if _u.mutation.BlPresentFlagCleared() {
-		_spec.ClearField(mediastream.FieldBlPresentFlag, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.DvBlSignalCompatibilityID(); ok {
-		_spec.SetField(mediastream.FieldDvBlSignalCompatibilityID, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedDvBlSignalCompatibilityID(); ok {
-		_spec.AddField(mediastream.FieldDvBlSignalCompatibilityID, field.TypeInt32, value)
-	}
-	if _u.mutation.DvBlSignalCompatibilityIDCleared() {
-		_spec.ClearField(mediastream.FieldDvBlSignalCompatibilityID, field.TypeInt32)
-	}
 	if value, ok := _u.mutation.BitRate(); ok {
 		_spec.SetField(mediastream.FieldBitRate, field.TypeInt32, value)
 	}
@@ -3184,33 +1377,6 @@ func (_u *MediaStreamUpdateOne) sqlSave(ctx context.Context) (_node *MediaStream
 	}
 	if _u.mutation.BitRateCleared() {
 		_spec.ClearField(mediastream.FieldBitRate, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.BitDepth(); ok {
-		_spec.SetField(mediastream.FieldBitDepth, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedBitDepth(); ok {
-		_spec.AddField(mediastream.FieldBitDepth, field.TypeInt32, value)
-	}
-	if _u.mutation.BitDepthCleared() {
-		_spec.ClearField(mediastream.FieldBitDepth, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.RefFrames(); ok {
-		_spec.SetField(mediastream.FieldRefFrames, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedRefFrames(); ok {
-		_spec.AddField(mediastream.FieldRefFrames, field.TypeInt32, value)
-	}
-	if _u.mutation.RefFramesCleared() {
-		_spec.ClearField(mediastream.FieldRefFrames, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.PacketLength(); ok {
-		_spec.SetField(mediastream.FieldPacketLength, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedPacketLength(); ok {
-		_spec.AddField(mediastream.FieldPacketLength, field.TypeInt32, value)
-	}
-	if _u.mutation.PacketLengthCleared() {
-		_spec.ClearField(mediastream.FieldPacketLength, field.TypeInt32)
 	}
 	if value, ok := _u.mutation.Channels(); ok {
 		_spec.SetField(mediastream.FieldChannels, field.TypeInt32, value)
@@ -3248,24 +1414,6 @@ func (_u *MediaStreamUpdateOne) sqlSave(ctx context.Context) (_node *MediaStream
 	if _u.mutation.HeightCleared() {
 		_spec.ClearField(mediastream.FieldHeight, field.TypeInt32)
 	}
-	if value, ok := _u.mutation.Rotation(); ok {
-		_spec.SetField(mediastream.FieldRotation, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedRotation(); ok {
-		_spec.AddField(mediastream.FieldRotation, field.TypeInt32, value)
-	}
-	if _u.mutation.RotationCleared() {
-		_spec.ClearField(mediastream.FieldRotation, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.Score(); ok {
-		_spec.SetField(mediastream.FieldScore, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedScore(); ok {
-		_spec.AddField(mediastream.FieldScore, field.TypeInt32, value)
-	}
-	if _u.mutation.ScoreCleared() {
-		_spec.ClearField(mediastream.FieldScore, field.TypeInt32)
-	}
 	if value, ok := _u.mutation.Level(); ok {
 		_spec.SetField(mediastream.FieldLevel, field.TypeFloat64, value)
 	}
@@ -3274,33 +1422,6 @@ func (_u *MediaStreamUpdateOne) sqlSave(ctx context.Context) (_node *MediaStream
 	}
 	if _u.mutation.LevelCleared() {
 		_spec.ClearField(mediastream.FieldLevel, field.TypeFloat64)
-	}
-	if value, ok := _u.mutation.AverageFrameRate(); ok {
-		_spec.SetField(mediastream.FieldAverageFrameRate, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.AddedAverageFrameRate(); ok {
-		_spec.AddField(mediastream.FieldAverageFrameRate, field.TypeFloat64, value)
-	}
-	if _u.mutation.AverageFrameRateCleared() {
-		_spec.ClearField(mediastream.FieldAverageFrameRate, field.TypeFloat64)
-	}
-	if value, ok := _u.mutation.RealFrameRate(); ok {
-		_spec.SetField(mediastream.FieldRealFrameRate, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.AddedRealFrameRate(); ok {
-		_spec.AddField(mediastream.FieldRealFrameRate, field.TypeFloat64, value)
-	}
-	if _u.mutation.RealFrameRateCleared() {
-		_spec.ClearField(mediastream.FieldRealFrameRate, field.TypeFloat64)
-	}
-	if value, ok := _u.mutation.ReferenceFrameRate(); ok {
-		_spec.SetField(mediastream.FieldReferenceFrameRate, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.AddedReferenceFrameRate(); ok {
-		_spec.AddField(mediastream.FieldReferenceFrameRate, field.TypeFloat64, value)
-	}
-	if _u.mutation.ReferenceFrameRateCleared() {
-		_spec.ClearField(mediastream.FieldReferenceFrameRate, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.IsDefault(); ok {
 		_spec.SetField(mediastream.FieldIsDefault, field.TypeBool, value)
@@ -3316,9 +1437,6 @@ func (_u *MediaStreamUpdateOne) sqlSave(ctx context.Context) (_node *MediaStream
 	}
 	if value, ok := _u.mutation.IsAnamorphic(); ok {
 		_spec.SetField(mediastream.FieldIsAnamorphic, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.IsAvc(); ok {
-		_spec.SetField(mediastream.FieldIsAvc, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.IsHearingImpaired(); ok {
 		_spec.SetField(mediastream.FieldIsHearingImpaired, field.TypeBool, value)

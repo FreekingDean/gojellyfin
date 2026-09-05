@@ -3,7 +3,6 @@
 package mediasource
 
 import (
-	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -23,26 +22,10 @@ const (
 	FieldItemID = "item_id"
 	// FieldLibraryID holds the string denoting the library_id field in the database.
 	FieldLibraryID = "library_id"
-	// FieldProtocol holds the string denoting the protocol field in the database.
-	FieldProtocol = "protocol"
-	// FieldEncoderProtocol holds the string denoting the encoder_protocol field in the database.
-	FieldEncoderProtocol = "encoder_protocol"
-	// FieldKind holds the string denoting the kind field in the database.
-	FieldKind = "kind"
-	// FieldTimestamp holds the string denoting the timestamp field in the database.
-	FieldTimestamp = "timestamp"
-	// FieldVideoType holds the string denoting the video_type field in the database.
-	FieldVideoType = "video_type"
-	// FieldIsoType holds the string denoting the iso_type field in the database.
-	FieldIsoType = "iso_type"
-	// FieldVideo3dFormat holds the string denoting the video_3d_format field in the database.
-	FieldVideo3dFormat = "video_3d_format"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
 	// FieldPath holds the string denoting the path field in the database.
 	FieldPath = "path"
-	// FieldEncoderPath holds the string denoting the encoder_path field in the database.
-	FieldEncoderPath = "encoder_path"
 	// FieldContainer holds the string denoting the container field in the database.
 	FieldContainer = "container"
 	// FieldSize holds the string denoting the size field in the database.
@@ -55,22 +38,6 @@ const (
 	FieldDateModified = "date_modified"
 	// FieldProbedAt holds the string denoting the probed_at field in the database.
 	FieldProbedAt = "probed_at"
-	// FieldReadAtNativeFramerate holds the string denoting the read_at_native_framerate field in the database.
-	FieldReadAtNativeFramerate = "read_at_native_framerate"
-	// FieldIgnoreDts holds the string denoting the ignore_dts field in the database.
-	FieldIgnoreDts = "ignore_dts"
-	// FieldIgnoreIndex holds the string denoting the ignore_index field in the database.
-	FieldIgnoreIndex = "ignore_index"
-	// FieldGenPtsInput holds the string denoting the gen_pts_input field in the database.
-	FieldGenPtsInput = "gen_pts_input"
-	// FieldHasSegments holds the string denoting the has_segments field in the database.
-	FieldHasSegments = "has_segments"
-	// FieldDefaultAudioStreamIndex holds the string denoting the default_audio_stream_index field in the database.
-	FieldDefaultAudioStreamIndex = "default_audio_stream_index"
-	// FieldDefaultSubtitleStreamIndex holds the string denoting the default_subtitle_stream_index field in the database.
-	FieldDefaultSubtitleStreamIndex = "default_subtitle_stream_index"
-	// FieldFormats holds the string denoting the formats field in the database.
-	FieldFormats = "formats"
 	// EdgeItem holds the string denoting the item edge name in mutations.
 	EdgeItem = "item"
 	// EdgeLibrary holds the string denoting the library edge name in mutations.
@@ -109,30 +76,14 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldItemID,
 	FieldLibraryID,
-	FieldProtocol,
-	FieldEncoderProtocol,
-	FieldKind,
-	FieldTimestamp,
-	FieldVideoType,
-	FieldIsoType,
-	FieldVideo3dFormat,
 	FieldName,
 	FieldPath,
-	FieldEncoderPath,
 	FieldContainer,
 	FieldSize,
 	FieldRunTimeTicks,
 	FieldBitrate,
 	FieldDateModified,
 	FieldProbedAt,
-	FieldReadAtNativeFramerate,
-	FieldIgnoreDts,
-	FieldIgnoreIndex,
-	FieldGenPtsInput,
-	FieldHasSegments,
-	FieldDefaultAudioStreamIndex,
-	FieldDefaultSubtitleStreamIndex,
-	FieldFormats,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -152,201 +103,7 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
-	// DefaultReadAtNativeFramerate holds the default value on creation for the "read_at_native_framerate" field.
-	DefaultReadAtNativeFramerate bool
-	// DefaultIgnoreDts holds the default value on creation for the "ignore_dts" field.
-	DefaultIgnoreDts bool
-	// DefaultIgnoreIndex holds the default value on creation for the "ignore_index" field.
-	DefaultIgnoreIndex bool
-	// DefaultGenPtsInput holds the default value on creation for the "gen_pts_input" field.
-	DefaultGenPtsInput bool
-	// DefaultHasSegments holds the default value on creation for the "has_segments" field.
-	DefaultHasSegments bool
 )
-
-// Protocol defines the type for the "protocol" enum field.
-type Protocol string
-
-// ProtocolFile is the default value of the Protocol enum.
-const DefaultProtocol = ProtocolFile
-
-// Protocol values.
-const (
-	ProtocolFile Protocol = "File"
-	ProtocolHttp Protocol = "Http"
-	ProtocolRtmp Protocol = "Rtmp"
-	ProtocolRtsp Protocol = "Rtsp"
-	ProtocolUdp  Protocol = "Udp"
-	ProtocolRtp  Protocol = "Rtp"
-	ProtocolFtp  Protocol = "Ftp"
-)
-
-func (pr Protocol) String() string {
-	return string(pr)
-}
-
-// ProtocolValidator is a validator for the "protocol" field enum values. It is called by the builders before save.
-func ProtocolValidator(pr Protocol) error {
-	switch pr {
-	case ProtocolFile, ProtocolHttp, ProtocolRtmp, ProtocolRtsp, ProtocolUdp, ProtocolRtp, ProtocolFtp:
-		return nil
-	default:
-		return fmt.Errorf("mediasource: invalid enum value for protocol field: %q", pr)
-	}
-}
-
-// EncoderProtocol defines the type for the "encoder_protocol" enum field.
-type EncoderProtocol string
-
-// EncoderProtocol values.
-const (
-	EncoderProtocolFile EncoderProtocol = "File"
-	EncoderProtocolHttp EncoderProtocol = "Http"
-	EncoderProtocolRtmp EncoderProtocol = "Rtmp"
-	EncoderProtocolRtsp EncoderProtocol = "Rtsp"
-	EncoderProtocolUdp  EncoderProtocol = "Udp"
-	EncoderProtocolRtp  EncoderProtocol = "Rtp"
-	EncoderProtocolFtp  EncoderProtocol = "Ftp"
-)
-
-func (ep EncoderProtocol) String() string {
-	return string(ep)
-}
-
-// EncoderProtocolValidator is a validator for the "encoder_protocol" field enum values. It is called by the builders before save.
-func EncoderProtocolValidator(ep EncoderProtocol) error {
-	switch ep {
-	case EncoderProtocolFile, EncoderProtocolHttp, EncoderProtocolRtmp, EncoderProtocolRtsp, EncoderProtocolUdp, EncoderProtocolRtp, EncoderProtocolFtp:
-		return nil
-	default:
-		return fmt.Errorf("mediasource: invalid enum value for encoder_protocol field: %q", ep)
-	}
-}
-
-// Kind defines the type for the "kind" enum field.
-type Kind string
-
-// KindDefault is the default value of the Kind enum.
-const DefaultKind = KindDefault
-
-// Kind values.
-const (
-	KindDefault     Kind = "Default"
-	KindGrouping    Kind = "Grouping"
-	KindPlaceholder Kind = "Placeholder"
-)
-
-func (k Kind) String() string {
-	return string(k)
-}
-
-// KindValidator is a validator for the "kind" field enum values. It is called by the builders before save.
-func KindValidator(k Kind) error {
-	switch k {
-	case KindDefault, KindGrouping, KindPlaceholder:
-		return nil
-	default:
-		return fmt.Errorf("mediasource: invalid enum value for kind field: %q", k)
-	}
-}
-
-// Timestamp defines the type for the "timestamp" enum field.
-type Timestamp string
-
-// Timestamp values.
-const (
-	TimestampNone  Timestamp = "None"
-	TimestampZero  Timestamp = "Zero"
-	TimestampValid Timestamp = "Valid"
-)
-
-func (t Timestamp) String() string {
-	return string(t)
-}
-
-// TimestampValidator is a validator for the "timestamp" field enum values. It is called by the builders before save.
-func TimestampValidator(t Timestamp) error {
-	switch t {
-	case TimestampNone, TimestampZero, TimestampValid:
-		return nil
-	default:
-		return fmt.Errorf("mediasource: invalid enum value for timestamp field: %q", t)
-	}
-}
-
-// VideoType defines the type for the "video_type" enum field.
-type VideoType string
-
-// VideoType values.
-const (
-	VideoTypeVideoFile VideoType = "VideoFile"
-	VideoTypeIso       VideoType = "Iso"
-	VideoTypeDvd       VideoType = "Dvd"
-	VideoTypeBluRay    VideoType = "BluRay"
-)
-
-func (vt VideoType) String() string {
-	return string(vt)
-}
-
-// VideoTypeValidator is a validator for the "video_type" field enum values. It is called by the builders before save.
-func VideoTypeValidator(vt VideoType) error {
-	switch vt {
-	case VideoTypeVideoFile, VideoTypeIso, VideoTypeDvd, VideoTypeBluRay:
-		return nil
-	default:
-		return fmt.Errorf("mediasource: invalid enum value for video_type field: %q", vt)
-	}
-}
-
-// IsoType defines the type for the "iso_type" enum field.
-type IsoType string
-
-// IsoType values.
-const (
-	IsoTypeDvd    IsoType = "Dvd"
-	IsoTypeBluRay IsoType = "BluRay"
-)
-
-func (it IsoType) String() string {
-	return string(it)
-}
-
-// IsoTypeValidator is a validator for the "iso_type" field enum values. It is called by the builders before save.
-func IsoTypeValidator(it IsoType) error {
-	switch it {
-	case IsoTypeDvd, IsoTypeBluRay:
-		return nil
-	default:
-		return fmt.Errorf("mediasource: invalid enum value for iso_type field: %q", it)
-	}
-}
-
-// Video3dFormat defines the type for the "video_3d_format" enum field.
-type Video3dFormat string
-
-// Video3dFormat values.
-const (
-	Video3dFormatHalfSideBySide   Video3dFormat = "HalfSideBySide"
-	Video3dFormatFullSideBySide   Video3dFormat = "FullSideBySide"
-	Video3dFormatFullTopAndBottom Video3dFormat = "FullTopAndBottom"
-	Video3dFormatHalfTopAndBottom Video3dFormat = "HalfTopAndBottom"
-	Video3dFormatMVC              Video3dFormat = "MVC"
-)
-
-func (v3f Video3dFormat) String() string {
-	return string(v3f)
-}
-
-// Video3dFormatValidator is a validator for the "video_3d_format" field enum values. It is called by the builders before save.
-func Video3dFormatValidator(v3f Video3dFormat) error {
-	switch v3f {
-	case Video3dFormatHalfSideBySide, Video3dFormatFullSideBySide, Video3dFormatFullTopAndBottom, Video3dFormatHalfTopAndBottom, Video3dFormatMVC:
-		return nil
-	default:
-		return fmt.Errorf("mediasource: invalid enum value for video_3d_format field: %q", v3f)
-	}
-}
 
 // OrderOption defines the ordering options for the MediaSource queries.
 type OrderOption func(*sql.Selector)
@@ -376,41 +133,6 @@ func ByLibraryID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLibraryID, opts...).ToFunc()
 }
 
-// ByProtocol orders the results by the protocol field.
-func ByProtocol(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldProtocol, opts...).ToFunc()
-}
-
-// ByEncoderProtocol orders the results by the encoder_protocol field.
-func ByEncoderProtocol(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldEncoderProtocol, opts...).ToFunc()
-}
-
-// ByKind orders the results by the kind field.
-func ByKind(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldKind, opts...).ToFunc()
-}
-
-// ByTimestamp orders the results by the timestamp field.
-func ByTimestamp(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldTimestamp, opts...).ToFunc()
-}
-
-// ByVideoType orders the results by the video_type field.
-func ByVideoType(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldVideoType, opts...).ToFunc()
-}
-
-// ByIsoType orders the results by the iso_type field.
-func ByIsoType(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldIsoType, opts...).ToFunc()
-}
-
-// ByVideo3dFormat orders the results by the video_3d_format field.
-func ByVideo3dFormat(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldVideo3dFormat, opts...).ToFunc()
-}
-
 // ByName orders the results by the name field.
 func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
@@ -419,11 +141,6 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 // ByPath orders the results by the path field.
 func ByPath(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPath, opts...).ToFunc()
-}
-
-// ByEncoderPath orders the results by the encoder_path field.
-func ByEncoderPath(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldEncoderPath, opts...).ToFunc()
 }
 
 // ByContainer orders the results by the container field.
@@ -454,41 +171,6 @@ func ByDateModified(opts ...sql.OrderTermOption) OrderOption {
 // ByProbedAt orders the results by the probed_at field.
 func ByProbedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldProbedAt, opts...).ToFunc()
-}
-
-// ByReadAtNativeFramerate orders the results by the read_at_native_framerate field.
-func ByReadAtNativeFramerate(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldReadAtNativeFramerate, opts...).ToFunc()
-}
-
-// ByIgnoreDts orders the results by the ignore_dts field.
-func ByIgnoreDts(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldIgnoreDts, opts...).ToFunc()
-}
-
-// ByIgnoreIndex orders the results by the ignore_index field.
-func ByIgnoreIndex(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldIgnoreIndex, opts...).ToFunc()
-}
-
-// ByGenPtsInput orders the results by the gen_pts_input field.
-func ByGenPtsInput(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldGenPtsInput, opts...).ToFunc()
-}
-
-// ByHasSegments orders the results by the has_segments field.
-func ByHasSegments(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldHasSegments, opts...).ToFunc()
-}
-
-// ByDefaultAudioStreamIndex orders the results by the default_audio_stream_index field.
-func ByDefaultAudioStreamIndex(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDefaultAudioStreamIndex, opts...).ToFunc()
-}
-
-// ByDefaultSubtitleStreamIndex orders the results by the default_subtitle_stream_index field.
-func ByDefaultSubtitleStreamIndex(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDefaultSubtitleStreamIndex, opts...).ToFunc()
 }
 
 // ByItemField orders the results by item field.

@@ -15815,52 +15815,33 @@ func (m *LibrarySourceMutation) ResetEdge(name string) error {
 // MediaSourceMutation represents an operation that mutates the MediaSource nodes in the graph.
 type MediaSourceMutation struct {
 	config
-	op                               Op
-	typ                              string
-	id                               *uuid.UUID
-	created_at                       *time.Time
-	updated_at                       *time.Time
-	protocol                         *mediasource.Protocol
-	encoder_protocol                 *mediasource.EncoderProtocol
-	kind                             *mediasource.Kind
-	timestamp                        *mediasource.Timestamp
-	video_type                       *mediasource.VideoType
-	iso_type                         *mediasource.IsoType
-	video_3d_format                  *mediasource.Video3dFormat
-	name                             *string
-	_path                            *string
-	encoder_path                     *string
-	container                        *string
-	size                             *int64
-	addsize                          *int64
-	run_time_ticks                   *int64
-	addrun_time_ticks                *int64
-	bitrate                          *int32
-	addbitrate                       *int32
-	date_modified                    *time.Time
-	probed_at                        *time.Time
-	read_at_native_framerate         *bool
-	ignore_dts                       *bool
-	ignore_index                     *bool
-	gen_pts_input                    *bool
-	has_segments                     *bool
-	default_audio_stream_index       *int32
-	adddefault_audio_stream_index    *int32
-	default_subtitle_stream_index    *int32
-	adddefault_subtitle_stream_index *int32
-	formats                          *[]string
-	appendformats                    []string
-	clearedFields                    map[string]struct{}
-	item                             *uuid.UUID
-	cleareditem                      bool
-	library                          *uuid.UUID
-	clearedlibrary                   bool
-	streams                          map[uuid.UUID]struct{}
-	removedstreams                   map[uuid.UUID]struct{}
-	clearedstreams                   bool
-	done                             bool
-	oldValue                         func(context.Context) (*MediaSource, error)
-	predicates                       []predicate.MediaSource
+	op                Op
+	typ               string
+	id                *uuid.UUID
+	created_at        *time.Time
+	updated_at        *time.Time
+	name              *string
+	_path             *string
+	container         *string
+	size              *int64
+	addsize           *int64
+	run_time_ticks    *int64
+	addrun_time_ticks *int64
+	bitrate           *int32
+	addbitrate        *int32
+	date_modified     *time.Time
+	probed_at         *time.Time
+	clearedFields     map[string]struct{}
+	item              *uuid.UUID
+	cleareditem       bool
+	library           *uuid.UUID
+	clearedlibrary    bool
+	streams           map[uuid.UUID]struct{}
+	removedstreams    map[uuid.UUID]struct{}
+	clearedstreams    bool
+	done              bool
+	oldValue          func(context.Context) (*MediaSource, error)
+	predicates        []predicate.MediaSource
 }
 
 var _ ent.Mutation = (*MediaSourceMutation)(nil)
@@ -16111,323 +16092,6 @@ func (m *MediaSourceMutation) ResetLibraryID() {
 	m.library = nil
 }
 
-// SetProtocol sets the "protocol" field.
-func (m *MediaSourceMutation) SetProtocol(value mediasource.Protocol) {
-	m.protocol = &value
-}
-
-// Protocol returns the value of the "protocol" field in the mutation.
-func (m *MediaSourceMutation) Protocol() (r mediasource.Protocol, exists bool) {
-	v := m.protocol
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldProtocol returns the old "protocol" field's value of the MediaSource entity.
-// If the MediaSource object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaSourceMutation) OldProtocol(ctx context.Context) (v mediasource.Protocol, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldProtocol is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldProtocol requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldProtocol: %w", err)
-	}
-	return oldValue.Protocol, nil
-}
-
-// ResetProtocol resets all changes to the "protocol" field.
-func (m *MediaSourceMutation) ResetProtocol() {
-	m.protocol = nil
-}
-
-// SetEncoderProtocol sets the "encoder_protocol" field.
-func (m *MediaSourceMutation) SetEncoderProtocol(mp mediasource.EncoderProtocol) {
-	m.encoder_protocol = &mp
-}
-
-// EncoderProtocol returns the value of the "encoder_protocol" field in the mutation.
-func (m *MediaSourceMutation) EncoderProtocol() (r mediasource.EncoderProtocol, exists bool) {
-	v := m.encoder_protocol
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldEncoderProtocol returns the old "encoder_protocol" field's value of the MediaSource entity.
-// If the MediaSource object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaSourceMutation) OldEncoderProtocol(ctx context.Context) (v mediasource.EncoderProtocol, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldEncoderProtocol is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldEncoderProtocol requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldEncoderProtocol: %w", err)
-	}
-	return oldValue.EncoderProtocol, nil
-}
-
-// ClearEncoderProtocol clears the value of the "encoder_protocol" field.
-func (m *MediaSourceMutation) ClearEncoderProtocol() {
-	m.encoder_protocol = nil
-	m.clearedFields[mediasource.FieldEncoderProtocol] = struct{}{}
-}
-
-// EncoderProtocolCleared returns if the "encoder_protocol" field was cleared in this mutation.
-func (m *MediaSourceMutation) EncoderProtocolCleared() bool {
-	_, ok := m.clearedFields[mediasource.FieldEncoderProtocol]
-	return ok
-}
-
-// ResetEncoderProtocol resets all changes to the "encoder_protocol" field.
-func (m *MediaSourceMutation) ResetEncoderProtocol() {
-	m.encoder_protocol = nil
-	delete(m.clearedFields, mediasource.FieldEncoderProtocol)
-}
-
-// SetKind sets the "kind" field.
-func (m *MediaSourceMutation) SetKind(value mediasource.Kind) {
-	m.kind = &value
-}
-
-// Kind returns the value of the "kind" field in the mutation.
-func (m *MediaSourceMutation) Kind() (r mediasource.Kind, exists bool) {
-	v := m.kind
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldKind returns the old "kind" field's value of the MediaSource entity.
-// If the MediaSource object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaSourceMutation) OldKind(ctx context.Context) (v mediasource.Kind, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldKind is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldKind requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldKind: %w", err)
-	}
-	return oldValue.Kind, nil
-}
-
-// ResetKind resets all changes to the "kind" field.
-func (m *MediaSourceMutation) ResetKind() {
-	m.kind = nil
-}
-
-// SetTimestamp sets the "timestamp" field.
-func (m *MediaSourceMutation) SetTimestamp(value mediasource.Timestamp) {
-	m.timestamp = &value
-}
-
-// Timestamp returns the value of the "timestamp" field in the mutation.
-func (m *MediaSourceMutation) Timestamp() (r mediasource.Timestamp, exists bool) {
-	v := m.timestamp
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldTimestamp returns the old "timestamp" field's value of the MediaSource entity.
-// If the MediaSource object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaSourceMutation) OldTimestamp(ctx context.Context) (v mediasource.Timestamp, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldTimestamp is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldTimestamp requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldTimestamp: %w", err)
-	}
-	return oldValue.Timestamp, nil
-}
-
-// ClearTimestamp clears the value of the "timestamp" field.
-func (m *MediaSourceMutation) ClearTimestamp() {
-	m.timestamp = nil
-	m.clearedFields[mediasource.FieldTimestamp] = struct{}{}
-}
-
-// TimestampCleared returns if the "timestamp" field was cleared in this mutation.
-func (m *MediaSourceMutation) TimestampCleared() bool {
-	_, ok := m.clearedFields[mediasource.FieldTimestamp]
-	return ok
-}
-
-// ResetTimestamp resets all changes to the "timestamp" field.
-func (m *MediaSourceMutation) ResetTimestamp() {
-	m.timestamp = nil
-	delete(m.clearedFields, mediasource.FieldTimestamp)
-}
-
-// SetVideoType sets the "video_type" field.
-func (m *MediaSourceMutation) SetVideoType(mt mediasource.VideoType) {
-	m.video_type = &mt
-}
-
-// VideoType returns the value of the "video_type" field in the mutation.
-func (m *MediaSourceMutation) VideoType() (r mediasource.VideoType, exists bool) {
-	v := m.video_type
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldVideoType returns the old "video_type" field's value of the MediaSource entity.
-// If the MediaSource object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaSourceMutation) OldVideoType(ctx context.Context) (v mediasource.VideoType, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldVideoType is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldVideoType requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldVideoType: %w", err)
-	}
-	return oldValue.VideoType, nil
-}
-
-// ClearVideoType clears the value of the "video_type" field.
-func (m *MediaSourceMutation) ClearVideoType() {
-	m.video_type = nil
-	m.clearedFields[mediasource.FieldVideoType] = struct{}{}
-}
-
-// VideoTypeCleared returns if the "video_type" field was cleared in this mutation.
-func (m *MediaSourceMutation) VideoTypeCleared() bool {
-	_, ok := m.clearedFields[mediasource.FieldVideoType]
-	return ok
-}
-
-// ResetVideoType resets all changes to the "video_type" field.
-func (m *MediaSourceMutation) ResetVideoType() {
-	m.video_type = nil
-	delete(m.clearedFields, mediasource.FieldVideoType)
-}
-
-// SetIsoType sets the "iso_type" field.
-func (m *MediaSourceMutation) SetIsoType(mt mediasource.IsoType) {
-	m.iso_type = &mt
-}
-
-// IsoType returns the value of the "iso_type" field in the mutation.
-func (m *MediaSourceMutation) IsoType() (r mediasource.IsoType, exists bool) {
-	v := m.iso_type
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldIsoType returns the old "iso_type" field's value of the MediaSource entity.
-// If the MediaSource object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaSourceMutation) OldIsoType(ctx context.Context) (v mediasource.IsoType, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldIsoType is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldIsoType requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldIsoType: %w", err)
-	}
-	return oldValue.IsoType, nil
-}
-
-// ClearIsoType clears the value of the "iso_type" field.
-func (m *MediaSourceMutation) ClearIsoType() {
-	m.iso_type = nil
-	m.clearedFields[mediasource.FieldIsoType] = struct{}{}
-}
-
-// IsoTypeCleared returns if the "iso_type" field was cleared in this mutation.
-func (m *MediaSourceMutation) IsoTypeCleared() bool {
-	_, ok := m.clearedFields[mediasource.FieldIsoType]
-	return ok
-}
-
-// ResetIsoType resets all changes to the "iso_type" field.
-func (m *MediaSourceMutation) ResetIsoType() {
-	m.iso_type = nil
-	delete(m.clearedFields, mediasource.FieldIsoType)
-}
-
-// SetVideo3dFormat sets the "video_3d_format" field.
-func (m *MediaSourceMutation) SetVideo3dFormat(mf mediasource.Video3dFormat) {
-	m.video_3d_format = &mf
-}
-
-// Video3dFormat returns the value of the "video_3d_format" field in the mutation.
-func (m *MediaSourceMutation) Video3dFormat() (r mediasource.Video3dFormat, exists bool) {
-	v := m.video_3d_format
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldVideo3dFormat returns the old "video_3d_format" field's value of the MediaSource entity.
-// If the MediaSource object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaSourceMutation) OldVideo3dFormat(ctx context.Context) (v mediasource.Video3dFormat, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldVideo3dFormat is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldVideo3dFormat requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldVideo3dFormat: %w", err)
-	}
-	return oldValue.Video3dFormat, nil
-}
-
-// ClearVideo3dFormat clears the value of the "video_3d_format" field.
-func (m *MediaSourceMutation) ClearVideo3dFormat() {
-	m.video_3d_format = nil
-	m.clearedFields[mediasource.FieldVideo3dFormat] = struct{}{}
-}
-
-// Video3dFormatCleared returns if the "video_3d_format" field was cleared in this mutation.
-func (m *MediaSourceMutation) Video3dFormatCleared() bool {
-	_, ok := m.clearedFields[mediasource.FieldVideo3dFormat]
-	return ok
-}
-
-// ResetVideo3dFormat resets all changes to the "video_3d_format" field.
-func (m *MediaSourceMutation) ResetVideo3dFormat() {
-	m.video_3d_format = nil
-	delete(m.clearedFields, mediasource.FieldVideo3dFormat)
-}
-
 // SetName sets the "name" field.
 func (m *MediaSourceMutation) SetName(s string) {
 	m.name = &s
@@ -16498,55 +16162,6 @@ func (m *MediaSourceMutation) OldPath(ctx context.Context) (v string, err error)
 // ResetPath resets all changes to the "path" field.
 func (m *MediaSourceMutation) ResetPath() {
 	m._path = nil
-}
-
-// SetEncoderPath sets the "encoder_path" field.
-func (m *MediaSourceMutation) SetEncoderPath(s string) {
-	m.encoder_path = &s
-}
-
-// EncoderPath returns the value of the "encoder_path" field in the mutation.
-func (m *MediaSourceMutation) EncoderPath() (r string, exists bool) {
-	v := m.encoder_path
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldEncoderPath returns the old "encoder_path" field's value of the MediaSource entity.
-// If the MediaSource object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaSourceMutation) OldEncoderPath(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldEncoderPath is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldEncoderPath requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldEncoderPath: %w", err)
-	}
-	return oldValue.EncoderPath, nil
-}
-
-// ClearEncoderPath clears the value of the "encoder_path" field.
-func (m *MediaSourceMutation) ClearEncoderPath() {
-	m.encoder_path = nil
-	m.clearedFields[mediasource.FieldEncoderPath] = struct{}{}
-}
-
-// EncoderPathCleared returns if the "encoder_path" field was cleared in this mutation.
-func (m *MediaSourceMutation) EncoderPathCleared() bool {
-	_, ok := m.clearedFields[mediasource.FieldEncoderPath]
-	return ok
-}
-
-// ResetEncoderPath resets all changes to the "encoder_path" field.
-func (m *MediaSourceMutation) ResetEncoderPath() {
-	m.encoder_path = nil
-	delete(m.clearedFields, mediasource.FieldEncoderPath)
 }
 
 // SetContainer sets the "container" field.
@@ -16906,391 +16521,6 @@ func (m *MediaSourceMutation) ResetProbedAt() {
 	delete(m.clearedFields, mediasource.FieldProbedAt)
 }
 
-// SetReadAtNativeFramerate sets the "read_at_native_framerate" field.
-func (m *MediaSourceMutation) SetReadAtNativeFramerate(b bool) {
-	m.read_at_native_framerate = &b
-}
-
-// ReadAtNativeFramerate returns the value of the "read_at_native_framerate" field in the mutation.
-func (m *MediaSourceMutation) ReadAtNativeFramerate() (r bool, exists bool) {
-	v := m.read_at_native_framerate
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldReadAtNativeFramerate returns the old "read_at_native_framerate" field's value of the MediaSource entity.
-// If the MediaSource object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaSourceMutation) OldReadAtNativeFramerate(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldReadAtNativeFramerate is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldReadAtNativeFramerate requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldReadAtNativeFramerate: %w", err)
-	}
-	return oldValue.ReadAtNativeFramerate, nil
-}
-
-// ResetReadAtNativeFramerate resets all changes to the "read_at_native_framerate" field.
-func (m *MediaSourceMutation) ResetReadAtNativeFramerate() {
-	m.read_at_native_framerate = nil
-}
-
-// SetIgnoreDts sets the "ignore_dts" field.
-func (m *MediaSourceMutation) SetIgnoreDts(b bool) {
-	m.ignore_dts = &b
-}
-
-// IgnoreDts returns the value of the "ignore_dts" field in the mutation.
-func (m *MediaSourceMutation) IgnoreDts() (r bool, exists bool) {
-	v := m.ignore_dts
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldIgnoreDts returns the old "ignore_dts" field's value of the MediaSource entity.
-// If the MediaSource object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaSourceMutation) OldIgnoreDts(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldIgnoreDts is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldIgnoreDts requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldIgnoreDts: %w", err)
-	}
-	return oldValue.IgnoreDts, nil
-}
-
-// ResetIgnoreDts resets all changes to the "ignore_dts" field.
-func (m *MediaSourceMutation) ResetIgnoreDts() {
-	m.ignore_dts = nil
-}
-
-// SetIgnoreIndex sets the "ignore_index" field.
-func (m *MediaSourceMutation) SetIgnoreIndex(b bool) {
-	m.ignore_index = &b
-}
-
-// IgnoreIndex returns the value of the "ignore_index" field in the mutation.
-func (m *MediaSourceMutation) IgnoreIndex() (r bool, exists bool) {
-	v := m.ignore_index
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldIgnoreIndex returns the old "ignore_index" field's value of the MediaSource entity.
-// If the MediaSource object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaSourceMutation) OldIgnoreIndex(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldIgnoreIndex is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldIgnoreIndex requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldIgnoreIndex: %w", err)
-	}
-	return oldValue.IgnoreIndex, nil
-}
-
-// ResetIgnoreIndex resets all changes to the "ignore_index" field.
-func (m *MediaSourceMutation) ResetIgnoreIndex() {
-	m.ignore_index = nil
-}
-
-// SetGenPtsInput sets the "gen_pts_input" field.
-func (m *MediaSourceMutation) SetGenPtsInput(b bool) {
-	m.gen_pts_input = &b
-}
-
-// GenPtsInput returns the value of the "gen_pts_input" field in the mutation.
-func (m *MediaSourceMutation) GenPtsInput() (r bool, exists bool) {
-	v := m.gen_pts_input
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldGenPtsInput returns the old "gen_pts_input" field's value of the MediaSource entity.
-// If the MediaSource object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaSourceMutation) OldGenPtsInput(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldGenPtsInput is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldGenPtsInput requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldGenPtsInput: %w", err)
-	}
-	return oldValue.GenPtsInput, nil
-}
-
-// ResetGenPtsInput resets all changes to the "gen_pts_input" field.
-func (m *MediaSourceMutation) ResetGenPtsInput() {
-	m.gen_pts_input = nil
-}
-
-// SetHasSegments sets the "has_segments" field.
-func (m *MediaSourceMutation) SetHasSegments(b bool) {
-	m.has_segments = &b
-}
-
-// HasSegments returns the value of the "has_segments" field in the mutation.
-func (m *MediaSourceMutation) HasSegments() (r bool, exists bool) {
-	v := m.has_segments
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldHasSegments returns the old "has_segments" field's value of the MediaSource entity.
-// If the MediaSource object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaSourceMutation) OldHasSegments(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldHasSegments is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldHasSegments requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldHasSegments: %w", err)
-	}
-	return oldValue.HasSegments, nil
-}
-
-// ResetHasSegments resets all changes to the "has_segments" field.
-func (m *MediaSourceMutation) ResetHasSegments() {
-	m.has_segments = nil
-}
-
-// SetDefaultAudioStreamIndex sets the "default_audio_stream_index" field.
-func (m *MediaSourceMutation) SetDefaultAudioStreamIndex(i int32) {
-	m.default_audio_stream_index = &i
-	m.adddefault_audio_stream_index = nil
-}
-
-// DefaultAudioStreamIndex returns the value of the "default_audio_stream_index" field in the mutation.
-func (m *MediaSourceMutation) DefaultAudioStreamIndex() (r int32, exists bool) {
-	v := m.default_audio_stream_index
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldDefaultAudioStreamIndex returns the old "default_audio_stream_index" field's value of the MediaSource entity.
-// If the MediaSource object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaSourceMutation) OldDefaultAudioStreamIndex(ctx context.Context) (v int32, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDefaultAudioStreamIndex is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDefaultAudioStreamIndex requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDefaultAudioStreamIndex: %w", err)
-	}
-	return oldValue.DefaultAudioStreamIndex, nil
-}
-
-// AddDefaultAudioStreamIndex adds i to the "default_audio_stream_index" field.
-func (m *MediaSourceMutation) AddDefaultAudioStreamIndex(i int32) {
-	if m.adddefault_audio_stream_index != nil {
-		*m.adddefault_audio_stream_index += i
-	} else {
-		m.adddefault_audio_stream_index = &i
-	}
-}
-
-// AddedDefaultAudioStreamIndex returns the value that was added to the "default_audio_stream_index" field in this mutation.
-func (m *MediaSourceMutation) AddedDefaultAudioStreamIndex() (r int32, exists bool) {
-	v := m.adddefault_audio_stream_index
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearDefaultAudioStreamIndex clears the value of the "default_audio_stream_index" field.
-func (m *MediaSourceMutation) ClearDefaultAudioStreamIndex() {
-	m.default_audio_stream_index = nil
-	m.adddefault_audio_stream_index = nil
-	m.clearedFields[mediasource.FieldDefaultAudioStreamIndex] = struct{}{}
-}
-
-// DefaultAudioStreamIndexCleared returns if the "default_audio_stream_index" field was cleared in this mutation.
-func (m *MediaSourceMutation) DefaultAudioStreamIndexCleared() bool {
-	_, ok := m.clearedFields[mediasource.FieldDefaultAudioStreamIndex]
-	return ok
-}
-
-// ResetDefaultAudioStreamIndex resets all changes to the "default_audio_stream_index" field.
-func (m *MediaSourceMutation) ResetDefaultAudioStreamIndex() {
-	m.default_audio_stream_index = nil
-	m.adddefault_audio_stream_index = nil
-	delete(m.clearedFields, mediasource.FieldDefaultAudioStreamIndex)
-}
-
-// SetDefaultSubtitleStreamIndex sets the "default_subtitle_stream_index" field.
-func (m *MediaSourceMutation) SetDefaultSubtitleStreamIndex(i int32) {
-	m.default_subtitle_stream_index = &i
-	m.adddefault_subtitle_stream_index = nil
-}
-
-// DefaultSubtitleStreamIndex returns the value of the "default_subtitle_stream_index" field in the mutation.
-func (m *MediaSourceMutation) DefaultSubtitleStreamIndex() (r int32, exists bool) {
-	v := m.default_subtitle_stream_index
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldDefaultSubtitleStreamIndex returns the old "default_subtitle_stream_index" field's value of the MediaSource entity.
-// If the MediaSource object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaSourceMutation) OldDefaultSubtitleStreamIndex(ctx context.Context) (v int32, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDefaultSubtitleStreamIndex is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDefaultSubtitleStreamIndex requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDefaultSubtitleStreamIndex: %w", err)
-	}
-	return oldValue.DefaultSubtitleStreamIndex, nil
-}
-
-// AddDefaultSubtitleStreamIndex adds i to the "default_subtitle_stream_index" field.
-func (m *MediaSourceMutation) AddDefaultSubtitleStreamIndex(i int32) {
-	if m.adddefault_subtitle_stream_index != nil {
-		*m.adddefault_subtitle_stream_index += i
-	} else {
-		m.adddefault_subtitle_stream_index = &i
-	}
-}
-
-// AddedDefaultSubtitleStreamIndex returns the value that was added to the "default_subtitle_stream_index" field in this mutation.
-func (m *MediaSourceMutation) AddedDefaultSubtitleStreamIndex() (r int32, exists bool) {
-	v := m.adddefault_subtitle_stream_index
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearDefaultSubtitleStreamIndex clears the value of the "default_subtitle_stream_index" field.
-func (m *MediaSourceMutation) ClearDefaultSubtitleStreamIndex() {
-	m.default_subtitle_stream_index = nil
-	m.adddefault_subtitle_stream_index = nil
-	m.clearedFields[mediasource.FieldDefaultSubtitleStreamIndex] = struct{}{}
-}
-
-// DefaultSubtitleStreamIndexCleared returns if the "default_subtitle_stream_index" field was cleared in this mutation.
-func (m *MediaSourceMutation) DefaultSubtitleStreamIndexCleared() bool {
-	_, ok := m.clearedFields[mediasource.FieldDefaultSubtitleStreamIndex]
-	return ok
-}
-
-// ResetDefaultSubtitleStreamIndex resets all changes to the "default_subtitle_stream_index" field.
-func (m *MediaSourceMutation) ResetDefaultSubtitleStreamIndex() {
-	m.default_subtitle_stream_index = nil
-	m.adddefault_subtitle_stream_index = nil
-	delete(m.clearedFields, mediasource.FieldDefaultSubtitleStreamIndex)
-}
-
-// SetFormats sets the "formats" field.
-func (m *MediaSourceMutation) SetFormats(s []string) {
-	m.formats = &s
-	m.appendformats = nil
-}
-
-// Formats returns the value of the "formats" field in the mutation.
-func (m *MediaSourceMutation) Formats() (r []string, exists bool) {
-	v := m.formats
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldFormats returns the old "formats" field's value of the MediaSource entity.
-// If the MediaSource object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaSourceMutation) OldFormats(ctx context.Context) (v []string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldFormats is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldFormats requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldFormats: %w", err)
-	}
-	return oldValue.Formats, nil
-}
-
-// AppendFormats adds s to the "formats" field.
-func (m *MediaSourceMutation) AppendFormats(s []string) {
-	m.appendformats = append(m.appendformats, s...)
-}
-
-// AppendedFormats returns the list of values that were appended to the "formats" field in this mutation.
-func (m *MediaSourceMutation) AppendedFormats() ([]string, bool) {
-	if len(m.appendformats) == 0 {
-		return nil, false
-	}
-	return m.appendformats, true
-}
-
-// ClearFormats clears the value of the "formats" field.
-func (m *MediaSourceMutation) ClearFormats() {
-	m.formats = nil
-	m.appendformats = nil
-	m.clearedFields[mediasource.FieldFormats] = struct{}{}
-}
-
-// FormatsCleared returns if the "formats" field was cleared in this mutation.
-func (m *MediaSourceMutation) FormatsCleared() bool {
-	_, ok := m.clearedFields[mediasource.FieldFormats]
-	return ok
-}
-
-// ResetFormats resets all changes to the "formats" field.
-func (m *MediaSourceMutation) ResetFormats() {
-	m.formats = nil
-	m.appendformats = nil
-	delete(m.clearedFields, mediasource.FieldFormats)
-}
-
 // ClearItem clears the "item" edge to the Item entity.
 func (m *MediaSourceMutation) ClearItem() {
 	m.cleareditem = true
@@ -17433,7 +16663,7 @@ func (m *MediaSourceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *MediaSourceMutation) Fields() []string {
-	fields := make([]string, 0, 28)
+	fields := make([]string, 0, 12)
 	if m.created_at != nil {
 		fields = append(fields, mediasource.FieldCreatedAt)
 	}
@@ -17446,35 +16676,11 @@ func (m *MediaSourceMutation) Fields() []string {
 	if m.library != nil {
 		fields = append(fields, mediasource.FieldLibraryID)
 	}
-	if m.protocol != nil {
-		fields = append(fields, mediasource.FieldProtocol)
-	}
-	if m.encoder_protocol != nil {
-		fields = append(fields, mediasource.FieldEncoderProtocol)
-	}
-	if m.kind != nil {
-		fields = append(fields, mediasource.FieldKind)
-	}
-	if m.timestamp != nil {
-		fields = append(fields, mediasource.FieldTimestamp)
-	}
-	if m.video_type != nil {
-		fields = append(fields, mediasource.FieldVideoType)
-	}
-	if m.iso_type != nil {
-		fields = append(fields, mediasource.FieldIsoType)
-	}
-	if m.video_3d_format != nil {
-		fields = append(fields, mediasource.FieldVideo3dFormat)
-	}
 	if m.name != nil {
 		fields = append(fields, mediasource.FieldName)
 	}
 	if m._path != nil {
 		fields = append(fields, mediasource.FieldPath)
-	}
-	if m.encoder_path != nil {
-		fields = append(fields, mediasource.FieldEncoderPath)
 	}
 	if m.container != nil {
 		fields = append(fields, mediasource.FieldContainer)
@@ -17494,30 +16700,6 @@ func (m *MediaSourceMutation) Fields() []string {
 	if m.probed_at != nil {
 		fields = append(fields, mediasource.FieldProbedAt)
 	}
-	if m.read_at_native_framerate != nil {
-		fields = append(fields, mediasource.FieldReadAtNativeFramerate)
-	}
-	if m.ignore_dts != nil {
-		fields = append(fields, mediasource.FieldIgnoreDts)
-	}
-	if m.ignore_index != nil {
-		fields = append(fields, mediasource.FieldIgnoreIndex)
-	}
-	if m.gen_pts_input != nil {
-		fields = append(fields, mediasource.FieldGenPtsInput)
-	}
-	if m.has_segments != nil {
-		fields = append(fields, mediasource.FieldHasSegments)
-	}
-	if m.default_audio_stream_index != nil {
-		fields = append(fields, mediasource.FieldDefaultAudioStreamIndex)
-	}
-	if m.default_subtitle_stream_index != nil {
-		fields = append(fields, mediasource.FieldDefaultSubtitleStreamIndex)
-	}
-	if m.formats != nil {
-		fields = append(fields, mediasource.FieldFormats)
-	}
 	return fields
 }
 
@@ -17534,26 +16716,10 @@ func (m *MediaSourceMutation) Field(name string) (ent.Value, bool) {
 		return m.ItemID()
 	case mediasource.FieldLibraryID:
 		return m.LibraryID()
-	case mediasource.FieldProtocol:
-		return m.Protocol()
-	case mediasource.FieldEncoderProtocol:
-		return m.EncoderProtocol()
-	case mediasource.FieldKind:
-		return m.Kind()
-	case mediasource.FieldTimestamp:
-		return m.Timestamp()
-	case mediasource.FieldVideoType:
-		return m.VideoType()
-	case mediasource.FieldIsoType:
-		return m.IsoType()
-	case mediasource.FieldVideo3dFormat:
-		return m.Video3dFormat()
 	case mediasource.FieldName:
 		return m.Name()
 	case mediasource.FieldPath:
 		return m.Path()
-	case mediasource.FieldEncoderPath:
-		return m.EncoderPath()
 	case mediasource.FieldContainer:
 		return m.Container()
 	case mediasource.FieldSize:
@@ -17566,22 +16732,6 @@ func (m *MediaSourceMutation) Field(name string) (ent.Value, bool) {
 		return m.DateModified()
 	case mediasource.FieldProbedAt:
 		return m.ProbedAt()
-	case mediasource.FieldReadAtNativeFramerate:
-		return m.ReadAtNativeFramerate()
-	case mediasource.FieldIgnoreDts:
-		return m.IgnoreDts()
-	case mediasource.FieldIgnoreIndex:
-		return m.IgnoreIndex()
-	case mediasource.FieldGenPtsInput:
-		return m.GenPtsInput()
-	case mediasource.FieldHasSegments:
-		return m.HasSegments()
-	case mediasource.FieldDefaultAudioStreamIndex:
-		return m.DefaultAudioStreamIndex()
-	case mediasource.FieldDefaultSubtitleStreamIndex:
-		return m.DefaultSubtitleStreamIndex()
-	case mediasource.FieldFormats:
-		return m.Formats()
 	}
 	return nil, false
 }
@@ -17599,26 +16749,10 @@ func (m *MediaSourceMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldItemID(ctx)
 	case mediasource.FieldLibraryID:
 		return m.OldLibraryID(ctx)
-	case mediasource.FieldProtocol:
-		return m.OldProtocol(ctx)
-	case mediasource.FieldEncoderProtocol:
-		return m.OldEncoderProtocol(ctx)
-	case mediasource.FieldKind:
-		return m.OldKind(ctx)
-	case mediasource.FieldTimestamp:
-		return m.OldTimestamp(ctx)
-	case mediasource.FieldVideoType:
-		return m.OldVideoType(ctx)
-	case mediasource.FieldIsoType:
-		return m.OldIsoType(ctx)
-	case mediasource.FieldVideo3dFormat:
-		return m.OldVideo3dFormat(ctx)
 	case mediasource.FieldName:
 		return m.OldName(ctx)
 	case mediasource.FieldPath:
 		return m.OldPath(ctx)
-	case mediasource.FieldEncoderPath:
-		return m.OldEncoderPath(ctx)
 	case mediasource.FieldContainer:
 		return m.OldContainer(ctx)
 	case mediasource.FieldSize:
@@ -17631,22 +16765,6 @@ func (m *MediaSourceMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldDateModified(ctx)
 	case mediasource.FieldProbedAt:
 		return m.OldProbedAt(ctx)
-	case mediasource.FieldReadAtNativeFramerate:
-		return m.OldReadAtNativeFramerate(ctx)
-	case mediasource.FieldIgnoreDts:
-		return m.OldIgnoreDts(ctx)
-	case mediasource.FieldIgnoreIndex:
-		return m.OldIgnoreIndex(ctx)
-	case mediasource.FieldGenPtsInput:
-		return m.OldGenPtsInput(ctx)
-	case mediasource.FieldHasSegments:
-		return m.OldHasSegments(ctx)
-	case mediasource.FieldDefaultAudioStreamIndex:
-		return m.OldDefaultAudioStreamIndex(ctx)
-	case mediasource.FieldDefaultSubtitleStreamIndex:
-		return m.OldDefaultSubtitleStreamIndex(ctx)
-	case mediasource.FieldFormats:
-		return m.OldFormats(ctx)
 	}
 	return nil, fmt.Errorf("unknown MediaSource field %s", name)
 }
@@ -17684,55 +16802,6 @@ func (m *MediaSourceMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetLibraryID(v)
 		return nil
-	case mediasource.FieldProtocol:
-		v, ok := value.(mediasource.Protocol)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetProtocol(v)
-		return nil
-	case mediasource.FieldEncoderProtocol:
-		v, ok := value.(mediasource.EncoderProtocol)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetEncoderProtocol(v)
-		return nil
-	case mediasource.FieldKind:
-		v, ok := value.(mediasource.Kind)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetKind(v)
-		return nil
-	case mediasource.FieldTimestamp:
-		v, ok := value.(mediasource.Timestamp)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetTimestamp(v)
-		return nil
-	case mediasource.FieldVideoType:
-		v, ok := value.(mediasource.VideoType)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetVideoType(v)
-		return nil
-	case mediasource.FieldIsoType:
-		v, ok := value.(mediasource.IsoType)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetIsoType(v)
-		return nil
-	case mediasource.FieldVideo3dFormat:
-		v, ok := value.(mediasource.Video3dFormat)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetVideo3dFormat(v)
-		return nil
 	case mediasource.FieldName:
 		v, ok := value.(string)
 		if !ok {
@@ -17746,13 +16815,6 @@ func (m *MediaSourceMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPath(v)
-		return nil
-	case mediasource.FieldEncoderPath:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetEncoderPath(v)
 		return nil
 	case mediasource.FieldContainer:
 		v, ok := value.(string)
@@ -17796,62 +16858,6 @@ func (m *MediaSourceMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetProbedAt(v)
 		return nil
-	case mediasource.FieldReadAtNativeFramerate:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetReadAtNativeFramerate(v)
-		return nil
-	case mediasource.FieldIgnoreDts:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetIgnoreDts(v)
-		return nil
-	case mediasource.FieldIgnoreIndex:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetIgnoreIndex(v)
-		return nil
-	case mediasource.FieldGenPtsInput:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetGenPtsInput(v)
-		return nil
-	case mediasource.FieldHasSegments:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetHasSegments(v)
-		return nil
-	case mediasource.FieldDefaultAudioStreamIndex:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetDefaultAudioStreamIndex(v)
-		return nil
-	case mediasource.FieldDefaultSubtitleStreamIndex:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetDefaultSubtitleStreamIndex(v)
-		return nil
-	case mediasource.FieldFormats:
-		v, ok := value.([]string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetFormats(v)
-		return nil
 	}
 	return fmt.Errorf("unknown MediaSource field %s", name)
 }
@@ -17869,12 +16875,6 @@ func (m *MediaSourceMutation) AddedFields() []string {
 	if m.addbitrate != nil {
 		fields = append(fields, mediasource.FieldBitrate)
 	}
-	if m.adddefault_audio_stream_index != nil {
-		fields = append(fields, mediasource.FieldDefaultAudioStreamIndex)
-	}
-	if m.adddefault_subtitle_stream_index != nil {
-		fields = append(fields, mediasource.FieldDefaultSubtitleStreamIndex)
-	}
 	return fields
 }
 
@@ -17889,10 +16889,6 @@ func (m *MediaSourceMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedRunTimeTicks()
 	case mediasource.FieldBitrate:
 		return m.AddedBitrate()
-	case mediasource.FieldDefaultAudioStreamIndex:
-		return m.AddedDefaultAudioStreamIndex()
-	case mediasource.FieldDefaultSubtitleStreamIndex:
-		return m.AddedDefaultSubtitleStreamIndex()
 	}
 	return nil, false
 }
@@ -17923,20 +16919,6 @@ func (m *MediaSourceMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddBitrate(v)
 		return nil
-	case mediasource.FieldDefaultAudioStreamIndex:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddDefaultAudioStreamIndex(v)
-		return nil
-	case mediasource.FieldDefaultSubtitleStreamIndex:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddDefaultSubtitleStreamIndex(v)
-		return nil
 	}
 	return fmt.Errorf("unknown MediaSource numeric field %s", name)
 }
@@ -17945,24 +16927,6 @@ func (m *MediaSourceMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *MediaSourceMutation) ClearedFields() []string {
 	var fields []string
-	if m.FieldCleared(mediasource.FieldEncoderProtocol) {
-		fields = append(fields, mediasource.FieldEncoderProtocol)
-	}
-	if m.FieldCleared(mediasource.FieldTimestamp) {
-		fields = append(fields, mediasource.FieldTimestamp)
-	}
-	if m.FieldCleared(mediasource.FieldVideoType) {
-		fields = append(fields, mediasource.FieldVideoType)
-	}
-	if m.FieldCleared(mediasource.FieldIsoType) {
-		fields = append(fields, mediasource.FieldIsoType)
-	}
-	if m.FieldCleared(mediasource.FieldVideo3dFormat) {
-		fields = append(fields, mediasource.FieldVideo3dFormat)
-	}
-	if m.FieldCleared(mediasource.FieldEncoderPath) {
-		fields = append(fields, mediasource.FieldEncoderPath)
-	}
 	if m.FieldCleared(mediasource.FieldContainer) {
 		fields = append(fields, mediasource.FieldContainer)
 	}
@@ -17981,15 +16945,6 @@ func (m *MediaSourceMutation) ClearedFields() []string {
 	if m.FieldCleared(mediasource.FieldProbedAt) {
 		fields = append(fields, mediasource.FieldProbedAt)
 	}
-	if m.FieldCleared(mediasource.FieldDefaultAudioStreamIndex) {
-		fields = append(fields, mediasource.FieldDefaultAudioStreamIndex)
-	}
-	if m.FieldCleared(mediasource.FieldDefaultSubtitleStreamIndex) {
-		fields = append(fields, mediasource.FieldDefaultSubtitleStreamIndex)
-	}
-	if m.FieldCleared(mediasource.FieldFormats) {
-		fields = append(fields, mediasource.FieldFormats)
-	}
 	return fields
 }
 
@@ -18004,24 +16959,6 @@ func (m *MediaSourceMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *MediaSourceMutation) ClearField(name string) error {
 	switch name {
-	case mediasource.FieldEncoderProtocol:
-		m.ClearEncoderProtocol()
-		return nil
-	case mediasource.FieldTimestamp:
-		m.ClearTimestamp()
-		return nil
-	case mediasource.FieldVideoType:
-		m.ClearVideoType()
-		return nil
-	case mediasource.FieldIsoType:
-		m.ClearIsoType()
-		return nil
-	case mediasource.FieldVideo3dFormat:
-		m.ClearVideo3dFormat()
-		return nil
-	case mediasource.FieldEncoderPath:
-		m.ClearEncoderPath()
-		return nil
 	case mediasource.FieldContainer:
 		m.ClearContainer()
 		return nil
@@ -18039,15 +16976,6 @@ func (m *MediaSourceMutation) ClearField(name string) error {
 		return nil
 	case mediasource.FieldProbedAt:
 		m.ClearProbedAt()
-		return nil
-	case mediasource.FieldDefaultAudioStreamIndex:
-		m.ClearDefaultAudioStreamIndex()
-		return nil
-	case mediasource.FieldDefaultSubtitleStreamIndex:
-		m.ClearDefaultSubtitleStreamIndex()
-		return nil
-	case mediasource.FieldFormats:
-		m.ClearFormats()
 		return nil
 	}
 	return fmt.Errorf("unknown MediaSource nullable field %s", name)
@@ -18069,35 +16997,11 @@ func (m *MediaSourceMutation) ResetField(name string) error {
 	case mediasource.FieldLibraryID:
 		m.ResetLibraryID()
 		return nil
-	case mediasource.FieldProtocol:
-		m.ResetProtocol()
-		return nil
-	case mediasource.FieldEncoderProtocol:
-		m.ResetEncoderProtocol()
-		return nil
-	case mediasource.FieldKind:
-		m.ResetKind()
-		return nil
-	case mediasource.FieldTimestamp:
-		m.ResetTimestamp()
-		return nil
-	case mediasource.FieldVideoType:
-		m.ResetVideoType()
-		return nil
-	case mediasource.FieldIsoType:
-		m.ResetIsoType()
-		return nil
-	case mediasource.FieldVideo3dFormat:
-		m.ResetVideo3dFormat()
-		return nil
 	case mediasource.FieldName:
 		m.ResetName()
 		return nil
 	case mediasource.FieldPath:
 		m.ResetPath()
-		return nil
-	case mediasource.FieldEncoderPath:
-		m.ResetEncoderPath()
 		return nil
 	case mediasource.FieldContainer:
 		m.ResetContainer()
@@ -18116,30 +17020,6 @@ func (m *MediaSourceMutation) ResetField(name string) error {
 		return nil
 	case mediasource.FieldProbedAt:
 		m.ResetProbedAt()
-		return nil
-	case mediasource.FieldReadAtNativeFramerate:
-		m.ResetReadAtNativeFramerate()
-		return nil
-	case mediasource.FieldIgnoreDts:
-		m.ResetIgnoreDts()
-		return nil
-	case mediasource.FieldIgnoreIndex:
-		m.ResetIgnoreIndex()
-		return nil
-	case mediasource.FieldGenPtsInput:
-		m.ResetGenPtsInput()
-		return nil
-	case mediasource.FieldHasSegments:
-		m.ResetHasSegments()
-		return nil
-	case mediasource.FieldDefaultAudioStreamIndex:
-		m.ResetDefaultAudioStreamIndex()
-		return nil
-	case mediasource.FieldDefaultSubtitleStreamIndex:
-		m.ResetDefaultSubtitleStreamIndex()
-		return nil
-	case mediasource.FieldFormats:
-		m.ResetFormats()
 		return nil
 	}
 	return fmt.Errorf("unknown MediaSource field %s", name)
@@ -18268,91 +17148,45 @@ func (m *MediaSourceMutation) ResetEdge(name string) error {
 // MediaStreamMutation represents an operation that mutates the MediaStream nodes in the graph.
 type MediaStreamMutation struct {
 	config
-	op                               Op
-	typ                              string
-	id                               *uuid.UUID
-	created_at                       *time.Time
-	updated_at                       *time.Time
-	kind                             *mediastream.Kind
-	video_range                      *mediastream.VideoRange
-	video_range_type                 *mediastream.VideoRangeType
-	audio_spatial_format             *mediastream.AudioSpatialFormat
-	index                            *int32
-	addindex                         *int32
-	codec                            *string
-	codec_tag                        *string
-	profile                          *string
-	language                         *string
-	title                            *string
-	comment                          *string
-	_path                            *string
-	pixel_format                     *string
-	aspect_ratio                     *string
-	channel_layout                   *string
-	time_base                        *string
-	nal_length_size                  *string
-	video_dovi_title                 *string
-	color_range                      *string
-	color_space                      *string
-	color_transfer                   *string
-	color_primaries                  *string
-	dv_version_major                 *int32
-	adddv_version_major              *int32
-	dv_version_minor                 *int32
-	adddv_version_minor              *int32
-	dv_profile                       *int32
-	adddv_profile                    *int32
-	dv_level                         *int32
-	adddv_level                      *int32
-	rpu_present_flag                 *int32
-	addrpu_present_flag              *int32
-	el_present_flag                  *int32
-	addel_present_flag               *int32
-	bl_present_flag                  *int32
-	addbl_present_flag               *int32
-	dv_bl_signal_compatibility_id    *int32
-	adddv_bl_signal_compatibility_id *int32
-	bit_rate                         *int32
-	addbit_rate                      *int32
-	bit_depth                        *int32
-	addbit_depth                     *int32
-	ref_frames                       *int32
-	addref_frames                    *int32
-	packet_length                    *int32
-	addpacket_length                 *int32
-	channels                         *int32
-	addchannels                      *int32
-	sample_rate                      *int32
-	addsample_rate                   *int32
-	width                            *int32
-	addwidth                         *int32
-	height                           *int32
-	addheight                        *int32
-	rotation                         *int32
-	addrotation                      *int32
-	score                            *int32
-	addscore                         *int32
-	level                            *float64
-	addlevel                         *float64
-	average_frame_rate               *float64
-	addaverage_frame_rate            *float64
-	real_frame_rate                  *float64
-	addreal_frame_rate               *float64
-	reference_frame_rate             *float64
-	addreference_frame_rate          *float64
-	is_default                       *bool
-	is_forced                        *bool
-	is_external                      *bool
-	is_interlaced                    *bool
-	is_anamorphic                    *bool
-	is_avc                           *bool
-	is_hearing_impaired              *bool
-	clearedFields                    map[string]struct{}
-	source                           *uuid.UUID
-	clearedsource                    bool
-	done                             bool
-	oldValue                         func(context.Context) (*MediaStream, error)
-	predicates                       []predicate.MediaStream
+	op                  Op
+	typ                 string
+	id                  *uuid.UUID
+	created_at          *time.Time
+	updated_at          *time.Time
+	kind                *mediastream.Kind
+	video_range_type    *mediastream.VideoRangeType
+	index               *int32
+	addindex            *int32
+	codec               *string
+	profile             *string
+	language            *string
+	title               *string
+	_path               *string
+	pixel_format        *string
+	bit_rate            *int32
+	addbit_rate         *int32
+	channels            *int32
+	addchannels         *int32
+	sample_rate         *int32
+	addsample_rate      *int32
+	width               *int32
+	addwidth            *int32
+	height              *int32
+	addheight           *int32
+	level               *float64
+	addlevel            *float64
+	is_default          *bool
+	is_forced           *bool
+	is_external         *bool
+	is_interlaced       *bool
+	is_anamorphic       *bool
+	is_hearing_impaired *bool
+	clearedFields       map[string]struct{}
+	source              *uuid.UUID
+	clearedsource       bool
+	done                bool
+	oldValue            func(context.Context) (*MediaStream, error)
+	predicates          []predicate.MediaStream
 }
 
 var _ ent.Mutation = (*MediaStreamMutation)(nil)
@@ -18603,55 +17437,6 @@ func (m *MediaStreamMutation) ResetKind() {
 	m.kind = nil
 }
 
-// SetVideoRange sets the "video_range" field.
-func (m *MediaStreamMutation) SetVideoRange(mr mediastream.VideoRange) {
-	m.video_range = &mr
-}
-
-// VideoRange returns the value of the "video_range" field in the mutation.
-func (m *MediaStreamMutation) VideoRange() (r mediastream.VideoRange, exists bool) {
-	v := m.video_range
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldVideoRange returns the old "video_range" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldVideoRange(ctx context.Context) (v mediastream.VideoRange, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldVideoRange is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldVideoRange requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldVideoRange: %w", err)
-	}
-	return oldValue.VideoRange, nil
-}
-
-// ClearVideoRange clears the value of the "video_range" field.
-func (m *MediaStreamMutation) ClearVideoRange() {
-	m.video_range = nil
-	m.clearedFields[mediastream.FieldVideoRange] = struct{}{}
-}
-
-// VideoRangeCleared returns if the "video_range" field was cleared in this mutation.
-func (m *MediaStreamMutation) VideoRangeCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldVideoRange]
-	return ok
-}
-
-// ResetVideoRange resets all changes to the "video_range" field.
-func (m *MediaStreamMutation) ResetVideoRange() {
-	m.video_range = nil
-	delete(m.clearedFields, mediastream.FieldVideoRange)
-}
-
 // SetVideoRangeType sets the "video_range_type" field.
 func (m *MediaStreamMutation) SetVideoRangeType(mrt mediastream.VideoRangeType) {
 	m.video_range_type = &mrt
@@ -18699,55 +17484,6 @@ func (m *MediaStreamMutation) VideoRangeTypeCleared() bool {
 func (m *MediaStreamMutation) ResetVideoRangeType() {
 	m.video_range_type = nil
 	delete(m.clearedFields, mediastream.FieldVideoRangeType)
-}
-
-// SetAudioSpatialFormat sets the "audio_spatial_format" field.
-func (m *MediaStreamMutation) SetAudioSpatialFormat(msf mediastream.AudioSpatialFormat) {
-	m.audio_spatial_format = &msf
-}
-
-// AudioSpatialFormat returns the value of the "audio_spatial_format" field in the mutation.
-func (m *MediaStreamMutation) AudioSpatialFormat() (r mediastream.AudioSpatialFormat, exists bool) {
-	v := m.audio_spatial_format
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldAudioSpatialFormat returns the old "audio_spatial_format" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldAudioSpatialFormat(ctx context.Context) (v mediastream.AudioSpatialFormat, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldAudioSpatialFormat is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldAudioSpatialFormat requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAudioSpatialFormat: %w", err)
-	}
-	return oldValue.AudioSpatialFormat, nil
-}
-
-// ClearAudioSpatialFormat clears the value of the "audio_spatial_format" field.
-func (m *MediaStreamMutation) ClearAudioSpatialFormat() {
-	m.audio_spatial_format = nil
-	m.clearedFields[mediastream.FieldAudioSpatialFormat] = struct{}{}
-}
-
-// AudioSpatialFormatCleared returns if the "audio_spatial_format" field was cleared in this mutation.
-func (m *MediaStreamMutation) AudioSpatialFormatCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldAudioSpatialFormat]
-	return ok
-}
-
-// ResetAudioSpatialFormat resets all changes to the "audio_spatial_format" field.
-func (m *MediaStreamMutation) ResetAudioSpatialFormat() {
-	m.audio_spatial_format = nil
-	delete(m.clearedFields, mediastream.FieldAudioSpatialFormat)
 }
 
 // SetIndex sets the "index" field.
@@ -18853,55 +17589,6 @@ func (m *MediaStreamMutation) CodecCleared() bool {
 func (m *MediaStreamMutation) ResetCodec() {
 	m.codec = nil
 	delete(m.clearedFields, mediastream.FieldCodec)
-}
-
-// SetCodecTag sets the "codec_tag" field.
-func (m *MediaStreamMutation) SetCodecTag(s string) {
-	m.codec_tag = &s
-}
-
-// CodecTag returns the value of the "codec_tag" field in the mutation.
-func (m *MediaStreamMutation) CodecTag() (r string, exists bool) {
-	v := m.codec_tag
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldCodecTag returns the old "codec_tag" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldCodecTag(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldCodecTag is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldCodecTag requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCodecTag: %w", err)
-	}
-	return oldValue.CodecTag, nil
-}
-
-// ClearCodecTag clears the value of the "codec_tag" field.
-func (m *MediaStreamMutation) ClearCodecTag() {
-	m.codec_tag = nil
-	m.clearedFields[mediastream.FieldCodecTag] = struct{}{}
-}
-
-// CodecTagCleared returns if the "codec_tag" field was cleared in this mutation.
-func (m *MediaStreamMutation) CodecTagCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldCodecTag]
-	return ok
-}
-
-// ResetCodecTag resets all changes to the "codec_tag" field.
-func (m *MediaStreamMutation) ResetCodecTag() {
-	m.codec_tag = nil
-	delete(m.clearedFields, mediastream.FieldCodecTag)
 }
 
 // SetProfile sets the "profile" field.
@@ -19051,55 +17738,6 @@ func (m *MediaStreamMutation) ResetTitle() {
 	delete(m.clearedFields, mediastream.FieldTitle)
 }
 
-// SetComment sets the "comment" field.
-func (m *MediaStreamMutation) SetComment(s string) {
-	m.comment = &s
-}
-
-// Comment returns the value of the "comment" field in the mutation.
-func (m *MediaStreamMutation) Comment() (r string, exists bool) {
-	v := m.comment
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldComment returns the old "comment" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldComment(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldComment is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldComment requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldComment: %w", err)
-	}
-	return oldValue.Comment, nil
-}
-
-// ClearComment clears the value of the "comment" field.
-func (m *MediaStreamMutation) ClearComment() {
-	m.comment = nil
-	m.clearedFields[mediastream.FieldComment] = struct{}{}
-}
-
-// CommentCleared returns if the "comment" field was cleared in this mutation.
-func (m *MediaStreamMutation) CommentCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldComment]
-	return ok
-}
-
-// ResetComment resets all changes to the "comment" field.
-func (m *MediaStreamMutation) ResetComment() {
-	m.comment = nil
-	delete(m.clearedFields, mediastream.FieldComment)
-}
-
 // SetPath sets the "path" field.
 func (m *MediaStreamMutation) SetPath(s string) {
 	m._path = &s
@@ -19198,1007 +17836,6 @@ func (m *MediaStreamMutation) ResetPixelFormat() {
 	delete(m.clearedFields, mediastream.FieldPixelFormat)
 }
 
-// SetAspectRatio sets the "aspect_ratio" field.
-func (m *MediaStreamMutation) SetAspectRatio(s string) {
-	m.aspect_ratio = &s
-}
-
-// AspectRatio returns the value of the "aspect_ratio" field in the mutation.
-func (m *MediaStreamMutation) AspectRatio() (r string, exists bool) {
-	v := m.aspect_ratio
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldAspectRatio returns the old "aspect_ratio" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldAspectRatio(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldAspectRatio is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldAspectRatio requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAspectRatio: %w", err)
-	}
-	return oldValue.AspectRatio, nil
-}
-
-// ClearAspectRatio clears the value of the "aspect_ratio" field.
-func (m *MediaStreamMutation) ClearAspectRatio() {
-	m.aspect_ratio = nil
-	m.clearedFields[mediastream.FieldAspectRatio] = struct{}{}
-}
-
-// AspectRatioCleared returns if the "aspect_ratio" field was cleared in this mutation.
-func (m *MediaStreamMutation) AspectRatioCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldAspectRatio]
-	return ok
-}
-
-// ResetAspectRatio resets all changes to the "aspect_ratio" field.
-func (m *MediaStreamMutation) ResetAspectRatio() {
-	m.aspect_ratio = nil
-	delete(m.clearedFields, mediastream.FieldAspectRatio)
-}
-
-// SetChannelLayout sets the "channel_layout" field.
-func (m *MediaStreamMutation) SetChannelLayout(s string) {
-	m.channel_layout = &s
-}
-
-// ChannelLayout returns the value of the "channel_layout" field in the mutation.
-func (m *MediaStreamMutation) ChannelLayout() (r string, exists bool) {
-	v := m.channel_layout
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldChannelLayout returns the old "channel_layout" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldChannelLayout(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldChannelLayout is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldChannelLayout requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldChannelLayout: %w", err)
-	}
-	return oldValue.ChannelLayout, nil
-}
-
-// ClearChannelLayout clears the value of the "channel_layout" field.
-func (m *MediaStreamMutation) ClearChannelLayout() {
-	m.channel_layout = nil
-	m.clearedFields[mediastream.FieldChannelLayout] = struct{}{}
-}
-
-// ChannelLayoutCleared returns if the "channel_layout" field was cleared in this mutation.
-func (m *MediaStreamMutation) ChannelLayoutCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldChannelLayout]
-	return ok
-}
-
-// ResetChannelLayout resets all changes to the "channel_layout" field.
-func (m *MediaStreamMutation) ResetChannelLayout() {
-	m.channel_layout = nil
-	delete(m.clearedFields, mediastream.FieldChannelLayout)
-}
-
-// SetTimeBase sets the "time_base" field.
-func (m *MediaStreamMutation) SetTimeBase(s string) {
-	m.time_base = &s
-}
-
-// TimeBase returns the value of the "time_base" field in the mutation.
-func (m *MediaStreamMutation) TimeBase() (r string, exists bool) {
-	v := m.time_base
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldTimeBase returns the old "time_base" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldTimeBase(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldTimeBase is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldTimeBase requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldTimeBase: %w", err)
-	}
-	return oldValue.TimeBase, nil
-}
-
-// ClearTimeBase clears the value of the "time_base" field.
-func (m *MediaStreamMutation) ClearTimeBase() {
-	m.time_base = nil
-	m.clearedFields[mediastream.FieldTimeBase] = struct{}{}
-}
-
-// TimeBaseCleared returns if the "time_base" field was cleared in this mutation.
-func (m *MediaStreamMutation) TimeBaseCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldTimeBase]
-	return ok
-}
-
-// ResetTimeBase resets all changes to the "time_base" field.
-func (m *MediaStreamMutation) ResetTimeBase() {
-	m.time_base = nil
-	delete(m.clearedFields, mediastream.FieldTimeBase)
-}
-
-// SetNalLengthSize sets the "nal_length_size" field.
-func (m *MediaStreamMutation) SetNalLengthSize(s string) {
-	m.nal_length_size = &s
-}
-
-// NalLengthSize returns the value of the "nal_length_size" field in the mutation.
-func (m *MediaStreamMutation) NalLengthSize() (r string, exists bool) {
-	v := m.nal_length_size
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldNalLengthSize returns the old "nal_length_size" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldNalLengthSize(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldNalLengthSize is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldNalLengthSize requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldNalLengthSize: %w", err)
-	}
-	return oldValue.NalLengthSize, nil
-}
-
-// ClearNalLengthSize clears the value of the "nal_length_size" field.
-func (m *MediaStreamMutation) ClearNalLengthSize() {
-	m.nal_length_size = nil
-	m.clearedFields[mediastream.FieldNalLengthSize] = struct{}{}
-}
-
-// NalLengthSizeCleared returns if the "nal_length_size" field was cleared in this mutation.
-func (m *MediaStreamMutation) NalLengthSizeCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldNalLengthSize]
-	return ok
-}
-
-// ResetNalLengthSize resets all changes to the "nal_length_size" field.
-func (m *MediaStreamMutation) ResetNalLengthSize() {
-	m.nal_length_size = nil
-	delete(m.clearedFields, mediastream.FieldNalLengthSize)
-}
-
-// SetVideoDoviTitle sets the "video_dovi_title" field.
-func (m *MediaStreamMutation) SetVideoDoviTitle(s string) {
-	m.video_dovi_title = &s
-}
-
-// VideoDoviTitle returns the value of the "video_dovi_title" field in the mutation.
-func (m *MediaStreamMutation) VideoDoviTitle() (r string, exists bool) {
-	v := m.video_dovi_title
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldVideoDoviTitle returns the old "video_dovi_title" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldVideoDoviTitle(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldVideoDoviTitle is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldVideoDoviTitle requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldVideoDoviTitle: %w", err)
-	}
-	return oldValue.VideoDoviTitle, nil
-}
-
-// ClearVideoDoviTitle clears the value of the "video_dovi_title" field.
-func (m *MediaStreamMutation) ClearVideoDoviTitle() {
-	m.video_dovi_title = nil
-	m.clearedFields[mediastream.FieldVideoDoviTitle] = struct{}{}
-}
-
-// VideoDoviTitleCleared returns if the "video_dovi_title" field was cleared in this mutation.
-func (m *MediaStreamMutation) VideoDoviTitleCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldVideoDoviTitle]
-	return ok
-}
-
-// ResetVideoDoviTitle resets all changes to the "video_dovi_title" field.
-func (m *MediaStreamMutation) ResetVideoDoviTitle() {
-	m.video_dovi_title = nil
-	delete(m.clearedFields, mediastream.FieldVideoDoviTitle)
-}
-
-// SetColorRange sets the "color_range" field.
-func (m *MediaStreamMutation) SetColorRange(s string) {
-	m.color_range = &s
-}
-
-// ColorRange returns the value of the "color_range" field in the mutation.
-func (m *MediaStreamMutation) ColorRange() (r string, exists bool) {
-	v := m.color_range
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldColorRange returns the old "color_range" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldColorRange(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldColorRange is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldColorRange requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldColorRange: %w", err)
-	}
-	return oldValue.ColorRange, nil
-}
-
-// ClearColorRange clears the value of the "color_range" field.
-func (m *MediaStreamMutation) ClearColorRange() {
-	m.color_range = nil
-	m.clearedFields[mediastream.FieldColorRange] = struct{}{}
-}
-
-// ColorRangeCleared returns if the "color_range" field was cleared in this mutation.
-func (m *MediaStreamMutation) ColorRangeCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldColorRange]
-	return ok
-}
-
-// ResetColorRange resets all changes to the "color_range" field.
-func (m *MediaStreamMutation) ResetColorRange() {
-	m.color_range = nil
-	delete(m.clearedFields, mediastream.FieldColorRange)
-}
-
-// SetColorSpace sets the "color_space" field.
-func (m *MediaStreamMutation) SetColorSpace(s string) {
-	m.color_space = &s
-}
-
-// ColorSpace returns the value of the "color_space" field in the mutation.
-func (m *MediaStreamMutation) ColorSpace() (r string, exists bool) {
-	v := m.color_space
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldColorSpace returns the old "color_space" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldColorSpace(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldColorSpace is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldColorSpace requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldColorSpace: %w", err)
-	}
-	return oldValue.ColorSpace, nil
-}
-
-// ClearColorSpace clears the value of the "color_space" field.
-func (m *MediaStreamMutation) ClearColorSpace() {
-	m.color_space = nil
-	m.clearedFields[mediastream.FieldColorSpace] = struct{}{}
-}
-
-// ColorSpaceCleared returns if the "color_space" field was cleared in this mutation.
-func (m *MediaStreamMutation) ColorSpaceCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldColorSpace]
-	return ok
-}
-
-// ResetColorSpace resets all changes to the "color_space" field.
-func (m *MediaStreamMutation) ResetColorSpace() {
-	m.color_space = nil
-	delete(m.clearedFields, mediastream.FieldColorSpace)
-}
-
-// SetColorTransfer sets the "color_transfer" field.
-func (m *MediaStreamMutation) SetColorTransfer(s string) {
-	m.color_transfer = &s
-}
-
-// ColorTransfer returns the value of the "color_transfer" field in the mutation.
-func (m *MediaStreamMutation) ColorTransfer() (r string, exists bool) {
-	v := m.color_transfer
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldColorTransfer returns the old "color_transfer" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldColorTransfer(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldColorTransfer is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldColorTransfer requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldColorTransfer: %w", err)
-	}
-	return oldValue.ColorTransfer, nil
-}
-
-// ClearColorTransfer clears the value of the "color_transfer" field.
-func (m *MediaStreamMutation) ClearColorTransfer() {
-	m.color_transfer = nil
-	m.clearedFields[mediastream.FieldColorTransfer] = struct{}{}
-}
-
-// ColorTransferCleared returns if the "color_transfer" field was cleared in this mutation.
-func (m *MediaStreamMutation) ColorTransferCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldColorTransfer]
-	return ok
-}
-
-// ResetColorTransfer resets all changes to the "color_transfer" field.
-func (m *MediaStreamMutation) ResetColorTransfer() {
-	m.color_transfer = nil
-	delete(m.clearedFields, mediastream.FieldColorTransfer)
-}
-
-// SetColorPrimaries sets the "color_primaries" field.
-func (m *MediaStreamMutation) SetColorPrimaries(s string) {
-	m.color_primaries = &s
-}
-
-// ColorPrimaries returns the value of the "color_primaries" field in the mutation.
-func (m *MediaStreamMutation) ColorPrimaries() (r string, exists bool) {
-	v := m.color_primaries
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldColorPrimaries returns the old "color_primaries" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldColorPrimaries(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldColorPrimaries is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldColorPrimaries requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldColorPrimaries: %w", err)
-	}
-	return oldValue.ColorPrimaries, nil
-}
-
-// ClearColorPrimaries clears the value of the "color_primaries" field.
-func (m *MediaStreamMutation) ClearColorPrimaries() {
-	m.color_primaries = nil
-	m.clearedFields[mediastream.FieldColorPrimaries] = struct{}{}
-}
-
-// ColorPrimariesCleared returns if the "color_primaries" field was cleared in this mutation.
-func (m *MediaStreamMutation) ColorPrimariesCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldColorPrimaries]
-	return ok
-}
-
-// ResetColorPrimaries resets all changes to the "color_primaries" field.
-func (m *MediaStreamMutation) ResetColorPrimaries() {
-	m.color_primaries = nil
-	delete(m.clearedFields, mediastream.FieldColorPrimaries)
-}
-
-// SetDvVersionMajor sets the "dv_version_major" field.
-func (m *MediaStreamMutation) SetDvVersionMajor(i int32) {
-	m.dv_version_major = &i
-	m.adddv_version_major = nil
-}
-
-// DvVersionMajor returns the value of the "dv_version_major" field in the mutation.
-func (m *MediaStreamMutation) DvVersionMajor() (r int32, exists bool) {
-	v := m.dv_version_major
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldDvVersionMajor returns the old "dv_version_major" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldDvVersionMajor(ctx context.Context) (v int32, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDvVersionMajor is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDvVersionMajor requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDvVersionMajor: %w", err)
-	}
-	return oldValue.DvVersionMajor, nil
-}
-
-// AddDvVersionMajor adds i to the "dv_version_major" field.
-func (m *MediaStreamMutation) AddDvVersionMajor(i int32) {
-	if m.adddv_version_major != nil {
-		*m.adddv_version_major += i
-	} else {
-		m.adddv_version_major = &i
-	}
-}
-
-// AddedDvVersionMajor returns the value that was added to the "dv_version_major" field in this mutation.
-func (m *MediaStreamMutation) AddedDvVersionMajor() (r int32, exists bool) {
-	v := m.adddv_version_major
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearDvVersionMajor clears the value of the "dv_version_major" field.
-func (m *MediaStreamMutation) ClearDvVersionMajor() {
-	m.dv_version_major = nil
-	m.adddv_version_major = nil
-	m.clearedFields[mediastream.FieldDvVersionMajor] = struct{}{}
-}
-
-// DvVersionMajorCleared returns if the "dv_version_major" field was cleared in this mutation.
-func (m *MediaStreamMutation) DvVersionMajorCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldDvVersionMajor]
-	return ok
-}
-
-// ResetDvVersionMajor resets all changes to the "dv_version_major" field.
-func (m *MediaStreamMutation) ResetDvVersionMajor() {
-	m.dv_version_major = nil
-	m.adddv_version_major = nil
-	delete(m.clearedFields, mediastream.FieldDvVersionMajor)
-}
-
-// SetDvVersionMinor sets the "dv_version_minor" field.
-func (m *MediaStreamMutation) SetDvVersionMinor(i int32) {
-	m.dv_version_minor = &i
-	m.adddv_version_minor = nil
-}
-
-// DvVersionMinor returns the value of the "dv_version_minor" field in the mutation.
-func (m *MediaStreamMutation) DvVersionMinor() (r int32, exists bool) {
-	v := m.dv_version_minor
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldDvVersionMinor returns the old "dv_version_minor" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldDvVersionMinor(ctx context.Context) (v int32, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDvVersionMinor is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDvVersionMinor requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDvVersionMinor: %w", err)
-	}
-	return oldValue.DvVersionMinor, nil
-}
-
-// AddDvVersionMinor adds i to the "dv_version_minor" field.
-func (m *MediaStreamMutation) AddDvVersionMinor(i int32) {
-	if m.adddv_version_minor != nil {
-		*m.adddv_version_minor += i
-	} else {
-		m.adddv_version_minor = &i
-	}
-}
-
-// AddedDvVersionMinor returns the value that was added to the "dv_version_minor" field in this mutation.
-func (m *MediaStreamMutation) AddedDvVersionMinor() (r int32, exists bool) {
-	v := m.adddv_version_minor
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearDvVersionMinor clears the value of the "dv_version_minor" field.
-func (m *MediaStreamMutation) ClearDvVersionMinor() {
-	m.dv_version_minor = nil
-	m.adddv_version_minor = nil
-	m.clearedFields[mediastream.FieldDvVersionMinor] = struct{}{}
-}
-
-// DvVersionMinorCleared returns if the "dv_version_minor" field was cleared in this mutation.
-func (m *MediaStreamMutation) DvVersionMinorCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldDvVersionMinor]
-	return ok
-}
-
-// ResetDvVersionMinor resets all changes to the "dv_version_minor" field.
-func (m *MediaStreamMutation) ResetDvVersionMinor() {
-	m.dv_version_minor = nil
-	m.adddv_version_minor = nil
-	delete(m.clearedFields, mediastream.FieldDvVersionMinor)
-}
-
-// SetDvProfile sets the "dv_profile" field.
-func (m *MediaStreamMutation) SetDvProfile(i int32) {
-	m.dv_profile = &i
-	m.adddv_profile = nil
-}
-
-// DvProfile returns the value of the "dv_profile" field in the mutation.
-func (m *MediaStreamMutation) DvProfile() (r int32, exists bool) {
-	v := m.dv_profile
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldDvProfile returns the old "dv_profile" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldDvProfile(ctx context.Context) (v int32, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDvProfile is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDvProfile requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDvProfile: %w", err)
-	}
-	return oldValue.DvProfile, nil
-}
-
-// AddDvProfile adds i to the "dv_profile" field.
-func (m *MediaStreamMutation) AddDvProfile(i int32) {
-	if m.adddv_profile != nil {
-		*m.adddv_profile += i
-	} else {
-		m.adddv_profile = &i
-	}
-}
-
-// AddedDvProfile returns the value that was added to the "dv_profile" field in this mutation.
-func (m *MediaStreamMutation) AddedDvProfile() (r int32, exists bool) {
-	v := m.adddv_profile
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearDvProfile clears the value of the "dv_profile" field.
-func (m *MediaStreamMutation) ClearDvProfile() {
-	m.dv_profile = nil
-	m.adddv_profile = nil
-	m.clearedFields[mediastream.FieldDvProfile] = struct{}{}
-}
-
-// DvProfileCleared returns if the "dv_profile" field was cleared in this mutation.
-func (m *MediaStreamMutation) DvProfileCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldDvProfile]
-	return ok
-}
-
-// ResetDvProfile resets all changes to the "dv_profile" field.
-func (m *MediaStreamMutation) ResetDvProfile() {
-	m.dv_profile = nil
-	m.adddv_profile = nil
-	delete(m.clearedFields, mediastream.FieldDvProfile)
-}
-
-// SetDvLevel sets the "dv_level" field.
-func (m *MediaStreamMutation) SetDvLevel(i int32) {
-	m.dv_level = &i
-	m.adddv_level = nil
-}
-
-// DvLevel returns the value of the "dv_level" field in the mutation.
-func (m *MediaStreamMutation) DvLevel() (r int32, exists bool) {
-	v := m.dv_level
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldDvLevel returns the old "dv_level" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldDvLevel(ctx context.Context) (v int32, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDvLevel is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDvLevel requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDvLevel: %w", err)
-	}
-	return oldValue.DvLevel, nil
-}
-
-// AddDvLevel adds i to the "dv_level" field.
-func (m *MediaStreamMutation) AddDvLevel(i int32) {
-	if m.adddv_level != nil {
-		*m.adddv_level += i
-	} else {
-		m.adddv_level = &i
-	}
-}
-
-// AddedDvLevel returns the value that was added to the "dv_level" field in this mutation.
-func (m *MediaStreamMutation) AddedDvLevel() (r int32, exists bool) {
-	v := m.adddv_level
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearDvLevel clears the value of the "dv_level" field.
-func (m *MediaStreamMutation) ClearDvLevel() {
-	m.dv_level = nil
-	m.adddv_level = nil
-	m.clearedFields[mediastream.FieldDvLevel] = struct{}{}
-}
-
-// DvLevelCleared returns if the "dv_level" field was cleared in this mutation.
-func (m *MediaStreamMutation) DvLevelCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldDvLevel]
-	return ok
-}
-
-// ResetDvLevel resets all changes to the "dv_level" field.
-func (m *MediaStreamMutation) ResetDvLevel() {
-	m.dv_level = nil
-	m.adddv_level = nil
-	delete(m.clearedFields, mediastream.FieldDvLevel)
-}
-
-// SetRpuPresentFlag sets the "rpu_present_flag" field.
-func (m *MediaStreamMutation) SetRpuPresentFlag(i int32) {
-	m.rpu_present_flag = &i
-	m.addrpu_present_flag = nil
-}
-
-// RpuPresentFlag returns the value of the "rpu_present_flag" field in the mutation.
-func (m *MediaStreamMutation) RpuPresentFlag() (r int32, exists bool) {
-	v := m.rpu_present_flag
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldRpuPresentFlag returns the old "rpu_present_flag" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldRpuPresentFlag(ctx context.Context) (v int32, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldRpuPresentFlag is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldRpuPresentFlag requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldRpuPresentFlag: %w", err)
-	}
-	return oldValue.RpuPresentFlag, nil
-}
-
-// AddRpuPresentFlag adds i to the "rpu_present_flag" field.
-func (m *MediaStreamMutation) AddRpuPresentFlag(i int32) {
-	if m.addrpu_present_flag != nil {
-		*m.addrpu_present_flag += i
-	} else {
-		m.addrpu_present_flag = &i
-	}
-}
-
-// AddedRpuPresentFlag returns the value that was added to the "rpu_present_flag" field in this mutation.
-func (m *MediaStreamMutation) AddedRpuPresentFlag() (r int32, exists bool) {
-	v := m.addrpu_present_flag
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearRpuPresentFlag clears the value of the "rpu_present_flag" field.
-func (m *MediaStreamMutation) ClearRpuPresentFlag() {
-	m.rpu_present_flag = nil
-	m.addrpu_present_flag = nil
-	m.clearedFields[mediastream.FieldRpuPresentFlag] = struct{}{}
-}
-
-// RpuPresentFlagCleared returns if the "rpu_present_flag" field was cleared in this mutation.
-func (m *MediaStreamMutation) RpuPresentFlagCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldRpuPresentFlag]
-	return ok
-}
-
-// ResetRpuPresentFlag resets all changes to the "rpu_present_flag" field.
-func (m *MediaStreamMutation) ResetRpuPresentFlag() {
-	m.rpu_present_flag = nil
-	m.addrpu_present_flag = nil
-	delete(m.clearedFields, mediastream.FieldRpuPresentFlag)
-}
-
-// SetElPresentFlag sets the "el_present_flag" field.
-func (m *MediaStreamMutation) SetElPresentFlag(i int32) {
-	m.el_present_flag = &i
-	m.addel_present_flag = nil
-}
-
-// ElPresentFlag returns the value of the "el_present_flag" field in the mutation.
-func (m *MediaStreamMutation) ElPresentFlag() (r int32, exists bool) {
-	v := m.el_present_flag
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldElPresentFlag returns the old "el_present_flag" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldElPresentFlag(ctx context.Context) (v int32, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldElPresentFlag is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldElPresentFlag requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldElPresentFlag: %w", err)
-	}
-	return oldValue.ElPresentFlag, nil
-}
-
-// AddElPresentFlag adds i to the "el_present_flag" field.
-func (m *MediaStreamMutation) AddElPresentFlag(i int32) {
-	if m.addel_present_flag != nil {
-		*m.addel_present_flag += i
-	} else {
-		m.addel_present_flag = &i
-	}
-}
-
-// AddedElPresentFlag returns the value that was added to the "el_present_flag" field in this mutation.
-func (m *MediaStreamMutation) AddedElPresentFlag() (r int32, exists bool) {
-	v := m.addel_present_flag
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearElPresentFlag clears the value of the "el_present_flag" field.
-func (m *MediaStreamMutation) ClearElPresentFlag() {
-	m.el_present_flag = nil
-	m.addel_present_flag = nil
-	m.clearedFields[mediastream.FieldElPresentFlag] = struct{}{}
-}
-
-// ElPresentFlagCleared returns if the "el_present_flag" field was cleared in this mutation.
-func (m *MediaStreamMutation) ElPresentFlagCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldElPresentFlag]
-	return ok
-}
-
-// ResetElPresentFlag resets all changes to the "el_present_flag" field.
-func (m *MediaStreamMutation) ResetElPresentFlag() {
-	m.el_present_flag = nil
-	m.addel_present_flag = nil
-	delete(m.clearedFields, mediastream.FieldElPresentFlag)
-}
-
-// SetBlPresentFlag sets the "bl_present_flag" field.
-func (m *MediaStreamMutation) SetBlPresentFlag(i int32) {
-	m.bl_present_flag = &i
-	m.addbl_present_flag = nil
-}
-
-// BlPresentFlag returns the value of the "bl_present_flag" field in the mutation.
-func (m *MediaStreamMutation) BlPresentFlag() (r int32, exists bool) {
-	v := m.bl_present_flag
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldBlPresentFlag returns the old "bl_present_flag" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldBlPresentFlag(ctx context.Context) (v int32, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldBlPresentFlag is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldBlPresentFlag requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldBlPresentFlag: %w", err)
-	}
-	return oldValue.BlPresentFlag, nil
-}
-
-// AddBlPresentFlag adds i to the "bl_present_flag" field.
-func (m *MediaStreamMutation) AddBlPresentFlag(i int32) {
-	if m.addbl_present_flag != nil {
-		*m.addbl_present_flag += i
-	} else {
-		m.addbl_present_flag = &i
-	}
-}
-
-// AddedBlPresentFlag returns the value that was added to the "bl_present_flag" field in this mutation.
-func (m *MediaStreamMutation) AddedBlPresentFlag() (r int32, exists bool) {
-	v := m.addbl_present_flag
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearBlPresentFlag clears the value of the "bl_present_flag" field.
-func (m *MediaStreamMutation) ClearBlPresentFlag() {
-	m.bl_present_flag = nil
-	m.addbl_present_flag = nil
-	m.clearedFields[mediastream.FieldBlPresentFlag] = struct{}{}
-}
-
-// BlPresentFlagCleared returns if the "bl_present_flag" field was cleared in this mutation.
-func (m *MediaStreamMutation) BlPresentFlagCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldBlPresentFlag]
-	return ok
-}
-
-// ResetBlPresentFlag resets all changes to the "bl_present_flag" field.
-func (m *MediaStreamMutation) ResetBlPresentFlag() {
-	m.bl_present_flag = nil
-	m.addbl_present_flag = nil
-	delete(m.clearedFields, mediastream.FieldBlPresentFlag)
-}
-
-// SetDvBlSignalCompatibilityID sets the "dv_bl_signal_compatibility_id" field.
-func (m *MediaStreamMutation) SetDvBlSignalCompatibilityID(i int32) {
-	m.dv_bl_signal_compatibility_id = &i
-	m.adddv_bl_signal_compatibility_id = nil
-}
-
-// DvBlSignalCompatibilityID returns the value of the "dv_bl_signal_compatibility_id" field in the mutation.
-func (m *MediaStreamMutation) DvBlSignalCompatibilityID() (r int32, exists bool) {
-	v := m.dv_bl_signal_compatibility_id
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldDvBlSignalCompatibilityID returns the old "dv_bl_signal_compatibility_id" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldDvBlSignalCompatibilityID(ctx context.Context) (v int32, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDvBlSignalCompatibilityID is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDvBlSignalCompatibilityID requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDvBlSignalCompatibilityID: %w", err)
-	}
-	return oldValue.DvBlSignalCompatibilityID, nil
-}
-
-// AddDvBlSignalCompatibilityID adds i to the "dv_bl_signal_compatibility_id" field.
-func (m *MediaStreamMutation) AddDvBlSignalCompatibilityID(i int32) {
-	if m.adddv_bl_signal_compatibility_id != nil {
-		*m.adddv_bl_signal_compatibility_id += i
-	} else {
-		m.adddv_bl_signal_compatibility_id = &i
-	}
-}
-
-// AddedDvBlSignalCompatibilityID returns the value that was added to the "dv_bl_signal_compatibility_id" field in this mutation.
-func (m *MediaStreamMutation) AddedDvBlSignalCompatibilityID() (r int32, exists bool) {
-	v := m.adddv_bl_signal_compatibility_id
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearDvBlSignalCompatibilityID clears the value of the "dv_bl_signal_compatibility_id" field.
-func (m *MediaStreamMutation) ClearDvBlSignalCompatibilityID() {
-	m.dv_bl_signal_compatibility_id = nil
-	m.adddv_bl_signal_compatibility_id = nil
-	m.clearedFields[mediastream.FieldDvBlSignalCompatibilityID] = struct{}{}
-}
-
-// DvBlSignalCompatibilityIDCleared returns if the "dv_bl_signal_compatibility_id" field was cleared in this mutation.
-func (m *MediaStreamMutation) DvBlSignalCompatibilityIDCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldDvBlSignalCompatibilityID]
-	return ok
-}
-
-// ResetDvBlSignalCompatibilityID resets all changes to the "dv_bl_signal_compatibility_id" field.
-func (m *MediaStreamMutation) ResetDvBlSignalCompatibilityID() {
-	m.dv_bl_signal_compatibility_id = nil
-	m.adddv_bl_signal_compatibility_id = nil
-	delete(m.clearedFields, mediastream.FieldDvBlSignalCompatibilityID)
-}
-
 // SetBitRate sets the "bit_rate" field.
 func (m *MediaStreamMutation) SetBitRate(i int32) {
 	m.bit_rate = &i
@@ -20267,216 +17904,6 @@ func (m *MediaStreamMutation) ResetBitRate() {
 	m.bit_rate = nil
 	m.addbit_rate = nil
 	delete(m.clearedFields, mediastream.FieldBitRate)
-}
-
-// SetBitDepth sets the "bit_depth" field.
-func (m *MediaStreamMutation) SetBitDepth(i int32) {
-	m.bit_depth = &i
-	m.addbit_depth = nil
-}
-
-// BitDepth returns the value of the "bit_depth" field in the mutation.
-func (m *MediaStreamMutation) BitDepth() (r int32, exists bool) {
-	v := m.bit_depth
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldBitDepth returns the old "bit_depth" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldBitDepth(ctx context.Context) (v int32, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldBitDepth is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldBitDepth requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldBitDepth: %w", err)
-	}
-	return oldValue.BitDepth, nil
-}
-
-// AddBitDepth adds i to the "bit_depth" field.
-func (m *MediaStreamMutation) AddBitDepth(i int32) {
-	if m.addbit_depth != nil {
-		*m.addbit_depth += i
-	} else {
-		m.addbit_depth = &i
-	}
-}
-
-// AddedBitDepth returns the value that was added to the "bit_depth" field in this mutation.
-func (m *MediaStreamMutation) AddedBitDepth() (r int32, exists bool) {
-	v := m.addbit_depth
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearBitDepth clears the value of the "bit_depth" field.
-func (m *MediaStreamMutation) ClearBitDepth() {
-	m.bit_depth = nil
-	m.addbit_depth = nil
-	m.clearedFields[mediastream.FieldBitDepth] = struct{}{}
-}
-
-// BitDepthCleared returns if the "bit_depth" field was cleared in this mutation.
-func (m *MediaStreamMutation) BitDepthCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldBitDepth]
-	return ok
-}
-
-// ResetBitDepth resets all changes to the "bit_depth" field.
-func (m *MediaStreamMutation) ResetBitDepth() {
-	m.bit_depth = nil
-	m.addbit_depth = nil
-	delete(m.clearedFields, mediastream.FieldBitDepth)
-}
-
-// SetRefFrames sets the "ref_frames" field.
-func (m *MediaStreamMutation) SetRefFrames(i int32) {
-	m.ref_frames = &i
-	m.addref_frames = nil
-}
-
-// RefFrames returns the value of the "ref_frames" field in the mutation.
-func (m *MediaStreamMutation) RefFrames() (r int32, exists bool) {
-	v := m.ref_frames
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldRefFrames returns the old "ref_frames" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldRefFrames(ctx context.Context) (v int32, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldRefFrames is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldRefFrames requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldRefFrames: %w", err)
-	}
-	return oldValue.RefFrames, nil
-}
-
-// AddRefFrames adds i to the "ref_frames" field.
-func (m *MediaStreamMutation) AddRefFrames(i int32) {
-	if m.addref_frames != nil {
-		*m.addref_frames += i
-	} else {
-		m.addref_frames = &i
-	}
-}
-
-// AddedRefFrames returns the value that was added to the "ref_frames" field in this mutation.
-func (m *MediaStreamMutation) AddedRefFrames() (r int32, exists bool) {
-	v := m.addref_frames
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearRefFrames clears the value of the "ref_frames" field.
-func (m *MediaStreamMutation) ClearRefFrames() {
-	m.ref_frames = nil
-	m.addref_frames = nil
-	m.clearedFields[mediastream.FieldRefFrames] = struct{}{}
-}
-
-// RefFramesCleared returns if the "ref_frames" field was cleared in this mutation.
-func (m *MediaStreamMutation) RefFramesCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldRefFrames]
-	return ok
-}
-
-// ResetRefFrames resets all changes to the "ref_frames" field.
-func (m *MediaStreamMutation) ResetRefFrames() {
-	m.ref_frames = nil
-	m.addref_frames = nil
-	delete(m.clearedFields, mediastream.FieldRefFrames)
-}
-
-// SetPacketLength sets the "packet_length" field.
-func (m *MediaStreamMutation) SetPacketLength(i int32) {
-	m.packet_length = &i
-	m.addpacket_length = nil
-}
-
-// PacketLength returns the value of the "packet_length" field in the mutation.
-func (m *MediaStreamMutation) PacketLength() (r int32, exists bool) {
-	v := m.packet_length
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldPacketLength returns the old "packet_length" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldPacketLength(ctx context.Context) (v int32, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPacketLength is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPacketLength requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPacketLength: %w", err)
-	}
-	return oldValue.PacketLength, nil
-}
-
-// AddPacketLength adds i to the "packet_length" field.
-func (m *MediaStreamMutation) AddPacketLength(i int32) {
-	if m.addpacket_length != nil {
-		*m.addpacket_length += i
-	} else {
-		m.addpacket_length = &i
-	}
-}
-
-// AddedPacketLength returns the value that was added to the "packet_length" field in this mutation.
-func (m *MediaStreamMutation) AddedPacketLength() (r int32, exists bool) {
-	v := m.addpacket_length
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearPacketLength clears the value of the "packet_length" field.
-func (m *MediaStreamMutation) ClearPacketLength() {
-	m.packet_length = nil
-	m.addpacket_length = nil
-	m.clearedFields[mediastream.FieldPacketLength] = struct{}{}
-}
-
-// PacketLengthCleared returns if the "packet_length" field was cleared in this mutation.
-func (m *MediaStreamMutation) PacketLengthCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldPacketLength]
-	return ok
-}
-
-// ResetPacketLength resets all changes to the "packet_length" field.
-func (m *MediaStreamMutation) ResetPacketLength() {
-	m.packet_length = nil
-	m.addpacket_length = nil
-	delete(m.clearedFields, mediastream.FieldPacketLength)
 }
 
 // SetChannels sets the "channels" field.
@@ -20759,146 +18186,6 @@ func (m *MediaStreamMutation) ResetHeight() {
 	delete(m.clearedFields, mediastream.FieldHeight)
 }
 
-// SetRotation sets the "rotation" field.
-func (m *MediaStreamMutation) SetRotation(i int32) {
-	m.rotation = &i
-	m.addrotation = nil
-}
-
-// Rotation returns the value of the "rotation" field in the mutation.
-func (m *MediaStreamMutation) Rotation() (r int32, exists bool) {
-	v := m.rotation
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldRotation returns the old "rotation" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldRotation(ctx context.Context) (v int32, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldRotation is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldRotation requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldRotation: %w", err)
-	}
-	return oldValue.Rotation, nil
-}
-
-// AddRotation adds i to the "rotation" field.
-func (m *MediaStreamMutation) AddRotation(i int32) {
-	if m.addrotation != nil {
-		*m.addrotation += i
-	} else {
-		m.addrotation = &i
-	}
-}
-
-// AddedRotation returns the value that was added to the "rotation" field in this mutation.
-func (m *MediaStreamMutation) AddedRotation() (r int32, exists bool) {
-	v := m.addrotation
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearRotation clears the value of the "rotation" field.
-func (m *MediaStreamMutation) ClearRotation() {
-	m.rotation = nil
-	m.addrotation = nil
-	m.clearedFields[mediastream.FieldRotation] = struct{}{}
-}
-
-// RotationCleared returns if the "rotation" field was cleared in this mutation.
-func (m *MediaStreamMutation) RotationCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldRotation]
-	return ok
-}
-
-// ResetRotation resets all changes to the "rotation" field.
-func (m *MediaStreamMutation) ResetRotation() {
-	m.rotation = nil
-	m.addrotation = nil
-	delete(m.clearedFields, mediastream.FieldRotation)
-}
-
-// SetScore sets the "score" field.
-func (m *MediaStreamMutation) SetScore(i int32) {
-	m.score = &i
-	m.addscore = nil
-}
-
-// Score returns the value of the "score" field in the mutation.
-func (m *MediaStreamMutation) Score() (r int32, exists bool) {
-	v := m.score
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldScore returns the old "score" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldScore(ctx context.Context) (v int32, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldScore is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldScore requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldScore: %w", err)
-	}
-	return oldValue.Score, nil
-}
-
-// AddScore adds i to the "score" field.
-func (m *MediaStreamMutation) AddScore(i int32) {
-	if m.addscore != nil {
-		*m.addscore += i
-	} else {
-		m.addscore = &i
-	}
-}
-
-// AddedScore returns the value that was added to the "score" field in this mutation.
-func (m *MediaStreamMutation) AddedScore() (r int32, exists bool) {
-	v := m.addscore
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearScore clears the value of the "score" field.
-func (m *MediaStreamMutation) ClearScore() {
-	m.score = nil
-	m.addscore = nil
-	m.clearedFields[mediastream.FieldScore] = struct{}{}
-}
-
-// ScoreCleared returns if the "score" field was cleared in this mutation.
-func (m *MediaStreamMutation) ScoreCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldScore]
-	return ok
-}
-
-// ResetScore resets all changes to the "score" field.
-func (m *MediaStreamMutation) ResetScore() {
-	m.score = nil
-	m.addscore = nil
-	delete(m.clearedFields, mediastream.FieldScore)
-}
-
 // SetLevel sets the "level" field.
 func (m *MediaStreamMutation) SetLevel(f float64) {
 	m.level = &f
@@ -20967,216 +18254,6 @@ func (m *MediaStreamMutation) ResetLevel() {
 	m.level = nil
 	m.addlevel = nil
 	delete(m.clearedFields, mediastream.FieldLevel)
-}
-
-// SetAverageFrameRate sets the "average_frame_rate" field.
-func (m *MediaStreamMutation) SetAverageFrameRate(f float64) {
-	m.average_frame_rate = &f
-	m.addaverage_frame_rate = nil
-}
-
-// AverageFrameRate returns the value of the "average_frame_rate" field in the mutation.
-func (m *MediaStreamMutation) AverageFrameRate() (r float64, exists bool) {
-	v := m.average_frame_rate
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldAverageFrameRate returns the old "average_frame_rate" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldAverageFrameRate(ctx context.Context) (v float64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldAverageFrameRate is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldAverageFrameRate requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAverageFrameRate: %w", err)
-	}
-	return oldValue.AverageFrameRate, nil
-}
-
-// AddAverageFrameRate adds f to the "average_frame_rate" field.
-func (m *MediaStreamMutation) AddAverageFrameRate(f float64) {
-	if m.addaverage_frame_rate != nil {
-		*m.addaverage_frame_rate += f
-	} else {
-		m.addaverage_frame_rate = &f
-	}
-}
-
-// AddedAverageFrameRate returns the value that was added to the "average_frame_rate" field in this mutation.
-func (m *MediaStreamMutation) AddedAverageFrameRate() (r float64, exists bool) {
-	v := m.addaverage_frame_rate
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearAverageFrameRate clears the value of the "average_frame_rate" field.
-func (m *MediaStreamMutation) ClearAverageFrameRate() {
-	m.average_frame_rate = nil
-	m.addaverage_frame_rate = nil
-	m.clearedFields[mediastream.FieldAverageFrameRate] = struct{}{}
-}
-
-// AverageFrameRateCleared returns if the "average_frame_rate" field was cleared in this mutation.
-func (m *MediaStreamMutation) AverageFrameRateCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldAverageFrameRate]
-	return ok
-}
-
-// ResetAverageFrameRate resets all changes to the "average_frame_rate" field.
-func (m *MediaStreamMutation) ResetAverageFrameRate() {
-	m.average_frame_rate = nil
-	m.addaverage_frame_rate = nil
-	delete(m.clearedFields, mediastream.FieldAverageFrameRate)
-}
-
-// SetRealFrameRate sets the "real_frame_rate" field.
-func (m *MediaStreamMutation) SetRealFrameRate(f float64) {
-	m.real_frame_rate = &f
-	m.addreal_frame_rate = nil
-}
-
-// RealFrameRate returns the value of the "real_frame_rate" field in the mutation.
-func (m *MediaStreamMutation) RealFrameRate() (r float64, exists bool) {
-	v := m.real_frame_rate
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldRealFrameRate returns the old "real_frame_rate" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldRealFrameRate(ctx context.Context) (v float64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldRealFrameRate is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldRealFrameRate requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldRealFrameRate: %w", err)
-	}
-	return oldValue.RealFrameRate, nil
-}
-
-// AddRealFrameRate adds f to the "real_frame_rate" field.
-func (m *MediaStreamMutation) AddRealFrameRate(f float64) {
-	if m.addreal_frame_rate != nil {
-		*m.addreal_frame_rate += f
-	} else {
-		m.addreal_frame_rate = &f
-	}
-}
-
-// AddedRealFrameRate returns the value that was added to the "real_frame_rate" field in this mutation.
-func (m *MediaStreamMutation) AddedRealFrameRate() (r float64, exists bool) {
-	v := m.addreal_frame_rate
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearRealFrameRate clears the value of the "real_frame_rate" field.
-func (m *MediaStreamMutation) ClearRealFrameRate() {
-	m.real_frame_rate = nil
-	m.addreal_frame_rate = nil
-	m.clearedFields[mediastream.FieldRealFrameRate] = struct{}{}
-}
-
-// RealFrameRateCleared returns if the "real_frame_rate" field was cleared in this mutation.
-func (m *MediaStreamMutation) RealFrameRateCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldRealFrameRate]
-	return ok
-}
-
-// ResetRealFrameRate resets all changes to the "real_frame_rate" field.
-func (m *MediaStreamMutation) ResetRealFrameRate() {
-	m.real_frame_rate = nil
-	m.addreal_frame_rate = nil
-	delete(m.clearedFields, mediastream.FieldRealFrameRate)
-}
-
-// SetReferenceFrameRate sets the "reference_frame_rate" field.
-func (m *MediaStreamMutation) SetReferenceFrameRate(f float64) {
-	m.reference_frame_rate = &f
-	m.addreference_frame_rate = nil
-}
-
-// ReferenceFrameRate returns the value of the "reference_frame_rate" field in the mutation.
-func (m *MediaStreamMutation) ReferenceFrameRate() (r float64, exists bool) {
-	v := m.reference_frame_rate
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldReferenceFrameRate returns the old "reference_frame_rate" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldReferenceFrameRate(ctx context.Context) (v float64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldReferenceFrameRate is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldReferenceFrameRate requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldReferenceFrameRate: %w", err)
-	}
-	return oldValue.ReferenceFrameRate, nil
-}
-
-// AddReferenceFrameRate adds f to the "reference_frame_rate" field.
-func (m *MediaStreamMutation) AddReferenceFrameRate(f float64) {
-	if m.addreference_frame_rate != nil {
-		*m.addreference_frame_rate += f
-	} else {
-		m.addreference_frame_rate = &f
-	}
-}
-
-// AddedReferenceFrameRate returns the value that was added to the "reference_frame_rate" field in this mutation.
-func (m *MediaStreamMutation) AddedReferenceFrameRate() (r float64, exists bool) {
-	v := m.addreference_frame_rate
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearReferenceFrameRate clears the value of the "reference_frame_rate" field.
-func (m *MediaStreamMutation) ClearReferenceFrameRate() {
-	m.reference_frame_rate = nil
-	m.addreference_frame_rate = nil
-	m.clearedFields[mediastream.FieldReferenceFrameRate] = struct{}{}
-}
-
-// ReferenceFrameRateCleared returns if the "reference_frame_rate" field was cleared in this mutation.
-func (m *MediaStreamMutation) ReferenceFrameRateCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldReferenceFrameRate]
-	return ok
-}
-
-// ResetReferenceFrameRate resets all changes to the "reference_frame_rate" field.
-func (m *MediaStreamMutation) ResetReferenceFrameRate() {
-	m.reference_frame_rate = nil
-	m.addreference_frame_rate = nil
-	delete(m.clearedFields, mediastream.FieldReferenceFrameRate)
 }
 
 // SetIsDefault sets the "is_default" field.
@@ -21359,42 +18436,6 @@ func (m *MediaStreamMutation) ResetIsAnamorphic() {
 	m.is_anamorphic = nil
 }
 
-// SetIsAvc sets the "is_avc" field.
-func (m *MediaStreamMutation) SetIsAvc(b bool) {
-	m.is_avc = &b
-}
-
-// IsAvc returns the value of the "is_avc" field in the mutation.
-func (m *MediaStreamMutation) IsAvc() (r bool, exists bool) {
-	v := m.is_avc
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldIsAvc returns the old "is_avc" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldIsAvc(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldIsAvc is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldIsAvc requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldIsAvc: %w", err)
-	}
-	return oldValue.IsAvc, nil
-}
-
-// ResetIsAvc resets all changes to the "is_avc" field.
-func (m *MediaStreamMutation) ResetIsAvc() {
-	m.is_avc = nil
-}
-
 // SetIsHearingImpaired sets the "is_hearing_impaired" field.
 func (m *MediaStreamMutation) SetIsHearingImpaired(b bool) {
 	m.is_hearing_impaired = &b
@@ -21492,7 +18533,7 @@ func (m *MediaStreamMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *MediaStreamMutation) Fields() []string {
-	fields := make([]string, 0, 54)
+	fields := make([]string, 0, 24)
 	if m.created_at != nil {
 		fields = append(fields, mediastream.FieldCreatedAt)
 	}
@@ -21505,23 +18546,14 @@ func (m *MediaStreamMutation) Fields() []string {
 	if m.kind != nil {
 		fields = append(fields, mediastream.FieldKind)
 	}
-	if m.video_range != nil {
-		fields = append(fields, mediastream.FieldVideoRange)
-	}
 	if m.video_range_type != nil {
 		fields = append(fields, mediastream.FieldVideoRangeType)
-	}
-	if m.audio_spatial_format != nil {
-		fields = append(fields, mediastream.FieldAudioSpatialFormat)
 	}
 	if m.index != nil {
 		fields = append(fields, mediastream.FieldIndex)
 	}
 	if m.codec != nil {
 		fields = append(fields, mediastream.FieldCodec)
-	}
-	if m.codec_tag != nil {
-		fields = append(fields, mediastream.FieldCodecTag)
 	}
 	if m.profile != nil {
 		fields = append(fields, mediastream.FieldProfile)
@@ -21532,77 +18564,14 @@ func (m *MediaStreamMutation) Fields() []string {
 	if m.title != nil {
 		fields = append(fields, mediastream.FieldTitle)
 	}
-	if m.comment != nil {
-		fields = append(fields, mediastream.FieldComment)
-	}
 	if m._path != nil {
 		fields = append(fields, mediastream.FieldPath)
 	}
 	if m.pixel_format != nil {
 		fields = append(fields, mediastream.FieldPixelFormat)
 	}
-	if m.aspect_ratio != nil {
-		fields = append(fields, mediastream.FieldAspectRatio)
-	}
-	if m.channel_layout != nil {
-		fields = append(fields, mediastream.FieldChannelLayout)
-	}
-	if m.time_base != nil {
-		fields = append(fields, mediastream.FieldTimeBase)
-	}
-	if m.nal_length_size != nil {
-		fields = append(fields, mediastream.FieldNalLengthSize)
-	}
-	if m.video_dovi_title != nil {
-		fields = append(fields, mediastream.FieldVideoDoviTitle)
-	}
-	if m.color_range != nil {
-		fields = append(fields, mediastream.FieldColorRange)
-	}
-	if m.color_space != nil {
-		fields = append(fields, mediastream.FieldColorSpace)
-	}
-	if m.color_transfer != nil {
-		fields = append(fields, mediastream.FieldColorTransfer)
-	}
-	if m.color_primaries != nil {
-		fields = append(fields, mediastream.FieldColorPrimaries)
-	}
-	if m.dv_version_major != nil {
-		fields = append(fields, mediastream.FieldDvVersionMajor)
-	}
-	if m.dv_version_minor != nil {
-		fields = append(fields, mediastream.FieldDvVersionMinor)
-	}
-	if m.dv_profile != nil {
-		fields = append(fields, mediastream.FieldDvProfile)
-	}
-	if m.dv_level != nil {
-		fields = append(fields, mediastream.FieldDvLevel)
-	}
-	if m.rpu_present_flag != nil {
-		fields = append(fields, mediastream.FieldRpuPresentFlag)
-	}
-	if m.el_present_flag != nil {
-		fields = append(fields, mediastream.FieldElPresentFlag)
-	}
-	if m.bl_present_flag != nil {
-		fields = append(fields, mediastream.FieldBlPresentFlag)
-	}
-	if m.dv_bl_signal_compatibility_id != nil {
-		fields = append(fields, mediastream.FieldDvBlSignalCompatibilityID)
-	}
 	if m.bit_rate != nil {
 		fields = append(fields, mediastream.FieldBitRate)
-	}
-	if m.bit_depth != nil {
-		fields = append(fields, mediastream.FieldBitDepth)
-	}
-	if m.ref_frames != nil {
-		fields = append(fields, mediastream.FieldRefFrames)
-	}
-	if m.packet_length != nil {
-		fields = append(fields, mediastream.FieldPacketLength)
 	}
 	if m.channels != nil {
 		fields = append(fields, mediastream.FieldChannels)
@@ -21616,23 +18585,8 @@ func (m *MediaStreamMutation) Fields() []string {
 	if m.height != nil {
 		fields = append(fields, mediastream.FieldHeight)
 	}
-	if m.rotation != nil {
-		fields = append(fields, mediastream.FieldRotation)
-	}
-	if m.score != nil {
-		fields = append(fields, mediastream.FieldScore)
-	}
 	if m.level != nil {
 		fields = append(fields, mediastream.FieldLevel)
-	}
-	if m.average_frame_rate != nil {
-		fields = append(fields, mediastream.FieldAverageFrameRate)
-	}
-	if m.real_frame_rate != nil {
-		fields = append(fields, mediastream.FieldRealFrameRate)
-	}
-	if m.reference_frame_rate != nil {
-		fields = append(fields, mediastream.FieldReferenceFrameRate)
 	}
 	if m.is_default != nil {
 		fields = append(fields, mediastream.FieldIsDefault)
@@ -21648,9 +18602,6 @@ func (m *MediaStreamMutation) Fields() []string {
 	}
 	if m.is_anamorphic != nil {
 		fields = append(fields, mediastream.FieldIsAnamorphic)
-	}
-	if m.is_avc != nil {
-		fields = append(fields, mediastream.FieldIsAvc)
 	}
 	if m.is_hearing_impaired != nil {
 		fields = append(fields, mediastream.FieldIsHearingImpaired)
@@ -21671,72 +18622,24 @@ func (m *MediaStreamMutation) Field(name string) (ent.Value, bool) {
 		return m.SourceID()
 	case mediastream.FieldKind:
 		return m.Kind()
-	case mediastream.FieldVideoRange:
-		return m.VideoRange()
 	case mediastream.FieldVideoRangeType:
 		return m.VideoRangeType()
-	case mediastream.FieldAudioSpatialFormat:
-		return m.AudioSpatialFormat()
 	case mediastream.FieldIndex:
 		return m.Index()
 	case mediastream.FieldCodec:
 		return m.Codec()
-	case mediastream.FieldCodecTag:
-		return m.CodecTag()
 	case mediastream.FieldProfile:
 		return m.Profile()
 	case mediastream.FieldLanguage:
 		return m.Language()
 	case mediastream.FieldTitle:
 		return m.Title()
-	case mediastream.FieldComment:
-		return m.Comment()
 	case mediastream.FieldPath:
 		return m.Path()
 	case mediastream.FieldPixelFormat:
 		return m.PixelFormat()
-	case mediastream.FieldAspectRatio:
-		return m.AspectRatio()
-	case mediastream.FieldChannelLayout:
-		return m.ChannelLayout()
-	case mediastream.FieldTimeBase:
-		return m.TimeBase()
-	case mediastream.FieldNalLengthSize:
-		return m.NalLengthSize()
-	case mediastream.FieldVideoDoviTitle:
-		return m.VideoDoviTitle()
-	case mediastream.FieldColorRange:
-		return m.ColorRange()
-	case mediastream.FieldColorSpace:
-		return m.ColorSpace()
-	case mediastream.FieldColorTransfer:
-		return m.ColorTransfer()
-	case mediastream.FieldColorPrimaries:
-		return m.ColorPrimaries()
-	case mediastream.FieldDvVersionMajor:
-		return m.DvVersionMajor()
-	case mediastream.FieldDvVersionMinor:
-		return m.DvVersionMinor()
-	case mediastream.FieldDvProfile:
-		return m.DvProfile()
-	case mediastream.FieldDvLevel:
-		return m.DvLevel()
-	case mediastream.FieldRpuPresentFlag:
-		return m.RpuPresentFlag()
-	case mediastream.FieldElPresentFlag:
-		return m.ElPresentFlag()
-	case mediastream.FieldBlPresentFlag:
-		return m.BlPresentFlag()
-	case mediastream.FieldDvBlSignalCompatibilityID:
-		return m.DvBlSignalCompatibilityID()
 	case mediastream.FieldBitRate:
 		return m.BitRate()
-	case mediastream.FieldBitDepth:
-		return m.BitDepth()
-	case mediastream.FieldRefFrames:
-		return m.RefFrames()
-	case mediastream.FieldPacketLength:
-		return m.PacketLength()
 	case mediastream.FieldChannels:
 		return m.Channels()
 	case mediastream.FieldSampleRate:
@@ -21745,18 +18648,8 @@ func (m *MediaStreamMutation) Field(name string) (ent.Value, bool) {
 		return m.Width()
 	case mediastream.FieldHeight:
 		return m.Height()
-	case mediastream.FieldRotation:
-		return m.Rotation()
-	case mediastream.FieldScore:
-		return m.Score()
 	case mediastream.FieldLevel:
 		return m.Level()
-	case mediastream.FieldAverageFrameRate:
-		return m.AverageFrameRate()
-	case mediastream.FieldRealFrameRate:
-		return m.RealFrameRate()
-	case mediastream.FieldReferenceFrameRate:
-		return m.ReferenceFrameRate()
 	case mediastream.FieldIsDefault:
 		return m.IsDefault()
 	case mediastream.FieldIsForced:
@@ -21767,8 +18660,6 @@ func (m *MediaStreamMutation) Field(name string) (ent.Value, bool) {
 		return m.IsInterlaced()
 	case mediastream.FieldIsAnamorphic:
 		return m.IsAnamorphic()
-	case mediastream.FieldIsAvc:
-		return m.IsAvc()
 	case mediastream.FieldIsHearingImpaired:
 		return m.IsHearingImpaired()
 	}
@@ -21788,72 +18679,24 @@ func (m *MediaStreamMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldSourceID(ctx)
 	case mediastream.FieldKind:
 		return m.OldKind(ctx)
-	case mediastream.FieldVideoRange:
-		return m.OldVideoRange(ctx)
 	case mediastream.FieldVideoRangeType:
 		return m.OldVideoRangeType(ctx)
-	case mediastream.FieldAudioSpatialFormat:
-		return m.OldAudioSpatialFormat(ctx)
 	case mediastream.FieldIndex:
 		return m.OldIndex(ctx)
 	case mediastream.FieldCodec:
 		return m.OldCodec(ctx)
-	case mediastream.FieldCodecTag:
-		return m.OldCodecTag(ctx)
 	case mediastream.FieldProfile:
 		return m.OldProfile(ctx)
 	case mediastream.FieldLanguage:
 		return m.OldLanguage(ctx)
 	case mediastream.FieldTitle:
 		return m.OldTitle(ctx)
-	case mediastream.FieldComment:
-		return m.OldComment(ctx)
 	case mediastream.FieldPath:
 		return m.OldPath(ctx)
 	case mediastream.FieldPixelFormat:
 		return m.OldPixelFormat(ctx)
-	case mediastream.FieldAspectRatio:
-		return m.OldAspectRatio(ctx)
-	case mediastream.FieldChannelLayout:
-		return m.OldChannelLayout(ctx)
-	case mediastream.FieldTimeBase:
-		return m.OldTimeBase(ctx)
-	case mediastream.FieldNalLengthSize:
-		return m.OldNalLengthSize(ctx)
-	case mediastream.FieldVideoDoviTitle:
-		return m.OldVideoDoviTitle(ctx)
-	case mediastream.FieldColorRange:
-		return m.OldColorRange(ctx)
-	case mediastream.FieldColorSpace:
-		return m.OldColorSpace(ctx)
-	case mediastream.FieldColorTransfer:
-		return m.OldColorTransfer(ctx)
-	case mediastream.FieldColorPrimaries:
-		return m.OldColorPrimaries(ctx)
-	case mediastream.FieldDvVersionMajor:
-		return m.OldDvVersionMajor(ctx)
-	case mediastream.FieldDvVersionMinor:
-		return m.OldDvVersionMinor(ctx)
-	case mediastream.FieldDvProfile:
-		return m.OldDvProfile(ctx)
-	case mediastream.FieldDvLevel:
-		return m.OldDvLevel(ctx)
-	case mediastream.FieldRpuPresentFlag:
-		return m.OldRpuPresentFlag(ctx)
-	case mediastream.FieldElPresentFlag:
-		return m.OldElPresentFlag(ctx)
-	case mediastream.FieldBlPresentFlag:
-		return m.OldBlPresentFlag(ctx)
-	case mediastream.FieldDvBlSignalCompatibilityID:
-		return m.OldDvBlSignalCompatibilityID(ctx)
 	case mediastream.FieldBitRate:
 		return m.OldBitRate(ctx)
-	case mediastream.FieldBitDepth:
-		return m.OldBitDepth(ctx)
-	case mediastream.FieldRefFrames:
-		return m.OldRefFrames(ctx)
-	case mediastream.FieldPacketLength:
-		return m.OldPacketLength(ctx)
 	case mediastream.FieldChannels:
 		return m.OldChannels(ctx)
 	case mediastream.FieldSampleRate:
@@ -21862,18 +18705,8 @@ func (m *MediaStreamMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldWidth(ctx)
 	case mediastream.FieldHeight:
 		return m.OldHeight(ctx)
-	case mediastream.FieldRotation:
-		return m.OldRotation(ctx)
-	case mediastream.FieldScore:
-		return m.OldScore(ctx)
 	case mediastream.FieldLevel:
 		return m.OldLevel(ctx)
-	case mediastream.FieldAverageFrameRate:
-		return m.OldAverageFrameRate(ctx)
-	case mediastream.FieldRealFrameRate:
-		return m.OldRealFrameRate(ctx)
-	case mediastream.FieldReferenceFrameRate:
-		return m.OldReferenceFrameRate(ctx)
 	case mediastream.FieldIsDefault:
 		return m.OldIsDefault(ctx)
 	case mediastream.FieldIsForced:
@@ -21884,8 +18717,6 @@ func (m *MediaStreamMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldIsInterlaced(ctx)
 	case mediastream.FieldIsAnamorphic:
 		return m.OldIsAnamorphic(ctx)
-	case mediastream.FieldIsAvc:
-		return m.OldIsAvc(ctx)
 	case mediastream.FieldIsHearingImpaired:
 		return m.OldIsHearingImpaired(ctx)
 	}
@@ -21925,26 +18756,12 @@ func (m *MediaStreamMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetKind(v)
 		return nil
-	case mediastream.FieldVideoRange:
-		v, ok := value.(mediastream.VideoRange)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetVideoRange(v)
-		return nil
 	case mediastream.FieldVideoRangeType:
 		v, ok := value.(mediastream.VideoRangeType)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetVideoRangeType(v)
-		return nil
-	case mediastream.FieldAudioSpatialFormat:
-		v, ok := value.(mediastream.AudioSpatialFormat)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAudioSpatialFormat(v)
 		return nil
 	case mediastream.FieldIndex:
 		v, ok := value.(int32)
@@ -21959,13 +18776,6 @@ func (m *MediaStreamMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetCodec(v)
-		return nil
-	case mediastream.FieldCodecTag:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetCodecTag(v)
 		return nil
 	case mediastream.FieldProfile:
 		v, ok := value.(string)
@@ -21988,13 +18798,6 @@ func (m *MediaStreamMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetTitle(v)
 		return nil
-	case mediastream.FieldComment:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetComment(v)
-		return nil
 	case mediastream.FieldPath:
 		v, ok := value.(string)
 		if !ok {
@@ -22009,152 +18812,12 @@ func (m *MediaStreamMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetPixelFormat(v)
 		return nil
-	case mediastream.FieldAspectRatio:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAspectRatio(v)
-		return nil
-	case mediastream.FieldChannelLayout:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetChannelLayout(v)
-		return nil
-	case mediastream.FieldTimeBase:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetTimeBase(v)
-		return nil
-	case mediastream.FieldNalLengthSize:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetNalLengthSize(v)
-		return nil
-	case mediastream.FieldVideoDoviTitle:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetVideoDoviTitle(v)
-		return nil
-	case mediastream.FieldColorRange:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetColorRange(v)
-		return nil
-	case mediastream.FieldColorSpace:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetColorSpace(v)
-		return nil
-	case mediastream.FieldColorTransfer:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetColorTransfer(v)
-		return nil
-	case mediastream.FieldColorPrimaries:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetColorPrimaries(v)
-		return nil
-	case mediastream.FieldDvVersionMajor:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetDvVersionMajor(v)
-		return nil
-	case mediastream.FieldDvVersionMinor:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetDvVersionMinor(v)
-		return nil
-	case mediastream.FieldDvProfile:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetDvProfile(v)
-		return nil
-	case mediastream.FieldDvLevel:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetDvLevel(v)
-		return nil
-	case mediastream.FieldRpuPresentFlag:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetRpuPresentFlag(v)
-		return nil
-	case mediastream.FieldElPresentFlag:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetElPresentFlag(v)
-		return nil
-	case mediastream.FieldBlPresentFlag:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetBlPresentFlag(v)
-		return nil
-	case mediastream.FieldDvBlSignalCompatibilityID:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetDvBlSignalCompatibilityID(v)
-		return nil
 	case mediastream.FieldBitRate:
 		v, ok := value.(int32)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetBitRate(v)
-		return nil
-	case mediastream.FieldBitDepth:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetBitDepth(v)
-		return nil
-	case mediastream.FieldRefFrames:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetRefFrames(v)
-		return nil
-	case mediastream.FieldPacketLength:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetPacketLength(v)
 		return nil
 	case mediastream.FieldChannels:
 		v, ok := value.(int32)
@@ -22184,47 +18847,12 @@ func (m *MediaStreamMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetHeight(v)
 		return nil
-	case mediastream.FieldRotation:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetRotation(v)
-		return nil
-	case mediastream.FieldScore:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetScore(v)
-		return nil
 	case mediastream.FieldLevel:
 		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetLevel(v)
-		return nil
-	case mediastream.FieldAverageFrameRate:
-		v, ok := value.(float64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAverageFrameRate(v)
-		return nil
-	case mediastream.FieldRealFrameRate:
-		v, ok := value.(float64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetRealFrameRate(v)
-		return nil
-	case mediastream.FieldReferenceFrameRate:
-		v, ok := value.(float64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetReferenceFrameRate(v)
 		return nil
 	case mediastream.FieldIsDefault:
 		v, ok := value.(bool)
@@ -22261,13 +18889,6 @@ func (m *MediaStreamMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetIsAnamorphic(v)
 		return nil
-	case mediastream.FieldIsAvc:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetIsAvc(v)
-		return nil
 	case mediastream.FieldIsHearingImpaired:
 		v, ok := value.(bool)
 		if !ok {
@@ -22286,41 +18907,8 @@ func (m *MediaStreamMutation) AddedFields() []string {
 	if m.addindex != nil {
 		fields = append(fields, mediastream.FieldIndex)
 	}
-	if m.adddv_version_major != nil {
-		fields = append(fields, mediastream.FieldDvVersionMajor)
-	}
-	if m.adddv_version_minor != nil {
-		fields = append(fields, mediastream.FieldDvVersionMinor)
-	}
-	if m.adddv_profile != nil {
-		fields = append(fields, mediastream.FieldDvProfile)
-	}
-	if m.adddv_level != nil {
-		fields = append(fields, mediastream.FieldDvLevel)
-	}
-	if m.addrpu_present_flag != nil {
-		fields = append(fields, mediastream.FieldRpuPresentFlag)
-	}
-	if m.addel_present_flag != nil {
-		fields = append(fields, mediastream.FieldElPresentFlag)
-	}
-	if m.addbl_present_flag != nil {
-		fields = append(fields, mediastream.FieldBlPresentFlag)
-	}
-	if m.adddv_bl_signal_compatibility_id != nil {
-		fields = append(fields, mediastream.FieldDvBlSignalCompatibilityID)
-	}
 	if m.addbit_rate != nil {
 		fields = append(fields, mediastream.FieldBitRate)
-	}
-	if m.addbit_depth != nil {
-		fields = append(fields, mediastream.FieldBitDepth)
-	}
-	if m.addref_frames != nil {
-		fields = append(fields, mediastream.FieldRefFrames)
-	}
-	if m.addpacket_length != nil {
-		fields = append(fields, mediastream.FieldPacketLength)
 	}
 	if m.addchannels != nil {
 		fields = append(fields, mediastream.FieldChannels)
@@ -22334,23 +18922,8 @@ func (m *MediaStreamMutation) AddedFields() []string {
 	if m.addheight != nil {
 		fields = append(fields, mediastream.FieldHeight)
 	}
-	if m.addrotation != nil {
-		fields = append(fields, mediastream.FieldRotation)
-	}
-	if m.addscore != nil {
-		fields = append(fields, mediastream.FieldScore)
-	}
 	if m.addlevel != nil {
 		fields = append(fields, mediastream.FieldLevel)
-	}
-	if m.addaverage_frame_rate != nil {
-		fields = append(fields, mediastream.FieldAverageFrameRate)
-	}
-	if m.addreal_frame_rate != nil {
-		fields = append(fields, mediastream.FieldRealFrameRate)
-	}
-	if m.addreference_frame_rate != nil {
-		fields = append(fields, mediastream.FieldReferenceFrameRate)
 	}
 	return fields
 }
@@ -22362,30 +18935,8 @@ func (m *MediaStreamMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case mediastream.FieldIndex:
 		return m.AddedIndex()
-	case mediastream.FieldDvVersionMajor:
-		return m.AddedDvVersionMajor()
-	case mediastream.FieldDvVersionMinor:
-		return m.AddedDvVersionMinor()
-	case mediastream.FieldDvProfile:
-		return m.AddedDvProfile()
-	case mediastream.FieldDvLevel:
-		return m.AddedDvLevel()
-	case mediastream.FieldRpuPresentFlag:
-		return m.AddedRpuPresentFlag()
-	case mediastream.FieldElPresentFlag:
-		return m.AddedElPresentFlag()
-	case mediastream.FieldBlPresentFlag:
-		return m.AddedBlPresentFlag()
-	case mediastream.FieldDvBlSignalCompatibilityID:
-		return m.AddedDvBlSignalCompatibilityID()
 	case mediastream.FieldBitRate:
 		return m.AddedBitRate()
-	case mediastream.FieldBitDepth:
-		return m.AddedBitDepth()
-	case mediastream.FieldRefFrames:
-		return m.AddedRefFrames()
-	case mediastream.FieldPacketLength:
-		return m.AddedPacketLength()
 	case mediastream.FieldChannels:
 		return m.AddedChannels()
 	case mediastream.FieldSampleRate:
@@ -22394,18 +18945,8 @@ func (m *MediaStreamMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedWidth()
 	case mediastream.FieldHeight:
 		return m.AddedHeight()
-	case mediastream.FieldRotation:
-		return m.AddedRotation()
-	case mediastream.FieldScore:
-		return m.AddedScore()
 	case mediastream.FieldLevel:
 		return m.AddedLevel()
-	case mediastream.FieldAverageFrameRate:
-		return m.AddedAverageFrameRate()
-	case mediastream.FieldRealFrameRate:
-		return m.AddedRealFrameRate()
-	case mediastream.FieldReferenceFrameRate:
-		return m.AddedReferenceFrameRate()
 	}
 	return nil, false
 }
@@ -22422,89 +18963,12 @@ func (m *MediaStreamMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddIndex(v)
 		return nil
-	case mediastream.FieldDvVersionMajor:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddDvVersionMajor(v)
-		return nil
-	case mediastream.FieldDvVersionMinor:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddDvVersionMinor(v)
-		return nil
-	case mediastream.FieldDvProfile:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddDvProfile(v)
-		return nil
-	case mediastream.FieldDvLevel:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddDvLevel(v)
-		return nil
-	case mediastream.FieldRpuPresentFlag:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddRpuPresentFlag(v)
-		return nil
-	case mediastream.FieldElPresentFlag:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddElPresentFlag(v)
-		return nil
-	case mediastream.FieldBlPresentFlag:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddBlPresentFlag(v)
-		return nil
-	case mediastream.FieldDvBlSignalCompatibilityID:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddDvBlSignalCompatibilityID(v)
-		return nil
 	case mediastream.FieldBitRate:
 		v, ok := value.(int32)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddBitRate(v)
-		return nil
-	case mediastream.FieldBitDepth:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddBitDepth(v)
-		return nil
-	case mediastream.FieldRefFrames:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddRefFrames(v)
-		return nil
-	case mediastream.FieldPacketLength:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddPacketLength(v)
 		return nil
 	case mediastream.FieldChannels:
 		v, ok := value.(int32)
@@ -22534,47 +18998,12 @@ func (m *MediaStreamMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddHeight(v)
 		return nil
-	case mediastream.FieldRotation:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddRotation(v)
-		return nil
-	case mediastream.FieldScore:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddScore(v)
-		return nil
 	case mediastream.FieldLevel:
 		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddLevel(v)
-		return nil
-	case mediastream.FieldAverageFrameRate:
-		v, ok := value.(float64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddAverageFrameRate(v)
-		return nil
-	case mediastream.FieldRealFrameRate:
-		v, ok := value.(float64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddRealFrameRate(v)
-		return nil
-	case mediastream.FieldReferenceFrameRate:
-		v, ok := value.(float64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddReferenceFrameRate(v)
 		return nil
 	}
 	return fmt.Errorf("unknown MediaStream numeric field %s", name)
@@ -22584,20 +19013,11 @@ func (m *MediaStreamMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *MediaStreamMutation) ClearedFields() []string {
 	var fields []string
-	if m.FieldCleared(mediastream.FieldVideoRange) {
-		fields = append(fields, mediastream.FieldVideoRange)
-	}
 	if m.FieldCleared(mediastream.FieldVideoRangeType) {
 		fields = append(fields, mediastream.FieldVideoRangeType)
 	}
-	if m.FieldCleared(mediastream.FieldAudioSpatialFormat) {
-		fields = append(fields, mediastream.FieldAudioSpatialFormat)
-	}
 	if m.FieldCleared(mediastream.FieldCodec) {
 		fields = append(fields, mediastream.FieldCodec)
-	}
-	if m.FieldCleared(mediastream.FieldCodecTag) {
-		fields = append(fields, mediastream.FieldCodecTag)
 	}
 	if m.FieldCleared(mediastream.FieldProfile) {
 		fields = append(fields, mediastream.FieldProfile)
@@ -22608,77 +19028,14 @@ func (m *MediaStreamMutation) ClearedFields() []string {
 	if m.FieldCleared(mediastream.FieldTitle) {
 		fields = append(fields, mediastream.FieldTitle)
 	}
-	if m.FieldCleared(mediastream.FieldComment) {
-		fields = append(fields, mediastream.FieldComment)
-	}
 	if m.FieldCleared(mediastream.FieldPath) {
 		fields = append(fields, mediastream.FieldPath)
 	}
 	if m.FieldCleared(mediastream.FieldPixelFormat) {
 		fields = append(fields, mediastream.FieldPixelFormat)
 	}
-	if m.FieldCleared(mediastream.FieldAspectRatio) {
-		fields = append(fields, mediastream.FieldAspectRatio)
-	}
-	if m.FieldCleared(mediastream.FieldChannelLayout) {
-		fields = append(fields, mediastream.FieldChannelLayout)
-	}
-	if m.FieldCleared(mediastream.FieldTimeBase) {
-		fields = append(fields, mediastream.FieldTimeBase)
-	}
-	if m.FieldCleared(mediastream.FieldNalLengthSize) {
-		fields = append(fields, mediastream.FieldNalLengthSize)
-	}
-	if m.FieldCleared(mediastream.FieldVideoDoviTitle) {
-		fields = append(fields, mediastream.FieldVideoDoviTitle)
-	}
-	if m.FieldCleared(mediastream.FieldColorRange) {
-		fields = append(fields, mediastream.FieldColorRange)
-	}
-	if m.FieldCleared(mediastream.FieldColorSpace) {
-		fields = append(fields, mediastream.FieldColorSpace)
-	}
-	if m.FieldCleared(mediastream.FieldColorTransfer) {
-		fields = append(fields, mediastream.FieldColorTransfer)
-	}
-	if m.FieldCleared(mediastream.FieldColorPrimaries) {
-		fields = append(fields, mediastream.FieldColorPrimaries)
-	}
-	if m.FieldCleared(mediastream.FieldDvVersionMajor) {
-		fields = append(fields, mediastream.FieldDvVersionMajor)
-	}
-	if m.FieldCleared(mediastream.FieldDvVersionMinor) {
-		fields = append(fields, mediastream.FieldDvVersionMinor)
-	}
-	if m.FieldCleared(mediastream.FieldDvProfile) {
-		fields = append(fields, mediastream.FieldDvProfile)
-	}
-	if m.FieldCleared(mediastream.FieldDvLevel) {
-		fields = append(fields, mediastream.FieldDvLevel)
-	}
-	if m.FieldCleared(mediastream.FieldRpuPresentFlag) {
-		fields = append(fields, mediastream.FieldRpuPresentFlag)
-	}
-	if m.FieldCleared(mediastream.FieldElPresentFlag) {
-		fields = append(fields, mediastream.FieldElPresentFlag)
-	}
-	if m.FieldCleared(mediastream.FieldBlPresentFlag) {
-		fields = append(fields, mediastream.FieldBlPresentFlag)
-	}
-	if m.FieldCleared(mediastream.FieldDvBlSignalCompatibilityID) {
-		fields = append(fields, mediastream.FieldDvBlSignalCompatibilityID)
-	}
 	if m.FieldCleared(mediastream.FieldBitRate) {
 		fields = append(fields, mediastream.FieldBitRate)
-	}
-	if m.FieldCleared(mediastream.FieldBitDepth) {
-		fields = append(fields, mediastream.FieldBitDepth)
-	}
-	if m.FieldCleared(mediastream.FieldRefFrames) {
-		fields = append(fields, mediastream.FieldRefFrames)
-	}
-	if m.FieldCleared(mediastream.FieldPacketLength) {
-		fields = append(fields, mediastream.FieldPacketLength)
 	}
 	if m.FieldCleared(mediastream.FieldChannels) {
 		fields = append(fields, mediastream.FieldChannels)
@@ -22692,23 +19049,8 @@ func (m *MediaStreamMutation) ClearedFields() []string {
 	if m.FieldCleared(mediastream.FieldHeight) {
 		fields = append(fields, mediastream.FieldHeight)
 	}
-	if m.FieldCleared(mediastream.FieldRotation) {
-		fields = append(fields, mediastream.FieldRotation)
-	}
-	if m.FieldCleared(mediastream.FieldScore) {
-		fields = append(fields, mediastream.FieldScore)
-	}
 	if m.FieldCleared(mediastream.FieldLevel) {
 		fields = append(fields, mediastream.FieldLevel)
-	}
-	if m.FieldCleared(mediastream.FieldAverageFrameRate) {
-		fields = append(fields, mediastream.FieldAverageFrameRate)
-	}
-	if m.FieldCleared(mediastream.FieldRealFrameRate) {
-		fields = append(fields, mediastream.FieldRealFrameRate)
-	}
-	if m.FieldCleared(mediastream.FieldReferenceFrameRate) {
-		fields = append(fields, mediastream.FieldReferenceFrameRate)
 	}
 	return fields
 }
@@ -22724,20 +19066,11 @@ func (m *MediaStreamMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *MediaStreamMutation) ClearField(name string) error {
 	switch name {
-	case mediastream.FieldVideoRange:
-		m.ClearVideoRange()
-		return nil
 	case mediastream.FieldVideoRangeType:
 		m.ClearVideoRangeType()
 		return nil
-	case mediastream.FieldAudioSpatialFormat:
-		m.ClearAudioSpatialFormat()
-		return nil
 	case mediastream.FieldCodec:
 		m.ClearCodec()
-		return nil
-	case mediastream.FieldCodecTag:
-		m.ClearCodecTag()
 		return nil
 	case mediastream.FieldProfile:
 		m.ClearProfile()
@@ -22748,77 +19081,14 @@ func (m *MediaStreamMutation) ClearField(name string) error {
 	case mediastream.FieldTitle:
 		m.ClearTitle()
 		return nil
-	case mediastream.FieldComment:
-		m.ClearComment()
-		return nil
 	case mediastream.FieldPath:
 		m.ClearPath()
 		return nil
 	case mediastream.FieldPixelFormat:
 		m.ClearPixelFormat()
 		return nil
-	case mediastream.FieldAspectRatio:
-		m.ClearAspectRatio()
-		return nil
-	case mediastream.FieldChannelLayout:
-		m.ClearChannelLayout()
-		return nil
-	case mediastream.FieldTimeBase:
-		m.ClearTimeBase()
-		return nil
-	case mediastream.FieldNalLengthSize:
-		m.ClearNalLengthSize()
-		return nil
-	case mediastream.FieldVideoDoviTitle:
-		m.ClearVideoDoviTitle()
-		return nil
-	case mediastream.FieldColorRange:
-		m.ClearColorRange()
-		return nil
-	case mediastream.FieldColorSpace:
-		m.ClearColorSpace()
-		return nil
-	case mediastream.FieldColorTransfer:
-		m.ClearColorTransfer()
-		return nil
-	case mediastream.FieldColorPrimaries:
-		m.ClearColorPrimaries()
-		return nil
-	case mediastream.FieldDvVersionMajor:
-		m.ClearDvVersionMajor()
-		return nil
-	case mediastream.FieldDvVersionMinor:
-		m.ClearDvVersionMinor()
-		return nil
-	case mediastream.FieldDvProfile:
-		m.ClearDvProfile()
-		return nil
-	case mediastream.FieldDvLevel:
-		m.ClearDvLevel()
-		return nil
-	case mediastream.FieldRpuPresentFlag:
-		m.ClearRpuPresentFlag()
-		return nil
-	case mediastream.FieldElPresentFlag:
-		m.ClearElPresentFlag()
-		return nil
-	case mediastream.FieldBlPresentFlag:
-		m.ClearBlPresentFlag()
-		return nil
-	case mediastream.FieldDvBlSignalCompatibilityID:
-		m.ClearDvBlSignalCompatibilityID()
-		return nil
 	case mediastream.FieldBitRate:
 		m.ClearBitRate()
-		return nil
-	case mediastream.FieldBitDepth:
-		m.ClearBitDepth()
-		return nil
-	case mediastream.FieldRefFrames:
-		m.ClearRefFrames()
-		return nil
-	case mediastream.FieldPacketLength:
-		m.ClearPacketLength()
 		return nil
 	case mediastream.FieldChannels:
 		m.ClearChannels()
@@ -22832,23 +19102,8 @@ func (m *MediaStreamMutation) ClearField(name string) error {
 	case mediastream.FieldHeight:
 		m.ClearHeight()
 		return nil
-	case mediastream.FieldRotation:
-		m.ClearRotation()
-		return nil
-	case mediastream.FieldScore:
-		m.ClearScore()
-		return nil
 	case mediastream.FieldLevel:
 		m.ClearLevel()
-		return nil
-	case mediastream.FieldAverageFrameRate:
-		m.ClearAverageFrameRate()
-		return nil
-	case mediastream.FieldRealFrameRate:
-		m.ClearRealFrameRate()
-		return nil
-	case mediastream.FieldReferenceFrameRate:
-		m.ClearReferenceFrameRate()
 		return nil
 	}
 	return fmt.Errorf("unknown MediaStream nullable field %s", name)
@@ -22870,23 +19125,14 @@ func (m *MediaStreamMutation) ResetField(name string) error {
 	case mediastream.FieldKind:
 		m.ResetKind()
 		return nil
-	case mediastream.FieldVideoRange:
-		m.ResetVideoRange()
-		return nil
 	case mediastream.FieldVideoRangeType:
 		m.ResetVideoRangeType()
-		return nil
-	case mediastream.FieldAudioSpatialFormat:
-		m.ResetAudioSpatialFormat()
 		return nil
 	case mediastream.FieldIndex:
 		m.ResetIndex()
 		return nil
 	case mediastream.FieldCodec:
 		m.ResetCodec()
-		return nil
-	case mediastream.FieldCodecTag:
-		m.ResetCodecTag()
 		return nil
 	case mediastream.FieldProfile:
 		m.ResetProfile()
@@ -22897,77 +19143,14 @@ func (m *MediaStreamMutation) ResetField(name string) error {
 	case mediastream.FieldTitle:
 		m.ResetTitle()
 		return nil
-	case mediastream.FieldComment:
-		m.ResetComment()
-		return nil
 	case mediastream.FieldPath:
 		m.ResetPath()
 		return nil
 	case mediastream.FieldPixelFormat:
 		m.ResetPixelFormat()
 		return nil
-	case mediastream.FieldAspectRatio:
-		m.ResetAspectRatio()
-		return nil
-	case mediastream.FieldChannelLayout:
-		m.ResetChannelLayout()
-		return nil
-	case mediastream.FieldTimeBase:
-		m.ResetTimeBase()
-		return nil
-	case mediastream.FieldNalLengthSize:
-		m.ResetNalLengthSize()
-		return nil
-	case mediastream.FieldVideoDoviTitle:
-		m.ResetVideoDoviTitle()
-		return nil
-	case mediastream.FieldColorRange:
-		m.ResetColorRange()
-		return nil
-	case mediastream.FieldColorSpace:
-		m.ResetColorSpace()
-		return nil
-	case mediastream.FieldColorTransfer:
-		m.ResetColorTransfer()
-		return nil
-	case mediastream.FieldColorPrimaries:
-		m.ResetColorPrimaries()
-		return nil
-	case mediastream.FieldDvVersionMajor:
-		m.ResetDvVersionMajor()
-		return nil
-	case mediastream.FieldDvVersionMinor:
-		m.ResetDvVersionMinor()
-		return nil
-	case mediastream.FieldDvProfile:
-		m.ResetDvProfile()
-		return nil
-	case mediastream.FieldDvLevel:
-		m.ResetDvLevel()
-		return nil
-	case mediastream.FieldRpuPresentFlag:
-		m.ResetRpuPresentFlag()
-		return nil
-	case mediastream.FieldElPresentFlag:
-		m.ResetElPresentFlag()
-		return nil
-	case mediastream.FieldBlPresentFlag:
-		m.ResetBlPresentFlag()
-		return nil
-	case mediastream.FieldDvBlSignalCompatibilityID:
-		m.ResetDvBlSignalCompatibilityID()
-		return nil
 	case mediastream.FieldBitRate:
 		m.ResetBitRate()
-		return nil
-	case mediastream.FieldBitDepth:
-		m.ResetBitDepth()
-		return nil
-	case mediastream.FieldRefFrames:
-		m.ResetRefFrames()
-		return nil
-	case mediastream.FieldPacketLength:
-		m.ResetPacketLength()
 		return nil
 	case mediastream.FieldChannels:
 		m.ResetChannels()
@@ -22981,23 +19164,8 @@ func (m *MediaStreamMutation) ResetField(name string) error {
 	case mediastream.FieldHeight:
 		m.ResetHeight()
 		return nil
-	case mediastream.FieldRotation:
-		m.ResetRotation()
-		return nil
-	case mediastream.FieldScore:
-		m.ResetScore()
-		return nil
 	case mediastream.FieldLevel:
 		m.ResetLevel()
-		return nil
-	case mediastream.FieldAverageFrameRate:
-		m.ResetAverageFrameRate()
-		return nil
-	case mediastream.FieldRealFrameRate:
-		m.ResetRealFrameRate()
-		return nil
-	case mediastream.FieldReferenceFrameRate:
-		m.ResetReferenceFrameRate()
 		return nil
 	case mediastream.FieldIsDefault:
 		m.ResetIsDefault()
@@ -23013,9 +19181,6 @@ func (m *MediaStreamMutation) ResetField(name string) error {
 		return nil
 	case mediastream.FieldIsAnamorphic:
 		m.ResetIsAnamorphic()
-		return nil
-	case mediastream.FieldIsAvc:
-		m.ResetIsAvc()
 		return nil
 	case mediastream.FieldIsHearingImpaired:
 		m.ResetIsHearingImpaired()

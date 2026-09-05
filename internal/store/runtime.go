@@ -415,26 +415,6 @@ func init() {
 	mediasource.DefaultUpdatedAt = mediasourceDescUpdatedAt.Default.(func() time.Time)
 	// mediasource.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	mediasource.UpdateDefaultUpdatedAt = mediasourceDescUpdatedAt.UpdateDefault.(func() time.Time)
-	// mediasourceDescReadAtNativeFramerate is the schema descriptor for read_at_native_framerate field.
-	mediasourceDescReadAtNativeFramerate := mediasourceFields[21].Descriptor()
-	// mediasource.DefaultReadAtNativeFramerate holds the default value on creation for the read_at_native_framerate field.
-	mediasource.DefaultReadAtNativeFramerate = mediasourceDescReadAtNativeFramerate.Default.(bool)
-	// mediasourceDescIgnoreDts is the schema descriptor for ignore_dts field.
-	mediasourceDescIgnoreDts := mediasourceFields[22].Descriptor()
-	// mediasource.DefaultIgnoreDts holds the default value on creation for the ignore_dts field.
-	mediasource.DefaultIgnoreDts = mediasourceDescIgnoreDts.Default.(bool)
-	// mediasourceDescIgnoreIndex is the schema descriptor for ignore_index field.
-	mediasourceDescIgnoreIndex := mediasourceFields[23].Descriptor()
-	// mediasource.DefaultIgnoreIndex holds the default value on creation for the ignore_index field.
-	mediasource.DefaultIgnoreIndex = mediasourceDescIgnoreIndex.Default.(bool)
-	// mediasourceDescGenPtsInput is the schema descriptor for gen_pts_input field.
-	mediasourceDescGenPtsInput := mediasourceFields[24].Descriptor()
-	// mediasource.DefaultGenPtsInput holds the default value on creation for the gen_pts_input field.
-	mediasource.DefaultGenPtsInput = mediasourceDescGenPtsInput.Default.(bool)
-	// mediasourceDescHasSegments is the schema descriptor for has_segments field.
-	mediasourceDescHasSegments := mediasourceFields[25].Descriptor()
-	// mediasource.DefaultHasSegments holds the default value on creation for the has_segments field.
-	mediasource.DefaultHasSegments = mediasourceDescHasSegments.Default.(bool)
 	mediastreamFields := entities.MediaStream{}.Fields()
 	_ = mediastreamFields
 	// mediastreamDescCreatedAt is the schema descriptor for created_at field.
@@ -448,35 +428,31 @@ func init() {
 	// mediastream.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	mediastream.UpdateDefaultUpdatedAt = mediastreamDescUpdatedAt.UpdateDefault.(func() time.Time)
 	// mediastreamDescIndex is the schema descriptor for index field.
-	mediastreamDescIndex := mediastreamFields[8].Descriptor()
+	mediastreamDescIndex := mediastreamFields[6].Descriptor()
 	// mediastream.DefaultIndex holds the default value on creation for the index field.
 	mediastream.DefaultIndex = mediastreamDescIndex.Default.(int32)
 	// mediastreamDescIsDefault is the schema descriptor for is_default field.
-	mediastreamDescIsDefault := mediastreamFields[48].Descriptor()
+	mediastreamDescIsDefault := mediastreamFields[19].Descriptor()
 	// mediastream.DefaultIsDefault holds the default value on creation for the is_default field.
 	mediastream.DefaultIsDefault = mediastreamDescIsDefault.Default.(bool)
 	// mediastreamDescIsForced is the schema descriptor for is_forced field.
-	mediastreamDescIsForced := mediastreamFields[49].Descriptor()
+	mediastreamDescIsForced := mediastreamFields[20].Descriptor()
 	// mediastream.DefaultIsForced holds the default value on creation for the is_forced field.
 	mediastream.DefaultIsForced = mediastreamDescIsForced.Default.(bool)
 	// mediastreamDescIsExternal is the schema descriptor for is_external field.
-	mediastreamDescIsExternal := mediastreamFields[50].Descriptor()
+	mediastreamDescIsExternal := mediastreamFields[21].Descriptor()
 	// mediastream.DefaultIsExternal holds the default value on creation for the is_external field.
 	mediastream.DefaultIsExternal = mediastreamDescIsExternal.Default.(bool)
 	// mediastreamDescIsInterlaced is the schema descriptor for is_interlaced field.
-	mediastreamDescIsInterlaced := mediastreamFields[51].Descriptor()
+	mediastreamDescIsInterlaced := mediastreamFields[22].Descriptor()
 	// mediastream.DefaultIsInterlaced holds the default value on creation for the is_interlaced field.
 	mediastream.DefaultIsInterlaced = mediastreamDescIsInterlaced.Default.(bool)
 	// mediastreamDescIsAnamorphic is the schema descriptor for is_anamorphic field.
-	mediastreamDescIsAnamorphic := mediastreamFields[52].Descriptor()
+	mediastreamDescIsAnamorphic := mediastreamFields[23].Descriptor()
 	// mediastream.DefaultIsAnamorphic holds the default value on creation for the is_anamorphic field.
 	mediastream.DefaultIsAnamorphic = mediastreamDescIsAnamorphic.Default.(bool)
-	// mediastreamDescIsAvc is the schema descriptor for is_avc field.
-	mediastreamDescIsAvc := mediastreamFields[53].Descriptor()
-	// mediastream.DefaultIsAvc holds the default value on creation for the is_avc field.
-	mediastream.DefaultIsAvc = mediastreamDescIsAvc.Default.(bool)
 	// mediastreamDescIsHearingImpaired is the schema descriptor for is_hearing_impaired field.
-	mediastreamDescIsHearingImpaired := mediastreamFields[54].Descriptor()
+	mediastreamDescIsHearingImpaired := mediastreamFields[24].Descriptor()
 	// mediastream.DefaultIsHearingImpaired holds the default value on creation for the is_hearing_impaired field.
 	mediastream.DefaultIsHearingImpaired = mediastreamDescIsHearingImpaired.Default.(bool)
 	personFields := entities.Person{}.Fields()
