@@ -273,6 +273,12 @@ Several instances may feed one library and one instance may feed several, which 
 
 **Deleting a library deletes the titles nothing else holds.** Items are global, so the cascade that used to take a library's items with it is gone; `DeleteLibrary` collects the ids first and removes those left in no library and not a playlist. Without that they survive with no membership, invisible to every library query and present in every global one.
 
+**A library is a permission boundary.** `user_policy.enable_all_folders` and `enabled_folders` decide what a user sees: an item is visible if it holds membership in a library they can access, and a playlist is exempt because it belongs to its owner rather than to a library. `users.Access` answers what one may see and `dto.ViewerFor` turns that into an `items.Viewer`.
+
+**The viewer is a parameter, never read off the context.** Fifty files import `internal/items`, and that is the point — a signature makes the compiler name every read that needs one, and a background job passes `items.Everyone` where a reader can see it. The zero value sees *nothing*, so a caller who forgets it gets an empty result rather than someone else's library; that is what made the two query structs announce their missing callers when the tests went red. It rides inside `ItemQuery`, `MetadataQuery` and `EpisodeQuery` for the listing paths, which is where browsing and search discover anything.
+
+**An anonymous request resolves to no access, and that decision lives in `users.Access`.** The authorization middleware already refuses anonymous access to every operation outside `PublicOperations`, so a handler reached without a user is public by declaration — the image endpoint is the only one, and it passes `Everyone` explicitly. Keeping the rule in the policy service rather than in the caller is what lets a test inject a permissive stub deliberately instead of every fixture having to build a session.
+
 **A library nobody bound is left alone.** `scanLibrary` returns before the sweep when no source names it, so creating a library and scanning it before binding a source does not empty it.
 
 **A source is identified by its URL, not its name.** `Update` deletes the sources a save does not name and upserts the rest, so keying on the name made a rename a delete and a create — and since a file belongs to its source, that took every `item_source`, `media_stream` and membership row with it and re-probed the library. The URL is what the instance is; the name is what you call it.
@@ -282,6 +288,8 @@ Several instances may feed one library and one instance may feed several, which 
 **`internal/sources/arr` is the vocabulary Sonarr and Radarr share** — the tag list, the file record and the `X-Api-Key` header, which are the same on both — and `radarr` and `sonarr` hold only what differs. The domain makes the requests and translates both into `sources.Title`, a recursive shape the scanner writes without knowing which answered. An episode Sonarr has no file for is not a row: only what is on disk becomes an item, so the library holds what can be played rather than what has been wanted.
 
 **Paths arrive in the instance's namespace**, so the source's root rewrites them into what this server can open; a source whose two paths are equal is one that shares a filesystem with the server.
+
+**A title's runtime comes from the provider; a file's comes from the probe.** They are different facts, and the probe used to write whichever file it read last onto the title — the same defect that took `container` and `probed_at` off `item`, except this one is read. `items.Metadata` carries it now, the file keeps its own on `item_source`, and the DTO falls back to the file's until an identify run has answered. `has_subtitles` went the same way: it is derived from the file's streams rather than stored on the title.
 
 **`dateAdded` is what the scan stores as the file's `date_modified`, and it is not the file's mtime.** Sonarr and Radarr write a new file record each time they import one, so an upgraded release moves the date and earns a re-probe, while a file replaced underneath them in place does not and keeps the probe it has.
 
