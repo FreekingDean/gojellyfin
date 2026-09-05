@@ -22,6 +22,8 @@ A Go reimplementation of a Jellyfin media server, serving the Jellyfin 12.0.0 HT
 
 ```sh
 make dev                             # watch and restart (go install github.com/air-verse/air@latest)
+make temporal                        # local Temporal dev server (brew install temporal)
+make worker                          # background worker, dialing that server
 make run                             # run once, no watching
 make build test fmt
 make lint                            # gofmt, go vet, golangci-lint
@@ -206,6 +208,20 @@ Background work runs as Temporal workflows in a separate deployment. `gojellyfin
 `TEMPORAL_NAMESPACE` has no default, and `jobs.NewClient` refuses to build a client without one rather than `env` inventing it: a namespace is only required once there is a server to dial, and defaulting it silently puts every run in whichever namespace the constant happened to name. The check belongs with the client because that is what needs the value.
 
 `internal/jobs` is the client, the worker and the registry the `ScheduledTasks` API is served from, and it is the only package that names the engine — a job is written against `jobs.Job`, `Context`, `Step` and `Child`, which `internal/jobs/abstraction_test.go` enforces. A package declares what it runs beside the code that implements it: a `Job` names its steps and its children, and `internal/scanner/fx.go` registers it, so the worker command lists no workflows of its own.
+
+**Running background work locally is two terminals.** `make temporal` starts the CLI's dev server — in-memory, so a restart is a clean slate, with the web UI on `http://localhost:8233` — and `make worker` runs `gojellyfin worker` against it on `localhost:7233` in the `gojellyfin_development` namespace. The CLI is `brew install temporal` or `https://temporal.download/cli.sh`, and deliberately not `go install`: its `go.mod` carries replace directives, which `go install` refuses.
+
+`TEMPORAL_HOSTPORT` is **not** exported by the Makefile, which is the whole point of it being a variable there. `jobs.NewClient` dials at construction, so a server told about a Temporal that is not running refuses to start, while one told nothing serves with background work off — the property that lets a developer run `make dev` alone. Giving the running server the `ScheduledTasks` API is opting in by hand: `TEMPORAL_HOSTPORT=localhost:7233 make dev`.
+
+A job can be driven without the API at all, which is the fastest way to test a change to one:
+
+```sh
+temporal workflow start --namespace gojellyfin_development --task-queue gojellyfin \
+  --type RefreshLibrary --workflow-id RefreshLibrary --input '{}'
+temporal workflow describe --namespace gojellyfin_development --workflow-id RefreshLibrary
+```
+
+The type is the job's `Name()` and the workflow id is the same string, because the task id is the workflow id.
 
 **The task id is the workflow id.** That is what gives a task singleton semantics without a lock or a dedupe column — Temporal refuses a second execution under an id that is already running, so pressing Start twice, `RefreshLibrary` and a schedule all collapse into one run. It also means state is one `DescribeWorkflowExecution` on a known id rather than a search over history, which is why `internal/tasks` needs no visibility query and no stored mapping.
 
