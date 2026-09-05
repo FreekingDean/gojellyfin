@@ -15,7 +15,6 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediaattachment"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
@@ -25,15 +24,14 @@ import (
 // MediaSourceQuery is the builder for querying MediaSource entities.
 type MediaSourceQuery struct {
 	config
-	ctx             *QueryContext
-	order           []mediasource.OrderOption
-	inters          []Interceptor
-	predicates      []predicate.MediaSource
-	withItem        *ItemQuery
-	withLibrary     *LibraryQuery
-	withStreams     *MediaStreamQuery
-	withAttachments *MediaAttachmentQuery
-	modifiers       []func(*sql.Selector)
+	ctx         *QueryContext
+	order       []mediasource.OrderOption
+	inters      []Interceptor
+	predicates  []predicate.MediaSource
+	withItem    *ItemQuery
+	withLibrary *LibraryQuery
+	withStreams *MediaStreamQuery
+	modifiers   []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -129,28 +127,6 @@ func (_q *MediaSourceQuery) QueryStreams() *MediaStreamQuery {
 			sqlgraph.From(mediasource.Table, mediasource.FieldID, selector),
 			sqlgraph.To(mediastream.Table, mediastream.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, mediasource.StreamsTable, mediasource.StreamsColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryAttachments chains the current query on the "attachments" edge.
-func (_q *MediaSourceQuery) QueryAttachments() *MediaAttachmentQuery {
-	query := (&MediaAttachmentClient{config: _q.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := _q.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(mediasource.Table, mediasource.FieldID, selector),
-			sqlgraph.To(mediaattachment.Table, mediaattachment.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, mediasource.AttachmentsTable, mediasource.AttachmentsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -345,15 +321,14 @@ func (_q *MediaSourceQuery) Clone() *MediaSourceQuery {
 		return nil
 	}
 	return &MediaSourceQuery{
-		config:          _q.config,
-		ctx:             _q.ctx.Clone(),
-		order:           append([]mediasource.OrderOption{}, _q.order...),
-		inters:          append([]Interceptor{}, _q.inters...),
-		predicates:      append([]predicate.MediaSource{}, _q.predicates...),
-		withItem:        _q.withItem.Clone(),
-		withLibrary:     _q.withLibrary.Clone(),
-		withStreams:     _q.withStreams.Clone(),
-		withAttachments: _q.withAttachments.Clone(),
+		config:      _q.config,
+		ctx:         _q.ctx.Clone(),
+		order:       append([]mediasource.OrderOption{}, _q.order...),
+		inters:      append([]Interceptor{}, _q.inters...),
+		predicates:  append([]predicate.MediaSource{}, _q.predicates...),
+		withItem:    _q.withItem.Clone(),
+		withLibrary: _q.withLibrary.Clone(),
+		withStreams: _q.withStreams.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -390,17 +365,6 @@ func (_q *MediaSourceQuery) WithStreams(opts ...func(*MediaStreamQuery)) *MediaS
 		opt(query)
 	}
 	_q.withStreams = query
-	return _q
-}
-
-// WithAttachments tells the query-builder to eager-load the nodes that are connected to
-// the "attachments" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *MediaSourceQuery) WithAttachments(opts ...func(*MediaAttachmentQuery)) *MediaSourceQuery {
-	query := (&MediaAttachmentClient{config: _q.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	_q.withAttachments = query
 	return _q
 }
 
@@ -482,11 +446,10 @@ func (_q *MediaSourceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 	var (
 		nodes       = []*MediaSource{}
 		_spec       = _q.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [3]bool{
 			_q.withItem != nil,
 			_q.withLibrary != nil,
 			_q.withStreams != nil,
-			_q.withAttachments != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -526,13 +489,6 @@ func (_q *MediaSourceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 		if err := _q.loadStreams(ctx, query, nodes,
 			func(n *MediaSource) { n.Edges.Streams = []*MediaStream{} },
 			func(n *MediaSource, e *MediaStream) { n.Edges.Streams = append(n.Edges.Streams, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := _q.withAttachments; query != nil {
-		if err := _q.loadAttachments(ctx, query, nodes,
-			func(n *MediaSource) { n.Edges.Attachments = []*MediaAttachment{} },
-			func(n *MediaSource, e *MediaAttachment) { n.Edges.Attachments = append(n.Edges.Attachments, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -622,37 +578,6 @@ func (_q *MediaSourceQuery) loadStreams(ctx context.Context, query *MediaStreamQ
 		node, ok := nodeids[fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "source_id" returned %v for node %v`, fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (_q *MediaSourceQuery) loadAttachments(ctx context.Context, query *MediaAttachmentQuery, nodes []*MediaSource, init func(*MediaSource), assign func(*MediaSource, *MediaAttachment)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*MediaSource)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	query.withFKs = true
-	query.Where(predicate.MediaAttachment(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(mediasource.AttachmentsColumn), fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.media_source_attachments
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "media_source_attachments" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "media_source_attachments" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

@@ -14,7 +14,6 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediaattachment"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
@@ -566,21 +565,6 @@ func (_u *MediaSourceUpdate) AddStreams(v ...*MediaStream) *MediaSourceUpdate {
 	return _u.AddStreamIDs(ids...)
 }
 
-// AddAttachmentIDs adds the "attachments" edge to the MediaAttachment entity by IDs.
-func (_u *MediaSourceUpdate) AddAttachmentIDs(ids ...uuid.UUID) *MediaSourceUpdate {
-	_u.mutation.AddAttachmentIDs(ids...)
-	return _u
-}
-
-// AddAttachments adds the "attachments" edges to the MediaAttachment entity.
-func (_u *MediaSourceUpdate) AddAttachments(v ...*MediaAttachment) *MediaSourceUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddAttachmentIDs(ids...)
-}
-
 // Mutation returns the MediaSourceMutation object of the builder.
 func (_u *MediaSourceUpdate) Mutation() *MediaSourceMutation {
 	return _u.mutation
@@ -617,27 +601,6 @@ func (_u *MediaSourceUpdate) RemoveStreams(v ...*MediaStream) *MediaSourceUpdate
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveStreamIDs(ids...)
-}
-
-// ClearAttachments clears all "attachments" edges to the MediaAttachment entity.
-func (_u *MediaSourceUpdate) ClearAttachments() *MediaSourceUpdate {
-	_u.mutation.ClearAttachments()
-	return _u
-}
-
-// RemoveAttachmentIDs removes the "attachments" edge to MediaAttachment entities by IDs.
-func (_u *MediaSourceUpdate) RemoveAttachmentIDs(ids ...uuid.UUID) *MediaSourceUpdate {
-	_u.mutation.RemoveAttachmentIDs(ids...)
-	return _u
-}
-
-// RemoveAttachments removes "attachments" edges to MediaAttachment entities.
-func (_u *MediaSourceUpdate) RemoveAttachments(v ...*MediaAttachment) *MediaSourceUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveAttachmentIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -973,51 +936,6 @@ func (_u *MediaSourceUpdate) sqlSave(ctx context.Context) (_node int, err error)
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(mediastream.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.AttachmentsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   mediasource.AttachmentsTable,
-			Columns: []string{mediasource.AttachmentsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediaattachment.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedAttachmentsIDs(); len(nodes) > 0 && !_u.mutation.AttachmentsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   mediasource.AttachmentsTable,
-			Columns: []string{mediasource.AttachmentsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediaattachment.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.AttachmentsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   mediasource.AttachmentsTable,
-			Columns: []string{mediasource.AttachmentsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediaattachment.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1577,21 +1495,6 @@ func (_u *MediaSourceUpdateOne) AddStreams(v ...*MediaStream) *MediaSourceUpdate
 	return _u.AddStreamIDs(ids...)
 }
 
-// AddAttachmentIDs adds the "attachments" edge to the MediaAttachment entity by IDs.
-func (_u *MediaSourceUpdateOne) AddAttachmentIDs(ids ...uuid.UUID) *MediaSourceUpdateOne {
-	_u.mutation.AddAttachmentIDs(ids...)
-	return _u
-}
-
-// AddAttachments adds the "attachments" edges to the MediaAttachment entity.
-func (_u *MediaSourceUpdateOne) AddAttachments(v ...*MediaAttachment) *MediaSourceUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddAttachmentIDs(ids...)
-}
-
 // Mutation returns the MediaSourceMutation object of the builder.
 func (_u *MediaSourceUpdateOne) Mutation() *MediaSourceMutation {
 	return _u.mutation
@@ -1628,27 +1531,6 @@ func (_u *MediaSourceUpdateOne) RemoveStreams(v ...*MediaStream) *MediaSourceUpd
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveStreamIDs(ids...)
-}
-
-// ClearAttachments clears all "attachments" edges to the MediaAttachment entity.
-func (_u *MediaSourceUpdateOne) ClearAttachments() *MediaSourceUpdateOne {
-	_u.mutation.ClearAttachments()
-	return _u
-}
-
-// RemoveAttachmentIDs removes the "attachments" edge to MediaAttachment entities by IDs.
-func (_u *MediaSourceUpdateOne) RemoveAttachmentIDs(ids ...uuid.UUID) *MediaSourceUpdateOne {
-	_u.mutation.RemoveAttachmentIDs(ids...)
-	return _u
-}
-
-// RemoveAttachments removes "attachments" edges to MediaAttachment entities.
-func (_u *MediaSourceUpdateOne) RemoveAttachments(v ...*MediaAttachment) *MediaSourceUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveAttachmentIDs(ids...)
 }
 
 // Where appends a list predicates to the MediaSourceUpdate builder.
@@ -2014,51 +1896,6 @@ func (_u *MediaSourceUpdateOne) sqlSave(ctx context.Context) (_node *MediaSource
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(mediastream.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.AttachmentsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   mediasource.AttachmentsTable,
-			Columns: []string{mediasource.AttachmentsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediaattachment.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedAttachmentsIDs(); len(nodes) > 0 && !_u.mutation.AttachmentsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   mediasource.AttachmentsTable,
-			Columns: []string{mediasource.AttachmentsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediaattachment.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.AttachmentsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   mediasource.AttachmentsTable,
-			Columns: []string{mediasource.AttachmentsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediaattachment.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

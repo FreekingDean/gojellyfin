@@ -18,8 +18,6 @@ type Tx struct {
 	ActivityLogEntry *ActivityLogEntryClient
 	// ApiKey is the client for interacting with the ApiKey builders.
 	ApiKey *ApiKeyClient
-	// Chapter is the client for interacting with the Chapter builders.
-	Chapter *ChapterClient
 	// Configuration is the client for interacting with the Configuration builders.
 	Configuration *ConfigurationClient
 	// Credit is the client for interacting with the Credit builders.
@@ -42,12 +40,6 @@ type Tx struct {
 	LibraryOptions *LibraryOptionsClient
 	// LibrarySource is the client for interacting with the LibrarySource builders.
 	LibrarySource *LibrarySourceClient
-	// ListingsProvider is the client for interacting with the ListingsProvider builders.
-	ListingsProvider *ListingsProviderClient
-	// MediaAttachment is the client for interacting with the MediaAttachment builders.
-	MediaAttachment *MediaAttachmentClient
-	// MediaSegment is the client for interacting with the MediaSegment builders.
-	MediaSegment *MediaSegmentClient
 	// MediaSource is the client for interacting with the MediaSource builders.
 	MediaSource *MediaSourceClient
 	// MediaStream is the client for interacting with the MediaStream builders.
@@ -60,20 +52,12 @@ type Tx struct {
 	PlaylistEntry *PlaylistEntryClient
 	// PlaylistShare is the client for interacting with the PlaylistShare builders.
 	PlaylistShare *PlaylistShareClient
-	// SeriesTimer is the client for interacting with the SeriesTimer builders.
-	SeriesTimer *SeriesTimerClient
 	// Session is the client for interacting with the Session builders.
 	Session *SessionClient
 	// Source is the client for interacting with the Source builders.
 	Source *SourceClient
 	// Studio is the client for interacting with the Studio builders.
 	Studio *StudioClient
-	// Timer is the client for interacting with the Timer builders.
-	Timer *TimerClient
-	// Trickplay is the client for interacting with the Trickplay builders.
-	Trickplay *TrickplayClient
-	// TunerHost is the client for interacting with the TunerHost builders.
-	TunerHost *TunerHostClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 	// UserConfiguration is the client for interacting with the UserConfiguration builders.
@@ -215,7 +199,6 @@ func (tx *Tx) Client() *Client {
 func (tx *Tx) init() {
 	tx.ActivityLogEntry = NewActivityLogEntryClient(tx.config)
 	tx.ApiKey = NewApiKeyClient(tx.config)
-	tx.Chapter = NewChapterClient(tx.config)
 	tx.Configuration = NewConfigurationClient(tx.config)
 	tx.Credit = NewCreditClient(tx.config)
 	tx.Device = NewDeviceClient(tx.config)
@@ -227,22 +210,15 @@ func (tx *Tx) init() {
 	tx.Library = NewLibraryClient(tx.config)
 	tx.LibraryOptions = NewLibraryOptionsClient(tx.config)
 	tx.LibrarySource = NewLibrarySourceClient(tx.config)
-	tx.ListingsProvider = NewListingsProviderClient(tx.config)
-	tx.MediaAttachment = NewMediaAttachmentClient(tx.config)
-	tx.MediaSegment = NewMediaSegmentClient(tx.config)
 	tx.MediaSource = NewMediaSourceClient(tx.config)
 	tx.MediaStream = NewMediaStreamClient(tx.config)
 	tx.Person = NewPersonClient(tx.config)
 	tx.Playlist = NewPlaylistClient(tx.config)
 	tx.PlaylistEntry = NewPlaylistEntryClient(tx.config)
 	tx.PlaylistShare = NewPlaylistShareClient(tx.config)
-	tx.SeriesTimer = NewSeriesTimerClient(tx.config)
 	tx.Session = NewSessionClient(tx.config)
 	tx.Source = NewSourceClient(tx.config)
 	tx.Studio = NewStudioClient(tx.config)
-	tx.Timer = NewTimerClient(tx.config)
-	tx.Trickplay = NewTrickplayClient(tx.config)
-	tx.TunerHost = NewTunerHostClient(tx.config)
 	tx.User = NewUserClient(tx.config)
 	tx.UserConfiguration = NewUserConfigurationClient(tx.config)
 	tx.UserItemData = NewUserItemDataClient(tx.config)

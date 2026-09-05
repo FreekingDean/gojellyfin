@@ -13,20 +13,17 @@ import (
 	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
-	"github.com/FreekingDean/gojellyfin/internal/store/chapter"
 	"github.com/FreekingDean/gojellyfin/internal/store/credit"
 	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 	"github.com/FreekingDean/gojellyfin/internal/store/genre"
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasegment"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
-	"github.com/FreekingDean/gojellyfin/internal/store/trickplay"
 	"github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
 	"github.com/google/uuid"
 )
@@ -1244,21 +1241,6 @@ func (_u *ItemUpdate) AddCredits(v ...*Credit) *ItemUpdate {
 	return _u.AddCreditIDs(ids...)
 }
 
-// AddChapterIDs adds the "chapters" edge to the Chapter entity by IDs.
-func (_u *ItemUpdate) AddChapterIDs(ids ...uuid.UUID) *ItemUpdate {
-	_u.mutation.AddChapterIDs(ids...)
-	return _u
-}
-
-// AddChapters adds the "chapters" edges to the Chapter entity.
-func (_u *ItemUpdate) AddChapters(v ...*Chapter) *ItemUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddChapterIDs(ids...)
-}
-
 // AddImageIDs adds the "images" edge to the Image entity by IDs.
 func (_u *ItemUpdate) AddImageIDs(ids ...uuid.UUID) *ItemUpdate {
 	_u.mutation.AddImageIDs(ids...)
@@ -1302,36 +1284,6 @@ func (_u *ItemUpdate) AddActivityLogEntries(v ...*ActivityLogEntry) *ItemUpdate 
 		ids[i] = v[i].ID
 	}
 	return _u.AddActivityLogEntryIDs(ids...)
-}
-
-// AddTrickplayIDs adds the "trickplays" edge to the Trickplay entity by IDs.
-func (_u *ItemUpdate) AddTrickplayIDs(ids ...uuid.UUID) *ItemUpdate {
-	_u.mutation.AddTrickplayIDs(ids...)
-	return _u
-}
-
-// AddTrickplays adds the "trickplays" edges to the Trickplay entity.
-func (_u *ItemUpdate) AddTrickplays(v ...*Trickplay) *ItemUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddTrickplayIDs(ids...)
-}
-
-// AddMediaSegmentIDs adds the "media_segments" edge to the MediaSegment entity by IDs.
-func (_u *ItemUpdate) AddMediaSegmentIDs(ids ...uuid.UUID) *ItemUpdate {
-	_u.mutation.AddMediaSegmentIDs(ids...)
-	return _u
-}
-
-// AddMediaSegments adds the "media_segments" edges to the MediaSegment entity.
-func (_u *ItemUpdate) AddMediaSegments(v ...*MediaSegment) *ItemUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddMediaSegmentIDs(ids...)
 }
 
 // SetPlaylistID sets the "playlist" edge to the Playlist entity by ID.
@@ -1478,27 +1430,6 @@ func (_u *ItemUpdate) RemoveCredits(v ...*Credit) *ItemUpdate {
 	return _u.RemoveCreditIDs(ids...)
 }
 
-// ClearChapters clears all "chapters" edges to the Chapter entity.
-func (_u *ItemUpdate) ClearChapters() *ItemUpdate {
-	_u.mutation.ClearChapters()
-	return _u
-}
-
-// RemoveChapterIDs removes the "chapters" edge to Chapter entities by IDs.
-func (_u *ItemUpdate) RemoveChapterIDs(ids ...uuid.UUID) *ItemUpdate {
-	_u.mutation.RemoveChapterIDs(ids...)
-	return _u
-}
-
-// RemoveChapters removes "chapters" edges to Chapter entities.
-func (_u *ItemUpdate) RemoveChapters(v ...*Chapter) *ItemUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveChapterIDs(ids...)
-}
-
 // ClearImages clears all "images" edges to the Image entity.
 func (_u *ItemUpdate) ClearImages() *ItemUpdate {
 	_u.mutation.ClearImages()
@@ -1560,48 +1491,6 @@ func (_u *ItemUpdate) RemoveActivityLogEntries(v ...*ActivityLogEntry) *ItemUpda
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveActivityLogEntryIDs(ids...)
-}
-
-// ClearTrickplays clears all "trickplays" edges to the Trickplay entity.
-func (_u *ItemUpdate) ClearTrickplays() *ItemUpdate {
-	_u.mutation.ClearTrickplays()
-	return _u
-}
-
-// RemoveTrickplayIDs removes the "trickplays" edge to Trickplay entities by IDs.
-func (_u *ItemUpdate) RemoveTrickplayIDs(ids ...uuid.UUID) *ItemUpdate {
-	_u.mutation.RemoveTrickplayIDs(ids...)
-	return _u
-}
-
-// RemoveTrickplays removes "trickplays" edges to Trickplay entities.
-func (_u *ItemUpdate) RemoveTrickplays(v ...*Trickplay) *ItemUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveTrickplayIDs(ids...)
-}
-
-// ClearMediaSegments clears all "media_segments" edges to the MediaSegment entity.
-func (_u *ItemUpdate) ClearMediaSegments() *ItemUpdate {
-	_u.mutation.ClearMediaSegments()
-	return _u
-}
-
-// RemoveMediaSegmentIDs removes the "media_segments" edge to MediaSegment entities by IDs.
-func (_u *ItemUpdate) RemoveMediaSegmentIDs(ids ...uuid.UUID) *ItemUpdate {
-	_u.mutation.RemoveMediaSegmentIDs(ids...)
-	return _u
-}
-
-// RemoveMediaSegments removes "media_segments" edges to MediaSegment entities.
-func (_u *ItemUpdate) RemoveMediaSegments(v ...*MediaSegment) *ItemUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveMediaSegmentIDs(ids...)
 }
 
 // ClearPlaylist clears the "playlist" edge to the Playlist entity.
@@ -2320,51 +2209,6 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.ChaptersCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.ChaptersTable,
-			Columns: []string{item.ChaptersColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(chapter.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedChaptersIDs(); len(nodes) > 0 && !_u.mutation.ChaptersCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.ChaptersTable,
-			Columns: []string{item.ChaptersColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(chapter.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.ChaptersIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.ChaptersTable,
-			Columns: []string{item.ChaptersColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(chapter.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
 	if _u.mutation.ImagesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -2493,96 +2337,6 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(activitylogentry.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.TrickplaysCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.TrickplaysTable,
-			Columns: []string{item.TrickplaysColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(trickplay.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedTrickplaysIDs(); len(nodes) > 0 && !_u.mutation.TrickplaysCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.TrickplaysTable,
-			Columns: []string{item.TrickplaysColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(trickplay.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.TrickplaysIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.TrickplaysTable,
-			Columns: []string{item.TrickplaysColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(trickplay.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.MediaSegmentsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.MediaSegmentsTable,
-			Columns: []string{item.MediaSegmentsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasegment.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedMediaSegmentsIDs(); len(nodes) > 0 && !_u.mutation.MediaSegmentsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.MediaSegmentsTable,
-			Columns: []string{item.MediaSegmentsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasegment.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.MediaSegmentsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.MediaSegmentsTable,
-			Columns: []string{item.MediaSegmentsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasegment.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -3974,21 +3728,6 @@ func (_u *ItemUpdateOne) AddCredits(v ...*Credit) *ItemUpdateOne {
 	return _u.AddCreditIDs(ids...)
 }
 
-// AddChapterIDs adds the "chapters" edge to the Chapter entity by IDs.
-func (_u *ItemUpdateOne) AddChapterIDs(ids ...uuid.UUID) *ItemUpdateOne {
-	_u.mutation.AddChapterIDs(ids...)
-	return _u
-}
-
-// AddChapters adds the "chapters" edges to the Chapter entity.
-func (_u *ItemUpdateOne) AddChapters(v ...*Chapter) *ItemUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddChapterIDs(ids...)
-}
-
 // AddImageIDs adds the "images" edge to the Image entity by IDs.
 func (_u *ItemUpdateOne) AddImageIDs(ids ...uuid.UUID) *ItemUpdateOne {
 	_u.mutation.AddImageIDs(ids...)
@@ -4032,36 +3771,6 @@ func (_u *ItemUpdateOne) AddActivityLogEntries(v ...*ActivityLogEntry) *ItemUpda
 		ids[i] = v[i].ID
 	}
 	return _u.AddActivityLogEntryIDs(ids...)
-}
-
-// AddTrickplayIDs adds the "trickplays" edge to the Trickplay entity by IDs.
-func (_u *ItemUpdateOne) AddTrickplayIDs(ids ...uuid.UUID) *ItemUpdateOne {
-	_u.mutation.AddTrickplayIDs(ids...)
-	return _u
-}
-
-// AddTrickplays adds the "trickplays" edges to the Trickplay entity.
-func (_u *ItemUpdateOne) AddTrickplays(v ...*Trickplay) *ItemUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddTrickplayIDs(ids...)
-}
-
-// AddMediaSegmentIDs adds the "media_segments" edge to the MediaSegment entity by IDs.
-func (_u *ItemUpdateOne) AddMediaSegmentIDs(ids ...uuid.UUID) *ItemUpdateOne {
-	_u.mutation.AddMediaSegmentIDs(ids...)
-	return _u
-}
-
-// AddMediaSegments adds the "media_segments" edges to the MediaSegment entity.
-func (_u *ItemUpdateOne) AddMediaSegments(v ...*MediaSegment) *ItemUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddMediaSegmentIDs(ids...)
 }
 
 // SetPlaylistID sets the "playlist" edge to the Playlist entity by ID.
@@ -4208,27 +3917,6 @@ func (_u *ItemUpdateOne) RemoveCredits(v ...*Credit) *ItemUpdateOne {
 	return _u.RemoveCreditIDs(ids...)
 }
 
-// ClearChapters clears all "chapters" edges to the Chapter entity.
-func (_u *ItemUpdateOne) ClearChapters() *ItemUpdateOne {
-	_u.mutation.ClearChapters()
-	return _u
-}
-
-// RemoveChapterIDs removes the "chapters" edge to Chapter entities by IDs.
-func (_u *ItemUpdateOne) RemoveChapterIDs(ids ...uuid.UUID) *ItemUpdateOne {
-	_u.mutation.RemoveChapterIDs(ids...)
-	return _u
-}
-
-// RemoveChapters removes "chapters" edges to Chapter entities.
-func (_u *ItemUpdateOne) RemoveChapters(v ...*Chapter) *ItemUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveChapterIDs(ids...)
-}
-
 // ClearImages clears all "images" edges to the Image entity.
 func (_u *ItemUpdateOne) ClearImages() *ItemUpdateOne {
 	_u.mutation.ClearImages()
@@ -4290,48 +3978,6 @@ func (_u *ItemUpdateOne) RemoveActivityLogEntries(v ...*ActivityLogEntry) *ItemU
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveActivityLogEntryIDs(ids...)
-}
-
-// ClearTrickplays clears all "trickplays" edges to the Trickplay entity.
-func (_u *ItemUpdateOne) ClearTrickplays() *ItemUpdateOne {
-	_u.mutation.ClearTrickplays()
-	return _u
-}
-
-// RemoveTrickplayIDs removes the "trickplays" edge to Trickplay entities by IDs.
-func (_u *ItemUpdateOne) RemoveTrickplayIDs(ids ...uuid.UUID) *ItemUpdateOne {
-	_u.mutation.RemoveTrickplayIDs(ids...)
-	return _u
-}
-
-// RemoveTrickplays removes "trickplays" edges to Trickplay entities.
-func (_u *ItemUpdateOne) RemoveTrickplays(v ...*Trickplay) *ItemUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveTrickplayIDs(ids...)
-}
-
-// ClearMediaSegments clears all "media_segments" edges to the MediaSegment entity.
-func (_u *ItemUpdateOne) ClearMediaSegments() *ItemUpdateOne {
-	_u.mutation.ClearMediaSegments()
-	return _u
-}
-
-// RemoveMediaSegmentIDs removes the "media_segments" edge to MediaSegment entities by IDs.
-func (_u *ItemUpdateOne) RemoveMediaSegmentIDs(ids ...uuid.UUID) *ItemUpdateOne {
-	_u.mutation.RemoveMediaSegmentIDs(ids...)
-	return _u
-}
-
-// RemoveMediaSegments removes "media_segments" edges to MediaSegment entities.
-func (_u *ItemUpdateOne) RemoveMediaSegments(v ...*MediaSegment) *ItemUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveMediaSegmentIDs(ids...)
 }
 
 // ClearPlaylist clears the "playlist" edge to the Playlist entity.
@@ -5080,51 +4726,6 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.ChaptersCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.ChaptersTable,
-			Columns: []string{item.ChaptersColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(chapter.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedChaptersIDs(); len(nodes) > 0 && !_u.mutation.ChaptersCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.ChaptersTable,
-			Columns: []string{item.ChaptersColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(chapter.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.ChaptersIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.ChaptersTable,
-			Columns: []string{item.ChaptersColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(chapter.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
 	if _u.mutation.ImagesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -5253,96 +4854,6 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(activitylogentry.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.TrickplaysCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.TrickplaysTable,
-			Columns: []string{item.TrickplaysColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(trickplay.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedTrickplaysIDs(); len(nodes) > 0 && !_u.mutation.TrickplaysCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.TrickplaysTable,
-			Columns: []string{item.TrickplaysColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(trickplay.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.TrickplaysIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.TrickplaysTable,
-			Columns: []string{item.TrickplaysColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(trickplay.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.MediaSegmentsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.MediaSegmentsTable,
-			Columns: []string{item.MediaSegmentsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasegment.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedMediaSegmentsIDs(); len(nodes) > 0 && !_u.mutation.MediaSegmentsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.MediaSegmentsTable,
-			Columns: []string{item.MediaSegmentsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasegment.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.MediaSegmentsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.MediaSegmentsTable,
-			Columns: []string{item.MediaSegmentsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasegment.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

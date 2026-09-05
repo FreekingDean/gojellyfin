@@ -156,18 +156,12 @@ type ItemEdges struct {
 	MediaSources []*MediaSource `json:"media_sources,omitempty"`
 	// Credits holds the value of the credits edge.
 	Credits []*Credit `json:"credits,omitempty"`
-	// Chapters holds the value of the chapters edge.
-	Chapters []*Chapter `json:"chapters,omitempty"`
 	// Images holds the value of the images edge.
 	Images []*Image `json:"images,omitempty"`
 	// UserData holds the value of the user_data edge.
 	UserData []*UserItemData `json:"user_data,omitempty"`
 	// ActivityLogEntries holds the value of the activity_log_entries edge.
 	ActivityLogEntries []*ActivityLogEntry `json:"activity_log_entries,omitempty"`
-	// Trickplays holds the value of the trickplays edge.
-	Trickplays []*Trickplay `json:"trickplays,omitempty"`
-	// MediaSegments holds the value of the media_segments edge.
-	MediaSegments []*MediaSegment `json:"media_segments,omitempty"`
 	// Playlist holds the value of the playlist edge.
 	Playlist *Playlist `json:"playlist,omitempty"`
 	// PlaylistEntries holds the value of the playlist_entries edge.
@@ -178,7 +172,7 @@ type ItemEdges struct {
 	Studios []*Studio `json:"studios,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [15]bool
+	loadedTypes [12]bool
 }
 
 // ParentOrErr returns the Parent value or an error if the edge
@@ -230,19 +224,10 @@ func (e ItemEdges) CreditsOrErr() ([]*Credit, error) {
 	return nil, &NotLoadedError{edge: "credits"}
 }
 
-// ChaptersOrErr returns the Chapters value or an error if the edge
-// was not loaded in eager-loading.
-func (e ItemEdges) ChaptersOrErr() ([]*Chapter, error) {
-	if e.loadedTypes[5] {
-		return e.Chapters, nil
-	}
-	return nil, &NotLoadedError{edge: "chapters"}
-}
-
 // ImagesOrErr returns the Images value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) ImagesOrErr() ([]*Image, error) {
-	if e.loadedTypes[6] {
+	if e.loadedTypes[5] {
 		return e.Images, nil
 	}
 	return nil, &NotLoadedError{edge: "images"}
@@ -251,7 +236,7 @@ func (e ItemEdges) ImagesOrErr() ([]*Image, error) {
 // UserDataOrErr returns the UserData value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) UserDataOrErr() ([]*UserItemData, error) {
-	if e.loadedTypes[7] {
+	if e.loadedTypes[6] {
 		return e.UserData, nil
 	}
 	return nil, &NotLoadedError{edge: "user_data"}
@@ -260,28 +245,10 @@ func (e ItemEdges) UserDataOrErr() ([]*UserItemData, error) {
 // ActivityLogEntriesOrErr returns the ActivityLogEntries value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) ActivityLogEntriesOrErr() ([]*ActivityLogEntry, error) {
-	if e.loadedTypes[8] {
+	if e.loadedTypes[7] {
 		return e.ActivityLogEntries, nil
 	}
 	return nil, &NotLoadedError{edge: "activity_log_entries"}
-}
-
-// TrickplaysOrErr returns the Trickplays value or an error if the edge
-// was not loaded in eager-loading.
-func (e ItemEdges) TrickplaysOrErr() ([]*Trickplay, error) {
-	if e.loadedTypes[9] {
-		return e.Trickplays, nil
-	}
-	return nil, &NotLoadedError{edge: "trickplays"}
-}
-
-// MediaSegmentsOrErr returns the MediaSegments value or an error if the edge
-// was not loaded in eager-loading.
-func (e ItemEdges) MediaSegmentsOrErr() ([]*MediaSegment, error) {
-	if e.loadedTypes[10] {
-		return e.MediaSegments, nil
-	}
-	return nil, &NotLoadedError{edge: "media_segments"}
 }
 
 // PlaylistOrErr returns the Playlist value or an error if the edge
@@ -289,7 +256,7 @@ func (e ItemEdges) MediaSegmentsOrErr() ([]*MediaSegment, error) {
 func (e ItemEdges) PlaylistOrErr() (*Playlist, error) {
 	if e.Playlist != nil {
 		return e.Playlist, nil
-	} else if e.loadedTypes[11] {
+	} else if e.loadedTypes[8] {
 		return nil, &NotFoundError{label: playlist.Label}
 	}
 	return nil, &NotLoadedError{edge: "playlist"}
@@ -298,7 +265,7 @@ func (e ItemEdges) PlaylistOrErr() (*Playlist, error) {
 // PlaylistEntriesOrErr returns the PlaylistEntries value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) PlaylistEntriesOrErr() ([]*PlaylistEntry, error) {
-	if e.loadedTypes[12] {
+	if e.loadedTypes[9] {
 		return e.PlaylistEntries, nil
 	}
 	return nil, &NotLoadedError{edge: "playlist_entries"}
@@ -307,7 +274,7 @@ func (e ItemEdges) PlaylistEntriesOrErr() ([]*PlaylistEntry, error) {
 // GenresOrErr returns the Genres value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) GenresOrErr() ([]*Genre, error) {
-	if e.loadedTypes[13] {
+	if e.loadedTypes[10] {
 		return e.Genres, nil
 	}
 	return nil, &NotLoadedError{edge: "genres"}
@@ -316,7 +283,7 @@ func (e ItemEdges) GenresOrErr() ([]*Genre, error) {
 // StudiosOrErr returns the Studios value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) StudiosOrErr() ([]*Studio, error) {
-	if e.loadedTypes[14] {
+	if e.loadedTypes[11] {
 		return e.Studios, nil
 	}
 	return nil, &NotLoadedError{edge: "studios"}
@@ -781,11 +748,6 @@ func (_m *Item) QueryCredits() *CreditQuery {
 	return NewItemClient(_m.config).QueryCredits(_m)
 }
 
-// QueryChapters queries the "chapters" edge of the Item entity.
-func (_m *Item) QueryChapters() *ChapterQuery {
-	return NewItemClient(_m.config).QueryChapters(_m)
-}
-
 // QueryImages queries the "images" edge of the Item entity.
 func (_m *Item) QueryImages() *ImageQuery {
 	return NewItemClient(_m.config).QueryImages(_m)
@@ -799,16 +761,6 @@ func (_m *Item) QueryUserData() *UserItemDataQuery {
 // QueryActivityLogEntries queries the "activity_log_entries" edge of the Item entity.
 func (_m *Item) QueryActivityLogEntries() *ActivityLogEntryQuery {
 	return NewItemClient(_m.config).QueryActivityLogEntries(_m)
-}
-
-// QueryTrickplays queries the "trickplays" edge of the Item entity.
-func (_m *Item) QueryTrickplays() *TrickplayQuery {
-	return NewItemClient(_m.config).QueryTrickplays(_m)
-}
-
-// QueryMediaSegments queries the "media_segments" edge of the Item entity.
-func (_m *Item) QueryMediaSegments() *MediaSegmentQuery {
-	return NewItemClient(_m.config).QueryMediaSegments(_m)
 }
 
 // QueryPlaylist queries the "playlist" edge of the Item entity.

@@ -56,31 +56,6 @@ var (
 		Columns:    APIKeysColumns,
 		PrimaryKey: []*schema.Column{APIKeysColumns[0]},
 	}
-	// ChaptersColumns holds the columns for the "chapters" table.
-	ChaptersColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "name", Type: field.TypeString, Nullable: true},
-		{Name: "start_position_ticks", Type: field.TypeInt64},
-		{Name: "image_path", Type: field.TypeString, Nullable: true},
-		{Name: "image_modified_at", Type: field.TypeTime, Nullable: true},
-		{Name: "item_chapters", Type: field.TypeUUID},
-	}
-	// ChaptersTable holds the schema information for the "chapters" table.
-	ChaptersTable = &schema.Table{
-		Name:       "chapters",
-		Columns:    ChaptersColumns,
-		PrimaryKey: []*schema.Column{ChaptersColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "chapters_items_chapters",
-				Columns:    []*schema.Column{ChaptersColumns[7]},
-				RefColumns: []*schema.Column{ItemsColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-		},
-	}
 	// ConfigurationsColumns holds the columns for the "configurations" table.
 	ConfigurationsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
@@ -489,93 +464,6 @@ var (
 			},
 		},
 	}
-	// ListingsProvidersColumns holds the columns for the "listings_providers" table.
-	ListingsProvidersColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "kind", Type: field.TypeString},
-		{Name: "username", Type: field.TypeString, Nullable: true},
-		{Name: "password", Type: field.TypeString, Nullable: true},
-		{Name: "listings_id", Type: field.TypeString, Nullable: true},
-		{Name: "zip_code", Type: field.TypeString, Nullable: true},
-		{Name: "country", Type: field.TypeString, Nullable: true},
-		{Name: "path", Type: field.TypeString, Nullable: true},
-		{Name: "movie_prefix", Type: field.TypeString, Nullable: true},
-		{Name: "preferred_language", Type: field.TypeString, Nullable: true},
-		{Name: "user_agent", Type: field.TypeString, Nullable: true},
-		{Name: "enable_all_tuners", Type: field.TypeBool},
-		{Name: "enabled_tuners", Type: field.TypeJSON, Nullable: true},
-		{Name: "news_categories", Type: field.TypeJSON, Nullable: true},
-		{Name: "sports_categories", Type: field.TypeJSON, Nullable: true},
-		{Name: "kids_categories", Type: field.TypeJSON, Nullable: true},
-		{Name: "movie_categories", Type: field.TypeJSON, Nullable: true},
-		{Name: "channel_mappings", Type: field.TypeJSON, Nullable: true},
-	}
-	// ListingsProvidersTable holds the schema information for the "listings_providers" table.
-	ListingsProvidersTable = &schema.Table{
-		Name:       "listings_providers",
-		Columns:    ListingsProvidersColumns,
-		PrimaryKey: []*schema.Column{ListingsProvidersColumns[0]},
-	}
-	// MediaAttachmentsColumns holds the columns for the "media_attachments" table.
-	MediaAttachmentsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "index", Type: field.TypeInt32},
-		{Name: "codec", Type: field.TypeString, Nullable: true},
-		{Name: "codec_tag", Type: field.TypeString, Nullable: true},
-		{Name: "comment", Type: field.TypeString, Nullable: true},
-		{Name: "file_name", Type: field.TypeString, Nullable: true},
-		{Name: "mime_type", Type: field.TypeString, Nullable: true},
-		{Name: "media_source_attachments", Type: field.TypeUUID},
-	}
-	// MediaAttachmentsTable holds the schema information for the "media_attachments" table.
-	MediaAttachmentsTable = &schema.Table{
-		Name:       "media_attachments",
-		Columns:    MediaAttachmentsColumns,
-		PrimaryKey: []*schema.Column{MediaAttachmentsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "media_attachments_media_sources_attachments",
-				Columns:    []*schema.Column{MediaAttachmentsColumns[9]},
-				RefColumns: []*schema.Column{MediaSourcesColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-		},
-		Indexes: []*schema.Index{
-			{
-				Name:    "mediaattachment_index_media_source_attachments",
-				Unique:  true,
-				Columns: []*schema.Column{MediaAttachmentsColumns[3], MediaAttachmentsColumns[9]},
-			},
-		},
-	}
-	// MediaSegmentsColumns holds the columns for the "media_segments" table.
-	MediaSegmentsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Unknown", "Commercial", "Preview", "Recap", "Outro", "Intro"}},
-		{Name: "start_ticks", Type: field.TypeInt64},
-		{Name: "end_ticks", Type: field.TypeInt64},
-		{Name: "item_media_segments", Type: field.TypeUUID},
-	}
-	// MediaSegmentsTable holds the schema information for the "media_segments" table.
-	MediaSegmentsTable = &schema.Table{
-		Name:       "media_segments",
-		Columns:    MediaSegmentsColumns,
-		PrimaryKey: []*schema.Column{MediaSegmentsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "media_segments_items_media_segments",
-				Columns:    []*schema.Column{MediaSegmentsColumns[6]},
-				RefColumns: []*schema.Column{ItemsColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-		},
-	}
 	// MediaSourcesColumns holds the columns for the "media_sources" table.
 	MediaSourcesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
@@ -832,41 +720,6 @@ var (
 			},
 		},
 	}
-	// SeriesTimersColumns holds the columns for the "series_timers" table.
-	SeriesTimersColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "name", Type: field.TypeString},
-		{Name: "overview", Type: field.TypeString, Nullable: true, Size: 2147483647},
-		{Name: "service_name", Type: field.TypeString, Nullable: true},
-		{Name: "external_id", Type: field.TypeString, Nullable: true},
-		{Name: "channel_id", Type: field.TypeString, Nullable: true},
-		{Name: "external_channel_id", Type: field.TypeString, Nullable: true},
-		{Name: "program_id", Type: field.TypeString, Nullable: true},
-		{Name: "external_program_id", Type: field.TypeString, Nullable: true},
-		{Name: "start_date", Type: field.TypeTime},
-		{Name: "end_date", Type: field.TypeTime},
-		{Name: "priority", Type: field.TypeInt32},
-		{Name: "pre_padding_seconds", Type: field.TypeInt32},
-		{Name: "post_padding_seconds", Type: field.TypeInt32},
-		{Name: "is_pre_padding_required", Type: field.TypeBool},
-		{Name: "is_post_padding_required", Type: field.TypeBool},
-		{Name: "keep_until", Type: field.TypeEnum, Enums: []string{"UntilDeleted", "UntilSpaceNeeded", "UntilWatched", "UntilDate"}},
-		{Name: "keep_up_to", Type: field.TypeInt32},
-		{Name: "record_any_time", Type: field.TypeBool},
-		{Name: "record_any_channel", Type: field.TypeBool},
-		{Name: "record_new_only", Type: field.TypeBool},
-		{Name: "skip_episodes_in_library", Type: field.TypeBool},
-		{Name: "days", Type: field.TypeJSON, Nullable: true},
-		{Name: "day_pattern", Type: field.TypeEnum, Nullable: true, Enums: []string{"Daily", "Weekdays", "Weekends"}},
-	}
-	// SeriesTimersTable holds the schema information for the "series_timers" table.
-	SeriesTimersTable = &schema.Table{
-		Name:       "series_timers",
-		Columns:    SeriesTimersColumns,
-		PrimaryKey: []*schema.Column{SeriesTimersColumns[0]},
-	}
 	// SessionsColumns holds the columns for the "sessions" table.
 	SessionsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
@@ -928,100 +781,6 @@ var (
 		Name:       "studios",
 		Columns:    StudiosColumns,
 		PrimaryKey: []*schema.Column{StudiosColumns[0]},
-	}
-	// TimersColumns holds the columns for the "timers" table.
-	TimersColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "name", Type: field.TypeString},
-		{Name: "overview", Type: field.TypeString, Nullable: true, Size: 2147483647},
-		{Name: "service_name", Type: field.TypeString, Nullable: true},
-		{Name: "external_id", Type: field.TypeString, Nullable: true},
-		{Name: "channel_id", Type: field.TypeString, Nullable: true},
-		{Name: "external_channel_id", Type: field.TypeString, Nullable: true},
-		{Name: "program_id", Type: field.TypeString, Nullable: true},
-		{Name: "external_program_id", Type: field.TypeString, Nullable: true},
-		{Name: "external_series_timer_id", Type: field.TypeString, Nullable: true},
-		{Name: "start_date", Type: field.TypeTime},
-		{Name: "end_date", Type: field.TypeTime},
-		{Name: "run_time_ticks", Type: field.TypeInt64, Nullable: true},
-		{Name: "priority", Type: field.TypeInt32},
-		{Name: "pre_padding_seconds", Type: field.TypeInt32},
-		{Name: "post_padding_seconds", Type: field.TypeInt32},
-		{Name: "is_pre_padding_required", Type: field.TypeBool},
-		{Name: "is_post_padding_required", Type: field.TypeBool},
-		{Name: "keep_until", Type: field.TypeEnum, Enums: []string{"UntilDeleted", "UntilSpaceNeeded", "UntilWatched", "UntilDate"}},
-		{Name: "status", Type: field.TypeEnum, Enums: []string{"New", "InProgress", "Completed", "Cancelled", "ConflictedOk", "ConflictedNotOk", "Error"}},
-		{Name: "series_timer_timers", Type: field.TypeUUID, Nullable: true},
-	}
-	// TimersTable holds the schema information for the "timers" table.
-	TimersTable = &schema.Table{
-		Name:       "timers",
-		Columns:    TimersColumns,
-		PrimaryKey: []*schema.Column{TimersColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "timers_series_timers_timers",
-				Columns:    []*schema.Column{TimersColumns[22]},
-				RefColumns: []*schema.Column{SeriesTimersColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-		},
-	}
-	// TrickplaysColumns holds the columns for the "trickplays" table.
-	TrickplaysColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "width", Type: field.TypeInt32},
-		{Name: "height", Type: field.TypeInt32},
-		{Name: "tile_width", Type: field.TypeInt32},
-		{Name: "tile_height", Type: field.TypeInt32},
-		{Name: "thumbnail_count", Type: field.TypeInt32},
-		{Name: "interval", Type: field.TypeInt32},
-		{Name: "bandwidth", Type: field.TypeInt32},
-		{Name: "item_trickplays", Type: field.TypeUUID},
-	}
-	// TrickplaysTable holds the schema information for the "trickplays" table.
-	TrickplaysTable = &schema.Table{
-		Name:       "trickplays",
-		Columns:    TrickplaysColumns,
-		PrimaryKey: []*schema.Column{TrickplaysColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "trickplays_items_trickplays",
-				Columns:    []*schema.Column{TrickplaysColumns[10]},
-				RefColumns: []*schema.Column{ItemsColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-		},
-	}
-	// TunerHostsColumns holds the columns for the "tuner_hosts" table.
-	TunerHostsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "kind", Type: field.TypeString},
-		{Name: "url", Type: field.TypeString},
-		{Name: "device_id", Type: field.TypeString, Nullable: true},
-		{Name: "friendly_name", Type: field.TypeString, Nullable: true},
-		{Name: "source", Type: field.TypeString, Nullable: true},
-		{Name: "user_agent", Type: field.TypeString, Nullable: true},
-		{Name: "tuner_count", Type: field.TypeInt32},
-		{Name: "fallback_max_streaming_bitrate", Type: field.TypeInt32},
-		{Name: "import_favorites_only", Type: field.TypeBool},
-		{Name: "allow_hw_transcoding", Type: field.TypeBool},
-		{Name: "allow_fmp4_transcoding_container", Type: field.TypeBool},
-		{Name: "allow_stream_sharing", Type: field.TypeBool},
-		{Name: "enable_stream_looping", Type: field.TypeBool},
-		{Name: "ignore_dts", Type: field.TypeBool},
-	}
-	// TunerHostsTable holds the schema information for the "tuner_hosts" table.
-	TunerHostsTable = &schema.Table{
-		Name:       "tuner_hosts",
-		Columns:    TunerHostsColumns,
-		PrimaryKey: []*schema.Column{TunerHostsColumns[0]},
 	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
@@ -1238,7 +997,6 @@ var (
 	Tables = []*schema.Table{
 		ActivityLogEntriesTable,
 		APIKeysTable,
-		ChaptersTable,
 		ConfigurationsTable,
 		CreditsTable,
 		DevicesTable,
@@ -1250,22 +1008,15 @@ var (
 		LibrariesTable,
 		LibraryOptionsTable,
 		LibrarySourcesTable,
-		ListingsProvidersTable,
-		MediaAttachmentsTable,
-		MediaSegmentsTable,
 		MediaSourcesTable,
 		MediaStreamsTable,
 		PersonsTable,
 		PlaylistsTable,
 		PlaylistEntriesTable,
 		PlaylistSharesTable,
-		SeriesTimersTable,
 		SessionsTable,
 		SourcesTable,
 		StudiosTable,
-		TimersTable,
-		TrickplaysTable,
-		TunerHostsTable,
 		UsersTable,
 		UserConfigurationsTable,
 		UserItemDataTable,
@@ -1278,7 +1029,6 @@ var (
 func init() {
 	ActivityLogEntriesTable.ForeignKeys[0].RefTable = ItemsTable
 	ActivityLogEntriesTable.ForeignKeys[1].RefTable = UsersTable
-	ChaptersTable.ForeignKeys[0].RefTable = ItemsTable
 	CreditsTable.ForeignKeys[0].RefTable = ItemsTable
 	CreditsTable.ForeignKeys[1].RefTable = PersonsTable
 	DisplayPreferencesTable.ForeignKeys[0].RefTable = UsersTable
@@ -1288,8 +1038,6 @@ func init() {
 	LibraryOptionsTable.ForeignKeys[0].RefTable = LibrariesTable
 	LibrarySourcesTable.ForeignKeys[0].RefTable = LibrariesTable
 	LibrarySourcesTable.ForeignKeys[1].RefTable = SourcesTable
-	MediaAttachmentsTable.ForeignKeys[0].RefTable = MediaSourcesTable
-	MediaSegmentsTable.ForeignKeys[0].RefTable = ItemsTable
 	MediaSourcesTable.ForeignKeys[0].RefTable = ItemsTable
 	MediaSourcesTable.ForeignKeys[1].RefTable = LibrariesTable
 	MediaStreamsTable.ForeignKeys[0].RefTable = MediaSourcesTable
@@ -1301,8 +1049,6 @@ func init() {
 	PlaylistSharesTable.ForeignKeys[1].RefTable = UsersTable
 	SessionsTable.ForeignKeys[0].RefTable = DevicesTable
 	SessionsTable.ForeignKeys[1].RefTable = UsersTable
-	TimersTable.ForeignKeys[0].RefTable = SeriesTimersTable
-	TrickplaysTable.ForeignKeys[0].RefTable = ItemsTable
 	UserConfigurationsTable.ForeignKeys[0].RefTable = UsersTable
 	UserItemDataTable.ForeignKeys[0].RefTable = ItemsTable
 	UserItemDataTable.ForeignKeys[1].RefTable = UsersTable

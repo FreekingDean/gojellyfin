@@ -77,8 +77,6 @@ const (
 	EdgeLibrary = "library"
 	// EdgeStreams holds the string denoting the streams edge name in mutations.
 	EdgeStreams = "streams"
-	// EdgeAttachments holds the string denoting the attachments edge name in mutations.
-	EdgeAttachments = "attachments"
 	// Table holds the table name of the mediasource in the database.
 	Table = "media_sources"
 	// ItemTable is the table that holds the item relation/edge.
@@ -102,13 +100,6 @@ const (
 	StreamsInverseTable = "media_streams"
 	// StreamsColumn is the table column denoting the streams relation/edge.
 	StreamsColumn = "source_id"
-	// AttachmentsTable is the table that holds the attachments relation/edge.
-	AttachmentsTable = "media_attachments"
-	// AttachmentsInverseTable is the table name for the MediaAttachment entity.
-	// It exists in this package in order to avoid circular dependency with the "mediaattachment" package.
-	AttachmentsInverseTable = "media_attachments"
-	// AttachmentsColumn is the table column denoting the attachments relation/edge.
-	AttachmentsColumn = "media_source_attachments"
 )
 
 // Columns holds all SQL columns for mediasource fields.
@@ -527,20 +518,6 @@ func ByStreams(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newStreamsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
-
-// ByAttachmentsCount orders the results by attachments count.
-func ByAttachmentsCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newAttachmentsStep(), opts...)
-	}
-}
-
-// ByAttachments orders the results by attachments terms.
-func ByAttachments(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newAttachmentsStep(), append([]sql.OrderTerm{term}, terms...)...)
-	}
-}
 func newItemStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -560,12 +537,5 @@ func newStreamsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(StreamsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, StreamsTable, StreamsColumn),
-	)
-}
-func newAttachmentsStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(AttachmentsInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, AttachmentsTable, AttachmentsColumn),
 	)
 }

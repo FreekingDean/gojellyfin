@@ -14,19 +14,16 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
-	"github.com/FreekingDean/gojellyfin/internal/store/chapter"
 	"github.com/FreekingDean/gojellyfin/internal/store/credit"
 	"github.com/FreekingDean/gojellyfin/internal/store/genre"
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasegment"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
-	"github.com/FreekingDean/gojellyfin/internal/store/trickplay"
 	"github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
 	"github.com/google/uuid"
 )
@@ -43,12 +40,9 @@ type ItemQuery struct {
 	withLibrary            *LibraryQuery
 	withMediaSources       *MediaSourceQuery
 	withCredits            *CreditQuery
-	withChapters           *ChapterQuery
 	withImages             *ImageQuery
 	withUserData           *UserItemDataQuery
 	withActivityLogEntries *ActivityLogEntryQuery
-	withTrickplays         *TrickplayQuery
-	withMediaSegments      *MediaSegmentQuery
 	withPlaylist           *PlaylistQuery
 	withPlaylistEntries    *PlaylistEntryQuery
 	withGenres             *GenreQuery
@@ -200,28 +194,6 @@ func (_q *ItemQuery) QueryCredits() *CreditQuery {
 	return query
 }
 
-// QueryChapters chains the current query on the "chapters" edge.
-func (_q *ItemQuery) QueryChapters() *ChapterQuery {
-	query := (&ChapterClient{config: _q.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := _q.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(item.Table, item.FieldID, selector),
-			sqlgraph.To(chapter.Table, chapter.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, item.ChaptersTable, item.ChaptersColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
 // QueryImages chains the current query on the "images" edge.
 func (_q *ItemQuery) QueryImages() *ImageQuery {
 	query := (&ImageClient{config: _q.config}).Query()
@@ -281,50 +253,6 @@ func (_q *ItemQuery) QueryActivityLogEntries() *ActivityLogEntryQuery {
 			sqlgraph.From(item.Table, item.FieldID, selector),
 			sqlgraph.To(activitylogentry.Table, activitylogentry.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, item.ActivityLogEntriesTable, item.ActivityLogEntriesColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryTrickplays chains the current query on the "trickplays" edge.
-func (_q *ItemQuery) QueryTrickplays() *TrickplayQuery {
-	query := (&TrickplayClient{config: _q.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := _q.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(item.Table, item.FieldID, selector),
-			sqlgraph.To(trickplay.Table, trickplay.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, item.TrickplaysTable, item.TrickplaysColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryMediaSegments chains the current query on the "media_segments" edge.
-func (_q *ItemQuery) QueryMediaSegments() *MediaSegmentQuery {
-	query := (&MediaSegmentClient{config: _q.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := _q.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(item.Table, item.FieldID, selector),
-			sqlgraph.To(mediasegment.Table, mediasegment.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, item.MediaSegmentsTable, item.MediaSegmentsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -617,12 +545,9 @@ func (_q *ItemQuery) Clone() *ItemQuery {
 		withLibrary:            _q.withLibrary.Clone(),
 		withMediaSources:       _q.withMediaSources.Clone(),
 		withCredits:            _q.withCredits.Clone(),
-		withChapters:           _q.withChapters.Clone(),
 		withImages:             _q.withImages.Clone(),
 		withUserData:           _q.withUserData.Clone(),
 		withActivityLogEntries: _q.withActivityLogEntries.Clone(),
-		withTrickplays:         _q.withTrickplays.Clone(),
-		withMediaSegments:      _q.withMediaSegments.Clone(),
 		withPlaylist:           _q.withPlaylist.Clone(),
 		withPlaylistEntries:    _q.withPlaylistEntries.Clone(),
 		withGenres:             _q.withGenres.Clone(),
@@ -688,17 +613,6 @@ func (_q *ItemQuery) WithCredits(opts ...func(*CreditQuery)) *ItemQuery {
 	return _q
 }
 
-// WithChapters tells the query-builder to eager-load the nodes that are connected to
-// the "chapters" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *ItemQuery) WithChapters(opts ...func(*ChapterQuery)) *ItemQuery {
-	query := (&ChapterClient{config: _q.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	_q.withChapters = query
-	return _q
-}
-
 // WithImages tells the query-builder to eager-load the nodes that are connected to
 // the "images" edge. The optional arguments are used to configure the query builder of the edge.
 func (_q *ItemQuery) WithImages(opts ...func(*ImageQuery)) *ItemQuery {
@@ -729,28 +643,6 @@ func (_q *ItemQuery) WithActivityLogEntries(opts ...func(*ActivityLogEntryQuery)
 		opt(query)
 	}
 	_q.withActivityLogEntries = query
-	return _q
-}
-
-// WithTrickplays tells the query-builder to eager-load the nodes that are connected to
-// the "trickplays" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *ItemQuery) WithTrickplays(opts ...func(*TrickplayQuery)) *ItemQuery {
-	query := (&TrickplayClient{config: _q.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	_q.withTrickplays = query
-	return _q
-}
-
-// WithMediaSegments tells the query-builder to eager-load the nodes that are connected to
-// the "media_segments" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *ItemQuery) WithMediaSegments(opts ...func(*MediaSegmentQuery)) *ItemQuery {
-	query := (&MediaSegmentClient{config: _q.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	_q.withMediaSegments = query
 	return _q
 }
 
@@ -876,18 +768,15 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 	var (
 		nodes       = []*Item{}
 		_spec       = _q.querySpec()
-		loadedTypes = [15]bool{
+		loadedTypes = [12]bool{
 			_q.withParent != nil,
 			_q.withChildren != nil,
 			_q.withLibrary != nil,
 			_q.withMediaSources != nil,
 			_q.withCredits != nil,
-			_q.withChapters != nil,
 			_q.withImages != nil,
 			_q.withUserData != nil,
 			_q.withActivityLogEntries != nil,
-			_q.withTrickplays != nil,
-			_q.withMediaSegments != nil,
 			_q.withPlaylist != nil,
 			_q.withPlaylistEntries != nil,
 			_q.withGenres != nil,
@@ -948,13 +837,6 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 			return nil, err
 		}
 	}
-	if query := _q.withChapters; query != nil {
-		if err := _q.loadChapters(ctx, query, nodes,
-			func(n *Item) { n.Edges.Chapters = []*Chapter{} },
-			func(n *Item, e *Chapter) { n.Edges.Chapters = append(n.Edges.Chapters, e) }); err != nil {
-			return nil, err
-		}
-	}
 	if query := _q.withImages; query != nil {
 		if err := _q.loadImages(ctx, query, nodes,
 			func(n *Item) { n.Edges.Images = []*Image{} },
@@ -973,20 +855,6 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 		if err := _q.loadActivityLogEntries(ctx, query, nodes,
 			func(n *Item) { n.Edges.ActivityLogEntries = []*ActivityLogEntry{} },
 			func(n *Item, e *ActivityLogEntry) { n.Edges.ActivityLogEntries = append(n.Edges.ActivityLogEntries, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := _q.withTrickplays; query != nil {
-		if err := _q.loadTrickplays(ctx, query, nodes,
-			func(n *Item) { n.Edges.Trickplays = []*Trickplay{} },
-			func(n *Item, e *Trickplay) { n.Edges.Trickplays = append(n.Edges.Trickplays, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := _q.withMediaSegments; query != nil {
-		if err := _q.loadMediaSegments(ctx, query, nodes,
-			func(n *Item) { n.Edges.MediaSegments = []*MediaSegment{} },
-			func(n *Item, e *MediaSegment) { n.Edges.MediaSegments = append(n.Edges.MediaSegments, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -1175,37 +1043,6 @@ func (_q *ItemQuery) loadCredits(ctx context.Context, query *CreditQuery, nodes 
 	}
 	return nil
 }
-func (_q *ItemQuery) loadChapters(ctx context.Context, query *ChapterQuery, nodes []*Item, init func(*Item), assign func(*Item, *Chapter)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Item)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	query.withFKs = true
-	query.Where(predicate.Chapter(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(item.ChaptersColumn), fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.item_chapters
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "item_chapters" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "item_chapters" returned %v for node %v`, *fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
 func (_q *ItemQuery) loadImages(ctx context.Context, query *ImageQuery, nodes []*Item, init func(*Item), assign func(*Item, *Image)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*Item)
@@ -1292,68 +1129,6 @@ func (_q *ItemQuery) loadActivityLogEntries(ctx context.Context, query *Activity
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "item_activity_log_entries" returned %v for node %v`, *fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (_q *ItemQuery) loadTrickplays(ctx context.Context, query *TrickplayQuery, nodes []*Item, init func(*Item), assign func(*Item, *Trickplay)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Item)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	query.withFKs = true
-	query.Where(predicate.Trickplay(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(item.TrickplaysColumn), fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.item_trickplays
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "item_trickplays" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "item_trickplays" returned %v for node %v`, *fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (_q *ItemQuery) loadMediaSegments(ctx context.Context, query *MediaSegmentQuery, nodes []*Item, init func(*Item), assign func(*Item, *MediaSegment)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Item)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	query.withFKs = true
-	query.Where(predicate.MediaSegment(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(item.MediaSegmentsColumn), fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.item_media_segments
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "item_media_segments" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "item_media_segments" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

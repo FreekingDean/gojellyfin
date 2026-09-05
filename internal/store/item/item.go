@@ -141,18 +141,12 @@ const (
 	EdgeMediaSources = "media_sources"
 	// EdgeCredits holds the string denoting the credits edge name in mutations.
 	EdgeCredits = "credits"
-	// EdgeChapters holds the string denoting the chapters edge name in mutations.
-	EdgeChapters = "chapters"
 	// EdgeImages holds the string denoting the images edge name in mutations.
 	EdgeImages = "images"
 	// EdgeUserData holds the string denoting the user_data edge name in mutations.
 	EdgeUserData = "user_data"
 	// EdgeActivityLogEntries holds the string denoting the activity_log_entries edge name in mutations.
 	EdgeActivityLogEntries = "activity_log_entries"
-	// EdgeTrickplays holds the string denoting the trickplays edge name in mutations.
-	EdgeTrickplays = "trickplays"
-	// EdgeMediaSegments holds the string denoting the media_segments edge name in mutations.
-	EdgeMediaSegments = "media_segments"
 	// EdgePlaylist holds the string denoting the playlist edge name in mutations.
 	EdgePlaylist = "playlist"
 	// EdgePlaylistEntries holds the string denoting the playlist_entries edge name in mutations.
@@ -192,13 +186,6 @@ const (
 	CreditsInverseTable = "credits"
 	// CreditsColumn is the table column denoting the credits relation/edge.
 	CreditsColumn = "item_credits"
-	// ChaptersTable is the table that holds the chapters relation/edge.
-	ChaptersTable = "chapters"
-	// ChaptersInverseTable is the table name for the Chapter entity.
-	// It exists in this package in order to avoid circular dependency with the "chapter" package.
-	ChaptersInverseTable = "chapters"
-	// ChaptersColumn is the table column denoting the chapters relation/edge.
-	ChaptersColumn = "item_chapters"
 	// ImagesTable is the table that holds the images relation/edge.
 	ImagesTable = "images"
 	// ImagesInverseTable is the table name for the Image entity.
@@ -220,20 +207,6 @@ const (
 	ActivityLogEntriesInverseTable = "activity_log_entries"
 	// ActivityLogEntriesColumn is the table column denoting the activity_log_entries relation/edge.
 	ActivityLogEntriesColumn = "item_activity_log_entries"
-	// TrickplaysTable is the table that holds the trickplays relation/edge.
-	TrickplaysTable = "trickplays"
-	// TrickplaysInverseTable is the table name for the Trickplay entity.
-	// It exists in this package in order to avoid circular dependency with the "trickplay" package.
-	TrickplaysInverseTable = "trickplays"
-	// TrickplaysColumn is the table column denoting the trickplays relation/edge.
-	TrickplaysColumn = "item_trickplays"
-	// MediaSegmentsTable is the table that holds the media_segments relation/edge.
-	MediaSegmentsTable = "media_segments"
-	// MediaSegmentsInverseTable is the table name for the MediaSegment entity.
-	// It exists in this package in order to avoid circular dependency with the "mediasegment" package.
-	MediaSegmentsInverseTable = "media_segments"
-	// MediaSegmentsColumn is the table column denoting the media_segments relation/edge.
-	MediaSegmentsColumn = "item_media_segments"
 	// PlaylistTable is the table that holds the playlist relation/edge.
 	PlaylistTable = "playlists"
 	// PlaylistInverseTable is the table name for the Playlist entity.
@@ -906,20 +879,6 @@ func ByCredits(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
-// ByChaptersCount orders the results by chapters count.
-func ByChaptersCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newChaptersStep(), opts...)
-	}
-}
-
-// ByChapters orders the results by chapters terms.
-func ByChapters(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newChaptersStep(), append([]sql.OrderTerm{term}, terms...)...)
-	}
-}
-
 // ByImagesCount orders the results by images count.
 func ByImagesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -959,34 +918,6 @@ func ByActivityLogEntriesCount(opts ...sql.OrderTermOption) OrderOption {
 func ByActivityLogEntries(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newActivityLogEntriesStep(), append([]sql.OrderTerm{term}, terms...)...)
-	}
-}
-
-// ByTrickplaysCount orders the results by trickplays count.
-func ByTrickplaysCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newTrickplaysStep(), opts...)
-	}
-}
-
-// ByTrickplays orders the results by trickplays terms.
-func ByTrickplays(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newTrickplaysStep(), append([]sql.OrderTerm{term}, terms...)...)
-	}
-}
-
-// ByMediaSegmentsCount orders the results by media_segments count.
-func ByMediaSegmentsCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newMediaSegmentsStep(), opts...)
-	}
-}
-
-// ByMediaSegments orders the results by media_segments terms.
-func ByMediaSegments(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newMediaSegmentsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
@@ -1073,13 +1004,6 @@ func newCreditsStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2M, false, CreditsTable, CreditsColumn),
 	)
 }
-func newChaptersStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(ChaptersInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, ChaptersTable, ChaptersColumn),
-	)
-}
 func newImagesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -1099,20 +1023,6 @@ func newActivityLogEntriesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ActivityLogEntriesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ActivityLogEntriesTable, ActivityLogEntriesColumn),
-	)
-}
-func newTrickplaysStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(TrickplaysInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, TrickplaysTable, TrickplaysColumn),
-	)
-}
-func newMediaSegmentsStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(MediaSegmentsInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, MediaSegmentsTable, MediaSegmentsColumn),
 	)
 }
 func newPlaylistStep() *sqlgraph.Step {

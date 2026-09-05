@@ -2841,29 +2841,6 @@ func HasCreditsWith(preds ...predicate.Credit) predicate.Item {
 	})
 }
 
-// HasChapters applies the HasEdge predicate on the "chapters" edge.
-func HasChapters() predicate.Item {
-	return predicate.Item(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, ChaptersTable, ChaptersColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasChaptersWith applies the HasEdge predicate on the "chapters" edge with a given conditions (other predicates).
-func HasChaptersWith(preds ...predicate.Chapter) predicate.Item {
-	return predicate.Item(func(s *sql.Selector) {
-		step := newChaptersStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
 // HasImages applies the HasEdge predicate on the "images" edge.
 func HasImages() predicate.Item {
 	return predicate.Item(func(s *sql.Selector) {
@@ -2925,52 +2902,6 @@ func HasActivityLogEntries() predicate.Item {
 func HasActivityLogEntriesWith(preds ...predicate.ActivityLogEntry) predicate.Item {
 	return predicate.Item(func(s *sql.Selector) {
 		step := newActivityLogEntriesStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
-// HasTrickplays applies the HasEdge predicate on the "trickplays" edge.
-func HasTrickplays() predicate.Item {
-	return predicate.Item(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, TrickplaysTable, TrickplaysColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasTrickplaysWith applies the HasEdge predicate on the "trickplays" edge with a given conditions (other predicates).
-func HasTrickplaysWith(preds ...predicate.Trickplay) predicate.Item {
-	return predicate.Item(func(s *sql.Selector) {
-		step := newTrickplaysStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
-// HasMediaSegments applies the HasEdge predicate on the "media_segments" edge.
-func HasMediaSegments() predicate.Item {
-	return predicate.Item(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, MediaSegmentsTable, MediaSegmentsColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasMediaSegmentsWith applies the HasEdge predicate on the "media_segments" edge with a given conditions (other predicates).
-func HasMediaSegmentsWith(preds ...predicate.MediaSegment) predicate.Item {
-	return predicate.Item(func(s *sql.Selector) {
-		step := newMediaSegmentsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

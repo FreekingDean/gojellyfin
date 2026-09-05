@@ -14,7 +14,6 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/apikey"
-	"github.com/FreekingDean/gojellyfin/internal/store/chapter"
 	"github.com/FreekingDean/gojellyfin/internal/store/configuration"
 	"github.com/FreekingDean/gojellyfin/internal/store/credit"
 	"github.com/FreekingDean/gojellyfin/internal/store/device"
@@ -26,22 +25,15 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
 	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
-	"github.com/FreekingDean/gojellyfin/internal/store/listingsprovider"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediaattachment"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasegment"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/person"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
-	"github.com/FreekingDean/gojellyfin/internal/store/seriestimer"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
-	"github.com/FreekingDean/gojellyfin/internal/store/timer"
-	"github.com/FreekingDean/gojellyfin/internal/store/trickplay"
-	"github.com/FreekingDean/gojellyfin/internal/store/tunerhost"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
 	"github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
@@ -108,7 +100,6 @@ func checkColumn(t, c string) error {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
 			activitylogentry.Table:   activitylogentry.ValidColumn,
 			apikey.Table:             apikey.ValidColumn,
-			chapter.Table:            chapter.ValidColumn,
 			configuration.Table:      configuration.ValidColumn,
 			credit.Table:             credit.ValidColumn,
 			device.Table:             device.ValidColumn,
@@ -120,22 +111,15 @@ func checkColumn(t, c string) error {
 			library.Table:            library.ValidColumn,
 			libraryoptions.Table:     libraryoptions.ValidColumn,
 			librarysource.Table:      librarysource.ValidColumn,
-			listingsprovider.Table:   listingsprovider.ValidColumn,
-			mediaattachment.Table:    mediaattachment.ValidColumn,
-			mediasegment.Table:       mediasegment.ValidColumn,
 			mediasource.Table:        mediasource.ValidColumn,
 			mediastream.Table:        mediastream.ValidColumn,
 			person.Table:             person.ValidColumn,
 			playlist.Table:           playlist.ValidColumn,
 			playlistentry.Table:      playlistentry.ValidColumn,
 			playlistshare.Table:      playlistshare.ValidColumn,
-			seriestimer.Table:        seriestimer.ValidColumn,
 			session.Table:            session.ValidColumn,
 			source.Table:             source.ValidColumn,
 			studio.Table:             studio.ValidColumn,
-			timer.Table:              timer.ValidColumn,
-			trickplay.Table:          trickplay.ValidColumn,
-			tunerhost.Table:          tunerhost.ValidColumn,
 			user.Table:               user.ValidColumn,
 			userconfiguration.Table:  userconfiguration.ValidColumn,
 			useritemdata.Table:       useritemdata.ValidColumn,

@@ -14,7 +14,6 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediaattachment"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/google/uuid"
@@ -411,21 +410,6 @@ func (_c *MediaSourceCreate) AddStreams(v ...*MediaStream) *MediaSourceCreate {
 	return _c.AddStreamIDs(ids...)
 }
 
-// AddAttachmentIDs adds the "attachments" edge to the MediaAttachment entity by IDs.
-func (_c *MediaSourceCreate) AddAttachmentIDs(ids ...uuid.UUID) *MediaSourceCreate {
-	_c.mutation.AddAttachmentIDs(ids...)
-	return _c
-}
-
-// AddAttachments adds the "attachments" edges to the MediaAttachment entity.
-func (_c *MediaSourceCreate) AddAttachments(v ...*MediaAttachment) *MediaSourceCreate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _c.AddAttachmentIDs(ids...)
-}
-
 // Mutation returns the MediaSourceMutation object of the builder.
 func (_c *MediaSourceCreate) Mutation() *MediaSourceMutation {
 	return _c.mutation
@@ -764,22 +748,6 @@ func (_c *MediaSourceCreate) createSpec() (*MediaSource, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(mediastream.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := _c.mutation.AttachmentsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   mediasource.AttachmentsTable,
-			Columns: []string{mediasource.AttachmentsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediaattachment.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

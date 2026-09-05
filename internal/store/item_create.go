@@ -13,19 +13,16 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
-	"github.com/FreekingDean/gojellyfin/internal/store/chapter"
 	"github.com/FreekingDean/gojellyfin/internal/store/credit"
 	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 	"github.com/FreekingDean/gojellyfin/internal/store/genre"
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasegment"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
-	"github.com/FreekingDean/gojellyfin/internal/store/trickplay"
 	"github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
 	"github.com/google/uuid"
 )
@@ -839,21 +836,6 @@ func (_c *ItemCreate) AddCredits(v ...*Credit) *ItemCreate {
 	return _c.AddCreditIDs(ids...)
 }
 
-// AddChapterIDs adds the "chapters" edge to the Chapter entity by IDs.
-func (_c *ItemCreate) AddChapterIDs(ids ...uuid.UUID) *ItemCreate {
-	_c.mutation.AddChapterIDs(ids...)
-	return _c
-}
-
-// AddChapters adds the "chapters" edges to the Chapter entity.
-func (_c *ItemCreate) AddChapters(v ...*Chapter) *ItemCreate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _c.AddChapterIDs(ids...)
-}
-
 // AddImageIDs adds the "images" edge to the Image entity by IDs.
 func (_c *ItemCreate) AddImageIDs(ids ...uuid.UUID) *ItemCreate {
 	_c.mutation.AddImageIDs(ids...)
@@ -897,36 +879,6 @@ func (_c *ItemCreate) AddActivityLogEntries(v ...*ActivityLogEntry) *ItemCreate 
 		ids[i] = v[i].ID
 	}
 	return _c.AddActivityLogEntryIDs(ids...)
-}
-
-// AddTrickplayIDs adds the "trickplays" edge to the Trickplay entity by IDs.
-func (_c *ItemCreate) AddTrickplayIDs(ids ...uuid.UUID) *ItemCreate {
-	_c.mutation.AddTrickplayIDs(ids...)
-	return _c
-}
-
-// AddTrickplays adds the "trickplays" edges to the Trickplay entity.
-func (_c *ItemCreate) AddTrickplays(v ...*Trickplay) *ItemCreate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _c.AddTrickplayIDs(ids...)
-}
-
-// AddMediaSegmentIDs adds the "media_segments" edge to the MediaSegment entity by IDs.
-func (_c *ItemCreate) AddMediaSegmentIDs(ids ...uuid.UUID) *ItemCreate {
-	_c.mutation.AddMediaSegmentIDs(ids...)
-	return _c
-}
-
-// AddMediaSegments adds the "media_segments" edges to the MediaSegment entity.
-func (_c *ItemCreate) AddMediaSegments(v ...*MediaSegment) *ItemCreate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _c.AddMediaSegmentIDs(ids...)
 }
 
 // SetPlaylistID sets the "playlist" edge to the Playlist entity by ID.
@@ -1492,22 +1444,6 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := _c.mutation.ChaptersIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.ChaptersTable,
-			Columns: []string{item.ChaptersColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(chapter.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
 	if nodes := _c.mutation.ImagesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -1549,38 +1485,6 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(activitylogentry.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := _c.mutation.TrickplaysIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.TrickplaysTable,
-			Columns: []string{item.TrickplaysColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(trickplay.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := _c.mutation.MediaSegmentsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.MediaSegmentsTable,
-			Columns: []string{item.MediaSegmentsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasegment.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

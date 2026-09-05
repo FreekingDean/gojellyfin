@@ -91,11 +91,9 @@ type MediaSourceEdges struct {
 	Library *Library `json:"library,omitempty"`
 	// Streams holds the value of the streams edge.
 	Streams []*MediaStream `json:"streams,omitempty"`
-	// Attachments holds the value of the attachments edge.
-	Attachments []*MediaAttachment `json:"attachments,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [3]bool
 }
 
 // ItemOrErr returns the Item value or an error if the edge
@@ -127,15 +125,6 @@ func (e MediaSourceEdges) StreamsOrErr() ([]*MediaStream, error) {
 		return e.Streams, nil
 	}
 	return nil, &NotLoadedError{edge: "streams"}
-}
-
-// AttachmentsOrErr returns the Attachments value or an error if the edge
-// was not loaded in eager-loading.
-func (e MediaSourceEdges) AttachmentsOrErr() ([]*MediaAttachment, error) {
-	if e.loadedTypes[3] {
-		return e.Attachments, nil
-	}
-	return nil, &NotLoadedError{edge: "attachments"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -372,11 +361,6 @@ func (_m *MediaSource) QueryLibrary() *LibraryQuery {
 // QueryStreams queries the "streams" edge of the MediaSource entity.
 func (_m *MediaSource) QueryStreams() *MediaStreamQuery {
 	return NewMediaSourceClient(_m.config).QueryStreams(_m)
-}
-
-// QueryAttachments queries the "attachments" edge of the MediaSource entity.
-func (_m *MediaSource) QueryAttachments() *MediaAttachmentQuery {
-	return NewMediaSourceClient(_m.config).QueryAttachments(_m)
 }
 
 // Update returns a builder for updating this MediaSource.
