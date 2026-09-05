@@ -49,6 +49,7 @@ func movieMetadata(movie *gotmdb.MovieDetails, base string) items.Metadata {
 		ProductionYear:  year(premiere),
 		Taglines:        list(movie.Tagline),
 		Genres:          named(movie.Genres),
+		RunTimeTicks:    ticks(movie.Runtime),
 		Studios:         companies(movie.ProductionCompanies),
 		ProviderIds:     providerIDs(movie.ID, movie.IMDbID),
 		Images: artwork(
@@ -222,6 +223,16 @@ func text(value string) *string {
 	if value == "" {
 		return nil
 	}
+
+	return &value
+}
+
+func ticks(minutes int) *int64 {
+	if minutes <= 0 {
+		return nil
+	}
+
+	value := int64(minutes) * 60 * 10_000_000
 
 	return &value
 }

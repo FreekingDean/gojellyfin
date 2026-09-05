@@ -100,8 +100,12 @@ func TestService_ReplaceExternalSubtitles(t *testing.T) {
 		if !found[1].IsForced {
 			t.Error("the fr track should be forced")
 		}
-		if !fixture.item(t, item.ID).HasSubtitles {
-			t.Error("the item should have subtitles")
+		held, err := fixture.service.FilesByItem(ctx, []uuid.UUID{item.ID})
+		if err != nil {
+			t.Fatalf("failed to read the files back: %v", err)
+		}
+		if !held[item.ID].HasSubtitles {
+			t.Error("the item should report subtitles from its file's streams")
 		}
 	})
 
@@ -134,8 +138,12 @@ func TestService_ReplaceExternalSubtitles(t *testing.T) {
 		if found := fixture.subtitles(t, item.ID); len(found) != 0 {
 			t.Errorf("subtitles = %v, want none", indices(found))
 		}
-		if fixture.item(t, item.ID).HasSubtitles {
-			t.Error("the item should no longer have subtitles")
+		held, err := fixture.service.FilesByItem(ctx, []uuid.UUID{item.ID})
+		if err != nil {
+			t.Fatalf("failed to read the files back: %v", err)
+		}
+		if held[item.ID].HasSubtitles {
+			t.Error("the item should no longer report subtitles")
 		}
 	})
 	t.Run("indexes from zero without a probed source", func(t *testing.T) {
@@ -154,8 +162,12 @@ func TestService_ReplaceExternalSubtitles(t *testing.T) {
 		if len(found) != 1 || found[0].Index != 0 {
 			t.Fatalf("indices = %v, want [0]", indices(found))
 		}
-		if !fixture.item(t, item.ID).HasSubtitles {
-			t.Error("the item should have subtitles")
+		held, err := fixture.service.FilesByItem(ctx, []uuid.UUID{item.ID})
+		if err != nil {
+			t.Fatalf("failed to read the files back: %v", err)
+		}
+		if !held[item.ID].HasSubtitles {
+			t.Error("the item should report subtitles from its file's streams")
 		}
 	})
 
@@ -175,8 +187,12 @@ func TestService_ReplaceExternalSubtitles(t *testing.T) {
 		if got := indices(fixture.subtitles(t, item.ID)); len(got) != 1 || got[0] != 1 {
 			t.Fatalf("indices = %v, want the embedded track alone", got)
 		}
-		if !fixture.item(t, item.ID).HasSubtitles {
-			t.Error("the embedded track should keep the flag set")
+		held, err := fixture.service.FilesByItem(ctx, []uuid.UUID{item.ID})
+		if err != nil {
+			t.Fatalf("failed to read the files back: %v", err)
+		}
+		if !held[item.ID].HasSubtitles {
+			t.Error("the embedded track should still be reported")
 		}
 	})
 

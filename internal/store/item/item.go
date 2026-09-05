@@ -39,8 +39,6 @@ const (
 	FieldIsFolder = "is_folder"
 	// FieldLockData holds the string denoting the lock_data field in the database.
 	FieldLockData = "lock_data"
-	// FieldHasSubtitles holds the string denoting the has_subtitles field in the database.
-	FieldHasSubtitles = "has_subtitles"
 	// FieldPremiereDate holds the string denoting the premiere_date field in the database.
 	FieldPremiereDate = "premiere_date"
 	// FieldEndDate holds the string denoting the end_date field in the database.
@@ -186,7 +184,6 @@ var Columns = []string{
 	FieldOverview,
 	FieldIsFolder,
 	FieldLockData,
-	FieldHasSubtitles,
 	FieldPremiereDate,
 	FieldEndDate,
 	FieldDateModified,
@@ -233,8 +230,6 @@ var (
 	DefaultIsFolder bool
 	// DefaultLockData holds the default value on creation for the "lock_data" field.
 	DefaultLockData bool
-	// DefaultHasSubtitles holds the default value on creation for the "has_subtitles" field.
-	DefaultHasSubtitles bool
 )
 
 // Kind defines the type for the "kind" enum field.
@@ -390,11 +385,6 @@ func ByIsFolder(opts ...sql.OrderTermOption) OrderOption {
 // ByLockData orders the results by the lock_data field.
 func ByLockData(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLockData, opts...).ToFunc()
-}
-
-// ByHasSubtitles orders the results by the has_subtitles field.
-func ByHasSubtitles(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldHasSubtitles, opts...).ToFunc()
 }
 
 // ByPremiereDate orders the results by the premiere_date field.

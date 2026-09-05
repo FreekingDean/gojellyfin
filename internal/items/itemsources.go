@@ -12,6 +12,7 @@ import (
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
+	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 )
 
 type (
@@ -96,14 +97,7 @@ func (s *Service) SaveSource(ctx context.Context, scanned ScannedSource) (*Media
 
 func (s *Service) SaveProbe(ctx context.Context, item *Item, source *MediaSource, probe Probe) error {
 	return s.store.WithTx(ctx, func(tx *store.Tx) error {
-		err := tx.Item.UpdateOneID(item.ID).
-			SetRunTimeTicks(probe.RunTimeTicks).
-			Exec(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to save probed item: %w", err)
-		}
-
-		err = tx.ItemSource.UpdateOneID(source.ID).
+		err := tx.ItemSource.UpdateOneID(source.ID).
 			SetContainer(probe.Container).
 			SetRunTimeTicks(probe.RunTimeTicks).
 			SetSize(probe.Size).
@@ -195,27 +189,39 @@ func (s *Service) MediaSources(ctx context.Context, itemID uuid.UUID) ([]*MediaS
 	return sources, nil
 }
 
-func (s *Service) PathsByItem(ctx context.Context, itemIDs []uuid.UUID) (map[uuid.UUID]string, error) {
-	paths := map[uuid.UUID]string{}
+type Held struct {
+	Path         string
+	RunTimeTicks *int64
+	HasSubtitles bool
+}
+
+func (s *Service) FilesByItem(ctx context.Context, itemIDs []uuid.UUID) (map[uuid.UUID]Held, error) {
+	held := map[uuid.UUID]Held{}
 	if len(itemIDs) == 0 {
-		return paths, nil
+		return held, nil
 	}
 
 	sources, err := s.store.ItemSource.Query().
 		Where(sourcemodal.ItemIDIn(itemIDs...)).
 		Order(sourcemodal.ByCreatedAt(), sourcemodal.ByPath()).
+		WithStreams(func(query *store.MediaStreamQuery) {
+			query.Where(streammodal.KindEQ(streammodal.KindSubtitle))
+		}).
 		All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query media source paths: %w", err)
 	}
 
 	for _, source := range sources {
-		if _, ok := paths[source.ItemID]; !ok {
-			paths[source.ItemID] = source.Path
+		entry, seen := held[source.ItemID]
+		if !seen {
+			entry = Held{Path: source.Path, RunTimeTicks: &source.RunTimeTicks}
 		}
+		entry.HasSubtitles = entry.HasSubtitles || len(source.Edges.Streams) > 0
+		held[source.ItemID] = entry
 	}
 
-	return paths, nil
+	return held, nil
 }
 
 func (s *Service) SourcePaths(ctx context.Context, id uuid.UUID) ([]string, error) {
@@ -236,17 +242,29 @@ func (s *Service) SourcePaths(ctx context.Context, id uuid.UUID) ([]string, erro
 	return paths, nil
 }
 
-func (s *Service) DeleteSourcesNotInPaths(ctx context.Context, sourceID uuid.UUID, paths []string) error {
-	missing := s.store.ItemSource.Delete().Where(sourcemodal.SourceID(sourceID))
+func (s *Service) DeleteSourcesNotInPaths(
+	ctx context.Context,
+	sourceID uuid.UUID,
+	paths []string,
+) ([]uuid.UUID, error) {
+	where := []predicate.ItemSource{sourcemodal.SourceID(sourceID)}
 	if len(paths) > 0 {
-		missing = missing.Where(sourcemodal.PathNotIn(paths...))
+		where = append(where, sourcemodal.PathNotIn(paths...))
 	}
 
-	if _, err := missing.Exec(ctx); err != nil {
-		return fmt.Errorf("failed to delete missing media sources: %w", err)
+	dropped, err := s.store.ItemSource.Query().
+		Where(where...).
+		Select(sourcemodal.FieldItemID).
+		Strings(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to select missing media sources: %w", err)
 	}
 
-	return nil
+	if _, err := s.store.ItemSource.Delete().Where(where...).Exec(ctx); err != nil {
+		return nil, fmt.Errorf("failed to delete missing media sources: %w", err)
+	}
+
+	return parsed(dropped), nil
 }
 
 func NeedsProbe(source *MediaSource) bool {

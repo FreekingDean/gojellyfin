@@ -1,4 +1,4 @@
-h1:I6vrT8JcWCFmQYjxCr9LKkujB3D8bURb358Wb1Rplss=
+h1:2NDGXF8JdtY0mFQw7AtzR3sunyF2CZneBYiqwl9UtTA=
 20260808161932_schema.sql h1:TSsMFoNc1lu6mOmwk6WUpVAleagab51CYpT8AcXjFe8=
 20260809054423_schema.sql h1:V8LqoR24+BY3zT0+YlBHRxazmflw/ECnIQrC9e8FboE=
 20260809060012_configurations.sql h1:lWCojwN/ZmPBP/uS9aNCdmvBPXLv1rSc21+W+ZeyrJg=
@@ -20,5 +20,6 @@ h1:I6vrT8JcWCFmQYjxCr9LKkujB3D8bURb358Wb1Rplss=
 20260905004008_drop_unwritten_media_columns.sql h1:9O4OVhjcujf9ViOFxEQHHRzkxA6fSl9cnMgKiWyk7LY=
 20260905011404_source_api_key_variable.sql h1:y575g3yuVZF35/P7jikOyXDSEJyMWbq4JGWhgsvNxp4=
 20260905123337_drop_image_source.sql h1:QT0XM6MKSMBx7r6vH/fVJbhx9AMqvSHOLVyUPPLeyuE=
-20260905203853_item_sources.sql h1:GgbEOyowlgJxj8G6xbeswTVjqtCO8XtNpiGkvsYqUDU=
-20260905205508_global_items.sql h1:7SeKTp6Fn9hyqnWKWk7MVYw/Ch2WRz5pWvPNjaBtwds=
+20260905203853_item_sources.sql h1:8g0TALW9+KHBP13xkegSNmjtx/aL+2WAW6ZmTAtjrLs=
+20260905205508_global_items.sql h1:cAYG7zIV1Gw0v2ZlSTbkYEla6/jW/3OjAOjLnZA0st4=
+20260905212424_drop_has_subtitles.sql h1:lvkmCl8tLKLm6D5/+f7TxygX6ncUfiweMkLUsy0Lnfk=

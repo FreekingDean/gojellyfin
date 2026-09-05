@@ -44,8 +44,6 @@ type Item struct {
 	IsFolder bool `json:"is_folder,omitempty"`
 	// LockData holds the value of the "lock_data" field.
 	LockData bool `json:"lock_data,omitempty"`
-	// HasSubtitles holds the value of the "has_subtitles" field.
-	HasSubtitles bool `json:"has_subtitles,omitempty"`
 	// PremiereDate holds the value of the "premiere_date" field.
 	PremiereDate *time.Time `json:"premiere_date,omitempty"`
 	// EndDate holds the value of the "end_date" field.
@@ -232,7 +230,7 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case item.FieldProviderIds, item.FieldTags, item.FieldTaglines, item.FieldLockedFields:
 			values[i] = new([]byte)
-		case item.FieldIsFolder, item.FieldLockData, item.FieldHasSubtitles:
+		case item.FieldIsFolder, item.FieldLockData:
 			values[i] = new(sql.NullBool)
 		case item.FieldCommunityRating:
 			values[i] = new(sql.NullFloat64)
@@ -338,12 +336,6 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field lock_data", values[i])
 			} else if value.Valid {
 				_m.LockData = value.Bool
-			}
-		case item.FieldHasSubtitles:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field has_subtitles", values[i])
-			} else if value.Valid {
-				_m.HasSubtitles = value.Bool
 			}
 		case item.FieldPremiereDate:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -579,9 +571,6 @@ func (_m *Item) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("lock_data=")
 	builder.WriteString(fmt.Sprintf("%v", _m.LockData))
-	builder.WriteString(", ")
-	builder.WriteString("has_subtitles=")
-	builder.WriteString(fmt.Sprintf("%v", _m.HasSubtitles))
 	builder.WriteString(", ")
 	if v := _m.PremiereDate; v != nil {
 		builder.WriteString("premiere_date=")

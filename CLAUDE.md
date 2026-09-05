@@ -183,6 +183,8 @@ Ent's default delete action is `NO ACTION` for a required edge and `SET NULL` fo
 
 **An item is global. A library is a view of one.** `item` carries no `library_id` and its identity is `key` alone, so a film held by two libraries is one row with one watch state, one favourite and one search result rather than two that drift apart. Which libraries show it is `library_items`, written by the scan.
 
+**The scan writes every file a source holds, and membership only for the tagged ones.** That split is what makes the two sweeps separable, and getting it wrong is destructive rather than untidy: with `Titles` filtering by tag before returning, a library's scan saw only its own subset, and the per-source file sweep then deleted every file the *other* libraries' subsets held. Two libraries fed by one instance alternated contents on every run and re-probed the survivors. `sources.Title` therefore carries `Tagged` rather than being filtered, and `TestScanLibrary_SharedSource` holds the line.
+
 **That table is authoritative, not a cache.** Membership cannot be derived from `item_source → source → library_sources`, because a binding's `tag_filter` is applied per title at fetch time and that decision is stored nowhere: one Radarr feeding a `4k` library and a `kids` library sends different subsets to each, so deriving through the source would put every title in both. It carries `source_id` as well for the same reason the sweep needs it — with two sources feeding one library, the `(library, source)` pass has to know which rows are its own.
 
 **The sweep is a reference count.** A binding that stops matching a title drops its membership row; a title is soft-deleted only once no `item_source` anywhere reports a file for it, and a season or series once nothing living hangs beneath it. Losing a tag and losing a file are different events, and the split tells them apart — a title dropping out of one library no longer erases the watch state another library still has a copy for. `SweepUnreachable` runs once per scan rather than per library, because the count is global.
@@ -269,7 +271,11 @@ The prefix is a boundary, not decoration. Without it an administrator could name
 
 Several instances may feed one library and one instance may feed several, which is what the tag filter separates: an empty filter takes everything the instance manages and a named one takes only what carries that tag. A tag the instance does not define fails the source rather than quietly taking nothing, because to the sweep an empty answer and a misspelt tag look the same.
 
+**Deleting a library deletes the titles nothing else holds.** Items are global, so the cascade that used to take a library's items with it is gone; `DeleteLibrary` collects the ids first and removes those left in no library and not a playlist. Without that they survive with no membership, invisible to every library query and present in every global one.
+
 **A library nobody bound is left alone.** `scanLibrary` returns before the sweep when no source names it, so creating a library and scanning it before binding a source does not empty it.
+
+**A source is identified by its URL, not its name.** `Update` deletes the sources a save does not name and upserts the rest, so keying on the name made a rename a delete and a create — and since a file belongs to its source, that took every `item_source`, `media_stream` and membership row with it and re-probed the library. The URL is what the instance is; the name is what you call it.
 
 **Sources are read in name order**, which is the only thing deciding whose artwork wins when two instances report one title. Which of an item's files is *played* is not decided here at all — that is `items.SourceFor`, on the probed streams (see Transcoding).
 

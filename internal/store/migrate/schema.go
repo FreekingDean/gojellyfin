@@ -258,7 +258,6 @@ var (
 		{Name: "overview", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "is_folder", Type: field.TypeBool, Default: false},
 		{Name: "lock_data", Type: field.TypeBool, Default: false},
-		{Name: "has_subtitles", Type: field.TypeBool, Default: false},
 		{Name: "premiere_date", Type: field.TypeTime, Nullable: true},
 		{Name: "end_date", Type: field.TypeTime, Nullable: true},
 		{Name: "date_modified", Type: field.TypeTime, Nullable: true},
@@ -283,7 +282,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "items_items_children",
-				Columns:    []*schema.Column{ItemsColumns[27]},
+				Columns:    []*schema.Column{ItemsColumns[26]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},

@@ -9,7 +9,9 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	"github.com/FreekingDean/gojellyfin/internal/store/entities"
+	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
+	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	optionsmodal "github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
 )
 
@@ -162,11 +164,30 @@ func (s *Service) Rename(ctx context.Context, id uuid.UUID, name string) error {
 }
 
 func (s *Service) DeleteLibrary(ctx context.Context, id uuid.UUID) error {
-	if err := s.store.Library.DeleteOneID(id).Exec(ctx); err != nil {
-		return fmt.Errorf("failed to delete library: %w", err)
-	}
+	return s.store.WithTx(ctx, func(tx *store.Tx) error {
+		orphaned, err := tx.Item.Query().
+			Where(itemmodal.HasLibrariesWith(librarymembership.LibraryID(id))).
+			IDs(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to query the library's items: %w", err)
+		}
 
-	return nil
+		if err := tx.Library.DeleteOneID(id).Exec(ctx); err != nil {
+			return fmt.Errorf("failed to delete library: %w", err)
+		}
+
+		if _, err := tx.Item.Delete().
+			Where(
+				itemmodal.IDIn(orphaned...),
+				itemmodal.Not(itemmodal.HasLibraries()),
+				itemmodal.Not(itemmodal.HasPlaylist()),
+			).
+			Exec(ctx); err != nil {
+			return fmt.Errorf("failed to delete the items no library holds: %w", err)
+		}
+
+		return nil
+	})
 }
 
 func (s *Service) UpdateOptions(id uuid.UUID) *store.LibraryOptionsUpdate {

@@ -10,6 +10,22 @@ import (
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
+func (f *fixture) everything(t *testing.T) []uuid.UUID {
+	t.Helper()
+
+	records, _, err := f.service.QueryItems(context.Background(), ItemQuery{LibraryID: &f.libraryID})
+	if err != nil {
+		t.Fatalf("failed to list the library: %v", err)
+	}
+
+	ids := make([]uuid.UUID, 0, len(records))
+	for _, record := range records {
+		ids = append(ids, record.ID)
+	}
+
+	return ids
+}
+
 func TestService_SweepUnreachable(t *testing.T) {
 	t.Run("keeps a title a downloader still holds a file for", func(t *testing.T) {
 		fixture := newFixture(t)
@@ -17,7 +33,7 @@ func TestService_SweepUnreachable(t *testing.T) {
 
 		kept := fixture.scannedFrom(t, fixture.downloader(t), "movie:kept", "/media/kept.mkv")
 
-		if err := fixture.service.SweepUnreachable(ctx); err != nil {
+		if err := fixture.service.SweepUnreachable(ctx, fixture.everything(t)); err != nil {
 			t.Fatalf("failed to sweep: %v", err)
 		}
 
@@ -32,7 +48,7 @@ func TestService_SweepUnreachable(t *testing.T) {
 
 		gone := fixture.add(t, seed{kind: itemmodal.KindMovie, name: "Gone"})
 
-		if err := fixture.service.SweepUnreachable(ctx); err != nil {
+		if err := fixture.service.SweepUnreachable(ctx, fixture.everything(t)); err != nil {
 			t.Fatalf("failed to sweep: %v", err)
 		}
 
@@ -57,7 +73,7 @@ func TestService_SweepUnreachable(t *testing.T) {
 		season := fixture.add(t, seed{kind: itemmodal.KindSeason, name: "Season 1", parentID: &series})
 		episode := fixture.add(t, seed{kind: itemmodal.KindEpisode, name: "One", parentID: &season})
 
-		if err := fixture.service.SweepUnreachable(ctx); err != nil {
+		if err := fixture.service.SweepUnreachable(ctx, fixture.everything(t)); err != nil {
 			t.Fatalf("failed to sweep: %v", err)
 		}
 
@@ -85,7 +101,7 @@ func TestService_SweepUnreachable(t *testing.T) {
 			t.Fatalf("failed to save the file: %v", err)
 		}
 
-		if err := fixture.service.SweepUnreachable(ctx); err != nil {
+		if err := fixture.service.SweepUnreachable(ctx, fixture.everything(t)); err != nil {
 			t.Fatalf("failed to sweep: %v", err)
 		}
 
@@ -107,7 +123,7 @@ func TestService_SweepUnreachable(t *testing.T) {
 			t.Fatalf("failed to save the image: %v", err)
 		}
 
-		if err := fixture.service.SweepUnreachable(ctx); err != nil {
+		if err := fixture.service.SweepUnreachable(ctx, fixture.everything(t)); err != nil {
 			t.Fatalf("failed to sweep: %v", err)
 		}
 

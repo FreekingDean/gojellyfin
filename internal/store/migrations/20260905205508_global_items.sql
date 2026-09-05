@@ -1,15 +1,3 @@
--- A legacy path key cannot be slugified in SQL, and the scan that used to rewrite
--- one is gone. Refuse rather than let it become a sibling of its real self.
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM "items"
-    WHERE "kind" IN ('Movie', 'Series', 'Season', 'Episode')
-      AND "key" !~ '^(movie|series|season|episode):'
-  ) THEN
-    RAISE EXCEPTION 'legacy path keys remain: scan on the previous version before migrating';
-  END IF;
-END $$;
-
 CREATE TABLE "library_items" (
   "id" uuid NOT NULL DEFAULT gen_random_uuid(),
   "created_at" timestamptz NOT NULL,
@@ -76,20 +64,34 @@ FROM "merged" m WHERE g.item_id = m.loser
   AND NOT EXISTS (
     SELECT 1 FROM "images" held
     WHERE held.item_id = m.keeper AND held.kind = g.kind AND held.index = g.index
+  )
+  AND g.id = (
+    SELECT (array_agg(g2.id ORDER BY g2.id))[1] FROM "images" g2 JOIN "merged" m2 ON m2.loser = g2.item_id
+    WHERE m2.keeper = m.keeper AND g2.kind = g.kind AND g2.index = g.index
   );
+
 UPDATE "credits" c SET "item_credits" = m.keeper
 FROM "merged" m WHERE c.item_credits = m.loser
   AND NOT EXISTS (
     SELECT 1 FROM "credits" held
     WHERE held.item_credits = m.keeper AND held.person_credits = c.person_credits
       AND held.kind = c.kind AND held.role = c.role
+  )
+  AND c.id = (
+    SELECT (array_agg(c2.id ORDER BY c2.id))[1] FROM "credits" c2 JOIN "merged" m2 ON m2.loser = c2.item_credits
+    WHERE m2.keeper = m.keeper AND c2.person_credits = c.person_credits
+      AND c2.kind = c.kind AND c2.role = c.role
   );
-UPDATE "item_genres" g SET "item_id" = m.keeper
-FROM "merged" m WHERE g.item_id = m.loser
-  AND NOT EXISTS (SELECT 1 FROM "item_genres" held WHERE held.item_id = m.keeper AND held.genre_id = g.genre_id);
-UPDATE "item_studios" g SET "item_id" = m.keeper
-FROM "merged" m WHERE g.item_id = m.loser
-  AND NOT EXISTS (SELECT 1 FROM "item_studios" held WHERE held.item_id = m.keeper AND held.studio_id = g.studio_id);
+
+INSERT INTO "item_genres" ("item_id", "genre_id")
+SELECT DISTINCT m.keeper, g.genre_id
+FROM "item_genres" g JOIN "merged" m ON m.loser = g.item_id
+ON CONFLICT DO NOTHING;
+
+INSERT INTO "item_studios" ("item_id", "studio_id")
+SELECT DISTINCT m.keeper, g.studio_id
+FROM "item_studios" g JOIN "merged" m ON m.loser = g.item_id
+ON CONFLICT DO NOTHING;
 
 DELETE FROM "items" WHERE "id" IN (SELECT loser FROM "merged");
 

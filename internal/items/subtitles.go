@@ -67,17 +67,7 @@ func (s *Service) ReplaceExternalSubtitles(ctx context.Context, itemID uuid.UUID
 			return fmt.Errorf("failed to create external subtitles: %w", err)
 		}
 
-		count, err := tx.MediaStream.Query().
-			Where(
-				streammodal.HasSourceWith(sourcemodal.ItemID(itemID)),
-				streammodal.KindEQ(streammodal.KindSubtitle),
-			).
-			Count(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to count subtitles: %w", err)
-		}
-
-		return tx.Item.UpdateOneID(itemID).SetHasSubtitles(count > 0).Exec(ctx)
+		return nil
 	})
 }
 

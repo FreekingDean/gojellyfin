@@ -60,9 +60,25 @@ func found() *seen {
 	}
 }
 
-func (s *seen) title(source uuid.UUID, item *items.Item) {
+func (s *seen) reached(source uuid.UUID) {
+	if _, held := s.paths[source]; !held {
+		s.paths[source] = []string{}
+	}
+	if _, held := s.members[source]; !held {
+		s.members[source] = []uuid.UUID{}
+	}
+}
+
+func (s *seen) unreached(source uuid.UUID) {
+	delete(s.paths, source)
+	delete(s.members, source)
+}
+
+func (s *seen) title(source uuid.UUID, item *items.Item, tagged bool) {
 	s.keys = append(s.keys, item.Key)
-	s.members[source] = append(s.members[source], item.ID)
+	if tagged {
+		s.members[source] = append(s.members[source], item.ID)
+	}
 }
 
 func (s *seen) file(source uuid.UUID, path string) {
@@ -87,36 +103,39 @@ func (s *seen) complete() bool {
 	return s.unreadable == 0
 }
 
-func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) error {
+func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) ([]uuid.UUID, error) {
 	found := found()
 
 	bindings, err := s.sources.BindingsFor(ctx, library.ID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if len(bindings) == 0 {
 		log.Printf("not scanning %s: no source is bound to it", library.Name)
 
-		return nil
+		return nil, nil
 	}
 
 	for _, binding := range bindings {
+		found.reached(binding.Source.ID)
+
 		titles, err := s.sources.Titles(ctx, binding)
 		if err != nil {
 			found.skip(binding.Source.Name, err)
+			found.unreached(binding.Source.ID)
 
 			continue
 		}
 
 		for _, title := range titles {
-			if err := s.saveTitle(ctx, library, binding.Source.ID, nil, "", title, found); err != nil {
-				return err
+			if err := s.saveTitle(ctx, library, binding.Source.ID, nil, "", title, title.Tagged, found); err != nil {
+				return nil, err
 			}
 		}
 
 		members := found.members[binding.Source.ID]
 		if err := s.items.SaveMembership(ctx, library.ID, binding.Source.ID, members); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -125,19 +144,25 @@ func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) e
 	if !found.complete() {
 		log.Printf("not sweeping %s: %d could not be read", library.Name, found.unreadable)
 
-		return nil
+		return nil, nil
 	}
 
+	disturbed := make([]uuid.UUID, 0)
+
 	for source, members := range found.members {
-		if err := s.items.DeleteMembershipNotIn(ctx, library.ID, source, members); err != nil {
-			return err
+		dropped, err := s.items.DeleteMembershipNotIn(ctx, library.ID, source, members)
+		if err != nil {
+			return nil, err
 		}
+		disturbed = append(disturbed, dropped...)
 	}
 
 	for source, paths := range found.paths {
-		if err := s.items.DeleteSourcesNotInPaths(ctx, source, paths); err != nil {
-			return err
+		dropped, err := s.items.DeleteSourcesNotInPaths(ctx, source, paths)
+		if err != nil {
+			return nil, err
 		}
+		disturbed = append(disturbed, dropped...)
 	}
 
 	s.activity.Record(ctx, activity.Event{
@@ -147,7 +172,7 @@ func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) e
 		Severity:      activity.SeverityInformation,
 	})
 
-	return nil
+	return disturbed, nil
 }
 
 func (s *Scanner) saveTitle(
@@ -157,6 +182,7 @@ func (s *Scanner) saveTitle(
 	parent *uuid.UUID,
 	slug string,
 	title sources.Title,
+	tagged bool,
 	found *seen,
 ) error {
 	if err := ctx.Err(); err != nil {
@@ -198,7 +224,7 @@ func (s *Scanner) saveTitle(
 	if err != nil {
 		return err
 	}
-	found.title(source, item)
+	found.title(source, item, tagged)
 
 	for _, file := range title.Files {
 		if err := s.saveFile(ctx, source, item, file, found); err != nil {
@@ -207,7 +233,7 @@ func (s *Scanner) saveTitle(
 	}
 
 	for _, child := range title.Children {
-		if err := s.saveTitle(ctx, library, source, &item.ID, slug, child, found); err != nil {
+		if err := s.saveTitle(ctx, library, source, &item.ID, slug, child, tagged, found); err != nil {
 			return err
 		}
 	}

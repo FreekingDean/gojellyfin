@@ -71,7 +71,7 @@ func TestService_DeleteSourcesNotInPaths(t *testing.T) {
 	item := fixture.scannedFrom(t, uhd, key, "/media/4k/The Matrix.mkv")
 	fixture.scannedFrom(t, hd, key, "/media/hd/The Matrix.mkv")
 
-	err := fixture.service.DeleteSourcesNotInPaths(ctx, hd, nil)
+	_, err := fixture.service.DeleteSourcesNotInPaths(ctx, hd, nil)
 	if err != nil {
 		t.Fatalf("failed to sweep the sources: %v", err)
 	}

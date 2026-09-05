@@ -34,6 +34,7 @@ type Metadata struct {
 	IndexNumber       *int32
 	ParentIndexNumber *int32
 	Status            *string
+	RunTimeTicks      *int64
 	LockData          *bool
 	Tags              *[]string
 	Taglines          *[]string
@@ -57,6 +58,7 @@ func (s *Service) UpdateMetadata(ctx context.Context, id uuid.UUID, metadata Met
 		SetNillableIndexNumber(metadata.IndexNumber).
 		SetNillableParentIndexNumber(metadata.ParentIndexNumber).
 		SetNillableStatus(metadata.Status).
+		SetNillableRunTimeTicks(metadata.RunTimeTicks).
 		SetNillableLockData(metadata.LockData)
 
 	if metadata.Tags != nil {

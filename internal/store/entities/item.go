@@ -36,7 +36,6 @@ func (Item) Fields() []ent.Field {
 
 		field.Bool("is_folder").Default(false),
 		field.Bool("lock_data").Default(false),
-		field.Bool("has_subtitles").Default(false),
 
 		field.Time("premiere_date").Optional().Nillable(),
 		field.Time("end_date").Optional().Nillable(),

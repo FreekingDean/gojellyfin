@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
@@ -23,7 +25,7 @@ func TestService_SaveScanned(t *testing.T) {
 		t.Fatalf("failed to save the item: %v", err)
 	}
 
-	if err := fixture.service.SweepUnreachable(ctx); err != nil {
+	if err := fixture.service.SweepUnreachable(ctx, []uuid.UUID{first.ID}); err != nil {
 		t.Fatalf("failed to sweep: %v", err)
 	}
 

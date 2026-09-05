@@ -230,20 +230,6 @@ func (_u *ItemUpdate) SetNillableLockData(v *bool) *ItemUpdate {
 	return _u
 }
 
-// SetHasSubtitles sets the "has_subtitles" field.
-func (_u *ItemUpdate) SetHasSubtitles(v bool) *ItemUpdate {
-	_u.mutation.SetHasSubtitles(v)
-	return _u
-}
-
-// SetNillableHasSubtitles sets the "has_subtitles" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableHasSubtitles(v *bool) *ItemUpdate {
-	if v != nil {
-		_u.SetHasSubtitles(*v)
-	}
-	return _u
-}
-
 // SetPremiereDate sets the "premiere_date" field.
 func (_u *ItemUpdate) SetPremiereDate(v time.Time) *ItemUpdate {
 	_u.mutation.SetPremiereDate(v)
@@ -1053,9 +1039,6 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.LockData(); ok {
 		_spec.SetField(item.FieldLockData, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.HasSubtitles(); ok {
-		_spec.SetField(item.FieldHasSubtitles, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.PremiereDate(); ok {
 		_spec.SetField(item.FieldPremiereDate, field.TypeTime, value)
@@ -1885,20 +1868,6 @@ func (_u *ItemUpdateOne) SetLockData(v bool) *ItemUpdateOne {
 func (_u *ItemUpdateOne) SetNillableLockData(v *bool) *ItemUpdateOne {
 	if v != nil {
 		_u.SetLockData(*v)
-	}
-	return _u
-}
-
-// SetHasSubtitles sets the "has_subtitles" field.
-func (_u *ItemUpdateOne) SetHasSubtitles(v bool) *ItemUpdateOne {
-	_u.mutation.SetHasSubtitles(v)
-	return _u
-}
-
-// SetNillableHasSubtitles sets the "has_subtitles" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableHasSubtitles(v *bool) *ItemUpdateOne {
-	if v != nil {
-		_u.SetHasSubtitles(*v)
 	}
 	return _u
 }
@@ -2742,9 +2711,6 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	}
 	if value, ok := _u.mutation.LockData(); ok {
 		_spec.SetField(item.FieldLockData, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.HasSubtitles(); ok {
-		_spec.SetField(item.FieldHasSubtitles, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.PremiereDate(); ok {
 		_spec.SetField(item.FieldPremiereDate, field.TypeTime, value)

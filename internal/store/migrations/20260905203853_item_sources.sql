@@ -1,3 +1,15 @@
+-- A legacy path key cannot be slugified in SQL and the scan that rewrote one is
+-- gone, so refuse before anything here is destructive.
+DO $$ BEGIN
+  IF EXISTS (
+    SELECT 1 FROM "items"
+    WHERE "kind" IN ('Movie', 'Series', 'Season', 'Episode')
+      AND "key" !~ '^(movie|series|season|episode):'
+  ) THEN
+    RAISE EXCEPTION 'legacy path keys remain: scan on the previous version before migrating';
+  END IF;
+END $$;
+
 -- Carry each source's root forward from the bindings that agree on one.
 ALTER TABLE "sources" ADD COLUMN "root_path" character varying NULL, ADD COLUMN "local_path" character varying NULL;
 
@@ -28,13 +40,34 @@ FROM (
 ) sole
 WHERE sole.library_id = f.library_id;
 
+DO $$
+DECLARE orphaned bigint;
+BEGIN
+  SELECT count(*) INTO orphaned FROM "item_sources" WHERE "source_id" IS NULL;
+  IF orphaned > 0 THEN
+    RAISE NOTICE 'dropping % file rows whose downloader cannot be determined; the next scan re-derives them', orphaned;
+  END IF;
+END $$;
+
 DELETE FROM "item_sources" WHERE "source_id" IS NULL;
 
 -- One file per title per downloader, and no two downloaders claiming one file.
+-- coalesce, because a row comparison against a NULL probed_at yields NULL and
+-- would keep both rows; the index below would then refuse to build.
 DELETE FROM "item_sources" a
 USING "item_sources" b
 WHERE a.path = b.path
-  AND (a.probed_at, a.id) < (b.probed_at, b.id);
+  AND (coalesce(a.probed_at, '-infinity'::timestamptz), a.id)
+    < (coalesce(b.probed_at, '-infinity'::timestamptz), b.id);
+
+-- A title with several files from one downloader predates sources entirely: the
+-- filesystem walk made those rows and one Radarr reports one file per movie.
+-- Keep the best-probed and let the next scan re-derive whatever still exists.
+DELETE FROM "item_sources" a
+USING "item_sources" b
+WHERE a.item_id = b.item_id AND a.source_id = b.source_id
+  AND (coalesce(a.probed_at, '-infinity'::timestamptz), a.id)
+    < (coalesce(b.probed_at, '-infinity'::timestamptz), b.id);
 
 ALTER TABLE "item_sources" ALTER COLUMN "source_id" SET NOT NULL;
 ALTER TABLE "item_sources" DROP CONSTRAINT "media_sources_libraries_media_sources";

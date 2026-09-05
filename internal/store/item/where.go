@@ -106,11 +106,6 @@ func LockData(v bool) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldLockData, v))
 }
 
-// HasSubtitles applies equality check predicate on the "has_subtitles" field. It's identical to HasSubtitlesEQ.
-func HasSubtitles(v bool) predicate.Item {
-	return predicate.Item(sql.FieldEQ(FieldHasSubtitles, v))
-}
-
 // PremiereDate applies equality check predicate on the "premiere_date" field. It's identical to PremiereDateEQ.
 func PremiereDate(v time.Time) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldPremiereDate, v))
@@ -669,16 +664,6 @@ func LockDataEQ(v bool) predicate.Item {
 // LockDataNEQ applies the NEQ predicate on the "lock_data" field.
 func LockDataNEQ(v bool) predicate.Item {
 	return predicate.Item(sql.FieldNEQ(FieldLockData, v))
-}
-
-// HasSubtitlesEQ applies the EQ predicate on the "has_subtitles" field.
-func HasSubtitlesEQ(v bool) predicate.Item {
-	return predicate.Item(sql.FieldEQ(FieldHasSubtitles, v))
-}
-
-// HasSubtitlesNEQ applies the NEQ predicate on the "has_subtitles" field.
-func HasSubtitlesNEQ(v bool) predicate.Item {
-	return predicate.Item(sql.FieldNEQ(FieldHasSubtitles, v))
 }
 
 // PremiereDateEQ applies the EQ predicate on the "premiere_date" field.

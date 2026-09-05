@@ -14,7 +14,15 @@ import (
 	"github.com/google/uuid"
 )
 
-func ItemDto(item *items.Item, path string, childCount int32, imageTags map[string]string) api.BaseItemDto {
+func runtime(item *items.Item, held items.Held) *int64 {
+	if item.RunTimeTicks != nil {
+		return item.RunTimeTicks
+	}
+
+	return held.RunTimeTicks
+}
+
+func ItemDto(item *items.Item, held items.Held, childCount int32, imageTags map[string]string) api.BaseItemDto {
 	kind := api.BaseItemKind(item.Kind)
 
 	dto := api.BaseItemDto{
@@ -23,7 +31,7 @@ func ItemDto(item *items.Item, path string, childCount int32, imageTags map[stri
 		Name:              apiutil.Ptr(item.Name),
 		SortName:          apiutil.Ptr(item.SortName),
 		Type:              &kind,
-		Path:              apiutil.Ptr(path),
+		Path:              apiutil.Ptr(held.Path),
 		IsFolder:          apiutil.Ptr(item.IsFolder),
 		LockData:          apiutil.Ptr(item.LockData),
 		ParentId:          item.ParentID,
@@ -31,7 +39,7 @@ func ItemDto(item *items.Item, path string, childCount int32, imageTags map[stri
 		ParentIndexNumber: item.ParentIndexNumber,
 		ProductionYear:    item.ProductionYear,
 		PremiereDate:      item.PremiereDate,
-		RunTimeTicks:      item.RunTimeTicks,
+		RunTimeTicks:      runtime(item, held),
 		DateCreated:       apiutil.Ptr(item.CreatedAt),
 		LocationType:      apiutil.Ptr(api.FileSystem),
 		ImageTags:         &map[string]*string{},
@@ -79,7 +87,7 @@ func ItemDto(item *items.Item, path string, childCount int32, imageTags map[stri
 		dto.ChildCount = apiutil.Ptr(childCount)
 	} else {
 		dto.MediaType = apiutil.Ptr(api.MediaType(item.MediaType))
-		dto.HasSubtitles = apiutil.Ptr(item.HasSubtitles)
+		dto.HasSubtitles = apiutil.Ptr(held.HasSubtitles)
 	}
 
 	return dto
@@ -105,7 +113,7 @@ func ItemDtos(ctx context.Context, store *items.Service, records []*items.Item) 
 		return nil, err
 	}
 
-	paths, err := store.PathsByItem(ctx, itemIDs)
+	held, err := store.FilesByItem(ctx, itemIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +127,7 @@ func ItemDtos(ctx context.Context, store *items.Service, records []*items.Item) 
 
 	converted := make([]api.BaseItemDto, 0, len(records))
 	for _, item := range records {
-		dto := ItemDto(item, paths[item.ID], counts[item.ID], imageTags[item.ID])
+		dto := ItemDto(item, held[item.ID], counts[item.ID], imageTags[item.ID])
 		datum, ok := userData[item.ID]
 		if !ok {
 			datum = &items.Datum{ItemID: item.ID}

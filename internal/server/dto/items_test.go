@@ -15,7 +15,7 @@ func TestItemDto(t *testing.T) {
 			Name:         "The Matrix",
 			LockData:     true,
 			LockedFields: []string{"Name"},
-		}, "", 0, nil)
+		}, items.Held{}, 0, nil)
 
 		if !apiutil.Deref(dto.LockData) {
 			t.Error("lock data = false, want the stored lock: the editor posts back what it was handed")
@@ -27,7 +27,7 @@ func TestItemDto(t *testing.T) {
 	})
 
 	t.Run("locks nothing by default", func(t *testing.T) {
-		dto := ItemDto(&items.Item{Name: "The Matrix"}, "", 0, nil)
+		dto := ItemDto(&items.Item{Name: "The Matrix"}, items.Held{}, 0, nil)
 
 		if apiutil.Deref(dto.LockData) {
 			t.Error("lock data = true, want false")

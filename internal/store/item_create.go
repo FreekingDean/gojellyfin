@@ -186,20 +186,6 @@ func (_c *ItemCreate) SetNillableLockData(v *bool) *ItemCreate {
 	return _c
 }
 
-// SetHasSubtitles sets the "has_subtitles" field.
-func (_c *ItemCreate) SetHasSubtitles(v bool) *ItemCreate {
-	_c.mutation.SetHasSubtitles(v)
-	return _c
-}
-
-// SetNillableHasSubtitles sets the "has_subtitles" field if the given value is not nil.
-func (_c *ItemCreate) SetNillableHasSubtitles(v *bool) *ItemCreate {
-	if v != nil {
-		_c.SetHasSubtitles(*v)
-	}
-	return _c
-}
-
 // SetPremiereDate sets the "premiere_date" field.
 func (_c *ItemCreate) SetPremiereDate(v time.Time) *ItemCreate {
 	_c.mutation.SetPremiereDate(v)
@@ -599,10 +585,6 @@ func (_c *ItemCreate) defaults() {
 		v := item.DefaultLockData
 		_c.mutation.SetLockData(v)
 	}
-	if _, ok := _c.mutation.HasSubtitles(); !ok {
-		v := item.DefaultHasSubtitles
-		_c.mutation.SetHasSubtitles(v)
-	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -637,9 +619,6 @@ func (_c *ItemCreate) check() error {
 	}
 	if _, ok := _c.mutation.LockData(); !ok {
 		return &ValidationError{Name: "lock_data", err: errors.New(`store: missing required field "Item.lock_data"`)}
-	}
-	if _, ok := _c.mutation.HasSubtitles(); !ok {
-		return &ValidationError{Name: "has_subtitles", err: errors.New(`store: missing required field "Item.has_subtitles"`)}
 	}
 	return nil
 }
@@ -720,10 +699,6 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.LockData(); ok {
 		_spec.SetField(item.FieldLockData, field.TypeBool, value)
 		_node.LockData = value
-	}
-	if value, ok := _c.mutation.HasSubtitles(); ok {
-		_spec.SetField(item.FieldHasSubtitles, field.TypeBool, value)
-		_node.HasSubtitles = value
 	}
 	if value, ok := _c.mutation.PremiereDate(); ok {
 		_spec.SetField(item.FieldPremiereDate, field.TypeTime, value)
@@ -1197,18 +1172,6 @@ func (u *ItemUpsert) SetLockData(v bool) *ItemUpsert {
 // UpdateLockData sets the "lock_data" field to the value that was provided on create.
 func (u *ItemUpsert) UpdateLockData() *ItemUpsert {
 	u.SetExcluded(item.FieldLockData)
-	return u
-}
-
-// SetHasSubtitles sets the "has_subtitles" field.
-func (u *ItemUpsert) SetHasSubtitles(v bool) *ItemUpsert {
-	u.Set(item.FieldHasSubtitles, v)
-	return u
-}
-
-// UpdateHasSubtitles sets the "has_subtitles" field to the value that was provided on create.
-func (u *ItemUpsert) UpdateHasSubtitles() *ItemUpsert {
-	u.SetExcluded(item.FieldHasSubtitles)
 	return u
 }
 
@@ -1742,20 +1705,6 @@ func (u *ItemUpsertOne) SetLockData(v bool) *ItemUpsertOne {
 func (u *ItemUpsertOne) UpdateLockData() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.UpdateLockData()
-	})
-}
-
-// SetHasSubtitles sets the "has_subtitles" field.
-func (u *ItemUpsertOne) SetHasSubtitles(v bool) *ItemUpsertOne {
-	return u.Update(func(s *ItemUpsert) {
-		s.SetHasSubtitles(v)
-	})
-}
-
-// UpdateHasSubtitles sets the "has_subtitles" field to the value that was provided on create.
-func (u *ItemUpsertOne) UpdateHasSubtitles() *ItemUpsertOne {
-	return u.Update(func(s *ItemUpsert) {
-		s.UpdateHasSubtitles()
 	})
 }
 
@@ -2503,20 +2452,6 @@ func (u *ItemUpsertBulk) SetLockData(v bool) *ItemUpsertBulk {
 func (u *ItemUpsertBulk) UpdateLockData() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.UpdateLockData()
-	})
-}
-
-// SetHasSubtitles sets the "has_subtitles" field.
-func (u *ItemUpsertBulk) SetHasSubtitles(v bool) *ItemUpsertBulk {
-	return u.Update(func(s *ItemUpsert) {
-		s.SetHasSubtitles(v)
-	})
-}
-
-// UpdateHasSubtitles sets the "has_subtitles" field to the value that was provided on create.
-func (u *ItemUpsertBulk) UpdateHasSubtitles() *ItemUpsertBulk {
-	return u.Update(func(s *ItemUpsert) {
-		s.UpdateHasSubtitles()
 	})
 }
 

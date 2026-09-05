@@ -200,10 +200,6 @@ func init() {
 	itemDescLockData := itemFields[12].Descriptor()
 	// item.DefaultLockData holds the default value on creation for the lock_data field.
 	item.DefaultLockData = itemDescLockData.Default.(bool)
-	// itemDescHasSubtitles is the schema descriptor for has_subtitles field.
-	itemDescHasSubtitles := itemFields[13].Descriptor()
-	// item.DefaultHasSubtitles holds the default value on creation for the has_subtitles field.
-	item.DefaultHasSubtitles = itemDescHasSubtitles.Default.(bool)
 	itemsourceFields := entities.ItemSource{}.Fields()
 	_ = itemsourceFields
 	// itemsourceDescCreatedAt is the schema descriptor for created_at field.

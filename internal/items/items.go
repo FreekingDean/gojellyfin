@@ -328,8 +328,6 @@ func (s *Service) query() *store.ItemQuery {
 	return s.store.Item.Query().Where(itemmodal.DeletedAtIsNil())
 }
 
-var ErrNothingScanned = errors.New("items: the scan found no files")
-
 func inLibrary(id uuid.UUID) predicate.Item {
 	return itemmodal.HasLibrariesWith(librarymembership.LibraryID(id))
 }
@@ -362,25 +360,57 @@ func (s *Service) SaveMembership(ctx context.Context, libraryID, sourceID uuid.U
 	return nil
 }
 
-func (s *Service) DeleteMembershipNotIn(ctx context.Context, libraryID, sourceID uuid.UUID, itemIDs []uuid.UUID) error {
-	missing := s.store.LibraryItem.Delete().Where(
+func (s *Service) DeleteMembershipNotIn(
+	ctx context.Context,
+	libraryID, sourceID uuid.UUID,
+	itemIDs []uuid.UUID,
+) ([]uuid.UUID, error) {
+	where := []predicate.LibraryItem{
 		librarymembership.LibraryID(libraryID),
 		librarymembership.SourceID(sourceID),
-	)
+	}
 	if len(itemIDs) > 0 {
-		missing = missing.Where(librarymembership.ItemIDNotIn(itemIDs...))
+		where = append(where, librarymembership.ItemIDNotIn(itemIDs...))
 	}
 
-	if _, err := missing.Exec(ctx); err != nil {
-		return fmt.Errorf("failed to drop library membership: %w", err)
+	dropped, err := s.store.LibraryItem.Query().
+		Where(where...).
+		Select(librarymembership.FieldItemID).
+		Strings(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to select stale library membership: %w", err)
 	}
 
-	return nil
+	if _, err := s.store.LibraryItem.Delete().Where(where...).Exec(ctx); err != nil {
+		return nil, fmt.Errorf("failed to drop library membership: %w", err)
+	}
+
+	return parsed(dropped), nil
 }
 
-func (s *Service) SweepUnreachable(ctx context.Context) error {
+func (s *Service) UnreachableItems(ctx context.Context) ([]uuid.UUID, error) {
+	orphans, err := s.store.Item.Query().
+		Where(
+			itemmodal.DeletedAtIsNil(),
+			itemmodal.Not(itemmodal.HasLibraries()),
+			itemmodal.Not(itemmodal.HasPlaylist()),
+		).
+		IDs(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query items in no library: %w", err)
+	}
+
+	return orphans, nil
+}
+
+func (s *Service) SweepUnreachable(ctx context.Context, disturbed []uuid.UUID) error {
+	if len(disturbed) == 0 {
+		return nil
+	}
+
 	if err := s.store.Item.Update().
 		Where(
+			itemmodal.IDIn(disturbed...),
 			itemmodal.DeletedAtIsNil(),
 			itemmodal.KindIn(playableKinds...),
 			itemmodal.Not(itemmodal.HasItemSources()),
@@ -395,6 +425,7 @@ func (s *Service) SweepUnreachable(ctx context.Context) error {
 			Where(
 				itemmodal.DeletedAtIsNil(),
 				itemmodal.KindIn(folderKinds...),
+				itemmodal.HasChildren(),
 				itemmodal.Not(itemmodal.HasChildrenWith(itemmodal.DeletedAtIsNil())),
 			).
 			SetDeletedAt(time.Now()).

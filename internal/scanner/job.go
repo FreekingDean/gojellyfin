@@ -34,10 +34,15 @@ func (l *LibraryScan) Run(ctx context.Context) error {
 		return err
 	}
 
+	disturbed := make([]uuid.UUID, 0)
 	for _, id := range libraries {
-		if err := l.scanner.ScanLibrary(ctx, id); err != nil {
+		dropped, err := l.scanner.ScanLibrary(ctx, id)
+		if err != nil {
 			log.Printf("library scan failed %s: %v", id, err)
+
+			continue
 		}
+		disturbed = append(disturbed, dropped...)
 	}
 
 	configured, err := l.scanner.sources.List(ctx)
@@ -51,7 +56,7 @@ func (l *LibraryScan) Run(ctx context.Context) error {
 		}
 	}
 
-	return l.scanner.items.SweepUnreachable(ctx)
+	return l.scanner.items.SweepUnreachable(ctx, disturbed)
 }
 
 func (l *LibraryScan) probe(ctx context.Context, source uuid.UUID) error {
@@ -90,10 +95,10 @@ func (s *Scanner) ListLibraries(ctx context.Context) ([]uuid.UUID, error) {
 	return ids, nil
 }
 
-func (s *Scanner) ScanLibrary(ctx context.Context, id uuid.UUID) error {
+func (s *Scanner) ScanLibrary(ctx context.Context, id uuid.UUID) ([]uuid.UUID, error) {
 	library, err := s.libraries.Library(ctx, id)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	jobs.Heartbeat(ctx, library.Name)

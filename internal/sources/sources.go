@@ -136,13 +136,13 @@ func library(record *store.LibrarySource) Library {
 
 func (s *Service) Update(ctx context.Context, configured []Configured) error {
 	return s.store.WithTx(ctx, func(tx *store.Tx) error {
-		names := make([]string, len(configured))
+		urls := make([]string, len(configured))
 		for i, entry := range configured {
-			names[i] = entry.Source.Name
+			urls[i] = entry.Source.URL
 		}
 
 		if _, err := tx.Source.Delete().
-			Where(sourcemodel.NameNotIn(names...)).
+			Where(sourcemodel.URLNotIn(urls...)).
 			Exec(ctx); err != nil {
 			return err
 		}
@@ -166,7 +166,7 @@ func (s *Service) Update(ctx context.Context, configured []Configured) error {
 				SetKind(entry.Source.Kind).
 				SetRootPath(entry.Source.RootPath).
 				SetLocalPath(entry.Source.LocalPath).
-				OnConflictColumns(sourcemodel.FieldName).
+				OnConflictColumns(sourcemodel.FieldURL).
 				UpdateNewValues().
 				ID(ctx)
 			if err != nil {
@@ -198,6 +198,9 @@ func roots(configured []Configured) error {
 	for i, entry := range configured {
 		if entry.Source.RootPath == "" {
 			return fmt.Errorf("%s names no root path, so nothing it reports can be placed", entry.Source.Name)
+		}
+		if entry.Source.LocalPath == "" {
+			return fmt.Errorf("%s names no local path, so nothing it reports can be opened", entry.Source.Name)
 		}
 
 		for _, other := range configured[i+1:] {

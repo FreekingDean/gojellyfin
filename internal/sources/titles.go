@@ -26,6 +26,7 @@ type File struct {
 }
 
 type Title struct {
+	Tagged      bool
 	Kind        itemmodel.Kind
 	Name        string
 	Year        *int32
@@ -64,22 +65,21 @@ func (s *Service) movies(ctx context.Context, binding Binding) ([]Title, error) 
 
 	titles := make([]Title, 0, len(movies))
 	for _, movie := range movies {
-		if !movie.HasFile || !tagged(movie.Tags) {
+		if !movie.HasFile {
 			continue
 		}
 
 		found, err := file(binding.Source, movie.File)
 		if err != nil {
-			log.Printf("skipping %s: %v", movie.Title, err)
-
-			continue
+			return nil, err
 		}
 
 		titles = append(titles, Title{
-			Kind:  itemmodel.KindMovie,
-			Name:  movie.Title,
-			Year:  released(movie.Year),
-			Files: []File{found},
+			Tagged: tagged(movie.Tags),
+			Kind:   itemmodel.KindMovie,
+			Name:   movie.Title,
+			Year:   released(movie.Year),
+			Files:  []File{found},
 		})
 	}
 
@@ -99,10 +99,6 @@ func (s *Service) series(ctx context.Context, binding Binding) ([]Title, error) 
 
 	titles := make([]Title, 0, len(shows))
 	for _, show := range shows {
-		if !tagged(show.Tags) {
-			continue
-		}
-
 		query := url.Values{}
 		query.Set("seriesId", strconv.Itoa(show.ID))
 		query.Set("includeEpisodeFile", "true")
@@ -120,6 +116,7 @@ func (s *Service) series(ctx context.Context, binding Binding) ([]Title, error) 
 		}
 
 		titles = append(titles, Title{
+			Tagged:   tagged(show.Tags),
 			Kind:     itemmodel.KindSeries,
 			Name:     show.Title,
 			Year:     released(show.Year),

@@ -7600,7 +7600,6 @@ type ItemMutation struct {
 	overview                    *string
 	is_folder                   *bool
 	lock_data                   *bool
-	has_subtitles               *bool
 	premiere_date               *time.Time
 	end_date                    *time.Time
 	date_modified               *time.Time
@@ -8262,42 +8261,6 @@ func (m *ItemMutation) OldLockData(ctx context.Context) (v bool, err error) {
 // ResetLockData resets all changes to the "lock_data" field.
 func (m *ItemMutation) ResetLockData() {
 	m.lock_data = nil
-}
-
-// SetHasSubtitles sets the "has_subtitles" field.
-func (m *ItemMutation) SetHasSubtitles(b bool) {
-	m.has_subtitles = &b
-}
-
-// HasSubtitles returns the value of the "has_subtitles" field in the mutation.
-func (m *ItemMutation) HasSubtitles() (r bool, exists bool) {
-	v := m.has_subtitles
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldHasSubtitles returns the old "has_subtitles" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldHasSubtitles(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldHasSubtitles is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldHasSubtitles requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldHasSubtitles: %w", err)
-	}
-	return oldValue.HasSubtitles, nil
-}
-
-// ResetHasSubtitles resets all changes to the "has_subtitles" field.
-func (m *ItemMutation) ResetHasSubtitles() {
-	m.has_subtitles = nil
 }
 
 // SetPremiereDate sets the "premiere_date" field.
@@ -9779,7 +9742,7 @@ func (m *ItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemMutation) Fields() []string {
-	fields := make([]string, 0, 27)
+	fields := make([]string, 0, 26)
 	if m.created_at != nil {
 		fields = append(fields, item.FieldCreatedAt)
 	}
@@ -9815,9 +9778,6 @@ func (m *ItemMutation) Fields() []string {
 	}
 	if m.lock_data != nil {
 		fields = append(fields, item.FieldLockData)
-	}
-	if m.has_subtitles != nil {
-		fields = append(fields, item.FieldHasSubtitles)
 	}
 	if m.premiere_date != nil {
 		fields = append(fields, item.FieldPremiereDate)
@@ -9893,8 +9853,6 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.IsFolder()
 	case item.FieldLockData:
 		return m.LockData()
-	case item.FieldHasSubtitles:
-		return m.HasSubtitles()
 	case item.FieldPremiereDate:
 		return m.PremiereDate()
 	case item.FieldEndDate:
@@ -9956,8 +9914,6 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldIsFolder(ctx)
 	case item.FieldLockData:
 		return m.OldLockData(ctx)
-	case item.FieldHasSubtitles:
-		return m.OldHasSubtitles(ctx)
 	case item.FieldPremiereDate:
 		return m.OldPremiereDate(ctx)
 	case item.FieldEndDate:
@@ -10078,13 +10034,6 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetLockData(v)
-		return nil
-	case item.FieldHasSubtitles:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetHasSubtitles(v)
 		return nil
 	case item.FieldPremiereDate:
 		v, ok := value.(time.Time)
@@ -10448,9 +10397,6 @@ func (m *ItemMutation) ResetField(name string) error {
 		return nil
 	case item.FieldLockData:
 		m.ResetLockData()
-		return nil
-	case item.FieldHasSubtitles:
-		m.ResetHasSubtitles()
 		return nil
 	case item.FieldPremiereDate:
 		m.ResetPremiereDate()
