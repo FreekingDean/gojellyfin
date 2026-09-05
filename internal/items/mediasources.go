@@ -106,9 +106,7 @@ func (s *Service) SaveProbe(ctx context.Context, item *Item, source *MediaSource
 		}
 
 		err = tx.Item.UpdateOneID(item.ID).
-			SetContainer(probe.Container).
 			SetRunTimeTicks(probe.RunTimeTicks).
-			SetProbedAt(time.Now()).
 			SetTags(probe.Metadata.Tags).
 			ClearGenres().
 			AddGenreIDs(genres...).

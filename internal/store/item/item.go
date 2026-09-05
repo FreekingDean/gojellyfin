@@ -27,110 +27,50 @@ const (
 	FieldKind = "kind"
 	// FieldMediaType holds the string denoting the media_type field in the database.
 	FieldMediaType = "media_type"
-	// FieldLocationType holds the string denoting the location_type field in the database.
-	FieldLocationType = "location_type"
-	// FieldExtraType holds the string denoting the extra_type field in the database.
-	FieldExtraType = "extra_type"
-	// FieldVideoType holds the string denoting the video_type field in the database.
-	FieldVideoType = "video_type"
-	// FieldIsoType holds the string denoting the iso_type field in the database.
-	FieldIsoType = "iso_type"
-	// FieldVideo3dFormat holds the string denoting the video_3d_format field in the database.
-	FieldVideo3dFormat = "video_3d_format"
 	// FieldKey holds the string denoting the key field in the database.
 	FieldKey = "key"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
-	// FieldOriginalTitle holds the string denoting the original_title field in the database.
-	FieldOriginalTitle = "original_title"
 	// FieldSortName holds the string denoting the sort_name field in the database.
 	FieldSortName = "sort_name"
-	// FieldForcedSortName holds the string denoting the forced_sort_name field in the database.
-	FieldForcedSortName = "forced_sort_name"
 	// FieldDeletedAt holds the string denoting the deleted_at field in the database.
 	FieldDeletedAt = "deleted_at"
-	// FieldContainer holds the string denoting the container field in the database.
-	FieldContainer = "container"
 	// FieldOverview holds the string denoting the overview field in the database.
 	FieldOverview = "overview"
 	// FieldIsFolder holds the string denoting the is_folder field in the database.
 	FieldIsFolder = "is_folder"
-	// FieldIsPlaceholder holds the string denoting the is_placeholder field in the database.
-	FieldIsPlaceholder = "is_placeholder"
 	// FieldLockData holds the string denoting the lock_data field in the database.
 	FieldLockData = "lock_data"
-	// FieldHasLyrics holds the string denoting the has_lyrics field in the database.
-	FieldHasLyrics = "has_lyrics"
 	// FieldHasSubtitles holds the string denoting the has_subtitles field in the database.
 	FieldHasSubtitles = "has_subtitles"
-	// FieldEnableMediaSourceDisplay holds the string denoting the enable_media_source_display field in the database.
-	FieldEnableMediaSourceDisplay = "enable_media_source_display"
 	// FieldPremiereDate holds the string denoting the premiere_date field in the database.
 	FieldPremiereDate = "premiere_date"
 	// FieldEndDate holds the string denoting the end_date field in the database.
 	FieldEndDate = "end_date"
-	// FieldLastMediaAddedAt holds the string denoting the last_media_added_at field in the database.
-	FieldLastMediaAddedAt = "last_media_added_at"
 	// FieldDateModified holds the string denoting the date_modified field in the database.
 	FieldDateModified = "date_modified"
-	// FieldProbedAt holds the string denoting the probed_at field in the database.
-	FieldProbedAt = "probed_at"
 	// FieldProductionYear holds the string denoting the production_year field in the database.
 	FieldProductionYear = "production_year"
 	// FieldOfficialRating holds the string denoting the official_rating field in the database.
 	FieldOfficialRating = "official_rating"
-	// FieldCustomRating holds the string denoting the custom_rating field in the database.
-	FieldCustomRating = "custom_rating"
-	// FieldCriticRating holds the string denoting the critic_rating field in the database.
-	FieldCriticRating = "critic_rating"
 	// FieldCommunityRating holds the string denoting the community_rating field in the database.
 	FieldCommunityRating = "community_rating"
 	// FieldRunTimeTicks holds the string denoting the run_time_ticks field in the database.
 	FieldRunTimeTicks = "run_time_ticks"
 	// FieldIndexNumber holds the string denoting the index_number field in the database.
 	FieldIndexNumber = "index_number"
-	// FieldIndexNumberEnd holds the string denoting the index_number_end field in the database.
-	FieldIndexNumberEnd = "index_number_end"
 	// FieldParentIndexNumber holds the string denoting the parent_index_number field in the database.
 	FieldParentIndexNumber = "parent_index_number"
-	// FieldAirsBeforeSeasonNumber holds the string denoting the airs_before_season_number field in the database.
-	FieldAirsBeforeSeasonNumber = "airs_before_season_number"
-	// FieldAirsAfterSeasonNumber holds the string denoting the airs_after_season_number field in the database.
-	FieldAirsAfterSeasonNumber = "airs_after_season_number"
-	// FieldAirsBeforeEpisodeNumber holds the string denoting the airs_before_episode_number field in the database.
-	FieldAirsBeforeEpisodeNumber = "airs_before_episode_number"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
-	// FieldAirTime holds the string denoting the air_time field in the database.
-	FieldAirTime = "air_time"
-	// FieldDisplayOrder holds the string denoting the display_order field in the database.
-	FieldDisplayOrder = "display_order"
-	// FieldAirDays holds the string denoting the air_days field in the database.
-	FieldAirDays = "air_days"
-	// FieldAspectRatio holds the string denoting the aspect_ratio field in the database.
-	FieldAspectRatio = "aspect_ratio"
-	// FieldWidth holds the string denoting the width field in the database.
-	FieldWidth = "width"
-	// FieldHeight holds the string denoting the height field in the database.
-	FieldHeight = "height"
-	// FieldNormalizationGain holds the string denoting the normalization_gain field in the database.
-	FieldNormalizationGain = "normalization_gain"
-	// FieldPreferredMetadataLanguage holds the string denoting the preferred_metadata_language field in the database.
-	FieldPreferredMetadataLanguage = "preferred_metadata_language"
-	// FieldPreferredMetadataCountryCode holds the string denoting the preferred_metadata_country_code field in the database.
-	FieldPreferredMetadataCountryCode = "preferred_metadata_country_code"
 	// FieldProviderIds holds the string denoting the provider_ids field in the database.
 	FieldProviderIds = "provider_ids"
 	// FieldTags holds the string denoting the tags field in the database.
 	FieldTags = "tags"
 	// FieldTaglines holds the string denoting the taglines field in the database.
 	FieldTaglines = "taglines"
-	// FieldProductionLocations holds the string denoting the production_locations field in the database.
-	FieldProductionLocations = "production_locations"
 	// FieldLockedFields holds the string denoting the locked_fields field in the database.
 	FieldLockedFields = "locked_fields"
-	// FieldExternalUrls holds the string denoting the external_urls field in the database.
-	FieldExternalUrls = "external_urls"
 	// EdgeParent holds the string denoting the parent edge name in mutations.
 	EdgeParent = "parent"
 	// EdgeChildren holds the string denoting the children edge name in mutations.
@@ -242,58 +182,28 @@ var Columns = []string{
 	FieldParentID,
 	FieldKind,
 	FieldMediaType,
-	FieldLocationType,
-	FieldExtraType,
-	FieldVideoType,
-	FieldIsoType,
-	FieldVideo3dFormat,
 	FieldKey,
 	FieldName,
-	FieldOriginalTitle,
 	FieldSortName,
-	FieldForcedSortName,
 	FieldDeletedAt,
-	FieldContainer,
 	FieldOverview,
 	FieldIsFolder,
-	FieldIsPlaceholder,
 	FieldLockData,
-	FieldHasLyrics,
 	FieldHasSubtitles,
-	FieldEnableMediaSourceDisplay,
 	FieldPremiereDate,
 	FieldEndDate,
-	FieldLastMediaAddedAt,
 	FieldDateModified,
-	FieldProbedAt,
 	FieldProductionYear,
 	FieldOfficialRating,
-	FieldCustomRating,
-	FieldCriticRating,
 	FieldCommunityRating,
 	FieldRunTimeTicks,
 	FieldIndexNumber,
-	FieldIndexNumberEnd,
 	FieldParentIndexNumber,
-	FieldAirsBeforeSeasonNumber,
-	FieldAirsAfterSeasonNumber,
-	FieldAirsBeforeEpisodeNumber,
 	FieldStatus,
-	FieldAirTime,
-	FieldDisplayOrder,
-	FieldAirDays,
-	FieldAspectRatio,
-	FieldWidth,
-	FieldHeight,
-	FieldNormalizationGain,
-	FieldPreferredMetadataLanguage,
-	FieldPreferredMetadataCountryCode,
 	FieldProviderIds,
 	FieldTags,
 	FieldTaglines,
-	FieldProductionLocations,
 	FieldLockedFields,
-	FieldExternalUrls,
 }
 
 var (
@@ -322,20 +232,12 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
-	// DefaultForcedSortName holds the default value on creation for the "forced_sort_name" field.
-	DefaultForcedSortName bool
 	// DefaultIsFolder holds the default value on creation for the "is_folder" field.
 	DefaultIsFolder bool
-	// DefaultIsPlaceholder holds the default value on creation for the "is_placeholder" field.
-	DefaultIsPlaceholder bool
 	// DefaultLockData holds the default value on creation for the "lock_data" field.
 	DefaultLockData bool
-	// DefaultHasLyrics holds the default value on creation for the "has_lyrics" field.
-	DefaultHasLyrics bool
 	// DefaultHasSubtitles holds the default value on creation for the "has_subtitles" field.
 	DefaultHasSubtitles bool
-	// DefaultEnableMediaSourceDisplay holds the default value on creation for the "enable_media_source_display" field.
-	DefaultEnableMediaSourceDisplay bool
 )
 
 // Kind defines the type for the "kind" enum field.
@@ -425,141 +327,6 @@ func MediaTypeValidator(mt MediaType) error {
 	}
 }
 
-// LocationType defines the type for the "location_type" enum field.
-type LocationType string
-
-// LocationTypeFileSystem is the default value of the LocationType enum.
-const DefaultLocationType = LocationTypeFileSystem
-
-// LocationType values.
-const (
-	LocationTypeFileSystem LocationType = "FileSystem"
-	LocationTypeRemote     LocationType = "Remote"
-	LocationTypeVirtual    LocationType = "Virtual"
-	LocationTypeOffline    LocationType = "Offline"
-)
-
-func (lt LocationType) String() string {
-	return string(lt)
-}
-
-// LocationTypeValidator is a validator for the "location_type" field enum values. It is called by the builders before save.
-func LocationTypeValidator(lt LocationType) error {
-	switch lt {
-	case LocationTypeFileSystem, LocationTypeRemote, LocationTypeVirtual, LocationTypeOffline:
-		return nil
-	default:
-		return fmt.Errorf("item: invalid enum value for location_type field: %q", lt)
-	}
-}
-
-// ExtraType defines the type for the "extra_type" enum field.
-type ExtraType string
-
-// ExtraType values.
-const (
-	ExtraTypeUnknown         ExtraType = "Unknown"
-	ExtraTypeClip            ExtraType = "Clip"
-	ExtraTypeTrailer         ExtraType = "Trailer"
-	ExtraTypeBehindTheScenes ExtraType = "BehindTheScenes"
-	ExtraTypeDeletedScene    ExtraType = "DeletedScene"
-	ExtraTypeInterview       ExtraType = "Interview"
-	ExtraTypeScene           ExtraType = "Scene"
-	ExtraTypeSample          ExtraType = "Sample"
-	ExtraTypeThemeSong       ExtraType = "ThemeSong"
-	ExtraTypeThemeVideo      ExtraType = "ThemeVideo"
-	ExtraTypeFeaturette      ExtraType = "Featurette"
-	ExtraTypeShort           ExtraType = "Short"
-)
-
-func (et ExtraType) String() string {
-	return string(et)
-}
-
-// ExtraTypeValidator is a validator for the "extra_type" field enum values. It is called by the builders before save.
-func ExtraTypeValidator(et ExtraType) error {
-	switch et {
-	case ExtraTypeUnknown, ExtraTypeClip, ExtraTypeTrailer, ExtraTypeBehindTheScenes, ExtraTypeDeletedScene, ExtraTypeInterview, ExtraTypeScene, ExtraTypeSample, ExtraTypeThemeSong, ExtraTypeThemeVideo, ExtraTypeFeaturette, ExtraTypeShort:
-		return nil
-	default:
-		return fmt.Errorf("item: invalid enum value for extra_type field: %q", et)
-	}
-}
-
-// VideoType defines the type for the "video_type" enum field.
-type VideoType string
-
-// VideoType values.
-const (
-	VideoTypeVideoFile VideoType = "VideoFile"
-	VideoTypeIso       VideoType = "Iso"
-	VideoTypeDvd       VideoType = "Dvd"
-	VideoTypeBluRay    VideoType = "BluRay"
-)
-
-func (vt VideoType) String() string {
-	return string(vt)
-}
-
-// VideoTypeValidator is a validator for the "video_type" field enum values. It is called by the builders before save.
-func VideoTypeValidator(vt VideoType) error {
-	switch vt {
-	case VideoTypeVideoFile, VideoTypeIso, VideoTypeDvd, VideoTypeBluRay:
-		return nil
-	default:
-		return fmt.Errorf("item: invalid enum value for video_type field: %q", vt)
-	}
-}
-
-// IsoType defines the type for the "iso_type" enum field.
-type IsoType string
-
-// IsoType values.
-const (
-	IsoTypeDvd    IsoType = "Dvd"
-	IsoTypeBluRay IsoType = "BluRay"
-)
-
-func (it IsoType) String() string {
-	return string(it)
-}
-
-// IsoTypeValidator is a validator for the "iso_type" field enum values. It is called by the builders before save.
-func IsoTypeValidator(it IsoType) error {
-	switch it {
-	case IsoTypeDvd, IsoTypeBluRay:
-		return nil
-	default:
-		return fmt.Errorf("item: invalid enum value for iso_type field: %q", it)
-	}
-}
-
-// Video3dFormat defines the type for the "video_3d_format" enum field.
-type Video3dFormat string
-
-// Video3dFormat values.
-const (
-	Video3dFormatHalfSideBySide   Video3dFormat = "HalfSideBySide"
-	Video3dFormatFullSideBySide   Video3dFormat = "FullSideBySide"
-	Video3dFormatFullTopAndBottom Video3dFormat = "FullTopAndBottom"
-	Video3dFormatHalfTopAndBottom Video3dFormat = "HalfTopAndBottom"
-	Video3dFormatMVC              Video3dFormat = "MVC"
-)
-
-func (v3f Video3dFormat) String() string {
-	return string(v3f)
-}
-
-// Video3dFormatValidator is a validator for the "video_3d_format" field enum values. It is called by the builders before save.
-func Video3dFormatValidator(v3f Video3dFormat) error {
-	switch v3f {
-	case Video3dFormatHalfSideBySide, Video3dFormatFullSideBySide, Video3dFormatFullTopAndBottom, Video3dFormatHalfTopAndBottom, Video3dFormatMVC:
-		return nil
-	default:
-		return fmt.Errorf("item: invalid enum value for video_3d_format field: %q", v3f)
-	}
-}
-
 // OrderOption defines the ordering options for the Item queries.
 type OrderOption func(*sql.Selector)
 
@@ -598,31 +365,6 @@ func ByMediaType(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldMediaType, opts...).ToFunc()
 }
 
-// ByLocationType orders the results by the location_type field.
-func ByLocationType(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldLocationType, opts...).ToFunc()
-}
-
-// ByExtraType orders the results by the extra_type field.
-func ByExtraType(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldExtraType, opts...).ToFunc()
-}
-
-// ByVideoType orders the results by the video_type field.
-func ByVideoType(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldVideoType, opts...).ToFunc()
-}
-
-// ByIsoType orders the results by the iso_type field.
-func ByIsoType(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldIsoType, opts...).ToFunc()
-}
-
-// ByVideo3dFormat orders the results by the video_3d_format field.
-func ByVideo3dFormat(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldVideo3dFormat, opts...).ToFunc()
-}
-
 // ByKey orders the results by the key field.
 func ByKey(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldKey, opts...).ToFunc()
@@ -633,29 +375,14 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
 }
 
-// ByOriginalTitle orders the results by the original_title field.
-func ByOriginalTitle(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldOriginalTitle, opts...).ToFunc()
-}
-
 // BySortName orders the results by the sort_name field.
 func BySortName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSortName, opts...).ToFunc()
 }
 
-// ByForcedSortName orders the results by the forced_sort_name field.
-func ByForcedSortName(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldForcedSortName, opts...).ToFunc()
-}
-
 // ByDeletedAt orders the results by the deleted_at field.
 func ByDeletedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDeletedAt, opts...).ToFunc()
-}
-
-// ByContainer orders the results by the container field.
-func ByContainer(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldContainer, opts...).ToFunc()
 }
 
 // ByOverview orders the results by the overview field.
@@ -668,29 +395,14 @@ func ByIsFolder(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsFolder, opts...).ToFunc()
 }
 
-// ByIsPlaceholder orders the results by the is_placeholder field.
-func ByIsPlaceholder(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldIsPlaceholder, opts...).ToFunc()
-}
-
 // ByLockData orders the results by the lock_data field.
 func ByLockData(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLockData, opts...).ToFunc()
 }
 
-// ByHasLyrics orders the results by the has_lyrics field.
-func ByHasLyrics(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldHasLyrics, opts...).ToFunc()
-}
-
 // ByHasSubtitles orders the results by the has_subtitles field.
 func ByHasSubtitles(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldHasSubtitles, opts...).ToFunc()
-}
-
-// ByEnableMediaSourceDisplay orders the results by the enable_media_source_display field.
-func ByEnableMediaSourceDisplay(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldEnableMediaSourceDisplay, opts...).ToFunc()
 }
 
 // ByPremiereDate orders the results by the premiere_date field.
@@ -703,19 +415,9 @@ func ByEndDate(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEndDate, opts...).ToFunc()
 }
 
-// ByLastMediaAddedAt orders the results by the last_media_added_at field.
-func ByLastMediaAddedAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldLastMediaAddedAt, opts...).ToFunc()
-}
-
 // ByDateModified orders the results by the date_modified field.
 func ByDateModified(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDateModified, opts...).ToFunc()
-}
-
-// ByProbedAt orders the results by the probed_at field.
-func ByProbedAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldProbedAt, opts...).ToFunc()
 }
 
 // ByProductionYear orders the results by the production_year field.
@@ -726,16 +428,6 @@ func ByProductionYear(opts ...sql.OrderTermOption) OrderOption {
 // ByOfficialRating orders the results by the official_rating field.
 func ByOfficialRating(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldOfficialRating, opts...).ToFunc()
-}
-
-// ByCustomRating orders the results by the custom_rating field.
-func ByCustomRating(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldCustomRating, opts...).ToFunc()
-}
-
-// ByCriticRating orders the results by the critic_rating field.
-func ByCriticRating(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldCriticRating, opts...).ToFunc()
 }
 
 // ByCommunityRating orders the results by the community_rating field.
@@ -753,74 +445,14 @@ func ByIndexNumber(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIndexNumber, opts...).ToFunc()
 }
 
-// ByIndexNumberEnd orders the results by the index_number_end field.
-func ByIndexNumberEnd(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldIndexNumberEnd, opts...).ToFunc()
-}
-
 // ByParentIndexNumber orders the results by the parent_index_number field.
 func ByParentIndexNumber(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldParentIndexNumber, opts...).ToFunc()
 }
 
-// ByAirsBeforeSeasonNumber orders the results by the airs_before_season_number field.
-func ByAirsBeforeSeasonNumber(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldAirsBeforeSeasonNumber, opts...).ToFunc()
-}
-
-// ByAirsAfterSeasonNumber orders the results by the airs_after_season_number field.
-func ByAirsAfterSeasonNumber(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldAirsAfterSeasonNumber, opts...).ToFunc()
-}
-
-// ByAirsBeforeEpisodeNumber orders the results by the airs_before_episode_number field.
-func ByAirsBeforeEpisodeNumber(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldAirsBeforeEpisodeNumber, opts...).ToFunc()
-}
-
 // ByStatus orders the results by the status field.
 func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatus, opts...).ToFunc()
-}
-
-// ByAirTime orders the results by the air_time field.
-func ByAirTime(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldAirTime, opts...).ToFunc()
-}
-
-// ByDisplayOrder orders the results by the display_order field.
-func ByDisplayOrder(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDisplayOrder, opts...).ToFunc()
-}
-
-// ByAspectRatio orders the results by the aspect_ratio field.
-func ByAspectRatio(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldAspectRatio, opts...).ToFunc()
-}
-
-// ByWidth orders the results by the width field.
-func ByWidth(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldWidth, opts...).ToFunc()
-}
-
-// ByHeight orders the results by the height field.
-func ByHeight(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldHeight, opts...).ToFunc()
-}
-
-// ByNormalizationGain orders the results by the normalization_gain field.
-func ByNormalizationGain(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldNormalizationGain, opts...).ToFunc()
-}
-
-// ByPreferredMetadataLanguage orders the results by the preferred_metadata_language field.
-func ByPreferredMetadataLanguage(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldPreferredMetadataLanguage, opts...).ToFunc()
-}
-
-// ByPreferredMetadataCountryCode orders the results by the preferred_metadata_country_code field.
-func ByPreferredMetadataCountryCode(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldPreferredMetadataCountryCode, opts...).ToFunc()
 }
 
 // ByParentField orders the results by parent field.

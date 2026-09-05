@@ -13,10 +13,6 @@ type Person struct {
 func (Person) Fields() []ent.Field {
 	return withDefaultFields(
 		field.String("name").Unique(),
-		field.Text("overview").Optional(),
-		field.Time("birth_date").Optional(),
-		field.Time("death_date").Optional(),
-		field.JSON("provider_ids", map[string]string{}).Optional(),
 	)
 }
 

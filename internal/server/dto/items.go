@@ -33,7 +33,7 @@ func ItemDto(item *items.Item, path string, childCount int32, imageTags map[stri
 		PremiereDate:      item.PremiereDate,
 		RunTimeTicks:      item.RunTimeTicks,
 		DateCreated:       apiutil.Ptr(item.CreatedAt),
-		LocationType:      apiutil.Ptr(api.LocationType(item.LocationType)),
+		LocationType:      apiutil.Ptr(api.FileSystem),
 		ImageTags:         &map[string]*string{},
 		BackdropImageTags: &[]string{},
 	}
@@ -55,6 +55,19 @@ func ItemDto(item *items.Item, path string, childCount int32, imageTags map[stri
 	if item.Overview != "" {
 		dto.Overview = apiutil.Ptr(item.Overview)
 	}
+	if item.OfficialRating != "" {
+		dto.OfficialRating = apiutil.Ptr(item.OfficialRating)
+	}
+	if item.Status != "" {
+		dto.Status = apiutil.Ptr(item.Status)
+	}
+	if item.CommunityRating != nil {
+		dto.CommunityRating = apiutil.Ptr(float32(*item.CommunityRating))
+	}
+	if len(item.Taglines) > 0 {
+		dto.Taglines = apiutil.Ptr(item.Taglines)
+	}
+	dto.EndDate = item.EndDate
 	if len(item.LockedFields) > 0 {
 		locked := make([]api.MetadataField, 0, len(item.LockedFields))
 		for _, field := range item.LockedFields {

@@ -41,16 +41,14 @@ func movieMetadata(movie *gotmdb.MovieDetails, base string) items.Metadata {
 	premiere := date(movie.ReleaseDate)
 
 	return items.Metadata{
-		Name:                text(movie.Title),
-		OriginalTitle:       text(movie.OriginalTitle),
-		Overview:            text(movie.Overview),
-		OfficialRating:      rating(movieCertification(movie)),
-		CommunityRating:     score(movie.VoteAverage),
-		PremiereDate:        premiere,
-		ProductionYear:      year(premiere),
-		Taglines:            list(movie.Tagline),
-		ProductionLocations: countries(movie.ProductionCountries),
-		ProviderIds:         providerIDs(movie.ID, movie.IMDbID),
+		Name:            text(movie.Title),
+		Overview:        text(movie.Overview),
+		OfficialRating:  rating(movieCertification(movie)),
+		CommunityRating: score(movie.VoteAverage),
+		PremiereDate:    premiere,
+		ProductionYear:  year(premiere),
+		Taglines:        list(movie.Tagline),
+		ProviderIds:     providerIDs(movie.ID, movie.IMDbID),
 		Images: artwork(
 			remote(imagemodal.KindPrimary, base, posterSize, movie.PosterPath),
 			remote(imagemodal.KindBackdrop, base, backdropSize, movie.BackdropPath),
@@ -62,17 +60,15 @@ func seriesMetadata(series *gotmdb.TVDetails, base string) items.Metadata {
 	premiere := date(series.FirstAirDate)
 
 	metadata := items.Metadata{
-		Name:                text(series.Name),
-		OriginalTitle:       text(series.OriginalName),
-		Overview:            text(series.Overview),
-		Status:              text(seriesStatus(series.Status)),
-		OfficialRating:      rating(seriesCertification(series)),
-		CommunityRating:     score(series.VoteAverage),
-		PremiereDate:        premiere,
-		ProductionYear:      year(premiere),
-		Taglines:            list(series.Tagline),
-		ProductionLocations: countries(series.ProductionCountries),
-		ProviderIds:         providerIDs(series.ID, seriesIMDbID(series)),
+		Name:            text(series.Name),
+		Overview:        text(series.Overview),
+		Status:          text(seriesStatus(series.Status)),
+		OfficialRating:  rating(seriesCertification(series)),
+		CommunityRating: score(series.VoteAverage),
+		PremiereDate:    premiere,
+		ProductionYear:  year(premiere),
+		Taglines:        list(series.Tagline),
+		ProviderIds:     providerIDs(series.ID, seriesIMDbID(series)),
 		Images: artwork(
 			remote(imagemodal.KindPrimary, base, posterSize, series.PosterPath),
 			remote(imagemodal.KindBackdrop, base, backdropSize, series.BackdropPath),
@@ -198,19 +194,6 @@ func providerIDs(tmdbID int64, imdbID string) *map[string]string {
 	}
 
 	return &ids
-}
-
-func countries(named []gotmdb.ProductionCountry) *[]string {
-	if len(named) == 0 {
-		return nil
-	}
-
-	names := make([]string, 0, len(named))
-	for _, one := range named {
-		names = append(names, one.Name)
-	}
-
-	return &names
 }
 
 func date(value string) *time.Time {

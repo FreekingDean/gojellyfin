@@ -7638,121 +7638,80 @@ func (m *ImageBlobMutation) ResetEdge(name string) error {
 // ItemMutation represents an operation that mutates the Item nodes in the graph.
 type ItemMutation struct {
 	config
-	op                              Op
-	typ                             string
-	id                              *uuid.UUID
-	created_at                      *time.Time
-	updated_at                      *time.Time
-	kind                            *item.Kind
-	media_type                      *item.MediaType
-	location_type                   *item.LocationType
-	extra_type                      *item.ExtraType
-	video_type                      *item.VideoType
-	iso_type                        *item.IsoType
-	video_3d_format                 *item.Video3dFormat
-	key                             *string
-	name                            *string
-	original_title                  *string
-	sort_name                       *string
-	forced_sort_name                *bool
-	deleted_at                      *time.Time
-	container                       *string
-	overview                        *string
-	is_folder                       *bool
-	is_placeholder                  *bool
-	lock_data                       *bool
-	has_lyrics                      *bool
-	has_subtitles                   *bool
-	enable_media_source_display     *bool
-	premiere_date                   *time.Time
-	end_date                        *time.Time
-	last_media_added_at             *time.Time
-	date_modified                   *time.Time
-	probed_at                       *time.Time
-	production_year                 *int32
-	addproduction_year              *int32
-	official_rating                 *string
-	custom_rating                   *string
-	critic_rating                   *float64
-	addcritic_rating                *float64
-	community_rating                *float64
-	addcommunity_rating             *float64
-	run_time_ticks                  *int64
-	addrun_time_ticks               *int64
-	index_number                    *int32
-	addindex_number                 *int32
-	index_number_end                *int32
-	addindex_number_end             *int32
-	parent_index_number             *int32
-	addparent_index_number          *int32
-	airs_before_season_number       *int32
-	addairs_before_season_number    *int32
-	airs_after_season_number        *int32
-	addairs_after_season_number     *int32
-	airs_before_episode_number      *int32
-	addairs_before_episode_number   *int32
-	status                          *string
-	air_time                        *string
-	display_order                   *string
-	air_days                        *[]string
-	appendair_days                  []string
-	aspect_ratio                    *string
-	width                           *int32
-	addwidth                        *int32
-	height                          *int32
-	addheight                       *int32
-	normalization_gain              *float64
-	addnormalization_gain           *float64
-	preferred_metadata_language     *string
-	preferred_metadata_country_code *string
-	provider_ids                    *map[string]string
-	tags                            *[]string
-	appendtags                      []string
-	taglines                        *[]string
-	appendtaglines                  []string
-	production_locations            *[]string
-	appendproduction_locations      []string
-	locked_fields                   *[]string
-	appendlocked_fields             []string
-	external_urls                   *[]entities.ExternalUrl
-	appendexternal_urls             []entities.ExternalUrl
-	clearedFields                   map[string]struct{}
-	parent                          *uuid.UUID
-	clearedparent                   bool
-	children                        map[uuid.UUID]struct{}
-	removedchildren                 map[uuid.UUID]struct{}
-	clearedchildren                 bool
-	library                         *uuid.UUID
-	clearedlibrary                  bool
-	media_sources                   map[uuid.UUID]struct{}
-	removedmedia_sources            map[uuid.UUID]struct{}
-	clearedmedia_sources            bool
-	credits                         map[uuid.UUID]struct{}
-	removedcredits                  map[uuid.UUID]struct{}
-	clearedcredits                  bool
-	images                          map[uuid.UUID]struct{}
-	removedimages                   map[uuid.UUID]struct{}
-	clearedimages                   bool
-	user_data                       map[uuid.UUID]struct{}
-	removeduser_data                map[uuid.UUID]struct{}
-	cleareduser_data                bool
-	activity_log_entries            map[uuid.UUID]struct{}
-	removedactivity_log_entries     map[uuid.UUID]struct{}
-	clearedactivity_log_entries     bool
-	playlist                        *uuid.UUID
-	clearedplaylist                 bool
-	playlist_entries                map[uuid.UUID]struct{}
-	removedplaylist_entries         map[uuid.UUID]struct{}
-	clearedplaylist_entries         bool
-	genres                          map[uuid.UUID]struct{}
-	removedgenres                   map[uuid.UUID]struct{}
-	clearedgenres                   bool
-	studios                         map[uuid.UUID]struct{}
-	removedstudios                  map[uuid.UUID]struct{}
-	clearedstudios                  bool
-	done                            bool
-	oldValue                        func(context.Context) (*Item, error)
-	predicates                      []predicate.Item
+	op                          Op
+	typ                         string
+	id                          *uuid.UUID
+	created_at                  *time.Time
+	updated_at                  *time.Time
+	kind                        *item.Kind
+	media_type                  *item.MediaType
+	key                         *string
+	name                        *string
+	sort_name                   *string
+	deleted_at                  *time.Time
+	overview                    *string
+	is_folder                   *bool
+	lock_data                   *bool
+	has_subtitles               *bool
+	premiere_date               *time.Time
+	end_date                    *time.Time
+	date_modified               *time.Time
+	production_year             *int32
+	addproduction_year          *int32
+	official_rating             *string
+	community_rating            *float64
+	addcommunity_rating         *float64
+	run_time_ticks              *int64
+	addrun_time_ticks           *int64
+	index_number                *int32
+	addindex_number             *int32
+	parent_index_number         *int32
+	addparent_index_number      *int32
+	status                      *string
+	provider_ids                *map[string]string
+	tags                        *[]string
+	appendtags                  []string
+	taglines                    *[]string
+	appendtaglines              []string
+	locked_fields               *[]string
+	appendlocked_fields         []string
+	clearedFields               map[string]struct{}
+	parent                      *uuid.UUID
+	clearedparent               bool
+	children                    map[uuid.UUID]struct{}
+	removedchildren             map[uuid.UUID]struct{}
+	clearedchildren             bool
+	library                     *uuid.UUID
+	clearedlibrary              bool
+	media_sources               map[uuid.UUID]struct{}
+	removedmedia_sources        map[uuid.UUID]struct{}
+	clearedmedia_sources        bool
+	credits                     map[uuid.UUID]struct{}
+	removedcredits              map[uuid.UUID]struct{}
+	clearedcredits              bool
+	images                      map[uuid.UUID]struct{}
+	removedimages               map[uuid.UUID]struct{}
+	clearedimages               bool
+	user_data                   map[uuid.UUID]struct{}
+	removeduser_data            map[uuid.UUID]struct{}
+	cleareduser_data            bool
+	activity_log_entries        map[uuid.UUID]struct{}
+	removedactivity_log_entries map[uuid.UUID]struct{}
+	clearedactivity_log_entries bool
+	playlist                    *uuid.UUID
+	clearedplaylist             bool
+	playlist_entries            map[uuid.UUID]struct{}
+	removedplaylist_entries     map[uuid.UUID]struct{}
+	clearedplaylist_entries     bool
+	genres                      map[uuid.UUID]struct{}
+	removedgenres               map[uuid.UUID]struct{}
+	clearedgenres               bool
+	studios                     map[uuid.UUID]struct{}
+	removedstudios              map[uuid.UUID]struct{}
+	clearedstudios              bool
+	done                        bool
+	oldValue                    func(context.Context) (*Item, error)
+	predicates                  []predicate.Item
 }
 
 var _ ent.Mutation = (*ItemMutation)(nil)
@@ -8101,238 +8060,6 @@ func (m *ItemMutation) ResetMediaType() {
 	m.media_type = nil
 }
 
-// SetLocationType sets the "location_type" field.
-func (m *ItemMutation) SetLocationType(it item.LocationType) {
-	m.location_type = &it
-}
-
-// LocationType returns the value of the "location_type" field in the mutation.
-func (m *ItemMutation) LocationType() (r item.LocationType, exists bool) {
-	v := m.location_type
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldLocationType returns the old "location_type" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldLocationType(ctx context.Context) (v item.LocationType, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldLocationType is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldLocationType requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldLocationType: %w", err)
-	}
-	return oldValue.LocationType, nil
-}
-
-// ResetLocationType resets all changes to the "location_type" field.
-func (m *ItemMutation) ResetLocationType() {
-	m.location_type = nil
-}
-
-// SetExtraType sets the "extra_type" field.
-func (m *ItemMutation) SetExtraType(it item.ExtraType) {
-	m.extra_type = &it
-}
-
-// ExtraType returns the value of the "extra_type" field in the mutation.
-func (m *ItemMutation) ExtraType() (r item.ExtraType, exists bool) {
-	v := m.extra_type
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldExtraType returns the old "extra_type" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldExtraType(ctx context.Context) (v item.ExtraType, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldExtraType is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldExtraType requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldExtraType: %w", err)
-	}
-	return oldValue.ExtraType, nil
-}
-
-// ClearExtraType clears the value of the "extra_type" field.
-func (m *ItemMutation) ClearExtraType() {
-	m.extra_type = nil
-	m.clearedFields[item.FieldExtraType] = struct{}{}
-}
-
-// ExtraTypeCleared returns if the "extra_type" field was cleared in this mutation.
-func (m *ItemMutation) ExtraTypeCleared() bool {
-	_, ok := m.clearedFields[item.FieldExtraType]
-	return ok
-}
-
-// ResetExtraType resets all changes to the "extra_type" field.
-func (m *ItemMutation) ResetExtraType() {
-	m.extra_type = nil
-	delete(m.clearedFields, item.FieldExtraType)
-}
-
-// SetVideoType sets the "video_type" field.
-func (m *ItemMutation) SetVideoType(it item.VideoType) {
-	m.video_type = &it
-}
-
-// VideoType returns the value of the "video_type" field in the mutation.
-func (m *ItemMutation) VideoType() (r item.VideoType, exists bool) {
-	v := m.video_type
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldVideoType returns the old "video_type" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldVideoType(ctx context.Context) (v item.VideoType, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldVideoType is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldVideoType requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldVideoType: %w", err)
-	}
-	return oldValue.VideoType, nil
-}
-
-// ClearVideoType clears the value of the "video_type" field.
-func (m *ItemMutation) ClearVideoType() {
-	m.video_type = nil
-	m.clearedFields[item.FieldVideoType] = struct{}{}
-}
-
-// VideoTypeCleared returns if the "video_type" field was cleared in this mutation.
-func (m *ItemMutation) VideoTypeCleared() bool {
-	_, ok := m.clearedFields[item.FieldVideoType]
-	return ok
-}
-
-// ResetVideoType resets all changes to the "video_type" field.
-func (m *ItemMutation) ResetVideoType() {
-	m.video_type = nil
-	delete(m.clearedFields, item.FieldVideoType)
-}
-
-// SetIsoType sets the "iso_type" field.
-func (m *ItemMutation) SetIsoType(it item.IsoType) {
-	m.iso_type = &it
-}
-
-// IsoType returns the value of the "iso_type" field in the mutation.
-func (m *ItemMutation) IsoType() (r item.IsoType, exists bool) {
-	v := m.iso_type
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldIsoType returns the old "iso_type" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldIsoType(ctx context.Context) (v item.IsoType, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldIsoType is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldIsoType requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldIsoType: %w", err)
-	}
-	return oldValue.IsoType, nil
-}
-
-// ClearIsoType clears the value of the "iso_type" field.
-func (m *ItemMutation) ClearIsoType() {
-	m.iso_type = nil
-	m.clearedFields[item.FieldIsoType] = struct{}{}
-}
-
-// IsoTypeCleared returns if the "iso_type" field was cleared in this mutation.
-func (m *ItemMutation) IsoTypeCleared() bool {
-	_, ok := m.clearedFields[item.FieldIsoType]
-	return ok
-}
-
-// ResetIsoType resets all changes to the "iso_type" field.
-func (m *ItemMutation) ResetIsoType() {
-	m.iso_type = nil
-	delete(m.clearedFields, item.FieldIsoType)
-}
-
-// SetVideo3dFormat sets the "video_3d_format" field.
-func (m *ItemMutation) SetVideo3dFormat(_if item.Video3dFormat) {
-	m.video_3d_format = &_if
-}
-
-// Video3dFormat returns the value of the "video_3d_format" field in the mutation.
-func (m *ItemMutation) Video3dFormat() (r item.Video3dFormat, exists bool) {
-	v := m.video_3d_format
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldVideo3dFormat returns the old "video_3d_format" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldVideo3dFormat(ctx context.Context) (v item.Video3dFormat, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldVideo3dFormat is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldVideo3dFormat requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldVideo3dFormat: %w", err)
-	}
-	return oldValue.Video3dFormat, nil
-}
-
-// ClearVideo3dFormat clears the value of the "video_3d_format" field.
-func (m *ItemMutation) ClearVideo3dFormat() {
-	m.video_3d_format = nil
-	m.clearedFields[item.FieldVideo3dFormat] = struct{}{}
-}
-
-// Video3dFormatCleared returns if the "video_3d_format" field was cleared in this mutation.
-func (m *ItemMutation) Video3dFormatCleared() bool {
-	_, ok := m.clearedFields[item.FieldVideo3dFormat]
-	return ok
-}
-
-// ResetVideo3dFormat resets all changes to the "video_3d_format" field.
-func (m *ItemMutation) ResetVideo3dFormat() {
-	m.video_3d_format = nil
-	delete(m.clearedFields, item.FieldVideo3dFormat)
-}
-
 // SetKey sets the "key" field.
 func (m *ItemMutation) SetKey(s string) {
 	m.key = &s
@@ -8418,55 +8145,6 @@ func (m *ItemMutation) ResetName() {
 	m.name = nil
 }
 
-// SetOriginalTitle sets the "original_title" field.
-func (m *ItemMutation) SetOriginalTitle(s string) {
-	m.original_title = &s
-}
-
-// OriginalTitle returns the value of the "original_title" field in the mutation.
-func (m *ItemMutation) OriginalTitle() (r string, exists bool) {
-	v := m.original_title
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldOriginalTitle returns the old "original_title" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldOriginalTitle(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldOriginalTitle is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldOriginalTitle requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldOriginalTitle: %w", err)
-	}
-	return oldValue.OriginalTitle, nil
-}
-
-// ClearOriginalTitle clears the value of the "original_title" field.
-func (m *ItemMutation) ClearOriginalTitle() {
-	m.original_title = nil
-	m.clearedFields[item.FieldOriginalTitle] = struct{}{}
-}
-
-// OriginalTitleCleared returns if the "original_title" field was cleared in this mutation.
-func (m *ItemMutation) OriginalTitleCleared() bool {
-	_, ok := m.clearedFields[item.FieldOriginalTitle]
-	return ok
-}
-
-// ResetOriginalTitle resets all changes to the "original_title" field.
-func (m *ItemMutation) ResetOriginalTitle() {
-	m.original_title = nil
-	delete(m.clearedFields, item.FieldOriginalTitle)
-}
-
 // SetSortName sets the "sort_name" field.
 func (m *ItemMutation) SetSortName(s string) {
 	m.sort_name = &s
@@ -8516,42 +8194,6 @@ func (m *ItemMutation) ResetSortName() {
 	delete(m.clearedFields, item.FieldSortName)
 }
 
-// SetForcedSortName sets the "forced_sort_name" field.
-func (m *ItemMutation) SetForcedSortName(b bool) {
-	m.forced_sort_name = &b
-}
-
-// ForcedSortName returns the value of the "forced_sort_name" field in the mutation.
-func (m *ItemMutation) ForcedSortName() (r bool, exists bool) {
-	v := m.forced_sort_name
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldForcedSortName returns the old "forced_sort_name" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldForcedSortName(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldForcedSortName is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldForcedSortName requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldForcedSortName: %w", err)
-	}
-	return oldValue.ForcedSortName, nil
-}
-
-// ResetForcedSortName resets all changes to the "forced_sort_name" field.
-func (m *ItemMutation) ResetForcedSortName() {
-	m.forced_sort_name = nil
-}
-
 // SetDeletedAt sets the "deleted_at" field.
 func (m *ItemMutation) SetDeletedAt(t time.Time) {
 	m.deleted_at = &t
@@ -8599,55 +8241,6 @@ func (m *ItemMutation) DeletedAtCleared() bool {
 func (m *ItemMutation) ResetDeletedAt() {
 	m.deleted_at = nil
 	delete(m.clearedFields, item.FieldDeletedAt)
-}
-
-// SetContainer sets the "container" field.
-func (m *ItemMutation) SetContainer(s string) {
-	m.container = &s
-}
-
-// Container returns the value of the "container" field in the mutation.
-func (m *ItemMutation) Container() (r string, exists bool) {
-	v := m.container
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldContainer returns the old "container" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldContainer(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldContainer is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldContainer requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldContainer: %w", err)
-	}
-	return oldValue.Container, nil
-}
-
-// ClearContainer clears the value of the "container" field.
-func (m *ItemMutation) ClearContainer() {
-	m.container = nil
-	m.clearedFields[item.FieldContainer] = struct{}{}
-}
-
-// ContainerCleared returns if the "container" field was cleared in this mutation.
-func (m *ItemMutation) ContainerCleared() bool {
-	_, ok := m.clearedFields[item.FieldContainer]
-	return ok
-}
-
-// ResetContainer resets all changes to the "container" field.
-func (m *ItemMutation) ResetContainer() {
-	m.container = nil
-	delete(m.clearedFields, item.FieldContainer)
 }
 
 // SetOverview sets the "overview" field.
@@ -8735,42 +8328,6 @@ func (m *ItemMutation) ResetIsFolder() {
 	m.is_folder = nil
 }
 
-// SetIsPlaceholder sets the "is_placeholder" field.
-func (m *ItemMutation) SetIsPlaceholder(b bool) {
-	m.is_placeholder = &b
-}
-
-// IsPlaceholder returns the value of the "is_placeholder" field in the mutation.
-func (m *ItemMutation) IsPlaceholder() (r bool, exists bool) {
-	v := m.is_placeholder
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldIsPlaceholder returns the old "is_placeholder" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldIsPlaceholder(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldIsPlaceholder is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldIsPlaceholder requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldIsPlaceholder: %w", err)
-	}
-	return oldValue.IsPlaceholder, nil
-}
-
-// ResetIsPlaceholder resets all changes to the "is_placeholder" field.
-func (m *ItemMutation) ResetIsPlaceholder() {
-	m.is_placeholder = nil
-}
-
 // SetLockData sets the "lock_data" field.
 func (m *ItemMutation) SetLockData(b bool) {
 	m.lock_data = &b
@@ -8807,42 +8364,6 @@ func (m *ItemMutation) ResetLockData() {
 	m.lock_data = nil
 }
 
-// SetHasLyrics sets the "has_lyrics" field.
-func (m *ItemMutation) SetHasLyrics(b bool) {
-	m.has_lyrics = &b
-}
-
-// HasLyrics returns the value of the "has_lyrics" field in the mutation.
-func (m *ItemMutation) HasLyrics() (r bool, exists bool) {
-	v := m.has_lyrics
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldHasLyrics returns the old "has_lyrics" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldHasLyrics(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldHasLyrics is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldHasLyrics requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldHasLyrics: %w", err)
-	}
-	return oldValue.HasLyrics, nil
-}
-
-// ResetHasLyrics resets all changes to the "has_lyrics" field.
-func (m *ItemMutation) ResetHasLyrics() {
-	m.has_lyrics = nil
-}
-
 // SetHasSubtitles sets the "has_subtitles" field.
 func (m *ItemMutation) SetHasSubtitles(b bool) {
 	m.has_subtitles = &b
@@ -8877,42 +8398,6 @@ func (m *ItemMutation) OldHasSubtitles(ctx context.Context) (v bool, err error) 
 // ResetHasSubtitles resets all changes to the "has_subtitles" field.
 func (m *ItemMutation) ResetHasSubtitles() {
 	m.has_subtitles = nil
-}
-
-// SetEnableMediaSourceDisplay sets the "enable_media_source_display" field.
-func (m *ItemMutation) SetEnableMediaSourceDisplay(b bool) {
-	m.enable_media_source_display = &b
-}
-
-// EnableMediaSourceDisplay returns the value of the "enable_media_source_display" field in the mutation.
-func (m *ItemMutation) EnableMediaSourceDisplay() (r bool, exists bool) {
-	v := m.enable_media_source_display
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldEnableMediaSourceDisplay returns the old "enable_media_source_display" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldEnableMediaSourceDisplay(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldEnableMediaSourceDisplay is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldEnableMediaSourceDisplay requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldEnableMediaSourceDisplay: %w", err)
-	}
-	return oldValue.EnableMediaSourceDisplay, nil
-}
-
-// ResetEnableMediaSourceDisplay resets all changes to the "enable_media_source_display" field.
-func (m *ItemMutation) ResetEnableMediaSourceDisplay() {
-	m.enable_media_source_display = nil
 }
 
 // SetPremiereDate sets the "premiere_date" field.
@@ -9013,55 +8498,6 @@ func (m *ItemMutation) ResetEndDate() {
 	delete(m.clearedFields, item.FieldEndDate)
 }
 
-// SetLastMediaAddedAt sets the "last_media_added_at" field.
-func (m *ItemMutation) SetLastMediaAddedAt(t time.Time) {
-	m.last_media_added_at = &t
-}
-
-// LastMediaAddedAt returns the value of the "last_media_added_at" field in the mutation.
-func (m *ItemMutation) LastMediaAddedAt() (r time.Time, exists bool) {
-	v := m.last_media_added_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldLastMediaAddedAt returns the old "last_media_added_at" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldLastMediaAddedAt(ctx context.Context) (v *time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldLastMediaAddedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldLastMediaAddedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldLastMediaAddedAt: %w", err)
-	}
-	return oldValue.LastMediaAddedAt, nil
-}
-
-// ClearLastMediaAddedAt clears the value of the "last_media_added_at" field.
-func (m *ItemMutation) ClearLastMediaAddedAt() {
-	m.last_media_added_at = nil
-	m.clearedFields[item.FieldLastMediaAddedAt] = struct{}{}
-}
-
-// LastMediaAddedAtCleared returns if the "last_media_added_at" field was cleared in this mutation.
-func (m *ItemMutation) LastMediaAddedAtCleared() bool {
-	_, ok := m.clearedFields[item.FieldLastMediaAddedAt]
-	return ok
-}
-
-// ResetLastMediaAddedAt resets all changes to the "last_media_added_at" field.
-func (m *ItemMutation) ResetLastMediaAddedAt() {
-	m.last_media_added_at = nil
-	delete(m.clearedFields, item.FieldLastMediaAddedAt)
-}
-
 // SetDateModified sets the "date_modified" field.
 func (m *ItemMutation) SetDateModified(t time.Time) {
 	m.date_modified = &t
@@ -9109,55 +8545,6 @@ func (m *ItemMutation) DateModifiedCleared() bool {
 func (m *ItemMutation) ResetDateModified() {
 	m.date_modified = nil
 	delete(m.clearedFields, item.FieldDateModified)
-}
-
-// SetProbedAt sets the "probed_at" field.
-func (m *ItemMutation) SetProbedAt(t time.Time) {
-	m.probed_at = &t
-}
-
-// ProbedAt returns the value of the "probed_at" field in the mutation.
-func (m *ItemMutation) ProbedAt() (r time.Time, exists bool) {
-	v := m.probed_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldProbedAt returns the old "probed_at" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldProbedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldProbedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldProbedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldProbedAt: %w", err)
-	}
-	return oldValue.ProbedAt, nil
-}
-
-// ClearProbedAt clears the value of the "probed_at" field.
-func (m *ItemMutation) ClearProbedAt() {
-	m.probed_at = nil
-	m.clearedFields[item.FieldProbedAt] = struct{}{}
-}
-
-// ProbedAtCleared returns if the "probed_at" field was cleared in this mutation.
-func (m *ItemMutation) ProbedAtCleared() bool {
-	_, ok := m.clearedFields[item.FieldProbedAt]
-	return ok
-}
-
-// ResetProbedAt resets all changes to the "probed_at" field.
-func (m *ItemMutation) ResetProbedAt() {
-	m.probed_at = nil
-	delete(m.clearedFields, item.FieldProbedAt)
 }
 
 // SetProductionYear sets the "production_year" field.
@@ -9277,125 +8664,6 @@ func (m *ItemMutation) OfficialRatingCleared() bool {
 func (m *ItemMutation) ResetOfficialRating() {
 	m.official_rating = nil
 	delete(m.clearedFields, item.FieldOfficialRating)
-}
-
-// SetCustomRating sets the "custom_rating" field.
-func (m *ItemMutation) SetCustomRating(s string) {
-	m.custom_rating = &s
-}
-
-// CustomRating returns the value of the "custom_rating" field in the mutation.
-func (m *ItemMutation) CustomRating() (r string, exists bool) {
-	v := m.custom_rating
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldCustomRating returns the old "custom_rating" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldCustomRating(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldCustomRating is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldCustomRating requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCustomRating: %w", err)
-	}
-	return oldValue.CustomRating, nil
-}
-
-// ClearCustomRating clears the value of the "custom_rating" field.
-func (m *ItemMutation) ClearCustomRating() {
-	m.custom_rating = nil
-	m.clearedFields[item.FieldCustomRating] = struct{}{}
-}
-
-// CustomRatingCleared returns if the "custom_rating" field was cleared in this mutation.
-func (m *ItemMutation) CustomRatingCleared() bool {
-	_, ok := m.clearedFields[item.FieldCustomRating]
-	return ok
-}
-
-// ResetCustomRating resets all changes to the "custom_rating" field.
-func (m *ItemMutation) ResetCustomRating() {
-	m.custom_rating = nil
-	delete(m.clearedFields, item.FieldCustomRating)
-}
-
-// SetCriticRating sets the "critic_rating" field.
-func (m *ItemMutation) SetCriticRating(f float64) {
-	m.critic_rating = &f
-	m.addcritic_rating = nil
-}
-
-// CriticRating returns the value of the "critic_rating" field in the mutation.
-func (m *ItemMutation) CriticRating() (r float64, exists bool) {
-	v := m.critic_rating
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldCriticRating returns the old "critic_rating" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldCriticRating(ctx context.Context) (v *float64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldCriticRating is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldCriticRating requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCriticRating: %w", err)
-	}
-	return oldValue.CriticRating, nil
-}
-
-// AddCriticRating adds f to the "critic_rating" field.
-func (m *ItemMutation) AddCriticRating(f float64) {
-	if m.addcritic_rating != nil {
-		*m.addcritic_rating += f
-	} else {
-		m.addcritic_rating = &f
-	}
-}
-
-// AddedCriticRating returns the value that was added to the "critic_rating" field in this mutation.
-func (m *ItemMutation) AddedCriticRating() (r float64, exists bool) {
-	v := m.addcritic_rating
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearCriticRating clears the value of the "critic_rating" field.
-func (m *ItemMutation) ClearCriticRating() {
-	m.critic_rating = nil
-	m.addcritic_rating = nil
-	m.clearedFields[item.FieldCriticRating] = struct{}{}
-}
-
-// CriticRatingCleared returns if the "critic_rating" field was cleared in this mutation.
-func (m *ItemMutation) CriticRatingCleared() bool {
-	_, ok := m.clearedFields[item.FieldCriticRating]
-	return ok
-}
-
-// ResetCriticRating resets all changes to the "critic_rating" field.
-func (m *ItemMutation) ResetCriticRating() {
-	m.critic_rating = nil
-	m.addcritic_rating = nil
-	delete(m.clearedFields, item.FieldCriticRating)
 }
 
 // SetCommunityRating sets the "community_rating" field.
@@ -9608,76 +8876,6 @@ func (m *ItemMutation) ResetIndexNumber() {
 	delete(m.clearedFields, item.FieldIndexNumber)
 }
 
-// SetIndexNumberEnd sets the "index_number_end" field.
-func (m *ItemMutation) SetIndexNumberEnd(i int32) {
-	m.index_number_end = &i
-	m.addindex_number_end = nil
-}
-
-// IndexNumberEnd returns the value of the "index_number_end" field in the mutation.
-func (m *ItemMutation) IndexNumberEnd() (r int32, exists bool) {
-	v := m.index_number_end
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldIndexNumberEnd returns the old "index_number_end" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldIndexNumberEnd(ctx context.Context) (v *int32, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldIndexNumberEnd is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldIndexNumberEnd requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldIndexNumberEnd: %w", err)
-	}
-	return oldValue.IndexNumberEnd, nil
-}
-
-// AddIndexNumberEnd adds i to the "index_number_end" field.
-func (m *ItemMutation) AddIndexNumberEnd(i int32) {
-	if m.addindex_number_end != nil {
-		*m.addindex_number_end += i
-	} else {
-		m.addindex_number_end = &i
-	}
-}
-
-// AddedIndexNumberEnd returns the value that was added to the "index_number_end" field in this mutation.
-func (m *ItemMutation) AddedIndexNumberEnd() (r int32, exists bool) {
-	v := m.addindex_number_end
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearIndexNumberEnd clears the value of the "index_number_end" field.
-func (m *ItemMutation) ClearIndexNumberEnd() {
-	m.index_number_end = nil
-	m.addindex_number_end = nil
-	m.clearedFields[item.FieldIndexNumberEnd] = struct{}{}
-}
-
-// IndexNumberEndCleared returns if the "index_number_end" field was cleared in this mutation.
-func (m *ItemMutation) IndexNumberEndCleared() bool {
-	_, ok := m.clearedFields[item.FieldIndexNumberEnd]
-	return ok
-}
-
-// ResetIndexNumberEnd resets all changes to the "index_number_end" field.
-func (m *ItemMutation) ResetIndexNumberEnd() {
-	m.index_number_end = nil
-	m.addindex_number_end = nil
-	delete(m.clearedFields, item.FieldIndexNumberEnd)
-}
-
 // SetParentIndexNumber sets the "parent_index_number" field.
 func (m *ItemMutation) SetParentIndexNumber(i int32) {
 	m.parent_index_number = &i
@@ -9748,216 +8946,6 @@ func (m *ItemMutation) ResetParentIndexNumber() {
 	delete(m.clearedFields, item.FieldParentIndexNumber)
 }
 
-// SetAirsBeforeSeasonNumber sets the "airs_before_season_number" field.
-func (m *ItemMutation) SetAirsBeforeSeasonNumber(i int32) {
-	m.airs_before_season_number = &i
-	m.addairs_before_season_number = nil
-}
-
-// AirsBeforeSeasonNumber returns the value of the "airs_before_season_number" field in the mutation.
-func (m *ItemMutation) AirsBeforeSeasonNumber() (r int32, exists bool) {
-	v := m.airs_before_season_number
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldAirsBeforeSeasonNumber returns the old "airs_before_season_number" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldAirsBeforeSeasonNumber(ctx context.Context) (v *int32, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldAirsBeforeSeasonNumber is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldAirsBeforeSeasonNumber requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAirsBeforeSeasonNumber: %w", err)
-	}
-	return oldValue.AirsBeforeSeasonNumber, nil
-}
-
-// AddAirsBeforeSeasonNumber adds i to the "airs_before_season_number" field.
-func (m *ItemMutation) AddAirsBeforeSeasonNumber(i int32) {
-	if m.addairs_before_season_number != nil {
-		*m.addairs_before_season_number += i
-	} else {
-		m.addairs_before_season_number = &i
-	}
-}
-
-// AddedAirsBeforeSeasonNumber returns the value that was added to the "airs_before_season_number" field in this mutation.
-func (m *ItemMutation) AddedAirsBeforeSeasonNumber() (r int32, exists bool) {
-	v := m.addairs_before_season_number
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearAirsBeforeSeasonNumber clears the value of the "airs_before_season_number" field.
-func (m *ItemMutation) ClearAirsBeforeSeasonNumber() {
-	m.airs_before_season_number = nil
-	m.addairs_before_season_number = nil
-	m.clearedFields[item.FieldAirsBeforeSeasonNumber] = struct{}{}
-}
-
-// AirsBeforeSeasonNumberCleared returns if the "airs_before_season_number" field was cleared in this mutation.
-func (m *ItemMutation) AirsBeforeSeasonNumberCleared() bool {
-	_, ok := m.clearedFields[item.FieldAirsBeforeSeasonNumber]
-	return ok
-}
-
-// ResetAirsBeforeSeasonNumber resets all changes to the "airs_before_season_number" field.
-func (m *ItemMutation) ResetAirsBeforeSeasonNumber() {
-	m.airs_before_season_number = nil
-	m.addairs_before_season_number = nil
-	delete(m.clearedFields, item.FieldAirsBeforeSeasonNumber)
-}
-
-// SetAirsAfterSeasonNumber sets the "airs_after_season_number" field.
-func (m *ItemMutation) SetAirsAfterSeasonNumber(i int32) {
-	m.airs_after_season_number = &i
-	m.addairs_after_season_number = nil
-}
-
-// AirsAfterSeasonNumber returns the value of the "airs_after_season_number" field in the mutation.
-func (m *ItemMutation) AirsAfterSeasonNumber() (r int32, exists bool) {
-	v := m.airs_after_season_number
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldAirsAfterSeasonNumber returns the old "airs_after_season_number" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldAirsAfterSeasonNumber(ctx context.Context) (v *int32, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldAirsAfterSeasonNumber is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldAirsAfterSeasonNumber requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAirsAfterSeasonNumber: %w", err)
-	}
-	return oldValue.AirsAfterSeasonNumber, nil
-}
-
-// AddAirsAfterSeasonNumber adds i to the "airs_after_season_number" field.
-func (m *ItemMutation) AddAirsAfterSeasonNumber(i int32) {
-	if m.addairs_after_season_number != nil {
-		*m.addairs_after_season_number += i
-	} else {
-		m.addairs_after_season_number = &i
-	}
-}
-
-// AddedAirsAfterSeasonNumber returns the value that was added to the "airs_after_season_number" field in this mutation.
-func (m *ItemMutation) AddedAirsAfterSeasonNumber() (r int32, exists bool) {
-	v := m.addairs_after_season_number
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearAirsAfterSeasonNumber clears the value of the "airs_after_season_number" field.
-func (m *ItemMutation) ClearAirsAfterSeasonNumber() {
-	m.airs_after_season_number = nil
-	m.addairs_after_season_number = nil
-	m.clearedFields[item.FieldAirsAfterSeasonNumber] = struct{}{}
-}
-
-// AirsAfterSeasonNumberCleared returns if the "airs_after_season_number" field was cleared in this mutation.
-func (m *ItemMutation) AirsAfterSeasonNumberCleared() bool {
-	_, ok := m.clearedFields[item.FieldAirsAfterSeasonNumber]
-	return ok
-}
-
-// ResetAirsAfterSeasonNumber resets all changes to the "airs_after_season_number" field.
-func (m *ItemMutation) ResetAirsAfterSeasonNumber() {
-	m.airs_after_season_number = nil
-	m.addairs_after_season_number = nil
-	delete(m.clearedFields, item.FieldAirsAfterSeasonNumber)
-}
-
-// SetAirsBeforeEpisodeNumber sets the "airs_before_episode_number" field.
-func (m *ItemMutation) SetAirsBeforeEpisodeNumber(i int32) {
-	m.airs_before_episode_number = &i
-	m.addairs_before_episode_number = nil
-}
-
-// AirsBeforeEpisodeNumber returns the value of the "airs_before_episode_number" field in the mutation.
-func (m *ItemMutation) AirsBeforeEpisodeNumber() (r int32, exists bool) {
-	v := m.airs_before_episode_number
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldAirsBeforeEpisodeNumber returns the old "airs_before_episode_number" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldAirsBeforeEpisodeNumber(ctx context.Context) (v *int32, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldAirsBeforeEpisodeNumber is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldAirsBeforeEpisodeNumber requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAirsBeforeEpisodeNumber: %w", err)
-	}
-	return oldValue.AirsBeforeEpisodeNumber, nil
-}
-
-// AddAirsBeforeEpisodeNumber adds i to the "airs_before_episode_number" field.
-func (m *ItemMutation) AddAirsBeforeEpisodeNumber(i int32) {
-	if m.addairs_before_episode_number != nil {
-		*m.addairs_before_episode_number += i
-	} else {
-		m.addairs_before_episode_number = &i
-	}
-}
-
-// AddedAirsBeforeEpisodeNumber returns the value that was added to the "airs_before_episode_number" field in this mutation.
-func (m *ItemMutation) AddedAirsBeforeEpisodeNumber() (r int32, exists bool) {
-	v := m.addairs_before_episode_number
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearAirsBeforeEpisodeNumber clears the value of the "airs_before_episode_number" field.
-func (m *ItemMutation) ClearAirsBeforeEpisodeNumber() {
-	m.airs_before_episode_number = nil
-	m.addairs_before_episode_number = nil
-	m.clearedFields[item.FieldAirsBeforeEpisodeNumber] = struct{}{}
-}
-
-// AirsBeforeEpisodeNumberCleared returns if the "airs_before_episode_number" field was cleared in this mutation.
-func (m *ItemMutation) AirsBeforeEpisodeNumberCleared() bool {
-	_, ok := m.clearedFields[item.FieldAirsBeforeEpisodeNumber]
-	return ok
-}
-
-// ResetAirsBeforeEpisodeNumber resets all changes to the "airs_before_episode_number" field.
-func (m *ItemMutation) ResetAirsBeforeEpisodeNumber() {
-	m.airs_before_episode_number = nil
-	m.addairs_before_episode_number = nil
-	delete(m.clearedFields, item.FieldAirsBeforeEpisodeNumber)
-}
-
 // SetStatus sets the "status" field.
 func (m *ItemMutation) SetStatus(s string) {
 	m.status = &s
@@ -10005,526 +8993,6 @@ func (m *ItemMutation) StatusCleared() bool {
 func (m *ItemMutation) ResetStatus() {
 	m.status = nil
 	delete(m.clearedFields, item.FieldStatus)
-}
-
-// SetAirTime sets the "air_time" field.
-func (m *ItemMutation) SetAirTime(s string) {
-	m.air_time = &s
-}
-
-// AirTime returns the value of the "air_time" field in the mutation.
-func (m *ItemMutation) AirTime() (r string, exists bool) {
-	v := m.air_time
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldAirTime returns the old "air_time" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldAirTime(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldAirTime is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldAirTime requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAirTime: %w", err)
-	}
-	return oldValue.AirTime, nil
-}
-
-// ClearAirTime clears the value of the "air_time" field.
-func (m *ItemMutation) ClearAirTime() {
-	m.air_time = nil
-	m.clearedFields[item.FieldAirTime] = struct{}{}
-}
-
-// AirTimeCleared returns if the "air_time" field was cleared in this mutation.
-func (m *ItemMutation) AirTimeCleared() bool {
-	_, ok := m.clearedFields[item.FieldAirTime]
-	return ok
-}
-
-// ResetAirTime resets all changes to the "air_time" field.
-func (m *ItemMutation) ResetAirTime() {
-	m.air_time = nil
-	delete(m.clearedFields, item.FieldAirTime)
-}
-
-// SetDisplayOrder sets the "display_order" field.
-func (m *ItemMutation) SetDisplayOrder(s string) {
-	m.display_order = &s
-}
-
-// DisplayOrder returns the value of the "display_order" field in the mutation.
-func (m *ItemMutation) DisplayOrder() (r string, exists bool) {
-	v := m.display_order
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldDisplayOrder returns the old "display_order" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldDisplayOrder(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDisplayOrder is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDisplayOrder requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDisplayOrder: %w", err)
-	}
-	return oldValue.DisplayOrder, nil
-}
-
-// ClearDisplayOrder clears the value of the "display_order" field.
-func (m *ItemMutation) ClearDisplayOrder() {
-	m.display_order = nil
-	m.clearedFields[item.FieldDisplayOrder] = struct{}{}
-}
-
-// DisplayOrderCleared returns if the "display_order" field was cleared in this mutation.
-func (m *ItemMutation) DisplayOrderCleared() bool {
-	_, ok := m.clearedFields[item.FieldDisplayOrder]
-	return ok
-}
-
-// ResetDisplayOrder resets all changes to the "display_order" field.
-func (m *ItemMutation) ResetDisplayOrder() {
-	m.display_order = nil
-	delete(m.clearedFields, item.FieldDisplayOrder)
-}
-
-// SetAirDays sets the "air_days" field.
-func (m *ItemMutation) SetAirDays(s []string) {
-	m.air_days = &s
-	m.appendair_days = nil
-}
-
-// AirDays returns the value of the "air_days" field in the mutation.
-func (m *ItemMutation) AirDays() (r []string, exists bool) {
-	v := m.air_days
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldAirDays returns the old "air_days" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldAirDays(ctx context.Context) (v []string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldAirDays is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldAirDays requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAirDays: %w", err)
-	}
-	return oldValue.AirDays, nil
-}
-
-// AppendAirDays adds s to the "air_days" field.
-func (m *ItemMutation) AppendAirDays(s []string) {
-	m.appendair_days = append(m.appendair_days, s...)
-}
-
-// AppendedAirDays returns the list of values that were appended to the "air_days" field in this mutation.
-func (m *ItemMutation) AppendedAirDays() ([]string, bool) {
-	if len(m.appendair_days) == 0 {
-		return nil, false
-	}
-	return m.appendair_days, true
-}
-
-// ClearAirDays clears the value of the "air_days" field.
-func (m *ItemMutation) ClearAirDays() {
-	m.air_days = nil
-	m.appendair_days = nil
-	m.clearedFields[item.FieldAirDays] = struct{}{}
-}
-
-// AirDaysCleared returns if the "air_days" field was cleared in this mutation.
-func (m *ItemMutation) AirDaysCleared() bool {
-	_, ok := m.clearedFields[item.FieldAirDays]
-	return ok
-}
-
-// ResetAirDays resets all changes to the "air_days" field.
-func (m *ItemMutation) ResetAirDays() {
-	m.air_days = nil
-	m.appendair_days = nil
-	delete(m.clearedFields, item.FieldAirDays)
-}
-
-// SetAspectRatio sets the "aspect_ratio" field.
-func (m *ItemMutation) SetAspectRatio(s string) {
-	m.aspect_ratio = &s
-}
-
-// AspectRatio returns the value of the "aspect_ratio" field in the mutation.
-func (m *ItemMutation) AspectRatio() (r string, exists bool) {
-	v := m.aspect_ratio
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldAspectRatio returns the old "aspect_ratio" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldAspectRatio(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldAspectRatio is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldAspectRatio requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAspectRatio: %w", err)
-	}
-	return oldValue.AspectRatio, nil
-}
-
-// ClearAspectRatio clears the value of the "aspect_ratio" field.
-func (m *ItemMutation) ClearAspectRatio() {
-	m.aspect_ratio = nil
-	m.clearedFields[item.FieldAspectRatio] = struct{}{}
-}
-
-// AspectRatioCleared returns if the "aspect_ratio" field was cleared in this mutation.
-func (m *ItemMutation) AspectRatioCleared() bool {
-	_, ok := m.clearedFields[item.FieldAspectRatio]
-	return ok
-}
-
-// ResetAspectRatio resets all changes to the "aspect_ratio" field.
-func (m *ItemMutation) ResetAspectRatio() {
-	m.aspect_ratio = nil
-	delete(m.clearedFields, item.FieldAspectRatio)
-}
-
-// SetWidth sets the "width" field.
-func (m *ItemMutation) SetWidth(i int32) {
-	m.width = &i
-	m.addwidth = nil
-}
-
-// Width returns the value of the "width" field in the mutation.
-func (m *ItemMutation) Width() (r int32, exists bool) {
-	v := m.width
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldWidth returns the old "width" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldWidth(ctx context.Context) (v *int32, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldWidth is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldWidth requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldWidth: %w", err)
-	}
-	return oldValue.Width, nil
-}
-
-// AddWidth adds i to the "width" field.
-func (m *ItemMutation) AddWidth(i int32) {
-	if m.addwidth != nil {
-		*m.addwidth += i
-	} else {
-		m.addwidth = &i
-	}
-}
-
-// AddedWidth returns the value that was added to the "width" field in this mutation.
-func (m *ItemMutation) AddedWidth() (r int32, exists bool) {
-	v := m.addwidth
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearWidth clears the value of the "width" field.
-func (m *ItemMutation) ClearWidth() {
-	m.width = nil
-	m.addwidth = nil
-	m.clearedFields[item.FieldWidth] = struct{}{}
-}
-
-// WidthCleared returns if the "width" field was cleared in this mutation.
-func (m *ItemMutation) WidthCleared() bool {
-	_, ok := m.clearedFields[item.FieldWidth]
-	return ok
-}
-
-// ResetWidth resets all changes to the "width" field.
-func (m *ItemMutation) ResetWidth() {
-	m.width = nil
-	m.addwidth = nil
-	delete(m.clearedFields, item.FieldWidth)
-}
-
-// SetHeight sets the "height" field.
-func (m *ItemMutation) SetHeight(i int32) {
-	m.height = &i
-	m.addheight = nil
-}
-
-// Height returns the value of the "height" field in the mutation.
-func (m *ItemMutation) Height() (r int32, exists bool) {
-	v := m.height
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldHeight returns the old "height" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldHeight(ctx context.Context) (v *int32, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldHeight is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldHeight requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldHeight: %w", err)
-	}
-	return oldValue.Height, nil
-}
-
-// AddHeight adds i to the "height" field.
-func (m *ItemMutation) AddHeight(i int32) {
-	if m.addheight != nil {
-		*m.addheight += i
-	} else {
-		m.addheight = &i
-	}
-}
-
-// AddedHeight returns the value that was added to the "height" field in this mutation.
-func (m *ItemMutation) AddedHeight() (r int32, exists bool) {
-	v := m.addheight
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearHeight clears the value of the "height" field.
-func (m *ItemMutation) ClearHeight() {
-	m.height = nil
-	m.addheight = nil
-	m.clearedFields[item.FieldHeight] = struct{}{}
-}
-
-// HeightCleared returns if the "height" field was cleared in this mutation.
-func (m *ItemMutation) HeightCleared() bool {
-	_, ok := m.clearedFields[item.FieldHeight]
-	return ok
-}
-
-// ResetHeight resets all changes to the "height" field.
-func (m *ItemMutation) ResetHeight() {
-	m.height = nil
-	m.addheight = nil
-	delete(m.clearedFields, item.FieldHeight)
-}
-
-// SetNormalizationGain sets the "normalization_gain" field.
-func (m *ItemMutation) SetNormalizationGain(f float64) {
-	m.normalization_gain = &f
-	m.addnormalization_gain = nil
-}
-
-// NormalizationGain returns the value of the "normalization_gain" field in the mutation.
-func (m *ItemMutation) NormalizationGain() (r float64, exists bool) {
-	v := m.normalization_gain
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldNormalizationGain returns the old "normalization_gain" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldNormalizationGain(ctx context.Context) (v float64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldNormalizationGain is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldNormalizationGain requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldNormalizationGain: %w", err)
-	}
-	return oldValue.NormalizationGain, nil
-}
-
-// AddNormalizationGain adds f to the "normalization_gain" field.
-func (m *ItemMutation) AddNormalizationGain(f float64) {
-	if m.addnormalization_gain != nil {
-		*m.addnormalization_gain += f
-	} else {
-		m.addnormalization_gain = &f
-	}
-}
-
-// AddedNormalizationGain returns the value that was added to the "normalization_gain" field in this mutation.
-func (m *ItemMutation) AddedNormalizationGain() (r float64, exists bool) {
-	v := m.addnormalization_gain
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearNormalizationGain clears the value of the "normalization_gain" field.
-func (m *ItemMutation) ClearNormalizationGain() {
-	m.normalization_gain = nil
-	m.addnormalization_gain = nil
-	m.clearedFields[item.FieldNormalizationGain] = struct{}{}
-}
-
-// NormalizationGainCleared returns if the "normalization_gain" field was cleared in this mutation.
-func (m *ItemMutation) NormalizationGainCleared() bool {
-	_, ok := m.clearedFields[item.FieldNormalizationGain]
-	return ok
-}
-
-// ResetNormalizationGain resets all changes to the "normalization_gain" field.
-func (m *ItemMutation) ResetNormalizationGain() {
-	m.normalization_gain = nil
-	m.addnormalization_gain = nil
-	delete(m.clearedFields, item.FieldNormalizationGain)
-}
-
-// SetPreferredMetadataLanguage sets the "preferred_metadata_language" field.
-func (m *ItemMutation) SetPreferredMetadataLanguage(s string) {
-	m.preferred_metadata_language = &s
-}
-
-// PreferredMetadataLanguage returns the value of the "preferred_metadata_language" field in the mutation.
-func (m *ItemMutation) PreferredMetadataLanguage() (r string, exists bool) {
-	v := m.preferred_metadata_language
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldPreferredMetadataLanguage returns the old "preferred_metadata_language" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldPreferredMetadataLanguage(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPreferredMetadataLanguage is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPreferredMetadataLanguage requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPreferredMetadataLanguage: %w", err)
-	}
-	return oldValue.PreferredMetadataLanguage, nil
-}
-
-// ClearPreferredMetadataLanguage clears the value of the "preferred_metadata_language" field.
-func (m *ItemMutation) ClearPreferredMetadataLanguage() {
-	m.preferred_metadata_language = nil
-	m.clearedFields[item.FieldPreferredMetadataLanguage] = struct{}{}
-}
-
-// PreferredMetadataLanguageCleared returns if the "preferred_metadata_language" field was cleared in this mutation.
-func (m *ItemMutation) PreferredMetadataLanguageCleared() bool {
-	_, ok := m.clearedFields[item.FieldPreferredMetadataLanguage]
-	return ok
-}
-
-// ResetPreferredMetadataLanguage resets all changes to the "preferred_metadata_language" field.
-func (m *ItemMutation) ResetPreferredMetadataLanguage() {
-	m.preferred_metadata_language = nil
-	delete(m.clearedFields, item.FieldPreferredMetadataLanguage)
-}
-
-// SetPreferredMetadataCountryCode sets the "preferred_metadata_country_code" field.
-func (m *ItemMutation) SetPreferredMetadataCountryCode(s string) {
-	m.preferred_metadata_country_code = &s
-}
-
-// PreferredMetadataCountryCode returns the value of the "preferred_metadata_country_code" field in the mutation.
-func (m *ItemMutation) PreferredMetadataCountryCode() (r string, exists bool) {
-	v := m.preferred_metadata_country_code
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldPreferredMetadataCountryCode returns the old "preferred_metadata_country_code" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldPreferredMetadataCountryCode(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPreferredMetadataCountryCode is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPreferredMetadataCountryCode requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPreferredMetadataCountryCode: %w", err)
-	}
-	return oldValue.PreferredMetadataCountryCode, nil
-}
-
-// ClearPreferredMetadataCountryCode clears the value of the "preferred_metadata_country_code" field.
-func (m *ItemMutation) ClearPreferredMetadataCountryCode() {
-	m.preferred_metadata_country_code = nil
-	m.clearedFields[item.FieldPreferredMetadataCountryCode] = struct{}{}
-}
-
-// PreferredMetadataCountryCodeCleared returns if the "preferred_metadata_country_code" field was cleared in this mutation.
-func (m *ItemMutation) PreferredMetadataCountryCodeCleared() bool {
-	_, ok := m.clearedFields[item.FieldPreferredMetadataCountryCode]
-	return ok
-}
-
-// ResetPreferredMetadataCountryCode resets all changes to the "preferred_metadata_country_code" field.
-func (m *ItemMutation) ResetPreferredMetadataCountryCode() {
-	m.preferred_metadata_country_code = nil
-	delete(m.clearedFields, item.FieldPreferredMetadataCountryCode)
 }
 
 // SetProviderIds sets the "provider_ids" field.
@@ -10706,71 +9174,6 @@ func (m *ItemMutation) ResetTaglines() {
 	delete(m.clearedFields, item.FieldTaglines)
 }
 
-// SetProductionLocations sets the "production_locations" field.
-func (m *ItemMutation) SetProductionLocations(s []string) {
-	m.production_locations = &s
-	m.appendproduction_locations = nil
-}
-
-// ProductionLocations returns the value of the "production_locations" field in the mutation.
-func (m *ItemMutation) ProductionLocations() (r []string, exists bool) {
-	v := m.production_locations
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldProductionLocations returns the old "production_locations" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldProductionLocations(ctx context.Context) (v []string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldProductionLocations is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldProductionLocations requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldProductionLocations: %w", err)
-	}
-	return oldValue.ProductionLocations, nil
-}
-
-// AppendProductionLocations adds s to the "production_locations" field.
-func (m *ItemMutation) AppendProductionLocations(s []string) {
-	m.appendproduction_locations = append(m.appendproduction_locations, s...)
-}
-
-// AppendedProductionLocations returns the list of values that were appended to the "production_locations" field in this mutation.
-func (m *ItemMutation) AppendedProductionLocations() ([]string, bool) {
-	if len(m.appendproduction_locations) == 0 {
-		return nil, false
-	}
-	return m.appendproduction_locations, true
-}
-
-// ClearProductionLocations clears the value of the "production_locations" field.
-func (m *ItemMutation) ClearProductionLocations() {
-	m.production_locations = nil
-	m.appendproduction_locations = nil
-	m.clearedFields[item.FieldProductionLocations] = struct{}{}
-}
-
-// ProductionLocationsCleared returns if the "production_locations" field was cleared in this mutation.
-func (m *ItemMutation) ProductionLocationsCleared() bool {
-	_, ok := m.clearedFields[item.FieldProductionLocations]
-	return ok
-}
-
-// ResetProductionLocations resets all changes to the "production_locations" field.
-func (m *ItemMutation) ResetProductionLocations() {
-	m.production_locations = nil
-	m.appendproduction_locations = nil
-	delete(m.clearedFields, item.FieldProductionLocations)
-}
-
 // SetLockedFields sets the "locked_fields" field.
 func (m *ItemMutation) SetLockedFields(s []string) {
 	m.locked_fields = &s
@@ -10834,71 +9237,6 @@ func (m *ItemMutation) ResetLockedFields() {
 	m.locked_fields = nil
 	m.appendlocked_fields = nil
 	delete(m.clearedFields, item.FieldLockedFields)
-}
-
-// SetExternalUrls sets the "external_urls" field.
-func (m *ItemMutation) SetExternalUrls(eu []entities.ExternalUrl) {
-	m.external_urls = &eu
-	m.appendexternal_urls = nil
-}
-
-// ExternalUrls returns the value of the "external_urls" field in the mutation.
-func (m *ItemMutation) ExternalUrls() (r []entities.ExternalUrl, exists bool) {
-	v := m.external_urls
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldExternalUrls returns the old "external_urls" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldExternalUrls(ctx context.Context) (v []entities.ExternalUrl, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldExternalUrls is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldExternalUrls requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldExternalUrls: %w", err)
-	}
-	return oldValue.ExternalUrls, nil
-}
-
-// AppendExternalUrls adds eu to the "external_urls" field.
-func (m *ItemMutation) AppendExternalUrls(eu []entities.ExternalUrl) {
-	m.appendexternal_urls = append(m.appendexternal_urls, eu...)
-}
-
-// AppendedExternalUrls returns the list of values that were appended to the "external_urls" field in this mutation.
-func (m *ItemMutation) AppendedExternalUrls() ([]entities.ExternalUrl, bool) {
-	if len(m.appendexternal_urls) == 0 {
-		return nil, false
-	}
-	return m.appendexternal_urls, true
-}
-
-// ClearExternalUrls clears the value of the "external_urls" field.
-func (m *ItemMutation) ClearExternalUrls() {
-	m.external_urls = nil
-	m.appendexternal_urls = nil
-	m.clearedFields[item.FieldExternalUrls] = struct{}{}
-}
-
-// ExternalUrlsCleared returns if the "external_urls" field was cleared in this mutation.
-func (m *ItemMutation) ExternalUrlsCleared() bool {
-	_, ok := m.clearedFields[item.FieldExternalUrls]
-	return ok
-}
-
-// ResetExternalUrls resets all changes to the "external_urls" field.
-func (m *ItemMutation) ResetExternalUrls() {
-	m.external_urls = nil
-	m.appendexternal_urls = nil
-	delete(m.clearedFields, item.FieldExternalUrls)
 }
 
 // ClearParent clears the "parent" edge to the Item entity.
@@ -11514,7 +9852,7 @@ func (m *ItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemMutation) Fields() []string {
-	fields := make([]string, 0, 58)
+	fields := make([]string, 0, 28)
 	if m.created_at != nil {
 		fields = append(fields, item.FieldCreatedAt)
 	}
@@ -11533,41 +9871,17 @@ func (m *ItemMutation) Fields() []string {
 	if m.media_type != nil {
 		fields = append(fields, item.FieldMediaType)
 	}
-	if m.location_type != nil {
-		fields = append(fields, item.FieldLocationType)
-	}
-	if m.extra_type != nil {
-		fields = append(fields, item.FieldExtraType)
-	}
-	if m.video_type != nil {
-		fields = append(fields, item.FieldVideoType)
-	}
-	if m.iso_type != nil {
-		fields = append(fields, item.FieldIsoType)
-	}
-	if m.video_3d_format != nil {
-		fields = append(fields, item.FieldVideo3dFormat)
-	}
 	if m.key != nil {
 		fields = append(fields, item.FieldKey)
 	}
 	if m.name != nil {
 		fields = append(fields, item.FieldName)
 	}
-	if m.original_title != nil {
-		fields = append(fields, item.FieldOriginalTitle)
-	}
 	if m.sort_name != nil {
 		fields = append(fields, item.FieldSortName)
 	}
-	if m.forced_sort_name != nil {
-		fields = append(fields, item.FieldForcedSortName)
-	}
 	if m.deleted_at != nil {
 		fields = append(fields, item.FieldDeletedAt)
-	}
-	if m.container != nil {
-		fields = append(fields, item.FieldContainer)
 	}
 	if m.overview != nil {
 		fields = append(fields, item.FieldOverview)
@@ -11575,20 +9889,11 @@ func (m *ItemMutation) Fields() []string {
 	if m.is_folder != nil {
 		fields = append(fields, item.FieldIsFolder)
 	}
-	if m.is_placeholder != nil {
-		fields = append(fields, item.FieldIsPlaceholder)
-	}
 	if m.lock_data != nil {
 		fields = append(fields, item.FieldLockData)
 	}
-	if m.has_lyrics != nil {
-		fields = append(fields, item.FieldHasLyrics)
-	}
 	if m.has_subtitles != nil {
 		fields = append(fields, item.FieldHasSubtitles)
-	}
-	if m.enable_media_source_display != nil {
-		fields = append(fields, item.FieldEnableMediaSourceDisplay)
 	}
 	if m.premiere_date != nil {
 		fields = append(fields, item.FieldPremiereDate)
@@ -11596,26 +9901,14 @@ func (m *ItemMutation) Fields() []string {
 	if m.end_date != nil {
 		fields = append(fields, item.FieldEndDate)
 	}
-	if m.last_media_added_at != nil {
-		fields = append(fields, item.FieldLastMediaAddedAt)
-	}
 	if m.date_modified != nil {
 		fields = append(fields, item.FieldDateModified)
-	}
-	if m.probed_at != nil {
-		fields = append(fields, item.FieldProbedAt)
 	}
 	if m.production_year != nil {
 		fields = append(fields, item.FieldProductionYear)
 	}
 	if m.official_rating != nil {
 		fields = append(fields, item.FieldOfficialRating)
-	}
-	if m.custom_rating != nil {
-		fields = append(fields, item.FieldCustomRating)
-	}
-	if m.critic_rating != nil {
-		fields = append(fields, item.FieldCriticRating)
 	}
 	if m.community_rating != nil {
 		fields = append(fields, item.FieldCommunityRating)
@@ -11626,50 +9919,11 @@ func (m *ItemMutation) Fields() []string {
 	if m.index_number != nil {
 		fields = append(fields, item.FieldIndexNumber)
 	}
-	if m.index_number_end != nil {
-		fields = append(fields, item.FieldIndexNumberEnd)
-	}
 	if m.parent_index_number != nil {
 		fields = append(fields, item.FieldParentIndexNumber)
 	}
-	if m.airs_before_season_number != nil {
-		fields = append(fields, item.FieldAirsBeforeSeasonNumber)
-	}
-	if m.airs_after_season_number != nil {
-		fields = append(fields, item.FieldAirsAfterSeasonNumber)
-	}
-	if m.airs_before_episode_number != nil {
-		fields = append(fields, item.FieldAirsBeforeEpisodeNumber)
-	}
 	if m.status != nil {
 		fields = append(fields, item.FieldStatus)
-	}
-	if m.air_time != nil {
-		fields = append(fields, item.FieldAirTime)
-	}
-	if m.display_order != nil {
-		fields = append(fields, item.FieldDisplayOrder)
-	}
-	if m.air_days != nil {
-		fields = append(fields, item.FieldAirDays)
-	}
-	if m.aspect_ratio != nil {
-		fields = append(fields, item.FieldAspectRatio)
-	}
-	if m.width != nil {
-		fields = append(fields, item.FieldWidth)
-	}
-	if m.height != nil {
-		fields = append(fields, item.FieldHeight)
-	}
-	if m.normalization_gain != nil {
-		fields = append(fields, item.FieldNormalizationGain)
-	}
-	if m.preferred_metadata_language != nil {
-		fields = append(fields, item.FieldPreferredMetadataLanguage)
-	}
-	if m.preferred_metadata_country_code != nil {
-		fields = append(fields, item.FieldPreferredMetadataCountryCode)
 	}
 	if m.provider_ids != nil {
 		fields = append(fields, item.FieldProviderIds)
@@ -11680,14 +9934,8 @@ func (m *ItemMutation) Fields() []string {
 	if m.taglines != nil {
 		fields = append(fields, item.FieldTaglines)
 	}
-	if m.production_locations != nil {
-		fields = append(fields, item.FieldProductionLocations)
-	}
 	if m.locked_fields != nil {
 		fields = append(fields, item.FieldLockedFields)
-	}
-	if m.external_urls != nil {
-		fields = append(fields, item.FieldExternalUrls)
 	}
 	return fields
 }
@@ -11709,110 +9957,50 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.Kind()
 	case item.FieldMediaType:
 		return m.MediaType()
-	case item.FieldLocationType:
-		return m.LocationType()
-	case item.FieldExtraType:
-		return m.ExtraType()
-	case item.FieldVideoType:
-		return m.VideoType()
-	case item.FieldIsoType:
-		return m.IsoType()
-	case item.FieldVideo3dFormat:
-		return m.Video3dFormat()
 	case item.FieldKey:
 		return m.Key()
 	case item.FieldName:
 		return m.Name()
-	case item.FieldOriginalTitle:
-		return m.OriginalTitle()
 	case item.FieldSortName:
 		return m.SortName()
-	case item.FieldForcedSortName:
-		return m.ForcedSortName()
 	case item.FieldDeletedAt:
 		return m.DeletedAt()
-	case item.FieldContainer:
-		return m.Container()
 	case item.FieldOverview:
 		return m.Overview()
 	case item.FieldIsFolder:
 		return m.IsFolder()
-	case item.FieldIsPlaceholder:
-		return m.IsPlaceholder()
 	case item.FieldLockData:
 		return m.LockData()
-	case item.FieldHasLyrics:
-		return m.HasLyrics()
 	case item.FieldHasSubtitles:
 		return m.HasSubtitles()
-	case item.FieldEnableMediaSourceDisplay:
-		return m.EnableMediaSourceDisplay()
 	case item.FieldPremiereDate:
 		return m.PremiereDate()
 	case item.FieldEndDate:
 		return m.EndDate()
-	case item.FieldLastMediaAddedAt:
-		return m.LastMediaAddedAt()
 	case item.FieldDateModified:
 		return m.DateModified()
-	case item.FieldProbedAt:
-		return m.ProbedAt()
 	case item.FieldProductionYear:
 		return m.ProductionYear()
 	case item.FieldOfficialRating:
 		return m.OfficialRating()
-	case item.FieldCustomRating:
-		return m.CustomRating()
-	case item.FieldCriticRating:
-		return m.CriticRating()
 	case item.FieldCommunityRating:
 		return m.CommunityRating()
 	case item.FieldRunTimeTicks:
 		return m.RunTimeTicks()
 	case item.FieldIndexNumber:
 		return m.IndexNumber()
-	case item.FieldIndexNumberEnd:
-		return m.IndexNumberEnd()
 	case item.FieldParentIndexNumber:
 		return m.ParentIndexNumber()
-	case item.FieldAirsBeforeSeasonNumber:
-		return m.AirsBeforeSeasonNumber()
-	case item.FieldAirsAfterSeasonNumber:
-		return m.AirsAfterSeasonNumber()
-	case item.FieldAirsBeforeEpisodeNumber:
-		return m.AirsBeforeEpisodeNumber()
 	case item.FieldStatus:
 		return m.Status()
-	case item.FieldAirTime:
-		return m.AirTime()
-	case item.FieldDisplayOrder:
-		return m.DisplayOrder()
-	case item.FieldAirDays:
-		return m.AirDays()
-	case item.FieldAspectRatio:
-		return m.AspectRatio()
-	case item.FieldWidth:
-		return m.Width()
-	case item.FieldHeight:
-		return m.Height()
-	case item.FieldNormalizationGain:
-		return m.NormalizationGain()
-	case item.FieldPreferredMetadataLanguage:
-		return m.PreferredMetadataLanguage()
-	case item.FieldPreferredMetadataCountryCode:
-		return m.PreferredMetadataCountryCode()
 	case item.FieldProviderIds:
 		return m.ProviderIds()
 	case item.FieldTags:
 		return m.Tags()
 	case item.FieldTaglines:
 		return m.Taglines()
-	case item.FieldProductionLocations:
-		return m.ProductionLocations()
 	case item.FieldLockedFields:
 		return m.LockedFields()
-	case item.FieldExternalUrls:
-		return m.ExternalUrls()
 	}
 	return nil, false
 }
@@ -11834,110 +10022,50 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldKind(ctx)
 	case item.FieldMediaType:
 		return m.OldMediaType(ctx)
-	case item.FieldLocationType:
-		return m.OldLocationType(ctx)
-	case item.FieldExtraType:
-		return m.OldExtraType(ctx)
-	case item.FieldVideoType:
-		return m.OldVideoType(ctx)
-	case item.FieldIsoType:
-		return m.OldIsoType(ctx)
-	case item.FieldVideo3dFormat:
-		return m.OldVideo3dFormat(ctx)
 	case item.FieldKey:
 		return m.OldKey(ctx)
 	case item.FieldName:
 		return m.OldName(ctx)
-	case item.FieldOriginalTitle:
-		return m.OldOriginalTitle(ctx)
 	case item.FieldSortName:
 		return m.OldSortName(ctx)
-	case item.FieldForcedSortName:
-		return m.OldForcedSortName(ctx)
 	case item.FieldDeletedAt:
 		return m.OldDeletedAt(ctx)
-	case item.FieldContainer:
-		return m.OldContainer(ctx)
 	case item.FieldOverview:
 		return m.OldOverview(ctx)
 	case item.FieldIsFolder:
 		return m.OldIsFolder(ctx)
-	case item.FieldIsPlaceholder:
-		return m.OldIsPlaceholder(ctx)
 	case item.FieldLockData:
 		return m.OldLockData(ctx)
-	case item.FieldHasLyrics:
-		return m.OldHasLyrics(ctx)
 	case item.FieldHasSubtitles:
 		return m.OldHasSubtitles(ctx)
-	case item.FieldEnableMediaSourceDisplay:
-		return m.OldEnableMediaSourceDisplay(ctx)
 	case item.FieldPremiereDate:
 		return m.OldPremiereDate(ctx)
 	case item.FieldEndDate:
 		return m.OldEndDate(ctx)
-	case item.FieldLastMediaAddedAt:
-		return m.OldLastMediaAddedAt(ctx)
 	case item.FieldDateModified:
 		return m.OldDateModified(ctx)
-	case item.FieldProbedAt:
-		return m.OldProbedAt(ctx)
 	case item.FieldProductionYear:
 		return m.OldProductionYear(ctx)
 	case item.FieldOfficialRating:
 		return m.OldOfficialRating(ctx)
-	case item.FieldCustomRating:
-		return m.OldCustomRating(ctx)
-	case item.FieldCriticRating:
-		return m.OldCriticRating(ctx)
 	case item.FieldCommunityRating:
 		return m.OldCommunityRating(ctx)
 	case item.FieldRunTimeTicks:
 		return m.OldRunTimeTicks(ctx)
 	case item.FieldIndexNumber:
 		return m.OldIndexNumber(ctx)
-	case item.FieldIndexNumberEnd:
-		return m.OldIndexNumberEnd(ctx)
 	case item.FieldParentIndexNumber:
 		return m.OldParentIndexNumber(ctx)
-	case item.FieldAirsBeforeSeasonNumber:
-		return m.OldAirsBeforeSeasonNumber(ctx)
-	case item.FieldAirsAfterSeasonNumber:
-		return m.OldAirsAfterSeasonNumber(ctx)
-	case item.FieldAirsBeforeEpisodeNumber:
-		return m.OldAirsBeforeEpisodeNumber(ctx)
 	case item.FieldStatus:
 		return m.OldStatus(ctx)
-	case item.FieldAirTime:
-		return m.OldAirTime(ctx)
-	case item.FieldDisplayOrder:
-		return m.OldDisplayOrder(ctx)
-	case item.FieldAirDays:
-		return m.OldAirDays(ctx)
-	case item.FieldAspectRatio:
-		return m.OldAspectRatio(ctx)
-	case item.FieldWidth:
-		return m.OldWidth(ctx)
-	case item.FieldHeight:
-		return m.OldHeight(ctx)
-	case item.FieldNormalizationGain:
-		return m.OldNormalizationGain(ctx)
-	case item.FieldPreferredMetadataLanguage:
-		return m.OldPreferredMetadataLanguage(ctx)
-	case item.FieldPreferredMetadataCountryCode:
-		return m.OldPreferredMetadataCountryCode(ctx)
 	case item.FieldProviderIds:
 		return m.OldProviderIds(ctx)
 	case item.FieldTags:
 		return m.OldTags(ctx)
 	case item.FieldTaglines:
 		return m.OldTaglines(ctx)
-	case item.FieldProductionLocations:
-		return m.OldProductionLocations(ctx)
 	case item.FieldLockedFields:
 		return m.OldLockedFields(ctx)
-	case item.FieldExternalUrls:
-		return m.OldExternalUrls(ctx)
 	}
 	return nil, fmt.Errorf("unknown Item field %s", name)
 }
@@ -11989,41 +10117,6 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetMediaType(v)
 		return nil
-	case item.FieldLocationType:
-		v, ok := value.(item.LocationType)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetLocationType(v)
-		return nil
-	case item.FieldExtraType:
-		v, ok := value.(item.ExtraType)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetExtraType(v)
-		return nil
-	case item.FieldVideoType:
-		v, ok := value.(item.VideoType)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetVideoType(v)
-		return nil
-	case item.FieldIsoType:
-		v, ok := value.(item.IsoType)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetIsoType(v)
-		return nil
-	case item.FieldVideo3dFormat:
-		v, ok := value.(item.Video3dFormat)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetVideo3dFormat(v)
-		return nil
 	case item.FieldKey:
 		v, ok := value.(string)
 		if !ok {
@@ -12038,13 +10131,6 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetName(v)
 		return nil
-	case item.FieldOriginalTitle:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetOriginalTitle(v)
-		return nil
 	case item.FieldSortName:
 		v, ok := value.(string)
 		if !ok {
@@ -12052,26 +10138,12 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSortName(v)
 		return nil
-	case item.FieldForcedSortName:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetForcedSortName(v)
-		return nil
 	case item.FieldDeletedAt:
 		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDeletedAt(v)
-		return nil
-	case item.FieldContainer:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetContainer(v)
 		return nil
 	case item.FieldOverview:
 		v, ok := value.(string)
@@ -12087,13 +10159,6 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetIsFolder(v)
 		return nil
-	case item.FieldIsPlaceholder:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetIsPlaceholder(v)
-		return nil
 	case item.FieldLockData:
 		v, ok := value.(bool)
 		if !ok {
@@ -12101,26 +10166,12 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetLockData(v)
 		return nil
-	case item.FieldHasLyrics:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetHasLyrics(v)
-		return nil
 	case item.FieldHasSubtitles:
 		v, ok := value.(bool)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetHasSubtitles(v)
-		return nil
-	case item.FieldEnableMediaSourceDisplay:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetEnableMediaSourceDisplay(v)
 		return nil
 	case item.FieldPremiereDate:
 		v, ok := value.(time.Time)
@@ -12136,26 +10187,12 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetEndDate(v)
 		return nil
-	case item.FieldLastMediaAddedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetLastMediaAddedAt(v)
-		return nil
 	case item.FieldDateModified:
 		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDateModified(v)
-		return nil
-	case item.FieldProbedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetProbedAt(v)
 		return nil
 	case item.FieldProductionYear:
 		v, ok := value.(int32)
@@ -12170,20 +10207,6 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetOfficialRating(v)
-		return nil
-	case item.FieldCustomRating:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetCustomRating(v)
-		return nil
-	case item.FieldCriticRating:
-		v, ok := value.(float64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetCriticRating(v)
 		return nil
 	case item.FieldCommunityRating:
 		v, ok := value.(float64)
@@ -12206,13 +10229,6 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetIndexNumber(v)
 		return nil
-	case item.FieldIndexNumberEnd:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetIndexNumberEnd(v)
-		return nil
 	case item.FieldParentIndexNumber:
 		v, ok := value.(int32)
 		if !ok {
@@ -12220,96 +10236,12 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetParentIndexNumber(v)
 		return nil
-	case item.FieldAirsBeforeSeasonNumber:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAirsBeforeSeasonNumber(v)
-		return nil
-	case item.FieldAirsAfterSeasonNumber:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAirsAfterSeasonNumber(v)
-		return nil
-	case item.FieldAirsBeforeEpisodeNumber:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAirsBeforeEpisodeNumber(v)
-		return nil
 	case item.FieldStatus:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetStatus(v)
-		return nil
-	case item.FieldAirTime:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAirTime(v)
-		return nil
-	case item.FieldDisplayOrder:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetDisplayOrder(v)
-		return nil
-	case item.FieldAirDays:
-		v, ok := value.([]string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAirDays(v)
-		return nil
-	case item.FieldAspectRatio:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAspectRatio(v)
-		return nil
-	case item.FieldWidth:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetWidth(v)
-		return nil
-	case item.FieldHeight:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetHeight(v)
-		return nil
-	case item.FieldNormalizationGain:
-		v, ok := value.(float64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetNormalizationGain(v)
-		return nil
-	case item.FieldPreferredMetadataLanguage:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetPreferredMetadataLanguage(v)
-		return nil
-	case item.FieldPreferredMetadataCountryCode:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetPreferredMetadataCountryCode(v)
 		return nil
 	case item.FieldProviderIds:
 		v, ok := value.(map[string]string)
@@ -12332,26 +10264,12 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetTaglines(v)
 		return nil
-	case item.FieldProductionLocations:
-		v, ok := value.([]string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetProductionLocations(v)
-		return nil
 	case item.FieldLockedFields:
 		v, ok := value.([]string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetLockedFields(v)
-		return nil
-	case item.FieldExternalUrls:
-		v, ok := value.([]entities.ExternalUrl)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetExternalUrls(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Item field %s", name)
@@ -12364,9 +10282,6 @@ func (m *ItemMutation) AddedFields() []string {
 	if m.addproduction_year != nil {
 		fields = append(fields, item.FieldProductionYear)
 	}
-	if m.addcritic_rating != nil {
-		fields = append(fields, item.FieldCriticRating)
-	}
 	if m.addcommunity_rating != nil {
 		fields = append(fields, item.FieldCommunityRating)
 	}
@@ -12376,29 +10291,8 @@ func (m *ItemMutation) AddedFields() []string {
 	if m.addindex_number != nil {
 		fields = append(fields, item.FieldIndexNumber)
 	}
-	if m.addindex_number_end != nil {
-		fields = append(fields, item.FieldIndexNumberEnd)
-	}
 	if m.addparent_index_number != nil {
 		fields = append(fields, item.FieldParentIndexNumber)
-	}
-	if m.addairs_before_season_number != nil {
-		fields = append(fields, item.FieldAirsBeforeSeasonNumber)
-	}
-	if m.addairs_after_season_number != nil {
-		fields = append(fields, item.FieldAirsAfterSeasonNumber)
-	}
-	if m.addairs_before_episode_number != nil {
-		fields = append(fields, item.FieldAirsBeforeEpisodeNumber)
-	}
-	if m.addwidth != nil {
-		fields = append(fields, item.FieldWidth)
-	}
-	if m.addheight != nil {
-		fields = append(fields, item.FieldHeight)
-	}
-	if m.addnormalization_gain != nil {
-		fields = append(fields, item.FieldNormalizationGain)
 	}
 	return fields
 }
@@ -12410,30 +10304,14 @@ func (m *ItemMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case item.FieldProductionYear:
 		return m.AddedProductionYear()
-	case item.FieldCriticRating:
-		return m.AddedCriticRating()
 	case item.FieldCommunityRating:
 		return m.AddedCommunityRating()
 	case item.FieldRunTimeTicks:
 		return m.AddedRunTimeTicks()
 	case item.FieldIndexNumber:
 		return m.AddedIndexNumber()
-	case item.FieldIndexNumberEnd:
-		return m.AddedIndexNumberEnd()
 	case item.FieldParentIndexNumber:
 		return m.AddedParentIndexNumber()
-	case item.FieldAirsBeforeSeasonNumber:
-		return m.AddedAirsBeforeSeasonNumber()
-	case item.FieldAirsAfterSeasonNumber:
-		return m.AddedAirsAfterSeasonNumber()
-	case item.FieldAirsBeforeEpisodeNumber:
-		return m.AddedAirsBeforeEpisodeNumber()
-	case item.FieldWidth:
-		return m.AddedWidth()
-	case item.FieldHeight:
-		return m.AddedHeight()
-	case item.FieldNormalizationGain:
-		return m.AddedNormalizationGain()
 	}
 	return nil, false
 }
@@ -12449,13 +10327,6 @@ func (m *ItemMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddProductionYear(v)
-		return nil
-	case item.FieldCriticRating:
-		v, ok := value.(float64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddCriticRating(v)
 		return nil
 	case item.FieldCommunityRating:
 		v, ok := value.(float64)
@@ -12478,61 +10349,12 @@ func (m *ItemMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddIndexNumber(v)
 		return nil
-	case item.FieldIndexNumberEnd:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddIndexNumberEnd(v)
-		return nil
 	case item.FieldParentIndexNumber:
 		v, ok := value.(int32)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddParentIndexNumber(v)
-		return nil
-	case item.FieldAirsBeforeSeasonNumber:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddAirsBeforeSeasonNumber(v)
-		return nil
-	case item.FieldAirsAfterSeasonNumber:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddAirsAfterSeasonNumber(v)
-		return nil
-	case item.FieldAirsBeforeEpisodeNumber:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddAirsBeforeEpisodeNumber(v)
-		return nil
-	case item.FieldWidth:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddWidth(v)
-		return nil
-	case item.FieldHeight:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddHeight(v)
-		return nil
-	case item.FieldNormalizationGain:
-		v, ok := value.(float64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddNormalizationGain(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Item numeric field %s", name)
@@ -12548,32 +10370,14 @@ func (m *ItemMutation) ClearedFields() []string {
 	if m.FieldCleared(item.FieldParentID) {
 		fields = append(fields, item.FieldParentID)
 	}
-	if m.FieldCleared(item.FieldExtraType) {
-		fields = append(fields, item.FieldExtraType)
-	}
-	if m.FieldCleared(item.FieldVideoType) {
-		fields = append(fields, item.FieldVideoType)
-	}
-	if m.FieldCleared(item.FieldIsoType) {
-		fields = append(fields, item.FieldIsoType)
-	}
-	if m.FieldCleared(item.FieldVideo3dFormat) {
-		fields = append(fields, item.FieldVideo3dFormat)
-	}
 	if m.FieldCleared(item.FieldKey) {
 		fields = append(fields, item.FieldKey)
-	}
-	if m.FieldCleared(item.FieldOriginalTitle) {
-		fields = append(fields, item.FieldOriginalTitle)
 	}
 	if m.FieldCleared(item.FieldSortName) {
 		fields = append(fields, item.FieldSortName)
 	}
 	if m.FieldCleared(item.FieldDeletedAt) {
 		fields = append(fields, item.FieldDeletedAt)
-	}
-	if m.FieldCleared(item.FieldContainer) {
-		fields = append(fields, item.FieldContainer)
 	}
 	if m.FieldCleared(item.FieldOverview) {
 		fields = append(fields, item.FieldOverview)
@@ -12584,26 +10388,14 @@ func (m *ItemMutation) ClearedFields() []string {
 	if m.FieldCleared(item.FieldEndDate) {
 		fields = append(fields, item.FieldEndDate)
 	}
-	if m.FieldCleared(item.FieldLastMediaAddedAt) {
-		fields = append(fields, item.FieldLastMediaAddedAt)
-	}
 	if m.FieldCleared(item.FieldDateModified) {
 		fields = append(fields, item.FieldDateModified)
-	}
-	if m.FieldCleared(item.FieldProbedAt) {
-		fields = append(fields, item.FieldProbedAt)
 	}
 	if m.FieldCleared(item.FieldProductionYear) {
 		fields = append(fields, item.FieldProductionYear)
 	}
 	if m.FieldCleared(item.FieldOfficialRating) {
 		fields = append(fields, item.FieldOfficialRating)
-	}
-	if m.FieldCleared(item.FieldCustomRating) {
-		fields = append(fields, item.FieldCustomRating)
-	}
-	if m.FieldCleared(item.FieldCriticRating) {
-		fields = append(fields, item.FieldCriticRating)
 	}
 	if m.FieldCleared(item.FieldCommunityRating) {
 		fields = append(fields, item.FieldCommunityRating)
@@ -12614,50 +10406,11 @@ func (m *ItemMutation) ClearedFields() []string {
 	if m.FieldCleared(item.FieldIndexNumber) {
 		fields = append(fields, item.FieldIndexNumber)
 	}
-	if m.FieldCleared(item.FieldIndexNumberEnd) {
-		fields = append(fields, item.FieldIndexNumberEnd)
-	}
 	if m.FieldCleared(item.FieldParentIndexNumber) {
 		fields = append(fields, item.FieldParentIndexNumber)
 	}
-	if m.FieldCleared(item.FieldAirsBeforeSeasonNumber) {
-		fields = append(fields, item.FieldAirsBeforeSeasonNumber)
-	}
-	if m.FieldCleared(item.FieldAirsAfterSeasonNumber) {
-		fields = append(fields, item.FieldAirsAfterSeasonNumber)
-	}
-	if m.FieldCleared(item.FieldAirsBeforeEpisodeNumber) {
-		fields = append(fields, item.FieldAirsBeforeEpisodeNumber)
-	}
 	if m.FieldCleared(item.FieldStatus) {
 		fields = append(fields, item.FieldStatus)
-	}
-	if m.FieldCleared(item.FieldAirTime) {
-		fields = append(fields, item.FieldAirTime)
-	}
-	if m.FieldCleared(item.FieldDisplayOrder) {
-		fields = append(fields, item.FieldDisplayOrder)
-	}
-	if m.FieldCleared(item.FieldAirDays) {
-		fields = append(fields, item.FieldAirDays)
-	}
-	if m.FieldCleared(item.FieldAspectRatio) {
-		fields = append(fields, item.FieldAspectRatio)
-	}
-	if m.FieldCleared(item.FieldWidth) {
-		fields = append(fields, item.FieldWidth)
-	}
-	if m.FieldCleared(item.FieldHeight) {
-		fields = append(fields, item.FieldHeight)
-	}
-	if m.FieldCleared(item.FieldNormalizationGain) {
-		fields = append(fields, item.FieldNormalizationGain)
-	}
-	if m.FieldCleared(item.FieldPreferredMetadataLanguage) {
-		fields = append(fields, item.FieldPreferredMetadataLanguage)
-	}
-	if m.FieldCleared(item.FieldPreferredMetadataCountryCode) {
-		fields = append(fields, item.FieldPreferredMetadataCountryCode)
 	}
 	if m.FieldCleared(item.FieldProviderIds) {
 		fields = append(fields, item.FieldProviderIds)
@@ -12668,14 +10421,8 @@ func (m *ItemMutation) ClearedFields() []string {
 	if m.FieldCleared(item.FieldTaglines) {
 		fields = append(fields, item.FieldTaglines)
 	}
-	if m.FieldCleared(item.FieldProductionLocations) {
-		fields = append(fields, item.FieldProductionLocations)
-	}
 	if m.FieldCleared(item.FieldLockedFields) {
 		fields = append(fields, item.FieldLockedFields)
-	}
-	if m.FieldCleared(item.FieldExternalUrls) {
-		fields = append(fields, item.FieldExternalUrls)
 	}
 	return fields
 }
@@ -12697,32 +10444,14 @@ func (m *ItemMutation) ClearField(name string) error {
 	case item.FieldParentID:
 		m.ClearParentID()
 		return nil
-	case item.FieldExtraType:
-		m.ClearExtraType()
-		return nil
-	case item.FieldVideoType:
-		m.ClearVideoType()
-		return nil
-	case item.FieldIsoType:
-		m.ClearIsoType()
-		return nil
-	case item.FieldVideo3dFormat:
-		m.ClearVideo3dFormat()
-		return nil
 	case item.FieldKey:
 		m.ClearKey()
-		return nil
-	case item.FieldOriginalTitle:
-		m.ClearOriginalTitle()
 		return nil
 	case item.FieldSortName:
 		m.ClearSortName()
 		return nil
 	case item.FieldDeletedAt:
 		m.ClearDeletedAt()
-		return nil
-	case item.FieldContainer:
-		m.ClearContainer()
 		return nil
 	case item.FieldOverview:
 		m.ClearOverview()
@@ -12733,26 +10462,14 @@ func (m *ItemMutation) ClearField(name string) error {
 	case item.FieldEndDate:
 		m.ClearEndDate()
 		return nil
-	case item.FieldLastMediaAddedAt:
-		m.ClearLastMediaAddedAt()
-		return nil
 	case item.FieldDateModified:
 		m.ClearDateModified()
-		return nil
-	case item.FieldProbedAt:
-		m.ClearProbedAt()
 		return nil
 	case item.FieldProductionYear:
 		m.ClearProductionYear()
 		return nil
 	case item.FieldOfficialRating:
 		m.ClearOfficialRating()
-		return nil
-	case item.FieldCustomRating:
-		m.ClearCustomRating()
-		return nil
-	case item.FieldCriticRating:
-		m.ClearCriticRating()
 		return nil
 	case item.FieldCommunityRating:
 		m.ClearCommunityRating()
@@ -12763,50 +10480,11 @@ func (m *ItemMutation) ClearField(name string) error {
 	case item.FieldIndexNumber:
 		m.ClearIndexNumber()
 		return nil
-	case item.FieldIndexNumberEnd:
-		m.ClearIndexNumberEnd()
-		return nil
 	case item.FieldParentIndexNumber:
 		m.ClearParentIndexNumber()
 		return nil
-	case item.FieldAirsBeforeSeasonNumber:
-		m.ClearAirsBeforeSeasonNumber()
-		return nil
-	case item.FieldAirsAfterSeasonNumber:
-		m.ClearAirsAfterSeasonNumber()
-		return nil
-	case item.FieldAirsBeforeEpisodeNumber:
-		m.ClearAirsBeforeEpisodeNumber()
-		return nil
 	case item.FieldStatus:
 		m.ClearStatus()
-		return nil
-	case item.FieldAirTime:
-		m.ClearAirTime()
-		return nil
-	case item.FieldDisplayOrder:
-		m.ClearDisplayOrder()
-		return nil
-	case item.FieldAirDays:
-		m.ClearAirDays()
-		return nil
-	case item.FieldAspectRatio:
-		m.ClearAspectRatio()
-		return nil
-	case item.FieldWidth:
-		m.ClearWidth()
-		return nil
-	case item.FieldHeight:
-		m.ClearHeight()
-		return nil
-	case item.FieldNormalizationGain:
-		m.ClearNormalizationGain()
-		return nil
-	case item.FieldPreferredMetadataLanguage:
-		m.ClearPreferredMetadataLanguage()
-		return nil
-	case item.FieldPreferredMetadataCountryCode:
-		m.ClearPreferredMetadataCountryCode()
 		return nil
 	case item.FieldProviderIds:
 		m.ClearProviderIds()
@@ -12817,14 +10495,8 @@ func (m *ItemMutation) ClearField(name string) error {
 	case item.FieldTaglines:
 		m.ClearTaglines()
 		return nil
-	case item.FieldProductionLocations:
-		m.ClearProductionLocations()
-		return nil
 	case item.FieldLockedFields:
 		m.ClearLockedFields()
-		return nil
-	case item.FieldExternalUrls:
-		m.ClearExternalUrls()
 		return nil
 	}
 	return fmt.Errorf("unknown Item nullable field %s", name)
@@ -12852,41 +10524,17 @@ func (m *ItemMutation) ResetField(name string) error {
 	case item.FieldMediaType:
 		m.ResetMediaType()
 		return nil
-	case item.FieldLocationType:
-		m.ResetLocationType()
-		return nil
-	case item.FieldExtraType:
-		m.ResetExtraType()
-		return nil
-	case item.FieldVideoType:
-		m.ResetVideoType()
-		return nil
-	case item.FieldIsoType:
-		m.ResetIsoType()
-		return nil
-	case item.FieldVideo3dFormat:
-		m.ResetVideo3dFormat()
-		return nil
 	case item.FieldKey:
 		m.ResetKey()
 		return nil
 	case item.FieldName:
 		m.ResetName()
 		return nil
-	case item.FieldOriginalTitle:
-		m.ResetOriginalTitle()
-		return nil
 	case item.FieldSortName:
 		m.ResetSortName()
 		return nil
-	case item.FieldForcedSortName:
-		m.ResetForcedSortName()
-		return nil
 	case item.FieldDeletedAt:
 		m.ResetDeletedAt()
-		return nil
-	case item.FieldContainer:
-		m.ResetContainer()
 		return nil
 	case item.FieldOverview:
 		m.ResetOverview()
@@ -12894,20 +10542,11 @@ func (m *ItemMutation) ResetField(name string) error {
 	case item.FieldIsFolder:
 		m.ResetIsFolder()
 		return nil
-	case item.FieldIsPlaceholder:
-		m.ResetIsPlaceholder()
-		return nil
 	case item.FieldLockData:
 		m.ResetLockData()
 		return nil
-	case item.FieldHasLyrics:
-		m.ResetHasLyrics()
-		return nil
 	case item.FieldHasSubtitles:
 		m.ResetHasSubtitles()
-		return nil
-	case item.FieldEnableMediaSourceDisplay:
-		m.ResetEnableMediaSourceDisplay()
 		return nil
 	case item.FieldPremiereDate:
 		m.ResetPremiereDate()
@@ -12915,26 +10554,14 @@ func (m *ItemMutation) ResetField(name string) error {
 	case item.FieldEndDate:
 		m.ResetEndDate()
 		return nil
-	case item.FieldLastMediaAddedAt:
-		m.ResetLastMediaAddedAt()
-		return nil
 	case item.FieldDateModified:
 		m.ResetDateModified()
-		return nil
-	case item.FieldProbedAt:
-		m.ResetProbedAt()
 		return nil
 	case item.FieldProductionYear:
 		m.ResetProductionYear()
 		return nil
 	case item.FieldOfficialRating:
 		m.ResetOfficialRating()
-		return nil
-	case item.FieldCustomRating:
-		m.ResetCustomRating()
-		return nil
-	case item.FieldCriticRating:
-		m.ResetCriticRating()
 		return nil
 	case item.FieldCommunityRating:
 		m.ResetCommunityRating()
@@ -12945,50 +10572,11 @@ func (m *ItemMutation) ResetField(name string) error {
 	case item.FieldIndexNumber:
 		m.ResetIndexNumber()
 		return nil
-	case item.FieldIndexNumberEnd:
-		m.ResetIndexNumberEnd()
-		return nil
 	case item.FieldParentIndexNumber:
 		m.ResetParentIndexNumber()
 		return nil
-	case item.FieldAirsBeforeSeasonNumber:
-		m.ResetAirsBeforeSeasonNumber()
-		return nil
-	case item.FieldAirsAfterSeasonNumber:
-		m.ResetAirsAfterSeasonNumber()
-		return nil
-	case item.FieldAirsBeforeEpisodeNumber:
-		m.ResetAirsBeforeEpisodeNumber()
-		return nil
 	case item.FieldStatus:
 		m.ResetStatus()
-		return nil
-	case item.FieldAirTime:
-		m.ResetAirTime()
-		return nil
-	case item.FieldDisplayOrder:
-		m.ResetDisplayOrder()
-		return nil
-	case item.FieldAirDays:
-		m.ResetAirDays()
-		return nil
-	case item.FieldAspectRatio:
-		m.ResetAspectRatio()
-		return nil
-	case item.FieldWidth:
-		m.ResetWidth()
-		return nil
-	case item.FieldHeight:
-		m.ResetHeight()
-		return nil
-	case item.FieldNormalizationGain:
-		m.ResetNormalizationGain()
-		return nil
-	case item.FieldPreferredMetadataLanguage:
-		m.ResetPreferredMetadataLanguage()
-		return nil
-	case item.FieldPreferredMetadataCountryCode:
-		m.ResetPreferredMetadataCountryCode()
 		return nil
 	case item.FieldProviderIds:
 		m.ResetProviderIds()
@@ -12999,14 +10587,8 @@ func (m *ItemMutation) ResetField(name string) error {
 	case item.FieldTaglines:
 		m.ResetTaglines()
 		return nil
-	case item.FieldProductionLocations:
-		m.ResetProductionLocations()
-		return nil
 	case item.FieldLockedFields:
 		m.ResetLockedFields()
-		return nil
-	case item.FieldExternalUrls:
-		m.ResetExternalUrls()
 		return nil
 	}
 	return fmt.Errorf("unknown Item field %s", name)
@@ -25525,10 +23107,6 @@ type PersonMutation struct {
 	created_at     *time.Time
 	updated_at     *time.Time
 	name           *string
-	overview       *string
-	birth_date     *time.Time
-	death_date     *time.Time
-	provider_ids   *map[string]string
 	clearedFields  map[string]struct{}
 	credits        map[uuid.UUID]struct{}
 	removedcredits map[uuid.UUID]struct{}
@@ -25750,202 +23328,6 @@ func (m *PersonMutation) ResetName() {
 	m.name = nil
 }
 
-// SetOverview sets the "overview" field.
-func (m *PersonMutation) SetOverview(s string) {
-	m.overview = &s
-}
-
-// Overview returns the value of the "overview" field in the mutation.
-func (m *PersonMutation) Overview() (r string, exists bool) {
-	v := m.overview
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldOverview returns the old "overview" field's value of the Person entity.
-// If the Person object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *PersonMutation) OldOverview(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldOverview is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldOverview requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldOverview: %w", err)
-	}
-	return oldValue.Overview, nil
-}
-
-// ClearOverview clears the value of the "overview" field.
-func (m *PersonMutation) ClearOverview() {
-	m.overview = nil
-	m.clearedFields[person.FieldOverview] = struct{}{}
-}
-
-// OverviewCleared returns if the "overview" field was cleared in this mutation.
-func (m *PersonMutation) OverviewCleared() bool {
-	_, ok := m.clearedFields[person.FieldOverview]
-	return ok
-}
-
-// ResetOverview resets all changes to the "overview" field.
-func (m *PersonMutation) ResetOverview() {
-	m.overview = nil
-	delete(m.clearedFields, person.FieldOverview)
-}
-
-// SetBirthDate sets the "birth_date" field.
-func (m *PersonMutation) SetBirthDate(t time.Time) {
-	m.birth_date = &t
-}
-
-// BirthDate returns the value of the "birth_date" field in the mutation.
-func (m *PersonMutation) BirthDate() (r time.Time, exists bool) {
-	v := m.birth_date
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldBirthDate returns the old "birth_date" field's value of the Person entity.
-// If the Person object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *PersonMutation) OldBirthDate(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldBirthDate is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldBirthDate requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldBirthDate: %w", err)
-	}
-	return oldValue.BirthDate, nil
-}
-
-// ClearBirthDate clears the value of the "birth_date" field.
-func (m *PersonMutation) ClearBirthDate() {
-	m.birth_date = nil
-	m.clearedFields[person.FieldBirthDate] = struct{}{}
-}
-
-// BirthDateCleared returns if the "birth_date" field was cleared in this mutation.
-func (m *PersonMutation) BirthDateCleared() bool {
-	_, ok := m.clearedFields[person.FieldBirthDate]
-	return ok
-}
-
-// ResetBirthDate resets all changes to the "birth_date" field.
-func (m *PersonMutation) ResetBirthDate() {
-	m.birth_date = nil
-	delete(m.clearedFields, person.FieldBirthDate)
-}
-
-// SetDeathDate sets the "death_date" field.
-func (m *PersonMutation) SetDeathDate(t time.Time) {
-	m.death_date = &t
-}
-
-// DeathDate returns the value of the "death_date" field in the mutation.
-func (m *PersonMutation) DeathDate() (r time.Time, exists bool) {
-	v := m.death_date
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldDeathDate returns the old "death_date" field's value of the Person entity.
-// If the Person object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *PersonMutation) OldDeathDate(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDeathDate is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDeathDate requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDeathDate: %w", err)
-	}
-	return oldValue.DeathDate, nil
-}
-
-// ClearDeathDate clears the value of the "death_date" field.
-func (m *PersonMutation) ClearDeathDate() {
-	m.death_date = nil
-	m.clearedFields[person.FieldDeathDate] = struct{}{}
-}
-
-// DeathDateCleared returns if the "death_date" field was cleared in this mutation.
-func (m *PersonMutation) DeathDateCleared() bool {
-	_, ok := m.clearedFields[person.FieldDeathDate]
-	return ok
-}
-
-// ResetDeathDate resets all changes to the "death_date" field.
-func (m *PersonMutation) ResetDeathDate() {
-	m.death_date = nil
-	delete(m.clearedFields, person.FieldDeathDate)
-}
-
-// SetProviderIds sets the "provider_ids" field.
-func (m *PersonMutation) SetProviderIds(value map[string]string) {
-	m.provider_ids = &value
-}
-
-// ProviderIds returns the value of the "provider_ids" field in the mutation.
-func (m *PersonMutation) ProviderIds() (r map[string]string, exists bool) {
-	v := m.provider_ids
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldProviderIds returns the old "provider_ids" field's value of the Person entity.
-// If the Person object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *PersonMutation) OldProviderIds(ctx context.Context) (v map[string]string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldProviderIds is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldProviderIds requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldProviderIds: %w", err)
-	}
-	return oldValue.ProviderIds, nil
-}
-
-// ClearProviderIds clears the value of the "provider_ids" field.
-func (m *PersonMutation) ClearProviderIds() {
-	m.provider_ids = nil
-	m.clearedFields[person.FieldProviderIds] = struct{}{}
-}
-
-// ProviderIdsCleared returns if the "provider_ids" field was cleared in this mutation.
-func (m *PersonMutation) ProviderIdsCleared() bool {
-	_, ok := m.clearedFields[person.FieldProviderIds]
-	return ok
-}
-
-// ResetProviderIds resets all changes to the "provider_ids" field.
-func (m *PersonMutation) ResetProviderIds() {
-	m.provider_ids = nil
-	delete(m.clearedFields, person.FieldProviderIds)
-}
-
 // AddCreditIDs adds the "credits" edge to the Credit entity by ids.
 func (m *PersonMutation) AddCreditIDs(ids ...uuid.UUID) {
 	if m.credits == nil {
@@ -26034,7 +23416,7 @@ func (m *PersonMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PersonMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 3)
 	if m.created_at != nil {
 		fields = append(fields, person.FieldCreatedAt)
 	}
@@ -26043,18 +23425,6 @@ func (m *PersonMutation) Fields() []string {
 	}
 	if m.name != nil {
 		fields = append(fields, person.FieldName)
-	}
-	if m.overview != nil {
-		fields = append(fields, person.FieldOverview)
-	}
-	if m.birth_date != nil {
-		fields = append(fields, person.FieldBirthDate)
-	}
-	if m.death_date != nil {
-		fields = append(fields, person.FieldDeathDate)
-	}
-	if m.provider_ids != nil {
-		fields = append(fields, person.FieldProviderIds)
 	}
 	return fields
 }
@@ -26070,14 +23440,6 @@ func (m *PersonMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case person.FieldName:
 		return m.Name()
-	case person.FieldOverview:
-		return m.Overview()
-	case person.FieldBirthDate:
-		return m.BirthDate()
-	case person.FieldDeathDate:
-		return m.DeathDate()
-	case person.FieldProviderIds:
-		return m.ProviderIds()
 	}
 	return nil, false
 }
@@ -26093,14 +23455,6 @@ func (m *PersonMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldUpdatedAt(ctx)
 	case person.FieldName:
 		return m.OldName(ctx)
-	case person.FieldOverview:
-		return m.OldOverview(ctx)
-	case person.FieldBirthDate:
-		return m.OldBirthDate(ctx)
-	case person.FieldDeathDate:
-		return m.OldDeathDate(ctx)
-	case person.FieldProviderIds:
-		return m.OldProviderIds(ctx)
 	}
 	return nil, fmt.Errorf("unknown Person field %s", name)
 }
@@ -26131,34 +23485,6 @@ func (m *PersonMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetName(v)
 		return nil
-	case person.FieldOverview:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetOverview(v)
-		return nil
-	case person.FieldBirthDate:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetBirthDate(v)
-		return nil
-	case person.FieldDeathDate:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetDeathDate(v)
-		return nil
-	case person.FieldProviderIds:
-		v, ok := value.(map[string]string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetProviderIds(v)
-		return nil
 	}
 	return fmt.Errorf("unknown Person field %s", name)
 }
@@ -26188,20 +23514,7 @@ func (m *PersonMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *PersonMutation) ClearedFields() []string {
-	var fields []string
-	if m.FieldCleared(person.FieldOverview) {
-		fields = append(fields, person.FieldOverview)
-	}
-	if m.FieldCleared(person.FieldBirthDate) {
-		fields = append(fields, person.FieldBirthDate)
-	}
-	if m.FieldCleared(person.FieldDeathDate) {
-		fields = append(fields, person.FieldDeathDate)
-	}
-	if m.FieldCleared(person.FieldProviderIds) {
-		fields = append(fields, person.FieldProviderIds)
-	}
-	return fields
+	return nil
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -26214,20 +23527,6 @@ func (m *PersonMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *PersonMutation) ClearField(name string) error {
-	switch name {
-	case person.FieldOverview:
-		m.ClearOverview()
-		return nil
-	case person.FieldBirthDate:
-		m.ClearBirthDate()
-		return nil
-	case person.FieldDeathDate:
-		m.ClearDeathDate()
-		return nil
-	case person.FieldProviderIds:
-		m.ClearProviderIds()
-		return nil
-	}
 	return fmt.Errorf("unknown Person nullable field %s", name)
 }
 
@@ -26243,18 +23542,6 @@ func (m *PersonMutation) ResetField(name string) error {
 		return nil
 	case person.FieldName:
 		m.ResetName()
-		return nil
-	case person.FieldOverview:
-		m.ResetOverview()
-		return nil
-	case person.FieldBirthDate:
-		m.ResetBirthDate()
-		return nil
-	case person.FieldDeathDate:
-		m.ResetDeathDate()
-		return nil
-	case person.FieldProviderIds:
-		m.ResetProviderIds()
 		return nil
 	}
 	return fmt.Errorf("unknown Person field %s", name)
@@ -29984,7 +27271,6 @@ type StudioMutation struct {
 	created_at    *time.Time
 	updated_at    *time.Time
 	name          *string
-	provider_ids  *map[string]string
 	clearedFields map[string]struct{}
 	items         map[uuid.UUID]struct{}
 	removeditems  map[uuid.UUID]struct{}
@@ -30206,55 +27492,6 @@ func (m *StudioMutation) ResetName() {
 	m.name = nil
 }
 
-// SetProviderIds sets the "provider_ids" field.
-func (m *StudioMutation) SetProviderIds(value map[string]string) {
-	m.provider_ids = &value
-}
-
-// ProviderIds returns the value of the "provider_ids" field in the mutation.
-func (m *StudioMutation) ProviderIds() (r map[string]string, exists bool) {
-	v := m.provider_ids
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldProviderIds returns the old "provider_ids" field's value of the Studio entity.
-// If the Studio object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *StudioMutation) OldProviderIds(ctx context.Context) (v map[string]string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldProviderIds is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldProviderIds requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldProviderIds: %w", err)
-	}
-	return oldValue.ProviderIds, nil
-}
-
-// ClearProviderIds clears the value of the "provider_ids" field.
-func (m *StudioMutation) ClearProviderIds() {
-	m.provider_ids = nil
-	m.clearedFields[studio.FieldProviderIds] = struct{}{}
-}
-
-// ProviderIdsCleared returns if the "provider_ids" field was cleared in this mutation.
-func (m *StudioMutation) ProviderIdsCleared() bool {
-	_, ok := m.clearedFields[studio.FieldProviderIds]
-	return ok
-}
-
-// ResetProviderIds resets all changes to the "provider_ids" field.
-func (m *StudioMutation) ResetProviderIds() {
-	m.provider_ids = nil
-	delete(m.clearedFields, studio.FieldProviderIds)
-}
-
 // AddItemIDs adds the "items" edge to the Item entity by ids.
 func (m *StudioMutation) AddItemIDs(ids ...uuid.UUID) {
 	if m.items == nil {
@@ -30343,7 +27580,7 @@ func (m *StudioMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *StudioMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 3)
 	if m.created_at != nil {
 		fields = append(fields, studio.FieldCreatedAt)
 	}
@@ -30352,9 +27589,6 @@ func (m *StudioMutation) Fields() []string {
 	}
 	if m.name != nil {
 		fields = append(fields, studio.FieldName)
-	}
-	if m.provider_ids != nil {
-		fields = append(fields, studio.FieldProviderIds)
 	}
 	return fields
 }
@@ -30370,8 +27604,6 @@ func (m *StudioMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case studio.FieldName:
 		return m.Name()
-	case studio.FieldProviderIds:
-		return m.ProviderIds()
 	}
 	return nil, false
 }
@@ -30387,8 +27619,6 @@ func (m *StudioMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldUpdatedAt(ctx)
 	case studio.FieldName:
 		return m.OldName(ctx)
-	case studio.FieldProviderIds:
-		return m.OldProviderIds(ctx)
 	}
 	return nil, fmt.Errorf("unknown Studio field %s", name)
 }
@@ -30419,13 +27649,6 @@ func (m *StudioMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetName(v)
 		return nil
-	case studio.FieldProviderIds:
-		v, ok := value.(map[string]string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetProviderIds(v)
-		return nil
 	}
 	return fmt.Errorf("unknown Studio field %s", name)
 }
@@ -30455,11 +27678,7 @@ func (m *StudioMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *StudioMutation) ClearedFields() []string {
-	var fields []string
-	if m.FieldCleared(studio.FieldProviderIds) {
-		fields = append(fields, studio.FieldProviderIds)
-	}
-	return fields
+	return nil
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -30472,11 +27691,6 @@ func (m *StudioMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *StudioMutation) ClearField(name string) error {
-	switch name {
-	case studio.FieldProviderIds:
-		m.ClearProviderIds()
-		return nil
-	}
 	return fmt.Errorf("unknown Studio nullable field %s", name)
 }
 
@@ -30492,9 +27706,6 @@ func (m *StudioMutation) ResetField(name string) error {
 		return nil
 	case studio.FieldName:
 		m.ResetName()
-		return nil
-	case studio.FieldProviderIds:
-		m.ResetProviderIds()
 		return nil
 	}
 	return fmt.Errorf("unknown Studio field %s", name)

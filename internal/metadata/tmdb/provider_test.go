@@ -109,9 +109,6 @@ func TestClient_Movie(t *testing.T) {
 		if found.Taglines == nil || (*found.Taglines)[0] != "Welcome to the Real World." {
 			t.Errorf("Taglines = %v, want the fetched one", found.Taglines)
 		}
-		if found.ProductionLocations == nil || (*found.ProductionLocations)[0] != "United States of America" {
-			t.Errorf("ProductionLocations = %v, want the fetched one", found.ProductionLocations)
-		}
 		if found.Status != nil {
 			t.Errorf("Status = %v, want none written for a movie", *found.Status)
 		}

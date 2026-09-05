@@ -59,12 +59,6 @@ func (_c *StudioCreate) SetName(v string) *StudioCreate {
 	return _c
 }
 
-// SetProviderIds sets the "provider_ids" field.
-func (_c *StudioCreate) SetProviderIds(v map[string]string) *StudioCreate {
-	_c.mutation.SetProviderIds(v)
-	return _c
-}
-
 // SetID sets the "id" field.
 func (_c *StudioCreate) SetID(v uuid.UUID) *StudioCreate {
 	_c.mutation.SetID(v)
@@ -190,10 +184,6 @@ func (_c *StudioCreate) createSpec() (*Studio, *sqlgraph.CreateSpec) {
 		_spec.SetField(studio.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
-	if value, ok := _c.mutation.ProviderIds(); ok {
-		_spec.SetField(studio.FieldProviderIds, field.TypeJSON, value)
-		_node.ProviderIds = value
-	}
 	if nodes := _c.mutation.ItemsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
@@ -298,24 +288,6 @@ func (u *StudioUpsert) UpdateName() *StudioUpsert {
 	return u
 }
 
-// SetProviderIds sets the "provider_ids" field.
-func (u *StudioUpsert) SetProviderIds(v map[string]string) *StudioUpsert {
-	u.Set(studio.FieldProviderIds, v)
-	return u
-}
-
-// UpdateProviderIds sets the "provider_ids" field to the value that was provided on create.
-func (u *StudioUpsert) UpdateProviderIds() *StudioUpsert {
-	u.SetExcluded(studio.FieldProviderIds)
-	return u
-}
-
-// ClearProviderIds clears the value of the "provider_ids" field.
-func (u *StudioUpsert) ClearProviderIds() *StudioUpsert {
-	u.SetNull(studio.FieldProviderIds)
-	return u
-}
-
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -403,27 +375,6 @@ func (u *StudioUpsertOne) SetName(v string) *StudioUpsertOne {
 func (u *StudioUpsertOne) UpdateName() *StudioUpsertOne {
 	return u.Update(func(s *StudioUpsert) {
 		s.UpdateName()
-	})
-}
-
-// SetProviderIds sets the "provider_ids" field.
-func (u *StudioUpsertOne) SetProviderIds(v map[string]string) *StudioUpsertOne {
-	return u.Update(func(s *StudioUpsert) {
-		s.SetProviderIds(v)
-	})
-}
-
-// UpdateProviderIds sets the "provider_ids" field to the value that was provided on create.
-func (u *StudioUpsertOne) UpdateProviderIds() *StudioUpsertOne {
-	return u.Update(func(s *StudioUpsert) {
-		s.UpdateProviderIds()
-	})
-}
-
-// ClearProviderIds clears the value of the "provider_ids" field.
-func (u *StudioUpsertOne) ClearProviderIds() *StudioUpsertOne {
-	return u.Update(func(s *StudioUpsert) {
-		s.ClearProviderIds()
 	})
 }
 
@@ -681,27 +632,6 @@ func (u *StudioUpsertBulk) SetName(v string) *StudioUpsertBulk {
 func (u *StudioUpsertBulk) UpdateName() *StudioUpsertBulk {
 	return u.Update(func(s *StudioUpsert) {
 		s.UpdateName()
-	})
-}
-
-// SetProviderIds sets the "provider_ids" field.
-func (u *StudioUpsertBulk) SetProviderIds(v map[string]string) *StudioUpsertBulk {
-	return u.Update(func(s *StudioUpsert) {
-		s.SetProviderIds(v)
-	})
-}
-
-// UpdateProviderIds sets the "provider_ids" field to the value that was provided on create.
-func (u *StudioUpsertBulk) UpdateProviderIds() *StudioUpsertBulk {
-	return u.Update(func(s *StudioUpsert) {
-		s.UpdateProviderIds()
-	})
-}
-
-// ClearProviderIds clears the value of the "provider_ids" field.
-func (u *StudioUpsertBulk) ClearProviderIds() *StudioUpsertBulk {
-	return u.Update(func(s *StudioUpsert) {
-		s.ClearProviderIds()
 	})
 }
 

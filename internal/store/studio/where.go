@@ -216,16 +216,6 @@ func NameContainsFold(v string) predicate.Studio {
 	return predicate.Studio(sql.FieldContainsFold(FieldName, v))
 }
 
-// ProviderIdsIsNil applies the IsNil predicate on the "provider_ids" field.
-func ProviderIdsIsNil() predicate.Studio {
-	return predicate.Studio(sql.FieldIsNull(FieldProviderIds))
-}
-
-// ProviderIdsNotNil applies the NotNil predicate on the "provider_ids" field.
-func ProviderIdsNotNil() predicate.Studio {
-	return predicate.Studio(sql.FieldNotNull(FieldProviderIds))
-}
-
 // HasItems applies the HasEdge predicate on the "items" edge.
 func HasItems() predicate.Studio {
 	return predicate.Studio(func(s *sql.Selector) {

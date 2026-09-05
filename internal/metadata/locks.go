@@ -6,7 +6,6 @@ func stripLockedFields(metadata *items.Metadata, locked []string) {
 	locks := map[string]func(){
 		"Name": func() {
 			metadata.Name = nil
-			metadata.OriginalTitle = nil
 			metadata.SortName = nil
 		},
 		"Overview": func() {
@@ -15,9 +14,6 @@ func stripLockedFields(metadata *items.Metadata, locked []string) {
 		},
 		"OfficialRating": func() {
 			metadata.OfficialRating = nil
-		},
-		"ProductionLocations": func() {
-			metadata.ProductionLocations = nil
 		},
 		"Tags": func() {
 			metadata.Tags = nil

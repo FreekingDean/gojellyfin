@@ -13,7 +13,6 @@ type Studio struct {
 func (Studio) Fields() []ent.Field {
 	return withDefaultFields(
 		field.String("name").Unique(),
-		field.JSON("provider_ids", map[string]string{}).Optional(),
 	)
 }
 

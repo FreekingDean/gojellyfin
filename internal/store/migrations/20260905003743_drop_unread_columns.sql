@@ -1,0 +1,6 @@
+-- Modify "items" table
+ALTER TABLE "items" DROP COLUMN "location_type", DROP COLUMN "extra_type", DROP COLUMN "video_type", DROP COLUMN "iso_type", DROP COLUMN "video_3d_format", DROP COLUMN "original_title", DROP COLUMN "forced_sort_name", DROP COLUMN "container", DROP COLUMN "is_placeholder", DROP COLUMN "has_lyrics", DROP COLUMN "enable_media_source_display", DROP COLUMN "last_media_added_at", DROP COLUMN "custom_rating", DROP COLUMN "critic_rating", DROP COLUMN "index_number_end", DROP COLUMN "airs_before_season_number", DROP COLUMN "airs_after_season_number", DROP COLUMN "airs_before_episode_number", DROP COLUMN "air_time", DROP COLUMN "display_order", DROP COLUMN "air_days", DROP COLUMN "aspect_ratio", DROP COLUMN "width", DROP COLUMN "height", DROP COLUMN "normalization_gain", DROP COLUMN "preferred_metadata_language", DROP COLUMN "preferred_metadata_country_code", DROP COLUMN "production_locations", DROP COLUMN "external_urls", DROP COLUMN "probed_at";
+-- Modify "persons" table
+ALTER TABLE "persons" DROP COLUMN "overview", DROP COLUMN "birth_date", DROP COLUMN "death_date", DROP COLUMN "provider_ids";
+-- Modify "studios" table
+ALTER TABLE "studios" DROP COLUMN "provider_ids";

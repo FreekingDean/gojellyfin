@@ -20,7 +20,6 @@ import (
 )
 
 var (
-	probedAt     = time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC)
 	dateModified = time.Date(2021, 2, 3, 4, 5, 6, 0, time.UTC)
 )
 
@@ -76,9 +75,7 @@ func newFixture(t *testing.T) *fixture {
 		SetName("Original Name").
 		SetSortName("original name").
 		SetKey("movie:original-name").
-		SetContainer("mkv").
 		SetRunTimeTicks(72_000_000_000).
-		SetProbedAt(probedAt).
 		SetDateModified(dateModified).
 		Save(ctx)
 	if err != nil {
@@ -226,7 +223,6 @@ func TestServer_UpdateItem(t *testing.T) {
 
 		fixture.update(t, fixture.itemID, api.BaseItemDto{
 			Name:         apiutil.Ptr("Renamed"),
-			Container:    apiutil.Ptr("mp4"),
 			RunTimeTicks: apiutil.Ptr(int64(1)),
 			Path:         apiutil.Ptr("/somewhere/else.mp4"),
 			Type:         apiutil.Ptr(api.BaseItemKindEpisode),
@@ -238,14 +234,8 @@ func TestServer_UpdateItem(t *testing.T) {
 		if record.Name != "Renamed" {
 			t.Errorf("name = %q, want %q", record.Name, "Renamed")
 		}
-		if record.Container != "mkv" {
-			t.Errorf("container = %q, want %q", record.Container, "mkv")
-		}
 		if apiutil.Deref(record.RunTimeTicks) != 72_000_000_000 {
 			t.Errorf("run time ticks = %v, want 72000000000", record.RunTimeTicks)
-		}
-		if !record.ProbedAt.Equal(probedAt) {
-			t.Errorf("probed at = %v, want %v", record.ProbedAt, probedAt)
 		}
 		if !record.DateModified.Equal(dateModified) {
 			t.Errorf("date modified = %v, want %v", record.DateModified, dateModified)

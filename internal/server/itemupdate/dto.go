@@ -10,41 +10,22 @@ import (
 
 func metadata(req *api.BaseItemDto) items.Metadata {
 	converted := items.Metadata{
-		Name:                         req.Name,
-		OriginalTitle:                req.OriginalTitle,
-		SortName:                     req.SortName,
-		Overview:                     req.Overview,
-		OfficialRating:               rating(req.OfficialRating),
-		CustomRating:                 rating(req.CustomRating),
-		CommunityRating:              score(req.CommunityRating),
-		CriticRating:                 score(req.CriticRating),
-		ProductionYear:               req.ProductionYear,
-		PremiereDate:                 req.PremiereDate,
-		EndDate:                      req.EndDate,
-		IndexNumber:                  req.IndexNumber,
-		IndexNumberEnd:               req.IndexNumberEnd,
-		ParentIndexNumber:            req.ParentIndexNumber,
-		AirsBeforeSeasonNumber:       req.AirsBeforeSeasonNumber,
-		AirsAfterSeasonNumber:        req.AirsAfterSeasonNumber,
-		AirsBeforeEpisodeNumber:      req.AirsBeforeEpisodeNumber,
-		Status:                       req.Status,
-		AirTime:                      req.AirTime,
-		DisplayOrder:                 req.DisplayOrder,
-		LockData:                     req.LockData,
-		PreferredMetadataLanguage:    req.PreferredMetadataLanguage,
-		PreferredMetadataCountryCode: req.PreferredMetadataCountryCode,
-		Tags:                         req.Tags,
-		Taglines:                     req.Taglines,
-		ProductionLocations:          req.ProductionLocations,
+		Name:              req.Name,
+		SortName:          req.SortName,
+		Overview:          req.Overview,
+		OfficialRating:    rating(req.OfficialRating),
+		CommunityRating:   score(req.CommunityRating),
+		ProductionYear:    req.ProductionYear,
+		PremiereDate:      req.PremiereDate,
+		EndDate:           req.EndDate,
+		IndexNumber:       req.IndexNumber,
+		ParentIndexNumber: req.ParentIndexNumber,
+		Status:            req.Status,
+		LockData:          req.LockData,
+		Tags:              req.Tags,
+		Taglines:          req.Taglines,
 	}
 
-	if req.AirDays != nil {
-		days := make([]string, 0, len(*req.AirDays))
-		for _, day := range *req.AirDays {
-			days = append(days, string(day))
-		}
-		converted.AirDays = &days
-	}
 	if req.LockedFields != nil {
 		fields := make([]string, 0, len(*req.LockedFields))
 		for _, field := range *req.LockedFields {

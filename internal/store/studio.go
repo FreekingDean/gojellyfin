@@ -3,7 +3,6 @@
 package store
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -25,8 +24,6 @@ type Studio struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
-	// ProviderIds holds the value of the "provider_ids" field.
-	ProviderIds map[string]string `json:"provider_ids,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the StudioQuery when eager-loading is set.
 	Edges        StudioEdges `json:"edges"`
@@ -56,8 +53,6 @@ func (*Studio) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case studio.FieldProviderIds:
-			values[i] = new([]byte)
 		case studio.FieldName:
 			values[i] = new(sql.NullString)
 		case studio.FieldCreatedAt, studio.FieldUpdatedAt:
@@ -102,14 +97,6 @@ func (_m *Studio) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				_m.Name = value.String
-			}
-		case studio.FieldProviderIds:
-			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field provider_ids", values[i])
-			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &_m.ProviderIds); err != nil {
-					return fmt.Errorf("unmarshal field provider_ids: %w", err)
-				}
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -160,9 +147,6 @@ func (_m *Studio) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)
-	builder.WriteString(", ")
-	builder.WriteString("provider_ids=")
-	builder.WriteString(fmt.Sprintf("%v", _m.ProviderIds))
 	builder.WriteByte(')')
 	return builder.String()
 }

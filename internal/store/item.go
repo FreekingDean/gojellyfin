@@ -10,7 +10,6 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
@@ -34,110 +33,50 @@ type Item struct {
 	Kind item.Kind `json:"kind,omitempty"`
 	// MediaType holds the value of the "media_type" field.
 	MediaType item.MediaType `json:"media_type,omitempty"`
-	// LocationType holds the value of the "location_type" field.
-	LocationType item.LocationType `json:"location_type,omitempty"`
-	// ExtraType holds the value of the "extra_type" field.
-	ExtraType item.ExtraType `json:"extra_type,omitempty"`
-	// VideoType holds the value of the "video_type" field.
-	VideoType item.VideoType `json:"video_type,omitempty"`
-	// IsoType holds the value of the "iso_type" field.
-	IsoType item.IsoType `json:"iso_type,omitempty"`
-	// Video3dFormat holds the value of the "video_3d_format" field.
-	Video3dFormat item.Video3dFormat `json:"video_3d_format,omitempty"`
 	// Key holds the value of the "key" field.
 	Key string `json:"key,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
-	// OriginalTitle holds the value of the "original_title" field.
-	OriginalTitle string `json:"original_title,omitempty"`
 	// SortName holds the value of the "sort_name" field.
 	SortName string `json:"sort_name,omitempty"`
-	// ForcedSortName holds the value of the "forced_sort_name" field.
-	ForcedSortName bool `json:"forced_sort_name,omitempty"`
 	// DeletedAt holds the value of the "deleted_at" field.
 	DeletedAt *time.Time `json:"deleted_at,omitempty"`
-	// Container holds the value of the "container" field.
-	Container string `json:"container,omitempty"`
 	// Overview holds the value of the "overview" field.
 	Overview string `json:"overview,omitempty"`
 	// IsFolder holds the value of the "is_folder" field.
 	IsFolder bool `json:"is_folder,omitempty"`
-	// IsPlaceholder holds the value of the "is_placeholder" field.
-	IsPlaceholder bool `json:"is_placeholder,omitempty"`
 	// LockData holds the value of the "lock_data" field.
 	LockData bool `json:"lock_data,omitempty"`
-	// HasLyrics holds the value of the "has_lyrics" field.
-	HasLyrics bool `json:"has_lyrics,omitempty"`
 	// HasSubtitles holds the value of the "has_subtitles" field.
 	HasSubtitles bool `json:"has_subtitles,omitempty"`
-	// EnableMediaSourceDisplay holds the value of the "enable_media_source_display" field.
-	EnableMediaSourceDisplay bool `json:"enable_media_source_display,omitempty"`
 	// PremiereDate holds the value of the "premiere_date" field.
 	PremiereDate *time.Time `json:"premiere_date,omitempty"`
 	// EndDate holds the value of the "end_date" field.
 	EndDate *time.Time `json:"end_date,omitempty"`
-	// LastMediaAddedAt holds the value of the "last_media_added_at" field.
-	LastMediaAddedAt *time.Time `json:"last_media_added_at,omitempty"`
 	// DateModified holds the value of the "date_modified" field.
 	DateModified time.Time `json:"date_modified,omitempty"`
-	// ProbedAt holds the value of the "probed_at" field.
-	ProbedAt time.Time `json:"probed_at,omitempty"`
 	// ProductionYear holds the value of the "production_year" field.
 	ProductionYear *int32 `json:"production_year,omitempty"`
 	// OfficialRating holds the value of the "official_rating" field.
 	OfficialRating string `json:"official_rating,omitempty"`
-	// CustomRating holds the value of the "custom_rating" field.
-	CustomRating string `json:"custom_rating,omitempty"`
-	// CriticRating holds the value of the "critic_rating" field.
-	CriticRating *float64 `json:"critic_rating,omitempty"`
 	// CommunityRating holds the value of the "community_rating" field.
 	CommunityRating *float64 `json:"community_rating,omitempty"`
 	// RunTimeTicks holds the value of the "run_time_ticks" field.
 	RunTimeTicks *int64 `json:"run_time_ticks,omitempty"`
 	// IndexNumber holds the value of the "index_number" field.
 	IndexNumber *int32 `json:"index_number,omitempty"`
-	// IndexNumberEnd holds the value of the "index_number_end" field.
-	IndexNumberEnd *int32 `json:"index_number_end,omitempty"`
 	// ParentIndexNumber holds the value of the "parent_index_number" field.
 	ParentIndexNumber *int32 `json:"parent_index_number,omitempty"`
-	// AirsBeforeSeasonNumber holds the value of the "airs_before_season_number" field.
-	AirsBeforeSeasonNumber *int32 `json:"airs_before_season_number,omitempty"`
-	// AirsAfterSeasonNumber holds the value of the "airs_after_season_number" field.
-	AirsAfterSeasonNumber *int32 `json:"airs_after_season_number,omitempty"`
-	// AirsBeforeEpisodeNumber holds the value of the "airs_before_episode_number" field.
-	AirsBeforeEpisodeNumber *int32 `json:"airs_before_episode_number,omitempty"`
 	// Status holds the value of the "status" field.
 	Status string `json:"status,omitempty"`
-	// AirTime holds the value of the "air_time" field.
-	AirTime string `json:"air_time,omitempty"`
-	// DisplayOrder holds the value of the "display_order" field.
-	DisplayOrder string `json:"display_order,omitempty"`
-	// AirDays holds the value of the "air_days" field.
-	AirDays []string `json:"air_days,omitempty"`
-	// AspectRatio holds the value of the "aspect_ratio" field.
-	AspectRatio string `json:"aspect_ratio,omitempty"`
-	// Width holds the value of the "width" field.
-	Width *int32 `json:"width,omitempty"`
-	// Height holds the value of the "height" field.
-	Height *int32 `json:"height,omitempty"`
-	// NormalizationGain holds the value of the "normalization_gain" field.
-	NormalizationGain float64 `json:"normalization_gain,omitempty"`
-	// PreferredMetadataLanguage holds the value of the "preferred_metadata_language" field.
-	PreferredMetadataLanguage string `json:"preferred_metadata_language,omitempty"`
-	// PreferredMetadataCountryCode holds the value of the "preferred_metadata_country_code" field.
-	PreferredMetadataCountryCode string `json:"preferred_metadata_country_code,omitempty"`
 	// ProviderIds holds the value of the "provider_ids" field.
 	ProviderIds map[string]string `json:"provider_ids,omitempty"`
 	// Tags holds the value of the "tags" field.
 	Tags []string `json:"tags,omitempty"`
 	// Taglines holds the value of the "taglines" field.
 	Taglines []string `json:"taglines,omitempty"`
-	// ProductionLocations holds the value of the "production_locations" field.
-	ProductionLocations []string `json:"production_locations,omitempty"`
 	// LockedFields holds the value of the "locked_fields" field.
 	LockedFields []string `json:"locked_fields,omitempty"`
-	// ExternalUrls holds the value of the "external_urls" field.
-	ExternalUrls []entities.ExternalUrl `json:"external_urls,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ItemQuery when eager-loading is set.
 	Edges        ItemEdges `json:"edges"`
@@ -296,17 +235,17 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case item.FieldParentID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case item.FieldAirDays, item.FieldProviderIds, item.FieldTags, item.FieldTaglines, item.FieldProductionLocations, item.FieldLockedFields, item.FieldExternalUrls:
+		case item.FieldProviderIds, item.FieldTags, item.FieldTaglines, item.FieldLockedFields:
 			values[i] = new([]byte)
-		case item.FieldForcedSortName, item.FieldIsFolder, item.FieldIsPlaceholder, item.FieldLockData, item.FieldHasLyrics, item.FieldHasSubtitles, item.FieldEnableMediaSourceDisplay:
+		case item.FieldIsFolder, item.FieldLockData, item.FieldHasSubtitles:
 			values[i] = new(sql.NullBool)
-		case item.FieldCriticRating, item.FieldCommunityRating, item.FieldNormalizationGain:
+		case item.FieldCommunityRating:
 			values[i] = new(sql.NullFloat64)
-		case item.FieldProductionYear, item.FieldRunTimeTicks, item.FieldIndexNumber, item.FieldIndexNumberEnd, item.FieldParentIndexNumber, item.FieldAirsBeforeSeasonNumber, item.FieldAirsAfterSeasonNumber, item.FieldAirsBeforeEpisodeNumber, item.FieldWidth, item.FieldHeight:
+		case item.FieldProductionYear, item.FieldRunTimeTicks, item.FieldIndexNumber, item.FieldParentIndexNumber:
 			values[i] = new(sql.NullInt64)
-		case item.FieldKind, item.FieldMediaType, item.FieldLocationType, item.FieldExtraType, item.FieldVideoType, item.FieldIsoType, item.FieldVideo3dFormat, item.FieldKey, item.FieldName, item.FieldOriginalTitle, item.FieldSortName, item.FieldContainer, item.FieldOverview, item.FieldOfficialRating, item.FieldCustomRating, item.FieldStatus, item.FieldAirTime, item.FieldDisplayOrder, item.FieldAspectRatio, item.FieldPreferredMetadataLanguage, item.FieldPreferredMetadataCountryCode:
+		case item.FieldKind, item.FieldMediaType, item.FieldKey, item.FieldName, item.FieldSortName, item.FieldOverview, item.FieldOfficialRating, item.FieldStatus:
 			values[i] = new(sql.NullString)
-		case item.FieldCreatedAt, item.FieldUpdatedAt, item.FieldDeletedAt, item.FieldPremiereDate, item.FieldEndDate, item.FieldLastMediaAddedAt, item.FieldDateModified, item.FieldProbedAt:
+		case item.FieldCreatedAt, item.FieldUpdatedAt, item.FieldDeletedAt, item.FieldPremiereDate, item.FieldEndDate, item.FieldDateModified:
 			values[i] = new(sql.NullTime)
 		case item.FieldID, item.FieldLibraryID:
 			values[i] = new(uuid.UUID)
@@ -368,36 +307,6 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.MediaType = item.MediaType(value.String)
 			}
-		case item.FieldLocationType:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field location_type", values[i])
-			} else if value.Valid {
-				_m.LocationType = item.LocationType(value.String)
-			}
-		case item.FieldExtraType:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field extra_type", values[i])
-			} else if value.Valid {
-				_m.ExtraType = item.ExtraType(value.String)
-			}
-		case item.FieldVideoType:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field video_type", values[i])
-			} else if value.Valid {
-				_m.VideoType = item.VideoType(value.String)
-			}
-		case item.FieldIsoType:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field iso_type", values[i])
-			} else if value.Valid {
-				_m.IsoType = item.IsoType(value.String)
-			}
-		case item.FieldVideo3dFormat:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field video_3d_format", values[i])
-			} else if value.Valid {
-				_m.Video3dFormat = item.Video3dFormat(value.String)
-			}
 		case item.FieldKey:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field key", values[i])
@@ -410,23 +319,11 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Name = value.String
 			}
-		case item.FieldOriginalTitle:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field original_title", values[i])
-			} else if value.Valid {
-				_m.OriginalTitle = value.String
-			}
 		case item.FieldSortName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field sort_name", values[i])
 			} else if value.Valid {
 				_m.SortName = value.String
-			}
-		case item.FieldForcedSortName:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field forced_sort_name", values[i])
-			} else if value.Valid {
-				_m.ForcedSortName = value.Bool
 			}
 		case item.FieldDeletedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -434,12 +331,6 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.DeletedAt = new(time.Time)
 				*_m.DeletedAt = value.Time
-			}
-		case item.FieldContainer:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field container", values[i])
-			} else if value.Valid {
-				_m.Container = value.String
 			}
 		case item.FieldOverview:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -453,35 +344,17 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.IsFolder = value.Bool
 			}
-		case item.FieldIsPlaceholder:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field is_placeholder", values[i])
-			} else if value.Valid {
-				_m.IsPlaceholder = value.Bool
-			}
 		case item.FieldLockData:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field lock_data", values[i])
 			} else if value.Valid {
 				_m.LockData = value.Bool
 			}
-		case item.FieldHasLyrics:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field has_lyrics", values[i])
-			} else if value.Valid {
-				_m.HasLyrics = value.Bool
-			}
 		case item.FieldHasSubtitles:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field has_subtitles", values[i])
 			} else if value.Valid {
 				_m.HasSubtitles = value.Bool
-			}
-		case item.FieldEnableMediaSourceDisplay:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field enable_media_source_display", values[i])
-			} else if value.Valid {
-				_m.EnableMediaSourceDisplay = value.Bool
 			}
 		case item.FieldPremiereDate:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -497,24 +370,11 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 				_m.EndDate = new(time.Time)
 				*_m.EndDate = value.Time
 			}
-		case item.FieldLastMediaAddedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field last_media_added_at", values[i])
-			} else if value.Valid {
-				_m.LastMediaAddedAt = new(time.Time)
-				*_m.LastMediaAddedAt = value.Time
-			}
 		case item.FieldDateModified:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field date_modified", values[i])
 			} else if value.Valid {
 				_m.DateModified = value.Time
-			}
-		case item.FieldProbedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field probed_at", values[i])
-			} else if value.Valid {
-				_m.ProbedAt = value.Time
 			}
 		case item.FieldProductionYear:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -528,19 +388,6 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field official_rating", values[i])
 			} else if value.Valid {
 				_m.OfficialRating = value.String
-			}
-		case item.FieldCustomRating:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field custom_rating", values[i])
-			} else if value.Valid {
-				_m.CustomRating = value.String
-			}
-		case item.FieldCriticRating:
-			if value, ok := values[i].(*sql.NullFloat64); !ok {
-				return fmt.Errorf("unexpected type %T for field critic_rating", values[i])
-			} else if value.Valid {
-				_m.CriticRating = new(float64)
-				*_m.CriticRating = value.Float64
 			}
 		case item.FieldCommunityRating:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
@@ -563,13 +410,6 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 				_m.IndexNumber = new(int32)
 				*_m.IndexNumber = int32(value.Int64)
 			}
-		case item.FieldIndexNumberEnd:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field index_number_end", values[i])
-			} else if value.Valid {
-				_m.IndexNumberEnd = new(int32)
-				*_m.IndexNumberEnd = int32(value.Int64)
-			}
 		case item.FieldParentIndexNumber:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field parent_index_number", values[i])
@@ -577,90 +417,11 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 				_m.ParentIndexNumber = new(int32)
 				*_m.ParentIndexNumber = int32(value.Int64)
 			}
-		case item.FieldAirsBeforeSeasonNumber:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field airs_before_season_number", values[i])
-			} else if value.Valid {
-				_m.AirsBeforeSeasonNumber = new(int32)
-				*_m.AirsBeforeSeasonNumber = int32(value.Int64)
-			}
-		case item.FieldAirsAfterSeasonNumber:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field airs_after_season_number", values[i])
-			} else if value.Valid {
-				_m.AirsAfterSeasonNumber = new(int32)
-				*_m.AirsAfterSeasonNumber = int32(value.Int64)
-			}
-		case item.FieldAirsBeforeEpisodeNumber:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field airs_before_episode_number", values[i])
-			} else if value.Valid {
-				_m.AirsBeforeEpisodeNumber = new(int32)
-				*_m.AirsBeforeEpisodeNumber = int32(value.Int64)
-			}
 		case item.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
 			} else if value.Valid {
 				_m.Status = value.String
-			}
-		case item.FieldAirTime:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field air_time", values[i])
-			} else if value.Valid {
-				_m.AirTime = value.String
-			}
-		case item.FieldDisplayOrder:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field display_order", values[i])
-			} else if value.Valid {
-				_m.DisplayOrder = value.String
-			}
-		case item.FieldAirDays:
-			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field air_days", values[i])
-			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &_m.AirDays); err != nil {
-					return fmt.Errorf("unmarshal field air_days: %w", err)
-				}
-			}
-		case item.FieldAspectRatio:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field aspect_ratio", values[i])
-			} else if value.Valid {
-				_m.AspectRatio = value.String
-			}
-		case item.FieldWidth:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field width", values[i])
-			} else if value.Valid {
-				_m.Width = new(int32)
-				*_m.Width = int32(value.Int64)
-			}
-		case item.FieldHeight:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field height", values[i])
-			} else if value.Valid {
-				_m.Height = new(int32)
-				*_m.Height = int32(value.Int64)
-			}
-		case item.FieldNormalizationGain:
-			if value, ok := values[i].(*sql.NullFloat64); !ok {
-				return fmt.Errorf("unexpected type %T for field normalization_gain", values[i])
-			} else if value.Valid {
-				_m.NormalizationGain = value.Float64
-			}
-		case item.FieldPreferredMetadataLanguage:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field preferred_metadata_language", values[i])
-			} else if value.Valid {
-				_m.PreferredMetadataLanguage = value.String
-			}
-		case item.FieldPreferredMetadataCountryCode:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field preferred_metadata_country_code", values[i])
-			} else if value.Valid {
-				_m.PreferredMetadataCountryCode = value.String
 			}
 		case item.FieldProviderIds:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -686,28 +447,12 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field taglines: %w", err)
 				}
 			}
-		case item.FieldProductionLocations:
-			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field production_locations", values[i])
-			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &_m.ProductionLocations); err != nil {
-					return fmt.Errorf("unmarshal field production_locations: %w", err)
-				}
-			}
 		case item.FieldLockedFields:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field locked_fields", values[i])
 			} else if value != nil && len(*value) > 0 {
 				if err := json.Unmarshal(*value, &_m.LockedFields); err != nil {
 					return fmt.Errorf("unmarshal field locked_fields: %w", err)
-				}
-			}
-		case item.FieldExternalUrls:
-			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field external_urls", values[i])
-			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &_m.ExternalUrls); err != nil {
-					return fmt.Errorf("unmarshal field external_urls: %w", err)
 				}
 			}
 		default:
@@ -826,43 +571,19 @@ func (_m *Item) String() string {
 	builder.WriteString("media_type=")
 	builder.WriteString(fmt.Sprintf("%v", _m.MediaType))
 	builder.WriteString(", ")
-	builder.WriteString("location_type=")
-	builder.WriteString(fmt.Sprintf("%v", _m.LocationType))
-	builder.WriteString(", ")
-	builder.WriteString("extra_type=")
-	builder.WriteString(fmt.Sprintf("%v", _m.ExtraType))
-	builder.WriteString(", ")
-	builder.WriteString("video_type=")
-	builder.WriteString(fmt.Sprintf("%v", _m.VideoType))
-	builder.WriteString(", ")
-	builder.WriteString("iso_type=")
-	builder.WriteString(fmt.Sprintf("%v", _m.IsoType))
-	builder.WriteString(", ")
-	builder.WriteString("video_3d_format=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Video3dFormat))
-	builder.WriteString(", ")
 	builder.WriteString("key=")
 	builder.WriteString(_m.Key)
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)
 	builder.WriteString(", ")
-	builder.WriteString("original_title=")
-	builder.WriteString(_m.OriginalTitle)
-	builder.WriteString(", ")
 	builder.WriteString("sort_name=")
 	builder.WriteString(_m.SortName)
-	builder.WriteString(", ")
-	builder.WriteString("forced_sort_name=")
-	builder.WriteString(fmt.Sprintf("%v", _m.ForcedSortName))
 	builder.WriteString(", ")
 	if v := _m.DeletedAt; v != nil {
 		builder.WriteString("deleted_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
-	builder.WriteString(", ")
-	builder.WriteString("container=")
-	builder.WriteString(_m.Container)
 	builder.WriteString(", ")
 	builder.WriteString("overview=")
 	builder.WriteString(_m.Overview)
@@ -870,20 +591,11 @@ func (_m *Item) String() string {
 	builder.WriteString("is_folder=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsFolder))
 	builder.WriteString(", ")
-	builder.WriteString("is_placeholder=")
-	builder.WriteString(fmt.Sprintf("%v", _m.IsPlaceholder))
-	builder.WriteString(", ")
 	builder.WriteString("lock_data=")
 	builder.WriteString(fmt.Sprintf("%v", _m.LockData))
 	builder.WriteString(", ")
-	builder.WriteString("has_lyrics=")
-	builder.WriteString(fmt.Sprintf("%v", _m.HasLyrics))
-	builder.WriteString(", ")
 	builder.WriteString("has_subtitles=")
 	builder.WriteString(fmt.Sprintf("%v", _m.HasSubtitles))
-	builder.WriteString(", ")
-	builder.WriteString("enable_media_source_display=")
-	builder.WriteString(fmt.Sprintf("%v", _m.EnableMediaSourceDisplay))
 	builder.WriteString(", ")
 	if v := _m.PremiereDate; v != nil {
 		builder.WriteString("premiere_date=")
@@ -895,16 +607,8 @@ func (_m *Item) String() string {
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")
-	if v := _m.LastMediaAddedAt; v != nil {
-		builder.WriteString("last_media_added_at=")
-		builder.WriteString(v.Format(time.ANSIC))
-	}
-	builder.WriteString(", ")
 	builder.WriteString("date_modified=")
 	builder.WriteString(_m.DateModified.Format(time.ANSIC))
-	builder.WriteString(", ")
-	builder.WriteString("probed_at=")
-	builder.WriteString(_m.ProbedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	if v := _m.ProductionYear; v != nil {
 		builder.WriteString("production_year=")
@@ -913,14 +617,6 @@ func (_m *Item) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("official_rating=")
 	builder.WriteString(_m.OfficialRating)
-	builder.WriteString(", ")
-	builder.WriteString("custom_rating=")
-	builder.WriteString(_m.CustomRating)
-	builder.WriteString(", ")
-	if v := _m.CriticRating; v != nil {
-		builder.WriteString("critic_rating=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
 	builder.WriteString(", ")
 	if v := _m.CommunityRating; v != nil {
 		builder.WriteString("community_rating=")
@@ -937,64 +633,13 @@ func (_m *Item) String() string {
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
-	if v := _m.IndexNumberEnd; v != nil {
-		builder.WriteString("index_number_end=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
-	builder.WriteString(", ")
 	if v := _m.ParentIndexNumber; v != nil {
 		builder.WriteString("parent_index_number=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
-	if v := _m.AirsBeforeSeasonNumber; v != nil {
-		builder.WriteString("airs_before_season_number=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
-	builder.WriteString(", ")
-	if v := _m.AirsAfterSeasonNumber; v != nil {
-		builder.WriteString("airs_after_season_number=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
-	builder.WriteString(", ")
-	if v := _m.AirsBeforeEpisodeNumber; v != nil {
-		builder.WriteString("airs_before_episode_number=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
-	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(_m.Status)
-	builder.WriteString(", ")
-	builder.WriteString("air_time=")
-	builder.WriteString(_m.AirTime)
-	builder.WriteString(", ")
-	builder.WriteString("display_order=")
-	builder.WriteString(_m.DisplayOrder)
-	builder.WriteString(", ")
-	builder.WriteString("air_days=")
-	builder.WriteString(fmt.Sprintf("%v", _m.AirDays))
-	builder.WriteString(", ")
-	builder.WriteString("aspect_ratio=")
-	builder.WriteString(_m.AspectRatio)
-	builder.WriteString(", ")
-	if v := _m.Width; v != nil {
-		builder.WriteString("width=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
-	builder.WriteString(", ")
-	if v := _m.Height; v != nil {
-		builder.WriteString("height=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
-	builder.WriteString(", ")
-	builder.WriteString("normalization_gain=")
-	builder.WriteString(fmt.Sprintf("%v", _m.NormalizationGain))
-	builder.WriteString(", ")
-	builder.WriteString("preferred_metadata_language=")
-	builder.WriteString(_m.PreferredMetadataLanguage)
-	builder.WriteString(", ")
-	builder.WriteString("preferred_metadata_country_code=")
-	builder.WriteString(_m.PreferredMetadataCountryCode)
 	builder.WriteString(", ")
 	builder.WriteString("provider_ids=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ProviderIds))
@@ -1005,14 +650,8 @@ func (_m *Item) String() string {
 	builder.WriteString("taglines=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Taglines))
 	builder.WriteString(", ")
-	builder.WriteString("production_locations=")
-	builder.WriteString(fmt.Sprintf("%v", _m.ProductionLocations))
-	builder.WriteString(", ")
 	builder.WriteString("locked_fields=")
 	builder.WriteString(fmt.Sprintf("%v", _m.LockedFields))
-	builder.WriteString(", ")
-	builder.WriteString("external_urls=")
-	builder.WriteString(fmt.Sprintf("%v", _m.ExternalUrls))
 	builder.WriteByte(')')
 	return builder.String()
 }
