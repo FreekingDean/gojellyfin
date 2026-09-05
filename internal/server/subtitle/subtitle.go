@@ -15,6 +15,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 )
 
 var contentTypes = map[string]string{
@@ -26,12 +27,13 @@ var contentTypes = map[string]string{
 }
 
 type Server struct {
+	policies   dto.Access
 	items      *items.Service
 	filesystem *filesystem.Service
 }
 
-func New(items *items.Service, filesystem *filesystem.Service) *Server {
-	return &Server{items: items, filesystem: filesystem}
+func New(items *items.Service, filesystem *filesystem.Service, policies dto.Access) *Server {
+	return &Server{items: items, filesystem: filesystem, policies: policies}
 }
 
 func (s *Server) GetSubtitle(ctx context.Context, request api.GetSubtitleRequestObject) (api.GetSubtitleResponseObject, error) {
@@ -118,7 +120,12 @@ func (s *Server) GetSubtitlePlaylist(ctx context.Context, request api.GetSubtitl
 		return nil, err
 	}
 
-	item, err := s.items.ItemByID(ctx, request.ItemId)
+	viewer, err := dto.ViewerFor(ctx, s.policies)
+	if err != nil {
+		return nil, err
+	}
+
+	item, err := s.items.ItemByID(ctx, viewer, request.ItemId)
 	if err != nil {
 		return nil, err
 	}

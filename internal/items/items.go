@@ -99,11 +99,11 @@ func (s *Service) SaveScanned(ctx context.Context, scanned Scanned) (*Item, erro
 		return nil, fmt.Errorf("failed to save scanned item: %w", err)
 	}
 
-	return s.ItemByID(ctx, id)
+	return s.ItemByID(ctx, Everyone, id)
 }
 
-func (s *Service) ItemByID(ctx context.Context, id uuid.UUID) (*Item, error) {
-	item, err := s.query().Where(itemmodal.ID(id)).Only(ctx)
+func (s *Service) ItemByID(ctx context.Context, viewer Viewer, id uuid.UUID) (*Item, error) {
+	item, err := s.query(viewer).Where(itemmodal.ID(id)).Only(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query item: %w", err)
 	}
@@ -111,13 +111,13 @@ func (s *Service) ItemByID(ctx context.Context, id uuid.UUID) (*Item, error) {
 	return item, nil
 }
 
-func (s *Service) ItemsByIDs(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID]*Item, error) {
+func (s *Service) ItemsByIDs(ctx context.Context, viewer Viewer, ids []uuid.UUID) (map[uuid.UUID]*Item, error) {
 	found := make(map[uuid.UUID]*Item, len(ids))
 	if len(ids) == 0 {
 		return found, nil
 	}
 
-	records, err := s.query().Where(itemmodal.IDIn(ids...)).All(ctx)
+	records, err := s.query(viewer).Where(itemmodal.IDIn(ids...)).All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query items by id: %w", err)
 	}
@@ -165,7 +165,7 @@ func (s *Service) Ancestors(ctx context.Context, id uuid.UUID) (*Ancestry, error
 	ancestry := &Ancestry{Parents: []*Item{}, LibraryIDs: parsed(libraries)}
 	seen := map[uuid.UUID]bool{item.ID: true}
 	for item.ParentID != nil && !seen[*item.ParentID] {
-		parent, err := s.ItemByID(ctx, *item.ParentID)
+		parent, err := s.ItemByID(ctx, Everyone, *item.ParentID)
 		if err != nil {
 			return nil, err
 		}
@@ -178,7 +178,7 @@ func (s *Service) Ancestors(ctx context.Context, id uuid.UUID) (*Ancestry, error
 }
 
 func (s *Service) ItemsNeedingMetadata(ctx context.Context, kinds []Kind, force bool, scope uuid.UUID) ([]uuid.UUID, error) {
-	query := s.query().Where(itemmodal.KindIn(kinds...), itemmodal.LockData(false))
+	query := s.query(Everyone).Where(itemmodal.KindIn(kinds...), itemmodal.LockData(false))
 	if !force {
 		query = query.Where(itemmodal.ProviderIdsIsNil())
 	}
@@ -211,6 +211,8 @@ func (s *Service) ItemsNeedingMetadata(ctx context.Context, kinds []Kind, force 
 }
 
 type ItemQuery struct {
+	Viewer Viewer
+
 	LibraryID  *uuid.UUID
 	ParentID   *uuid.UUID
 	TopLevel   bool
@@ -235,7 +237,7 @@ var sortFields = map[string]string{
 }
 
 func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int, error) {
-	items := s.query()
+	items := s.query(query.Viewer)
 
 	if query.LibraryID != nil {
 		items = items.Where(inLibrary(*query.LibraryID))
@@ -308,7 +310,7 @@ func (s *Service) CountChildren(ctx context.Context, parentIDs []uuid.UUID) (map
 		ParentID uuid.UUID `json:"parent_id"`
 		Count    int       `json:"count"`
 	}
-	err := s.query().
+	err := s.query(Everyone).
 		Where(itemmodal.ParentIDIn(parentIDs...)).
 		GroupBy(itemmodal.FieldParentID).
 		Aggregate(store.Count()).
@@ -324,12 +326,34 @@ func (s *Service) CountChildren(ctx context.Context, parentIDs []uuid.UUID) (map
 	return counts, nil
 }
 
-func (s *Service) query() *store.ItemQuery {
-	return s.store.Item.Query().Where(itemmodal.DeletedAtIsNil())
+func (s *Service) query(viewer Viewer) *store.ItemQuery {
+	return s.store.Item.Query().
+		Where(itemmodal.DeletedAtIsNil()).
+		Where(viewer.visible()...)
 }
 
 func inLibrary(id uuid.UUID) predicate.Item {
 	return itemmodal.HasLibrariesWith(librarymembership.LibraryID(id))
+}
+
+type Viewer struct {
+	All       bool
+	Libraries []uuid.UUID
+}
+
+var Everyone = Viewer{All: true}
+
+func (v Viewer) visible() []predicate.Item {
+	if v.All {
+		return nil
+	}
+
+	return []predicate.Item{
+		itemmodal.Or(
+			itemmodal.KindEQ(itemmodal.KindPlaylist),
+			itemmodal.HasLibrariesWith(librarymembership.LibraryIDIn(v.Libraries...)),
+		),
+	}
 }
 
 func (s *Service) SaveMembership(ctx context.Context, libraryID, sourceID uuid.UUID, itemIDs []uuid.UUID) error {
@@ -439,8 +463,8 @@ func (s *Service) SweepUnreachable(ctx context.Context, disturbed []uuid.UUID) e
 	}
 }
 
-func (s *Service) DistinctYears(ctx context.Context, libraryID *uuid.UUID, kinds []Kind) ([]int32, error) {
-	items := s.query().Where(itemmodal.ProductionYearNotNil())
+func (s *Service) DistinctYears(ctx context.Context, viewer Viewer, libraryID *uuid.UUID, kinds []Kind) ([]int32, error) {
+	items := s.query(viewer).Where(itemmodal.ProductionYearNotNil())
 	if libraryID != nil {
 		items = items.Where(inLibrary(*libraryID))
 	}
@@ -515,7 +539,7 @@ func (s *Service) CountByKind(ctx context.Context) (map[string]int32, error) {
 		Kind  string `json:"kind"`
 		Count int    `json:"count"`
 	}
-	err := s.query().
+	err := s.query(Everyone).
 		GroupBy(itemmodal.FieldKind).
 		Aggregate(store.Count()).
 		Scan(ctx, &rows)

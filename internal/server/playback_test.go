@@ -49,6 +49,7 @@ const chromeProfile = `{
 }`
 
 type playbackFixture struct {
+	sessions   *sessions.Service
 	info       *mediainfo.Server
 	streams    *stream.Handler
 	items      *items.Service
@@ -149,7 +150,8 @@ func newPlaybackFixture(t *testing.T) *playbackFixture {
 	return &playbackFixture{
 		downloader: downloader.ID,
 		client:     client,
-		info:       mediainfo.New(itemService),
+		sessions:   sessionService,
+		info:       mediainfo.New(itemService, allLibraries{}),
 		streams:    stream.New(sessionService, itemService, filesystem.New(config), transcode.NewEncoder(2, 0)),
 		items:      itemService,
 		library:    library.ID,
@@ -201,7 +203,7 @@ func (f *playbackFixture) beside(t *testing.T, id uuid.UUID, name, encoder, vide
 	f.paths[name] = path
 
 	ctx := context.Background()
-	item, err := f.items.ItemByID(ctx, id)
+	item, err := f.items.ItemByID(ctx, items.Everyone, id)
 	if err != nil {
 		t.Fatalf("failed to read the item: %v", err)
 	}
@@ -255,6 +257,13 @@ func (f *playbackFixture) answer(t *testing.T, id uuid.UUID, profile string, sta
 	}
 
 	ctx := auth.ContextWithAuthorization(context.Background(), auth.Authorization{Token: f.token})
+
+	session, err := f.sessions.ByToken(ctx, f.token)
+	if err != nil {
+		t.Fatalf("failed to read the session back: %v", err)
+	}
+	ctx = auth.ContextWithSession(ctx, session)
+
 	response, err := f.info.GetPostedPlaybackInfo(ctx, api.GetPostedPlaybackInfoRequestObject{ItemId: id, JSONBody: body})
 	if err != nil {
 		t.Fatalf("failed to answer playback info: %v", err)
@@ -596,4 +605,10 @@ func (f *playbackFixture) newDownloader(t *testing.T) uuid.UUID {
 	})
 
 	return record.ID
+}
+
+type allLibraries struct{}
+
+func (allLibraries) Access(context.Context, uuid.UUID) (users.Access, error) {
+	return users.Access{All: true}, nil
 }

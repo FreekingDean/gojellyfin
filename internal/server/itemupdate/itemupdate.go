@@ -27,7 +27,7 @@ func (s *Server) UpdateItem(ctx context.Context, request api.UpdateItemRequestOb
 		return api.UpdateItem403Response{}, nil
 	}
 
-	item, err := s.items.ItemByID(ctx, request.ItemId)
+	item, err := s.items.ItemByID(ctx, items.Everyone, request.ItemId)
 	if err != nil {
 		return api.UpdateItem404JSONResponse{}, nil
 	}
@@ -40,7 +40,7 @@ func (s *Server) UpdateItem(ctx context.Context, request api.UpdateItemRequestOb
 }
 
 func (s *Server) UpdateItemContentType(ctx context.Context, request api.UpdateItemContentTypeRequestObject) (api.UpdateItemContentTypeResponseObject, error) {
-	if _, err := s.items.ItemByID(ctx, request.ItemId); err != nil {
+	if _, err := s.items.ItemByID(ctx, items.Everyone, request.ItemId); err != nil {
 		return api.UpdateItemContentType404JSONResponse{}, nil
 	}
 
@@ -52,7 +52,7 @@ func (s *Server) UpdateItemContentType(ctx context.Context, request api.UpdateIt
 }
 
 func (s *Server) GetMetadataEditorInfo(ctx context.Context, request api.GetMetadataEditorInfoRequestObject) (api.GetMetadataEditorInfoResponseObject, error) {
-	item, err := s.items.ItemByID(ctx, request.ItemId)
+	item, err := s.items.ItemByID(ctx, items.Everyone, request.ItemId)
 	if err != nil {
 		return api.GetMetadataEditorInfo404JSONResponse{}, nil
 	}

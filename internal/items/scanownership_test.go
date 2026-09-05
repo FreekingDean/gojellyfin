@@ -251,7 +251,7 @@ func TestService_EditMetadata(t *testing.T) {
 func (f *fixture) editing(t *testing.T, id uuid.UUID, metadata Metadata) *Item {
 	t.Helper()
 
-	item, err := f.service.ItemByID(context.Background(), id)
+	item, err := f.service.ItemByID(context.Background(), Everyone, id)
 	if err != nil {
 		t.Fatalf("failed to read the item: %v", err)
 	}

@@ -10,16 +10,17 @@ import (
 )
 
 type Server struct {
+	policies  dto.Access
 	items     *items.Service
 	libraries *libraries.Service
 }
 
-func New(items *items.Service, libraries *libraries.Service) *Server {
-	return &Server{items: items, libraries: libraries}
+func New(items *items.Service, libraries *libraries.Service, policies dto.Access) *Server {
+	return &Server{items: items, libraries: libraries, policies: policies}
 }
 
 func (s *Server) GetTrailers(ctx context.Context, request api.GetTrailersRequestObject) (api.GetTrailersResponseObject, error) {
-	result, err := dto.QueryResult(ctx, s.items, s.libraries, api.GetItemsParams{
+	result, err := dto.QueryResult(ctx, s.items, s.libraries, s.policies, api.GetItemsParams{
 		IncludeItemTypes: &[]api.BaseItemKind{api.BaseItemKindTrailer},
 		Ids:              request.Params.Ids,
 		ParentId:         request.Params.ParentId,

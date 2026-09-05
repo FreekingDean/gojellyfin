@@ -20,6 +20,7 @@ func New(items *items.Service) *Server {
 
 func (s *Server) GetNextUp(ctx context.Context, request api.GetNextUpRequestObject) (api.GetNextUpResponseObject, error) {
 	records, err := s.items.NextUpEpisodes(ctx,
+		items.Everyone,
 		auth.UserID(ctx),
 		request.Params.SeriesId,
 		int(apiutil.Deref(request.Params.Limit)),
@@ -41,7 +42,7 @@ func (s *Server) GetNextUp(ctx context.Context, request api.GetNextUpRequestObje
 }
 
 func (s *Server) GetSeasons(ctx context.Context, request api.GetSeasonsRequestObject) (api.GetSeasonsResponseObject, error) {
-	records, err := s.items.SeriesSeasons(ctx, request.SeriesId)
+	records, err := s.items.SeriesSeasons(ctx, items.Everyone, request.SeriesId)
 	if err != nil {
 		return nil, err
 	}
@@ -61,6 +62,7 @@ func (s *Server) GetSeasons(ctx context.Context, request api.GetSeasonsRequestOb
 func (s *Server) GetEpisodes(ctx context.Context, request api.GetEpisodesRequestObject) (api.GetEpisodesResponseObject, error) {
 	startIndex := int(apiutil.Deref(request.Params.StartIndex))
 	records, total, err := s.items.SeriesEpisodes(ctx, items.EpisodeQuery{
+		Viewer:     items.Everyone,
 		SeriesID:   request.SeriesId,
 		SeasonID:   request.Params.SeasonId,
 		Season:     request.Params.Season,
@@ -86,6 +88,7 @@ func (s *Server) GetEpisodes(ctx context.Context, request api.GetEpisodesRequest
 func (s *Server) GetUpcomingEpisodes(ctx context.Context, request api.GetUpcomingEpisodesRequestObject) (api.GetUpcomingEpisodesResponseObject, error) {
 	startIndex := int(apiutil.Deref(request.Params.StartIndex))
 	records, total, err := s.items.UpcomingEpisodes(ctx,
+		items.Everyone,
 		request.Params.ParentId,
 		startIndex,
 		int(apiutil.Deref(request.Params.Limit)),

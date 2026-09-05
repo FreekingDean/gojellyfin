@@ -11,8 +11,8 @@ import (
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
-func (s *Service) SeriesSeasons(ctx context.Context, seriesID uuid.UUID) ([]*Item, error) {
-	records, err := s.query().
+func (s *Service) SeriesSeasons(ctx context.Context, viewer Viewer, seriesID uuid.UUID) ([]*Item, error) {
+	records, err := s.query(viewer).
 		Where(
 			itemmodal.KindEQ(itemmodal.KindSeason),
 			itemmodal.ParentID(seriesID),
@@ -27,6 +27,8 @@ func (s *Service) SeriesSeasons(ctx context.Context, seriesID uuid.UUID) ([]*Ite
 }
 
 type EpisodeQuery struct {
+	Viewer Viewer
+
 	SeriesID   uuid.UUID
 	SeasonID   *uuid.UUID
 	Season     *int32
@@ -35,7 +37,7 @@ type EpisodeQuery struct {
 }
 
 func (s *Service) SeriesEpisodes(ctx context.Context, query EpisodeQuery) ([]*Item, int, error) {
-	episodes := s.query().Where(
+	episodes := s.query(query.Viewer).Where(
 		itemmodal.KindEQ(itemmodal.KindEpisode),
 		itemmodal.HasParentWith(itemmodal.ParentID(query.SeriesID)),
 	)
@@ -71,8 +73,8 @@ func (s *Service) SeriesEpisodes(ctx context.Context, query EpisodeQuery) ([]*It
 	return records, total, nil
 }
 
-func (s *Service) UpcomingEpisodes(ctx context.Context, libraryID *uuid.UUID, startIndex, limit int) ([]*Item, int, error) {
-	episodes := s.query().Where(
+func (s *Service) UpcomingEpisodes(ctx context.Context, viewer Viewer, libraryID *uuid.UUID, startIndex, limit int) ([]*Item, int, error) {
+	episodes := s.query(viewer).Where(
 		itemmodal.KindEQ(itemmodal.KindEpisode),
 		itemmodal.PremiereDateGT(time.Now()),
 	)

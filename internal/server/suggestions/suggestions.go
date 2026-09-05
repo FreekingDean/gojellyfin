@@ -10,16 +10,17 @@ import (
 )
 
 type Server struct {
+	policies  dto.Access
 	items     *items.Service
 	libraries *libraries.Service
 }
 
-func New(items *items.Service, libraries *libraries.Service) *Server {
-	return &Server{items: items, libraries: libraries}
+func New(items *items.Service, libraries *libraries.Service, policies dto.Access) *Server {
+	return &Server{items: items, libraries: libraries, policies: policies}
 }
 
 func (s *Server) GetSuggestions(ctx context.Context, request api.GetSuggestionsRequestObject) (api.GetSuggestionsResponseObject, error) {
-	result, err := dto.QueryResult(ctx, s.items, s.libraries, api.GetItemsParams{
+	result, err := dto.QueryResult(ctx, s.items, s.libraries, s.policies, api.GetItemsParams{
 		IncludeItemTypes: request.Params.Type,
 		MediaTypes:       request.Params.MediaType,
 		SortBy:           &[]api.ItemSortBy{api.ItemSortByRandom},

@@ -45,7 +45,7 @@ func (s *Server) itemsByID(ctx context.Context, ids []uuid.UUID) ([]*items.Item,
 		return nil, nil
 	}
 
-	records, _, err := s.items.QueryItems(ctx, items.ItemQuery{IDs: ids})
+	records, _, err := s.items.QueryItems(ctx, items.ItemQuery{Viewer: items.Everyone, IDs: ids})
 
 	return records, err
 }

@@ -18,6 +18,7 @@ func New(items *items.Service) *Server {
 
 func (s *Server) GetQueryFilters(ctx context.Context, request api.GetQueryFiltersRequestObject) (api.GetQueryFiltersResponseObject, error) {
 	query := items.MetadataQuery{
+		Viewer:    items.Everyone,
 		LibraryID: request.Params.ParentId,
 		Kinds:     dto.Kinds(request.Params.IncludeItemTypes),
 	}
@@ -44,11 +45,12 @@ func (s *Server) GetQueryFilters(ctx context.Context, request api.GetQueryFilter
 
 func (s *Server) GetQueryFiltersLegacy(ctx context.Context, request api.GetQueryFiltersLegacyRequestObject) (api.GetQueryFiltersLegacyResponseObject, error) {
 	query := items.MetadataQuery{
+		Viewer:    items.Everyone,
 		LibraryID: request.Params.ParentId,
 		Kinds:     dto.Kinds(request.Params.IncludeItemTypes),
 	}
 
-	years, err := s.items.DistinctYears(ctx, request.Params.ParentId, query.Kinds)
+	years, err := s.items.DistinctYears(ctx, items.Everyone, request.Params.ParentId, query.Kinds)
 	if err != nil {
 		return nil, err
 	}

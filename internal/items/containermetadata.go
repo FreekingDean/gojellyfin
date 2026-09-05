@@ -26,6 +26,8 @@ type Named struct {
 }
 
 type MetadataQuery struct {
+	Viewer Viewer
+
 	LibraryID  *uuid.UUID
 	ItemID     *uuid.UUID
 	Kinds      []Kind
@@ -151,7 +153,7 @@ func (s *Service) DistinctPeople(ctx context.Context, query MetadataQuery, kinds
 }
 
 func (s *Service) DistinctTags(ctx context.Context, query MetadataQuery) ([]string, error) {
-	records, err := s.query().
+	records, err := s.query(query.Viewer).
 		Where(query.items()...).
 		Where(itemmodal.TagsNotNil()).
 		Select(itemmodal.FieldTags).

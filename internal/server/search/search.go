@@ -19,6 +19,7 @@ func New(items *items.Service) *Server {
 
 func (s *Server) GetSearchHints(ctx context.Context, request api.GetSearchHintsRequestObject) (api.GetSearchHintsResponseObject, error) {
 	query := items.ItemQuery{
+		Viewer:     items.Everyone,
 		SearchTerm: request.Params.SearchTerm,
 		StartIndex: int(apiutil.Deref(request.Params.StartIndex)),
 		Limit:      int(apiutil.Deref(request.Params.Limit)),

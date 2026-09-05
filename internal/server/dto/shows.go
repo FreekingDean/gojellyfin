@@ -19,7 +19,7 @@ func applyShowFields(ctx context.Context, store *items.Service, records []*items
 		}
 	}
 
-	parents, err := store.ItemsByIDs(ctx, parentIDs)
+	parents, err := store.ItemsByIDs(ctx, items.Everyone, parentIDs)
 	if err != nil {
 		return err
 	}
@@ -31,7 +31,7 @@ func applyShowFields(ctx context.Context, store *items.Service, records []*items
 		}
 	}
 
-	grandparents, err := store.ItemsByIDs(ctx, grandparentIDs)
+	grandparents, err := store.ItemsByIDs(ctx, items.Everyone, grandparentIDs)
 	if err != nil {
 		return err
 	}

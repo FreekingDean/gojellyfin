@@ -12,16 +12,17 @@ import (
 )
 
 type Server struct {
+	policies  dto.Access
 	items     *items.Service
 	libraries *libraries.Service
 }
 
-func New(items *items.Service, libraries *libraries.Service) *Server {
-	return &Server{items: items, libraries: libraries}
+func New(items *items.Service, libraries *libraries.Service, policies dto.Access) *Server {
+	return &Server{items: items, libraries: libraries, policies: policies}
 }
 
 func (s *Server) GetItems(ctx context.Context, request api.GetItemsRequestObject) (api.GetItemsResponseObject, error) {
-	result, err := dto.QueryResult(ctx, s.items, s.libraries, request.Params)
+	result, err := dto.QueryResult(ctx, s.items, s.libraries, s.policies, request.Params)
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +31,7 @@ func (s *Server) GetItems(ctx context.Context, request api.GetItemsRequestObject
 }
 
 func (s *Server) GetItem(ctx context.Context, request api.GetItemRequestObject) (api.GetItemResponseObject, error) {
-	item, err := s.items.ItemByID(ctx, request.ItemId)
+	item, err := s.items.ItemByID(ctx, items.Everyone, request.ItemId)
 	if err != nil {
 		library, libraryErr := s.libraries.Library(ctx, request.ItemId)
 		if libraryErr != nil {
@@ -54,6 +55,7 @@ func (s *Server) GetRootFolder(ctx context.Context, request api.GetRootFolderReq
 
 func (s *Server) GetLatestMedia(ctx context.Context, request api.GetLatestMediaRequestObject) (api.GetLatestMediaResponseObject, error) {
 	query := items.ItemQuery{
+		Viewer:     items.Everyone,
 		Kinds:      []items.Kind{itemmodal.KindMovie, itemmodal.KindSeries},
 		SortBy:     []string{"DateCreated"},
 		Descending: true,

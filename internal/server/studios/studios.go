@@ -21,6 +21,7 @@ func (s *Server) GetStudios(ctx context.Context, request api.GetStudiosRequestOb
 	startIndex := apiutil.Deref(request.Params.StartIndex)
 
 	named, total, err := s.items.DistinctStudios(ctx, items.MetadataQuery{
+		Viewer:     items.Everyone,
 		LibraryID:  request.Params.ParentId,
 		Kinds:      dto.Kinds(request.Params.IncludeItemTypes),
 		SearchTerm: apiutil.Deref(request.Params.SearchTerm),

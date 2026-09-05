@@ -9,8 +9,19 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
-func QueryResult(ctx context.Context, store *items.Service, collections *libraries.Service, params api.GetItemsParams) (api.BaseItemDtoQueryResult, error) {
-	query := ItemQuery(ctx, collections, params)
+func QueryResult(
+	ctx context.Context,
+	store *items.Service,
+	collections *libraries.Service,
+	policies Access,
+	params api.GetItemsParams,
+) (api.BaseItemDtoQueryResult, error) {
+	viewer, err := ViewerFor(ctx, policies)
+	if err != nil {
+		return api.BaseItemDtoQueryResult{}, err
+	}
+
+	query := ItemQuery(ctx, collections, viewer, params)
 
 	records, total, err := store.QueryItems(ctx, query)
 	if err != nil {
@@ -29,8 +40,9 @@ func QueryResult(ctx context.Context, store *items.Service, collections *librari
 	}, nil
 }
 
-func ItemQuery(ctx context.Context, collections *libraries.Service, params api.GetItemsParams) items.ItemQuery {
+func ItemQuery(ctx context.Context, collections *libraries.Service, viewer items.Viewer, params api.GetItemsParams) items.ItemQuery {
 	query := items.ItemQuery{
+		Viewer:     viewer,
 		SearchTerm: apiutil.Deref(params.SearchTerm),
 		StartIndex: int(apiutil.Deref(params.StartIndex)),
 		Limit:      int(apiutil.Deref(params.Limit)),

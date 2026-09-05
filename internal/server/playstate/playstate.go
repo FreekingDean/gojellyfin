@@ -76,7 +76,7 @@ func (s *Server) recordStop(ctx context.Context, itemID uuid.UUID, position int6
 		return err
 	}
 
-	item, err := s.items.ItemByID(ctx, itemID)
+	item, err := s.items.ItemByID(ctx, items.Everyone, itemID)
 	if err != nil {
 		return err
 	}

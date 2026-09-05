@@ -21,6 +21,7 @@ import (
 	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	downloadermodal "github.com/FreekingDean/gojellyfin/internal/store/source"
+	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
 const srtFile = `1
@@ -129,7 +130,7 @@ func newFixture(t *testing.T) *fixture {
 
 	return &fixture{
 		downloader: downloader.ID,
-		server:     New(items.New(client), filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}})),
+		server:     New(items.New(client), filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}), allLibraries{}),
 		client:     client,
 		item:       item,
 		source:     source.ID,
@@ -419,4 +420,10 @@ func TestServer_GetSubtitlePlaylist(t *testing.T) {
 			t.Errorf("response = %T, want api.GetSubtitlePlaylist404JSONResponse", response)
 		}
 	})
+}
+
+type allLibraries struct{}
+
+func (allLibraries) Access(context.Context, uuid.UUID) (users.Access, error) {
+	return users.Access{All: true}, nil
 }

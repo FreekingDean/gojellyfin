@@ -83,7 +83,7 @@ func TestService_DeleteSourcesNotInPaths(t *testing.T) {
 	if len(sources) != 1 || sources[0].Path != "/media/4k/The Matrix.mkv" {
 		t.Fatalf("sources = %d, want only the downloader that still reports its copy", len(sources))
 	}
-	if _, err := fixture.service.ItemByID(ctx, item.ID); err != nil {
+	if _, err := fixture.service.ItemByID(ctx, Everyone, item.ID); err != nil {
 		t.Errorf("losing one copy took the item and its watch state: %v", err)
 	}
 }

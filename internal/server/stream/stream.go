@@ -267,7 +267,7 @@ func (h *Handler) item(w http.ResponseWriter, r *http.Request) (*items.Item, *it
 		return nil, nil, "", false
 	}
 
-	item, err := h.items.ItemByID(r.Context(), id)
+	item, err := h.items.ItemByID(r.Context(), items.Everyone, id)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return nil, nil, "", false

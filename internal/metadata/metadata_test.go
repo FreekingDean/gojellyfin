@@ -269,7 +269,7 @@ func (f *fixture) lock(t *testing.T, added *items.Item, metadata items.Metadata)
 func (f *fixture) reload(t *testing.T, id uuid.UUID) *items.Item {
 	t.Helper()
 
-	reloaded, err := f.items.ItemByID(context.Background(), id)
+	reloaded, err := f.items.ItemByID(context.Background(), items.Everyone, id)
 	if err != nil {
 		t.Fatalf("failed to read the item back: %v", err)
 	}

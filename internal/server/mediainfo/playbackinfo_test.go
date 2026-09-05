@@ -91,7 +91,7 @@ func newFixture(t *testing.T) *fixture {
 
 	return &fixture{
 		downloader: downloader.ID,
-		client:     client, server: New(items.New(client)), library: library.ID}
+		client:     client, server: New(items.New(client), allLibraries{}), library: library.ID}
 }
 
 func (f *fixture) addRip(t *testing.T, kind items.Kind, container, codec string) uuid.UUID {
@@ -148,7 +148,7 @@ func (f *fixture) addCopy(t *testing.T, id uuid.UUID, path, video, audio string,
 	ctx := context.Background()
 	service := f.server.items
 
-	item, err := service.ItemByID(ctx, id)
+	item, err := service.ItemByID(ctx, items.Everyone, id)
 	if err != nil {
 		t.Fatalf("failed to read the item: %v", err)
 	}

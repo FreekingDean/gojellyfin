@@ -60,7 +60,7 @@ func (f *fixture) addCopy(t *testing.T, id uuid.UUID, name, audio string, height
 	t.Helper()
 
 	ctx := context.Background()
-	item, err := f.items.ItemByID(ctx, id)
+	item, err := f.items.ItemByID(ctx, items.Everyone, id)
 	if err != nil {
 		t.Fatalf("failed to read the item: %v", err)
 	}

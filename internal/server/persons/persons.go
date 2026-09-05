@@ -19,6 +19,7 @@ func New(items *items.Service) *Server {
 
 func (s *Server) GetPersons(ctx context.Context, request api.GetPersonsRequestObject) (api.GetPersonsResponseObject, error) {
 	named, total, err := s.items.DistinctPeople(ctx, items.MetadataQuery{
+		Viewer:     items.Everyone,
 		ItemID:     request.Params.AppearsInItemId,
 		SearchTerm: apiutil.Deref(request.Params.SearchTerm),
 		Limit:      int(apiutil.Deref(request.Params.Limit)),

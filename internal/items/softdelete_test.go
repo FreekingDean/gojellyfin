@@ -46,7 +46,7 @@ func TestService_SaveScanned(t *testing.T) {
 	if second.DeletedAt != nil {
 		t.Error("the returning item is still marked deleted")
 	}
-	if _, err := fixture.service.ItemByID(ctx, first.ID); err != nil {
+	if _, err := fixture.service.ItemByID(ctx, Everyone, first.ID); err != nil {
 		t.Errorf("the revived item is not readable: %v", err)
 	}
 }

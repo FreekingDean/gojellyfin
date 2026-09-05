@@ -31,7 +31,7 @@ func (f *fixture) probed(t *testing.T, streams ...Stream) (*Item, *MediaSource) 
 func (f *fixture) item(t *testing.T, id uuid.UUID) *Item {
 	t.Helper()
 
-	item, err := f.service.ItemByID(context.Background(), id)
+	item, err := f.service.ItemByID(context.Background(), Everyone, id)
 	if err != nil {
 		t.Fatalf("failed to load the item: %v", err)
 	}

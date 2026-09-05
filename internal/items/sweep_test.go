@@ -13,7 +13,7 @@ import (
 func (f *fixture) everything(t *testing.T) []uuid.UUID {
 	t.Helper()
 
-	records, _, err := f.service.QueryItems(context.Background(), ItemQuery{LibraryID: &f.libraryID})
+	records, _, err := f.service.QueryItems(context.Background(), ItemQuery{Viewer: Everyone, LibraryID: &f.libraryID})
 	if err != nil {
 		t.Fatalf("failed to list the library: %v", err)
 	}
@@ -37,7 +37,7 @@ func TestService_SweepUnreachable(t *testing.T) {
 			t.Fatalf("failed to sweep: %v", err)
 		}
 
-		if _, err := fixture.service.ItemByID(ctx, kept.ID); err != nil {
+		if _, err := fixture.service.ItemByID(ctx, Everyone, kept.ID); err != nil {
 			t.Errorf("a title with a file was swept: %v", err)
 		}
 	})
@@ -52,7 +52,7 @@ func TestService_SweepUnreachable(t *testing.T) {
 			t.Fatalf("failed to sweep: %v", err)
 		}
 
-		if _, err := fixture.service.ItemByID(ctx, gone); err == nil {
+		if _, err := fixture.service.ItemByID(ctx, Everyone, gone); err == nil {
 			t.Error("a title with no file survived the sweep")
 		}
 
@@ -78,7 +78,7 @@ func TestService_SweepUnreachable(t *testing.T) {
 		}
 
 		for name, id := range map[string]uuid.UUID{"episode": episode, "season": season, "series": series} {
-			if _, err := fixture.service.ItemByID(ctx, id); err == nil {
+			if _, err := fixture.service.ItemByID(ctx, Everyone, id); err == nil {
 				t.Errorf("the %s survived with nothing beneath it", name)
 			}
 		}
@@ -106,7 +106,7 @@ func TestService_SweepUnreachable(t *testing.T) {
 		}
 
 		for name, id := range map[string]uuid.UUID{"episode": episode, "season": season, "series": series} {
-			if _, err := fixture.service.ItemByID(ctx, id); err != nil {
+			if _, err := fixture.service.ItemByID(ctx, Everyone, id); err != nil {
 				t.Errorf("the %s was swept while a file remained: %v", name, err)
 			}
 		}
@@ -135,4 +135,32 @@ func TestService_SweepUnreachable(t *testing.T) {
 			t.Errorf("images = %d, want the artwork kept for the title's return", len(images))
 		}
 	})
+}
+
+func TestViewer_Visible(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := context.Background()
+
+	held := fixture.add(t, seed{kind: itemmodal.KindMovie, name: "Held"})
+
+	other := Viewer{Libraries: []uuid.UUID{uuid.New()}}
+	records, total, err := fixture.service.QueryItems(ctx, ItemQuery{Viewer: other})
+	if err != nil {
+		t.Fatalf("failed to query: %v", err)
+	}
+	for _, record := range records {
+		if record.ID == held {
+			t.Errorf("a viewer with no access to the library was served %q", record.Name)
+		}
+	}
+	_ = total
+
+	if _, err := fixture.service.ItemByID(ctx, other, held); err == nil {
+		t.Error("a viewer with no access to the library fetched the item by id")
+	}
+
+	allowed := Viewer{Libraries: []uuid.UUID{fixture.libraryID}}
+	if _, err := fixture.service.ItemByID(ctx, allowed, held); err != nil {
+		t.Errorf("a viewer with access was refused: %v", err)
+	}
 }

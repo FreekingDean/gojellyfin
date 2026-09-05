@@ -59,7 +59,7 @@ func (s *Service) IdentifyItems(ctx context.Context, scope uuid.UUID, force bool
 
 		jobs.Heartbeat(ctx, id)
 
-		pendingItem, err := s.items.ItemByID(ctx, id)
+		pendingItem, err := s.items.ItemByID(ctx, items.Everyone, id)
 		if store.IsNotFound(err) {
 			continue
 		}

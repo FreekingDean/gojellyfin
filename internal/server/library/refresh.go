@@ -3,6 +3,7 @@ package library
 import (
 	"context"
 
+	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/metadata"
 	"github.com/FreekingDean/gojellyfin/internal/scanner"
@@ -12,7 +13,7 @@ import (
 
 func (s *Server) RefreshItem(ctx context.Context, request api.RefreshItemRequestObject) (api.RefreshItemResponseObject, error) {
 	if _, err := s.libraries.Library(ctx, request.ItemId); err != nil {
-		if _, err := s.items.ItemByID(ctx, request.ItemId); err != nil {
+		if _, err := s.items.ItemByID(ctx, items.Everyone, request.ItemId); err != nil {
 			return api.RefreshItem404JSONResponse{}, nil
 		}
 	}

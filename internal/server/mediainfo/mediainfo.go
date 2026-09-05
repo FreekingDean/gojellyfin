@@ -13,15 +13,17 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 )
 
 type Server struct {
-	items *items.Service
+	policies dto.Access
+	items    *items.Service
 }
 
-func New(items *items.Service) *Server {
-	return &Server{items: items}
+func New(items *items.Service, policies dto.Access) *Server {
+	return &Server{items: items, policies: policies}
 }
 
 func (s *Server) GetPlaybackInfo(ctx context.Context, request api.GetPlaybackInfoRequestObject) (api.GetPlaybackInfoResponseObject, error) {
@@ -54,7 +56,12 @@ func (s *Server) GetPostedPlaybackInfo(ctx context.Context, request api.GetPoste
 }
 
 func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, profile api.DeviceProfile, startTicks int64) (api.PlaybackInfoResponse, error) {
-	item, err := s.items.ItemByID(ctx, itemID)
+	viewer, err := dto.ViewerFor(ctx, s.policies)
+	if err != nil {
+		return api.PlaybackInfoResponse{}, err
+	}
+
+	item, err := s.items.ItemByID(ctx, viewer, itemID)
 	if err != nil {
 		return api.PlaybackInfoResponse{}, err
 	}

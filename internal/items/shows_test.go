@@ -185,7 +185,7 @@ func TestService_SeriesSeasons(t *testing.T) {
 	fixture.add(t, seed{kind: itemmodal.KindSeason, name: "Elsewhere", parentID: &other, index: number(1)})
 	fixture.add(t, seed{kind: itemmodal.KindEpisode, name: "Loose Episode", parentID: &series, index: number(1)})
 
-	records, err := fixture.service.SeriesSeasons(ctx, series)
+	records, err := fixture.service.SeriesSeasons(ctx, Everyone, series)
 	if err != nil {
 		t.Fatalf("failed to query seasons: %v", err)
 	}
@@ -221,25 +221,25 @@ func TestService_SeriesEpisodes(t *testing.T) {
 	}{
 		{
 			name:      "orders by season then episode",
-			query:     EpisodeQuery{SeriesID: series},
+			query:     EpisodeQuery{Viewer: Everyone, SeriesID: series},
 			want:      []string{"S01E01", "S01E02", "S02E01", "S02 Extra"},
 			wantTotal: 4,
 		},
 		{
 			name:      "filters by season id",
-			query:     EpisodeQuery{SeriesID: series, SeasonID: &seasonTwo},
+			query:     EpisodeQuery{Viewer: Everyone, SeriesID: series, SeasonID: &seasonTwo},
 			want:      []string{"S02E01", "S02 Extra"},
 			wantTotal: 2,
 		},
 		{
 			name:      "filters by season number",
-			query:     EpisodeQuery{SeriesID: series, Season: number(1)},
+			query:     EpisodeQuery{Viewer: Everyone, SeriesID: series, Season: number(1)},
 			want:      []string{"S01E01", "S01E02"},
 			wantTotal: 2,
 		},
 		{
 			name:      "pages without changing the total",
-			query:     EpisodeQuery{SeriesID: series, StartIndex: 1, Limit: 2},
+			query:     EpisodeQuery{Viewer: Everyone, SeriesID: series, StartIndex: 1, Limit: 2},
 			want:      []string{"S01E02", "S02E01"},
 			wantTotal: 4,
 		},
@@ -302,7 +302,7 @@ func TestService_UpcomingEpisodes(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			records, total, err := fixture.service.UpcomingEpisodes(ctx, &fixture.libraryID, test.startIndex, test.limit)
+			records, total, err := fixture.service.UpcomingEpisodes(ctx, Everyone, &fixture.libraryID, test.startIndex, test.limit)
 			if err != nil {
 				t.Fatalf("failed to query upcoming episodes: %v", err)
 			}

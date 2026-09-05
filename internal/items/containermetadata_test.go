@@ -50,7 +50,7 @@ func (f *metadataFixture) item(t *testing.T, name string) *Item {
 	t.Helper()
 
 	id := f.add(t, seed{kind: itemmodal.KindMovie, name: name})
-	record, err := f.service.ItemByID(context.Background(), id)
+	record, err := f.service.ItemByID(context.Background(), Everyone, id)
 	if err != nil {
 		t.Fatalf("failed to read %q: %v", name, err)
 	}
@@ -108,7 +108,7 @@ func (f *metadataFixture) seed(t *testing.T, item *Item, with seeded) {
 }
 
 func (f *metadataFixture) query() MetadataQuery {
-	return MetadataQuery{LibraryID: &f.libraryID}
+	return MetadataQuery{Viewer: Everyone, LibraryID: &f.libraryID}
 }
 
 func (f *metadataFixture) name(value string) string {
@@ -283,7 +283,7 @@ func TestService_NamedMetadata(t *testing.T) {
 		ctx := context.Background()
 
 		id := fixture.add(t, seed{kind: itemmodal.KindMovie, name: "Movie"})
-		item, err := fixture.service.ItemByID(ctx, id)
+		item, err := fixture.service.ItemByID(ctx, Everyone, id)
 		if err != nil {
 			t.Fatalf("failed to load the item: %v", err)
 		}
@@ -335,7 +335,7 @@ func TestService_DistinctGenres(t *testing.T) {
 	fixture.seed(t, movie, seeded{Genres: []string{fixture.name("Comedy")}})
 
 	t.Run("filters by item kind", func(t *testing.T) {
-		named, _, err := fixture.service.DistinctGenres(ctx, MetadataQuery{
+		named, _, err := fixture.service.DistinctGenres(ctx, MetadataQuery{Viewer: Everyone,
 			LibraryID: &fixture.libraryID,
 			Kinds:     []Kind{itemmodal.KindEpisode},
 		})
@@ -348,7 +348,7 @@ func TestService_DistinctGenres(t *testing.T) {
 	})
 
 	t.Run("filters by search term", func(t *testing.T) {
-		named, _, err := fixture.service.DistinctGenres(ctx, MetadataQuery{
+		named, _, err := fixture.service.DistinctGenres(ctx, MetadataQuery{Viewer: Everyone,
 			LibraryID:  &fixture.libraryID,
 			SearchTerm: "comedy",
 		})
@@ -362,7 +362,7 @@ func TestService_DistinctGenres(t *testing.T) {
 
 	t.Run("ignores other libraries", func(t *testing.T) {
 		other := uuid.New()
-		named, _, err := fixture.service.DistinctGenres(ctx, MetadataQuery{LibraryID: &other})
+		named, _, err := fixture.service.DistinctGenres(ctx, MetadataQuery{Viewer: Everyone, LibraryID: &other})
 		if err != nil {
 			t.Fatalf("failed to query genres: %v", err)
 		}

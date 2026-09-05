@@ -1,6 +1,8 @@
 package server
 
 import (
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
+	"github.com/FreekingDean/gojellyfin/internal/users"
 	"go.uber.org/fx"
 
 	"github.com/FreekingDean/gojellyfin/internal/server/activitylog"
@@ -91,5 +93,6 @@ var Module = fx.Module(
 	years.Module,
 	fx.Provide(
 		New,
+		func(policies *users.Service) dto.Access { return policies },
 	),
 )

@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 )
@@ -135,7 +136,7 @@ func (s *Scanner) ProbeSource(ctx context.Context, id uuid.UUID) error {
 		return err
 	}
 
-	item, err := s.items.ItemByID(ctx, source.ItemID)
+	item, err := s.items.ItemByID(ctx, items.Everyone, source.ItemID)
 	if err != nil {
 		return err
 	}
