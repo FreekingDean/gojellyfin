@@ -46,9 +46,11 @@ type SourceEdges struct {
 	Libraries []*LibrarySource `json:"libraries,omitempty"`
 	// Files holds the value of the files edge.
 	Files []*ItemSource `json:"files,omitempty"`
+	// Memberships holds the value of the memberships edge.
+	Memberships []*LibraryItem `json:"memberships,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // LibrariesOrErr returns the Libraries value or an error if the edge
@@ -67,6 +69,15 @@ func (e SourceEdges) FilesOrErr() ([]*ItemSource, error) {
 		return e.Files, nil
 	}
 	return nil, &NotLoadedError{edge: "files"}
+}
+
+// MembershipsOrErr returns the Memberships value or an error if the edge
+// was not loaded in eager-loading.
+func (e SourceEdges) MembershipsOrErr() ([]*LibraryItem, error) {
+	if e.loadedTypes[2] {
+		return e.Memberships, nil
+	}
+	return nil, &NotLoadedError{edge: "memberships"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -170,6 +181,11 @@ func (_m *Source) QueryLibraries() *LibrarySourceQuery {
 // QueryFiles queries the "files" edge of the Source entity.
 func (_m *Source) QueryFiles() *ItemSourceQuery {
 	return NewSourceClient(_m.config).QueryFiles(_m)
+}
+
+// QueryMemberships queries the "memberships" edge of the Source entity.
+func (_m *Source) QueryMemberships() *LibraryItemQuery {
+	return NewSourceClient(_m.config).QueryMemberships(_m)
 }
 
 // Update returns a builder for updating this Source.

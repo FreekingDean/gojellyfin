@@ -14,6 +14,7 @@ import (
 	creditmodal "github.com/FreekingDean/gojellyfin/internal/store/credit"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	personmodal "github.com/FreekingDean/gojellyfin/internal/store/person"
 )
 
@@ -63,7 +64,7 @@ func TestServer_GetPersons(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		owned := itemmodal.LibraryID(library.ID)
+		owned := itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID))
 		if _, err := client.Credit.Delete().Where(creditmodal.HasItemWith(owned)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the credits: %v", err)
 		}
@@ -86,11 +87,10 @@ func TestServer_GetPersons(t *testing.T) {
 
 	service := items.New(client)
 	movie, err := service.SaveScanned(ctx, items.Scanned{
-		LibraryID: library.ID,
-		Kind:      itemmodal.KindMovie,
-		Name:      prefix + "Movie",
-		SortName:  prefix + "Movie",
-		Key:       "test:" + prefix + "movie",
+		Kind:     itemmodal.KindMovie,
+		Name:     prefix + "Movie",
+		SortName: prefix + "Movie",
+		Key:      "test:" + prefix + "movie",
 	})
 	if err != nil {
 		t.Fatalf("failed to save the item: %v", err)

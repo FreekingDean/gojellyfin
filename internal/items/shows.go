@@ -77,7 +77,7 @@ func (s *Service) UpcomingEpisodes(ctx context.Context, libraryID *uuid.UUID, st
 		itemmodal.PremiereDateGT(time.Now()),
 	)
 	if libraryID != nil {
-		episodes = episodes.Where(itemmodal.LibraryID(*libraryID))
+		episodes = episodes.Where(inLibrary(*libraryID))
 	}
 
 	total, err := episodes.Clone().Count(ctx)

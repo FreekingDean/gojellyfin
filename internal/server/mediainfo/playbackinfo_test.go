@@ -19,6 +19,7 @@ import (
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
+	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	downloadermodal "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
@@ -56,7 +57,7 @@ func newFixture(t *testing.T) *fixture {
 	}
 
 	t.Cleanup(func() {
-		inLibrary := sourcemodal.HasItemWith(itemmodal.LibraryID(library.ID))
+		inLibrary := sourcemodal.HasItemWith(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID)))
 		if _, err := client.MediaStream.Delete().Where(streammodal.HasSourceWith(inLibrary)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the media streams: %v", err)
 		}
@@ -106,7 +107,6 @@ func (f *fixture) addRipped(t *testing.T, kind items.Kind, container, video, cod
 	service := f.server.items
 
 	item, err := service.SaveScanned(ctx, items.Scanned{
-		LibraryID:    f.library,
 		Kind:         kind,
 		Key:          string(kind) + ":" + container + ":" + video + ":" + codec,
 		Name:         "rip." + container,
@@ -180,7 +180,6 @@ func (f *fixture) unscanned(t *testing.T) uuid.UUID {
 	t.Helper()
 
 	item, err := f.server.items.SaveScanned(context.Background(), items.Scanned{
-		LibraryID:    f.library,
 		Kind:         itemmodal.KindMovie,
 		Key:          "movie:unscanned",
 		Name:         "unscanned",

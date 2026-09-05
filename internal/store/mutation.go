@@ -25,6 +25,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
+	"github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
 	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
@@ -64,6 +65,7 @@ const (
 	TypeItem               = "Item"
 	TypeItemSource         = "ItemSource"
 	TypeLibrary            = "Library"
+	TypeLibraryItem        = "LibraryItem"
 	TypeLibraryOptions     = "LibraryOptions"
 	TypeLibrarySource      = "LibrarySource"
 	TypeMediaStream        = "MediaStream"
@@ -7627,8 +7629,9 @@ type ItemMutation struct {
 	children                    map[uuid.UUID]struct{}
 	removedchildren             map[uuid.UUID]struct{}
 	clearedchildren             bool
-	library                     *uuid.UUID
-	clearedlibrary              bool
+	libraries                   map[uuid.UUID]struct{}
+	removedlibraries            map[uuid.UUID]struct{}
+	clearedlibraries            bool
 	item_sources                map[uuid.UUID]struct{}
 	removeditem_sources         map[uuid.UUID]struct{}
 	cleareditem_sources         bool
@@ -7834,55 +7837,6 @@ func (m *ItemMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error
 // ResetUpdatedAt resets all changes to the "updated_at" field.
 func (m *ItemMutation) ResetUpdatedAt() {
 	m.updated_at = nil
-}
-
-// SetLibraryID sets the "library_id" field.
-func (m *ItemMutation) SetLibraryID(u uuid.UUID) {
-	m.library = &u
-}
-
-// LibraryID returns the value of the "library_id" field in the mutation.
-func (m *ItemMutation) LibraryID() (r uuid.UUID, exists bool) {
-	v := m.library
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldLibraryID returns the old "library_id" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldLibraryID(ctx context.Context) (v uuid.UUID, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldLibraryID is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldLibraryID requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldLibraryID: %w", err)
-	}
-	return oldValue.LibraryID, nil
-}
-
-// ClearLibraryID clears the value of the "library_id" field.
-func (m *ItemMutation) ClearLibraryID() {
-	m.library = nil
-	m.clearedFields[item.FieldLibraryID] = struct{}{}
-}
-
-// LibraryIDCleared returns if the "library_id" field was cleared in this mutation.
-func (m *ItemMutation) LibraryIDCleared() bool {
-	_, ok := m.clearedFields[item.FieldLibraryID]
-	return ok
-}
-
-// ResetLibraryID resets all changes to the "library_id" field.
-func (m *ItemMutation) ResetLibraryID() {
-	m.library = nil
-	delete(m.clearedFields, item.FieldLibraryID)
 }
 
 // SetParentID sets the "parent_id" field.
@@ -9266,31 +9220,58 @@ func (m *ItemMutation) ResetChildren() {
 	m.removedchildren = nil
 }
 
-// ClearLibrary clears the "library" edge to the Library entity.
-func (m *ItemMutation) ClearLibrary() {
-	m.clearedlibrary = true
-	m.clearedFields[item.FieldLibraryID] = struct{}{}
+// AddLibraryIDs adds the "libraries" edge to the LibraryItem entity by ids.
+func (m *ItemMutation) AddLibraryIDs(ids ...uuid.UUID) {
+	if m.libraries == nil {
+		m.libraries = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.libraries[ids[i]] = struct{}{}
+	}
 }
 
-// LibraryCleared reports if the "library" edge to the Library entity was cleared.
-func (m *ItemMutation) LibraryCleared() bool {
-	return m.LibraryIDCleared() || m.clearedlibrary
+// ClearLibraries clears the "libraries" edge to the LibraryItem entity.
+func (m *ItemMutation) ClearLibraries() {
+	m.clearedlibraries = true
 }
 
-// LibraryIDs returns the "library" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// LibraryID instead. It exists only for internal usage by the builders.
-func (m *ItemMutation) LibraryIDs() (ids []uuid.UUID) {
-	if id := m.library; id != nil {
-		ids = append(ids, *id)
+// LibrariesCleared reports if the "libraries" edge to the LibraryItem entity was cleared.
+func (m *ItemMutation) LibrariesCleared() bool {
+	return m.clearedlibraries
+}
+
+// RemoveLibraryIDs removes the "libraries" edge to the LibraryItem entity by IDs.
+func (m *ItemMutation) RemoveLibraryIDs(ids ...uuid.UUID) {
+	if m.removedlibraries == nil {
+		m.removedlibraries = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.libraries, ids[i])
+		m.removedlibraries[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedLibraries returns the removed IDs of the "libraries" edge to the LibraryItem entity.
+func (m *ItemMutation) RemovedLibrariesIDs() (ids []uuid.UUID) {
+	for id := range m.removedlibraries {
+		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetLibrary resets all changes to the "library" edge.
-func (m *ItemMutation) ResetLibrary() {
-	m.library = nil
-	m.clearedlibrary = false
+// LibrariesIDs returns the "libraries" edge IDs in the mutation.
+func (m *ItemMutation) LibrariesIDs() (ids []uuid.UUID) {
+	for id := range m.libraries {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetLibraries resets all changes to the "libraries" edge.
+func (m *ItemMutation) ResetLibraries() {
+	m.libraries = nil
+	m.clearedlibraries = false
+	m.removedlibraries = nil
 }
 
 // AddItemSourceIDs adds the "item_sources" edge to the ItemSource entity by ids.
@@ -9798,15 +9779,12 @@ func (m *ItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemMutation) Fields() []string {
-	fields := make([]string, 0, 28)
+	fields := make([]string, 0, 27)
 	if m.created_at != nil {
 		fields = append(fields, item.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
 		fields = append(fields, item.FieldUpdatedAt)
-	}
-	if m.library != nil {
-		fields = append(fields, item.FieldLibraryID)
 	}
 	if m.parent != nil {
 		fields = append(fields, item.FieldParentID)
@@ -9895,8 +9873,6 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case item.FieldUpdatedAt:
 		return m.UpdatedAt()
-	case item.FieldLibraryID:
-		return m.LibraryID()
 	case item.FieldParentID:
 		return m.ParentID()
 	case item.FieldKind:
@@ -9960,8 +9936,6 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldCreatedAt(ctx)
 	case item.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
-	case item.FieldLibraryID:
-		return m.OldLibraryID(ctx)
 	case item.FieldParentID:
 		return m.OldParentID(ctx)
 	case item.FieldKind:
@@ -10034,13 +10008,6 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedAt(v)
-		return nil
-	case item.FieldLibraryID:
-		v, ok := value.(uuid.UUID)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetLibraryID(v)
 		return nil
 	case item.FieldParentID:
 		v, ok := value.(uuid.UUID)
@@ -10310,9 +10277,6 @@ func (m *ItemMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *ItemMutation) ClearedFields() []string {
 	var fields []string
-	if m.FieldCleared(item.FieldLibraryID) {
-		fields = append(fields, item.FieldLibraryID)
-	}
 	if m.FieldCleared(item.FieldParentID) {
 		fields = append(fields, item.FieldParentID)
 	}
@@ -10384,9 +10348,6 @@ func (m *ItemMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *ItemMutation) ClearField(name string) error {
 	switch name {
-	case item.FieldLibraryID:
-		m.ClearLibraryID()
-		return nil
 	case item.FieldParentID:
 		m.ClearParentID()
 		return nil
@@ -10457,9 +10418,6 @@ func (m *ItemMutation) ResetField(name string) error {
 		return nil
 	case item.FieldUpdatedAt:
 		m.ResetUpdatedAt()
-		return nil
-	case item.FieldLibraryID:
-		m.ResetLibraryID()
 		return nil
 	case item.FieldParentID:
 		m.ResetParentID()
@@ -10549,8 +10507,8 @@ func (m *ItemMutation) AddedEdges() []string {
 	if m.children != nil {
 		edges = append(edges, item.EdgeChildren)
 	}
-	if m.library != nil {
-		edges = append(edges, item.EdgeLibrary)
+	if m.libraries != nil {
+		edges = append(edges, item.EdgeLibraries)
 	}
 	if m.item_sources != nil {
 		edges = append(edges, item.EdgeItemSources)
@@ -10596,10 +10554,12 @@ func (m *ItemMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case item.EdgeLibrary:
-		if id := m.library; id != nil {
-			return []ent.Value{*id}
+	case item.EdgeLibraries:
+		ids := make([]ent.Value, 0, len(m.libraries))
+		for id := range m.libraries {
+			ids = append(ids, id)
 		}
+		return ids
 	case item.EdgeItemSources:
 		ids := make([]ent.Value, 0, len(m.item_sources))
 		for id := range m.item_sources {
@@ -10662,6 +10622,9 @@ func (m *ItemMutation) RemovedEdges() []string {
 	if m.removedchildren != nil {
 		edges = append(edges, item.EdgeChildren)
 	}
+	if m.removedlibraries != nil {
+		edges = append(edges, item.EdgeLibraries)
+	}
 	if m.removeditem_sources != nil {
 		edges = append(edges, item.EdgeItemSources)
 	}
@@ -10696,6 +10659,12 @@ func (m *ItemMutation) RemovedIDs(name string) []ent.Value {
 	case item.EdgeChildren:
 		ids := make([]ent.Value, 0, len(m.removedchildren))
 		for id := range m.removedchildren {
+			ids = append(ids, id)
+		}
+		return ids
+	case item.EdgeLibraries:
+		ids := make([]ent.Value, 0, len(m.removedlibraries))
+		for id := range m.removedlibraries {
 			ids = append(ids, id)
 		}
 		return ids
@@ -10760,8 +10729,8 @@ func (m *ItemMutation) ClearedEdges() []string {
 	if m.clearedchildren {
 		edges = append(edges, item.EdgeChildren)
 	}
-	if m.clearedlibrary {
-		edges = append(edges, item.EdgeLibrary)
+	if m.clearedlibraries {
+		edges = append(edges, item.EdgeLibraries)
 	}
 	if m.cleareditem_sources {
 		edges = append(edges, item.EdgeItemSources)
@@ -10801,8 +10770,8 @@ func (m *ItemMutation) EdgeCleared(name string) bool {
 		return m.clearedparent
 	case item.EdgeChildren:
 		return m.clearedchildren
-	case item.EdgeLibrary:
-		return m.clearedlibrary
+	case item.EdgeLibraries:
+		return m.clearedlibraries
 	case item.EdgeItemSources:
 		return m.cleareditem_sources
 	case item.EdgeCredits:
@@ -10832,9 +10801,6 @@ func (m *ItemMutation) ClearEdge(name string) error {
 	case item.EdgeParent:
 		m.ClearParent()
 		return nil
-	case item.EdgeLibrary:
-		m.ClearLibrary()
-		return nil
 	case item.EdgePlaylist:
 		m.ClearPlaylist()
 		return nil
@@ -10852,8 +10818,8 @@ func (m *ItemMutation) ResetEdge(name string) error {
 	case item.EdgeChildren:
 		m.ResetChildren()
 		return nil
-	case item.EdgeLibrary:
-		m.ResetLibrary()
+	case item.EdgeLibraries:
+		m.ResetLibraries()
 		return nil
 	case item.EdgeItemSources:
 		m.ResetItemSources()
@@ -12222,27 +12188,27 @@ func (m *ItemSourceMutation) ResetEdge(name string) error {
 // LibraryMutation represents an operation that mutates the Library nodes in the graph.
 type LibraryMutation struct {
 	config
-	op              Op
-	typ             string
-	id              *uuid.UUID
-	created_at      *time.Time
-	updated_at      *time.Time
-	name            *string
-	collection_type *library.CollectionType
-	locations       *[]string
-	appendlocations []string
-	clearedFields   map[string]struct{}
-	options         *uuid.UUID
-	clearedoptions  bool
-	items           map[uuid.UUID]struct{}
-	removeditems    map[uuid.UUID]struct{}
-	cleareditems    bool
-	sources         map[uuid.UUID]struct{}
-	removedsources  map[uuid.UUID]struct{}
-	clearedsources  bool
-	done            bool
-	oldValue        func(context.Context) (*Library, error)
-	predicates      []predicate.Library
+	op                   Op
+	typ                  string
+	id                   *uuid.UUID
+	created_at           *time.Time
+	updated_at           *time.Time
+	name                 *string
+	collection_type      *library.CollectionType
+	locations            *[]string
+	appendlocations      []string
+	clearedFields        map[string]struct{}
+	options              *uuid.UUID
+	clearedoptions       bool
+	library_items        map[uuid.UUID]struct{}
+	removedlibrary_items map[uuid.UUID]struct{}
+	clearedlibrary_items bool
+	sources              map[uuid.UUID]struct{}
+	removedsources       map[uuid.UUID]struct{}
+	clearedsources       bool
+	done                 bool
+	oldValue             func(context.Context) (*Library, error)
+	predicates           []predicate.Library
 }
 
 var _ ent.Mutation = (*LibraryMutation)(nil)
@@ -12583,58 +12549,58 @@ func (m *LibraryMutation) ResetOptions() {
 	m.clearedoptions = false
 }
 
-// AddItemIDs adds the "items" edge to the Item entity by ids.
-func (m *LibraryMutation) AddItemIDs(ids ...uuid.UUID) {
-	if m.items == nil {
-		m.items = make(map[uuid.UUID]struct{})
+// AddLibraryItemIDs adds the "library_items" edge to the LibraryItem entity by ids.
+func (m *LibraryMutation) AddLibraryItemIDs(ids ...uuid.UUID) {
+	if m.library_items == nil {
+		m.library_items = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		m.items[ids[i]] = struct{}{}
+		m.library_items[ids[i]] = struct{}{}
 	}
 }
 
-// ClearItems clears the "items" edge to the Item entity.
-func (m *LibraryMutation) ClearItems() {
-	m.cleareditems = true
+// ClearLibraryItems clears the "library_items" edge to the LibraryItem entity.
+func (m *LibraryMutation) ClearLibraryItems() {
+	m.clearedlibrary_items = true
 }
 
-// ItemsCleared reports if the "items" edge to the Item entity was cleared.
-func (m *LibraryMutation) ItemsCleared() bool {
-	return m.cleareditems
+// LibraryItemsCleared reports if the "library_items" edge to the LibraryItem entity was cleared.
+func (m *LibraryMutation) LibraryItemsCleared() bool {
+	return m.clearedlibrary_items
 }
 
-// RemoveItemIDs removes the "items" edge to the Item entity by IDs.
-func (m *LibraryMutation) RemoveItemIDs(ids ...uuid.UUID) {
-	if m.removeditems == nil {
-		m.removeditems = make(map[uuid.UUID]struct{})
+// RemoveLibraryItemIDs removes the "library_items" edge to the LibraryItem entity by IDs.
+func (m *LibraryMutation) RemoveLibraryItemIDs(ids ...uuid.UUID) {
+	if m.removedlibrary_items == nil {
+		m.removedlibrary_items = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		delete(m.items, ids[i])
-		m.removeditems[ids[i]] = struct{}{}
+		delete(m.library_items, ids[i])
+		m.removedlibrary_items[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedItems returns the removed IDs of the "items" edge to the Item entity.
-func (m *LibraryMutation) RemovedItemsIDs() (ids []uuid.UUID) {
-	for id := range m.removeditems {
+// RemovedLibraryItems returns the removed IDs of the "library_items" edge to the LibraryItem entity.
+func (m *LibraryMutation) RemovedLibraryItemsIDs() (ids []uuid.UUID) {
+	for id := range m.removedlibrary_items {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ItemsIDs returns the "items" edge IDs in the mutation.
-func (m *LibraryMutation) ItemsIDs() (ids []uuid.UUID) {
-	for id := range m.items {
+// LibraryItemsIDs returns the "library_items" edge IDs in the mutation.
+func (m *LibraryMutation) LibraryItemsIDs() (ids []uuid.UUID) {
+	for id := range m.library_items {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetItems resets all changes to the "items" edge.
-func (m *LibraryMutation) ResetItems() {
-	m.items = nil
-	m.cleareditems = false
-	m.removeditems = nil
+// ResetLibraryItems resets all changes to the "library_items" edge.
+func (m *LibraryMutation) ResetLibraryItems() {
+	m.library_items = nil
+	m.clearedlibrary_items = false
+	m.removedlibrary_items = nil
 }
 
 // AddSourceIDs adds the "sources" edge to the LibrarySource entity by ids.
@@ -12896,8 +12862,8 @@ func (m *LibraryMutation) AddedEdges() []string {
 	if m.options != nil {
 		edges = append(edges, library.EdgeOptions)
 	}
-	if m.items != nil {
-		edges = append(edges, library.EdgeItems)
+	if m.library_items != nil {
+		edges = append(edges, library.EdgeLibraryItems)
 	}
 	if m.sources != nil {
 		edges = append(edges, library.EdgeSources)
@@ -12913,9 +12879,9 @@ func (m *LibraryMutation) AddedIDs(name string) []ent.Value {
 		if id := m.options; id != nil {
 			return []ent.Value{*id}
 		}
-	case library.EdgeItems:
-		ids := make([]ent.Value, 0, len(m.items))
-		for id := range m.items {
+	case library.EdgeLibraryItems:
+		ids := make([]ent.Value, 0, len(m.library_items))
+		for id := range m.library_items {
 			ids = append(ids, id)
 		}
 		return ids
@@ -12932,8 +12898,8 @@ func (m *LibraryMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *LibraryMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 3)
-	if m.removeditems != nil {
-		edges = append(edges, library.EdgeItems)
+	if m.removedlibrary_items != nil {
+		edges = append(edges, library.EdgeLibraryItems)
 	}
 	if m.removedsources != nil {
 		edges = append(edges, library.EdgeSources)
@@ -12945,9 +12911,9 @@ func (m *LibraryMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *LibraryMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case library.EdgeItems:
-		ids := make([]ent.Value, 0, len(m.removeditems))
-		for id := range m.removeditems {
+	case library.EdgeLibraryItems:
+		ids := make([]ent.Value, 0, len(m.removedlibrary_items))
+		for id := range m.removedlibrary_items {
 			ids = append(ids, id)
 		}
 		return ids
@@ -12967,8 +12933,8 @@ func (m *LibraryMutation) ClearedEdges() []string {
 	if m.clearedoptions {
 		edges = append(edges, library.EdgeOptions)
 	}
-	if m.cleareditems {
-		edges = append(edges, library.EdgeItems)
+	if m.clearedlibrary_items {
+		edges = append(edges, library.EdgeLibraryItems)
 	}
 	if m.clearedsources {
 		edges = append(edges, library.EdgeSources)
@@ -12982,8 +12948,8 @@ func (m *LibraryMutation) EdgeCleared(name string) bool {
 	switch name {
 	case library.EdgeOptions:
 		return m.clearedoptions
-	case library.EdgeItems:
-		return m.cleareditems
+	case library.EdgeLibraryItems:
+		return m.clearedlibrary_items
 	case library.EdgeSources:
 		return m.clearedsources
 	}
@@ -13008,14 +12974,708 @@ func (m *LibraryMutation) ResetEdge(name string) error {
 	case library.EdgeOptions:
 		m.ResetOptions()
 		return nil
-	case library.EdgeItems:
-		m.ResetItems()
+	case library.EdgeLibraryItems:
+		m.ResetLibraryItems()
 		return nil
 	case library.EdgeSources:
 		m.ResetSources()
 		return nil
 	}
 	return fmt.Errorf("unknown Library edge %s", name)
+}
+
+// LibraryItemMutation represents an operation that mutates the LibraryItem nodes in the graph.
+type LibraryItemMutation struct {
+	config
+	op             Op
+	typ            string
+	id             *uuid.UUID
+	created_at     *time.Time
+	updated_at     *time.Time
+	clearedFields  map[string]struct{}
+	library        *uuid.UUID
+	clearedlibrary bool
+	item           *uuid.UUID
+	cleareditem    bool
+	source         *uuid.UUID
+	clearedsource  bool
+	done           bool
+	oldValue       func(context.Context) (*LibraryItem, error)
+	predicates     []predicate.LibraryItem
+}
+
+var _ ent.Mutation = (*LibraryItemMutation)(nil)
+
+// libraryitemOption allows management of the mutation configuration using functional options.
+type libraryitemOption func(*LibraryItemMutation)
+
+// newLibraryItemMutation creates new mutation for the LibraryItem entity.
+func newLibraryItemMutation(c config, op Op, opts ...libraryitemOption) *LibraryItemMutation {
+	m := &LibraryItemMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeLibraryItem,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withLibraryItemID sets the ID field of the mutation.
+func withLibraryItemID(id uuid.UUID) libraryitemOption {
+	return func(m *LibraryItemMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *LibraryItem
+		)
+		m.oldValue = func(ctx context.Context) (*LibraryItem, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().LibraryItem.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withLibraryItem sets the old LibraryItem of the mutation.
+func withLibraryItem(node *LibraryItem) libraryitemOption {
+	return func(m *LibraryItemMutation) {
+		m.oldValue = func(context.Context) (*LibraryItem, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m LibraryItemMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m LibraryItemMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("store: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of LibraryItem entities.
+func (m *LibraryItemMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *LibraryItemMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *LibraryItemMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().LibraryItem.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *LibraryItemMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *LibraryItemMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the LibraryItem entity.
+// If the LibraryItem object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LibraryItemMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *LibraryItemMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *LibraryItemMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *LibraryItemMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the LibraryItem entity.
+// If the LibraryItem object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LibraryItemMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *LibraryItemMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetLibraryID sets the "library_id" field.
+func (m *LibraryItemMutation) SetLibraryID(u uuid.UUID) {
+	m.library = &u
+}
+
+// LibraryID returns the value of the "library_id" field in the mutation.
+func (m *LibraryItemMutation) LibraryID() (r uuid.UUID, exists bool) {
+	v := m.library
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLibraryID returns the old "library_id" field's value of the LibraryItem entity.
+// If the LibraryItem object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LibraryItemMutation) OldLibraryID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLibraryID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLibraryID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLibraryID: %w", err)
+	}
+	return oldValue.LibraryID, nil
+}
+
+// ResetLibraryID resets all changes to the "library_id" field.
+func (m *LibraryItemMutation) ResetLibraryID() {
+	m.library = nil
+}
+
+// SetItemID sets the "item_id" field.
+func (m *LibraryItemMutation) SetItemID(u uuid.UUID) {
+	m.item = &u
+}
+
+// ItemID returns the value of the "item_id" field in the mutation.
+func (m *LibraryItemMutation) ItemID() (r uuid.UUID, exists bool) {
+	v := m.item
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldItemID returns the old "item_id" field's value of the LibraryItem entity.
+// If the LibraryItem object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LibraryItemMutation) OldItemID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldItemID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldItemID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldItemID: %w", err)
+	}
+	return oldValue.ItemID, nil
+}
+
+// ResetItemID resets all changes to the "item_id" field.
+func (m *LibraryItemMutation) ResetItemID() {
+	m.item = nil
+}
+
+// SetSourceID sets the "source_id" field.
+func (m *LibraryItemMutation) SetSourceID(u uuid.UUID) {
+	m.source = &u
+}
+
+// SourceID returns the value of the "source_id" field in the mutation.
+func (m *LibraryItemMutation) SourceID() (r uuid.UUID, exists bool) {
+	v := m.source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSourceID returns the old "source_id" field's value of the LibraryItem entity.
+// If the LibraryItem object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LibraryItemMutation) OldSourceID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSourceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSourceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSourceID: %w", err)
+	}
+	return oldValue.SourceID, nil
+}
+
+// ResetSourceID resets all changes to the "source_id" field.
+func (m *LibraryItemMutation) ResetSourceID() {
+	m.source = nil
+}
+
+// ClearLibrary clears the "library" edge to the Library entity.
+func (m *LibraryItemMutation) ClearLibrary() {
+	m.clearedlibrary = true
+	m.clearedFields[libraryitem.FieldLibraryID] = struct{}{}
+}
+
+// LibraryCleared reports if the "library" edge to the Library entity was cleared.
+func (m *LibraryItemMutation) LibraryCleared() bool {
+	return m.clearedlibrary
+}
+
+// LibraryIDs returns the "library" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// LibraryID instead. It exists only for internal usage by the builders.
+func (m *LibraryItemMutation) LibraryIDs() (ids []uuid.UUID) {
+	if id := m.library; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetLibrary resets all changes to the "library" edge.
+func (m *LibraryItemMutation) ResetLibrary() {
+	m.library = nil
+	m.clearedlibrary = false
+}
+
+// ClearItem clears the "item" edge to the Item entity.
+func (m *LibraryItemMutation) ClearItem() {
+	m.cleareditem = true
+	m.clearedFields[libraryitem.FieldItemID] = struct{}{}
+}
+
+// ItemCleared reports if the "item" edge to the Item entity was cleared.
+func (m *LibraryItemMutation) ItemCleared() bool {
+	return m.cleareditem
+}
+
+// ItemIDs returns the "item" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ItemID instead. It exists only for internal usage by the builders.
+func (m *LibraryItemMutation) ItemIDs() (ids []uuid.UUID) {
+	if id := m.item; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetItem resets all changes to the "item" edge.
+func (m *LibraryItemMutation) ResetItem() {
+	m.item = nil
+	m.cleareditem = false
+}
+
+// ClearSource clears the "source" edge to the Source entity.
+func (m *LibraryItemMutation) ClearSource() {
+	m.clearedsource = true
+	m.clearedFields[libraryitem.FieldSourceID] = struct{}{}
+}
+
+// SourceCleared reports if the "source" edge to the Source entity was cleared.
+func (m *LibraryItemMutation) SourceCleared() bool {
+	return m.clearedsource
+}
+
+// SourceIDs returns the "source" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// SourceID instead. It exists only for internal usage by the builders.
+func (m *LibraryItemMutation) SourceIDs() (ids []uuid.UUID) {
+	if id := m.source; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetSource resets all changes to the "source" edge.
+func (m *LibraryItemMutation) ResetSource() {
+	m.source = nil
+	m.clearedsource = false
+}
+
+// Where appends a list predicates to the LibraryItemMutation builder.
+func (m *LibraryItemMutation) Where(ps ...predicate.LibraryItem) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the LibraryItemMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *LibraryItemMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.LibraryItem, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *LibraryItemMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *LibraryItemMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (LibraryItem).
+func (m *LibraryItemMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *LibraryItemMutation) Fields() []string {
+	fields := make([]string, 0, 5)
+	if m.created_at != nil {
+		fields = append(fields, libraryitem.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, libraryitem.FieldUpdatedAt)
+	}
+	if m.library != nil {
+		fields = append(fields, libraryitem.FieldLibraryID)
+	}
+	if m.item != nil {
+		fields = append(fields, libraryitem.FieldItemID)
+	}
+	if m.source != nil {
+		fields = append(fields, libraryitem.FieldSourceID)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *LibraryItemMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case libraryitem.FieldCreatedAt:
+		return m.CreatedAt()
+	case libraryitem.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case libraryitem.FieldLibraryID:
+		return m.LibraryID()
+	case libraryitem.FieldItemID:
+		return m.ItemID()
+	case libraryitem.FieldSourceID:
+		return m.SourceID()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *LibraryItemMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case libraryitem.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case libraryitem.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case libraryitem.FieldLibraryID:
+		return m.OldLibraryID(ctx)
+	case libraryitem.FieldItemID:
+		return m.OldItemID(ctx)
+	case libraryitem.FieldSourceID:
+		return m.OldSourceID(ctx)
+	}
+	return nil, fmt.Errorf("unknown LibraryItem field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *LibraryItemMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case libraryitem.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case libraryitem.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case libraryitem.FieldLibraryID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLibraryID(v)
+		return nil
+	case libraryitem.FieldItemID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetItemID(v)
+		return nil
+	case libraryitem.FieldSourceID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSourceID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown LibraryItem field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *LibraryItemMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *LibraryItemMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *LibraryItemMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown LibraryItem numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *LibraryItemMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *LibraryItemMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *LibraryItemMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown LibraryItem nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *LibraryItemMutation) ResetField(name string) error {
+	switch name {
+	case libraryitem.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case libraryitem.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case libraryitem.FieldLibraryID:
+		m.ResetLibraryID()
+		return nil
+	case libraryitem.FieldItemID:
+		m.ResetItemID()
+		return nil
+	case libraryitem.FieldSourceID:
+		m.ResetSourceID()
+		return nil
+	}
+	return fmt.Errorf("unknown LibraryItem field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *LibraryItemMutation) AddedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.library != nil {
+		edges = append(edges, libraryitem.EdgeLibrary)
+	}
+	if m.item != nil {
+		edges = append(edges, libraryitem.EdgeItem)
+	}
+	if m.source != nil {
+		edges = append(edges, libraryitem.EdgeSource)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *LibraryItemMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case libraryitem.EdgeLibrary:
+		if id := m.library; id != nil {
+			return []ent.Value{*id}
+		}
+	case libraryitem.EdgeItem:
+		if id := m.item; id != nil {
+			return []ent.Value{*id}
+		}
+	case libraryitem.EdgeSource:
+		if id := m.source; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *LibraryItemMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 3)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *LibraryItemMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *LibraryItemMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.clearedlibrary {
+		edges = append(edges, libraryitem.EdgeLibrary)
+	}
+	if m.cleareditem {
+		edges = append(edges, libraryitem.EdgeItem)
+	}
+	if m.clearedsource {
+		edges = append(edges, libraryitem.EdgeSource)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *LibraryItemMutation) EdgeCleared(name string) bool {
+	switch name {
+	case libraryitem.EdgeLibrary:
+		return m.clearedlibrary
+	case libraryitem.EdgeItem:
+		return m.cleareditem
+	case libraryitem.EdgeSource:
+		return m.clearedsource
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *LibraryItemMutation) ClearEdge(name string) error {
+	switch name {
+	case libraryitem.EdgeLibrary:
+		m.ClearLibrary()
+		return nil
+	case libraryitem.EdgeItem:
+		m.ClearItem()
+		return nil
+	case libraryitem.EdgeSource:
+		m.ClearSource()
+		return nil
+	}
+	return fmt.Errorf("unknown LibraryItem unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *LibraryItemMutation) ResetEdge(name string) error {
+	switch name {
+	case libraryitem.EdgeLibrary:
+		m.ResetLibrary()
+		return nil
+	case libraryitem.EdgeItem:
+		m.ResetItem()
+		return nil
+	case libraryitem.EdgeSource:
+		m.ResetSource()
+		return nil
+	}
+	return fmt.Errorf("unknown LibraryItem edge %s", name)
 }
 
 // LibraryOptionsMutation represents an operation that mutates the LibraryOptions nodes in the graph.
@@ -22465,27 +23125,30 @@ func (m *SessionMutation) ResetEdge(name string) error {
 // SourceMutation represents an operation that mutates the Source nodes in the graph.
 type SourceMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *uuid.UUID
-	created_at       *time.Time
-	updated_at       *time.Time
-	name             *string
-	url              *string
-	api_key_variable *string
-	root_path        *string
-	local_path       *string
-	kind             *source.Kind
-	clearedFields    map[string]struct{}
-	libraries        map[uuid.UUID]struct{}
-	removedlibraries map[uuid.UUID]struct{}
-	clearedlibraries bool
-	files            map[uuid.UUID]struct{}
-	removedfiles     map[uuid.UUID]struct{}
-	clearedfiles     bool
-	done             bool
-	oldValue         func(context.Context) (*Source, error)
-	predicates       []predicate.Source
+	op                 Op
+	typ                string
+	id                 *uuid.UUID
+	created_at         *time.Time
+	updated_at         *time.Time
+	name               *string
+	url                *string
+	api_key_variable   *string
+	root_path          *string
+	local_path         *string
+	kind               *source.Kind
+	clearedFields      map[string]struct{}
+	libraries          map[uuid.UUID]struct{}
+	removedlibraries   map[uuid.UUID]struct{}
+	clearedlibraries   bool
+	files              map[uuid.UUID]struct{}
+	removedfiles       map[uuid.UUID]struct{}
+	clearedfiles       bool
+	memberships        map[uuid.UUID]struct{}
+	removedmemberships map[uuid.UUID]struct{}
+	clearedmemberships bool
+	done               bool
+	oldValue           func(context.Context) (*Source, error)
+	predicates         []predicate.Source
 }
 
 var _ ent.Mutation = (*SourceMutation)(nil)
@@ -23014,6 +23677,60 @@ func (m *SourceMutation) ResetFiles() {
 	m.removedfiles = nil
 }
 
+// AddMembershipIDs adds the "memberships" edge to the LibraryItem entity by ids.
+func (m *SourceMutation) AddMembershipIDs(ids ...uuid.UUID) {
+	if m.memberships == nil {
+		m.memberships = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.memberships[ids[i]] = struct{}{}
+	}
+}
+
+// ClearMemberships clears the "memberships" edge to the LibraryItem entity.
+func (m *SourceMutation) ClearMemberships() {
+	m.clearedmemberships = true
+}
+
+// MembershipsCleared reports if the "memberships" edge to the LibraryItem entity was cleared.
+func (m *SourceMutation) MembershipsCleared() bool {
+	return m.clearedmemberships
+}
+
+// RemoveMembershipIDs removes the "memberships" edge to the LibraryItem entity by IDs.
+func (m *SourceMutation) RemoveMembershipIDs(ids ...uuid.UUID) {
+	if m.removedmemberships == nil {
+		m.removedmemberships = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.memberships, ids[i])
+		m.removedmemberships[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedMemberships returns the removed IDs of the "memberships" edge to the LibraryItem entity.
+func (m *SourceMutation) RemovedMembershipsIDs() (ids []uuid.UUID) {
+	for id := range m.removedmemberships {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// MembershipsIDs returns the "memberships" edge IDs in the mutation.
+func (m *SourceMutation) MembershipsIDs() (ids []uuid.UUID) {
+	for id := range m.memberships {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetMemberships resets all changes to the "memberships" edge.
+func (m *SourceMutation) ResetMemberships() {
+	m.memberships = nil
+	m.clearedmemberships = false
+	m.removedmemberships = nil
+}
+
 // Where appends a list predicates to the SourceMutation builder.
 func (m *SourceMutation) Where(ps ...predicate.Source) {
 	m.predicates = append(m.predicates, ps...)
@@ -23281,12 +23998,15 @@ func (m *SourceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *SourceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.libraries != nil {
 		edges = append(edges, source.EdgeLibraries)
 	}
 	if m.files != nil {
 		edges = append(edges, source.EdgeFiles)
+	}
+	if m.memberships != nil {
+		edges = append(edges, source.EdgeMemberships)
 	}
 	return edges
 }
@@ -23307,18 +24027,27 @@ func (m *SourceMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case source.EdgeMemberships:
+		ids := make([]ent.Value, 0, len(m.memberships))
+		for id := range m.memberships {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *SourceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedlibraries != nil {
 		edges = append(edges, source.EdgeLibraries)
 	}
 	if m.removedfiles != nil {
 		edges = append(edges, source.EdgeFiles)
+	}
+	if m.removedmemberships != nil {
+		edges = append(edges, source.EdgeMemberships)
 	}
 	return edges
 }
@@ -23339,18 +24068,27 @@ func (m *SourceMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case source.EdgeMemberships:
+		ids := make([]ent.Value, 0, len(m.removedmemberships))
+		for id := range m.removedmemberships {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *SourceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedlibraries {
 		edges = append(edges, source.EdgeLibraries)
 	}
 	if m.clearedfiles {
 		edges = append(edges, source.EdgeFiles)
+	}
+	if m.clearedmemberships {
+		edges = append(edges, source.EdgeMemberships)
 	}
 	return edges
 }
@@ -23363,6 +24101,8 @@ func (m *SourceMutation) EdgeCleared(name string) bool {
 		return m.clearedlibraries
 	case source.EdgeFiles:
 		return m.clearedfiles
+	case source.EdgeMemberships:
+		return m.clearedmemberships
 	}
 	return false
 }
@@ -23384,6 +24124,9 @@ func (m *SourceMutation) ResetEdge(name string) error {
 		return nil
 	case source.EdgeFiles:
 		m.ResetFiles()
+		return nil
+	case source.EdgeMemberships:
+		m.ResetMemberships()
 		return nil
 	}
 	return fmt.Errorf("unknown Source edge %s", name)

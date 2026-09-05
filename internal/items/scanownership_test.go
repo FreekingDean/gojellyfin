@@ -15,9 +15,8 @@ func (f *fixture) scan(t *testing.T, name string, year *int32) *Item {
 	t.Helper()
 
 	record, err := f.service.SaveScanned(context.Background(), Scanned{
-		LibraryID:      f.libraryID,
 		Kind:           itemmodal.KindMovie,
-		Key:            "movie:rescanned",
+		Key:            "movie:rescanned:" + f.libraryID.String(),
 		Name:           name,
 		SortName:       name,
 		ProductionYear: year,
@@ -160,9 +159,8 @@ func TestService_SaveScannedTitleOwnership(t *testing.T) {
 		ctx := context.Background()
 
 		record, err := fixture.service.SaveScanned(ctx, Scanned{
-			LibraryID:         fixture.libraryID,
 			Kind:              itemmodal.KindEpisode,
-			Key:               "episode:the-wire:1:3",
+			Key:               "episode:the-wire:1:3:" + fixture.libraryID.String(),
 			Name:              "The Wire S01E03",
 			SortName:          "the wire s01e03",
 			IndexNumber:       number(3),
@@ -182,9 +180,8 @@ func TestService_SaveScannedTitleOwnership(t *testing.T) {
 		}
 
 		rescanned, err := fixture.service.SaveScanned(ctx, Scanned{
-			LibraryID:         fixture.libraryID,
 			Kind:              itemmodal.KindEpisode,
-			Key:               "episode:the-wire:1:3",
+			Key:               "episode:the-wire:1:3:" + fixture.libraryID.String(),
 			Name:              "The Wire S01E03",
 			SortName:          "the wire s01e03",
 			IndexNumber:       number(3),

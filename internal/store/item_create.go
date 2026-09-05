@@ -18,7 +18,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
-	"github.com/FreekingDean/gojellyfin/internal/store/library"
+	"github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
@@ -58,20 +58,6 @@ func (_c *ItemCreate) SetUpdatedAt(v time.Time) *ItemCreate {
 func (_c *ItemCreate) SetNillableUpdatedAt(v *time.Time) *ItemCreate {
 	if v != nil {
 		_c.SetUpdatedAt(*v)
-	}
-	return _c
-}
-
-// SetLibraryID sets the "library_id" field.
-func (_c *ItemCreate) SetLibraryID(v uuid.UUID) *ItemCreate {
-	_c.mutation.SetLibraryID(v)
-	return _c
-}
-
-// SetNillableLibraryID sets the "library_id" field if the given value is not nil.
-func (_c *ItemCreate) SetNillableLibraryID(v *uuid.UUID) *ItemCreate {
-	if v != nil {
-		_c.SetLibraryID(*v)
 	}
 	return _c
 }
@@ -404,9 +390,19 @@ func (_c *ItemCreate) AddChildren(v ...*Item) *ItemCreate {
 	return _c.AddChildIDs(ids...)
 }
 
-// SetLibrary sets the "library" edge to the Library entity.
-func (_c *ItemCreate) SetLibrary(v *Library) *ItemCreate {
-	return _c.SetLibraryID(v.ID)
+// AddLibraryIDs adds the "libraries" edge to the LibraryItem entity by IDs.
+func (_c *ItemCreate) AddLibraryIDs(ids ...uuid.UUID) *ItemCreate {
+	_c.mutation.AddLibraryIDs(ids...)
+	return _c
+}
+
+// AddLibraries adds the "libraries" edges to the LibraryItem entity.
+func (_c *ItemCreate) AddLibraries(v ...*LibraryItem) *ItemCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddLibraryIDs(ids...)
 }
 
 // AddItemSourceIDs adds the "item_sources" edge to the ItemSource entity by IDs.
@@ -818,21 +814,20 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := _c.mutation.LibraryIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.LibrariesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   item.LibraryTable,
-			Columns: []string{item.LibraryColumn},
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.LibrariesTable,
+			Columns: []string{item.LibrariesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(library.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.LibraryID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.ItemSourcesIDs(); len(nodes) > 0 {
@@ -1052,24 +1047,6 @@ func (u *ItemUpsert) SetUpdatedAt(v time.Time) *ItemUpsert {
 // UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
 func (u *ItemUpsert) UpdateUpdatedAt() *ItemUpsert {
 	u.SetExcluded(item.FieldUpdatedAt)
-	return u
-}
-
-// SetLibraryID sets the "library_id" field.
-func (u *ItemUpsert) SetLibraryID(v uuid.UUID) *ItemUpsert {
-	u.Set(item.FieldLibraryID, v)
-	return u
-}
-
-// UpdateLibraryID sets the "library_id" field to the value that was provided on create.
-func (u *ItemUpsert) UpdateLibraryID() *ItemUpsert {
-	u.SetExcluded(item.FieldLibraryID)
-	return u
-}
-
-// ClearLibraryID clears the value of the "library_id" field.
-func (u *ItemUpsert) ClearLibraryID() *ItemUpsert {
-	u.SetNull(item.FieldLibraryID)
 	return u
 }
 
@@ -1590,27 +1567,6 @@ func (u *ItemUpsertOne) SetUpdatedAt(v time.Time) *ItemUpsertOne {
 func (u *ItemUpsertOne) UpdateUpdatedAt() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.UpdateUpdatedAt()
-	})
-}
-
-// SetLibraryID sets the "library_id" field.
-func (u *ItemUpsertOne) SetLibraryID(v uuid.UUID) *ItemUpsertOne {
-	return u.Update(func(s *ItemUpsert) {
-		s.SetLibraryID(v)
-	})
-}
-
-// UpdateLibraryID sets the "library_id" field to the value that was provided on create.
-func (u *ItemUpsertOne) UpdateLibraryID() *ItemUpsertOne {
-	return u.Update(func(s *ItemUpsert) {
-		s.UpdateLibraryID()
-	})
-}
-
-// ClearLibraryID clears the value of the "library_id" field.
-func (u *ItemUpsertOne) ClearLibraryID() *ItemUpsertOne {
-	return u.Update(func(s *ItemUpsert) {
-		s.ClearLibraryID()
 	})
 }
 
@@ -2372,27 +2328,6 @@ func (u *ItemUpsertBulk) SetUpdatedAt(v time.Time) *ItemUpsertBulk {
 func (u *ItemUpsertBulk) UpdateUpdatedAt() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.UpdateUpdatedAt()
-	})
-}
-
-// SetLibraryID sets the "library_id" field.
-func (u *ItemUpsertBulk) SetLibraryID(v uuid.UUID) *ItemUpsertBulk {
-	return u.Update(func(s *ItemUpsert) {
-		s.SetLibraryID(v)
-	})
-}
-
-// UpdateLibraryID sets the "library_id" field to the value that was provided on create.
-func (u *ItemUpsertBulk) UpdateLibraryID() *ItemUpsertBulk {
-	return u.Update(func(s *ItemUpsert) {
-		s.UpdateLibraryID()
-	})
-}
-
-// ClearLibraryID clears the value of the "library_id" field.
-func (u *ItemUpsertBulk) ClearLibraryID() *ItemUpsertBulk {
-	return u.Update(func(s *ItemUpsert) {
-		s.ClearLibraryID()
 	})
 }
 

@@ -25,6 +25,7 @@ import (
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
+	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	downloadermodal "github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/FreekingDean/gojellyfin/internal/transcode"
@@ -105,7 +106,7 @@ func newFixture(t *testing.T) *fixture {
 	}
 
 	t.Cleanup(func() {
-		inLibrary := sourcemodal.HasItemWith(itemmodal.LibraryID(library.ID))
+		inLibrary := sourcemodal.HasItemWith(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID)))
 		if _, err := client.MediaStream.Delete().Where(streammodal.HasSourceWith(inLibrary)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the media streams: %v", err)
 		}
@@ -168,7 +169,6 @@ func (f *fixture) scan(t *testing.T, name string) (*items.Item, *items.MediaSour
 	}
 
 	item, err := f.items.SaveScanned(context.Background(), items.Scanned{
-		LibraryID:    f.library,
 		Kind:         itemmodal.KindAudio,
 		Key:          "audio:" + name,
 		Name:         name,

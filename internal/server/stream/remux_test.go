@@ -41,7 +41,6 @@ func (f *fixture) addRip(t *testing.T, audio string) uuid.UUID {
 	t.Helper()
 
 	item, err := f.items.SaveScanned(context.Background(), items.Scanned{
-		LibraryID:    f.library,
 		Kind:         itemmodal.KindMovie,
 		Key:          "movie:" + audio,
 		Name:         "rip.mkv",

@@ -22,15 +22,17 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	downloadermodal "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
 
 type fixture struct {
-	server    *Server
-	client    *store.Client
-	artwork   artwork.Store
-	itemID    uuid.UUID
-	libraryID uuid.UUID
-	directory string
+	server     *Server
+	client     *store.Client
+	artwork    artwork.Store
+	itemID     uuid.UUID
+	libraryID  uuid.UUID
+	directory  string
+	downloader uuid.UUID
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -57,18 +59,39 @@ func newFixture(t *testing.T) *fixture {
 		t.Fatalf("failed to create the library: %v", err)
 	}
 
+	downloader, err := client.Source.Create().
+		SetName(t.Name() + "-" + uuid.NewString()).
+		SetURL("http://" + uuid.NewString() + ".invalid").
+		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
+		SetKind(downloadermodal.KindRadarr).
+		SetRootPath("/media").
+		SetLocalPath("/media").
+		Save(context.Background())
+	if err != nil {
+		t.Fatalf("failed to create the source: %v", err)
+	}
 	item, err := client.Item.Create().
-		SetLibraryID(library.ID).
 		SetKind(itemmodal.KindMovie).
 		SetName("Movie").
 		SetSortName("Movie").
-		SetKey("test:movie").
+		SetKey("test:movie:" + library.ID.String()).
 		Save(ctx)
 	if err != nil {
 		t.Fatalf("failed to create the item: %v", err)
 	}
 
+	if err := client.LibraryItem.Create().
+		SetLibraryID(library.ID).
+		SetSourceID(downloader.ID).
+		SetItemID(item.ID).
+		Exec(ctx); err != nil {
+		t.Fatalf("failed to place the item in the library: %v", err)
+	}
+
 	t.Cleanup(func() {
+		if err := client.Source.DeleteOne(downloader).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
+		}
 		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the library: %v", err)
 		}
@@ -82,12 +105,13 @@ func newFixture(t *testing.T) *fixture {
 	files := filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}})
 
 	return &fixture{
-		server:    New(records, collage.New(records, files, stored), files, stored),
-		client:    client,
-		artwork:   stored,
-		itemID:    item.ID,
-		libraryID: library.ID,
-		directory: t.TempDir(),
+		downloader: downloader.ID,
+		server:     New(records, collage.New(records, files, stored), files, stored),
+		client:     client,
+		artwork:    stored,
+		itemID:     item.ID,
+		libraryID:  library.ID,
+		directory:  t.TempDir(),
 	}
 }
 

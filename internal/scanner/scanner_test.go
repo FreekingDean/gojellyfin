@@ -147,7 +147,7 @@ func (f *fixture) scan(t *testing.T) []*items.Item {
 		t.Fatalf("failed to scan: %v", err)
 	}
 
-	records, err := f.items.ItemsInLibrary(context.Background(), f.record.ID)
+	records, _, err := f.items.QueryItems(context.Background(), items.ItemQuery{LibraryID: &f.record.ID})
 	if err != nil {
 		t.Fatalf("failed to read the library back: %v", err)
 	}

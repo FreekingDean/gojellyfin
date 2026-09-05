@@ -274,7 +274,6 @@ var (
 		{Name: "taglines", Type: field.TypeJSON, Nullable: true},
 		{Name: "locked_fields", Type: field.TypeJSON, Nullable: true},
 		{Name: "parent_id", Type: field.TypeUUID, Nullable: true},
-		{Name: "library_id", Type: field.TypeUUID, Nullable: true},
 	}
 	// ItemsTable holds the schema information for the "items" table.
 	ItemsTable = &schema.Table{
@@ -288,18 +287,12 @@ var (
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
-			{
-				Symbol:     "items_libraries_items",
-				Columns:    []*schema.Column{ItemsColumns[28]},
-				RefColumns: []*schema.Column{LibrariesColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "item_library_id_key",
+				Name:    "item_key",
 				Unique:  true,
-				Columns: []*schema.Column{ItemsColumns[28], ItemsColumns[5]},
+				Columns: []*schema.Column{ItemsColumns[5]},
 			},
 			{
 				Name:    "item_kind_sort_name",
@@ -375,6 +368,53 @@ var (
 		Name:       "libraries",
 		Columns:    LibrariesColumns,
 		PrimaryKey: []*schema.Column{LibrariesColumns[0]},
+	}
+	// LibraryItemsColumns holds the columns for the "library_items" table.
+	LibraryItemsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "item_id", Type: field.TypeUUID},
+		{Name: "library_id", Type: field.TypeUUID},
+		{Name: "source_id", Type: field.TypeUUID},
+	}
+	// LibraryItemsTable holds the schema information for the "library_items" table.
+	LibraryItemsTable = &schema.Table{
+		Name:       "library_items",
+		Columns:    LibraryItemsColumns,
+		PrimaryKey: []*schema.Column{LibraryItemsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "library_items_items_libraries",
+				Columns:    []*schema.Column{LibraryItemsColumns[3]},
+				RefColumns: []*schema.Column{ItemsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "library_items_libraries_library_items",
+				Columns:    []*schema.Column{LibraryItemsColumns[4]},
+				RefColumns: []*schema.Column{LibrariesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "library_items_sources_memberships",
+				Columns:    []*schema.Column{LibraryItemsColumns[5]},
+				RefColumns: []*schema.Column{SourcesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "libraryitem_library_id_item_id_source_id",
+				Unique:  true,
+				Columns: []*schema.Column{LibraryItemsColumns[4], LibraryItemsColumns[3], LibraryItemsColumns[5]},
+			},
+			{
+				Name:    "libraryitem_item_id",
+				Unique:  false,
+				Columns: []*schema.Column{LibraryItemsColumns[3]},
+			},
+		},
 	}
 	// LibraryOptionsColumns holds the columns for the "library_options" table.
 	LibraryOptionsColumns = []*schema.Column{
@@ -930,6 +970,7 @@ var (
 		ItemsTable,
 		ItemSourcesTable,
 		LibrariesTable,
+		LibraryItemsTable,
 		LibraryOptionsTable,
 		LibrarySourcesTable,
 		MediaStreamsTable,
@@ -957,9 +998,11 @@ func init() {
 	DisplayPreferencesTable.ForeignKeys[0].RefTable = UsersTable
 	ImagesTable.ForeignKeys[0].RefTable = ItemsTable
 	ItemsTable.ForeignKeys[0].RefTable = ItemsTable
-	ItemsTable.ForeignKeys[1].RefTable = LibrariesTable
 	ItemSourcesTable.ForeignKeys[0].RefTable = ItemsTable
 	ItemSourcesTable.ForeignKeys[1].RefTable = SourcesTable
+	LibraryItemsTable.ForeignKeys[0].RefTable = ItemsTable
+	LibraryItemsTable.ForeignKeys[1].RefTable = LibrariesTable
+	LibraryItemsTable.ForeignKeys[2].RefTable = SourcesTable
 	LibraryOptionsTable.ForeignKeys[0].RefTable = LibrariesTable
 	LibrarySourcesTable.ForeignKeys[0].RefTable = LibrariesTable
 	LibrarySourcesTable.ForeignKeys[1].RefTable = SourcesTable

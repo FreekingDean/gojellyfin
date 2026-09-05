@@ -66,11 +66,6 @@ func UpdatedAt(v time.Time) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
-// LibraryID applies equality check predicate on the "library_id" field. It's identical to LibraryIDEQ.
-func LibraryID(v uuid.UUID) predicate.Item {
-	return predicate.Item(sql.FieldEQ(FieldLibraryID, v))
-}
-
 // ParentID applies equality check predicate on the "parent_id" field. It's identical to ParentIDEQ.
 func ParentID(v uuid.UUID) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldParentID, v))
@@ -244,36 +239,6 @@ func UpdatedAtLT(v time.Time) predicate.Item {
 // UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
 func UpdatedAtLTE(v time.Time) predicate.Item {
 	return predicate.Item(sql.FieldLTE(FieldUpdatedAt, v))
-}
-
-// LibraryIDEQ applies the EQ predicate on the "library_id" field.
-func LibraryIDEQ(v uuid.UUID) predicate.Item {
-	return predicate.Item(sql.FieldEQ(FieldLibraryID, v))
-}
-
-// LibraryIDNEQ applies the NEQ predicate on the "library_id" field.
-func LibraryIDNEQ(v uuid.UUID) predicate.Item {
-	return predicate.Item(sql.FieldNEQ(FieldLibraryID, v))
-}
-
-// LibraryIDIn applies the In predicate on the "library_id" field.
-func LibraryIDIn(vs ...uuid.UUID) predicate.Item {
-	return predicate.Item(sql.FieldIn(FieldLibraryID, vs...))
-}
-
-// LibraryIDNotIn applies the NotIn predicate on the "library_id" field.
-func LibraryIDNotIn(vs ...uuid.UUID) predicate.Item {
-	return predicate.Item(sql.FieldNotIn(FieldLibraryID, vs...))
-}
-
-// LibraryIDIsNil applies the IsNil predicate on the "library_id" field.
-func LibraryIDIsNil() predicate.Item {
-	return predicate.Item(sql.FieldIsNull(FieldLibraryID))
-}
-
-// LibraryIDNotNil applies the NotNil predicate on the "library_id" field.
-func LibraryIDNotNil() predicate.Item {
-	return predicate.Item(sql.FieldNotNull(FieldLibraryID))
 }
 
 // ParentIDEQ applies the EQ predicate on the "parent_id" field.
@@ -1352,21 +1317,21 @@ func HasChildrenWith(preds ...predicate.Item) predicate.Item {
 	})
 }
 
-// HasLibrary applies the HasEdge predicate on the "library" edge.
-func HasLibrary() predicate.Item {
+// HasLibraries applies the HasEdge predicate on the "libraries" edge.
+func HasLibraries() predicate.Item {
 	return predicate.Item(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, LibraryTable, LibraryColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, LibrariesTable, LibrariesColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasLibraryWith applies the HasEdge predicate on the "library" edge with a given conditions (other predicates).
-func HasLibraryWith(preds ...predicate.Library) predicate.Item {
+// HasLibrariesWith applies the HasEdge predicate on the "libraries" edge with a given conditions (other predicates).
+func HasLibrariesWith(preds ...predicate.LibraryItem) predicate.Item {
 	return predicate.Item(func(s *sql.Selector) {
-		step := newLibraryStep()
+		step := newLibrariesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

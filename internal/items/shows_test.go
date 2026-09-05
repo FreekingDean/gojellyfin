@@ -92,6 +92,11 @@ func newFixture(t *testing.T) *fixture {
 
 	t.Cleanup(func() {
 		ctx := context.Background()
+		if _, err := client.Item.Delete().
+			Where(itemmodal.KeyContains(library.ID.String())).
+			Exec(ctx); err != nil {
+			t.Errorf("failed to delete the items: %v", err)
+		}
 		if err := client.Source.DeleteOne(downloader).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the source: %v", err)
 		}
@@ -115,11 +120,10 @@ func (f *fixture) add(t *testing.T, item seed) uuid.UUID {
 	}
 
 	record, err := f.service.store.Item.Create().
-		SetLibraryID(f.libraryID).
 		SetKind(item.kind).
 		SetName(item.name).
 		SetSortName(sortName).
-		SetKey(fmt.Sprintf("test:%s", item.name)).
+		SetKey(fmt.Sprintf("test:%s:%s", f.libraryID, item.name)).
 		SetNillableParentID(item.parentID).
 		SetNillableIndexNumber(item.index).
 		SetNillableParentIndexNumber(item.parentIndex).
@@ -127,6 +131,12 @@ func (f *fixture) add(t *testing.T, item seed) uuid.UUID {
 		Save(context.Background())
 	if err != nil {
 		t.Fatalf("failed to create %q: %v", item.name, err)
+	}
+
+	if err := f.service.SaveMembership(
+		context.Background(), f.libraryID, f.sourceID, []uuid.UUID{record.ID},
+	); err != nil {
+		t.Fatalf("failed to place %q in the library: %v", item.name, err)
 	}
 
 	return record.ID

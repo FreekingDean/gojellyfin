@@ -259,21 +259,21 @@ func HasOptionsWith(preds ...predicate.LibraryOptions) predicate.Library {
 	})
 }
 
-// HasItems applies the HasEdge predicate on the "items" edge.
-func HasItems() predicate.Library {
+// HasLibraryItems applies the HasEdge predicate on the "library_items" edge.
+func HasLibraryItems() predicate.Library {
 	return predicate.Library(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, ItemsTable, ItemsColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, LibraryItemsTable, LibraryItemsColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasItemsWith applies the HasEdge predicate on the "items" edge with a given conditions (other predicates).
-func HasItemsWith(preds ...predicate.Item) predicate.Library {
+// HasLibraryItemsWith applies the HasEdge predicate on the "library_items" edge with a given conditions (other predicates).
+func HasLibraryItemsWith(preds ...predicate.LibraryItem) predicate.Library {
 	return predicate.Library(func(s *sql.Selector) {
-		step := newItemsStep()
+		step := newLibraryItemsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

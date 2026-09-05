@@ -40,8 +40,8 @@ type Library struct {
 type LibraryEdges struct {
 	// Options holds the value of the options edge.
 	Options *LibraryOptions `json:"options,omitempty"`
-	// Items holds the value of the items edge.
-	Items []*Item `json:"items,omitempty"`
+	// LibraryItems holds the value of the library_items edge.
+	LibraryItems []*LibraryItem `json:"library_items,omitempty"`
 	// Sources holds the value of the sources edge.
 	Sources []*LibrarySource `json:"sources,omitempty"`
 	// loadedTypes holds the information for reporting if a
@@ -60,13 +60,13 @@ func (e LibraryEdges) OptionsOrErr() (*LibraryOptions, error) {
 	return nil, &NotLoadedError{edge: "options"}
 }
 
-// ItemsOrErr returns the Items value or an error if the edge
+// LibraryItemsOrErr returns the LibraryItems value or an error if the edge
 // was not loaded in eager-loading.
-func (e LibraryEdges) ItemsOrErr() ([]*Item, error) {
+func (e LibraryEdges) LibraryItemsOrErr() ([]*LibraryItem, error) {
 	if e.loadedTypes[1] {
-		return e.Items, nil
+		return e.LibraryItems, nil
 	}
-	return nil, &NotLoadedError{edge: "items"}
+	return nil, &NotLoadedError{edge: "library_items"}
 }
 
 // SourcesOrErr returns the Sources value or an error if the edge
@@ -162,9 +162,9 @@ func (_m *Library) QueryOptions() *LibraryOptionsQuery {
 	return NewLibraryClient(_m.config).QueryOptions(_m)
 }
 
-// QueryItems queries the "items" edge of the Library entity.
-func (_m *Library) QueryItems() *ItemQuery {
-	return NewLibraryClient(_m.config).QueryItems(_m)
+// QueryLibraryItems queries the "library_items" edge of the Library entity.
+func (_m *Library) QueryLibraryItems() *LibraryItemQuery {
+	return NewLibraryClient(_m.config).QueryLibraryItems(_m)
 }
 
 // QuerySources queries the "sources" edge of the Library entity.

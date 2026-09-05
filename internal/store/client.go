@@ -28,6 +28,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
+	"github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
 	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
@@ -75,6 +76,8 @@ type Client struct {
 	ItemSource *ItemSourceClient
 	// Library is the client for interacting with the Library builders.
 	Library *LibraryClient
+	// LibraryItem is the client for interacting with the LibraryItem builders.
+	LibraryItem *LibraryItemClient
 	// LibraryOptions is the client for interacting with the LibraryOptions builders.
 	LibraryOptions *LibraryOptionsClient
 	// LibrarySource is the client for interacting with the LibrarySource builders.
@@ -126,6 +129,7 @@ func (c *Client) init() {
 	c.Item = NewItemClient(c.config)
 	c.ItemSource = NewItemSourceClient(c.config)
 	c.Library = NewLibraryClient(c.config)
+	c.LibraryItem = NewLibraryItemClient(c.config)
 	c.LibraryOptions = NewLibraryOptionsClient(c.config)
 	c.LibrarySource = NewLibrarySourceClient(c.config)
 	c.MediaStream = NewMediaStreamClient(c.config)
@@ -244,6 +248,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Item:               NewItemClient(cfg),
 		ItemSource:         NewItemSourceClient(cfg),
 		Library:            NewLibraryClient(cfg),
+		LibraryItem:        NewLibraryItemClient(cfg),
 		LibraryOptions:     NewLibraryOptionsClient(cfg),
 		LibrarySource:      NewLibrarySourceClient(cfg),
 		MediaStream:        NewMediaStreamClient(cfg),
@@ -289,6 +294,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Item:               NewItemClient(cfg),
 		ItemSource:         NewItemSourceClient(cfg),
 		Library:            NewLibraryClient(cfg),
+		LibraryItem:        NewLibraryItemClient(cfg),
 		LibraryOptions:     NewLibraryOptionsClient(cfg),
 		LibrarySource:      NewLibrarySourceClient(cfg),
 		MediaStream:        NewMediaStreamClient(cfg),
@@ -334,9 +340,9 @@ func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.ActivityLogEntry, c.ApiKey, c.Configuration, c.Credit, c.Device,
 		c.DisplayPreferences, c.Genre, c.Image, c.ImageBlob, c.Item, c.ItemSource,
-		c.Library, c.LibraryOptions, c.LibrarySource, c.MediaStream, c.Person,
-		c.Playlist, c.PlaylistEntry, c.PlaylistShare, c.Session, c.Source, c.Studio,
-		c.User, c.UserConfiguration, c.UserItemData, c.UserPolicy,
+		c.Library, c.LibraryItem, c.LibraryOptions, c.LibrarySource, c.MediaStream,
+		c.Person, c.Playlist, c.PlaylistEntry, c.PlaylistShare, c.Session, c.Source,
+		c.Studio, c.User, c.UserConfiguration, c.UserItemData, c.UserPolicy,
 	} {
 		n.Use(hooks...)
 	}
@@ -348,9 +354,9 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.ActivityLogEntry, c.ApiKey, c.Configuration, c.Credit, c.Device,
 		c.DisplayPreferences, c.Genre, c.Image, c.ImageBlob, c.Item, c.ItemSource,
-		c.Library, c.LibraryOptions, c.LibrarySource, c.MediaStream, c.Person,
-		c.Playlist, c.PlaylistEntry, c.PlaylistShare, c.Session, c.Source, c.Studio,
-		c.User, c.UserConfiguration, c.UserItemData, c.UserPolicy,
+		c.Library, c.LibraryItem, c.LibraryOptions, c.LibrarySource, c.MediaStream,
+		c.Person, c.Playlist, c.PlaylistEntry, c.PlaylistShare, c.Session, c.Source,
+		c.Studio, c.User, c.UserConfiguration, c.UserItemData, c.UserPolicy,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -383,6 +389,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ItemSource.mutate(ctx, m)
 	case *LibraryMutation:
 		return c.Library.mutate(ctx, m)
+	case *LibraryItemMutation:
+		return c.LibraryItem.mutate(ctx, m)
 	case *LibraryOptionsMutation:
 		return c.LibraryOptions.mutate(ctx, m)
 	case *LibrarySourceMutation:
@@ -1881,15 +1889,15 @@ func (c *ItemClient) QueryChildren(_m *Item) *ItemQuery {
 	return query
 }
 
-// QueryLibrary queries the library edge of a Item.
-func (c *ItemClient) QueryLibrary(_m *Item) *LibraryQuery {
-	query := (&LibraryClient{config: c.config}).Query()
+// QueryLibraries queries the libraries edge of a Item.
+func (c *ItemClient) QueryLibraries(_m *Item) *LibraryItemQuery {
+	query := (&LibraryItemClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(item.Table, item.FieldID, id),
-			sqlgraph.To(library.Table, library.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, item.LibraryTable, item.LibraryColumn),
+			sqlgraph.To(libraryitem.Table, libraryitem.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.LibrariesTable, item.LibrariesColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -2371,15 +2379,15 @@ func (c *LibraryClient) QueryOptions(_m *Library) *LibraryOptionsQuery {
 	return query
 }
 
-// QueryItems queries the items edge of a Library.
-func (c *LibraryClient) QueryItems(_m *Library) *ItemQuery {
-	query := (&ItemClient{config: c.config}).Query()
+// QueryLibraryItems queries the library_items edge of a Library.
+func (c *LibraryClient) QueryLibraryItems(_m *Library) *LibraryItemQuery {
+	query := (&LibraryItemClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(library.Table, library.FieldID, id),
-			sqlgraph.To(item.Table, item.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, library.ItemsTable, library.ItemsColumn),
+			sqlgraph.To(libraryitem.Table, libraryitem.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, library.LibraryItemsTable, library.LibraryItemsColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -2425,6 +2433,187 @@ func (c *LibraryClient) mutate(ctx context.Context, m *LibraryMutation) (Value, 
 		return (&LibraryDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("store: unknown Library mutation op: %q", m.Op())
+	}
+}
+
+// LibraryItemClient is a client for the LibraryItem schema.
+type LibraryItemClient struct {
+	config
+}
+
+// NewLibraryItemClient returns a client for the LibraryItem from the given config.
+func NewLibraryItemClient(c config) *LibraryItemClient {
+	return &LibraryItemClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `libraryitem.Hooks(f(g(h())))`.
+func (c *LibraryItemClient) Use(hooks ...Hook) {
+	c.hooks.LibraryItem = append(c.hooks.LibraryItem, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `libraryitem.Intercept(f(g(h())))`.
+func (c *LibraryItemClient) Intercept(interceptors ...Interceptor) {
+	c.inters.LibraryItem = append(c.inters.LibraryItem, interceptors...)
+}
+
+// Create returns a builder for creating a LibraryItem entity.
+func (c *LibraryItemClient) Create() *LibraryItemCreate {
+	mutation := newLibraryItemMutation(c.config, OpCreate)
+	return &LibraryItemCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of LibraryItem entities.
+func (c *LibraryItemClient) CreateBulk(builders ...*LibraryItemCreate) *LibraryItemCreateBulk {
+	return &LibraryItemCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *LibraryItemClient) MapCreateBulk(slice any, setFunc func(*LibraryItemCreate, int)) *LibraryItemCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &LibraryItemCreateBulk{err: fmt.Errorf("calling to LibraryItemClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*LibraryItemCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &LibraryItemCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for LibraryItem.
+func (c *LibraryItemClient) Update() *LibraryItemUpdate {
+	mutation := newLibraryItemMutation(c.config, OpUpdate)
+	return &LibraryItemUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *LibraryItemClient) UpdateOne(_m *LibraryItem) *LibraryItemUpdateOne {
+	mutation := newLibraryItemMutation(c.config, OpUpdateOne, withLibraryItem(_m))
+	return &LibraryItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *LibraryItemClient) UpdateOneID(id uuid.UUID) *LibraryItemUpdateOne {
+	mutation := newLibraryItemMutation(c.config, OpUpdateOne, withLibraryItemID(id))
+	return &LibraryItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for LibraryItem.
+func (c *LibraryItemClient) Delete() *LibraryItemDelete {
+	mutation := newLibraryItemMutation(c.config, OpDelete)
+	return &LibraryItemDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *LibraryItemClient) DeleteOne(_m *LibraryItem) *LibraryItemDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *LibraryItemClient) DeleteOneID(id uuid.UUID) *LibraryItemDeleteOne {
+	builder := c.Delete().Where(libraryitem.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &LibraryItemDeleteOne{builder}
+}
+
+// Query returns a query builder for LibraryItem.
+func (c *LibraryItemClient) Query() *LibraryItemQuery {
+	return &LibraryItemQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeLibraryItem},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a LibraryItem entity by its id.
+func (c *LibraryItemClient) Get(ctx context.Context, id uuid.UUID) (*LibraryItem, error) {
+	return c.Query().Where(libraryitem.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *LibraryItemClient) GetX(ctx context.Context, id uuid.UUID) *LibraryItem {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryLibrary queries the library edge of a LibraryItem.
+func (c *LibraryItemClient) QueryLibrary(_m *LibraryItem) *LibraryQuery {
+	query := (&LibraryClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(libraryitem.Table, libraryitem.FieldID, id),
+			sqlgraph.To(library.Table, library.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, libraryitem.LibraryTable, libraryitem.LibraryColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryItem queries the item edge of a LibraryItem.
+func (c *LibraryItemClient) QueryItem(_m *LibraryItem) *ItemQuery {
+	query := (&ItemClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(libraryitem.Table, libraryitem.FieldID, id),
+			sqlgraph.To(item.Table, item.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, libraryitem.ItemTable, libraryitem.ItemColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySource queries the source edge of a LibraryItem.
+func (c *LibraryItemClient) QuerySource(_m *LibraryItem) *SourceQuery {
+	query := (&SourceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(libraryitem.Table, libraryitem.FieldID, id),
+			sqlgraph.To(source.Table, source.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, libraryitem.SourceTable, libraryitem.SourceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *LibraryItemClient) Hooks() []Hook {
+	return c.hooks.LibraryItem
+}
+
+// Interceptors returns the client interceptors.
+func (c *LibraryItemClient) Interceptors() []Interceptor {
+	return c.inters.LibraryItem
+}
+
+func (c *LibraryItemClient) mutate(ctx context.Context, m *LibraryItemMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&LibraryItemCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&LibraryItemUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&LibraryItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&LibraryItemDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("store: unknown LibraryItem mutation op: %q", m.Op())
 	}
 }
 
@@ -3872,6 +4061,22 @@ func (c *SourceClient) QueryFiles(_m *Source) *ItemSourceQuery {
 	return query
 }
 
+// QueryMemberships queries the memberships edge of a Source.
+func (c *SourceClient) QueryMemberships(_m *Source) *LibraryItemQuery {
+	query := (&LibraryItemClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(source.Table, source.FieldID, id),
+			sqlgraph.To(libraryitem.Table, libraryitem.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, source.MembershipsTable, source.MembershipsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *SourceClient) Hooks() []Hook {
 	return c.hooks.Source
@@ -4774,16 +4979,16 @@ func (c *UserPolicyClient) mutate(ctx context.Context, m *UserPolicyMutation) (V
 type (
 	hooks struct {
 		ActivityLogEntry, ApiKey, Configuration, Credit, Device, DisplayPreferences,
-		Genre, Image, ImageBlob, Item, ItemSource, Library, LibraryOptions,
-		LibrarySource, MediaStream, Person, Playlist, PlaylistEntry, PlaylistShare,
-		Session, Source, Studio, User, UserConfiguration, UserItemData,
+		Genre, Image, ImageBlob, Item, ItemSource, Library, LibraryItem,
+		LibraryOptions, LibrarySource, MediaStream, Person, Playlist, PlaylistEntry,
+		PlaylistShare, Session, Source, Studio, User, UserConfiguration, UserItemData,
 		UserPolicy []ent.Hook
 	}
 	inters struct {
 		ActivityLogEntry, ApiKey, Configuration, Credit, Device, DisplayPreferences,
-		Genre, Image, ImageBlob, Item, ItemSource, Library, LibraryOptions,
-		LibrarySource, MediaStream, Person, Playlist, PlaylistEntry, PlaylistShare,
-		Session, Source, Studio, User, UserConfiguration, UserItemData,
+		Genre, Image, ImageBlob, Item, ItemSource, Library, LibraryItem,
+		LibraryOptions, LibrarySource, MediaStream, Person, Playlist, PlaylistEntry,
+		PlaylistShare, Session, Source, Studio, User, UserConfiguration, UserItemData,
 		UserPolicy []ent.Interceptor
 	}
 )

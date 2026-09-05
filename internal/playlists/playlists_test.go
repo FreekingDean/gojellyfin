@@ -12,6 +12,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	playlistmodal "github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	entrymodal "github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	sharemodal "github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
@@ -73,7 +74,7 @@ func newFixture(t *testing.T) *fixture {
 		if _, err := client.Item.Delete().Where(itemmodal.IDIn(fixture.created...)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the playlist items: %v", err)
 		}
-		if _, err := client.Item.Delete().Where(itemmodal.LibraryID(library.ID)).Exec(ctx); err != nil {
+		if _, err := client.Item.Delete().Where(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID))).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the items: %v", err)
 		}
 		if _, err := client.User.Delete().Where(usermodal.IDIn(fixture.users...)).Exec(ctx); err != nil {
@@ -110,12 +111,11 @@ func (f *fixture) item(t *testing.T, name string, kind itemmodal.Kind, parentID 
 	t.Helper()
 
 	record, err := f.client.Item.Create().
-		SetLibraryID(f.libraryID).
 		SetKind(kind).
 		SetName(name).
 		SetSortName(name).
 		SetIsFolder(kind == itemmodal.KindSeries || kind == itemmodal.KindSeason).
-		SetKey(fmt.Sprintf("test:%s", name)).
+		SetKey(fmt.Sprintf("test:%s:%s", f.libraryID, name)).
 		SetNillableParentID(parentID).
 		SetNillableIndexNumber(index).
 		Save(context.Background())

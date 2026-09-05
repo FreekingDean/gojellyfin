@@ -35,6 +35,8 @@ const (
 	EdgeLibraries = "libraries"
 	// EdgeFiles holds the string denoting the files edge name in mutations.
 	EdgeFiles = "files"
+	// EdgeMemberships holds the string denoting the memberships edge name in mutations.
+	EdgeMemberships = "memberships"
 	// Table holds the table name of the source in the database.
 	Table = "sources"
 	// LibrariesTable is the table that holds the libraries relation/edge.
@@ -51,6 +53,13 @@ const (
 	FilesInverseTable = "item_sources"
 	// FilesColumn is the table column denoting the files relation/edge.
 	FilesColumn = "source_id"
+	// MembershipsTable is the table that holds the memberships relation/edge.
+	MembershipsTable = "library_items"
+	// MembershipsInverseTable is the table name for the LibraryItem entity.
+	// It exists in this package in order to avoid circular dependency with the "libraryitem" package.
+	MembershipsInverseTable = "library_items"
+	// MembershipsColumn is the table column denoting the memberships relation/edge.
+	MembershipsColumn = "source_id"
 )
 
 // Columns holds all SQL columns for source fields.
@@ -186,6 +195,20 @@ func ByFiles(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newFilesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByMembershipsCount orders the results by memberships count.
+func ByMembershipsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newMembershipsStep(), opts...)
+	}
+}
+
+// ByMemberships orders the results by memberships terms.
+func ByMemberships(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newMembershipsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newLibrariesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -198,5 +221,12 @@ func newFilesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(FilesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, FilesTable, FilesColumn),
+	)
+}
+func newMembershipsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(MembershipsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, MembershipsTable, MembershipsColumn),
 	)
 }

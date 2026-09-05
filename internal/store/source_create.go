@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	"github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/google/uuid"
@@ -140,6 +141,21 @@ func (_c *SourceCreate) AddFiles(v ...*ItemSource) *SourceCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddFileIDs(ids...)
+}
+
+// AddMembershipIDs adds the "memberships" edge to the LibraryItem entity by IDs.
+func (_c *SourceCreate) AddMembershipIDs(ids ...uuid.UUID) *SourceCreate {
+	_c.mutation.AddMembershipIDs(ids...)
+	return _c
+}
+
+// AddMemberships adds the "memberships" edges to the LibraryItem entity.
+func (_c *SourceCreate) AddMemberships(v ...*LibraryItem) *SourceCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddMembershipIDs(ids...)
 }
 
 // Mutation returns the SourceMutation object of the builder.
@@ -305,6 +321,22 @@ func (_c *SourceCreate) createSpec() (*Source, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.MembershipsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.MembershipsTable,
+			Columns: []string{source.MembershipsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

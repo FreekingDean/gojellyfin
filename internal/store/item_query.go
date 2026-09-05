@@ -19,7 +19,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
-	"github.com/FreekingDean/gojellyfin/internal/store/library"
+	"github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
@@ -37,7 +37,7 @@ type ItemQuery struct {
 	predicates             []predicate.Item
 	withParent             *ItemQuery
 	withChildren           *ItemQuery
-	withLibrary            *LibraryQuery
+	withLibraries          *LibraryItemQuery
 	withItemSources        *ItemSourceQuery
 	withCredits            *CreditQuery
 	withImages             *ImageQuery
@@ -128,9 +128,9 @@ func (_q *ItemQuery) QueryChildren() *ItemQuery {
 	return query
 }
 
-// QueryLibrary chains the current query on the "library" edge.
-func (_q *ItemQuery) QueryLibrary() *LibraryQuery {
-	query := (&LibraryClient{config: _q.config}).Query()
+// QueryLibraries chains the current query on the "libraries" edge.
+func (_q *ItemQuery) QueryLibraries() *LibraryItemQuery {
+	query := (&LibraryItemClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -141,8 +141,8 @@ func (_q *ItemQuery) QueryLibrary() *LibraryQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(item.Table, item.FieldID, selector),
-			sqlgraph.To(library.Table, library.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, item.LibraryTable, item.LibraryColumn),
+			sqlgraph.To(libraryitem.Table, libraryitem.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.LibrariesTable, item.LibrariesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -542,7 +542,7 @@ func (_q *ItemQuery) Clone() *ItemQuery {
 		predicates:             append([]predicate.Item{}, _q.predicates...),
 		withParent:             _q.withParent.Clone(),
 		withChildren:           _q.withChildren.Clone(),
-		withLibrary:            _q.withLibrary.Clone(),
+		withLibraries:          _q.withLibraries.Clone(),
 		withItemSources:        _q.withItemSources.Clone(),
 		withCredits:            _q.withCredits.Clone(),
 		withImages:             _q.withImages.Clone(),
@@ -580,14 +580,14 @@ func (_q *ItemQuery) WithChildren(opts ...func(*ItemQuery)) *ItemQuery {
 	return _q
 }
 
-// WithLibrary tells the query-builder to eager-load the nodes that are connected to
-// the "library" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *ItemQuery) WithLibrary(opts ...func(*LibraryQuery)) *ItemQuery {
-	query := (&LibraryClient{config: _q.config}).Query()
+// WithLibraries tells the query-builder to eager-load the nodes that are connected to
+// the "libraries" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemQuery) WithLibraries(opts ...func(*LibraryItemQuery)) *ItemQuery {
+	query := (&LibraryItemClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withLibrary = query
+	_q.withLibraries = query
 	return _q
 }
 
@@ -771,7 +771,7 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 		loadedTypes = [12]bool{
 			_q.withParent != nil,
 			_q.withChildren != nil,
-			_q.withLibrary != nil,
+			_q.withLibraries != nil,
 			_q.withItemSources != nil,
 			_q.withCredits != nil,
 			_q.withImages != nil,
@@ -817,9 +817,10 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 			return nil, err
 		}
 	}
-	if query := _q.withLibrary; query != nil {
-		if err := _q.loadLibrary(ctx, query, nodes, nil,
-			func(n *Item, e *Library) { n.Edges.Library = e }); err != nil {
+	if query := _q.withLibraries; query != nil {
+		if err := _q.loadLibraries(ctx, query, nodes,
+			func(n *Item) { n.Edges.Libraries = []*LibraryItem{} },
+			func(n *Item, e *LibraryItem) { n.Edges.Libraries = append(n.Edges.Libraries, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -953,32 +954,33 @@ func (_q *ItemQuery) loadChildren(ctx context.Context, query *ItemQuery, nodes [
 	}
 	return nil
 }
-func (_q *ItemQuery) loadLibrary(ctx context.Context, query *LibraryQuery, nodes []*Item, init func(*Item), assign func(*Item, *Library)) error {
-	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*Item)
+func (_q *ItemQuery) loadLibraries(ctx context.Context, query *LibraryItemQuery, nodes []*Item, init func(*Item), assign func(*Item, *LibraryItem)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Item)
 	for i := range nodes {
-		fk := nodes[i].LibraryID
-		if _, ok := nodeids[fk]; !ok {
-			ids = append(ids, fk)
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
 		}
-		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	if len(ids) == 0 {
-		return nil
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(libraryitem.FieldItemID)
 	}
-	query.Where(library.IDIn(ids...))
+	query.Where(predicate.LibraryItem(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(item.LibrariesColumn), fks...))
+	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		nodes, ok := nodeids[n.ID]
+		fk := n.ItemID
+		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "library_id" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "item_id" returned %v for node %v`, fk, n.ID)
 		}
-		for i := range nodes {
-			assign(nodes[i], n)
-		}
+		assign(node, n)
 	}
 	return nil
 }
@@ -1344,9 +1346,6 @@ func (_q *ItemQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withParent != nil {
 			_spec.Node.AddColumnOnce(item.FieldParentID)
-		}
-		if _q.withLibrary != nil {
-			_spec.Node.AddColumnOnce(item.FieldLibraryID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

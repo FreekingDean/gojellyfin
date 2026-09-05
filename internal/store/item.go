@@ -11,7 +11,6 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
-	"github.com/FreekingDean/gojellyfin/internal/store/library"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/google/uuid"
 )
@@ -25,8 +24,6 @@ type Item struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
-	// LibraryID holds the value of the "library_id" field.
-	LibraryID uuid.UUID `json:"library_id,omitempty"`
 	// ParentID holds the value of the "parent_id" field.
 	ParentID *uuid.UUID `json:"parent_id,omitempty"`
 	// Kind holds the value of the "kind" field.
@@ -89,8 +86,8 @@ type ItemEdges struct {
 	Parent *Item `json:"parent,omitempty"`
 	// Children holds the value of the children edge.
 	Children []*Item `json:"children,omitempty"`
-	// Library holds the value of the library edge.
-	Library *Library `json:"library,omitempty"`
+	// Libraries holds the value of the libraries edge.
+	Libraries []*LibraryItem `json:"libraries,omitempty"`
 	// ItemSources holds the value of the item_sources edge.
 	ItemSources []*ItemSource `json:"item_sources,omitempty"`
 	// Credits holds the value of the credits edge.
@@ -134,15 +131,13 @@ func (e ItemEdges) ChildrenOrErr() ([]*Item, error) {
 	return nil, &NotLoadedError{edge: "children"}
 }
 
-// LibraryOrErr returns the Library value or an error if the edge
-// was not loaded in eager-loading, or loaded but was not found.
-func (e ItemEdges) LibraryOrErr() (*Library, error) {
-	if e.Library != nil {
-		return e.Library, nil
-	} else if e.loadedTypes[2] {
-		return nil, &NotFoundError{label: library.Label}
+// LibrariesOrErr returns the Libraries value or an error if the edge
+// was not loaded in eager-loading.
+func (e ItemEdges) LibrariesOrErr() ([]*LibraryItem, error) {
+	if e.loadedTypes[2] {
+		return e.Libraries, nil
 	}
-	return nil, &NotLoadedError{edge: "library"}
+	return nil, &NotLoadedError{edge: "libraries"}
 }
 
 // ItemSourcesOrErr returns the ItemSources value or an error if the edge
@@ -247,7 +242,7 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case item.FieldCreatedAt, item.FieldUpdatedAt, item.FieldDeletedAt, item.FieldPremiereDate, item.FieldEndDate, item.FieldDateModified:
 			values[i] = new(sql.NullTime)
-		case item.FieldID, item.FieldLibraryID:
+		case item.FieldID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -281,12 +276,6 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
-			}
-		case item.FieldLibraryID:
-			if value, ok := values[i].(*uuid.UUID); !ok {
-				return fmt.Errorf("unexpected type %T for field library_id", values[i])
-			} else if value != nil {
-				_m.LibraryID = *value
 			}
 		case item.FieldParentID:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
@@ -478,9 +467,9 @@ func (_m *Item) QueryChildren() *ItemQuery {
 	return NewItemClient(_m.config).QueryChildren(_m)
 }
 
-// QueryLibrary queries the "library" edge of the Item entity.
-func (_m *Item) QueryLibrary() *LibraryQuery {
-	return NewItemClient(_m.config).QueryLibrary(_m)
+// QueryLibraries queries the "libraries" edge of the Item entity.
+func (_m *Item) QueryLibraries() *LibraryItemQuery {
+	return NewItemClient(_m.config).QueryLibraries(_m)
 }
 
 // QueryItemSources queries the "item_sources" edge of the Item entity.
@@ -556,9 +545,6 @@ func (_m *Item) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
 	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
-	builder.WriteString(", ")
-	builder.WriteString("library_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.LibraryID))
 	builder.WriteString(", ")
 	if v := _m.ParentID; v != nil {
 		builder.WriteString("parent_id=")

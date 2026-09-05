@@ -14,7 +14,6 @@ type Item struct {
 
 func (Item) Fields() []ent.Field {
 	return withDefaultFields(
-		field.UUID("library_id", uuid.UUID{}).Optional(),
 		field.UUID("parent_id", uuid.UUID{}).Optional().Nillable(),
 
 		field.Enum("kind").Values(
@@ -63,7 +62,7 @@ func (Item) Fields() []ent.Field {
 func (Item) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("children", Item.Type).Annotations(cascadeOnDelete).From("parent").Unique().Field("parent_id"),
-		edge.From("library", Library.Type).Ref("items").Unique().Field("library_id"),
+		edge.To("libraries", LibraryItem.Type).Annotations(cascadeOnDelete),
 		edge.To("item_sources", ItemSource.Type).Annotations(cascadeOnDelete),
 		edge.To("credits", Credit.Type).Annotations(cascadeOnDelete),
 		edge.To("images", Image.Type).Annotations(cascadeOnDelete),
@@ -78,7 +77,7 @@ func (Item) Edges() []ent.Edge {
 
 func (Item) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("library_id", "key").Unique(),
+		index.Fields("key").Unique(),
 		index.Fields("kind", "sort_name"),
 		index.Fields("deleted_at"),
 	}

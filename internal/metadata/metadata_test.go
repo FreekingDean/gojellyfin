@@ -19,6 +19,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
+	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
 
 const unreachable = "A Film The Provider Cannot Reach"
@@ -120,11 +121,12 @@ func (s *stubProvider) Episode(_ context.Context, series map[string]string, seas
 }
 
 type fixture struct {
-	items     *items.Service
-	service   *Service
-	provider  *stubProvider
-	artwork   artwork.Store
-	libraryID uuid.UUID
+	items      *items.Service
+	service    *Service
+	provider   *stubProvider
+	artwork    artwork.Store
+	libraryID  uuid.UUID
+	downloader uuid.UUID
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -176,12 +178,30 @@ func newFixtureEnabled(t *testing.T, enabled bool) *fixture {
 		}
 	})
 
+	downloader, err := client.Source.Create().
+		SetName(t.Name() + "-" + uuid.NewString()).
+		SetURL("http://" + uuid.NewString() + ".invalid").
+		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
+		SetKind(sourcemodal.KindRadarr).
+		SetRootPath("/media").
+		SetLocalPath("/media").
+		Save(context.Background())
+	if err != nil {
+		t.Fatalf("failed to create the source: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := client.Source.DeleteOne(downloader).Exec(context.Background()); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
+		}
+	})
+
 	return &fixture{
-		items:     service,
-		service:   New(provider, service, stored),
-		provider:  provider,
-		artwork:   stored,
-		libraryID: library.ID,
+		downloader: downloader.ID,
+		items:      service,
+		service:    New(provider, service, stored),
+		provider:   provider,
+		artwork:    stored,
+		libraryID:  library.ID,
 	}
 }
 
@@ -214,7 +234,6 @@ func dropStoredArtwork(t *testing.T, service *items.Service, stored artwork.Stor
 func (f *fixture) add(t *testing.T, scanned items.Scanned) *items.Item {
 	t.Helper()
 
-	scanned.LibraryID = f.libraryID
 	if scanned.SortName == "" {
 		scanned.SortName = scanned.Name
 	}
@@ -225,6 +244,12 @@ func (f *fixture) add(t *testing.T, scanned items.Scanned) *items.Item {
 	added, err := f.items.SaveScanned(context.Background(), scanned)
 	if err != nil {
 		t.Fatalf("failed to add %q: %v", scanned.Name, err)
+	}
+
+	if err := f.items.SaveMembership(
+		context.Background(), f.libraryID, f.downloader, []uuid.UUID{added.ID},
+	); err != nil {
+		t.Fatalf("failed to place %q in the library: %v", scanned.Name, err)
 	}
 
 	return added

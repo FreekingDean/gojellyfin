@@ -430,7 +430,6 @@ func (f *fixture) film(t *testing.T, key string) *Item {
 	t.Helper()
 
 	item, err := f.service.SaveScanned(context.Background(), Scanned{
-		LibraryID:    f.libraryID,
 		Kind:         itemmodal.KindMovie,
 		Key:          key,
 		Name:         key,

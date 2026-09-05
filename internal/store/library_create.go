@@ -12,8 +12,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
+	"github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
 	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	"github.com/google/uuid"
@@ -106,19 +106,19 @@ func (_c *LibraryCreate) SetOptions(v *LibraryOptions) *LibraryCreate {
 	return _c.SetOptionsID(v.ID)
 }
 
-// AddItemIDs adds the "items" edge to the Item entity by IDs.
-func (_c *LibraryCreate) AddItemIDs(ids ...uuid.UUID) *LibraryCreate {
-	_c.mutation.AddItemIDs(ids...)
+// AddLibraryItemIDs adds the "library_items" edge to the LibraryItem entity by IDs.
+func (_c *LibraryCreate) AddLibraryItemIDs(ids ...uuid.UUID) *LibraryCreate {
+	_c.mutation.AddLibraryItemIDs(ids...)
 	return _c
 }
 
-// AddItems adds the "items" edges to the Item entity.
-func (_c *LibraryCreate) AddItems(v ...*Item) *LibraryCreate {
+// AddLibraryItems adds the "library_items" edges to the LibraryItem entity.
+func (_c *LibraryCreate) AddLibraryItems(v ...*LibraryItem) *LibraryCreate {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _c.AddItemIDs(ids...)
+	return _c.AddLibraryItemIDs(ids...)
 }
 
 // AddSourceIDs adds the "sources" edge to the LibrarySource entity by IDs.
@@ -283,15 +283,15 @@ func (_c *LibraryCreate) createSpec() (*Library, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := _c.mutation.ItemsIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.LibraryItemsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   library.ItemsTable,
-			Columns: []string{library.ItemsColumn},
+			Table:   library.LibraryItemsTable,
+			Columns: []string{library.LibraryItemsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

@@ -2,6 +2,7 @@ package items
 
 import (
 	"context"
+	stdsql "database/sql"
 	"errors"
 	"fmt"
 	"strings"
@@ -12,8 +13,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
-	entrymodal "github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
+	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	datamodal "github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
 )
@@ -38,7 +38,6 @@ func New(client *store.Client) *Service {
 }
 
 type Scanned struct {
-	LibraryID         uuid.UUID
 	ParentID          *uuid.UUID
 	Kind              Kind
 	Key               string
@@ -50,7 +49,7 @@ type Scanned struct {
 	DateModified      time.Time
 }
 
-var folderKinds = map[Kind]bool{
+var isFolderKind = map[Kind]bool{
 	itemmodal.KindSeries:           true,
 	itemmodal.KindSeason:           true,
 	itemmodal.KindFolder:           true,
@@ -60,15 +59,19 @@ var folderKinds = map[Kind]bool{
 	itemmodal.KindUserRootFolder:   true,
 }
 
+var (
+	folderKinds   = []Kind{itemmodal.KindSeries, itemmodal.KindSeason}
+	playableKinds = []Kind{itemmodal.KindMovie, itemmodal.KindEpisode}
+)
+
 func (s *Service) SaveScanned(ctx context.Context, scanned Scanned) (*Item, error) {
-	isFolder := folderKinds[scanned.Kind]
+	isFolder := isFolderKind[scanned.Kind]
 	mediaType := itemmodal.MediaTypeVideo
 	if isFolder {
 		mediaType = itemmodal.MediaTypeUnknown
 	}
 
 	id, err := s.store.Item.Create().
-		SetLibraryID(scanned.LibraryID).
 		SetNillableParentID(scanned.ParentID).
 		SetKind(scanned.Kind).
 		SetMediaType(mediaType).
@@ -80,7 +83,7 @@ func (s *Service) SaveScanned(ctx context.Context, scanned Scanned) (*Item, erro
 		SetNillableIndexNumber(scanned.IndexNumber).
 		SetNillableParentIndexNumber(scanned.ParentIndexNumber).
 		SetDateModified(scanned.DateModified).
-		OnConflictColumns(itemmodal.FieldLibraryID, itemmodal.FieldKey).
+		OnConflictColumns(itemmodal.FieldKey).
 		UpdateParentID().
 		UpdateKind().
 		UpdateMediaType().
@@ -127,8 +130,19 @@ func (s *Service) ItemsByIDs(ctx context.Context, ids []uuid.UUID) (map[uuid.UUI
 }
 
 type Ancestry struct {
-	Parents   []*Item
-	LibraryID uuid.UUID
+	Parents    []*Item
+	LibraryIDs []uuid.UUID
+}
+
+func parsed(values []string) []uuid.UUID {
+	ids := make([]uuid.UUID, 0, len(values))
+	for _, value := range values {
+		if id, err := uuid.Parse(value); err == nil {
+			ids = append(ids, id)
+		}
+	}
+
+	return ids
 }
 
 func (s *Service) Ancestors(ctx context.Context, id uuid.UUID) (*Ancestry, error) {
@@ -140,7 +154,15 @@ func (s *Service) Ancestors(ctx context.Context, id uuid.UUID) (*Ancestry, error
 		return nil, fmt.Errorf("failed to query item: %w", err)
 	}
 
-	ancestry := &Ancestry{Parents: []*Item{}, LibraryID: item.LibraryID}
+	libraries, err := s.store.LibraryItem.Query().
+		Where(librarymembership.ItemID(id)).
+		Select(librarymembership.FieldLibraryID).
+		Strings(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query the item's libraries: %w", err)
+	}
+
+	ancestry := &Ancestry{Parents: []*Item{}, LibraryIDs: parsed(libraries)}
 	seen := map[uuid.UUID]bool{item.ID: true}
 	for item.ParentID != nil && !seen[*item.ParentID] {
 		parent, err := s.ItemByID(ctx, *item.ParentID)
@@ -162,7 +184,7 @@ func (s *Service) ItemsNeedingMetadata(ctx context.Context, kinds []Kind, force 
 	}
 	if scope != uuid.Nil {
 		query = query.Where(itemmodal.Or(
-			itemmodal.LibraryID(scope),
+			inLibrary(scope),
 			itemmodal.ID(scope),
 			itemmodal.HasParentWith(itemmodal.ID(scope)),
 			itemmodal.HasParentWith(itemmodal.HasParentWith(itemmodal.ID(scope))),
@@ -216,7 +238,7 @@ func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int
 	items := s.query()
 
 	if query.LibraryID != nil {
-		items = items.Where(itemmodal.LibraryID(*query.LibraryID))
+		items = items.Where(inLibrary(*query.LibraryID))
 	}
 	if query.TopLevel {
 		items = items.Where(itemmodal.ParentIDIsNil())
@@ -308,39 +330,77 @@ func (s *Service) query() *store.ItemQuery {
 
 var ErrNothingScanned = errors.New("items: the scan found no files")
 
-func (s *Service) DeleteItemsNotInKeys(ctx context.Context, libraryID uuid.UUID, keys []string) error {
-	if len(keys) == 0 {
-		return ErrNothingScanned
-	}
-
-	missing := []predicate.Item{
-		itemmodal.LibraryID(libraryID),
-		itemmodal.DeletedAtIsNil(),
-		itemmodal.KeyNotIn(keys...),
-	}
-
-	if err := s.store.Item.Update().
-		Where(missing...).
-		SetDeletedAt(time.Now()).
-		Exec(ctx); err != nil {
-		return fmt.Errorf("failed to mark missing items deleted: %w", err)
-	}
-
-	return s.deleteOrphanedDescendants(ctx, libraryID)
+func inLibrary(id uuid.UUID) predicate.Item {
+	return itemmodal.HasLibrariesWith(librarymembership.LibraryID(id))
 }
 
-func (s *Service) deleteOrphanedDescendants(ctx context.Context, libraryID uuid.UUID) error {
+func (s *Service) SaveMembership(ctx context.Context, libraryID, sourceID uuid.UUID, itemIDs []uuid.UUID) error {
+	if len(itemIDs) == 0 {
+		return nil
+	}
+
+	builders := make([]*store.LibraryItemCreate, 0, len(itemIDs))
+	for _, id := range itemIDs {
+		builders = append(builders, s.store.LibraryItem.Create().
+			SetLibraryID(libraryID).
+			SetSourceID(sourceID).
+			SetItemID(id))
+	}
+
+	err := s.store.LibraryItem.CreateBulk(builders...).
+		OnConflictColumns(
+			librarymembership.FieldLibraryID,
+			librarymembership.FieldItemID,
+			librarymembership.FieldSourceID,
+		).
+		DoNothing().
+		Exec(ctx)
+	if err != nil && !errors.Is(err, stdsql.ErrNoRows) {
+		return fmt.Errorf("failed to save library membership: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Service) DeleteMembershipNotIn(ctx context.Context, libraryID, sourceID uuid.UUID, itemIDs []uuid.UUID) error {
+	missing := s.store.LibraryItem.Delete().Where(
+		librarymembership.LibraryID(libraryID),
+		librarymembership.SourceID(sourceID),
+	)
+	if len(itemIDs) > 0 {
+		missing = missing.Where(librarymembership.ItemIDNotIn(itemIDs...))
+	}
+
+	if _, err := missing.Exec(ctx); err != nil {
+		return fmt.Errorf("failed to drop library membership: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Service) SweepUnreachable(ctx context.Context) error {
+	if err := s.store.Item.Update().
+		Where(
+			itemmodal.DeletedAtIsNil(),
+			itemmodal.KindIn(playableKinds...),
+			itemmodal.Not(itemmodal.HasItemSources()),
+		).
+		SetDeletedAt(time.Now()).
+		Exec(ctx); err != nil {
+		return fmt.Errorf("failed to mark fileless items deleted: %w", err)
+	}
+
 	for {
 		affected, err := s.store.Item.Update().
 			Where(
-				itemmodal.LibraryID(libraryID),
 				itemmodal.DeletedAtIsNil(),
-				itemmodal.HasParentWith(itemmodal.DeletedAtNotNil()),
+				itemmodal.KindIn(folderKinds...),
+				itemmodal.Not(itemmodal.HasChildrenWith(itemmodal.DeletedAtIsNil())),
 			).
 			SetDeletedAt(time.Now()).
 			Save(ctx)
 		if err != nil {
-			return fmt.Errorf("failed to mark orphaned items deleted: %w", err)
+			return fmt.Errorf("failed to mark childless folders deleted: %w", err)
 		}
 		if affected == 0 {
 			return nil
@@ -351,7 +411,7 @@ func (s *Service) deleteOrphanedDescendants(ctx context.Context, libraryID uuid.
 func (s *Service) DistinctYears(ctx context.Context, libraryID *uuid.UUID, kinds []Kind) ([]int32, error) {
 	items := s.query().Where(itemmodal.ProductionYearNotNil())
 	if libraryID != nil {
-		items = items.Where(itemmodal.LibraryID(*libraryID))
+		items = items.Where(inLibrary(*libraryID))
 	}
 	if len(kinds) > 0 {
 		items = items.Where(itemmodal.KindIn(kinds...))
@@ -380,7 +440,7 @@ func (s *Service) ResumeItems(ctx context.Context, userID uuid.UUID, kinds []Kin
 		playable = append(playable, itemmodal.KindIn(kinds...))
 	}
 	if libraryID != nil {
-		playable = append(playable, itemmodal.LibraryID(*libraryID))
+		playable = append(playable, inLibrary(*libraryID))
 	}
 
 	data := s.store.UserItemData.Query().
@@ -438,118 +498,4 @@ func (s *Service) CountByKind(ctx context.Context) (map[string]int32, error) {
 	}
 
 	return counts, nil
-}
-
-func (s *Service) LegacyKeyedItems(ctx context.Context, libraryID uuid.UUID) ([]*Item, error) {
-	records, err := s.query().
-		Where(
-			itemmodal.LibraryID(libraryID),
-			itemmodal.Not(itemmodal.Or(derivedKeys()...)),
-		).
-		All(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query legacy keyed items: %w", err)
-	}
-
-	return records, nil
-}
-
-func (s *Service) ItemsInLibrary(ctx context.Context, libraryID uuid.UUID) ([]*Item, error) {
-	records, err := s.query().Where(itemmodal.LibraryID(libraryID)).All(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query the items of a library: %w", err)
-	}
-
-	return records, nil
-}
-
-func (s *Service) Rekey(ctx context.Context, id uuid.UUID, key string) error {
-	if err := s.store.Item.UpdateOneID(id).SetKey(key).Exec(ctx); err != nil {
-		return fmt.Errorf("failed to rekey %s: %w", id, err)
-	}
-
-	return nil
-}
-
-func (s *Service) Merge(ctx context.Context, from, into uuid.UUID) error {
-	err := s.store.WithTx(ctx, func(tx *store.Tx) error {
-		kept, err := tx.UserItemData.Query().Where(datamodal.ItemID(into)).All(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to query the surviving item's user data: %w", err)
-		}
-
-		survivor := make(map[uuid.UUID]*store.UserItemData, len(kept))
-		for _, datum := range kept {
-			survivor[datum.UserID] = datum
-		}
-
-		folded, err := tx.UserItemData.Query().Where(datamodal.ItemID(from)).All(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to query the duplicate's user data: %w", err)
-		}
-
-		clashed := make([]uuid.UUID, 0, len(folded))
-		for _, datum := range folded {
-			existing, clash := survivor[datum.UserID]
-			if !clash {
-				continue
-			}
-			clashed = append(clashed, datum.UserID)
-			if err := union(existing, datum).Exec(ctx); err != nil {
-				return fmt.Errorf("failed to fold the duplicate's user data: %w", err)
-			}
-		}
-
-		if len(clashed) > 0 {
-			if _, err := tx.UserItemData.Delete().
-				Where(datamodal.ItemID(from), datamodal.UserIDIn(clashed...)).
-				Exec(ctx); err != nil {
-				return fmt.Errorf("failed to drop the folded user data: %w", err)
-			}
-		}
-
-		if err := tx.UserItemData.Update().Where(datamodal.ItemID(from)).SetItemID(into).Exec(ctx); err != nil {
-			return fmt.Errorf("failed to move the user data: %w", err)
-		}
-		if err := tx.PlaylistEntry.Update().Where(entrymodal.ItemID(from)).SetItemID(into).Exec(ctx); err != nil {
-			return fmt.Errorf("failed to move the playlist entries: %w", err)
-		}
-		if err := tx.ItemSource.Update().Where(sourcemodal.ItemID(from)).SetItemID(into).Exec(ctx); err != nil {
-			return fmt.Errorf("failed to move the media sources: %w", err)
-		}
-		if err := tx.Item.Update().Where(itemmodal.ParentID(from)).SetParentID(into).Exec(ctx); err != nil {
-			return fmt.Errorf("failed to move the children: %w", err)
-		}
-
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-
-	return s.DeleteItem(ctx, from)
-}
-
-func union(kept, folded *store.UserItemData) *store.UserItemDataUpdateOne {
-	update := kept.Update().
-		SetPlayed(kept.Played || folded.Played).
-		SetIsFavorite(kept.IsFavorite || folded.IsFavorite).
-		SetPlayCount(max(kept.PlayCount, folded.PlayCount)).
-		SetPlaybackPositionTicks(max(kept.PlaybackPositionTicks, folded.PlaybackPositionTicks))
-
-	if folded.LastPlayedAt != nil && (kept.LastPlayedAt == nil || folded.LastPlayedAt.After(*kept.LastPlayedAt)) {
-		update = update.SetLastPlayedAt(*folded.LastPlayedAt)
-	}
-
-	return update
-}
-
-func derivedKeys() []predicate.Item {
-	kinds := []Kind{itemmodal.KindMovie, itemmodal.KindSeries, itemmodal.KindSeason, itemmodal.KindEpisode}
-	prefixes := make([]predicate.Item, 0, len(kinds))
-	for _, kind := range kinds {
-		prefixes = append(prefixes, itemmodal.KeyHasPrefix(strings.ToLower(string(kind))+":"))
-	}
-
-	return prefixes
 }

@@ -20,15 +20,17 @@ import (
 	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
+	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
 
 type fixture struct {
-	service   *Service
-	client    *store.Client
-	items     *items.Service
-	artwork   artwork.Store
-	libraryID uuid.UUID
-	added     int
+	service    *Service
+	client     *store.Client
+	items      *items.Service
+	artwork    artwork.Store
+	libraryID  uuid.UUID
+	added      int
+	downloader uuid.UUID
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -74,12 +76,30 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
+	downloader, err := client.Source.Create().
+		SetName(t.Name() + "-" + uuid.NewString()).
+		SetURL("http://" + uuid.NewString() + ".invalid").
+		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
+		SetKind(sourcemodal.KindRadarr).
+		SetRootPath("/media").
+		SetLocalPath("/media").
+		Save(context.Background())
+	if err != nil {
+		t.Fatalf("failed to create the source: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := client.Source.DeleteOne(downloader).Exec(context.Background()); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
+		}
+	})
+
 	return &fixture{
-		service:   New(records, files, stored),
-		client:    client,
-		items:     records,
-		artwork:   stored,
-		libraryID: library.ID,
+		downloader: downloader.ID,
+		service:    New(records, files, stored),
+		client:     client,
+		items:      records,
+		artwork:    stored,
+		libraryID:  library.ID,
 	}
 }
 
@@ -91,7 +111,6 @@ func (f *fixture) title(t *testing.T, shade color.RGBA) uuid.UUID {
 	name := "Title " + uuid.NewString()
 
 	item, err := f.client.Item.Create().
-		SetLibraryID(f.libraryID).
 		SetKind(itemmodal.KindMovie).
 		SetName(name).
 		SetSortName(name).
@@ -99,6 +118,14 @@ func (f *fixture) title(t *testing.T, shade color.RGBA) uuid.UUID {
 		Save(ctx)
 	if err != nil {
 		t.Fatalf("failed to create the item: %v", err)
+	}
+
+	if err := f.client.LibraryItem.Create().
+		SetLibraryID(f.libraryID).
+		SetSourceID(f.downloader).
+		SetItemID(item.ID).
+		Exec(ctx); err != nil {
+		t.Fatalf("failed to place the item in the library: %v", err)
 	}
 
 	f.artworkFor(t, item.ID, painted(t, shade), time.Now().Add(-time.Duration(f.added)*time.Minute))
@@ -218,14 +245,20 @@ func TestService_Image(t *testing.T) {
 		fixture.title(t, color.RGBA{R: 200, G: 30, B: 30, A: 255})
 
 		broken, err := fixture.client.Item.Create().
-			SetLibraryID(fixture.libraryID).
 			SetKind(itemmodal.KindMovie).
 			SetName("Broken").
 			SetSortName("Broken").
-			SetKey("collage:broken").
+			SetKey("collage:broken:" + fixture.libraryID.String()).
 			Save(context.Background())
 		if err != nil {
 			t.Fatalf("failed to create the item: %v", err)
+		}
+		if err := fixture.client.LibraryItem.Create().
+			SetLibraryID(fixture.libraryID).
+			SetSourceID(fixture.downloader).
+			SetItemID(broken.ID).
+			Exec(context.Background()); err != nil {
+			t.Fatalf("failed to place the broken item: %v", err)
 		}
 		fixture.artworkFor(t, broken.ID, []byte("not an image"), time.Now())
 

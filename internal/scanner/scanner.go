@@ -49,15 +49,20 @@ func New(
 type seen struct {
 	keys       []string
 	paths      map[uuid.UUID][]string
+	members    map[uuid.UUID][]uuid.UUID
 	unreadable int
 }
 
 func found() *seen {
-	return &seen{paths: map[uuid.UUID][]string{}}
+	return &seen{
+		paths:   map[uuid.UUID][]string{},
+		members: map[uuid.UUID][]uuid.UUID{},
+	}
 }
 
-func (s *seen) title(item *items.Item) {
+func (s *seen) title(source uuid.UUID, item *items.Item) {
 	s.keys = append(s.keys, item.Key)
+	s.members[source] = append(s.members[source], item.ID)
 }
 
 func (s *seen) file(source uuid.UUID, path string) {
@@ -85,10 +90,6 @@ func (s *seen) complete() bool {
 func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) error {
 	found := found()
 
-	if err := s.rekeyLegacy(ctx, library); err != nil {
-		return err
-	}
-
 	bindings, err := s.sources.BindingsFor(ctx, library.ID)
 	if err != nil {
 		return err
@@ -112,6 +113,11 @@ func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) e
 				return err
 			}
 		}
+
+		members := found.members[binding.Source.ID]
+		if err := s.items.SaveMembership(ctx, library.ID, binding.Source.ID, members); err != nil {
+			return err
+		}
 	}
 
 	log.Printf("scanned %s: %d items, %d files", library.Name, len(found.keys), found.files())
@@ -122,8 +128,10 @@ func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) e
 		return nil
 	}
 
-	if err := s.items.DeleteItemsNotInKeys(ctx, library.ID, found.keys); err != nil {
-		return err
+	for source, members := range found.members {
+		if err := s.items.DeleteMembershipNotIn(ctx, library.ID, source, members); err != nil {
+			return err
+		}
 	}
 
 	for source, paths := range found.paths {
@@ -156,7 +164,6 @@ func (s *Scanner) saveTitle(
 	}
 
 	scanned := items.Scanned{
-		LibraryID:    library.ID,
 		ParentID:     parent,
 		Kind:         title.Kind,
 		Name:         title.Name,
@@ -191,7 +198,7 @@ func (s *Scanner) saveTitle(
 	if err != nil {
 		return err
 	}
-	found.title(item)
+	found.title(source, item)
 
 	for _, file := range title.Files {
 		if err := s.saveFile(ctx, source, item, file, found); err != nil {

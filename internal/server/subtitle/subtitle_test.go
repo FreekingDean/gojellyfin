@@ -18,6 +18,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	downloadermodal "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
@@ -66,16 +67,16 @@ func newFixture(t *testing.T) *fixture {
 
 	t.Cleanup(func() {
 		if _, err := client.MediaStream.Delete().
-			Where(streammodal.HasSourceWith(sourcemodal.HasItemWith(itemmodal.LibraryID(library.ID)))).
+			Where(streammodal.HasSourceWith(sourcemodal.HasItemWith(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID))))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the streams: %v", err)
 		}
 		if _, err := client.ItemSource.Delete().
-			Where(sourcemodal.HasItemWith(itemmodal.LibraryID(library.ID))).
+			Where(sourcemodal.HasItemWith(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID)))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the sources: %v", err)
 		}
-		if _, err := client.Item.Delete().Where(itemmodal.LibraryID(library.ID)).Exec(ctx); err != nil {
+		if _, err := client.Item.Delete().Where(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID))).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the items: %v", err)
 		}
 		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
@@ -106,11 +107,10 @@ func newFixture(t *testing.T) *fixture {
 	directory := t.TempDir()
 	path := filepath.Join(directory, "Blade Runner (1982).mkv")
 	item, err := client.Item.Create().
-		SetLibraryID(library.ID).
 		SetKind(itemmodal.KindMovie).
 		SetName("Blade Runner").
 		SetSortName("blade runner").
-		SetKey("movie:blade-runner:1982").
+		SetKey("movie:blade-runner:1982:" + library.ID.String()).
 		SetRunTimeTicks(250_000_000).
 		Save(ctx)
 	if err != nil {

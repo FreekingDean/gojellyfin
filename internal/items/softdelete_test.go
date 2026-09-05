@@ -13,7 +13,6 @@ func TestService_SaveScanned(t *testing.T) {
 	ctx := context.Background()
 
 	first, err := fixture.service.SaveScanned(ctx, Scanned{
-		LibraryID:    fixture.libraryID,
 		Kind:         itemmodal.KindMovie,
 		Name:         "Returns",
 		SortName:     "Returns",
@@ -24,12 +23,11 @@ func TestService_SaveScanned(t *testing.T) {
 		t.Fatalf("failed to save the item: %v", err)
 	}
 
-	if err := fixture.service.DeleteItemsNotInKeys(ctx, fixture.libraryID, []string{"movie:elsewhere"}); err != nil {
+	if err := fixture.service.SweepUnreachable(ctx); err != nil {
 		t.Fatalf("failed to sweep: %v", err)
 	}
 
 	second, err := fixture.service.SaveScanned(ctx, Scanned{
-		LibraryID:    fixture.libraryID,
 		Kind:         itemmodal.KindMovie,
 		Name:         "Returns",
 		SortName:     "Returns",

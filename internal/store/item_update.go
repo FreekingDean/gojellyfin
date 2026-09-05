@@ -18,7 +18,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
-	"github.com/FreekingDean/gojellyfin/internal/store/library"
+	"github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
@@ -57,26 +57,6 @@ func (_u *ItemUpdate) SetNillableCreatedAt(v *time.Time) *ItemUpdate {
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *ItemUpdate) SetUpdatedAt(v time.Time) *ItemUpdate {
 	_u.mutation.SetUpdatedAt(v)
-	return _u
-}
-
-// SetLibraryID sets the "library_id" field.
-func (_u *ItemUpdate) SetLibraryID(v uuid.UUID) *ItemUpdate {
-	_u.mutation.SetLibraryID(v)
-	return _u
-}
-
-// SetNillableLibraryID sets the "library_id" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableLibraryID(v *uuid.UUID) *ItemUpdate {
-	if v != nil {
-		_u.SetLibraryID(*v)
-	}
-	return _u
-}
-
-// ClearLibraryID clears the value of the "library_id" field.
-func (_u *ItemUpdate) ClearLibraryID() *ItemUpdate {
-	_u.mutation.ClearLibraryID()
 	return _u
 }
 
@@ -585,9 +565,19 @@ func (_u *ItemUpdate) AddChildren(v ...*Item) *ItemUpdate {
 	return _u.AddChildIDs(ids...)
 }
 
-// SetLibrary sets the "library" edge to the Library entity.
-func (_u *ItemUpdate) SetLibrary(v *Library) *ItemUpdate {
-	return _u.SetLibraryID(v.ID)
+// AddLibraryIDs adds the "libraries" edge to the LibraryItem entity by IDs.
+func (_u *ItemUpdate) AddLibraryIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.AddLibraryIDs(ids...)
+	return _u
+}
+
+// AddLibraries adds the "libraries" edges to the LibraryItem entity.
+func (_u *ItemUpdate) AddLibraries(v ...*LibraryItem) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddLibraryIDs(ids...)
 }
 
 // AddItemSourceIDs adds the "item_sources" edge to the ItemSource entity by IDs.
@@ -761,10 +751,25 @@ func (_u *ItemUpdate) RemoveChildren(v ...*Item) *ItemUpdate {
 	return _u.RemoveChildIDs(ids...)
 }
 
-// ClearLibrary clears the "library" edge to the Library entity.
-func (_u *ItemUpdate) ClearLibrary() *ItemUpdate {
-	_u.mutation.ClearLibrary()
+// ClearLibraries clears all "libraries" edges to the LibraryItem entity.
+func (_u *ItemUpdate) ClearLibraries() *ItemUpdate {
+	_u.mutation.ClearLibraries()
 	return _u
+}
+
+// RemoveLibraryIDs removes the "libraries" edge to LibraryItem entities by IDs.
+func (_u *ItemUpdate) RemoveLibraryIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.RemoveLibraryIDs(ids...)
+	return _u
+}
+
+// RemoveLibraries removes "libraries" edges to LibraryItem entities.
+func (_u *ItemUpdate) RemoveLibraries(v ...*LibraryItem) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveLibraryIDs(ids...)
 }
 
 // ClearItemSources clears all "item_sources" edges to the ItemSource entity.
@@ -1240,28 +1245,44 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.LibraryCleared() {
+	if _u.mutation.LibrariesCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   item.LibraryTable,
-			Columns: []string{item.LibraryColumn},
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.LibrariesTable,
+			Columns: []string{item.LibrariesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(library.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.LibraryIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.RemovedLibrariesIDs(); len(nodes) > 0 && !_u.mutation.LibrariesCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   item.LibraryTable,
-			Columns: []string{item.LibraryColumn},
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.LibrariesTable,
+			Columns: []string{item.LibrariesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(library.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.LibrariesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.LibrariesTable,
+			Columns: []string{item.LibrariesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1695,26 +1716,6 @@ func (_u *ItemUpdateOne) SetNillableCreatedAt(v *time.Time) *ItemUpdateOne {
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *ItemUpdateOne) SetUpdatedAt(v time.Time) *ItemUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
-	return _u
-}
-
-// SetLibraryID sets the "library_id" field.
-func (_u *ItemUpdateOne) SetLibraryID(v uuid.UUID) *ItemUpdateOne {
-	_u.mutation.SetLibraryID(v)
-	return _u
-}
-
-// SetNillableLibraryID sets the "library_id" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableLibraryID(v *uuid.UUID) *ItemUpdateOne {
-	if v != nil {
-		_u.SetLibraryID(*v)
-	}
-	return _u
-}
-
-// ClearLibraryID clears the value of the "library_id" field.
-func (_u *ItemUpdateOne) ClearLibraryID() *ItemUpdateOne {
-	_u.mutation.ClearLibraryID()
 	return _u
 }
 
@@ -2223,9 +2224,19 @@ func (_u *ItemUpdateOne) AddChildren(v ...*Item) *ItemUpdateOne {
 	return _u.AddChildIDs(ids...)
 }
 
-// SetLibrary sets the "library" edge to the Library entity.
-func (_u *ItemUpdateOne) SetLibrary(v *Library) *ItemUpdateOne {
-	return _u.SetLibraryID(v.ID)
+// AddLibraryIDs adds the "libraries" edge to the LibraryItem entity by IDs.
+func (_u *ItemUpdateOne) AddLibraryIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.AddLibraryIDs(ids...)
+	return _u
+}
+
+// AddLibraries adds the "libraries" edges to the LibraryItem entity.
+func (_u *ItemUpdateOne) AddLibraries(v ...*LibraryItem) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddLibraryIDs(ids...)
 }
 
 // AddItemSourceIDs adds the "item_sources" edge to the ItemSource entity by IDs.
@@ -2399,10 +2410,25 @@ func (_u *ItemUpdateOne) RemoveChildren(v ...*Item) *ItemUpdateOne {
 	return _u.RemoveChildIDs(ids...)
 }
 
-// ClearLibrary clears the "library" edge to the Library entity.
-func (_u *ItemUpdateOne) ClearLibrary() *ItemUpdateOne {
-	_u.mutation.ClearLibrary()
+// ClearLibraries clears all "libraries" edges to the LibraryItem entity.
+func (_u *ItemUpdateOne) ClearLibraries() *ItemUpdateOne {
+	_u.mutation.ClearLibraries()
 	return _u
+}
+
+// RemoveLibraryIDs removes the "libraries" edge to LibraryItem entities by IDs.
+func (_u *ItemUpdateOne) RemoveLibraryIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.RemoveLibraryIDs(ids...)
+	return _u
+}
+
+// RemoveLibraries removes "libraries" edges to LibraryItem entities.
+func (_u *ItemUpdateOne) RemoveLibraries(v ...*LibraryItem) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveLibraryIDs(ids...)
 }
 
 // ClearItemSources clears all "item_sources" edges to the ItemSource entity.
@@ -2908,28 +2934,44 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.LibraryCleared() {
+	if _u.mutation.LibrariesCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   item.LibraryTable,
-			Columns: []string{item.LibraryColumn},
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.LibrariesTable,
+			Columns: []string{item.LibrariesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(library.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.LibraryIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.RemovedLibrariesIDs(); len(nodes) > 0 && !_u.mutation.LibrariesCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   item.LibraryTable,
-			Columns: []string{item.LibraryColumn},
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.LibrariesTable,
+			Columns: []string{item.LibrariesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(library.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.LibrariesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.LibrariesTable,
+			Columns: []string{item.LibrariesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

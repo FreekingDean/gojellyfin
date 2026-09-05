@@ -13,8 +13,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
+	"github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
 	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
@@ -24,14 +24,14 @@ import (
 // LibraryQuery is the builder for querying Library entities.
 type LibraryQuery struct {
 	config
-	ctx         *QueryContext
-	order       []library.OrderOption
-	inters      []Interceptor
-	predicates  []predicate.Library
-	withOptions *LibraryOptionsQuery
-	withItems   *ItemQuery
-	withSources *LibrarySourceQuery
-	modifiers   []func(*sql.Selector)
+	ctx              *QueryContext
+	order            []library.OrderOption
+	inters           []Interceptor
+	predicates       []predicate.Library
+	withOptions      *LibraryOptionsQuery
+	withLibraryItems *LibraryItemQuery
+	withSources      *LibrarySourceQuery
+	modifiers        []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -90,9 +90,9 @@ func (_q *LibraryQuery) QueryOptions() *LibraryOptionsQuery {
 	return query
 }
 
-// QueryItems chains the current query on the "items" edge.
-func (_q *LibraryQuery) QueryItems() *ItemQuery {
-	query := (&ItemClient{config: _q.config}).Query()
+// QueryLibraryItems chains the current query on the "library_items" edge.
+func (_q *LibraryQuery) QueryLibraryItems() *LibraryItemQuery {
+	query := (&LibraryItemClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -103,8 +103,8 @@ func (_q *LibraryQuery) QueryItems() *ItemQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(library.Table, library.FieldID, selector),
-			sqlgraph.To(item.Table, item.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, library.ItemsTable, library.ItemsColumn),
+			sqlgraph.To(libraryitem.Table, libraryitem.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, library.LibraryItemsTable, library.LibraryItemsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -321,14 +321,14 @@ func (_q *LibraryQuery) Clone() *LibraryQuery {
 		return nil
 	}
 	return &LibraryQuery{
-		config:      _q.config,
-		ctx:         _q.ctx.Clone(),
-		order:       append([]library.OrderOption{}, _q.order...),
-		inters:      append([]Interceptor{}, _q.inters...),
-		predicates:  append([]predicate.Library{}, _q.predicates...),
-		withOptions: _q.withOptions.Clone(),
-		withItems:   _q.withItems.Clone(),
-		withSources: _q.withSources.Clone(),
+		config:           _q.config,
+		ctx:              _q.ctx.Clone(),
+		order:            append([]library.OrderOption{}, _q.order...),
+		inters:           append([]Interceptor{}, _q.inters...),
+		predicates:       append([]predicate.Library{}, _q.predicates...),
+		withOptions:      _q.withOptions.Clone(),
+		withLibraryItems: _q.withLibraryItems.Clone(),
+		withSources:      _q.withSources.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -346,14 +346,14 @@ func (_q *LibraryQuery) WithOptions(opts ...func(*LibraryOptionsQuery)) *Library
 	return _q
 }
 
-// WithItems tells the query-builder to eager-load the nodes that are connected to
-// the "items" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *LibraryQuery) WithItems(opts ...func(*ItemQuery)) *LibraryQuery {
-	query := (&ItemClient{config: _q.config}).Query()
+// WithLibraryItems tells the query-builder to eager-load the nodes that are connected to
+// the "library_items" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *LibraryQuery) WithLibraryItems(opts ...func(*LibraryItemQuery)) *LibraryQuery {
+	query := (&LibraryItemClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withItems = query
+	_q.withLibraryItems = query
 	return _q
 }
 
@@ -448,7 +448,7 @@ func (_q *LibraryQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Libr
 		_spec       = _q.querySpec()
 		loadedTypes = [3]bool{
 			_q.withOptions != nil,
-			_q.withItems != nil,
+			_q.withLibraryItems != nil,
 			_q.withSources != nil,
 		}
 	)
@@ -479,10 +479,10 @@ func (_q *LibraryQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Libr
 			return nil, err
 		}
 	}
-	if query := _q.withItems; query != nil {
-		if err := _q.loadItems(ctx, query, nodes,
-			func(n *Library) { n.Edges.Items = []*Item{} },
-			func(n *Library, e *Item) { n.Edges.Items = append(n.Edges.Items, e) }); err != nil {
+	if query := _q.withLibraryItems; query != nil {
+		if err := _q.loadLibraryItems(ctx, query, nodes,
+			func(n *Library) { n.Edges.LibraryItems = []*LibraryItem{} },
+			func(n *Library, e *LibraryItem) { n.Edges.LibraryItems = append(n.Edges.LibraryItems, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -524,7 +524,7 @@ func (_q *LibraryQuery) loadOptions(ctx context.Context, query *LibraryOptionsQu
 	}
 	return nil
 }
-func (_q *LibraryQuery) loadItems(ctx context.Context, query *ItemQuery, nodes []*Library, init func(*Library), assign func(*Library, *Item)) error {
+func (_q *LibraryQuery) loadLibraryItems(ctx context.Context, query *LibraryItemQuery, nodes []*Library, init func(*Library), assign func(*Library, *LibraryItem)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*Library)
 	for i := range nodes {
@@ -535,10 +535,10 @@ func (_q *LibraryQuery) loadItems(ctx context.Context, query *ItemQuery, nodes [
 		}
 	}
 	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(item.FieldLibraryID)
+		query.ctx.AppendFieldOnce(libraryitem.FieldLibraryID)
 	}
-	query.Where(predicate.Item(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(library.ItemsColumn), fks...))
+	query.Where(predicate.LibraryItem(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(library.LibraryItemsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

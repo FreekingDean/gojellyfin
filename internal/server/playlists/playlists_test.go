@@ -18,6 +18,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	devicemodal "github.com/FreekingDean/gojellyfin/internal/store/device"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	playlistmodal "github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	entrymodal "github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	sharemodal "github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
@@ -92,7 +93,7 @@ func newFixture(t *testing.T) *fixture {
 		if _, err := client.Item.Delete().Where(itemmodal.IDIn(fixture.created...)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the playlist items: %v", err)
 		}
-		if _, err := client.Item.Delete().Where(itemmodal.LibraryID(library.ID)).Exec(ctx); err != nil {
+		if _, err := client.Item.Delete().Where(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID))).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the items: %v", err)
 		}
 		if _, err := client.Session.Delete().
@@ -154,11 +155,10 @@ func (f *fixture) songs(t *testing.T, names ...string) []uuid.UUID {
 	ids := make([]uuid.UUID, 0, len(names))
 	for _, name := range names {
 		record, err := f.client.Item.Create().
-			SetLibraryID(f.libraryID).
 			SetKind(itemmodal.KindAudio).
 			SetName(name).
 			SetSortName(name).
-			SetKey(fmt.Sprintf("test:%s", name)).
+			SetKey(fmt.Sprintf("test:%s:%s", f.libraryID, name)).
 			Save(context.Background())
 		if err != nil {
 			t.Fatalf("failed to create %q: %v", name, err)

@@ -24,6 +24,7 @@ import (
 	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
+	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	optionsmodal "github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
 	sessionmodal "github.com/FreekingDean/gojellyfin/internal/store/session"
 	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/source"
@@ -76,16 +77,16 @@ func newFixture(t *testing.T) *fixture {
 
 	t.Cleanup(func() {
 		if _, err := client.Image.Delete().
-			Where(imagemodal.HasItemWith(itemmodal.LibraryID(library.ID))).
+			Where(imagemodal.HasItemWith(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID)))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the images: %v", err)
 		}
 		if _, err := client.UserItemData.Delete().
-			Where(datamodal.HasItemWith(itemmodal.LibraryID(library.ID))).
+			Where(datamodal.HasItemWith(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID)))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the user item data: %v", err)
 		}
-		if _, err := client.Item.Delete().Where(itemmodal.LibraryID(library.ID)).Exec(ctx); err != nil {
+		if _, err := client.Item.Delete().Where(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID))).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the items: %v", err)
 		}
 		if _, err := client.Session.Delete().
@@ -149,7 +150,6 @@ func (f *fixture) add(t *testing.T, item seed) uuid.UUID {
 	t.Helper()
 
 	record, err := f.client.Item.Create().
-		SetLibraryID(f.libraryID).
 		SetKind(item.kind).
 		SetKey(f.prefix + ":" + item.name).
 		SetName(item.name).
@@ -158,6 +158,14 @@ func (f *fixture) add(t *testing.T, item seed) uuid.UUID {
 		Save(context.Background())
 	if err != nil {
 		t.Fatalf("failed to create %q: %v", item.name, err)
+	}
+
+	if err := f.client.LibraryItem.Create().
+		SetLibraryID(f.libraryID).
+		SetSourceID(f.downloader).
+		SetItemID(record.ID).
+		Exec(context.Background()); err != nil {
+		t.Fatalf("failed to place %q in the library: %v", item.name, err)
 	}
 
 	if item.path != "" {

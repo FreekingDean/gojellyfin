@@ -18,6 +18,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
+	"github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
 	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
@@ -192,15 +193,15 @@ func init() {
 	// item.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	item.UpdateDefaultUpdatedAt = itemDescUpdatedAt.UpdateDefault.(func() time.Time)
 	// itemDescIsFolder is the schema descriptor for is_folder field.
-	itemDescIsFolder := itemFields[12].Descriptor()
+	itemDescIsFolder := itemFields[11].Descriptor()
 	// item.DefaultIsFolder holds the default value on creation for the is_folder field.
 	item.DefaultIsFolder = itemDescIsFolder.Default.(bool)
 	// itemDescLockData is the schema descriptor for lock_data field.
-	itemDescLockData := itemFields[13].Descriptor()
+	itemDescLockData := itemFields[12].Descriptor()
 	// item.DefaultLockData holds the default value on creation for the lock_data field.
 	item.DefaultLockData = itemDescLockData.Default.(bool)
 	// itemDescHasSubtitles is the schema descriptor for has_subtitles field.
-	itemDescHasSubtitles := itemFields[14].Descriptor()
+	itemDescHasSubtitles := itemFields[13].Descriptor()
 	// item.DefaultHasSubtitles holds the default value on creation for the has_subtitles field.
 	item.DefaultHasSubtitles = itemDescHasSubtitles.Default.(bool)
 	itemsourceFields := entities.ItemSource{}.Fields()
@@ -231,6 +232,18 @@ func init() {
 	libraryDescLocations := libraryFields[5].Descriptor()
 	// library.DefaultLocations holds the default value on creation for the locations field.
 	library.DefaultLocations = libraryDescLocations.Default.([]string)
+	libraryitemFields := entities.LibraryItem{}.Fields()
+	_ = libraryitemFields
+	// libraryitemDescCreatedAt is the schema descriptor for created_at field.
+	libraryitemDescCreatedAt := libraryitemFields[1].Descriptor()
+	// libraryitem.DefaultCreatedAt holds the default value on creation for the created_at field.
+	libraryitem.DefaultCreatedAt = libraryitemDescCreatedAt.Default.(func() time.Time)
+	// libraryitemDescUpdatedAt is the schema descriptor for updated_at field.
+	libraryitemDescUpdatedAt := libraryitemFields[2].Descriptor()
+	// libraryitem.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	libraryitem.DefaultUpdatedAt = libraryitemDescUpdatedAt.Default.(func() time.Time)
+	// libraryitem.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	libraryitem.UpdateDefaultUpdatedAt = libraryitemDescUpdatedAt.UpdateDefault.(func() time.Time)
 	libraryoptionsFields := entities.LibraryOptions{}.Fields()
 	_ = libraryoptionsFields
 	// libraryoptionsDescCreatedAt is the schema descriptor for created_at field.

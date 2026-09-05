@@ -51,7 +51,7 @@ func (l *LibraryScan) Run(ctx context.Context) error {
 		}
 	}
 
-	return nil
+	return l.scanner.items.SweepUnreachable(ctx)
 }
 
 func (l *LibraryScan) probe(ctx context.Context, source uuid.UUID) error {

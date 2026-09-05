@@ -15,7 +15,6 @@ func (f *fixture) scannedFrom(t *testing.T, downloader uuid.UUID, key, path stri
 
 	ctx := context.Background()
 	item, err := f.service.SaveScanned(ctx, Scanned{
-		LibraryID:    f.libraryID,
 		Kind:         itemmodal.KindMovie,
 		Key:          key,
 		Name:         "The Matrix",

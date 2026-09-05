@@ -153,6 +153,18 @@ func (f LibraryFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value,
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.LibraryMutation", m)
 }
 
+// The LibraryItemFunc type is an adapter to allow the use of ordinary
+// function as LibraryItem mutator.
+type LibraryItemFunc func(context.Context, *store.LibraryItemMutation) (store.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f LibraryItemFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, error) {
+	if mv, ok := m.(*store.LibraryItemMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.LibraryItemMutation", m)
+}
+
 // The LibraryOptionsFunc type is an adapter to allow the use of ordinary
 // function as LibraryOptions mutator.
 type LibraryOptionsFunc func(context.Context, *store.LibraryOptionsMutation) (store.Value, error)

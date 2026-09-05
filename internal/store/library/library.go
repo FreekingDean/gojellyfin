@@ -27,8 +27,8 @@ const (
 	FieldLocations = "locations"
 	// EdgeOptions holds the string denoting the options edge name in mutations.
 	EdgeOptions = "options"
-	// EdgeItems holds the string denoting the items edge name in mutations.
-	EdgeItems = "items"
+	// EdgeLibraryItems holds the string denoting the library_items edge name in mutations.
+	EdgeLibraryItems = "library_items"
 	// EdgeSources holds the string denoting the sources edge name in mutations.
 	EdgeSources = "sources"
 	// Table holds the table name of the library in the database.
@@ -40,13 +40,13 @@ const (
 	OptionsInverseTable = "library_options"
 	// OptionsColumn is the table column denoting the options relation/edge.
 	OptionsColumn = "library_options"
-	// ItemsTable is the table that holds the items relation/edge.
-	ItemsTable = "items"
-	// ItemsInverseTable is the table name for the Item entity.
-	// It exists in this package in order to avoid circular dependency with the "item" package.
-	ItemsInverseTable = "items"
-	// ItemsColumn is the table column denoting the items relation/edge.
-	ItemsColumn = "library_id"
+	// LibraryItemsTable is the table that holds the library_items relation/edge.
+	LibraryItemsTable = "library_items"
+	// LibraryItemsInverseTable is the table name for the LibraryItem entity.
+	// It exists in this package in order to avoid circular dependency with the "libraryitem" package.
+	LibraryItemsInverseTable = "library_items"
+	// LibraryItemsColumn is the table column denoting the library_items relation/edge.
+	LibraryItemsColumn = "library_id"
 	// SourcesTable is the table that holds the sources relation/edge.
 	SourcesTable = "library_sources"
 	// SourcesInverseTable is the table name for the LibrarySource entity.
@@ -154,17 +154,17 @@ func ByOptionsField(field string, opts ...sql.OrderTermOption) OrderOption {
 	}
 }
 
-// ByItemsCount orders the results by items count.
-func ByItemsCount(opts ...sql.OrderTermOption) OrderOption {
+// ByLibraryItemsCount orders the results by library_items count.
+func ByLibraryItemsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newItemsStep(), opts...)
+		sqlgraph.OrderByNeighborsCount(s, newLibraryItemsStep(), opts...)
 	}
 }
 
-// ByItems orders the results by items terms.
-func ByItems(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+// ByLibraryItems orders the results by library_items terms.
+func ByLibraryItems(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newItemsStep(), append([]sql.OrderTerm{term}, terms...)...)
+		sqlgraph.OrderByNeighborTerms(s, newLibraryItemsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
@@ -188,11 +188,11 @@ func newOptionsStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2O, false, OptionsTable, OptionsColumn),
 	)
 }
-func newItemsStep() *sqlgraph.Step {
+func newLibraryItemsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(ItemsInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, ItemsTable, ItemsColumn),
+		sqlgraph.To(LibraryItemsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, LibraryItemsTable, LibraryItemsColumn),
 	)
 }
 func newSourcesStep() *sqlgraph.Step {

@@ -14,6 +14,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 )
 
 type fixture struct {
@@ -48,7 +49,7 @@ func newFixture(t *testing.T) *fixture {
 
 	t.Cleanup(func() {
 		ctx := context.Background()
-		if _, err := client.Item.Delete().Where(itemmodal.LibraryID(library.ID)).Exec(ctx); err != nil {
+		if _, err := client.Item.Delete().Where(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID))).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the items: %v", err)
 		}
 		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
@@ -68,12 +69,11 @@ func (f *fixture) add(t *testing.T, kind itemmodal.Kind, mediaType itemmodal.Med
 	t.Helper()
 
 	_, err := f.client.Item.Create().
-		SetLibraryID(f.library).
 		SetKind(kind).
 		SetMediaType(mediaType).
 		SetName(f.prefix + name).
 		SetSortName(f.prefix + name).
-		SetKey("test:" + name).
+		SetKey("test:" + f.prefix + name).
 		Save(context.Background())
 	if err != nil {
 		t.Fatalf("failed to create %q: %v", name, err)

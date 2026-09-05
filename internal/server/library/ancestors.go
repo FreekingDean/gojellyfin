@@ -3,8 +3,6 @@ package library
 import (
 	"context"
 
-	"github.com/google/uuid"
-
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 )
@@ -23,8 +21,8 @@ func (s *Server) GetAncestors(ctx context.Context, request api.GetAncestorsReque
 		return nil, err
 	}
 
-	if ancestry.LibraryID != uuid.Nil {
-		library, err := s.libraries.Library(ctx, ancestry.LibraryID)
+	if len(ancestry.LibraryIDs) > 0 {
+		library, err := s.libraries.Library(ctx, ancestry.LibraryIDs[0])
 		if err != nil {
 			return nil, err
 		}

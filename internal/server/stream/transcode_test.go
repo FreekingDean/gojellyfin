@@ -57,7 +57,6 @@ func (f *fixture) addTone(t *testing.T) uuid.UUID {
 	}
 
 	item, err := f.items.SaveScanned(context.Background(), items.Scanned{
-		LibraryID:    f.library,
 		Kind:         itemmodal.KindAudio,
 		Key:          "audio:tone",
 		Name:         "tone.flac",

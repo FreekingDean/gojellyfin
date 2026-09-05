@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	"github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
@@ -177,6 +178,21 @@ func (_u *SourceUpdate) AddFiles(v ...*ItemSource) *SourceUpdate {
 	return _u.AddFileIDs(ids...)
 }
 
+// AddMembershipIDs adds the "memberships" edge to the LibraryItem entity by IDs.
+func (_u *SourceUpdate) AddMembershipIDs(ids ...uuid.UUID) *SourceUpdate {
+	_u.mutation.AddMembershipIDs(ids...)
+	return _u
+}
+
+// AddMemberships adds the "memberships" edges to the LibraryItem entity.
+func (_u *SourceUpdate) AddMemberships(v ...*LibraryItem) *SourceUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddMembershipIDs(ids...)
+}
+
 // Mutation returns the SourceMutation object of the builder.
 func (_u *SourceUpdate) Mutation() *SourceMutation {
 	return _u.mutation
@@ -222,6 +238,27 @@ func (_u *SourceUpdate) RemoveFiles(v ...*ItemSource) *SourceUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveFileIDs(ids...)
+}
+
+// ClearMemberships clears all "memberships" edges to the LibraryItem entity.
+func (_u *SourceUpdate) ClearMemberships() *SourceUpdate {
+	_u.mutation.ClearMemberships()
+	return _u
+}
+
+// RemoveMembershipIDs removes the "memberships" edge to LibraryItem entities by IDs.
+func (_u *SourceUpdate) RemoveMembershipIDs(ids ...uuid.UUID) *SourceUpdate {
+	_u.mutation.RemoveMembershipIDs(ids...)
+	return _u
+}
+
+// RemoveMemberships removes "memberships" edges to LibraryItem entities.
+func (_u *SourceUpdate) RemoveMemberships(v ...*LibraryItem) *SourceUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveMembershipIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -402,6 +439,51 @@ func (_u *SourceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.MembershipsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.MembershipsTable,
+			Columns: []string{source.MembershipsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedMembershipsIDs(); len(nodes) > 0 && !_u.mutation.MembershipsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.MembershipsTable,
+			Columns: []string{source.MembershipsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.MembershipsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.MembershipsTable,
+			Columns: []string{source.MembershipsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{source.Label}
@@ -568,6 +650,21 @@ func (_u *SourceUpdateOne) AddFiles(v ...*ItemSource) *SourceUpdateOne {
 	return _u.AddFileIDs(ids...)
 }
 
+// AddMembershipIDs adds the "memberships" edge to the LibraryItem entity by IDs.
+func (_u *SourceUpdateOne) AddMembershipIDs(ids ...uuid.UUID) *SourceUpdateOne {
+	_u.mutation.AddMembershipIDs(ids...)
+	return _u
+}
+
+// AddMemberships adds the "memberships" edges to the LibraryItem entity.
+func (_u *SourceUpdateOne) AddMemberships(v ...*LibraryItem) *SourceUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddMembershipIDs(ids...)
+}
+
 // Mutation returns the SourceMutation object of the builder.
 func (_u *SourceUpdateOne) Mutation() *SourceMutation {
 	return _u.mutation
@@ -613,6 +710,27 @@ func (_u *SourceUpdateOne) RemoveFiles(v ...*ItemSource) *SourceUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveFileIDs(ids...)
+}
+
+// ClearMemberships clears all "memberships" edges to the LibraryItem entity.
+func (_u *SourceUpdateOne) ClearMemberships() *SourceUpdateOne {
+	_u.mutation.ClearMemberships()
+	return _u
+}
+
+// RemoveMembershipIDs removes the "memberships" edge to LibraryItem entities by IDs.
+func (_u *SourceUpdateOne) RemoveMembershipIDs(ids ...uuid.UUID) *SourceUpdateOne {
+	_u.mutation.RemoveMembershipIDs(ids...)
+	return _u
+}
+
+// RemoveMemberships removes "memberships" edges to LibraryItem entities.
+func (_u *SourceUpdateOne) RemoveMemberships(v ...*LibraryItem) *SourceUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveMembershipIDs(ids...)
 }
 
 // Where appends a list predicates to the SourceUpdate builder.
@@ -816,6 +934,51 @@ func (_u *SourceUpdateOne) sqlSave(ctx context.Context) (_node *Source, err erro
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.MembershipsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.MembershipsTable,
+			Columns: []string{source.MembershipsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedMembershipsIDs(); len(nodes) > 0 && !_u.mutation.MembershipsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.MembershipsTable,
+			Columns: []string{source.MembershipsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.MembershipsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.MembershipsTable,
+			Columns: []string{source.MembershipsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

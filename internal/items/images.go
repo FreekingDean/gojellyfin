@@ -129,7 +129,7 @@ func (s *Service) LibraryPosters(ctx context.Context, libraryID uuid.UUID, limit
 			imagemodal.KindEQ(imagemodal.KindPrimary),
 			imagemodal.Index(0),
 			imagemodal.HasItemWith(
-				itemmodal.LibraryID(libraryID),
+				inLibrary(libraryID),
 				itemmodal.DeletedAtIsNil(),
 				itemmodal.ParentIDIsNil(),
 			),

@@ -3,8 +3,6 @@ package itemupdate
 import (
 	"context"
 
-	"github.com/google/uuid"
-
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/localization"
@@ -70,8 +68,12 @@ func (s *Server) GetMetadataEditorInfo(ctx context.Context, request api.GetMetad
 		info.ContentTypeOptions = apiutil.Ptr(contentTypeOptions())
 	}
 
-	if item.LibraryID != uuid.Nil {
-		library, err := s.libraries.Library(ctx, item.LibraryID)
+	ancestry, err := s.items.Ancestors(ctx, item.ID)
+	if err != nil {
+		return nil, err
+	}
+	if ancestry != nil && len(ancestry.LibraryIDs) > 0 {
+		library, err := s.libraries.Library(ctx, ancestry.LibraryIDs[0])
 		if err != nil {
 			return nil, err
 		}

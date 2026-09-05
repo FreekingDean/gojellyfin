@@ -151,7 +151,6 @@ func seed() error {
 	catalogue := items.New(client)
 	for _, name := range movies {
 		item, err := catalogue.SaveScanned(ctx, items.Scanned{
-			LibraryID:    record.ID,
 			Kind:         itemmodal.KindMovie,
 			Key:          "movie:" + slugify(name),
 			Name:         name,
@@ -165,6 +164,9 @@ func seed() error {
 		if err := file(ctx, catalogue, downloader.ID, item.ID, name); err != nil {
 			return err
 		}
+		if err := member(ctx, client, record.ID, downloader.ID, item.ID); err != nil {
+			return err
+		}
 	}
 
 	shown, err := libraries.New(client).CreateLibrary(ctx, shows, libraries.CollectionTypeTvshows, []string{"/fixtures/shows"})
@@ -175,7 +177,6 @@ func seed() error {
 	number := int32(1)
 
 	show, err := catalogue.SaveScanned(ctx, items.Scanned{
-		LibraryID:    shown.ID,
 		Kind:         itemmodal.KindSeries,
 		Key:          "series:" + slugify(series),
 		Name:         series,
@@ -187,7 +188,6 @@ func seed() error {
 	}
 
 	first, err := catalogue.SaveScanned(ctx, items.Scanned{
-		LibraryID:    shown.ID,
 		ParentID:     &show.ID,
 		Kind:         itemmodal.KindSeason,
 		Key:          "season:" + slugify(series) + ":1",
@@ -203,7 +203,6 @@ func seed() error {
 	for index, name := range episodes {
 		position := int32(index + 1)
 		item, err := catalogue.SaveScanned(ctx, items.Scanned{
-			LibraryID:         shown.ID,
 			ParentID:          &first.ID,
 			Kind:              itemmodal.KindEpisode,
 			Key:               fmt.Sprintf("episode:%s:1:%d", slugify(series), position),
@@ -220,11 +219,28 @@ func seed() error {
 		if err := file(ctx, catalogue, downloader.ID, item.ID, name); err != nil {
 			return err
 		}
+		if err := member(ctx, client, shown.ID, downloader.ID, item.ID); err != nil {
+			return err
+		}
+	}
+
+	for _, id := range []uuid.UUID{show.ID, first.ID} {
+		if err := member(ctx, client, shown.ID, downloader.ID, id); err != nil {
+			return err
+		}
 	}
 
 	fmt.Println(record.ID)
 
 	return nil
+}
+
+func member(ctx context.Context, client *store.Client, libraryID, sourceID, itemID uuid.UUID) error {
+	return client.LibraryItem.Create().
+		SetLibraryID(libraryID).
+		SetSourceID(sourceID).
+		SetItemID(itemID).
+		Exec(ctx)
 }
 
 func file(ctx context.Context, catalogue *items.Service, sourceID, itemID uuid.UUID, name string) error {

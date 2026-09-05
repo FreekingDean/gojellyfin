@@ -37,7 +37,7 @@ type MetadataQuery struct {
 func (q MetadataQuery) items() []predicate.Item {
 	filters := make([]predicate.Item, 0, 3)
 	if q.LibraryID != nil {
-		filters = append(filters, itemmodal.LibraryID(*q.LibraryID))
+		filters = append(filters, inLibrary(*q.LibraryID))
 	}
 	if q.ItemID != nil {
 		filters = append(filters, itemmodal.ID(*q.ItemID))

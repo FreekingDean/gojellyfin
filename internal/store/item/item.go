@@ -19,8 +19,6 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
-	// FieldLibraryID holds the string denoting the library_id field in the database.
-	FieldLibraryID = "library_id"
 	// FieldParentID holds the string denoting the parent_id field in the database.
 	FieldParentID = "parent_id"
 	// FieldKind holds the string denoting the kind field in the database.
@@ -75,8 +73,8 @@ const (
 	EdgeParent = "parent"
 	// EdgeChildren holds the string denoting the children edge name in mutations.
 	EdgeChildren = "children"
-	// EdgeLibrary holds the string denoting the library edge name in mutations.
-	EdgeLibrary = "library"
+	// EdgeLibraries holds the string denoting the libraries edge name in mutations.
+	EdgeLibraries = "libraries"
 	// EdgeItemSources holds the string denoting the item_sources edge name in mutations.
 	EdgeItemSources = "item_sources"
 	// EdgeCredits holds the string denoting the credits edge name in mutations.
@@ -105,13 +103,13 @@ const (
 	ChildrenTable = "items"
 	// ChildrenColumn is the table column denoting the children relation/edge.
 	ChildrenColumn = "parent_id"
-	// LibraryTable is the table that holds the library relation/edge.
-	LibraryTable = "items"
-	// LibraryInverseTable is the table name for the Library entity.
-	// It exists in this package in order to avoid circular dependency with the "library" package.
-	LibraryInverseTable = "libraries"
-	// LibraryColumn is the table column denoting the library relation/edge.
-	LibraryColumn = "library_id"
+	// LibrariesTable is the table that holds the libraries relation/edge.
+	LibrariesTable = "library_items"
+	// LibrariesInverseTable is the table name for the LibraryItem entity.
+	// It exists in this package in order to avoid circular dependency with the "libraryitem" package.
+	LibrariesInverseTable = "library_items"
+	// LibrariesColumn is the table column denoting the libraries relation/edge.
+	LibrariesColumn = "item_id"
 	// ItemSourcesTable is the table that holds the item_sources relation/edge.
 	ItemSourcesTable = "item_sources"
 	// ItemSourcesInverseTable is the table name for the ItemSource entity.
@@ -178,7 +176,6 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
-	FieldLibraryID,
 	FieldParentID,
 	FieldKind,
 	FieldMediaType,
@@ -345,11 +342,6 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
-// ByLibraryID orders the results by the library_id field.
-func ByLibraryID(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldLibraryID, opts...).ToFunc()
-}
-
 // ByParentID orders the results by the parent_id field.
 func ByParentID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldParentID, opts...).ToFunc()
@@ -476,10 +468,17 @@ func ByChildren(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
-// ByLibraryField orders the results by library field.
-func ByLibraryField(field string, opts ...sql.OrderTermOption) OrderOption {
+// ByLibrariesCount orders the results by libraries count.
+func ByLibrariesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newLibraryStep(), sql.OrderByField(field, opts...))
+		sqlgraph.OrderByNeighborsCount(s, newLibrariesStep(), opts...)
+	}
+}
+
+// ByLibraries orders the results by libraries terms.
+func ByLibraries(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newLibrariesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
@@ -615,11 +614,11 @@ func newChildrenStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2M, false, ChildrenTable, ChildrenColumn),
 	)
 }
-func newLibraryStep() *sqlgraph.Step {
+func newLibrariesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(LibraryInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2O, true, LibraryTable, LibraryColumn),
+		sqlgraph.To(LibrariesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, LibrariesTable, LibrariesColumn),
 	)
 }
 func newItemSourcesStep() *sqlgraph.Step {

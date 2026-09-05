@@ -42,6 +42,9 @@ type ItemSource func(*sql.Selector)
 // Library is the predicate function for library builders.
 type Library func(*sql.Selector)
 
+// LibraryItem is the predicate function for libraryitem builders.
+type LibraryItem func(*sql.Selector)
+
 // LibraryOptions is the predicate function for libraryoptions builders.
 type LibraryOptions func(*sql.Selector)
 

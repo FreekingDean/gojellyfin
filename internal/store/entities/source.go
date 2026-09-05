@@ -25,5 +25,6 @@ func (Source) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("libraries", LibrarySource.Type).Annotations(cascadeOnDelete),
 		edge.To("files", ItemSource.Type).Annotations(cascadeOnDelete),
+		edge.To("memberships", LibraryItem.Type).Annotations(cascadeOnDelete),
 	}
 }
