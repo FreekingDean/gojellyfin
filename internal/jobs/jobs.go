@@ -4,8 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"maps"
-	"slices"
+	"net/url"
 	"strings"
 	"time"
 
@@ -16,6 +15,7 @@ import (
 
 const (
 	runWorkflow = "RunJob"
+	idSeparator = ":"
 
 	stepTimeout   = 6 * time.Hour
 	heartbeat     = 2 * time.Minute
@@ -52,12 +52,12 @@ func (p Params) id(name string) string {
 		return name
 	}
 
-	parts := make([]string, 0, len(p))
-	for _, key := range slices.Sorted(maps.Keys(p)) {
-		parts = append(parts, strings.Trim(p[key], `"`))
+	written := make(url.Values, len(p))
+	for key, value := range p {
+		written.Set(key, strings.Trim(value, `"`))
 	}
 
-	return name + ":" + strings.Join(parts, ":")
+	return name + idSeparator + written.Encode()
 }
 
 type paramsKey struct{}
