@@ -37,6 +37,8 @@ type Metadata struct {
 	LockData          *bool
 	Tags              *[]string
 	Taglines          *[]string
+	Genres            *[]string
+	Studios           *[]string
 	LockedFields      *[]string
 	ProviderIds       *map[string]string
 	Images            []RemoteImage
@@ -75,7 +77,38 @@ func (s *Service) UpdateMetadata(ctx context.Context, id uuid.UUID, metadata Met
 		return nil, fmt.Errorf("failed to update item metadata: %w", err)
 	}
 
+	if err := s.replaceNamed(ctx, id, metadata); err != nil {
+		return nil, err
+	}
+
 	return item, nil
+}
+
+func (s *Service) replaceNamed(ctx context.Context, id uuid.UUID, metadata Metadata) error {
+	if metadata.Genres == nil && metadata.Studios == nil {
+		return nil
+	}
+
+	return s.store.WithTx(ctx, func(tx *store.Tx) error {
+		update := tx.Item.UpdateOneID(id)
+
+		if metadata.Genres != nil {
+			genres, err := genreIDs(ctx, tx, *metadata.Genres)
+			if err != nil {
+				return err
+			}
+			update = update.ClearGenres().AddGenreIDs(genres...)
+		}
+		if metadata.Studios != nil {
+			studios, err := studioIDs(ctx, tx, *metadata.Studios)
+			if err != nil {
+				return err
+			}
+			update = update.ClearStudios().AddStudioIDs(studios...)
+		}
+
+		return update.Exec(ctx)
+	})
 }
 
 func unclaimedTitle(upsert *store.ItemUpsert) {

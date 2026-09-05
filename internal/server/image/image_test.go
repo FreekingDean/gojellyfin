@@ -9,8 +9,6 @@ import (
 	"image/png"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/google/uuid"
@@ -110,30 +108,9 @@ func (f *fixture) store(t *testing.T, kind items.ImageKind, index int32, key, ta
 		SetItemID(f.itemID).
 		SetKind(kind).
 		SetIndex(index).
-		SetSource(imagemodal.SourceRemote).
 		SetPath(key).
 		SetTag(tag).
 		Save(ctx)
-	if err != nil {
-		t.Fatalf("failed to create the image row: %v", err)
-	}
-}
-
-func (f *fixture) add(t *testing.T, kind items.ImageKind, index int32, name, tag string, content []byte) {
-	t.Helper()
-
-	path := filepath.Join(f.directory, name)
-	if err := os.WriteFile(path, content, 0o600); err != nil {
-		t.Fatalf("failed to write %q: %v", name, err)
-	}
-
-	_, err := f.client.Image.Create().
-		SetItemID(f.itemID).
-		SetKind(kind).
-		SetIndex(index).
-		SetPath(path).
-		SetTag(tag).
-		Save(context.Background())
 	if err != nil {
 		t.Fatalf("failed to create the image row: %v", err)
 	}
@@ -162,7 +139,7 @@ func TestServer_GetItemImage(t *testing.T) {
 	poster := []byte("poster-bytes")
 
 	t.Run("serves the file", func(t *testing.T) {
-		fixture.add(t, imagemodal.KindPrimary, 0, "poster.jpg", "postertag", poster)
+		fixture.store(t, imagemodal.KindPrimary, 0, "poster.jpg", "postertag", poster)
 
 		response, err := fixture.server.GetItemImage(context.Background(), api.GetItemImageRequestObject{
 			ItemId:    fixture.itemID,
@@ -225,10 +202,15 @@ func TestServer_GetItemImage(t *testing.T) {
 		fixture := newFixture(t)
 		ctx := context.Background()
 
-		fixture.add(t, imagemodal.KindPrimary, 0, "poster.jpg", "postertag", []byte("poster-bytes"))
-		fixture.add(t, imagemodal.KindThumb, 0, "thumb.jpg", "thumbtag", []byte("thumb-bytes"))
-		if err := os.Remove(filepath.Join(fixture.directory, "thumb.jpg")); err != nil {
-			t.Fatalf("failed to remove the file: %v", err)
+		fixture.store(t, imagemodal.KindPrimary, 0, "poster.jpg", "postertag", []byte("poster-bytes"))
+		if _, err := fixture.client.Image.Create().
+			SetItemID(fixture.itemID).
+			SetKind(imagemodal.KindThumb).
+			SetIndex(0).
+			SetPath("thumb.jpg").
+			SetTag("thumbtag").
+			Save(ctx); err != nil {
+			t.Fatalf("failed to create the unstored image row: %v", err)
 		}
 
 		tests := []struct {
@@ -239,7 +221,7 @@ func TestServer_GetItemImage(t *testing.T) {
 			{name: "an image the item does not have", itemID: fixture.itemID, imageType: api.Logo},
 			{name: "an unknown image type", itemID: fixture.itemID, imageType: api.ImageType("Nonsense")},
 			{name: "an unknown item", itemID: uuid.New(), imageType: api.Primary},
-			{name: "a row whose file is gone", itemID: fixture.itemID, imageType: api.Thumb},
+			{name: "a row whose bytes are not stored", itemID: fixture.itemID, imageType: api.Thumb},
 			{name: "a library with no collage", itemID: fixture.libraryID, imageType: api.Primary},
 			{name: "an image type a library never has", itemID: fixture.libraryID, imageType: api.Thumb},
 		}
@@ -267,8 +249,8 @@ func TestServer_GetItemImageByIndex(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
-	fixture.add(t, imagemodal.KindBackdrop, 0, "backdrop0.png", "first", []byte("first-backdrop"))
-	fixture.add(t, imagemodal.KindBackdrop, 1, "backdrop1.png", "second", []byte("second-backdrop"))
+	fixture.store(t, imagemodal.KindBackdrop, 0, "backdrop0.png", "first", []byte("first-backdrop"))
+	fixture.store(t, imagemodal.KindBackdrop, 1, "backdrop1.png", "second", []byte("second-backdrop"))
 
 	t.Run("serves the requested index", func(t *testing.T) {
 		response, err := fixture.server.GetItemImageByIndex(ctx, api.GetItemImageByIndexRequestObject{
@@ -313,7 +295,7 @@ func TestServer_HeadItemImage(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
-	fixture.add(t, imagemodal.KindPrimary, 0, "poster.jpg", "postertag", []byte("poster-bytes"))
+	fixture.store(t, imagemodal.KindPrimary, 0, "poster.jpg", "postertag", []byte("poster-bytes"))
 
 	t.Run("answers with the content headers", func(t *testing.T) {
 		response, err := fixture.server.HeadItemImage(ctx, api.HeadItemImageRequestObject{

@@ -5955,7 +5955,6 @@ type ImageMutation struct {
 	kind          *image.Kind
 	index         *int32
 	addindex      *int32
-	source        *image.Source
 	_path         *string
 	tag           *string
 	blur_hash     *string
@@ -6275,42 +6274,6 @@ func (m *ImageMutation) AddedIndex() (r int32, exists bool) {
 func (m *ImageMutation) ResetIndex() {
 	m.index = nil
 	m.addindex = nil
-}
-
-// SetSource sets the "source" field.
-func (m *ImageMutation) SetSource(i image.Source) {
-	m.source = &i
-}
-
-// Source returns the value of the "source" field in the mutation.
-func (m *ImageMutation) Source() (r image.Source, exists bool) {
-	v := m.source
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldSource returns the old "source" field's value of the Image entity.
-// If the Image object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ImageMutation) OldSource(ctx context.Context) (v image.Source, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldSource is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldSource requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldSource: %w", err)
-	}
-	return oldValue.Source, nil
-}
-
-// ResetSource resets all changes to the "source" field.
-func (m *ImageMutation) ResetSource() {
-	m.source = nil
 }
 
 // SetPath sets the "path" field.
@@ -6705,7 +6668,7 @@ func (m *ImageMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ImageMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 11)
 	if m.created_at != nil {
 		fields = append(fields, image.FieldCreatedAt)
 	}
@@ -6720,9 +6683,6 @@ func (m *ImageMutation) Fields() []string {
 	}
 	if m.index != nil {
 		fields = append(fields, image.FieldIndex)
-	}
-	if m.source != nil {
-		fields = append(fields, image.FieldSource)
 	}
 	if m._path != nil {
 		fields = append(fields, image.FieldPath)
@@ -6760,8 +6720,6 @@ func (m *ImageMutation) Field(name string) (ent.Value, bool) {
 		return m.Kind()
 	case image.FieldIndex:
 		return m.Index()
-	case image.FieldSource:
-		return m.Source()
 	case image.FieldPath:
 		return m.Path()
 	case image.FieldTag:
@@ -6793,8 +6751,6 @@ func (m *ImageMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldKind(ctx)
 	case image.FieldIndex:
 		return m.OldIndex(ctx)
-	case image.FieldSource:
-		return m.OldSource(ctx)
 	case image.FieldPath:
 		return m.OldPath(ctx)
 	case image.FieldTag:
@@ -6850,13 +6806,6 @@ func (m *ImageMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetIndex(v)
-		return nil
-	case image.FieldSource:
-		v, ok := value.(image.Source)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetSource(v)
 		return nil
 	case image.FieldPath:
 		v, ok := value.(string)
@@ -7041,9 +6990,6 @@ func (m *ImageMutation) ResetField(name string) error {
 		return nil
 	case image.FieldIndex:
 		m.ResetIndex()
-		return nil
-	case image.FieldSource:
-		m.ResetSource()
 		return nil
 	case image.FieldPath:
 		m.ResetPath()

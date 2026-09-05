@@ -119,7 +119,6 @@ func (f *fixture) artworkFor(t *testing.T, itemID uuid.UUID, body []byte, acquir
 	_, err := f.client.Image.Create().
 		SetItemID(itemID).
 		SetKind(imagemodal.KindPrimary).
-		SetSource(imagemodal.SourceRemote).
 		SetPath(key).
 		SetTag(tag).
 		SetCreatedAt(acquired).

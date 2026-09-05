@@ -20,18 +20,6 @@ type CreditKind = creditmodal.Kind
 
 var ValidCreditKind = creditmodal.KindValidator
 
-type ContainerMetadata struct {
-	Genres  []string
-	Studios []string
-	Tags    []string
-	People  []Person
-}
-
-type Person struct {
-	Name string
-	Kind CreditKind
-}
-
 type Named struct {
 	ID   uuid.UUID
 	Name string
@@ -186,34 +174,6 @@ func (s *Service) DistinctTags(ctx context.Context, query MetadataQuery) ([]stri
 	slices.Sort(tags)
 
 	return tags, nil
-}
-
-func saveCredits(ctx context.Context, tx *store.Tx, itemID uuid.UUID, people []Person) error {
-	if _, err := tx.Credit.Delete().Where(creditmodal.HasItemWith(itemmodal.ID(itemID))).Exec(ctx); err != nil {
-		return fmt.Errorf("failed to clear credits: %w", err)
-	}
-	if len(people) == 0 {
-		return nil
-	}
-
-	builders := make([]*store.CreditCreate, 0, len(people))
-	for _, person := range people {
-		id, err := tx.Person.Create().
-			SetName(person.Name).
-			OnConflictColumns(personmodal.FieldName).
-			UpdateName().
-			ID(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to save person: %w", err)
-		}
-		builders = append(builders, tx.Credit.Create().SetItemID(itemID).SetPersonID(id).SetKind(person.Kind))
-	}
-
-	if err := tx.Credit.CreateBulk(builders...).Exec(ctx); err != nil {
-		return fmt.Errorf("failed to save credits: %w", err)
-	}
-
-	return nil
 }
 
 func genreIDs(ctx context.Context, tx *store.Tx, names []string) ([]uuid.UUID, error) {

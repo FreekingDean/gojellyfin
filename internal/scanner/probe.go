@@ -57,7 +57,6 @@ func (s *Scanner) probeFile(ctx context.Context, source *items.MediaSource) (*it
 		Size:         probe.Format.Size,
 		Bitrate:      probe.Format.BitRate,
 		Streams:      streams,
-		Metadata:     metadata(probe),
 	}, nil
 }
 

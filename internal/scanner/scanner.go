@@ -49,7 +49,6 @@ func New(
 type seen struct {
 	keys       []string
 	paths      []string
-	images     []string
 	unreadable int
 }
 
@@ -59,10 +58,6 @@ func (s *seen) title(item *items.Item) {
 
 func (s *seen) file(path string) {
 	s.paths = append(s.paths, path)
-}
-
-func (s *seen) image(path string) {
-	s.images = append(s.images, path)
 }
 
 func (s *seen) skip(name string, err error) {
@@ -115,10 +110,6 @@ func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) e
 	}
 
 	if err := s.items.DeleteItemsNotInKeys(ctx, library.ID, found.keys); err != nil {
-		return err
-	}
-
-	if err := s.items.DeleteImagesNotInPaths(ctx, library.ID, found.images); err != nil {
 		return err
 	}
 
@@ -186,14 +177,8 @@ func (s *Scanner) saveTitle(
 	}
 	found.title(item)
 
-	if title.Directory != "" {
-		if err := s.scanArtwork(ctx, item.ID, title.Directory, "", true, found); err != nil {
-			log.Printf("artwork %s: %v", title.Directory, err)
-		}
-	}
-
 	for _, file := range title.Files {
-		if err := s.saveFile(ctx, library, item, title.Kind, file, found); err != nil {
+		if err := s.saveFile(ctx, library, item, file, found); err != nil {
 			return err
 		}
 	}
@@ -211,7 +196,6 @@ func (s *Scanner) saveFile(
 	ctx context.Context,
 	library *libraries.Library,
 	item *items.Item,
-	kind itemmodal.Kind,
 	file sources.File,
 	found *seen,
 ) error {
@@ -231,12 +215,6 @@ func (s *Scanner) saveFile(
 
 	if err := s.scanSubtitles(ctx, item.ID, source); err != nil {
 		log.Printf("subtitles %s: %v", file.Path, err)
-	}
-
-	base := stripExtension(filepath.Base(file.Path))
-	folder := kind != itemmodal.KindEpisode
-	if err := s.scanArtwork(ctx, item.ID, filepath.Dir(file.Path), base, folder, found); err != nil {
-		log.Printf("artwork %s: %v", file.Path, err)
 	}
 
 	return nil

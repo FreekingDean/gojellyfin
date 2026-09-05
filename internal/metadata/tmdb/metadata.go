@@ -48,6 +48,8 @@ func movieMetadata(movie *gotmdb.MovieDetails, base string) items.Metadata {
 		PremiereDate:    premiere,
 		ProductionYear:  year(premiere),
 		Taglines:        list(movie.Tagline),
+		Genres:          named(movie.Genres),
+		Studios:         companies(movie.ProductionCompanies),
 		ProviderIds:     providerIDs(movie.ID, movie.IMDbID),
 		Images: artwork(
 			remote(imagemodal.KindPrimary, base, posterSize, movie.PosterPath),
@@ -68,6 +70,8 @@ func seriesMetadata(series *gotmdb.TVDetails, base string) items.Metadata {
 		PremiereDate:    premiere,
 		ProductionYear:  year(premiere),
 		Taglines:        list(series.Tagline),
+		Genres:          named(series.Genres),
+		Studios:         companies(series.ProductionCompanies),
 		ProviderIds:     providerIDs(series.ID, seriesIMDbID(series)),
 		Images: artwork(
 			remote(imagemodal.KindPrimary, base, posterSize, series.PosterPath),
@@ -220,6 +224,32 @@ func text(value string) *string {
 	}
 
 	return &value
+}
+
+func named(genres []gotmdb.Genre) *[]string {
+	if len(genres) == 0 {
+		return nil
+	}
+
+	names := make([]string, 0, len(genres))
+	for _, genre := range genres {
+		names = append(names, genre.Name)
+	}
+
+	return &names
+}
+
+func companies(studios []gotmdb.ProductionCompany) *[]string {
+	if len(studios) == 0 {
+		return nil
+	}
+
+	names := make([]string, 0, len(studios))
+	for _, studio := range studios {
+		names = append(names, studio.Name)
+	}
+
+	return &names
 }
 
 func list(value string) *[]string {

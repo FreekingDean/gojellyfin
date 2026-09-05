@@ -30,7 +30,6 @@ type Title struct {
 	Year        *int32
 	Index       *int32
 	ParentIndex *int32
-	Directory   string
 	Files       []File
 	Children    []Title
 }
@@ -113,11 +112,10 @@ func (s *Service) series(ctx context.Context, binding Binding) ([]Title, error) 
 		}
 
 		titles = append(titles, Title{
-			Kind:      itemmodel.KindSeries,
-			Name:      show.Title,
-			Year:      released(show.Year),
-			Directory: mapPath(binding.Library, show.Path),
-			Children:  children,
+			Kind:     itemmodel.KindSeries,
+			Name:     show.Title,
+			Year:     released(show.Year),
+			Children: children,
 		})
 	}
 
@@ -150,33 +148,13 @@ func seasons(bound Library, episodes []sonarr.Episode) []Title {
 	titles := make([]Title, 0, len(numbers))
 	for _, number := range numbers {
 		titles = append(titles, Title{
-			Kind:      itemmodel.KindSeason,
-			Index:     ptr(number),
-			Directory: sharedDirectory(byNumber[number]),
-			Children:  byNumber[number],
+			Kind:     itemmodel.KindSeason,
+			Index:    ptr(number),
+			Children: byNumber[number],
 		})
 	}
 
 	return titles
-}
-
-func sharedDirectory(episodes []Title) string {
-	shared := ""
-	for _, episode := range episodes {
-		for _, file := range episode.Files {
-			directory := filepath.Dir(file.Path)
-			if shared == "" {
-				shared = directory
-
-				continue
-			}
-			if shared != directory {
-				return ""
-			}
-		}
-	}
-
-	return shared
 }
 
 func (s *Service) tagFilter(ctx context.Context, binding Binding) (func([]int) bool, error) {

@@ -68,16 +68,7 @@ func TestServer_GetGenres(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to save the item: %v", err)
 	}
-	source, err := service.SaveSource(ctx, items.ScannedSource{
-		LibraryID: library.ID,
-		ItemID:    movie.ID,
-		Path:      "/media/" + name + ".mkv",
-		Name:      name,
-	})
-	if err != nil {
-		t.Fatalf("failed to save the media source: %v", err)
-	}
-	if err := service.SaveProbe(ctx, movie, source, items.Probe{Metadata: items.ContainerMetadata{Genres: []string{name}}}); err != nil {
+	if _, err := service.UpdateMetadata(ctx, movie.ID, items.Metadata{Genres: &[]string{name}}); err != nil {
 		t.Fatalf("failed to save the probe: %v", err)
 	}
 

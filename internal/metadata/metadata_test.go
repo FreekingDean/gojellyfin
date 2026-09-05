@@ -205,9 +205,6 @@ func dropStoredArtwork(t *testing.T, service *items.Service, stored artwork.Stor
 			continue
 		}
 		for _, image := range images {
-			if image.Source != items.ImageSourceRemote {
-				continue
-			}
 			if err := stored.Delete(ctx, image.Path); err != nil {
 				t.Errorf("failed to delete the artwork: %v", err)
 			}

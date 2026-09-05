@@ -36,7 +36,6 @@ type Probe struct {
 	Size         int64
 	Bitrate      int32
 	Streams      []Stream
-	Metadata     ContainerMetadata
 }
 
 func nillableRangeType(rangeType VideoRangeType) *VideoRangeType {
@@ -96,29 +95,11 @@ func (s *Service) SaveSource(ctx context.Context, scanned ScannedSource) (*Media
 
 func (s *Service) SaveProbe(ctx context.Context, item *Item, source *MediaSource, probe Probe) error {
 	return s.store.WithTx(ctx, func(tx *store.Tx) error {
-		genres, err := genreIDs(ctx, tx, probe.Metadata.Genres)
-		if err != nil {
-			return err
-		}
-		studios, err := studioIDs(ctx, tx, probe.Metadata.Studios)
-		if err != nil {
-			return err
-		}
-
-		err = tx.Item.UpdateOneID(item.ID).
+		err := tx.Item.UpdateOneID(item.ID).
 			SetRunTimeTicks(probe.RunTimeTicks).
-			SetTags(probe.Metadata.Tags).
-			ClearGenres().
-			AddGenreIDs(genres...).
-			ClearStudios().
-			AddStudioIDs(studios...).
 			Exec(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to save probed item: %w", err)
-		}
-
-		if err := saveCredits(ctx, tx, item.ID, probe.Metadata.People); err != nil {
-			return err
 		}
 
 		err = tx.MediaSource.UpdateOneID(source.ID).

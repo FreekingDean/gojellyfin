@@ -52,10 +52,6 @@ func (s *Service) saveArtwork(ctx context.Context, pendingItem *items.Item, refe
 }
 
 func (s *Service) storeArtwork(ctx context.Context, itemID uuid.UUID, held *items.Image, reference items.RemoteImage) error {
-	if held != nil && held.Source == items.ImageSourceLocal {
-		return nil
-	}
-
 	sum := sha1.Sum([]byte(reference.URL))
 	tag := hex.EncodeToString(sum[:])
 	suffix := path.Ext(reference.URL)

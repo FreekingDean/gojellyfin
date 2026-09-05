@@ -115,17 +115,8 @@ func (s *Server) openLibrary(ctx context.Context, id uuid.UUID, kind items.Image
 }
 
 func (s *Server) read(ctx context.Context, record *items.Image) (io.ReadCloser, int64, bool) {
-	if record.Source == items.ImageSourceRemote {
-		body, size, found, err := s.artwork.Open(ctx, record.Path)
-		if err != nil || !found {
-			return nil, 0, false
-		}
-
-		return body, size, true
-	}
-
-	body, size, err := s.filesystem.Open(ctx, record.Path)
-	if err != nil {
+	body, size, found, err := s.artwork.Open(ctx, record.Path)
+	if err != nil || !found {
 		return nil, 0, false
 	}
 

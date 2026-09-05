@@ -125,61 +125,11 @@ func TestService_IdentifyItems_Artwork(t *testing.T) {
 		fixed.identify(t)
 
 		record := fixed.poster(t, movie.ID)
-		if record.Source != imagemodal.SourceRemote {
-			t.Errorf("source = %s, want Remote", record.Source)
-		}
 		if record.Size != int64(len(body)) {
 			t.Errorf("size = %d, want %d", record.Size, len(body))
 		}
 		if got := fixed.stored(t, record.Path); string(got) != string(body) {
 			t.Errorf("stored %d bytes, want the %d the CDN served", len(got), len(body))
-		}
-	})
-
-	t.Run("leaves a poster the scan found beside the file", func(t *testing.T) {
-		fixed := newFixture(t)
-		served := newCDN(t)
-		url, _ := served.serve(t, "/t/p/w780/matrix.png")
-		fixed.provider.images = []items.RemoteImage{{Kind: imagemodal.KindPrimary, URL: url}}
-
-		movie := fixed.matrix(t)
-		found := items.Artwork{Kind: imagemodal.KindPrimary, Path: "/media/poster.jpg", Tag: "local"}
-		if err := fixed.items.SaveImage(context.Background(), movie.ID, found); err != nil {
-			t.Fatalf("failed to save the scanned poster: %v", err)
-		}
-
-		fixed.identify(t)
-
-		record := fixed.poster(t, movie.ID)
-		if record.Source != imagemodal.SourceLocal || record.Path != "/media/poster.jpg" {
-			t.Errorf("poster = %s %q, want the operator's own kept", record.Source, record.Path)
-		}
-		if asked := served.requests(); len(asked) != 0 {
-			t.Errorf("requests = %v, want nothing downloaded over a local poster", asked)
-		}
-	})
-
-	t.Run("gives way to a poster the scan finds afterwards", func(t *testing.T) {
-		fixed := newFixture(t)
-		served := newCDN(t)
-		url, _ := served.serve(t, "/t/p/w780/matrix.png")
-		fixed.provider.images = []items.RemoteImage{{Kind: imagemodal.KindPrimary, URL: url}}
-
-		movie := fixed.matrix(t)
-		fixed.identify(t)
-
-		if downloaded := fixed.poster(t, movie.ID); downloaded.Source != imagemodal.SourceRemote {
-			t.Fatalf("source = %s, want the download to have happened first", downloaded.Source)
-		}
-
-		found := items.Artwork{Kind: imagemodal.KindPrimary, Path: "/media/poster.jpg", Tag: "local"}
-		if err := fixed.items.SaveImage(context.Background(), movie.ID, found); err != nil {
-			t.Fatalf("failed to save the scanned poster: %v", err)
-		}
-
-		record := fixed.poster(t, movie.ID)
-		if record.Source != imagemodal.SourceLocal || record.Path != "/media/poster.jpg" {
-			t.Errorf("poster = %s %q, want the operator's own to displace the download", record.Source, record.Path)
 		}
 	})
 

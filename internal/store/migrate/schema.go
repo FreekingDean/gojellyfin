@@ -194,7 +194,6 @@ var (
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Primary", "Art", "Backdrop", "Banner", "Logo", "Thumb", "Disc", "Box", "Screenshot", "Menu", "Chapter", "BoxRear", "Profile"}},
 		{Name: "index", Type: field.TypeInt32, Default: 0},
-		{Name: "source", Type: field.TypeEnum, Enums: []string{"Local", "Remote"}, Default: "Local"},
 		{Name: "path", Type: field.TypeString},
 		{Name: "tag", Type: field.TypeString},
 		{Name: "blur_hash", Type: field.TypeString, Nullable: true},
@@ -211,7 +210,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "images_items_images",
-				Columns:    []*schema.Column{ImagesColumns[12]},
+				Columns:    []*schema.Column{ImagesColumns[11]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -220,7 +219,7 @@ var (
 			{
 				Name:    "image_item_id_kind_index",
 				Unique:  true,
-				Columns: []*schema.Column{ImagesColumns[12], ImagesColumns[3], ImagesColumns[4]},
+				Columns: []*schema.Column{ImagesColumns[11], ImagesColumns[3], ImagesColumns[4]},
 			},
 		},
 	}

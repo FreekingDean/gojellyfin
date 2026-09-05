@@ -127,12 +127,6 @@ func (s *Service) decode(ctx context.Context, record *items.Image) (image.Image,
 }
 
 func (s *Service) open(ctx context.Context, record *items.Image) (io.ReadCloser, error) {
-	if record.Source == items.ImageSourceLocal {
-		body, _, err := s.filesystem.Open(ctx, record.Path)
-
-		return body, err
-	}
-
 	body, _, found, err := s.artwork.Open(ctx, record.Path)
 	if err != nil {
 		return nil, err
