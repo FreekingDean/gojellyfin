@@ -12,7 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/FreekingDean/gojellyfin/internal/store/entities"
+	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/google/uuid"
 )
@@ -71,18 +71,6 @@ func (_c *SourceCreate) SetAPIKey(v string) *SourceCreate {
 	return _c
 }
 
-// SetPathMappings sets the "path_mappings" field.
-func (_c *SourceCreate) SetPathMappings(v []entities.SourcePathMapping) *SourceCreate {
-	_c.mutation.SetPathMappings(v)
-	return _c
-}
-
-// SetLibraries sets the "libraries" field.
-func (_c *SourceCreate) SetLibraries(v []entities.SourceLibrary) *SourceCreate {
-	_c.mutation.SetLibraries(v)
-	return _c
-}
-
 // SetKind sets the "kind" field.
 func (_c *SourceCreate) SetKind(v source.Kind) *SourceCreate {
 	_c.mutation.SetKind(v)
@@ -93,6 +81,21 @@ func (_c *SourceCreate) SetKind(v source.Kind) *SourceCreate {
 func (_c *SourceCreate) SetID(v uuid.UUID) *SourceCreate {
 	_c.mutation.SetID(v)
 	return _c
+}
+
+// AddLibraryIDs adds the "libraries" edge to the LibrarySource entity by IDs.
+func (_c *SourceCreate) AddLibraryIDs(ids ...uuid.UUID) *SourceCreate {
+	_c.mutation.AddLibraryIDs(ids...)
+	return _c
+}
+
+// AddLibraries adds the "libraries" edges to the LibrarySource entity.
+func (_c *SourceCreate) AddLibraries(v ...*LibrarySource) *SourceCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddLibraryIDs(ids...)
 }
 
 // Mutation returns the SourceMutation object of the builder.
@@ -221,17 +224,25 @@ func (_c *SourceCreate) createSpec() (*Source, *sqlgraph.CreateSpec) {
 		_spec.SetField(source.FieldAPIKey, field.TypeString, value)
 		_node.APIKey = value
 	}
-	if value, ok := _c.mutation.PathMappings(); ok {
-		_spec.SetField(source.FieldPathMappings, field.TypeJSON, value)
-		_node.PathMappings = value
-	}
-	if value, ok := _c.mutation.Libraries(); ok {
-		_spec.SetField(source.FieldLibraries, field.TypeJSON, value)
-		_node.Libraries = value
-	}
 	if value, ok := _c.mutation.Kind(); ok {
 		_spec.SetField(source.FieldKind, field.TypeEnum, value)
 		_node.Kind = value
+	}
+	if nodes := _c.mutation.LibrariesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.LibrariesTable,
+			Columns: []string{source.LibrariesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(librarysource.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }
@@ -342,42 +353,6 @@ func (u *SourceUpsert) SetAPIKey(v string) *SourceUpsert {
 // UpdateAPIKey sets the "api_key" field to the value that was provided on create.
 func (u *SourceUpsert) UpdateAPIKey() *SourceUpsert {
 	u.SetExcluded(source.FieldAPIKey)
-	return u
-}
-
-// SetPathMappings sets the "path_mappings" field.
-func (u *SourceUpsert) SetPathMappings(v []entities.SourcePathMapping) *SourceUpsert {
-	u.Set(source.FieldPathMappings, v)
-	return u
-}
-
-// UpdatePathMappings sets the "path_mappings" field to the value that was provided on create.
-func (u *SourceUpsert) UpdatePathMappings() *SourceUpsert {
-	u.SetExcluded(source.FieldPathMappings)
-	return u
-}
-
-// ClearPathMappings clears the value of the "path_mappings" field.
-func (u *SourceUpsert) ClearPathMappings() *SourceUpsert {
-	u.SetNull(source.FieldPathMappings)
-	return u
-}
-
-// SetLibraries sets the "libraries" field.
-func (u *SourceUpsert) SetLibraries(v []entities.SourceLibrary) *SourceUpsert {
-	u.Set(source.FieldLibraries, v)
-	return u
-}
-
-// UpdateLibraries sets the "libraries" field to the value that was provided on create.
-func (u *SourceUpsert) UpdateLibraries() *SourceUpsert {
-	u.SetExcluded(source.FieldLibraries)
-	return u
-}
-
-// ClearLibraries clears the value of the "libraries" field.
-func (u *SourceUpsert) ClearLibraries() *SourceUpsert {
-	u.SetNull(source.FieldLibraries)
 	return u
 }
 
@@ -508,48 +483,6 @@ func (u *SourceUpsertOne) SetAPIKey(v string) *SourceUpsertOne {
 func (u *SourceUpsertOne) UpdateAPIKey() *SourceUpsertOne {
 	return u.Update(func(s *SourceUpsert) {
 		s.UpdateAPIKey()
-	})
-}
-
-// SetPathMappings sets the "path_mappings" field.
-func (u *SourceUpsertOne) SetPathMappings(v []entities.SourcePathMapping) *SourceUpsertOne {
-	return u.Update(func(s *SourceUpsert) {
-		s.SetPathMappings(v)
-	})
-}
-
-// UpdatePathMappings sets the "path_mappings" field to the value that was provided on create.
-func (u *SourceUpsertOne) UpdatePathMappings() *SourceUpsertOne {
-	return u.Update(func(s *SourceUpsert) {
-		s.UpdatePathMappings()
-	})
-}
-
-// ClearPathMappings clears the value of the "path_mappings" field.
-func (u *SourceUpsertOne) ClearPathMappings() *SourceUpsertOne {
-	return u.Update(func(s *SourceUpsert) {
-		s.ClearPathMappings()
-	})
-}
-
-// SetLibraries sets the "libraries" field.
-func (u *SourceUpsertOne) SetLibraries(v []entities.SourceLibrary) *SourceUpsertOne {
-	return u.Update(func(s *SourceUpsert) {
-		s.SetLibraries(v)
-	})
-}
-
-// UpdateLibraries sets the "libraries" field to the value that was provided on create.
-func (u *SourceUpsertOne) UpdateLibraries() *SourceUpsertOne {
-	return u.Update(func(s *SourceUpsert) {
-		s.UpdateLibraries()
-	})
-}
-
-// ClearLibraries clears the value of the "libraries" field.
-func (u *SourceUpsertOne) ClearLibraries() *SourceUpsertOne {
-	return u.Update(func(s *SourceUpsert) {
-		s.ClearLibraries()
 	})
 }
 
@@ -849,48 +782,6 @@ func (u *SourceUpsertBulk) SetAPIKey(v string) *SourceUpsertBulk {
 func (u *SourceUpsertBulk) UpdateAPIKey() *SourceUpsertBulk {
 	return u.Update(func(s *SourceUpsert) {
 		s.UpdateAPIKey()
-	})
-}
-
-// SetPathMappings sets the "path_mappings" field.
-func (u *SourceUpsertBulk) SetPathMappings(v []entities.SourcePathMapping) *SourceUpsertBulk {
-	return u.Update(func(s *SourceUpsert) {
-		s.SetPathMappings(v)
-	})
-}
-
-// UpdatePathMappings sets the "path_mappings" field to the value that was provided on create.
-func (u *SourceUpsertBulk) UpdatePathMappings() *SourceUpsertBulk {
-	return u.Update(func(s *SourceUpsert) {
-		s.UpdatePathMappings()
-	})
-}
-
-// ClearPathMappings clears the value of the "path_mappings" field.
-func (u *SourceUpsertBulk) ClearPathMappings() *SourceUpsertBulk {
-	return u.Update(func(s *SourceUpsert) {
-		s.ClearPathMappings()
-	})
-}
-
-// SetLibraries sets the "libraries" field.
-func (u *SourceUpsertBulk) SetLibraries(v []entities.SourceLibrary) *SourceUpsertBulk {
-	return u.Update(func(s *SourceUpsert) {
-		s.SetLibraries(v)
-	})
-}
-
-// UpdateLibraries sets the "libraries" field to the value that was provided on create.
-func (u *SourceUpsertBulk) UpdateLibraries() *SourceUpsertBulk {
-	return u.Update(func(s *SourceUpsert) {
-		s.UpdateLibraries()
-	})
-}
-
-// ClearLibraries clears the value of the "libraries" field.
-func (u *SourceUpsertBulk) ClearLibraries() *SourceUpsertBulk {
-	return u.Update(func(s *SourceUpsert) {
-		s.ClearLibraries()
 	})
 }
 

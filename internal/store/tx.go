@@ -40,6 +40,8 @@ type Tx struct {
 	Library *LibraryClient
 	// LibraryOptions is the client for interacting with the LibraryOptions builders.
 	LibraryOptions *LibraryOptionsClient
+	// LibrarySource is the client for interacting with the LibrarySource builders.
+	LibrarySource *LibrarySourceClient
 	// ListingsProvider is the client for interacting with the ListingsProvider builders.
 	ListingsProvider *ListingsProviderClient
 	// MediaAttachment is the client for interacting with the MediaAttachment builders.
@@ -224,6 +226,7 @@ func (tx *Tx) init() {
 	tx.Item = NewItemClient(tx.config)
 	tx.Library = NewLibraryClient(tx.config)
 	tx.LibraryOptions = NewLibraryOptionsClient(tx.config)
+	tx.LibrarySource = NewLibrarySourceClient(tx.config)
 	tx.ListingsProvider = NewListingsProviderClient(tx.config)
 	tx.MediaAttachment = NewMediaAttachmentClient(tx.config)
 	tx.MediaSegment = NewMediaSegmentClient(tx.config)

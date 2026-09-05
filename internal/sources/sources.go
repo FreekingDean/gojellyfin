@@ -5,11 +5,15 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"slices"
+	"strings"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/sources/arr"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	"github.com/FreekingDean/gojellyfin/internal/store/entities"
+	librarysourcemodel "github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
 
@@ -36,57 +40,135 @@ func New(store *store.Client) *Service {
 }
 
 type (
-	Kind        = sourcemodel.Kind
-	Source      = store.Source
-	PathMapping = entities.SourcePathMapping
-	Library     = entities.SourceLibrary
+	Kind   = sourcemodel.Kind
+	Source = store.Source
 )
 
-func (s *Service) List(ctx context.Context) ([]Source, error) {
-	sourcePtr, err := s.store.Source.Query().
+type Library struct {
+	ID         uuid.UUID
+	TagFilter  string
+	SourcePath string
+	TargetPath string
+}
+
+type Configured struct {
+	Source    Source
+	Libraries []Library
+}
+
+func (s *Service) List(ctx context.Context) ([]Configured, error) {
+	records, err := s.store.Source.Query().
+		WithLibraries().
 		Order(sourcemodel.ByName()).
 		All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	sources := make([]Source, len(sourcePtr))
-	for i, source := range sourcePtr {
-		sources[i] = *source
+
+	configured := make([]Configured, len(records))
+	for i, record := range records {
+		configured[i] = Configured{
+			Source:    *record,
+			Libraries: libraries(record.Edges.Libraries),
+		}
 	}
-	return sources, nil
+
+	return configured, nil
 }
 
-func (s *Service) Update(ctx context.Context, sources []Source) error {
-	err := s.store.WithTx(ctx, func(tx *store.Tx) error {
-		namesToUpdate := make([]string, len(sources))
-		for i, source := range sources {
-			namesToUpdate[i] = source.Name
+func (s *Service) BindingsFor(ctx context.Context, id uuid.UUID) ([]Binding, error) {
+	records, err := s.store.LibrarySource.Query().
+		Where(librarysourcemodel.LibraryID(id)).
+		WithSource().
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	bindings := make([]Binding, 0, len(records))
+	for _, record := range records {
+		if record.Edges.Source == nil {
+			continue
 		}
-		_, err := tx.Source.Delete().
-			Where(sourcemodel.NameNotIn(namesToUpdate...)).
-			Exec(ctx)
-		if err != nil {
+
+		bindings = append(bindings, Binding{
+			Source:  *record.Edges.Source,
+			Library: library(record),
+		})
+	}
+
+	slices.SortFunc(bindings, func(first, second Binding) int {
+		return strings.Compare(first.Source.Name, second.Source.Name)
+	})
+
+	return bindings, nil
+}
+
+func libraries(records []*store.LibrarySource) []Library {
+	bound := make([]Library, len(records))
+	for i, record := range records {
+		bound[i] = library(record)
+	}
+
+	return bound
+}
+
+func library(record *store.LibrarySource) Library {
+	return Library{
+		ID:         record.LibraryID,
+		TagFilter:  record.TagFilter,
+		SourcePath: record.SourcePath,
+		TargetPath: record.TargetPath,
+	}
+}
+
+func (s *Service) Update(ctx context.Context, configured []Configured) error {
+	return s.store.WithTx(ctx, func(tx *store.Tx) error {
+		names := make([]string, len(configured))
+		for i, entry := range configured {
+			names[i] = entry.Source.Name
+		}
+
+		if _, err := tx.Source.Delete().
+			Where(sourcemodel.NameNotIn(names...)).
+			Exec(ctx); err != nil {
 			return err
 		}
 
-		for _, source := range sources {
-			err := tx.Source.Create().
-				SetName(source.Name).
-				SetURL(source.URL).
-				SetAPIKey(source.APIKey).
-				SetPathMappings(source.PathMappings).
-				SetLibraries(source.Libraries).
-				SetKind(source.Kind).
+		for _, entry := range configured {
+			id, err := tx.Source.Create().
+				SetName(entry.Source.Name).
+				SetURL(entry.Source.URL).
+				SetAPIKey(entry.Source.APIKey).
+				SetKind(entry.Source.Kind).
 				OnConflictColumns(sourcemodel.FieldName).
 				UpdateNewValues().
-				Exec(ctx)
+				ID(ctx)
 			if err != nil {
 				return err
 			}
+
+			if _, err := tx.LibrarySource.Delete().
+				Where(librarysourcemodel.SourceID(id)).
+				Exec(ctx); err != nil {
+				return err
+			}
+
+			for _, bound := range entry.Libraries {
+				if err := tx.LibrarySource.Create().
+					SetSourceID(id).
+					SetLibraryID(bound.ID).
+					SetTagFilter(bound.TagFilter).
+					SetSourcePath(bound.SourcePath).
+					SetTargetPath(bound.TargetPath).
+					Exec(ctx); err != nil {
+					return err
+				}
+			}
 		}
+
 		return nil
 	})
-	return err
 }
 
 func (s *Service) Test(ctx context.Context, apiURL, apiKey string) error {

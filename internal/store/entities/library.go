@@ -26,5 +26,6 @@ func (Library) Edges() []ent.Edge {
 		edge.To("options", LibraryOptions.Type).Unique().Annotations(cascadeOnDelete),
 		edge.To("items", Item.Type).Annotations(cascadeOnDelete),
 		edge.To("media_sources", MediaSource.Type).Annotations(cascadeOnDelete),
+		edge.To("sources", LibrarySource.Type).Annotations(cascadeOnDelete),
 	}
 }

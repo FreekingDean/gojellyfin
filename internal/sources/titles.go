@@ -12,8 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/FreekingDean/gojellyfin/internal/sources/arr"
 	"github.com/FreekingDean/gojellyfin/internal/sources/radarr"
 	"github.com/FreekingDean/gojellyfin/internal/sources/sonarr"
@@ -37,26 +35,8 @@ type Title struct {
 }
 
 type Binding struct {
-	Source    Source
-	TagFilter string
-}
-
-func (s *Service) BindingsFor(ctx context.Context, library uuid.UUID) ([]Binding, error) {
-	all, err := s.List(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	bindings := make([]Binding, 0, len(all))
-	for _, source := range all {
-		for _, bound := range source.Libraries {
-			if bound.ID == library.String() {
-				bindings = append(bindings, Binding{Source: source, TagFilter: bound.TagFilter})
-			}
-		}
-	}
-
-	return bindings, nil
+	Source  Source
+	Library Library
 }
 
 func (s *Service) Titles(ctx context.Context, binding Binding) ([]Title, error) {
@@ -91,7 +71,7 @@ func (s *Service) movies(ctx context.Context, binding Binding) ([]Title, error) 
 			Kind:  itemmodel.KindMovie,
 			Name:  movie.Title,
 			Year:  released(movie.Year),
-			Files: []File{file(binding.Source, movie.File)},
+			Files: []File{file(binding.Library, movie.File)},
 		})
 	}
 
@@ -124,7 +104,7 @@ func (s *Service) series(ctx context.Context, binding Binding) ([]Title, error) 
 			return nil, err
 		}
 
-		children := seasons(binding.Source, episodes)
+		children := seasons(binding.Library, episodes)
 		if len(children) == 0 {
 			continue
 		}
@@ -133,7 +113,7 @@ func (s *Service) series(ctx context.Context, binding Binding) ([]Title, error) 
 			Kind:      itemmodel.KindSeries,
 			Name:      show.Title,
 			Year:      released(show.Year),
-			Directory: mapPath(binding.Source, show.Path),
+			Directory: mapPath(binding.Library, show.Path),
 			Children:  children,
 		})
 	}
@@ -141,7 +121,7 @@ func (s *Service) series(ctx context.Context, binding Binding) ([]Title, error) 
 	return titles, nil
 }
 
-func seasons(source Source, episodes []sonarr.Episode) []Title {
+func seasons(bound Library, episodes []sonarr.Episode) []Title {
 	numbers := make([]int32, 0)
 	byNumber := map[int32][]Title{}
 
@@ -158,7 +138,7 @@ func seasons(source Source, episodes []sonarr.Episode) []Title {
 			Name:        episode.Title,
 			Index:       ptr(episode.EpisodeNumber),
 			ParentIndex: ptr(episode.SeasonNumber),
-			Files:       []File{file(source, episode.File)},
+			Files:       []File{file(bound, episode.File)},
 		})
 	}
 
@@ -177,7 +157,7 @@ func seasons(source Source, episodes []sonarr.Episode) []Title {
 }
 
 func (s *Service) tagFilter(ctx context.Context, binding Binding) (func([]int) bool, error) {
-	if binding.TagFilter == "" {
+	if binding.Library.TagFilter == "" {
 		return func([]int) bool { return true }, nil
 	}
 
@@ -187,31 +167,27 @@ func (s *Service) tagFilter(ctx context.Context, binding Binding) (func([]int) b
 	}
 
 	for _, tag := range tags {
-		if strings.EqualFold(tag.Label, binding.TagFilter) {
+		if strings.EqualFold(tag.Label, binding.Library.TagFilter) {
 			return func(ids []int) bool { return slices.Contains(ids, tag.ID) }, nil
 		}
 	}
 
-	return nil, fmt.Errorf("%s has no tag %q", binding.Source.Name, binding.TagFilter)
+	return nil, fmt.Errorf("%s has no tag %q", binding.Source.Name, binding.Library.TagFilter)
 }
 
-func file(source Source, from arr.File) File {
+func file(bound Library, from arr.File) File {
 	return File{
-		Path:         mapPath(source, from.Path),
+		Path:         mapPath(bound, from.Path),
 		DateModified: from.DateAdded,
 	}
 }
 
-func mapPath(source Source, path string) string {
-	for _, mapping := range source.PathMappings {
-		if mapping.SourcePath == "" || !strings.HasPrefix(path, mapping.SourcePath) {
-			continue
-		}
-
-		return filepath.Join(mapping.TargetPath, strings.TrimPrefix(path, mapping.SourcePath))
+func mapPath(bound Library, path string) string {
+	if bound.SourcePath == "" || !strings.HasPrefix(path, bound.SourcePath) {
+		return path
 	}
 
-	return path
+	return filepath.Join(bound.TargetPath, strings.TrimPrefix(path, bound.SourcePath))
 }
 
 func released(year int32) *int32 {

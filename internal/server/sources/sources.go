@@ -25,66 +25,52 @@ func New(sources *sources.Service) *Server {
 	}
 }
 
-func (s *Server) GoJellyfinUpdateSources(ctx context.Context, request api.GoJellyfinUpdateSourcesRequestObject) (api.GoJellyfinUpdateSourcesResponseObject, error) {
+func (s *Server) GoJellyfinListSources(
+	ctx context.Context,
+	_ api.GoJellyfinListSourcesRequestObject,
+) (api.GoJellyfinListSourcesResponseObject, error) {
+	configured, err := s.sources.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := make([]api.Source, len(configured))
+	for i, entry := range configured {
+		resp[i] = modelToParams(entry)
+	}
+
+	return api.GoJellyfinListSources200JSONResponse(resp), nil
+}
+
+func (s *Server) GoJellyfinUpdateSources(
+	ctx context.Context,
+	request api.GoJellyfinUpdateSourcesRequestObject,
+) (api.GoJellyfinUpdateSourcesResponseObject, error) {
 	if request.Body == nil {
 		return nil, fmt.Errorf("no request body")
 	}
-	req := *request.Body
 
-	reqSources := make([]sources.Source, len(req))
-	for i, source := range req {
-		reqSources[i] = paramsToModel(source)
+	configured := make([]sources.Configured, len(*request.Body))
+	for i, source := range *request.Body {
+		configured[i] = paramsToModel(source)
 	}
-	err := s.sources.Update(ctx, reqSources)
-	if err != nil {
+
+	if err := s.sources.Update(ctx, configured); err != nil {
 		return nil, err
 	}
 
 	return api.GoJellyfinUpdateSources204Response{}, nil
 }
 
-func (s *Server) GoJellyfinListSources(ctx context.Context, request api.GoJellyfinListSourcesRequestObject) (api.GoJellyfinListSourcesResponseObject, error) {
-	sources, err := s.sources.List(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	resp := make([]api.Source, len(sources))
-	for i, source := range sources {
-		pathMappings := make([]api.SourcePathMapping, len(source.PathMappings))
-		for j, mapping := range source.PathMappings {
-			pathMappings[j] = api.SourcePathMapping{
-				SourcePath: apiutil.Ptr(mapping.SourcePath),
-				TargetPath: apiutil.Ptr(mapping.TargetPath),
-			}
-		}
-		libraries := make([]api.SourceLibrary, len(source.Libraries))
-		for j, library := range source.Libraries {
-			libraries[j] = api.SourceLibrary{
-				Id:        apiutil.Ptr(library.ID),
-				TagFilter: apiutil.Ptr(library.TagFilter),
-			}
-		}
-		resp[i] = api.Source{
-			Name:         apiutil.Ptr(source.Name),
-			Kind:         apiutil.Ptr(apiKind(source.Kind)),
-			Url:          apiutil.Ptr(source.URL),
-			ApiKey:       apiutil.Ptr(source.APIKey),
-			PathMappings: apiutil.Ptr(pathMappings),
-			Libraries:    apiutil.Ptr(libraries),
-		}
-	}
-
-	return api.GoJellyfinListSources200JSONResponse(resp), nil
-}
-
-func (s *Server) GoJellyfinTestSource(ctx context.Context, request api.GoJellyfinTestSourceRequestObject) (api.GoJellyfinTestSourceResponseObject, error) {
+func (s *Server) GoJellyfinTestSource(
+	ctx context.Context,
+	request api.GoJellyfinTestSourceRequestObject,
+) (api.GoJellyfinTestSourceResponseObject, error) {
 	if request.Body == nil {
 		return unreachable("no request body"), nil
 	}
 
-	err := s.sources.Test(ctx, request.Body.Url, request.Body.ApiKey)
-	if err != nil {
+	if err := s.sources.Test(ctx, request.Body.Url, request.Body.ApiKey); err != nil {
 		return unreachable(err.Error()), nil
 	}
 
@@ -98,6 +84,51 @@ func unreachable(reason string) api.GoJellyfinTestSource200JSONResponse {
 		Reachable: false,
 		Error:     apiutil.Ptr(reason),
 	}
+}
+
+func modelToParams(entry sources.Configured) api.Source {
+	bound := make([]api.SourceLibrary, len(entry.Libraries))
+	for i, library := range entry.Libraries {
+		bound[i] = api.SourceLibrary{
+			Id:         library.ID,
+			TagFilter:  apiutil.Ptr(library.TagFilter),
+			SourcePath: apiutil.Ptr(library.SourcePath),
+			TargetPath: apiutil.Ptr(library.TargetPath),
+		}
+	}
+
+	return api.Source{
+		Name:      apiutil.Ptr(entry.Source.Name),
+		Kind:      apiutil.Ptr(apiKind(entry.Source.Kind)),
+		Url:       apiutil.Ptr(entry.Source.URL),
+		ApiKey:    apiutil.Ptr(entry.Source.APIKey),
+		Libraries: apiutil.Ptr(bound),
+	}
+}
+
+func paramsToModel(req api.Source) sources.Configured {
+	bound := apiutil.Deref(req.Libraries)
+
+	entry := sources.Configured{
+		Source: sources.Source{
+			Name:   apiutil.Deref(req.Name),
+			Kind:   modelKind(apiutil.Deref(req.Kind)),
+			URL:    apiutil.Deref(req.Url),
+			APIKey: apiutil.Deref(req.ApiKey),
+		},
+		Libraries: make([]sources.Library, len(bound)),
+	}
+
+	for i, library := range bound {
+		entry.Libraries[i] = sources.Library{
+			ID:         library.Id,
+			TagFilter:  apiutil.Deref(library.TagFilter),
+			SourcePath: apiutil.Deref(library.SourcePath),
+			TargetPath: apiutil.Deref(library.TargetPath),
+		}
+	}
+
+	return entry
 }
 
 func apiKind(kind sources.Kind) api.SourceKind {
@@ -114,30 +145,4 @@ func modelKind(kind api.SourceKind) sources.Kind {
 	}
 
 	return sources.KindRadarr
-}
-
-func paramsToModel(req api.Source) sources.Source {
-	pathMappings := apiutil.Deref(req.PathMappings)
-	libraries := apiutil.Deref(req.Libraries)
-	source := sources.Source{
-		Name:         apiutil.Deref(req.Name),
-		Kind:         modelKind(apiutil.Deref(req.Kind)),
-		URL:          apiutil.Deref(req.Url),
-		APIKey:       apiutil.Deref(req.ApiKey),
-		PathMappings: make([]sources.PathMapping, len(pathMappings)),
-		Libraries:    make([]sources.Library, len(libraries)),
-	}
-	for j, mapping := range pathMappings {
-		source.PathMappings[j] = sources.PathMapping{
-			SourcePath: apiutil.Deref(mapping.SourcePath),
-			TargetPath: apiutil.Deref(mapping.TargetPath),
-		}
-	}
-	for j, library := range libraries {
-		source.Libraries[j] = sources.Library{
-			ID:        apiutil.Deref(library.Id),
-			TagFilter: apiutil.Deref(library.TagFilter),
-		}
-	}
-	return source
 }

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 const (
@@ -24,14 +25,19 @@ const (
 	FieldURL = "url"
 	// FieldAPIKey holds the string denoting the api_key field in the database.
 	FieldAPIKey = "api_key"
-	// FieldPathMappings holds the string denoting the path_mappings field in the database.
-	FieldPathMappings = "path_mappings"
-	// FieldLibraries holds the string denoting the libraries field in the database.
-	FieldLibraries = "libraries"
 	// FieldKind holds the string denoting the kind field in the database.
 	FieldKind = "kind"
+	// EdgeLibraries holds the string denoting the libraries edge name in mutations.
+	EdgeLibraries = "libraries"
 	// Table holds the table name of the source in the database.
 	Table = "sources"
+	// LibrariesTable is the table that holds the libraries relation/edge.
+	LibrariesTable = "library_sources"
+	// LibrariesInverseTable is the table name for the LibrarySource entity.
+	// It exists in this package in order to avoid circular dependency with the "librarysource" package.
+	LibrariesInverseTable = "library_sources"
+	// LibrariesColumn is the table column denoting the libraries relation/edge.
+	LibrariesColumn = "source_id"
 )
 
 // Columns holds all SQL columns for source fields.
@@ -42,8 +48,6 @@ var Columns = []string{
 	FieldName,
 	FieldURL,
 	FieldAPIKey,
-	FieldPathMappings,
-	FieldLibraries,
 	FieldKind,
 }
 
@@ -128,4 +132,25 @@ func ByAPIKey(opts ...sql.OrderTermOption) OrderOption {
 // ByKind orders the results by the kind field.
 func ByKind(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldKind, opts...).ToFunc()
+}
+
+// ByLibrariesCount orders the results by libraries count.
+func ByLibrariesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newLibrariesStep(), opts...)
+	}
+}
+
+// ByLibraries orders the results by libraries terms.
+func ByLibraries(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newLibrariesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newLibrariesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(LibrariesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, LibrariesTable, LibrariesColumn),
+	)
 }

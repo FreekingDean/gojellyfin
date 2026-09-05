@@ -10,11 +10,11 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
-	"github.com/FreekingDean/gojellyfin/internal/store/entities"
+	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
+	"github.com/google/uuid"
 )
 
 // SourceUpdate is the builder for updating Source entities.
@@ -92,42 +92,6 @@ func (_u *SourceUpdate) SetNillableAPIKey(v *string) *SourceUpdate {
 	return _u
 }
 
-// SetPathMappings sets the "path_mappings" field.
-func (_u *SourceUpdate) SetPathMappings(v []entities.SourcePathMapping) *SourceUpdate {
-	_u.mutation.SetPathMappings(v)
-	return _u
-}
-
-// AppendPathMappings appends value to the "path_mappings" field.
-func (_u *SourceUpdate) AppendPathMappings(v []entities.SourcePathMapping) *SourceUpdate {
-	_u.mutation.AppendPathMappings(v)
-	return _u
-}
-
-// ClearPathMappings clears the value of the "path_mappings" field.
-func (_u *SourceUpdate) ClearPathMappings() *SourceUpdate {
-	_u.mutation.ClearPathMappings()
-	return _u
-}
-
-// SetLibraries sets the "libraries" field.
-func (_u *SourceUpdate) SetLibraries(v []entities.SourceLibrary) *SourceUpdate {
-	_u.mutation.SetLibraries(v)
-	return _u
-}
-
-// AppendLibraries appends value to the "libraries" field.
-func (_u *SourceUpdate) AppendLibraries(v []entities.SourceLibrary) *SourceUpdate {
-	_u.mutation.AppendLibraries(v)
-	return _u
-}
-
-// ClearLibraries clears the value of the "libraries" field.
-func (_u *SourceUpdate) ClearLibraries() *SourceUpdate {
-	_u.mutation.ClearLibraries()
-	return _u
-}
-
 // SetKind sets the "kind" field.
 func (_u *SourceUpdate) SetKind(v source.Kind) *SourceUpdate {
 	_u.mutation.SetKind(v)
@@ -142,9 +106,45 @@ func (_u *SourceUpdate) SetNillableKind(v *source.Kind) *SourceUpdate {
 	return _u
 }
 
+// AddLibraryIDs adds the "libraries" edge to the LibrarySource entity by IDs.
+func (_u *SourceUpdate) AddLibraryIDs(ids ...uuid.UUID) *SourceUpdate {
+	_u.mutation.AddLibraryIDs(ids...)
+	return _u
+}
+
+// AddLibraries adds the "libraries" edges to the LibrarySource entity.
+func (_u *SourceUpdate) AddLibraries(v ...*LibrarySource) *SourceUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddLibraryIDs(ids...)
+}
+
 // Mutation returns the SourceMutation object of the builder.
 func (_u *SourceUpdate) Mutation() *SourceMutation {
 	return _u.mutation
+}
+
+// ClearLibraries clears all "libraries" edges to the LibrarySource entity.
+func (_u *SourceUpdate) ClearLibraries() *SourceUpdate {
+	_u.mutation.ClearLibraries()
+	return _u
+}
+
+// RemoveLibraryIDs removes the "libraries" edge to LibrarySource entities by IDs.
+func (_u *SourceUpdate) RemoveLibraryIDs(ids ...uuid.UUID) *SourceUpdate {
+	_u.mutation.RemoveLibraryIDs(ids...)
+	return _u
+}
+
+// RemoveLibraries removes "libraries" edges to LibrarySource entities.
+func (_u *SourceUpdate) RemoveLibraries(v ...*LibrarySource) *SourceUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveLibraryIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -220,30 +220,53 @@ func (_u *SourceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.APIKey(); ok {
 		_spec.SetField(source.FieldAPIKey, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.PathMappings(); ok {
-		_spec.SetField(source.FieldPathMappings, field.TypeJSON, value)
-	}
-	if value, ok := _u.mutation.AppendedPathMappings(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, source.FieldPathMappings, value)
-		})
-	}
-	if _u.mutation.PathMappingsCleared() {
-		_spec.ClearField(source.FieldPathMappings, field.TypeJSON)
-	}
-	if value, ok := _u.mutation.Libraries(); ok {
-		_spec.SetField(source.FieldLibraries, field.TypeJSON, value)
-	}
-	if value, ok := _u.mutation.AppendedLibraries(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, source.FieldLibraries, value)
-		})
-	}
-	if _u.mutation.LibrariesCleared() {
-		_spec.ClearField(source.FieldLibraries, field.TypeJSON)
-	}
 	if value, ok := _u.mutation.Kind(); ok {
 		_spec.SetField(source.FieldKind, field.TypeEnum, value)
+	}
+	if _u.mutation.LibrariesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.LibrariesTable,
+			Columns: []string{source.LibrariesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(librarysource.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedLibrariesIDs(); len(nodes) > 0 && !_u.mutation.LibrariesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.LibrariesTable,
+			Columns: []string{source.LibrariesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(librarysource.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.LibrariesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.LibrariesTable,
+			Columns: []string{source.LibrariesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(librarysource.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -327,42 +350,6 @@ func (_u *SourceUpdateOne) SetNillableAPIKey(v *string) *SourceUpdateOne {
 	return _u
 }
 
-// SetPathMappings sets the "path_mappings" field.
-func (_u *SourceUpdateOne) SetPathMappings(v []entities.SourcePathMapping) *SourceUpdateOne {
-	_u.mutation.SetPathMappings(v)
-	return _u
-}
-
-// AppendPathMappings appends value to the "path_mappings" field.
-func (_u *SourceUpdateOne) AppendPathMappings(v []entities.SourcePathMapping) *SourceUpdateOne {
-	_u.mutation.AppendPathMappings(v)
-	return _u
-}
-
-// ClearPathMappings clears the value of the "path_mappings" field.
-func (_u *SourceUpdateOne) ClearPathMappings() *SourceUpdateOne {
-	_u.mutation.ClearPathMappings()
-	return _u
-}
-
-// SetLibraries sets the "libraries" field.
-func (_u *SourceUpdateOne) SetLibraries(v []entities.SourceLibrary) *SourceUpdateOne {
-	_u.mutation.SetLibraries(v)
-	return _u
-}
-
-// AppendLibraries appends value to the "libraries" field.
-func (_u *SourceUpdateOne) AppendLibraries(v []entities.SourceLibrary) *SourceUpdateOne {
-	_u.mutation.AppendLibraries(v)
-	return _u
-}
-
-// ClearLibraries clears the value of the "libraries" field.
-func (_u *SourceUpdateOne) ClearLibraries() *SourceUpdateOne {
-	_u.mutation.ClearLibraries()
-	return _u
-}
-
 // SetKind sets the "kind" field.
 func (_u *SourceUpdateOne) SetKind(v source.Kind) *SourceUpdateOne {
 	_u.mutation.SetKind(v)
@@ -377,9 +364,45 @@ func (_u *SourceUpdateOne) SetNillableKind(v *source.Kind) *SourceUpdateOne {
 	return _u
 }
 
+// AddLibraryIDs adds the "libraries" edge to the LibrarySource entity by IDs.
+func (_u *SourceUpdateOne) AddLibraryIDs(ids ...uuid.UUID) *SourceUpdateOne {
+	_u.mutation.AddLibraryIDs(ids...)
+	return _u
+}
+
+// AddLibraries adds the "libraries" edges to the LibrarySource entity.
+func (_u *SourceUpdateOne) AddLibraries(v ...*LibrarySource) *SourceUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddLibraryIDs(ids...)
+}
+
 // Mutation returns the SourceMutation object of the builder.
 func (_u *SourceUpdateOne) Mutation() *SourceMutation {
 	return _u.mutation
+}
+
+// ClearLibraries clears all "libraries" edges to the LibrarySource entity.
+func (_u *SourceUpdateOne) ClearLibraries() *SourceUpdateOne {
+	_u.mutation.ClearLibraries()
+	return _u
+}
+
+// RemoveLibraryIDs removes the "libraries" edge to LibrarySource entities by IDs.
+func (_u *SourceUpdateOne) RemoveLibraryIDs(ids ...uuid.UUID) *SourceUpdateOne {
+	_u.mutation.RemoveLibraryIDs(ids...)
+	return _u
+}
+
+// RemoveLibraries removes "libraries" edges to LibrarySource entities.
+func (_u *SourceUpdateOne) RemoveLibraries(v ...*LibrarySource) *SourceUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveLibraryIDs(ids...)
 }
 
 // Where appends a list predicates to the SourceUpdate builder.
@@ -485,30 +508,53 @@ func (_u *SourceUpdateOne) sqlSave(ctx context.Context) (_node *Source, err erro
 	if value, ok := _u.mutation.APIKey(); ok {
 		_spec.SetField(source.FieldAPIKey, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.PathMappings(); ok {
-		_spec.SetField(source.FieldPathMappings, field.TypeJSON, value)
-	}
-	if value, ok := _u.mutation.AppendedPathMappings(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, source.FieldPathMappings, value)
-		})
-	}
-	if _u.mutation.PathMappingsCleared() {
-		_spec.ClearField(source.FieldPathMappings, field.TypeJSON)
-	}
-	if value, ok := _u.mutation.Libraries(); ok {
-		_spec.SetField(source.FieldLibraries, field.TypeJSON, value)
-	}
-	if value, ok := _u.mutation.AppendedLibraries(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, source.FieldLibraries, value)
-		})
-	}
-	if _u.mutation.LibrariesCleared() {
-		_spec.ClearField(source.FieldLibraries, field.TypeJSON)
-	}
 	if value, ok := _u.mutation.Kind(); ok {
 		_spec.SetField(source.FieldKind, field.TypeEnum, value)
+	}
+	if _u.mutation.LibrariesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.LibrariesTable,
+			Columns: []string{source.LibrariesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(librarysource.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedLibrariesIDs(); len(nodes) > 0 && !_u.mutation.LibrariesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.LibrariesTable,
+			Columns: []string{source.LibrariesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(librarysource.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.LibrariesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.LibrariesTable,
+			Columns: []string{source.LibrariesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(librarysource.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Source{config: _u.config}
 	_spec.Assign = _node.assignValues

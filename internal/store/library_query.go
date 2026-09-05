@@ -16,6 +16,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
+	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/google/uuid"
@@ -31,6 +32,7 @@ type LibraryQuery struct {
 	withOptions      *LibraryOptionsQuery
 	withItems        *ItemQuery
 	withMediaSources *MediaSourceQuery
+	withSources      *LibrarySourceQuery
 	modifiers        []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -127,6 +129,28 @@ func (_q *LibraryQuery) QueryMediaSources() *MediaSourceQuery {
 			sqlgraph.From(library.Table, library.FieldID, selector),
 			sqlgraph.To(mediasource.Table, mediasource.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, library.MediaSourcesTable, library.MediaSourcesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySources chains the current query on the "sources" edge.
+func (_q *LibraryQuery) QuerySources() *LibrarySourceQuery {
+	query := (&LibrarySourceClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(library.Table, library.FieldID, selector),
+			sqlgraph.To(librarysource.Table, librarysource.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, library.SourcesTable, library.SourcesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -329,6 +353,7 @@ func (_q *LibraryQuery) Clone() *LibraryQuery {
 		withOptions:      _q.withOptions.Clone(),
 		withItems:        _q.withItems.Clone(),
 		withMediaSources: _q.withMediaSources.Clone(),
+		withSources:      _q.withSources.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -365,6 +390,17 @@ func (_q *LibraryQuery) WithMediaSources(opts ...func(*MediaSourceQuery)) *Libra
 		opt(query)
 	}
 	_q.withMediaSources = query
+	return _q
+}
+
+// WithSources tells the query-builder to eager-load the nodes that are connected to
+// the "sources" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *LibraryQuery) WithSources(opts ...func(*LibrarySourceQuery)) *LibraryQuery {
+	query := (&LibrarySourceClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withSources = query
 	return _q
 }
 
@@ -446,10 +482,11 @@ func (_q *LibraryQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Libr
 	var (
 		nodes       = []*Library{}
 		_spec       = _q.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			_q.withOptions != nil,
 			_q.withItems != nil,
 			_q.withMediaSources != nil,
+			_q.withSources != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -490,6 +527,13 @@ func (_q *LibraryQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Libr
 		if err := _q.loadMediaSources(ctx, query, nodes,
 			func(n *Library) { n.Edges.MediaSources = []*MediaSource{} },
 			func(n *Library, e *MediaSource) { n.Edges.MediaSources = append(n.Edges.MediaSources, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withSources; query != nil {
+		if err := _q.loadSources(ctx, query, nodes,
+			func(n *Library) { n.Edges.Sources = []*LibrarySource{} },
+			func(n *Library, e *LibrarySource) { n.Edges.Sources = append(n.Edges.Sources, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -569,6 +613,36 @@ func (_q *LibraryQuery) loadMediaSources(ctx context.Context, query *MediaSource
 	}
 	query.Where(predicate.MediaSource(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(library.MediaSourcesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.LibraryID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "library_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *LibraryQuery) loadSources(ctx context.Context, query *LibrarySourceQuery, nodes []*Library, init func(*Library), assign func(*Library, *LibrarySource)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Library)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(librarysource.FieldLibraryID)
+	}
+	query.Where(predicate.LibrarySource(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(library.SourcesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

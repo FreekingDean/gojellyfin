@@ -74,35 +74,24 @@
             </div>
 
             <h3 class="checkboxListLabel">Libraries</h3>
+            <p class="fieldDescription">
+                Each row binds this instance to one library. The tag filter is optional and empty means every
+                title the instance manages; the paths rewrite what it reports into what this server can open.
+            </p>
             <table style="width:100%">
                 <thead>
                     <tr>
-                        <th style="text-align:left;width:45%">Library</th>
-                        <th style="text-align:left;width:45%">Tag filter<br />
-                            <span class="fieldDescription" style="margin:0">Optional. Empty means every title this instance manages.</span>
-                        </th>
+                        <th style="text-align:left;width:28%">Library</th>
+                        <th style="text-align:left;width:16%">Tag filter</th>
+                        <th style="text-align:left;width:26%">Path in Sonarr/Radarr</th>
+                        <th style="text-align:left;width:26%">Path on this server</th>
                         <th style="text-align:right"></th>
                     </tr>
                 </thead>
                 <tbody data-id="bindingsHost"></tbody>
             </table>
-            <button is="emby-button" data-id="addBinding" type="button" class="raised raised-mini" style="margin-bottom:1.5em">
+            <button is="emby-button" data-id="addBinding" type="button" class="raised raised-mini">
                 <span>Add library</span>
-            </button>
-
-            <h3 class="checkboxListLabel">Path mappings</h3>
-            <table style="width:100%">
-                <thead>
-                    <tr>
-                        <th style="text-align:left;width:45%">Path in Sonarr/Radarr</th>
-                        <th style="text-align:left;width:45%">Path on this server</th>
-                        <th style="text-align:right"></th>
-                    </tr>
-                </thead>
-                <tbody data-id="mappingsHost"></tbody>
-            </table>
-            <button is="emby-button" data-id="addMapping" type="button" class="raised raised-mini">
-                <span>Add mapping</span>
             </button>
         </div>
     </template>
@@ -115,16 +104,6 @@
             <td style="vertical-align:top;padding-right:1em">
                 <input type="text" data-id="txtTag" class="emby-input" placeholder="4k" />
             </td>
-            <td style="vertical-align:top;text-align:right">
-                <button is="emby-button" data-id="removeBinding" type="button" class="raised raised-mini">
-                    <span>Remove</span>
-                </button>
-            </td>
-        </tr>
-    </template>
-
-    <template id="mappingTemplate">
-        <tr>
             <td style="vertical-align:top;padding-right:1em">
                 <input type="text" data-id="txtSourcePath" class="emby-input" placeholder="/data/movies" />
             </td>
@@ -132,7 +111,7 @@
                 <input type="text" data-id="txtTargetPath" class="emby-input" placeholder="/media/movies" />
             </td>
             <td style="vertical-align:top;text-align:right">
-                <button is="emby-button" data-id="removeMapping" type="button" class="raised raised-mini">
+                <button is="emby-button" data-id="removeBinding" type="button" class="raised raised-mini">
                     <span>Remove</span>
                 </button>
             </td>
@@ -170,6 +149,8 @@
                 const kind = card.querySelector('[data-id=selKind]').value;
 
                 row.querySelector('[data-id=txtTag]').value = binding.TagFilter || '';
+                row.querySelector('[data-id=txtSourcePath]').value = binding.SourcePath || '';
+                row.querySelector('[data-id=txtTargetPath]').value = binding.TargetPath || '';
                 window.GoJellyfinSources.fillLibraries(row.querySelector('[data-id=selLibrary]'), kind, binding.Id);
 
                 row.querySelector('[data-id=removeBinding]').addEventListener('click', function () {
@@ -177,20 +158,6 @@
                 });
 
                 card.querySelector('[data-id=bindingsHost]').appendChild(clone);
-            },
-
-            addMapping: function (card, mapping) {
-                const clone = document.querySelector('#mappingTemplate').content.cloneNode(true);
-                const row = clone.querySelector('tr');
-
-                row.querySelector('[data-id=txtSourcePath]').value = mapping.SourcePath || '';
-                row.querySelector('[data-id=txtTargetPath]').value = mapping.TargetPath || '';
-
-                row.querySelector('[data-id=removeMapping]').addEventListener('click', function () {
-                    row.remove();
-                });
-
-                card.querySelector('[data-id=mappingsHost]').appendChild(clone);
             },
 
             addConnection: function (connection) {
@@ -217,10 +184,6 @@
                     source.addBinding(card, {});
                 });
 
-                card.querySelector('[data-id=addMapping]').addEventListener('click', function () {
-                    source.addMapping(card, {});
-                });
-
                 card.querySelector('[data-id=testConnection]').addEventListener('click', function () {
                     source.testConnection(card);
                 });
@@ -230,22 +193,13 @@
                 (connection.Libraries || []).forEach(function (binding) {
                     source.addBinding(card, binding);
                 });
-
-                (connection.PathMappings || []).forEach(function (mapping) {
-                    source.addMapping(card, mapping);
-                });
             },
 
             readConnection: function (card) {
                 const libraries = Array.prototype.map.call(card.querySelectorAll('[data-id=bindingsHost] tr'), function (row) {
                     return {
                         Id: row.querySelector('[data-id=selLibrary]').value,
-                        TagFilter: row.querySelector('[data-id=txtTag]').value.trim()
-                    };
-                });
-
-                const mappings = Array.prototype.map.call(card.querySelectorAll('[data-id=mappingsHost] tr'), function (row) {
-                    return {
+                        TagFilter: row.querySelector('[data-id=txtTag]').value.trim(),
                         SourcePath: row.querySelector('[data-id=txtSourcePath]').value.trim(),
                         TargetPath: row.querySelector('[data-id=txtTargetPath]').value.trim()
                     };
@@ -256,8 +210,7 @@
                     Kind: card.querySelector('[data-id=selKind]').value,
                     Url: card.querySelector('[data-id=txtUrl]').value.trim().replace(/\/+$/, ''),
                     ApiKey: card.querySelector('[data-id=txtApiKey]').value.trim(),
-                    Libraries: libraries,
-                    PathMappings: mappings
+                    Libraries: libraries
                 };
             },
 

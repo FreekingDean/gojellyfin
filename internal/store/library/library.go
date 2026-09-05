@@ -31,6 +31,8 @@ const (
 	EdgeItems = "items"
 	// EdgeMediaSources holds the string denoting the media_sources edge name in mutations.
 	EdgeMediaSources = "media_sources"
+	// EdgeSources holds the string denoting the sources edge name in mutations.
+	EdgeSources = "sources"
 	// Table holds the table name of the library in the database.
 	Table = "libraries"
 	// OptionsTable is the table that holds the options relation/edge.
@@ -54,6 +56,13 @@ const (
 	MediaSourcesInverseTable = "media_sources"
 	// MediaSourcesColumn is the table column denoting the media_sources relation/edge.
 	MediaSourcesColumn = "library_id"
+	// SourcesTable is the table that holds the sources relation/edge.
+	SourcesTable = "library_sources"
+	// SourcesInverseTable is the table name for the LibrarySource entity.
+	// It exists in this package in order to avoid circular dependency with the "librarysource" package.
+	SourcesInverseTable = "library_sources"
+	// SourcesColumn is the table column denoting the sources relation/edge.
+	SourcesColumn = "library_id"
 )
 
 // Columns holds all SQL columns for library fields.
@@ -181,6 +190,20 @@ func ByMediaSources(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newMediaSourcesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// BySourcesCount orders the results by sources count.
+func BySourcesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSourcesStep(), opts...)
+	}
+}
+
+// BySources orders the results by sources terms.
+func BySources(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSourcesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newOptionsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -200,5 +223,12 @@ func newMediaSourcesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(MediaSourcesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, MediaSourcesTable, MediaSourcesColumn),
+	)
+}
+func newSourcesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SourcesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SourcesTable, SourcesColumn),
 	)
 }

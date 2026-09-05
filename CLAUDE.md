@@ -225,7 +225,11 @@ Triggers are not built. `UpdateTask` answers 501 rather than storing a schedule 
 
 **A library is filled from Sonarr and Radarr rather than from a walk of its locations.** `internal/sources` owns the source rows and the clients under it, and `internal/scanner` writes what they answer into items and media sources. Nothing parses a filename any more: the title, the year and the season and episode numbers are what the instance already knows, so the regexes that guessed them out of `The.Matrix.1999.mkv` are gone along with the `filepath.WalkDir` that fed them. What is left of the filesystem in a scan is the artwork and the subtitles beside a file whose path a source named, and the probe, which still opens every file it has not seen before.
 
-**A source is bound to a library, not to a path**, through `SourceLibrary{ID, TagFilter}` on the source row. Several instances may feed one library and one instance may feed several, which is what the tag filter separates: an empty filter takes everything the instance manages and a named one takes only what carries that tag. A tag the instance does not define fails the source rather than quietly taking nothing, because to the sweep an empty answer and a misspelt tag look the same.
+**A source is bound to a library, not to a path**, and the binding is a row rather than a blob. `library_sources` carries the library, the source, the tag filter and the one path mapping that pair needs, unique on `(library_id, source_id)` and indexed on `source_id`, so "which sources feed this library" is a join and an index rather than a scan of every source decoding its own JSON. It replaced two `jsonb` columns on `source`, which could be neither joined nor constrained: nothing stopped a binding naming a library that had been deleted, and both sides cascade now.
+
+Several instances may feed one library and one instance may feed several, which is what the tag filter separates: an empty filter takes everything the instance manages and a named one takes only what carries that tag. A tag the instance does not define fails the source rather than quietly taking nothing, because to the sweep an empty answer and a misspelt tag look the same.
+
+**One path mapping per binding, not a list.** The prefix a source reports under is a property of the pair — this Radarr, that library — so a second mapping means a second binding, and the singular column is what keeps the rewrite a comparison rather than a search through an ordered list whose order nothing declared.
 
 **A library nobody bound is left alone.** `scanLibrary` returns before the sweep when no source names it, so creating a library and scanning it before binding a source does not empty it.
 
@@ -233,7 +237,7 @@ Triggers are not built. `UpdateTask` answers 501 rather than storing a schedule 
 
 **`internal/sources/arr` is the vocabulary Sonarr and Radarr share** — the tag list, the file record and the `X-Api-Key` header, which are the same on both — and `radarr` and `sonarr` hold only what differs. The domain makes the requests and translates both into `sources.Title`, a recursive shape the scanner writes without knowing which answered. An episode Sonarr has no file for is not a row: only what is on disk becomes an item, so the library holds what can be played rather than what has been wanted.
 
-**Paths arrive in the instance's namespace**, so `PathMappings` on the source rewrites them into what this server can open; a source with no mapping is one that shares a filesystem with the server.
+**Paths arrive in the instance's namespace**, so the binding's `source_path` and `target_path` rewrite them into what this server can open; a binding with no mapping is one whose instance shares a filesystem with the server.
 
 **`dateAdded` is what the scan stores as the file's `date_modified`, and it is not the file's mtime.** Sonarr and Radarr write a new file record each time they import one, so an upgraded release moves the date and earns a re-probe, while a file replaced underneath them in place does not and keeps the probe it has.
 

@@ -4,7 +4,6 @@ package store
 
 import (
 	"context"
-	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -13,60 +12,62 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/FreekingDean/gojellyfin/internal/store/library"
 	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/google/uuid"
 )
 
-// SourceQuery is the builder for querying Source entities.
-type SourceQuery struct {
+// LibrarySourceQuery is the builder for querying LibrarySource entities.
+type LibrarySourceQuery struct {
 	config
-	ctx           *QueryContext
-	order         []source.OrderOption
-	inters        []Interceptor
-	predicates    []predicate.Source
-	withLibraries *LibrarySourceQuery
-	modifiers     []func(*sql.Selector)
+	ctx         *QueryContext
+	order       []librarysource.OrderOption
+	inters      []Interceptor
+	predicates  []predicate.LibrarySource
+	withLibrary *LibraryQuery
+	withSource  *SourceQuery
+	modifiers   []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
 }
 
-// Where adds a new predicate for the SourceQuery builder.
-func (_q *SourceQuery) Where(ps ...predicate.Source) *SourceQuery {
+// Where adds a new predicate for the LibrarySourceQuery builder.
+func (_q *LibrarySourceQuery) Where(ps ...predicate.LibrarySource) *LibrarySourceQuery {
 	_q.predicates = append(_q.predicates, ps...)
 	return _q
 }
 
 // Limit the number of records to be returned by this query.
-func (_q *SourceQuery) Limit(limit int) *SourceQuery {
+func (_q *LibrarySourceQuery) Limit(limit int) *LibrarySourceQuery {
 	_q.ctx.Limit = &limit
 	return _q
 }
 
 // Offset to start from.
-func (_q *SourceQuery) Offset(offset int) *SourceQuery {
+func (_q *LibrarySourceQuery) Offset(offset int) *LibrarySourceQuery {
 	_q.ctx.Offset = &offset
 	return _q
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
-func (_q *SourceQuery) Unique(unique bool) *SourceQuery {
+func (_q *LibrarySourceQuery) Unique(unique bool) *LibrarySourceQuery {
 	_q.ctx.Unique = &unique
 	return _q
 }
 
 // Order specifies how the records should be ordered.
-func (_q *SourceQuery) Order(o ...source.OrderOption) *SourceQuery {
+func (_q *LibrarySourceQuery) Order(o ...librarysource.OrderOption) *LibrarySourceQuery {
 	_q.order = append(_q.order, o...)
 	return _q
 }
 
-// QueryLibraries chains the current query on the "libraries" edge.
-func (_q *SourceQuery) QueryLibraries() *LibrarySourceQuery {
-	query := (&LibrarySourceClient{config: _q.config}).Query()
+// QueryLibrary chains the current query on the "library" edge.
+func (_q *LibrarySourceQuery) QueryLibrary() *LibraryQuery {
+	query := (&LibraryClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -76,9 +77,9 @@ func (_q *SourceQuery) QueryLibraries() *LibrarySourceQuery {
 			return nil, err
 		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(source.Table, source.FieldID, selector),
-			sqlgraph.To(librarysource.Table, librarysource.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, source.LibrariesTable, source.LibrariesColumn),
+			sqlgraph.From(librarysource.Table, librarysource.FieldID, selector),
+			sqlgraph.To(library.Table, library.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, librarysource.LibraryTable, librarysource.LibraryColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -86,21 +87,43 @@ func (_q *SourceQuery) QueryLibraries() *LibrarySourceQuery {
 	return query
 }
 
-// First returns the first Source entity from the query.
-// Returns a *NotFoundError when no Source was found.
-func (_q *SourceQuery) First(ctx context.Context) (*Source, error) {
+// QuerySource chains the current query on the "source" edge.
+func (_q *LibrarySourceQuery) QuerySource() *SourceQuery {
+	query := (&SourceClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(librarysource.Table, librarysource.FieldID, selector),
+			sqlgraph.To(source.Table, source.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, librarysource.SourceTable, librarysource.SourceColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// First returns the first LibrarySource entity from the query.
+// Returns a *NotFoundError when no LibrarySource was found.
+func (_q *LibrarySourceQuery) First(ctx context.Context) (*LibrarySource, error) {
 	nodes, err := _q.Limit(1).All(setContextOp(ctx, _q.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
-		return nil, &NotFoundError{source.Label}
+		return nil, &NotFoundError{librarysource.Label}
 	}
 	return nodes[0], nil
 }
 
 // FirstX is like First, but panics if an error occurs.
-func (_q *SourceQuery) FirstX(ctx context.Context) *Source {
+func (_q *LibrarySourceQuery) FirstX(ctx context.Context) *LibrarySource {
 	node, err := _q.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -108,22 +131,22 @@ func (_q *SourceQuery) FirstX(ctx context.Context) *Source {
 	return node
 }
 
-// FirstID returns the first Source ID from the query.
-// Returns a *NotFoundError when no Source ID was found.
-func (_q *SourceQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+// FirstID returns the first LibrarySource ID from the query.
+// Returns a *NotFoundError when no LibrarySource ID was found.
+func (_q *LibrarySourceQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
 	if ids, err = _q.Limit(1).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
-		err = &NotFoundError{source.Label}
+		err = &NotFoundError{librarysource.Label}
 		return
 	}
 	return ids[0], nil
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (_q *SourceQuery) FirstIDX(ctx context.Context) uuid.UUID {
+func (_q *LibrarySourceQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := _q.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -131,10 +154,10 @@ func (_q *SourceQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	return id
 }
 
-// Only returns a single Source entity found by the query, ensuring it only returns one.
-// Returns a *NotSingularError when more than one Source entity is found.
-// Returns a *NotFoundError when no Source entities are found.
-func (_q *SourceQuery) Only(ctx context.Context) (*Source, error) {
+// Only returns a single LibrarySource entity found by the query, ensuring it only returns one.
+// Returns a *NotSingularError when more than one LibrarySource entity is found.
+// Returns a *NotFoundError when no LibrarySource entities are found.
+func (_q *LibrarySourceQuery) Only(ctx context.Context) (*LibrarySource, error) {
 	nodes, err := _q.Limit(2).All(setContextOp(ctx, _q.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
@@ -143,14 +166,14 @@ func (_q *SourceQuery) Only(ctx context.Context) (*Source, error) {
 	case 1:
 		return nodes[0], nil
 	case 0:
-		return nil, &NotFoundError{source.Label}
+		return nil, &NotFoundError{librarysource.Label}
 	default:
-		return nil, &NotSingularError{source.Label}
+		return nil, &NotSingularError{librarysource.Label}
 	}
 }
 
 // OnlyX is like Only, but panics if an error occurs.
-func (_q *SourceQuery) OnlyX(ctx context.Context) *Source {
+func (_q *LibrarySourceQuery) OnlyX(ctx context.Context) *LibrarySource {
 	node, err := _q.Only(ctx)
 	if err != nil {
 		panic(err)
@@ -158,10 +181,10 @@ func (_q *SourceQuery) OnlyX(ctx context.Context) *Source {
 	return node
 }
 
-// OnlyID is like Only, but returns the only Source ID in the query.
-// Returns a *NotSingularError when more than one Source ID is found.
+// OnlyID is like Only, but returns the only LibrarySource ID in the query.
+// Returns a *NotSingularError when more than one LibrarySource ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (_q *SourceQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+func (_q *LibrarySourceQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
 	if ids, err = _q.Limit(2).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
@@ -170,15 +193,15 @@ func (_q *SourceQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	case 1:
 		id = ids[0]
 	case 0:
-		err = &NotFoundError{source.Label}
+		err = &NotFoundError{librarysource.Label}
 	default:
-		err = &NotSingularError{source.Label}
+		err = &NotSingularError{librarysource.Label}
 	}
 	return
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (_q *SourceQuery) OnlyIDX(ctx context.Context) uuid.UUID {
+func (_q *LibrarySourceQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := _q.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -186,18 +209,18 @@ func (_q *SourceQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	return id
 }
 
-// All executes the query and returns a list of Sources.
-func (_q *SourceQuery) All(ctx context.Context) ([]*Source, error) {
+// All executes the query and returns a list of LibrarySources.
+func (_q *LibrarySourceQuery) All(ctx context.Context) ([]*LibrarySource, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryAll)
 	if err := _q.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	qr := querierAll[[]*Source, *SourceQuery]()
-	return withInterceptors[[]*Source](ctx, _q, qr, _q.inters)
+	qr := querierAll[[]*LibrarySource, *LibrarySourceQuery]()
+	return withInterceptors[[]*LibrarySource](ctx, _q, qr, _q.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
-func (_q *SourceQuery) AllX(ctx context.Context) []*Source {
+func (_q *LibrarySourceQuery) AllX(ctx context.Context) []*LibrarySource {
 	nodes, err := _q.All(ctx)
 	if err != nil {
 		panic(err)
@@ -205,20 +228,20 @@ func (_q *SourceQuery) AllX(ctx context.Context) []*Source {
 	return nodes
 }
 
-// IDs executes the query and returns a list of Source IDs.
-func (_q *SourceQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+// IDs executes the query and returns a list of LibrarySource IDs.
+func (_q *LibrarySourceQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 	if _q.ctx.Unique == nil && _q.path != nil {
 		_q.Unique(true)
 	}
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryIDs)
-	if err = _q.Select(source.FieldID).Scan(ctx, &ids); err != nil {
+	if err = _q.Select(librarysource.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (_q *SourceQuery) IDsX(ctx context.Context) []uuid.UUID {
+func (_q *LibrarySourceQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := _q.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -227,16 +250,16 @@ func (_q *SourceQuery) IDsX(ctx context.Context) []uuid.UUID {
 }
 
 // Count returns the count of the given query.
-func (_q *SourceQuery) Count(ctx context.Context) (int, error) {
+func (_q *LibrarySourceQuery) Count(ctx context.Context) (int, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryCount)
 	if err := _q.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return withInterceptors[int](ctx, _q, querierCount[*SourceQuery](), _q.inters)
+	return withInterceptors[int](ctx, _q, querierCount[*LibrarySourceQuery](), _q.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
-func (_q *SourceQuery) CountX(ctx context.Context) int {
+func (_q *LibrarySourceQuery) CountX(ctx context.Context) int {
 	count, err := _q.Count(ctx)
 	if err != nil {
 		panic(err)
@@ -245,7 +268,7 @@ func (_q *SourceQuery) CountX(ctx context.Context) int {
 }
 
 // Exist returns true if the query has elements in the graph.
-func (_q *SourceQuery) Exist(ctx context.Context) (bool, error) {
+func (_q *LibrarySourceQuery) Exist(ctx context.Context) (bool, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryExist)
 	switch _, err := _q.FirstID(ctx); {
 	case IsNotFound(err):
@@ -258,7 +281,7 @@ func (_q *SourceQuery) Exist(ctx context.Context) (bool, error) {
 }
 
 // ExistX is like Exist, but panics if an error occurs.
-func (_q *SourceQuery) ExistX(ctx context.Context) bool {
+func (_q *LibrarySourceQuery) ExistX(ctx context.Context) bool {
 	exist, err := _q.Exist(ctx)
 	if err != nil {
 		panic(err)
@@ -266,33 +289,45 @@ func (_q *SourceQuery) ExistX(ctx context.Context) bool {
 	return exist
 }
 
-// Clone returns a duplicate of the SourceQuery builder, including all associated steps. It can be
+// Clone returns a duplicate of the LibrarySourceQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
-func (_q *SourceQuery) Clone() *SourceQuery {
+func (_q *LibrarySourceQuery) Clone() *LibrarySourceQuery {
 	if _q == nil {
 		return nil
 	}
-	return &SourceQuery{
-		config:        _q.config,
-		ctx:           _q.ctx.Clone(),
-		order:         append([]source.OrderOption{}, _q.order...),
-		inters:        append([]Interceptor{}, _q.inters...),
-		predicates:    append([]predicate.Source{}, _q.predicates...),
-		withLibraries: _q.withLibraries.Clone(),
+	return &LibrarySourceQuery{
+		config:      _q.config,
+		ctx:         _q.ctx.Clone(),
+		order:       append([]librarysource.OrderOption{}, _q.order...),
+		inters:      append([]Interceptor{}, _q.inters...),
+		predicates:  append([]predicate.LibrarySource{}, _q.predicates...),
+		withLibrary: _q.withLibrary.Clone(),
+		withSource:  _q.withSource.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
 	}
 }
 
-// WithLibraries tells the query-builder to eager-load the nodes that are connected to
-// the "libraries" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *SourceQuery) WithLibraries(opts ...func(*LibrarySourceQuery)) *SourceQuery {
-	query := (&LibrarySourceClient{config: _q.config}).Query()
+// WithLibrary tells the query-builder to eager-load the nodes that are connected to
+// the "library" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *LibrarySourceQuery) WithLibrary(opts ...func(*LibraryQuery)) *LibrarySourceQuery {
+	query := (&LibraryClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withLibraries = query
+	_q.withLibrary = query
+	return _q
+}
+
+// WithSource tells the query-builder to eager-load the nodes that are connected to
+// the "source" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *LibrarySourceQuery) WithSource(opts ...func(*SourceQuery)) *LibrarySourceQuery {
+	query := (&SourceClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withSource = query
 	return _q
 }
 
@@ -306,15 +341,15 @@ func (_q *SourceQuery) WithLibraries(opts ...func(*LibrarySourceQuery)) *SourceQ
 //		Count int `json:"count,omitempty"`
 //	}
 //
-//	client.Source.Query().
-//		GroupBy(source.FieldCreatedAt).
+//	client.LibrarySource.Query().
+//		GroupBy(librarysource.FieldCreatedAt).
 //		Aggregate(store.Count()).
 //		Scan(ctx, &v)
-func (_q *SourceQuery) GroupBy(field string, fields ...string) *SourceGroupBy {
+func (_q *LibrarySourceQuery) GroupBy(field string, fields ...string) *LibrarySourceGroupBy {
 	_q.ctx.Fields = append([]string{field}, fields...)
-	grbuild := &SourceGroupBy{build: _q}
+	grbuild := &LibrarySourceGroupBy{build: _q}
 	grbuild.flds = &_q.ctx.Fields
-	grbuild.label = source.Label
+	grbuild.label = librarysource.Label
 	grbuild.scan = grbuild.Scan
 	return grbuild
 }
@@ -328,23 +363,23 @@ func (_q *SourceQuery) GroupBy(field string, fields ...string) *SourceGroupBy {
 //		CreatedAt time.Time `json:"created_at,omitempty"`
 //	}
 //
-//	client.Source.Query().
-//		Select(source.FieldCreatedAt).
+//	client.LibrarySource.Query().
+//		Select(librarysource.FieldCreatedAt).
 //		Scan(ctx, &v)
-func (_q *SourceQuery) Select(fields ...string) *SourceSelect {
+func (_q *LibrarySourceQuery) Select(fields ...string) *LibrarySourceSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
-	sbuild := &SourceSelect{SourceQuery: _q}
-	sbuild.label = source.Label
+	sbuild := &LibrarySourceSelect{LibrarySourceQuery: _q}
+	sbuild.label = librarysource.Label
 	sbuild.flds, sbuild.scan = &_q.ctx.Fields, sbuild.Scan
 	return sbuild
 }
 
-// Aggregate returns a SourceSelect configured with the given aggregations.
-func (_q *SourceQuery) Aggregate(fns ...AggregateFunc) *SourceSelect {
+// Aggregate returns a LibrarySourceSelect configured with the given aggregations.
+func (_q *LibrarySourceQuery) Aggregate(fns ...AggregateFunc) *LibrarySourceSelect {
 	return _q.Select().Aggregate(fns...)
 }
 
-func (_q *SourceQuery) prepareQuery(ctx context.Context) error {
+func (_q *LibrarySourceQuery) prepareQuery(ctx context.Context) error {
 	for _, inter := range _q.inters {
 		if inter == nil {
 			return fmt.Errorf("store: uninitialized interceptor (forgotten import store/runtime?)")
@@ -356,7 +391,7 @@ func (_q *SourceQuery) prepareQuery(ctx context.Context) error {
 		}
 	}
 	for _, f := range _q.ctx.Fields {
-		if !source.ValidColumn(f) {
+		if !librarysource.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("store: invalid field %q for query", f)}
 		}
 	}
@@ -370,19 +405,20 @@ func (_q *SourceQuery) prepareQuery(ctx context.Context) error {
 	return nil
 }
 
-func (_q *SourceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Source, error) {
+func (_q *LibrarySourceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*LibrarySource, error) {
 	var (
-		nodes       = []*Source{}
+		nodes       = []*LibrarySource{}
 		_spec       = _q.querySpec()
-		loadedTypes = [1]bool{
-			_q.withLibraries != nil,
+		loadedTypes = [2]bool{
+			_q.withLibrary != nil,
+			_q.withSource != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
-		return (*Source).scanValues(nil, columns)
+		return (*LibrarySource).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
-		node := &Source{config: _q.config}
+		node := &LibrarySource{config: _q.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
@@ -399,48 +435,81 @@ func (_q *SourceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Sourc
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := _q.withLibraries; query != nil {
-		if err := _q.loadLibraries(ctx, query, nodes,
-			func(n *Source) { n.Edges.Libraries = []*LibrarySource{} },
-			func(n *Source, e *LibrarySource) { n.Edges.Libraries = append(n.Edges.Libraries, e) }); err != nil {
+	if query := _q.withLibrary; query != nil {
+		if err := _q.loadLibrary(ctx, query, nodes, nil,
+			func(n *LibrarySource, e *Library) { n.Edges.Library = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withSource; query != nil {
+		if err := _q.loadSource(ctx, query, nodes, nil,
+			func(n *LibrarySource, e *Source) { n.Edges.Source = e }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (_q *SourceQuery) loadLibraries(ctx context.Context, query *LibrarySourceQuery, nodes []*Source, init func(*Source), assign func(*Source, *LibrarySource)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Source)
+func (_q *LibrarySourceQuery) loadLibrary(ctx context.Context, query *LibraryQuery, nodes []*LibrarySource, init func(*LibrarySource), assign func(*LibrarySource, *Library)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*LibrarySource)
 	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
+		fk := nodes[i].LibraryID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
 		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(librarysource.FieldSourceID)
+	if len(ids) == 0 {
+		return nil
 	}
-	query.Where(predicate.LibrarySource(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(source.LibrariesColumn), fks...))
-	}))
+	query.Where(library.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.SourceID
-		node, ok := nodeids[fk]
+		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "source_id" returned %v for node %v`, fk, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "library_id" returned %v`, n.ID)
 		}
-		assign(node, n)
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *LibrarySourceQuery) loadSource(ctx context.Context, query *SourceQuery, nodes []*LibrarySource, init func(*LibrarySource), assign func(*LibrarySource, *Source)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*LibrarySource)
+	for i := range nodes {
+		fk := nodes[i].SourceID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(source.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "source_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
 	}
 	return nil
 }
 
-func (_q *SourceQuery) sqlCount(ctx context.Context) (int, error) {
+func (_q *LibrarySourceQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
 	if len(_q.modifiers) > 0 {
 		_spec.Modifiers = _q.modifiers
@@ -452,8 +521,8 @@ func (_q *SourceQuery) sqlCount(ctx context.Context) (int, error) {
 	return sqlgraph.CountNodes(ctx, _q.driver, _spec)
 }
 
-func (_q *SourceQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(source.Table, source.Columns, sqlgraph.NewFieldSpec(source.FieldID, field.TypeUUID))
+func (_q *LibrarySourceQuery) querySpec() *sqlgraph.QuerySpec {
+	_spec := sqlgraph.NewQuerySpec(librarysource.Table, librarysource.Columns, sqlgraph.NewFieldSpec(librarysource.FieldID, field.TypeUUID))
 	_spec.From = _q.sql
 	if unique := _q.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
@@ -462,11 +531,17 @@ func (_q *SourceQuery) querySpec() *sqlgraph.QuerySpec {
 	}
 	if fields := _q.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
-		_spec.Node.Columns = append(_spec.Node.Columns, source.FieldID)
+		_spec.Node.Columns = append(_spec.Node.Columns, librarysource.FieldID)
 		for i := range fields {
-			if fields[i] != source.FieldID {
+			if fields[i] != librarysource.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withLibrary != nil {
+			_spec.Node.AddColumnOnce(librarysource.FieldLibraryID)
+		}
+		if _q.withSource != nil {
+			_spec.Node.AddColumnOnce(librarysource.FieldSourceID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {
@@ -492,12 +567,12 @@ func (_q *SourceQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (_q *SourceQuery) sqlQuery(ctx context.Context) *sql.Selector {
+func (_q *LibrarySourceQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(_q.driver.Dialect())
-	t1 := builder.Table(source.Table)
+	t1 := builder.Table(librarysource.Table)
 	columns := _q.ctx.Fields
 	if len(columns) == 0 {
-		columns = source.Columns
+		columns = librarysource.Columns
 	}
 	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if _q.sql != nil {
@@ -530,7 +605,7 @@ func (_q *SourceQuery) sqlQuery(ctx context.Context) *sql.Selector {
 // ForUpdate locks the selected rows against concurrent updates, and prevent them from being
 // updated, deleted or "selected ... for update" by other sessions, until the transaction is
 // either committed or rolled-back.
-func (_q *SourceQuery) ForUpdate(opts ...sql.LockOption) *SourceQuery {
+func (_q *LibrarySourceQuery) ForUpdate(opts ...sql.LockOption) *LibrarySourceQuery {
 	if _q.driver.Dialect() == dialect.Postgres {
 		_q.Unique(false)
 	}
@@ -543,7 +618,7 @@ func (_q *SourceQuery) ForUpdate(opts ...sql.LockOption) *SourceQuery {
 // ForShare behaves similarly to ForUpdate, except that it acquires a shared mode lock
 // on any rows that are read. Other sessions can read the rows, but cannot modify them
 // until your transaction commits.
-func (_q *SourceQuery) ForShare(opts ...sql.LockOption) *SourceQuery {
+func (_q *LibrarySourceQuery) ForShare(opts ...sql.LockOption) *LibrarySourceQuery {
 	if _q.driver.Dialect() == dialect.Postgres {
 		_q.Unique(false)
 	}
@@ -553,28 +628,28 @@ func (_q *SourceQuery) ForShare(opts ...sql.LockOption) *SourceQuery {
 	return _q
 }
 
-// SourceGroupBy is the group-by builder for Source entities.
-type SourceGroupBy struct {
+// LibrarySourceGroupBy is the group-by builder for LibrarySource entities.
+type LibrarySourceGroupBy struct {
 	selector
-	build *SourceQuery
+	build *LibrarySourceQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
-func (_g *SourceGroupBy) Aggregate(fns ...AggregateFunc) *SourceGroupBy {
+func (_g *LibrarySourceGroupBy) Aggregate(fns ...AggregateFunc) *LibrarySourceGroupBy {
 	_g.fns = append(_g.fns, fns...)
 	return _g
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_g *SourceGroupBy) Scan(ctx context.Context, v any) error {
+func (_g *LibrarySourceGroupBy) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, _g.build.ctx, ent.OpQueryGroupBy)
 	if err := _g.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*SourceQuery, *SourceGroupBy](ctx, _g.build, _g, _g.build.inters, v)
+	return scanWithInterceptors[*LibrarySourceQuery, *LibrarySourceGroupBy](ctx, _g.build, _g, _g.build.inters, v)
 }
 
-func (_g *SourceGroupBy) sqlScan(ctx context.Context, root *SourceQuery, v any) error {
+func (_g *LibrarySourceGroupBy) sqlScan(ctx context.Context, root *LibrarySourceQuery, v any) error {
 	selector := root.sqlQuery(ctx).Select()
 	aggregation := make([]string, 0, len(_g.fns))
 	for _, fn := range _g.fns {
@@ -601,28 +676,28 @@ func (_g *SourceGroupBy) sqlScan(ctx context.Context, root *SourceQuery, v any) 
 	return sql.ScanSlice(rows, v)
 }
 
-// SourceSelect is the builder for selecting fields of Source entities.
-type SourceSelect struct {
-	*SourceQuery
+// LibrarySourceSelect is the builder for selecting fields of LibrarySource entities.
+type LibrarySourceSelect struct {
+	*LibrarySourceQuery
 	selector
 }
 
 // Aggregate adds the given aggregation functions to the selector query.
-func (_s *SourceSelect) Aggregate(fns ...AggregateFunc) *SourceSelect {
+func (_s *LibrarySourceSelect) Aggregate(fns ...AggregateFunc) *LibrarySourceSelect {
 	_s.fns = append(_s.fns, fns...)
 	return _s
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_s *SourceSelect) Scan(ctx context.Context, v any) error {
+func (_s *LibrarySourceSelect) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, _s.ctx, ent.OpQuerySelect)
 	if err := _s.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*SourceQuery, *SourceSelect](ctx, _s.SourceQuery, _s, _s.inters, v)
+	return scanWithInterceptors[*LibrarySourceQuery, *LibrarySourceSelect](ctx, _s.LibrarySourceQuery, _s, _s.inters, v)
 }
 
-func (_s *SourceSelect) sqlScan(ctx context.Context, root *SourceQuery, v any) error {
+func (_s *LibrarySourceSelect) sqlScan(ctx context.Context, root *LibrarySourceQuery, v any) error {
 	selector := root.sqlQuery(ctx)
 	aggregation := make([]string, 0, len(_s.fns))
 	for _, fn := range _s.fns {

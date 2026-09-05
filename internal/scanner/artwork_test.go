@@ -25,7 +25,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/sources"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
 	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
@@ -119,12 +118,18 @@ func (f *fixture) radarr(t *testing.T, movies ...movie) *fixture {
 		SetURL(server.URL).
 		SetAPIKey("key").
 		SetKind(sourcemodal.KindRadarr).
-		SetLibraries([]entities.SourceLibrary{{ID: f.record.ID.String()}}).
 		Save(context.Background())
 	if err != nil {
 		t.Fatalf("failed to create the source: %v", err)
 	}
 	f.bound++
+
+	if err := f.client.LibrarySource.Create().
+		SetSourceID(record.ID).
+		SetLibraryID(f.record.ID).
+		Exec(context.Background()); err != nil {
+		t.Fatalf("failed to bind the source to the library: %v", err)
+	}
 
 	t.Cleanup(func() {
 		if err := f.client.Source.DeleteOne(record).Exec(context.Background()); err != nil {

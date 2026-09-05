@@ -15,6 +15,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
+	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/google/uuid"
@@ -142,6 +143,21 @@ func (_u *LibraryUpdate) AddMediaSources(v ...*MediaSource) *LibraryUpdate {
 	return _u.AddMediaSourceIDs(ids...)
 }
 
+// AddSourceIDs adds the "sources" edge to the LibrarySource entity by IDs.
+func (_u *LibraryUpdate) AddSourceIDs(ids ...uuid.UUID) *LibraryUpdate {
+	_u.mutation.AddSourceIDs(ids...)
+	return _u
+}
+
+// AddSources adds the "sources" edges to the LibrarySource entity.
+func (_u *LibraryUpdate) AddSources(v ...*LibrarySource) *LibraryUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSourceIDs(ids...)
+}
+
 // Mutation returns the LibraryMutation object of the builder.
 func (_u *LibraryUpdate) Mutation() *LibraryMutation {
 	return _u.mutation
@@ -193,6 +209,27 @@ func (_u *LibraryUpdate) RemoveMediaSources(v ...*MediaSource) *LibraryUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveMediaSourceIDs(ids...)
+}
+
+// ClearSources clears all "sources" edges to the LibrarySource entity.
+func (_u *LibraryUpdate) ClearSources() *LibraryUpdate {
+	_u.mutation.ClearSources()
+	return _u
+}
+
+// RemoveSourceIDs removes the "sources" edge to LibrarySource entities by IDs.
+func (_u *LibraryUpdate) RemoveSourceIDs(ids ...uuid.UUID) *LibraryUpdate {
+	_u.mutation.RemoveSourceIDs(ids...)
+	return _u
+}
+
+// RemoveSources removes "sources" edges to LibrarySource entities.
+func (_u *LibraryUpdate) RemoveSources(v ...*LibrarySource) *LibraryUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSourceIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -392,6 +429,51 @@ func (_u *LibraryUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.SourcesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   library.SourcesTable,
+			Columns: []string{library.SourcesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(librarysource.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSourcesIDs(); len(nodes) > 0 && !_u.mutation.SourcesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   library.SourcesTable,
+			Columns: []string{library.SourcesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(librarysource.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SourcesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   library.SourcesTable,
+			Columns: []string{library.SourcesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(librarysource.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{library.Label}
@@ -521,6 +603,21 @@ func (_u *LibraryUpdateOne) AddMediaSources(v ...*MediaSource) *LibraryUpdateOne
 	return _u.AddMediaSourceIDs(ids...)
 }
 
+// AddSourceIDs adds the "sources" edge to the LibrarySource entity by IDs.
+func (_u *LibraryUpdateOne) AddSourceIDs(ids ...uuid.UUID) *LibraryUpdateOne {
+	_u.mutation.AddSourceIDs(ids...)
+	return _u
+}
+
+// AddSources adds the "sources" edges to the LibrarySource entity.
+func (_u *LibraryUpdateOne) AddSources(v ...*LibrarySource) *LibraryUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSourceIDs(ids...)
+}
+
 // Mutation returns the LibraryMutation object of the builder.
 func (_u *LibraryUpdateOne) Mutation() *LibraryMutation {
 	return _u.mutation
@@ -572,6 +669,27 @@ func (_u *LibraryUpdateOne) RemoveMediaSources(v ...*MediaSource) *LibraryUpdate
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveMediaSourceIDs(ids...)
+}
+
+// ClearSources clears all "sources" edges to the LibrarySource entity.
+func (_u *LibraryUpdateOne) ClearSources() *LibraryUpdateOne {
+	_u.mutation.ClearSources()
+	return _u
+}
+
+// RemoveSourceIDs removes the "sources" edge to LibrarySource entities by IDs.
+func (_u *LibraryUpdateOne) RemoveSourceIDs(ids ...uuid.UUID) *LibraryUpdateOne {
+	_u.mutation.RemoveSourceIDs(ids...)
+	return _u
+}
+
+// RemoveSources removes "sources" edges to LibrarySource entities.
+func (_u *LibraryUpdateOne) RemoveSources(v ...*LibrarySource) *LibraryUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSourceIDs(ids...)
 }
 
 // Where appends a list predicates to the LibraryUpdate builder.
@@ -794,6 +912,51 @@ func (_u *LibraryUpdateOne) sqlSave(ctx context.Context) (_node *Library, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(mediasource.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SourcesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   library.SourcesTable,
+			Columns: []string{library.SourcesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(librarysource.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSourcesIDs(); len(nodes) > 0 && !_u.mutation.SourcesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   library.SourcesTable,
+			Columns: []string{library.SourcesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(librarysource.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SourcesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   library.SourcesTable,
+			Columns: []string{library.SourcesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(librarysource.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

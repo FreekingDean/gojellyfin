@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/google/uuid"
 )
@@ -355,26 +356,6 @@ func APIKeyContainsFold(v string) predicate.Source {
 	return predicate.Source(sql.FieldContainsFold(FieldAPIKey, v))
 }
 
-// PathMappingsIsNil applies the IsNil predicate on the "path_mappings" field.
-func PathMappingsIsNil() predicate.Source {
-	return predicate.Source(sql.FieldIsNull(FieldPathMappings))
-}
-
-// PathMappingsNotNil applies the NotNil predicate on the "path_mappings" field.
-func PathMappingsNotNil() predicate.Source {
-	return predicate.Source(sql.FieldNotNull(FieldPathMappings))
-}
-
-// LibrariesIsNil applies the IsNil predicate on the "libraries" field.
-func LibrariesIsNil() predicate.Source {
-	return predicate.Source(sql.FieldIsNull(FieldLibraries))
-}
-
-// LibrariesNotNil applies the NotNil predicate on the "libraries" field.
-func LibrariesNotNil() predicate.Source {
-	return predicate.Source(sql.FieldNotNull(FieldLibraries))
-}
-
 // KindEQ applies the EQ predicate on the "kind" field.
 func KindEQ(v Kind) predicate.Source {
 	return predicate.Source(sql.FieldEQ(FieldKind, v))
@@ -393,6 +374,29 @@ func KindIn(vs ...Kind) predicate.Source {
 // KindNotIn applies the NotIn predicate on the "kind" field.
 func KindNotIn(vs ...Kind) predicate.Source {
 	return predicate.Source(sql.FieldNotIn(FieldKind, vs...))
+}
+
+// HasLibraries applies the HasEdge predicate on the "libraries" edge.
+func HasLibraries() predicate.Source {
+	return predicate.Source(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, LibrariesTable, LibrariesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasLibrariesWith applies the HasEdge predicate on the "libraries" edge with a given conditions (other predicates).
+func HasLibrariesWith(preds ...predicate.LibrarySource) predicate.Source {
+	return predicate.Source(func(s *sql.Selector) {
+		step := newLibrariesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // And groups predicates with the AND operator between them.

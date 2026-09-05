@@ -26,6 +26,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
+	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	"github.com/FreekingDean/gojellyfin/internal/store/listingsprovider"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediaattachment"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediasegment"
@@ -72,6 +73,7 @@ const (
 	TypeItem               = "Item"
 	TypeLibrary            = "Library"
 	TypeLibraryOptions     = "LibraryOptions"
+	TypeLibrarySource      = "LibrarySource"
 	TypeListingsProvider   = "ListingsProvider"
 	TypeMediaAttachment    = "MediaAttachment"
 	TypeMediaSegment       = "MediaSegment"
@@ -14407,6 +14409,9 @@ type LibraryMutation struct {
 	media_sources        map[uuid.UUID]struct{}
 	removedmedia_sources map[uuid.UUID]struct{}
 	clearedmedia_sources bool
+	sources              map[uuid.UUID]struct{}
+	removedsources       map[uuid.UUID]struct{}
+	clearedsources       bool
 	done                 bool
 	oldValue             func(context.Context) (*Library, error)
 	predicates           []predicate.Library
@@ -14858,6 +14863,60 @@ func (m *LibraryMutation) ResetMediaSources() {
 	m.removedmedia_sources = nil
 }
 
+// AddSourceIDs adds the "sources" edge to the LibrarySource entity by ids.
+func (m *LibraryMutation) AddSourceIDs(ids ...uuid.UUID) {
+	if m.sources == nil {
+		m.sources = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.sources[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSources clears the "sources" edge to the LibrarySource entity.
+func (m *LibraryMutation) ClearSources() {
+	m.clearedsources = true
+}
+
+// SourcesCleared reports if the "sources" edge to the LibrarySource entity was cleared.
+func (m *LibraryMutation) SourcesCleared() bool {
+	return m.clearedsources
+}
+
+// RemoveSourceIDs removes the "sources" edge to the LibrarySource entity by IDs.
+func (m *LibraryMutation) RemoveSourceIDs(ids ...uuid.UUID) {
+	if m.removedsources == nil {
+		m.removedsources = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.sources, ids[i])
+		m.removedsources[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSources returns the removed IDs of the "sources" edge to the LibrarySource entity.
+func (m *LibraryMutation) RemovedSourcesIDs() (ids []uuid.UUID) {
+	for id := range m.removedsources {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SourcesIDs returns the "sources" edge IDs in the mutation.
+func (m *LibraryMutation) SourcesIDs() (ids []uuid.UUID) {
+	for id := range m.sources {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSources resets all changes to the "sources" edge.
+func (m *LibraryMutation) ResetSources() {
+	m.sources = nil
+	m.clearedsources = false
+	m.removedsources = nil
+}
+
 // Where appends a list predicates to the LibraryMutation builder.
 func (m *LibraryMutation) Where(ps ...predicate.Library) {
 	m.predicates = append(m.predicates, ps...)
@@ -15059,7 +15118,7 @@ func (m *LibraryMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *LibraryMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.options != nil {
 		edges = append(edges, library.EdgeOptions)
 	}
@@ -15068,6 +15127,9 @@ func (m *LibraryMutation) AddedEdges() []string {
 	}
 	if m.media_sources != nil {
 		edges = append(edges, library.EdgeMediaSources)
+	}
+	if m.sources != nil {
+		edges = append(edges, library.EdgeSources)
 	}
 	return edges
 }
@@ -15092,18 +15154,27 @@ func (m *LibraryMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case library.EdgeSources:
+		ids := make([]ent.Value, 0, len(m.sources))
+		for id := range m.sources {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *LibraryMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removeditems != nil {
 		edges = append(edges, library.EdgeItems)
 	}
 	if m.removedmedia_sources != nil {
 		edges = append(edges, library.EdgeMediaSources)
+	}
+	if m.removedsources != nil {
+		edges = append(edges, library.EdgeSources)
 	}
 	return edges
 }
@@ -15124,13 +15195,19 @@ func (m *LibraryMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case library.EdgeSources:
+		ids := make([]ent.Value, 0, len(m.removedsources))
+		for id := range m.removedsources {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *LibraryMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedoptions {
 		edges = append(edges, library.EdgeOptions)
 	}
@@ -15139,6 +15216,9 @@ func (m *LibraryMutation) ClearedEdges() []string {
 	}
 	if m.clearedmedia_sources {
 		edges = append(edges, library.EdgeMediaSources)
+	}
+	if m.clearedsources {
+		edges = append(edges, library.EdgeSources)
 	}
 	return edges
 }
@@ -15153,6 +15233,8 @@ func (m *LibraryMutation) EdgeCleared(name string) bool {
 		return m.cleareditems
 	case library.EdgeMediaSources:
 		return m.clearedmedia_sources
+	case library.EdgeSources:
+		return m.clearedsources
 	}
 	return false
 }
@@ -15180,6 +15262,9 @@ func (m *LibraryMutation) ResetEdge(name string) error {
 		return nil
 	case library.EdgeMediaSources:
 		m.ResetMediaSources()
+		return nil
+	case library.EdgeSources:
+		m.ResetSources()
 		return nil
 	}
 	return fmt.Errorf("unknown Library edge %s", name)
@@ -18357,6 +18442,822 @@ func (m *LibraryOptionsMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown LibraryOptions edge %s", name)
+}
+
+// LibrarySourceMutation represents an operation that mutates the LibrarySource nodes in the graph.
+type LibrarySourceMutation struct {
+	config
+	op             Op
+	typ            string
+	id             *uuid.UUID
+	created_at     *time.Time
+	updated_at     *time.Time
+	tag_filter     *string
+	source_path    *string
+	target_path    *string
+	clearedFields  map[string]struct{}
+	library        *uuid.UUID
+	clearedlibrary bool
+	source         *uuid.UUID
+	clearedsource  bool
+	done           bool
+	oldValue       func(context.Context) (*LibrarySource, error)
+	predicates     []predicate.LibrarySource
+}
+
+var _ ent.Mutation = (*LibrarySourceMutation)(nil)
+
+// librarysourceOption allows management of the mutation configuration using functional options.
+type librarysourceOption func(*LibrarySourceMutation)
+
+// newLibrarySourceMutation creates new mutation for the LibrarySource entity.
+func newLibrarySourceMutation(c config, op Op, opts ...librarysourceOption) *LibrarySourceMutation {
+	m := &LibrarySourceMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeLibrarySource,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withLibrarySourceID sets the ID field of the mutation.
+func withLibrarySourceID(id uuid.UUID) librarysourceOption {
+	return func(m *LibrarySourceMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *LibrarySource
+		)
+		m.oldValue = func(ctx context.Context) (*LibrarySource, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().LibrarySource.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withLibrarySource sets the old LibrarySource of the mutation.
+func withLibrarySource(node *LibrarySource) librarysourceOption {
+	return func(m *LibrarySourceMutation) {
+		m.oldValue = func(context.Context) (*LibrarySource, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m LibrarySourceMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m LibrarySourceMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("store: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of LibrarySource entities.
+func (m *LibrarySourceMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *LibrarySourceMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *LibrarySourceMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().LibrarySource.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *LibrarySourceMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *LibrarySourceMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the LibrarySource entity.
+// If the LibrarySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LibrarySourceMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *LibrarySourceMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *LibrarySourceMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *LibrarySourceMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the LibrarySource entity.
+// If the LibrarySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LibrarySourceMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *LibrarySourceMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetLibraryID sets the "library_id" field.
+func (m *LibrarySourceMutation) SetLibraryID(u uuid.UUID) {
+	m.library = &u
+}
+
+// LibraryID returns the value of the "library_id" field in the mutation.
+func (m *LibrarySourceMutation) LibraryID() (r uuid.UUID, exists bool) {
+	v := m.library
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLibraryID returns the old "library_id" field's value of the LibrarySource entity.
+// If the LibrarySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LibrarySourceMutation) OldLibraryID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLibraryID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLibraryID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLibraryID: %w", err)
+	}
+	return oldValue.LibraryID, nil
+}
+
+// ResetLibraryID resets all changes to the "library_id" field.
+func (m *LibrarySourceMutation) ResetLibraryID() {
+	m.library = nil
+}
+
+// SetSourceID sets the "source_id" field.
+func (m *LibrarySourceMutation) SetSourceID(u uuid.UUID) {
+	m.source = &u
+}
+
+// SourceID returns the value of the "source_id" field in the mutation.
+func (m *LibrarySourceMutation) SourceID() (r uuid.UUID, exists bool) {
+	v := m.source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSourceID returns the old "source_id" field's value of the LibrarySource entity.
+// If the LibrarySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LibrarySourceMutation) OldSourceID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSourceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSourceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSourceID: %w", err)
+	}
+	return oldValue.SourceID, nil
+}
+
+// ResetSourceID resets all changes to the "source_id" field.
+func (m *LibrarySourceMutation) ResetSourceID() {
+	m.source = nil
+}
+
+// SetTagFilter sets the "tag_filter" field.
+func (m *LibrarySourceMutation) SetTagFilter(s string) {
+	m.tag_filter = &s
+}
+
+// TagFilter returns the value of the "tag_filter" field in the mutation.
+func (m *LibrarySourceMutation) TagFilter() (r string, exists bool) {
+	v := m.tag_filter
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTagFilter returns the old "tag_filter" field's value of the LibrarySource entity.
+// If the LibrarySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LibrarySourceMutation) OldTagFilter(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTagFilter is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTagFilter requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTagFilter: %w", err)
+	}
+	return oldValue.TagFilter, nil
+}
+
+// ClearTagFilter clears the value of the "tag_filter" field.
+func (m *LibrarySourceMutation) ClearTagFilter() {
+	m.tag_filter = nil
+	m.clearedFields[librarysource.FieldTagFilter] = struct{}{}
+}
+
+// TagFilterCleared returns if the "tag_filter" field was cleared in this mutation.
+func (m *LibrarySourceMutation) TagFilterCleared() bool {
+	_, ok := m.clearedFields[librarysource.FieldTagFilter]
+	return ok
+}
+
+// ResetTagFilter resets all changes to the "tag_filter" field.
+func (m *LibrarySourceMutation) ResetTagFilter() {
+	m.tag_filter = nil
+	delete(m.clearedFields, librarysource.FieldTagFilter)
+}
+
+// SetSourcePath sets the "source_path" field.
+func (m *LibrarySourceMutation) SetSourcePath(s string) {
+	m.source_path = &s
+}
+
+// SourcePath returns the value of the "source_path" field in the mutation.
+func (m *LibrarySourceMutation) SourcePath() (r string, exists bool) {
+	v := m.source_path
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSourcePath returns the old "source_path" field's value of the LibrarySource entity.
+// If the LibrarySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LibrarySourceMutation) OldSourcePath(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSourcePath is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSourcePath requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSourcePath: %w", err)
+	}
+	return oldValue.SourcePath, nil
+}
+
+// ClearSourcePath clears the value of the "source_path" field.
+func (m *LibrarySourceMutation) ClearSourcePath() {
+	m.source_path = nil
+	m.clearedFields[librarysource.FieldSourcePath] = struct{}{}
+}
+
+// SourcePathCleared returns if the "source_path" field was cleared in this mutation.
+func (m *LibrarySourceMutation) SourcePathCleared() bool {
+	_, ok := m.clearedFields[librarysource.FieldSourcePath]
+	return ok
+}
+
+// ResetSourcePath resets all changes to the "source_path" field.
+func (m *LibrarySourceMutation) ResetSourcePath() {
+	m.source_path = nil
+	delete(m.clearedFields, librarysource.FieldSourcePath)
+}
+
+// SetTargetPath sets the "target_path" field.
+func (m *LibrarySourceMutation) SetTargetPath(s string) {
+	m.target_path = &s
+}
+
+// TargetPath returns the value of the "target_path" field in the mutation.
+func (m *LibrarySourceMutation) TargetPath() (r string, exists bool) {
+	v := m.target_path
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTargetPath returns the old "target_path" field's value of the LibrarySource entity.
+// If the LibrarySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LibrarySourceMutation) OldTargetPath(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTargetPath is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTargetPath requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTargetPath: %w", err)
+	}
+	return oldValue.TargetPath, nil
+}
+
+// ClearTargetPath clears the value of the "target_path" field.
+func (m *LibrarySourceMutation) ClearTargetPath() {
+	m.target_path = nil
+	m.clearedFields[librarysource.FieldTargetPath] = struct{}{}
+}
+
+// TargetPathCleared returns if the "target_path" field was cleared in this mutation.
+func (m *LibrarySourceMutation) TargetPathCleared() bool {
+	_, ok := m.clearedFields[librarysource.FieldTargetPath]
+	return ok
+}
+
+// ResetTargetPath resets all changes to the "target_path" field.
+func (m *LibrarySourceMutation) ResetTargetPath() {
+	m.target_path = nil
+	delete(m.clearedFields, librarysource.FieldTargetPath)
+}
+
+// ClearLibrary clears the "library" edge to the Library entity.
+func (m *LibrarySourceMutation) ClearLibrary() {
+	m.clearedlibrary = true
+	m.clearedFields[librarysource.FieldLibraryID] = struct{}{}
+}
+
+// LibraryCleared reports if the "library" edge to the Library entity was cleared.
+func (m *LibrarySourceMutation) LibraryCleared() bool {
+	return m.clearedlibrary
+}
+
+// LibraryIDs returns the "library" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// LibraryID instead. It exists only for internal usage by the builders.
+func (m *LibrarySourceMutation) LibraryIDs() (ids []uuid.UUID) {
+	if id := m.library; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetLibrary resets all changes to the "library" edge.
+func (m *LibrarySourceMutation) ResetLibrary() {
+	m.library = nil
+	m.clearedlibrary = false
+}
+
+// ClearSource clears the "source" edge to the Source entity.
+func (m *LibrarySourceMutation) ClearSource() {
+	m.clearedsource = true
+	m.clearedFields[librarysource.FieldSourceID] = struct{}{}
+}
+
+// SourceCleared reports if the "source" edge to the Source entity was cleared.
+func (m *LibrarySourceMutation) SourceCleared() bool {
+	return m.clearedsource
+}
+
+// SourceIDs returns the "source" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// SourceID instead. It exists only for internal usage by the builders.
+func (m *LibrarySourceMutation) SourceIDs() (ids []uuid.UUID) {
+	if id := m.source; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetSource resets all changes to the "source" edge.
+func (m *LibrarySourceMutation) ResetSource() {
+	m.source = nil
+	m.clearedsource = false
+}
+
+// Where appends a list predicates to the LibrarySourceMutation builder.
+func (m *LibrarySourceMutation) Where(ps ...predicate.LibrarySource) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the LibrarySourceMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *LibrarySourceMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.LibrarySource, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *LibrarySourceMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *LibrarySourceMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (LibrarySource).
+func (m *LibrarySourceMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *LibrarySourceMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.created_at != nil {
+		fields = append(fields, librarysource.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, librarysource.FieldUpdatedAt)
+	}
+	if m.library != nil {
+		fields = append(fields, librarysource.FieldLibraryID)
+	}
+	if m.source != nil {
+		fields = append(fields, librarysource.FieldSourceID)
+	}
+	if m.tag_filter != nil {
+		fields = append(fields, librarysource.FieldTagFilter)
+	}
+	if m.source_path != nil {
+		fields = append(fields, librarysource.FieldSourcePath)
+	}
+	if m.target_path != nil {
+		fields = append(fields, librarysource.FieldTargetPath)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *LibrarySourceMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case librarysource.FieldCreatedAt:
+		return m.CreatedAt()
+	case librarysource.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case librarysource.FieldLibraryID:
+		return m.LibraryID()
+	case librarysource.FieldSourceID:
+		return m.SourceID()
+	case librarysource.FieldTagFilter:
+		return m.TagFilter()
+	case librarysource.FieldSourcePath:
+		return m.SourcePath()
+	case librarysource.FieldTargetPath:
+		return m.TargetPath()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *LibrarySourceMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case librarysource.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case librarysource.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case librarysource.FieldLibraryID:
+		return m.OldLibraryID(ctx)
+	case librarysource.FieldSourceID:
+		return m.OldSourceID(ctx)
+	case librarysource.FieldTagFilter:
+		return m.OldTagFilter(ctx)
+	case librarysource.FieldSourcePath:
+		return m.OldSourcePath(ctx)
+	case librarysource.FieldTargetPath:
+		return m.OldTargetPath(ctx)
+	}
+	return nil, fmt.Errorf("unknown LibrarySource field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *LibrarySourceMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case librarysource.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case librarysource.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case librarysource.FieldLibraryID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLibraryID(v)
+		return nil
+	case librarysource.FieldSourceID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSourceID(v)
+		return nil
+	case librarysource.FieldTagFilter:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTagFilter(v)
+		return nil
+	case librarysource.FieldSourcePath:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSourcePath(v)
+		return nil
+	case librarysource.FieldTargetPath:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTargetPath(v)
+		return nil
+	}
+	return fmt.Errorf("unknown LibrarySource field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *LibrarySourceMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *LibrarySourceMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *LibrarySourceMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown LibrarySource numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *LibrarySourceMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(librarysource.FieldTagFilter) {
+		fields = append(fields, librarysource.FieldTagFilter)
+	}
+	if m.FieldCleared(librarysource.FieldSourcePath) {
+		fields = append(fields, librarysource.FieldSourcePath)
+	}
+	if m.FieldCleared(librarysource.FieldTargetPath) {
+		fields = append(fields, librarysource.FieldTargetPath)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *LibrarySourceMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *LibrarySourceMutation) ClearField(name string) error {
+	switch name {
+	case librarysource.FieldTagFilter:
+		m.ClearTagFilter()
+		return nil
+	case librarysource.FieldSourcePath:
+		m.ClearSourcePath()
+		return nil
+	case librarysource.FieldTargetPath:
+		m.ClearTargetPath()
+		return nil
+	}
+	return fmt.Errorf("unknown LibrarySource nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *LibrarySourceMutation) ResetField(name string) error {
+	switch name {
+	case librarysource.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case librarysource.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case librarysource.FieldLibraryID:
+		m.ResetLibraryID()
+		return nil
+	case librarysource.FieldSourceID:
+		m.ResetSourceID()
+		return nil
+	case librarysource.FieldTagFilter:
+		m.ResetTagFilter()
+		return nil
+	case librarysource.FieldSourcePath:
+		m.ResetSourcePath()
+		return nil
+	case librarysource.FieldTargetPath:
+		m.ResetTargetPath()
+		return nil
+	}
+	return fmt.Errorf("unknown LibrarySource field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *LibrarySourceMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.library != nil {
+		edges = append(edges, librarysource.EdgeLibrary)
+	}
+	if m.source != nil {
+		edges = append(edges, librarysource.EdgeSource)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *LibrarySourceMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case librarysource.EdgeLibrary:
+		if id := m.library; id != nil {
+			return []ent.Value{*id}
+		}
+	case librarysource.EdgeSource:
+		if id := m.source; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *LibrarySourceMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *LibrarySourceMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *LibrarySourceMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedlibrary {
+		edges = append(edges, librarysource.EdgeLibrary)
+	}
+	if m.clearedsource {
+		edges = append(edges, librarysource.EdgeSource)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *LibrarySourceMutation) EdgeCleared(name string) bool {
+	switch name {
+	case librarysource.EdgeLibrary:
+		return m.clearedlibrary
+	case librarysource.EdgeSource:
+		return m.clearedsource
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *LibrarySourceMutation) ClearEdge(name string) error {
+	switch name {
+	case librarysource.EdgeLibrary:
+		m.ClearLibrary()
+		return nil
+	case librarysource.EdgeSource:
+		m.ClearSource()
+		return nil
+	}
+	return fmt.Errorf("unknown LibrarySource unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *LibrarySourceMutation) ResetEdge(name string) error {
+	switch name {
+	case librarysource.EdgeLibrary:
+		m.ResetLibrary()
+		return nil
+	case librarysource.EdgeSource:
+		m.ResetSource()
+		return nil
+	}
+	return fmt.Errorf("unknown LibrarySource edge %s", name)
 }
 
 // ListingsProviderMutation represents an operation that mutates the ListingsProvider nodes in the graph.
@@ -34831,23 +35732,22 @@ func (m *SessionMutation) ResetEdge(name string) error {
 // SourceMutation represents an operation that mutates the Source nodes in the graph.
 type SourceMutation struct {
 	config
-	op                  Op
-	typ                 string
-	id                  *uuid.UUID
-	created_at          *time.Time
-	updated_at          *time.Time
-	name                *string
-	url                 *string
-	api_key             *string
-	path_mappings       *[]entities.SourcePathMapping
-	appendpath_mappings []entities.SourcePathMapping
-	libraries           *[]entities.SourceLibrary
-	appendlibraries     []entities.SourceLibrary
-	kind                *source.Kind
-	clearedFields       map[string]struct{}
-	done                bool
-	oldValue            func(context.Context) (*Source, error)
-	predicates          []predicate.Source
+	op               Op
+	typ              string
+	id               *uuid.UUID
+	created_at       *time.Time
+	updated_at       *time.Time
+	name             *string
+	url              *string
+	api_key          *string
+	kind             *source.Kind
+	clearedFields    map[string]struct{}
+	libraries        map[uuid.UUID]struct{}
+	removedlibraries map[uuid.UUID]struct{}
+	clearedlibraries bool
+	done             bool
+	oldValue         func(context.Context) (*Source, error)
+	predicates       []predicate.Source
 }
 
 var _ ent.Mutation = (*SourceMutation)(nil)
@@ -35134,136 +36034,6 @@ func (m *SourceMutation) ResetAPIKey() {
 	m.api_key = nil
 }
 
-// SetPathMappings sets the "path_mappings" field.
-func (m *SourceMutation) SetPathMappings(epm []entities.SourcePathMapping) {
-	m.path_mappings = &epm
-	m.appendpath_mappings = nil
-}
-
-// PathMappings returns the value of the "path_mappings" field in the mutation.
-func (m *SourceMutation) PathMappings() (r []entities.SourcePathMapping, exists bool) {
-	v := m.path_mappings
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldPathMappings returns the old "path_mappings" field's value of the Source entity.
-// If the Source object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SourceMutation) OldPathMappings(ctx context.Context) (v []entities.SourcePathMapping, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPathMappings is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPathMappings requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPathMappings: %w", err)
-	}
-	return oldValue.PathMappings, nil
-}
-
-// AppendPathMappings adds epm to the "path_mappings" field.
-func (m *SourceMutation) AppendPathMappings(epm []entities.SourcePathMapping) {
-	m.appendpath_mappings = append(m.appendpath_mappings, epm...)
-}
-
-// AppendedPathMappings returns the list of values that were appended to the "path_mappings" field in this mutation.
-func (m *SourceMutation) AppendedPathMappings() ([]entities.SourcePathMapping, bool) {
-	if len(m.appendpath_mappings) == 0 {
-		return nil, false
-	}
-	return m.appendpath_mappings, true
-}
-
-// ClearPathMappings clears the value of the "path_mappings" field.
-func (m *SourceMutation) ClearPathMappings() {
-	m.path_mappings = nil
-	m.appendpath_mappings = nil
-	m.clearedFields[source.FieldPathMappings] = struct{}{}
-}
-
-// PathMappingsCleared returns if the "path_mappings" field was cleared in this mutation.
-func (m *SourceMutation) PathMappingsCleared() bool {
-	_, ok := m.clearedFields[source.FieldPathMappings]
-	return ok
-}
-
-// ResetPathMappings resets all changes to the "path_mappings" field.
-func (m *SourceMutation) ResetPathMappings() {
-	m.path_mappings = nil
-	m.appendpath_mappings = nil
-	delete(m.clearedFields, source.FieldPathMappings)
-}
-
-// SetLibraries sets the "libraries" field.
-func (m *SourceMutation) SetLibraries(el []entities.SourceLibrary) {
-	m.libraries = &el
-	m.appendlibraries = nil
-}
-
-// Libraries returns the value of the "libraries" field in the mutation.
-func (m *SourceMutation) Libraries() (r []entities.SourceLibrary, exists bool) {
-	v := m.libraries
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldLibraries returns the old "libraries" field's value of the Source entity.
-// If the Source object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SourceMutation) OldLibraries(ctx context.Context) (v []entities.SourceLibrary, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldLibraries is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldLibraries requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldLibraries: %w", err)
-	}
-	return oldValue.Libraries, nil
-}
-
-// AppendLibraries adds el to the "libraries" field.
-func (m *SourceMutation) AppendLibraries(el []entities.SourceLibrary) {
-	m.appendlibraries = append(m.appendlibraries, el...)
-}
-
-// AppendedLibraries returns the list of values that were appended to the "libraries" field in this mutation.
-func (m *SourceMutation) AppendedLibraries() ([]entities.SourceLibrary, bool) {
-	if len(m.appendlibraries) == 0 {
-		return nil, false
-	}
-	return m.appendlibraries, true
-}
-
-// ClearLibraries clears the value of the "libraries" field.
-func (m *SourceMutation) ClearLibraries() {
-	m.libraries = nil
-	m.appendlibraries = nil
-	m.clearedFields[source.FieldLibraries] = struct{}{}
-}
-
-// LibrariesCleared returns if the "libraries" field was cleared in this mutation.
-func (m *SourceMutation) LibrariesCleared() bool {
-	_, ok := m.clearedFields[source.FieldLibraries]
-	return ok
-}
-
-// ResetLibraries resets all changes to the "libraries" field.
-func (m *SourceMutation) ResetLibraries() {
-	m.libraries = nil
-	m.appendlibraries = nil
-	delete(m.clearedFields, source.FieldLibraries)
-}
-
 // SetKind sets the "kind" field.
 func (m *SourceMutation) SetKind(s source.Kind) {
 	m.kind = &s
@@ -35300,6 +36070,60 @@ func (m *SourceMutation) ResetKind() {
 	m.kind = nil
 }
 
+// AddLibraryIDs adds the "libraries" edge to the LibrarySource entity by ids.
+func (m *SourceMutation) AddLibraryIDs(ids ...uuid.UUID) {
+	if m.libraries == nil {
+		m.libraries = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.libraries[ids[i]] = struct{}{}
+	}
+}
+
+// ClearLibraries clears the "libraries" edge to the LibrarySource entity.
+func (m *SourceMutation) ClearLibraries() {
+	m.clearedlibraries = true
+}
+
+// LibrariesCleared reports if the "libraries" edge to the LibrarySource entity was cleared.
+func (m *SourceMutation) LibrariesCleared() bool {
+	return m.clearedlibraries
+}
+
+// RemoveLibraryIDs removes the "libraries" edge to the LibrarySource entity by IDs.
+func (m *SourceMutation) RemoveLibraryIDs(ids ...uuid.UUID) {
+	if m.removedlibraries == nil {
+		m.removedlibraries = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.libraries, ids[i])
+		m.removedlibraries[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedLibraries returns the removed IDs of the "libraries" edge to the LibrarySource entity.
+func (m *SourceMutation) RemovedLibrariesIDs() (ids []uuid.UUID) {
+	for id := range m.removedlibraries {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// LibrariesIDs returns the "libraries" edge IDs in the mutation.
+func (m *SourceMutation) LibrariesIDs() (ids []uuid.UUID) {
+	for id := range m.libraries {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetLibraries resets all changes to the "libraries" edge.
+func (m *SourceMutation) ResetLibraries() {
+	m.libraries = nil
+	m.clearedlibraries = false
+	m.removedlibraries = nil
+}
+
 // Where appends a list predicates to the SourceMutation builder.
 func (m *SourceMutation) Where(ps ...predicate.Source) {
 	m.predicates = append(m.predicates, ps...)
@@ -35334,7 +36158,7 @@ func (m *SourceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SourceMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 6)
 	if m.created_at != nil {
 		fields = append(fields, source.FieldCreatedAt)
 	}
@@ -35349,12 +36173,6 @@ func (m *SourceMutation) Fields() []string {
 	}
 	if m.api_key != nil {
 		fields = append(fields, source.FieldAPIKey)
-	}
-	if m.path_mappings != nil {
-		fields = append(fields, source.FieldPathMappings)
-	}
-	if m.libraries != nil {
-		fields = append(fields, source.FieldLibraries)
 	}
 	if m.kind != nil {
 		fields = append(fields, source.FieldKind)
@@ -35377,10 +36195,6 @@ func (m *SourceMutation) Field(name string) (ent.Value, bool) {
 		return m.URL()
 	case source.FieldAPIKey:
 		return m.APIKey()
-	case source.FieldPathMappings:
-		return m.PathMappings()
-	case source.FieldLibraries:
-		return m.Libraries()
 	case source.FieldKind:
 		return m.Kind()
 	}
@@ -35402,10 +36216,6 @@ func (m *SourceMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldURL(ctx)
 	case source.FieldAPIKey:
 		return m.OldAPIKey(ctx)
-	case source.FieldPathMappings:
-		return m.OldPathMappings(ctx)
-	case source.FieldLibraries:
-		return m.OldLibraries(ctx)
 	case source.FieldKind:
 		return m.OldKind(ctx)
 	}
@@ -35452,20 +36262,6 @@ func (m *SourceMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetAPIKey(v)
 		return nil
-	case source.FieldPathMappings:
-		v, ok := value.([]entities.SourcePathMapping)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetPathMappings(v)
-		return nil
-	case source.FieldLibraries:
-		v, ok := value.([]entities.SourceLibrary)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetLibraries(v)
-		return nil
 	case source.FieldKind:
 		v, ok := value.(source.Kind)
 		if !ok {
@@ -35502,14 +36298,7 @@ func (m *SourceMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *SourceMutation) ClearedFields() []string {
-	var fields []string
-	if m.FieldCleared(source.FieldPathMappings) {
-		fields = append(fields, source.FieldPathMappings)
-	}
-	if m.FieldCleared(source.FieldLibraries) {
-		fields = append(fields, source.FieldLibraries)
-	}
-	return fields
+	return nil
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -35522,14 +36311,6 @@ func (m *SourceMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *SourceMutation) ClearField(name string) error {
-	switch name {
-	case source.FieldPathMappings:
-		m.ClearPathMappings()
-		return nil
-	case source.FieldLibraries:
-		m.ClearLibraries()
-		return nil
-	}
 	return fmt.Errorf("unknown Source nullable field %s", name)
 }
 
@@ -35552,12 +36333,6 @@ func (m *SourceMutation) ResetField(name string) error {
 	case source.FieldAPIKey:
 		m.ResetAPIKey()
 		return nil
-	case source.FieldPathMappings:
-		m.ResetPathMappings()
-		return nil
-	case source.FieldLibraries:
-		m.ResetLibraries()
-		return nil
 	case source.FieldKind:
 		m.ResetKind()
 		return nil
@@ -35567,49 +36342,85 @@ func (m *SourceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *SourceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.libraries != nil {
+		edges = append(edges, source.EdgeLibraries)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *SourceMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case source.EdgeLibraries:
+		ids := make([]ent.Value, 0, len(m.libraries))
+		for id := range m.libraries {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *SourceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.removedlibraries != nil {
+		edges = append(edges, source.EdgeLibraries)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *SourceMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case source.EdgeLibraries:
+		ids := make([]ent.Value, 0, len(m.removedlibraries))
+		for id := range m.removedlibraries {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *SourceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.clearedlibraries {
+		edges = append(edges, source.EdgeLibraries)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *SourceMutation) EdgeCleared(name string) bool {
+	switch name {
+	case source.EdgeLibraries:
+		return m.clearedlibraries
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *SourceMutation) ClearEdge(name string) error {
+	switch name {
+	}
 	return fmt.Errorf("unknown Source unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *SourceMutation) ResetEdge(name string) error {
+	switch name {
+	case source.EdgeLibraries:
+		m.ResetLibraries()
+		return nil
+	}
 	return fmt.Errorf("unknown Source edge %s", name)
 }
 

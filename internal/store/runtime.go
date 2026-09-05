@@ -19,6 +19,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
+	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	"github.com/FreekingDean/gojellyfin/internal/store/listingsprovider"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediaattachment"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediasegment"
@@ -426,6 +427,18 @@ func init() {
 	libraryoptionsDescTypeOptions := libraryoptionsFields[43].Descriptor()
 	// libraryoptions.DefaultTypeOptions holds the default value on creation for the type_options field.
 	libraryoptions.DefaultTypeOptions = libraryoptionsDescTypeOptions.Default.([]entities.TypeOptions)
+	librarysourceFields := entities.LibrarySource{}.Fields()
+	_ = librarysourceFields
+	// librarysourceDescCreatedAt is the schema descriptor for created_at field.
+	librarysourceDescCreatedAt := librarysourceFields[1].Descriptor()
+	// librarysource.DefaultCreatedAt holds the default value on creation for the created_at field.
+	librarysource.DefaultCreatedAt = librarysourceDescCreatedAt.Default.(func() time.Time)
+	// librarysourceDescUpdatedAt is the schema descriptor for updated_at field.
+	librarysourceDescUpdatedAt := librarysourceFields[2].Descriptor()
+	// librarysource.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	librarysource.DefaultUpdatedAt = librarysourceDescUpdatedAt.Default.(func() time.Time)
+	// librarysource.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	librarysource.UpdateDefaultUpdatedAt = librarysourceDescUpdatedAt.UpdateDefault.(func() time.Time)
 	listingsproviderFields := entities.ListingsProvider{}.Fields()
 	_ = listingsproviderFields
 	// listingsproviderDescCreatedAt is the schema descriptor for created_at field.

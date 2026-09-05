@@ -47234,12 +47234,6 @@
           "ApiKey": {
             "type": "string"
           },
-          "PathMappings": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SourcePathMapping"
-            }
-          },
           "Libraries": {
             "type": "array",
             "items": {
@@ -47255,23 +47249,27 @@
         ]
       }, "SourceLibrary": {
         "type": "object",
+        "required": [
+          "Id"
+        ],
         "properties": {
           "Id": {
-            "type": "string"
+            "type": "string",
+            "format": "uuid"
           },
           "TagFilter": {
             "type": "string",
             "nullable": true
-          }
-        }
-      }, "SourcePathMapping": {
-        "type": "object",
-        "properties": {
+          },
           "SourcePath": {
-            "type": "string"
+            "type": "string",
+            "nullable": true,
+            "description": "Path prefix as Sonarr or Radarr reports it."
           },
           "TargetPath": {
-            "type": "string"
+            "type": "string",
+            "nullable": true,
+            "description": "Path prefix this server opens the file at."
           }
         }
       }, "SourceTestRequest": {

@@ -446,6 +446,49 @@ var (
 			},
 		},
 	}
+	// LibrarySourcesColumns holds the columns for the "library_sources" table.
+	LibrarySourcesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "tag_filter", Type: field.TypeString, Nullable: true},
+		{Name: "source_path", Type: field.TypeString, Nullable: true},
+		{Name: "target_path", Type: field.TypeString, Nullable: true},
+		{Name: "library_id", Type: field.TypeUUID},
+		{Name: "source_id", Type: field.TypeUUID},
+	}
+	// LibrarySourcesTable holds the schema information for the "library_sources" table.
+	LibrarySourcesTable = &schema.Table{
+		Name:       "library_sources",
+		Columns:    LibrarySourcesColumns,
+		PrimaryKey: []*schema.Column{LibrarySourcesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "library_sources_libraries_sources",
+				Columns:    []*schema.Column{LibrarySourcesColumns[6]},
+				RefColumns: []*schema.Column{LibrariesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "library_sources_sources_libraries",
+				Columns:    []*schema.Column{LibrarySourcesColumns[7]},
+				RefColumns: []*schema.Column{SourcesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "librarysource_library_id_source_id",
+				Unique:  true,
+				Columns: []*schema.Column{LibrarySourcesColumns[6], LibrarySourcesColumns[7]},
+			},
+			{
+				Name:    "librarysource_source_id",
+				Unique:  false,
+				Columns: []*schema.Column{LibrarySourcesColumns[7]},
+			},
+		},
+	}
 	// ListingsProvidersColumns holds the columns for the "listings_providers" table.
 	ListingsProvidersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
@@ -864,8 +907,6 @@ var (
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "url", Type: field.TypeString, Unique: true},
 		{Name: "api_key", Type: field.TypeString},
-		{Name: "path_mappings", Type: field.TypeJSON, Nullable: true},
-		{Name: "libraries", Type: field.TypeJSON, Nullable: true},
 		{Name: "kind", Type: field.TypeEnum, Enums: []string{"radarr", "sonarr", "lidarr", "readarr", "bazarr"}},
 	}
 	// SourcesTable holds the schema information for the "sources" table.
@@ -1208,6 +1249,7 @@ var (
 		ItemsTable,
 		LibrariesTable,
 		LibraryOptionsTable,
+		LibrarySourcesTable,
 		ListingsProvidersTable,
 		MediaAttachmentsTable,
 		MediaSegmentsTable,
@@ -1244,6 +1286,8 @@ func init() {
 	ItemsTable.ForeignKeys[0].RefTable = ItemsTable
 	ItemsTable.ForeignKeys[1].RefTable = LibrariesTable
 	LibraryOptionsTable.ForeignKeys[0].RefTable = LibrariesTable
+	LibrarySourcesTable.ForeignKeys[0].RefTable = LibrariesTable
+	LibrarySourcesTable.ForeignKeys[1].RefTable = SourcesTable
 	MediaAttachmentsTable.ForeignKeys[0].RefTable = MediaSourcesTable
 	MediaSegmentsTable.ForeignKeys[0].RefTable = ItemsTable
 	MediaSourcesTable.ForeignKeys[0].RefTable = ItemsTable

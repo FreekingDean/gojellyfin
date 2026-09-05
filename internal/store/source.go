@@ -3,14 +3,12 @@
 package store
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/google/uuid"
 )
@@ -30,13 +28,30 @@ type Source struct {
 	URL string `json:"url,omitempty"`
 	// APIKey holds the value of the "api_key" field.
 	APIKey string `json:"api_key,omitempty"`
-	// PathMappings holds the value of the "path_mappings" field.
-	PathMappings []entities.SourcePathMapping `json:"path_mappings,omitempty"`
-	// Libraries holds the value of the "libraries" field.
-	Libraries []entities.SourceLibrary `json:"libraries,omitempty"`
 	// Kind holds the value of the "kind" field.
-	Kind         source.Kind `json:"kind,omitempty"`
+	Kind source.Kind `json:"kind,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the SourceQuery when eager-loading is set.
+	Edges        SourceEdges `json:"edges"`
 	selectValues sql.SelectValues
+}
+
+// SourceEdges holds the relations/edges for other nodes in the graph.
+type SourceEdges struct {
+	// Libraries holds the value of the libraries edge.
+	Libraries []*LibrarySource `json:"libraries,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// LibrariesOrErr returns the Libraries value or an error if the edge
+// was not loaded in eager-loading.
+func (e SourceEdges) LibrariesOrErr() ([]*LibrarySource, error) {
+	if e.loadedTypes[0] {
+		return e.Libraries, nil
+	}
+	return nil, &NotLoadedError{edge: "libraries"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -44,8 +59,6 @@ func (*Source) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case source.FieldPathMappings, source.FieldLibraries:
-			values[i] = new([]byte)
 		case source.FieldName, source.FieldURL, source.FieldAPIKey, source.FieldKind:
 			values[i] = new(sql.NullString)
 		case source.FieldCreatedAt, source.FieldUpdatedAt:
@@ -103,22 +116,6 @@ func (_m *Source) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.APIKey = value.String
 			}
-		case source.FieldPathMappings:
-			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field path_mappings", values[i])
-			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &_m.PathMappings); err != nil {
-					return fmt.Errorf("unmarshal field path_mappings: %w", err)
-				}
-			}
-		case source.FieldLibraries:
-			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field libraries", values[i])
-			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &_m.Libraries); err != nil {
-					return fmt.Errorf("unmarshal field libraries: %w", err)
-				}
-			}
 		case source.FieldKind:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field kind", values[i])
@@ -136,6 +133,11 @@ func (_m *Source) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (_m *Source) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
+}
+
+// QueryLibraries queries the "libraries" edge of the Source entity.
+func (_m *Source) QueryLibraries() *LibrarySourceQuery {
+	return NewSourceClient(_m.config).QueryLibraries(_m)
 }
 
 // Update returns a builder for updating this Source.
@@ -175,12 +177,6 @@ func (_m *Source) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("api_key=")
 	builder.WriteString(_m.APIKey)
-	builder.WriteString(", ")
-	builder.WriteString("path_mappings=")
-	builder.WriteString(fmt.Sprintf("%v", _m.PathMappings))
-	builder.WriteString(", ")
-	builder.WriteString("libraries=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Libraries))
 	builder.WriteString(", ")
 	builder.WriteString("kind=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Kind))
