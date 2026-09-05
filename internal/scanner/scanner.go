@@ -188,12 +188,12 @@ func (s *Scanner) saveTitle(
 
 	if title.Directory != "" {
 		if err := s.scanArtwork(ctx, item.ID, title.Directory, "", true, found); err != nil {
-			found.skip(title.Directory, err)
+			log.Printf("artwork %s: %v", title.Directory, err)
 		}
 	}
 
 	for _, file := range title.Files {
-		if err := s.saveFile(ctx, library, item, file, found); err != nil {
+		if err := s.saveFile(ctx, library, item, title.Kind, file, found); err != nil {
 			return err
 		}
 	}
@@ -211,6 +211,7 @@ func (s *Scanner) saveFile(
 	ctx context.Context,
 	library *libraries.Library,
 	item *items.Item,
+	kind itemmodal.Kind,
 	file sources.File,
 	found *seen,
 ) error {
@@ -233,8 +234,9 @@ func (s *Scanner) saveFile(
 	}
 
 	base := stripExtension(filepath.Base(file.Path))
-	if err := s.scanArtwork(ctx, item.ID, filepath.Dir(file.Path), base, true, found); err != nil {
-		found.skip(file.Path, err)
+	folder := kind != itemmodal.KindEpisode
+	if err := s.scanArtwork(ctx, item.ID, filepath.Dir(file.Path), base, folder, found); err != nil {
+		log.Printf("artwork %s: %v", file.Path, err)
 	}
 
 	return nil

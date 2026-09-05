@@ -205,6 +205,7 @@ var OperationPolicies = map[string][]string{
 	"GetVirtualFolders":                 {"DefaultAuthorization", "FirstTimeSetupOrElevated"},
 	"GetYear":                           {"DefaultAuthorization"},
 	"GetYears":                          {"DefaultAuthorization"},
+	"GoJellyfinListSources":             {"DefaultAuthorization", "RequiresElevation"},
 	"GoJellyfinTestSource":              {"DefaultAuthorization", "RequiresElevation"},
 	"GoJellyfinUpdateSources":           {"DefaultAuthorization", "RequiresElevation"},
 	"HeadUniversalAudioStream":          {"DefaultAuthorization"},

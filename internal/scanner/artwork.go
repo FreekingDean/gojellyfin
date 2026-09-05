@@ -33,7 +33,9 @@ var artworkNames = map[items.ImageKind][]string{
 func (s *Scanner) scanArtwork(ctx context.Context, itemID uuid.UUID, directory, base string, folder bool, found *seen) error {
 	entries, err := os.ReadDir(directory)
 	if err != nil {
-		return err
+		found.skip(directory, err)
+
+		return nil
 	}
 
 	for kind, names := range artworkNames {

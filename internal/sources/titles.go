@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/sources/arr"
 	"github.com/FreekingDean/gojellyfin/internal/sources/radarr"
 	"github.com/FreekingDean/gojellyfin/internal/sources/sonarr"
@@ -99,6 +100,8 @@ func (s *Service) series(ctx context.Context, binding Binding) ([]Title, error) 
 		query.Set("seriesId", strconv.Itoa(show.ID))
 		query.Set("includeEpisodeFile", "true")
 
+		jobs.Heartbeat(ctx, show.Title)
+
 		episodes, err := get[[]sonarr.Episode](ctx, s, binding.Source, sonarr.EpisodesPath, query)
 		if err != nil {
 			return nil, err
@@ -147,13 +150,33 @@ func seasons(bound Library, episodes []sonarr.Episode) []Title {
 	titles := make([]Title, 0, len(numbers))
 	for _, number := range numbers {
 		titles = append(titles, Title{
-			Kind:     itemmodel.KindSeason,
-			Index:    ptr(number),
-			Children: byNumber[number],
+			Kind:      itemmodel.KindSeason,
+			Index:     ptr(number),
+			Directory: sharedDirectory(byNumber[number]),
+			Children:  byNumber[number],
 		})
 	}
 
 	return titles
+}
+
+func sharedDirectory(episodes []Title) string {
+	shared := ""
+	for _, episode := range episodes {
+		for _, file := range episode.Files {
+			directory := filepath.Dir(file.Path)
+			if shared == "" {
+				shared = directory
+
+				continue
+			}
+			if shared != directory {
+				return ""
+			}
+		}
+	}
+
+	return shared
 }
 
 func (s *Service) tagFilter(ctx context.Context, binding Binding) (func([]int) bool, error) {
@@ -183,11 +206,16 @@ func file(bound Library, from arr.File) File {
 }
 
 func mapPath(bound Library, path string) string {
-	if bound.SourcePath == "" || !strings.HasPrefix(path, bound.SourcePath) {
+	if bound.SourcePath == "" {
 		return path
 	}
 
-	return filepath.Join(bound.TargetPath, strings.TrimPrefix(path, bound.SourcePath))
+	prefix := strings.TrimSuffix(bound.SourcePath, string(filepath.Separator))
+	if path != prefix && !strings.HasPrefix(path, prefix+string(filepath.Separator)) {
+		return path
+	}
+
+	return filepath.Join(bound.TargetPath, strings.TrimPrefix(path, prefix))
 }
 
 func released(year int32) *int32 {

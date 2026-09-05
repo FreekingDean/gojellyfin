@@ -27,7 +27,7 @@ type Source struct {
 	// URL holds the value of the "url" field.
 	URL string `json:"url,omitempty"`
 	// APIKey holds the value of the "api_key" field.
-	APIKey string `json:"api_key,omitempty"`
+	APIKey string `json:"-"`
 	// Kind holds the value of the "kind" field.
 	Kind source.Kind `json:"kind,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -175,8 +175,7 @@ func (_m *Source) String() string {
 	builder.WriteString("url=")
 	builder.WriteString(_m.URL)
 	builder.WriteString(", ")
-	builder.WriteString("api_key=")
-	builder.WriteString(_m.APIKey)
+	builder.WriteString("api_key=<sensitive>")
 	builder.WriteString(", ")
 	builder.WriteString("kind=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Kind))

@@ -52,7 +52,11 @@ func (s *Server) GoJellyfinUpdateSources(
 
 	configured := make([]sources.Configured, len(*request.Body))
 	for i, source := range *request.Body {
-		configured[i] = paramsToModel(source)
+		entry, err := paramsToModel(source)
+		if err != nil {
+			return nil, err
+		}
+		configured[i] = entry
 	}
 
 	if err := s.sources.Update(ctx, configured); err != nil {
@@ -106,13 +110,17 @@ func modelToParams(entry sources.Configured) api.Source {
 	}
 }
 
-func paramsToModel(req api.Source) sources.Configured {
-	bound := apiutil.Deref(req.Libraries)
+func paramsToModel(req api.Source) (sources.Configured, error) {
+	kind, err := modelKind(apiutil.Deref(req.Kind))
+	if err != nil {
+		return sources.Configured{}, err
+	}
 
+	bound := apiutil.Deref(req.Libraries)
 	entry := sources.Configured{
 		Source: sources.Source{
 			Name:   apiutil.Deref(req.Name),
-			Kind:   modelKind(apiutil.Deref(req.Kind)),
+			Kind:   kind,
 			URL:    apiutil.Deref(req.Url),
 			APIKey: apiutil.Deref(req.ApiKey),
 		},
@@ -128,7 +136,7 @@ func paramsToModel(req api.Source) sources.Configured {
 		}
 	}
 
-	return entry
+	return entry, nil
 }
 
 func apiKind(kind sources.Kind) api.SourceKind {
@@ -139,10 +147,13 @@ func apiKind(kind sources.Kind) api.SourceKind {
 	return radarrKind
 }
 
-func modelKind(kind api.SourceKind) sources.Kind {
-	if strings.EqualFold(string(kind), string(sonarrKind)) {
-		return sources.KindSonarr
+func modelKind(kind api.SourceKind) (sources.Kind, error) {
+	switch {
+	case strings.EqualFold(string(kind), string(sonarrKind)):
+		return sources.KindSonarr, nil
+	case strings.EqualFold(string(kind), string(radarrKind)):
+		return sources.KindRadarr, nil
+	default:
+		return "", fmt.Errorf("unsupported source kind %q", kind)
 	}
-
-	return sources.KindRadarr
 }

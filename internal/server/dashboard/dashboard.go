@@ -3,12 +3,16 @@ package dashboard
 import (
 	"bytes"
 	"context"
-	"os"
+	_ "embed"
+
+	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
-	"github.com/google/uuid"
 )
+
+//go:embed configpage.html
+var configPage []byte
 
 type Server struct{}
 
@@ -20,10 +24,13 @@ var pages = map[string]string{
 	"media_downloaders": "Media Downloaders",
 }
 
-func (s *Server) GetConfigurationPages(ctx context.Context, request api.GetConfigurationPagesRequestObject) (api.GetConfigurationPagesResponseObject, error) {
+func (s *Server) GetConfigurationPages(
+	_ context.Context,
+	_ api.GetConfigurationPagesRequestObject,
+) (api.GetConfigurationPagesResponseObject, error) {
 	pageInfos := make([]api.ConfigurationPageInfo, 0, len(pages))
 	for name, displayName := range pages {
-		pluginID := uuid.NewMD5(uuid.New(), []byte(name))
+		pluginID := uuid.NewMD5(uuid.NameSpaceOID, []byte(name))
 		pageInfos = append(pageInfos, api.ConfigurationPageInfo{
 			MenuIcon:    apiutil.Ptr("person"),
 			DisplayName: apiutil.Ptr(displayName),
@@ -31,18 +38,16 @@ func (s *Server) GetConfigurationPages(ctx context.Context, request api.GetConfi
 			PluginId:    apiutil.Ptr(pluginID),
 		})
 	}
+
 	return api.GetConfigurationPages200JSONResponse(pageInfos), nil
 }
 
-func (s *Server) GetDashboardConfigurationPage(ctx context.Context, request api.GetDashboardConfigurationPageRequestObject) (api.GetDashboardConfigurationPageResponseObject, error) {
-	data, err := os.ReadFile("./configpage.html")
-	if err != nil {
-		return nil, err
-	}
-
-	resp := api.GetDashboardConfigurationPage200TexthtmlResponse{
-		Body:          bytes.NewBuffer(data),
-		ContentLength: int64(len(data)),
-	}
-	return resp, nil
+func (s *Server) GetDashboardConfigurationPage(
+	_ context.Context,
+	_ api.GetDashboardConfigurationPageRequestObject,
+) (api.GetDashboardConfigurationPageResponseObject, error) {
+	return api.GetDashboardConfigurationPage200TexthtmlResponse{
+		Body:          bytes.NewBuffer(configPage),
+		ContentLength: int64(len(configPage)),
+	}, nil
 }
