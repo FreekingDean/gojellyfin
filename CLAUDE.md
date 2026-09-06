@@ -92,6 +92,8 @@ A binding that exists only because the object graph would otherwise be cyclic go
 
 `TestServerModules` in `cmd/gojellyfin/server_test.go` runs `fx.ValidateApp` over `serverModules`. A forgotten `Module` compiles cleanly — nothing references one except the list it belongs to — so the build cannot catch it and the server dies on start instead. `ValidateApp` checks the graph without opening a database or binding a port; dropping `mediainfo.Module` fails it with `missing type: *mediainfo.Server`.
 
+**It does not catch a module replaced by its own constructor**, and that is a different bug with the same shape. `workerModules` listed `fx.Provide(items.New, libraries.New)` rather than `items.Module` and `libraries.Module`: every type still resolved, so `ValidateApp` was happy, but the modules' `fx.Invoke(register)` never ran and three of the six jobs were missing from the registry — the worker answered `unable to find activityType=RefreshLibraries` at run time. `TestCommandsComposeModulesRatherThanConstructors` parses `serverModules` and `workerModules` and fails on a `<pkg>.New` for any package that declares a `Module`, because the constructor is only ever the shorter way to say the same thing until the module grows an invoke.
+
 ### API layer: generated, with an unimplemented base
 
 `internal/server/api` is entirely generated and should never be hand-edited. `go:generate` runs two steps:

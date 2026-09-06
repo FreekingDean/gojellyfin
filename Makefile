@@ -38,6 +38,7 @@ run: build
 
 .PHONY: dev
 dev: migrate build
+	TEMPORAL_HOSTPORT=$(TEMPORAL_HOSTPORT) TEMPORAL_NAMESPACE=$(TEMPORAL_NAMESPACE) \
 	CORS_ORIGINS="*" go run -ldflags "$(LDFLAGS)" ./cmd/gojellyfin server 2>&1 | tee $(LOG)
 
 # brew install temporal, or https://temporal.download/cli.sh. Not `go install`:
