@@ -18,6 +18,9 @@ func runtime(item *items.Item, held items.Held) *int64 {
 	if item.RunTimeTicks != nil {
 		return item.RunTimeTicks
 	}
+	if held.RunTimeTicks == nil || *held.RunTimeTicks == 0 {
+		return nil
+	}
 
 	return held.RunTimeTicks
 }

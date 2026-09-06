@@ -21,6 +21,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/sources"
 	"github.com/FreekingDean/gojellyfin/internal/sources/arr"
 	"github.com/FreekingDean/gojellyfin/internal/store"
+	itemsourcemodal "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
 
@@ -315,7 +316,9 @@ func TestScanLibrary_SharedSource(t *testing.T) {
 		t.Fatalf("second library = %v, want only the grown title", names(records))
 	}
 
-	files, err := first.client.ItemSource.Query().All(context.Background())
+	files, err := first.client.ItemSource.Query().
+		Where(itemsourcemodal.SourceID(first.sourceID)).
+		All(context.Background())
 	if err != nil {
 		t.Fatalf("failed to read the files back: %v", err)
 	}

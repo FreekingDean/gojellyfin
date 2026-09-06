@@ -156,6 +156,8 @@ func (s *Service) Ancestors(ctx context.Context, id uuid.UUID) (*Ancestry, error
 
 	libraries, err := s.store.LibraryItem.Query().
 		Where(librarymembership.ItemID(id)).
+		Order(librarymembership.ByLibraryID()).
+		Unique(true).
 		Select(librarymembership.FieldLibraryID).
 		Strings(ctx)
 	if err != nil {
