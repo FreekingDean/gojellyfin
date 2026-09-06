@@ -21,9 +21,12 @@ const (
 
 	stepTimeout   = 6 * time.Hour
 	heartbeat     = 2 * time.Minute
-	stepQueued    = 10 * time.Minute
-	stepAttempts  = 3
 	runTimeoutMax = 24 * time.Hour
+
+	retryFirst    = time.Second
+	retryGrowth   = 2.0
+	retryLongest  = time.Minute
+	retryAttempts = 8
 )
 
 type Job struct {
@@ -115,10 +118,14 @@ func Heartbeat(ctx context.Context, detail ...any) {
 
 func run(ctx workflow.Context, name string, params Params) error {
 	ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
-		StartToCloseTimeout:    stepTimeout,
-		HeartbeatTimeout:       heartbeat,
-		ScheduleToStartTimeout: stepQueued,
-		RetryPolicy:            &sdktemporal.RetryPolicy{MaximumAttempts: stepAttempts},
+		StartToCloseTimeout: stepTimeout,
+		HeartbeatTimeout:    heartbeat,
+		RetryPolicy: &sdktemporal.RetryPolicy{
+			InitialInterval:    retryFirst,
+			BackoffCoefficient: retryGrowth,
+			MaximumInterval:    retryLongest,
+			MaximumAttempts:    retryAttempts,
+		},
 	})
 
 	return workflow.ExecuteActivity(ctx, name, params).Get(ctx, nil)
