@@ -12,8 +12,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/env"
 )
 
-const TaskQueue = "gojellyfin"
-
 var ErrNotConfigured = errors.New("jobs: TEMPORAL_HOSTPORT is not set")
 
 var ErrNoNamespace = errors.New("jobs: TEMPORAL_HOSTPORT is set but TEMPORAL_NAMESPACE is not")
@@ -126,7 +124,7 @@ func (s *Service) Start(ctx context.Context, name string, options Options) error
 
 	_, err = connection.ExecuteWorkflow(ctx, client.StartWorkflowOptions{
 		ID:                       job.Name(),
-		TaskQueue:                TaskQueue,
+		TaskQueue:                job.Queue(),
 		WorkflowExecutionTimeout: runTimeoutMax,
 		WorkflowIDReusePolicy:    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 	}, job.Name(), options)

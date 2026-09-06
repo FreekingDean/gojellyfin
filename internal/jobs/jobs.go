@@ -27,6 +27,7 @@ type Job interface {
 	Name() string
 	Description() string
 	Category() string
+	Queue() string
 	Run(ctx Context, options Options) error
 	Steps() []any
 	Children() []any

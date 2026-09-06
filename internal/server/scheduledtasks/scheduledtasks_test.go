@@ -99,6 +99,7 @@ type scanJob struct{}
 func (scanJob) Name() string        { return "RefreshLibrary" }
 func (scanJob) Description() string { return "Scans the media libraries." }
 func (scanJob) Category() string    { return "Library" }
+func (scanJob) Queue() string       { return "gojellyfin" }
 func (scanJob) Steps() []any        { return nil }
 func (scanJob) Children() []any     { return nil }
 func (scanJob) Run(jobs.Context, jobs.Options) error {

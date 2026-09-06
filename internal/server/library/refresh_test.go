@@ -24,6 +24,7 @@ type namedJob string
 
 func (n namedJob) Name() string                             { return string(n) }
 func (n namedJob) Category() string                         { return "Library" }
+func (n namedJob) Queue() string                            { return "gojellyfin" }
 func (n namedJob) Description() string                      { return "" }
 func (n namedJob) Steps() []any                             { return nil }
 func (n namedJob) Children() []any                          { return nil }

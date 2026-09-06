@@ -1,6 +1,7 @@
 package jobs
 
 import (
+	"fmt"
 	"log"
 	"runtime"
 
@@ -11,7 +12,7 @@ import (
 type Worker struct {
 	client   *Client
 	registry *Registry
-	worker   worker.Worker
+	workers  map[string]worker.Worker
 }
 
 func NewWorker(client *Client, registry *Registry) *Worker {
@@ -24,26 +25,40 @@ func (w *Worker) Start() error {
 		return err
 	}
 
-	w.worker = worker.New(connection, TaskQueue, worker.Options{
-		MaxConcurrentActivityExecutionSize: runtime.GOMAXPROCS(0),
-	})
+	w.workers = make(map[string]worker.Worker)
 	for _, job := range w.registry.All() {
-		w.worker.RegisterWorkflowWithOptions(job.Run, workflow.RegisterOptions{Name: job.Name()})
+		polling, known := w.workers[job.Queue()]
+		if !known {
+			polling = worker.New(connection, job.Queue(), worker.Options{
+				MaxConcurrentActivityExecutionSize: runtime.GOMAXPROCS(0),
+			})
+			w.workers[job.Queue()] = polling
+		}
+
+		polling.RegisterWorkflowWithOptions(job.Run, workflow.RegisterOptions{Name: job.Name()})
 		for _, child := range job.Children() {
-			w.worker.RegisterWorkflow(child)
+			polling.RegisterWorkflow(child)
 		}
 		for _, step := range job.Steps() {
-			w.worker.RegisterActivity(step)
+			polling.RegisterActivity(step)
 		}
-		log.Printf("registered job %s", job.Name())
+		log.Printf("registered job %s on queue %s", job.Name(), job.Queue())
 	}
 
-	return w.worker.Start()
+	for queue, polling := range w.workers {
+		if err := polling.Start(); err != nil {
+			_ = w.Stop()
+
+			return fmt.Errorf("jobs: worker for queue %s: %w", queue, err)
+		}
+	}
+
+	return nil
 }
 
 func (w *Worker) Stop() error {
-	if w.worker != nil {
-		w.worker.Stop()
+	for _, polling := range w.workers {
+		polling.Stop()
 	}
 	w.client.Close()
 

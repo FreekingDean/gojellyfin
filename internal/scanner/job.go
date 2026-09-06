@@ -26,6 +26,7 @@ func NewLibraryScan(scanner *Scanner) *LibraryScan {
 
 func (l *LibraryScan) Name() string     { return RefreshLibraryJobID }
 func (l *LibraryScan) Category() string { return "Library" }
+func (l *LibraryScan) Queue() string    { return "gojellyfin" }
 func (l *LibraryScan) Description() string {
 	return "Scans the media libraries for new and changed files."
 }
