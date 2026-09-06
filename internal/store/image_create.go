@@ -79,71 +79,15 @@ func (_c *ImageCreate) SetNillableIndex(v *int32) *ImageCreate {
 	return _c
 }
 
-// SetPath sets the "path" field.
-func (_c *ImageCreate) SetPath(v string) *ImageCreate {
-	_c.mutation.SetPath(v)
+// SetURL sets the "url" field.
+func (_c *ImageCreate) SetURL(v string) *ImageCreate {
+	_c.mutation.SetURL(v)
 	return _c
 }
 
 // SetTag sets the "tag" field.
 func (_c *ImageCreate) SetTag(v string) *ImageCreate {
 	_c.mutation.SetTag(v)
-	return _c
-}
-
-// SetBlurHash sets the "blur_hash" field.
-func (_c *ImageCreate) SetBlurHash(v string) *ImageCreate {
-	_c.mutation.SetBlurHash(v)
-	return _c
-}
-
-// SetNillableBlurHash sets the "blur_hash" field if the given value is not nil.
-func (_c *ImageCreate) SetNillableBlurHash(v *string) *ImageCreate {
-	if v != nil {
-		_c.SetBlurHash(*v)
-	}
-	return _c
-}
-
-// SetWidth sets the "width" field.
-func (_c *ImageCreate) SetWidth(v int32) *ImageCreate {
-	_c.mutation.SetWidth(v)
-	return _c
-}
-
-// SetNillableWidth sets the "width" field if the given value is not nil.
-func (_c *ImageCreate) SetNillableWidth(v *int32) *ImageCreate {
-	if v != nil {
-		_c.SetWidth(*v)
-	}
-	return _c
-}
-
-// SetHeight sets the "height" field.
-func (_c *ImageCreate) SetHeight(v int32) *ImageCreate {
-	_c.mutation.SetHeight(v)
-	return _c
-}
-
-// SetNillableHeight sets the "height" field if the given value is not nil.
-func (_c *ImageCreate) SetNillableHeight(v *int32) *ImageCreate {
-	if v != nil {
-		_c.SetHeight(*v)
-	}
-	return _c
-}
-
-// SetSize sets the "size" field.
-func (_c *ImageCreate) SetSize(v int64) *ImageCreate {
-	_c.mutation.SetSize(v)
-	return _c
-}
-
-// SetNillableSize sets the "size" field if the given value is not nil.
-func (_c *ImageCreate) SetNillableSize(v *int64) *ImageCreate {
-	if v != nil {
-		_c.SetSize(*v)
-	}
 	return _c
 }
 
@@ -229,8 +173,8 @@ func (_c *ImageCreate) check() error {
 	if _, ok := _c.mutation.Index(); !ok {
 		return &ValidationError{Name: "index", err: errors.New(`store: missing required field "Image.index"`)}
 	}
-	if _, ok := _c.mutation.Path(); !ok {
-		return &ValidationError{Name: "path", err: errors.New(`store: missing required field "Image.path"`)}
+	if _, ok := _c.mutation.URL(); !ok {
+		return &ValidationError{Name: "url", err: errors.New(`store: missing required field "Image.url"`)}
 	}
 	if _, ok := _c.mutation.Tag(); !ok {
 		return &ValidationError{Name: "tag", err: errors.New(`store: missing required field "Image.tag"`)}
@@ -290,29 +234,13 @@ func (_c *ImageCreate) createSpec() (*Image, *sqlgraph.CreateSpec) {
 		_spec.SetField(image.FieldIndex, field.TypeInt32, value)
 		_node.Index = value
 	}
-	if value, ok := _c.mutation.Path(); ok {
-		_spec.SetField(image.FieldPath, field.TypeString, value)
-		_node.Path = value
+	if value, ok := _c.mutation.URL(); ok {
+		_spec.SetField(image.FieldURL, field.TypeString, value)
+		_node.URL = value
 	}
 	if value, ok := _c.mutation.Tag(); ok {
 		_spec.SetField(image.FieldTag, field.TypeString, value)
 		_node.Tag = value
-	}
-	if value, ok := _c.mutation.BlurHash(); ok {
-		_spec.SetField(image.FieldBlurHash, field.TypeString, value)
-		_node.BlurHash = value
-	}
-	if value, ok := _c.mutation.Width(); ok {
-		_spec.SetField(image.FieldWidth, field.TypeInt32, value)
-		_node.Width = value
-	}
-	if value, ok := _c.mutation.Height(); ok {
-		_spec.SetField(image.FieldHeight, field.TypeInt32, value)
-		_node.Height = value
-	}
-	if value, ok := _c.mutation.Size(); ok {
-		_spec.SetField(image.FieldSize, field.TypeInt64, value)
-		_node.Size = value
 	}
 	if nodes := _c.mutation.ItemIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -449,15 +377,15 @@ func (u *ImageUpsert) AddIndex(v int32) *ImageUpsert {
 	return u
 }
 
-// SetPath sets the "path" field.
-func (u *ImageUpsert) SetPath(v string) *ImageUpsert {
-	u.Set(image.FieldPath, v)
+// SetURL sets the "url" field.
+func (u *ImageUpsert) SetURL(v string) *ImageUpsert {
+	u.Set(image.FieldURL, v)
 	return u
 }
 
-// UpdatePath sets the "path" field to the value that was provided on create.
-func (u *ImageUpsert) UpdatePath() *ImageUpsert {
-	u.SetExcluded(image.FieldPath)
+// UpdateURL sets the "url" field to the value that was provided on create.
+func (u *ImageUpsert) UpdateURL() *ImageUpsert {
+	u.SetExcluded(image.FieldURL)
 	return u
 }
 
@@ -470,96 +398,6 @@ func (u *ImageUpsert) SetTag(v string) *ImageUpsert {
 // UpdateTag sets the "tag" field to the value that was provided on create.
 func (u *ImageUpsert) UpdateTag() *ImageUpsert {
 	u.SetExcluded(image.FieldTag)
-	return u
-}
-
-// SetBlurHash sets the "blur_hash" field.
-func (u *ImageUpsert) SetBlurHash(v string) *ImageUpsert {
-	u.Set(image.FieldBlurHash, v)
-	return u
-}
-
-// UpdateBlurHash sets the "blur_hash" field to the value that was provided on create.
-func (u *ImageUpsert) UpdateBlurHash() *ImageUpsert {
-	u.SetExcluded(image.FieldBlurHash)
-	return u
-}
-
-// ClearBlurHash clears the value of the "blur_hash" field.
-func (u *ImageUpsert) ClearBlurHash() *ImageUpsert {
-	u.SetNull(image.FieldBlurHash)
-	return u
-}
-
-// SetWidth sets the "width" field.
-func (u *ImageUpsert) SetWidth(v int32) *ImageUpsert {
-	u.Set(image.FieldWidth, v)
-	return u
-}
-
-// UpdateWidth sets the "width" field to the value that was provided on create.
-func (u *ImageUpsert) UpdateWidth() *ImageUpsert {
-	u.SetExcluded(image.FieldWidth)
-	return u
-}
-
-// AddWidth adds v to the "width" field.
-func (u *ImageUpsert) AddWidth(v int32) *ImageUpsert {
-	u.Add(image.FieldWidth, v)
-	return u
-}
-
-// ClearWidth clears the value of the "width" field.
-func (u *ImageUpsert) ClearWidth() *ImageUpsert {
-	u.SetNull(image.FieldWidth)
-	return u
-}
-
-// SetHeight sets the "height" field.
-func (u *ImageUpsert) SetHeight(v int32) *ImageUpsert {
-	u.Set(image.FieldHeight, v)
-	return u
-}
-
-// UpdateHeight sets the "height" field to the value that was provided on create.
-func (u *ImageUpsert) UpdateHeight() *ImageUpsert {
-	u.SetExcluded(image.FieldHeight)
-	return u
-}
-
-// AddHeight adds v to the "height" field.
-func (u *ImageUpsert) AddHeight(v int32) *ImageUpsert {
-	u.Add(image.FieldHeight, v)
-	return u
-}
-
-// ClearHeight clears the value of the "height" field.
-func (u *ImageUpsert) ClearHeight() *ImageUpsert {
-	u.SetNull(image.FieldHeight)
-	return u
-}
-
-// SetSize sets the "size" field.
-func (u *ImageUpsert) SetSize(v int64) *ImageUpsert {
-	u.Set(image.FieldSize, v)
-	return u
-}
-
-// UpdateSize sets the "size" field to the value that was provided on create.
-func (u *ImageUpsert) UpdateSize() *ImageUpsert {
-	u.SetExcluded(image.FieldSize)
-	return u
-}
-
-// AddSize adds v to the "size" field.
-func (u *ImageUpsert) AddSize(v int64) *ImageUpsert {
-	u.Add(image.FieldSize, v)
-	return u
-}
-
-// ClearSize clears the value of the "size" field.
-func (u *ImageUpsert) ClearSize() *ImageUpsert {
-	u.SetNull(image.FieldSize)
 	return u
 }
 
@@ -688,17 +526,17 @@ func (u *ImageUpsertOne) UpdateIndex() *ImageUpsertOne {
 	})
 }
 
-// SetPath sets the "path" field.
-func (u *ImageUpsertOne) SetPath(v string) *ImageUpsertOne {
+// SetURL sets the "url" field.
+func (u *ImageUpsertOne) SetURL(v string) *ImageUpsertOne {
 	return u.Update(func(s *ImageUpsert) {
-		s.SetPath(v)
+		s.SetURL(v)
 	})
 }
 
-// UpdatePath sets the "path" field to the value that was provided on create.
-func (u *ImageUpsertOne) UpdatePath() *ImageUpsertOne {
+// UpdateURL sets the "url" field to the value that was provided on create.
+func (u *ImageUpsertOne) UpdateURL() *ImageUpsertOne {
 	return u.Update(func(s *ImageUpsert) {
-		s.UpdatePath()
+		s.UpdateURL()
 	})
 }
 
@@ -713,111 +551,6 @@ func (u *ImageUpsertOne) SetTag(v string) *ImageUpsertOne {
 func (u *ImageUpsertOne) UpdateTag() *ImageUpsertOne {
 	return u.Update(func(s *ImageUpsert) {
 		s.UpdateTag()
-	})
-}
-
-// SetBlurHash sets the "blur_hash" field.
-func (u *ImageUpsertOne) SetBlurHash(v string) *ImageUpsertOne {
-	return u.Update(func(s *ImageUpsert) {
-		s.SetBlurHash(v)
-	})
-}
-
-// UpdateBlurHash sets the "blur_hash" field to the value that was provided on create.
-func (u *ImageUpsertOne) UpdateBlurHash() *ImageUpsertOne {
-	return u.Update(func(s *ImageUpsert) {
-		s.UpdateBlurHash()
-	})
-}
-
-// ClearBlurHash clears the value of the "blur_hash" field.
-func (u *ImageUpsertOne) ClearBlurHash() *ImageUpsertOne {
-	return u.Update(func(s *ImageUpsert) {
-		s.ClearBlurHash()
-	})
-}
-
-// SetWidth sets the "width" field.
-func (u *ImageUpsertOne) SetWidth(v int32) *ImageUpsertOne {
-	return u.Update(func(s *ImageUpsert) {
-		s.SetWidth(v)
-	})
-}
-
-// AddWidth adds v to the "width" field.
-func (u *ImageUpsertOne) AddWidth(v int32) *ImageUpsertOne {
-	return u.Update(func(s *ImageUpsert) {
-		s.AddWidth(v)
-	})
-}
-
-// UpdateWidth sets the "width" field to the value that was provided on create.
-func (u *ImageUpsertOne) UpdateWidth() *ImageUpsertOne {
-	return u.Update(func(s *ImageUpsert) {
-		s.UpdateWidth()
-	})
-}
-
-// ClearWidth clears the value of the "width" field.
-func (u *ImageUpsertOne) ClearWidth() *ImageUpsertOne {
-	return u.Update(func(s *ImageUpsert) {
-		s.ClearWidth()
-	})
-}
-
-// SetHeight sets the "height" field.
-func (u *ImageUpsertOne) SetHeight(v int32) *ImageUpsertOne {
-	return u.Update(func(s *ImageUpsert) {
-		s.SetHeight(v)
-	})
-}
-
-// AddHeight adds v to the "height" field.
-func (u *ImageUpsertOne) AddHeight(v int32) *ImageUpsertOne {
-	return u.Update(func(s *ImageUpsert) {
-		s.AddHeight(v)
-	})
-}
-
-// UpdateHeight sets the "height" field to the value that was provided on create.
-func (u *ImageUpsertOne) UpdateHeight() *ImageUpsertOne {
-	return u.Update(func(s *ImageUpsert) {
-		s.UpdateHeight()
-	})
-}
-
-// ClearHeight clears the value of the "height" field.
-func (u *ImageUpsertOne) ClearHeight() *ImageUpsertOne {
-	return u.Update(func(s *ImageUpsert) {
-		s.ClearHeight()
-	})
-}
-
-// SetSize sets the "size" field.
-func (u *ImageUpsertOne) SetSize(v int64) *ImageUpsertOne {
-	return u.Update(func(s *ImageUpsert) {
-		s.SetSize(v)
-	})
-}
-
-// AddSize adds v to the "size" field.
-func (u *ImageUpsertOne) AddSize(v int64) *ImageUpsertOne {
-	return u.Update(func(s *ImageUpsert) {
-		s.AddSize(v)
-	})
-}
-
-// UpdateSize sets the "size" field to the value that was provided on create.
-func (u *ImageUpsertOne) UpdateSize() *ImageUpsertOne {
-	return u.Update(func(s *ImageUpsert) {
-		s.UpdateSize()
-	})
-}
-
-// ClearSize clears the value of the "size" field.
-func (u *ImageUpsertOne) ClearSize() *ImageUpsertOne {
-	return u.Update(func(s *ImageUpsert) {
-		s.ClearSize()
 	})
 }
 
@@ -1113,17 +846,17 @@ func (u *ImageUpsertBulk) UpdateIndex() *ImageUpsertBulk {
 	})
 }
 
-// SetPath sets the "path" field.
-func (u *ImageUpsertBulk) SetPath(v string) *ImageUpsertBulk {
+// SetURL sets the "url" field.
+func (u *ImageUpsertBulk) SetURL(v string) *ImageUpsertBulk {
 	return u.Update(func(s *ImageUpsert) {
-		s.SetPath(v)
+		s.SetURL(v)
 	})
 }
 
-// UpdatePath sets the "path" field to the value that was provided on create.
-func (u *ImageUpsertBulk) UpdatePath() *ImageUpsertBulk {
+// UpdateURL sets the "url" field to the value that was provided on create.
+func (u *ImageUpsertBulk) UpdateURL() *ImageUpsertBulk {
 	return u.Update(func(s *ImageUpsert) {
-		s.UpdatePath()
+		s.UpdateURL()
 	})
 }
 
@@ -1138,111 +871,6 @@ func (u *ImageUpsertBulk) SetTag(v string) *ImageUpsertBulk {
 func (u *ImageUpsertBulk) UpdateTag() *ImageUpsertBulk {
 	return u.Update(func(s *ImageUpsert) {
 		s.UpdateTag()
-	})
-}
-
-// SetBlurHash sets the "blur_hash" field.
-func (u *ImageUpsertBulk) SetBlurHash(v string) *ImageUpsertBulk {
-	return u.Update(func(s *ImageUpsert) {
-		s.SetBlurHash(v)
-	})
-}
-
-// UpdateBlurHash sets the "blur_hash" field to the value that was provided on create.
-func (u *ImageUpsertBulk) UpdateBlurHash() *ImageUpsertBulk {
-	return u.Update(func(s *ImageUpsert) {
-		s.UpdateBlurHash()
-	})
-}
-
-// ClearBlurHash clears the value of the "blur_hash" field.
-func (u *ImageUpsertBulk) ClearBlurHash() *ImageUpsertBulk {
-	return u.Update(func(s *ImageUpsert) {
-		s.ClearBlurHash()
-	})
-}
-
-// SetWidth sets the "width" field.
-func (u *ImageUpsertBulk) SetWidth(v int32) *ImageUpsertBulk {
-	return u.Update(func(s *ImageUpsert) {
-		s.SetWidth(v)
-	})
-}
-
-// AddWidth adds v to the "width" field.
-func (u *ImageUpsertBulk) AddWidth(v int32) *ImageUpsertBulk {
-	return u.Update(func(s *ImageUpsert) {
-		s.AddWidth(v)
-	})
-}
-
-// UpdateWidth sets the "width" field to the value that was provided on create.
-func (u *ImageUpsertBulk) UpdateWidth() *ImageUpsertBulk {
-	return u.Update(func(s *ImageUpsert) {
-		s.UpdateWidth()
-	})
-}
-
-// ClearWidth clears the value of the "width" field.
-func (u *ImageUpsertBulk) ClearWidth() *ImageUpsertBulk {
-	return u.Update(func(s *ImageUpsert) {
-		s.ClearWidth()
-	})
-}
-
-// SetHeight sets the "height" field.
-func (u *ImageUpsertBulk) SetHeight(v int32) *ImageUpsertBulk {
-	return u.Update(func(s *ImageUpsert) {
-		s.SetHeight(v)
-	})
-}
-
-// AddHeight adds v to the "height" field.
-func (u *ImageUpsertBulk) AddHeight(v int32) *ImageUpsertBulk {
-	return u.Update(func(s *ImageUpsert) {
-		s.AddHeight(v)
-	})
-}
-
-// UpdateHeight sets the "height" field to the value that was provided on create.
-func (u *ImageUpsertBulk) UpdateHeight() *ImageUpsertBulk {
-	return u.Update(func(s *ImageUpsert) {
-		s.UpdateHeight()
-	})
-}
-
-// ClearHeight clears the value of the "height" field.
-func (u *ImageUpsertBulk) ClearHeight() *ImageUpsertBulk {
-	return u.Update(func(s *ImageUpsert) {
-		s.ClearHeight()
-	})
-}
-
-// SetSize sets the "size" field.
-func (u *ImageUpsertBulk) SetSize(v int64) *ImageUpsertBulk {
-	return u.Update(func(s *ImageUpsert) {
-		s.SetSize(v)
-	})
-}
-
-// AddSize adds v to the "size" field.
-func (u *ImageUpsertBulk) AddSize(v int64) *ImageUpsertBulk {
-	return u.Update(func(s *ImageUpsert) {
-		s.AddSize(v)
-	})
-}
-
-// UpdateSize sets the "size" field to the value that was provided on create.
-func (u *ImageUpsertBulk) UpdateSize() *ImageUpsertBulk {
-	return u.Update(func(s *ImageUpsert) {
-		s.UpdateSize()
-	})
-}
-
-// ClearSize clears the value of the "size" field.
-func (u *ImageUpsertBulk) ClearSize() *ImageUpsertBulk {
-	return u.Update(func(s *ImageUpsert) {
-		s.ClearSize()
 	})
 }
 

@@ -21,7 +21,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 	"github.com/FreekingDean/gojellyfin/internal/store/genre"
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
-	"github.com/FreekingDean/gojellyfin/internal/store/imageblob"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
@@ -61,7 +60,6 @@ const (
 	TypeDisplayPreferences = "DisplayPreferences"
 	TypeGenre              = "Genre"
 	TypeImage              = "Image"
-	TypeImageBlob          = "ImageBlob"
 	TypeItem               = "Item"
 	TypeItemSource         = "ItemSource"
 	TypeLibrary            = "Library"
@@ -5957,15 +5955,8 @@ type ImageMutation struct {
 	kind          *image.Kind
 	index         *int32
 	addindex      *int32
-	_path         *string
+	url           *string
 	tag           *string
-	blur_hash     *string
-	width         *int32
-	addwidth      *int32
-	height        *int32
-	addheight     *int32
-	size          *int64
-	addsize       *int64
 	clearedFields map[string]struct{}
 	item          *uuid.UUID
 	cleareditem   bool
@@ -6278,40 +6269,40 @@ func (m *ImageMutation) ResetIndex() {
 	m.addindex = nil
 }
 
-// SetPath sets the "path" field.
-func (m *ImageMutation) SetPath(s string) {
-	m._path = &s
+// SetURL sets the "url" field.
+func (m *ImageMutation) SetURL(s string) {
+	m.url = &s
 }
 
-// Path returns the value of the "path" field in the mutation.
-func (m *ImageMutation) Path() (r string, exists bool) {
-	v := m._path
+// URL returns the value of the "url" field in the mutation.
+func (m *ImageMutation) URL() (r string, exists bool) {
+	v := m.url
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldPath returns the old "path" field's value of the Image entity.
+// OldURL returns the old "url" field's value of the Image entity.
 // If the Image object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ImageMutation) OldPath(ctx context.Context) (v string, err error) {
+func (m *ImageMutation) OldURL(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPath is only allowed on UpdateOne operations")
+		return v, errors.New("OldURL is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPath requires an ID field in the mutation")
+		return v, errors.New("OldURL requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPath: %w", err)
+		return v, fmt.Errorf("querying old value for OldURL: %w", err)
 	}
-	return oldValue.Path, nil
+	return oldValue.URL, nil
 }
 
-// ResetPath resets all changes to the "path" field.
-func (m *ImageMutation) ResetPath() {
-	m._path = nil
+// ResetURL resets all changes to the "url" field.
+func (m *ImageMutation) ResetURL() {
+	m.url = nil
 }
 
 // SetTag sets the "tag" field.
@@ -6348,265 +6339,6 @@ func (m *ImageMutation) OldTag(ctx context.Context) (v string, err error) {
 // ResetTag resets all changes to the "tag" field.
 func (m *ImageMutation) ResetTag() {
 	m.tag = nil
-}
-
-// SetBlurHash sets the "blur_hash" field.
-func (m *ImageMutation) SetBlurHash(s string) {
-	m.blur_hash = &s
-}
-
-// BlurHash returns the value of the "blur_hash" field in the mutation.
-func (m *ImageMutation) BlurHash() (r string, exists bool) {
-	v := m.blur_hash
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldBlurHash returns the old "blur_hash" field's value of the Image entity.
-// If the Image object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ImageMutation) OldBlurHash(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldBlurHash is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldBlurHash requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldBlurHash: %w", err)
-	}
-	return oldValue.BlurHash, nil
-}
-
-// ClearBlurHash clears the value of the "blur_hash" field.
-func (m *ImageMutation) ClearBlurHash() {
-	m.blur_hash = nil
-	m.clearedFields[image.FieldBlurHash] = struct{}{}
-}
-
-// BlurHashCleared returns if the "blur_hash" field was cleared in this mutation.
-func (m *ImageMutation) BlurHashCleared() bool {
-	_, ok := m.clearedFields[image.FieldBlurHash]
-	return ok
-}
-
-// ResetBlurHash resets all changes to the "blur_hash" field.
-func (m *ImageMutation) ResetBlurHash() {
-	m.blur_hash = nil
-	delete(m.clearedFields, image.FieldBlurHash)
-}
-
-// SetWidth sets the "width" field.
-func (m *ImageMutation) SetWidth(i int32) {
-	m.width = &i
-	m.addwidth = nil
-}
-
-// Width returns the value of the "width" field in the mutation.
-func (m *ImageMutation) Width() (r int32, exists bool) {
-	v := m.width
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldWidth returns the old "width" field's value of the Image entity.
-// If the Image object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ImageMutation) OldWidth(ctx context.Context) (v int32, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldWidth is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldWidth requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldWidth: %w", err)
-	}
-	return oldValue.Width, nil
-}
-
-// AddWidth adds i to the "width" field.
-func (m *ImageMutation) AddWidth(i int32) {
-	if m.addwidth != nil {
-		*m.addwidth += i
-	} else {
-		m.addwidth = &i
-	}
-}
-
-// AddedWidth returns the value that was added to the "width" field in this mutation.
-func (m *ImageMutation) AddedWidth() (r int32, exists bool) {
-	v := m.addwidth
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearWidth clears the value of the "width" field.
-func (m *ImageMutation) ClearWidth() {
-	m.width = nil
-	m.addwidth = nil
-	m.clearedFields[image.FieldWidth] = struct{}{}
-}
-
-// WidthCleared returns if the "width" field was cleared in this mutation.
-func (m *ImageMutation) WidthCleared() bool {
-	_, ok := m.clearedFields[image.FieldWidth]
-	return ok
-}
-
-// ResetWidth resets all changes to the "width" field.
-func (m *ImageMutation) ResetWidth() {
-	m.width = nil
-	m.addwidth = nil
-	delete(m.clearedFields, image.FieldWidth)
-}
-
-// SetHeight sets the "height" field.
-func (m *ImageMutation) SetHeight(i int32) {
-	m.height = &i
-	m.addheight = nil
-}
-
-// Height returns the value of the "height" field in the mutation.
-func (m *ImageMutation) Height() (r int32, exists bool) {
-	v := m.height
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldHeight returns the old "height" field's value of the Image entity.
-// If the Image object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ImageMutation) OldHeight(ctx context.Context) (v int32, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldHeight is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldHeight requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldHeight: %w", err)
-	}
-	return oldValue.Height, nil
-}
-
-// AddHeight adds i to the "height" field.
-func (m *ImageMutation) AddHeight(i int32) {
-	if m.addheight != nil {
-		*m.addheight += i
-	} else {
-		m.addheight = &i
-	}
-}
-
-// AddedHeight returns the value that was added to the "height" field in this mutation.
-func (m *ImageMutation) AddedHeight() (r int32, exists bool) {
-	v := m.addheight
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearHeight clears the value of the "height" field.
-func (m *ImageMutation) ClearHeight() {
-	m.height = nil
-	m.addheight = nil
-	m.clearedFields[image.FieldHeight] = struct{}{}
-}
-
-// HeightCleared returns if the "height" field was cleared in this mutation.
-func (m *ImageMutation) HeightCleared() bool {
-	_, ok := m.clearedFields[image.FieldHeight]
-	return ok
-}
-
-// ResetHeight resets all changes to the "height" field.
-func (m *ImageMutation) ResetHeight() {
-	m.height = nil
-	m.addheight = nil
-	delete(m.clearedFields, image.FieldHeight)
-}
-
-// SetSize sets the "size" field.
-func (m *ImageMutation) SetSize(i int64) {
-	m.size = &i
-	m.addsize = nil
-}
-
-// Size returns the value of the "size" field in the mutation.
-func (m *ImageMutation) Size() (r int64, exists bool) {
-	v := m.size
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldSize returns the old "size" field's value of the Image entity.
-// If the Image object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ImageMutation) OldSize(ctx context.Context) (v int64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldSize is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldSize requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldSize: %w", err)
-	}
-	return oldValue.Size, nil
-}
-
-// AddSize adds i to the "size" field.
-func (m *ImageMutation) AddSize(i int64) {
-	if m.addsize != nil {
-		*m.addsize += i
-	} else {
-		m.addsize = &i
-	}
-}
-
-// AddedSize returns the value that was added to the "size" field in this mutation.
-func (m *ImageMutation) AddedSize() (r int64, exists bool) {
-	v := m.addsize
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearSize clears the value of the "size" field.
-func (m *ImageMutation) ClearSize() {
-	m.size = nil
-	m.addsize = nil
-	m.clearedFields[image.FieldSize] = struct{}{}
-}
-
-// SizeCleared returns if the "size" field was cleared in this mutation.
-func (m *ImageMutation) SizeCleared() bool {
-	_, ok := m.clearedFields[image.FieldSize]
-	return ok
-}
-
-// ResetSize resets all changes to the "size" field.
-func (m *ImageMutation) ResetSize() {
-	m.size = nil
-	m.addsize = nil
-	delete(m.clearedFields, image.FieldSize)
 }
 
 // ClearItem clears the "item" edge to the Item entity.
@@ -6670,7 +6402,7 @@ func (m *ImageMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ImageMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, image.FieldCreatedAt)
 	}
@@ -6686,23 +6418,11 @@ func (m *ImageMutation) Fields() []string {
 	if m.index != nil {
 		fields = append(fields, image.FieldIndex)
 	}
-	if m._path != nil {
-		fields = append(fields, image.FieldPath)
+	if m.url != nil {
+		fields = append(fields, image.FieldURL)
 	}
 	if m.tag != nil {
 		fields = append(fields, image.FieldTag)
-	}
-	if m.blur_hash != nil {
-		fields = append(fields, image.FieldBlurHash)
-	}
-	if m.width != nil {
-		fields = append(fields, image.FieldWidth)
-	}
-	if m.height != nil {
-		fields = append(fields, image.FieldHeight)
-	}
-	if m.size != nil {
-		fields = append(fields, image.FieldSize)
 	}
 	return fields
 }
@@ -6722,18 +6442,10 @@ func (m *ImageMutation) Field(name string) (ent.Value, bool) {
 		return m.Kind()
 	case image.FieldIndex:
 		return m.Index()
-	case image.FieldPath:
-		return m.Path()
+	case image.FieldURL:
+		return m.URL()
 	case image.FieldTag:
 		return m.Tag()
-	case image.FieldBlurHash:
-		return m.BlurHash()
-	case image.FieldWidth:
-		return m.Width()
-	case image.FieldHeight:
-		return m.Height()
-	case image.FieldSize:
-		return m.Size()
 	}
 	return nil, false
 }
@@ -6753,18 +6465,10 @@ func (m *ImageMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldKind(ctx)
 	case image.FieldIndex:
 		return m.OldIndex(ctx)
-	case image.FieldPath:
-		return m.OldPath(ctx)
+	case image.FieldURL:
+		return m.OldURL(ctx)
 	case image.FieldTag:
 		return m.OldTag(ctx)
-	case image.FieldBlurHash:
-		return m.OldBlurHash(ctx)
-	case image.FieldWidth:
-		return m.OldWidth(ctx)
-	case image.FieldHeight:
-		return m.OldHeight(ctx)
-	case image.FieldSize:
-		return m.OldSize(ctx)
 	}
 	return nil, fmt.Errorf("unknown Image field %s", name)
 }
@@ -6809,12 +6513,12 @@ func (m *ImageMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetIndex(v)
 		return nil
-	case image.FieldPath:
+	case image.FieldURL:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetPath(v)
+		m.SetURL(v)
 		return nil
 	case image.FieldTag:
 		v, ok := value.(string)
@@ -6822,34 +6526,6 @@ func (m *ImageMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetTag(v)
-		return nil
-	case image.FieldBlurHash:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetBlurHash(v)
-		return nil
-	case image.FieldWidth:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetWidth(v)
-		return nil
-	case image.FieldHeight:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetHeight(v)
-		return nil
-	case image.FieldSize:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetSize(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Image field %s", name)
@@ -6862,15 +6538,6 @@ func (m *ImageMutation) AddedFields() []string {
 	if m.addindex != nil {
 		fields = append(fields, image.FieldIndex)
 	}
-	if m.addwidth != nil {
-		fields = append(fields, image.FieldWidth)
-	}
-	if m.addheight != nil {
-		fields = append(fields, image.FieldHeight)
-	}
-	if m.addsize != nil {
-		fields = append(fields, image.FieldSize)
-	}
 	return fields
 }
 
@@ -6881,12 +6548,6 @@ func (m *ImageMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case image.FieldIndex:
 		return m.AddedIndex()
-	case image.FieldWidth:
-		return m.AddedWidth()
-	case image.FieldHeight:
-		return m.AddedHeight()
-	case image.FieldSize:
-		return m.AddedSize()
 	}
 	return nil, false
 }
@@ -6903,27 +6564,6 @@ func (m *ImageMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddIndex(v)
 		return nil
-	case image.FieldWidth:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddWidth(v)
-		return nil
-	case image.FieldHeight:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddHeight(v)
-		return nil
-	case image.FieldSize:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddSize(v)
-		return nil
 	}
 	return fmt.Errorf("unknown Image numeric field %s", name)
 }
@@ -6931,20 +6571,7 @@ func (m *ImageMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *ImageMutation) ClearedFields() []string {
-	var fields []string
-	if m.FieldCleared(image.FieldBlurHash) {
-		fields = append(fields, image.FieldBlurHash)
-	}
-	if m.FieldCleared(image.FieldWidth) {
-		fields = append(fields, image.FieldWidth)
-	}
-	if m.FieldCleared(image.FieldHeight) {
-		fields = append(fields, image.FieldHeight)
-	}
-	if m.FieldCleared(image.FieldSize) {
-		fields = append(fields, image.FieldSize)
-	}
-	return fields
+	return nil
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -6957,20 +6584,6 @@ func (m *ImageMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *ImageMutation) ClearField(name string) error {
-	switch name {
-	case image.FieldBlurHash:
-		m.ClearBlurHash()
-		return nil
-	case image.FieldWidth:
-		m.ClearWidth()
-		return nil
-	case image.FieldHeight:
-		m.ClearHeight()
-		return nil
-	case image.FieldSize:
-		m.ClearSize()
-		return nil
-	}
 	return fmt.Errorf("unknown Image nullable field %s", name)
 }
 
@@ -6993,23 +6606,11 @@ func (m *ImageMutation) ResetField(name string) error {
 	case image.FieldIndex:
 		m.ResetIndex()
 		return nil
-	case image.FieldPath:
-		m.ResetPath()
+	case image.FieldURL:
+		m.ResetURL()
 		return nil
 	case image.FieldTag:
 		m.ResetTag()
-		return nil
-	case image.FieldBlurHash:
-		m.ResetBlurHash()
-		return nil
-	case image.FieldWidth:
-		m.ResetWidth()
-		return nil
-	case image.FieldHeight:
-		m.ResetHeight()
-		return nil
-	case image.FieldSize:
-		m.ResetSize()
 		return nil
 	}
 	return fmt.Errorf("unknown Image field %s", name)
@@ -7087,500 +6688,6 @@ func (m *ImageMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Image edge %s", name)
-}
-
-// ImageBlobMutation represents an operation that mutates the ImageBlob nodes in the graph.
-type ImageBlobMutation struct {
-	config
-	op            Op
-	typ           string
-	id            *uuid.UUID
-	created_at    *time.Time
-	updated_at    *time.Time
-	key           *string
-	data          *[]byte
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*ImageBlob, error)
-	predicates    []predicate.ImageBlob
-}
-
-var _ ent.Mutation = (*ImageBlobMutation)(nil)
-
-// imageblobOption allows management of the mutation configuration using functional options.
-type imageblobOption func(*ImageBlobMutation)
-
-// newImageBlobMutation creates new mutation for the ImageBlob entity.
-func newImageBlobMutation(c config, op Op, opts ...imageblobOption) *ImageBlobMutation {
-	m := &ImageBlobMutation{
-		config:        c,
-		op:            op,
-		typ:           TypeImageBlob,
-		clearedFields: make(map[string]struct{}),
-	}
-	for _, opt := range opts {
-		opt(m)
-	}
-	return m
-}
-
-// withImageBlobID sets the ID field of the mutation.
-func withImageBlobID(id uuid.UUID) imageblobOption {
-	return func(m *ImageBlobMutation) {
-		var (
-			err   error
-			once  sync.Once
-			value *ImageBlob
-		)
-		m.oldValue = func(ctx context.Context) (*ImageBlob, error) {
-			once.Do(func() {
-				if m.done {
-					err = errors.New("querying old values post mutation is not allowed")
-				} else {
-					value, err = m.Client().ImageBlob.Get(ctx, id)
-				}
-			})
-			return value, err
-		}
-		m.id = &id
-	}
-}
-
-// withImageBlob sets the old ImageBlob of the mutation.
-func withImageBlob(node *ImageBlob) imageblobOption {
-	return func(m *ImageBlobMutation) {
-		m.oldValue = func(context.Context) (*ImageBlob, error) {
-			return node, nil
-		}
-		m.id = &node.ID
-	}
-}
-
-// Client returns a new `ent.Client` from the mutation. If the mutation was
-// executed in a transaction (ent.Tx), a transactional client is returned.
-func (m ImageBlobMutation) Client() *Client {
-	client := &Client{config: m.config}
-	client.init()
-	return client
-}
-
-// Tx returns an `ent.Tx` for mutations that were executed in transactions;
-// it returns an error otherwise.
-func (m ImageBlobMutation) Tx() (*Tx, error) {
-	if _, ok := m.driver.(*txDriver); !ok {
-		return nil, errors.New("store: mutation is not running in a transaction")
-	}
-	tx := &Tx{config: m.config}
-	tx.init()
-	return tx, nil
-}
-
-// SetID sets the value of the id field. Note that this
-// operation is only accepted on creation of ImageBlob entities.
-func (m *ImageBlobMutation) SetID(id uuid.UUID) {
-	m.id = &id
-}
-
-// ID returns the ID value in the mutation. Note that the ID is only available
-// if it was provided to the builder or after it was returned from the database.
-func (m *ImageBlobMutation) ID() (id uuid.UUID, exists bool) {
-	if m.id == nil {
-		return
-	}
-	return *m.id, true
-}
-
-// IDs queries the database and returns the entity ids that match the mutation's predicate.
-// That means, if the mutation is applied within a transaction with an isolation level such
-// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
-// or updated by the mutation.
-func (m *ImageBlobMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
-	switch {
-	case m.op.Is(OpUpdateOne | OpDeleteOne):
-		id, exists := m.ID()
-		if exists {
-			return []uuid.UUID{id}, nil
-		}
-		fallthrough
-	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().ImageBlob.Query().Where(m.predicates...).IDs(ctx)
-	default:
-		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
-	}
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (m *ImageBlobMutation) SetCreatedAt(t time.Time) {
-	m.created_at = &t
-}
-
-// CreatedAt returns the value of the "created_at" field in the mutation.
-func (m *ImageBlobMutation) CreatedAt() (r time.Time, exists bool) {
-	v := m.created_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldCreatedAt returns the old "created_at" field's value of the ImageBlob entity.
-// If the ImageBlob object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ImageBlobMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
-	}
-	return oldValue.CreatedAt, nil
-}
-
-// ResetCreatedAt resets all changes to the "created_at" field.
-func (m *ImageBlobMutation) ResetCreatedAt() {
-	m.created_at = nil
-}
-
-// SetUpdatedAt sets the "updated_at" field.
-func (m *ImageBlobMutation) SetUpdatedAt(t time.Time) {
-	m.updated_at = &t
-}
-
-// UpdatedAt returns the value of the "updated_at" field in the mutation.
-func (m *ImageBlobMutation) UpdatedAt() (r time.Time, exists bool) {
-	v := m.updated_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldUpdatedAt returns the old "updated_at" field's value of the ImageBlob entity.
-// If the ImageBlob object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ImageBlobMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
-	}
-	return oldValue.UpdatedAt, nil
-}
-
-// ResetUpdatedAt resets all changes to the "updated_at" field.
-func (m *ImageBlobMutation) ResetUpdatedAt() {
-	m.updated_at = nil
-}
-
-// SetKey sets the "key" field.
-func (m *ImageBlobMutation) SetKey(s string) {
-	m.key = &s
-}
-
-// Key returns the value of the "key" field in the mutation.
-func (m *ImageBlobMutation) Key() (r string, exists bool) {
-	v := m.key
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldKey returns the old "key" field's value of the ImageBlob entity.
-// If the ImageBlob object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ImageBlobMutation) OldKey(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldKey is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldKey requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldKey: %w", err)
-	}
-	return oldValue.Key, nil
-}
-
-// ResetKey resets all changes to the "key" field.
-func (m *ImageBlobMutation) ResetKey() {
-	m.key = nil
-}
-
-// SetData sets the "data" field.
-func (m *ImageBlobMutation) SetData(b []byte) {
-	m.data = &b
-}
-
-// Data returns the value of the "data" field in the mutation.
-func (m *ImageBlobMutation) Data() (r []byte, exists bool) {
-	v := m.data
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldData returns the old "data" field's value of the ImageBlob entity.
-// If the ImageBlob object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ImageBlobMutation) OldData(ctx context.Context) (v []byte, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldData is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldData requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldData: %w", err)
-	}
-	return oldValue.Data, nil
-}
-
-// ResetData resets all changes to the "data" field.
-func (m *ImageBlobMutation) ResetData() {
-	m.data = nil
-}
-
-// Where appends a list predicates to the ImageBlobMutation builder.
-func (m *ImageBlobMutation) Where(ps ...predicate.ImageBlob) {
-	m.predicates = append(m.predicates, ps...)
-}
-
-// WhereP appends storage-level predicates to the ImageBlobMutation builder. Using this method,
-// users can use type-assertion to append predicates that do not depend on any generated package.
-func (m *ImageBlobMutation) WhereP(ps ...func(*sql.Selector)) {
-	p := make([]predicate.ImageBlob, len(ps))
-	for i := range ps {
-		p[i] = ps[i]
-	}
-	m.Where(p...)
-}
-
-// Op returns the operation name.
-func (m *ImageBlobMutation) Op() Op {
-	return m.op
-}
-
-// SetOp allows setting the mutation operation.
-func (m *ImageBlobMutation) SetOp(op Op) {
-	m.op = op
-}
-
-// Type returns the node type of this mutation (ImageBlob).
-func (m *ImageBlobMutation) Type() string {
-	return m.typ
-}
-
-// Fields returns all fields that were changed during this mutation. Note that in
-// order to get all numeric fields that were incremented/decremented, call
-// AddedFields().
-func (m *ImageBlobMutation) Fields() []string {
-	fields := make([]string, 0, 4)
-	if m.created_at != nil {
-		fields = append(fields, imageblob.FieldCreatedAt)
-	}
-	if m.updated_at != nil {
-		fields = append(fields, imageblob.FieldUpdatedAt)
-	}
-	if m.key != nil {
-		fields = append(fields, imageblob.FieldKey)
-	}
-	if m.data != nil {
-		fields = append(fields, imageblob.FieldData)
-	}
-	return fields
-}
-
-// Field returns the value of a field with the given name. The second boolean
-// return value indicates that this field was not set, or was not defined in the
-// schema.
-func (m *ImageBlobMutation) Field(name string) (ent.Value, bool) {
-	switch name {
-	case imageblob.FieldCreatedAt:
-		return m.CreatedAt()
-	case imageblob.FieldUpdatedAt:
-		return m.UpdatedAt()
-	case imageblob.FieldKey:
-		return m.Key()
-	case imageblob.FieldData:
-		return m.Data()
-	}
-	return nil, false
-}
-
-// OldField returns the old value of the field from the database. An error is
-// returned if the mutation operation is not UpdateOne, or the query to the
-// database failed.
-func (m *ImageBlobMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
-	switch name {
-	case imageblob.FieldCreatedAt:
-		return m.OldCreatedAt(ctx)
-	case imageblob.FieldUpdatedAt:
-		return m.OldUpdatedAt(ctx)
-	case imageblob.FieldKey:
-		return m.OldKey(ctx)
-	case imageblob.FieldData:
-		return m.OldData(ctx)
-	}
-	return nil, fmt.Errorf("unknown ImageBlob field %s", name)
-}
-
-// SetField sets the value of a field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *ImageBlobMutation) SetField(name string, value ent.Value) error {
-	switch name {
-	case imageblob.FieldCreatedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetCreatedAt(v)
-		return nil
-	case imageblob.FieldUpdatedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetUpdatedAt(v)
-		return nil
-	case imageblob.FieldKey:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetKey(v)
-		return nil
-	case imageblob.FieldData:
-		v, ok := value.([]byte)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetData(v)
-		return nil
-	}
-	return fmt.Errorf("unknown ImageBlob field %s", name)
-}
-
-// AddedFields returns all numeric fields that were incremented/decremented during
-// this mutation.
-func (m *ImageBlobMutation) AddedFields() []string {
-	return nil
-}
-
-// AddedField returns the numeric value that was incremented/decremented on a field
-// with the given name. The second boolean return value indicates that this field
-// was not set, or was not defined in the schema.
-func (m *ImageBlobMutation) AddedField(name string) (ent.Value, bool) {
-	return nil, false
-}
-
-// AddField adds the value to the field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *ImageBlobMutation) AddField(name string, value ent.Value) error {
-	switch name {
-	}
-	return fmt.Errorf("unknown ImageBlob numeric field %s", name)
-}
-
-// ClearedFields returns all nullable fields that were cleared during this
-// mutation.
-func (m *ImageBlobMutation) ClearedFields() []string {
-	return nil
-}
-
-// FieldCleared returns a boolean indicating if a field with the given name was
-// cleared in this mutation.
-func (m *ImageBlobMutation) FieldCleared(name string) bool {
-	_, ok := m.clearedFields[name]
-	return ok
-}
-
-// ClearField clears the value of the field with the given name. It returns an
-// error if the field is not defined in the schema.
-func (m *ImageBlobMutation) ClearField(name string) error {
-	return fmt.Errorf("unknown ImageBlob nullable field %s", name)
-}
-
-// ResetField resets all changes in the mutation for the field with the given name.
-// It returns an error if the field is not defined in the schema.
-func (m *ImageBlobMutation) ResetField(name string) error {
-	switch name {
-	case imageblob.FieldCreatedAt:
-		m.ResetCreatedAt()
-		return nil
-	case imageblob.FieldUpdatedAt:
-		m.ResetUpdatedAt()
-		return nil
-	case imageblob.FieldKey:
-		m.ResetKey()
-		return nil
-	case imageblob.FieldData:
-		m.ResetData()
-		return nil
-	}
-	return fmt.Errorf("unknown ImageBlob field %s", name)
-}
-
-// AddedEdges returns all edge names that were set/added in this mutation.
-func (m *ImageBlobMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
-	return edges
-}
-
-// AddedIDs returns all IDs (to other nodes) that were added for the given edge
-// name in this mutation.
-func (m *ImageBlobMutation) AddedIDs(name string) []ent.Value {
-	return nil
-}
-
-// RemovedEdges returns all edge names that were removed in this mutation.
-func (m *ImageBlobMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
-	return edges
-}
-
-// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
-// the given name in this mutation.
-func (m *ImageBlobMutation) RemovedIDs(name string) []ent.Value {
-	return nil
-}
-
-// ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *ImageBlobMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
-	return edges
-}
-
-// EdgeCleared returns a boolean which indicates if the edge with the given name
-// was cleared in this mutation.
-func (m *ImageBlobMutation) EdgeCleared(name string) bool {
-	return false
-}
-
-// ClearEdge clears the value of the edge with the given name. It returns an error
-// if that edge is not defined in the schema.
-func (m *ImageBlobMutation) ClearEdge(name string) error {
-	return fmt.Errorf("unknown ImageBlob unique edge %s", name)
-}
-
-// ResetEdge resets all changes to the edge with the given name in this mutation.
-// It returns an error if the edge is not defined in the schema.
-func (m *ImageBlobMutation) ResetEdge(name string) error {
-	return fmt.Errorf("unknown ImageBlob edge %s", name)
 }
 
 // ItemMutation represents an operation that mutates the Item nodes in the graph.
@@ -17363,45 +16470,42 @@ func (m *LibrarySourceMutation) ResetEdge(name string) error {
 // MediaStreamMutation represents an operation that mutates the MediaStream nodes in the graph.
 type MediaStreamMutation struct {
 	config
-	op                  Op
-	typ                 string
-	id                  *uuid.UUID
-	created_at          *time.Time
-	updated_at          *time.Time
-	kind                *mediastream.Kind
-	video_range_type    *mediastream.VideoRangeType
-	index               *int32
-	addindex            *int32
-	codec               *string
-	profile             *string
-	language            *string
-	title               *string
-	_path               *string
-	pixel_format        *string
-	bit_rate            *int32
-	addbit_rate         *int32
-	channels            *int32
-	addchannels         *int32
-	sample_rate         *int32
-	addsample_rate      *int32
-	width               *int32
-	addwidth            *int32
-	height              *int32
-	addheight           *int32
-	level               *float64
-	addlevel            *float64
-	is_default          *bool
-	is_forced           *bool
-	is_external         *bool
-	is_interlaced       *bool
-	is_anamorphic       *bool
-	is_hearing_impaired *bool
-	clearedFields       map[string]struct{}
-	source              *uuid.UUID
-	clearedsource       bool
-	done                bool
-	oldValue            func(context.Context) (*MediaStream, error)
-	predicates          []predicate.MediaStream
+	op               Op
+	typ              string
+	id               *uuid.UUID
+	created_at       *time.Time
+	updated_at       *time.Time
+	kind             *mediastream.Kind
+	video_range_type *mediastream.VideoRangeType
+	index            *int32
+	addindex         *int32
+	codec            *string
+	profile          *string
+	language         *string
+	title            *string
+	pixel_format     *string
+	bit_rate         *int32
+	addbit_rate      *int32
+	channels         *int32
+	addchannels      *int32
+	sample_rate      *int32
+	addsample_rate   *int32
+	width            *int32
+	addwidth         *int32
+	height           *int32
+	addheight        *int32
+	level            *float64
+	addlevel         *float64
+	is_default       *bool
+	is_forced        *bool
+	is_interlaced    *bool
+	is_anamorphic    *bool
+	clearedFields    map[string]struct{}
+	source           *uuid.UUID
+	clearedsource    bool
+	done             bool
+	oldValue         func(context.Context) (*MediaStream, error)
+	predicates       []predicate.MediaStream
 }
 
 var _ ent.Mutation = (*MediaStreamMutation)(nil)
@@ -17953,55 +17057,6 @@ func (m *MediaStreamMutation) ResetTitle() {
 	delete(m.clearedFields, mediastream.FieldTitle)
 }
 
-// SetPath sets the "path" field.
-func (m *MediaStreamMutation) SetPath(s string) {
-	m._path = &s
-}
-
-// Path returns the value of the "path" field in the mutation.
-func (m *MediaStreamMutation) Path() (r string, exists bool) {
-	v := m._path
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldPath returns the old "path" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldPath(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPath is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPath requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPath: %w", err)
-	}
-	return oldValue.Path, nil
-}
-
-// ClearPath clears the value of the "path" field.
-func (m *MediaStreamMutation) ClearPath() {
-	m._path = nil
-	m.clearedFields[mediastream.FieldPath] = struct{}{}
-}
-
-// PathCleared returns if the "path" field was cleared in this mutation.
-func (m *MediaStreamMutation) PathCleared() bool {
-	_, ok := m.clearedFields[mediastream.FieldPath]
-	return ok
-}
-
-// ResetPath resets all changes to the "path" field.
-func (m *MediaStreamMutation) ResetPath() {
-	m._path = nil
-	delete(m.clearedFields, mediastream.FieldPath)
-}
-
 // SetPixelFormat sets the "pixel_format" field.
 func (m *MediaStreamMutation) SetPixelFormat(s string) {
 	m.pixel_format = &s
@@ -18543,42 +17598,6 @@ func (m *MediaStreamMutation) ResetIsForced() {
 	m.is_forced = nil
 }
 
-// SetIsExternal sets the "is_external" field.
-func (m *MediaStreamMutation) SetIsExternal(b bool) {
-	m.is_external = &b
-}
-
-// IsExternal returns the value of the "is_external" field in the mutation.
-func (m *MediaStreamMutation) IsExternal() (r bool, exists bool) {
-	v := m.is_external
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldIsExternal returns the old "is_external" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldIsExternal(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldIsExternal is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldIsExternal requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldIsExternal: %w", err)
-	}
-	return oldValue.IsExternal, nil
-}
-
-// ResetIsExternal resets all changes to the "is_external" field.
-func (m *MediaStreamMutation) ResetIsExternal() {
-	m.is_external = nil
-}
-
 // SetIsInterlaced sets the "is_interlaced" field.
 func (m *MediaStreamMutation) SetIsInterlaced(b bool) {
 	m.is_interlaced = &b
@@ -18649,42 +17668,6 @@ func (m *MediaStreamMutation) OldIsAnamorphic(ctx context.Context) (v bool, err 
 // ResetIsAnamorphic resets all changes to the "is_anamorphic" field.
 func (m *MediaStreamMutation) ResetIsAnamorphic() {
 	m.is_anamorphic = nil
-}
-
-// SetIsHearingImpaired sets the "is_hearing_impaired" field.
-func (m *MediaStreamMutation) SetIsHearingImpaired(b bool) {
-	m.is_hearing_impaired = &b
-}
-
-// IsHearingImpaired returns the value of the "is_hearing_impaired" field in the mutation.
-func (m *MediaStreamMutation) IsHearingImpaired() (r bool, exists bool) {
-	v := m.is_hearing_impaired
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldIsHearingImpaired returns the old "is_hearing_impaired" field's value of the MediaStream entity.
-// If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldIsHearingImpaired(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldIsHearingImpaired is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldIsHearingImpaired requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldIsHearingImpaired: %w", err)
-	}
-	return oldValue.IsHearingImpaired, nil
-}
-
-// ResetIsHearingImpaired resets all changes to the "is_hearing_impaired" field.
-func (m *MediaStreamMutation) ResetIsHearingImpaired() {
-	m.is_hearing_impaired = nil
 }
 
 // SetSourceID sets the "source" edge to the ItemSource entity by id.
@@ -18761,7 +17744,7 @@ func (m *MediaStreamMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *MediaStreamMutation) Fields() []string {
-	fields := make([]string, 0, 24)
+	fields := make([]string, 0, 21)
 	if m.created_at != nil {
 		fields = append(fields, mediastream.FieldCreatedAt)
 	}
@@ -18792,9 +17775,6 @@ func (m *MediaStreamMutation) Fields() []string {
 	if m.title != nil {
 		fields = append(fields, mediastream.FieldTitle)
 	}
-	if m._path != nil {
-		fields = append(fields, mediastream.FieldPath)
-	}
 	if m.pixel_format != nil {
 		fields = append(fields, mediastream.FieldPixelFormat)
 	}
@@ -18822,17 +17802,11 @@ func (m *MediaStreamMutation) Fields() []string {
 	if m.is_forced != nil {
 		fields = append(fields, mediastream.FieldIsForced)
 	}
-	if m.is_external != nil {
-		fields = append(fields, mediastream.FieldIsExternal)
-	}
 	if m.is_interlaced != nil {
 		fields = append(fields, mediastream.FieldIsInterlaced)
 	}
 	if m.is_anamorphic != nil {
 		fields = append(fields, mediastream.FieldIsAnamorphic)
-	}
-	if m.is_hearing_impaired != nil {
-		fields = append(fields, mediastream.FieldIsHearingImpaired)
 	}
 	return fields
 }
@@ -18862,8 +17836,6 @@ func (m *MediaStreamMutation) Field(name string) (ent.Value, bool) {
 		return m.Language()
 	case mediastream.FieldTitle:
 		return m.Title()
-	case mediastream.FieldPath:
-		return m.Path()
 	case mediastream.FieldPixelFormat:
 		return m.PixelFormat()
 	case mediastream.FieldBitRate:
@@ -18882,14 +17854,10 @@ func (m *MediaStreamMutation) Field(name string) (ent.Value, bool) {
 		return m.IsDefault()
 	case mediastream.FieldIsForced:
 		return m.IsForced()
-	case mediastream.FieldIsExternal:
-		return m.IsExternal()
 	case mediastream.FieldIsInterlaced:
 		return m.IsInterlaced()
 	case mediastream.FieldIsAnamorphic:
 		return m.IsAnamorphic()
-	case mediastream.FieldIsHearingImpaired:
-		return m.IsHearingImpaired()
 	}
 	return nil, false
 }
@@ -18919,8 +17887,6 @@ func (m *MediaStreamMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldLanguage(ctx)
 	case mediastream.FieldTitle:
 		return m.OldTitle(ctx)
-	case mediastream.FieldPath:
-		return m.OldPath(ctx)
 	case mediastream.FieldPixelFormat:
 		return m.OldPixelFormat(ctx)
 	case mediastream.FieldBitRate:
@@ -18939,14 +17905,10 @@ func (m *MediaStreamMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldIsDefault(ctx)
 	case mediastream.FieldIsForced:
 		return m.OldIsForced(ctx)
-	case mediastream.FieldIsExternal:
-		return m.OldIsExternal(ctx)
 	case mediastream.FieldIsInterlaced:
 		return m.OldIsInterlaced(ctx)
 	case mediastream.FieldIsAnamorphic:
 		return m.OldIsAnamorphic(ctx)
-	case mediastream.FieldIsHearingImpaired:
-		return m.OldIsHearingImpaired(ctx)
 	}
 	return nil, fmt.Errorf("unknown MediaStream field %s", name)
 }
@@ -19026,13 +17988,6 @@ func (m *MediaStreamMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetTitle(v)
 		return nil
-	case mediastream.FieldPath:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetPath(v)
-		return nil
 	case mediastream.FieldPixelFormat:
 		v, ok := value.(string)
 		if !ok {
@@ -19096,13 +18051,6 @@ func (m *MediaStreamMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetIsForced(v)
 		return nil
-	case mediastream.FieldIsExternal:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetIsExternal(v)
-		return nil
 	case mediastream.FieldIsInterlaced:
 		v, ok := value.(bool)
 		if !ok {
@@ -19116,13 +18064,6 @@ func (m *MediaStreamMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetIsAnamorphic(v)
-		return nil
-	case mediastream.FieldIsHearingImpaired:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetIsHearingImpaired(v)
 		return nil
 	}
 	return fmt.Errorf("unknown MediaStream field %s", name)
@@ -19256,9 +18197,6 @@ func (m *MediaStreamMutation) ClearedFields() []string {
 	if m.FieldCleared(mediastream.FieldTitle) {
 		fields = append(fields, mediastream.FieldTitle)
 	}
-	if m.FieldCleared(mediastream.FieldPath) {
-		fields = append(fields, mediastream.FieldPath)
-	}
 	if m.FieldCleared(mediastream.FieldPixelFormat) {
 		fields = append(fields, mediastream.FieldPixelFormat)
 	}
@@ -19308,9 +18246,6 @@ func (m *MediaStreamMutation) ClearField(name string) error {
 		return nil
 	case mediastream.FieldTitle:
 		m.ClearTitle()
-		return nil
-	case mediastream.FieldPath:
-		m.ClearPath()
 		return nil
 	case mediastream.FieldPixelFormat:
 		m.ClearPixelFormat()
@@ -19371,9 +18306,6 @@ func (m *MediaStreamMutation) ResetField(name string) error {
 	case mediastream.FieldTitle:
 		m.ResetTitle()
 		return nil
-	case mediastream.FieldPath:
-		m.ResetPath()
-		return nil
 	case mediastream.FieldPixelFormat:
 		m.ResetPixelFormat()
 		return nil
@@ -19401,17 +18333,11 @@ func (m *MediaStreamMutation) ResetField(name string) error {
 	case mediastream.FieldIsForced:
 		m.ResetIsForced()
 		return nil
-	case mediastream.FieldIsExternal:
-		m.ResetIsExternal()
-		return nil
 	case mediastream.FieldIsInterlaced:
 		m.ResetIsInterlaced()
 		return nil
 	case mediastream.FieldIsAnamorphic:
 		m.ResetIsAnamorphic()
-		return nil
-	case mediastream.FieldIsHearingImpaired:
-		m.ResetIsHearingImpaired()
 		return nil
 	}
 	return fmt.Errorf("unknown MediaStream field %s", name)

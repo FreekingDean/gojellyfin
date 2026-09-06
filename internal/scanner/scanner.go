@@ -11,7 +11,6 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
-	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
@@ -20,29 +19,26 @@ import (
 )
 
 type Scanner struct {
-	items      *items.Service
-	libraries  *libraries.Service
-	sources    *sources.Service
-	filesystem *filesystem.Service
-	ffmpeg     *ffmpeg.FFMpeg
-	activity   *activity.Service
+	items     *items.Service
+	libraries *libraries.Service
+	sources   *sources.Service
+	ffmpeg    *ffmpeg.FFMpeg
+	activity  *activity.Service
 }
 
 func New(
 	items *items.Service,
 	libraries *libraries.Service,
 	sources *sources.Service,
-	filesystem *filesystem.Service,
 	ffmpeg *ffmpeg.FFMpeg,
 	activity *activity.Service,
 ) *Scanner {
 	return &Scanner{
-		items:      items,
-		libraries:  libraries,
-		sources:    sources,
-		filesystem: filesystem,
-		ffmpeg:     ffmpeg,
-		activity:   activity,
+		items:     items,
+		libraries: libraries,
+		sources:   sources,
+		ffmpeg:    ffmpeg,
+		activity:  activity,
 	}
 }
 
@@ -128,7 +124,7 @@ func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) (
 		}
 
 		for _, title := range titles {
-			if err := s.saveTitle(ctx, library, binding.Source.ID, nil, "", title, title.Tagged, found); err != nil {
+			if err := s.saveTitle(ctx, binding.Source.ID, nil, "", title, title.Tagged, found); err != nil {
 				return nil, err
 			}
 		}
@@ -177,7 +173,6 @@ func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) (
 
 func (s *Scanner) saveTitle(
 	ctx context.Context,
-	library *libraries.Library,
 	source uuid.UUID,
 	parent *uuid.UUID,
 	slug string,
@@ -227,43 +222,24 @@ func (s *Scanner) saveTitle(
 	found.title(source, item, tagged)
 
 	for _, file := range title.Files {
-		if err := s.saveFile(ctx, source, item, file, found); err != nil {
+		jobs.Heartbeat(ctx, file.Path)
+		found.file(source, file.Path)
+
+		if _, err := s.items.SaveSource(ctx, items.MediaSource{
+			SourceID:     source,
+			ItemID:       item.ID,
+			Path:         file.Path,
+			Name:         filepath.Base(file.Path),
+			DateModified: file.DateModified,
+		}); err != nil {
 			return err
 		}
 	}
 
 	for _, child := range title.Children {
-		if err := s.saveTitle(ctx, library, source, &item.ID, slug, child, tagged, found); err != nil {
+		if err := s.saveTitle(ctx, source, &item.ID, slug, child, tagged, found); err != nil {
 			return err
 		}
-	}
-
-	return nil
-}
-
-func (s *Scanner) saveFile(
-	ctx context.Context,
-	sourceID uuid.UUID,
-	item *items.Item,
-	file sources.File,
-	found *seen,
-) error {
-	jobs.Heartbeat(ctx, file.Path)
-	found.file(sourceID, file.Path)
-
-	source, err := s.items.SaveSource(ctx, items.MediaSource{
-		SourceID:     sourceID,
-		ItemID:       item.ID,
-		Path:         file.Path,
-		Name:         filepath.Base(file.Path),
-		DateModified: file.DateModified,
-	})
-	if err != nil {
-		return err
-	}
-
-	if err := s.scanSubtitles(ctx, item.ID, source); err != nil {
-		log.Printf("subtitles %s: %v", file.Path, err)
 	}
 
 	return nil

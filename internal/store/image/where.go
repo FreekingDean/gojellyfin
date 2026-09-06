@@ -76,34 +76,14 @@ func Index(v int32) predicate.Image {
 	return predicate.Image(sql.FieldEQ(FieldIndex, v))
 }
 
-// Path applies equality check predicate on the "path" field. It's identical to PathEQ.
-func Path(v string) predicate.Image {
-	return predicate.Image(sql.FieldEQ(FieldPath, v))
+// URL applies equality check predicate on the "url" field. It's identical to URLEQ.
+func URL(v string) predicate.Image {
+	return predicate.Image(sql.FieldEQ(FieldURL, v))
 }
 
 // Tag applies equality check predicate on the "tag" field. It's identical to TagEQ.
 func Tag(v string) predicate.Image {
 	return predicate.Image(sql.FieldEQ(FieldTag, v))
-}
-
-// BlurHash applies equality check predicate on the "blur_hash" field. It's identical to BlurHashEQ.
-func BlurHash(v string) predicate.Image {
-	return predicate.Image(sql.FieldEQ(FieldBlurHash, v))
-}
-
-// Width applies equality check predicate on the "width" field. It's identical to WidthEQ.
-func Width(v int32) predicate.Image {
-	return predicate.Image(sql.FieldEQ(FieldWidth, v))
-}
-
-// Height applies equality check predicate on the "height" field. It's identical to HeightEQ.
-func Height(v int32) predicate.Image {
-	return predicate.Image(sql.FieldEQ(FieldHeight, v))
-}
-
-// Size applies equality check predicate on the "size" field. It's identical to SizeEQ.
-func Size(v int64) predicate.Image {
-	return predicate.Image(sql.FieldEQ(FieldSize, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -266,69 +246,69 @@ func IndexLTE(v int32) predicate.Image {
 	return predicate.Image(sql.FieldLTE(FieldIndex, v))
 }
 
-// PathEQ applies the EQ predicate on the "path" field.
-func PathEQ(v string) predicate.Image {
-	return predicate.Image(sql.FieldEQ(FieldPath, v))
+// URLEQ applies the EQ predicate on the "url" field.
+func URLEQ(v string) predicate.Image {
+	return predicate.Image(sql.FieldEQ(FieldURL, v))
 }
 
-// PathNEQ applies the NEQ predicate on the "path" field.
-func PathNEQ(v string) predicate.Image {
-	return predicate.Image(sql.FieldNEQ(FieldPath, v))
+// URLNEQ applies the NEQ predicate on the "url" field.
+func URLNEQ(v string) predicate.Image {
+	return predicate.Image(sql.FieldNEQ(FieldURL, v))
 }
 
-// PathIn applies the In predicate on the "path" field.
-func PathIn(vs ...string) predicate.Image {
-	return predicate.Image(sql.FieldIn(FieldPath, vs...))
+// URLIn applies the In predicate on the "url" field.
+func URLIn(vs ...string) predicate.Image {
+	return predicate.Image(sql.FieldIn(FieldURL, vs...))
 }
 
-// PathNotIn applies the NotIn predicate on the "path" field.
-func PathNotIn(vs ...string) predicate.Image {
-	return predicate.Image(sql.FieldNotIn(FieldPath, vs...))
+// URLNotIn applies the NotIn predicate on the "url" field.
+func URLNotIn(vs ...string) predicate.Image {
+	return predicate.Image(sql.FieldNotIn(FieldURL, vs...))
 }
 
-// PathGT applies the GT predicate on the "path" field.
-func PathGT(v string) predicate.Image {
-	return predicate.Image(sql.FieldGT(FieldPath, v))
+// URLGT applies the GT predicate on the "url" field.
+func URLGT(v string) predicate.Image {
+	return predicate.Image(sql.FieldGT(FieldURL, v))
 }
 
-// PathGTE applies the GTE predicate on the "path" field.
-func PathGTE(v string) predicate.Image {
-	return predicate.Image(sql.FieldGTE(FieldPath, v))
+// URLGTE applies the GTE predicate on the "url" field.
+func URLGTE(v string) predicate.Image {
+	return predicate.Image(sql.FieldGTE(FieldURL, v))
 }
 
-// PathLT applies the LT predicate on the "path" field.
-func PathLT(v string) predicate.Image {
-	return predicate.Image(sql.FieldLT(FieldPath, v))
+// URLLT applies the LT predicate on the "url" field.
+func URLLT(v string) predicate.Image {
+	return predicate.Image(sql.FieldLT(FieldURL, v))
 }
 
-// PathLTE applies the LTE predicate on the "path" field.
-func PathLTE(v string) predicate.Image {
-	return predicate.Image(sql.FieldLTE(FieldPath, v))
+// URLLTE applies the LTE predicate on the "url" field.
+func URLLTE(v string) predicate.Image {
+	return predicate.Image(sql.FieldLTE(FieldURL, v))
 }
 
-// PathContains applies the Contains predicate on the "path" field.
-func PathContains(v string) predicate.Image {
-	return predicate.Image(sql.FieldContains(FieldPath, v))
+// URLContains applies the Contains predicate on the "url" field.
+func URLContains(v string) predicate.Image {
+	return predicate.Image(sql.FieldContains(FieldURL, v))
 }
 
-// PathHasPrefix applies the HasPrefix predicate on the "path" field.
-func PathHasPrefix(v string) predicate.Image {
-	return predicate.Image(sql.FieldHasPrefix(FieldPath, v))
+// URLHasPrefix applies the HasPrefix predicate on the "url" field.
+func URLHasPrefix(v string) predicate.Image {
+	return predicate.Image(sql.FieldHasPrefix(FieldURL, v))
 }
 
-// PathHasSuffix applies the HasSuffix predicate on the "path" field.
-func PathHasSuffix(v string) predicate.Image {
-	return predicate.Image(sql.FieldHasSuffix(FieldPath, v))
+// URLHasSuffix applies the HasSuffix predicate on the "url" field.
+func URLHasSuffix(v string) predicate.Image {
+	return predicate.Image(sql.FieldHasSuffix(FieldURL, v))
 }
 
-// PathEqualFold applies the EqualFold predicate on the "path" field.
-func PathEqualFold(v string) predicate.Image {
-	return predicate.Image(sql.FieldEqualFold(FieldPath, v))
+// URLEqualFold applies the EqualFold predicate on the "url" field.
+func URLEqualFold(v string) predicate.Image {
+	return predicate.Image(sql.FieldEqualFold(FieldURL, v))
 }
 
-// PathContainsFold applies the ContainsFold predicate on the "path" field.
-func PathContainsFold(v string) predicate.Image {
-	return predicate.Image(sql.FieldContainsFold(FieldPath, v))
+// URLContainsFold applies the ContainsFold predicate on the "url" field.
+func URLContainsFold(v string) predicate.Image {
+	return predicate.Image(sql.FieldContainsFold(FieldURL, v))
 }
 
 // TagEQ applies the EQ predicate on the "tag" field.
@@ -394,231 +374,6 @@ func TagEqualFold(v string) predicate.Image {
 // TagContainsFold applies the ContainsFold predicate on the "tag" field.
 func TagContainsFold(v string) predicate.Image {
 	return predicate.Image(sql.FieldContainsFold(FieldTag, v))
-}
-
-// BlurHashEQ applies the EQ predicate on the "blur_hash" field.
-func BlurHashEQ(v string) predicate.Image {
-	return predicate.Image(sql.FieldEQ(FieldBlurHash, v))
-}
-
-// BlurHashNEQ applies the NEQ predicate on the "blur_hash" field.
-func BlurHashNEQ(v string) predicate.Image {
-	return predicate.Image(sql.FieldNEQ(FieldBlurHash, v))
-}
-
-// BlurHashIn applies the In predicate on the "blur_hash" field.
-func BlurHashIn(vs ...string) predicate.Image {
-	return predicate.Image(sql.FieldIn(FieldBlurHash, vs...))
-}
-
-// BlurHashNotIn applies the NotIn predicate on the "blur_hash" field.
-func BlurHashNotIn(vs ...string) predicate.Image {
-	return predicate.Image(sql.FieldNotIn(FieldBlurHash, vs...))
-}
-
-// BlurHashGT applies the GT predicate on the "blur_hash" field.
-func BlurHashGT(v string) predicate.Image {
-	return predicate.Image(sql.FieldGT(FieldBlurHash, v))
-}
-
-// BlurHashGTE applies the GTE predicate on the "blur_hash" field.
-func BlurHashGTE(v string) predicate.Image {
-	return predicate.Image(sql.FieldGTE(FieldBlurHash, v))
-}
-
-// BlurHashLT applies the LT predicate on the "blur_hash" field.
-func BlurHashLT(v string) predicate.Image {
-	return predicate.Image(sql.FieldLT(FieldBlurHash, v))
-}
-
-// BlurHashLTE applies the LTE predicate on the "blur_hash" field.
-func BlurHashLTE(v string) predicate.Image {
-	return predicate.Image(sql.FieldLTE(FieldBlurHash, v))
-}
-
-// BlurHashContains applies the Contains predicate on the "blur_hash" field.
-func BlurHashContains(v string) predicate.Image {
-	return predicate.Image(sql.FieldContains(FieldBlurHash, v))
-}
-
-// BlurHashHasPrefix applies the HasPrefix predicate on the "blur_hash" field.
-func BlurHashHasPrefix(v string) predicate.Image {
-	return predicate.Image(sql.FieldHasPrefix(FieldBlurHash, v))
-}
-
-// BlurHashHasSuffix applies the HasSuffix predicate on the "blur_hash" field.
-func BlurHashHasSuffix(v string) predicate.Image {
-	return predicate.Image(sql.FieldHasSuffix(FieldBlurHash, v))
-}
-
-// BlurHashIsNil applies the IsNil predicate on the "blur_hash" field.
-func BlurHashIsNil() predicate.Image {
-	return predicate.Image(sql.FieldIsNull(FieldBlurHash))
-}
-
-// BlurHashNotNil applies the NotNil predicate on the "blur_hash" field.
-func BlurHashNotNil() predicate.Image {
-	return predicate.Image(sql.FieldNotNull(FieldBlurHash))
-}
-
-// BlurHashEqualFold applies the EqualFold predicate on the "blur_hash" field.
-func BlurHashEqualFold(v string) predicate.Image {
-	return predicate.Image(sql.FieldEqualFold(FieldBlurHash, v))
-}
-
-// BlurHashContainsFold applies the ContainsFold predicate on the "blur_hash" field.
-func BlurHashContainsFold(v string) predicate.Image {
-	return predicate.Image(sql.FieldContainsFold(FieldBlurHash, v))
-}
-
-// WidthEQ applies the EQ predicate on the "width" field.
-func WidthEQ(v int32) predicate.Image {
-	return predicate.Image(sql.FieldEQ(FieldWidth, v))
-}
-
-// WidthNEQ applies the NEQ predicate on the "width" field.
-func WidthNEQ(v int32) predicate.Image {
-	return predicate.Image(sql.FieldNEQ(FieldWidth, v))
-}
-
-// WidthIn applies the In predicate on the "width" field.
-func WidthIn(vs ...int32) predicate.Image {
-	return predicate.Image(sql.FieldIn(FieldWidth, vs...))
-}
-
-// WidthNotIn applies the NotIn predicate on the "width" field.
-func WidthNotIn(vs ...int32) predicate.Image {
-	return predicate.Image(sql.FieldNotIn(FieldWidth, vs...))
-}
-
-// WidthGT applies the GT predicate on the "width" field.
-func WidthGT(v int32) predicate.Image {
-	return predicate.Image(sql.FieldGT(FieldWidth, v))
-}
-
-// WidthGTE applies the GTE predicate on the "width" field.
-func WidthGTE(v int32) predicate.Image {
-	return predicate.Image(sql.FieldGTE(FieldWidth, v))
-}
-
-// WidthLT applies the LT predicate on the "width" field.
-func WidthLT(v int32) predicate.Image {
-	return predicate.Image(sql.FieldLT(FieldWidth, v))
-}
-
-// WidthLTE applies the LTE predicate on the "width" field.
-func WidthLTE(v int32) predicate.Image {
-	return predicate.Image(sql.FieldLTE(FieldWidth, v))
-}
-
-// WidthIsNil applies the IsNil predicate on the "width" field.
-func WidthIsNil() predicate.Image {
-	return predicate.Image(sql.FieldIsNull(FieldWidth))
-}
-
-// WidthNotNil applies the NotNil predicate on the "width" field.
-func WidthNotNil() predicate.Image {
-	return predicate.Image(sql.FieldNotNull(FieldWidth))
-}
-
-// HeightEQ applies the EQ predicate on the "height" field.
-func HeightEQ(v int32) predicate.Image {
-	return predicate.Image(sql.FieldEQ(FieldHeight, v))
-}
-
-// HeightNEQ applies the NEQ predicate on the "height" field.
-func HeightNEQ(v int32) predicate.Image {
-	return predicate.Image(sql.FieldNEQ(FieldHeight, v))
-}
-
-// HeightIn applies the In predicate on the "height" field.
-func HeightIn(vs ...int32) predicate.Image {
-	return predicate.Image(sql.FieldIn(FieldHeight, vs...))
-}
-
-// HeightNotIn applies the NotIn predicate on the "height" field.
-func HeightNotIn(vs ...int32) predicate.Image {
-	return predicate.Image(sql.FieldNotIn(FieldHeight, vs...))
-}
-
-// HeightGT applies the GT predicate on the "height" field.
-func HeightGT(v int32) predicate.Image {
-	return predicate.Image(sql.FieldGT(FieldHeight, v))
-}
-
-// HeightGTE applies the GTE predicate on the "height" field.
-func HeightGTE(v int32) predicate.Image {
-	return predicate.Image(sql.FieldGTE(FieldHeight, v))
-}
-
-// HeightLT applies the LT predicate on the "height" field.
-func HeightLT(v int32) predicate.Image {
-	return predicate.Image(sql.FieldLT(FieldHeight, v))
-}
-
-// HeightLTE applies the LTE predicate on the "height" field.
-func HeightLTE(v int32) predicate.Image {
-	return predicate.Image(sql.FieldLTE(FieldHeight, v))
-}
-
-// HeightIsNil applies the IsNil predicate on the "height" field.
-func HeightIsNil() predicate.Image {
-	return predicate.Image(sql.FieldIsNull(FieldHeight))
-}
-
-// HeightNotNil applies the NotNil predicate on the "height" field.
-func HeightNotNil() predicate.Image {
-	return predicate.Image(sql.FieldNotNull(FieldHeight))
-}
-
-// SizeEQ applies the EQ predicate on the "size" field.
-func SizeEQ(v int64) predicate.Image {
-	return predicate.Image(sql.FieldEQ(FieldSize, v))
-}
-
-// SizeNEQ applies the NEQ predicate on the "size" field.
-func SizeNEQ(v int64) predicate.Image {
-	return predicate.Image(sql.FieldNEQ(FieldSize, v))
-}
-
-// SizeIn applies the In predicate on the "size" field.
-func SizeIn(vs ...int64) predicate.Image {
-	return predicate.Image(sql.FieldIn(FieldSize, vs...))
-}
-
-// SizeNotIn applies the NotIn predicate on the "size" field.
-func SizeNotIn(vs ...int64) predicate.Image {
-	return predicate.Image(sql.FieldNotIn(FieldSize, vs...))
-}
-
-// SizeGT applies the GT predicate on the "size" field.
-func SizeGT(v int64) predicate.Image {
-	return predicate.Image(sql.FieldGT(FieldSize, v))
-}
-
-// SizeGTE applies the GTE predicate on the "size" field.
-func SizeGTE(v int64) predicate.Image {
-	return predicate.Image(sql.FieldGTE(FieldSize, v))
-}
-
-// SizeLT applies the LT predicate on the "size" field.
-func SizeLT(v int64) predicate.Image {
-	return predicate.Image(sql.FieldLT(FieldSize, v))
-}
-
-// SizeLTE applies the LTE predicate on the "size" field.
-func SizeLTE(v int64) predicate.Image {
-	return predicate.Image(sql.FieldLTE(FieldSize, v))
-}
-
-// SizeIsNil applies the IsNil predicate on the "size" field.
-func SizeIsNil() predicate.Image {
-	return predicate.Image(sql.FieldIsNull(FieldSize))
-}
-
-// SizeNotNil applies the NotNil predicate on the "size" field.
-func SizeNotNil() predicate.Image {
-	return predicate.Image(sql.FieldNotNull(FieldSize))
 }
 
 // HasItem applies the HasEdge predicate on the "item" edge.

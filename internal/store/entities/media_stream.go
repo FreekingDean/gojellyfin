@@ -29,7 +29,6 @@ func (MediaStream) Fields() []ent.Field {
 		field.String("profile").Optional(),
 		field.String("language").Optional(),
 		field.String("title").Optional(),
-		field.String("path").Optional(),
 		field.String("pixel_format").Optional(),
 
 		field.Int32("bit_rate").Optional(),
@@ -41,10 +40,8 @@ func (MediaStream) Fields() []ent.Field {
 
 		field.Bool("is_default").Default(false),
 		field.Bool("is_forced").Default(false),
-		field.Bool("is_external").Default(false),
 		field.Bool("is_interlaced").Default(false),
 		field.Bool("is_anamorphic").Default(false),
-		field.Bool("is_hearing_impaired").Default(false),
 	)
 }
 

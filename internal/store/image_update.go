@@ -99,16 +99,16 @@ func (_u *ImageUpdate) AddIndex(v int32) *ImageUpdate {
 	return _u
 }
 
-// SetPath sets the "path" field.
-func (_u *ImageUpdate) SetPath(v string) *ImageUpdate {
-	_u.mutation.SetPath(v)
+// SetURL sets the "url" field.
+func (_u *ImageUpdate) SetURL(v string) *ImageUpdate {
+	_u.mutation.SetURL(v)
 	return _u
 }
 
-// SetNillablePath sets the "path" field if the given value is not nil.
-func (_u *ImageUpdate) SetNillablePath(v *string) *ImageUpdate {
+// SetNillableURL sets the "url" field if the given value is not nil.
+func (_u *ImageUpdate) SetNillableURL(v *string) *ImageUpdate {
 	if v != nil {
-		_u.SetPath(*v)
+		_u.SetURL(*v)
 	}
 	return _u
 }
@@ -124,107 +124,6 @@ func (_u *ImageUpdate) SetNillableTag(v *string) *ImageUpdate {
 	if v != nil {
 		_u.SetTag(*v)
 	}
-	return _u
-}
-
-// SetBlurHash sets the "blur_hash" field.
-func (_u *ImageUpdate) SetBlurHash(v string) *ImageUpdate {
-	_u.mutation.SetBlurHash(v)
-	return _u
-}
-
-// SetNillableBlurHash sets the "blur_hash" field if the given value is not nil.
-func (_u *ImageUpdate) SetNillableBlurHash(v *string) *ImageUpdate {
-	if v != nil {
-		_u.SetBlurHash(*v)
-	}
-	return _u
-}
-
-// ClearBlurHash clears the value of the "blur_hash" field.
-func (_u *ImageUpdate) ClearBlurHash() *ImageUpdate {
-	_u.mutation.ClearBlurHash()
-	return _u
-}
-
-// SetWidth sets the "width" field.
-func (_u *ImageUpdate) SetWidth(v int32) *ImageUpdate {
-	_u.mutation.ResetWidth()
-	_u.mutation.SetWidth(v)
-	return _u
-}
-
-// SetNillableWidth sets the "width" field if the given value is not nil.
-func (_u *ImageUpdate) SetNillableWidth(v *int32) *ImageUpdate {
-	if v != nil {
-		_u.SetWidth(*v)
-	}
-	return _u
-}
-
-// AddWidth adds value to the "width" field.
-func (_u *ImageUpdate) AddWidth(v int32) *ImageUpdate {
-	_u.mutation.AddWidth(v)
-	return _u
-}
-
-// ClearWidth clears the value of the "width" field.
-func (_u *ImageUpdate) ClearWidth() *ImageUpdate {
-	_u.mutation.ClearWidth()
-	return _u
-}
-
-// SetHeight sets the "height" field.
-func (_u *ImageUpdate) SetHeight(v int32) *ImageUpdate {
-	_u.mutation.ResetHeight()
-	_u.mutation.SetHeight(v)
-	return _u
-}
-
-// SetNillableHeight sets the "height" field if the given value is not nil.
-func (_u *ImageUpdate) SetNillableHeight(v *int32) *ImageUpdate {
-	if v != nil {
-		_u.SetHeight(*v)
-	}
-	return _u
-}
-
-// AddHeight adds value to the "height" field.
-func (_u *ImageUpdate) AddHeight(v int32) *ImageUpdate {
-	_u.mutation.AddHeight(v)
-	return _u
-}
-
-// ClearHeight clears the value of the "height" field.
-func (_u *ImageUpdate) ClearHeight() *ImageUpdate {
-	_u.mutation.ClearHeight()
-	return _u
-}
-
-// SetSize sets the "size" field.
-func (_u *ImageUpdate) SetSize(v int64) *ImageUpdate {
-	_u.mutation.ResetSize()
-	_u.mutation.SetSize(v)
-	return _u
-}
-
-// SetNillableSize sets the "size" field if the given value is not nil.
-func (_u *ImageUpdate) SetNillableSize(v *int64) *ImageUpdate {
-	if v != nil {
-		_u.SetSize(*v)
-	}
-	return _u
-}
-
-// AddSize adds value to the "size" field.
-func (_u *ImageUpdate) AddSize(v int64) *ImageUpdate {
-	_u.mutation.AddSize(v)
-	return _u
-}
-
-// ClearSize clears the value of the "size" field.
-func (_u *ImageUpdate) ClearSize() *ImageUpdate {
-	_u.mutation.ClearSize()
 	return _u
 }
 
@@ -320,44 +219,11 @@ func (_u *ImageUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.AddedIndex(); ok {
 		_spec.AddField(image.FieldIndex, field.TypeInt32, value)
 	}
-	if value, ok := _u.mutation.Path(); ok {
-		_spec.SetField(image.FieldPath, field.TypeString, value)
+	if value, ok := _u.mutation.URL(); ok {
+		_spec.SetField(image.FieldURL, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Tag(); ok {
 		_spec.SetField(image.FieldTag, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.BlurHash(); ok {
-		_spec.SetField(image.FieldBlurHash, field.TypeString, value)
-	}
-	if _u.mutation.BlurHashCleared() {
-		_spec.ClearField(image.FieldBlurHash, field.TypeString)
-	}
-	if value, ok := _u.mutation.Width(); ok {
-		_spec.SetField(image.FieldWidth, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedWidth(); ok {
-		_spec.AddField(image.FieldWidth, field.TypeInt32, value)
-	}
-	if _u.mutation.WidthCleared() {
-		_spec.ClearField(image.FieldWidth, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.Height(); ok {
-		_spec.SetField(image.FieldHeight, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedHeight(); ok {
-		_spec.AddField(image.FieldHeight, field.TypeInt32, value)
-	}
-	if _u.mutation.HeightCleared() {
-		_spec.ClearField(image.FieldHeight, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.Size(); ok {
-		_spec.SetField(image.FieldSize, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedSize(); ok {
-		_spec.AddField(image.FieldSize, field.TypeInt64, value)
-	}
-	if _u.mutation.SizeCleared() {
-		_spec.ClearField(image.FieldSize, field.TypeInt64)
 	}
 	if _u.mutation.ItemCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -477,16 +343,16 @@ func (_u *ImageUpdateOne) AddIndex(v int32) *ImageUpdateOne {
 	return _u
 }
 
-// SetPath sets the "path" field.
-func (_u *ImageUpdateOne) SetPath(v string) *ImageUpdateOne {
-	_u.mutation.SetPath(v)
+// SetURL sets the "url" field.
+func (_u *ImageUpdateOne) SetURL(v string) *ImageUpdateOne {
+	_u.mutation.SetURL(v)
 	return _u
 }
 
-// SetNillablePath sets the "path" field if the given value is not nil.
-func (_u *ImageUpdateOne) SetNillablePath(v *string) *ImageUpdateOne {
+// SetNillableURL sets the "url" field if the given value is not nil.
+func (_u *ImageUpdateOne) SetNillableURL(v *string) *ImageUpdateOne {
 	if v != nil {
-		_u.SetPath(*v)
+		_u.SetURL(*v)
 	}
 	return _u
 }
@@ -502,107 +368,6 @@ func (_u *ImageUpdateOne) SetNillableTag(v *string) *ImageUpdateOne {
 	if v != nil {
 		_u.SetTag(*v)
 	}
-	return _u
-}
-
-// SetBlurHash sets the "blur_hash" field.
-func (_u *ImageUpdateOne) SetBlurHash(v string) *ImageUpdateOne {
-	_u.mutation.SetBlurHash(v)
-	return _u
-}
-
-// SetNillableBlurHash sets the "blur_hash" field if the given value is not nil.
-func (_u *ImageUpdateOne) SetNillableBlurHash(v *string) *ImageUpdateOne {
-	if v != nil {
-		_u.SetBlurHash(*v)
-	}
-	return _u
-}
-
-// ClearBlurHash clears the value of the "blur_hash" field.
-func (_u *ImageUpdateOne) ClearBlurHash() *ImageUpdateOne {
-	_u.mutation.ClearBlurHash()
-	return _u
-}
-
-// SetWidth sets the "width" field.
-func (_u *ImageUpdateOne) SetWidth(v int32) *ImageUpdateOne {
-	_u.mutation.ResetWidth()
-	_u.mutation.SetWidth(v)
-	return _u
-}
-
-// SetNillableWidth sets the "width" field if the given value is not nil.
-func (_u *ImageUpdateOne) SetNillableWidth(v *int32) *ImageUpdateOne {
-	if v != nil {
-		_u.SetWidth(*v)
-	}
-	return _u
-}
-
-// AddWidth adds value to the "width" field.
-func (_u *ImageUpdateOne) AddWidth(v int32) *ImageUpdateOne {
-	_u.mutation.AddWidth(v)
-	return _u
-}
-
-// ClearWidth clears the value of the "width" field.
-func (_u *ImageUpdateOne) ClearWidth() *ImageUpdateOne {
-	_u.mutation.ClearWidth()
-	return _u
-}
-
-// SetHeight sets the "height" field.
-func (_u *ImageUpdateOne) SetHeight(v int32) *ImageUpdateOne {
-	_u.mutation.ResetHeight()
-	_u.mutation.SetHeight(v)
-	return _u
-}
-
-// SetNillableHeight sets the "height" field if the given value is not nil.
-func (_u *ImageUpdateOne) SetNillableHeight(v *int32) *ImageUpdateOne {
-	if v != nil {
-		_u.SetHeight(*v)
-	}
-	return _u
-}
-
-// AddHeight adds value to the "height" field.
-func (_u *ImageUpdateOne) AddHeight(v int32) *ImageUpdateOne {
-	_u.mutation.AddHeight(v)
-	return _u
-}
-
-// ClearHeight clears the value of the "height" field.
-func (_u *ImageUpdateOne) ClearHeight() *ImageUpdateOne {
-	_u.mutation.ClearHeight()
-	return _u
-}
-
-// SetSize sets the "size" field.
-func (_u *ImageUpdateOne) SetSize(v int64) *ImageUpdateOne {
-	_u.mutation.ResetSize()
-	_u.mutation.SetSize(v)
-	return _u
-}
-
-// SetNillableSize sets the "size" field if the given value is not nil.
-func (_u *ImageUpdateOne) SetNillableSize(v *int64) *ImageUpdateOne {
-	if v != nil {
-		_u.SetSize(*v)
-	}
-	return _u
-}
-
-// AddSize adds value to the "size" field.
-func (_u *ImageUpdateOne) AddSize(v int64) *ImageUpdateOne {
-	_u.mutation.AddSize(v)
-	return _u
-}
-
-// ClearSize clears the value of the "size" field.
-func (_u *ImageUpdateOne) ClearSize() *ImageUpdateOne {
-	_u.mutation.ClearSize()
 	return _u
 }
 
@@ -728,44 +493,11 @@ func (_u *ImageUpdateOne) sqlSave(ctx context.Context) (_node *Image, err error)
 	if value, ok := _u.mutation.AddedIndex(); ok {
 		_spec.AddField(image.FieldIndex, field.TypeInt32, value)
 	}
-	if value, ok := _u.mutation.Path(); ok {
-		_spec.SetField(image.FieldPath, field.TypeString, value)
+	if value, ok := _u.mutation.URL(); ok {
+		_spec.SetField(image.FieldURL, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Tag(); ok {
 		_spec.SetField(image.FieldTag, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.BlurHash(); ok {
-		_spec.SetField(image.FieldBlurHash, field.TypeString, value)
-	}
-	if _u.mutation.BlurHashCleared() {
-		_spec.ClearField(image.FieldBlurHash, field.TypeString)
-	}
-	if value, ok := _u.mutation.Width(); ok {
-		_spec.SetField(image.FieldWidth, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedWidth(); ok {
-		_spec.AddField(image.FieldWidth, field.TypeInt32, value)
-	}
-	if _u.mutation.WidthCleared() {
-		_spec.ClearField(image.FieldWidth, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.Height(); ok {
-		_spec.SetField(image.FieldHeight, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedHeight(); ok {
-		_spec.AddField(image.FieldHeight, field.TypeInt32, value)
-	}
-	if _u.mutation.HeightCleared() {
-		_spec.ClearField(image.FieldHeight, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.Size(); ok {
-		_spec.SetField(image.FieldSize, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedSize(); ok {
-		_spec.AddField(image.FieldSize, field.TypeInt64, value)
-	}
-	if _u.mutation.SizeCleared() {
-		_spec.ClearField(image.FieldSize, field.TypeInt64)
 	}
 	if _u.mutation.ItemCleared() {
 		edge := &sqlgraph.EdgeSpec{

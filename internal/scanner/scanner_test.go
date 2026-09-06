@@ -15,7 +15,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
-	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/sources"
@@ -83,7 +82,7 @@ func newFixture(t *testing.T, root string) *fixture {
 	service := items.New(client)
 
 	return &fixture{
-		scanner: New(service, libraries.New(client), sources.New(client, config), filesystem.New(config), ffmpeg.New(), activity.New(client)),
+		scanner: New(service, libraries.New(client), sources.New(client, config), ffmpeg.New(), activity.New(client)),
 		items:   service,
 		client:  client,
 		record:  record,

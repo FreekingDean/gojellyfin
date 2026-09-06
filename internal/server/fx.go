@@ -35,7 +35,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/session"
 	"github.com/FreekingDean/gojellyfin/internal/server/sources"
 	"github.com/FreekingDean/gojellyfin/internal/server/studios"
-	"github.com/FreekingDean/gojellyfin/internal/server/subtitle"
 	"github.com/FreekingDean/gojellyfin/internal/server/suggestions"
 	"github.com/FreekingDean/gojellyfin/internal/server/syncplay"
 	"github.com/FreekingDean/gojellyfin/internal/server/system"
@@ -80,7 +79,6 @@ var Module = fx.Module(
 	search.Module,
 	session.Module,
 	studios.Module,
-	subtitle.Module,
 	suggestions.Module,
 	syncplay.Module,
 	system.Module,

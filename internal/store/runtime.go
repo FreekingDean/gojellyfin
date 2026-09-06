@@ -14,7 +14,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 	"github.com/FreekingDean/gojellyfin/internal/store/genre"
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
-	"github.com/FreekingDean/gojellyfin/internal/store/imageblob"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
@@ -168,18 +167,6 @@ func init() {
 	imageDescIndex := imageFields[5].Descriptor()
 	// image.DefaultIndex holds the default value on creation for the index field.
 	image.DefaultIndex = imageDescIndex.Default.(int32)
-	imageblobFields := entities.ImageBlob{}.Fields()
-	_ = imageblobFields
-	// imageblobDescCreatedAt is the schema descriptor for created_at field.
-	imageblobDescCreatedAt := imageblobFields[1].Descriptor()
-	// imageblob.DefaultCreatedAt holds the default value on creation for the created_at field.
-	imageblob.DefaultCreatedAt = imageblobDescCreatedAt.Default.(func() time.Time)
-	// imageblobDescUpdatedAt is the schema descriptor for updated_at field.
-	imageblobDescUpdatedAt := imageblobFields[2].Descriptor()
-	// imageblob.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	imageblob.DefaultUpdatedAt = imageblobDescUpdatedAt.Default.(func() time.Time)
-	// imageblob.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	imageblob.UpdateDefaultUpdatedAt = imageblobDescUpdatedAt.UpdateDefault.(func() time.Time)
 	itemFields := entities.Item{}.Fields()
 	_ = itemFields
 	// itemDescCreatedAt is the schema descriptor for created_at field.
@@ -437,29 +424,21 @@ func init() {
 	// mediastream.DefaultIndex holds the default value on creation for the index field.
 	mediastream.DefaultIndex = mediastreamDescIndex.Default.(int32)
 	// mediastreamDescIsDefault is the schema descriptor for is_default field.
-	mediastreamDescIsDefault := mediastreamFields[19].Descriptor()
+	mediastreamDescIsDefault := mediastreamFields[18].Descriptor()
 	// mediastream.DefaultIsDefault holds the default value on creation for the is_default field.
 	mediastream.DefaultIsDefault = mediastreamDescIsDefault.Default.(bool)
 	// mediastreamDescIsForced is the schema descriptor for is_forced field.
-	mediastreamDescIsForced := mediastreamFields[20].Descriptor()
+	mediastreamDescIsForced := mediastreamFields[19].Descriptor()
 	// mediastream.DefaultIsForced holds the default value on creation for the is_forced field.
 	mediastream.DefaultIsForced = mediastreamDescIsForced.Default.(bool)
-	// mediastreamDescIsExternal is the schema descriptor for is_external field.
-	mediastreamDescIsExternal := mediastreamFields[21].Descriptor()
-	// mediastream.DefaultIsExternal holds the default value on creation for the is_external field.
-	mediastream.DefaultIsExternal = mediastreamDescIsExternal.Default.(bool)
 	// mediastreamDescIsInterlaced is the schema descriptor for is_interlaced field.
-	mediastreamDescIsInterlaced := mediastreamFields[22].Descriptor()
+	mediastreamDescIsInterlaced := mediastreamFields[20].Descriptor()
 	// mediastream.DefaultIsInterlaced holds the default value on creation for the is_interlaced field.
 	mediastream.DefaultIsInterlaced = mediastreamDescIsInterlaced.Default.(bool)
 	// mediastreamDescIsAnamorphic is the schema descriptor for is_anamorphic field.
-	mediastreamDescIsAnamorphic := mediastreamFields[23].Descriptor()
+	mediastreamDescIsAnamorphic := mediastreamFields[21].Descriptor()
 	// mediastream.DefaultIsAnamorphic holds the default value on creation for the is_anamorphic field.
 	mediastream.DefaultIsAnamorphic = mediastreamDescIsAnamorphic.Default.(bool)
-	// mediastreamDescIsHearingImpaired is the schema descriptor for is_hearing_impaired field.
-	mediastreamDescIsHearingImpaired := mediastreamFields[24].Descriptor()
-	// mediastream.DefaultIsHearingImpaired holds the default value on creation for the is_hearing_impaired field.
-	mediastream.DefaultIsHearingImpaired = mediastreamDescIsHearingImpaired.Default.(bool)
 	personFields := entities.Person{}.Fields()
 	_ = personFields
 	// personDescCreatedAt is the schema descriptor for created_at field.

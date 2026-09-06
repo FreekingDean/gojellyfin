@@ -24,7 +24,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/displaypreferences"
 	"github.com/FreekingDean/gojellyfin/internal/store/genre"
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
-	"github.com/FreekingDean/gojellyfin/internal/store/imageblob"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
@@ -68,8 +67,6 @@ type Client struct {
 	Genre *GenreClient
 	// Image is the client for interacting with the Image builders.
 	Image *ImageClient
-	// ImageBlob is the client for interacting with the ImageBlob builders.
-	ImageBlob *ImageBlobClient
 	// Item is the client for interacting with the Item builders.
 	Item *ItemClient
 	// ItemSource is the client for interacting with the ItemSource builders.
@@ -125,7 +122,6 @@ func (c *Client) init() {
 	c.DisplayPreferences = NewDisplayPreferencesClient(c.config)
 	c.Genre = NewGenreClient(c.config)
 	c.Image = NewImageClient(c.config)
-	c.ImageBlob = NewImageBlobClient(c.config)
 	c.Item = NewItemClient(c.config)
 	c.ItemSource = NewItemSourceClient(c.config)
 	c.Library = NewLibraryClient(c.config)
@@ -244,7 +240,6 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		DisplayPreferences: NewDisplayPreferencesClient(cfg),
 		Genre:              NewGenreClient(cfg),
 		Image:              NewImageClient(cfg),
-		ImageBlob:          NewImageBlobClient(cfg),
 		Item:               NewItemClient(cfg),
 		ItemSource:         NewItemSourceClient(cfg),
 		Library:            NewLibraryClient(cfg),
@@ -290,7 +285,6 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		DisplayPreferences: NewDisplayPreferencesClient(cfg),
 		Genre:              NewGenreClient(cfg),
 		Image:              NewImageClient(cfg),
-		ImageBlob:          NewImageBlobClient(cfg),
 		Item:               NewItemClient(cfg),
 		ItemSource:         NewItemSourceClient(cfg),
 		Library:            NewLibraryClient(cfg),
@@ -339,10 +333,10 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.ActivityLogEntry, c.ApiKey, c.Configuration, c.Credit, c.Device,
-		c.DisplayPreferences, c.Genre, c.Image, c.ImageBlob, c.Item, c.ItemSource,
-		c.Library, c.LibraryItem, c.LibraryOptions, c.LibrarySource, c.MediaStream,
-		c.Person, c.Playlist, c.PlaylistEntry, c.PlaylistShare, c.Session, c.Source,
-		c.Studio, c.User, c.UserConfiguration, c.UserItemData, c.UserPolicy,
+		c.DisplayPreferences, c.Genre, c.Image, c.Item, c.ItemSource, c.Library,
+		c.LibraryItem, c.LibraryOptions, c.LibrarySource, c.MediaStream, c.Person,
+		c.Playlist, c.PlaylistEntry, c.PlaylistShare, c.Session, c.Source, c.Studio,
+		c.User, c.UserConfiguration, c.UserItemData, c.UserPolicy,
 	} {
 		n.Use(hooks...)
 	}
@@ -353,10 +347,10 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.ActivityLogEntry, c.ApiKey, c.Configuration, c.Credit, c.Device,
-		c.DisplayPreferences, c.Genre, c.Image, c.ImageBlob, c.Item, c.ItemSource,
-		c.Library, c.LibraryItem, c.LibraryOptions, c.LibrarySource, c.MediaStream,
-		c.Person, c.Playlist, c.PlaylistEntry, c.PlaylistShare, c.Session, c.Source,
-		c.Studio, c.User, c.UserConfiguration, c.UserItemData, c.UserPolicy,
+		c.DisplayPreferences, c.Genre, c.Image, c.Item, c.ItemSource, c.Library,
+		c.LibraryItem, c.LibraryOptions, c.LibrarySource, c.MediaStream, c.Person,
+		c.Playlist, c.PlaylistEntry, c.PlaylistShare, c.Session, c.Source, c.Studio,
+		c.User, c.UserConfiguration, c.UserItemData, c.UserPolicy,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -381,8 +375,6 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Genre.mutate(ctx, m)
 	case *ImageMutation:
 		return c.Image.mutate(ctx, m)
-	case *ImageBlobMutation:
-		return c.ImageBlob.mutate(ctx, m)
 	case *ItemMutation:
 		return c.Item.mutate(ctx, m)
 	case *ItemSourceMutation:
@@ -1613,139 +1605,6 @@ func (c *ImageClient) mutate(ctx context.Context, m *ImageMutation) (Value, erro
 		return (&ImageDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("store: unknown Image mutation op: %q", m.Op())
-	}
-}
-
-// ImageBlobClient is a client for the ImageBlob schema.
-type ImageBlobClient struct {
-	config
-}
-
-// NewImageBlobClient returns a client for the ImageBlob from the given config.
-func NewImageBlobClient(c config) *ImageBlobClient {
-	return &ImageBlobClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `imageblob.Hooks(f(g(h())))`.
-func (c *ImageBlobClient) Use(hooks ...Hook) {
-	c.hooks.ImageBlob = append(c.hooks.ImageBlob, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `imageblob.Intercept(f(g(h())))`.
-func (c *ImageBlobClient) Intercept(interceptors ...Interceptor) {
-	c.inters.ImageBlob = append(c.inters.ImageBlob, interceptors...)
-}
-
-// Create returns a builder for creating a ImageBlob entity.
-func (c *ImageBlobClient) Create() *ImageBlobCreate {
-	mutation := newImageBlobMutation(c.config, OpCreate)
-	return &ImageBlobCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of ImageBlob entities.
-func (c *ImageBlobClient) CreateBulk(builders ...*ImageBlobCreate) *ImageBlobCreateBulk {
-	return &ImageBlobCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *ImageBlobClient) MapCreateBulk(slice any, setFunc func(*ImageBlobCreate, int)) *ImageBlobCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &ImageBlobCreateBulk{err: fmt.Errorf("calling to ImageBlobClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*ImageBlobCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &ImageBlobCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for ImageBlob.
-func (c *ImageBlobClient) Update() *ImageBlobUpdate {
-	mutation := newImageBlobMutation(c.config, OpUpdate)
-	return &ImageBlobUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *ImageBlobClient) UpdateOne(_m *ImageBlob) *ImageBlobUpdateOne {
-	mutation := newImageBlobMutation(c.config, OpUpdateOne, withImageBlob(_m))
-	return &ImageBlobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *ImageBlobClient) UpdateOneID(id uuid.UUID) *ImageBlobUpdateOne {
-	mutation := newImageBlobMutation(c.config, OpUpdateOne, withImageBlobID(id))
-	return &ImageBlobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for ImageBlob.
-func (c *ImageBlobClient) Delete() *ImageBlobDelete {
-	mutation := newImageBlobMutation(c.config, OpDelete)
-	return &ImageBlobDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *ImageBlobClient) DeleteOne(_m *ImageBlob) *ImageBlobDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *ImageBlobClient) DeleteOneID(id uuid.UUID) *ImageBlobDeleteOne {
-	builder := c.Delete().Where(imageblob.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &ImageBlobDeleteOne{builder}
-}
-
-// Query returns a query builder for ImageBlob.
-func (c *ImageBlobClient) Query() *ImageBlobQuery {
-	return &ImageBlobQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeImageBlob},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a ImageBlob entity by its id.
-func (c *ImageBlobClient) Get(ctx context.Context, id uuid.UUID) (*ImageBlob, error) {
-	return c.Query().Where(imageblob.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *ImageBlobClient) GetX(ctx context.Context, id uuid.UUID) *ImageBlob {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *ImageBlobClient) Hooks() []Hook {
-	return c.hooks.ImageBlob
-}
-
-// Interceptors returns the client interceptors.
-func (c *ImageBlobClient) Interceptors() []Interceptor {
-	return c.inters.ImageBlob
-}
-
-func (c *ImageBlobClient) mutate(ctx context.Context, m *ImageBlobMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&ImageBlobCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&ImageBlobUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&ImageBlobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&ImageBlobDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("store: unknown ImageBlob mutation op: %q", m.Op())
 	}
 }
 
@@ -4979,16 +4838,16 @@ func (c *UserPolicyClient) mutate(ctx context.Context, m *UserPolicyMutation) (V
 type (
 	hooks struct {
 		ActivityLogEntry, ApiKey, Configuration, Credit, Device, DisplayPreferences,
-		Genre, Image, ImageBlob, Item, ItemSource, Library, LibraryItem,
-		LibraryOptions, LibrarySource, MediaStream, Person, Playlist, PlaylistEntry,
-		PlaylistShare, Session, Source, Studio, User, UserConfiguration, UserItemData,
+		Genre, Image, Item, ItemSource, Library, LibraryItem, LibraryOptions,
+		LibrarySource, MediaStream, Person, Playlist, PlaylistEntry, PlaylistShare,
+		Session, Source, Studio, User, UserConfiguration, UserItemData,
 		UserPolicy []ent.Hook
 	}
 	inters struct {
 		ActivityLogEntry, ApiKey, Configuration, Credit, Device, DisplayPreferences,
-		Genre, Image, ImageBlob, Item, ItemSource, Library, LibraryItem,
-		LibraryOptions, LibrarySource, MediaStream, Person, Playlist, PlaylistEntry,
-		PlaylistShare, Session, Source, Studio, User, UserConfiguration, UserItemData,
+		Genre, Image, Item, ItemSource, Library, LibraryItem, LibraryOptions,
+		LibrarySource, MediaStream, Person, Playlist, PlaylistEntry, PlaylistShare,
+		Session, Source, Studio, User, UserConfiguration, UserItemData,
 		UserPolicy []ent.Interceptor
 	}
 )

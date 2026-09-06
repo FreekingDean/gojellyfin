@@ -35,8 +35,6 @@ const (
 	FieldLanguage = "language"
 	// FieldTitle holds the string denoting the title field in the database.
 	FieldTitle = "title"
-	// FieldPath holds the string denoting the path field in the database.
-	FieldPath = "path"
 	// FieldPixelFormat holds the string denoting the pixel_format field in the database.
 	FieldPixelFormat = "pixel_format"
 	// FieldBitRate holds the string denoting the bit_rate field in the database.
@@ -55,14 +53,10 @@ const (
 	FieldIsDefault = "is_default"
 	// FieldIsForced holds the string denoting the is_forced field in the database.
 	FieldIsForced = "is_forced"
-	// FieldIsExternal holds the string denoting the is_external field in the database.
-	FieldIsExternal = "is_external"
 	// FieldIsInterlaced holds the string denoting the is_interlaced field in the database.
 	FieldIsInterlaced = "is_interlaced"
 	// FieldIsAnamorphic holds the string denoting the is_anamorphic field in the database.
 	FieldIsAnamorphic = "is_anamorphic"
-	// FieldIsHearingImpaired holds the string denoting the is_hearing_impaired field in the database.
-	FieldIsHearingImpaired = "is_hearing_impaired"
 	// EdgeSource holds the string denoting the source edge name in mutations.
 	EdgeSource = "source"
 	// Table holds the table name of the mediastream in the database.
@@ -89,7 +83,6 @@ var Columns = []string{
 	FieldProfile,
 	FieldLanguage,
 	FieldTitle,
-	FieldPath,
 	FieldPixelFormat,
 	FieldBitRate,
 	FieldChannels,
@@ -99,10 +92,8 @@ var Columns = []string{
 	FieldLevel,
 	FieldIsDefault,
 	FieldIsForced,
-	FieldIsExternal,
 	FieldIsInterlaced,
 	FieldIsAnamorphic,
-	FieldIsHearingImpaired,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -128,14 +119,10 @@ var (
 	DefaultIsDefault bool
 	// DefaultIsForced holds the default value on creation for the "is_forced" field.
 	DefaultIsForced bool
-	// DefaultIsExternal holds the default value on creation for the "is_external" field.
-	DefaultIsExternal bool
 	// DefaultIsInterlaced holds the default value on creation for the "is_interlaced" field.
 	DefaultIsInterlaced bool
 	// DefaultIsAnamorphic holds the default value on creation for the "is_anamorphic" field.
 	DefaultIsAnamorphic bool
-	// DefaultIsHearingImpaired holds the default value on creation for the "is_hearing_impaired" field.
-	DefaultIsHearingImpaired bool
 )
 
 // Kind defines the type for the "kind" enum field.
@@ -253,11 +240,6 @@ func ByTitle(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTitle, opts...).ToFunc()
 }
 
-// ByPath orders the results by the path field.
-func ByPath(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldPath, opts...).ToFunc()
-}
-
 // ByPixelFormat orders the results by the pixel_format field.
 func ByPixelFormat(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPixelFormat, opts...).ToFunc()
@@ -303,11 +285,6 @@ func ByIsForced(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsForced, opts...).ToFunc()
 }
 
-// ByIsExternal orders the results by the is_external field.
-func ByIsExternal(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldIsExternal, opts...).ToFunc()
-}
-
 // ByIsInterlaced orders the results by the is_interlaced field.
 func ByIsInterlaced(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsInterlaced, opts...).ToFunc()
@@ -316,11 +293,6 @@ func ByIsInterlaced(opts ...sql.OrderTermOption) OrderOption {
 // ByIsAnamorphic orders the results by the is_anamorphic field.
 func ByIsAnamorphic(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsAnamorphic, opts...).ToFunc()
-}
-
-// ByIsHearingImpaired orders the results by the is_hearing_impaired field.
-func ByIsHearingImpaired(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldIsHearingImpaired, opts...).ToFunc()
 }
 
 // BySourceField orders the results by source field.

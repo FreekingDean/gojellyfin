@@ -29,18 +29,10 @@ type Image struct {
 	Kind image.Kind `json:"kind,omitempty"`
 	// Index holds the value of the "index" field.
 	Index int32 `json:"index,omitempty"`
-	// Path holds the value of the "path" field.
-	Path string `json:"path,omitempty"`
+	// URL holds the value of the "url" field.
+	URL string `json:"url,omitempty"`
 	// Tag holds the value of the "tag" field.
 	Tag string `json:"tag,omitempty"`
-	// BlurHash holds the value of the "blur_hash" field.
-	BlurHash string `json:"blur_hash,omitempty"`
-	// Width holds the value of the "width" field.
-	Width int32 `json:"width,omitempty"`
-	// Height holds the value of the "height" field.
-	Height int32 `json:"height,omitempty"`
-	// Size holds the value of the "size" field.
-	Size int64 `json:"size,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ImageQuery when eager-loading is set.
 	Edges        ImageEdges `json:"edges"`
@@ -72,9 +64,9 @@ func (*Image) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case image.FieldIndex, image.FieldWidth, image.FieldHeight, image.FieldSize:
+		case image.FieldIndex:
 			values[i] = new(sql.NullInt64)
-		case image.FieldKind, image.FieldPath, image.FieldTag, image.FieldBlurHash:
+		case image.FieldKind, image.FieldURL, image.FieldTag:
 			values[i] = new(sql.NullString)
 		case image.FieldCreatedAt, image.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -131,41 +123,17 @@ func (_m *Image) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Index = int32(value.Int64)
 			}
-		case image.FieldPath:
+		case image.FieldURL:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field path", values[i])
+				return fmt.Errorf("unexpected type %T for field url", values[i])
 			} else if value.Valid {
-				_m.Path = value.String
+				_m.URL = value.String
 			}
 		case image.FieldTag:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field tag", values[i])
 			} else if value.Valid {
 				_m.Tag = value.String
-			}
-		case image.FieldBlurHash:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field blur_hash", values[i])
-			} else if value.Valid {
-				_m.BlurHash = value.String
-			}
-		case image.FieldWidth:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field width", values[i])
-			} else if value.Valid {
-				_m.Width = int32(value.Int64)
-			}
-		case image.FieldHeight:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field height", values[i])
-			} else if value.Valid {
-				_m.Height = int32(value.Int64)
-			}
-		case image.FieldSize:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field size", values[i])
-			} else if value.Valid {
-				_m.Size = value.Int64
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -223,23 +191,11 @@ func (_m *Image) String() string {
 	builder.WriteString("index=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Index))
 	builder.WriteString(", ")
-	builder.WriteString("path=")
-	builder.WriteString(_m.Path)
+	builder.WriteString("url=")
+	builder.WriteString(_m.URL)
 	builder.WriteString(", ")
 	builder.WriteString("tag=")
 	builder.WriteString(_m.Tag)
-	builder.WriteString(", ")
-	builder.WriteString("blur_hash=")
-	builder.WriteString(_m.BlurHash)
-	builder.WriteString(", ")
-	builder.WriteString("width=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Width))
-	builder.WriteString(", ")
-	builder.WriteString("height=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Height))
-	builder.WriteString(", ")
-	builder.WriteString("size=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Size))
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -110,7 +110,7 @@ func mediaSourceDto(source *items.MediaSource) api.MediaSourceInfo {
 	streams := source.Edges.Streams
 	converted := make([]api.MediaStream, 0, len(streams))
 	for _, stream := range streams {
-		converted = append(converted, mediaStreamDto(source, stream))
+		converted = append(converted, mediaStreamDto(stream))
 	}
 
 	return api.MediaSourceInfo{
@@ -140,7 +140,7 @@ func mediaSourceDto(source *items.MediaSource) api.MediaSourceInfo {
 	}
 }
 
-func mediaStreamDto(source *items.MediaSource, stream *items.MediaStream) api.MediaStream {
+func mediaStreamDto(stream *items.MediaStream) api.MediaStream {
 	kind := api.MediaStreamType(stream.Kind)
 
 	dto := api.MediaStream{
@@ -149,9 +149,9 @@ func mediaStreamDto(source *items.MediaSource, stream *items.MediaStream) api.Me
 		Codec:                  apiutil.Ptr(stream.Codec),
 		IsDefault:              apiutil.Ptr(stream.IsDefault),
 		IsForced:               apiutil.Ptr(stream.IsForced),
-		IsExternal:             apiutil.Ptr(stream.IsExternal),
+		IsExternal:             apiutil.Ptr(false),
 		IsInterlaced:           apiutil.Ptr(false),
-		SupportsExternalStream: apiutil.Ptr(stream.IsExternal),
+		SupportsExternalStream: apiutil.Ptr(false),
 		DisplayTitle:           apiutil.Ptr(streamDisplayTitle(stream)),
 	}
 
@@ -182,21 +182,9 @@ func mediaStreamDto(source *items.MediaSource, stream *items.MediaStream) api.Me
 	case streammodal.KindAudio:
 		dto.Channels = apiutil.Ptr(stream.Channels)
 		dto.SampleRate = apiutil.Ptr(stream.SampleRate)
-	case streammodal.KindSubtitle:
-		dto.IsHearingImpaired = apiutil.Ptr(stream.IsHearingImpaired)
-		if stream.IsExternal {
-			dto.Path = apiutil.Ptr(stream.Path)
-			dto.IsTextSubtitleStream = apiutil.Ptr(true)
-			dto.DeliveryMethod = apiutil.Ptr(api.SubtitleDeliveryMethodExternal)
-			dto.DeliveryUrl = apiutil.Ptr(subtitleURL(source, stream))
-		}
 	}
 
 	return dto
-}
-
-func subtitleURL(source *items.MediaSource, stream *items.MediaStream) string {
-	return fmt.Sprintf("/Videos/%s/%s/Subtitles/%d/0/Stream.vtt", source.ItemID, source.ID, stream.Index)
 }
 
 func streamDisplayTitle(stream *items.MediaStream) string {

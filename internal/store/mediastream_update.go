@@ -199,26 +199,6 @@ func (_u *MediaStreamUpdate) ClearTitle() *MediaStreamUpdate {
 	return _u
 }
 
-// SetPath sets the "path" field.
-func (_u *MediaStreamUpdate) SetPath(v string) *MediaStreamUpdate {
-	_u.mutation.SetPath(v)
-	return _u
-}
-
-// SetNillablePath sets the "path" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillablePath(v *string) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetPath(*v)
-	}
-	return _u
-}
-
-// ClearPath clears the value of the "path" field.
-func (_u *MediaStreamUpdate) ClearPath() *MediaStreamUpdate {
-	_u.mutation.ClearPath()
-	return _u
-}
-
 // SetPixelFormat sets the "pixel_format" field.
 func (_u *MediaStreamUpdate) SetPixelFormat(v string) *MediaStreamUpdate {
 	_u.mutation.SetPixelFormat(v)
@@ -429,20 +409,6 @@ func (_u *MediaStreamUpdate) SetNillableIsForced(v *bool) *MediaStreamUpdate {
 	return _u
 }
 
-// SetIsExternal sets the "is_external" field.
-func (_u *MediaStreamUpdate) SetIsExternal(v bool) *MediaStreamUpdate {
-	_u.mutation.SetIsExternal(v)
-	return _u
-}
-
-// SetNillableIsExternal sets the "is_external" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableIsExternal(v *bool) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetIsExternal(*v)
-	}
-	return _u
-}
-
 // SetIsInterlaced sets the "is_interlaced" field.
 func (_u *MediaStreamUpdate) SetIsInterlaced(v bool) *MediaStreamUpdate {
 	_u.mutation.SetIsInterlaced(v)
@@ -467,20 +433,6 @@ func (_u *MediaStreamUpdate) SetIsAnamorphic(v bool) *MediaStreamUpdate {
 func (_u *MediaStreamUpdate) SetNillableIsAnamorphic(v *bool) *MediaStreamUpdate {
 	if v != nil {
 		_u.SetIsAnamorphic(*v)
-	}
-	return _u
-}
-
-// SetIsHearingImpaired sets the "is_hearing_impaired" field.
-func (_u *MediaStreamUpdate) SetIsHearingImpaired(v bool) *MediaStreamUpdate {
-	_u.mutation.SetIsHearingImpaired(v)
-	return _u
-}
-
-// SetNillableIsHearingImpaired sets the "is_hearing_impaired" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableIsHearingImpaired(v *bool) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetIsHearingImpaired(*v)
 	}
 	return _u
 }
@@ -618,12 +570,6 @@ func (_u *MediaStreamUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	if _u.mutation.TitleCleared() {
 		_spec.ClearField(mediastream.FieldTitle, field.TypeString)
 	}
-	if value, ok := _u.mutation.Path(); ok {
-		_spec.SetField(mediastream.FieldPath, field.TypeString, value)
-	}
-	if _u.mutation.PathCleared() {
-		_spec.ClearField(mediastream.FieldPath, field.TypeString)
-	}
 	if value, ok := _u.mutation.PixelFormat(); ok {
 		_spec.SetField(mediastream.FieldPixelFormat, field.TypeString, value)
 	}
@@ -690,17 +636,11 @@ func (_u *MediaStreamUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	if value, ok := _u.mutation.IsForced(); ok {
 		_spec.SetField(mediastream.FieldIsForced, field.TypeBool, value)
 	}
-	if value, ok := _u.mutation.IsExternal(); ok {
-		_spec.SetField(mediastream.FieldIsExternal, field.TypeBool, value)
-	}
 	if value, ok := _u.mutation.IsInterlaced(); ok {
 		_spec.SetField(mediastream.FieldIsInterlaced, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.IsAnamorphic(); ok {
 		_spec.SetField(mediastream.FieldIsAnamorphic, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.IsHearingImpaired(); ok {
-		_spec.SetField(mediastream.FieldIsHearingImpaired, field.TypeBool, value)
 	}
 	if _u.mutation.SourceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -920,26 +860,6 @@ func (_u *MediaStreamUpdateOne) ClearTitle() *MediaStreamUpdateOne {
 	return _u
 }
 
-// SetPath sets the "path" field.
-func (_u *MediaStreamUpdateOne) SetPath(v string) *MediaStreamUpdateOne {
-	_u.mutation.SetPath(v)
-	return _u
-}
-
-// SetNillablePath sets the "path" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillablePath(v *string) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetPath(*v)
-	}
-	return _u
-}
-
-// ClearPath clears the value of the "path" field.
-func (_u *MediaStreamUpdateOne) ClearPath() *MediaStreamUpdateOne {
-	_u.mutation.ClearPath()
-	return _u
-}
-
 // SetPixelFormat sets the "pixel_format" field.
 func (_u *MediaStreamUpdateOne) SetPixelFormat(v string) *MediaStreamUpdateOne {
 	_u.mutation.SetPixelFormat(v)
@@ -1150,20 +1070,6 @@ func (_u *MediaStreamUpdateOne) SetNillableIsForced(v *bool) *MediaStreamUpdateO
 	return _u
 }
 
-// SetIsExternal sets the "is_external" field.
-func (_u *MediaStreamUpdateOne) SetIsExternal(v bool) *MediaStreamUpdateOne {
-	_u.mutation.SetIsExternal(v)
-	return _u
-}
-
-// SetNillableIsExternal sets the "is_external" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableIsExternal(v *bool) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetIsExternal(*v)
-	}
-	return _u
-}
-
 // SetIsInterlaced sets the "is_interlaced" field.
 func (_u *MediaStreamUpdateOne) SetIsInterlaced(v bool) *MediaStreamUpdateOne {
 	_u.mutation.SetIsInterlaced(v)
@@ -1188,20 +1094,6 @@ func (_u *MediaStreamUpdateOne) SetIsAnamorphic(v bool) *MediaStreamUpdateOne {
 func (_u *MediaStreamUpdateOne) SetNillableIsAnamorphic(v *bool) *MediaStreamUpdateOne {
 	if v != nil {
 		_u.SetIsAnamorphic(*v)
-	}
-	return _u
-}
-
-// SetIsHearingImpaired sets the "is_hearing_impaired" field.
-func (_u *MediaStreamUpdateOne) SetIsHearingImpaired(v bool) *MediaStreamUpdateOne {
-	_u.mutation.SetIsHearingImpaired(v)
-	return _u
-}
-
-// SetNillableIsHearingImpaired sets the "is_hearing_impaired" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableIsHearingImpaired(v *bool) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetIsHearingImpaired(*v)
 	}
 	return _u
 }
@@ -1369,12 +1261,6 @@ func (_u *MediaStreamUpdateOne) sqlSave(ctx context.Context) (_node *MediaStream
 	if _u.mutation.TitleCleared() {
 		_spec.ClearField(mediastream.FieldTitle, field.TypeString)
 	}
-	if value, ok := _u.mutation.Path(); ok {
-		_spec.SetField(mediastream.FieldPath, field.TypeString, value)
-	}
-	if _u.mutation.PathCleared() {
-		_spec.ClearField(mediastream.FieldPath, field.TypeString)
-	}
 	if value, ok := _u.mutation.PixelFormat(); ok {
 		_spec.SetField(mediastream.FieldPixelFormat, field.TypeString, value)
 	}
@@ -1441,17 +1327,11 @@ func (_u *MediaStreamUpdateOne) sqlSave(ctx context.Context) (_node *MediaStream
 	if value, ok := _u.mutation.IsForced(); ok {
 		_spec.SetField(mediastream.FieldIsForced, field.TypeBool, value)
 	}
-	if value, ok := _u.mutation.IsExternal(); ok {
-		_spec.SetField(mediastream.FieldIsExternal, field.TypeBool, value)
-	}
 	if value, ok := _u.mutation.IsInterlaced(); ok {
 		_spec.SetField(mediastream.FieldIsInterlaced, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.IsAnamorphic(); ok {
 		_spec.SetField(mediastream.FieldIsAnamorphic, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.IsHearingImpaired(); ok {
-		_spec.SetField(mediastream.FieldIsHearingImpaired, field.TypeBool, value)
 	}
 	if _u.mutation.SourceCleared() {
 		edge := &sqlgraph.EdgeSpec{

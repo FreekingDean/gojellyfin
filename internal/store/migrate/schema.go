@@ -194,12 +194,8 @@ var (
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Primary", "Art", "Backdrop", "Banner", "Logo", "Thumb", "Disc", "Box", "Screenshot", "Menu", "Chapter", "BoxRear", "Profile"}},
 		{Name: "index", Type: field.TypeInt32, Default: 0},
-		{Name: "path", Type: field.TypeString},
+		{Name: "url", Type: field.TypeString},
 		{Name: "tag", Type: field.TypeString},
-		{Name: "blur_hash", Type: field.TypeString, Nullable: true},
-		{Name: "width", Type: field.TypeInt32, Nullable: true},
-		{Name: "height", Type: field.TypeInt32, Nullable: true},
-		{Name: "size", Type: field.TypeInt64, Nullable: true},
 		{Name: "item_id", Type: field.TypeUUID},
 	}
 	// ImagesTable holds the schema information for the "images" table.
@@ -210,7 +206,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "images_items_images",
-				Columns:    []*schema.Column{ImagesColumns[11]},
+				Columns:    []*schema.Column{ImagesColumns[7]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -219,28 +215,7 @@ var (
 			{
 				Name:    "image_item_id_kind_index",
 				Unique:  true,
-				Columns: []*schema.Column{ImagesColumns[11], ImagesColumns[3], ImagesColumns[4]},
-			},
-		},
-	}
-	// ImageBlobsColumns holds the columns for the "image_blobs" table.
-	ImageBlobsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "key", Type: field.TypeString},
-		{Name: "data", Type: field.TypeBytes},
-	}
-	// ImageBlobsTable holds the schema information for the "image_blobs" table.
-	ImageBlobsTable = &schema.Table{
-		Name:       "image_blobs",
-		Columns:    ImageBlobsColumns,
-		PrimaryKey: []*schema.Column{ImageBlobsColumns[0]},
-		Indexes: []*schema.Index{
-			{
-				Name:    "imageblob_key",
-				Unique:  true,
-				Columns: []*schema.Column{ImageBlobsColumns[3]},
+				Columns: []*schema.Column{ImagesColumns[7], ImagesColumns[3], ImagesColumns[4]},
 			},
 		},
 	}
@@ -528,7 +503,6 @@ var (
 		{Name: "profile", Type: field.TypeString, Nullable: true},
 		{Name: "language", Type: field.TypeString, Nullable: true},
 		{Name: "title", Type: field.TypeString, Nullable: true},
-		{Name: "path", Type: field.TypeString, Nullable: true},
 		{Name: "pixel_format", Type: field.TypeString, Nullable: true},
 		{Name: "bit_rate", Type: field.TypeInt32, Nullable: true},
 		{Name: "channels", Type: field.TypeInt32, Nullable: true},
@@ -538,10 +512,8 @@ var (
 		{Name: "level", Type: field.TypeFloat64, Nullable: true},
 		{Name: "is_default", Type: field.TypeBool, Default: false},
 		{Name: "is_forced", Type: field.TypeBool, Default: false},
-		{Name: "is_external", Type: field.TypeBool, Default: false},
 		{Name: "is_interlaced", Type: field.TypeBool, Default: false},
 		{Name: "is_anamorphic", Type: field.TypeBool, Default: false},
-		{Name: "is_hearing_impaired", Type: field.TypeBool, Default: false},
 		{Name: "item_source_id", Type: field.TypeUUID},
 	}
 	// MediaStreamsTable holds the schema information for the "media_streams" table.
@@ -552,7 +524,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "media_streams_item_sources_streams",
-				Columns:    []*schema.Column{MediaStreamsColumns[24]},
+				Columns:    []*schema.Column{MediaStreamsColumns[21]},
 				RefColumns: []*schema.Column{ItemSourcesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -561,7 +533,7 @@ var (
 			{
 				Name:    "mediastream_item_source_id_index",
 				Unique:  true,
-				Columns: []*schema.Column{MediaStreamsColumns[24], MediaStreamsColumns[5]},
+				Columns: []*schema.Column{MediaStreamsColumns[21], MediaStreamsColumns[5]},
 			},
 		},
 	}
@@ -964,7 +936,6 @@ var (
 		DisplayPreferencesTable,
 		GenresTable,
 		ImagesTable,
-		ImageBlobsTable,
 		ItemsTable,
 		ItemSourcesTable,
 		LibrariesTable,

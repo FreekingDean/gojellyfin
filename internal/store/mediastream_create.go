@@ -149,20 +149,6 @@ func (_c *MediaStreamCreate) SetNillableTitle(v *string) *MediaStreamCreate {
 	return _c
 }
 
-// SetPath sets the "path" field.
-func (_c *MediaStreamCreate) SetPath(v string) *MediaStreamCreate {
-	_c.mutation.SetPath(v)
-	return _c
-}
-
-// SetNillablePath sets the "path" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillablePath(v *string) *MediaStreamCreate {
-	if v != nil {
-		_c.SetPath(*v)
-	}
-	return _c
-}
-
 // SetPixelFormat sets the "pixel_format" field.
 func (_c *MediaStreamCreate) SetPixelFormat(v string) *MediaStreamCreate {
 	_c.mutation.SetPixelFormat(v)
@@ -289,20 +275,6 @@ func (_c *MediaStreamCreate) SetNillableIsForced(v *bool) *MediaStreamCreate {
 	return _c
 }
 
-// SetIsExternal sets the "is_external" field.
-func (_c *MediaStreamCreate) SetIsExternal(v bool) *MediaStreamCreate {
-	_c.mutation.SetIsExternal(v)
-	return _c
-}
-
-// SetNillableIsExternal sets the "is_external" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableIsExternal(v *bool) *MediaStreamCreate {
-	if v != nil {
-		_c.SetIsExternal(*v)
-	}
-	return _c
-}
-
 // SetIsInterlaced sets the "is_interlaced" field.
 func (_c *MediaStreamCreate) SetIsInterlaced(v bool) *MediaStreamCreate {
 	_c.mutation.SetIsInterlaced(v)
@@ -327,20 +299,6 @@ func (_c *MediaStreamCreate) SetIsAnamorphic(v bool) *MediaStreamCreate {
 func (_c *MediaStreamCreate) SetNillableIsAnamorphic(v *bool) *MediaStreamCreate {
 	if v != nil {
 		_c.SetIsAnamorphic(*v)
-	}
-	return _c
-}
-
-// SetIsHearingImpaired sets the "is_hearing_impaired" field.
-func (_c *MediaStreamCreate) SetIsHearingImpaired(v bool) *MediaStreamCreate {
-	_c.mutation.SetIsHearingImpaired(v)
-	return _c
-}
-
-// SetNillableIsHearingImpaired sets the "is_hearing_impaired" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableIsHearingImpaired(v *bool) *MediaStreamCreate {
-	if v != nil {
-		_c.SetIsHearingImpaired(*v)
 	}
 	return _c
 }
@@ -417,10 +375,6 @@ func (_c *MediaStreamCreate) defaults() {
 		v := mediastream.DefaultIsForced
 		_c.mutation.SetIsForced(v)
 	}
-	if _, ok := _c.mutation.IsExternal(); !ok {
-		v := mediastream.DefaultIsExternal
-		_c.mutation.SetIsExternal(v)
-	}
 	if _, ok := _c.mutation.IsInterlaced(); !ok {
 		v := mediastream.DefaultIsInterlaced
 		_c.mutation.SetIsInterlaced(v)
@@ -428,10 +382,6 @@ func (_c *MediaStreamCreate) defaults() {
 	if _, ok := _c.mutation.IsAnamorphic(); !ok {
 		v := mediastream.DefaultIsAnamorphic
 		_c.mutation.SetIsAnamorphic(v)
-	}
-	if _, ok := _c.mutation.IsHearingImpaired(); !ok {
-		v := mediastream.DefaultIsHearingImpaired
-		_c.mutation.SetIsHearingImpaired(v)
 	}
 }
 
@@ -468,17 +418,11 @@ func (_c *MediaStreamCreate) check() error {
 	if _, ok := _c.mutation.IsForced(); !ok {
 		return &ValidationError{Name: "is_forced", err: errors.New(`store: missing required field "MediaStream.is_forced"`)}
 	}
-	if _, ok := _c.mutation.IsExternal(); !ok {
-		return &ValidationError{Name: "is_external", err: errors.New(`store: missing required field "MediaStream.is_external"`)}
-	}
 	if _, ok := _c.mutation.IsInterlaced(); !ok {
 		return &ValidationError{Name: "is_interlaced", err: errors.New(`store: missing required field "MediaStream.is_interlaced"`)}
 	}
 	if _, ok := _c.mutation.IsAnamorphic(); !ok {
 		return &ValidationError{Name: "is_anamorphic", err: errors.New(`store: missing required field "MediaStream.is_anamorphic"`)}
-	}
-	if _, ok := _c.mutation.IsHearingImpaired(); !ok {
-		return &ValidationError{Name: "is_hearing_impaired", err: errors.New(`store: missing required field "MediaStream.is_hearing_impaired"`)}
 	}
 	if len(_c.mutation.SourceIDs()) == 0 {
 		return &ValidationError{Name: "source", err: errors.New(`store: missing required edge "MediaStream.source"`)}
@@ -555,10 +499,6 @@ func (_c *MediaStreamCreate) createSpec() (*MediaStream, *sqlgraph.CreateSpec) {
 		_spec.SetField(mediastream.FieldTitle, field.TypeString, value)
 		_node.Title = value
 	}
-	if value, ok := _c.mutation.Path(); ok {
-		_spec.SetField(mediastream.FieldPath, field.TypeString, value)
-		_node.Path = value
-	}
 	if value, ok := _c.mutation.PixelFormat(); ok {
 		_spec.SetField(mediastream.FieldPixelFormat, field.TypeString, value)
 		_node.PixelFormat = value
@@ -595,10 +535,6 @@ func (_c *MediaStreamCreate) createSpec() (*MediaStream, *sqlgraph.CreateSpec) {
 		_spec.SetField(mediastream.FieldIsForced, field.TypeBool, value)
 		_node.IsForced = value
 	}
-	if value, ok := _c.mutation.IsExternal(); ok {
-		_spec.SetField(mediastream.FieldIsExternal, field.TypeBool, value)
-		_node.IsExternal = value
-	}
 	if value, ok := _c.mutation.IsInterlaced(); ok {
 		_spec.SetField(mediastream.FieldIsInterlaced, field.TypeBool, value)
 		_node.IsInterlaced = value
@@ -606,10 +542,6 @@ func (_c *MediaStreamCreate) createSpec() (*MediaStream, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.IsAnamorphic(); ok {
 		_spec.SetField(mediastream.FieldIsAnamorphic, field.TypeBool, value)
 		_node.IsAnamorphic = value
-	}
-	if value, ok := _c.mutation.IsHearingImpaired(); ok {
-		_spec.SetField(mediastream.FieldIsHearingImpaired, field.TypeBool, value)
-		_node.IsHearingImpaired = value
 	}
 	if nodes := _c.mutation.SourceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -836,24 +768,6 @@ func (u *MediaStreamUpsert) ClearTitle() *MediaStreamUpsert {
 	return u
 }
 
-// SetPath sets the "path" field.
-func (u *MediaStreamUpsert) SetPath(v string) *MediaStreamUpsert {
-	u.Set(mediastream.FieldPath, v)
-	return u
-}
-
-// UpdatePath sets the "path" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdatePath() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldPath)
-	return u
-}
-
-// ClearPath clears the value of the "path" field.
-func (u *MediaStreamUpsert) ClearPath() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldPath)
-	return u
-}
-
 // SetPixelFormat sets the "pixel_format" field.
 func (u *MediaStreamUpsert) SetPixelFormat(v string) *MediaStreamUpsert {
 	u.Set(mediastream.FieldPixelFormat, v)
@@ -1040,18 +954,6 @@ func (u *MediaStreamUpsert) UpdateIsForced() *MediaStreamUpsert {
 	return u
 }
 
-// SetIsExternal sets the "is_external" field.
-func (u *MediaStreamUpsert) SetIsExternal(v bool) *MediaStreamUpsert {
-	u.Set(mediastream.FieldIsExternal, v)
-	return u
-}
-
-// UpdateIsExternal sets the "is_external" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateIsExternal() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldIsExternal)
-	return u
-}
-
 // SetIsInterlaced sets the "is_interlaced" field.
 func (u *MediaStreamUpsert) SetIsInterlaced(v bool) *MediaStreamUpsert {
 	u.Set(mediastream.FieldIsInterlaced, v)
@@ -1073,18 +975,6 @@ func (u *MediaStreamUpsert) SetIsAnamorphic(v bool) *MediaStreamUpsert {
 // UpdateIsAnamorphic sets the "is_anamorphic" field to the value that was provided on create.
 func (u *MediaStreamUpsert) UpdateIsAnamorphic() *MediaStreamUpsert {
 	u.SetExcluded(mediastream.FieldIsAnamorphic)
-	return u
-}
-
-// SetIsHearingImpaired sets the "is_hearing_impaired" field.
-func (u *MediaStreamUpsert) SetIsHearingImpaired(v bool) *MediaStreamUpsert {
-	u.Set(mediastream.FieldIsHearingImpaired, v)
-	return u
-}
-
-// UpdateIsHearingImpaired sets the "is_hearing_impaired" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateIsHearingImpaired() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldIsHearingImpaired)
 	return u
 }
 
@@ -1318,27 +1208,6 @@ func (u *MediaStreamUpsertOne) ClearTitle() *MediaStreamUpsertOne {
 	})
 }
 
-// SetPath sets the "path" field.
-func (u *MediaStreamUpsertOne) SetPath(v string) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetPath(v)
-	})
-}
-
-// UpdatePath sets the "path" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdatePath() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdatePath()
-	})
-}
-
-// ClearPath clears the value of the "path" field.
-func (u *MediaStreamUpsertOne) ClearPath() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearPath()
-	})
-}
-
 // SetPixelFormat sets the "pixel_format" field.
 func (u *MediaStreamUpsertOne) SetPixelFormat(v string) *MediaStreamUpsertOne {
 	return u.Update(func(s *MediaStreamUpsert) {
@@ -1556,20 +1425,6 @@ func (u *MediaStreamUpsertOne) UpdateIsForced() *MediaStreamUpsertOne {
 	})
 }
 
-// SetIsExternal sets the "is_external" field.
-func (u *MediaStreamUpsertOne) SetIsExternal(v bool) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetIsExternal(v)
-	})
-}
-
-// UpdateIsExternal sets the "is_external" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateIsExternal() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateIsExternal()
-	})
-}
-
 // SetIsInterlaced sets the "is_interlaced" field.
 func (u *MediaStreamUpsertOne) SetIsInterlaced(v bool) *MediaStreamUpsertOne {
 	return u.Update(func(s *MediaStreamUpsert) {
@@ -1595,20 +1450,6 @@ func (u *MediaStreamUpsertOne) SetIsAnamorphic(v bool) *MediaStreamUpsertOne {
 func (u *MediaStreamUpsertOne) UpdateIsAnamorphic() *MediaStreamUpsertOne {
 	return u.Update(func(s *MediaStreamUpsert) {
 		s.UpdateIsAnamorphic()
-	})
-}
-
-// SetIsHearingImpaired sets the "is_hearing_impaired" field.
-func (u *MediaStreamUpsertOne) SetIsHearingImpaired(v bool) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetIsHearingImpaired(v)
-	})
-}
-
-// UpdateIsHearingImpaired sets the "is_hearing_impaired" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateIsHearingImpaired() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateIsHearingImpaired()
 	})
 }
 
@@ -2009,27 +1850,6 @@ func (u *MediaStreamUpsertBulk) ClearTitle() *MediaStreamUpsertBulk {
 	})
 }
 
-// SetPath sets the "path" field.
-func (u *MediaStreamUpsertBulk) SetPath(v string) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetPath(v)
-	})
-}
-
-// UpdatePath sets the "path" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdatePath() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdatePath()
-	})
-}
-
-// ClearPath clears the value of the "path" field.
-func (u *MediaStreamUpsertBulk) ClearPath() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearPath()
-	})
-}
-
 // SetPixelFormat sets the "pixel_format" field.
 func (u *MediaStreamUpsertBulk) SetPixelFormat(v string) *MediaStreamUpsertBulk {
 	return u.Update(func(s *MediaStreamUpsert) {
@@ -2247,20 +2067,6 @@ func (u *MediaStreamUpsertBulk) UpdateIsForced() *MediaStreamUpsertBulk {
 	})
 }
 
-// SetIsExternal sets the "is_external" field.
-func (u *MediaStreamUpsertBulk) SetIsExternal(v bool) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetIsExternal(v)
-	})
-}
-
-// UpdateIsExternal sets the "is_external" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateIsExternal() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateIsExternal()
-	})
-}
-
 // SetIsInterlaced sets the "is_interlaced" field.
 func (u *MediaStreamUpsertBulk) SetIsInterlaced(v bool) *MediaStreamUpsertBulk {
 	return u.Update(func(s *MediaStreamUpsert) {
@@ -2286,20 +2092,6 @@ func (u *MediaStreamUpsertBulk) SetIsAnamorphic(v bool) *MediaStreamUpsertBulk {
 func (u *MediaStreamUpsertBulk) UpdateIsAnamorphic() *MediaStreamUpsertBulk {
 	return u.Update(func(s *MediaStreamUpsert) {
 		s.UpdateIsAnamorphic()
-	})
-}
-
-// SetIsHearingImpaired sets the "is_hearing_impaired" field.
-func (u *MediaStreamUpsertBulk) SetIsHearingImpaired(v bool) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetIsHearingImpaired(v)
-	})
-}
-
-// UpdateIsHearingImpaired sets the "is_hearing_impaired" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateIsHearingImpaired() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateIsHearingImpaired()
 	})
 }
 

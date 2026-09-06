@@ -39,8 +39,6 @@ type MediaStream struct {
 	Language string `json:"language,omitempty"`
 	// Title holds the value of the "title" field.
 	Title string `json:"title,omitempty"`
-	// Path holds the value of the "path" field.
-	Path string `json:"path,omitempty"`
 	// PixelFormat holds the value of the "pixel_format" field.
 	PixelFormat string `json:"pixel_format,omitempty"`
 	// BitRate holds the value of the "bit_rate" field.
@@ -59,14 +57,10 @@ type MediaStream struct {
 	IsDefault bool `json:"is_default,omitempty"`
 	// IsForced holds the value of the "is_forced" field.
 	IsForced bool `json:"is_forced,omitempty"`
-	// IsExternal holds the value of the "is_external" field.
-	IsExternal bool `json:"is_external,omitempty"`
 	// IsInterlaced holds the value of the "is_interlaced" field.
 	IsInterlaced bool `json:"is_interlaced,omitempty"`
 	// IsAnamorphic holds the value of the "is_anamorphic" field.
 	IsAnamorphic bool `json:"is_anamorphic,omitempty"`
-	// IsHearingImpaired holds the value of the "is_hearing_impaired" field.
-	IsHearingImpaired bool `json:"is_hearing_impaired,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the MediaStreamQuery when eager-loading is set.
 	Edges        MediaStreamEdges `json:"edges"`
@@ -98,13 +92,13 @@ func (*MediaStream) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case mediastream.FieldIsDefault, mediastream.FieldIsForced, mediastream.FieldIsExternal, mediastream.FieldIsInterlaced, mediastream.FieldIsAnamorphic, mediastream.FieldIsHearingImpaired:
+		case mediastream.FieldIsDefault, mediastream.FieldIsForced, mediastream.FieldIsInterlaced, mediastream.FieldIsAnamorphic:
 			values[i] = new(sql.NullBool)
 		case mediastream.FieldLevel:
 			values[i] = new(sql.NullFloat64)
 		case mediastream.FieldIndex, mediastream.FieldBitRate, mediastream.FieldChannels, mediastream.FieldSampleRate, mediastream.FieldWidth, mediastream.FieldHeight:
 			values[i] = new(sql.NullInt64)
-		case mediastream.FieldKind, mediastream.FieldVideoRangeType, mediastream.FieldCodec, mediastream.FieldProfile, mediastream.FieldLanguage, mediastream.FieldTitle, mediastream.FieldPath, mediastream.FieldPixelFormat:
+		case mediastream.FieldKind, mediastream.FieldVideoRangeType, mediastream.FieldCodec, mediastream.FieldProfile, mediastream.FieldLanguage, mediastream.FieldTitle, mediastream.FieldPixelFormat:
 			values[i] = new(sql.NullString)
 		case mediastream.FieldCreatedAt, mediastream.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -191,12 +185,6 @@ func (_m *MediaStream) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Title = value.String
 			}
-		case mediastream.FieldPath:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field path", values[i])
-			} else if value.Valid {
-				_m.Path = value.String
-			}
 		case mediastream.FieldPixelFormat:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field pixel_format", values[i])
@@ -251,12 +239,6 @@ func (_m *MediaStream) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.IsForced = value.Bool
 			}
-		case mediastream.FieldIsExternal:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field is_external", values[i])
-			} else if value.Valid {
-				_m.IsExternal = value.Bool
-			}
 		case mediastream.FieldIsInterlaced:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field is_interlaced", values[i])
@@ -268,12 +250,6 @@ func (_m *MediaStream) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field is_anamorphic", values[i])
 			} else if value.Valid {
 				_m.IsAnamorphic = value.Bool
-			}
-		case mediastream.FieldIsHearingImpaired:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field is_hearing_impaired", values[i])
-			} else if value.Valid {
-				_m.IsHearingImpaired = value.Bool
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -346,9 +322,6 @@ func (_m *MediaStream) String() string {
 	builder.WriteString("title=")
 	builder.WriteString(_m.Title)
 	builder.WriteString(", ")
-	builder.WriteString("path=")
-	builder.WriteString(_m.Path)
-	builder.WriteString(", ")
 	builder.WriteString("pixel_format=")
 	builder.WriteString(_m.PixelFormat)
 	builder.WriteString(", ")
@@ -376,17 +349,11 @@ func (_m *MediaStream) String() string {
 	builder.WriteString("is_forced=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsForced))
 	builder.WriteString(", ")
-	builder.WriteString("is_external=")
-	builder.WriteString(fmt.Sprintf("%v", _m.IsExternal))
-	builder.WriteString(", ")
 	builder.WriteString("is_interlaced=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsInterlaced))
 	builder.WriteString(", ")
 	builder.WriteString("is_anamorphic=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsAnamorphic))
-	builder.WriteString(", ")
-	builder.WriteString("is_hearing_impaired=")
-	builder.WriteString(fmt.Sprintf("%v", _m.IsHearingImpaired))
 	builder.WriteByte(')')
 	return builder.String()
 }
