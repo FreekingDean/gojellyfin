@@ -8,6 +8,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/consts"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	creditmodal "github.com/FreekingDean/gojellyfin/internal/store/credit"
 	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
 )
 
@@ -51,6 +52,7 @@ func movieMetadata(movie *gotmdb.MovieDetails, base string) items.Metadata {
 		Genres:          named(movie.Genres),
 		RunTimeTicks:    ticks(movie.Runtime),
 		Studios:         companies(movie.ProductionCompanies),
+		People:          movieCredits(movie),
 		ProviderIds:     providerIDs(movie.ID, movie.IMDbID),
 		Images: artwork(
 			remote(imagemodal.KindPrimary, base, posterSize, movie.PosterPath),
@@ -73,6 +75,7 @@ func seriesMetadata(series *gotmdb.TVDetails, base string) items.Metadata {
 		Taglines:        list(series.Tagline),
 		Genres:          named(series.Genres),
 		Studios:         companies(series.ProductionCompanies),
+		People:          seriesCredits(series),
 		ProviderIds:     providerIDs(series.ID, seriesIMDbID(series)),
 		Images: artwork(
 			remote(imagemodal.KindPrimary, base, posterSize, series.PosterPath),
@@ -225,6 +228,67 @@ func text(value string) *string {
 	}
 
 	return &value
+}
+
+func movieCredits(movie *gotmdb.MovieDetails) *[]items.Credit {
+	if movie.MovieCreditsAppend == nil || movie.Credits.MovieCredits == nil {
+		return nil
+	}
+
+	people := make([]items.Credit, 0, len(movie.Credits.Cast)+len(movie.Credits.Crew))
+	for _, member := range movie.Credits.Cast {
+		people = append(people, cast(member.Name, member.Character, member.Order))
+	}
+	for _, member := range movie.Credits.Crew {
+		if credit, wanted := crew(member.Name, member.Job); wanted {
+			people = append(people, credit)
+		}
+	}
+
+	if len(people) == 0 {
+		return nil
+	}
+
+	return &people
+}
+
+func seriesCredits(series *gotmdb.TVDetails) *[]items.Credit {
+	if series.TVCreditsAppend == nil || series.Credits.TVCredits == nil {
+		return nil
+	}
+
+	people := make([]items.Credit, 0, len(series.Credits.Cast)+len(series.Credits.Crew))
+	for _, member := range series.Credits.Cast {
+		people = append(people, cast(member.Name, member.Character, member.Order))
+	}
+	for _, member := range series.Credits.Crew {
+		if credit, wanted := crew(member.Name, member.Job); wanted {
+			people = append(people, credit)
+		}
+	}
+
+	if len(people) == 0 {
+		return nil
+	}
+
+	return &people
+}
+
+func cast(name, character string, order int) items.Credit {
+	return items.Credit{Name: name, Kind: creditmodal.KindActor, Role: character, Order: int32(order)}
+}
+
+func crew(name, job string) (items.Credit, bool) {
+	kind, wanted := crewKinds[job]
+
+	return items.Credit{Name: name, Kind: kind}, wanted
+}
+
+var crewKinds = map[string]items.CreditKind{
+	"Director": creditmodal.KindDirector,
+	"Writer":   creditmodal.KindWriter,
+	"Producer": creditmodal.KindProducer,
+	"Composer": creditmodal.KindComposer,
 }
 
 func ticks(minutes int) *int64 {

@@ -16,7 +16,17 @@ const (
 		"poster_path": "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
 		"backdrop_path": "/ByDf0zjLSumz1MP1cDEo2JmHkrn.jpg",
 		"production_countries": [{"iso_3166_1": "US", "name": "United States of America"}],
-		"release_dates": {"results": [{"iso_3166_1": "US", "release_dates": [{"certification": "R", "type": 3}]}]}
+		"release_dates": {"results": [{"iso_3166_1": "US", "release_dates": [{"certification": "R", "type": 3}]}]},
+		"credits": {
+			"cast": [
+				{"id": 6384, "name": "Keanu Reeves", "character": "Thomas A. Anderson", "order": 0},
+				{"id": 2975, "name": "Laurence Fishburne", "character": "Morpheus", "order": 1}
+			],
+			"crew": [
+				{"id": 9339, "name": "Lana Wachowski", "job": "Director", "department": "Directing"},
+				{"id": 1254, "name": "Bill Pope", "job": "Director of Photography", "department": "Camera"}
+			]
+		}
 	}`
 
 	breakingBadSearch = `{"page":1,"results":[{"id":1396,"name":"Breaking Bad","first_air_date":"2008-01-20"}],"total_results":1}`
@@ -36,7 +46,11 @@ const (
 		"backdrop_path": "/tsRy63Mu5cu8etL1X7ZLyf7UP1M.jpg",
 		"production_countries": [{"iso_3166_1": "US", "name": "United States of America"}],
 		"external_ids": {"imdb_id": "tt0903747"},
-		"content_ratings": {"results": [{"iso_3166_1": "US", "rating": "TV-MA"}]}
+		"content_ratings": {"results": [{"iso_3166_1": "US", "rating": "TV-MA"}]},
+		"credits": {
+			"cast": [{"id": 17419, "name": "Bryan Cranston", "character": "Walter White", "order": 0}],
+			"crew": [{"id": 66633, "name": "Vince Gilligan", "job": "Writer", "department": "Writing"}]
+		}
 	}`
 
 	breakingBadSeasonOne = `{

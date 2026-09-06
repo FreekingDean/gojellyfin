@@ -40,6 +40,7 @@ type Metadata struct {
 	Taglines          *[]string
 	Genres            *[]string
 	Studios           *[]string
+	People            *[]Credit
 	LockedFields      *[]string
 	ProviderIds       *map[string]string
 	Images            []RemoteImage
@@ -86,8 +87,15 @@ func (s *Service) UpdateMetadata(ctx context.Context, id uuid.UUID, metadata Met
 	return item, nil
 }
 
+type Credit struct {
+	Name  string
+	Kind  CreditKind
+	Role  string
+	Order int32
+}
+
 func (s *Service) replaceNamed(ctx context.Context, id uuid.UUID, metadata Metadata) error {
-	if metadata.Genres == nil && metadata.Studios == nil {
+	if metadata.Genres == nil && metadata.Studios == nil && metadata.People == nil {
 		return nil
 	}
 
@@ -109,7 +117,15 @@ func (s *Service) replaceNamed(ctx context.Context, id uuid.UUID, metadata Metad
 			update = update.ClearStudios().AddStudioIDs(studios...)
 		}
 
-		return update.Exec(ctx)
+		if err := update.Exec(ctx); err != nil {
+			return err
+		}
+
+		if metadata.People != nil {
+			return replaceCredits(ctx, tx, id, *metadata.People)
+		}
+
+		return nil
 	})
 }
 

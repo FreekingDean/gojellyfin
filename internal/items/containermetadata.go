@@ -178,6 +178,37 @@ func (s *Service) DistinctTags(ctx context.Context, query MetadataQuery) ([]stri
 	return tags, nil
 }
 
+func replaceCredits(ctx context.Context, tx *store.Tx, itemID uuid.UUID, people []Credit) error {
+	if _, err := tx.Credit.Delete().
+		Where(creditmodal.HasItemWith(itemmodal.ID(itemID))).
+		Exec(ctx); err != nil {
+		return fmt.Errorf("failed to clear the credits: %w", err)
+	}
+
+	for _, person := range people {
+		id, err := tx.Person.Create().
+			SetName(person.Name).
+			OnConflictColumns(personmodal.FieldName).
+			UpdateNewValues().
+			ID(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to save %q: %w", person.Name, err)
+		}
+
+		if err := tx.Credit.Create().
+			SetItemID(itemID).
+			SetPersonID(id).
+			SetKind(person.Kind).
+			SetRole(person.Role).
+			SetSortOrder(person.Order).
+			Exec(ctx); err != nil {
+			return fmt.Errorf("failed to credit %q: %w", person.Name, err)
+		}
+	}
+
+	return nil
+}
+
 func genreIDs(ctx context.Context, tx *store.Tx, names []string) ([]uuid.UUID, error) {
 	ids := make([]uuid.UUID, 0, len(names))
 	for _, name := range names {

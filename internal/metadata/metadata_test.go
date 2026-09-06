@@ -3,6 +3,7 @@ package metadata
 import (
 	"context"
 	"errors"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -17,6 +18,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/store"
+	creditmodal "github.com/FreekingDean/gojellyfin/internal/store/credit"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
 	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/source"
@@ -67,8 +69,12 @@ func (s *stubProvider) Movie(_ context.Context, name string, _ *int32) (items.Me
 		CommunityRating: number(8.2),
 		PremiereDate:    &premiere,
 		Taglines:        &[]string{"Welcome to the Real World."},
-		ProviderIds:     &map[string]string{"Stub": "603", "StubExternal": "tt0133093"},
-		Images:          s.images,
+		People: &[]items.Credit{
+			{Name: "Keanu Reeves", Kind: creditmodal.KindActor, Role: "Thomas A. Anderson"},
+			{Name: "Lana Wachowski", Kind: creditmodal.KindDirector},
+		},
+		ProviderIds: &map[string]string{"Stub": "603", "StubExternal": "tt0133093"},
+		Images:      s.images,
 	}, true, nil
 }
 
@@ -349,6 +355,23 @@ func TestService_IdentifyItems(t *testing.T) {
 		}
 		if identified.PremiereDate == nil || identified.PremiereDate.Year() != 1999 {
 			t.Errorf("PremiereDate = %v, want 1999", identified.PremiereDate)
+		}
+
+		named, _, err := fixed.items.DistinctPeople(context.Background(), items.MetadataQuery{
+			Viewer: items.Everyone,
+			ItemID: &movie.ID,
+		}, nil)
+		if err != nil {
+			t.Fatalf("failed to read the credits: %v", err)
+		}
+
+		want := []string{"Keanu Reeves", "Lana Wachowski"}
+		got := make([]string, 0, len(named))
+		for _, person := range named {
+			got = append(got, person.Name)
+		}
+		if !slices.Equal(got, want) {
+			t.Errorf("people = %v, want %v", got, want)
 		}
 	})
 

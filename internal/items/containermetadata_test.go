@@ -62,12 +62,7 @@ type seeded struct {
 	Genres  []string
 	Studios []string
 	Tags    []string
-	People  []credited
-}
-
-type credited struct {
-	Name string
-	Kind CreditKind
+	People  []Credit
 }
 
 func (f *metadataFixture) seed(t *testing.T, item *Item, with seeded) {
@@ -85,25 +80,11 @@ func (f *metadataFixture) seed(t *testing.T, item *Item, with seeded) {
 	if with.Tags != nil {
 		metadata.Tags = &with.Tags
 	}
+	if with.People != nil {
+		metadata.People = &with.People
+	}
 	if _, err := f.service.UpdateMetadata(ctx, item.ID, metadata); err != nil {
 		t.Fatalf("failed to save the metadata: %v", err)
-	}
-
-	for _, person := range with.People {
-		id, err := f.service.store.Person.Create().SetName(person.Name).
-			OnConflictColumns(personmodal.FieldName).
-			UpdateNewValues().
-			ID(ctx)
-		if err != nil {
-			t.Fatalf("failed to save the person: %v", err)
-		}
-		if err := f.service.store.Credit.Create().
-			SetItemID(item.ID).
-			SetPersonID(id).
-			SetKind(person.Kind).
-			Exec(ctx); err != nil {
-			t.Fatalf("failed to save the credit: %v", err)
-		}
 	}
 }
 
@@ -134,9 +115,9 @@ func TestService_NamedMetadata(t *testing.T) {
 			Genres:  []string{fixture.name("Comedy"), fixture.name("Drama")},
 			Studios: []string{fixture.name("Studio")},
 			Tags:    []string{"live"},
-			People: []credited{
+			People: []Credit{
 				{Name: fixture.name("Director"), Kind: creditmodal.KindDirector},
-				{Name: fixture.name("Writer"), Kind: creditmodal.KindWriter},
+				{Name: fixture.name("Writer"), Kind: creditmodal.KindWriter, Role: "Teleplay", Order: 3},
 			},
 		})
 
@@ -188,6 +169,19 @@ func TestService_NamedMetadata(t *testing.T) {
 			want := []string{fixture.name("Writer")}
 			if got := namesOf(named); !slices.Equal(got, want) {
 				t.Errorf("people = %v, want %v", got, want)
+			}
+		})
+
+		t.Run("keeps the role and the billing order", func(t *testing.T) {
+			credit, err := fixture.service.store.Credit.Query().
+				Where(creditmodal.HasPersonWith(personmodal.Name(fixture.name("Writer")))).
+				Only(ctx)
+			if err != nil {
+				t.Fatalf("failed to read the credit: %v", err)
+			}
+
+			if credit.Role != "Teleplay" || credit.SortOrder != 3 {
+				t.Errorf("credit = %q/%d, want Teleplay/3", credit.Role, credit.SortOrder)
 			}
 		})
 
