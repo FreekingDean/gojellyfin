@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/sources/arr"
 	"github.com/FreekingDean/gojellyfin/internal/sources/radarr"
@@ -26,14 +27,16 @@ type File struct {
 }
 
 type Title struct {
+	Key         string
+	ParentKey   string
 	Tagged      bool
 	Kind        itemmodel.Kind
 	Name        string
+	SortName    string
 	Year        *int32
 	Index       *int32
 	ParentIndex *int32
 	Files       []File
-	Children    []Title
 }
 
 type Binding struct {
@@ -74,12 +77,20 @@ func (s *Service) movies(ctx context.Context, binding Binding) ([]Title, error) 
 			return nil, err
 		}
 
+		if movie.TmdbID == 0 {
+			log.Printf("skipping %s: %s reports no TMDB id", movie.Title, binding.Source.Name)
+
+			continue
+		}
+
 		titles = append(titles, Title{
-			Tagged: tagged(movie.Tags),
-			Kind:   itemmodel.KindMovie,
-			Name:   movie.Title,
-			Year:   released(movie.Year),
-			Files:  []File{found},
+			Key:      items.MovieKey(movie.TmdbID),
+			Tagged:   tagged(movie.Tags),
+			Kind:     itemmodel.KindMovie,
+			Name:     movie.Title,
+			SortName: items.SortName(movie.Title),
+			Year:     released(movie.Year),
+			Files:    []File{found},
 		})
 	}
 
@@ -99,6 +110,12 @@ func (s *Service) series(ctx context.Context, binding Binding) ([]Title, error) 
 
 	titles := make([]Title, 0, len(shows))
 	for _, show := range shows {
+		if show.TmdbID == 0 {
+			log.Printf("skipping %s: %s reports no TMDB id", show.Title, binding.Source.Name)
+
+			continue
+		}
+
 		query := url.Values{}
 		query.Set("seriesId", strconv.Itoa(show.ID))
 		query.Set("includeEpisodeFile", "true")
@@ -110,24 +127,26 @@ func (s *Service) series(ctx context.Context, binding Binding) ([]Title, error) 
 			return nil, err
 		}
 
-		children := seasons(binding.Source, episodes)
-		if len(children) == 0 {
+		below := seasons(binding.Source, show.TmdbID, tagged(show.Tags), episodes)
+		if len(below) == 0 {
 			continue
 		}
 
 		titles = append(titles, Title{
+			Key:      items.SeriesKey(show.TmdbID),
 			Tagged:   tagged(show.Tags),
 			Kind:     itemmodel.KindSeries,
 			Name:     show.Title,
+			SortName: items.SortName(show.Title),
 			Year:     released(show.Year),
-			Children: children,
 		})
+		titles = append(titles, below...)
 	}
 
 	return titles, nil
 }
 
-func seasons(source Source, episodes []sonarr.Episode) []Title {
+func seasons(source Source, tmdbID int, tagged bool, episodes []sonarr.Episode) []Title {
 	numbers := make([]int32, 0)
 	byNumber := map[int32][]Title{}
 
@@ -147,9 +166,14 @@ func seasons(source Source, episodes []sonarr.Episode) []Title {
 			numbers = append(numbers, episode.SeasonNumber)
 		}
 
+		name := items.EpisodeName(episode.Title, episode.EpisodeNumber)
 		byNumber[episode.SeasonNumber] = append(byNumber[episode.SeasonNumber], Title{
+			Key:         items.EpisodeKey(tmdbID, episode.SeasonNumber, episode.EpisodeNumber),
+			ParentKey:   items.SeasonKey(tmdbID, episode.SeasonNumber),
+			Tagged:      tagged,
 			Kind:        itemmodel.KindEpisode,
-			Name:        episode.Title,
+			Name:        name,
+			SortName:    items.SortName(name),
 			Index:       ptr(episode.EpisodeNumber),
 			ParentIndex: ptr(episode.SeasonNumber),
 			Files:       []File{found},
@@ -161,10 +185,15 @@ func seasons(source Source, episodes []sonarr.Episode) []Title {
 	titles := make([]Title, 0, len(numbers))
 	for _, number := range numbers {
 		titles = append(titles, Title{
-			Kind:     itemmodel.KindSeason,
-			Index:    ptr(number),
-			Children: byNumber[number],
+			Key:       items.SeasonKey(tmdbID, number),
+			ParentKey: items.SeriesKey(tmdbID),
+			Tagged:    tagged,
+			Kind:      itemmodel.KindSeason,
+			Name:      items.SeasonName(number),
+			SortName:  items.SeasonSortName(number),
+			Index:     ptr(number),
 		})
+		titles = append(titles, byNumber[number]...)
 	}
 
 	return titles

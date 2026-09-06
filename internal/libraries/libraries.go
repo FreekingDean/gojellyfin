@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/sources"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
@@ -50,11 +51,16 @@ var (
 )
 
 type Service struct {
-	store *store.Client
+	store   *store.Client
+	sources *sources.Service
 }
 
 func New(client *store.Client) *Service {
 	return &Service{store: client}
+}
+
+func (s *Service) UseSources(bindings *sources.Service) {
+	s.sources = bindings
 }
 
 func (s *Service) CreateLibrary(ctx context.Context, name string, collectionType CollectionType, locations []string) (*Library, error) {

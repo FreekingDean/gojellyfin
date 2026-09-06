@@ -20,7 +20,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/metadata"
 	"github.com/FreekingDean/gojellyfin/internal/observability"
 	"github.com/FreekingDean/gojellyfin/internal/playlists"
-	"github.com/FreekingDean/gojellyfin/internal/scanner"
+	"github.com/FreekingDean/gojellyfin/internal/probe"
 	"github.com/FreekingDean/gojellyfin/internal/server"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/sources"
@@ -46,7 +46,7 @@ var serverModules = fx.Options(
 	localization.Module,
 	metadata.Module,
 	playlists.Module,
-	scanner.Module,
+	probe.Module,
 	sources.Module,
 	sessions.Module,
 	system.Module,

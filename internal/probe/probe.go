@@ -1,4 +1,4 @@
-package scanner
+package probe
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 
 const ticksPerSecond = 10_000_000
 
-func (s *Scanner) probeFile(ctx context.Context, source *items.MediaSource) (*items.MediaSource, error) {
+func (s *Prober) probeFile(ctx context.Context, source *items.MediaSource) (*items.MediaSource, error) {
 	if !items.NeedsProbe(source) {
 		return nil, nil
 	}

@@ -1,4 +1,4 @@
-package scanner
+package probe
 
 import (
 	"github.com/FreekingDean/gojellyfin/internal/fx"
@@ -6,11 +6,11 @@ import (
 )
 
 var Module = fx.Module(
-	"scanner",
+	"probe",
 	fx.Provide(New),
 	fx.Invoke(register),
 )
 
-func register(registry *jobs.Registry, scanner *Scanner) {
-	registry.Register(scanner.Job())
+func register(registry *jobs.Registry, prober *Prober) {
+	registry.Register(prober.Job())
 }

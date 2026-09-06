@@ -430,6 +430,34 @@ func (s *Service) DeleteMembershipNotIn(
 	return parsed(dropped), nil
 }
 
+func (s *Service) DeleteMembershipNotInKeys(
+	ctx context.Context,
+	libraryID, sourceID uuid.UUID,
+	keys []string,
+) ([]uuid.UUID, error) {
+	where := []predicate.LibraryItem{
+		librarymembership.LibraryID(libraryID),
+		librarymembership.SourceID(sourceID),
+	}
+	if len(keys) > 0 {
+		where = append(where, librarymembership.HasItemWith(itemmodal.KeyNotIn(keys...)))
+	}
+
+	dropped, err := s.store.LibraryItem.Query().
+		Where(where...).
+		Select(librarymembership.FieldItemID).
+		Strings(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to select stale library membership: %w", err)
+	}
+
+	if _, err := s.store.LibraryItem.Delete().Where(where...).Exec(ctx); err != nil {
+		return nil, fmt.Errorf("failed to drop library membership: %w", err)
+	}
+
+	return parsed(dropped), nil
+}
+
 func (s *Service) UnreachableItems(ctx context.Context) ([]uuid.UUID, error) {
 	orphans, err := s.store.Item.Query().
 		Where(

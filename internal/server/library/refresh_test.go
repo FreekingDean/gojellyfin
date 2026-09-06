@@ -13,7 +13,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/metadata"
-	"github.com/FreekingDean/gojellyfin/internal/scanner"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
@@ -112,7 +111,7 @@ func TestServer_RefreshItem(t *testing.T) {
 		fixed := newFixture(t)
 		movie := fixed.add(t, seed{kind: itemmodal.KindMovie, name: "The Matrix"})
 
-		if _, err := fixed.expecting(t, scanner.RefreshLibraryJobID).RefreshItem(
+		if _, err := fixed.expecting(t, libraries.RefreshLibrariesJobID).RefreshItem(
 			context.Background(),
 			api.RefreshItemRequestObject{
 				ItemId: movie,

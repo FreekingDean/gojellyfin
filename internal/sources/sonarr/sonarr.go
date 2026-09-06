@@ -8,11 +8,12 @@ const (
 )
 
 type Series struct {
-	ID    int    `json:"id"`
-	Title string `json:"title"`
-	Year  int32  `json:"year"`
-	Path  string `json:"path"`
-	Tags  []int  `json:"tags"`
+	ID     int    `json:"id"`
+	TmdbID int    `json:"tmdbId"`
+	Title  string `json:"title"`
+	Year   int32  `json:"year"`
+	Path   string `json:"path"`
+	Tags   []int  `json:"tags"`
 }
 
 type Episode struct {

@@ -11,7 +11,9 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/env"
+	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/sources/arr"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	librarysourcemodel "github.com/FreekingDean/gojellyfin/internal/store/librarysource"
@@ -27,18 +29,22 @@ const (
 )
 
 type Service struct {
-	client *http.Client
-	lister *http.Client
-	store  *store.Client
-	config env.Config
+	client   *http.Client
+	lister   *http.Client
+	store    *store.Client
+	config   env.Config
+	items    *items.Service
+	activity *activity.Service
 }
 
-func New(store *store.Client, config env.Config) *Service {
+func New(store *store.Client, config env.Config, records *items.Service, activities *activity.Service) *Service {
 	return &Service{
-		client: &http.Client{Timeout: testTimeout},
-		lister: &http.Client{Timeout: listTimeout},
-		store:  store,
-		config: config,
+		client:   &http.Client{Timeout: testTimeout},
+		lister:   &http.Client{Timeout: listTimeout},
+		store:    store,
+		config:   config,
+		items:    records,
+		activity: activities,
 	}
 }
 

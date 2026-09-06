@@ -2,6 +2,7 @@ package items
 
 import (
 	"context"
+	"slices"
 	"testing"
 	"time"
 
@@ -105,11 +106,11 @@ func TestService_SourcesNeedingProbe(t *testing.T) {
 			t.Fatalf("failed to save the unprobed source: %v", err)
 		}
 
-		outstanding, err := fixture.service.SourcesNeedingProbe(ctx, fixture.sourceID)
+		outstanding, err := fixture.service.SourcesNeedingProbe(ctx)
 		if err != nil {
 			t.Fatalf("failed to select the sources needing a probe: %v", err)
 		}
-		if len(outstanding) != 1 || outstanding[0] != unread.ID {
+		if !slices.Contains(outstanding, unread.ID) {
 			t.Fatalf("outstanding = %v, want the file nothing has probed", outstanding)
 		}
 	})
@@ -130,11 +131,11 @@ func TestService_SourcesNeedingProbe(t *testing.T) {
 			t.Fatalf("failed to touch the probed source: %v", err)
 		}
 
-		outstanding, err := fixture.service.SourcesNeedingProbe(ctx, fixture.sourceID)
+		outstanding, err := fixture.service.SourcesNeedingProbe(ctx)
 		if err != nil {
 			t.Fatalf("failed to select the sources needing a probe: %v", err)
 		}
-		if len(outstanding) != 1 || outstanding[0] != changed.ID {
+		if !slices.Contains(outstanding, changed.ID) {
 			t.Fatalf("outstanding = %v, want the file that changed since its probe", outstanding)
 		}
 	})
@@ -143,14 +144,19 @@ func TestService_SourcesNeedingProbe(t *testing.T) {
 		fixture := newFixture(t)
 		ctx := context.Background()
 
-		fixture.scannedFrom(t, fixture.downloader(t), "movie:the-matrix:1999", "/media/hd/The Matrix.mkv")
+		settled := fixture.scannedFrom(t, fixture.downloader(t), "movie:the-matrix:1999", "/media/hd/The Matrix.mkv")
 
-		outstanding, err := fixture.service.SourcesNeedingProbe(ctx, fixture.sourceID)
+		sources, err := fixture.service.MediaSources(ctx, settled.ID)
+		if err != nil {
+			t.Fatalf("failed to read the sources back: %v", err)
+		}
+
+		outstanding, err := fixture.service.SourcesNeedingProbe(ctx)
 		if err != nil {
 			t.Fatalf("failed to select the sources needing a probe: %v", err)
 		}
-		if len(outstanding) != 0 {
-			t.Fatalf("outstanding = %v, want nothing left to probe", outstanding)
+		if slices.Contains(outstanding, sources[0].ID) {
+			t.Fatalf("outstanding = %v, want the probed file left alone", outstanding)
 		}
 	})
 }

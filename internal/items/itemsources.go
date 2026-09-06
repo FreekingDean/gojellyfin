@@ -119,10 +119,9 @@ func (s *Service) SourceByID(ctx context.Context, id uuid.UUID) (*MediaSource, e
 	return source, nil
 }
 
-func (s *Service) SourcesNeedingProbe(ctx context.Context, sourceID uuid.UUID) ([]uuid.UUID, error) {
+func (s *Service) SourcesNeedingProbe(ctx context.Context) ([]uuid.UUID, error) {
 	ids, err := s.store.ItemSource.Query().
 		Where(
-			sourcemodal.SourceID(sourceID),
 			func(selector *sql.Selector) {
 				probed, modified := selector.C(sourcemodal.FieldProbedAt), selector.C(sourcemodal.FieldDateModified)
 				selector.Where(sql.Or(sql.IsNull(probed), sql.ColumnsLT(probed, modified)))

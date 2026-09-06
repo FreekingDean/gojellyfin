@@ -5,8 +5,8 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
+	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/metadata"
-	"github.com/FreekingDean/gojellyfin/internal/scanner"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
@@ -20,7 +20,7 @@ func (s *Server) RefreshItem(ctx context.Context, request api.RefreshItemRequest
 
 	switch apiutil.Deref(request.Params.MetadataRefreshMode) {
 	case api.MetadataRefreshModeDefault, api.MetadataRefreshModeValidationOnly:
-		if err := s.tasks.Start(ctx, scanner.RefreshLibraryJobID); err != nil {
+		if err := s.tasks.Start(ctx, libraries.RefreshLibrariesJobID); err != nil {
 			return nil, err
 		}
 	case api.MetadataRefreshModeFullRefresh:
