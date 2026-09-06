@@ -21,7 +21,7 @@ A Go reimplementation of a Jellyfin media server, serving the Jellyfin 12.0.0 HT
 ## Commands
 
 ```sh
-make dev                             # watch and restart (go install github.com/air-verse/air@latest)
+make dev                             # migrate, build and serve, with CORS open
 make temporal                        # local Temporal dev server (brew install temporal)
 make worker                          # background worker, dialing that server
 make run                             # run once, no watching
@@ -39,13 +39,13 @@ Three things are shared between them, all in `main.go`: `withStore` opens the st
 
 `make dev` and `make run` tee to `/tmp/gojellyfin.log`, so the log is on screen and readable by tooling at the same time.
 
-`build` depends on `generate`, and `run` and `test` depend on `build`, so the generated code is never stale. The watch loop is the exception: `air` only builds, because regenerating re-emits ~95k lines on every save.
+`build` depends on `generate`, and `run`, `dev` and `test` depend on `build`, so the generated code is never stale. `dev` migrates first and opens `CORS_ORIGINS`, which is what a browser served from somewhere other than this port needs; `run` does neither.
 
 `make lint` is `gofmt`, `go vet` and the `golangci-lint` version `.github/workflows/ci.yml` pins. `.golangci.yml` enables the standard set plus the linters the tree already passes clean, so a green run means zero issues rather than a tolerated backlog. `funlen`, `gocyclo`, `revive`, `wrapcheck` and `paralleltest` are deliberately out because each has one — 53 functions over `funlen`'s default, 47 of them tests — and enabling a rule alongside exclusions wide enough to pass it leaves a rule nobody is held to. Those backlogs are #612's.
 
-Run `air` through `tee` so the log is both on screen and readable at `/tmp/gojellyfin.log`; the request log is the fastest way to find what a client actually calls.
+There is no watcher: `make dev` builds and runs once, so a change means restarting it. It `tee`s to `/tmp/gojellyfin.log`, so the log is on screen and readable by tooling at the same time; the request log is the fastest way to find what a client actually calls.
 
-`air` owns `:8081` while it runs, so starting a second server alongside it fails with `ListenAndServe error: address already in use`. Check whether it is running with `pgrep -x air` (matching on a path fails — the process is just `air`), and the listener with `lsof -ti:8081 -sTCP:LISTEN` — without `-sTCP:LISTEN` it also matches browsers connected to the port, and killing those results is not what you want. An orphaned `.air/gojellyfin` can outlive its supervisor and keep serving stale code.
+A running server owns `:8081`, so starting a second alongside it fails with `ListenAndServe error: address already in use`. Find the listener with `lsof -ti:8081 -sTCP:LISTEN` — without `-sTCP:LISTEN` it also matches browsers connected to the port, and killing those results is not what you want.
 
 Requires a reachable Postgres. `DATABASE_URL` is required and the binary carries no default — a process that was not told which database to open fails at start rather than quietly dialing localhost. The development DSN (`postgres://localhost:5432/gojellyfin_development?sslmode=disable`) lives in the `Makefile` as a `?=`, so `make run`, `make dev` and `make test` supply it while an explicit `DATABASE_URL` still wins. Running `go test ./...` or the binary directly, outside `make`, means setting it yourself.
 
@@ -55,7 +55,7 @@ The reading is `viper`, bound to the environment only — no config file, no fla
 
 A malformed value is refused at start rather than ignored. `TRANSCODER_JOBS=lots` used to fall through to the core count and `TRANSCODER_STALL_TIMEOUT=30` to thirty seconds, so a typo in a manifest became a capacity problem with nothing to point at.
 
-`HTTP_PORT` is what the server listens on and defaults to 8081, which is the port `air`, the `Dockerfile`, and every manifest in `deploy/` already name — the variable exists so a second process can be brought up beside them, not to move the default.
+`HTTP_PORT` is what the server listens on and defaults to 8081, which is the port the `Dockerfile` and every manifest in `deploy/` already name — the variable exists so a second process can be brought up beside them, not to move the default.
 
 `serverModules` and `workerModules` in `cmd/gojellyfin` both list `env.Module`, and `TestWorkerModules` guards the second the way `TestServerModules` guards the first — a command that composes its graph inline has nothing to validate, so the worker starting without a config it needs is only found by running it.
 
@@ -63,7 +63,7 @@ A malformed value is refused at start rather than ignored. `TRANSCODER_JOBS=lots
 
 `make e2e` is the one test that boots the server. `cmd/gojellyfin/e2e_test.go` sits behind a `//go:build e2e` tag so `make test` never picks it up, creates a database of its own and drops it on the way out, runs `migrateCommand` and `addUserCommand` in process — piping the password through a swapped `os.Stdin`, because that command takes it no other way — seeds a library, and then starts the real `serverModules` graph and drives it over HTTP: public system info, a refused anonymous request, a refused wrong password, a login, the user behind the token, the library as a view, its items through the `/Users/{userId}/Items` alias, an item opened and favourited and re-read, and the websocket greeting. It takes about four seconds. `.github/workflows/e2e.yml` is its own workflow rather than a step in `ci.yml`, so it runs beside the unit tests instead of after them; it needs a postgres and the atlas CLI, but neither ffmpeg nor a pre-applied schema, because nothing here transcodes and the test migrates the database it made.
 
-It picks its port by binding `:0` and reading the number back into `HTTP_PORT`, so it can never take `:8081` from a running `air`.
+It picks its port by binding `:0` and reading the number back into `HTTP_PORT`, so it can never take `:8081` from a running server.
 
 **There is no browser in this one.** `jellyfin-web` is not published anywhere a test can fetch it directly: no npm package, no built assets on its releases, and the only place the built client exists is inside the all-in-one `jellyfin/jellyfin` image (see the comment in `deploy/web-deployment.yaml`), which is 395MB and has to be unpacked to get at a directory of static files. So the smoke test is written against the API, which is the contract the client talks to. A real integration test that boots the client on top of it is wanted and tracked in #558 — that is a second test rather than a change to this one, because what the two catch is different: this one fails when the server stops serving, and that one fails when the client stops being able to use what it serves.
 
