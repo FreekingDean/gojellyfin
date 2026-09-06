@@ -55,15 +55,15 @@ func searchHint(item *items.Item, term string) api.SearchHint {
 		Name:              apiutil.Ptr(item.Name),
 		MatchedTerm:       apiutil.Ptr(term),
 		Type:              &kind,
-		IsFolder:          apiutil.Ptr(item.IsFolder),
+		IsFolder:          apiutil.Ptr(items.IsFolder(item.Kind)),
 		IndexNumber:       item.IndexNumber,
 		ParentIndexNumber: item.ParentIndexNumber,
 		ProductionYear:    item.ProductionYear,
 		RunTimeTicks:      item.RunTimeTicks,
 	}
 
-	if !item.IsFolder {
-		hint.MediaType = apiutil.Ptr(api.MediaType(item.MediaType))
+	if !items.IsFolder(item.Kind) {
+		hint.MediaType = apiutil.Ptr(api.MediaType(items.MediaTypeOf(item.Kind)))
 	}
 
 	return hint

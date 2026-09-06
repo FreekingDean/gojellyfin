@@ -161,6 +161,26 @@ func UpdatedAtLTE(v time.Time) predicate.Playlist {
 	return predicate.Playlist(sql.FieldLTE(FieldUpdatedAt, v))
 }
 
+// MediaTypeEQ applies the EQ predicate on the "media_type" field.
+func MediaTypeEQ(v MediaType) predicate.Playlist {
+	return predicate.Playlist(sql.FieldEQ(FieldMediaType, v))
+}
+
+// MediaTypeNEQ applies the NEQ predicate on the "media_type" field.
+func MediaTypeNEQ(v MediaType) predicate.Playlist {
+	return predicate.Playlist(sql.FieldNEQ(FieldMediaType, v))
+}
+
+// MediaTypeIn applies the In predicate on the "media_type" field.
+func MediaTypeIn(vs ...MediaType) predicate.Playlist {
+	return predicate.Playlist(sql.FieldIn(FieldMediaType, vs...))
+}
+
+// MediaTypeNotIn applies the NotIn predicate on the "media_type" field.
+func MediaTypeNotIn(vs ...MediaType) predicate.Playlist {
+	return predicate.Playlist(sql.FieldNotIn(FieldMediaType, vs...))
+}
+
 // ItemIDEQ applies the EQ predicate on the "item_id" field.
 func ItemIDEQ(v uuid.UUID) predicate.Playlist {
 	return predicate.Playlist(sql.FieldEQ(FieldItemID, v))

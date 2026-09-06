@@ -64,7 +64,7 @@ func (s *Server) GetMetadataEditorInfo(ctx context.Context, request api.GetMetad
 		ParentalRatingOptions: apiutil.Ptr(dto.ParentalRatings(s.localization.ParentalRatings())),
 		ExternalIdInfos:       &[]api.ExternalIdInfo{},
 	}
-	if item.IsFolder {
+	if items.IsFolder(item.Kind) {
 		info.ContentTypeOptions = apiutil.Ptr(contentTypeOptions())
 	}
 

@@ -94,20 +94,6 @@ func (_u *ItemUpdate) SetNillableKind(v *item.Kind) *ItemUpdate {
 	return _u
 }
 
-// SetMediaType sets the "media_type" field.
-func (_u *ItemUpdate) SetMediaType(v item.MediaType) *ItemUpdate {
-	_u.mutation.SetMediaType(v)
-	return _u
-}
-
-// SetNillableMediaType sets the "media_type" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableMediaType(v *item.MediaType) *ItemUpdate {
-	if v != nil {
-		_u.SetMediaType(*v)
-	}
-	return _u
-}
-
 // SetKey sets the "key" field.
 func (_u *ItemUpdate) SetKey(v string) *ItemUpdate {
 	_u.mutation.SetKey(v)
@@ -199,20 +185,6 @@ func (_u *ItemUpdate) SetNillableOverview(v *string) *ItemUpdate {
 // ClearOverview clears the value of the "overview" field.
 func (_u *ItemUpdate) ClearOverview() *ItemUpdate {
 	_u.mutation.ClearOverview()
-	return _u
-}
-
-// SetIsFolder sets the "is_folder" field.
-func (_u *ItemUpdate) SetIsFolder(v bool) *ItemUpdate {
-	_u.mutation.SetIsFolder(v)
-	return _u
-}
-
-// SetNillableIsFolder sets the "is_folder" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableIsFolder(v *bool) *ItemUpdate {
-	if v != nil {
-		_u.SetIsFolder(*v)
-	}
 	return _u
 }
 
@@ -975,11 +947,6 @@ func (_u *ItemUpdate) check() error {
 			return &ValidationError{Name: "kind", err: fmt.Errorf(`store: validator failed for field "Item.kind": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.MediaType(); ok {
-		if err := item.MediaTypeValidator(v); err != nil {
-			return &ValidationError{Name: "media_type", err: fmt.Errorf(`store: validator failed for field "Item.media_type": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -1003,9 +970,6 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.Kind(); ok {
 		_spec.SetField(item.FieldKind, field.TypeEnum, value)
-	}
-	if value, ok := _u.mutation.MediaType(); ok {
-		_spec.SetField(item.FieldMediaType, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.Key(); ok {
 		_spec.SetField(item.FieldKey, field.TypeString, value)
@@ -1033,9 +997,6 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.OverviewCleared() {
 		_spec.ClearField(item.FieldOverview, field.TypeString)
-	}
-	if value, ok := _u.mutation.IsFolder(); ok {
-		_spec.SetField(item.FieldIsFolder, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.LockData(); ok {
 		_spec.SetField(item.FieldLockData, field.TypeBool, value)
@@ -1736,20 +1697,6 @@ func (_u *ItemUpdateOne) SetNillableKind(v *item.Kind) *ItemUpdateOne {
 	return _u
 }
 
-// SetMediaType sets the "media_type" field.
-func (_u *ItemUpdateOne) SetMediaType(v item.MediaType) *ItemUpdateOne {
-	_u.mutation.SetMediaType(v)
-	return _u
-}
-
-// SetNillableMediaType sets the "media_type" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableMediaType(v *item.MediaType) *ItemUpdateOne {
-	if v != nil {
-		_u.SetMediaType(*v)
-	}
-	return _u
-}
-
 // SetKey sets the "key" field.
 func (_u *ItemUpdateOne) SetKey(v string) *ItemUpdateOne {
 	_u.mutation.SetKey(v)
@@ -1841,20 +1788,6 @@ func (_u *ItemUpdateOne) SetNillableOverview(v *string) *ItemUpdateOne {
 // ClearOverview clears the value of the "overview" field.
 func (_u *ItemUpdateOne) ClearOverview() *ItemUpdateOne {
 	_u.mutation.ClearOverview()
-	return _u
-}
-
-// SetIsFolder sets the "is_folder" field.
-func (_u *ItemUpdateOne) SetIsFolder(v bool) *ItemUpdateOne {
-	_u.mutation.SetIsFolder(v)
-	return _u
-}
-
-// SetNillableIsFolder sets the "is_folder" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableIsFolder(v *bool) *ItemUpdateOne {
-	if v != nil {
-		_u.SetIsFolder(*v)
-	}
 	return _u
 }
 
@@ -2630,11 +2563,6 @@ func (_u *ItemUpdateOne) check() error {
 			return &ValidationError{Name: "kind", err: fmt.Errorf(`store: validator failed for field "Item.kind": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.MediaType(); ok {
-		if err := item.MediaTypeValidator(v); err != nil {
-			return &ValidationError{Name: "media_type", err: fmt.Errorf(`store: validator failed for field "Item.media_type": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -2676,9 +2604,6 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	if value, ok := _u.mutation.Kind(); ok {
 		_spec.SetField(item.FieldKind, field.TypeEnum, value)
 	}
-	if value, ok := _u.mutation.MediaType(); ok {
-		_spec.SetField(item.FieldMediaType, field.TypeEnum, value)
-	}
 	if value, ok := _u.mutation.Key(); ok {
 		_spec.SetField(item.FieldKey, field.TypeString, value)
 	}
@@ -2705,9 +2630,6 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	}
 	if _u.mutation.OverviewCleared() {
 		_spec.ClearField(item.FieldOverview, field.TypeString)
-	}
-	if value, ok := _u.mutation.IsFolder(); ok {
-		_spec.SetField(item.FieldIsFolder, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.LockData(); ok {
 		_spec.SetField(item.FieldLockData, field.TypeBool, value)

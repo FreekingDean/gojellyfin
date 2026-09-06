@@ -9,6 +9,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 	playlistmodal "github.com/FreekingDean/gojellyfin/internal/store/playlist"
@@ -22,13 +23,13 @@ type (
 	Entry     = store.PlaylistEntry
 	Share     = store.PlaylistShare
 	Item      = store.Item
-	MediaType = itemmodal.MediaType
+	MediaType = playlistmodal.MediaType
 )
 
-const MediaTypeUnknown = itemmodal.MediaTypeUnknown
+const MediaTypeUnknown = playlistmodal.MediaTypeUnknown
 
 var (
-	ValidMediaType = itemmodal.MediaTypeValidator
+	ValidMediaType = playlistmodal.MediaTypeValidator
 
 	ErrInvalidShare = errors.New("invalid playlist share")
 )
@@ -78,16 +79,15 @@ func (s *Service) Create(ctx context.Context, params CreateParams) (*Item, error
 	err := s.store.WithTx(ctx, func(tx *store.Tx) error {
 		item, err := tx.Item.Create().
 			SetKind(itemmodal.KindPlaylist).
-			SetMediaType(params.MediaType).
 			SetName(params.Name).
 			SetSortName(strings.ToLower(params.Name)).
-			SetIsFolder(true).
 			Save(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to create playlist item: %w", err)
 		}
 
 		playlist, err := tx.Playlist.Create().
+			SetMediaType(params.MediaType).
 			SetItemID(item.ID).
 			SetOwnerID(params.OwnerID).
 			SetOpenAccess(params.OpenAccess).
@@ -417,7 +417,7 @@ func expand(ctx context.Context, client *store.ItemClient, itemIDs []uuid.UUID) 
 
 	folders := make(map[uuid.UUID]bool, len(records))
 	for _, record := range records {
-		folders[record.ID] = record.IsFolder
+		folders[record.ID] = items.IsFolder(record.Kind)
 	}
 
 	expanded := make([]uuid.UUID, 0, len(itemIDs))
@@ -452,7 +452,7 @@ func descendants(ctx context.Context, client *store.ItemClient, folderID uuid.UU
 
 	expanded := make([]uuid.UUID, 0, len(children))
 	for _, child := range children {
-		if !child.IsFolder {
+		if !items.IsFolder(child.Kind) {
 			expanded = append(expanded, child.ID)
 			continue
 		}

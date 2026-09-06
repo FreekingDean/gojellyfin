@@ -114,7 +114,6 @@ func (f *fixture) item(t *testing.T, name string, kind itemmodal.Kind, parentID 
 		SetKind(kind).
 		SetName(name).
 		SetSortName(name).
-		SetIsFolder(kind == itemmodal.KindSeries || kind == itemmodal.KindSeason).
 		SetKey(fmt.Sprintf("test:%s:%s", f.libraryID, name)).
 		SetNillableParentID(parentID).
 		SetNillableIndexNumber(index).

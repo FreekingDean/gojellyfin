@@ -17,16 +17,10 @@ func (Item) Fields() []ent.Field {
 		field.UUID("parent_id", uuid.UUID{}).Optional().Nillable(),
 
 		field.Enum("kind").Values(
-			"AggregateFolder", "Audio", "AudioBook", "BasePluginFolder", "Book",
-			"BoxSet", "Channel", "ChannelFolderItem", "CollectionFolder", "Episode",
-			"Folder", "Genre", "ManualPlaylistsFolder", "Movie", "LiveTvChannel",
-			"LiveTvProgram", "MusicAlbum", "MusicArtist", "MusicGenre", "MusicVideo",
-			"Person", "Photo", "PhotoAlbum", "Playlist", "PlaylistsFolder", "Program",
-			"Recording", "Season", "Series", "Studio", "Trailer", "TvChannel",
-			"TvProgram", "UserRootFolder", "UserView", "Video", "Year",
+			"Movie", "Series", "Season", "Episode", "Playlist",
+			"Audio", "AudioBook", "Trailer", "Video",
+			"Folder", "CollectionFolder", "BoxSet", "PlaylistsFolder", "UserRootFolder",
 		),
-		field.Enum("media_type").Values("Unknown", "Video", "Audio", "Photo", "Book").
-			Default("Unknown"),
 
 		field.String("key").Optional(),
 		field.String("name"),
@@ -34,7 +28,6 @@ func (Item) Fields() []ent.Field {
 		field.Time("deleted_at").Optional().Nillable(),
 		field.Text("overview").Optional(),
 
-		field.Bool("is_folder").Default(false),
 		field.Bool("lock_data").Default(false),
 
 		field.Time("premiere_date").Optional().Nillable(),

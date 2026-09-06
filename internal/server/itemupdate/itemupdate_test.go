@@ -111,7 +111,6 @@ func newFixture(t *testing.T) *fixture {
 
 	folder, err := client.Item.Create().
 		SetKind(itemmodal.KindFolder).
-		SetIsFolder(true).
 		SetName("Folder").
 		SetSortName("folder").
 		SetKey("folder:folder:" + library.ID.String()).

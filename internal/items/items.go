@@ -5,6 +5,7 @@ import (
 	stdsql "database/sql"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
+	playlistmodal "github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	datamodal "github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
 )
@@ -21,12 +23,12 @@ import (
 type (
 	Item      = store.Item
 	Kind      = itemmodal.Kind
-	MediaType = itemmodal.MediaType
+	MediaType = playlistmodal.MediaType
 )
 
 var (
 	ValidKind      = itemmodal.KindValidator
-	ValidMediaType = itemmodal.MediaTypeValidator
+	ValidMediaType = playlistmodal.MediaTypeValidator
 )
 
 type Service struct {
@@ -62,20 +64,48 @@ var isFolderKind = map[Kind]bool{
 var (
 	folderKinds   = []Kind{itemmodal.KindSeries, itemmodal.KindSeason}
 	playableKinds = []Kind{itemmodal.KindMovie, itemmodal.KindEpisode}
+
+	audioKinds = []Kind{itemmodal.KindAudio, itemmodal.KindAudioBook}
+
+	allKinds = []Kind{
+		itemmodal.KindMovie, itemmodal.KindSeries, itemmodal.KindSeason,
+		itemmodal.KindEpisode, itemmodal.KindPlaylist, itemmodal.KindAudio,
+		itemmodal.KindAudioBook, itemmodal.KindTrailer, itemmodal.KindVideo,
+		itemmodal.KindFolder, itemmodal.KindCollectionFolder, itemmodal.KindBoxSet,
+		itemmodal.KindPlaylistsFolder, itemmodal.KindUserRootFolder,
+	}
 )
 
-func (s *Service) SaveScanned(ctx context.Context, scanned Scanned) (*Item, error) {
-	isFolder := isFolderKind[scanned.Kind]
-	mediaType := itemmodal.MediaTypeVideo
-	if isFolder {
-		mediaType = itemmodal.MediaTypeUnknown
+func kindsOf(types []MediaType) []Kind {
+	wanted := make([]Kind, 0)
+	for _, kind := range allKinds {
+		if slices.Contains(types, MediaTypeOf(kind)) {
+			wanted = append(wanted, kind)
+		}
 	}
 
+	return wanted
+}
+
+func IsFolder(kind Kind) bool {
+	return isFolderKind[kind]
+}
+
+func MediaTypeOf(kind Kind) MediaType {
+	switch {
+	case isFolderKind[kind]:
+		return playlistmodal.MediaTypeUnknown
+	case slices.Contains(audioKinds, kind):
+		return playlistmodal.MediaTypeAudio
+	default:
+		return playlistmodal.MediaTypeVideo
+	}
+}
+
+func (s *Service) SaveScanned(ctx context.Context, scanned Scanned) (*Item, error) {
 	id, err := s.store.Item.Create().
 		SetNillableParentID(scanned.ParentID).
 		SetKind(scanned.Kind).
-		SetMediaType(mediaType).
-		SetIsFolder(isFolder).
 		SetKey(scanned.Key).
 		SetName(scanned.Name).
 		SetSortName(scanned.SortName).
@@ -86,8 +116,6 @@ func (s *Service) SaveScanned(ctx context.Context, scanned Scanned) (*Item, erro
 		OnConflictColumns(itemmodal.FieldKey).
 		UpdateParentID().
 		UpdateKind().
-		UpdateMediaType().
-		UpdateIsFolder().
 		UpdateIndexNumber().
 		UpdateParentIndexNumber().
 		UpdateDateModified().
@@ -254,7 +282,7 @@ func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int
 		items = items.Where(itemmodal.KindIn(query.Kinds...))
 	}
 	if len(query.MediaTypes) > 0 {
-		items = items.Where(itemmodal.MediaTypeIn(query.MediaTypes...))
+		items = items.Where(itemmodal.KindIn(kindsOf(query.MediaTypes)...))
 	}
 	if len(query.IDs) > 0 {
 		items = items.Where(itemmodal.IDIn(query.IDs...))
@@ -492,7 +520,7 @@ func (s *Service) DistinctYears(ctx context.Context, viewer Viewer, libraryID *u
 }
 
 func (s *Service) ResumeItems(ctx context.Context, userID uuid.UUID, kinds []Kind, libraryID *uuid.UUID, startIndex, limit int) ([]*Item, int, error) {
-	playable := []predicate.Item{itemmodal.IsFolder(false)}
+	playable := []predicate.Item{itemmodal.KindNotIn(folderKinds...)}
 	if len(kinds) > 0 {
 		playable = append(playable, itemmodal.KindIn(kinds...))
 	}

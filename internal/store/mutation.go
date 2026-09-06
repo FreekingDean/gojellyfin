@@ -7592,13 +7592,11 @@ type ItemMutation struct {
 	created_at                  *time.Time
 	updated_at                  *time.Time
 	kind                        *item.Kind
-	media_type                  *item.MediaType
 	key                         *string
 	name                        *string
 	sort_name                   *string
 	deleted_at                  *time.Time
 	overview                    *string
-	is_folder                   *bool
 	lock_data                   *bool
 	premiere_date               *time.Time
 	end_date                    *time.Time
@@ -7923,42 +7921,6 @@ func (m *ItemMutation) ResetKind() {
 	m.kind = nil
 }
 
-// SetMediaType sets the "media_type" field.
-func (m *ItemMutation) SetMediaType(it item.MediaType) {
-	m.media_type = &it
-}
-
-// MediaType returns the value of the "media_type" field in the mutation.
-func (m *ItemMutation) MediaType() (r item.MediaType, exists bool) {
-	v := m.media_type
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldMediaType returns the old "media_type" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldMediaType(ctx context.Context) (v item.MediaType, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldMediaType is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldMediaType requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldMediaType: %w", err)
-	}
-	return oldValue.MediaType, nil
-}
-
-// ResetMediaType resets all changes to the "media_type" field.
-func (m *ItemMutation) ResetMediaType() {
-	m.media_type = nil
-}
-
 // SetKey sets the "key" field.
 func (m *ItemMutation) SetKey(s string) {
 	m.key = &s
@@ -8189,42 +8151,6 @@ func (m *ItemMutation) OverviewCleared() bool {
 func (m *ItemMutation) ResetOverview() {
 	m.overview = nil
 	delete(m.clearedFields, item.FieldOverview)
-}
-
-// SetIsFolder sets the "is_folder" field.
-func (m *ItemMutation) SetIsFolder(b bool) {
-	m.is_folder = &b
-}
-
-// IsFolder returns the value of the "is_folder" field in the mutation.
-func (m *ItemMutation) IsFolder() (r bool, exists bool) {
-	v := m.is_folder
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldIsFolder returns the old "is_folder" field's value of the Item entity.
-// If the Item object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldIsFolder(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldIsFolder is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldIsFolder requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldIsFolder: %w", err)
-	}
-	return oldValue.IsFolder, nil
-}
-
-// ResetIsFolder resets all changes to the "is_folder" field.
-func (m *ItemMutation) ResetIsFolder() {
-	m.is_folder = nil
 }
 
 // SetLockData sets the "lock_data" field.
@@ -9742,7 +9668,7 @@ func (m *ItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemMutation) Fields() []string {
-	fields := make([]string, 0, 26)
+	fields := make([]string, 0, 24)
 	if m.created_at != nil {
 		fields = append(fields, item.FieldCreatedAt)
 	}
@@ -9754,9 +9680,6 @@ func (m *ItemMutation) Fields() []string {
 	}
 	if m.kind != nil {
 		fields = append(fields, item.FieldKind)
-	}
-	if m.media_type != nil {
-		fields = append(fields, item.FieldMediaType)
 	}
 	if m.key != nil {
 		fields = append(fields, item.FieldKey)
@@ -9772,9 +9695,6 @@ func (m *ItemMutation) Fields() []string {
 	}
 	if m.overview != nil {
 		fields = append(fields, item.FieldOverview)
-	}
-	if m.is_folder != nil {
-		fields = append(fields, item.FieldIsFolder)
 	}
 	if m.lock_data != nil {
 		fields = append(fields, item.FieldLockData)
@@ -9837,8 +9757,6 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.ParentID()
 	case item.FieldKind:
 		return m.Kind()
-	case item.FieldMediaType:
-		return m.MediaType()
 	case item.FieldKey:
 		return m.Key()
 	case item.FieldName:
@@ -9849,8 +9767,6 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.DeletedAt()
 	case item.FieldOverview:
 		return m.Overview()
-	case item.FieldIsFolder:
-		return m.IsFolder()
 	case item.FieldLockData:
 		return m.LockData()
 	case item.FieldPremiereDate:
@@ -9898,8 +9814,6 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldParentID(ctx)
 	case item.FieldKind:
 		return m.OldKind(ctx)
-	case item.FieldMediaType:
-		return m.OldMediaType(ctx)
 	case item.FieldKey:
 		return m.OldKey(ctx)
 	case item.FieldName:
@@ -9910,8 +9824,6 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldDeletedAt(ctx)
 	case item.FieldOverview:
 		return m.OldOverview(ctx)
-	case item.FieldIsFolder:
-		return m.OldIsFolder(ctx)
 	case item.FieldLockData:
 		return m.OldLockData(ctx)
 	case item.FieldPremiereDate:
@@ -9979,13 +9891,6 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetKind(v)
 		return nil
-	case item.FieldMediaType:
-		v, ok := value.(item.MediaType)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetMediaType(v)
-		return nil
 	case item.FieldKey:
 		v, ok := value.(string)
 		if !ok {
@@ -10020,13 +9925,6 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetOverview(v)
-		return nil
-	case item.FieldIsFolder:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetIsFolder(v)
 		return nil
 	case item.FieldLockData:
 		v, ok := value.(bool)
@@ -10374,9 +10272,6 @@ func (m *ItemMutation) ResetField(name string) error {
 	case item.FieldKind:
 		m.ResetKind()
 		return nil
-	case item.FieldMediaType:
-		m.ResetMediaType()
-		return nil
 	case item.FieldKey:
 		m.ResetKey()
 		return nil
@@ -10391,9 +10286,6 @@ func (m *ItemMutation) ResetField(name string) error {
 		return nil
 	case item.FieldOverview:
 		m.ResetOverview()
-		return nil
-	case item.FieldIsFolder:
-		m.ResetIsFolder()
 		return nil
 	case item.FieldLockData:
 		m.ResetLockData()
@@ -20140,6 +20032,7 @@ type PlaylistMutation struct {
 	id             *uuid.UUID
 	created_at     *time.Time
 	updated_at     *time.Time
+	media_type     *playlist.MediaType
 	open_access    *bool
 	clearedFields  map[string]struct{}
 	item           *uuid.UUID
@@ -20331,6 +20224,42 @@ func (m *PlaylistMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err e
 // ResetUpdatedAt resets all changes to the "updated_at" field.
 func (m *PlaylistMutation) ResetUpdatedAt() {
 	m.updated_at = nil
+}
+
+// SetMediaType sets the "media_type" field.
+func (m *PlaylistMutation) SetMediaType(pt playlist.MediaType) {
+	m.media_type = &pt
+}
+
+// MediaType returns the value of the "media_type" field in the mutation.
+func (m *PlaylistMutation) MediaType() (r playlist.MediaType, exists bool) {
+	v := m.media_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMediaType returns the old "media_type" field's value of the Playlist entity.
+// If the Playlist object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PlaylistMutation) OldMediaType(ctx context.Context) (v playlist.MediaType, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMediaType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMediaType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMediaType: %w", err)
+	}
+	return oldValue.MediaType, nil
+}
+
+// ResetMediaType resets all changes to the "media_type" field.
+func (m *PlaylistMutation) ResetMediaType() {
+	m.media_type = nil
 }
 
 // SetItemID sets the "item_id" field.
@@ -20637,12 +20566,15 @@ func (m *PlaylistMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PlaylistMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 6)
 	if m.created_at != nil {
 		fields = append(fields, playlist.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
 		fields = append(fields, playlist.FieldUpdatedAt)
+	}
+	if m.media_type != nil {
+		fields = append(fields, playlist.FieldMediaType)
 	}
 	if m.item != nil {
 		fields = append(fields, playlist.FieldItemID)
@@ -20665,6 +20597,8 @@ func (m *PlaylistMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case playlist.FieldUpdatedAt:
 		return m.UpdatedAt()
+	case playlist.FieldMediaType:
+		return m.MediaType()
 	case playlist.FieldItemID:
 		return m.ItemID()
 	case playlist.FieldOwnerID:
@@ -20684,6 +20618,8 @@ func (m *PlaylistMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldCreatedAt(ctx)
 	case playlist.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
+	case playlist.FieldMediaType:
+		return m.OldMediaType(ctx)
 	case playlist.FieldItemID:
 		return m.OldItemID(ctx)
 	case playlist.FieldOwnerID:
@@ -20712,6 +20648,13 @@ func (m *PlaylistMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedAt(v)
+		return nil
+	case playlist.FieldMediaType:
+		v, ok := value.(playlist.MediaType)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMediaType(v)
 		return nil
 	case playlist.FieldItemID:
 		v, ok := value.(uuid.UUID)
@@ -20788,6 +20731,9 @@ func (m *PlaylistMutation) ResetField(name string) error {
 		return nil
 	case playlist.FieldUpdatedAt:
 		m.ResetUpdatedAt()
+		return nil
+	case playlist.FieldMediaType:
+		m.ResetMediaType()
 		return nil
 	case playlist.FieldItemID:
 		m.ResetItemID()

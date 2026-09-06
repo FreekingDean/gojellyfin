@@ -23,8 +23,6 @@ const (
 	FieldParentID = "parent_id"
 	// FieldKind holds the string denoting the kind field in the database.
 	FieldKind = "kind"
-	// FieldMediaType holds the string denoting the media_type field in the database.
-	FieldMediaType = "media_type"
 	// FieldKey holds the string denoting the key field in the database.
 	FieldKey = "key"
 	// FieldName holds the string denoting the name field in the database.
@@ -35,8 +33,6 @@ const (
 	FieldDeletedAt = "deleted_at"
 	// FieldOverview holds the string denoting the overview field in the database.
 	FieldOverview = "overview"
-	// FieldIsFolder holds the string denoting the is_folder field in the database.
-	FieldIsFolder = "is_folder"
 	// FieldLockData holds the string denoting the lock_data field in the database.
 	FieldLockData = "lock_data"
 	// FieldPremiereDate holds the string denoting the premiere_date field in the database.
@@ -176,13 +172,11 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldParentID,
 	FieldKind,
-	FieldMediaType,
 	FieldKey,
 	FieldName,
 	FieldSortName,
 	FieldDeletedAt,
 	FieldOverview,
-	FieldIsFolder,
 	FieldLockData,
 	FieldPremiereDate,
 	FieldEndDate,
@@ -226,8 +220,6 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
-	// DefaultIsFolder holds the default value on creation for the "is_folder" field.
-	DefaultIsFolder bool
 	// DefaultLockData holds the default value on creation for the "lock_data" field.
 	DefaultLockData bool
 )
@@ -237,43 +229,20 @@ type Kind string
 
 // Kind values.
 const (
-	KindAggregateFolder       Kind = "AggregateFolder"
-	KindAudio                 Kind = "Audio"
-	KindAudioBook             Kind = "AudioBook"
-	KindBasePluginFolder      Kind = "BasePluginFolder"
-	KindBook                  Kind = "Book"
-	KindBoxSet                Kind = "BoxSet"
-	KindChannel               Kind = "Channel"
-	KindChannelFolderItem     Kind = "ChannelFolderItem"
-	KindCollectionFolder      Kind = "CollectionFolder"
-	KindEpisode               Kind = "Episode"
-	KindFolder                Kind = "Folder"
-	KindGenre                 Kind = "Genre"
-	KindManualPlaylistsFolder Kind = "ManualPlaylistsFolder"
-	KindMovie                 Kind = "Movie"
-	KindLiveTvChannel         Kind = "LiveTvChannel"
-	KindLiveTvProgram         Kind = "LiveTvProgram"
-	KindMusicAlbum            Kind = "MusicAlbum"
-	KindMusicArtist           Kind = "MusicArtist"
-	KindMusicGenre            Kind = "MusicGenre"
-	KindMusicVideo            Kind = "MusicVideo"
-	KindPerson                Kind = "Person"
-	KindPhoto                 Kind = "Photo"
-	KindPhotoAlbum            Kind = "PhotoAlbum"
-	KindPlaylist              Kind = "Playlist"
-	KindPlaylistsFolder       Kind = "PlaylistsFolder"
-	KindProgram               Kind = "Program"
-	KindRecording             Kind = "Recording"
-	KindSeason                Kind = "Season"
-	KindSeries                Kind = "Series"
-	KindStudio                Kind = "Studio"
-	KindTrailer               Kind = "Trailer"
-	KindTvChannel             Kind = "TvChannel"
-	KindTvProgram             Kind = "TvProgram"
-	KindUserRootFolder        Kind = "UserRootFolder"
-	KindUserView              Kind = "UserView"
-	KindVideo                 Kind = "Video"
-	KindYear                  Kind = "Year"
+	KindMovie            Kind = "Movie"
+	KindSeries           Kind = "Series"
+	KindSeason           Kind = "Season"
+	KindEpisode          Kind = "Episode"
+	KindPlaylist         Kind = "Playlist"
+	KindAudio            Kind = "Audio"
+	KindAudioBook        Kind = "AudioBook"
+	KindTrailer          Kind = "Trailer"
+	KindVideo            Kind = "Video"
+	KindFolder           Kind = "Folder"
+	KindCollectionFolder Kind = "CollectionFolder"
+	KindBoxSet           Kind = "BoxSet"
+	KindPlaylistsFolder  Kind = "PlaylistsFolder"
+	KindUserRootFolder   Kind = "UserRootFolder"
 )
 
 func (k Kind) String() string {
@@ -283,39 +252,10 @@ func (k Kind) String() string {
 // KindValidator is a validator for the "kind" field enum values. It is called by the builders before save.
 func KindValidator(k Kind) error {
 	switch k {
-	case KindAggregateFolder, KindAudio, KindAudioBook, KindBasePluginFolder, KindBook, KindBoxSet, KindChannel, KindChannelFolderItem, KindCollectionFolder, KindEpisode, KindFolder, KindGenre, KindManualPlaylistsFolder, KindMovie, KindLiveTvChannel, KindLiveTvProgram, KindMusicAlbum, KindMusicArtist, KindMusicGenre, KindMusicVideo, KindPerson, KindPhoto, KindPhotoAlbum, KindPlaylist, KindPlaylistsFolder, KindProgram, KindRecording, KindSeason, KindSeries, KindStudio, KindTrailer, KindTvChannel, KindTvProgram, KindUserRootFolder, KindUserView, KindVideo, KindYear:
+	case KindMovie, KindSeries, KindSeason, KindEpisode, KindPlaylist, KindAudio, KindAudioBook, KindTrailer, KindVideo, KindFolder, KindCollectionFolder, KindBoxSet, KindPlaylistsFolder, KindUserRootFolder:
 		return nil
 	default:
 		return fmt.Errorf("item: invalid enum value for kind field: %q", k)
-	}
-}
-
-// MediaType defines the type for the "media_type" enum field.
-type MediaType string
-
-// MediaTypeUnknown is the default value of the MediaType enum.
-const DefaultMediaType = MediaTypeUnknown
-
-// MediaType values.
-const (
-	MediaTypeUnknown MediaType = "Unknown"
-	MediaTypeVideo   MediaType = "Video"
-	MediaTypeAudio   MediaType = "Audio"
-	MediaTypePhoto   MediaType = "Photo"
-	MediaTypeBook    MediaType = "Book"
-)
-
-func (mt MediaType) String() string {
-	return string(mt)
-}
-
-// MediaTypeValidator is a validator for the "media_type" field enum values. It is called by the builders before save.
-func MediaTypeValidator(mt MediaType) error {
-	switch mt {
-	case MediaTypeUnknown, MediaTypeVideo, MediaTypeAudio, MediaTypePhoto, MediaTypeBook:
-		return nil
-	default:
-		return fmt.Errorf("item: invalid enum value for media_type field: %q", mt)
 	}
 }
 
@@ -347,11 +287,6 @@ func ByKind(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldKind, opts...).ToFunc()
 }
 
-// ByMediaType orders the results by the media_type field.
-func ByMediaType(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldMediaType, opts...).ToFunc()
-}
-
 // ByKey orders the results by the key field.
 func ByKey(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldKey, opts...).ToFunc()
@@ -375,11 +310,6 @@ func ByDeletedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByOverview orders the results by the overview field.
 func ByOverview(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldOverview, opts...).ToFunc()
-}
-
-// ByIsFolder orders the results by the is_folder field.
-func ByIsFolder(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldIsFolder, opts...).ToFunc()
 }
 
 // ByLockData orders the results by the lock_data field.

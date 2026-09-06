@@ -82,20 +82,6 @@ func (_c *ItemCreate) SetKind(v item.Kind) *ItemCreate {
 	return _c
 }
 
-// SetMediaType sets the "media_type" field.
-func (_c *ItemCreate) SetMediaType(v item.MediaType) *ItemCreate {
-	_c.mutation.SetMediaType(v)
-	return _c
-}
-
-// SetNillableMediaType sets the "media_type" field if the given value is not nil.
-func (_c *ItemCreate) SetNillableMediaType(v *item.MediaType) *ItemCreate {
-	if v != nil {
-		_c.SetMediaType(*v)
-	}
-	return _c
-}
-
 // SetKey sets the "key" field.
 func (_c *ItemCreate) SetKey(v string) *ItemCreate {
 	_c.mutation.SetKey(v)
@@ -154,20 +140,6 @@ func (_c *ItemCreate) SetOverview(v string) *ItemCreate {
 func (_c *ItemCreate) SetNillableOverview(v *string) *ItemCreate {
 	if v != nil {
 		_c.SetOverview(*v)
-	}
-	return _c
-}
-
-// SetIsFolder sets the "is_folder" field.
-func (_c *ItemCreate) SetIsFolder(v bool) *ItemCreate {
-	_c.mutation.SetIsFolder(v)
-	return _c
-}
-
-// SetNillableIsFolder sets the "is_folder" field if the given value is not nil.
-func (_c *ItemCreate) SetNillableIsFolder(v *bool) *ItemCreate {
-	if v != nil {
-		_c.SetIsFolder(*v)
 	}
 	return _c
 }
@@ -573,14 +545,6 @@ func (_c *ItemCreate) defaults() {
 		v := item.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
-	if _, ok := _c.mutation.MediaType(); !ok {
-		v := item.DefaultMediaType
-		_c.mutation.SetMediaType(v)
-	}
-	if _, ok := _c.mutation.IsFolder(); !ok {
-		v := item.DefaultIsFolder
-		_c.mutation.SetIsFolder(v)
-	}
 	if _, ok := _c.mutation.LockData(); !ok {
 		v := item.DefaultLockData
 		_c.mutation.SetLockData(v)
@@ -603,19 +567,8 @@ func (_c *ItemCreate) check() error {
 			return &ValidationError{Name: "kind", err: fmt.Errorf(`store: validator failed for field "Item.kind": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.MediaType(); !ok {
-		return &ValidationError{Name: "media_type", err: errors.New(`store: missing required field "Item.media_type"`)}
-	}
-	if v, ok := _c.mutation.MediaType(); ok {
-		if err := item.MediaTypeValidator(v); err != nil {
-			return &ValidationError{Name: "media_type", err: fmt.Errorf(`store: validator failed for field "Item.media_type": %w`, err)}
-		}
-	}
 	if _, ok := _c.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`store: missing required field "Item.name"`)}
-	}
-	if _, ok := _c.mutation.IsFolder(); !ok {
-		return &ValidationError{Name: "is_folder", err: errors.New(`store: missing required field "Item.is_folder"`)}
 	}
 	if _, ok := _c.mutation.LockData(); !ok {
 		return &ValidationError{Name: "lock_data", err: errors.New(`store: missing required field "Item.lock_data"`)}
@@ -668,10 +621,6 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 		_spec.SetField(item.FieldKind, field.TypeEnum, value)
 		_node.Kind = value
 	}
-	if value, ok := _c.mutation.MediaType(); ok {
-		_spec.SetField(item.FieldMediaType, field.TypeEnum, value)
-		_node.MediaType = value
-	}
 	if value, ok := _c.mutation.Key(); ok {
 		_spec.SetField(item.FieldKey, field.TypeString, value)
 		_node.Key = value
@@ -691,10 +640,6 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Overview(); ok {
 		_spec.SetField(item.FieldOverview, field.TypeString, value)
 		_node.Overview = value
-	}
-	if value, ok := _c.mutation.IsFolder(); ok {
-		_spec.SetField(item.FieldIsFolder, field.TypeBool, value)
-		_node.IsFolder = value
 	}
 	if value, ok := _c.mutation.LockData(); ok {
 		_spec.SetField(item.FieldLockData, field.TypeBool, value)
@@ -1055,18 +1000,6 @@ func (u *ItemUpsert) UpdateKind() *ItemUpsert {
 	return u
 }
 
-// SetMediaType sets the "media_type" field.
-func (u *ItemUpsert) SetMediaType(v item.MediaType) *ItemUpsert {
-	u.Set(item.FieldMediaType, v)
-	return u
-}
-
-// UpdateMediaType sets the "media_type" field to the value that was provided on create.
-func (u *ItemUpsert) UpdateMediaType() *ItemUpsert {
-	u.SetExcluded(item.FieldMediaType)
-	return u
-}
-
 // SetKey sets the "key" field.
 func (u *ItemUpsert) SetKey(v string) *ItemUpsert {
 	u.Set(item.FieldKey, v)
@@ -1148,18 +1081,6 @@ func (u *ItemUpsert) UpdateOverview() *ItemUpsert {
 // ClearOverview clears the value of the "overview" field.
 func (u *ItemUpsert) ClearOverview() *ItemUpsert {
 	u.SetNull(item.FieldOverview)
-	return u
-}
-
-// SetIsFolder sets the "is_folder" field.
-func (u *ItemUpsert) SetIsFolder(v bool) *ItemUpsert {
-	u.Set(item.FieldIsFolder, v)
-	return u
-}
-
-// UpdateIsFolder sets the "is_folder" field to the value that was provided on create.
-func (u *ItemUpsert) UpdateIsFolder() *ItemUpsert {
-	u.SetExcluded(item.FieldIsFolder)
 	return u
 }
 
@@ -1568,20 +1489,6 @@ func (u *ItemUpsertOne) UpdateKind() *ItemUpsertOne {
 	})
 }
 
-// SetMediaType sets the "media_type" field.
-func (u *ItemUpsertOne) SetMediaType(v item.MediaType) *ItemUpsertOne {
-	return u.Update(func(s *ItemUpsert) {
-		s.SetMediaType(v)
-	})
-}
-
-// UpdateMediaType sets the "media_type" field to the value that was provided on create.
-func (u *ItemUpsertOne) UpdateMediaType() *ItemUpsertOne {
-	return u.Update(func(s *ItemUpsert) {
-		s.UpdateMediaType()
-	})
-}
-
 // SetKey sets the "key" field.
 func (u *ItemUpsertOne) SetKey(v string) *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
@@ -1677,20 +1584,6 @@ func (u *ItemUpsertOne) UpdateOverview() *ItemUpsertOne {
 func (u *ItemUpsertOne) ClearOverview() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearOverview()
-	})
-}
-
-// SetIsFolder sets the "is_folder" field.
-func (u *ItemUpsertOne) SetIsFolder(v bool) *ItemUpsertOne {
-	return u.Update(func(s *ItemUpsert) {
-		s.SetIsFolder(v)
-	})
-}
-
-// UpdateIsFolder sets the "is_folder" field to the value that was provided on create.
-func (u *ItemUpsertOne) UpdateIsFolder() *ItemUpsertOne {
-	return u.Update(func(s *ItemUpsert) {
-		s.UpdateIsFolder()
 	})
 }
 
@@ -2315,20 +2208,6 @@ func (u *ItemUpsertBulk) UpdateKind() *ItemUpsertBulk {
 	})
 }
 
-// SetMediaType sets the "media_type" field.
-func (u *ItemUpsertBulk) SetMediaType(v item.MediaType) *ItemUpsertBulk {
-	return u.Update(func(s *ItemUpsert) {
-		s.SetMediaType(v)
-	})
-}
-
-// UpdateMediaType sets the "media_type" field to the value that was provided on create.
-func (u *ItemUpsertBulk) UpdateMediaType() *ItemUpsertBulk {
-	return u.Update(func(s *ItemUpsert) {
-		s.UpdateMediaType()
-	})
-}
-
 // SetKey sets the "key" field.
 func (u *ItemUpsertBulk) SetKey(v string) *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
@@ -2424,20 +2303,6 @@ func (u *ItemUpsertBulk) UpdateOverview() *ItemUpsertBulk {
 func (u *ItemUpsertBulk) ClearOverview() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearOverview()
-	})
-}
-
-// SetIsFolder sets the "is_folder" field.
-func (u *ItemUpsertBulk) SetIsFolder(v bool) *ItemUpsertBulk {
-	return u.Update(func(s *ItemUpsert) {
-		s.SetIsFolder(v)
-	})
-}
-
-// UpdateIsFolder sets the "is_folder" field to the value that was provided on create.
-func (u *ItemUpsertBulk) UpdateIsFolder() *ItemUpsertBulk {
-	return u.Update(func(s *ItemUpsert) {
-		s.UpdateIsFolder()
 	})
 }
 

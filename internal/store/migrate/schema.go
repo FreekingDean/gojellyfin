@@ -249,14 +249,12 @@ var (
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "kind", Type: field.TypeEnum, Enums: []string{"AggregateFolder", "Audio", "AudioBook", "BasePluginFolder", "Book", "BoxSet", "Channel", "ChannelFolderItem", "CollectionFolder", "Episode", "Folder", "Genre", "ManualPlaylistsFolder", "Movie", "LiveTvChannel", "LiveTvProgram", "MusicAlbum", "MusicArtist", "MusicGenre", "MusicVideo", "Person", "Photo", "PhotoAlbum", "Playlist", "PlaylistsFolder", "Program", "Recording", "Season", "Series", "Studio", "Trailer", "TvChannel", "TvProgram", "UserRootFolder", "UserView", "Video", "Year"}},
-		{Name: "media_type", Type: field.TypeEnum, Enums: []string{"Unknown", "Video", "Audio", "Photo", "Book"}, Default: "Unknown"},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Movie", "Series", "Season", "Episode", "Playlist", "Audio", "AudioBook", "Trailer", "Video", "Folder", "CollectionFolder", "BoxSet", "PlaylistsFolder", "UserRootFolder"}},
 		{Name: "key", Type: field.TypeString, Nullable: true},
 		{Name: "name", Type: field.TypeString},
 		{Name: "sort_name", Type: field.TypeString, Nullable: true},
 		{Name: "deleted_at", Type: field.TypeTime, Nullable: true},
 		{Name: "overview", Type: field.TypeString, Nullable: true, Size: 2147483647},
-		{Name: "is_folder", Type: field.TypeBool, Default: false},
 		{Name: "lock_data", Type: field.TypeBool, Default: false},
 		{Name: "premiere_date", Type: field.TypeTime, Nullable: true},
 		{Name: "end_date", Type: field.TypeTime, Nullable: true},
@@ -282,7 +280,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "items_items_children",
-				Columns:    []*schema.Column{ItemsColumns[26]},
+				Columns:    []*schema.Column{ItemsColumns[24]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -291,17 +289,17 @@ var (
 			{
 				Name:    "item_key",
 				Unique:  true,
-				Columns: []*schema.Column{ItemsColumns[5]},
+				Columns: []*schema.Column{ItemsColumns[4]},
 			},
 			{
 				Name:    "item_kind_sort_name",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[3], ItemsColumns[7]},
+				Columns: []*schema.Column{ItemsColumns[3], ItemsColumns[6]},
 			},
 			{
 				Name:    "item_deleted_at",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[8]},
+				Columns: []*schema.Column{ItemsColumns[7]},
 			},
 		},
 	}
@@ -585,6 +583,7 @@ var (
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "media_type", Type: field.TypeEnum, Enums: []string{"Unknown", "Video", "Audio", "Photo", "Book"}, Default: "Unknown"},
 		{Name: "open_access", Type: field.TypeBool},
 		{Name: "item_id", Type: field.TypeUUID, Unique: true},
 		{Name: "owner_id", Type: field.TypeUUID},
@@ -597,13 +596,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "playlists_items_playlist",
-				Columns:    []*schema.Column{PlaylistsColumns[4]},
+				Columns:    []*schema.Column{PlaylistsColumns[5]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "playlists_users_playlists",
-				Columns:    []*schema.Column{PlaylistsColumns[5]},
+				Columns:    []*schema.Column{PlaylistsColumns[6]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.Cascade,
 			},

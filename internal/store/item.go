@@ -28,8 +28,6 @@ type Item struct {
 	ParentID *uuid.UUID `json:"parent_id,omitempty"`
 	// Kind holds the value of the "kind" field.
 	Kind item.Kind `json:"kind,omitempty"`
-	// MediaType holds the value of the "media_type" field.
-	MediaType item.MediaType `json:"media_type,omitempty"`
 	// Key holds the value of the "key" field.
 	Key string `json:"key,omitempty"`
 	// Name holds the value of the "name" field.
@@ -40,8 +38,6 @@ type Item struct {
 	DeletedAt *time.Time `json:"deleted_at,omitempty"`
 	// Overview holds the value of the "overview" field.
 	Overview string `json:"overview,omitempty"`
-	// IsFolder holds the value of the "is_folder" field.
-	IsFolder bool `json:"is_folder,omitempty"`
 	// LockData holds the value of the "lock_data" field.
 	LockData bool `json:"lock_data,omitempty"`
 	// PremiereDate holds the value of the "premiere_date" field.
@@ -230,13 +226,13 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case item.FieldProviderIds, item.FieldTags, item.FieldTaglines, item.FieldLockedFields:
 			values[i] = new([]byte)
-		case item.FieldIsFolder, item.FieldLockData:
+		case item.FieldLockData:
 			values[i] = new(sql.NullBool)
 		case item.FieldCommunityRating:
 			values[i] = new(sql.NullFloat64)
 		case item.FieldProductionYear, item.FieldRunTimeTicks, item.FieldIndexNumber, item.FieldParentIndexNumber:
 			values[i] = new(sql.NullInt64)
-		case item.FieldKind, item.FieldMediaType, item.FieldKey, item.FieldName, item.FieldSortName, item.FieldOverview, item.FieldOfficialRating, item.FieldStatus:
+		case item.FieldKind, item.FieldKey, item.FieldName, item.FieldSortName, item.FieldOverview, item.FieldOfficialRating, item.FieldStatus:
 			values[i] = new(sql.NullString)
 		case item.FieldCreatedAt, item.FieldUpdatedAt, item.FieldDeletedAt, item.FieldPremiereDate, item.FieldEndDate, item.FieldDateModified:
 			values[i] = new(sql.NullTime)
@@ -288,12 +284,6 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Kind = item.Kind(value.String)
 			}
-		case item.FieldMediaType:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field media_type", values[i])
-			} else if value.Valid {
-				_m.MediaType = item.MediaType(value.String)
-			}
 		case item.FieldKey:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field key", values[i])
@@ -324,12 +314,6 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field overview", values[i])
 			} else if value.Valid {
 				_m.Overview = value.String
-			}
-		case item.FieldIsFolder:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field is_folder", values[i])
-			} else if value.Valid {
-				_m.IsFolder = value.Bool
 			}
 		case item.FieldLockData:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -546,9 +530,6 @@ func (_m *Item) String() string {
 	builder.WriteString("kind=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Kind))
 	builder.WriteString(", ")
-	builder.WriteString("media_type=")
-	builder.WriteString(fmt.Sprintf("%v", _m.MediaType))
-	builder.WriteString(", ")
 	builder.WriteString("key=")
 	builder.WriteString(_m.Key)
 	builder.WriteString(", ")
@@ -565,9 +546,6 @@ func (_m *Item) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("overview=")
 	builder.WriteString(_m.Overview)
-	builder.WriteString(", ")
-	builder.WriteString("is_folder=")
-	builder.WriteString(fmt.Sprintf("%v", _m.IsFolder))
 	builder.WriteString(", ")
 	builder.WriteString("lock_data=")
 	builder.WriteString(fmt.Sprintf("%v", _m.LockData))

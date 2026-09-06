@@ -35,7 +35,7 @@ func ItemDto(item *items.Item, held items.Held, childCount int32, imageTags map[
 		SortName:          apiutil.Ptr(item.SortName),
 		Type:              &kind,
 		Path:              apiutil.Ptr(held.Path),
-		IsFolder:          apiutil.Ptr(item.IsFolder),
+		IsFolder:          apiutil.Ptr(items.IsFolder(item.Kind)),
 		LockData:          apiutil.Ptr(item.LockData),
 		ParentId:          item.ParentID,
 		IndexNumber:       item.IndexNumber,
@@ -86,10 +86,10 @@ func ItemDto(item *items.Item, held items.Held, childCount int32, imageTags map[
 		}
 		dto.LockedFields = &locked
 	}
-	if item.IsFolder {
+	if items.IsFolder(item.Kind) {
 		dto.ChildCount = apiutil.Ptr(childCount)
 	} else {
-		dto.MediaType = apiutil.Ptr(api.MediaType(item.MediaType))
+		dto.MediaType = apiutil.Ptr(api.MediaType(items.MediaTypeOf(item.Kind)))
 		dto.HasSubtitles = apiutil.Ptr(held.HasSubtitles)
 	}
 
@@ -101,7 +101,7 @@ func ItemDtos(ctx context.Context, store *items.Service, records []*items.Item) 
 	itemIDs := make([]uuid.UUID, 0, len(records))
 	for _, item := range records {
 		itemIDs = append(itemIDs, item.ID)
-		if item.IsFolder {
+		if items.IsFolder(item.Kind) {
 			folderIDs = append(folderIDs, item.ID)
 		}
 	}

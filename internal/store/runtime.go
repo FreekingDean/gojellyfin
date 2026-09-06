@@ -192,12 +192,8 @@ func init() {
 	item.DefaultUpdatedAt = itemDescUpdatedAt.Default.(func() time.Time)
 	// item.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	item.UpdateDefaultUpdatedAt = itemDescUpdatedAt.UpdateDefault.(func() time.Time)
-	// itemDescIsFolder is the schema descriptor for is_folder field.
-	itemDescIsFolder := itemFields[11].Descriptor()
-	// item.DefaultIsFolder holds the default value on creation for the is_folder field.
-	item.DefaultIsFolder = itemDescIsFolder.Default.(bool)
 	// itemDescLockData is the schema descriptor for lock_data field.
-	itemDescLockData := itemFields[12].Descriptor()
+	itemDescLockData := itemFields[10].Descriptor()
 	// item.DefaultLockData holds the default value on creation for the lock_data field.
 	item.DefaultLockData = itemDescLockData.Default.(bool)
 	itemsourceFields := entities.ItemSource{}.Fields()

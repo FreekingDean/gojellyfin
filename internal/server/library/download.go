@@ -115,7 +115,7 @@ func (s *Server) openItemFile(ctx context.Context, id uuid.UUID) (*mediaFile, er
 		body:        body,
 		contentType: contentType(source.Path),
 		length:      size,
-		audio:       api.MediaType(item.MediaType) == api.MediaTypeAudio,
+		audio:       api.MediaType(items.MediaTypeOf(item.Kind)) == api.MediaTypeAudio,
 	}, nil
 }
 

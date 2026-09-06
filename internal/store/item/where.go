@@ -96,11 +96,6 @@ func Overview(v string) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldOverview, v))
 }
 
-// IsFolder applies equality check predicate on the "is_folder" field. It's identical to IsFolderEQ.
-func IsFolder(v bool) predicate.Item {
-	return predicate.Item(sql.FieldEQ(FieldIsFolder, v))
-}
-
 // LockData applies equality check predicate on the "lock_data" field. It's identical to LockDataEQ.
 func LockData(v bool) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldLockData, v))
@@ -284,26 +279,6 @@ func KindIn(vs ...Kind) predicate.Item {
 // KindNotIn applies the NotIn predicate on the "kind" field.
 func KindNotIn(vs ...Kind) predicate.Item {
 	return predicate.Item(sql.FieldNotIn(FieldKind, vs...))
-}
-
-// MediaTypeEQ applies the EQ predicate on the "media_type" field.
-func MediaTypeEQ(v MediaType) predicate.Item {
-	return predicate.Item(sql.FieldEQ(FieldMediaType, v))
-}
-
-// MediaTypeNEQ applies the NEQ predicate on the "media_type" field.
-func MediaTypeNEQ(v MediaType) predicate.Item {
-	return predicate.Item(sql.FieldNEQ(FieldMediaType, v))
-}
-
-// MediaTypeIn applies the In predicate on the "media_type" field.
-func MediaTypeIn(vs ...MediaType) predicate.Item {
-	return predicate.Item(sql.FieldIn(FieldMediaType, vs...))
-}
-
-// MediaTypeNotIn applies the NotIn predicate on the "media_type" field.
-func MediaTypeNotIn(vs ...MediaType) predicate.Item {
-	return predicate.Item(sql.FieldNotIn(FieldMediaType, vs...))
 }
 
 // KeyEQ applies the EQ predicate on the "key" field.
@@ -644,16 +619,6 @@ func OverviewEqualFold(v string) predicate.Item {
 // OverviewContainsFold applies the ContainsFold predicate on the "overview" field.
 func OverviewContainsFold(v string) predicate.Item {
 	return predicate.Item(sql.FieldContainsFold(FieldOverview, v))
-}
-
-// IsFolderEQ applies the EQ predicate on the "is_folder" field.
-func IsFolderEQ(v bool) predicate.Item {
-	return predicate.Item(sql.FieldEQ(FieldIsFolder, v))
-}
-
-// IsFolderNEQ applies the NEQ predicate on the "is_folder" field.
-func IsFolderNEQ(v bool) predicate.Item {
-	return predicate.Item(sql.FieldNEQ(FieldIsFolder, v))
 }
 
 // LockDataEQ applies the EQ predicate on the "lock_data" field.
