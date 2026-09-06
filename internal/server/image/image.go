@@ -1,124 +1,87 @@
 package image
 
 import (
-	"bytes"
 	"context"
-	"io"
+	"net/http"
 
 	"github.com/google/uuid"
 
-	"github.com/FreekingDean/gojellyfin/internal/artwork"
-	"github.com/FreekingDean/gojellyfin/internal/collage"
-	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
+const cacheFor = "public, max-age=86400"
+
 type Server struct {
-	items      *items.Service
-	collage    *collage.Service
-	filesystem *filesystem.Service
-	artwork    artwork.Store
+	items *items.Service
 }
 
-func New(items *items.Service, collages *collage.Service, filesystem *filesystem.Service, artwork artwork.Store) *Server {
-	return &Server{items: items, collage: collages, filesystem: filesystem, artwork: artwork}
+func New(items *items.Service) *Server {
+	return &Server{items: items}
 }
 
 func (s *Server) GetItemImage(ctx context.Context, request api.GetItemImageRequestObject) (api.GetItemImageResponseObject, error) {
-	file, ok := s.open(ctx, request.ItemId, request.ImageType, apiutil.Deref(request.Params.ImageIndex))
+	url, ok := s.url(ctx, request.ItemId, request.ImageType, apiutil.Deref(request.Params.ImageIndex))
 	if !ok {
 		return api.GetItemImage404JSONResponse{}, nil
 	}
 
-	return api.GetItemImage200ImageResponse{
-		Body:          file.body,
-		ContentType:   file.contentType,
-		ContentLength: file.length,
-	}, nil
+	return redirect(url), nil
 }
 
 func (s *Server) HeadItemImage(ctx context.Context, request api.HeadItemImageRequestObject) (api.HeadItemImageResponseObject, error) {
-	file, ok := s.open(ctx, request.ItemId, request.ImageType, apiutil.Deref(request.Params.ImageIndex))
+	url, ok := s.url(ctx, request.ItemId, request.ImageType, apiutil.Deref(request.Params.ImageIndex))
 	if !ok {
 		return api.HeadItemImage404JSONResponse{}, nil
 	}
 
-	return api.HeadItemImage200ImageResponse{
-		Body:          file.body,
-		ContentType:   file.contentType,
-		ContentLength: file.length,
-	}, nil
+	return redirect(url), nil
 }
 
 func (s *Server) GetItemImageByIndex(ctx context.Context, request api.GetItemImageByIndexRequestObject) (api.GetItemImageByIndexResponseObject, error) {
-	file, ok := s.open(ctx, request.ItemId, request.ImageType, request.ImageIndex)
+	url, ok := s.url(ctx, request.ItemId, request.ImageType, request.ImageIndex)
 	if !ok {
 		return api.GetItemImageByIndex404JSONResponse{}, nil
 	}
 
-	return api.GetItemImageByIndex200ImageResponse{
-		Body:          file.body,
-		ContentType:   file.contentType,
-		ContentLength: file.length,
-	}, nil
+	return redirect(url), nil
 }
 
 func (s *Server) HeadItemImageByIndex(ctx context.Context, request api.HeadItemImageByIndexRequestObject) (api.HeadItemImageByIndexResponseObject, error) {
-	file, ok := s.open(ctx, request.ItemId, request.ImageType, request.ImageIndex)
+	url, ok := s.url(ctx, request.ItemId, request.ImageType, request.ImageIndex)
 	if !ok {
 		return api.HeadItemImageByIndex404JSONResponse{}, nil
 	}
 
-	return api.HeadItemImageByIndex200ImageResponse{
-		Body:          file.body,
-		ContentType:   file.contentType,
-		ContentLength: file.length,
-	}, nil
+	return redirect(url), nil
 }
 
-func (s *Server) open(ctx context.Context, itemID uuid.UUID, imageType api.ImageType, index int32) (imageFile, bool) {
+func (s *Server) url(ctx context.Context, itemID uuid.UUID, imageType api.ImageType, index int32) (string, bool) {
 	kind := items.ImageKind(imageType)
 	if items.ValidImageKind(kind) != nil {
-		return imageFile{}, false
+		return "", false
 	}
 
 	record, err := s.items.Image(ctx, itemID, kind, index)
 	if err != nil {
-		return s.openLibrary(ctx, itemID, kind, index)
+		return "", false
 	}
 
-	body, size, ok := s.read(ctx, record)
-	if !ok {
-		return imageFile{}, false
-	}
-
-	return imageFile{body: body, contentType: contentType(record.Path), length: size}, true
+	return record.URL, true
 }
 
-func (s *Server) openLibrary(ctx context.Context, id uuid.UUID, kind items.ImageKind, index int32) (imageFile, bool) {
-	if kind != items.ImageKindPrimary || index != 0 {
-		return imageFile{}, false
-	}
+type redirect string
 
-	body, ok := s.collage.Image(ctx, id)
-	if !ok {
-		return imageFile{}, false
-	}
+func (r redirect) write(w http.ResponseWriter) error {
+	w.Header().Set("Location", string(r))
+	w.Header().Set("Cache-Control", cacheFor)
+	w.WriteHeader(http.StatusFound)
 
-	return imageFile{
-		body:        io.NopCloser(bytes.NewReader(body)),
-		contentType: collage.ContentType,
-		length:      int64(len(body)),
-	}, true
+	return nil
 }
 
-func (s *Server) read(ctx context.Context, record *items.Image) (io.ReadCloser, int64, bool) {
-	body, size, found, err := s.artwork.Open(ctx, record.Path)
-	if err != nil || !found {
-		return nil, 0, false
-	}
-
-	return body, size, true
-}
+func (r redirect) VisitGetItemImageResponse(w http.ResponseWriter) error         { return r.write(w) }
+func (r redirect) VisitHeadItemImageResponse(w http.ResponseWriter) error        { return r.write(w) }
+func (r redirect) VisitGetItemImageByIndexResponse(w http.ResponseWriter) error  { return r.write(w) }
+func (r redirect) VisitHeadItemImageByIndexResponse(w http.ResponseWriter) error { return r.write(w) }

@@ -3,10 +3,7 @@ package metadata
 import (
 	"context"
 	"log"
-	"net/http"
-	"time"
 
-	"github.com/FreekingDean/gojellyfin/internal/artwork"
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
@@ -14,8 +11,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
-
-const downloadTimeout = 30 * time.Second
 
 var identifiable = []items.Kind{
 	itemmodal.KindMovie,
@@ -25,19 +20,12 @@ var identifiable = []items.Kind{
 }
 
 type Service struct {
-	provider  Provider
-	items     *items.Service
-	artwork   artwork.Store
-	downloads *http.Client
+	provider Provider
+	items    *items.Service
 }
 
-func New(provider Provider, service *items.Service, store artwork.Store) *Service {
-	return &Service{
-		provider:  provider,
-		items:     service,
-		artwork:   store,
-		downloads: &http.Client{Timeout: downloadTimeout},
-	}
+func New(provider Provider, service *items.Service) *Service {
+	return &Service{provider: provider, items: service}
 }
 
 func (s *Service) IdentifyItems(ctx context.Context, scope uuid.UUID, force bool) error {

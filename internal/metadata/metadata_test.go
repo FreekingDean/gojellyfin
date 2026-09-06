@@ -12,7 +12,6 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/FreekingDean/gojellyfin/internal/artwork"
 	"github.com/FreekingDean/gojellyfin/internal/consts"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
@@ -130,7 +129,6 @@ type fixture struct {
 	items      *items.Service
 	service    *Service
 	provider   *stubProvider
-	artwork    artwork.Store
 	libraryID  uuid.UUID
 	downloader uuid.UUID
 }
@@ -171,11 +169,9 @@ func newFixtureEnabled(t *testing.T, enabled bool) *fixture {
 
 	provider := &stubProvider{enabled: enabled}
 	service := items.New(client)
-	stored := artwork.New(client)
 
 	t.Cleanup(func() {
 		ctx := context.Background()
-		dropStoredArtwork(t, service, stored, library.ID)
 		if err := catalogue.DeleteLibrary(ctx, library.ID); err != nil {
 			t.Errorf("failed to delete the library: %v", err)
 		}
@@ -204,36 +200,9 @@ func newFixtureEnabled(t *testing.T, enabled bool) *fixture {
 	return &fixture{
 		downloader: downloader.ID,
 		items:      service,
-		service:    New(provider, service, stored),
+		service:    New(provider, service),
 		provider:   provider,
-		artwork:    stored,
 		libraryID:  library.ID,
-	}
-}
-
-func dropStoredArtwork(t *testing.T, service *items.Service, stored artwork.Store, libraryID uuid.UUID) {
-	t.Helper()
-
-	ctx := context.Background()
-	records, _, err := service.QueryItems(ctx, items.ItemQuery{LibraryID: &libraryID})
-	if err != nil {
-		t.Errorf("failed to list the items: %v", err)
-
-		return
-	}
-
-	for _, record := range records {
-		images, err := service.Images(ctx, record.ID)
-		if err != nil {
-			t.Errorf("failed to list the images: %v", err)
-
-			continue
-		}
-		for _, image := range images {
-			if err := stored.Delete(ctx, image.Path); err != nil {
-				t.Errorf("failed to delete the artwork: %v", err)
-			}
-		}
 	}
 }
 

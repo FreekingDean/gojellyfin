@@ -117,8 +117,8 @@ func TestService_SweepUnreachable(t *testing.T) {
 		ctx := context.Background()
 
 		gone := fixture.add(t, seed{kind: itemmodal.KindMovie, name: "Returning"})
-		if err := fixture.service.SaveDownloadedImage(ctx, gone, Image{
-			Kind: imagemodal.KindPrimary, Path: "/artwork/poster.jpg", Tag: "tag",
+		if err := fixture.service.SaveImage(ctx, gone, Image{
+			Kind: imagemodal.KindPrimary, URL: "https://image.tmdb.org/t/p/w780/poster.jpg", Tag: "tag",
 		}); err != nil {
 			t.Fatalf("failed to save the image: %v", err)
 		}

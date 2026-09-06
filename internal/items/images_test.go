@@ -8,15 +8,19 @@ import (
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
-func TestService_SaveDownloadedImage(t *testing.T) {
+func TestService_SaveImage(t *testing.T) {
 	t.Run("replaces the poster it wrote before", func(t *testing.T) {
 		fixture := newFixture(t)
 		ctx := context.Background()
 		movie := fixture.add(t, seed{kind: itemmodal.KindMovie, name: "Dune"})
 
 		for _, tag := range []string{"abc", "def"} {
-			downloaded := Image{Kind: imagemodal.KindPrimary, Path: "items/dune/Primary/" + tag + ".jpg", Tag: tag}
-			if err := fixture.service.SaveDownloadedImage(ctx, movie, downloaded); err != nil {
+			poster := Image{
+				Kind: imagemodal.KindPrimary,
+				URL:  "https://image.tmdb.org/t/p/w780/" + tag + ".jpg",
+				Tag:  tag,
+			}
+			if err := fixture.service.SaveImage(ctx, movie, poster); err != nil {
 				t.Fatalf("failed to save %q: %v", tag, err)
 			}
 		}
@@ -25,8 +29,8 @@ func TestService_SaveDownloadedImage(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to read the image back: %v", err)
 		}
-		if record.Path != "items/dune/Primary/def.jpg" {
-			t.Errorf("path = %q, want the newer poster", record.Path)
+		if record.URL != "https://image.tmdb.org/t/p/w780/def.jpg" {
+			t.Errorf("url = %q, want the newer poster", record.URL)
 		}
 		if record.Tag != "def" {
 			t.Errorf("tag = %q, want a changed poster to bust the client's cache", record.Tag)

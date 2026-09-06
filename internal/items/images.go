@@ -2,8 +2,6 @@ package items
 
 import (
 	"context"
-	stdsql "database/sql"
-	"errors"
 	"fmt"
 
 	"entgo.io/ent/dialect/sql"
@@ -30,35 +28,17 @@ type RemoteImage struct {
 	URL  string
 }
 
-func (s *Service) SaveDownloadedImage(ctx context.Context, itemID uuid.UUID, artwork Image) error {
-	replaced, err := s.store.Image.Update().
-		Where(
-			imagemodal.ItemID(itemID),
-			imagemodal.KindEQ(artwork.Kind),
-			imagemodal.Index(0),
-		).
-		SetPath(artwork.Path).
-		SetTag(artwork.Tag).
-		SetSize(artwork.Size).
-		Save(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to replace downloaded image: %w", err)
-	}
-	if replaced > 0 {
-		return nil
-	}
-
-	err = s.store.Image.Create().
+func (s *Service) SaveImage(ctx context.Context, itemID uuid.UUID, artwork Image) error {
+	err := s.store.Image.Create().
 		SetItemID(itemID).
 		SetKind(artwork.Kind).
-		SetPath(artwork.Path).
+		SetURL(artwork.URL).
 		SetTag(artwork.Tag).
-		SetSize(artwork.Size).
 		OnConflictColumns(imagemodal.FieldItemID, imagemodal.FieldKind, imagemodal.FieldIndex).
-		DoNothing().
+		UpdateNewValues().
 		Exec(ctx)
-	if err != nil && !errors.Is(err, stdsql.ErrNoRows) {
-		return fmt.Errorf("failed to save downloaded image: %w", err)
+	if err != nil {
+		return fmt.Errorf("failed to save the image: %w", err)
 	}
 
 	return nil

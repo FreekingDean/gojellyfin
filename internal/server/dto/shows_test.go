@@ -71,8 +71,8 @@ func TestItemDtos(t *testing.T) {
 	episode := save(itemmodal.KindEpisode, name+" S01E01", &season.ID)
 	movie := save(itemmodal.KindMovie, name+" Movie", nil)
 
-	if err := service.SaveDownloadedImage(ctx, series.ID, items.Image{
-		Kind: imagemodal.KindPrimary, Path: "/fixtures/poster.jpg", Tag: "poster",
+	if err := service.SaveImage(ctx, series.ID, items.Image{
+		Kind: imagemodal.KindPrimary, URL: "https://image.tmdb.org/t/p/w780/poster.jpg", Tag: "poster",
 	}); err != nil {
 		t.Fatalf("failed to give the series an image: %v", err)
 	}
