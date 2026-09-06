@@ -1,5 +1,5 @@
 -- Create "sources" table
-CREATE TABLE "sources" (
+CREATE TABLE IF NOT EXISTS "sources" (
   "id" uuid NOT NULL DEFAULT gen_random_uuid(),
   "created_at" timestamptz NOT NULL,
   "updated_at" timestamptz NOT NULL,
@@ -12,6 +12,6 @@ CREATE TABLE "sources" (
   PRIMARY KEY ("id")
 );
 -- Create index "sources_name_key" to table: "sources"
-CREATE UNIQUE INDEX "sources_name_key" ON "sources" ("name");
+CREATE UNIQUE INDEX IF NOT EXISTS "sources_name_key" ON "sources" ("name");
 -- Create index "sources_url_key" to table: "sources"
-CREATE UNIQUE INDEX "sources_url_key" ON "sources" ("url");
+CREATE UNIQUE INDEX IF NOT EXISTS "sources_url_key" ON "sources" ("url");
