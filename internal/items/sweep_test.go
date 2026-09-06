@@ -92,7 +92,7 @@ func TestService_SweepUnreachable(t *testing.T) {
 		season := fixture.add(t, seed{kind: itemmodal.KindSeason, name: "Season 1", parentID: &series})
 		episode := fixture.add(t, seed{kind: itemmodal.KindEpisode, name: "One", parentID: &season})
 
-		if _, err := fixture.service.SaveSource(ctx, ScannedSource{
+		if _, err := fixture.service.SaveSource(ctx, MediaSource{
 			SourceID: fixture.downloader(t),
 			ItemID:   episode,
 			Path:     "/media/held.mkv",
@@ -117,7 +117,7 @@ func TestService_SweepUnreachable(t *testing.T) {
 		ctx := context.Background()
 
 		gone := fixture.add(t, seed{kind: itemmodal.KindMovie, name: "Returning"})
-		if err := fixture.service.SaveDownloadedImage(ctx, gone, Artwork{
+		if err := fixture.service.SaveDownloadedImage(ctx, gone, Image{
 			Kind: imagemodal.KindPrimary, Path: "/artwork/poster.jpg", Tag: "tag",
 		}); err != nil {
 			t.Fatalf("failed to save the image: %v", err)

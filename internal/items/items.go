@@ -39,18 +39,6 @@ func New(client *store.Client) *Service {
 	return &Service{store: client}
 }
 
-type Scanned struct {
-	ParentID          *uuid.UUID
-	Kind              Kind
-	Key               string
-	Name              string
-	SortName          string
-	ProductionYear    *int32
-	IndexNumber       *int32
-	ParentIndexNumber *int32
-	DateModified      time.Time
-}
-
 var isFolderKind = map[Kind]bool{
 	itemmodal.KindSeries:           true,
 	itemmodal.KindSeason:           true,
@@ -102,7 +90,7 @@ func MediaTypeOf(kind Kind) MediaType {
 	}
 }
 
-func (s *Service) SaveScanned(ctx context.Context, scanned Scanned) (*Item, error) {
+func (s *Service) SaveScanned(ctx context.Context, scanned Item) (*Item, error) {
 	id, err := s.store.Item.Create().
 		SetNillableParentID(scanned.ParentID).
 		SetKind(scanned.Kind).

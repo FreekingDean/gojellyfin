@@ -86,7 +86,7 @@ func TestServer_GetPersons(t *testing.T) {
 	})
 
 	service := items.New(client)
-	movie, err := service.SaveScanned(ctx, items.Scanned{
+	movie, err := service.SaveScanned(ctx, items.Item{
 		Kind:     itemmodal.KindMovie,
 		Name:     prefix + "Movie",
 		SortName: prefix + "Movie",

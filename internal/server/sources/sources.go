@@ -94,7 +94,7 @@ func modelToParams(entry sources.Configured) api.Source {
 	bound := make([]api.SourceLibrary, len(entry.Libraries))
 	for i, library := range entry.Libraries {
 		bound[i] = api.SourceLibrary{
-			Id:        library.ID,
+			Id:        library.LibraryID,
 			TagFilter: apiutil.Ptr(library.TagFilter),
 		}
 	}
@@ -126,12 +126,12 @@ func paramsToModel(req api.Source) (sources.Configured, error) {
 			LocalPath:      apiutil.Deref(req.LocalPath),
 			APIKeyVariable: apiutil.Deref(req.ApiKeyVariable),
 		},
-		Libraries: make([]sources.Library, len(bound)),
+		Libraries: make([]sources.LibrarySource, len(bound)),
 	}
 
 	for i, library := range bound {
-		entry.Libraries[i] = sources.Library{
-			ID:        library.Id,
+		entry.Libraries[i] = sources.LibrarySource{
+			LibraryID: library.Id,
 			TagFilter: apiutil.Deref(library.TagFilter),
 		}
 	}

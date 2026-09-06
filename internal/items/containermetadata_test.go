@@ -282,23 +282,23 @@ func TestService_NamedMetadata(t *testing.T) {
 			t.Fatalf("failed to load the item: %v", err)
 		}
 
-		first := Probe{
+		first := MediaSource{
 			Container:    "mkv",
 			RunTimeTicks: 100,
-			Streams: []Stream{
+			Edges: MediaSourceEdges{Streams: []*MediaStream{
 				{Index: 0, Kind: streammodal.KindVideo, Codec: "h264"},
 				{Index: 1, Kind: streammodal.KindAudio, Codec: "aac"},
-			},
+			}},
 		}
 		source := fixture.source(t, id, "/media/movie.mkv")
 		if err := fixture.service.SaveProbe(ctx, item, source, first); err != nil {
 			t.Fatalf("failed to save the first probe: %v", err)
 		}
 
-		second := Probe{
+		second := MediaSource{
 			Container:    "mkv",
 			RunTimeTicks: 200,
-			Streams:      []Stream{{Index: 0, Kind: streammodal.KindVideo, Codec: "hevc"}},
+			Edges:        MediaSourceEdges{Streams: []*MediaStream{{Index: 0, Kind: streammodal.KindVideo, Codec: "hevc"}}},
 		}
 		if err := fixture.service.SaveProbe(ctx, item, source, second); err != nil {
 			t.Fatalf("failed to save the second probe: %v", err)

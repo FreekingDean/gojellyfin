@@ -15,7 +15,7 @@ func TestService_SaveDownloadedImage(t *testing.T) {
 		movie := fixture.add(t, seed{kind: itemmodal.KindMovie, name: "Dune"})
 
 		for _, tag := range []string{"abc", "def"} {
-			downloaded := Artwork{Kind: imagemodal.KindPrimary, Path: "items/dune/Primary/" + tag + ".jpg", Tag: tag}
+			downloaded := Image{Kind: imagemodal.KindPrimary, Path: "items/dune/Primary/" + tag + ".jpg", Tag: tag}
 			if err := fixture.service.SaveDownloadedImage(ctx, movie, downloaded); err != nil {
 				t.Fatalf("failed to save %q: %v", tag, err)
 			}

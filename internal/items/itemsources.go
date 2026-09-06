@@ -16,28 +16,13 @@ import (
 )
 
 type (
-	MediaSource = store.ItemSource
-	MediaStream = store.MediaStream
-	StreamKind  = streammodal.Kind
+	MediaSource      = store.ItemSource
+	MediaSourceEdges = store.ItemSourceEdges
+	MediaStream      = store.MediaStream
+	StreamKind       = streammodal.Kind
 
 	VideoRangeType = streammodal.VideoRangeType
 )
-
-type ScannedSource struct {
-	SourceID     uuid.UUID
-	ItemID       uuid.UUID
-	Path         string
-	Name         string
-	DateModified time.Time
-}
-
-type Probe struct {
-	Container    string
-	RunTimeTicks int64
-	Size         int64
-	Bitrate      int32
-	Streams      []Stream
-}
 
 func nillableRangeType(rangeType VideoRangeType) *VideoRangeType {
 	if rangeType == "" {
@@ -47,29 +32,7 @@ func nillableRangeType(rangeType VideoRangeType) *VideoRangeType {
 	return &rangeType
 }
 
-type Stream struct {
-	Index       int32
-	Kind        StreamKind
-	Codec       string
-	Profile     string
-	Language    string
-	Title       string
-	Width       int32
-	Height      int32
-	Channels    int32
-	SampleRate  int32
-	Bitrate     int32
-	PixelFormat string
-	Level       float64
-	IsDefault   bool
-	IsForced    bool
-
-	RangeType    VideoRangeType
-	IsInterlaced bool
-	IsAnamorphic bool
-}
-
-func (s *Service) SaveSource(ctx context.Context, scanned ScannedSource) (*MediaSource, error) {
+func (s *Service) SaveSource(ctx context.Context, scanned MediaSource) (*MediaSource, error) {
 	id, err := s.store.ItemSource.Create().
 		SetSourceID(scanned.SourceID).
 		SetItemID(scanned.ItemID).
@@ -95,7 +58,7 @@ func (s *Service) SaveSource(ctx context.Context, scanned ScannedSource) (*Media
 	return source, nil
 }
 
-func (s *Service) SaveProbe(ctx context.Context, item *Item, source *MediaSource, probe Probe) error {
+func (s *Service) SaveProbe(ctx context.Context, item *Item, source *MediaSource, probe MediaSource) error {
 	return s.store.WithTx(ctx, func(tx *store.Tx) error {
 		err := tx.ItemSource.UpdateOneID(source.ID).
 			SetContainer(probe.Container).
@@ -112,12 +75,12 @@ func (s *Service) SaveProbe(ctx context.Context, item *Item, source *MediaSource
 			return fmt.Errorf("failed to clear media streams: %w", err)
 		}
 
-		if len(probe.Streams) == 0 {
+		if len(probe.Edges.Streams) == 0 {
 			return nil
 		}
 
-		builders := make([]*store.MediaStreamCreate, 0, len(probe.Streams))
-		for _, stream := range probe.Streams {
+		builders := make([]*store.MediaStreamCreate, 0, len(probe.Edges.Streams))
+		for _, stream := range probe.Edges.Streams {
 			builders = append(builders, tx.MediaStream.Create().
 				SetSourceID(source.ID).
 				SetIndex(stream.Index).
@@ -130,12 +93,12 @@ func (s *Service) SaveProbe(ctx context.Context, item *Item, source *MediaSource
 				SetHeight(stream.Height).
 				SetChannels(stream.Channels).
 				SetSampleRate(stream.SampleRate).
-				SetBitRate(stream.Bitrate).
+				SetBitRate(stream.BitRate).
 				SetPixelFormat(stream.PixelFormat).
 				SetLevel(stream.Level).
 				SetIsDefault(stream.IsDefault).
 				SetIsForced(stream.IsForced).
-				SetNillableVideoRangeType(nillableRangeType(stream.RangeType)).
+				SetNillableVideoRangeType(nillableRangeType(stream.VideoRangeType)).
 				SetIsInterlaced(stream.IsInterlaced).
 				SetIsAnamorphic(stream.IsAnamorphic))
 		}

@@ -73,7 +73,7 @@ func (s *Service) storeArtwork(ctx context.Context, itemID uuid.UUID, held *item
 		return err
 	}
 
-	saved := items.Artwork{Kind: reference.Kind, Path: key, Tag: tag, Size: int64(len(body))}
+	saved := items.Image{Kind: reference.Kind, Path: key, Tag: tag, Size: int64(len(body))}
 	if err := s.items.SaveDownloadedImage(ctx, itemID, saved); err != nil {
 		return err
 	}

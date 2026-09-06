@@ -25,21 +25,12 @@ const (
 
 var ValidImageKind = imagemodal.KindValidator
 
-type Artwork struct {
-	Kind   ImageKind
-	Path   string
-	Tag    string
-	Width  int32
-	Height int32
-	Size   int64
-}
-
 type RemoteImage struct {
 	Kind ImageKind
 	URL  string
 }
 
-func (s *Service) SaveDownloadedImage(ctx context.Context, itemID uuid.UUID, artwork Artwork) error {
+func (s *Service) SaveDownloadedImage(ctx context.Context, itemID uuid.UUID, artwork Image) error {
 	replaced, err := s.store.Image.Update().
 		Where(
 			imagemodal.ItemID(itemID),

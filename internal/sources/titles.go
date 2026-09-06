@@ -38,7 +38,7 @@ type Title struct {
 
 type Binding struct {
 	Source  Source
-	Library Library
+	Library LibrarySource
 }
 
 func (s *Service) Titles(ctx context.Context, binding Binding) ([]Title, error) {

@@ -85,7 +85,7 @@ func (f *fixture) signIn(t *testing.T, name string) (context.Context, uuid.UUID)
 	}
 
 	token := uuid.NewString()
-	device := sessions.DeviceInfo{ID: f.prefix + name, Name: name, AppName: "Test", AppVersion: "1"}
+	device := sessions.Device{ClientID: f.prefix + name, Name: name, AppName: "Test", AppVersion: "1"}
 	if _, err := f.sessions.Create(ctx, user.ID, token, device); err != nil {
 		t.Fatalf("failed to create the session for %q: %v", name, err)
 	}

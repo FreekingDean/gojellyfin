@@ -100,7 +100,7 @@ func newFixture(t *testing.T) *fixture {
 	}
 
 	token := uuid.NewString()
-	device := sessions.DeviceInfo{ID: unique, Name: "Test", AppName: "Test", AppVersion: "1"}
+	device := sessions.Device{ClientID: unique, Name: "Test", AppName: "Test", AppVersion: "1"}
 	if _, err := sessionService.Create(ctx, user.ID, token, device); err != nil {
 		t.Fatalf("failed to create the session: %v", err)
 	}
@@ -168,7 +168,7 @@ func (f *fixture) scan(t *testing.T, name string) (*items.Item, *items.MediaSour
 		t.Fatalf("failed to write %q: %v", path, err)
 	}
 
-	item, err := f.items.SaveScanned(context.Background(), items.Scanned{
+	item, err := f.items.SaveScanned(context.Background(), items.Item{
 		Kind:         itemmodal.KindAudio,
 		Key:          "audio:" + name,
 		Name:         name,
@@ -185,7 +185,7 @@ func (f *fixture) scan(t *testing.T, name string) (*items.Item, *items.MediaSour
 func (f *fixture) source(t *testing.T, itemID uuid.UUID, path string) *items.MediaSource {
 	t.Helper()
 
-	source, err := f.items.SaveSource(context.Background(), items.ScannedSource{
+	source, err := f.items.SaveSource(context.Background(), items.MediaSource{
 		SourceID:     f.newDownloader(t),
 		ItemID:       itemID,
 		Path:         path,
@@ -203,10 +203,10 @@ func (f *fixture) add(t *testing.T, name, codec string) uuid.UUID {
 	t.Helper()
 
 	item, source := f.scan(t, name)
-	err := f.items.SaveProbe(context.Background(), item, source, items.Probe{
+	err := f.items.SaveProbe(context.Background(), item, source, items.MediaSource{
 		Container: strings.TrimPrefix(filepath.Ext(name), "."),
 		Size:      int64(len(song)),
-		Streams:   []items.Stream{{Kind: streammodal.KindAudio, Codec: codec}},
+		Edges:     items.MediaSourceEdges{Streams: []*items.MediaStream{{Kind: streammodal.KindAudio, Codec: codec}}},
 	})
 	if err != nil {
 		t.Fatalf("failed to probe %q: %v", name, err)

@@ -100,7 +100,7 @@ func newPlaybackFixture(t *testing.T) *playbackFixture {
 	}
 
 	token := uuid.NewString()
-	device := sessions.DeviceInfo{ID: unique, Name: "Test", AppName: "Test", AppVersion: "1"}
+	device := sessions.Device{ClientID: unique, Name: "Test", AppName: "Test", AppVersion: "1"}
 	if _, err := sessionService.Create(ctx, user.ID, token, device); err != nil {
 		t.Fatalf("failed to create the session: %v", err)
 	}
@@ -169,7 +169,7 @@ func (f *playbackFixture) rip(t *testing.T, name, audio string) uuid.UUID {
 func (f *playbackFixture) ripped(t *testing.T, name, encoder, video, audio string) uuid.UUID {
 	t.Helper()
 
-	item, err := f.items.SaveScanned(context.Background(), items.Scanned{
+	item, err := f.items.SaveScanned(context.Background(), items.Item{
 		Kind:         itemmodal.KindMovie,
 		Key:          "movie:" + name + ":" + audio,
 		Name:         name,
@@ -208,7 +208,7 @@ func (f *playbackFixture) beside(t *testing.T, id uuid.UUID, name, encoder, vide
 		t.Fatalf("failed to read the item: %v", err)
 	}
 
-	source, err := f.items.SaveSource(ctx, items.ScannedSource{
+	source, err := f.items.SaveSource(ctx, items.MediaSource{
 		SourceID:     f.newDownloader(t),
 		ItemID:       id,
 		Path:         path,
@@ -219,12 +219,12 @@ func (f *playbackFixture) beside(t *testing.T, id uuid.UUID, name, encoder, vide
 		t.Fatalf("failed to save the source: %v", err)
 	}
 
-	err = f.items.SaveProbe(ctx, item, source, items.Probe{
+	err = f.items.SaveProbe(ctx, item, source, items.MediaSource{
 		Container: strings.TrimPrefix(filepath.Ext(name), "."),
-		Streams: []items.Stream{
+		Edges: items.MediaSourceEdges{Streams: []*items.MediaStream{
 			{Index: 0, Kind: streammodal.KindVideo, Codec: video, Width: width, Height: height},
 			{Index: 1, Kind: streammodal.KindAudio, Codec: audio},
-		},
+		}},
 	})
 	if err != nil {
 		t.Fatalf("failed to probe the source: %v", err)

@@ -200,7 +200,7 @@ func TestService_Create(t *testing.T) {
 		MediaType:  "Audio",
 		OpenAccess: true,
 		ItemIDs:    songs,
-		Shares:     []Permission{{UserID: fixture.guestID, CanEdit: true}},
+		Shares:     []Share{{UserID: fixture.guestID, CanEdit: true}},
 	})
 
 	playlist, err := fixture.service.PlaylistByItemID(ctx, playlistID)
@@ -258,7 +258,7 @@ func TestService_Access(t *testing.T) {
 	})
 
 	t.Run("a read-only share may view", func(t *testing.T) {
-		if err := fixture.service.SetShare(ctx, playlistID, Permission{UserID: fixture.guestID}); err != nil {
+		if err := fixture.service.SetShare(ctx, playlistID, Share{UserID: fixture.guestID}); err != nil {
 			t.Fatalf("failed to add the share: %v", err)
 		}
 
@@ -268,7 +268,7 @@ func TestService_Access(t *testing.T) {
 	})
 
 	t.Run("an editable share may edit but does not own", func(t *testing.T) {
-		if err := fixture.service.SetShare(ctx, playlistID, Permission{UserID: fixture.guestID, CanEdit: true}); err != nil {
+		if err := fixture.service.SetShare(ctx, playlistID, Share{UserID: fixture.guestID, CanEdit: true}); err != nil {
 			t.Fatalf("failed to update the share: %v", err)
 		}
 
@@ -508,7 +508,7 @@ func TestService_Update(t *testing.T) {
 		Name:       ptr("After"),
 		OpenAccess: ptr(true),
 		ItemIDs:    &replacement,
-		Shares:     &[]Permission{{UserID: fixture.guestID}},
+		Shares:     &[]Share{{UserID: fixture.guestID}},
 	})
 	if err != nil {
 		t.Fatalf("failed to update the playlist: %v", err)
@@ -542,10 +542,10 @@ func TestService_Shares(t *testing.T) {
 
 	playlistID := fixture.create(t, CreateParams{Name: "Shared"})
 
-	if err := fixture.service.SetShare(ctx, playlistID, Permission{UserID: fixture.guestID}); err != nil {
+	if err := fixture.service.SetShare(ctx, playlistID, Share{UserID: fixture.guestID}); err != nil {
 		t.Fatalf("failed to add the share: %v", err)
 	}
-	if err := fixture.service.SetShare(ctx, playlistID, Permission{UserID: fixture.guestID, CanEdit: true}); err != nil {
+	if err := fixture.service.SetShare(ctx, playlistID, Share{UserID: fixture.guestID, CanEdit: true}); err != nil {
 		t.Fatalf("failed to update the share: %v", err)
 	}
 
@@ -580,10 +580,10 @@ func TestCheckPermissions(t *testing.T) {
 
 		playlistID := fixture.create(t, CreateParams{
 			Name:   "Guarded",
-			Shares: []Permission{{UserID: fixture.guestID}},
+			Shares: []Share{{UserID: fixture.guestID}},
 		})
 
-		rejected := map[string][]Permission{
+		rejected := map[string][]Share{
 			"no user id":   {{UserID: uuid.Nil}},
 			"unknown user": {{UserID: uuid.New()}},
 			"the same user twice": {
@@ -610,7 +610,7 @@ func TestCheckPermissions(t *testing.T) {
 		}
 
 		t.Run("a single unknown share", func(t *testing.T) {
-			err := fixture.service.SetShare(ctx, playlistID, Permission{UserID: uuid.New()})
+			err := fixture.service.SetShare(ctx, playlistID, Share{UserID: uuid.New()})
 			if !errors.Is(err, ErrInvalidShare) {
 				t.Fatalf("error = %v, want %v", err, ErrInvalidShare)
 			}
@@ -624,7 +624,7 @@ func TestCheckPermissions(t *testing.T) {
 			Name:      "Doomed",
 			MediaType: MediaTypeUnknown,
 			OwnerID:   fixture.ownerID,
-			Shares:    []Permission{{UserID: uuid.New()}},
+			Shares:    []Share{{UserID: uuid.New()}},
 		})
 		if !errors.Is(err, ErrInvalidShare) {
 			t.Fatalf("error = %v, want %v", err, ErrInvalidShare)

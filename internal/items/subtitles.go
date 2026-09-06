@@ -12,17 +12,7 @@ import (
 	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 )
 
-type ExternalSubtitle struct {
-	Path              string
-	Language          string
-	Title             string
-	Codec             string
-	IsDefault         bool
-	IsForced          bool
-	IsHearingImpaired bool
-}
-
-func (s *Service) ReplaceExternalSubtitles(ctx context.Context, itemID uuid.UUID, source *MediaSource, subtitles []ExternalSubtitle) error {
+func (s *Service) ReplaceExternalSubtitles(ctx context.Context, itemID uuid.UUID, source *MediaSource, subtitles []MediaStream) error {
 	return s.store.WithTx(ctx, func(tx *store.Tx) error {
 		if _, err := tx.ItemSource.Query().
 			Where(sourcemodal.ID(source.ID)).

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
-	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	entrymodal "github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
@@ -16,6 +15,7 @@ import (
 type (
 	Entry    = store.ActivityLogEntry
 	Severity = entrymodal.Severity
+	Edges    = store.ActivityLogEntryEdges
 )
 
 const SeverityInformation = entrymodal.SeverityInformation
@@ -25,16 +25,6 @@ const (
 	KindSessionEnded            = "SessionEnded"
 	KindLibraryScanCompleted    = "LibraryScanCompleted"
 )
-
-type Event struct {
-	Name          string
-	Kind          string
-	Overview      string
-	ShortOverview string
-	Severity      Severity
-	UserID        *uuid.UUID
-	ItemID        *uuid.UUID
-}
 
 type Query struct {
 	StartIndex int
@@ -52,18 +42,25 @@ func New(client *store.Client) *Service {
 	return &Service{store: client}
 }
 
-func (s *Service) Record(ctx context.Context, event Event) {
-	err := s.store.ActivityLogEntry.Create().
-		SetName(event.Name).
-		SetKind(event.Kind).
-		SetOverview(event.Overview).
-		SetShortOverview(event.ShortOverview).
-		SetSeverity(event.Severity).
-		SetNillableUserID(event.UserID).
-		SetNillableItemID(event.ItemID).
-		Exec(ctx)
+func (s *Service) Record(ctx context.Context, entry Entry) {
+	create := s.store.ActivityLogEntry.Create().
+		SetName(entry.Name).
+		SetKind(entry.Kind).
+		SetOverview(entry.Overview).
+		SetShortOverview(entry.ShortOverview).
+		SetSeverity(entry.Severity)
+
+	if entry.Edges.User != nil {
+		create.SetUserID(entry.Edges.User.ID)
+	}
+
+	if entry.Edges.Item != nil {
+		create.SetItemID(entry.Edges.Item.ID)
+	}
+
+	err := create.Exec(ctx)
 	if err != nil {
-		log.Printf("record activity %q: %v", event.Kind, err)
+		log.Printf("record activity %q: %v", entry.Kind, err)
 	}
 }
 

@@ -165,7 +165,7 @@ func (s *Scanner) scanLibrary(ctx context.Context, library *libraries.Library) (
 		disturbed = append(disturbed, dropped...)
 	}
 
-	s.activity.Record(ctx, activity.Event{
+	s.activity.Record(ctx, activity.Entry{
 		Name:          fmt.Sprintf("%s scan completed", library.Name),
 		Kind:          activity.KindLibraryScanCompleted,
 		ShortOverview: fmt.Sprintf("%d items, %d files", len(found.keys), found.files()),
@@ -189,7 +189,7 @@ func (s *Scanner) saveTitle(
 		return err
 	}
 
-	scanned := items.Scanned{
+	scanned := items.Item{
 		ParentID:     parent,
 		Kind:         title.Kind,
 		Name:         title.Name,
@@ -251,7 +251,7 @@ func (s *Scanner) saveFile(
 	jobs.Heartbeat(ctx, file.Path)
 	found.file(sourceID, file.Path)
 
-	source, err := s.items.SaveSource(ctx, items.ScannedSource{
+	source, err := s.items.SaveSource(ctx, items.MediaSource{
 		SourceID:     sourceID,
 		ItemID:       item.ID,
 		Path:         file.Path,

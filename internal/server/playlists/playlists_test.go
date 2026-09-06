@@ -134,7 +134,7 @@ func (f *fixture) signIn(t *testing.T, name string) (uuid.UUID, context.Context)
 	}
 	f.users = append(f.users, user.ID)
 
-	device := sessions.DeviceInfo{ID: unique, Name: name, AppName: "test", AppVersion: "1"}
+	device := sessions.Device{ClientID: unique, Name: name, AppName: "test", AppVersion: "1"}
 	f.devices = append(f.devices, unique)
 
 	if _, err := f.sessions.Create(ctx, user.ID, unique, device); err != nil {

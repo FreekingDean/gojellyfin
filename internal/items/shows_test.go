@@ -145,7 +145,7 @@ func (f *fixture) add(t *testing.T, item seed) uuid.UUID {
 func (f *fixture) source(t *testing.T, itemID uuid.UUID, path string) *MediaSource {
 	t.Helper()
 
-	source, err := f.service.SaveSource(context.Background(), ScannedSource{
+	source, err := f.service.SaveSource(context.Background(), MediaSource{
 		SourceID: f.sourceID,
 		ItemID:   itemID,
 		Path:     path,

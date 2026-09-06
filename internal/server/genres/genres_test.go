@@ -77,7 +77,7 @@ func TestServer_GetGenres(t *testing.T) {
 	})
 
 	service := items.New(client)
-	movie, err := service.SaveScanned(ctx, items.Scanned{
+	movie, err := service.SaveScanned(ctx, items.Item{
 		Kind:     itemmodal.KindMovie,
 		Name:     name,
 		SortName: name,

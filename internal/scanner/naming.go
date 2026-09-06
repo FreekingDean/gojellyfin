@@ -24,17 +24,17 @@ func isSubtitle(name string) bool {
 	return subtitleExtensions[strings.ToLower(filepath.Ext(name))]
 }
 
-func parseSubtitle(base, name string) (items.ExternalSubtitle, bool) {
+func parseSubtitle(base, name string) (items.MediaStream, bool) {
 	if !isSubtitle(name) {
-		return items.ExternalSubtitle{}, false
+		return items.MediaStream{}, false
 	}
 
 	remainder := stripExtension(name)
 	if !strings.EqualFold(remainder, base) && !strings.HasPrefix(strings.ToLower(remainder), strings.ToLower(base)+".") {
-		return items.ExternalSubtitle{}, false
+		return items.MediaStream{}, false
 	}
 
-	subtitle := items.ExternalSubtitle{
+	subtitle := items.MediaStream{
 		Codec: strings.TrimPrefix(strings.ToLower(filepath.Ext(name)), "."),
 	}
 
@@ -57,7 +57,7 @@ func parseSubtitle(base, name string) (items.ExternalSubtitle, bool) {
 	return subtitle, true
 }
 
-func takeFlag(subtitle *items.ExternalSubtitle, token string) bool {
+func takeFlag(subtitle *items.MediaStream, token string) bool {
 	switch token {
 	case "forced":
 		subtitle.IsForced = true

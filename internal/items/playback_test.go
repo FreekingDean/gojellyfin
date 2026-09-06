@@ -381,7 +381,7 @@ func (f *fixture) copyRanged(t *testing.T, item *Item, path, video, audio string
 	t.Helper()
 
 	ctx := context.Background()
-	source, err := f.service.SaveSource(ctx, ScannedSource{
+	source, err := f.service.SaveSource(ctx, MediaSource{
 		SourceID: f.downloader(t),
 		ItemID:   item.ID,
 		Path:     path,
@@ -391,19 +391,22 @@ func (f *fixture) copyRanged(t *testing.T, item *Item, path, video, audio string
 		t.Fatalf("failed to save the source of %q: %v", path, err)
 	}
 
-	streams := []Stream{{
-		Index:     0,
-		Kind:      streammodal.KindVideo,
-		Codec:     video,
-		Height:    height,
-		Width:     height * 16 / 9,
-		RangeType: rangeType,
+	streams := []*MediaStream{{
+		Index:          0,
+		Kind:           streammodal.KindVideo,
+		Codec:          video,
+		Height:         height,
+		Width:          height * 16 / 9,
+		VideoRangeType: rangeType,
 	}}
 	if audio != "" {
-		streams = append(streams, Stream{Index: 1, Kind: streammodal.KindAudio, Codec: audio})
+		streams = append(streams, &MediaStream{Index: 1, Kind: streammodal.KindAudio, Codec: audio})
 	}
 
-	probe := Probe{Container: strings.TrimPrefix(filepath.Ext(path), "."), Streams: streams}
+	probe := MediaSource{
+		Container: strings.TrimPrefix(filepath.Ext(path), "."),
+		Edges:     MediaSourceEdges{Streams: streams},
+	}
 	if err := f.service.SaveProbe(ctx, item, source, probe); err != nil {
 		t.Fatalf("failed to probe %q: %v", path, err)
 	}
@@ -429,7 +432,7 @@ func (f *fixture) bitrate(t *testing.T, item *Item, path string, bitrate int32) 
 func (f *fixture) film(t *testing.T, key string) *Item {
 	t.Helper()
 
-	item, err := f.service.SaveScanned(context.Background(), Scanned{
+	item, err := f.service.SaveScanned(context.Background(), Item{
 		Kind:         itemmodal.KindMovie,
 		Key:          key,
 		Name:         key,

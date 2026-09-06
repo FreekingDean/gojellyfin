@@ -56,7 +56,7 @@ func (f *fixture) addTone(t *testing.T) uuid.UUID {
 		t.Fatalf("failed to generate the source: %v: %s", err, output)
 	}
 
-	item, err := f.items.SaveScanned(context.Background(), items.Scanned{
+	item, err := f.items.SaveScanned(context.Background(), items.Item{
 		Kind:         itemmodal.KindAudio,
 		Key:          "audio:tone",
 		Name:         "tone.flac",
@@ -67,9 +67,9 @@ func (f *fixture) addTone(t *testing.T) uuid.UUID {
 		t.Fatalf("failed to save the source: %v", err)
 	}
 
-	err = f.items.SaveProbe(context.Background(), item, f.source(t, item.ID, path), items.Probe{
+	err = f.items.SaveProbe(context.Background(), item, f.source(t, item.ID, path), items.MediaSource{
 		Container: "flac",
-		Streams:   []items.Stream{{Kind: streammodal.KindAudio, Codec: "flac"}},
+		Edges:     items.MediaSourceEdges{Streams: []*items.MediaStream{{Kind: streammodal.KindAudio, Codec: "flac"}}},
 	})
 	if err != nil {
 		t.Fatalf("failed to probe the source: %v", err)

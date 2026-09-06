@@ -14,7 +14,7 @@ func (f *fixture) scannedFrom(t *testing.T, downloader uuid.UUID, key, path stri
 	t.Helper()
 
 	ctx := context.Background()
-	item, err := f.service.SaveScanned(ctx, Scanned{
+	item, err := f.service.SaveScanned(ctx, Item{
 		Kind:         itemmodal.KindMovie,
 		Key:          key,
 		Name:         "The Matrix",
@@ -25,7 +25,7 @@ func (f *fixture) scannedFrom(t *testing.T, downloader uuid.UUID, key, path stri
 		t.Fatalf("failed to save %q: %v", path, err)
 	}
 
-	source, err := f.service.SaveSource(ctx, ScannedSource{
+	source, err := f.service.SaveSource(ctx, MediaSource{
 		SourceID: downloader,
 		ItemID:   item.ID,
 		Path:     path,
@@ -34,7 +34,7 @@ func (f *fixture) scannedFrom(t *testing.T, downloader uuid.UUID, key, path stri
 	if err != nil {
 		t.Fatalf("failed to save the source of %q: %v", path, err)
 	}
-	if err := f.service.SaveProbe(ctx, item, source, Probe{Container: "mkv"}); err != nil {
+	if err := f.service.SaveProbe(ctx, item, source, MediaSource{Container: "mkv"}); err != nil {
 		t.Fatalf("failed to probe %q: %v", path, err)
 	}
 
@@ -94,7 +94,7 @@ func TestService_SourcesNeedingProbe(t *testing.T) {
 		ctx := context.Background()
 
 		probed := fixture.scannedFrom(t, fixture.downloader(t), "movie:the-matrix:1999", "/media/hd/The Matrix.mkv")
-		unread, err := fixture.service.SaveSource(ctx, ScannedSource{
+		unread, err := fixture.service.SaveSource(ctx, MediaSource{
 			SourceID:     fixture.sourceID,
 			ItemID:       probed.ID,
 			Path:         "/media/4k/The Matrix.mkv",
@@ -119,7 +119,7 @@ func TestService_SourcesNeedingProbe(t *testing.T) {
 		ctx := context.Background()
 
 		probed := fixture.scannedFrom(t, fixture.downloader(t), "movie:the-matrix:1999", "/media/hd/The Matrix.mkv")
-		changed, err := fixture.service.SaveSource(ctx, ScannedSource{
+		changed, err := fixture.service.SaveSource(ctx, MediaSource{
 			SourceID:     fixture.sourceID,
 			ItemID:       probed.ID,
 			Path:         "/media/hd/The Matrix.mkv",

@@ -30,9 +30,9 @@ type Authorization struct {
 	RemoteAddr string
 }
 
-func (a Authorization) DeviceInfo() sessions.DeviceInfo {
-	return sessions.DeviceInfo{
-		ID:         a.DeviceID,
+func (a Authorization) ClientDevice() sessions.Device {
+	return sessions.Device{
+		ClientID:   a.DeviceID,
 		Name:       a.Device,
 		AppName:    a.Client,
 		AppVersion: a.Version,

@@ -13,7 +13,7 @@ import (
 
 const ticksPerSecond = 10_000_000
 
-func (s *Scanner) probeFile(ctx context.Context, source *items.MediaSource) (*items.Probe, error) {
+func (s *Scanner) probeFile(ctx context.Context, source *items.MediaSource) (*items.MediaSource, error) {
 	if !items.NeedsProbe(source) {
 		return nil, nil
 	}
@@ -26,9 +26,9 @@ func (s *Scanner) probeFile(ctx context.Context, source *items.MediaSource) (*it
 		return nil, err
 	}
 
-	streams := make([]items.Stream, 0, len(probe.Streams))
+	streams := make([]*items.MediaStream, 0, len(probe.Streams))
 	for _, stream := range probe.Streams {
-		streams = append(streams, items.Stream{
+		streams = append(streams, &items.MediaStream{
 			Index:       stream.Index,
 			Kind:        streamKind(stream.CodecType),
 			Codec:       stream.CodecName,
@@ -39,24 +39,24 @@ func (s *Scanner) probeFile(ctx context.Context, source *items.MediaSource) (*it
 			Height:      stream.Height,
 			Channels:    stream.Channels,
 			SampleRate:  stream.SampleRate,
-			Bitrate:     stream.BitRate,
+			BitRate:     stream.BitRate,
 			PixelFormat: stream.PixelFormat,
 			Level:       stream.Level,
 			IsDefault:   stream.Disposition.Default,
 			IsForced:    stream.Disposition.Forced,
 
-			RangeType:    rangeType(stream.ColorTransfer),
-			IsInterlaced: interlaced(stream.FieldOrder),
-			IsAnamorphic: anamorphic(stream.AspectRatio),
+			VideoRangeType: rangeType(stream.ColorTransfer),
+			IsInterlaced:   interlaced(stream.FieldOrder),
+			IsAnamorphic:   anamorphic(stream.AspectRatio),
 		})
 	}
 
-	return &items.Probe{
+	return &items.MediaSource{
 		Container:    container(probe.Format.FormatName, source.Path),
 		RunTimeTicks: int64(probe.Format.Duration * ticksPerSecond),
 		Size:         probe.Format.Size,
 		Bitrate:      probe.Format.BitRate,
-		Streams:      streams,
+		Edges:        items.MediaSourceEdges{Streams: streams},
 	}, nil
 }
 

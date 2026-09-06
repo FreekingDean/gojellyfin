@@ -150,7 +150,7 @@ func seed() error {
 
 	catalogue := items.New(client)
 	for _, name := range movies {
-		item, err := catalogue.SaveScanned(ctx, items.Scanned{
+		item, err := catalogue.SaveScanned(ctx, items.Item{
 			Kind:         itemmodal.KindMovie,
 			Key:          "movie:" + slugify(name),
 			Name:         name,
@@ -176,7 +176,7 @@ func seed() error {
 
 	number := int32(1)
 
-	show, err := catalogue.SaveScanned(ctx, items.Scanned{
+	show, err := catalogue.SaveScanned(ctx, items.Item{
 		Kind:         itemmodal.KindSeries,
 		Key:          "series:" + slugify(series),
 		Name:         series,
@@ -187,7 +187,7 @@ func seed() error {
 		return err
 	}
 
-	first, err := catalogue.SaveScanned(ctx, items.Scanned{
+	first, err := catalogue.SaveScanned(ctx, items.Item{
 		ParentID:     &show.ID,
 		Kind:         itemmodal.KindSeason,
 		Key:          "season:" + slugify(series) + ":1",
@@ -202,7 +202,7 @@ func seed() error {
 
 	for index, name := range episodes {
 		position := int32(index + 1)
-		item, err := catalogue.SaveScanned(ctx, items.Scanned{
+		item, err := catalogue.SaveScanned(ctx, items.Item{
 			ParentID:          &first.ID,
 			Kind:              itemmodal.KindEpisode,
 			Key:               fmt.Sprintf("episode:%s:1:%d", slugify(series), position),
@@ -244,7 +244,7 @@ func member(ctx context.Context, client *store.Client, libraryID, sourceID, item
 }
 
 func file(ctx context.Context, catalogue *items.Service, sourceID, itemID uuid.UUID, name string) error {
-	_, err := catalogue.SaveSource(ctx, items.ScannedSource{
+	_, err := catalogue.SaveSource(ctx, items.MediaSource{
 		SourceID:     sourceID,
 		ItemID:       itemID,
 		Path:         "/fixtures/" + name + ".mkv",

@@ -50,8 +50,8 @@ func newFixture(t *testing.T) *fixture {
 
 	service := sessions.New(client, activity.New(client))
 	token := uuid.NewString()
-	if _, err := service.Create(ctx, user.ID, token, sessions.DeviceInfo{
-		ID:         name,
+	if _, err := service.Create(ctx, user.ID, token, sessions.Device{
+		ClientID:   name,
 		Name:       name,
 		AppName:    "socket-test",
 		AppVersion: "1",

@@ -14,7 +14,7 @@ func TestService_SaveScanned(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
-	first, err := fixture.service.SaveScanned(ctx, Scanned{
+	first, err := fixture.service.SaveScanned(ctx, Item{
 		Kind:         itemmodal.KindMovie,
 		Name:         "Returns",
 		SortName:     "Returns",
@@ -29,7 +29,7 @@ func TestService_SaveScanned(t *testing.T) {
 		t.Fatalf("failed to sweep: %v", err)
 	}
 
-	second, err := fixture.service.SaveScanned(ctx, Scanned{
+	second, err := fixture.service.SaveScanned(ctx, Item{
 		Kind:         itemmodal.KindMovie,
 		Name:         "Returns",
 		SortName:     "Returns",

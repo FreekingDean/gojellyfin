@@ -19,7 +19,7 @@ func (s *Scanner) scanSubtitles(ctx context.Context, itemID uuid.UUID, source *i
 	return s.items.ReplaceExternalSubtitles(ctx, itemID, source, found)
 }
 
-func subtitlesBeside(ctx context.Context, files *filesystem.Service, path string) ([]items.ExternalSubtitle, error) {
+func subtitlesBeside(ctx context.Context, files *filesystem.Service, path string) ([]items.MediaStream, error) {
 	directory := filepath.Dir(path)
 	base := stripExtension(filepath.Base(path))
 
@@ -28,7 +28,7 @@ func subtitlesBeside(ctx context.Context, files *filesystem.Service, path string
 		return nil, err
 	}
 
-	found := make([]items.ExternalSubtitle, 0)
+	found := make([]items.MediaStream, 0)
 	for _, entry := range entries {
 		if entry.Dir {
 			continue

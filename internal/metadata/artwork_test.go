@@ -106,7 +106,7 @@ func (f *fixture) stored(t *testing.T, key string) []byte {
 func (f *fixture) matrix(t *testing.T) *items.Item {
 	t.Helper()
 
-	return f.add(t, items.Scanned{
+	return f.add(t, items.Item{
 		Kind:           itemmodal.KindMovie,
 		Name:           "The Matrix",
 		ProductionYear: index(1999),

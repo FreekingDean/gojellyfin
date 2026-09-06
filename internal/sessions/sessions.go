@@ -19,13 +19,6 @@ type (
 	User    = store.User
 )
 
-type DeviceInfo struct {
-	ID         string
-	Name       string
-	AppName    string
-	AppVersion string
-}
-
 type Service struct {
 	store    *store.Client
 	activity *activity.Service
@@ -35,11 +28,11 @@ func New(client *store.Client, activity *activity.Service) *Service {
 	return &Service{store: client, activity: activity}
 }
 
-func (s *Service) Create(ctx context.Context, userID uuid.UUID, token string, device DeviceInfo) (*Session, error) {
+func (s *Service) Create(ctx context.Context, userID uuid.UUID, token string, device Device) (*Session, error) {
 	err := s.store.WithTx(ctx, func(tx *store.Tx) error {
 		now := time.Now()
 		deviceID, err := tx.Device.Create().
-			SetClientID(device.ID).
+			SetClientID(device.ClientID).
 			SetName(device.Name).
 			SetAppName(device.AppName).
 			SetAppVersion(device.AppVersion).
@@ -77,12 +70,14 @@ func (s *Service) Create(ctx context.Context, userID uuid.UUID, token string, de
 		return nil, err
 	}
 
-	s.activity.Record(ctx, activity.Event{
+	s.activity.Record(ctx, activity.Entry{
 		Name:          fmt.Sprintf("%s has been authenticated", session.Edges.User.Username),
 		Kind:          activity.KindAuthenticationSucceeded,
 		ShortOverview: device.Name,
 		Severity:      activity.SeverityInformation,
-		UserID:        &userID,
+		Edges: activity.Edges{
+			User: &store.User{ID: userID},
+		},
 	})
 
 	return session, nil
@@ -128,12 +123,14 @@ func (s *Service) DeleteByToken(ctx context.Context, token string) error {
 	}
 
 	if session != nil {
-		s.activity.Record(ctx, activity.Event{
+		s.activity.Record(ctx, activity.Entry{
 			Name:          fmt.Sprintf("%s has disconnected", session.Edges.User.Username),
 			Kind:          activity.KindSessionEnded,
 			ShortOverview: session.Edges.Device.Name,
 			Severity:      activity.SeverityInformation,
-			UserID:        &session.Edges.User.ID,
+			Edges: activity.Edges{
+				User: session.Edges.User,
+			},
 		})
 	}
 

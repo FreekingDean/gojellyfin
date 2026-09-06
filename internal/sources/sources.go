@@ -56,18 +56,14 @@ func (s *Service) APIKey(variable string) (string, error) {
 }
 
 type (
-	Kind   = sourcemodel.Kind
-	Source = store.Source
+	Kind          = sourcemodel.Kind
+	Source        = store.Source
+	LibrarySource = store.LibrarySource
 )
-
-type Library struct {
-	ID        uuid.UUID
-	TagFilter string
-}
 
 type Configured struct {
 	Source    Source
-	Libraries []Library
+	Libraries []LibrarySource
 }
 
 func (s *Service) List(ctx context.Context) ([]Configured, error) {
@@ -107,7 +103,7 @@ func (s *Service) BindingsFor(ctx context.Context, id uuid.UUID) ([]Binding, err
 
 		bindings = append(bindings, Binding{
 			Source:  *record.Edges.Source,
-			Library: library(record),
+			Library: *record,
 		})
 	}
 
@@ -118,20 +114,13 @@ func (s *Service) BindingsFor(ctx context.Context, id uuid.UUID) ([]Binding, err
 	return bindings, nil
 }
 
-func libraries(records []*store.LibrarySource) []Library {
-	bound := make([]Library, len(records))
+func libraries(records []*LibrarySource) []LibrarySource {
+	bound := make([]LibrarySource, len(records))
 	for i, record := range records {
-		bound[i] = library(record)
+		bound[i] = *record
 	}
 
 	return bound
-}
-
-func library(record *store.LibrarySource) Library {
-	return Library{
-		ID:        record.LibraryID,
-		TagFilter: record.TagFilter,
-	}
 }
 
 func (s *Service) Update(ctx context.Context, configured []Configured) error {
@@ -182,7 +171,7 @@ func (s *Service) Update(ctx context.Context, configured []Configured) error {
 			for _, bound := range entry.Libraries {
 				if err := tx.LibrarySource.Create().
 					SetSourceID(id).
-					SetLibraryID(bound.ID).
+					SetLibraryID(bound.LibraryID).
 					SetTagFilter(bound.TagFilter).
 					Exec(ctx); err != nil {
 					return err

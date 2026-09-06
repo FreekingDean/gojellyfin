@@ -37,14 +37,14 @@ func userPermission(share *playlists.Share) api.PlaylistUserPermissions {
 	}
 }
 
-func permissions(users *[]api.PlaylistUserPermissions) []playlists.Permission {
+func permissions(users *[]api.PlaylistUserPermissions) []playlists.Share {
 	if users == nil {
 		return nil
 	}
 
-	converted := make([]playlists.Permission, 0, len(*users))
+	converted := make([]playlists.Share, 0, len(*users))
 	for _, user := range *users {
-		converted = append(converted, playlists.Permission{
+		converted = append(converted, playlists.Share{
 			UserID:  apiutil.Deref(user.UserId),
 			CanEdit: apiutil.Deref(user.CanEdit),
 		})
