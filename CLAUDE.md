@@ -227,7 +227,7 @@ Background work runs as Temporal workflows in a separate deployment. `gojellyfin
 
 Underneath, one generic workflow executes one activity: the named job's `Run`. That is forced rather than chosen — workflow code has to be deterministic and replayable, so it can do no IO, and a `Run` that touches the database has to be the activity. Keeping the workflow to a single `ExecuteActivity` is what makes the whole of a job ordinary Go with no replay semantics to reason about.
 
-**The workflow id is derived from the name and the parameters**, so `RefreshLibrary` and `RefreshLibrary:<uuid>` are separate singletons and an enqueue that arrives twice collides with the execution already running and answers success. That is what makes fire-and-forget safe without any bookkeeping: a retried activity re-enqueues its children and starts nothing new.
+**The workflow id is `<name>:<sha1 of the parameters>`**, so one title's `RefreshItem` and another's are separate singletons and an enqueue that arrives twice with the same parameters collides with the execution already running and answers success. It is a hash rather than the parameters themselves because `RefreshItem` carries a whole title in its params and Temporal caps a workflow id — spelling them out produced an id thousands of bytes long. The `:` matters: `jobs.executions` finds a task's runs with `WorkflowId = <name> OR WorkflowId STARTS_WITH <name>:`, so an id built with any other separator leaves every task reading Idle on the dashboard and makes Cancel a no-op. That is what makes fire-and-forget safe without any bookkeeping: a retried activity re-enqueues its children and starts nothing new.
 
 Enqueued jobs are independent top-level executions, never children. A parent's history grows by about three events per child and a Temporal workflow is terminated somewhere around fifty thousand, so a parent that fans out to thousands is the one shape that does not scale; thousands of *independent* executions are what the engine is built for. The cost is that stopping a job stops only that job — cancelling a scan no longer reaches what it enqueued.
 
@@ -250,11 +250,20 @@ The type is the job's `Name` and the workflow id is the same string, because the
 **The refresh is four jobs, each in the package that owns what it writes.** There is no scanner package: it was the `filepath.WalkDir` one, and when the walk became Sonarr and Radarr the name stopped describing anything while the probe stayed bolted to it.
 
 ```
-RefreshLibraries       libraries  every library      -> RefreshLibrary per library
-RefreshLibrary         libraries  one library        -> RefreshLibrarySource per binding
+RefreshLibraries       libraries  every library        -> RefreshLibrary per library
+RefreshLibrary         libraries  one library          -> RefreshLibrarySource per binding
 RefreshLibrarySource   sources    one (library,source) -> RefreshItem per title
-RefreshItem            items      one title          writes item, item_sources, library_item
+RefreshItem            items      one title            -> ProbeFile per unprobed file
+                                                       -> RefreshMetadata if unidentified
+ProbeFile              probe      one file
+RefreshMetadata        metadata   one item, or the batch
 ```
+
+**The names are in `internal/jobs`, not in the package that runs them.** `items` enqueues `ProbeFile` and `RefreshMetadata`, and both of those packages import `items` — so the constants cannot live with their jobs without a cycle. `jobs` imports nothing of ours, which makes it the one place every level can name the next, and the whole graph readable in one file.
+
+`RefreshItem` then asks for the two things a new title needs, and only when it needs them: `ProbeFile` for a file whose `probed_at` is missing or older than it, and `RefreshMetadata` for a title carrying no `provider_ids`. So a title that lands in a refresh is probed and identified without waiting for either schedule.
+
+The batch jobs stay, and are what makes the chain safe to lose. A per-item `RefreshMetadata` for an episode is a miss while its series is still unidentified — the episode resolves through the series' provider ids — and nothing re-enqueues it. `RefreshMetadata` with no `item` runs the batch, which selects `provider_ids IS NULL` **parent first**, so the next scheduled run picks up whatever the chain could not answer yet.
 
 Each enqueue is fire and forget, so a level never waits on the one below it and a failure stops one title rather than a library. The two jobs that used to ride along are their own now and run on their own schedule: `ProbeFiles` in `internal/probe` reads every file `items.SourcesNeedingProbe` returns, and `SweepItems` in `internal/items` is the reference count. Neither belongs to a refresh — one is bounded by ffmpeg and the other is a garbage collector.
 

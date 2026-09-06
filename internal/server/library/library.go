@@ -32,7 +32,7 @@ func New(
 }
 
 func (s *Server) RefreshLibrary(ctx context.Context, request api.RefreshLibraryRequestObject) (api.RefreshLibraryResponseObject, error) {
-	if err := s.tasks.Start(ctx, libraries.RefreshLibrariesJobID); err != nil {
+	if err := s.tasks.Start(ctx, jobs.RefreshLibraries); err != nil {
 		return nil, err
 	}
 

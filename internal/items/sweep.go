@@ -7,11 +7,9 @@ import (
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
-const SweepItemsJobID = "SweepItems"
-
 func (s *Service) SweepJob() jobs.Job {
 	return jobs.Job{
-		Name:        SweepItemsJobID,
+		Name:        jobs.SweepItems,
 		Category:    "Library",
 		Description: "Removes titles no source reports a file for any more.",
 		Run:         s.sweep,

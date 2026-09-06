@@ -8,16 +8,9 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 )
 
-const (
-	RefreshMetadataJobID = "RefreshMetadata"
-
-	ParamScope = "scope"
-	ParamForce = "force"
-)
-
 func (s *Service) Job() jobs.Job {
 	return jobs.Job{
-		Name:        RefreshMetadataJobID,
+		Name:        jobs.RefreshMetadata,
 		Category:    "Library",
 		Description: "Identifies items and fetches their metadata.",
 		Run:         s.run,
@@ -25,12 +18,20 @@ func (s *Service) Job() jobs.Job {
 }
 
 func (s *Service) run(ctx context.Context) error {
-	scope, err := jobs.GetParam[uuid.UUID](ctx, ParamScope)
+	itemID, err := jobs.GetParam[uuid.UUID](ctx, jobs.ParamItem)
+	if err != nil {
+		return err
+	}
+	if itemID != uuid.Nil {
+		return s.IdentifyItem(ctx, itemID)
+	}
+
+	scope, err := jobs.GetParam[uuid.UUID](ctx, jobs.ParamScope)
 	if err != nil {
 		return err
 	}
 
-	force, err := jobs.GetParam[bool](ctx, ParamForce)
+	force, err := jobs.GetParam[bool](ctx, jobs.ParamForce)
 	if err != nil {
 		return err
 	}

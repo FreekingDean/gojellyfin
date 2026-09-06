@@ -13,4 +13,5 @@ var Module = fx.Module(
 
 func register(registry *jobs.Registry, prober *Prober) {
 	registry.Register(prober.Job())
+	registry.Register(prober.FileJob())
 }

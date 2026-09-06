@@ -229,10 +229,6 @@ func file(source Source, from arr.File) (File, error) {
 
 func Localise(source Source, path string) (string, error) {
 	root := strings.TrimSuffix(source.RootPath, string(filepath.Separator))
-	if root == "" {
-		return "", fmt.Errorf("%s names no root path", source.Name)
-	}
-
 	if path != root && !strings.HasPrefix(path, root+string(filepath.Separator)) {
 		return "", fmt.Errorf("%s reported %q, which is outside its root %s", source.Name, path, root)
 	}

@@ -28,6 +28,24 @@ func New(provider Provider, service *items.Service) *Service {
 	return &Service{provider: provider, items: service}
 }
 
+func (s *Service) IdentifyItem(ctx context.Context, id uuid.UUID) error {
+	if !s.provider.Enabled() {
+		return nil
+	}
+
+	pendingItem, err := s.items.ItemByID(ctx, items.Everyone, id)
+	if store.IsNotFound(err) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	jobs.Heartbeat(ctx, pendingItem.Name)
+
+	return s.identify(ctx, pendingItem)
+}
+
 func (s *Service) IdentifyItems(ctx context.Context, scope uuid.UUID, force bool) error {
 	if !s.provider.Enabled() {
 		log.Print("metadata: no provider is configured, nothing to identify against")

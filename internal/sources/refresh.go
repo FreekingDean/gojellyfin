@@ -13,16 +13,9 @@ import (
 	librarysourcemodel "github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 )
 
-const (
-	RefreshLibrarySourceJobID = "RefreshLibrarySource"
-
-	ParamLibrary = "library"
-	ParamSource  = "source"
-)
-
 func (s *Service) RefreshJob() jobs.Job {
 	return jobs.Job{
-		Name:        RefreshLibrarySourceJobID,
+		Name:        jobs.RefreshLibrarySource,
 		Category:    "Library",
 		Description: "Reads one Sonarr or Radarr instance for one library.",
 		Run:         s.refresh,
@@ -30,12 +23,12 @@ func (s *Service) RefreshJob() jobs.Job {
 }
 
 func (s *Service) refresh(ctx context.Context) error {
-	libraryID, err := jobs.GetParam[uuid.UUID](ctx, ParamLibrary)
+	libraryID, err := jobs.GetParam[uuid.UUID](ctx, jobs.ParamLibrary)
 	if err != nil {
 		return err
 	}
 
-	sourceID, err := jobs.GetParam[uuid.UUID](ctx, ParamSource)
+	sourceID, err := jobs.GetParam[uuid.UUID](ctx, jobs.ParamSource)
 	if err != nil {
 		return err
 	}
@@ -71,10 +64,10 @@ func (s *Service) refresh(ctx context.Context) error {
 	for _, title := range titles {
 		jobs.Heartbeat(ctx, title.Name)
 
-		if err := jobs.Enqueue(ctx, items.RefreshItemJobID,
-			jobs.With(items.ParamItem, scanned(title)),
-			jobs.With(items.ParamLibrary, libraryID),
-			jobs.With(items.ParamSource, sourceID),
+		if err := jobs.Enqueue(ctx, jobs.RefreshItem,
+			jobs.With(jobs.ParamItem, scanned(title)),
+			jobs.With(jobs.ParamLibrary, libraryID),
+			jobs.With(jobs.ParamSource, sourceID),
 		); err != nil {
 			log.Printf("failed to enqueue %s: %v", title.Key, err)
 		}

@@ -7,13 +7,13 @@ import (
 	"go.temporal.io/sdk/testsuite"
 )
 
-type queued struct {
+type Queued struct {
 	Name   string
 	Params Params
 }
 
 type recorder struct {
-	enqueued []queued
+	enqueued []Queued
 }
 
 func (r *recorder) Enqueue(_ context.Context, name string, params ...Param) error {
@@ -21,12 +21,12 @@ func (r *recorder) Enqueue(_ context.Context, name string, params ...Param) erro
 	for _, param := range params {
 		held[param.Name] = param.Value
 	}
-	r.enqueued = append(r.enqueued, queued{Name: name, Params: held})
+	r.enqueued = append(r.enqueued, Queued{Name: name, Params: held})
 
 	return nil
 }
 
-func RunJob(t *testing.T, job Job, params ...Param) ([]queued, error) {
+func RunJob(t *testing.T, job Job, params ...Param) ([]Queued, error) {
 	t.Helper()
 
 	held := make(Params, len(params))
@@ -51,7 +51,7 @@ func RunJob(t *testing.T, job Job, params ...Param) ([]queued, error) {
 	return written.enqueued, nil
 }
 
-func Enqueued(t *testing.T, from []queued, name string) []Params {
+func Enqueued(t *testing.T, from []Queued, name string) []Params {
 	t.Helper()
 
 	found := make([]Params, 0, len(from))

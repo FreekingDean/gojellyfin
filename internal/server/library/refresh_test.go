@@ -12,7 +12,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
-	"github.com/FreekingDean/gojellyfin/internal/metadata"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
@@ -88,7 +87,7 @@ func TestServer_RefreshItem(t *testing.T) {
 		fixed := newFixture(t)
 		movie := fixed.add(t, seed{kind: itemmodal.KindMovie, name: "The Matrix"})
 
-		if _, err := fixed.expecting(t, metadata.RefreshMetadataJobID).RefreshItem(
+		if _, err := fixed.expecting(t, jobs.RefreshMetadata).RefreshItem(
 			context.Background(),
 			refreshRequest(movie, api.MetadataRefreshModeFullRefresh, true),
 		); !errors.Is(err, jobs.ErrNotConfigured) {
@@ -99,7 +98,7 @@ func TestServer_RefreshItem(t *testing.T) {
 	t.Run("starts the metadata job for a library", func(t *testing.T) {
 		fixed := newFixture(t)
 
-		if _, err := fixed.expecting(t, metadata.RefreshMetadataJobID).RefreshItem(
+		if _, err := fixed.expecting(t, jobs.RefreshMetadata).RefreshItem(
 			context.Background(),
 			refreshRequest(fixed.libraryID, api.MetadataRefreshModeFullRefresh, true),
 		); !errors.Is(err, jobs.ErrNotConfigured) {
@@ -111,7 +110,7 @@ func TestServer_RefreshItem(t *testing.T) {
 		fixed := newFixture(t)
 		movie := fixed.add(t, seed{kind: itemmodal.KindMovie, name: "The Matrix"})
 
-		if _, err := fixed.expecting(t, libraries.RefreshLibrariesJobID).RefreshItem(
+		if _, err := fixed.expecting(t, jobs.RefreshLibraries).RefreshItem(
 			context.Background(),
 			api.RefreshItemRequestObject{
 				ItemId: movie,

@@ -138,14 +138,14 @@ func (f *fixture) refresh(t *testing.T, libraryID uuid.UUID) []jobs.Params {
 	t.Helper()
 
 	enqueued, err := jobs.RunJob(t, f.service.RefreshJob(),
-		jobs.With(ParamLibrary, libraryID),
-		jobs.With(ParamSource, f.sourceID),
+		jobs.With(jobs.ParamLibrary, libraryID),
+		jobs.With(jobs.ParamSource, f.sourceID),
 	)
 	if err != nil {
 		t.Fatalf("failed to refresh: %v", err)
 	}
 
-	return jobs.Enqueued(t, enqueued, items.RefreshItemJobID)
+	return jobs.Enqueued(t, enqueued, jobs.RefreshItem)
 }
 
 func (f *fixture) write(t *testing.T, libraryID uuid.UUID, params []jobs.Params) {
@@ -153,7 +153,7 @@ func (f *fixture) write(t *testing.T, libraryID uuid.UUID, params []jobs.Params)
 
 	for _, held := range params {
 		var scanned items.Scanned
-		if err := json.Unmarshal([]byte(held[items.ParamItem]), &scanned); err != nil {
+		if err := json.Unmarshal([]byte(held[jobs.ParamItem]), &scanned); err != nil {
 			t.Fatalf("failed to read the enqueued title: %v", err)
 		}
 		if err := f.items.RefreshItem(context.Background(), libraryID, f.sourceID, scanned); err != nil {

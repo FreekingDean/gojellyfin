@@ -2,6 +2,8 @@ package jobs
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -57,7 +59,9 @@ func (p Params) id(name string) string {
 		written.Set(key, strings.Trim(value, `"`))
 	}
 
-	return name + idSeparator + written.Encode()
+	sum := sha1.Sum([]byte(written.Encode()))
+
+	return name + idSeparator + hex.EncodeToString(sum[:])
 }
 
 type paramsKey struct{}

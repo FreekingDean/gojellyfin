@@ -7,19 +7,11 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
-	"github.com/FreekingDean/gojellyfin/internal/sources"
-)
-
-const (
-	RefreshLibrariesJobID = "RefreshLibraries"
-	RefreshLibraryJobID   = "RefreshLibrary"
-
-	ParamLibrary = "library"
 )
 
 func (s *Service) RefreshLibrariesJob() jobs.Job {
 	return jobs.Job{
-		Name:        RefreshLibrariesJobID,
+		Name:        jobs.RefreshLibraries,
 		Category:    "Library",
 		Description: "Refreshes every library from its Sonarr and Radarr sources.",
 		Run:         s.refreshAll,
@@ -28,7 +20,7 @@ func (s *Service) RefreshLibrariesJob() jobs.Job {
 
 func (s *Service) RefreshLibraryJob() jobs.Job {
 	return jobs.Job{
-		Name:        RefreshLibraryJobID,
+		Name:        jobs.RefreshLibrary,
 		Category:    "Library",
 		Description: "Refreshes one library from each source bound to it.",
 		Run:         s.refreshOne,
@@ -44,7 +36,7 @@ func (s *Service) refreshAll(ctx context.Context) error {
 	for _, library := range libraries {
 		jobs.Heartbeat(ctx, library.Name)
 
-		if err := jobs.Enqueue(ctx, RefreshLibraryJobID, jobs.With(ParamLibrary, library.ID)); err != nil {
+		if err := jobs.Enqueue(ctx, jobs.RefreshLibrary, jobs.With(jobs.ParamLibrary, library.ID)); err != nil {
 			log.Printf("failed to enqueue %s: %v", library.Name, err)
 		}
 	}
@@ -53,7 +45,7 @@ func (s *Service) refreshAll(ctx context.Context) error {
 }
 
 func (s *Service) refreshOne(ctx context.Context) error {
-	libraryID, err := jobs.GetParam[uuid.UUID](ctx, ParamLibrary)
+	libraryID, err := jobs.GetParam[uuid.UUID](ctx, jobs.ParamLibrary)
 	if err != nil {
 		return err
 	}
@@ -76,9 +68,9 @@ func (s *Service) refreshOne(ctx context.Context) error {
 	for _, binding := range bindings {
 		jobs.Heartbeat(ctx, binding.Source.Name)
 
-		if err := jobs.Enqueue(ctx, sources.RefreshLibrarySourceJobID,
-			jobs.With(sources.ParamLibrary, libraryID),
-			jobs.With(sources.ParamSource, binding.Source.ID),
+		if err := jobs.Enqueue(ctx, jobs.RefreshLibrarySource,
+			jobs.With(jobs.ParamLibrary, libraryID),
+			jobs.With(jobs.ParamSource, binding.Source.ID),
 		); err != nil {
 			log.Printf("failed to enqueue %s: %v", binding.Source.Name, err)
 		}

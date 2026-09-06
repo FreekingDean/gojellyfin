@@ -14,8 +14,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store"
 )
 
-const ProbeFilesJobID = "ProbeFiles"
-
 type Prober struct {
 	items  *items.Service
 	ffmpeg *ffmpeg.FFMpeg
@@ -25,9 +23,31 @@ func New(records *items.Service, probe *ffmpeg.FFMpeg) *Prober {
 	return &Prober{items: records, ffmpeg: probe}
 }
 
+func (s *Prober) FileJob() jobs.Job {
+	return jobs.Job{
+		Name:        jobs.ProbeFile,
+		Category:    "Library",
+		Description: "Reads the streams of one file.",
+		Run:         s.runOne,
+	}
+}
+
+func (s *Prober) runOne(ctx context.Context) error {
+	id, err := jobs.GetParam[uuid.UUID](ctx, jobs.ParamSource)
+	if err != nil {
+		return err
+	}
+
+	if err := s.ProbeSource(ctx, id); err != nil && !store.IsNotFound(err) {
+		return err
+	}
+
+	return nil
+}
+
 func (s *Prober) Job() jobs.Job {
 	return jobs.Job{
-		Name:        ProbeFilesJobID,
+		Name:        jobs.ProbeFiles,
 		Category:    "Library",
 		Description: "Reads the streams of every file it has not seen before.",
 		Run:         s.run,

@@ -5,8 +5,6 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
-	"github.com/FreekingDean/gojellyfin/internal/libraries"
-	"github.com/FreekingDean/gojellyfin/internal/metadata"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
@@ -20,13 +18,13 @@ func (s *Server) RefreshItem(ctx context.Context, request api.RefreshItemRequest
 
 	switch apiutil.Deref(request.Params.MetadataRefreshMode) {
 	case api.MetadataRefreshModeDefault, api.MetadataRefreshModeValidationOnly:
-		if err := s.tasks.Start(ctx, libraries.RefreshLibrariesJobID); err != nil {
+		if err := s.tasks.Start(ctx, jobs.RefreshLibraries); err != nil {
 			return nil, err
 		}
 	case api.MetadataRefreshModeFullRefresh:
-		if err := s.tasks.Start(ctx, metadata.RefreshMetadataJobID,
-			jobs.With(metadata.ParamScope, request.ItemId),
-			jobs.With(metadata.ParamForce, apiutil.Deref(request.Params.ReplaceAllMetadata)),
+		if err := s.tasks.Start(ctx, jobs.RefreshMetadata,
+			jobs.With(jobs.ParamScope, request.ItemId),
+			jobs.With(jobs.ParamForce, apiutil.Deref(request.Params.ReplaceAllMetadata)),
 		); err != nil {
 			return nil, err
 		}

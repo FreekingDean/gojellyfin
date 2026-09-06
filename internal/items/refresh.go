@@ -3,6 +3,7 @@ package items
 import (
 	"context"
 	"fmt"
+	"log"
 	"path/filepath"
 	"time"
 
@@ -10,14 +11,6 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-)
-
-const (
-	RefreshItemJobID = "RefreshItem"
-
-	ParamItem    = "item"
-	ParamLibrary = "library"
-	ParamSource  = "source"
 )
 
 type Scanned struct {
@@ -40,7 +33,7 @@ type ScannedFile struct {
 
 func (s *Service) RefreshItemJob() jobs.Job {
 	return jobs.Job{
-		Name:        RefreshItemJobID,
+		Name:        jobs.RefreshItem,
 		Category:    "Library",
 		Description: "Writes one title, its files and its library membership.",
 		Run:         s.refreshItem,
@@ -48,17 +41,17 @@ func (s *Service) RefreshItemJob() jobs.Job {
 }
 
 func (s *Service) refreshItem(ctx context.Context) error {
-	scanned, err := jobs.GetParam[Scanned](ctx, ParamItem)
+	scanned, err := jobs.GetParam[Scanned](ctx, jobs.ParamItem)
 	if err != nil {
 		return err
 	}
 
-	libraryID, err := jobs.GetParam[uuid.UUID](ctx, ParamLibrary)
+	libraryID, err := jobs.GetParam[uuid.UUID](ctx, jobs.ParamLibrary)
 	if err != nil {
 		return err
 	}
 
-	sourceID, err := jobs.GetParam[uuid.UUID](ctx, ParamSource)
+	sourceID, err := jobs.GetParam[uuid.UUID](ctx, jobs.ParamSource)
 	if err != nil {
 		return err
 	}
@@ -90,15 +83,24 @@ func (s *Service) RefreshItem(ctx context.Context, libraryID, sourceID uuid.UUID
 	for _, file := range scanned.Files {
 		jobs.Heartbeat(ctx, file.Path)
 
-		if _, err := s.SaveSource(ctx, MediaSource{
+		saved, err := s.SaveSource(ctx, MediaSource{
 			SourceID:     sourceID,
 			ItemID:       item.ID,
 			Path:         file.Path,
 			Name:         filepath.Base(file.Path),
 			DateModified: file.DateModified,
-		}); err != nil {
+		})
+		if err != nil {
 			return err
 		}
+
+		if NeedsProbe(saved) {
+			enqueue(ctx, jobs.ProbeFile, jobs.With(jobs.ParamSource, saved.ID))
+		}
+	}
+
+	if item.ProviderIds == nil {
+		enqueue(ctx, jobs.RefreshMetadata, jobs.With(jobs.ParamItem, item.ID))
 	}
 
 	if !scanned.Tagged {
@@ -108,14 +110,29 @@ func (s *Service) RefreshItem(ctx context.Context, libraryID, sourceID uuid.UUID
 	return s.SaveMembership(ctx, libraryID, sourceID, []uuid.UUID{item.ID})
 }
 
+func enqueue(ctx context.Context, name string, params ...jobs.Param) {
+	if err := jobs.Enqueue(ctx, name, params...); err != nil {
+		log.Printf("failed to enqueue %s: %v", name, err)
+	}
+}
+
+func (s *Service) ItemByKey(ctx context.Context, key string) (*Item, error) {
+	item, err := s.store.Item.Query().Where(itemmodal.Key(key)).Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query %s: %w", key, err)
+	}
+
+	return item, nil
+}
+
 func (s *Service) parentOf(ctx context.Context, key string) (*uuid.UUID, error) {
 	if key == "" {
 		return nil, nil
 	}
 
-	parent, err := s.store.Item.Query().Where(itemmodal.Key(key)).Only(ctx)
+	parent, err := s.ItemByKey(ctx, key)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find the parent %s: %w", key, err)
+		return nil, err
 	}
 
 	return &parent.ID, nil
