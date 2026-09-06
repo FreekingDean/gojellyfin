@@ -1,4 +1,4 @@
-CREATE TABLE "library_items" (
+CREATE TABLE IF NOT EXISTS "library_items" (
   "id" uuid NOT NULL DEFAULT gen_random_uuid(),
   "created_at" timestamptz NOT NULL,
   "updated_at" timestamptz NOT NULL,
@@ -10,6 +10,14 @@ CREATE TABLE "library_items" (
   CONSTRAINT "library_items_libraries_library_items" FOREIGN KEY ("library_id") REFERENCES "libraries" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
   CONSTRAINT "library_items_sources_memberships" FOREIGN KEY ("source_id") REFERENCES "sources" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
 );
+
+DROP TABLE IF EXISTS "merged";
+
+DO $$ BEGIN
+IF EXISTS (
+  SELECT 1 FROM information_schema.columns
+  WHERE table_schema = current_schema() AND table_name = 'items' AND column_name = 'library_id'
+) THEN
 
 -- Membership for what has a file, then for the seasons and series above them.
 INSERT INTO "library_items" ("created_at", "updated_at", "library_id", "item_id", "source_id")
@@ -100,7 +108,10 @@ DROP TABLE "merged";
 DELETE FROM "library_items" a USING "library_items" b
 WHERE a.library_id = b.library_id AND a.item_id = b.item_id AND a.source_id = b.source_id AND a.id > b.id;
 
-ALTER TABLE "items" DROP COLUMN "library_id";
-CREATE UNIQUE INDEX "item_key" ON "items" ("key");
-CREATE INDEX "libraryitem_item_id" ON "library_items" ("item_id");
-CREATE UNIQUE INDEX "libraryitem_library_id_item_id_source_id" ON "library_items" ("library_id", "item_id", "source_id");
+END IF;
+END $$;
+
+ALTER TABLE "items" DROP COLUMN IF EXISTS "library_id";
+CREATE UNIQUE INDEX IF NOT EXISTS "item_key" ON "items" ("key");
+CREATE INDEX IF NOT EXISTS "libraryitem_item_id" ON "library_items" ("item_id");
+CREATE UNIQUE INDEX IF NOT EXISTS "libraryitem_library_id_item_id_source_id" ON "library_items" ("library_id", "item_id", "source_id");

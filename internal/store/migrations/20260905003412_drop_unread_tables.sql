@@ -1,16 +1,16 @@
 -- Drop "chapters" table
-DROP TABLE "chapters";
+DROP TABLE IF EXISTS "chapters";
 -- Drop "listings_providers" table
-DROP TABLE "listings_providers";
+DROP TABLE IF EXISTS "listings_providers";
 -- Drop "media_attachments" table
-DROP TABLE "media_attachments";
+DROP TABLE IF EXISTS "media_attachments";
 -- Drop "media_segments" table
-DROP TABLE "media_segments";
+DROP TABLE IF EXISTS "media_segments";
 -- Drop "timers" table
-DROP TABLE "timers";
+DROP TABLE IF EXISTS "timers";
 -- Drop "trickplays" table
-DROP TABLE "trickplays";
+DROP TABLE IF EXISTS "trickplays";
 -- Drop "tuner_hosts" table
-DROP TABLE "tuner_hosts";
+DROP TABLE IF EXISTS "tuner_hosts";
 -- Drop "series_timers" table
-DROP TABLE "series_timers";
+DROP TABLE IF EXISTS "series_timers";
