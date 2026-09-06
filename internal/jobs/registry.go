@@ -18,10 +18,10 @@ func (r *Registry) All() []Job {
 
 func (r *Registry) Find(name string) (Job, error) {
 	for _, job := range r.jobs {
-		if job.Name() == name {
+		if job.Name == name {
 			return job, nil
 		}
 	}
 
-	return nil, ErrNotFound
+	return Job{}, ErrNotFound
 }

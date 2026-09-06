@@ -20,12 +20,13 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
-type namedJob string
-
-func (n namedJob) Name() string                { return string(n) }
-func (n namedJob) Category() string            { return "Library" }
-func (n namedJob) Description() string         { return "" }
-func (n namedJob) Run(_ context.Context) error { return nil }
+func namedJob(name string) jobs.Job {
+	return jobs.Job{
+		Name:     name,
+		Category: "Library",
+		Run:      func(context.Context) error { return nil },
+	}
+}
 
 func (f *fixture) expecting(t *testing.T, job string) *Server {
 	t.Helper()

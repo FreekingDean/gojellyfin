@@ -24,11 +24,11 @@ const (
 	runTimeoutMax = 24 * time.Hour
 )
 
-type Job interface {
-	Name() string
-	Category() string
-	Description() string
-	Run(ctx context.Context) error
+type Job struct {
+	Name        string
+	Category    string
+	Description string
+	Run         func(ctx context.Context) error
 }
 
 type Params map[string]string

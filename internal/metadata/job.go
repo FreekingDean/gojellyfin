@@ -15,21 +15,16 @@ const (
 	ParamForce = "force"
 )
 
-type Identify struct {
-	service *Service
+func (s *Service) Job() jobs.Job {
+	return jobs.Job{
+		Name:        RefreshMetadataJobID,
+		Category:    "Library",
+		Description: "Identifies items and fetches their metadata.",
+		Run:         s.run,
+	}
 }
 
-func NewIdentify(service *Service) *Identify {
-	return &Identify{service: service}
-}
-
-func (i *Identify) Name() string     { return RefreshMetadataJobID }
-func (i *Identify) Category() string { return "Library" }
-func (i *Identify) Description() string {
-	return "Identifies items and fetches their metadata."
-}
-
-func (i *Identify) Run(ctx context.Context) error {
+func (s *Service) run(ctx context.Context) error {
 	scope, err := jobs.GetParam[uuid.UUID](ctx, ParamScope)
 	if err != nil {
 		return err
@@ -40,5 +35,5 @@ func (i *Identify) Run(ctx context.Context) error {
 		return err
 	}
 
-	return i.service.IdentifyItems(ctx, scope, force)
+	return s.IdentifyItems(ctx, scope, force)
 }

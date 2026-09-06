@@ -72,18 +72,18 @@ func (q *queue) CancelWorkflow(_ context.Context, id string, _ string) error {
 	return nil
 }
 
-type refreshJob struct{}
-
-func (refreshJob) Name() string              { return "RefreshMetadata" }
-func (refreshJob) Category() string          { return "Library" }
-func (refreshJob) Description() string       { return "Fetches metadata." }
-func (refreshJob) Run(context.Context) error { return nil }
+var refreshJob = Job{
+	Name:        "RefreshMetadata",
+	Category:    "Library",
+	Description: "Fetches metadata.",
+	Run:         func(context.Context) error { return nil },
+}
 
 func serviceOver(t *testing.T, queued *queue) *Service {
 	t.Helper()
 
 	registry := NewRegistry()
-	registry.Register(refreshJob{})
+	registry.Register(refreshJob)
 
 	return NewService(&Client{client: queued}, registry)
 }

@@ -12,5 +12,5 @@ var Module = fx.Module(
 )
 
 func register(registry *jobs.Registry, scanner *Scanner) {
-	registry.Register(NewLibraryScan(scanner))
+	registry.Register(scanner.Job())
 }

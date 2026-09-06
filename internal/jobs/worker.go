@@ -34,9 +34,9 @@ func (w *Worker) Start() error {
 	for _, job := range w.registry.All() {
 		w.worker.RegisterActivityWithOptions(
 			w.activity(job),
-			activity.RegisterOptions{Name: job.Name()},
+			activity.RegisterOptions{Name: job.Name},
 		)
-		log.Printf("registered job %s", job.Name())
+		log.Printf("registered job %s", job.Name)
 	}
 
 	return w.worker.Start()

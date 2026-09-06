@@ -19,7 +19,7 @@ func newServer(t *testing.T) *Server {
 	}
 
 	registry := jobs.NewRegistry()
-	registry.Register(scanJob{})
+	registry.Register(scanJob)
 
 	return New(jobs.NewService(client, registry))
 }
@@ -38,8 +38,8 @@ func TestServer_GetTasks(t *testing.T) {
 		if len(infos) == 0 {
 			t.Fatal("no tasks were listed")
 		}
-		if got := apiutil.Deref(infos[0].Id); got != (scanJob{}).Name() {
-			t.Errorf("id = %q, want %q", got, (scanJob{}).Name())
+		if got := apiutil.Deref(infos[0].Id); got != scanJob.Name {
+			t.Errorf("id = %q, want %q", got, scanJob.Name)
 		}
 		if got := apiutil.Deref(infos[0].State); got != api.TaskStateIdle {
 			t.Errorf("state = %q, want Idle with nothing running", got)
@@ -94,11 +94,9 @@ func TestServer(t *testing.T) {
 	}
 }
 
-type scanJob struct{}
-
-func (scanJob) Name() string        { return "RefreshLibrary" }
-func (scanJob) Description() string { return "Scans the media libraries." }
-func (scanJob) Category() string    { return "Library" }
-func (scanJob) Run(context.Context) error {
-	return nil
+var scanJob = jobs.Job{
+	Name:        "RefreshLibrary",
+	Description: "Scans the media libraries.",
+	Category:    "Library",
+	Run:         func(context.Context) error { return nil },
 }

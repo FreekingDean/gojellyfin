@@ -166,7 +166,7 @@ func (s *Service) Cancel(ctx context.Context, name string) error {
 		return err
 	}
 
-	running, err := executions(ctx, connection, job.Name(), runningOnly)
+	running, err := executions(ctx, connection, job.Name, runningOnly)
 	if err != nil {
 		return err
 	}
@@ -210,7 +210,7 @@ func (s *Service) status(ctx context.Context, job Job) (Status, error) {
 		return Status{}, err
 	}
 
-	running, err := executions(ctx, connection, job.Name(), runningOnly)
+	running, err := executions(ctx, connection, job.Name, runningOnly)
 	if err != nil {
 		return Status{}, err
 	}
@@ -220,7 +220,7 @@ func (s *Service) status(ctx context.Context, job Job) (Status, error) {
 		return status, nil
 	}
 
-	finished, err := executions(ctx, connection, job.Name(), finishedOnly)
+	finished, err := executions(ctx, connection, job.Name, finishedOnly)
 	if err != nil {
 		return Status{}, err
 	}

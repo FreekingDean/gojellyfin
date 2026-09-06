@@ -15,29 +15,24 @@ import (
 
 const RefreshLibraryJobID = "RefreshLibrary"
 
-type LibraryScan struct {
-	scanner *Scanner
+func (s *Scanner) Job() jobs.Job {
+	return jobs.Job{
+		Name:        RefreshLibraryJobID,
+		Category:    "Library",
+		Description: "Reads the libraries from their Sonarr and Radarr sources.",
+		Run:         s.refresh,
+	}
 }
 
-func NewLibraryScan(scanner *Scanner) *LibraryScan {
-	return &LibraryScan{scanner: scanner}
-}
-
-func (l *LibraryScan) Name() string     { return RefreshLibraryJobID }
-func (l *LibraryScan) Category() string { return "Library" }
-func (l *LibraryScan) Description() string {
-	return "Reads the libraries from their Sonarr and Radarr sources."
-}
-
-func (l *LibraryScan) Run(ctx context.Context) error {
-	libraries, err := l.scanner.ListLibraries(ctx)
+func (s *Scanner) refresh(ctx context.Context) error {
+	libraries, err := s.ListLibraries(ctx)
 	if err != nil {
 		return err
 	}
 
 	disturbed := make([]uuid.UUID, 0)
 	for _, id := range libraries {
-		dropped, err := l.scanner.ScanLibrary(ctx, id)
+		dropped, err := s.ScanLibrary(ctx, id)
 		if err != nil {
 			log.Printf("library scan failed %s: %v", id, err)
 
@@ -46,22 +41,22 @@ func (l *LibraryScan) Run(ctx context.Context) error {
 		disturbed = append(disturbed, dropped...)
 	}
 
-	configured, err := l.scanner.sources.List(ctx)
+	configured, err := s.sources.List(ctx)
 	if err != nil {
 		return err
 	}
 
 	for _, entry := range configured {
-		if err := l.probe(ctx, entry.Source.ID); err != nil {
+		if err := s.probe(ctx, entry.Source.ID); err != nil {
 			log.Printf("probe failed %s: %v", entry.Source.Name, err)
 		}
 	}
 
-	return l.scanner.items.SweepUnreachable(ctx, disturbed)
+	return s.items.SweepUnreachable(ctx, disturbed)
 }
 
-func (l *LibraryScan) probe(ctx context.Context, source uuid.UUID) error {
-	files, err := l.scanner.UnprobedSources(ctx, source)
+func (s *Scanner) probe(ctx context.Context, source uuid.UUID) error {
+	files, err := s.UnprobedSources(ctx, source)
 	if err != nil {
 		return err
 	}
@@ -71,7 +66,7 @@ func (l *LibraryScan) probe(ctx context.Context, source uuid.UUID) error {
 
 	for _, file := range files {
 		group.Go(func() error {
-			if err := l.scanner.ProbeSource(probing, file); err != nil && !store.IsNotFound(err) {
+			if err := s.ProbeSource(probing, file); err != nil && !store.IsNotFound(err) {
 				log.Printf("probe failed %s: %v", file, err)
 			}
 
