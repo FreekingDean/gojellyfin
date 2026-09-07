@@ -5,6 +5,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/server/activitylog"
 	"github.com/FreekingDean/gojellyfin/internal/server/apikey"
+	"github.com/FreekingDean/gojellyfin/internal/server/artists"
 	"github.com/FreekingDean/gojellyfin/internal/server/branding"
 	"github.com/FreekingDean/gojellyfin/internal/server/channels"
 	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
@@ -22,6 +23,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/livetv"
 	"github.com/FreekingDean/gojellyfin/internal/server/localization"
 	"github.com/FreekingDean/gojellyfin/internal/server/mediainfo"
+	"github.com/FreekingDean/gojellyfin/internal/server/musicgenres"
 	"github.com/FreekingDean/gojellyfin/internal/server/packages"
 	"github.com/FreekingDean/gojellyfin/internal/server/persons"
 	"github.com/FreekingDean/gojellyfin/internal/server/playlists"
@@ -49,6 +51,7 @@ var Module = fx.Module(
 	"server",
 	activitylog.Module,
 	apikey.Module,
+	artists.Module,
 	branding.Module,
 	channels.Module,
 	configuration.Module,
@@ -66,6 +69,7 @@ var Module = fx.Module(
 	livetv.Module,
 	localization.Module,
 	mediainfo.Module,
+	musicgenres.Module,
 	packages.Module,
 	persons.Module,
 	playlists.Module,

@@ -93,6 +93,15 @@ func (s *Service) DistinctGenres(ctx context.Context, query MetadataQuery) ([]Na
 	return named, total, nil
 }
 
+func (s *Service) GenreByName(ctx context.Context, name string) (Named, error) {
+	record, err := s.store.Genre.Query().Where(genremodal.NameEqualFold(name)).First(ctx)
+	if err != nil {
+		return Named{}, fmt.Errorf("failed to query genre by name: %w", err)
+	}
+
+	return Named{ID: record.ID, Name: record.Name}, nil
+}
+
 func (s *Service) DistinctStudios(ctx context.Context, query MetadataQuery) ([]Named, int, error) {
 	studios := s.store.Studio.Query().Where(studiomodal.HasItemsWith(query.items()...))
 	if query.SearchTerm != "" {

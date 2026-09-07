@@ -3,6 +3,8 @@ package dto
 import (
 	"context"
 
+	"github.com/google/uuid"
+
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
@@ -43,17 +45,38 @@ func ItemQuery(ctx context.Context, collections *libraries.Service, params api.G
 	if params.Ids != nil {
 		query.IDs = *params.Ids
 	}
-
-	if params.ParentId != nil {
-		if library, err := collections.Library(ctx, *params.ParentId); err == nil {
-			query.LibraryID = &library.ID
-			query.TopLevel = !apiutil.Deref(params.Recursive)
-		} else {
-			query.ParentID = params.ParentId
-		}
+	if params.ArtistIds != nil {
+		query.ArtistIDs = *params.ArtistIds
+	}
+	if params.AlbumArtistIds != nil {
+		query.ArtistIDs = append(query.ArtistIDs, *params.AlbumArtistIds...)
+	}
+	if params.AlbumIds != nil {
+		query.AlbumIDs = *params.AlbumIds
+	}
+	if params.GenreIds != nil {
+		query.GenreIDs = *params.GenreIds
 	}
 
+	ScopeToParent(ctx, collections, &query, params.ParentId, apiutil.Deref(params.Recursive))
+
 	return query
+}
+
+func ScopeToParent(ctx context.Context, collections *libraries.Service, query *items.ItemQuery, parentID *uuid.UUID, recursive bool) {
+	if parentID == nil {
+		return
+	}
+
+	library, err := collections.Library(ctx, *parentID)
+	if err != nil {
+		query.ParentID = parentID
+
+		return
+	}
+
+	query.LibraryID = &library.ID
+	query.TopLevel = !recursive
 }
 
 func Descending(order *[]api.SortOrder) bool {
