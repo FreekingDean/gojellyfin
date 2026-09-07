@@ -172,6 +172,29 @@ func TestService_NamedMetadata(t *testing.T) {
 			}
 		})
 
+		t.Run("takes a person the provider credited twice", func(t *testing.T) {
+			twice := newMetadataFixture(t)
+			movie := twice.item(t, "Twice")
+
+			twice.seed(t, movie, seeded{People: []Credit{
+				{Name: twice.name("Producer"), Kind: creditmodal.KindProducer},
+				{Name: twice.name("Producer"), Kind: creditmodal.KindProducer},
+			}})
+
+			named, _, err := twice.service.DistinctPeople(ctx, MetadataQuery{
+				Viewer: Everyone,
+				ItemID: &movie.ID,
+			}, nil)
+			if err != nil {
+				t.Fatalf("failed to query people: %v", err)
+			}
+
+			want := []string{twice.name("Producer")}
+			if got := namesOf(named); !slices.Equal(got, want) {
+				t.Errorf("people = %v, want %v", got, want)
+			}
+		})
+
 		t.Run("keeps the role and the billing order", func(t *testing.T) {
 			credit, err := fixture.service.store.Credit.Query().
 				Where(creditmodal.HasPersonWith(personmodal.Name(fixture.name("Writer")))).

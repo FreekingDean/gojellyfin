@@ -195,13 +195,21 @@ func replaceCredits(ctx context.Context, tx *store.Tx, itemID uuid.UUID, people 
 			return fmt.Errorf("failed to save %q: %w", person.Name, err)
 		}
 
-		if err := tx.Credit.Create().
+		err = tx.Credit.Create().
 			SetItemID(itemID).
 			SetPersonID(id).
 			SetKind(person.Kind).
 			SetRole(person.Role).
 			SetSortOrder(person.Order).
-			Exec(ctx); err != nil {
+			OnConflictColumns(
+				creditmodal.FieldKind,
+				creditmodal.FieldRole,
+				creditmodal.ItemColumn,
+				creditmodal.PersonColumn,
+			).
+			UpdateNewValues().
+			Exec(ctx)
+		if err != nil {
 			return fmt.Errorf("failed to credit %q: %w", person.Name, err)
 		}
 	}
