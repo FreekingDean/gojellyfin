@@ -250,14 +250,21 @@ The type is the job's `Name` and the workflow id is the same string, because the
 **The refresh is four jobs, each in the package that owns what it writes.** There is no scanner package: it was the `filepath.WalkDir` one, and when the walk became Sonarr and Radarr the name stopped describing anything while the probe stayed bolted to it.
 
 ```
-RefreshLibraries       libraries  every library        -> RefreshLibrary per library
+RefreshLibraries       libraries  every library        -> RefreshLibrary per library      *
 RefreshLibrary         libraries  one library          -> RefreshLibrarySource per binding
 RefreshLibrarySource   sources    one (library,source) -> RefreshItem per title
 RefreshItem            items      one title            -> ProbeFile per unprobed file
-                                                       -> RefreshMetadata if unidentified
+                                                       -> RefreshItemMetadata if unidentified
 ProbeFile              probe      one file
-RefreshMetadata        metadata   one item, or the batch
+ProbeFiles             probe      every unprobed file                                     *
+RefreshItemMetadata    metadata   one item
+RefreshMetadata        metadata   every unidentified item                                 *
+SweepItems             items      the reference count                                     *
 ```
+
+**One job does one thing, and `Startable` (marked `*`) says which a person may press Start on.** The four marked are what the dashboard lists and the only ones `jobs.Start` accepts; the rest are only ever enqueued by the level above, and starting one by hand would run it with no parameters. `Registry.All` is still what the worker registers as activities, so every job runs — the split is only in what is offered.
+
+A batch and its leaf are two names rather than one job branching on whether a parameter is set. That is not tidiness: `jobs.executions` finds a task's runs with `WorkflowId = <name> OR WorkflowId STARTS_WITH <name>:`, so one name for both made the dashboard's Refresh Metadata row read Running whenever any of ten thousand per-item identifies was in flight, and made Cancel stop all of them.
 
 **The names are in `internal/jobs`, not in the package that runs them.** `items` enqueues `ProbeFile` and `RefreshMetadata`, and both of those packages import `items` — so the constants cannot live with their jobs without a cycle. `jobs` imports nothing of ours, which makes it the one place every level can name the next, and the whole graph readable in one file.
 

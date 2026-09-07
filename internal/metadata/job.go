@@ -12,20 +12,22 @@ func (s *Service) Job() jobs.Job {
 	return jobs.Job{
 		Name:        jobs.RefreshMetadata,
 		Category:    "Library",
-		Description: "Identifies items and fetches their metadata.",
-		Run:         s.run,
+		Description: "Identifies every item nothing has identified yet.",
+		Startable:   true,
+		Run:         s.runBatch,
 	}
 }
 
-func (s *Service) run(ctx context.Context) error {
-	itemID, err := jobs.GetParam[uuid.UUID](ctx, jobs.ParamItem)
-	if err != nil {
-		return err
+func (s *Service) ItemJob() jobs.Job {
+	return jobs.Job{
+		Name:        jobs.RefreshItemMetadata,
+		Category:    "Library",
+		Description: "Identifies one item.",
+		Run:         s.runOne,
 	}
-	if itemID != uuid.Nil {
-		return s.IdentifyItem(ctx, itemID)
-	}
+}
 
+func (s *Service) runBatch(ctx context.Context) error {
 	scope, err := jobs.GetParam[uuid.UUID](ctx, jobs.ParamScope)
 	if err != nil {
 		return err
@@ -37,4 +39,13 @@ func (s *Service) run(ctx context.Context) error {
 	}
 
 	return s.IdentifyItems(ctx, scope, force)
+}
+
+func (s *Service) runOne(ctx context.Context) error {
+	itemID, err := jobs.GetParam[uuid.UUID](ctx, jobs.ParamItem)
+	if err != nil {
+		return err
+	}
+
+	return s.IdentifyItem(ctx, itemID)
 }

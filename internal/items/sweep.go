@@ -12,6 +12,7 @@ func (s *Service) SweepJob() jobs.Job {
 		Name:        jobs.SweepItems,
 		Category:    "Library",
 		Description: "Removes titles no source reports a file for any more.",
+		Startable:   true,
 		Run:         s.sweep,
 	}
 }

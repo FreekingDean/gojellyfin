@@ -127,7 +127,7 @@ func NewService(client *Client, registry *Registry) *Service {
 
 func (s *Service) All(ctx context.Context) ([]Status, error) {
 	statuses := make([]Status, 0)
-	for _, job := range s.registry.All() {
+	for _, job := range s.registry.Startable() {
 		status, err := s.status(ctx, job)
 		if err != nil {
 			return nil, err
@@ -148,8 +148,12 @@ func (s *Service) Status(ctx context.Context, name string) (Status, error) {
 }
 
 func (s *Service) Start(ctx context.Context, name string, params ...Param) error {
-	if _, err := s.registry.Find(name); err != nil {
+	job, err := s.registry.Find(name)
+	if err != nil {
 		return err
+	}
+	if !job.Startable {
+		return fmt.Errorf("%w: %s is only ever enqueued by another job", ErrNotFound, name)
 	}
 
 	return s.client.Enqueue(ctx, name, params...)

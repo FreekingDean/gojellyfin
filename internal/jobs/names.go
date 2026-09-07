@@ -6,6 +6,7 @@ const (
 	RefreshLibrarySource = "RefreshLibrarySource"
 	RefreshItem          = "RefreshItem"
 	RefreshMetadata      = "RefreshMetadata"
+	RefreshItemMetadata  = "RefreshItemMetadata"
 	ProbeFile            = "ProbeFile"
 	ProbeFiles           = "ProbeFiles"
 	SweepItems           = "SweepItems"

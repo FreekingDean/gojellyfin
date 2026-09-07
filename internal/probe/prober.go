@@ -50,6 +50,7 @@ func (s *Prober) Job() jobs.Job {
 		Name:        jobs.ProbeFiles,
 		Category:    "Library",
 		Description: "Reads the streams of every file it has not seen before.",
+		Startable:   true,
 		Run:         s.run,
 	}
 }

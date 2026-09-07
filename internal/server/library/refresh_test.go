@@ -20,9 +20,10 @@ import (
 
 func namedJob(name string) jobs.Job {
 	return jobs.Job{
-		Name:     name,
-		Category: "Library",
-		Run:      func(context.Context) error { return nil },
+		Name:      name,
+		Category:  "Library",
+		Startable: true,
+		Run:       func(context.Context) error { return nil },
 	}
 }
 

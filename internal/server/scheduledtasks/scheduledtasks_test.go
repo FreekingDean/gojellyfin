@@ -98,5 +98,6 @@ var scanJob = jobs.Job{
 	Name:        "RefreshLibrary",
 	Description: "Scans the media libraries.",
 	Category:    "Library",
+	Startable:   true,
 	Run:         func(context.Context) error { return nil },
 }

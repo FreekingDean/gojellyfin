@@ -33,6 +33,7 @@ type Job struct {
 	Name        string
 	Category    string
 	Description string
+	Startable   bool
 	Run         func(ctx context.Context) error
 }
 

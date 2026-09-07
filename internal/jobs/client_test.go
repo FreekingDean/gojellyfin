@@ -75,6 +75,7 @@ func (q *queue) CancelWorkflow(_ context.Context, id string, _ string) error {
 var refreshJob = Job{
 	Name:        "RefreshMetadata",
 	Category:    "Library",
+	Startable:   true,
 	Description: "Fetches metadata.",
 	Run:         func(context.Context) error { return nil },
 }

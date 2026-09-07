@@ -100,7 +100,7 @@ func (s *Service) RefreshItem(ctx context.Context, libraryID, sourceID uuid.UUID
 	}
 
 	if item.ProviderIds == nil {
-		enqueue(ctx, jobs.RefreshMetadata, jobs.With(jobs.ParamItem, item.ID))
+		enqueue(ctx, jobs.RefreshItemMetadata, jobs.With(jobs.ParamItem, item.ID))
 	}
 
 	if !scanned.Tagged {

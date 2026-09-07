@@ -48,7 +48,7 @@ func TestService_RefreshItem(t *testing.T) {
 		if probes := jobs.Enqueued(t, enqueued, jobs.ProbeFile); len(probes) != 1 {
 			t.Errorf("probes = %d, want the new file probed", len(probes))
 		}
-		if identify := jobs.Enqueued(t, enqueued, jobs.RefreshMetadata); len(identify) != 1 {
+		if identify := jobs.Enqueued(t, enqueued, jobs.RefreshItemMetadata); len(identify) != 1 {
 			t.Errorf("metadata = %d, want the unidentified title identified", len(identify))
 		}
 	})
@@ -90,7 +90,7 @@ func TestService_RefreshItem(t *testing.T) {
 		if probes := jobs.Enqueued(t, enqueued, jobs.ProbeFile); len(probes) != 0 {
 			t.Errorf("probes = %d, want the probed file left alone", len(probes))
 		}
-		if identify := jobs.Enqueued(t, enqueued, jobs.RefreshMetadata); len(identify) != 0 {
+		if identify := jobs.Enqueued(t, enqueued, jobs.RefreshItemMetadata); len(identify) != 0 {
 			t.Errorf("metadata = %d, want the identified title left alone", len(identify))
 		}
 	})
