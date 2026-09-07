@@ -193,3 +193,33 @@ func TestResolve(t *testing.T) {
 		}
 	}
 }
+
+func TestResolveBoundsRootsOnSegments(t *testing.T) {
+	parent := t.TempDir()
+	root := filepath.Join(parent, "media")
+	sibling := filepath.Join(parent, "mediasecrets")
+	for _, directory := range []string{root, sibling} {
+		if err := os.Mkdir(directory, 0o700); err != nil {
+			t.Fatalf("failed to create %q: %v", directory, err)
+		}
+	}
+
+	inside := filepath.Join(root, "film.mkv")
+	outside := filepath.Join(sibling, "film.mkv")
+	for _, path := range []string{inside, outside} {
+		if err := os.WriteFile(path, []byte("1"), 0o600); err != nil {
+			t.Fatalf("failed to write %q: %v", path, err)
+		}
+	}
+
+	bounded := service(root)
+	if _, err := bounded.Stat(context.Background(), inside); err != nil {
+		t.Errorf("Stat(%q) = %v, want a path under the root admitted", inside, err)
+	}
+	if _, err := bounded.Stat(context.Background(), root); err != nil {
+		t.Errorf("Stat(%q) = %v, want the root itself admitted", root, err)
+	}
+	if _, err := bounded.Stat(context.Background(), outside); !errors.Is(err, ErrNotFound) {
+		t.Errorf("Stat(%q) = %v, want ErrNotFound: a sibling sharing the root's prefix is not under it", outside, err)
+	}
+}

@@ -178,6 +178,9 @@ func (s *Server) UpdateUserPassword(ctx context.Context, request api.UpdateUserP
 	if err := s.users.SetPassword(ctx, user.ID, hash); err != nil {
 		return nil, err
 	}
+	if err := s.sessions.RevokeForUser(ctx, user.ID); err != nil {
+		return nil, err
+	}
 
 	return api.UpdateUserPassword204Response{}, nil
 }
@@ -229,6 +232,10 @@ func (s *Server) AuthenticateUserByName(ctx context.Context, request api.Authent
 
 	matches, err := auth.Verify(apiutil.Deref(req.Pw), user.PasswordHash)
 	if err != nil || !matches {
+		return nil, auth.ErrUnauthorized
+	}
+
+	if policy := user.Edges.Policy; policy != nil && policy.IsDisabled {
 		return nil, auth.ErrUnauthorized
 	}
 
