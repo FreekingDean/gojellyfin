@@ -16,27 +16,39 @@
                 library, and one instance may feed several libraries when each binding names a different tag.
             </p>
         </div>
-        <hr class="solid" />
 
-        <form class="gojellyfinSourcesForm" onsubmit="return false">
-            <div id="connectionsHost"></div>
+        <div id="connectionCards" class="itemsContainer vertical-wrap"></div>
 
-            <div class="verticalSection">
-                <button is="emby-button" id="addConnection" type="button" class="raised block">
-                    <span>Add connection</span>
-                </button>
-            </div>
+        <div id="connectionEditor" class="verticalSection" style="display:none"></div>
 
-            <br />
+        <br />
 
-            <button is="emby-button" id="saveConfig" type="submit" class="raised button-submit block">
-                <span>Save</span>
-            </button>
-        </form>
+        <button is="emby-button" id="saveConfig" type="button" class="raised button-submit block">
+            <span>Save</span>
+        </button>
     </div>
 
-    <template id="connectionTemplate">
-        <div class="verticalSection connectionCard" style="border:1px solid rgba(255,255,255,.12);border-radius:4px;padding:1.25em;margin-bottom:1.5em">
+    <template id="cardTemplate">
+        <div class="card backdropCard scalableCard backdropCard-scalable" style="cursor:pointer">
+            <div class="cardBox cardBox-bottompadded">
+                <div class="cardScalable">
+                    <div class="cardPadder cardPadder-backdrop"></div>
+                    <div class="cardContent cardContent-shadow">
+                        <div data-id="tile" class="cardImageContainer coveredImage defaultCardBackground defaultCardBackground1">
+                            <span data-id="icon" class="cardImageIcon material-icons"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="cardFooter">
+                    <div data-id="name" class="cardText"></div>
+                    <div data-id="detail" class="cardText cardText-secondary"></div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="editorTemplate">
+        <div class="verticalSection" style="border:1px solid rgba(127,127,127,.25);border-radius:4px;padding:1.25em">
             <div class="flex align-items-center" style="gap:1em;flex-wrap:wrap">
                 <div class="inputContainer" style="flex:2 1 16em;margin-bottom:0">
                     <label class="inputLabel inputLabelUnfocused">Name</label>
@@ -49,9 +61,6 @@
                         <option value="sonarr">Sonarr</option>
                     </select>
                 </div>
-                <button is="emby-button" data-id="removeConnection" type="button" class="raised raised-mini" style="margin-left:auto">
-                    <span>Remove</span>
-                </button>
             </div>
 
             <div class="inputContainer">
@@ -94,7 +103,7 @@
             <h3 class="checkboxListLabel">Libraries</h3>
             <p class="fieldDescription">
                 Each row binds this instance to one library. The tag filter is optional and empty means every
-                title the instance manages; the paths rewrite what it reports into what this server can open.
+                title the instance manages.
             </p>
             <table style="width:100%">
                 <thead>
@@ -109,6 +118,15 @@
             <button is="emby-button" data-id="addBinding" type="button" class="raised raised-mini">
                 <span>Add library</span>
             </button>
+
+            <div class="flex align-items-center" style="gap:1em;margin-top:1.5em">
+                <button is="emby-button" data-id="doneEditing" type="button" class="raised raised-mini">
+                    <span>Done</span>
+                </button>
+                <button is="emby-button" data-id="removeConnection" type="button" class="raised raised-mini" style="margin-left:auto">
+                    <span>Remove</span>
+                </button>
+            </div>
         </div>
     </template>
 
@@ -130,18 +148,81 @@
 
     <script type="text/javascript">
         window.GoJellyfinSources = {
-            collectionTypes: { Radarr: 'movies', Sonarr: 'tvshows' },
+            collectionTypes: { radarr: 'movies', sonarr: 'tvshows' },
+            icons: { radarr: 'movie', sonarr: 'live_tv' },
 
             libraries: [],
+            connections: [],
+            editing: -1,
 
-            host: function () {
-                return document.querySelector('#gojellyfinSourcesPage #connectionsHost');
+            page: function () {
+                return document.querySelector('#gojellyfinSourcesPage');
+            },
+
+            bound: function (count) {
+                if (count === 0) {
+                    return 'No libraries';
+                }
+
+                return count === 1 ? '1 library' : count + ' libraries';
+            },
+
+            card: function (connection, index) {
+                const source = window.GoJellyfinSources;
+                const clone = document.querySelector('#cardTemplate').content.cloneNode(true);
+                const card = clone.querySelector('.card');
+                const kind = connection.Kind || 'radarr';
+
+                card.querySelector('[data-id=name]').textContent = connection.Name || 'Unnamed connection';
+                card.querySelector('[data-id=detail]').textContent =
+                    (kind === 'sonarr' ? 'Sonarr' : 'Radarr') + ' · ' +
+                    source.bound((connection.Libraries || []).length);
+                card.querySelector('[data-id=icon]').classList.add(source.icons[kind]);
+                card.querySelector('[data-id=tile]').classList.add('defaultCardBackground' + ((index % 5) + 1));
+
+                card.addEventListener('click', function () {
+                    source.openEditor(index);
+                });
+
+                return clone;
+            },
+
+            addCard: function () {
+                const source = window.GoJellyfinSources;
+                const clone = document.querySelector('#cardTemplate').content.cloneNode(true);
+                const card = clone.querySelector('.card');
+
+                card.querySelector('[data-id=name]').textContent = 'Add connection';
+                card.querySelector('[data-id=detail]').textContent = 'Sonarr or Radarr';
+                card.querySelector('[data-id=icon]').classList.add('add');
+                card.querySelector('[data-id=tile]').classList.add('defaultCardBackground5');
+
+                card.addEventListener('click', function () {
+                    source.commit();
+                    source.connections.push({ Kind: 'radarr', Libraries: [] });
+                    source.render();
+                    source.openEditor(source.connections.length - 1);
+                });
+
+                return clone;
+            },
+
+            render: function () {
+                const source = window.GoJellyfinSources;
+                const host = source.page().querySelector('#connectionCards');
+
+                host.innerHTML = '';
+                source.connections.forEach(function (connection, index) {
+                    host.appendChild(source.card(connection, index));
+                });
+                host.appendChild(source.addCard());
             },
 
             fillLibraries: function (select, kind, selected) {
                 const wanted = window.GoJellyfinSources.collectionTypes[kind];
                 const matching = window.GoJellyfinSources.libraries.filter(function (library) {
-                    return !wanted || !library.CollectionType || library.CollectionType === wanted;
+                    return !wanted || !library.CollectionType ||
+                        library.CollectionType === wanted || library.CollectionType === 'mixed';
                 });
 
                 select.innerHTML = matching.map(function (library) {
@@ -153,10 +234,10 @@
                 }
             },
 
-            addBinding: function (card, binding) {
+            addBinding: function (editor, binding) {
                 const clone = document.querySelector('#bindingTemplate').content.cloneNode(true);
                 const row = clone.querySelector('tr');
-                const kind = card.querySelector('[data-id=selKind]').value;
+                const kind = editor.querySelector('[data-id=selKind]').value;
 
                 row.querySelector('[data-id=txtTag]').value = binding.TagFilter || '';
                 window.GoJellyfinSources.fillLibraries(row.querySelector('[data-id=selLibrary]'), kind, binding.Id);
@@ -165,48 +246,89 @@
                     row.remove();
                 });
 
-                card.querySelector('[data-id=bindingsHost]').appendChild(clone);
+                editor.querySelector('[data-id=bindingsHost]').appendChild(clone);
             },
 
-            addConnection: function (connection) {
+            openEditor: function (index) {
                 const source = window.GoJellyfinSources;
-                const clone = document.querySelector('#connectionTemplate').content.cloneNode(true);
-                const card = clone.querySelector('.connectionCard');
 
-                card.querySelector('[data-id=txtName]').value = connection.Name || '';
-                card.querySelector('[data-id=selKind]').value = connection.Kind || 'radarr';
-                card.querySelector('[data-id=txtUrl]').value = connection.Url || '';
-                card.querySelector('[data-id=txtApiKeyVariable]').value = connection.ApiKeyVariable || '';
-                card.querySelector('[data-id=txtRootPath]').value = connection.RootPath || '';
-                card.querySelector('[data-id=txtLocalPath]').value = connection.LocalPath || '';
+                source.commit();
+                source.editing = index;
 
-                card.querySelector('[data-id=selKind]').addEventListener('change', function (e) {
-                    card.querySelectorAll('[data-id=selLibrary]').forEach(function (select) {
+                const connection = source.connections[index];
+                const host = source.page().querySelector('#connectionEditor');
+                const clone = document.querySelector('#editorTemplate').content.cloneNode(true);
+                const editor = clone.querySelector('.verticalSection');
+
+                editor.querySelector('[data-id=txtName]').value = connection.Name || '';
+                editor.querySelector('[data-id=selKind]').value = connection.Kind || 'radarr';
+                editor.querySelector('[data-id=txtUrl]').value = connection.Url || '';
+                editor.querySelector('[data-id=txtApiKeyVariable]').value = connection.ApiKeyVariable || '';
+                editor.querySelector('[data-id=txtRootPath]').value = connection.RootPath || '';
+                editor.querySelector('[data-id=txtLocalPath]').value = connection.LocalPath || '';
+
+                editor.querySelector('[data-id=selKind]').addEventListener('change', function (e) {
+                    editor.querySelectorAll('[data-id=selLibrary]').forEach(function (select) {
                         source.fillLibraries(select, e.target.value, select.value);
                     });
                 });
 
-                card.querySelector('[data-id=removeConnection]').addEventListener('click', function () {
-                    card.remove();
+                editor.querySelector('[data-id=addBinding]').addEventListener('click', function () {
+                    source.addBinding(editor, {});
                 });
 
-                card.querySelector('[data-id=addBinding]').addEventListener('click', function () {
-                    source.addBinding(card, {});
+                editor.querySelector('[data-id=testConnection]').addEventListener('click', function () {
+                    source.testConnection(editor);
                 });
 
-                card.querySelector('[data-id=testConnection]').addEventListener('click', function () {
-                    source.testConnection(card);
+                editor.querySelector('[data-id=doneEditing]').addEventListener('click', function () {
+                    source.commit();
+                    source.closeEditor();
+                    source.render();
                 });
 
-                source.host().appendChild(clone);
+                editor.querySelector('[data-id=removeConnection]').addEventListener('click', function () {
+                    source.connections.splice(source.editing, 1);
+                    source.closeEditor();
+                    source.render();
+                });
+
+                host.innerHTML = '';
+                host.appendChild(clone);
+                host.style.display = '';
 
                 (connection.Libraries || []).forEach(function (binding) {
-                    source.addBinding(card, binding);
+                    source.addBinding(editor, binding);
                 });
+
+                host.scrollIntoView({ block: 'nearest' });
             },
 
-            readConnection: function (card) {
-                const libraries = Array.prototype.map.call(card.querySelectorAll('[data-id=bindingsHost] tr'), function (row) {
+            closeEditor: function () {
+                const host = window.GoJellyfinSources.page().querySelector('#connectionEditor');
+
+                window.GoJellyfinSources.editing = -1;
+                host.innerHTML = '';
+                host.style.display = 'none';
+            },
+
+            editor: function () {
+                return window.GoJellyfinSources.page().querySelector('#connectionEditor .verticalSection');
+            },
+
+            commit: function () {
+                const source = window.GoJellyfinSources;
+                const editor = source.editor();
+
+                if (source.editing < 0 || !editor) {
+                    return;
+                }
+
+                source.connections[source.editing] = source.readEditor(editor);
+            },
+
+            readEditor: function (editor) {
+                const libraries = Array.prototype.map.call(editor.querySelectorAll('[data-id=bindingsHost] tr'), function (row) {
                     return {
                         Id: row.querySelector('[data-id=selLibrary]').value,
                         TagFilter: row.querySelector('[data-id=txtTag]').value.trim()
@@ -214,25 +336,19 @@
                 });
 
                 return {
-                    Name: card.querySelector('[data-id=txtName]').value.trim(),
-                    Kind: card.querySelector('[data-id=selKind]').value,
-                    Url: card.querySelector('[data-id=txtUrl]').value.trim().replace(/\/+$/, ''),
-                    ApiKeyVariable: card.querySelector('[data-id=txtApiKeyVariable]').value.trim(),
-                    RootPath: card.querySelector('[data-id=txtRootPath]').value.trim(),
-                    LocalPath: card.querySelector('[data-id=txtLocalPath]').value.trim(),
+                    Name: editor.querySelector('[data-id=txtName]').value.trim(),
+                    Kind: editor.querySelector('[data-id=selKind]').value,
+                    Url: editor.querySelector('[data-id=txtUrl]').value.trim().replace(/\/+$/, ''),
+                    ApiKeyVariable: editor.querySelector('[data-id=txtApiKeyVariable]').value.trim(),
+                    RootPath: editor.querySelector('[data-id=txtRootPath]').value.trim(),
+                    LocalPath: editor.querySelector('[data-id=txtLocalPath]').value.trim(),
                     Libraries: libraries
                 };
             },
 
-            readConfig: function () {
-                const cards = window.GoJellyfinSources.host().querySelectorAll('.connectionCard');
-
-                return Array.prototype.map.call(cards, window.GoJellyfinSources.readConnection);
-            },
-
-            testConnection: function (card) {
-                const result = card.querySelector('[data-id=testResult]');
-                const connection = window.GoJellyfinSources.readConnection(card);
+            testConnection: function (editor) {
+                const result = editor.querySelector('[data-id=testResult]');
+                const connection = window.GoJellyfinSources.readEditor(editor);
 
                 result.textContent = 'Testing…';
 
@@ -269,9 +385,9 @@
 
                     return window.ApiClient.getJSON(window.ApiClient.getUrl('GoJellyfin/Sources'));
                 }).then(function (sources) {
-                    source.host().innerHTML = '';
-
-                    (sources || []).forEach(source.addConnection);
+                    source.connections = sources || [];
+                    source.closeEditor();
+                    source.render();
                 }).catch(function (error) {
                     console.error(error);
                 }).finally(function () {
@@ -279,18 +395,21 @@
                 });
             },
 
-            saveConfig: function (e) {
-                e.preventDefault();
+            saveConfig: function () {
+                const source = window.GoJellyfinSources;
+
+                source.commit();
 
                 Dashboard.showLoadingMsg();
 
                 window.ApiClient.ajax({
                     type: 'PUT',
                     url: window.ApiClient.getUrl('GoJellyfin/Sources'),
-                    data: JSON.stringify(window.GoJellyfinSources.readConfig()),
+                    data: JSON.stringify(source.connections),
                     contentType: 'application/json'
                 }).then(function () {
                     Dashboard.alert('Sources saved.');
+                    source.render();
                 }).catch(function (error) {
                     console.error(error);
                     Dashboard.alert('Sources could not be saved.');
@@ -301,13 +420,8 @@
 
             init: function () {
                 const source = window.GoJellyfinSources;
-                const page = document.querySelector('#gojellyfinSourcesPage');
 
-                page.querySelector('#saveConfig').addEventListener('click', source.saveConfig);
-                page.querySelector('#addConnection').addEventListener('click', function () {
-                    source.addConnection({});
-                });
-
+                source.page().querySelector('#saveConfig').addEventListener('click', source.saveConfig);
                 source.loadConfig();
             }
         };
