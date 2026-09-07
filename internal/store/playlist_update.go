@@ -53,6 +53,20 @@ func (_u *PlaylistUpdate) SetUpdatedAt(v time.Time) *PlaylistUpdate {
 	return _u
 }
 
+// SetMediaType sets the "media_type" field.
+func (_u *PlaylistUpdate) SetMediaType(v playlist.MediaType) *PlaylistUpdate {
+	_u.mutation.SetMediaType(v)
+	return _u
+}
+
+// SetNillableMediaType sets the "media_type" field if the given value is not nil.
+func (_u *PlaylistUpdate) SetNillableMediaType(v *playlist.MediaType) *PlaylistUpdate {
+	if v != nil {
+		_u.SetMediaType(*v)
+	}
+	return _u
+}
+
 // SetItemID sets the "item_id" field.
 func (_u *PlaylistUpdate) SetItemID(v uuid.UUID) *PlaylistUpdate {
 	_u.mutation.SetItemID(v)
@@ -232,6 +246,11 @@ func (_u *PlaylistUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *PlaylistUpdate) check() error {
+	if v, ok := _u.mutation.MediaType(); ok {
+		if err := playlist.MediaTypeValidator(v); err != nil {
+			return &ValidationError{Name: "media_type", err: fmt.Errorf(`store: validator failed for field "Playlist.media_type": %w`, err)}
+		}
+	}
 	if _u.mutation.ItemCleared() && len(_u.mutation.ItemIDs()) > 0 {
 		return errors.New(`store: clearing a required unique edge "Playlist.item"`)
 	}
@@ -258,6 +277,9 @@ func (_u *PlaylistUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(playlist.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.MediaType(); ok {
+		_spec.SetField(playlist.FieldMediaType, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.OpenAccess(); ok {
 		_spec.SetField(playlist.FieldOpenAccess, field.TypeBool, value)
@@ -447,6 +469,20 @@ func (_u *PlaylistUpdateOne) SetNillableCreatedAt(v *time.Time) *PlaylistUpdateO
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *PlaylistUpdateOne) SetUpdatedAt(v time.Time) *PlaylistUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetMediaType sets the "media_type" field.
+func (_u *PlaylistUpdateOne) SetMediaType(v playlist.MediaType) *PlaylistUpdateOne {
+	_u.mutation.SetMediaType(v)
+	return _u
+}
+
+// SetNillableMediaType sets the "media_type" field if the given value is not nil.
+func (_u *PlaylistUpdateOne) SetNillableMediaType(v *playlist.MediaType) *PlaylistUpdateOne {
+	if v != nil {
+		_u.SetMediaType(*v)
+	}
 	return _u
 }
 
@@ -642,6 +678,11 @@ func (_u *PlaylistUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *PlaylistUpdateOne) check() error {
+	if v, ok := _u.mutation.MediaType(); ok {
+		if err := playlist.MediaTypeValidator(v); err != nil {
+			return &ValidationError{Name: "media_type", err: fmt.Errorf(`store: validator failed for field "Playlist.media_type": %w`, err)}
+		}
+	}
 	if _u.mutation.ItemCleared() && len(_u.mutation.ItemIDs()) > 0 {
 		return errors.New(`store: clearing a required unique edge "Playlist.item"`)
 	}
@@ -685,6 +726,9 @@ func (_u *PlaylistUpdateOne) sqlSave(ctx context.Context) (_node *Playlist, err 
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(playlist.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.MediaType(); ok {
+		_spec.SetField(playlist.FieldMediaType, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.OpenAccess(); ok {
 		_spec.SetField(playlist.FieldOpenAccess, field.TypeBool, value)

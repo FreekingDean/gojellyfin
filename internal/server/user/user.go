@@ -237,7 +237,7 @@ func (s *Server) AuthenticateUserByName(ctx context.Context, request api.Authent
 		return nil, err
 	}
 
-	session, err := s.sessions.Create(ctx, user.ID, token, auth.AuthorizationFrom(ctx).DeviceInfo())
+	session, err := s.sessions.Create(ctx, user.ID, token, auth.AuthorizationFrom(ctx).ClientDevice())
 	if err != nil {
 		return nil, err
 	}

@@ -20,10 +20,11 @@ const (
 	dst   = "unimplemented.gen.go"
 	iface = "StrictServerInterface"
 
-	specPath      = "../../../spec/jellyfin-openapi-stable.json"
-	publicDst     = "public.gen.go"
-	policyDst     = "policies.gen.go"
-	queryParamDst = "queryparams.gen.go"
+	specPath        = "../../../spec/jellyfin-openapi-stable.patched.json"
+	versionSpecPath = "../../../spec/jellyfin-openapi-stable.json"
+	publicDst       = "public.gen.go"
+	policyDst       = "policies.gen.go"
+	queryParamDst   = "queryparams.gen.go"
 
 	versionDst = "../../system/jellyfinversion.gen.go"
 	versionPkg = "system"
@@ -54,7 +55,7 @@ func main() {
 }
 
 func writeJellyfinVersion() {
-	b, err := os.ReadFile(specPath)
+	b, err := os.ReadFile(versionSpecPath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -68,7 +69,7 @@ func writeJellyfinVersion() {
 		log.Fatal(err)
 	}
 	if doc.Info.Version == "" {
-		log.Fatalf("%s declares no info.version", specPath)
+		log.Fatalf("%s declares no info.version", versionSpecPath)
 	}
 
 	out := &bytes.Buffer{}

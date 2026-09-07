@@ -10,7 +10,121 @@
       "url": "http://localhost"
     }
   ],
-  "paths": {
+  "paths": {"/GoJellyfin/Sources": {
+      "get": {
+        "tags": [
+          "Sources"
+        ],
+        "summary": "Lists the sources configuration.",
+        "operationId": "GoJellyfinListSources",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Sources"
+                }
+              }
+            },
+            "description": "Source saved."
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "RequiresElevation"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Sources"
+        ],
+        "summary": "Updates the sources configuration.",
+        "operationId": "GoJellyfinUpdateSources",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Sources"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Source saved."
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "RequiresElevation"
+            ]
+          }
+        ]
+      }
+    }, "/GoJellyfin/Sources/Test": {
+      "post": {
+        "tags": [
+          "Sources"
+        ],
+        "summary": "Tests whether a Sonarr or Radarr instance is reachable.",
+        "operationId": "GoJellyfinTestSource",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceTestRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The instance answered.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceTestResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "RequiresElevation"
+            ]
+          }
+        ]
+      }
+    }, 
     "/System/ActivityLog/Entries": {
       "get": {
         "tags": [
@@ -47118,7 +47232,99 @@
     }
   },
   "components": {
-    "schemas": {
+    "schemas": {"Source": {
+        "type": "object",
+        "properties": {
+          "Name": {
+            "type": "string"
+          },
+          "Kind": {
+            "$ref": "#/components/schemas/SourceKind"
+          },
+          "Url": {
+            "type": "string",
+            "description": "Base address of the instance, without a trailing slash."
+          },
+          "ApiKeyVariable": {
+            "type": "string",
+            "description": "Name of the environment variable holding the API key. Must begin with SOURCE_API_KEY_."
+          },
+          "RootPath": {
+            "type": "string",
+            "description": "Directory this instance reports its files under."
+          },
+          "LocalPath": {
+            "type": "string",
+            "description": "Directory this server opens those files at."
+          },
+          "Libraries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SourceLibrary"
+            }
+          }
+        }
+      }, "SourceKind": {
+        "type": "string",
+        "enum": [
+          "Sonarr",
+          "Radarr"
+        ]
+      }, "SourceLibrary": {
+        "type": "object",
+        "required": [
+          "Id"
+        ],
+        "properties": {
+          "Id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "TagFilter": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      }, "SourceTestRequest": {
+        "type": "object",
+        "required": [
+          "Kind",
+          "Url",
+          "ApiKeyVariable"
+        ],
+        "properties": {
+          "Kind": {
+            "$ref": "#/components/schemas/SourceKind"
+          },
+          "Url": {
+            "type": "string",
+            "description": "Base address of the instance, without a trailing slash."
+          },
+          "ApiKeyVariable": {
+            "type": "string",
+            "description": "Name of the environment variable holding the API key. Must begin with SOURCE_API_KEY_."
+          }
+        }
+      }, "SourceTestResult": {
+        "type": "object",
+        "required": [
+          "Reachable"
+        ],
+        "properties": {
+          "Reachable": {
+            "type": "boolean"
+          },
+          "Error": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      }, "Sources": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Source"
+        }
+      }, 
       "AccessSchedule": {
         "type": "object",
         "properties": {

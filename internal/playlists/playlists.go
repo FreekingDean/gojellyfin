@@ -9,6 +9,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 	playlistmodal "github.com/FreekingDean/gojellyfin/internal/store/playlist"
@@ -22,24 +23,19 @@ type (
 	Entry     = store.PlaylistEntry
 	Share     = store.PlaylistShare
 	Item      = store.Item
-	MediaType = itemmodal.MediaType
+	MediaType = playlistmodal.MediaType
 )
 
-const MediaTypeUnknown = itemmodal.MediaTypeUnknown
+const MediaTypeUnknown = playlistmodal.MediaTypeUnknown
 
 var (
-	ValidMediaType = itemmodal.MediaTypeValidator
+	ValidMediaType = playlistmodal.MediaTypeValidator
 
 	ErrInvalidShare = errors.New("invalid playlist share")
 )
 
 func EntryItem(entry *Entry) *Item {
 	return entry.Edges.Item
-}
-
-type Permission struct {
-	UserID  uuid.UUID
-	CanEdit bool
 }
 
 type Access struct {
@@ -54,14 +50,14 @@ type CreateParams struct {
 	OwnerID    uuid.UUID
 	OpenAccess bool
 	ItemIDs    []uuid.UUID
-	Shares     []Permission
+	Shares     []Share
 }
 
 type UpdateParams struct {
 	Name       *string
 	OpenAccess *bool
 	ItemIDs    *[]uuid.UUID
-	Shares     *[]Permission
+	Shares     *[]Share
 }
 
 type Service struct {
@@ -78,16 +74,15 @@ func (s *Service) Create(ctx context.Context, params CreateParams) (*Item, error
 	err := s.store.WithTx(ctx, func(tx *store.Tx) error {
 		item, err := tx.Item.Create().
 			SetKind(itemmodal.KindPlaylist).
-			SetMediaType(params.MediaType).
 			SetName(params.Name).
 			SetSortName(strings.ToLower(params.Name)).
-			SetIsFolder(true).
 			Save(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to create playlist item: %w", err)
 		}
 
 		playlist, err := tx.Playlist.Create().
+			SetMediaType(params.MediaType).
 			SetItemID(item.ID).
 			SetOwnerID(params.OwnerID).
 			SetOpenAccess(params.OpenAccess).
@@ -352,14 +347,14 @@ func (s *Service) ShareFor(ctx context.Context, itemID, userID uuid.UUID) (*Shar
 	return share, nil
 }
 
-func (s *Service) SetShare(ctx context.Context, itemID uuid.UUID, permission Permission) error {
+func (s *Service) SetShare(ctx context.Context, itemID uuid.UUID, permission Share) error {
 	return s.store.WithTx(ctx, func(tx *store.Tx) error {
 		playlist, err := playlistByItem(ctx, tx.Playlist, itemID)
 		if err != nil {
 			return err
 		}
 
-		if err := checkPermissions(ctx, tx.User, []Permission{permission}); err != nil {
+		if err := checkPermissions(ctx, tx.User, []Share{permission}); err != nil {
 			return err
 		}
 
@@ -417,7 +412,7 @@ func expand(ctx context.Context, client *store.ItemClient, itemIDs []uuid.UUID) 
 
 	folders := make(map[uuid.UUID]bool, len(records))
 	for _, record := range records {
-		folders[record.ID] = record.IsFolder
+		folders[record.ID] = items.IsFolder(record.Kind)
 	}
 
 	expanded := make([]uuid.UUID, 0, len(itemIDs))
@@ -452,7 +447,7 @@ func descendants(ctx context.Context, client *store.ItemClient, folderID uuid.UU
 
 	expanded := make([]uuid.UUID, 0, len(children))
 	for _, child := range children {
-		if !child.IsFolder {
+		if !items.IsFolder(child.Kind) {
 			expanded = append(expanded, child.ID)
 			continue
 		}
@@ -494,7 +489,7 @@ func renumber(ctx context.Context, client *store.PlaylistEntryClient, entries []
 	return nil
 }
 
-func replaceShares(ctx context.Context, tx *store.Tx, playlistID uuid.UUID, permissions []Permission) error {
+func replaceShares(ctx context.Context, tx *store.Tx, playlistID uuid.UUID, permissions []Share) error {
 	if err := checkPermissions(ctx, tx.User, permissions); err != nil {
 		return err
 	}
@@ -514,7 +509,7 @@ func replaceShares(ctx context.Context, tx *store.Tx, playlistID uuid.UUID, perm
 	return nil
 }
 
-func upsertShare(ctx context.Context, client *store.PlaylistShareClient, playlistID uuid.UUID, permission Permission) error {
+func upsertShare(ctx context.Context, client *store.PlaylistShareClient, playlistID uuid.UUID, permission Share) error {
 	if err := client.Create().
 		SetPlaylistID(playlistID).
 		SetUserID(permission.UserID).
@@ -529,7 +524,7 @@ func upsertShare(ctx context.Context, client *store.PlaylistShareClient, playlis
 	return nil
 }
 
-func checkPermissions(ctx context.Context, client *store.UserClient, permissions []Permission) error {
+func checkPermissions(ctx context.Context, client *store.UserClient, permissions []Share) error {
 	userIDs := make([]uuid.UUID, 0, len(permissions))
 	seen := make(map[uuid.UUID]bool, len(permissions))
 

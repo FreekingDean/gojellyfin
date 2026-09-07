@@ -56,6 +56,20 @@ func (_c *PlaylistCreate) SetNillableUpdatedAt(v *time.Time) *PlaylistCreate {
 	return _c
 }
 
+// SetMediaType sets the "media_type" field.
+func (_c *PlaylistCreate) SetMediaType(v playlist.MediaType) *PlaylistCreate {
+	_c.mutation.SetMediaType(v)
+	return _c
+}
+
+// SetNillableMediaType sets the "media_type" field if the given value is not nil.
+func (_c *PlaylistCreate) SetNillableMediaType(v *playlist.MediaType) *PlaylistCreate {
+	if v != nil {
+		_c.SetMediaType(*v)
+	}
+	return _c
+}
+
 // SetItemID sets the "item_id" field.
 func (_c *PlaylistCreate) SetItemID(v uuid.UUID) *PlaylistCreate {
 	_c.mutation.SetItemID(v)
@@ -163,6 +177,10 @@ func (_c *PlaylistCreate) defaults() {
 		v := playlist.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.MediaType(); !ok {
+		v := playlist.DefaultMediaType
+		_c.mutation.SetMediaType(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -172,6 +190,14 @@ func (_c *PlaylistCreate) check() error {
 	}
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`store: missing required field "Playlist.updated_at"`)}
+	}
+	if _, ok := _c.mutation.MediaType(); !ok {
+		return &ValidationError{Name: "media_type", err: errors.New(`store: missing required field "Playlist.media_type"`)}
+	}
+	if v, ok := _c.mutation.MediaType(); ok {
+		if err := playlist.MediaTypeValidator(v); err != nil {
+			return &ValidationError{Name: "media_type", err: fmt.Errorf(`store: validator failed for field "Playlist.media_type": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.ItemID(); !ok {
 		return &ValidationError{Name: "item_id", err: errors.New(`store: missing required field "Playlist.item_id"`)}
@@ -231,6 +257,10 @@ func (_c *PlaylistCreate) createSpec() (*Playlist, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.UpdatedAt(); ok {
 		_spec.SetField(playlist.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
+	}
+	if value, ok := _c.mutation.MediaType(); ok {
+		_spec.SetField(playlist.FieldMediaType, field.TypeEnum, value)
+		_node.MediaType = value
 	}
 	if value, ok := _c.mutation.OpenAccess(); ok {
 		_spec.SetField(playlist.FieldOpenAccess, field.TypeBool, value)
@@ -378,6 +408,18 @@ func (u *PlaylistUpsert) UpdateUpdatedAt() *PlaylistUpsert {
 	return u
 }
 
+// SetMediaType sets the "media_type" field.
+func (u *PlaylistUpsert) SetMediaType(v playlist.MediaType) *PlaylistUpsert {
+	u.Set(playlist.FieldMediaType, v)
+	return u
+}
+
+// UpdateMediaType sets the "media_type" field to the value that was provided on create.
+func (u *PlaylistUpsert) UpdateMediaType() *PlaylistUpsert {
+	u.SetExcluded(playlist.FieldMediaType)
+	return u
+}
+
 // SetItemID sets the "item_id" field.
 func (u *PlaylistUpsert) SetItemID(v uuid.UUID) *PlaylistUpsert {
 	u.Set(playlist.FieldItemID, v)
@@ -487,6 +529,20 @@ func (u *PlaylistUpsertOne) SetUpdatedAt(v time.Time) *PlaylistUpsertOne {
 func (u *PlaylistUpsertOne) UpdateUpdatedAt() *PlaylistUpsertOne {
 	return u.Update(func(s *PlaylistUpsert) {
 		s.UpdateUpdatedAt()
+	})
+}
+
+// SetMediaType sets the "media_type" field.
+func (u *PlaylistUpsertOne) SetMediaType(v playlist.MediaType) *PlaylistUpsertOne {
+	return u.Update(func(s *PlaylistUpsert) {
+		s.SetMediaType(v)
+	})
+}
+
+// UpdateMediaType sets the "media_type" field to the value that was provided on create.
+func (u *PlaylistUpsertOne) UpdateMediaType() *PlaylistUpsertOne {
+	return u.Update(func(s *PlaylistUpsert) {
+		s.UpdateMediaType()
 	})
 }
 
@@ -772,6 +828,20 @@ func (u *PlaylistUpsertBulk) SetUpdatedAt(v time.Time) *PlaylistUpsertBulk {
 func (u *PlaylistUpsertBulk) UpdateUpdatedAt() *PlaylistUpsertBulk {
 	return u.Update(func(s *PlaylistUpsert) {
 		s.UpdateUpdatedAt()
+	})
+}
+
+// SetMediaType sets the "media_type" field.
+func (u *PlaylistUpsertBulk) SetMediaType(v playlist.MediaType) *PlaylistUpsertBulk {
+	return u.Update(func(s *PlaylistUpsert) {
+		s.SetMediaType(v)
+	})
+}
+
+// UpdateMediaType sets the "media_type" field to the value that was provided on create.
+func (u *PlaylistUpsertBulk) UpdateMediaType() *PlaylistUpsertBulk {
+	return u.Update(func(s *PlaylistUpsert) {
+		s.UpdateMediaType()
 	})
 }
 

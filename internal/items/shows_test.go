@@ -12,11 +12,37 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
 
 type fixture struct {
 	service   *Service
+	client    *store.Client
 	libraryID uuid.UUID
+	sourceID  uuid.UUID
+}
+
+func (f *fixture) downloader(t *testing.T) uuid.UUID {
+	t.Helper()
+
+	record, err := f.client.Source.Create().
+		SetName(t.Name() + "-" + uuid.NewString()).
+		SetURL("http://" + uuid.NewString() + ".invalid").
+		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
+		SetKind(sourcemodal.KindRadarr).
+		SetRootPath("/media").
+		SetLocalPath("/media").
+		Save(context.Background())
+	if err != nil {
+		t.Fatalf("failed to create the source: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := f.client.Source.DeleteOne(record).Exec(context.Background()); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
+		}
+	})
+
+	return record.ID
 }
 
 type seed struct {
@@ -51,8 +77,29 @@ func newFixture(t *testing.T) *fixture {
 		t.Fatalf("failed to create the library: %v", err)
 	}
 
+	name := t.Name() + "-" + uuid.NewString()
+	downloader, err := client.Source.Create().
+		SetName(name).
+		SetURL("http://" + uuid.NewString() + ".invalid").
+		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
+		SetKind(sourcemodal.KindRadarr).
+		SetRootPath("/media").
+		SetLocalPath("/media").
+		Save(context.Background())
+	if err != nil {
+		t.Fatalf("failed to create the source: %v", err)
+	}
+
 	t.Cleanup(func() {
 		ctx := context.Background()
+		if _, err := client.Item.Delete().
+			Where(itemmodal.KeyContains(library.ID.String())).
+			Exec(ctx); err != nil {
+			t.Errorf("failed to delete the items: %v", err)
+		}
+		if err := client.Source.DeleteOne(downloader).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
+		}
 		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the library: %v", err)
 		}
@@ -61,7 +108,7 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
-	return &fixture{service: New(client), libraryID: library.ID}
+	return &fixture{service: New(client), client: client, libraryID: library.ID, sourceID: downloader.ID}
 }
 
 func (f *fixture) add(t *testing.T, item seed) uuid.UUID {
@@ -73,11 +120,10 @@ func (f *fixture) add(t *testing.T, item seed) uuid.UUID {
 	}
 
 	record, err := f.service.store.Item.Create().
-		SetLibraryID(f.libraryID).
 		SetKind(item.kind).
 		SetName(item.name).
 		SetSortName(sortName).
-		SetKey(fmt.Sprintf("test:%s", item.name)).
+		SetKey(fmt.Sprintf("test:%s:%s", f.libraryID, item.name)).
 		SetNillableParentID(item.parentID).
 		SetNillableIndexNumber(item.index).
 		SetNillableParentIndexNumber(item.parentIndex).
@@ -87,17 +133,23 @@ func (f *fixture) add(t *testing.T, item seed) uuid.UUID {
 		t.Fatalf("failed to create %q: %v", item.name, err)
 	}
 
+	if err := f.service.SaveMembership(
+		context.Background(), f.libraryID, f.sourceID, []uuid.UUID{record.ID},
+	); err != nil {
+		t.Fatalf("failed to place %q in the library: %v", item.name, err)
+	}
+
 	return record.ID
 }
 
 func (f *fixture) source(t *testing.T, itemID uuid.UUID, path string) *MediaSource {
 	t.Helper()
 
-	source, err := f.service.SaveSource(context.Background(), ScannedSource{
-		LibraryID: f.libraryID,
-		ItemID:    itemID,
-		Path:      path,
-		Name:      path,
+	source, err := f.service.SaveSource(context.Background(), MediaSource{
+		SourceID: f.sourceID,
+		ItemID:   itemID,
+		Path:     path,
+		Name:     path,
 	})
 	if err != nil {
 		t.Fatalf("failed to create the media source: %v", err)
@@ -133,7 +185,7 @@ func TestService_SeriesSeasons(t *testing.T) {
 	fixture.add(t, seed{kind: itemmodal.KindSeason, name: "Elsewhere", parentID: &other, index: number(1)})
 	fixture.add(t, seed{kind: itemmodal.KindEpisode, name: "Loose Episode", parentID: &series, index: number(1)})
 
-	records, err := fixture.service.SeriesSeasons(ctx, series)
+	records, err := fixture.service.SeriesSeasons(ctx, Everyone, series)
 	if err != nil {
 		t.Fatalf("failed to query seasons: %v", err)
 	}
@@ -169,25 +221,25 @@ func TestService_SeriesEpisodes(t *testing.T) {
 	}{
 		{
 			name:      "orders by season then episode",
-			query:     EpisodeQuery{SeriesID: series},
+			query:     EpisodeQuery{Viewer: Everyone, SeriesID: series},
 			want:      []string{"S01E01", "S01E02", "S02E01", "S02 Extra"},
 			wantTotal: 4,
 		},
 		{
 			name:      "filters by season id",
-			query:     EpisodeQuery{SeriesID: series, SeasonID: &seasonTwo},
+			query:     EpisodeQuery{Viewer: Everyone, SeriesID: series, SeasonID: &seasonTwo},
 			want:      []string{"S02E01", "S02 Extra"},
 			wantTotal: 2,
 		},
 		{
 			name:      "filters by season number",
-			query:     EpisodeQuery{SeriesID: series, Season: number(1)},
+			query:     EpisodeQuery{Viewer: Everyone, SeriesID: series, Season: number(1)},
 			want:      []string{"S01E01", "S01E02"},
 			wantTotal: 2,
 		},
 		{
 			name:      "pages without changing the total",
-			query:     EpisodeQuery{SeriesID: series, StartIndex: 1, Limit: 2},
+			query:     EpisodeQuery{Viewer: Everyone, SeriesID: series, StartIndex: 1, Limit: 2},
 			want:      []string{"S01E02", "S02E01"},
 			wantTotal: 4,
 		},
@@ -250,7 +302,7 @@ func TestService_UpcomingEpisodes(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			records, total, err := fixture.service.UpcomingEpisodes(ctx, &fixture.libraryID, test.startIndex, test.limit)
+			records, total, err := fixture.service.UpcomingEpisodes(ctx, Everyone, &fixture.libraryID, test.startIndex, test.limit)
 			if err != nil {
 				t.Fatalf("failed to query upcoming episodes: %v", err)
 			}

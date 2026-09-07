@@ -12,6 +12,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	playlistmodal "github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	entrymodal "github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	sharemodal "github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
@@ -73,7 +74,7 @@ func newFixture(t *testing.T) *fixture {
 		if _, err := client.Item.Delete().Where(itemmodal.IDIn(fixture.created...)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the playlist items: %v", err)
 		}
-		if _, err := client.Item.Delete().Where(itemmodal.LibraryID(library.ID)).Exec(ctx); err != nil {
+		if _, err := client.Item.Delete().Where(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID))).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the items: %v", err)
 		}
 		if _, err := client.User.Delete().Where(usermodal.IDIn(fixture.users...)).Exec(ctx); err != nil {
@@ -110,12 +111,10 @@ func (f *fixture) item(t *testing.T, name string, kind itemmodal.Kind, parentID 
 	t.Helper()
 
 	record, err := f.client.Item.Create().
-		SetLibraryID(f.libraryID).
 		SetKind(kind).
 		SetName(name).
 		SetSortName(name).
-		SetIsFolder(kind == itemmodal.KindSeries || kind == itemmodal.KindSeason).
-		SetKey(fmt.Sprintf("test:%s", name)).
+		SetKey(fmt.Sprintf("test:%s:%s", f.libraryID, name)).
 		SetNillableParentID(parentID).
 		SetNillableIndexNumber(index).
 		Save(context.Background())
@@ -201,7 +200,7 @@ func TestService_Create(t *testing.T) {
 		MediaType:  "Audio",
 		OpenAccess: true,
 		ItemIDs:    songs,
-		Shares:     []Permission{{UserID: fixture.guestID, CanEdit: true}},
+		Shares:     []Share{{UserID: fixture.guestID, CanEdit: true}},
 	})
 
 	playlist, err := fixture.service.PlaylistByItemID(ctx, playlistID)
@@ -259,7 +258,7 @@ func TestService_Access(t *testing.T) {
 	})
 
 	t.Run("a read-only share may view", func(t *testing.T) {
-		if err := fixture.service.SetShare(ctx, playlistID, Permission{UserID: fixture.guestID}); err != nil {
+		if err := fixture.service.SetShare(ctx, playlistID, Share{UserID: fixture.guestID}); err != nil {
 			t.Fatalf("failed to add the share: %v", err)
 		}
 
@@ -269,7 +268,7 @@ func TestService_Access(t *testing.T) {
 	})
 
 	t.Run("an editable share may edit but does not own", func(t *testing.T) {
-		if err := fixture.service.SetShare(ctx, playlistID, Permission{UserID: fixture.guestID, CanEdit: true}); err != nil {
+		if err := fixture.service.SetShare(ctx, playlistID, Share{UserID: fixture.guestID, CanEdit: true}); err != nil {
 			t.Fatalf("failed to update the share: %v", err)
 		}
 
@@ -509,7 +508,7 @@ func TestService_Update(t *testing.T) {
 		Name:       ptr("After"),
 		OpenAccess: ptr(true),
 		ItemIDs:    &replacement,
-		Shares:     &[]Permission{{UserID: fixture.guestID}},
+		Shares:     &[]Share{{UserID: fixture.guestID}},
 	})
 	if err != nil {
 		t.Fatalf("failed to update the playlist: %v", err)
@@ -543,10 +542,10 @@ func TestService_Shares(t *testing.T) {
 
 	playlistID := fixture.create(t, CreateParams{Name: "Shared"})
 
-	if err := fixture.service.SetShare(ctx, playlistID, Permission{UserID: fixture.guestID}); err != nil {
+	if err := fixture.service.SetShare(ctx, playlistID, Share{UserID: fixture.guestID}); err != nil {
 		t.Fatalf("failed to add the share: %v", err)
 	}
-	if err := fixture.service.SetShare(ctx, playlistID, Permission{UserID: fixture.guestID, CanEdit: true}); err != nil {
+	if err := fixture.service.SetShare(ctx, playlistID, Share{UserID: fixture.guestID, CanEdit: true}); err != nil {
 		t.Fatalf("failed to update the share: %v", err)
 	}
 
@@ -581,10 +580,10 @@ func TestCheckPermissions(t *testing.T) {
 
 		playlistID := fixture.create(t, CreateParams{
 			Name:   "Guarded",
-			Shares: []Permission{{UserID: fixture.guestID}},
+			Shares: []Share{{UserID: fixture.guestID}},
 		})
 
-		rejected := map[string][]Permission{
+		rejected := map[string][]Share{
 			"no user id":   {{UserID: uuid.Nil}},
 			"unknown user": {{UserID: uuid.New()}},
 			"the same user twice": {
@@ -611,7 +610,7 @@ func TestCheckPermissions(t *testing.T) {
 		}
 
 		t.Run("a single unknown share", func(t *testing.T) {
-			err := fixture.service.SetShare(ctx, playlistID, Permission{UserID: uuid.New()})
+			err := fixture.service.SetShare(ctx, playlistID, Share{UserID: uuid.New()})
 			if !errors.Is(err, ErrInvalidShare) {
 				t.Fatalf("error = %v, want %v", err, ErrInvalidShare)
 			}
@@ -625,7 +624,7 @@ func TestCheckPermissions(t *testing.T) {
 			Name:      "Doomed",
 			MediaType: MediaTypeUnknown,
 			OwnerID:   fixture.ownerID,
-			Shares:    []Permission{{UserID: uuid.New()}},
+			Shares:    []Share{{UserID: uuid.New()}},
 		})
 		if !errors.Is(err, ErrInvalidShare) {
 			t.Fatalf("error = %v, want %v", err, ErrInvalidShare)

@@ -7,7 +7,6 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/apikey"
-	"github.com/FreekingDean/gojellyfin/internal/store/chapter"
 	"github.com/FreekingDean/gojellyfin/internal/store/configuration"
 	"github.com/FreekingDean/gojellyfin/internal/store/credit"
 	"github.com/FreekingDean/gojellyfin/internal/store/device"
@@ -15,25 +14,20 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 	"github.com/FreekingDean/gojellyfin/internal/store/genre"
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
-	"github.com/FreekingDean/gojellyfin/internal/store/imageblob"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
+	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
+	"github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
-	"github.com/FreekingDean/gojellyfin/internal/store/listingsprovider"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediaattachment"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasegment"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/person"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
-	"github.com/FreekingDean/gojellyfin/internal/store/seriestimer"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
+	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
-	"github.com/FreekingDean/gojellyfin/internal/store/timer"
-	"github.com/FreekingDean/gojellyfin/internal/store/trickplay"
-	"github.com/FreekingDean/gojellyfin/internal/store/tunerhost"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
 	"github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
@@ -69,18 +63,6 @@ func init() {
 	apikey.DefaultUpdatedAt = apikeyDescUpdatedAt.Default.(func() time.Time)
 	// apikey.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	apikey.UpdateDefaultUpdatedAt = apikeyDescUpdatedAt.UpdateDefault.(func() time.Time)
-	chapterFields := entities.Chapter{}.Fields()
-	_ = chapterFields
-	// chapterDescCreatedAt is the schema descriptor for created_at field.
-	chapterDescCreatedAt := chapterFields[1].Descriptor()
-	// chapter.DefaultCreatedAt holds the default value on creation for the created_at field.
-	chapter.DefaultCreatedAt = chapterDescCreatedAt.Default.(func() time.Time)
-	// chapterDescUpdatedAt is the schema descriptor for updated_at field.
-	chapterDescUpdatedAt := chapterFields[2].Descriptor()
-	// chapter.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	chapter.DefaultUpdatedAt = chapterDescUpdatedAt.Default.(func() time.Time)
-	// chapter.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	chapter.UpdateDefaultUpdatedAt = chapterDescUpdatedAt.UpdateDefault.(func() time.Time)
 	configurationFields := entities.Configuration{}.Fields()
 	_ = configurationFields
 	// configurationDescCreatedAt is the schema descriptor for created_at field.
@@ -185,18 +167,6 @@ func init() {
 	imageDescIndex := imageFields[5].Descriptor()
 	// image.DefaultIndex holds the default value on creation for the index field.
 	image.DefaultIndex = imageDescIndex.Default.(int32)
-	imageblobFields := entities.ImageBlob{}.Fields()
-	_ = imageblobFields
-	// imageblobDescCreatedAt is the schema descriptor for created_at field.
-	imageblobDescCreatedAt := imageblobFields[1].Descriptor()
-	// imageblob.DefaultCreatedAt holds the default value on creation for the created_at field.
-	imageblob.DefaultCreatedAt = imageblobDescCreatedAt.Default.(func() time.Time)
-	// imageblobDescUpdatedAt is the schema descriptor for updated_at field.
-	imageblobDescUpdatedAt := imageblobFields[2].Descriptor()
-	// imageblob.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	imageblob.DefaultUpdatedAt = imageblobDescUpdatedAt.Default.(func() time.Time)
-	// imageblob.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	imageblob.UpdateDefaultUpdatedAt = imageblobDescUpdatedAt.UpdateDefault.(func() time.Time)
 	itemFields := entities.Item{}.Fields()
 	_ = itemFields
 	// itemDescCreatedAt is the schema descriptor for created_at field.
@@ -209,34 +179,22 @@ func init() {
 	item.DefaultUpdatedAt = itemDescUpdatedAt.Default.(func() time.Time)
 	// item.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	item.UpdateDefaultUpdatedAt = itemDescUpdatedAt.UpdateDefault.(func() time.Time)
-	// itemDescForcedSortName is the schema descriptor for forced_sort_name field.
-	itemDescForcedSortName := itemFields[16].Descriptor()
-	// item.DefaultForcedSortName holds the default value on creation for the forced_sort_name field.
-	item.DefaultForcedSortName = itemDescForcedSortName.Default.(bool)
-	// itemDescIsFolder is the schema descriptor for is_folder field.
-	itemDescIsFolder := itemFields[20].Descriptor()
-	// item.DefaultIsFolder holds the default value on creation for the is_folder field.
-	item.DefaultIsFolder = itemDescIsFolder.Default.(bool)
-	// itemDescIsPlaceholder is the schema descriptor for is_placeholder field.
-	itemDescIsPlaceholder := itemFields[21].Descriptor()
-	// item.DefaultIsPlaceholder holds the default value on creation for the is_placeholder field.
-	item.DefaultIsPlaceholder = itemDescIsPlaceholder.Default.(bool)
 	// itemDescLockData is the schema descriptor for lock_data field.
-	itemDescLockData := itemFields[22].Descriptor()
+	itemDescLockData := itemFields[10].Descriptor()
 	// item.DefaultLockData holds the default value on creation for the lock_data field.
 	item.DefaultLockData = itemDescLockData.Default.(bool)
-	// itemDescHasLyrics is the schema descriptor for has_lyrics field.
-	itemDescHasLyrics := itemFields[23].Descriptor()
-	// item.DefaultHasLyrics holds the default value on creation for the has_lyrics field.
-	item.DefaultHasLyrics = itemDescHasLyrics.Default.(bool)
-	// itemDescHasSubtitles is the schema descriptor for has_subtitles field.
-	itemDescHasSubtitles := itemFields[24].Descriptor()
-	// item.DefaultHasSubtitles holds the default value on creation for the has_subtitles field.
-	item.DefaultHasSubtitles = itemDescHasSubtitles.Default.(bool)
-	// itemDescEnableMediaSourceDisplay is the schema descriptor for enable_media_source_display field.
-	itemDescEnableMediaSourceDisplay := itemFields[25].Descriptor()
-	// item.DefaultEnableMediaSourceDisplay holds the default value on creation for the enable_media_source_display field.
-	item.DefaultEnableMediaSourceDisplay = itemDescEnableMediaSourceDisplay.Default.(bool)
+	itemsourceFields := entities.ItemSource{}.Fields()
+	_ = itemsourceFields
+	// itemsourceDescCreatedAt is the schema descriptor for created_at field.
+	itemsourceDescCreatedAt := itemsourceFields[1].Descriptor()
+	// itemsource.DefaultCreatedAt holds the default value on creation for the created_at field.
+	itemsource.DefaultCreatedAt = itemsourceDescCreatedAt.Default.(func() time.Time)
+	// itemsourceDescUpdatedAt is the schema descriptor for updated_at field.
+	itemsourceDescUpdatedAt := itemsourceFields[2].Descriptor()
+	// itemsource.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	itemsource.DefaultUpdatedAt = itemsourceDescUpdatedAt.Default.(func() time.Time)
+	// itemsource.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	itemsource.UpdateDefaultUpdatedAt = itemsourceDescUpdatedAt.UpdateDefault.(func() time.Time)
 	libraryFields := entities.Library{}.Fields()
 	_ = libraryFields
 	// libraryDescCreatedAt is the schema descriptor for created_at field.
@@ -253,6 +211,18 @@ func init() {
 	libraryDescLocations := libraryFields[5].Descriptor()
 	// library.DefaultLocations holds the default value on creation for the locations field.
 	library.DefaultLocations = libraryDescLocations.Default.([]string)
+	libraryitemFields := entities.LibraryItem{}.Fields()
+	_ = libraryitemFields
+	// libraryitemDescCreatedAt is the schema descriptor for created_at field.
+	libraryitemDescCreatedAt := libraryitemFields[1].Descriptor()
+	// libraryitem.DefaultCreatedAt holds the default value on creation for the created_at field.
+	libraryitem.DefaultCreatedAt = libraryitemDescCreatedAt.Default.(func() time.Time)
+	// libraryitemDescUpdatedAt is the schema descriptor for updated_at field.
+	libraryitemDescUpdatedAt := libraryitemFields[2].Descriptor()
+	// libraryitem.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	libraryitem.DefaultUpdatedAt = libraryitemDescUpdatedAt.Default.(func() time.Time)
+	// libraryitem.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	libraryitem.UpdateDefaultUpdatedAt = libraryitemDescUpdatedAt.UpdateDefault.(func() time.Time)
 	libraryoptionsFields := entities.LibraryOptions{}.Fields()
 	_ = libraryoptionsFields
 	// libraryoptionsDescCreatedAt is the schema descriptor for created_at field.
@@ -425,74 +395,18 @@ func init() {
 	libraryoptionsDescTypeOptions := libraryoptionsFields[43].Descriptor()
 	// libraryoptions.DefaultTypeOptions holds the default value on creation for the type_options field.
 	libraryoptions.DefaultTypeOptions = libraryoptionsDescTypeOptions.Default.([]entities.TypeOptions)
-	listingsproviderFields := entities.ListingsProvider{}.Fields()
-	_ = listingsproviderFields
-	// listingsproviderDescCreatedAt is the schema descriptor for created_at field.
-	listingsproviderDescCreatedAt := listingsproviderFields[1].Descriptor()
-	// listingsprovider.DefaultCreatedAt holds the default value on creation for the created_at field.
-	listingsprovider.DefaultCreatedAt = listingsproviderDescCreatedAt.Default.(func() time.Time)
-	// listingsproviderDescUpdatedAt is the schema descriptor for updated_at field.
-	listingsproviderDescUpdatedAt := listingsproviderFields[2].Descriptor()
-	// listingsprovider.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	listingsprovider.DefaultUpdatedAt = listingsproviderDescUpdatedAt.Default.(func() time.Time)
-	// listingsprovider.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	listingsprovider.UpdateDefaultUpdatedAt = listingsproviderDescUpdatedAt.UpdateDefault.(func() time.Time)
-	mediaattachmentFields := entities.MediaAttachment{}.Fields()
-	_ = mediaattachmentFields
-	// mediaattachmentDescCreatedAt is the schema descriptor for created_at field.
-	mediaattachmentDescCreatedAt := mediaattachmentFields[1].Descriptor()
-	// mediaattachment.DefaultCreatedAt holds the default value on creation for the created_at field.
-	mediaattachment.DefaultCreatedAt = mediaattachmentDescCreatedAt.Default.(func() time.Time)
-	// mediaattachmentDescUpdatedAt is the schema descriptor for updated_at field.
-	mediaattachmentDescUpdatedAt := mediaattachmentFields[2].Descriptor()
-	// mediaattachment.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	mediaattachment.DefaultUpdatedAt = mediaattachmentDescUpdatedAt.Default.(func() time.Time)
-	// mediaattachment.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	mediaattachment.UpdateDefaultUpdatedAt = mediaattachmentDescUpdatedAt.UpdateDefault.(func() time.Time)
-	mediasegmentFields := entities.MediaSegment{}.Fields()
-	_ = mediasegmentFields
-	// mediasegmentDescCreatedAt is the schema descriptor for created_at field.
-	mediasegmentDescCreatedAt := mediasegmentFields[1].Descriptor()
-	// mediasegment.DefaultCreatedAt holds the default value on creation for the created_at field.
-	mediasegment.DefaultCreatedAt = mediasegmentDescCreatedAt.Default.(func() time.Time)
-	// mediasegmentDescUpdatedAt is the schema descriptor for updated_at field.
-	mediasegmentDescUpdatedAt := mediasegmentFields[2].Descriptor()
-	// mediasegment.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	mediasegment.DefaultUpdatedAt = mediasegmentDescUpdatedAt.Default.(func() time.Time)
-	// mediasegment.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	mediasegment.UpdateDefaultUpdatedAt = mediasegmentDescUpdatedAt.UpdateDefault.(func() time.Time)
-	mediasourceFields := entities.MediaSource{}.Fields()
-	_ = mediasourceFields
-	// mediasourceDescCreatedAt is the schema descriptor for created_at field.
-	mediasourceDescCreatedAt := mediasourceFields[1].Descriptor()
-	// mediasource.DefaultCreatedAt holds the default value on creation for the created_at field.
-	mediasource.DefaultCreatedAt = mediasourceDescCreatedAt.Default.(func() time.Time)
-	// mediasourceDescUpdatedAt is the schema descriptor for updated_at field.
-	mediasourceDescUpdatedAt := mediasourceFields[2].Descriptor()
-	// mediasource.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	mediasource.DefaultUpdatedAt = mediasourceDescUpdatedAt.Default.(func() time.Time)
-	// mediasource.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	mediasource.UpdateDefaultUpdatedAt = mediasourceDescUpdatedAt.UpdateDefault.(func() time.Time)
-	// mediasourceDescReadAtNativeFramerate is the schema descriptor for read_at_native_framerate field.
-	mediasourceDescReadAtNativeFramerate := mediasourceFields[21].Descriptor()
-	// mediasource.DefaultReadAtNativeFramerate holds the default value on creation for the read_at_native_framerate field.
-	mediasource.DefaultReadAtNativeFramerate = mediasourceDescReadAtNativeFramerate.Default.(bool)
-	// mediasourceDescIgnoreDts is the schema descriptor for ignore_dts field.
-	mediasourceDescIgnoreDts := mediasourceFields[22].Descriptor()
-	// mediasource.DefaultIgnoreDts holds the default value on creation for the ignore_dts field.
-	mediasource.DefaultIgnoreDts = mediasourceDescIgnoreDts.Default.(bool)
-	// mediasourceDescIgnoreIndex is the schema descriptor for ignore_index field.
-	mediasourceDescIgnoreIndex := mediasourceFields[23].Descriptor()
-	// mediasource.DefaultIgnoreIndex holds the default value on creation for the ignore_index field.
-	mediasource.DefaultIgnoreIndex = mediasourceDescIgnoreIndex.Default.(bool)
-	// mediasourceDescGenPtsInput is the schema descriptor for gen_pts_input field.
-	mediasourceDescGenPtsInput := mediasourceFields[24].Descriptor()
-	// mediasource.DefaultGenPtsInput holds the default value on creation for the gen_pts_input field.
-	mediasource.DefaultGenPtsInput = mediasourceDescGenPtsInput.Default.(bool)
-	// mediasourceDescHasSegments is the schema descriptor for has_segments field.
-	mediasourceDescHasSegments := mediasourceFields[25].Descriptor()
-	// mediasource.DefaultHasSegments holds the default value on creation for the has_segments field.
-	mediasource.DefaultHasSegments = mediasourceDescHasSegments.Default.(bool)
+	librarysourceFields := entities.LibrarySource{}.Fields()
+	_ = librarysourceFields
+	// librarysourceDescCreatedAt is the schema descriptor for created_at field.
+	librarysourceDescCreatedAt := librarysourceFields[1].Descriptor()
+	// librarysource.DefaultCreatedAt holds the default value on creation for the created_at field.
+	librarysource.DefaultCreatedAt = librarysourceDescCreatedAt.Default.(func() time.Time)
+	// librarysourceDescUpdatedAt is the schema descriptor for updated_at field.
+	librarysourceDescUpdatedAt := librarysourceFields[2].Descriptor()
+	// librarysource.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	librarysource.DefaultUpdatedAt = librarysourceDescUpdatedAt.Default.(func() time.Time)
+	// librarysource.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	librarysource.UpdateDefaultUpdatedAt = librarysourceDescUpdatedAt.UpdateDefault.(func() time.Time)
 	mediastreamFields := entities.MediaStream{}.Fields()
 	_ = mediastreamFields
 	// mediastreamDescCreatedAt is the schema descriptor for created_at field.
@@ -506,37 +420,25 @@ func init() {
 	// mediastream.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	mediastream.UpdateDefaultUpdatedAt = mediastreamDescUpdatedAt.UpdateDefault.(func() time.Time)
 	// mediastreamDescIndex is the schema descriptor for index field.
-	mediastreamDescIndex := mediastreamFields[8].Descriptor()
+	mediastreamDescIndex := mediastreamFields[6].Descriptor()
 	// mediastream.DefaultIndex holds the default value on creation for the index field.
 	mediastream.DefaultIndex = mediastreamDescIndex.Default.(int32)
 	// mediastreamDescIsDefault is the schema descriptor for is_default field.
-	mediastreamDescIsDefault := mediastreamFields[48].Descriptor()
+	mediastreamDescIsDefault := mediastreamFields[18].Descriptor()
 	// mediastream.DefaultIsDefault holds the default value on creation for the is_default field.
 	mediastream.DefaultIsDefault = mediastreamDescIsDefault.Default.(bool)
 	// mediastreamDescIsForced is the schema descriptor for is_forced field.
-	mediastreamDescIsForced := mediastreamFields[49].Descriptor()
+	mediastreamDescIsForced := mediastreamFields[19].Descriptor()
 	// mediastream.DefaultIsForced holds the default value on creation for the is_forced field.
 	mediastream.DefaultIsForced = mediastreamDescIsForced.Default.(bool)
-	// mediastreamDescIsExternal is the schema descriptor for is_external field.
-	mediastreamDescIsExternal := mediastreamFields[50].Descriptor()
-	// mediastream.DefaultIsExternal holds the default value on creation for the is_external field.
-	mediastream.DefaultIsExternal = mediastreamDescIsExternal.Default.(bool)
 	// mediastreamDescIsInterlaced is the schema descriptor for is_interlaced field.
-	mediastreamDescIsInterlaced := mediastreamFields[51].Descriptor()
+	mediastreamDescIsInterlaced := mediastreamFields[20].Descriptor()
 	// mediastream.DefaultIsInterlaced holds the default value on creation for the is_interlaced field.
 	mediastream.DefaultIsInterlaced = mediastreamDescIsInterlaced.Default.(bool)
 	// mediastreamDescIsAnamorphic is the schema descriptor for is_anamorphic field.
-	mediastreamDescIsAnamorphic := mediastreamFields[52].Descriptor()
+	mediastreamDescIsAnamorphic := mediastreamFields[21].Descriptor()
 	// mediastream.DefaultIsAnamorphic holds the default value on creation for the is_anamorphic field.
 	mediastream.DefaultIsAnamorphic = mediastreamDescIsAnamorphic.Default.(bool)
-	// mediastreamDescIsAvc is the schema descriptor for is_avc field.
-	mediastreamDescIsAvc := mediastreamFields[53].Descriptor()
-	// mediastream.DefaultIsAvc holds the default value on creation for the is_avc field.
-	mediastream.DefaultIsAvc = mediastreamDescIsAvc.Default.(bool)
-	// mediastreamDescIsHearingImpaired is the schema descriptor for is_hearing_impaired field.
-	mediastreamDescIsHearingImpaired := mediastreamFields[54].Descriptor()
-	// mediastream.DefaultIsHearingImpaired holds the default value on creation for the is_hearing_impaired field.
-	mediastream.DefaultIsHearingImpaired = mediastreamDescIsHearingImpaired.Default.(bool)
 	personFields := entities.Person{}.Fields()
 	_ = personFields
 	// personDescCreatedAt is the schema descriptor for created_at field.
@@ -585,18 +487,6 @@ func init() {
 	playlistshare.DefaultUpdatedAt = playlistshareDescUpdatedAt.Default.(func() time.Time)
 	// playlistshare.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	playlistshare.UpdateDefaultUpdatedAt = playlistshareDescUpdatedAt.UpdateDefault.(func() time.Time)
-	seriestimerFields := entities.SeriesTimer{}.Fields()
-	_ = seriestimerFields
-	// seriestimerDescCreatedAt is the schema descriptor for created_at field.
-	seriestimerDescCreatedAt := seriestimerFields[1].Descriptor()
-	// seriestimer.DefaultCreatedAt holds the default value on creation for the created_at field.
-	seriestimer.DefaultCreatedAt = seriestimerDescCreatedAt.Default.(func() time.Time)
-	// seriestimerDescUpdatedAt is the schema descriptor for updated_at field.
-	seriestimerDescUpdatedAt := seriestimerFields[2].Descriptor()
-	// seriestimer.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	seriestimer.DefaultUpdatedAt = seriestimerDescUpdatedAt.Default.(func() time.Time)
-	// seriestimer.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	seriestimer.UpdateDefaultUpdatedAt = seriestimerDescUpdatedAt.UpdateDefault.(func() time.Time)
 	sessionFields := entities.Session{}.Fields()
 	_ = sessionFields
 	// sessionDescCreatedAt is the schema descriptor for created_at field.
@@ -609,6 +499,18 @@ func init() {
 	session.DefaultUpdatedAt = sessionDescUpdatedAt.Default.(func() time.Time)
 	// session.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	session.UpdateDefaultUpdatedAt = sessionDescUpdatedAt.UpdateDefault.(func() time.Time)
+	sourceFields := entities.Source{}.Fields()
+	_ = sourceFields
+	// sourceDescCreatedAt is the schema descriptor for created_at field.
+	sourceDescCreatedAt := sourceFields[1].Descriptor()
+	// source.DefaultCreatedAt holds the default value on creation for the created_at field.
+	source.DefaultCreatedAt = sourceDescCreatedAt.Default.(func() time.Time)
+	// sourceDescUpdatedAt is the schema descriptor for updated_at field.
+	sourceDescUpdatedAt := sourceFields[2].Descriptor()
+	// source.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	source.DefaultUpdatedAt = sourceDescUpdatedAt.Default.(func() time.Time)
+	// source.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	source.UpdateDefaultUpdatedAt = sourceDescUpdatedAt.UpdateDefault.(func() time.Time)
 	studioFields := entities.Studio{}.Fields()
 	_ = studioFields
 	// studioDescCreatedAt is the schema descriptor for created_at field.
@@ -621,42 +523,6 @@ func init() {
 	studio.DefaultUpdatedAt = studioDescUpdatedAt.Default.(func() time.Time)
 	// studio.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	studio.UpdateDefaultUpdatedAt = studioDescUpdatedAt.UpdateDefault.(func() time.Time)
-	timerFields := entities.Timer{}.Fields()
-	_ = timerFields
-	// timerDescCreatedAt is the schema descriptor for created_at field.
-	timerDescCreatedAt := timerFields[1].Descriptor()
-	// timer.DefaultCreatedAt holds the default value on creation for the created_at field.
-	timer.DefaultCreatedAt = timerDescCreatedAt.Default.(func() time.Time)
-	// timerDescUpdatedAt is the schema descriptor for updated_at field.
-	timerDescUpdatedAt := timerFields[2].Descriptor()
-	// timer.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	timer.DefaultUpdatedAt = timerDescUpdatedAt.Default.(func() time.Time)
-	// timer.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	timer.UpdateDefaultUpdatedAt = timerDescUpdatedAt.UpdateDefault.(func() time.Time)
-	trickplayFields := entities.Trickplay{}.Fields()
-	_ = trickplayFields
-	// trickplayDescCreatedAt is the schema descriptor for created_at field.
-	trickplayDescCreatedAt := trickplayFields[1].Descriptor()
-	// trickplay.DefaultCreatedAt holds the default value on creation for the created_at field.
-	trickplay.DefaultCreatedAt = trickplayDescCreatedAt.Default.(func() time.Time)
-	// trickplayDescUpdatedAt is the schema descriptor for updated_at field.
-	trickplayDescUpdatedAt := trickplayFields[2].Descriptor()
-	// trickplay.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	trickplay.DefaultUpdatedAt = trickplayDescUpdatedAt.Default.(func() time.Time)
-	// trickplay.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	trickplay.UpdateDefaultUpdatedAt = trickplayDescUpdatedAt.UpdateDefault.(func() time.Time)
-	tunerhostFields := entities.TunerHost{}.Fields()
-	_ = tunerhostFields
-	// tunerhostDescCreatedAt is the schema descriptor for created_at field.
-	tunerhostDescCreatedAt := tunerhostFields[1].Descriptor()
-	// tunerhost.DefaultCreatedAt holds the default value on creation for the created_at field.
-	tunerhost.DefaultCreatedAt = tunerhostDescCreatedAt.Default.(func() time.Time)
-	// tunerhostDescUpdatedAt is the schema descriptor for updated_at field.
-	tunerhostDescUpdatedAt := tunerhostFields[2].Descriptor()
-	// tunerhost.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	tunerhost.DefaultUpdatedAt = tunerhostDescUpdatedAt.Default.(func() time.Time)
-	// tunerhost.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	tunerhost.UpdateDefaultUpdatedAt = tunerhostDescUpdatedAt.UpdateDefault.(func() time.Time)
 	userFields := entities.User{}.Fields()
 	_ = userFields
 	// userDescCreatedAt is the schema descriptor for created_at field.

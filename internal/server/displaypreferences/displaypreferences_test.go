@@ -67,7 +67,7 @@ func newFixture(t *testing.T) *fixture {
 
 	sessionService := sessions.New(client, activity.New(client))
 	token := uuid.NewString()
-	if _, err := sessionService.Create(ctx, user.ID, token, sessions.DeviceInfo{ID: name, Name: name}); err != nil {
+	if _, err := sessionService.Create(ctx, user.ID, token, sessions.Device{ClientID: name, Name: name}); err != nil {
 		t.Fatalf("failed to create the session: %v", err)
 	}
 
@@ -82,11 +82,10 @@ func newFixture(t *testing.T) *fixture {
 	}
 
 	item, err := client.Item.Create().
-		SetLibraryID(library.ID).
 		SetKind(itemmodal.KindMovie).
 		SetName(name).
 		SetSortName(name).
-		SetKey("test:" + name).
+		SetKey("test:" + library.ID.String() + ":" + name).
 		Save(ctx)
 	if err != nil {
 		t.Fatalf("failed to create the item: %v", err)

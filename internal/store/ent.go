@@ -14,32 +14,26 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/apikey"
-	"github.com/FreekingDean/gojellyfin/internal/store/chapter"
 	"github.com/FreekingDean/gojellyfin/internal/store/configuration"
 	"github.com/FreekingDean/gojellyfin/internal/store/credit"
 	"github.com/FreekingDean/gojellyfin/internal/store/device"
 	"github.com/FreekingDean/gojellyfin/internal/store/displaypreferences"
 	"github.com/FreekingDean/gojellyfin/internal/store/genre"
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
-	"github.com/FreekingDean/gojellyfin/internal/store/imageblob"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
+	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
+	"github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
-	"github.com/FreekingDean/gojellyfin/internal/store/listingsprovider"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediaattachment"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasegment"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/person"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
-	"github.com/FreekingDean/gojellyfin/internal/store/seriestimer"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
+	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
-	"github.com/FreekingDean/gojellyfin/internal/store/timer"
-	"github.com/FreekingDean/gojellyfin/internal/store/trickplay"
-	"github.com/FreekingDean/gojellyfin/internal/store/tunerhost"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
 	"github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
@@ -106,32 +100,26 @@ func checkColumn(t, c string) error {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
 			activitylogentry.Table:   activitylogentry.ValidColumn,
 			apikey.Table:             apikey.ValidColumn,
-			chapter.Table:            chapter.ValidColumn,
 			configuration.Table:      configuration.ValidColumn,
 			credit.Table:             credit.ValidColumn,
 			device.Table:             device.ValidColumn,
 			displaypreferences.Table: displaypreferences.ValidColumn,
 			genre.Table:              genre.ValidColumn,
 			image.Table:              image.ValidColumn,
-			imageblob.Table:          imageblob.ValidColumn,
 			item.Table:               item.ValidColumn,
+			itemsource.Table:         itemsource.ValidColumn,
 			library.Table:            library.ValidColumn,
+			libraryitem.Table:        libraryitem.ValidColumn,
 			libraryoptions.Table:     libraryoptions.ValidColumn,
-			listingsprovider.Table:   listingsprovider.ValidColumn,
-			mediaattachment.Table:    mediaattachment.ValidColumn,
-			mediasegment.Table:       mediasegment.ValidColumn,
-			mediasource.Table:        mediasource.ValidColumn,
+			librarysource.Table:      librarysource.ValidColumn,
 			mediastream.Table:        mediastream.ValidColumn,
 			person.Table:             person.ValidColumn,
 			playlist.Table:           playlist.ValidColumn,
 			playlistentry.Table:      playlistentry.ValidColumn,
 			playlistshare.Table:      playlistshare.ValidColumn,
-			seriestimer.Table:        seriestimer.ValidColumn,
 			session.Table:            session.ValidColumn,
+			source.Table:             source.ValidColumn,
 			studio.Table:             studio.ValidColumn,
-			timer.Table:              timer.ValidColumn,
-			trickplay.Table:          trickplay.ValidColumn,
-			tunerhost.Table:          tunerhost.ValidColumn,
 			user.Table:               user.ValidColumn,
 			userconfiguration.Table:  userconfiguration.ValidColumn,
 			useritemdata.Table:       useritemdata.ValidColumn,

@@ -21,13 +21,8 @@ func (Image) Fields() []ent.Field {
 			"Box", "Screenshot", "Menu", "Chapter", "BoxRear", "Profile",
 		),
 		field.Int32("index").Default(0),
-		field.Enum("source").Values("Local", "Remote").Default("Local"),
-		field.String("path"),
+		field.String("url"),
 		field.String("tag"),
-		field.String("blur_hash").Optional(),
-		field.Int32("width").Optional(),
-		field.Int32("height").Optional(),
-		field.Int64("size").Optional(),
 	)
 }
 

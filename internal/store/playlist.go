@@ -24,6 +24,8 @@ type Playlist struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// MediaType holds the value of the "media_type" field.
+	MediaType playlist.MediaType `json:"media_type,omitempty"`
 	// ItemID holds the value of the "item_id" field.
 	ItemID uuid.UUID `json:"item_id,omitempty"`
 	// OwnerID holds the value of the "owner_id" field.
@@ -98,6 +100,8 @@ func (*Playlist) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case playlist.FieldOpenAccess:
 			values[i] = new(sql.NullBool)
+		case playlist.FieldMediaType:
+			values[i] = new(sql.NullString)
 		case playlist.FieldCreatedAt, playlist.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		case playlist.FieldID, playlist.FieldItemID, playlist.FieldOwnerID:
@@ -134,6 +138,12 @@ func (_m *Playlist) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
+			}
+		case playlist.FieldMediaType:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field media_type", values[i])
+			} else if value.Valid {
+				_m.MediaType = playlist.MediaType(value.String)
 			}
 		case playlist.FieldItemID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
@@ -214,6 +224,9 @@ func (_m *Playlist) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
 	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("media_type=")
+	builder.WriteString(fmt.Sprintf("%v", _m.MediaType))
 	builder.WriteString(", ")
 	builder.WriteString("item_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ItemID))

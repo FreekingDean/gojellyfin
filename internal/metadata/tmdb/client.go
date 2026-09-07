@@ -83,7 +83,7 @@ func (c *Client) Movie(ctx context.Context, name string, year *int32) (items.Met
 		return items.Metadata{}, false, err
 	}
 
-	movie, err := c.api.GetMovieDetails(int(found), map[string]string{"append_to_response": "release_dates"})
+	movie, err := c.api.GetMovieDetails(int(found), map[string]string{"append_to_response": "release_dates,credits"})
 	if err != nil {
 		return missed(err)
 	}
@@ -111,7 +111,7 @@ func (c *Client) Series(ctx context.Context, name string, year *int32) (items.Me
 		return items.Metadata{}, false, err
 	}
 
-	series, err := c.api.GetTVDetails(int(found), map[string]string{"append_to_response": "content_ratings,external_ids"})
+	series, err := c.api.GetTVDetails(int(found), map[string]string{"append_to_response": "content_ratings,external_ids,credits"})
 	if err != nil {
 		return missed(err)
 	}

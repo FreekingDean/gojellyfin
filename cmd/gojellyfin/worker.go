@@ -5,7 +5,6 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/FreekingDean/gojellyfin/internal/activity"
-	"github.com/FreekingDean/gojellyfin/internal/artwork"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
@@ -14,7 +13,8 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/metadata"
 	"github.com/FreekingDean/gojellyfin/internal/observability"
-	"github.com/FreekingDean/gojellyfin/internal/scanner"
+	"github.com/FreekingDean/gojellyfin/internal/probe"
+	"github.com/FreekingDean/gojellyfin/internal/sources"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 )
 
@@ -24,13 +24,11 @@ var workerModules = fx.Options(
 	store.Module,
 	ffmpeg.Module,
 	activity.Module,
-	artwork.Module,
-	fx.Provide(
-		items.New,
-		libraries.New,
-		filesystem.New,
-	),
-	scanner.Module,
+	filesystem.Module,
+	items.Module,
+	libraries.Module,
+	sources.Module,
+	probe.Module,
 	metadata.Module,
 	jobs.Module,
 	jobs.WorkerModule,

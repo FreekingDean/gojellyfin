@@ -12,6 +12,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 )
 
 func TestItemDtos(t *testing.T) {
@@ -38,7 +39,7 @@ func TestItemDtos(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		if _, err := client.Item.Delete().Where(itemmodal.LibraryID(library.ID)).Exec(ctx); err != nil {
+		if _, err := client.Item.Delete().Where(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID))).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the items: %v", err)
 		}
 		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
@@ -51,13 +52,12 @@ func TestItemDtos(t *testing.T) {
 
 	service := items.New(client)
 	save := func(kind items.Kind, itemName string, parentID *uuid.UUID) *items.Item {
-		record, err := service.SaveScanned(ctx, items.Scanned{
-			LibraryID: library.ID,
-			ParentID:  parentID,
-			Kind:      kind,
-			Name:      itemName,
-			SortName:  itemName,
-			Key:       "test:" + itemName,
+		record, err := service.SaveScanned(ctx, items.Item{
+			ParentID: parentID,
+			Kind:     kind,
+			Name:     itemName,
+			SortName: itemName,
+			Key:      "test:" + itemName,
 		})
 		if err != nil {
 			t.Fatalf("failed to save %q: %v", itemName, err)
@@ -71,8 +71,8 @@ func TestItemDtos(t *testing.T) {
 	episode := save(itemmodal.KindEpisode, name+" S01E01", &season.ID)
 	movie := save(itemmodal.KindMovie, name+" Movie", nil)
 
-	if err := service.SaveImage(ctx, series.ID, items.Artwork{
-		Kind: imagemodal.KindPrimary, Path: "/fixtures/poster.jpg", Tag: "poster",
+	if err := service.SaveImage(ctx, series.ID, items.Image{
+		Kind: imagemodal.KindPrimary, URL: "https://image.tmdb.org/t/p/w780/poster.jpg", Tag: "poster",
 	}); err != nil {
 		t.Fatalf("failed to give the series an image: %v", err)
 	}

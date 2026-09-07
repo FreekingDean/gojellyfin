@@ -24,8 +24,10 @@ import (
 	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
+	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	optionsmodal "github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
 	sessionmodal "github.com/FreekingDean/gojellyfin/internal/store/session"
+	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/source"
 	usermodal "github.com/FreekingDean/gojellyfin/internal/store/user"
 	configurationmodal "github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
 	datamodal "github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
@@ -34,10 +36,11 @@ import (
 )
 
 type fixture struct {
-	server    *Server
-	client    *store.Client
-	libraryID uuid.UUID
-	prefix    string
+	server     *Server
+	client     *store.Client
+	libraryID  uuid.UUID
+	prefix     string
+	downloader uuid.UUID
 }
 
 type seed struct {
@@ -74,16 +77,16 @@ func newFixture(t *testing.T) *fixture {
 
 	t.Cleanup(func() {
 		if _, err := client.Image.Delete().
-			Where(imagemodal.HasItemWith(itemmodal.LibraryID(library.ID))).
+			Where(imagemodal.HasItemWith(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID)))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the images: %v", err)
 		}
 		if _, err := client.UserItemData.Delete().
-			Where(datamodal.HasItemWith(itemmodal.LibraryID(library.ID))).
+			Where(datamodal.HasItemWith(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID)))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the user item data: %v", err)
 		}
-		if _, err := client.Item.Delete().Where(itemmodal.LibraryID(library.ID)).Exec(ctx); err != nil {
+		if _, err := client.Item.Delete().Where(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID))).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the items: %v", err)
 		}
 		if _, err := client.Session.Delete().
@@ -122,14 +125,31 @@ func newFixture(t *testing.T) *fixture {
 
 	server := New(items.New(client), libraries.New(client), users.New(client), filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}), jobs.NewService(disconnected(t), jobs.NewRegistry()))
 
-	return &fixture{server: server, client: client, libraryID: library.ID, prefix: prefix}
+	downloader, err := client.Source.Create().
+		SetName(t.Name() + "-" + uuid.NewString()).
+		SetURL("http://" + uuid.NewString() + ".invalid").
+		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
+		SetKind(sourcemodal.KindRadarr).
+		SetRootPath("/media").
+		SetLocalPath("/media").
+		Save(context.Background())
+	if err != nil {
+		t.Fatalf("failed to create the source: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := client.Source.DeleteOne(downloader).Exec(context.Background()); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
+		}
+	})
+
+	return &fixture{
+		downloader: downloader.ID, server: server, client: client, libraryID: library.ID, prefix: prefix}
 }
 
 func (f *fixture) add(t *testing.T, item seed) uuid.UUID {
 	t.Helper()
 
 	record, err := f.client.Item.Create().
-		SetLibraryID(f.libraryID).
 		SetKind(item.kind).
 		SetKey(f.prefix + ":" + item.name).
 		SetName(item.name).
@@ -140,10 +160,18 @@ func (f *fixture) add(t *testing.T, item seed) uuid.UUID {
 		t.Fatalf("failed to create %q: %v", item.name, err)
 	}
 
+	if err := f.client.LibraryItem.Create().
+		SetLibraryID(f.libraryID).
+		SetSourceID(f.downloader).
+		SetItemID(record.ID).
+		Exec(context.Background()); err != nil {
+		t.Fatalf("failed to place %q in the library: %v", item.name, err)
+	}
+
 	if item.path != "" {
-		err := f.client.MediaSource.Create().
+		err := f.client.ItemSource.Create().
 			SetItemID(record.ID).
-			SetLibraryID(f.libraryID).
+			SetSourceID(f.downloader).
 			SetName(filepath.Base(item.path)).
 			SetPath(item.path).
 			Exec(context.Background())

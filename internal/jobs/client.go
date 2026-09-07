@@ -3,10 +3,13 @@ package jobs
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/api/serviceerror"
+	"go.temporal.io/api/workflow/v1"
+	"go.temporal.io/api/workflowservice/v1"
 	"go.temporal.io/sdk/client"
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
@@ -19,6 +22,11 @@ var ErrNotConfigured = errors.New("jobs: TEMPORAL_HOSTPORT is not set")
 var ErrNoNamespace = errors.New("jobs: TEMPORAL_HOSTPORT is set but TEMPORAL_NAMESPACE is not")
 
 var ErrNotFound = errors.New("jobs: no such job")
+
+const (
+	runningOnly  = `ExecutionStatus = "Running"`
+	finishedOnly = `ExecutionStatus != "Running"`
+)
 
 type Client struct {
 	client client.Client
@@ -82,6 +90,32 @@ type Status struct {
 	Last  *Result
 }
 
+func (c *Client) Enqueue(ctx context.Context, name string, params ...Param) error {
+	connection, err := c.connection()
+	if err != nil {
+		return err
+	}
+
+	held := make(Params, len(params))
+	for _, param := range params {
+		held[param.Name] = param.Value
+	}
+
+	_, err = connection.ExecuteWorkflow(ctx, client.StartWorkflowOptions{
+		ID:                       held.id(name),
+		TaskQueue:                TaskQueue,
+		WorkflowExecutionTimeout: runTimeoutMax,
+		WorkflowIDReusePolicy:    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
+	}, runWorkflow, name, held)
+
+	var running *serviceerror.WorkflowExecutionAlreadyStarted
+	if errors.As(err, &running) {
+		return nil
+	}
+
+	return err
+}
+
 type Service struct {
 	client   *Client
 	registry *Registry
@@ -93,7 +127,7 @@ func NewService(client *Client, registry *Registry) *Service {
 
 func (s *Service) All(ctx context.Context) ([]Status, error) {
 	statuses := make([]Status, 0)
-	for _, job := range s.registry.All() {
+	for _, job := range s.registry.Startable() {
 		status, err := s.status(ctx, job)
 		if err != nil {
 			return nil, err
@@ -113,29 +147,16 @@ func (s *Service) Status(ctx context.Context, name string) (Status, error) {
 	return s.status(ctx, job)
 }
 
-func (s *Service) Start(ctx context.Context, name string, options Options) error {
+func (s *Service) Start(ctx context.Context, name string, params ...Param) error {
 	job, err := s.registry.Find(name)
 	if err != nil {
 		return err
 	}
-
-	connection, err := s.client.connection()
-	if err != nil {
-		return err
+	if !job.Startable {
+		return fmt.Errorf("%w: %s is only ever enqueued by another job", ErrNotFound, name)
 	}
 
-	_, err = connection.ExecuteWorkflow(ctx, client.StartWorkflowOptions{
-		ID:                       job.Name(),
-		TaskQueue:                TaskQueue,
-		WorkflowExecutionTimeout: runTimeoutMax,
-		WorkflowIDReusePolicy:    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
-	}, job.Name(), options)
-	var running *serviceerror.WorkflowExecutionAlreadyStarted
-	if errors.As(err, &running) {
-		return nil
-	}
-
-	return err
+	return s.client.Enqueue(ctx, name, params...)
 }
 
 func (s *Service) Cancel(ctx context.Context, name string) error {
@@ -149,7 +170,37 @@ func (s *Service) Cancel(ctx context.Context, name string) error {
 		return err
 	}
 
-	return connection.CancelWorkflow(ctx, job.Name(), "")
+	running, err := executions(ctx, connection, job.Name, runningOnly)
+	if err != nil {
+		return err
+	}
+
+	for _, execution := range running {
+		if err := connection.CancelWorkflow(ctx, execution.GetExecution().GetWorkflowId(), ""); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func executions(
+	ctx context.Context,
+	connection client.Client,
+	name string,
+	only string,
+) ([]*workflow.WorkflowExecutionInfo, error) {
+	query := fmt.Sprintf(
+		"(WorkflowId = %q OR WorkflowId STARTS_WITH %q) AND %s",
+		name, name+idSeparator, only,
+	)
+
+	listed, err := connection.ListWorkflow(ctx, &workflowservice.ListWorkflowExecutionsRequest{Query: query})
+	if err != nil {
+		return nil, err
+	}
+
+	return listed.GetExecutions(), nil
 }
 
 func (s *Service) status(ctx context.Context, job Job) (Status, error) {
@@ -163,28 +214,34 @@ func (s *Service) status(ctx context.Context, job Job) (Status, error) {
 		return Status{}, err
 	}
 
-	described, err := connection.DescribeWorkflowExecution(ctx, job.Name(), "")
-	var missing *serviceerror.NotFound
-	if errors.As(err, &missing) {
-		return status, nil
-	}
+	running, err := executions(ctx, connection, job.Name, runningOnly)
 	if err != nil {
 		return Status{}, err
 	}
-
-	info := described.GetWorkflowExecutionInfo()
-	switch info.GetStatus() {
-	case enums.WORKFLOW_EXECUTION_STATUS_RUNNING:
+	if len(running) > 0 {
 		status.State = StateRunning
+
 		return status, nil
-	case enums.WORKFLOW_EXECUTION_STATUS_CANCELED, enums.WORKFLOW_EXECUTION_STATUS_TERMINATED:
+	}
+
+	finished, err := executions(ctx, connection, job.Name, finishedOnly)
+	if err != nil {
+		return Status{}, err
+	}
+	if len(finished) == 0 {
+		return status, nil
+	}
+
+	info := finished[0]
+	cancelled := info.GetStatus() == enums.WORKFLOW_EXECUTION_STATUS_CANCELED ||
+		info.GetStatus() == enums.WORKFLOW_EXECUTION_STATUS_TERMINATED
+	if cancelled {
 		status.State = StateCancelling
 	}
 
 	status.Last = &Result{
 		Succeeded: info.GetStatus() == enums.WORKFLOW_EXECUTION_STATUS_COMPLETED,
-		Cancelled: info.GetStatus() == enums.WORKFLOW_EXECUTION_STATUS_CANCELED ||
-			info.GetStatus() == enums.WORKFLOW_EXECUTION_STATUS_TERMINATED,
+		Cancelled: cancelled,
 		StartedAt: info.GetStartTime().AsTime(),
 		EndedAt:   info.GetCloseTime().AsTime(),
 	}

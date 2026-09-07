@@ -13,9 +13,32 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	creditmodal "github.com/FreekingDean/gojellyfin/internal/store/credit"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	personmodal "github.com/FreekingDean/gojellyfin/internal/store/person"
 )
+
+func credit(t *testing.T, client *store.Client, itemID uuid.UUID, name string, kind creditmodal.Kind) {
+	t.Helper()
+
+	ctx := context.Background()
+
+	person, err := client.Person.Create().SetName(name).
+		OnConflictColumns(personmodal.FieldName).
+		UpdateNewValues().
+		ID(ctx)
+	if err != nil {
+		t.Fatalf("failed to save the person: %v", err)
+	}
+
+	if err := client.Credit.Create().
+		SetItemID(itemID).
+		SetPersonID(person).
+		SetKind(kind).
+		Exec(ctx); err != nil {
+		t.Fatalf("failed to save the credit: %v", err)
+	}
+}
 
 func TestServer_GetPersons(t *testing.T) {
 	ctx := context.Background()
@@ -41,11 +64,11 @@ func TestServer_GetPersons(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		owned := itemmodal.LibraryID(library.ID)
+		owned := itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID))
 		if _, err := client.Credit.Delete().Where(creditmodal.HasItemWith(owned)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the credits: %v", err)
 		}
-		if _, err := client.MediaSource.Delete().Where(sourcemodal.HasItemWith(owned)).Exec(ctx); err != nil {
+		if _, err := client.ItemSource.Delete().Where(sourcemodal.HasItemWith(owned)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the media sources: %v", err)
 		}
 		if _, err := client.Item.Delete().Where(owned).Exec(ctx); err != nil {
@@ -63,12 +86,11 @@ func TestServer_GetPersons(t *testing.T) {
 	})
 
 	service := items.New(client)
-	movie, err := service.SaveScanned(ctx, items.Scanned{
-		LibraryID: library.ID,
-		Kind:      itemmodal.KindMovie,
-		Name:      prefix + "Movie",
-		SortName:  prefix + "Movie",
-		Key:       "test:" + prefix + "movie",
+	movie, err := service.SaveScanned(ctx, items.Item{
+		Kind:     itemmodal.KindMovie,
+		Name:     prefix + "Movie",
+		SortName: prefix + "Movie",
+		Key:      "test:" + prefix + "movie",
 	})
 	if err != nil {
 		t.Fatalf("failed to save the item: %v", err)
@@ -76,22 +98,8 @@ func TestServer_GetPersons(t *testing.T) {
 
 	director := prefix + "Director"
 	writer := prefix + "Writer"
-	probe := items.Probe{Metadata: items.ContainerMetadata{People: []items.Person{
-		{Name: director, Kind: creditmodal.KindDirector},
-		{Name: writer, Kind: creditmodal.KindWriter},
-	}}}
-	source, err := service.SaveSource(ctx, items.ScannedSource{
-		LibraryID: library.ID,
-		ItemID:    movie.ID,
-		Path:      "/media/" + prefix + "Movie.mkv",
-		Name:      prefix + "Movie",
-	})
-	if err != nil {
-		t.Fatalf("failed to save the media source: %v", err)
-	}
-	if err := service.SaveProbe(ctx, movie, source, probe); err != nil {
-		t.Fatalf("failed to save the probe: %v", err)
-	}
+	credit(t, client, movie.ID, director, creditmodal.KindDirector)
+	credit(t, client, movie.ID, writer, creditmodal.KindWriter)
 
 	server := New(service)
 

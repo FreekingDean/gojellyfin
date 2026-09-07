@@ -64,78 +64,6 @@ func (_u *PersonUpdate) SetNillableName(v *string) *PersonUpdate {
 	return _u
 }
 
-// SetOverview sets the "overview" field.
-func (_u *PersonUpdate) SetOverview(v string) *PersonUpdate {
-	_u.mutation.SetOverview(v)
-	return _u
-}
-
-// SetNillableOverview sets the "overview" field if the given value is not nil.
-func (_u *PersonUpdate) SetNillableOverview(v *string) *PersonUpdate {
-	if v != nil {
-		_u.SetOverview(*v)
-	}
-	return _u
-}
-
-// ClearOverview clears the value of the "overview" field.
-func (_u *PersonUpdate) ClearOverview() *PersonUpdate {
-	_u.mutation.ClearOverview()
-	return _u
-}
-
-// SetBirthDate sets the "birth_date" field.
-func (_u *PersonUpdate) SetBirthDate(v time.Time) *PersonUpdate {
-	_u.mutation.SetBirthDate(v)
-	return _u
-}
-
-// SetNillableBirthDate sets the "birth_date" field if the given value is not nil.
-func (_u *PersonUpdate) SetNillableBirthDate(v *time.Time) *PersonUpdate {
-	if v != nil {
-		_u.SetBirthDate(*v)
-	}
-	return _u
-}
-
-// ClearBirthDate clears the value of the "birth_date" field.
-func (_u *PersonUpdate) ClearBirthDate() *PersonUpdate {
-	_u.mutation.ClearBirthDate()
-	return _u
-}
-
-// SetDeathDate sets the "death_date" field.
-func (_u *PersonUpdate) SetDeathDate(v time.Time) *PersonUpdate {
-	_u.mutation.SetDeathDate(v)
-	return _u
-}
-
-// SetNillableDeathDate sets the "death_date" field if the given value is not nil.
-func (_u *PersonUpdate) SetNillableDeathDate(v *time.Time) *PersonUpdate {
-	if v != nil {
-		_u.SetDeathDate(*v)
-	}
-	return _u
-}
-
-// ClearDeathDate clears the value of the "death_date" field.
-func (_u *PersonUpdate) ClearDeathDate() *PersonUpdate {
-	_u.mutation.ClearDeathDate()
-	return _u
-}
-
-// SetProviderIds sets the "provider_ids" field.
-func (_u *PersonUpdate) SetProviderIds(v map[string]string) *PersonUpdate {
-	_u.mutation.SetProviderIds(v)
-	return _u
-}
-
-// ClearProviderIds clears the value of the "provider_ids" field.
-func (_u *PersonUpdate) ClearProviderIds() *PersonUpdate {
-	_u.mutation.ClearProviderIds()
-	return _u
-}
-
 // AddCreditIDs adds the "credits" edge to the Credit entity by IDs.
 func (_u *PersonUpdate) AddCreditIDs(ids ...uuid.UUID) *PersonUpdate {
 	_u.mutation.AddCreditIDs(ids...)
@@ -230,30 +158,6 @@ func (_u *PersonUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(person.FieldName, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.Overview(); ok {
-		_spec.SetField(person.FieldOverview, field.TypeString, value)
-	}
-	if _u.mutation.OverviewCleared() {
-		_spec.ClearField(person.FieldOverview, field.TypeString)
-	}
-	if value, ok := _u.mutation.BirthDate(); ok {
-		_spec.SetField(person.FieldBirthDate, field.TypeTime, value)
-	}
-	if _u.mutation.BirthDateCleared() {
-		_spec.ClearField(person.FieldBirthDate, field.TypeTime)
-	}
-	if value, ok := _u.mutation.DeathDate(); ok {
-		_spec.SetField(person.FieldDeathDate, field.TypeTime, value)
-	}
-	if _u.mutation.DeathDateCleared() {
-		_spec.ClearField(person.FieldDeathDate, field.TypeTime)
-	}
-	if value, ok := _u.mutation.ProviderIds(); ok {
-		_spec.SetField(person.FieldProviderIds, field.TypeJSON, value)
-	}
-	if _u.mutation.ProviderIdsCleared() {
-		_spec.ClearField(person.FieldProviderIds, field.TypeJSON)
 	}
 	if _u.mutation.CreditsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -351,78 +255,6 @@ func (_u *PersonUpdateOne) SetNillableName(v *string) *PersonUpdateOne {
 	if v != nil {
 		_u.SetName(*v)
 	}
-	return _u
-}
-
-// SetOverview sets the "overview" field.
-func (_u *PersonUpdateOne) SetOverview(v string) *PersonUpdateOne {
-	_u.mutation.SetOverview(v)
-	return _u
-}
-
-// SetNillableOverview sets the "overview" field if the given value is not nil.
-func (_u *PersonUpdateOne) SetNillableOverview(v *string) *PersonUpdateOne {
-	if v != nil {
-		_u.SetOverview(*v)
-	}
-	return _u
-}
-
-// ClearOverview clears the value of the "overview" field.
-func (_u *PersonUpdateOne) ClearOverview() *PersonUpdateOne {
-	_u.mutation.ClearOverview()
-	return _u
-}
-
-// SetBirthDate sets the "birth_date" field.
-func (_u *PersonUpdateOne) SetBirthDate(v time.Time) *PersonUpdateOne {
-	_u.mutation.SetBirthDate(v)
-	return _u
-}
-
-// SetNillableBirthDate sets the "birth_date" field if the given value is not nil.
-func (_u *PersonUpdateOne) SetNillableBirthDate(v *time.Time) *PersonUpdateOne {
-	if v != nil {
-		_u.SetBirthDate(*v)
-	}
-	return _u
-}
-
-// ClearBirthDate clears the value of the "birth_date" field.
-func (_u *PersonUpdateOne) ClearBirthDate() *PersonUpdateOne {
-	_u.mutation.ClearBirthDate()
-	return _u
-}
-
-// SetDeathDate sets the "death_date" field.
-func (_u *PersonUpdateOne) SetDeathDate(v time.Time) *PersonUpdateOne {
-	_u.mutation.SetDeathDate(v)
-	return _u
-}
-
-// SetNillableDeathDate sets the "death_date" field if the given value is not nil.
-func (_u *PersonUpdateOne) SetNillableDeathDate(v *time.Time) *PersonUpdateOne {
-	if v != nil {
-		_u.SetDeathDate(*v)
-	}
-	return _u
-}
-
-// ClearDeathDate clears the value of the "death_date" field.
-func (_u *PersonUpdateOne) ClearDeathDate() *PersonUpdateOne {
-	_u.mutation.ClearDeathDate()
-	return _u
-}
-
-// SetProviderIds sets the "provider_ids" field.
-func (_u *PersonUpdateOne) SetProviderIds(v map[string]string) *PersonUpdateOne {
-	_u.mutation.SetProviderIds(v)
-	return _u
-}
-
-// ClearProviderIds clears the value of the "provider_ids" field.
-func (_u *PersonUpdateOne) ClearProviderIds() *PersonUpdateOne {
-	_u.mutation.ClearProviderIds()
 	return _u
 }
 
@@ -550,30 +382,6 @@ func (_u *PersonUpdateOne) sqlSave(ctx context.Context) (_node *Person, err erro
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(person.FieldName, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.Overview(); ok {
-		_spec.SetField(person.FieldOverview, field.TypeString, value)
-	}
-	if _u.mutation.OverviewCleared() {
-		_spec.ClearField(person.FieldOverview, field.TypeString)
-	}
-	if value, ok := _u.mutation.BirthDate(); ok {
-		_spec.SetField(person.FieldBirthDate, field.TypeTime, value)
-	}
-	if _u.mutation.BirthDateCleared() {
-		_spec.ClearField(person.FieldBirthDate, field.TypeTime)
-	}
-	if value, ok := _u.mutation.DeathDate(); ok {
-		_spec.SetField(person.FieldDeathDate, field.TypeTime, value)
-	}
-	if _u.mutation.DeathDateCleared() {
-		_spec.ClearField(person.FieldDeathDate, field.TypeTime)
-	}
-	if value, ok := _u.mutation.ProviderIds(); ok {
-		_spec.SetField(person.FieldProviderIds, field.TypeJSON, value)
-	}
-	if _u.mutation.ProviderIdsCleared() {
-		_spec.ClearField(person.FieldProviderIds, field.TypeJSON)
 	}
 	if _u.mutation.CreditsCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -12,7 +12,9 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	genremodal "github.com/FreekingDean/gojellyfin/internal/store/genre"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
+	downloadermodal "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
 
 func TestServer_GetGenres(t *testing.T) {
@@ -39,8 +41,8 @@ func TestServer_GetGenres(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		owned := itemmodal.LibraryID(library.ID)
-		if _, err := client.MediaSource.Delete().Where(sourcemodal.HasItemWith(owned)).Exec(ctx); err != nil {
+		owned := itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID))
+		if _, err := client.ItemSource.Delete().Where(sourcemodal.HasItemWith(owned)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the media sources: %v", err)
 		}
 		if _, err := client.Item.Delete().Where(owned).Exec(ctx); err != nil {
@@ -57,27 +59,37 @@ func TestServer_GetGenres(t *testing.T) {
 		}
 	})
 
+	downloader, err := client.Source.Create().
+		SetName(name).
+		SetURL("http://" + uuid.NewString() + ".invalid").
+		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
+		SetKind(downloadermodal.KindRadarr).
+		SetRootPath("/media").
+		SetLocalPath("/media").
+		Save(ctx)
+	if err != nil {
+		t.Fatalf("failed to create the source: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := client.Source.DeleteOne(downloader).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
+		}
+	})
+
 	service := items.New(client)
-	movie, err := service.SaveScanned(ctx, items.Scanned{
-		LibraryID: library.ID,
-		Kind:      itemmodal.KindMovie,
-		Name:      name,
-		SortName:  name,
-		Key:       "test:" + name,
+	movie, err := service.SaveScanned(ctx, items.Item{
+		Kind:     itemmodal.KindMovie,
+		Name:     name,
+		SortName: name,
+		Key:      "test:" + name,
 	})
 	if err != nil {
 		t.Fatalf("failed to save the item: %v", err)
 	}
-	source, err := service.SaveSource(ctx, items.ScannedSource{
-		LibraryID: library.ID,
-		ItemID:    movie.ID,
-		Path:      "/media/" + name + ".mkv",
-		Name:      name,
-	})
-	if err != nil {
-		t.Fatalf("failed to save the media source: %v", err)
+	if err := service.SaveMembership(ctx, library.ID, downloader.ID, []uuid.UUID{movie.ID}); err != nil {
+		t.Fatalf("failed to place the item in the library: %v", err)
 	}
-	if err := service.SaveProbe(ctx, movie, source, items.Probe{Metadata: items.ContainerMetadata{Genres: []string{name}}}); err != nil {
+	if _, err := service.UpdateMetadata(ctx, movie.ID, items.Metadata{Genres: &[]string{name}}); err != nil {
 		t.Fatalf("failed to save the probe: %v", err)
 	}
 

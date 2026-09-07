@@ -4,12 +4,14 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	creditmodal "github.com/FreekingDean/gojellyfin/internal/store/credit"
 	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
 )
 
@@ -109,11 +111,16 @@ func TestClient_Movie(t *testing.T) {
 		if found.Taglines == nil || (*found.Taglines)[0] != "Welcome to the Real World." {
 			t.Errorf("Taglines = %v, want the fetched one", found.Taglines)
 		}
-		if found.ProductionLocations == nil || (*found.ProductionLocations)[0] != "United States of America" {
-			t.Errorf("ProductionLocations = %v, want the fetched one", found.ProductionLocations)
-		}
 		if found.Status != nil {
 			t.Errorf("Status = %v, want none written for a movie", *found.Status)
+		}
+		want := []items.Credit{
+			{Name: "Keanu Reeves", Kind: creditmodal.KindActor, Role: "Thomas A. Anderson", Order: 0},
+			{Name: "Laurence Fishburne", Kind: creditmodal.KindActor, Role: "Morpheus", Order: 1},
+			{Name: "Lana Wachowski", Kind: creditmodal.KindDirector},
+		}
+		if found.People == nil || !slices.Equal(*found.People, want) {
+			t.Errorf("People = %v, want %v", found.People, want)
 		}
 	})
 
@@ -144,6 +151,13 @@ func TestClient_Series(t *testing.T) {
 	}
 	if ids := *found.ProviderIds; ids[providerTmdb] != "1396" || ids[providerImdb] != "tt0903747" {
 		t.Errorf("ProviderIds = %v, want the Tmdb and Imdb ids", ids)
+	}
+	want := []items.Credit{
+		{Name: "Bryan Cranston", Kind: creditmodal.KindActor, Role: "Walter White"},
+		{Name: "Vince Gilligan", Kind: creditmodal.KindWriter},
+	}
+	if found.People == nil || !slices.Equal(*found.People, want) {
+		t.Errorf("People = %v, want %v", found.People, want)
 	}
 }
 

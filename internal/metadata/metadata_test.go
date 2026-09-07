@@ -3,6 +3,7 @@ package metadata
 import (
 	"context"
 	"errors"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -11,15 +12,15 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/FreekingDean/gojellyfin/internal/artwork"
 	"github.com/FreekingDean/gojellyfin/internal/consts"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
-	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/store"
+	creditmodal "github.com/FreekingDean/gojellyfin/internal/store/credit"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
+	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
 
 const unreachable = "A Film The Provider Cannot Reach"
@@ -67,8 +68,12 @@ func (s *stubProvider) Movie(_ context.Context, name string, _ *int32) (items.Me
 		CommunityRating: number(8.2),
 		PremiereDate:    &premiere,
 		Taglines:        &[]string{"Welcome to the Real World."},
-		ProviderIds:     &map[string]string{"Stub": "603", "StubExternal": "tt0133093"},
-		Images:          s.images,
+		People: &[]items.Credit{
+			{Name: "Keanu Reeves", Kind: creditmodal.KindActor, Role: "Thomas A. Anderson"},
+			{Name: "Lana Wachowski", Kind: creditmodal.KindDirector},
+		},
+		ProviderIds: &map[string]string{"Stub": "603", "StubExternal": "tt0133093"},
+		Images:      s.images,
 	}, true, nil
 }
 
@@ -121,11 +126,11 @@ func (s *stubProvider) Episode(_ context.Context, series map[string]string, seas
 }
 
 type fixture struct {
-	items     *items.Service
-	service   *Service
-	provider  *stubProvider
-	artwork   artwork.Store
-	libraryID uuid.UUID
+	items      *items.Service
+	service    *Service
+	provider   *stubProvider
+	libraryID  uuid.UUID
+	downloader uuid.UUID
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -164,11 +169,9 @@ func newFixtureEnabled(t *testing.T, enabled bool) *fixture {
 
 	provider := &stubProvider{enabled: enabled}
 	service := items.New(client)
-	stored := artwork.New(client)
 
 	t.Cleanup(func() {
 		ctx := context.Background()
-		dropStoredArtwork(t, service, stored, library.ID)
 		if err := catalogue.DeleteLibrary(ctx, library.ID); err != nil {
 			t.Errorf("failed to delete the library: %v", err)
 		}
@@ -177,48 +180,35 @@ func newFixtureEnabled(t *testing.T, enabled bool) *fixture {
 		}
 	})
 
-	return &fixture{
-		items:     service,
-		service:   New(provider, service, stored),
-		provider:  provider,
-		artwork:   stored,
-		libraryID: library.ID,
-	}
-}
-
-func dropStoredArtwork(t *testing.T, service *items.Service, stored artwork.Store, libraryID uuid.UUID) {
-	t.Helper()
-
-	ctx := context.Background()
-	records, _, err := service.QueryItems(ctx, items.ItemQuery{LibraryID: &libraryID})
+	downloader, err := client.Source.Create().
+		SetName(t.Name() + "-" + uuid.NewString()).
+		SetURL("http://" + uuid.NewString() + ".invalid").
+		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
+		SetKind(sourcemodal.KindRadarr).
+		SetRootPath("/media").
+		SetLocalPath("/media").
+		Save(context.Background())
 	if err != nil {
-		t.Errorf("failed to list the items: %v", err)
-
-		return
+		t.Fatalf("failed to create the source: %v", err)
 	}
-
-	for _, record := range records {
-		images, err := service.Images(ctx, record.ID)
-		if err != nil {
-			t.Errorf("failed to list the images: %v", err)
-
-			continue
+	t.Cleanup(func() {
+		if err := client.Source.DeleteOne(downloader).Exec(context.Background()); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
 		}
-		for _, image := range images {
-			if image.Source != items.ImageSourceRemote {
-				continue
-			}
-			if err := stored.Delete(ctx, image.Path); err != nil {
-				t.Errorf("failed to delete the artwork: %v", err)
-			}
-		}
+	})
+
+	return &fixture{
+		downloader: downloader.ID,
+		items:      service,
+		service:    New(provider, service),
+		provider:   provider,
+		libraryID:  library.ID,
 	}
 }
 
-func (f *fixture) add(t *testing.T, scanned items.Scanned) *items.Item {
+func (f *fixture) add(t *testing.T, scanned items.Item) *items.Item {
 	t.Helper()
 
-	scanned.LibraryID = f.libraryID
 	if scanned.SortName == "" {
 		scanned.SortName = scanned.Name
 	}
@@ -229,6 +219,12 @@ func (f *fixture) add(t *testing.T, scanned items.Scanned) *items.Item {
 	added, err := f.items.SaveScanned(context.Background(), scanned)
 	if err != nil {
 		t.Fatalf("failed to add %q: %v", scanned.Name, err)
+	}
+
+	if err := f.items.SaveMembership(
+		context.Background(), f.libraryID, f.downloader, []uuid.UUID{added.ID},
+	); err != nil {
+		t.Fatalf("failed to place %q in the library: %v", scanned.Name, err)
 	}
 
 	return added
@@ -248,7 +244,7 @@ func (f *fixture) lock(t *testing.T, added *items.Item, metadata items.Metadata)
 func (f *fixture) reload(t *testing.T, id uuid.UUID) *items.Item {
 	t.Helper()
 
-	reloaded, err := f.items.ItemByID(context.Background(), id)
+	reloaded, err := f.items.ItemByID(context.Background(), items.Everyone, id)
 	if err != nil {
 		t.Fatalf("failed to read the item back: %v", err)
 	}
@@ -268,17 +264,17 @@ func (f *fixture) identified(t *testing.T, added *items.Item, overview string) *
 func (f *fixture) identify(t *testing.T) {
 	t.Helper()
 
-	f.run(t, jobs.Options{})
+	f.run(t, uuid.Nil, false)
 }
 
-func (f *fixture) run(t *testing.T, options jobs.Options) {
+func (f *fixture) run(t *testing.T, scope uuid.UUID, force bool) {
 	t.Helper()
 
-	if options.Scope == uuid.Nil {
-		options.Scope = f.libraryID
+	if scope == uuid.Nil {
+		scope = f.libraryID
 	}
 
-	if err := jobs.RunStep(t, f.service.IdentifyItems, options); err != nil {
+	if err := f.service.IdentifyItems(context.Background(), scope, force); err != nil {
 		t.Fatalf("identification failed: %v", err)
 	}
 }
@@ -308,7 +304,7 @@ func truth(value bool) *bool {
 func TestService_IdentifyItems(t *testing.T) {
 	t.Run("writes a movie", func(t *testing.T) {
 		fixed := newFixture(t)
-		movie := fixed.add(t, items.Scanned{
+		movie := fixed.add(t, items.Item{
 			Kind:           itemmodal.KindMovie,
 			Name:           "The Matrix",
 			ProductionYear: index(1999),
@@ -329,22 +325,39 @@ func TestService_IdentifyItems(t *testing.T) {
 		if identified.PremiereDate == nil || identified.PremiereDate.Year() != 1999 {
 			t.Errorf("PremiereDate = %v, want 1999", identified.PremiereDate)
 		}
+
+		named, _, err := fixed.items.DistinctPeople(context.Background(), items.MetadataQuery{
+			Viewer: items.Everyone,
+			ItemID: &movie.ID,
+		}, nil)
+		if err != nil {
+			t.Fatalf("failed to read the credits: %v", err)
+		}
+
+		want := []string{"Keanu Reeves", "Lana Wachowski"}
+		got := make([]string, 0, len(named))
+		for _, person := range named {
+			got = append(got, person.Name)
+		}
+		if !slices.Equal(got, want) {
+			t.Errorf("people = %v, want %v", got, want)
+		}
 	})
 
 	t.Run("walks a series to its episode", func(t *testing.T) {
 		fixed := newFixture(t)
-		series := fixed.add(t, items.Scanned{
+		series := fixed.add(t, items.Item{
 			Kind:           itemmodal.KindSeries,
 			Name:           "Breaking Bad",
 			ProductionYear: index(2008),
 		})
-		season := fixed.add(t, items.Scanned{
+		season := fixed.add(t, items.Item{
 			Kind:        itemmodal.KindSeason,
 			ParentID:    &series.ID,
 			Name:        "Season 1",
 			IndexNumber: index(1),
 		})
-		episode := fixed.add(t, items.Scanned{
+		episode := fixed.add(t, items.Item{
 			Kind:              itemmodal.KindEpisode,
 			ParentID:          &season.ID,
 			Name:              "s01e01",
@@ -390,18 +403,18 @@ func TestService_IdentifyItems(t *testing.T) {
 
 	t.Run("identifies a parent listed after its children", func(t *testing.T) {
 		fixed := newFixture(t)
-		series := fixed.add(t, items.Scanned{
+		series := fixed.add(t, items.Item{
 			Kind:           itemmodal.KindSeries,
 			Name:           "Breaking Bad",
 			ProductionYear: index(2008),
 		})
-		season := fixed.add(t, items.Scanned{
+		season := fixed.add(t, items.Item{
 			Kind:        itemmodal.KindSeason,
 			ParentID:    &series.ID,
 			Name:        "Season 1",
 			IndexNumber: index(1),
 		})
-		episode := fixed.add(t, items.Scanned{
+		episode := fixed.add(t, items.Item{
 			Kind:              itemmodal.KindEpisode,
 			ParentID:          &season.ID,
 			Name:              "s01e01",
@@ -422,12 +435,12 @@ func TestService_IdentifyItems(t *testing.T) {
 
 	t.Run("identifies specials as season zero", func(t *testing.T) {
 		fixed := newFixture(t)
-		series := fixed.add(t, items.Scanned{
+		series := fixed.add(t, items.Item{
 			Kind:           itemmodal.KindSeries,
 			Name:           "Breaking Bad",
 			ProductionYear: index(2008),
 		})
-		specials := fixed.add(t, items.Scanned{
+		specials := fixed.add(t, items.Item{
 			Kind:        itemmodal.KindSeason,
 			ParentID:    &series.ID,
 			Name:        "Specials",
@@ -444,18 +457,18 @@ func TestService_IdentifyItems(t *testing.T) {
 
 	t.Run("keeps an unmatched season out of its episode", func(t *testing.T) {
 		fixed := newFixture(t)
-		series := fixed.add(t, items.Scanned{
+		series := fixed.add(t, items.Item{
 			Kind:           itemmodal.KindSeries,
 			Name:           "Breaking Bad",
 			ProductionYear: index(2008),
 		})
-		season := fixed.add(t, items.Scanned{
+		season := fixed.add(t, items.Item{
 			Kind:        itemmodal.KindSeason,
 			ParentID:    &series.ID,
 			Name:        "Season 9",
 			IndexNumber: index(9),
 		})
-		episode := fixed.add(t, items.Scanned{
+		episode := fixed.add(t, items.Item{
 			Kind:              itemmodal.KindEpisode,
 			ParentID:          &season.ID,
 			Name:              "s01e01",
@@ -475,12 +488,12 @@ func TestService_IdentifyItems(t *testing.T) {
 
 	t.Run("keeps a locked season field", func(t *testing.T) {
 		fixed := newFixture(t)
-		series := fixed.add(t, items.Scanned{
+		series := fixed.add(t, items.Item{
 			Kind:           itemmodal.KindSeries,
 			Name:           "Breaking Bad",
 			ProductionYear: index(2008),
 		})
-		season := fixed.lock(t, fixed.add(t, items.Scanned{
+		season := fixed.lock(t, fixed.add(t, items.Item{
 			Kind:        itemmodal.KindSeason,
 			ParentID:    &series.ID,
 			Name:        "The One With The Chemistry",
@@ -503,13 +516,13 @@ func TestService_IdentifyItems(t *testing.T) {
 
 	t.Run("leaves a locked item alone", func(t *testing.T) {
 		fixed := newFixture(t)
-		locked := fixed.lock(t, fixed.add(t, items.Scanned{
+		locked := fixed.lock(t, fixed.add(t, items.Item{
 			Kind:           itemmodal.KindMovie,
 			Name:           "The Matrix",
 			ProductionYear: index(1999),
 		}), items.Metadata{LockData: truth(true)})
 
-		witness := fixed.add(t, items.Scanned{
+		witness := fixed.add(t, items.Item{
 			Kind:           itemmodal.KindMovie,
 			Name:           "The Matrix",
 			Key:            "test:" + fixed.libraryID.String() + ":witness",
@@ -532,7 +545,7 @@ func TestService_IdentifyItems(t *testing.T) {
 
 	t.Run("keeps a locked field", func(t *testing.T) {
 		fixed := newFixture(t)
-		movie := fixed.lock(t, fixed.add(t, items.Scanned{
+		movie := fixed.lock(t, fixed.add(t, items.Item{
 			Kind:           itemmodal.KindMovie,
 			Name:           "The Matrix",
 			ProductionYear: index(1999),
@@ -560,7 +573,7 @@ func TestService_IdentifyItems(t *testing.T) {
 
 	t.Run("does nothing without a provider", func(t *testing.T) {
 		fixed := newFixtureEnabled(t, false)
-		movie := fixed.add(t, items.Scanned{
+		movie := fixed.add(t, items.Item{
 			Kind:           itemmodal.KindMovie,
 			Name:           "The Matrix",
 			ProductionYear: index(1999),
@@ -578,7 +591,7 @@ func TestService_IdentifyItems(t *testing.T) {
 
 	t.Run("leaves an unmatched item for the next run", func(t *testing.T) {
 		fixed := newFixture(t)
-		unknown := fixed.add(t, items.Scanned{
+		unknown := fixed.add(t, items.Item{
 			Kind: itemmodal.KindMovie,
 			Name: "A Film Nobody Carries",
 		})
@@ -597,13 +610,13 @@ func TestService_IdentifyItems(t *testing.T) {
 func TestService_IdentifyItems_Force(t *testing.T) {
 	t.Run("looks an identified item up again", func(t *testing.T) {
 		fixed := newFixture(t)
-		movie := fixed.identified(t, fixed.add(t, items.Scanned{
+		movie := fixed.identified(t, fixed.add(t, items.Item{
 			Kind:           itemmodal.KindMovie,
 			Name:           "The Matrix",
 			ProductionYear: index(1999),
 		}), "Whatever the last provider said.")
 
-		fixed.run(t, jobs.Options{Force: true})
+		fixed.run(t, uuid.Nil, true)
 
 		refreshed := fixed.reload(t, movie.ID)
 		if !strings.HasPrefix(refreshed.Overview, "Set in the 22nd century") {
@@ -616,7 +629,7 @@ func TestService_IdentifyItems_Force(t *testing.T) {
 
 	t.Run("leaves an identified item alone without it", func(t *testing.T) {
 		fixed := newFixture(t)
-		movie := fixed.identified(t, fixed.add(t, items.Scanned{
+		movie := fixed.identified(t, fixed.add(t, items.Item{
 			Kind:           itemmodal.KindMovie,
 			Name:           "The Matrix",
 			ProductionYear: index(1999),
@@ -634,7 +647,7 @@ func TestService_IdentifyItems_Force(t *testing.T) {
 
 	t.Run("keeps a locked field", func(t *testing.T) {
 		fixed := newFixture(t)
-		movie := fixed.lock(t, fixed.add(t, items.Scanned{
+		movie := fixed.lock(t, fixed.add(t, items.Item{
 			Kind:           itemmodal.KindMovie,
 			Name:           "The Matrix",
 			ProductionYear: index(1999),
@@ -644,7 +657,7 @@ func TestService_IdentifyItems_Force(t *testing.T) {
 			ProviderIds:  &map[string]string{"Stub": "603"},
 		})
 
-		fixed.run(t, jobs.Options{Force: true})
+		fixed.run(t, uuid.Nil, true)
 
 		refreshed := fixed.reload(t, movie.ID)
 		if refreshed.Overview != "A summary somebody wrote by hand." {
@@ -657,18 +670,18 @@ func TestService_IdentifyItems_Force(t *testing.T) {
 
 	t.Run("carries on past an item the provider cannot reach", func(t *testing.T) {
 		fixed := newFixture(t)
-		unreachableItem := fixed.identified(t, fixed.add(t, items.Scanned{
+		unreachableItem := fixed.identified(t, fixed.add(t, items.Item{
 			Kind: itemmodal.KindMovie,
 			Name: unreachable,
 		}), "Whatever the last provider said.")
-		reachable := fixed.identified(t, fixed.add(t, items.Scanned{
+		reachable := fixed.identified(t, fixed.add(t, items.Item{
 			Kind:           itemmodal.KindMovie,
 			Name:           "The Matrix",
 			Key:            "test:" + fixed.libraryID.String() + ":reachable",
 			ProductionYear: index(1999),
 		}), "Whatever the last provider said.")
 
-		fixed.run(t, jobs.Options{Force: true})
+		fixed.run(t, uuid.Nil, true)
 
 		if failed := fixed.reload(t, unreachableItem.ID); failed.Overview != "Whatever the last provider said." {
 			t.Errorf("Overview = %q, want a failed fetch to write nothing", failed.Overview)
@@ -683,7 +696,7 @@ func TestService_IdentifyItems_Force(t *testing.T) {
 
 		ids := make([]uuid.UUID, 0, 205)
 		for number := range 205 {
-			added := fixed.identified(t, fixed.add(t, items.Scanned{
+			added := fixed.identified(t, fixed.add(t, items.Item{
 				Kind:           itemmodal.KindMovie,
 				Name:           "The Matrix",
 				Key:            "test:" + fixed.libraryID.String() + ":" + strconv.Itoa(number),
@@ -692,7 +705,7 @@ func TestService_IdentifyItems_Force(t *testing.T) {
 			ids = append(ids, added.ID)
 		}
 
-		fixed.run(t, jobs.Options{Force: true})
+		fixed.run(t, uuid.Nil, true)
 
 		for _, id := range ids {
 			if refreshed := fixed.reload(t, id); !strings.HasPrefix(refreshed.Overview, "Set in the 22nd century") {
@@ -705,19 +718,19 @@ func TestService_IdentifyItems_Force(t *testing.T) {
 func TestService_IdentifyItems_Scope(t *testing.T) {
 	t.Run("refreshes only the item it names", func(t *testing.T) {
 		fixed := newFixture(t)
-		asked := fixed.identified(t, fixed.add(t, items.Scanned{
+		asked := fixed.identified(t, fixed.add(t, items.Item{
 			Kind:           itemmodal.KindMovie,
 			Name:           "The Matrix",
 			ProductionYear: index(1999),
 		}), "Whatever the last provider said.")
-		elsewhere := fixed.identified(t, fixed.add(t, items.Scanned{
+		elsewhere := fixed.identified(t, fixed.add(t, items.Item{
 			Kind:           itemmodal.KindMovie,
 			Name:           "The Matrix",
 			Key:            "test:" + fixed.libraryID.String() + ":elsewhere",
 			ProductionYear: index(1999),
 		}), "Whatever the last provider said.")
 
-		fixed.run(t, jobs.Options{Force: true, Scope: asked.ID})
+		fixed.run(t, asked.ID, true)
 
 		if refreshed := fixed.reload(t, asked.ID); !strings.HasPrefix(refreshed.Overview, "Set in the 22nd century") {
 			t.Errorf("Overview = %q, want the named item refreshed", refreshed.Overview)
@@ -729,33 +742,32 @@ func TestService_IdentifyItems_Scope(t *testing.T) {
 
 	t.Run("follows a series down to its episodes", func(t *testing.T) {
 		fixed := newFixture(t)
-		series := fixed.add(t, items.Scanned{
+		series := fixed.add(t, items.Item{
 			Kind:           itemmodal.KindSeries,
 			Name:           "Breaking Bad",
 			ProductionYear: index(2008),
 		})
-		season := fixed.add(t, items.Scanned{
+		season := fixed.add(t, items.Item{
 			Kind:        itemmodal.KindSeason,
 			ParentID:    &series.ID,
 			Name:        "Season 1",
 			IndexNumber: index(1),
 		})
-		episode := fixed.add(t, items.Scanned{
+		episode := fixed.add(t, items.Item{
 			Kind:              itemmodal.KindEpisode,
 			ParentID:          &season.ID,
 			Name:              "s01e01",
 			IndexNumber:       index(1),
 			ParentIndexNumber: index(1),
 		})
-		elsewhere := fixed.identified(t, fixed.add(t, items.Scanned{
+		elsewhere := fixed.identified(t, fixed.add(t, items.Item{
 			Kind:           itemmodal.KindMovie,
 			Name:           "The Matrix",
 			ProductionYear: index(1999),
 		}), "Whatever the last provider said.")
 
-		scope := jobs.Options{Force: true, Scope: series.ID}
-		fixed.run(t, scope)
-		fixed.run(t, scope)
+		fixed.run(t, series.ID, true)
+		fixed.run(t, series.ID, true)
 
 		if identified := fixed.reload(t, series.ID); identified.ProviderIds["Stub"] != "1396" {
 			t.Errorf("series provider id = %q, want the scoped series identified", identified.ProviderIds["Stub"])
@@ -770,19 +782,19 @@ func TestService_IdentifyItems_Scope(t *testing.T) {
 
 	t.Run("refreshes everything in a library it names", func(t *testing.T) {
 		fixed := newFixture(t)
-		first := fixed.identified(t, fixed.add(t, items.Scanned{
+		first := fixed.identified(t, fixed.add(t, items.Item{
 			Kind:           itemmodal.KindMovie,
 			Name:           "The Matrix",
 			ProductionYear: index(1999),
 		}), "Whatever the last provider said.")
-		second := fixed.identified(t, fixed.add(t, items.Scanned{
+		second := fixed.identified(t, fixed.add(t, items.Item{
 			Kind:           itemmodal.KindMovie,
 			Name:           "The Matrix",
 			Key:            "test:" + fixed.libraryID.String() + ":second",
 			ProductionYear: index(1999),
 		}), "Whatever the last provider said.")
 
-		fixed.run(t, jobs.Options{Force: true, Scope: fixed.libraryID})
+		fixed.run(t, fixed.libraryID, true)
 
 		for _, id := range []uuid.UUID{first.ID, second.ID} {
 			if refreshed := fixed.reload(t, id); !strings.HasPrefix(refreshed.Overview, "Set in the 22nd century") {

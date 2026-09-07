@@ -193,3 +193,16 @@ func TestResolve(t *testing.T) {
 		}
 	}
 }
+
+func TestService_Resolve(t *testing.T) {
+	files := service("/media")
+
+	if _, err := files.Resolve("/media/movies/film.mkv"); err != nil {
+		t.Errorf("Resolve of a served path = %v, want it allowed", err)
+	}
+	for _, path := range []string{"/etc/passwd", "relative.mkv", "", "/media/../etc/passwd"} {
+		if _, err := files.Resolve(path); err == nil {
+			t.Errorf("Resolve(%q) was allowed, want it refused", path)
+		}
+	}
+}

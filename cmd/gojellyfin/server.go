@@ -6,9 +6,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/apikeys"
-	"github.com/FreekingDean/gojellyfin/internal/artwork"
 	"github.com/FreekingDean/gojellyfin/internal/auth"
-	"github.com/FreekingDean/gojellyfin/internal/collage"
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/displaypreferences"
 	"github.com/FreekingDean/gojellyfin/internal/env"
@@ -22,9 +20,10 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/metadata"
 	"github.com/FreekingDean/gojellyfin/internal/observability"
 	"github.com/FreekingDean/gojellyfin/internal/playlists"
-	"github.com/FreekingDean/gojellyfin/internal/scanner"
+	"github.com/FreekingDean/gojellyfin/internal/probe"
 	"github.com/FreekingDean/gojellyfin/internal/server"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
+	"github.com/FreekingDean/gojellyfin/internal/sources"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	"github.com/FreekingDean/gojellyfin/internal/system"
 	"github.com/FreekingDean/gojellyfin/internal/users"
@@ -37,9 +36,7 @@ var serverModules = fx.Options(
 
 	activity.Module,
 	apikeys.Module,
-	artwork.Module,
 	auth.Module,
-	collage.Module,
 	config.Module,
 	displaypreferences.Module,
 	ffmpeg.Module,
@@ -49,7 +46,8 @@ var serverModules = fx.Options(
 	localization.Module,
 	metadata.Module,
 	playlists.Module,
-	scanner.Module,
+	probe.Module,
+	sources.Module,
 	sessions.Module,
 	system.Module,
 	jobs.Module,

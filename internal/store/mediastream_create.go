@@ -12,7 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/google/uuid"
 )
@@ -53,29 +53,15 @@ func (_c *MediaStreamCreate) SetNillableUpdatedAt(v *time.Time) *MediaStreamCrea
 	return _c
 }
 
-// SetSourceID sets the "source_id" field.
-func (_c *MediaStreamCreate) SetSourceID(v uuid.UUID) *MediaStreamCreate {
-	_c.mutation.SetSourceID(v)
+// SetItemSourceID sets the "item_source_id" field.
+func (_c *MediaStreamCreate) SetItemSourceID(v uuid.UUID) *MediaStreamCreate {
+	_c.mutation.SetItemSourceID(v)
 	return _c
 }
 
 // SetKind sets the "kind" field.
 func (_c *MediaStreamCreate) SetKind(v mediastream.Kind) *MediaStreamCreate {
 	_c.mutation.SetKind(v)
-	return _c
-}
-
-// SetVideoRange sets the "video_range" field.
-func (_c *MediaStreamCreate) SetVideoRange(v mediastream.VideoRange) *MediaStreamCreate {
-	_c.mutation.SetVideoRange(v)
-	return _c
-}
-
-// SetNillableVideoRange sets the "video_range" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableVideoRange(v *mediastream.VideoRange) *MediaStreamCreate {
-	if v != nil {
-		_c.SetVideoRange(*v)
-	}
 	return _c
 }
 
@@ -89,20 +75,6 @@ func (_c *MediaStreamCreate) SetVideoRangeType(v mediastream.VideoRangeType) *Me
 func (_c *MediaStreamCreate) SetNillableVideoRangeType(v *mediastream.VideoRangeType) *MediaStreamCreate {
 	if v != nil {
 		_c.SetVideoRangeType(*v)
-	}
-	return _c
-}
-
-// SetAudioSpatialFormat sets the "audio_spatial_format" field.
-func (_c *MediaStreamCreate) SetAudioSpatialFormat(v mediastream.AudioSpatialFormat) *MediaStreamCreate {
-	_c.mutation.SetAudioSpatialFormat(v)
-	return _c
-}
-
-// SetNillableAudioSpatialFormat sets the "audio_spatial_format" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableAudioSpatialFormat(v *mediastream.AudioSpatialFormat) *MediaStreamCreate {
-	if v != nil {
-		_c.SetAudioSpatialFormat(*v)
 	}
 	return _c
 }
@@ -131,20 +103,6 @@ func (_c *MediaStreamCreate) SetCodec(v string) *MediaStreamCreate {
 func (_c *MediaStreamCreate) SetNillableCodec(v *string) *MediaStreamCreate {
 	if v != nil {
 		_c.SetCodec(*v)
-	}
-	return _c
-}
-
-// SetCodecTag sets the "codec_tag" field.
-func (_c *MediaStreamCreate) SetCodecTag(v string) *MediaStreamCreate {
-	_c.mutation.SetCodecTag(v)
-	return _c
-}
-
-// SetNillableCodecTag sets the "codec_tag" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableCodecTag(v *string) *MediaStreamCreate {
-	if v != nil {
-		_c.SetCodecTag(*v)
 	}
 	return _c
 }
@@ -191,34 +149,6 @@ func (_c *MediaStreamCreate) SetNillableTitle(v *string) *MediaStreamCreate {
 	return _c
 }
 
-// SetComment sets the "comment" field.
-func (_c *MediaStreamCreate) SetComment(v string) *MediaStreamCreate {
-	_c.mutation.SetComment(v)
-	return _c
-}
-
-// SetNillableComment sets the "comment" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableComment(v *string) *MediaStreamCreate {
-	if v != nil {
-		_c.SetComment(*v)
-	}
-	return _c
-}
-
-// SetPath sets the "path" field.
-func (_c *MediaStreamCreate) SetPath(v string) *MediaStreamCreate {
-	_c.mutation.SetPath(v)
-	return _c
-}
-
-// SetNillablePath sets the "path" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillablePath(v *string) *MediaStreamCreate {
-	if v != nil {
-		_c.SetPath(*v)
-	}
-	return _c
-}
-
 // SetPixelFormat sets the "pixel_format" field.
 func (_c *MediaStreamCreate) SetPixelFormat(v string) *MediaStreamCreate {
 	_c.mutation.SetPixelFormat(v)
@@ -233,244 +163,6 @@ func (_c *MediaStreamCreate) SetNillablePixelFormat(v *string) *MediaStreamCreat
 	return _c
 }
 
-// SetAspectRatio sets the "aspect_ratio" field.
-func (_c *MediaStreamCreate) SetAspectRatio(v string) *MediaStreamCreate {
-	_c.mutation.SetAspectRatio(v)
-	return _c
-}
-
-// SetNillableAspectRatio sets the "aspect_ratio" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableAspectRatio(v *string) *MediaStreamCreate {
-	if v != nil {
-		_c.SetAspectRatio(*v)
-	}
-	return _c
-}
-
-// SetChannelLayout sets the "channel_layout" field.
-func (_c *MediaStreamCreate) SetChannelLayout(v string) *MediaStreamCreate {
-	_c.mutation.SetChannelLayout(v)
-	return _c
-}
-
-// SetNillableChannelLayout sets the "channel_layout" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableChannelLayout(v *string) *MediaStreamCreate {
-	if v != nil {
-		_c.SetChannelLayout(*v)
-	}
-	return _c
-}
-
-// SetTimeBase sets the "time_base" field.
-func (_c *MediaStreamCreate) SetTimeBase(v string) *MediaStreamCreate {
-	_c.mutation.SetTimeBase(v)
-	return _c
-}
-
-// SetNillableTimeBase sets the "time_base" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableTimeBase(v *string) *MediaStreamCreate {
-	if v != nil {
-		_c.SetTimeBase(*v)
-	}
-	return _c
-}
-
-// SetNalLengthSize sets the "nal_length_size" field.
-func (_c *MediaStreamCreate) SetNalLengthSize(v string) *MediaStreamCreate {
-	_c.mutation.SetNalLengthSize(v)
-	return _c
-}
-
-// SetNillableNalLengthSize sets the "nal_length_size" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableNalLengthSize(v *string) *MediaStreamCreate {
-	if v != nil {
-		_c.SetNalLengthSize(*v)
-	}
-	return _c
-}
-
-// SetVideoDoviTitle sets the "video_dovi_title" field.
-func (_c *MediaStreamCreate) SetVideoDoviTitle(v string) *MediaStreamCreate {
-	_c.mutation.SetVideoDoviTitle(v)
-	return _c
-}
-
-// SetNillableVideoDoviTitle sets the "video_dovi_title" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableVideoDoviTitle(v *string) *MediaStreamCreate {
-	if v != nil {
-		_c.SetVideoDoviTitle(*v)
-	}
-	return _c
-}
-
-// SetColorRange sets the "color_range" field.
-func (_c *MediaStreamCreate) SetColorRange(v string) *MediaStreamCreate {
-	_c.mutation.SetColorRange(v)
-	return _c
-}
-
-// SetNillableColorRange sets the "color_range" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableColorRange(v *string) *MediaStreamCreate {
-	if v != nil {
-		_c.SetColorRange(*v)
-	}
-	return _c
-}
-
-// SetColorSpace sets the "color_space" field.
-func (_c *MediaStreamCreate) SetColorSpace(v string) *MediaStreamCreate {
-	_c.mutation.SetColorSpace(v)
-	return _c
-}
-
-// SetNillableColorSpace sets the "color_space" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableColorSpace(v *string) *MediaStreamCreate {
-	if v != nil {
-		_c.SetColorSpace(*v)
-	}
-	return _c
-}
-
-// SetColorTransfer sets the "color_transfer" field.
-func (_c *MediaStreamCreate) SetColorTransfer(v string) *MediaStreamCreate {
-	_c.mutation.SetColorTransfer(v)
-	return _c
-}
-
-// SetNillableColorTransfer sets the "color_transfer" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableColorTransfer(v *string) *MediaStreamCreate {
-	if v != nil {
-		_c.SetColorTransfer(*v)
-	}
-	return _c
-}
-
-// SetColorPrimaries sets the "color_primaries" field.
-func (_c *MediaStreamCreate) SetColorPrimaries(v string) *MediaStreamCreate {
-	_c.mutation.SetColorPrimaries(v)
-	return _c
-}
-
-// SetNillableColorPrimaries sets the "color_primaries" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableColorPrimaries(v *string) *MediaStreamCreate {
-	if v != nil {
-		_c.SetColorPrimaries(*v)
-	}
-	return _c
-}
-
-// SetDvVersionMajor sets the "dv_version_major" field.
-func (_c *MediaStreamCreate) SetDvVersionMajor(v int32) *MediaStreamCreate {
-	_c.mutation.SetDvVersionMajor(v)
-	return _c
-}
-
-// SetNillableDvVersionMajor sets the "dv_version_major" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableDvVersionMajor(v *int32) *MediaStreamCreate {
-	if v != nil {
-		_c.SetDvVersionMajor(*v)
-	}
-	return _c
-}
-
-// SetDvVersionMinor sets the "dv_version_minor" field.
-func (_c *MediaStreamCreate) SetDvVersionMinor(v int32) *MediaStreamCreate {
-	_c.mutation.SetDvVersionMinor(v)
-	return _c
-}
-
-// SetNillableDvVersionMinor sets the "dv_version_minor" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableDvVersionMinor(v *int32) *MediaStreamCreate {
-	if v != nil {
-		_c.SetDvVersionMinor(*v)
-	}
-	return _c
-}
-
-// SetDvProfile sets the "dv_profile" field.
-func (_c *MediaStreamCreate) SetDvProfile(v int32) *MediaStreamCreate {
-	_c.mutation.SetDvProfile(v)
-	return _c
-}
-
-// SetNillableDvProfile sets the "dv_profile" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableDvProfile(v *int32) *MediaStreamCreate {
-	if v != nil {
-		_c.SetDvProfile(*v)
-	}
-	return _c
-}
-
-// SetDvLevel sets the "dv_level" field.
-func (_c *MediaStreamCreate) SetDvLevel(v int32) *MediaStreamCreate {
-	_c.mutation.SetDvLevel(v)
-	return _c
-}
-
-// SetNillableDvLevel sets the "dv_level" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableDvLevel(v *int32) *MediaStreamCreate {
-	if v != nil {
-		_c.SetDvLevel(*v)
-	}
-	return _c
-}
-
-// SetRpuPresentFlag sets the "rpu_present_flag" field.
-func (_c *MediaStreamCreate) SetRpuPresentFlag(v int32) *MediaStreamCreate {
-	_c.mutation.SetRpuPresentFlag(v)
-	return _c
-}
-
-// SetNillableRpuPresentFlag sets the "rpu_present_flag" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableRpuPresentFlag(v *int32) *MediaStreamCreate {
-	if v != nil {
-		_c.SetRpuPresentFlag(*v)
-	}
-	return _c
-}
-
-// SetElPresentFlag sets the "el_present_flag" field.
-func (_c *MediaStreamCreate) SetElPresentFlag(v int32) *MediaStreamCreate {
-	_c.mutation.SetElPresentFlag(v)
-	return _c
-}
-
-// SetNillableElPresentFlag sets the "el_present_flag" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableElPresentFlag(v *int32) *MediaStreamCreate {
-	if v != nil {
-		_c.SetElPresentFlag(*v)
-	}
-	return _c
-}
-
-// SetBlPresentFlag sets the "bl_present_flag" field.
-func (_c *MediaStreamCreate) SetBlPresentFlag(v int32) *MediaStreamCreate {
-	_c.mutation.SetBlPresentFlag(v)
-	return _c
-}
-
-// SetNillableBlPresentFlag sets the "bl_present_flag" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableBlPresentFlag(v *int32) *MediaStreamCreate {
-	if v != nil {
-		_c.SetBlPresentFlag(*v)
-	}
-	return _c
-}
-
-// SetDvBlSignalCompatibilityID sets the "dv_bl_signal_compatibility_id" field.
-func (_c *MediaStreamCreate) SetDvBlSignalCompatibilityID(v int32) *MediaStreamCreate {
-	_c.mutation.SetDvBlSignalCompatibilityID(v)
-	return _c
-}
-
-// SetNillableDvBlSignalCompatibilityID sets the "dv_bl_signal_compatibility_id" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableDvBlSignalCompatibilityID(v *int32) *MediaStreamCreate {
-	if v != nil {
-		_c.SetDvBlSignalCompatibilityID(*v)
-	}
-	return _c
-}
-
 // SetBitRate sets the "bit_rate" field.
 func (_c *MediaStreamCreate) SetBitRate(v int32) *MediaStreamCreate {
 	_c.mutation.SetBitRate(v)
@@ -481,48 +173,6 @@ func (_c *MediaStreamCreate) SetBitRate(v int32) *MediaStreamCreate {
 func (_c *MediaStreamCreate) SetNillableBitRate(v *int32) *MediaStreamCreate {
 	if v != nil {
 		_c.SetBitRate(*v)
-	}
-	return _c
-}
-
-// SetBitDepth sets the "bit_depth" field.
-func (_c *MediaStreamCreate) SetBitDepth(v int32) *MediaStreamCreate {
-	_c.mutation.SetBitDepth(v)
-	return _c
-}
-
-// SetNillableBitDepth sets the "bit_depth" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableBitDepth(v *int32) *MediaStreamCreate {
-	if v != nil {
-		_c.SetBitDepth(*v)
-	}
-	return _c
-}
-
-// SetRefFrames sets the "ref_frames" field.
-func (_c *MediaStreamCreate) SetRefFrames(v int32) *MediaStreamCreate {
-	_c.mutation.SetRefFrames(v)
-	return _c
-}
-
-// SetNillableRefFrames sets the "ref_frames" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableRefFrames(v *int32) *MediaStreamCreate {
-	if v != nil {
-		_c.SetRefFrames(*v)
-	}
-	return _c
-}
-
-// SetPacketLength sets the "packet_length" field.
-func (_c *MediaStreamCreate) SetPacketLength(v int32) *MediaStreamCreate {
-	_c.mutation.SetPacketLength(v)
-	return _c
-}
-
-// SetNillablePacketLength sets the "packet_length" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillablePacketLength(v *int32) *MediaStreamCreate {
-	if v != nil {
-		_c.SetPacketLength(*v)
 	}
 	return _c
 }
@@ -583,34 +233,6 @@ func (_c *MediaStreamCreate) SetNillableHeight(v *int32) *MediaStreamCreate {
 	return _c
 }
 
-// SetRotation sets the "rotation" field.
-func (_c *MediaStreamCreate) SetRotation(v int32) *MediaStreamCreate {
-	_c.mutation.SetRotation(v)
-	return _c
-}
-
-// SetNillableRotation sets the "rotation" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableRotation(v *int32) *MediaStreamCreate {
-	if v != nil {
-		_c.SetRotation(*v)
-	}
-	return _c
-}
-
-// SetScore sets the "score" field.
-func (_c *MediaStreamCreate) SetScore(v int32) *MediaStreamCreate {
-	_c.mutation.SetScore(v)
-	return _c
-}
-
-// SetNillableScore sets the "score" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableScore(v *int32) *MediaStreamCreate {
-	if v != nil {
-		_c.SetScore(*v)
-	}
-	return _c
-}
-
 // SetLevel sets the "level" field.
 func (_c *MediaStreamCreate) SetLevel(v float64) *MediaStreamCreate {
 	_c.mutation.SetLevel(v)
@@ -621,48 +243,6 @@ func (_c *MediaStreamCreate) SetLevel(v float64) *MediaStreamCreate {
 func (_c *MediaStreamCreate) SetNillableLevel(v *float64) *MediaStreamCreate {
 	if v != nil {
 		_c.SetLevel(*v)
-	}
-	return _c
-}
-
-// SetAverageFrameRate sets the "average_frame_rate" field.
-func (_c *MediaStreamCreate) SetAverageFrameRate(v float64) *MediaStreamCreate {
-	_c.mutation.SetAverageFrameRate(v)
-	return _c
-}
-
-// SetNillableAverageFrameRate sets the "average_frame_rate" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableAverageFrameRate(v *float64) *MediaStreamCreate {
-	if v != nil {
-		_c.SetAverageFrameRate(*v)
-	}
-	return _c
-}
-
-// SetRealFrameRate sets the "real_frame_rate" field.
-func (_c *MediaStreamCreate) SetRealFrameRate(v float64) *MediaStreamCreate {
-	_c.mutation.SetRealFrameRate(v)
-	return _c
-}
-
-// SetNillableRealFrameRate sets the "real_frame_rate" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableRealFrameRate(v *float64) *MediaStreamCreate {
-	if v != nil {
-		_c.SetRealFrameRate(*v)
-	}
-	return _c
-}
-
-// SetReferenceFrameRate sets the "reference_frame_rate" field.
-func (_c *MediaStreamCreate) SetReferenceFrameRate(v float64) *MediaStreamCreate {
-	_c.mutation.SetReferenceFrameRate(v)
-	return _c
-}
-
-// SetNillableReferenceFrameRate sets the "reference_frame_rate" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableReferenceFrameRate(v *float64) *MediaStreamCreate {
-	if v != nil {
-		_c.SetReferenceFrameRate(*v)
 	}
 	return _c
 }
@@ -695,20 +275,6 @@ func (_c *MediaStreamCreate) SetNillableIsForced(v *bool) *MediaStreamCreate {
 	return _c
 }
 
-// SetIsExternal sets the "is_external" field.
-func (_c *MediaStreamCreate) SetIsExternal(v bool) *MediaStreamCreate {
-	_c.mutation.SetIsExternal(v)
-	return _c
-}
-
-// SetNillableIsExternal sets the "is_external" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableIsExternal(v *bool) *MediaStreamCreate {
-	if v != nil {
-		_c.SetIsExternal(*v)
-	}
-	return _c
-}
-
 // SetIsInterlaced sets the "is_interlaced" field.
 func (_c *MediaStreamCreate) SetIsInterlaced(v bool) *MediaStreamCreate {
 	_c.mutation.SetIsInterlaced(v)
@@ -737,42 +303,20 @@ func (_c *MediaStreamCreate) SetNillableIsAnamorphic(v *bool) *MediaStreamCreate
 	return _c
 }
 
-// SetIsAvc sets the "is_avc" field.
-func (_c *MediaStreamCreate) SetIsAvc(v bool) *MediaStreamCreate {
-	_c.mutation.SetIsAvc(v)
-	return _c
-}
-
-// SetNillableIsAvc sets the "is_avc" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableIsAvc(v *bool) *MediaStreamCreate {
-	if v != nil {
-		_c.SetIsAvc(*v)
-	}
-	return _c
-}
-
-// SetIsHearingImpaired sets the "is_hearing_impaired" field.
-func (_c *MediaStreamCreate) SetIsHearingImpaired(v bool) *MediaStreamCreate {
-	_c.mutation.SetIsHearingImpaired(v)
-	return _c
-}
-
-// SetNillableIsHearingImpaired sets the "is_hearing_impaired" field if the given value is not nil.
-func (_c *MediaStreamCreate) SetNillableIsHearingImpaired(v *bool) *MediaStreamCreate {
-	if v != nil {
-		_c.SetIsHearingImpaired(*v)
-	}
-	return _c
-}
-
 // SetID sets the "id" field.
 func (_c *MediaStreamCreate) SetID(v uuid.UUID) *MediaStreamCreate {
 	_c.mutation.SetID(v)
 	return _c
 }
 
-// SetSource sets the "source" edge to the MediaSource entity.
-func (_c *MediaStreamCreate) SetSource(v *MediaSource) *MediaStreamCreate {
+// SetSourceID sets the "source" edge to the ItemSource entity by ID.
+func (_c *MediaStreamCreate) SetSourceID(id uuid.UUID) *MediaStreamCreate {
+	_c.mutation.SetSourceID(id)
+	return _c
+}
+
+// SetSource sets the "source" edge to the ItemSource entity.
+func (_c *MediaStreamCreate) SetSource(v *ItemSource) *MediaStreamCreate {
 	return _c.SetSourceID(v.ID)
 }
 
@@ -831,10 +375,6 @@ func (_c *MediaStreamCreate) defaults() {
 		v := mediastream.DefaultIsForced
 		_c.mutation.SetIsForced(v)
 	}
-	if _, ok := _c.mutation.IsExternal(); !ok {
-		v := mediastream.DefaultIsExternal
-		_c.mutation.SetIsExternal(v)
-	}
 	if _, ok := _c.mutation.IsInterlaced(); !ok {
 		v := mediastream.DefaultIsInterlaced
 		_c.mutation.SetIsInterlaced(v)
@@ -842,14 +382,6 @@ func (_c *MediaStreamCreate) defaults() {
 	if _, ok := _c.mutation.IsAnamorphic(); !ok {
 		v := mediastream.DefaultIsAnamorphic
 		_c.mutation.SetIsAnamorphic(v)
-	}
-	if _, ok := _c.mutation.IsAvc(); !ok {
-		v := mediastream.DefaultIsAvc
-		_c.mutation.SetIsAvc(v)
-	}
-	if _, ok := _c.mutation.IsHearingImpaired(); !ok {
-		v := mediastream.DefaultIsHearingImpaired
-		_c.mutation.SetIsHearingImpaired(v)
 	}
 }
 
@@ -861,8 +393,8 @@ func (_c *MediaStreamCreate) check() error {
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`store: missing required field "MediaStream.updated_at"`)}
 	}
-	if _, ok := _c.mutation.SourceID(); !ok {
-		return &ValidationError{Name: "source_id", err: errors.New(`store: missing required field "MediaStream.source_id"`)}
+	if _, ok := _c.mutation.ItemSourceID(); !ok {
+		return &ValidationError{Name: "item_source_id", err: errors.New(`store: missing required field "MediaStream.item_source_id"`)}
 	}
 	if _, ok := _c.mutation.Kind(); !ok {
 		return &ValidationError{Name: "kind", err: errors.New(`store: missing required field "MediaStream.kind"`)}
@@ -872,19 +404,9 @@ func (_c *MediaStreamCreate) check() error {
 			return &ValidationError{Name: "kind", err: fmt.Errorf(`store: validator failed for field "MediaStream.kind": %w`, err)}
 		}
 	}
-	if v, ok := _c.mutation.VideoRange(); ok {
-		if err := mediastream.VideoRangeValidator(v); err != nil {
-			return &ValidationError{Name: "video_range", err: fmt.Errorf(`store: validator failed for field "MediaStream.video_range": %w`, err)}
-		}
-	}
 	if v, ok := _c.mutation.VideoRangeType(); ok {
 		if err := mediastream.VideoRangeTypeValidator(v); err != nil {
 			return &ValidationError{Name: "video_range_type", err: fmt.Errorf(`store: validator failed for field "MediaStream.video_range_type": %w`, err)}
-		}
-	}
-	if v, ok := _c.mutation.AudioSpatialFormat(); ok {
-		if err := mediastream.AudioSpatialFormatValidator(v); err != nil {
-			return &ValidationError{Name: "audio_spatial_format", err: fmt.Errorf(`store: validator failed for field "MediaStream.audio_spatial_format": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.Index(); !ok {
@@ -896,20 +418,11 @@ func (_c *MediaStreamCreate) check() error {
 	if _, ok := _c.mutation.IsForced(); !ok {
 		return &ValidationError{Name: "is_forced", err: errors.New(`store: missing required field "MediaStream.is_forced"`)}
 	}
-	if _, ok := _c.mutation.IsExternal(); !ok {
-		return &ValidationError{Name: "is_external", err: errors.New(`store: missing required field "MediaStream.is_external"`)}
-	}
 	if _, ok := _c.mutation.IsInterlaced(); !ok {
 		return &ValidationError{Name: "is_interlaced", err: errors.New(`store: missing required field "MediaStream.is_interlaced"`)}
 	}
 	if _, ok := _c.mutation.IsAnamorphic(); !ok {
 		return &ValidationError{Name: "is_anamorphic", err: errors.New(`store: missing required field "MediaStream.is_anamorphic"`)}
-	}
-	if _, ok := _c.mutation.IsAvc(); !ok {
-		return &ValidationError{Name: "is_avc", err: errors.New(`store: missing required field "MediaStream.is_avc"`)}
-	}
-	if _, ok := _c.mutation.IsHearingImpaired(); !ok {
-		return &ValidationError{Name: "is_hearing_impaired", err: errors.New(`store: missing required field "MediaStream.is_hearing_impaired"`)}
 	}
 	if len(_c.mutation.SourceIDs()) == 0 {
 		return &ValidationError{Name: "source", err: errors.New(`store: missing required edge "MediaStream.source"`)}
@@ -962,17 +475,9 @@ func (_c *MediaStreamCreate) createSpec() (*MediaStream, *sqlgraph.CreateSpec) {
 		_spec.SetField(mediastream.FieldKind, field.TypeEnum, value)
 		_node.Kind = value
 	}
-	if value, ok := _c.mutation.VideoRange(); ok {
-		_spec.SetField(mediastream.FieldVideoRange, field.TypeEnum, value)
-		_node.VideoRange = value
-	}
 	if value, ok := _c.mutation.VideoRangeType(); ok {
 		_spec.SetField(mediastream.FieldVideoRangeType, field.TypeEnum, value)
 		_node.VideoRangeType = value
-	}
-	if value, ok := _c.mutation.AudioSpatialFormat(); ok {
-		_spec.SetField(mediastream.FieldAudioSpatialFormat, field.TypeEnum, value)
-		_node.AudioSpatialFormat = value
 	}
 	if value, ok := _c.mutation.Index(); ok {
 		_spec.SetField(mediastream.FieldIndex, field.TypeInt32, value)
@@ -981,10 +486,6 @@ func (_c *MediaStreamCreate) createSpec() (*MediaStream, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Codec(); ok {
 		_spec.SetField(mediastream.FieldCodec, field.TypeString, value)
 		_node.Codec = value
-	}
-	if value, ok := _c.mutation.CodecTag(); ok {
-		_spec.SetField(mediastream.FieldCodecTag, field.TypeString, value)
-		_node.CodecTag = value
 	}
 	if value, ok := _c.mutation.Profile(); ok {
 		_spec.SetField(mediastream.FieldProfile, field.TypeString, value)
@@ -998,101 +499,13 @@ func (_c *MediaStreamCreate) createSpec() (*MediaStream, *sqlgraph.CreateSpec) {
 		_spec.SetField(mediastream.FieldTitle, field.TypeString, value)
 		_node.Title = value
 	}
-	if value, ok := _c.mutation.Comment(); ok {
-		_spec.SetField(mediastream.FieldComment, field.TypeString, value)
-		_node.Comment = value
-	}
-	if value, ok := _c.mutation.Path(); ok {
-		_spec.SetField(mediastream.FieldPath, field.TypeString, value)
-		_node.Path = value
-	}
 	if value, ok := _c.mutation.PixelFormat(); ok {
 		_spec.SetField(mediastream.FieldPixelFormat, field.TypeString, value)
 		_node.PixelFormat = value
 	}
-	if value, ok := _c.mutation.AspectRatio(); ok {
-		_spec.SetField(mediastream.FieldAspectRatio, field.TypeString, value)
-		_node.AspectRatio = value
-	}
-	if value, ok := _c.mutation.ChannelLayout(); ok {
-		_spec.SetField(mediastream.FieldChannelLayout, field.TypeString, value)
-		_node.ChannelLayout = value
-	}
-	if value, ok := _c.mutation.TimeBase(); ok {
-		_spec.SetField(mediastream.FieldTimeBase, field.TypeString, value)
-		_node.TimeBase = value
-	}
-	if value, ok := _c.mutation.NalLengthSize(); ok {
-		_spec.SetField(mediastream.FieldNalLengthSize, field.TypeString, value)
-		_node.NalLengthSize = value
-	}
-	if value, ok := _c.mutation.VideoDoviTitle(); ok {
-		_spec.SetField(mediastream.FieldVideoDoviTitle, field.TypeString, value)
-		_node.VideoDoviTitle = value
-	}
-	if value, ok := _c.mutation.ColorRange(); ok {
-		_spec.SetField(mediastream.FieldColorRange, field.TypeString, value)
-		_node.ColorRange = value
-	}
-	if value, ok := _c.mutation.ColorSpace(); ok {
-		_spec.SetField(mediastream.FieldColorSpace, field.TypeString, value)
-		_node.ColorSpace = value
-	}
-	if value, ok := _c.mutation.ColorTransfer(); ok {
-		_spec.SetField(mediastream.FieldColorTransfer, field.TypeString, value)
-		_node.ColorTransfer = value
-	}
-	if value, ok := _c.mutation.ColorPrimaries(); ok {
-		_spec.SetField(mediastream.FieldColorPrimaries, field.TypeString, value)
-		_node.ColorPrimaries = value
-	}
-	if value, ok := _c.mutation.DvVersionMajor(); ok {
-		_spec.SetField(mediastream.FieldDvVersionMajor, field.TypeInt32, value)
-		_node.DvVersionMajor = value
-	}
-	if value, ok := _c.mutation.DvVersionMinor(); ok {
-		_spec.SetField(mediastream.FieldDvVersionMinor, field.TypeInt32, value)
-		_node.DvVersionMinor = value
-	}
-	if value, ok := _c.mutation.DvProfile(); ok {
-		_spec.SetField(mediastream.FieldDvProfile, field.TypeInt32, value)
-		_node.DvProfile = value
-	}
-	if value, ok := _c.mutation.DvLevel(); ok {
-		_spec.SetField(mediastream.FieldDvLevel, field.TypeInt32, value)
-		_node.DvLevel = value
-	}
-	if value, ok := _c.mutation.RpuPresentFlag(); ok {
-		_spec.SetField(mediastream.FieldRpuPresentFlag, field.TypeInt32, value)
-		_node.RpuPresentFlag = value
-	}
-	if value, ok := _c.mutation.ElPresentFlag(); ok {
-		_spec.SetField(mediastream.FieldElPresentFlag, field.TypeInt32, value)
-		_node.ElPresentFlag = value
-	}
-	if value, ok := _c.mutation.BlPresentFlag(); ok {
-		_spec.SetField(mediastream.FieldBlPresentFlag, field.TypeInt32, value)
-		_node.BlPresentFlag = value
-	}
-	if value, ok := _c.mutation.DvBlSignalCompatibilityID(); ok {
-		_spec.SetField(mediastream.FieldDvBlSignalCompatibilityID, field.TypeInt32, value)
-		_node.DvBlSignalCompatibilityID = value
-	}
 	if value, ok := _c.mutation.BitRate(); ok {
 		_spec.SetField(mediastream.FieldBitRate, field.TypeInt32, value)
 		_node.BitRate = value
-	}
-	if value, ok := _c.mutation.BitDepth(); ok {
-		_spec.SetField(mediastream.FieldBitDepth, field.TypeInt32, value)
-		_node.BitDepth = value
-	}
-	if value, ok := _c.mutation.RefFrames(); ok {
-		_spec.SetField(mediastream.FieldRefFrames, field.TypeInt32, value)
-		_node.RefFrames = value
-	}
-	if value, ok := _c.mutation.PacketLength(); ok {
-		_spec.SetField(mediastream.FieldPacketLength, field.TypeInt32, value)
-		_node.PacketLength = value
 	}
 	if value, ok := _c.mutation.Channels(); ok {
 		_spec.SetField(mediastream.FieldChannels, field.TypeInt32, value)
@@ -1110,29 +523,9 @@ func (_c *MediaStreamCreate) createSpec() (*MediaStream, *sqlgraph.CreateSpec) {
 		_spec.SetField(mediastream.FieldHeight, field.TypeInt32, value)
 		_node.Height = value
 	}
-	if value, ok := _c.mutation.Rotation(); ok {
-		_spec.SetField(mediastream.FieldRotation, field.TypeInt32, value)
-		_node.Rotation = value
-	}
-	if value, ok := _c.mutation.Score(); ok {
-		_spec.SetField(mediastream.FieldScore, field.TypeInt32, value)
-		_node.Score = value
-	}
 	if value, ok := _c.mutation.Level(); ok {
 		_spec.SetField(mediastream.FieldLevel, field.TypeFloat64, value)
 		_node.Level = value
-	}
-	if value, ok := _c.mutation.AverageFrameRate(); ok {
-		_spec.SetField(mediastream.FieldAverageFrameRate, field.TypeFloat64, value)
-		_node.AverageFrameRate = value
-	}
-	if value, ok := _c.mutation.RealFrameRate(); ok {
-		_spec.SetField(mediastream.FieldRealFrameRate, field.TypeFloat64, value)
-		_node.RealFrameRate = value
-	}
-	if value, ok := _c.mutation.ReferenceFrameRate(); ok {
-		_spec.SetField(mediastream.FieldReferenceFrameRate, field.TypeFloat64, value)
-		_node.ReferenceFrameRate = value
 	}
 	if value, ok := _c.mutation.IsDefault(); ok {
 		_spec.SetField(mediastream.FieldIsDefault, field.TypeBool, value)
@@ -1142,10 +535,6 @@ func (_c *MediaStreamCreate) createSpec() (*MediaStream, *sqlgraph.CreateSpec) {
 		_spec.SetField(mediastream.FieldIsForced, field.TypeBool, value)
 		_node.IsForced = value
 	}
-	if value, ok := _c.mutation.IsExternal(); ok {
-		_spec.SetField(mediastream.FieldIsExternal, field.TypeBool, value)
-		_node.IsExternal = value
-	}
 	if value, ok := _c.mutation.IsInterlaced(); ok {
 		_spec.SetField(mediastream.FieldIsInterlaced, field.TypeBool, value)
 		_node.IsInterlaced = value
@@ -1153,14 +542,6 @@ func (_c *MediaStreamCreate) createSpec() (*MediaStream, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.IsAnamorphic(); ok {
 		_spec.SetField(mediastream.FieldIsAnamorphic, field.TypeBool, value)
 		_node.IsAnamorphic = value
-	}
-	if value, ok := _c.mutation.IsAvc(); ok {
-		_spec.SetField(mediastream.FieldIsAvc, field.TypeBool, value)
-		_node.IsAvc = value
-	}
-	if value, ok := _c.mutation.IsHearingImpaired(); ok {
-		_spec.SetField(mediastream.FieldIsHearingImpaired, field.TypeBool, value)
-		_node.IsHearingImpaired = value
 	}
 	if nodes := _c.mutation.SourceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -1170,13 +551,13 @@ func (_c *MediaStreamCreate) createSpec() (*MediaStream, *sqlgraph.CreateSpec) {
 			Columns: []string{mediastream.SourceColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasource.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.SourceID = nodes[0]
+		_node.ItemSourceID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -1255,15 +636,15 @@ func (u *MediaStreamUpsert) UpdateUpdatedAt() *MediaStreamUpsert {
 	return u
 }
 
-// SetSourceID sets the "source_id" field.
-func (u *MediaStreamUpsert) SetSourceID(v uuid.UUID) *MediaStreamUpsert {
-	u.Set(mediastream.FieldSourceID, v)
+// SetItemSourceID sets the "item_source_id" field.
+func (u *MediaStreamUpsert) SetItemSourceID(v uuid.UUID) *MediaStreamUpsert {
+	u.Set(mediastream.FieldItemSourceID, v)
 	return u
 }
 
-// UpdateSourceID sets the "source_id" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateSourceID() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldSourceID)
+// UpdateItemSourceID sets the "item_source_id" field to the value that was provided on create.
+func (u *MediaStreamUpsert) UpdateItemSourceID() *MediaStreamUpsert {
+	u.SetExcluded(mediastream.FieldItemSourceID)
 	return u
 }
 
@@ -1276,24 +657,6 @@ func (u *MediaStreamUpsert) SetKind(v mediastream.Kind) *MediaStreamUpsert {
 // UpdateKind sets the "kind" field to the value that was provided on create.
 func (u *MediaStreamUpsert) UpdateKind() *MediaStreamUpsert {
 	u.SetExcluded(mediastream.FieldKind)
-	return u
-}
-
-// SetVideoRange sets the "video_range" field.
-func (u *MediaStreamUpsert) SetVideoRange(v mediastream.VideoRange) *MediaStreamUpsert {
-	u.Set(mediastream.FieldVideoRange, v)
-	return u
-}
-
-// UpdateVideoRange sets the "video_range" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateVideoRange() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldVideoRange)
-	return u
-}
-
-// ClearVideoRange clears the value of the "video_range" field.
-func (u *MediaStreamUpsert) ClearVideoRange() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldVideoRange)
 	return u
 }
 
@@ -1312,24 +675,6 @@ func (u *MediaStreamUpsert) UpdateVideoRangeType() *MediaStreamUpsert {
 // ClearVideoRangeType clears the value of the "video_range_type" field.
 func (u *MediaStreamUpsert) ClearVideoRangeType() *MediaStreamUpsert {
 	u.SetNull(mediastream.FieldVideoRangeType)
-	return u
-}
-
-// SetAudioSpatialFormat sets the "audio_spatial_format" field.
-func (u *MediaStreamUpsert) SetAudioSpatialFormat(v mediastream.AudioSpatialFormat) *MediaStreamUpsert {
-	u.Set(mediastream.FieldAudioSpatialFormat, v)
-	return u
-}
-
-// UpdateAudioSpatialFormat sets the "audio_spatial_format" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateAudioSpatialFormat() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldAudioSpatialFormat)
-	return u
-}
-
-// ClearAudioSpatialFormat clears the value of the "audio_spatial_format" field.
-func (u *MediaStreamUpsert) ClearAudioSpatialFormat() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldAudioSpatialFormat)
 	return u
 }
 
@@ -1366,24 +711,6 @@ func (u *MediaStreamUpsert) UpdateCodec() *MediaStreamUpsert {
 // ClearCodec clears the value of the "codec" field.
 func (u *MediaStreamUpsert) ClearCodec() *MediaStreamUpsert {
 	u.SetNull(mediastream.FieldCodec)
-	return u
-}
-
-// SetCodecTag sets the "codec_tag" field.
-func (u *MediaStreamUpsert) SetCodecTag(v string) *MediaStreamUpsert {
-	u.Set(mediastream.FieldCodecTag, v)
-	return u
-}
-
-// UpdateCodecTag sets the "codec_tag" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateCodecTag() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldCodecTag)
-	return u
-}
-
-// ClearCodecTag clears the value of the "codec_tag" field.
-func (u *MediaStreamUpsert) ClearCodecTag() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldCodecTag)
 	return u
 }
 
@@ -1441,42 +768,6 @@ func (u *MediaStreamUpsert) ClearTitle() *MediaStreamUpsert {
 	return u
 }
 
-// SetComment sets the "comment" field.
-func (u *MediaStreamUpsert) SetComment(v string) *MediaStreamUpsert {
-	u.Set(mediastream.FieldComment, v)
-	return u
-}
-
-// UpdateComment sets the "comment" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateComment() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldComment)
-	return u
-}
-
-// ClearComment clears the value of the "comment" field.
-func (u *MediaStreamUpsert) ClearComment() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldComment)
-	return u
-}
-
-// SetPath sets the "path" field.
-func (u *MediaStreamUpsert) SetPath(v string) *MediaStreamUpsert {
-	u.Set(mediastream.FieldPath, v)
-	return u
-}
-
-// UpdatePath sets the "path" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdatePath() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldPath)
-	return u
-}
-
-// ClearPath clears the value of the "path" field.
-func (u *MediaStreamUpsert) ClearPath() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldPath)
-	return u
-}
-
 // SetPixelFormat sets the "pixel_format" field.
 func (u *MediaStreamUpsert) SetPixelFormat(v string) *MediaStreamUpsert {
 	u.Set(mediastream.FieldPixelFormat, v)
@@ -1492,360 +783,6 @@ func (u *MediaStreamUpsert) UpdatePixelFormat() *MediaStreamUpsert {
 // ClearPixelFormat clears the value of the "pixel_format" field.
 func (u *MediaStreamUpsert) ClearPixelFormat() *MediaStreamUpsert {
 	u.SetNull(mediastream.FieldPixelFormat)
-	return u
-}
-
-// SetAspectRatio sets the "aspect_ratio" field.
-func (u *MediaStreamUpsert) SetAspectRatio(v string) *MediaStreamUpsert {
-	u.Set(mediastream.FieldAspectRatio, v)
-	return u
-}
-
-// UpdateAspectRatio sets the "aspect_ratio" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateAspectRatio() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldAspectRatio)
-	return u
-}
-
-// ClearAspectRatio clears the value of the "aspect_ratio" field.
-func (u *MediaStreamUpsert) ClearAspectRatio() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldAspectRatio)
-	return u
-}
-
-// SetChannelLayout sets the "channel_layout" field.
-func (u *MediaStreamUpsert) SetChannelLayout(v string) *MediaStreamUpsert {
-	u.Set(mediastream.FieldChannelLayout, v)
-	return u
-}
-
-// UpdateChannelLayout sets the "channel_layout" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateChannelLayout() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldChannelLayout)
-	return u
-}
-
-// ClearChannelLayout clears the value of the "channel_layout" field.
-func (u *MediaStreamUpsert) ClearChannelLayout() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldChannelLayout)
-	return u
-}
-
-// SetTimeBase sets the "time_base" field.
-func (u *MediaStreamUpsert) SetTimeBase(v string) *MediaStreamUpsert {
-	u.Set(mediastream.FieldTimeBase, v)
-	return u
-}
-
-// UpdateTimeBase sets the "time_base" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateTimeBase() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldTimeBase)
-	return u
-}
-
-// ClearTimeBase clears the value of the "time_base" field.
-func (u *MediaStreamUpsert) ClearTimeBase() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldTimeBase)
-	return u
-}
-
-// SetNalLengthSize sets the "nal_length_size" field.
-func (u *MediaStreamUpsert) SetNalLengthSize(v string) *MediaStreamUpsert {
-	u.Set(mediastream.FieldNalLengthSize, v)
-	return u
-}
-
-// UpdateNalLengthSize sets the "nal_length_size" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateNalLengthSize() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldNalLengthSize)
-	return u
-}
-
-// ClearNalLengthSize clears the value of the "nal_length_size" field.
-func (u *MediaStreamUpsert) ClearNalLengthSize() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldNalLengthSize)
-	return u
-}
-
-// SetVideoDoviTitle sets the "video_dovi_title" field.
-func (u *MediaStreamUpsert) SetVideoDoviTitle(v string) *MediaStreamUpsert {
-	u.Set(mediastream.FieldVideoDoviTitle, v)
-	return u
-}
-
-// UpdateVideoDoviTitle sets the "video_dovi_title" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateVideoDoviTitle() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldVideoDoviTitle)
-	return u
-}
-
-// ClearVideoDoviTitle clears the value of the "video_dovi_title" field.
-func (u *MediaStreamUpsert) ClearVideoDoviTitle() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldVideoDoviTitle)
-	return u
-}
-
-// SetColorRange sets the "color_range" field.
-func (u *MediaStreamUpsert) SetColorRange(v string) *MediaStreamUpsert {
-	u.Set(mediastream.FieldColorRange, v)
-	return u
-}
-
-// UpdateColorRange sets the "color_range" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateColorRange() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldColorRange)
-	return u
-}
-
-// ClearColorRange clears the value of the "color_range" field.
-func (u *MediaStreamUpsert) ClearColorRange() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldColorRange)
-	return u
-}
-
-// SetColorSpace sets the "color_space" field.
-func (u *MediaStreamUpsert) SetColorSpace(v string) *MediaStreamUpsert {
-	u.Set(mediastream.FieldColorSpace, v)
-	return u
-}
-
-// UpdateColorSpace sets the "color_space" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateColorSpace() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldColorSpace)
-	return u
-}
-
-// ClearColorSpace clears the value of the "color_space" field.
-func (u *MediaStreamUpsert) ClearColorSpace() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldColorSpace)
-	return u
-}
-
-// SetColorTransfer sets the "color_transfer" field.
-func (u *MediaStreamUpsert) SetColorTransfer(v string) *MediaStreamUpsert {
-	u.Set(mediastream.FieldColorTransfer, v)
-	return u
-}
-
-// UpdateColorTransfer sets the "color_transfer" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateColorTransfer() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldColorTransfer)
-	return u
-}
-
-// ClearColorTransfer clears the value of the "color_transfer" field.
-func (u *MediaStreamUpsert) ClearColorTransfer() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldColorTransfer)
-	return u
-}
-
-// SetColorPrimaries sets the "color_primaries" field.
-func (u *MediaStreamUpsert) SetColorPrimaries(v string) *MediaStreamUpsert {
-	u.Set(mediastream.FieldColorPrimaries, v)
-	return u
-}
-
-// UpdateColorPrimaries sets the "color_primaries" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateColorPrimaries() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldColorPrimaries)
-	return u
-}
-
-// ClearColorPrimaries clears the value of the "color_primaries" field.
-func (u *MediaStreamUpsert) ClearColorPrimaries() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldColorPrimaries)
-	return u
-}
-
-// SetDvVersionMajor sets the "dv_version_major" field.
-func (u *MediaStreamUpsert) SetDvVersionMajor(v int32) *MediaStreamUpsert {
-	u.Set(mediastream.FieldDvVersionMajor, v)
-	return u
-}
-
-// UpdateDvVersionMajor sets the "dv_version_major" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateDvVersionMajor() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldDvVersionMajor)
-	return u
-}
-
-// AddDvVersionMajor adds v to the "dv_version_major" field.
-func (u *MediaStreamUpsert) AddDvVersionMajor(v int32) *MediaStreamUpsert {
-	u.Add(mediastream.FieldDvVersionMajor, v)
-	return u
-}
-
-// ClearDvVersionMajor clears the value of the "dv_version_major" field.
-func (u *MediaStreamUpsert) ClearDvVersionMajor() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldDvVersionMajor)
-	return u
-}
-
-// SetDvVersionMinor sets the "dv_version_minor" field.
-func (u *MediaStreamUpsert) SetDvVersionMinor(v int32) *MediaStreamUpsert {
-	u.Set(mediastream.FieldDvVersionMinor, v)
-	return u
-}
-
-// UpdateDvVersionMinor sets the "dv_version_minor" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateDvVersionMinor() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldDvVersionMinor)
-	return u
-}
-
-// AddDvVersionMinor adds v to the "dv_version_minor" field.
-func (u *MediaStreamUpsert) AddDvVersionMinor(v int32) *MediaStreamUpsert {
-	u.Add(mediastream.FieldDvVersionMinor, v)
-	return u
-}
-
-// ClearDvVersionMinor clears the value of the "dv_version_minor" field.
-func (u *MediaStreamUpsert) ClearDvVersionMinor() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldDvVersionMinor)
-	return u
-}
-
-// SetDvProfile sets the "dv_profile" field.
-func (u *MediaStreamUpsert) SetDvProfile(v int32) *MediaStreamUpsert {
-	u.Set(mediastream.FieldDvProfile, v)
-	return u
-}
-
-// UpdateDvProfile sets the "dv_profile" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateDvProfile() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldDvProfile)
-	return u
-}
-
-// AddDvProfile adds v to the "dv_profile" field.
-func (u *MediaStreamUpsert) AddDvProfile(v int32) *MediaStreamUpsert {
-	u.Add(mediastream.FieldDvProfile, v)
-	return u
-}
-
-// ClearDvProfile clears the value of the "dv_profile" field.
-func (u *MediaStreamUpsert) ClearDvProfile() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldDvProfile)
-	return u
-}
-
-// SetDvLevel sets the "dv_level" field.
-func (u *MediaStreamUpsert) SetDvLevel(v int32) *MediaStreamUpsert {
-	u.Set(mediastream.FieldDvLevel, v)
-	return u
-}
-
-// UpdateDvLevel sets the "dv_level" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateDvLevel() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldDvLevel)
-	return u
-}
-
-// AddDvLevel adds v to the "dv_level" field.
-func (u *MediaStreamUpsert) AddDvLevel(v int32) *MediaStreamUpsert {
-	u.Add(mediastream.FieldDvLevel, v)
-	return u
-}
-
-// ClearDvLevel clears the value of the "dv_level" field.
-func (u *MediaStreamUpsert) ClearDvLevel() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldDvLevel)
-	return u
-}
-
-// SetRpuPresentFlag sets the "rpu_present_flag" field.
-func (u *MediaStreamUpsert) SetRpuPresentFlag(v int32) *MediaStreamUpsert {
-	u.Set(mediastream.FieldRpuPresentFlag, v)
-	return u
-}
-
-// UpdateRpuPresentFlag sets the "rpu_present_flag" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateRpuPresentFlag() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldRpuPresentFlag)
-	return u
-}
-
-// AddRpuPresentFlag adds v to the "rpu_present_flag" field.
-func (u *MediaStreamUpsert) AddRpuPresentFlag(v int32) *MediaStreamUpsert {
-	u.Add(mediastream.FieldRpuPresentFlag, v)
-	return u
-}
-
-// ClearRpuPresentFlag clears the value of the "rpu_present_flag" field.
-func (u *MediaStreamUpsert) ClearRpuPresentFlag() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldRpuPresentFlag)
-	return u
-}
-
-// SetElPresentFlag sets the "el_present_flag" field.
-func (u *MediaStreamUpsert) SetElPresentFlag(v int32) *MediaStreamUpsert {
-	u.Set(mediastream.FieldElPresentFlag, v)
-	return u
-}
-
-// UpdateElPresentFlag sets the "el_present_flag" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateElPresentFlag() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldElPresentFlag)
-	return u
-}
-
-// AddElPresentFlag adds v to the "el_present_flag" field.
-func (u *MediaStreamUpsert) AddElPresentFlag(v int32) *MediaStreamUpsert {
-	u.Add(mediastream.FieldElPresentFlag, v)
-	return u
-}
-
-// ClearElPresentFlag clears the value of the "el_present_flag" field.
-func (u *MediaStreamUpsert) ClearElPresentFlag() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldElPresentFlag)
-	return u
-}
-
-// SetBlPresentFlag sets the "bl_present_flag" field.
-func (u *MediaStreamUpsert) SetBlPresentFlag(v int32) *MediaStreamUpsert {
-	u.Set(mediastream.FieldBlPresentFlag, v)
-	return u
-}
-
-// UpdateBlPresentFlag sets the "bl_present_flag" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateBlPresentFlag() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldBlPresentFlag)
-	return u
-}
-
-// AddBlPresentFlag adds v to the "bl_present_flag" field.
-func (u *MediaStreamUpsert) AddBlPresentFlag(v int32) *MediaStreamUpsert {
-	u.Add(mediastream.FieldBlPresentFlag, v)
-	return u
-}
-
-// ClearBlPresentFlag clears the value of the "bl_present_flag" field.
-func (u *MediaStreamUpsert) ClearBlPresentFlag() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldBlPresentFlag)
-	return u
-}
-
-// SetDvBlSignalCompatibilityID sets the "dv_bl_signal_compatibility_id" field.
-func (u *MediaStreamUpsert) SetDvBlSignalCompatibilityID(v int32) *MediaStreamUpsert {
-	u.Set(mediastream.FieldDvBlSignalCompatibilityID, v)
-	return u
-}
-
-// UpdateDvBlSignalCompatibilityID sets the "dv_bl_signal_compatibility_id" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateDvBlSignalCompatibilityID() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldDvBlSignalCompatibilityID)
-	return u
-}
-
-// AddDvBlSignalCompatibilityID adds v to the "dv_bl_signal_compatibility_id" field.
-func (u *MediaStreamUpsert) AddDvBlSignalCompatibilityID(v int32) *MediaStreamUpsert {
-	u.Add(mediastream.FieldDvBlSignalCompatibilityID, v)
-	return u
-}
-
-// ClearDvBlSignalCompatibilityID clears the value of the "dv_bl_signal_compatibility_id" field.
-func (u *MediaStreamUpsert) ClearDvBlSignalCompatibilityID() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldDvBlSignalCompatibilityID)
 	return u
 }
 
@@ -1870,78 +807,6 @@ func (u *MediaStreamUpsert) AddBitRate(v int32) *MediaStreamUpsert {
 // ClearBitRate clears the value of the "bit_rate" field.
 func (u *MediaStreamUpsert) ClearBitRate() *MediaStreamUpsert {
 	u.SetNull(mediastream.FieldBitRate)
-	return u
-}
-
-// SetBitDepth sets the "bit_depth" field.
-func (u *MediaStreamUpsert) SetBitDepth(v int32) *MediaStreamUpsert {
-	u.Set(mediastream.FieldBitDepth, v)
-	return u
-}
-
-// UpdateBitDepth sets the "bit_depth" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateBitDepth() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldBitDepth)
-	return u
-}
-
-// AddBitDepth adds v to the "bit_depth" field.
-func (u *MediaStreamUpsert) AddBitDepth(v int32) *MediaStreamUpsert {
-	u.Add(mediastream.FieldBitDepth, v)
-	return u
-}
-
-// ClearBitDepth clears the value of the "bit_depth" field.
-func (u *MediaStreamUpsert) ClearBitDepth() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldBitDepth)
-	return u
-}
-
-// SetRefFrames sets the "ref_frames" field.
-func (u *MediaStreamUpsert) SetRefFrames(v int32) *MediaStreamUpsert {
-	u.Set(mediastream.FieldRefFrames, v)
-	return u
-}
-
-// UpdateRefFrames sets the "ref_frames" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateRefFrames() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldRefFrames)
-	return u
-}
-
-// AddRefFrames adds v to the "ref_frames" field.
-func (u *MediaStreamUpsert) AddRefFrames(v int32) *MediaStreamUpsert {
-	u.Add(mediastream.FieldRefFrames, v)
-	return u
-}
-
-// ClearRefFrames clears the value of the "ref_frames" field.
-func (u *MediaStreamUpsert) ClearRefFrames() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldRefFrames)
-	return u
-}
-
-// SetPacketLength sets the "packet_length" field.
-func (u *MediaStreamUpsert) SetPacketLength(v int32) *MediaStreamUpsert {
-	u.Set(mediastream.FieldPacketLength, v)
-	return u
-}
-
-// UpdatePacketLength sets the "packet_length" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdatePacketLength() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldPacketLength)
-	return u
-}
-
-// AddPacketLength adds v to the "packet_length" field.
-func (u *MediaStreamUpsert) AddPacketLength(v int32) *MediaStreamUpsert {
-	u.Add(mediastream.FieldPacketLength, v)
-	return u
-}
-
-// ClearPacketLength clears the value of the "packet_length" field.
-func (u *MediaStreamUpsert) ClearPacketLength() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldPacketLength)
 	return u
 }
 
@@ -2041,54 +906,6 @@ func (u *MediaStreamUpsert) ClearHeight() *MediaStreamUpsert {
 	return u
 }
 
-// SetRotation sets the "rotation" field.
-func (u *MediaStreamUpsert) SetRotation(v int32) *MediaStreamUpsert {
-	u.Set(mediastream.FieldRotation, v)
-	return u
-}
-
-// UpdateRotation sets the "rotation" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateRotation() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldRotation)
-	return u
-}
-
-// AddRotation adds v to the "rotation" field.
-func (u *MediaStreamUpsert) AddRotation(v int32) *MediaStreamUpsert {
-	u.Add(mediastream.FieldRotation, v)
-	return u
-}
-
-// ClearRotation clears the value of the "rotation" field.
-func (u *MediaStreamUpsert) ClearRotation() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldRotation)
-	return u
-}
-
-// SetScore sets the "score" field.
-func (u *MediaStreamUpsert) SetScore(v int32) *MediaStreamUpsert {
-	u.Set(mediastream.FieldScore, v)
-	return u
-}
-
-// UpdateScore sets the "score" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateScore() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldScore)
-	return u
-}
-
-// AddScore adds v to the "score" field.
-func (u *MediaStreamUpsert) AddScore(v int32) *MediaStreamUpsert {
-	u.Add(mediastream.FieldScore, v)
-	return u
-}
-
-// ClearScore clears the value of the "score" field.
-func (u *MediaStreamUpsert) ClearScore() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldScore)
-	return u
-}
-
 // SetLevel sets the "level" field.
 func (u *MediaStreamUpsert) SetLevel(v float64) *MediaStreamUpsert {
 	u.Set(mediastream.FieldLevel, v)
@@ -2110,78 +927,6 @@ func (u *MediaStreamUpsert) AddLevel(v float64) *MediaStreamUpsert {
 // ClearLevel clears the value of the "level" field.
 func (u *MediaStreamUpsert) ClearLevel() *MediaStreamUpsert {
 	u.SetNull(mediastream.FieldLevel)
-	return u
-}
-
-// SetAverageFrameRate sets the "average_frame_rate" field.
-func (u *MediaStreamUpsert) SetAverageFrameRate(v float64) *MediaStreamUpsert {
-	u.Set(mediastream.FieldAverageFrameRate, v)
-	return u
-}
-
-// UpdateAverageFrameRate sets the "average_frame_rate" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateAverageFrameRate() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldAverageFrameRate)
-	return u
-}
-
-// AddAverageFrameRate adds v to the "average_frame_rate" field.
-func (u *MediaStreamUpsert) AddAverageFrameRate(v float64) *MediaStreamUpsert {
-	u.Add(mediastream.FieldAverageFrameRate, v)
-	return u
-}
-
-// ClearAverageFrameRate clears the value of the "average_frame_rate" field.
-func (u *MediaStreamUpsert) ClearAverageFrameRate() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldAverageFrameRate)
-	return u
-}
-
-// SetRealFrameRate sets the "real_frame_rate" field.
-func (u *MediaStreamUpsert) SetRealFrameRate(v float64) *MediaStreamUpsert {
-	u.Set(mediastream.FieldRealFrameRate, v)
-	return u
-}
-
-// UpdateRealFrameRate sets the "real_frame_rate" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateRealFrameRate() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldRealFrameRate)
-	return u
-}
-
-// AddRealFrameRate adds v to the "real_frame_rate" field.
-func (u *MediaStreamUpsert) AddRealFrameRate(v float64) *MediaStreamUpsert {
-	u.Add(mediastream.FieldRealFrameRate, v)
-	return u
-}
-
-// ClearRealFrameRate clears the value of the "real_frame_rate" field.
-func (u *MediaStreamUpsert) ClearRealFrameRate() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldRealFrameRate)
-	return u
-}
-
-// SetReferenceFrameRate sets the "reference_frame_rate" field.
-func (u *MediaStreamUpsert) SetReferenceFrameRate(v float64) *MediaStreamUpsert {
-	u.Set(mediastream.FieldReferenceFrameRate, v)
-	return u
-}
-
-// UpdateReferenceFrameRate sets the "reference_frame_rate" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateReferenceFrameRate() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldReferenceFrameRate)
-	return u
-}
-
-// AddReferenceFrameRate adds v to the "reference_frame_rate" field.
-func (u *MediaStreamUpsert) AddReferenceFrameRate(v float64) *MediaStreamUpsert {
-	u.Add(mediastream.FieldReferenceFrameRate, v)
-	return u
-}
-
-// ClearReferenceFrameRate clears the value of the "reference_frame_rate" field.
-func (u *MediaStreamUpsert) ClearReferenceFrameRate() *MediaStreamUpsert {
-	u.SetNull(mediastream.FieldReferenceFrameRate)
 	return u
 }
 
@@ -2209,18 +954,6 @@ func (u *MediaStreamUpsert) UpdateIsForced() *MediaStreamUpsert {
 	return u
 }
 
-// SetIsExternal sets the "is_external" field.
-func (u *MediaStreamUpsert) SetIsExternal(v bool) *MediaStreamUpsert {
-	u.Set(mediastream.FieldIsExternal, v)
-	return u
-}
-
-// UpdateIsExternal sets the "is_external" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateIsExternal() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldIsExternal)
-	return u
-}
-
 // SetIsInterlaced sets the "is_interlaced" field.
 func (u *MediaStreamUpsert) SetIsInterlaced(v bool) *MediaStreamUpsert {
 	u.Set(mediastream.FieldIsInterlaced, v)
@@ -2242,30 +975,6 @@ func (u *MediaStreamUpsert) SetIsAnamorphic(v bool) *MediaStreamUpsert {
 // UpdateIsAnamorphic sets the "is_anamorphic" field to the value that was provided on create.
 func (u *MediaStreamUpsert) UpdateIsAnamorphic() *MediaStreamUpsert {
 	u.SetExcluded(mediastream.FieldIsAnamorphic)
-	return u
-}
-
-// SetIsAvc sets the "is_avc" field.
-func (u *MediaStreamUpsert) SetIsAvc(v bool) *MediaStreamUpsert {
-	u.Set(mediastream.FieldIsAvc, v)
-	return u
-}
-
-// UpdateIsAvc sets the "is_avc" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateIsAvc() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldIsAvc)
-	return u
-}
-
-// SetIsHearingImpaired sets the "is_hearing_impaired" field.
-func (u *MediaStreamUpsert) SetIsHearingImpaired(v bool) *MediaStreamUpsert {
-	u.Set(mediastream.FieldIsHearingImpaired, v)
-	return u
-}
-
-// UpdateIsHearingImpaired sets the "is_hearing_impaired" field to the value that was provided on create.
-func (u *MediaStreamUpsert) UpdateIsHearingImpaired() *MediaStreamUpsert {
-	u.SetExcluded(mediastream.FieldIsHearingImpaired)
 	return u
 }
 
@@ -2345,17 +1054,17 @@ func (u *MediaStreamUpsertOne) UpdateUpdatedAt() *MediaStreamUpsertOne {
 	})
 }
 
-// SetSourceID sets the "source_id" field.
-func (u *MediaStreamUpsertOne) SetSourceID(v uuid.UUID) *MediaStreamUpsertOne {
+// SetItemSourceID sets the "item_source_id" field.
+func (u *MediaStreamUpsertOne) SetItemSourceID(v uuid.UUID) *MediaStreamUpsertOne {
 	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetSourceID(v)
+		s.SetItemSourceID(v)
 	})
 }
 
-// UpdateSourceID sets the "source_id" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateSourceID() *MediaStreamUpsertOne {
+// UpdateItemSourceID sets the "item_source_id" field to the value that was provided on create.
+func (u *MediaStreamUpsertOne) UpdateItemSourceID() *MediaStreamUpsertOne {
 	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateSourceID()
+		s.UpdateItemSourceID()
 	})
 }
 
@@ -2370,27 +1079,6 @@ func (u *MediaStreamUpsertOne) SetKind(v mediastream.Kind) *MediaStreamUpsertOne
 func (u *MediaStreamUpsertOne) UpdateKind() *MediaStreamUpsertOne {
 	return u.Update(func(s *MediaStreamUpsert) {
 		s.UpdateKind()
-	})
-}
-
-// SetVideoRange sets the "video_range" field.
-func (u *MediaStreamUpsertOne) SetVideoRange(v mediastream.VideoRange) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetVideoRange(v)
-	})
-}
-
-// UpdateVideoRange sets the "video_range" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateVideoRange() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateVideoRange()
-	})
-}
-
-// ClearVideoRange clears the value of the "video_range" field.
-func (u *MediaStreamUpsertOne) ClearVideoRange() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearVideoRange()
 	})
 }
 
@@ -2412,27 +1100,6 @@ func (u *MediaStreamUpsertOne) UpdateVideoRangeType() *MediaStreamUpsertOne {
 func (u *MediaStreamUpsertOne) ClearVideoRangeType() *MediaStreamUpsertOne {
 	return u.Update(func(s *MediaStreamUpsert) {
 		s.ClearVideoRangeType()
-	})
-}
-
-// SetAudioSpatialFormat sets the "audio_spatial_format" field.
-func (u *MediaStreamUpsertOne) SetAudioSpatialFormat(v mediastream.AudioSpatialFormat) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetAudioSpatialFormat(v)
-	})
-}
-
-// UpdateAudioSpatialFormat sets the "audio_spatial_format" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateAudioSpatialFormat() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateAudioSpatialFormat()
-	})
-}
-
-// ClearAudioSpatialFormat clears the value of the "audio_spatial_format" field.
-func (u *MediaStreamUpsertOne) ClearAudioSpatialFormat() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearAudioSpatialFormat()
 	})
 }
 
@@ -2475,27 +1142,6 @@ func (u *MediaStreamUpsertOne) UpdateCodec() *MediaStreamUpsertOne {
 func (u *MediaStreamUpsertOne) ClearCodec() *MediaStreamUpsertOne {
 	return u.Update(func(s *MediaStreamUpsert) {
 		s.ClearCodec()
-	})
-}
-
-// SetCodecTag sets the "codec_tag" field.
-func (u *MediaStreamUpsertOne) SetCodecTag(v string) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetCodecTag(v)
-	})
-}
-
-// UpdateCodecTag sets the "codec_tag" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateCodecTag() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateCodecTag()
-	})
-}
-
-// ClearCodecTag clears the value of the "codec_tag" field.
-func (u *MediaStreamUpsertOne) ClearCodecTag() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearCodecTag()
 	})
 }
 
@@ -2562,48 +1208,6 @@ func (u *MediaStreamUpsertOne) ClearTitle() *MediaStreamUpsertOne {
 	})
 }
 
-// SetComment sets the "comment" field.
-func (u *MediaStreamUpsertOne) SetComment(v string) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetComment(v)
-	})
-}
-
-// UpdateComment sets the "comment" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateComment() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateComment()
-	})
-}
-
-// ClearComment clears the value of the "comment" field.
-func (u *MediaStreamUpsertOne) ClearComment() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearComment()
-	})
-}
-
-// SetPath sets the "path" field.
-func (u *MediaStreamUpsertOne) SetPath(v string) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetPath(v)
-	})
-}
-
-// UpdatePath sets the "path" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdatePath() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdatePath()
-	})
-}
-
-// ClearPath clears the value of the "path" field.
-func (u *MediaStreamUpsertOne) ClearPath() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearPath()
-	})
-}
-
 // SetPixelFormat sets the "pixel_format" field.
 func (u *MediaStreamUpsertOne) SetPixelFormat(v string) *MediaStreamUpsertOne {
 	return u.Update(func(s *MediaStreamUpsert) {
@@ -2622,419 +1226,6 @@ func (u *MediaStreamUpsertOne) UpdatePixelFormat() *MediaStreamUpsertOne {
 func (u *MediaStreamUpsertOne) ClearPixelFormat() *MediaStreamUpsertOne {
 	return u.Update(func(s *MediaStreamUpsert) {
 		s.ClearPixelFormat()
-	})
-}
-
-// SetAspectRatio sets the "aspect_ratio" field.
-func (u *MediaStreamUpsertOne) SetAspectRatio(v string) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetAspectRatio(v)
-	})
-}
-
-// UpdateAspectRatio sets the "aspect_ratio" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateAspectRatio() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateAspectRatio()
-	})
-}
-
-// ClearAspectRatio clears the value of the "aspect_ratio" field.
-func (u *MediaStreamUpsertOne) ClearAspectRatio() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearAspectRatio()
-	})
-}
-
-// SetChannelLayout sets the "channel_layout" field.
-func (u *MediaStreamUpsertOne) SetChannelLayout(v string) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetChannelLayout(v)
-	})
-}
-
-// UpdateChannelLayout sets the "channel_layout" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateChannelLayout() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateChannelLayout()
-	})
-}
-
-// ClearChannelLayout clears the value of the "channel_layout" field.
-func (u *MediaStreamUpsertOne) ClearChannelLayout() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearChannelLayout()
-	})
-}
-
-// SetTimeBase sets the "time_base" field.
-func (u *MediaStreamUpsertOne) SetTimeBase(v string) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetTimeBase(v)
-	})
-}
-
-// UpdateTimeBase sets the "time_base" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateTimeBase() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateTimeBase()
-	})
-}
-
-// ClearTimeBase clears the value of the "time_base" field.
-func (u *MediaStreamUpsertOne) ClearTimeBase() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearTimeBase()
-	})
-}
-
-// SetNalLengthSize sets the "nal_length_size" field.
-func (u *MediaStreamUpsertOne) SetNalLengthSize(v string) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetNalLengthSize(v)
-	})
-}
-
-// UpdateNalLengthSize sets the "nal_length_size" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateNalLengthSize() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateNalLengthSize()
-	})
-}
-
-// ClearNalLengthSize clears the value of the "nal_length_size" field.
-func (u *MediaStreamUpsertOne) ClearNalLengthSize() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearNalLengthSize()
-	})
-}
-
-// SetVideoDoviTitle sets the "video_dovi_title" field.
-func (u *MediaStreamUpsertOne) SetVideoDoviTitle(v string) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetVideoDoviTitle(v)
-	})
-}
-
-// UpdateVideoDoviTitle sets the "video_dovi_title" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateVideoDoviTitle() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateVideoDoviTitle()
-	})
-}
-
-// ClearVideoDoviTitle clears the value of the "video_dovi_title" field.
-func (u *MediaStreamUpsertOne) ClearVideoDoviTitle() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearVideoDoviTitle()
-	})
-}
-
-// SetColorRange sets the "color_range" field.
-func (u *MediaStreamUpsertOne) SetColorRange(v string) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetColorRange(v)
-	})
-}
-
-// UpdateColorRange sets the "color_range" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateColorRange() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateColorRange()
-	})
-}
-
-// ClearColorRange clears the value of the "color_range" field.
-func (u *MediaStreamUpsertOne) ClearColorRange() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearColorRange()
-	})
-}
-
-// SetColorSpace sets the "color_space" field.
-func (u *MediaStreamUpsertOne) SetColorSpace(v string) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetColorSpace(v)
-	})
-}
-
-// UpdateColorSpace sets the "color_space" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateColorSpace() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateColorSpace()
-	})
-}
-
-// ClearColorSpace clears the value of the "color_space" field.
-func (u *MediaStreamUpsertOne) ClearColorSpace() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearColorSpace()
-	})
-}
-
-// SetColorTransfer sets the "color_transfer" field.
-func (u *MediaStreamUpsertOne) SetColorTransfer(v string) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetColorTransfer(v)
-	})
-}
-
-// UpdateColorTransfer sets the "color_transfer" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateColorTransfer() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateColorTransfer()
-	})
-}
-
-// ClearColorTransfer clears the value of the "color_transfer" field.
-func (u *MediaStreamUpsertOne) ClearColorTransfer() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearColorTransfer()
-	})
-}
-
-// SetColorPrimaries sets the "color_primaries" field.
-func (u *MediaStreamUpsertOne) SetColorPrimaries(v string) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetColorPrimaries(v)
-	})
-}
-
-// UpdateColorPrimaries sets the "color_primaries" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateColorPrimaries() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateColorPrimaries()
-	})
-}
-
-// ClearColorPrimaries clears the value of the "color_primaries" field.
-func (u *MediaStreamUpsertOne) ClearColorPrimaries() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearColorPrimaries()
-	})
-}
-
-// SetDvVersionMajor sets the "dv_version_major" field.
-func (u *MediaStreamUpsertOne) SetDvVersionMajor(v int32) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetDvVersionMajor(v)
-	})
-}
-
-// AddDvVersionMajor adds v to the "dv_version_major" field.
-func (u *MediaStreamUpsertOne) AddDvVersionMajor(v int32) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddDvVersionMajor(v)
-	})
-}
-
-// UpdateDvVersionMajor sets the "dv_version_major" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateDvVersionMajor() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateDvVersionMajor()
-	})
-}
-
-// ClearDvVersionMajor clears the value of the "dv_version_major" field.
-func (u *MediaStreamUpsertOne) ClearDvVersionMajor() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearDvVersionMajor()
-	})
-}
-
-// SetDvVersionMinor sets the "dv_version_minor" field.
-func (u *MediaStreamUpsertOne) SetDvVersionMinor(v int32) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetDvVersionMinor(v)
-	})
-}
-
-// AddDvVersionMinor adds v to the "dv_version_minor" field.
-func (u *MediaStreamUpsertOne) AddDvVersionMinor(v int32) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddDvVersionMinor(v)
-	})
-}
-
-// UpdateDvVersionMinor sets the "dv_version_minor" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateDvVersionMinor() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateDvVersionMinor()
-	})
-}
-
-// ClearDvVersionMinor clears the value of the "dv_version_minor" field.
-func (u *MediaStreamUpsertOne) ClearDvVersionMinor() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearDvVersionMinor()
-	})
-}
-
-// SetDvProfile sets the "dv_profile" field.
-func (u *MediaStreamUpsertOne) SetDvProfile(v int32) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetDvProfile(v)
-	})
-}
-
-// AddDvProfile adds v to the "dv_profile" field.
-func (u *MediaStreamUpsertOne) AddDvProfile(v int32) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddDvProfile(v)
-	})
-}
-
-// UpdateDvProfile sets the "dv_profile" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateDvProfile() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateDvProfile()
-	})
-}
-
-// ClearDvProfile clears the value of the "dv_profile" field.
-func (u *MediaStreamUpsertOne) ClearDvProfile() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearDvProfile()
-	})
-}
-
-// SetDvLevel sets the "dv_level" field.
-func (u *MediaStreamUpsertOne) SetDvLevel(v int32) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetDvLevel(v)
-	})
-}
-
-// AddDvLevel adds v to the "dv_level" field.
-func (u *MediaStreamUpsertOne) AddDvLevel(v int32) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddDvLevel(v)
-	})
-}
-
-// UpdateDvLevel sets the "dv_level" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateDvLevel() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateDvLevel()
-	})
-}
-
-// ClearDvLevel clears the value of the "dv_level" field.
-func (u *MediaStreamUpsertOne) ClearDvLevel() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearDvLevel()
-	})
-}
-
-// SetRpuPresentFlag sets the "rpu_present_flag" field.
-func (u *MediaStreamUpsertOne) SetRpuPresentFlag(v int32) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetRpuPresentFlag(v)
-	})
-}
-
-// AddRpuPresentFlag adds v to the "rpu_present_flag" field.
-func (u *MediaStreamUpsertOne) AddRpuPresentFlag(v int32) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddRpuPresentFlag(v)
-	})
-}
-
-// UpdateRpuPresentFlag sets the "rpu_present_flag" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateRpuPresentFlag() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateRpuPresentFlag()
-	})
-}
-
-// ClearRpuPresentFlag clears the value of the "rpu_present_flag" field.
-func (u *MediaStreamUpsertOne) ClearRpuPresentFlag() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearRpuPresentFlag()
-	})
-}
-
-// SetElPresentFlag sets the "el_present_flag" field.
-func (u *MediaStreamUpsertOne) SetElPresentFlag(v int32) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetElPresentFlag(v)
-	})
-}
-
-// AddElPresentFlag adds v to the "el_present_flag" field.
-func (u *MediaStreamUpsertOne) AddElPresentFlag(v int32) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddElPresentFlag(v)
-	})
-}
-
-// UpdateElPresentFlag sets the "el_present_flag" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateElPresentFlag() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateElPresentFlag()
-	})
-}
-
-// ClearElPresentFlag clears the value of the "el_present_flag" field.
-func (u *MediaStreamUpsertOne) ClearElPresentFlag() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearElPresentFlag()
-	})
-}
-
-// SetBlPresentFlag sets the "bl_present_flag" field.
-func (u *MediaStreamUpsertOne) SetBlPresentFlag(v int32) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetBlPresentFlag(v)
-	})
-}
-
-// AddBlPresentFlag adds v to the "bl_present_flag" field.
-func (u *MediaStreamUpsertOne) AddBlPresentFlag(v int32) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddBlPresentFlag(v)
-	})
-}
-
-// UpdateBlPresentFlag sets the "bl_present_flag" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateBlPresentFlag() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateBlPresentFlag()
-	})
-}
-
-// ClearBlPresentFlag clears the value of the "bl_present_flag" field.
-func (u *MediaStreamUpsertOne) ClearBlPresentFlag() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearBlPresentFlag()
-	})
-}
-
-// SetDvBlSignalCompatibilityID sets the "dv_bl_signal_compatibility_id" field.
-func (u *MediaStreamUpsertOne) SetDvBlSignalCompatibilityID(v int32) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetDvBlSignalCompatibilityID(v)
-	})
-}
-
-// AddDvBlSignalCompatibilityID adds v to the "dv_bl_signal_compatibility_id" field.
-func (u *MediaStreamUpsertOne) AddDvBlSignalCompatibilityID(v int32) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddDvBlSignalCompatibilityID(v)
-	})
-}
-
-// UpdateDvBlSignalCompatibilityID sets the "dv_bl_signal_compatibility_id" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateDvBlSignalCompatibilityID() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateDvBlSignalCompatibilityID()
-	})
-}
-
-// ClearDvBlSignalCompatibilityID clears the value of the "dv_bl_signal_compatibility_id" field.
-func (u *MediaStreamUpsertOne) ClearDvBlSignalCompatibilityID() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearDvBlSignalCompatibilityID()
 	})
 }
 
@@ -3063,90 +1254,6 @@ func (u *MediaStreamUpsertOne) UpdateBitRate() *MediaStreamUpsertOne {
 func (u *MediaStreamUpsertOne) ClearBitRate() *MediaStreamUpsertOne {
 	return u.Update(func(s *MediaStreamUpsert) {
 		s.ClearBitRate()
-	})
-}
-
-// SetBitDepth sets the "bit_depth" field.
-func (u *MediaStreamUpsertOne) SetBitDepth(v int32) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetBitDepth(v)
-	})
-}
-
-// AddBitDepth adds v to the "bit_depth" field.
-func (u *MediaStreamUpsertOne) AddBitDepth(v int32) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddBitDepth(v)
-	})
-}
-
-// UpdateBitDepth sets the "bit_depth" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateBitDepth() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateBitDepth()
-	})
-}
-
-// ClearBitDepth clears the value of the "bit_depth" field.
-func (u *MediaStreamUpsertOne) ClearBitDepth() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearBitDepth()
-	})
-}
-
-// SetRefFrames sets the "ref_frames" field.
-func (u *MediaStreamUpsertOne) SetRefFrames(v int32) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetRefFrames(v)
-	})
-}
-
-// AddRefFrames adds v to the "ref_frames" field.
-func (u *MediaStreamUpsertOne) AddRefFrames(v int32) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddRefFrames(v)
-	})
-}
-
-// UpdateRefFrames sets the "ref_frames" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateRefFrames() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateRefFrames()
-	})
-}
-
-// ClearRefFrames clears the value of the "ref_frames" field.
-func (u *MediaStreamUpsertOne) ClearRefFrames() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearRefFrames()
-	})
-}
-
-// SetPacketLength sets the "packet_length" field.
-func (u *MediaStreamUpsertOne) SetPacketLength(v int32) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetPacketLength(v)
-	})
-}
-
-// AddPacketLength adds v to the "packet_length" field.
-func (u *MediaStreamUpsertOne) AddPacketLength(v int32) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddPacketLength(v)
-	})
-}
-
-// UpdatePacketLength sets the "packet_length" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdatePacketLength() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdatePacketLength()
-	})
-}
-
-// ClearPacketLength clears the value of the "packet_length" field.
-func (u *MediaStreamUpsertOne) ClearPacketLength() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearPacketLength()
 	})
 }
 
@@ -3262,62 +1369,6 @@ func (u *MediaStreamUpsertOne) ClearHeight() *MediaStreamUpsertOne {
 	})
 }
 
-// SetRotation sets the "rotation" field.
-func (u *MediaStreamUpsertOne) SetRotation(v int32) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetRotation(v)
-	})
-}
-
-// AddRotation adds v to the "rotation" field.
-func (u *MediaStreamUpsertOne) AddRotation(v int32) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddRotation(v)
-	})
-}
-
-// UpdateRotation sets the "rotation" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateRotation() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateRotation()
-	})
-}
-
-// ClearRotation clears the value of the "rotation" field.
-func (u *MediaStreamUpsertOne) ClearRotation() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearRotation()
-	})
-}
-
-// SetScore sets the "score" field.
-func (u *MediaStreamUpsertOne) SetScore(v int32) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetScore(v)
-	})
-}
-
-// AddScore adds v to the "score" field.
-func (u *MediaStreamUpsertOne) AddScore(v int32) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddScore(v)
-	})
-}
-
-// UpdateScore sets the "score" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateScore() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateScore()
-	})
-}
-
-// ClearScore clears the value of the "score" field.
-func (u *MediaStreamUpsertOne) ClearScore() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearScore()
-	})
-}
-
 // SetLevel sets the "level" field.
 func (u *MediaStreamUpsertOne) SetLevel(v float64) *MediaStreamUpsertOne {
 	return u.Update(func(s *MediaStreamUpsert) {
@@ -3343,90 +1394,6 @@ func (u *MediaStreamUpsertOne) UpdateLevel() *MediaStreamUpsertOne {
 func (u *MediaStreamUpsertOne) ClearLevel() *MediaStreamUpsertOne {
 	return u.Update(func(s *MediaStreamUpsert) {
 		s.ClearLevel()
-	})
-}
-
-// SetAverageFrameRate sets the "average_frame_rate" field.
-func (u *MediaStreamUpsertOne) SetAverageFrameRate(v float64) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetAverageFrameRate(v)
-	})
-}
-
-// AddAverageFrameRate adds v to the "average_frame_rate" field.
-func (u *MediaStreamUpsertOne) AddAverageFrameRate(v float64) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddAverageFrameRate(v)
-	})
-}
-
-// UpdateAverageFrameRate sets the "average_frame_rate" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateAverageFrameRate() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateAverageFrameRate()
-	})
-}
-
-// ClearAverageFrameRate clears the value of the "average_frame_rate" field.
-func (u *MediaStreamUpsertOne) ClearAverageFrameRate() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearAverageFrameRate()
-	})
-}
-
-// SetRealFrameRate sets the "real_frame_rate" field.
-func (u *MediaStreamUpsertOne) SetRealFrameRate(v float64) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetRealFrameRate(v)
-	})
-}
-
-// AddRealFrameRate adds v to the "real_frame_rate" field.
-func (u *MediaStreamUpsertOne) AddRealFrameRate(v float64) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddRealFrameRate(v)
-	})
-}
-
-// UpdateRealFrameRate sets the "real_frame_rate" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateRealFrameRate() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateRealFrameRate()
-	})
-}
-
-// ClearRealFrameRate clears the value of the "real_frame_rate" field.
-func (u *MediaStreamUpsertOne) ClearRealFrameRate() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearRealFrameRate()
-	})
-}
-
-// SetReferenceFrameRate sets the "reference_frame_rate" field.
-func (u *MediaStreamUpsertOne) SetReferenceFrameRate(v float64) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetReferenceFrameRate(v)
-	})
-}
-
-// AddReferenceFrameRate adds v to the "reference_frame_rate" field.
-func (u *MediaStreamUpsertOne) AddReferenceFrameRate(v float64) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddReferenceFrameRate(v)
-	})
-}
-
-// UpdateReferenceFrameRate sets the "reference_frame_rate" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateReferenceFrameRate() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateReferenceFrameRate()
-	})
-}
-
-// ClearReferenceFrameRate clears the value of the "reference_frame_rate" field.
-func (u *MediaStreamUpsertOne) ClearReferenceFrameRate() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearReferenceFrameRate()
 	})
 }
 
@@ -3458,20 +1425,6 @@ func (u *MediaStreamUpsertOne) UpdateIsForced() *MediaStreamUpsertOne {
 	})
 }
 
-// SetIsExternal sets the "is_external" field.
-func (u *MediaStreamUpsertOne) SetIsExternal(v bool) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetIsExternal(v)
-	})
-}
-
-// UpdateIsExternal sets the "is_external" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateIsExternal() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateIsExternal()
-	})
-}
-
 // SetIsInterlaced sets the "is_interlaced" field.
 func (u *MediaStreamUpsertOne) SetIsInterlaced(v bool) *MediaStreamUpsertOne {
 	return u.Update(func(s *MediaStreamUpsert) {
@@ -3497,34 +1450,6 @@ func (u *MediaStreamUpsertOne) SetIsAnamorphic(v bool) *MediaStreamUpsertOne {
 func (u *MediaStreamUpsertOne) UpdateIsAnamorphic() *MediaStreamUpsertOne {
 	return u.Update(func(s *MediaStreamUpsert) {
 		s.UpdateIsAnamorphic()
-	})
-}
-
-// SetIsAvc sets the "is_avc" field.
-func (u *MediaStreamUpsertOne) SetIsAvc(v bool) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetIsAvc(v)
-	})
-}
-
-// UpdateIsAvc sets the "is_avc" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateIsAvc() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateIsAvc()
-	})
-}
-
-// SetIsHearingImpaired sets the "is_hearing_impaired" field.
-func (u *MediaStreamUpsertOne) SetIsHearingImpaired(v bool) *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetIsHearingImpaired(v)
-	})
-}
-
-// UpdateIsHearingImpaired sets the "is_hearing_impaired" field to the value that was provided on create.
-func (u *MediaStreamUpsertOne) UpdateIsHearingImpaired() *MediaStreamUpsertOne {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateIsHearingImpaired()
 	})
 }
 
@@ -3771,17 +1696,17 @@ func (u *MediaStreamUpsertBulk) UpdateUpdatedAt() *MediaStreamUpsertBulk {
 	})
 }
 
-// SetSourceID sets the "source_id" field.
-func (u *MediaStreamUpsertBulk) SetSourceID(v uuid.UUID) *MediaStreamUpsertBulk {
+// SetItemSourceID sets the "item_source_id" field.
+func (u *MediaStreamUpsertBulk) SetItemSourceID(v uuid.UUID) *MediaStreamUpsertBulk {
 	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetSourceID(v)
+		s.SetItemSourceID(v)
 	})
 }
 
-// UpdateSourceID sets the "source_id" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateSourceID() *MediaStreamUpsertBulk {
+// UpdateItemSourceID sets the "item_source_id" field to the value that was provided on create.
+func (u *MediaStreamUpsertBulk) UpdateItemSourceID() *MediaStreamUpsertBulk {
 	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateSourceID()
+		s.UpdateItemSourceID()
 	})
 }
 
@@ -3796,27 +1721,6 @@ func (u *MediaStreamUpsertBulk) SetKind(v mediastream.Kind) *MediaStreamUpsertBu
 func (u *MediaStreamUpsertBulk) UpdateKind() *MediaStreamUpsertBulk {
 	return u.Update(func(s *MediaStreamUpsert) {
 		s.UpdateKind()
-	})
-}
-
-// SetVideoRange sets the "video_range" field.
-func (u *MediaStreamUpsertBulk) SetVideoRange(v mediastream.VideoRange) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetVideoRange(v)
-	})
-}
-
-// UpdateVideoRange sets the "video_range" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateVideoRange() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateVideoRange()
-	})
-}
-
-// ClearVideoRange clears the value of the "video_range" field.
-func (u *MediaStreamUpsertBulk) ClearVideoRange() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearVideoRange()
 	})
 }
 
@@ -3838,27 +1742,6 @@ func (u *MediaStreamUpsertBulk) UpdateVideoRangeType() *MediaStreamUpsertBulk {
 func (u *MediaStreamUpsertBulk) ClearVideoRangeType() *MediaStreamUpsertBulk {
 	return u.Update(func(s *MediaStreamUpsert) {
 		s.ClearVideoRangeType()
-	})
-}
-
-// SetAudioSpatialFormat sets the "audio_spatial_format" field.
-func (u *MediaStreamUpsertBulk) SetAudioSpatialFormat(v mediastream.AudioSpatialFormat) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetAudioSpatialFormat(v)
-	})
-}
-
-// UpdateAudioSpatialFormat sets the "audio_spatial_format" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateAudioSpatialFormat() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateAudioSpatialFormat()
-	})
-}
-
-// ClearAudioSpatialFormat clears the value of the "audio_spatial_format" field.
-func (u *MediaStreamUpsertBulk) ClearAudioSpatialFormat() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearAudioSpatialFormat()
 	})
 }
 
@@ -3901,27 +1784,6 @@ func (u *MediaStreamUpsertBulk) UpdateCodec() *MediaStreamUpsertBulk {
 func (u *MediaStreamUpsertBulk) ClearCodec() *MediaStreamUpsertBulk {
 	return u.Update(func(s *MediaStreamUpsert) {
 		s.ClearCodec()
-	})
-}
-
-// SetCodecTag sets the "codec_tag" field.
-func (u *MediaStreamUpsertBulk) SetCodecTag(v string) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetCodecTag(v)
-	})
-}
-
-// UpdateCodecTag sets the "codec_tag" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateCodecTag() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateCodecTag()
-	})
-}
-
-// ClearCodecTag clears the value of the "codec_tag" field.
-func (u *MediaStreamUpsertBulk) ClearCodecTag() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearCodecTag()
 	})
 }
 
@@ -3988,48 +1850,6 @@ func (u *MediaStreamUpsertBulk) ClearTitle() *MediaStreamUpsertBulk {
 	})
 }
 
-// SetComment sets the "comment" field.
-func (u *MediaStreamUpsertBulk) SetComment(v string) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetComment(v)
-	})
-}
-
-// UpdateComment sets the "comment" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateComment() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateComment()
-	})
-}
-
-// ClearComment clears the value of the "comment" field.
-func (u *MediaStreamUpsertBulk) ClearComment() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearComment()
-	})
-}
-
-// SetPath sets the "path" field.
-func (u *MediaStreamUpsertBulk) SetPath(v string) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetPath(v)
-	})
-}
-
-// UpdatePath sets the "path" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdatePath() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdatePath()
-	})
-}
-
-// ClearPath clears the value of the "path" field.
-func (u *MediaStreamUpsertBulk) ClearPath() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearPath()
-	})
-}
-
 // SetPixelFormat sets the "pixel_format" field.
 func (u *MediaStreamUpsertBulk) SetPixelFormat(v string) *MediaStreamUpsertBulk {
 	return u.Update(func(s *MediaStreamUpsert) {
@@ -4048,419 +1868,6 @@ func (u *MediaStreamUpsertBulk) UpdatePixelFormat() *MediaStreamUpsertBulk {
 func (u *MediaStreamUpsertBulk) ClearPixelFormat() *MediaStreamUpsertBulk {
 	return u.Update(func(s *MediaStreamUpsert) {
 		s.ClearPixelFormat()
-	})
-}
-
-// SetAspectRatio sets the "aspect_ratio" field.
-func (u *MediaStreamUpsertBulk) SetAspectRatio(v string) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetAspectRatio(v)
-	})
-}
-
-// UpdateAspectRatio sets the "aspect_ratio" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateAspectRatio() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateAspectRatio()
-	})
-}
-
-// ClearAspectRatio clears the value of the "aspect_ratio" field.
-func (u *MediaStreamUpsertBulk) ClearAspectRatio() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearAspectRatio()
-	})
-}
-
-// SetChannelLayout sets the "channel_layout" field.
-func (u *MediaStreamUpsertBulk) SetChannelLayout(v string) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetChannelLayout(v)
-	})
-}
-
-// UpdateChannelLayout sets the "channel_layout" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateChannelLayout() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateChannelLayout()
-	})
-}
-
-// ClearChannelLayout clears the value of the "channel_layout" field.
-func (u *MediaStreamUpsertBulk) ClearChannelLayout() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearChannelLayout()
-	})
-}
-
-// SetTimeBase sets the "time_base" field.
-func (u *MediaStreamUpsertBulk) SetTimeBase(v string) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetTimeBase(v)
-	})
-}
-
-// UpdateTimeBase sets the "time_base" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateTimeBase() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateTimeBase()
-	})
-}
-
-// ClearTimeBase clears the value of the "time_base" field.
-func (u *MediaStreamUpsertBulk) ClearTimeBase() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearTimeBase()
-	})
-}
-
-// SetNalLengthSize sets the "nal_length_size" field.
-func (u *MediaStreamUpsertBulk) SetNalLengthSize(v string) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetNalLengthSize(v)
-	})
-}
-
-// UpdateNalLengthSize sets the "nal_length_size" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateNalLengthSize() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateNalLengthSize()
-	})
-}
-
-// ClearNalLengthSize clears the value of the "nal_length_size" field.
-func (u *MediaStreamUpsertBulk) ClearNalLengthSize() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearNalLengthSize()
-	})
-}
-
-// SetVideoDoviTitle sets the "video_dovi_title" field.
-func (u *MediaStreamUpsertBulk) SetVideoDoviTitle(v string) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetVideoDoviTitle(v)
-	})
-}
-
-// UpdateVideoDoviTitle sets the "video_dovi_title" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateVideoDoviTitle() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateVideoDoviTitle()
-	})
-}
-
-// ClearVideoDoviTitle clears the value of the "video_dovi_title" field.
-func (u *MediaStreamUpsertBulk) ClearVideoDoviTitle() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearVideoDoviTitle()
-	})
-}
-
-// SetColorRange sets the "color_range" field.
-func (u *MediaStreamUpsertBulk) SetColorRange(v string) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetColorRange(v)
-	})
-}
-
-// UpdateColorRange sets the "color_range" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateColorRange() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateColorRange()
-	})
-}
-
-// ClearColorRange clears the value of the "color_range" field.
-func (u *MediaStreamUpsertBulk) ClearColorRange() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearColorRange()
-	})
-}
-
-// SetColorSpace sets the "color_space" field.
-func (u *MediaStreamUpsertBulk) SetColorSpace(v string) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetColorSpace(v)
-	})
-}
-
-// UpdateColorSpace sets the "color_space" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateColorSpace() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateColorSpace()
-	})
-}
-
-// ClearColorSpace clears the value of the "color_space" field.
-func (u *MediaStreamUpsertBulk) ClearColorSpace() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearColorSpace()
-	})
-}
-
-// SetColorTransfer sets the "color_transfer" field.
-func (u *MediaStreamUpsertBulk) SetColorTransfer(v string) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetColorTransfer(v)
-	})
-}
-
-// UpdateColorTransfer sets the "color_transfer" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateColorTransfer() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateColorTransfer()
-	})
-}
-
-// ClearColorTransfer clears the value of the "color_transfer" field.
-func (u *MediaStreamUpsertBulk) ClearColorTransfer() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearColorTransfer()
-	})
-}
-
-// SetColorPrimaries sets the "color_primaries" field.
-func (u *MediaStreamUpsertBulk) SetColorPrimaries(v string) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetColorPrimaries(v)
-	})
-}
-
-// UpdateColorPrimaries sets the "color_primaries" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateColorPrimaries() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateColorPrimaries()
-	})
-}
-
-// ClearColorPrimaries clears the value of the "color_primaries" field.
-func (u *MediaStreamUpsertBulk) ClearColorPrimaries() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearColorPrimaries()
-	})
-}
-
-// SetDvVersionMajor sets the "dv_version_major" field.
-func (u *MediaStreamUpsertBulk) SetDvVersionMajor(v int32) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetDvVersionMajor(v)
-	})
-}
-
-// AddDvVersionMajor adds v to the "dv_version_major" field.
-func (u *MediaStreamUpsertBulk) AddDvVersionMajor(v int32) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddDvVersionMajor(v)
-	})
-}
-
-// UpdateDvVersionMajor sets the "dv_version_major" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateDvVersionMajor() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateDvVersionMajor()
-	})
-}
-
-// ClearDvVersionMajor clears the value of the "dv_version_major" field.
-func (u *MediaStreamUpsertBulk) ClearDvVersionMajor() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearDvVersionMajor()
-	})
-}
-
-// SetDvVersionMinor sets the "dv_version_minor" field.
-func (u *MediaStreamUpsertBulk) SetDvVersionMinor(v int32) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetDvVersionMinor(v)
-	})
-}
-
-// AddDvVersionMinor adds v to the "dv_version_minor" field.
-func (u *MediaStreamUpsertBulk) AddDvVersionMinor(v int32) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddDvVersionMinor(v)
-	})
-}
-
-// UpdateDvVersionMinor sets the "dv_version_minor" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateDvVersionMinor() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateDvVersionMinor()
-	})
-}
-
-// ClearDvVersionMinor clears the value of the "dv_version_minor" field.
-func (u *MediaStreamUpsertBulk) ClearDvVersionMinor() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearDvVersionMinor()
-	})
-}
-
-// SetDvProfile sets the "dv_profile" field.
-func (u *MediaStreamUpsertBulk) SetDvProfile(v int32) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetDvProfile(v)
-	})
-}
-
-// AddDvProfile adds v to the "dv_profile" field.
-func (u *MediaStreamUpsertBulk) AddDvProfile(v int32) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddDvProfile(v)
-	})
-}
-
-// UpdateDvProfile sets the "dv_profile" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateDvProfile() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateDvProfile()
-	})
-}
-
-// ClearDvProfile clears the value of the "dv_profile" field.
-func (u *MediaStreamUpsertBulk) ClearDvProfile() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearDvProfile()
-	})
-}
-
-// SetDvLevel sets the "dv_level" field.
-func (u *MediaStreamUpsertBulk) SetDvLevel(v int32) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetDvLevel(v)
-	})
-}
-
-// AddDvLevel adds v to the "dv_level" field.
-func (u *MediaStreamUpsertBulk) AddDvLevel(v int32) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddDvLevel(v)
-	})
-}
-
-// UpdateDvLevel sets the "dv_level" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateDvLevel() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateDvLevel()
-	})
-}
-
-// ClearDvLevel clears the value of the "dv_level" field.
-func (u *MediaStreamUpsertBulk) ClearDvLevel() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearDvLevel()
-	})
-}
-
-// SetRpuPresentFlag sets the "rpu_present_flag" field.
-func (u *MediaStreamUpsertBulk) SetRpuPresentFlag(v int32) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetRpuPresentFlag(v)
-	})
-}
-
-// AddRpuPresentFlag adds v to the "rpu_present_flag" field.
-func (u *MediaStreamUpsertBulk) AddRpuPresentFlag(v int32) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddRpuPresentFlag(v)
-	})
-}
-
-// UpdateRpuPresentFlag sets the "rpu_present_flag" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateRpuPresentFlag() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateRpuPresentFlag()
-	})
-}
-
-// ClearRpuPresentFlag clears the value of the "rpu_present_flag" field.
-func (u *MediaStreamUpsertBulk) ClearRpuPresentFlag() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearRpuPresentFlag()
-	})
-}
-
-// SetElPresentFlag sets the "el_present_flag" field.
-func (u *MediaStreamUpsertBulk) SetElPresentFlag(v int32) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetElPresentFlag(v)
-	})
-}
-
-// AddElPresentFlag adds v to the "el_present_flag" field.
-func (u *MediaStreamUpsertBulk) AddElPresentFlag(v int32) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddElPresentFlag(v)
-	})
-}
-
-// UpdateElPresentFlag sets the "el_present_flag" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateElPresentFlag() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateElPresentFlag()
-	})
-}
-
-// ClearElPresentFlag clears the value of the "el_present_flag" field.
-func (u *MediaStreamUpsertBulk) ClearElPresentFlag() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearElPresentFlag()
-	})
-}
-
-// SetBlPresentFlag sets the "bl_present_flag" field.
-func (u *MediaStreamUpsertBulk) SetBlPresentFlag(v int32) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetBlPresentFlag(v)
-	})
-}
-
-// AddBlPresentFlag adds v to the "bl_present_flag" field.
-func (u *MediaStreamUpsertBulk) AddBlPresentFlag(v int32) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddBlPresentFlag(v)
-	})
-}
-
-// UpdateBlPresentFlag sets the "bl_present_flag" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateBlPresentFlag() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateBlPresentFlag()
-	})
-}
-
-// ClearBlPresentFlag clears the value of the "bl_present_flag" field.
-func (u *MediaStreamUpsertBulk) ClearBlPresentFlag() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearBlPresentFlag()
-	})
-}
-
-// SetDvBlSignalCompatibilityID sets the "dv_bl_signal_compatibility_id" field.
-func (u *MediaStreamUpsertBulk) SetDvBlSignalCompatibilityID(v int32) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetDvBlSignalCompatibilityID(v)
-	})
-}
-
-// AddDvBlSignalCompatibilityID adds v to the "dv_bl_signal_compatibility_id" field.
-func (u *MediaStreamUpsertBulk) AddDvBlSignalCompatibilityID(v int32) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddDvBlSignalCompatibilityID(v)
-	})
-}
-
-// UpdateDvBlSignalCompatibilityID sets the "dv_bl_signal_compatibility_id" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateDvBlSignalCompatibilityID() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateDvBlSignalCompatibilityID()
-	})
-}
-
-// ClearDvBlSignalCompatibilityID clears the value of the "dv_bl_signal_compatibility_id" field.
-func (u *MediaStreamUpsertBulk) ClearDvBlSignalCompatibilityID() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearDvBlSignalCompatibilityID()
 	})
 }
 
@@ -4489,90 +1896,6 @@ func (u *MediaStreamUpsertBulk) UpdateBitRate() *MediaStreamUpsertBulk {
 func (u *MediaStreamUpsertBulk) ClearBitRate() *MediaStreamUpsertBulk {
 	return u.Update(func(s *MediaStreamUpsert) {
 		s.ClearBitRate()
-	})
-}
-
-// SetBitDepth sets the "bit_depth" field.
-func (u *MediaStreamUpsertBulk) SetBitDepth(v int32) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetBitDepth(v)
-	})
-}
-
-// AddBitDepth adds v to the "bit_depth" field.
-func (u *MediaStreamUpsertBulk) AddBitDepth(v int32) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddBitDepth(v)
-	})
-}
-
-// UpdateBitDepth sets the "bit_depth" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateBitDepth() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateBitDepth()
-	})
-}
-
-// ClearBitDepth clears the value of the "bit_depth" field.
-func (u *MediaStreamUpsertBulk) ClearBitDepth() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearBitDepth()
-	})
-}
-
-// SetRefFrames sets the "ref_frames" field.
-func (u *MediaStreamUpsertBulk) SetRefFrames(v int32) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetRefFrames(v)
-	})
-}
-
-// AddRefFrames adds v to the "ref_frames" field.
-func (u *MediaStreamUpsertBulk) AddRefFrames(v int32) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddRefFrames(v)
-	})
-}
-
-// UpdateRefFrames sets the "ref_frames" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateRefFrames() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateRefFrames()
-	})
-}
-
-// ClearRefFrames clears the value of the "ref_frames" field.
-func (u *MediaStreamUpsertBulk) ClearRefFrames() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearRefFrames()
-	})
-}
-
-// SetPacketLength sets the "packet_length" field.
-func (u *MediaStreamUpsertBulk) SetPacketLength(v int32) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetPacketLength(v)
-	})
-}
-
-// AddPacketLength adds v to the "packet_length" field.
-func (u *MediaStreamUpsertBulk) AddPacketLength(v int32) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddPacketLength(v)
-	})
-}
-
-// UpdatePacketLength sets the "packet_length" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdatePacketLength() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdatePacketLength()
-	})
-}
-
-// ClearPacketLength clears the value of the "packet_length" field.
-func (u *MediaStreamUpsertBulk) ClearPacketLength() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearPacketLength()
 	})
 }
 
@@ -4688,62 +2011,6 @@ func (u *MediaStreamUpsertBulk) ClearHeight() *MediaStreamUpsertBulk {
 	})
 }
 
-// SetRotation sets the "rotation" field.
-func (u *MediaStreamUpsertBulk) SetRotation(v int32) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetRotation(v)
-	})
-}
-
-// AddRotation adds v to the "rotation" field.
-func (u *MediaStreamUpsertBulk) AddRotation(v int32) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddRotation(v)
-	})
-}
-
-// UpdateRotation sets the "rotation" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateRotation() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateRotation()
-	})
-}
-
-// ClearRotation clears the value of the "rotation" field.
-func (u *MediaStreamUpsertBulk) ClearRotation() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearRotation()
-	})
-}
-
-// SetScore sets the "score" field.
-func (u *MediaStreamUpsertBulk) SetScore(v int32) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetScore(v)
-	})
-}
-
-// AddScore adds v to the "score" field.
-func (u *MediaStreamUpsertBulk) AddScore(v int32) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddScore(v)
-	})
-}
-
-// UpdateScore sets the "score" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateScore() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateScore()
-	})
-}
-
-// ClearScore clears the value of the "score" field.
-func (u *MediaStreamUpsertBulk) ClearScore() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearScore()
-	})
-}
-
 // SetLevel sets the "level" field.
 func (u *MediaStreamUpsertBulk) SetLevel(v float64) *MediaStreamUpsertBulk {
 	return u.Update(func(s *MediaStreamUpsert) {
@@ -4769,90 +2036,6 @@ func (u *MediaStreamUpsertBulk) UpdateLevel() *MediaStreamUpsertBulk {
 func (u *MediaStreamUpsertBulk) ClearLevel() *MediaStreamUpsertBulk {
 	return u.Update(func(s *MediaStreamUpsert) {
 		s.ClearLevel()
-	})
-}
-
-// SetAverageFrameRate sets the "average_frame_rate" field.
-func (u *MediaStreamUpsertBulk) SetAverageFrameRate(v float64) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetAverageFrameRate(v)
-	})
-}
-
-// AddAverageFrameRate adds v to the "average_frame_rate" field.
-func (u *MediaStreamUpsertBulk) AddAverageFrameRate(v float64) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddAverageFrameRate(v)
-	})
-}
-
-// UpdateAverageFrameRate sets the "average_frame_rate" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateAverageFrameRate() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateAverageFrameRate()
-	})
-}
-
-// ClearAverageFrameRate clears the value of the "average_frame_rate" field.
-func (u *MediaStreamUpsertBulk) ClearAverageFrameRate() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearAverageFrameRate()
-	})
-}
-
-// SetRealFrameRate sets the "real_frame_rate" field.
-func (u *MediaStreamUpsertBulk) SetRealFrameRate(v float64) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetRealFrameRate(v)
-	})
-}
-
-// AddRealFrameRate adds v to the "real_frame_rate" field.
-func (u *MediaStreamUpsertBulk) AddRealFrameRate(v float64) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddRealFrameRate(v)
-	})
-}
-
-// UpdateRealFrameRate sets the "real_frame_rate" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateRealFrameRate() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateRealFrameRate()
-	})
-}
-
-// ClearRealFrameRate clears the value of the "real_frame_rate" field.
-func (u *MediaStreamUpsertBulk) ClearRealFrameRate() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearRealFrameRate()
-	})
-}
-
-// SetReferenceFrameRate sets the "reference_frame_rate" field.
-func (u *MediaStreamUpsertBulk) SetReferenceFrameRate(v float64) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetReferenceFrameRate(v)
-	})
-}
-
-// AddReferenceFrameRate adds v to the "reference_frame_rate" field.
-func (u *MediaStreamUpsertBulk) AddReferenceFrameRate(v float64) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.AddReferenceFrameRate(v)
-	})
-}
-
-// UpdateReferenceFrameRate sets the "reference_frame_rate" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateReferenceFrameRate() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateReferenceFrameRate()
-	})
-}
-
-// ClearReferenceFrameRate clears the value of the "reference_frame_rate" field.
-func (u *MediaStreamUpsertBulk) ClearReferenceFrameRate() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.ClearReferenceFrameRate()
 	})
 }
 
@@ -4884,20 +2067,6 @@ func (u *MediaStreamUpsertBulk) UpdateIsForced() *MediaStreamUpsertBulk {
 	})
 }
 
-// SetIsExternal sets the "is_external" field.
-func (u *MediaStreamUpsertBulk) SetIsExternal(v bool) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetIsExternal(v)
-	})
-}
-
-// UpdateIsExternal sets the "is_external" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateIsExternal() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateIsExternal()
-	})
-}
-
 // SetIsInterlaced sets the "is_interlaced" field.
 func (u *MediaStreamUpsertBulk) SetIsInterlaced(v bool) *MediaStreamUpsertBulk {
 	return u.Update(func(s *MediaStreamUpsert) {
@@ -4923,34 +2092,6 @@ func (u *MediaStreamUpsertBulk) SetIsAnamorphic(v bool) *MediaStreamUpsertBulk {
 func (u *MediaStreamUpsertBulk) UpdateIsAnamorphic() *MediaStreamUpsertBulk {
 	return u.Update(func(s *MediaStreamUpsert) {
 		s.UpdateIsAnamorphic()
-	})
-}
-
-// SetIsAvc sets the "is_avc" field.
-func (u *MediaStreamUpsertBulk) SetIsAvc(v bool) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetIsAvc(v)
-	})
-}
-
-// UpdateIsAvc sets the "is_avc" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateIsAvc() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateIsAvc()
-	})
-}
-
-// SetIsHearingImpaired sets the "is_hearing_impaired" field.
-func (u *MediaStreamUpsertBulk) SetIsHearingImpaired(v bool) *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.SetIsHearingImpaired(v)
-	})
-}
-
-// UpdateIsHearingImpaired sets the "is_hearing_impaired" field to the value that was provided on create.
-func (u *MediaStreamUpsertBulk) UpdateIsHearingImpaired() *MediaStreamUpsertBulk {
-	return u.Update(func(s *MediaStreamUpsert) {
-		s.UpdateIsHearingImpaired()
 	})
 }
 

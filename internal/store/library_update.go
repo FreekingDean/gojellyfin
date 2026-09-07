@@ -12,10 +12,10 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
-	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
+	"github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/google/uuid"
 )
@@ -112,34 +112,34 @@ func (_u *LibraryUpdate) SetOptions(v *LibraryOptions) *LibraryUpdate {
 	return _u.SetOptionsID(v.ID)
 }
 
-// AddItemIDs adds the "items" edge to the Item entity by IDs.
-func (_u *LibraryUpdate) AddItemIDs(ids ...uuid.UUID) *LibraryUpdate {
-	_u.mutation.AddItemIDs(ids...)
+// AddLibraryItemIDs adds the "library_items" edge to the LibraryItem entity by IDs.
+func (_u *LibraryUpdate) AddLibraryItemIDs(ids ...uuid.UUID) *LibraryUpdate {
+	_u.mutation.AddLibraryItemIDs(ids...)
 	return _u
 }
 
-// AddItems adds the "items" edges to the Item entity.
-func (_u *LibraryUpdate) AddItems(v ...*Item) *LibraryUpdate {
+// AddLibraryItems adds the "library_items" edges to the LibraryItem entity.
+func (_u *LibraryUpdate) AddLibraryItems(v ...*LibraryItem) *LibraryUpdate {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.AddItemIDs(ids...)
+	return _u.AddLibraryItemIDs(ids...)
 }
 
-// AddMediaSourceIDs adds the "media_sources" edge to the MediaSource entity by IDs.
-func (_u *LibraryUpdate) AddMediaSourceIDs(ids ...uuid.UUID) *LibraryUpdate {
-	_u.mutation.AddMediaSourceIDs(ids...)
+// AddSourceIDs adds the "sources" edge to the LibrarySource entity by IDs.
+func (_u *LibraryUpdate) AddSourceIDs(ids ...uuid.UUID) *LibraryUpdate {
+	_u.mutation.AddSourceIDs(ids...)
 	return _u
 }
 
-// AddMediaSources adds the "media_sources" edges to the MediaSource entity.
-func (_u *LibraryUpdate) AddMediaSources(v ...*MediaSource) *LibraryUpdate {
+// AddSources adds the "sources" edges to the LibrarySource entity.
+func (_u *LibraryUpdate) AddSources(v ...*LibrarySource) *LibraryUpdate {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.AddMediaSourceIDs(ids...)
+	return _u.AddSourceIDs(ids...)
 }
 
 // Mutation returns the LibraryMutation object of the builder.
@@ -153,46 +153,46 @@ func (_u *LibraryUpdate) ClearOptions() *LibraryUpdate {
 	return _u
 }
 
-// ClearItems clears all "items" edges to the Item entity.
-func (_u *LibraryUpdate) ClearItems() *LibraryUpdate {
-	_u.mutation.ClearItems()
+// ClearLibraryItems clears all "library_items" edges to the LibraryItem entity.
+func (_u *LibraryUpdate) ClearLibraryItems() *LibraryUpdate {
+	_u.mutation.ClearLibraryItems()
 	return _u
 }
 
-// RemoveItemIDs removes the "items" edge to Item entities by IDs.
-func (_u *LibraryUpdate) RemoveItemIDs(ids ...uuid.UUID) *LibraryUpdate {
-	_u.mutation.RemoveItemIDs(ids...)
+// RemoveLibraryItemIDs removes the "library_items" edge to LibraryItem entities by IDs.
+func (_u *LibraryUpdate) RemoveLibraryItemIDs(ids ...uuid.UUID) *LibraryUpdate {
+	_u.mutation.RemoveLibraryItemIDs(ids...)
 	return _u
 }
 
-// RemoveItems removes "items" edges to Item entities.
-func (_u *LibraryUpdate) RemoveItems(v ...*Item) *LibraryUpdate {
+// RemoveLibraryItems removes "library_items" edges to LibraryItem entities.
+func (_u *LibraryUpdate) RemoveLibraryItems(v ...*LibraryItem) *LibraryUpdate {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.RemoveItemIDs(ids...)
+	return _u.RemoveLibraryItemIDs(ids...)
 }
 
-// ClearMediaSources clears all "media_sources" edges to the MediaSource entity.
-func (_u *LibraryUpdate) ClearMediaSources() *LibraryUpdate {
-	_u.mutation.ClearMediaSources()
+// ClearSources clears all "sources" edges to the LibrarySource entity.
+func (_u *LibraryUpdate) ClearSources() *LibraryUpdate {
+	_u.mutation.ClearSources()
 	return _u
 }
 
-// RemoveMediaSourceIDs removes the "media_sources" edge to MediaSource entities by IDs.
-func (_u *LibraryUpdate) RemoveMediaSourceIDs(ids ...uuid.UUID) *LibraryUpdate {
-	_u.mutation.RemoveMediaSourceIDs(ids...)
+// RemoveSourceIDs removes the "sources" edge to LibrarySource entities by IDs.
+func (_u *LibraryUpdate) RemoveSourceIDs(ids ...uuid.UUID) *LibraryUpdate {
+	_u.mutation.RemoveSourceIDs(ids...)
 	return _u
 }
 
-// RemoveMediaSources removes "media_sources" edges to MediaSource entities.
-func (_u *LibraryUpdate) RemoveMediaSources(v ...*MediaSource) *LibraryUpdate {
+// RemoveSources removes "sources" edges to LibrarySource entities.
+func (_u *LibraryUpdate) RemoveSources(v ...*LibrarySource) *LibraryUpdate {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.RemoveMediaSourceIDs(ids...)
+	return _u.RemoveSourceIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -302,28 +302,28 @@ func (_u *LibraryUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.ItemsCleared() {
+	if _u.mutation.LibraryItemsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   library.ItemsTable,
-			Columns: []string{library.ItemsColumn},
+			Table:   library.LibraryItemsTable,
+			Columns: []string{library.LibraryItemsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RemovedItemsIDs(); len(nodes) > 0 && !_u.mutation.ItemsCleared() {
+	if nodes := _u.mutation.RemovedLibraryItemsIDs(); len(nodes) > 0 && !_u.mutation.LibraryItemsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   library.ItemsTable,
-			Columns: []string{library.ItemsColumn},
+			Table:   library.LibraryItemsTable,
+			Columns: []string{library.LibraryItemsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -331,15 +331,15 @@ func (_u *LibraryUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.ItemsIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.LibraryItemsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   library.ItemsTable,
-			Columns: []string{library.ItemsColumn},
+			Table:   library.LibraryItemsTable,
+			Columns: []string{library.LibraryItemsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -347,28 +347,28 @@ func (_u *LibraryUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.MediaSourcesCleared() {
+	if _u.mutation.SourcesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   library.MediaSourcesTable,
-			Columns: []string{library.MediaSourcesColumn},
+			Table:   library.SourcesTable,
+			Columns: []string{library.SourcesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasource.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(librarysource.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RemovedMediaSourcesIDs(); len(nodes) > 0 && !_u.mutation.MediaSourcesCleared() {
+	if nodes := _u.mutation.RemovedSourcesIDs(); len(nodes) > 0 && !_u.mutation.SourcesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   library.MediaSourcesTable,
-			Columns: []string{library.MediaSourcesColumn},
+			Table:   library.SourcesTable,
+			Columns: []string{library.SourcesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasource.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(librarysource.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -376,15 +376,15 @@ func (_u *LibraryUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.MediaSourcesIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.SourcesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   library.MediaSourcesTable,
-			Columns: []string{library.MediaSourcesColumn},
+			Table:   library.SourcesTable,
+			Columns: []string{library.SourcesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasource.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(librarysource.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -491,34 +491,34 @@ func (_u *LibraryUpdateOne) SetOptions(v *LibraryOptions) *LibraryUpdateOne {
 	return _u.SetOptionsID(v.ID)
 }
 
-// AddItemIDs adds the "items" edge to the Item entity by IDs.
-func (_u *LibraryUpdateOne) AddItemIDs(ids ...uuid.UUID) *LibraryUpdateOne {
-	_u.mutation.AddItemIDs(ids...)
+// AddLibraryItemIDs adds the "library_items" edge to the LibraryItem entity by IDs.
+func (_u *LibraryUpdateOne) AddLibraryItemIDs(ids ...uuid.UUID) *LibraryUpdateOne {
+	_u.mutation.AddLibraryItemIDs(ids...)
 	return _u
 }
 
-// AddItems adds the "items" edges to the Item entity.
-func (_u *LibraryUpdateOne) AddItems(v ...*Item) *LibraryUpdateOne {
+// AddLibraryItems adds the "library_items" edges to the LibraryItem entity.
+func (_u *LibraryUpdateOne) AddLibraryItems(v ...*LibraryItem) *LibraryUpdateOne {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.AddItemIDs(ids...)
+	return _u.AddLibraryItemIDs(ids...)
 }
 
-// AddMediaSourceIDs adds the "media_sources" edge to the MediaSource entity by IDs.
-func (_u *LibraryUpdateOne) AddMediaSourceIDs(ids ...uuid.UUID) *LibraryUpdateOne {
-	_u.mutation.AddMediaSourceIDs(ids...)
+// AddSourceIDs adds the "sources" edge to the LibrarySource entity by IDs.
+func (_u *LibraryUpdateOne) AddSourceIDs(ids ...uuid.UUID) *LibraryUpdateOne {
+	_u.mutation.AddSourceIDs(ids...)
 	return _u
 }
 
-// AddMediaSources adds the "media_sources" edges to the MediaSource entity.
-func (_u *LibraryUpdateOne) AddMediaSources(v ...*MediaSource) *LibraryUpdateOne {
+// AddSources adds the "sources" edges to the LibrarySource entity.
+func (_u *LibraryUpdateOne) AddSources(v ...*LibrarySource) *LibraryUpdateOne {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.AddMediaSourceIDs(ids...)
+	return _u.AddSourceIDs(ids...)
 }
 
 // Mutation returns the LibraryMutation object of the builder.
@@ -532,46 +532,46 @@ func (_u *LibraryUpdateOne) ClearOptions() *LibraryUpdateOne {
 	return _u
 }
 
-// ClearItems clears all "items" edges to the Item entity.
-func (_u *LibraryUpdateOne) ClearItems() *LibraryUpdateOne {
-	_u.mutation.ClearItems()
+// ClearLibraryItems clears all "library_items" edges to the LibraryItem entity.
+func (_u *LibraryUpdateOne) ClearLibraryItems() *LibraryUpdateOne {
+	_u.mutation.ClearLibraryItems()
 	return _u
 }
 
-// RemoveItemIDs removes the "items" edge to Item entities by IDs.
-func (_u *LibraryUpdateOne) RemoveItemIDs(ids ...uuid.UUID) *LibraryUpdateOne {
-	_u.mutation.RemoveItemIDs(ids...)
+// RemoveLibraryItemIDs removes the "library_items" edge to LibraryItem entities by IDs.
+func (_u *LibraryUpdateOne) RemoveLibraryItemIDs(ids ...uuid.UUID) *LibraryUpdateOne {
+	_u.mutation.RemoveLibraryItemIDs(ids...)
 	return _u
 }
 
-// RemoveItems removes "items" edges to Item entities.
-func (_u *LibraryUpdateOne) RemoveItems(v ...*Item) *LibraryUpdateOne {
+// RemoveLibraryItems removes "library_items" edges to LibraryItem entities.
+func (_u *LibraryUpdateOne) RemoveLibraryItems(v ...*LibraryItem) *LibraryUpdateOne {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.RemoveItemIDs(ids...)
+	return _u.RemoveLibraryItemIDs(ids...)
 }
 
-// ClearMediaSources clears all "media_sources" edges to the MediaSource entity.
-func (_u *LibraryUpdateOne) ClearMediaSources() *LibraryUpdateOne {
-	_u.mutation.ClearMediaSources()
+// ClearSources clears all "sources" edges to the LibrarySource entity.
+func (_u *LibraryUpdateOne) ClearSources() *LibraryUpdateOne {
+	_u.mutation.ClearSources()
 	return _u
 }
 
-// RemoveMediaSourceIDs removes the "media_sources" edge to MediaSource entities by IDs.
-func (_u *LibraryUpdateOne) RemoveMediaSourceIDs(ids ...uuid.UUID) *LibraryUpdateOne {
-	_u.mutation.RemoveMediaSourceIDs(ids...)
+// RemoveSourceIDs removes the "sources" edge to LibrarySource entities by IDs.
+func (_u *LibraryUpdateOne) RemoveSourceIDs(ids ...uuid.UUID) *LibraryUpdateOne {
+	_u.mutation.RemoveSourceIDs(ids...)
 	return _u
 }
 
-// RemoveMediaSources removes "media_sources" edges to MediaSource entities.
-func (_u *LibraryUpdateOne) RemoveMediaSources(v ...*MediaSource) *LibraryUpdateOne {
+// RemoveSources removes "sources" edges to LibrarySource entities.
+func (_u *LibraryUpdateOne) RemoveSources(v ...*LibrarySource) *LibraryUpdateOne {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.RemoveMediaSourceIDs(ids...)
+	return _u.RemoveSourceIDs(ids...)
 }
 
 // Where appends a list predicates to the LibraryUpdate builder.
@@ -711,28 +711,28 @@ func (_u *LibraryUpdateOne) sqlSave(ctx context.Context) (_node *Library, err er
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.ItemsCleared() {
+	if _u.mutation.LibraryItemsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   library.ItemsTable,
-			Columns: []string{library.ItemsColumn},
+			Table:   library.LibraryItemsTable,
+			Columns: []string{library.LibraryItemsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RemovedItemsIDs(); len(nodes) > 0 && !_u.mutation.ItemsCleared() {
+	if nodes := _u.mutation.RemovedLibraryItemsIDs(); len(nodes) > 0 && !_u.mutation.LibraryItemsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   library.ItemsTable,
-			Columns: []string{library.ItemsColumn},
+			Table:   library.LibraryItemsTable,
+			Columns: []string{library.LibraryItemsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -740,15 +740,15 @@ func (_u *LibraryUpdateOne) sqlSave(ctx context.Context) (_node *Library, err er
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.ItemsIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.LibraryItemsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   library.ItemsTable,
-			Columns: []string{library.ItemsColumn},
+			Table:   library.LibraryItemsTable,
+			Columns: []string{library.LibraryItemsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -756,28 +756,28 @@ func (_u *LibraryUpdateOne) sqlSave(ctx context.Context) (_node *Library, err er
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.MediaSourcesCleared() {
+	if _u.mutation.SourcesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   library.MediaSourcesTable,
-			Columns: []string{library.MediaSourcesColumn},
+			Table:   library.SourcesTable,
+			Columns: []string{library.SourcesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasource.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(librarysource.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RemovedMediaSourcesIDs(); len(nodes) > 0 && !_u.mutation.MediaSourcesCleared() {
+	if nodes := _u.mutation.RemovedSourcesIDs(); len(nodes) > 0 && !_u.mutation.SourcesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   library.MediaSourcesTable,
-			Columns: []string{library.MediaSourcesColumn},
+			Table:   library.SourcesTable,
+			Columns: []string{library.SourcesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasource.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(librarysource.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -785,15 +785,15 @@ func (_u *LibraryUpdateOne) sqlSave(ctx context.Context) (_node *Library, err er
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.MediaSourcesIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.SourcesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   library.MediaSourcesTable,
-			Columns: []string{library.MediaSourcesColumn},
+			Table:   library.SourcesTable,
+			Columns: []string{library.SourcesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasource.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(librarysource.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

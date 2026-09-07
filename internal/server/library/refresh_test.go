@@ -12,22 +12,20 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
-	"github.com/FreekingDean/gojellyfin/internal/metadata"
-	"github.com/FreekingDean/gojellyfin/internal/scanner"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
-type namedJob string
-
-func (n namedJob) Name() string                             { return string(n) }
-func (n namedJob) Category() string                         { return "Library" }
-func (n namedJob) Description() string                      { return "" }
-func (n namedJob) Steps() []any                             { return nil }
-func (n namedJob) Children() []any                          { return nil }
-func (n namedJob) Run(_ jobs.Context, _ jobs.Options) error { return nil }
+func namedJob(name string) jobs.Job {
+	return jobs.Job{
+		Name:      name,
+		Category:  "Library",
+		Startable: true,
+		Run:       func(context.Context) error { return nil },
+	}
+}
 
 func (f *fixture) expecting(t *testing.T, job string) *Server {
 	t.Helper()
@@ -90,7 +88,7 @@ func TestServer_RefreshItem(t *testing.T) {
 		fixed := newFixture(t)
 		movie := fixed.add(t, seed{kind: itemmodal.KindMovie, name: "The Matrix"})
 
-		if _, err := fixed.expecting(t, metadata.RefreshMetadataJobID).RefreshItem(
+		if _, err := fixed.expecting(t, jobs.RefreshMetadata).RefreshItem(
 			context.Background(),
 			refreshRequest(movie, api.MetadataRefreshModeFullRefresh, true),
 		); !errors.Is(err, jobs.ErrNotConfigured) {
@@ -101,7 +99,7 @@ func TestServer_RefreshItem(t *testing.T) {
 	t.Run("starts the metadata job for a library", func(t *testing.T) {
 		fixed := newFixture(t)
 
-		if _, err := fixed.expecting(t, metadata.RefreshMetadataJobID).RefreshItem(
+		if _, err := fixed.expecting(t, jobs.RefreshMetadata).RefreshItem(
 			context.Background(),
 			refreshRequest(fixed.libraryID, api.MetadataRefreshModeFullRefresh, true),
 		); !errors.Is(err, jobs.ErrNotConfigured) {
@@ -113,7 +111,7 @@ func TestServer_RefreshItem(t *testing.T) {
 		fixed := newFixture(t)
 		movie := fixed.add(t, seed{kind: itemmodal.KindMovie, name: "The Matrix"})
 
-		if _, err := fixed.expecting(t, scanner.RefreshLibraryJobID).RefreshItem(
+		if _, err := fixed.expecting(t, jobs.RefreshLibraries).RefreshItem(
 			context.Background(),
 			api.RefreshItemRequestObject{
 				ItemId: movie,

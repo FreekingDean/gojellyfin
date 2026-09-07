@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
-	"github.com/FreekingDean/gojellyfin/internal/collage"
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
@@ -14,7 +13,18 @@ import (
 	"github.com/google/uuid"
 )
 
-func ItemDto(item *items.Item, path string, childCount int32, imageTags map[string]string) api.BaseItemDto {
+func runtime(item *items.Item, held items.Held) *int64 {
+	if item.RunTimeTicks != nil {
+		return item.RunTimeTicks
+	}
+	if held.RunTimeTicks == nil || *held.RunTimeTicks == 0 {
+		return nil
+	}
+
+	return held.RunTimeTicks
+}
+
+func ItemDto(item *items.Item, held items.Held, childCount int32, imageTags map[string]string) api.BaseItemDto {
 	kind := api.BaseItemKind(item.Kind)
 
 	dto := api.BaseItemDto{
@@ -23,17 +33,17 @@ func ItemDto(item *items.Item, path string, childCount int32, imageTags map[stri
 		Name:              apiutil.Ptr(item.Name),
 		SortName:          apiutil.Ptr(item.SortName),
 		Type:              &kind,
-		Path:              apiutil.Ptr(path),
-		IsFolder:          apiutil.Ptr(item.IsFolder),
+		Path:              apiutil.Ptr(held.Path),
+		IsFolder:          apiutil.Ptr(items.IsFolder(item.Kind)),
 		LockData:          apiutil.Ptr(item.LockData),
 		ParentId:          item.ParentID,
 		IndexNumber:       item.IndexNumber,
 		ParentIndexNumber: item.ParentIndexNumber,
 		ProductionYear:    item.ProductionYear,
 		PremiereDate:      item.PremiereDate,
-		RunTimeTicks:      item.RunTimeTicks,
+		RunTimeTicks:      runtime(item, held),
 		DateCreated:       apiutil.Ptr(item.CreatedAt),
-		LocationType:      apiutil.Ptr(api.LocationType(item.LocationType)),
+		LocationType:      apiutil.Ptr(api.FileSystem),
 		ImageTags:         &map[string]*string{},
 		BackdropImageTags: &[]string{},
 	}
@@ -55,6 +65,19 @@ func ItemDto(item *items.Item, path string, childCount int32, imageTags map[stri
 	if item.Overview != "" {
 		dto.Overview = apiutil.Ptr(item.Overview)
 	}
+	if item.OfficialRating != "" {
+		dto.OfficialRating = apiutil.Ptr(item.OfficialRating)
+	}
+	if item.Status != "" {
+		dto.Status = apiutil.Ptr(item.Status)
+	}
+	if item.CommunityRating != nil {
+		dto.CommunityRating = apiutil.Ptr(float32(*item.CommunityRating))
+	}
+	if len(item.Taglines) > 0 {
+		dto.Taglines = apiutil.Ptr(item.Taglines)
+	}
+	dto.EndDate = item.EndDate
 	if len(item.LockedFields) > 0 {
 		locked := make([]api.MetadataField, 0, len(item.LockedFields))
 		for _, field := range item.LockedFields {
@@ -62,11 +85,11 @@ func ItemDto(item *items.Item, path string, childCount int32, imageTags map[stri
 		}
 		dto.LockedFields = &locked
 	}
-	if item.IsFolder {
+	if items.IsFolder(item.Kind) {
 		dto.ChildCount = apiutil.Ptr(childCount)
 	} else {
-		dto.MediaType = apiutil.Ptr(api.MediaType(item.MediaType))
-		dto.HasSubtitles = apiutil.Ptr(item.HasSubtitles)
+		dto.MediaType = apiutil.Ptr(api.MediaType(items.MediaTypeOf(item.Kind)))
+		dto.HasSubtitles = apiutil.Ptr(held.HasSubtitles)
 	}
 
 	return dto
@@ -77,7 +100,7 @@ func ItemDtos(ctx context.Context, store *items.Service, records []*items.Item) 
 	itemIDs := make([]uuid.UUID, 0, len(records))
 	for _, item := range records {
 		itemIDs = append(itemIDs, item.ID)
-		if item.IsFolder {
+		if items.IsFolder(item.Kind) {
 			folderIDs = append(folderIDs, item.ID)
 		}
 	}
@@ -92,7 +115,7 @@ func ItemDtos(ctx context.Context, store *items.Service, records []*items.Item) 
 		return nil, err
 	}
 
-	paths, err := store.PathsByItem(ctx, itemIDs)
+	held, err := store.FilesByItem(ctx, itemIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +129,7 @@ func ItemDtos(ctx context.Context, store *items.Service, records []*items.Item) 
 
 	converted := make([]api.BaseItemDto, 0, len(records))
 	for _, item := range records {
-		dto := ItemDto(item, paths[item.ID], counts[item.ID], imageTags[item.ID])
+		dto := ItemDto(item, held[item.ID], counts[item.ID], imageTags[item.ID])
 		datum, ok := userData[item.ID]
 		if !ok {
 			datum = &items.Datum{ItemID: item.ID}
@@ -134,7 +157,7 @@ func LibraryView(library *libraries.Library) api.BaseItemDto {
 		CollectionType:    &collectionType,
 		IsFolder:          apiutil.Ptr(true),
 		LocationType:      apiutil.Ptr(api.FileSystem),
-		ImageTags:         &map[string]*string{"Primary": apiutil.Ptr(collage.Tag)},
+		ImageTags:         &map[string]*string{},
 		BackdropImageTags: &[]string{},
 	}
 }

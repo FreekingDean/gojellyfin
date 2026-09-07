@@ -12,7 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/google/uuid"
@@ -25,7 +25,7 @@ type MediaStreamQuery struct {
 	order      []mediastream.OrderOption
 	inters     []Interceptor
 	predicates []predicate.MediaStream
-	withSource *MediaSourceQuery
+	withSource *ItemSourceQuery
 	modifiers  []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -64,8 +64,8 @@ func (_q *MediaStreamQuery) Order(o ...mediastream.OrderOption) *MediaStreamQuer
 }
 
 // QuerySource chains the current query on the "source" edge.
-func (_q *MediaStreamQuery) QuerySource() *MediaSourceQuery {
-	query := (&MediaSourceClient{config: _q.config}).Query()
+func (_q *MediaStreamQuery) QuerySource() *ItemSourceQuery {
+	query := (&ItemSourceClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -76,7 +76,7 @@ func (_q *MediaStreamQuery) QuerySource() *MediaSourceQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(mediastream.Table, mediastream.FieldID, selector),
-			sqlgraph.To(mediasource.Table, mediasource.FieldID),
+			sqlgraph.To(itemsource.Table, itemsource.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, mediastream.SourceTable, mediastream.SourceColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
@@ -286,8 +286,8 @@ func (_q *MediaStreamQuery) Clone() *MediaStreamQuery {
 
 // WithSource tells the query-builder to eager-load the nodes that are connected to
 // the "source" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *MediaStreamQuery) WithSource(opts ...func(*MediaSourceQuery)) *MediaStreamQuery {
-	query := (&MediaSourceClient{config: _q.config}).Query()
+func (_q *MediaStreamQuery) WithSource(opts ...func(*ItemSourceQuery)) *MediaStreamQuery {
+	query := (&ItemSourceClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -400,18 +400,18 @@ func (_q *MediaStreamQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 	}
 	if query := _q.withSource; query != nil {
 		if err := _q.loadSource(ctx, query, nodes, nil,
-			func(n *MediaStream, e *MediaSource) { n.Edges.Source = e }); err != nil {
+			func(n *MediaStream, e *ItemSource) { n.Edges.Source = e }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (_q *MediaStreamQuery) loadSource(ctx context.Context, query *MediaSourceQuery, nodes []*MediaStream, init func(*MediaStream), assign func(*MediaStream, *MediaSource)) error {
+func (_q *MediaStreamQuery) loadSource(ctx context.Context, query *ItemSourceQuery, nodes []*MediaStream, init func(*MediaStream), assign func(*MediaStream, *ItemSource)) error {
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*MediaStream)
 	for i := range nodes {
-		fk := nodes[i].SourceID
+		fk := nodes[i].ItemSourceID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -420,7 +420,7 @@ func (_q *MediaStreamQuery) loadSource(ctx context.Context, query *MediaSourceQu
 	if len(ids) == 0 {
 		return nil
 	}
-	query.Where(mediasource.IDIn(ids...))
+	query.Where(itemsource.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
@@ -428,7 +428,7 @@ func (_q *MediaStreamQuery) loadSource(ctx context.Context, query *MediaSourceQu
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "source_id" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "item_source_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -466,7 +466,7 @@ func (_q *MediaStreamQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 		if _q.withSource != nil {
-			_spec.Node.AddColumnOnce(mediastream.FieldSourceID)
+			_spec.Node.AddColumnOnce(mediastream.FieldItemSourceID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

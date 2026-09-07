@@ -12,9 +12,6 @@ type ActivityLogEntry func(*sql.Selector)
 // ApiKey is the predicate function for apikey builders.
 type ApiKey func(*sql.Selector)
 
-// Chapter is the predicate function for chapter builders.
-type Chapter func(*sql.Selector)
-
 // Configuration is the predicate function for configuration builders.
 type Configuration func(*sql.Selector)
 
@@ -33,29 +30,23 @@ type Genre func(*sql.Selector)
 // Image is the predicate function for image builders.
 type Image func(*sql.Selector)
 
-// ImageBlob is the predicate function for imageblob builders.
-type ImageBlob func(*sql.Selector)
-
 // Item is the predicate function for item builders.
 type Item func(*sql.Selector)
+
+// ItemSource is the predicate function for itemsource builders.
+type ItemSource func(*sql.Selector)
 
 // Library is the predicate function for library builders.
 type Library func(*sql.Selector)
 
+// LibraryItem is the predicate function for libraryitem builders.
+type LibraryItem func(*sql.Selector)
+
 // LibraryOptions is the predicate function for libraryoptions builders.
 type LibraryOptions func(*sql.Selector)
 
-// ListingsProvider is the predicate function for listingsprovider builders.
-type ListingsProvider func(*sql.Selector)
-
-// MediaAttachment is the predicate function for mediaattachment builders.
-type MediaAttachment func(*sql.Selector)
-
-// MediaSegment is the predicate function for mediasegment builders.
-type MediaSegment func(*sql.Selector)
-
-// MediaSource is the predicate function for mediasource builders.
-type MediaSource func(*sql.Selector)
+// LibrarySource is the predicate function for librarysource builders.
+type LibrarySource func(*sql.Selector)
 
 // MediaStream is the predicate function for mediastream builders.
 type MediaStream func(*sql.Selector)
@@ -72,23 +63,14 @@ type PlaylistEntry func(*sql.Selector)
 // PlaylistShare is the predicate function for playlistshare builders.
 type PlaylistShare func(*sql.Selector)
 
-// SeriesTimer is the predicate function for seriestimer builders.
-type SeriesTimer func(*sql.Selector)
-
 // Session is the predicate function for session builders.
 type Session func(*sql.Selector)
 
+// Source is the predicate function for source builders.
+type Source func(*sql.Selector)
+
 // Studio is the predicate function for studio builders.
 type Studio func(*sql.Selector)
-
-// Timer is the predicate function for timer builders.
-type Timer func(*sql.Selector)
-
-// Trickplay is the predicate function for trickplay builders.
-type Trickplay func(*sql.Selector)
-
-// TunerHost is the predicate function for tunerhost builders.
-type TunerHost func(*sql.Selector)
 
 // User is the predicate function for user builders.
 type User func(*sql.Selector)

@@ -9,7 +9,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
-	"github.com/FreekingDean/gojellyfin/internal/scanner"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
@@ -33,7 +32,7 @@ func New(
 }
 
 func (s *Server) RefreshLibrary(ctx context.Context, request api.RefreshLibraryRequestObject) (api.RefreshLibraryResponseObject, error) {
-	if err := s.tasks.Start(ctx, scanner.RefreshLibraryJobID, jobs.Options{}); err != nil {
+	if err := s.tasks.Start(ctx, jobs.RefreshLibraries); err != nil {
 		return nil, err
 	}
 
@@ -45,7 +44,7 @@ func (s *Server) itemsByID(ctx context.Context, ids []uuid.UUID) ([]*items.Item,
 		return nil, nil
 	}
 
-	records, _, err := s.items.QueryItems(ctx, items.ItemQuery{IDs: ids})
+	records, _, err := s.items.QueryItems(ctx, items.ItemQuery{Viewer: items.Everyone, IDs: ids})
 
 	return records, err
 }

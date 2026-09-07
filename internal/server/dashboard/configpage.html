@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Library Sources</title>
+</head>
+<body>
+<div data-role="page" id="gojellyfinSourcesPage" class="page type-interior pluginConfigurationPage fullWidthContent"
+     data-require="emby-input,emby-button,emby-select">
+    <div class="content-primary">
+        <div class="verticalSection">
+            <div class="sectionTitleContainer flex align-items-center">
+                <h2 class="sectionTitle">Library Sources</h2>
+            </div>
+            <p class="fieldDescription">
+                Connect a Sonarr or Radarr instance and bind it to a library. Several instances may feed one
+                library, and one instance may feed several libraries when each binding names a different tag.
+            </p>
+        </div>
+
+        <div id="connectionCards" class="itemsContainer vertical-wrap"></div>
+
+        <div id="connectionEditor" class="verticalSection" style="display:none"></div>
+
+        <br />
+
+        <button is="emby-button" id="saveConfig" type="button" class="raised button-submit block">
+            <span>Save</span>
+        </button>
+    </div>
+
+    <template id="cardTemplate">
+        <div class="card backdropCard scalableCard backdropCard-scalable" style="cursor:pointer">
+            <div class="cardBox cardBox-bottompadded">
+                <div class="cardScalable">
+                    <div class="cardPadder cardPadder-backdrop"></div>
+                    <div class="cardContent cardContent-shadow">
+                        <div data-id="tile" class="cardImageContainer coveredImage defaultCardBackground defaultCardBackground1">
+                            <span data-id="icon" class="cardImageIcon material-icons"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="cardFooter">
+                    <div data-id="name" class="cardText"></div>
+                    <div data-id="detail" class="cardText cardText-secondary"></div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="editorTemplate">
+        <div class="verticalSection" style="border:1px solid rgba(127,127,127,.25);border-radius:4px;padding:1.25em">
+            <div class="flex align-items-center" style="gap:1em;flex-wrap:wrap">
+                <div class="inputContainer" style="flex:2 1 16em;margin-bottom:0">
+                    <label class="inputLabel inputLabelUnfocused">Name</label>
+                    <input type="text" data-id="txtName" class="emby-input" placeholder="Radarr 4K" />
+                </div>
+                <div class="selectContainer" style="flex:1 1 10em;margin-bottom:0">
+                    <label class="selectLabel">Type</label>
+                    <select data-id="selKind" class="emby-select-withcolor emby-select">
+                        <option value="radarr">Radarr</option>
+                        <option value="sonarr">Sonarr</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="inputContainer">
+                <label class="inputLabel inputLabelUnfocused">URL</label>
+                <input type="url" data-id="txtUrl" class="emby-input" placeholder="http://radarr:7878" />
+                <div class="fieldDescription">The address this server reaches the instance on, not the one your browser uses.</div>
+            </div>
+
+            <div class="flex align-items-center" style="gap:1em;flex-wrap:wrap">
+                <div class="inputContainer" style="flex:1 1 16em">
+                    <label class="inputLabel inputLabelUnfocused">Root path</label>
+                    <input type="text" data-id="txtRootPath" class="emby-input" placeholder="/data/movies" />
+                    <div class="fieldDescription">The directory this instance reports its files under. One instance owns one directory, and two instances may not overlap.</div>
+                </div>
+                <div class="inputContainer" style="flex:1 1 16em">
+                    <label class="inputLabel inputLabelUnfocused">Path on this server</label>
+                    <input type="text" data-id="txtLocalPath" class="emby-input" placeholder="/media/movies" />
+                    <div class="fieldDescription">Where this server opens those same files. The same value if they share a filesystem.</div>
+                </div>
+            </div>
+
+            <div class="inputContainer">
+                <label class="inputLabel inputLabelUnfocused">API key variable</label>
+                <input type="text" data-id="txtApiKeyVariable" class="emby-input" autocomplete="off"
+                       placeholder="SOURCE_API_KEY_RADARR" />
+                <div class="fieldDescription">
+                    The name of an environment variable on the server holding the key, not the key itself.
+                    It must begin with SOURCE_API_KEY_. Take the key from Settings &rarr; General &rarr; Security
+                    in Sonarr or Radarr and set it on the server, then name the variable here.
+                </div>
+            </div>
+
+            <div class="flex align-items-center" style="gap:1em;margin-bottom:1.5em">
+                <button is="emby-button" data-id="testConnection" type="button" class="raised raised-mini">
+                    <span>Test connection</span>
+                </button>
+                <span data-id="testResult" class="fieldDescription" style="margin:0"></span>
+            </div>
+
+            <h3 class="checkboxListLabel">Libraries</h3>
+            <p class="fieldDescription">
+                Each row binds this instance to one library. The tag filter is optional and empty means every
+                title the instance manages.
+            </p>
+            <table style="width:100%">
+                <thead>
+                    <tr>
+                        <th style="text-align:left;width:60%">Library</th>
+                        <th style="text-align:left;width:40%">Tag filter</th>
+                        <th style="text-align:right"></th>
+                    </tr>
+                </thead>
+                <tbody data-id="bindingsHost"></tbody>
+            </table>
+            <button is="emby-button" data-id="addBinding" type="button" class="raised raised-mini">
+                <span>Add library</span>
+            </button>
+
+            <div class="flex align-items-center" style="gap:1em;margin-top:1.5em">
+                <button is="emby-button" data-id="doneEditing" type="button" class="raised raised-mini">
+                    <span>Done</span>
+                </button>
+                <button is="emby-button" data-id="removeConnection" type="button" class="raised raised-mini" style="margin-left:auto">
+                    <span>Remove</span>
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <template id="bindingTemplate">
+        <tr>
+            <td style="vertical-align:top;padding-right:1em">
+                <select data-id="selLibrary" class="emby-select-withcolor emby-select"></select>
+            </td>
+            <td style="vertical-align:top;padding-right:1em">
+                <input type="text" data-id="txtTag" class="emby-input" placeholder="4k" />
+            </td>
+            <td style="vertical-align:top;text-align:right">
+                <button is="emby-button" data-id="removeBinding" type="button" class="raised raised-mini">
+                    <span>Remove</span>
+                </button>
+            </td>
+        </tr>
+    </template>
+
+    <script type="text/javascript">
+        window.GoJellyfinSources = {
+            collectionTypes: { radarr: 'movies', sonarr: 'tvshows' },
+            icons: { radarr: 'movie', sonarr: 'live_tv' },
+
+            libraries: [],
+            connections: [],
+            editing: -1,
+
+            page: function () {
+                return document.querySelector('#gojellyfinSourcesPage');
+            },
+
+            bound: function (count) {
+                if (count === 0) {
+                    return 'No libraries';
+                }
+
+                return count === 1 ? '1 library' : count + ' libraries';
+            },
+
+            card: function (connection, index) {
+                const source = window.GoJellyfinSources;
+                const clone = document.querySelector('#cardTemplate').content.cloneNode(true);
+                const card = clone.querySelector('.card');
+                const kind = connection.Kind || 'radarr';
+
+                card.querySelector('[data-id=name]').textContent = connection.Name || 'Unnamed connection';
+                card.querySelector('[data-id=detail]').textContent =
+                    (kind === 'sonarr' ? 'Sonarr' : 'Radarr') + ' · ' +
+                    source.bound((connection.Libraries || []).length);
+                card.querySelector('[data-id=icon]').classList.add(source.icons[kind]);
+                card.querySelector('[data-id=tile]').classList.add('defaultCardBackground' + ((index % 5) + 1));
+
+                card.addEventListener('click', function () {
+                    source.openEditor(index);
+                });
+
+                return clone;
+            },
+
+            addCard: function () {
+                const source = window.GoJellyfinSources;
+                const clone = document.querySelector('#cardTemplate').content.cloneNode(true);
+                const card = clone.querySelector('.card');
+
+                card.querySelector('[data-id=name]').textContent = 'Add connection';
+                card.querySelector('[data-id=detail]').textContent = 'Sonarr or Radarr';
+                card.querySelector('[data-id=icon]').classList.add('add');
+                card.querySelector('[data-id=tile]').classList.add('defaultCardBackground5');
+
+                card.addEventListener('click', function () {
+                    source.commit();
+                    source.connections.push({ Kind: 'radarr', Libraries: [] });
+                    source.render();
+                    source.openEditor(source.connections.length - 1);
+                });
+
+                return clone;
+            },
+
+            render: function () {
+                const source = window.GoJellyfinSources;
+                const host = source.page().querySelector('#connectionCards');
+
+                host.innerHTML = '';
+                source.connections.forEach(function (connection, index) {
+                    host.appendChild(source.card(connection, index));
+                });
+                host.appendChild(source.addCard());
+            },
+
+            fillLibraries: function (select, kind, selected) {
+                const wanted = window.GoJellyfinSources.collectionTypes[kind];
+                const matching = window.GoJellyfinSources.libraries.filter(function (library) {
+                    return !wanted || !library.CollectionType ||
+                        library.CollectionType === wanted || library.CollectionType === 'mixed';
+                });
+
+                select.innerHTML = matching.map(function (library) {
+                    return '<option value="' + library.ItemId + '">' + library.Name + '</option>';
+                }).join('');
+
+                if (selected && matching.some(function (library) { return library.ItemId === selected; })) {
+                    select.value = selected;
+                }
+            },
+
+            addBinding: function (editor, binding) {
+                const clone = document.querySelector('#bindingTemplate').content.cloneNode(true);
+                const row = clone.querySelector('tr');
+                const kind = editor.querySelector('[data-id=selKind]').value;
+
+                row.querySelector('[data-id=txtTag]').value = binding.TagFilter || '';
+                window.GoJellyfinSources.fillLibraries(row.querySelector('[data-id=selLibrary]'), kind, binding.Id);
+
+                row.querySelector('[data-id=removeBinding]').addEventListener('click', function () {
+                    row.remove();
+                });
+
+                editor.querySelector('[data-id=bindingsHost]').appendChild(clone);
+            },
+
+            openEditor: function (index) {
+                const source = window.GoJellyfinSources;
+
+                source.commit();
+                source.editing = index;
+
+                const connection = source.connections[index];
+                const host = source.page().querySelector('#connectionEditor');
+                const clone = document.querySelector('#editorTemplate').content.cloneNode(true);
+                const editor = clone.querySelector('.verticalSection');
+
+                editor.querySelector('[data-id=txtName]').value = connection.Name || '';
+                editor.querySelector('[data-id=selKind]').value = connection.Kind || 'radarr';
+                editor.querySelector('[data-id=txtUrl]').value = connection.Url || '';
+                editor.querySelector('[data-id=txtApiKeyVariable]').value = connection.ApiKeyVariable || '';
+                editor.querySelector('[data-id=txtRootPath]').value = connection.RootPath || '';
+                editor.querySelector('[data-id=txtLocalPath]').value = connection.LocalPath || '';
+
+                editor.querySelector('[data-id=selKind]').addEventListener('change', function (e) {
+                    editor.querySelectorAll('[data-id=selLibrary]').forEach(function (select) {
+                        source.fillLibraries(select, e.target.value, select.value);
+                    });
+                });
+
+                editor.querySelector('[data-id=addBinding]').addEventListener('click', function () {
+                    source.addBinding(editor, {});
+                });
+
+                editor.querySelector('[data-id=testConnection]').addEventListener('click', function () {
+                    source.testConnection(editor);
+                });
+
+                editor.querySelector('[data-id=doneEditing]').addEventListener('click', function () {
+                    source.commit();
+                    source.closeEditor();
+                    source.render();
+                });
+
+                editor.querySelector('[data-id=removeConnection]').addEventListener('click', function () {
+                    source.connections.splice(source.editing, 1);
+                    source.closeEditor();
+                    source.render();
+                });
+
+                host.innerHTML = '';
+                host.appendChild(clone);
+                host.style.display = '';
+
+                (connection.Libraries || []).forEach(function (binding) {
+                    source.addBinding(editor, binding);
+                });
+
+                host.scrollIntoView({ block: 'nearest' });
+            },
+
+            closeEditor: function () {
+                const host = window.GoJellyfinSources.page().querySelector('#connectionEditor');
+
+                window.GoJellyfinSources.editing = -1;
+                host.innerHTML = '';
+                host.style.display = 'none';
+            },
+
+            editor: function () {
+                return window.GoJellyfinSources.page().querySelector('#connectionEditor .verticalSection');
+            },
+
+            commit: function () {
+                const source = window.GoJellyfinSources;
+                const editor = source.editor();
+
+                if (source.editing < 0 || !editor) {
+                    return;
+                }
+
+                source.connections[source.editing] = source.readEditor(editor);
+            },
+
+            readEditor: function (editor) {
+                const libraries = Array.prototype.map.call(editor.querySelectorAll('[data-id=bindingsHost] tr'), function (row) {
+                    return {
+                        Id: row.querySelector('[data-id=selLibrary]').value,
+                        TagFilter: row.querySelector('[data-id=txtTag]').value.trim()
+                    };
+                });
+
+                return {
+                    Name: editor.querySelector('[data-id=txtName]').value.trim(),
+                    Kind: editor.querySelector('[data-id=selKind]').value,
+                    Url: editor.querySelector('[data-id=txtUrl]').value.trim().replace(/\/+$/, ''),
+                    ApiKeyVariable: editor.querySelector('[data-id=txtApiKeyVariable]').value.trim(),
+                    RootPath: editor.querySelector('[data-id=txtRootPath]').value.trim(),
+                    LocalPath: editor.querySelector('[data-id=txtLocalPath]').value.trim(),
+                    Libraries: libraries
+                };
+            },
+
+            testConnection: function (editor) {
+                const result = editor.querySelector('[data-id=testResult]');
+                const connection = window.GoJellyfinSources.readEditor(editor);
+
+                result.textContent = 'Testing…';
+
+                window.ApiClient.ajax({
+                    type: 'POST',
+                    url: window.ApiClient.getUrl('GoJellyfin/Sources/Test'),
+                    data: JSON.stringify({
+                        Kind: connection.Kind,
+                        Url: connection.Url,
+                        ApiKeyVariable: connection.ApiKeyVariable
+                    }),
+                    contentType: 'application/json',
+                    dataType: 'json'
+                }).then(function (response) {
+                    if (!response.Reachable) {
+                        result.textContent = 'Failed: ' + (response.Error || 'unreachable');
+
+                        return;
+                    }
+
+                    result.textContent = 'Reachable';
+                }).catch(function (error) {
+                    result.textContent = 'Failed: ' + (error && error.statusText ? error.statusText : 'request refused');
+                });
+            },
+
+            loadConfig: function () {
+                const source = window.GoJellyfinSources;
+
+                Dashboard.showLoadingMsg();
+
+                window.ApiClient.getJSON(window.ApiClient.getUrl('Library/VirtualFolders')).then(function (libraries) {
+                    source.libraries = libraries || [];
+
+                    return window.ApiClient.getJSON(window.ApiClient.getUrl('GoJellyfin/Sources'));
+                }).then(function (sources) {
+                    source.connections = sources || [];
+                    source.closeEditor();
+                    source.render();
+                }).catch(function (error) {
+                    console.error(error);
+                }).finally(function () {
+                    Dashboard.hideLoadingMsg();
+                });
+            },
+
+            saveConfig: function () {
+                const source = window.GoJellyfinSources;
+
+                source.commit();
+
+                Dashboard.showLoadingMsg();
+
+                window.ApiClient.ajax({
+                    type: 'PUT',
+                    url: window.ApiClient.getUrl('GoJellyfin/Sources'),
+                    data: JSON.stringify(source.connections),
+                    contentType: 'application/json'
+                }).then(function () {
+                    Dashboard.alert('Sources saved.');
+                    source.render();
+                }).catch(function (error) {
+                    console.error(error);
+                    Dashboard.alert('Sources could not be saved.');
+                }).finally(function () {
+                    Dashboard.hideLoadingMsg();
+                });
+            },
+
+            init: function () {
+                const source = window.GoJellyfinSources;
+
+                source.page().querySelector('#saveConfig').addEventListener('click', source.saveConfig);
+                source.loadConfig();
+            }
+        };
+
+        document.querySelector('#gojellyfinSourcesPage').addEventListener('pageshow', function () {
+            window.GoJellyfinSources.init();
+        });
+    </script>
+</div>
+</body>
+</html>

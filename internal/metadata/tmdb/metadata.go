@@ -8,6 +8,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/consts"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	creditmodal "github.com/FreekingDean/gojellyfin/internal/store/credit"
 	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
 )
 
@@ -41,16 +42,18 @@ func movieMetadata(movie *gotmdb.MovieDetails, base string) items.Metadata {
 	premiere := date(movie.ReleaseDate)
 
 	return items.Metadata{
-		Name:                text(movie.Title),
-		OriginalTitle:       text(movie.OriginalTitle),
-		Overview:            text(movie.Overview),
-		OfficialRating:      rating(movieCertification(movie)),
-		CommunityRating:     score(movie.VoteAverage),
-		PremiereDate:        premiere,
-		ProductionYear:      year(premiere),
-		Taglines:            list(movie.Tagline),
-		ProductionLocations: countries(movie.ProductionCountries),
-		ProviderIds:         providerIDs(movie.ID, movie.IMDbID),
+		Name:            text(movie.Title),
+		Overview:        text(movie.Overview),
+		OfficialRating:  rating(movieCertification(movie)),
+		CommunityRating: score(movie.VoteAverage),
+		PremiereDate:    premiere,
+		ProductionYear:  year(premiere),
+		Taglines:        list(movie.Tagline),
+		Genres:          named(movie.Genres),
+		RunTimeTicks:    ticks(movie.Runtime),
+		Studios:         companies(movie.ProductionCompanies),
+		People:          movieCredits(movie),
+		ProviderIds:     providerIDs(movie.ID, movie.IMDbID),
 		Images: artwork(
 			remote(imagemodal.KindPrimary, base, posterSize, movie.PosterPath),
 			remote(imagemodal.KindBackdrop, base, backdropSize, movie.BackdropPath),
@@ -62,17 +65,18 @@ func seriesMetadata(series *gotmdb.TVDetails, base string) items.Metadata {
 	premiere := date(series.FirstAirDate)
 
 	metadata := items.Metadata{
-		Name:                text(series.Name),
-		OriginalTitle:       text(series.OriginalName),
-		Overview:            text(series.Overview),
-		Status:              text(seriesStatus(series.Status)),
-		OfficialRating:      rating(seriesCertification(series)),
-		CommunityRating:     score(series.VoteAverage),
-		PremiereDate:        premiere,
-		ProductionYear:      year(premiere),
-		Taglines:            list(series.Tagline),
-		ProductionLocations: countries(series.ProductionCountries),
-		ProviderIds:         providerIDs(series.ID, seriesIMDbID(series)),
+		Name:            text(series.Name),
+		Overview:        text(series.Overview),
+		Status:          text(seriesStatus(series.Status)),
+		OfficialRating:  rating(seriesCertification(series)),
+		CommunityRating: score(series.VoteAverage),
+		PremiereDate:    premiere,
+		ProductionYear:  year(premiere),
+		Taglines:        list(series.Tagline),
+		Genres:          named(series.Genres),
+		Studios:         companies(series.ProductionCompanies),
+		People:          seriesCredits(series),
+		ProviderIds:     providerIDs(series.ID, seriesIMDbID(series)),
 		Images: artwork(
 			remote(imagemodal.KindPrimary, base, posterSize, series.PosterPath),
 			remote(imagemodal.KindBackdrop, base, backdropSize, series.BackdropPath),
@@ -200,19 +204,6 @@ func providerIDs(tmdbID int64, imdbID string) *map[string]string {
 	return &ids
 }
 
-func countries(named []gotmdb.ProductionCountry) *[]string {
-	if len(named) == 0 {
-		return nil
-	}
-
-	names := make([]string, 0, len(named))
-	for _, one := range named {
-		names = append(names, one.Name)
-	}
-
-	return &names
-}
-
 func date(value string) *time.Time {
 	parsed, err := time.Parse(time.DateOnly, value)
 	if err != nil {
@@ -237,6 +228,103 @@ func text(value string) *string {
 	}
 
 	return &value
+}
+
+func movieCredits(movie *gotmdb.MovieDetails) *[]items.Credit {
+	if movie.MovieCreditsAppend == nil || movie.Credits.MovieCredits == nil {
+		return nil
+	}
+
+	people := make([]items.Credit, 0, len(movie.Credits.Cast)+len(movie.Credits.Crew))
+	for _, member := range movie.Credits.Cast {
+		people = append(people, cast(member.Name, member.Character, member.Order))
+	}
+	for _, member := range movie.Credits.Crew {
+		if credit, wanted := crew(member.Name, member.Job); wanted {
+			people = append(people, credit)
+		}
+	}
+
+	if len(people) == 0 {
+		return nil
+	}
+
+	return &people
+}
+
+func seriesCredits(series *gotmdb.TVDetails) *[]items.Credit {
+	if series.TVCreditsAppend == nil || series.Credits.TVCredits == nil {
+		return nil
+	}
+
+	people := make([]items.Credit, 0, len(series.Credits.Cast)+len(series.Credits.Crew))
+	for _, member := range series.Credits.Cast {
+		people = append(people, cast(member.Name, member.Character, member.Order))
+	}
+	for _, member := range series.Credits.Crew {
+		if credit, wanted := crew(member.Name, member.Job); wanted {
+			people = append(people, credit)
+		}
+	}
+
+	if len(people) == 0 {
+		return nil
+	}
+
+	return &people
+}
+
+func cast(name, character string, order int) items.Credit {
+	return items.Credit{Name: name, Kind: creditmodal.KindActor, Role: character, Order: int32(order)}
+}
+
+func crew(name, job string) (items.Credit, bool) {
+	kind, wanted := crewKinds[job]
+
+	return items.Credit{Name: name, Kind: kind}, wanted
+}
+
+var crewKinds = map[string]items.CreditKind{
+	"Director": creditmodal.KindDirector,
+	"Writer":   creditmodal.KindWriter,
+	"Producer": creditmodal.KindProducer,
+	"Composer": creditmodal.KindComposer,
+}
+
+func ticks(minutes int) *int64 {
+	if minutes <= 0 {
+		return nil
+	}
+
+	value := int64(minutes) * 60 * 10_000_000
+
+	return &value
+}
+
+func named(genres []gotmdb.Genre) *[]string {
+	if len(genres) == 0 {
+		return nil
+	}
+
+	names := make([]string, 0, len(genres))
+	for _, genre := range genres {
+		names = append(names, genre.Name)
+	}
+
+	return &names
+}
+
+func companies(studios []gotmdb.ProductionCompany) *[]string {
+	if len(studios) == 0 {
+		return nil
+	}
+
+	names := make([]string, 0, len(studios))
+	for _, studio := range studios {
+		names = append(names, studio.Name)
+	}
+
+	return &names
 }
 
 func list(value string) *[]string {

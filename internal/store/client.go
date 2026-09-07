@@ -18,32 +18,26 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/apikey"
-	"github.com/FreekingDean/gojellyfin/internal/store/chapter"
 	"github.com/FreekingDean/gojellyfin/internal/store/configuration"
 	"github.com/FreekingDean/gojellyfin/internal/store/credit"
 	"github.com/FreekingDean/gojellyfin/internal/store/device"
 	"github.com/FreekingDean/gojellyfin/internal/store/displaypreferences"
 	"github.com/FreekingDean/gojellyfin/internal/store/genre"
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
-	"github.com/FreekingDean/gojellyfin/internal/store/imageblob"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
+	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
+	"github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
-	"github.com/FreekingDean/gojellyfin/internal/store/listingsprovider"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediaattachment"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasegment"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/person"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
-	"github.com/FreekingDean/gojellyfin/internal/store/seriestimer"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
+	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
-	"github.com/FreekingDean/gojellyfin/internal/store/timer"
-	"github.com/FreekingDean/gojellyfin/internal/store/trickplay"
-	"github.com/FreekingDean/gojellyfin/internal/store/tunerhost"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
 	"github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
@@ -61,8 +55,6 @@ type Client struct {
 	ActivityLogEntry *ActivityLogEntryClient
 	// ApiKey is the client for interacting with the ApiKey builders.
 	ApiKey *ApiKeyClient
-	// Chapter is the client for interacting with the Chapter builders.
-	Chapter *ChapterClient
 	// Configuration is the client for interacting with the Configuration builders.
 	Configuration *ConfigurationClient
 	// Credit is the client for interacting with the Credit builders.
@@ -75,22 +67,18 @@ type Client struct {
 	Genre *GenreClient
 	// Image is the client for interacting with the Image builders.
 	Image *ImageClient
-	// ImageBlob is the client for interacting with the ImageBlob builders.
-	ImageBlob *ImageBlobClient
 	// Item is the client for interacting with the Item builders.
 	Item *ItemClient
+	// ItemSource is the client for interacting with the ItemSource builders.
+	ItemSource *ItemSourceClient
 	// Library is the client for interacting with the Library builders.
 	Library *LibraryClient
+	// LibraryItem is the client for interacting with the LibraryItem builders.
+	LibraryItem *LibraryItemClient
 	// LibraryOptions is the client for interacting with the LibraryOptions builders.
 	LibraryOptions *LibraryOptionsClient
-	// ListingsProvider is the client for interacting with the ListingsProvider builders.
-	ListingsProvider *ListingsProviderClient
-	// MediaAttachment is the client for interacting with the MediaAttachment builders.
-	MediaAttachment *MediaAttachmentClient
-	// MediaSegment is the client for interacting with the MediaSegment builders.
-	MediaSegment *MediaSegmentClient
-	// MediaSource is the client for interacting with the MediaSource builders.
-	MediaSource *MediaSourceClient
+	// LibrarySource is the client for interacting with the LibrarySource builders.
+	LibrarySource *LibrarySourceClient
 	// MediaStream is the client for interacting with the MediaStream builders.
 	MediaStream *MediaStreamClient
 	// Person is the client for interacting with the Person builders.
@@ -101,18 +89,12 @@ type Client struct {
 	PlaylistEntry *PlaylistEntryClient
 	// PlaylistShare is the client for interacting with the PlaylistShare builders.
 	PlaylistShare *PlaylistShareClient
-	// SeriesTimer is the client for interacting with the SeriesTimer builders.
-	SeriesTimer *SeriesTimerClient
 	// Session is the client for interacting with the Session builders.
 	Session *SessionClient
+	// Source is the client for interacting with the Source builders.
+	Source *SourceClient
 	// Studio is the client for interacting with the Studio builders.
 	Studio *StudioClient
-	// Timer is the client for interacting with the Timer builders.
-	Timer *TimerClient
-	// Trickplay is the client for interacting with the Trickplay builders.
-	Trickplay *TrickplayClient
-	// TunerHost is the client for interacting with the TunerHost builders.
-	TunerHost *TunerHostClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 	// UserConfiguration is the client for interacting with the UserConfiguration builders.
@@ -134,32 +116,26 @@ func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.ActivityLogEntry = NewActivityLogEntryClient(c.config)
 	c.ApiKey = NewApiKeyClient(c.config)
-	c.Chapter = NewChapterClient(c.config)
 	c.Configuration = NewConfigurationClient(c.config)
 	c.Credit = NewCreditClient(c.config)
 	c.Device = NewDeviceClient(c.config)
 	c.DisplayPreferences = NewDisplayPreferencesClient(c.config)
 	c.Genre = NewGenreClient(c.config)
 	c.Image = NewImageClient(c.config)
-	c.ImageBlob = NewImageBlobClient(c.config)
 	c.Item = NewItemClient(c.config)
+	c.ItemSource = NewItemSourceClient(c.config)
 	c.Library = NewLibraryClient(c.config)
+	c.LibraryItem = NewLibraryItemClient(c.config)
 	c.LibraryOptions = NewLibraryOptionsClient(c.config)
-	c.ListingsProvider = NewListingsProviderClient(c.config)
-	c.MediaAttachment = NewMediaAttachmentClient(c.config)
-	c.MediaSegment = NewMediaSegmentClient(c.config)
-	c.MediaSource = NewMediaSourceClient(c.config)
+	c.LibrarySource = NewLibrarySourceClient(c.config)
 	c.MediaStream = NewMediaStreamClient(c.config)
 	c.Person = NewPersonClient(c.config)
 	c.Playlist = NewPlaylistClient(c.config)
 	c.PlaylistEntry = NewPlaylistEntryClient(c.config)
 	c.PlaylistShare = NewPlaylistShareClient(c.config)
-	c.SeriesTimer = NewSeriesTimerClient(c.config)
 	c.Session = NewSessionClient(c.config)
+	c.Source = NewSourceClient(c.config)
 	c.Studio = NewStudioClient(c.config)
-	c.Timer = NewTimerClient(c.config)
-	c.Trickplay = NewTrickplayClient(c.config)
-	c.TunerHost = NewTunerHostClient(c.config)
 	c.User = NewUserClient(c.config)
 	c.UserConfiguration = NewUserConfigurationClient(c.config)
 	c.UserItemData = NewUserItemDataClient(c.config)
@@ -258,32 +234,26 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		config:             cfg,
 		ActivityLogEntry:   NewActivityLogEntryClient(cfg),
 		ApiKey:             NewApiKeyClient(cfg),
-		Chapter:            NewChapterClient(cfg),
 		Configuration:      NewConfigurationClient(cfg),
 		Credit:             NewCreditClient(cfg),
 		Device:             NewDeviceClient(cfg),
 		DisplayPreferences: NewDisplayPreferencesClient(cfg),
 		Genre:              NewGenreClient(cfg),
 		Image:              NewImageClient(cfg),
-		ImageBlob:          NewImageBlobClient(cfg),
 		Item:               NewItemClient(cfg),
+		ItemSource:         NewItemSourceClient(cfg),
 		Library:            NewLibraryClient(cfg),
+		LibraryItem:        NewLibraryItemClient(cfg),
 		LibraryOptions:     NewLibraryOptionsClient(cfg),
-		ListingsProvider:   NewListingsProviderClient(cfg),
-		MediaAttachment:    NewMediaAttachmentClient(cfg),
-		MediaSegment:       NewMediaSegmentClient(cfg),
-		MediaSource:        NewMediaSourceClient(cfg),
+		LibrarySource:      NewLibrarySourceClient(cfg),
 		MediaStream:        NewMediaStreamClient(cfg),
 		Person:             NewPersonClient(cfg),
 		Playlist:           NewPlaylistClient(cfg),
 		PlaylistEntry:      NewPlaylistEntryClient(cfg),
 		PlaylistShare:      NewPlaylistShareClient(cfg),
-		SeriesTimer:        NewSeriesTimerClient(cfg),
 		Session:            NewSessionClient(cfg),
+		Source:             NewSourceClient(cfg),
 		Studio:             NewStudioClient(cfg),
-		Timer:              NewTimerClient(cfg),
-		Trickplay:          NewTrickplayClient(cfg),
-		TunerHost:          NewTunerHostClient(cfg),
 		User:               NewUserClient(cfg),
 		UserConfiguration:  NewUserConfigurationClient(cfg),
 		UserItemData:       NewUserItemDataClient(cfg),
@@ -309,32 +279,26 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		config:             cfg,
 		ActivityLogEntry:   NewActivityLogEntryClient(cfg),
 		ApiKey:             NewApiKeyClient(cfg),
-		Chapter:            NewChapterClient(cfg),
 		Configuration:      NewConfigurationClient(cfg),
 		Credit:             NewCreditClient(cfg),
 		Device:             NewDeviceClient(cfg),
 		DisplayPreferences: NewDisplayPreferencesClient(cfg),
 		Genre:              NewGenreClient(cfg),
 		Image:              NewImageClient(cfg),
-		ImageBlob:          NewImageBlobClient(cfg),
 		Item:               NewItemClient(cfg),
+		ItemSource:         NewItemSourceClient(cfg),
 		Library:            NewLibraryClient(cfg),
+		LibraryItem:        NewLibraryItemClient(cfg),
 		LibraryOptions:     NewLibraryOptionsClient(cfg),
-		ListingsProvider:   NewListingsProviderClient(cfg),
-		MediaAttachment:    NewMediaAttachmentClient(cfg),
-		MediaSegment:       NewMediaSegmentClient(cfg),
-		MediaSource:        NewMediaSourceClient(cfg),
+		LibrarySource:      NewLibrarySourceClient(cfg),
 		MediaStream:        NewMediaStreamClient(cfg),
 		Person:             NewPersonClient(cfg),
 		Playlist:           NewPlaylistClient(cfg),
 		PlaylistEntry:      NewPlaylistEntryClient(cfg),
 		PlaylistShare:      NewPlaylistShareClient(cfg),
-		SeriesTimer:        NewSeriesTimerClient(cfg),
 		Session:            NewSessionClient(cfg),
+		Source:             NewSourceClient(cfg),
 		Studio:             NewStudioClient(cfg),
-		Timer:              NewTimerClient(cfg),
-		Trickplay:          NewTrickplayClient(cfg),
-		TunerHost:          NewTunerHostClient(cfg),
 		User:               NewUserClient(cfg),
 		UserConfiguration:  NewUserConfigurationClient(cfg),
 		UserItemData:       NewUserItemDataClient(cfg),
@@ -368,12 +332,11 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.ActivityLogEntry, c.ApiKey, c.Chapter, c.Configuration, c.Credit, c.Device,
-		c.DisplayPreferences, c.Genre, c.Image, c.ImageBlob, c.Item, c.Library,
-		c.LibraryOptions, c.ListingsProvider, c.MediaAttachment, c.MediaSegment,
-		c.MediaSource, c.MediaStream, c.Person, c.Playlist, c.PlaylistEntry,
-		c.PlaylistShare, c.SeriesTimer, c.Session, c.Studio, c.Timer, c.Trickplay,
-		c.TunerHost, c.User, c.UserConfiguration, c.UserItemData, c.UserPolicy,
+		c.ActivityLogEntry, c.ApiKey, c.Configuration, c.Credit, c.Device,
+		c.DisplayPreferences, c.Genre, c.Image, c.Item, c.ItemSource, c.Library,
+		c.LibraryItem, c.LibraryOptions, c.LibrarySource, c.MediaStream, c.Person,
+		c.Playlist, c.PlaylistEntry, c.PlaylistShare, c.Session, c.Source, c.Studio,
+		c.User, c.UserConfiguration, c.UserItemData, c.UserPolicy,
 	} {
 		n.Use(hooks...)
 	}
@@ -383,12 +346,11 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.ActivityLogEntry, c.ApiKey, c.Chapter, c.Configuration, c.Credit, c.Device,
-		c.DisplayPreferences, c.Genre, c.Image, c.ImageBlob, c.Item, c.Library,
-		c.LibraryOptions, c.ListingsProvider, c.MediaAttachment, c.MediaSegment,
-		c.MediaSource, c.MediaStream, c.Person, c.Playlist, c.PlaylistEntry,
-		c.PlaylistShare, c.SeriesTimer, c.Session, c.Studio, c.Timer, c.Trickplay,
-		c.TunerHost, c.User, c.UserConfiguration, c.UserItemData, c.UserPolicy,
+		c.ActivityLogEntry, c.ApiKey, c.Configuration, c.Credit, c.Device,
+		c.DisplayPreferences, c.Genre, c.Image, c.Item, c.ItemSource, c.Library,
+		c.LibraryItem, c.LibraryOptions, c.LibrarySource, c.MediaStream, c.Person,
+		c.Playlist, c.PlaylistEntry, c.PlaylistShare, c.Session, c.Source, c.Studio,
+		c.User, c.UserConfiguration, c.UserItemData, c.UserPolicy,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -401,8 +363,6 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ActivityLogEntry.mutate(ctx, m)
 	case *ApiKeyMutation:
 		return c.ApiKey.mutate(ctx, m)
-	case *ChapterMutation:
-		return c.Chapter.mutate(ctx, m)
 	case *ConfigurationMutation:
 		return c.Configuration.mutate(ctx, m)
 	case *CreditMutation:
@@ -415,22 +375,18 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Genre.mutate(ctx, m)
 	case *ImageMutation:
 		return c.Image.mutate(ctx, m)
-	case *ImageBlobMutation:
-		return c.ImageBlob.mutate(ctx, m)
 	case *ItemMutation:
 		return c.Item.mutate(ctx, m)
+	case *ItemSourceMutation:
+		return c.ItemSource.mutate(ctx, m)
 	case *LibraryMutation:
 		return c.Library.mutate(ctx, m)
+	case *LibraryItemMutation:
+		return c.LibraryItem.mutate(ctx, m)
 	case *LibraryOptionsMutation:
 		return c.LibraryOptions.mutate(ctx, m)
-	case *ListingsProviderMutation:
-		return c.ListingsProvider.mutate(ctx, m)
-	case *MediaAttachmentMutation:
-		return c.MediaAttachment.mutate(ctx, m)
-	case *MediaSegmentMutation:
-		return c.MediaSegment.mutate(ctx, m)
-	case *MediaSourceMutation:
-		return c.MediaSource.mutate(ctx, m)
+	case *LibrarySourceMutation:
+		return c.LibrarySource.mutate(ctx, m)
 	case *MediaStreamMutation:
 		return c.MediaStream.mutate(ctx, m)
 	case *PersonMutation:
@@ -441,18 +397,12 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.PlaylistEntry.mutate(ctx, m)
 	case *PlaylistShareMutation:
 		return c.PlaylistShare.mutate(ctx, m)
-	case *SeriesTimerMutation:
-		return c.SeriesTimer.mutate(ctx, m)
 	case *SessionMutation:
 		return c.Session.mutate(ctx, m)
+	case *SourceMutation:
+		return c.Source.mutate(ctx, m)
 	case *StudioMutation:
 		return c.Studio.mutate(ctx, m)
-	case *TimerMutation:
-		return c.Timer.mutate(ctx, m)
-	case *TrickplayMutation:
-		return c.Trickplay.mutate(ctx, m)
-	case *TunerHostMutation:
-		return c.TunerHost.mutate(ctx, m)
 	case *UserMutation:
 		return c.User.mutate(ctx, m)
 	case *UserConfigurationMutation:
@@ -761,155 +711,6 @@ func (c *ApiKeyClient) mutate(ctx context.Context, m *ApiKeyMutation) (Value, er
 		return (&ApiKeyDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("store: unknown ApiKey mutation op: %q", m.Op())
-	}
-}
-
-// ChapterClient is a client for the Chapter schema.
-type ChapterClient struct {
-	config
-}
-
-// NewChapterClient returns a client for the Chapter from the given config.
-func NewChapterClient(c config) *ChapterClient {
-	return &ChapterClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `chapter.Hooks(f(g(h())))`.
-func (c *ChapterClient) Use(hooks ...Hook) {
-	c.hooks.Chapter = append(c.hooks.Chapter, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `chapter.Intercept(f(g(h())))`.
-func (c *ChapterClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Chapter = append(c.inters.Chapter, interceptors...)
-}
-
-// Create returns a builder for creating a Chapter entity.
-func (c *ChapterClient) Create() *ChapterCreate {
-	mutation := newChapterMutation(c.config, OpCreate)
-	return &ChapterCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of Chapter entities.
-func (c *ChapterClient) CreateBulk(builders ...*ChapterCreate) *ChapterCreateBulk {
-	return &ChapterCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *ChapterClient) MapCreateBulk(slice any, setFunc func(*ChapterCreate, int)) *ChapterCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &ChapterCreateBulk{err: fmt.Errorf("calling to ChapterClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*ChapterCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &ChapterCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Chapter.
-func (c *ChapterClient) Update() *ChapterUpdate {
-	mutation := newChapterMutation(c.config, OpUpdate)
-	return &ChapterUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *ChapterClient) UpdateOne(_m *Chapter) *ChapterUpdateOne {
-	mutation := newChapterMutation(c.config, OpUpdateOne, withChapter(_m))
-	return &ChapterUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *ChapterClient) UpdateOneID(id uuid.UUID) *ChapterUpdateOne {
-	mutation := newChapterMutation(c.config, OpUpdateOne, withChapterID(id))
-	return &ChapterUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Chapter.
-func (c *ChapterClient) Delete() *ChapterDelete {
-	mutation := newChapterMutation(c.config, OpDelete)
-	return &ChapterDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *ChapterClient) DeleteOne(_m *Chapter) *ChapterDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *ChapterClient) DeleteOneID(id uuid.UUID) *ChapterDeleteOne {
-	builder := c.Delete().Where(chapter.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &ChapterDeleteOne{builder}
-}
-
-// Query returns a query builder for Chapter.
-func (c *ChapterClient) Query() *ChapterQuery {
-	return &ChapterQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeChapter},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a Chapter entity by its id.
-func (c *ChapterClient) Get(ctx context.Context, id uuid.UUID) (*Chapter, error) {
-	return c.Query().Where(chapter.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *ChapterClient) GetX(ctx context.Context, id uuid.UUID) *Chapter {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryItem queries the item edge of a Chapter.
-func (c *ChapterClient) QueryItem(_m *Chapter) *ItemQuery {
-	query := (&ItemClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(chapter.Table, chapter.FieldID, id),
-			sqlgraph.To(item.Table, item.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, chapter.ItemTable, chapter.ItemColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *ChapterClient) Hooks() []Hook {
-	return c.hooks.Chapter
-}
-
-// Interceptors returns the client interceptors.
-func (c *ChapterClient) Interceptors() []Interceptor {
-	return c.inters.Chapter
-}
-
-func (c *ChapterClient) mutate(ctx context.Context, m *ChapterMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&ChapterCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&ChapterUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&ChapterUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&ChapterDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("store: unknown Chapter mutation op: %q", m.Op())
 	}
 }
 
@@ -1807,139 +1608,6 @@ func (c *ImageClient) mutate(ctx context.Context, m *ImageMutation) (Value, erro
 	}
 }
 
-// ImageBlobClient is a client for the ImageBlob schema.
-type ImageBlobClient struct {
-	config
-}
-
-// NewImageBlobClient returns a client for the ImageBlob from the given config.
-func NewImageBlobClient(c config) *ImageBlobClient {
-	return &ImageBlobClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `imageblob.Hooks(f(g(h())))`.
-func (c *ImageBlobClient) Use(hooks ...Hook) {
-	c.hooks.ImageBlob = append(c.hooks.ImageBlob, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `imageblob.Intercept(f(g(h())))`.
-func (c *ImageBlobClient) Intercept(interceptors ...Interceptor) {
-	c.inters.ImageBlob = append(c.inters.ImageBlob, interceptors...)
-}
-
-// Create returns a builder for creating a ImageBlob entity.
-func (c *ImageBlobClient) Create() *ImageBlobCreate {
-	mutation := newImageBlobMutation(c.config, OpCreate)
-	return &ImageBlobCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of ImageBlob entities.
-func (c *ImageBlobClient) CreateBulk(builders ...*ImageBlobCreate) *ImageBlobCreateBulk {
-	return &ImageBlobCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *ImageBlobClient) MapCreateBulk(slice any, setFunc func(*ImageBlobCreate, int)) *ImageBlobCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &ImageBlobCreateBulk{err: fmt.Errorf("calling to ImageBlobClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*ImageBlobCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &ImageBlobCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for ImageBlob.
-func (c *ImageBlobClient) Update() *ImageBlobUpdate {
-	mutation := newImageBlobMutation(c.config, OpUpdate)
-	return &ImageBlobUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *ImageBlobClient) UpdateOne(_m *ImageBlob) *ImageBlobUpdateOne {
-	mutation := newImageBlobMutation(c.config, OpUpdateOne, withImageBlob(_m))
-	return &ImageBlobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *ImageBlobClient) UpdateOneID(id uuid.UUID) *ImageBlobUpdateOne {
-	mutation := newImageBlobMutation(c.config, OpUpdateOne, withImageBlobID(id))
-	return &ImageBlobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for ImageBlob.
-func (c *ImageBlobClient) Delete() *ImageBlobDelete {
-	mutation := newImageBlobMutation(c.config, OpDelete)
-	return &ImageBlobDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *ImageBlobClient) DeleteOne(_m *ImageBlob) *ImageBlobDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *ImageBlobClient) DeleteOneID(id uuid.UUID) *ImageBlobDeleteOne {
-	builder := c.Delete().Where(imageblob.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &ImageBlobDeleteOne{builder}
-}
-
-// Query returns a query builder for ImageBlob.
-func (c *ImageBlobClient) Query() *ImageBlobQuery {
-	return &ImageBlobQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeImageBlob},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a ImageBlob entity by its id.
-func (c *ImageBlobClient) Get(ctx context.Context, id uuid.UUID) (*ImageBlob, error) {
-	return c.Query().Where(imageblob.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *ImageBlobClient) GetX(ctx context.Context, id uuid.UUID) *ImageBlob {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *ImageBlobClient) Hooks() []Hook {
-	return c.hooks.ImageBlob
-}
-
-// Interceptors returns the client interceptors.
-func (c *ImageBlobClient) Interceptors() []Interceptor {
-	return c.inters.ImageBlob
-}
-
-func (c *ImageBlobClient) mutate(ctx context.Context, m *ImageBlobMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&ImageBlobCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&ImageBlobUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&ImageBlobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&ImageBlobDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("store: unknown ImageBlob mutation op: %q", m.Op())
-	}
-}
-
 // ItemClient is a client for the Item schema.
 type ItemClient struct {
 	config
@@ -2080,15 +1748,15 @@ func (c *ItemClient) QueryChildren(_m *Item) *ItemQuery {
 	return query
 }
 
-// QueryLibrary queries the library edge of a Item.
-func (c *ItemClient) QueryLibrary(_m *Item) *LibraryQuery {
-	query := (&LibraryClient{config: c.config}).Query()
+// QueryLibraries queries the libraries edge of a Item.
+func (c *ItemClient) QueryLibraries(_m *Item) *LibraryItemQuery {
+	query := (&LibraryItemClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(item.Table, item.FieldID, id),
-			sqlgraph.To(library.Table, library.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, item.LibraryTable, item.LibraryColumn),
+			sqlgraph.To(libraryitem.Table, libraryitem.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.LibrariesTable, item.LibrariesColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -2096,15 +1764,15 @@ func (c *ItemClient) QueryLibrary(_m *Item) *LibraryQuery {
 	return query
 }
 
-// QueryMediaSources queries the media_sources edge of a Item.
-func (c *ItemClient) QueryMediaSources(_m *Item) *MediaSourceQuery {
-	query := (&MediaSourceClient{config: c.config}).Query()
+// QueryItemSources queries the item_sources edge of a Item.
+func (c *ItemClient) QueryItemSources(_m *Item) *ItemSourceQuery {
+	query := (&ItemSourceClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(item.Table, item.FieldID, id),
-			sqlgraph.To(mediasource.Table, mediasource.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, item.MediaSourcesTable, item.MediaSourcesColumn),
+			sqlgraph.To(itemsource.Table, itemsource.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.ItemSourcesTable, item.ItemSourcesColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -2121,22 +1789,6 @@ func (c *ItemClient) QueryCredits(_m *Item) *CreditQuery {
 			sqlgraph.From(item.Table, item.FieldID, id),
 			sqlgraph.To(credit.Table, credit.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, item.CreditsTable, item.CreditsColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryChapters queries the chapters edge of a Item.
-func (c *ItemClient) QueryChapters(_m *Item) *ChapterQuery {
-	query := (&ChapterClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(item.Table, item.FieldID, id),
-			sqlgraph.To(chapter.Table, chapter.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, item.ChaptersTable, item.ChaptersColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -2185,38 +1837,6 @@ func (c *ItemClient) QueryActivityLogEntries(_m *Item) *ActivityLogEntryQuery {
 			sqlgraph.From(item.Table, item.FieldID, id),
 			sqlgraph.To(activitylogentry.Table, activitylogentry.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, item.ActivityLogEntriesTable, item.ActivityLogEntriesColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryTrickplays queries the trickplays edge of a Item.
-func (c *ItemClient) QueryTrickplays(_m *Item) *TrickplayQuery {
-	query := (&TrickplayClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(item.Table, item.FieldID, id),
-			sqlgraph.To(trickplay.Table, trickplay.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, item.TrickplaysTable, item.TrickplaysColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryMediaSegments queries the media_segments edge of a Item.
-func (c *ItemClient) QueryMediaSegments(_m *Item) *MediaSegmentQuery {
-	query := (&MediaSegmentClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(item.Table, item.FieldID, id),
-			sqlgraph.To(mediasegment.Table, mediasegment.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, item.MediaSegmentsTable, item.MediaSegmentsColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -2310,6 +1930,187 @@ func (c *ItemClient) mutate(ctx context.Context, m *ItemMutation) (Value, error)
 		return (&ItemDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("store: unknown Item mutation op: %q", m.Op())
+	}
+}
+
+// ItemSourceClient is a client for the ItemSource schema.
+type ItemSourceClient struct {
+	config
+}
+
+// NewItemSourceClient returns a client for the ItemSource from the given config.
+func NewItemSourceClient(c config) *ItemSourceClient {
+	return &ItemSourceClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `itemsource.Hooks(f(g(h())))`.
+func (c *ItemSourceClient) Use(hooks ...Hook) {
+	c.hooks.ItemSource = append(c.hooks.ItemSource, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `itemsource.Intercept(f(g(h())))`.
+func (c *ItemSourceClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ItemSource = append(c.inters.ItemSource, interceptors...)
+}
+
+// Create returns a builder for creating a ItemSource entity.
+func (c *ItemSourceClient) Create() *ItemSourceCreate {
+	mutation := newItemSourceMutation(c.config, OpCreate)
+	return &ItemSourceCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ItemSource entities.
+func (c *ItemSourceClient) CreateBulk(builders ...*ItemSourceCreate) *ItemSourceCreateBulk {
+	return &ItemSourceCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ItemSourceClient) MapCreateBulk(slice any, setFunc func(*ItemSourceCreate, int)) *ItemSourceCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ItemSourceCreateBulk{err: fmt.Errorf("calling to ItemSourceClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ItemSourceCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ItemSourceCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ItemSource.
+func (c *ItemSourceClient) Update() *ItemSourceUpdate {
+	mutation := newItemSourceMutation(c.config, OpUpdate)
+	return &ItemSourceUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ItemSourceClient) UpdateOne(_m *ItemSource) *ItemSourceUpdateOne {
+	mutation := newItemSourceMutation(c.config, OpUpdateOne, withItemSource(_m))
+	return &ItemSourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ItemSourceClient) UpdateOneID(id uuid.UUID) *ItemSourceUpdateOne {
+	mutation := newItemSourceMutation(c.config, OpUpdateOne, withItemSourceID(id))
+	return &ItemSourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ItemSource.
+func (c *ItemSourceClient) Delete() *ItemSourceDelete {
+	mutation := newItemSourceMutation(c.config, OpDelete)
+	return &ItemSourceDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ItemSourceClient) DeleteOne(_m *ItemSource) *ItemSourceDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ItemSourceClient) DeleteOneID(id uuid.UUID) *ItemSourceDeleteOne {
+	builder := c.Delete().Where(itemsource.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ItemSourceDeleteOne{builder}
+}
+
+// Query returns a query builder for ItemSource.
+func (c *ItemSourceClient) Query() *ItemSourceQuery {
+	return &ItemSourceQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeItemSource},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ItemSource entity by its id.
+func (c *ItemSourceClient) Get(ctx context.Context, id uuid.UUID) (*ItemSource, error) {
+	return c.Query().Where(itemsource.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ItemSourceClient) GetX(ctx context.Context, id uuid.UUID) *ItemSource {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryItem queries the item edge of a ItemSource.
+func (c *ItemSourceClient) QueryItem(_m *ItemSource) *ItemQuery {
+	query := (&ItemClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(itemsource.Table, itemsource.FieldID, id),
+			sqlgraph.To(item.Table, item.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, itemsource.ItemTable, itemsource.ItemColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySource queries the source edge of a ItemSource.
+func (c *ItemSourceClient) QuerySource(_m *ItemSource) *SourceQuery {
+	query := (&SourceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(itemsource.Table, itemsource.FieldID, id),
+			sqlgraph.To(source.Table, source.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, itemsource.SourceTable, itemsource.SourceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryStreams queries the streams edge of a ItemSource.
+func (c *ItemSourceClient) QueryStreams(_m *ItemSource) *MediaStreamQuery {
+	query := (&MediaStreamClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(itemsource.Table, itemsource.FieldID, id),
+			sqlgraph.To(mediastream.Table, mediastream.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, itemsource.StreamsTable, itemsource.StreamsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ItemSourceClient) Hooks() []Hook {
+	return c.hooks.ItemSource
+}
+
+// Interceptors returns the client interceptors.
+func (c *ItemSourceClient) Interceptors() []Interceptor {
+	return c.inters.ItemSource
+}
+
+func (c *ItemSourceClient) mutate(ctx context.Context, m *ItemSourceMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ItemSourceCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ItemSourceUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ItemSourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ItemSourceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("store: unknown ItemSource mutation op: %q", m.Op())
 	}
 }
 
@@ -2437,15 +2238,15 @@ func (c *LibraryClient) QueryOptions(_m *Library) *LibraryOptionsQuery {
 	return query
 }
 
-// QueryItems queries the items edge of a Library.
-func (c *LibraryClient) QueryItems(_m *Library) *ItemQuery {
-	query := (&ItemClient{config: c.config}).Query()
+// QueryLibraryItems queries the library_items edge of a Library.
+func (c *LibraryClient) QueryLibraryItems(_m *Library) *LibraryItemQuery {
+	query := (&LibraryItemClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(library.Table, library.FieldID, id),
-			sqlgraph.To(item.Table, item.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, library.ItemsTable, library.ItemsColumn),
+			sqlgraph.To(libraryitem.Table, libraryitem.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, library.LibraryItemsTable, library.LibraryItemsColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -2453,15 +2254,15 @@ func (c *LibraryClient) QueryItems(_m *Library) *ItemQuery {
 	return query
 }
 
-// QueryMediaSources queries the media_sources edge of a Library.
-func (c *LibraryClient) QueryMediaSources(_m *Library) *MediaSourceQuery {
-	query := (&MediaSourceClient{config: c.config}).Query()
+// QuerySources queries the sources edge of a Library.
+func (c *LibraryClient) QuerySources(_m *Library) *LibrarySourceQuery {
+	query := (&LibrarySourceClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(library.Table, library.FieldID, id),
-			sqlgraph.To(mediasource.Table, mediasource.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, library.MediaSourcesTable, library.MediaSourcesColumn),
+			sqlgraph.To(librarysource.Table, librarysource.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, library.SourcesTable, library.SourcesColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -2491,6 +2292,187 @@ func (c *LibraryClient) mutate(ctx context.Context, m *LibraryMutation) (Value, 
 		return (&LibraryDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("store: unknown Library mutation op: %q", m.Op())
+	}
+}
+
+// LibraryItemClient is a client for the LibraryItem schema.
+type LibraryItemClient struct {
+	config
+}
+
+// NewLibraryItemClient returns a client for the LibraryItem from the given config.
+func NewLibraryItemClient(c config) *LibraryItemClient {
+	return &LibraryItemClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `libraryitem.Hooks(f(g(h())))`.
+func (c *LibraryItemClient) Use(hooks ...Hook) {
+	c.hooks.LibraryItem = append(c.hooks.LibraryItem, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `libraryitem.Intercept(f(g(h())))`.
+func (c *LibraryItemClient) Intercept(interceptors ...Interceptor) {
+	c.inters.LibraryItem = append(c.inters.LibraryItem, interceptors...)
+}
+
+// Create returns a builder for creating a LibraryItem entity.
+func (c *LibraryItemClient) Create() *LibraryItemCreate {
+	mutation := newLibraryItemMutation(c.config, OpCreate)
+	return &LibraryItemCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of LibraryItem entities.
+func (c *LibraryItemClient) CreateBulk(builders ...*LibraryItemCreate) *LibraryItemCreateBulk {
+	return &LibraryItemCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *LibraryItemClient) MapCreateBulk(slice any, setFunc func(*LibraryItemCreate, int)) *LibraryItemCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &LibraryItemCreateBulk{err: fmt.Errorf("calling to LibraryItemClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*LibraryItemCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &LibraryItemCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for LibraryItem.
+func (c *LibraryItemClient) Update() *LibraryItemUpdate {
+	mutation := newLibraryItemMutation(c.config, OpUpdate)
+	return &LibraryItemUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *LibraryItemClient) UpdateOne(_m *LibraryItem) *LibraryItemUpdateOne {
+	mutation := newLibraryItemMutation(c.config, OpUpdateOne, withLibraryItem(_m))
+	return &LibraryItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *LibraryItemClient) UpdateOneID(id uuid.UUID) *LibraryItemUpdateOne {
+	mutation := newLibraryItemMutation(c.config, OpUpdateOne, withLibraryItemID(id))
+	return &LibraryItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for LibraryItem.
+func (c *LibraryItemClient) Delete() *LibraryItemDelete {
+	mutation := newLibraryItemMutation(c.config, OpDelete)
+	return &LibraryItemDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *LibraryItemClient) DeleteOne(_m *LibraryItem) *LibraryItemDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *LibraryItemClient) DeleteOneID(id uuid.UUID) *LibraryItemDeleteOne {
+	builder := c.Delete().Where(libraryitem.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &LibraryItemDeleteOne{builder}
+}
+
+// Query returns a query builder for LibraryItem.
+func (c *LibraryItemClient) Query() *LibraryItemQuery {
+	return &LibraryItemQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeLibraryItem},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a LibraryItem entity by its id.
+func (c *LibraryItemClient) Get(ctx context.Context, id uuid.UUID) (*LibraryItem, error) {
+	return c.Query().Where(libraryitem.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *LibraryItemClient) GetX(ctx context.Context, id uuid.UUID) *LibraryItem {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryLibrary queries the library edge of a LibraryItem.
+func (c *LibraryItemClient) QueryLibrary(_m *LibraryItem) *LibraryQuery {
+	query := (&LibraryClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(libraryitem.Table, libraryitem.FieldID, id),
+			sqlgraph.To(library.Table, library.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, libraryitem.LibraryTable, libraryitem.LibraryColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryItem queries the item edge of a LibraryItem.
+func (c *LibraryItemClient) QueryItem(_m *LibraryItem) *ItemQuery {
+	query := (&ItemClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(libraryitem.Table, libraryitem.FieldID, id),
+			sqlgraph.To(item.Table, item.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, libraryitem.ItemTable, libraryitem.ItemColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySource queries the source edge of a LibraryItem.
+func (c *LibraryItemClient) QuerySource(_m *LibraryItem) *SourceQuery {
+	query := (&SourceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(libraryitem.Table, libraryitem.FieldID, id),
+			sqlgraph.To(source.Table, source.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, libraryitem.SourceTable, libraryitem.SourceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *LibraryItemClient) Hooks() []Hook {
+	return c.hooks.LibraryItem
+}
+
+// Interceptors returns the client interceptors.
+func (c *LibraryItemClient) Interceptors() []Interceptor {
+	return c.inters.LibraryItem
+}
+
+func (c *LibraryItemClient) mutate(ctx context.Context, m *LibraryItemMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&LibraryItemCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&LibraryItemUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&LibraryItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&LibraryItemDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("store: unknown LibraryItem mutation op: %q", m.Op())
 	}
 }
 
@@ -2643,107 +2625,107 @@ func (c *LibraryOptionsClient) mutate(ctx context.Context, m *LibraryOptionsMuta
 	}
 }
 
-// ListingsProviderClient is a client for the ListingsProvider schema.
-type ListingsProviderClient struct {
+// LibrarySourceClient is a client for the LibrarySource schema.
+type LibrarySourceClient struct {
 	config
 }
 
-// NewListingsProviderClient returns a client for the ListingsProvider from the given config.
-func NewListingsProviderClient(c config) *ListingsProviderClient {
-	return &ListingsProviderClient{config: c}
+// NewLibrarySourceClient returns a client for the LibrarySource from the given config.
+func NewLibrarySourceClient(c config) *LibrarySourceClient {
+	return &LibrarySourceClient{config: c}
 }
 
 // Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `listingsprovider.Hooks(f(g(h())))`.
-func (c *ListingsProviderClient) Use(hooks ...Hook) {
-	c.hooks.ListingsProvider = append(c.hooks.ListingsProvider, hooks...)
+// A call to `Use(f, g, h)` equals to `librarysource.Hooks(f(g(h())))`.
+func (c *LibrarySourceClient) Use(hooks ...Hook) {
+	c.hooks.LibrarySource = append(c.hooks.LibrarySource, hooks...)
 }
 
 // Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `listingsprovider.Intercept(f(g(h())))`.
-func (c *ListingsProviderClient) Intercept(interceptors ...Interceptor) {
-	c.inters.ListingsProvider = append(c.inters.ListingsProvider, interceptors...)
+// A call to `Intercept(f, g, h)` equals to `librarysource.Intercept(f(g(h())))`.
+func (c *LibrarySourceClient) Intercept(interceptors ...Interceptor) {
+	c.inters.LibrarySource = append(c.inters.LibrarySource, interceptors...)
 }
 
-// Create returns a builder for creating a ListingsProvider entity.
-func (c *ListingsProviderClient) Create() *ListingsProviderCreate {
-	mutation := newListingsProviderMutation(c.config, OpCreate)
-	return &ListingsProviderCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Create returns a builder for creating a LibrarySource entity.
+func (c *LibrarySourceClient) Create() *LibrarySourceCreate {
+	mutation := newLibrarySourceMutation(c.config, OpCreate)
+	return &LibrarySourceCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// CreateBulk returns a builder for creating a bulk of ListingsProvider entities.
-func (c *ListingsProviderClient) CreateBulk(builders ...*ListingsProviderCreate) *ListingsProviderCreateBulk {
-	return &ListingsProviderCreateBulk{config: c.config, builders: builders}
+// CreateBulk returns a builder for creating a bulk of LibrarySource entities.
+func (c *LibrarySourceClient) CreateBulk(builders ...*LibrarySourceCreate) *LibrarySourceCreateBulk {
+	return &LibrarySourceCreateBulk{config: c.config, builders: builders}
 }
 
 // MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
 // a builder and applies setFunc on it.
-func (c *ListingsProviderClient) MapCreateBulk(slice any, setFunc func(*ListingsProviderCreate, int)) *ListingsProviderCreateBulk {
+func (c *LibrarySourceClient) MapCreateBulk(slice any, setFunc func(*LibrarySourceCreate, int)) *LibrarySourceCreateBulk {
 	rv := reflect.ValueOf(slice)
 	if rv.Kind() != reflect.Slice {
-		return &ListingsProviderCreateBulk{err: fmt.Errorf("calling to ListingsProviderClient.MapCreateBulk with wrong type %T, need slice", slice)}
+		return &LibrarySourceCreateBulk{err: fmt.Errorf("calling to LibrarySourceClient.MapCreateBulk with wrong type %T, need slice", slice)}
 	}
-	builders := make([]*ListingsProviderCreate, rv.Len())
+	builders := make([]*LibrarySourceCreate, rv.Len())
 	for i := 0; i < rv.Len(); i++ {
 		builders[i] = c.Create()
 		setFunc(builders[i], i)
 	}
-	return &ListingsProviderCreateBulk{config: c.config, builders: builders}
+	return &LibrarySourceCreateBulk{config: c.config, builders: builders}
 }
 
-// Update returns an update builder for ListingsProvider.
-func (c *ListingsProviderClient) Update() *ListingsProviderUpdate {
-	mutation := newListingsProviderMutation(c.config, OpUpdate)
-	return &ListingsProviderUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Update returns an update builder for LibrarySource.
+func (c *LibrarySourceClient) Update() *LibrarySourceUpdate {
+	mutation := newLibrarySourceMutation(c.config, OpUpdate)
+	return &LibrarySourceUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *ListingsProviderClient) UpdateOne(_m *ListingsProvider) *ListingsProviderUpdateOne {
-	mutation := newListingsProviderMutation(c.config, OpUpdateOne, withListingsProvider(_m))
-	return &ListingsProviderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *LibrarySourceClient) UpdateOne(_m *LibrarySource) *LibrarySourceUpdateOne {
+	mutation := newLibrarySourceMutation(c.config, OpUpdateOne, withLibrarySource(_m))
+	return &LibrarySourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *ListingsProviderClient) UpdateOneID(id uuid.UUID) *ListingsProviderUpdateOne {
-	mutation := newListingsProviderMutation(c.config, OpUpdateOne, withListingsProviderID(id))
-	return &ListingsProviderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *LibrarySourceClient) UpdateOneID(id uuid.UUID) *LibrarySourceUpdateOne {
+	mutation := newLibrarySourceMutation(c.config, OpUpdateOne, withLibrarySourceID(id))
+	return &LibrarySourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// Delete returns a delete builder for ListingsProvider.
-func (c *ListingsProviderClient) Delete() *ListingsProviderDelete {
-	mutation := newListingsProviderMutation(c.config, OpDelete)
-	return &ListingsProviderDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Delete returns a delete builder for LibrarySource.
+func (c *LibrarySourceClient) Delete() *LibrarySourceDelete {
+	mutation := newLibrarySourceMutation(c.config, OpDelete)
+	return &LibrarySourceDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *ListingsProviderClient) DeleteOne(_m *ListingsProvider) *ListingsProviderDeleteOne {
+func (c *LibrarySourceClient) DeleteOne(_m *LibrarySource) *LibrarySourceDeleteOne {
 	return c.DeleteOneID(_m.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *ListingsProviderClient) DeleteOneID(id uuid.UUID) *ListingsProviderDeleteOne {
-	builder := c.Delete().Where(listingsprovider.ID(id))
+func (c *LibrarySourceClient) DeleteOneID(id uuid.UUID) *LibrarySourceDeleteOne {
+	builder := c.Delete().Where(librarysource.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
-	return &ListingsProviderDeleteOne{builder}
+	return &LibrarySourceDeleteOne{builder}
 }
 
-// Query returns a query builder for ListingsProvider.
-func (c *ListingsProviderClient) Query() *ListingsProviderQuery {
-	return &ListingsProviderQuery{
+// Query returns a query builder for LibrarySource.
+func (c *LibrarySourceClient) Query() *LibrarySourceQuery {
+	return &LibrarySourceQuery{
 		config: c.config,
-		ctx:    &QueryContext{Type: TypeListingsProvider},
+		ctx:    &QueryContext{Type: TypeLibrarySource},
 		inters: c.Interceptors(),
 	}
 }
 
-// Get returns a ListingsProvider entity by its id.
-func (c *ListingsProviderClient) Get(ctx context.Context, id uuid.UUID) (*ListingsProvider, error) {
-	return c.Query().Where(listingsprovider.ID(id)).Only(ctx)
+// Get returns a LibrarySource entity by its id.
+func (c *LibrarySourceClient) Get(ctx context.Context, id uuid.UUID) (*LibrarySource, error) {
+	return c.Query().Where(librarysource.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *ListingsProviderClient) GetX(ctx context.Context, id uuid.UUID) *ListingsProvider {
+func (c *LibrarySourceClient) GetX(ctx context.Context, id uuid.UUID) *LibrarySource {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -2751,462 +2733,15 @@ func (c *ListingsProviderClient) GetX(ctx context.Context, id uuid.UUID) *Listin
 	return obj
 }
 
-// Hooks returns the client hooks.
-func (c *ListingsProviderClient) Hooks() []Hook {
-	return c.hooks.ListingsProvider
-}
-
-// Interceptors returns the client interceptors.
-func (c *ListingsProviderClient) Interceptors() []Interceptor {
-	return c.inters.ListingsProvider
-}
-
-func (c *ListingsProviderClient) mutate(ctx context.Context, m *ListingsProviderMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&ListingsProviderCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&ListingsProviderUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&ListingsProviderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&ListingsProviderDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("store: unknown ListingsProvider mutation op: %q", m.Op())
-	}
-}
-
-// MediaAttachmentClient is a client for the MediaAttachment schema.
-type MediaAttachmentClient struct {
-	config
-}
-
-// NewMediaAttachmentClient returns a client for the MediaAttachment from the given config.
-func NewMediaAttachmentClient(c config) *MediaAttachmentClient {
-	return &MediaAttachmentClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `mediaattachment.Hooks(f(g(h())))`.
-func (c *MediaAttachmentClient) Use(hooks ...Hook) {
-	c.hooks.MediaAttachment = append(c.hooks.MediaAttachment, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `mediaattachment.Intercept(f(g(h())))`.
-func (c *MediaAttachmentClient) Intercept(interceptors ...Interceptor) {
-	c.inters.MediaAttachment = append(c.inters.MediaAttachment, interceptors...)
-}
-
-// Create returns a builder for creating a MediaAttachment entity.
-func (c *MediaAttachmentClient) Create() *MediaAttachmentCreate {
-	mutation := newMediaAttachmentMutation(c.config, OpCreate)
-	return &MediaAttachmentCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of MediaAttachment entities.
-func (c *MediaAttachmentClient) CreateBulk(builders ...*MediaAttachmentCreate) *MediaAttachmentCreateBulk {
-	return &MediaAttachmentCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *MediaAttachmentClient) MapCreateBulk(slice any, setFunc func(*MediaAttachmentCreate, int)) *MediaAttachmentCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &MediaAttachmentCreateBulk{err: fmt.Errorf("calling to MediaAttachmentClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*MediaAttachmentCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &MediaAttachmentCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for MediaAttachment.
-func (c *MediaAttachmentClient) Update() *MediaAttachmentUpdate {
-	mutation := newMediaAttachmentMutation(c.config, OpUpdate)
-	return &MediaAttachmentUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *MediaAttachmentClient) UpdateOne(_m *MediaAttachment) *MediaAttachmentUpdateOne {
-	mutation := newMediaAttachmentMutation(c.config, OpUpdateOne, withMediaAttachment(_m))
-	return &MediaAttachmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *MediaAttachmentClient) UpdateOneID(id uuid.UUID) *MediaAttachmentUpdateOne {
-	mutation := newMediaAttachmentMutation(c.config, OpUpdateOne, withMediaAttachmentID(id))
-	return &MediaAttachmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for MediaAttachment.
-func (c *MediaAttachmentClient) Delete() *MediaAttachmentDelete {
-	mutation := newMediaAttachmentMutation(c.config, OpDelete)
-	return &MediaAttachmentDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *MediaAttachmentClient) DeleteOne(_m *MediaAttachment) *MediaAttachmentDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *MediaAttachmentClient) DeleteOneID(id uuid.UUID) *MediaAttachmentDeleteOne {
-	builder := c.Delete().Where(mediaattachment.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &MediaAttachmentDeleteOne{builder}
-}
-
-// Query returns a query builder for MediaAttachment.
-func (c *MediaAttachmentClient) Query() *MediaAttachmentQuery {
-	return &MediaAttachmentQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeMediaAttachment},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a MediaAttachment entity by its id.
-func (c *MediaAttachmentClient) Get(ctx context.Context, id uuid.UUID) (*MediaAttachment, error) {
-	return c.Query().Where(mediaattachment.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *MediaAttachmentClient) GetX(ctx context.Context, id uuid.UUID) *MediaAttachment {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QuerySource queries the source edge of a MediaAttachment.
-func (c *MediaAttachmentClient) QuerySource(_m *MediaAttachment) *MediaSourceQuery {
-	query := (&MediaSourceClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(mediaattachment.Table, mediaattachment.FieldID, id),
-			sqlgraph.To(mediasource.Table, mediasource.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, mediaattachment.SourceTable, mediaattachment.SourceColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *MediaAttachmentClient) Hooks() []Hook {
-	return c.hooks.MediaAttachment
-}
-
-// Interceptors returns the client interceptors.
-func (c *MediaAttachmentClient) Interceptors() []Interceptor {
-	return c.inters.MediaAttachment
-}
-
-func (c *MediaAttachmentClient) mutate(ctx context.Context, m *MediaAttachmentMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&MediaAttachmentCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&MediaAttachmentUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&MediaAttachmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&MediaAttachmentDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("store: unknown MediaAttachment mutation op: %q", m.Op())
-	}
-}
-
-// MediaSegmentClient is a client for the MediaSegment schema.
-type MediaSegmentClient struct {
-	config
-}
-
-// NewMediaSegmentClient returns a client for the MediaSegment from the given config.
-func NewMediaSegmentClient(c config) *MediaSegmentClient {
-	return &MediaSegmentClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `mediasegment.Hooks(f(g(h())))`.
-func (c *MediaSegmentClient) Use(hooks ...Hook) {
-	c.hooks.MediaSegment = append(c.hooks.MediaSegment, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `mediasegment.Intercept(f(g(h())))`.
-func (c *MediaSegmentClient) Intercept(interceptors ...Interceptor) {
-	c.inters.MediaSegment = append(c.inters.MediaSegment, interceptors...)
-}
-
-// Create returns a builder for creating a MediaSegment entity.
-func (c *MediaSegmentClient) Create() *MediaSegmentCreate {
-	mutation := newMediaSegmentMutation(c.config, OpCreate)
-	return &MediaSegmentCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of MediaSegment entities.
-func (c *MediaSegmentClient) CreateBulk(builders ...*MediaSegmentCreate) *MediaSegmentCreateBulk {
-	return &MediaSegmentCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *MediaSegmentClient) MapCreateBulk(slice any, setFunc func(*MediaSegmentCreate, int)) *MediaSegmentCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &MediaSegmentCreateBulk{err: fmt.Errorf("calling to MediaSegmentClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*MediaSegmentCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &MediaSegmentCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for MediaSegment.
-func (c *MediaSegmentClient) Update() *MediaSegmentUpdate {
-	mutation := newMediaSegmentMutation(c.config, OpUpdate)
-	return &MediaSegmentUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *MediaSegmentClient) UpdateOne(_m *MediaSegment) *MediaSegmentUpdateOne {
-	mutation := newMediaSegmentMutation(c.config, OpUpdateOne, withMediaSegment(_m))
-	return &MediaSegmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *MediaSegmentClient) UpdateOneID(id uuid.UUID) *MediaSegmentUpdateOne {
-	mutation := newMediaSegmentMutation(c.config, OpUpdateOne, withMediaSegmentID(id))
-	return &MediaSegmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for MediaSegment.
-func (c *MediaSegmentClient) Delete() *MediaSegmentDelete {
-	mutation := newMediaSegmentMutation(c.config, OpDelete)
-	return &MediaSegmentDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *MediaSegmentClient) DeleteOne(_m *MediaSegment) *MediaSegmentDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *MediaSegmentClient) DeleteOneID(id uuid.UUID) *MediaSegmentDeleteOne {
-	builder := c.Delete().Where(mediasegment.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &MediaSegmentDeleteOne{builder}
-}
-
-// Query returns a query builder for MediaSegment.
-func (c *MediaSegmentClient) Query() *MediaSegmentQuery {
-	return &MediaSegmentQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeMediaSegment},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a MediaSegment entity by its id.
-func (c *MediaSegmentClient) Get(ctx context.Context, id uuid.UUID) (*MediaSegment, error) {
-	return c.Query().Where(mediasegment.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *MediaSegmentClient) GetX(ctx context.Context, id uuid.UUID) *MediaSegment {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryItem queries the item edge of a MediaSegment.
-func (c *MediaSegmentClient) QueryItem(_m *MediaSegment) *ItemQuery {
-	query := (&ItemClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(mediasegment.Table, mediasegment.FieldID, id),
-			sqlgraph.To(item.Table, item.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, mediasegment.ItemTable, mediasegment.ItemColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *MediaSegmentClient) Hooks() []Hook {
-	return c.hooks.MediaSegment
-}
-
-// Interceptors returns the client interceptors.
-func (c *MediaSegmentClient) Interceptors() []Interceptor {
-	return c.inters.MediaSegment
-}
-
-func (c *MediaSegmentClient) mutate(ctx context.Context, m *MediaSegmentMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&MediaSegmentCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&MediaSegmentUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&MediaSegmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&MediaSegmentDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("store: unknown MediaSegment mutation op: %q", m.Op())
-	}
-}
-
-// MediaSourceClient is a client for the MediaSource schema.
-type MediaSourceClient struct {
-	config
-}
-
-// NewMediaSourceClient returns a client for the MediaSource from the given config.
-func NewMediaSourceClient(c config) *MediaSourceClient {
-	return &MediaSourceClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `mediasource.Hooks(f(g(h())))`.
-func (c *MediaSourceClient) Use(hooks ...Hook) {
-	c.hooks.MediaSource = append(c.hooks.MediaSource, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `mediasource.Intercept(f(g(h())))`.
-func (c *MediaSourceClient) Intercept(interceptors ...Interceptor) {
-	c.inters.MediaSource = append(c.inters.MediaSource, interceptors...)
-}
-
-// Create returns a builder for creating a MediaSource entity.
-func (c *MediaSourceClient) Create() *MediaSourceCreate {
-	mutation := newMediaSourceMutation(c.config, OpCreate)
-	return &MediaSourceCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of MediaSource entities.
-func (c *MediaSourceClient) CreateBulk(builders ...*MediaSourceCreate) *MediaSourceCreateBulk {
-	return &MediaSourceCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *MediaSourceClient) MapCreateBulk(slice any, setFunc func(*MediaSourceCreate, int)) *MediaSourceCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &MediaSourceCreateBulk{err: fmt.Errorf("calling to MediaSourceClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*MediaSourceCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &MediaSourceCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for MediaSource.
-func (c *MediaSourceClient) Update() *MediaSourceUpdate {
-	mutation := newMediaSourceMutation(c.config, OpUpdate)
-	return &MediaSourceUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *MediaSourceClient) UpdateOne(_m *MediaSource) *MediaSourceUpdateOne {
-	mutation := newMediaSourceMutation(c.config, OpUpdateOne, withMediaSource(_m))
-	return &MediaSourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *MediaSourceClient) UpdateOneID(id uuid.UUID) *MediaSourceUpdateOne {
-	mutation := newMediaSourceMutation(c.config, OpUpdateOne, withMediaSourceID(id))
-	return &MediaSourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for MediaSource.
-func (c *MediaSourceClient) Delete() *MediaSourceDelete {
-	mutation := newMediaSourceMutation(c.config, OpDelete)
-	return &MediaSourceDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *MediaSourceClient) DeleteOne(_m *MediaSource) *MediaSourceDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *MediaSourceClient) DeleteOneID(id uuid.UUID) *MediaSourceDeleteOne {
-	builder := c.Delete().Where(mediasource.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &MediaSourceDeleteOne{builder}
-}
-
-// Query returns a query builder for MediaSource.
-func (c *MediaSourceClient) Query() *MediaSourceQuery {
-	return &MediaSourceQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeMediaSource},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a MediaSource entity by its id.
-func (c *MediaSourceClient) Get(ctx context.Context, id uuid.UUID) (*MediaSource, error) {
-	return c.Query().Where(mediasource.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *MediaSourceClient) GetX(ctx context.Context, id uuid.UUID) *MediaSource {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryItem queries the item edge of a MediaSource.
-func (c *MediaSourceClient) QueryItem(_m *MediaSource) *ItemQuery {
-	query := (&ItemClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(mediasource.Table, mediasource.FieldID, id),
-			sqlgraph.To(item.Table, item.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, mediasource.ItemTable, mediasource.ItemColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryLibrary queries the library edge of a MediaSource.
-func (c *MediaSourceClient) QueryLibrary(_m *MediaSource) *LibraryQuery {
+// QueryLibrary queries the library edge of a LibrarySource.
+func (c *LibrarySourceClient) QueryLibrary(_m *LibrarySource) *LibraryQuery {
 	query := (&LibraryClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := _m.ID
 		step := sqlgraph.NewStep(
-			sqlgraph.From(mediasource.Table, mediasource.FieldID, id),
+			sqlgraph.From(librarysource.Table, librarysource.FieldID, id),
 			sqlgraph.To(library.Table, library.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, mediasource.LibraryTable, mediasource.LibraryColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, librarysource.LibraryTable, librarysource.LibraryColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -3214,31 +2749,15 @@ func (c *MediaSourceClient) QueryLibrary(_m *MediaSource) *LibraryQuery {
 	return query
 }
 
-// QueryStreams queries the streams edge of a MediaSource.
-func (c *MediaSourceClient) QueryStreams(_m *MediaSource) *MediaStreamQuery {
-	query := (&MediaStreamClient{config: c.config}).Query()
+// QuerySource queries the source edge of a LibrarySource.
+func (c *LibrarySourceClient) QuerySource(_m *LibrarySource) *SourceQuery {
+	query := (&SourceClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := _m.ID
 		step := sqlgraph.NewStep(
-			sqlgraph.From(mediasource.Table, mediasource.FieldID, id),
-			sqlgraph.To(mediastream.Table, mediastream.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, mediasource.StreamsTable, mediasource.StreamsColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryAttachments queries the attachments edge of a MediaSource.
-func (c *MediaSourceClient) QueryAttachments(_m *MediaSource) *MediaAttachmentQuery {
-	query := (&MediaAttachmentClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(mediasource.Table, mediasource.FieldID, id),
-			sqlgraph.To(mediaattachment.Table, mediaattachment.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, mediasource.AttachmentsTable, mediasource.AttachmentsColumn),
+			sqlgraph.From(librarysource.Table, librarysource.FieldID, id),
+			sqlgraph.To(source.Table, source.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, librarysource.SourceTable, librarysource.SourceColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -3247,27 +2766,27 @@ func (c *MediaSourceClient) QueryAttachments(_m *MediaSource) *MediaAttachmentQu
 }
 
 // Hooks returns the client hooks.
-func (c *MediaSourceClient) Hooks() []Hook {
-	return c.hooks.MediaSource
+func (c *LibrarySourceClient) Hooks() []Hook {
+	return c.hooks.LibrarySource
 }
 
 // Interceptors returns the client interceptors.
-func (c *MediaSourceClient) Interceptors() []Interceptor {
-	return c.inters.MediaSource
+func (c *LibrarySourceClient) Interceptors() []Interceptor {
+	return c.inters.LibrarySource
 }
 
-func (c *MediaSourceClient) mutate(ctx context.Context, m *MediaSourceMutation) (Value, error) {
+func (c *LibrarySourceClient) mutate(ctx context.Context, m *LibrarySourceMutation) (Value, error) {
 	switch m.Op() {
 	case OpCreate:
-		return (&MediaSourceCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&LibrarySourceCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdate:
-		return (&MediaSourceUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&LibrarySourceUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdateOne:
-		return (&MediaSourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&LibrarySourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpDelete, OpDeleteOne:
-		return (&MediaSourceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+		return (&LibrarySourceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
-		return nil, fmt.Errorf("store: unknown MediaSource mutation op: %q", m.Op())
+		return nil, fmt.Errorf("store: unknown LibrarySource mutation op: %q", m.Op())
 	}
 }
 
@@ -3380,13 +2899,13 @@ func (c *MediaStreamClient) GetX(ctx context.Context, id uuid.UUID) *MediaStream
 }
 
 // QuerySource queries the source edge of a MediaStream.
-func (c *MediaStreamClient) QuerySource(_m *MediaStream) *MediaSourceQuery {
-	query := (&MediaSourceClient{config: c.config}).Query()
+func (c *MediaStreamClient) QuerySource(_m *MediaStream) *ItemSourceQuery {
+	query := (&ItemSourceClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(mediastream.Table, mediastream.FieldID, id),
-			sqlgraph.To(mediasource.Table, mediasource.FieldID),
+			sqlgraph.To(itemsource.Table, itemsource.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, mediastream.SourceTable, mediastream.SourceColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
@@ -4096,155 +3615,6 @@ func (c *PlaylistShareClient) mutate(ctx context.Context, m *PlaylistShareMutati
 	}
 }
 
-// SeriesTimerClient is a client for the SeriesTimer schema.
-type SeriesTimerClient struct {
-	config
-}
-
-// NewSeriesTimerClient returns a client for the SeriesTimer from the given config.
-func NewSeriesTimerClient(c config) *SeriesTimerClient {
-	return &SeriesTimerClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `seriestimer.Hooks(f(g(h())))`.
-func (c *SeriesTimerClient) Use(hooks ...Hook) {
-	c.hooks.SeriesTimer = append(c.hooks.SeriesTimer, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `seriestimer.Intercept(f(g(h())))`.
-func (c *SeriesTimerClient) Intercept(interceptors ...Interceptor) {
-	c.inters.SeriesTimer = append(c.inters.SeriesTimer, interceptors...)
-}
-
-// Create returns a builder for creating a SeriesTimer entity.
-func (c *SeriesTimerClient) Create() *SeriesTimerCreate {
-	mutation := newSeriesTimerMutation(c.config, OpCreate)
-	return &SeriesTimerCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of SeriesTimer entities.
-func (c *SeriesTimerClient) CreateBulk(builders ...*SeriesTimerCreate) *SeriesTimerCreateBulk {
-	return &SeriesTimerCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *SeriesTimerClient) MapCreateBulk(slice any, setFunc func(*SeriesTimerCreate, int)) *SeriesTimerCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &SeriesTimerCreateBulk{err: fmt.Errorf("calling to SeriesTimerClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*SeriesTimerCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &SeriesTimerCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for SeriesTimer.
-func (c *SeriesTimerClient) Update() *SeriesTimerUpdate {
-	mutation := newSeriesTimerMutation(c.config, OpUpdate)
-	return &SeriesTimerUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *SeriesTimerClient) UpdateOne(_m *SeriesTimer) *SeriesTimerUpdateOne {
-	mutation := newSeriesTimerMutation(c.config, OpUpdateOne, withSeriesTimer(_m))
-	return &SeriesTimerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *SeriesTimerClient) UpdateOneID(id uuid.UUID) *SeriesTimerUpdateOne {
-	mutation := newSeriesTimerMutation(c.config, OpUpdateOne, withSeriesTimerID(id))
-	return &SeriesTimerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for SeriesTimer.
-func (c *SeriesTimerClient) Delete() *SeriesTimerDelete {
-	mutation := newSeriesTimerMutation(c.config, OpDelete)
-	return &SeriesTimerDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *SeriesTimerClient) DeleteOne(_m *SeriesTimer) *SeriesTimerDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *SeriesTimerClient) DeleteOneID(id uuid.UUID) *SeriesTimerDeleteOne {
-	builder := c.Delete().Where(seriestimer.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &SeriesTimerDeleteOne{builder}
-}
-
-// Query returns a query builder for SeriesTimer.
-func (c *SeriesTimerClient) Query() *SeriesTimerQuery {
-	return &SeriesTimerQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeSeriesTimer},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a SeriesTimer entity by its id.
-func (c *SeriesTimerClient) Get(ctx context.Context, id uuid.UUID) (*SeriesTimer, error) {
-	return c.Query().Where(seriestimer.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *SeriesTimerClient) GetX(ctx context.Context, id uuid.UUID) *SeriesTimer {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryTimers queries the timers edge of a SeriesTimer.
-func (c *SeriesTimerClient) QueryTimers(_m *SeriesTimer) *TimerQuery {
-	query := (&TimerClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(seriestimer.Table, seriestimer.FieldID, id),
-			sqlgraph.To(timer.Table, timer.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, seriestimer.TimersTable, seriestimer.TimersColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *SeriesTimerClient) Hooks() []Hook {
-	return c.hooks.SeriesTimer
-}
-
-// Interceptors returns the client interceptors.
-func (c *SeriesTimerClient) Interceptors() []Interceptor {
-	return c.inters.SeriesTimer
-}
-
-func (c *SeriesTimerClient) mutate(ctx context.Context, m *SeriesTimerMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&SeriesTimerCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&SeriesTimerUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&SeriesTimerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&SeriesTimerDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("store: unknown SeriesTimer mutation op: %q", m.Op())
-	}
-}
-
 // SessionClient is a client for the Session schema.
 type SessionClient struct {
 	config
@@ -4410,6 +3780,187 @@ func (c *SessionClient) mutate(ctx context.Context, m *SessionMutation) (Value, 
 	}
 }
 
+// SourceClient is a client for the Source schema.
+type SourceClient struct {
+	config
+}
+
+// NewSourceClient returns a client for the Source from the given config.
+func NewSourceClient(c config) *SourceClient {
+	return &SourceClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `source.Hooks(f(g(h())))`.
+func (c *SourceClient) Use(hooks ...Hook) {
+	c.hooks.Source = append(c.hooks.Source, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `source.Intercept(f(g(h())))`.
+func (c *SourceClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Source = append(c.inters.Source, interceptors...)
+}
+
+// Create returns a builder for creating a Source entity.
+func (c *SourceClient) Create() *SourceCreate {
+	mutation := newSourceMutation(c.config, OpCreate)
+	return &SourceCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Source entities.
+func (c *SourceClient) CreateBulk(builders ...*SourceCreate) *SourceCreateBulk {
+	return &SourceCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SourceClient) MapCreateBulk(slice any, setFunc func(*SourceCreate, int)) *SourceCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SourceCreateBulk{err: fmt.Errorf("calling to SourceClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SourceCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SourceCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Source.
+func (c *SourceClient) Update() *SourceUpdate {
+	mutation := newSourceMutation(c.config, OpUpdate)
+	return &SourceUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SourceClient) UpdateOne(_m *Source) *SourceUpdateOne {
+	mutation := newSourceMutation(c.config, OpUpdateOne, withSource(_m))
+	return &SourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SourceClient) UpdateOneID(id uuid.UUID) *SourceUpdateOne {
+	mutation := newSourceMutation(c.config, OpUpdateOne, withSourceID(id))
+	return &SourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Source.
+func (c *SourceClient) Delete() *SourceDelete {
+	mutation := newSourceMutation(c.config, OpDelete)
+	return &SourceDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SourceClient) DeleteOne(_m *Source) *SourceDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SourceClient) DeleteOneID(id uuid.UUID) *SourceDeleteOne {
+	builder := c.Delete().Where(source.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SourceDeleteOne{builder}
+}
+
+// Query returns a query builder for Source.
+func (c *SourceClient) Query() *SourceQuery {
+	return &SourceQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSource},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Source entity by its id.
+func (c *SourceClient) Get(ctx context.Context, id uuid.UUID) (*Source, error) {
+	return c.Query().Where(source.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SourceClient) GetX(ctx context.Context, id uuid.UUID) *Source {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryLibraries queries the libraries edge of a Source.
+func (c *SourceClient) QueryLibraries(_m *Source) *LibrarySourceQuery {
+	query := (&LibrarySourceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(source.Table, source.FieldID, id),
+			sqlgraph.To(librarysource.Table, librarysource.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, source.LibrariesTable, source.LibrariesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryFiles queries the files edge of a Source.
+func (c *SourceClient) QueryFiles(_m *Source) *ItemSourceQuery {
+	query := (&ItemSourceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(source.Table, source.FieldID, id),
+			sqlgraph.To(itemsource.Table, itemsource.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, source.FilesTable, source.FilesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryMemberships queries the memberships edge of a Source.
+func (c *SourceClient) QueryMemberships(_m *Source) *LibraryItemQuery {
+	query := (&LibraryItemClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(source.Table, source.FieldID, id),
+			sqlgraph.To(libraryitem.Table, libraryitem.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, source.MembershipsTable, source.MembershipsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *SourceClient) Hooks() []Hook {
+	return c.hooks.Source
+}
+
+// Interceptors returns the client interceptors.
+func (c *SourceClient) Interceptors() []Interceptor {
+	return c.inters.Source
+}
+
+func (c *SourceClient) mutate(ctx context.Context, m *SourceMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SourceCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SourceUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SourceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("store: unknown Source mutation op: %q", m.Op())
+	}
+}
+
 // StudioClient is a client for the Studio schema.
 type StudioClient struct {
 	config
@@ -4556,437 +4107,6 @@ func (c *StudioClient) mutate(ctx context.Context, m *StudioMutation) (Value, er
 		return (&StudioDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("store: unknown Studio mutation op: %q", m.Op())
-	}
-}
-
-// TimerClient is a client for the Timer schema.
-type TimerClient struct {
-	config
-}
-
-// NewTimerClient returns a client for the Timer from the given config.
-func NewTimerClient(c config) *TimerClient {
-	return &TimerClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `timer.Hooks(f(g(h())))`.
-func (c *TimerClient) Use(hooks ...Hook) {
-	c.hooks.Timer = append(c.hooks.Timer, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `timer.Intercept(f(g(h())))`.
-func (c *TimerClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Timer = append(c.inters.Timer, interceptors...)
-}
-
-// Create returns a builder for creating a Timer entity.
-func (c *TimerClient) Create() *TimerCreate {
-	mutation := newTimerMutation(c.config, OpCreate)
-	return &TimerCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of Timer entities.
-func (c *TimerClient) CreateBulk(builders ...*TimerCreate) *TimerCreateBulk {
-	return &TimerCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *TimerClient) MapCreateBulk(slice any, setFunc func(*TimerCreate, int)) *TimerCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &TimerCreateBulk{err: fmt.Errorf("calling to TimerClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*TimerCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &TimerCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Timer.
-func (c *TimerClient) Update() *TimerUpdate {
-	mutation := newTimerMutation(c.config, OpUpdate)
-	return &TimerUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *TimerClient) UpdateOne(_m *Timer) *TimerUpdateOne {
-	mutation := newTimerMutation(c.config, OpUpdateOne, withTimer(_m))
-	return &TimerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *TimerClient) UpdateOneID(id uuid.UUID) *TimerUpdateOne {
-	mutation := newTimerMutation(c.config, OpUpdateOne, withTimerID(id))
-	return &TimerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Timer.
-func (c *TimerClient) Delete() *TimerDelete {
-	mutation := newTimerMutation(c.config, OpDelete)
-	return &TimerDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *TimerClient) DeleteOne(_m *Timer) *TimerDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *TimerClient) DeleteOneID(id uuid.UUID) *TimerDeleteOne {
-	builder := c.Delete().Where(timer.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &TimerDeleteOne{builder}
-}
-
-// Query returns a query builder for Timer.
-func (c *TimerClient) Query() *TimerQuery {
-	return &TimerQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeTimer},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a Timer entity by its id.
-func (c *TimerClient) Get(ctx context.Context, id uuid.UUID) (*Timer, error) {
-	return c.Query().Where(timer.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *TimerClient) GetX(ctx context.Context, id uuid.UUID) *Timer {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QuerySeriesTimer queries the series_timer edge of a Timer.
-func (c *TimerClient) QuerySeriesTimer(_m *Timer) *SeriesTimerQuery {
-	query := (&SeriesTimerClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(timer.Table, timer.FieldID, id),
-			sqlgraph.To(seriestimer.Table, seriestimer.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, timer.SeriesTimerTable, timer.SeriesTimerColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *TimerClient) Hooks() []Hook {
-	return c.hooks.Timer
-}
-
-// Interceptors returns the client interceptors.
-func (c *TimerClient) Interceptors() []Interceptor {
-	return c.inters.Timer
-}
-
-func (c *TimerClient) mutate(ctx context.Context, m *TimerMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&TimerCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&TimerUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&TimerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&TimerDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("store: unknown Timer mutation op: %q", m.Op())
-	}
-}
-
-// TrickplayClient is a client for the Trickplay schema.
-type TrickplayClient struct {
-	config
-}
-
-// NewTrickplayClient returns a client for the Trickplay from the given config.
-func NewTrickplayClient(c config) *TrickplayClient {
-	return &TrickplayClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `trickplay.Hooks(f(g(h())))`.
-func (c *TrickplayClient) Use(hooks ...Hook) {
-	c.hooks.Trickplay = append(c.hooks.Trickplay, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `trickplay.Intercept(f(g(h())))`.
-func (c *TrickplayClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Trickplay = append(c.inters.Trickplay, interceptors...)
-}
-
-// Create returns a builder for creating a Trickplay entity.
-func (c *TrickplayClient) Create() *TrickplayCreate {
-	mutation := newTrickplayMutation(c.config, OpCreate)
-	return &TrickplayCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of Trickplay entities.
-func (c *TrickplayClient) CreateBulk(builders ...*TrickplayCreate) *TrickplayCreateBulk {
-	return &TrickplayCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *TrickplayClient) MapCreateBulk(slice any, setFunc func(*TrickplayCreate, int)) *TrickplayCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &TrickplayCreateBulk{err: fmt.Errorf("calling to TrickplayClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*TrickplayCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &TrickplayCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Trickplay.
-func (c *TrickplayClient) Update() *TrickplayUpdate {
-	mutation := newTrickplayMutation(c.config, OpUpdate)
-	return &TrickplayUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *TrickplayClient) UpdateOne(_m *Trickplay) *TrickplayUpdateOne {
-	mutation := newTrickplayMutation(c.config, OpUpdateOne, withTrickplay(_m))
-	return &TrickplayUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *TrickplayClient) UpdateOneID(id uuid.UUID) *TrickplayUpdateOne {
-	mutation := newTrickplayMutation(c.config, OpUpdateOne, withTrickplayID(id))
-	return &TrickplayUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Trickplay.
-func (c *TrickplayClient) Delete() *TrickplayDelete {
-	mutation := newTrickplayMutation(c.config, OpDelete)
-	return &TrickplayDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *TrickplayClient) DeleteOne(_m *Trickplay) *TrickplayDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *TrickplayClient) DeleteOneID(id uuid.UUID) *TrickplayDeleteOne {
-	builder := c.Delete().Where(trickplay.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &TrickplayDeleteOne{builder}
-}
-
-// Query returns a query builder for Trickplay.
-func (c *TrickplayClient) Query() *TrickplayQuery {
-	return &TrickplayQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeTrickplay},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a Trickplay entity by its id.
-func (c *TrickplayClient) Get(ctx context.Context, id uuid.UUID) (*Trickplay, error) {
-	return c.Query().Where(trickplay.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *TrickplayClient) GetX(ctx context.Context, id uuid.UUID) *Trickplay {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryItem queries the item edge of a Trickplay.
-func (c *TrickplayClient) QueryItem(_m *Trickplay) *ItemQuery {
-	query := (&ItemClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(trickplay.Table, trickplay.FieldID, id),
-			sqlgraph.To(item.Table, item.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, trickplay.ItemTable, trickplay.ItemColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *TrickplayClient) Hooks() []Hook {
-	return c.hooks.Trickplay
-}
-
-// Interceptors returns the client interceptors.
-func (c *TrickplayClient) Interceptors() []Interceptor {
-	return c.inters.Trickplay
-}
-
-func (c *TrickplayClient) mutate(ctx context.Context, m *TrickplayMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&TrickplayCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&TrickplayUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&TrickplayUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&TrickplayDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("store: unknown Trickplay mutation op: %q", m.Op())
-	}
-}
-
-// TunerHostClient is a client for the TunerHost schema.
-type TunerHostClient struct {
-	config
-}
-
-// NewTunerHostClient returns a client for the TunerHost from the given config.
-func NewTunerHostClient(c config) *TunerHostClient {
-	return &TunerHostClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `tunerhost.Hooks(f(g(h())))`.
-func (c *TunerHostClient) Use(hooks ...Hook) {
-	c.hooks.TunerHost = append(c.hooks.TunerHost, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `tunerhost.Intercept(f(g(h())))`.
-func (c *TunerHostClient) Intercept(interceptors ...Interceptor) {
-	c.inters.TunerHost = append(c.inters.TunerHost, interceptors...)
-}
-
-// Create returns a builder for creating a TunerHost entity.
-func (c *TunerHostClient) Create() *TunerHostCreate {
-	mutation := newTunerHostMutation(c.config, OpCreate)
-	return &TunerHostCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of TunerHost entities.
-func (c *TunerHostClient) CreateBulk(builders ...*TunerHostCreate) *TunerHostCreateBulk {
-	return &TunerHostCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *TunerHostClient) MapCreateBulk(slice any, setFunc func(*TunerHostCreate, int)) *TunerHostCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &TunerHostCreateBulk{err: fmt.Errorf("calling to TunerHostClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*TunerHostCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &TunerHostCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for TunerHost.
-func (c *TunerHostClient) Update() *TunerHostUpdate {
-	mutation := newTunerHostMutation(c.config, OpUpdate)
-	return &TunerHostUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *TunerHostClient) UpdateOne(_m *TunerHost) *TunerHostUpdateOne {
-	mutation := newTunerHostMutation(c.config, OpUpdateOne, withTunerHost(_m))
-	return &TunerHostUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *TunerHostClient) UpdateOneID(id uuid.UUID) *TunerHostUpdateOne {
-	mutation := newTunerHostMutation(c.config, OpUpdateOne, withTunerHostID(id))
-	return &TunerHostUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for TunerHost.
-func (c *TunerHostClient) Delete() *TunerHostDelete {
-	mutation := newTunerHostMutation(c.config, OpDelete)
-	return &TunerHostDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *TunerHostClient) DeleteOne(_m *TunerHost) *TunerHostDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *TunerHostClient) DeleteOneID(id uuid.UUID) *TunerHostDeleteOne {
-	builder := c.Delete().Where(tunerhost.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &TunerHostDeleteOne{builder}
-}
-
-// Query returns a query builder for TunerHost.
-func (c *TunerHostClient) Query() *TunerHostQuery {
-	return &TunerHostQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeTunerHost},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a TunerHost entity by its id.
-func (c *TunerHostClient) Get(ctx context.Context, id uuid.UUID) (*TunerHost, error) {
-	return c.Query().Where(tunerhost.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *TunerHostClient) GetX(ctx context.Context, id uuid.UUID) *TunerHost {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *TunerHostClient) Hooks() []Hook {
-	return c.hooks.TunerHost
-}
-
-// Interceptors returns the client interceptors.
-func (c *TunerHostClient) Interceptors() []Interceptor {
-	return c.inters.TunerHost
-}
-
-func (c *TunerHostClient) mutate(ctx context.Context, m *TunerHostMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&TunerHostCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&TunerHostUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&TunerHostUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&TunerHostDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("store: unknown TunerHost mutation op: %q", m.Op())
 	}
 }
 
@@ -5717,19 +4837,17 @@ func (c *UserPolicyClient) mutate(ctx context.Context, m *UserPolicyMutation) (V
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		ActivityLogEntry, ApiKey, Chapter, Configuration, Credit, Device,
-		DisplayPreferences, Genre, Image, ImageBlob, Item, Library, LibraryOptions,
-		ListingsProvider, MediaAttachment, MediaSegment, MediaSource, MediaStream,
-		Person, Playlist, PlaylistEntry, PlaylistShare, SeriesTimer, Session, Studio,
-		Timer, Trickplay, TunerHost, User, UserConfiguration, UserItemData,
+		ActivityLogEntry, ApiKey, Configuration, Credit, Device, DisplayPreferences,
+		Genre, Image, Item, ItemSource, Library, LibraryItem, LibraryOptions,
+		LibrarySource, MediaStream, Person, Playlist, PlaylistEntry, PlaylistShare,
+		Session, Source, Studio, User, UserConfiguration, UserItemData,
 		UserPolicy []ent.Hook
 	}
 	inters struct {
-		ActivityLogEntry, ApiKey, Chapter, Configuration, Credit, Device,
-		DisplayPreferences, Genre, Image, ImageBlob, Item, Library, LibraryOptions,
-		ListingsProvider, MediaAttachment, MediaSegment, MediaSource, MediaStream,
-		Person, Playlist, PlaylistEntry, PlaylistShare, SeriesTimer, Session, Studio,
-		Timer, Trickplay, TunerHost, User, UserConfiguration, UserItemData,
+		ActivityLogEntry, ApiKey, Configuration, Credit, Device, DisplayPreferences,
+		Genre, Image, Item, ItemSource, Library, LibraryItem, LibraryOptions,
+		LibrarySource, MediaStream, Person, Playlist, PlaylistEntry, PlaylistShare,
+		Session, Source, Studio, User, UserConfiguration, UserItemData,
 		UserPolicy []ent.Interceptor
 	}
 )

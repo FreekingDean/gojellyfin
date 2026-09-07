@@ -20,6 +20,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
+	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
@@ -30,9 +31,11 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
-	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
+	downloadermodal "github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/FreekingDean/gojellyfin/internal/transcode"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
@@ -46,12 +49,15 @@ const chromeProfile = `{
 }`
 
 type playbackFixture struct {
-	info    *mediainfo.Server
-	streams *stream.Handler
-	items   *items.Service
-	library uuid.UUID
-	token   string
-	paths   map[string]string
+	sessions   *sessions.Service
+	info       *mediainfo.Server
+	streams    *stream.Handler
+	items      *items.Service
+	library    uuid.UUID
+	token      string
+	paths      map[string]string
+	downloader uuid.UUID
+	client     *store.Client
 }
 
 func newPlaybackFixture(t *testing.T) *playbackFixture {
@@ -94,17 +100,17 @@ func newPlaybackFixture(t *testing.T) *playbackFixture {
 	}
 
 	token := uuid.NewString()
-	device := sessions.DeviceInfo{ID: unique, Name: "Test", AppName: "Test", AppVersion: "1"}
+	device := sessions.Device{ClientID: unique, Name: "Test", AppName: "Test", AppVersion: "1"}
 	if _, err := sessionService.Create(ctx, user.ID, token, device); err != nil {
 		t.Fatalf("failed to create the session: %v", err)
 	}
 
 	t.Cleanup(func() {
-		inLibrary := sourcemodal.HasItemWith(itemmodal.LibraryID(library.ID))
+		inLibrary := sourcemodal.HasItemWith(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID)))
 		if _, err := client.MediaStream.Delete().Where(streammodal.HasSourceWith(inLibrary)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the media streams: %v", err)
 		}
-		if _, err := client.MediaSource.Delete().Where(inLibrary).Exec(ctx); err != nil {
+		if _, err := client.ItemSource.Delete().Where(inLibrary).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the media sources: %v", err)
 		}
 		if err := libraryService.DeleteLibrary(ctx, library.ID); err != nil {
@@ -124,13 +130,33 @@ func newPlaybackFixture(t *testing.T) *playbackFixture {
 		}
 	})
 
+	downloader, err := client.Source.Create().
+		SetName(t.Name() + "-" + uuid.NewString()).
+		SetURL("http://" + uuid.NewString() + ".invalid").
+		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
+		SetKind(downloadermodal.KindRadarr).
+		SetRootPath("/media").
+		SetLocalPath("/media").
+		Save(context.Background())
+	if err != nil {
+		t.Fatalf("failed to create the source: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := client.Source.DeleteOne(downloader).Exec(context.Background()); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
+		}
+	})
+
 	return &playbackFixture{
-		info:    mediainfo.New(itemService),
-		streams: stream.New(sessionService, itemService, transcode.NewEncoder(2, 0)),
-		items:   itemService,
-		library: library.ID,
-		token:   token,
-		paths:   map[string]string{},
+		downloader: downloader.ID,
+		client:     client,
+		sessions:   sessionService,
+		info:       mediainfo.New(itemService, allLibraries{}),
+		streams:    stream.New(sessionService, itemService, filesystem.New(config), transcode.NewEncoder(2, 0)),
+		items:      itemService,
+		library:    library.ID,
+		token:      token,
+		paths:      map[string]string{},
 	}
 }
 
@@ -143,8 +169,7 @@ func (f *playbackFixture) rip(t *testing.T, name, audio string) uuid.UUID {
 func (f *playbackFixture) ripped(t *testing.T, name, encoder, video, audio string) uuid.UUID {
 	t.Helper()
 
-	item, err := f.items.SaveScanned(context.Background(), items.Scanned{
-		LibraryID:    f.library,
+	item, err := f.items.SaveScanned(context.Background(), items.Item{
 		Kind:         itemmodal.KindMovie,
 		Key:          "movie:" + name + ":" + audio,
 		Name:         name,
@@ -178,13 +203,13 @@ func (f *playbackFixture) beside(t *testing.T, id uuid.UUID, name, encoder, vide
 	f.paths[name] = path
 
 	ctx := context.Background()
-	item, err := f.items.ItemByID(ctx, id)
+	item, err := f.items.ItemByID(ctx, items.Everyone, id)
 	if err != nil {
 		t.Fatalf("failed to read the item: %v", err)
 	}
 
-	source, err := f.items.SaveSource(ctx, items.ScannedSource{
-		LibraryID:    f.library,
+	source, err := f.items.SaveSource(ctx, items.MediaSource{
+		SourceID:     f.newDownloader(t),
 		ItemID:       id,
 		Path:         path,
 		Name:         name,
@@ -194,12 +219,12 @@ func (f *playbackFixture) beside(t *testing.T, id uuid.UUID, name, encoder, vide
 		t.Fatalf("failed to save the source: %v", err)
 	}
 
-	err = f.items.SaveProbe(ctx, item, source, items.Probe{
+	err = f.items.SaveProbe(ctx, item, source, items.MediaSource{
 		Container: strings.TrimPrefix(filepath.Ext(name), "."),
-		Streams: []items.Stream{
+		Edges: items.MediaSourceEdges{Streams: []*items.MediaStream{
 			{Index: 0, Kind: streammodal.KindVideo, Codec: video, Width: width, Height: height},
 			{Index: 1, Kind: streammodal.KindAudio, Codec: audio},
-		},
+		}},
 	})
 	if err != nil {
 		t.Fatalf("failed to probe the source: %v", err)
@@ -232,6 +257,13 @@ func (f *playbackFixture) answer(t *testing.T, id uuid.UUID, profile string, sta
 	}
 
 	ctx := auth.ContextWithAuthorization(context.Background(), auth.Authorization{Token: f.token})
+
+	session, err := f.sessions.ByToken(ctx, f.token)
+	if err != nil {
+		t.Fatalf("failed to read the session back: %v", err)
+	}
+	ctx = auth.ContextWithSession(ctx, session)
+
 	response, err := f.info.GetPostedPlaybackInfo(ctx, api.GetPostedPlaybackInfoRequestObject{ItemId: id, JSONBody: body})
 	if err != nil {
 		t.Fatalf("failed to answer playback info: %v", err)
@@ -550,4 +582,33 @@ func TestPlayback(t *testing.T) {
 			t.Errorf("the response runs %.2fs of the %.2fs source, want the seek to have skipped most of it", remaining, whole)
 		}
 	})
+}
+
+func (f *playbackFixture) newDownloader(t *testing.T) uuid.UUID {
+	t.Helper()
+
+	record, err := f.client.Source.Create().
+		SetName(t.Name() + "-" + uuid.NewString()).
+		SetURL("http://" + uuid.NewString() + ".invalid").
+		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
+		SetKind(downloadermodal.KindRadarr).
+		SetRootPath("/media").
+		SetLocalPath("/media").
+		Save(context.Background())
+	if err != nil {
+		t.Fatalf("failed to create the source: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := f.client.Source.DeleteOne(record).Exec(context.Background()); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
+		}
+	})
+
+	return record.ID
+}
+
+type allLibraries struct{}
+
+func (allLibraries) Access(context.Context, uuid.UUID) (users.Access, error) {
+	return users.Access{All: true}, nil
 }

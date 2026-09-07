@@ -50,7 +50,7 @@ func (f *metadataFixture) item(t *testing.T, name string) *Item {
 	t.Helper()
 
 	id := f.add(t, seed{kind: itemmodal.KindMovie, name: name})
-	record, err := f.service.ItemByID(context.Background(), id)
+	record, err := f.service.ItemByID(context.Background(), Everyone, id)
 	if err != nil {
 		t.Fatalf("failed to read %q: %v", name, err)
 	}
@@ -58,17 +58,38 @@ func (f *metadataFixture) item(t *testing.T, name string) *Item {
 	return record
 }
 
-func (f *metadataFixture) probe(t *testing.T, item *Item, probe Probe) {
+type seeded struct {
+	Genres  []string
+	Studios []string
+	Tags    []string
+	People  []Credit
+}
+
+func (f *metadataFixture) seed(t *testing.T, item *Item, with seeded) {
 	t.Helper()
 
-	source := f.source(t, item.ID, "/media/"+item.ID.String()+".mkv")
-	if err := f.service.SaveProbe(context.Background(), item, source, probe); err != nil {
-		t.Fatalf("failed to save the probe: %v", err)
+	ctx := context.Background()
+
+	metadata := Metadata{}
+	if with.Genres != nil {
+		metadata.Genres = &with.Genres
+	}
+	if with.Studios != nil {
+		metadata.Studios = &with.Studios
+	}
+	if with.Tags != nil {
+		metadata.Tags = &with.Tags
+	}
+	if with.People != nil {
+		metadata.People = &with.People
+	}
+	if _, err := f.service.UpdateMetadata(ctx, item.ID, metadata); err != nil {
+		t.Fatalf("failed to save the metadata: %v", err)
 	}
 }
 
 func (f *metadataFixture) query() MetadataQuery {
-	return MetadataQuery{LibraryID: &f.libraryID}
+	return MetadataQuery{Viewer: Everyone, LibraryID: &f.libraryID}
 }
 
 func (f *metadataFixture) name(value string) string {
@@ -84,25 +105,21 @@ func namesOf(named []Named) []string {
 	return found
 }
 
-func TestService_SaveProbe(t *testing.T) {
+func TestService_NamedMetadata(t *testing.T) {
 	t.Run("writes the container metadata", func(t *testing.T) {
 		fixture := newMetadataFixture(t)
 		ctx := context.Background()
 		movie := fixture.item(t, "Movie")
 
-		probe := Probe{
-			Container: "mkv",
-			Metadata: ContainerMetadata{
-				Genres:  []string{fixture.name("Comedy"), fixture.name("Drama")},
-				Studios: []string{fixture.name("Studio")},
-				Tags:    []string{"live"},
-				People: []Person{
-					{Name: fixture.name("Director"), Kind: creditmodal.KindDirector},
-					{Name: fixture.name("Writer"), Kind: creditmodal.KindWriter},
-				},
+		fixture.seed(t, movie, seeded{
+			Genres:  []string{fixture.name("Comedy"), fixture.name("Drama")},
+			Studios: []string{fixture.name("Studio")},
+			Tags:    []string{"live"},
+			People: []Credit{
+				{Name: fixture.name("Director"), Kind: creditmodal.KindDirector},
+				{Name: fixture.name("Writer"), Kind: creditmodal.KindWriter, Role: "Teleplay", Order: 3},
 			},
-		}
-		fixture.probe(t, movie, probe)
+		})
 
 		t.Run("populates the genres", func(t *testing.T) {
 			named, total, err := fixture.service.DistinctGenres(ctx, fixture.query())
@@ -155,6 +172,42 @@ func TestService_SaveProbe(t *testing.T) {
 			}
 		})
 
+		t.Run("takes a person the provider credited twice", func(t *testing.T) {
+			twice := newMetadataFixture(t)
+			movie := twice.item(t, "Twice")
+
+			twice.seed(t, movie, seeded{People: []Credit{
+				{Name: twice.name("Producer"), Kind: creditmodal.KindProducer},
+				{Name: twice.name("Producer"), Kind: creditmodal.KindProducer},
+			}})
+
+			named, _, err := twice.service.DistinctPeople(ctx, MetadataQuery{
+				Viewer: Everyone,
+				ItemID: &movie.ID,
+			}, nil)
+			if err != nil {
+				t.Fatalf("failed to query people: %v", err)
+			}
+
+			want := []string{twice.name("Producer")}
+			if got := namesOf(named); !slices.Equal(got, want) {
+				t.Errorf("people = %v, want %v", got, want)
+			}
+		})
+
+		t.Run("keeps the role and the billing order", func(t *testing.T) {
+			credit, err := fixture.service.store.Credit.Query().
+				Where(creditmodal.HasPersonWith(personmodal.Name(fixture.name("Writer")))).
+				Only(ctx)
+			if err != nil {
+				t.Fatalf("failed to read the credit: %v", err)
+			}
+
+			if credit.Role != "Teleplay" || credit.SortOrder != 3 {
+				t.Errorf("credit = %q/%d, want Teleplay/3", credit.Role, credit.SortOrder)
+			}
+		})
+
 		t.Run("populates the tags", func(t *testing.T) {
 			tags, err := fixture.service.DistinctTags(ctx, fixture.query())
 			if err != nil {
@@ -166,8 +219,11 @@ func TestService_SaveProbe(t *testing.T) {
 			}
 		})
 
-		t.Run("re-probing changes nothing", func(t *testing.T) {
-			fixture.probe(t, movie, probe)
+		t.Run("writing the same metadata again changes nothing", func(t *testing.T) {
+			fixture.seed(t, movie, seeded{
+				Genres:  []string{fixture.name("Comedy"), fixture.name("Drama")},
+				Studios: []string{fixture.name("Studio")},
+			})
 
 			named, total, err := fixture.service.DistinctGenres(ctx, fixture.query())
 			if err != nil {
@@ -190,19 +246,10 @@ func TestService_SaveProbe(t *testing.T) {
 				t.Errorf("genre rows = %d, want 2", rows)
 			}
 
-			credits, err := fixture.service.store.Credit.Query().Where(creditmodal.HasItemWith(itemmodal.ID(movie.ID))).Count(ctx)
-			if err != nil {
-				t.Fatalf("failed to count credits: %v", err)
-			}
-			if credits != 2 {
-				t.Errorf("credits = %d, want 2", credits)
-			}
 		})
 
-		t.Run("re-probing drops metadata the container no longer carries", func(t *testing.T) {
-			reduced := probe
-			reduced.Metadata = ContainerMetadata{Genres: []string{fixture.name("Comedy")}}
-			fixture.probe(t, movie, reduced)
+		t.Run("a shorter list replaces the one it names and leaves the rest", func(t *testing.T) {
+			fixture.seed(t, movie, seeded{Genres: []string{fixture.name("Comedy")}})
 
 			named, _, err := fixture.service.DistinctGenres(ctx, fixture.query())
 			if err != nil {
@@ -212,20 +259,12 @@ func TestService_SaveProbe(t *testing.T) {
 				t.Errorf("genres = %v, want %v", namesOf(named), want)
 			}
 
-			people, _, err := fixture.service.DistinctPeople(ctx, fixture.query(), nil)
+			studios, _, err := fixture.service.DistinctStudios(ctx, fixture.query())
 			if err != nil {
-				t.Fatalf("failed to query people: %v", err)
+				t.Fatalf("failed to query studios: %v", err)
 			}
-			if len(people) != 0 {
-				t.Errorf("people = %v, want none", namesOf(people))
-			}
-
-			tags, err := fixture.service.DistinctTags(ctx, fixture.query())
-			if err != nil {
-				t.Fatalf("failed to query tags: %v", err)
-			}
-			if len(tags) != 0 {
-				t.Errorf("tags = %v, want none", tags)
+			if want := []string{fixture.name("Studio")}; !slices.Equal(namesOf(studios), want) {
+				t.Errorf("studios = %v, want them untouched by a write that named none", namesOf(studios))
 			}
 		})
 	})
@@ -236,7 +275,7 @@ func TestService_SaveProbe(t *testing.T) {
 		shared := fixture.name("Comedy")
 
 		for _, name := range []string{"First", "Second"} {
-			fixture.probe(t, fixture.item(t, name), Probe{Metadata: ContainerMetadata{Genres: []string{shared}}})
+			fixture.seed(t, fixture.item(t, name), seeded{Genres: []string{shared}})
 		}
 
 		rows, err := fixture.service.store.Genre.Query().Where(genremodal.Name(shared)).Count(ctx)
@@ -261,28 +300,28 @@ func TestService_SaveProbe(t *testing.T) {
 		ctx := context.Background()
 
 		id := fixture.add(t, seed{kind: itemmodal.KindMovie, name: "Movie"})
-		item, err := fixture.service.ItemByID(ctx, id)
+		item, err := fixture.service.ItemByID(ctx, Everyone, id)
 		if err != nil {
 			t.Fatalf("failed to load the item: %v", err)
 		}
 
-		first := Probe{
+		first := MediaSource{
 			Container:    "mkv",
 			RunTimeTicks: 100,
-			Streams: []Stream{
+			Edges: MediaSourceEdges{Streams: []*MediaStream{
 				{Index: 0, Kind: streammodal.KindVideo, Codec: "h264"},
 				{Index: 1, Kind: streammodal.KindAudio, Codec: "aac"},
-			},
+			}},
 		}
 		source := fixture.source(t, id, "/media/movie.mkv")
 		if err := fixture.service.SaveProbe(ctx, item, source, first); err != nil {
 			t.Fatalf("failed to save the first probe: %v", err)
 		}
 
-		second := Probe{
+		second := MediaSource{
 			Container:    "mkv",
 			RunTimeTicks: 200,
-			Streams:      []Stream{{Index: 0, Kind: streammodal.KindVideo, Codec: "hevc"}},
+			Edges:        MediaSourceEdges{Streams: []*MediaStream{{Index: 0, Kind: streammodal.KindVideo, Codec: "hevc"}}},
 		}
 		if err := fixture.service.SaveProbe(ctx, item, source, second); err != nil {
 			t.Fatalf("failed to save the second probe: %v", err)
@@ -310,10 +349,10 @@ func TestService_DistinctGenres(t *testing.T) {
 	ctx := context.Background()
 
 	movie := fixture.item(t, "Movie")
-	fixture.probe(t, movie, Probe{Metadata: ContainerMetadata{Genres: []string{fixture.name("Comedy")}}})
+	fixture.seed(t, movie, seeded{Genres: []string{fixture.name("Comedy")}})
 
 	t.Run("filters by item kind", func(t *testing.T) {
-		named, _, err := fixture.service.DistinctGenres(ctx, MetadataQuery{
+		named, _, err := fixture.service.DistinctGenres(ctx, MetadataQuery{Viewer: Everyone,
 			LibraryID: &fixture.libraryID,
 			Kinds:     []Kind{itemmodal.KindEpisode},
 		})
@@ -326,7 +365,7 @@ func TestService_DistinctGenres(t *testing.T) {
 	})
 
 	t.Run("filters by search term", func(t *testing.T) {
-		named, _, err := fixture.service.DistinctGenres(ctx, MetadataQuery{
+		named, _, err := fixture.service.DistinctGenres(ctx, MetadataQuery{Viewer: Everyone,
 			LibraryID:  &fixture.libraryID,
 			SearchTerm: "comedy",
 		})
@@ -340,7 +379,7 @@ func TestService_DistinctGenres(t *testing.T) {
 
 	t.Run("ignores other libraries", func(t *testing.T) {
 		other := uuid.New()
-		named, _, err := fixture.service.DistinctGenres(ctx, MetadataQuery{LibraryID: &other})
+		named, _, err := fixture.service.DistinctGenres(ctx, MetadataQuery{Viewer: Everyone, LibraryID: &other})
 		if err != nil {
 			t.Fatalf("failed to query genres: %v", err)
 		}

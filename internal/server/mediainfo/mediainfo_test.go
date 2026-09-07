@@ -2,11 +2,13 @@ package mediainfo
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"io"
 	"testing"
 
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
 func TestServer_GetBitrateTestBytes(t *testing.T) {
@@ -22,7 +24,7 @@ func TestServer_GetBitrateTestBytes(t *testing.T) {
 		{name: "negative", size: apiutil.Ptr(int32(-5)), want: 1},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			response, err := New(nil).GetBitrateTestBytes(context.Background(), api.GetBitrateTestBytesRequestObject{
+			response, err := New(nil, nil).GetBitrateTestBytes(context.Background(), api.GetBitrateTestBytesRequestObject{
 				Params: api.GetBitrateTestBytesParams{Size: tc.size},
 			})
 			if err != nil {
@@ -43,4 +45,10 @@ func TestServer_GetBitrateTestBytes(t *testing.T) {
 			}
 		})
 	}
+}
+
+type allLibraries struct{}
+
+func (allLibraries) Access(context.Context, uuid.UUID) (users.Access, error) {
+	return users.Access{All: true}, nil
 }

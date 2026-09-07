@@ -40,8 +40,7 @@ func (f *fixture) encode(t *testing.T, name, audio string, height int) string {
 func (f *fixture) addRip(t *testing.T, audio string) uuid.UUID {
 	t.Helper()
 
-	item, err := f.items.SaveScanned(context.Background(), items.Scanned{
-		LibraryID:    f.library,
+	item, err := f.items.SaveScanned(context.Background(), items.Item{
 		Kind:         itemmodal.KindMovie,
 		Key:          "movie:" + audio,
 		Name:         "rip.mkv",
@@ -61,18 +60,18 @@ func (f *fixture) addCopy(t *testing.T, id uuid.UUID, name, audio string, height
 	t.Helper()
 
 	ctx := context.Background()
-	item, err := f.items.ItemByID(ctx, id)
+	item, err := f.items.ItemByID(ctx, items.Everyone, id)
 	if err != nil {
 		t.Fatalf("failed to read the item: %v", err)
 	}
 
 	source := f.source(t, id, f.encode(t, name, audio, height))
-	err = f.items.SaveProbe(ctx, item, source, items.Probe{
+	err = f.items.SaveProbe(ctx, item, source, items.MediaSource{
 		Container: "mkv",
-		Streams: []items.Stream{
+		Edges: items.MediaSourceEdges{Streams: []*items.MediaStream{
 			{Index: 0, Kind: streammodal.KindVideo, Codec: "h264", Height: int32(height), Width: int32(height * 4 / 3)},
 			{Index: 1, Kind: streammodal.KindAudio, Codec: audio},
-		},
+		}},
 	})
 	if err != nil {
 		t.Fatalf("failed to probe %q: %v", name, err)

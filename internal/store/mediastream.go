@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/google/uuid"
 )
@@ -23,76 +23,26 @@ type MediaStream struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
-	// SourceID holds the value of the "source_id" field.
-	SourceID uuid.UUID `json:"source_id,omitempty"`
+	// ItemSourceID holds the value of the "item_source_id" field.
+	ItemSourceID uuid.UUID `json:"item_source_id,omitempty"`
 	// Kind holds the value of the "kind" field.
 	Kind mediastream.Kind `json:"kind,omitempty"`
-	// VideoRange holds the value of the "video_range" field.
-	VideoRange mediastream.VideoRange `json:"video_range,omitempty"`
 	// VideoRangeType holds the value of the "video_range_type" field.
 	VideoRangeType mediastream.VideoRangeType `json:"video_range_type,omitempty"`
-	// AudioSpatialFormat holds the value of the "audio_spatial_format" field.
-	AudioSpatialFormat mediastream.AudioSpatialFormat `json:"audio_spatial_format,omitempty"`
 	// Index holds the value of the "index" field.
 	Index int32 `json:"index,omitempty"`
 	// Codec holds the value of the "codec" field.
 	Codec string `json:"codec,omitempty"`
-	// CodecTag holds the value of the "codec_tag" field.
-	CodecTag string `json:"codec_tag,omitempty"`
 	// Profile holds the value of the "profile" field.
 	Profile string `json:"profile,omitempty"`
 	// Language holds the value of the "language" field.
 	Language string `json:"language,omitempty"`
 	// Title holds the value of the "title" field.
 	Title string `json:"title,omitempty"`
-	// Comment holds the value of the "comment" field.
-	Comment string `json:"comment,omitempty"`
-	// Path holds the value of the "path" field.
-	Path string `json:"path,omitempty"`
 	// PixelFormat holds the value of the "pixel_format" field.
 	PixelFormat string `json:"pixel_format,omitempty"`
-	// AspectRatio holds the value of the "aspect_ratio" field.
-	AspectRatio string `json:"aspect_ratio,omitempty"`
-	// ChannelLayout holds the value of the "channel_layout" field.
-	ChannelLayout string `json:"channel_layout,omitempty"`
-	// TimeBase holds the value of the "time_base" field.
-	TimeBase string `json:"time_base,omitempty"`
-	// NalLengthSize holds the value of the "nal_length_size" field.
-	NalLengthSize string `json:"nal_length_size,omitempty"`
-	// VideoDoviTitle holds the value of the "video_dovi_title" field.
-	VideoDoviTitle string `json:"video_dovi_title,omitempty"`
-	// ColorRange holds the value of the "color_range" field.
-	ColorRange string `json:"color_range,omitempty"`
-	// ColorSpace holds the value of the "color_space" field.
-	ColorSpace string `json:"color_space,omitempty"`
-	// ColorTransfer holds the value of the "color_transfer" field.
-	ColorTransfer string `json:"color_transfer,omitempty"`
-	// ColorPrimaries holds the value of the "color_primaries" field.
-	ColorPrimaries string `json:"color_primaries,omitempty"`
-	// DvVersionMajor holds the value of the "dv_version_major" field.
-	DvVersionMajor int32 `json:"dv_version_major,omitempty"`
-	// DvVersionMinor holds the value of the "dv_version_minor" field.
-	DvVersionMinor int32 `json:"dv_version_minor,omitempty"`
-	// DvProfile holds the value of the "dv_profile" field.
-	DvProfile int32 `json:"dv_profile,omitempty"`
-	// DvLevel holds the value of the "dv_level" field.
-	DvLevel int32 `json:"dv_level,omitempty"`
-	// RpuPresentFlag holds the value of the "rpu_present_flag" field.
-	RpuPresentFlag int32 `json:"rpu_present_flag,omitempty"`
-	// ElPresentFlag holds the value of the "el_present_flag" field.
-	ElPresentFlag int32 `json:"el_present_flag,omitempty"`
-	// BlPresentFlag holds the value of the "bl_present_flag" field.
-	BlPresentFlag int32 `json:"bl_present_flag,omitempty"`
-	// DvBlSignalCompatibilityID holds the value of the "dv_bl_signal_compatibility_id" field.
-	DvBlSignalCompatibilityID int32 `json:"dv_bl_signal_compatibility_id,omitempty"`
 	// BitRate holds the value of the "bit_rate" field.
 	BitRate int32 `json:"bit_rate,omitempty"`
-	// BitDepth holds the value of the "bit_depth" field.
-	BitDepth int32 `json:"bit_depth,omitempty"`
-	// RefFrames holds the value of the "ref_frames" field.
-	RefFrames int32 `json:"ref_frames,omitempty"`
-	// PacketLength holds the value of the "packet_length" field.
-	PacketLength int32 `json:"packet_length,omitempty"`
 	// Channels holds the value of the "channels" field.
 	Channels int32 `json:"channels,omitempty"`
 	// SampleRate holds the value of the "sample_rate" field.
@@ -101,32 +51,16 @@ type MediaStream struct {
 	Width int32 `json:"width,omitempty"`
 	// Height holds the value of the "height" field.
 	Height int32 `json:"height,omitempty"`
-	// Rotation holds the value of the "rotation" field.
-	Rotation int32 `json:"rotation,omitempty"`
-	// Score holds the value of the "score" field.
-	Score int32 `json:"score,omitempty"`
 	// Level holds the value of the "level" field.
 	Level float64 `json:"level,omitempty"`
-	// AverageFrameRate holds the value of the "average_frame_rate" field.
-	AverageFrameRate float64 `json:"average_frame_rate,omitempty"`
-	// RealFrameRate holds the value of the "real_frame_rate" field.
-	RealFrameRate float64 `json:"real_frame_rate,omitempty"`
-	// ReferenceFrameRate holds the value of the "reference_frame_rate" field.
-	ReferenceFrameRate float64 `json:"reference_frame_rate,omitempty"`
 	// IsDefault holds the value of the "is_default" field.
 	IsDefault bool `json:"is_default,omitempty"`
 	// IsForced holds the value of the "is_forced" field.
 	IsForced bool `json:"is_forced,omitempty"`
-	// IsExternal holds the value of the "is_external" field.
-	IsExternal bool `json:"is_external,omitempty"`
 	// IsInterlaced holds the value of the "is_interlaced" field.
 	IsInterlaced bool `json:"is_interlaced,omitempty"`
 	// IsAnamorphic holds the value of the "is_anamorphic" field.
 	IsAnamorphic bool `json:"is_anamorphic,omitempty"`
-	// IsAvc holds the value of the "is_avc" field.
-	IsAvc bool `json:"is_avc,omitempty"`
-	// IsHearingImpaired holds the value of the "is_hearing_impaired" field.
-	IsHearingImpaired bool `json:"is_hearing_impaired,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the MediaStreamQuery when eager-loading is set.
 	Edges        MediaStreamEdges `json:"edges"`
@@ -136,7 +70,7 @@ type MediaStream struct {
 // MediaStreamEdges holds the relations/edges for other nodes in the graph.
 type MediaStreamEdges struct {
 	// Source holds the value of the source edge.
-	Source *MediaSource `json:"source,omitempty"`
+	Source *ItemSource `json:"source,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
@@ -144,11 +78,11 @@ type MediaStreamEdges struct {
 
 // SourceOrErr returns the Source value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e MediaStreamEdges) SourceOrErr() (*MediaSource, error) {
+func (e MediaStreamEdges) SourceOrErr() (*ItemSource, error) {
 	if e.Source != nil {
 		return e.Source, nil
 	} else if e.loadedTypes[0] {
-		return nil, &NotFoundError{label: mediasource.Label}
+		return nil, &NotFoundError{label: itemsource.Label}
 	}
 	return nil, &NotLoadedError{edge: "source"}
 }
@@ -158,17 +92,17 @@ func (*MediaStream) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case mediastream.FieldIsDefault, mediastream.FieldIsForced, mediastream.FieldIsExternal, mediastream.FieldIsInterlaced, mediastream.FieldIsAnamorphic, mediastream.FieldIsAvc, mediastream.FieldIsHearingImpaired:
+		case mediastream.FieldIsDefault, mediastream.FieldIsForced, mediastream.FieldIsInterlaced, mediastream.FieldIsAnamorphic:
 			values[i] = new(sql.NullBool)
-		case mediastream.FieldLevel, mediastream.FieldAverageFrameRate, mediastream.FieldRealFrameRate, mediastream.FieldReferenceFrameRate:
+		case mediastream.FieldLevel:
 			values[i] = new(sql.NullFloat64)
-		case mediastream.FieldIndex, mediastream.FieldDvVersionMajor, mediastream.FieldDvVersionMinor, mediastream.FieldDvProfile, mediastream.FieldDvLevel, mediastream.FieldRpuPresentFlag, mediastream.FieldElPresentFlag, mediastream.FieldBlPresentFlag, mediastream.FieldDvBlSignalCompatibilityID, mediastream.FieldBitRate, mediastream.FieldBitDepth, mediastream.FieldRefFrames, mediastream.FieldPacketLength, mediastream.FieldChannels, mediastream.FieldSampleRate, mediastream.FieldWidth, mediastream.FieldHeight, mediastream.FieldRotation, mediastream.FieldScore:
+		case mediastream.FieldIndex, mediastream.FieldBitRate, mediastream.FieldChannels, mediastream.FieldSampleRate, mediastream.FieldWidth, mediastream.FieldHeight:
 			values[i] = new(sql.NullInt64)
-		case mediastream.FieldKind, mediastream.FieldVideoRange, mediastream.FieldVideoRangeType, mediastream.FieldAudioSpatialFormat, mediastream.FieldCodec, mediastream.FieldCodecTag, mediastream.FieldProfile, mediastream.FieldLanguage, mediastream.FieldTitle, mediastream.FieldComment, mediastream.FieldPath, mediastream.FieldPixelFormat, mediastream.FieldAspectRatio, mediastream.FieldChannelLayout, mediastream.FieldTimeBase, mediastream.FieldNalLengthSize, mediastream.FieldVideoDoviTitle, mediastream.FieldColorRange, mediastream.FieldColorSpace, mediastream.FieldColorTransfer, mediastream.FieldColorPrimaries:
+		case mediastream.FieldKind, mediastream.FieldVideoRangeType, mediastream.FieldCodec, mediastream.FieldProfile, mediastream.FieldLanguage, mediastream.FieldTitle, mediastream.FieldPixelFormat:
 			values[i] = new(sql.NullString)
 		case mediastream.FieldCreatedAt, mediastream.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case mediastream.FieldID, mediastream.FieldSourceID:
+		case mediastream.FieldID, mediastream.FieldItemSourceID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -203,11 +137,11 @@ func (_m *MediaStream) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
 			}
-		case mediastream.FieldSourceID:
+		case mediastream.FieldItemSourceID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
-				return fmt.Errorf("unexpected type %T for field source_id", values[i])
+				return fmt.Errorf("unexpected type %T for field item_source_id", values[i])
 			} else if value != nil {
-				_m.SourceID = *value
+				_m.ItemSourceID = *value
 			}
 		case mediastream.FieldKind:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -215,23 +149,11 @@ func (_m *MediaStream) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Kind = mediastream.Kind(value.String)
 			}
-		case mediastream.FieldVideoRange:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field video_range", values[i])
-			} else if value.Valid {
-				_m.VideoRange = mediastream.VideoRange(value.String)
-			}
 		case mediastream.FieldVideoRangeType:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field video_range_type", values[i])
 			} else if value.Valid {
 				_m.VideoRangeType = mediastream.VideoRangeType(value.String)
-			}
-		case mediastream.FieldAudioSpatialFormat:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field audio_spatial_format", values[i])
-			} else if value.Valid {
-				_m.AudioSpatialFormat = mediastream.AudioSpatialFormat(value.String)
 			}
 		case mediastream.FieldIndex:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -244,12 +166,6 @@ func (_m *MediaStream) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field codec", values[i])
 			} else if value.Valid {
 				_m.Codec = value.String
-			}
-		case mediastream.FieldCodecTag:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field codec_tag", values[i])
-			} else if value.Valid {
-				_m.CodecTag = value.String
 			}
 		case mediastream.FieldProfile:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -269,149 +185,17 @@ func (_m *MediaStream) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Title = value.String
 			}
-		case mediastream.FieldComment:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field comment", values[i])
-			} else if value.Valid {
-				_m.Comment = value.String
-			}
-		case mediastream.FieldPath:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field path", values[i])
-			} else if value.Valid {
-				_m.Path = value.String
-			}
 		case mediastream.FieldPixelFormat:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field pixel_format", values[i])
 			} else if value.Valid {
 				_m.PixelFormat = value.String
 			}
-		case mediastream.FieldAspectRatio:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field aspect_ratio", values[i])
-			} else if value.Valid {
-				_m.AspectRatio = value.String
-			}
-		case mediastream.FieldChannelLayout:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field channel_layout", values[i])
-			} else if value.Valid {
-				_m.ChannelLayout = value.String
-			}
-		case mediastream.FieldTimeBase:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field time_base", values[i])
-			} else if value.Valid {
-				_m.TimeBase = value.String
-			}
-		case mediastream.FieldNalLengthSize:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field nal_length_size", values[i])
-			} else if value.Valid {
-				_m.NalLengthSize = value.String
-			}
-		case mediastream.FieldVideoDoviTitle:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field video_dovi_title", values[i])
-			} else if value.Valid {
-				_m.VideoDoviTitle = value.String
-			}
-		case mediastream.FieldColorRange:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field color_range", values[i])
-			} else if value.Valid {
-				_m.ColorRange = value.String
-			}
-		case mediastream.FieldColorSpace:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field color_space", values[i])
-			} else if value.Valid {
-				_m.ColorSpace = value.String
-			}
-		case mediastream.FieldColorTransfer:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field color_transfer", values[i])
-			} else if value.Valid {
-				_m.ColorTransfer = value.String
-			}
-		case mediastream.FieldColorPrimaries:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field color_primaries", values[i])
-			} else if value.Valid {
-				_m.ColorPrimaries = value.String
-			}
-		case mediastream.FieldDvVersionMajor:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field dv_version_major", values[i])
-			} else if value.Valid {
-				_m.DvVersionMajor = int32(value.Int64)
-			}
-		case mediastream.FieldDvVersionMinor:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field dv_version_minor", values[i])
-			} else if value.Valid {
-				_m.DvVersionMinor = int32(value.Int64)
-			}
-		case mediastream.FieldDvProfile:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field dv_profile", values[i])
-			} else if value.Valid {
-				_m.DvProfile = int32(value.Int64)
-			}
-		case mediastream.FieldDvLevel:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field dv_level", values[i])
-			} else if value.Valid {
-				_m.DvLevel = int32(value.Int64)
-			}
-		case mediastream.FieldRpuPresentFlag:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field rpu_present_flag", values[i])
-			} else if value.Valid {
-				_m.RpuPresentFlag = int32(value.Int64)
-			}
-		case mediastream.FieldElPresentFlag:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field el_present_flag", values[i])
-			} else if value.Valid {
-				_m.ElPresentFlag = int32(value.Int64)
-			}
-		case mediastream.FieldBlPresentFlag:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field bl_present_flag", values[i])
-			} else if value.Valid {
-				_m.BlPresentFlag = int32(value.Int64)
-			}
-		case mediastream.FieldDvBlSignalCompatibilityID:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field dv_bl_signal_compatibility_id", values[i])
-			} else if value.Valid {
-				_m.DvBlSignalCompatibilityID = int32(value.Int64)
-			}
 		case mediastream.FieldBitRate:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field bit_rate", values[i])
 			} else if value.Valid {
 				_m.BitRate = int32(value.Int64)
-			}
-		case mediastream.FieldBitDepth:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field bit_depth", values[i])
-			} else if value.Valid {
-				_m.BitDepth = int32(value.Int64)
-			}
-		case mediastream.FieldRefFrames:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field ref_frames", values[i])
-			} else if value.Valid {
-				_m.RefFrames = int32(value.Int64)
-			}
-		case mediastream.FieldPacketLength:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field packet_length", values[i])
-			} else if value.Valid {
-				_m.PacketLength = int32(value.Int64)
 			}
 		case mediastream.FieldChannels:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -437,41 +221,11 @@ func (_m *MediaStream) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Height = int32(value.Int64)
 			}
-		case mediastream.FieldRotation:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field rotation", values[i])
-			} else if value.Valid {
-				_m.Rotation = int32(value.Int64)
-			}
-		case mediastream.FieldScore:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field score", values[i])
-			} else if value.Valid {
-				_m.Score = int32(value.Int64)
-			}
 		case mediastream.FieldLevel:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field level", values[i])
 			} else if value.Valid {
 				_m.Level = value.Float64
-			}
-		case mediastream.FieldAverageFrameRate:
-			if value, ok := values[i].(*sql.NullFloat64); !ok {
-				return fmt.Errorf("unexpected type %T for field average_frame_rate", values[i])
-			} else if value.Valid {
-				_m.AverageFrameRate = value.Float64
-			}
-		case mediastream.FieldRealFrameRate:
-			if value, ok := values[i].(*sql.NullFloat64); !ok {
-				return fmt.Errorf("unexpected type %T for field real_frame_rate", values[i])
-			} else if value.Valid {
-				_m.RealFrameRate = value.Float64
-			}
-		case mediastream.FieldReferenceFrameRate:
-			if value, ok := values[i].(*sql.NullFloat64); !ok {
-				return fmt.Errorf("unexpected type %T for field reference_frame_rate", values[i])
-			} else if value.Valid {
-				_m.ReferenceFrameRate = value.Float64
 			}
 		case mediastream.FieldIsDefault:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -485,12 +239,6 @@ func (_m *MediaStream) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.IsForced = value.Bool
 			}
-		case mediastream.FieldIsExternal:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field is_external", values[i])
-			} else if value.Valid {
-				_m.IsExternal = value.Bool
-			}
 		case mediastream.FieldIsInterlaced:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field is_interlaced", values[i])
@@ -502,18 +250,6 @@ func (_m *MediaStream) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field is_anamorphic", values[i])
 			} else if value.Valid {
 				_m.IsAnamorphic = value.Bool
-			}
-		case mediastream.FieldIsAvc:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field is_avc", values[i])
-			} else if value.Valid {
-				_m.IsAvc = value.Bool
-			}
-		case mediastream.FieldIsHearingImpaired:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field is_hearing_impaired", values[i])
-			} else if value.Valid {
-				_m.IsHearingImpaired = value.Bool
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -529,7 +265,7 @@ func (_m *MediaStream) Value(name string) (ent.Value, error) {
 }
 
 // QuerySource queries the "source" edge of the MediaStream entity.
-func (_m *MediaStream) QuerySource() *MediaSourceQuery {
+func (_m *MediaStream) QuerySource() *ItemSourceQuery {
 	return NewMediaStreamClient(_m.config).QuerySource(_m)
 }
 
@@ -562,29 +298,20 @@ func (_m *MediaStream) String() string {
 	builder.WriteString("updated_at=")
 	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
-	builder.WriteString("source_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.SourceID))
+	builder.WriteString("item_source_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ItemSourceID))
 	builder.WriteString(", ")
 	builder.WriteString("kind=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Kind))
 	builder.WriteString(", ")
-	builder.WriteString("video_range=")
-	builder.WriteString(fmt.Sprintf("%v", _m.VideoRange))
-	builder.WriteString(", ")
 	builder.WriteString("video_range_type=")
 	builder.WriteString(fmt.Sprintf("%v", _m.VideoRangeType))
-	builder.WriteString(", ")
-	builder.WriteString("audio_spatial_format=")
-	builder.WriteString(fmt.Sprintf("%v", _m.AudioSpatialFormat))
 	builder.WriteString(", ")
 	builder.WriteString("index=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Index))
 	builder.WriteString(", ")
 	builder.WriteString("codec=")
 	builder.WriteString(_m.Codec)
-	builder.WriteString(", ")
-	builder.WriteString("codec_tag=")
-	builder.WriteString(_m.CodecTag)
 	builder.WriteString(", ")
 	builder.WriteString("profile=")
 	builder.WriteString(_m.Profile)
@@ -595,77 +322,11 @@ func (_m *MediaStream) String() string {
 	builder.WriteString("title=")
 	builder.WriteString(_m.Title)
 	builder.WriteString(", ")
-	builder.WriteString("comment=")
-	builder.WriteString(_m.Comment)
-	builder.WriteString(", ")
-	builder.WriteString("path=")
-	builder.WriteString(_m.Path)
-	builder.WriteString(", ")
 	builder.WriteString("pixel_format=")
 	builder.WriteString(_m.PixelFormat)
 	builder.WriteString(", ")
-	builder.WriteString("aspect_ratio=")
-	builder.WriteString(_m.AspectRatio)
-	builder.WriteString(", ")
-	builder.WriteString("channel_layout=")
-	builder.WriteString(_m.ChannelLayout)
-	builder.WriteString(", ")
-	builder.WriteString("time_base=")
-	builder.WriteString(_m.TimeBase)
-	builder.WriteString(", ")
-	builder.WriteString("nal_length_size=")
-	builder.WriteString(_m.NalLengthSize)
-	builder.WriteString(", ")
-	builder.WriteString("video_dovi_title=")
-	builder.WriteString(_m.VideoDoviTitle)
-	builder.WriteString(", ")
-	builder.WriteString("color_range=")
-	builder.WriteString(_m.ColorRange)
-	builder.WriteString(", ")
-	builder.WriteString("color_space=")
-	builder.WriteString(_m.ColorSpace)
-	builder.WriteString(", ")
-	builder.WriteString("color_transfer=")
-	builder.WriteString(_m.ColorTransfer)
-	builder.WriteString(", ")
-	builder.WriteString("color_primaries=")
-	builder.WriteString(_m.ColorPrimaries)
-	builder.WriteString(", ")
-	builder.WriteString("dv_version_major=")
-	builder.WriteString(fmt.Sprintf("%v", _m.DvVersionMajor))
-	builder.WriteString(", ")
-	builder.WriteString("dv_version_minor=")
-	builder.WriteString(fmt.Sprintf("%v", _m.DvVersionMinor))
-	builder.WriteString(", ")
-	builder.WriteString("dv_profile=")
-	builder.WriteString(fmt.Sprintf("%v", _m.DvProfile))
-	builder.WriteString(", ")
-	builder.WriteString("dv_level=")
-	builder.WriteString(fmt.Sprintf("%v", _m.DvLevel))
-	builder.WriteString(", ")
-	builder.WriteString("rpu_present_flag=")
-	builder.WriteString(fmt.Sprintf("%v", _m.RpuPresentFlag))
-	builder.WriteString(", ")
-	builder.WriteString("el_present_flag=")
-	builder.WriteString(fmt.Sprintf("%v", _m.ElPresentFlag))
-	builder.WriteString(", ")
-	builder.WriteString("bl_present_flag=")
-	builder.WriteString(fmt.Sprintf("%v", _m.BlPresentFlag))
-	builder.WriteString(", ")
-	builder.WriteString("dv_bl_signal_compatibility_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.DvBlSignalCompatibilityID))
-	builder.WriteString(", ")
 	builder.WriteString("bit_rate=")
 	builder.WriteString(fmt.Sprintf("%v", _m.BitRate))
-	builder.WriteString(", ")
-	builder.WriteString("bit_depth=")
-	builder.WriteString(fmt.Sprintf("%v", _m.BitDepth))
-	builder.WriteString(", ")
-	builder.WriteString("ref_frames=")
-	builder.WriteString(fmt.Sprintf("%v", _m.RefFrames))
-	builder.WriteString(", ")
-	builder.WriteString("packet_length=")
-	builder.WriteString(fmt.Sprintf("%v", _m.PacketLength))
 	builder.WriteString(", ")
 	builder.WriteString("channels=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Channels))
@@ -679,23 +340,8 @@ func (_m *MediaStream) String() string {
 	builder.WriteString("height=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Height))
 	builder.WriteString(", ")
-	builder.WriteString("rotation=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Rotation))
-	builder.WriteString(", ")
-	builder.WriteString("score=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Score))
-	builder.WriteString(", ")
 	builder.WriteString("level=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Level))
-	builder.WriteString(", ")
-	builder.WriteString("average_frame_rate=")
-	builder.WriteString(fmt.Sprintf("%v", _m.AverageFrameRate))
-	builder.WriteString(", ")
-	builder.WriteString("real_frame_rate=")
-	builder.WriteString(fmt.Sprintf("%v", _m.RealFrameRate))
-	builder.WriteString(", ")
-	builder.WriteString("reference_frame_rate=")
-	builder.WriteString(fmt.Sprintf("%v", _m.ReferenceFrameRate))
 	builder.WriteString(", ")
 	builder.WriteString("is_default=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsDefault))
@@ -703,20 +349,11 @@ func (_m *MediaStream) String() string {
 	builder.WriteString("is_forced=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsForced))
 	builder.WriteString(", ")
-	builder.WriteString("is_external=")
-	builder.WriteString(fmt.Sprintf("%v", _m.IsExternal))
-	builder.WriteString(", ")
 	builder.WriteString("is_interlaced=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsInterlaced))
 	builder.WriteString(", ")
 	builder.WriteString("is_anamorphic=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsAnamorphic))
-	builder.WriteString(", ")
-	builder.WriteString("is_avc=")
-	builder.WriteString(fmt.Sprintf("%v", _m.IsAvc))
-	builder.WriteString(", ")
-	builder.WriteString("is_hearing_impaired=")
-	builder.WriteString(fmt.Sprintf("%v", _m.IsHearingImpaired))
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -20,7 +20,7 @@ func New(items *items.Service) *Server {
 }
 
 func (s *Server) GetYears(ctx context.Context, request api.GetYearsRequestObject) (api.GetYearsResponseObject, error) {
-	years, err := s.items.DistinctYears(ctx, request.Params.ParentId, dto.Kinds(request.Params.IncludeItemTypes))
+	years, err := s.items.DistinctYears(ctx, items.Everyone, request.Params.ParentId, dto.Kinds(request.Params.IncludeItemTypes))
 	if err != nil {
 		return nil, err
 	}

@@ -20,14 +20,6 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
-	// FieldOverview holds the string denoting the overview field in the database.
-	FieldOverview = "overview"
-	// FieldBirthDate holds the string denoting the birth_date field in the database.
-	FieldBirthDate = "birth_date"
-	// FieldDeathDate holds the string denoting the death_date field in the database.
-	FieldDeathDate = "death_date"
-	// FieldProviderIds holds the string denoting the provider_ids field in the database.
-	FieldProviderIds = "provider_ids"
 	// EdgeCredits holds the string denoting the credits edge name in mutations.
 	EdgeCredits = "credits"
 	// Table holds the table name of the person in the database.
@@ -47,10 +39,6 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldName,
-	FieldOverview,
-	FieldBirthDate,
-	FieldDeathDate,
-	FieldProviderIds,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -93,21 +81,6 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByName orders the results by the name field.
 func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
-}
-
-// ByOverview orders the results by the overview field.
-func ByOverview(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldOverview, opts...).ToFunc()
-}
-
-// ByBirthDate orders the results by the birth_date field.
-func ByBirthDate(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldBirthDate, opts...).ToFunc()
-}
-
-// ByDeathDate orders the results by the death_date field.
-func ByDeathDate(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDeathDate, opts...).ToFunc()
 }
 
 // ByCreditsCount orders the results by credits count.

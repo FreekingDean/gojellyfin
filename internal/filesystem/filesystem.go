@@ -127,6 +127,10 @@ func (s *Service) Stat(ctx context.Context, name string) (File, error) {
 	}, nil
 }
 
+func (s *Service) Resolve(path string) (string, error) {
+	return s.resolve(path)
+}
+
 func (s *Service) resolve(path string) (string, error) {
 	if path == "" {
 		return "", ErrNotFound

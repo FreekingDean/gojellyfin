@@ -3,6 +3,7 @@
 package playlist
 
 import (
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -18,6 +19,8 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// FieldMediaType holds the string denoting the media_type field in the database.
+	FieldMediaType = "media_type"
 	// FieldItemID holds the string denoting the item_id field in the database.
 	FieldItemID = "item_id"
 	// FieldOwnerID holds the string denoting the owner_id field in the database.
@@ -69,6 +72,7 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
+	FieldMediaType,
 	FieldItemID,
 	FieldOwnerID,
 	FieldOpenAccess,
@@ -93,6 +97,35 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 )
 
+// MediaType defines the type for the "media_type" enum field.
+type MediaType string
+
+// MediaTypeUnknown is the default value of the MediaType enum.
+const DefaultMediaType = MediaTypeUnknown
+
+// MediaType values.
+const (
+	MediaTypeUnknown MediaType = "Unknown"
+	MediaTypeVideo   MediaType = "Video"
+	MediaTypeAudio   MediaType = "Audio"
+	MediaTypePhoto   MediaType = "Photo"
+	MediaTypeBook    MediaType = "Book"
+)
+
+func (mt MediaType) String() string {
+	return string(mt)
+}
+
+// MediaTypeValidator is a validator for the "media_type" field enum values. It is called by the builders before save.
+func MediaTypeValidator(mt MediaType) error {
+	switch mt {
+	case MediaTypeUnknown, MediaTypeVideo, MediaTypeAudio, MediaTypePhoto, MediaTypeBook:
+		return nil
+	default:
+		return fmt.Errorf("playlist: invalid enum value for media_type field: %q", mt)
+	}
+}
+
 // OrderOption defines the ordering options for the Playlist queries.
 type OrderOption func(*sql.Selector)
 
@@ -109,6 +142,11 @@ func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByUpdatedAt orders the results by the updated_at field.
 func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
+}
+
+// ByMediaType orders the results by the media_type field.
+func ByMediaType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMediaType, opts...).ToFunc()
 }
 
 // ByItemID orders the results by the item_id field.

@@ -8,6 +8,27 @@ import (
 	policymodal "github.com/FreekingDean/gojellyfin/internal/store/userpolicy"
 )
 
+type Access struct {
+	All       bool
+	Libraries []uuid.UUID
+}
+
+func (s *Service) Access(ctx context.Context, id uuid.UUID) (Access, error) {
+	if id == uuid.Nil {
+		return Access{}, nil
+	}
+
+	policy, err := s.policy(ctx, id)
+	if err != nil {
+		return Access{}, err
+	}
+	if policy == nil || policy.IsAdministrator || policy.EnableAllFolders {
+		return Access{All: true}, nil
+	}
+
+	return Access{Libraries: policy.EnabledFolders}, nil
+}
+
 func (s *Service) Satisfies(ctx context.Context, id uuid.UUID, scopes []string) (bool, error) {
 	policy, err := s.policy(ctx, id)
 	if err != nil || policy == nil {

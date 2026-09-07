@@ -1,29 +1,51 @@
 package metadata
 
-import "github.com/FreekingDean/gojellyfin/internal/jobs"
+import (
+	"context"
 
-const RefreshMetadataJobID = "RefreshMetadata"
+	"github.com/google/uuid"
 
-type Identify struct {
-	service *Service
+	"github.com/FreekingDean/gojellyfin/internal/jobs"
+)
+
+func (s *Service) Job() jobs.Job {
+	return jobs.Job{
+		Name:        jobs.RefreshMetadata,
+		Category:    "Library",
+		Description: "Identifies every item nothing has identified yet.",
+		Startable:   true,
+		Run:         s.runBatch,
+	}
 }
 
-func NewIdentify(service *Service) *Identify {
-	return &Identify{service: service}
+func (s *Service) ItemJob() jobs.Job {
+	return jobs.Job{
+		Name:        jobs.RefreshItemMetadata,
+		Category:    "Library",
+		Description: "Identifies one item.",
+		Run:         s.runOne,
+	}
 }
 
-func (i *Identify) Name() string     { return RefreshMetadataJobID }
-func (i *Identify) Category() string { return "Library" }
-func (i *Identify) Description() string {
-	return "Identifies items and fetches their metadata."
+func (s *Service) runBatch(ctx context.Context) error {
+	scope, err := jobs.GetParam[uuid.UUID](ctx, jobs.ParamScope)
+	if err != nil {
+		return err
+	}
+
+	force, err := jobs.GetParam[bool](ctx, jobs.ParamForce)
+	if err != nil {
+		return err
+	}
+
+	return s.IdentifyItems(ctx, scope, force)
 }
 
-func (i *Identify) Steps() []any {
-	return []any{i.service.IdentifyItems}
-}
+func (s *Service) runOne(ctx context.Context) error {
+	itemID, err := jobs.GetParam[uuid.UUID](ctx, jobs.ParamItem)
+	if err != nil {
+		return err
+	}
 
-func (i *Identify) Children() []any { return nil }
-
-func (i *Identify) Run(ctx jobs.Context, options jobs.Options) error {
-	return jobs.Step(ctx, i.service.IdentifyItems, options).Get(nil)
+	return s.IdentifyItem(ctx, itemID)
 }

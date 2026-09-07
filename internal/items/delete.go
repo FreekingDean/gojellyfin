@@ -9,7 +9,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	datamodal "github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
 )
@@ -21,15 +21,15 @@ func (s *Service) DeleteItem(ctx context.Context, id uuid.UUID) error {
 	}
 
 	return s.store.WithTx(ctx, func(tx *store.Tx) error {
-		sourceIDs, err := tx.MediaSource.Query().Where(sourcemodal.ItemIDIn(ids...)).IDs(ctx)
+		sourceIDs, err := tx.ItemSource.Query().Where(sourcemodal.ItemIDIn(ids...)).IDs(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to query media sources: %w", err)
 		}
 		if len(sourceIDs) > 0 {
-			if _, err := tx.MediaStream.Delete().Where(streammodal.SourceIDIn(sourceIDs...)).Exec(ctx); err != nil {
+			if _, err := tx.MediaStream.Delete().Where(streammodal.ItemSourceIDIn(sourceIDs...)).Exec(ctx); err != nil {
 				return fmt.Errorf("failed to delete media streams: %w", err)
 			}
-			if _, err := tx.MediaSource.Delete().Where(sourcemodal.IDIn(sourceIDs...)).Exec(ctx); err != nil {
+			if _, err := tx.ItemSource.Delete().Where(sourcemodal.IDIn(sourceIDs...)).Exec(ctx); err != nil {
 				return fmt.Errorf("failed to delete media sources: %w", err)
 			}
 		}
@@ -50,7 +50,7 @@ func (s *Service) DeleteItem(ctx context.Context, id uuid.UUID) error {
 func (s *Service) subtree(ctx context.Context, root uuid.UUID) ([]uuid.UUID, error) {
 	ids := []uuid.UUID{root}
 	for frontier := ids; len(frontier) > 0; {
-		children, err := s.query().
+		children, err := s.query(Everyone).
 			Where(itemmodal.ParentIDIn(frontier...), itemmodal.IDNotIn(ids...)).
 			IDs(ctx)
 		if err != nil {

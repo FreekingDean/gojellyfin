@@ -17,6 +17,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
 
 const (
@@ -135,10 +136,21 @@ func seed() error {
 		return err
 	}
 
+	downloader, err := client.Source.Create().
+		SetName("Fixtures").
+		SetURL("http://fixtures.invalid").
+		SetAPIKeyVariable(env.SourceAPIKeyPrefix + "FIXTURES").
+		SetKind(sourcemodal.KindRadarr).
+		SetRootPath("/fixtures").
+		SetLocalPath("/fixtures").
+		Save(ctx)
+	if err != nil {
+		return err
+	}
+
 	catalogue := items.New(client)
 	for _, name := range movies {
-		item, err := catalogue.SaveScanned(ctx, items.Scanned{
-			LibraryID:    record.ID,
+		item, err := catalogue.SaveScanned(ctx, items.Item{
 			Kind:         itemmodal.KindMovie,
 			Key:          "movie:" + slugify(name),
 			Name:         name,
@@ -149,7 +161,10 @@ func seed() error {
 			return err
 		}
 
-		if err := file(ctx, catalogue, record.ID, item.ID, name); err != nil {
+		if err := file(ctx, catalogue, downloader.ID, item.ID, name); err != nil {
+			return err
+		}
+		if err := member(ctx, client, record.ID, downloader.ID, item.ID); err != nil {
 			return err
 		}
 	}
@@ -161,8 +176,7 @@ func seed() error {
 
 	number := int32(1)
 
-	show, err := catalogue.SaveScanned(ctx, items.Scanned{
-		LibraryID:    shown.ID,
+	show, err := catalogue.SaveScanned(ctx, items.Item{
 		Kind:         itemmodal.KindSeries,
 		Key:          "series:" + slugify(series),
 		Name:         series,
@@ -173,8 +187,7 @@ func seed() error {
 		return err
 	}
 
-	first, err := catalogue.SaveScanned(ctx, items.Scanned{
-		LibraryID:    shown.ID,
+	first, err := catalogue.SaveScanned(ctx, items.Item{
 		ParentID:     &show.ID,
 		Kind:         itemmodal.KindSeason,
 		Key:          "season:" + slugify(series) + ":1",
@@ -189,8 +202,7 @@ func seed() error {
 
 	for index, name := range episodes {
 		position := int32(index + 1)
-		item, err := catalogue.SaveScanned(ctx, items.Scanned{
-			LibraryID:         shown.ID,
+		item, err := catalogue.SaveScanned(ctx, items.Item{
 			ParentID:          &first.ID,
 			Kind:              itemmodal.KindEpisode,
 			Key:               fmt.Sprintf("episode:%s:1:%d", slugify(series), position),
@@ -204,7 +216,16 @@ func seed() error {
 			return err
 		}
 
-		if err := file(ctx, catalogue, shown.ID, item.ID, name); err != nil {
+		if err := file(ctx, catalogue, downloader.ID, item.ID, name); err != nil {
+			return err
+		}
+		if err := member(ctx, client, shown.ID, downloader.ID, item.ID); err != nil {
+			return err
+		}
+	}
+
+	for _, id := range []uuid.UUID{show.ID, first.ID} {
+		if err := member(ctx, client, shown.ID, downloader.ID, id); err != nil {
 			return err
 		}
 	}
@@ -214,9 +235,17 @@ func seed() error {
 	return nil
 }
 
-func file(ctx context.Context, catalogue *items.Service, libraryID, itemID uuid.UUID, name string) error {
-	_, err := catalogue.SaveSource(ctx, items.ScannedSource{
-		LibraryID:    libraryID,
+func member(ctx context.Context, client *store.Client, libraryID, sourceID, itemID uuid.UUID) error {
+	return client.LibraryItem.Create().
+		SetLibraryID(libraryID).
+		SetSourceID(sourceID).
+		SetItemID(itemID).
+		Exec(ctx)
+}
+
+func file(ctx context.Context, catalogue *items.Service, sourceID, itemID uuid.UUID, name string) error {
+	_, err := catalogue.SaveSource(ctx, items.MediaSource{
+		SourceID:     sourceID,
 		ItemID:       itemID,
 		Path:         "/fixtures/" + name + ".mkv",
 		Name:         name,

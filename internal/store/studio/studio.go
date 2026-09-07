@@ -20,8 +20,6 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
-	// FieldProviderIds holds the string denoting the provider_ids field in the database.
-	FieldProviderIds = "provider_ids"
 	// EdgeItems holds the string denoting the items edge name in mutations.
 	EdgeItems = "items"
 	// Table holds the table name of the studio in the database.
@@ -39,7 +37,6 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldName,
-	FieldProviderIds,
 }
 
 var (

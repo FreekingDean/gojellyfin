@@ -31,7 +31,7 @@ const nextUpQuery = `
 	ORDER BY series.id, episodes.parent_index_number, episodes.index_number
 	LIMIT $3`
 
-func (s *Service) NextUpEpisodes(ctx context.Context, userID uuid.UUID, seriesID *uuid.UUID, limit int) ([]*Item, error) {
+func (s *Service) NextUpEpisodes(ctx context.Context, viewer Viewer, userID uuid.UUID, seriesID *uuid.UUID, limit int) ([]*Item, error) {
 	if limit <= 0 {
 		limit = 24
 	}
@@ -57,7 +57,7 @@ func (s *Service) NextUpEpisodes(ctx context.Context, userID uuid.UUID, seriesID
 		return nil, nil
 	}
 
-	records, err := s.query().Where(itemmodal.IDIn(ids...)).All(ctx)
+	records, err := s.query(viewer).Where(itemmodal.IDIn(ids...)).All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load next up episodes: %w", err)
 	}

@@ -26,6 +26,7 @@ type target struct {
 func main() {
 	spec := flag.String("spec", "", "vendored upstream spec")
 	overrides := flag.String("overrides", "", "x-go-type overrides")
+	extend := flag.String("extend", "", "spec whose paths and schemas are merged in")
 	out := flag.String("out", "", "patched spec")
 	flag.Parse()
 
@@ -33,7 +34,7 @@ func main() {
 		log.Fatal("specpatch: -spec, -overrides and -out are required")
 	}
 
-	patched, err := patch(*spec, *overrides)
+	patched, err := patch(*spec, *overrides, *extend)
 	if err != nil {
 		log.Fatalf("specpatch: %v", err)
 	}
@@ -43,7 +44,51 @@ func main() {
 	}
 }
 
-func patch(specPath, overridesPath string) ([]byte, error) {
+type members struct {
+	Paths      map[string]json.RawMessage `json:"paths"`
+	Components struct {
+		Schemas map[string]json.RawMessage `json:"schemas"`
+	} `json:"components"`
+}
+
+func readMembers(path string) (*members, error) {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	read := &members{}
+	if err := json.Unmarshal(raw, read); err != nil {
+		return nil, err
+	}
+
+	return read, nil
+}
+
+func rendered(existing, adding map[string]json.RawMessage, what string, empty bool) (string, error) {
+	names := make([]string, 0, len(adding))
+	for name := range adding {
+		if _, taken := existing[name]; taken {
+			return "", fmt.Errorf("%s %q is already declared upstream; rename it", what, name)
+		}
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	parts := make([]string, 0, len(names))
+	for _, name := range names {
+		parts = append(parts, fmt.Sprintf("%q: %s", name, adding[name]))
+	}
+
+	joined := strings.Join(parts, ", ")
+	if empty {
+		return joined, nil
+	}
+
+	return joined + ", ", nil
+}
+
+func patch(specPath, overridesPath, extendPath string) ([]byte, error) {
 	raw, err := os.ReadFile(specPath)
 	if err != nil {
 		return nil, err
@@ -59,6 +104,25 @@ func patch(specPath, overridesPath string) ([]byte, error) {
 		targets[o.Pointer] = &target{}
 	}
 
+	upstream, err := readMembers(specPath)
+	if err != nil {
+		return nil, err
+	}
+
+	extension := &members{}
+	if extendPath != "" {
+		if extension, err = readMembers(extendPath); err != nil {
+			return nil, err
+		}
+	}
+
+	if len(extension.Paths) > 0 {
+		targets["/paths"] = &target{}
+	}
+	if len(extension.Components.Schemas) > 0 {
+		targets["/components/schemas"] = &target{}
+	}
+
 	if err := scan(json.NewDecoder(strings.NewReader(string(raw))), "", targets); err != nil {
 		return nil, err
 	}
@@ -66,7 +130,37 @@ func patch(specPath, overridesPath string) ([]byte, error) {
 	edits := make([]struct {
 		at   int64
 		text string
-	}, 0, len(list))
+	}, 0, len(list)+2)
+
+	merges := []struct {
+		pointer  string
+		what     string
+		existing map[string]json.RawMessage
+		adding   map[string]json.RawMessage
+	}{
+		{"/paths", "path", upstream.Paths, extension.Paths},
+		{"/components/schemas", "schema", upstream.Components.Schemas, extension.Components.Schemas},
+	}
+
+	for _, merge := range merges {
+		found, wanted := targets[merge.pointer]
+		if !wanted {
+			continue
+		}
+		if !found.found {
+			return nil, fmt.Errorf("%s does not resolve in %s", merge.pointer, specPath)
+		}
+
+		text, err := rendered(merge.existing, merge.adding, merge.what, found.empty)
+		if err != nil {
+			return nil, err
+		}
+
+		edits = append(edits, struct {
+			at   int64
+			text string
+		}{at: found.offset, text: text})
+	}
 
 	for _, o := range list {
 		found := targets[o.Pointer]

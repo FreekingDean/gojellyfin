@@ -10,11 +10,11 @@ func taskInfo(status jobs.Status) api.TaskInfo {
 	triggers := make([]api.TaskTriggerInfo, 0)
 
 	return api.TaskInfo{
-		Id:                  apiutil.Ptr(status.Job.Name()),
-		Key:                 apiutil.Ptr(status.Job.Name()),
-		Name:                apiutil.Ptr(status.Job.Name()),
-		Description:         apiutil.Ptr(status.Job.Description()),
-		Category:            apiutil.Ptr(status.Job.Category()),
+		Id:                  apiutil.Ptr(status.Job.Name),
+		Key:                 apiutil.Ptr(status.Job.Name),
+		Name:                apiutil.Ptr(status.Job.Name),
+		Description:         apiutil.Ptr(status.Job.Description),
+		Category:            apiutil.Ptr(status.Job.Category),
 		IsHidden:            apiutil.Ptr(false),
 		State:               apiutil.Ptr(taskState(status.State)),
 		Triggers:            &triggers,
@@ -39,9 +39,9 @@ func taskResult(status jobs.Status) *api.TaskResult {
 	}
 
 	return &api.TaskResult{
-		Id:           apiutil.Ptr(status.Job.Name()),
-		Key:          apiutil.Ptr(status.Job.Name()),
-		Name:         apiutil.Ptr(status.Job.Name()),
+		Id:           apiutil.Ptr(status.Job.Name),
+		Key:          apiutil.Ptr(status.Job.Name),
+		Name:         apiutil.Ptr(status.Job.Name),
 		StartTimeUtc: apiutil.Ptr(status.Last.StartedAt.UTC()),
 		EndTimeUtc:   apiutil.Ptr(status.Last.EndedAt.UTC()),
 		Status:       apiutil.Ptr(completionStatus(status.Last)),

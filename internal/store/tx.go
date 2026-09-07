@@ -18,8 +18,6 @@ type Tx struct {
 	ActivityLogEntry *ActivityLogEntryClient
 	// ApiKey is the client for interacting with the ApiKey builders.
 	ApiKey *ApiKeyClient
-	// Chapter is the client for interacting with the Chapter builders.
-	Chapter *ChapterClient
 	// Configuration is the client for interacting with the Configuration builders.
 	Configuration *ConfigurationClient
 	// Credit is the client for interacting with the Credit builders.
@@ -32,22 +30,18 @@ type Tx struct {
 	Genre *GenreClient
 	// Image is the client for interacting with the Image builders.
 	Image *ImageClient
-	// ImageBlob is the client for interacting with the ImageBlob builders.
-	ImageBlob *ImageBlobClient
 	// Item is the client for interacting with the Item builders.
 	Item *ItemClient
+	// ItemSource is the client for interacting with the ItemSource builders.
+	ItemSource *ItemSourceClient
 	// Library is the client for interacting with the Library builders.
 	Library *LibraryClient
+	// LibraryItem is the client for interacting with the LibraryItem builders.
+	LibraryItem *LibraryItemClient
 	// LibraryOptions is the client for interacting with the LibraryOptions builders.
 	LibraryOptions *LibraryOptionsClient
-	// ListingsProvider is the client for interacting with the ListingsProvider builders.
-	ListingsProvider *ListingsProviderClient
-	// MediaAttachment is the client for interacting with the MediaAttachment builders.
-	MediaAttachment *MediaAttachmentClient
-	// MediaSegment is the client for interacting with the MediaSegment builders.
-	MediaSegment *MediaSegmentClient
-	// MediaSource is the client for interacting with the MediaSource builders.
-	MediaSource *MediaSourceClient
+	// LibrarySource is the client for interacting with the LibrarySource builders.
+	LibrarySource *LibrarySourceClient
 	// MediaStream is the client for interacting with the MediaStream builders.
 	MediaStream *MediaStreamClient
 	// Person is the client for interacting with the Person builders.
@@ -58,18 +52,12 @@ type Tx struct {
 	PlaylistEntry *PlaylistEntryClient
 	// PlaylistShare is the client for interacting with the PlaylistShare builders.
 	PlaylistShare *PlaylistShareClient
-	// SeriesTimer is the client for interacting with the SeriesTimer builders.
-	SeriesTimer *SeriesTimerClient
 	// Session is the client for interacting with the Session builders.
 	Session *SessionClient
+	// Source is the client for interacting with the Source builders.
+	Source *SourceClient
 	// Studio is the client for interacting with the Studio builders.
 	Studio *StudioClient
-	// Timer is the client for interacting with the Timer builders.
-	Timer *TimerClient
-	// Trickplay is the client for interacting with the Trickplay builders.
-	Trickplay *TrickplayClient
-	// TunerHost is the client for interacting with the TunerHost builders.
-	TunerHost *TunerHostClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 	// UserConfiguration is the client for interacting with the UserConfiguration builders.
@@ -211,32 +199,26 @@ func (tx *Tx) Client() *Client {
 func (tx *Tx) init() {
 	tx.ActivityLogEntry = NewActivityLogEntryClient(tx.config)
 	tx.ApiKey = NewApiKeyClient(tx.config)
-	tx.Chapter = NewChapterClient(tx.config)
 	tx.Configuration = NewConfigurationClient(tx.config)
 	tx.Credit = NewCreditClient(tx.config)
 	tx.Device = NewDeviceClient(tx.config)
 	tx.DisplayPreferences = NewDisplayPreferencesClient(tx.config)
 	tx.Genre = NewGenreClient(tx.config)
 	tx.Image = NewImageClient(tx.config)
-	tx.ImageBlob = NewImageBlobClient(tx.config)
 	tx.Item = NewItemClient(tx.config)
+	tx.ItemSource = NewItemSourceClient(tx.config)
 	tx.Library = NewLibraryClient(tx.config)
+	tx.LibraryItem = NewLibraryItemClient(tx.config)
 	tx.LibraryOptions = NewLibraryOptionsClient(tx.config)
-	tx.ListingsProvider = NewListingsProviderClient(tx.config)
-	tx.MediaAttachment = NewMediaAttachmentClient(tx.config)
-	tx.MediaSegment = NewMediaSegmentClient(tx.config)
-	tx.MediaSource = NewMediaSourceClient(tx.config)
+	tx.LibrarySource = NewLibrarySourceClient(tx.config)
 	tx.MediaStream = NewMediaStreamClient(tx.config)
 	tx.Person = NewPersonClient(tx.config)
 	tx.Playlist = NewPlaylistClient(tx.config)
 	tx.PlaylistEntry = NewPlaylistEntryClient(tx.config)
 	tx.PlaylistShare = NewPlaylistShareClient(tx.config)
-	tx.SeriesTimer = NewSeriesTimerClient(tx.config)
 	tx.Session = NewSessionClient(tx.config)
+	tx.Source = NewSourceClient(tx.config)
 	tx.Studio = NewStudioClient(tx.config)
-	tx.Timer = NewTimerClient(tx.config)
-	tx.Trickplay = NewTrickplayClient(tx.config)
-	tx.TunerHost = NewTunerHostClient(tx.config)
 	tx.User = NewUserClient(tx.config)
 	tx.UserConfiguration = NewUserConfigurationClient(tx.config)
 	tx.UserItemData = NewUserItemDataClient(tx.config)

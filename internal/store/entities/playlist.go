@@ -13,6 +13,7 @@ type Playlist struct {
 
 func (Playlist) Fields() []ent.Field {
 	return withDefaultFields(
+		field.Enum("media_type").Values("Unknown", "Video", "Audio", "Photo", "Book").Default("Unknown"),
 		field.UUID("item_id", uuid.UUID{}).Unique(),
 		field.UUID("owner_id", uuid.UUID{}),
 		field.Bool("open_access"),

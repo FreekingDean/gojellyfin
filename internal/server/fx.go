@@ -1,6 +1,8 @@
 package server
 
 import (
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
+	"github.com/FreekingDean/gojellyfin/internal/users"
 	"go.uber.org/fx"
 
 	"github.com/FreekingDean/gojellyfin/internal/server/activitylog"
@@ -31,8 +33,8 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/scheduledtasks"
 	"github.com/FreekingDean/gojellyfin/internal/server/search"
 	"github.com/FreekingDean/gojellyfin/internal/server/session"
+	"github.com/FreekingDean/gojellyfin/internal/server/sources"
 	"github.com/FreekingDean/gojellyfin/internal/server/studios"
-	"github.com/FreekingDean/gojellyfin/internal/server/subtitle"
 	"github.com/FreekingDean/gojellyfin/internal/server/suggestions"
 	"github.com/FreekingDean/gojellyfin/internal/server/syncplay"
 	"github.com/FreekingDean/gojellyfin/internal/server/system"
@@ -71,12 +73,12 @@ var Module = fx.Module(
 	playlists.Module,
 	playstate.Module,
 	plugins.Module,
+	sources.Module,
 	quickconnect.Module,
 	scheduledtasks.Module,
 	search.Module,
 	session.Module,
 	studios.Module,
-	subtitle.Module,
 	suggestions.Module,
 	syncplay.Module,
 	system.Module,
@@ -89,5 +91,6 @@ var Module = fx.Module(
 	years.Module,
 	fx.Provide(
 		New,
+		func(policies *users.Service) dto.Access { return policies },
 	),
 )

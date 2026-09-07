@@ -59,54 +59,6 @@ func (_c *PersonCreate) SetName(v string) *PersonCreate {
 	return _c
 }
 
-// SetOverview sets the "overview" field.
-func (_c *PersonCreate) SetOverview(v string) *PersonCreate {
-	_c.mutation.SetOverview(v)
-	return _c
-}
-
-// SetNillableOverview sets the "overview" field if the given value is not nil.
-func (_c *PersonCreate) SetNillableOverview(v *string) *PersonCreate {
-	if v != nil {
-		_c.SetOverview(*v)
-	}
-	return _c
-}
-
-// SetBirthDate sets the "birth_date" field.
-func (_c *PersonCreate) SetBirthDate(v time.Time) *PersonCreate {
-	_c.mutation.SetBirthDate(v)
-	return _c
-}
-
-// SetNillableBirthDate sets the "birth_date" field if the given value is not nil.
-func (_c *PersonCreate) SetNillableBirthDate(v *time.Time) *PersonCreate {
-	if v != nil {
-		_c.SetBirthDate(*v)
-	}
-	return _c
-}
-
-// SetDeathDate sets the "death_date" field.
-func (_c *PersonCreate) SetDeathDate(v time.Time) *PersonCreate {
-	_c.mutation.SetDeathDate(v)
-	return _c
-}
-
-// SetNillableDeathDate sets the "death_date" field if the given value is not nil.
-func (_c *PersonCreate) SetNillableDeathDate(v *time.Time) *PersonCreate {
-	if v != nil {
-		_c.SetDeathDate(*v)
-	}
-	return _c
-}
-
-// SetProviderIds sets the "provider_ids" field.
-func (_c *PersonCreate) SetProviderIds(v map[string]string) *PersonCreate {
-	_c.mutation.SetProviderIds(v)
-	return _c
-}
-
 // SetID sets the "id" field.
 func (_c *PersonCreate) SetID(v uuid.UUID) *PersonCreate {
 	_c.mutation.SetID(v)
@@ -232,22 +184,6 @@ func (_c *PersonCreate) createSpec() (*Person, *sqlgraph.CreateSpec) {
 		_spec.SetField(person.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
-	if value, ok := _c.mutation.Overview(); ok {
-		_spec.SetField(person.FieldOverview, field.TypeString, value)
-		_node.Overview = value
-	}
-	if value, ok := _c.mutation.BirthDate(); ok {
-		_spec.SetField(person.FieldBirthDate, field.TypeTime, value)
-		_node.BirthDate = value
-	}
-	if value, ok := _c.mutation.DeathDate(); ok {
-		_spec.SetField(person.FieldDeathDate, field.TypeTime, value)
-		_node.DeathDate = value
-	}
-	if value, ok := _c.mutation.ProviderIds(); ok {
-		_spec.SetField(person.FieldProviderIds, field.TypeJSON, value)
-		_node.ProviderIds = value
-	}
 	if nodes := _c.mutation.CreditsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -352,78 +288,6 @@ func (u *PersonUpsert) UpdateName() *PersonUpsert {
 	return u
 }
 
-// SetOverview sets the "overview" field.
-func (u *PersonUpsert) SetOverview(v string) *PersonUpsert {
-	u.Set(person.FieldOverview, v)
-	return u
-}
-
-// UpdateOverview sets the "overview" field to the value that was provided on create.
-func (u *PersonUpsert) UpdateOverview() *PersonUpsert {
-	u.SetExcluded(person.FieldOverview)
-	return u
-}
-
-// ClearOverview clears the value of the "overview" field.
-func (u *PersonUpsert) ClearOverview() *PersonUpsert {
-	u.SetNull(person.FieldOverview)
-	return u
-}
-
-// SetBirthDate sets the "birth_date" field.
-func (u *PersonUpsert) SetBirthDate(v time.Time) *PersonUpsert {
-	u.Set(person.FieldBirthDate, v)
-	return u
-}
-
-// UpdateBirthDate sets the "birth_date" field to the value that was provided on create.
-func (u *PersonUpsert) UpdateBirthDate() *PersonUpsert {
-	u.SetExcluded(person.FieldBirthDate)
-	return u
-}
-
-// ClearBirthDate clears the value of the "birth_date" field.
-func (u *PersonUpsert) ClearBirthDate() *PersonUpsert {
-	u.SetNull(person.FieldBirthDate)
-	return u
-}
-
-// SetDeathDate sets the "death_date" field.
-func (u *PersonUpsert) SetDeathDate(v time.Time) *PersonUpsert {
-	u.Set(person.FieldDeathDate, v)
-	return u
-}
-
-// UpdateDeathDate sets the "death_date" field to the value that was provided on create.
-func (u *PersonUpsert) UpdateDeathDate() *PersonUpsert {
-	u.SetExcluded(person.FieldDeathDate)
-	return u
-}
-
-// ClearDeathDate clears the value of the "death_date" field.
-func (u *PersonUpsert) ClearDeathDate() *PersonUpsert {
-	u.SetNull(person.FieldDeathDate)
-	return u
-}
-
-// SetProviderIds sets the "provider_ids" field.
-func (u *PersonUpsert) SetProviderIds(v map[string]string) *PersonUpsert {
-	u.Set(person.FieldProviderIds, v)
-	return u
-}
-
-// UpdateProviderIds sets the "provider_ids" field to the value that was provided on create.
-func (u *PersonUpsert) UpdateProviderIds() *PersonUpsert {
-	u.SetExcluded(person.FieldProviderIds)
-	return u
-}
-
-// ClearProviderIds clears the value of the "provider_ids" field.
-func (u *PersonUpsert) ClearProviderIds() *PersonUpsert {
-	u.SetNull(person.FieldProviderIds)
-	return u
-}
-
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -511,90 +375,6 @@ func (u *PersonUpsertOne) SetName(v string) *PersonUpsertOne {
 func (u *PersonUpsertOne) UpdateName() *PersonUpsertOne {
 	return u.Update(func(s *PersonUpsert) {
 		s.UpdateName()
-	})
-}
-
-// SetOverview sets the "overview" field.
-func (u *PersonUpsertOne) SetOverview(v string) *PersonUpsertOne {
-	return u.Update(func(s *PersonUpsert) {
-		s.SetOverview(v)
-	})
-}
-
-// UpdateOverview sets the "overview" field to the value that was provided on create.
-func (u *PersonUpsertOne) UpdateOverview() *PersonUpsertOne {
-	return u.Update(func(s *PersonUpsert) {
-		s.UpdateOverview()
-	})
-}
-
-// ClearOverview clears the value of the "overview" field.
-func (u *PersonUpsertOne) ClearOverview() *PersonUpsertOne {
-	return u.Update(func(s *PersonUpsert) {
-		s.ClearOverview()
-	})
-}
-
-// SetBirthDate sets the "birth_date" field.
-func (u *PersonUpsertOne) SetBirthDate(v time.Time) *PersonUpsertOne {
-	return u.Update(func(s *PersonUpsert) {
-		s.SetBirthDate(v)
-	})
-}
-
-// UpdateBirthDate sets the "birth_date" field to the value that was provided on create.
-func (u *PersonUpsertOne) UpdateBirthDate() *PersonUpsertOne {
-	return u.Update(func(s *PersonUpsert) {
-		s.UpdateBirthDate()
-	})
-}
-
-// ClearBirthDate clears the value of the "birth_date" field.
-func (u *PersonUpsertOne) ClearBirthDate() *PersonUpsertOne {
-	return u.Update(func(s *PersonUpsert) {
-		s.ClearBirthDate()
-	})
-}
-
-// SetDeathDate sets the "death_date" field.
-func (u *PersonUpsertOne) SetDeathDate(v time.Time) *PersonUpsertOne {
-	return u.Update(func(s *PersonUpsert) {
-		s.SetDeathDate(v)
-	})
-}
-
-// UpdateDeathDate sets the "death_date" field to the value that was provided on create.
-func (u *PersonUpsertOne) UpdateDeathDate() *PersonUpsertOne {
-	return u.Update(func(s *PersonUpsert) {
-		s.UpdateDeathDate()
-	})
-}
-
-// ClearDeathDate clears the value of the "death_date" field.
-func (u *PersonUpsertOne) ClearDeathDate() *PersonUpsertOne {
-	return u.Update(func(s *PersonUpsert) {
-		s.ClearDeathDate()
-	})
-}
-
-// SetProviderIds sets the "provider_ids" field.
-func (u *PersonUpsertOne) SetProviderIds(v map[string]string) *PersonUpsertOne {
-	return u.Update(func(s *PersonUpsert) {
-		s.SetProviderIds(v)
-	})
-}
-
-// UpdateProviderIds sets the "provider_ids" field to the value that was provided on create.
-func (u *PersonUpsertOne) UpdateProviderIds() *PersonUpsertOne {
-	return u.Update(func(s *PersonUpsert) {
-		s.UpdateProviderIds()
-	})
-}
-
-// ClearProviderIds clears the value of the "provider_ids" field.
-func (u *PersonUpsertOne) ClearProviderIds() *PersonUpsertOne {
-	return u.Update(func(s *PersonUpsert) {
-		s.ClearProviderIds()
 	})
 }
 
@@ -852,90 +632,6 @@ func (u *PersonUpsertBulk) SetName(v string) *PersonUpsertBulk {
 func (u *PersonUpsertBulk) UpdateName() *PersonUpsertBulk {
 	return u.Update(func(s *PersonUpsert) {
 		s.UpdateName()
-	})
-}
-
-// SetOverview sets the "overview" field.
-func (u *PersonUpsertBulk) SetOverview(v string) *PersonUpsertBulk {
-	return u.Update(func(s *PersonUpsert) {
-		s.SetOverview(v)
-	})
-}
-
-// UpdateOverview sets the "overview" field to the value that was provided on create.
-func (u *PersonUpsertBulk) UpdateOverview() *PersonUpsertBulk {
-	return u.Update(func(s *PersonUpsert) {
-		s.UpdateOverview()
-	})
-}
-
-// ClearOverview clears the value of the "overview" field.
-func (u *PersonUpsertBulk) ClearOverview() *PersonUpsertBulk {
-	return u.Update(func(s *PersonUpsert) {
-		s.ClearOverview()
-	})
-}
-
-// SetBirthDate sets the "birth_date" field.
-func (u *PersonUpsertBulk) SetBirthDate(v time.Time) *PersonUpsertBulk {
-	return u.Update(func(s *PersonUpsert) {
-		s.SetBirthDate(v)
-	})
-}
-
-// UpdateBirthDate sets the "birth_date" field to the value that was provided on create.
-func (u *PersonUpsertBulk) UpdateBirthDate() *PersonUpsertBulk {
-	return u.Update(func(s *PersonUpsert) {
-		s.UpdateBirthDate()
-	})
-}
-
-// ClearBirthDate clears the value of the "birth_date" field.
-func (u *PersonUpsertBulk) ClearBirthDate() *PersonUpsertBulk {
-	return u.Update(func(s *PersonUpsert) {
-		s.ClearBirthDate()
-	})
-}
-
-// SetDeathDate sets the "death_date" field.
-func (u *PersonUpsertBulk) SetDeathDate(v time.Time) *PersonUpsertBulk {
-	return u.Update(func(s *PersonUpsert) {
-		s.SetDeathDate(v)
-	})
-}
-
-// UpdateDeathDate sets the "death_date" field to the value that was provided on create.
-func (u *PersonUpsertBulk) UpdateDeathDate() *PersonUpsertBulk {
-	return u.Update(func(s *PersonUpsert) {
-		s.UpdateDeathDate()
-	})
-}
-
-// ClearDeathDate clears the value of the "death_date" field.
-func (u *PersonUpsertBulk) ClearDeathDate() *PersonUpsertBulk {
-	return u.Update(func(s *PersonUpsert) {
-		s.ClearDeathDate()
-	})
-}
-
-// SetProviderIds sets the "provider_ids" field.
-func (u *PersonUpsertBulk) SetProviderIds(v map[string]string) *PersonUpsertBulk {
-	return u.Update(func(s *PersonUpsert) {
-		s.SetProviderIds(v)
-	})
-}
-
-// UpdateProviderIds sets the "provider_ids" field to the value that was provided on create.
-func (u *PersonUpsertBulk) UpdateProviderIds() *PersonUpsertBulk {
-	return u.Update(func(s *PersonUpsert) {
-		s.UpdateProviderIds()
-	})
-}
-
-// ClearProviderIds clears the value of the "provider_ids" field.
-func (u *PersonUpsertBulk) ClearProviderIds() *PersonUpsertBulk {
-	return u.Update(func(s *PersonUpsert) {
-		s.ClearProviderIds()
 	})
 }
 

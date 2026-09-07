@@ -64,18 +64,6 @@ func (_u *StudioUpdate) SetNillableName(v *string) *StudioUpdate {
 	return _u
 }
 
-// SetProviderIds sets the "provider_ids" field.
-func (_u *StudioUpdate) SetProviderIds(v map[string]string) *StudioUpdate {
-	_u.mutation.SetProviderIds(v)
-	return _u
-}
-
-// ClearProviderIds clears the value of the "provider_ids" field.
-func (_u *StudioUpdate) ClearProviderIds() *StudioUpdate {
-	_u.mutation.ClearProviderIds()
-	return _u
-}
-
 // AddItemIDs adds the "items" edge to the Item entity by IDs.
 func (_u *StudioUpdate) AddItemIDs(ids ...uuid.UUID) *StudioUpdate {
 	_u.mutation.AddItemIDs(ids...)
@@ -170,12 +158,6 @@ func (_u *StudioUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(studio.FieldName, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.ProviderIds(); ok {
-		_spec.SetField(studio.FieldProviderIds, field.TypeJSON, value)
-	}
-	if _u.mutation.ProviderIdsCleared() {
-		_spec.ClearField(studio.FieldProviderIds, field.TypeJSON)
 	}
 	if _u.mutation.ItemsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -273,18 +255,6 @@ func (_u *StudioUpdateOne) SetNillableName(v *string) *StudioUpdateOne {
 	if v != nil {
 		_u.SetName(*v)
 	}
-	return _u
-}
-
-// SetProviderIds sets the "provider_ids" field.
-func (_u *StudioUpdateOne) SetProviderIds(v map[string]string) *StudioUpdateOne {
-	_u.mutation.SetProviderIds(v)
-	return _u
-}
-
-// ClearProviderIds clears the value of the "provider_ids" field.
-func (_u *StudioUpdateOne) ClearProviderIds() *StudioUpdateOne {
-	_u.mutation.ClearProviderIds()
 	return _u
 }
 
@@ -412,12 +382,6 @@ func (_u *StudioUpdateOne) sqlSave(ctx context.Context) (_node *Studio, err erro
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(studio.FieldName, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.ProviderIds(); ok {
-		_spec.SetField(studio.FieldProviderIds, field.TypeJSON, value)
-	}
-	if _u.mutation.ProviderIdsCleared() {
-		_spec.ClearField(studio.FieldProviderIds, field.TypeJSON)
 	}
 	if _u.mutation.ItemsCleared() {
 		edge := &sqlgraph.EdgeSpec{

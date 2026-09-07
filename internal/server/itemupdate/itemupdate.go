@@ -3,8 +3,6 @@ package itemupdate
 import (
 	"context"
 
-	"github.com/google/uuid"
-
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/localization"
@@ -29,7 +27,7 @@ func (s *Server) UpdateItem(ctx context.Context, request api.UpdateItemRequestOb
 		return api.UpdateItem403Response{}, nil
 	}
 
-	item, err := s.items.ItemByID(ctx, request.ItemId)
+	item, err := s.items.ItemByID(ctx, items.Everyone, request.ItemId)
 	if err != nil {
 		return api.UpdateItem404JSONResponse{}, nil
 	}
@@ -42,7 +40,7 @@ func (s *Server) UpdateItem(ctx context.Context, request api.UpdateItemRequestOb
 }
 
 func (s *Server) UpdateItemContentType(ctx context.Context, request api.UpdateItemContentTypeRequestObject) (api.UpdateItemContentTypeResponseObject, error) {
-	if _, err := s.items.ItemByID(ctx, request.ItemId); err != nil {
+	if _, err := s.items.ItemByID(ctx, items.Everyone, request.ItemId); err != nil {
 		return api.UpdateItemContentType404JSONResponse{}, nil
 	}
 
@@ -54,7 +52,7 @@ func (s *Server) UpdateItemContentType(ctx context.Context, request api.UpdateIt
 }
 
 func (s *Server) GetMetadataEditorInfo(ctx context.Context, request api.GetMetadataEditorInfoRequestObject) (api.GetMetadataEditorInfoResponseObject, error) {
-	item, err := s.items.ItemByID(ctx, request.ItemId)
+	item, err := s.items.ItemByID(ctx, items.Everyone, request.ItemId)
 	if err != nil {
 		return api.GetMetadataEditorInfo404JSONResponse{}, nil
 	}
@@ -66,12 +64,16 @@ func (s *Server) GetMetadataEditorInfo(ctx context.Context, request api.GetMetad
 		ParentalRatingOptions: apiutil.Ptr(dto.ParentalRatings(s.localization.ParentalRatings())),
 		ExternalIdInfos:       &[]api.ExternalIdInfo{},
 	}
-	if item.IsFolder {
+	if items.IsFolder(item.Kind) {
 		info.ContentTypeOptions = apiutil.Ptr(contentTypeOptions())
 	}
 
-	if item.LibraryID != uuid.Nil {
-		library, err := s.libraries.Library(ctx, item.LibraryID)
+	ancestry, err := s.items.Ancestors(ctx, item.ID)
+	if err != nil {
+		return nil, err
+	}
+	if ancestry != nil && len(ancestry.LibraryIDs) > 0 {
+		library, err := s.libraries.Library(ctx, ancestry.LibraryIDs[0])
 		if err != nil {
 			return nil, err
 		}

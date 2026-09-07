@@ -17,19 +17,21 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
+	downloadermodal "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
 
 var (
-	probedAt     = time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC)
 	dateModified = time.Date(2021, 2, 3, 4, 5, 6, 0, time.UTC)
 )
 
 type fixture struct {
-	server    *Server
-	client    *store.Client
-	libraryID uuid.UUID
-	itemID    uuid.UUID
-	folderID  uuid.UUID
+	server     *Server
+	client     *store.Client
+	libraryID  uuid.UUID
+	itemID     uuid.UUID
+	folderID   uuid.UUID
+	downloader uuid.UUID
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -59,7 +61,7 @@ func newFixture(t *testing.T) *fixture {
 	}
 
 	t.Cleanup(func() {
-		if _, err := client.Item.Delete().Where(itemmodal.LibraryID(library.ID)).Exec(ctx); err != nil {
+		if _, err := client.Item.Delete().Where(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID))).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the items: %v", err)
 		}
 		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
@@ -70,28 +72,48 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
+	downloader, err := client.Source.Create().
+		SetName(t.Name() + "-" + uuid.NewString()).
+		SetURL("http://" + uuid.NewString() + ".invalid").
+		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
+		SetKind(downloadermodal.KindRadarr).
+		SetRootPath("/media").
+		SetLocalPath("/media").
+		Save(context.Background())
+	if err != nil {
+		t.Fatalf("failed to create the source: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := client.Source.DeleteOne(downloader).Exec(context.Background()); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
+		}
+	})
+
 	record, err := client.Item.Create().
-		SetLibraryID(library.ID).
 		SetKind(itemmodal.KindMovie).
 		SetName("Original Name").
 		SetSortName("original name").
-		SetKey("movie:original-name").
-		SetContainer("mkv").
+		SetKey("movie:original-name:" + library.ID.String()).
 		SetRunTimeTicks(72_000_000_000).
-		SetProbedAt(probedAt).
 		SetDateModified(dateModified).
 		Save(ctx)
 	if err != nil {
 		t.Fatalf("failed to create the item: %v", err)
 	}
 
-	folder, err := client.Item.Create().
+	if err := client.LibraryItem.Create().
 		SetLibraryID(library.ID).
+		SetSourceID(downloader.ID).
+		SetItemID(record.ID).
+		Exec(ctx); err != nil {
+		t.Fatalf("failed to place the item in the library: %v", err)
+	}
+
+	folder, err := client.Item.Create().
 		SetKind(itemmodal.KindFolder).
-		SetIsFolder(true).
 		SetName("Folder").
 		SetSortName("folder").
-		SetKey("folder:folder").
+		SetKey("folder:folder:" + library.ID.String()).
 		Save(ctx)
 	if err != nil {
 		t.Fatalf("failed to create the folder: %v", err)
@@ -103,11 +125,12 @@ func newFixture(t *testing.T) *fixture {
 	}
 
 	return &fixture{
-		server:    New(items.New(client), libraries.New(client), service),
-		client:    client,
-		libraryID: library.ID,
-		itemID:    record.ID,
-		folderID:  folder.ID,
+		downloader: downloader.ID,
+		server:     New(items.New(client), libraries.New(client), service),
+		client:     client,
+		libraryID:  library.ID,
+		itemID:     record.ID,
+		folderID:   folder.ID,
 	}
 }
 
@@ -226,7 +249,6 @@ func TestServer_UpdateItem(t *testing.T) {
 
 		fixture.update(t, fixture.itemID, api.BaseItemDto{
 			Name:         apiutil.Ptr("Renamed"),
-			Container:    apiutil.Ptr("mp4"),
 			RunTimeTicks: apiutil.Ptr(int64(1)),
 			Path:         apiutil.Ptr("/somewhere/else.mp4"),
 			Type:         apiutil.Ptr(api.BaseItemKindEpisode),
@@ -238,19 +260,13 @@ func TestServer_UpdateItem(t *testing.T) {
 		if record.Name != "Renamed" {
 			t.Errorf("name = %q, want %q", record.Name, "Renamed")
 		}
-		if record.Container != "mkv" {
-			t.Errorf("container = %q, want %q", record.Container, "mkv")
-		}
 		if apiutil.Deref(record.RunTimeTicks) != 72_000_000_000 {
 			t.Errorf("run time ticks = %v, want 72000000000", record.RunTimeTicks)
-		}
-		if !record.ProbedAt.Equal(probedAt) {
-			t.Errorf("probed at = %v, want %v", record.ProbedAt, probedAt)
 		}
 		if !record.DateModified.Equal(dateModified) {
 			t.Errorf("date modified = %v, want %v", record.DateModified, dateModified)
 		}
-		if record.Key != "movie:original-name" {
+		if record.Key != "movie:original-name:"+fixture.libraryID.String() {
 			t.Errorf("key = %q, want the scan's key: the metadata editor must not move an item's identity", record.Key)
 		}
 		if record.Kind != itemmodal.KindMovie {
@@ -259,10 +275,7 @@ func TestServer_UpdateItem(t *testing.T) {
 		if record.ParentID != nil {
 			t.Errorf("parent id = %v, want none", record.ParentID)
 		}
-		if record.LibraryID != fixture.libraryID {
-			t.Errorf("library id = %v, want %v", record.LibraryID, fixture.libraryID)
-		}
-		if sources, err := record.QueryMediaSources().Count(context.Background()); err != nil {
+		if sources, err := record.QueryItemSources().Count(context.Background()); err != nil {
 			t.Fatalf("failed to count the media sources: %v", err)
 		} else if sources != 0 {
 			t.Errorf("media sources = %d, want none", sources)

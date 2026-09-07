@@ -21,6 +21,7 @@ func (s *Server) GetGenres(ctx context.Context, request api.GetGenresRequestObje
 	startIndex := apiutil.Deref(request.Params.StartIndex)
 
 	named, total, err := s.items.DistinctGenres(ctx, items.MetadataQuery{
+		Viewer:     items.Everyone,
 		LibraryID:  request.Params.ParentId,
 		Kinds:      dto.Kinds(request.Params.IncludeItemTypes),
 		SearchTerm: apiutil.Deref(request.Params.SearchTerm),

@@ -20,24 +20,14 @@ type CreditKind = creditmodal.Kind
 
 var ValidCreditKind = creditmodal.KindValidator
 
-type ContainerMetadata struct {
-	Genres  []string
-	Studios []string
-	Tags    []string
-	People  []Person
-}
-
-type Person struct {
-	Name string
-	Kind CreditKind
-}
-
 type Named struct {
 	ID   uuid.UUID
 	Name string
 }
 
 type MetadataQuery struct {
+	Viewer Viewer
+
 	LibraryID  *uuid.UUID
 	ItemID     *uuid.UUID
 	Kinds      []Kind
@@ -49,7 +39,7 @@ type MetadataQuery struct {
 func (q MetadataQuery) items() []predicate.Item {
 	filters := make([]predicate.Item, 0, 3)
 	if q.LibraryID != nil {
-		filters = append(filters, itemmodal.LibraryID(*q.LibraryID))
+		filters = append(filters, inLibrary(*q.LibraryID))
 	}
 	if q.ItemID != nil {
 		filters = append(filters, itemmodal.ID(*q.ItemID))
@@ -163,7 +153,7 @@ func (s *Service) DistinctPeople(ctx context.Context, query MetadataQuery, kinds
 }
 
 func (s *Service) DistinctTags(ctx context.Context, query MetadataQuery) ([]string, error) {
-	records, err := s.query().
+	records, err := s.query(query.Viewer).
 		Where(query.items()...).
 		Where(itemmodal.TagsNotNil()).
 		Select(itemmodal.FieldTags).
@@ -188,29 +178,40 @@ func (s *Service) DistinctTags(ctx context.Context, query MetadataQuery) ([]stri
 	return tags, nil
 }
 
-func saveCredits(ctx context.Context, tx *store.Tx, itemID uuid.UUID, people []Person) error {
-	if _, err := tx.Credit.Delete().Where(creditmodal.HasItemWith(itemmodal.ID(itemID))).Exec(ctx); err != nil {
-		return fmt.Errorf("failed to clear credits: %w", err)
-	}
-	if len(people) == 0 {
-		return nil
+func replaceCredits(ctx context.Context, tx *store.Tx, itemID uuid.UUID, people []Credit) error {
+	if _, err := tx.Credit.Delete().
+		Where(creditmodal.HasItemWith(itemmodal.ID(itemID))).
+		Exec(ctx); err != nil {
+		return fmt.Errorf("failed to clear the credits: %w", err)
 	}
 
-	builders := make([]*store.CreditCreate, 0, len(people))
 	for _, person := range people {
 		id, err := tx.Person.Create().
 			SetName(person.Name).
 			OnConflictColumns(personmodal.FieldName).
-			UpdateName().
+			UpdateNewValues().
 			ID(ctx)
 		if err != nil {
-			return fmt.Errorf("failed to save person: %w", err)
+			return fmt.Errorf("failed to save %q: %w", person.Name, err)
 		}
-		builders = append(builders, tx.Credit.Create().SetItemID(itemID).SetPersonID(id).SetKind(person.Kind))
-	}
 
-	if err := tx.Credit.CreateBulk(builders...).Exec(ctx); err != nil {
-		return fmt.Errorf("failed to save credits: %w", err)
+		err = tx.Credit.Create().
+			SetItemID(itemID).
+			SetPersonID(id).
+			SetKind(person.Kind).
+			SetRole(person.Role).
+			SetSortOrder(person.Order).
+			OnConflictColumns(
+				creditmodal.FieldKind,
+				creditmodal.FieldRole,
+				creditmodal.ItemColumn,
+				creditmodal.PersonColumn,
+			).
+			UpdateNewValues().
+			Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to credit %q: %w", person.Name, err)
+		}
 	}
 
 	return nil

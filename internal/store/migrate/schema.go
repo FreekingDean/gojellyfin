@@ -56,31 +56,6 @@ var (
 		Columns:    APIKeysColumns,
 		PrimaryKey: []*schema.Column{APIKeysColumns[0]},
 	}
-	// ChaptersColumns holds the columns for the "chapters" table.
-	ChaptersColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "name", Type: field.TypeString, Nullable: true},
-		{Name: "start_position_ticks", Type: field.TypeInt64},
-		{Name: "image_path", Type: field.TypeString, Nullable: true},
-		{Name: "image_modified_at", Type: field.TypeTime, Nullable: true},
-		{Name: "item_chapters", Type: field.TypeUUID},
-	}
-	// ChaptersTable holds the schema information for the "chapters" table.
-	ChaptersTable = &schema.Table{
-		Name:       "chapters",
-		Columns:    ChaptersColumns,
-		PrimaryKey: []*schema.Column{ChaptersColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "chapters_items_chapters",
-				Columns:    []*schema.Column{ChaptersColumns[7]},
-				RefColumns: []*schema.Column{ItemsColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-		},
-	}
 	// ConfigurationsColumns holds the columns for the "configurations" table.
 	ConfigurationsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
@@ -219,13 +194,8 @@ var (
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Primary", "Art", "Backdrop", "Banner", "Logo", "Thumb", "Disc", "Box", "Screenshot", "Menu", "Chapter", "BoxRear", "Profile"}},
 		{Name: "index", Type: field.TypeInt32, Default: 0},
-		{Name: "source", Type: field.TypeEnum, Enums: []string{"Local", "Remote"}, Default: "Local"},
-		{Name: "path", Type: field.TypeString},
+		{Name: "url", Type: field.TypeString},
 		{Name: "tag", Type: field.TypeString},
-		{Name: "blur_hash", Type: field.TypeString, Nullable: true},
-		{Name: "width", Type: field.TypeInt32, Nullable: true},
-		{Name: "height", Type: field.TypeInt32, Nullable: true},
-		{Name: "size", Type: field.TypeInt64, Nullable: true},
 		{Name: "item_id", Type: field.TypeUUID},
 	}
 	// ImagesTable holds the schema information for the "images" table.
@@ -236,7 +206,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "images_items_images",
-				Columns:    []*schema.Column{ImagesColumns[12]},
+				Columns:    []*schema.Column{ImagesColumns[7]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -245,28 +215,7 @@ var (
 			{
 				Name:    "image_item_id_kind_index",
 				Unique:  true,
-				Columns: []*schema.Column{ImagesColumns[12], ImagesColumns[3], ImagesColumns[4]},
-			},
-		},
-	}
-	// ImageBlobsColumns holds the columns for the "image_blobs" table.
-	ImageBlobsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "key", Type: field.TypeString},
-		{Name: "data", Type: field.TypeBytes},
-	}
-	// ImageBlobsTable holds the schema information for the "image_blobs" table.
-	ImageBlobsTable = &schema.Table{
-		Name:       "image_blobs",
-		Columns:    ImageBlobsColumns,
-		PrimaryKey: []*schema.Column{ImageBlobsColumns[0]},
-		Indexes: []*schema.Index{
-			{
-				Name:    "imageblob_key",
-				Unique:  true,
-				Columns: []*schema.Column{ImageBlobsColumns[3]},
+				Columns: []*schema.Column{ImagesColumns[7], ImagesColumns[3], ImagesColumns[4]},
 			},
 		},
 	}
@@ -275,62 +224,28 @@ var (
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "kind", Type: field.TypeEnum, Enums: []string{"AggregateFolder", "Audio", "AudioBook", "BasePluginFolder", "Book", "BoxSet", "Channel", "ChannelFolderItem", "CollectionFolder", "Episode", "Folder", "Genre", "ManualPlaylistsFolder", "Movie", "LiveTvChannel", "LiveTvProgram", "MusicAlbum", "MusicArtist", "MusicGenre", "MusicVideo", "Person", "Photo", "PhotoAlbum", "Playlist", "PlaylistsFolder", "Program", "Recording", "Season", "Series", "Studio", "Trailer", "TvChannel", "TvProgram", "UserRootFolder", "UserView", "Video", "Year"}},
-		{Name: "media_type", Type: field.TypeEnum, Enums: []string{"Unknown", "Video", "Audio", "Photo", "Book"}, Default: "Unknown"},
-		{Name: "location_type", Type: field.TypeEnum, Enums: []string{"FileSystem", "Remote", "Virtual", "Offline"}, Default: "FileSystem"},
-		{Name: "extra_type", Type: field.TypeEnum, Nullable: true, Enums: []string{"Unknown", "Clip", "Trailer", "BehindTheScenes", "DeletedScene", "Interview", "Scene", "Sample", "ThemeSong", "ThemeVideo", "Featurette", "Short"}},
-		{Name: "video_type", Type: field.TypeEnum, Nullable: true, Enums: []string{"VideoFile", "Iso", "Dvd", "BluRay"}},
-		{Name: "iso_type", Type: field.TypeEnum, Nullable: true, Enums: []string{"Dvd", "BluRay"}},
-		{Name: "video_3d_format", Type: field.TypeEnum, Nullable: true, Enums: []string{"HalfSideBySide", "FullSideBySide", "FullTopAndBottom", "HalfTopAndBottom", "MVC"}},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Movie", "Series", "Season", "Episode", "Playlist", "Audio", "AudioBook", "Trailer", "Video", "Folder", "CollectionFolder", "BoxSet", "PlaylistsFolder", "UserRootFolder"}},
 		{Name: "key", Type: field.TypeString, Nullable: true},
 		{Name: "name", Type: field.TypeString},
-		{Name: "original_title", Type: field.TypeString, Nullable: true},
 		{Name: "sort_name", Type: field.TypeString, Nullable: true},
-		{Name: "forced_sort_name", Type: field.TypeBool, Default: false},
 		{Name: "deleted_at", Type: field.TypeTime, Nullable: true},
-		{Name: "container", Type: field.TypeString, Nullable: true},
 		{Name: "overview", Type: field.TypeString, Nullable: true, Size: 2147483647},
-		{Name: "is_folder", Type: field.TypeBool, Default: false},
-		{Name: "is_placeholder", Type: field.TypeBool, Default: false},
 		{Name: "lock_data", Type: field.TypeBool, Default: false},
-		{Name: "has_lyrics", Type: field.TypeBool, Default: false},
-		{Name: "has_subtitles", Type: field.TypeBool, Default: false},
-		{Name: "enable_media_source_display", Type: field.TypeBool, Default: true},
 		{Name: "premiere_date", Type: field.TypeTime, Nullable: true},
 		{Name: "end_date", Type: field.TypeTime, Nullable: true},
-		{Name: "last_media_added_at", Type: field.TypeTime, Nullable: true},
 		{Name: "date_modified", Type: field.TypeTime, Nullable: true},
-		{Name: "probed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "production_year", Type: field.TypeInt32, Nullable: true},
 		{Name: "official_rating", Type: field.TypeString, Nullable: true},
-		{Name: "custom_rating", Type: field.TypeString, Nullable: true},
-		{Name: "critic_rating", Type: field.TypeFloat64, Nullable: true},
 		{Name: "community_rating", Type: field.TypeFloat64, Nullable: true},
 		{Name: "run_time_ticks", Type: field.TypeInt64, Nullable: true},
 		{Name: "index_number", Type: field.TypeInt32, Nullable: true},
-		{Name: "index_number_end", Type: field.TypeInt32, Nullable: true},
 		{Name: "parent_index_number", Type: field.TypeInt32, Nullable: true},
-		{Name: "airs_before_season_number", Type: field.TypeInt32, Nullable: true},
-		{Name: "airs_after_season_number", Type: field.TypeInt32, Nullable: true},
-		{Name: "airs_before_episode_number", Type: field.TypeInt32, Nullable: true},
 		{Name: "status", Type: field.TypeString, Nullable: true},
-		{Name: "air_time", Type: field.TypeString, Nullable: true},
-		{Name: "display_order", Type: field.TypeString, Nullable: true},
-		{Name: "air_days", Type: field.TypeJSON, Nullable: true},
-		{Name: "aspect_ratio", Type: field.TypeString, Nullable: true},
-		{Name: "width", Type: field.TypeInt32, Nullable: true},
-		{Name: "height", Type: field.TypeInt32, Nullable: true},
-		{Name: "normalization_gain", Type: field.TypeFloat64, Nullable: true},
-		{Name: "preferred_metadata_language", Type: field.TypeString, Nullable: true},
-		{Name: "preferred_metadata_country_code", Type: field.TypeString, Nullable: true},
 		{Name: "provider_ids", Type: field.TypeJSON, Nullable: true},
 		{Name: "tags", Type: field.TypeJSON, Nullable: true},
 		{Name: "taglines", Type: field.TypeJSON, Nullable: true},
-		{Name: "production_locations", Type: field.TypeJSON, Nullable: true},
 		{Name: "locked_fields", Type: field.TypeJSON, Nullable: true},
-		{Name: "external_urls", Type: field.TypeJSON, Nullable: true},
 		{Name: "parent_id", Type: field.TypeUUID, Nullable: true},
-		{Name: "library_id", Type: field.TypeUUID, Nullable: true},
 	}
 	// ItemsTable holds the schema information for the "items" table.
 	ItemsTable = &schema.Table{
@@ -340,32 +255,74 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "items_items_children",
-				Columns:    []*schema.Column{ItemsColumns[57]},
+				Columns:    []*schema.Column{ItemsColumns[24]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-			{
-				Symbol:     "items_libraries_items",
-				Columns:    []*schema.Column{ItemsColumns[58]},
-				RefColumns: []*schema.Column{LibrariesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "item_library_id_key",
+				Name:    "item_key",
 				Unique:  true,
-				Columns: []*schema.Column{ItemsColumns[58], ItemsColumns[10]},
+				Columns: []*schema.Column{ItemsColumns[4]},
 			},
 			{
 				Name:    "item_kind_sort_name",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[3], ItemsColumns[13]},
+				Columns: []*schema.Column{ItemsColumns[3], ItemsColumns[6]},
 			},
 			{
 				Name:    "item_deleted_at",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[15]},
+				Columns: []*schema.Column{ItemsColumns[7]},
+			},
+		},
+	}
+	// ItemSourcesColumns holds the columns for the "item_sources" table.
+	ItemSourcesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString},
+		{Name: "path", Type: field.TypeString},
+		{Name: "container", Type: field.TypeString, Nullable: true},
+		{Name: "size", Type: field.TypeInt64, Nullable: true},
+		{Name: "run_time_ticks", Type: field.TypeInt64, Nullable: true},
+		{Name: "bitrate", Type: field.TypeInt32, Nullable: true},
+		{Name: "date_modified", Type: field.TypeTime, Nullable: true},
+		{Name: "probed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "item_id", Type: field.TypeUUID},
+		{Name: "source_id", Type: field.TypeUUID},
+	}
+	// ItemSourcesTable holds the schema information for the "item_sources" table.
+	ItemSourcesTable = &schema.Table{
+		Name:       "item_sources",
+		Columns:    ItemSourcesColumns,
+		PrimaryKey: []*schema.Column{ItemSourcesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "item_sources_items_item_sources",
+				Columns:    []*schema.Column{ItemSourcesColumns[11]},
+				RefColumns: []*schema.Column{ItemsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "item_sources_sources_files",
+				Columns:    []*schema.Column{ItemSourcesColumns[12]},
+				RefColumns: []*schema.Column{SourcesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "itemsource_item_id_source_id",
+				Unique:  true,
+				Columns: []*schema.Column{ItemSourcesColumns[11], ItemSourcesColumns[12]},
+			},
+			{
+				Name:    "itemsource_path",
+				Unique:  true,
+				Columns: []*schema.Column{ItemSourcesColumns[4]},
 			},
 		},
 	}
@@ -383,6 +340,53 @@ var (
 		Name:       "libraries",
 		Columns:    LibrariesColumns,
 		PrimaryKey: []*schema.Column{LibrariesColumns[0]},
+	}
+	// LibraryItemsColumns holds the columns for the "library_items" table.
+	LibraryItemsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "item_id", Type: field.TypeUUID},
+		{Name: "library_id", Type: field.TypeUUID},
+		{Name: "source_id", Type: field.TypeUUID},
+	}
+	// LibraryItemsTable holds the schema information for the "library_items" table.
+	LibraryItemsTable = &schema.Table{
+		Name:       "library_items",
+		Columns:    LibraryItemsColumns,
+		PrimaryKey: []*schema.Column{LibraryItemsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "library_items_items_libraries",
+				Columns:    []*schema.Column{LibraryItemsColumns[3]},
+				RefColumns: []*schema.Column{ItemsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "library_items_libraries_library_items",
+				Columns:    []*schema.Column{LibraryItemsColumns[4]},
+				RefColumns: []*schema.Column{LibrariesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "library_items_sources_memberships",
+				Columns:    []*schema.Column{LibraryItemsColumns[5]},
+				RefColumns: []*schema.Column{SourcesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "libraryitem_library_id_item_id_source_id",
+				Unique:  true,
+				Columns: []*schema.Column{LibraryItemsColumns[4], LibraryItemsColumns[3], LibraryItemsColumns[5]},
+			},
+			{
+				Name:    "libraryitem_item_id",
+				Unique:  false,
+				Columns: []*schema.Column{LibraryItemsColumns[3]},
+			},
+		},
 	}
 	// LibraryOptionsColumns holds the columns for the "library_options" table.
 	LibraryOptionsColumns = []*schema.Column{
@@ -446,149 +450,44 @@ var (
 			},
 		},
 	}
-	// ListingsProvidersColumns holds the columns for the "listings_providers" table.
-	ListingsProvidersColumns = []*schema.Column{
+	// LibrarySourcesColumns holds the columns for the "library_sources" table.
+	LibrarySourcesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "kind", Type: field.TypeString},
-		{Name: "username", Type: field.TypeString, Nullable: true},
-		{Name: "password", Type: field.TypeString, Nullable: true},
-		{Name: "listings_id", Type: field.TypeString, Nullable: true},
-		{Name: "zip_code", Type: field.TypeString, Nullable: true},
-		{Name: "country", Type: field.TypeString, Nullable: true},
-		{Name: "path", Type: field.TypeString, Nullable: true},
-		{Name: "movie_prefix", Type: field.TypeString, Nullable: true},
-		{Name: "preferred_language", Type: field.TypeString, Nullable: true},
-		{Name: "user_agent", Type: field.TypeString, Nullable: true},
-		{Name: "enable_all_tuners", Type: field.TypeBool},
-		{Name: "enabled_tuners", Type: field.TypeJSON, Nullable: true},
-		{Name: "news_categories", Type: field.TypeJSON, Nullable: true},
-		{Name: "sports_categories", Type: field.TypeJSON, Nullable: true},
-		{Name: "kids_categories", Type: field.TypeJSON, Nullable: true},
-		{Name: "movie_categories", Type: field.TypeJSON, Nullable: true},
-		{Name: "channel_mappings", Type: field.TypeJSON, Nullable: true},
-	}
-	// ListingsProvidersTable holds the schema information for the "listings_providers" table.
-	ListingsProvidersTable = &schema.Table{
-		Name:       "listings_providers",
-		Columns:    ListingsProvidersColumns,
-		PrimaryKey: []*schema.Column{ListingsProvidersColumns[0]},
-	}
-	// MediaAttachmentsColumns holds the columns for the "media_attachments" table.
-	MediaAttachmentsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "index", Type: field.TypeInt32},
-		{Name: "codec", Type: field.TypeString, Nullable: true},
-		{Name: "codec_tag", Type: field.TypeString, Nullable: true},
-		{Name: "comment", Type: field.TypeString, Nullable: true},
-		{Name: "file_name", Type: field.TypeString, Nullable: true},
-		{Name: "mime_type", Type: field.TypeString, Nullable: true},
-		{Name: "media_source_attachments", Type: field.TypeUUID},
-	}
-	// MediaAttachmentsTable holds the schema information for the "media_attachments" table.
-	MediaAttachmentsTable = &schema.Table{
-		Name:       "media_attachments",
-		Columns:    MediaAttachmentsColumns,
-		PrimaryKey: []*schema.Column{MediaAttachmentsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "media_attachments_media_sources_attachments",
-				Columns:    []*schema.Column{MediaAttachmentsColumns[9]},
-				RefColumns: []*schema.Column{MediaSourcesColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-		},
-		Indexes: []*schema.Index{
-			{
-				Name:    "mediaattachment_index_media_source_attachments",
-				Unique:  true,
-				Columns: []*schema.Column{MediaAttachmentsColumns[3], MediaAttachmentsColumns[9]},
-			},
-		},
-	}
-	// MediaSegmentsColumns holds the columns for the "media_segments" table.
-	MediaSegmentsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Unknown", "Commercial", "Preview", "Recap", "Outro", "Intro"}},
-		{Name: "start_ticks", Type: field.TypeInt64},
-		{Name: "end_ticks", Type: field.TypeInt64},
-		{Name: "item_media_segments", Type: field.TypeUUID},
-	}
-	// MediaSegmentsTable holds the schema information for the "media_segments" table.
-	MediaSegmentsTable = &schema.Table{
-		Name:       "media_segments",
-		Columns:    MediaSegmentsColumns,
-		PrimaryKey: []*schema.Column{MediaSegmentsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "media_segments_items_media_segments",
-				Columns:    []*schema.Column{MediaSegmentsColumns[6]},
-				RefColumns: []*schema.Column{ItemsColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-		},
-	}
-	// MediaSourcesColumns holds the columns for the "media_sources" table.
-	MediaSourcesColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "protocol", Type: field.TypeEnum, Enums: []string{"File", "Http", "Rtmp", "Rtsp", "Udp", "Rtp", "Ftp"}, Default: "File"},
-		{Name: "encoder_protocol", Type: field.TypeEnum, Nullable: true, Enums: []string{"File", "Http", "Rtmp", "Rtsp", "Udp", "Rtp", "Ftp"}},
-		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Default", "Grouping", "Placeholder"}, Default: "Default"},
-		{Name: "timestamp", Type: field.TypeEnum, Nullable: true, Enums: []string{"None", "Zero", "Valid"}},
-		{Name: "video_type", Type: field.TypeEnum, Nullable: true, Enums: []string{"VideoFile", "Iso", "Dvd", "BluRay"}},
-		{Name: "iso_type", Type: field.TypeEnum, Nullable: true, Enums: []string{"Dvd", "BluRay"}},
-		{Name: "video_3d_format", Type: field.TypeEnum, Nullable: true, Enums: []string{"HalfSideBySide", "FullSideBySide", "FullTopAndBottom", "HalfTopAndBottom", "MVC"}},
-		{Name: "name", Type: field.TypeString},
-		{Name: "path", Type: field.TypeString},
-		{Name: "encoder_path", Type: field.TypeString, Nullable: true},
-		{Name: "container", Type: field.TypeString, Nullable: true},
-		{Name: "size", Type: field.TypeInt64, Nullable: true},
-		{Name: "run_time_ticks", Type: field.TypeInt64, Nullable: true},
-		{Name: "bitrate", Type: field.TypeInt32, Nullable: true},
-		{Name: "date_modified", Type: field.TypeTime, Nullable: true},
-		{Name: "probed_at", Type: field.TypeTime, Nullable: true},
-		{Name: "read_at_native_framerate", Type: field.TypeBool, Default: false},
-		{Name: "ignore_dts", Type: field.TypeBool, Default: false},
-		{Name: "ignore_index", Type: field.TypeBool, Default: false},
-		{Name: "gen_pts_input", Type: field.TypeBool, Default: false},
-		{Name: "has_segments", Type: field.TypeBool, Default: false},
-		{Name: "default_audio_stream_index", Type: field.TypeInt32, Nullable: true},
-		{Name: "default_subtitle_stream_index", Type: field.TypeInt32, Nullable: true},
-		{Name: "formats", Type: field.TypeJSON, Nullable: true},
-		{Name: "item_id", Type: field.TypeUUID},
+		{Name: "tag_filter", Type: field.TypeString, Nullable: true},
 		{Name: "library_id", Type: field.TypeUUID},
+		{Name: "source_id", Type: field.TypeUUID},
 	}
-	// MediaSourcesTable holds the schema information for the "media_sources" table.
-	MediaSourcesTable = &schema.Table{
-		Name:       "media_sources",
-		Columns:    MediaSourcesColumns,
-		PrimaryKey: []*schema.Column{MediaSourcesColumns[0]},
+	// LibrarySourcesTable holds the schema information for the "library_sources" table.
+	LibrarySourcesTable = &schema.Table{
+		Name:       "library_sources",
+		Columns:    LibrarySourcesColumns,
+		PrimaryKey: []*schema.Column{LibrarySourcesColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "media_sources_items_media_sources",
-				Columns:    []*schema.Column{MediaSourcesColumns[27]},
-				RefColumns: []*schema.Column{ItemsColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-			{
-				Symbol:     "media_sources_libraries_media_sources",
-				Columns:    []*schema.Column{MediaSourcesColumns[28]},
+				Symbol:     "library_sources_libraries_sources",
+				Columns:    []*schema.Column{LibrarySourcesColumns[4]},
 				RefColumns: []*schema.Column{LibrariesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
+			{
+				Symbol:     "library_sources_sources_libraries",
+				Columns:    []*schema.Column{LibrarySourcesColumns[5]},
+				RefColumns: []*schema.Column{SourcesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "mediasource_library_id_path",
+				Name:    "librarysource_library_id_source_id",
 				Unique:  true,
-				Columns: []*schema.Column{MediaSourcesColumns[28], MediaSourcesColumns[11]},
+				Columns: []*schema.Column{LibrarySourcesColumns[4], LibrarySourcesColumns[5]},
+			},
+			{
+				Name:    "librarysource_source_id",
+				Unique:  false,
+				Columns: []*schema.Column{LibrarySourcesColumns[5]},
 			},
 		},
 	}
@@ -598,57 +497,24 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Audio", "Video", "Subtitle", "EmbeddedImage", "Data", "Lyric"}},
-		{Name: "video_range", Type: field.TypeEnum, Nullable: true, Enums: []string{"Unknown", "SDR", "HDR"}},
 		{Name: "video_range_type", Type: field.TypeEnum, Nullable: true, Enums: []string{"Unknown", "SDR", "HDR10", "HLG", "DOVI", "DOVIWithHDR10", "DOVIWithHLG", "DOVIWithSDR", "HDR10Plus"}},
-		{Name: "audio_spatial_format", Type: field.TypeEnum, Nullable: true, Enums: []string{"None", "DolbyAtmos", "DTSX"}},
 		{Name: "index", Type: field.TypeInt32, Default: 0},
 		{Name: "codec", Type: field.TypeString, Nullable: true},
-		{Name: "codec_tag", Type: field.TypeString, Nullable: true},
 		{Name: "profile", Type: field.TypeString, Nullable: true},
 		{Name: "language", Type: field.TypeString, Nullable: true},
 		{Name: "title", Type: field.TypeString, Nullable: true},
-		{Name: "comment", Type: field.TypeString, Nullable: true},
-		{Name: "path", Type: field.TypeString, Nullable: true},
 		{Name: "pixel_format", Type: field.TypeString, Nullable: true},
-		{Name: "aspect_ratio", Type: field.TypeString, Nullable: true},
-		{Name: "channel_layout", Type: field.TypeString, Nullable: true},
-		{Name: "time_base", Type: field.TypeString, Nullable: true},
-		{Name: "nal_length_size", Type: field.TypeString, Nullable: true},
-		{Name: "video_dovi_title", Type: field.TypeString, Nullable: true},
-		{Name: "color_range", Type: field.TypeString, Nullable: true},
-		{Name: "color_space", Type: field.TypeString, Nullable: true},
-		{Name: "color_transfer", Type: field.TypeString, Nullable: true},
-		{Name: "color_primaries", Type: field.TypeString, Nullable: true},
-		{Name: "dv_version_major", Type: field.TypeInt32, Nullable: true},
-		{Name: "dv_version_minor", Type: field.TypeInt32, Nullable: true},
-		{Name: "dv_profile", Type: field.TypeInt32, Nullable: true},
-		{Name: "dv_level", Type: field.TypeInt32, Nullable: true},
-		{Name: "rpu_present_flag", Type: field.TypeInt32, Nullable: true},
-		{Name: "el_present_flag", Type: field.TypeInt32, Nullable: true},
-		{Name: "bl_present_flag", Type: field.TypeInt32, Nullable: true},
-		{Name: "dv_bl_signal_compatibility_id", Type: field.TypeInt32, Nullable: true},
 		{Name: "bit_rate", Type: field.TypeInt32, Nullable: true},
-		{Name: "bit_depth", Type: field.TypeInt32, Nullable: true},
-		{Name: "ref_frames", Type: field.TypeInt32, Nullable: true},
-		{Name: "packet_length", Type: field.TypeInt32, Nullable: true},
 		{Name: "channels", Type: field.TypeInt32, Nullable: true},
 		{Name: "sample_rate", Type: field.TypeInt32, Nullable: true},
 		{Name: "width", Type: field.TypeInt32, Nullable: true},
 		{Name: "height", Type: field.TypeInt32, Nullable: true},
-		{Name: "rotation", Type: field.TypeInt32, Nullable: true},
-		{Name: "score", Type: field.TypeInt32, Nullable: true},
 		{Name: "level", Type: field.TypeFloat64, Nullable: true},
-		{Name: "average_frame_rate", Type: field.TypeFloat64, Nullable: true},
-		{Name: "real_frame_rate", Type: field.TypeFloat64, Nullable: true},
-		{Name: "reference_frame_rate", Type: field.TypeFloat64, Nullable: true},
 		{Name: "is_default", Type: field.TypeBool, Default: false},
 		{Name: "is_forced", Type: field.TypeBool, Default: false},
-		{Name: "is_external", Type: field.TypeBool, Default: false},
 		{Name: "is_interlaced", Type: field.TypeBool, Default: false},
 		{Name: "is_anamorphic", Type: field.TypeBool, Default: false},
-		{Name: "is_avc", Type: field.TypeBool, Default: false},
-		{Name: "is_hearing_impaired", Type: field.TypeBool, Default: false},
-		{Name: "source_id", Type: field.TypeUUID},
+		{Name: "item_source_id", Type: field.TypeUUID},
 	}
 	// MediaStreamsTable holds the schema information for the "media_streams" table.
 	MediaStreamsTable = &schema.Table{
@@ -657,17 +523,17 @@ var (
 		PrimaryKey: []*schema.Column{MediaStreamsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "media_streams_media_sources_streams",
-				Columns:    []*schema.Column{MediaStreamsColumns[54]},
-				RefColumns: []*schema.Column{MediaSourcesColumns[0]},
+				Symbol:     "media_streams_item_sources_streams",
+				Columns:    []*schema.Column{MediaStreamsColumns[21]},
+				RefColumns: []*schema.Column{ItemSourcesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "mediastream_source_id_index",
+				Name:    "mediastream_item_source_id_index",
 				Unique:  true,
-				Columns: []*schema.Column{MediaStreamsColumns[54], MediaStreamsColumns[7]},
+				Columns: []*schema.Column{MediaStreamsColumns[21], MediaStreamsColumns[5]},
 			},
 		},
 	}
@@ -677,10 +543,6 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString, Unique: true},
-		{Name: "overview", Type: field.TypeString, Nullable: true, Size: 2147483647},
-		{Name: "birth_date", Type: field.TypeTime, Nullable: true},
-		{Name: "death_date", Type: field.TypeTime, Nullable: true},
-		{Name: "provider_ids", Type: field.TypeJSON, Nullable: true},
 	}
 	// PersonsTable holds the schema information for the "persons" table.
 	PersonsTable = &schema.Table{
@@ -693,6 +555,7 @@ var (
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "media_type", Type: field.TypeEnum, Enums: []string{"Unknown", "Video", "Audio", "Photo", "Book"}, Default: "Unknown"},
 		{Name: "open_access", Type: field.TypeBool},
 		{Name: "item_id", Type: field.TypeUUID, Unique: true},
 		{Name: "owner_id", Type: field.TypeUUID},
@@ -705,13 +568,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "playlists_items_playlist",
-				Columns:    []*schema.Column{PlaylistsColumns[4]},
+				Columns:    []*schema.Column{PlaylistsColumns[5]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "playlists_users_playlists",
-				Columns:    []*schema.Column{PlaylistsColumns[5]},
+				Columns:    []*schema.Column{PlaylistsColumns[6]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -789,41 +652,6 @@ var (
 			},
 		},
 	}
-	// SeriesTimersColumns holds the columns for the "series_timers" table.
-	SeriesTimersColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "name", Type: field.TypeString},
-		{Name: "overview", Type: field.TypeString, Nullable: true, Size: 2147483647},
-		{Name: "service_name", Type: field.TypeString, Nullable: true},
-		{Name: "external_id", Type: field.TypeString, Nullable: true},
-		{Name: "channel_id", Type: field.TypeString, Nullable: true},
-		{Name: "external_channel_id", Type: field.TypeString, Nullable: true},
-		{Name: "program_id", Type: field.TypeString, Nullable: true},
-		{Name: "external_program_id", Type: field.TypeString, Nullable: true},
-		{Name: "start_date", Type: field.TypeTime},
-		{Name: "end_date", Type: field.TypeTime},
-		{Name: "priority", Type: field.TypeInt32},
-		{Name: "pre_padding_seconds", Type: field.TypeInt32},
-		{Name: "post_padding_seconds", Type: field.TypeInt32},
-		{Name: "is_pre_padding_required", Type: field.TypeBool},
-		{Name: "is_post_padding_required", Type: field.TypeBool},
-		{Name: "keep_until", Type: field.TypeEnum, Enums: []string{"UntilDeleted", "UntilSpaceNeeded", "UntilWatched", "UntilDate"}},
-		{Name: "keep_up_to", Type: field.TypeInt32},
-		{Name: "record_any_time", Type: field.TypeBool},
-		{Name: "record_any_channel", Type: field.TypeBool},
-		{Name: "record_new_only", Type: field.TypeBool},
-		{Name: "skip_episodes_in_library", Type: field.TypeBool},
-		{Name: "days", Type: field.TypeJSON, Nullable: true},
-		{Name: "day_pattern", Type: field.TypeEnum, Nullable: true, Enums: []string{"Daily", "Weekdays", "Weekends"}},
-	}
-	// SeriesTimersTable holds the schema information for the "series_timers" table.
-	SeriesTimersTable = &schema.Table{
-		Name:       "series_timers",
-		Columns:    SeriesTimersColumns,
-		PrimaryKey: []*schema.Column{SeriesTimersColumns[0]},
-	}
 	// SessionsColumns holds the columns for the "sessions" table.
 	SessionsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
@@ -856,113 +684,36 @@ var (
 			},
 		},
 	}
+	// SourcesColumns holds the columns for the "sources" table.
+	SourcesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "url", Type: field.TypeString, Unique: true},
+		{Name: "api_key_variable", Type: field.TypeString},
+		{Name: "root_path", Type: field.TypeString, Nullable: true},
+		{Name: "local_path", Type: field.TypeString, Nullable: true},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"radarr", "sonarr", "lidarr", "readarr", "bazarr"}},
+	}
+	// SourcesTable holds the schema information for the "sources" table.
+	SourcesTable = &schema.Table{
+		Name:       "sources",
+		Columns:    SourcesColumns,
+		PrimaryKey: []*schema.Column{SourcesColumns[0]},
+	}
 	// StudiosColumns holds the columns for the "studios" table.
 	StudiosColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString, Unique: true},
-		{Name: "provider_ids", Type: field.TypeJSON, Nullable: true},
 	}
 	// StudiosTable holds the schema information for the "studios" table.
 	StudiosTable = &schema.Table{
 		Name:       "studios",
 		Columns:    StudiosColumns,
 		PrimaryKey: []*schema.Column{StudiosColumns[0]},
-	}
-	// TimersColumns holds the columns for the "timers" table.
-	TimersColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "name", Type: field.TypeString},
-		{Name: "overview", Type: field.TypeString, Nullable: true, Size: 2147483647},
-		{Name: "service_name", Type: field.TypeString, Nullable: true},
-		{Name: "external_id", Type: field.TypeString, Nullable: true},
-		{Name: "channel_id", Type: field.TypeString, Nullable: true},
-		{Name: "external_channel_id", Type: field.TypeString, Nullable: true},
-		{Name: "program_id", Type: field.TypeString, Nullable: true},
-		{Name: "external_program_id", Type: field.TypeString, Nullable: true},
-		{Name: "external_series_timer_id", Type: field.TypeString, Nullable: true},
-		{Name: "start_date", Type: field.TypeTime},
-		{Name: "end_date", Type: field.TypeTime},
-		{Name: "run_time_ticks", Type: field.TypeInt64, Nullable: true},
-		{Name: "priority", Type: field.TypeInt32},
-		{Name: "pre_padding_seconds", Type: field.TypeInt32},
-		{Name: "post_padding_seconds", Type: field.TypeInt32},
-		{Name: "is_pre_padding_required", Type: field.TypeBool},
-		{Name: "is_post_padding_required", Type: field.TypeBool},
-		{Name: "keep_until", Type: field.TypeEnum, Enums: []string{"UntilDeleted", "UntilSpaceNeeded", "UntilWatched", "UntilDate"}},
-		{Name: "status", Type: field.TypeEnum, Enums: []string{"New", "InProgress", "Completed", "Cancelled", "ConflictedOk", "ConflictedNotOk", "Error"}},
-		{Name: "series_timer_timers", Type: field.TypeUUID, Nullable: true},
-	}
-	// TimersTable holds the schema information for the "timers" table.
-	TimersTable = &schema.Table{
-		Name:       "timers",
-		Columns:    TimersColumns,
-		PrimaryKey: []*schema.Column{TimersColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "timers_series_timers_timers",
-				Columns:    []*schema.Column{TimersColumns[22]},
-				RefColumns: []*schema.Column{SeriesTimersColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-		},
-	}
-	// TrickplaysColumns holds the columns for the "trickplays" table.
-	TrickplaysColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "width", Type: field.TypeInt32},
-		{Name: "height", Type: field.TypeInt32},
-		{Name: "tile_width", Type: field.TypeInt32},
-		{Name: "tile_height", Type: field.TypeInt32},
-		{Name: "thumbnail_count", Type: field.TypeInt32},
-		{Name: "interval", Type: field.TypeInt32},
-		{Name: "bandwidth", Type: field.TypeInt32},
-		{Name: "item_trickplays", Type: field.TypeUUID},
-	}
-	// TrickplaysTable holds the schema information for the "trickplays" table.
-	TrickplaysTable = &schema.Table{
-		Name:       "trickplays",
-		Columns:    TrickplaysColumns,
-		PrimaryKey: []*schema.Column{TrickplaysColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "trickplays_items_trickplays",
-				Columns:    []*schema.Column{TrickplaysColumns[10]},
-				RefColumns: []*schema.Column{ItemsColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-		},
-	}
-	// TunerHostsColumns holds the columns for the "tuner_hosts" table.
-	TunerHostsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "kind", Type: field.TypeString},
-		{Name: "url", Type: field.TypeString},
-		{Name: "device_id", Type: field.TypeString, Nullable: true},
-		{Name: "friendly_name", Type: field.TypeString, Nullable: true},
-		{Name: "source", Type: field.TypeString, Nullable: true},
-		{Name: "user_agent", Type: field.TypeString, Nullable: true},
-		{Name: "tuner_count", Type: field.TypeInt32},
-		{Name: "fallback_max_streaming_bitrate", Type: field.TypeInt32},
-		{Name: "import_favorites_only", Type: field.TypeBool},
-		{Name: "allow_hw_transcoding", Type: field.TypeBool},
-		{Name: "allow_fmp4_transcoding_container", Type: field.TypeBool},
-		{Name: "allow_stream_sharing", Type: field.TypeBool},
-		{Name: "enable_stream_looping", Type: field.TypeBool},
-		{Name: "ignore_dts", Type: field.TypeBool},
-	}
-	// TunerHostsTable holds the schema information for the "tuner_hosts" table.
-	TunerHostsTable = &schema.Table{
-		Name:       "tuner_hosts",
-		Columns:    TunerHostsColumns,
-		PrimaryKey: []*schema.Column{TunerHostsColumns[0]},
 	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
@@ -1179,32 +930,26 @@ var (
 	Tables = []*schema.Table{
 		ActivityLogEntriesTable,
 		APIKeysTable,
-		ChaptersTable,
 		ConfigurationsTable,
 		CreditsTable,
 		DevicesTable,
 		DisplayPreferencesTable,
 		GenresTable,
 		ImagesTable,
-		ImageBlobsTable,
 		ItemsTable,
+		ItemSourcesTable,
 		LibrariesTable,
+		LibraryItemsTable,
 		LibraryOptionsTable,
-		ListingsProvidersTable,
-		MediaAttachmentsTable,
-		MediaSegmentsTable,
-		MediaSourcesTable,
+		LibrarySourcesTable,
 		MediaStreamsTable,
 		PersonsTable,
 		PlaylistsTable,
 		PlaylistEntriesTable,
 		PlaylistSharesTable,
-		SeriesTimersTable,
 		SessionsTable,
+		SourcesTable,
 		StudiosTable,
-		TimersTable,
-		TrickplaysTable,
-		TunerHostsTable,
 		UsersTable,
 		UserConfigurationsTable,
 		UserItemDataTable,
@@ -1217,19 +962,20 @@ var (
 func init() {
 	ActivityLogEntriesTable.ForeignKeys[0].RefTable = ItemsTable
 	ActivityLogEntriesTable.ForeignKeys[1].RefTable = UsersTable
-	ChaptersTable.ForeignKeys[0].RefTable = ItemsTable
 	CreditsTable.ForeignKeys[0].RefTable = ItemsTable
 	CreditsTable.ForeignKeys[1].RefTable = PersonsTable
 	DisplayPreferencesTable.ForeignKeys[0].RefTable = UsersTable
 	ImagesTable.ForeignKeys[0].RefTable = ItemsTable
 	ItemsTable.ForeignKeys[0].RefTable = ItemsTable
-	ItemsTable.ForeignKeys[1].RefTable = LibrariesTable
+	ItemSourcesTable.ForeignKeys[0].RefTable = ItemsTable
+	ItemSourcesTable.ForeignKeys[1].RefTable = SourcesTable
+	LibraryItemsTable.ForeignKeys[0].RefTable = ItemsTable
+	LibraryItemsTable.ForeignKeys[1].RefTable = LibrariesTable
+	LibraryItemsTable.ForeignKeys[2].RefTable = SourcesTable
 	LibraryOptionsTable.ForeignKeys[0].RefTable = LibrariesTable
-	MediaAttachmentsTable.ForeignKeys[0].RefTable = MediaSourcesTable
-	MediaSegmentsTable.ForeignKeys[0].RefTable = ItemsTable
-	MediaSourcesTable.ForeignKeys[0].RefTable = ItemsTable
-	MediaSourcesTable.ForeignKeys[1].RefTable = LibrariesTable
-	MediaStreamsTable.ForeignKeys[0].RefTable = MediaSourcesTable
+	LibrarySourcesTable.ForeignKeys[0].RefTable = LibrariesTable
+	LibrarySourcesTable.ForeignKeys[1].RefTable = SourcesTable
+	MediaStreamsTable.ForeignKeys[0].RefTable = ItemSourcesTable
 	PlaylistsTable.ForeignKeys[0].RefTable = ItemsTable
 	PlaylistsTable.ForeignKeys[1].RefTable = UsersTable
 	PlaylistEntriesTable.ForeignKeys[0].RefTable = ItemsTable
@@ -1238,8 +984,6 @@ func init() {
 	PlaylistSharesTable.ForeignKeys[1].RefTable = UsersTable
 	SessionsTable.ForeignKeys[0].RefTable = DevicesTable
 	SessionsTable.ForeignKeys[1].RefTable = UsersTable
-	TimersTable.ForeignKeys[0].RefTable = SeriesTimersTable
-	TrickplaysTable.ForeignKeys[0].RefTable = ItemsTable
 	UserConfigurationsTable.ForeignKeys[0].RefTable = UsersTable
 	UserItemDataTable.ForeignKeys[0].RefTable = ItemsTable
 	UserItemDataTable.ForeignKeys[1].RefTable = UsersTable

@@ -21,5 +21,6 @@ func provider(client *tmdb.Client) Provider {
 }
 
 func register(registry *jobs.Registry, service *Service) {
-	registry.Register(NewIdentify(service))
+	registry.Register(service.Job())
+	registry.Register(service.ItemJob())
 }

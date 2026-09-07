@@ -1,10 +1,19 @@
 LOG ?= /tmp/gojellyfin.log
+WORKER_LOG ?= /tmp/gojellyfin-worker.log
 
 # The binary carries no default DSN, so the development one lives here. `?=`
 # leaves an existing DATABASE_URL alone, which is how CI and a scratch database
 # override it.
 DATABASE_URL ?= postgres://localhost:5432/gojellyfin_development?sslmode=disable
 export DATABASE_URL
+
+# The local Temporal dev server `make temporal` starts, and what `make worker`
+# dials. Deliberately not exported: jobs.NewClient dials at construction, so a
+# server told about a Temporal that is not running refuses to start, while one
+# told nothing serves with background work off. Export it yourself to give
+# `make dev` the ScheduledTasks API: TEMPORAL_HOSTPORT=localhost:7233 make dev
+TEMPORAL_HOSTPORT ?= localhost:7233
+TEMPORAL_NAMESPACE ?= gojellyfin_development
 
 # gojellyfin's own build, stamped into internal/system. The Jellyfin API
 # version is a different fact and comes from the vendored spec.
@@ -14,10 +23,6 @@ DATE ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 
 STAMP := github.com/FreekingDean/gojellyfin/internal/system
 LDFLAGS := -X $(STAMP).buildVersion=$(VERSION) -X $(STAMP).buildCommit=$(COMMIT) -X $(STAMP).buildDate=$(DATE)
-
-.PHONY: dev
-dev:
-	air 2>&1 | tee $(LOG)
 
 .PHONY: generate
 generate:
@@ -30,6 +35,30 @@ build: generate
 .PHONY: run
 run: build
 	go run -ldflags "$(LDFLAGS)" ./cmd/gojellyfin server 2>&1 | tee $(LOG)
+
+.PHONY: dev
+dev: migrate build
+	TEMPORAL_HOSTPORT=$(TEMPORAL_HOSTPORT) TEMPORAL_NAMESPACE=$(TEMPORAL_NAMESPACE) \
+	CORS_ORIGINS="*" go run -ldflags "$(LDFLAGS)" ./cmd/gojellyfin server 2>&1 | tee $(LOG)
+
+# brew install temporal, or https://temporal.download/cli.sh. Not `go install`:
+# the CLI's go.mod carries replace directives, which go install refuses.
+# Ephemeral: history lives in memory, so a restart is a clean slate. The web UI
+# is on http://localhost:8233.
+.PHONY: temporal
+temporal:
+	@command -v temporal >/dev/null || \
+		(echo "temporal not found: brew install temporal" && exit 1)
+	temporal server start-dev --ip 127.0.0.1 --namespace $(TEMPORAL_NAMESPACE)
+
+.PHONY: worker
+worker: build
+	TEMPORAL_HOSTPORT=$(TEMPORAL_HOSTPORT) TEMPORAL_NAMESPACE=$(TEMPORAL_NAMESPACE) \
+		go run -ldflags "$(LDFLAGS)" ./cmd/gojellyfin worker 2>&1 | tee $(WORKER_LOG)
+
+.PHONY: migrate
+migrate: build
+	go run -ldflags "$(LDFLAGS)" ./cmd/gojellyfin migrate
 
 .PHONY: test
 test: build

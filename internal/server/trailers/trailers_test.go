@@ -14,12 +14,16 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
+	downloadermodal "github.com/FreekingDean/gojellyfin/internal/store/source"
+	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
 type fixture struct {
-	server  *Server
-	client  *store.Client
-	library uuid.UUID
+	server     *Server
+	client     *store.Client
+	library    uuid.UUID
+	downloader uuid.UUID
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -46,7 +50,7 @@ func newFixture(t *testing.T) *fixture {
 
 	t.Cleanup(func() {
 		ctx := context.Background()
-		if _, err := client.Item.Delete().Where(itemmodal.LibraryID(library.ID)).Exec(ctx); err != nil {
+		if _, err := client.Item.Delete().Where(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID))).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the items: %v", err)
 		}
 		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
@@ -57,23 +61,48 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
-	server := New(items.New(client), libraries.New(client))
+	server := New(items.New(client), libraries.New(client), allLibraries{})
 
-	return &fixture{server: server, client: client, library: library.ID}
+	downloader, err := client.Source.Create().
+		SetName(t.Name() + "-" + uuid.NewString()).
+		SetURL("http://" + uuid.NewString() + ".invalid").
+		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
+		SetKind(downloadermodal.KindRadarr).
+		SetRootPath("/media").
+		SetLocalPath("/media").
+		Save(context.Background())
+	if err != nil {
+		t.Fatalf("failed to create the source: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := client.Source.DeleteOne(downloader).Exec(context.Background()); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
+		}
+	})
+
+	return &fixture{
+		downloader: downloader.ID, server: server, client: client, library: library.ID}
 }
 
 func (f *fixture) add(t *testing.T, kind itemmodal.Kind, name string) {
 	t.Helper()
 
-	_, err := f.client.Item.Create().
-		SetLibraryID(f.library).
+	record, err := f.client.Item.Create().
 		SetKind(kind).
 		SetName(name).
 		SetSortName(name).
-		SetKey("test:" + name).
+		SetKey("test:" + f.library.String() + ":" + name).
 		Save(context.Background())
 	if err != nil {
 		t.Fatalf("failed to create %q: %v", name, err)
+	}
+
+	if err := f.client.LibraryItem.Create().
+		SetLibraryID(f.library).
+		SetSourceID(f.downloader).
+		SetItemID(record.ID).
+		Exec(context.Background()); err != nil {
+		t.Fatalf("failed to place %q in the library: %v", name, err)
 	}
 }
 
@@ -160,4 +189,10 @@ func TestServer_GetTrailers(t *testing.T) {
 			}
 		})
 	}
+}
+
+type allLibraries struct{}
+
+func (allLibraries) Access(context.Context, uuid.UUID) (users.Access, error) {
+	return users.Access{All: true}, nil
 }

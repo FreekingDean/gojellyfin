@@ -16,12 +16,23 @@ func (r *Registry) All() []Job {
 	return r.jobs
 }
 
+func (r *Registry) Startable() []Job {
+	found := make([]Job, 0, len(r.jobs))
+	for _, job := range r.jobs {
+		if job.Startable {
+			found = append(found, job)
+		}
+	}
+
+	return found
+}
+
 func (r *Registry) Find(name string) (Job, error) {
 	for _, job := range r.jobs {
-		if job.Name() == name {
+		if job.Name == name {
 			return job, nil
 		}
 	}
 
-	return nil, ErrNotFound
+	return Job{}, ErrNotFound
 }

@@ -282,7 +282,7 @@ func (s *Server) UpdatePlaylistUser(ctx context.Context, request api.UpdatePlayl
 		return api.UpdatePlaylistUser403JSONResponse{}, nil
 	}
 
-	permission := playlists.Permission{UserID: request.UserId, CanEdit: apiutil.Deref(body.CanEdit)}
+	permission := playlists.Share{UserID: request.UserId, CanEdit: apiutil.Deref(body.CanEdit)}
 	if err := s.playlists.SetShare(ctx, request.PlaylistId, permission); err != nil {
 		if errors.Is(err, playlists.ErrInvalidShare) {
 			return api.UpdatePlaylistUser404JSONResponse{}, nil

@@ -19,76 +19,26 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
-	// FieldSourceID holds the string denoting the source_id field in the database.
-	FieldSourceID = "source_id"
+	// FieldItemSourceID holds the string denoting the item_source_id field in the database.
+	FieldItemSourceID = "item_source_id"
 	// FieldKind holds the string denoting the kind field in the database.
 	FieldKind = "kind"
-	// FieldVideoRange holds the string denoting the video_range field in the database.
-	FieldVideoRange = "video_range"
 	// FieldVideoRangeType holds the string denoting the video_range_type field in the database.
 	FieldVideoRangeType = "video_range_type"
-	// FieldAudioSpatialFormat holds the string denoting the audio_spatial_format field in the database.
-	FieldAudioSpatialFormat = "audio_spatial_format"
 	// FieldIndex holds the string denoting the index field in the database.
 	FieldIndex = "index"
 	// FieldCodec holds the string denoting the codec field in the database.
 	FieldCodec = "codec"
-	// FieldCodecTag holds the string denoting the codec_tag field in the database.
-	FieldCodecTag = "codec_tag"
 	// FieldProfile holds the string denoting the profile field in the database.
 	FieldProfile = "profile"
 	// FieldLanguage holds the string denoting the language field in the database.
 	FieldLanguage = "language"
 	// FieldTitle holds the string denoting the title field in the database.
 	FieldTitle = "title"
-	// FieldComment holds the string denoting the comment field in the database.
-	FieldComment = "comment"
-	// FieldPath holds the string denoting the path field in the database.
-	FieldPath = "path"
 	// FieldPixelFormat holds the string denoting the pixel_format field in the database.
 	FieldPixelFormat = "pixel_format"
-	// FieldAspectRatio holds the string denoting the aspect_ratio field in the database.
-	FieldAspectRatio = "aspect_ratio"
-	// FieldChannelLayout holds the string denoting the channel_layout field in the database.
-	FieldChannelLayout = "channel_layout"
-	// FieldTimeBase holds the string denoting the time_base field in the database.
-	FieldTimeBase = "time_base"
-	// FieldNalLengthSize holds the string denoting the nal_length_size field in the database.
-	FieldNalLengthSize = "nal_length_size"
-	// FieldVideoDoviTitle holds the string denoting the video_dovi_title field in the database.
-	FieldVideoDoviTitle = "video_dovi_title"
-	// FieldColorRange holds the string denoting the color_range field in the database.
-	FieldColorRange = "color_range"
-	// FieldColorSpace holds the string denoting the color_space field in the database.
-	FieldColorSpace = "color_space"
-	// FieldColorTransfer holds the string denoting the color_transfer field in the database.
-	FieldColorTransfer = "color_transfer"
-	// FieldColorPrimaries holds the string denoting the color_primaries field in the database.
-	FieldColorPrimaries = "color_primaries"
-	// FieldDvVersionMajor holds the string denoting the dv_version_major field in the database.
-	FieldDvVersionMajor = "dv_version_major"
-	// FieldDvVersionMinor holds the string denoting the dv_version_minor field in the database.
-	FieldDvVersionMinor = "dv_version_minor"
-	// FieldDvProfile holds the string denoting the dv_profile field in the database.
-	FieldDvProfile = "dv_profile"
-	// FieldDvLevel holds the string denoting the dv_level field in the database.
-	FieldDvLevel = "dv_level"
-	// FieldRpuPresentFlag holds the string denoting the rpu_present_flag field in the database.
-	FieldRpuPresentFlag = "rpu_present_flag"
-	// FieldElPresentFlag holds the string denoting the el_present_flag field in the database.
-	FieldElPresentFlag = "el_present_flag"
-	// FieldBlPresentFlag holds the string denoting the bl_present_flag field in the database.
-	FieldBlPresentFlag = "bl_present_flag"
-	// FieldDvBlSignalCompatibilityID holds the string denoting the dv_bl_signal_compatibility_id field in the database.
-	FieldDvBlSignalCompatibilityID = "dv_bl_signal_compatibility_id"
 	// FieldBitRate holds the string denoting the bit_rate field in the database.
 	FieldBitRate = "bit_rate"
-	// FieldBitDepth holds the string denoting the bit_depth field in the database.
-	FieldBitDepth = "bit_depth"
-	// FieldRefFrames holds the string denoting the ref_frames field in the database.
-	FieldRefFrames = "ref_frames"
-	// FieldPacketLength holds the string denoting the packet_length field in the database.
-	FieldPacketLength = "packet_length"
 	// FieldChannels holds the string denoting the channels field in the database.
 	FieldChannels = "channels"
 	// FieldSampleRate holds the string denoting the sample_rate field in the database.
@@ -97,43 +47,27 @@ const (
 	FieldWidth = "width"
 	// FieldHeight holds the string denoting the height field in the database.
 	FieldHeight = "height"
-	// FieldRotation holds the string denoting the rotation field in the database.
-	FieldRotation = "rotation"
-	// FieldScore holds the string denoting the score field in the database.
-	FieldScore = "score"
 	// FieldLevel holds the string denoting the level field in the database.
 	FieldLevel = "level"
-	// FieldAverageFrameRate holds the string denoting the average_frame_rate field in the database.
-	FieldAverageFrameRate = "average_frame_rate"
-	// FieldRealFrameRate holds the string denoting the real_frame_rate field in the database.
-	FieldRealFrameRate = "real_frame_rate"
-	// FieldReferenceFrameRate holds the string denoting the reference_frame_rate field in the database.
-	FieldReferenceFrameRate = "reference_frame_rate"
 	// FieldIsDefault holds the string denoting the is_default field in the database.
 	FieldIsDefault = "is_default"
 	// FieldIsForced holds the string denoting the is_forced field in the database.
 	FieldIsForced = "is_forced"
-	// FieldIsExternal holds the string denoting the is_external field in the database.
-	FieldIsExternal = "is_external"
 	// FieldIsInterlaced holds the string denoting the is_interlaced field in the database.
 	FieldIsInterlaced = "is_interlaced"
 	// FieldIsAnamorphic holds the string denoting the is_anamorphic field in the database.
 	FieldIsAnamorphic = "is_anamorphic"
-	// FieldIsAvc holds the string denoting the is_avc field in the database.
-	FieldIsAvc = "is_avc"
-	// FieldIsHearingImpaired holds the string denoting the is_hearing_impaired field in the database.
-	FieldIsHearingImpaired = "is_hearing_impaired"
 	// EdgeSource holds the string denoting the source edge name in mutations.
 	EdgeSource = "source"
 	// Table holds the table name of the mediastream in the database.
 	Table = "media_streams"
 	// SourceTable is the table that holds the source relation/edge.
 	SourceTable = "media_streams"
-	// SourceInverseTable is the table name for the MediaSource entity.
-	// It exists in this package in order to avoid circular dependency with the "mediasource" package.
-	SourceInverseTable = "media_sources"
+	// SourceInverseTable is the table name for the ItemSource entity.
+	// It exists in this package in order to avoid circular dependency with the "itemsource" package.
+	SourceInverseTable = "item_sources"
 	// SourceColumn is the table column denoting the source relation/edge.
-	SourceColumn = "source_id"
+	SourceColumn = "item_source_id"
 )
 
 // Columns holds all SQL columns for mediastream fields.
@@ -141,58 +75,25 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
-	FieldSourceID,
+	FieldItemSourceID,
 	FieldKind,
-	FieldVideoRange,
 	FieldVideoRangeType,
-	FieldAudioSpatialFormat,
 	FieldIndex,
 	FieldCodec,
-	FieldCodecTag,
 	FieldProfile,
 	FieldLanguage,
 	FieldTitle,
-	FieldComment,
-	FieldPath,
 	FieldPixelFormat,
-	FieldAspectRatio,
-	FieldChannelLayout,
-	FieldTimeBase,
-	FieldNalLengthSize,
-	FieldVideoDoviTitle,
-	FieldColorRange,
-	FieldColorSpace,
-	FieldColorTransfer,
-	FieldColorPrimaries,
-	FieldDvVersionMajor,
-	FieldDvVersionMinor,
-	FieldDvProfile,
-	FieldDvLevel,
-	FieldRpuPresentFlag,
-	FieldElPresentFlag,
-	FieldBlPresentFlag,
-	FieldDvBlSignalCompatibilityID,
 	FieldBitRate,
-	FieldBitDepth,
-	FieldRefFrames,
-	FieldPacketLength,
 	FieldChannels,
 	FieldSampleRate,
 	FieldWidth,
 	FieldHeight,
-	FieldRotation,
-	FieldScore,
 	FieldLevel,
-	FieldAverageFrameRate,
-	FieldRealFrameRate,
-	FieldReferenceFrameRate,
 	FieldIsDefault,
 	FieldIsForced,
-	FieldIsExternal,
 	FieldIsInterlaced,
 	FieldIsAnamorphic,
-	FieldIsAvc,
-	FieldIsHearingImpaired,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -218,16 +119,10 @@ var (
 	DefaultIsDefault bool
 	// DefaultIsForced holds the default value on creation for the "is_forced" field.
 	DefaultIsForced bool
-	// DefaultIsExternal holds the default value on creation for the "is_external" field.
-	DefaultIsExternal bool
 	// DefaultIsInterlaced holds the default value on creation for the "is_interlaced" field.
 	DefaultIsInterlaced bool
 	// DefaultIsAnamorphic holds the default value on creation for the "is_anamorphic" field.
 	DefaultIsAnamorphic bool
-	// DefaultIsAvc holds the default value on creation for the "is_avc" field.
-	DefaultIsAvc bool
-	// DefaultIsHearingImpaired holds the default value on creation for the "is_hearing_impaired" field.
-	DefaultIsHearingImpaired bool
 )
 
 // Kind defines the type for the "kind" enum field.
@@ -254,30 +149,6 @@ func KindValidator(k Kind) error {
 		return nil
 	default:
 		return fmt.Errorf("mediastream: invalid enum value for kind field: %q", k)
-	}
-}
-
-// VideoRange defines the type for the "video_range" enum field.
-type VideoRange string
-
-// VideoRange values.
-const (
-	VideoRangeUnknown VideoRange = "Unknown"
-	VideoRangeSDR     VideoRange = "SDR"
-	VideoRangeHDR     VideoRange = "HDR"
-)
-
-func (vr VideoRange) String() string {
-	return string(vr)
-}
-
-// VideoRangeValidator is a validator for the "video_range" field enum values. It is called by the builders before save.
-func VideoRangeValidator(vr VideoRange) error {
-	switch vr {
-	case VideoRangeUnknown, VideoRangeSDR, VideoRangeHDR:
-		return nil
-	default:
-		return fmt.Errorf("mediastream: invalid enum value for video_range field: %q", vr)
 	}
 }
 
@@ -311,30 +182,6 @@ func VideoRangeTypeValidator(vrt VideoRangeType) error {
 	}
 }
 
-// AudioSpatialFormat defines the type for the "audio_spatial_format" enum field.
-type AudioSpatialFormat string
-
-// AudioSpatialFormat values.
-const (
-	AudioSpatialFormatNone       AudioSpatialFormat = "None"
-	AudioSpatialFormatDolbyAtmos AudioSpatialFormat = "DolbyAtmos"
-	AudioSpatialFormatDTSX       AudioSpatialFormat = "DTSX"
-)
-
-func (asf AudioSpatialFormat) String() string {
-	return string(asf)
-}
-
-// AudioSpatialFormatValidator is a validator for the "audio_spatial_format" field enum values. It is called by the builders before save.
-func AudioSpatialFormatValidator(asf AudioSpatialFormat) error {
-	switch asf {
-	case AudioSpatialFormatNone, AudioSpatialFormatDolbyAtmos, AudioSpatialFormatDTSX:
-		return nil
-	default:
-		return fmt.Errorf("mediastream: invalid enum value for audio_spatial_format field: %q", asf)
-	}
-}
-
 // OrderOption defines the ordering options for the MediaStream queries.
 type OrderOption func(*sql.Selector)
 
@@ -353,9 +200,9 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
-// BySourceID orders the results by the source_id field.
-func BySourceID(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSourceID, opts...).ToFunc()
+// ByItemSourceID orders the results by the item_source_id field.
+func ByItemSourceID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldItemSourceID, opts...).ToFunc()
 }
 
 // ByKind orders the results by the kind field.
@@ -363,19 +210,9 @@ func ByKind(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldKind, opts...).ToFunc()
 }
 
-// ByVideoRange orders the results by the video_range field.
-func ByVideoRange(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldVideoRange, opts...).ToFunc()
-}
-
 // ByVideoRangeType orders the results by the video_range_type field.
 func ByVideoRangeType(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldVideoRangeType, opts...).ToFunc()
-}
-
-// ByAudioSpatialFormat orders the results by the audio_spatial_format field.
-func ByAudioSpatialFormat(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldAudioSpatialFormat, opts...).ToFunc()
 }
 
 // ByIndex orders the results by the index field.
@@ -386,11 +223,6 @@ func ByIndex(opts ...sql.OrderTermOption) OrderOption {
 // ByCodec orders the results by the codec field.
 func ByCodec(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCodec, opts...).ToFunc()
-}
-
-// ByCodecTag orders the results by the codec_tag field.
-func ByCodecTag(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldCodecTag, opts...).ToFunc()
 }
 
 // ByProfile orders the results by the profile field.
@@ -408,124 +240,14 @@ func ByTitle(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTitle, opts...).ToFunc()
 }
 
-// ByComment orders the results by the comment field.
-func ByComment(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldComment, opts...).ToFunc()
-}
-
-// ByPath orders the results by the path field.
-func ByPath(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldPath, opts...).ToFunc()
-}
-
 // ByPixelFormat orders the results by the pixel_format field.
 func ByPixelFormat(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPixelFormat, opts...).ToFunc()
 }
 
-// ByAspectRatio orders the results by the aspect_ratio field.
-func ByAspectRatio(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldAspectRatio, opts...).ToFunc()
-}
-
-// ByChannelLayout orders the results by the channel_layout field.
-func ByChannelLayout(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldChannelLayout, opts...).ToFunc()
-}
-
-// ByTimeBase orders the results by the time_base field.
-func ByTimeBase(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldTimeBase, opts...).ToFunc()
-}
-
-// ByNalLengthSize orders the results by the nal_length_size field.
-func ByNalLengthSize(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldNalLengthSize, opts...).ToFunc()
-}
-
-// ByVideoDoviTitle orders the results by the video_dovi_title field.
-func ByVideoDoviTitle(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldVideoDoviTitle, opts...).ToFunc()
-}
-
-// ByColorRange orders the results by the color_range field.
-func ByColorRange(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldColorRange, opts...).ToFunc()
-}
-
-// ByColorSpace orders the results by the color_space field.
-func ByColorSpace(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldColorSpace, opts...).ToFunc()
-}
-
-// ByColorTransfer orders the results by the color_transfer field.
-func ByColorTransfer(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldColorTransfer, opts...).ToFunc()
-}
-
-// ByColorPrimaries orders the results by the color_primaries field.
-func ByColorPrimaries(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldColorPrimaries, opts...).ToFunc()
-}
-
-// ByDvVersionMajor orders the results by the dv_version_major field.
-func ByDvVersionMajor(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDvVersionMajor, opts...).ToFunc()
-}
-
-// ByDvVersionMinor orders the results by the dv_version_minor field.
-func ByDvVersionMinor(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDvVersionMinor, opts...).ToFunc()
-}
-
-// ByDvProfile orders the results by the dv_profile field.
-func ByDvProfile(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDvProfile, opts...).ToFunc()
-}
-
-// ByDvLevel orders the results by the dv_level field.
-func ByDvLevel(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDvLevel, opts...).ToFunc()
-}
-
-// ByRpuPresentFlag orders the results by the rpu_present_flag field.
-func ByRpuPresentFlag(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldRpuPresentFlag, opts...).ToFunc()
-}
-
-// ByElPresentFlag orders the results by the el_present_flag field.
-func ByElPresentFlag(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldElPresentFlag, opts...).ToFunc()
-}
-
-// ByBlPresentFlag orders the results by the bl_present_flag field.
-func ByBlPresentFlag(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldBlPresentFlag, opts...).ToFunc()
-}
-
-// ByDvBlSignalCompatibilityID orders the results by the dv_bl_signal_compatibility_id field.
-func ByDvBlSignalCompatibilityID(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDvBlSignalCompatibilityID, opts...).ToFunc()
-}
-
 // ByBitRate orders the results by the bit_rate field.
 func ByBitRate(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBitRate, opts...).ToFunc()
-}
-
-// ByBitDepth orders the results by the bit_depth field.
-func ByBitDepth(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldBitDepth, opts...).ToFunc()
-}
-
-// ByRefFrames orders the results by the ref_frames field.
-func ByRefFrames(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldRefFrames, opts...).ToFunc()
-}
-
-// ByPacketLength orders the results by the packet_length field.
-func ByPacketLength(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldPacketLength, opts...).ToFunc()
 }
 
 // ByChannels orders the results by the channels field.
@@ -548,34 +270,9 @@ func ByHeight(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldHeight, opts...).ToFunc()
 }
 
-// ByRotation orders the results by the rotation field.
-func ByRotation(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldRotation, opts...).ToFunc()
-}
-
-// ByScore orders the results by the score field.
-func ByScore(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldScore, opts...).ToFunc()
-}
-
 // ByLevel orders the results by the level field.
 func ByLevel(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLevel, opts...).ToFunc()
-}
-
-// ByAverageFrameRate orders the results by the average_frame_rate field.
-func ByAverageFrameRate(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldAverageFrameRate, opts...).ToFunc()
-}
-
-// ByRealFrameRate orders the results by the real_frame_rate field.
-func ByRealFrameRate(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldRealFrameRate, opts...).ToFunc()
-}
-
-// ByReferenceFrameRate orders the results by the reference_frame_rate field.
-func ByReferenceFrameRate(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldReferenceFrameRate, opts...).ToFunc()
 }
 
 // ByIsDefault orders the results by the is_default field.
@@ -588,11 +285,6 @@ func ByIsForced(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsForced, opts...).ToFunc()
 }
 
-// ByIsExternal orders the results by the is_external field.
-func ByIsExternal(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldIsExternal, opts...).ToFunc()
-}
-
 // ByIsInterlaced orders the results by the is_interlaced field.
 func ByIsInterlaced(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsInterlaced, opts...).ToFunc()
@@ -601,16 +293,6 @@ func ByIsInterlaced(opts ...sql.OrderTermOption) OrderOption {
 // ByIsAnamorphic orders the results by the is_anamorphic field.
 func ByIsAnamorphic(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsAnamorphic, opts...).ToFunc()
-}
-
-// ByIsAvc orders the results by the is_avc field.
-func ByIsAvc(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldIsAvc, opts...).ToFunc()
-}
-
-// ByIsHearingImpaired orders the results by the is_hearing_impaired field.
-func ByIsHearingImpaired(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldIsHearingImpaired, opts...).ToFunc()
 }
 
 // BySourceField orders the results by source field.

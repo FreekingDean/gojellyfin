@@ -13,20 +13,16 @@ import (
 	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
-	"github.com/FreekingDean/gojellyfin/internal/store/chapter"
 	"github.com/FreekingDean/gojellyfin/internal/store/credit"
-	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 	"github.com/FreekingDean/gojellyfin/internal/store/genre"
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
-	"github.com/FreekingDean/gojellyfin/internal/store/library"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasegment"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	"github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
-	"github.com/FreekingDean/gojellyfin/internal/store/trickplay"
 	"github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
 	"github.com/google/uuid"
 )
@@ -64,26 +60,6 @@ func (_u *ItemUpdate) SetUpdatedAt(v time.Time) *ItemUpdate {
 	return _u
 }
 
-// SetLibraryID sets the "library_id" field.
-func (_u *ItemUpdate) SetLibraryID(v uuid.UUID) *ItemUpdate {
-	_u.mutation.SetLibraryID(v)
-	return _u
-}
-
-// SetNillableLibraryID sets the "library_id" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableLibraryID(v *uuid.UUID) *ItemUpdate {
-	if v != nil {
-		_u.SetLibraryID(*v)
-	}
-	return _u
-}
-
-// ClearLibraryID clears the value of the "library_id" field.
-func (_u *ItemUpdate) ClearLibraryID() *ItemUpdate {
-	_u.mutation.ClearLibraryID()
-	return _u
-}
-
 // SetParentID sets the "parent_id" field.
 func (_u *ItemUpdate) SetParentID(v uuid.UUID) *ItemUpdate {
 	_u.mutation.SetParentID(v)
@@ -115,114 +91,6 @@ func (_u *ItemUpdate) SetNillableKind(v *item.Kind) *ItemUpdate {
 	if v != nil {
 		_u.SetKind(*v)
 	}
-	return _u
-}
-
-// SetMediaType sets the "media_type" field.
-func (_u *ItemUpdate) SetMediaType(v item.MediaType) *ItemUpdate {
-	_u.mutation.SetMediaType(v)
-	return _u
-}
-
-// SetNillableMediaType sets the "media_type" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableMediaType(v *item.MediaType) *ItemUpdate {
-	if v != nil {
-		_u.SetMediaType(*v)
-	}
-	return _u
-}
-
-// SetLocationType sets the "location_type" field.
-func (_u *ItemUpdate) SetLocationType(v item.LocationType) *ItemUpdate {
-	_u.mutation.SetLocationType(v)
-	return _u
-}
-
-// SetNillableLocationType sets the "location_type" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableLocationType(v *item.LocationType) *ItemUpdate {
-	if v != nil {
-		_u.SetLocationType(*v)
-	}
-	return _u
-}
-
-// SetExtraType sets the "extra_type" field.
-func (_u *ItemUpdate) SetExtraType(v item.ExtraType) *ItemUpdate {
-	_u.mutation.SetExtraType(v)
-	return _u
-}
-
-// SetNillableExtraType sets the "extra_type" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableExtraType(v *item.ExtraType) *ItemUpdate {
-	if v != nil {
-		_u.SetExtraType(*v)
-	}
-	return _u
-}
-
-// ClearExtraType clears the value of the "extra_type" field.
-func (_u *ItemUpdate) ClearExtraType() *ItemUpdate {
-	_u.mutation.ClearExtraType()
-	return _u
-}
-
-// SetVideoType sets the "video_type" field.
-func (_u *ItemUpdate) SetVideoType(v item.VideoType) *ItemUpdate {
-	_u.mutation.SetVideoType(v)
-	return _u
-}
-
-// SetNillableVideoType sets the "video_type" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableVideoType(v *item.VideoType) *ItemUpdate {
-	if v != nil {
-		_u.SetVideoType(*v)
-	}
-	return _u
-}
-
-// ClearVideoType clears the value of the "video_type" field.
-func (_u *ItemUpdate) ClearVideoType() *ItemUpdate {
-	_u.mutation.ClearVideoType()
-	return _u
-}
-
-// SetIsoType sets the "iso_type" field.
-func (_u *ItemUpdate) SetIsoType(v item.IsoType) *ItemUpdate {
-	_u.mutation.SetIsoType(v)
-	return _u
-}
-
-// SetNillableIsoType sets the "iso_type" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableIsoType(v *item.IsoType) *ItemUpdate {
-	if v != nil {
-		_u.SetIsoType(*v)
-	}
-	return _u
-}
-
-// ClearIsoType clears the value of the "iso_type" field.
-func (_u *ItemUpdate) ClearIsoType() *ItemUpdate {
-	_u.mutation.ClearIsoType()
-	return _u
-}
-
-// SetVideo3dFormat sets the "video_3d_format" field.
-func (_u *ItemUpdate) SetVideo3dFormat(v item.Video3dFormat) *ItemUpdate {
-	_u.mutation.SetVideo3dFormat(v)
-	return _u
-}
-
-// SetNillableVideo3dFormat sets the "video_3d_format" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableVideo3dFormat(v *item.Video3dFormat) *ItemUpdate {
-	if v != nil {
-		_u.SetVideo3dFormat(*v)
-	}
-	return _u
-}
-
-// ClearVideo3dFormat clears the value of the "video_3d_format" field.
-func (_u *ItemUpdate) ClearVideo3dFormat() *ItemUpdate {
-	_u.mutation.ClearVideo3dFormat()
 	return _u
 }
 
@@ -260,26 +128,6 @@ func (_u *ItemUpdate) SetNillableName(v *string) *ItemUpdate {
 	return _u
 }
 
-// SetOriginalTitle sets the "original_title" field.
-func (_u *ItemUpdate) SetOriginalTitle(v string) *ItemUpdate {
-	_u.mutation.SetOriginalTitle(v)
-	return _u
-}
-
-// SetNillableOriginalTitle sets the "original_title" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableOriginalTitle(v *string) *ItemUpdate {
-	if v != nil {
-		_u.SetOriginalTitle(*v)
-	}
-	return _u
-}
-
-// ClearOriginalTitle clears the value of the "original_title" field.
-func (_u *ItemUpdate) ClearOriginalTitle() *ItemUpdate {
-	_u.mutation.ClearOriginalTitle()
-	return _u
-}
-
 // SetSortName sets the "sort_name" field.
 func (_u *ItemUpdate) SetSortName(v string) *ItemUpdate {
 	_u.mutation.SetSortName(v)
@@ -297,20 +145,6 @@ func (_u *ItemUpdate) SetNillableSortName(v *string) *ItemUpdate {
 // ClearSortName clears the value of the "sort_name" field.
 func (_u *ItemUpdate) ClearSortName() *ItemUpdate {
 	_u.mutation.ClearSortName()
-	return _u
-}
-
-// SetForcedSortName sets the "forced_sort_name" field.
-func (_u *ItemUpdate) SetForcedSortName(v bool) *ItemUpdate {
-	_u.mutation.SetForcedSortName(v)
-	return _u
-}
-
-// SetNillableForcedSortName sets the "forced_sort_name" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableForcedSortName(v *bool) *ItemUpdate {
-	if v != nil {
-		_u.SetForcedSortName(*v)
-	}
 	return _u
 }
 
@@ -334,26 +168,6 @@ func (_u *ItemUpdate) ClearDeletedAt() *ItemUpdate {
 	return _u
 }
 
-// SetContainer sets the "container" field.
-func (_u *ItemUpdate) SetContainer(v string) *ItemUpdate {
-	_u.mutation.SetContainer(v)
-	return _u
-}
-
-// SetNillableContainer sets the "container" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableContainer(v *string) *ItemUpdate {
-	if v != nil {
-		_u.SetContainer(*v)
-	}
-	return _u
-}
-
-// ClearContainer clears the value of the "container" field.
-func (_u *ItemUpdate) ClearContainer() *ItemUpdate {
-	_u.mutation.ClearContainer()
-	return _u
-}
-
 // SetOverview sets the "overview" field.
 func (_u *ItemUpdate) SetOverview(v string) *ItemUpdate {
 	_u.mutation.SetOverview(v)
@@ -374,34 +188,6 @@ func (_u *ItemUpdate) ClearOverview() *ItemUpdate {
 	return _u
 }
 
-// SetIsFolder sets the "is_folder" field.
-func (_u *ItemUpdate) SetIsFolder(v bool) *ItemUpdate {
-	_u.mutation.SetIsFolder(v)
-	return _u
-}
-
-// SetNillableIsFolder sets the "is_folder" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableIsFolder(v *bool) *ItemUpdate {
-	if v != nil {
-		_u.SetIsFolder(*v)
-	}
-	return _u
-}
-
-// SetIsPlaceholder sets the "is_placeholder" field.
-func (_u *ItemUpdate) SetIsPlaceholder(v bool) *ItemUpdate {
-	_u.mutation.SetIsPlaceholder(v)
-	return _u
-}
-
-// SetNillableIsPlaceholder sets the "is_placeholder" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableIsPlaceholder(v *bool) *ItemUpdate {
-	if v != nil {
-		_u.SetIsPlaceholder(*v)
-	}
-	return _u
-}
-
 // SetLockData sets the "lock_data" field.
 func (_u *ItemUpdate) SetLockData(v bool) *ItemUpdate {
 	_u.mutation.SetLockData(v)
@@ -412,48 +198,6 @@ func (_u *ItemUpdate) SetLockData(v bool) *ItemUpdate {
 func (_u *ItemUpdate) SetNillableLockData(v *bool) *ItemUpdate {
 	if v != nil {
 		_u.SetLockData(*v)
-	}
-	return _u
-}
-
-// SetHasLyrics sets the "has_lyrics" field.
-func (_u *ItemUpdate) SetHasLyrics(v bool) *ItemUpdate {
-	_u.mutation.SetHasLyrics(v)
-	return _u
-}
-
-// SetNillableHasLyrics sets the "has_lyrics" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableHasLyrics(v *bool) *ItemUpdate {
-	if v != nil {
-		_u.SetHasLyrics(*v)
-	}
-	return _u
-}
-
-// SetHasSubtitles sets the "has_subtitles" field.
-func (_u *ItemUpdate) SetHasSubtitles(v bool) *ItemUpdate {
-	_u.mutation.SetHasSubtitles(v)
-	return _u
-}
-
-// SetNillableHasSubtitles sets the "has_subtitles" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableHasSubtitles(v *bool) *ItemUpdate {
-	if v != nil {
-		_u.SetHasSubtitles(*v)
-	}
-	return _u
-}
-
-// SetEnableMediaSourceDisplay sets the "enable_media_source_display" field.
-func (_u *ItemUpdate) SetEnableMediaSourceDisplay(v bool) *ItemUpdate {
-	_u.mutation.SetEnableMediaSourceDisplay(v)
-	return _u
-}
-
-// SetNillableEnableMediaSourceDisplay sets the "enable_media_source_display" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableEnableMediaSourceDisplay(v *bool) *ItemUpdate {
-	if v != nil {
-		_u.SetEnableMediaSourceDisplay(*v)
 	}
 	return _u
 }
@@ -498,26 +242,6 @@ func (_u *ItemUpdate) ClearEndDate() *ItemUpdate {
 	return _u
 }
 
-// SetLastMediaAddedAt sets the "last_media_added_at" field.
-func (_u *ItemUpdate) SetLastMediaAddedAt(v time.Time) *ItemUpdate {
-	_u.mutation.SetLastMediaAddedAt(v)
-	return _u
-}
-
-// SetNillableLastMediaAddedAt sets the "last_media_added_at" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableLastMediaAddedAt(v *time.Time) *ItemUpdate {
-	if v != nil {
-		_u.SetLastMediaAddedAt(*v)
-	}
-	return _u
-}
-
-// ClearLastMediaAddedAt clears the value of the "last_media_added_at" field.
-func (_u *ItemUpdate) ClearLastMediaAddedAt() *ItemUpdate {
-	_u.mutation.ClearLastMediaAddedAt()
-	return _u
-}
-
 // SetDateModified sets the "date_modified" field.
 func (_u *ItemUpdate) SetDateModified(v time.Time) *ItemUpdate {
 	_u.mutation.SetDateModified(v)
@@ -535,26 +259,6 @@ func (_u *ItemUpdate) SetNillableDateModified(v *time.Time) *ItemUpdate {
 // ClearDateModified clears the value of the "date_modified" field.
 func (_u *ItemUpdate) ClearDateModified() *ItemUpdate {
 	_u.mutation.ClearDateModified()
-	return _u
-}
-
-// SetProbedAt sets the "probed_at" field.
-func (_u *ItemUpdate) SetProbedAt(v time.Time) *ItemUpdate {
-	_u.mutation.SetProbedAt(v)
-	return _u
-}
-
-// SetNillableProbedAt sets the "probed_at" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableProbedAt(v *time.Time) *ItemUpdate {
-	if v != nil {
-		_u.SetProbedAt(*v)
-	}
-	return _u
-}
-
-// ClearProbedAt clears the value of the "probed_at" field.
-func (_u *ItemUpdate) ClearProbedAt() *ItemUpdate {
-	_u.mutation.ClearProbedAt()
 	return _u
 }
 
@@ -602,53 +306,6 @@ func (_u *ItemUpdate) SetNillableOfficialRating(v *string) *ItemUpdate {
 // ClearOfficialRating clears the value of the "official_rating" field.
 func (_u *ItemUpdate) ClearOfficialRating() *ItemUpdate {
 	_u.mutation.ClearOfficialRating()
-	return _u
-}
-
-// SetCustomRating sets the "custom_rating" field.
-func (_u *ItemUpdate) SetCustomRating(v string) *ItemUpdate {
-	_u.mutation.SetCustomRating(v)
-	return _u
-}
-
-// SetNillableCustomRating sets the "custom_rating" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableCustomRating(v *string) *ItemUpdate {
-	if v != nil {
-		_u.SetCustomRating(*v)
-	}
-	return _u
-}
-
-// ClearCustomRating clears the value of the "custom_rating" field.
-func (_u *ItemUpdate) ClearCustomRating() *ItemUpdate {
-	_u.mutation.ClearCustomRating()
-	return _u
-}
-
-// SetCriticRating sets the "critic_rating" field.
-func (_u *ItemUpdate) SetCriticRating(v float64) *ItemUpdate {
-	_u.mutation.ResetCriticRating()
-	_u.mutation.SetCriticRating(v)
-	return _u
-}
-
-// SetNillableCriticRating sets the "critic_rating" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableCriticRating(v *float64) *ItemUpdate {
-	if v != nil {
-		_u.SetCriticRating(*v)
-	}
-	return _u
-}
-
-// AddCriticRating adds value to the "critic_rating" field.
-func (_u *ItemUpdate) AddCriticRating(v float64) *ItemUpdate {
-	_u.mutation.AddCriticRating(v)
-	return _u
-}
-
-// ClearCriticRating clears the value of the "critic_rating" field.
-func (_u *ItemUpdate) ClearCriticRating() *ItemUpdate {
-	_u.mutation.ClearCriticRating()
 	return _u
 }
 
@@ -733,33 +390,6 @@ func (_u *ItemUpdate) ClearIndexNumber() *ItemUpdate {
 	return _u
 }
 
-// SetIndexNumberEnd sets the "index_number_end" field.
-func (_u *ItemUpdate) SetIndexNumberEnd(v int32) *ItemUpdate {
-	_u.mutation.ResetIndexNumberEnd()
-	_u.mutation.SetIndexNumberEnd(v)
-	return _u
-}
-
-// SetNillableIndexNumberEnd sets the "index_number_end" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableIndexNumberEnd(v *int32) *ItemUpdate {
-	if v != nil {
-		_u.SetIndexNumberEnd(*v)
-	}
-	return _u
-}
-
-// AddIndexNumberEnd adds value to the "index_number_end" field.
-func (_u *ItemUpdate) AddIndexNumberEnd(v int32) *ItemUpdate {
-	_u.mutation.AddIndexNumberEnd(v)
-	return _u
-}
-
-// ClearIndexNumberEnd clears the value of the "index_number_end" field.
-func (_u *ItemUpdate) ClearIndexNumberEnd() *ItemUpdate {
-	_u.mutation.ClearIndexNumberEnd()
-	return _u
-}
-
 // SetParentIndexNumber sets the "parent_index_number" field.
 func (_u *ItemUpdate) SetParentIndexNumber(v int32) *ItemUpdate {
 	_u.mutation.ResetParentIndexNumber()
@@ -787,87 +417,6 @@ func (_u *ItemUpdate) ClearParentIndexNumber() *ItemUpdate {
 	return _u
 }
 
-// SetAirsBeforeSeasonNumber sets the "airs_before_season_number" field.
-func (_u *ItemUpdate) SetAirsBeforeSeasonNumber(v int32) *ItemUpdate {
-	_u.mutation.ResetAirsBeforeSeasonNumber()
-	_u.mutation.SetAirsBeforeSeasonNumber(v)
-	return _u
-}
-
-// SetNillableAirsBeforeSeasonNumber sets the "airs_before_season_number" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableAirsBeforeSeasonNumber(v *int32) *ItemUpdate {
-	if v != nil {
-		_u.SetAirsBeforeSeasonNumber(*v)
-	}
-	return _u
-}
-
-// AddAirsBeforeSeasonNumber adds value to the "airs_before_season_number" field.
-func (_u *ItemUpdate) AddAirsBeforeSeasonNumber(v int32) *ItemUpdate {
-	_u.mutation.AddAirsBeforeSeasonNumber(v)
-	return _u
-}
-
-// ClearAirsBeforeSeasonNumber clears the value of the "airs_before_season_number" field.
-func (_u *ItemUpdate) ClearAirsBeforeSeasonNumber() *ItemUpdate {
-	_u.mutation.ClearAirsBeforeSeasonNumber()
-	return _u
-}
-
-// SetAirsAfterSeasonNumber sets the "airs_after_season_number" field.
-func (_u *ItemUpdate) SetAirsAfterSeasonNumber(v int32) *ItemUpdate {
-	_u.mutation.ResetAirsAfterSeasonNumber()
-	_u.mutation.SetAirsAfterSeasonNumber(v)
-	return _u
-}
-
-// SetNillableAirsAfterSeasonNumber sets the "airs_after_season_number" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableAirsAfterSeasonNumber(v *int32) *ItemUpdate {
-	if v != nil {
-		_u.SetAirsAfterSeasonNumber(*v)
-	}
-	return _u
-}
-
-// AddAirsAfterSeasonNumber adds value to the "airs_after_season_number" field.
-func (_u *ItemUpdate) AddAirsAfterSeasonNumber(v int32) *ItemUpdate {
-	_u.mutation.AddAirsAfterSeasonNumber(v)
-	return _u
-}
-
-// ClearAirsAfterSeasonNumber clears the value of the "airs_after_season_number" field.
-func (_u *ItemUpdate) ClearAirsAfterSeasonNumber() *ItemUpdate {
-	_u.mutation.ClearAirsAfterSeasonNumber()
-	return _u
-}
-
-// SetAirsBeforeEpisodeNumber sets the "airs_before_episode_number" field.
-func (_u *ItemUpdate) SetAirsBeforeEpisodeNumber(v int32) *ItemUpdate {
-	_u.mutation.ResetAirsBeforeEpisodeNumber()
-	_u.mutation.SetAirsBeforeEpisodeNumber(v)
-	return _u
-}
-
-// SetNillableAirsBeforeEpisodeNumber sets the "airs_before_episode_number" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableAirsBeforeEpisodeNumber(v *int32) *ItemUpdate {
-	if v != nil {
-		_u.SetAirsBeforeEpisodeNumber(*v)
-	}
-	return _u
-}
-
-// AddAirsBeforeEpisodeNumber adds value to the "airs_before_episode_number" field.
-func (_u *ItemUpdate) AddAirsBeforeEpisodeNumber(v int32) *ItemUpdate {
-	_u.mutation.AddAirsBeforeEpisodeNumber(v)
-	return _u
-}
-
-// ClearAirsBeforeEpisodeNumber clears the value of the "airs_before_episode_number" field.
-func (_u *ItemUpdate) ClearAirsBeforeEpisodeNumber() *ItemUpdate {
-	_u.mutation.ClearAirsBeforeEpisodeNumber()
-	return _u
-}
-
 // SetStatus sets the "status" field.
 func (_u *ItemUpdate) SetStatus(v string) *ItemUpdate {
 	_u.mutation.SetStatus(v)
@@ -885,205 +434,6 @@ func (_u *ItemUpdate) SetNillableStatus(v *string) *ItemUpdate {
 // ClearStatus clears the value of the "status" field.
 func (_u *ItemUpdate) ClearStatus() *ItemUpdate {
 	_u.mutation.ClearStatus()
-	return _u
-}
-
-// SetAirTime sets the "air_time" field.
-func (_u *ItemUpdate) SetAirTime(v string) *ItemUpdate {
-	_u.mutation.SetAirTime(v)
-	return _u
-}
-
-// SetNillableAirTime sets the "air_time" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableAirTime(v *string) *ItemUpdate {
-	if v != nil {
-		_u.SetAirTime(*v)
-	}
-	return _u
-}
-
-// ClearAirTime clears the value of the "air_time" field.
-func (_u *ItemUpdate) ClearAirTime() *ItemUpdate {
-	_u.mutation.ClearAirTime()
-	return _u
-}
-
-// SetDisplayOrder sets the "display_order" field.
-func (_u *ItemUpdate) SetDisplayOrder(v string) *ItemUpdate {
-	_u.mutation.SetDisplayOrder(v)
-	return _u
-}
-
-// SetNillableDisplayOrder sets the "display_order" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableDisplayOrder(v *string) *ItemUpdate {
-	if v != nil {
-		_u.SetDisplayOrder(*v)
-	}
-	return _u
-}
-
-// ClearDisplayOrder clears the value of the "display_order" field.
-func (_u *ItemUpdate) ClearDisplayOrder() *ItemUpdate {
-	_u.mutation.ClearDisplayOrder()
-	return _u
-}
-
-// SetAirDays sets the "air_days" field.
-func (_u *ItemUpdate) SetAirDays(v []string) *ItemUpdate {
-	_u.mutation.SetAirDays(v)
-	return _u
-}
-
-// AppendAirDays appends value to the "air_days" field.
-func (_u *ItemUpdate) AppendAirDays(v []string) *ItemUpdate {
-	_u.mutation.AppendAirDays(v)
-	return _u
-}
-
-// ClearAirDays clears the value of the "air_days" field.
-func (_u *ItemUpdate) ClearAirDays() *ItemUpdate {
-	_u.mutation.ClearAirDays()
-	return _u
-}
-
-// SetAspectRatio sets the "aspect_ratio" field.
-func (_u *ItemUpdate) SetAspectRatio(v string) *ItemUpdate {
-	_u.mutation.SetAspectRatio(v)
-	return _u
-}
-
-// SetNillableAspectRatio sets the "aspect_ratio" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableAspectRatio(v *string) *ItemUpdate {
-	if v != nil {
-		_u.SetAspectRatio(*v)
-	}
-	return _u
-}
-
-// ClearAspectRatio clears the value of the "aspect_ratio" field.
-func (_u *ItemUpdate) ClearAspectRatio() *ItemUpdate {
-	_u.mutation.ClearAspectRatio()
-	return _u
-}
-
-// SetWidth sets the "width" field.
-func (_u *ItemUpdate) SetWidth(v int32) *ItemUpdate {
-	_u.mutation.ResetWidth()
-	_u.mutation.SetWidth(v)
-	return _u
-}
-
-// SetNillableWidth sets the "width" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableWidth(v *int32) *ItemUpdate {
-	if v != nil {
-		_u.SetWidth(*v)
-	}
-	return _u
-}
-
-// AddWidth adds value to the "width" field.
-func (_u *ItemUpdate) AddWidth(v int32) *ItemUpdate {
-	_u.mutation.AddWidth(v)
-	return _u
-}
-
-// ClearWidth clears the value of the "width" field.
-func (_u *ItemUpdate) ClearWidth() *ItemUpdate {
-	_u.mutation.ClearWidth()
-	return _u
-}
-
-// SetHeight sets the "height" field.
-func (_u *ItemUpdate) SetHeight(v int32) *ItemUpdate {
-	_u.mutation.ResetHeight()
-	_u.mutation.SetHeight(v)
-	return _u
-}
-
-// SetNillableHeight sets the "height" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableHeight(v *int32) *ItemUpdate {
-	if v != nil {
-		_u.SetHeight(*v)
-	}
-	return _u
-}
-
-// AddHeight adds value to the "height" field.
-func (_u *ItemUpdate) AddHeight(v int32) *ItemUpdate {
-	_u.mutation.AddHeight(v)
-	return _u
-}
-
-// ClearHeight clears the value of the "height" field.
-func (_u *ItemUpdate) ClearHeight() *ItemUpdate {
-	_u.mutation.ClearHeight()
-	return _u
-}
-
-// SetNormalizationGain sets the "normalization_gain" field.
-func (_u *ItemUpdate) SetNormalizationGain(v float64) *ItemUpdate {
-	_u.mutation.ResetNormalizationGain()
-	_u.mutation.SetNormalizationGain(v)
-	return _u
-}
-
-// SetNillableNormalizationGain sets the "normalization_gain" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableNormalizationGain(v *float64) *ItemUpdate {
-	if v != nil {
-		_u.SetNormalizationGain(*v)
-	}
-	return _u
-}
-
-// AddNormalizationGain adds value to the "normalization_gain" field.
-func (_u *ItemUpdate) AddNormalizationGain(v float64) *ItemUpdate {
-	_u.mutation.AddNormalizationGain(v)
-	return _u
-}
-
-// ClearNormalizationGain clears the value of the "normalization_gain" field.
-func (_u *ItemUpdate) ClearNormalizationGain() *ItemUpdate {
-	_u.mutation.ClearNormalizationGain()
-	return _u
-}
-
-// SetPreferredMetadataLanguage sets the "preferred_metadata_language" field.
-func (_u *ItemUpdate) SetPreferredMetadataLanguage(v string) *ItemUpdate {
-	_u.mutation.SetPreferredMetadataLanguage(v)
-	return _u
-}
-
-// SetNillablePreferredMetadataLanguage sets the "preferred_metadata_language" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillablePreferredMetadataLanguage(v *string) *ItemUpdate {
-	if v != nil {
-		_u.SetPreferredMetadataLanguage(*v)
-	}
-	return _u
-}
-
-// ClearPreferredMetadataLanguage clears the value of the "preferred_metadata_language" field.
-func (_u *ItemUpdate) ClearPreferredMetadataLanguage() *ItemUpdate {
-	_u.mutation.ClearPreferredMetadataLanguage()
-	return _u
-}
-
-// SetPreferredMetadataCountryCode sets the "preferred_metadata_country_code" field.
-func (_u *ItemUpdate) SetPreferredMetadataCountryCode(v string) *ItemUpdate {
-	_u.mutation.SetPreferredMetadataCountryCode(v)
-	return _u
-}
-
-// SetNillablePreferredMetadataCountryCode sets the "preferred_metadata_country_code" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillablePreferredMetadataCountryCode(v *string) *ItemUpdate {
-	if v != nil {
-		_u.SetPreferredMetadataCountryCode(*v)
-	}
-	return _u
-}
-
-// ClearPreferredMetadataCountryCode clears the value of the "preferred_metadata_country_code" field.
-func (_u *ItemUpdate) ClearPreferredMetadataCountryCode() *ItemUpdate {
-	_u.mutation.ClearPreferredMetadataCountryCode()
 	return _u
 }
 
@@ -1135,24 +485,6 @@ func (_u *ItemUpdate) ClearTaglines() *ItemUpdate {
 	return _u
 }
 
-// SetProductionLocations sets the "production_locations" field.
-func (_u *ItemUpdate) SetProductionLocations(v []string) *ItemUpdate {
-	_u.mutation.SetProductionLocations(v)
-	return _u
-}
-
-// AppendProductionLocations appends value to the "production_locations" field.
-func (_u *ItemUpdate) AppendProductionLocations(v []string) *ItemUpdate {
-	_u.mutation.AppendProductionLocations(v)
-	return _u
-}
-
-// ClearProductionLocations clears the value of the "production_locations" field.
-func (_u *ItemUpdate) ClearProductionLocations() *ItemUpdate {
-	_u.mutation.ClearProductionLocations()
-	return _u
-}
-
 // SetLockedFields sets the "locked_fields" field.
 func (_u *ItemUpdate) SetLockedFields(v []string) *ItemUpdate {
 	_u.mutation.SetLockedFields(v)
@@ -1168,24 +500,6 @@ func (_u *ItemUpdate) AppendLockedFields(v []string) *ItemUpdate {
 // ClearLockedFields clears the value of the "locked_fields" field.
 func (_u *ItemUpdate) ClearLockedFields() *ItemUpdate {
 	_u.mutation.ClearLockedFields()
-	return _u
-}
-
-// SetExternalUrls sets the "external_urls" field.
-func (_u *ItemUpdate) SetExternalUrls(v []entities.ExternalUrl) *ItemUpdate {
-	_u.mutation.SetExternalUrls(v)
-	return _u
-}
-
-// AppendExternalUrls appends value to the "external_urls" field.
-func (_u *ItemUpdate) AppendExternalUrls(v []entities.ExternalUrl) *ItemUpdate {
-	_u.mutation.AppendExternalUrls(v)
-	return _u
-}
-
-// ClearExternalUrls clears the value of the "external_urls" field.
-func (_u *ItemUpdate) ClearExternalUrls() *ItemUpdate {
-	_u.mutation.ClearExternalUrls()
 	return _u
 }
 
@@ -1209,24 +523,34 @@ func (_u *ItemUpdate) AddChildren(v ...*Item) *ItemUpdate {
 	return _u.AddChildIDs(ids...)
 }
 
-// SetLibrary sets the "library" edge to the Library entity.
-func (_u *ItemUpdate) SetLibrary(v *Library) *ItemUpdate {
-	return _u.SetLibraryID(v.ID)
-}
-
-// AddMediaSourceIDs adds the "media_sources" edge to the MediaSource entity by IDs.
-func (_u *ItemUpdate) AddMediaSourceIDs(ids ...uuid.UUID) *ItemUpdate {
-	_u.mutation.AddMediaSourceIDs(ids...)
+// AddLibraryIDs adds the "libraries" edge to the LibraryItem entity by IDs.
+func (_u *ItemUpdate) AddLibraryIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.AddLibraryIDs(ids...)
 	return _u
 }
 
-// AddMediaSources adds the "media_sources" edges to the MediaSource entity.
-func (_u *ItemUpdate) AddMediaSources(v ...*MediaSource) *ItemUpdate {
+// AddLibraries adds the "libraries" edges to the LibraryItem entity.
+func (_u *ItemUpdate) AddLibraries(v ...*LibraryItem) *ItemUpdate {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.AddMediaSourceIDs(ids...)
+	return _u.AddLibraryIDs(ids...)
+}
+
+// AddItemSourceIDs adds the "item_sources" edge to the ItemSource entity by IDs.
+func (_u *ItemUpdate) AddItemSourceIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.AddItemSourceIDs(ids...)
+	return _u
+}
+
+// AddItemSources adds the "item_sources" edges to the ItemSource entity.
+func (_u *ItemUpdate) AddItemSources(v ...*ItemSource) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddItemSourceIDs(ids...)
 }
 
 // AddCreditIDs adds the "credits" edge to the Credit entity by IDs.
@@ -1242,21 +566,6 @@ func (_u *ItemUpdate) AddCredits(v ...*Credit) *ItemUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddCreditIDs(ids...)
-}
-
-// AddChapterIDs adds the "chapters" edge to the Chapter entity by IDs.
-func (_u *ItemUpdate) AddChapterIDs(ids ...uuid.UUID) *ItemUpdate {
-	_u.mutation.AddChapterIDs(ids...)
-	return _u
-}
-
-// AddChapters adds the "chapters" edges to the Chapter entity.
-func (_u *ItemUpdate) AddChapters(v ...*Chapter) *ItemUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddChapterIDs(ids...)
 }
 
 // AddImageIDs adds the "images" edge to the Image entity by IDs.
@@ -1302,36 +611,6 @@ func (_u *ItemUpdate) AddActivityLogEntries(v ...*ActivityLogEntry) *ItemUpdate 
 		ids[i] = v[i].ID
 	}
 	return _u.AddActivityLogEntryIDs(ids...)
-}
-
-// AddTrickplayIDs adds the "trickplays" edge to the Trickplay entity by IDs.
-func (_u *ItemUpdate) AddTrickplayIDs(ids ...uuid.UUID) *ItemUpdate {
-	_u.mutation.AddTrickplayIDs(ids...)
-	return _u
-}
-
-// AddTrickplays adds the "trickplays" edges to the Trickplay entity.
-func (_u *ItemUpdate) AddTrickplays(v ...*Trickplay) *ItemUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddTrickplayIDs(ids...)
-}
-
-// AddMediaSegmentIDs adds the "media_segments" edge to the MediaSegment entity by IDs.
-func (_u *ItemUpdate) AddMediaSegmentIDs(ids ...uuid.UUID) *ItemUpdate {
-	_u.mutation.AddMediaSegmentIDs(ids...)
-	return _u
-}
-
-// AddMediaSegments adds the "media_segments" edges to the MediaSegment entity.
-func (_u *ItemUpdate) AddMediaSegments(v ...*MediaSegment) *ItemUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddMediaSegmentIDs(ids...)
 }
 
 // SetPlaylistID sets the "playlist" edge to the Playlist entity by ID.
@@ -1430,31 +709,46 @@ func (_u *ItemUpdate) RemoveChildren(v ...*Item) *ItemUpdate {
 	return _u.RemoveChildIDs(ids...)
 }
 
-// ClearLibrary clears the "library" edge to the Library entity.
-func (_u *ItemUpdate) ClearLibrary() *ItemUpdate {
-	_u.mutation.ClearLibrary()
+// ClearLibraries clears all "libraries" edges to the LibraryItem entity.
+func (_u *ItemUpdate) ClearLibraries() *ItemUpdate {
+	_u.mutation.ClearLibraries()
 	return _u
 }
 
-// ClearMediaSources clears all "media_sources" edges to the MediaSource entity.
-func (_u *ItemUpdate) ClearMediaSources() *ItemUpdate {
-	_u.mutation.ClearMediaSources()
+// RemoveLibraryIDs removes the "libraries" edge to LibraryItem entities by IDs.
+func (_u *ItemUpdate) RemoveLibraryIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.RemoveLibraryIDs(ids...)
 	return _u
 }
 
-// RemoveMediaSourceIDs removes the "media_sources" edge to MediaSource entities by IDs.
-func (_u *ItemUpdate) RemoveMediaSourceIDs(ids ...uuid.UUID) *ItemUpdate {
-	_u.mutation.RemoveMediaSourceIDs(ids...)
-	return _u
-}
-
-// RemoveMediaSources removes "media_sources" edges to MediaSource entities.
-func (_u *ItemUpdate) RemoveMediaSources(v ...*MediaSource) *ItemUpdate {
+// RemoveLibraries removes "libraries" edges to LibraryItem entities.
+func (_u *ItemUpdate) RemoveLibraries(v ...*LibraryItem) *ItemUpdate {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.RemoveMediaSourceIDs(ids...)
+	return _u.RemoveLibraryIDs(ids...)
+}
+
+// ClearItemSources clears all "item_sources" edges to the ItemSource entity.
+func (_u *ItemUpdate) ClearItemSources() *ItemUpdate {
+	_u.mutation.ClearItemSources()
+	return _u
+}
+
+// RemoveItemSourceIDs removes the "item_sources" edge to ItemSource entities by IDs.
+func (_u *ItemUpdate) RemoveItemSourceIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.RemoveItemSourceIDs(ids...)
+	return _u
+}
+
+// RemoveItemSources removes "item_sources" edges to ItemSource entities.
+func (_u *ItemUpdate) RemoveItemSources(v ...*ItemSource) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveItemSourceIDs(ids...)
 }
 
 // ClearCredits clears all "credits" edges to the Credit entity.
@@ -1476,27 +770,6 @@ func (_u *ItemUpdate) RemoveCredits(v ...*Credit) *ItemUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveCreditIDs(ids...)
-}
-
-// ClearChapters clears all "chapters" edges to the Chapter entity.
-func (_u *ItemUpdate) ClearChapters() *ItemUpdate {
-	_u.mutation.ClearChapters()
-	return _u
-}
-
-// RemoveChapterIDs removes the "chapters" edge to Chapter entities by IDs.
-func (_u *ItemUpdate) RemoveChapterIDs(ids ...uuid.UUID) *ItemUpdate {
-	_u.mutation.RemoveChapterIDs(ids...)
-	return _u
-}
-
-// RemoveChapters removes "chapters" edges to Chapter entities.
-func (_u *ItemUpdate) RemoveChapters(v ...*Chapter) *ItemUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveChapterIDs(ids...)
 }
 
 // ClearImages clears all "images" edges to the Image entity.
@@ -1560,48 +833,6 @@ func (_u *ItemUpdate) RemoveActivityLogEntries(v ...*ActivityLogEntry) *ItemUpda
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveActivityLogEntryIDs(ids...)
-}
-
-// ClearTrickplays clears all "trickplays" edges to the Trickplay entity.
-func (_u *ItemUpdate) ClearTrickplays() *ItemUpdate {
-	_u.mutation.ClearTrickplays()
-	return _u
-}
-
-// RemoveTrickplayIDs removes the "trickplays" edge to Trickplay entities by IDs.
-func (_u *ItemUpdate) RemoveTrickplayIDs(ids ...uuid.UUID) *ItemUpdate {
-	_u.mutation.RemoveTrickplayIDs(ids...)
-	return _u
-}
-
-// RemoveTrickplays removes "trickplays" edges to Trickplay entities.
-func (_u *ItemUpdate) RemoveTrickplays(v ...*Trickplay) *ItemUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveTrickplayIDs(ids...)
-}
-
-// ClearMediaSegments clears all "media_segments" edges to the MediaSegment entity.
-func (_u *ItemUpdate) ClearMediaSegments() *ItemUpdate {
-	_u.mutation.ClearMediaSegments()
-	return _u
-}
-
-// RemoveMediaSegmentIDs removes the "media_segments" edge to MediaSegment entities by IDs.
-func (_u *ItemUpdate) RemoveMediaSegmentIDs(ids ...uuid.UUID) *ItemUpdate {
-	_u.mutation.RemoveMediaSegmentIDs(ids...)
-	return _u
-}
-
-// RemoveMediaSegments removes "media_segments" edges to MediaSegment entities.
-func (_u *ItemUpdate) RemoveMediaSegments(v ...*MediaSegment) *ItemUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveMediaSegmentIDs(ids...)
 }
 
 // ClearPlaylist clears the "playlist" edge to the Playlist entity.
@@ -1716,36 +947,6 @@ func (_u *ItemUpdate) check() error {
 			return &ValidationError{Name: "kind", err: fmt.Errorf(`store: validator failed for field "Item.kind": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.MediaType(); ok {
-		if err := item.MediaTypeValidator(v); err != nil {
-			return &ValidationError{Name: "media_type", err: fmt.Errorf(`store: validator failed for field "Item.media_type": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.LocationType(); ok {
-		if err := item.LocationTypeValidator(v); err != nil {
-			return &ValidationError{Name: "location_type", err: fmt.Errorf(`store: validator failed for field "Item.location_type": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.ExtraType(); ok {
-		if err := item.ExtraTypeValidator(v); err != nil {
-			return &ValidationError{Name: "extra_type", err: fmt.Errorf(`store: validator failed for field "Item.extra_type": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.VideoType(); ok {
-		if err := item.VideoTypeValidator(v); err != nil {
-			return &ValidationError{Name: "video_type", err: fmt.Errorf(`store: validator failed for field "Item.video_type": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.IsoType(); ok {
-		if err := item.IsoTypeValidator(v); err != nil {
-			return &ValidationError{Name: "iso_type", err: fmt.Errorf(`store: validator failed for field "Item.iso_type": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.Video3dFormat(); ok {
-		if err := item.Video3dFormatValidator(v); err != nil {
-			return &ValidationError{Name: "video_3d_format", err: fmt.Errorf(`store: validator failed for field "Item.video_3d_format": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -1770,36 +971,6 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.Kind(); ok {
 		_spec.SetField(item.FieldKind, field.TypeEnum, value)
 	}
-	if value, ok := _u.mutation.MediaType(); ok {
-		_spec.SetField(item.FieldMediaType, field.TypeEnum, value)
-	}
-	if value, ok := _u.mutation.LocationType(); ok {
-		_spec.SetField(item.FieldLocationType, field.TypeEnum, value)
-	}
-	if value, ok := _u.mutation.ExtraType(); ok {
-		_spec.SetField(item.FieldExtraType, field.TypeEnum, value)
-	}
-	if _u.mutation.ExtraTypeCleared() {
-		_spec.ClearField(item.FieldExtraType, field.TypeEnum)
-	}
-	if value, ok := _u.mutation.VideoType(); ok {
-		_spec.SetField(item.FieldVideoType, field.TypeEnum, value)
-	}
-	if _u.mutation.VideoTypeCleared() {
-		_spec.ClearField(item.FieldVideoType, field.TypeEnum)
-	}
-	if value, ok := _u.mutation.IsoType(); ok {
-		_spec.SetField(item.FieldIsoType, field.TypeEnum, value)
-	}
-	if _u.mutation.IsoTypeCleared() {
-		_spec.ClearField(item.FieldIsoType, field.TypeEnum)
-	}
-	if value, ok := _u.mutation.Video3dFormat(); ok {
-		_spec.SetField(item.FieldVideo3dFormat, field.TypeEnum, value)
-	}
-	if _u.mutation.Video3dFormatCleared() {
-		_spec.ClearField(item.FieldVideo3dFormat, field.TypeEnum)
-	}
 	if value, ok := _u.mutation.Key(); ok {
 		_spec.SetField(item.FieldKey, field.TypeString, value)
 	}
@@ -1809,20 +980,11 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(item.FieldName, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.OriginalTitle(); ok {
-		_spec.SetField(item.FieldOriginalTitle, field.TypeString, value)
-	}
-	if _u.mutation.OriginalTitleCleared() {
-		_spec.ClearField(item.FieldOriginalTitle, field.TypeString)
-	}
 	if value, ok := _u.mutation.SortName(); ok {
 		_spec.SetField(item.FieldSortName, field.TypeString, value)
 	}
 	if _u.mutation.SortNameCleared() {
 		_spec.ClearField(item.FieldSortName, field.TypeString)
-	}
-	if value, ok := _u.mutation.ForcedSortName(); ok {
-		_spec.SetField(item.FieldForcedSortName, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.DeletedAt(); ok {
 		_spec.SetField(item.FieldDeletedAt, field.TypeTime, value)
@@ -1830,35 +992,14 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.DeletedAtCleared() {
 		_spec.ClearField(item.FieldDeletedAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.Container(); ok {
-		_spec.SetField(item.FieldContainer, field.TypeString, value)
-	}
-	if _u.mutation.ContainerCleared() {
-		_spec.ClearField(item.FieldContainer, field.TypeString)
-	}
 	if value, ok := _u.mutation.Overview(); ok {
 		_spec.SetField(item.FieldOverview, field.TypeString, value)
 	}
 	if _u.mutation.OverviewCleared() {
 		_spec.ClearField(item.FieldOverview, field.TypeString)
 	}
-	if value, ok := _u.mutation.IsFolder(); ok {
-		_spec.SetField(item.FieldIsFolder, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.IsPlaceholder(); ok {
-		_spec.SetField(item.FieldIsPlaceholder, field.TypeBool, value)
-	}
 	if value, ok := _u.mutation.LockData(); ok {
 		_spec.SetField(item.FieldLockData, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.HasLyrics(); ok {
-		_spec.SetField(item.FieldHasLyrics, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.HasSubtitles(); ok {
-		_spec.SetField(item.FieldHasSubtitles, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.EnableMediaSourceDisplay(); ok {
-		_spec.SetField(item.FieldEnableMediaSourceDisplay, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.PremiereDate(); ok {
 		_spec.SetField(item.FieldPremiereDate, field.TypeTime, value)
@@ -1872,23 +1013,11 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.EndDateCleared() {
 		_spec.ClearField(item.FieldEndDate, field.TypeTime)
 	}
-	if value, ok := _u.mutation.LastMediaAddedAt(); ok {
-		_spec.SetField(item.FieldLastMediaAddedAt, field.TypeTime, value)
-	}
-	if _u.mutation.LastMediaAddedAtCleared() {
-		_spec.ClearField(item.FieldLastMediaAddedAt, field.TypeTime)
-	}
 	if value, ok := _u.mutation.DateModified(); ok {
 		_spec.SetField(item.FieldDateModified, field.TypeTime, value)
 	}
 	if _u.mutation.DateModifiedCleared() {
 		_spec.ClearField(item.FieldDateModified, field.TypeTime)
-	}
-	if value, ok := _u.mutation.ProbedAt(); ok {
-		_spec.SetField(item.FieldProbedAt, field.TypeTime, value)
-	}
-	if _u.mutation.ProbedAtCleared() {
-		_spec.ClearField(item.FieldProbedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.ProductionYear(); ok {
 		_spec.SetField(item.FieldProductionYear, field.TypeInt32, value)
@@ -1904,21 +1033,6 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.OfficialRatingCleared() {
 		_spec.ClearField(item.FieldOfficialRating, field.TypeString)
-	}
-	if value, ok := _u.mutation.CustomRating(); ok {
-		_spec.SetField(item.FieldCustomRating, field.TypeString, value)
-	}
-	if _u.mutation.CustomRatingCleared() {
-		_spec.ClearField(item.FieldCustomRating, field.TypeString)
-	}
-	if value, ok := _u.mutation.CriticRating(); ok {
-		_spec.SetField(item.FieldCriticRating, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.AddedCriticRating(); ok {
-		_spec.AddField(item.FieldCriticRating, field.TypeFloat64, value)
-	}
-	if _u.mutation.CriticRatingCleared() {
-		_spec.ClearField(item.FieldCriticRating, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.CommunityRating(); ok {
 		_spec.SetField(item.FieldCommunityRating, field.TypeFloat64, value)
@@ -1947,15 +1061,6 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.IndexNumberCleared() {
 		_spec.ClearField(item.FieldIndexNumber, field.TypeInt32)
 	}
-	if value, ok := _u.mutation.IndexNumberEnd(); ok {
-		_spec.SetField(item.FieldIndexNumberEnd, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedIndexNumberEnd(); ok {
-		_spec.AddField(item.FieldIndexNumberEnd, field.TypeInt32, value)
-	}
-	if _u.mutation.IndexNumberEndCleared() {
-		_spec.ClearField(item.FieldIndexNumberEnd, field.TypeInt32)
-	}
 	if value, ok := _u.mutation.ParentIndexNumber(); ok {
 		_spec.SetField(item.FieldParentIndexNumber, field.TypeInt32, value)
 	}
@@ -1965,106 +1070,11 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.ParentIndexNumberCleared() {
 		_spec.ClearField(item.FieldParentIndexNumber, field.TypeInt32)
 	}
-	if value, ok := _u.mutation.AirsBeforeSeasonNumber(); ok {
-		_spec.SetField(item.FieldAirsBeforeSeasonNumber, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedAirsBeforeSeasonNumber(); ok {
-		_spec.AddField(item.FieldAirsBeforeSeasonNumber, field.TypeInt32, value)
-	}
-	if _u.mutation.AirsBeforeSeasonNumberCleared() {
-		_spec.ClearField(item.FieldAirsBeforeSeasonNumber, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.AirsAfterSeasonNumber(); ok {
-		_spec.SetField(item.FieldAirsAfterSeasonNumber, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedAirsAfterSeasonNumber(); ok {
-		_spec.AddField(item.FieldAirsAfterSeasonNumber, field.TypeInt32, value)
-	}
-	if _u.mutation.AirsAfterSeasonNumberCleared() {
-		_spec.ClearField(item.FieldAirsAfterSeasonNumber, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.AirsBeforeEpisodeNumber(); ok {
-		_spec.SetField(item.FieldAirsBeforeEpisodeNumber, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedAirsBeforeEpisodeNumber(); ok {
-		_spec.AddField(item.FieldAirsBeforeEpisodeNumber, field.TypeInt32, value)
-	}
-	if _u.mutation.AirsBeforeEpisodeNumberCleared() {
-		_spec.ClearField(item.FieldAirsBeforeEpisodeNumber, field.TypeInt32)
-	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(item.FieldStatus, field.TypeString, value)
 	}
 	if _u.mutation.StatusCleared() {
 		_spec.ClearField(item.FieldStatus, field.TypeString)
-	}
-	if value, ok := _u.mutation.AirTime(); ok {
-		_spec.SetField(item.FieldAirTime, field.TypeString, value)
-	}
-	if _u.mutation.AirTimeCleared() {
-		_spec.ClearField(item.FieldAirTime, field.TypeString)
-	}
-	if value, ok := _u.mutation.DisplayOrder(); ok {
-		_spec.SetField(item.FieldDisplayOrder, field.TypeString, value)
-	}
-	if _u.mutation.DisplayOrderCleared() {
-		_spec.ClearField(item.FieldDisplayOrder, field.TypeString)
-	}
-	if value, ok := _u.mutation.AirDays(); ok {
-		_spec.SetField(item.FieldAirDays, field.TypeJSON, value)
-	}
-	if value, ok := _u.mutation.AppendedAirDays(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, item.FieldAirDays, value)
-		})
-	}
-	if _u.mutation.AirDaysCleared() {
-		_spec.ClearField(item.FieldAirDays, field.TypeJSON)
-	}
-	if value, ok := _u.mutation.AspectRatio(); ok {
-		_spec.SetField(item.FieldAspectRatio, field.TypeString, value)
-	}
-	if _u.mutation.AspectRatioCleared() {
-		_spec.ClearField(item.FieldAspectRatio, field.TypeString)
-	}
-	if value, ok := _u.mutation.Width(); ok {
-		_spec.SetField(item.FieldWidth, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedWidth(); ok {
-		_spec.AddField(item.FieldWidth, field.TypeInt32, value)
-	}
-	if _u.mutation.WidthCleared() {
-		_spec.ClearField(item.FieldWidth, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.Height(); ok {
-		_spec.SetField(item.FieldHeight, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedHeight(); ok {
-		_spec.AddField(item.FieldHeight, field.TypeInt32, value)
-	}
-	if _u.mutation.HeightCleared() {
-		_spec.ClearField(item.FieldHeight, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.NormalizationGain(); ok {
-		_spec.SetField(item.FieldNormalizationGain, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.AddedNormalizationGain(); ok {
-		_spec.AddField(item.FieldNormalizationGain, field.TypeFloat64, value)
-	}
-	if _u.mutation.NormalizationGainCleared() {
-		_spec.ClearField(item.FieldNormalizationGain, field.TypeFloat64)
-	}
-	if value, ok := _u.mutation.PreferredMetadataLanguage(); ok {
-		_spec.SetField(item.FieldPreferredMetadataLanguage, field.TypeString, value)
-	}
-	if _u.mutation.PreferredMetadataLanguageCleared() {
-		_spec.ClearField(item.FieldPreferredMetadataLanguage, field.TypeString)
-	}
-	if value, ok := _u.mutation.PreferredMetadataCountryCode(); ok {
-		_spec.SetField(item.FieldPreferredMetadataCountryCode, field.TypeString, value)
-	}
-	if _u.mutation.PreferredMetadataCountryCodeCleared() {
-		_spec.ClearField(item.FieldPreferredMetadataCountryCode, field.TypeString)
 	}
 	if value, ok := _u.mutation.ProviderIds(); ok {
 		_spec.SetField(item.FieldProviderIds, field.TypeJSON, value)
@@ -2094,17 +1104,6 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.TaglinesCleared() {
 		_spec.ClearField(item.FieldTaglines, field.TypeJSON)
 	}
-	if value, ok := _u.mutation.ProductionLocations(); ok {
-		_spec.SetField(item.FieldProductionLocations, field.TypeJSON, value)
-	}
-	if value, ok := _u.mutation.AppendedProductionLocations(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, item.FieldProductionLocations, value)
-		})
-	}
-	if _u.mutation.ProductionLocationsCleared() {
-		_spec.ClearField(item.FieldProductionLocations, field.TypeJSON)
-	}
 	if value, ok := _u.mutation.LockedFields(); ok {
 		_spec.SetField(item.FieldLockedFields, field.TypeJSON, value)
 	}
@@ -2115,17 +1114,6 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.LockedFieldsCleared() {
 		_spec.ClearField(item.FieldLockedFields, field.TypeJSON)
-	}
-	if value, ok := _u.mutation.ExternalUrls(); ok {
-		_spec.SetField(item.FieldExternalUrls, field.TypeJSON, value)
-	}
-	if value, ok := _u.mutation.AppendedExternalUrls(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, item.FieldExternalUrls, value)
-		})
-	}
-	if _u.mutation.ExternalUrlsCleared() {
-		_spec.ClearField(item.FieldExternalUrls, field.TypeJSON)
 	}
 	if _u.mutation.ParentCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -2201,28 +1189,44 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.LibraryCleared() {
+	if _u.mutation.LibrariesCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   item.LibraryTable,
-			Columns: []string{item.LibraryColumn},
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.LibrariesTable,
+			Columns: []string{item.LibrariesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(library.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.LibraryIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.RemovedLibrariesIDs(); len(nodes) > 0 && !_u.mutation.LibrariesCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   item.LibraryTable,
-			Columns: []string{item.LibraryColumn},
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.LibrariesTable,
+			Columns: []string{item.LibrariesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(library.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.LibrariesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.LibrariesTable,
+			Columns: []string{item.LibrariesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -2230,28 +1234,28 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.MediaSourcesCleared() {
+	if _u.mutation.ItemSourcesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   item.MediaSourcesTable,
-			Columns: []string{item.MediaSourcesColumn},
+			Table:   item.ItemSourcesTable,
+			Columns: []string{item.ItemSourcesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasource.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RemovedMediaSourcesIDs(); len(nodes) > 0 && !_u.mutation.MediaSourcesCleared() {
+	if nodes := _u.mutation.RemovedItemSourcesIDs(); len(nodes) > 0 && !_u.mutation.ItemSourcesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   item.MediaSourcesTable,
-			Columns: []string{item.MediaSourcesColumn},
+			Table:   item.ItemSourcesTable,
+			Columns: []string{item.ItemSourcesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasource.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -2259,15 +1263,15 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.MediaSourcesIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.ItemSourcesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   item.MediaSourcesTable,
-			Columns: []string{item.MediaSourcesColumn},
+			Table:   item.ItemSourcesTable,
+			Columns: []string{item.ItemSourcesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasource.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -2313,51 +1317,6 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(credit.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.ChaptersCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.ChaptersTable,
-			Columns: []string{item.ChaptersColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(chapter.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedChaptersIDs(); len(nodes) > 0 && !_u.mutation.ChaptersCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.ChaptersTable,
-			Columns: []string{item.ChaptersColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(chapter.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.ChaptersIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.ChaptersTable,
-			Columns: []string{item.ChaptersColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(chapter.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -2493,96 +1452,6 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(activitylogentry.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.TrickplaysCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.TrickplaysTable,
-			Columns: []string{item.TrickplaysColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(trickplay.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedTrickplaysIDs(); len(nodes) > 0 && !_u.mutation.TrickplaysCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.TrickplaysTable,
-			Columns: []string{item.TrickplaysColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(trickplay.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.TrickplaysIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.TrickplaysTable,
-			Columns: []string{item.TrickplaysColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(trickplay.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.MediaSegmentsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.MediaSegmentsTable,
-			Columns: []string{item.MediaSegmentsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasegment.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedMediaSegmentsIDs(); len(nodes) > 0 && !_u.mutation.MediaSegmentsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.MediaSegmentsTable,
-			Columns: []string{item.MediaSegmentsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasegment.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.MediaSegmentsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.MediaSegmentsTable,
-			Columns: []string{item.MediaSegmentsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasegment.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -2794,26 +1663,6 @@ func (_u *ItemUpdateOne) SetUpdatedAt(v time.Time) *ItemUpdateOne {
 	return _u
 }
 
-// SetLibraryID sets the "library_id" field.
-func (_u *ItemUpdateOne) SetLibraryID(v uuid.UUID) *ItemUpdateOne {
-	_u.mutation.SetLibraryID(v)
-	return _u
-}
-
-// SetNillableLibraryID sets the "library_id" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableLibraryID(v *uuid.UUID) *ItemUpdateOne {
-	if v != nil {
-		_u.SetLibraryID(*v)
-	}
-	return _u
-}
-
-// ClearLibraryID clears the value of the "library_id" field.
-func (_u *ItemUpdateOne) ClearLibraryID() *ItemUpdateOne {
-	_u.mutation.ClearLibraryID()
-	return _u
-}
-
 // SetParentID sets the "parent_id" field.
 func (_u *ItemUpdateOne) SetParentID(v uuid.UUID) *ItemUpdateOne {
 	_u.mutation.SetParentID(v)
@@ -2845,114 +1694,6 @@ func (_u *ItemUpdateOne) SetNillableKind(v *item.Kind) *ItemUpdateOne {
 	if v != nil {
 		_u.SetKind(*v)
 	}
-	return _u
-}
-
-// SetMediaType sets the "media_type" field.
-func (_u *ItemUpdateOne) SetMediaType(v item.MediaType) *ItemUpdateOne {
-	_u.mutation.SetMediaType(v)
-	return _u
-}
-
-// SetNillableMediaType sets the "media_type" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableMediaType(v *item.MediaType) *ItemUpdateOne {
-	if v != nil {
-		_u.SetMediaType(*v)
-	}
-	return _u
-}
-
-// SetLocationType sets the "location_type" field.
-func (_u *ItemUpdateOne) SetLocationType(v item.LocationType) *ItemUpdateOne {
-	_u.mutation.SetLocationType(v)
-	return _u
-}
-
-// SetNillableLocationType sets the "location_type" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableLocationType(v *item.LocationType) *ItemUpdateOne {
-	if v != nil {
-		_u.SetLocationType(*v)
-	}
-	return _u
-}
-
-// SetExtraType sets the "extra_type" field.
-func (_u *ItemUpdateOne) SetExtraType(v item.ExtraType) *ItemUpdateOne {
-	_u.mutation.SetExtraType(v)
-	return _u
-}
-
-// SetNillableExtraType sets the "extra_type" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableExtraType(v *item.ExtraType) *ItemUpdateOne {
-	if v != nil {
-		_u.SetExtraType(*v)
-	}
-	return _u
-}
-
-// ClearExtraType clears the value of the "extra_type" field.
-func (_u *ItemUpdateOne) ClearExtraType() *ItemUpdateOne {
-	_u.mutation.ClearExtraType()
-	return _u
-}
-
-// SetVideoType sets the "video_type" field.
-func (_u *ItemUpdateOne) SetVideoType(v item.VideoType) *ItemUpdateOne {
-	_u.mutation.SetVideoType(v)
-	return _u
-}
-
-// SetNillableVideoType sets the "video_type" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableVideoType(v *item.VideoType) *ItemUpdateOne {
-	if v != nil {
-		_u.SetVideoType(*v)
-	}
-	return _u
-}
-
-// ClearVideoType clears the value of the "video_type" field.
-func (_u *ItemUpdateOne) ClearVideoType() *ItemUpdateOne {
-	_u.mutation.ClearVideoType()
-	return _u
-}
-
-// SetIsoType sets the "iso_type" field.
-func (_u *ItemUpdateOne) SetIsoType(v item.IsoType) *ItemUpdateOne {
-	_u.mutation.SetIsoType(v)
-	return _u
-}
-
-// SetNillableIsoType sets the "iso_type" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableIsoType(v *item.IsoType) *ItemUpdateOne {
-	if v != nil {
-		_u.SetIsoType(*v)
-	}
-	return _u
-}
-
-// ClearIsoType clears the value of the "iso_type" field.
-func (_u *ItemUpdateOne) ClearIsoType() *ItemUpdateOne {
-	_u.mutation.ClearIsoType()
-	return _u
-}
-
-// SetVideo3dFormat sets the "video_3d_format" field.
-func (_u *ItemUpdateOne) SetVideo3dFormat(v item.Video3dFormat) *ItemUpdateOne {
-	_u.mutation.SetVideo3dFormat(v)
-	return _u
-}
-
-// SetNillableVideo3dFormat sets the "video_3d_format" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableVideo3dFormat(v *item.Video3dFormat) *ItemUpdateOne {
-	if v != nil {
-		_u.SetVideo3dFormat(*v)
-	}
-	return _u
-}
-
-// ClearVideo3dFormat clears the value of the "video_3d_format" field.
-func (_u *ItemUpdateOne) ClearVideo3dFormat() *ItemUpdateOne {
-	_u.mutation.ClearVideo3dFormat()
 	return _u
 }
 
@@ -2990,26 +1731,6 @@ func (_u *ItemUpdateOne) SetNillableName(v *string) *ItemUpdateOne {
 	return _u
 }
 
-// SetOriginalTitle sets the "original_title" field.
-func (_u *ItemUpdateOne) SetOriginalTitle(v string) *ItemUpdateOne {
-	_u.mutation.SetOriginalTitle(v)
-	return _u
-}
-
-// SetNillableOriginalTitle sets the "original_title" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableOriginalTitle(v *string) *ItemUpdateOne {
-	if v != nil {
-		_u.SetOriginalTitle(*v)
-	}
-	return _u
-}
-
-// ClearOriginalTitle clears the value of the "original_title" field.
-func (_u *ItemUpdateOne) ClearOriginalTitle() *ItemUpdateOne {
-	_u.mutation.ClearOriginalTitle()
-	return _u
-}
-
 // SetSortName sets the "sort_name" field.
 func (_u *ItemUpdateOne) SetSortName(v string) *ItemUpdateOne {
 	_u.mutation.SetSortName(v)
@@ -3027,20 +1748,6 @@ func (_u *ItemUpdateOne) SetNillableSortName(v *string) *ItemUpdateOne {
 // ClearSortName clears the value of the "sort_name" field.
 func (_u *ItemUpdateOne) ClearSortName() *ItemUpdateOne {
 	_u.mutation.ClearSortName()
-	return _u
-}
-
-// SetForcedSortName sets the "forced_sort_name" field.
-func (_u *ItemUpdateOne) SetForcedSortName(v bool) *ItemUpdateOne {
-	_u.mutation.SetForcedSortName(v)
-	return _u
-}
-
-// SetNillableForcedSortName sets the "forced_sort_name" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableForcedSortName(v *bool) *ItemUpdateOne {
-	if v != nil {
-		_u.SetForcedSortName(*v)
-	}
 	return _u
 }
 
@@ -3064,26 +1771,6 @@ func (_u *ItemUpdateOne) ClearDeletedAt() *ItemUpdateOne {
 	return _u
 }
 
-// SetContainer sets the "container" field.
-func (_u *ItemUpdateOne) SetContainer(v string) *ItemUpdateOne {
-	_u.mutation.SetContainer(v)
-	return _u
-}
-
-// SetNillableContainer sets the "container" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableContainer(v *string) *ItemUpdateOne {
-	if v != nil {
-		_u.SetContainer(*v)
-	}
-	return _u
-}
-
-// ClearContainer clears the value of the "container" field.
-func (_u *ItemUpdateOne) ClearContainer() *ItemUpdateOne {
-	_u.mutation.ClearContainer()
-	return _u
-}
-
 // SetOverview sets the "overview" field.
 func (_u *ItemUpdateOne) SetOverview(v string) *ItemUpdateOne {
 	_u.mutation.SetOverview(v)
@@ -3104,34 +1791,6 @@ func (_u *ItemUpdateOne) ClearOverview() *ItemUpdateOne {
 	return _u
 }
 
-// SetIsFolder sets the "is_folder" field.
-func (_u *ItemUpdateOne) SetIsFolder(v bool) *ItemUpdateOne {
-	_u.mutation.SetIsFolder(v)
-	return _u
-}
-
-// SetNillableIsFolder sets the "is_folder" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableIsFolder(v *bool) *ItemUpdateOne {
-	if v != nil {
-		_u.SetIsFolder(*v)
-	}
-	return _u
-}
-
-// SetIsPlaceholder sets the "is_placeholder" field.
-func (_u *ItemUpdateOne) SetIsPlaceholder(v bool) *ItemUpdateOne {
-	_u.mutation.SetIsPlaceholder(v)
-	return _u
-}
-
-// SetNillableIsPlaceholder sets the "is_placeholder" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableIsPlaceholder(v *bool) *ItemUpdateOne {
-	if v != nil {
-		_u.SetIsPlaceholder(*v)
-	}
-	return _u
-}
-
 // SetLockData sets the "lock_data" field.
 func (_u *ItemUpdateOne) SetLockData(v bool) *ItemUpdateOne {
 	_u.mutation.SetLockData(v)
@@ -3142,48 +1801,6 @@ func (_u *ItemUpdateOne) SetLockData(v bool) *ItemUpdateOne {
 func (_u *ItemUpdateOne) SetNillableLockData(v *bool) *ItemUpdateOne {
 	if v != nil {
 		_u.SetLockData(*v)
-	}
-	return _u
-}
-
-// SetHasLyrics sets the "has_lyrics" field.
-func (_u *ItemUpdateOne) SetHasLyrics(v bool) *ItemUpdateOne {
-	_u.mutation.SetHasLyrics(v)
-	return _u
-}
-
-// SetNillableHasLyrics sets the "has_lyrics" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableHasLyrics(v *bool) *ItemUpdateOne {
-	if v != nil {
-		_u.SetHasLyrics(*v)
-	}
-	return _u
-}
-
-// SetHasSubtitles sets the "has_subtitles" field.
-func (_u *ItemUpdateOne) SetHasSubtitles(v bool) *ItemUpdateOne {
-	_u.mutation.SetHasSubtitles(v)
-	return _u
-}
-
-// SetNillableHasSubtitles sets the "has_subtitles" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableHasSubtitles(v *bool) *ItemUpdateOne {
-	if v != nil {
-		_u.SetHasSubtitles(*v)
-	}
-	return _u
-}
-
-// SetEnableMediaSourceDisplay sets the "enable_media_source_display" field.
-func (_u *ItemUpdateOne) SetEnableMediaSourceDisplay(v bool) *ItemUpdateOne {
-	_u.mutation.SetEnableMediaSourceDisplay(v)
-	return _u
-}
-
-// SetNillableEnableMediaSourceDisplay sets the "enable_media_source_display" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableEnableMediaSourceDisplay(v *bool) *ItemUpdateOne {
-	if v != nil {
-		_u.SetEnableMediaSourceDisplay(*v)
 	}
 	return _u
 }
@@ -3228,26 +1845,6 @@ func (_u *ItemUpdateOne) ClearEndDate() *ItemUpdateOne {
 	return _u
 }
 
-// SetLastMediaAddedAt sets the "last_media_added_at" field.
-func (_u *ItemUpdateOne) SetLastMediaAddedAt(v time.Time) *ItemUpdateOne {
-	_u.mutation.SetLastMediaAddedAt(v)
-	return _u
-}
-
-// SetNillableLastMediaAddedAt sets the "last_media_added_at" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableLastMediaAddedAt(v *time.Time) *ItemUpdateOne {
-	if v != nil {
-		_u.SetLastMediaAddedAt(*v)
-	}
-	return _u
-}
-
-// ClearLastMediaAddedAt clears the value of the "last_media_added_at" field.
-func (_u *ItemUpdateOne) ClearLastMediaAddedAt() *ItemUpdateOne {
-	_u.mutation.ClearLastMediaAddedAt()
-	return _u
-}
-
 // SetDateModified sets the "date_modified" field.
 func (_u *ItemUpdateOne) SetDateModified(v time.Time) *ItemUpdateOne {
 	_u.mutation.SetDateModified(v)
@@ -3265,26 +1862,6 @@ func (_u *ItemUpdateOne) SetNillableDateModified(v *time.Time) *ItemUpdateOne {
 // ClearDateModified clears the value of the "date_modified" field.
 func (_u *ItemUpdateOne) ClearDateModified() *ItemUpdateOne {
 	_u.mutation.ClearDateModified()
-	return _u
-}
-
-// SetProbedAt sets the "probed_at" field.
-func (_u *ItemUpdateOne) SetProbedAt(v time.Time) *ItemUpdateOne {
-	_u.mutation.SetProbedAt(v)
-	return _u
-}
-
-// SetNillableProbedAt sets the "probed_at" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableProbedAt(v *time.Time) *ItemUpdateOne {
-	if v != nil {
-		_u.SetProbedAt(*v)
-	}
-	return _u
-}
-
-// ClearProbedAt clears the value of the "probed_at" field.
-func (_u *ItemUpdateOne) ClearProbedAt() *ItemUpdateOne {
-	_u.mutation.ClearProbedAt()
 	return _u
 }
 
@@ -3332,53 +1909,6 @@ func (_u *ItemUpdateOne) SetNillableOfficialRating(v *string) *ItemUpdateOne {
 // ClearOfficialRating clears the value of the "official_rating" field.
 func (_u *ItemUpdateOne) ClearOfficialRating() *ItemUpdateOne {
 	_u.mutation.ClearOfficialRating()
-	return _u
-}
-
-// SetCustomRating sets the "custom_rating" field.
-func (_u *ItemUpdateOne) SetCustomRating(v string) *ItemUpdateOne {
-	_u.mutation.SetCustomRating(v)
-	return _u
-}
-
-// SetNillableCustomRating sets the "custom_rating" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableCustomRating(v *string) *ItemUpdateOne {
-	if v != nil {
-		_u.SetCustomRating(*v)
-	}
-	return _u
-}
-
-// ClearCustomRating clears the value of the "custom_rating" field.
-func (_u *ItemUpdateOne) ClearCustomRating() *ItemUpdateOne {
-	_u.mutation.ClearCustomRating()
-	return _u
-}
-
-// SetCriticRating sets the "critic_rating" field.
-func (_u *ItemUpdateOne) SetCriticRating(v float64) *ItemUpdateOne {
-	_u.mutation.ResetCriticRating()
-	_u.mutation.SetCriticRating(v)
-	return _u
-}
-
-// SetNillableCriticRating sets the "critic_rating" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableCriticRating(v *float64) *ItemUpdateOne {
-	if v != nil {
-		_u.SetCriticRating(*v)
-	}
-	return _u
-}
-
-// AddCriticRating adds value to the "critic_rating" field.
-func (_u *ItemUpdateOne) AddCriticRating(v float64) *ItemUpdateOne {
-	_u.mutation.AddCriticRating(v)
-	return _u
-}
-
-// ClearCriticRating clears the value of the "critic_rating" field.
-func (_u *ItemUpdateOne) ClearCriticRating() *ItemUpdateOne {
-	_u.mutation.ClearCriticRating()
 	return _u
 }
 
@@ -3463,33 +1993,6 @@ func (_u *ItemUpdateOne) ClearIndexNumber() *ItemUpdateOne {
 	return _u
 }
 
-// SetIndexNumberEnd sets the "index_number_end" field.
-func (_u *ItemUpdateOne) SetIndexNumberEnd(v int32) *ItemUpdateOne {
-	_u.mutation.ResetIndexNumberEnd()
-	_u.mutation.SetIndexNumberEnd(v)
-	return _u
-}
-
-// SetNillableIndexNumberEnd sets the "index_number_end" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableIndexNumberEnd(v *int32) *ItemUpdateOne {
-	if v != nil {
-		_u.SetIndexNumberEnd(*v)
-	}
-	return _u
-}
-
-// AddIndexNumberEnd adds value to the "index_number_end" field.
-func (_u *ItemUpdateOne) AddIndexNumberEnd(v int32) *ItemUpdateOne {
-	_u.mutation.AddIndexNumberEnd(v)
-	return _u
-}
-
-// ClearIndexNumberEnd clears the value of the "index_number_end" field.
-func (_u *ItemUpdateOne) ClearIndexNumberEnd() *ItemUpdateOne {
-	_u.mutation.ClearIndexNumberEnd()
-	return _u
-}
-
 // SetParentIndexNumber sets the "parent_index_number" field.
 func (_u *ItemUpdateOne) SetParentIndexNumber(v int32) *ItemUpdateOne {
 	_u.mutation.ResetParentIndexNumber()
@@ -3517,87 +2020,6 @@ func (_u *ItemUpdateOne) ClearParentIndexNumber() *ItemUpdateOne {
 	return _u
 }
 
-// SetAirsBeforeSeasonNumber sets the "airs_before_season_number" field.
-func (_u *ItemUpdateOne) SetAirsBeforeSeasonNumber(v int32) *ItemUpdateOne {
-	_u.mutation.ResetAirsBeforeSeasonNumber()
-	_u.mutation.SetAirsBeforeSeasonNumber(v)
-	return _u
-}
-
-// SetNillableAirsBeforeSeasonNumber sets the "airs_before_season_number" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableAirsBeforeSeasonNumber(v *int32) *ItemUpdateOne {
-	if v != nil {
-		_u.SetAirsBeforeSeasonNumber(*v)
-	}
-	return _u
-}
-
-// AddAirsBeforeSeasonNumber adds value to the "airs_before_season_number" field.
-func (_u *ItemUpdateOne) AddAirsBeforeSeasonNumber(v int32) *ItemUpdateOne {
-	_u.mutation.AddAirsBeforeSeasonNumber(v)
-	return _u
-}
-
-// ClearAirsBeforeSeasonNumber clears the value of the "airs_before_season_number" field.
-func (_u *ItemUpdateOne) ClearAirsBeforeSeasonNumber() *ItemUpdateOne {
-	_u.mutation.ClearAirsBeforeSeasonNumber()
-	return _u
-}
-
-// SetAirsAfterSeasonNumber sets the "airs_after_season_number" field.
-func (_u *ItemUpdateOne) SetAirsAfterSeasonNumber(v int32) *ItemUpdateOne {
-	_u.mutation.ResetAirsAfterSeasonNumber()
-	_u.mutation.SetAirsAfterSeasonNumber(v)
-	return _u
-}
-
-// SetNillableAirsAfterSeasonNumber sets the "airs_after_season_number" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableAirsAfterSeasonNumber(v *int32) *ItemUpdateOne {
-	if v != nil {
-		_u.SetAirsAfterSeasonNumber(*v)
-	}
-	return _u
-}
-
-// AddAirsAfterSeasonNumber adds value to the "airs_after_season_number" field.
-func (_u *ItemUpdateOne) AddAirsAfterSeasonNumber(v int32) *ItemUpdateOne {
-	_u.mutation.AddAirsAfterSeasonNumber(v)
-	return _u
-}
-
-// ClearAirsAfterSeasonNumber clears the value of the "airs_after_season_number" field.
-func (_u *ItemUpdateOne) ClearAirsAfterSeasonNumber() *ItemUpdateOne {
-	_u.mutation.ClearAirsAfterSeasonNumber()
-	return _u
-}
-
-// SetAirsBeforeEpisodeNumber sets the "airs_before_episode_number" field.
-func (_u *ItemUpdateOne) SetAirsBeforeEpisodeNumber(v int32) *ItemUpdateOne {
-	_u.mutation.ResetAirsBeforeEpisodeNumber()
-	_u.mutation.SetAirsBeforeEpisodeNumber(v)
-	return _u
-}
-
-// SetNillableAirsBeforeEpisodeNumber sets the "airs_before_episode_number" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableAirsBeforeEpisodeNumber(v *int32) *ItemUpdateOne {
-	if v != nil {
-		_u.SetAirsBeforeEpisodeNumber(*v)
-	}
-	return _u
-}
-
-// AddAirsBeforeEpisodeNumber adds value to the "airs_before_episode_number" field.
-func (_u *ItemUpdateOne) AddAirsBeforeEpisodeNumber(v int32) *ItemUpdateOne {
-	_u.mutation.AddAirsBeforeEpisodeNumber(v)
-	return _u
-}
-
-// ClearAirsBeforeEpisodeNumber clears the value of the "airs_before_episode_number" field.
-func (_u *ItemUpdateOne) ClearAirsBeforeEpisodeNumber() *ItemUpdateOne {
-	_u.mutation.ClearAirsBeforeEpisodeNumber()
-	return _u
-}
-
 // SetStatus sets the "status" field.
 func (_u *ItemUpdateOne) SetStatus(v string) *ItemUpdateOne {
 	_u.mutation.SetStatus(v)
@@ -3615,205 +2037,6 @@ func (_u *ItemUpdateOne) SetNillableStatus(v *string) *ItemUpdateOne {
 // ClearStatus clears the value of the "status" field.
 func (_u *ItemUpdateOne) ClearStatus() *ItemUpdateOne {
 	_u.mutation.ClearStatus()
-	return _u
-}
-
-// SetAirTime sets the "air_time" field.
-func (_u *ItemUpdateOne) SetAirTime(v string) *ItemUpdateOne {
-	_u.mutation.SetAirTime(v)
-	return _u
-}
-
-// SetNillableAirTime sets the "air_time" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableAirTime(v *string) *ItemUpdateOne {
-	if v != nil {
-		_u.SetAirTime(*v)
-	}
-	return _u
-}
-
-// ClearAirTime clears the value of the "air_time" field.
-func (_u *ItemUpdateOne) ClearAirTime() *ItemUpdateOne {
-	_u.mutation.ClearAirTime()
-	return _u
-}
-
-// SetDisplayOrder sets the "display_order" field.
-func (_u *ItemUpdateOne) SetDisplayOrder(v string) *ItemUpdateOne {
-	_u.mutation.SetDisplayOrder(v)
-	return _u
-}
-
-// SetNillableDisplayOrder sets the "display_order" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableDisplayOrder(v *string) *ItemUpdateOne {
-	if v != nil {
-		_u.SetDisplayOrder(*v)
-	}
-	return _u
-}
-
-// ClearDisplayOrder clears the value of the "display_order" field.
-func (_u *ItemUpdateOne) ClearDisplayOrder() *ItemUpdateOne {
-	_u.mutation.ClearDisplayOrder()
-	return _u
-}
-
-// SetAirDays sets the "air_days" field.
-func (_u *ItemUpdateOne) SetAirDays(v []string) *ItemUpdateOne {
-	_u.mutation.SetAirDays(v)
-	return _u
-}
-
-// AppendAirDays appends value to the "air_days" field.
-func (_u *ItemUpdateOne) AppendAirDays(v []string) *ItemUpdateOne {
-	_u.mutation.AppendAirDays(v)
-	return _u
-}
-
-// ClearAirDays clears the value of the "air_days" field.
-func (_u *ItemUpdateOne) ClearAirDays() *ItemUpdateOne {
-	_u.mutation.ClearAirDays()
-	return _u
-}
-
-// SetAspectRatio sets the "aspect_ratio" field.
-func (_u *ItemUpdateOne) SetAspectRatio(v string) *ItemUpdateOne {
-	_u.mutation.SetAspectRatio(v)
-	return _u
-}
-
-// SetNillableAspectRatio sets the "aspect_ratio" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableAspectRatio(v *string) *ItemUpdateOne {
-	if v != nil {
-		_u.SetAspectRatio(*v)
-	}
-	return _u
-}
-
-// ClearAspectRatio clears the value of the "aspect_ratio" field.
-func (_u *ItemUpdateOne) ClearAspectRatio() *ItemUpdateOne {
-	_u.mutation.ClearAspectRatio()
-	return _u
-}
-
-// SetWidth sets the "width" field.
-func (_u *ItemUpdateOne) SetWidth(v int32) *ItemUpdateOne {
-	_u.mutation.ResetWidth()
-	_u.mutation.SetWidth(v)
-	return _u
-}
-
-// SetNillableWidth sets the "width" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableWidth(v *int32) *ItemUpdateOne {
-	if v != nil {
-		_u.SetWidth(*v)
-	}
-	return _u
-}
-
-// AddWidth adds value to the "width" field.
-func (_u *ItemUpdateOne) AddWidth(v int32) *ItemUpdateOne {
-	_u.mutation.AddWidth(v)
-	return _u
-}
-
-// ClearWidth clears the value of the "width" field.
-func (_u *ItemUpdateOne) ClearWidth() *ItemUpdateOne {
-	_u.mutation.ClearWidth()
-	return _u
-}
-
-// SetHeight sets the "height" field.
-func (_u *ItemUpdateOne) SetHeight(v int32) *ItemUpdateOne {
-	_u.mutation.ResetHeight()
-	_u.mutation.SetHeight(v)
-	return _u
-}
-
-// SetNillableHeight sets the "height" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableHeight(v *int32) *ItemUpdateOne {
-	if v != nil {
-		_u.SetHeight(*v)
-	}
-	return _u
-}
-
-// AddHeight adds value to the "height" field.
-func (_u *ItemUpdateOne) AddHeight(v int32) *ItemUpdateOne {
-	_u.mutation.AddHeight(v)
-	return _u
-}
-
-// ClearHeight clears the value of the "height" field.
-func (_u *ItemUpdateOne) ClearHeight() *ItemUpdateOne {
-	_u.mutation.ClearHeight()
-	return _u
-}
-
-// SetNormalizationGain sets the "normalization_gain" field.
-func (_u *ItemUpdateOne) SetNormalizationGain(v float64) *ItemUpdateOne {
-	_u.mutation.ResetNormalizationGain()
-	_u.mutation.SetNormalizationGain(v)
-	return _u
-}
-
-// SetNillableNormalizationGain sets the "normalization_gain" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableNormalizationGain(v *float64) *ItemUpdateOne {
-	if v != nil {
-		_u.SetNormalizationGain(*v)
-	}
-	return _u
-}
-
-// AddNormalizationGain adds value to the "normalization_gain" field.
-func (_u *ItemUpdateOne) AddNormalizationGain(v float64) *ItemUpdateOne {
-	_u.mutation.AddNormalizationGain(v)
-	return _u
-}
-
-// ClearNormalizationGain clears the value of the "normalization_gain" field.
-func (_u *ItemUpdateOne) ClearNormalizationGain() *ItemUpdateOne {
-	_u.mutation.ClearNormalizationGain()
-	return _u
-}
-
-// SetPreferredMetadataLanguage sets the "preferred_metadata_language" field.
-func (_u *ItemUpdateOne) SetPreferredMetadataLanguage(v string) *ItemUpdateOne {
-	_u.mutation.SetPreferredMetadataLanguage(v)
-	return _u
-}
-
-// SetNillablePreferredMetadataLanguage sets the "preferred_metadata_language" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillablePreferredMetadataLanguage(v *string) *ItemUpdateOne {
-	if v != nil {
-		_u.SetPreferredMetadataLanguage(*v)
-	}
-	return _u
-}
-
-// ClearPreferredMetadataLanguage clears the value of the "preferred_metadata_language" field.
-func (_u *ItemUpdateOne) ClearPreferredMetadataLanguage() *ItemUpdateOne {
-	_u.mutation.ClearPreferredMetadataLanguage()
-	return _u
-}
-
-// SetPreferredMetadataCountryCode sets the "preferred_metadata_country_code" field.
-func (_u *ItemUpdateOne) SetPreferredMetadataCountryCode(v string) *ItemUpdateOne {
-	_u.mutation.SetPreferredMetadataCountryCode(v)
-	return _u
-}
-
-// SetNillablePreferredMetadataCountryCode sets the "preferred_metadata_country_code" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillablePreferredMetadataCountryCode(v *string) *ItemUpdateOne {
-	if v != nil {
-		_u.SetPreferredMetadataCountryCode(*v)
-	}
-	return _u
-}
-
-// ClearPreferredMetadataCountryCode clears the value of the "preferred_metadata_country_code" field.
-func (_u *ItemUpdateOne) ClearPreferredMetadataCountryCode() *ItemUpdateOne {
-	_u.mutation.ClearPreferredMetadataCountryCode()
 	return _u
 }
 
@@ -3865,24 +2088,6 @@ func (_u *ItemUpdateOne) ClearTaglines() *ItemUpdateOne {
 	return _u
 }
 
-// SetProductionLocations sets the "production_locations" field.
-func (_u *ItemUpdateOne) SetProductionLocations(v []string) *ItemUpdateOne {
-	_u.mutation.SetProductionLocations(v)
-	return _u
-}
-
-// AppendProductionLocations appends value to the "production_locations" field.
-func (_u *ItemUpdateOne) AppendProductionLocations(v []string) *ItemUpdateOne {
-	_u.mutation.AppendProductionLocations(v)
-	return _u
-}
-
-// ClearProductionLocations clears the value of the "production_locations" field.
-func (_u *ItemUpdateOne) ClearProductionLocations() *ItemUpdateOne {
-	_u.mutation.ClearProductionLocations()
-	return _u
-}
-
 // SetLockedFields sets the "locked_fields" field.
 func (_u *ItemUpdateOne) SetLockedFields(v []string) *ItemUpdateOne {
 	_u.mutation.SetLockedFields(v)
@@ -3898,24 +2103,6 @@ func (_u *ItemUpdateOne) AppendLockedFields(v []string) *ItemUpdateOne {
 // ClearLockedFields clears the value of the "locked_fields" field.
 func (_u *ItemUpdateOne) ClearLockedFields() *ItemUpdateOne {
 	_u.mutation.ClearLockedFields()
-	return _u
-}
-
-// SetExternalUrls sets the "external_urls" field.
-func (_u *ItemUpdateOne) SetExternalUrls(v []entities.ExternalUrl) *ItemUpdateOne {
-	_u.mutation.SetExternalUrls(v)
-	return _u
-}
-
-// AppendExternalUrls appends value to the "external_urls" field.
-func (_u *ItemUpdateOne) AppendExternalUrls(v []entities.ExternalUrl) *ItemUpdateOne {
-	_u.mutation.AppendExternalUrls(v)
-	return _u
-}
-
-// ClearExternalUrls clears the value of the "external_urls" field.
-func (_u *ItemUpdateOne) ClearExternalUrls() *ItemUpdateOne {
-	_u.mutation.ClearExternalUrls()
 	return _u
 }
 
@@ -3939,24 +2126,34 @@ func (_u *ItemUpdateOne) AddChildren(v ...*Item) *ItemUpdateOne {
 	return _u.AddChildIDs(ids...)
 }
 
-// SetLibrary sets the "library" edge to the Library entity.
-func (_u *ItemUpdateOne) SetLibrary(v *Library) *ItemUpdateOne {
-	return _u.SetLibraryID(v.ID)
-}
-
-// AddMediaSourceIDs adds the "media_sources" edge to the MediaSource entity by IDs.
-func (_u *ItemUpdateOne) AddMediaSourceIDs(ids ...uuid.UUID) *ItemUpdateOne {
-	_u.mutation.AddMediaSourceIDs(ids...)
+// AddLibraryIDs adds the "libraries" edge to the LibraryItem entity by IDs.
+func (_u *ItemUpdateOne) AddLibraryIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.AddLibraryIDs(ids...)
 	return _u
 }
 
-// AddMediaSources adds the "media_sources" edges to the MediaSource entity.
-func (_u *ItemUpdateOne) AddMediaSources(v ...*MediaSource) *ItemUpdateOne {
+// AddLibraries adds the "libraries" edges to the LibraryItem entity.
+func (_u *ItemUpdateOne) AddLibraries(v ...*LibraryItem) *ItemUpdateOne {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.AddMediaSourceIDs(ids...)
+	return _u.AddLibraryIDs(ids...)
+}
+
+// AddItemSourceIDs adds the "item_sources" edge to the ItemSource entity by IDs.
+func (_u *ItemUpdateOne) AddItemSourceIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.AddItemSourceIDs(ids...)
+	return _u
+}
+
+// AddItemSources adds the "item_sources" edges to the ItemSource entity.
+func (_u *ItemUpdateOne) AddItemSources(v ...*ItemSource) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddItemSourceIDs(ids...)
 }
 
 // AddCreditIDs adds the "credits" edge to the Credit entity by IDs.
@@ -3972,21 +2169,6 @@ func (_u *ItemUpdateOne) AddCredits(v ...*Credit) *ItemUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.AddCreditIDs(ids...)
-}
-
-// AddChapterIDs adds the "chapters" edge to the Chapter entity by IDs.
-func (_u *ItemUpdateOne) AddChapterIDs(ids ...uuid.UUID) *ItemUpdateOne {
-	_u.mutation.AddChapterIDs(ids...)
-	return _u
-}
-
-// AddChapters adds the "chapters" edges to the Chapter entity.
-func (_u *ItemUpdateOne) AddChapters(v ...*Chapter) *ItemUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddChapterIDs(ids...)
 }
 
 // AddImageIDs adds the "images" edge to the Image entity by IDs.
@@ -4032,36 +2214,6 @@ func (_u *ItemUpdateOne) AddActivityLogEntries(v ...*ActivityLogEntry) *ItemUpda
 		ids[i] = v[i].ID
 	}
 	return _u.AddActivityLogEntryIDs(ids...)
-}
-
-// AddTrickplayIDs adds the "trickplays" edge to the Trickplay entity by IDs.
-func (_u *ItemUpdateOne) AddTrickplayIDs(ids ...uuid.UUID) *ItemUpdateOne {
-	_u.mutation.AddTrickplayIDs(ids...)
-	return _u
-}
-
-// AddTrickplays adds the "trickplays" edges to the Trickplay entity.
-func (_u *ItemUpdateOne) AddTrickplays(v ...*Trickplay) *ItemUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddTrickplayIDs(ids...)
-}
-
-// AddMediaSegmentIDs adds the "media_segments" edge to the MediaSegment entity by IDs.
-func (_u *ItemUpdateOne) AddMediaSegmentIDs(ids ...uuid.UUID) *ItemUpdateOne {
-	_u.mutation.AddMediaSegmentIDs(ids...)
-	return _u
-}
-
-// AddMediaSegments adds the "media_segments" edges to the MediaSegment entity.
-func (_u *ItemUpdateOne) AddMediaSegments(v ...*MediaSegment) *ItemUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddMediaSegmentIDs(ids...)
 }
 
 // SetPlaylistID sets the "playlist" edge to the Playlist entity by ID.
@@ -4160,31 +2312,46 @@ func (_u *ItemUpdateOne) RemoveChildren(v ...*Item) *ItemUpdateOne {
 	return _u.RemoveChildIDs(ids...)
 }
 
-// ClearLibrary clears the "library" edge to the Library entity.
-func (_u *ItemUpdateOne) ClearLibrary() *ItemUpdateOne {
-	_u.mutation.ClearLibrary()
+// ClearLibraries clears all "libraries" edges to the LibraryItem entity.
+func (_u *ItemUpdateOne) ClearLibraries() *ItemUpdateOne {
+	_u.mutation.ClearLibraries()
 	return _u
 }
 
-// ClearMediaSources clears all "media_sources" edges to the MediaSource entity.
-func (_u *ItemUpdateOne) ClearMediaSources() *ItemUpdateOne {
-	_u.mutation.ClearMediaSources()
+// RemoveLibraryIDs removes the "libraries" edge to LibraryItem entities by IDs.
+func (_u *ItemUpdateOne) RemoveLibraryIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.RemoveLibraryIDs(ids...)
 	return _u
 }
 
-// RemoveMediaSourceIDs removes the "media_sources" edge to MediaSource entities by IDs.
-func (_u *ItemUpdateOne) RemoveMediaSourceIDs(ids ...uuid.UUID) *ItemUpdateOne {
-	_u.mutation.RemoveMediaSourceIDs(ids...)
-	return _u
-}
-
-// RemoveMediaSources removes "media_sources" edges to MediaSource entities.
-func (_u *ItemUpdateOne) RemoveMediaSources(v ...*MediaSource) *ItemUpdateOne {
+// RemoveLibraries removes "libraries" edges to LibraryItem entities.
+func (_u *ItemUpdateOne) RemoveLibraries(v ...*LibraryItem) *ItemUpdateOne {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.RemoveMediaSourceIDs(ids...)
+	return _u.RemoveLibraryIDs(ids...)
+}
+
+// ClearItemSources clears all "item_sources" edges to the ItemSource entity.
+func (_u *ItemUpdateOne) ClearItemSources() *ItemUpdateOne {
+	_u.mutation.ClearItemSources()
+	return _u
+}
+
+// RemoveItemSourceIDs removes the "item_sources" edge to ItemSource entities by IDs.
+func (_u *ItemUpdateOne) RemoveItemSourceIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.RemoveItemSourceIDs(ids...)
+	return _u
+}
+
+// RemoveItemSources removes "item_sources" edges to ItemSource entities.
+func (_u *ItemUpdateOne) RemoveItemSources(v ...*ItemSource) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveItemSourceIDs(ids...)
 }
 
 // ClearCredits clears all "credits" edges to the Credit entity.
@@ -4206,27 +2373,6 @@ func (_u *ItemUpdateOne) RemoveCredits(v ...*Credit) *ItemUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveCreditIDs(ids...)
-}
-
-// ClearChapters clears all "chapters" edges to the Chapter entity.
-func (_u *ItemUpdateOne) ClearChapters() *ItemUpdateOne {
-	_u.mutation.ClearChapters()
-	return _u
-}
-
-// RemoveChapterIDs removes the "chapters" edge to Chapter entities by IDs.
-func (_u *ItemUpdateOne) RemoveChapterIDs(ids ...uuid.UUID) *ItemUpdateOne {
-	_u.mutation.RemoveChapterIDs(ids...)
-	return _u
-}
-
-// RemoveChapters removes "chapters" edges to Chapter entities.
-func (_u *ItemUpdateOne) RemoveChapters(v ...*Chapter) *ItemUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveChapterIDs(ids...)
 }
 
 // ClearImages clears all "images" edges to the Image entity.
@@ -4290,48 +2436,6 @@ func (_u *ItemUpdateOne) RemoveActivityLogEntries(v ...*ActivityLogEntry) *ItemU
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveActivityLogEntryIDs(ids...)
-}
-
-// ClearTrickplays clears all "trickplays" edges to the Trickplay entity.
-func (_u *ItemUpdateOne) ClearTrickplays() *ItemUpdateOne {
-	_u.mutation.ClearTrickplays()
-	return _u
-}
-
-// RemoveTrickplayIDs removes the "trickplays" edge to Trickplay entities by IDs.
-func (_u *ItemUpdateOne) RemoveTrickplayIDs(ids ...uuid.UUID) *ItemUpdateOne {
-	_u.mutation.RemoveTrickplayIDs(ids...)
-	return _u
-}
-
-// RemoveTrickplays removes "trickplays" edges to Trickplay entities.
-func (_u *ItemUpdateOne) RemoveTrickplays(v ...*Trickplay) *ItemUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveTrickplayIDs(ids...)
-}
-
-// ClearMediaSegments clears all "media_segments" edges to the MediaSegment entity.
-func (_u *ItemUpdateOne) ClearMediaSegments() *ItemUpdateOne {
-	_u.mutation.ClearMediaSegments()
-	return _u
-}
-
-// RemoveMediaSegmentIDs removes the "media_segments" edge to MediaSegment entities by IDs.
-func (_u *ItemUpdateOne) RemoveMediaSegmentIDs(ids ...uuid.UUID) *ItemUpdateOne {
-	_u.mutation.RemoveMediaSegmentIDs(ids...)
-	return _u
-}
-
-// RemoveMediaSegments removes "media_segments" edges to MediaSegment entities.
-func (_u *ItemUpdateOne) RemoveMediaSegments(v ...*MediaSegment) *ItemUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveMediaSegmentIDs(ids...)
 }
 
 // ClearPlaylist clears the "playlist" edge to the Playlist entity.
@@ -4459,36 +2563,6 @@ func (_u *ItemUpdateOne) check() error {
 			return &ValidationError{Name: "kind", err: fmt.Errorf(`store: validator failed for field "Item.kind": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.MediaType(); ok {
-		if err := item.MediaTypeValidator(v); err != nil {
-			return &ValidationError{Name: "media_type", err: fmt.Errorf(`store: validator failed for field "Item.media_type": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.LocationType(); ok {
-		if err := item.LocationTypeValidator(v); err != nil {
-			return &ValidationError{Name: "location_type", err: fmt.Errorf(`store: validator failed for field "Item.location_type": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.ExtraType(); ok {
-		if err := item.ExtraTypeValidator(v); err != nil {
-			return &ValidationError{Name: "extra_type", err: fmt.Errorf(`store: validator failed for field "Item.extra_type": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.VideoType(); ok {
-		if err := item.VideoTypeValidator(v); err != nil {
-			return &ValidationError{Name: "video_type", err: fmt.Errorf(`store: validator failed for field "Item.video_type": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.IsoType(); ok {
-		if err := item.IsoTypeValidator(v); err != nil {
-			return &ValidationError{Name: "iso_type", err: fmt.Errorf(`store: validator failed for field "Item.iso_type": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.Video3dFormat(); ok {
-		if err := item.Video3dFormatValidator(v); err != nil {
-			return &ValidationError{Name: "video_3d_format", err: fmt.Errorf(`store: validator failed for field "Item.video_3d_format": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -4530,36 +2604,6 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	if value, ok := _u.mutation.Kind(); ok {
 		_spec.SetField(item.FieldKind, field.TypeEnum, value)
 	}
-	if value, ok := _u.mutation.MediaType(); ok {
-		_spec.SetField(item.FieldMediaType, field.TypeEnum, value)
-	}
-	if value, ok := _u.mutation.LocationType(); ok {
-		_spec.SetField(item.FieldLocationType, field.TypeEnum, value)
-	}
-	if value, ok := _u.mutation.ExtraType(); ok {
-		_spec.SetField(item.FieldExtraType, field.TypeEnum, value)
-	}
-	if _u.mutation.ExtraTypeCleared() {
-		_spec.ClearField(item.FieldExtraType, field.TypeEnum)
-	}
-	if value, ok := _u.mutation.VideoType(); ok {
-		_spec.SetField(item.FieldVideoType, field.TypeEnum, value)
-	}
-	if _u.mutation.VideoTypeCleared() {
-		_spec.ClearField(item.FieldVideoType, field.TypeEnum)
-	}
-	if value, ok := _u.mutation.IsoType(); ok {
-		_spec.SetField(item.FieldIsoType, field.TypeEnum, value)
-	}
-	if _u.mutation.IsoTypeCleared() {
-		_spec.ClearField(item.FieldIsoType, field.TypeEnum)
-	}
-	if value, ok := _u.mutation.Video3dFormat(); ok {
-		_spec.SetField(item.FieldVideo3dFormat, field.TypeEnum, value)
-	}
-	if _u.mutation.Video3dFormatCleared() {
-		_spec.ClearField(item.FieldVideo3dFormat, field.TypeEnum)
-	}
 	if value, ok := _u.mutation.Key(); ok {
 		_spec.SetField(item.FieldKey, field.TypeString, value)
 	}
@@ -4569,20 +2613,11 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(item.FieldName, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.OriginalTitle(); ok {
-		_spec.SetField(item.FieldOriginalTitle, field.TypeString, value)
-	}
-	if _u.mutation.OriginalTitleCleared() {
-		_spec.ClearField(item.FieldOriginalTitle, field.TypeString)
-	}
 	if value, ok := _u.mutation.SortName(); ok {
 		_spec.SetField(item.FieldSortName, field.TypeString, value)
 	}
 	if _u.mutation.SortNameCleared() {
 		_spec.ClearField(item.FieldSortName, field.TypeString)
-	}
-	if value, ok := _u.mutation.ForcedSortName(); ok {
-		_spec.SetField(item.FieldForcedSortName, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.DeletedAt(); ok {
 		_spec.SetField(item.FieldDeletedAt, field.TypeTime, value)
@@ -4590,35 +2625,14 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	if _u.mutation.DeletedAtCleared() {
 		_spec.ClearField(item.FieldDeletedAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.Container(); ok {
-		_spec.SetField(item.FieldContainer, field.TypeString, value)
-	}
-	if _u.mutation.ContainerCleared() {
-		_spec.ClearField(item.FieldContainer, field.TypeString)
-	}
 	if value, ok := _u.mutation.Overview(); ok {
 		_spec.SetField(item.FieldOverview, field.TypeString, value)
 	}
 	if _u.mutation.OverviewCleared() {
 		_spec.ClearField(item.FieldOverview, field.TypeString)
 	}
-	if value, ok := _u.mutation.IsFolder(); ok {
-		_spec.SetField(item.FieldIsFolder, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.IsPlaceholder(); ok {
-		_spec.SetField(item.FieldIsPlaceholder, field.TypeBool, value)
-	}
 	if value, ok := _u.mutation.LockData(); ok {
 		_spec.SetField(item.FieldLockData, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.HasLyrics(); ok {
-		_spec.SetField(item.FieldHasLyrics, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.HasSubtitles(); ok {
-		_spec.SetField(item.FieldHasSubtitles, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.EnableMediaSourceDisplay(); ok {
-		_spec.SetField(item.FieldEnableMediaSourceDisplay, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.PremiereDate(); ok {
 		_spec.SetField(item.FieldPremiereDate, field.TypeTime, value)
@@ -4632,23 +2646,11 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	if _u.mutation.EndDateCleared() {
 		_spec.ClearField(item.FieldEndDate, field.TypeTime)
 	}
-	if value, ok := _u.mutation.LastMediaAddedAt(); ok {
-		_spec.SetField(item.FieldLastMediaAddedAt, field.TypeTime, value)
-	}
-	if _u.mutation.LastMediaAddedAtCleared() {
-		_spec.ClearField(item.FieldLastMediaAddedAt, field.TypeTime)
-	}
 	if value, ok := _u.mutation.DateModified(); ok {
 		_spec.SetField(item.FieldDateModified, field.TypeTime, value)
 	}
 	if _u.mutation.DateModifiedCleared() {
 		_spec.ClearField(item.FieldDateModified, field.TypeTime)
-	}
-	if value, ok := _u.mutation.ProbedAt(); ok {
-		_spec.SetField(item.FieldProbedAt, field.TypeTime, value)
-	}
-	if _u.mutation.ProbedAtCleared() {
-		_spec.ClearField(item.FieldProbedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.ProductionYear(); ok {
 		_spec.SetField(item.FieldProductionYear, field.TypeInt32, value)
@@ -4664,21 +2666,6 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	}
 	if _u.mutation.OfficialRatingCleared() {
 		_spec.ClearField(item.FieldOfficialRating, field.TypeString)
-	}
-	if value, ok := _u.mutation.CustomRating(); ok {
-		_spec.SetField(item.FieldCustomRating, field.TypeString, value)
-	}
-	if _u.mutation.CustomRatingCleared() {
-		_spec.ClearField(item.FieldCustomRating, field.TypeString)
-	}
-	if value, ok := _u.mutation.CriticRating(); ok {
-		_spec.SetField(item.FieldCriticRating, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.AddedCriticRating(); ok {
-		_spec.AddField(item.FieldCriticRating, field.TypeFloat64, value)
-	}
-	if _u.mutation.CriticRatingCleared() {
-		_spec.ClearField(item.FieldCriticRating, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.CommunityRating(); ok {
 		_spec.SetField(item.FieldCommunityRating, field.TypeFloat64, value)
@@ -4707,15 +2694,6 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	if _u.mutation.IndexNumberCleared() {
 		_spec.ClearField(item.FieldIndexNumber, field.TypeInt32)
 	}
-	if value, ok := _u.mutation.IndexNumberEnd(); ok {
-		_spec.SetField(item.FieldIndexNumberEnd, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedIndexNumberEnd(); ok {
-		_spec.AddField(item.FieldIndexNumberEnd, field.TypeInt32, value)
-	}
-	if _u.mutation.IndexNumberEndCleared() {
-		_spec.ClearField(item.FieldIndexNumberEnd, field.TypeInt32)
-	}
 	if value, ok := _u.mutation.ParentIndexNumber(); ok {
 		_spec.SetField(item.FieldParentIndexNumber, field.TypeInt32, value)
 	}
@@ -4725,106 +2703,11 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	if _u.mutation.ParentIndexNumberCleared() {
 		_spec.ClearField(item.FieldParentIndexNumber, field.TypeInt32)
 	}
-	if value, ok := _u.mutation.AirsBeforeSeasonNumber(); ok {
-		_spec.SetField(item.FieldAirsBeforeSeasonNumber, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedAirsBeforeSeasonNumber(); ok {
-		_spec.AddField(item.FieldAirsBeforeSeasonNumber, field.TypeInt32, value)
-	}
-	if _u.mutation.AirsBeforeSeasonNumberCleared() {
-		_spec.ClearField(item.FieldAirsBeforeSeasonNumber, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.AirsAfterSeasonNumber(); ok {
-		_spec.SetField(item.FieldAirsAfterSeasonNumber, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedAirsAfterSeasonNumber(); ok {
-		_spec.AddField(item.FieldAirsAfterSeasonNumber, field.TypeInt32, value)
-	}
-	if _u.mutation.AirsAfterSeasonNumberCleared() {
-		_spec.ClearField(item.FieldAirsAfterSeasonNumber, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.AirsBeforeEpisodeNumber(); ok {
-		_spec.SetField(item.FieldAirsBeforeEpisodeNumber, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedAirsBeforeEpisodeNumber(); ok {
-		_spec.AddField(item.FieldAirsBeforeEpisodeNumber, field.TypeInt32, value)
-	}
-	if _u.mutation.AirsBeforeEpisodeNumberCleared() {
-		_spec.ClearField(item.FieldAirsBeforeEpisodeNumber, field.TypeInt32)
-	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(item.FieldStatus, field.TypeString, value)
 	}
 	if _u.mutation.StatusCleared() {
 		_spec.ClearField(item.FieldStatus, field.TypeString)
-	}
-	if value, ok := _u.mutation.AirTime(); ok {
-		_spec.SetField(item.FieldAirTime, field.TypeString, value)
-	}
-	if _u.mutation.AirTimeCleared() {
-		_spec.ClearField(item.FieldAirTime, field.TypeString)
-	}
-	if value, ok := _u.mutation.DisplayOrder(); ok {
-		_spec.SetField(item.FieldDisplayOrder, field.TypeString, value)
-	}
-	if _u.mutation.DisplayOrderCleared() {
-		_spec.ClearField(item.FieldDisplayOrder, field.TypeString)
-	}
-	if value, ok := _u.mutation.AirDays(); ok {
-		_spec.SetField(item.FieldAirDays, field.TypeJSON, value)
-	}
-	if value, ok := _u.mutation.AppendedAirDays(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, item.FieldAirDays, value)
-		})
-	}
-	if _u.mutation.AirDaysCleared() {
-		_spec.ClearField(item.FieldAirDays, field.TypeJSON)
-	}
-	if value, ok := _u.mutation.AspectRatio(); ok {
-		_spec.SetField(item.FieldAspectRatio, field.TypeString, value)
-	}
-	if _u.mutation.AspectRatioCleared() {
-		_spec.ClearField(item.FieldAspectRatio, field.TypeString)
-	}
-	if value, ok := _u.mutation.Width(); ok {
-		_spec.SetField(item.FieldWidth, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedWidth(); ok {
-		_spec.AddField(item.FieldWidth, field.TypeInt32, value)
-	}
-	if _u.mutation.WidthCleared() {
-		_spec.ClearField(item.FieldWidth, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.Height(); ok {
-		_spec.SetField(item.FieldHeight, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.AddedHeight(); ok {
-		_spec.AddField(item.FieldHeight, field.TypeInt32, value)
-	}
-	if _u.mutation.HeightCleared() {
-		_spec.ClearField(item.FieldHeight, field.TypeInt32)
-	}
-	if value, ok := _u.mutation.NormalizationGain(); ok {
-		_spec.SetField(item.FieldNormalizationGain, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.AddedNormalizationGain(); ok {
-		_spec.AddField(item.FieldNormalizationGain, field.TypeFloat64, value)
-	}
-	if _u.mutation.NormalizationGainCleared() {
-		_spec.ClearField(item.FieldNormalizationGain, field.TypeFloat64)
-	}
-	if value, ok := _u.mutation.PreferredMetadataLanguage(); ok {
-		_spec.SetField(item.FieldPreferredMetadataLanguage, field.TypeString, value)
-	}
-	if _u.mutation.PreferredMetadataLanguageCleared() {
-		_spec.ClearField(item.FieldPreferredMetadataLanguage, field.TypeString)
-	}
-	if value, ok := _u.mutation.PreferredMetadataCountryCode(); ok {
-		_spec.SetField(item.FieldPreferredMetadataCountryCode, field.TypeString, value)
-	}
-	if _u.mutation.PreferredMetadataCountryCodeCleared() {
-		_spec.ClearField(item.FieldPreferredMetadataCountryCode, field.TypeString)
 	}
 	if value, ok := _u.mutation.ProviderIds(); ok {
 		_spec.SetField(item.FieldProviderIds, field.TypeJSON, value)
@@ -4854,17 +2737,6 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	if _u.mutation.TaglinesCleared() {
 		_spec.ClearField(item.FieldTaglines, field.TypeJSON)
 	}
-	if value, ok := _u.mutation.ProductionLocations(); ok {
-		_spec.SetField(item.FieldProductionLocations, field.TypeJSON, value)
-	}
-	if value, ok := _u.mutation.AppendedProductionLocations(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, item.FieldProductionLocations, value)
-		})
-	}
-	if _u.mutation.ProductionLocationsCleared() {
-		_spec.ClearField(item.FieldProductionLocations, field.TypeJSON)
-	}
 	if value, ok := _u.mutation.LockedFields(); ok {
 		_spec.SetField(item.FieldLockedFields, field.TypeJSON, value)
 	}
@@ -4875,17 +2747,6 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	}
 	if _u.mutation.LockedFieldsCleared() {
 		_spec.ClearField(item.FieldLockedFields, field.TypeJSON)
-	}
-	if value, ok := _u.mutation.ExternalUrls(); ok {
-		_spec.SetField(item.FieldExternalUrls, field.TypeJSON, value)
-	}
-	if value, ok := _u.mutation.AppendedExternalUrls(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, item.FieldExternalUrls, value)
-		})
-	}
-	if _u.mutation.ExternalUrlsCleared() {
-		_spec.ClearField(item.FieldExternalUrls, field.TypeJSON)
 	}
 	if _u.mutation.ParentCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -4961,28 +2822,44 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.LibraryCleared() {
+	if _u.mutation.LibrariesCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   item.LibraryTable,
-			Columns: []string{item.LibraryColumn},
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.LibrariesTable,
+			Columns: []string{item.LibrariesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(library.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.LibraryIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.RemovedLibrariesIDs(); len(nodes) > 0 && !_u.mutation.LibrariesCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   item.LibraryTable,
-			Columns: []string{item.LibraryColumn},
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.LibrariesTable,
+			Columns: []string{item.LibrariesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(library.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.LibrariesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.LibrariesTable,
+			Columns: []string{item.LibrariesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -4990,28 +2867,28 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.MediaSourcesCleared() {
+	if _u.mutation.ItemSourcesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   item.MediaSourcesTable,
-			Columns: []string{item.MediaSourcesColumn},
+			Table:   item.ItemSourcesTable,
+			Columns: []string{item.ItemSourcesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasource.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RemovedMediaSourcesIDs(); len(nodes) > 0 && !_u.mutation.MediaSourcesCleared() {
+	if nodes := _u.mutation.RemovedItemSourcesIDs(); len(nodes) > 0 && !_u.mutation.ItemSourcesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   item.MediaSourcesTable,
-			Columns: []string{item.MediaSourcesColumn},
+			Table:   item.ItemSourcesTable,
+			Columns: []string{item.ItemSourcesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasource.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -5019,15 +2896,15 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.MediaSourcesIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.ItemSourcesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   item.MediaSourcesTable,
-			Columns: []string{item.MediaSourcesColumn},
+			Table:   item.ItemSourcesTable,
+			Columns: []string{item.ItemSourcesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasource.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -5073,51 +2950,6 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(credit.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.ChaptersCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.ChaptersTable,
-			Columns: []string{item.ChaptersColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(chapter.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedChaptersIDs(); len(nodes) > 0 && !_u.mutation.ChaptersCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.ChaptersTable,
-			Columns: []string{item.ChaptersColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(chapter.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.ChaptersIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.ChaptersTable,
-			Columns: []string{item.ChaptersColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(chapter.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -5253,96 +3085,6 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(activitylogentry.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.TrickplaysCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.TrickplaysTable,
-			Columns: []string{item.TrickplaysColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(trickplay.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedTrickplaysIDs(); len(nodes) > 0 && !_u.mutation.TrickplaysCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.TrickplaysTable,
-			Columns: []string{item.TrickplaysColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(trickplay.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.TrickplaysIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.TrickplaysTable,
-			Columns: []string{item.TrickplaysColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(trickplay.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.MediaSegmentsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.MediaSegmentsTable,
-			Columns: []string{item.MediaSegmentsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasegment.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedMediaSegmentsIDs(); len(nodes) > 0 && !_u.mutation.MediaSegmentsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.MediaSegmentsTable,
-			Columns: []string{item.MediaSegmentsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasegment.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.MediaSegmentsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   item.MediaSegmentsTable,
-			Columns: []string{item.MediaSegmentsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(mediasegment.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

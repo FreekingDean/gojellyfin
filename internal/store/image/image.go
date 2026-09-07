@@ -25,20 +25,10 @@ const (
 	FieldKind = "kind"
 	// FieldIndex holds the string denoting the index field in the database.
 	FieldIndex = "index"
-	// FieldSource holds the string denoting the source field in the database.
-	FieldSource = "source"
-	// FieldPath holds the string denoting the path field in the database.
-	FieldPath = "path"
+	// FieldURL holds the string denoting the url field in the database.
+	FieldURL = "url"
 	// FieldTag holds the string denoting the tag field in the database.
 	FieldTag = "tag"
-	// FieldBlurHash holds the string denoting the blur_hash field in the database.
-	FieldBlurHash = "blur_hash"
-	// FieldWidth holds the string denoting the width field in the database.
-	FieldWidth = "width"
-	// FieldHeight holds the string denoting the height field in the database.
-	FieldHeight = "height"
-	// FieldSize holds the string denoting the size field in the database.
-	FieldSize = "size"
 	// EdgeItem holds the string denoting the item edge name in mutations.
 	EdgeItem = "item"
 	// Table holds the table name of the image in the database.
@@ -60,13 +50,8 @@ var Columns = []string{
 	FieldItemID,
 	FieldKind,
 	FieldIndex,
-	FieldSource,
-	FieldPath,
+	FieldURL,
 	FieldTag,
-	FieldBlurHash,
-	FieldWidth,
-	FieldHeight,
-	FieldSize,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -124,32 +109,6 @@ func KindValidator(k Kind) error {
 	}
 }
 
-// Source defines the type for the "source" enum field.
-type Source string
-
-// SourceLocal is the default value of the Source enum.
-const DefaultSource = SourceLocal
-
-// Source values.
-const (
-	SourceLocal  Source = "Local"
-	SourceRemote Source = "Remote"
-)
-
-func (s Source) String() string {
-	return string(s)
-}
-
-// SourceValidator is a validator for the "source" field enum values. It is called by the builders before save.
-func SourceValidator(s Source) error {
-	switch s {
-	case SourceLocal, SourceRemote:
-		return nil
-	default:
-		return fmt.Errorf("image: invalid enum value for source field: %q", s)
-	}
-}
-
 // OrderOption defines the ordering options for the Image queries.
 type OrderOption func(*sql.Selector)
 
@@ -183,39 +142,14 @@ func ByIndex(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIndex, opts...).ToFunc()
 }
 
-// BySource orders the results by the source field.
-func BySource(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSource, opts...).ToFunc()
-}
-
-// ByPath orders the results by the path field.
-func ByPath(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldPath, opts...).ToFunc()
+// ByURL orders the results by the url field.
+func ByURL(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldURL, opts...).ToFunc()
 }
 
 // ByTag orders the results by the tag field.
 func ByTag(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTag, opts...).ToFunc()
-}
-
-// ByBlurHash orders the results by the blur_hash field.
-func ByBlurHash(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldBlurHash, opts...).ToFunc()
-}
-
-// ByWidth orders the results by the width field.
-func ByWidth(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldWidth, opts...).ToFunc()
-}
-
-// ByHeight orders the results by the height field.
-func ByHeight(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldHeight, opts...).ToFunc()
-}
-
-// BySize orders the results by the size field.
-func BySize(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSize, opts...).ToFunc()
 }
 
 // ByItemField orders the results by item field.

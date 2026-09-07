@@ -21,7 +21,7 @@ type fixture struct {
 	service    *Service
 	activities *activity.Service
 	user       *store.User
-	device     DeviceInfo
+	device     Device
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -78,7 +78,7 @@ func newFixture(t *testing.T) *fixture {
 		service:    New(client, activities),
 		activities: activities,
 		user:       user,
-		device:     DeviceInfo{ID: deviceID, Name: "Firefox", AppName: "Jellyfin Web", AppVersion: "10.10.0"},
+		device:     Device{ClientID: deviceID, Name: "Firefox", AppName: "Jellyfin Web", AppVersion: "10.10.0"},
 	}
 }
 

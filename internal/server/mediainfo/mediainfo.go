@@ -13,15 +13,17 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 )
 
 type Server struct {
-	items *items.Service
+	policies dto.Access
+	items    *items.Service
 }
 
-func New(items *items.Service) *Server {
-	return &Server{items: items}
+func New(items *items.Service, policies dto.Access) *Server {
+	return &Server{items: items, policies: policies}
 }
 
 func (s *Server) GetPlaybackInfo(ctx context.Context, request api.GetPlaybackInfoRequestObject) (api.GetPlaybackInfoResponseObject, error) {
@@ -54,7 +56,12 @@ func (s *Server) GetPostedPlaybackInfo(ctx context.Context, request api.GetPoste
 }
 
 func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, profile api.DeviceProfile, startTicks int64) (api.PlaybackInfoResponse, error) {
-	item, err := s.items.ItemByID(ctx, itemID)
+	viewer, err := dto.ViewerFor(ctx, s.policies)
+	if err != nil {
+		return api.PlaybackInfoResponse{}, err
+	}
+
+	item, err := s.items.ItemByID(ctx, viewer, itemID)
 	if err != nil {
 		return api.PlaybackInfoResponse{}, err
 	}
@@ -103,15 +110,15 @@ func mediaSourceDto(source *items.MediaSource) api.MediaSourceInfo {
 	streams := source.Edges.Streams
 	converted := make([]api.MediaStream, 0, len(streams))
 	for _, stream := range streams {
-		converted = append(converted, mediaStreamDto(source, stream))
+		converted = append(converted, mediaStreamDto(stream))
 	}
 
 	return api.MediaSourceInfo{
 		Id:                         apiutil.Ptr(source.ID.String()),
 		Name:                       apiutil.Ptr(source.Name),
 		Path:                       apiutil.Ptr(source.Path),
-		Protocol:                   apiutil.Ptr(api.MediaProtocol(source.Protocol)),
-		Type:                       apiutil.Ptr(api.MediaSourceType(source.Kind)),
+		Protocol:                   apiutil.Ptr(api.MediaProtocolFile),
+		Type:                       apiutil.Ptr(api.MediaSourceTypeDefault),
 		Container:                  apiutil.Ptr(source.Container),
 		Size:                       apiutil.Ptr(source.Size),
 		Bitrate:                    apiutil.Ptr(source.Bitrate),
@@ -133,7 +140,7 @@ func mediaSourceDto(source *items.MediaSource) api.MediaSourceInfo {
 	}
 }
 
-func mediaStreamDto(source *items.MediaSource, stream *items.MediaStream) api.MediaStream {
+func mediaStreamDto(stream *items.MediaStream) api.MediaStream {
 	kind := api.MediaStreamType(stream.Kind)
 
 	dto := api.MediaStream{
@@ -142,9 +149,9 @@ func mediaStreamDto(source *items.MediaSource, stream *items.MediaStream) api.Me
 		Codec:                  apiutil.Ptr(stream.Codec),
 		IsDefault:              apiutil.Ptr(stream.IsDefault),
 		IsForced:               apiutil.Ptr(stream.IsForced),
-		IsExternal:             apiutil.Ptr(stream.IsExternal),
+		IsExternal:             apiutil.Ptr(false),
 		IsInterlaced:           apiutil.Ptr(false),
-		SupportsExternalStream: apiutil.Ptr(stream.IsExternal),
+		SupportsExternalStream: apiutil.Ptr(false),
 		DisplayTitle:           apiutil.Ptr(streamDisplayTitle(stream)),
 	}
 
@@ -175,21 +182,9 @@ func mediaStreamDto(source *items.MediaSource, stream *items.MediaStream) api.Me
 	case streammodal.KindAudio:
 		dto.Channels = apiutil.Ptr(stream.Channels)
 		dto.SampleRate = apiutil.Ptr(stream.SampleRate)
-	case streammodal.KindSubtitle:
-		dto.IsHearingImpaired = apiutil.Ptr(stream.IsHearingImpaired)
-		if stream.IsExternal {
-			dto.Path = apiutil.Ptr(stream.Path)
-			dto.IsTextSubtitleStream = apiutil.Ptr(true)
-			dto.DeliveryMethod = apiutil.Ptr(api.SubtitleDeliveryMethodExternal)
-			dto.DeliveryUrl = apiutil.Ptr(subtitleURL(source, stream))
-		}
 	}
 
 	return dto
-}
-
-func subtitleURL(source *items.MediaSource, stream *items.MediaStream) string {
-	return fmt.Sprintf("/Videos/%s/%s/Subtitles/%d/0/Stream.vtt", source.ItemID, source.ID, stream.Index)
 }
 
 func streamDisplayTitle(stream *items.MediaStream) string {

@@ -17,14 +17,18 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
-	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
+	downloadermodal "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
 
 type fixture struct {
-	server  *Server
-	library uuid.UUID
+	server     *Server
+	library    uuid.UUID
+	downloader uuid.UUID
+	client     *store.Client
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -53,11 +57,11 @@ func newFixture(t *testing.T) *fixture {
 	}
 
 	t.Cleanup(func() {
-		inLibrary := sourcemodal.HasItemWith(itemmodal.LibraryID(library.ID))
+		inLibrary := sourcemodal.HasItemWith(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID)))
 		if _, err := client.MediaStream.Delete().Where(streammodal.HasSourceWith(inLibrary)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the media streams: %v", err)
 		}
-		if _, err := client.MediaSource.Delete().Where(inLibrary).Exec(ctx); err != nil {
+		if _, err := client.ItemSource.Delete().Where(inLibrary).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the media sources: %v", err)
 		}
 		if err := libraryService.DeleteLibrary(ctx, library.ID); err != nil {
@@ -68,7 +72,26 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
-	return &fixture{server: New(items.New(client)), library: library.ID}
+	downloader, err := client.Source.Create().
+		SetName(t.Name() + "-" + uuid.NewString()).
+		SetURL("http://" + uuid.NewString() + ".invalid").
+		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
+		SetKind(downloadermodal.KindRadarr).
+		SetRootPath("/media").
+		SetLocalPath("/media").
+		Save(context.Background())
+	if err != nil {
+		t.Fatalf("failed to create the source: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := client.Source.DeleteOne(downloader).Exec(context.Background()); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
+		}
+	})
+
+	return &fixture{
+		downloader: downloader.ID,
+		client:     client, server: New(items.New(client), allLibraries{}), library: library.ID}
 }
 
 func (f *fixture) addRip(t *testing.T, kind items.Kind, container, codec string) uuid.UUID {
@@ -83,8 +106,7 @@ func (f *fixture) addRipped(t *testing.T, kind items.Kind, container, video, cod
 	ctx := context.Background()
 	service := f.server.items
 
-	item, err := service.SaveScanned(ctx, items.Scanned{
-		LibraryID:    f.library,
+	item, err := service.SaveScanned(ctx, items.Item{
 		Kind:         kind,
 		Key:          string(kind) + ":" + container + ":" + video + ":" + codec,
 		Name:         "rip." + container,
@@ -95,8 +117,8 @@ func (f *fixture) addRipped(t *testing.T, kind items.Kind, container, video, cod
 		t.Fatalf("failed to save the item: %v", err)
 	}
 
-	source, err := service.SaveSource(ctx, items.ScannedSource{
-		LibraryID:    f.library,
+	source, err := service.SaveSource(ctx, items.MediaSource{
+		SourceID:     f.newDownloader(t),
 		ItemID:       item.ID,
 		Path:         "/media/rip." + container,
 		Name:         "rip." + container,
@@ -106,12 +128,12 @@ func (f *fixture) addRipped(t *testing.T, kind items.Kind, container, video, cod
 		t.Fatalf("failed to save the source: %v", err)
 	}
 
-	err = service.SaveProbe(ctx, item, source, items.Probe{
+	err = service.SaveProbe(ctx, item, source, items.MediaSource{
 		Container: container,
-		Streams: []items.Stream{
+		Edges: items.MediaSourceEdges{Streams: []*items.MediaStream{
 			{Index: 0, Kind: streammodal.KindVideo, Codec: video, Height: 1080, Width: 1920},
 			{Index: 1, Kind: streammodal.KindAudio, Codec: codec},
-		},
+		}},
 	})
 	if err != nil {
 		t.Fatalf("failed to probe the source: %v", err)
@@ -126,13 +148,13 @@ func (f *fixture) addCopy(t *testing.T, id uuid.UUID, path, video, audio string,
 	ctx := context.Background()
 	service := f.server.items
 
-	item, err := service.ItemByID(ctx, id)
+	item, err := service.ItemByID(ctx, items.Everyone, id)
 	if err != nil {
 		t.Fatalf("failed to read the item: %v", err)
 	}
 
-	source, err := service.SaveSource(ctx, items.ScannedSource{
-		LibraryID:    f.library,
+	source, err := service.SaveSource(ctx, items.MediaSource{
+		SourceID:     f.newDownloader(t),
 		ItemID:       id,
 		Path:         path,
 		Name:         path,
@@ -142,12 +164,12 @@ func (f *fixture) addCopy(t *testing.T, id uuid.UUID, path, video, audio string,
 		t.Fatalf("failed to save the source: %v", err)
 	}
 
-	err = service.SaveProbe(ctx, item, source, items.Probe{
+	err = service.SaveProbe(ctx, item, source, items.MediaSource{
 		Container: strings.TrimPrefix(filepath.Ext(path), "."),
-		Streams: []items.Stream{
+		Edges: items.MediaSourceEdges{Streams: []*items.MediaStream{
 			{Index: 0, Kind: streammodal.KindVideo, Codec: video, Height: height, Width: height * 16 / 9},
 			{Index: 1, Kind: streammodal.KindAudio, Codec: audio},
-		},
+		}},
 	})
 	if err != nil {
 		t.Fatalf("failed to probe the source: %v", err)
@@ -157,8 +179,7 @@ func (f *fixture) addCopy(t *testing.T, id uuid.UUID, path, video, audio string,
 func (f *fixture) unscanned(t *testing.T) uuid.UUID {
 	t.Helper()
 
-	item, err := f.server.items.SaveScanned(context.Background(), items.Scanned{
-		LibraryID:    f.library,
+	item, err := f.server.items.SaveScanned(context.Background(), items.Item{
 		Kind:         itemmodal.KindMovie,
 		Key:          "movie:unscanned",
 		Name:         "unscanned",
@@ -503,4 +524,27 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 			}
 		}
 	})
+}
+
+func (f *fixture) newDownloader(t *testing.T) uuid.UUID {
+	t.Helper()
+
+	record, err := f.client.Source.Create().
+		SetName(t.Name() + "-" + uuid.NewString()).
+		SetURL("http://" + uuid.NewString() + ".invalid").
+		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
+		SetKind(downloadermodal.KindRadarr).
+		SetRootPath("/media").
+		SetLocalPath("/media").
+		Save(context.Background())
+	if err != nil {
+		t.Fatalf("failed to create the source: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := f.client.Source.DeleteOne(record).Exec(context.Background()); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
+		}
+	})
+
+	return record.ID
 }

@@ -14,10 +14,9 @@ import (
 func (f *fixture) scan(t *testing.T, name string, year *int32) *Item {
 	t.Helper()
 
-	record, err := f.service.SaveScanned(context.Background(), Scanned{
-		LibraryID:      f.libraryID,
+	record, err := f.service.SaveScanned(context.Background(), Item{
 		Kind:           itemmodal.KindMovie,
-		Key:            "movie:rescanned",
+		Key:            "movie:rescanned:" + f.libraryID.String(),
 		Name:           name,
 		SortName:       name,
 		ProductionYear: year,
@@ -159,10 +158,9 @@ func TestService_SaveScannedTitleOwnership(t *testing.T) {
 		fixture := newFixture(t)
 		ctx := context.Background()
 
-		record, err := fixture.service.SaveScanned(ctx, Scanned{
-			LibraryID:         fixture.libraryID,
+		record, err := fixture.service.SaveScanned(ctx, Item{
 			Kind:              itemmodal.KindEpisode,
-			Key:               "episode:the-wire:1:3",
+			Key:               "episode:the-wire:1:3:" + fixture.libraryID.String(),
 			Name:              "The Wire S01E03",
 			SortName:          "the wire s01e03",
 			IndexNumber:       number(3),
@@ -181,10 +179,9 @@ func TestService_SaveScannedTitleOwnership(t *testing.T) {
 			t.Fatalf("failed to identify the episode: %v", err)
 		}
 
-		rescanned, err := fixture.service.SaveScanned(ctx, Scanned{
-			LibraryID:         fixture.libraryID,
+		rescanned, err := fixture.service.SaveScanned(ctx, Item{
 			Kind:              itemmodal.KindEpisode,
-			Key:               "episode:the-wire:1:3",
+			Key:               "episode:the-wire:1:3:" + fixture.libraryID.String(),
 			Name:              "The Wire S01E03",
 			SortName:          "the wire s01e03",
 			IndexNumber:       number(3),
@@ -254,7 +251,7 @@ func TestService_EditMetadata(t *testing.T) {
 func (f *fixture) editing(t *testing.T, id uuid.UUID, metadata Metadata) *Item {
 	t.Helper()
 
-	item, err := f.service.ItemByID(context.Background(), id)
+	item, err := f.service.ItemByID(context.Background(), Everyone, id)
 	if err != nil {
 		t.Fatalf("failed to read the item: %v", err)
 	}

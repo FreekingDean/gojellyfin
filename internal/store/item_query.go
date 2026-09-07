@@ -14,19 +14,16 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
-	"github.com/FreekingDean/gojellyfin/internal/store/chapter"
 	"github.com/FreekingDean/gojellyfin/internal/store/credit"
 	"github.com/FreekingDean/gojellyfin/internal/store/genre"
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
-	"github.com/FreekingDean/gojellyfin/internal/store/library"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasegment"
-	"github.com/FreekingDean/gojellyfin/internal/store/mediasource"
+	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	"github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
-	"github.com/FreekingDean/gojellyfin/internal/store/trickplay"
 	"github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
 	"github.com/google/uuid"
 )
@@ -40,15 +37,12 @@ type ItemQuery struct {
 	predicates             []predicate.Item
 	withParent             *ItemQuery
 	withChildren           *ItemQuery
-	withLibrary            *LibraryQuery
-	withMediaSources       *MediaSourceQuery
+	withLibraries          *LibraryItemQuery
+	withItemSources        *ItemSourceQuery
 	withCredits            *CreditQuery
-	withChapters           *ChapterQuery
 	withImages             *ImageQuery
 	withUserData           *UserItemDataQuery
 	withActivityLogEntries *ActivityLogEntryQuery
-	withTrickplays         *TrickplayQuery
-	withMediaSegments      *MediaSegmentQuery
 	withPlaylist           *PlaylistQuery
 	withPlaylistEntries    *PlaylistEntryQuery
 	withGenres             *GenreQuery
@@ -134,9 +128,9 @@ func (_q *ItemQuery) QueryChildren() *ItemQuery {
 	return query
 }
 
-// QueryLibrary chains the current query on the "library" edge.
-func (_q *ItemQuery) QueryLibrary() *LibraryQuery {
-	query := (&LibraryClient{config: _q.config}).Query()
+// QueryLibraries chains the current query on the "libraries" edge.
+func (_q *ItemQuery) QueryLibraries() *LibraryItemQuery {
+	query := (&LibraryItemClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -147,8 +141,8 @@ func (_q *ItemQuery) QueryLibrary() *LibraryQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(item.Table, item.FieldID, selector),
-			sqlgraph.To(library.Table, library.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, item.LibraryTable, item.LibraryColumn),
+			sqlgraph.To(libraryitem.Table, libraryitem.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.LibrariesTable, item.LibrariesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -156,9 +150,9 @@ func (_q *ItemQuery) QueryLibrary() *LibraryQuery {
 	return query
 }
 
-// QueryMediaSources chains the current query on the "media_sources" edge.
-func (_q *ItemQuery) QueryMediaSources() *MediaSourceQuery {
-	query := (&MediaSourceClient{config: _q.config}).Query()
+// QueryItemSources chains the current query on the "item_sources" edge.
+func (_q *ItemQuery) QueryItemSources() *ItemSourceQuery {
+	query := (&ItemSourceClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -169,8 +163,8 @@ func (_q *ItemQuery) QueryMediaSources() *MediaSourceQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(item.Table, item.FieldID, selector),
-			sqlgraph.To(mediasource.Table, mediasource.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, item.MediaSourcesTable, item.MediaSourcesColumn),
+			sqlgraph.To(itemsource.Table, itemsource.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.ItemSourcesTable, item.ItemSourcesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -193,28 +187,6 @@ func (_q *ItemQuery) QueryCredits() *CreditQuery {
 			sqlgraph.From(item.Table, item.FieldID, selector),
 			sqlgraph.To(credit.Table, credit.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, item.CreditsTable, item.CreditsColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryChapters chains the current query on the "chapters" edge.
-func (_q *ItemQuery) QueryChapters() *ChapterQuery {
-	query := (&ChapterClient{config: _q.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := _q.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(item.Table, item.FieldID, selector),
-			sqlgraph.To(chapter.Table, chapter.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, item.ChaptersTable, item.ChaptersColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -281,50 +253,6 @@ func (_q *ItemQuery) QueryActivityLogEntries() *ActivityLogEntryQuery {
 			sqlgraph.From(item.Table, item.FieldID, selector),
 			sqlgraph.To(activitylogentry.Table, activitylogentry.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, item.ActivityLogEntriesTable, item.ActivityLogEntriesColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryTrickplays chains the current query on the "trickplays" edge.
-func (_q *ItemQuery) QueryTrickplays() *TrickplayQuery {
-	query := (&TrickplayClient{config: _q.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := _q.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(item.Table, item.FieldID, selector),
-			sqlgraph.To(trickplay.Table, trickplay.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, item.TrickplaysTable, item.TrickplaysColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryMediaSegments chains the current query on the "media_segments" edge.
-func (_q *ItemQuery) QueryMediaSegments() *MediaSegmentQuery {
-	query := (&MediaSegmentClient{config: _q.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := _q.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(item.Table, item.FieldID, selector),
-			sqlgraph.To(mediasegment.Table, mediasegment.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, item.MediaSegmentsTable, item.MediaSegmentsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -614,15 +542,12 @@ func (_q *ItemQuery) Clone() *ItemQuery {
 		predicates:             append([]predicate.Item{}, _q.predicates...),
 		withParent:             _q.withParent.Clone(),
 		withChildren:           _q.withChildren.Clone(),
-		withLibrary:            _q.withLibrary.Clone(),
-		withMediaSources:       _q.withMediaSources.Clone(),
+		withLibraries:          _q.withLibraries.Clone(),
+		withItemSources:        _q.withItemSources.Clone(),
 		withCredits:            _q.withCredits.Clone(),
-		withChapters:           _q.withChapters.Clone(),
 		withImages:             _q.withImages.Clone(),
 		withUserData:           _q.withUserData.Clone(),
 		withActivityLogEntries: _q.withActivityLogEntries.Clone(),
-		withTrickplays:         _q.withTrickplays.Clone(),
-		withMediaSegments:      _q.withMediaSegments.Clone(),
 		withPlaylist:           _q.withPlaylist.Clone(),
 		withPlaylistEntries:    _q.withPlaylistEntries.Clone(),
 		withGenres:             _q.withGenres.Clone(),
@@ -655,25 +580,25 @@ func (_q *ItemQuery) WithChildren(opts ...func(*ItemQuery)) *ItemQuery {
 	return _q
 }
 
-// WithLibrary tells the query-builder to eager-load the nodes that are connected to
-// the "library" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *ItemQuery) WithLibrary(opts ...func(*LibraryQuery)) *ItemQuery {
-	query := (&LibraryClient{config: _q.config}).Query()
+// WithLibraries tells the query-builder to eager-load the nodes that are connected to
+// the "libraries" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemQuery) WithLibraries(opts ...func(*LibraryItemQuery)) *ItemQuery {
+	query := (&LibraryItemClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withLibrary = query
+	_q.withLibraries = query
 	return _q
 }
 
-// WithMediaSources tells the query-builder to eager-load the nodes that are connected to
-// the "media_sources" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *ItemQuery) WithMediaSources(opts ...func(*MediaSourceQuery)) *ItemQuery {
-	query := (&MediaSourceClient{config: _q.config}).Query()
+// WithItemSources tells the query-builder to eager-load the nodes that are connected to
+// the "item_sources" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemQuery) WithItemSources(opts ...func(*ItemSourceQuery)) *ItemQuery {
+	query := (&ItemSourceClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withMediaSources = query
+	_q.withItemSources = query
 	return _q
 }
 
@@ -685,17 +610,6 @@ func (_q *ItemQuery) WithCredits(opts ...func(*CreditQuery)) *ItemQuery {
 		opt(query)
 	}
 	_q.withCredits = query
-	return _q
-}
-
-// WithChapters tells the query-builder to eager-load the nodes that are connected to
-// the "chapters" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *ItemQuery) WithChapters(opts ...func(*ChapterQuery)) *ItemQuery {
-	query := (&ChapterClient{config: _q.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	_q.withChapters = query
 	return _q
 }
 
@@ -729,28 +643,6 @@ func (_q *ItemQuery) WithActivityLogEntries(opts ...func(*ActivityLogEntryQuery)
 		opt(query)
 	}
 	_q.withActivityLogEntries = query
-	return _q
-}
-
-// WithTrickplays tells the query-builder to eager-load the nodes that are connected to
-// the "trickplays" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *ItemQuery) WithTrickplays(opts ...func(*TrickplayQuery)) *ItemQuery {
-	query := (&TrickplayClient{config: _q.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	_q.withTrickplays = query
-	return _q
-}
-
-// WithMediaSegments tells the query-builder to eager-load the nodes that are connected to
-// the "media_segments" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *ItemQuery) WithMediaSegments(opts ...func(*MediaSegmentQuery)) *ItemQuery {
-	query := (&MediaSegmentClient{config: _q.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	_q.withMediaSegments = query
 	return _q
 }
 
@@ -876,18 +768,15 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 	var (
 		nodes       = []*Item{}
 		_spec       = _q.querySpec()
-		loadedTypes = [15]bool{
+		loadedTypes = [12]bool{
 			_q.withParent != nil,
 			_q.withChildren != nil,
-			_q.withLibrary != nil,
-			_q.withMediaSources != nil,
+			_q.withLibraries != nil,
+			_q.withItemSources != nil,
 			_q.withCredits != nil,
-			_q.withChapters != nil,
 			_q.withImages != nil,
 			_q.withUserData != nil,
 			_q.withActivityLogEntries != nil,
-			_q.withTrickplays != nil,
-			_q.withMediaSegments != nil,
 			_q.withPlaylist != nil,
 			_q.withPlaylistEntries != nil,
 			_q.withGenres != nil,
@@ -928,16 +817,17 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 			return nil, err
 		}
 	}
-	if query := _q.withLibrary; query != nil {
-		if err := _q.loadLibrary(ctx, query, nodes, nil,
-			func(n *Item, e *Library) { n.Edges.Library = e }); err != nil {
+	if query := _q.withLibraries; query != nil {
+		if err := _q.loadLibraries(ctx, query, nodes,
+			func(n *Item) { n.Edges.Libraries = []*LibraryItem{} },
+			func(n *Item, e *LibraryItem) { n.Edges.Libraries = append(n.Edges.Libraries, e) }); err != nil {
 			return nil, err
 		}
 	}
-	if query := _q.withMediaSources; query != nil {
-		if err := _q.loadMediaSources(ctx, query, nodes,
-			func(n *Item) { n.Edges.MediaSources = []*MediaSource{} },
-			func(n *Item, e *MediaSource) { n.Edges.MediaSources = append(n.Edges.MediaSources, e) }); err != nil {
+	if query := _q.withItemSources; query != nil {
+		if err := _q.loadItemSources(ctx, query, nodes,
+			func(n *Item) { n.Edges.ItemSources = []*ItemSource{} },
+			func(n *Item, e *ItemSource) { n.Edges.ItemSources = append(n.Edges.ItemSources, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -945,13 +835,6 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 		if err := _q.loadCredits(ctx, query, nodes,
 			func(n *Item) { n.Edges.Credits = []*Credit{} },
 			func(n *Item, e *Credit) { n.Edges.Credits = append(n.Edges.Credits, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := _q.withChapters; query != nil {
-		if err := _q.loadChapters(ctx, query, nodes,
-			func(n *Item) { n.Edges.Chapters = []*Chapter{} },
-			func(n *Item, e *Chapter) { n.Edges.Chapters = append(n.Edges.Chapters, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -973,20 +856,6 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 		if err := _q.loadActivityLogEntries(ctx, query, nodes,
 			func(n *Item) { n.Edges.ActivityLogEntries = []*ActivityLogEntry{} },
 			func(n *Item, e *ActivityLogEntry) { n.Edges.ActivityLogEntries = append(n.Edges.ActivityLogEntries, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := _q.withTrickplays; query != nil {
-		if err := _q.loadTrickplays(ctx, query, nodes,
-			func(n *Item) { n.Edges.Trickplays = []*Trickplay{} },
-			func(n *Item, e *Trickplay) { n.Edges.Trickplays = append(n.Edges.Trickplays, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := _q.withMediaSegments; query != nil {
-		if err := _q.loadMediaSegments(ctx, query, nodes,
-			func(n *Item) { n.Edges.MediaSegments = []*MediaSegment{} },
-			func(n *Item, e *MediaSegment) { n.Edges.MediaSegments = append(n.Edges.MediaSegments, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -1085,36 +954,7 @@ func (_q *ItemQuery) loadChildren(ctx context.Context, query *ItemQuery, nodes [
 	}
 	return nil
 }
-func (_q *ItemQuery) loadLibrary(ctx context.Context, query *LibraryQuery, nodes []*Item, init func(*Item), assign func(*Item, *Library)) error {
-	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*Item)
-	for i := range nodes {
-		fk := nodes[i].LibraryID
-		if _, ok := nodeids[fk]; !ok {
-			ids = append(ids, fk)
-		}
-		nodeids[fk] = append(nodeids[fk], nodes[i])
-	}
-	if len(ids) == 0 {
-		return nil
-	}
-	query.Where(library.IDIn(ids...))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		nodes, ok := nodeids[n.ID]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "library_id" returned %v`, n.ID)
-		}
-		for i := range nodes {
-			assign(nodes[i], n)
-		}
-	}
-	return nil
-}
-func (_q *ItemQuery) loadMediaSources(ctx context.Context, query *MediaSourceQuery, nodes []*Item, init func(*Item), assign func(*Item, *MediaSource)) error {
+func (_q *ItemQuery) loadLibraries(ctx context.Context, query *LibraryItemQuery, nodes []*Item, init func(*Item), assign func(*Item, *LibraryItem)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*Item)
 	for i := range nodes {
@@ -1125,10 +965,40 @@ func (_q *ItemQuery) loadMediaSources(ctx context.Context, query *MediaSourceQue
 		}
 	}
 	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(mediasource.FieldItemID)
+		query.ctx.AppendFieldOnce(libraryitem.FieldItemID)
 	}
-	query.Where(predicate.MediaSource(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(item.MediaSourcesColumn), fks...))
+	query.Where(predicate.LibraryItem(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(item.LibrariesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ItemID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "item_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *ItemQuery) loadItemSources(ctx context.Context, query *ItemSourceQuery, nodes []*Item, init func(*Item), assign func(*Item, *ItemSource)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Item)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(itemsource.FieldItemID)
+	}
+	query.Where(predicate.ItemSource(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(item.ItemSourcesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -1170,37 +1040,6 @@ func (_q *ItemQuery) loadCredits(ctx context.Context, query *CreditQuery, nodes 
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "item_credits" returned %v for node %v`, *fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (_q *ItemQuery) loadChapters(ctx context.Context, query *ChapterQuery, nodes []*Item, init func(*Item), assign func(*Item, *Chapter)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Item)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	query.withFKs = true
-	query.Where(predicate.Chapter(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(item.ChaptersColumn), fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.item_chapters
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "item_chapters" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "item_chapters" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -1292,68 +1131,6 @@ func (_q *ItemQuery) loadActivityLogEntries(ctx context.Context, query *Activity
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "item_activity_log_entries" returned %v for node %v`, *fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (_q *ItemQuery) loadTrickplays(ctx context.Context, query *TrickplayQuery, nodes []*Item, init func(*Item), assign func(*Item, *Trickplay)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Item)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	query.withFKs = true
-	query.Where(predicate.Trickplay(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(item.TrickplaysColumn), fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.item_trickplays
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "item_trickplays" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "item_trickplays" returned %v for node %v`, *fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (_q *ItemQuery) loadMediaSegments(ctx context.Context, query *MediaSegmentQuery, nodes []*Item, init func(*Item), assign func(*Item, *MediaSegment)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Item)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	query.withFKs = true
-	query.Where(predicate.MediaSegment(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(item.MediaSegmentsColumn), fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.item_media_segments
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "item_media_segments" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "item_media_segments" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -1569,9 +1346,6 @@ func (_q *ItemQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withParent != nil {
 			_spec.Node.AddColumnOnce(item.FieldParentID)
-		}
-		if _q.withLibrary != nil {
-			_spec.Node.AddColumnOnce(item.FieldLibraryID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

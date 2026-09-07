@@ -14,6 +14,9 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
+	playlistmodal "github.com/FreekingDean/gojellyfin/internal/store/playlist"
+	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
 type fixture struct {
@@ -48,7 +51,7 @@ func newFixture(t *testing.T) *fixture {
 
 	t.Cleanup(func() {
 		ctx := context.Background()
-		if _, err := client.Item.Delete().Where(itemmodal.LibraryID(library.ID)).Exec(ctx); err != nil {
+		if _, err := client.Item.Delete().Where(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID))).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the items: %v", err)
 		}
 		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
@@ -59,21 +62,19 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
-	server := New(items.New(client), libraries.New(client))
+	server := New(items.New(client), libraries.New(client), allLibraries{})
 
 	return &fixture{server: server, client: client, library: library.ID, prefix: prefix}
 }
 
-func (f *fixture) add(t *testing.T, kind itemmodal.Kind, mediaType itemmodal.MediaType, name string) {
+func (f *fixture) add(t *testing.T, kind itemmodal.Kind, mediaType playlistmodal.MediaType, name string) {
 	t.Helper()
 
 	_, err := f.client.Item.Create().
-		SetLibraryID(f.library).
 		SetKind(kind).
-		SetMediaType(mediaType).
 		SetName(f.prefix + name).
 		SetSortName(f.prefix + name).
-		SetKey("test:" + name).
+		SetKey("test:" + f.prefix + name).
 		Save(context.Background())
 	if err != nil {
 		t.Fatalf("failed to create %q: %v", name, err)
@@ -107,10 +108,10 @@ func (f *fixture) mine(t *testing.T, params api.GetSuggestionsParams) []string {
 func TestServer_GetSuggestions(t *testing.T) {
 	fixture := newFixture(t)
 
-	fixture.add(t, itemmodal.KindMovie, itemmodal.MediaTypeVideo, "Movie One")
-	fixture.add(t, itemmodal.KindMovie, itemmodal.MediaTypeVideo, "Movie Two")
-	fixture.add(t, itemmodal.KindSeries, itemmodal.MediaTypeUnknown, "Series")
-	fixture.add(t, itemmodal.KindAudio, itemmodal.MediaTypeAudio, "Song")
+	fixture.add(t, itemmodal.KindMovie, playlistmodal.MediaTypeVideo, "Movie One")
+	fixture.add(t, itemmodal.KindMovie, playlistmodal.MediaTypeVideo, "Movie Two")
+	fixture.add(t, itemmodal.KindSeries, playlistmodal.MediaTypeUnknown, "Series")
+	fixture.add(t, itemmodal.KindAudio, playlistmodal.MediaTypeAudio, "Song")
 
 	tests := []struct {
 		name   string
@@ -141,4 +142,10 @@ func TestServer_GetSuggestions(t *testing.T) {
 			}
 		})
 	}
+}
+
+type allLibraries struct{}
+
+func (allLibraries) Access(context.Context, uuid.UUID) (users.Access, error) {
+	return users.Access{All: true}, nil
 }
