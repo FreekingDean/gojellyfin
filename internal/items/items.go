@@ -238,6 +238,11 @@ type ItemQuery struct {
 	MediaTypes []MediaType
 	IDs        []uuid.UUID
 	SearchTerm string
+
+	NameStartsWith          string
+	NameStartsWithOrGreater string
+	NameLessThan            string
+
 	SortBy     []string
 	Descending bool
 	StartIndex int
@@ -277,6 +282,15 @@ func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int
 	}
 	if query.SearchTerm != "" {
 		items = items.Where(itemmodal.NameContainsFold(query.SearchTerm))
+	}
+	if query.NameStartsWith != "" {
+		items = items.Where(itemmodal.SortNameHasPrefix(sorted(query.NameStartsWith)))
+	}
+	if query.NameStartsWithOrGreater != "" {
+		items = items.Where(itemmodal.SortNameGTE(sorted(query.NameStartsWithOrGreater)))
+	}
+	if query.NameLessThan != "" {
+		items = items.Where(itemmodal.SortNameLT(sorted(query.NameLessThan)))
 	}
 
 	total, err := items.Clone().Count(ctx)

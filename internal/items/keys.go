@@ -47,6 +47,10 @@ func EpisodeName(name string, number int32) string {
 	return "Episode " + strconv.Itoa(int(number))
 }
 
+func sorted(value string) string {
+	return strings.ToLower(value)
+}
+
 func SortName(name string) string {
 	cleaned := strings.NewReplacer(".", " ", "_", " ").Replace(name)
 	cleaned = strings.TrimSpace(strings.Join(strings.Fields(cleaned), " "))

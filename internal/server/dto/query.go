@@ -50,6 +50,10 @@ func ItemQuery(ctx context.Context, collections *libraries.Service, viewer items
 		SortBy:     SortFields(params.SortBy),
 		Kinds:      Kinds(params.IncludeItemTypes),
 		MediaTypes: MediaTypes(params.MediaTypes),
+
+		NameStartsWith:          apiutil.Deref(params.NameStartsWith),
+		NameStartsWithOrGreater: apiutil.Deref(params.NameStartsWithOrGreater),
+		NameLessThan:            apiutil.Deref(params.NameLessThan),
 	}
 
 	if params.Ids != nil {
