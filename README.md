@@ -15,6 +15,7 @@ Everything ships as one binary, `cmd/gojellyfin`, with a subcommand each for
 | **TV** | Series, seasons and episodes, including next-up and resume |
 | **Library scanning** | Walks the tree, probes with ffprobe, sweeps what is gone |
 | **Metadata** | Movies, series and episodes identified against TMDB, with your own `TMDB_API_KEY` |
+| **Artwork** | Posters and backdrops cached into an S3-compatible bucket, or redirected to the provider when none is configured |
 | **Background jobs** | Temporal workflows in a separate worker deployment |
 | **High availability** | The API is stateless — run as many replicas as you like |
 | **Automatic encoding** | Audio a client cannot decode is re-encoded on the fly; the video is copied, never transcoded |
