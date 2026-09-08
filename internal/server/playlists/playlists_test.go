@@ -16,14 +16,14 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	devicemodal "github.com/FreekingDean/gojellyfin/internal/store/device"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	devicemodel "github.com/FreekingDean/gojellyfin/internal/store/device"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
-	playlistmodal "github.com/FreekingDean/gojellyfin/internal/store/playlist"
-	entrymodal "github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
-	sharemodal "github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
-	sessionmodal "github.com/FreekingDean/gojellyfin/internal/store/session"
-	usermodal "github.com/FreekingDean/gojellyfin/internal/store/user"
+	playlistmodel "github.com/FreekingDean/gojellyfin/internal/store/playlist"
+	entrymodel "github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
+	sharemodel "github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
+	sessionmodel "github.com/FreekingDean/gojellyfin/internal/store/session"
+	usermodel "github.com/FreekingDean/gojellyfin/internal/store/user"
 )
 
 type fixture struct {
@@ -78,33 +78,33 @@ func newFixture(t *testing.T) *fixture {
 
 	t.Cleanup(func() {
 		if _, err := client.PlaylistShare.Delete().
-			Where(sharemodal.HasPlaylistWith(playlistmodal.ItemIDIn(fixture.created...))).
+			Where(sharemodel.HasPlaylistWith(playlistmodal.ItemIDIn(fixture.created...))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the shares: %v", err)
 		}
 		if _, err := client.PlaylistEntry.Delete().
-			Where(entrymodal.HasPlaylistWith(playlistmodal.ItemIDIn(fixture.created...))).
+			Where(entrymodel.HasPlaylistWith(playlistmodal.ItemIDIn(fixture.created...))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the entries: %v", err)
 		}
-		if _, err := client.Playlist.Delete().Where(playlistmodal.ItemIDIn(fixture.created...)).Exec(ctx); err != nil {
+		if _, err := client.Playlist.Delete().Where(playlistmodel.ItemIDIn(fixture.created...)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the playlists: %v", err)
 		}
-		if _, err := client.Item.Delete().Where(itemmodal.IDIn(fixture.created...)).Exec(ctx); err != nil {
+		if _, err := client.Item.Delete().Where(itemmodel.IDIn(fixture.created...)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the playlist items: %v", err)
 		}
-		if _, err := client.Item.Delete().Where(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID))).Exec(ctx); err != nil {
+		if _, err := client.Item.Delete().Where(itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID))).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the items: %v", err)
 		}
 		if _, err := client.Session.Delete().
-			Where(sessionmodal.HasUserWith(usermodal.IDIn(fixture.users...))).
+			Where(sessionmodel.HasUserWith(usermodal.IDIn(fixture.users...))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the sessions: %v", err)
 		}
-		if _, err := client.Device.Delete().Where(devicemodal.ClientIDIn(fixture.devices...)).Exec(ctx); err != nil {
+		if _, err := client.Device.Delete().Where(devicemodel.ClientIDIn(fixture.devices...)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the devices: %v", err)
 		}
-		if _, err := client.User.Delete().Where(usermodal.IDIn(fixture.users...)).Exec(ctx); err != nil {
+		if _, err := client.User.Delete().Where(usermodel.IDIn(fixture.users...)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the users: %v", err)
 		}
 		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
@@ -155,7 +155,7 @@ func (f *fixture) songs(t *testing.T, names ...string) []uuid.UUID {
 	ids := make([]uuid.UUID, 0, len(names))
 	for _, name := range names {
 		record, err := f.client.Item.Create().
-			SetKind(itemmodal.KindAudio).
+			SetKind(itemmodel.KindAudio).
 			SetName(name).
 			SetSortName(name).
 			SetKey(fmt.Sprintf("test:%s:%s", f.libraryID, name)).

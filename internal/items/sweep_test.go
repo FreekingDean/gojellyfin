@@ -6,8 +6,8 @@ import (
 
 	"github.com/google/uuid"
 
-	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
 func (f *fixture) everything(t *testing.T) []uuid.UUID {
@@ -46,7 +46,7 @@ func TestService_SweepUnreachable(t *testing.T) {
 		fixture := newFixture(t)
 		ctx := context.Background()
 
-		gone := fixture.add(t, seed{kind: itemmodal.KindMovie, name: "Gone"})
+		gone := fixture.add(t, seed{kind: itemmodel.KindMovie, name: "Gone"})
 
 		if err := fixture.service.SweepUnreachable(ctx, fixture.everything(t)); err != nil {
 			t.Fatalf("failed to sweep: %v", err)
@@ -69,9 +69,9 @@ func TestService_SweepUnreachable(t *testing.T) {
 		fixture := newFixture(t)
 		ctx := context.Background()
 
-		series := fixture.add(t, seed{kind: itemmodal.KindSeries, name: "Show"})
-		season := fixture.add(t, seed{kind: itemmodal.KindSeason, name: "Season 1", parentID: &series})
-		episode := fixture.add(t, seed{kind: itemmodal.KindEpisode, name: "One", parentID: &season})
+		series := fixture.add(t, seed{kind: itemmodel.KindSeries, name: "Show"})
+		season := fixture.add(t, seed{kind: itemmodel.KindSeason, name: "Season 1", parentID: &series})
+		episode := fixture.add(t, seed{kind: itemmodel.KindEpisode, name: "One", parentID: &season})
 
 		if err := fixture.service.SweepUnreachable(ctx, fixture.everything(t)); err != nil {
 			t.Fatalf("failed to sweep: %v", err)
@@ -88,9 +88,9 @@ func TestService_SweepUnreachable(t *testing.T) {
 		fixture := newFixture(t)
 		ctx := context.Background()
 
-		series := fixture.add(t, seed{kind: itemmodal.KindSeries, name: "Held"})
-		season := fixture.add(t, seed{kind: itemmodal.KindSeason, name: "Season 1", parentID: &series})
-		episode := fixture.add(t, seed{kind: itemmodal.KindEpisode, name: "One", parentID: &season})
+		series := fixture.add(t, seed{kind: itemmodel.KindSeries, name: "Held"})
+		season := fixture.add(t, seed{kind: itemmodel.KindSeason, name: "Season 1", parentID: &series})
+		episode := fixture.add(t, seed{kind: itemmodel.KindEpisode, name: "One", parentID: &season})
 
 		if _, err := fixture.service.SaveSource(ctx, MediaSource{
 			SourceID: fixture.downloader(t),
@@ -116,9 +116,9 @@ func TestService_SweepUnreachable(t *testing.T) {
 		fixture := newFixture(t)
 		ctx := context.Background()
 
-		gone := fixture.add(t, seed{kind: itemmodal.KindMovie, name: "Returning"})
+		gone := fixture.add(t, seed{kind: itemmodel.KindMovie, name: "Returning"})
 		if err := fixture.service.SaveImage(ctx, gone, Image{
-			Kind: imagemodal.KindPrimary, URL: "https://image.tmdb.org/t/p/w780/poster.jpg", Tag: "tag",
+			Kind: imagemodel.KindPrimary, URL: "https://image.tmdb.org/t/p/w780/poster.jpg", Tag: "tag",
 		}); err != nil {
 			t.Fatalf("failed to save the image: %v", err)
 		}
@@ -141,7 +141,7 @@ func TestViewer_Visible(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
-	held := fixture.add(t, seed{kind: itemmodal.KindMovie, name: "Held"})
+	held := fixture.add(t, seed{kind: itemmodel.KindMovie, name: "Held"})
 
 	other := Viewer{Libraries: []uuid.UUID{uuid.New()}}
 	records, total, err := fixture.service.QueryItems(ctx, ItemQuery{Viewer: other})

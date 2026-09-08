@@ -13,9 +13,9 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	devicemodal "github.com/FreekingDean/gojellyfin/internal/store/device"
-	sessionmodal "github.com/FreekingDean/gojellyfin/internal/store/session"
-	usermodal "github.com/FreekingDean/gojellyfin/internal/store/user"
+	devicemodel "github.com/FreekingDean/gojellyfin/internal/store/device"
+	sessionmodel "github.com/FreekingDean/gojellyfin/internal/store/session"
+	usermodel "github.com/FreekingDean/gojellyfin/internal/store/user"
 )
 
 type fixture struct {
@@ -55,12 +55,12 @@ func newFixture(t *testing.T) *fixture {
 	t.Cleanup(func() {
 		ctx := context.Background()
 		if _, err := client.Device.Delete().
-			Where(devicemodal.ClientIDHasPrefix(prefix)).
+			Where(devicemodel.ClientIDHasPrefix(prefix)).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the devices: %v", err)
 		}
 		if _, err := client.User.Delete().
-			Where(usermodal.UsernameHasPrefix(prefix)).
+			Where(usermodel.UsernameHasPrefix(prefix)).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the users: %v", err)
 		}
@@ -112,7 +112,7 @@ func (f *fixture) addUser(t *testing.T, name string) *store.User {
 func (f *fixture) addSession(t *testing.T, clientID string, user *store.User, lastActivity time.Time) uuid.UUID {
 	t.Helper()
 
-	device, err := f.client.Device.Query().Where(devicemodal.ClientID(clientID)).Only(context.Background())
+	device, err := f.client.Device.Query().Where(devicemodel.ClientID(clientID)).Only(context.Background())
 	if err != nil {
 		t.Fatalf("failed to find the device %q: %v", clientID, err)
 	}
@@ -133,7 +133,7 @@ func (f *fixture) addSession(t *testing.T, clientID string, user *store.User, la
 func (f *fixture) storedCustomName(t *testing.T, clientID string) string {
 	t.Helper()
 
-	device, err := f.client.Device.Query().Where(devicemodal.ClientID(clientID)).Only(context.Background())
+	device, err := f.client.Device.Query().Where(devicemodel.ClientID(clientID)).Only(context.Background())
 	if err != nil {
 		t.Fatalf("failed to find the device %q: %v", clientID, err)
 	}
@@ -417,7 +417,7 @@ func TestServer_DeleteDevice(t *testing.T) {
 			t.Fatalf("response = %T, want api.DeleteDevice204Response", response)
 		}
 
-		devices, err := fixture.client.Device.Query().Where(devicemodal.ClientID(clientID)).Count(ctx)
+		devices, err := fixture.client.Device.Query().Where(devicemodel.ClientID(clientID)).Count(ctx)
 		if err != nil {
 			t.Fatalf("failed to count the devices: %v", err)
 		}
@@ -426,7 +426,7 @@ func TestServer_DeleteDevice(t *testing.T) {
 		}
 
 		orphans, err := fixture.client.Session.Query().
-			Where(sessionmodal.HasDeviceWith(devicemodal.ClientID(clientID))).
+			Where(sessionmodel.HasDeviceWith(devicemodal.ClientID(clientID))).
 			Count(ctx)
 		if err != nil {
 			t.Fatalf("failed to count the sessions: %v", err)
@@ -435,7 +435,7 @@ func TestServer_DeleteDevice(t *testing.T) {
 			t.Errorf("sessions = %d, want 0", orphans)
 		}
 
-		if exists, err := fixture.client.Session.Query().Where(sessionmodal.ID(keptSession)).Exist(ctx); err != nil {
+		if exists, err := fixture.client.Session.Query().Where(sessionmodel.ID(keptSession)).Exist(ctx); err != nil {
 			t.Fatalf("failed to look up the kept session: %v", err)
 		} else if !exists {
 			t.Error("the other device's session was deleted")

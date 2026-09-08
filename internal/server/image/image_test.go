@@ -12,9 +12,9 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	downloadermodal "github.com/FreekingDean/gojellyfin/internal/store/source"
+	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
+	downloadermodel "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
 
 type fixture struct {
@@ -51,7 +51,7 @@ func newFixture(t *testing.T) *fixture {
 		SetName(t.Name() + "-" + uuid.NewString()).
 		SetURL("http://" + uuid.NewString() + ".invalid").
 		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
-		SetKind(downloadermodal.KindRadarr).
+		SetKind(downloadermodel.KindRadarr).
 		SetRootPath("/media").
 		SetLocalPath("/media").
 		Save(context.Background())
@@ -59,7 +59,7 @@ func newFixture(t *testing.T) *fixture {
 		t.Fatalf("failed to create the source: %v", err)
 	}
 	item, err := client.Item.Create().
-		SetKind(itemmodal.KindMovie).
+		SetKind(itemmodel.KindMovie).
 		SetName("Movie").
 		SetSortName("Movie").
 		SetKey("test:movie:" + library.ID.String()).
@@ -115,7 +115,7 @@ const poster = "https://image.tmdb.org/t/p/w780/poster.jpg"
 func TestServer_GetItemImage(t *testing.T) {
 	t.Run("redirects to the url the provider answered", func(t *testing.T) {
 		fixture := newFixture(t)
-		fixture.store(t, imagemodal.KindPrimary, 0, poster, "postertag")
+		fixture.store(t, imagemodel.KindPrimary, 0, poster, "postertag")
 
 		response, err := fixture.server.GetItemImage(context.Background(), api.GetItemImageRequestObject{
 			ItemId:    fixture.itemID,
@@ -156,7 +156,7 @@ func TestServer_GetItemImage(t *testing.T) {
 
 	t.Run("answers 404 for an image type nothing wrote", func(t *testing.T) {
 		fixture := newFixture(t)
-		fixture.store(t, imagemodal.KindPrimary, 0, poster, "postertag")
+		fixture.store(t, imagemodel.KindPrimary, 0, poster, "postertag")
 
 		response, err := fixture.server.GetItemImage(context.Background(), api.GetItemImageRequestObject{
 			ItemId:    fixture.itemID,
@@ -175,7 +175,7 @@ func TestServer_GetItemImage(t *testing.T) {
 func TestServer_GetItemImageByIndex(t *testing.T) {
 	fixture := newFixture(t)
 	second := "https://image.tmdb.org/t/p/w1280/backdrop.jpg"
-	fixture.store(t, imagemodal.KindBackdrop, 1, second, "backdroptag")
+	fixture.store(t, imagemodel.KindBackdrop, 1, second, "backdroptag")
 
 	response, err := fixture.server.GetItemImageByIndex(context.Background(), api.GetItemImageByIndexRequestObject{
 		ItemId:     fixture.itemID,

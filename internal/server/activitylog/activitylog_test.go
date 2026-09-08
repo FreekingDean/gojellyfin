@@ -13,7 +13,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	entrymodal "github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
+	entrymodel "github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
 )
 
 type fixture struct {
@@ -59,7 +59,7 @@ func newFixture(t *testing.T) *fixture {
 
 	t.Cleanup(func() {
 		ctx := context.Background()
-		if _, err := client.ActivityLogEntry.Delete().Where(entrymodal.IDIn(f.ids...)).Exec(ctx); err != nil {
+		if _, err := client.ActivityLogEntry.Delete().Where(entrymodel.IDIn(f.ids...)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the entries: %v", err)
 		}
 		if err := client.User.DeleteOne(user).Exec(ctx); err != nil {

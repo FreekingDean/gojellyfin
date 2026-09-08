@@ -6,7 +6,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
-	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
+	librarymodel "github.com/FreekingDean/gojellyfin/internal/store/library"
 )
 
 type Server struct {
@@ -36,7 +36,7 @@ func (s *Server) AddVirtualFolder(ctx context.Context, request api.AddVirtualFol
 		return api.AddVirtualFolder403Response{}, nil
 	}
 
-	collectionType := librarymodal.CollectionTypeMixed
+	collectionType := librarymodel.CollectionTypeMixed
 	if request.Params.CollectionType != nil {
 		collectionType = libraries.CollectionType(*request.Params.CollectionType)
 	}

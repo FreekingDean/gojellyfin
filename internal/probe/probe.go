@@ -8,7 +8,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/items"
-	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
+	streammodel "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 )
 
 const ticksPerSecond = 10_000_000
@@ -63,13 +63,13 @@ func (s *Prober) probeFile(ctx context.Context, source *items.MediaSource) (*ite
 func rangeType(transfer string) items.VideoRangeType {
 	switch strings.ToLower(strings.TrimSpace(transfer)) {
 	case "smpte2084":
-		return streammodal.VideoRangeTypeHDR10
+		return streammodel.VideoRangeTypeHDR10
 	case "arib-std-b67":
-		return streammodal.VideoRangeTypeHLG
+		return streammodel.VideoRangeTypeHLG
 	case "":
 		return ""
 	default:
-		return streammodal.VideoRangeTypeSDR
+		return streammodel.VideoRangeTypeSDR
 	}
 }
 
@@ -105,12 +105,12 @@ func container(formatName, path string) string {
 func streamKind(codecType string) items.StreamKind {
 	switch codecType {
 	case "video":
-		return streammodal.KindVideo
+		return streammodel.KindVideo
 	case "audio":
-		return streammodal.KindAudio
+		return streammodel.KindAudio
 	case "subtitle":
-		return streammodal.KindSubtitle
+		return streammodel.KindSubtitle
 	default:
-		return streammodal.KindEmbeddedImage
+		return streammodel.KindEmbeddedImage
 	}
 }

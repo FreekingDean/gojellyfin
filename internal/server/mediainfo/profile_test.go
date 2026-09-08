@@ -10,7 +10,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
+	streammodel "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 )
 
 const chromeProfile = `{
@@ -62,8 +62,8 @@ func TestCapabilities(t *testing.T) {
 func planFor(container, audio string) items.Plan {
 	source := &items.MediaSource{ID: uuid.New(), Container: "mkv"}
 	source.Edges.Streams = []*items.MediaStream{
-		{Index: 0, Kind: streammodal.KindVideo, Codec: "h264"},
-		{Index: 1, Kind: streammodal.KindAudio, Codec: "ac3"},
+		{Index: 0, Kind: streammodel.KindVideo, Codec: "h264"},
+		{Index: 1, Kind: streammodel.KindAudio, Codec: "ac3"},
 	}
 
 	return items.Plan{Source: source, Container: container, AudioCodec: audio}

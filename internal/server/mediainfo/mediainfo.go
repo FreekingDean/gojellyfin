@@ -14,7 +14,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/server/dto"
-	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
+	streammodel "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 )
 
 type Server struct {
@@ -135,8 +135,8 @@ func mediaSourceDto(source *items.MediaSource) api.MediaSourceInfo {
 		RequiresOpening:            apiutil.Ptr(false),
 		RequiresClosing:            apiutil.Ptr(false),
 		RequiresLooping:            apiutil.Ptr(false),
-		DefaultAudioStreamIndex:    defaultStreamIndex(streams, streammodal.KindAudio),
-		DefaultSubtitleStreamIndex: defaultStreamIndex(streams, streammodal.KindSubtitle),
+		DefaultAudioStreamIndex:    defaultStreamIndex(streams, streammodel.KindAudio),
+		DefaultSubtitleStreamIndex: defaultStreamIndex(streams, streammodel.KindSubtitle),
 	}
 }
 
@@ -175,11 +175,11 @@ func mediaStreamDto(stream *items.MediaStream) api.MediaStream {
 	}
 
 	switch stream.Kind {
-	case streammodal.KindVideo:
+	case streammodel.KindVideo:
 		dto.Width = apiutil.Ptr(stream.Width)
 		dto.Height = apiutil.Ptr(stream.Height)
 		dto.AspectRatio = apiutil.Ptr(aspectRatio(stream.Width, stream.Height))
-	case streammodal.KindAudio:
+	case streammodel.KindAudio:
 		dto.Channels = apiutil.Ptr(stream.Channels)
 		dto.SampleRate = apiutil.Ptr(stream.SampleRate)
 	}
@@ -189,9 +189,9 @@ func mediaStreamDto(stream *items.MediaStream) api.MediaStream {
 
 func streamDisplayTitle(stream *items.MediaStream) string {
 	switch stream.Kind {
-	case streammodal.KindVideo:
+	case streammodel.KindVideo:
 		return fmt.Sprintf("%dx%d %s", stream.Width, stream.Height, stream.Codec)
-	case streammodal.KindAudio:
+	case streammodel.KindAudio:
 		if stream.Language != "" {
 			return fmt.Sprintf("%s %s", stream.Language, stream.Codec)
 		}

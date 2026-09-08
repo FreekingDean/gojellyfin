@@ -15,10 +15,10 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	entrymodal "github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
-	devicemodal "github.com/FreekingDean/gojellyfin/internal/store/device"
-	sessionmodal "github.com/FreekingDean/gojellyfin/internal/store/session"
-	usermodal "github.com/FreekingDean/gojellyfin/internal/store/user"
+	entrymodel "github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
+	devicemodel "github.com/FreekingDean/gojellyfin/internal/store/device"
+	sessionmodel "github.com/FreekingDean/gojellyfin/internal/store/session"
+	usermodel "github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
@@ -104,13 +104,13 @@ func TestServer_AuthenticateUserByName(t *testing.T) {
 		}
 
 		t.Cleanup(func() {
-			if _, err := client.ActivityLogEntry.Delete().Where(entrymodal.HasUserWith(usermodal.ID(user.ID))).Exec(ctx); err != nil {
+			if _, err := client.ActivityLogEntry.Delete().Where(entrymodel.HasUserWith(usermodal.ID(user.ID))).Exec(ctx); err != nil {
 				t.Errorf("failed to delete the entries: %v", err)
 			}
-			if _, err := client.Session.Delete().Where(sessionmodal.HasUserWith(usermodal.ID(user.ID))).Exec(ctx); err != nil {
+			if _, err := client.Session.Delete().Where(sessionmodel.HasUserWith(usermodal.ID(user.ID))).Exec(ctx); err != nil {
 				t.Errorf("failed to delete the sessions: %v", err)
 			}
-			if _, err := client.Device.Delete().Where(devicemodal.ClientID(deviceID)).Exec(ctx); err != nil {
+			if _, err := client.Device.Delete().Where(devicemodel.ClientID(deviceID)).Exec(ctx); err != nil {
 				t.Errorf("failed to delete the device: %v", err)
 			}
 			if err := client.User.DeleteOne(user).Exec(ctx); err != nil {

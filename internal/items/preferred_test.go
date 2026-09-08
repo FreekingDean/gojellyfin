@@ -4,14 +4,14 @@ import (
 	"testing"
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
+	streammodel "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 )
 
 func source(container, video, audio string, bitrate int32) *MediaSource {
 	record := &MediaSource{Container: container, Bitrate: bitrate}
 	record.Edges.Streams = []*store.MediaStream{
-		{Kind: streammodal.KindVideo, Codec: video},
-		{Kind: streammodal.KindAudio, Codec: audio},
+		{Kind: streammodel.KindVideo, Codec: video},
+		{Kind: streammodel.KindAudio, Codec: audio},
 	}
 
 	return record

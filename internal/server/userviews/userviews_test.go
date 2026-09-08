@@ -15,7 +15,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
+	librarymodel "github.com/FreekingDean/gojellyfin/internal/store/library"
 )
 
 type fixture struct {
@@ -45,7 +45,7 @@ func newFixture(t *testing.T) *fixture {
 
 	t.Cleanup(func() {
 		ctx := context.Background()
-		if _, err := client.Library.Delete().Where(librarymodal.NameHasPrefix(prefix)).Exec(ctx); err != nil {
+		if _, err := client.Library.Delete().Where(librarymodel.NameHasPrefix(prefix)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the libraries: %v", err)
 		}
 		if err := connection.Stop(); err != nil {
@@ -56,7 +56,7 @@ func newFixture(t *testing.T) *fixture {
 	return &fixture{server: New(libraries.New(client)), client: client, prefix: prefix}
 }
 
-func (f *fixture) add(t *testing.T, collectionType librarymodal.CollectionType, name string) uuid.UUID {
+func (f *fixture) add(t *testing.T, collectionType librarymodel.CollectionType, name string) uuid.UUID {
 	t.Helper()
 
 	library, err := f.client.Library.Create().
@@ -73,7 +73,7 @@ func (f *fixture) add(t *testing.T, collectionType librarymodal.CollectionType, 
 func TestServer_GetUserViews(t *testing.T) {
 	fixture := newFixture(t)
 
-	id := fixture.add(t, librarymodal.CollectionTypeMovies, "Feature Films")
+	id := fixture.add(t, librarymodel.CollectionTypeMovies, "Feature Films")
 
 	response, err := fixture.server.GetUserViews(context.Background(), api.GetUserViewsRequestObject{})
 	if err != nil {
@@ -101,7 +101,7 @@ func TestServer_GetUserViews(t *testing.T) {
 		Name:              apiutil.Ptr(fixture.prefix + "Feature Films"),
 		SortName:          apiutil.Ptr(strings.ToLower(fixture.prefix + "Feature Films")),
 		Type:              apiutil.Ptr(api.BaseItemKindCollectionFolder),
-		CollectionType:    apiutil.Ptr(api.CollectionType(librarymodal.CollectionTypeMovies)),
+		CollectionType:    apiutil.Ptr(api.CollectionType(librarymodel.CollectionTypeMovies)),
 		IsFolder:          apiutil.Ptr(true),
 		LocationType:      apiutil.Ptr(api.FileSystem),
 		ImageTags:         &map[string]*string{},
@@ -115,11 +115,11 @@ func TestServer_GetUserViews(t *testing.T) {
 func TestServer_GetGroupingOptions(t *testing.T) {
 	fixture := newFixture(t)
 
-	movies := fixture.add(t, librarymodal.CollectionTypeMovies, "Movies")
-	shows := fixture.add(t, librarymodal.CollectionTypeTvshows, "Shows")
-	mixed := fixture.add(t, librarymodal.CollectionTypeMixed, "Mixed")
-	fixture.add(t, librarymodal.CollectionTypeMusic, "Music")
-	fixture.add(t, librarymodal.CollectionTypeBooks, "Books")
+	movies := fixture.add(t, librarymodel.CollectionTypeMovies, "Movies")
+	shows := fixture.add(t, librarymodel.CollectionTypeTvshows, "Shows")
+	mixed := fixture.add(t, librarymodel.CollectionTypeMixed, "Mixed")
+	fixture.add(t, librarymodel.CollectionTypeMusic, "Music")
+	fixture.add(t, librarymodel.CollectionTypeBooks, "Books")
 
 	response, err := fixture.server.GetGroupingOptions(context.Background(), api.GetGroupingOptionsRequestObject{})
 	if err != nil {

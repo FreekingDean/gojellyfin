@@ -7,12 +7,12 @@ import (
 
 	"github.com/google/uuid"
 
-	creditmodal "github.com/FreekingDean/gojellyfin/internal/store/credit"
-	genremodal "github.com/FreekingDean/gojellyfin/internal/store/genre"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
-	personmodal "github.com/FreekingDean/gojellyfin/internal/store/person"
-	studiomodal "github.com/FreekingDean/gojellyfin/internal/store/studio"
+	creditmodel "github.com/FreekingDean/gojellyfin/internal/store/credit"
+	genremodel "github.com/FreekingDean/gojellyfin/internal/store/genre"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
+	streammodel "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
+	personmodel "github.com/FreekingDean/gojellyfin/internal/store/person"
+	studiomodel "github.com/FreekingDean/gojellyfin/internal/store/studio"
 )
 
 type metadataFixture struct {
@@ -29,16 +29,16 @@ func newMetadataFixture(t *testing.T) *metadataFixture {
 
 	t.Cleanup(func() {
 		ctx := context.Background()
-		if _, err := client.Credit.Delete().Where(creditmodal.HasPersonWith(personmodal.NameHasPrefix(prefix))).Exec(ctx); err != nil {
+		if _, err := client.Credit.Delete().Where(creditmodel.HasPersonWith(personmodal.NameHasPrefix(prefix))).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the credits: %v", err)
 		}
-		if _, err := client.Person.Delete().Where(personmodal.NameHasPrefix(prefix)).Exec(ctx); err != nil {
+		if _, err := client.Person.Delete().Where(personmodel.NameHasPrefix(prefix)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the people: %v", err)
 		}
-		if _, err := client.Genre.Delete().Where(genremodal.NameHasPrefix(prefix)).Exec(ctx); err != nil {
+		if _, err := client.Genre.Delete().Where(genremodel.NameHasPrefix(prefix)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the genres: %v", err)
 		}
-		if _, err := client.Studio.Delete().Where(studiomodal.NameHasPrefix(prefix)).Exec(ctx); err != nil {
+		if _, err := client.Studio.Delete().Where(studiomodel.NameHasPrefix(prefix)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the studios: %v", err)
 		}
 	})
@@ -49,7 +49,7 @@ func newMetadataFixture(t *testing.T) *metadataFixture {
 func (f *metadataFixture) item(t *testing.T, name string) *Item {
 	t.Helper()
 
-	id := f.add(t, seed{kind: itemmodal.KindMovie, name: name})
+	id := f.add(t, seed{kind: itemmodel.KindMovie, name: name})
 	record, err := f.service.ItemByID(context.Background(), Everyone, id)
 	if err != nil {
 		t.Fatalf("failed to read %q: %v", name, err)
@@ -116,8 +116,8 @@ func TestService_NamedMetadata(t *testing.T) {
 			Studios: []string{fixture.name("Studio")},
 			Tags:    []string{"live"},
 			People: []Credit{
-				{Name: fixture.name("Director"), Kind: creditmodal.KindDirector},
-				{Name: fixture.name("Writer"), Kind: creditmodal.KindWriter, Role: "Teleplay", Order: 3},
+				{Name: fixture.name("Director"), Kind: creditmodel.KindDirector},
+				{Name: fixture.name("Writer"), Kind: creditmodel.KindWriter, Role: "Teleplay", Order: 3},
 			},
 		})
 
@@ -161,7 +161,7 @@ func TestService_NamedMetadata(t *testing.T) {
 		})
 
 		t.Run("filters people by credit kind", func(t *testing.T) {
-			named, _, err := fixture.service.DistinctPeople(ctx, fixture.query(), []CreditKind{creditmodal.KindWriter})
+			named, _, err := fixture.service.DistinctPeople(ctx, fixture.query(), []CreditKind{creditmodel.KindWriter})
 			if err != nil {
 				t.Fatalf("failed to query people: %v", err)
 			}
@@ -177,8 +177,8 @@ func TestService_NamedMetadata(t *testing.T) {
 			movie := twice.item(t, "Twice")
 
 			twice.seed(t, movie, seeded{People: []Credit{
-				{Name: twice.name("Producer"), Kind: creditmodal.KindProducer},
-				{Name: twice.name("Producer"), Kind: creditmodal.KindProducer},
+				{Name: twice.name("Producer"), Kind: creditmodel.KindProducer},
+				{Name: twice.name("Producer"), Kind: creditmodel.KindProducer},
 			}})
 
 			named, _, err := twice.service.DistinctPeople(ctx, MetadataQuery{
@@ -197,7 +197,7 @@ func TestService_NamedMetadata(t *testing.T) {
 
 		t.Run("keeps the role and the billing order", func(t *testing.T) {
 			credit, err := fixture.service.store.Credit.Query().
-				Where(creditmodal.HasPersonWith(personmodal.Name(fixture.name("Writer")))).
+				Where(creditmodel.HasPersonWith(personmodal.Name(fixture.name("Writer")))).
 				Only(ctx)
 			if err != nil {
 				t.Fatalf("failed to read the credit: %v", err)
@@ -238,7 +238,7 @@ func TestService_NamedMetadata(t *testing.T) {
 				t.Errorf("genres = %v, want %v", got, want)
 			}
 
-			rows, err := fixture.service.store.Genre.Query().Where(genremodal.NameHasPrefix(fixture.prefix)).Count(ctx)
+			rows, err := fixture.service.store.Genre.Query().Where(genremodel.NameHasPrefix(fixture.prefix)).Count(ctx)
 			if err != nil {
 				t.Fatalf("failed to count genre rows: %v", err)
 			}
@@ -278,7 +278,7 @@ func TestService_NamedMetadata(t *testing.T) {
 			fixture.seed(t, fixture.item(t, name), seeded{Genres: []string{shared}})
 		}
 
-		rows, err := fixture.service.store.Genre.Query().Where(genremodal.Name(shared)).Count(ctx)
+		rows, err := fixture.service.store.Genre.Query().Where(genremodel.Name(shared)).Count(ctx)
 		if err != nil {
 			t.Fatalf("failed to count genre rows: %v", err)
 		}
@@ -299,7 +299,7 @@ func TestService_NamedMetadata(t *testing.T) {
 		fixture := newFixture(t)
 		ctx := context.Background()
 
-		id := fixture.add(t, seed{kind: itemmodal.KindMovie, name: "Movie"})
+		id := fixture.add(t, seed{kind: itemmodel.KindMovie, name: "Movie"})
 		item, err := fixture.service.ItemByID(ctx, Everyone, id)
 		if err != nil {
 			t.Fatalf("failed to load the item: %v", err)
@@ -309,8 +309,8 @@ func TestService_NamedMetadata(t *testing.T) {
 			Container:    "mkv",
 			RunTimeTicks: 100,
 			Edges: MediaSourceEdges{Streams: []*MediaStream{
-				{Index: 0, Kind: streammodal.KindVideo, Codec: "h264"},
-				{Index: 1, Kind: streammodal.KindAudio, Codec: "aac"},
+				{Index: 0, Kind: streammodel.KindVideo, Codec: "h264"},
+				{Index: 1, Kind: streammodel.KindAudio, Codec: "aac"},
 			}},
 		}
 		source := fixture.source(t, id, "/media/movie.mkv")
@@ -321,7 +321,7 @@ func TestService_NamedMetadata(t *testing.T) {
 		second := MediaSource{
 			Container:    "mkv",
 			RunTimeTicks: 200,
-			Edges:        MediaSourceEdges{Streams: []*MediaStream{{Index: 0, Kind: streammodal.KindVideo, Codec: "hevc"}}},
+			Edges:        MediaSourceEdges{Streams: []*MediaStream{{Index: 0, Kind: streammodel.KindVideo, Codec: "hevc"}}},
 		}
 		if err := fixture.service.SaveProbe(ctx, item, source, second); err != nil {
 			t.Fatalf("failed to save the second probe: %v", err)
@@ -354,7 +354,7 @@ func TestService_DistinctGenres(t *testing.T) {
 	t.Run("filters by item kind", func(t *testing.T) {
 		named, _, err := fixture.service.DistinctGenres(ctx, MetadataQuery{Viewer: Everyone,
 			LibraryID: &fixture.libraryID,
-			Kinds:     []Kind{itemmodal.KindEpisode},
+			Kinds:     []Kind{itemmodel.KindEpisode},
 		})
 		if err != nil {
 			t.Fatalf("failed to query genres: %v", err)

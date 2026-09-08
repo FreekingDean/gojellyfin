@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
 const nextUpQuery = `
@@ -57,7 +57,7 @@ func (s *Service) NextUpEpisodes(ctx context.Context, viewer Viewer, userID uuid
 		return nil, nil
 	}
 
-	records, err := s.query(viewer).Where(itemmodal.IDIn(ids...)).All(ctx)
+	records, err := s.query(viewer).Where(itemmodel.IDIn(ids...)).All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load next up episodes: %w", err)
 	}

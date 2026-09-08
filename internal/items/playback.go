@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/uuid"
 
-	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
+	streammodel "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/transcode"
 )
 
@@ -92,7 +92,7 @@ func (s *Service) SourceFor(ctx context.Context, itemID uuid.UUID, can Capabilit
 }
 
 func (c Capabilities) plan(source *MediaSource) Plan {
-	picture, sound := stream(source, streammodal.KindVideo), stream(source, streammodal.KindAudio)
+	picture, sound := stream(source, streammodel.KindVideo), stream(source, streammodal.KindAudio)
 	video, audio := codec(picture), codec(sound)
 	plan := Plan{Source: source, Container: Container(source), AudioCodec: audio}
 	if len(c.Profiles) == 0 {
@@ -154,7 +154,7 @@ func (c Condition) holds(picture *MediaStream) bool {
 	named, ceiling := "", float64(0)
 	switch c.Property {
 	case "VideoRangeType":
-		if picture.VideoRangeType != streammodal.VideoRangeTypeUnknown {
+		if picture.VideoRangeType != streammodel.VideoRangeTypeUnknown {
 			named = string(picture.VideoRangeType)
 		}
 	case "VideoProfile":
@@ -222,7 +222,7 @@ func codec(stream *MediaStream) string {
 }
 
 func height(source *MediaSource) int32 {
-	if picture := stream(source, streammodal.KindVideo); picture != nil {
+	if picture := stream(source, streammodel.KindVideo); picture != nil {
 		return picture.Height
 	}
 
@@ -230,7 +230,7 @@ func height(source *MediaSource) int32 {
 }
 
 func AudioCodec(source *MediaSource) string {
-	return codec(stream(source, streammodal.KindAudio))
+	return codec(stream(source, streammodel.KindAudio))
 }
 
 func Container(source *MediaSource) string {

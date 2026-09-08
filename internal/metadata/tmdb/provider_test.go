@@ -11,8 +11,8 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
-	creditmodal "github.com/FreekingDean/gojellyfin/internal/store/credit"
-	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
+	creditmodel "github.com/FreekingDean/gojellyfin/internal/store/credit"
+	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
 )
 
 type stubbed struct {
@@ -115,9 +115,9 @@ func TestClient_Movie(t *testing.T) {
 			t.Errorf("Status = %v, want none written for a movie", *found.Status)
 		}
 		want := []items.Credit{
-			{Name: "Keanu Reeves", Kind: creditmodal.KindActor, Role: "Thomas A. Anderson", Order: 0},
-			{Name: "Laurence Fishburne", Kind: creditmodal.KindActor, Role: "Morpheus", Order: 1},
-			{Name: "Lana Wachowski", Kind: creditmodal.KindDirector},
+			{Name: "Keanu Reeves", Kind: creditmodel.KindActor, Role: "Thomas A. Anderson", Order: 0},
+			{Name: "Laurence Fishburne", Kind: creditmodel.KindActor, Role: "Morpheus", Order: 1},
+			{Name: "Lana Wachowski", Kind: creditmodel.KindDirector},
 		}
 		if found.People == nil || !slices.Equal(*found.People, want) {
 			t.Errorf("People = %v, want %v", found.People, want)
@@ -153,8 +153,8 @@ func TestClient_Series(t *testing.T) {
 		t.Errorf("ProviderIds = %v, want the Tmdb and Imdb ids", ids)
 	}
 	want := []items.Credit{
-		{Name: "Bryan Cranston", Kind: creditmodal.KindActor, Role: "Walter White"},
-		{Name: "Vince Gilligan", Kind: creditmodal.KindWriter},
+		{Name: "Bryan Cranston", Kind: creditmodel.KindActor, Role: "Walter White"},
+		{Name: "Vince Gilligan", Kind: creditmodel.KindWriter},
 	}
 	if found.People == nil || !slices.Equal(*found.People, want) {
 		t.Errorf("People = %v, want %v", found.People, want)
@@ -280,12 +280,12 @@ func TestClient_Artwork(t *testing.T) {
 		}
 
 		poster := "https://image.tmdb.org/t/p/w780/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg"
-		if got := artworkURL(t, found.Images, imagemodal.KindPrimary); got != poster {
+		if got := artworkURL(t, found.Images, imagemodel.KindPrimary); got != poster {
 			t.Errorf("poster = %q, want %q", got, poster)
 		}
 
 		backdrop := "https://image.tmdb.org/t/p/w1280/ByDf0zjLSumz1MP1cDEo2JmHkrn.jpg"
-		if got := artworkURL(t, found.Images, imagemodal.KindBackdrop); got != backdrop {
+		if got := artworkURL(t, found.Images, imagemodel.KindBackdrop); got != backdrop {
 			t.Errorf("backdrop = %q, want %q", got, backdrop)
 		}
 	})
@@ -298,7 +298,7 @@ func TestClient_Artwork(t *testing.T) {
 		}
 
 		still := "https://image.tmdb.org/t/p/w300/ydlY3iPfeOAvu8gVqrxPoMvzNCn.jpg"
-		if got := artworkURL(t, found.Images, imagemodal.KindPrimary); got != still {
+		if got := artworkURL(t, found.Images, imagemodel.KindPrimary); got != still {
 			t.Errorf("still = %q, want %q", got, still)
 		}
 	})

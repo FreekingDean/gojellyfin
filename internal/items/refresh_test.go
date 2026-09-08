@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
 func tmdbID() int {
@@ -36,7 +36,7 @@ func TestService_RefreshItem(t *testing.T) {
 
 		enqueued := fixture.refresh(t, Scanned{
 			Key:      MovieKey(tmdbID()),
-			Kind:     itemmodal.KindMovie,
+			Kind:     itemmodel.KindMovie,
 			Name:     "The Matrix",
 			SortName: "matrix",
 			Files: []ScannedFile{{
@@ -60,7 +60,7 @@ func TestService_RefreshItem(t *testing.T) {
 
 		scanned := Scanned{
 			Key:      MovieKey(tmdbID()),
-			Kind:     itemmodal.KindMovie,
+			Kind:     itemmodel.KindMovie,
 			Name:     "The Matrix",
 			SortName: "matrix",
 			Files:    []ScannedFile{{Path: path, DateModified: time.Now()}},

@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
 type Scanned struct {
@@ -117,7 +117,7 @@ func enqueue(ctx context.Context, name string, params ...jobs.Param) {
 }
 
 func (s *Service) ItemByKey(ctx context.Context, key string) (*Item, error) {
-	item, err := s.store.Item.Query().Where(itemmodal.Key(key)).Only(ctx)
+	item, err := s.store.Item.Query().Where(itemmodel.Key(key)).Only(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query %s: %w", key, err)
 	}

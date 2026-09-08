@@ -8,16 +8,16 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
 func (s *Service) SeriesSeasons(ctx context.Context, viewer Viewer, seriesID uuid.UUID) ([]*Item, error) {
 	records, err := s.query(viewer).
 		Where(
-			itemmodal.KindEQ(itemmodal.KindSeason),
-			itemmodal.ParentID(seriesID),
+			itemmodel.KindEQ(itemmodal.KindSeason),
+			itemmodel.ParentID(seriesID),
 		).
-		Order(itemmodal.ByIndexNumber(sql.OrderNullsLast()), itemmodal.BySortName()).
+		Order(itemmodel.ByIndexNumber(sql.OrderNullsLast()), itemmodal.BySortName()).
 		All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query seasons: %w", err)
@@ -38,14 +38,14 @@ type EpisodeQuery struct {
 
 func (s *Service) SeriesEpisodes(ctx context.Context, query EpisodeQuery) ([]*Item, int, error) {
 	episodes := s.query(query.Viewer).Where(
-		itemmodal.KindEQ(itemmodal.KindEpisode),
-		itemmodal.HasParentWith(itemmodal.ParentID(query.SeriesID)),
+		itemmodel.KindEQ(itemmodal.KindEpisode),
+		itemmodel.HasParentWith(itemmodal.ParentID(query.SeriesID)),
 	)
 	if query.SeasonID != nil {
-		episodes = episodes.Where(itemmodal.ParentID(*query.SeasonID))
+		episodes = episodes.Where(itemmodel.ParentID(*query.SeasonID))
 	}
 	if query.Season != nil {
-		episodes = episodes.Where(itemmodal.ParentIndexNumber(*query.Season))
+		episodes = episodes.Where(itemmodel.ParentIndexNumber(*query.Season))
 	}
 
 	total, err := episodes.Clone().Count(ctx)
@@ -54,9 +54,9 @@ func (s *Service) SeriesEpisodes(ctx context.Context, query EpisodeQuery) ([]*It
 	}
 
 	episodes = episodes.Order(
-		itemmodal.ByParentIndexNumber(sql.OrderNullsLast()),
-		itemmodal.ByIndexNumber(sql.OrderNullsLast()),
-		itemmodal.BySortName(),
+		itemmodel.ByParentIndexNumber(sql.OrderNullsLast()),
+		itemmodel.ByIndexNumber(sql.OrderNullsLast()),
+		itemmodel.BySortName(),
 	)
 	if query.StartIndex > 0 {
 		episodes = episodes.Offset(query.StartIndex)
@@ -75,8 +75,8 @@ func (s *Service) SeriesEpisodes(ctx context.Context, query EpisodeQuery) ([]*It
 
 func (s *Service) UpcomingEpisodes(ctx context.Context, viewer Viewer, libraryID *uuid.UUID, startIndex, limit int) ([]*Item, int, error) {
 	episodes := s.query(viewer).Where(
-		itemmodal.KindEQ(itemmodal.KindEpisode),
-		itemmodal.PremiereDateGT(time.Now()),
+		itemmodel.KindEQ(itemmodal.KindEpisode),
+		itemmodel.PremiereDateGT(time.Now()),
 	)
 	if libraryID != nil {
 		episodes = episodes.Where(inLibrary(*libraryID))
@@ -87,7 +87,7 @@ func (s *Service) UpcomingEpisodes(ctx context.Context, viewer Viewer, libraryID
 		return nil, 0, fmt.Errorf("failed to count upcoming episodes: %w", err)
 	}
 
-	episodes = episodes.Order(itemmodal.ByPremiereDate(), itemmodal.BySortName())
+	episodes = episodes.Order(itemmodel.ByPremiereDate(), itemmodal.BySortName())
 	if startIndex > 0 {
 		episodes = episodes.Offset(startIndex)
 	}

@@ -11,12 +11,12 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
-	playlistmodal "github.com/FreekingDean/gojellyfin/internal/store/playlist"
-	entrymodal "github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
-	sharemodal "github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
-	usermodal "github.com/FreekingDean/gojellyfin/internal/store/user"
+	playlistmodel "github.com/FreekingDean/gojellyfin/internal/store/playlist"
+	entrymodel "github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
+	sharemodel "github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
+	usermodel "github.com/FreekingDean/gojellyfin/internal/store/user"
 )
 
 type fixture struct {
@@ -59,25 +59,25 @@ func newFixture(t *testing.T) *fixture {
 
 	t.Cleanup(func() {
 		if _, err := client.PlaylistShare.Delete().
-			Where(sharemodal.HasPlaylistWith(playlistmodal.ItemIDIn(fixture.created...))).
+			Where(sharemodel.HasPlaylistWith(playlistmodal.ItemIDIn(fixture.created...))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the shares: %v", err)
 		}
 		if _, err := client.PlaylistEntry.Delete().
-			Where(entrymodal.HasPlaylistWith(playlistmodal.ItemIDIn(fixture.created...))).
+			Where(entrymodel.HasPlaylistWith(playlistmodal.ItemIDIn(fixture.created...))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the entries: %v", err)
 		}
-		if _, err := client.Playlist.Delete().Where(playlistmodal.ItemIDIn(fixture.created...)).Exec(ctx); err != nil {
+		if _, err := client.Playlist.Delete().Where(playlistmodel.ItemIDIn(fixture.created...)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the playlists: %v", err)
 		}
-		if _, err := client.Item.Delete().Where(itemmodal.IDIn(fixture.created...)).Exec(ctx); err != nil {
+		if _, err := client.Item.Delete().Where(itemmodel.IDIn(fixture.created...)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the playlist items: %v", err)
 		}
-		if _, err := client.Item.Delete().Where(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID))).Exec(ctx); err != nil {
+		if _, err := client.Item.Delete().Where(itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID))).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the items: %v", err)
 		}
-		if _, err := client.User.Delete().Where(usermodal.IDIn(fixture.users...)).Exec(ctx); err != nil {
+		if _, err := client.User.Delete().Where(usermodel.IDIn(fixture.users...)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the users: %v", err)
 		}
 		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
@@ -107,7 +107,7 @@ func (f *fixture) user(t *testing.T, name string) uuid.UUID {
 	return record.ID
 }
 
-func (f *fixture) item(t *testing.T, name string, kind itemmodal.Kind, parentID *uuid.UUID, index *int32) uuid.UUID {
+func (f *fixture) item(t *testing.T, name string, kind itemmodel.Kind, parentID *uuid.UUID, index *int32) uuid.UUID {
 	t.Helper()
 
 	record, err := f.client.Item.Create().
@@ -130,7 +130,7 @@ func (f *fixture) songs(t *testing.T, names ...string) []uuid.UUID {
 
 	ids := make([]uuid.UUID, 0, len(names))
 	for _, name := range names {
-		ids = append(ids, f.item(t, name, itemmodal.KindAudio, nil, nil))
+		ids = append(ids, f.item(t, name, itemmodel.KindAudio, nil, nil))
 	}
 
 	return ids
@@ -336,12 +336,12 @@ func TestExpand(t *testing.T) {
 		fixture := newFixture(t)
 		ctx := context.Background()
 
-		series := fixture.item(t, "Series", itemmodal.KindSeries, nil, nil)
-		first := fixture.item(t, "Bravo", itemmodal.KindSeason, &series, ptr(int32(1)))
-		second := fixture.item(t, "Alpha", itemmodal.KindSeason, &series, ptr(int32(2)))
-		fixture.item(t, "Second", itemmodal.KindEpisode, &first, ptr(int32(1)))
-		fixture.item(t, "First", itemmodal.KindEpisode, &first, ptr(int32(2)))
-		fixture.item(t, "Solo", itemmodal.KindEpisode, &second, ptr(int32(1)))
+		series := fixture.item(t, "Series", itemmodel.KindSeries, nil, nil)
+		first := fixture.item(t, "Bravo", itemmodel.KindSeason, &series, ptr(int32(1)))
+		second := fixture.item(t, "Alpha", itemmodel.KindSeason, &series, ptr(int32(2)))
+		fixture.item(t, "Second", itemmodel.KindEpisode, &first, ptr(int32(1)))
+		fixture.item(t, "First", itemmodel.KindEpisode, &first, ptr(int32(2)))
+		fixture.item(t, "Solo", itemmodel.KindEpisode, &second, ptr(int32(1)))
 
 		song := fixture.songs(t, "Zulu")
 		ids := []uuid.UUID{series, song[0]}

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
 func (s *Service) SweepJob() jobs.Job {
@@ -18,7 +18,7 @@ func (s *Service) SweepJob() jobs.Job {
 }
 
 func (s *Service) sweep(ctx context.Context) error {
-	everything, err := s.store.Item.Query().Where(itemmodal.DeletedAtIsNil()).IDs(ctx)
+	everything, err := s.store.Item.Query().Where(itemmodel.DeletedAtIsNil()).IDs(ctx)
 	if err != nil {
 		return err
 	}

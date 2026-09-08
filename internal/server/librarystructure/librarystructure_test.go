@@ -12,7 +12,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
+	librarymodel "github.com/FreekingDean/gojellyfin/internal/store/library"
 )
 
 func newServer(t *testing.T) (*Server, string) {
@@ -36,7 +36,7 @@ func newServer(t *testing.T) (*Server, string) {
 
 	t.Cleanup(func() {
 		ctx := context.Background()
-		if _, err := client.Library.Delete().Where(librarymodal.Name(name)).Exec(ctx); err != nil {
+		if _, err := client.Library.Delete().Where(librarymodel.Name(name)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the library: %v", err)
 		}
 		if err := connection.Stop(); err != nil {
@@ -59,7 +59,7 @@ func pathInfos(paths ...string) *[]api.MediaPathInfo {
 func addVirtualFolder(t *testing.T, server *Server, name string, params *[]string, infos *[]api.MediaPathInfo) {
 	t.Helper()
 
-	collectionType := api.CollectionTypeOptions(librarymodal.CollectionTypeMovies)
+	collectionType := api.CollectionTypeOptions(librarymodel.CollectionTypeMovies)
 	body := api.AddVirtualFolderJSONRequestBody{
 		LibraryOptions: &api.LibraryOptions{PathInfos: infos},
 	}

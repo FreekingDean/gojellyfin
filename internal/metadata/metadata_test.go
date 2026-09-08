@@ -17,10 +17,10 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	creditmodal "github.com/FreekingDean/gojellyfin/internal/store/credit"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
-	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/source"
+	creditmodel "github.com/FreekingDean/gojellyfin/internal/store/credit"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
+	librarymodel "github.com/FreekingDean/gojellyfin/internal/store/library"
+	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
 
 const unreachable = "A Film The Provider Cannot Reach"
@@ -69,8 +69,8 @@ func (s *stubProvider) Movie(_ context.Context, name string, _ *int32) (items.Me
 		PremiereDate:    &premiere,
 		Taglines:        &[]string{"Welcome to the Real World."},
 		People: &[]items.Credit{
-			{Name: "Keanu Reeves", Kind: creditmodal.KindActor, Role: "Thomas A. Anderson"},
-			{Name: "Lana Wachowski", Kind: creditmodal.KindDirector},
+			{Name: "Keanu Reeves", Kind: creditmodel.KindActor, Role: "Thomas A. Anderson"},
+			{Name: "Lana Wachowski", Kind: creditmodel.KindDirector},
 		},
 		ProviderIds: &map[string]string{"Stub": "603", "StubExternal": "tt0133093"},
 		Images:      s.images,
@@ -160,7 +160,7 @@ func newFixtureEnabled(t *testing.T, enabled bool) *fixture {
 	library, err := catalogue.CreateLibrary(
 		context.Background(),
 		t.Name()+"-"+uuid.NewString(),
-		librarymodal.CollectionTypeMovies,
+		librarymodel.CollectionTypeMovies,
 		[]string{"/" + uuid.NewString()},
 	)
 	if err != nil {
@@ -184,7 +184,7 @@ func newFixtureEnabled(t *testing.T, enabled bool) *fixture {
 		SetName(t.Name() + "-" + uuid.NewString()).
 		SetURL("http://" + uuid.NewString() + ".invalid").
 		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
-		SetKind(sourcemodal.KindRadarr).
+		SetKind(sourcemodel.KindRadarr).
 		SetRootPath("/media").
 		SetLocalPath("/media").
 		Save(context.Background())
@@ -305,7 +305,7 @@ func TestService_IdentifyItems(t *testing.T) {
 	t.Run("writes a movie", func(t *testing.T) {
 		fixed := newFixture(t)
 		movie := fixed.add(t, items.Item{
-			Kind:           itemmodal.KindMovie,
+			Kind:           itemmodel.KindMovie,
 			Name:           "The Matrix",
 			ProductionYear: index(1999),
 		})
@@ -347,18 +347,18 @@ func TestService_IdentifyItems(t *testing.T) {
 	t.Run("walks a series to its episode", func(t *testing.T) {
 		fixed := newFixture(t)
 		series := fixed.add(t, items.Item{
-			Kind:           itemmodal.KindSeries,
+			Kind:           itemmodel.KindSeries,
 			Name:           "Breaking Bad",
 			ProductionYear: index(2008),
 		})
 		season := fixed.add(t, items.Item{
-			Kind:        itemmodal.KindSeason,
+			Kind:        itemmodel.KindSeason,
 			ParentID:    &series.ID,
 			Name:        "Season 1",
 			IndexNumber: index(1),
 		})
 		episode := fixed.add(t, items.Item{
-			Kind:              itemmodal.KindEpisode,
+			Kind:              itemmodel.KindEpisode,
 			ParentID:          &season.ID,
 			Name:              "s01e01",
 			IndexNumber:       index(1),
@@ -404,18 +404,18 @@ func TestService_IdentifyItems(t *testing.T) {
 	t.Run("identifies a parent listed after its children", func(t *testing.T) {
 		fixed := newFixture(t)
 		series := fixed.add(t, items.Item{
-			Kind:           itemmodal.KindSeries,
+			Kind:           itemmodel.KindSeries,
 			Name:           "Breaking Bad",
 			ProductionYear: index(2008),
 		})
 		season := fixed.add(t, items.Item{
-			Kind:        itemmodal.KindSeason,
+			Kind:        itemmodel.KindSeason,
 			ParentID:    &series.ID,
 			Name:        "Season 1",
 			IndexNumber: index(1),
 		})
 		episode := fixed.add(t, items.Item{
-			Kind:              itemmodal.KindEpisode,
+			Kind:              itemmodel.KindEpisode,
 			ParentID:          &season.ID,
 			Name:              "s01e01",
 			IndexNumber:       index(1),
@@ -436,12 +436,12 @@ func TestService_IdentifyItems(t *testing.T) {
 	t.Run("identifies specials as season zero", func(t *testing.T) {
 		fixed := newFixture(t)
 		series := fixed.add(t, items.Item{
-			Kind:           itemmodal.KindSeries,
+			Kind:           itemmodel.KindSeries,
 			Name:           "Breaking Bad",
 			ProductionYear: index(2008),
 		})
 		specials := fixed.add(t, items.Item{
-			Kind:        itemmodal.KindSeason,
+			Kind:        itemmodel.KindSeason,
 			ParentID:    &series.ID,
 			Name:        "Specials",
 			IndexNumber: index(0),
@@ -458,18 +458,18 @@ func TestService_IdentifyItems(t *testing.T) {
 	t.Run("keeps an unmatched season out of its episode", func(t *testing.T) {
 		fixed := newFixture(t)
 		series := fixed.add(t, items.Item{
-			Kind:           itemmodal.KindSeries,
+			Kind:           itemmodel.KindSeries,
 			Name:           "Breaking Bad",
 			ProductionYear: index(2008),
 		})
 		season := fixed.add(t, items.Item{
-			Kind:        itemmodal.KindSeason,
+			Kind:        itemmodel.KindSeason,
 			ParentID:    &series.ID,
 			Name:        "Season 9",
 			IndexNumber: index(9),
 		})
 		episode := fixed.add(t, items.Item{
-			Kind:              itemmodal.KindEpisode,
+			Kind:              itemmodel.KindEpisode,
 			ParentID:          &season.ID,
 			Name:              "s01e01",
 			IndexNumber:       index(1),
@@ -489,12 +489,12 @@ func TestService_IdentifyItems(t *testing.T) {
 	t.Run("keeps a locked season field", func(t *testing.T) {
 		fixed := newFixture(t)
 		series := fixed.add(t, items.Item{
-			Kind:           itemmodal.KindSeries,
+			Kind:           itemmodel.KindSeries,
 			Name:           "Breaking Bad",
 			ProductionYear: index(2008),
 		})
 		season := fixed.lock(t, fixed.add(t, items.Item{
-			Kind:        itemmodal.KindSeason,
+			Kind:        itemmodel.KindSeason,
 			ParentID:    &series.ID,
 			Name:        "The One With The Chemistry",
 			IndexNumber: index(1),
@@ -517,13 +517,13 @@ func TestService_IdentifyItems(t *testing.T) {
 	t.Run("leaves a locked item alone", func(t *testing.T) {
 		fixed := newFixture(t)
 		locked := fixed.lock(t, fixed.add(t, items.Item{
-			Kind:           itemmodal.KindMovie,
+			Kind:           itemmodel.KindMovie,
 			Name:           "The Matrix",
 			ProductionYear: index(1999),
 		}), items.Metadata{LockData: truth(true)})
 
 		witness := fixed.add(t, items.Item{
-			Kind:           itemmodal.KindMovie,
+			Kind:           itemmodel.KindMovie,
 			Name:           "The Matrix",
 			Key:            "test:" + fixed.libraryID.String() + ":witness",
 			ProductionYear: index(1999),
@@ -546,7 +546,7 @@ func TestService_IdentifyItems(t *testing.T) {
 	t.Run("keeps a locked field", func(t *testing.T) {
 		fixed := newFixture(t)
 		movie := fixed.lock(t, fixed.add(t, items.Item{
-			Kind:           itemmodal.KindMovie,
+			Kind:           itemmodel.KindMovie,
 			Name:           "The Matrix",
 			ProductionYear: index(1999),
 		}), items.Metadata{
@@ -574,7 +574,7 @@ func TestService_IdentifyItems(t *testing.T) {
 	t.Run("does nothing without a provider", func(t *testing.T) {
 		fixed := newFixtureEnabled(t, false)
 		movie := fixed.add(t, items.Item{
-			Kind:           itemmodal.KindMovie,
+			Kind:           itemmodel.KindMovie,
 			Name:           "The Matrix",
 			ProductionYear: index(1999),
 		})
@@ -592,7 +592,7 @@ func TestService_IdentifyItems(t *testing.T) {
 	t.Run("leaves an unmatched item for the next run", func(t *testing.T) {
 		fixed := newFixture(t)
 		unknown := fixed.add(t, items.Item{
-			Kind: itemmodal.KindMovie,
+			Kind: itemmodel.KindMovie,
 			Name: "A Film Nobody Carries",
 		})
 
@@ -611,7 +611,7 @@ func TestService_IdentifyItems_Force(t *testing.T) {
 	t.Run("looks an identified item up again", func(t *testing.T) {
 		fixed := newFixture(t)
 		movie := fixed.identified(t, fixed.add(t, items.Item{
-			Kind:           itemmodal.KindMovie,
+			Kind:           itemmodel.KindMovie,
 			Name:           "The Matrix",
 			ProductionYear: index(1999),
 		}), "Whatever the last provider said.")
@@ -630,7 +630,7 @@ func TestService_IdentifyItems_Force(t *testing.T) {
 	t.Run("leaves an identified item alone without it", func(t *testing.T) {
 		fixed := newFixture(t)
 		movie := fixed.identified(t, fixed.add(t, items.Item{
-			Kind:           itemmodal.KindMovie,
+			Kind:           itemmodel.KindMovie,
 			Name:           "The Matrix",
 			ProductionYear: index(1999),
 		}), "Whatever the last provider said.")
@@ -648,7 +648,7 @@ func TestService_IdentifyItems_Force(t *testing.T) {
 	t.Run("keeps a locked field", func(t *testing.T) {
 		fixed := newFixture(t)
 		movie := fixed.lock(t, fixed.add(t, items.Item{
-			Kind:           itemmodal.KindMovie,
+			Kind:           itemmodel.KindMovie,
 			Name:           "The Matrix",
 			ProductionYear: index(1999),
 		}), items.Metadata{
@@ -671,11 +671,11 @@ func TestService_IdentifyItems_Force(t *testing.T) {
 	t.Run("carries on past an item the provider cannot reach", func(t *testing.T) {
 		fixed := newFixture(t)
 		unreachableItem := fixed.identified(t, fixed.add(t, items.Item{
-			Kind: itemmodal.KindMovie,
+			Kind: itemmodel.KindMovie,
 			Name: unreachable,
 		}), "Whatever the last provider said.")
 		reachable := fixed.identified(t, fixed.add(t, items.Item{
-			Kind:           itemmodal.KindMovie,
+			Kind:           itemmodel.KindMovie,
 			Name:           "The Matrix",
 			Key:            "test:" + fixed.libraryID.String() + ":reachable",
 			ProductionYear: index(1999),
@@ -697,7 +697,7 @@ func TestService_IdentifyItems_Force(t *testing.T) {
 		ids := make([]uuid.UUID, 0, 205)
 		for number := range 205 {
 			added := fixed.identified(t, fixed.add(t, items.Item{
-				Kind:           itemmodal.KindMovie,
+				Kind:           itemmodel.KindMovie,
 				Name:           "The Matrix",
 				Key:            "test:" + fixed.libraryID.String() + ":" + strconv.Itoa(number),
 				ProductionYear: index(1999),
@@ -719,12 +719,12 @@ func TestService_IdentifyItems_Scope(t *testing.T) {
 	t.Run("refreshes only the item it names", func(t *testing.T) {
 		fixed := newFixture(t)
 		asked := fixed.identified(t, fixed.add(t, items.Item{
-			Kind:           itemmodal.KindMovie,
+			Kind:           itemmodel.KindMovie,
 			Name:           "The Matrix",
 			ProductionYear: index(1999),
 		}), "Whatever the last provider said.")
 		elsewhere := fixed.identified(t, fixed.add(t, items.Item{
-			Kind:           itemmodal.KindMovie,
+			Kind:           itemmodel.KindMovie,
 			Name:           "The Matrix",
 			Key:            "test:" + fixed.libraryID.String() + ":elsewhere",
 			ProductionYear: index(1999),
@@ -743,25 +743,25 @@ func TestService_IdentifyItems_Scope(t *testing.T) {
 	t.Run("follows a series down to its episodes", func(t *testing.T) {
 		fixed := newFixture(t)
 		series := fixed.add(t, items.Item{
-			Kind:           itemmodal.KindSeries,
+			Kind:           itemmodel.KindSeries,
 			Name:           "Breaking Bad",
 			ProductionYear: index(2008),
 		})
 		season := fixed.add(t, items.Item{
-			Kind:        itemmodal.KindSeason,
+			Kind:        itemmodel.KindSeason,
 			ParentID:    &series.ID,
 			Name:        "Season 1",
 			IndexNumber: index(1),
 		})
 		episode := fixed.add(t, items.Item{
-			Kind:              itemmodal.KindEpisode,
+			Kind:              itemmodel.KindEpisode,
 			ParentID:          &season.ID,
 			Name:              "s01e01",
 			IndexNumber:       index(1),
 			ParentIndexNumber: index(1),
 		})
 		elsewhere := fixed.identified(t, fixed.add(t, items.Item{
-			Kind:           itemmodal.KindMovie,
+			Kind:           itemmodel.KindMovie,
 			Name:           "The Matrix",
 			ProductionYear: index(1999),
 		}), "Whatever the last provider said.")
@@ -783,12 +783,12 @@ func TestService_IdentifyItems_Scope(t *testing.T) {
 	t.Run("refreshes everything in a library it names", func(t *testing.T) {
 		fixed := newFixture(t)
 		first := fixed.identified(t, fixed.add(t, items.Item{
-			Kind:           itemmodal.KindMovie,
+			Kind:           itemmodel.KindMovie,
 			Name:           "The Matrix",
 			ProductionYear: index(1999),
 		}), "Whatever the last provider said.")
 		second := fixed.identified(t, fixed.add(t, items.Item{
-			Kind:           itemmodal.KindMovie,
+			Kind:           itemmodel.KindMovie,
 			Name:           "The Matrix",
 			Key:            "test:" + fixed.libraryID.String() + ":second",
 			ProductionYear: index(1999),

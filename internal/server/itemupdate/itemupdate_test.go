@@ -16,9 +16,9 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
-	downloadermodal "github.com/FreekingDean/gojellyfin/internal/store/source"
+	downloadermodel "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
 
 var (
@@ -61,7 +61,7 @@ func newFixture(t *testing.T) *fixture {
 	}
 
 	t.Cleanup(func() {
-		if _, err := client.Item.Delete().Where(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID))).Exec(ctx); err != nil {
+		if _, err := client.Item.Delete().Where(itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID))).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the items: %v", err)
 		}
 		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
@@ -76,7 +76,7 @@ func newFixture(t *testing.T) *fixture {
 		SetName(t.Name() + "-" + uuid.NewString()).
 		SetURL("http://" + uuid.NewString() + ".invalid").
 		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
-		SetKind(downloadermodal.KindRadarr).
+		SetKind(downloadermodel.KindRadarr).
 		SetRootPath("/media").
 		SetLocalPath("/media").
 		Save(context.Background())
@@ -90,7 +90,7 @@ func newFixture(t *testing.T) *fixture {
 	})
 
 	record, err := client.Item.Create().
-		SetKind(itemmodal.KindMovie).
+		SetKind(itemmodel.KindMovie).
 		SetName("Original Name").
 		SetSortName("original name").
 		SetKey("movie:original-name:" + library.ID.String()).
@@ -110,7 +110,7 @@ func newFixture(t *testing.T) *fixture {
 	}
 
 	folder, err := client.Item.Create().
-		SetKind(itemmodal.KindFolder).
+		SetKind(itemmodel.KindFolder).
 		SetName("Folder").
 		SetSortName("folder").
 		SetKey("folder:folder:" + library.ID.String()).
@@ -269,8 +269,8 @@ func TestServer_UpdateItem(t *testing.T) {
 		if record.Key != "movie:original-name:"+fixture.libraryID.String() {
 			t.Errorf("key = %q, want the scan's key: the metadata editor must not move an item's identity", record.Key)
 		}
-		if record.Kind != itemmodal.KindMovie {
-			t.Errorf("kind = %q, want %q", record.Kind, itemmodal.KindMovie)
+		if record.Kind != itemmodel.KindMovie {
+			t.Errorf("kind = %q, want %q", record.Kind, itemmodel.KindMovie)
 		}
 		if record.ParentID != nil {
 			t.Errorf("parent id = %v, want none", record.ParentID)

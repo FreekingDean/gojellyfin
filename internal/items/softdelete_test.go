@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
 func TestService_SaveScanned(t *testing.T) {
@@ -15,7 +15,7 @@ func TestService_SaveScanned(t *testing.T) {
 	ctx := context.Background()
 
 	first, err := fixture.service.SaveScanned(ctx, Item{
-		Kind:         itemmodal.KindMovie,
+		Kind:         itemmodel.KindMovie,
 		Name:         "Returns",
 		SortName:     "Returns",
 		Key:          "movie:returns",
@@ -30,7 +30,7 @@ func TestService_SaveScanned(t *testing.T) {
 	}
 
 	second, err := fixture.service.SaveScanned(ctx, Item{
-		Kind:         itemmodal.KindMovie,
+		Kind:         itemmodel.KindMovie,
 		Name:         "Returns",
 		SortName:     "Returns",
 		Key:          "movie:returns",

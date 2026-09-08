@@ -15,9 +15,9 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	devicemodal "github.com/FreekingDean/gojellyfin/internal/store/device"
-	displaypreferencesmodal "github.com/FreekingDean/gojellyfin/internal/store/displaypreferences"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	devicemodel "github.com/FreekingDean/gojellyfin/internal/store/device"
+	displaypreferencesmodel "github.com/FreekingDean/gojellyfin/internal/store/displaypreferences"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
@@ -82,7 +82,7 @@ func newFixture(t *testing.T) *fixture {
 	}
 
 	item, err := client.Item.Create().
-		SetKind(itemmodal.KindMovie).
+		SetKind(itemmodel.KindMovie).
 		SetName(name).
 		SetSortName(name).
 		SetKey("test:" + library.ID.String() + ":" + name).
@@ -94,14 +94,14 @@ func newFixture(t *testing.T) *fixture {
 	t.Cleanup(func() {
 		ctx := context.Background()
 		if _, err := client.DisplayPreferences.Delete().
-			Where(displaypreferencesmodal.UserID(user.ID)).
+			Where(displaypreferencesmodel.UserID(user.ID)).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the display preferences: %v", err)
 		}
 		if err := sessionService.DeleteByToken(ctx, token); err != nil {
 			t.Errorf("failed to delete the session: %v", err)
 		}
-		if _, err := client.Device.Delete().Where(devicemodal.ClientID(name)).Exec(ctx); err != nil {
+		if _, err := client.Device.Delete().Where(devicemodel.ClientID(name)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the device: %v", err)
 		}
 		if err := users.New(client).DeleteUser(ctx, user.ID); err != nil {
@@ -163,7 +163,7 @@ func (f *fixture) rows(t *testing.T) int {
 	t.Helper()
 
 	count, err := f.client.DisplayPreferences.Query().
-		Where(displaypreferencesmodal.UserID(f.userID)).
+		Where(displaypreferencesmodel.UserID(f.userID)).
 		Count(context.Background())
 	if err != nil {
 		t.Fatalf("failed to count the display preferences: %v", err)

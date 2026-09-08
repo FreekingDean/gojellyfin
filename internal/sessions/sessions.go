@@ -9,8 +9,8 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	devicemodal "github.com/FreekingDean/gojellyfin/internal/store/device"
-	sessionmodal "github.com/FreekingDean/gojellyfin/internal/store/session"
+	devicemodel "github.com/FreekingDean/gojellyfin/internal/store/device"
+	sessionmodel "github.com/FreekingDean/gojellyfin/internal/store/session"
 )
 
 type (
@@ -39,7 +39,7 @@ func (s *Service) Create(ctx context.Context, userID uuid.UUID, token string, de
 			SetSupportsMediaControl(false).
 			SetSupportsPersistentIdentifier(false).
 			SetLastActivityAt(now).
-			OnConflictColumns(devicemodal.FieldClientID).
+			OnConflictColumns(devicemodel.FieldClientID).
 			UpdateName().
 			UpdateAppName().
 			UpdateAppVersion().
@@ -86,8 +86,8 @@ func (s *Service) Create(ctx context.Context, userID uuid.UUID, token string, de
 func (s *Service) ByToken(ctx context.Context, token string) (*Session, error) {
 	session, err := s.store.Session.Query().
 		Where(
-			sessionmodal.AccessToken(token),
-			sessionmodal.RevokedAtIsNil(),
+			sessionmodel.AccessToken(token),
+			sessionmodel.RevokedAtIsNil(),
 		).
 		WithUser().
 		WithDevice().
@@ -101,7 +101,7 @@ func (s *Service) ByToken(ctx context.Context, token string) (*Session, error) {
 
 func (s *Service) List(ctx context.Context) ([]*Session, error) {
 	sessions, err := s.store.Session.Query().
-		Where(sessionmodal.RevokedAtIsNil()).
+		Where(sessionmodel.RevokedAtIsNil()).
 		WithUser().
 		WithDevice().
 		All(ctx)
@@ -118,7 +118,7 @@ func (s *Service) DeleteByToken(ctx context.Context, token string) error {
 		return err
 	}
 
-	if _, err := s.store.Session.Delete().Where(sessionmodal.AccessToken(token)).Exec(ctx); err != nil {
+	if _, err := s.store.Session.Delete().Where(sessionmodel.AccessToken(token)).Exec(ctx); err != nil {
 		return fmt.Errorf("failed to delete session by token: %w", err)
 	}
 

@@ -10,8 +10,8 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 )
 
@@ -39,7 +39,7 @@ func TestItemDtos(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		if _, err := client.Item.Delete().Where(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID))).Exec(ctx); err != nil {
+		if _, err := client.Item.Delete().Where(itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID))).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the items: %v", err)
 		}
 		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
@@ -66,13 +66,13 @@ func TestItemDtos(t *testing.T) {
 		return record
 	}
 
-	series := save(itemmodal.KindSeries, name+" Series", nil)
-	season := save(itemmodal.KindSeason, name+" Season 1", &series.ID)
-	episode := save(itemmodal.KindEpisode, name+" S01E01", &season.ID)
-	movie := save(itemmodal.KindMovie, name+" Movie", nil)
+	series := save(itemmodel.KindSeries, name+" Series", nil)
+	season := save(itemmodel.KindSeason, name+" Season 1", &series.ID)
+	episode := save(itemmodel.KindEpisode, name+" S01E01", &season.ID)
+	movie := save(itemmodel.KindMovie, name+" Movie", nil)
 
 	if err := service.SaveImage(ctx, series.ID, items.Image{
-		Kind: imagemodal.KindPrimary, URL: "https://image.tmdb.org/t/p/w780/poster.jpg", Tag: "poster",
+		Kind: imagemodel.KindPrimary, URL: "https://image.tmdb.org/t/p/w780/poster.jpg", Tag: "poster",
 	}); err != nil {
 		t.Fatalf("failed to give the series an image: %v", err)
 	}

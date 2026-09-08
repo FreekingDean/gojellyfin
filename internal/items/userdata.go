@@ -7,14 +7,14 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	datamodal "github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
+	datamodel "github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
 )
 
 type Datum = store.UserItemData
 
 func (s *Service) UserItemDatum(ctx context.Context, userID, itemID uuid.UUID) (*Datum, error) {
 	datum, err := s.store.UserItemData.Query().
-		Where(datamodal.UserID(userID), datamodal.ItemID(itemID)).
+		Where(datamodel.UserID(userID), datamodal.ItemID(itemID)).
 		Only(ctx)
 	if store.IsNotFound(err) {
 		return &Datum{UserID: userID, ItemID: itemID}, nil
@@ -33,7 +33,7 @@ func (s *Service) ListUserItemData(ctx context.Context, userID uuid.UUID, itemID
 	}
 
 	rows, err := s.store.UserItemData.Query().
-		Where(datamodal.UserID(userID), datamodal.ItemIDIn(itemIDs...)).
+		Where(datamodel.UserID(userID), datamodal.ItemIDIn(itemIDs...)).
 		All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list user item data: %w", err)
@@ -57,7 +57,7 @@ func (s *Service) SaveUserItemDatum(ctx context.Context, datum *Datum) error {
 		SetNillableLastPlayedAt(datum.LastPlayedAt)
 
 	err := create.
-		OnConflictColumns(datamodal.FieldUserID, datamodal.FieldItemID).
+		OnConflictColumns(datamodel.FieldUserID, datamodal.FieldItemID).
 		UpdatePlayed().
 		UpdatePlayCount().
 		UpdateIsFavorite().

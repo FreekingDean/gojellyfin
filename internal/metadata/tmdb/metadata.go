@@ -8,8 +8,8 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/consts"
 	"github.com/FreekingDean/gojellyfin/internal/items"
-	creditmodal "github.com/FreekingDean/gojellyfin/internal/store/credit"
-	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
+	creditmodel "github.com/FreekingDean/gojellyfin/internal/store/credit"
+	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
 )
 
 const (
@@ -55,8 +55,8 @@ func movieMetadata(movie *gotmdb.MovieDetails, base string) items.Metadata {
 		People:          movieCredits(movie),
 		ProviderIds:     providerIDs(movie.ID, movie.IMDbID),
 		Images: artwork(
-			remote(imagemodal.KindPrimary, base, posterSize, movie.PosterPath),
-			remote(imagemodal.KindBackdrop, base, backdropSize, movie.BackdropPath),
+			remote(imagemodel.KindPrimary, base, posterSize, movie.PosterPath),
+			remote(imagemodel.KindBackdrop, base, backdropSize, movie.BackdropPath),
 		),
 	}
 }
@@ -78,8 +78,8 @@ func seriesMetadata(series *gotmdb.TVDetails, base string) items.Metadata {
 		People:          seriesCredits(series),
 		ProviderIds:     providerIDs(series.ID, seriesIMDbID(series)),
 		Images: artwork(
-			remote(imagemodal.KindPrimary, base, posterSize, series.PosterPath),
-			remote(imagemodal.KindBackdrop, base, backdropSize, series.BackdropPath),
+			remote(imagemodel.KindPrimary, base, posterSize, series.PosterPath),
+			remote(imagemodel.KindBackdrop, base, backdropSize, series.BackdropPath),
 		),
 	}
 
@@ -100,7 +100,7 @@ func seasonMetadata(season *gotmdb.TVSeasonDetails, base string) items.Metadata 
 		PremiereDate:    premiere,
 		ProductionYear:  year(premiere),
 		ProviderIds:     providerIDs(season.ID, ""),
-		Images:          artwork(remote(imagemodal.KindPrimary, base, posterSize, season.PosterPath)),
+		Images:          artwork(remote(imagemodel.KindPrimary, base, posterSize, season.PosterPath)),
 	}
 }
 
@@ -114,7 +114,7 @@ func episodeMetadata(episode *gotmdb.TVEpisodeDetails, base string) items.Metada
 		PremiereDate:    premiere,
 		ProductionYear:  year(premiere),
 		ProviderIds:     providerIDs(episode.ID, episodeIMDbID(episode)),
-		Images:          artwork(remote(imagemodal.KindPrimary, base, stillSize, episode.StillPath)),
+		Images:          artwork(remote(imagemodel.KindPrimary, base, stillSize, episode.StillPath)),
 	}
 }
 
@@ -275,7 +275,7 @@ func seriesCredits(series *gotmdb.TVDetails) *[]items.Credit {
 }
 
 func cast(name, character string, order int) items.Credit {
-	return items.Credit{Name: name, Kind: creditmodal.KindActor, Role: character, Order: int32(order)}
+	return items.Credit{Name: name, Kind: creditmodel.KindActor, Role: character, Order: int32(order)}
 }
 
 func crew(name, job string) (items.Credit, bool) {
@@ -285,10 +285,10 @@ func crew(name, job string) (items.Credit, bool) {
 }
 
 var crewKinds = map[string]items.CreditKind{
-	"Director": creditmodal.KindDirector,
-	"Writer":   creditmodal.KindWriter,
-	"Producer": creditmodal.KindProducer,
-	"Composer": creditmodal.KindComposer,
+	"Director": creditmodel.KindDirector,
+	"Writer":   creditmodel.KindWriter,
+	"Producer": creditmodel.KindProducer,
+	"Composer": creditmodel.KindComposer,
 }
 
 func ticks(minutes int) *int64 {

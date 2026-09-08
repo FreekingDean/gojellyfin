@@ -11,11 +11,11 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	playlistmodal "github.com/FreekingDean/gojellyfin/internal/store/playlist"
-	entrymodal "github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
-	sharemodal "github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
-	usermodal "github.com/FreekingDean/gojellyfin/internal/store/user"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
+	playlistmodel "github.com/FreekingDean/gojellyfin/internal/store/playlist"
+	entrymodel "github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
+	sharemodel "github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
+	usermodel "github.com/FreekingDean/gojellyfin/internal/store/user"
 )
 
 type (
@@ -23,13 +23,13 @@ type (
 	Entry     = store.PlaylistEntry
 	Share     = store.PlaylistShare
 	Item      = store.Item
-	MediaType = playlistmodal.MediaType
+	MediaType = playlistmodel.MediaType
 )
 
-const MediaTypeUnknown = playlistmodal.MediaTypeUnknown
+const MediaTypeUnknown = playlistmodel.MediaTypeUnknown
 
 var (
-	ValidMediaType = playlistmodal.MediaTypeValidator
+	ValidMediaType = playlistmodel.MediaTypeValidator
 
 	ErrInvalidShare = errors.New("invalid playlist share")
 )
@@ -73,7 +73,7 @@ func (s *Service) Create(ctx context.Context, params CreateParams) (*Item, error
 
 	err := s.store.WithTx(ctx, func(tx *store.Tx) error {
 		item, err := tx.Item.Create().
-			SetKind(itemmodal.KindPlaylist).
+			SetKind(itemmodel.KindPlaylist).
 			SetName(params.Name).
 			SetSortName(strings.ToLower(params.Name)).
 			Save(ctx)
@@ -128,7 +128,7 @@ func (s *Service) Access(ctx context.Context, itemID, userID uuid.UUID) (Access,
 	}
 
 	share, err := s.store.PlaylistShare.Query().
-		Where(sharemodal.PlaylistID(playlist.ID), sharemodal.UserID(userID)).
+		Where(sharemodel.PlaylistID(playlist.ID), sharemodal.UserID(userID)).
 		Only(ctx)
 	if err != nil && !store.IsNotFound(err) {
 		return Access{}, fmt.Errorf("failed to query playlist share: %w", err)
@@ -173,7 +173,7 @@ func (s *Service) Update(ctx context.Context, itemID uuid.UUID, params UpdatePar
 				return err
 			}
 			if _, err := tx.PlaylistEntry.Delete().
-				Where(entrymodal.PlaylistID(playlist.ID)).
+				Where(entrymodel.PlaylistID(playlist.ID)).
 				Exec(ctx); err != nil {
 				return fmt.Errorf("failed to clear playlist entries: %w", err)
 			}
@@ -196,14 +196,14 @@ func (s *Service) Entries(ctx context.Context, itemID uuid.UUID, startIndex, lim
 		return nil, 0, err
 	}
 
-	entries := s.store.PlaylistEntry.Query().Where(entrymodal.PlaylistID(playlist.ID))
+	entries := s.store.PlaylistEntry.Query().Where(entrymodel.PlaylistID(playlist.ID))
 
 	total, err := entries.Clone().Count(ctx)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to count playlist entries: %w", err)
 	}
 
-	entries = entries.Order(entrymodal.BySortOrder(), entrymodal.ByID())
+	entries = entries.Order(entrymodel.BySortOrder(), entrymodal.ByID())
 	if startIndex > 0 {
 		entries = entries.Offset(startIndex)
 	}
@@ -227,7 +227,7 @@ func (s *Service) AddItems(ctx context.Context, itemID uuid.UUID, itemIDs []uuid
 		}
 
 		count, err := tx.PlaylistEntry.Query().
-			Where(entrymodal.PlaylistID(playlist.ID)).
+			Where(entrymodel.PlaylistID(playlist.ID)).
 			Count(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to count playlist entries: %w", err)
@@ -250,7 +250,7 @@ func (s *Service) RemoveEntries(ctx context.Context, itemID uuid.UUID, entryIDs 
 		}
 
 		if _, err := tx.PlaylistEntry.Delete().
-			Where(entrymodal.PlaylistID(playlist.ID), entrymodal.IDIn(entryIDs...)).
+			Where(entrymodel.PlaylistID(playlist.ID), entrymodal.IDIn(entryIDs...)).
 			Exec(ctx); err != nil {
 			return fmt.Errorf("failed to remove playlist entries: %w", err)
 		}
@@ -271,7 +271,7 @@ func (s *Service) MoveEntry(ctx context.Context, itemID, entryID uuid.UUID, newI
 			return err
 		}
 
-		entries := tx.PlaylistEntry.Query().Where(entrymodal.PlaylistID(playlist.ID))
+		entries := tx.PlaylistEntry.Query().Where(entrymodel.PlaylistID(playlist.ID))
 
 		count, err := entries.Clone().Count(ctx)
 		if err != nil {
@@ -281,7 +281,7 @@ func (s *Service) MoveEntry(ctx context.Context, itemID, entryID uuid.UUID, newI
 			return fmt.Errorf("index %d is outside playlist %s", newIndex, itemID)
 		}
 
-		entry, err := entries.Where(entrymodal.ID(entryID)).Only(ctx)
+		entry, err := entries.Where(entrymodel.ID(entryID)).Only(ctx)
 		if err != nil {
 			return fmt.Errorf("playlist %s has no entry %s: %w", itemID, entryID, err)
 		}
@@ -292,14 +292,14 @@ func (s *Service) MoveEntry(ctx context.Context, itemID, entryID uuid.UUID, newI
 			return nil
 		}
 
-		shifted := tx.PlaylistEntry.Update().Where(entrymodal.PlaylistID(playlist.ID))
+		shifted := tx.PlaylistEntry.Update().Where(entrymodel.PlaylistID(playlist.ID))
 		if to < from {
 			shifted = shifted.
-				Where(entrymodal.SortOrderGTE(to), entrymodal.SortOrderLT(from)).
+				Where(entrymodel.SortOrderGTE(to), entrymodal.SortOrderLT(from)).
 				AddSortOrder(1)
 		} else {
 			shifted = shifted.
-				Where(entrymodal.SortOrderGT(from), entrymodal.SortOrderLTE(to)).
+				Where(entrymodel.SortOrderGT(from), entrymodal.SortOrderLTE(to)).
 				AddSortOrder(-1)
 		}
 		if _, err := shifted.Save(ctx); err != nil {
@@ -321,8 +321,8 @@ func (s *Service) Shares(ctx context.Context, itemID uuid.UUID) ([]*Share, error
 	}
 
 	shares, err := s.store.PlaylistShare.Query().
-		Where(sharemodal.PlaylistID(playlist.ID)).
-		Order(sharemodal.ByCreatedAt(), sharemodal.ByID()).
+		Where(sharemodel.PlaylistID(playlist.ID)).
+		Order(sharemodel.ByCreatedAt(), sharemodal.ByID()).
 		All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query playlist shares: %w", err)
@@ -338,7 +338,7 @@ func (s *Service) ShareFor(ctx context.Context, itemID, userID uuid.UUID) (*Shar
 	}
 
 	share, err := s.store.PlaylistShare.Query().
-		Where(sharemodal.PlaylistID(playlist.ID), sharemodal.UserID(userID)).
+		Where(sharemodel.PlaylistID(playlist.ID), sharemodal.UserID(userID)).
 		Only(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query playlist share: %w", err)
@@ -370,7 +370,7 @@ func (s *Service) RemoveShare(ctx context.Context, itemID, userID uuid.UUID) err
 		}
 
 		if _, err := tx.PlaylistShare.Delete().
-			Where(sharemodal.PlaylistID(playlist.ID), sharemodal.UserID(userID)).
+			Where(sharemodel.PlaylistID(playlist.ID), sharemodal.UserID(userID)).
 			Exec(ctx); err != nil {
 			return fmt.Errorf("failed to remove playlist share: %w", err)
 		}
@@ -380,7 +380,7 @@ func (s *Service) RemoveShare(ctx context.Context, itemID, userID uuid.UUID) err
 }
 
 func playlistByItem(ctx context.Context, client *store.PlaylistClient, itemID uuid.UUID) (*Playlist, error) {
-	playlist, err := client.Query().Where(playlistmodal.ItemID(itemID)).Only(ctx)
+	playlist, err := client.Query().Where(playlistmodel.ItemID(itemID)).Only(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query playlist %s: %w", itemID, err)
 	}
@@ -390,8 +390,8 @@ func playlistByItem(ctx context.Context, client *store.PlaylistClient, itemID uu
 
 func orderedEntries(ctx context.Context, client *store.PlaylistEntryClient, playlistID uuid.UUID) ([]*Entry, error) {
 	entries, err := client.Query().
-		Where(entrymodal.PlaylistID(playlistID)).
-		Order(entrymodal.BySortOrder(), entrymodal.ByID()).
+		Where(entrymodel.PlaylistID(playlistID)).
+		Order(entrymodel.BySortOrder(), entrymodal.ByID()).
 		All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query playlist entries: %w", err)
@@ -405,7 +405,7 @@ func expand(ctx context.Context, client *store.ItemClient, itemIDs []uuid.UUID) 
 		return nil, nil
 	}
 
-	records, err := client.Query().Where(itemmodal.IDIn(itemIDs...)).All(ctx)
+	records, err := client.Query().Where(itemmodel.IDIn(itemIDs...)).All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query playlist items: %w", err)
 	}
@@ -438,8 +438,8 @@ func expand(ctx context.Context, client *store.ItemClient, itemIDs []uuid.UUID) 
 
 func descendants(ctx context.Context, client *store.ItemClient, folderID uuid.UUID) ([]uuid.UUID, error) {
 	children, err := client.Query().
-		Where(itemmodal.ParentID(folderID)).
-		Order(itemmodal.ByIndexNumber(sql.OrderNullsLast()), itemmodal.BySortName()).
+		Where(itemmodel.ParentID(folderID)).
+		Order(itemmodel.ByIndexNumber(sql.OrderNullsLast()), itemmodal.BySortName()).
 		All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query folder children: %w", err)
@@ -495,7 +495,7 @@ func replaceShares(ctx context.Context, tx *store.Tx, playlistID uuid.UUID, perm
 	}
 
 	if _, err := tx.PlaylistShare.Delete().
-		Where(sharemodal.PlaylistID(playlistID)).
+		Where(sharemodel.PlaylistID(playlistID)).
 		Exec(ctx); err != nil {
 		return fmt.Errorf("failed to clear playlist shares: %w", err)
 	}
@@ -514,7 +514,7 @@ func upsertShare(ctx context.Context, client *store.PlaylistShareClient, playlis
 		SetPlaylistID(playlistID).
 		SetUserID(permission.UserID).
 		SetCanEdit(permission.CanEdit).
-		OnConflictColumns(sharemodal.FieldPlaylistID, sharemodal.FieldUserID).
+		OnConflictColumns(sharemodel.FieldPlaylistID, sharemodal.FieldUserID).
 		UpdateCanEdit().
 		UpdateUpdatedAt().
 		Exec(ctx); err != nil {
@@ -543,7 +543,7 @@ func checkPermissions(ctx context.Context, client *store.UserClient, permissions
 		return nil
 	}
 
-	found, err := client.Query().Where(usermodal.IDIn(userIDs...)).Count(ctx)
+	found, err := client.Query().Where(usermodel.IDIn(userIDs...)).Count(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to count playlist share users: %w", err)
 	}

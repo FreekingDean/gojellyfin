@@ -16,12 +16,12 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
-	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
+	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	librarymodel "github.com/FreekingDean/gojellyfin/internal/store/library"
 	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
-	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
-	downloadermodal "github.com/FreekingDean/gojellyfin/internal/store/source"
+	streammodel "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
+	downloadermodel "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
 
 type fixture struct {
@@ -51,14 +51,14 @@ func newFixture(t *testing.T) *fixture {
 	client := connection.Client()
 	libraryService := libraries.New(client)
 
-	library, err := libraryService.CreateLibrary(ctx, t.Name()+"-"+uuid.NewString(), librarymodal.CollectionTypeMovies, nil)
+	library, err := libraryService.CreateLibrary(ctx, t.Name()+"-"+uuid.NewString(), librarymodel.CollectionTypeMovies, nil)
 	if err != nil {
 		t.Fatalf("failed to create the library: %v", err)
 	}
 
 	t.Cleanup(func() {
-		inLibrary := sourcemodal.HasItemWith(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID)))
-		if _, err := client.MediaStream.Delete().Where(streammodal.HasSourceWith(inLibrary)).Exec(ctx); err != nil {
+		inLibrary := sourcemodel.HasItemWith(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID)))
+		if _, err := client.MediaStream.Delete().Where(streammodel.HasSourceWith(inLibrary)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the media streams: %v", err)
 		}
 		if _, err := client.ItemSource.Delete().Where(inLibrary).Exec(ctx); err != nil {
@@ -76,7 +76,7 @@ func newFixture(t *testing.T) *fixture {
 		SetName(t.Name() + "-" + uuid.NewString()).
 		SetURL("http://" + uuid.NewString() + ".invalid").
 		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
-		SetKind(downloadermodal.KindRadarr).
+		SetKind(downloadermodel.KindRadarr).
 		SetRootPath("/media").
 		SetLocalPath("/media").
 		Save(context.Background())
@@ -131,8 +131,8 @@ func (f *fixture) addRipped(t *testing.T, kind items.Kind, container, video, cod
 	err = service.SaveProbe(ctx, item, source, items.MediaSource{
 		Container: container,
 		Edges: items.MediaSourceEdges{Streams: []*items.MediaStream{
-			{Index: 0, Kind: streammodal.KindVideo, Codec: video, Height: 1080, Width: 1920},
-			{Index: 1, Kind: streammodal.KindAudio, Codec: codec},
+			{Index: 0, Kind: streammodel.KindVideo, Codec: video, Height: 1080, Width: 1920},
+			{Index: 1, Kind: streammodel.KindAudio, Codec: codec},
 		}},
 	})
 	if err != nil {
@@ -167,8 +167,8 @@ func (f *fixture) addCopy(t *testing.T, id uuid.UUID, path, video, audio string,
 	err = service.SaveProbe(ctx, item, source, items.MediaSource{
 		Container: strings.TrimPrefix(filepath.Ext(path), "."),
 		Edges: items.MediaSourceEdges{Streams: []*items.MediaStream{
-			{Index: 0, Kind: streammodal.KindVideo, Codec: video, Height: height, Width: height * 16 / 9},
-			{Index: 1, Kind: streammodal.KindAudio, Codec: audio},
+			{Index: 0, Kind: streammodel.KindVideo, Codec: video, Height: height, Width: height * 16 / 9},
+			{Index: 1, Kind: streammodel.KindAudio, Codec: audio},
 		}},
 	})
 	if err != nil {
@@ -180,7 +180,7 @@ func (f *fixture) unscanned(t *testing.T) uuid.UUID {
 	t.Helper()
 
 	item, err := f.server.items.SaveScanned(context.Background(), items.Item{
-		Kind:         itemmodal.KindMovie,
+		Kind:         itemmodel.KindMovie,
 		Key:          "movie:unscanned",
 		Name:         "unscanned",
 		SortName:     "unscanned",
@@ -275,7 +275,7 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 
 	t.Run("the client is left with one url and no choice of path", func(t *testing.T) {
 		fixture := newFixture(t)
-		id := fixture.addRip(t, itemmodal.KindMovie, "mkv", "ac3")
+		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "ac3")
 
 		source := fixture.source(t, id, firstPlay(&chrome))
 
@@ -292,7 +292,7 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 
 	t.Run("an item with several files answers with one of them", func(t *testing.T) {
 		fixture := newFixture(t)
-		id := fixture.addRip(t, itemmodal.KindMovie, "mkv", "aac")
+		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "aac")
 		fixture.addCopy(t, id, "/media/second.mkv", "h264", "aac", 1080)
 
 		if got := len(fixture.sources(t, id, firstPlay(&chrome))); got != 1 {
@@ -302,7 +302,7 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 
 	t.Run("the version the client names is not the client's to choose", func(t *testing.T) {
 		fixture := newFixture(t)
-		id := fixture.addRip(t, itemmodal.KindMovie, "mkv", "aac")
+		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "aac")
 		fixture.addCopy(t, id, "/media/uhd.mkv", "h264", "aac", 2160)
 		named := fixture.sourceID(t, id, "/media/rip.mkv")
 
@@ -327,8 +327,8 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 	t.Run("nothing is answered as a stream that has to be opened, looped or probed", func(t *testing.T) {
 		fixture := newFixture(t)
 		for _, id := range []uuid.UUID{
-			fixture.addRip(t, itemmodal.KindMovie, "mkv", "ac3"),
-			fixture.addRip(t, itemmodal.KindAudio, "flac", "flac"),
+			fixture.addRip(t, itemmodel.KindMovie, "mkv", "ac3"),
+			fixture.addRip(t, itemmodel.KindAudio, "flac", "flac"),
 		} {
 			source := fixture.source(t, id, firstPlay(&chrome))
 
@@ -349,7 +349,7 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 
 	t.Run("a song is answered with a way to reach its bytes", func(t *testing.T) {
 		fixture := newFixture(t)
-		id := fixture.addRip(t, itemmodal.KindAudio, "flac", "flac")
+		id := fixture.addRip(t, itemmodel.KindAudio, "flac", "flac")
 
 		source := fixture.source(t, id, firstPlay(&chrome))
 
@@ -360,7 +360,7 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 
 	t.Run("audio the client cannot decode is answered in a container it can", func(t *testing.T) {
 		fixture := newFixture(t)
-		id := fixture.addRip(t, itemmodal.KindMovie, "mkv", "ac3")
+		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "ac3")
 
 		source := fixture.source(t, id, firstPlay(&chrome))
 
@@ -381,7 +381,7 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 
 	t.Run("a source the client declared is named as the source", func(t *testing.T) {
 		fixture := newFixture(t)
-		id := fixture.addRip(t, itemmodal.KindMovie, "mkv", "aac")
+		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "aac")
 
 		source := fixture.source(t, id, firstPlay(&chrome))
 
@@ -399,7 +399,7 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 
 	t.Run("codecs declared and the container not is answered by a mux", func(t *testing.T) {
 		fixture := newFixture(t)
-		id := fixture.addRip(t, itemmodal.KindMovie, "avi", "aac")
+		id := fixture.addRip(t, itemmodel.KindMovie, "avi", "aac")
 
 		source := fixture.source(t, id, firstPlay(&chrome))
 
@@ -413,7 +413,7 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 
 	t.Run("a client that declared nothing is handed the source", func(t *testing.T) {
 		fixture := newFixture(t)
-		id := fixture.addRip(t, itemmodal.KindMovie, "mkv", "ac3")
+		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "ac3")
 
 		source := fixture.source(t, id, firstPlay(nil))
 
@@ -427,7 +427,7 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 
 	t.Run("a seek is asked for by position", func(t *testing.T) {
 		fixture := newFixture(t)
-		id := fixture.addRip(t, itemmodal.KindMovie, "mkv", "ac3")
+		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "ac3")
 
 		body := firstPlay(&chrome)
 		body.StartTimeTicks = apiutil.Ptr(int64(25_000_000))
@@ -439,7 +439,7 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 
 	t.Run("a picture nothing declared can carry is answered as no compatible stream", func(t *testing.T) {
 		fixture := newFixture(t)
-		id := fixture.addRipped(t, itemmodal.KindMovie, "mkv", "mpeg4", "aac")
+		id := fixture.addRipped(t, itemmodel.KindMovie, "mkv", "mpeg4", "aac")
 
 		answer := fixture.answer(t, id, firstPlay(&chrome))
 
@@ -467,7 +467,7 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 
 	t.Run("a playable source is not refused for one it has beside it", func(t *testing.T) {
 		fixture := newFixture(t)
-		id := fixture.addRip(t, itemmodal.KindMovie, "mkv", "ac3")
+		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "ac3")
 
 		if fixture.answer(t, id, firstPlay(&chrome)).ErrorCode != nil {
 			t.Error("a source that can be muxed was answered as no compatible stream")
@@ -476,7 +476,7 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 
 	t.Run("a song is left to the audio path", func(t *testing.T) {
 		fixture := newFixture(t)
-		id := fixture.addRip(t, itemmodal.KindAudio, "flac", "flac")
+		id := fixture.addRip(t, itemmodel.KindAudio, "flac", "flac")
 
 		source := fixture.source(t, id, firstPlay(&chrome))
 
@@ -488,10 +488,10 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 	t.Run("transcoding and a url to transcode from always travel together", func(t *testing.T) {
 		fixture := newFixture(t)
 		ids := []uuid.UUID{
-			fixture.addRipped(t, itemmodal.KindMovie, "mkv", "mpeg4", "aac"),
-			fixture.addRip(t, itemmodal.KindMovie, "mkv", "ac3"),
-			fixture.addRip(t, itemmodal.KindMovie, "mkv", "aac"),
-			fixture.addRip(t, itemmodal.KindAudio, "flac", "flac"),
+			fixture.addRipped(t, itemmodel.KindMovie, "mkv", "mpeg4", "aac"),
+			fixture.addRip(t, itemmodel.KindMovie, "mkv", "ac3"),
+			fixture.addRip(t, itemmodel.KindMovie, "mkv", "aac"),
+			fixture.addRip(t, itemmodel.KindAudio, "flac", "flac"),
 			fixture.unscanned(t),
 		}
 
@@ -514,7 +514,7 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 
 	t.Run("a playback error has somewhere to stop", func(t *testing.T) {
 		fixture := newFixture(t)
-		id := fixture.addRip(t, itemmodal.KindMovie, "mkv", "ac3")
+		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "ac3")
 
 		raw := strings.ToLower(apiutil.Deref(fixture.source(t, id, afterPlaybackError(&chrome)).TranscodingUrl))
 
@@ -533,7 +533,7 @@ func (f *fixture) newDownloader(t *testing.T) uuid.UUID {
 		SetName(t.Name() + "-" + uuid.NewString()).
 		SetURL("http://" + uuid.NewString() + ".invalid").
 		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
-		SetKind(downloadermodal.KindRadarr).
+		SetKind(downloadermodel.KindRadarr).
 		SetRootPath("/media").
 		SetLocalPath("/media").
 		Save(context.Background())

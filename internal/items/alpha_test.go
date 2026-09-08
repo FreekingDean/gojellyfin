@@ -5,7 +5,7 @@ import (
 	"slices"
 	"testing"
 
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
 func (f *fixture) picked(t *testing.T, query ItemQuery) []string {
@@ -31,7 +31,7 @@ func TestQueryItems_AlphaPicker(t *testing.T) {
 	fixture := newFixture(t)
 
 	for _, name := range []string{"Alien", "Arrival", "Blade Runner", "The Matrix", "2001"} {
-		fixture.add(t, seed{kind: itemmodal.KindMovie, name: name, sortName: SortName(name)})
+		fixture.add(t, seed{kind: itemmodel.KindMovie, name: name, sortName: SortName(name)})
 	}
 
 	for _, test := range []struct {

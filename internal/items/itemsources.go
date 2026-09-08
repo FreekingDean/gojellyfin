@@ -9,9 +9,9 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
-	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
+	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	streammodel "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 )
 
@@ -19,9 +19,9 @@ type (
 	MediaSource      = store.ItemSource
 	MediaSourceEdges = store.ItemSourceEdges
 	MediaStream      = store.MediaStream
-	StreamKind       = streammodal.Kind
+	StreamKind       = streammodel.Kind
 
-	VideoRangeType = streammodal.VideoRangeType
+	VideoRangeType = streammodel.VideoRangeType
 )
 
 func nillableRangeType(rangeType VideoRangeType) *VideoRangeType {
@@ -39,7 +39,7 @@ func (s *Service) SaveSource(ctx context.Context, scanned MediaSource) (*MediaSo
 		SetPath(scanned.Path).
 		SetName(scanned.Name).
 		SetDateModified(scanned.DateModified).
-		OnConflictColumns(sourcemodal.FieldPath).
+		OnConflictColumns(sourcemodel.FieldPath).
 		UpdateItemID().
 		UpdateSourceID().
 		UpdateName().
@@ -71,7 +71,7 @@ func (s *Service) SaveProbe(ctx context.Context, item *Item, source *MediaSource
 			return fmt.Errorf("failed to save the probed media source: %w", err)
 		}
 
-		if _, err := tx.MediaStream.Delete().Where(streammodal.ItemSourceID(source.ID)).Exec(ctx); err != nil {
+		if _, err := tx.MediaStream.Delete().Where(streammodel.ItemSourceID(source.ID)).Exec(ctx); err != nil {
 			return fmt.Errorf("failed to clear media streams: %w", err)
 		}
 
@@ -123,11 +123,11 @@ func (s *Service) SourcesNeedingProbe(ctx context.Context) ([]uuid.UUID, error) 
 	ids, err := s.store.ItemSource.Query().
 		Where(
 			func(selector *sql.Selector) {
-				probed, modified := selector.C(sourcemodal.FieldProbedAt), selector.C(sourcemodal.FieldDateModified)
+				probed, modified := selector.C(sourcemodel.FieldProbedAt), selector.C(sourcemodal.FieldDateModified)
 				selector.Where(sql.Or(sql.IsNull(probed), sql.ColumnsLT(probed, modified)))
 			},
 		).
-		Order(sourcemodal.ByPath()).
+		Order(sourcemodel.ByPath()).
 		IDs(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query the sources needing a probe: %w", err)
@@ -138,10 +138,10 @@ func (s *Service) SourcesNeedingProbe(ctx context.Context) ([]uuid.UUID, error) 
 
 func (s *Service) MediaSources(ctx context.Context, itemID uuid.UUID) ([]*MediaSource, error) {
 	sources, err := s.store.ItemSource.Query().
-		Where(sourcemodal.ItemID(itemID)).
-		Order(sourcemodal.ByCreatedAt(), sourcemodal.ByPath()).
+		Where(sourcemodel.ItemID(itemID)).
+		Order(sourcemodel.ByCreatedAt(), sourcemodal.ByPath()).
 		WithStreams(func(query *store.MediaStreamQuery) {
-			query.Order(streammodal.ByIndex())
+			query.Order(streammodel.ByIndex())
 		}).
 		All(ctx)
 	if err != nil {
@@ -164,10 +164,10 @@ func (s *Service) FilesByItem(ctx context.Context, itemIDs []uuid.UUID) (map[uui
 	}
 
 	sources, err := s.store.ItemSource.Query().
-		Where(sourcemodal.ItemIDIn(itemIDs...)).
-		Order(sourcemodal.ByCreatedAt(), sourcemodal.ByPath()).
+		Where(sourcemodel.ItemIDIn(itemIDs...)).
+		Order(sourcemodel.ByCreatedAt(), sourcemodal.ByPath()).
 		WithStreams(func(query *store.MediaStreamQuery) {
-			query.Where(streammodal.KindEQ(streammodal.KindSubtitle))
+			query.Where(streammodel.KindEQ(streammodal.KindSubtitle))
 		}).
 		All(ctx)
 	if err != nil {
@@ -193,9 +193,9 @@ func (s *Service) SourcePaths(ctx context.Context, id uuid.UUID) ([]string, erro
 	}
 
 	paths, err := s.store.ItemSource.Query().
-		Where(sourcemodal.ItemIDIn(ids...)).
-		Order(sourcemodal.ByPath()).
-		Select(sourcemodal.FieldPath).
+		Where(sourcemodel.ItemIDIn(ids...)).
+		Order(sourcemodel.ByPath()).
+		Select(sourcemodel.FieldPath).
 		Strings(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query the paths under %s: %w", id, err)
@@ -209,14 +209,14 @@ func (s *Service) DeleteSourcesNotInPaths(
 	sourceID uuid.UUID,
 	paths []string,
 ) ([]uuid.UUID, error) {
-	where := []predicate.ItemSource{sourcemodal.SourceID(sourceID)}
+	where := []predicate.ItemSource{sourcemodel.SourceID(sourceID)}
 	if len(paths) > 0 {
-		where = append(where, sourcemodal.PathNotIn(paths...))
+		where = append(where, sourcemodel.PathNotIn(paths...))
 	}
 
 	dropped, err := s.store.ItemSource.Query().
 		Where(where...).
-		Select(sourcemodal.FieldItemID).
+		Select(sourcemodel.FieldItemID).
 		Strings(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to select missing media sources: %w", err)
@@ -235,7 +235,7 @@ func NeedsProbe(source *MediaSource) bool {
 
 func IsAudio(item *Item) bool {
 	switch item.Kind {
-	case itemmodal.KindAudio, itemmodal.KindAudioBook:
+	case itemmodel.KindAudio, itemmodal.KindAudioBook:
 		return true
 	default:
 		return false

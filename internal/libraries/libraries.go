@@ -10,33 +10,33 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/sources"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	"github.com/FreekingDean/gojellyfin/internal/store/entities"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
+	librarymodel "github.com/FreekingDean/gojellyfin/internal/store/library"
 	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
-	optionsmodal "github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
+	optionsmodel "github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
 )
 
 type (
 	Library           = store.Library
 	Options           = store.LibraryOptions
-	CollectionType    = librarymodal.CollectionType
-	EmbeddedSubtitles = optionsmodal.AllowEmbeddedSubtitles
+	CollectionType    = librarymodel.CollectionType
+	EmbeddedSubtitles = optionsmodel.AllowEmbeddedSubtitles
 	TypeOptions       = entities.TypeOptions
 )
 
 const (
-	CollectionTypeMovies      = librarymodal.CollectionTypeMovies
-	CollectionTypeTvshows     = librarymodal.CollectionTypeTvshows
-	CollectionTypeMusic       = librarymodal.CollectionTypeMusic
-	CollectionTypeMusicvideos = librarymodal.CollectionTypeMusicvideos
-	CollectionTypeHomevideos  = librarymodal.CollectionTypeHomevideos
-	CollectionTypeBoxsets     = librarymodal.CollectionTypeBoxsets
-	CollectionTypeBooks       = librarymodal.CollectionTypeBooks
-	CollectionTypeMixed       = librarymodal.CollectionTypeMixed
+	CollectionTypeMovies      = librarymodel.CollectionTypeMovies
+	CollectionTypeTvshows     = librarymodel.CollectionTypeTvshows
+	CollectionTypeMusic       = librarymodel.CollectionTypeMusic
+	CollectionTypeMusicvideos = librarymodel.CollectionTypeMusicvideos
+	CollectionTypeHomevideos  = librarymodel.CollectionTypeHomevideos
+	CollectionTypeBoxsets     = librarymodel.CollectionTypeBoxsets
+	CollectionTypeBooks       = librarymodel.CollectionTypeBooks
+	CollectionTypeMixed       = librarymodel.CollectionTypeMixed
 )
 
 var (
-	ValidCollectionType = librarymodal.CollectionTypeValidator
+	ValidCollectionType = librarymodel.CollectionTypeValidator
 
 	CollectionTypes = []CollectionType{
 		CollectionTypeMovies,
@@ -91,7 +91,7 @@ func (s *Service) CreateLibrary(ctx context.Context, name string, collectionType
 
 func (s *Service) Library(ctx context.Context, id uuid.UUID) (*Library, error) {
 	library, err := s.store.Library.Query().
-		Where(librarymodal.ID(id)).
+		Where(librarymodel.ID(id)).
 		WithOptions().
 		Only(ctx)
 	if err != nil {
@@ -103,7 +103,7 @@ func (s *Service) Library(ctx context.Context, id uuid.UUID) (*Library, error) {
 
 func (s *Service) LibraryByName(ctx context.Context, name string) (*Library, error) {
 	library, err := s.store.Library.Query().
-		Where(librarymodal.Name(name)).
+		Where(librarymodel.Name(name)).
 		WithOptions().
 		Only(ctx)
 	if err != nil {
@@ -116,7 +116,7 @@ func (s *Service) LibraryByName(ctx context.Context, name string) (*Library, err
 func (s *Service) ListLibraries(ctx context.Context) ([]*Library, error) {
 	libraries, err := s.store.Library.Query().
 		WithOptions().
-		Order(librarymodal.ByName()).
+		Order(librarymodel.ByName()).
 		All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list libraries: %w", err)
@@ -133,9 +133,9 @@ var groupableCollectionTypes = []CollectionType{
 
 func (s *Service) GroupableLibraries(ctx context.Context) ([]*Library, error) {
 	libraries, err := s.store.Library.Query().
-		Where(librarymodal.CollectionTypeIn(groupableCollectionTypes...)).
+		Where(librarymodel.CollectionTypeIn(groupableCollectionTypes...)).
 		WithOptions().
-		Order(librarymodal.ByName()).
+		Order(librarymodel.ByName()).
 		All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list groupable libraries: %w", err)
@@ -146,7 +146,7 @@ func (s *Service) GroupableLibraries(ctx context.Context) ([]*Library, error) {
 
 func (s *Service) PhysicalPaths(ctx context.Context) ([]string, error) {
 	libraries, err := s.store.Library.Query().
-		Select(librarymodal.FieldLocations).
+		Select(librarymodel.FieldLocations).
 		All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query library paths: %w", err)
@@ -172,7 +172,7 @@ func (s *Service) Rename(ctx context.Context, id uuid.UUID, name string) error {
 func (s *Service) DeleteLibrary(ctx context.Context, id uuid.UUID) error {
 	return s.store.WithTx(ctx, func(tx *store.Tx) error {
 		orphaned, err := tx.Item.Query().
-			Where(itemmodal.HasLibrariesWith(librarymembership.LibraryID(id))).
+			Where(itemmodel.HasLibrariesWith(librarymembership.LibraryID(id))).
 			IDs(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to query the library's items: %w", err)
@@ -184,9 +184,9 @@ func (s *Service) DeleteLibrary(ctx context.Context, id uuid.UUID) error {
 
 		if _, err := tx.Item.Delete().
 			Where(
-				itemmodal.IDIn(orphaned...),
-				itemmodal.Not(itemmodal.HasLibraries()),
-				itemmodal.Not(itemmodal.HasPlaylist()),
+				itemmodel.IDIn(orphaned...),
+				itemmodel.Not(itemmodal.HasLibraries()),
+				itemmodel.Not(itemmodal.HasPlaylist()),
 			).
 			Exec(ctx); err != nil {
 			return fmt.Errorf("failed to delete the items no library holds: %w", err)
@@ -198,7 +198,7 @@ func (s *Service) DeleteLibrary(ctx context.Context, id uuid.UUID) error {
 
 func (s *Service) UpdateOptions(id uuid.UUID) *store.LibraryOptionsUpdate {
 	return s.store.LibraryOptions.Update().
-		Where(optionsmodal.HasLibraryWith(librarymodal.ID(id)))
+		Where(optionsmodel.HasLibraryWith(librarymodal.ID(id)))
 }
 
 func (s *Service) AddLocation(ctx context.Context, id uuid.UUID, path string) error {

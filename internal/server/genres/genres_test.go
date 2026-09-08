@@ -10,11 +10,11 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	genremodal "github.com/FreekingDean/gojellyfin/internal/store/genre"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	genremodel "github.com/FreekingDean/gojellyfin/internal/store/genre"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
+	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
-	downloadermodal "github.com/FreekingDean/gojellyfin/internal/store/source"
+	downloadermodel "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
 
 func TestServer_GetGenres(t *testing.T) {
@@ -41,8 +41,8 @@ func TestServer_GetGenres(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		owned := itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID))
-		if _, err := client.ItemSource.Delete().Where(sourcemodal.HasItemWith(owned)).Exec(ctx); err != nil {
+		owned := itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID))
+		if _, err := client.ItemSource.Delete().Where(sourcemodel.HasItemWith(owned)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the media sources: %v", err)
 		}
 		if _, err := client.Item.Delete().Where(owned).Exec(ctx); err != nil {
@@ -51,7 +51,7 @@ func TestServer_GetGenres(t *testing.T) {
 		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the library: %v", err)
 		}
-		if _, err := client.Genre.Delete().Where(genremodal.Name(name)).Exec(ctx); err != nil {
+		if _, err := client.Genre.Delete().Where(genremodel.Name(name)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the genre: %v", err)
 		}
 		if err := connection.Stop(); err != nil {
@@ -63,7 +63,7 @@ func TestServer_GetGenres(t *testing.T) {
 		SetName(name).
 		SetURL("http://" + uuid.NewString() + ".invalid").
 		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
-		SetKind(downloadermodal.KindRadarr).
+		SetKind(downloadermodel.KindRadarr).
 		SetRootPath("/media").
 		SetLocalPath("/media").
 		Save(ctx)
@@ -78,7 +78,7 @@ func TestServer_GetGenres(t *testing.T) {
 
 	service := items.New(client)
 	movie, err := service.SaveScanned(ctx, items.Item{
-		Kind:     itemmodal.KindMovie,
+		Kind:     itemmodel.KindMovie,
 		Name:     name,
 		SortName: name,
 		Key:      "test:" + name,

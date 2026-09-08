@@ -11,20 +11,20 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	creditmodal "github.com/FreekingDean/gojellyfin/internal/store/credit"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	creditmodel "github.com/FreekingDean/gojellyfin/internal/store/credit"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
+	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
-	personmodal "github.com/FreekingDean/gojellyfin/internal/store/person"
+	personmodel "github.com/FreekingDean/gojellyfin/internal/store/person"
 )
 
-func credit(t *testing.T, client *store.Client, itemID uuid.UUID, name string, kind creditmodal.Kind) {
+func credit(t *testing.T, client *store.Client, itemID uuid.UUID, name string, kind creditmodel.Kind) {
 	t.Helper()
 
 	ctx := context.Background()
 
 	person, err := client.Person.Create().SetName(name).
-		OnConflictColumns(personmodal.FieldName).
+		OnConflictColumns(personmodel.FieldName).
 		UpdateNewValues().
 		ID(ctx)
 	if err != nil {
@@ -64,11 +64,11 @@ func TestServer_GetPersons(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		owned := itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID))
-		if _, err := client.Credit.Delete().Where(creditmodal.HasItemWith(owned)).Exec(ctx); err != nil {
+		owned := itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID))
+		if _, err := client.Credit.Delete().Where(creditmodel.HasItemWith(owned)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the credits: %v", err)
 		}
-		if _, err := client.ItemSource.Delete().Where(sourcemodal.HasItemWith(owned)).Exec(ctx); err != nil {
+		if _, err := client.ItemSource.Delete().Where(sourcemodel.HasItemWith(owned)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the media sources: %v", err)
 		}
 		if _, err := client.Item.Delete().Where(owned).Exec(ctx); err != nil {
@@ -77,7 +77,7 @@ func TestServer_GetPersons(t *testing.T) {
 		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the library: %v", err)
 		}
-		if _, err := client.Person.Delete().Where(personmodal.NameHasPrefix(prefix)).Exec(ctx); err != nil {
+		if _, err := client.Person.Delete().Where(personmodel.NameHasPrefix(prefix)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the people: %v", err)
 		}
 		if err := connection.Stop(); err != nil {
@@ -87,7 +87,7 @@ func TestServer_GetPersons(t *testing.T) {
 
 	service := items.New(client)
 	movie, err := service.SaveScanned(ctx, items.Item{
-		Kind:     itemmodal.KindMovie,
+		Kind:     itemmodel.KindMovie,
 		Name:     prefix + "Movie",
 		SortName: prefix + "Movie",
 		Key:      "test:" + prefix + "movie",
@@ -98,12 +98,12 @@ func TestServer_GetPersons(t *testing.T) {
 
 	director := prefix + "Director"
 	writer := prefix + "Writer"
-	credit(t, client, movie.ID, director, creditmodal.KindDirector)
-	credit(t, client, movie.ID, writer, creditmodal.KindWriter)
+	credit(t, client, movie.ID, director, creditmodel.KindDirector)
+	credit(t, client, movie.ID, writer, creditmodel.KindWriter)
 
 	server := New(service)
 
-	writerOnly := []string{string(creditmodal.KindWriter)}
+	writerOnly := []string{string(creditmodel.KindWriter)}
 	unknownKind := []string{"NotAKind"}
 	term := "director"
 	otherItem := uuid.New()

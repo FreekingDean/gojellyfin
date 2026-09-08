@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
 func (f *fixture) scannedFrom(t *testing.T, downloader uuid.UUID, key, path string) *Item {
@@ -16,7 +16,7 @@ func (f *fixture) scannedFrom(t *testing.T, downloader uuid.UUID, key, path stri
 
 	ctx := context.Background()
 	item, err := f.service.SaveScanned(ctx, Item{
-		Kind:         itemmodal.KindMovie,
+		Kind:         itemmodel.KindMovie,
 		Key:          key,
 		Name:         "The Matrix",
 		SortName:     "matrix",

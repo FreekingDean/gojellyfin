@@ -16,8 +16,8 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/source"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
+	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
 
 const (
@@ -140,7 +140,7 @@ func seed() error {
 		SetName("Fixtures").
 		SetURL("http://fixtures.invalid").
 		SetAPIKeyVariable(env.SourceAPIKeyPrefix + "FIXTURES").
-		SetKind(sourcemodal.KindRadarr).
+		SetKind(sourcemodel.KindRadarr).
 		SetRootPath("/fixtures").
 		SetLocalPath("/fixtures").
 		Save(ctx)
@@ -151,7 +151,7 @@ func seed() error {
 	catalogue := items.New(client)
 	for _, name := range movies {
 		item, err := catalogue.SaveScanned(ctx, items.Item{
-			Kind:         itemmodal.KindMovie,
+			Kind:         itemmodel.KindMovie,
 			Key:          "movie:" + slugify(name),
 			Name:         name,
 			SortName:     strings.ToLower(name),
@@ -177,7 +177,7 @@ func seed() error {
 	number := int32(1)
 
 	show, err := catalogue.SaveScanned(ctx, items.Item{
-		Kind:         itemmodal.KindSeries,
+		Kind:         itemmodel.KindSeries,
 		Key:          "series:" + slugify(series),
 		Name:         series,
 		SortName:     strings.ToLower(series),
@@ -189,7 +189,7 @@ func seed() error {
 
 	first, err := catalogue.SaveScanned(ctx, items.Item{
 		ParentID:     &show.ID,
-		Kind:         itemmodal.KindSeason,
+		Kind:         itemmodel.KindSeason,
 		Key:          "season:" + slugify(series) + ":1",
 		Name:         season,
 		SortName:     strings.ToLower(season),
@@ -204,7 +204,7 @@ func seed() error {
 		position := int32(index + 1)
 		item, err := catalogue.SaveScanned(ctx, items.Item{
 			ParentID:          &first.ID,
-			Kind:              itemmodal.KindEpisode,
+			Kind:              itemmodel.KindEpisode,
 			Key:               fmt.Sprintf("episode:%s:1:%d", slugify(series), position),
 			Name:              name,
 			SortName:          strings.ToLower(name),
