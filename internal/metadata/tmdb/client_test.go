@@ -33,7 +33,7 @@ func TestRetrying_RoundTrip(t *testing.T) {
 			Transport: retrying{base: http.DefaultTransport, attempts: retryAttempts, delay: time.Millisecond},
 		})
 
-		found, matched, err := client.Episode(context.Background(), map[string]string{providerTmdb: "1396"}, 1, 1)
+		found, matched, err := client.Episode(context.Background(), 1396, 1, 1)
 		if err != nil {
 			t.Fatalf("a refused request failed the run instead of backing off: %v", err)
 		}
@@ -66,7 +66,7 @@ func TestRetrying_RoundTrip(t *testing.T) {
 			Transport: retrying{base: http.DefaultTransport, attempts: retryAttempts, delay: time.Millisecond},
 		})
 
-		if _, _, err := client.Episode(context.Background(), map[string]string{providerTmdb: "1396"}, 1, 1); err == nil {
+		if _, _, err := client.Episode(context.Background(), 1396, 1, 1); err == nil {
 			t.Fatal("a permanently refused request answered without an error")
 		}
 		if attempts != retryAttempts {

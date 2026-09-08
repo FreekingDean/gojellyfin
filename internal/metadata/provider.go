@@ -8,8 +8,8 @@ import (
 
 type Provider interface {
 	Enabled() bool
-	Movie(ctx context.Context, name string, year *int32) (items.Metadata, bool, error)
-	Series(ctx context.Context, name string, year *int32) (items.Metadata, bool, error)
-	Season(ctx context.Context, series map[string]string, season int32) (items.Metadata, bool, error)
-	Episode(ctx context.Context, series map[string]string, season, episode int32) (items.Metadata, bool, error)
+	Movie(ctx context.Context, tmdbID int) (items.Metadata, bool, error)
+	Series(ctx context.Context, tmdbID int) (items.Metadata, bool, error)
+	Season(ctx context.Context, tmdbID int, season int32) (items.Metadata, bool, error)
+	Episode(ctx context.Context, tmdbID int, season, episode int32) (items.Metadata, bool, error)
 }
