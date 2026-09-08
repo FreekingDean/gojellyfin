@@ -5,6 +5,7 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/FreekingDean/gojellyfin/internal/activity"
+	"github.com/FreekingDean/gojellyfin/internal/blob"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
@@ -29,6 +30,7 @@ var workerModules = fx.Options(
 	libraries.Module,
 	sources.Module,
 	probe.Module,
+	blob.Module,
 	metadata.Module,
 	jobs.Module,
 	jobs.WorkerModule,

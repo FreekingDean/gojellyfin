@@ -12,6 +12,8 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/blob"
+	"github.com/FreekingDean/gojellyfin/internal/blob/blobtest"
 	"github.com/FreekingDean/gojellyfin/internal/consts"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
@@ -129,6 +131,7 @@ type fixture struct {
 	items      *items.Service
 	service    *Service
 	provider   *stubProvider
+	objects    *blob.Store
 	libraryID  uuid.UUID
 	downloader uuid.UUID
 }
@@ -197,11 +200,17 @@ func newFixtureEnabled(t *testing.T, enabled bool) *fixture {
 		}
 	})
 
+	objects, err := blob.New(env.Config{ObjectStore: blobtest.Server(t)})
+	if err != nil {
+		t.Fatalf("failed to build the object store: %v", err)
+	}
+
 	return &fixture{
 		downloader: downloader.ID,
 		items:      service,
-		service:    New(provider, service),
+		service:    New(provider, service, objects),
 		provider:   provider,
+		objects:    objects,
 		libraryID:  library.ID,
 	}
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/blob"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/store"
@@ -22,10 +23,11 @@ var identifiable = []items.Kind{
 type Service struct {
 	provider Provider
 	items    *items.Service
+	blob     *blob.Store
 }
 
-func New(provider Provider, service *items.Service) *Service {
-	return &Service{provider: provider, items: service}
+func New(provider Provider, service *items.Service, objects *blob.Store) *Service {
+	return &Service{provider: provider, items: service, blob: objects}
 }
 
 func (s *Service) IdentifyItem(ctx context.Context, id uuid.UUID) error {

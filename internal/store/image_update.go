@@ -127,6 +127,20 @@ func (_u *ImageUpdate) SetNillableTag(v *string) *ImageUpdate {
 	return _u
 }
 
+// SetKey sets the "key" field.
+func (_u *ImageUpdate) SetKey(v string) *ImageUpdate {
+	_u.mutation.SetKey(v)
+	return _u
+}
+
+// SetNillableKey sets the "key" field if the given value is not nil.
+func (_u *ImageUpdate) SetNillableKey(v *string) *ImageUpdate {
+	if v != nil {
+		_u.SetKey(*v)
+	}
+	return _u
+}
+
 // SetItem sets the "item" edge to the Item entity.
 func (_u *ImageUpdate) SetItem(v *Item) *ImageUpdate {
 	return _u.SetItemID(v.ID)
@@ -224,6 +238,9 @@ func (_u *ImageUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.Tag(); ok {
 		_spec.SetField(image.FieldTag, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Key(); ok {
+		_spec.SetField(image.FieldKey, field.TypeString, value)
 	}
 	if _u.mutation.ItemCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -371,6 +388,20 @@ func (_u *ImageUpdateOne) SetNillableTag(v *string) *ImageUpdateOne {
 	return _u
 }
 
+// SetKey sets the "key" field.
+func (_u *ImageUpdateOne) SetKey(v string) *ImageUpdateOne {
+	_u.mutation.SetKey(v)
+	return _u
+}
+
+// SetNillableKey sets the "key" field if the given value is not nil.
+func (_u *ImageUpdateOne) SetNillableKey(v *string) *ImageUpdateOne {
+	if v != nil {
+		_u.SetKey(*v)
+	}
+	return _u
+}
+
 // SetItem sets the "item" edge to the Item entity.
 func (_u *ImageUpdateOne) SetItem(v *Item) *ImageUpdateOne {
 	return _u.SetItemID(v.ID)
@@ -498,6 +529,9 @@ func (_u *ImageUpdateOne) sqlSave(ctx context.Context) (_node *Image, err error)
 	}
 	if value, ok := _u.mutation.Tag(); ok {
 		_spec.SetField(image.FieldTag, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Key(); ok {
+		_spec.SetField(image.FieldKey, field.TypeString, value)
 	}
 	if _u.mutation.ItemCleared() {
 		edge := &sqlgraph.EdgeSpec{

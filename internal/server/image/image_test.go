@@ -4,10 +4,13 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/blob"
+	"github.com/FreekingDean/gojellyfin/internal/blob/blobtest"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
@@ -18,9 +21,10 @@ import (
 )
 
 type fixture struct {
-	server *Server
-	client *store.Client
-	itemID uuid.UUID
+	server  *Server
+	client  *store.Client
+	objects *blob.Store
+	itemID  uuid.UUID
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -88,10 +92,16 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
+	objects, err := blob.New(env.Config{ObjectStore: blobtest.Server(t)})
+	if err != nil {
+		t.Fatalf("failed to build the object store: %v", err)
+	}
+
 	return &fixture{
-		server: New(items.New(client)),
-		client: client,
-		itemID: item.ID,
+		server:  New(items.New(client), objects),
+		client:  client,
+		objects: objects,
+		itemID:  item.ID,
 	}
 }
 
@@ -194,4 +204,115 @@ func TestServer_GetItemImageByIndex(t *testing.T) {
 	if got := recorder.Header().Get("Location"); got != second {
 		t.Errorf("location = %q, want %q", got, second)
 	}
+}
+
+func (f *fixture) storeKeyed(t *testing.T, kind imagemodal.Kind, index int32, url, tag, key string) {
+	t.Helper()
+
+	_, err := f.client.Image.Create().
+		SetItemID(f.itemID).
+		SetKind(kind).
+		SetIndex(index).
+		SetURL(url).
+		SetTag(tag).
+		SetKey(key).
+		Save(context.Background())
+	if err != nil {
+		t.Fatalf("failed to create the image row: %v", err)
+	}
+}
+
+func TestServer_GetItemImage_Stored(t *testing.T) {
+	t.Run("serves the bytes the object store holds", func(t *testing.T) {
+		fixture := newFixture(t)
+		key := items.ImageKey(fixture.itemID, imagemodal.KindPrimary, 0)
+		bytes := []byte("poster-bytes")
+
+		if err := fixture.objects.Put(context.Background(), key, strings.NewReader(string(bytes)), int64(len(bytes)), "image/jpeg"); err != nil {
+			t.Fatalf("failed to write the object: %v", err)
+		}
+		fixture.storeKeyed(t, imagemodal.KindPrimary, 0, poster, "postertag", key)
+
+		response, err := fixture.server.GetItemImage(context.Background(), api.GetItemImageRequestObject{
+			ItemId:    fixture.itemID,
+			ImageType: api.Primary,
+		})
+		if err != nil {
+			t.Fatalf("failed to get the image: %v", err)
+		}
+
+		recorder := httptest.NewRecorder()
+		if err := response.VisitGetItemImageResponse(recorder); err != nil {
+			t.Fatalf("failed to write the response: %v", err)
+		}
+
+		if recorder.Code != http.StatusOK {
+			t.Errorf("status = %d, want 200", recorder.Code)
+		}
+		if got := recorder.Header().Get("Content-Type"); got != "image/jpeg" {
+			t.Errorf("content type = %q, want image/jpeg", got)
+		}
+		if got := recorder.Body.String(); got != string(bytes) {
+			t.Errorf("body = %q, want %q", got, bytes)
+		}
+	})
+
+	t.Run("falls back to the provider url when the object has gone", func(t *testing.T) {
+		fixture := newFixture(t)
+		key := items.ImageKey(fixture.itemID, imagemodal.KindPrimary, 0)
+		fixture.storeKeyed(t, imagemodal.KindPrimary, 0, poster, "postertag", key)
+
+		response, err := fixture.server.GetItemImage(context.Background(), api.GetItemImageRequestObject{
+			ItemId:    fixture.itemID,
+			ImageType: api.Primary,
+		})
+		if err != nil {
+			t.Fatalf("failed to get the image: %v", err)
+		}
+
+		recorder := httptest.NewRecorder()
+		if err := response.VisitGetItemImageResponse(recorder); err != nil {
+			t.Fatalf("failed to write the response: %v", err)
+		}
+
+		if recorder.Code != http.StatusFound {
+			t.Errorf("status = %d, want 302", recorder.Code)
+		}
+		if got := recorder.Header().Get("Location"); got != poster {
+			t.Errorf("location = %q, want %q", got, poster)
+		}
+	})
+
+	t.Run("writes headers without a body for a head request", func(t *testing.T) {
+		fixture := newFixture(t)
+		key := items.ImageKey(fixture.itemID, imagemodal.KindPrimary, 0)
+
+		if err := fixture.objects.Put(context.Background(), key, strings.NewReader("poster-bytes"), 12, "image/jpeg"); err != nil {
+			t.Fatalf("failed to write the object: %v", err)
+		}
+		fixture.storeKeyed(t, imagemodal.KindPrimary, 0, poster, "postertag", key)
+
+		response, err := fixture.server.HeadItemImage(context.Background(), api.HeadItemImageRequestObject{
+			ItemId:    fixture.itemID,
+			ImageType: api.Primary,
+		})
+		if err != nil {
+			t.Fatalf("failed to head the image: %v", err)
+		}
+
+		recorder := httptest.NewRecorder()
+		if err := response.VisitHeadItemImageResponse(recorder); err != nil {
+			t.Fatalf("failed to write the response: %v", err)
+		}
+
+		if recorder.Code != http.StatusOK {
+			t.Errorf("status = %d, want 200", recorder.Code)
+		}
+		if got := recorder.Header().Get("Content-Length"); got != "12" {
+			t.Errorf("content length = %q, want 12", got)
+		}
+		if recorder.Body.Len() != 0 {
+			t.Errorf("body = %q, want nothing", recorder.Body.String())
+		}
+	})
 }

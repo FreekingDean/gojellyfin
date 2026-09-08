@@ -7,6 +7,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/apikeys"
 	"github.com/FreekingDean/gojellyfin/internal/auth"
+	"github.com/FreekingDean/gojellyfin/internal/blob"
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/displaypreferences"
 	"github.com/FreekingDean/gojellyfin/internal/env"
@@ -44,6 +45,7 @@ var serverModules = fx.Options(
 	items.Module,
 	libraries.Module,
 	localization.Module,
+	blob.Module,
 	metadata.Module,
 	playlists.Module,
 	probe.Module,

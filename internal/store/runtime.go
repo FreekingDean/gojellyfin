@@ -167,6 +167,10 @@ func init() {
 	imageDescIndex := imageFields[5].Descriptor()
 	// image.DefaultIndex holds the default value on creation for the index field.
 	image.DefaultIndex = imageDescIndex.Default.(int32)
+	// imageDescKey is the schema descriptor for key field.
+	imageDescKey := imageFields[8].Descriptor()
+	// image.DefaultKey holds the default value on creation for the key field.
+	image.DefaultKey = imageDescKey.Default.(string)
 	itemFields := entities.Item{}.Fields()
 	_ = itemFields
 	// itemDescCreatedAt is the schema descriptor for created_at field.

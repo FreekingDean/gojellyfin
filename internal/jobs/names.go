@@ -10,6 +10,7 @@ const (
 	ProbeFile            = "ProbeFile"
 	ProbeFiles           = "ProbeFiles"
 	SweepItems           = "SweepItems"
+	CacheArtwork         = "CacheArtwork"
 )
 
 const (

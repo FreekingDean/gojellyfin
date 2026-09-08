@@ -29,6 +29,8 @@ const (
 	FieldURL = "url"
 	// FieldTag holds the string denoting the tag field in the database.
 	FieldTag = "tag"
+	// FieldKey holds the string denoting the key field in the database.
+	FieldKey = "key"
 	// EdgeItem holds the string denoting the item edge name in mutations.
 	EdgeItem = "item"
 	// Table holds the table name of the image in the database.
@@ -52,6 +54,7 @@ var Columns = []string{
 	FieldIndex,
 	FieldURL,
 	FieldTag,
+	FieldKey,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -73,6 +76,8 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// DefaultIndex holds the default value on creation for the "index" field.
 	DefaultIndex int32
+	// DefaultKey holds the default value on creation for the "key" field.
+	DefaultKey string
 )
 
 // Kind defines the type for the "kind" enum field.
@@ -150,6 +155,11 @@ func ByURL(opts ...sql.OrderTermOption) OrderOption {
 // ByTag orders the results by the tag field.
 func ByTag(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTag, opts...).ToFunc()
+}
+
+// ByKey orders the results by the key field.
+func ByKey(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldKey, opts...).ToFunc()
 }
 
 // ByItemField orders the results by item field.

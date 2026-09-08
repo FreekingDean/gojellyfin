@@ -28,6 +28,10 @@ type RemoteImage struct {
 	URL  string
 }
 
+func ImageKey(itemID uuid.UUID, kind ImageKind, index int32) string {
+	return fmt.Sprintf("artwork/%s/%s/%d", itemID, kind, index)
+}
+
 func (s *Service) SaveImage(ctx context.Context, itemID uuid.UUID, artwork Image) error {
 	err := s.store.Image.Create().
 		SetItemID(itemID).
@@ -35,13 +39,67 @@ func (s *Service) SaveImage(ctx context.Context, itemID uuid.UUID, artwork Image
 		SetURL(artwork.URL).
 		SetTag(artwork.Tag).
 		OnConflictColumns(imagemodal.FieldItemID, imagemodal.FieldKind, imagemodal.FieldIndex).
-		UpdateNewValues().
+		UpdateURL().
+		UpdateTag().
+		UpdateUpdatedAt().
+		Update(keyOfTheStoredURL).
 		Exec(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to save the image: %w", err)
 	}
 
 	return nil
+}
+
+func keyOfTheStoredURL(upsert *store.ImageUpsert) {
+	kept := upsert.Table()
+	excluded := sql.Dialect(upsert.Dialect()).Table("excluded")
+
+	upsert.Set(imagemodal.FieldKey, sql.Expr(fmt.Sprintf(
+		"CASE WHEN %s = %s THEN %s ELSE '' END",
+		kept.C(imagemodal.FieldURL), excluded.C(imagemodal.FieldURL), kept.C(imagemodal.FieldKey),
+	)))
+}
+
+func (s *Service) ImagesNeedingCache(ctx context.Context, scope uuid.UUID, limit int) ([]*Image, error) {
+	query := s.store.Image.Query().Where(imagemodal.Key(""))
+	if scope != uuid.Nil {
+		query = query.Where(imagemodal.HasItemWith(inLibrary(scope)))
+	}
+
+	images, err := query.
+		Order(imagemodal.ByCreatedAt(), imagemodal.ByID()).
+		Limit(limit).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query images needing cache: %w", err)
+	}
+
+	return images, nil
+}
+
+func (s *Service) SaveImageKey(ctx context.Context, id uuid.UUID, key string) error {
+	if err := s.store.Image.UpdateOneID(id).SetKey(key).Exec(ctx); err != nil {
+		return fmt.Errorf("failed to save the image key: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Service) ImageKeys(ctx context.Context, itemIDs []uuid.UUID) ([]string, error) {
+	if len(itemIDs) == 0 {
+		return nil, nil
+	}
+
+	keys, err := s.store.Image.Query().
+		Where(imagemodal.ItemIDIn(itemIDs...), imagemodal.KeyNEQ("")).
+		Select(imagemodal.FieldKey).
+		Strings(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query image keys: %w", err)
+	}
+
+	return keys, nil
 }
 
 func (s *Service) Images(ctx context.Context, itemID uuid.UUID) ([]*Image, error) {

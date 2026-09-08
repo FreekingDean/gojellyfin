@@ -33,6 +33,8 @@ type Image struct {
 	URL string `json:"url,omitempty"`
 	// Tag holds the value of the "tag" field.
 	Tag string `json:"tag,omitempty"`
+	// Key holds the value of the "key" field.
+	Key string `json:"key,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ImageQuery when eager-loading is set.
 	Edges        ImageEdges `json:"edges"`
@@ -66,7 +68,7 @@ func (*Image) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case image.FieldIndex:
 			values[i] = new(sql.NullInt64)
-		case image.FieldKind, image.FieldURL, image.FieldTag:
+		case image.FieldKind, image.FieldURL, image.FieldTag, image.FieldKey:
 			values[i] = new(sql.NullString)
 		case image.FieldCreatedAt, image.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -135,6 +137,12 @@ func (_m *Image) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Tag = value.String
 			}
+		case image.FieldKey:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field key", values[i])
+			} else if value.Valid {
+				_m.Key = value.String
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -196,6 +204,9 @@ func (_m *Image) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("tag=")
 	builder.WriteString(_m.Tag)
+	builder.WriteString(", ")
+	builder.WriteString("key=")
+	builder.WriteString(_m.Key)
 	builder.WriteByte(')')
 	return builder.String()
 }
