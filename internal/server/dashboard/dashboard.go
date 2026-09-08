@@ -32,7 +32,7 @@ func (s *Server) GetConfigurationPages(
 	for name, displayName := range pages {
 		pluginID := uuid.NewMD5(uuid.NameSpaceOID, []byte(name))
 		pageInfos = append(pageInfos, api.ConfigurationPageInfo{
-			MenuIcon:    apiutil.Ptr("person"),
+			MenuIcon:    apiutil.Ptr("download"),
 			DisplayName: apiutil.Ptr(displayName),
 			Name:        apiutil.Ptr(name),
 			PluginId:    apiutil.Ptr(pluginID),
