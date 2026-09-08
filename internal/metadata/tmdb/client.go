@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"strconv"
 	"sync"
 	"time"
 
@@ -63,27 +62,12 @@ func (c *Client) Enabled() bool {
 	return c.api != nil
 }
 
-func (c *Client) Movie(ctx context.Context, name string, year *int32) (items.Metadata, bool, error) {
-	found, err := c.search(ctx, name, year, "year", func(query string, options map[string]string) (int64, error) {
-		results, err := c.api.GetSearchMovies(query, options)
-		if err != nil {
-			return 0, err
-		}
-		if results.SearchMoviesResults == nil || len(results.Results) == 0 {
-			return 0, nil
-		}
-
-		return results.Results[0].ID, nil
-	})
-	if err != nil || found == 0 {
+func (c *Client) Movie(ctx context.Context, tmdbID int) (items.Metadata, bool, error) {
+	if err := c.ready(ctx); err != nil {
 		return items.Metadata{}, false, err
 	}
 
-	if err := c.wait(ctx); err != nil {
-		return items.Metadata{}, false, err
-	}
-
-	movie, err := c.api.GetMovieDetails(int(found), map[string]string{"append_to_response": "release_dates,credits"})
+	movie, err := c.api.GetMovieDetails(tmdbID, map[string]string{"append_to_response": "release_dates,credits"})
 	if err != nil {
 		return missed(err)
 	}
@@ -91,27 +75,12 @@ func (c *Client) Movie(ctx context.Context, name string, year *int32) (items.Met
 	return movieMetadata(movie, c.images(ctx)), true, nil
 }
 
-func (c *Client) Series(ctx context.Context, name string, year *int32) (items.Metadata, bool, error) {
-	found, err := c.search(ctx, name, year, "first_air_date_year", func(query string, options map[string]string) (int64, error) {
-		results, err := c.api.GetSearchTVShow(query, options)
-		if err != nil {
-			return 0, err
-		}
-		if results.SearchTVShowsResults == nil || len(results.Results) == 0 {
-			return 0, nil
-		}
-
-		return results.Results[0].ID, nil
-	})
-	if err != nil || found == 0 {
+func (c *Client) Series(ctx context.Context, tmdbID int) (items.Metadata, bool, error) {
+	if err := c.ready(ctx); err != nil {
 		return items.Metadata{}, false, err
 	}
 
-	if err := c.wait(ctx); err != nil {
-		return items.Metadata{}, false, err
-	}
-
-	series, err := c.api.GetTVDetails(int(found), map[string]string{"append_to_response": "content_ratings,external_ids,credits"})
+	series, err := c.api.GetTVDetails(tmdbID, map[string]string{"append_to_response": "content_ratings,external_ids,credits"})
 	if err != nil {
 		return missed(err)
 	}
@@ -119,13 +88,12 @@ func (c *Client) Series(ctx context.Context, name string, year *int32) (items.Me
 	return seriesMetadata(series, c.images(ctx)), true, nil
 }
 
-func (c *Client) Season(ctx context.Context, series map[string]string, season int32) (items.Metadata, bool, error) {
-	id, err := c.seriesID(ctx, series)
-	if err != nil || id == 0 {
+func (c *Client) Season(ctx context.Context, tmdbID int, season int32) (items.Metadata, bool, error) {
+	if err := c.ready(ctx); err != nil {
 		return items.Metadata{}, false, err
 	}
 
-	found, err := c.api.GetTVSeasonDetails(id, int(season), nil)
+	found, err := c.api.GetTVSeasonDetails(tmdbID, int(season), nil)
 	if err != nil {
 		return missed(err)
 	}
@@ -133,13 +101,12 @@ func (c *Client) Season(ctx context.Context, series map[string]string, season in
 	return seasonMetadata(found, c.images(ctx)), true, nil
 }
 
-func (c *Client) Episode(ctx context.Context, series map[string]string, season, episode int32) (items.Metadata, bool, error) {
-	id, err := c.seriesID(ctx, series)
-	if err != nil || id == 0 {
+func (c *Client) Episode(ctx context.Context, tmdbID int, season, episode int32) (items.Metadata, bool, error) {
+	if err := c.ready(ctx); err != nil {
 		return items.Metadata{}, false, err
 	}
 
-	found, err := c.api.GetTVEpisodeDetails(id, int(season), int(episode), map[string]string{"append_to_response": "external_ids"})
+	found, err := c.api.GetTVEpisodeDetails(tmdbID, int(season), int(episode), map[string]string{"append_to_response": "external_ids"})
 	if err != nil {
 		return missed(err)
 	}
@@ -147,44 +114,12 @@ func (c *Client) Episode(ctx context.Context, series map[string]string, season, 
 	return episodeMetadata(found, c.images(ctx)), true, nil
 }
 
-func (c *Client) seriesID(ctx context.Context, series map[string]string) (int, error) {
+func (c *Client) ready(ctx context.Context) error {
 	if !c.Enabled() {
-		return 0, ErrNotConfigured
+		return ErrNotConfigured
 	}
 
-	id, err := strconv.Atoi(series[providerTmdb])
-	if err != nil {
-		return 0, nil
-	}
-
-	return id, c.wait(ctx)
-}
-
-func (c *Client) search(
-	ctx context.Context,
-	name string,
-	year *int32,
-	yearOption string,
-	run func(string, map[string]string) (int64, error),
-) (int64, error) {
-	if !c.Enabled() {
-		return 0, ErrNotConfigured
-	}
-	if err := c.wait(ctx); err != nil {
-		return 0, err
-	}
-
-	options := map[string]string{}
-	if year != nil {
-		options[yearOption] = strconv.FormatInt(int64(*year), 10)
-	}
-
-	found, err := run(name, options)
-	if isNotFound(err) {
-		return 0, nil
-	}
-
-	return found, err
+	return c.wait(ctx)
 }
 
 func (c *Client) images(ctx context.Context) string {

@@ -82,13 +82,9 @@ func artworkURL(t *testing.T, found []items.RemoteImage, kind items.ImageKind) s
 	return ""
 }
 
-func released(value int32) *int32 {
-	return &value
-}
-
 func TestClient_Movie(t *testing.T) {
 	t.Run("maps what Tmdb returns", func(t *testing.T) {
-		found, matched, err := stub(t).Movie(context.Background(), "The Matrix", released(1999))
+		found, matched, err := stub(t).Movie(context.Background(), 603)
 		if err != nil {
 			t.Fatalf("the lookup failed: %v", err)
 		}
@@ -125,14 +121,14 @@ func TestClient_Movie(t *testing.T) {
 	})
 
 	t.Run("answers a miss without an error", func(t *testing.T) {
-		if _, matched, err := stub(t).Movie(context.Background(), "A Film Nobody Carries", nil); err != nil || matched {
+		if _, matched, err := stub(t).Movie(context.Background(), 404404); err != nil || matched {
 			t.Errorf("matched = %v, err = %v, want a clean miss", matched, err)
 		}
 	})
 }
 
 func TestClient_Series(t *testing.T) {
-	found, matched, err := stub(t).Series(context.Background(), "Breaking Bad", released(2008))
+	found, matched, err := stub(t).Series(context.Background(), 1396)
 	if err != nil {
 		t.Fatalf("the lookup failed: %v", err)
 	}
@@ -181,7 +177,7 @@ func TestClient_Season(t *testing.T) {
 	client := stub(t)
 
 	t.Run("maps what Tmdb returns", func(t *testing.T) {
-		found, matched, err := client.Season(context.Background(), map[string]string{providerTmdb: "1396"}, 1)
+		found, matched, err := client.Season(context.Background(), 1396, 1)
 		if err != nil {
 			t.Fatalf("the lookup failed: %v", err)
 		}
@@ -206,7 +202,7 @@ func TestClient_Season(t *testing.T) {
 	})
 
 	t.Run("asks for specials as season zero", func(t *testing.T) {
-		found, matched, err := client.Season(context.Background(), map[string]string{providerTmdb: "1396"}, 0)
+		found, matched, err := client.Season(context.Background(), 1396, 0)
 		if err != nil {
 			t.Fatalf("the lookup failed: %v", err)
 		}
@@ -219,10 +215,10 @@ func TestClient_Season(t *testing.T) {
 	})
 
 	t.Run("answers a miss without an error", func(t *testing.T) {
-		if _, matched, err := client.Season(context.Background(), map[string]string{providerTmdb: "1396"}, 9); err != nil || matched {
+		if _, matched, err := client.Season(context.Background(), 1396, 9); err != nil || matched {
 			t.Errorf("matched = %v, err = %v, want a clean miss", matched, err)
 		}
-		if _, matched, err := client.Season(context.Background(), map[string]string{"Imdb": "tt0903747"}, 1); err != nil || matched {
+		if _, matched, err := client.Season(context.Background(), 0, 1); err != nil || matched {
 			t.Errorf("matched = %v, err = %v, want a miss without a Tmdb id", matched, err)
 		}
 	})
@@ -231,7 +227,7 @@ func TestClient_Season(t *testing.T) {
 func TestClient_Episode(t *testing.T) {
 	client := stub(t)
 
-	found, matched, err := client.Episode(context.Background(), map[string]string{providerTmdb: "1396"}, 1, 1)
+	found, matched, err := client.Episode(context.Background(), 1396, 1, 1)
 	if err != nil {
 		t.Fatalf("the lookup failed: %v", err)
 	}
@@ -245,7 +241,7 @@ func TestClient_Episode(t *testing.T) {
 		t.Errorf("ProviderIds = %v, want the episode Imdb id", ids)
 	}
 
-	if _, matched, err := client.Episode(context.Background(), map[string]string{"Imdb": "tt0903747"}, 1, 1); err != nil || matched {
+	if _, matched, err := client.Episode(context.Background(), 0, 1, 1); err != nil || matched {
 		t.Errorf("matched = %v, err = %v, want a miss without a Tmdb id", matched, err)
 	}
 }
@@ -259,7 +255,7 @@ func TestNewClient(t *testing.T) {
 		t.Error("a client with no key configured reported itself enabled")
 	}
 
-	if _, _, err := off.Movie(context.Background(), "The Matrix", nil); err == nil {
+	if _, _, err := off.Movie(context.Background(), 603); err == nil {
 		t.Error("an unconfigured client answered a lookup")
 	}
 
@@ -274,7 +270,7 @@ func TestNewClient(t *testing.T) {
 
 func TestClient_Artwork(t *testing.T) {
 	t.Run("names a movie's poster and backdrop", func(t *testing.T) {
-		found, _, err := stub(t).Movie(context.Background(), "The Matrix", released(1999))
+		found, _, err := stub(t).Movie(context.Background(), 603)
 		if err != nil {
 			t.Fatalf("the lookup failed: %v", err)
 		}
@@ -291,8 +287,7 @@ func TestClient_Artwork(t *testing.T) {
 	})
 
 	t.Run("names an episode's still as its poster", func(t *testing.T) {
-		series := map[string]string{providerTmdb: "1396"}
-		found, _, err := stub(t).Episode(context.Background(), series, 1, 1)
+		found, _, err := stub(t).Episode(context.Background(), 1396, 1, 1)
 		if err != nil {
 			t.Fatalf("the lookup failed: %v", err)
 		}
@@ -304,8 +299,7 @@ func TestClient_Artwork(t *testing.T) {
 	})
 
 	t.Run("names nothing for a title carrying no artwork", func(t *testing.T) {
-		series := map[string]string{providerTmdb: "1396"}
-		found, _, err := stub(t).Season(context.Background(), series, 0)
+		found, _, err := stub(t).Season(context.Background(), 1396, 0)
 		if err != nil {
 			t.Fatalf("the lookup failed: %v", err)
 		}
@@ -317,10 +311,10 @@ func TestClient_Artwork(t *testing.T) {
 	t.Run("reads the image configuration once a process", func(t *testing.T) {
 		stubbing := newStub(t)
 
-		if _, _, err := stubbing.client.Movie(context.Background(), "The Matrix", released(1999)); err != nil {
+		if _, _, err := stubbing.client.Movie(context.Background(), 603); err != nil {
 			t.Fatalf("the first lookup failed: %v", err)
 		}
-		if _, _, err := stubbing.client.Series(context.Background(), "Breaking Bad", released(2008)); err != nil {
+		if _, _, err := stubbing.client.Series(context.Background(), 1396); err != nil {
 			t.Fatalf("the second lookup failed: %v", err)
 		}
 

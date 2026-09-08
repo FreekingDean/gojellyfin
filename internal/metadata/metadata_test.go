@@ -3,8 +3,8 @@ package metadata
 import (
 	"context"
 	"errors"
+	"fmt"
 	"slices"
-	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -23,7 +23,14 @@ import (
 	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
 
-const unreachable = "A Film The Provider Cannot Reach"
+const (
+	unreachable = 999999
+	unmatched   = 999998
+)
+
+func newTmdbID() int {
+	return int(uuid.New().ID())
+}
 
 var errUnreachable = errors.New("the provider is unreachable")
 
@@ -50,12 +57,12 @@ func (s *stubProvider) requests() []string {
 	return append([]string(nil), s.asked...)
 }
 
-func (s *stubProvider) Movie(_ context.Context, name string, _ *int32) (items.Metadata, bool, error) {
-	s.record("movie:" + name)
-	if name == unreachable {
+func (s *stubProvider) Movie(_ context.Context, tmdbID int) (items.Metadata, bool, error) {
+	s.record(fmt.Sprintf("movie:%d", tmdbID))
+	if tmdbID == unreachable {
 		return items.Metadata{}, false, errUnreachable
 	}
-	if name != "The Matrix" {
+	if tmdbID == unmatched {
 		return items.Metadata{}, false, nil
 	}
 
@@ -77,9 +84,9 @@ func (s *stubProvider) Movie(_ context.Context, name string, _ *int32) (items.Me
 	}, true, nil
 }
 
-func (s *stubProvider) Series(_ context.Context, name string, _ *int32) (items.Metadata, bool, error) {
-	s.record("series:" + name)
-	if name != "Breaking Bad" {
+func (s *stubProvider) Series(_ context.Context, tmdbID int) (items.Metadata, bool, error) {
+	s.record(fmt.Sprintf("series:%d", tmdbID))
+	if tmdbID == unmatched {
 		return items.Metadata{}, false, nil
 	}
 
@@ -90,9 +97,9 @@ func (s *stubProvider) Series(_ context.Context, name string, _ *int32) (items.M
 	}, true, nil
 }
 
-func (s *stubProvider) Season(_ context.Context, series map[string]string, season int32) (items.Metadata, bool, error) {
-	s.record("season:" + series["Stub"])
-	if series["Stub"] != "1396" || season > 1 {
+func (s *stubProvider) Season(_ context.Context, tmdbID int, season int32) (items.Metadata, bool, error) {
+	s.record(fmt.Sprintf("season:%d", tmdbID))
+	if tmdbID == unmatched || season > 1 {
 		return items.Metadata{}, false, nil
 	}
 	if season == 0 {
@@ -113,9 +120,9 @@ func (s *stubProvider) Season(_ context.Context, series map[string]string, seaso
 	}, true, nil
 }
 
-func (s *stubProvider) Episode(_ context.Context, series map[string]string, season, episode int32) (items.Metadata, bool, error) {
-	s.record("episode:" + series["Stub"])
-	if series["Stub"] != "1396" || season != 1 || episode != 1 {
+func (s *stubProvider) Episode(_ context.Context, tmdbID int, season, episode int32) (items.Metadata, bool, error) {
+	s.record(fmt.Sprintf("episode:%d", tmdbID))
+	if tmdbID == unmatched || season != 1 || episode != 1 {
 		return items.Metadata{}, false, nil
 	}
 
@@ -131,6 +138,24 @@ type fixture struct {
 	provider   *stubProvider
 	libraryID  uuid.UUID
 	downloader uuid.UUID
+	show       int
+}
+
+func (f *fixture) next() int {
+	return newTmdbID()
+}
+
+func (f *fixture) keyFor(scanned items.Item) string {
+	switch scanned.Kind {
+	case itemmodal.KindSeries:
+		return items.SeriesKey(f.show)
+	case itemmodal.KindSeason:
+		return items.SeasonKey(f.show, *scanned.IndexNumber)
+	case itemmodal.KindEpisode:
+		return items.EpisodeKey(f.show, *scanned.ParentIndexNumber, *scanned.IndexNumber)
+	default:
+		return items.MovieKey(f.next())
+	}
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -203,6 +228,7 @@ func newFixtureEnabled(t *testing.T, enabled bool) *fixture {
 		service:    New(provider, service),
 		provider:   provider,
 		libraryID:  library.ID,
+		show:       newTmdbID(),
 	}
 }
 
@@ -213,7 +239,7 @@ func (f *fixture) add(t *testing.T, scanned items.Item) *items.Item {
 		scanned.SortName = scanned.Name
 	}
 	if scanned.Key == "" {
-		scanned.Key = "test:" + f.libraryID.String() + ":" + scanned.Name
+		scanned.Key = f.keyFor(scanned)
 	}
 
 	added, err := f.items.SaveScanned(context.Background(), scanned)
@@ -525,7 +551,6 @@ func TestService_IdentifyItems(t *testing.T) {
 		witness := fixed.add(t, items.Item{
 			Kind:           itemmodal.KindMovie,
 			Name:           "The Matrix",
-			Key:            "test:" + fixed.libraryID.String() + ":witness",
 			ProductionYear: index(1999),
 		})
 
@@ -594,6 +619,7 @@ func TestService_IdentifyItems(t *testing.T) {
 		unknown := fixed.add(t, items.Item{
 			Kind: itemmodal.KindMovie,
 			Name: "A Film Nobody Carries",
+			Key:  items.MovieKey(unmatched),
 		})
 
 		fixed.identify(t)
@@ -672,12 +698,12 @@ func TestService_IdentifyItems_Force(t *testing.T) {
 		fixed := newFixture(t)
 		unreachableItem := fixed.identified(t, fixed.add(t, items.Item{
 			Kind: itemmodal.KindMovie,
-			Name: unreachable,
+			Name: "A Film The Provider Cannot Reach",
+			Key:  items.MovieKey(unreachable),
 		}), "Whatever the last provider said.")
 		reachable := fixed.identified(t, fixed.add(t, items.Item{
 			Kind:           itemmodal.KindMovie,
 			Name:           "The Matrix",
-			Key:            "test:" + fixed.libraryID.String() + ":reachable",
 			ProductionYear: index(1999),
 		}), "Whatever the last provider said.")
 
@@ -695,11 +721,10 @@ func TestService_IdentifyItems_Force(t *testing.T) {
 		fixed := newFixture(t)
 
 		ids := make([]uuid.UUID, 0, 205)
-		for number := range 205 {
+		for range 205 {
 			added := fixed.identified(t, fixed.add(t, items.Item{
 				Kind:           itemmodal.KindMovie,
 				Name:           "The Matrix",
-				Key:            "test:" + fixed.libraryID.String() + ":" + strconv.Itoa(number),
 				ProductionYear: index(1999),
 			}), "Whatever the last provider said.")
 			ids = append(ids, added.ID)
@@ -726,7 +751,6 @@ func TestService_IdentifyItems_Scope(t *testing.T) {
 		elsewhere := fixed.identified(t, fixed.add(t, items.Item{
 			Kind:           itemmodal.KindMovie,
 			Name:           "The Matrix",
-			Key:            "test:" + fixed.libraryID.String() + ":elsewhere",
 			ProductionYear: index(1999),
 		}), "Whatever the last provider said.")
 
@@ -790,7 +814,6 @@ func TestService_IdentifyItems_Scope(t *testing.T) {
 		second := fixed.identified(t, fixed.add(t, items.Item{
 			Kind:           itemmodal.KindMovie,
 			Name:           "The Matrix",
-			Key:            "test:" + fixed.libraryID.String() + ":second",
 			ProductionYear: index(1999),
 		}), "Whatever the last provider said.")
 

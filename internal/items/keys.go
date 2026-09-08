@@ -27,6 +27,20 @@ func EpisodeKey(tmdbID int, season, episode int32) string {
 	return fmt.Sprintf("episode:%s:%d:%d:%d", provider, tmdbID, season, episode)
 }
 
+func TmdbID(key string) (int, bool) {
+	parts := strings.Split(key, ":")
+	if len(parts) < 3 || parts[1] != provider {
+		return 0, false
+	}
+
+	id, err := strconv.Atoi(parts[2])
+	if err != nil || id == 0 {
+		return 0, false
+	}
+
+	return id, true
+}
+
 func SeasonName(number int32) string {
 	if number == 0 {
 		return "Specials"
