@@ -196,6 +196,7 @@ var (
 		{Name: "index", Type: field.TypeInt32, Default: 0},
 		{Name: "url", Type: field.TypeString},
 		{Name: "tag", Type: field.TypeString},
+		{Name: "key", Type: field.TypeString, Default: ""},
 		{Name: "item_id", Type: field.TypeUUID},
 	}
 	// ImagesTable holds the schema information for the "images" table.
@@ -206,7 +207,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "images_items_images",
-				Columns:    []*schema.Column{ImagesColumns[7]},
+				Columns:    []*schema.Column{ImagesColumns[8]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -215,7 +216,7 @@ var (
 			{
 				Name:    "image_item_id_kind_index",
 				Unique:  true,
-				Columns: []*schema.Column{ImagesColumns[7], ImagesColumns[3], ImagesColumns[4]},
+				Columns: []*schema.Column{ImagesColumns[8], ImagesColumns[3], ImagesColumns[4]},
 			},
 		},
 	}

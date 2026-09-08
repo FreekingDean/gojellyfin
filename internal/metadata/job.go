@@ -27,6 +27,25 @@ func (s *Service) ItemJob() jobs.Job {
 	}
 }
 
+func (s *Service) ArtworkJob() jobs.Job {
+	return jobs.Job{
+		Name:        jobs.CacheArtwork,
+		Category:    "Library",
+		Description: "Stores artwork the provider answered in the object store.",
+		Startable:   true,
+		Run:         s.runArtwork,
+	}
+}
+
+func (s *Service) runArtwork(ctx context.Context) error {
+	scope, err := jobs.GetParam[uuid.UUID](ctx, jobs.ParamScope)
+	if err != nil {
+		return err
+	}
+
+	return s.CacheArtwork(ctx, scope)
+}
+
 func (s *Service) runBatch(ctx context.Context) error {
 	scope, err := jobs.GetParam[uuid.UUID](ctx, jobs.ParamScope)
 	if err != nil {

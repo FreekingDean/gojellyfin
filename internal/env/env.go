@@ -18,15 +18,16 @@ const (
 )
 
 type Config struct {
-	DatabaseURL        string     `mapstructure:"DATABASE_URL"`
-	HTTPPort           int        `mapstructure:"HTTP_PORT"`
-	PublishedServerURL string     `mapstructure:"PUBLISHED_SERVER_URL"`
-	CORSOrigins        []string   `mapstructure:"CORS_ORIGINS"`
-	Transcoder         Transcoder `mapstructure:",squash"`
-	Temporal           Temporal   `mapstructure:",squash"`
-	Tracing            Tracing    `mapstructure:",squash"`
-	TMDB               TMDB       `mapstructure:",squash"`
-	MediaDirectories   []string   `mapstructure:"MEDIA_DIRECTORIES"`
+	DatabaseURL        string      `mapstructure:"DATABASE_URL"`
+	HTTPPort           int         `mapstructure:"HTTP_PORT"`
+	PublishedServerURL string      `mapstructure:"PUBLISHED_SERVER_URL"`
+	CORSOrigins        []string    `mapstructure:"CORS_ORIGINS"`
+	Transcoder         Transcoder  `mapstructure:",squash"`
+	Temporal           Temporal    `mapstructure:",squash"`
+	Tracing            Tracing     `mapstructure:",squash"`
+	TMDB               TMDB        `mapstructure:",squash"`
+	ObjectStore        ObjectStore `mapstructure:",squash"`
+	MediaDirectories   []string    `mapstructure:"MEDIA_DIRECTORIES"`
 
 	SourceAPIKeys map[string]string `mapstructure:"-"`
 }
@@ -47,6 +48,14 @@ type Tracing struct {
 
 type TMDB struct {
 	APIKey string `mapstructure:"TMDB_API_KEY"`
+}
+
+type ObjectStore struct {
+	Endpoint  string `mapstructure:"OBJECT_STORE_ENDPOINT"`
+	Bucket    string `mapstructure:"OBJECT_STORE_BUCKET"`
+	Region    string `mapstructure:"OBJECT_STORE_REGION"`
+	AccessKey string `mapstructure:"OBJECT_STORE_ACCESS_KEY"`
+	SecretKey string `mapstructure:"OBJECT_STORE_SECRET_KEY"`
 }
 
 func Load() (Config, error) {

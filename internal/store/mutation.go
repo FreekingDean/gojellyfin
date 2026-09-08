@@ -5957,6 +5957,7 @@ type ImageMutation struct {
 	addindex      *int32
 	url           *string
 	tag           *string
+	key           *string
 	clearedFields map[string]struct{}
 	item          *uuid.UUID
 	cleareditem   bool
@@ -6341,6 +6342,42 @@ func (m *ImageMutation) ResetTag() {
 	m.tag = nil
 }
 
+// SetKey sets the "key" field.
+func (m *ImageMutation) SetKey(s string) {
+	m.key = &s
+}
+
+// Key returns the value of the "key" field in the mutation.
+func (m *ImageMutation) Key() (r string, exists bool) {
+	v := m.key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKey returns the old "key" field's value of the Image entity.
+// If the Image object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ImageMutation) OldKey(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKey: %w", err)
+	}
+	return oldValue.Key, nil
+}
+
+// ResetKey resets all changes to the "key" field.
+func (m *ImageMutation) ResetKey() {
+	m.key = nil
+}
+
 // ClearItem clears the "item" edge to the Item entity.
 func (m *ImageMutation) ClearItem() {
 	m.cleareditem = true
@@ -6402,7 +6439,7 @@ func (m *ImageMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ImageMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.created_at != nil {
 		fields = append(fields, image.FieldCreatedAt)
 	}
@@ -6423,6 +6460,9 @@ func (m *ImageMutation) Fields() []string {
 	}
 	if m.tag != nil {
 		fields = append(fields, image.FieldTag)
+	}
+	if m.key != nil {
+		fields = append(fields, image.FieldKey)
 	}
 	return fields
 }
@@ -6446,6 +6486,8 @@ func (m *ImageMutation) Field(name string) (ent.Value, bool) {
 		return m.URL()
 	case image.FieldTag:
 		return m.Tag()
+	case image.FieldKey:
+		return m.Key()
 	}
 	return nil, false
 }
@@ -6469,6 +6511,8 @@ func (m *ImageMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldURL(ctx)
 	case image.FieldTag:
 		return m.OldTag(ctx)
+	case image.FieldKey:
+		return m.OldKey(ctx)
 	}
 	return nil, fmt.Errorf("unknown Image field %s", name)
 }
@@ -6526,6 +6570,13 @@ func (m *ImageMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetTag(v)
+		return nil
+	case image.FieldKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKey(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Image field %s", name)
@@ -6611,6 +6662,9 @@ func (m *ImageMutation) ResetField(name string) error {
 		return nil
 	case image.FieldTag:
 		m.ResetTag()
+		return nil
+	case image.FieldKey:
+		m.ResetKey()
 		return nil
 	}
 	return fmt.Errorf("unknown Image field %s", name)

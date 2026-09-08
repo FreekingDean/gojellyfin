@@ -91,6 +91,20 @@ func (_c *ImageCreate) SetTag(v string) *ImageCreate {
 	return _c
 }
 
+// SetKey sets the "key" field.
+func (_c *ImageCreate) SetKey(v string) *ImageCreate {
+	_c.mutation.SetKey(v)
+	return _c
+}
+
+// SetNillableKey sets the "key" field if the given value is not nil.
+func (_c *ImageCreate) SetNillableKey(v *string) *ImageCreate {
+	if v != nil {
+		_c.SetKey(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *ImageCreate) SetID(v uuid.UUID) *ImageCreate {
 	_c.mutation.SetID(v)
@@ -149,6 +163,10 @@ func (_c *ImageCreate) defaults() {
 		v := image.DefaultIndex
 		_c.mutation.SetIndex(v)
 	}
+	if _, ok := _c.mutation.Key(); !ok {
+		v := image.DefaultKey
+		_c.mutation.SetKey(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -178,6 +196,9 @@ func (_c *ImageCreate) check() error {
 	}
 	if _, ok := _c.mutation.Tag(); !ok {
 		return &ValidationError{Name: "tag", err: errors.New(`store: missing required field "Image.tag"`)}
+	}
+	if _, ok := _c.mutation.Key(); !ok {
+		return &ValidationError{Name: "key", err: errors.New(`store: missing required field "Image.key"`)}
 	}
 	if len(_c.mutation.ItemIDs()) == 0 {
 		return &ValidationError{Name: "item", err: errors.New(`store: missing required edge "Image.item"`)}
@@ -241,6 +262,10 @@ func (_c *ImageCreate) createSpec() (*Image, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Tag(); ok {
 		_spec.SetField(image.FieldTag, field.TypeString, value)
 		_node.Tag = value
+	}
+	if value, ok := _c.mutation.Key(); ok {
+		_spec.SetField(image.FieldKey, field.TypeString, value)
+		_node.Key = value
 	}
 	if nodes := _c.mutation.ItemIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -401,6 +426,18 @@ func (u *ImageUpsert) UpdateTag() *ImageUpsert {
 	return u
 }
 
+// SetKey sets the "key" field.
+func (u *ImageUpsert) SetKey(v string) *ImageUpsert {
+	u.Set(image.FieldKey, v)
+	return u
+}
+
+// UpdateKey sets the "key" field to the value that was provided on create.
+func (u *ImageUpsert) UpdateKey() *ImageUpsert {
+	u.SetExcluded(image.FieldKey)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -551,6 +588,20 @@ func (u *ImageUpsertOne) SetTag(v string) *ImageUpsertOne {
 func (u *ImageUpsertOne) UpdateTag() *ImageUpsertOne {
 	return u.Update(func(s *ImageUpsert) {
 		s.UpdateTag()
+	})
+}
+
+// SetKey sets the "key" field.
+func (u *ImageUpsertOne) SetKey(v string) *ImageUpsertOne {
+	return u.Update(func(s *ImageUpsert) {
+		s.SetKey(v)
+	})
+}
+
+// UpdateKey sets the "key" field to the value that was provided on create.
+func (u *ImageUpsertOne) UpdateKey() *ImageUpsertOne {
+	return u.Update(func(s *ImageUpsert) {
+		s.UpdateKey()
 	})
 }
 
@@ -871,6 +922,20 @@ func (u *ImageUpsertBulk) SetTag(v string) *ImageUpsertBulk {
 func (u *ImageUpsertBulk) UpdateTag() *ImageUpsertBulk {
 	return u.Update(func(s *ImageUpsert) {
 		s.UpdateTag()
+	})
+}
+
+// SetKey sets the "key" field.
+func (u *ImageUpsertBulk) SetKey(v string) *ImageUpsertBulk {
+	return u.Update(func(s *ImageUpsert) {
+		s.SetKey(v)
+	})
+}
+
+// UpdateKey sets the "key" field to the value that was provided on create.
+func (u *ImageUpsertBulk) UpdateKey() *ImageUpsertBulk {
+	return u.Update(func(s *ImageUpsert) {
+		s.UpdateKey()
 	})
 }
 

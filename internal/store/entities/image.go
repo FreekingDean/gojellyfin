@@ -23,6 +23,7 @@ func (Image) Fields() []ent.Field {
 		field.Int32("index").Default(0),
 		field.String("url"),
 		field.String("tag"),
+		field.String("key").Default(""),
 	)
 }
 
