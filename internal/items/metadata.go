@@ -75,7 +75,7 @@ func (s *Service) UpdateMetadata(ctx context.Context, id uuid.UUID, metadata Met
 		update.SetProviderIds(*metadata.ProviderIds)
 	}
 
-	item, err := update.Save(ctx)
+	item, err := update.SaveModel(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update item metadata: %w", err)
 	}

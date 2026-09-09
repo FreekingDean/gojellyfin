@@ -3,18 +3,18 @@ package items
 import (
 	"testing"
 
-	"github.com/FreekingDean/gojellyfin/internal/store"
 	streammodel "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 )
 
 func source(container, video, audio string, bitrate int32) *MediaSource {
-	record := &MediaSource{Container: container, Bitrate: bitrate}
-	record.Edges.Streams = []*store.MediaStream{
-		{Kind: streammodel.KindVideo, Codec: video},
-		{Kind: streammodel.KindAudio, Codec: audio},
+	return &MediaSource{
+		Container: container,
+		Bitrate:   &bitrate,
+		Streams: []*MediaStream{
+			{Kind: streammodel.KindVideo, Codec: video},
+			{Kind: streammodel.KindAudio, Codec: audio},
+		},
 	}
-
-	return record
 }
 
 func TestBestSource(t *testing.T) {

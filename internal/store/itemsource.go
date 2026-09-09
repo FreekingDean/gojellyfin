@@ -35,15 +35,15 @@ type ItemSource struct {
 	// Container holds the value of the "container" field.
 	Container string `json:"container,omitempty"`
 	// Size holds the value of the "size" field.
-	Size int64 `json:"size,omitempty"`
+	Size *int64 `json:"size,omitempty"`
 	// RunTimeTicks holds the value of the "run_time_ticks" field.
-	RunTimeTicks int64 `json:"run_time_ticks,omitempty"`
+	RunTimeTicks *int64 `json:"run_time_ticks,omitempty"`
 	// Bitrate holds the value of the "bitrate" field.
-	Bitrate int32 `json:"bitrate,omitempty"`
+	Bitrate *int32 `json:"bitrate,omitempty"`
 	// DateModified holds the value of the "date_modified" field.
-	DateModified time.Time `json:"date_modified,omitempty"`
+	DateModified *time.Time `json:"date_modified,omitempty"`
 	// ProbedAt holds the value of the "probed_at" field.
-	ProbedAt time.Time `json:"probed_at,omitempty"`
+	ProbedAt *time.Time `json:"probed_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ItemSourceQuery when eager-loading is set.
 	Edges        ItemSourceEdges `json:"edges"`
@@ -174,31 +174,36 @@ func (_m *ItemSource) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field size", values[i])
 			} else if value.Valid {
-				_m.Size = value.Int64
+				_m.Size = new(int64)
+				*_m.Size = value.Int64
 			}
 		case itemsource.FieldRunTimeTicks:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field run_time_ticks", values[i])
 			} else if value.Valid {
-				_m.RunTimeTicks = value.Int64
+				_m.RunTimeTicks = new(int64)
+				*_m.RunTimeTicks = value.Int64
 			}
 		case itemsource.FieldBitrate:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field bitrate", values[i])
 			} else if value.Valid {
-				_m.Bitrate = int32(value.Int64)
+				_m.Bitrate = new(int32)
+				*_m.Bitrate = int32(value.Int64)
 			}
 		case itemsource.FieldDateModified:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field date_modified", values[i])
 			} else if value.Valid {
-				_m.DateModified = value.Time
+				_m.DateModified = new(time.Time)
+				*_m.DateModified = value.Time
 			}
 		case itemsource.FieldProbedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field probed_at", values[i])
 			} else if value.Valid {
-				_m.ProbedAt = value.Time
+				_m.ProbedAt = new(time.Time)
+				*_m.ProbedAt = value.Time
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -272,20 +277,30 @@ func (_m *ItemSource) String() string {
 	builder.WriteString("container=")
 	builder.WriteString(_m.Container)
 	builder.WriteString(", ")
-	builder.WriteString("size=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Size))
+	if v := _m.Size; v != nil {
+		builder.WriteString("size=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
-	builder.WriteString("run_time_ticks=")
-	builder.WriteString(fmt.Sprintf("%v", _m.RunTimeTicks))
+	if v := _m.RunTimeTicks; v != nil {
+		builder.WriteString("run_time_ticks=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
-	builder.WriteString("bitrate=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Bitrate))
+	if v := _m.Bitrate; v != nil {
+		builder.WriteString("bitrate=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
-	builder.WriteString("date_modified=")
-	builder.WriteString(_m.DateModified.Format(time.ANSIC))
+	if v := _m.DateModified; v != nil {
+		builder.WriteString("date_modified=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteString(", ")
-	builder.WriteString("probed_at=")
-	builder.WriteString(_m.ProbedAt.Format(time.ANSIC))
+	if v := _m.ProbedAt; v != nil {
+		builder.WriteString("probed_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

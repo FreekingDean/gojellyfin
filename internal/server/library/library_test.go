@@ -77,12 +77,12 @@ func newFixture(t *testing.T) *fixture {
 
 	t.Cleanup(func() {
 		if _, err := client.Image.Delete().
-			Where(imagemodel.HasItemWith(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID)))).
+			Where(imagemodel.HasItemWith(itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID)))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the images: %v", err)
 		}
 		if _, err := client.UserItemData.Delete().
-			Where(datamodel.HasItemWith(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID)))).
+			Where(datamodel.HasItemWith(itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID)))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the user item data: %v", err)
 		}
@@ -90,7 +90,7 @@ func newFixture(t *testing.T) *fixture {
 			t.Errorf("failed to delete the items: %v", err)
 		}
 		if _, err := client.Session.Delete().
-			Where(sessionmodel.HasUserWith(usermodal.UsernameHasPrefix(prefix))).
+			Where(sessionmodel.HasUserWith(usermodel.UsernameHasPrefix(prefix))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the sessions: %v", err)
 		}
@@ -98,12 +98,12 @@ func newFixture(t *testing.T) *fixture {
 			t.Errorf("failed to delete the devices: %v", err)
 		}
 		if _, err := client.UserPolicy.Delete().
-			Where(policymodel.HasUserWith(usermodal.UsernameHasPrefix(prefix))).
+			Where(policymodel.HasUserWith(usermodel.UsernameHasPrefix(prefix))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the user policies: %v", err)
 		}
 		if _, err := client.UserConfiguration.Delete().
-			Where(configurationmodel.HasUserWith(usermodal.UsernameHasPrefix(prefix))).
+			Where(configurationmodel.HasUserWith(usermodel.UsernameHasPrefix(prefix))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the user configurations: %v", err)
 		}
@@ -111,7 +111,7 @@ func newFixture(t *testing.T) *fixture {
 			t.Errorf("failed to delete the users: %v", err)
 		}
 		if _, err := client.LibraryOptions.Delete().
-			Where(optionsmodel.HasLibraryWith(librarymodal.NameHasPrefix(prefix))).
+			Where(optionsmodel.HasLibraryWith(librarymodel.NameHasPrefix(prefix))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the library options: %v", err)
 		}

@@ -21,7 +21,7 @@ import (
 )
 
 type (
-	Item      = store.Item
+	Item      = store.ItemModel
 	Kind      = itemmodel.Kind
 	MediaType = playlistmodel.MediaType
 )
@@ -50,17 +50,17 @@ var isFolderKind = map[Kind]bool{
 }
 
 var (
-	folderKinds   = []Kind{itemmodel.KindSeries, itemmodal.KindSeason}
-	playableKinds = []Kind{itemmodel.KindMovie, itemmodal.KindEpisode}
+	folderKinds   = []Kind{itemmodel.KindSeries, itemmodel.KindSeason}
+	playableKinds = []Kind{itemmodel.KindMovie, itemmodel.KindEpisode}
 
-	audioKinds = []Kind{itemmodel.KindAudio, itemmodal.KindAudioBook}
+	audioKinds = []Kind{itemmodel.KindAudio, itemmodel.KindAudioBook}
 
 	allKinds = []Kind{
-		itemmodel.KindMovie, itemmodal.KindSeries, itemmodal.KindSeason,
-		itemmodel.KindEpisode, itemmodal.KindPlaylist, itemmodal.KindAudio,
-		itemmodel.KindAudioBook, itemmodal.KindTrailer, itemmodal.KindVideo,
-		itemmodel.KindFolder, itemmodal.KindCollectionFolder, itemmodal.KindBoxSet,
-		itemmodel.KindPlaylistsFolder, itemmodal.KindUserRootFolder,
+		itemmodel.KindMovie, itemmodel.KindSeries, itemmodel.KindSeason,
+		itemmodel.KindEpisode, itemmodel.KindPlaylist, itemmodel.KindAudio,
+		itemmodel.KindAudioBook, itemmodel.KindTrailer, itemmodel.KindVideo,
+		itemmodel.KindFolder, itemmodel.KindCollectionFolder, itemmodel.KindBoxSet,
+		itemmodel.KindPlaylistsFolder, itemmodel.KindUserRootFolder,
 	}
 )
 
@@ -100,7 +100,7 @@ func (s *Service) SaveScanned(ctx context.Context, scanned Item) (*Item, error) 
 		SetNillableProductionYear(scanned.ProductionYear).
 		SetNillableIndexNumber(scanned.IndexNumber).
 		SetNillableParentIndexNumber(scanned.ParentIndexNumber).
-		SetDateModified(scanned.DateModified).
+		SetNillableDateModified(scanned.DateModified).
 		OnConflictColumns(itemmodel.FieldKey).
 		UpdateParentID().
 		UpdateKind().
@@ -119,7 +119,7 @@ func (s *Service) SaveScanned(ctx context.Context, scanned Item) (*Item, error) 
 }
 
 func (s *Service) ItemByID(ctx context.Context, viewer Viewer, id uuid.UUID) (*Item, error) {
-	item, err := s.query(viewer).Where(itemmodel.ID(id)).Only(ctx)
+	item, err := s.query(viewer).Where(itemmodel.ID(id)).OnlyModel(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query item: %w", err)
 	}
@@ -133,7 +133,7 @@ func (s *Service) ItemsByIDs(ctx context.Context, viewer Viewer, ids []uuid.UUID
 		return found, nil
 	}
 
-	records, err := s.query(viewer).Where(itemmodel.IDIn(ids...)).All(ctx)
+	records, err := s.query(viewer).Where(itemmodel.IDIn(ids...)).AllModels(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query items by id: %w", err)
 	}
@@ -162,7 +162,7 @@ func parsed(values []string) []uuid.UUID {
 }
 
 func (s *Service) Ancestors(ctx context.Context, id uuid.UUID) (*Ancestry, error) {
-	item, err := s.store.Item.Get(ctx, id)
+	item, err := s.store.Item.GetModel(ctx, id)
 	if store.IsNotFound(err) {
 		return nil, nil
 	}
@@ -196,7 +196,7 @@ func (s *Service) Ancestors(ctx context.Context, id uuid.UUID) (*Ancestry, error
 }
 
 func (s *Service) ItemsNeedingMetadata(ctx context.Context, kinds []Kind, force bool, scope uuid.UUID) ([]uuid.UUID, error) {
-	query := s.query(Everyone).Where(itemmodel.KindIn(kinds...), itemmodal.LockData(false))
+	query := s.query(Everyone).Where(itemmodel.KindIn(kinds...), itemmodel.LockData(false))
 	if !force {
 		query = query.Where(itemmodel.ProviderIdsIsNil())
 	}
@@ -204,8 +204,8 @@ func (s *Service) ItemsNeedingMetadata(ctx context.Context, kinds []Kind, force 
 		query = query.Where(itemmodel.Or(
 			inLibrary(scope),
 			itemmodel.ID(scope),
-			itemmodel.HasParentWith(itemmodal.ID(scope)),
-			itemmodel.HasParentWith(itemmodal.HasParentWith(itemmodal.ID(scope))),
+			itemmodel.HasParentWith(itemmodel.ID(scope)),
+			itemmodel.HasParentWith(itemmodel.HasParentWith(itemmodel.ID(scope))),
 		))
 	}
 
@@ -320,7 +320,7 @@ func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int
 		items = items.Limit(query.Limit)
 	}
 
-	records, err := items.All(ctx)
+	records, err := items.AllModels(ctx)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to query items: %w", err)
 	}
@@ -382,7 +382,7 @@ func (v Viewer) visible() []predicate.Item {
 
 	return []predicate.Item{
 		itemmodel.Or(
-			itemmodel.KindEQ(itemmodal.KindPlaylist),
+			itemmodel.KindEQ(itemmodel.KindPlaylist),
 			itemmodel.HasLibrariesWith(librarymembership.LibraryIDIn(v.Libraries...)),
 		),
 	}
@@ -476,8 +476,8 @@ func (s *Service) UnreachableItems(ctx context.Context) ([]uuid.UUID, error) {
 	orphans, err := s.store.Item.Query().
 		Where(
 			itemmodel.DeletedAtIsNil(),
-			itemmodel.Not(itemmodal.HasLibraries()),
-			itemmodel.Not(itemmodal.HasPlaylist()),
+			itemmodel.Not(itemmodel.HasLibraries()),
+			itemmodel.Not(itemmodel.HasPlaylist()),
 		).
 		IDs(ctx)
 	if err != nil {
@@ -497,7 +497,7 @@ func (s *Service) SweepUnreachable(ctx context.Context, disturbed []uuid.UUID) e
 			itemmodel.IDIn(disturbed...),
 			itemmodel.DeletedAtIsNil(),
 			itemmodel.KindIn(playableKinds...),
-			itemmodel.Not(itemmodal.HasItemSources()),
+			itemmodel.Not(itemmodel.HasItemSources()),
 		).
 		SetDeletedAt(time.Now()).
 		Exec(ctx); err != nil {
@@ -510,7 +510,7 @@ func (s *Service) SweepUnreachable(ctx context.Context, disturbed []uuid.UUID) e
 				itemmodel.DeletedAtIsNil(),
 				itemmodel.KindIn(folderKinds...),
 				itemmodel.HasChildren(),
-				itemmodel.Not(itemmodal.HasChildrenWith(itemmodal.DeletedAtIsNil())),
+				itemmodel.Not(itemmodel.HasChildrenWith(itemmodel.DeletedAtIsNil())),
 			).
 			SetDeletedAt(time.Now()).
 			Save(ctx)
@@ -579,15 +579,15 @@ func (s *Service) ResumeItems(ctx context.Context, userID uuid.UUID, kinds []Kin
 		data = data.Limit(limit)
 	}
 
-	rows, err := data.WithItem().All(ctx)
+	rows, err := data.WithItem().AllModels(ctx)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to query resume items: %w", err)
 	}
 
 	records := make([]*Item, 0, len(rows))
 	for _, row := range rows {
-		if row.Edges.Item != nil {
-			records = append(records, row.Edges.Item)
+		if row.Item != nil {
+			records = append(records, row.Item)
 		}
 	}
 
@@ -613,4 +613,14 @@ func (s *Service) CountByKind(ctx context.Context) (map[string]int32, error) {
 	}
 
 	return counts, nil
+}
+
+func deref[T any](value *T) T {
+	if value == nil {
+		var zero T
+
+		return zero
+	}
+
+	return *value
 }

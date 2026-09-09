@@ -17,7 +17,7 @@ func (s *Service) Devices(ctx context.Context) ([]*Device, error) {
 		WithSessions(func(query *store.SessionQuery) {
 			query.Order(sessionmodel.ByLastActivityAt(sql.OrderDesc())).WithUser()
 		}).
-		All(ctx)
+		AllModels(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list devices: %w", err)
 	}
@@ -31,7 +31,7 @@ func (s *Service) DeviceByClientID(ctx context.Context, clientID string) (*Devic
 		WithSessions(func(query *store.SessionQuery) {
 			query.Order(sessionmodel.ByLastActivityAt(sql.OrderDesc())).WithUser()
 		}).
-		Only(ctx)
+		OnlyModel(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query device by client id: %w", err)
 	}
@@ -60,9 +60,9 @@ func (s *Service) RemoveDevice(ctx context.Context, clientID string) error {
 }
 
 func LastUser(device *Device) *User {
-	for _, session := range device.Edges.Sessions {
-		if session.Edges.User != nil {
-			return session.Edges.User
+	for _, session := range device.Sessions {
+		if session.User != nil {
+			return session.User
 		}
 	}
 

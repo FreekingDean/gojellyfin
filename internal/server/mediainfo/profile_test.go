@@ -61,7 +61,7 @@ func TestCapabilities(t *testing.T) {
 
 func planFor(container, audio string) items.Plan {
 	source := &items.MediaSource{ID: uuid.New(), Container: "mkv"}
-	source.Edges.Streams = []*items.MediaStream{
+	source.Streams = []*items.MediaStream{
 		{Index: 0, Kind: streammodel.KindVideo, Codec: "h264"},
 		{Index: 1, Kind: streammodel.KindAudio, Codec: "ac3"},
 	}

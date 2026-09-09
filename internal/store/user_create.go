@@ -360,11 +360,11 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := _c.mutation.LastLoginAt(); ok {
 		_spec.SetField(user.FieldLastLoginAt, field.TypeTime, value)
-		_node.LastLoginAt = value
+		_node.LastLoginAt = &value
 	}
 	if value, ok := _c.mutation.LastActivityAt(); ok {
 		_spec.SetField(user.FieldLastActivityAt, field.TypeTime, value)
-		_node.LastActivityAt = value
+		_node.LastActivityAt = &value
 	}
 	if nodes := _c.mutation.ConfigurationIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

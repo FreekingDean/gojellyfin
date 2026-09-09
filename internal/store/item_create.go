@@ -655,7 +655,7 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := _c.mutation.DateModified(); ok {
 		_spec.SetField(item.FieldDateModified, field.TypeTime, value)
-		_node.DateModified = value
+		_node.DateModified = &value
 	}
 	if value, ok := _c.mutation.ProductionYear(); ok {
 		_spec.SetField(item.FieldProductionYear, field.TypeInt32, value)

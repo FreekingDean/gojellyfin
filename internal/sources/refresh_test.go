@@ -212,11 +212,11 @@ func TestRefreshLibrarySource_SharedSource(t *testing.T) {
 		members, err := fixture.client.LibraryItem.Query().
 			Where(librarymembership.LibraryID(run.library)).
 			WithItem().
-			All(context.Background())
+			AllModels(context.Background())
 		if err != nil {
 			t.Fatalf("failed to read the membership: %v", err)
 		}
-		if len(members) != 1 || members[0].Edges.Item.Key != run.want {
+		if len(members) != 1 || members[0].Item.Key != run.want {
 			t.Fatalf("membership = %d rows, want only the tagged title", len(members))
 		}
 

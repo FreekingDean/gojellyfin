@@ -246,8 +246,8 @@ func (s *Server) AuthenticateUserByName(ctx context.Context, request api.Authent
 		return nil, err
 	}
 	now := time.Now()
-	user.LastLoginAt = now
-	user.LastActivityAt = now
+	user.LastLoginAt = &now
+	user.LastActivityAt = &now
 
 	return api.AuthenticateUserByName200JSONResponse{
 		AccessToken: apiutil.Ptr(token),

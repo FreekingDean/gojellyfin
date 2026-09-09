@@ -29,7 +29,7 @@ type Credit struct {
 	// Role holds the value of the "role" field.
 	Role string `json:"role,omitempty"`
 	// SortOrder holds the value of the "sort_order" field.
-	SortOrder int32 `json:"sort_order,omitempty"`
+	SortOrder *int32 `json:"sort_order,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the CreditQuery when eager-loading is set.
 	Edges          CreditEdges `json:"edges"`
@@ -137,7 +137,8 @@ func (_m *Credit) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field sort_order", values[i])
 			} else if value.Valid {
-				_m.SortOrder = int32(value.Int64)
+				_m.SortOrder = new(int32)
+				*_m.SortOrder = int32(value.Int64)
 			}
 		case credit.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
@@ -211,8 +212,10 @@ func (_m *Credit) String() string {
 	builder.WriteString("role=")
 	builder.WriteString(_m.Role)
 	builder.WriteString(", ")
-	builder.WriteString("sort_order=")
-	builder.WriteString(fmt.Sprintf("%v", _m.SortOrder))
+	if v := _m.SortOrder; v != nil {
+		builder.WriteString("sort_order=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -11,7 +11,7 @@ import (
 )
 
 type (
-	DisplayPreferences = store.DisplayPreferences
+	DisplayPreferences = store.DisplayPreferencesModel
 	SortOrder          = displaypreferencesmodel.SortOrder
 	ScrollDirection    = displaypreferencesmodel.ScrollDirection
 )
@@ -29,7 +29,7 @@ func (s *Service) Get(ctx context.Context, userID uuid.UUID, referenceID, client
 		displaypreferencesmodel.UserID(userID),
 		displaypreferencesmodel.ReferenceID(referenceID),
 		displaypreferencesmodel.Client(client),
-	).First(ctx)
+	).FirstModel(ctx)
 	if store.IsNotFound(err) {
 		return defaults(userID, referenceID, client), nil
 	} else if err != nil {

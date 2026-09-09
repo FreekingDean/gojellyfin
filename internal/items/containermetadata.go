@@ -180,7 +180,7 @@ func (s *Service) DistinctTags(ctx context.Context, query MetadataQuery) ([]stri
 
 func replaceCredits(ctx context.Context, tx *store.Tx, itemID uuid.UUID, people []Credit) error {
 	if _, err := tx.Credit.Delete().
-		Where(creditmodel.HasItemWith(itemmodal.ID(itemID))).
+		Where(creditmodel.HasItemWith(itemmodel.ID(itemID))).
 		Exec(ctx); err != nil {
 		return fmt.Errorf("failed to clear the credits: %w", err)
 	}

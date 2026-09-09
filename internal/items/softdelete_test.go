@@ -19,7 +19,7 @@ func TestService_SaveScanned(t *testing.T) {
 		Name:         "Returns",
 		SortName:     "Returns",
 		Key:          "movie:returns",
-		DateModified: time.Now(),
+		DateModified: ptr(time.Now()),
 	})
 	if err != nil {
 		t.Fatalf("failed to save the item: %v", err)
@@ -34,7 +34,7 @@ func TestService_SaveScanned(t *testing.T) {
 		Name:         "Returns",
 		SortName:     "Returns",
 		Key:          "movie:returns",
-		DateModified: time.Now(),
+		DateModified: ptr(time.Now()),
 	})
 	if err != nil {
 		t.Fatalf("failed to save the returning item: %v", err)

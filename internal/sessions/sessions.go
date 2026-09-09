@@ -14,9 +14,9 @@ import (
 )
 
 type (
-	Session = store.Session
-	Device  = store.Device
-	User    = store.User
+	Session = store.SessionModel
+	Device  = store.DeviceModel
+	User    = store.UserModel
 )
 
 type Service struct {
@@ -69,15 +69,12 @@ func (s *Service) Create(ctx context.Context, userID uuid.UUID, token string, de
 	if err != nil {
 		return nil, err
 	}
-
 	s.activity.Record(ctx, activity.Entry{
-		Name:          fmt.Sprintf("%s has been authenticated", session.Edges.User.Username),
+		Name:          fmt.Sprintf("%s has been authenticated", session.User.Username),
 		Kind:          activity.KindAuthenticationSucceeded,
 		ShortOverview: device.Name,
 		Severity:      activity.SeverityInformation,
-		Edges: activity.Edges{
-			User: &store.User{ID: userID},
-		},
+		UserID:        &userID,
 	})
 
 	return session, nil
@@ -91,7 +88,7 @@ func (s *Service) ByToken(ctx context.Context, token string) (*Session, error) {
 		).
 		WithUser().
 		WithDevice().
-		Only(ctx)
+		OnlyModel(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query session by token: %w", err)
 	}
@@ -104,7 +101,7 @@ func (s *Service) List(ctx context.Context) ([]*Session, error) {
 		Where(sessionmodel.RevokedAtIsNil()).
 		WithUser().
 		WithDevice().
-		All(ctx)
+		AllModels(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list sessions: %w", err)
 	}
@@ -124,13 +121,11 @@ func (s *Service) DeleteByToken(ctx context.Context, token string) error {
 
 	if session != nil {
 		s.activity.Record(ctx, activity.Entry{
-			Name:          fmt.Sprintf("%s has disconnected", session.Edges.User.Username),
+			Name:          fmt.Sprintf("%s has disconnected", session.User.Username),
 			Kind:          activity.KindSessionEnded,
-			ShortOverview: session.Edges.Device.Name,
+			ShortOverview: session.Device.Name,
 			Severity:      activity.SeverityInformation,
-			Edges: activity.Edges{
-				User: session.Edges.User,
-			},
+			UserID:        &session.User.ID,
 		})
 	}
 

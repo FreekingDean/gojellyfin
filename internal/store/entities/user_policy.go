@@ -53,8 +53,8 @@ func (UserPolicy) Fields() []ent.Field {
 		field.Bool("enable_all_channels").Default(true),
 		field.Bool("enable_all_folders").Default(true),
 
-		field.Enum("max_parental_rating").Optional().Values(ratings...),
-		field.Enum("max_parental_sub_rating").Optional().Values(ratings...),
+		field.Enum("max_parental_rating").Optional().Nillable().Values(ratings...),
+		field.Enum("max_parental_sub_rating").Optional().Nillable().Values(ratings...),
 
 		field.Int32("invalid_login_attempt_count").Default(0),
 		field.Int32("login_attempts_before_lockout").Default(-1),

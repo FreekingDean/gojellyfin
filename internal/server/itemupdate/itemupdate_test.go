@@ -17,6 +17,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
+	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	downloadermodel "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
@@ -134,10 +135,10 @@ func newFixture(t *testing.T) *fixture {
 	}
 }
 
-func (f *fixture) item(t *testing.T) *store.Item {
+func (f *fixture) item(t *testing.T) *store.ItemModel {
 	t.Helper()
 
-	record, err := f.client.Item.Get(context.Background(), f.itemID)
+	record, err := f.client.Item.GetModel(context.Background(), f.itemID)
 	if err != nil {
 		t.Fatalf("failed to read the item: %v", err)
 	}
@@ -275,7 +276,7 @@ func TestServer_UpdateItem(t *testing.T) {
 		if record.ParentID != nil {
 			t.Errorf("parent id = %v, want none", record.ParentID)
 		}
-		if sources, err := record.QueryItemSources().Count(context.Background()); err != nil {
+		if sources, err := fixture.client.ItemSource.Query().Where(sourcemodel.ItemID(record.ID)).Count(context.Background()); err != nil {
 			t.Fatalf("failed to count the media sources: %v", err)
 		} else if sources != 0 {
 			t.Errorf("media sources = %d, want none", sources)

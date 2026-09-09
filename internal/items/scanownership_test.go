@@ -20,7 +20,7 @@ func (f *fixture) scan(t *testing.T, name string, year *int32) *Item {
 		Name:           name,
 		SortName:       name,
 		ProductionYear: year,
-		DateModified:   time.Now(),
+		DateModified:   ptr(time.Now()),
 	})
 	if err != nil {
 		t.Fatalf("failed to scan %q: %v", name, err)
@@ -165,7 +165,7 @@ func TestService_SaveScannedTitleOwnership(t *testing.T) {
 			SortName:          "the wire s01e03",
 			IndexNumber:       number(3),
 			ParentIndexNumber: number(1),
-			DateModified:      time.Now(),
+			DateModified:      ptr(time.Now()),
 		})
 		if err != nil {
 			t.Fatalf("failed to scan the episode: %v", err)
@@ -186,7 +186,7 @@ func TestService_SaveScannedTitleOwnership(t *testing.T) {
 			SortName:          "the wire s01e03",
 			IndexNumber:       number(3),
 			ParentIndexNumber: number(1),
-			DateModified:      time.Now(),
+			DateModified:      ptr(time.Now()),
 		})
 		if err != nil {
 			t.Fatalf("failed to rescan the episode: %v", err)

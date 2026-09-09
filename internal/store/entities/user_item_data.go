@@ -22,7 +22,7 @@ func (UserItemData) Fields() []ent.Field {
 		field.Int32("play_count").Default(0),
 		field.Int64("playback_position_ticks").Default(0),
 		field.Float("rating").Optional().Nillable(),
-		field.Bool("likes").Optional(),
+		field.Bool("likes").Optional().Nillable(),
 		field.Time("last_played_at").Optional().Nillable(),
 	)
 }

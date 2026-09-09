@@ -13,7 +13,7 @@ func deviceInfoDto(device *sessions.Device) api.DeviceInfoDto {
 		CustomName:       apiutil.Ptr(device.CustomName),
 		AppName:          apiutil.Ptr(device.AppName),
 		AppVersion:       apiutil.Ptr(device.AppVersion),
-		DateLastActivity: apiutil.Ptr(device.LastActivityAt),
+		DateLastActivity: device.LastActivityAt,
 		IconUrl:          apiutil.Ptr(device.IconURL),
 	}
 	if user := sessions.LastUser(device); user != nil {

@@ -94,14 +94,14 @@ func (f *fixture) addDevice(t *testing.T, device deviceSeed) string {
 	return clientID
 }
 
-func (f *fixture) addUser(t *testing.T, name string) *store.User {
+func (f *fixture) addUser(t *testing.T, name string) *store.UserModel {
 	t.Helper()
 
 	user, err := f.client.User.Create().
 		SetName(name).
 		SetUsername(f.prefix + name).
 		SetPasswordHash("hash").
-		Save(context.Background())
+		SaveModel(context.Background())
 	if err != nil {
 		t.Fatalf("failed to create the user %q: %v", name, err)
 	}
@@ -109,7 +109,7 @@ func (f *fixture) addUser(t *testing.T, name string) *store.User {
 	return user
 }
 
-func (f *fixture) addSession(t *testing.T, clientID string, user *store.User, lastActivity time.Time) uuid.UUID {
+func (f *fixture) addSession(t *testing.T, clientID string, user *store.UserModel, lastActivity time.Time) uuid.UUID {
 	t.Helper()
 
 	device, err := f.client.Device.Query().Where(devicemodel.ClientID(clientID)).Only(context.Background())
@@ -426,7 +426,7 @@ func TestServer_DeleteDevice(t *testing.T) {
 		}
 
 		orphans, err := fixture.client.Session.Query().
-			Where(sessionmodel.HasDeviceWith(devicemodal.ClientID(clientID))).
+			Where(sessionmodel.HasDeviceWith(devicemodel.ClientID(clientID))).
 			Count(ctx)
 		if err != nil {
 			t.Fatalf("failed to count the sessions: %v", err)

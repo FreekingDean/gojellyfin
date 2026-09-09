@@ -107,7 +107,7 @@ func served(dto *api.MediaSourceInfo, plan items.Plan, url string) {
 }
 
 func mediaSourceDto(source *items.MediaSource) api.MediaSourceInfo {
-	streams := source.Edges.Streams
+	streams := source.Streams
 	converted := make([]api.MediaStream, 0, len(streams))
 	for _, stream := range streams {
 		converted = append(converted, mediaStreamDto(stream))
@@ -120,9 +120,9 @@ func mediaSourceDto(source *items.MediaSource) api.MediaSourceInfo {
 		Protocol:                   apiutil.Ptr(api.MediaProtocolFile),
 		Type:                       apiutil.Ptr(api.MediaSourceTypeDefault),
 		Container:                  apiutil.Ptr(source.Container),
-		Size:                       apiutil.Ptr(source.Size),
-		Bitrate:                    apiutil.Ptr(source.Bitrate),
-		RunTimeTicks:               apiutil.Ptr(source.RunTimeTicks),
+		Size:                       source.Size,
+		Bitrate:                    source.Bitrate,
+		RunTimeTicks:               source.RunTimeTicks,
 		MediaStreams:               &converted,
 		MediaAttachments:           &[]api.MediaAttachment{},
 		Formats:                    &[]string{},
@@ -147,6 +147,8 @@ func mediaStreamDto(stream *items.MediaStream) api.MediaStream {
 		Index:                  apiutil.Ptr(stream.Index),
 		Type:                   &kind,
 		Codec:                  apiutil.Ptr(stream.Codec),
+		BitRate:                stream.BitRate,
+		Level:                  stream.Level,
 		IsDefault:              apiutil.Ptr(stream.IsDefault),
 		IsForced:               apiutil.Ptr(stream.IsForced),
 		IsExternal:             apiutil.Ptr(false),
@@ -164,24 +166,18 @@ func mediaStreamDto(stream *items.MediaStream) api.MediaStream {
 	if stream.Title != "" {
 		dto.Title = apiutil.Ptr(stream.Title)
 	}
-	if stream.BitRate > 0 {
-		dto.BitRate = apiutil.Ptr(stream.BitRate)
-	}
 	if stream.PixelFormat != "" {
 		dto.PixelFormat = apiutil.Ptr(stream.PixelFormat)
-	}
-	if stream.Level > 0 {
-		dto.Level = apiutil.Ptr(stream.Level)
 	}
 
 	switch stream.Kind {
 	case streammodel.KindVideo:
-		dto.Width = apiutil.Ptr(stream.Width)
-		dto.Height = apiutil.Ptr(stream.Height)
-		dto.AspectRatio = apiutil.Ptr(aspectRatio(stream.Width, stream.Height))
+		dto.Width = stream.Width
+		dto.Height = stream.Height
+		dto.AspectRatio = apiutil.Ptr(aspectRatio(apiutil.Deref(stream.Width), apiutil.Deref(stream.Height)))
 	case streammodel.KindAudio:
-		dto.Channels = apiutil.Ptr(stream.Channels)
-		dto.SampleRate = apiutil.Ptr(stream.SampleRate)
+		dto.Channels = stream.Channels
+		dto.SampleRate = stream.SampleRate
 	}
 
 	return dto
@@ -190,7 +186,7 @@ func mediaStreamDto(stream *items.MediaStream) api.MediaStream {
 func streamDisplayTitle(stream *items.MediaStream) string {
 	switch stream.Kind {
 	case streammodel.KindVideo:
-		return fmt.Sprintf("%dx%d %s", stream.Width, stream.Height, stream.Codec)
+		return fmt.Sprintf("%dx%d %s", apiutil.Deref(stream.Width), apiutil.Deref(stream.Height), stream.Codec)
 	case streammodel.KindAudio:
 		if stream.Language != "" {
 			return fmt.Sprintf("%s %s", stream.Language, stream.Codec)

@@ -246,11 +246,11 @@ func (_c *SessionCreate) createSpec() (*Session, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := _c.mutation.LastActivityAt(); ok {
 		_spec.SetField(session.FieldLastActivityAt, field.TypeTime, value)
-		_node.LastActivityAt = value
+		_node.LastActivityAt = &value
 	}
 	if value, ok := _c.mutation.RevokedAt(); ok {
 		_spec.SetField(session.FieldRevokedAt, field.TypeTime, value)
-		_node.RevokedAt = value
+		_node.RevokedAt = &value
 	}
 	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

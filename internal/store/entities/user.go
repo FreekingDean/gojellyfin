@@ -15,8 +15,8 @@ func (User) Fields() []ent.Field {
 		field.String("name"),
 		field.String("username").Unique(),
 		field.String("password_hash").Sensitive(),
-		field.Time("last_login_at").Optional(),
-		field.Time("last_activity_at").Optional(),
+		field.Time("last_login_at").Optional().Nillable(),
+		field.Time("last_activity_at").Optional().Nillable(),
 	)
 }
 

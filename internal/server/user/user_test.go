@@ -104,10 +104,10 @@ func TestServer_AuthenticateUserByName(t *testing.T) {
 		}
 
 		t.Cleanup(func() {
-			if _, err := client.ActivityLogEntry.Delete().Where(entrymodel.HasUserWith(usermodal.ID(user.ID))).Exec(ctx); err != nil {
+			if _, err := client.ActivityLogEntry.Delete().Where(entrymodel.HasUserWith(usermodel.ID(user.ID))).Exec(ctx); err != nil {
 				t.Errorf("failed to delete the entries: %v", err)
 			}
-			if _, err := client.Session.Delete().Where(sessionmodel.HasUserWith(usermodal.ID(user.ID))).Exec(ctx); err != nil {
+			if _, err := client.Session.Delete().Where(sessionmodel.HasUserWith(usermodel.ID(user.ID))).Exec(ctx); err != nil {
 				t.Errorf("failed to delete the sessions: %v", err)
 			}
 			if _, err := client.Device.Delete().Where(devicemodel.ClientID(deviceID)).Exec(ctx); err != nil {
@@ -155,7 +155,7 @@ func TestServer_AuthenticateUserByName(t *testing.T) {
 
 		found := 0
 		for _, entry := range entries {
-			if entry.Edges.User == nil || entry.Edges.User.ID != user.ID {
+			if entry.User == nil || entry.User.ID != user.ID {
 				continue
 			}
 			found++

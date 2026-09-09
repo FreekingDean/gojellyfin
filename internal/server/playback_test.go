@@ -106,7 +106,7 @@ func newPlaybackFixture(t *testing.T) *playbackFixture {
 	}
 
 	t.Cleanup(func() {
-		inLibrary := sourcemodel.HasItemWith(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID)))
+		inLibrary := sourcemodel.HasItemWith(itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID)))
 		if _, err := client.MediaStream.Delete().Where(streammodel.HasSourceWith(inLibrary)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the media streams: %v", err)
 		}
@@ -174,7 +174,7 @@ func (f *playbackFixture) ripped(t *testing.T, name, encoder, video, audio strin
 		Key:          "movie:" + name + ":" + audio,
 		Name:         name,
 		SortName:     name,
-		DateModified: time.Now(),
+		DateModified: apiutil.Ptr(time.Now()),
 	})
 	if err != nil {
 		t.Fatalf("failed to save the item: %v", err)
@@ -213,7 +213,7 @@ func (f *playbackFixture) beside(t *testing.T, id uuid.UUID, name, encoder, vide
 		ItemID:       id,
 		Path:         path,
 		Name:         name,
-		DateModified: time.Now(),
+		DateModified: apiutil.Ptr(time.Now()),
 	})
 	if err != nil {
 		t.Fatalf("failed to save the source: %v", err)
@@ -221,10 +221,10 @@ func (f *playbackFixture) beside(t *testing.T, id uuid.UUID, name, encoder, vide
 
 	err = f.items.SaveProbe(ctx, item, source, items.MediaSource{
 		Container: strings.TrimPrefix(filepath.Ext(name), "."),
-		Edges: items.MediaSourceEdges{Streams: []*items.MediaStream{
-			{Index: 0, Kind: streammodel.KindVideo, Codec: video, Width: width, Height: height},
+		Streams: []*items.MediaStream{
+			{Index: 0, Kind: streammodel.KindVideo, Codec: video, Width: &width, Height: &height},
 			{Index: 1, Kind: streammodel.KindAudio, Codec: audio},
-		}},
+		},
 	})
 	if err != nil {
 		t.Fatalf("failed to probe the source: %v", err)

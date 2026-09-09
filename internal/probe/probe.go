@@ -35,17 +35,17 @@ func (s *Prober) probeFile(ctx context.Context, source *items.MediaSource) (*ite
 			Profile:     stream.Profile,
 			Language:    stream.Tags["language"],
 			Title:       stream.Tags["title"],
-			Width:       stream.Width,
-			Height:      stream.Height,
-			Channels:    stream.Channels,
-			SampleRate:  stream.SampleRate,
-			BitRate:     stream.BitRate,
+			Width:       optional(stream.Width),
+			Height:      optional(stream.Height),
+			Channels:    optional(stream.Channels),
+			SampleRate:  optional(stream.SampleRate),
+			BitRate:     optional(stream.BitRate),
 			PixelFormat: stream.PixelFormat,
-			Level:       stream.Level,
+			Level:       optional(stream.Level),
 			IsDefault:   stream.Disposition.Default,
 			IsForced:    stream.Disposition.Forced,
 
-			VideoRangeType: rangeType(stream.ColorTransfer),
+			VideoRangeType: optional(rangeType(stream.ColorTransfer)),
 			IsInterlaced:   interlaced(stream.FieldOrder),
 			IsAnamorphic:   anamorphic(stream.AspectRatio),
 		})
@@ -53,10 +53,10 @@ func (s *Prober) probeFile(ctx context.Context, source *items.MediaSource) (*ite
 
 	return &items.MediaSource{
 		Container:    container(probe.Format.FormatName, source.Path),
-		RunTimeTicks: int64(probe.Format.Duration * ticksPerSecond),
-		Size:         probe.Format.Size,
-		Bitrate:      probe.Format.BitRate,
-		Edges:        items.MediaSourceEdges{Streams: streams},
+		RunTimeTicks: optional(int64(probe.Format.Duration * ticksPerSecond)),
+		Size:         optional(probe.Format.Size),
+		Bitrate:      optional(probe.Format.BitRate),
+		Streams:      streams,
 	}, nil
 }
 
@@ -113,4 +113,13 @@ func streamKind(codecType string) items.StreamKind {
 	default:
 		return streammodel.KindEmbeddedImage
 	}
+}
+
+func optional[T comparable](value T) *T {
+	var zero T
+	if value == zero {
+		return nil
+	}
+
+	return &value
 }

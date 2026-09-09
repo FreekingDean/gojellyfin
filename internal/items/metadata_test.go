@@ -12,13 +12,13 @@ import (
 )
 
 func TestService_ItemsNeedingMetadata(t *testing.T) {
-	wanted := []Kind{itemmodel.KindMovie, itemmodal.KindSeries, itemmodal.KindSeason, itemmodal.KindEpisode}
+	wanted := []Kind{itemmodel.KindMovie, itemmodel.KindSeries, itemmodel.KindSeason, itemmodel.KindEpisode}
 
 	t.Run("hands the kinds back in the order they were asked for", func(t *testing.T) {
 		fixed := newFixture(t)
 
 		kinds := map[uuid.UUID]Kind{}
-		for _, kind := range []Kind{itemmodel.KindEpisode, itemmodal.KindSeason, itemmodal.KindSeries, itemmodal.KindMovie} {
+		for _, kind := range []Kind{itemmodel.KindEpisode, itemmodel.KindSeason, itemmodel.KindSeries, itemmodel.KindMovie} {
 			for copy := range 3 {
 				id := fixed.add(t, seed{kind: kind, name: fmt.Sprintf("%s %d", kind, copy)})
 				kinds[id] = kind

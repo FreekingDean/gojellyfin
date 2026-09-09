@@ -17,8 +17,8 @@ import (
 )
 
 type (
-	Library           = store.Library
-	Options           = store.LibraryOptions
+	Library           = store.LibraryModel
+	Options           = store.LibraryOptionsModel
 	CollectionType    = librarymodel.CollectionType
 	EmbeddedSubtitles = optionsmodel.AllowEmbeddedSubtitles
 	TypeOptions       = entities.TypeOptions
@@ -93,7 +93,7 @@ func (s *Service) Library(ctx context.Context, id uuid.UUID) (*Library, error) {
 	library, err := s.store.Library.Query().
 		Where(librarymodel.ID(id)).
 		WithOptions().
-		Only(ctx)
+		OnlyModel(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query library: %w", err)
 	}
@@ -105,7 +105,7 @@ func (s *Service) LibraryByName(ctx context.Context, name string) (*Library, err
 	library, err := s.store.Library.Query().
 		Where(librarymodel.Name(name)).
 		WithOptions().
-		Only(ctx)
+		OnlyModel(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query library by name: %w", err)
 	}
@@ -117,7 +117,7 @@ func (s *Service) ListLibraries(ctx context.Context) ([]*Library, error) {
 	libraries, err := s.store.Library.Query().
 		WithOptions().
 		Order(librarymodel.ByName()).
-		All(ctx)
+		AllModels(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list libraries: %w", err)
 	}
@@ -136,7 +136,7 @@ func (s *Service) GroupableLibraries(ctx context.Context) ([]*Library, error) {
 		Where(librarymodel.CollectionTypeIn(groupableCollectionTypes...)).
 		WithOptions().
 		Order(librarymodel.ByName()).
-		All(ctx)
+		AllModels(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list groupable libraries: %w", err)
 	}
@@ -185,8 +185,8 @@ func (s *Service) DeleteLibrary(ctx context.Context, id uuid.UUID) error {
 		if _, err := tx.Item.Delete().
 			Where(
 				itemmodel.IDIn(orphaned...),
-				itemmodel.Not(itemmodal.HasLibraries()),
-				itemmodel.Not(itemmodal.HasPlaylist()),
+				itemmodel.Not(itemmodel.HasLibraries()),
+				itemmodel.Not(itemmodel.HasPlaylist()),
 			).
 			Exec(ctx); err != nil {
 			return fmt.Errorf("failed to delete the items no library holds: %w", err)
@@ -198,7 +198,7 @@ func (s *Service) DeleteLibrary(ctx context.Context, id uuid.UUID) error {
 
 func (s *Service) UpdateOptions(id uuid.UUID) *store.LibraryOptionsUpdate {
 	return s.store.LibraryOptions.Update().
-		Where(optionsmodel.HasLibraryWith(librarymodal.ID(id)))
+		Where(optionsmodel.HasLibraryWith(librarymodel.ID(id)))
 }
 
 func (s *Service) AddLocation(ctx context.Context, id uuid.UUID, path string) error {

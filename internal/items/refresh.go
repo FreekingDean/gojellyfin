@@ -88,7 +88,7 @@ func (s *Service) RefreshItem(ctx context.Context, libraryID, sourceID uuid.UUID
 			ItemID:       item.ID,
 			Path:         file.Path,
 			Name:         filepath.Base(file.Path),
-			DateModified: file.DateModified,
+			DateModified: &file.DateModified,
 		})
 		if err != nil {
 			return err
@@ -117,7 +117,7 @@ func enqueue(ctx context.Context, name string, params ...jobs.Param) {
 }
 
 func (s *Service) ItemByKey(ctx context.Context, key string) (*Item, error) {
-	item, err := s.store.Item.Query().Where(itemmodel.Key(key)).Only(ctx)
+	item, err := s.store.Item.Query().Where(itemmodel.Key(key)).OnlyModel(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query %s: %w", key, err)
 	}
@@ -138,11 +138,11 @@ func (s *Service) parentOf(ctx context.Context, key string) (*uuid.UUID, error) 
 	return &parent.ID, nil
 }
 
-func newest(files []ScannedFile) time.Time {
-	latest := time.Time{}
+func newest(files []ScannedFile) *time.Time {
+	var latest *time.Time
 	for _, file := range files {
-		if file.DateModified.After(latest) {
-			latest = file.DateModified
+		if latest == nil || file.DateModified.After(*latest) {
+			latest = &file.DateModified
 		}
 	}
 

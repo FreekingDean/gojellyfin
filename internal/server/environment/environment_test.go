@@ -53,7 +53,7 @@ func newFixture(t *testing.T) *fixture {
 	t.Cleanup(func() {
 		ctx := context.Background()
 		if _, err := client.Session.Delete().
-			Where(sessionmodel.HasUserWith(usermodal.UsernameHasPrefix(prefix))).
+			Where(sessionmodel.HasUserWith(usermodel.UsernameHasPrefix(prefix))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the sessions: %v", err)
 		}
@@ -61,12 +61,12 @@ func newFixture(t *testing.T) *fixture {
 			t.Errorf("failed to delete the devices: %v", err)
 		}
 		if _, err := client.UserPolicy.Delete().
-			Where(policymodel.HasUserWith(usermodal.UsernameHasPrefix(prefix))).
+			Where(policymodel.HasUserWith(usermodel.UsernameHasPrefix(prefix))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the policies: %v", err)
 		}
 		if _, err := client.UserConfiguration.Delete().
-			Where(configurationmodel.HasUserWith(usermodal.UsernameHasPrefix(prefix))).
+			Where(configurationmodel.HasUserWith(usermodel.UsernameHasPrefix(prefix))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the configurations: %v", err)
 		}

@@ -32,7 +32,7 @@ func requestedPaths(params *[]string, options *api.LibraryOptions) []string {
 }
 
 func virtualFolderInfo(library *libraries.Library) api.VirtualFolderInfo {
-	options := optionsDto(library.Edges.Options)
+	options := optionsDto(library.Options)
 
 	pathInfos := make([]api.MediaPathInfo, 0, len(library.Locations))
 	for _, location := range library.Locations {

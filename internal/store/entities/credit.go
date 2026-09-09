@@ -21,7 +21,7 @@ func (Credit) Fields() []ent.Field {
 			"Translator",
 		),
 		field.String("role").Optional(),
-		field.Int32("sort_order").Optional(),
+		field.Int32("sort_order").Optional().Nillable(),
 	)
 }
 

@@ -20,7 +20,7 @@ func (f *fixture) scannedFrom(t *testing.T, downloader uuid.UUID, key, path stri
 		Key:          key,
 		Name:         "The Matrix",
 		SortName:     "matrix",
-		DateModified: time.Now(),
+		DateModified: ptr(time.Now()),
 	})
 	if err != nil {
 		t.Fatalf("failed to save %q: %v", path, err)
@@ -100,7 +100,7 @@ func TestService_SourcesNeedingProbe(t *testing.T) {
 			ItemID:       probed.ID,
 			Path:         "/media/4k/The Matrix.mkv",
 			Name:         "The Matrix.mkv",
-			DateModified: time.Now(),
+			DateModified: ptr(time.Now()),
 		})
 		if err != nil {
 			t.Fatalf("failed to save the unprobed source: %v", err)
@@ -125,7 +125,7 @@ func TestService_SourcesNeedingProbe(t *testing.T) {
 			ItemID:       probed.ID,
 			Path:         "/media/hd/The Matrix.mkv",
 			Name:         "The Matrix.mkv",
-			DateModified: time.Now().Add(time.Hour),
+			DateModified: ptr(time.Now().Add(time.Hour)),
 		})
 		if err != nil {
 			t.Fatalf("failed to touch the probed source: %v", err)

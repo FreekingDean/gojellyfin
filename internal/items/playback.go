@@ -92,7 +92,7 @@ func (s *Service) SourceFor(ctx context.Context, itemID uuid.UUID, can Capabilit
 }
 
 func (c Capabilities) plan(source *MediaSource) Plan {
-	picture, sound := stream(source, streammodel.KindVideo), stream(source, streammodal.KindAudio)
+	picture, sound := stream(source, streammodel.KindVideo), stream(source, streammodel.KindAudio)
 	video, audio := codec(picture), codec(sound)
 	plan := Plan{Source: source, Container: Container(source), AudioCodec: audio}
 	if len(c.Profiles) == 0 {
@@ -154,8 +154,8 @@ func (c Condition) holds(picture *MediaStream) bool {
 	named, ceiling := "", float64(0)
 	switch c.Property {
 	case "VideoRangeType":
-		if picture.VideoRangeType != streammodel.VideoRangeTypeUnknown {
-			named = string(picture.VideoRangeType)
+		if rangeType := deref(picture.VideoRangeType); rangeType != streammodel.VideoRangeTypeUnknown {
+			named = string(rangeType)
 		}
 	case "VideoProfile":
 		named = picture.Profile
@@ -164,13 +164,13 @@ func (c Condition) holds(picture *MediaStream) bool {
 	case "IsAnamorphic":
 		named = strconv.FormatBool(picture.IsAnamorphic)
 	case "VideoLevel":
-		ceiling = picture.Level
+		ceiling = deref(picture.Level)
 	case "Width":
-		ceiling = float64(picture.Width)
+		ceiling = float64(deref(picture.Width))
 	case "Height":
-		ceiling = float64(picture.Height)
+		ceiling = float64(deref(picture.Height))
 	case "VideoBitrate":
-		ceiling = float64(picture.BitRate)
+		ceiling = float64(deref(picture.BitRate))
 	default:
 		return true
 	}
@@ -204,7 +204,7 @@ func lists(declared, value string) bool {
 }
 
 func stream(source *MediaSource, kind StreamKind) *MediaStream {
-	for _, candidate := range source.Edges.Streams {
+	for _, candidate := range source.Streams {
 		if candidate.Kind == kind {
 			return candidate
 		}
@@ -223,7 +223,7 @@ func codec(stream *MediaStream) string {
 
 func height(source *MediaSource) int32 {
 	if picture := stream(source, streammodel.KindVideo); picture != nil {
-		return picture.Height
+		return deref(picture.Height)
 	}
 
 	return 0

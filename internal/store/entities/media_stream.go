@@ -19,7 +19,7 @@ func (MediaStream) Fields() []ent.Field {
 		field.Enum("kind").Values(
 			"Audio", "Video", "Subtitle", "EmbeddedImage", "Data", "Lyric",
 		),
-		field.Enum("video_range_type").Optional().Values(
+		field.Enum("video_range_type").Optional().Nillable().Values(
 			"Unknown", "SDR", "HDR10", "HLG", "DOVI", "DOVIWithHDR10",
 			"DOVIWithHLG", "DOVIWithSDR", "HDR10Plus",
 		),
@@ -31,12 +31,12 @@ func (MediaStream) Fields() []ent.Field {
 		field.String("title").Optional(),
 		field.String("pixel_format").Optional(),
 
-		field.Int32("bit_rate").Optional(),
-		field.Int32("channels").Optional(),
-		field.Int32("sample_rate").Optional(),
-		field.Int32("width").Optional(),
-		field.Int32("height").Optional(),
-		field.Float("level").Optional(),
+		field.Int32("bit_rate").Optional().Nillable(),
+		field.Int32("channels").Optional().Nillable(),
+		field.Int32("sample_rate").Optional().Nillable(),
+		field.Int32("width").Optional().Nillable(),
+		field.Int32("height").Optional().Nillable(),
+		field.Float("level").Optional().Nillable(),
 
 		field.Bool("is_default").Default(false),
 		field.Bool("is_forced").Default(false),

@@ -16,21 +16,12 @@ import (
 )
 
 type (
-	MediaSource      = store.ItemSource
-	MediaSourceEdges = store.ItemSourceEdges
-	MediaStream      = store.MediaStream
-	StreamKind       = streammodel.Kind
+	MediaSource = store.ItemSourceModel
+	MediaStream = store.MediaStreamModel
+	StreamKind  = streammodel.Kind
 
 	VideoRangeType = streammodel.VideoRangeType
 )
-
-func nillableRangeType(rangeType VideoRangeType) *VideoRangeType {
-	if rangeType == "" {
-		return nil
-	}
-
-	return &rangeType
-}
 
 func (s *Service) SaveSource(ctx context.Context, scanned MediaSource) (*MediaSource, error) {
 	id, err := s.store.ItemSource.Create().
@@ -38,7 +29,7 @@ func (s *Service) SaveSource(ctx context.Context, scanned MediaSource) (*MediaSo
 		SetItemID(scanned.ItemID).
 		SetPath(scanned.Path).
 		SetName(scanned.Name).
-		SetDateModified(scanned.DateModified).
+		SetNillableDateModified(scanned.DateModified).
 		OnConflictColumns(sourcemodel.FieldPath).
 		UpdateItemID().
 		UpdateSourceID().
@@ -50,7 +41,7 @@ func (s *Service) SaveSource(ctx context.Context, scanned MediaSource) (*MediaSo
 		return nil, fmt.Errorf("failed to save media source: %w", err)
 	}
 
-	source, err := s.store.ItemSource.Get(ctx, id)
+	source, err := s.store.ItemSource.GetModel(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query the saved media source: %w", err)
 	}
@@ -62,9 +53,9 @@ func (s *Service) SaveProbe(ctx context.Context, item *Item, source *MediaSource
 	return s.store.WithTx(ctx, func(tx *store.Tx) error {
 		err := tx.ItemSource.UpdateOneID(source.ID).
 			SetContainer(probe.Container).
-			SetRunTimeTicks(probe.RunTimeTicks).
-			SetSize(probe.Size).
-			SetBitrate(probe.Bitrate).
+			SetNillableRunTimeTicks(probe.RunTimeTicks).
+			SetNillableSize(probe.Size).
+			SetNillableBitrate(probe.Bitrate).
 			SetProbedAt(time.Now()).
 			Exec(ctx)
 		if err != nil {
@@ -75,12 +66,12 @@ func (s *Service) SaveProbe(ctx context.Context, item *Item, source *MediaSource
 			return fmt.Errorf("failed to clear media streams: %w", err)
 		}
 
-		if len(probe.Edges.Streams) == 0 {
+		if len(probe.Streams) == 0 {
 			return nil
 		}
 
-		builders := make([]*store.MediaStreamCreate, 0, len(probe.Edges.Streams))
-		for _, stream := range probe.Edges.Streams {
+		builders := make([]*store.MediaStreamCreate, 0, len(probe.Streams))
+		for _, stream := range probe.Streams {
 			builders = append(builders, tx.MediaStream.Create().
 				SetSourceID(source.ID).
 				SetIndex(stream.Index).
@@ -89,16 +80,16 @@ func (s *Service) SaveProbe(ctx context.Context, item *Item, source *MediaSource
 				SetProfile(stream.Profile).
 				SetLanguage(stream.Language).
 				SetTitle(stream.Title).
-				SetWidth(stream.Width).
-				SetHeight(stream.Height).
-				SetChannels(stream.Channels).
-				SetSampleRate(stream.SampleRate).
-				SetBitRate(stream.BitRate).
+				SetNillableWidth(stream.Width).
+				SetNillableHeight(stream.Height).
+				SetNillableChannels(stream.Channels).
+				SetNillableSampleRate(stream.SampleRate).
+				SetNillableBitRate(stream.BitRate).
 				SetPixelFormat(stream.PixelFormat).
-				SetLevel(stream.Level).
+				SetNillableLevel(stream.Level).
 				SetIsDefault(stream.IsDefault).
 				SetIsForced(stream.IsForced).
-				SetNillableVideoRangeType(nillableRangeType(stream.VideoRangeType)).
+				SetNillableVideoRangeType(stream.VideoRangeType).
 				SetIsInterlaced(stream.IsInterlaced).
 				SetIsAnamorphic(stream.IsAnamorphic))
 		}
@@ -111,7 +102,7 @@ func (s *Service) SaveProbe(ctx context.Context, item *Item, source *MediaSource
 }
 
 func (s *Service) SourceByID(ctx context.Context, id uuid.UUID) (*MediaSource, error) {
-	source, err := s.store.ItemSource.Get(ctx, id)
+	source, err := s.store.ItemSource.GetModel(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query media source %s: %w", id, err)
 	}
@@ -123,7 +114,7 @@ func (s *Service) SourcesNeedingProbe(ctx context.Context) ([]uuid.UUID, error) 
 	ids, err := s.store.ItemSource.Query().
 		Where(
 			func(selector *sql.Selector) {
-				probed, modified := selector.C(sourcemodel.FieldProbedAt), selector.C(sourcemodal.FieldDateModified)
+				probed, modified := selector.C(sourcemodel.FieldProbedAt), selector.C(sourcemodel.FieldDateModified)
 				selector.Where(sql.Or(sql.IsNull(probed), sql.ColumnsLT(probed, modified)))
 			},
 		).
@@ -139,11 +130,11 @@ func (s *Service) SourcesNeedingProbe(ctx context.Context) ([]uuid.UUID, error) 
 func (s *Service) MediaSources(ctx context.Context, itemID uuid.UUID) ([]*MediaSource, error) {
 	sources, err := s.store.ItemSource.Query().
 		Where(sourcemodel.ItemID(itemID)).
-		Order(sourcemodel.ByCreatedAt(), sourcemodal.ByPath()).
+		Order(sourcemodel.ByCreatedAt(), sourcemodel.ByPath()).
 		WithStreams(func(query *store.MediaStreamQuery) {
 			query.Order(streammodel.ByIndex())
 		}).
-		All(ctx)
+		AllModels(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query media sources: %w", err)
 	}
@@ -165,11 +156,11 @@ func (s *Service) FilesByItem(ctx context.Context, itemIDs []uuid.UUID) (map[uui
 
 	sources, err := s.store.ItemSource.Query().
 		Where(sourcemodel.ItemIDIn(itemIDs...)).
-		Order(sourcemodel.ByCreatedAt(), sourcemodal.ByPath()).
+		Order(sourcemodel.ByCreatedAt(), sourcemodel.ByPath()).
 		WithStreams(func(query *store.MediaStreamQuery) {
-			query.Where(streammodel.KindEQ(streammodal.KindSubtitle))
+			query.Where(streammodel.KindEQ(streammodel.KindSubtitle))
 		}).
-		All(ctx)
+		AllModels(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query media source paths: %w", err)
 	}
@@ -177,9 +168,10 @@ func (s *Service) FilesByItem(ctx context.Context, itemIDs []uuid.UUID) (map[uui
 	for _, source := range sources {
 		entry, seen := held[source.ItemID]
 		if !seen {
-			entry = Held{Path: source.Path, RunTimeTicks: &source.RunTimeTicks}
+			entry = Held{Path: source.Path, RunTimeTicks: source.RunTimeTicks}
 		}
-		entry.HasSubtitles = entry.HasSubtitles || len(source.Edges.Streams) > 0
+
+		entry.HasSubtitles = entry.HasSubtitles || len(source.Streams) > 0
 		held[source.ItemID] = entry
 	}
 
@@ -230,12 +222,16 @@ func (s *Service) DeleteSourcesNotInPaths(
 }
 
 func NeedsProbe(source *MediaSource) bool {
-	return source == nil || source.ProbedAt.IsZero() || source.ProbedAt.Before(source.DateModified)
+	return source == nil ||
+		source.ProbedAt == nil ||
+		source.ProbedAt.IsZero() ||
+		source.DateModified == nil ||
+		source.ProbedAt.Before(*source.DateModified)
 }
 
 func IsAudio(item *Item) bool {
 	switch item.Kind {
-	case itemmodel.KindAudio, itemmodal.KindAudioBook:
+	case itemmodel.KindAudio, itemmodel.KindAudioBook:
 		return true
 	default:
 		return false

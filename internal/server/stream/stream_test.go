@@ -20,6 +20,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
+	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
@@ -106,7 +107,7 @@ func newFixture(t *testing.T) *fixture {
 	}
 
 	t.Cleanup(func() {
-		inLibrary := sourcemodel.HasItemWith(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID)))
+		inLibrary := sourcemodel.HasItemWith(itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID)))
 		if _, err := client.MediaStream.Delete().Where(streammodel.HasSourceWith(inLibrary)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the media streams: %v", err)
 		}
@@ -173,7 +174,7 @@ func (f *fixture) scan(t *testing.T, name string) (*items.Item, *items.MediaSour
 		Key:          "audio:" + name,
 		Name:         name,
 		SortName:     name,
-		DateModified: time.Now(),
+		DateModified: apiutil.Ptr(time.Now()),
 	})
 	if err != nil {
 		t.Fatalf("failed to save %q: %v", name, err)
@@ -190,7 +191,7 @@ func (f *fixture) source(t *testing.T, itemID uuid.UUID, path string) *items.Med
 		ItemID:       itemID,
 		Path:         path,
 		Name:         filepath.Base(path),
-		DateModified: time.Now(),
+		DateModified: apiutil.Ptr(time.Now()),
 	})
 	if err != nil {
 		t.Fatalf("failed to save the source of %q: %v", path, err)
@@ -205,8 +206,8 @@ func (f *fixture) add(t *testing.T, name, codec string) uuid.UUID {
 	item, source := f.scan(t, name)
 	err := f.items.SaveProbe(context.Background(), item, source, items.MediaSource{
 		Container: strings.TrimPrefix(filepath.Ext(name), "."),
-		Size:      int64(len(song)),
-		Edges:     items.MediaSourceEdges{Streams: []*items.MediaStream{{Kind: streammodel.KindAudio, Codec: codec}}},
+		Size:      apiutil.Ptr(int64(len(song))),
+		Streams:   []*items.MediaStream{{Kind: streammodel.KindAudio, Codec: codec}},
 	})
 	if err != nil {
 		t.Fatalf("failed to probe %q: %v", name, err)

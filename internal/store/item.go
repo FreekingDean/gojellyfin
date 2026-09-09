@@ -45,7 +45,7 @@ type Item struct {
 	// EndDate holds the value of the "end_date" field.
 	EndDate *time.Time `json:"end_date,omitempty"`
 	// DateModified holds the value of the "date_modified" field.
-	DateModified time.Time `json:"date_modified,omitempty"`
+	DateModified *time.Time `json:"date_modified,omitempty"`
 	// ProductionYear holds the value of the "production_year" field.
 	ProductionYear *int32 `json:"production_year,omitempty"`
 	// OfficialRating holds the value of the "official_rating" field.
@@ -339,7 +339,8 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field date_modified", values[i])
 			} else if value.Valid {
-				_m.DateModified = value.Time
+				_m.DateModified = new(time.Time)
+				*_m.DateModified = value.Time
 			}
 		case item.FieldProductionYear:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -560,8 +561,10 @@ func (_m *Item) String() string {
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")
-	builder.WriteString("date_modified=")
-	builder.WriteString(_m.DateModified.Format(time.ANSIC))
+	if v := _m.DateModified; v != nil {
+		builder.WriteString("date_modified=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteString(", ")
 	if v := _m.ProductionYear; v != nil {
 		builder.WriteString("production_year=")

@@ -15,6 +15,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	streammodel "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/transcode"
@@ -61,7 +62,7 @@ func (f *fixture) addTone(t *testing.T) uuid.UUID {
 		Key:          "audio:tone",
 		Name:         "tone.flac",
 		SortName:     "tone.flac",
-		DateModified: time.Now(),
+		DateModified: apiutil.Ptr(time.Now()),
 	})
 	if err != nil {
 		t.Fatalf("failed to save the source: %v", err)
@@ -69,7 +70,7 @@ func (f *fixture) addTone(t *testing.T) uuid.UUID {
 
 	err = f.items.SaveProbe(context.Background(), item, f.source(t, item.ID, path), items.MediaSource{
 		Container: "flac",
-		Edges:     items.MediaSourceEdges{Streams: []*items.MediaStream{{Kind: streammodel.KindAudio, Codec: "flac"}}},
+		Streams:   []*items.MediaStream{{Kind: streammodel.KindAudio, Codec: "flac"}},
 	})
 	if err != nil {
 		t.Fatalf("failed to probe the source: %v", err)

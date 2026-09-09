@@ -18,7 +18,7 @@ func authenticationInfo(key *apikeys.ApiKey) api.AuthenticationInfo {
 
 	if !key.RevokedAt.IsZero() && key.RevokedAt.Before(time.Now()) {
 		info.IsActive = apiutil.Ptr(false)
-		info.DateRevoked = apiutil.Ptr(key.RevokedAt)
+		info.DateRevoked = key.RevokedAt
 	}
 
 	return info

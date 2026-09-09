@@ -59,12 +59,12 @@ func newFixture(t *testing.T) *fixture {
 
 	t.Cleanup(func() {
 		if _, err := client.PlaylistShare.Delete().
-			Where(sharemodel.HasPlaylistWith(playlistmodal.ItemIDIn(fixture.created...))).
+			Where(sharemodel.HasPlaylistWith(playlistmodel.ItemIDIn(fixture.created...))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the shares: %v", err)
 		}
 		if _, err := client.PlaylistEntry.Delete().
-			Where(entrymodel.HasPlaylistWith(playlistmodal.ItemIDIn(fixture.created...))).
+			Where(entrymodel.HasPlaylistWith(playlistmodel.ItemIDIn(fixture.created...))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the entries: %v", err)
 		}
@@ -168,7 +168,7 @@ func (f *fixture) order(t *testing.T, playlistID uuid.UUID) []string {
 		if entry.SortOrder != int32(index) {
 			t.Errorf("entry %d has sort order %d", index, entry.SortOrder)
 		}
-		names = append(names, entry.Edges.Item.Name)
+		names = append(names, entry.Item.Name)
 	}
 
 	return names
@@ -489,7 +489,7 @@ func TestService_Entries(t *testing.T) {
 
 	names := make([]string, 0, len(entries))
 	for _, entry := range entries {
-		names = append(names, entry.Edges.Item.Name)
+		names = append(names, entry.Item.Name)
 	}
 	if want := []string{"Two", "Three"}; !slices.Equal(names, want) {
 		t.Errorf("entries = %v, want %v", names, want)

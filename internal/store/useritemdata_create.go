@@ -339,7 +339,7 @@ func (_c *UserItemDataCreate) createSpec() (*UserItemData, *sqlgraph.CreateSpec)
 	}
 	if value, ok := _c.mutation.Likes(); ok {
 		_spec.SetField(useritemdata.FieldLikes, field.TypeBool, value)
-		_node.Likes = value
+		_node.Likes = &value
 	}
 	if value, ok := _c.mutation.LastPlayedAt(); ok {
 		_spec.SetField(useritemdata.FieldLastPlayedAt, field.TypeTime, value)

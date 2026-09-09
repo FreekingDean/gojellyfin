@@ -78,12 +78,12 @@ func newFixture(t *testing.T) *fixture {
 
 	t.Cleanup(func() {
 		if _, err := client.PlaylistShare.Delete().
-			Where(sharemodel.HasPlaylistWith(playlistmodal.ItemIDIn(fixture.created...))).
+			Where(sharemodel.HasPlaylistWith(playlistmodel.ItemIDIn(fixture.created...))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the shares: %v", err)
 		}
 		if _, err := client.PlaylistEntry.Delete().
-			Where(entrymodel.HasPlaylistWith(playlistmodal.ItemIDIn(fixture.created...))).
+			Where(entrymodel.HasPlaylistWith(playlistmodel.ItemIDIn(fixture.created...))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the entries: %v", err)
 		}
@@ -97,7 +97,7 @@ func newFixture(t *testing.T) *fixture {
 			t.Errorf("failed to delete the items: %v", err)
 		}
 		if _, err := client.Session.Delete().
-			Where(sessionmodel.HasUserWith(usermodal.IDIn(fixture.users...))).
+			Where(sessionmodel.HasUserWith(usermodel.IDIn(fixture.users...))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the sessions: %v", err)
 		}

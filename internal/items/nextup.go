@@ -57,7 +57,7 @@ func (s *Service) NextUpEpisodes(ctx context.Context, viewer Viewer, userID uuid
 		return nil, nil
 	}
 
-	records, err := s.query(viewer).Where(itemmodel.IDIn(ids...)).All(ctx)
+	records, err := s.query(viewer).Where(itemmodel.IDIn(ids...)).AllModels(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load next up episodes: %w", err)
 	}

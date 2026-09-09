@@ -28,7 +28,7 @@ type MediaStream struct {
 	// Kind holds the value of the "kind" field.
 	Kind mediastream.Kind `json:"kind,omitempty"`
 	// VideoRangeType holds the value of the "video_range_type" field.
-	VideoRangeType mediastream.VideoRangeType `json:"video_range_type,omitempty"`
+	VideoRangeType *mediastream.VideoRangeType `json:"video_range_type,omitempty"`
 	// Index holds the value of the "index" field.
 	Index int32 `json:"index,omitempty"`
 	// Codec holds the value of the "codec" field.
@@ -42,17 +42,17 @@ type MediaStream struct {
 	// PixelFormat holds the value of the "pixel_format" field.
 	PixelFormat string `json:"pixel_format,omitempty"`
 	// BitRate holds the value of the "bit_rate" field.
-	BitRate int32 `json:"bit_rate,omitempty"`
+	BitRate *int32 `json:"bit_rate,omitempty"`
 	// Channels holds the value of the "channels" field.
-	Channels int32 `json:"channels,omitempty"`
+	Channels *int32 `json:"channels,omitempty"`
 	// SampleRate holds the value of the "sample_rate" field.
-	SampleRate int32 `json:"sample_rate,omitempty"`
+	SampleRate *int32 `json:"sample_rate,omitempty"`
 	// Width holds the value of the "width" field.
-	Width int32 `json:"width,omitempty"`
+	Width *int32 `json:"width,omitempty"`
 	// Height holds the value of the "height" field.
-	Height int32 `json:"height,omitempty"`
+	Height *int32 `json:"height,omitempty"`
 	// Level holds the value of the "level" field.
-	Level float64 `json:"level,omitempty"`
+	Level *float64 `json:"level,omitempty"`
 	// IsDefault holds the value of the "is_default" field.
 	IsDefault bool `json:"is_default,omitempty"`
 	// IsForced holds the value of the "is_forced" field.
@@ -153,7 +153,8 @@ func (_m *MediaStream) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field video_range_type", values[i])
 			} else if value.Valid {
-				_m.VideoRangeType = mediastream.VideoRangeType(value.String)
+				_m.VideoRangeType = new(mediastream.VideoRangeType)
+				*_m.VideoRangeType = mediastream.VideoRangeType(value.String)
 			}
 		case mediastream.FieldIndex:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -195,37 +196,43 @@ func (_m *MediaStream) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field bit_rate", values[i])
 			} else if value.Valid {
-				_m.BitRate = int32(value.Int64)
+				_m.BitRate = new(int32)
+				*_m.BitRate = int32(value.Int64)
 			}
 		case mediastream.FieldChannels:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field channels", values[i])
 			} else if value.Valid {
-				_m.Channels = int32(value.Int64)
+				_m.Channels = new(int32)
+				*_m.Channels = int32(value.Int64)
 			}
 		case mediastream.FieldSampleRate:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field sample_rate", values[i])
 			} else if value.Valid {
-				_m.SampleRate = int32(value.Int64)
+				_m.SampleRate = new(int32)
+				*_m.SampleRate = int32(value.Int64)
 			}
 		case mediastream.FieldWidth:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field width", values[i])
 			} else if value.Valid {
-				_m.Width = int32(value.Int64)
+				_m.Width = new(int32)
+				*_m.Width = int32(value.Int64)
 			}
 		case mediastream.FieldHeight:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field height", values[i])
 			} else if value.Valid {
-				_m.Height = int32(value.Int64)
+				_m.Height = new(int32)
+				*_m.Height = int32(value.Int64)
 			}
 		case mediastream.FieldLevel:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field level", values[i])
 			} else if value.Valid {
-				_m.Level = value.Float64
+				_m.Level = new(float64)
+				*_m.Level = value.Float64
 			}
 		case mediastream.FieldIsDefault:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -304,8 +311,10 @@ func (_m *MediaStream) String() string {
 	builder.WriteString("kind=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Kind))
 	builder.WriteString(", ")
-	builder.WriteString("video_range_type=")
-	builder.WriteString(fmt.Sprintf("%v", _m.VideoRangeType))
+	if v := _m.VideoRangeType; v != nil {
+		builder.WriteString("video_range_type=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("index=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Index))
@@ -325,23 +334,35 @@ func (_m *MediaStream) String() string {
 	builder.WriteString("pixel_format=")
 	builder.WriteString(_m.PixelFormat)
 	builder.WriteString(", ")
-	builder.WriteString("bit_rate=")
-	builder.WriteString(fmt.Sprintf("%v", _m.BitRate))
+	if v := _m.BitRate; v != nil {
+		builder.WriteString("bit_rate=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
-	builder.WriteString("channels=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Channels))
+	if v := _m.Channels; v != nil {
+		builder.WriteString("channels=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
-	builder.WriteString("sample_rate=")
-	builder.WriteString(fmt.Sprintf("%v", _m.SampleRate))
+	if v := _m.SampleRate; v != nil {
+		builder.WriteString("sample_rate=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
-	builder.WriteString("width=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Width))
+	if v := _m.Width; v != nil {
+		builder.WriteString("width=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
-	builder.WriteString("height=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Height))
+	if v := _m.Height; v != nil {
+		builder.WriteString("height=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
-	builder.WriteString("level=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Level))
+	if v := _m.Level; v != nil {
+		builder.WriteString("level=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("is_default=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsDefault))

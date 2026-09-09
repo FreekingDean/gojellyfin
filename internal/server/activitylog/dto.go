@@ -12,6 +12,11 @@ func entryDto(entry *activity.Entry) api.ActivityLogEntry {
 		Name:     apiutil.Ptr(entry.Name),
 		Type:     apiutil.Ptr(entry.Kind),
 		Severity: apiutil.Ptr(api.LogLevel(entry.Severity)),
+		UserId:   entry.UserID,
+	}
+
+	if entry.ItemID != nil {
+		dto.ItemId = apiutil.Ptr(entry.ItemID.String())
 	}
 
 	if entry.Overview != "" {
@@ -19,12 +24,6 @@ func entryDto(entry *activity.Entry) api.ActivityLogEntry {
 	}
 	if entry.ShortOverview != "" {
 		dto.ShortOverview = apiutil.Ptr(entry.ShortOverview)
-	}
-	if user := entry.Edges.User; user != nil {
-		dto.UserId = &user.ID
-	}
-	if item := entry.Edges.Item; item != nil {
-		dto.ItemId = apiutil.Ptr(item.ID.String())
 	}
 
 	return dto

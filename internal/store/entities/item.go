@@ -32,7 +32,7 @@ func (Item) Fields() []ent.Field {
 
 		field.Time("premiere_date").Optional().Nillable(),
 		field.Time("end_date").Optional().Nillable(),
-		field.Time("date_modified").Optional(),
+		field.Time("date_modified").Optional().Nillable(),
 		field.Int32("production_year").Optional().Nillable(),
 
 		field.String("official_rating").Optional(),

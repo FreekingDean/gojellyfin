@@ -10,7 +10,7 @@ import (
 	apikeymodel "github.com/FreekingDean/gojellyfin/internal/store/apikey"
 )
 
-type ApiKey = store.ApiKey
+type ApiKey = store.ApiKeyModel
 
 type Service struct {
 	store *store.Client
@@ -23,7 +23,7 @@ func New(client *store.Client) *Service {
 func (s *Service) Keys(ctx context.Context) ([]*ApiKey, error) {
 	keys, err := s.store.ApiKey.Query().
 		Order(apikeymodel.ByCreatedAt(sql.OrderDesc())).
-		All(ctx)
+		AllModels(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list api keys: %w", err)
 	}
@@ -35,7 +35,7 @@ func (s *Service) Create(ctx context.Context, appName, token string) (*ApiKey, e
 	key, err := s.store.ApiKey.Create().
 		SetAppName(appName).
 		SetAccessToken(token).
-		Save(ctx)
+		SaveModel(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create api key: %w", err)
 	}

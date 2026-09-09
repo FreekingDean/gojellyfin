@@ -57,7 +57,7 @@ func newFixture(t *testing.T) *fixture {
 	}
 
 	t.Cleanup(func() {
-		inLibrary := sourcemodel.HasItemWith(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID)))
+		inLibrary := sourcemodel.HasItemWith(itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID)))
 		if _, err := client.MediaStream.Delete().Where(streammodel.HasSourceWith(inLibrary)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the media streams: %v", err)
 		}
@@ -111,7 +111,7 @@ func (f *fixture) addRipped(t *testing.T, kind items.Kind, container, video, cod
 		Key:          string(kind) + ":" + container + ":" + video + ":" + codec,
 		Name:         "rip." + container,
 		SortName:     "rip." + container,
-		DateModified: time.Now(),
+		DateModified: apiutil.Ptr(time.Now()),
 	})
 	if err != nil {
 		t.Fatalf("failed to save the item: %v", err)
@@ -122,7 +122,7 @@ func (f *fixture) addRipped(t *testing.T, kind items.Kind, container, video, cod
 		ItemID:       item.ID,
 		Path:         "/media/rip." + container,
 		Name:         "rip." + container,
-		DateModified: time.Now(),
+		DateModified: apiutil.Ptr(time.Now()),
 	})
 	if err != nil {
 		t.Fatalf("failed to save the source: %v", err)
@@ -130,10 +130,10 @@ func (f *fixture) addRipped(t *testing.T, kind items.Kind, container, video, cod
 
 	err = service.SaveProbe(ctx, item, source, items.MediaSource{
 		Container: container,
-		Edges: items.MediaSourceEdges{Streams: []*items.MediaStream{
-			{Index: 0, Kind: streammodel.KindVideo, Codec: video, Height: 1080, Width: 1920},
+		Streams: []*items.MediaStream{
+			{Index: 0, Kind: streammodel.KindVideo, Codec: video, Height: apiutil.Ptr(int32(1080)), Width: apiutil.Ptr(int32(1920))},
 			{Index: 1, Kind: streammodel.KindAudio, Codec: codec},
-		}},
+		},
 	})
 	if err != nil {
 		t.Fatalf("failed to probe the source: %v", err)
@@ -158,7 +158,7 @@ func (f *fixture) addCopy(t *testing.T, id uuid.UUID, path, video, audio string,
 		ItemID:       id,
 		Path:         path,
 		Name:         path,
-		DateModified: time.Now(),
+		DateModified: apiutil.Ptr(time.Now()),
 	})
 	if err != nil {
 		t.Fatalf("failed to save the source: %v", err)
@@ -166,10 +166,10 @@ func (f *fixture) addCopy(t *testing.T, id uuid.UUID, path, video, audio string,
 
 	err = service.SaveProbe(ctx, item, source, items.MediaSource{
 		Container: strings.TrimPrefix(filepath.Ext(path), "."),
-		Edges: items.MediaSourceEdges{Streams: []*items.MediaStream{
-			{Index: 0, Kind: streammodel.KindVideo, Codec: video, Height: height, Width: height * 16 / 9},
+		Streams: []*items.MediaStream{
+			{Index: 0, Kind: streammodel.KindVideo, Codec: video, Height: &height, Width: apiutil.Ptr(height * 16 / 9)},
 			{Index: 1, Kind: streammodel.KindAudio, Codec: audio},
-		}},
+		},
 	})
 	if err != nil {
 		t.Fatalf("failed to probe the source: %v", err)
@@ -184,7 +184,7 @@ func (f *fixture) unscanned(t *testing.T) uuid.UUID {
 		Key:          "movie:unscanned",
 		Name:         "unscanned",
 		SortName:     "unscanned",
-		DateModified: time.Now(),
+		DateModified: apiutil.Ptr(time.Now()),
 	})
 	if err != nil {
 		t.Fatalf("failed to save the item: %v", err)

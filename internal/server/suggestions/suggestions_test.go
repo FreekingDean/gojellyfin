@@ -67,7 +67,7 @@ func newFixture(t *testing.T) *fixture {
 	return &fixture{server: server, client: client, library: library.ID, prefix: prefix}
 }
 
-func (f *fixture) add(t *testing.T, kind itemmodel.Kind, mediaType playlistmodal.MediaType, name string) {
+func (f *fixture) add(t *testing.T, kind itemmodel.Kind, mediaType playlistmodel.MediaType, name string) {
 	t.Helper()
 
 	_, err := f.client.Item.Create().
@@ -108,10 +108,10 @@ func (f *fixture) mine(t *testing.T, params api.GetSuggestionsParams) []string {
 func TestServer_GetSuggestions(t *testing.T) {
 	fixture := newFixture(t)
 
-	fixture.add(t, itemmodel.KindMovie, playlistmodal.MediaTypeVideo, "Movie One")
-	fixture.add(t, itemmodel.KindMovie, playlistmodal.MediaTypeVideo, "Movie Two")
-	fixture.add(t, itemmodel.KindSeries, playlistmodal.MediaTypeUnknown, "Series")
-	fixture.add(t, itemmodel.KindAudio, playlistmodal.MediaTypeAudio, "Song")
+	fixture.add(t, itemmodel.KindMovie, playlistmodel.MediaTypeVideo, "Movie One")
+	fixture.add(t, itemmodel.KindMovie, playlistmodel.MediaTypeVideo, "Movie Two")
+	fixture.add(t, itemmodel.KindSeries, playlistmodel.MediaTypeUnknown, "Series")
+	fixture.add(t, itemmodel.KindAudio, playlistmodel.MediaTypeAudio, "Song")
 
 	tests := []struct {
 		name   string

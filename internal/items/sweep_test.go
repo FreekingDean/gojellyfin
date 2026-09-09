@@ -56,7 +56,7 @@ func TestService_SweepUnreachable(t *testing.T) {
 			t.Error("a title with no file survived the sweep")
 		}
 
-		record, err := fixture.service.store.Item.Get(ctx, gone)
+		record, err := fixture.service.store.Item.GetModel(ctx, gone)
 		if err != nil {
 			t.Fatalf("the row itself was deleted, taking its watch state: %v", err)
 		}

@@ -46,7 +46,7 @@ func newFixture(t *testing.T) *fixture {
 	t.Cleanup(func() {
 		ctx := context.Background()
 		if _, err := client.Session.Delete().
-			Where(sessionmodel.HasDeviceWith(devicemodal.ClientIDHasPrefix(prefix))).
+			Where(sessionmodel.HasDeviceWith(devicemodel.ClientIDHasPrefix(prefix))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the sessions: %v", err)
 		}

@@ -13,7 +13,7 @@ import (
 )
 
 type (
-	Image     = store.Image
+	Image     = store.ImageModel
 	ImageKind = imagemodel.Kind
 )
 
@@ -34,7 +34,7 @@ func (s *Service) SaveImage(ctx context.Context, itemID uuid.UUID, artwork Image
 		SetKind(artwork.Kind).
 		SetURL(artwork.URL).
 		SetTag(artwork.Tag).
-		OnConflictColumns(imagemodel.FieldItemID, imagemodal.FieldKind, imagemodal.FieldIndex).
+		OnConflictColumns(imagemodel.FieldItemID, imagemodel.FieldKind, imagemodel.FieldIndex).
 		UpdateNewValues().
 		Exec(ctx)
 	if err != nil {
@@ -47,8 +47,8 @@ func (s *Service) SaveImage(ctx context.Context, itemID uuid.UUID, artwork Image
 func (s *Service) Images(ctx context.Context, itemID uuid.UUID) ([]*Image, error) {
 	images, err := s.store.Image.Query().
 		Where(imagemodel.ItemID(itemID)).
-		Order(imagemodel.ByKind(), imagemodal.ByIndex()).
-		All(ctx)
+		Order(imagemodel.ByKind(), imagemodel.ByIndex()).
+		AllModels(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list images: %w", err)
 	}
@@ -63,7 +63,7 @@ func (s *Service) Image(ctx context.Context, itemID uuid.UUID, kind ImageKind, i
 			imagemodel.KindEQ(kind),
 			imagemodel.Index(index),
 		).
-		Only(ctx)
+		OnlyModel(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query image: %w", err)
 	}
@@ -78,7 +78,7 @@ func (s *Service) ImageTagsByItem(ctx context.Context, itemIDs []uuid.UUID) (map
 	}
 
 	images, err := s.store.Image.Query().
-		Where(imagemodel.ItemIDIn(itemIDs...), imagemodal.Index(0)).
+		Where(imagemodel.ItemIDIn(itemIDs...), imagemodel.Index(0)).
 		All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query image tags: %w", err)
@@ -97,7 +97,7 @@ func (s *Service) ImageTagsByItem(ctx context.Context, itemIDs []uuid.UUID) (map
 func (s *Service) LibraryPosters(ctx context.Context, libraryID uuid.UUID, limit int) ([]*Image, error) {
 	posters, err := s.store.Image.Query().
 		Where(
-			imagemodel.KindEQ(imagemodal.KindPrimary),
+			imagemodel.KindEQ(imagemodel.KindPrimary),
 			imagemodel.Index(0),
 			imagemodel.HasItemWith(
 				inLibrary(libraryID),
@@ -105,9 +105,9 @@ func (s *Service) LibraryPosters(ctx context.Context, libraryID uuid.UUID, limit
 				itemmodel.ParentIDIsNil(),
 			),
 		).
-		Order(imagemodel.ByCreatedAt(sql.OrderDesc()), imagemodal.ByID()).
+		Order(imagemodel.ByCreatedAt(sql.OrderDesc()), imagemodel.ByID()).
 		Limit(limit).
-		All(ctx)
+		AllModels(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query library posters: %w", err)
 	}

@@ -130,6 +130,7 @@ func seed() error {
 
 	ctx := context.Background()
 	client := connection.Client()
+	modified := time.Now()
 
 	record, err := libraries.New(client).CreateLibrary(ctx, library, libraries.CollectionTypeMovies, []string{"/fixtures"})
 	if err != nil {
@@ -155,7 +156,7 @@ func seed() error {
 			Key:          "movie:" + slugify(name),
 			Name:         name,
 			SortName:     strings.ToLower(name),
-			DateModified: time.Now(),
+			DateModified: &modified,
 		})
 		if err != nil {
 			return err
@@ -181,7 +182,7 @@ func seed() error {
 		Key:          "series:" + slugify(series),
 		Name:         series,
 		SortName:     strings.ToLower(series),
-		DateModified: time.Now(),
+		DateModified: &modified,
 	})
 	if err != nil {
 		return err
@@ -194,7 +195,7 @@ func seed() error {
 		Name:         season,
 		SortName:     strings.ToLower(season),
 		IndexNumber:  &number,
-		DateModified: time.Now(),
+		DateModified: &modified,
 	})
 	if err != nil {
 		return err
@@ -210,7 +211,7 @@ func seed() error {
 			SortName:          strings.ToLower(name),
 			IndexNumber:       &position,
 			ParentIndexNumber: &number,
-			DateModified:      time.Now(),
+			DateModified:      &modified,
 		})
 		if err != nil {
 			return err
@@ -244,12 +245,13 @@ func member(ctx context.Context, client *store.Client, libraryID, sourceID, item
 }
 
 func file(ctx context.Context, catalogue *items.Service, sourceID, itemID uuid.UUID, name string) error {
+	modified := time.Now()
 	_, err := catalogue.SaveSource(ctx, items.MediaSource{
 		SourceID:     sourceID,
 		ItemID:       itemID,
 		Path:         "/fixtures/" + name + ".mkv",
 		Name:         name,
-		DateModified: time.Now(),
+		DateModified: &modified,
 	})
 
 	return err

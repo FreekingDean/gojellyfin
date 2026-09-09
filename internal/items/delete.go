@@ -51,7 +51,7 @@ func (s *Service) subtree(ctx context.Context, root uuid.UUID) ([]uuid.UUID, err
 	ids := []uuid.UUID{root}
 	for frontier := ids; len(frontier) > 0; {
 		children, err := s.query(Everyone).
-			Where(itemmodel.ParentIDIn(frontier...), itemmodal.IDNotIn(ids...)).
+			Where(itemmodel.ParentIDIn(frontier...), itemmodel.IDNotIn(ids...)).
 			IDs(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to query child items: %w", err)
