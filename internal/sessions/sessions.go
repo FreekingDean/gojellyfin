@@ -69,6 +69,7 @@ func (s *Service) Create(ctx context.Context, userID uuid.UUID, token string, de
 	if err != nil {
 		return nil, err
 	}
+
 	s.activity.Record(ctx, activity.Entry{
 		Name:          fmt.Sprintf("%s has been authenticated", session.User.Username),
 		Kind:          activity.KindAuthenticationSucceeded,
@@ -125,7 +126,7 @@ func (s *Service) DeleteByToken(ctx context.Context, token string) error {
 			Kind:          activity.KindSessionEnded,
 			ShortOverview: session.Device.Name,
 			Severity:      activity.SeverityInformation,
-			UserID:        &session.User.ID,
+			UserID:        session.UserID,
 		})
 	}
 

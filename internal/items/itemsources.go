@@ -222,11 +222,11 @@ func (s *Service) DeleteSourcesNotInPaths(
 }
 
 func NeedsProbe(source *MediaSource) bool {
-	return source == nil ||
-		source.ProbedAt == nil ||
-		source.ProbedAt.IsZero() ||
-		source.DateModified == nil ||
-		source.ProbedAt.Before(*source.DateModified)
+	if source == nil || source.ProbedAt == nil {
+		return true
+	}
+
+	return source.DateModified != nil && source.ProbedAt.Before(*source.DateModified)
 }
 
 func IsAudio(item *Item) bool {

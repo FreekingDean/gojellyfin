@@ -174,7 +174,7 @@ func mediaStreamDto(stream *items.MediaStream) api.MediaStream {
 	case streammodel.KindVideo:
 		dto.Width = stream.Width
 		dto.Height = stream.Height
-		dto.AspectRatio = apiutil.Ptr(aspectRatio(apiutil.Deref(stream.Width), apiutil.Deref(stream.Height)))
+		dto.AspectRatio = apiutil.Ptr(aspectRatio(stream))
 	case streammodel.KindAudio:
 		dto.Channels = stream.Channels
 		dto.SampleRate = stream.SampleRate
@@ -220,7 +220,8 @@ func defaultStreamIndex(streams []*items.MediaStream, kind items.StreamKind) *in
 	return nil
 }
 
-func aspectRatio(width, height int32) string {
+func aspectRatio(stream *items.MediaStream) string {
+	width, height := apiutil.Deref(stream.Width), apiutil.Deref(stream.Height)
 	if width == 0 || height == 0 {
 		return ""
 	}
