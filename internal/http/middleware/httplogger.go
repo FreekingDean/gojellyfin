@@ -36,7 +36,7 @@ func HttpLogging(next http.Handler) http.Handler {
 		next.ServeHTTP(lrw, r)
 
 		if lrw.statusCode >= http.StatusBadRequest || lrw.statusCode == 0 {
-			log.Printf("%s %s %d %s", r.Method, r.RequestURI, lrw.statusCode, time.Since(start))
+			log.Printf("%s %s %d %s", r.Method, loggedURI(r), lrw.statusCode, time.Since(start))
 		}
 	})
 }
