@@ -358,7 +358,7 @@ There is **one** provider and one binding — no fx value group and no priority 
 
 It is bring your own key: `TMDB_API_KEY` reaches the client as `env.Config.TMDB.APIKey` rather than through `os.Getenv`, and unset leaves the provider disabled and the job a no-op, so a developer running the server alone still gets a server. An absent key is deliberately not a validation failure — `env` refuses a malformed value, not a missing optional one. We embed no key of our own: there is then none to share, none to throttle and no attribution owed for one.
 
-The job runs on its own rather than inside the scan, and fans out: `RefreshMetadata` selects what needs identifying and enqueues one `RefreshItemMetadata` per item, parent first, so each item is its own execution with its own retries and one bad title fails alone. The provider's limiter is what bounds the request rate, not the batch. A season or episode that runs before its series has been identified is a miss, so a series that is identified enqueues `RefreshMetadata` scoped to itself, which picks up whatever of its children ran too early. What a run still leaves, the next run picks up.
+The job runs on its own rather than inside the scan, and fans out: `RefreshMetadata` selects what needs identifying and enqueues one `RefreshItemMetadata` per item, parent first, so each item is its own execution with its own retries and one bad title fails alone. The provider's limiter is what bounds the request rate, not the batch. What a run still leaves, the next run picks up.
 
 The batch is derived from the rows — `items.UnidentifiedItems` asks for items whose `provider_ids` is null — rather than handed over, so a crash re-asks the question instead of replaying a stale list.
 

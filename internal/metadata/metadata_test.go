@@ -658,7 +658,7 @@ func TestService_IdentifyItems(t *testing.T) {
 }
 
 func TestService_IdentifyItem(t *testing.T) {
-	t.Run("sends a series back for the children that ran before it", func(t *testing.T) {
+	t.Run("identifies a season before its series", func(t *testing.T) {
 		fixed := newFixture(t)
 		series := fixed.add(t, items.Item{
 			Kind:           itemmodel.KindSeries,
@@ -672,21 +672,15 @@ func TestService_IdentifyItem(t *testing.T) {
 			IndexNumber: index(1),
 		})
 
-		if _, err := jobs.RunJob(t, fixed.service.ItemJob(), jobs.With(jobs.ParamItem, season.ID)); err != nil {
+		queued, err := jobs.RunJob(t, fixed.service.ItemJob(), jobs.With(jobs.ParamItem, season.ID))
+		if err != nil {
 			t.Fatalf("season failed: %v", err)
 		}
-		if early := fixed.reload(t, season.ID); early.ProviderIds != nil {
-			t.Fatalf("season ProviderIds = %v, want a miss before its series", early.ProviderIds)
+		if identified := fixed.reload(t, season.ID); identified.ProviderIds["Stub"] != "3572" {
+			t.Errorf("season provider id = %q, want it identified without its series", identified.ProviderIds["Stub"])
 		}
-
-		queued, err := jobs.RunJob(t, fixed.service.ItemJob(), jobs.With(jobs.ParamItem, series.ID))
-		if err != nil {
-			t.Fatalf("series failed: %v", err)
-		}
-
-		sent := jobs.Enqueued(t, queued, jobs.RefreshMetadata)
-		if len(sent) != 1 || sent[0][jobs.ParamScope] != jobs.With(jobs.ParamScope, series.ID).Value {
-			t.Errorf("enqueued = %v, want the series' own scope sent back", queued)
+		if len(queued) != 0 {
+			t.Errorf("enqueued = %v, want nothing sent on", queued)
 		}
 	})
 }

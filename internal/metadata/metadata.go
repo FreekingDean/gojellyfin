@@ -87,11 +87,7 @@ func (s *Service) identify(ctx context.Context, pendingItem *items.Item) error {
 
 	s.saveArtwork(ctx, pendingItem, found.Images)
 
-	if pendingItem.Kind != itemmodel.KindSeries {
-		return nil
-	}
-
-	return jobs.Enqueue(ctx, jobs.RefreshMetadata, jobs.With(jobs.ParamScope, pendingItem.ID))
+	return nil
 }
 
 func (s *Service) fetch(ctx context.Context, pendingItem *items.Item) (items.Metadata, bool, error) {
