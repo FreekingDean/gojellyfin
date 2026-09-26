@@ -278,3 +278,27 @@ func TestServer_DisablingAnAccountStopsItsSessions(t *testing.T) {
 		t.Error("a disabled account's existing session is still honoured")
 	}
 }
+
+func TestServer_UpdateUserPolicyRefusesDisablingAnAdministrator(t *testing.T) {
+	accounts := newAccounts(t)
+
+	response, err := accounts.server.UpdateUserPolicy(as(accounts.admin), api.UpdateUserPolicyRequestObject{
+		UserId:   accounts.admin.ID,
+		JSONBody: &api.UpdateUserPolicyJSONRequestBody{IsAdministrator: apiutil.Ptr(true), IsDisabled: apiutil.Ptr(true)},
+	})
+	if err != nil {
+		t.Fatalf("UpdateUserPolicy = %v", err)
+	}
+	if _, ok := response.(api.UpdateUserPolicy403JSONResponse); !ok {
+		t.Errorf("response = %T, want 403: an administrator disabled themselves out of the server", response)
+	}
+
+	if _, err := accounts.server.AuthenticateUserByName(context.Background(), api.AuthenticateUserByNameRequestObject{
+		JSONBody: &api.AuthenticateUserByNameJSONRequestBody{
+			Username: apiutil.Ptr(accounts.admin.Username),
+			Pw:       apiutil.Ptr("current-password"),
+		},
+	}); err != nil {
+		t.Errorf("AuthenticateUserByName = %v, want the administrator still able to log in", err)
+	}
+}

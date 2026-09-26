@@ -138,6 +138,10 @@ func (s *Server) UpdateUserPolicy(ctx context.Context, request api.UpdateUserPol
 		return api.UpdateUserPolicy400JSONResponse{}, nil
 	}
 
+	if apiutil.Deref(req.IsDisabled) && user.Policy != nil && user.Policy.IsAdministrator {
+		return api.UpdateUserPolicy403JSONResponse{}, nil
+	}
+
 	if err := s.savePolicy(ctx, user.ID, req); err != nil {
 		return nil, err
 	}
