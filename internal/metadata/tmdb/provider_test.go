@@ -45,9 +45,6 @@ func newStub(t *testing.T) *stubbed {
 		stubbing.mutex.Unlock()
 
 		body, found := details[request.URL.Path]
-		if strings.HasPrefix(request.URL.Path, "/3/search/") {
-			body, found = searches[request.URL.Query().Get("query")]
-		}
 		if !found {
 			writer.Header().Set("Content-Type", "application/json")
 			writer.WriteHeader(http.StatusNotFound)
