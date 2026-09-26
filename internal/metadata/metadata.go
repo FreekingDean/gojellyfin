@@ -65,18 +65,8 @@ func (s *Service) IdentifyItems(ctx context.Context, scope uuid.UUID, force bool
 
 		jobs.Heartbeat(ctx, id)
 
-		pendingItem, err := s.items.ItemByID(ctx, items.Everyone, id)
-		if store.IsNotFound(err) {
-			continue
-		}
-		if err != nil {
+		if err := jobs.Enqueue(ctx, jobs.RefreshItemMetadata, jobs.With(jobs.ParamItem, id)); err != nil {
 			return err
-		}
-
-		jobs.Heartbeat(ctx, pendingItem.Name)
-
-		if err := s.identify(ctx, pendingItem); err != nil {
-			log.Printf("metadata %s: %v", pendingItem.Name, err)
 		}
 	}
 
@@ -97,7 +87,11 @@ func (s *Service) identify(ctx context.Context, pendingItem *items.Item) error {
 
 	s.saveArtwork(ctx, pendingItem, found.Images)
 
-	return nil
+	if pendingItem.Kind != itemmodel.KindSeries {
+		return nil
+	}
+
+	return jobs.Enqueue(ctx, jobs.RefreshMetadata, jobs.With(jobs.ParamScope, pendingItem.ID))
 }
 
 func (s *Service) fetch(ctx context.Context, pendingItem *items.Item) (items.Metadata, bool, error) {

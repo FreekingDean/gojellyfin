@@ -15,6 +15,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/consts"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	creditmodel "github.com/FreekingDean/gojellyfin/internal/store/credit"
@@ -274,8 +275,31 @@ func (f *fixture) run(t *testing.T, scope uuid.UUID, force bool) {
 		scope = f.libraryID
 	}
 
-	if err := f.service.IdentifyItems(context.Background(), scope, force); err != nil {
+	queue, err := jobs.RunJob(t, f.service.Job(), jobs.With(jobs.ParamScope, scope), jobs.With(jobs.ParamForce, force))
+	if err != nil {
 		t.Fatalf("identification failed: %v", err)
+	}
+
+	for len(queue) > 0 {
+		next := queue[0]
+		queue = queue[1:]
+
+		job := f.service.Job()
+		if next.Name == jobs.RefreshItemMetadata {
+			job = f.service.ItemJob()
+		}
+
+		params := make([]jobs.Param, 0, len(next.Params))
+		for name, value := range next.Params {
+			params = append(params, jobs.Param{Name: name, Value: value})
+		}
+
+		enqueued, err := jobs.RunJob(t, job, params...)
+		if err != nil && !strings.Contains(err.Error(), errUnreachable.Error()) {
+			t.Fatalf("%s failed: %v", next.Name, err)
+		}
+
+		queue = append(queue, enqueued...)
 	}
 }
 
@@ -603,6 +627,40 @@ func TestService_IdentifyItems(t *testing.T) {
 		}
 		if asked := fixed.provider.requests(); len(asked) != 1 {
 			t.Errorf("requests = %v, want the miss to have been asked once", asked)
+		}
+	})
+}
+
+func TestService_IdentifyItem(t *testing.T) {
+	t.Run("sends a series back for the children that ran before it", func(t *testing.T) {
+		fixed := newFixture(t)
+		series := fixed.add(t, items.Item{
+			Kind:           itemmodel.KindSeries,
+			Name:           "Breaking Bad",
+			ProductionYear: index(2008),
+		})
+		season := fixed.add(t, items.Item{
+			Kind:        itemmodel.KindSeason,
+			ParentID:    &series.ID,
+			Name:        "Season 1",
+			IndexNumber: index(1),
+		})
+
+		if _, err := jobs.RunJob(t, fixed.service.ItemJob(), jobs.With(jobs.ParamItem, season.ID)); err != nil {
+			t.Fatalf("season failed: %v", err)
+		}
+		if early := fixed.reload(t, season.ID); early.ProviderIds != nil {
+			t.Fatalf("season ProviderIds = %v, want a miss before its series", early.ProviderIds)
+		}
+
+		queued, err := jobs.RunJob(t, fixed.service.ItemJob(), jobs.With(jobs.ParamItem, series.ID))
+		if err != nil {
+			t.Fatalf("series failed: %v", err)
+		}
+
+		sent := jobs.Enqueued(t, queued, jobs.RefreshMetadata)
+		if len(sent) != 1 || sent[0][jobs.ParamScope] != jobs.With(jobs.ParamScope, series.ID).Value {
+			t.Errorf("enqueued = %v, want the series' own scope sent back", queued)
 		}
 	})
 }
