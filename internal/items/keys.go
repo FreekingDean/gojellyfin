@@ -34,7 +34,7 @@ func TmdbID(key string) (int, bool) {
 	}
 
 	id, err := strconv.Atoi(parts[2])
-	if err != nil || id == 0 {
+	if err != nil || id <= 0 {
 		return 0, false
 	}
 
