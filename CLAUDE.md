@@ -59,7 +59,7 @@ A malformed value is refused at start rather than ignored. `TRANSCODER_JOBS=lots
 
 `serverModules` and `workerModules` in `cmd/gojellyfin` both list `env.Module`, and `TestWorkerModules` guards the second the way `TestServerModules` guards the first — a command that composes its graph inline has nothing to validate, so the worker starting without a config it needs is only found by running it.
 
-**Domains test against the real store; tag packages mock their domain.** A tag package declares the interface it consumes (`activitylog.ActivitiesService`), `mockgen` writes it to `mocks/` through a `go:generate` line beside it, and the test is a table of request, expected query and canned answer. What the query does to the database is the domain's test, not the handler's.
+**A domain may be mocked; the database never is.** A consumer of a domain declares the interface it uses (`activitylog.ActivitiesService`), `mockgen` writes it to `mocks/` through a `go:generate` line beside it, and the test is a table of input, expected call and canned answer. A domain's own tests run against the real store, because what a query does to the database is exactly what they exist to prove.
 
 `make test` needs one too — `internal/items` seeds real rows through `store.NewStore()` and fails rather than skipping when the database is unreachable, so a green run means the queries actually ran. Each test owns a library row and deletes it and its items on cleanup; point `DATABASE_URL` at a scratch database to keep development data out of it. CI runs the suite against a `postgres:16` service with `internal/store/migrations` applied by `atlas migrate apply`.
 
