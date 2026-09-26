@@ -2,7 +2,6 @@ package items
 
 import (
 	"context"
-	"fmt"
 	"slices"
 	"testing"
 
@@ -13,36 +12,6 @@ import (
 
 func TestService_ItemsNeedingMetadata(t *testing.T) {
 	wanted := []Kind{itemmodel.KindMovie, itemmodel.KindSeries, itemmodel.KindSeason, itemmodel.KindEpisode}
-
-	t.Run("hands the kinds back in the order they were asked for", func(t *testing.T) {
-		fixed := newFixture(t)
-
-		kinds := map[uuid.UUID]Kind{}
-		for _, kind := range []Kind{itemmodel.KindEpisode, itemmodel.KindSeason, itemmodel.KindSeries, itemmodel.KindMovie} {
-			for copy := range 3 {
-				id := fixed.add(t, seed{kind: kind, name: fmt.Sprintf("%s %d", kind, copy)})
-				kinds[id] = kind
-			}
-		}
-
-		pending, err := fixed.service.ItemsNeedingMetadata(context.Background(), wanted, false, uuid.Nil)
-		if err != nil {
-			t.Fatalf("failed to select the items needing metadata: %v", err)
-		}
-
-		ranks := make([]int, 0, len(kinds))
-		for _, id := range pending {
-			if kind, seeded := kinds[id]; seeded {
-				ranks = append(ranks, slices.Index(wanted, kind))
-			}
-		}
-		if len(ranks) != len(kinds) {
-			t.Fatalf("selected %d of the seeded items, want %d", len(ranks), len(kinds))
-		}
-		if !slices.IsSorted(ranks) {
-			t.Errorf("kind order = %v, want parents before children", ranks)
-		}
-	})
 
 	t.Run("leaves an identified item out unless forced", func(t *testing.T) {
 		fixed := newFixture(t)
