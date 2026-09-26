@@ -228,12 +228,12 @@ func file(source Source, from arr.File) (File, error) {
 }
 
 func Localise(source Source, path string) (string, error) {
-	root := strings.TrimSuffix(source.RootPath, string(filepath.Separator))
-	if path != root && !strings.HasPrefix(path, root+string(filepath.Separator)) {
-		return "", fmt.Errorf("%s reported %q, which is outside its root %s", source.Name, path, root)
+	relative, err := filepath.Rel(source.RootPath, path)
+	if err != nil || !filepath.IsAbs(path) || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+		return "", fmt.Errorf("%s reported %q, which is outside its root %s", source.Name, path, source.RootPath)
 	}
 
-	return filepath.Join(source.LocalPath, strings.TrimPrefix(path, root)), nil
+	return filepath.Join(source.LocalPath, relative), nil
 }
 
 func released(year int32) *int32 {
