@@ -88,12 +88,12 @@ func (c *Client) Series(ctx context.Context, tmdbID int) (items.Metadata, bool, 
 	return seriesMetadata(series, c.images(ctx)), true, nil
 }
 
-func (c *Client) Season(ctx context.Context, tmdbID int, season int32) (items.Metadata, bool, error) {
+func (c *Client) Season(ctx context.Context, series int, season int32) (items.Metadata, bool, error) {
 	if err := c.ready(ctx); err != nil {
 		return items.Metadata{}, false, err
 	}
 
-	found, err := c.api.GetTVSeasonDetails(tmdbID, int(season), nil)
+	found, err := c.api.GetTVSeasonDetails(series, int(season), nil)
 	if err != nil {
 		return missed(err)
 	}
@@ -101,12 +101,12 @@ func (c *Client) Season(ctx context.Context, tmdbID int, season int32) (items.Me
 	return seasonMetadata(found, c.images(ctx)), true, nil
 }
 
-func (c *Client) Episode(ctx context.Context, tmdbID int, season, episode int32) (items.Metadata, bool, error) {
+func (c *Client) Episode(ctx context.Context, series int, season, episode int32) (items.Metadata, bool, error) {
 	if err := c.ready(ctx); err != nil {
 		return items.Metadata{}, false, err
 	}
 
-	found, err := c.api.GetTVEpisodeDetails(tmdbID, int(season), int(episode), map[string]string{"append_to_response": "external_ids"})
+	found, err := c.api.GetTVEpisodeDetails(series, int(season), int(episode), map[string]string{"append_to_response": "external_ids"})
 	if err != nil {
 		return missed(err)
 	}

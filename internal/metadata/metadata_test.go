@@ -98,9 +98,9 @@ func (s *stubProvider) Series(_ context.Context, tmdbID int) (items.Metadata, bo
 	}, true, nil
 }
 
-func (s *stubProvider) Season(_ context.Context, tmdbID int, season int32) (items.Metadata, bool, error) {
-	s.record(fmt.Sprintf("season:%d", tmdbID))
-	if tmdbID == unmatched || season > 1 {
+func (s *stubProvider) Season(_ context.Context, series int, season int32) (items.Metadata, bool, error) {
+	s.record(fmt.Sprintf("season:%d", series))
+	if series == unmatched || season > 1 {
 		return items.Metadata{}, false, nil
 	}
 	if season == 0 {
@@ -121,9 +121,9 @@ func (s *stubProvider) Season(_ context.Context, tmdbID int, season int32) (item
 	}, true, nil
 }
 
-func (s *stubProvider) Episode(_ context.Context, tmdbID int, season, episode int32) (items.Metadata, bool, error) {
-	s.record(fmt.Sprintf("episode:%d", tmdbID))
-	if tmdbID == unmatched || season != 1 || episode != 1 {
+func (s *stubProvider) Episode(_ context.Context, series int, season, episode int32) (items.Metadata, bool, error) {
+	s.record(fmt.Sprintf("episode:%d", series))
+	if series == unmatched || season != 1 || episode != 1 {
 		return items.Metadata{}, false, nil
 	}
 
