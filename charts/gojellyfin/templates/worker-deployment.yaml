@@ -34,6 +34,11 @@ spec:
           args: ["worker"]
           env:
             {{- include "gojellyfin.workerEnv" . | nindent 12 }}
+          {{- with .Values.sources.existingSecret }}
+          envFrom:
+            - secretRef:
+                name: {{ . }}
+          {{- end }}
           {{- with .Values.worker.resources }}
           resources:
             {{- toYaml . | nindent 12 }}

@@ -37,6 +37,12 @@ tmdb:
   existingSecret: ""
   secretKey: TMDB_API_KEY
 
+# The SOURCE_API_KEY_* variables a Sonarr or Radarr source names, out of a
+# Secret you create whose keys are those names. The API tests a source with
+# them and the worker scans with them.
+sources:
+  existingSecret: ""
+
 # CORS_ORIGINS. Off reflects whatever origin asks; a literal "*" is not
 # equivalent, because browsers reject it on credentialed requests. Enabled
 # needs an origin — the chart refuses to render a restriction that would

@@ -33,6 +33,11 @@ spec:
               containerPort: {{ .Values.httpPort }}
           env:
             {{- include "gojellyfin.serverEnv" (dict "root" $ "workload" .Values.api) | nindent 12 }}
+          {{- with .Values.sources.existingSecret }}
+          envFrom:
+            - secretRef:
+                name: {{ . }}
+          {{- end }}
           livenessProbe:
             httpGet:
               path: /System/Ping
