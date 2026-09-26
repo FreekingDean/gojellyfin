@@ -74,7 +74,7 @@ func newAccounts(t *testing.T) *accounts {
 	})
 
 	return &accounts{
-		server:   New(service, tokens),
+		server:   New(service, tokens, nil),
 		users:    service,
 		sessions: tokens,
 		admin:    admin,
