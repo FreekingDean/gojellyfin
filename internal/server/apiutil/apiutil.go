@@ -28,3 +28,12 @@ func Body[T any](jsonBody, wildcardBody *T) *T {
 
 	return wildcardBody
 }
+
+func ZeroOrNilPtr[T string | int](v T) *T {
+	var zero T
+	if v == zero {
+		return nil
+	}
+
+	return &v
+}
