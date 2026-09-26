@@ -623,6 +623,24 @@ func TestService_IdentifyItems(t *testing.T) {
 			t.Errorf("requests = %v, want the miss to have been asked once", asked)
 		}
 	})
+
+	t.Run("asks nothing for a key without a TMDB id", func(t *testing.T) {
+		fixed := newFixture(t)
+		legacy := fixed.add(t, items.Item{
+			Kind: itemmodel.KindMovie,
+			Name: "The Matrix",
+			Key:  "movie:" + fixed.libraryID.String(),
+		})
+
+		fixed.identify(t)
+
+		if identified := fixed.reload(t, legacy.ID); identified.ProviderIds != nil {
+			t.Errorf("ProviderIds = %v, want nothing written", identified.ProviderIds)
+		}
+		if asked := fixed.provider.requests(); len(asked) != 0 {
+			t.Errorf("requests = %v, want the provider left alone", asked)
+		}
+	})
 }
 
 func TestService_IdentifyItem(t *testing.T) {
