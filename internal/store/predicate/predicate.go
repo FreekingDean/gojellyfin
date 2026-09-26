@@ -72,6 +72,12 @@ type Source func(*sql.Selector)
 // Studio is the predicate function for studio builders.
 type Studio func(*sql.Selector)
 
+// SyncPlayGroup is the predicate function for syncplaygroup builders.
+type SyncPlayGroup func(*sql.Selector)
+
+// SyncPlayGroupMember is the predicate function for syncplaygroupmember builders.
+type SyncPlayGroupMember func(*sql.Selector)
+
 // User is the predicate function for user builders.
 type User func(*sql.Selector)
 
