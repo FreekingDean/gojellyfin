@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -185,6 +186,8 @@ type importReport struct {
 	skipped  int
 }
 
+var errDryRun = errors.New("dry run")
+
 func runImport(ctx context.Context, source *sql.DB, client *store.Client, activeDays int, dryRun bool) (*importReport, error) {
 	found, err := readUsers(ctx, source)
 	if err != nil {
@@ -195,6 +198,28 @@ func runImport(ctx context.Context, source *sql.DB, client *store.Client, active
 		return nil, err
 	}
 
+	cutoff := time.Time{}
+	if activeDays > 0 {
+		cutoff = time.Now().AddDate(0, 0, -activeDays)
+	}
+
+	var report *importReport
+	err = client.WithTx(ctx, func(tx *store.Tx) error {
+		report, err = writeImport(ctx, tx.Client(), found, devices, cutoff)
+		if err == nil && dryRun {
+			return errDryRun
+		}
+
+		return err
+	})
+	if err != nil && !errors.Is(err, errDryRun) {
+		return nil, err
+	}
+
+	return report, nil
+}
+
+func writeImport(ctx context.Context, client *store.Client, found []jellyfinUser, devices []jellyfinDevice, cutoff time.Time) (*importReport, error) {
 	service := users.New(client)
 	present, err := service.Users(ctx)
 	if err != nil {
@@ -221,22 +246,12 @@ func runImport(ctx context.Context, source *sql.DB, client *store.Client, active
 		} else {
 			report.users = append(report.users, user.username+": new")
 		}
-		if dryRun {
-			imported[user.id] = uuid.Nil
-
-			continue
-		}
 
 		id, err := createUser(ctx, service, user)
 		if err != nil {
 			return nil, err
 		}
 		imported[user.id] = id
-	}
-
-	cutoff := time.Time{}
-	if activeDays > 0 {
-		cutoff = time.Now().AddDate(0, 0, -activeDays)
 	}
 
 	sessionService := sessions.New(client, activity.New(client))
@@ -249,10 +264,6 @@ func runImport(ctx context.Context, source *sql.DB, client *store.Client, active
 		}
 
 		report.sessions++
-		if dryRun {
-			continue
-		}
-
 		if err := sessionService.Import(ctx, id, device.token, device.info); err != nil {
 			return nil, err
 		}

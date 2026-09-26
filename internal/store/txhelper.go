@@ -9,6 +9,11 @@ import (
 
 // WithTx
 func (c *Client) WithTx(ctx context.Context, fn func(tx *Tx) error) error {
+	if _, ok := c.driver.(*txDriver); ok {
+		tx := &Tx{ctx: ctx, config: c.config}
+		tx.init()
+		return fn(tx)
+	}
 	tx, err := c.Tx(ctx)
 	if err != nil {
 		return err

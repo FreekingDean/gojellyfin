@@ -475,3 +475,29 @@ func TestRunImport(t *testing.T) {
 		}
 	})
 }
+
+func TestRunImport_Atomic(t *testing.T) {
+	fixture := newImportFixture(t)
+	id := fixture.addUser(t, "viewer", importedHash)
+	fixture.addDevice(t, id, "Tele\x00vision", uuid.NewString(), time.Now(), true)
+
+	source, err := openReadOnly(filepath.Join(fixture.from, jellyfinDatabase))
+	if err != nil {
+		t.Fatalf("failed to open the source: %v", err)
+	}
+	defer func() { _ = source.Close() }()
+
+	if _, err := runImport(context.Background(), source, fixture.client, 0, false); err == nil {
+		t.Fatal("a device name Postgres cannot store was imported")
+	}
+
+	count, err := fixture.client.User.Query().
+		Where(usermodel.UsernameHasPrefix(fixture.prefix)).
+		Count(context.Background())
+	if err != nil {
+		t.Fatalf("failed to count the users: %v", err)
+	}
+	if count != 0 {
+		t.Errorf("users = %d, want none: a failed import left the users it had already written", count)
+	}
+}
