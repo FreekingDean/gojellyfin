@@ -12,7 +12,10 @@ import (
 	"strings"
 )
 
-const jellyfinPrefix = "$PBKDF2"
+const (
+	jellyfinPrefix        = "$PBKDF2"
+	jellyfinMaxIterations = 1_000_000
+)
 
 func isJellyfinHash(encoded string) bool {
 	return strings.HasPrefix(encoded, jellyfinPrefix+"$") || strings.HasPrefix(encoded, jellyfinPrefix+"-")
@@ -68,8 +71,8 @@ func jellyfinIterations(parameters string) (int, error) {
 		}
 
 		iterations, err := strconv.Atoi(value)
-		if err != nil || iterations < 1 {
-			return 0, fmt.Errorf("a jellyfin hash needs a positive iteration count, got %q", value)
+		if err != nil || iterations < 1 || iterations > jellyfinMaxIterations {
+			return 0, fmt.Errorf("a jellyfin hash needs between 1 and %d iterations, got %q", jellyfinMaxIterations, value)
 		}
 
 		return iterations, nil
