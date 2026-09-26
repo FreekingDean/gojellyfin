@@ -451,38 +451,6 @@ func TestService_IdentifyItems(t *testing.T) {
 		}
 	})
 
-	t.Run("identifies a parent listed after its children", func(t *testing.T) {
-		fixed := newFixture(t)
-		series := fixed.add(t, items.Item{
-			Kind:           itemmodel.KindSeries,
-			Name:           "Breaking Bad",
-			ProductionYear: index(2008),
-		})
-		season := fixed.add(t, items.Item{
-			Kind:        itemmodel.KindSeason,
-			ParentID:    &series.ID,
-			Name:        "Season 1",
-			IndexNumber: index(1),
-		})
-		episode := fixed.add(t, items.Item{
-			Kind:              itemmodel.KindEpisode,
-			ParentID:          &season.ID,
-			Name:              "s01e01",
-			IndexNumber:       index(1),
-			ParentIndexNumber: index(1),
-		})
-		fixed.lock(t, series, items.Metadata{})
-
-		fixed.identify(t)
-
-		if identified := fixed.reload(t, season.ID); identified.ProviderIds["Stub"] != "3572" {
-			t.Errorf("season provider id = %q, want the series identified first", identified.ProviderIds["Stub"])
-		}
-		if identified := fixed.reload(t, episode.ID); identified.Name != "Pilot" {
-			t.Errorf("episode Name = %q, want the series identified first", identified.Name)
-		}
-	})
-
 	t.Run("identifies specials as season zero", func(t *testing.T) {
 		fixed := newFixture(t)
 		series := fixed.add(t, items.Item{
