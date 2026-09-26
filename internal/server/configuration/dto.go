@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 
 	"github.com/FreekingDean/gojellyfin/internal/config"
-	"github.com/FreekingDean/gojellyfin/internal/quickconnect"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
@@ -53,7 +52,7 @@ func defaultServerConfiguration() api.ServerConfiguration {
 		UICulture:                    apiutil.Ptr("en-US"),
 		IsStartupWizardCompleted:     apiutil.Ptr(true),
 		IsPortAuthorized:             apiutil.Ptr(true),
-		QuickConnectAvailable:        apiutil.Ptr(quickconnect.Enabled),
+		QuickConnectAvailable:        apiutil.Ptr(true),
 		EnableMetrics:                apiutil.Ptr(false),
 		EnableFolderView:             apiutil.Ptr(false),
 		DisplaySpecialsWithinSeasons: apiutil.Ptr(true),

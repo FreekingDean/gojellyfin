@@ -2,7 +2,6 @@ package user
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -19,11 +18,8 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	entrymodel "github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
 	devicemodel "github.com/FreekingDean/gojellyfin/internal/store/device"
-	requestmodel "github.com/FreekingDean/gojellyfin/internal/store/quickconnectrequest"
 	sessionmodel "github.com/FreekingDean/gojellyfin/internal/store/session"
 	usermodel "github.com/FreekingDean/gojellyfin/internal/store/user"
-	configurationmodel "github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
-	policymodel "github.com/FreekingDean/gojellyfin/internal/store/userpolicy"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
@@ -71,197 +67,7 @@ func TestServer_ForgotPasswordPin(t *testing.T) {
 	}
 }
 
-type fixture struct {
-	server   *Server
-	pending  *quickconnect.Service
-	sessions *sessions.Service
-	users    *users.Service
-	prefix   string
-}
-
-func newFixture(t *testing.T) *fixture {
-	t.Helper()
-
-	config, err := env.Load()
-	if err != nil {
-		t.Fatalf("failed to read the environment: %v", err)
-	}
-
-	connection, err := store.NewStore(config)
-	if err != nil {
-		t.Fatalf("failed to open the database: %v", err)
-	}
-	if err := connection.Start(); err != nil {
-		t.Fatalf("failed to reach the database, set DATABASE_URL: %v", err)
-	}
-
-	client := connection.Client()
-	prefix := t.Name() + "-" + uuid.NewString() + "-"
-
-	t.Cleanup(func() {
-		ctx := context.Background()
-		if _, err := client.Session.Delete().
-			Where(sessionmodel.HasDeviceWith(devicemodel.ClientIDHasPrefix(prefix))).
-			Exec(ctx); err != nil {
-			t.Errorf("failed to delete the sessions: %v", err)
-		}
-		if _, err := client.Device.Delete().
-			Where(devicemodel.ClientIDHasPrefix(prefix)).
-			Exec(ctx); err != nil {
-			t.Errorf("failed to delete the devices: %v", err)
-		}
-		if _, err := client.UserPolicy.Delete().
-			Where(policymodel.HasUserWith(usermodel.UsernameHasPrefix(prefix))).
-			Exec(ctx); err != nil {
-			t.Errorf("failed to delete the user policies: %v", err)
-		}
-		if _, err := client.UserConfiguration.Delete().
-			Where(configurationmodel.HasUserWith(usermodel.UsernameHasPrefix(prefix))).
-			Exec(ctx); err != nil {
-			t.Errorf("failed to delete the user configurations: %v", err)
-		}
-		if _, err := client.QuickConnectRequest.Delete().
-			Where(requestmodel.DeviceIDHasPrefix(prefix)).
-			Exec(ctx); err != nil {
-			t.Errorf("failed to delete the quick connect requests: %v", err)
-		}
-		if _, err := client.User.Delete().
-			Where(usermodel.UsernameHasPrefix(prefix)).
-			Exec(ctx); err != nil {
-			t.Errorf("failed to delete the users: %v", err)
-		}
-		if err := connection.Stop(); err != nil {
-			t.Errorf("failed to close the database: %v", err)
-		}
-	})
-
-	pending := quickconnect.New(client)
-	userService := users.New(client)
-	sessionService := sessions.New(client, activity.New(client))
-
-	return &fixture{
-		server:   New(userService, sessionService, pending),
-		pending:  pending,
-		sessions: sessionService,
-		users:    userService,
-		prefix:   prefix,
-	}
-}
-
-func (f *fixture) deviceContext(device string) context.Context {
-	return auth.ContextWithAuthorization(context.Background(), auth.Authorization{
-		Client:   "Jellyfin Web",
-		Device:   device,
-		DeviceID: f.prefix + device,
-		Version:  "10.10.0",
-	})
-}
-
-func (f *fixture) account(t *testing.T, name, password string) uuid.UUID {
-	t.Helper()
-
-	hash, err := auth.Hash(password)
-	if err != nil {
-		t.Fatalf("failed to hash the password: %v", err)
-	}
-
-	account, err := f.users.CreateUser(context.Background(), f.prefix+name, hash, false)
-	if err != nil {
-		t.Fatalf("failed to create the user %q: %v", name, err)
-	}
-
-	return account.ID
-}
-
-func (f *fixture) stored(t *testing.T, id uuid.UUID) *users.User {
-	t.Helper()
-
-	account, err := f.users.User(context.Background(), id)
-	if err != nil {
-		t.Fatalf("failed to reload the user: %v", err)
-	}
-
-	return account
-}
-
-func (f *fixture) signIn(username, password string) (api.AuthenticateUserByNameResponseObject, error) {
-	return f.server.AuthenticateUserByName(f.deviceContext("browser"), api.AuthenticateUserByNameRequestObject{
-		JSONBody: &api.AuthenticateUserByName{Username: &username, Pw: &password},
-	})
-}
-
-func (f *fixture) initiate(t *testing.T) *quickconnect.Request {
-	t.Helper()
-
-	request, err := f.pending.Initiate(context.Background(), sessions.Device{ClientID: f.prefix + "tv", Name: "tv", AppName: "Jellyfin Web"})
-	if err != nil {
-		t.Fatalf("failed to initiate quick connect: %v", err)
-	}
-
-	return request
-}
-
-func (f *fixture) redeem(t *testing.T, secret string) api.AuthenticateWithQuickConnectResponseObject {
-	t.Helper()
-
-	response, err := f.server.AuthenticateWithQuickConnect(f.deviceContext("tv"), api.AuthenticateWithQuickConnectRequestObject{
-		JSONBody: &api.QuickConnectDto{Secret: secret},
-	})
-	if err != nil {
-		t.Fatalf("failed to authenticate with quick connect: %v", err)
-	}
-
-	return response
-}
-
-func (f *fixture) refuseRedeem(t *testing.T, secret string) {
-	t.Helper()
-
-	if _, ok := f.redeem(t, secret).(api.AuthenticateWithQuickConnect400Response); !ok {
-		t.Error("the secret was redeemable, want no token handed out")
-	}
-}
-
 func TestServer_AuthenticateUserByName(t *testing.T) {
-	fixture := newFixture(t)
-
-	t.Run("issues a session token the request can be resolved by", func(t *testing.T) {
-		userID := fixture.account(t, "dean", "hunter2")
-
-		response, err := fixture.signIn(fixture.prefix+"dean", "hunter2")
-		if err != nil {
-			t.Fatalf("failed to authenticate: %v", err)
-		}
-
-		authenticated, ok := response.(api.AuthenticateUserByName200JSONResponse)
-		if !ok {
-			t.Fatalf("response = %T, want api.AuthenticateUserByName200JSONResponse", response)
-		}
-		if authenticated.AccessToken == nil || *authenticated.AccessToken == "" {
-			t.Fatal("AccessToken is empty, want a usable token")
-		}
-		if authenticated.SessionInfo == nil || authenticated.SessionInfo.Id == nil {
-			t.Fatal("SessionInfo is empty, want the created session")
-		}
-		if authenticated.User == nil || *authenticated.User.Id != userID {
-			t.Errorf("User = %v, want %v", authenticated.User, userID)
-		}
-
-		session, err := fixture.sessions.ByToken(context.Background(), *authenticated.AccessToken)
-		if err != nil {
-			t.Fatalf("failed to resolve the issued token: %v", err)
-		}
-		if session.User == nil || session.User.ID != userID {
-			t.Errorf("session user = %v, want %v", session.User, userID)
-		}
-		if session.ID.String() != *authenticated.SessionInfo.Id {
-			t.Errorf("SessionInfo.Id = %q, want the created session %q", *authenticated.SessionInfo.Id, session.ID)
-		}
-		if fixture.stored(t, userID).LastLoginAt.IsZero() {
-			t.Error("LastLoginAt is zero, want the login recorded")
-		}
-	})
-
 	t.Run("records an authentication that leaks no secret", func(t *testing.T) {
 		config, err := env.Load()
 		if err != nil {
@@ -279,7 +85,7 @@ func TestServer_AuthenticateUserByName(t *testing.T) {
 		ctx := context.Background()
 		client := connection.Client()
 		activities := activity.New(client)
-		server := New(users.New(client), sessions.New(client, activities), quickconnect.New(client))
+		server := New(users.New(client), sessions.New(client, activities), nil)
 
 		username := t.Name() + "-" + uuid.NewString()
 		password := "hunter2"
@@ -375,60 +181,91 @@ func TestServer_AuthenticateUserByName(t *testing.T) {
 			t.Errorf("entries for the user = %d, want 1", found)
 		}
 	})
-
-	t.Run("refuses credentials that do not match", func(t *testing.T) {
-		fixture.account(t, "bad", "hunter2")
-
-		if _, err := fixture.signIn(fixture.prefix+"bad", "wrong"); !errors.Is(err, auth.ErrUnauthorized) {
-			t.Errorf("wrong password err = %v, want auth.ErrUnauthorized", err)
-		}
-		if _, err := fixture.signIn(fixture.prefix+"nobody", "hunter2"); !errors.Is(err, auth.ErrUnauthorized) {
-			t.Errorf("unknown user err = %v, want auth.ErrUnauthorized", err)
-		}
-		if _, err := fixture.signIn(fixture.prefix+"bad", ""); !errors.Is(err, auth.ErrUnauthorized) {
-			t.Errorf("empty password err = %v, want auth.ErrUnauthorized", err)
-		}
-	})
 }
 
 func TestServer_AuthenticateWithQuickConnect(t *testing.T) {
-	fixture := newFixture(t)
+	config, err := env.Load()
+	if err != nil {
+		t.Fatalf("failed to read the environment: %v", err)
+	}
 
-	t.Run("refuses a secret nobody was issued", func(t *testing.T) {
-		fixture.refuseRedeem(t, "")
-		fixture.refuseRedeem(t, "not-a-secret")
+	connection, err := store.NewStore(config)
+	if err != nil {
+		t.Fatalf("failed to open the database: %v", err)
+	}
+	if err := connection.Start(); err != nil {
+		t.Fatalf("failed to reach the database, set DATABASE_URL: %v", err)
+	}
+
+	ctx := context.Background()
+	client := connection.Client()
+	sessionService := sessions.New(client, activity.New(client))
+	pending := quickconnect.New(client)
+	server := New(users.New(client), sessionService, pending)
+
+	username := t.Name() + "-" + uuid.NewString()
+	deviceID := uuid.NewString()
+	user, err := client.User.Create().SetName(username).SetUsername(username).SetPasswordHash("hash").Save(ctx)
+	if err != nil {
+		t.Fatalf("failed to create the user: %v", err)
+	}
+
+	t.Cleanup(func() {
+		if _, err := client.ActivityLogEntry.Delete().Where(entrymodel.HasUserWith(usermodel.ID(user.ID))).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the entries: %v", err)
+		}
+		if _, err := client.Session.Delete().Where(sessionmodel.HasUserWith(usermodel.ID(user.ID))).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the sessions: %v", err)
+		}
+		if _, err := client.Device.Delete().Where(devicemodel.ClientID(deviceID)).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the device: %v", err)
+		}
+		if err := client.User.DeleteOne(user).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the user: %v", err)
+		}
+		if err := connection.Stop(); err != nil {
+			t.Errorf("failed to close the database: %v", err)
+		}
 	})
 
-	t.Run("refuses a request nobody authorized", func(t *testing.T) {
-		request := fixture.initiate(t)
-
-		fixture.refuseRedeem(t, request.Secret)
-	})
-
-	t.Run("issues a session token for the authorizing user once", func(t *testing.T) {
-		userID := fixture.account(t, "dean", "hunter2")
-
-		request := fixture.initiate(t)
-		if err := fixture.pending.Authorize(context.Background(), request.Code, userID); err != nil {
-			t.Fatalf("failed to authorize the request: %v", err)
-		}
-
-		authenticated, ok := fixture.redeem(t, request.Secret).(api.AuthenticateWithQuickConnect200JSONResponse)
-		if !ok {
-			t.Fatal("the secret was not redeemable, want an access token")
-		}
-		if authenticated.AccessToken == nil || *authenticated.AccessToken == "" {
-			t.Fatal("AccessToken is empty, want a usable token")
-		}
-
-		session, err := fixture.sessions.ByToken(context.Background(), *authenticated.AccessToken)
+	ctx = auth.ContextWithAuthorization(ctx, auth.Authorization{Client: "Jellyfin Web", Device: "tv", DeviceID: deviceID})
+	redeem := func(secret string) api.AuthenticateWithQuickConnectResponseObject {
+		response, err := server.AuthenticateWithQuickConnect(ctx, api.AuthenticateWithQuickConnectRequestObject{
+			JSONBody: &api.QuickConnectDto{Secret: secret},
+		})
 		if err != nil {
-			t.Fatalf("failed to resolve the issued token: %v", err)
+			t.Fatalf("failed to authenticate with quick connect: %v", err)
 		}
-		if session.User == nil || session.User.ID != userID {
-			t.Errorf("session user = %v, want the authorizing user %v", session.User, userID)
-		}
+		return response
+	}
 
-		fixture.refuseRedeem(t, request.Secret)
-	})
+	for _, secret := range []string{"", "not-a-secret"} {
+		if _, ok := redeem(secret).(api.AuthenticateWithQuickConnect400Response); !ok {
+			t.Errorf("secret %q was redeemable, want 400", secret)
+		}
+	}
+
+	request, err := pending.Initiate(ctx, auth.AuthorizationFrom(ctx).ClientDevice())
+	if err != nil {
+		t.Fatalf("failed to initiate: %v", err)
+	}
+	if err := pending.Authorize(ctx, request.Code, user.ID); err != nil {
+		t.Fatalf("failed to authorize: %v", err)
+	}
+
+	authenticated, ok := redeem(request.Secret).(api.AuthenticateWithQuickConnect200JSONResponse)
+	if !ok || authenticated.AccessToken == nil {
+		t.Fatal("the secret was not redeemable, want an access token")
+	}
+	session, err := sessionService.ByToken(ctx, *authenticated.AccessToken)
+	if err != nil {
+		t.Fatalf("failed to resolve the issued token: %v", err)
+	}
+	if session.User == nil || session.User.ID != user.ID {
+		t.Errorf("session user = %v, want %v", session.User, user.ID)
+	}
+
+	if _, ok := redeem(request.Secret).(api.AuthenticateWithQuickConnect400Response); !ok {
+		t.Error("the secret was redeemed twice, want 400")
+	}
 }

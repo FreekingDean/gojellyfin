@@ -257,7 +257,7 @@ func (s *Server) AuthenticateWithQuickConnect(ctx context.Context, request api.A
 	}
 
 	userID, err := s.quickconnect.Redeem(ctx, req.Secret)
-	if errors.Is(err, quickconnect.ErrUnknownSecret) || errors.Is(err, quickconnect.ErrNotAuthorized) {
+	if errors.Is(err, quickconnect.ErrNotFound) {
 		return api.AuthenticateWithQuickConnect400Response{}, nil
 	}
 	if err != nil {

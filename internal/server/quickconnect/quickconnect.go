@@ -3,22 +3,31 @@ package quickconnect
 import (
 	"context"
 	"errors"
-	"strings"
 
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/quickconnect"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
-const retryAfterSeconds = 10
+//go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -destination=mocks/mock_$GOFILE -package=mocks
+type QuickConnectService interface {
+	Initiate(ctx context.Context, device sessions.Device) (*quickconnect.Request, error)
+	Pending(ctx context.Context, secret string) (*quickconnect.Request, error)
+	Authorize(ctx context.Context, code string, userID uuid.UUID) error
+}
+
+type UsersService interface {
+	IsAdministrator(ctx context.Context, id uuid.UUID) (bool, error)
+	User(ctx context.Context, id uuid.UUID) (*users.User, error)
+}
 
 type Server struct {
-	quickconnect *quickconnect.Service
-	users        *users.Service
+	quickconnect QuickConnectService
+	users        UsersService
 }
 
 func New(quickconnect *quickconnect.Service, users *users.Service) *Server {
@@ -26,14 +35,11 @@ func New(quickconnect *quickconnect.Service, users *users.Service) *Server {
 }
 
 func (s *Server) GetQuickConnectEnabled(ctx context.Context, request api.GetQuickConnectEnabledRequestObject) (api.GetQuickConnectEnabledResponseObject, error) {
-	return api.GetQuickConnectEnabled200JSONResponse(quickconnect.Enabled), nil
+	return api.GetQuickConnectEnabled200JSONResponse(true), nil
 }
 
 func (s *Server) InitiateQuickConnect(ctx context.Context, request api.InitiateQuickConnectRequestObject) (api.InitiateQuickConnectResponseObject, error) {
 	pending, err := s.quickconnect.Initiate(ctx, auth.AuthorizationFrom(ctx).ClientDevice())
-	if errors.Is(err, quickconnect.ErrTooManyPending) || errors.Is(err, quickconnect.ErrNoCode) {
-		return busy(), nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +49,7 @@ func (s *Server) InitiateQuickConnect(ctx context.Context, request api.InitiateQ
 
 func (s *Server) GetQuickConnectState(ctx context.Context, request api.GetQuickConnectStateRequestObject) (api.GetQuickConnectStateResponseObject, error) {
 	pending, err := s.quickconnect.Pending(ctx, request.Params.Secret)
-	if errors.Is(err, quickconnect.ErrUnknownSecret) {
+	if errors.Is(err, quickconnect.ErrNotFound) {
 		return api.GetQuickConnectState404JSONResponse{}, nil
 	}
 	if err != nil {
@@ -55,19 +61,23 @@ func (s *Server) GetQuickConnectState(ctx context.Context, request api.GetQuickC
 
 func (s *Server) AuthorizeQuickConnect(ctx context.Context, request api.AuthorizeQuickConnectRequestObject) (api.AuthorizeQuickConnectResponseObject, error) {
 	userID := auth.UserID(ctx)
-	if userID == uuid.Nil {
-		return nil, auth.ErrUnauthorized
-	}
 
 	if target := request.Params.UserId; target != nil && *target != userID {
-		if err := s.mayAuthorizeFor(ctx, userID, *target); err != nil {
+		administrator, err := s.users.IsAdministrator(ctx, userID)
+		if err != nil {
+			return nil, err
+		}
+		if !administrator {
+			return api.AuthorizeQuickConnect403JSONResponse{}, nil
+		}
+		if _, err := s.users.User(ctx, *target); err != nil {
 			return api.AuthorizeQuickConnect403JSONResponse{}, nil
 		}
 		userID = *target
 	}
 
 	err := s.quickconnect.Authorize(ctx, request.Params.Code, userID)
-	if errors.Is(err, quickconnect.ErrUnknownCode) || errors.Is(err, quickconnect.ErrAlreadyAuthorized) {
+	if errors.Is(err, quickconnect.ErrNotFound) {
 		return api.AuthorizeQuickConnect200JSONResponse(false), nil
 	}
 	if err != nil {
@@ -75,31 +85,4 @@ func (s *Server) AuthorizeQuickConnect(ctx context.Context, request api.Authoriz
 	}
 
 	return api.AuthorizeQuickConnect200JSONResponse(true), nil
-}
-
-func (s *Server) mayAuthorizeFor(ctx context.Context, userID, target uuid.UUID) error {
-	administrator, err := s.users.IsAdministrator(ctx, userID)
-	if err != nil {
-		return err
-	}
-	if !administrator {
-		return auth.ErrUnauthorized
-	}
-
-	_, err = s.users.User(ctx, target)
-
-	return err
-}
-
-func busy() api.InitiateQuickConnect503TexthtmlResponse {
-	message := "too many pending quick connect requests"
-
-	return api.InitiateQuickConnect503TexthtmlResponse{
-		Body:          strings.NewReader(message),
-		ContentLength: int64(len(message)),
-		Headers: api.InitiateQuickConnect503ResponseHeaders{
-			Message:    apiutil.Ptr(message),
-			RetryAfter: apiutil.Ptr(int32(retryAfterSeconds)),
-		},
-	}
 }
