@@ -22,6 +22,7 @@ var Module = fx.Module(
 		middleware.NewAuth,
 		middleware.NewOapiTracing,
 		socket.New,
+		func(s *socket.Socket) notify.Handler { return s.Deliver },
 		func(encoder *transcode.Encoder) stream.Transcoder { return encoder },
 		func(service *users.Service) middleware.Policies { return service },
 		stream.New,
@@ -29,14 +30,9 @@ var Module = fx.Module(
 	),
 	fx.Invoke(
 		Register,
-		deliver,
 		run,
 	),
 )
-
-func deliver(notifier *notify.Service, s *socket.Socket) {
-	notifier.Handle(s.Deliver)
-}
 
 func run(lc fx.Lifecycle, s *Server) {
 	lc.Append(fx.Hook{

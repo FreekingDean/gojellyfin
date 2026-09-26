@@ -5,14 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"slices"
-	"sync"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5"
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
+	"github.com/FreekingDean/gojellyfin/internal/store"
 )
 
 const (
@@ -30,29 +29,16 @@ type Envelope struct {
 type Handler func(Envelope)
 
 type Service struct {
-	pool *pgxpool.Pool
-
-	mu       sync.RWMutex
-	handlers []Handler
+	store       *store.Client
+	databaseURL string
+	handler     Handler
 
 	cancel context.CancelFunc
 	done   chan struct{}
 }
 
-func New(config env.Config) (*Service, error) {
-	pool, err := pgxpool.New(context.Background(), config.DatabaseURL)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open the notify pool: %w", err)
-	}
-
-	return &Service{pool: pool, done: make(chan struct{})}, nil
-}
-
-func (s *Service) Handle(handler Handler) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	s.handlers = append(s.handlers, handler)
+func New(config env.Config, client *store.Client, handler Handler) *Service {
+	return &Service{store: client, databaseURL: config.DatabaseURL, handler: handler, done: make(chan struct{})}
 }
 
 func (s *Service) Publish(ctx context.Context, sessionIDs []uuid.UUID, messageType string, data any) error {
@@ -65,35 +51,16 @@ func (s *Service) Publish(ctx context.Context, sessionIDs []uuid.UUID, messageTy
 		return fmt.Errorf("failed to encode %s data: %w", messageType, err)
 	}
 
-	for start := 0; start < len(sessionIDs); {
-		size := len(sessionIDs) - start
+	payload, err := json.Marshal(Envelope{SessionIDs: sessionIDs, Type: messageType, Data: encoded})
+	if err != nil {
+		return fmt.Errorf("failed to encode %s envelope: %w", messageType, err)
+	}
+	if len(payload) > maxPayload {
+		return fmt.Errorf("%s for %d sessions needs %d bytes, over the %d a notification allows", messageType, len(sessionIDs), len(payload), maxPayload)
+	}
 
-		var payload []byte
-		for {
-			payload, err = json.Marshal(Envelope{
-				SessionIDs: sessionIDs[start : start+size],
-				Type:       messageType,
-				Data:       encoded,
-			})
-			if err != nil {
-				return fmt.Errorf("failed to encode %s envelope: %w", messageType, err)
-			}
-			if len(payload) <= maxPayload || size == 1 {
-				break
-			}
-
-			size /= 2
-		}
-
-		if len(payload) > maxPayload {
-			return fmt.Errorf("a single %s recipient needs %d bytes, over the %d a notification allows", messageType, len(payload), maxPayload)
-		}
-
-		if _, err := s.pool.Exec(ctx, "select pg_notify($1, $2)", channel, string(payload)); err != nil {
-			return fmt.Errorf("failed to publish %s: %w", messageType, err)
-		}
-
-		start += size
+	if _, err := s.store.ExecContext(ctx, "select pg_notify($1, $2)", channel, string(payload)); err != nil {
+		return fmt.Errorf("failed to publish %s: %w", messageType, err)
 	}
 
 	return nil
@@ -119,19 +86,18 @@ func (s *Service) Start() error {
 func (s *Service) Stop() error {
 	s.cancel()
 	<-s.done
-	s.pool.Close()
 
 	return nil
 }
 
-func (s *Service) listen(ctx context.Context) (*pgxpool.Conn, error) {
-	conn, err := s.pool.Acquire(ctx)
+func (s *Service) listen(ctx context.Context) (*pgx.Conn, error) {
+	conn, err := pgx.Connect(ctx, s.databaseURL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to acquire a listener: %w", err)
+		return nil, fmt.Errorf("failed to connect a listener: %w", err)
 	}
 
 	if _, err := conn.Exec(ctx, "listen "+channel); err != nil {
-		conn.Release()
+		_ = conn.Close(context.Background())
 
 		return nil, fmt.Errorf("failed to listen on %s: %w", channel, err)
 	}
@@ -139,7 +105,7 @@ func (s *Service) listen(ctx context.Context) (*pgxpool.Conn, error) {
 	return conn, nil
 }
 
-func (s *Service) run(ctx context.Context, conn *pgxpool.Conn) {
+func (s *Service) run(ctx context.Context, conn *pgx.Conn) {
 	defer close(s.done)
 
 	var lost time.Time
@@ -147,7 +113,7 @@ func (s *Service) run(ctx context.Context, conn *pgxpool.Conn) {
 	for {
 		if conn != nil {
 			err := s.receive(ctx, conn)
-			conn.Release()
+			_ = conn.Close(context.Background())
 
 			if ctx.Err() != nil {
 				return
@@ -181,9 +147,9 @@ func (s *Service) run(ctx context.Context, conn *pgxpool.Conn) {
 	}
 }
 
-func (s *Service) receive(ctx context.Context, conn *pgxpool.Conn) error {
+func (s *Service) receive(ctx context.Context, conn *pgx.Conn) error {
 	for {
-		notification, err := conn.Conn().WaitForNotification(ctx)
+		notification, err := conn.WaitForNotification(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to read a notification: %w", err)
 		}
@@ -194,16 +160,6 @@ func (s *Service) receive(ctx context.Context, conn *pgxpool.Conn) error {
 			continue
 		}
 
-		s.dispatch(envelope)
-	}
-}
-
-func (s *Service) dispatch(envelope Envelope) {
-	s.mu.RLock()
-	handlers := slices.Clone(s.handlers)
-	s.mu.RUnlock()
-
-	for _, handler := range handlers {
-		handler(envelope)
+		s.handler(envelope)
 	}
 }
