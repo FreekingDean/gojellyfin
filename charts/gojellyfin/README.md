@@ -101,7 +101,7 @@ reads the environment.
 | `httpPort` | `HTTP_PORT` | `8081` | What the server listens on. The container port, the Service target and the probes follow it |
 | `database.existingSecret` | `DATABASE_URL` | `""` | Secret holding the URL. Empty means the release's own fullname |
 | `database.secretKey` | — | `DATABASE_URL` | Key within that Secret |
-| `tmdb.existingSecret` | `TMDB_API_KEY` | `""` | Secret holding the TMDB key. Empty sets no key and metadata lookups fail |
+| `tmdb.existingSecret` | `TMDB_API_KEY` | `""` | Secret holding the TMDB key. Empty turns metadata lookups off, so items keep their source's titles and get no artwork |
 | `tmdb.secretKey` | — | `TMDB_API_KEY` | Key within that Secret |
 | `sources.existingSecret` | `SOURCE_API_KEY_*` | `""` | Secret whose keys are the variable names Sonarr and Radarr sources are configured with, loaded into the API and the worker. Empty leaves every source failing its test and its scan |
 | `cors.enabled` | `CORS_ORIGINS` | `false` | Off reflects whatever origin asks; a literal `*` is not equivalent, because browsers reject it on credentialed requests |

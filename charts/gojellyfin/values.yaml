@@ -31,8 +31,8 @@ database:
   existingSecret: ""
   secretKey: DATABASE_URL
 
-# TMDB_API_KEY, out of a Secret you create. Empty leaves metadata lookups
-# unauthenticated and failing.
+# TMDB_API_KEY, out of a Secret you create. Empty turns metadata lookups off:
+# items keep the titles their source reported and get no artwork.
 tmdb:
   existingSecret: ""
   secretKey: TMDB_API_KEY
