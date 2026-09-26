@@ -2,7 +2,10 @@ module github.com/FreekingDean/gojellyfin
 
 go 1.25.4
 
-tool github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen
+tool (
+	github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen
+	go.uber.org/mock/mockgen
+)
 
 require (
 	entgo.io/ent v0.14.6
@@ -23,6 +26,7 @@ require (
 	go.temporal.io/api v1.63.4
 	go.temporal.io/sdk v1.47.0
 	go.uber.org/fx v1.24.0
+	go.uber.org/mock v0.6.0
 	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.54.0
 	golang.org/x/sync v0.22.0

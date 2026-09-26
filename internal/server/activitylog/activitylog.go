@@ -8,8 +8,13 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
+//go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -destination=mocks/mock_$GOFILE -package=mocks
+type ActivitiesService interface {
+	Entries(ctx context.Context, query activity.Query) ([]*activity.Entry, int, error)
+}
+
 type Server struct {
-	activity *activity.Service
+	activity ActivitiesService
 }
 
 func New(activity *activity.Service) *Server {
@@ -30,9 +35,9 @@ func (s *Server) GetLogEntries(ctx context.Context, request api.GetLogEntriesReq
 		return nil, err
 	}
 
-	converted := make([]api.ActivityLogEntry, 0, len(entries))
-	for _, entry := range entries {
-		converted = append(converted, entryDto(entry))
+	converted := make([]api.ActivityLogEntry, len(entries))
+	for i, entry := range entries {
+		converted[i] = entryDto(entry)
 	}
 
 	return api.GetLogEntries200JSONResponse{
