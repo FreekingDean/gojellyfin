@@ -331,7 +331,7 @@ func (_c *DeviceCreate) createSpec() (*Device, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := _c.mutation.LastActivityAt(); ok {
 		_spec.SetField(device.FieldLastActivityAt, field.TypeTime, value)
-		_node.LastActivityAt = value
+		_node.LastActivityAt = &value
 	}
 	if nodes := _c.mutation.SessionsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

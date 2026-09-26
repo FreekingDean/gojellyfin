@@ -9,14 +9,14 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
 var identifiable = []items.Kind{
-	itemmodal.KindMovie,
-	itemmodal.KindSeries,
-	itemmodal.KindSeason,
-	itemmodal.KindEpisode,
+	itemmodel.KindMovie,
+	itemmodel.KindSeries,
+	itemmodel.KindSeason,
+	itemmodel.KindEpisode,
 }
 
 type Service struct {
@@ -65,18 +65,8 @@ func (s *Service) IdentifyItems(ctx context.Context, scope uuid.UUID, force bool
 
 		jobs.Heartbeat(ctx, id)
 
-		pendingItem, err := s.items.ItemByID(ctx, items.Everyone, id)
-		if store.IsNotFound(err) {
-			continue
-		}
-		if err != nil {
+		if err := jobs.Enqueue(ctx, jobs.RefreshItemMetadata, jobs.With(jobs.ParamItem, id)); err != nil {
 			return err
-		}
-
-		jobs.Heartbeat(ctx, pendingItem.Name)
-
-		if err := s.identify(ctx, pendingItem); err != nil {
-			log.Printf("metadata %s: %v", pendingItem.Name, err)
 		}
 	}
 
@@ -97,18 +87,22 @@ func (s *Service) identify(ctx context.Context, pendingItem *items.Item) error {
 
 	s.saveArtwork(ctx, pendingItem, found.Images)
 
-	return nil
+	if pendingItem.Kind != itemmodel.KindSeries {
+		return nil
+	}
+
+	return jobs.Enqueue(ctx, jobs.RefreshMetadata, jobs.With(jobs.ParamScope, pendingItem.ID))
 }
 
 func (s *Service) fetch(ctx context.Context, pendingItem *items.Item) (items.Metadata, bool, error) {
 	switch pendingItem.Kind {
-	case itemmodal.KindMovie:
+	case itemmodel.KindMovie:
 		return s.provider.Movie(ctx, pendingItem.Name, pendingItem.ProductionYear)
-	case itemmodal.KindSeries:
+	case itemmodel.KindSeries:
 		return s.provider.Series(ctx, pendingItem.Name, pendingItem.ProductionYear)
-	case itemmodal.KindSeason:
+	case itemmodel.KindSeason:
 		return s.fetchSeason(ctx, pendingItem)
-	case itemmodal.KindEpisode:
+	case itemmodel.KindEpisode:
 		return s.fetchEpisode(ctx, pendingItem)
 	}
 
@@ -148,7 +142,7 @@ func (s *Service) seriesIDs(ctx context.Context, pendingItem *items.Item) (map[s
 	}
 
 	for _, parent := range ancestry.Parents {
-		if parent.Kind == itemmodal.KindSeries {
+		if parent.Kind == itemmodel.KindSeries {
 			return parent.ProviderIds, nil
 		}
 	}

@@ -14,8 +14,9 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
+	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
+	streammodel "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 )
 
 func (f *fixture) encode(t *testing.T, name, audio string, height int) string {
@@ -41,11 +42,11 @@ func (f *fixture) addRip(t *testing.T, audio string) uuid.UUID {
 	t.Helper()
 
 	item, err := f.items.SaveScanned(context.Background(), items.Item{
-		Kind:         itemmodal.KindMovie,
+		Kind:         itemmodel.KindMovie,
 		Key:          "movie:" + audio,
 		Name:         "rip.mkv",
 		SortName:     "rip.mkv",
-		DateModified: time.Now(),
+		DateModified: apiutil.Ptr(time.Now()),
 	})
 	if err != nil {
 		t.Fatalf("failed to save the item: %v", err)
@@ -68,10 +69,10 @@ func (f *fixture) addCopy(t *testing.T, id uuid.UUID, name, audio string, height
 	source := f.source(t, id, f.encode(t, name, audio, height))
 	err = f.items.SaveProbe(ctx, item, source, items.MediaSource{
 		Container: "mkv",
-		Edges: items.MediaSourceEdges{Streams: []*items.MediaStream{
-			{Index: 0, Kind: streammodal.KindVideo, Codec: "h264", Height: int32(height), Width: int32(height * 4 / 3)},
-			{Index: 1, Kind: streammodal.KindAudio, Codec: audio},
-		}},
+		Streams: []*items.MediaStream{
+			{Index: 0, Kind: streammodel.KindVideo, Codec: "h264", Height: apiutil.Ptr(int32(height)), Width: apiutil.Ptr(int32(height * 4 / 3))},
+			{Index: 1, Kind: streammodel.KindAudio, Codec: audio},
+		},
 	})
 	if err != nil {
 		t.Fatalf("failed to probe %q: %v", name, err)

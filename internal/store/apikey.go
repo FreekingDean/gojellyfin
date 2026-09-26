@@ -27,7 +27,7 @@ type ApiKey struct {
 	// AppName holds the value of the "app_name" field.
 	AppName string `json:"app_name,omitempty"`
 	// RevokedAt holds the value of the "revoked_at" field.
-	RevokedAt    time.Time `json:"revoked_at,omitempty"`
+	RevokedAt    *time.Time `json:"revoked_at,omitempty"`
 	selectValues sql.SelectValues
 }
 
@@ -91,7 +91,8 @@ func (_m *ApiKey) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field revoked_at", values[i])
 			} else if value.Valid {
-				_m.RevokedAt = value.Time
+				_m.RevokedAt = new(time.Time)
+				*_m.RevokedAt = value.Time
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -140,8 +141,10 @@ func (_m *ApiKey) String() string {
 	builder.WriteString("app_name=")
 	builder.WriteString(_m.AppName)
 	builder.WriteString(", ")
-	builder.WriteString("revoked_at=")
-	builder.WriteString(_m.RevokedAt.Format(time.ANSIC))
+	if v := _m.RevokedAt; v != nil {
+		builder.WriteString("revoked_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -20,11 +20,11 @@ func (ItemSource) Fields() []ent.Field {
 		field.String("name"),
 		field.String("path"),
 		field.String("container").Optional(),
-		field.Int64("size").Optional(),
-		field.Int64("run_time_ticks").Optional(),
-		field.Int32("bitrate").Optional(),
-		field.Time("date_modified").Optional(),
-		field.Time("probed_at").Optional(),
+		field.Int64("size").Optional().Nillable(),
+		field.Int64("run_time_ticks").Optional().Nillable(),
+		field.Int32("bitrate").Optional().Nillable(),
+		field.Time("date_modified").Optional().Nillable(),
+		field.Time("probed_at").Optional().Nillable(),
 	)
 }
 

@@ -24,15 +24,10 @@ func userDto(user *users.User) api.UserDto {
 		HasConfiguredEasyPassword: apiutil.Ptr(false),
 		HasConfiguredPassword:     apiutil.Ptr(user.PasswordHash != ""),
 		HasPassword:               apiutil.Ptr(user.PasswordHash != ""),
-		Configuration:             apiutil.Ptr(configurationDto(user.Edges.Configuration)),
-		Policy:                    apiutil.Ptr(policyDto(user.Edges.Policy)),
-	}
-
-	if !user.LastLoginAt.IsZero() {
-		dto.LastLoginDate = &user.LastLoginAt
-	}
-	if !user.LastActivityAt.IsZero() {
-		dto.LastActivityDate = &user.LastActivityAt
+		Configuration:             apiutil.Ptr(configurationDto(user.Configuration)),
+		Policy:                    apiutil.Ptr(policyDto(user.Policy)),
+		LastLoginDate:             user.LastLoginAt,
+		LastActivityDate:          user.LastActivityAt,
 	}
 
 	return dto

@@ -477,7 +477,7 @@ func (_c *MediaStreamCreate) createSpec() (*MediaStream, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := _c.mutation.VideoRangeType(); ok {
 		_spec.SetField(mediastream.FieldVideoRangeType, field.TypeEnum, value)
-		_node.VideoRangeType = value
+		_node.VideoRangeType = &value
 	}
 	if value, ok := _c.mutation.Index(); ok {
 		_spec.SetField(mediastream.FieldIndex, field.TypeInt32, value)
@@ -505,27 +505,27 @@ func (_c *MediaStreamCreate) createSpec() (*MediaStream, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := _c.mutation.BitRate(); ok {
 		_spec.SetField(mediastream.FieldBitRate, field.TypeInt32, value)
-		_node.BitRate = value
+		_node.BitRate = &value
 	}
 	if value, ok := _c.mutation.Channels(); ok {
 		_spec.SetField(mediastream.FieldChannels, field.TypeInt32, value)
-		_node.Channels = value
+		_node.Channels = &value
 	}
 	if value, ok := _c.mutation.SampleRate(); ok {
 		_spec.SetField(mediastream.FieldSampleRate, field.TypeInt32, value)
-		_node.SampleRate = value
+		_node.SampleRate = &value
 	}
 	if value, ok := _c.mutation.Width(); ok {
 		_spec.SetField(mediastream.FieldWidth, field.TypeInt32, value)
-		_node.Width = value
+		_node.Width = &value
 	}
 	if value, ok := _c.mutation.Height(); ok {
 		_spec.SetField(mediastream.FieldHeight, field.TypeInt32, value)
-		_node.Height = value
+		_node.Height = &value
 	}
 	if value, ok := _c.mutation.Level(); ok {
 		_spec.SetField(mediastream.FieldLevel, field.TypeFloat64, value)
-		_node.Level = value
+		_node.Level = &value
 	}
 	if value, ok := _c.mutation.IsDefault(); ok {
 		_spec.SetField(mediastream.FieldIsDefault, field.TypeBool, value)

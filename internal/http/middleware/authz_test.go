@@ -12,7 +12,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
-	"github.com/FreekingDean/gojellyfin/internal/store"
 )
 
 type stubPolicies struct {
@@ -48,8 +47,8 @@ func run(t *testing.T, policies Policies, operationID string, ctx context.Contex
 }
 
 func authenticated() context.Context {
-	session := &sessions.Session{}
-	session.Edges.User = &store.User{ID: uuid.New()}
+	id := uuid.New()
+	session := &sessions.Session{UserID: &id}
 
 	return auth.ContextWithSession(context.Background(), session)
 }

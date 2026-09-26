@@ -11,15 +11,15 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/consts"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
 const LockedName = "Name"
 
 var titleColumns = []string{
-	itemmodal.FieldName,
-	itemmodal.FieldSortName,
-	itemmodal.FieldProductionYear,
+	itemmodel.FieldName,
+	itemmodel.FieldSortName,
+	itemmodel.FieldProductionYear,
 }
 
 type Metadata struct {
@@ -75,7 +75,7 @@ func (s *Service) UpdateMetadata(ctx context.Context, id uuid.UUID, metadata Met
 		update.SetProviderIds(*metadata.ProviderIds)
 	}
 
-	item, err := update.Save(ctx)
+	item, err := update.SaveModel(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update item metadata: %w", err)
 	}
@@ -134,9 +134,9 @@ func unclaimedTitle(upsert *store.ItemUpsert) {
 	excluded := sql.Dialect(upsert.Dialect()).Table("excluded")
 	unclaimed := fmt.Sprintf(
 		"%s IS NULL AND NOT %s AND NOT COALESCE(%s @> '[%q]', false)",
-		kept.C(itemmodal.FieldProviderIds),
-		kept.C(itemmodal.FieldLockData),
-		kept.C(itemmodal.FieldLockedFields),
+		kept.C(itemmodel.FieldProviderIds),
+		kept.C(itemmodel.FieldLockData),
+		kept.C(itemmodel.FieldLockedFields),
 		LockedName,
 	)
 

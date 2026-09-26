@@ -7,17 +7,17 @@ import (
 	"entgo.io/ent/dialect/sql"
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	devicemodal "github.com/FreekingDean/gojellyfin/internal/store/device"
-	sessionmodal "github.com/FreekingDean/gojellyfin/internal/store/session"
+	devicemodel "github.com/FreekingDean/gojellyfin/internal/store/device"
+	sessionmodel "github.com/FreekingDean/gojellyfin/internal/store/session"
 )
 
 func (s *Service) Devices(ctx context.Context) ([]*Device, error) {
 	devices, err := s.store.Device.Query().
-		Order(devicemodal.ByLastActivityAt(sql.OrderDesc())).
+		Order(devicemodel.ByLastActivityAt(sql.OrderDesc())).
 		WithSessions(func(query *store.SessionQuery) {
-			query.Order(sessionmodal.ByLastActivityAt(sql.OrderDesc())).WithUser()
+			query.Order(sessionmodel.ByLastActivityAt(sql.OrderDesc())).WithUser()
 		}).
-		All(ctx)
+		AllModels(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list devices: %w", err)
 	}
@@ -27,11 +27,11 @@ func (s *Service) Devices(ctx context.Context) ([]*Device, error) {
 
 func (s *Service) DeviceByClientID(ctx context.Context, clientID string) (*Device, error) {
 	device, err := s.store.Device.Query().
-		Where(devicemodal.ClientID(clientID)).
+		Where(devicemodel.ClientID(clientID)).
 		WithSessions(func(query *store.SessionQuery) {
-			query.Order(sessionmodal.ByLastActivityAt(sql.OrderDesc())).WithUser()
+			query.Order(sessionmodel.ByLastActivityAt(sql.OrderDesc())).WithUser()
 		}).
-		Only(ctx)
+		OnlyModel(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query device by client id: %w", err)
 	}
@@ -41,7 +41,7 @@ func (s *Service) DeviceByClientID(ctx context.Context, clientID string) (*Devic
 
 func (s *Service) RenameDevice(ctx context.Context, clientID string, customName *string) error {
 	_, err := s.store.Device.Update().
-		Where(devicemodal.ClientID(clientID)).
+		Where(devicemodel.ClientID(clientID)).
 		SetNillableCustomName(customName).
 		Save(ctx)
 	if err != nil {
@@ -52,7 +52,7 @@ func (s *Service) RenameDevice(ctx context.Context, clientID string, customName 
 }
 
 func (s *Service) RemoveDevice(ctx context.Context, clientID string) error {
-	if _, err := s.store.Device.Delete().Where(devicemodal.ClientID(clientID)).Exec(ctx); err != nil {
+	if _, err := s.store.Device.Delete().Where(devicemodel.ClientID(clientID)).Exec(ctx); err != nil {
 		return fmt.Errorf("failed to delete device: %w", err)
 	}
 
@@ -60,9 +60,9 @@ func (s *Service) RemoveDevice(ctx context.Context, clientID string) error {
 }
 
 func LastUser(device *Device) *User {
-	for _, session := range device.Edges.Sessions {
-		if session.Edges.User != nil {
-			return session.Edges.User
+	for _, session := range device.Sessions {
+		if session.User != nil {
+			return session.User
 		}
 	}
 

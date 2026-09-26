@@ -12,9 +12,10 @@ func BestSource(sources []*MediaSource) *MediaSource {
 }
 
 func richer(source, than *MediaSource) bool {
-	if source.Bitrate != than.Bitrate {
-		return source.Bitrate > than.Bitrate
+	bitrate, other := deref(source.Bitrate), deref(than.Bitrate)
+	if bitrate != other {
+		return bitrate > other
 	}
 
-	return source.Size > than.Size
+	return deref(source.Size) > deref(than.Size)
 }

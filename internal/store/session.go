@@ -29,9 +29,9 @@ type Session struct {
 	// RemoteEndpoint holds the value of the "remote_endpoint" field.
 	RemoteEndpoint string `json:"remote_endpoint,omitempty"`
 	// LastActivityAt holds the value of the "last_activity_at" field.
-	LastActivityAt time.Time `json:"last_activity_at,omitempty"`
+	LastActivityAt *time.Time `json:"last_activity_at,omitempty"`
 	// RevokedAt holds the value of the "revoked_at" field.
-	RevokedAt time.Time `json:"revoked_at,omitempty"`
+	RevokedAt *time.Time `json:"revoked_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SessionQuery when eager-loading is set.
 	Edges           SessionEdges `json:"edges"`
@@ -137,13 +137,15 @@ func (_m *Session) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_activity_at", values[i])
 			} else if value.Valid {
-				_m.LastActivityAt = value.Time
+				_m.LastActivityAt = new(time.Time)
+				*_m.LastActivityAt = value.Time
 			}
 		case session.FieldRevokedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field revoked_at", values[i])
 			} else if value.Valid {
-				_m.RevokedAt = value.Time
+				_m.RevokedAt = new(time.Time)
+				*_m.RevokedAt = value.Time
 			}
 		case session.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
@@ -216,11 +218,15 @@ func (_m *Session) String() string {
 	builder.WriteString("remote_endpoint=")
 	builder.WriteString(_m.RemoteEndpoint)
 	builder.WriteString(", ")
-	builder.WriteString("last_activity_at=")
-	builder.WriteString(_m.LastActivityAt.Format(time.ANSIC))
+	if v := _m.LastActivityAt; v != nil {
+		builder.WriteString("last_activity_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteString(", ")
-	builder.WriteString("revoked_at=")
-	builder.WriteString(_m.RevokedAt.Format(time.ANSIC))
+	if v := _m.RevokedAt; v != nil {
+		builder.WriteString("revoked_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

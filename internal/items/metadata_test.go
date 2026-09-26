@@ -8,17 +8,17 @@ import (
 
 	"github.com/google/uuid"
 
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
 func TestService_ItemsNeedingMetadata(t *testing.T) {
-	wanted := []Kind{itemmodal.KindMovie, itemmodal.KindSeries, itemmodal.KindSeason, itemmodal.KindEpisode}
+	wanted := []Kind{itemmodel.KindMovie, itemmodel.KindSeries, itemmodel.KindSeason, itemmodel.KindEpisode}
 
 	t.Run("hands the kinds back in the order they were asked for", func(t *testing.T) {
 		fixed := newFixture(t)
 
 		kinds := map[uuid.UUID]Kind{}
-		for _, kind := range []Kind{itemmodal.KindEpisode, itemmodal.KindSeason, itemmodal.KindSeries, itemmodal.KindMovie} {
+		for _, kind := range []Kind{itemmodel.KindEpisode, itemmodel.KindSeason, itemmodel.KindSeries, itemmodel.KindMovie} {
 			for copy := range 3 {
 				id := fixed.add(t, seed{kind: kind, name: fmt.Sprintf("%s %d", kind, copy)})
 				kinds[id] = kind
@@ -46,7 +46,7 @@ func TestService_ItemsNeedingMetadata(t *testing.T) {
 
 	t.Run("leaves an identified item out unless forced", func(t *testing.T) {
 		fixed := newFixture(t)
-		movie := fixed.add(t, seed{kind: itemmodal.KindMovie, name: "The Matrix"})
+		movie := fixed.add(t, seed{kind: itemmodel.KindMovie, name: "The Matrix"})
 
 		if _, err := fixed.service.UpdateMetadata(context.Background(), movie, Metadata{
 			ProviderIds: &map[string]string{"Stub": "603"},
@@ -73,10 +73,10 @@ func TestService_ItemsNeedingMetadata(t *testing.T) {
 
 	t.Run("takes a series scope down to its episodes", func(t *testing.T) {
 		fixed := newFixture(t)
-		series := fixed.add(t, seed{kind: itemmodal.KindSeries, name: "Breaking Bad"})
-		season := fixed.add(t, seed{kind: itemmodal.KindSeason, name: "Season 1", parentID: &series})
-		episode := fixed.add(t, seed{kind: itemmodal.KindEpisode, name: "Pilot", parentID: &season})
-		elsewhere := fixed.add(t, seed{kind: itemmodal.KindMovie, name: "The Matrix"})
+		series := fixed.add(t, seed{kind: itemmodel.KindSeries, name: "Breaking Bad"})
+		season := fixed.add(t, seed{kind: itemmodel.KindSeason, name: "Season 1", parentID: &series})
+		episode := fixed.add(t, seed{kind: itemmodel.KindEpisode, name: "Pilot", parentID: &season})
+		elsewhere := fixed.add(t, seed{kind: itemmodel.KindMovie, name: "The Matrix"})
 
 		pending, err := fixed.service.ItemsNeedingMetadata(context.Background(), wanted, false, series)
 		if err != nil {

@@ -8,7 +8,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/items"
-	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
+	streammodel "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 )
 
 const ticksPerSecond = 10_000_000
@@ -35,17 +35,17 @@ func (s *Prober) probeFile(ctx context.Context, source *items.MediaSource) (*ite
 			Profile:     stream.Profile,
 			Language:    stream.Tags["language"],
 			Title:       stream.Tags["title"],
-			Width:       stream.Width,
-			Height:      stream.Height,
-			Channels:    stream.Channels,
-			SampleRate:  stream.SampleRate,
-			BitRate:     stream.BitRate,
+			Width:       optional(stream.Width),
+			Height:      optional(stream.Height),
+			Channels:    optional(stream.Channels),
+			SampleRate:  optional(stream.SampleRate),
+			BitRate:     optional(stream.BitRate),
 			PixelFormat: stream.PixelFormat,
-			Level:       stream.Level,
+			Level:       optional(stream.Level),
 			IsDefault:   stream.Disposition.Default,
 			IsForced:    stream.Disposition.Forced,
 
-			VideoRangeType: rangeType(stream.ColorTransfer),
+			VideoRangeType: optional(rangeType(stream.ColorTransfer)),
 			IsInterlaced:   interlaced(stream.FieldOrder),
 			IsAnamorphic:   anamorphic(stream.AspectRatio),
 		})
@@ -53,23 +53,23 @@ func (s *Prober) probeFile(ctx context.Context, source *items.MediaSource) (*ite
 
 	return &items.MediaSource{
 		Container:    container(probe.Format.FormatName, source.Path),
-		RunTimeTicks: int64(probe.Format.Duration * ticksPerSecond),
-		Size:         probe.Format.Size,
-		Bitrate:      probe.Format.BitRate,
-		Edges:        items.MediaSourceEdges{Streams: streams},
+		RunTimeTicks: optional(int64(probe.Format.Duration * ticksPerSecond)),
+		Size:         optional(probe.Format.Size),
+		Bitrate:      optional(probe.Format.BitRate),
+		Streams:      streams,
 	}, nil
 }
 
 func rangeType(transfer string) items.VideoRangeType {
 	switch strings.ToLower(strings.TrimSpace(transfer)) {
 	case "smpte2084":
-		return streammodal.VideoRangeTypeHDR10
+		return streammodel.VideoRangeTypeHDR10
 	case "arib-std-b67":
-		return streammodal.VideoRangeTypeHLG
+		return streammodel.VideoRangeTypeHLG
 	case "":
 		return ""
 	default:
-		return streammodal.VideoRangeTypeSDR
+		return streammodel.VideoRangeTypeSDR
 	}
 }
 
@@ -105,12 +105,21 @@ func container(formatName, path string) string {
 func streamKind(codecType string) items.StreamKind {
 	switch codecType {
 	case "video":
-		return streammodal.KindVideo
+		return streammodel.KindVideo
 	case "audio":
-		return streammodal.KindAudio
+		return streammodel.KindAudio
 	case "subtitle":
-		return streammodal.KindSubtitle
+		return streammodel.KindSubtitle
 	default:
-		return streammodal.KindEmbeddedImage
+		return streammodel.KindEmbeddedImage
 	}
+}
+
+func optional[T comparable](value T) *T {
+	var zero T
+	if value == zero {
+		return nil
+	}
+
+	return &value
 }

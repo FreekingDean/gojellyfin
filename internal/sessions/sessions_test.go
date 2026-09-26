@@ -11,16 +11,16 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	entrymodal "github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
-	devicemodal "github.com/FreekingDean/gojellyfin/internal/store/device"
-	sessionmodal "github.com/FreekingDean/gojellyfin/internal/store/session"
-	usermodal "github.com/FreekingDean/gojellyfin/internal/store/user"
+	entrymodel "github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
+	devicemodel "github.com/FreekingDean/gojellyfin/internal/store/device"
+	sessionmodel "github.com/FreekingDean/gojellyfin/internal/store/session"
+	usermodel "github.com/FreekingDean/gojellyfin/internal/store/user"
 )
 
 type fixture struct {
 	service    *Service
 	activities *activity.Service
-	user       *store.User
+	user       *User
 	device     Device
 }
 
@@ -51,22 +51,22 @@ func newFixture(t *testing.T) *fixture {
 		SetName(username).
 		SetUsername(username).
 		SetPasswordHash("").
-		Save(ctx)
+		SaveModel(ctx)
 	if err != nil {
 		t.Fatalf("failed to create the user: %v", err)
 	}
 
 	t.Cleanup(func() {
-		if _, err := client.ActivityLogEntry.Delete().Where(entrymodal.HasUserWith(usermodal.ID(user.ID))).Exec(ctx); err != nil {
+		if _, err := client.ActivityLogEntry.Delete().Where(entrymodel.HasUserWith(usermodel.ID(user.ID))).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the entries: %v", err)
 		}
-		if _, err := client.Session.Delete().Where(sessionmodal.HasUserWith(usermodal.ID(user.ID))).Exec(ctx); err != nil {
+		if _, err := client.Session.Delete().Where(sessionmodel.HasUserWith(usermodel.ID(user.ID))).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the sessions: %v", err)
 		}
-		if _, err := client.Device.Delete().Where(devicemodal.ClientID(deviceID)).Exec(ctx); err != nil {
+		if _, err := client.Device.Delete().Where(devicemodel.ClientID(deviceID)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the device: %v", err)
 		}
-		if err := client.User.DeleteOne(user).Exec(ctx); err != nil {
+		if err := client.User.DeleteOneID(user.ID).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the user: %v", err)
 		}
 		if err := connection.Stop(); err != nil {
@@ -93,7 +93,7 @@ func (f *fixture) entries(t *testing.T, since time.Time) []*activity.Entry {
 
 	mine := make([]*activity.Entry, 0)
 	for _, entry := range entries {
-		if entry.Edges.User != nil && entry.Edges.User.ID == f.user.ID {
+		if entry.User != nil && entry.User.ID == f.user.ID {
 			mine = append(mine, entry)
 		}
 	}

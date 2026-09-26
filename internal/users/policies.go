@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
-	policymodal "github.com/FreekingDean/gojellyfin/internal/store/userpolicy"
+	policymodel "github.com/FreekingDean/gojellyfin/internal/store/userpolicy"
 )
 
 type Access struct {
@@ -67,9 +67,9 @@ func granted(policy *Policy, scope string) bool {
 	case "Download":
 		return policy.EnableContentDownloading
 	case "SyncPlayCreateGroup":
-		return policy.SyncPlayAccess == policymodal.SyncPlayAccessCreateAndJoinGroups
+		return policy.SyncPlayAccess == policymodel.SyncPlayAccessCreateAndJoinGroups
 	case "SyncPlayHasAccess", "SyncPlayIsInGroup", "SyncPlayJoinGroup":
-		return policy.SyncPlayAccess != policymodal.SyncPlayAccessNone
+		return policy.SyncPlayAccess != policymodel.SyncPlayAccessNone
 	}
 
 	return false

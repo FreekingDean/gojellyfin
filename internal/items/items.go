@@ -13,22 +13,22 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
-	playlistmodal "github.com/FreekingDean/gojellyfin/internal/store/playlist"
+	playlistmodel "github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
-	datamodal "github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
+	datamodel "github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
 )
 
 type (
-	Item      = store.Item
-	Kind      = itemmodal.Kind
-	MediaType = playlistmodal.MediaType
+	Item      = store.ItemModel
+	Kind      = itemmodel.Kind
+	MediaType = playlistmodel.MediaType
 )
 
 var (
-	ValidKind      = itemmodal.KindValidator
-	ValidMediaType = playlistmodal.MediaTypeValidator
+	ValidKind      = itemmodel.KindValidator
+	ValidMediaType = playlistmodel.MediaTypeValidator
 )
 
 type Service struct {
@@ -40,27 +40,27 @@ func New(client *store.Client) *Service {
 }
 
 var isFolderKind = map[Kind]bool{
-	itemmodal.KindSeries:           true,
-	itemmodal.KindSeason:           true,
-	itemmodal.KindFolder:           true,
-	itemmodal.KindCollectionFolder: true,
-	itemmodal.KindBoxSet:           true,
-	itemmodal.KindPlaylistsFolder:  true,
-	itemmodal.KindUserRootFolder:   true,
+	itemmodel.KindSeries:           true,
+	itemmodel.KindSeason:           true,
+	itemmodel.KindFolder:           true,
+	itemmodel.KindCollectionFolder: true,
+	itemmodel.KindBoxSet:           true,
+	itemmodel.KindPlaylistsFolder:  true,
+	itemmodel.KindUserRootFolder:   true,
 }
 
 var (
-	folderKinds   = []Kind{itemmodal.KindSeries, itemmodal.KindSeason}
-	playableKinds = []Kind{itemmodal.KindMovie, itemmodal.KindEpisode}
+	folderKinds   = []Kind{itemmodel.KindSeries, itemmodel.KindSeason}
+	playableKinds = []Kind{itemmodel.KindMovie, itemmodel.KindEpisode}
 
-	audioKinds = []Kind{itemmodal.KindAudio, itemmodal.KindAudioBook}
+	audioKinds = []Kind{itemmodel.KindAudio, itemmodel.KindAudioBook}
 
 	allKinds = []Kind{
-		itemmodal.KindMovie, itemmodal.KindSeries, itemmodal.KindSeason,
-		itemmodal.KindEpisode, itemmodal.KindPlaylist, itemmodal.KindAudio,
-		itemmodal.KindAudioBook, itemmodal.KindTrailer, itemmodal.KindVideo,
-		itemmodal.KindFolder, itemmodal.KindCollectionFolder, itemmodal.KindBoxSet,
-		itemmodal.KindPlaylistsFolder, itemmodal.KindUserRootFolder,
+		itemmodel.KindMovie, itemmodel.KindSeries, itemmodel.KindSeason,
+		itemmodel.KindEpisode, itemmodel.KindPlaylist, itemmodel.KindAudio,
+		itemmodel.KindAudioBook, itemmodel.KindTrailer, itemmodel.KindVideo,
+		itemmodel.KindFolder, itemmodel.KindCollectionFolder, itemmodel.KindBoxSet,
+		itemmodel.KindPlaylistsFolder, itemmodel.KindUserRootFolder,
 	}
 )
 
@@ -82,11 +82,11 @@ func IsFolder(kind Kind) bool {
 func MediaTypeOf(kind Kind) MediaType {
 	switch {
 	case isFolderKind[kind]:
-		return playlistmodal.MediaTypeUnknown
+		return playlistmodel.MediaTypeUnknown
 	case slices.Contains(audioKinds, kind):
-		return playlistmodal.MediaTypeAudio
+		return playlistmodel.MediaTypeAudio
 	default:
-		return playlistmodal.MediaTypeVideo
+		return playlistmodel.MediaTypeVideo
 	}
 }
 
@@ -100,8 +100,8 @@ func (s *Service) SaveScanned(ctx context.Context, scanned Item) (*Item, error) 
 		SetNillableProductionYear(scanned.ProductionYear).
 		SetNillableIndexNumber(scanned.IndexNumber).
 		SetNillableParentIndexNumber(scanned.ParentIndexNumber).
-		SetDateModified(scanned.DateModified).
-		OnConflictColumns(itemmodal.FieldKey).
+		SetNillableDateModified(scanned.DateModified).
+		OnConflictColumns(itemmodel.FieldKey).
 		UpdateParentID().
 		UpdateKind().
 		UpdateIndexNumber().
@@ -119,7 +119,7 @@ func (s *Service) SaveScanned(ctx context.Context, scanned Item) (*Item, error) 
 }
 
 func (s *Service) ItemByID(ctx context.Context, viewer Viewer, id uuid.UUID) (*Item, error) {
-	item, err := s.query(viewer).Where(itemmodal.ID(id)).Only(ctx)
+	item, err := s.query(viewer).Where(itemmodel.ID(id)).OnlyModel(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query item: %w", err)
 	}
@@ -133,7 +133,7 @@ func (s *Service) ItemsByIDs(ctx context.Context, viewer Viewer, ids []uuid.UUID
 		return found, nil
 	}
 
-	records, err := s.query(viewer).Where(itemmodal.IDIn(ids...)).All(ctx)
+	records, err := s.query(viewer).Where(itemmodel.IDIn(ids...)).AllModels(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query items by id: %w", err)
 	}
@@ -162,7 +162,7 @@ func parsed(values []string) []uuid.UUID {
 }
 
 func (s *Service) Ancestors(ctx context.Context, id uuid.UUID) (*Ancestry, error) {
-	item, err := s.store.Item.Get(ctx, id)
+	item, err := s.store.Item.GetModel(ctx, id)
 	if store.IsNotFound(err) {
 		return nil, nil
 	}
@@ -196,16 +196,16 @@ func (s *Service) Ancestors(ctx context.Context, id uuid.UUID) (*Ancestry, error
 }
 
 func (s *Service) ItemsNeedingMetadata(ctx context.Context, kinds []Kind, force bool, scope uuid.UUID) ([]uuid.UUID, error) {
-	query := s.query(Everyone).Where(itemmodal.KindIn(kinds...), itemmodal.LockData(false))
+	query := s.query(Everyone).Where(itemmodel.KindIn(kinds...), itemmodel.LockData(false))
 	if !force {
-		query = query.Where(itemmodal.ProviderIdsIsNil())
+		query = query.Where(itemmodel.ProviderIdsIsNil())
 	}
 	if scope != uuid.Nil {
-		query = query.Where(itemmodal.Or(
+		query = query.Where(itemmodel.Or(
 			inLibrary(scope),
-			itemmodal.ID(scope),
-			itemmodal.HasParentWith(itemmodal.ID(scope)),
-			itemmodal.HasParentWith(itemmodal.HasParentWith(itemmodal.ID(scope))),
+			itemmodel.ID(scope),
+			itemmodel.HasParentWith(itemmodel.ID(scope)),
+			itemmodel.HasParentWith(itemmodel.HasParentWith(itemmodel.ID(scope))),
 		))
 	}
 
@@ -217,9 +217,9 @@ func (s *Service) ItemsNeedingMetadata(ctx context.Context, kinds []Kind, force 
 	ids, err := query.
 		Order(func(selector *sql.Selector) {
 			selector.OrderExpr(sql.Expr(fmt.Sprintf(
-				"CASE %s %s END", selector.C(itemmodal.FieldKind), strings.Join(ranks, " "),
+				"CASE %s %s END", selector.C(itemmodel.FieldKind), strings.Join(ranks, " "),
 			)))
-		}, itemmodal.ByID()).
+		}, itemmodel.ByID()).
 		IDs(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query the items needing metadata: %w", err)
@@ -250,13 +250,13 @@ type ItemQuery struct {
 }
 
 var sortFields = map[string]string{
-	"sortname":       itemmodal.FieldSortName,
-	"name":           itemmodal.FieldSortName,
-	"premieredate":   itemmodal.FieldPremiereDate,
-	"productionyear": itemmodal.FieldProductionYear,
-	"datecreated":    itemmodal.FieldCreatedAt,
-	"datemodified":   itemmodal.FieldDateModified,
-	"indexnumber":    itemmodal.FieldIndexNumber,
+	"sortname":       itemmodel.FieldSortName,
+	"name":           itemmodel.FieldSortName,
+	"premieredate":   itemmodel.FieldPremiereDate,
+	"productionyear": itemmodel.FieldProductionYear,
+	"datecreated":    itemmodel.FieldCreatedAt,
+	"datemodified":   itemmodel.FieldDateModified,
+	"indexnumber":    itemmodel.FieldIndexNumber,
 }
 
 func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int, error) {
@@ -266,31 +266,31 @@ func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int
 		items = items.Where(inLibrary(*query.LibraryID))
 	}
 	if query.TopLevel {
-		items = items.Where(itemmodal.ParentIDIsNil())
+		items = items.Where(itemmodel.ParentIDIsNil())
 	}
 	if query.ParentID != nil {
-		items = items.Where(itemmodal.ParentID(*query.ParentID))
+		items = items.Where(itemmodel.ParentID(*query.ParentID))
 	}
 	if len(query.Kinds) > 0 {
-		items = items.Where(itemmodal.KindIn(query.Kinds...))
+		items = items.Where(itemmodel.KindIn(query.Kinds...))
 	}
 	if len(query.MediaTypes) > 0 {
-		items = items.Where(itemmodal.KindIn(kindsOf(query.MediaTypes)...))
+		items = items.Where(itemmodel.KindIn(kindsOf(query.MediaTypes)...))
 	}
 	if len(query.IDs) > 0 {
-		items = items.Where(itemmodal.IDIn(query.IDs...))
+		items = items.Where(itemmodel.IDIn(query.IDs...))
 	}
 	if query.SearchTerm != "" {
-		items = items.Where(itemmodal.NameContainsFold(query.SearchTerm))
+		items = items.Where(itemmodel.NameContainsFold(query.SearchTerm))
 	}
 	if query.NameStartsWith != "" {
-		items = items.Where(itemmodal.SortNameHasPrefix(sorted(query.NameStartsWith)))
+		items = items.Where(itemmodel.SortNameHasPrefix(sorted(query.NameStartsWith)))
 	}
 	if query.NameStartsWithOrGreater != "" {
-		items = items.Where(itemmodal.SortNameGTE(sorted(query.NameStartsWithOrGreater)))
+		items = items.Where(itemmodel.SortNameGTE(sorted(query.NameStartsWithOrGreater)))
 	}
 	if query.NameLessThan != "" {
-		items = items.Where(itemmodal.SortNameLT(sorted(query.NameLessThan)))
+		items = items.Where(itemmodel.SortNameLT(sorted(query.NameLessThan)))
 	}
 
 	total, err := items.Clone().Count(ctx)
@@ -311,7 +311,7 @@ func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int
 			items = items.Order(sql.OrderByField(field, direction).ToFunc())
 		}
 	}
-	items = items.Order(itemmodal.BySortName(direction))
+	items = items.Order(itemmodel.BySortName(direction))
 
 	if query.StartIndex > 0 {
 		items = items.Offset(query.StartIndex)
@@ -320,7 +320,7 @@ func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int
 		items = items.Limit(query.Limit)
 	}
 
-	records, err := items.All(ctx)
+	records, err := items.AllModels(ctx)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to query items: %w", err)
 	}
@@ -343,8 +343,8 @@ func (s *Service) CountChildren(ctx context.Context, parentIDs []uuid.UUID) (map
 		Count    int       `json:"count"`
 	}
 	err := s.query(Everyone).
-		Where(itemmodal.ParentIDIn(parentIDs...)).
-		GroupBy(itemmodal.FieldParentID).
+		Where(itemmodel.ParentIDIn(parentIDs...)).
+		GroupBy(itemmodel.FieldParentID).
 		Aggregate(store.Count()).
 		Scan(ctx, &rows)
 	if err != nil {
@@ -360,12 +360,12 @@ func (s *Service) CountChildren(ctx context.Context, parentIDs []uuid.UUID) (map
 
 func (s *Service) query(viewer Viewer) *store.ItemQuery {
 	return s.store.Item.Query().
-		Where(itemmodal.DeletedAtIsNil()).
+		Where(itemmodel.DeletedAtIsNil()).
 		Where(viewer.visible()...)
 }
 
 func inLibrary(id uuid.UUID) predicate.Item {
-	return itemmodal.HasLibrariesWith(librarymembership.LibraryID(id))
+	return itemmodel.HasLibrariesWith(librarymembership.LibraryID(id))
 }
 
 type Viewer struct {
@@ -381,9 +381,9 @@ func (v Viewer) visible() []predicate.Item {
 	}
 
 	return []predicate.Item{
-		itemmodal.Or(
-			itemmodal.KindEQ(itemmodal.KindPlaylist),
-			itemmodal.HasLibrariesWith(librarymembership.LibraryIDIn(v.Libraries...)),
+		itemmodel.Or(
+			itemmodel.KindEQ(itemmodel.KindPlaylist),
+			itemmodel.HasLibrariesWith(librarymembership.LibraryIDIn(v.Libraries...)),
 		),
 	}
 }
@@ -454,7 +454,7 @@ func (s *Service) DeleteMembershipNotInKeys(
 		librarymembership.SourceID(sourceID),
 	}
 	if len(keys) > 0 {
-		where = append(where, librarymembership.HasItemWith(itemmodal.KeyNotIn(keys...)))
+		where = append(where, librarymembership.HasItemWith(itemmodel.KeyNotIn(keys...)))
 	}
 
 	dropped, err := s.store.LibraryItem.Query().
@@ -475,9 +475,9 @@ func (s *Service) DeleteMembershipNotInKeys(
 func (s *Service) UnreachableItems(ctx context.Context) ([]uuid.UUID, error) {
 	orphans, err := s.store.Item.Query().
 		Where(
-			itemmodal.DeletedAtIsNil(),
-			itemmodal.Not(itemmodal.HasLibraries()),
-			itemmodal.Not(itemmodal.HasPlaylist()),
+			itemmodel.DeletedAtIsNil(),
+			itemmodel.Not(itemmodel.HasLibraries()),
+			itemmodel.Not(itemmodel.HasPlaylist()),
 		).
 		IDs(ctx)
 	if err != nil {
@@ -494,10 +494,10 @@ func (s *Service) SweepUnreachable(ctx context.Context, disturbed []uuid.UUID) e
 
 	if err := s.store.Item.Update().
 		Where(
-			itemmodal.IDIn(disturbed...),
-			itemmodal.DeletedAtIsNil(),
-			itemmodal.KindIn(playableKinds...),
-			itemmodal.Not(itemmodal.HasItemSources()),
+			itemmodel.IDIn(disturbed...),
+			itemmodel.DeletedAtIsNil(),
+			itemmodel.KindIn(playableKinds...),
+			itemmodel.Not(itemmodel.HasItemSources()),
 		).
 		SetDeletedAt(time.Now()).
 		Exec(ctx); err != nil {
@@ -507,10 +507,10 @@ func (s *Service) SweepUnreachable(ctx context.Context, disturbed []uuid.UUID) e
 	for {
 		affected, err := s.store.Item.Update().
 			Where(
-				itemmodal.DeletedAtIsNil(),
-				itemmodal.KindIn(folderKinds...),
-				itemmodal.HasChildren(),
-				itemmodal.Not(itemmodal.HasChildrenWith(itemmodal.DeletedAtIsNil())),
+				itemmodel.DeletedAtIsNil(),
+				itemmodel.KindIn(folderKinds...),
+				itemmodel.HasChildren(),
+				itemmodel.Not(itemmodel.HasChildrenWith(itemmodel.DeletedAtIsNil())),
 			).
 			SetDeletedAt(time.Now()).
 			Save(ctx)
@@ -524,18 +524,18 @@ func (s *Service) SweepUnreachable(ctx context.Context, disturbed []uuid.UUID) e
 }
 
 func (s *Service) DistinctYears(ctx context.Context, viewer Viewer, libraryID *uuid.UUID, kinds []Kind) ([]int32, error) {
-	items := s.query(viewer).Where(itemmodal.ProductionYearNotNil())
+	items := s.query(viewer).Where(itemmodel.ProductionYearNotNil())
 	if libraryID != nil {
 		items = items.Where(inLibrary(*libraryID))
 	}
 	if len(kinds) > 0 {
-		items = items.Where(itemmodal.KindIn(kinds...))
+		items = items.Where(itemmodel.KindIn(kinds...))
 	}
 
 	values, err := items.
-		Order(itemmodal.ByProductionYear()).
+		Order(itemmodel.ByProductionYear()).
 		Unique(true).
-		Select(itemmodal.FieldProductionYear).
+		Select(itemmodel.FieldProductionYear).
 		Ints(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query distinct years: %w", err)
@@ -550,9 +550,9 @@ func (s *Service) DistinctYears(ctx context.Context, viewer Viewer, libraryID *u
 }
 
 func (s *Service) ResumeItems(ctx context.Context, userID uuid.UUID, kinds []Kind, libraryID *uuid.UUID, startIndex, limit int) ([]*Item, int, error) {
-	playable := []predicate.Item{itemmodal.KindNotIn(folderKinds...)}
+	playable := []predicate.Item{itemmodel.KindNotIn(folderKinds...)}
 	if len(kinds) > 0 {
-		playable = append(playable, itemmodal.KindIn(kinds...))
+		playable = append(playable, itemmodel.KindIn(kinds...))
 	}
 	if libraryID != nil {
 		playable = append(playable, inLibrary(*libraryID))
@@ -560,10 +560,10 @@ func (s *Service) ResumeItems(ctx context.Context, userID uuid.UUID, kinds []Kin
 
 	data := s.store.UserItemData.Query().
 		Where(
-			datamodal.UserID(userID),
-			datamodal.PlaybackPositionTicksGT(0),
-			datamodal.Played(false),
-			datamodal.HasItemWith(playable...),
+			datamodel.UserID(userID),
+			datamodel.PlaybackPositionTicksGT(0),
+			datamodel.Played(false),
+			datamodel.HasItemWith(playable...),
 		)
 
 	total, err := data.Clone().Count(ctx)
@@ -571,7 +571,7 @@ func (s *Service) ResumeItems(ctx context.Context, userID uuid.UUID, kinds []Kin
 		return nil, 0, fmt.Errorf("failed to count resume items: %w", err)
 	}
 
-	data = data.Order(datamodal.ByLastPlayedAt(sql.OrderDesc(), sql.OrderNullsLast()))
+	data = data.Order(datamodel.ByLastPlayedAt(sql.OrderDesc(), sql.OrderNullsLast()))
 	if startIndex > 0 {
 		data = data.Offset(startIndex)
 	}
@@ -579,15 +579,15 @@ func (s *Service) ResumeItems(ctx context.Context, userID uuid.UUID, kinds []Kin
 		data = data.Limit(limit)
 	}
 
-	rows, err := data.WithItem().All(ctx)
+	rows, err := data.WithItem().AllModels(ctx)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to query resume items: %w", err)
 	}
 
 	records := make([]*Item, 0, len(rows))
 	for _, row := range rows {
-		if row.Edges.Item != nil {
-			records = append(records, row.Edges.Item)
+		if row.Item != nil {
+			records = append(records, row.Item)
 		}
 	}
 
@@ -600,7 +600,7 @@ func (s *Service) CountByKind(ctx context.Context) (map[string]int32, error) {
 		Count int    `json:"count"`
 	}
 	err := s.query(Everyone).
-		GroupBy(itemmodal.FieldKind).
+		GroupBy(itemmodel.FieldKind).
 		Aggregate(store.Count()).
 		Scan(ctx, &rows)
 	if err != nil {
@@ -613,4 +613,14 @@ func (s *Service) CountByKind(ctx context.Context) (map[string]int32, error) {
 	}
 
 	return counts, nil
+}
+
+func deref[T any](value *T) T {
+	if value == nil {
+		var zero T
+
+		return zero
+	}
+
+	return *value
 }

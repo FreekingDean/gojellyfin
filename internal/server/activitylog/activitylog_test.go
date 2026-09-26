@@ -1,206 +1,144 @@
 package activitylog
 
 import (
-	"context"
-	"slices"
+	"errors"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 
 	"github.com/FreekingDean/gojellyfin/internal/activity"
-	"github.com/FreekingDean/gojellyfin/internal/env"
+	"github.com/FreekingDean/gojellyfin/internal/server/activitylog/mocks"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
-	"github.com/FreekingDean/gojellyfin/internal/store"
-	entrymodal "github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
 )
 
-type fixture struct {
-	server *Server
-	client *store.Client
-	userID uuid.UUID
-	future time.Time
-	ids    []uuid.UUID
-}
-
-func newFixture(t *testing.T) *fixture {
-	t.Helper()
-
-	config, err := env.Load()
-	if err != nil {
-		t.Fatalf("failed to read the environment: %v", err)
-	}
-
-	connection, err := store.NewStore(config)
-	if err != nil {
-		t.Fatalf("failed to open the database: %v", err)
-	}
-	if err := connection.Start(); err != nil {
-		t.Fatalf("failed to reach the database, set DATABASE_URL: %v", err)
-	}
-
-	client := connection.Client()
-	user, err := client.User.Create().
-		SetName(t.Name()).
-		SetUsername(t.Name() + "-" + uuid.NewString()).
-		SetPasswordHash("").
-		Save(context.Background())
-	if err != nil {
-		t.Fatalf("failed to create the user: %v", err)
-	}
-
-	f := &fixture{
-		server: New(activity.New(client)),
-		client: client,
-		userID: user.ID,
-		future: time.Now().Add(time.Hour).Truncate(time.Millisecond),
-	}
-
-	t.Cleanup(func() {
-		ctx := context.Background()
-		if _, err := client.ActivityLogEntry.Delete().Where(entrymodal.IDIn(f.ids...)).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the entries: %v", err)
-		}
-		if err := client.User.DeleteOne(user).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the user: %v", err)
-		}
-		if err := connection.Stop(); err != nil {
-			t.Errorf("failed to close the database: %v", err)
-		}
-	})
-
-	return f
-}
-
-func (f *fixture) add(t *testing.T, name string, at time.Time, userID *uuid.UUID) {
-	t.Helper()
-
-	entry, err := f.client.ActivityLogEntry.Create().
-		SetName(name).
-		SetKind(activity.KindLibraryScanCompleted).
-		SetShortOverview("seeded").
-		SetSeverity(activity.SeverityInformation).
-		SetCreatedAt(at).
-		SetNillableUserID(userID).
-		Save(context.Background())
-	if err != nil {
-		t.Fatalf("failed to create %q: %v", name, err)
-	}
-
-	f.ids = append(f.ids, entry.ID)
-}
-
-func (f *fixture) get(t *testing.T, params api.GetLogEntriesParams) api.ActivityLogEntryQueryResult {
-	t.Helper()
-
-	response, err := f.server.GetLogEntries(context.Background(), api.GetLogEntriesRequestObject{Params: params})
-	if err != nil {
-		t.Fatalf("failed to get log entries: %v", err)
-	}
-
-	result, ok := response.(api.GetLogEntries200JSONResponse)
-	if !ok {
-		t.Fatalf("response = %T, want a 200", response)
-	}
-
-	return api.ActivityLogEntryQueryResult(result)
-}
-
-func names(result api.ActivityLogEntryQueryResult) []string {
-	found := make([]string, 0)
-	for _, entry := range apiutil.Deref(result.Items) {
-		found = append(found, apiutil.Deref(entry.Name))
-	}
-
-	return found
-}
-
 func TestServer_GetLogEntries(t *testing.T) {
-	fixture := newFixture(t)
+	at := time.Date(2026, time.September, 1, 12, 0, 0, 0, time.UTC)
+	userID := uuid.New()
+	itemID := uuid.New()
+	failed := errors.New("the database is gone")
 
-	fixture.add(t, "Oldest", fixture.future, nil)
-	fixture.add(t, "Middle", fixture.future.Add(time.Minute), nil)
-	fixture.add(t, "Newest", fixture.future.Add(2*time.Minute), nil)
-	fixture.add(t, "By User", fixture.future.Add(3*time.Minute), &fixture.userID)
+	tests := []struct {
+		name             string
+		request          api.GetLogEntriesRequestObject
+		expectedResponse api.GetLogEntriesResponseObject
+		expectedError    error
 
-	t.Run("returns the newest entry first", func(t *testing.T) {
-		result := fixture.get(t, api.GetLogEntriesParams{MinDate: &fixture.future})
+		mockExpectedQuery activity.Query
+		mockResponse      []*activity.Entry
+		mockTotal         int
+		mockError         error
+	}{
+		{
+			name:    "empty result",
+			request: api.GetLogEntriesRequestObject{},
+			expectedResponse: api.GetLogEntries200JSONResponse{
+				Items:            &[]api.ActivityLogEntry{},
+				StartIndex:       apiutil.Ptr(int32(0)),
+				TotalRecordCount: apiutil.Ptr(int32(0)),
+			},
+			mockResponse: []*activity.Entry{},
+		},
+		{
+			name: "passes the window and the page through",
+			request: api.GetLogEntriesRequestObject{Params: api.GetLogEntriesParams{
+				StartIndex: apiutil.Ptr(int32(2)),
+				Limit:      apiutil.Ptr(int32(5)),
+				MinDate:    &at,
+				MaxDate:    &at,
+				HasUserId:  apiutil.Ptr(true),
+			}},
+			expectedResponse: api.GetLogEntries200JSONResponse{
+				Items:            &[]api.ActivityLogEntry{},
+				StartIndex:       apiutil.Ptr(int32(2)),
+				TotalRecordCount: apiutil.Ptr(int32(9)),
+			},
+			mockExpectedQuery: activity.Query{
+				StartIndex: 2,
+				Limit:      5,
+				MinDate:    &at,
+				MaxDate:    &at,
+				HasUserID:  apiutil.Ptr(true),
+			},
+			mockResponse: []*activity.Entry{},
+			mockTotal:    9,
+		},
+		{
+			name:    "translates an entry",
+			request: api.GetLogEntriesRequestObject{},
+			expectedResponse: api.GetLogEntries200JSONResponse{
+				Items: &[]api.ActivityLogEntry{
+					{
+						Date:          apiutil.Ptr(at),
+						Name:          apiutil.Ptr("Scan"),
+						Type:          apiutil.Ptr(activity.KindLibraryScanCompleted),
+						Severity:      apiutil.Ptr(api.LogLevel(activity.SeverityInformation)),
+						UserId:        &userID,
+						ItemId:        apiutil.Ptr(itemID.String()),
+						Overview:      apiutil.Ptr("overview"),
+						ShortOverview: apiutil.Ptr("short"),
+					},
+				},
+				StartIndex:       apiutil.Ptr(int32(0)),
+				TotalRecordCount: apiutil.Ptr(int32(1)),
+			},
+			mockResponse: []*activity.Entry{
+				{
+					CreatedAt:     at,
+					Name:          "Scan",
+					Kind:          activity.KindLibraryScanCompleted,
+					Severity:      activity.SeverityInformation,
+					UserID:        &userID,
+					ItemID:        &itemID,
+					Overview:      "overview",
+					ShortOverview: "short",
+				},
+			},
+			mockTotal: 1,
+		},
+		{
+			name:    "leaves an empty overview out",
+			request: api.GetLogEntriesRequestObject{},
+			expectedResponse: api.GetLogEntries200JSONResponse{
+				Items: &[]api.ActivityLogEntry{
+					{
+						Date:     apiutil.Ptr(time.Time{}),
+						Name:     apiutil.Ptr(""),
+						Type:     apiutil.Ptr(""),
+						Severity: apiutil.Ptr(api.LogLevel("")),
+					},
+				},
+				StartIndex:       apiutil.Ptr(int32(0)),
+				TotalRecordCount: apiutil.Ptr(int32(1)),
+			},
+			mockResponse: []*activity.Entry{{}},
+			mockTotal:    1,
+		},
+		{
+			name:          "returns the error",
+			request:       api.GetLogEntriesRequestObject{},
+			expectedError: failed,
+			mockError:     failed,
+		},
+	}
 
-		want := []string{"By User", "Newest", "Middle", "Oldest"}
-		if got := names(result); !slices.Equal(got, want) {
-			t.Errorf("entries = %v, want %v", got, want)
-		}
-		if total := apiutil.Deref(result.TotalRecordCount); total != 4 {
-			t.Errorf("total = %d, want 4", total)
-		}
-	})
-
-	t.Run("pages without changing the total", func(t *testing.T) {
-		result := fixture.get(t, api.GetLogEntriesParams{
-			MinDate:    &fixture.future,
-			StartIndex: apiutil.Ptr(int32(1)),
-			Limit:      apiutil.Ptr(int32(2)),
-		})
-
-		want := []string{"Newest", "Middle"}
-		if got := names(result); !slices.Equal(got, want) {
-			t.Errorf("entries = %v, want %v", got, want)
-		}
-		if total := apiutil.Deref(result.TotalRecordCount); total != 4 {
-			t.Errorf("total = %d, want 4", total)
-		}
-		if start := apiutil.Deref(result.StartIndex); start != 1 {
-			t.Errorf("start index = %d, want 1", start)
-		}
-	})
-
-	t.Run("drops entries before the minimum date", func(t *testing.T) {
-		minDate := fixture.future.Add(2 * time.Minute)
-		result := fixture.get(t, api.GetLogEntriesParams{MinDate: &minDate})
-
-		want := []string{"By User", "Newest"}
-		if got := names(result); !slices.Equal(got, want) {
-			t.Errorf("entries = %v, want %v", got, want)
-		}
-		if total := apiutil.Deref(result.TotalRecordCount); total != 2 {
-			t.Errorf("total = %d, want 2", total)
-		}
-	})
-
-	t.Run("bounds the window at both ends", func(t *testing.T) {
-		maxDate := fixture.future.Add(time.Minute)
-		result := fixture.get(t, api.GetLogEntriesParams{MinDate: &fixture.future, MaxDate: &maxDate})
-
-		want := []string{"Middle", "Oldest"}
-		if got := names(result); !slices.Equal(got, want) {
-			t.Errorf("entries = %v, want %v", got, want)
-		}
-		if total := apiutil.Deref(result.TotalRecordCount); total != 2 {
-			t.Errorf("total = %d, want 2", total)
-		}
-	})
-
-	t.Run("filters on having a user", func(t *testing.T) {
-		result := fixture.get(t, api.GetLogEntriesParams{MinDate: &fixture.future, HasUserId: apiutil.Ptr(true)})
-
-		want := []string{"By User"}
-		if got := names(result); !slices.Equal(got, want) {
-			t.Errorf("entries = %v, want %v", got, want)
-		}
-		for _, entry := range apiutil.Deref(result.Items) {
-			if got := apiutil.Deref(entry.UserId); got != fixture.userID {
-				t.Errorf("user id = %v, want %v", got, fixture.userID)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			activities := mocks.NewMockActivitiesService(ctrl)
+			activities.EXPECT().
+				Entries(gomock.Any(), test.mockExpectedQuery).
+				Return(test.mockResponse, test.mockTotal, test.mockError)
+			server := Server{
+				activity: activities,
 			}
-		}
-	})
 
-	t.Run("filters on not having a user", func(t *testing.T) {
-		result := fixture.get(t, api.GetLogEntriesParams{MinDate: &fixture.future, HasUserId: apiutil.Ptr(false)})
-
-		want := []string{"Newest", "Middle", "Oldest"}
-		if got := names(result); !slices.Equal(got, want) {
-			t.Errorf("entries = %v, want %v", got, want)
-		}
-	})
+			resp, err := server.GetLogEntries(t.Context(), test.request)
+			assert.Equal(t, test.expectedError, err)
+			assert.Equal(t, test.expectedResponse, resp)
+		})
+	}
 }

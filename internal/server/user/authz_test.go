@@ -71,8 +71,7 @@ func newAccounts(t *testing.T) *accounts {
 }
 
 func as(user *users.User) context.Context {
-	session := &sessions.Session{}
-	session.Edges.User = &store.User{ID: user.ID}
+	session := &sessions.Session{UserID: &user.ID}
 
 	return auth.ContextWithSession(context.Background(), session)
 }

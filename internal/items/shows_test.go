@@ -11,8 +11,8 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/source"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
+	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
 
 type fixture struct {
@@ -29,7 +29,7 @@ func (f *fixture) downloader(t *testing.T) uuid.UUID {
 		SetName(t.Name() + "-" + uuid.NewString()).
 		SetURL("http://" + uuid.NewString() + ".invalid").
 		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
-		SetKind(sourcemodal.KindRadarr).
+		SetKind(sourcemodel.KindRadarr).
 		SetRootPath("/media").
 		SetLocalPath("/media").
 		Save(context.Background())
@@ -82,7 +82,7 @@ func newFixture(t *testing.T) *fixture {
 		SetName(name).
 		SetURL("http://" + uuid.NewString() + ".invalid").
 		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
-		SetKind(sourcemodal.KindRadarr).
+		SetKind(sourcemodel.KindRadarr).
 		SetRootPath("/media").
 		SetLocalPath("/media").
 		Save(context.Background())
@@ -93,7 +93,7 @@ func newFixture(t *testing.T) *fixture {
 	t.Cleanup(func() {
 		ctx := context.Background()
 		if _, err := client.Item.Delete().
-			Where(itemmodal.KeyContains(library.ID.String())).
+			Where(itemmodel.KeyContains(library.ID.String())).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the items: %v", err)
 		}
@@ -175,15 +175,15 @@ func TestService_SeriesSeasons(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
-	series := fixture.add(t, seed{kind: itemmodal.KindSeries, name: "Series"})
-	other := fixture.add(t, seed{kind: itemmodal.KindSeries, name: "Other Series"})
+	series := fixture.add(t, seed{kind: itemmodel.KindSeries, name: "Series"})
+	other := fixture.add(t, seed{kind: itemmodel.KindSeries, name: "Other Series"})
 
-	fixture.add(t, seed{kind: itemmodal.KindSeason, name: "Season 2", parentID: &series, index: number(2)})
-	fixture.add(t, seed{kind: itemmodal.KindSeason, name: "Season 1", parentID: &series, index: number(1)})
-	fixture.add(t, seed{kind: itemmodal.KindSeason, name: "Unnumbered B", parentID: &series, sortName: "b"})
-	fixture.add(t, seed{kind: itemmodal.KindSeason, name: "Unnumbered A", parentID: &series, sortName: "a"})
-	fixture.add(t, seed{kind: itemmodal.KindSeason, name: "Elsewhere", parentID: &other, index: number(1)})
-	fixture.add(t, seed{kind: itemmodal.KindEpisode, name: "Loose Episode", parentID: &series, index: number(1)})
+	fixture.add(t, seed{kind: itemmodel.KindSeason, name: "Season 2", parentID: &series, index: number(2)})
+	fixture.add(t, seed{kind: itemmodel.KindSeason, name: "Season 1", parentID: &series, index: number(1)})
+	fixture.add(t, seed{kind: itemmodel.KindSeason, name: "Unnumbered B", parentID: &series, sortName: "b"})
+	fixture.add(t, seed{kind: itemmodel.KindSeason, name: "Unnumbered A", parentID: &series, sortName: "a"})
+	fixture.add(t, seed{kind: itemmodel.KindSeason, name: "Elsewhere", parentID: &other, index: number(1)})
+	fixture.add(t, seed{kind: itemmodel.KindEpisode, name: "Loose Episode", parentID: &series, index: number(1)})
 
 	records, err := fixture.service.SeriesSeasons(ctx, Everyone, series)
 	if err != nil {
@@ -200,18 +200,18 @@ func TestService_SeriesEpisodes(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
-	series := fixture.add(t, seed{kind: itemmodal.KindSeries, name: "Series"})
-	other := fixture.add(t, seed{kind: itemmodal.KindSeries, name: "Other Series"})
-	seasonOne := fixture.add(t, seed{kind: itemmodal.KindSeason, name: "Season 1", parentID: &series, index: number(1)})
-	seasonTwo := fixture.add(t, seed{kind: itemmodal.KindSeason, name: "Season 2", parentID: &series, index: number(2)})
-	otherSeason := fixture.add(t, seed{kind: itemmodal.KindSeason, name: "Other Season", parentID: &other, index: number(1)})
+	series := fixture.add(t, seed{kind: itemmodel.KindSeries, name: "Series"})
+	other := fixture.add(t, seed{kind: itemmodel.KindSeries, name: "Other Series"})
+	seasonOne := fixture.add(t, seed{kind: itemmodel.KindSeason, name: "Season 1", parentID: &series, index: number(1)})
+	seasonTwo := fixture.add(t, seed{kind: itemmodel.KindSeason, name: "Season 2", parentID: &series, index: number(2)})
+	otherSeason := fixture.add(t, seed{kind: itemmodel.KindSeason, name: "Other Season", parentID: &other, index: number(1)})
 
-	fixture.add(t, seed{kind: itemmodal.KindEpisode, name: "S02E01", parentID: &seasonTwo, index: number(1), parentIndex: number(2)})
-	fixture.add(t, seed{kind: itemmodal.KindEpisode, name: "S01E02", parentID: &seasonOne, index: number(2), parentIndex: number(1)})
-	fixture.add(t, seed{kind: itemmodal.KindEpisode, name: "S01E01", parentID: &seasonOne, index: number(1), parentIndex: number(1)})
-	fixture.add(t, seed{kind: itemmodal.KindEpisode, name: "S02 Extra", parentID: &seasonTwo, parentIndex: number(2)})
-	fixture.add(t, seed{kind: itemmodal.KindVideo, name: "Behind The Scenes", parentID: &seasonOne, index: number(1), parentIndex: number(1)})
-	fixture.add(t, seed{kind: itemmodal.KindEpisode, name: "Elsewhere", parentID: &otherSeason, index: number(1), parentIndex: number(1)})
+	fixture.add(t, seed{kind: itemmodel.KindEpisode, name: "S02E01", parentID: &seasonTwo, index: number(1), parentIndex: number(2)})
+	fixture.add(t, seed{kind: itemmodel.KindEpisode, name: "S01E02", parentID: &seasonOne, index: number(2), parentIndex: number(1)})
+	fixture.add(t, seed{kind: itemmodel.KindEpisode, name: "S01E01", parentID: &seasonOne, index: number(1), parentIndex: number(1)})
+	fixture.add(t, seed{kind: itemmodel.KindEpisode, name: "S02 Extra", parentID: &seasonTwo, parentIndex: number(2)})
+	fixture.add(t, seed{kind: itemmodel.KindVideo, name: "Behind The Scenes", parentID: &seasonOne, index: number(1), parentIndex: number(1)})
+	fixture.add(t, seed{kind: itemmodel.KindEpisode, name: "Elsewhere", parentID: &otherSeason, index: number(1), parentIndex: number(1)})
 
 	tests := []struct {
 		name      string
@@ -271,13 +271,13 @@ func TestService_UpcomingEpisodes(t *testing.T) {
 	soon := now.Add(24 * time.Hour)
 	later := now.Add(48 * time.Hour)
 
-	series := fixture.add(t, seed{kind: itemmodal.KindSeries, name: "Series"})
-	season := fixture.add(t, seed{kind: itemmodal.KindSeason, name: "Season 1", parentID: &series, index: number(1)})
+	series := fixture.add(t, seed{kind: itemmodel.KindSeries, name: "Series"})
+	season := fixture.add(t, seed{kind: itemmodel.KindSeason, name: "Season 1", parentID: &series, index: number(1)})
 
-	fixture.add(t, seed{kind: itemmodal.KindEpisode, name: "Later", parentID: &season, index: number(3), premiere: &later})
-	fixture.add(t, seed{kind: itemmodal.KindEpisode, name: "Soon", parentID: &season, index: number(2), premiere: &soon})
-	fixture.add(t, seed{kind: itemmodal.KindEpisode, name: "Aired", parentID: &season, index: number(1), premiere: &aired})
-	fixture.add(t, seed{kind: itemmodal.KindEpisode, name: "Undated", parentID: &season, index: number(4)})
+	fixture.add(t, seed{kind: itemmodel.KindEpisode, name: "Later", parentID: &season, index: number(3), premiere: &later})
+	fixture.add(t, seed{kind: itemmodel.KindEpisode, name: "Soon", parentID: &season, index: number(2), premiere: &soon})
+	fixture.add(t, seed{kind: itemmodel.KindEpisode, name: "Aired", parentID: &season, index: number(1), premiere: &aired})
+	fixture.add(t, seed{kind: itemmodel.KindEpisode, name: "Undated", parentID: &season, index: number(4)})
 
 	tests := []struct {
 		name       string

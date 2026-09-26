@@ -9,18 +9,18 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	"github.com/FreekingDean/gojellyfin/internal/store/entities"
-	usermodal "github.com/FreekingDean/gojellyfin/internal/store/user"
-	configurationmodal "github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
-	policymodal "github.com/FreekingDean/gojellyfin/internal/store/userpolicy"
+	usermodel "github.com/FreekingDean/gojellyfin/internal/store/user"
+	configurationmodel "github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
+	policymodel "github.com/FreekingDean/gojellyfin/internal/store/userpolicy"
 )
 
 type (
-	User          = store.User
-	Configuration = store.UserConfiguration
-	Policy        = store.UserPolicy
+	User          = store.UserModel
+	Configuration = store.UserConfigurationModel
+	Policy        = store.UserPolicyModel
 
-	SubtitleMode   = configurationmodal.SubtitleMode
-	SyncPlayAccess = policymodal.SyncPlayAccess
+	SubtitleMode   = configurationmodel.SubtitleMode
+	SyncPlayAccess = policymodel.SyncPlayAccess
 	AccessSchedule = entities.AccessSchedule
 )
 
@@ -70,7 +70,7 @@ func (s *Service) CreateUser(ctx context.Context, name, passwordHash string, isA
 }
 
 func (s *Service) User(ctx context.Context, id uuid.UUID) (*User, error) {
-	user, err := s.query().Where(usermodal.ID(id)).Only(ctx)
+	user, err := s.query().Where(usermodel.ID(id)).OnlyModel(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query user: %w", err)
 	}
@@ -79,7 +79,7 @@ func (s *Service) User(ctx context.Context, id uuid.UUID) (*User, error) {
 }
 
 func (s *Service) UserByUsername(ctx context.Context, username string) (*User, error) {
-	user, err := s.query().Where(usermodal.Username(username)).Only(ctx)
+	user, err := s.query().Where(usermodel.Username(username)).OnlyModel(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query user by username: %w", err)
 	}
@@ -88,7 +88,7 @@ func (s *Service) UserByUsername(ctx context.Context, username string) (*User, e
 }
 
 func (s *Service) Users(ctx context.Context) ([]*User, error) {
-	users, err := s.query().All(ctx)
+	users, err := s.query().AllModels(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list users: %w", err)
 	}
@@ -125,8 +125,8 @@ func (s *Service) MayDownloadContent(ctx context.Context, id uuid.UUID) (bool, e
 
 func (s *Service) policy(ctx context.Context, id uuid.UUID) (*Policy, error) {
 	policy, err := s.store.UserPolicy.Query().
-		Where(policymodal.HasUserWith(usermodal.ID(id))).
-		Only(ctx)
+		Where(policymodel.HasUserWith(usermodel.ID(id))).
+		OnlyModel(ctx)
 	if store.IsNotFound(err) {
 		return nil, nil
 	}
@@ -155,12 +155,12 @@ func (s *Service) SetPassword(ctx context.Context, id uuid.UUID, passwordHash st
 
 func (s *Service) UpdateConfiguration(id uuid.UUID) *store.UserConfigurationUpdate {
 	return s.store.UserConfiguration.Update().
-		Where(configurationmodal.HasUserWith(usermodal.ID(id)))
+		Where(configurationmodel.HasUserWith(usermodel.ID(id)))
 }
 
 func (s *Service) UpdatePolicy(id uuid.UUID) *store.UserPolicyUpdate {
 	return s.store.UserPolicy.Update().
-		Where(policymodal.HasUserWith(usermodal.ID(id)))
+		Where(policymodel.HasUserWith(usermodel.ID(id)))
 }
 
 func (s *Service) DeleteUser(ctx context.Context, id uuid.UUID) error {

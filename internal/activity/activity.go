@@ -9,16 +9,15 @@ import (
 	"entgo.io/ent/dialect/sql"
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	entrymodal "github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
+	entrymodel "github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
 )
 
 type (
-	Entry    = store.ActivityLogEntry
-	Severity = entrymodal.Severity
-	Edges    = store.ActivityLogEntryEdges
+	Entry    = store.ActivityLogEntryModel
+	Severity = entrymodel.Severity
 )
 
-const SeverityInformation = entrymodal.SeverityInformation
+const SeverityInformation = entrymodel.SeverityInformation
 
 const (
 	KindAuthenticationSucceeded = "AuthenticationSucceeded"
@@ -43,22 +42,16 @@ func New(client *store.Client) *Service {
 }
 
 func (s *Service) Record(ctx context.Context, entry Entry) {
-	create := s.store.ActivityLogEntry.Create().
+	err := s.store.ActivityLogEntry.Create().
 		SetName(entry.Name).
 		SetKind(entry.Kind).
 		SetOverview(entry.Overview).
 		SetShortOverview(entry.ShortOverview).
-		SetSeverity(entry.Severity)
+		SetSeverity(entry.Severity).
+		SetNillableUserID(entry.UserID).
+		SetNillableItemID(entry.ItemID).
+		Exec(ctx)
 
-	if entry.Edges.User != nil {
-		create.SetUserID(entry.Edges.User.ID)
-	}
-
-	if entry.Edges.Item != nil {
-		create.SetItemID(entry.Edges.Item.ID)
-	}
-
-	err := create.Exec(ctx)
 	if err != nil {
 		log.Printf("record activity %q: %v", entry.Kind, err)
 	}
@@ -67,16 +60,16 @@ func (s *Service) Record(ctx context.Context, entry Entry) {
 func (s *Service) Entries(ctx context.Context, query Query) ([]*Entry, int, error) {
 	entries := s.store.ActivityLogEntry.Query()
 	if query.MinDate != nil {
-		entries = entries.Where(entrymodal.CreatedAtGTE(*query.MinDate))
+		entries = entries.Where(entrymodel.CreatedAtGTE(*query.MinDate))
 	}
 	if query.MaxDate != nil {
-		entries = entries.Where(entrymodal.CreatedAtLTE(*query.MaxDate))
+		entries = entries.Where(entrymodel.CreatedAtLTE(*query.MaxDate))
 	}
 	if query.HasUserID != nil {
 		if *query.HasUserID {
-			entries = entries.Where(entrymodal.HasUser())
+			entries = entries.Where(entrymodel.HasUser())
 		} else {
-			entries = entries.Where(entrymodal.Not(entrymodal.HasUser()))
+			entries = entries.Where(entrymodel.Not(entrymodel.HasUser()))
 		}
 	}
 
@@ -85,7 +78,7 @@ func (s *Service) Entries(ctx context.Context, query Query) ([]*Entry, int, erro
 		return nil, 0, fmt.Errorf("failed to count activity entries: %w", err)
 	}
 
-	entries = entries.Order(entrymodal.ByCreatedAt(sql.OrderDesc()), entrymodal.ByID())
+	entries = entries.Order(entrymodel.ByCreatedAt(sql.OrderDesc()), entrymodel.ByID())
 	if query.StartIndex > 0 {
 		entries = entries.Offset(query.StartIndex)
 	}
@@ -93,7 +86,7 @@ func (s *Service) Entries(ctx context.Context, query Query) ([]*Entry, int, erro
 		entries = entries.Limit(query.Limit)
 	}
 
-	records, err := entries.WithUser().WithItem().All(ctx)
+	records, err := entries.WithUser().WithItem().AllModels(ctx)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to query activity entries: %w", err)
 	}

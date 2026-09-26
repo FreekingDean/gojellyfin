@@ -1103,11 +1103,11 @@ func (_c *UserPolicyCreate) createSpec() (*UserPolicy, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := _c.mutation.MaxParentalRating(); ok {
 		_spec.SetField(userpolicy.FieldMaxParentalRating, field.TypeEnum, value)
-		_node.MaxParentalRating = value
+		_node.MaxParentalRating = &value
 	}
 	if value, ok := _c.mutation.MaxParentalSubRating(); ok {
 		_spec.SetField(userpolicy.FieldMaxParentalSubRating, field.TypeEnum, value)
-		_node.MaxParentalSubRating = value
+		_node.MaxParentalSubRating = &value
 	}
 	if value, ok := _c.mutation.InvalidLoginAttemptCount(); ok {
 		_spec.SetField(userpolicy.FieldInvalidLoginAttemptCount, field.TypeInt32, value)

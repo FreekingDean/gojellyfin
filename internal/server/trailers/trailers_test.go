@@ -13,9 +13,9 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
-	downloadermodal "github.com/FreekingDean/gojellyfin/internal/store/source"
+	downloadermodel "github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
@@ -50,7 +50,7 @@ func newFixture(t *testing.T) *fixture {
 
 	t.Cleanup(func() {
 		ctx := context.Background()
-		if _, err := client.Item.Delete().Where(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID))).Exec(ctx); err != nil {
+		if _, err := client.Item.Delete().Where(itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID))).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the items: %v", err)
 		}
 		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
@@ -67,7 +67,7 @@ func newFixture(t *testing.T) *fixture {
 		SetName(t.Name() + "-" + uuid.NewString()).
 		SetURL("http://" + uuid.NewString() + ".invalid").
 		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
-		SetKind(downloadermodal.KindRadarr).
+		SetKind(downloadermodel.KindRadarr).
 		SetRootPath("/media").
 		SetLocalPath("/media").
 		Save(context.Background())
@@ -84,7 +84,7 @@ func newFixture(t *testing.T) *fixture {
 		downloader: downloader.ID, server: server, client: client, library: library.ID}
 }
 
-func (f *fixture) add(t *testing.T, kind itemmodal.Kind, name string) {
+func (f *fixture) add(t *testing.T, kind itemmodel.Kind, name string) {
 	t.Helper()
 
 	record, err := f.client.Item.Create().
@@ -137,11 +137,11 @@ func names(items []api.BaseItemDto) []string {
 func TestServer_GetTrailers(t *testing.T) {
 	fixture := newFixture(t)
 
-	fixture.add(t, itemmodal.KindTrailer, "Alpha Trailer")
-	fixture.add(t, itemmodal.KindTrailer, "Beta Trailer")
-	fixture.add(t, itemmodal.KindTrailer, "Gamma Trailer")
-	fixture.add(t, itemmodal.KindMovie, "A Movie")
-	fixture.add(t, itemmodal.KindEpisode, "An Episode")
+	fixture.add(t, itemmodel.KindTrailer, "Alpha Trailer")
+	fixture.add(t, itemmodel.KindTrailer, "Beta Trailer")
+	fixture.add(t, itemmodel.KindTrailer, "Gamma Trailer")
+	fixture.add(t, itemmodel.KindMovie, "A Movie")
+	fixture.add(t, itemmodel.KindEpisode, "An Episode")
 
 	tests := []struct {
 		name           string

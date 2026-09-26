@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
 func TestService_SaveScanned(t *testing.T) {
@@ -15,11 +15,11 @@ func TestService_SaveScanned(t *testing.T) {
 	ctx := context.Background()
 
 	first, err := fixture.service.SaveScanned(ctx, Item{
-		Kind:         itemmodal.KindMovie,
+		Kind:         itemmodel.KindMovie,
 		Name:         "Returns",
 		SortName:     "Returns",
 		Key:          "movie:returns",
-		DateModified: time.Now(),
+		DateModified: ptr(time.Now()),
 	})
 	if err != nil {
 		t.Fatalf("failed to save the item: %v", err)
@@ -30,11 +30,11 @@ func TestService_SaveScanned(t *testing.T) {
 	}
 
 	second, err := fixture.service.SaveScanned(ctx, Item{
-		Kind:         itemmodal.KindMovie,
+		Kind:         itemmodel.KindMovie,
 		Name:         "Returns",
 		SortName:     "Returns",
 		Key:          "movie:returns",
-		DateModified: time.Now(),
+		DateModified: ptr(time.Now()),
 	})
 	if err != nil {
 		t.Fatalf("failed to save the returning item: %v", err)

@@ -1,0 +1,82 @@
+{{ define "model_exports" }}
+
+{{ template "header" $ }}
+
+{{ range $n := $.Nodes }}
+{{ $receiver := $n.Receiver }}
+type {{ $n.Name }}Model struct {
+	{{ $n.ID.StructField }} {{ if $n.ID.NillableValue }}*{{ end }}{{ $n.ID.Type }}
+	{{ range $f := $n.Fields }}
+		{{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }}
+	{{- end }}
+	{{ range $fk := $n.ForeignKeys }}
+		{{- if $fk.UserDefined }}{{ continue }}{{ end }}
+		{{ $fk.Edge.Ref.StructField }}ID {{ if $fk.Field.Optional }}*{{ end }}{{ $fk.Field.Type }}
+	{{- end }}
+	{{ range $edge := $n.Edges }}
+		{{ $edge.StructField }} {{ if not $edge.Unique }}[]{{ end }}*{{ $edge.Type.Name }}Model
+	{{- end }}
+}
+
+func fromAll{{ $n.Name }}({{ $receiver }} []*{{ $n.Name }}) []*{{ $n.Name }}Model {
+	models := make([]*{{ $n.Name }}Model, len({{ $receiver }}))
+	for i, v := range {{ $receiver }} {
+		models[i] = from{{ $n.Name }}(v)
+	}
+	return models
+}
+
+func from{{ $n.Name }}({{ $receiver }} *{{ $n.Name }}) *{{ $n.Name }}Model {
+	if {{ $receiver }} == nil {
+		return nil
+	}
+
+	return &{{ $n.Name }}Model{
+		{{ $n.ID.StructField }}: {{ $receiver }}.{{ $n.ID.StructField }},
+		{{- range $f := $n.Fields }}
+			{{ $f.StructField }}: {{ $receiver }}.{{ $f.StructField }},
+		{{- end }}
+		{{ range $fk := $n.ForeignKeys }}
+			{{- if $fk.UserDefined }}{{ continue }}{{ end }}
+			{{ $fk.Edge.Ref.StructField }}ID: {{ $receiver }}.{{ $fk.Field.Name }},
+		{{- end }}
+		{{ range $edge := $n.Edges }}
+			{{ $edge.StructField }}: from{{ if not $edge.Unique }}All{{ end }}{{ $edge.Type.Name }}({{ $receiver }}.Edges.{{ $edge.StructField }}),
+		{{- end }}
+	}
+}
+
+func ({{ $n.CreateReceiver }} *{{ $n.CreateName }}) SaveModel(ctx context.Context) (*{{ $n.Name }}Model, error) {
+	{{ $receiver }}, err := {{ $n.CreateReceiver }}.Save(ctx)
+	return from{{ $n.Name }}({{ $receiver }}), err
+}
+
+func ({{ $n.UpdateOneReceiver }} *{{ $n.UpdateOneName }}) SaveModel(ctx context.Context) (*{{ $n.Name }}Model, error) {
+	{{ $receiver }}, err := {{ $n.UpdateOneReceiver }}.Save(ctx)
+	return from{{ $n.Name }}({{ $receiver }}), err
+}
+
+func ({{ $n.QueryReceiver }} *{{ $n.QueryName }}) OnlyModel(ctx context.Context) (*{{ $n.Name }}Model, error) {
+	{{ $receiver }}, err := {{ $n.QueryReceiver }}.Only(ctx)
+	return from{{ $n.Name }}({{ $receiver }}), err
+}
+
+func ({{ $n.QueryReceiver }} *{{ $n.QueryName }}) FirstModel(ctx context.Context) (*{{ $n.Name }}Model, error) {
+	{{ $receiver }}, err := {{ $n.QueryReceiver }}.First(ctx)
+	return from{{ $n.Name }}({{ $receiver }}), err
+}
+
+func ({{ $n.QueryReceiver }} *{{ $n.QueryName }}) AllModels(ctx context.Context) ([]*{{ $n.Name }}Model, error) {
+	{{ $receiver }}, err := {{ $n.QueryReceiver }}.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return fromAll{{ $n.Name }}({{ $receiver }}), nil
+}
+
+func (c *{{ $n.ClientName }}) GetModel(ctx context.Context, id {{ $n.ID.Type }}) (*{{ $n.Name }}Model, error) {
+	{{ $receiver }}, err := c.Get(ctx, id)
+	return from{{ $n.Name }}({{ $receiver }}), err
+}
+{{ end }}
+{{ end }}

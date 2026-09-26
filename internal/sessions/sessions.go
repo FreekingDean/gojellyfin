@@ -9,14 +9,14 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	devicemodal "github.com/FreekingDean/gojellyfin/internal/store/device"
-	sessionmodal "github.com/FreekingDean/gojellyfin/internal/store/session"
+	devicemodel "github.com/FreekingDean/gojellyfin/internal/store/device"
+	sessionmodel "github.com/FreekingDean/gojellyfin/internal/store/session"
 )
 
 type (
-	Session = store.Session
-	Device  = store.Device
-	User    = store.User
+	Session = store.SessionModel
+	Device  = store.DeviceModel
+	User    = store.UserModel
 )
 
 type Service struct {
@@ -39,7 +39,7 @@ func (s *Service) Create(ctx context.Context, userID uuid.UUID, token string, de
 			SetSupportsMediaControl(false).
 			SetSupportsPersistentIdentifier(false).
 			SetLastActivityAt(now).
-			OnConflictColumns(devicemodal.FieldClientID).
+			OnConflictColumns(devicemodel.FieldClientID).
 			UpdateName().
 			UpdateAppName().
 			UpdateAppVersion().
@@ -71,13 +71,11 @@ func (s *Service) Create(ctx context.Context, userID uuid.UUID, token string, de
 	}
 
 	s.activity.Record(ctx, activity.Entry{
-		Name:          fmt.Sprintf("%s has been authenticated", session.Edges.User.Username),
+		Name:          fmt.Sprintf("%s has been authenticated", session.User.Username),
 		Kind:          activity.KindAuthenticationSucceeded,
 		ShortOverview: device.Name,
 		Severity:      activity.SeverityInformation,
-		Edges: activity.Edges{
-			User: &store.User{ID: userID},
-		},
+		UserID:        &userID,
 	})
 
 	return session, nil
@@ -86,12 +84,12 @@ func (s *Service) Create(ctx context.Context, userID uuid.UUID, token string, de
 func (s *Service) ByToken(ctx context.Context, token string) (*Session, error) {
 	session, err := s.store.Session.Query().
 		Where(
-			sessionmodal.AccessToken(token),
-			sessionmodal.RevokedAtIsNil(),
+			sessionmodel.AccessToken(token),
+			sessionmodel.RevokedAtIsNil(),
 		).
 		WithUser().
 		WithDevice().
-		Only(ctx)
+		OnlyModel(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query session by token: %w", err)
 	}
@@ -101,10 +99,10 @@ func (s *Service) ByToken(ctx context.Context, token string) (*Session, error) {
 
 func (s *Service) List(ctx context.Context) ([]*Session, error) {
 	sessions, err := s.store.Session.Query().
-		Where(sessionmodal.RevokedAtIsNil()).
+		Where(sessionmodel.RevokedAtIsNil()).
 		WithUser().
 		WithDevice().
-		All(ctx)
+		AllModels(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list sessions: %w", err)
 	}
@@ -118,19 +116,17 @@ func (s *Service) DeleteByToken(ctx context.Context, token string) error {
 		return err
 	}
 
-	if _, err := s.store.Session.Delete().Where(sessionmodal.AccessToken(token)).Exec(ctx); err != nil {
+	if _, err := s.store.Session.Delete().Where(sessionmodel.AccessToken(token)).Exec(ctx); err != nil {
 		return fmt.Errorf("failed to delete session by token: %w", err)
 	}
 
 	if session != nil {
 		s.activity.Record(ctx, activity.Entry{
-			Name:          fmt.Sprintf("%s has disconnected", session.Edges.User.Username),
+			Name:          fmt.Sprintf("%s has disconnected", session.User.Username),
 			Kind:          activity.KindSessionEnded,
-			ShortOverview: session.Edges.Device.Name,
+			ShortOverview: session.Device.Name,
 			Severity:      activity.SeverityInformation,
-			Edges: activity.Edges{
-				User: session.Edges.User,
-			},
+			UserID:        session.UserID,
 		})
 	}
 

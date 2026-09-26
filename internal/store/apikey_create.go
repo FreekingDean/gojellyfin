@@ -197,7 +197,7 @@ func (_c *ApiKeyCreate) createSpec() (*ApiKey, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := _c.mutation.RevokedAt(); ok {
 		_spec.SetField(apikey.FieldRevokedAt, field.TypeTime, value)
-		_node.RevokedAt = value
+		_node.RevokedAt = &value
 	}
 	return _node, _spec
 }

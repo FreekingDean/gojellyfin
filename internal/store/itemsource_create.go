@@ -323,23 +323,23 @@ func (_c *ItemSourceCreate) createSpec() (*ItemSource, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := _c.mutation.Size(); ok {
 		_spec.SetField(itemsource.FieldSize, field.TypeInt64, value)
-		_node.Size = value
+		_node.Size = &value
 	}
 	if value, ok := _c.mutation.RunTimeTicks(); ok {
 		_spec.SetField(itemsource.FieldRunTimeTicks, field.TypeInt64, value)
-		_node.RunTimeTicks = value
+		_node.RunTimeTicks = &value
 	}
 	if value, ok := _c.mutation.Bitrate(); ok {
 		_spec.SetField(itemsource.FieldBitrate, field.TypeInt32, value)
-		_node.Bitrate = value
+		_node.Bitrate = &value
 	}
 	if value, ok := _c.mutation.DateModified(); ok {
 		_spec.SetField(itemsource.FieldDateModified, field.TypeTime, value)
-		_node.DateModified = value
+		_node.DateModified = &value
 	}
 	if value, ok := _c.mutation.ProbedAt(); ok {
 		_spec.SetField(itemsource.FieldProbedAt, field.TypeTime, value)
-		_node.ProbedAt = value
+		_node.ProbedAt = &value
 	}
 	if nodes := _c.mutation.ItemIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

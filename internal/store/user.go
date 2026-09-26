@@ -31,9 +31,9 @@ type User struct {
 	// PasswordHash holds the value of the "password_hash" field.
 	PasswordHash string `json:"-"`
 	// LastLoginAt holds the value of the "last_login_at" field.
-	LastLoginAt time.Time `json:"last_login_at,omitempty"`
+	LastLoginAt *time.Time `json:"last_login_at,omitempty"`
 	// LastActivityAt holds the value of the "last_activity_at" field.
-	LastActivityAt time.Time `json:"last_activity_at,omitempty"`
+	LastActivityAt *time.Time `json:"last_activity_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
 	Edges        UserEdges `json:"edges"`
@@ -205,13 +205,15 @@ func (_m *User) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_login_at", values[i])
 			} else if value.Valid {
-				_m.LastLoginAt = value.Time
+				_m.LastLoginAt = new(time.Time)
+				*_m.LastLoginAt = value.Time
 			}
 		case user.FieldLastActivityAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_activity_at", values[i])
 			} else if value.Valid {
-				_m.LastActivityAt = value.Time
+				_m.LastActivityAt = new(time.Time)
+				*_m.LastActivityAt = value.Time
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -303,11 +305,15 @@ func (_m *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("password_hash=<sensitive>")
 	builder.WriteString(", ")
-	builder.WriteString("last_login_at=")
-	builder.WriteString(_m.LastLoginAt.Format(time.ANSIC))
+	if v := _m.LastLoginAt; v != nil {
+		builder.WriteString("last_login_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteString(", ")
-	builder.WriteString("last_activity_at=")
-	builder.WriteString(_m.LastActivityAt.Format(time.ANSIC))
+	if v := _m.LastActivityAt; v != nil {
+		builder.WriteString("last_activity_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

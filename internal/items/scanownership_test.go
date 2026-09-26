@@ -8,19 +8,19 @@ import (
 
 	"github.com/google/uuid"
 
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
 func (f *fixture) scan(t *testing.T, name string, year *int32) *Item {
 	t.Helper()
 
 	record, err := f.service.SaveScanned(context.Background(), Item{
-		Kind:           itemmodal.KindMovie,
+		Kind:           itemmodel.KindMovie,
 		Key:            "movie:rescanned:" + f.libraryID.String(),
 		Name:           name,
 		SortName:       name,
 		ProductionYear: year,
-		DateModified:   time.Now(),
+		DateModified:   ptr(time.Now()),
 	})
 	if err != nil {
 		t.Fatalf("failed to scan %q: %v", name, err)
@@ -159,13 +159,13 @@ func TestService_SaveScannedTitleOwnership(t *testing.T) {
 		ctx := context.Background()
 
 		record, err := fixture.service.SaveScanned(ctx, Item{
-			Kind:              itemmodal.KindEpisode,
+			Kind:              itemmodel.KindEpisode,
 			Key:               "episode:the-wire:1:3:" + fixture.libraryID.String(),
 			Name:              "The Wire S01E03",
 			SortName:          "the wire s01e03",
 			IndexNumber:       number(3),
 			ParentIndexNumber: number(1),
-			DateModified:      time.Now(),
+			DateModified:      ptr(time.Now()),
 		})
 		if err != nil {
 			t.Fatalf("failed to scan the episode: %v", err)
@@ -180,13 +180,13 @@ func TestService_SaveScannedTitleOwnership(t *testing.T) {
 		}
 
 		rescanned, err := fixture.service.SaveScanned(ctx, Item{
-			Kind:              itemmodal.KindEpisode,
+			Kind:              itemmodel.KindEpisode,
 			Key:               "episode:the-wire:1:3:" + fixture.libraryID.String(),
 			Name:              "The Wire S01E03",
 			SortName:          "the wire s01e03",
 			IndexNumber:       number(3),
 			ParentIndexNumber: number(1),
-			DateModified:      time.Now(),
+			DateModified:      ptr(time.Now()),
 		})
 		if err != nil {
 			t.Fatalf("failed to rescan the episode: %v", err)
@@ -205,7 +205,7 @@ func TestService_EditMetadata(t *testing.T) {
 	fixture := newFixture(t)
 
 	t.Run("claims a retitled item", func(t *testing.T) {
-		id := fixture.add(t, seed{kind: itemmodal.KindMovie, name: "Untitled"})
+		id := fixture.add(t, seed{kind: itemmodel.KindMovie, name: "Untitled"})
 
 		edited := fixture.editing(t, id, Metadata{Name: ptr("Named")})
 		if !slices.Contains(edited.LockedFields, LockedName) {
@@ -214,7 +214,7 @@ func TestService_EditMetadata(t *testing.T) {
 	})
 
 	t.Run("leaves an untouched title unclaimed", func(t *testing.T) {
-		id := fixture.add(t, seed{kind: itemmodal.KindMovie, name: "Unchanged"})
+		id := fixture.add(t, seed{kind: itemmodel.KindMovie, name: "Unchanged"})
 
 		edited := fixture.editing(t, id, Metadata{
 			Name:     ptr("Unchanged"),
@@ -227,7 +227,7 @@ func TestService_EditMetadata(t *testing.T) {
 	})
 
 	t.Run("claims an item whose year changed", func(t *testing.T) {
-		id := fixture.add(t, seed{kind: itemmodal.KindMovie, name: "Dated"})
+		id := fixture.add(t, seed{kind: itemmodel.KindMovie, name: "Dated"})
 
 		edited := fixture.editing(t, id, Metadata{ProductionYear: number(1999)})
 		if !slices.Contains(edited.LockedFields, LockedName) {
@@ -236,7 +236,7 @@ func TestService_EditMetadata(t *testing.T) {
 	})
 
 	t.Run("keeps the locks the client sent", func(t *testing.T) {
-		id := fixture.add(t, seed{kind: itemmodal.KindMovie, name: "Locked"})
+		id := fixture.add(t, seed{kind: itemmodel.KindMovie, name: "Locked"})
 
 		edited := fixture.editing(t, id, Metadata{
 			Name:         ptr("Relocked"),

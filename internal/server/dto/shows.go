@@ -8,7 +8,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
 func applyShowFields(ctx context.Context, store *items.Service, records []*items.Item, converted []api.BaseItemDto) error {
@@ -26,7 +26,7 @@ func applyShowFields(ctx context.Context, store *items.Service, records []*items
 
 	grandparentIDs := make([]uuid.UUID, 0, len(parents))
 	for _, parent := range parents {
-		if parent.Kind == itemmodal.KindSeason && parent.ParentID != nil {
+		if parent.Kind == itemmodel.KindSeason && parent.ParentID != nil {
 			grandparentIDs = append(grandparentIDs, *parent.ParentID)
 		}
 	}
@@ -49,7 +49,7 @@ func applyShowFields(ctx context.Context, store *items.Service, records []*items
 		}
 
 		series := parent
-		if parent.Kind == itemmodal.KindSeason {
+		if parent.Kind == itemmodel.KindSeason {
 			converted[index].SeasonId = apiutil.Ptr(parent.ID)
 			converted[index].SeasonName = apiutil.Ptr(parent.Name)
 			if parent.ParentID == nil {
@@ -57,7 +57,7 @@ func applyShowFields(ctx context.Context, store *items.Service, records []*items
 			}
 			series = grandparents[*parent.ParentID]
 		}
-		if series == nil || series.Kind != itemmodal.KindSeries {
+		if series == nil || series.Kind != itemmodel.KindSeries {
 			continue
 		}
 

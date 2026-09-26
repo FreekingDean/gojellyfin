@@ -20,18 +20,18 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	devicemodal "github.com/FreekingDean/gojellyfin/internal/store/device"
-	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
+	devicemodel "github.com/FreekingDean/gojellyfin/internal/store/device"
+	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
+	librarymodel "github.com/FreekingDean/gojellyfin/internal/store/library"
 	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
-	optionsmodal "github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
-	sessionmodal "github.com/FreekingDean/gojellyfin/internal/store/session"
-	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/source"
-	usermodal "github.com/FreekingDean/gojellyfin/internal/store/user"
-	configurationmodal "github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
-	datamodal "github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
-	policymodal "github.com/FreekingDean/gojellyfin/internal/store/userpolicy"
+	optionsmodel "github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
+	sessionmodel "github.com/FreekingDean/gojellyfin/internal/store/session"
+	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/source"
+	usermodel "github.com/FreekingDean/gojellyfin/internal/store/user"
+	configurationmodel "github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
+	datamodel "github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
+	policymodel "github.com/FreekingDean/gojellyfin/internal/store/userpolicy"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
@@ -70,52 +70,52 @@ func newFixture(t *testing.T) *fixture {
 	client := connection.Client()
 	prefix := t.Name() + "-" + uuid.NewString()
 
-	library, err := libraries.New(client).CreateLibrary(ctx, prefix, librarymodal.CollectionTypeMovies, []string{"/media/" + prefix})
+	library, err := libraries.New(client).CreateLibrary(ctx, prefix, librarymodel.CollectionTypeMovies, []string{"/media/" + prefix})
 	if err != nil {
 		t.Fatalf("failed to create the library: %v", err)
 	}
 
 	t.Cleanup(func() {
 		if _, err := client.Image.Delete().
-			Where(imagemodal.HasItemWith(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID)))).
+			Where(imagemodel.HasItemWith(itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID)))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the images: %v", err)
 		}
 		if _, err := client.UserItemData.Delete().
-			Where(datamodal.HasItemWith(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID)))).
+			Where(datamodel.HasItemWith(itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID)))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the user item data: %v", err)
 		}
-		if _, err := client.Item.Delete().Where(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID))).Exec(ctx); err != nil {
+		if _, err := client.Item.Delete().Where(itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID))).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the items: %v", err)
 		}
 		if _, err := client.Session.Delete().
-			Where(sessionmodal.HasUserWith(usermodal.UsernameHasPrefix(prefix))).
+			Where(sessionmodel.HasUserWith(usermodel.UsernameHasPrefix(prefix))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the sessions: %v", err)
 		}
-		if _, err := client.Device.Delete().Where(devicemodal.ClientIDHasPrefix(prefix)).Exec(ctx); err != nil {
+		if _, err := client.Device.Delete().Where(devicemodel.ClientIDHasPrefix(prefix)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the devices: %v", err)
 		}
 		if _, err := client.UserPolicy.Delete().
-			Where(policymodal.HasUserWith(usermodal.UsernameHasPrefix(prefix))).
+			Where(policymodel.HasUserWith(usermodel.UsernameHasPrefix(prefix))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the user policies: %v", err)
 		}
 		if _, err := client.UserConfiguration.Delete().
-			Where(configurationmodal.HasUserWith(usermodal.UsernameHasPrefix(prefix))).
+			Where(configurationmodel.HasUserWith(usermodel.UsernameHasPrefix(prefix))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the user configurations: %v", err)
 		}
-		if _, err := client.User.Delete().Where(usermodal.UsernameHasPrefix(prefix)).Exec(ctx); err != nil {
+		if _, err := client.User.Delete().Where(usermodel.UsernameHasPrefix(prefix)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the users: %v", err)
 		}
 		if _, err := client.LibraryOptions.Delete().
-			Where(optionsmodal.HasLibraryWith(librarymodal.NameHasPrefix(prefix))).
+			Where(optionsmodel.HasLibraryWith(librarymodel.NameHasPrefix(prefix))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the library options: %v", err)
 		}
-		if _, err := client.Library.Delete().Where(librarymodal.NameHasPrefix(prefix)).Exec(ctx); err != nil {
+		if _, err := client.Library.Delete().Where(librarymodel.NameHasPrefix(prefix)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the libraries: %v", err)
 		}
 		if err := connection.Stop(); err != nil {
@@ -129,7 +129,7 @@ func newFixture(t *testing.T) *fixture {
 		SetName(t.Name() + "-" + uuid.NewString()).
 		SetURL("http://" + uuid.NewString() + ".invalid").
 		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
-		SetKind(sourcemodal.KindRadarr).
+		SetKind(sourcemodel.KindRadarr).
 		SetRootPath("/media").
 		SetLocalPath("/media").
 		Save(context.Background())
@@ -236,7 +236,7 @@ func TestServer_GetPhysicalPaths(t *testing.T) {
 
 	shared := "/media/" + fixture.prefix
 	_, err := libraries.New(fixture.client).
-		CreateLibrary(ctx, fixture.prefix+"-second", librarymodal.CollectionTypeTvshows, []string{shared, shared + "-shows"})
+		CreateLibrary(ctx, fixture.prefix+"-second", librarymodel.CollectionTypeTvshows, []string{shared, shared + "-shows"})
 	if err != nil {
 		t.Fatalf("failed to create the second library: %v", err)
 	}
@@ -266,9 +266,9 @@ func TestServer_GetAncestors(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
-	series := fixture.add(t, seed{kind: itemmodal.KindSeries, name: "Series"})
-	season := fixture.add(t, seed{kind: itemmodal.KindSeason, name: "Season 1", parentID: &series})
-	episode := fixture.add(t, seed{kind: itemmodal.KindEpisode, name: "S01E01", parentID: &season})
+	series := fixture.add(t, seed{kind: itemmodel.KindSeries, name: "Series"})
+	season := fixture.add(t, seed{kind: itemmodel.KindSeason, name: "Season 1", parentID: &series})
+	episode := fixture.add(t, seed{kind: itemmodel.KindEpisode, name: "S01E01", parentID: &season})
 
 	t.Run("walks up to the library and the root folder", func(t *testing.T) {
 		response, err := fixture.server.GetAncestors(ctx, api.GetAncestorsRequestObject{ItemId: episode})
@@ -317,8 +317,8 @@ func TestServer_DeleteItem(t *testing.T) {
 		t.Fatalf("failed to create the episode: %v", err)
 	}
 
-	series := fixture.add(t, seed{kind: itemmodal.KindSeries, name: "Series"})
-	episode := fixture.add(t, seed{kind: itemmodal.KindEpisode, name: "S01E01", parentID: &series, path: episodePath})
+	series := fixture.add(t, seed{kind: itemmodel.KindSeries, name: "Series"})
+	episode := fixture.add(t, seed{kind: itemmodel.KindEpisode, name: "S01E01", parentID: &series, path: episodePath})
 
 	t.Run("refuses a user without the deletion policy", func(t *testing.T) {
 		ctx := fixture.signIn(t, "viewer", false)
@@ -351,7 +351,7 @@ func TestServer_DeleteItem(t *testing.T) {
 		}
 
 		remaining, err := fixture.client.Item.Query().
-			Where(itemmodal.IDIn(series, episode)).
+			Where(itemmodel.IDIn(series, episode)).
 			Count(context.Background())
 		if err != nil {
 			t.Fatalf("failed to count the remaining items: %v", err)
@@ -381,7 +381,7 @@ func TestServer_GetDownload(t *testing.T) {
 	if err := os.WriteFile(path, []byte("media"), 0o600); err != nil {
 		t.Fatalf("failed to create the movie: %v", err)
 	}
-	movie := fixture.add(t, seed{kind: itemmodal.KindMovie, name: "Movie", path: path})
+	movie := fixture.add(t, seed{kind: itemmodel.KindMovie, name: "Movie", path: path})
 
 	t.Run("streams the file back", func(t *testing.T) {
 		ctx := fixture.signIn(t, "viewer", false)
@@ -428,7 +428,7 @@ func TestServer_GetDownload(t *testing.T) {
 
 	t.Run("reports a missing file", func(t *testing.T) {
 		ctx := fixture.signIn(t, "reader", false)
-		gone := fixture.add(t, seed{kind: itemmodal.KindMovie, name: "Gone", path: filepath.Join(t.TempDir(), "gone.mkv")})
+		gone := fixture.add(t, seed{kind: itemmodel.KindMovie, name: "Gone", path: filepath.Join(t.TempDir(), "gone.mkv")})
 
 		response, err := fixture.server.GetFile(ctx, api.GetFileRequestObject{ItemId: gone})
 		if err != nil {

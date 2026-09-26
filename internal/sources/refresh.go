@@ -90,15 +90,15 @@ func (s *Service) binding(ctx context.Context, libraryID, sourceID uuid.UUID) (B
 			librarysourcemodel.SourceID(sourceID),
 		).
 		WithSource().
-		Only(ctx)
+		OnlyModel(ctx)
 	if err != nil {
 		return Binding{}, fmt.Errorf("failed to find the binding: %w", err)
 	}
-	if record.Edges.Source == nil {
+	if record.Source == nil {
 		return Binding{}, fmt.Errorf("binding %s names no source", record.ID)
 	}
 
-	return Binding{Source: *record.Edges.Source, Library: *record}, nil
+	return Binding{Source: *record.Source, Library: *record}, nil
 }
 
 func scanned(title Title) items.Scanned {

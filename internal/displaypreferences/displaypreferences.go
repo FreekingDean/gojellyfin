@@ -7,13 +7,13 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	displaypreferencesmodal "github.com/FreekingDean/gojellyfin/internal/store/displaypreferences"
+	displaypreferencesmodel "github.com/FreekingDean/gojellyfin/internal/store/displaypreferences"
 )
 
 type (
-	DisplayPreferences = store.DisplayPreferences
-	SortOrder          = displaypreferencesmodal.SortOrder
-	ScrollDirection    = displaypreferencesmodal.ScrollDirection
+	DisplayPreferences = store.DisplayPreferencesModel
+	SortOrder          = displaypreferencesmodel.SortOrder
+	ScrollDirection    = displaypreferencesmodel.ScrollDirection
 )
 
 type Service struct {
@@ -26,10 +26,10 @@ func New(client *store.Client) *Service {
 
 func (s *Service) Get(ctx context.Context, userID uuid.UUID, referenceID, client string) (*DisplayPreferences, error) {
 	prefs, err := s.store.DisplayPreferences.Query().Where(
-		displaypreferencesmodal.UserID(userID),
-		displaypreferencesmodal.ReferenceID(referenceID),
-		displaypreferencesmodal.Client(client),
-	).First(ctx)
+		displaypreferencesmodel.UserID(userID),
+		displaypreferencesmodel.ReferenceID(referenceID),
+		displaypreferencesmodel.Client(client),
+	).FirstModel(ctx)
 	if store.IsNotFound(err) {
 		return defaults(userID, referenceID, client), nil
 	} else if err != nil {
@@ -44,15 +44,15 @@ func defaults(userID uuid.UUID, referenceID, client string) *DisplayPreferences 
 		UserID:             userID,
 		ReferenceID:        referenceID,
 		Client:             client,
-		SortBy:             displaypreferencesmodal.DefaultSortBy,
-		SortOrder:          displaypreferencesmodal.DefaultSortOrder,
-		ScrollDirection:    displaypreferencesmodal.DefaultScrollDirection,
-		RememberIndexing:   displaypreferencesmodal.DefaultRememberIndexing,
-		RememberSorting:    displaypreferencesmodal.DefaultRememberSorting,
-		ShowBackdrop:       displaypreferencesmodal.DefaultShowBackdrop,
-		ShowSidebar:        displaypreferencesmodal.DefaultShowSidebar,
-		PrimaryImageHeight: displaypreferencesmodal.DefaultPrimaryImageHeight,
-		PrimaryImageWidth:  displaypreferencesmodal.DefaultPrimaryImageWidth,
+		SortBy:             displaypreferencesmodel.DefaultSortBy,
+		SortOrder:          displaypreferencesmodel.DefaultSortOrder,
+		ScrollDirection:    displaypreferencesmodel.DefaultScrollDirection,
+		RememberIndexing:   displaypreferencesmodel.DefaultRememberIndexing,
+		RememberSorting:    displaypreferencesmodel.DefaultRememberSorting,
+		ShowBackdrop:       displaypreferencesmodel.DefaultShowBackdrop,
+		ShowSidebar:        displaypreferencesmodel.DefaultShowSidebar,
+		PrimaryImageHeight: displaypreferencesmodel.DefaultPrimaryImageHeight,
+		PrimaryImageWidth:  displaypreferencesmodel.DefaultPrimaryImageWidth,
 	}
 }
 
@@ -100,9 +100,9 @@ func (s *Service) Update(
 
 	return upsert.
 		OnConflictColumns(
-			displaypreferencesmodal.FieldUserID,
-			displaypreferencesmodal.FieldReferenceID,
-			displaypreferencesmodal.FieldClient,
+			displaypreferencesmodel.FieldUserID,
+			displaypreferencesmodel.FieldReferenceID,
+			displaypreferencesmodel.FieldClient,
 		).
 		UpdateNewValues().
 		Exec(ctx)

@@ -7,11 +7,11 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
-	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
-	datamodal "github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
+	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
+	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	streammodel "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
+	datamodel "github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
 )
 
 func (s *Service) DeleteItem(ctx context.Context, id uuid.UUID) error {
@@ -21,25 +21,25 @@ func (s *Service) DeleteItem(ctx context.Context, id uuid.UUID) error {
 	}
 
 	return s.store.WithTx(ctx, func(tx *store.Tx) error {
-		sourceIDs, err := tx.ItemSource.Query().Where(sourcemodal.ItemIDIn(ids...)).IDs(ctx)
+		sourceIDs, err := tx.ItemSource.Query().Where(sourcemodel.ItemIDIn(ids...)).IDs(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to query media sources: %w", err)
 		}
 		if len(sourceIDs) > 0 {
-			if _, err := tx.MediaStream.Delete().Where(streammodal.ItemSourceIDIn(sourceIDs...)).Exec(ctx); err != nil {
+			if _, err := tx.MediaStream.Delete().Where(streammodel.ItemSourceIDIn(sourceIDs...)).Exec(ctx); err != nil {
 				return fmt.Errorf("failed to delete media streams: %w", err)
 			}
-			if _, err := tx.ItemSource.Delete().Where(sourcemodal.IDIn(sourceIDs...)).Exec(ctx); err != nil {
+			if _, err := tx.ItemSource.Delete().Where(sourcemodel.IDIn(sourceIDs...)).Exec(ctx); err != nil {
 				return fmt.Errorf("failed to delete media sources: %w", err)
 			}
 		}
-		if _, err := tx.Image.Delete().Where(imagemodal.ItemIDIn(ids...)).Exec(ctx); err != nil {
+		if _, err := tx.Image.Delete().Where(imagemodel.ItemIDIn(ids...)).Exec(ctx); err != nil {
 			return fmt.Errorf("failed to delete images: %w", err)
 		}
-		if _, err := tx.UserItemData.Delete().Where(datamodal.ItemIDIn(ids...)).Exec(ctx); err != nil {
+		if _, err := tx.UserItemData.Delete().Where(datamodel.ItemIDIn(ids...)).Exec(ctx); err != nil {
 			return fmt.Errorf("failed to delete user item data: %w", err)
 		}
-		if _, err := tx.Item.Delete().Where(itemmodal.IDIn(ids...)).Exec(ctx); err != nil {
+		if _, err := tx.Item.Delete().Where(itemmodel.IDIn(ids...)).Exec(ctx); err != nil {
 			return fmt.Errorf("failed to delete items: %w", err)
 		}
 
@@ -51,7 +51,7 @@ func (s *Service) subtree(ctx context.Context, root uuid.UUID) ([]uuid.UUID, err
 	ids := []uuid.UUID{root}
 	for frontier := ids; len(frontier) > 0; {
 		children, err := s.query(Everyone).
-			Where(itemmodal.ParentIDIn(frontier...), itemmodal.IDNotIn(ids...)).
+			Where(itemmodel.ParentIDIn(frontier...), itemmodel.IDNotIn(ids...)).
 			IDs(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to query child items: %w", err)

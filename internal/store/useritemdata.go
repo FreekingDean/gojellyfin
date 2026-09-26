@@ -39,7 +39,7 @@ type UserItemData struct {
 	// Rating holds the value of the "rating" field.
 	Rating *float64 `json:"rating,omitempty"`
 	// Likes holds the value of the "likes" field.
-	Likes bool `json:"likes,omitempty"`
+	Likes *bool `json:"likes,omitempty"`
 	// LastPlayedAt holds the value of the "last_played_at" field.
 	LastPlayedAt *time.Time `json:"last_played_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -176,7 +176,8 @@ func (_m *UserItemData) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field likes", values[i])
 			} else if value.Valid {
-				_m.Likes = value.Bool
+				_m.Likes = new(bool)
+				*_m.Likes = value.Bool
 			}
 		case useritemdata.FieldLastPlayedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -260,8 +261,10 @@ func (_m *UserItemData) String() string {
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
-	builder.WriteString("likes=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Likes))
+	if v := _m.Likes; v != nil {
+		builder.WriteString("likes=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	if v := _m.LastPlayedAt; v != nil {
 		builder.WriteString("last_played_at=")

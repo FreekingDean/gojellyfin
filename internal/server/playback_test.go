@@ -30,12 +30,12 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/stream"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	sourcemodal "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
-	librarymodal "github.com/FreekingDean/gojellyfin/internal/store/library"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
+	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	librarymodel "github.com/FreekingDean/gojellyfin/internal/store/library"
 	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
-	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
-	downloadermodal "github.com/FreekingDean/gojellyfin/internal/store/source"
+	streammodel "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
+	downloadermodel "github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/FreekingDean/gojellyfin/internal/transcode"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
@@ -89,7 +89,7 @@ func newPlaybackFixture(t *testing.T) *playbackFixture {
 	sessionService := sessions.New(client, activity.New(client))
 	userService := users.New(client)
 
-	library, err := libraryService.CreateLibrary(ctx, unique, librarymodal.CollectionTypeMovies, nil)
+	library, err := libraryService.CreateLibrary(ctx, unique, librarymodel.CollectionTypeMovies, nil)
 	if err != nil {
 		t.Fatalf("failed to create the library: %v", err)
 	}
@@ -106,8 +106,8 @@ func newPlaybackFixture(t *testing.T) *playbackFixture {
 	}
 
 	t.Cleanup(func() {
-		inLibrary := sourcemodal.HasItemWith(itemmodal.HasLibrariesWith(librarymembership.LibraryID(library.ID)))
-		if _, err := client.MediaStream.Delete().Where(streammodal.HasSourceWith(inLibrary)).Exec(ctx); err != nil {
+		inLibrary := sourcemodel.HasItemWith(itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID)))
+		if _, err := client.MediaStream.Delete().Where(streammodel.HasSourceWith(inLibrary)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the media streams: %v", err)
 		}
 		if _, err := client.ItemSource.Delete().Where(inLibrary).Exec(ctx); err != nil {
@@ -134,7 +134,7 @@ func newPlaybackFixture(t *testing.T) *playbackFixture {
 		SetName(t.Name() + "-" + uuid.NewString()).
 		SetURL("http://" + uuid.NewString() + ".invalid").
 		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
-		SetKind(downloadermodal.KindRadarr).
+		SetKind(downloadermodel.KindRadarr).
 		SetRootPath("/media").
 		SetLocalPath("/media").
 		Save(context.Background())
@@ -170,11 +170,11 @@ func (f *playbackFixture) ripped(t *testing.T, name, encoder, video, audio strin
 	t.Helper()
 
 	item, err := f.items.SaveScanned(context.Background(), items.Item{
-		Kind:         itemmodal.KindMovie,
+		Kind:         itemmodel.KindMovie,
 		Key:          "movie:" + name + ":" + audio,
 		Name:         name,
 		SortName:     name,
-		DateModified: time.Now(),
+		DateModified: apiutil.Ptr(time.Now()),
 	})
 	if err != nil {
 		t.Fatalf("failed to save the item: %v", err)
@@ -213,7 +213,7 @@ func (f *playbackFixture) beside(t *testing.T, id uuid.UUID, name, encoder, vide
 		ItemID:       id,
 		Path:         path,
 		Name:         name,
-		DateModified: time.Now(),
+		DateModified: apiutil.Ptr(time.Now()),
 	})
 	if err != nil {
 		t.Fatalf("failed to save the source: %v", err)
@@ -221,10 +221,10 @@ func (f *playbackFixture) beside(t *testing.T, id uuid.UUID, name, encoder, vide
 
 	err = f.items.SaveProbe(ctx, item, source, items.MediaSource{
 		Container: strings.TrimPrefix(filepath.Ext(name), "."),
-		Edges: items.MediaSourceEdges{Streams: []*items.MediaStream{
-			{Index: 0, Kind: streammodal.KindVideo, Codec: video, Width: width, Height: height},
-			{Index: 1, Kind: streammodal.KindAudio, Codec: audio},
-		}},
+		Streams: []*items.MediaStream{
+			{Index: 0, Kind: streammodel.KindVideo, Codec: video, Width: &width, Height: &height},
+			{Index: 1, Kind: streammodel.KindAudio, Codec: audio},
+		},
 	})
 	if err != nil {
 		t.Fatalf("failed to probe the source: %v", err)
@@ -591,7 +591,7 @@ func (f *playbackFixture) newDownloader(t *testing.T) uuid.UUID {
 		SetName(t.Name() + "-" + uuid.NewString()).
 		SetURL("http://" + uuid.NewString() + ".invalid").
 		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
-		SetKind(downloadermodal.KindRadarr).
+		SetKind(downloadermodel.KindRadarr).
 		SetRootPath("/media").
 		SetLocalPath("/media").
 		Save(context.Background())

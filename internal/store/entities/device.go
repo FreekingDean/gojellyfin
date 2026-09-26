@@ -26,7 +26,7 @@ func (Device) Fields() []ent.Field {
 		field.Bool("supports_media_control"),
 		field.Bool("supports_persistent_identifier"),
 
-		field.Time("last_activity_at").Optional(),
+		field.Time("last_activity_at").Optional().Nillable(),
 	)
 }
 

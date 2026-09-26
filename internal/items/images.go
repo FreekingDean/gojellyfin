@@ -8,20 +8,20 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	imagemodal "github.com/FreekingDean/gojellyfin/internal/store/image"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
 type (
-	Image     = store.Image
-	ImageKind = imagemodal.Kind
+	Image     = store.ImageModel
+	ImageKind = imagemodel.Kind
 )
 
 const (
-	ImageKindPrimary = imagemodal.KindPrimary
+	ImageKindPrimary = imagemodel.KindPrimary
 )
 
-var ValidImageKind = imagemodal.KindValidator
+var ValidImageKind = imagemodel.KindValidator
 
 type RemoteImage struct {
 	Kind ImageKind
@@ -34,7 +34,7 @@ func (s *Service) SaveImage(ctx context.Context, itemID uuid.UUID, artwork Image
 		SetKind(artwork.Kind).
 		SetURL(artwork.URL).
 		SetTag(artwork.Tag).
-		OnConflictColumns(imagemodal.FieldItemID, imagemodal.FieldKind, imagemodal.FieldIndex).
+		OnConflictColumns(imagemodel.FieldItemID, imagemodel.FieldKind, imagemodel.FieldIndex).
 		UpdateNewValues().
 		Exec(ctx)
 	if err != nil {
@@ -46,9 +46,9 @@ func (s *Service) SaveImage(ctx context.Context, itemID uuid.UUID, artwork Image
 
 func (s *Service) Images(ctx context.Context, itemID uuid.UUID) ([]*Image, error) {
 	images, err := s.store.Image.Query().
-		Where(imagemodal.ItemID(itemID)).
-		Order(imagemodal.ByKind(), imagemodal.ByIndex()).
-		All(ctx)
+		Where(imagemodel.ItemID(itemID)).
+		Order(imagemodel.ByKind(), imagemodel.ByIndex()).
+		AllModels(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list images: %w", err)
 	}
@@ -59,11 +59,11 @@ func (s *Service) Images(ctx context.Context, itemID uuid.UUID) ([]*Image, error
 func (s *Service) Image(ctx context.Context, itemID uuid.UUID, kind ImageKind, index int32) (*Image, error) {
 	image, err := s.store.Image.Query().
 		Where(
-			imagemodal.ItemID(itemID),
-			imagemodal.KindEQ(kind),
-			imagemodal.Index(index),
+			imagemodel.ItemID(itemID),
+			imagemodel.KindEQ(kind),
+			imagemodel.Index(index),
 		).
-		Only(ctx)
+		OnlyModel(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query image: %w", err)
 	}
@@ -78,7 +78,7 @@ func (s *Service) ImageTagsByItem(ctx context.Context, itemIDs []uuid.UUID) (map
 	}
 
 	images, err := s.store.Image.Query().
-		Where(imagemodal.ItemIDIn(itemIDs...), imagemodal.Index(0)).
+		Where(imagemodel.ItemIDIn(itemIDs...), imagemodel.Index(0)).
 		All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query image tags: %w", err)
@@ -97,17 +97,17 @@ func (s *Service) ImageTagsByItem(ctx context.Context, itemIDs []uuid.UUID) (map
 func (s *Service) LibraryPosters(ctx context.Context, libraryID uuid.UUID, limit int) ([]*Image, error) {
 	posters, err := s.store.Image.Query().
 		Where(
-			imagemodal.KindEQ(imagemodal.KindPrimary),
-			imagemodal.Index(0),
-			imagemodal.HasItemWith(
+			imagemodel.KindEQ(imagemodel.KindPrimary),
+			imagemodel.Index(0),
+			imagemodel.HasItemWith(
 				inLibrary(libraryID),
-				itemmodal.DeletedAtIsNil(),
-				itemmodal.ParentIDIsNil(),
+				itemmodel.DeletedAtIsNil(),
+				itemmodel.ParentIDIsNil(),
 			),
 		).
-		Order(imagemodal.ByCreatedAt(sql.OrderDesc()), imagemodal.ByID()).
+		Order(imagemodel.ByCreatedAt(sql.OrderDesc()), imagemodel.ByID()).
 		Limit(limit).
-		All(ctx)
+		AllModels(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query library posters: %w", err)
 	}

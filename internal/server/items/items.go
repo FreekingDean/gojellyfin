@@ -8,7 +8,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/server/dto"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
 type Server struct {
@@ -56,7 +56,7 @@ func (s *Server) GetRootFolder(ctx context.Context, request api.GetRootFolderReq
 func (s *Server) GetLatestMedia(ctx context.Context, request api.GetLatestMediaRequestObject) (api.GetLatestMediaResponseObject, error) {
 	query := items.ItemQuery{
 		Viewer:     items.Everyone,
-		Kinds:      []items.Kind{itemmodal.KindMovie, itemmodal.KindSeries},
+		Kinds:      []items.Kind{itemmodel.KindMovie, itemmodel.KindSeries},
 		SortBy:     []string{"DateCreated"},
 		Descending: true,
 		Limit:      int(apiutil.OrElse(request.Params.Limit, int32(20))),

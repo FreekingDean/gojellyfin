@@ -76,9 +76,9 @@ type UserPolicy struct {
 	// EnableAllFolders holds the value of the "enable_all_folders" field.
 	EnableAllFolders bool `json:"enable_all_folders,omitempty"`
 	// MaxParentalRating holds the value of the "max_parental_rating" field.
-	MaxParentalRating userpolicy.MaxParentalRating `json:"max_parental_rating,omitempty"`
+	MaxParentalRating *userpolicy.MaxParentalRating `json:"max_parental_rating,omitempty"`
 	// MaxParentalSubRating holds the value of the "max_parental_sub_rating" field.
-	MaxParentalSubRating userpolicy.MaxParentalSubRating `json:"max_parental_sub_rating,omitempty"`
+	MaxParentalSubRating *userpolicy.MaxParentalSubRating `json:"max_parental_sub_rating,omitempty"`
 	// InvalidLoginAttemptCount holds the value of the "invalid_login_attempt_count" field.
 	InvalidLoginAttemptCount int32 `json:"invalid_login_attempt_count,omitempty"`
 	// LoginAttemptsBeforeLockout holds the value of the "login_attempts_before_lockout" field.
@@ -346,13 +346,15 @@ func (_m *UserPolicy) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field max_parental_rating", values[i])
 			} else if value.Valid {
-				_m.MaxParentalRating = userpolicy.MaxParentalRating(value.String)
+				_m.MaxParentalRating = new(userpolicy.MaxParentalRating)
+				*_m.MaxParentalRating = userpolicy.MaxParentalRating(value.String)
 			}
 		case userpolicy.FieldMaxParentalSubRating:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field max_parental_sub_rating", values[i])
 			} else if value.Valid {
-				_m.MaxParentalSubRating = userpolicy.MaxParentalSubRating(value.String)
+				_m.MaxParentalSubRating = new(userpolicy.MaxParentalSubRating)
+				*_m.MaxParentalSubRating = userpolicy.MaxParentalSubRating(value.String)
 			}
 		case userpolicy.FieldInvalidLoginAttemptCount:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -605,11 +607,15 @@ func (_m *UserPolicy) String() string {
 	builder.WriteString("enable_all_folders=")
 	builder.WriteString(fmt.Sprintf("%v", _m.EnableAllFolders))
 	builder.WriteString(", ")
-	builder.WriteString("max_parental_rating=")
-	builder.WriteString(fmt.Sprintf("%v", _m.MaxParentalRating))
+	if v := _m.MaxParentalRating; v != nil {
+		builder.WriteString("max_parental_rating=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
-	builder.WriteString("max_parental_sub_rating=")
-	builder.WriteString(fmt.Sprintf("%v", _m.MaxParentalSubRating))
+	if v := _m.MaxParentalSubRating; v != nil {
+		builder.WriteString("max_parental_sub_rating=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("invalid_login_attempt_count=")
 	builder.WriteString(fmt.Sprintf("%v", _m.InvalidLoginAttemptCount))

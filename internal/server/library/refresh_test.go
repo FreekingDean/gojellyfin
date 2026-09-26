@@ -14,7 +14,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
@@ -70,7 +70,7 @@ func TestServer_RefreshItem(t *testing.T) {
 
 	t.Run("answers 204 without queuing when the mode asks for nothing", func(t *testing.T) {
 		fixed := newFixture(t)
-		movie := fixed.add(t, seed{kind: itemmodal.KindMovie, name: "The Matrix"})
+		movie := fixed.add(t, seed{kind: itemmodel.KindMovie, name: "The Matrix"})
 
 		response, err := fixed.server.RefreshItem(
 			context.Background(),
@@ -86,7 +86,7 @@ func TestServer_RefreshItem(t *testing.T) {
 
 	t.Run("starts the metadata job for an item", func(t *testing.T) {
 		fixed := newFixture(t)
-		movie := fixed.add(t, seed{kind: itemmodal.KindMovie, name: "The Matrix"})
+		movie := fixed.add(t, seed{kind: itemmodel.KindMovie, name: "The Matrix"})
 
 		if _, err := fixed.expecting(t, jobs.RefreshMetadata).RefreshItem(
 			context.Background(),
@@ -109,7 +109,7 @@ func TestServer_RefreshItem(t *testing.T) {
 
 	t.Run("starts the scan when the mode asks to look for new files", func(t *testing.T) {
 		fixed := newFixture(t)
-		movie := fixed.add(t, seed{kind: itemmodal.KindMovie, name: "The Matrix"})
+		movie := fixed.add(t, seed{kind: itemmodel.KindMovie, name: "The Matrix"})
 
 		if _, err := fixed.expecting(t, jobs.RefreshLibraries).RefreshItem(
 			context.Background(),

@@ -11,7 +11,7 @@ func SessionDto(session *sessions.Session) *api.SessionInfoDto {
 	dto := &api.SessionInfoDto{
 		Id:                    apiutil.Ptr(session.ID.String()),
 		ServerId:              apiutil.Ptr(config.ServerID),
-		LastActivityDate:      apiutil.Ptr(session.LastActivityAt),
+		LastActivityDate:      session.LastActivityAt,
 		IsActive:              apiutil.Ptr(true),
 		SupportsRemoteControl: apiutil.Ptr(false),
 		PlayableMediaTypes:    &[]api.MediaType{},
@@ -19,7 +19,7 @@ func SessionDto(session *sessions.Session) *api.SessionInfoDto {
 		AdditionalUsers:       &[]api.SessionUserInfo{},
 	}
 
-	if device := session.Edges.Device; device != nil {
+	if device := session.Device; device != nil {
 		playable := make([]api.MediaType, 0, len(device.PlayableMediaTypes))
 		for _, mediaType := range device.PlayableMediaTypes {
 			playable = append(playable, api.MediaType(mediaType))
@@ -38,7 +38,7 @@ func SessionDto(session *sessions.Session) *api.SessionInfoDto {
 		dto.SupportedCommands = &commands
 	}
 
-	if user := session.Edges.User; user != nil {
+	if user := session.User; user != nil {
 		dto.UserId = &user.ID
 		dto.UserName = apiutil.Ptr(user.Name)
 	}

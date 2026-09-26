@@ -1185,7 +1185,7 @@ func (m *ApiKeyMutation) RevokedAt() (r time.Time, exists bool) {
 // OldRevokedAt returns the old "revoked_at" field's value of the ApiKey entity.
 // If the ApiKey object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ApiKeyMutation) OldRevokedAt(ctx context.Context) (v time.Time, err error) {
+func (m *ApiKeyMutation) OldRevokedAt(ctx context.Context) (v *time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldRevokedAt is only allowed on UpdateOne operations")
 	}
@@ -2284,7 +2284,7 @@ func (m *CreditMutation) SortOrder() (r int32, exists bool) {
 // OldSortOrder returns the old "sort_order" field's value of the Credit entity.
 // If the Credit object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *CreditMutation) OldSortOrder(ctx context.Context) (v int32, err error) {
+func (m *CreditMutation) OldSortOrder(ctx context.Context) (v *int32, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldSortOrder is only allowed on UpdateOne operations")
 	}
@@ -3452,7 +3452,7 @@ func (m *DeviceMutation) LastActivityAt() (r time.Time, exists bool) {
 // OldLastActivityAt returns the old "last_activity_at" field's value of the Device entity.
 // If the Device object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *DeviceMutation) OldLastActivityAt(ctx context.Context) (v time.Time, err error) {
+func (m *DeviceMutation) OldLastActivityAt(ctx context.Context) (v *time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldLastActivityAt is only allowed on UpdateOne operations")
 	}
@@ -7411,7 +7411,7 @@ func (m *ItemMutation) DateModified() (r time.Time, exists bool) {
 // OldDateModified returns the old "date_modified" field's value of the Item entity.
 // If the Item object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemMutation) OldDateModified(ctx context.Context) (v time.Time, err error) {
+func (m *ItemMutation) OldDateModified(ctx context.Context) (v *time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldDateModified is only allowed on UpdateOne operations")
 	}
@@ -10216,7 +10216,7 @@ func (m *ItemSourceMutation) Size() (r int64, exists bool) {
 // OldSize returns the old "size" field's value of the ItemSource entity.
 // If the ItemSource object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemSourceMutation) OldSize(ctx context.Context) (v int64, err error) {
+func (m *ItemSourceMutation) OldSize(ctx context.Context) (v *int64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldSize is only allowed on UpdateOne operations")
 	}
@@ -10286,7 +10286,7 @@ func (m *ItemSourceMutation) RunTimeTicks() (r int64, exists bool) {
 // OldRunTimeTicks returns the old "run_time_ticks" field's value of the ItemSource entity.
 // If the ItemSource object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemSourceMutation) OldRunTimeTicks(ctx context.Context) (v int64, err error) {
+func (m *ItemSourceMutation) OldRunTimeTicks(ctx context.Context) (v *int64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldRunTimeTicks is only allowed on UpdateOne operations")
 	}
@@ -10356,7 +10356,7 @@ func (m *ItemSourceMutation) Bitrate() (r int32, exists bool) {
 // OldBitrate returns the old "bitrate" field's value of the ItemSource entity.
 // If the ItemSource object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemSourceMutation) OldBitrate(ctx context.Context) (v int32, err error) {
+func (m *ItemSourceMutation) OldBitrate(ctx context.Context) (v *int32, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldBitrate is only allowed on UpdateOne operations")
 	}
@@ -10425,7 +10425,7 @@ func (m *ItemSourceMutation) DateModified() (r time.Time, exists bool) {
 // OldDateModified returns the old "date_modified" field's value of the ItemSource entity.
 // If the ItemSource object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemSourceMutation) OldDateModified(ctx context.Context) (v time.Time, err error) {
+func (m *ItemSourceMutation) OldDateModified(ctx context.Context) (v *time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldDateModified is only allowed on UpdateOne operations")
 	}
@@ -10474,7 +10474,7 @@ func (m *ItemSourceMutation) ProbedAt() (r time.Time, exists bool) {
 // OldProbedAt returns the old "probed_at" field's value of the ItemSource entity.
 // If the ItemSource object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemSourceMutation) OldProbedAt(ctx context.Context) (v time.Time, err error) {
+func (m *ItemSourceMutation) OldProbedAt(ctx context.Context) (v *time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldProbedAt is only allowed on UpdateOne operations")
 	}
@@ -16773,7 +16773,7 @@ func (m *MediaStreamMutation) VideoRangeType() (r mediastream.VideoRangeType, ex
 // OldVideoRangeType returns the old "video_range_type" field's value of the MediaStream entity.
 // If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldVideoRangeType(ctx context.Context) (v mediastream.VideoRangeType, err error) {
+func (m *MediaStreamMutation) OldVideoRangeType(ctx context.Context) (v *mediastream.VideoRangeType, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldVideoRangeType is only allowed on UpdateOne operations")
 	}
@@ -17124,7 +17124,7 @@ func (m *MediaStreamMutation) BitRate() (r int32, exists bool) {
 // OldBitRate returns the old "bit_rate" field's value of the MediaStream entity.
 // If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldBitRate(ctx context.Context) (v int32, err error) {
+func (m *MediaStreamMutation) OldBitRate(ctx context.Context) (v *int32, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldBitRate is only allowed on UpdateOne operations")
 	}
@@ -17194,7 +17194,7 @@ func (m *MediaStreamMutation) Channels() (r int32, exists bool) {
 // OldChannels returns the old "channels" field's value of the MediaStream entity.
 // If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldChannels(ctx context.Context) (v int32, err error) {
+func (m *MediaStreamMutation) OldChannels(ctx context.Context) (v *int32, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldChannels is only allowed on UpdateOne operations")
 	}
@@ -17264,7 +17264,7 @@ func (m *MediaStreamMutation) SampleRate() (r int32, exists bool) {
 // OldSampleRate returns the old "sample_rate" field's value of the MediaStream entity.
 // If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldSampleRate(ctx context.Context) (v int32, err error) {
+func (m *MediaStreamMutation) OldSampleRate(ctx context.Context) (v *int32, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldSampleRate is only allowed on UpdateOne operations")
 	}
@@ -17334,7 +17334,7 @@ func (m *MediaStreamMutation) Width() (r int32, exists bool) {
 // OldWidth returns the old "width" field's value of the MediaStream entity.
 // If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldWidth(ctx context.Context) (v int32, err error) {
+func (m *MediaStreamMutation) OldWidth(ctx context.Context) (v *int32, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldWidth is only allowed on UpdateOne operations")
 	}
@@ -17404,7 +17404,7 @@ func (m *MediaStreamMutation) Height() (r int32, exists bool) {
 // OldHeight returns the old "height" field's value of the MediaStream entity.
 // If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldHeight(ctx context.Context) (v int32, err error) {
+func (m *MediaStreamMutation) OldHeight(ctx context.Context) (v *int32, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldHeight is only allowed on UpdateOne operations")
 	}
@@ -17474,7 +17474,7 @@ func (m *MediaStreamMutation) Level() (r float64, exists bool) {
 // OldLevel returns the old "level" field's value of the MediaStream entity.
 // If the MediaStream object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MediaStreamMutation) OldLevel(ctx context.Context) (v float64, err error) {
+func (m *MediaStreamMutation) OldLevel(ctx context.Context) (v *float64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldLevel is only allowed on UpdateOne operations")
 	}
@@ -21452,7 +21452,7 @@ func (m *SessionMutation) LastActivityAt() (r time.Time, exists bool) {
 // OldLastActivityAt returns the old "last_activity_at" field's value of the Session entity.
 // If the Session object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SessionMutation) OldLastActivityAt(ctx context.Context) (v time.Time, err error) {
+func (m *SessionMutation) OldLastActivityAt(ctx context.Context) (v *time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldLastActivityAt is only allowed on UpdateOne operations")
 	}
@@ -21501,7 +21501,7 @@ func (m *SessionMutation) RevokedAt() (r time.Time, exists bool) {
 // OldRevokedAt returns the old "revoked_at" field's value of the Session entity.
 // If the Session object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SessionMutation) OldRevokedAt(ctx context.Context) (v time.Time, err error) {
+func (m *SessionMutation) OldRevokedAt(ctx context.Context) (v *time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldRevokedAt is only allowed on UpdateOne operations")
 	}
@@ -23825,7 +23825,7 @@ func (m *UserMutation) LastLoginAt() (r time.Time, exists bool) {
 // OldLastLoginAt returns the old "last_login_at" field's value of the User entity.
 // If the User object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserMutation) OldLastLoginAt(ctx context.Context) (v time.Time, err error) {
+func (m *UserMutation) OldLastLoginAt(ctx context.Context) (v *time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldLastLoginAt is only allowed on UpdateOne operations")
 	}
@@ -23874,7 +23874,7 @@ func (m *UserMutation) LastActivityAt() (r time.Time, exists bool) {
 // OldLastActivityAt returns the old "last_activity_at" field's value of the User entity.
 // If the User object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserMutation) OldLastActivityAt(ctx context.Context) (v time.Time, err error) {
+func (m *UserMutation) OldLastActivityAt(ctx context.Context) (v *time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldLastActivityAt is only allowed on UpdateOne operations")
 	}
@@ -26874,7 +26874,7 @@ func (m *UserItemDataMutation) Likes() (r bool, exists bool) {
 // OldLikes returns the old "likes" field's value of the UserItemData entity.
 // If the UserItemData object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserItemDataMutation) OldLikes(ctx context.Context) (v bool, err error) {
+func (m *UserItemDataMutation) OldLikes(ctx context.Context) (v *bool, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldLikes is only allowed on UpdateOne operations")
 	}
@@ -28629,7 +28629,7 @@ func (m *UserPolicyMutation) MaxParentalRating() (r userpolicy.MaxParentalRating
 // OldMaxParentalRating returns the old "max_parental_rating" field's value of the UserPolicy entity.
 // If the UserPolicy object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserPolicyMutation) OldMaxParentalRating(ctx context.Context) (v userpolicy.MaxParentalRating, err error) {
+func (m *UserPolicyMutation) OldMaxParentalRating(ctx context.Context) (v *userpolicy.MaxParentalRating, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldMaxParentalRating is only allowed on UpdateOne operations")
 	}
@@ -28678,7 +28678,7 @@ func (m *UserPolicyMutation) MaxParentalSubRating() (r userpolicy.MaxParentalSub
 // OldMaxParentalSubRating returns the old "max_parental_sub_rating" field's value of the UserPolicy entity.
 // If the UserPolicy object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserPolicyMutation) OldMaxParentalSubRating(ctx context.Context) (v userpolicy.MaxParentalSubRating, err error) {
+func (m *UserPolicyMutation) OldMaxParentalSubRating(ctx context.Context) (v *userpolicy.MaxParentalSubRating, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldMaxParentalSubRating is only allowed on UpdateOne operations")
 	}

@@ -14,8 +14,8 @@ func (Session) Fields() []ent.Field {
 	return withDefaultFields(
 		field.String("access_token").Unique().Sensitive(),
 		field.String("remote_endpoint").Optional(),
-		field.Time("last_activity_at").Optional(),
-		field.Time("revoked_at").Optional(),
+		field.Time("last_activity_at").Optional().Nillable(),
+		field.Time("revoked_at").Optional().Nillable(),
 	)
 }
 

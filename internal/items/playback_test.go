@@ -10,8 +10,8 @@ import (
 
 	"github.com/google/uuid"
 
-	itemmodal "github.com/FreekingDean/gojellyfin/internal/store/item"
-	streammodal "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
+	streammodel "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 )
 
 var chrome = Capabilities{
@@ -49,14 +49,14 @@ func rip(container string, audio ...string) *MediaSource {
 func ripped(container, video string, height int32, audio ...string) *MediaSource {
 	source := &MediaSource{ID: uuid.New(), Container: container}
 	if video != "" {
-		source.Edges.Streams = []*MediaStream{
-			{Index: 0, Kind: streammodal.KindVideo, Codec: video, Height: height, Width: height * 16 / 9},
+		source.Streams = []*MediaStream{
+			{Index: 0, Kind: streammodel.KindVideo, Codec: video, Height: &height, Width: ptr(height * 16 / 9)},
 		}
 	}
 	for index, codec := range audio {
-		source.Edges.Streams = append(source.Edges.Streams, &MediaStream{
+		source.Streams = append(source.Streams, &MediaStream{
 			Index: int32(index + 1),
-			Kind:  streammodal.KindAudio,
+			Kind:  streammodel.KindAudio,
 			Codec: codec,
 		})
 	}
@@ -65,7 +65,7 @@ func ripped(container, video string, height int32, audio ...string) *MediaSource
 }
 
 func hdr(source *MediaSource) *MediaSource {
-	source.Edges.Streams[0].VideoRangeType = streammodal.VideoRangeTypeHDR10
+	source.Streams[0].VideoRangeType = ptr(streammodel.VideoRangeTypeHDR10)
 
 	return source
 }
@@ -328,9 +328,9 @@ func TestService_SourceForOrder(t *testing.T) {
 			fixture := newFixture(t)
 			film := fixture.film(t, tc.name)
 			for _, file := range tc.copies {
-				rangeType := VideoRangeType("")
+				var rangeType *VideoRangeType
 				if file.hdr {
-					rangeType = streammodal.VideoRangeTypeHDR10
+					rangeType = ptr(streammodel.VideoRangeTypeHDR10)
 				}
 				fixture.copyRanged(t, film, file.path, file.video, file.audio, file.height, rangeType)
 			}
@@ -374,10 +374,10 @@ func TestService_SourceForOrder(t *testing.T) {
 func (f *fixture) copy(t *testing.T, item *Item, path, video, audio string, height int32) {
 	t.Helper()
 
-	f.copyRanged(t, item, path, video, audio, height, "")
+	f.copyRanged(t, item, path, video, audio, height, nil)
 }
 
-func (f *fixture) copyRanged(t *testing.T, item *Item, path, video, audio string, height int32, rangeType VideoRangeType) {
+func (f *fixture) copyRanged(t *testing.T, item *Item, path, video, audio string, height int32, rangeType *VideoRangeType) {
 	t.Helper()
 
 	ctx := context.Background()
@@ -393,19 +393,19 @@ func (f *fixture) copyRanged(t *testing.T, item *Item, path, video, audio string
 
 	streams := []*MediaStream{{
 		Index:          0,
-		Kind:           streammodal.KindVideo,
+		Kind:           streammodel.KindVideo,
 		Codec:          video,
-		Height:         height,
-		Width:          height * 16 / 9,
+		Height:         &height,
+		Width:          ptr(height * 16 / 9),
 		VideoRangeType: rangeType,
 	}}
 	if audio != "" {
-		streams = append(streams, &MediaStream{Index: 1, Kind: streammodal.KindAudio, Codec: audio})
+		streams = append(streams, &MediaStream{Index: 1, Kind: streammodel.KindAudio, Codec: audio})
 	}
 
 	probe := MediaSource{
 		Container: strings.TrimPrefix(filepath.Ext(path), "."),
-		Edges:     MediaSourceEdges{Streams: streams},
+		Streams:   streams,
 	}
 	if err := f.service.SaveProbe(ctx, item, source, probe); err != nil {
 		t.Fatalf("failed to probe %q: %v", path, err)
@@ -423,7 +423,7 @@ func (f *fixture) bitrate(t *testing.T, item *Item, path string, bitrate int32) 
 		if source.Path != path {
 			continue
 		}
-		if err := f.service.store.ItemSource.UpdateOne(source).SetBitrate(bitrate).Exec(context.Background()); err != nil {
+		if err := f.service.store.ItemSource.UpdateOneID(source.ID).SetBitrate(bitrate).Exec(context.Background()); err != nil {
 			t.Fatalf("failed to set the bitrate: %v", err)
 		}
 	}
@@ -433,11 +433,11 @@ func (f *fixture) film(t *testing.T, key string) *Item {
 	t.Helper()
 
 	item, err := f.service.SaveScanned(context.Background(), Item{
-		Kind:         itemmodal.KindMovie,
+		Kind:         itemmodel.KindMovie,
 		Key:          key,
 		Name:         key,
 		SortName:     key,
-		DateModified: time.Now(),
+		DateModified: ptr(time.Now()),
 	})
 	if err != nil {
 		t.Fatalf("failed to save %q: %v", key, err)
@@ -515,8 +515,8 @@ func TestService_SourceFor(t *testing.T) {
 	t.Run("an SDR client gets the 1080p rather than the HDR 4K beside it", func(t *testing.T) {
 		fixture := newFixture(t)
 		film := fixture.film(t, "movie:hdr-tiers")
-		fixture.copyRanged(t, film, "/media/uhd.mkv", "h264", "aac", 2160, streammodal.VideoRangeTypeHDR10)
-		fixture.copyRanged(t, film, "/media/hd.mkv", "h264", "aac", 1080, streammodal.VideoRangeTypeSDR)
+		fixture.copyRanged(t, film, "/media/uhd.mkv", "h264", "aac", 2160, ptr(streammodel.VideoRangeTypeHDR10))
+		fixture.copyRanged(t, film, "/media/hd.mkv", "h264", "aac", 1080, ptr(streammodel.VideoRangeTypeSDR))
 
 		plan, err := fixture.service.SourceFor(ctx, film.ID, chrome)
 		if err != nil {
@@ -533,7 +533,7 @@ func TestService_SourceFor(t *testing.T) {
 	t.Run("refuses when the only copy is one the client cannot decode", func(t *testing.T) {
 		fixture := newFixture(t)
 		film := fixture.film(t, "movie:hdr-only")
-		fixture.copyRanged(t, film, "/media/only.mkv", "h264", "aac", 2160, streammodal.VideoRangeTypeHDR10)
+		fixture.copyRanged(t, film, "/media/only.mkv", "h264", "aac", 2160, ptr(streammodel.VideoRangeTypeHDR10))
 
 		if _, err := fixture.service.SourceFor(ctx, film.ID, chrome); !errors.Is(err, ErrNoPlayable) {
 			t.Errorf("err = %v, want %v", err, ErrNoPlayable)

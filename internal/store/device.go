@@ -46,7 +46,7 @@ type Device struct {
 	// SupportsPersistentIdentifier holds the value of the "supports_persistent_identifier" field.
 	SupportsPersistentIdentifier bool `json:"supports_persistent_identifier,omitempty"`
 	// LastActivityAt holds the value of the "last_activity_at" field.
-	LastActivityAt time.Time `json:"last_activity_at,omitempty"`
+	LastActivityAt *time.Time `json:"last_activity_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the DeviceQuery when eager-loading is set.
 	Edges        DeviceEdges `json:"edges"`
@@ -195,7 +195,8 @@ func (_m *Device) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_activity_at", values[i])
 			} else if value.Valid {
-				_m.LastActivityAt = value.Time
+				_m.LastActivityAt = new(time.Time)
+				*_m.LastActivityAt = value.Time
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -277,8 +278,10 @@ func (_m *Device) String() string {
 	builder.WriteString("supports_persistent_identifier=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SupportsPersistentIdentifier))
 	builder.WriteString(", ")
-	builder.WriteString("last_activity_at=")
-	builder.WriteString(_m.LastActivityAt.Format(time.ANSIC))
+	if v := _m.LastActivityAt; v != nil {
+		builder.WriteString("last_activity_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

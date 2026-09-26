@@ -11,9 +11,9 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	devicemodal "github.com/FreekingDean/gojellyfin/internal/store/device"
-	sessionmodal "github.com/FreekingDean/gojellyfin/internal/store/session"
-	usermodal "github.com/FreekingDean/gojellyfin/internal/store/user"
+	devicemodel "github.com/FreekingDean/gojellyfin/internal/store/device"
+	sessionmodel "github.com/FreekingDean/gojellyfin/internal/store/session"
+	usermodel "github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
@@ -46,17 +46,17 @@ func newFixture(t *testing.T) *fixture {
 	t.Cleanup(func() {
 		ctx := context.Background()
 		if _, err := client.Session.Delete().
-			Where(sessionmodal.HasDeviceWith(devicemodal.ClientIDHasPrefix(prefix))).
+			Where(sessionmodel.HasDeviceWith(devicemodel.ClientIDHasPrefix(prefix))).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the sessions: %v", err)
 		}
 		if _, err := client.Device.Delete().
-			Where(devicemodal.ClientIDHasPrefix(prefix)).
+			Where(devicemodel.ClientIDHasPrefix(prefix)).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the devices: %v", err)
 		}
 		if _, err := client.User.Delete().
-			Where(usermodal.UsernameHasPrefix(prefix)).
+			Where(usermodel.UsernameHasPrefix(prefix)).
 			Exec(ctx); err != nil {
 			t.Errorf("failed to delete the users: %v", err)
 		}

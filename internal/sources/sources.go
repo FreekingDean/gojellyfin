@@ -63,8 +63,8 @@ func (s *Service) APIKey(variable string) (string, error) {
 
 type (
 	Kind          = sourcemodel.Kind
-	Source        = store.Source
-	LibrarySource = store.LibrarySource
+	Source        = store.SourceModel
+	LibrarySource = store.LibrarySourceModel
 )
 
 type Configured struct {
@@ -76,7 +76,7 @@ func (s *Service) List(ctx context.Context) ([]Configured, error) {
 	records, err := s.store.Source.Query().
 		WithLibraries().
 		Order(sourcemodel.ByName()).
-		All(ctx)
+		AllModels(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (s *Service) List(ctx context.Context) ([]Configured, error) {
 	for i, record := range records {
 		configured[i] = Configured{
 			Source:    *record,
-			Libraries: libraries(record.Edges.Libraries),
+			Libraries: libraries(record.Libraries),
 		}
 	}
 
@@ -96,19 +96,19 @@ func (s *Service) BindingsFor(ctx context.Context, id uuid.UUID) ([]Binding, err
 	records, err := s.store.LibrarySource.Query().
 		Where(librarysourcemodel.LibraryID(id)).
 		WithSource().
-		All(ctx)
+		AllModels(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	bindings := make([]Binding, 0, len(records))
 	for _, record := range records {
-		if record.Edges.Source == nil {
+		if record.Source == nil {
 			continue
 		}
 
 		bindings = append(bindings, Binding{
-			Source:  *record.Edges.Source,
+			Source:  *record.Source,
 			Library: *record,
 		})
 	}

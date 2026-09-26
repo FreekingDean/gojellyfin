@@ -237,7 +237,7 @@ func (_c *CreditCreate) createSpec() (*Credit, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := _c.mutation.SortOrder(); ok {
 		_spec.SetField(credit.FieldSortOrder, field.TypeInt32, value)
-		_node.SortOrder = value
+		_node.SortOrder = &value
 	}
 	if nodes := _c.mutation.ItemIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
