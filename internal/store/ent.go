@@ -31,6 +31,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
+	"github.com/FreekingDean/gojellyfin/internal/store/quickconnectrequest"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
@@ -98,32 +99,33 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			activitylogentry.Table:   activitylogentry.ValidColumn,
-			apikey.Table:             apikey.ValidColumn,
-			configuration.Table:      configuration.ValidColumn,
-			credit.Table:             credit.ValidColumn,
-			device.Table:             device.ValidColumn,
-			displaypreferences.Table: displaypreferences.ValidColumn,
-			genre.Table:              genre.ValidColumn,
-			image.Table:              image.ValidColumn,
-			item.Table:               item.ValidColumn,
-			itemsource.Table:         itemsource.ValidColumn,
-			library.Table:            library.ValidColumn,
-			libraryitem.Table:        libraryitem.ValidColumn,
-			libraryoptions.Table:     libraryoptions.ValidColumn,
-			librarysource.Table:      librarysource.ValidColumn,
-			mediastream.Table:        mediastream.ValidColumn,
-			person.Table:             person.ValidColumn,
-			playlist.Table:           playlist.ValidColumn,
-			playlistentry.Table:      playlistentry.ValidColumn,
-			playlistshare.Table:      playlistshare.ValidColumn,
-			session.Table:            session.ValidColumn,
-			source.Table:             source.ValidColumn,
-			studio.Table:             studio.ValidColumn,
-			user.Table:               user.ValidColumn,
-			userconfiguration.Table:  userconfiguration.ValidColumn,
-			useritemdata.Table:       useritemdata.ValidColumn,
-			userpolicy.Table:         userpolicy.ValidColumn,
+			activitylogentry.Table:    activitylogentry.ValidColumn,
+			apikey.Table:              apikey.ValidColumn,
+			configuration.Table:       configuration.ValidColumn,
+			credit.Table:              credit.ValidColumn,
+			device.Table:              device.ValidColumn,
+			displaypreferences.Table:  displaypreferences.ValidColumn,
+			genre.Table:               genre.ValidColumn,
+			image.Table:               image.ValidColumn,
+			item.Table:                item.ValidColumn,
+			itemsource.Table:          itemsource.ValidColumn,
+			library.Table:             library.ValidColumn,
+			libraryitem.Table:         libraryitem.ValidColumn,
+			libraryoptions.Table:      libraryoptions.ValidColumn,
+			librarysource.Table:       librarysource.ValidColumn,
+			mediastream.Table:         mediastream.ValidColumn,
+			person.Table:              person.ValidColumn,
+			playlist.Table:            playlist.ValidColumn,
+			playlistentry.Table:       playlistentry.ValidColumn,
+			playlistshare.Table:       playlistshare.ValidColumn,
+			quickconnectrequest.Table: quickconnectrequest.ValidColumn,
+			session.Table:             session.ValidColumn,
+			source.Table:              source.ValidColumn,
+			studio.Table:              studio.ValidColumn,
+			user.Table:                user.ValidColumn,
+			userconfiguration.Table:   userconfiguration.ValidColumn,
+			useritemdata.Table:        useritemdata.ValidColumn,
+			userpolicy.Table:          userpolicy.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

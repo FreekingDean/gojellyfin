@@ -35,6 +35,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
+	"github.com/FreekingDean/gojellyfin/internal/store/quickconnectrequest"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
@@ -89,6 +90,8 @@ type Client struct {
 	PlaylistEntry *PlaylistEntryClient
 	// PlaylistShare is the client for interacting with the PlaylistShare builders.
 	PlaylistShare *PlaylistShareClient
+	// QuickConnectRequest is the client for interacting with the QuickConnectRequest builders.
+	QuickConnectRequest *QuickConnectRequestClient
 	// Session is the client for interacting with the Session builders.
 	Session *SessionClient
 	// Source is the client for interacting with the Source builders.
@@ -133,6 +136,7 @@ func (c *Client) init() {
 	c.Playlist = NewPlaylistClient(c.config)
 	c.PlaylistEntry = NewPlaylistEntryClient(c.config)
 	c.PlaylistShare = NewPlaylistShareClient(c.config)
+	c.QuickConnectRequest = NewQuickConnectRequestClient(c.config)
 	c.Session = NewSessionClient(c.config)
 	c.Source = NewSourceClient(c.config)
 	c.Studio = NewStudioClient(c.config)
@@ -230,34 +234,35 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:                ctx,
-		config:             cfg,
-		ActivityLogEntry:   NewActivityLogEntryClient(cfg),
-		ApiKey:             NewApiKeyClient(cfg),
-		Configuration:      NewConfigurationClient(cfg),
-		Credit:             NewCreditClient(cfg),
-		Device:             NewDeviceClient(cfg),
-		DisplayPreferences: NewDisplayPreferencesClient(cfg),
-		Genre:              NewGenreClient(cfg),
-		Image:              NewImageClient(cfg),
-		Item:               NewItemClient(cfg),
-		ItemSource:         NewItemSourceClient(cfg),
-		Library:            NewLibraryClient(cfg),
-		LibraryItem:        NewLibraryItemClient(cfg),
-		LibraryOptions:     NewLibraryOptionsClient(cfg),
-		LibrarySource:      NewLibrarySourceClient(cfg),
-		MediaStream:        NewMediaStreamClient(cfg),
-		Person:             NewPersonClient(cfg),
-		Playlist:           NewPlaylistClient(cfg),
-		PlaylistEntry:      NewPlaylistEntryClient(cfg),
-		PlaylistShare:      NewPlaylistShareClient(cfg),
-		Session:            NewSessionClient(cfg),
-		Source:             NewSourceClient(cfg),
-		Studio:             NewStudioClient(cfg),
-		User:               NewUserClient(cfg),
-		UserConfiguration:  NewUserConfigurationClient(cfg),
-		UserItemData:       NewUserItemDataClient(cfg),
-		UserPolicy:         NewUserPolicyClient(cfg),
+		ctx:                 ctx,
+		config:              cfg,
+		ActivityLogEntry:    NewActivityLogEntryClient(cfg),
+		ApiKey:              NewApiKeyClient(cfg),
+		Configuration:       NewConfigurationClient(cfg),
+		Credit:              NewCreditClient(cfg),
+		Device:              NewDeviceClient(cfg),
+		DisplayPreferences:  NewDisplayPreferencesClient(cfg),
+		Genre:               NewGenreClient(cfg),
+		Image:               NewImageClient(cfg),
+		Item:                NewItemClient(cfg),
+		ItemSource:          NewItemSourceClient(cfg),
+		Library:             NewLibraryClient(cfg),
+		LibraryItem:         NewLibraryItemClient(cfg),
+		LibraryOptions:      NewLibraryOptionsClient(cfg),
+		LibrarySource:       NewLibrarySourceClient(cfg),
+		MediaStream:         NewMediaStreamClient(cfg),
+		Person:              NewPersonClient(cfg),
+		Playlist:            NewPlaylistClient(cfg),
+		PlaylistEntry:       NewPlaylistEntryClient(cfg),
+		PlaylistShare:       NewPlaylistShareClient(cfg),
+		QuickConnectRequest: NewQuickConnectRequestClient(cfg),
+		Session:             NewSessionClient(cfg),
+		Source:              NewSourceClient(cfg),
+		Studio:              NewStudioClient(cfg),
+		User:                NewUserClient(cfg),
+		UserConfiguration:   NewUserConfigurationClient(cfg),
+		UserItemData:        NewUserItemDataClient(cfg),
+		UserPolicy:          NewUserPolicyClient(cfg),
 	}, nil
 }
 
@@ -275,34 +280,35 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:                ctx,
-		config:             cfg,
-		ActivityLogEntry:   NewActivityLogEntryClient(cfg),
-		ApiKey:             NewApiKeyClient(cfg),
-		Configuration:      NewConfigurationClient(cfg),
-		Credit:             NewCreditClient(cfg),
-		Device:             NewDeviceClient(cfg),
-		DisplayPreferences: NewDisplayPreferencesClient(cfg),
-		Genre:              NewGenreClient(cfg),
-		Image:              NewImageClient(cfg),
-		Item:               NewItemClient(cfg),
-		ItemSource:         NewItemSourceClient(cfg),
-		Library:            NewLibraryClient(cfg),
-		LibraryItem:        NewLibraryItemClient(cfg),
-		LibraryOptions:     NewLibraryOptionsClient(cfg),
-		LibrarySource:      NewLibrarySourceClient(cfg),
-		MediaStream:        NewMediaStreamClient(cfg),
-		Person:             NewPersonClient(cfg),
-		Playlist:           NewPlaylistClient(cfg),
-		PlaylistEntry:      NewPlaylistEntryClient(cfg),
-		PlaylistShare:      NewPlaylistShareClient(cfg),
-		Session:            NewSessionClient(cfg),
-		Source:             NewSourceClient(cfg),
-		Studio:             NewStudioClient(cfg),
-		User:               NewUserClient(cfg),
-		UserConfiguration:  NewUserConfigurationClient(cfg),
-		UserItemData:       NewUserItemDataClient(cfg),
-		UserPolicy:         NewUserPolicyClient(cfg),
+		ctx:                 ctx,
+		config:              cfg,
+		ActivityLogEntry:    NewActivityLogEntryClient(cfg),
+		ApiKey:              NewApiKeyClient(cfg),
+		Configuration:       NewConfigurationClient(cfg),
+		Credit:              NewCreditClient(cfg),
+		Device:              NewDeviceClient(cfg),
+		DisplayPreferences:  NewDisplayPreferencesClient(cfg),
+		Genre:               NewGenreClient(cfg),
+		Image:               NewImageClient(cfg),
+		Item:                NewItemClient(cfg),
+		ItemSource:          NewItemSourceClient(cfg),
+		Library:             NewLibraryClient(cfg),
+		LibraryItem:         NewLibraryItemClient(cfg),
+		LibraryOptions:      NewLibraryOptionsClient(cfg),
+		LibrarySource:       NewLibrarySourceClient(cfg),
+		MediaStream:         NewMediaStreamClient(cfg),
+		Person:              NewPersonClient(cfg),
+		Playlist:            NewPlaylistClient(cfg),
+		PlaylistEntry:       NewPlaylistEntryClient(cfg),
+		PlaylistShare:       NewPlaylistShareClient(cfg),
+		QuickConnectRequest: NewQuickConnectRequestClient(cfg),
+		Session:             NewSessionClient(cfg),
+		Source:              NewSourceClient(cfg),
+		Studio:              NewStudioClient(cfg),
+		User:                NewUserClient(cfg),
+		UserConfiguration:   NewUserConfigurationClient(cfg),
+		UserItemData:        NewUserItemDataClient(cfg),
+		UserPolicy:          NewUserPolicyClient(cfg),
 	}, nil
 }
 
@@ -335,8 +341,8 @@ func (c *Client) Use(hooks ...Hook) {
 		c.ActivityLogEntry, c.ApiKey, c.Configuration, c.Credit, c.Device,
 		c.DisplayPreferences, c.Genre, c.Image, c.Item, c.ItemSource, c.Library,
 		c.LibraryItem, c.LibraryOptions, c.LibrarySource, c.MediaStream, c.Person,
-		c.Playlist, c.PlaylistEntry, c.PlaylistShare, c.Session, c.Source, c.Studio,
-		c.User, c.UserConfiguration, c.UserItemData, c.UserPolicy,
+		c.Playlist, c.PlaylistEntry, c.PlaylistShare, c.QuickConnectRequest, c.Session,
+		c.Source, c.Studio, c.User, c.UserConfiguration, c.UserItemData, c.UserPolicy,
 	} {
 		n.Use(hooks...)
 	}
@@ -349,8 +355,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.ActivityLogEntry, c.ApiKey, c.Configuration, c.Credit, c.Device,
 		c.DisplayPreferences, c.Genre, c.Image, c.Item, c.ItemSource, c.Library,
 		c.LibraryItem, c.LibraryOptions, c.LibrarySource, c.MediaStream, c.Person,
-		c.Playlist, c.PlaylistEntry, c.PlaylistShare, c.Session, c.Source, c.Studio,
-		c.User, c.UserConfiguration, c.UserItemData, c.UserPolicy,
+		c.Playlist, c.PlaylistEntry, c.PlaylistShare, c.QuickConnectRequest, c.Session,
+		c.Source, c.Studio, c.User, c.UserConfiguration, c.UserItemData, c.UserPolicy,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -397,6 +403,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.PlaylistEntry.mutate(ctx, m)
 	case *PlaylistShareMutation:
 		return c.PlaylistShare.mutate(ctx, m)
+	case *QuickConnectRequestMutation:
+		return c.QuickConnectRequest.mutate(ctx, m)
 	case *SessionMutation:
 		return c.Session.mutate(ctx, m)
 	case *SourceMutation:
@@ -3615,6 +3623,155 @@ func (c *PlaylistShareClient) mutate(ctx context.Context, m *PlaylistShareMutati
 	}
 }
 
+// QuickConnectRequestClient is a client for the QuickConnectRequest schema.
+type QuickConnectRequestClient struct {
+	config
+}
+
+// NewQuickConnectRequestClient returns a client for the QuickConnectRequest from the given config.
+func NewQuickConnectRequestClient(c config) *QuickConnectRequestClient {
+	return &QuickConnectRequestClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `quickconnectrequest.Hooks(f(g(h())))`.
+func (c *QuickConnectRequestClient) Use(hooks ...Hook) {
+	c.hooks.QuickConnectRequest = append(c.hooks.QuickConnectRequest, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `quickconnectrequest.Intercept(f(g(h())))`.
+func (c *QuickConnectRequestClient) Intercept(interceptors ...Interceptor) {
+	c.inters.QuickConnectRequest = append(c.inters.QuickConnectRequest, interceptors...)
+}
+
+// Create returns a builder for creating a QuickConnectRequest entity.
+func (c *QuickConnectRequestClient) Create() *QuickConnectRequestCreate {
+	mutation := newQuickConnectRequestMutation(c.config, OpCreate)
+	return &QuickConnectRequestCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of QuickConnectRequest entities.
+func (c *QuickConnectRequestClient) CreateBulk(builders ...*QuickConnectRequestCreate) *QuickConnectRequestCreateBulk {
+	return &QuickConnectRequestCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *QuickConnectRequestClient) MapCreateBulk(slice any, setFunc func(*QuickConnectRequestCreate, int)) *QuickConnectRequestCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &QuickConnectRequestCreateBulk{err: fmt.Errorf("calling to QuickConnectRequestClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*QuickConnectRequestCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &QuickConnectRequestCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for QuickConnectRequest.
+func (c *QuickConnectRequestClient) Update() *QuickConnectRequestUpdate {
+	mutation := newQuickConnectRequestMutation(c.config, OpUpdate)
+	return &QuickConnectRequestUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *QuickConnectRequestClient) UpdateOne(_m *QuickConnectRequest) *QuickConnectRequestUpdateOne {
+	mutation := newQuickConnectRequestMutation(c.config, OpUpdateOne, withQuickConnectRequest(_m))
+	return &QuickConnectRequestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *QuickConnectRequestClient) UpdateOneID(id uuid.UUID) *QuickConnectRequestUpdateOne {
+	mutation := newQuickConnectRequestMutation(c.config, OpUpdateOne, withQuickConnectRequestID(id))
+	return &QuickConnectRequestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for QuickConnectRequest.
+func (c *QuickConnectRequestClient) Delete() *QuickConnectRequestDelete {
+	mutation := newQuickConnectRequestMutation(c.config, OpDelete)
+	return &QuickConnectRequestDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *QuickConnectRequestClient) DeleteOne(_m *QuickConnectRequest) *QuickConnectRequestDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *QuickConnectRequestClient) DeleteOneID(id uuid.UUID) *QuickConnectRequestDeleteOne {
+	builder := c.Delete().Where(quickconnectrequest.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &QuickConnectRequestDeleteOne{builder}
+}
+
+// Query returns a query builder for QuickConnectRequest.
+func (c *QuickConnectRequestClient) Query() *QuickConnectRequestQuery {
+	return &QuickConnectRequestQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeQuickConnectRequest},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a QuickConnectRequest entity by its id.
+func (c *QuickConnectRequestClient) Get(ctx context.Context, id uuid.UUID) (*QuickConnectRequest, error) {
+	return c.Query().Where(quickconnectrequest.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *QuickConnectRequestClient) GetX(ctx context.Context, id uuid.UUID) *QuickConnectRequest {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryAuthorizedBy queries the authorized_by edge of a QuickConnectRequest.
+func (c *QuickConnectRequestClient) QueryAuthorizedBy(_m *QuickConnectRequest) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(quickconnectrequest.Table, quickconnectrequest.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, quickconnectrequest.AuthorizedByTable, quickconnectrequest.AuthorizedByColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *QuickConnectRequestClient) Hooks() []Hook {
+	return c.hooks.QuickConnectRequest
+}
+
+// Interceptors returns the client interceptors.
+func (c *QuickConnectRequestClient) Interceptors() []Interceptor {
+	return c.inters.QuickConnectRequest
+}
+
+func (c *QuickConnectRequestClient) mutate(ctx context.Context, m *QuickConnectRequestMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&QuickConnectRequestCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&QuickConnectRequestUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&QuickConnectRequestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&QuickConnectRequestDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("store: unknown QuickConnectRequest mutation op: %q", m.Op())
+	}
+}
+
 // SessionClient is a client for the Session schema.
 type SessionClient struct {
 	config
@@ -4346,6 +4503,22 @@ func (c *UserClient) QueryPlaylistShares(_m *User) *PlaylistShareQuery {
 	return query
 }
 
+// QueryQuickConnectRequests queries the quick_connect_requests edge of a User.
+func (c *UserClient) QueryQuickConnectRequests(_m *User) *QuickConnectRequestQuery {
+	query := (&QuickConnectRequestClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(quickconnectrequest.Table, quickconnectrequest.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.QuickConnectRequestsTable, user.QuickConnectRequestsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *UserClient) Hooks() []Hook {
 	return c.hooks.User
@@ -4840,15 +5013,15 @@ type (
 		ActivityLogEntry, ApiKey, Configuration, Credit, Device, DisplayPreferences,
 		Genre, Image, Item, ItemSource, Library, LibraryItem, LibraryOptions,
 		LibrarySource, MediaStream, Person, Playlist, PlaylistEntry, PlaylistShare,
-		Session, Source, Studio, User, UserConfiguration, UserItemData,
-		UserPolicy []ent.Hook
+		QuickConnectRequest, Session, Source, Studio, User, UserConfiguration,
+		UserItemData, UserPolicy []ent.Hook
 	}
 	inters struct {
 		ActivityLogEntry, ApiKey, Configuration, Credit, Device, DisplayPreferences,
 		Genre, Image, Item, ItemSource, Library, LibraryItem, LibraryOptions,
 		LibrarySource, MediaStream, Person, Playlist, PlaylistEntry, PlaylistShare,
-		Session, Source, Studio, User, UserConfiguration, UserItemData,
-		UserPolicy []ent.Interceptor
+		QuickConnectRequest, Session, Source, Studio, User, UserConfiguration,
+		UserItemData, UserPolicy []ent.Interceptor
 	}
 )
 
