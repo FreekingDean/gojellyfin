@@ -292,6 +292,8 @@ Being generous costs nothing because every job is idempotent: `SaveScanned` and 
 
 **One job per leaf, and that is thousands of executions.** A ten thousand episode Sonarr enqueues ten thousand `RefreshItem` executions. That is the shape Temporal is built for — independent top-level executions rather than one parent's history — but it is not free, and it is the reason the parent sweeps rather than waiting.
 
+**A job names its own task queue.** `Job.Queue` is where `Service.Enqueue` and `Service.Start` put a run, empty meaning `jobs.TaskQueue`; the activity inherits the queue of the workflow that runs it. `RefreshMetadata` and `RefreshItemMetadata` are on `jobs.MetadataQueue` because they wait on a rate limited API while a probe saturates a core, and ten thousand identifies fanned out behind the same activity cap as the probes starve them. A new kind of per item work gets a queue of its own rather than a bigger cap on the shared one (#567). The worker runs one Temporal worker per queue `Registry.Queues` names, `TaskQueue` always among them, each with the same options and every job registered — so the queue decides only where a run waits, and a run started on a queue before its job moved still finds something to run it. An enqueue resolves the name through the registry, so a name nothing registered is refused at the enqueue rather than failing as an unknown activity.
+
 Triggers are not built. `UpdateTask` answers 501 rather than storing a schedule nobody reads; Temporal schedules are where they belong.
 
 ### Library sources
