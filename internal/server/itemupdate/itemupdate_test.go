@@ -264,7 +264,7 @@ func TestServer_UpdateItem(t *testing.T) {
 		if apiutil.Deref(record.RunTimeTicks) != 72_000_000_000 {
 			t.Errorf("run time ticks = %v, want 72000000000", record.RunTimeTicks)
 		}
-		if !record.DateModified.Equal(dateModified) {
+		if record.DateModified == nil || !record.DateModified.Equal(dateModified) {
 			t.Errorf("date modified = %v, want %v", record.DateModified, dateModified)
 		}
 		if record.Key != "movie:original-name:"+fixture.libraryID.String() {
