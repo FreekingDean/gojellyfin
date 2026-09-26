@@ -1,5 +1,7 @@
 package jobs
 
+import "slices"
+
 type Registry struct {
 	jobs []Job
 }
@@ -25,6 +27,17 @@ func (r *Registry) Startable() []Job {
 	}
 
 	return found
+}
+
+func (r *Registry) Queues() []string {
+	queues := []string{TaskQueue}
+	for _, job := range r.jobs {
+		if !slices.Contains(queues, job.queue()) {
+			queues = append(queues, job.queue())
+		}
+	}
+
+	return queues
 }
 
 func (r *Registry) Find(name string) (Job, error) {

@@ -15,7 +15,10 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/env"
 )
 
-const TaskQueue = "gojellyfin"
+const (
+	TaskQueue     = "gojellyfin"
+	MetadataQueue = "gojellyfin-metadata"
+)
 
 var ErrNotConfigured = errors.New("jobs: TEMPORAL_HOSTPORT is not set")
 
@@ -90,7 +93,7 @@ type Status struct {
 	Last  *Result
 }
 
-func (c *Client) Enqueue(ctx context.Context, name string, params ...Param) error {
+func (c *Client) start(ctx context.Context, queue string, name string, params ...Param) error {
 	connection, err := c.connection()
 	if err != nil {
 		return err
@@ -103,7 +106,7 @@ func (c *Client) Enqueue(ctx context.Context, name string, params ...Param) erro
 
 	_, err = connection.ExecuteWorkflow(ctx, client.StartWorkflowOptions{
 		ID:                       held.id(name),
-		TaskQueue:                TaskQueue,
+		TaskQueue:                queue,
 		WorkflowExecutionTimeout: runTimeoutMax,
 		WorkflowIDReusePolicy:    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 	}, runWorkflow, name, held)
@@ -156,7 +159,16 @@ func (s *Service) Start(ctx context.Context, name string, params ...Param) error
 		return fmt.Errorf("%w: %s is only ever enqueued by another job", ErrNotFound, name)
 	}
 
-	return s.client.Enqueue(ctx, name, params...)
+	return s.client.start(ctx, job.queue(), name, params...)
+}
+
+func (s *Service) Enqueue(ctx context.Context, name string, params ...Param) error {
+	job, err := s.registry.Find(name)
+	if err != nil {
+		return err
+	}
+
+	return s.client.start(ctx, job.queue(), name, params...)
 }
 
 func (s *Service) Cancel(ctx context.Context, name string) error {
