@@ -138,6 +138,10 @@ func (s *Server) UpdateUserPolicy(ctx context.Context, request api.UpdateUserPol
 		return api.UpdateUserPolicy400JSONResponse{}, nil
 	}
 
+	if apiutil.Deref(req.IsDisabled) && user.Policy != nil && user.Policy.IsAdministrator {
+		return api.UpdateUserPolicy403JSONResponse{}, nil
+	}
+
 	if err := s.savePolicy(ctx, user.ID, req); err != nil {
 		return nil, err
 	}
@@ -176,6 +180,9 @@ func (s *Server) UpdateUserPassword(ctx context.Context, request api.UpdateUserP
 		return nil, err
 	}
 	if err := s.users.SetPassword(ctx, user.ID, hash); err != nil {
+		return nil, err
+	}
+	if err := s.sessions.RevokeForUser(ctx, user.ID); err != nil {
 		return nil, err
 	}
 
@@ -229,6 +236,10 @@ func (s *Server) AuthenticateUserByName(ctx context.Context, request api.Authent
 
 	matches, err := auth.Verify(apiutil.Deref(req.Pw), user.PasswordHash)
 	if err != nil || !matches {
+		return nil, auth.ErrUnauthorized
+	}
+
+	if policy := user.Policy; policy != nil && policy.IsDisabled {
 		return nil, auth.ErrUnauthorized
 	}
 
