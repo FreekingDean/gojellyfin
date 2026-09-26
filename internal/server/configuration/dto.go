@@ -52,7 +52,7 @@ func defaultServerConfiguration() api.ServerConfiguration {
 		UICulture:                    apiutil.Ptr("en-US"),
 		IsStartupWizardCompleted:     apiutil.Ptr(true),
 		IsPortAuthorized:             apiutil.Ptr(true),
-		QuickConnectAvailable:        apiutil.Ptr(false),
+		QuickConnectAvailable:        apiutil.Ptr(true),
 		EnableMetrics:                apiutil.Ptr(false),
 		EnableFolderView:             apiutil.Ptr(false),
 		DisplaySpecialsWithinSeasons: apiutil.Ptr(true),
