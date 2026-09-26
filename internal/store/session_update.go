@@ -14,6 +14,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/device"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
+	"github.com/FreekingDean/gojellyfin/internal/store/syncplaygroupmember"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/google/uuid"
 )
@@ -147,6 +148,21 @@ func (_u *SessionUpdate) SetDevice(v *Device) *SessionUpdate {
 	return _u.SetDeviceID(v.ID)
 }
 
+// AddSyncPlayMembershipIDs adds the "sync_play_memberships" edge to the SyncPlayGroupMember entity by IDs.
+func (_u *SessionUpdate) AddSyncPlayMembershipIDs(ids ...uuid.UUID) *SessionUpdate {
+	_u.mutation.AddSyncPlayMembershipIDs(ids...)
+	return _u
+}
+
+// AddSyncPlayMemberships adds the "sync_play_memberships" edges to the SyncPlayGroupMember entity.
+func (_u *SessionUpdate) AddSyncPlayMemberships(v ...*SyncPlayGroupMember) *SessionUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSyncPlayMembershipIDs(ids...)
+}
+
 // Mutation returns the SessionMutation object of the builder.
 func (_u *SessionUpdate) Mutation() *SessionMutation {
 	return _u.mutation
@@ -162,6 +178,27 @@ func (_u *SessionUpdate) ClearUser() *SessionUpdate {
 func (_u *SessionUpdate) ClearDevice() *SessionUpdate {
 	_u.mutation.ClearDevice()
 	return _u
+}
+
+// ClearSyncPlayMemberships clears all "sync_play_memberships" edges to the SyncPlayGroupMember entity.
+func (_u *SessionUpdate) ClearSyncPlayMemberships() *SessionUpdate {
+	_u.mutation.ClearSyncPlayMemberships()
+	return _u
+}
+
+// RemoveSyncPlayMembershipIDs removes the "sync_play_memberships" edge to SyncPlayGroupMember entities by IDs.
+func (_u *SessionUpdate) RemoveSyncPlayMembershipIDs(ids ...uuid.UUID) *SessionUpdate {
+	_u.mutation.RemoveSyncPlayMembershipIDs(ids...)
+	return _u
+}
+
+// RemoveSyncPlayMemberships removes "sync_play_memberships" edges to SyncPlayGroupMember entities.
+func (_u *SessionUpdate) RemoveSyncPlayMemberships(v ...*SyncPlayGroupMember) *SessionUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSyncPlayMembershipIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -308,6 +345,51 @@ func (_u *SessionUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.SyncPlayMembershipsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   session.SyncPlayMembershipsTable,
+			Columns: []string{session.SyncPlayMembershipsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(syncplaygroupmember.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSyncPlayMembershipsIDs(); len(nodes) > 0 && !_u.mutation.SyncPlayMembershipsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   session.SyncPlayMembershipsTable,
+			Columns: []string{session.SyncPlayMembershipsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(syncplaygroupmember.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SyncPlayMembershipsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   session.SyncPlayMembershipsTable,
+			Columns: []string{session.SyncPlayMembershipsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(syncplaygroupmember.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{session.Label}
@@ -444,6 +526,21 @@ func (_u *SessionUpdateOne) SetDevice(v *Device) *SessionUpdateOne {
 	return _u.SetDeviceID(v.ID)
 }
 
+// AddSyncPlayMembershipIDs adds the "sync_play_memberships" edge to the SyncPlayGroupMember entity by IDs.
+func (_u *SessionUpdateOne) AddSyncPlayMembershipIDs(ids ...uuid.UUID) *SessionUpdateOne {
+	_u.mutation.AddSyncPlayMembershipIDs(ids...)
+	return _u
+}
+
+// AddSyncPlayMemberships adds the "sync_play_memberships" edges to the SyncPlayGroupMember entity.
+func (_u *SessionUpdateOne) AddSyncPlayMemberships(v ...*SyncPlayGroupMember) *SessionUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSyncPlayMembershipIDs(ids...)
+}
+
 // Mutation returns the SessionMutation object of the builder.
 func (_u *SessionUpdateOne) Mutation() *SessionMutation {
 	return _u.mutation
@@ -459,6 +556,27 @@ func (_u *SessionUpdateOne) ClearUser() *SessionUpdateOne {
 func (_u *SessionUpdateOne) ClearDevice() *SessionUpdateOne {
 	_u.mutation.ClearDevice()
 	return _u
+}
+
+// ClearSyncPlayMemberships clears all "sync_play_memberships" edges to the SyncPlayGroupMember entity.
+func (_u *SessionUpdateOne) ClearSyncPlayMemberships() *SessionUpdateOne {
+	_u.mutation.ClearSyncPlayMemberships()
+	return _u
+}
+
+// RemoveSyncPlayMembershipIDs removes the "sync_play_memberships" edge to SyncPlayGroupMember entities by IDs.
+func (_u *SessionUpdateOne) RemoveSyncPlayMembershipIDs(ids ...uuid.UUID) *SessionUpdateOne {
+	_u.mutation.RemoveSyncPlayMembershipIDs(ids...)
+	return _u
+}
+
+// RemoveSyncPlayMemberships removes "sync_play_memberships" edges to SyncPlayGroupMember entities.
+func (_u *SessionUpdateOne) RemoveSyncPlayMemberships(v ...*SyncPlayGroupMember) *SessionUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSyncPlayMembershipIDs(ids...)
 }
 
 // Where appends a list predicates to the SessionUpdate builder.
@@ -628,6 +746,51 @@ func (_u *SessionUpdateOne) sqlSave(ctx context.Context) (_node *Session, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(device.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SyncPlayMembershipsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   session.SyncPlayMembershipsTable,
+			Columns: []string{session.SyncPlayMembershipsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(syncplaygroupmember.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSyncPlayMembershipsIDs(); len(nodes) > 0 && !_u.mutation.SyncPlayMembershipsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   session.SyncPlayMembershipsTable,
+			Columns: []string{session.SyncPlayMembershipsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(syncplaygroupmember.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SyncPlayMembershipsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   session.SyncPlayMembershipsTable,
+			Columns: []string{session.SyncPlayMembershipsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(syncplaygroupmember.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

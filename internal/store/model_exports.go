@@ -1626,8 +1626,9 @@ type SessionModel struct {
 	DeviceID *uuid.UUID
 	UserID   *uuid.UUID
 
-	User   *UserModel
-	Device *DeviceModel
+	User                *UserModel
+	Device              *DeviceModel
+	SyncPlayMemberships []*SyncPlayGroupMemberModel
 }
 
 func fromAllSession(_m []*Session) []*SessionModel {
@@ -1655,8 +1656,9 @@ func fromSession(_m *Session) *SessionModel {
 		DeviceID: _m.device_sessions,
 		UserID:   _m.user_sessions,
 
-		User:   fromUser(_m.Edges.User),
-		Device: fromDevice(_m.Edges.Device),
+		User:                fromUser(_m.Edges.User),
+		Device:              fromDevice(_m.Edges.Device),
+		SyncPlayMemberships: fromAllSyncPlayGroupMember(_m.Edges.SyncPlayMemberships),
 	}
 }
 
@@ -1837,6 +1839,142 @@ func (_q *StudioQuery) AllModels(ctx context.Context) ([]*StudioModel, error) {
 func (c *StudioClient) GetModel(ctx context.Context, id uuid.UUID) (*StudioModel, error) {
 	_m, err := c.Get(ctx, id)
 	return fromStudio(_m), err
+}
+
+type SyncPlayGroupModel struct {
+	ID uuid.UUID
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	Name      string
+
+	Members []*SyncPlayGroupMemberModel
+}
+
+func fromAllSyncPlayGroup(_m []*SyncPlayGroup) []*SyncPlayGroupModel {
+	models := make([]*SyncPlayGroupModel, len(_m))
+	for i, v := range _m {
+		models[i] = fromSyncPlayGroup(v)
+	}
+	return models
+}
+
+func fromSyncPlayGroup(_m *SyncPlayGroup) *SyncPlayGroupModel {
+	if _m == nil {
+		return nil
+	}
+
+	return &SyncPlayGroupModel{
+		ID:        _m.ID,
+		CreatedAt: _m.CreatedAt,
+		UpdatedAt: _m.UpdatedAt,
+		Name:      _m.Name,
+
+		Members: fromAllSyncPlayGroupMember(_m.Edges.Members),
+	}
+}
+
+func (_c *SyncPlayGroupCreate) SaveModel(ctx context.Context) (*SyncPlayGroupModel, error) {
+	_m, err := _c.Save(ctx)
+	return fromSyncPlayGroup(_m), err
+}
+
+func (_u *SyncPlayGroupUpdateOne) SaveModel(ctx context.Context) (*SyncPlayGroupModel, error) {
+	_m, err := _u.Save(ctx)
+	return fromSyncPlayGroup(_m), err
+}
+
+func (_q *SyncPlayGroupQuery) OnlyModel(ctx context.Context) (*SyncPlayGroupModel, error) {
+	_m, err := _q.Only(ctx)
+	return fromSyncPlayGroup(_m), err
+}
+
+func (_q *SyncPlayGroupQuery) FirstModel(ctx context.Context) (*SyncPlayGroupModel, error) {
+	_m, err := _q.First(ctx)
+	return fromSyncPlayGroup(_m), err
+}
+
+func (_q *SyncPlayGroupQuery) AllModels(ctx context.Context) ([]*SyncPlayGroupModel, error) {
+	_m, err := _q.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return fromAllSyncPlayGroup(_m), nil
+}
+
+func (c *SyncPlayGroupClient) GetModel(ctx context.Context, id uuid.UUID) (*SyncPlayGroupModel, error) {
+	_m, err := c.Get(ctx, id)
+	return fromSyncPlayGroup(_m), err
+}
+
+type SyncPlayGroupMemberModel struct {
+	ID uuid.UUID
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	GroupID   uuid.UUID
+	SessionID uuid.UUID
+
+	Group   *SyncPlayGroupModel
+	Session *SessionModel
+}
+
+func fromAllSyncPlayGroupMember(_m []*SyncPlayGroupMember) []*SyncPlayGroupMemberModel {
+	models := make([]*SyncPlayGroupMemberModel, len(_m))
+	for i, v := range _m {
+		models[i] = fromSyncPlayGroupMember(v)
+	}
+	return models
+}
+
+func fromSyncPlayGroupMember(_m *SyncPlayGroupMember) *SyncPlayGroupMemberModel {
+	if _m == nil {
+		return nil
+	}
+
+	return &SyncPlayGroupMemberModel{
+		ID:        _m.ID,
+		CreatedAt: _m.CreatedAt,
+		UpdatedAt: _m.UpdatedAt,
+		GroupID:   _m.GroupID,
+		SessionID: _m.SessionID,
+
+		Group:   fromSyncPlayGroup(_m.Edges.Group),
+		Session: fromSession(_m.Edges.Session),
+	}
+}
+
+func (_c *SyncPlayGroupMemberCreate) SaveModel(ctx context.Context) (*SyncPlayGroupMemberModel, error) {
+	_m, err := _c.Save(ctx)
+	return fromSyncPlayGroupMember(_m), err
+}
+
+func (_u *SyncPlayGroupMemberUpdateOne) SaveModel(ctx context.Context) (*SyncPlayGroupMemberModel, error) {
+	_m, err := _u.Save(ctx)
+	return fromSyncPlayGroupMember(_m), err
+}
+
+func (_q *SyncPlayGroupMemberQuery) OnlyModel(ctx context.Context) (*SyncPlayGroupMemberModel, error) {
+	_m, err := _q.Only(ctx)
+	return fromSyncPlayGroupMember(_m), err
+}
+
+func (_q *SyncPlayGroupMemberQuery) FirstModel(ctx context.Context) (*SyncPlayGroupMemberModel, error) {
+	_m, err := _q.First(ctx)
+	return fromSyncPlayGroupMember(_m), err
+}
+
+func (_q *SyncPlayGroupMemberQuery) AllModels(ctx context.Context) ([]*SyncPlayGroupMemberModel, error) {
+	_m, err := _q.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return fromAllSyncPlayGroupMember(_m), nil
+}
+
+func (c *SyncPlayGroupMemberClient) GetModel(ctx context.Context, id uuid.UUID) (*SyncPlayGroupMemberModel, error) {
+	_m, err := c.Get(ctx, id)
+	return fromSyncPlayGroupMember(_m), err
 }
 
 type UserModel struct {
