@@ -31,22 +31,10 @@ func New(client *store.Client, activity *activity.Service) *Service {
 func (s *Service) Create(ctx context.Context, userID uuid.UUID, token string, device Device) (*Session, error) {
 	err := s.store.WithTx(ctx, func(tx *store.Tx) error {
 		now := time.Now()
-		deviceID, err := tx.Device.Create().
-			SetClientID(device.ClientID).
-			SetName(device.Name).
-			SetAppName(device.AppName).
-			SetAppVersion(device.AppVersion).
-			SetSupportsMediaControl(false).
-			SetSupportsPersistentIdentifier(false).
-			SetLastActivityAt(now).
-			OnConflictColumns(devicemodel.FieldClientID).
-			UpdateName().
-			UpdateAppName().
-			UpdateAppVersion().
-			UpdateLastActivityAt().
-			ID(ctx)
+		device.LastActivityAt = &now
+		deviceID, err := upsertDevice(ctx, tx, device)
 		if err != nil {
-			return fmt.Errorf("failed to create or update device: %w", err)
+			return err
 		}
 
 		_, err = tx.Session.Create().
@@ -131,4 +119,49 @@ func (s *Service) DeleteByToken(ctx context.Context, token string) error {
 	}
 
 	return nil
+}
+
+func (s *Service) Import(ctx context.Context, userID uuid.UUID, token string, device Device) error {
+	return s.store.WithTx(ctx, func(tx *store.Tx) error {
+		deviceID, err := upsertDevice(ctx, tx, device)
+		if err != nil {
+			return err
+		}
+
+		err = tx.Session.Create().
+			SetUserID(userID).
+			SetDeviceID(deviceID).
+			SetAccessToken(token).
+			SetNillableLastActivityAt(device.LastActivityAt).
+			OnConflictColumns(sessionmodel.FieldAccessToken).
+			UpdateLastActivityAt().
+			Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to import session: %w", err)
+		}
+
+		return nil
+	})
+}
+
+func upsertDevice(ctx context.Context, tx *store.Tx, device Device) (uuid.UUID, error) {
+	id, err := tx.Device.Create().
+		SetClientID(device.ClientID).
+		SetName(device.Name).
+		SetAppName(device.AppName).
+		SetAppVersion(device.AppVersion).
+		SetSupportsMediaControl(false).
+		SetSupportsPersistentIdentifier(false).
+		SetNillableLastActivityAt(device.LastActivityAt).
+		OnConflictColumns(devicemodel.FieldClientID).
+		UpdateName().
+		UpdateAppName().
+		UpdateAppVersion().
+		UpdateLastActivityAt().
+		ID(ctx)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("failed to create or update device: %w", err)
+	}
+
+	return id, nil
 }
