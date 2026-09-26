@@ -352,7 +352,7 @@ The rule is about imports, not about the letters T-M-D-B. `internal/env` carries
 
 The calls go through `github.com/cyruzin/golang-tmdb`, which models every payload this needs. Two of its behaviours are deliberately not used. Its `SetClientAutoRetry` retries a 429 in an unbounded loop and never retries a 5xx, so a `RoundTripper` in `retry.go` does the backoff with a bound; and every request it builds carries its own `context.Background`, so a cancelled run cannot interrupt one in flight — the limiter before each call is where cancellation lands, which bounds a cancelled step to a single request's timeout.
 
-Two things keep the dependency pointing one way. A miss is a `false` return rather than a sentinel error, so the implementation never imports its consumer for one variable; and `Season` and `Episode` take the series' whole `ProviderIds` map, so each provider reads its own key out and no key name escapes the package that owns it.
+A miss is a `false` return rather than a sentinel error, so the implementation never imports its consumer for one variable. The interface takes a TMDB id rather than something provider neutral, because the id is what the key is built from (see Library sources) — a second provider would need a key that carries its id first.
 
 There is **one** provider and one binding — no fx value group and no priority order until a second provider exists to need them. The seam is the interface.
 
@@ -366,7 +366,7 @@ The batch is derived from the rows — `items.ItemsNeedingMetadata` asks for ite
 
 A season and an episode carry the *series'* id in their own keys — `season:tmdb:1396:1` is series 1396 — which is exactly what `/tv/1396/season/1` wants. So a season never looks at its series row and **does not need the series identified first**, which is why the batch has no order and an identified series sends nothing back for its children. Specials are season zero on both sides and need no case of their own.
 
-An item whose key carries no TMDB id is a miss rather than an error — nothing writes such a key any more, but a row left by an older scan would otherwise search for a name we no longer ask by.
+An item whose key carries no TMDB id is a miss rather than an error and asks the provider nothing; nothing writes such a key, so only a row left by an older scan has one.
 
 **Artwork rides on the metadata rather than costing a call of its own.** TMDB puts `poster_path`, `backdrop_path` and `still_path` on the detail responses the identify job already fetches, so `items.Metadata` carries the references and the run makes no extra request against the rate limited API. `tmdb` returns references and never bytes — it is a translation layer — and `metadata` writes each one as an `image` row holding the url (see Images). The one new call is `/configuration`, read once per process and cached **on success only**, so a process that started while TMDB was unreachable is not left without artwork until somebody restarts it; a configuration that cannot be read costs that item its artwork, not the run its metadata.
 
