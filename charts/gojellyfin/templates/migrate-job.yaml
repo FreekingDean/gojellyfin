@@ -1,0 +1,45 @@
+{{- if .Values.migration.enabled }}
+{{- $component := "migrate" }}
+{{- $pod := deepCopy (default dict .Values.pod) }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "gojellyfin.fullname" . }}-migrate
+  labels:
+    {{- include "gojellyfin.labels" (dict "root" $ "component" $component) | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      {{- with $pod.annotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      {{- with (include "gojellyfin.podSpec" $pod | trim) }}
+      {{- . | nindent 6 }}
+      {{- end }}
+      containers:
+        - name: migrate
+          image: {{ include "gojellyfin.image" . }}
+          imagePullPolicy: {{ include "gojellyfin.imagePullPolicy" . }}
+          args: ["migrate"]
+          env:
+            {{- include "gojellyfin.databaseEnv" . | nindent 12 }}
+          {{- with .Values.migration.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $pod.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}

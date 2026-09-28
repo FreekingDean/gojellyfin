@@ -1,0 +1,71 @@
+{{- if .Values.web.enabled }}
+{{- $component := "web" }}
+{{- $pod := mergeOverwrite (deepCopy (default dict .Values.pod)) (default dict .Values.web.pod) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gojellyfin.fullname" . }}-web
+  labels:
+    {{- include "gojellyfin.labels" (dict "root" $ "component" $component) | nindent 4 }}
+spec:
+  replicas: {{ .Values.web.replicas }}
+  selector:
+    matchLabels:
+      {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 6 }}
+  template:
+    metadata:
+      {{- with $pod.annotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 8 }}
+    spec:
+      {{- with (include "gojellyfin.podSpec" $pod | trim) }}
+      {{- . | nindent 6 }}
+      {{- end }}
+      initContainers:
+        - name: client
+          image: {{ printf "%s:%s" .Values.web.client.repository .Values.web.client.tag }}
+          imagePullPolicy: {{ include "gojellyfin.pullPolicy" (dict "policy" .Values.web.client.pullPolicy "tag" .Values.web.client.tag) }}
+          command: ["cp", "-a", "/jellyfin/jellyfin-web/.", "/client/"]
+          volumeMounts:
+            - name: client
+              mountPath: /client
+          {{- with .Values.web.client.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      containers:
+        - name: nginx
+          image: {{ printf "%s:%s" .Values.web.image.repository .Values.web.image.tag }}
+          imagePullPolicy: {{ include "gojellyfin.pullPolicy" (dict "policy" .Values.web.image.pullPolicy "tag" .Values.web.image.tag) }}
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: client
+              mountPath: /usr/share/nginx/html/web
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /web/index.html
+              port: http
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /web/index.html
+              port: http
+            periodSeconds: 10
+          {{- with .Values.web.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $pod.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: client
+          emptyDir: {}
+{{- end }}

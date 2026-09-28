@@ -1,0 +1,61 @@
+{{- if .Values.streaming.enabled }}
+{{- $component := "streaming" }}
+{{- $pod := mergeOverwrite (deepCopy (default dict .Values.pod)) (default dict .Values.streaming.pod) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gojellyfin.fullname" . }}-streaming
+  labels:
+    {{- include "gojellyfin.labels" (dict "root" $ "component" $component) | nindent 4 }}
+spec:
+  replicas: {{ .Values.streaming.replicas }}
+  selector:
+    matchLabels:
+      {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 6 }}
+  template:
+    metadata:
+      {{- with $pod.annotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 8 }}
+    spec:
+      {{- with (include "gojellyfin.podSpec" $pod | trim) }}
+      {{- . | nindent 6 }}
+      {{- end }}
+      containers:
+        - name: server
+          image: {{ include "gojellyfin.image" . }}
+          imagePullPolicy: {{ include "gojellyfin.imagePullPolicy" . }}
+          args: ["server"]
+          ports:
+            - name: http
+              containerPort: {{ .Values.httpPort }}
+          env:
+            {{- include "gojellyfin.serverEnv" (dict "root" $ "workload" .Values.streaming) | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /System/Ping
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            httpGet:
+              path: /System/Ping
+              port: http
+            periodSeconds: 10
+          {{- with .Values.streaming.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $pod.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            {{- include "gojellyfin.mediaVolumeMount" (dict "root" $ "readOnly" true) | nindent 12 }}
+      volumes:
+        {{- include "gojellyfin.mediaVolume" . | nindent 8 }}
+{{- end }}
