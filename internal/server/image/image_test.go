@@ -11,10 +11,12 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/collage"
+	settings "github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
+	"github.com/FreekingDean/gojellyfin/internal/shelves"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
@@ -92,8 +94,12 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
+	catalogue := items.New(client)
+	found := discover.New(trendingProvider{}, catalogue)
+	shelved := shelves.New(catalogue, found, settings.New(client))
+
 	return &fixture{
-		server:    New(items.New(client), collage.New(items.New(client)), discover.New(trendingProvider{}, items.New(client)), nil),
+		server:    New(catalogue, collage.New(catalogue, shelved), found, nil),
 		client:    client,
 		itemID:    item.ID,
 		libraryID: library.ID,

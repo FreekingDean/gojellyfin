@@ -3,6 +3,7 @@ package items
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
@@ -111,6 +112,49 @@ func (s *Service) LibraryPosters(ctx context.Context, libraryID uuid.UUID, limit
 		AllModels(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query library posters: %w", err)
+	}
+
+	return posters, nil
+}
+
+func (s *Service) Posters(ctx context.Context, records []*Item, limit int) ([]*Image, error) {
+	series, err := s.seriesOf(ctx, records)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]uuid.UUID, 0, len(records))
+	for _, record := range records {
+		id := record.ID
+		if parent, ok := series[record.ID]; ok {
+			id = parent.ID
+		}
+		if !slices.Contains(ids, id) {
+			ids = append(ids, id)
+		}
+	}
+
+	found, err := s.store.Image.Query().
+		Where(
+			imagemodel.ItemIDIn(ids...),
+			imagemodel.KindEQ(imagemodel.KindPrimary),
+			imagemodel.Index(0),
+		).
+		AllModels(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query posters: %w", err)
+	}
+
+	byItem := make(map[uuid.UUID]*Image, len(found))
+	for _, poster := range found {
+		byItem[poster.ItemID] = poster
+	}
+
+	posters := make([]*Image, 0, limit)
+	for _, id := range ids {
+		if poster, ok := byItem[id]; ok && len(posters) < limit {
+			posters = append(posters, poster)
+		}
 	}
 
 	return posters, nil

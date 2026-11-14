@@ -68,7 +68,7 @@ func newFixture(t *testing.T) *fixture {
 	}
 
 	f := &fixture{
-		service:   New(items.New(client)),
+		service:   newService(items.New(client), unshelved{}),
 		client:    client,
 		libraryID: library.ID,
 		sourceID:  downloader.ID,
@@ -296,4 +296,54 @@ func TestService_Image(t *testing.T) {
 			t.Errorf("cell = %v, want the red poster", cell)
 		}
 	})
+}
+
+type unshelved struct{}
+
+func (unshelved) Posters(context.Context, uuid.UUID, items.Viewer, int) ([]*items.Image, bool, error) {
+	return nil, false, nil
+}
+
+type shelved struct {
+	id      uuid.UUID
+	posters []*items.Image
+}
+
+func (s shelved) Posters(_ context.Context, id uuid.UUID, viewer items.Viewer, _ int) ([]*items.Image, bool, error) {
+	if id != s.id || !viewer.All {
+		return nil, false, nil
+	}
+
+	return s.posters, true, nil
+}
+
+func TestService_Shelf(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := context.Background()
+	fixture.title(t, painted(t, red))
+	fixture.title(t, painted(t, green))
+
+	posters, err := items.New(fixture.client).LibraryPosters(ctx, fixture.libraryID, cells)
+	if err != nil {
+		t.Fatalf("failed to read the library's posters: %v", err)
+	}
+
+	shelfID := uuid.New()
+	service := newService(items.New(fixture.client), shelved{id: shelfID, posters: posters})
+
+	tag, err := service.Tag(ctx, shelfID)
+	if err != nil {
+		t.Fatalf("failed to read the shelf's tag: %v", err)
+	}
+	if tag == "" || tag != fixture.tag(t) {
+		t.Errorf("tag = %q, want the tag of the posters the shelf answered", tag)
+	}
+
+	built, ok := service.Image(ctx, shelfID)
+	if !ok || !built.Complete {
+		t.Fatalf("shelf collage = %v complete %v, want a complete collage", ok, built.Complete)
+	}
+	if !bytes.Equal(built.Body, fixture.image(t)) {
+		t.Error("the shelf's collage differs from one built from the same posters")
+	}
 }

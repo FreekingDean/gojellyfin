@@ -22,6 +22,22 @@ test.describe('the library cards', () => {
   });
 });
 
+test.describe('the shelf cards', () => {
+  test('draw Recently Aired as a collage of the shows it lists', async ({ signedIn: page }) => {
+    const cells = await collage(page, 'Recently Aired');
+
+    expect(cells.every((cell) => near(cell, GREEN))).toBe(true);
+  });
+
+  test('draw New Releases as a collage of the movies it lists', async ({ signedIn: page }) => {
+    const cells = await collage(page, 'New Releases');
+
+    expect(cells.every((cell) => near(cell, RED) || near(cell, BLUE))).toBe(true);
+    expect(cells.some((cell) => near(cell, RED))).toBe(true);
+    expect(cells.some((cell) => near(cell, BLUE))).toBe(true);
+  });
+});
+
 async function collage(page, library) {
   const picture = card(page, library).locator('.cardImageContainer[style*="/Images/Primary"]').first();
   await expect(picture).toBeVisible();

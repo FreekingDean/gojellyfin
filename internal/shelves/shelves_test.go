@@ -370,3 +370,55 @@ func TestService_Titles(t *testing.T) {
 		t.Errorf("titles = %v, want %v", got, want)
 	}
 }
+
+func TestService_Posters(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := context.Background()
+	november := time.Date(2026, time.November, 14, 0, 0, 0, 0, time.UTC)
+	year := func(value int) time.Time { return time.Date(value, time.June, 1, 0, 0, 0, 0, time.UTC) }
+
+	older := fixture.movie(t, film{name: "Older", rating: 8, minutes: 90, genre: "Drama", released: year(2010)})
+	newer := fixture.movie(t, film{name: "Newer", rating: 8, minutes: 90, genre: "Drama", released: year(2024)})
+	fixture.movie(t, film{name: "Bare", rating: 8, minutes: 90, genre: "Drama", released: year(2020)})
+	for tag, itemID := range map[string]uuid.UUID{"older": older, "newer": newer} {
+		if err := fixture.catalogue.SaveImage(ctx, itemID, items.Image{Kind: items.ImageKindPrimary, URL: "https://cdn.invalid/" + tag, Tag: tag}); err != nil {
+			t.Fatalf("failed to save %q: %v", tag, err)
+		}
+	}
+
+	viewer := items.Viewer{Libraries: []uuid.UUID{fixture.libraryID}}
+
+	tests := []struct {
+		name    string
+		enabled []string
+		slug    string
+		want    []string
+		found   bool
+	}{
+		{name: "a shelf everyone sees alike answers its titles' posters newest first", enabled: []string{"new-releases"}, slug: "new-releases", want: []string{"newer", "older"}, found: true},
+		{name: "a shelf that differs per user has none", enabled: []string{"hidden-gems"}, slug: "hidden-gems"},
+		{name: "a shelf that is off has none", enabled: []string{"recently-aired"}, slug: "new-releases"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			service := newService(fixture.catalogue, available(true), stored(test.enabled...), func() time.Time { return november })
+
+			posters, found, err := service.Posters(ctx, ID(test.slug), viewer, 10)
+			if err != nil {
+				t.Fatalf("failed to read the posters: %v", err)
+			}
+			if found != test.found {
+				t.Fatalf("found = %v, want %v", found, test.found)
+			}
+
+			got := make([]string, 0, len(posters))
+			for _, poster := range posters {
+				got = append(got, poster.Tag)
+			}
+			if !slices.Equal(got, test.want) && (len(got) != 0 || len(test.want) != 0) {
+				t.Errorf("posters = %v, want %v", got, test.want)
+			}
+		})
+	}
+}

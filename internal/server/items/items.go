@@ -99,8 +99,13 @@ func (s *Server) view(ctx context.Context, id uuid.UUID) (api.BaseItemDto, bool,
 	}
 
 	shelf, found, err := s.shelf(ctx, &id)
+	if err != nil || !found {
+		return api.BaseItemDto{}, found, err
+	}
 
-	return dto.ShelfView(shelf), found, err
+	view, err := dto.ShelfView(ctx, s.collages, shelf)
+
+	return view, true, err
 }
 
 func (s *Server) GetItems(ctx context.Context, request api.GetItemsRequestObject) (api.GetItemsResponseObject, error) {
