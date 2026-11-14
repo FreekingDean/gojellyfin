@@ -89,4 +89,20 @@ test.describe('the admin app', () => {
     await expect(page.locator('tr', { hasText: harness.username })).toBeVisible();
     await expect(page.locator('tr', { hasText: name })).toHaveCount(0);
   });
+
+  test('shows who is signed in, what happened and the background jobs', async ({ page, harness }) => {
+    await page.goto(harness.baseUrl + '/admin');
+    await signIn(page, harness);
+
+    await page.getByRole('link', { name: 'Activity' }).click();
+    await expect(page.locator('tr', { hasText: 'gojellyfin admin' }).first()).toContainText(harness.username);
+    await page.getByRole('tab', { name: 'Log' }).click();
+    await expect(page.getByText(harness.username + ' has been authenticated').first()).toBeVisible();
+
+    await page.getByRole('link', { name: 'Jobs' }).click();
+    const job = page.locator('tr', { hasText: 'Refresh libraries' });
+    await expect(job).toContainText('Idle');
+    await job.getByRole('button', { name: 'Start' }).click();
+    await expect(page.getByRole('alert')).toContainText('Refresh libraries could not be started');
+  });
 });
