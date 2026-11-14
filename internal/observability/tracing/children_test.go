@@ -51,7 +51,7 @@ func TestTransport(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		response.Body.Close()
+		_ = response.Body.Close()
 
 		if traceparent != "" {
 			t.Errorf("traceparent = %q outside any span", traceparent)
@@ -65,7 +65,7 @@ func TestTransport(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		response.Body.Close()
+		_ = response.Body.Close()
 		parent.End()
 
 		span, ok := ended(recorder, "GET "+request.URL.Host)
