@@ -36,6 +36,9 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
 	"github.com/FreekingDean/gojellyfin/internal/store/quickconnectrequest"
+	"github.com/FreekingDean/gojellyfin/internal/store/report"
+	"github.com/FreekingDean/gojellyfin/internal/store/request"
+	"github.com/FreekingDean/gojellyfin/internal/store/requestsubmission"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/FreekingDean/gojellyfin/internal/store/sourcepath"
@@ -93,6 +96,12 @@ type Client struct {
 	PlaylistShare *PlaylistShareClient
 	// QuickConnectRequest is the client for interacting with the QuickConnectRequest builders.
 	QuickConnectRequest *QuickConnectRequestClient
+	// Report is the client for interacting with the Report builders.
+	Report *ReportClient
+	// Request is the client for interacting with the Request builders.
+	Request *RequestClient
+	// RequestSubmission is the client for interacting with the RequestSubmission builders.
+	RequestSubmission *RequestSubmissionClient
 	// Session is the client for interacting with the Session builders.
 	Session *SessionClient
 	// Source is the client for interacting with the Source builders.
@@ -140,6 +149,9 @@ func (c *Client) init() {
 	c.PlaylistEntry = NewPlaylistEntryClient(c.config)
 	c.PlaylistShare = NewPlaylistShareClient(c.config)
 	c.QuickConnectRequest = NewQuickConnectRequestClient(c.config)
+	c.Report = NewReportClient(c.config)
+	c.Request = NewRequestClient(c.config)
+	c.RequestSubmission = NewRequestSubmissionClient(c.config)
 	c.Session = NewSessionClient(c.config)
 	c.Source = NewSourceClient(c.config)
 	c.SourcePath = NewSourcePathClient(c.config)
@@ -260,6 +272,9 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		PlaylistEntry:       NewPlaylistEntryClient(cfg),
 		PlaylistShare:       NewPlaylistShareClient(cfg),
 		QuickConnectRequest: NewQuickConnectRequestClient(cfg),
+		Report:              NewReportClient(cfg),
+		Request:             NewRequestClient(cfg),
+		RequestSubmission:   NewRequestSubmissionClient(cfg),
 		Session:             NewSessionClient(cfg),
 		Source:              NewSourceClient(cfg),
 		SourcePath:          NewSourcePathClient(cfg),
@@ -307,6 +322,9 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		PlaylistEntry:       NewPlaylistEntryClient(cfg),
 		PlaylistShare:       NewPlaylistShareClient(cfg),
 		QuickConnectRequest: NewQuickConnectRequestClient(cfg),
+		Report:              NewReportClient(cfg),
+		Request:             NewRequestClient(cfg),
+		RequestSubmission:   NewRequestSubmissionClient(cfg),
 		Session:             NewSessionClient(cfg),
 		Source:              NewSourceClient(cfg),
 		SourcePath:          NewSourcePathClient(cfg),
@@ -347,9 +365,9 @@ func (c *Client) Use(hooks ...Hook) {
 		c.ActivityLogEntry, c.ApiKey, c.Configuration, c.Credit, c.Device,
 		c.DisplayPreferences, c.Genre, c.Image, c.Item, c.ItemSource, c.Library,
 		c.LibraryItem, c.LibraryOptions, c.LibrarySource, c.MediaStream, c.Person,
-		c.Playlist, c.PlaylistEntry, c.PlaylistShare, c.QuickConnectRequest, c.Session,
-		c.Source, c.SourcePath, c.Studio, c.User, c.UserConfiguration, c.UserItemData,
-		c.UserPolicy,
+		c.Playlist, c.PlaylistEntry, c.PlaylistShare, c.QuickConnectRequest, c.Report,
+		c.Request, c.RequestSubmission, c.Session, c.Source, c.SourcePath, c.Studio,
+		c.User, c.UserConfiguration, c.UserItemData, c.UserPolicy,
 	} {
 		n.Use(hooks...)
 	}
@@ -362,9 +380,9 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.ActivityLogEntry, c.ApiKey, c.Configuration, c.Credit, c.Device,
 		c.DisplayPreferences, c.Genre, c.Image, c.Item, c.ItemSource, c.Library,
 		c.LibraryItem, c.LibraryOptions, c.LibrarySource, c.MediaStream, c.Person,
-		c.Playlist, c.PlaylistEntry, c.PlaylistShare, c.QuickConnectRequest, c.Session,
-		c.Source, c.SourcePath, c.Studio, c.User, c.UserConfiguration, c.UserItemData,
-		c.UserPolicy,
+		c.Playlist, c.PlaylistEntry, c.PlaylistShare, c.QuickConnectRequest, c.Report,
+		c.Request, c.RequestSubmission, c.Session, c.Source, c.SourcePath, c.Studio,
+		c.User, c.UserConfiguration, c.UserItemData, c.UserPolicy,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -413,6 +431,12 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.PlaylistShare.mutate(ctx, m)
 	case *QuickConnectRequestMutation:
 		return c.QuickConnectRequest.mutate(ctx, m)
+	case *ReportMutation:
+		return c.Report.mutate(ctx, m)
+	case *RequestMutation:
+		return c.Request.mutate(ctx, m)
+	case *RequestSubmissionMutation:
+		return c.RequestSubmission.mutate(ctx, m)
 	case *SessionMutation:
 		return c.Session.mutate(ctx, m)
 	case *SourceMutation:
@@ -1798,6 +1822,22 @@ func (c *ItemClient) QueryItemSources(_m *Item) *ItemSourceQuery {
 	return query
 }
 
+// QueryReports queries the reports edge of a Item.
+func (c *ItemClient) QueryReports(_m *Item) *ReportQuery {
+	query := (&ReportClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, id),
+			sqlgraph.To(report.Table, report.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.ReportsTable, item.ReportsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryCredits queries the credits edge of a Item.
 func (c *ItemClient) QueryCredits(_m *Item) *CreditQuery {
 	query := (&CreditClient{config: c.config}).Query()
@@ -2100,6 +2140,22 @@ func (c *ItemSourceClient) QueryStreams(_m *ItemSource) *MediaStreamQuery {
 			sqlgraph.From(itemsource.Table, itemsource.FieldID, id),
 			sqlgraph.To(mediastream.Table, mediastream.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, itemsource.StreamsTable, itemsource.StreamsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryReports queries the reports edge of a ItemSource.
+func (c *ItemSourceClient) QueryReports(_m *ItemSource) *ReportQuery {
+	query := (&ReportClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(itemsource.Table, itemsource.FieldID, id),
+			sqlgraph.To(report.Table, report.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, itemsource.ReportsTable, itemsource.ReportsColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -3782,6 +3838,485 @@ func (c *QuickConnectRequestClient) mutate(ctx context.Context, m *QuickConnectR
 	}
 }
 
+// ReportClient is a client for the Report schema.
+type ReportClient struct {
+	config
+}
+
+// NewReportClient returns a client for the Report from the given config.
+func NewReportClient(c config) *ReportClient {
+	return &ReportClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `report.Hooks(f(g(h())))`.
+func (c *ReportClient) Use(hooks ...Hook) {
+	c.hooks.Report = append(c.hooks.Report, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `report.Intercept(f(g(h())))`.
+func (c *ReportClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Report = append(c.inters.Report, interceptors...)
+}
+
+// Create returns a builder for creating a Report entity.
+func (c *ReportClient) Create() *ReportCreate {
+	mutation := newReportMutation(c.config, OpCreate)
+	return &ReportCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Report entities.
+func (c *ReportClient) CreateBulk(builders ...*ReportCreate) *ReportCreateBulk {
+	return &ReportCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ReportClient) MapCreateBulk(slice any, setFunc func(*ReportCreate, int)) *ReportCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ReportCreateBulk{err: fmt.Errorf("calling to ReportClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ReportCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ReportCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Report.
+func (c *ReportClient) Update() *ReportUpdate {
+	mutation := newReportMutation(c.config, OpUpdate)
+	return &ReportUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ReportClient) UpdateOne(_m *Report) *ReportUpdateOne {
+	mutation := newReportMutation(c.config, OpUpdateOne, withReport(_m))
+	return &ReportUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ReportClient) UpdateOneID(id uuid.UUID) *ReportUpdateOne {
+	mutation := newReportMutation(c.config, OpUpdateOne, withReportID(id))
+	return &ReportUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Report.
+func (c *ReportClient) Delete() *ReportDelete {
+	mutation := newReportMutation(c.config, OpDelete)
+	return &ReportDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ReportClient) DeleteOne(_m *Report) *ReportDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ReportClient) DeleteOneID(id uuid.UUID) *ReportDeleteOne {
+	builder := c.Delete().Where(report.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ReportDeleteOne{builder}
+}
+
+// Query returns a query builder for Report.
+func (c *ReportClient) Query() *ReportQuery {
+	return &ReportQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeReport},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Report entity by its id.
+func (c *ReportClient) Get(ctx context.Context, id uuid.UUID) (*Report, error) {
+	return c.Query().Where(report.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ReportClient) GetX(ctx context.Context, id uuid.UUID) *Report {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryItem queries the item edge of a Report.
+func (c *ReportClient) QueryItem(_m *Report) *ItemQuery {
+	query := (&ItemClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(report.Table, report.FieldID, id),
+			sqlgraph.To(item.Table, item.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, report.ItemTable, report.ItemColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryFile queries the file edge of a Report.
+func (c *ReportClient) QueryFile(_m *Report) *ItemSourceQuery {
+	query := (&ItemSourceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(report.Table, report.FieldID, id),
+			sqlgraph.To(itemsource.Table, itemsource.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, report.FileTable, report.FileColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUser queries the user edge of a Report.
+func (c *ReportClient) QueryUser(_m *Report) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(report.Table, report.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, report.UserTable, report.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ReportClient) Hooks() []Hook {
+	return c.hooks.Report
+}
+
+// Interceptors returns the client interceptors.
+func (c *ReportClient) Interceptors() []Interceptor {
+	return c.inters.Report
+}
+
+func (c *ReportClient) mutate(ctx context.Context, m *ReportMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ReportCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ReportUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ReportUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ReportDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("store: unknown Report mutation op: %q", m.Op())
+	}
+}
+
+// RequestClient is a client for the Request schema.
+type RequestClient struct {
+	config
+}
+
+// NewRequestClient returns a client for the Request from the given config.
+func NewRequestClient(c config) *RequestClient {
+	return &RequestClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `request.Hooks(f(g(h())))`.
+func (c *RequestClient) Use(hooks ...Hook) {
+	c.hooks.Request = append(c.hooks.Request, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `request.Intercept(f(g(h())))`.
+func (c *RequestClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Request = append(c.inters.Request, interceptors...)
+}
+
+// Create returns a builder for creating a Request entity.
+func (c *RequestClient) Create() *RequestCreate {
+	mutation := newRequestMutation(c.config, OpCreate)
+	return &RequestCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Request entities.
+func (c *RequestClient) CreateBulk(builders ...*RequestCreate) *RequestCreateBulk {
+	return &RequestCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *RequestClient) MapCreateBulk(slice any, setFunc func(*RequestCreate, int)) *RequestCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &RequestCreateBulk{err: fmt.Errorf("calling to RequestClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*RequestCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &RequestCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Request.
+func (c *RequestClient) Update() *RequestUpdate {
+	mutation := newRequestMutation(c.config, OpUpdate)
+	return &RequestUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RequestClient) UpdateOne(_m *Request) *RequestUpdateOne {
+	mutation := newRequestMutation(c.config, OpUpdateOne, withRequest(_m))
+	return &RequestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RequestClient) UpdateOneID(id uuid.UUID) *RequestUpdateOne {
+	mutation := newRequestMutation(c.config, OpUpdateOne, withRequestID(id))
+	return &RequestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Request.
+func (c *RequestClient) Delete() *RequestDelete {
+	mutation := newRequestMutation(c.config, OpDelete)
+	return &RequestDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RequestClient) DeleteOne(_m *Request) *RequestDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *RequestClient) DeleteOneID(id uuid.UUID) *RequestDeleteOne {
+	builder := c.Delete().Where(request.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RequestDeleteOne{builder}
+}
+
+// Query returns a query builder for Request.
+func (c *RequestClient) Query() *RequestQuery {
+	return &RequestQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeRequest},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Request entity by its id.
+func (c *RequestClient) Get(ctx context.Context, id uuid.UUID) (*Request, error) {
+	return c.Query().Where(request.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RequestClient) GetX(ctx context.Context, id uuid.UUID) *Request {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUser queries the user edge of a Request.
+func (c *RequestClient) QueryUser(_m *Request) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(request.Table, request.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, request.UserTable, request.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *RequestClient) Hooks() []Hook {
+	return c.hooks.Request
+}
+
+// Interceptors returns the client interceptors.
+func (c *RequestClient) Interceptors() []Interceptor {
+	return c.inters.Request
+}
+
+func (c *RequestClient) mutate(ctx context.Context, m *RequestMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&RequestCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&RequestUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&RequestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&RequestDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("store: unknown Request mutation op: %q", m.Op())
+	}
+}
+
+// RequestSubmissionClient is a client for the RequestSubmission schema.
+type RequestSubmissionClient struct {
+	config
+}
+
+// NewRequestSubmissionClient returns a client for the RequestSubmission from the given config.
+func NewRequestSubmissionClient(c config) *RequestSubmissionClient {
+	return &RequestSubmissionClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `requestsubmission.Hooks(f(g(h())))`.
+func (c *RequestSubmissionClient) Use(hooks ...Hook) {
+	c.hooks.RequestSubmission = append(c.hooks.RequestSubmission, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `requestsubmission.Intercept(f(g(h())))`.
+func (c *RequestSubmissionClient) Intercept(interceptors ...Interceptor) {
+	c.inters.RequestSubmission = append(c.inters.RequestSubmission, interceptors...)
+}
+
+// Create returns a builder for creating a RequestSubmission entity.
+func (c *RequestSubmissionClient) Create() *RequestSubmissionCreate {
+	mutation := newRequestSubmissionMutation(c.config, OpCreate)
+	return &RequestSubmissionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of RequestSubmission entities.
+func (c *RequestSubmissionClient) CreateBulk(builders ...*RequestSubmissionCreate) *RequestSubmissionCreateBulk {
+	return &RequestSubmissionCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *RequestSubmissionClient) MapCreateBulk(slice any, setFunc func(*RequestSubmissionCreate, int)) *RequestSubmissionCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &RequestSubmissionCreateBulk{err: fmt.Errorf("calling to RequestSubmissionClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*RequestSubmissionCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &RequestSubmissionCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for RequestSubmission.
+func (c *RequestSubmissionClient) Update() *RequestSubmissionUpdate {
+	mutation := newRequestSubmissionMutation(c.config, OpUpdate)
+	return &RequestSubmissionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RequestSubmissionClient) UpdateOne(_m *RequestSubmission) *RequestSubmissionUpdateOne {
+	mutation := newRequestSubmissionMutation(c.config, OpUpdateOne, withRequestSubmission(_m))
+	return &RequestSubmissionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RequestSubmissionClient) UpdateOneID(id uuid.UUID) *RequestSubmissionUpdateOne {
+	mutation := newRequestSubmissionMutation(c.config, OpUpdateOne, withRequestSubmissionID(id))
+	return &RequestSubmissionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for RequestSubmission.
+func (c *RequestSubmissionClient) Delete() *RequestSubmissionDelete {
+	mutation := newRequestSubmissionMutation(c.config, OpDelete)
+	return &RequestSubmissionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RequestSubmissionClient) DeleteOne(_m *RequestSubmission) *RequestSubmissionDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *RequestSubmissionClient) DeleteOneID(id uuid.UUID) *RequestSubmissionDeleteOne {
+	builder := c.Delete().Where(requestsubmission.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RequestSubmissionDeleteOne{builder}
+}
+
+// Query returns a query builder for RequestSubmission.
+func (c *RequestSubmissionClient) Query() *RequestSubmissionQuery {
+	return &RequestSubmissionQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeRequestSubmission},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a RequestSubmission entity by its id.
+func (c *RequestSubmissionClient) Get(ctx context.Context, id uuid.UUID) (*RequestSubmission, error) {
+	return c.Query().Where(requestsubmission.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RequestSubmissionClient) GetX(ctx context.Context, id uuid.UUID) *RequestSubmission {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QuerySource queries the source edge of a RequestSubmission.
+func (c *RequestSubmissionClient) QuerySource(_m *RequestSubmission) *SourceQuery {
+	query := (&SourceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(requestsubmission.Table, requestsubmission.FieldID, id),
+			sqlgraph.To(source.Table, source.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, requestsubmission.SourceTable, requestsubmission.SourceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *RequestSubmissionClient) Hooks() []Hook {
+	return c.hooks.RequestSubmission
+}
+
+// Interceptors returns the client interceptors.
+func (c *RequestSubmissionClient) Interceptors() []Interceptor {
+	return c.inters.RequestSubmission
+}
+
+func (c *RequestSubmissionClient) mutate(ctx context.Context, m *RequestSubmissionMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&RequestSubmissionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&RequestSubmissionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&RequestSubmissionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&RequestSubmissionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("store: unknown RequestSubmission mutation op: %q", m.Op())
+	}
+}
+
 // SessionClient is a client for the Session schema.
 type SessionClient struct {
 	config
@@ -4112,6 +4647,22 @@ func (c *SourceClient) QueryMemberships(_m *Source) *LibraryItemQuery {
 			sqlgraph.From(source.Table, source.FieldID, id),
 			sqlgraph.To(libraryitem.Table, libraryitem.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, source.MembershipsTable, source.MembershipsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySubmissions queries the submissions edge of a Source.
+func (c *SourceClient) QuerySubmissions(_m *Source) *RequestSubmissionQuery {
+	query := (&RequestSubmissionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(source.Table, source.FieldID, id),
+			sqlgraph.To(requestsubmission.Table, requestsubmission.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, source.SubmissionsTable, source.SubmissionsColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -4694,6 +5245,38 @@ func (c *UserClient) QueryQuickConnectRequests(_m *User) *QuickConnectRequestQue
 	return query
 }
 
+// QueryRequests queries the requests edge of a User.
+func (c *UserClient) QueryRequests(_m *User) *RequestQuery {
+	query := (&RequestClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(request.Table, request.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.RequestsTable, user.RequestsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryReports queries the reports edge of a User.
+func (c *UserClient) QueryReports(_m *User) *ReportQuery {
+	query := (&ReportClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(report.Table, report.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.ReportsTable, user.ReportsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *UserClient) Hooks() []Hook {
 	return c.hooks.User
@@ -5188,15 +5771,17 @@ type (
 		ActivityLogEntry, ApiKey, Configuration, Credit, Device, DisplayPreferences,
 		Genre, Image, Item, ItemSource, Library, LibraryItem, LibraryOptions,
 		LibrarySource, MediaStream, Person, Playlist, PlaylistEntry, PlaylistShare,
-		QuickConnectRequest, Session, Source, SourcePath, Studio, User,
-		UserConfiguration, UserItemData, UserPolicy []ent.Hook
+		QuickConnectRequest, Report, Request, RequestSubmission, Session, Source,
+		SourcePath, Studio, User, UserConfiguration, UserItemData,
+		UserPolicy []ent.Hook
 	}
 	inters struct {
 		ActivityLogEntry, ApiKey, Configuration, Credit, Device, DisplayPreferences,
 		Genre, Image, Item, ItemSource, Library, LibraryItem, LibraryOptions,
 		LibrarySource, MediaStream, Person, Playlist, PlaylistEntry, PlaylistShare,
-		QuickConnectRequest, Session, Source, SourcePath, Studio, User,
-		UserConfiguration, UserItemData, UserPolicy []ent.Interceptor
+		QuickConnectRequest, Report, Request, RequestSubmission, Session, Source,
+		SourcePath, Studio, User, UserConfiguration, UserItemData,
+		UserPolicy []ent.Interceptor
 	}
 )
 

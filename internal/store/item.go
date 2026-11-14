@@ -84,6 +84,8 @@ type ItemEdges struct {
 	Libraries []*LibraryItem `json:"libraries,omitempty"`
 	// ItemSources holds the value of the item_sources edge.
 	ItemSources []*ItemSource `json:"item_sources,omitempty"`
+	// Reports holds the value of the reports edge.
+	Reports []*Report `json:"reports,omitempty"`
 	// Credits holds the value of the credits edge.
 	Credits []*Credit `json:"credits,omitempty"`
 	// Images holds the value of the images edge.
@@ -102,7 +104,7 @@ type ItemEdges struct {
 	Studios []*Studio `json:"studios,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [12]bool
+	loadedTypes [13]bool
 }
 
 // ParentOrErr returns the Parent value or an error if the edge
@@ -143,10 +145,19 @@ func (e ItemEdges) ItemSourcesOrErr() ([]*ItemSource, error) {
 	return nil, &NotLoadedError{edge: "item_sources"}
 }
 
+// ReportsOrErr returns the Reports value or an error if the edge
+// was not loaded in eager-loading.
+func (e ItemEdges) ReportsOrErr() ([]*Report, error) {
+	if e.loadedTypes[4] {
+		return e.Reports, nil
+	}
+	return nil, &NotLoadedError{edge: "reports"}
+}
+
 // CreditsOrErr returns the Credits value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) CreditsOrErr() ([]*Credit, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[5] {
 		return e.Credits, nil
 	}
 	return nil, &NotLoadedError{edge: "credits"}
@@ -155,7 +166,7 @@ func (e ItemEdges) CreditsOrErr() ([]*Credit, error) {
 // ImagesOrErr returns the Images value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) ImagesOrErr() ([]*Image, error) {
-	if e.loadedTypes[5] {
+	if e.loadedTypes[6] {
 		return e.Images, nil
 	}
 	return nil, &NotLoadedError{edge: "images"}
@@ -164,7 +175,7 @@ func (e ItemEdges) ImagesOrErr() ([]*Image, error) {
 // UserDataOrErr returns the UserData value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) UserDataOrErr() ([]*UserItemData, error) {
-	if e.loadedTypes[6] {
+	if e.loadedTypes[7] {
 		return e.UserData, nil
 	}
 	return nil, &NotLoadedError{edge: "user_data"}
@@ -173,7 +184,7 @@ func (e ItemEdges) UserDataOrErr() ([]*UserItemData, error) {
 // ActivityLogEntriesOrErr returns the ActivityLogEntries value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) ActivityLogEntriesOrErr() ([]*ActivityLogEntry, error) {
-	if e.loadedTypes[7] {
+	if e.loadedTypes[8] {
 		return e.ActivityLogEntries, nil
 	}
 	return nil, &NotLoadedError{edge: "activity_log_entries"}
@@ -184,7 +195,7 @@ func (e ItemEdges) ActivityLogEntriesOrErr() ([]*ActivityLogEntry, error) {
 func (e ItemEdges) PlaylistOrErr() (*Playlist, error) {
 	if e.Playlist != nil {
 		return e.Playlist, nil
-	} else if e.loadedTypes[8] {
+	} else if e.loadedTypes[9] {
 		return nil, &NotFoundError{label: playlist.Label}
 	}
 	return nil, &NotLoadedError{edge: "playlist"}
@@ -193,7 +204,7 @@ func (e ItemEdges) PlaylistOrErr() (*Playlist, error) {
 // PlaylistEntriesOrErr returns the PlaylistEntries value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) PlaylistEntriesOrErr() ([]*PlaylistEntry, error) {
-	if e.loadedTypes[9] {
+	if e.loadedTypes[10] {
 		return e.PlaylistEntries, nil
 	}
 	return nil, &NotLoadedError{edge: "playlist_entries"}
@@ -202,7 +213,7 @@ func (e ItemEdges) PlaylistEntriesOrErr() ([]*PlaylistEntry, error) {
 // GenresOrErr returns the Genres value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) GenresOrErr() ([]*Genre, error) {
-	if e.loadedTypes[10] {
+	if e.loadedTypes[11] {
 		return e.Genres, nil
 	}
 	return nil, &NotLoadedError{edge: "genres"}
@@ -211,7 +222,7 @@ func (e ItemEdges) GenresOrErr() ([]*Genre, error) {
 // StudiosOrErr returns the Studios value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) StudiosOrErr() ([]*Studio, error) {
-	if e.loadedTypes[11] {
+	if e.loadedTypes[12] {
 		return e.Studios, nil
 	}
 	return nil, &NotLoadedError{edge: "studios"}
@@ -452,6 +463,11 @@ func (_m *Item) QueryLibraries() *LibraryItemQuery {
 // QueryItemSources queries the "item_sources" edge of the Item entity.
 func (_m *Item) QueryItemSources() *ItemSourceQuery {
 	return NewItemClient(_m.config).QueryItemSources(_m)
+}
+
+// QueryReports queries the "reports" edge of the Item entity.
+func (_m *Item) QueryReports() *ReportQuery {
+	return NewItemClient(_m.config).QueryReports(_m)
 }
 
 // QueryCredits queries the "credits" edge of the Item entity.

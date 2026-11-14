@@ -35,6 +35,7 @@ func (ItemSource) Edges() []ent.Edge {
 		edge.From("item", Item.Type).Ref("item_sources").Unique().Required().Field("item_id"),
 		edge.From("source", Source.Type).Ref("files").Unique().Required().Field("source_id"),
 		edge.To("streams", MediaStream.Type).Annotations(cascadeOnDelete),
+		edge.To("reports", Report.Type),
 	}
 }
 

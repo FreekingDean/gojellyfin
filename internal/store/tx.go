@@ -54,6 +54,12 @@ type Tx struct {
 	PlaylistShare *PlaylistShareClient
 	// QuickConnectRequest is the client for interacting with the QuickConnectRequest builders.
 	QuickConnectRequest *QuickConnectRequestClient
+	// Report is the client for interacting with the Report builders.
+	Report *ReportClient
+	// Request is the client for interacting with the Request builders.
+	Request *RequestClient
+	// RequestSubmission is the client for interacting with the RequestSubmission builders.
+	RequestSubmission *RequestSubmissionClient
 	// Session is the client for interacting with the Session builders.
 	Session *SessionClient
 	// Source is the client for interacting with the Source builders.
@@ -221,6 +227,9 @@ func (tx *Tx) init() {
 	tx.PlaylistEntry = NewPlaylistEntryClient(tx.config)
 	tx.PlaylistShare = NewPlaylistShareClient(tx.config)
 	tx.QuickConnectRequest = NewQuickConnectRequestClient(tx.config)
+	tx.Report = NewReportClient(tx.config)
+	tx.Request = NewRequestClient(tx.config)
+	tx.RequestSubmission = NewRequestSubmissionClient(tx.config)
 	tx.Session = NewSessionClient(tx.config)
 	tx.Source = NewSourceClient(tx.config)
 	tx.SourcePath = NewSourcePathClient(tx.config)

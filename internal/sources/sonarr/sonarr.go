@@ -5,6 +5,11 @@ import "github.com/FreekingDean/gojellyfin/internal/sources/arr"
 const (
 	SeriesPath   = "api/v3/series"
 	EpisodesPath = "api/v3/episode"
+	LookupPath   = "api/v3/series/lookup"
+	FilePath     = "api/v3/episodefile"
+	GrabsPath    = "api/v3/history"
+	Search       = "EpisodeSearch"
+	GrabbedEvent = "1"
 )
 
 type Series struct {
@@ -23,4 +28,8 @@ type Episode struct {
 	Title         string   `json:"title"`
 	HasFile       bool     `json:"hasFile"`
 	File          arr.File `json:"episodeFile"`
+}
+
+type Grabs struct {
+	Records []arr.Grab `json:"records"`
 }

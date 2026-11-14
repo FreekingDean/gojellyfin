@@ -18,6 +18,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/reports"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/transcode"
 )
@@ -52,11 +53,16 @@ type Transcoder interface {
 	Stall() time.Duration
 }
 
+type Reports interface {
+	File(ctx context.Context, filing reports.Filing) error
+}
+
 type Handler struct {
 	sessions   *sessions.Service
 	items      *items.Service
 	files      *filesystem.Service
 	transcoder Transcoder
+	reports    Reports
 }
 
 func New(
@@ -64,8 +70,22 @@ func New(
 	items *items.Service,
 	files *filesystem.Service,
 	transcoder Transcoder,
+	reports *reports.Service,
 ) *Handler {
-	return &Handler{sessions: sessions, items: items, files: files, transcoder: transcoder}
+	return &Handler{sessions: sessions, items: items, files: files, transcoder: transcoder, reports: reports}
+}
+
+func (h *Handler) broken(r *http.Request, source *items.MediaSource, reason error) {
+	err := h.reports.File(context.WithoutCancel(r.Context()), reports.Filing{
+		ItemID: source.ItemID,
+		FileID: &source.ID,
+		Kind:   reports.KindUnplayable,
+		Origin: reports.OriginPlayback,
+		Note:   reason.Error(),
+	})
+	if err != nil {
+		log.Printf("failed to report %s as broken: %v", source.Path, err)
+	}
 }
 
 func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
@@ -77,7 +97,7 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 	container := items.Container(source)
 	requested := r.PathValue("container")
 	if requested == "" || isStatic(r) || (strings.EqualFold(requested, container) && !converts(r, item, source)) {
-		h.serveFile(w, r, path)
+		h.serveFile(w, r, source, path)
 		return
 	}
 
@@ -110,7 +130,7 @@ func (h *Handler) ServeUniversal(w http.ResponseWriter, r *http.Request) {
 	requested := r.URL.Query()["container"]
 	profiles := directPlayProfiles(requested)
 	if len(profiles) == 0 {
-		h.serveFile(w, r, path)
+		h.serveFile(w, r, source, path)
 		return
 	}
 
@@ -128,7 +148,7 @@ func (h *Handler) ServeUniversal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.serveFile(w, r, path)
+	h.serveFile(w, r, source, path)
 }
 
 func (h *Handler) serveTranscode(
@@ -217,6 +237,9 @@ func (h *Handler) relay(w http.ResponseWriter, r *http.Request, source *items.Me
 			busy(w)
 
 			return true
+		}
+		if !errors.Is(err, transcode.ErrNotAvailable) && r.Context().Err() == nil {
+			h.broken(r, source, err)
 		}
 
 		return false
@@ -344,9 +367,10 @@ func (h *Handler) authenticated(r *http.Request) bool {
 	return err == nil
 }
 
-func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, path string) {
+func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, source *items.MediaSource, path string) {
 	file, err := os.Open(path)
 	if err != nil {
+		h.broken(r, source, err)
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}

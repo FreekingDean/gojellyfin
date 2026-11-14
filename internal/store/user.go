@@ -38,6 +38,12 @@ type User struct {
 	OidcIssuer *string `json:"oidc_issuer,omitempty"`
 	// OidcSubject holds the value of the "oidc_subject" field.
 	OidcSubject *string `json:"oidc_subject,omitempty"`
+	// CanRequest holds the value of the "can_request" field.
+	CanRequest bool `json:"can_request,omitempty"`
+	// RequestsNeedApproval holds the value of the "requests_need_approval" field.
+	RequestsNeedApproval bool `json:"requests_need_approval,omitempty"`
+	// RequestQuota holds the value of the "request_quota" field.
+	RequestQuota *int `json:"request_quota,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
 	Edges        UserEdges `json:"edges"`
@@ -64,9 +70,13 @@ type UserEdges struct {
 	PlaylistShares []*PlaylistShare `json:"playlist_shares,omitempty"`
 	// QuickConnectRequests holds the value of the quick_connect_requests edge.
 	QuickConnectRequests []*QuickConnectRequest `json:"quick_connect_requests,omitempty"`
+	// Requests holds the value of the requests edge.
+	Requests []*Request `json:"requests,omitempty"`
+	// Reports holds the value of the reports edge.
+	Reports []*Report `json:"reports,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [9]bool
+	loadedTypes [11]bool
 }
 
 // ConfigurationOrErr returns the Configuration value or an error if the edge
@@ -154,11 +164,33 @@ func (e UserEdges) QuickConnectRequestsOrErr() ([]*QuickConnectRequest, error) {
 	return nil, &NotLoadedError{edge: "quick_connect_requests"}
 }
 
+// RequestsOrErr returns the Requests value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) RequestsOrErr() ([]*Request, error) {
+	if e.loadedTypes[9] {
+		return e.Requests, nil
+	}
+	return nil, &NotLoadedError{edge: "requests"}
+}
+
+// ReportsOrErr returns the Reports value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) ReportsOrErr() ([]*Report, error) {
+	if e.loadedTypes[10] {
+		return e.Reports, nil
+	}
+	return nil, &NotLoadedError{edge: "reports"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*User) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case user.FieldCanRequest, user.FieldRequestsNeedApproval:
+			values[i] = new(sql.NullBool)
+		case user.FieldRequestQuota:
+			values[i] = new(sql.NullInt64)
 		case user.FieldName, user.FieldUsername, user.FieldPasswordHash, user.FieldOidcIssuer, user.FieldOidcSubject:
 			values[i] = new(sql.NullString)
 		case user.FieldCreatedAt, user.FieldUpdatedAt, user.FieldLastLoginAt, user.FieldLastActivityAt:
@@ -244,6 +276,25 @@ func (_m *User) assignValues(columns []string, values []any) error {
 				_m.OidcSubject = new(string)
 				*_m.OidcSubject = value.String
 			}
+		case user.FieldCanRequest:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field can_request", values[i])
+			} else if value.Valid {
+				_m.CanRequest = value.Bool
+			}
+		case user.FieldRequestsNeedApproval:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field requests_need_approval", values[i])
+			} else if value.Valid {
+				_m.RequestsNeedApproval = value.Bool
+			}
+		case user.FieldRequestQuota:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field request_quota", values[i])
+			} else if value.Valid {
+				_m.RequestQuota = new(int)
+				*_m.RequestQuota = int(value.Int64)
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -302,6 +353,16 @@ func (_m *User) QueryQuickConnectRequests() *QuickConnectRequestQuery {
 	return NewUserClient(_m.config).QueryQuickConnectRequests(_m)
 }
 
+// QueryRequests queries the "requests" edge of the User entity.
+func (_m *User) QueryRequests() *RequestQuery {
+	return NewUserClient(_m.config).QueryRequests(_m)
+}
+
+// QueryReports queries the "reports" edge of the User entity.
+func (_m *User) QueryReports() *ReportQuery {
+	return NewUserClient(_m.config).QueryReports(_m)
+}
+
 // Update returns a builder for updating this User.
 // Note that you need to call User.Unwrap() before calling this method if this User
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -357,6 +418,17 @@ func (_m *User) String() string {
 	if v := _m.OidcSubject; v != nil {
 		builder.WriteString("oidc_subject=")
 		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	builder.WriteString("can_request=")
+	builder.WriteString(fmt.Sprintf("%v", _m.CanRequest))
+	builder.WriteString(", ")
+	builder.WriteString("requests_need_approval=")
+	builder.WriteString(fmt.Sprintf("%v", _m.RequestsNeedApproval))
+	builder.WriteString(", ")
+	if v := _m.RequestQuota; v != nil {
+		builder.WriteString("request_quota=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteByte(')')
 	return builder.String()

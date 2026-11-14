@@ -690,6 +690,132 @@ var (
 			},
 		},
 	}
+	// ReportsColumns holds the columns for the "reports" table.
+	ReportsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Unplayable", "Video", "Audio", "Subtitles", "Other"}},
+		{Name: "origin", Type: field.TypeEnum, Enums: []string{"User", "Delete", "Probe", "Playback"}},
+		{Name: "note", Type: field.TypeString, Default: ""},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"Open", "Resolved", "Dismissed"}, Default: "Open"},
+		{Name: "item_id", Type: field.TypeUUID},
+		{Name: "item_source_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "user_id", Type: field.TypeUUID, Nullable: true},
+	}
+	// ReportsTable holds the schema information for the "reports" table.
+	ReportsTable = &schema.Table{
+		Name:       "reports",
+		Columns:    ReportsColumns,
+		PrimaryKey: []*schema.Column{ReportsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "reports_items_reports",
+				Columns:    []*schema.Column{ReportsColumns[7]},
+				RefColumns: []*schema.Column{ItemsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "reports_item_sources_reports",
+				Columns:    []*schema.Column{ReportsColumns[8]},
+				RefColumns: []*schema.Column{ItemSourcesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "reports_users_reports",
+				Columns:    []*schema.Column{ReportsColumns[9]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "report_status_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{ReportsColumns[6], ReportsColumns[1]},
+			},
+			{
+				Name:    "report_item_id",
+				Unique:  false,
+				Columns: []*schema.Column{ReportsColumns[7]},
+			},
+		},
+	}
+	// RequestsColumns holds the columns for the "requests" table.
+	RequestsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "key", Type: field.TypeString},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Movie", "Series"}},
+		{Name: "tmdb_id", Type: field.TypeInt},
+		{Name: "tvdb_id", Type: field.TypeInt, Default: 0},
+		{Name: "name", Type: field.TypeString},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"Pending", "Approved", "Declined"}, Default: "Approved"},
+		{Name: "user_id", Type: field.TypeUUID},
+	}
+	// RequestsTable holds the schema information for the "requests" table.
+	RequestsTable = &schema.Table{
+		Name:       "requests",
+		Columns:    RequestsColumns,
+		PrimaryKey: []*schema.Column{RequestsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "requests_users_requests",
+				Columns:    []*schema.Column{RequestsColumns[9]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "request_user_id_key",
+				Unique:  true,
+				Columns: []*schema.Column{RequestsColumns[9], RequestsColumns[3]},
+			},
+			{
+				Name:    "request_key",
+				Unique:  false,
+				Columns: []*schema.Column{RequestsColumns[3]},
+			},
+		},
+	}
+	// RequestSubmissionsColumns holds the columns for the "request_submissions" table.
+	RequestSubmissionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "key", Type: field.TypeString},
+		{Name: "accepted_at", Type: field.TypeTime, Nullable: true},
+		{Name: "last_error", Type: field.TypeString, Nullable: true},
+		{Name: "source_id", Type: field.TypeUUID},
+	}
+	// RequestSubmissionsTable holds the schema information for the "request_submissions" table.
+	RequestSubmissionsTable = &schema.Table{
+		Name:       "request_submissions",
+		Columns:    RequestSubmissionsColumns,
+		PrimaryKey: []*schema.Column{RequestSubmissionsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "request_submissions_sources_submissions",
+				Columns:    []*schema.Column{RequestSubmissionsColumns[6]},
+				RefColumns: []*schema.Column{SourcesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "requestsubmission_source_id_key",
+				Unique:  true,
+				Columns: []*schema.Column{RequestSubmissionsColumns[6], RequestSubmissionsColumns[3]},
+			},
+			{
+				Name:    "requestsubmission_key",
+				Unique:  false,
+				Columns: []*schema.Column{RequestSubmissionsColumns[3]},
+			},
+		},
+	}
 	// SessionsColumns holds the columns for the "sessions" table.
 	SessionsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
@@ -734,6 +860,9 @@ var (
 		{Name: "version", Type: field.TypeString, Nullable: true},
 		{Name: "contacted_at", Type: field.TypeTime, Nullable: true},
 		{Name: "last_error", Type: field.TypeString, Nullable: true},
+		{Name: "request_profile_id", Type: field.TypeInt, Nullable: true},
+		{Name: "request_root_folder", Type: field.TypeString, Nullable: true},
+		{Name: "request_tag", Type: field.TypeString, Nullable: true},
 	}
 	// SourcesTable holds the schema information for the "sources" table.
 	SourcesTable = &schema.Table{
@@ -796,6 +925,9 @@ var (
 		{Name: "last_activity_at", Type: field.TypeTime, Nullable: true},
 		{Name: "oidc_issuer", Type: field.TypeString, Nullable: true},
 		{Name: "oidc_subject", Type: field.TypeString, Nullable: true},
+		{Name: "can_request", Type: field.TypeBool, Default: true},
+		{Name: "requests_need_approval", Type: field.TypeBool, Default: false},
+		{Name: "request_quota", Type: field.TypeInt, Nullable: true},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
@@ -1026,6 +1158,9 @@ var (
 		PlaylistEntriesTable,
 		PlaylistSharesTable,
 		QuickConnectRequestsTable,
+		ReportsTable,
+		RequestsTable,
+		RequestSubmissionsTable,
 		SessionsTable,
 		SourcesTable,
 		SourcePathsTable,
@@ -1068,6 +1203,11 @@ func init() {
 	PlaylistSharesTable.ForeignKeys[0].RefTable = PlaylistsTable
 	PlaylistSharesTable.ForeignKeys[1].RefTable = UsersTable
 	QuickConnectRequestsTable.ForeignKeys[0].RefTable = UsersTable
+	ReportsTable.ForeignKeys[0].RefTable = ItemsTable
+	ReportsTable.ForeignKeys[1].RefTable = ItemSourcesTable
+	ReportsTable.ForeignKeys[2].RefTable = UsersTable
+	RequestsTable.ForeignKeys[0].RefTable = UsersTable
+	RequestSubmissionsTable.ForeignKeys[0].RefTable = SourcesTable
 	SessionsTable.ForeignKeys[0].RefTable = DevicesTable
 	SessionsTable.ForeignKeys[1].RefTable = UsersTable
 	SourcePathsTable.ForeignKeys[0].RefTable = SourcesTable

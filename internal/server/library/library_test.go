@@ -18,6 +18,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
+	"github.com/FreekingDean/gojellyfin/internal/reports"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
@@ -27,6 +28,7 @@ import (
 	librarymodel "github.com/FreekingDean/gojellyfin/internal/store/library"
 	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	optionsmodel "github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
+	reportmodel "github.com/FreekingDean/gojellyfin/internal/store/report"
 	sessionmodel "github.com/FreekingDean/gojellyfin/internal/store/session"
 	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/source"
 	usermodel "github.com/FreekingDean/gojellyfin/internal/store/user"
@@ -124,7 +126,7 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
-	server := New(items.New(client), libraries.New(client), users.New(client), filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}), jobs.NewService(disconnected(t), jobs.NewRegistry()), collage.New(items.New(client)))
+	server := New(items.New(client), libraries.New(client), users.New(client), filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}), jobs.NewService(disconnected(t), jobs.NewRegistry()), collage.New(items.New(client)), reports.New(client, nil))
 
 	downloader, err := client.Source.Create().
 		SetName(t.Name() + "-" + uuid.NewString()).
@@ -357,6 +359,35 @@ func TestServer_DeleteItem(t *testing.T) {
 		}
 		if remaining != 2 {
 			t.Errorf("remaining items = %d, want 2; a refused delete must not orphan rows", remaining)
+		}
+	})
+
+	t.Run("a title is reported broken rather than deleted", func(t *testing.T) {
+		ctx := fixture.signIn(t, "reporter", false)
+
+		for range 2 {
+			response, err := fixture.server.DeleteItem(ctx, api.DeleteItemRequestObject{ItemId: episode})
+			if err != nil {
+				t.Fatalf("failed to report the episode: %v", err)
+			}
+			if _, ok := response.(api.DeleteItem204Response); !ok {
+				t.Fatalf("response = %T, want api.DeleteItem204Response", response)
+			}
+		}
+
+		if _, err := os.Stat(episodePath); err != nil {
+			t.Errorf("the reported episode was removed: %v", err)
+		}
+
+		filed, err := fixture.client.Report.Query().Where(reportmodel.ItemID(episode)).AllModels(context.Background())
+		if err != nil {
+			t.Fatalf("failed to query the reports: %v", err)
+		}
+		if len(filed) != 1 {
+			t.Fatalf("got %d reports, want the one both presses share", len(filed))
+		}
+		if filed[0].Origin != reports.OriginDelete || filed[0].Kind != reports.KindUnplayable || filed[0].UserID == nil {
+			t.Errorf("got a %s report of %s from %v, want Delete, Unplayable and the user", filed[0].Origin, filed[0].Kind, filed[0].UserID)
 		}
 	})
 

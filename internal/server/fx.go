@@ -8,6 +8,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/server/activitylog"
 	"github.com/FreekingDean/gojellyfin/internal/server/apikey"
+	"github.com/FreekingDean/gojellyfin/internal/server/artists"
 	"github.com/FreekingDean/gojellyfin/internal/server/branding"
 	"github.com/FreekingDean/gojellyfin/internal/server/channels"
 	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
@@ -31,9 +32,12 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/playstate"
 	"github.com/FreekingDean/gojellyfin/internal/server/plugins"
 	"github.com/FreekingDean/gojellyfin/internal/server/quickconnect"
+	"github.com/FreekingDean/gojellyfin/internal/server/reports"
+	"github.com/FreekingDean/gojellyfin/internal/server/requests"
 	"github.com/FreekingDean/gojellyfin/internal/server/scheduledtasks"
 	"github.com/FreekingDean/gojellyfin/internal/server/search"
 	"github.com/FreekingDean/gojellyfin/internal/server/session"
+	"github.com/FreekingDean/gojellyfin/internal/server/settings"
 	"github.com/FreekingDean/gojellyfin/internal/server/sources"
 	"github.com/FreekingDean/gojellyfin/internal/server/studios"
 	"github.com/FreekingDean/gojellyfin/internal/server/suggestions"
@@ -53,6 +57,7 @@ var Module = fx.Module(
 	activitylog.Module,
 	apikey.Module,
 	branding.Module,
+	artists.Module,
 	channels.Module,
 	configuration.Module,
 	dashboard.Module,
@@ -74,6 +79,9 @@ var Module = fx.Module(
 	playlists.Module,
 	playstate.Module,
 	plugins.Module,
+	reports.Module,
+	requests.Module,
+	settings.Module,
 	sources.Module,
 	quickconnect.Module,
 	scheduledtasks.Module,

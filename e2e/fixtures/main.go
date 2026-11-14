@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"crypto/sha1"
 	"database/sql"
@@ -19,11 +20,14 @@ import (
 	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5/stdlib"
 
+	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/probe"
+	"github.com/FreekingDean/gojellyfin/internal/reports"
+	"github.com/FreekingDean/gojellyfin/internal/shelves"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
@@ -40,9 +44,15 @@ const (
 	drama      = "Fixture Drama"
 	finale     = "Fixture Finale"
 	transcoded = "Fixture Transcoded"
+
+	requestProfile = 1
+
+	downloaderTitle = 71
+	downloaderFile  = 72
 )
 
 var (
+	shelved  = []string{"recently-aired", "new-releases", "trending-movies", "trending-shows"}
 	movies   = []string{"Fixture Alpha", "Fixture Beta"}
 	episodes = []string{"Fixture Pilot", "Fixture Second"}
 
@@ -177,12 +187,12 @@ func admin(statement string) error {
 }
 
 func seed() error {
-	config, err := env.Load()
+	environment, err := env.Load()
 	if err != nil {
 		return err
 	}
 
-	connection, err := store.NewStore(config)
+	connection, err := store.NewStore(environment)
 	if err != nil {
 		return err
 	}
@@ -206,9 +216,11 @@ func seed() error {
 
 	downloader, err := client.Source.Create().
 		SetName("Fixtures").
-		SetURL("http://fixtures.invalid").
+		SetURL(cmp.Or(os.Getenv("FIXTURE_DOWNLOADER"), "http://fixtures.invalid")).
 		SetAPIKeyVariable(env.SourceAPIKeyPrefix + "FIXTURES").
 		SetKind(sourcemodel.KindRadarr).
+		SetRequestProfileID(requestProfile).
+		SetRequestRootFolder("/fixtures").
 		Save(ctx)
 	if err != nil {
 		return err
@@ -219,6 +231,10 @@ func seed() error {
 		SetRemotePath("/fixtures").
 		SetLocalPath("/fixtures").
 		Exec(ctx); err != nil {
+		return err
+	}
+
+	if err := shelves.New(nil, nil, config.New(client)).Enable(ctx, shelved); err != nil {
 		return err
 	}
 
@@ -389,6 +405,7 @@ func playableMovie(ctx context.Context, client *store.Client, catalogue *items.S
 	}
 
 	modified := time.Now()
+	title, copied := int64(downloaderTitle), int64(downloaderFile)
 	item, err := catalogue.SaveScanned(ctx, items.Item{
 		Kind:         itemmodel.KindMovie,
 		Key:          "movie:" + slugify(name),
@@ -401,17 +418,19 @@ func playableMovie(ctx context.Context, client *store.Client, catalogue *items.S
 	}
 
 	source, err := catalogue.SaveSource(ctx, items.MediaSource{
-		SourceID:     sourceID,
-		ItemID:       item.ID,
-		Path:         path,
-		Name:         name,
-		DateModified: &modified,
+		SourceID:       sourceID,
+		ItemID:         item.ID,
+		Path:           path,
+		Name:           name,
+		DateModified:   &modified,
+		ExternalID:     &title,
+		ExternalFileID: &copied,
 	})
 	if err != nil {
 		return err
 	}
 
-	if err := probe.New(catalogue, ffmpeg.New()).ProbeSource(ctx, source.ID); err != nil {
+	if err := probe.New(catalogue, ffmpeg.New(), reports.New(client, nil)).ProbeSource(ctx, source.ID); err != nil {
 		return err
 	}
 

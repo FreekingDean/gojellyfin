@@ -1,6 +1,11 @@
+const crypto = require('node:crypto');
+
 const { test, expect, view, loadLogin } = require('./fixtures');
 
 const TV = 'MediaBrowser Client="Smoke TV", Device="Living Room", DeviceId="smoke-tv", Version="1.0.0"';
+
+// What a QR names: the television, as the server abbreviates its device id.
+const SCANNED = '/link/tv/' + crypto.createHash('sha256').update('smoke-tv').digest('hex').slice(0, 16);
 
 test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
@@ -24,7 +29,7 @@ async function authenticated(request, app, secret) {
 // visit to /link skip the login page: without it the client keeps the token
 // for this page load only.
 async function signInHere(page, app) {
-  await expect(page).toHaveURL(/login\.html/, { timeout: 30000 });
+  await expect(page).toHaveURL(/#\/login/, { timeout: 30000 });
   await page.locator('#loginPage button.card').filter({ hasText: app.username }).click();
   await page.locator('#txtManualPassword').fill(app.password);
   await page.locator('#loginPage .chkRememberLogin').evaluate((box) => {
@@ -78,7 +83,7 @@ test.describe('linking a TV from a phone', () => {
     await page.goto(harness.baseUrl + '/link?code=' + encodeURIComponent(spaced));
     await onQuickConnect(page);
 
-    await expect(page).not.toHaveURL(/login\.html/);
+    await expect(page).not.toHaveURL(/#\/login/);
     await expect(codeField(page)).toHaveValue(tv.Code);
   });
 });
@@ -110,6 +115,7 @@ test.describe('scanning the code off the TV', () => {
     });
     expect(qr.image).toContain('/link/qr.svg');
     expect(qr.width).toBeGreaterThan(150);
+    await expect(tv.locator('.backdropImage[data-url*="/Branding/Splashscreen"]')).toBeHidden();
     await expect(tv).toHaveScreenshot('tv-quickconnect-qr.png', { mask: [dialog.locator('.dialogContentInner')] });
 
     const scanned = (await context.cookies(harness.baseUrl + '/link/qr.svg')).find(
@@ -125,7 +131,7 @@ test.describe('scanning the code off the TV', () => {
     await view(page).locator('button[type=submit]').click();
     await expect(view(page)).toContainText('You have successfully authenticated your device!');
 
-    await expect(tv).toHaveURL(/home\.html/, { timeout: 30000 });
+    await expect(tv).toHaveURL(/#\/home/, { timeout: 30000 });
     await context.close();
   });
 
@@ -155,9 +161,28 @@ test.describe('scanning the code off the TV', () => {
     await context.close();
   });
 
+  test('asks a phone that is already signed in for one tap and nothing typed', async ({ page, request, harness }) => {
+    await page.goto(harness.baseUrl + '/link');
+    await signInHere(page, harness);
+    await onQuickConnect(page);
+
+    const tv = await initiate(request, harness);
+    await page.goto(harness.baseUrl + SCANNED);
+    await onQuickConnect(page);
+
+    await expect(page).not.toHaveURL(/#\/login/);
+    await expect(codeField(page)).toHaveValue(tv.Code);
+
+    await view(page).locator('button[type=submit]').click();
+    await expect(view(page)).toContainText('You have successfully authenticated your device!');
+    expect(await authenticated(request, harness, tv.Secret)).toBe(true);
+  });
+
   test('offers native TV apps a splashscreen carrying the same QR', async ({ request, harness }) => {
     const branding = await request.get(harness.baseUrl + '/Branding/Configuration');
-    expect((await branding.json()).SplashscreenEnabled).toBe(true);
+    const options = await branding.json();
+    expect(options.SplashscreenEnabled).toBe(true);
+    expect(options.CustomCss).toContain('/link/qr.svg');
 
     const splash = await request.get(harness.baseUrl + '/Branding/Splashscreen', { headers: { Authorization: TV } });
     expect(splash.status()).toBe(200);

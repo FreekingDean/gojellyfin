@@ -20,6 +20,9 @@ func (User) Fields() []ent.Field {
 		field.Time("last_activity_at").Optional().Nillable(),
 		field.String("oidc_issuer").Optional().Nillable(),
 		field.String("oidc_subject").Optional().Nillable(),
+		field.Bool("can_request").Default(true),
+		field.Bool("requests_need_approval").Default(false),
+		field.Int("request_quota").Optional().Nillable(),
 	)
 }
 
@@ -40,5 +43,7 @@ func (User) Edges() []ent.Edge {
 		edge.To("playlists", Playlist.Type).Annotations(cascadeOnDelete),
 		edge.To("playlist_shares", PlaylistShare.Type).Annotations(cascadeOnDelete),
 		edge.To("quick_connect_requests", QuickConnectRequest.Type).Annotations(cascadeOnDelete),
+		edge.To("requests", Request.Type).Annotations(cascadeOnDelete),
+		edge.To("reports", Report.Type),
 	}
 }

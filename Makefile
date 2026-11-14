@@ -28,8 +28,20 @@ LDFLAGS := -X $(STAMP).buildVersion=$(VERSION) -X $(STAMP).buildCommit=$(COMMIT)
 generate:
 	go generate ./...
 
+# The admin app the binary embeds and serves at /admin. A file target, so it
+# costs an npm run only when something under admin/ or the spec changed. A
+# plain `go build` without it still compiles, and /admin answers 503.
+ADMIN_APP := internal/server/admin/dist/index.html
+ADMIN_SOURCES := $(shell find admin -path admin/node_modules -prune -o -type f -print) spec/jellyfin-openapi-stable.patched.json
+
+.PHONY: admin
+admin: $(ADMIN_APP)
+
+$(ADMIN_APP): $(ADMIN_SOURCES)
+	cd admin && npm ci && npm run build
+
 .PHONY: build
-build: generate
+build: generate admin
 	go build -ldflags "$(LDFLAGS)" ./...
 
 .PHONY: run

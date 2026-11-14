@@ -10,7 +10,7 @@ import (
 )
 
 func TestServer_Similar(t *testing.T) {
-	s := New(nil, nil, nil, nil, nil, nil)
+	s := New(nil, nil, nil, nil, nil, nil, nil)
 	ctx := context.Background()
 
 	for _, tc := range []struct {

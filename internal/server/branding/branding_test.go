@@ -25,7 +25,7 @@ func (s signOn) Enabled() bool { return bool(s) }
 
 type titles []shelves.Title
 
-func (t titles) Titles() []shelves.Title { return t }
+func (t titles) Titles(context.Context) ([]shelves.Title, error) { return t, nil }
 
 func TestServer_GetBrandingCss(t *testing.T) {
 	base, err := env.Load()
@@ -62,6 +62,19 @@ func TestServer_GetBrandingCss(t *testing.T) {
 			t.Errorf("css = %q, want it to contain %q", css, want)
 		}
 	}
+
+	server.links = styling("#quickConnectAlert{}")
+	options, err := server.GetBrandingOptions(context.Background(), api.GetBrandingOptionsRequestObject{})
+	if err != nil {
+		t.Fatalf("GetBrandingOptions returned %v", err)
+	}
+	custom := apiutil.Deref(options.(api.GetBrandingOptions200JSONResponse).CustomCss)
+	for _, want := range []string{"#quickConnectAlert{}", "sectionTitleTextButton"} {
+		if !strings.Contains(custom, want) {
+			t.Errorf("CustomCss = %q, want it to contain %q, since jellyfin-web 10.11 reads its stylesheet from there", custom, want)
+		}
+	}
+	server.links = styling("")
 
 	server.shelves = titles(nil)
 	plain, err := server.brandingCss(context.Background())

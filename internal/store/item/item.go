@@ -71,6 +71,8 @@ const (
 	EdgeLibraries = "libraries"
 	// EdgeItemSources holds the string denoting the item_sources edge name in mutations.
 	EdgeItemSources = "item_sources"
+	// EdgeReports holds the string denoting the reports edge name in mutations.
+	EdgeReports = "reports"
 	// EdgeCredits holds the string denoting the credits edge name in mutations.
 	EdgeCredits = "credits"
 	// EdgeImages holds the string denoting the images edge name in mutations.
@@ -111,6 +113,13 @@ const (
 	ItemSourcesInverseTable = "item_sources"
 	// ItemSourcesColumn is the table column denoting the item_sources relation/edge.
 	ItemSourcesColumn = "item_id"
+	// ReportsTable is the table that holds the reports relation/edge.
+	ReportsTable = "reports"
+	// ReportsInverseTable is the table name for the Report entity.
+	// It exists in this package in order to avoid circular dependency with the "report" package.
+	ReportsInverseTable = "reports"
+	// ReportsColumn is the table column denoting the reports relation/edge.
+	ReportsColumn = "item_id"
 	// CreditsTable is the table that holds the credits relation/edge.
 	CreditsTable = "credits"
 	// CreditsInverseTable is the table name for the Credit entity.
@@ -408,6 +417,20 @@ func ByItemSources(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByReportsCount orders the results by reports count.
+func ByReportsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newReportsStep(), opts...)
+	}
+}
+
+// ByReports orders the results by reports terms.
+func ByReports(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newReportsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByCreditsCount orders the results by credits count.
 func ByCreditsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -538,6 +561,13 @@ func newItemSourcesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ItemSourcesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ItemSourcesTable, ItemSourcesColumn),
+	)
+}
+func newReportsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ReportsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ReportsTable, ReportsColumn),
 	)
 }
 func newCreditsStep() *sqlgraph.Step {

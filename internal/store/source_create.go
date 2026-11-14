@@ -15,6 +15,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
+	"github.com/FreekingDean/gojellyfin/internal/store/requestsubmission"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/FreekingDean/gojellyfin/internal/store/sourcepath"
 	"github.com/google/uuid"
@@ -122,6 +123,48 @@ func (_c *SourceCreate) SetNillableLastError(v *string) *SourceCreate {
 	return _c
 }
 
+// SetRequestProfileID sets the "request_profile_id" field.
+func (_c *SourceCreate) SetRequestProfileID(v int) *SourceCreate {
+	_c.mutation.SetRequestProfileID(v)
+	return _c
+}
+
+// SetNillableRequestProfileID sets the "request_profile_id" field if the given value is not nil.
+func (_c *SourceCreate) SetNillableRequestProfileID(v *int) *SourceCreate {
+	if v != nil {
+		_c.SetRequestProfileID(*v)
+	}
+	return _c
+}
+
+// SetRequestRootFolder sets the "request_root_folder" field.
+func (_c *SourceCreate) SetRequestRootFolder(v string) *SourceCreate {
+	_c.mutation.SetRequestRootFolder(v)
+	return _c
+}
+
+// SetNillableRequestRootFolder sets the "request_root_folder" field if the given value is not nil.
+func (_c *SourceCreate) SetNillableRequestRootFolder(v *string) *SourceCreate {
+	if v != nil {
+		_c.SetRequestRootFolder(*v)
+	}
+	return _c
+}
+
+// SetRequestTag sets the "request_tag" field.
+func (_c *SourceCreate) SetRequestTag(v string) *SourceCreate {
+	_c.mutation.SetRequestTag(v)
+	return _c
+}
+
+// SetNillableRequestTag sets the "request_tag" field if the given value is not nil.
+func (_c *SourceCreate) SetNillableRequestTag(v *string) *SourceCreate {
+	if v != nil {
+		_c.SetRequestTag(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *SourceCreate) SetID(v uuid.UUID) *SourceCreate {
 	_c.mutation.SetID(v)
@@ -186,6 +229,21 @@ func (_c *SourceCreate) AddMemberships(v ...*LibraryItem) *SourceCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddMembershipIDs(ids...)
+}
+
+// AddSubmissionIDs adds the "submissions" edge to the RequestSubmission entity by IDs.
+func (_c *SourceCreate) AddSubmissionIDs(ids ...uuid.UUID) *SourceCreate {
+	_c.mutation.AddSubmissionIDs(ids...)
+	return _c
+}
+
+// AddSubmissions adds the "submissions" edges to the RequestSubmission entity.
+func (_c *SourceCreate) AddSubmissions(v ...*RequestSubmission) *SourceCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddSubmissionIDs(ids...)
 }
 
 // Mutation returns the SourceMutation object of the builder.
@@ -330,6 +388,18 @@ func (_c *SourceCreate) createSpec() (*Source, *sqlgraph.CreateSpec) {
 		_spec.SetField(source.FieldLastError, field.TypeString, value)
 		_node.LastError = value
 	}
+	if value, ok := _c.mutation.RequestProfileID(); ok {
+		_spec.SetField(source.FieldRequestProfileID, field.TypeInt, value)
+		_node.RequestProfileID = &value
+	}
+	if value, ok := _c.mutation.RequestRootFolder(); ok {
+		_spec.SetField(source.FieldRequestRootFolder, field.TypeString, value)
+		_node.RequestRootFolder = value
+	}
+	if value, ok := _c.mutation.RequestTag(); ok {
+		_spec.SetField(source.FieldRequestTag, field.TypeString, value)
+		_node.RequestTag = value
+	}
 	if nodes := _c.mutation.PathsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -387,6 +457,22 @@ func (_c *SourceCreate) createSpec() (*Source, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SubmissionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.SubmissionsTable,
+			Columns: []string{source.SubmissionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(requestsubmission.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -569,6 +655,66 @@ func (u *SourceUpsert) UpdateLastError() *SourceUpsert {
 // ClearLastError clears the value of the "last_error" field.
 func (u *SourceUpsert) ClearLastError() *SourceUpsert {
 	u.SetNull(source.FieldLastError)
+	return u
+}
+
+// SetRequestProfileID sets the "request_profile_id" field.
+func (u *SourceUpsert) SetRequestProfileID(v int) *SourceUpsert {
+	u.Set(source.FieldRequestProfileID, v)
+	return u
+}
+
+// UpdateRequestProfileID sets the "request_profile_id" field to the value that was provided on create.
+func (u *SourceUpsert) UpdateRequestProfileID() *SourceUpsert {
+	u.SetExcluded(source.FieldRequestProfileID)
+	return u
+}
+
+// AddRequestProfileID adds v to the "request_profile_id" field.
+func (u *SourceUpsert) AddRequestProfileID(v int) *SourceUpsert {
+	u.Add(source.FieldRequestProfileID, v)
+	return u
+}
+
+// ClearRequestProfileID clears the value of the "request_profile_id" field.
+func (u *SourceUpsert) ClearRequestProfileID() *SourceUpsert {
+	u.SetNull(source.FieldRequestProfileID)
+	return u
+}
+
+// SetRequestRootFolder sets the "request_root_folder" field.
+func (u *SourceUpsert) SetRequestRootFolder(v string) *SourceUpsert {
+	u.Set(source.FieldRequestRootFolder, v)
+	return u
+}
+
+// UpdateRequestRootFolder sets the "request_root_folder" field to the value that was provided on create.
+func (u *SourceUpsert) UpdateRequestRootFolder() *SourceUpsert {
+	u.SetExcluded(source.FieldRequestRootFolder)
+	return u
+}
+
+// ClearRequestRootFolder clears the value of the "request_root_folder" field.
+func (u *SourceUpsert) ClearRequestRootFolder() *SourceUpsert {
+	u.SetNull(source.FieldRequestRootFolder)
+	return u
+}
+
+// SetRequestTag sets the "request_tag" field.
+func (u *SourceUpsert) SetRequestTag(v string) *SourceUpsert {
+	u.Set(source.FieldRequestTag, v)
+	return u
+}
+
+// UpdateRequestTag sets the "request_tag" field to the value that was provided on create.
+func (u *SourceUpsert) UpdateRequestTag() *SourceUpsert {
+	u.SetExcluded(source.FieldRequestTag)
+	return u
+}
+
+// ClearRequestTag clears the value of the "request_tag" field.
+func (u *SourceUpsert) ClearRequestTag() *SourceUpsert {
+	u.SetNull(source.FieldRequestTag)
 	return u
 }
 
@@ -764,6 +910,76 @@ func (u *SourceUpsertOne) UpdateLastError() *SourceUpsertOne {
 func (u *SourceUpsertOne) ClearLastError() *SourceUpsertOne {
 	return u.Update(func(s *SourceUpsert) {
 		s.ClearLastError()
+	})
+}
+
+// SetRequestProfileID sets the "request_profile_id" field.
+func (u *SourceUpsertOne) SetRequestProfileID(v int) *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.SetRequestProfileID(v)
+	})
+}
+
+// AddRequestProfileID adds v to the "request_profile_id" field.
+func (u *SourceUpsertOne) AddRequestProfileID(v int) *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.AddRequestProfileID(v)
+	})
+}
+
+// UpdateRequestProfileID sets the "request_profile_id" field to the value that was provided on create.
+func (u *SourceUpsertOne) UpdateRequestProfileID() *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.UpdateRequestProfileID()
+	})
+}
+
+// ClearRequestProfileID clears the value of the "request_profile_id" field.
+func (u *SourceUpsertOne) ClearRequestProfileID() *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.ClearRequestProfileID()
+	})
+}
+
+// SetRequestRootFolder sets the "request_root_folder" field.
+func (u *SourceUpsertOne) SetRequestRootFolder(v string) *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.SetRequestRootFolder(v)
+	})
+}
+
+// UpdateRequestRootFolder sets the "request_root_folder" field to the value that was provided on create.
+func (u *SourceUpsertOne) UpdateRequestRootFolder() *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.UpdateRequestRootFolder()
+	})
+}
+
+// ClearRequestRootFolder clears the value of the "request_root_folder" field.
+func (u *SourceUpsertOne) ClearRequestRootFolder() *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.ClearRequestRootFolder()
+	})
+}
+
+// SetRequestTag sets the "request_tag" field.
+func (u *SourceUpsertOne) SetRequestTag(v string) *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.SetRequestTag(v)
+	})
+}
+
+// UpdateRequestTag sets the "request_tag" field to the value that was provided on create.
+func (u *SourceUpsertOne) UpdateRequestTag() *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.UpdateRequestTag()
+	})
+}
+
+// ClearRequestTag clears the value of the "request_tag" field.
+func (u *SourceUpsertOne) ClearRequestTag() *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.ClearRequestTag()
 	})
 }
 
@@ -1126,6 +1342,76 @@ func (u *SourceUpsertBulk) UpdateLastError() *SourceUpsertBulk {
 func (u *SourceUpsertBulk) ClearLastError() *SourceUpsertBulk {
 	return u.Update(func(s *SourceUpsert) {
 		s.ClearLastError()
+	})
+}
+
+// SetRequestProfileID sets the "request_profile_id" field.
+func (u *SourceUpsertBulk) SetRequestProfileID(v int) *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.SetRequestProfileID(v)
+	})
+}
+
+// AddRequestProfileID adds v to the "request_profile_id" field.
+func (u *SourceUpsertBulk) AddRequestProfileID(v int) *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.AddRequestProfileID(v)
+	})
+}
+
+// UpdateRequestProfileID sets the "request_profile_id" field to the value that was provided on create.
+func (u *SourceUpsertBulk) UpdateRequestProfileID() *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.UpdateRequestProfileID()
+	})
+}
+
+// ClearRequestProfileID clears the value of the "request_profile_id" field.
+func (u *SourceUpsertBulk) ClearRequestProfileID() *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.ClearRequestProfileID()
+	})
+}
+
+// SetRequestRootFolder sets the "request_root_folder" field.
+func (u *SourceUpsertBulk) SetRequestRootFolder(v string) *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.SetRequestRootFolder(v)
+	})
+}
+
+// UpdateRequestRootFolder sets the "request_root_folder" field to the value that was provided on create.
+func (u *SourceUpsertBulk) UpdateRequestRootFolder() *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.UpdateRequestRootFolder()
+	})
+}
+
+// ClearRequestRootFolder clears the value of the "request_root_folder" field.
+func (u *SourceUpsertBulk) ClearRequestRootFolder() *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.ClearRequestRootFolder()
+	})
+}
+
+// SetRequestTag sets the "request_tag" field.
+func (u *SourceUpsertBulk) SetRequestTag(v string) *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.SetRequestTag(v)
+	})
+}
+
+// UpdateRequestTag sets the "request_tag" field to the value that was provided on create.
+func (u *SourceUpsertBulk) UpdateRequestTag() *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.UpdateRequestTag()
+	})
+}
+
+// ClearRequestTag clears the value of the "request_tag" field.
+func (u *SourceUpsertBulk) ClearRequestTag() *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.ClearRequestTag()
 	})
 }
 

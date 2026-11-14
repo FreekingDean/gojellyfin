@@ -2,6 +2,8 @@ package shelves
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"slices"
 	"strings"
 	"testing"
@@ -177,10 +179,7 @@ func TestService_Shelves(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.slug+" "+test.now.Month().String(), func(t *testing.T) {
-			service, err := newService(fixture.catalogue, available(true), []string{test.slug}, func() time.Time { return test.now })
-			if err != nil {
-				t.Fatalf("failed to build the shelves: %v", err)
-			}
+			service := newService(fixture.catalogue, available(true), stored(test.slug), func() time.Time { return test.now })
 
 			listed, err := service.Shelves(ctx, viewer, fixture.userID)
 			if err != nil {
@@ -223,10 +222,7 @@ func TestService_GenreSpotlight(t *testing.T) {
 	seen := map[string]bool{}
 	for week := range 2 {
 		now := time.Date(2026, time.January, 5+7*week, 0, 0, 0, 0, time.UTC)
-		service, err := newService(fixture.catalogue, available(true), []string{"genre-spotlight"}, func() time.Time { return now })
-		if err != nil {
-			t.Fatalf("failed to build the shelves: %v", err)
-		}
+		service := newService(fixture.catalogue, available(true), stored("genre-spotlight"), func() time.Time { return now })
 
 		listed, err := service.Shelves(ctx, viewer, fixture.userID)
 		if err != nil || len(listed) != 1 {
@@ -248,19 +244,75 @@ func TestService_GenreSpotlight(t *testing.T) {
 	}
 }
 
-func TestNew_RefusesAnUnknownShelf(t *testing.T) {
-	if _, err := newService(nil, available(true), []string{"recently-aired", "nonsense"}, time.Now); err == nil {
-		t.Error("an unknown shelf was accepted")
+type settings struct {
+	value json.RawMessage
+}
+
+func stored(slugs ...string) *settings {
+	value, _ := json.Marshal(slugs)
+
+	return &settings{value: value}
+}
+
+func (s *settings) Configuration(context.Context, string) (json.RawMessage, error) {
+	return s.value, nil
+}
+
+func (s *settings) SetConfiguration(_ context.Context, _ string, value json.RawMessage) error {
+	s.value = value
+
+	return nil
+}
+
+func TestService_Choices(t *testing.T) {
+	ctx := context.Background()
+	service := newService(nil, available(true), &settings{}, time.Now)
+
+	on := func() []string {
+		choices, err := service.Choices(ctx)
+		if err != nil {
+			t.Fatalf("failed to list the choices: %v", err)
+		}
+		if len(choices) != len(definitions) {
+			t.Fatalf("choices = %d, want every one of the %d shelves", len(choices), len(definitions))
+		}
+
+		enabled := []string{}
+		for _, choice := range choices {
+			if choice.Name == "" {
+				t.Errorf("%s has no name", choice.Slug)
+			}
+			if choice.Enabled {
+				enabled = append(enabled, choice.Slug)
+			}
+		}
+
+		return enabled
 	}
 
-	service, err := newService(nil, available(true), []string{"none"}, time.Now)
-	if err != nil || len(service.enabled) != 0 {
-		t.Errorf("none = %v, %v, want no shelves", service, err)
+	if got := on(); !slices.Equal(got, Defaults) {
+		t.Errorf("unset = %v, want the defaults %v", got, Defaults)
 	}
 
-	service, err = newService(nil, available(true), nil, time.Now)
-	if err != nil || len(service.enabled) != len(Defaults) {
-		t.Errorf("unset = %v, %v, want the defaults", service, err)
+	if err := service.Enable(ctx, []string{"trending-shows", "recently-aired", "trending-shows"}); err != nil {
+		t.Fatalf("failed to enable the shelves: %v", err)
+	}
+	if got, want := on(), []string{"recently-aired", "trending-shows"}; !slices.Equal(got, want) {
+		t.Errorf("enabled = %v, want %v", got, want)
+	}
+
+	if err := service.Enable(ctx, []string{"nonsense"}); !errors.Is(err, ErrUnknown) {
+		t.Errorf("an unknown shelf answered %v, want ErrUnknown", err)
+	}
+	if got, want := on(), []string{"recently-aired", "trending-shows"}; !slices.Equal(got, want) {
+		t.Errorf("a refused save left %v, want %v", got, want)
+	}
+
+	if err := service.Enable(ctx, nil); err != nil {
+		t.Fatalf("failed to turn every shelf off: %v", err)
+	}
+	if got := on(); len(got) != 0 {
+		t.Errorf("none = %v, want no shelves", got)
 	}
 }
 
@@ -282,10 +334,7 @@ func TestService_TrendingShelves(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			service, err := newService(nil, test.discovery, []string{"trending-movies", "trending-shows"}, time.Now)
-			if err != nil {
-				t.Fatalf("failed to build the shelves: %v", err)
-			}
+			service := newService(nil, test.discovery, stored("trending-movies", "trending-shows"), time.Now)
 
 			listed, err := service.Shelves(ctx, items.Everyone, uuid.New())
 			if err != nil {
@@ -307,16 +356,17 @@ func TestService_TrendingShelves(t *testing.T) {
 }
 
 func TestService_Titles(t *testing.T) {
-	service, err := newService(nil, available(true), []string{"recently-aired", "genre-spotlight", "because-you-watched", "hidden-gems"}, time.Now)
-	if err != nil {
-		t.Fatalf("failed to build the shelves: %v", err)
-	}
+	service := newService(nil, available(true), stored("recently-aired", "genre-spotlight", "because-you-watched", "hidden-gems"), time.Now)
 
 	want := []Title{
 		{ID: ID("recently-aired"), Name: "Recently Aired"},
 		{ID: ID("hidden-gems"), Name: "Hidden Gems"},
 	}
-	if got := service.Titles(); !slices.Equal(got, want) {
+	got, err := service.Titles(context.Background())
+	if err != nil {
+		t.Fatalf("failed to list the titles: %v", err)
+	}
+	if !slices.Equal(got, want) {
 		t.Errorf("titles = %v, want %v", got, want)
 	}
 }

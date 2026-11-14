@@ -271,6 +271,58 @@ func (Unimplemented) GetUtcTime(ctx context.Context, request GetUtcTimeRequestOb
 	return nil, ErrNotImplemented
 }
 
+func (Unimplemented) GoJellyfinListReports(ctx context.Context, request GoJellyfinListReportsRequestObject) (GoJellyfinListReportsResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) GoJellyfinFileReport(ctx context.Context, request GoJellyfinFileReportRequestObject) (GoJellyfinFileReportResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) GoJellyfinDismissReport(ctx context.Context, request GoJellyfinDismissReportRequestObject) (GoJellyfinDismissReportResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) GoJellyfinReplaceReported(ctx context.Context, request GoJellyfinReplaceReportedRequestObject) (GoJellyfinReplaceReportedResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) GoJellyfinResolveReport(ctx context.Context, request GoJellyfinResolveReportRequestObject) (GoJellyfinResolveReportResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) GoJellyfinListRequestUsers(ctx context.Context, request GoJellyfinListRequestUsersRequestObject) (GoJellyfinListRequestUsersResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) GoJellyfinUpdateRequestUser(ctx context.Context, request GoJellyfinUpdateRequestUserRequestObject) (GoJellyfinUpdateRequestUserResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) GoJellyfinListRequests(ctx context.Context, request GoJellyfinListRequestsRequestObject) (GoJellyfinListRequestsResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) GoJellyfinApproveRequest(ctx context.Context, request GoJellyfinApproveRequestRequestObject) (GoJellyfinApproveRequestResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) GoJellyfinDeclineRequest(ctx context.Context, request GoJellyfinDeclineRequestRequestObject) (GoJellyfinDeclineRequestResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) GoJellyfinListSettings(ctx context.Context, request GoJellyfinListSettingsRequestObject) (GoJellyfinListSettingsResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) GoJellyfinListShelves(ctx context.Context, request GoJellyfinListShelvesRequestObject) (GoJellyfinListShelvesResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) GoJellyfinUpdateShelves(ctx context.Context, request GoJellyfinUpdateShelvesRequestObject) (GoJellyfinUpdateShelvesResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
 func (Unimplemented) GoJellyfinListSourceApiKeyVariables(ctx context.Context, request GoJellyfinListSourceApiKeyVariablesRequestObject) (GoJellyfinListSourceApiKeyVariablesResponseObject, error) {
 	return nil, ErrNotImplemented
 }

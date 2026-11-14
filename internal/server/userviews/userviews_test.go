@@ -32,12 +32,12 @@ type fixture struct {
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
 
-	config, err := env.Load()
+	environment, err := env.Load()
 	if err != nil {
 		t.Fatalf("failed to read the environment: %v", err)
 	}
 
-	connection, err := store.NewStore(config)
+	connection, err := store.NewStore(environment)
 	if err != nil {
 		t.Fatalf("failed to open the database: %v", err)
 	}
@@ -59,10 +59,7 @@ func newFixture(t *testing.T) *fixture {
 	})
 
 	catalogue := items.New(client)
-	shown, err := shelves.New(catalogue, discover.New(noProvider{}, catalogue), env.Config{})
-	if err != nil {
-		t.Fatalf("failed to build the shelves: %v", err)
-	}
+	shown := shelves.New(catalogue, discover.New(noProvider{}, catalogue), config.New(client))
 
 	return &fixture{server: New(libraries.New(client), shown, allLibraries{}, collage.New(catalogue)), client: client, prefix: prefix}
 }
@@ -80,6 +77,10 @@ func (noProvider) Series(context.Context, int) (items.Metadata, bool, error) {
 }
 
 func (noProvider) Trending(context.Context, items.Kind) ([]items.Metadata, error) {
+	return nil, nil
+}
+
+func (noProvider) Search(context.Context, items.Kind, string) ([]items.Metadata, error) {
 	return nil, nil
 }
 

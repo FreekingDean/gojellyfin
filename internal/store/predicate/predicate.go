@@ -66,6 +66,15 @@ type PlaylistShare func(*sql.Selector)
 // QuickConnectRequest is the predicate function for quickconnectrequest builders.
 type QuickConnectRequest func(*sql.Selector)
 
+// Report is the predicate function for report builders.
+type Report func(*sql.Selector)
+
+// Request is the predicate function for request builders.
+type Request func(*sql.Selector)
+
+// RequestSubmission is the predicate function for requestsubmission builders.
+type RequestSubmission func(*sql.Selector)
+
 // Session is the predicate function for session builders.
 type Session func(*sql.Selector)
 

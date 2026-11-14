@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Report a problem</title>
+<style>
+  body { background: #101010; color: #fff; font-family: sans-serif; margin: 0; }
+  main { max-width: 34em; margin: 0 auto; padding: 1.5em 1em 3em; }
+  h1 { font-size: 1.4em; font-weight: 500; }
+  h2 { font-size: 1em; font-weight: 500; color: #aaa; margin: 1.5em 0 .5em; }
+  a { color: #00a4dc; }
+  input[type=search], textarea { width: 100%; box-sizing: border-box; background: #292929; color: #fff; border: 1px solid #444; border-radius: .2em; padding: .7em; font: inherit; }
+  button { font: inherit; border: 0; border-radius: .2em; padding: .7em 1.2em; cursor: pointer; }
+  .title { display: block; width: 100%; text-align: left; background: #202020; color: #fff; margin: 0 0 .35em; }
+  .title small { color: #aaa; margin-left: .5em; }
+  .send { background: #00a4dc; color: #fff; margin-top: 1em; }
+  .plain { background: none; color: #00a4dc; padding: 0; }
+  label { display: block; padding: .45em 0; }
+  [hidden] { display: none; }
+  #said { color: #aaa; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Report a problem</h1>
+
+  <section id="signedOut" hidden>
+    <p>Sign in first, then come back to this page.</p>
+    <p><a href="/web/">Sign in</a></p>
+  </section>
+
+  <section id="pick" hidden>
+    <input type="search" id="term" placeholder="Search for a film, a show or an episode" autocomplete="off">
+    <h2 id="listed"></h2>
+    <div id="titles"></div>
+  </section>
+
+  <section id="describe" hidden>
+    <p><strong id="chosen"></strong> <button type="button" class="plain" id="another">Choose another</button></p>
+    <form id="filing">
+      <label><input type="radio" name="kind" value="Unplayable" checked> It will not play</label>
+      <label><input type="radio" name="kind" value="Video"> The picture is wrong</label>
+      <label><input type="radio" name="kind" value="Audio"> The sound is wrong or missing</label>
+      <label><input type="radio" name="kind" value="Subtitles"> The subtitles are wrong or missing</label>
+      <label><input type="radio" name="kind" value="Other"> Something else</label>
+      <textarea id="note" rows="3" maxlength="1000" placeholder="Anything that helps: where in the title, which language"></textarea>
+      <button type="submit" class="send">Send report</button>
+    </form>
+  </section>
+
+  <section id="done" hidden>
+    <p>Thanks. Whoever runs this server has been told about <strong id="reported"></strong>.</p>
+    <p><button type="button" class="plain" id="again">Report something else</button></p>
+  </section>
+
+  <p id="said"></p>
+</main>
+<script>
+(function () {
+  var serverId = {{.ServerID}};
+  var element = function (id) { return document.getElementById(id); };
+  var sections = ['signedOut', 'pick', 'describe', 'done'];
+  var show = function (name) {
+    sections.forEach(function (id) { element(id).hidden = id !== name; });
+    element('said').textContent = '';
+  };
+
+  var credentials = {};
+  try { credentials = JSON.parse(localStorage.getItem('jellyfin_credentials')) || {}; } catch (e) {}
+  var servers = (credentials.Servers || []).filter(function (entry) { return entry.AccessToken; });
+  var server = servers.filter(function (entry) { return entry.Id === serverId; })[0] || servers[0];
+  if (!server) {
+    show('signedOut');
+    return;
+  }
+
+  var call = function (path, options) {
+    options = options || {};
+    options.headers = {
+      'Authorization': 'MediaBrowser Client="Report", Device="Browser", DeviceId="report", Version="1", Token="' + server.AccessToken + '"',
+      'Content-Type': 'application/json'
+    };
+
+    return fetch(path, options).then(function (response) {
+      if (response.status === 401) {
+        show('signedOut');
+      }
+      if (!response.ok) {
+        throw new Error(path + ' answered ' + response.status);
+      }
+
+      return response.status === 204 ? null : response.json();
+    });
+  };
+
+  var named = function (item) {
+    if (item.Type !== 'Episode') {
+      return item.Name;
+    }
+
+    return (item.SeriesName ? item.SeriesName + ' ' : '') + 'S' + item.ParentIndexNumber + 'E' + item.IndexNumber + ', ' + item.Name;
+  };
+
+  var selected = null;
+  var choose = function (item) {
+    if (item.Type === 'Series') {
+      call('/Shows/' + item.Id + '/Episodes?UserId=' + server.UserId).then(function (episodes) {
+        list('Episodes of ' + item.Name, episodes.Items.map(function (episode) {
+          episode.SeriesName = episode.SeriesName || item.Name;
+
+          return episode;
+        }));
+      }).catch(failed);
+
+      return;
+    }
+
+    selected = item;
+    element('chosen').textContent = named(item);
+    show('describe');
+  };
+
+  var list = function (heading, items) {
+    var titles = element('titles');
+    var held = items.filter(function (item) { return item.LocationType !== 'Virtual'; });
+
+    titles.textContent = '';
+    element('listed').textContent = held.length ? heading : 'Nothing found';
+    held.forEach(function (item) {
+      var button = document.createElement('button');
+      var kind = document.createElement('small');
+
+      button.type = 'button';
+      button.className = 'title';
+      button.textContent = named(item);
+      kind.textContent = item.Type === 'Series' ? 'Show' : (item.ProductionYear || '');
+      button.appendChild(kind);
+      button.addEventListener('click', function () { choose(item); });
+      titles.appendChild(button);
+    });
+  };
+
+  var failed = function (error) {
+    console.error(error);
+    element('said').textContent = 'That did not work. Try again in a moment.';
+  };
+
+  var recent = function () {
+    call('/UserItems/Resume?Limit=8&UserId=' + server.UserId).then(function (resumed) {
+      list('Recently watched', resumed.Items);
+    }).catch(failed);
+  };
+
+  var waiting = null;
+  element('term').addEventListener('input', function () {
+    var term = element('term').value.trim();
+
+    clearTimeout(waiting);
+    waiting = setTimeout(function () {
+      if (!term) {
+        recent();
+
+        return;
+      }
+
+      call('/Items?Recursive=true&IncludeItemTypes=Movie&IncludeItemTypes=Series&IncludeItemTypes=Episode&Limit=12&UserId=' + server.UserId +
+        '&SearchTerm=' + encodeURIComponent(term)).then(function (found) {
+        list('Results', found.Items);
+      }).catch(failed);
+    }, 300);
+  });
+
+  element('filing').addEventListener('submit', function (event) {
+    event.preventDefault();
+
+    call('/GoJellyfin/Reports', {
+      method: 'POST',
+      body: JSON.stringify({
+        ItemId: selected.Id,
+        Kind: document.querySelector('input[name=kind]:checked').value,
+        Note: element('note').value
+      })
+    }).then(function () {
+      element('reported').textContent = named(selected);
+      element('note').value = '';
+      show('done');
+    }).catch(failed);
+  });
+
+  var start = function () {
+    show('pick');
+    recent();
+  };
+  element('another').addEventListener('click', start);
+  element('again').addEventListener('click', start);
+
+  var asked = new URLSearchParams(location.search).get('item');
+  if (asked && /^[0-9a-fA-F-]{32,36}$/.test(asked)) {
+    call('/Items/' + asked + '?UserId=' + server.UserId).then(choose).catch(start);
+  } else {
+    start();
+  }
+})();
+</script>
+</body>
+</html>

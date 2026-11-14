@@ -140,6 +140,10 @@ func (trendingProvider) Trending(context.Context, items.Kind) ([]items.Metadata,
 	return nil, nil
 }
 
+func (trendingProvider) Search(context.Context, items.Kind, string) ([]items.Metadata, error) {
+	return nil, nil
+}
+
 const poster = "https://image.tmdb.org/t/p/w780/poster.jpg"
 
 func TestServer_GetItemImage(t *testing.T) {

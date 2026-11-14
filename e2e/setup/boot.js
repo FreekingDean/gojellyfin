@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const http = require('node:http');
 
 const proxy = require('./proxy');
+const radarr = require('./radarr');
 const tmdb = require('./tmdb');
 
 const ROOT = path.resolve(__dirname, '..', '..');
@@ -48,7 +49,6 @@ const WANTED_SHOW = {
   released: '2023-09-08',
   poster: '/wanted-show.png',
 };
-const SHELVES = 'recently-aired,new-releases,trending-movies,trending-shows';
 
 const CLIENT_IMAGE = 'jellyfin/jellyfin:10.10.0';
 
@@ -89,12 +89,15 @@ async function boot({ mediaSeconds = 20 } = {}) {
   });
   const cataloguePort = await listen(catalogue);
 
+  const downloader = radarr.start();
+  const downloaderUrl = `http://127.0.0.1:${await listen(downloader)}`;
+
   const serverEnv = clean({
     DATABASE_URL: databaseUrl,
     MEDIA_DIRECTORIES: path.dirname(media.playable),
     TMDB_API_KEY: 'e2e',
     TMDB_BASE_URL: `http://127.0.0.1:${cataloguePort}/3`,
-    SHELVES,
+    SOURCE_API_KEY_FIXTURES: 'e2e',
   });
 
   run(binaries.gojellyfin, ['migrate'], { env: serverEnv });
@@ -104,6 +107,7 @@ async function boot({ mediaSeconds = 20 } = {}) {
       ...serverEnv,
       FIXTURE_MEDIA: media.playable,
       FIXTURE_TRANSCODE: media.transcoded,
+      FIXTURE_DOWNLOADER: downloaderUrl,
       POSTER_DIR: posterRoot,
       UNOWNED_POSTER_DIR: path.join(posterRoot, POSTER_SIZE),
       POSTER_URL: `http://127.0.0.1:${webPort}${proxy.POSTERS}`,
@@ -164,11 +168,13 @@ async function boot({ mediaSeconds = 20 } = {}) {
         ...jellyfin,
         migrate: { command: binaries.migrate, args: ['--from', jellyfinData], env: serverEnv },
       },
+      downloaderUrl,
     },
     serverLog: () => log.join(''),
     async stop() {
       await new Promise((resolve) => front.close(resolve));
       await new Promise((resolve) => catalogue.close(resolve));
+      await new Promise((resolve) => downloader.close(resolve));
       api.kill('SIGTERM');
       await once(api);
       provider.child.kill('SIGTERM');
@@ -184,6 +190,11 @@ function build() {
   const gojellyfin = path.join(BUILD, 'gojellyfin');
   const fixtures = path.join(BUILD, 'fixtures');
   const migrate = path.join(BUILD, 'jellyfinmigrate');
+
+  // The binary embeds the admin app, so it is built first or /admin answers 503.
+  const admin = path.join(ROOT, 'admin');
+  run('npm', ['ci'], { cwd: admin });
+  run('npm', ['run', 'build'], { cwd: admin });
 
   run('go', ['build', '-o', gojellyfin, './cmd/gojellyfin'], { cwd: ROOT });
   run('go', ['build', '-o', fixtures, './e2e/fixtures'], { cwd: ROOT });
@@ -318,7 +329,6 @@ function clean(overrides) {
     OTEL_EXPORTER_OTLP_ENDPOINT: '',
     TMDB_API_KEY: '',
     TMDB_BASE_URL: '',
-    SHELVES: '',
     SERVER_ID: '',
     ...overrides,
   };

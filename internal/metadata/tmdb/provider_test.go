@@ -142,7 +142,7 @@ func TestClient_Series(t *testing.T) {
 	if found.EndDate == nil || found.EndDate.Year() != 2013 {
 		t.Errorf("EndDate = %v, want 2013-09-29", found.EndDate)
 	}
-	if ids := *found.ProviderIds; ids[providerTmdb] != "1396" || ids[providerImdb] != "tt0903747" {
+	if ids := *found.ProviderIds; ids[providerTmdb] != "1396" || ids[providerImdb] != "tt0903747" || ids[providerTvdb] != "81189" {
 		t.Errorf("ProviderIds = %v, want the Tmdb and Imdb ids", ids)
 	}
 	want := []items.Credit{

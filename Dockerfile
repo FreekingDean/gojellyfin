@@ -1,3 +1,14 @@
+FROM --platform=$BUILDPLATFORM node:22-alpine AS admin
+
+WORKDIR /src/admin
+
+COPY admin/package.json admin/package-lock.json ./
+RUN npm ci
+
+COPY admin ./
+COPY spec/jellyfin-openapi-stable.patched.json /src/spec/
+RUN npm run build
+
 FROM --platform=$BUILDPLATFORM golang:1.25 AS build
 
 WORKDIR /src
@@ -6,6 +17,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
+COPY --from=admin /src/internal/server/admin/dist internal/server/admin/dist
 
 # Generated code is committed, so the image never runs `go generate`: it would
 # need the codegen tools and the network.
