@@ -19,13 +19,21 @@ const TYPES = {
   '.webmanifest': 'application/manifest+json',
 };
 
+// Posters the seed painted, on the same origin as the client so the browser's
+// keepOnOrigin lets them through and the server can fetch them for a collage.
+const POSTERS = '/fixture-posters';
+
 // One origin, the way deploy/httproutes.yaml serves it: /web is a file on
 // disk and everything else is the API. Two would mean CORS and the client's
 // server picker before any assertion.
-function start({ webRoot, apiPort }) {
+function start({ webRoot, apiPort, posterRoot }) {
   const server = http.createServer((request, response) => {
     if (request.url === '/web' || request.url.startsWith('/web/')) {
-      serveFile(webRoot, request, response);
+      serveFile(webRoot, '/web', request, response);
+      return;
+    }
+    if (posterRoot && request.url.startsWith(POSTERS + '/')) {
+      serveFile(posterRoot, POSTERS, request, response);
       return;
     }
 
@@ -58,8 +66,8 @@ function rebuildHead(request) {
   return lines.join('\r\n') + '\r\n\r\n';
 }
 
-function serveFile(webRoot, request, response) {
-  const relative = decodeURIComponent(request.url.slice('/web'.length).split('?')[0]) || '/';
+function serveFile(webRoot, prefix, request, response) {
+  const relative = decodeURIComponent(request.url.slice(prefix.length).split('?')[0]) || '/';
   const resolved = path.join(webRoot, path.normalize(relative));
 
   if (!resolved.startsWith(webRoot)) {
@@ -110,4 +118,4 @@ function proxy(apiPort, request, response) {
   request.pipe(upstream);
 }
 
-module.exports = { start };
+module.exports = { start, POSTERS };

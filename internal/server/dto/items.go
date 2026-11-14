@@ -145,8 +145,35 @@ func ItemDtos(ctx context.Context, store *items.Service, records []*items.Item) 
 	return converted, nil
 }
 
-func LibraryView(library *libraries.Library) api.BaseItemDto {
+type Collages interface {
+	Tag(ctx context.Context, libraryID uuid.UUID) (string, error)
+}
+
+func LibraryViews(ctx context.Context, collages Collages, records []*libraries.Library) ([]api.BaseItemDto, error) {
+	views := make([]api.BaseItemDto, 0, len(records))
+	for _, library := range records {
+		view, err := LibraryView(ctx, collages, library)
+		if err != nil {
+			return nil, err
+		}
+		views = append(views, view)
+	}
+
+	return views, nil
+}
+
+func LibraryView(ctx context.Context, collages Collages, library *libraries.Library) (api.BaseItemDto, error) {
 	collectionType := api.CollectionType(library.CollectionType)
+
+	tag, err := collages.Tag(ctx, library.ID)
+	if err != nil {
+		return api.BaseItemDto{}, err
+	}
+
+	imageTags := map[string]*string{}
+	if tag != "" {
+		imageTags[string(api.Primary)] = &tag
+	}
 
 	return api.BaseItemDto{
 		Id:                &library.ID,
@@ -157,9 +184,9 @@ func LibraryView(library *libraries.Library) api.BaseItemDto {
 		CollectionType:    &collectionType,
 		IsFolder:          apiutil.Ptr(true),
 		LocationType:      apiutil.Ptr(api.FileSystem),
-		ImageTags:         &map[string]*string{},
+		ImageTags:         &imageTags,
 		BackdropImageTags: &[]string{},
-	}
+	}, nil
 }
 
 func RootView() api.BaseItemDto {

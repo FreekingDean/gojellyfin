@@ -12,6 +12,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/auth"
+	"github.com/FreekingDean/gojellyfin/internal/collage"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
@@ -123,7 +124,7 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
-	server := New(items.New(client), libraries.New(client), users.New(client), filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}), jobs.NewService(disconnected(t), jobs.NewRegistry()))
+	server := New(items.New(client), libraries.New(client), users.New(client), filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}), jobs.NewService(disconnected(t), jobs.NewRegistry()), collage.New(items.New(client)))
 
 	downloader, err := client.Source.Create().
 		SetName(t.Name() + "-" + uuid.NewString()).
