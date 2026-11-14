@@ -123,6 +123,22 @@ func TestStreamURL(t *testing.T) {
 		}
 	})
 
+	t.Run("a file served whole keeps its own clock", func(t *testing.T) {
+		_, values := splitURL(t, streamURL(item, untouched, "t", "s", 25_000_000))
+
+		if got := values.Get("copyTimestamps"); got != "true" {
+			t.Errorf("copy timestamps = %q, want true so the client does not add the start position to the file's own", got)
+		}
+	})
+
+	t.Run("a remux starts its clock at the position asked for", func(t *testing.T) {
+		_, values := splitURL(t, streamURL(item, planFor("mp4", "aac"), "t", "s", 25_000_000))
+
+		if values.Has("copyTimestamps") {
+			t.Error("the url tells the client a remux that starts at zero carries the source's timestamps")
+		}
+	})
+
 	t.Run("a playback error has somewhere to stop", func(t *testing.T) {
 		raw := strings.ToLower(streamURL(item, untouched, "t", "s", 0))
 

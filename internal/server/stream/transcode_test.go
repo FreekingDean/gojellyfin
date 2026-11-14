@@ -2,12 +2,15 @@ package stream
 
 import (
 	"context"
+	"errors"
+	"io"
 	"math"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -210,6 +213,87 @@ func TestHandler_serveTranscode(t *testing.T) {
 		}
 		if got := recorder.Header().Get("Retry-After"); got != "10" {
 			t.Errorf("retry after = %q, want 10", got)
+		}
+	})
+}
+
+type dying struct {
+	body []byte
+	err  error
+}
+
+func (d *dying) Read(b []byte) (int, error) {
+	if len(d.body) == 0 {
+		return 0, d.err
+	}
+	n := copy(b, d.body)
+	d.body = d.body[n:]
+
+	return n, nil
+}
+
+func (d *dying) Close() error {
+	return d.err
+}
+
+func TestHandler_relay(t *testing.T) {
+	t.Run("aborts the response when ffmpeg dies partway", func(t *testing.T) {
+		fixture := newFixture(t)
+		id := fixture.add(t, "track.flac", "flac")
+
+		fixture.transcoder.enabled = true
+		fixture.transcoder.open = func(context.Context, transcode.Spec) (io.ReadCloser, error) {
+			return &dying{body: []byte("partial"), err: errors.New("ffmpeg exited: exit status 1")}, nil
+		}
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			r.SetPathValue("itemId", id.String())
+			r.SetPathValue("container", "mp3")
+			fixture.handler.Serve(w, r)
+		}))
+		t.Cleanup(server.Close)
+
+		response, err := http.Get(server.URL + "/Audio/" + id.String() + "/stream.mp3?api_key=" + fixture.token)
+		if err != nil {
+			t.Fatalf("failed to request the stream: %v", err)
+		}
+		defer func() { _ = response.Body.Close() }()
+
+		if response.StatusCode != http.StatusOK {
+			t.Fatalf("status = %d, want %d", response.StatusCode, http.StatusOK)
+		}
+
+		body, err := io.ReadAll(response.Body)
+		if !errors.Is(err, io.ErrUnexpectedEOF) {
+			t.Fatalf("read %q then %v, want the truncation to reach the client as io.ErrUnexpectedEOF", body, err)
+		}
+	})
+
+	t.Run("ends the response cleanly when ffmpeg finishes", func(t *testing.T) {
+		fixture := newFixture(t)
+		id := fixture.add(t, "track.flac", "flac")
+
+		fixture.transcoder.enabled = true
+		fixture.transcoder.open = func(context.Context, transcode.Spec) (io.ReadCloser, error) {
+			return io.NopCloser(strings.NewReader("complete")), nil
+		}
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			r.SetPathValue("itemId", id.String())
+			r.SetPathValue("container", "mp3")
+			fixture.handler.Serve(w, r)
+		}))
+		t.Cleanup(server.Close)
+
+		response, err := http.Get(server.URL + "/Audio/" + id.String() + "/stream.mp3?api_key=" + fixture.token)
+		if err != nil {
+			t.Fatalf("failed to request the stream: %v", err)
+		}
+		defer func() { _ = response.Body.Close() }()
+
+		body, err := io.ReadAll(response.Body)
+		if err != nil || string(body) != "complete" {
+			t.Fatalf("read %q, %v; want %q and a clean end", body, err, "complete")
 		}
 	})
 }

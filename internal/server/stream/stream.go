@@ -76,8 +76,7 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 
 	container := items.Container(source)
 	requested := r.PathValue("container")
-	encodes := r.URL.Query().Get("videoCodec") != ""
-	if requested == "" || isStatic(r) || (strings.EqualFold(requested, container) && !encodes) {
+	if requested == "" || isStatic(r) || (strings.EqualFold(requested, container) && !converts(r, item, source)) {
 		h.serveFile(w, r, path)
 		return
 	}
@@ -91,6 +90,15 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 	}
 
 	unsupported(w, r, container, requested)
+}
+
+func (h *Handler) StopEncodings(w http.ResponseWriter, r *http.Request) {
+	if !h.authenticated(r) {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *Handler) ServeUniversal(w http.ResponseWriter, r *http.Request) {
@@ -177,6 +185,16 @@ func (h *Handler) serveRemux(w http.ResponseWriter, r *http.Request, source *ite
 	return h.relay(w, r, source, spec)
 }
 
+func converts(r *http.Request, item *items.Item, source *items.MediaSource) bool {
+	query := r.URL.Query()
+	if query.Get("videoCodec") != "" {
+		return true
+	}
+	asked := strings.TrimSpace(query.Get("audioCodec"))
+
+	return !items.IsAudio(item) && asked != "" && !strings.EqualFold(asked, items.AudioCodec(source))
+}
+
 func maxHeight(r *http.Request) int32 {
 	height, err := strconv.ParseInt(r.URL.Query().Get("maxHeight"), 10, 32)
 	if err != nil || height <= 0 {
@@ -203,11 +221,6 @@ func (h *Handler) relay(w http.ResponseWriter, r *http.Request, source *items.Me
 
 		return false
 	}
-	defer func() {
-		if err := output.Close(); err != nil {
-			log.Printf("transcode of %s ended: %v", source.Path, err)
-		}
-	}()
 
 	w.Header().Set("Content-Type", transcode.ContentType(container))
 	w.Header().Set("Accept-Ranges", "none")
@@ -220,8 +233,13 @@ func (h *Handler) relay(w http.ResponseWriter, r *http.Request, source *items.Me
 	}
 
 	stalling := transcode.UntilStalled(ctx, output, h.transcoder.Stall(), kill)
-	if _, err := transcode.Relay(w, stalling); err != nil {
-		log.Printf("transcode of %s stopped: %v", source.Path, err)
+	relayed, err := transcode.Relay(w, stalling)
+	if closed := output.Close(); err == nil {
+		err = closed
+	}
+	if err != nil {
+		log.Printf("transcode of %s to %s stopped after %d bytes: %v", source.Path, container, relayed, err)
+		panic(http.ErrAbortHandler)
 	}
 
 	return true
@@ -269,12 +287,7 @@ func unsupported(w http.ResponseWriter, r *http.Request, source, requested strin
 }
 
 func (h *Handler) item(w http.ResponseWriter, r *http.Request) (*items.Item, *items.MediaSource, string, bool) {
-	token := middleware.TokenFrom(r)
-	if token == "" {
-		w.WriteHeader(http.StatusUnauthorized)
-		return nil, nil, "", false
-	}
-	if _, err := h.sessions.ByToken(r.Context(), token); err != nil {
+	if !h.authenticated(r) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return nil, nil, "", false
 	}
@@ -319,6 +332,16 @@ func (h *Handler) item(w http.ResponseWriter, r *http.Request) (*items.Item, *it
 	}
 
 	return item, source, path, true
+}
+
+func (h *Handler) authenticated(r *http.Request) bool {
+	token := middleware.TokenFrom(r)
+	if token == "" {
+		return false
+	}
+	_, err := h.sessions.ByToken(r.Context(), token)
+
+	return err == nil
 }
 
 func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, path string) {

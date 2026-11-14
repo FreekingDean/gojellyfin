@@ -85,6 +85,9 @@ func streamURL(itemID uuid.UUID, plan items.Plan, token, session string, startTi
 		query.Set("videoCodec", plan.VideoCodec)
 		query.Set("maxHeight", strconv.Itoa(transcode.MaxHeight))
 	}
+	if plan.VideoCodec == "" && plan.Container == items.Container(plan.Source) && plan.AudioCodec == items.AudioCodec(plan.Source) {
+		query.Set("copyTimestamps", "true")
+	}
 	query.Set("allowVideoStreamCopy", "false")
 	query.Set("allowAudioStreamCopy", "false")
 

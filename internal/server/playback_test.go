@@ -559,6 +559,24 @@ func TestPlayback(t *testing.T) {
 		}
 	})
 
+	t.Run("an mp4 whose audio the client cannot decode is converted rather than served as it is", func(t *testing.T) {
+		fixture := newPlaybackFixture(t)
+		id := fixture.ripped(t, "ac3.mp4", "libx264", "h264", "ac3")
+
+		raw := apiutil.Deref(fixture.offer(t, id, chromeProfile, 0).TranscodingUrl)
+		if !strings.Contains(raw, "/stream.mp4?") || strings.Contains(raw, "copyTimestamps") {
+			t.Fatalf("url = %q, want a remux into mp4 that starts its own clock", raw)
+		}
+
+		recorder := fixture.follow(t, raw)
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("status = %d, want %d: %s", recorder.Code, http.StatusOK, recorder.Body)
+		}
+		if _, audio := codecs(decoded(t, recorder.Body.Bytes())); audio != "aac" {
+			t.Errorf("audio is %q, want the ac3 converted to aac", audio)
+		}
+	})
+
 	t.Run("a picture and audio the client cannot decode are both converted", func(t *testing.T) {
 		fixture := newPlaybackFixture(t)
 		id := fixture.ripped(t, "worse.mkv", "mpeg4", "mpeg4", "ac3")
