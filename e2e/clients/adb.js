@@ -107,21 +107,23 @@ function device(serial = process.env.ANDROID_SERIAL) {
 
   // A view that takes focus in touch mode spends the first tap on taking it,
   // which is most of a television app, so a tap that only moved the focus
-  // onto its target is finished with the remote's centre key. A text field is
-  // left alone: there the centre key types on the on-screen keyboard.
+  // onto its target is finished with the remote's centre key. A view that
+  // already had the focus was clicked by the tap itself. A text field is left
+  // alone: there the centre key types on the on-screen keyboard.
   async function press(node) {
-    tap(node);
-    await sleep(800);
-
     const [x1, y1, x2, y2] = node.bounds;
     const x = (x1 + x2) / 2;
     const y = (y1 + y2) / 2;
+    const focusedHere = (nodes) =>
+      nodes.some((other) => other.focused && other.bounds[0] <= x && x <= other.bounds[2] && other.bounds[1] <= y && y <= other.bounds[3]);
+
+    const before = focusedHere(dump());
+    tap(node);
+    await sleep(800);
+
     const nodes = dump();
     const still = nodes.some((other) => other.bounds.join() === node.bounds.join() && other.text === node.text && other.id === node.id);
-    const focused = nodes.some(
-      (other) => other.focused && other.bounds[0] <= x && x <= other.bounds[2] && other.bounds[1] <= y && y <= other.bounds[3],
-    );
-    if (still && focused && node.type !== 'EditText') {
+    if (!before && still && focusedHere(nodes) && node.type !== 'EditText') {
       key('center');
     }
   }
