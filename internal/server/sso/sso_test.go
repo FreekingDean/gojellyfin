@@ -65,6 +65,7 @@ func newFixture(t *testing.T, configure func(*env.OIDC)) *fixture {
 
 	cfg := base
 	cfg.PublishedServerURL = f.server.URL
+	f.provider.Register(f.server.URL + domain.CallbackPath)
 	cfg.OIDC = env.OIDC{IssuerURL: f.provider.URL, ClientID: ssotest.ClientID, ClientSecret: ssotest.ClientSecret}
 	if configure != nil {
 		configure(&cfg.OIDC)

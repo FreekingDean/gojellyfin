@@ -46,6 +46,7 @@ type Provider struct {
 	userinfo Claims
 	grants   map[string]grant
 	tokens   map[string]Claims
+	redirect string
 }
 
 func New(t *testing.T) *Provider {
@@ -68,6 +69,12 @@ func New(t *testing.T) *Provider {
 	t.Cleanup(p.server.Close)
 
 	return p
+}
+
+func (p *Provider) Register(redirectURI string) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.redirect = redirectURI
 }
 
 func (p *Provider) SignIn(claims Claims) {
@@ -113,7 +120,14 @@ func (p *Provider) keys(w http.ResponseWriter, _ *http.Request) {
 
 func (p *Provider) authorize(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	redirect, err := url.Parse(query.Get("redirect_uri"))
+	p.mu.Lock()
+	registered := p.redirect
+	p.mu.Unlock()
+	if registered == "" || query.Get("redirect_uri") != registered {
+		http.Error(w, "redirect_uri is not registered", http.StatusBadRequest)
+		return
+	}
+	redirect, err := url.Parse(registered)
 	if err != nil || query.Get("client_id") != ClientID || query.Get("response_type") != "code" || query.Get("code_challenge_method") != "S256" {
 		http.Error(w, "bad authorization request", http.StatusBadRequest)
 		return
