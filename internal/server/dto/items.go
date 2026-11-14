@@ -178,17 +178,22 @@ func LibraryView(ctx context.Context, collages Collages, library *libraries.Libr
 	}
 
 	return api.BaseItemDto{
-		Id:                &library.ID,
-		ServerId:          apiutil.Ptr(config.ServerID),
-		Name:              apiutil.Ptr(library.Name),
-		SortName:          apiutil.Ptr(strings.ToLower(library.Name)),
-		Type:              apiutil.Ptr(api.BaseItemKindCollectionFolder),
-		CollectionType:    &collectionType,
-		IsFolder:          apiutil.Ptr(true),
-		LocationType:      apiutil.Ptr(api.FileSystem),
-		ImageTags:         &imageTags,
-		BackdropImageTags: &[]string{},
+		Id:                   &library.ID,
+		ServerId:             apiutil.Ptr(config.ServerID),
+		Name:                 apiutil.Ptr(library.Name),
+		SortName:             apiutil.Ptr(strings.ToLower(library.Name)),
+		Type:                 apiutil.Ptr(api.BaseItemKindCollectionFolder),
+		CollectionType:       &collectionType,
+		DisplayPreferencesId: displayPreferencesID(library.ID),
+		IsFolder:             apiutil.Ptr(true),
+		LocationType:         apiutil.Ptr(api.FileSystem),
+		ImageTags:            &imageTags,
+		BackdropImageTags:    &[]string{},
 	}, nil
+}
+
+func displayPreferencesID(id uuid.UUID) *string {
+	return apiutil.Ptr(strings.ReplaceAll(id.String(), "-", ""))
 }
 
 func RootView() api.BaseItemDto {
