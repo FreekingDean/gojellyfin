@@ -7,7 +7,7 @@
   "scripts": {
     "generate": "openapi-typescript ../spec/jellyfin-openapi-stable.patched.json -o src/api.gen.ts",
     "dev": "npm run generate && vite",
-    "build": "npm run generate && tsc --noEmit && vite build"
+    "build": "npm run generate && tsc --noEmit && node -e \"fs.rmSync('../internal/server/admin/dist/assets', { recursive: true, force: true })\" && vite build"
   },
   "dependencies": {
     "openapi-fetch": "0.17.0",

@@ -192,6 +192,11 @@ function build() {
   const fixtures = path.join(BUILD, 'fixtures');
   const migrate = path.join(BUILD, 'jellyfinmigrate');
 
+  // The binary embeds the admin app, so it is built first or /admin answers 503.
+  const admin = path.join(ROOT, 'admin');
+  run('npm', ['ci'], { cwd: admin });
+  run('npm', ['run', 'build'], { cwd: admin });
+
   run('go', ['build', '-o', gojellyfin, './cmd/gojellyfin'], { cwd: ROOT });
   run('go', ['build', '-o', fixtures, './e2e/fixtures'], { cwd: ROOT });
   run('go', ['build', '-o', migrate, './scripts/jellyfinmigrate'], { cwd: ROOT });
