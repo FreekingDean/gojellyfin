@@ -53,6 +53,23 @@ func (s *Service) SaveSource(ctx context.Context, scanned MediaSource) (*MediaSo
 	return source, nil
 }
 
+func (s *Service) fileOwner(ctx context.Context, path string) (*uuid.UUID, error) {
+	owners, err := s.store.ItemSource.Query().Where(sourcemodel.Path(path)).Select(sourcemodel.FieldItemID).Strings(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query who holds %s: %w", path, err)
+	}
+	if len(owners) == 0 {
+		return nil, nil
+	}
+
+	owner, err := uuid.Parse(owners[0])
+	if err != nil {
+		return nil, fmt.Errorf("failed to read who holds %s: %w", path, err)
+	}
+
+	return &owner, nil
+}
+
 func (s *Service) SaveProbe(ctx context.Context, item *Item, source *MediaSource, probe MediaSource) error {
 	return s.store.WithTx(ctx, func(tx *store.Tx) error {
 		err := tx.ItemSource.UpdateOneID(source.ID).
