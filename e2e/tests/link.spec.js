@@ -1,6 +1,11 @@
+const crypto = require('node:crypto');
+
 const { test, expect, view, loadLogin } = require('./fixtures');
 
 const TV = 'MediaBrowser Client="Smoke TV", Device="Living Room", DeviceId="smoke-tv", Version="1.0.0"';
+
+// What a QR names: the television, as the server abbreviates its device id.
+const SCANNED = '/link/tv/' + crypto.createHash('sha256').update('smoke-tv').digest('hex').slice(0, 16);
 
 test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
@@ -154,6 +159,23 @@ test.describe('scanning the code off the TV', () => {
 
     await expect(codeField(page)).toHaveValue(second);
     await context.close();
+  });
+
+  test('asks a phone that is already signed in for one tap and nothing typed', async ({ page, request, harness }) => {
+    await page.goto(harness.baseUrl + '/link');
+    await signInHere(page, harness);
+    await onQuickConnect(page);
+
+    const tv = await initiate(request, harness);
+    await page.goto(harness.baseUrl + SCANNED);
+    await onQuickConnect(page);
+
+    await expect(page).not.toHaveURL(/#\/login/);
+    await expect(codeField(page)).toHaveValue(tv.Code);
+
+    await view(page).locator('button[type=submit]').click();
+    await expect(view(page)).toContainText('You have successfully authenticated your device!');
+    expect(await authenticated(request, harness, tv.Secret)).toBe(true);
   });
 
   test('offers native TV apps a splashscreen carrying the same QR', async ({ request, harness }) => {
