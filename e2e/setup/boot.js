@@ -46,6 +46,11 @@ async function boot() {
   const databaseUrl = withDatabase(adminUrl, scratch);
   const serverEnv = clean({ DATABASE_URL: databaseUrl, MEDIA_DIRECTORIES: path.dirname(media) });
 
+  const jellyfinData = path.join(BUILD, 'jellyfin-data');
+  fs.rmSync(jellyfinData, { recursive: true, force: true });
+  fs.mkdirSync(jellyfinData, { recursive: true });
+  const jellyfin = JSON.parse(run(binaries.fixtures, ['jellyfin', jellyfinData]));
+
   const apiPort = await freePort();
   const posterRoot = path.join(BUILD, 'posters');
   fs.rmSync(posterRoot, { recursive: true, force: true });
@@ -77,6 +82,7 @@ async function boot() {
       OIDC_ISSUER_URL: provider.url,
       OIDC_CLIENT_ID: SSO_CLIENT_ID,
       OIDC_CLIENT_SECRET: SSO_CLIENT_SECRET,
+      SERVER_ID: jellyfin.serverId,
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -109,6 +115,10 @@ async function boot() {
       episodes: EPISODES,
       drama: DRAMA,
       finale: FINALE,
+      jellyfin: {
+        ...jellyfin,
+        migrate: { command: binaries.migrate, args: ['--from', jellyfinData], env: serverEnv },
+      },
     },
     serverLog: () => log.join(''),
     async stop() {
@@ -127,11 +137,13 @@ function build() {
   fs.mkdirSync(BUILD, { recursive: true });
   const gojellyfin = path.join(BUILD, 'gojellyfin');
   const fixtures = path.join(BUILD, 'fixtures');
+  const migrate = path.join(BUILD, 'jellyfinmigrate');
 
   run('go', ['build', '-o', gojellyfin, './cmd/gojellyfin'], { cwd: ROOT });
   run('go', ['build', '-o', fixtures, './e2e/fixtures'], { cwd: ROOT });
+  run('go', ['build', '-o', migrate, './scripts/jellyfinmigrate'], { cwd: ROOT });
 
-  return { gojellyfin, fixtures };
+  return { gojellyfin, fixtures, migrate };
 }
 
 // VP9 and Opus in WebM because Playwright's Chromium carries no H.264 or AAC
@@ -235,6 +247,7 @@ function clean(overrides) {
     TEMPORAL_NAMESPACE: '',
     OTEL_EXPORTER_OTLP_ENDPOINT: '',
     TMDB_API_KEY: '',
+    SERVER_ID: '',
     ...overrides,
   };
 }
