@@ -19,12 +19,18 @@ const TYPES = {
   '.webmanifest': 'application/manifest+json',
 };
 
-// One origin, the way deploy/httproutes.yaml serves it: /web is a file on
+// One origin, the way the chart's httproute.yaml serves it: /web is a file on
 // disk and everything else is the API. Two would mean CORS and the client's
-// server picker before any assertion.
+// server picker before any assertion. /web/ConfigurationPage and
+// /web/ConfigurationPages are the two spec paths under /web, and the chart
+// routes them back to the API; served as files, the dashboard's nav gets
+// index.html instead of a list and the React dashboard dies on it.
+const API_UNDER_WEB = /^\/web\/configurationpages?(\?|$)/i;
+
 function start({ webRoot, apiPort }) {
   const server = http.createServer((request, response) => {
-    if (request.url === '/web' || request.url.startsWith('/web/')) {
+    const isWeb = request.url === '/web' || request.url.startsWith('/web/');
+    if (isWeb && !API_UNDER_WEB.test(request.url)) {
       serveFile(webRoot, request, response);
       return;
     }

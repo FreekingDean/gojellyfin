@@ -13,18 +13,21 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
+	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
+	"github.com/FreekingDean/gojellyfin/internal/probe"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
 
 const (
-	library = "Smoke Movies"
-	shows   = "Smoke Shows"
-	series  = "Fixture Show"
-	season  = "Season 1"
+	library  = "Smoke Movies"
+	playable = "Fixture Playable"
+	shows    = "Smoke Shows"
+	series   = "Fixture Show"
+	season   = "Season 1"
 )
 
 var (
@@ -176,6 +179,10 @@ func seed() error {
 		}
 	}
 
+	if err := playableMovie(ctx, client, catalogue, record.ID, downloader.ID); err != nil {
+		return err
+	}
+
 	shown, err := libraries.New(client).CreateLibrary(ctx, shows, libraries.CollectionTypeTvshows, []string{"/fixtures/shows"})
 	if err != nil {
 		return err
@@ -240,6 +247,42 @@ func seed() error {
 	fmt.Println(record.ID)
 
 	return nil
+}
+
+func playableMovie(ctx context.Context, client *store.Client, catalogue *items.Service, libraryID, sourceID uuid.UUID) error {
+	path := os.Getenv("FIXTURE_MEDIA")
+	if path == "" {
+		return fmt.Errorf("FIXTURE_MEDIA is not set")
+	}
+
+	modified := time.Now()
+	item, err := catalogue.SaveScanned(ctx, items.Item{
+		Kind:         itemmodel.KindMovie,
+		Key:          "movie:" + slugify(playable),
+		Name:         playable,
+		SortName:     strings.ToLower(playable),
+		DateModified: &modified,
+	})
+	if err != nil {
+		return err
+	}
+
+	source, err := catalogue.SaveSource(ctx, items.MediaSource{
+		SourceID:     sourceID,
+		ItemID:       item.ID,
+		Path:         path,
+		Name:         playable,
+		DateModified: &modified,
+	})
+	if err != nil {
+		return err
+	}
+
+	if err := probe.New(catalogue, ffmpeg.New()).ProbeSource(ctx, source.ID); err != nil {
+		return err
+	}
+
+	return member(ctx, client, libraryID, sourceID, item.ID)
 }
 
 func member(ctx context.Context, client *store.Client, libraryID, sourceID, itemID uuid.UUID) error {

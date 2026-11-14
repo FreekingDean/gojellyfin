@@ -9,11 +9,13 @@ const proxy = require('./proxy');
 const ROOT = path.resolve(__dirname, '..', '..');
 const BUILD = path.join(__dirname, '..', '.build');
 const WEB = path.join(__dirname, '..', '.client');
+const SERVER_LOG = path.join(BUILD, 'server.log');
 
 const USERNAME = 'smoke';
 const PASSWORD = 'smoke-password';
 const LIBRARY = 'Smoke Movies';
 const MOVIES = ['Fixture Alpha', 'Fixture Beta'];
+const PLAYABLE = 'Fixture Playable';
 const SHOWS = 'Smoke Shows';
 const SERIES = 'Fixture Show';
 const SEASON = 'Season 1';
@@ -29,6 +31,7 @@ async function boot() {
 
   const binaries = build();
   const client = fetchClient();
+  const media = encodeMedia();
 
   const scratch = 'gojellyfin_e2e_' + Math.random().toString(36).slice(2, 12).replace(/[^a-z0-9]/g, '0');
   const scratchEnv = { ADMIN_DATABASE_URL: adminUrl, SCRATCH_DATABASE: scratch };
@@ -40,7 +43,7 @@ async function boot() {
 
   run(binaries.gojellyfin, ['migrate'], { env: serverEnv });
   run(binaries.gojellyfin, ['adduser', USERNAME], { env: serverEnv, input: PASSWORD + '\n' });
-  run(binaries.fixtures, ['seed'], { env: serverEnv });
+  run(binaries.fixtures, ['seed'], { env: { ...serverEnv, FIXTURE_MEDIA: media } });
 
   const apiPort = await freePort();
   const api = spawn(binaries.gojellyfin, ['server'], {
@@ -49,7 +52,9 @@ async function boot() {
   });
 
   const log = [];
+  const file = fs.createWriteStream(SERVER_LOG);
   const record = (chunk) => {
+    file.write(chunk);
     log.push(chunk.toString());
     if (log.length > 400) log.shift();
   };
@@ -62,20 +67,24 @@ async function boot() {
   const webPort = await listen(front);
 
   return {
-    baseUrl: `http://127.0.0.1:${webPort}`,
-    username: USERNAME,
-    password: PASSWORD,
-    library: LIBRARY,
-    movies: MOVIES,
-    shows: SHOWS,
-    series: SERIES,
-    season: SEASON,
-    episodes: EPISODES,
+    facts: {
+      baseUrl: `http://127.0.0.1:${webPort}`,
+      username: USERNAME,
+      password: PASSWORD,
+      library: LIBRARY,
+      movies: MOVIES,
+      playable: PLAYABLE,
+      shows: SHOWS,
+      series: SERIES,
+      season: SEASON,
+      episodes: EPISODES,
+    },
     serverLog: () => log.join(''),
     async stop() {
       await new Promise((resolve) => front.close(resolve));
       api.kill('SIGTERM');
       await once(api);
+      file.end();
       run(binaries.fixtures, ['drop'], { env: scratchEnv, allowFailure: true });
     },
   };
@@ -90,6 +99,27 @@ function build() {
   run('go', ['build', '-o', fixtures, './e2e/fixtures'], { cwd: ROOT });
 
   return { gojellyfin, fixtures };
+}
+
+// VP9 and Opus in WebM because Playwright's Chromium carries no H.264 or AAC
+// decoder, so that is the only pairing it will direct play.
+function encodeMedia() {
+  const target = path.join(BUILD, 'media', 'playable.webm');
+  if (fs.existsSync(target)) {
+    return target;
+  }
+
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  run('ffmpeg', [
+    '-hide_banner', '-loglevel', 'error', '-y',
+    '-f', 'lavfi', '-i', 'testsrc2=size=640x360:rate=24:duration=20',
+    '-f', 'lavfi', '-i', 'sine=frequency=440:duration=20',
+    '-c:v', 'libvpx-vp9', '-b:v', '300k', '-deadline', 'realtime', '-cpu-used', '8',
+    '-c:a', 'libopus', '-b:a', '64k',
+    '-shortest', target,
+  ]);
+
+  return target;
 }
 
 // jellyfin-web is published nowhere but inside the all-in-one image: no npm
@@ -224,4 +254,4 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-module.exports = { boot };
+module.exports = { boot, SERVER_LOG };

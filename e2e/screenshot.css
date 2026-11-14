@@ -1,0 +1,14 @@
+/*
+ * jellyfin-web picks a card's placeholder colour from a hash of its id, and
+ * every run seeds fresh ids, so the five placeholder shades are flattened to
+ * one while a screenshot is taken. Anything else that varies run to run and
+ * cannot be seeded away belongs here too.
+ */
+.defaultCardBackground,
+.defaultCardBackground1,
+.defaultCardBackground2,
+.defaultCardBackground3,
+.defaultCardBackground4,
+.defaultCardBackground5 {
+  background-color: #00a4dc !important;
+}
