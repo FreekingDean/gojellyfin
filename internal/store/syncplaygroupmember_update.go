@@ -79,6 +79,55 @@ func (_u *SyncPlayGroupMemberUpdate) SetNillableSessionID(v *uuid.UUID) *SyncPla
 	return _u
 }
 
+// SetPing sets the "ping" field.
+func (_u *SyncPlayGroupMemberUpdate) SetPing(v int64) *SyncPlayGroupMemberUpdate {
+	_u.mutation.ResetPing()
+	_u.mutation.SetPing(v)
+	return _u
+}
+
+// SetNillablePing sets the "ping" field if the given value is not nil.
+func (_u *SyncPlayGroupMemberUpdate) SetNillablePing(v *int64) *SyncPlayGroupMemberUpdate {
+	if v != nil {
+		_u.SetPing(*v)
+	}
+	return _u
+}
+
+// AddPing adds value to the "ping" field.
+func (_u *SyncPlayGroupMemberUpdate) AddPing(v int64) *SyncPlayGroupMemberUpdate {
+	_u.mutation.AddPing(v)
+	return _u
+}
+
+// SetIsBuffering sets the "is_buffering" field.
+func (_u *SyncPlayGroupMemberUpdate) SetIsBuffering(v bool) *SyncPlayGroupMemberUpdate {
+	_u.mutation.SetIsBuffering(v)
+	return _u
+}
+
+// SetNillableIsBuffering sets the "is_buffering" field if the given value is not nil.
+func (_u *SyncPlayGroupMemberUpdate) SetNillableIsBuffering(v *bool) *SyncPlayGroupMemberUpdate {
+	if v != nil {
+		_u.SetIsBuffering(*v)
+	}
+	return _u
+}
+
+// SetIgnoreWait sets the "ignore_wait" field.
+func (_u *SyncPlayGroupMemberUpdate) SetIgnoreWait(v bool) *SyncPlayGroupMemberUpdate {
+	_u.mutation.SetIgnoreWait(v)
+	return _u
+}
+
+// SetNillableIgnoreWait sets the "ignore_wait" field if the given value is not nil.
+func (_u *SyncPlayGroupMemberUpdate) SetNillableIgnoreWait(v *bool) *SyncPlayGroupMemberUpdate {
+	if v != nil {
+		_u.SetIgnoreWait(*v)
+	}
+	return _u
+}
+
 // SetGroup sets the "group" edge to the SyncPlayGroup entity.
 func (_u *SyncPlayGroupMemberUpdate) SetGroup(v *SyncPlayGroup) *SyncPlayGroupMemberUpdate {
 	return _u.SetGroupID(v.ID)
@@ -170,6 +219,18 @@ func (_u *SyncPlayGroupMemberUpdate) sqlSave(ctx context.Context) (_node int, er
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(syncplaygroupmember.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Ping(); ok {
+		_spec.SetField(syncplaygroupmember.FieldPing, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedPing(); ok {
+		_spec.AddField(syncplaygroupmember.FieldPing, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.IsBuffering(); ok {
+		_spec.SetField(syncplaygroupmember.FieldIsBuffering, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.IgnoreWait(); ok {
+		_spec.SetField(syncplaygroupmember.FieldIgnoreWait, field.TypeBool, value)
 	}
 	if _u.mutation.GroupCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -297,6 +358,55 @@ func (_u *SyncPlayGroupMemberUpdateOne) SetNillableSessionID(v *uuid.UUID) *Sync
 	return _u
 }
 
+// SetPing sets the "ping" field.
+func (_u *SyncPlayGroupMemberUpdateOne) SetPing(v int64) *SyncPlayGroupMemberUpdateOne {
+	_u.mutation.ResetPing()
+	_u.mutation.SetPing(v)
+	return _u
+}
+
+// SetNillablePing sets the "ping" field if the given value is not nil.
+func (_u *SyncPlayGroupMemberUpdateOne) SetNillablePing(v *int64) *SyncPlayGroupMemberUpdateOne {
+	if v != nil {
+		_u.SetPing(*v)
+	}
+	return _u
+}
+
+// AddPing adds value to the "ping" field.
+func (_u *SyncPlayGroupMemberUpdateOne) AddPing(v int64) *SyncPlayGroupMemberUpdateOne {
+	_u.mutation.AddPing(v)
+	return _u
+}
+
+// SetIsBuffering sets the "is_buffering" field.
+func (_u *SyncPlayGroupMemberUpdateOne) SetIsBuffering(v bool) *SyncPlayGroupMemberUpdateOne {
+	_u.mutation.SetIsBuffering(v)
+	return _u
+}
+
+// SetNillableIsBuffering sets the "is_buffering" field if the given value is not nil.
+func (_u *SyncPlayGroupMemberUpdateOne) SetNillableIsBuffering(v *bool) *SyncPlayGroupMemberUpdateOne {
+	if v != nil {
+		_u.SetIsBuffering(*v)
+	}
+	return _u
+}
+
+// SetIgnoreWait sets the "ignore_wait" field.
+func (_u *SyncPlayGroupMemberUpdateOne) SetIgnoreWait(v bool) *SyncPlayGroupMemberUpdateOne {
+	_u.mutation.SetIgnoreWait(v)
+	return _u
+}
+
+// SetNillableIgnoreWait sets the "ignore_wait" field if the given value is not nil.
+func (_u *SyncPlayGroupMemberUpdateOne) SetNillableIgnoreWait(v *bool) *SyncPlayGroupMemberUpdateOne {
+	if v != nil {
+		_u.SetIgnoreWait(*v)
+	}
+	return _u
+}
+
 // SetGroup sets the "group" edge to the SyncPlayGroup entity.
 func (_u *SyncPlayGroupMemberUpdateOne) SetGroup(v *SyncPlayGroup) *SyncPlayGroupMemberUpdateOne {
 	return _u.SetGroupID(v.ID)
@@ -418,6 +528,18 @@ func (_u *SyncPlayGroupMemberUpdateOne) sqlSave(ctx context.Context) (_node *Syn
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(syncplaygroupmember.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Ping(); ok {
+		_spec.SetField(syncplaygroupmember.FieldPing, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedPing(); ok {
+		_spec.AddField(syncplaygroupmember.FieldPing, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.IsBuffering(); ok {
+		_spec.SetField(syncplaygroupmember.FieldIsBuffering, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.IgnoreWait(); ok {
+		_spec.SetField(syncplaygroupmember.FieldIgnoreWait, field.TypeBool, value)
 	}
 	if _u.mutation.GroupCleared() {
 		edge := &sqlgraph.EdgeSpec{

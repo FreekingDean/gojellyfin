@@ -45,6 +45,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
 	"github.com/FreekingDean/gojellyfin/internal/store/syncplaygroup"
 	"github.com/FreekingDean/gojellyfin/internal/store/syncplaygroupmember"
+	"github.com/FreekingDean/gojellyfin/internal/store/syncplayqueueentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
 	"github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
@@ -116,6 +117,8 @@ type Client struct {
 	SyncPlayGroup *SyncPlayGroupClient
 	// SyncPlayGroupMember is the client for interacting with the SyncPlayGroupMember builders.
 	SyncPlayGroupMember *SyncPlayGroupMemberClient
+	// SyncPlayQueueEntry is the client for interacting with the SyncPlayQueueEntry builders.
+	SyncPlayQueueEntry *SyncPlayQueueEntryClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 	// UserConfiguration is the client for interacting with the UserConfiguration builders.
@@ -164,6 +167,7 @@ func (c *Client) init() {
 	c.Studio = NewStudioClient(c.config)
 	c.SyncPlayGroup = NewSyncPlayGroupClient(c.config)
 	c.SyncPlayGroupMember = NewSyncPlayGroupMemberClient(c.config)
+	c.SyncPlayQueueEntry = NewSyncPlayQueueEntryClient(c.config)
 	c.User = NewUserClient(c.config)
 	c.UserConfiguration = NewUserConfigurationClient(c.config)
 	c.UserItemData = NewUserItemDataClient(c.config)
@@ -289,6 +293,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Studio:              NewStudioClient(cfg),
 		SyncPlayGroup:       NewSyncPlayGroupClient(cfg),
 		SyncPlayGroupMember: NewSyncPlayGroupMemberClient(cfg),
+		SyncPlayQueueEntry:  NewSyncPlayQueueEntryClient(cfg),
 		User:                NewUserClient(cfg),
 		UserConfiguration:   NewUserConfigurationClient(cfg),
 		UserItemData:        NewUserItemDataClient(cfg),
@@ -341,6 +346,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Studio:              NewStudioClient(cfg),
 		SyncPlayGroup:       NewSyncPlayGroupClient(cfg),
 		SyncPlayGroupMember: NewSyncPlayGroupMemberClient(cfg),
+		SyncPlayQueueEntry:  NewSyncPlayQueueEntryClient(cfg),
 		User:                NewUserClient(cfg),
 		UserConfiguration:   NewUserConfigurationClient(cfg),
 		UserItemData:        NewUserItemDataClient(cfg),
@@ -379,8 +385,8 @@ func (c *Client) Use(hooks ...Hook) {
 		c.LibraryItem, c.LibraryOptions, c.LibrarySource, c.MediaStream, c.Person,
 		c.Playlist, c.PlaylistEntry, c.PlaylistShare, c.QuickConnectRequest, c.Report,
 		c.Request, c.RequestSubmission, c.Session, c.Source, c.SourcePath, c.Studio,
-		c.SyncPlayGroup, c.SyncPlayGroupMember, c.User, c.UserConfiguration,
-		c.UserItemData, c.UserPolicy,
+		c.SyncPlayGroup, c.SyncPlayGroupMember, c.SyncPlayQueueEntry, c.User,
+		c.UserConfiguration, c.UserItemData, c.UserPolicy,
 	} {
 		n.Use(hooks...)
 	}
@@ -395,8 +401,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.LibraryItem, c.LibraryOptions, c.LibrarySource, c.MediaStream, c.Person,
 		c.Playlist, c.PlaylistEntry, c.PlaylistShare, c.QuickConnectRequest, c.Report,
 		c.Request, c.RequestSubmission, c.Session, c.Source, c.SourcePath, c.Studio,
-		c.SyncPlayGroup, c.SyncPlayGroupMember, c.User, c.UserConfiguration,
-		c.UserItemData, c.UserPolicy,
+		c.SyncPlayGroup, c.SyncPlayGroupMember, c.SyncPlayQueueEntry, c.User,
+		c.UserConfiguration, c.UserItemData, c.UserPolicy,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -463,6 +469,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.SyncPlayGroup.mutate(ctx, m)
 	case *SyncPlayGroupMemberMutation:
 		return c.SyncPlayGroupMember.mutate(ctx, m)
+	case *SyncPlayQueueEntryMutation:
+		return c.SyncPlayQueueEntry.mutate(ctx, m)
 	case *UserMutation:
 		return c.User.mutate(ctx, m)
 	case *UserConfigurationMutation:
@@ -1945,6 +1953,22 @@ func (c *ItemClient) QueryPlaylistEntries(_m *Item) *PlaylistEntryQuery {
 			sqlgraph.From(item.Table, item.FieldID, id),
 			sqlgraph.To(playlistentry.Table, playlistentry.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, item.PlaylistEntriesTable, item.PlaylistEntriesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySyncPlayEntries queries the sync_play_entries edge of a Item.
+func (c *ItemClient) QuerySyncPlayEntries(_m *Item) *SyncPlayQueueEntryQuery {
+	query := (&SyncPlayQueueEntryClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, id),
+			sqlgraph.To(syncplayqueueentry.Table, syncplayqueueentry.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.SyncPlayEntriesTable, item.SyncPlayEntriesColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -5151,6 +5175,22 @@ func (c *SyncPlayGroupClient) QueryMembers(_m *SyncPlayGroup) *SyncPlayGroupMemb
 	return query
 }
 
+// QueryQueue queries the queue edge of a SyncPlayGroup.
+func (c *SyncPlayGroupClient) QueryQueue(_m *SyncPlayGroup) *SyncPlayQueueEntryQuery {
+	query := (&SyncPlayQueueEntryClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(syncplaygroup.Table, syncplaygroup.FieldID, id),
+			sqlgraph.To(syncplayqueueentry.Table, syncplayqueueentry.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, syncplaygroup.QueueTable, syncplaygroup.QueueColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *SyncPlayGroupClient) Hooks() []Hook {
 	return c.hooks.SyncPlayGroup
@@ -5338,6 +5378,171 @@ func (c *SyncPlayGroupMemberClient) mutate(ctx context.Context, m *SyncPlayGroup
 		return (&SyncPlayGroupMemberDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("store: unknown SyncPlayGroupMember mutation op: %q", m.Op())
+	}
+}
+
+// SyncPlayQueueEntryClient is a client for the SyncPlayQueueEntry schema.
+type SyncPlayQueueEntryClient struct {
+	config
+}
+
+// NewSyncPlayQueueEntryClient returns a client for the SyncPlayQueueEntry from the given config.
+func NewSyncPlayQueueEntryClient(c config) *SyncPlayQueueEntryClient {
+	return &SyncPlayQueueEntryClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `syncplayqueueentry.Hooks(f(g(h())))`.
+func (c *SyncPlayQueueEntryClient) Use(hooks ...Hook) {
+	c.hooks.SyncPlayQueueEntry = append(c.hooks.SyncPlayQueueEntry, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `syncplayqueueentry.Intercept(f(g(h())))`.
+func (c *SyncPlayQueueEntryClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SyncPlayQueueEntry = append(c.inters.SyncPlayQueueEntry, interceptors...)
+}
+
+// Create returns a builder for creating a SyncPlayQueueEntry entity.
+func (c *SyncPlayQueueEntryClient) Create() *SyncPlayQueueEntryCreate {
+	mutation := newSyncPlayQueueEntryMutation(c.config, OpCreate)
+	return &SyncPlayQueueEntryCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SyncPlayQueueEntry entities.
+func (c *SyncPlayQueueEntryClient) CreateBulk(builders ...*SyncPlayQueueEntryCreate) *SyncPlayQueueEntryCreateBulk {
+	return &SyncPlayQueueEntryCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SyncPlayQueueEntryClient) MapCreateBulk(slice any, setFunc func(*SyncPlayQueueEntryCreate, int)) *SyncPlayQueueEntryCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SyncPlayQueueEntryCreateBulk{err: fmt.Errorf("calling to SyncPlayQueueEntryClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SyncPlayQueueEntryCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SyncPlayQueueEntryCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SyncPlayQueueEntry.
+func (c *SyncPlayQueueEntryClient) Update() *SyncPlayQueueEntryUpdate {
+	mutation := newSyncPlayQueueEntryMutation(c.config, OpUpdate)
+	return &SyncPlayQueueEntryUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SyncPlayQueueEntryClient) UpdateOne(_m *SyncPlayQueueEntry) *SyncPlayQueueEntryUpdateOne {
+	mutation := newSyncPlayQueueEntryMutation(c.config, OpUpdateOne, withSyncPlayQueueEntry(_m))
+	return &SyncPlayQueueEntryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SyncPlayQueueEntryClient) UpdateOneID(id uuid.UUID) *SyncPlayQueueEntryUpdateOne {
+	mutation := newSyncPlayQueueEntryMutation(c.config, OpUpdateOne, withSyncPlayQueueEntryID(id))
+	return &SyncPlayQueueEntryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SyncPlayQueueEntry.
+func (c *SyncPlayQueueEntryClient) Delete() *SyncPlayQueueEntryDelete {
+	mutation := newSyncPlayQueueEntryMutation(c.config, OpDelete)
+	return &SyncPlayQueueEntryDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SyncPlayQueueEntryClient) DeleteOne(_m *SyncPlayQueueEntry) *SyncPlayQueueEntryDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SyncPlayQueueEntryClient) DeleteOneID(id uuid.UUID) *SyncPlayQueueEntryDeleteOne {
+	builder := c.Delete().Where(syncplayqueueentry.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SyncPlayQueueEntryDeleteOne{builder}
+}
+
+// Query returns a query builder for SyncPlayQueueEntry.
+func (c *SyncPlayQueueEntryClient) Query() *SyncPlayQueueEntryQuery {
+	return &SyncPlayQueueEntryQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSyncPlayQueueEntry},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SyncPlayQueueEntry entity by its id.
+func (c *SyncPlayQueueEntryClient) Get(ctx context.Context, id uuid.UUID) (*SyncPlayQueueEntry, error) {
+	return c.Query().Where(syncplayqueueentry.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SyncPlayQueueEntryClient) GetX(ctx context.Context, id uuid.UUID) *SyncPlayQueueEntry {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryGroup queries the group edge of a SyncPlayQueueEntry.
+func (c *SyncPlayQueueEntryClient) QueryGroup(_m *SyncPlayQueueEntry) *SyncPlayGroupQuery {
+	query := (&SyncPlayGroupClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(syncplayqueueentry.Table, syncplayqueueentry.FieldID, id),
+			sqlgraph.To(syncplaygroup.Table, syncplaygroup.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, syncplayqueueentry.GroupTable, syncplayqueueentry.GroupColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryItem queries the item edge of a SyncPlayQueueEntry.
+func (c *SyncPlayQueueEntryClient) QueryItem(_m *SyncPlayQueueEntry) *ItemQuery {
+	query := (&ItemClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(syncplayqueueentry.Table, syncplayqueueentry.FieldID, id),
+			sqlgraph.To(item.Table, item.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, syncplayqueueentry.ItemTable, syncplayqueueentry.ItemColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *SyncPlayQueueEntryClient) Hooks() []Hook {
+	return c.hooks.SyncPlayQueueEntry
+}
+
+// Interceptors returns the client interceptors.
+func (c *SyncPlayQueueEntryClient) Interceptors() []Interceptor {
+	return c.inters.SyncPlayQueueEntry
+}
+
+func (c *SyncPlayQueueEntryClient) mutate(ctx context.Context, m *SyncPlayQueueEntryMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SyncPlayQueueEntryCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SyncPlayQueueEntryUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SyncPlayQueueEntryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SyncPlayQueueEntryDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("store: unknown SyncPlayQueueEntry mutation op: %q", m.Op())
 	}
 }
 
@@ -6120,16 +6325,16 @@ type (
 		Genre, Image, Item, ItemSource, Library, LibraryItem, LibraryOptions,
 		LibrarySource, MediaStream, Person, Playlist, PlaylistEntry, PlaylistShare,
 		QuickConnectRequest, Report, Request, RequestSubmission, Session, Source,
-		SourcePath, Studio, SyncPlayGroup, SyncPlayGroupMember, User,
-		UserConfiguration, UserItemData, UserPolicy []ent.Hook
+		SourcePath, Studio, SyncPlayGroup, SyncPlayGroupMember, SyncPlayQueueEntry,
+		User, UserConfiguration, UserItemData, UserPolicy []ent.Hook
 	}
 	inters struct {
 		ActivityLogEntry, ApiKey, Configuration, Credit, Device, DisplayPreferences,
 		Genre, Image, Item, ItemSource, Library, LibraryItem, LibraryOptions,
 		LibrarySource, MediaStream, Person, Playlist, PlaylistEntry, PlaylistShare,
 		QuickConnectRequest, Report, Request, RequestSubmission, Session, Source,
-		SourcePath, Studio, SyncPlayGroup, SyncPlayGroupMember, User,
-		UserConfiguration, UserItemData, UserPolicy []ent.Interceptor
+		SourcePath, Studio, SyncPlayGroup, SyncPlayGroupMember, SyncPlayQueueEntry,
+		User, UserConfiguration, UserItemData, UserPolicy []ent.Interceptor
 	}
 )
 

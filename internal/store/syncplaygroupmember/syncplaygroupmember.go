@@ -22,6 +22,12 @@ const (
 	FieldGroupID = "group_id"
 	// FieldSessionID holds the string denoting the session_id field in the database.
 	FieldSessionID = "session_id"
+	// FieldPing holds the string denoting the ping field in the database.
+	FieldPing = "ping"
+	// FieldIsBuffering holds the string denoting the is_buffering field in the database.
+	FieldIsBuffering = "is_buffering"
+	// FieldIgnoreWait holds the string denoting the ignore_wait field in the database.
+	FieldIgnoreWait = "ignore_wait"
 	// EdgeGroup holds the string denoting the group edge name in mutations.
 	EdgeGroup = "group"
 	// EdgeSession holds the string denoting the session edge name in mutations.
@@ -51,6 +57,9 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldGroupID,
 	FieldSessionID,
+	FieldPing,
+	FieldIsBuffering,
+	FieldIgnoreWait,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -70,6 +79,12 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultPing holds the default value on creation for the "ping" field.
+	DefaultPing int64
+	// DefaultIsBuffering holds the default value on creation for the "is_buffering" field.
+	DefaultIsBuffering bool
+	// DefaultIgnoreWait holds the default value on creation for the "ignore_wait" field.
+	DefaultIgnoreWait bool
 )
 
 // OrderOption defines the ordering options for the SyncPlayGroupMember queries.
@@ -98,6 +113,21 @@ func ByGroupID(opts ...sql.OrderTermOption) OrderOption {
 // BySessionID orders the results by the session_id field.
 func BySessionID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSessionID, opts...).ToFunc()
+}
+
+// ByPing orders the results by the ping field.
+func ByPing(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPing, opts...).ToFunc()
+}
+
+// ByIsBuffering orders the results by the is_buffering field.
+func ByIsBuffering(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsBuffering, opts...).ToFunc()
+}
+
+// ByIgnoreWait orders the results by the ignore_wait field.
+func ByIgnoreWait(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIgnoreWait, opts...).ToFunc()
 }
 
 // ByGroupField orders the results by group field.

@@ -23,6 +23,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/report"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
+	"github.com/FreekingDean/gojellyfin/internal/store/syncplayqueueentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
 	"github.com/google/uuid"
 )
@@ -488,6 +489,21 @@ func (_c *ItemCreate) AddPlaylistEntries(v ...*PlaylistEntry) *ItemCreate {
 	return _c.AddPlaylistEntryIDs(ids...)
 }
 
+// AddSyncPlayEntryIDs adds the "sync_play_entries" edge to the SyncPlayQueueEntry entity by IDs.
+func (_c *ItemCreate) AddSyncPlayEntryIDs(ids ...uuid.UUID) *ItemCreate {
+	_c.mutation.AddSyncPlayEntryIDs(ids...)
+	return _c
+}
+
+// AddSyncPlayEntries adds the "sync_play_entries" edges to the SyncPlayQueueEntry entity.
+func (_c *ItemCreate) AddSyncPlayEntries(v ...*SyncPlayQueueEntry) *ItemCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddSyncPlayEntryIDs(ids...)
+}
+
 // AddGenreIDs adds the "genres" edge to the Genre entity by IDs.
 func (_c *ItemCreate) AddGenreIDs(ids ...uuid.UUID) *ItemCreate {
 	_c.mutation.AddGenreIDs(ids...)
@@ -887,6 +903,22 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(playlistentry.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SyncPlayEntriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.SyncPlayEntriesTable,
+			Columns: []string{item.SyncPlayEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(syncplayqueueentry.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

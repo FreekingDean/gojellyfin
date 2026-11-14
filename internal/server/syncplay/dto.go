@@ -10,20 +10,14 @@ import (
 )
 
 const (
-	groupUpdateMessage = "SyncPlayGroupUpdate"
-
-	userJoined        = "UserJoined"
-	userLeft          = "UserLeft"
-	groupJoined       = "GroupJoined"
-	groupLeft         = "GroupLeft"
-	groupDoesNotExist = "GroupDoesNotExist"
+	userJoined          = "UserJoined"
+	userLeft            = "UserLeft"
+	groupJoined         = "GroupJoined"
+	groupLeft           = "GroupLeft"
+	groupDoesNotExist   = "GroupDoesNotExist"
+	notInGroup          = "NotInGroup"
+	libraryAccessDenied = "LibraryAccessDenied"
 )
-
-type groupUpdate struct {
-	GroupId uuid.UUID `json:"GroupId"`
-	Type    string    `json:"Type"`
-	Data    any       `json:"Data"`
-}
 
 func groupInfos(groups []*syncplay.Group) []api.GroupInfoDto {
 	converted := make([]api.GroupInfoDto, 0, len(groups))
@@ -40,7 +34,7 @@ func groupInfo(group *syncplay.Group) api.GroupInfoDto {
 		GroupName:     apiutil.Ptr(group.Name),
 		LastUpdatedAt: apiutil.Ptr(group.UpdatedAt),
 		Participants:  apiutil.Ptr(participantNames(group)),
-		State:         apiutil.Ptr(api.GroupStateTypeIdle),
+		State:         apiutil.Ptr(api.GroupStateType(group.State)),
 	}
 }
 

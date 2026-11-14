@@ -18,7 +18,15 @@ type (
 	Member = store.SyncPlayGroupMemberModel
 )
 
-var ErrNoGroup = errors.New("no such syncplay group")
+var (
+	ErrNoGroup      = errors.New("no such syncplay group")
+	ErrNotInGroup   = errors.New("session is in no syncplay group")
+	ErrAccessDenied = errors.New("session cannot see the syncplay group's queue")
+)
+
+type Publisher interface {
+	Publish(ctx context.Context, sessionIDs []uuid.UUID, messageType string, data any) error
+}
 
 type Participant struct {
 	SessionID uuid.UUID
@@ -28,12 +36,14 @@ type Participant struct {
 type Departure struct {
 	GroupID   uuid.UUID
 	Remaining []Participant
+	Messages  []Outgoing
 }
 
 type Joined struct {
 	Group    *Group
 	Left     *Departure
 	Rejoined bool
+	Messages []Outgoing
 }
 
 func Participants(group *Group) []Participant {
@@ -49,104 +59,169 @@ func Participants(group *Group) []Participant {
 	return participants
 }
 
-type Service struct {
-	store *store.Client
+func seated(room *Room) []Participant {
+	participants := make([]Participant, 0, len(room.Seats))
+	for _, seat := range room.Seats {
+		participants = append(participants, Participant{SessionID: seat.SessionID, UserName: seat.UserName})
+	}
+
+	return participants
 }
 
-func New(client *store.Client) *Service {
-	return &Service{store: client}
+type Service struct {
+	store     *store.Client
+	library   Library
+	policies  Policies
+	publisher Publisher
+	now       func() time.Time
+}
+
+func New(client *store.Client, library Library, policies Policies, publisher Publisher) *Service {
+	return &Service{store: client, library: library, policies: policies, publisher: publisher, now: time.Now}
 }
 
 func (s *Service) Create(ctx context.Context, name string, sessionID uuid.UUID) (Joined, error) {
-	var groupID, previousID uuid.UUID
+	var groupID uuid.UUID
+	var left *Departure
+	var messages []Outgoing
 
 	err := s.store.WithTx(ctx, func(tx *store.Tx) error {
-		member, err := memberOf(ctx, tx, sessionID)
+		var err error
+		left, err = s.vacate(ctx, tx, sessionID, uuid.Nil)
 		if err != nil {
 			return err
-		}
-		if member != nil {
-			previousID = member.GroupID
 		}
 
 		group, err := tx.SyncPlayGroup.Create().SetName(name).Save(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to create syncplay group: %w", err)
 		}
-
 		groupID = group.ID
 
-		return join(ctx, tx, group.ID, previousID, sessionID)
+		messages, err = s.seat(ctx, tx, groupID, sessionID)
+
+		return err
 	})
 	if err != nil {
 		return Joined{}, err
 	}
 
-	return s.joined(ctx, groupID, previousID, false)
+	return s.joined(ctx, groupID, left, false, messages)
 }
 
-func (s *Service) Join(ctx context.Context, groupID, sessionID uuid.UUID) (Joined, error) {
-	var previousID uuid.UUID
+func (s *Service) Join(ctx context.Context, groupID, sessionID, userID uuid.UUID) (Joined, error) {
+	var left *Departure
+	var messages []Outgoing
 	var rejoined bool
 
 	err := s.store.WithTx(ctx, func(tx *store.Tx) error {
-		exists, err := tx.SyncPlayGroup.Query().
-			Where(groupmodal.ID(groupID), groupmodal.HasMembers()).
-			Exist(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to query syncplay group %s: %w", groupID, err)
-		}
-		if !exists {
-			return ErrNoGroup
-		}
-
-		member, err := memberOf(ctx, tx, sessionID)
+		room, err := lockRoom(ctx, tx, groupID)
 		if err != nil {
 			return err
 		}
-		if member != nil {
-			if member.GroupID == groupID {
-				rejoined = true
-			} else {
-				previousID = member.GroupID
-			}
+		if len(room.Seats) == 0 {
+			return ErrNoGroup
 		}
 
-		return join(ctx, tx, groupID, previousID, sessionID)
+		group, err := tx.SyncPlayGroup.Query().Where(groupmodal.ID(groupID)).WithQueue().OnlyModel(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to read the queue of syncplay group %s: %w", groupID, err)
+		}
+		allowed, err := s.CanSeeQueue(ctx, userID, group)
+		if err != nil {
+			return err
+		}
+		if !allowed {
+			return ErrAccessDenied
+		}
+
+		rejoined = room.seat(sessionID) != nil
+
+		left, err = s.vacate(ctx, tx, sessionID, groupID)
+		if err != nil {
+			return err
+		}
+
+		messages, err = s.seat(ctx, tx, groupID, sessionID)
+
+		return err
 	})
 	if err != nil {
 		return Joined{}, err
 	}
 
-	return s.joined(ctx, groupID, previousID, rejoined)
+	return s.joined(ctx, groupID, left, rejoined, messages)
 }
 
 func (s *Service) Leave(ctx context.Context, sessionID uuid.UUID) (*Departure, error) {
-	var groupID uuid.UUID
+	var left *Departure
 
 	err := s.store.WithTx(ctx, func(tx *store.Tx) error {
 		member, err := memberOf(ctx, tx, sessionID)
-		if err != nil || member == nil {
+		if err != nil {
 			return err
 		}
+		if member == nil {
+			return ErrNotInGroup
+		}
 
-		groupID = member.GroupID
+		left, err = s.vacate(ctx, tx, sessionID, uuid.Nil)
+		if err != nil {
+			return err
+		}
 
 		if err := tx.SyncPlayGroupMember.DeleteOneID(member.ID).Exec(ctx); err != nil {
 			return fmt.Errorf("failed to leave syncplay group: %w", err)
 		}
 
-		return touch(ctx, tx, groupID)
+		return nil
 	})
-	if err != nil || groupID == uuid.Nil {
+	if err != nil {
 		return nil, err
 	}
 
-	return s.departure(ctx, groupID)
+	return left, nil
 }
 
-func (s *Service) List(ctx context.Context) ([]*Group, error) {
-	groups, err := withParticipants(s.store.SyncPlayGroup.Query()).
+func (s *Service) Apply(ctx context.Context, sessionID uuid.UUID, request Request) ([]Outgoing, error) {
+	var messages []Outgoing
+
+	err := s.store.WithTx(ctx, func(tx *store.Tx) error {
+		member, err := memberOf(ctx, tx, sessionID)
+		if err != nil {
+			return err
+		}
+		if member == nil {
+			return ErrNotInGroup
+		}
+
+		room, err := lockRoom(ctx, tx, member.GroupID)
+		if err != nil {
+			return err
+		}
+
+		seat := room.seat(sessionID)
+		if seat == nil {
+			return ErrNotInGroup
+		}
+
+		room.catalogue, err = s.known(ctx, room, request.ItemIDs)
+		if err != nil {
+			return err
+		}
+
+		room.now = s.now()
+		room.handle(request, room.State, seat)
+		messages = room.out
+
+		return saveRoom(ctx, tx, room)
+	})
+
+	return messages, err
+}
+
+func (s *Service) List(ctx context.Context, userID uuid.UUID) ([]*Group, error) {
+	groups, err := withRoom(s.store.SyncPlayGroup.Query()).
 		Where(groupmodal.HasMembers()).
 		Order(groupmodal.ByCreatedAt(), groupmodal.ByID()).
 		AllModels(ctx)
@@ -154,11 +229,39 @@ func (s *Service) List(ctx context.Context) ([]*Group, error) {
 		return nil, fmt.Errorf("failed to list syncplay groups: %w", err)
 	}
 
-	return groups, nil
+	visible := make([]*Group, 0, len(groups))
+	for _, group := range groups {
+		allowed, err := s.CanSeeQueue(ctx, userID, group)
+		if err != nil {
+			return nil, err
+		}
+		if allowed {
+			visible = append(visible, group)
+		}
+	}
+
+	return visible, nil
+}
+
+func (s *Service) GroupFor(ctx context.Context, userID, groupID uuid.UUID) (*Group, error) {
+	group, err := s.GroupByID(ctx, groupID)
+	if err != nil {
+		return nil, err
+	}
+
+	allowed, err := s.CanSeeQueue(ctx, userID, group)
+	if err != nil {
+		return nil, err
+	}
+	if !allowed {
+		return nil, ErrNoGroup
+	}
+
+	return group, nil
 }
 
 func (s *Service) GroupByID(ctx context.Context, groupID uuid.UUID) (*Group, error) {
-	group, err := withParticipants(s.store.SyncPlayGroup.Query()).
+	group, err := withRoom(s.store.SyncPlayGroup.Query()).
 		Where(groupmodal.ID(groupID), groupmodal.HasMembers()).
 		OnlyModel(ctx)
 	if store.IsNotFound(err) {
@@ -185,65 +288,76 @@ func (s *Service) GroupBySessionID(ctx context.Context, sessionID uuid.UUID) (*G
 	return s.GroupByID(ctx, member.GroupID)
 }
 
-func (s *Service) joined(ctx context.Context, groupID, previousID uuid.UUID, rejoined bool) (Joined, error) {
+func (s *Service) joined(ctx context.Context, groupID uuid.UUID, left *Departure, rejoined bool, messages []Outgoing) (Joined, error) {
 	group, err := s.GroupByID(ctx, groupID)
 	if err != nil {
 		return Joined{}, err
 	}
 
-	result := Joined{Group: group, Rejoined: rejoined}
-	if previousID == uuid.Nil {
-		return result, nil
-	}
-
-	left, err := s.departure(ctx, previousID)
-	if err != nil {
-		return Joined{}, err
-	}
-
-	result.Left = left
-
-	return result, nil
+	return Joined{Group: group, Left: left, Rejoined: rejoined, Messages: messages}, nil
 }
 
-func (s *Service) departure(ctx context.Context, groupID uuid.UUID) (*Departure, error) {
-	group, err := s.GroupByID(ctx, groupID)
-	if errors.Is(err, ErrNoGroup) {
-		return &Departure{GroupID: groupID}, nil
+func (s *Service) vacate(ctx context.Context, tx *store.Tx, sessionID, staying uuid.UUID) (*Departure, error) {
+	member, err := memberOf(ctx, tx, sessionID)
+	if err != nil || member == nil || member.GroupID == staying {
+		return nil, err
 	}
+
+	room, err := lockRoom(ctx, tx, member.GroupID)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Departure{GroupID: groupID, Remaining: Participants(group)}, nil
-}
+	room.catalogue = known{}
+	room.now = s.now()
+	room.leave(sessionID)
 
-func join(ctx context.Context, tx *store.Tx, groupID, previousID, sessionID uuid.UUID) error {
-	if err := tx.SyncPlayGroupMember.Create().
-		SetGroupID(groupID).
-		SetSessionID(sessionID).
-		OnConflictColumns(membermodal.FieldSessionID).
-		UpdateGroupID().
-		UpdateUpdatedAt().
-		Exec(ctx); err != nil {
-		return fmt.Errorf("failed to join syncplay group: %w", err)
+	if err := saveRoom(ctx, tx, room); err != nil {
+		return nil, err
 	}
 
-	if previousID != uuid.Nil {
-		if err := touch(ctx, tx, previousID); err != nil {
-			return err
+	return &Departure{GroupID: room.ID, Remaining: seated(room), Messages: room.out}, nil
+}
+
+func (s *Service) seat(ctx context.Context, tx *store.Tx, groupID, sessionID uuid.UUID) ([]Outgoing, error) {
+	member, err := memberOf(ctx, tx, sessionID)
+	if err != nil {
+		return nil, err
+	}
+
+	if member == nil || member.GroupID != groupID {
+		if err := tx.SyncPlayGroupMember.Create().
+			SetGroupID(groupID).
+			SetSessionID(sessionID).
+			OnConflictColumns(membermodal.FieldSessionID).
+			UpdateGroupID().
+			UpdatePing().
+			UpdateIsBuffering().
+			UpdateIgnoreWait().
+			UpdateUpdatedAt().
+			Exec(ctx); err != nil {
+			return nil, fmt.Errorf("failed to join syncplay group: %w", err)
 		}
 	}
 
-	return touch(ctx, tx, groupID)
-}
-
-func touch(ctx context.Context, tx *store.Tx, groupID uuid.UUID) error {
-	if err := tx.SyncPlayGroup.UpdateOneID(groupID).SetUpdatedAt(time.Now()).Exec(ctx); err != nil {
-		return fmt.Errorf("failed to touch syncplay group %s: %w", groupID, err)
+	room, err := lockRoom(ctx, tx, groupID)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	room.catalogue, err = s.known(ctx, room, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	room.now = s.now()
+	room.join(room.seat(sessionID))
+
+	if err := saveRoom(ctx, tx, room); err != nil {
+		return nil, err
+	}
+
+	return room.out, nil
 }
 
 func memberOf(ctx context.Context, tx *store.Tx, sessionID uuid.UUID) (*Member, error) {
@@ -262,6 +376,7 @@ func memberOf(ctx context.Context, tx *store.Tx, sessionID uuid.UUID) (*Member, 
 
 func withParticipants(query *store.SyncPlayGroupQuery) *store.SyncPlayGroupQuery {
 	return query.WithMembers(func(members *store.SyncPlayGroupMemberQuery) {
+		members.Order(membermodal.ByCreatedAt(), membermodal.ByID())
 		members.WithSession(func(sessions *store.SessionQuery) {
 			sessions.WithUser()
 		})

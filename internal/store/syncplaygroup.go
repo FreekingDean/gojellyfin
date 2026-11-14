@@ -24,6 +24,32 @@ type SyncPlayGroup struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
+	// State holds the value of the "state" field.
+	State syncplaygroup.State `json:"state,omitempty"`
+	// PositionTicks holds the value of the "position_ticks" field.
+	PositionTicks int64 `json:"position_ticks,omitempty"`
+	// RunTimeTicks holds the value of the "run_time_ticks" field.
+	RunTimeTicks int64 `json:"run_time_ticks,omitempty"`
+	// LastActivity holds the value of the "last_activity" field.
+	LastActivity time.Time `json:"last_activity,omitempty"`
+	// PlayingIndex holds the value of the "playing_index" field.
+	PlayingIndex int `json:"playing_index,omitempty"`
+	// ShuffleMode holds the value of the "shuffle_mode" field.
+	ShuffleMode syncplaygroup.ShuffleMode `json:"shuffle_mode,omitempty"`
+	// RepeatMode holds the value of the "repeat_mode" field.
+	RepeatMode syncplaygroup.RepeatMode `json:"repeat_mode,omitempty"`
+	// QueueChangedAt holds the value of the "queue_changed_at" field.
+	QueueChangedAt time.Time `json:"queue_changed_at,omitempty"`
+	// ResumePlaying holds the value of the "resume_playing" field.
+	ResumePlaying bool `json:"resume_playing,omitempty"`
+	// WaitingFrom holds the value of the "waiting_from" field.
+	WaitingFrom *syncplaygroup.WaitingFrom `json:"waiting_from,omitempty"`
+	// PositionJumped holds the value of the "position_jumped" field.
+	PositionJumped bool `json:"position_jumped,omitempty"`
+	// IgnoreBuffering holds the value of the "ignore_buffering" field.
+	IgnoreBuffering bool `json:"ignore_buffering,omitempty"`
+	// WaitDeadline holds the value of the "wait_deadline" field.
+	WaitDeadline *time.Time `json:"wait_deadline,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SyncPlayGroupQuery when eager-loading is set.
 	Edges        SyncPlayGroupEdges `json:"edges"`
@@ -34,9 +60,11 @@ type SyncPlayGroup struct {
 type SyncPlayGroupEdges struct {
 	// Members holds the value of the members edge.
 	Members []*SyncPlayGroupMember `json:"members,omitempty"`
+	// Queue holds the value of the queue edge.
+	Queue []*SyncPlayQueueEntry `json:"queue,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // MembersOrErr returns the Members value or an error if the edge
@@ -48,14 +76,27 @@ func (e SyncPlayGroupEdges) MembersOrErr() ([]*SyncPlayGroupMember, error) {
 	return nil, &NotLoadedError{edge: "members"}
 }
 
+// QueueOrErr returns the Queue value or an error if the edge
+// was not loaded in eager-loading.
+func (e SyncPlayGroupEdges) QueueOrErr() ([]*SyncPlayQueueEntry, error) {
+	if e.loadedTypes[1] {
+		return e.Queue, nil
+	}
+	return nil, &NotLoadedError{edge: "queue"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*SyncPlayGroup) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case syncplaygroup.FieldName:
+		case syncplaygroup.FieldResumePlaying, syncplaygroup.FieldPositionJumped, syncplaygroup.FieldIgnoreBuffering:
+			values[i] = new(sql.NullBool)
+		case syncplaygroup.FieldPositionTicks, syncplaygroup.FieldRunTimeTicks, syncplaygroup.FieldPlayingIndex:
+			values[i] = new(sql.NullInt64)
+		case syncplaygroup.FieldName, syncplaygroup.FieldState, syncplaygroup.FieldShuffleMode, syncplaygroup.FieldRepeatMode, syncplaygroup.FieldWaitingFrom:
 			values[i] = new(sql.NullString)
-		case syncplaygroup.FieldCreatedAt, syncplaygroup.FieldUpdatedAt:
+		case syncplaygroup.FieldCreatedAt, syncplaygroup.FieldUpdatedAt, syncplaygroup.FieldLastActivity, syncplaygroup.FieldQueueChangedAt, syncplaygroup.FieldWaitDeadline:
 			values[i] = new(sql.NullTime)
 		case syncplaygroup.FieldID:
 			values[i] = new(uuid.UUID)
@@ -98,6 +139,86 @@ func (_m *SyncPlayGroup) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Name = value.String
 			}
+		case syncplaygroup.FieldState:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field state", values[i])
+			} else if value.Valid {
+				_m.State = syncplaygroup.State(value.String)
+			}
+		case syncplaygroup.FieldPositionTicks:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field position_ticks", values[i])
+			} else if value.Valid {
+				_m.PositionTicks = value.Int64
+			}
+		case syncplaygroup.FieldRunTimeTicks:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field run_time_ticks", values[i])
+			} else if value.Valid {
+				_m.RunTimeTicks = value.Int64
+			}
+		case syncplaygroup.FieldLastActivity:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field last_activity", values[i])
+			} else if value.Valid {
+				_m.LastActivity = value.Time
+			}
+		case syncplaygroup.FieldPlayingIndex:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field playing_index", values[i])
+			} else if value.Valid {
+				_m.PlayingIndex = int(value.Int64)
+			}
+		case syncplaygroup.FieldShuffleMode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field shuffle_mode", values[i])
+			} else if value.Valid {
+				_m.ShuffleMode = syncplaygroup.ShuffleMode(value.String)
+			}
+		case syncplaygroup.FieldRepeatMode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field repeat_mode", values[i])
+			} else if value.Valid {
+				_m.RepeatMode = syncplaygroup.RepeatMode(value.String)
+			}
+		case syncplaygroup.FieldQueueChangedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field queue_changed_at", values[i])
+			} else if value.Valid {
+				_m.QueueChangedAt = value.Time
+			}
+		case syncplaygroup.FieldResumePlaying:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field resume_playing", values[i])
+			} else if value.Valid {
+				_m.ResumePlaying = value.Bool
+			}
+		case syncplaygroup.FieldWaitingFrom:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field waiting_from", values[i])
+			} else if value.Valid {
+				_m.WaitingFrom = new(syncplaygroup.WaitingFrom)
+				*_m.WaitingFrom = syncplaygroup.WaitingFrom(value.String)
+			}
+		case syncplaygroup.FieldPositionJumped:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field position_jumped", values[i])
+			} else if value.Valid {
+				_m.PositionJumped = value.Bool
+			}
+		case syncplaygroup.FieldIgnoreBuffering:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field ignore_buffering", values[i])
+			} else if value.Valid {
+				_m.IgnoreBuffering = value.Bool
+			}
+		case syncplaygroup.FieldWaitDeadline:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field wait_deadline", values[i])
+			} else if value.Valid {
+				_m.WaitDeadline = new(time.Time)
+				*_m.WaitDeadline = value.Time
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -114,6 +235,11 @@ func (_m *SyncPlayGroup) Value(name string) (ent.Value, error) {
 // QueryMembers queries the "members" edge of the SyncPlayGroup entity.
 func (_m *SyncPlayGroup) QueryMembers() *SyncPlayGroupMemberQuery {
 	return NewSyncPlayGroupClient(_m.config).QueryMembers(_m)
+}
+
+// QueryQueue queries the "queue" edge of the SyncPlayGroup entity.
+func (_m *SyncPlayGroup) QueryQueue() *SyncPlayQueueEntryQuery {
+	return NewSyncPlayGroupClient(_m.config).QueryQueue(_m)
 }
 
 // Update returns a builder for updating this SyncPlayGroup.
@@ -147,6 +273,49 @@ func (_m *SyncPlayGroup) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)
+	builder.WriteString(", ")
+	builder.WriteString("state=")
+	builder.WriteString(fmt.Sprintf("%v", _m.State))
+	builder.WriteString(", ")
+	builder.WriteString("position_ticks=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PositionTicks))
+	builder.WriteString(", ")
+	builder.WriteString("run_time_ticks=")
+	builder.WriteString(fmt.Sprintf("%v", _m.RunTimeTicks))
+	builder.WriteString(", ")
+	builder.WriteString("last_activity=")
+	builder.WriteString(_m.LastActivity.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("playing_index=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PlayingIndex))
+	builder.WriteString(", ")
+	builder.WriteString("shuffle_mode=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ShuffleMode))
+	builder.WriteString(", ")
+	builder.WriteString("repeat_mode=")
+	builder.WriteString(fmt.Sprintf("%v", _m.RepeatMode))
+	builder.WriteString(", ")
+	builder.WriteString("queue_changed_at=")
+	builder.WriteString(_m.QueueChangedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("resume_playing=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ResumePlaying))
+	builder.WriteString(", ")
+	if v := _m.WaitingFrom; v != nil {
+		builder.WriteString("waiting_from=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("position_jumped=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PositionJumped))
+	builder.WriteString(", ")
+	builder.WriteString("ignore_buffering=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IgnoreBuffering))
+	builder.WriteString(", ")
+	if v := _m.WaitDeadline; v != nil {
+		builder.WriteString("wait_deadline=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

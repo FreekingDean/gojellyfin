@@ -93,6 +93,9 @@ type SyncPlayGroup func(*sql.Selector)
 // SyncPlayGroupMember is the predicate function for syncplaygroupmember builders.
 type SyncPlayGroupMember func(*sql.Selector)
 
+// SyncPlayQueueEntry is the predicate function for syncplayqueueentry builders.
+type SyncPlayQueueEntry func(*sql.Selector)
+
 // User is the predicate function for user builders.
 type User func(*sql.Selector)
 

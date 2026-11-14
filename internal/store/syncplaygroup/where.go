@@ -71,6 +71,51 @@ func Name(v string) predicate.SyncPlayGroup {
 	return predicate.SyncPlayGroup(sql.FieldEQ(FieldName, v))
 }
 
+// PositionTicks applies equality check predicate on the "position_ticks" field. It's identical to PositionTicksEQ.
+func PositionTicks(v int64) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldEQ(FieldPositionTicks, v))
+}
+
+// RunTimeTicks applies equality check predicate on the "run_time_ticks" field. It's identical to RunTimeTicksEQ.
+func RunTimeTicks(v int64) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldEQ(FieldRunTimeTicks, v))
+}
+
+// LastActivity applies equality check predicate on the "last_activity" field. It's identical to LastActivityEQ.
+func LastActivity(v time.Time) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldEQ(FieldLastActivity, v))
+}
+
+// PlayingIndex applies equality check predicate on the "playing_index" field. It's identical to PlayingIndexEQ.
+func PlayingIndex(v int) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldEQ(FieldPlayingIndex, v))
+}
+
+// QueueChangedAt applies equality check predicate on the "queue_changed_at" field. It's identical to QueueChangedAtEQ.
+func QueueChangedAt(v time.Time) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldEQ(FieldQueueChangedAt, v))
+}
+
+// ResumePlaying applies equality check predicate on the "resume_playing" field. It's identical to ResumePlayingEQ.
+func ResumePlaying(v bool) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldEQ(FieldResumePlaying, v))
+}
+
+// PositionJumped applies equality check predicate on the "position_jumped" field. It's identical to PositionJumpedEQ.
+func PositionJumped(v bool) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldEQ(FieldPositionJumped, v))
+}
+
+// IgnoreBuffering applies equality check predicate on the "ignore_buffering" field. It's identical to IgnoreBufferingEQ.
+func IgnoreBuffering(v bool) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldEQ(FieldIgnoreBuffering, v))
+}
+
+// WaitDeadline applies equality check predicate on the "wait_deadline" field. It's identical to WaitDeadlineEQ.
+func WaitDeadline(v time.Time) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldEQ(FieldWaitDeadline, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.SyncPlayGroup {
 	return predicate.SyncPlayGroup(sql.FieldEQ(FieldCreatedAt, v))
@@ -216,6 +261,376 @@ func NameContainsFold(v string) predicate.SyncPlayGroup {
 	return predicate.SyncPlayGroup(sql.FieldContainsFold(FieldName, v))
 }
 
+// StateEQ applies the EQ predicate on the "state" field.
+func StateEQ(v State) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldEQ(FieldState, v))
+}
+
+// StateNEQ applies the NEQ predicate on the "state" field.
+func StateNEQ(v State) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldNEQ(FieldState, v))
+}
+
+// StateIn applies the In predicate on the "state" field.
+func StateIn(vs ...State) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldIn(FieldState, vs...))
+}
+
+// StateNotIn applies the NotIn predicate on the "state" field.
+func StateNotIn(vs ...State) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldNotIn(FieldState, vs...))
+}
+
+// PositionTicksEQ applies the EQ predicate on the "position_ticks" field.
+func PositionTicksEQ(v int64) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldEQ(FieldPositionTicks, v))
+}
+
+// PositionTicksNEQ applies the NEQ predicate on the "position_ticks" field.
+func PositionTicksNEQ(v int64) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldNEQ(FieldPositionTicks, v))
+}
+
+// PositionTicksIn applies the In predicate on the "position_ticks" field.
+func PositionTicksIn(vs ...int64) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldIn(FieldPositionTicks, vs...))
+}
+
+// PositionTicksNotIn applies the NotIn predicate on the "position_ticks" field.
+func PositionTicksNotIn(vs ...int64) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldNotIn(FieldPositionTicks, vs...))
+}
+
+// PositionTicksGT applies the GT predicate on the "position_ticks" field.
+func PositionTicksGT(v int64) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldGT(FieldPositionTicks, v))
+}
+
+// PositionTicksGTE applies the GTE predicate on the "position_ticks" field.
+func PositionTicksGTE(v int64) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldGTE(FieldPositionTicks, v))
+}
+
+// PositionTicksLT applies the LT predicate on the "position_ticks" field.
+func PositionTicksLT(v int64) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldLT(FieldPositionTicks, v))
+}
+
+// PositionTicksLTE applies the LTE predicate on the "position_ticks" field.
+func PositionTicksLTE(v int64) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldLTE(FieldPositionTicks, v))
+}
+
+// RunTimeTicksEQ applies the EQ predicate on the "run_time_ticks" field.
+func RunTimeTicksEQ(v int64) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldEQ(FieldRunTimeTicks, v))
+}
+
+// RunTimeTicksNEQ applies the NEQ predicate on the "run_time_ticks" field.
+func RunTimeTicksNEQ(v int64) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldNEQ(FieldRunTimeTicks, v))
+}
+
+// RunTimeTicksIn applies the In predicate on the "run_time_ticks" field.
+func RunTimeTicksIn(vs ...int64) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldIn(FieldRunTimeTicks, vs...))
+}
+
+// RunTimeTicksNotIn applies the NotIn predicate on the "run_time_ticks" field.
+func RunTimeTicksNotIn(vs ...int64) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldNotIn(FieldRunTimeTicks, vs...))
+}
+
+// RunTimeTicksGT applies the GT predicate on the "run_time_ticks" field.
+func RunTimeTicksGT(v int64) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldGT(FieldRunTimeTicks, v))
+}
+
+// RunTimeTicksGTE applies the GTE predicate on the "run_time_ticks" field.
+func RunTimeTicksGTE(v int64) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldGTE(FieldRunTimeTicks, v))
+}
+
+// RunTimeTicksLT applies the LT predicate on the "run_time_ticks" field.
+func RunTimeTicksLT(v int64) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldLT(FieldRunTimeTicks, v))
+}
+
+// RunTimeTicksLTE applies the LTE predicate on the "run_time_ticks" field.
+func RunTimeTicksLTE(v int64) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldLTE(FieldRunTimeTicks, v))
+}
+
+// LastActivityEQ applies the EQ predicate on the "last_activity" field.
+func LastActivityEQ(v time.Time) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldEQ(FieldLastActivity, v))
+}
+
+// LastActivityNEQ applies the NEQ predicate on the "last_activity" field.
+func LastActivityNEQ(v time.Time) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldNEQ(FieldLastActivity, v))
+}
+
+// LastActivityIn applies the In predicate on the "last_activity" field.
+func LastActivityIn(vs ...time.Time) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldIn(FieldLastActivity, vs...))
+}
+
+// LastActivityNotIn applies the NotIn predicate on the "last_activity" field.
+func LastActivityNotIn(vs ...time.Time) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldNotIn(FieldLastActivity, vs...))
+}
+
+// LastActivityGT applies the GT predicate on the "last_activity" field.
+func LastActivityGT(v time.Time) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldGT(FieldLastActivity, v))
+}
+
+// LastActivityGTE applies the GTE predicate on the "last_activity" field.
+func LastActivityGTE(v time.Time) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldGTE(FieldLastActivity, v))
+}
+
+// LastActivityLT applies the LT predicate on the "last_activity" field.
+func LastActivityLT(v time.Time) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldLT(FieldLastActivity, v))
+}
+
+// LastActivityLTE applies the LTE predicate on the "last_activity" field.
+func LastActivityLTE(v time.Time) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldLTE(FieldLastActivity, v))
+}
+
+// PlayingIndexEQ applies the EQ predicate on the "playing_index" field.
+func PlayingIndexEQ(v int) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldEQ(FieldPlayingIndex, v))
+}
+
+// PlayingIndexNEQ applies the NEQ predicate on the "playing_index" field.
+func PlayingIndexNEQ(v int) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldNEQ(FieldPlayingIndex, v))
+}
+
+// PlayingIndexIn applies the In predicate on the "playing_index" field.
+func PlayingIndexIn(vs ...int) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldIn(FieldPlayingIndex, vs...))
+}
+
+// PlayingIndexNotIn applies the NotIn predicate on the "playing_index" field.
+func PlayingIndexNotIn(vs ...int) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldNotIn(FieldPlayingIndex, vs...))
+}
+
+// PlayingIndexGT applies the GT predicate on the "playing_index" field.
+func PlayingIndexGT(v int) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldGT(FieldPlayingIndex, v))
+}
+
+// PlayingIndexGTE applies the GTE predicate on the "playing_index" field.
+func PlayingIndexGTE(v int) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldGTE(FieldPlayingIndex, v))
+}
+
+// PlayingIndexLT applies the LT predicate on the "playing_index" field.
+func PlayingIndexLT(v int) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldLT(FieldPlayingIndex, v))
+}
+
+// PlayingIndexLTE applies the LTE predicate on the "playing_index" field.
+func PlayingIndexLTE(v int) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldLTE(FieldPlayingIndex, v))
+}
+
+// ShuffleModeEQ applies the EQ predicate on the "shuffle_mode" field.
+func ShuffleModeEQ(v ShuffleMode) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldEQ(FieldShuffleMode, v))
+}
+
+// ShuffleModeNEQ applies the NEQ predicate on the "shuffle_mode" field.
+func ShuffleModeNEQ(v ShuffleMode) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldNEQ(FieldShuffleMode, v))
+}
+
+// ShuffleModeIn applies the In predicate on the "shuffle_mode" field.
+func ShuffleModeIn(vs ...ShuffleMode) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldIn(FieldShuffleMode, vs...))
+}
+
+// ShuffleModeNotIn applies the NotIn predicate on the "shuffle_mode" field.
+func ShuffleModeNotIn(vs ...ShuffleMode) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldNotIn(FieldShuffleMode, vs...))
+}
+
+// RepeatModeEQ applies the EQ predicate on the "repeat_mode" field.
+func RepeatModeEQ(v RepeatMode) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldEQ(FieldRepeatMode, v))
+}
+
+// RepeatModeNEQ applies the NEQ predicate on the "repeat_mode" field.
+func RepeatModeNEQ(v RepeatMode) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldNEQ(FieldRepeatMode, v))
+}
+
+// RepeatModeIn applies the In predicate on the "repeat_mode" field.
+func RepeatModeIn(vs ...RepeatMode) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldIn(FieldRepeatMode, vs...))
+}
+
+// RepeatModeNotIn applies the NotIn predicate on the "repeat_mode" field.
+func RepeatModeNotIn(vs ...RepeatMode) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldNotIn(FieldRepeatMode, vs...))
+}
+
+// QueueChangedAtEQ applies the EQ predicate on the "queue_changed_at" field.
+func QueueChangedAtEQ(v time.Time) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldEQ(FieldQueueChangedAt, v))
+}
+
+// QueueChangedAtNEQ applies the NEQ predicate on the "queue_changed_at" field.
+func QueueChangedAtNEQ(v time.Time) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldNEQ(FieldQueueChangedAt, v))
+}
+
+// QueueChangedAtIn applies the In predicate on the "queue_changed_at" field.
+func QueueChangedAtIn(vs ...time.Time) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldIn(FieldQueueChangedAt, vs...))
+}
+
+// QueueChangedAtNotIn applies the NotIn predicate on the "queue_changed_at" field.
+func QueueChangedAtNotIn(vs ...time.Time) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldNotIn(FieldQueueChangedAt, vs...))
+}
+
+// QueueChangedAtGT applies the GT predicate on the "queue_changed_at" field.
+func QueueChangedAtGT(v time.Time) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldGT(FieldQueueChangedAt, v))
+}
+
+// QueueChangedAtGTE applies the GTE predicate on the "queue_changed_at" field.
+func QueueChangedAtGTE(v time.Time) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldGTE(FieldQueueChangedAt, v))
+}
+
+// QueueChangedAtLT applies the LT predicate on the "queue_changed_at" field.
+func QueueChangedAtLT(v time.Time) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldLT(FieldQueueChangedAt, v))
+}
+
+// QueueChangedAtLTE applies the LTE predicate on the "queue_changed_at" field.
+func QueueChangedAtLTE(v time.Time) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldLTE(FieldQueueChangedAt, v))
+}
+
+// ResumePlayingEQ applies the EQ predicate on the "resume_playing" field.
+func ResumePlayingEQ(v bool) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldEQ(FieldResumePlaying, v))
+}
+
+// ResumePlayingNEQ applies the NEQ predicate on the "resume_playing" field.
+func ResumePlayingNEQ(v bool) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldNEQ(FieldResumePlaying, v))
+}
+
+// WaitingFromEQ applies the EQ predicate on the "waiting_from" field.
+func WaitingFromEQ(v WaitingFrom) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldEQ(FieldWaitingFrom, v))
+}
+
+// WaitingFromNEQ applies the NEQ predicate on the "waiting_from" field.
+func WaitingFromNEQ(v WaitingFrom) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldNEQ(FieldWaitingFrom, v))
+}
+
+// WaitingFromIn applies the In predicate on the "waiting_from" field.
+func WaitingFromIn(vs ...WaitingFrom) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldIn(FieldWaitingFrom, vs...))
+}
+
+// WaitingFromNotIn applies the NotIn predicate on the "waiting_from" field.
+func WaitingFromNotIn(vs ...WaitingFrom) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldNotIn(FieldWaitingFrom, vs...))
+}
+
+// WaitingFromIsNil applies the IsNil predicate on the "waiting_from" field.
+func WaitingFromIsNil() predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldIsNull(FieldWaitingFrom))
+}
+
+// WaitingFromNotNil applies the NotNil predicate on the "waiting_from" field.
+func WaitingFromNotNil() predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldNotNull(FieldWaitingFrom))
+}
+
+// PositionJumpedEQ applies the EQ predicate on the "position_jumped" field.
+func PositionJumpedEQ(v bool) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldEQ(FieldPositionJumped, v))
+}
+
+// PositionJumpedNEQ applies the NEQ predicate on the "position_jumped" field.
+func PositionJumpedNEQ(v bool) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldNEQ(FieldPositionJumped, v))
+}
+
+// IgnoreBufferingEQ applies the EQ predicate on the "ignore_buffering" field.
+func IgnoreBufferingEQ(v bool) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldEQ(FieldIgnoreBuffering, v))
+}
+
+// IgnoreBufferingNEQ applies the NEQ predicate on the "ignore_buffering" field.
+func IgnoreBufferingNEQ(v bool) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldNEQ(FieldIgnoreBuffering, v))
+}
+
+// WaitDeadlineEQ applies the EQ predicate on the "wait_deadline" field.
+func WaitDeadlineEQ(v time.Time) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldEQ(FieldWaitDeadline, v))
+}
+
+// WaitDeadlineNEQ applies the NEQ predicate on the "wait_deadline" field.
+func WaitDeadlineNEQ(v time.Time) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldNEQ(FieldWaitDeadline, v))
+}
+
+// WaitDeadlineIn applies the In predicate on the "wait_deadline" field.
+func WaitDeadlineIn(vs ...time.Time) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldIn(FieldWaitDeadline, vs...))
+}
+
+// WaitDeadlineNotIn applies the NotIn predicate on the "wait_deadline" field.
+func WaitDeadlineNotIn(vs ...time.Time) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldNotIn(FieldWaitDeadline, vs...))
+}
+
+// WaitDeadlineGT applies the GT predicate on the "wait_deadline" field.
+func WaitDeadlineGT(v time.Time) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldGT(FieldWaitDeadline, v))
+}
+
+// WaitDeadlineGTE applies the GTE predicate on the "wait_deadline" field.
+func WaitDeadlineGTE(v time.Time) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldGTE(FieldWaitDeadline, v))
+}
+
+// WaitDeadlineLT applies the LT predicate on the "wait_deadline" field.
+func WaitDeadlineLT(v time.Time) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldLT(FieldWaitDeadline, v))
+}
+
+// WaitDeadlineLTE applies the LTE predicate on the "wait_deadline" field.
+func WaitDeadlineLTE(v time.Time) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldLTE(FieldWaitDeadline, v))
+}
+
+// WaitDeadlineIsNil applies the IsNil predicate on the "wait_deadline" field.
+func WaitDeadlineIsNil() predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldIsNull(FieldWaitDeadline))
+}
+
+// WaitDeadlineNotNil applies the NotNil predicate on the "wait_deadline" field.
+func WaitDeadlineNotNil() predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(sql.FieldNotNull(FieldWaitDeadline))
+}
+
 // HasMembers applies the HasEdge predicate on the "members" edge.
 func HasMembers() predicate.SyncPlayGroup {
 	return predicate.SyncPlayGroup(func(s *sql.Selector) {
@@ -231,6 +646,29 @@ func HasMembers() predicate.SyncPlayGroup {
 func HasMembersWith(preds ...predicate.SyncPlayGroupMember) predicate.SyncPlayGroup {
 	return predicate.SyncPlayGroup(func(s *sql.Selector) {
 		step := newMembersStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasQueue applies the HasEdge predicate on the "queue" edge.
+func HasQueue() predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, QueueTable, QueueColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasQueueWith applies the HasEdge predicate on the "queue" edge with a given conditions (other predicates).
+func HasQueueWith(preds ...predicate.SyncPlayQueueEntry) predicate.SyncPlayGroup {
+	return predicate.SyncPlayGroup(func(s *sql.Selector) {
+		step := newQueueStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

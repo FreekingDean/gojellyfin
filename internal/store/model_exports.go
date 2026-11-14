@@ -20,6 +20,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/report"
 	"github.com/FreekingDean/gojellyfin/internal/store/request"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
+	"github.com/FreekingDean/gojellyfin/internal/store/syncplaygroup"
 	"github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
 	"github.com/FreekingDean/gojellyfin/internal/store/userpolicy"
 	"github.com/google/uuid"
@@ -676,6 +677,7 @@ type ItemModel struct {
 	ActivityLogEntries []*ActivityLogEntryModel
 	Playlist           *PlaylistModel
 	PlaylistEntries    []*PlaylistEntryModel
+	SyncPlayEntries    []*SyncPlayQueueEntryModel
 	Genres             []*GenreModel
 	Studios            []*StudioModel
 }
@@ -731,6 +733,7 @@ func fromItem(_m *Item) *ItemModel {
 		ActivityLogEntries: fromAllActivityLogEntry(_m.Edges.ActivityLogEntries),
 		Playlist:           fromPlaylist(_m.Edges.Playlist),
 		PlaylistEntries:    fromAllPlaylistEntry(_m.Edges.PlaylistEntries),
+		SyncPlayEntries:    fromAllSyncPlayQueueEntry(_m.Edges.SyncPlayEntries),
 		Genres:             fromAllGenre(_m.Edges.Genres),
 		Studios:            fromAllStudio(_m.Edges.Studios),
 	}
@@ -2254,11 +2257,25 @@ func (c *StudioClient) GetModel(ctx context.Context, id uuid.UUID) (*StudioModel
 type SyncPlayGroupModel struct {
 	ID uuid.UUID
 
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	Name      string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	Name            string
+	State           syncplaygroup.State
+	PositionTicks   int64
+	RunTimeTicks    int64
+	LastActivity    time.Time
+	PlayingIndex    int
+	ShuffleMode     syncplaygroup.ShuffleMode
+	RepeatMode      syncplaygroup.RepeatMode
+	QueueChangedAt  time.Time
+	ResumePlaying   bool
+	WaitingFrom     *syncplaygroup.WaitingFrom
+	PositionJumped  bool
+	IgnoreBuffering bool
+	WaitDeadline    *time.Time
 
 	Members []*SyncPlayGroupMemberModel
+	Queue   []*SyncPlayQueueEntryModel
 }
 
 func fromAllSyncPlayGroup(_m []*SyncPlayGroup) []*SyncPlayGroupModel {
@@ -2275,12 +2292,26 @@ func fromSyncPlayGroup(_m *SyncPlayGroup) *SyncPlayGroupModel {
 	}
 
 	return &SyncPlayGroupModel{
-		ID:        _m.ID,
-		CreatedAt: _m.CreatedAt,
-		UpdatedAt: _m.UpdatedAt,
-		Name:      _m.Name,
+		ID:              _m.ID,
+		CreatedAt:       _m.CreatedAt,
+		UpdatedAt:       _m.UpdatedAt,
+		Name:            _m.Name,
+		State:           _m.State,
+		PositionTicks:   _m.PositionTicks,
+		RunTimeTicks:    _m.RunTimeTicks,
+		LastActivity:    _m.LastActivity,
+		PlayingIndex:    _m.PlayingIndex,
+		ShuffleMode:     _m.ShuffleMode,
+		RepeatMode:      _m.RepeatMode,
+		QueueChangedAt:  _m.QueueChangedAt,
+		ResumePlaying:   _m.ResumePlaying,
+		WaitingFrom:     _m.WaitingFrom,
+		PositionJumped:  _m.PositionJumped,
+		IgnoreBuffering: _m.IgnoreBuffering,
+		WaitDeadline:    _m.WaitDeadline,
 
 		Members: fromAllSyncPlayGroupMember(_m.Edges.Members),
+		Queue:   fromAllSyncPlayQueueEntry(_m.Edges.Queue),
 	}
 }
 
@@ -2320,10 +2351,13 @@ func (c *SyncPlayGroupClient) GetModel(ctx context.Context, id uuid.UUID) (*Sync
 type SyncPlayGroupMemberModel struct {
 	ID uuid.UUID
 
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	GroupID   uuid.UUID
-	SessionID uuid.UUID
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	GroupID     uuid.UUID
+	SessionID   uuid.UUID
+	Ping        int64
+	IsBuffering bool
+	IgnoreWait  bool
 
 	Group   *SyncPlayGroupModel
 	Session *SessionModel
@@ -2343,11 +2377,14 @@ func fromSyncPlayGroupMember(_m *SyncPlayGroupMember) *SyncPlayGroupMemberModel 
 	}
 
 	return &SyncPlayGroupMemberModel{
-		ID:        _m.ID,
-		CreatedAt: _m.CreatedAt,
-		UpdatedAt: _m.UpdatedAt,
-		GroupID:   _m.GroupID,
-		SessionID: _m.SessionID,
+		ID:          _m.ID,
+		CreatedAt:   _m.CreatedAt,
+		UpdatedAt:   _m.UpdatedAt,
+		GroupID:     _m.GroupID,
+		SessionID:   _m.SessionID,
+		Ping:        _m.Ping,
+		IsBuffering: _m.IsBuffering,
+		IgnoreWait:  _m.IgnoreWait,
 
 		Group:   fromSyncPlayGroup(_m.Edges.Group),
 		Session: fromSession(_m.Edges.Session),
@@ -2385,6 +2422,80 @@ func (_q *SyncPlayGroupMemberQuery) AllModels(ctx context.Context) ([]*SyncPlayG
 func (c *SyncPlayGroupMemberClient) GetModel(ctx context.Context, id uuid.UUID) (*SyncPlayGroupMemberModel, error) {
 	_m, err := c.Get(ctx, id)
 	return fromSyncPlayGroupMember(_m), err
+}
+
+type SyncPlayQueueEntryModel struct {
+	ID uuid.UUID
+
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	GroupID       uuid.UUID
+	ItemID        uuid.UUID
+	SortedIndex   int
+	ShuffledIndex *int
+
+	Group *SyncPlayGroupModel
+	Item  *ItemModel
+}
+
+func fromAllSyncPlayQueueEntry(_m []*SyncPlayQueueEntry) []*SyncPlayQueueEntryModel {
+	models := make([]*SyncPlayQueueEntryModel, len(_m))
+	for i, v := range _m {
+		models[i] = fromSyncPlayQueueEntry(v)
+	}
+	return models
+}
+
+func fromSyncPlayQueueEntry(_m *SyncPlayQueueEntry) *SyncPlayQueueEntryModel {
+	if _m == nil {
+		return nil
+	}
+
+	return &SyncPlayQueueEntryModel{
+		ID:            _m.ID,
+		CreatedAt:     _m.CreatedAt,
+		UpdatedAt:     _m.UpdatedAt,
+		GroupID:       _m.GroupID,
+		ItemID:        _m.ItemID,
+		SortedIndex:   _m.SortedIndex,
+		ShuffledIndex: _m.ShuffledIndex,
+
+		Group: fromSyncPlayGroup(_m.Edges.Group),
+		Item:  fromItem(_m.Edges.Item),
+	}
+}
+
+func (_c *SyncPlayQueueEntryCreate) SaveModel(ctx context.Context) (*SyncPlayQueueEntryModel, error) {
+	_m, err := _c.Save(ctx)
+	return fromSyncPlayQueueEntry(_m), err
+}
+
+func (_u *SyncPlayQueueEntryUpdateOne) SaveModel(ctx context.Context) (*SyncPlayQueueEntryModel, error) {
+	_m, err := _u.Save(ctx)
+	return fromSyncPlayQueueEntry(_m), err
+}
+
+func (_q *SyncPlayQueueEntryQuery) OnlyModel(ctx context.Context) (*SyncPlayQueueEntryModel, error) {
+	_m, err := _q.Only(ctx)
+	return fromSyncPlayQueueEntry(_m), err
+}
+
+func (_q *SyncPlayQueueEntryQuery) FirstModel(ctx context.Context) (*SyncPlayQueueEntryModel, error) {
+	_m, err := _q.First(ctx)
+	return fromSyncPlayQueueEntry(_m), err
+}
+
+func (_q *SyncPlayQueueEntryQuery) AllModels(ctx context.Context) ([]*SyncPlayQueueEntryModel, error) {
+	_m, err := _q.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return fromAllSyncPlayQueueEntry(_m), nil
+}
+
+func (c *SyncPlayQueueEntryClient) GetModel(ctx context.Context, id uuid.UUID) (*SyncPlayQueueEntryModel, error) {
+	_m, err := c.Get(ctx, id)
+	return fromSyncPlayQueueEntry(_m), err
 }
 
 type UserModel struct {
