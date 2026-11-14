@@ -528,7 +528,7 @@ func validateLibraries(ctx context.Context, tx *store.Tx, entry Configured) erro
 
 	for _, library := range libraries {
 		if library.CollectionType != Fills(entry.Source.Kind) {
-			return invalid("%s cannot fill %s: Radarr fills a movies library and Sonarr a shows one", entry.Source.Name, library.Name)
+			return invalid("%s cannot fill %s: Radarr fills a movies library, Sonarr a shows one and Lidarr a music one", entry.Source.Name, library.Name)
 		}
 	}
 
@@ -536,11 +536,14 @@ func validateLibraries(ctx context.Context, tx *store.Tx, entry Configured) erro
 }
 
 func Fills(kind Kind) librarymodel.CollectionType {
-	if kind == KindSonarr {
+	switch kind {
+	case KindSonarr:
 		return librarymodel.CollectionTypeTvshows
+	case KindLidarr:
+		return librarymodel.CollectionTypeMusic
+	default:
+		return librarymodel.CollectionTypeMovies
 	}
-
-	return librarymodel.CollectionTypeMovies
 }
 
 func overlaps(one, other string) bool {

@@ -100,6 +100,11 @@ func TestService_RefreshItem_Music(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 	artistKey, albumKey, trackKey := ArtistKey(uuid.NewString()), AlbumKey(uuid.NewString()), TrackKey(uuid.NewString())
+	t.Cleanup(func() {
+		if _, err := fixture.client.Item.Delete().Where(itemmodel.KeyIn(trackKey, albumKey, artistKey)).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the music: %v", err)
+		}
+	})
 
 	for _, scanned := range []Scanned{
 		{

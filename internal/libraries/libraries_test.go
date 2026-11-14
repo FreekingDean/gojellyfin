@@ -24,7 +24,7 @@ func TestService_EnsureFixed(t *testing.T) {
 	client := connection.Client()
 	ctx := context.Background()
 	t.Cleanup(func() {
-		if _, err := client.Library.Delete().Where(librarymodel.IDIn(Movies.ID, Shows.ID)).Exec(context.Background()); err != nil {
+		if _, err := client.Library.Delete().Where(librarymodel.IDIn(Movies.ID, Shows.ID, Music.ID)).Exec(context.Background()); err != nil {
 			t.Errorf("failed to delete the fixed libraries: %v", err)
 		}
 	})
@@ -36,7 +36,7 @@ func TestService_EnsureFixed(t *testing.T) {
 		}
 	}
 
-	for _, fixed := range []Fixed{Movies, Shows} {
+	for _, fixed := range []Fixed{Movies, Shows, Music} {
 		found, err := client.Library.Query().
 			Where(librarymodel.CollectionTypeEQ(fixed.CollectionType)).
 			WithOptions().

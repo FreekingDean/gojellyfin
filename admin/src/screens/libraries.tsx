@@ -6,8 +6,8 @@ import * as mock from '../mock';
 import { Link, navigate } from '../router';
 import { Card, Dot, Field, Page, Pill, since } from '../ui';
 
-type Kind = 'Radarr' | 'Sonarr';
-type Slug = 'movies' | 'shows';
+type Kind = 'Radarr' | 'Sonarr' | 'Lidarr';
+type Slug = 'movies' | 'shows' | 'music';
 type Folder = { remote: string; local: string };
 type Requests = { profileId: number; profile?: string; folder: string; tag?: string };
 
@@ -33,7 +33,10 @@ type Loaded = { libraries: Library[]; downloaders: Downloader[]; variables: stri
 
 type Instance = { version?: string; error?: string; folders: string[]; profiles: { id: number; name: string }[]; tags: string[] };
 
-const kinds: Record<Slug, Kind> = { movies: 'Radarr', shows: 'Sonarr' };
+const kinds: Record<Slug, Kind> = { movies: 'Radarr', shows: 'Sonarr', music: 'Lidarr' };
+const collections: Record<Slug, string> = { movies: 'movies', shows: 'tvshows', music: 'music' };
+const placeholders: Record<Kind, string> = { Radarr: 'http://radarr:7878', Sonarr: 'http://sonarr:8989', Lidarr: 'http://lidarr:8686' };
+const filled: Record<Kind, string> = { Radarr: 'movies', Sonarr: 'shows', Lidarr: 'music' };
 
 function mocked(): Loaded {
   return {
@@ -51,7 +54,7 @@ function counted(value: number, one: string, many: string): string {
   return value.toLocaleString() + ' ' + (value === 1 ? one : many);
 }
 
-async function count(parentId: string, type: 'Movie' | 'Series' | 'Episode'): Promise<number> {
+async function count(parentId: string, type: 'Movie' | 'Series' | 'Episode' | 'MusicAlbum' | 'Audio'): Promise<number> {
   const { data } = await api.GET('/Items', { params: { query: { parentId, recursive: true, includeItemTypes: [type], limit: 0 } } });
 
   return data?.TotalRecordCount ?? 0;
@@ -70,7 +73,7 @@ async function fetched(): Promise<Loaded | undefined> {
   const downloaders: Downloader[] = sources.data.map((source) => ({
     id: source.Id ?? '',
     name: source.Name ?? '',
-    kind: source.Kind === 'Sonarr' ? 'Sonarr' : 'Radarr',
+    kind: source.Kind === 'Sonarr' || source.Kind === 'Lidarr' ? source.Kind : 'Radarr',
     version: source.Version ?? undefined,
     url: source.Url ?? '',
     variable: source.ApiKeyVariable ?? '',
@@ -86,8 +89,8 @@ async function fetched(): Promise<Loaded | undefined> {
   }));
 
   const libraries = await Promise.all(
-    (['movies', 'shows'] as Slug[]).map(async (slug): Promise<Library | undefined> => {
-      const folder = folders.data.find((each) => each.CollectionType === (slug === 'movies' ? 'movies' : 'tvshows'));
+    (['movies', 'shows', 'music'] as Slug[]).map(async (slug): Promise<Library | undefined> => {
+      const folder = folders.data.find((each) => each.CollectionType === collections[slug]);
       if (!folder?.ItemId) {
         return undefined;
       }
@@ -95,7 +98,9 @@ async function fetched(): Promise<Loaded | undefined> {
       const counts =
         slug === 'movies'
           ? counted(await count(id, 'Movie'), 'movie', 'movies')
-          : await Promise.all([count(id, 'Series'), count(id, 'Episode')]).then(([shows, episodes]) => counted(shows, 'show', 'shows') + ', ' + counted(episodes, 'episode', 'episodes'));
+          : slug === 'shows'
+            ? await Promise.all([count(id, 'Series'), count(id, 'Episode')]).then(([shows, episodes]) => counted(shows, 'show', 'shows') + ', ' + counted(episodes, 'episode', 'episodes'))
+            : await Promise.all([count(id, 'MusicAlbum'), count(id, 'Audio')]).then(([albums, tracks]) => counted(albums, 'album', 'albums') + ', ' + counted(tracks, 'track', 'tracks'));
       const synced = newest(downloaders.flatMap((downloader) => downloader.bindings.filter((binding) => binding.Id === id).map((binding) => binding.LastSyncedAt)));
 
       return { id, slug, name: folder.Name ?? '', kind: kinds[slug], counts, synced };
@@ -153,7 +158,7 @@ export function Libraries({ id }: { id?: string }) {
 
   if (!loaded) {
     return (
-      <Page title="Libraries" lead="Movies come from Radarr and Shows from Sonarr.">
+      <Page title="Libraries" lead="Movies come from Radarr, Shows from Sonarr and Music from Lidarr.">
         <p class={failure ? 'failure' : 'muted'}>{failure || 'Loading…'}</p>
       </Page>
     );
@@ -197,7 +202,7 @@ function Overview({ loaded }: { loaded: Loaded }) {
   }
 
   return (
-    <Page title="Libraries" lead="Movies come from Radarr and Shows from Sonarr. Add a downloader and its folders, and the library fills itself.">
+    <Page title="Libraries" lead="Movies come from Radarr, Shows from Sonarr and Music from Lidarr. Add a downloader and its folders, and the library fills itself.">
       {failure && (
         <p class="failure" role="alert">
           {failure}
@@ -398,7 +403,7 @@ function Editor({ kind, library, variables, downloader, saved }: { kind: Kind; l
   const [browsing, setBrowsing] = useState<number | undefined>(undefined);
   const [failure, setFailure] = useState('');
   const [busy, setBusy] = useState(false);
-  const what = kind === 'Radarr' ? 'movies' : 'shows';
+  const what = filled[kind];
 
   async function test() {
     setInstance(await probe(kind, url.trim(), variable));
@@ -495,7 +500,7 @@ function Editor({ kind, library, variables, downloader, saved }: { kind: Kind; l
             </label>
             <label class="span">
               Address
-              <input value={url} placeholder={kind === 'Radarr' ? 'http://radarr:7878' : 'http://sonarr:8989'} onInput={(event) => setUrl(event.currentTarget.value)} />
+              <input value={url} placeholder={placeholders[kind]} onInput={(event) => setUrl(event.currentTarget.value)} />
             </label>
           </div>
           {variables.length === 0 && <p class="muted small">No SOURCE_API_KEY_ variable is set on this server. Set one to the instance's API key and restart it.</p>}
@@ -561,6 +566,7 @@ function Editor({ kind, library, variables, downloader, saved }: { kind: Kind; l
           </button>
         </Card>
 
+        {kind !== 'Lidarr' && (
         <Card title="Requests">
           <label class="check">
             <input
@@ -604,6 +610,7 @@ function Editor({ kind, library, variables, downloader, saved }: { kind: Kind; l
             </div>
           )}
         </Card>
+        )}
 
         {downloader && (
           <Card title="Remove">
