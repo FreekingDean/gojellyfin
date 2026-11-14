@@ -105,4 +105,27 @@ test.describe('the admin app', () => {
     await job.getByRole('button', { name: 'Start' }).click();
     await expect(page.getByRole('alert')).toContainText('Refresh libraries could not be started');
   });
+
+  test('turns a shelf on and shows the environment with secrets withheld', async ({ page, harness }) => {
+    await page.goto(harness.baseUrl + '/admin');
+    await signIn(page, harness);
+    await page.getByRole('link', { name: 'Settings' }).click();
+
+    await expect(page.getByLabel('Trending Movies')).toBeChecked();
+    await expect(page.getByLabel('Hidden Gems')).not.toBeChecked();
+    await page.getByLabel('Hidden Gems').check();
+    await page.getByRole('button', { name: 'Save shelves' }).click();
+    await expect(page.getByRole('status')).toContainText('Shelves saved');
+
+    await page.reload();
+    await expect(page.getByLabel('Hidden Gems')).toBeChecked();
+    await page.getByLabel('Hidden Gems').uncheck();
+    await page.getByRole('button', { name: 'Save shelves' }).click();
+    await expect(page.getByRole('status')).toContainText('Shelves saved');
+
+    const main = page.locator('main');
+    await expect(main.locator('tr', { hasText: 'DATABASE_URL' })).toContainText('Set');
+    await expect(main.locator('tr', { hasText: 'SOURCE_API_KEY_FIXTURES' })).toContainText('Set');
+    await expect(main).not.toContainText('postgres://');
+  });
 });

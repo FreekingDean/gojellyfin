@@ -22,7 +22,7 @@ const (
 var serverIDPattern = regexp.MustCompile(`^[0-9a-f]{32}$`)
 
 type Config struct {
-	DatabaseURL        string     `mapstructure:"DATABASE_URL"`
+	DatabaseURL        string     `mapstructure:"DATABASE_URL" secret:"true"`
 	HTTPPort           int        `mapstructure:"HTTP_PORT"`
 	PublishedServerURL string     `mapstructure:"PUBLISHED_SERVER_URL"`
 	ServerID           string     `mapstructure:"SERVER_ID"`
@@ -53,14 +53,14 @@ type Tracing struct {
 }
 
 type TMDB struct {
-	APIKey  string `mapstructure:"TMDB_API_KEY"`
+	APIKey  string `mapstructure:"TMDB_API_KEY" secret:"true"`
 	BaseURL string `mapstructure:"TMDB_BASE_URL"`
 }
 
 type OIDC struct {
 	IssuerURL         string `mapstructure:"OIDC_ISSUER_URL"`
 	ClientID          string `mapstructure:"OIDC_CLIENT_ID"`
-	ClientSecret      string `mapstructure:"OIDC_CLIENT_SECRET"`
+	ClientSecret      string `mapstructure:"OIDC_CLIENT_SECRET" secret:"true"`
 	Scopes            string `mapstructure:"OIDC_SCOPES"`
 	UsernameClaim     string `mapstructure:"OIDC_USERNAME_CLAIM"`
 	GroupsClaim       string `mapstructure:"OIDC_GROUPS_CLAIM"`
