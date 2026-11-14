@@ -26,6 +26,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/librarystructure"
 	"github.com/FreekingDean/gojellyfin/internal/server/livetv"
 	"github.com/FreekingDean/gojellyfin/internal/server/localization"
+	"github.com/FreekingDean/gojellyfin/internal/server/lyrics"
 	"github.com/FreekingDean/gojellyfin/internal/server/mediainfo"
 	"github.com/FreekingDean/gojellyfin/internal/server/packages"
 	"github.com/FreekingDean/gojellyfin/internal/server/persons"
@@ -59,6 +60,7 @@ var Module = fx.Module(
 	apikey.Module,
 	branding.Module,
 	artists.Module,
+	lyrics.Module,
 	backup.Module,
 	channels.Module,
 	configuration.Module,

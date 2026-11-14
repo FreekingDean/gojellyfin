@@ -1,4 +1,4 @@
-h1:y/lQZrRKxSx7J/a154FbuRuaq73eWKinq3wGPyvVcM8=
+h1:mdEAXC84eAPATIIT2AD3WL6gUbGNvuYOOwXXMTKjS1k=
 20260808161932_schema.sql h1:TSsMFoNc1lu6mOmwk6WUpVAleagab51CYpT8AcXjFe8=
 20260809054423_schema.sql h1:V8LqoR24+BY3zT0+YlBHRxazmflw/ECnIQrC9e8FboE=
 20260809060012_configurations.sql h1:lWCojwN/ZmPBP/uS9aNCdmvBPXLv1rSc21+W+ZeyrJg=
@@ -38,3 +38,4 @@ h1:y/lQZrRKxSx7J/a154FbuRuaq73eWKinq3wGPyvVcM8=
 20261114230000_syncplay_playback.sql h1:7j7N/KLrxm+IO7RwdyjTAdXnhMzPArkmtqQdDDkkZZY=
 20261114235000_two_libraries.sql h1:hiskXIBQHC91kzGiJ5Rk1LQjZaHbexPlgUU/69kTL/Y=
 20261115000000_music_kinds.sql h1:qhdg04FEOjmX9nOvnZGrUn+I+tLael0qDSN5rg/XKgs=
+20261115010000_lyrics.sql h1:YqXkhZdH/4BIfBMvD8ylE63xkWPFNO+xpG9i2FbTPC8=

@@ -294,6 +294,7 @@ var (
 		{Name: "probed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "external_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "external_file_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "lyrics", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "item_id", Type: field.TypeUUID},
 		{Name: "source_id", Type: field.TypeUUID},
 	}
@@ -305,13 +306,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "item_sources_items_item_sources",
-				Columns:    []*schema.Column{ItemSourcesColumns[13]},
+				Columns:    []*schema.Column{ItemSourcesColumns[14]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "item_sources_sources_files",
-				Columns:    []*schema.Column{ItemSourcesColumns[14]},
+				Columns:    []*schema.Column{ItemSourcesColumns[15]},
 				RefColumns: []*schema.Column{SourcesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -320,7 +321,7 @@ var (
 			{
 				Name:    "itemsource_item_id_source_id",
 				Unique:  true,
-				Columns: []*schema.Column{ItemSourcesColumns[13], ItemSourcesColumns[14]},
+				Columns: []*schema.Column{ItemSourcesColumns[14], ItemSourcesColumns[15]},
 			},
 			{
 				Name:    "itemsource_path",
@@ -330,7 +331,7 @@ var (
 			{
 				Name:    "itemsource_source_id_external_file_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemSourcesColumns[14], ItemSourcesColumns[12]},
+				Columns: []*schema.Column{ItemSourcesColumns[15], ItemSourcesColumns[12]},
 			},
 		},
 	}

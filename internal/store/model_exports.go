@@ -789,6 +789,7 @@ type ItemSourceModel struct {
 	ProbedAt       *time.Time
 	ExternalID     *int64
 	ExternalFileID *int64
+	Lyrics         string
 
 	Item    *ItemModel
 	Source  *SourceModel
@@ -825,6 +826,7 @@ func fromItemSource(_m *ItemSource) *ItemSourceModel {
 		ProbedAt:       _m.ProbedAt,
 		ExternalID:     _m.ExternalID,
 		ExternalFileID: _m.ExternalFileID,
+		Lyrics:         _m.Lyrics,
 
 		Item:    fromItem(_m.Edges.Item),
 		Source:  fromSource(_m.Edges.Source),
