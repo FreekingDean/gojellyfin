@@ -59,14 +59,21 @@ function card(page, name) {
 // instead of opening the item. Its corner opens it. The outgoing view fades
 // rather than vanishing, so a click can land on its copy of the same card
 // while it still counts as visible; the click is retried until the route
-// moves.
+// moves. Both views stay visible for a moment once it has, so the views on
+// screen before the click are marked and the helper waits until the one
+// left visible is the new one.
 async function open(page, name) {
   const from = page.url();
+  await page.locator(VIEW).evaluateAll((views) => {
+    document.querySelectorAll('[data-outgoing]').forEach((view) => delete view.dataset.outgoing);
+    views.forEach((view) => (view.dataset.outgoing = 'true'));
+  });
 
   await expect(async () => {
     await card(page, name).locator('.cardScalable').click({ position: { x: 10, y: 10 }, timeout: 5000 });
     await expect(page).not.toHaveURL(from, { timeout: 5000 });
   }).toPass({ timeout: 30000 });
+  await expect(page.locator(VIEW + ':not([data-outgoing])')).toHaveCount(1);
   await expect(page.locator(VIEW)).toHaveCount(1);
 }
 
