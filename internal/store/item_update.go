@@ -23,6 +23,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/FreekingDean/gojellyfin/internal/store/report"
+	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
 	"github.com/FreekingDean/gojellyfin/internal/store/syncplayqueueentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
@@ -630,6 +631,21 @@ func (_u *ItemUpdate) AddActivityLogEntries(v ...*ActivityLogEntry) *ItemUpdate 
 	return _u.AddActivityLogEntryIDs(ids...)
 }
 
+// AddPlayingSessionIDs adds the "playing_sessions" edge to the Session entity by IDs.
+func (_u *ItemUpdate) AddPlayingSessionIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.AddPlayingSessionIDs(ids...)
+	return _u
+}
+
+// AddPlayingSessions adds the "playing_sessions" edges to the Session entity.
+func (_u *ItemUpdate) AddPlayingSessions(v ...*Session) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddPlayingSessionIDs(ids...)
+}
+
 // SetPlaylistID sets the "playlist" edge to the Playlist entity by ID.
 func (_u *ItemUpdate) SetPlaylistID(id uuid.UUID) *ItemUpdate {
 	_u.mutation.SetPlaylistID(id)
@@ -886,6 +902,27 @@ func (_u *ItemUpdate) RemoveActivityLogEntries(v ...*ActivityLogEntry) *ItemUpda
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveActivityLogEntryIDs(ids...)
+}
+
+// ClearPlayingSessions clears all "playing_sessions" edges to the Session entity.
+func (_u *ItemUpdate) ClearPlayingSessions() *ItemUpdate {
+	_u.mutation.ClearPlayingSessions()
+	return _u
+}
+
+// RemovePlayingSessionIDs removes the "playing_sessions" edge to Session entities by IDs.
+func (_u *ItemUpdate) RemovePlayingSessionIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.RemovePlayingSessionIDs(ids...)
+	return _u
+}
+
+// RemovePlayingSessions removes "playing_sessions" edges to Session entities.
+func (_u *ItemUpdate) RemovePlayingSessions(v ...*Session) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemovePlayingSessionIDs(ids...)
 }
 
 // ClearPlaylist clears the "playlist" edge to the Playlist entity.
@@ -1571,6 +1608,51 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(activitylogentry.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.PlayingSessionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.PlayingSessionsTable,
+			Columns: []string{item.PlayingSessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedPlayingSessionsIDs(); len(nodes) > 0 && !_u.mutation.PlayingSessionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.PlayingSessionsTable,
+			Columns: []string{item.PlayingSessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PlayingSessionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.PlayingSessionsTable,
+			Columns: []string{item.PlayingSessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -2395,6 +2477,21 @@ func (_u *ItemUpdateOne) AddActivityLogEntries(v ...*ActivityLogEntry) *ItemUpda
 	return _u.AddActivityLogEntryIDs(ids...)
 }
 
+// AddPlayingSessionIDs adds the "playing_sessions" edge to the Session entity by IDs.
+func (_u *ItemUpdateOne) AddPlayingSessionIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.AddPlayingSessionIDs(ids...)
+	return _u
+}
+
+// AddPlayingSessions adds the "playing_sessions" edges to the Session entity.
+func (_u *ItemUpdateOne) AddPlayingSessions(v ...*Session) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddPlayingSessionIDs(ids...)
+}
+
 // SetPlaylistID sets the "playlist" edge to the Playlist entity by ID.
 func (_u *ItemUpdateOne) SetPlaylistID(id uuid.UUID) *ItemUpdateOne {
 	_u.mutation.SetPlaylistID(id)
@@ -2651,6 +2748,27 @@ func (_u *ItemUpdateOne) RemoveActivityLogEntries(v ...*ActivityLogEntry) *ItemU
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveActivityLogEntryIDs(ids...)
+}
+
+// ClearPlayingSessions clears all "playing_sessions" edges to the Session entity.
+func (_u *ItemUpdateOne) ClearPlayingSessions() *ItemUpdateOne {
+	_u.mutation.ClearPlayingSessions()
+	return _u
+}
+
+// RemovePlayingSessionIDs removes the "playing_sessions" edge to Session entities by IDs.
+func (_u *ItemUpdateOne) RemovePlayingSessionIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.RemovePlayingSessionIDs(ids...)
+	return _u
+}
+
+// RemovePlayingSessions removes "playing_sessions" edges to Session entities.
+func (_u *ItemUpdateOne) RemovePlayingSessions(v ...*Session) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemovePlayingSessionIDs(ids...)
 }
 
 // ClearPlaylist clears the "playlist" edge to the Playlist entity.
@@ -3366,6 +3484,51 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(activitylogentry.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.PlayingSessionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.PlayingSessionsTable,
+			Columns: []string{item.PlayingSessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedPlayingSessionsIDs(); len(nodes) > 0 && !_u.mutation.PlayingSessionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.PlayingSessionsTable,
+			Columns: []string{item.PlayingSessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PlayingSessionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.PlayingSessionsTable,
+			Columns: []string{item.PlayingSessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

@@ -105,6 +105,11 @@ func (s *Service) List(ctx context.Context) ([]*Session, error) {
 		Where(sessionmodel.RevokedAtIsNil()).
 		WithUser().
 		WithDevice().
+		WithNowPlaying(func(query *store.ItemQuery) {
+			query.WithParent(func(query *store.ItemQuery) {
+				query.WithParent()
+			})
+		}).
 		AllModels(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list sessions: %w", err)

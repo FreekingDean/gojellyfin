@@ -285,6 +285,9 @@ func (s *Server) authenticate(ctx context.Context, user *users.User) (api.Authen
 	if err != nil {
 		return api.AuthenticationResult{}, err
 	}
+	if err := s.sessions.Seen(ctx, session.ID, auth.AuthorizationFrom(ctx).RemoteAddr); err != nil {
+		return api.AuthenticationResult{}, err
+	}
 
 	if err := s.users.TouchLogin(ctx, user.ID); err != nil {
 		return api.AuthenticationResult{}, err

@@ -86,6 +86,31 @@ func RevokedAt(v time.Time) predicate.Session {
 	return predicate.Session(sql.FieldEQ(FieldRevokedAt, v))
 }
 
+// NowPlayingItemID applies equality check predicate on the "now_playing_item_id" field. It's identical to NowPlayingItemIDEQ.
+func NowPlayingItemID(v uuid.UUID) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldNowPlayingItemID, v))
+}
+
+// PositionTicks applies equality check predicate on the "position_ticks" field. It's identical to PositionTicksEQ.
+func PositionTicks(v int64) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldPositionTicks, v))
+}
+
+// PlayMethod applies equality check predicate on the "play_method" field. It's identical to PlayMethodEQ.
+func PlayMethod(v string) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldPlayMethod, v))
+}
+
+// IsPaused applies equality check predicate on the "is_paused" field. It's identical to IsPausedEQ.
+func IsPaused(v bool) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldIsPaused, v))
+}
+
+// PlayingAt applies equality check predicate on the "playing_at" field. It's identical to PlayingAtEQ.
+func PlayingAt(v time.Time) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldPlayingAt, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Session {
 	return predicate.Session(sql.FieldEQ(FieldCreatedAt, v))
@@ -406,6 +431,211 @@ func RevokedAtNotNil() predicate.Session {
 	return predicate.Session(sql.FieldNotNull(FieldRevokedAt))
 }
 
+// NowPlayingItemIDEQ applies the EQ predicate on the "now_playing_item_id" field.
+func NowPlayingItemIDEQ(v uuid.UUID) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldNowPlayingItemID, v))
+}
+
+// NowPlayingItemIDNEQ applies the NEQ predicate on the "now_playing_item_id" field.
+func NowPlayingItemIDNEQ(v uuid.UUID) predicate.Session {
+	return predicate.Session(sql.FieldNEQ(FieldNowPlayingItemID, v))
+}
+
+// NowPlayingItemIDIn applies the In predicate on the "now_playing_item_id" field.
+func NowPlayingItemIDIn(vs ...uuid.UUID) predicate.Session {
+	return predicate.Session(sql.FieldIn(FieldNowPlayingItemID, vs...))
+}
+
+// NowPlayingItemIDNotIn applies the NotIn predicate on the "now_playing_item_id" field.
+func NowPlayingItemIDNotIn(vs ...uuid.UUID) predicate.Session {
+	return predicate.Session(sql.FieldNotIn(FieldNowPlayingItemID, vs...))
+}
+
+// NowPlayingItemIDIsNil applies the IsNil predicate on the "now_playing_item_id" field.
+func NowPlayingItemIDIsNil() predicate.Session {
+	return predicate.Session(sql.FieldIsNull(FieldNowPlayingItemID))
+}
+
+// NowPlayingItemIDNotNil applies the NotNil predicate on the "now_playing_item_id" field.
+func NowPlayingItemIDNotNil() predicate.Session {
+	return predicate.Session(sql.FieldNotNull(FieldNowPlayingItemID))
+}
+
+// PositionTicksEQ applies the EQ predicate on the "position_ticks" field.
+func PositionTicksEQ(v int64) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldPositionTicks, v))
+}
+
+// PositionTicksNEQ applies the NEQ predicate on the "position_ticks" field.
+func PositionTicksNEQ(v int64) predicate.Session {
+	return predicate.Session(sql.FieldNEQ(FieldPositionTicks, v))
+}
+
+// PositionTicksIn applies the In predicate on the "position_ticks" field.
+func PositionTicksIn(vs ...int64) predicate.Session {
+	return predicate.Session(sql.FieldIn(FieldPositionTicks, vs...))
+}
+
+// PositionTicksNotIn applies the NotIn predicate on the "position_ticks" field.
+func PositionTicksNotIn(vs ...int64) predicate.Session {
+	return predicate.Session(sql.FieldNotIn(FieldPositionTicks, vs...))
+}
+
+// PositionTicksGT applies the GT predicate on the "position_ticks" field.
+func PositionTicksGT(v int64) predicate.Session {
+	return predicate.Session(sql.FieldGT(FieldPositionTicks, v))
+}
+
+// PositionTicksGTE applies the GTE predicate on the "position_ticks" field.
+func PositionTicksGTE(v int64) predicate.Session {
+	return predicate.Session(sql.FieldGTE(FieldPositionTicks, v))
+}
+
+// PositionTicksLT applies the LT predicate on the "position_ticks" field.
+func PositionTicksLT(v int64) predicate.Session {
+	return predicate.Session(sql.FieldLT(FieldPositionTicks, v))
+}
+
+// PositionTicksLTE applies the LTE predicate on the "position_ticks" field.
+func PositionTicksLTE(v int64) predicate.Session {
+	return predicate.Session(sql.FieldLTE(FieldPositionTicks, v))
+}
+
+// PlayMethodEQ applies the EQ predicate on the "play_method" field.
+func PlayMethodEQ(v string) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldPlayMethod, v))
+}
+
+// PlayMethodNEQ applies the NEQ predicate on the "play_method" field.
+func PlayMethodNEQ(v string) predicate.Session {
+	return predicate.Session(sql.FieldNEQ(FieldPlayMethod, v))
+}
+
+// PlayMethodIn applies the In predicate on the "play_method" field.
+func PlayMethodIn(vs ...string) predicate.Session {
+	return predicate.Session(sql.FieldIn(FieldPlayMethod, vs...))
+}
+
+// PlayMethodNotIn applies the NotIn predicate on the "play_method" field.
+func PlayMethodNotIn(vs ...string) predicate.Session {
+	return predicate.Session(sql.FieldNotIn(FieldPlayMethod, vs...))
+}
+
+// PlayMethodGT applies the GT predicate on the "play_method" field.
+func PlayMethodGT(v string) predicate.Session {
+	return predicate.Session(sql.FieldGT(FieldPlayMethod, v))
+}
+
+// PlayMethodGTE applies the GTE predicate on the "play_method" field.
+func PlayMethodGTE(v string) predicate.Session {
+	return predicate.Session(sql.FieldGTE(FieldPlayMethod, v))
+}
+
+// PlayMethodLT applies the LT predicate on the "play_method" field.
+func PlayMethodLT(v string) predicate.Session {
+	return predicate.Session(sql.FieldLT(FieldPlayMethod, v))
+}
+
+// PlayMethodLTE applies the LTE predicate on the "play_method" field.
+func PlayMethodLTE(v string) predicate.Session {
+	return predicate.Session(sql.FieldLTE(FieldPlayMethod, v))
+}
+
+// PlayMethodContains applies the Contains predicate on the "play_method" field.
+func PlayMethodContains(v string) predicate.Session {
+	return predicate.Session(sql.FieldContains(FieldPlayMethod, v))
+}
+
+// PlayMethodHasPrefix applies the HasPrefix predicate on the "play_method" field.
+func PlayMethodHasPrefix(v string) predicate.Session {
+	return predicate.Session(sql.FieldHasPrefix(FieldPlayMethod, v))
+}
+
+// PlayMethodHasSuffix applies the HasSuffix predicate on the "play_method" field.
+func PlayMethodHasSuffix(v string) predicate.Session {
+	return predicate.Session(sql.FieldHasSuffix(FieldPlayMethod, v))
+}
+
+// PlayMethodIsNil applies the IsNil predicate on the "play_method" field.
+func PlayMethodIsNil() predicate.Session {
+	return predicate.Session(sql.FieldIsNull(FieldPlayMethod))
+}
+
+// PlayMethodNotNil applies the NotNil predicate on the "play_method" field.
+func PlayMethodNotNil() predicate.Session {
+	return predicate.Session(sql.FieldNotNull(FieldPlayMethod))
+}
+
+// PlayMethodEqualFold applies the EqualFold predicate on the "play_method" field.
+func PlayMethodEqualFold(v string) predicate.Session {
+	return predicate.Session(sql.FieldEqualFold(FieldPlayMethod, v))
+}
+
+// PlayMethodContainsFold applies the ContainsFold predicate on the "play_method" field.
+func PlayMethodContainsFold(v string) predicate.Session {
+	return predicate.Session(sql.FieldContainsFold(FieldPlayMethod, v))
+}
+
+// IsPausedEQ applies the EQ predicate on the "is_paused" field.
+func IsPausedEQ(v bool) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldIsPaused, v))
+}
+
+// IsPausedNEQ applies the NEQ predicate on the "is_paused" field.
+func IsPausedNEQ(v bool) predicate.Session {
+	return predicate.Session(sql.FieldNEQ(FieldIsPaused, v))
+}
+
+// PlayingAtEQ applies the EQ predicate on the "playing_at" field.
+func PlayingAtEQ(v time.Time) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldPlayingAt, v))
+}
+
+// PlayingAtNEQ applies the NEQ predicate on the "playing_at" field.
+func PlayingAtNEQ(v time.Time) predicate.Session {
+	return predicate.Session(sql.FieldNEQ(FieldPlayingAt, v))
+}
+
+// PlayingAtIn applies the In predicate on the "playing_at" field.
+func PlayingAtIn(vs ...time.Time) predicate.Session {
+	return predicate.Session(sql.FieldIn(FieldPlayingAt, vs...))
+}
+
+// PlayingAtNotIn applies the NotIn predicate on the "playing_at" field.
+func PlayingAtNotIn(vs ...time.Time) predicate.Session {
+	return predicate.Session(sql.FieldNotIn(FieldPlayingAt, vs...))
+}
+
+// PlayingAtGT applies the GT predicate on the "playing_at" field.
+func PlayingAtGT(v time.Time) predicate.Session {
+	return predicate.Session(sql.FieldGT(FieldPlayingAt, v))
+}
+
+// PlayingAtGTE applies the GTE predicate on the "playing_at" field.
+func PlayingAtGTE(v time.Time) predicate.Session {
+	return predicate.Session(sql.FieldGTE(FieldPlayingAt, v))
+}
+
+// PlayingAtLT applies the LT predicate on the "playing_at" field.
+func PlayingAtLT(v time.Time) predicate.Session {
+	return predicate.Session(sql.FieldLT(FieldPlayingAt, v))
+}
+
+// PlayingAtLTE applies the LTE predicate on the "playing_at" field.
+func PlayingAtLTE(v time.Time) predicate.Session {
+	return predicate.Session(sql.FieldLTE(FieldPlayingAt, v))
+}
+
+// PlayingAtIsNil applies the IsNil predicate on the "playing_at" field.
+func PlayingAtIsNil() predicate.Session {
+	return predicate.Session(sql.FieldIsNull(FieldPlayingAt))
+}
+
+// PlayingAtNotNil applies the NotNil predicate on the "playing_at" field.
+func PlayingAtNotNil() predicate.Session {
+	return predicate.Session(sql.FieldNotNull(FieldPlayingAt))
+}
+
 // HasUser applies the HasEdge predicate on the "user" edge.
 func HasUser() predicate.Session {
 	return predicate.Session(func(s *sql.Selector) {
@@ -444,6 +674,29 @@ func HasDevice() predicate.Session {
 func HasDeviceWith(preds ...predicate.Device) predicate.Session {
 	return predicate.Session(func(s *sql.Selector) {
 		step := newDeviceStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasNowPlaying applies the HasEdge predicate on the "now_playing" edge.
+func HasNowPlaying() predicate.Session {
+	return predicate.Session(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, NowPlayingTable, NowPlayingColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasNowPlayingWith applies the HasEdge predicate on the "now_playing" edge with a given conditions (other predicates).
+func HasNowPlayingWith(preds ...predicate.Item) predicate.Session {
+	return predicate.Session(func(s *sql.Selector) {
+		step := newNowPlayingStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

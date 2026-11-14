@@ -567,6 +567,14 @@ func init() {
 	session.DefaultUpdatedAt = sessionDescUpdatedAt.Default.(func() time.Time)
 	// session.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	session.UpdateDefaultUpdatedAt = sessionDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// sessionDescPositionTicks is the schema descriptor for position_ticks field.
+	sessionDescPositionTicks := sessionFields[8].Descriptor()
+	// session.DefaultPositionTicks holds the default value on creation for the position_ticks field.
+	session.DefaultPositionTicks = sessionDescPositionTicks.Default.(int64)
+	// sessionDescIsPaused is the schema descriptor for is_paused field.
+	sessionDescIsPaused := sessionFields[10].Descriptor()
+	// session.DefaultIsPaused holds the default value on creation for the is_paused field.
+	session.DefaultIsPaused = sessionDescIsPaused.Default.(bool)
 	sourceFields := entities.Source{}.Fields()
 	_ = sourceFields
 	// sourceDescCreatedAt is the schema descriptor for created_at field.

@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/FreekingDean/gojellyfin/internal/store/device"
+	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/google/uuid"
@@ -32,6 +33,16 @@ type Session struct {
 	LastActivityAt *time.Time `json:"last_activity_at,omitempty"`
 	// RevokedAt holds the value of the "revoked_at" field.
 	RevokedAt *time.Time `json:"revoked_at,omitempty"`
+	// NowPlayingItemID holds the value of the "now_playing_item_id" field.
+	NowPlayingItemID *uuid.UUID `json:"now_playing_item_id,omitempty"`
+	// PositionTicks holds the value of the "position_ticks" field.
+	PositionTicks int64 `json:"position_ticks,omitempty"`
+	// PlayMethod holds the value of the "play_method" field.
+	PlayMethod string `json:"play_method,omitempty"`
+	// IsPaused holds the value of the "is_paused" field.
+	IsPaused bool `json:"is_paused,omitempty"`
+	// PlayingAt holds the value of the "playing_at" field.
+	PlayingAt *time.Time `json:"playing_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SessionQuery when eager-loading is set.
 	Edges           SessionEdges `json:"edges"`
@@ -46,11 +57,13 @@ type SessionEdges struct {
 	User *User `json:"user,omitempty"`
 	// Device holds the value of the device edge.
 	Device *Device `json:"device,omitempty"`
+	// NowPlaying holds the value of the now_playing edge.
+	NowPlaying *Item `json:"now_playing,omitempty"`
 	// SyncPlayMemberships holds the value of the sync_play_memberships edge.
 	SyncPlayMemberships []*SyncPlayGroupMember `json:"sync_play_memberships,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // UserOrErr returns the User value or an error if the edge
@@ -75,10 +88,21 @@ func (e SessionEdges) DeviceOrErr() (*Device, error) {
 	return nil, &NotLoadedError{edge: "device"}
 }
 
+// NowPlayingOrErr returns the NowPlaying value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e SessionEdges) NowPlayingOrErr() (*Item, error) {
+	if e.NowPlaying != nil {
+		return e.NowPlaying, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: item.Label}
+	}
+	return nil, &NotLoadedError{edge: "now_playing"}
+}
+
 // SyncPlayMembershipsOrErr returns the SyncPlayMemberships value or an error if the edge
 // was not loaded in eager-loading.
 func (e SessionEdges) SyncPlayMembershipsOrErr() ([]*SyncPlayGroupMember, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.SyncPlayMemberships, nil
 	}
 	return nil, &NotLoadedError{edge: "sync_play_memberships"}
@@ -89,9 +113,15 @@ func (*Session) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case session.FieldAccessToken, session.FieldRemoteEndpoint:
+		case session.FieldNowPlayingItemID:
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+		case session.FieldIsPaused:
+			values[i] = new(sql.NullBool)
+		case session.FieldPositionTicks:
+			values[i] = new(sql.NullInt64)
+		case session.FieldAccessToken, session.FieldRemoteEndpoint, session.FieldPlayMethod:
 			values[i] = new(sql.NullString)
-		case session.FieldCreatedAt, session.FieldUpdatedAt, session.FieldLastActivityAt, session.FieldRevokedAt:
+		case session.FieldCreatedAt, session.FieldUpdatedAt, session.FieldLastActivityAt, session.FieldRevokedAt, session.FieldPlayingAt:
 			values[i] = new(sql.NullTime)
 		case session.FieldID:
 			values[i] = new(uuid.UUID)
@@ -158,6 +188,38 @@ func (_m *Session) assignValues(columns []string, values []any) error {
 				_m.RevokedAt = new(time.Time)
 				*_m.RevokedAt = value.Time
 			}
+		case session.FieldNowPlayingItemID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field now_playing_item_id", values[i])
+			} else if value.Valid {
+				_m.NowPlayingItemID = new(uuid.UUID)
+				*_m.NowPlayingItemID = *value.S.(*uuid.UUID)
+			}
+		case session.FieldPositionTicks:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field position_ticks", values[i])
+			} else if value.Valid {
+				_m.PositionTicks = value.Int64
+			}
+		case session.FieldPlayMethod:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field play_method", values[i])
+			} else if value.Valid {
+				_m.PlayMethod = value.String
+			}
+		case session.FieldIsPaused:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_paused", values[i])
+			} else if value.Valid {
+				_m.IsPaused = value.Bool
+			}
+		case session.FieldPlayingAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field playing_at", values[i])
+			} else if value.Valid {
+				_m.PlayingAt = new(time.Time)
+				*_m.PlayingAt = value.Time
+			}
 		case session.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field device_sessions", values[i])
@@ -193,6 +255,11 @@ func (_m *Session) QueryUser() *UserQuery {
 // QueryDevice queries the "device" edge of the Session entity.
 func (_m *Session) QueryDevice() *DeviceQuery {
 	return NewSessionClient(_m.config).QueryDevice(_m)
+}
+
+// QueryNowPlaying queries the "now_playing" edge of the Session entity.
+func (_m *Session) QueryNowPlaying() *ItemQuery {
+	return NewSessionClient(_m.config).QueryNowPlaying(_m)
 }
 
 // QuerySyncPlayMemberships queries the "sync_play_memberships" edge of the Session entity.
@@ -241,6 +308,25 @@ func (_m *Session) String() string {
 	builder.WriteString(", ")
 	if v := _m.RevokedAt; v != nil {
 		builder.WriteString("revoked_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.NowPlayingItemID; v != nil {
+		builder.WriteString("now_playing_item_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("position_ticks=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PositionTicks))
+	builder.WriteString(", ")
+	builder.WriteString("play_method=")
+	builder.WriteString(_m.PlayMethod)
+	builder.WriteString(", ")
+	builder.WriteString("is_paused=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IsPaused))
+	builder.WriteString(", ")
+	if v := _m.PlayingAt; v != nil {
+		builder.WriteString("playing_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteByte(')')

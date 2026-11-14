@@ -1928,6 +1928,22 @@ func (c *ItemClient) QueryActivityLogEntries(_m *Item) *ActivityLogEntryQuery {
 	return query
 }
 
+// QueryPlayingSessions queries the playing_sessions edge of a Item.
+func (c *ItemClient) QueryPlayingSessions(_m *Item) *SessionQuery {
+	query := (&SessionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, id),
+			sqlgraph.To(session.Table, session.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.PlayingSessionsTable, item.PlayingSessionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryPlaylist queries the playlist edge of a Item.
 func (c *ItemClient) QueryPlaylist(_m *Item) *PlaylistQuery {
 	query := (&PlaylistClient{config: c.config}).Query()
@@ -4492,6 +4508,22 @@ func (c *SessionClient) QueryDevice(_m *Session) *DeviceQuery {
 			sqlgraph.From(session.Table, session.FieldID, id),
 			sqlgraph.To(device.Table, device.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, session.DeviceTable, session.DeviceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryNowPlaying queries the now_playing edge of a Session.
+func (c *SessionClient) QueryNowPlaying(_m *Session) *ItemQuery {
+	query := (&ItemClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(session.Table, session.FieldID, id),
+			sqlgraph.To(item.Table, item.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, session.NowPlayingTable, session.NowPlayingColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
