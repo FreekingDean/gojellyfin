@@ -3,10 +3,10 @@ package radarr
 import "github.com/FreekingDean/gojellyfin/internal/sources/arr"
 
 const (
-	MoviesPath = "api/v3/movie"
-	LookupPath = "api/v3/movie/lookup/tmdb"
-	FilePath   = "api/v3/moviefile"
-	GrabsPath  = "api/v3/history/movie"
+	MoviesPath = "movie"
+	LookupPath = "movie/lookup/tmdb"
+	FilePath   = "moviefile"
+	GrabsPath  = "history/movie"
 	Search     = "MoviesSearch"
 
 	GrabbedEvent = "grabbed"

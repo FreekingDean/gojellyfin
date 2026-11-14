@@ -19,7 +19,7 @@ type Item struct {
 
 const playlistKind = "Playlist"
 
-var itemKinds = []string{"Movie", "Series", "Season", "Episode", playlistKind, "Audio"}
+var itemKinds = []string{"Movie", "Series", "Season", "Episode", playlistKind, "MusicArtist", "MusicAlbum", "Audio"}
 
 func (Item) Annotations() []schema.Annotation {
 	return []schema.Annotation{

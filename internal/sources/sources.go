@@ -32,6 +32,7 @@ const (
 
 	KindRadarr = sourcemodel.KindRadarr
 	KindSonarr = sourcemodel.KindSonarr
+	KindLidarr = sourcemodel.KindLidarr
 )
 
 var (
@@ -577,12 +578,12 @@ type Instance struct {
 	Tags        []string
 }
 
-func (s *Service) Test(ctx context.Context, apiURL, variable string) (Instance, error) {
+func (s *Service) Test(ctx context.Context, kind Kind, apiURL, variable string) (Instance, error) {
 	if err := checkURL(apiURL); err != nil {
 		return Instance{}, err
 	}
 
-	source := Source{URL: apiURL, APIKeyVariable: variable}
+	source := Source{Kind: kind, URL: apiURL, APIKeyVariable: variable}
 
 	status, err := fetch[arr.Status](ctx, s, s.client, source, arr.StatusPath, nil)
 	if err != nil {

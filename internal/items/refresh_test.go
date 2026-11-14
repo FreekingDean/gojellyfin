@@ -95,3 +95,50 @@ func TestService_RefreshItem(t *testing.T) {
 		}
 	})
 }
+
+func TestService_RefreshItem_Music(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := context.Background()
+	artistKey, albumKey, trackKey := ArtistKey(uuid.NewString()), AlbumKey(uuid.NewString()), TrackKey(uuid.NewString())
+
+	for _, scanned := range []Scanned{
+		{
+			Key: artistKey, Tagged: true, Kind: itemmodel.KindMusicArtist, Name: "The Band", SortName: "band",
+			Images: []RemoteImage{{Kind: ImageKindPrimary, URL: "https://art/" + uuid.NewString() + ".jpg"}},
+		},
+		{Key: albumKey, ParentKey: artistKey, Tagged: true, Kind: itemmodel.KindMusicAlbum, Name: "First", SortName: "first"},
+	} {
+		if enqueued := fixture.refresh(t, scanned); len(jobs.Enqueued(t, enqueued, jobs.RefreshItemMetadata)) != 0 {
+			t.Errorf("%s was sent to a provider that has nothing to say about music", scanned.Key)
+		}
+	}
+
+	enqueued := fixture.refresh(t, Scanned{
+		Key: trackKey, ParentKey: albumKey, Tagged: true, Kind: itemmodel.KindAudio, Name: "Opener", SortName: "opener",
+		Files: []ScannedFile{{Path: "/media/music/" + uuid.NewString() + ".flac", DateModified: time.Now()}},
+	})
+	if probes := jobs.Enqueued(t, enqueued, jobs.ProbeFile); len(probes) != 1 {
+		t.Errorf("probes = %d, want the new track probed", len(probes))
+	}
+
+	artist, err := fixture.service.ItemByKey(ctx, artistKey)
+	if err != nil {
+		t.Fatalf("failed to read the artist back: %v", err)
+	}
+	images, err := fixture.service.Images(ctx, artist.ID)
+	if err != nil || len(images) != 1 || images[0].Tag == "" {
+		t.Errorf("images = %+v (%v), want the artist's poster with a tag", images, err)
+	}
+
+	album, err := fixture.service.ItemByKey(ctx, albumKey)
+	if err != nil || album.ParentID == nil || *album.ParentID != artist.ID {
+		t.Fatalf("album = %+v (%v), want it under the artist", album, err)
+	}
+	track, err := fixture.service.ItemByKey(ctx, trackKey)
+	if err != nil || track.ParentID == nil || *track.ParentID != album.ID {
+		t.Fatalf("track = %+v (%v), want it under the album", track, err)
+	}
+	if !IsFolder(album.Kind) || !IsFolder(artist.Kind) || IsFolder(track.Kind) {
+		t.Error("an artist and an album are folders and a track is not")
+	}
+}

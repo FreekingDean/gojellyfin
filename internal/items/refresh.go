@@ -24,6 +24,7 @@ type Scanned struct {
 	Index       *int32
 	ParentIndex *int32
 	Files       []ScannedFile
+	Images      []RemoteImage
 }
 
 type ScannedFile struct {
@@ -103,7 +104,13 @@ func (s *Service) RefreshItem(ctx context.Context, libraryID, sourceID uuid.UUID
 		}
 	}
 
-	if item.ProviderIds == nil {
+	for _, reference := range scanned.Images {
+		if err := s.SaveImage(ctx, item.ID, reference.Image()); err != nil {
+			return err
+		}
+	}
+
+	if _, identifiable := TmdbID(item.Key); identifiable && item.ProviderIds == nil {
 		enqueue(ctx, jobs.RefreshItemMetadata, jobs.With(jobs.ParamItem, item.ID))
 	}
 

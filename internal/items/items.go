@@ -40,19 +40,22 @@ func New(client *store.Client) *Service {
 }
 
 var isFolderKind = map[Kind]bool{
-	itemmodel.KindSeries: true,
-	itemmodel.KindSeason: true,
+	itemmodel.KindSeries:      true,
+	itemmodel.KindSeason:      true,
+	itemmodel.KindMusicArtist: true,
+	itemmodel.KindMusicAlbum:  true,
 }
 
 var (
-	folderKinds   = []Kind{itemmodel.KindSeries, itemmodel.KindSeason}
-	playableKinds = []Kind{itemmodel.KindMovie, itemmodel.KindEpisode}
+	folderKinds   = []Kind{itemmodel.KindSeries, itemmodel.KindSeason, itemmodel.KindMusicArtist, itemmodel.KindMusicAlbum}
+	playableKinds = []Kind{itemmodel.KindMovie, itemmodel.KindEpisode, itemmodel.KindAudio}
 
 	audioKinds = []Kind{itemmodel.KindAudio}
 
 	allKinds = []Kind{
 		itemmodel.KindMovie, itemmodel.KindSeries, itemmodel.KindSeason,
-		itemmodel.KindEpisode, itemmodel.KindPlaylist, itemmodel.KindAudio,
+		itemmodel.KindEpisode, itemmodel.KindPlaylist, itemmodel.KindMusicArtist,
+		itemmodel.KindMusicAlbum, itemmodel.KindAudio,
 	}
 )
 

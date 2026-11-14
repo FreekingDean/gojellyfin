@@ -921,7 +921,8 @@
         "type": "string",
         "enum": [
           "Sonarr",
-          "Radarr"
+          "Radarr",
+          "Lidarr"
         ]
       },
       "Sources": {

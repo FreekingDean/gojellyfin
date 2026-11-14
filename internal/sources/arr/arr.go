@@ -3,12 +3,12 @@ package arr
 import "time"
 
 const (
-	StatusPath     = "api/v3/system/status"
-	TagsPath       = "api/v3/tag"
-	RootFolderPath = "api/v3/rootfolder"
-	ProfilesPath   = "api/v3/qualityprofile"
-	CommandPath    = "api/v3/command"
-	FailedPath     = "api/v3/history/failed"
+	StatusPath     = "system/status"
+	TagsPath       = "tag"
+	RootFolderPath = "rootfolder"
+	ProfilesPath   = "qualityprofile"
+	CommandPath    = "command"
+	FailedPath     = "history/failed"
 	APIKeyName     = "X-Api-Key"
 )
 

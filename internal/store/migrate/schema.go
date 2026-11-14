@@ -225,7 +225,7 @@ var (
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Movie", "Series", "Season", "Episode", "Playlist", "Audio"}},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Movie", "Series", "Season", "Episode", "Playlist", "MusicArtist", "MusicAlbum", "Audio"}},
 		{Name: "key", Type: field.TypeString, Nullable: true},
 		{Name: "name", Type: field.TypeString},
 		{Name: "sort_name", Type: field.TypeString, Nullable: true},
@@ -857,7 +857,7 @@ var (
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "url", Type: field.TypeString, Unique: true},
 		{Name: "api_key_variable", Type: field.TypeString},
-		{Name: "kind", Type: field.TypeEnum, Enums: []string{"radarr", "sonarr"}},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"radarr", "sonarr", "lidarr"}},
 		{Name: "version", Type: field.TypeString, Nullable: true},
 		{Name: "contacted_at", Type: field.TypeTime, Nullable: true},
 		{Name: "last_error", Type: field.TypeString, Nullable: true},
@@ -1302,7 +1302,7 @@ func init() {
 	ItemsTable.Annotation = &entsql.Annotation{}
 	ItemsTable.Annotation.Checks = map[string]string{
 		"item_key_unless_playlist": "kind = 'Playlist' OR key IS NOT NULL",
-		"item_kind_known":          "kind IN ('Movie', 'Series', 'Season', 'Episode', 'Playlist', 'Audio')",
+		"item_kind_known":          "kind IN ('Movie', 'Series', 'Season', 'Episode', 'Playlist', 'MusicArtist', 'MusicAlbum', 'Audio')",
 	}
 	ItemSourcesTable.ForeignKeys[0].RefTable = ItemsTable
 	ItemSourcesTable.ForeignKeys[1].RefTable = SourcesTable

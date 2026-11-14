@@ -14,6 +14,7 @@ import (
 const (
 	radarrKind api.SourceKind = "Radarr"
 	sonarrKind api.SourceKind = "Sonarr"
+	lidarrKind api.SourceKind = "Lidarr"
 )
 
 type Server struct {
@@ -138,7 +139,12 @@ func (s *Server) GoJellyfinTestSource(
 		return unreachable("no request body"), nil
 	}
 
-	found, err := s.sources.Test(ctx, request.Body.Url, request.Body.ApiKeyVariable)
+	kind, err := modelKind(request.Body.Kind)
+	if err != nil {
+		return unreachable(err.Error()), nil
+	}
+
+	found, err := s.sources.Test(ctx, kind, request.Body.Url, request.Body.ApiKeyVariable)
 	if err != nil {
 		return unreachable(err.Error()), nil
 	}
@@ -255,11 +261,14 @@ func configured(req api.Source) (sources.Configured, error) {
 }
 
 func apiKind(kind sources.Kind) api.SourceKind {
-	if kind == sources.KindSonarr {
+	switch kind {
+	case sources.KindSonarr:
 		return sonarrKind
+	case sources.KindLidarr:
+		return lidarrKind
+	default:
+		return radarrKind
 	}
-
-	return radarrKind
 }
 
 func modelKind(kind api.SourceKind) (sources.Kind, error) {
@@ -268,6 +277,8 @@ func modelKind(kind api.SourceKind) (sources.Kind, error) {
 		return sources.KindSonarr, nil
 	case strings.EqualFold(string(kind), string(radarrKind)):
 		return sources.KindRadarr, nil
+	case strings.EqualFold(string(kind), string(lidarrKind)):
+		return sources.KindLidarr, nil
 	default:
 		return "", fmt.Errorf("unsupported source kind %q", kind)
 	}

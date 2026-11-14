@@ -170,5 +170,6 @@ func scanned(title Title) items.Scanned {
 		Index:       title.Index,
 		ParentIndex: title.ParentIndex,
 		Files:       files,
+		Images:      title.Images,
 	}
 }

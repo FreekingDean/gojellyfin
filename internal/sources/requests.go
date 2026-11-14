@@ -137,7 +137,7 @@ func (s *Service) send(ctx context.Context, source Source, method, path string, 
 		payload = bytes.NewReader(encoded)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, method, parsed.JoinPath(path).String(), payload)
+	req, err := http.NewRequestWithContext(ctx, method, parsed.JoinPath(apiRoot(source.Kind), path).String(), payload)
 	if err != nil {
 		return err
 	}
