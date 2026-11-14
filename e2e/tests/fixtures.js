@@ -37,12 +37,12 @@ const test = base.extend({
 
 async function loadLogin(page, app) {
   await page.goto(app.baseUrl + '/web/');
-  await expect(page.locator('#loginPage button.card').first()).toBeVisible({ timeout: 30000 });
+  await expect(page.locator('#loginPage #txtManualName')).toBeVisible({ timeout: 30000 });
 }
 
 async function signIn(page, app, password = app.password) {
   await loadLogin(page, app);
-  await page.locator('#loginPage button.card').filter({ hasText: app.username }).click();
+  await page.locator('#txtManualName').fill(app.username);
   await page.locator('#txtManualPassword').fill(password);
   await page.getByRole('button', { name: 'Sign In', exact: true }).click();
 }

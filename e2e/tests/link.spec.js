@@ -30,7 +30,7 @@ async function authenticated(request, app, secret) {
 // for this page load only.
 async function signInHere(page, app) {
   await expect(page).toHaveURL(/#\/login/, { timeout: 30000 });
-  await page.locator('#loginPage button.card').filter({ hasText: app.username }).click();
+  await page.locator('#txtManualName').fill(app.username);
   await page.locator('#txtManualPassword').fill(app.password);
   await page.locator('#loginPage .chkRememberLogin').evaluate((box) => {
     box.checked = true;
