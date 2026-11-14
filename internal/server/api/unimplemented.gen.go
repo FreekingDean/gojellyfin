@@ -311,6 +311,18 @@ func (Unimplemented) GoJellyfinDeclineRequest(ctx context.Context, request GoJel
 	return nil, ErrNotImplemented
 }
 
+func (Unimplemented) GoJellyfinListSettings(ctx context.Context, request GoJellyfinListSettingsRequestObject) (GoJellyfinListSettingsResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) GoJellyfinListShelves(ctx context.Context, request GoJellyfinListShelvesRequestObject) (GoJellyfinListShelvesResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) GoJellyfinUpdateShelves(ctx context.Context, request GoJellyfinUpdateShelvesRequestObject) (GoJellyfinUpdateShelvesResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
 func (Unimplemented) GoJellyfinListSourceApiKeyVariables(ctx context.Context, request GoJellyfinListSourceApiKeyVariablesRequestObject) (GoJellyfinListSourceApiKeyVariablesResponseObject, error) {
 	return nil, ErrNotImplemented
 }

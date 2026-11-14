@@ -8,3 +8,5 @@ e2e/.build/
 e2e/.client/
 e2e/test-results/
 e2e/playwright-report/
+internal/server/admin/dist/*
+!internal/server/admin/dist/.gitkeep

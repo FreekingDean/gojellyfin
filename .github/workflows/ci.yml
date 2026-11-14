@@ -93,6 +93,27 @@ jobs:
             --set worker.autoscaling.enabled=true --set worker.autoscaling.minReplicas=4 --set worker.autoscaling.maxReplicas=2
           refuses --set oidc.issuerUrl=https://auth.example.test --set oidc.clientId=gojellyfin
 
+  # The admin app is typechecked against the spec it is generated from, so a
+  # renamed operation or field fails here rather than in a browser.
+  admin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: admin/package-lock.json
+
+      - name: Install
+        run: npm ci
+        working-directory: admin
+
+      - name: Build
+        run: npm run build
+        working-directory: admin
+
   generate:
     runs-on: ubuntu-latest
     steps:

@@ -35,6 +35,7 @@ const (
 
 	credentialsKey = "jellyfin_credentials"
 	webRoot        = "/web/"
+	adminRoot      = "/admin"
 	loginRoute     = "/web/#/login.html"
 	deviceName     = "Single sign-on"
 	appName        = "Jellyfin Web"
@@ -183,7 +184,10 @@ func (h *Handler) callback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	target := webRoot
-	if state.Return != "" {
+	switch {
+	case state.Return == adminRoot || strings.HasPrefix(state.Return, adminRoot+"/"):
+		target = state.Return
+	case state.Return != "":
 		target = webRoot + "#" + state.Return
 	}
 

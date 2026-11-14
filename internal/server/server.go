@@ -34,6 +34,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/scheduledtasks"
 	"github.com/FreekingDean/gojellyfin/internal/server/search"
 	"github.com/FreekingDean/gojellyfin/internal/server/session"
+	"github.com/FreekingDean/gojellyfin/internal/server/settings"
 	"github.com/FreekingDean/gojellyfin/internal/server/sources"
 	"github.com/FreekingDean/gojellyfin/internal/server/studios"
 	"github.com/FreekingDean/gojellyfin/internal/server/suggestions"
@@ -88,6 +89,7 @@ type (
 	SessionServer            = session.Server
 	ReportsServer            = reports.Server
 	RequestsServer           = requests.Server
+	SettingsServer           = settings.Server
 	SourcesServer            = sources.Server
 	SuggestionsServer        = suggestions.Server
 	SyncPlayServer           = syncplay.Server
@@ -135,6 +137,7 @@ type Server struct {
 	*SessionServer
 	*ReportsServer
 	*RequestsServer
+	*SettingsServer
 	*SourcesServer
 	*SuggestionsServer
 	*SyncPlayServer
@@ -184,6 +187,7 @@ func New(
 	session *session.Server,
 	reports *reports.Server,
 	requests *requests.Server,
+	settings *settings.Server,
 	sources *sources.Server,
 	suggestions *suggestions.Server,
 	syncPlay *syncplay.Server,
@@ -230,6 +234,7 @@ func New(
 		SessionServer:            session,
 		ReportsServer:            reports,
 		RequestsServer:           requests,
+		SettingsServer:           settings,
 		SourcesServer:            sources,
 		SuggestionsServer:        suggestions,
 		SyncPlayServer:           syncPlay,

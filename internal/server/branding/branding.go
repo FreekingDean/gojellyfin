@@ -32,7 +32,7 @@ type Styling interface {
 }
 
 type Shelves interface {
-	Titles() []shelves.Title
+	Titles(ctx context.Context) ([]shelves.Title, error)
 }
 
 type Server struct {
@@ -102,7 +102,11 @@ func (s *Server) brandingCss(ctx context.Context) (string, error) {
 	css := strings.Builder{}
 	css.WriteString(apiutil.Deref(branding.CustomCss))
 	css.WriteString(s.links.CSS())
-	for _, title := range s.shelves.Titles() {
+	titles, err := s.shelves.Titles(ctx)
+	if err != nil {
+		return "", err
+	}
+	for _, title := range titles {
 		fmt.Fprintf(&css, shelfTitle, title.ID, cssString.Replace(title.Name))
 	}
 

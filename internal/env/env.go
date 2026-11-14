@@ -22,7 +22,7 @@ const (
 var serverIDPattern = regexp.MustCompile(`^[0-9a-f]{32}$`)
 
 type Config struct {
-	DatabaseURL        string     `mapstructure:"DATABASE_URL"`
+	DatabaseURL        string     `mapstructure:"DATABASE_URL" secret:"true"`
 	HTTPPort           int        `mapstructure:"HTTP_PORT"`
 	PublishedServerURL string     `mapstructure:"PUBLISHED_SERVER_URL"`
 	ServerID           string     `mapstructure:"SERVER_ID"`
@@ -33,7 +33,6 @@ type Config struct {
 	TMDB               TMDB       `mapstructure:",squash"`
 	OIDC               OIDC       `mapstructure:",squash"`
 	MediaDirectories   []string   `mapstructure:"MEDIA_DIRECTORIES"`
-	Shelves            []string   `mapstructure:"SHELVES"`
 
 	SourceAPIKeys map[string]string `mapstructure:"-"`
 }
@@ -54,14 +53,14 @@ type Tracing struct {
 }
 
 type TMDB struct {
-	APIKey  string `mapstructure:"TMDB_API_KEY"`
+	APIKey  string `mapstructure:"TMDB_API_KEY" secret:"true"`
 	BaseURL string `mapstructure:"TMDB_BASE_URL"`
 }
 
 type OIDC struct {
 	IssuerURL         string `mapstructure:"OIDC_ISSUER_URL"`
 	ClientID          string `mapstructure:"OIDC_CLIENT_ID"`
-	ClientSecret      string `mapstructure:"OIDC_CLIENT_SECRET"`
+	ClientSecret      string `mapstructure:"OIDC_CLIENT_SECRET" secret:"true"`
 	Scopes            string `mapstructure:"OIDC_SCOPES"`
 	UsernameClaim     string `mapstructure:"OIDC_USERNAME_CLAIM"`
 	GroupsClaim       string `mapstructure:"OIDC_GROUPS_CLAIM"`
@@ -84,9 +83,6 @@ func Load() (Config, error) {
 
 	config.CORSOrigins = trimmed(config.CORSOrigins)
 	config.MediaDirectories = trimmed(config.MediaDirectories)
-	if config.Shelves != nil {
-		config.Shelves = trimmed(config.Shelves)
-	}
 	config.SourceAPIKeys = sourceAPIKeys()
 
 	if err := config.validate(); err != nil {

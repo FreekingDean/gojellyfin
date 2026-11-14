@@ -25,7 +25,7 @@ func (s signOn) Enabled() bool { return bool(s) }
 
 type titles []shelves.Title
 
-func (t titles) Titles() []shelves.Title { return t }
+func (t titles) Titles(context.Context) ([]shelves.Title, error) { return t, nil }
 
 func TestServer_GetBrandingCss(t *testing.T) {
 	base, err := env.Load()
