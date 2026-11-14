@@ -39,6 +39,17 @@ type Shelf struct {
 	query      items.LatestQuery
 }
 
+type Card struct {
+	Name    string
+	Fresh   int
+	Posters []*items.Image
+}
+
+const (
+	FreshLimit  = 99
+	freshWindow = 7 * 24 * time.Hour
+)
+
 type Settings interface {
 	Configuration(ctx context.Context, key string) (json.RawMessage, error)
 	SetConfiguration(ctx context.Context, key string, value json.RawMessage) error
@@ -241,25 +252,25 @@ func (s *Service) Latest(ctx context.Context, shelf Shelf, limit int, ungrouped 
 	return s.catalogue.LatestItems(ctx, query)
 }
 
-func (s *Service) Posters(ctx context.Context, id uuid.UUID, viewer items.Viewer, limit int) ([]*items.Image, bool, error) {
+func (s *Service) Card(ctx context.Context, id uuid.UUID, viewer items.Viewer, limit int) (Card, bool, error) {
 	enabled, err := s.enabled(ctx)
 	if err != nil {
-		return nil, false, err
+		return Card{}, false, err
 	}
 
 	index := slices.IndexFunc(enabled, func(entry definition) bool { return entry.shared && ID(entry.slug) == id })
 	if index < 0 {
-		return nil, false, nil
+		return Card{}, false, nil
 	}
 
 	shelf, ok, err := s.resolve(ctx, enabled[index], viewer, uuid.Nil)
 	if err != nil || !ok {
-		return nil, false, err
+		return Card{}, false, err
 	}
 
 	latest, err := s.Latest(ctx, shelf, limit*2, false)
 	if err != nil {
-		return nil, false, err
+		return Card{}, false, err
 	}
 
 	records := make([]*items.Item, 0, len(latest))
@@ -268,6 +279,28 @@ func (s *Service) Posters(ctx context.Context, id uuid.UUID, viewer items.Viewer
 	}
 
 	posters, err := s.catalogue.Posters(ctx, records, limit)
+	if err != nil {
+		return Card{}, false, err
+	}
 
-	return posters, true, err
+	fresh, err := s.fresh(ctx, shelf)
+
+	return Card{Name: shelf.Name, Fresh: fresh, Posters: posters}, true, err
+}
+
+func (s *Service) fresh(ctx context.Context, shelf Shelf) (int, error) {
+	aired, err := s.Latest(ctx, shelf, FreshLimit, true)
+	if err != nil {
+		return 0, err
+	}
+
+	since := s.now().Add(-freshWindow)
+	count := 0
+	for _, entry := range aired {
+		if entry.Item.PremiereDate != nil && entry.Item.PremiereDate.After(since) {
+			count++
+		}
+	}
+
+	return count, nil
 }

@@ -16,6 +16,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/shelves"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
@@ -300,21 +301,21 @@ func TestService_Image(t *testing.T) {
 
 type unshelved struct{}
 
-func (unshelved) Posters(context.Context, uuid.UUID, items.Viewer, int) ([]*items.Image, bool, error) {
-	return nil, false, nil
+func (unshelved) Card(context.Context, uuid.UUID, items.Viewer, int) (shelves.Card, bool, error) {
+	return shelves.Card{}, false, nil
 }
 
 type shelved struct {
-	id      uuid.UUID
-	posters []*items.Image
+	id   uuid.UUID
+	card shelves.Card
 }
 
-func (s shelved) Posters(_ context.Context, id uuid.UUID, viewer items.Viewer, _ int) ([]*items.Image, bool, error) {
+func (s shelved) Card(_ context.Context, id uuid.UUID, viewer items.Viewer, _ int) (shelves.Card, bool, error) {
 	if id != s.id || !viewer.All {
-		return nil, false, nil
+		return shelves.Card{}, false, nil
 	}
 
-	return s.posters, true, nil
+	return s.card, true, nil
 }
 
 func TestService_Shelf(t *testing.T) {
@@ -329,31 +330,41 @@ func TestService_Shelf(t *testing.T) {
 	}
 
 	shelfID := uuid.New()
-	service := newService(items.New(fixture.client), shelved{id: shelfID, posters: posters})
+	card := shelves.Card{Name: "Recently Aired", Fresh: 3, Posters: posters}
+	service := newService(items.New(fixture.client), shelved{id: shelfID, card: card})
 
 	tag, err := service.Tag(ctx, shelfID)
 	if err != nil {
 		t.Fatalf("failed to read the shelf's tag: %v", err)
 	}
-	if tag == "" || tag != fixture.tag(t) {
-		t.Errorf("tag = %q, want the tag of the posters the shelf answered", tag)
+	if tag == "" {
+		t.Fatal("the shelf has no tag")
+	}
+
+	card.Fresh = 4
+	recounted, err := newService(items.New(fixture.client), shelved{id: shelfID, card: card}).Tag(ctx, shelfID)
+	if err != nil {
+		t.Fatalf("failed to read the recounted tag: %v", err)
+	}
+	if recounted == tag {
+		t.Error("a new count kept the old tag, so a client would keep the old card")
 	}
 
 	built, ok := service.Image(ctx, shelfID)
 	if !ok || !built.Complete {
-		t.Fatalf("shelf collage = %v complete %v, want a complete collage", ok, built.Complete)
+		t.Fatalf("shelf card = %v complete %v, want a complete card", ok, built.Complete)
 	}
 	if bytes.Equal(built.Body, fixture.image(t)) {
-		t.Error("the shelf's card is the library's grid, want the fanned stack")
+		t.Error("the shelf's card is the library's grid, want the titled card")
 	}
 
-	fanned := opened(t, built.Body)
-	front := fanned.At(width/2, height/2)
+	drawn := opened(t, built.Body)
+	front := drawn.At(850, height/2)
 	if r, g, b, _ := front.RGBA(); g>>8 < 150 || r>>8 > 80 || b>>8 > 80 {
-		t.Errorf("centre = %v, want the newest poster, which is green", front)
+		t.Errorf("front = %v, want the newest poster, which is green", front)
 	}
-	corner := fanned.At(4, 4)
-	if r, g, b, _ := corner.RGBA(); r>>8 > 120 || g>>8 > 120 || b>>8 > 120 {
-		t.Errorf("corner = %v, want the dimmed backdrop", corner)
+	corner := drawn.At(4, height-4)
+	if r, g, b, _ := corner.RGBA(); r>>8 > 40 || g>>8 > 40 || b>>8 > 40 {
+		t.Errorf("corner = %v, want the dark side the title sits on", corner)
 	}
 }

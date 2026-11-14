@@ -23,15 +23,15 @@ test.describe('the library cards', () => {
 });
 
 test.describe('the shelf cards', () => {
-  test('fan Recently Aired out with the newest show in front', async ({ signedIn: page }) => {
-    const [front, , corner] = await sampled(page, 'Recently Aired', FAN);
+  test('title Recently Aired and stack its shows with the newest in front', async ({ signedIn: page }) => {
+    const [front, , corner] = await sampled(page, 'Recently Aired', STACK);
 
     expect(near(front, GREEN)).toBe(true);
     expect(near(corner, GREEN)).toBe(false);
   });
 
-  test('fan New Releases out with the newest movie in front and the next beside it', async ({ signedIn: page }) => {
-    const [front, beside, corner] = await sampled(page, 'New Releases', FAN);
+  test('title New Releases and stack its movies with the newest in front and the next behind it', async ({ signedIn: page }) => {
+    const [front, beside, corner] = await sampled(page, 'New Releases', STACK);
 
     expect(near(front, RED) || near(front, BLUE)).toBe(true);
     expect(near(beside, near(front, RED) ? BLUE : RED)).toBe(true);
@@ -40,10 +40,10 @@ test.describe('the shelf cards', () => {
 });
 
 const GRID = Array.from({ length: 10 }, (_, cell) => [((cell % 5) + 0.5) / 5, (Math.floor(cell / 5) + 0.5) / 2]);
-const FAN = [
-  [0.5, 0.5],
-  [0.7, 0.6],
-  [0.02, 0.04],
+const STACK = [
+  [0.885, 0.5],
+  [0.73, 0.7],
+  [0.02, 0.96],
 ];
 
 function collage(page, library) {
