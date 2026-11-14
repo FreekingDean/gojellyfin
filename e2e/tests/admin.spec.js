@@ -27,7 +27,7 @@ test.describe('the admin app', () => {
     await expect(page.locator('.failure')).toHaveText('That username and password did not sign in.');
 
     await signIn(page, harness);
-    await expect(page.getByRole('heading', { name: 'Requests and Reports' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
     await expect(page.locator('nav')).toContainText('Signed in as ' + harness.username);
 
     await page.goto(harness.baseUrl + '/admin/requests');
@@ -35,6 +35,18 @@ test.describe('the admin app', () => {
 
     await page.getByRole('button', { name: 'Sign out' }).click();
     await expect(page.getByLabel('Username')).toBeVisible();
+  });
+
+  test('says how the server is doing', async ({ page, harness }) => {
+    await page.goto(harness.baseUrl + '/admin');
+    await signIn(page, harness);
+
+    const health = page.locator('.health');
+    await expect(health.locator('div', { hasText: 'Database' })).toContainText('schema current');
+    await expect(health.locator('div', { hasText: 'Background work' })).toContainText('Set TEMPORAL_HOSTPORT');
+    await expect(health.locator('div', { hasText: 'Single sign-on' })).toContainText('127.0.0.1');
+    await expect(health.locator('div', { hasText: 'Transcoding' })).toContainText('ffmpeg found');
+    await expect(page.locator('main')).toContainText('Nobody is watching anything.');
   });
 
   test('closes a report somebody filed', async ({ page, harness }) => {
@@ -50,6 +62,7 @@ test.describe('the admin app', () => {
 
     await page.goto(harness.baseUrl + '/admin');
     await signIn(page, harness);
+    await page.getByRole('link', { name: 'Requests and Reports' }).click();
     await page.getByRole('tab', { name: 'Reports' }).click();
 
     const report = page.locator('tr', { hasText: 'filed by the admin spec' });
