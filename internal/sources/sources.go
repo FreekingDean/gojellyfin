@@ -268,6 +268,7 @@ func children(ctx context.Context, tx *store.Tx, id uuid.UUID, entry Configured)
 			SetTagFilter(bound.TagFilter).
 			OnConflictColumns(librarysourcemodel.FieldLibraryID, librarysourcemodel.FieldSourceID).
 			UpdateTagFilter().
+			UpdateUpdatedAt().
 			Exec(ctx); err != nil {
 			return conflict(err)
 		}
