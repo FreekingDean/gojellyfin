@@ -27,3 +27,32 @@ test.describe('the recently added row of a show library', () => {
     await expect(shows).toHaveScreenshot('recently-added-shows.png');
   });
 });
+
+test.describe('the virtual rows', () => {
+  test('list the newest aired episode of each show, newest first', async ({ signedIn: page, harness }) => {
+    const aired = row(page, 'Recently Aired');
+    await aired.scrollIntoViewIfNeeded();
+
+    const cards = aired.locator('.card');
+    await expect(cards).toHaveCount(2);
+    await expect(cards.nth(0).locator('.cardText').first()).toHaveText(harness.series);
+    await expect(cards.nth(0)).toContainText(harness.episodes[1]);
+    await expect(cards.nth(1).locator('.cardText').first()).toHaveText(harness.drama);
+    await expect(cards.nth(1)).toContainText(harness.finale);
+
+    await expect(aired).toHaveScreenshot('recently-aired.png');
+  });
+
+  test('list the movies by release date, newest first', async ({ signedIn: page, harness }) => {
+    const [alpha, beta] = harness.movies;
+    const releases = row(page, 'New Releases');
+    await releases.scrollIntoViewIfNeeded();
+
+    const cards = releases.locator('.card');
+    await expect(cards).toHaveCount(2);
+    await expect(cards.nth(0)).toContainText(alpha);
+    await expect(cards.nth(1)).toContainText(beta);
+
+    await expect(releases).toHaveScreenshot('new-releases.png');
+  });
+});

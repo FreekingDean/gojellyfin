@@ -43,6 +43,14 @@ var (
 	movies   = []string{"Fixture Alpha", "Fixture Beta"}
 	episodes = []string{"Fixture Pilot", "Fixture Second"}
 
+	released = map[string]int{
+		"Fixture Alpha":  2021,
+		"Fixture Beta":   2019,
+		"Fixture Pilot":  2020,
+		"Fixture Second": 2024,
+		"Fixture Finale": 2022,
+	}
+
 	posterShades = map[string]color.RGBA{
 		"Fixture Alpha": {R: 220, G: 40, B: 40, A: 255},
 		"Fixture Beta":  {R: 40, G: 60, B: 220, A: 255},
@@ -196,6 +204,9 @@ func seed() error {
 		if err := poster(ctx, catalogue, item.ID, name); err != nil {
 			return err
 		}
+		if err := aired(ctx, catalogue, item.ID, released[name]); err != nil {
+			return err
+		}
 	}
 
 	if err := playableMovie(ctx, client, catalogue, record.ID, downloader.ID); err != nil {
@@ -279,6 +290,9 @@ func (s shelf) series(ctx context.Context, name string, titles []string, modifie
 		if err := member(ctx, s.client, s.libraryID, s.sourceID, item.ID); err != nil {
 			return err
 		}
+		if err := aired(ctx, s.catalogue, item.ID, released[title]); err != nil {
+			return err
+		}
 	}
 
 	for _, id := range []uuid.UUID{show.ID, first.ID} {
@@ -324,6 +338,13 @@ func playableMovie(ctx context.Context, client *store.Client, catalogue *items.S
 	}
 
 	return member(ctx, client, libraryID, sourceID, item.ID)
+}
+
+func aired(ctx context.Context, catalogue *items.Service, itemID uuid.UUID, year int) error {
+	premiere := time.Date(year, time.March, 1, 0, 0, 0, 0, time.UTC)
+	_, err := catalogue.UpdateMetadata(ctx, itemID, items.Metadata{PremiereDate: &premiere})
+
+	return err
 }
 
 func member(ctx context.Context, client *store.Client, libraryID, sourceID, itemID uuid.UUID) error {

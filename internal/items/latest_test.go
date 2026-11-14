@@ -83,6 +83,12 @@ func TestService_LatestItems(t *testing.T) {
 			wantCounts: []int32{0, 0, 2},
 		},
 		{
+			name:       "newest only answers the newest episode of a series rather than the series",
+			query:      LatestQuery{Viewer: Everyone, Order: LatestAired, NewestOnly: true},
+			wantNames:  []string{"Airing E1", "Movie", "Ended E2"},
+			wantCounts: []int32{0, 0, 0},
+		},
+		{
 			name:       "ungrouped answers every episode",
 			query:      LatestQuery{Viewer: Everyone, Order: LatestAired, Ungrouped: true},
 			wantNames:  []string{"Airing E1", "Movie", "Ended E2", "Ended E1"},
