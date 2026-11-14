@@ -60,7 +60,7 @@ jobs:
           render --set pod=null --set api.resources=null
           render --set worker.enabled=true --set temporal.hostPort=temporal:7233 --set temporal.namespace=default --set migration.enabled=true \
             --set-json 'env=[{"name":"HOST_IP","valueFrom":{"fieldRef":{"fieldPath":"status.hostIP"}}}]' \
-            --set 'tracing.otlpEndpoint=http://$(HOST_IP):4317' \
+            --set 'tracing.otlpEndpoint=http://$(HOST_IP):4318' \
             --set-json 'media.extraVolumes=[{"name":"archive","mountPath":"/archive","volume":{"emptyDir":{}}}]' \
             --set-json 'pod.labels={"istio.io/dataplane-mode":"none"}' \
             --set-json 'service.labels={"istio.io/use-waypoint":"none"}'
