@@ -8,6 +8,7 @@ type Service interface {
 	PackageName() string
 	ProductName() string
 	Version() string
+	DetailedVersion() string
 }
 
 type serviceImpl struct {
@@ -42,6 +43,10 @@ func (s serviceImpl) ProductName() string {
 
 func (s serviceImpl) Version() string {
 	return s.version
+}
+
+func (s serviceImpl) DetailedVersion() string {
+	return s.version + "+gojellyfin." + buildVersion
 }
 
 func (s serviceImpl) OperatingSystem() string {

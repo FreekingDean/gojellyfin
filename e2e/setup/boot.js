@@ -20,6 +20,8 @@ const SHOWS = 'Smoke Shows';
 const SERIES = 'Fixture Show';
 const SEASON = 'Season 1';
 const EPISODES = ['Fixture Pilot', 'Fixture Second'];
+const DRAMA = 'Fixture Drama';
+const FINALE = 'Fixture Finale';
 const SSO_USERNAME = 'sso-viewer';
 const SSO_CLIENT_ID = 'gojellyfin';
 const SSO_CLIENT_SECRET = 'not-a-real-secret';
@@ -105,6 +107,8 @@ async function boot() {
       series: SERIES,
       season: SEASON,
       episodes: EPISODES,
+      drama: DRAMA,
+      finale: FINALE,
     },
     serverLog: () => log.join(''),
     async stop() {
