@@ -65,7 +65,7 @@ func TestProcess_Read(t *testing.T) {
 	})
 
 	t.Run("does not mistake a pipe closed by ffmpeg for its exit", func(t *testing.T) {
-		fakeFFmpeg(t, "printf partial; exec 1>&-; sleep 0.2; exit 3")
+		fakeFFmpeg(t, "printf partial; exec 1>&-; command -p sleep 0.2; exit 3")
 
 		output, err := start(context.Background(), Spec{Path: "/dev/null", Container: "mp3"})
 		if err != nil {
