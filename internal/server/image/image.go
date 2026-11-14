@@ -8,21 +8,46 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/collage"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/server/link"
 )
 
 const cacheFor = "public, max-age=86400"
 
+type Splash interface {
+	Enabled() bool
+	Splashscreen(deviceID string) ([]byte, error)
+}
+
 type Server struct {
 	items    *items.Service
 	collages *collage.Service
+	splash   Splash
 }
 
-func New(items *items.Service, collages *collage.Service) *Server {
-	return &Server{items: items, collages: collages}
+func New(items *items.Service, collages *collage.Service, links *link.Handler) *Server {
+	return &Server{items: items, collages: collages, splash: links}
+}
+
+func (s *Server) GetSplashscreen(ctx context.Context, request api.GetSplashscreenRequestObject) (api.GetSplashscreenResponseObject, error) {
+	if !s.splash.Enabled() {
+		return nil, api.ErrNotImplemented
+	}
+
+	picture, err := s.splash.Splashscreen(auth.AuthorizationFrom(ctx).DeviceID)
+	if err != nil {
+		return nil, err
+	}
+
+	return api.GetSplashscreen200ImageResponse{
+		Body:          bytes.NewReader(picture),
+		ContentType:   "image/png",
+		ContentLength: int64(len(picture)),
+	}, nil
 }
 
 func (s *Server) GetItemImage(ctx context.Context, request api.GetItemImageRequestObject) (api.GetItemImageResponseObject, error) {

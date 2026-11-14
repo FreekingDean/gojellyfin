@@ -68,7 +68,7 @@ var (
 
 func main() {
 	if len(os.Args) < 2 {
-		fail(fmt.Errorf("usage: fixtures create|drop|seed"))
+		fail(fmt.Errorf("usage: fixtures create|drop|seed|oidc"))
 	}
 
 	var err error
@@ -79,6 +79,8 @@ func main() {
 		err = drop()
 	case "seed":
 		err = seed()
+	case "oidc":
+		err = oidc()
 	default:
 		err = fmt.Errorf("unknown action %q", os.Args[1])
 	}

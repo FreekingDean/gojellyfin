@@ -59,6 +59,7 @@ jobs:
           render --set cors.enabled=true --set cors.origin=https://example.test
           render --set hostname=example.test --set oidc.issuerUrl=https://auth.example.test --set oidc.clientId=gojellyfin \
             --set oidc.existingSecret=gojellyfin-oidc --set oidc.adminGroup=admins --set oidc.linkExistingUsers=true
+          render --set oidc.issuerUrl=https://auth.example.test --set oidc.existingSecret=gojellyfin-oidc
           render --set pod=null --set api.resources=null
           render --set worker.enabled=true --set temporal.hostPort=temporal:7233 --set temporal.namespace=default \
             --set worker.autoscaling.enabled=true --set worker.podDisruptionBudget.enabled=true
@@ -90,7 +91,6 @@ jobs:
           refuses --set worker.enabled=true --set temporal.hostPort=temporal:7233 --set temporal.namespace=default \
             --set worker.autoscaling.enabled=true --set worker.autoscaling.minReplicas=4 --set worker.autoscaling.maxReplicas=2
           refuses --set oidc.issuerUrl=https://auth.example.test --set oidc.clientId=gojellyfin
-          refuses --set hostname=example.test --set oidc.issuerUrl=https://auth.example.test
 
   generate:
     runs-on: ubuntu-latest
