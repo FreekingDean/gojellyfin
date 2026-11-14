@@ -34,7 +34,16 @@ type Job struct {
 	Category    string
 	Description string
 	Startable   bool
+	Queue       string
 	Run         func(ctx context.Context) error
+}
+
+func (j Job) queue() string {
+	if j.Queue == "" {
+		return TaskQueue
+	}
+
+	return j.Queue
 }
 
 type Params map[string]string

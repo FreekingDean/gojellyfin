@@ -42,6 +42,18 @@ type queue struct {
 	running   []*workflow.WorkflowExecutionInfo
 	finished  []*workflow.WorkflowExecutionInfo
 	cancelled []string
+	started   []client.StartWorkflowOptions
+}
+
+func (q *queue) ExecuteWorkflow(
+	_ context.Context,
+	options client.StartWorkflowOptions,
+	_ any,
+	_ ...any,
+) (client.WorkflowRun, error) {
+	q.started = append(q.started, options)
+
+	return nil, nil
 }
 
 func (q *queue) ListWorkflow(
@@ -80,11 +92,24 @@ var refreshJob = Job{
 	Run:         func(context.Context) error { return nil },
 }
 
+var identifyJob = Job{
+	Name:  "RefreshItemMetadata",
+	Queue: MetadataQueue,
+	Run:   func(context.Context) error { return nil },
+}
+
+var probeJob = Job{
+	Name: "ProbeFile",
+	Run:  func(context.Context) error { return nil },
+}
+
 func serviceOver(t *testing.T, queued *queue) *Service {
 	t.Helper()
 
 	registry := NewRegistry()
 	registry.Register(refreshJob)
+	registry.Register(identifyJob)
+	registry.Register(probeJob)
 
 	return NewService(&Client{client: queued}, registry)
 }
@@ -167,5 +192,63 @@ func TestService_Cancel(t *testing.T) {
 	}
 	if len(queued.cancelled) != 1 || queued.cancelled[0] != scoped {
 		t.Errorf("cancelled = %v, want only %q", queued.cancelled, scoped)
+	}
+}
+
+func TestService_Enqueue(t *testing.T) {
+	for name, want := range map[string]string{
+		"RefreshItemMetadata": MetadataQueue,
+		"ProbeFile":           TaskQueue,
+	} {
+		t.Run(name, func(t *testing.T) {
+			queued := &queue{}
+
+			if err := serviceOver(t, queued).Enqueue(context.Background(), name); err != nil {
+				t.Fatalf("Enqueue returned %v", err)
+			}
+			if len(queued.started) != 1 || queued.started[0].TaskQueue != want {
+				t.Errorf("started = %v, want one run on %q", queued.started, want)
+			}
+		})
+	}
+
+	t.Run("refuses a job nothing registered", func(t *testing.T) {
+		queued := &queue{}
+
+		err := serviceOver(t, queued).Enqueue(context.Background(), "Unregistered")
+		if !errors.Is(err, ErrNotFound) {
+			t.Errorf("err = %v, want ErrNotFound", err)
+		}
+		if len(queued.started) != 0 {
+			t.Errorf("started = %v, want nothing", queued.started)
+		}
+	})
+}
+
+func TestService_Start(t *testing.T) {
+	queued := &queue{}
+	queuedRefresh := refreshJob
+	queuedRefresh.Queue = MetadataQueue
+
+	registry := NewRegistry()
+	registry.Register(queuedRefresh)
+
+	if err := NewService(&Client{client: queued}, registry).Start(context.Background(), "RefreshMetadata"); err != nil {
+		t.Fatalf("Start returned %v", err)
+	}
+	if len(queued.started) != 1 || queued.started[0].TaskQueue != MetadataQueue {
+		t.Errorf("started = %v, want one run on %q", queued.started, MetadataQueue)
+	}
+}
+
+func TestRegistry_Queues(t *testing.T) {
+	registry := NewRegistry()
+	registry.Register(identifyJob)
+	registry.Register(probeJob)
+	registry.Register(identifyJob)
+
+	got := registry.Queues()
+	if len(got) != 2 || got[0] != TaskQueue || got[1] != MetadataQueue {
+		t.Errorf("queues = %v, want [%s %s]", got, TaskQueue, MetadataQueue)
 	}
 }

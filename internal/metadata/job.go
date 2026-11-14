@@ -14,6 +14,7 @@ func (s *Service) Job() jobs.Job {
 		Category:    "Library",
 		Description: "Identifies every item nothing has identified yet.",
 		Startable:   true,
+		Queue:       jobs.MetadataQueue,
 		Run:         s.runBatch,
 	}
 }
@@ -23,6 +24,7 @@ func (s *Service) ItemJob() jobs.Job {
 		Name:        jobs.RefreshItemMetadata,
 		Category:    "Library",
 		Description: "Identifies one item.",
+		Queue:       jobs.MetadataQueue,
 		Run:         s.runOne,
 	}
 }
