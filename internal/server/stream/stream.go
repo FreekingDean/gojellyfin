@@ -262,6 +262,9 @@ func (h *Handler) relay(w http.ResponseWriter, r *http.Request, source *items.Me
 	}
 	if err != nil {
 		log.Printf("transcode of %s to %s stopped after %d bytes: %v", source.Path, container, relayed, err)
+		if errors.Is(err, transcode.ErrExited) && ctx.Err() == nil {
+			h.broken(r, source, err)
+		}
 		panic(http.ErrAbortHandler)
 	}
 

@@ -33,8 +33,8 @@ func TestProcess_Read(t *testing.T) {
 		if string(body) != "partial" {
 			t.Errorf("read %q before the failure, want %q", body, "partial")
 		}
-		if err == nil {
-			t.Fatal("an ffmpeg that exited 1 read as a clean end of stream")
+		if !errors.Is(err, ErrExited) {
+			t.Fatalf("read error = %v, want ErrExited", err)
 		}
 		if !strings.Contains(err.Error(), "Error while decoding") {
 			t.Errorf("the error %q does not carry what ffmpeg said", err)
