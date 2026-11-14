@@ -17,6 +17,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
+	"github.com/FreekingDean/gojellyfin/internal/store/requestsubmission"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/FreekingDean/gojellyfin/internal/store/sourcepath"
 	"github.com/google/uuid"
@@ -33,6 +34,7 @@ type SourceQuery struct {
 	withLibraries   *LibrarySourceQuery
 	withFiles       *ItemSourceQuery
 	withMemberships *LibraryItemQuery
+	withSubmissions *RequestSubmissionQuery
 	modifiers       []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -151,6 +153,28 @@ func (_q *SourceQuery) QueryMemberships() *LibraryItemQuery {
 			sqlgraph.From(source.Table, source.FieldID, selector),
 			sqlgraph.To(libraryitem.Table, libraryitem.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, source.MembershipsTable, source.MembershipsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySubmissions chains the current query on the "submissions" edge.
+func (_q *SourceQuery) QuerySubmissions() *RequestSubmissionQuery {
+	query := (&RequestSubmissionClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(source.Table, source.FieldID, selector),
+			sqlgraph.To(requestsubmission.Table, requestsubmission.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, source.SubmissionsTable, source.SubmissionsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -354,6 +378,7 @@ func (_q *SourceQuery) Clone() *SourceQuery {
 		withLibraries:   _q.withLibraries.Clone(),
 		withFiles:       _q.withFiles.Clone(),
 		withMemberships: _q.withMemberships.Clone(),
+		withSubmissions: _q.withSubmissions.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -401,6 +426,17 @@ func (_q *SourceQuery) WithMemberships(opts ...func(*LibraryItemQuery)) *SourceQ
 		opt(query)
 	}
 	_q.withMemberships = query
+	return _q
+}
+
+// WithSubmissions tells the query-builder to eager-load the nodes that are connected to
+// the "submissions" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *SourceQuery) WithSubmissions(opts ...func(*RequestSubmissionQuery)) *SourceQuery {
+	query := (&RequestSubmissionClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withSubmissions = query
 	return _q
 }
 
@@ -482,11 +518,12 @@ func (_q *SourceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Sourc
 	var (
 		nodes       = []*Source{}
 		_spec       = _q.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [5]bool{
 			_q.withPaths != nil,
 			_q.withLibraries != nil,
 			_q.withFiles != nil,
 			_q.withMemberships != nil,
+			_q.withSubmissions != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -535,6 +572,13 @@ func (_q *SourceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Sourc
 		if err := _q.loadMemberships(ctx, query, nodes,
 			func(n *Source) { n.Edges.Memberships = []*LibraryItem{} },
 			func(n *Source, e *LibraryItem) { n.Edges.Memberships = append(n.Edges.Memberships, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withSubmissions; query != nil {
+		if err := _q.loadSubmissions(ctx, query, nodes,
+			func(n *Source) { n.Edges.Submissions = []*RequestSubmission{} },
+			func(n *Source, e *RequestSubmission) { n.Edges.Submissions = append(n.Edges.Submissions, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -646,6 +690,36 @@ func (_q *SourceQuery) loadMemberships(ctx context.Context, query *LibraryItemQu
 	}
 	query.Where(predicate.LibraryItem(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(source.MembershipsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.SourceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "source_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *SourceQuery) loadSubmissions(ctx context.Context, query *RequestSubmissionQuery, nodes []*Source, init func(*Source), assign func(*Source, *RequestSubmission)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Source)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(requestsubmission.FieldSourceID)
+	}
+	query.Where(predicate.RequestSubmission(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(source.SubmissionsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

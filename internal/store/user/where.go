@@ -101,6 +101,21 @@ func OidcSubject(v string) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldOidcSubject, v))
 }
 
+// CanRequest applies equality check predicate on the "can_request" field. It's identical to CanRequestEQ.
+func CanRequest(v bool) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldCanRequest, v))
+}
+
+// RequestsNeedApproval applies equality check predicate on the "requests_need_approval" field. It's identical to RequestsNeedApprovalEQ.
+func RequestsNeedApproval(v bool) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldRequestsNeedApproval, v))
+}
+
+// RequestQuota applies equality check predicate on the "request_quota" field. It's identical to RequestQuotaEQ.
+func RequestQuota(v int) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldRequestQuota, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldCreatedAt, v))
@@ -626,6 +641,76 @@ func OidcSubjectContainsFold(v string) predicate.User {
 	return predicate.User(sql.FieldContainsFold(FieldOidcSubject, v))
 }
 
+// CanRequestEQ applies the EQ predicate on the "can_request" field.
+func CanRequestEQ(v bool) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldCanRequest, v))
+}
+
+// CanRequestNEQ applies the NEQ predicate on the "can_request" field.
+func CanRequestNEQ(v bool) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldCanRequest, v))
+}
+
+// RequestsNeedApprovalEQ applies the EQ predicate on the "requests_need_approval" field.
+func RequestsNeedApprovalEQ(v bool) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldRequestsNeedApproval, v))
+}
+
+// RequestsNeedApprovalNEQ applies the NEQ predicate on the "requests_need_approval" field.
+func RequestsNeedApprovalNEQ(v bool) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldRequestsNeedApproval, v))
+}
+
+// RequestQuotaEQ applies the EQ predicate on the "request_quota" field.
+func RequestQuotaEQ(v int) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldRequestQuota, v))
+}
+
+// RequestQuotaNEQ applies the NEQ predicate on the "request_quota" field.
+func RequestQuotaNEQ(v int) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldRequestQuota, v))
+}
+
+// RequestQuotaIn applies the In predicate on the "request_quota" field.
+func RequestQuotaIn(vs ...int) predicate.User {
+	return predicate.User(sql.FieldIn(FieldRequestQuota, vs...))
+}
+
+// RequestQuotaNotIn applies the NotIn predicate on the "request_quota" field.
+func RequestQuotaNotIn(vs ...int) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldRequestQuota, vs...))
+}
+
+// RequestQuotaGT applies the GT predicate on the "request_quota" field.
+func RequestQuotaGT(v int) predicate.User {
+	return predicate.User(sql.FieldGT(FieldRequestQuota, v))
+}
+
+// RequestQuotaGTE applies the GTE predicate on the "request_quota" field.
+func RequestQuotaGTE(v int) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldRequestQuota, v))
+}
+
+// RequestQuotaLT applies the LT predicate on the "request_quota" field.
+func RequestQuotaLT(v int) predicate.User {
+	return predicate.User(sql.FieldLT(FieldRequestQuota, v))
+}
+
+// RequestQuotaLTE applies the LTE predicate on the "request_quota" field.
+func RequestQuotaLTE(v int) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldRequestQuota, v))
+}
+
+// RequestQuotaIsNil applies the IsNil predicate on the "request_quota" field.
+func RequestQuotaIsNil() predicate.User {
+	return predicate.User(sql.FieldIsNull(FieldRequestQuota))
+}
+
+// RequestQuotaNotNil applies the NotNil predicate on the "request_quota" field.
+func RequestQuotaNotNil() predicate.User {
+	return predicate.User(sql.FieldNotNull(FieldRequestQuota))
+}
+
 // HasConfiguration applies the HasEdge predicate on the "configuration" edge.
 func HasConfiguration() predicate.User {
 	return predicate.User(func(s *sql.Selector) {
@@ -825,6 +910,29 @@ func HasQuickConnectRequests() predicate.User {
 func HasQuickConnectRequestsWith(preds ...predicate.QuickConnectRequest) predicate.User {
 	return predicate.User(func(s *sql.Selector) {
 		step := newQuickConnectRequestsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasRequests applies the HasEdge predicate on the "requests" edge.
+func HasRequests() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, RequestsTable, RequestsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasRequestsWith applies the HasEdge predicate on the "requests" edge with a given conditions (other predicates).
+func HasRequestsWith(preds ...predicate.Request) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newRequestsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

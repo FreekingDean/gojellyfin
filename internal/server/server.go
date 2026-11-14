@@ -4,6 +4,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/activitylog"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apikey"
+	"github.com/FreekingDean/gojellyfin/internal/server/artists"
 	"github.com/FreekingDean/gojellyfin/internal/server/branding"
 	"github.com/FreekingDean/gojellyfin/internal/server/channels"
 	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
@@ -27,6 +28,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/playstate"
 	"github.com/FreekingDean/gojellyfin/internal/server/plugins"
 	"github.com/FreekingDean/gojellyfin/internal/server/quickconnect"
+	"github.com/FreekingDean/gojellyfin/internal/server/requests"
 	"github.com/FreekingDean/gojellyfin/internal/server/scheduledtasks"
 	"github.com/FreekingDean/gojellyfin/internal/server/search"
 	"github.com/FreekingDean/gojellyfin/internal/server/session"
@@ -62,6 +64,7 @@ type (
 	DevicesServer            = devices.Server
 	ScheduledTasksServer     = scheduledtasks.Server
 	DashboardServer          = dashboard.Server
+	ArtistsServer            = artists.Server
 	ChannelsServer           = channels.Server
 	EnvironmentServer        = environment.Server
 	ActivityLogServer        = activitylog.Server
@@ -80,6 +83,7 @@ type (
 	PackagesServer           = packages.Server
 	QuickConnectServer       = quickconnect.Server
 	SessionServer            = session.Server
+	RequestsServer           = requests.Server
 	SourcesServer            = sources.Server
 	SuggestionsServer        = suggestions.Server
 	SyncPlayServer           = syncplay.Server
@@ -105,6 +109,7 @@ type Server struct {
 	*DevicesServer
 	*ScheduledTasksServer
 	*DashboardServer
+	*ArtistsServer
 	*ChannelsServer
 	*EnvironmentServer
 	*ActivityLogServer
@@ -123,6 +128,7 @@ type Server struct {
 	*PackagesServer
 	*QuickConnectServer
 	*SessionServer
+	*RequestsServer
 	*SourcesServer
 	*SuggestionsServer
 	*SyncPlayServer
@@ -150,6 +156,7 @@ func New(
 	devices *devices.Server,
 	scheduledtasks *scheduledtasks.Server,
 	dashboard *dashboard.Server,
+	artists *artists.Server,
 	channels *channels.Server,
 	environment *environment.Server,
 	activityLog *activitylog.Server,
@@ -168,6 +175,7 @@ func New(
 	packages *packages.Server,
 	quickConnect *quickconnect.Server,
 	session *session.Server,
+	requests *requests.Server,
 	sources *sources.Server,
 	suggestions *suggestions.Server,
 	syncPlay *syncplay.Server,
@@ -192,6 +200,7 @@ func New(
 		DevicesServer:            devices,
 		ScheduledTasksServer:     scheduledtasks,
 		DashboardServer:          dashboard,
+		ArtistsServer:            artists,
 		ChannelsServer:           channels,
 		EnvironmentServer:        environment,
 		ActivityLogServer:        activityLog,
@@ -210,6 +219,7 @@ func New(
 		PackagesServer:           packages,
 		QuickConnectServer:       quickConnect,
 		SessionServer:            session,
+		RequestsServer:           requests,
 		SourcesServer:            sources,
 		SuggestionsServer:        suggestions,
 		SyncPlayServer:           syncPlay,

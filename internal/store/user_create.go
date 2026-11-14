@@ -17,6 +17,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
 	"github.com/FreekingDean/gojellyfin/internal/store/quickconnectrequest"
+	"github.com/FreekingDean/gojellyfin/internal/store/request"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
@@ -131,6 +132,48 @@ func (_c *UserCreate) SetOidcSubject(v string) *UserCreate {
 func (_c *UserCreate) SetNillableOidcSubject(v *string) *UserCreate {
 	if v != nil {
 		_c.SetOidcSubject(*v)
+	}
+	return _c
+}
+
+// SetCanRequest sets the "can_request" field.
+func (_c *UserCreate) SetCanRequest(v bool) *UserCreate {
+	_c.mutation.SetCanRequest(v)
+	return _c
+}
+
+// SetNillableCanRequest sets the "can_request" field if the given value is not nil.
+func (_c *UserCreate) SetNillableCanRequest(v *bool) *UserCreate {
+	if v != nil {
+		_c.SetCanRequest(*v)
+	}
+	return _c
+}
+
+// SetRequestsNeedApproval sets the "requests_need_approval" field.
+func (_c *UserCreate) SetRequestsNeedApproval(v bool) *UserCreate {
+	_c.mutation.SetRequestsNeedApproval(v)
+	return _c
+}
+
+// SetNillableRequestsNeedApproval sets the "requests_need_approval" field if the given value is not nil.
+func (_c *UserCreate) SetNillableRequestsNeedApproval(v *bool) *UserCreate {
+	if v != nil {
+		_c.SetRequestsNeedApproval(*v)
+	}
+	return _c
+}
+
+// SetRequestQuota sets the "request_quota" field.
+func (_c *UserCreate) SetRequestQuota(v int) *UserCreate {
+	_c.mutation.SetRequestQuota(v)
+	return _c
+}
+
+// SetNillableRequestQuota sets the "request_quota" field if the given value is not nil.
+func (_c *UserCreate) SetNillableRequestQuota(v *int) *UserCreate {
+	if v != nil {
+		_c.SetRequestQuota(*v)
 	}
 	return _c
 }
@@ -284,6 +327,21 @@ func (_c *UserCreate) AddQuickConnectRequests(v ...*QuickConnectRequest) *UserCr
 	return _c.AddQuickConnectRequestIDs(ids...)
 }
 
+// AddRequestIDs adds the "requests" edge to the Request entity by IDs.
+func (_c *UserCreate) AddRequestIDs(ids ...uuid.UUID) *UserCreate {
+	_c.mutation.AddRequestIDs(ids...)
+	return _c
+}
+
+// AddRequests adds the "requests" edges to the Request entity.
+func (_c *UserCreate) AddRequests(v ...*Request) *UserCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddRequestIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (_c *UserCreate) Mutation() *UserMutation {
 	return _c.mutation
@@ -327,6 +385,14 @@ func (_c *UserCreate) defaults() {
 		v := user.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.CanRequest(); !ok {
+		v := user.DefaultCanRequest
+		_c.mutation.SetCanRequest(v)
+	}
+	if _, ok := _c.mutation.RequestsNeedApproval(); !ok {
+		v := user.DefaultRequestsNeedApproval
+		_c.mutation.SetRequestsNeedApproval(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -345,6 +411,12 @@ func (_c *UserCreate) check() error {
 	}
 	if _, ok := _c.mutation.PasswordHash(); !ok {
 		return &ValidationError{Name: "password_hash", err: errors.New(`store: missing required field "User.password_hash"`)}
+	}
+	if _, ok := _c.mutation.CanRequest(); !ok {
+		return &ValidationError{Name: "can_request", err: errors.New(`store: missing required field "User.can_request"`)}
+	}
+	if _, ok := _c.mutation.RequestsNeedApproval(); !ok {
+		return &ValidationError{Name: "requests_need_approval", err: errors.New(`store: missing required field "User.requests_need_approval"`)}
 	}
 	return nil
 }
@@ -417,6 +489,18 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.OidcSubject(); ok {
 		_spec.SetField(user.FieldOidcSubject, field.TypeString, value)
 		_node.OidcSubject = &value
+	}
+	if value, ok := _c.mutation.CanRequest(); ok {
+		_spec.SetField(user.FieldCanRequest, field.TypeBool, value)
+		_node.CanRequest = value
+	}
+	if value, ok := _c.mutation.RequestsNeedApproval(); ok {
+		_spec.SetField(user.FieldRequestsNeedApproval, field.TypeBool, value)
+		_node.RequestsNeedApproval = value
+	}
+	if value, ok := _c.mutation.RequestQuota(); ok {
+		_spec.SetField(user.FieldRequestQuota, field.TypeInt, value)
+		_node.RequestQuota = &value
 	}
 	if nodes := _c.mutation.ConfigurationIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -555,6 +639,22 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(quickconnectrequest.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.RequestsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.RequestsTable,
+			Columns: []string{user.RequestsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(request.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -743,6 +843,54 @@ func (u *UserUpsert) UpdateOidcSubject() *UserUpsert {
 // ClearOidcSubject clears the value of the "oidc_subject" field.
 func (u *UserUpsert) ClearOidcSubject() *UserUpsert {
 	u.SetNull(user.FieldOidcSubject)
+	return u
+}
+
+// SetCanRequest sets the "can_request" field.
+func (u *UserUpsert) SetCanRequest(v bool) *UserUpsert {
+	u.Set(user.FieldCanRequest, v)
+	return u
+}
+
+// UpdateCanRequest sets the "can_request" field to the value that was provided on create.
+func (u *UserUpsert) UpdateCanRequest() *UserUpsert {
+	u.SetExcluded(user.FieldCanRequest)
+	return u
+}
+
+// SetRequestsNeedApproval sets the "requests_need_approval" field.
+func (u *UserUpsert) SetRequestsNeedApproval(v bool) *UserUpsert {
+	u.Set(user.FieldRequestsNeedApproval, v)
+	return u
+}
+
+// UpdateRequestsNeedApproval sets the "requests_need_approval" field to the value that was provided on create.
+func (u *UserUpsert) UpdateRequestsNeedApproval() *UserUpsert {
+	u.SetExcluded(user.FieldRequestsNeedApproval)
+	return u
+}
+
+// SetRequestQuota sets the "request_quota" field.
+func (u *UserUpsert) SetRequestQuota(v int) *UserUpsert {
+	u.Set(user.FieldRequestQuota, v)
+	return u
+}
+
+// UpdateRequestQuota sets the "request_quota" field to the value that was provided on create.
+func (u *UserUpsert) UpdateRequestQuota() *UserUpsert {
+	u.SetExcluded(user.FieldRequestQuota)
+	return u
+}
+
+// AddRequestQuota adds v to the "request_quota" field.
+func (u *UserUpsert) AddRequestQuota(v int) *UserUpsert {
+	u.Add(user.FieldRequestQuota, v)
+	return u
+}
+
+// ClearRequestQuota clears the value of the "request_quota" field.
+func (u *UserUpsert) ClearRequestQuota() *UserUpsert {
+	u.SetNull(user.FieldRequestQuota)
 	return u
 }
 
@@ -945,6 +1093,62 @@ func (u *UserUpsertOne) UpdateOidcSubject() *UserUpsertOne {
 func (u *UserUpsertOne) ClearOidcSubject() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearOidcSubject()
+	})
+}
+
+// SetCanRequest sets the "can_request" field.
+func (u *UserUpsertOne) SetCanRequest(v bool) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetCanRequest(v)
+	})
+}
+
+// UpdateCanRequest sets the "can_request" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateCanRequest() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateCanRequest()
+	})
+}
+
+// SetRequestsNeedApproval sets the "requests_need_approval" field.
+func (u *UserUpsertOne) SetRequestsNeedApproval(v bool) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetRequestsNeedApproval(v)
+	})
+}
+
+// UpdateRequestsNeedApproval sets the "requests_need_approval" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateRequestsNeedApproval() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateRequestsNeedApproval()
+	})
+}
+
+// SetRequestQuota sets the "request_quota" field.
+func (u *UserUpsertOne) SetRequestQuota(v int) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetRequestQuota(v)
+	})
+}
+
+// AddRequestQuota adds v to the "request_quota" field.
+func (u *UserUpsertOne) AddRequestQuota(v int) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.AddRequestQuota(v)
+	})
+}
+
+// UpdateRequestQuota sets the "request_quota" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateRequestQuota() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateRequestQuota()
+	})
+}
+
+// ClearRequestQuota clears the value of the "request_quota" field.
+func (u *UserUpsertOne) ClearRequestQuota() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearRequestQuota()
 	})
 }
 
@@ -1314,6 +1518,62 @@ func (u *UserUpsertBulk) UpdateOidcSubject() *UserUpsertBulk {
 func (u *UserUpsertBulk) ClearOidcSubject() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearOidcSubject()
+	})
+}
+
+// SetCanRequest sets the "can_request" field.
+func (u *UserUpsertBulk) SetCanRequest(v bool) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetCanRequest(v)
+	})
+}
+
+// UpdateCanRequest sets the "can_request" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateCanRequest() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateCanRequest()
+	})
+}
+
+// SetRequestsNeedApproval sets the "requests_need_approval" field.
+func (u *UserUpsertBulk) SetRequestsNeedApproval(v bool) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetRequestsNeedApproval(v)
+	})
+}
+
+// UpdateRequestsNeedApproval sets the "requests_need_approval" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateRequestsNeedApproval() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateRequestsNeedApproval()
+	})
+}
+
+// SetRequestQuota sets the "request_quota" field.
+func (u *UserUpsertBulk) SetRequestQuota(v int) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetRequestQuota(v)
+	})
+}
+
+// AddRequestQuota adds v to the "request_quota" field.
+func (u *UserUpsertBulk) AddRequestQuota(v int) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.AddRequestQuota(v)
+	})
+}
+
+// UpdateRequestQuota sets the "request_quota" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateRequestQuota() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateRequestQuota()
+	})
+}
+
+// ClearRequestQuota clears the value of the "request_quota" field.
+func (u *UserUpsertBulk) ClearRequestQuota() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearRequestQuota()
 	})
 }
 

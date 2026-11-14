@@ -187,6 +187,9 @@ func (s *Service) Create(ctx context.Context, entry Configured) (Configured, err
 			SetURL(entry.Source.URL).
 			SetAPIKeyVariable(entry.Source.APIKeyVariable).
 			SetKind(entry.Source.Kind).
+			SetNillableRequestProfileID(entry.Source.RequestProfileID).
+			SetRequestRootFolder(entry.Source.RequestRootFolder).
+			SetRequestTag(entry.Source.RequestTag).
 			Save(ctx)
 		if err != nil {
 			return conflict(err)
@@ -208,12 +211,20 @@ func (s *Service) Update(ctx context.Context, id uuid.UUID, entry Configured) (C
 			return err
 		}
 
-		err := tx.Source.UpdateOneID(id).
+		update := tx.Source.UpdateOneID(id).
 			SetName(entry.Source.Name).
 			SetURL(entry.Source.URL).
 			SetAPIKeyVariable(entry.Source.APIKeyVariable).
 			SetKind(entry.Source.Kind).
-			Exec(ctx)
+			SetRequestRootFolder(entry.Source.RequestRootFolder).
+			SetRequestTag(entry.Source.RequestTag)
+		if entry.Source.RequestProfileID == nil {
+			update.ClearRequestProfileID()
+		} else {
+			update.SetRequestProfileID(*entry.Source.RequestProfileID)
+		}
+
+		err := update.Exec(ctx)
 		if store.IsNotFound(err) {
 			return ErrNotFound
 		}
@@ -333,6 +344,10 @@ func validate(ctx context.Context, tx *store.Tx, id uuid.UUID, entry Configured)
 		}
 	}
 
+	if err := validateRequests(source); err != nil {
+		return err
+	}
+
 	folders, err := libraryFolders(ctx, tx)
 	if err != nil {
 		return err
@@ -365,6 +380,28 @@ func validate(ctx context.Context, tx *store.Tx, id uuid.UUID, entry Configured)
 				)
 			}
 		}
+	}
+
+	return nil
+}
+
+func validateRequests(source Source) error {
+	if source.RequestProfileID == nil {
+		if source.RequestRootFolder != "" || source.RequestTag != "" {
+			return invalid("%s names where a request goes but no quality profile to give it", source.Name)
+		}
+
+		return nil
+	}
+
+	if *source.RequestProfileID <= 0 {
+		return invalid("%s names quality profile %d, which no instance defines", source.Name, *source.RequestProfileID)
+	}
+	if !slices.ContainsFunc(source.Paths, func(mapping *Path) bool { return within(source.RequestRootFolder, mapping.RemotePath) }) {
+		return invalid(
+			"%s adds requests under %q, which is in none of its folders: a requested title has to land where this server opens it",
+			source.Name, source.RequestRootFolder,
+		)
 	}
 
 	return nil
@@ -415,6 +452,8 @@ func checkURL(apiURL string) error {
 type Instance struct {
 	Version     string
 	RootFolders []string
+	Profiles    []arr.QualityProfile
+	Tags        []string
 }
 
 func (s *Service) Test(ctx context.Context, apiURL, variable string) (Instance, error) {
@@ -434,9 +473,27 @@ func (s *Service) Test(ctx context.Context, apiURL, variable string) (Instance, 
 		return Instance{}, err
 	}
 
-	found := Instance{Version: status.Version, RootFolders: make([]string, len(folders))}
+	profiles, err := fetch[[]arr.QualityProfile](ctx, s, s.client, source, arr.ProfilesPath, nil)
+	if err != nil {
+		return Instance{}, err
+	}
+
+	tags, err := fetch[[]arr.Tag](ctx, s, s.client, source, arr.TagsPath, nil)
+	if err != nil {
+		return Instance{}, err
+	}
+
+	found := Instance{
+		Version:     status.Version,
+		RootFolders: make([]string, len(folders)),
+		Profiles:    profiles,
+		Tags:        make([]string, len(tags)),
+	}
 	for i, folder := range folders {
 		found.RootFolders[i] = folder.Path
+	}
+	for i, tag := range tags {
+		found.Tags[i] = tag.Label
 	}
 
 	return found, nil

@@ -32,6 +32,12 @@ const (
 	FieldOidcIssuer = "oidc_issuer"
 	// FieldOidcSubject holds the string denoting the oidc_subject field in the database.
 	FieldOidcSubject = "oidc_subject"
+	// FieldCanRequest holds the string denoting the can_request field in the database.
+	FieldCanRequest = "can_request"
+	// FieldRequestsNeedApproval holds the string denoting the requests_need_approval field in the database.
+	FieldRequestsNeedApproval = "requests_need_approval"
+	// FieldRequestQuota holds the string denoting the request_quota field in the database.
+	FieldRequestQuota = "request_quota"
 	// EdgeConfiguration holds the string denoting the configuration edge name in mutations.
 	EdgeConfiguration = "configuration"
 	// EdgePolicy holds the string denoting the policy edge name in mutations.
@@ -50,6 +56,8 @@ const (
 	EdgePlaylistShares = "playlist_shares"
 	// EdgeQuickConnectRequests holds the string denoting the quick_connect_requests edge name in mutations.
 	EdgeQuickConnectRequests = "quick_connect_requests"
+	// EdgeRequests holds the string denoting the requests edge name in mutations.
+	EdgeRequests = "requests"
 	// Table holds the table name of the user in the database.
 	Table = "users"
 	// ConfigurationTable is the table that holds the configuration relation/edge.
@@ -115,6 +123,13 @@ const (
 	QuickConnectRequestsInverseTable = "quick_connect_requests"
 	// QuickConnectRequestsColumn is the table column denoting the quick_connect_requests relation/edge.
 	QuickConnectRequestsColumn = "authorized_by_id"
+	// RequestsTable is the table that holds the requests relation/edge.
+	RequestsTable = "requests"
+	// RequestsInverseTable is the table name for the Request entity.
+	// It exists in this package in order to avoid circular dependency with the "request" package.
+	RequestsInverseTable = "requests"
+	// RequestsColumn is the table column denoting the requests relation/edge.
+	RequestsColumn = "user_id"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -129,6 +144,9 @@ var Columns = []string{
 	FieldLastActivityAt,
 	FieldOidcIssuer,
 	FieldOidcSubject,
+	FieldCanRequest,
+	FieldRequestsNeedApproval,
+	FieldRequestQuota,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -148,6 +166,10 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultCanRequest holds the default value on creation for the "can_request" field.
+	DefaultCanRequest bool
+	// DefaultRequestsNeedApproval holds the default value on creation for the "requests_need_approval" field.
+	DefaultRequestsNeedApproval bool
 )
 
 // OrderOption defines the ordering options for the User queries.
@@ -201,6 +223,21 @@ func ByOidcIssuer(opts ...sql.OrderTermOption) OrderOption {
 // ByOidcSubject orders the results by the oidc_subject field.
 func ByOidcSubject(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldOidcSubject, opts...).ToFunc()
+}
+
+// ByCanRequest orders the results by the can_request field.
+func ByCanRequest(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCanRequest, opts...).ToFunc()
+}
+
+// ByRequestsNeedApproval orders the results by the requests_need_approval field.
+func ByRequestsNeedApproval(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRequestsNeedApproval, opts...).ToFunc()
+}
+
+// ByRequestQuota orders the results by the request_quota field.
+func ByRequestQuota(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRequestQuota, opts...).ToFunc()
 }
 
 // ByConfigurationField orders the results by configuration field.
@@ -314,6 +351,20 @@ func ByQuickConnectRequests(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOpt
 		sqlgraph.OrderByNeighborTerms(s, newQuickConnectRequestsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByRequestsCount orders the results by requests count.
+func ByRequestsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newRequestsStep(), opts...)
+	}
+}
+
+// ByRequests orders the results by requests terms.
+func ByRequests(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newRequestsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newConfigurationStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -375,5 +426,12 @@ func newQuickConnectRequestsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(QuickConnectRequestsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, QuickConnectRequestsTable, QuickConnectRequestsColumn),
+	)
+}
+func newRequestsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(RequestsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, RequestsTable, RequestsColumn),
 	)
 }

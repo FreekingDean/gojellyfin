@@ -15,6 +15,7 @@ import (
 const (
 	providerTmdb = "Tmdb"
 	providerImdb = "Imdb"
+	providerTvdb = "Tvdb"
 )
 
 const ratingCountry = "US"
@@ -76,7 +77,7 @@ func seriesMetadata(series *gotmdb.TVDetails, base string) items.Metadata {
 		Genres:          named(series.Genres),
 		Studios:         companies(series.ProductionCompanies),
 		People:          seriesCredits(series),
-		ProviderIds:     providerIDs(series.ID, seriesIMDbID(series)),
+		ProviderIds:     seriesProviderIDs(series),
 		Images: artwork(
 			remote(imagemodel.KindPrimary, base, posterSize, series.PosterPath),
 			remote(imagemodel.KindBackdrop, base, backdropSize, series.BackdropPath),
@@ -163,6 +164,15 @@ func seriesIMDbID(series *gotmdb.TVDetails) string {
 	}
 
 	return series.IMDbID
+}
+
+func seriesProviderIDs(series *gotmdb.TVDetails) *map[string]string {
+	ids := providerIDs(series.ID, seriesIMDbID(series))
+	if series.TVExternalIDsAppend != nil && series.TVExternalIDs != nil && series.TVDBID > 0 {
+		(*ids)[providerTvdb] = strconv.FormatInt(series.TVDBID, 10)
+	}
+
+	return ids
 }
 
 func episodeIMDbID(episode *gotmdb.TVEpisodeDetails) string {

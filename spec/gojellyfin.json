@@ -335,6 +335,225 @@
           }
         ]
       }
+    },
+    "/GoJellyfin/Requests": {
+      "get": {
+        "tags": [
+          "Requests"
+        ],
+        "summary": "Lists every title somebody asked for, with who asked and what each downloader answered.",
+        "operationId": "GoJellyfinListRequests",
+        "responses": {
+          "200": {
+            "description": "The requested titles, newest first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestedTitles"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "RequiresElevation"
+            ]
+          }
+        ]
+      }
+    },
+    "/GoJellyfin/Requests/{requestId}/Approve": {
+      "post": {
+        "tags": [
+          "Requests"
+        ],
+        "summary": "Approves one request and asks the downloaders for its title, again if they refused it before.",
+        "operationId": "GoJellyfinApproveRequest",
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "description": "The request id.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Request approved."
+          },
+          "400": {
+            "description": "No downloader takes requests for this kind of title.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such request."
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "RequiresElevation"
+            ]
+          }
+        ]
+      }
+    },
+    "/GoJellyfin/Requests/{requestId}/Decline": {
+      "post": {
+        "tags": [
+          "Requests"
+        ],
+        "summary": "Declines one request.",
+        "operationId": "GoJellyfinDeclineRequest",
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "description": "The request id.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Request declined."
+          },
+          "404": {
+            "description": "No such request."
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "RequiresElevation"
+            ]
+          }
+        ]
+      }
+    },
+    "/GoJellyfin/RequestUsers": {
+      "get": {
+        "tags": [
+          "Requests"
+        ],
+        "summary": "Lists what each user may ask for.",
+        "operationId": "GoJellyfinListRequestUsers",
+        "responses": {
+          "200": {
+            "description": "Every user and their allowance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestUsers"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "RequiresElevation"
+            ]
+          }
+        ]
+      }
+    },
+    "/GoJellyfin/RequestUsers/{userId}": {
+      "put": {
+        "tags": [
+          "Requests"
+        ],
+        "summary": "Replaces what one user may ask for.",
+        "operationId": "GoJellyfinUpdateRequestUser",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "description": "The user id.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestAllowance"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Allowance saved."
+          },
+          "404": {
+            "description": "No such user."
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "RequiresElevation"
+            ]
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -426,6 +645,9 @@
             "nullable": true,
             "readOnly": true,
             "description": "Why the instance last failed to answer, empty once it does."
+          },
+          "Requests": {
+            "$ref": "#/components/schemas/SourceRequests"
           }
         }
       },
@@ -452,6 +674,20 @@
               "type": "string"
             },
             "nullable": true
+          },
+          "QualityProfiles": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/SourceQualityProfile"
+            }
+          },
+          "Tags": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -507,6 +743,205 @@
         "properties": {
           "Message": {
             "type": "string"
+          }
+        }
+      },
+      "SourceRequests": {
+        "type": "object",
+        "nullable": true,
+        "description": "Where a title somebody asks for is added on the instance. Absent means the instance takes no requests.",
+        "required": [
+          "QualityProfileId",
+          "RootFolder"
+        ],
+        "properties": {
+          "QualityProfileId": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The instance's own id for the quality profile a requested title is given."
+          },
+          "RootFolder": {
+            "type": "string",
+            "description": "The folder on the instance a requested title is added under."
+          },
+          "Tag": {
+            "type": "string",
+            "nullable": true,
+            "description": "A tag the instance puts on a requested title, so a library that filters on it shows what arrives."
+          }
+        }
+      },
+      "SourceQualityProfile": {
+        "type": "object",
+        "required": [
+          "Id",
+          "Name"
+        ],
+        "properties": {
+          "Id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Name": {
+            "type": "string"
+          }
+        }
+      },
+      "RequestedTitles": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/RequestedTitle"
+        }
+      },
+      "RequestedTitle": {
+        "type": "object",
+        "required": [
+          "ItemId",
+          "Name",
+          "Kind",
+          "Requests",
+          "Submissions"
+        ],
+        "properties": {
+          "ItemId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The id the title is opened by while the library lacks it."
+          },
+          "Name": {
+            "type": "string"
+          },
+          "Kind": {
+            "type": "string",
+            "description": "Movie or Series."
+          },
+          "Requests": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestEntry"
+            }
+          },
+          "Submissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestSubmission"
+            }
+          }
+        }
+      },
+      "RequestEntry": {
+        "type": "object",
+        "required": [
+          "Id",
+          "UserId",
+          "UserName",
+          "Status",
+          "CreatedAt"
+        ],
+        "properties": {
+          "Id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "UserId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "UserName": {
+            "type": "string"
+          },
+          "Status": {
+            "type": "string",
+            "description": "Pending, Approved or Declined."
+          },
+          "CreatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RequestSubmission": {
+        "type": "object",
+        "required": [
+          "SourceName"
+        ],
+        "properties": {
+          "SourceName": {
+            "type": "string"
+          },
+          "AcceptedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When the instance took the title. Absent while it has refused."
+          },
+          "Error": {
+            "type": "string",
+            "nullable": true,
+            "description": "What the instance said the last time it refused."
+          }
+        }
+      },
+      "RequestUsers": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/RequestUser"
+        }
+      },
+      "RequestUser": {
+        "type": "object",
+        "required": [
+          "Id",
+          "Name",
+          "Used",
+          "CanRequest",
+          "NeedsApproval"
+        ],
+        "properties": {
+          "Id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "Name": {
+            "type": "string"
+          },
+          "Used": {
+            "type": "integer",
+            "format": "int32",
+            "description": "How many titles the user asked for in the last seven days."
+          },
+          "CanRequest": {
+            "type": "boolean"
+          },
+          "NeedsApproval": {
+            "type": "boolean",
+            "description": "Whether an administrator approves each request before a downloader is asked."
+          },
+          "Quota": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "The most titles the user may ask for in seven days. Absent means no limit."
+          }
+        }
+      },
+      "RequestAllowance": {
+        "type": "object",
+        "required": [
+          "CanRequest",
+          "NeedsApproval"
+        ],
+        "properties": {
+          "CanRequest": {
+            "type": "boolean"
+          },
+          "NeedsApproval": {
+            "type": "boolean"
+          },
+          "Quota": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           }
         }
       }

@@ -125,6 +125,27 @@
                 <span>Add library</span>
             </button>
 
+            <h3 class="checkboxListLabel">Requests</h3>
+            <p class="fieldDescription">
+                A title someone hearts that no library holds is added to every instance of its kind that takes
+                requests. Test connection lists the quality profiles and tags; leave the profile unset and this
+                instance takes none.
+            </p>
+            <div class="flex align-items-center" style="gap:1em">
+                <div class="selectContainer" style="flex:1">
+                    <label class="selectLabel">Quality profile</label>
+                    <select data-id="selRequestProfile" class="emby-select-withcolor emby-select"></select>
+                </div>
+                <div class="selectContainer" style="flex:1">
+                    <label class="selectLabel">Root folder</label>
+                    <select data-id="selRequestFolder" class="emby-select-withcolor emby-select"></select>
+                </div>
+                <div class="selectContainer" style="flex:1">
+                    <label class="selectLabel">Tag</label>
+                    <select data-id="selRequestTag" class="emby-select-withcolor emby-select"></select>
+                </div>
+            </div>
+
             <div class="flex align-items-center" style="gap:1em;margin-top:1.5em">
                 <button is="emby-button" data-id="saveConnection" type="button" class="raised raised-mini button-submit">
                     <span>Save</span>
@@ -350,6 +371,34 @@
                     selected);
             },
 
+            fillRequests: function (editor, wanted) {
+                const source = window.GoJellyfinSources;
+                const named = function (name) { return { value: name, label: name }; };
+
+                source.fillSelect(editor.querySelector('[data-id=selRequestProfile]'), 'Takes no requests',
+                    editor.profiles.map(function (profile) { return { value: String(profile.Id), label: profile.Name }; }),
+                    wanted.QualityProfileId ? String(wanted.QualityProfileId) : '');
+                source.fillSelect(editor.querySelector('[data-id=selRequestFolder]'),
+                    editor.rootFolders.length ? 'Choose a root folder' : 'Test connection to list root folders',
+                    editor.rootFolders.map(named), wanted.RootFolder);
+                source.fillSelect(editor.querySelector('[data-id=selRequestTag]'), 'No tag',
+                    editor.tags.map(named), wanted.Tag);
+            },
+
+            readRequests: function (editor) {
+                const profile = parseInt(editor.querySelector('[data-id=selRequestProfile]').value, 10);
+
+                if (!profile) {
+                    return null;
+                }
+
+                return {
+                    QualityProfileId: profile,
+                    RootFolder: editor.querySelector('[data-id=selRequestFolder]').value,
+                    Tag: editor.querySelector('[data-id=selRequestTag]').value
+                };
+            },
+
             bindFolder: function (editor, local) {
                 const chosen = local.selectedOptions[0];
                 const library = chosen && chosen.dataset.library;
@@ -426,7 +475,10 @@
                 editor.querySelector('[data-id=selKind]').value = source.kind(connection);
                 editor.querySelector('[data-id=txtUrl]').value = connection.Url || '';
                 editor.rootFolders = [];
+                editor.profiles = [];
+                editor.tags = [];
                 source.fillVariable(editor, connection.ApiKeyVariable);
+                source.fillRequests(editor, connection.Requests || {});
                 editor.querySelector('[data-id=noFolders]').style.display = source.libraryFolders().length ? 'none' : '';
                 editor.querySelector('[data-id=removeConnection]').style.display = index < 0 ? 'none' : '';
 
@@ -506,7 +558,8 @@
                             Id: row.querySelector('[data-id=selLibrary]').value,
                             TagFilter: row.querySelector('[data-id=txtTag]').value.trim()
                         };
-                    })
+                    }),
+                    Requests: window.GoJellyfinSources.readRequests(editor)
                 };
             },
 
@@ -541,6 +594,10 @@
                     }
 
                     const added = source.offerFolders(editor, response.RootFolders || []);
+
+                    editor.profiles = response.QualityProfiles || [];
+                    editor.tags = response.Tags || [];
+                    source.fillRequests(editor, connection.Requests || {});
 
                     result.textContent = 'Reachable' + (response.Version ? ', version ' + response.Version : '') +
                         (added ? '. Added ' + added + ' root folder(s): pick the library folder for each.' : '');

@@ -5,6 +5,7 @@ import "github.com/FreekingDean/gojellyfin/internal/sources/arr"
 const (
 	SeriesPath   = "api/v3/series"
 	EpisodesPath = "api/v3/episode"
+	LookupPath   = "api/v3/series/lookup"
 )
 
 type Series struct {

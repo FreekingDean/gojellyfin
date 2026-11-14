@@ -1,4 +1,4 @@
-h1:6XyGu86YxJpEv+dLWjYLI+2JiTHggGyAs/ahpl/ztw4=
+h1:1cA/dcJ+DBReDHU3eODrO670e/b8KwpQBflxbNNI0ko=
 20260808161932_schema.sql h1:TSsMFoNc1lu6mOmwk6WUpVAleagab51CYpT8AcXjFe8=
 20260809054423_schema.sql h1:V8LqoR24+BY3zT0+YlBHRxazmflw/ECnIQrC9e8FboE=
 20260809060012_configurations.sql h1:lWCojwN/ZmPBP/uS9aNCdmvBPXLv1rSc21+W+ZeyrJg=
@@ -30,3 +30,5 @@ h1:6XyGu86YxJpEv+dLWjYLI+2JiTHggGyAs/ahpl/ztw4=
 20261114025138_item_kinds_and_source_sync.sql h1:8lUZJJLQQeQtdRMytB65KoPwvGbNauI+9rxj8ptaxsw=
 20261114025228_source_paths.sql h1:cG8s3KVgEPmsGgoODTuJEDeosqKx5m/6TnE8x3oUbo0=
 20261114063000_user_oidc.sql h1:wXb/y+xvukf16txXiAAMOvve0pGGSVfc0h1y6LeT/gQ=
+20261114084006_requests.sql h1:Vm4aZ01YyWYuViU4UkU2eax0NHfz/pujAh4+/QfL4dA=
+20261114100000_request_approval.sql h1:lZnb3dAGO63Vq+VolBfI7V49Jjl99qDyJTWu5kt2iRM=

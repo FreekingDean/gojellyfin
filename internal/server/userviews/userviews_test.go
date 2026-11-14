@@ -83,6 +83,10 @@ func (noProvider) Trending(context.Context, items.Kind) ([]items.Metadata, error
 	return nil, nil
 }
 
+func (noProvider) Search(context.Context, items.Kind, string) ([]items.Metadata, error) {
+	return nil, nil
+}
+
 type allLibraries struct{}
 
 func (allLibraries) Access(context.Context, uuid.UUID) (users.Access, error) {

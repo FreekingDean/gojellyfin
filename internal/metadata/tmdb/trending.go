@@ -33,20 +33,43 @@ func (c *Client) Trending(ctx context.Context, kind items.Kind) ([]items.Metadat
 	base := c.images(ctx)
 	titles := make([]items.Metadata, 0, len(trending.Results))
 	for _, result := range trending.Results {
-		premiere := date(result.ReleaseDate + result.FirstAirDate)
-		titles = append(titles, items.Metadata{
-			Name:            text(result.Title + result.Name),
-			Overview:        text(result.Overview),
-			CommunityRating: score(result.VoteAverage),
-			PremiereDate:    premiere,
-			ProductionYear:  year(premiere),
-			ProviderIds:     providerIDs(result.ID, ""),
-			Images: artwork(
-				remote(imagemodel.KindPrimary, base, posterSize, result.PosterPath),
-				remote(imagemodel.KindBackdrop, base, backdropSize, result.BackdropPath),
-			),
-		})
+		titles = append(titles, summary(base, listed{
+			id:       result.ID,
+			name:     result.Title + result.Name,
+			overview: result.Overview,
+			released: result.ReleaseDate + result.FirstAirDate,
+			score:    result.VoteAverage,
+			poster:   result.PosterPath,
+			backdrop: result.BackdropPath,
+		}))
 	}
 
 	return titles, nil
+}
+
+type listed struct {
+	id       int64
+	name     string
+	overview string
+	released string
+	score    float32
+	poster   string
+	backdrop string
+}
+
+func summary(base string, title listed) items.Metadata {
+	premiere := date(title.released)
+
+	return items.Metadata{
+		Name:            text(title.name),
+		Overview:        text(title.overview),
+		CommunityRating: score(title.score),
+		PremiereDate:    premiere,
+		ProductionYear:  year(premiere),
+		ProviderIds:     providerIDs(title.id, ""),
+		Images: artwork(
+			remote(imagemodel.KindPrimary, base, posterSize, title.poster),
+			remote(imagemodel.KindBackdrop, base, backdropSize, title.backdrop),
+		),
+	}
 }

@@ -1,23 +1,48 @@
 package dto
 
 import (
+	"context"
+
+	"github.com/google/uuid"
+
+	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/requests"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
-func UnownedDtos(titles []discover.Title) []api.BaseItemDto {
-	converted := make([]api.BaseItemDto, 0, len(titles))
-	for _, title := range titles {
-		converted = append(converted, UnownedDto(title))
-	}
+const (
+	requestedTagline = "Requested"
+	pendingTagline   = "Awaiting approval"
+)
 
-	return converted
+type Requests interface {
+	Marks(ctx context.Context, userID uuid.UUID, keys []string) (map[string]requests.Mark, error)
 }
 
-func UnownedDto(title discover.Title) api.BaseItemDto {
+func UnownedDtos(ctx context.Context, asked Requests, titles []discover.Title) ([]api.BaseItemDto, error) {
+	keys := make([]string, 0, len(titles))
+	for _, title := range titles {
+		keys = append(keys, title.Key)
+	}
+
+	marks, err := asked.Marks(ctx, auth.UserID(ctx), keys)
+	if err != nil {
+		return nil, err
+	}
+
+	converted := make([]api.BaseItemDto, 0, len(titles))
+	for _, title := range titles {
+		converted = append(converted, UnownedDto(title, marks[title.Key]))
+	}
+
+	return converted, nil
+}
+
+func UnownedDto(title discover.Title, mark requests.Mark) api.BaseItemDto {
 	kind := api.BaseItemKind(title.Kind)
 	metadata := title.Metadata
 	name := apiutil.Deref(metadata.Name)
@@ -48,11 +73,11 @@ func UnownedDto(title discover.Title) api.BaseItemDto {
 		EndDate:           metadata.EndDate,
 		RunTimeTicks:      metadata.RunTimeTicks,
 		Status:            metadata.Status,
-		Taglines:          metadata.Taglines,
+		Taglines:          taglines(metadata.Taglines, mark),
 		Genres:            metadata.Genres,
 		ImageTags:         &imageTags,
 		BackdropImageTags: &backdrops,
-		UserData:          apiutil.Ptr(UserItemDataDto(&items.Datum{ItemID: title.ID})),
+		UserData:          apiutil.Ptr(UserItemDataDto(&items.Datum{ItemID: title.ID, IsFavorite: mark.Mine})),
 	}
 
 	if metadata.OfficialRating != nil {
@@ -68,4 +93,15 @@ func UnownedDto(title discover.Title) api.BaseItemDto {
 	}
 
 	return dto
+}
+
+func taglines(provided *[]string, mark requests.Mark) *[]string {
+	switch {
+	case mark.Requested:
+		return apiutil.Ptr(append([]string{requestedTagline}, apiutil.Deref(provided)...))
+	case mark.Pending:
+		return apiutil.Ptr(append([]string{pendingTagline}, apiutil.Deref(provided)...))
+	default:
+		return provided
+	}
 }

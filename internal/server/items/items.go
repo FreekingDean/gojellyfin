@@ -10,6 +10,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
+	"github.com/FreekingDean/gojellyfin/internal/requests"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/server/dto"
@@ -27,11 +28,12 @@ type Server struct {
 	libraries *libraries.Service
 	shelves   *shelves.Service
 	discover  *discover.Service
+	requests  *requests.Service
 	collages  dto.Collages
 }
 
-func New(items *items.Service, libraries *libraries.Service, shelves *shelves.Service, discover *discover.Service, policies dto.Access, collages dto.Collages) *Server {
-	return &Server{items: items, libraries: libraries, shelves: shelves, discover: discover, policies: policies, collages: collages}
+func New(items *items.Service, libraries *libraries.Service, shelves *shelves.Service, discover *discover.Service, requests *requests.Service, policies dto.Access, collages dto.Collages) *Server {
+	return &Server{items: items, libraries: libraries, shelves: shelves, discover: discover, requests: requests, policies: policies, collages: collages}
 }
 
 func (s *Server) shelved(ctx context.Context, shelf shelves.Shelf, limit int, ungrouped bool) ([]api.BaseItemDto, error) {
@@ -41,7 +43,7 @@ func (s *Server) shelved(ctx context.Context, shelf shelves.Shelf, limit int, un
 			return nil, err
 		}
 
-		return dto.UnownedDtos(titles), nil
+		return dto.UnownedDtos(ctx, s.requests, titles)
 	}
 
 	latest, err := s.shelves.Latest(ctx, shelf, limit, ungrouped)
@@ -60,7 +62,12 @@ func (s *Server) unowned(ctx context.Context, id uuid.UUID) (api.BaseItemDto, bo
 
 	held, err := s.items.ItemByKey(ctx, title.Key)
 	if err != nil || held.DeletedAt != nil {
-		return dto.UnownedDto(title), true, nil
+		converted, err := dto.UnownedDtos(ctx, s.requests, []discover.Title{title})
+		if err != nil {
+			return api.BaseItemDto{}, false, err
+		}
+
+		return converted[0], true, nil
 	}
 
 	converted, err := dto.ItemDtos(ctx, s.items, []*items.Item{held})
@@ -117,6 +124,16 @@ func (s *Server) GetItems(ctx context.Context, request api.GetItemsRequestObject
 	result, err := dto.QueryResult(ctx, s.items, s.libraries, s.policies, request.Params)
 	if err != nil {
 		return nil, err
+	}
+
+	wanted, err := s.searched(ctx, request.Params)
+	if err != nil {
+		return nil, err
+	}
+	if len(wanted) > 0 {
+		held := append(apiutil.Deref(result.Items), wanted...)
+		result.Items = &held
+		result.TotalRecordCount = apiutil.Ptr(apiutil.Deref(result.TotalRecordCount) + int32(len(wanted)))
 	}
 
 	return api.GetItems200JSONResponse(result), nil

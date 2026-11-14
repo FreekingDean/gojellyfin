@@ -74,6 +74,20 @@ func (s *stubProvider) Trending(_ context.Context, kind items.Kind) ([]items.Met
 	return append(titles, items.Metadata{}), nil
 }
 
+func (s *stubProvider) Search(_ context.Context, kind items.Kind, term string) ([]items.Metadata, error) {
+	s.asked = append(s.asked, "search:"+string(kind)+":"+term)
+	if s.failing {
+		return nil, errUnreachable
+	}
+
+	titles := make([]items.Metadata, 0, len(s.trending))
+	for _, tmdbID := range s.trending {
+		titles = append(titles, summary(tmdbID))
+	}
+
+	return titles, nil
+}
+
 type held []string
 
 func (h held) HeldKeys(_ context.Context, keys []string) ([]string, error) {
@@ -296,4 +310,67 @@ func TestTitled_SkipsAnIDItCannotCarry(t *testing.T) {
 			t.Errorf("%s became %s", name, title.ID)
 		}
 	}
+}
+
+func TestService_Search(t *testing.T) {
+	ctx := context.Background()
+
+	tests := []struct {
+		name     string
+		provider *stubProvider
+		term     string
+		want     []uint32
+		asked    []string
+		failing  bool
+	}{
+		{
+			name:     "what matches and the library lacks",
+			provider: &stubProvider{trending: []int{603, 604}},
+			term:     "matrix",
+			want:     []uint32{603},
+			asked:    []string{"search:Movie:matrix"},
+		},
+		{name: "a blank term asks nothing", provider: &stubProvider{trending: []int{603}}, term: "  ", want: []uint32{}},
+		{name: "a disabled provider asks nothing", provider: &stubProvider{disabled: true, trending: []int{603}}, term: "matrix", want: []uint32{}},
+		{
+			name:     "a provider that does not answer is an error",
+			provider: &stubProvider{failing: true},
+			term:     "matrix",
+			asked:    []string{"search:Movie:matrix"},
+			failing:  true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			service := newService(test.provider, held{"movie:tmdb:604"}, time.Now)
+
+			titles, err := service.Search(ctx, itemmodel.KindMovie, test.term, 0)
+			if (err != nil) != test.failing {
+				t.Fatalf("error = %v, want one: %v", err, test.failing)
+			}
+			if got := ids(titles); !test.failing && !slices.Equal(got, test.want) {
+				t.Errorf("found = %v, want %v", got, test.want)
+			}
+			if !slices.Equal(test.provider.asked, test.asked) {
+				t.Errorf("asked = %v, want %v", test.provider.asked, test.asked)
+			}
+		})
+	}
+
+	t.Run("a found title's poster needs no further request", func(t *testing.T) {
+		provider := &stubProvider{trending: []int{603}}
+		service := newService(provider, held{}, time.Now)
+
+		titles, err := service.Search(ctx, itemmodel.KindMovie, "matrix", 0)
+		if err != nil || len(titles) != 1 {
+			t.Fatalf("found = %v, %v", titles, err)
+		}
+		if _, found, err := service.Summary(ctx, titles[0].ID); err != nil || !found {
+			t.Fatalf("summary = %v, %v", found, err)
+		}
+		if !slices.Equal(provider.asked, []string{"search:Movie:matrix"}) {
+			t.Errorf("asked = %v", provider.asked)
+		}
+	})
 }

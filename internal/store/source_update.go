@@ -15,6 +15,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
+	"github.com/FreekingDean/gojellyfin/internal/store/requestsubmission"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/FreekingDean/gojellyfin/internal/store/sourcepath"
 	"github.com/google/uuid"
@@ -169,6 +170,73 @@ func (_u *SourceUpdate) ClearLastError() *SourceUpdate {
 	return _u
 }
 
+// SetRequestProfileID sets the "request_profile_id" field.
+func (_u *SourceUpdate) SetRequestProfileID(v int) *SourceUpdate {
+	_u.mutation.ResetRequestProfileID()
+	_u.mutation.SetRequestProfileID(v)
+	return _u
+}
+
+// SetNillableRequestProfileID sets the "request_profile_id" field if the given value is not nil.
+func (_u *SourceUpdate) SetNillableRequestProfileID(v *int) *SourceUpdate {
+	if v != nil {
+		_u.SetRequestProfileID(*v)
+	}
+	return _u
+}
+
+// AddRequestProfileID adds value to the "request_profile_id" field.
+func (_u *SourceUpdate) AddRequestProfileID(v int) *SourceUpdate {
+	_u.mutation.AddRequestProfileID(v)
+	return _u
+}
+
+// ClearRequestProfileID clears the value of the "request_profile_id" field.
+func (_u *SourceUpdate) ClearRequestProfileID() *SourceUpdate {
+	_u.mutation.ClearRequestProfileID()
+	return _u
+}
+
+// SetRequestRootFolder sets the "request_root_folder" field.
+func (_u *SourceUpdate) SetRequestRootFolder(v string) *SourceUpdate {
+	_u.mutation.SetRequestRootFolder(v)
+	return _u
+}
+
+// SetNillableRequestRootFolder sets the "request_root_folder" field if the given value is not nil.
+func (_u *SourceUpdate) SetNillableRequestRootFolder(v *string) *SourceUpdate {
+	if v != nil {
+		_u.SetRequestRootFolder(*v)
+	}
+	return _u
+}
+
+// ClearRequestRootFolder clears the value of the "request_root_folder" field.
+func (_u *SourceUpdate) ClearRequestRootFolder() *SourceUpdate {
+	_u.mutation.ClearRequestRootFolder()
+	return _u
+}
+
+// SetRequestTag sets the "request_tag" field.
+func (_u *SourceUpdate) SetRequestTag(v string) *SourceUpdate {
+	_u.mutation.SetRequestTag(v)
+	return _u
+}
+
+// SetNillableRequestTag sets the "request_tag" field if the given value is not nil.
+func (_u *SourceUpdate) SetNillableRequestTag(v *string) *SourceUpdate {
+	if v != nil {
+		_u.SetRequestTag(*v)
+	}
+	return _u
+}
+
+// ClearRequestTag clears the value of the "request_tag" field.
+func (_u *SourceUpdate) ClearRequestTag() *SourceUpdate {
+	_u.mutation.ClearRequestTag()
+	return _u
+}
+
 // AddPathIDs adds the "paths" edge to the SourcePath entity by IDs.
 func (_u *SourceUpdate) AddPathIDs(ids ...uuid.UUID) *SourceUpdate {
 	_u.mutation.AddPathIDs(ids...)
@@ -227,6 +295,21 @@ func (_u *SourceUpdate) AddMemberships(v ...*LibraryItem) *SourceUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddMembershipIDs(ids...)
+}
+
+// AddSubmissionIDs adds the "submissions" edge to the RequestSubmission entity by IDs.
+func (_u *SourceUpdate) AddSubmissionIDs(ids ...uuid.UUID) *SourceUpdate {
+	_u.mutation.AddSubmissionIDs(ids...)
+	return _u
+}
+
+// AddSubmissions adds the "submissions" edges to the RequestSubmission entity.
+func (_u *SourceUpdate) AddSubmissions(v ...*RequestSubmission) *SourceUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSubmissionIDs(ids...)
 }
 
 // Mutation returns the SourceMutation object of the builder.
@@ -316,6 +399,27 @@ func (_u *SourceUpdate) RemoveMemberships(v ...*LibraryItem) *SourceUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveMembershipIDs(ids...)
+}
+
+// ClearSubmissions clears all "submissions" edges to the RequestSubmission entity.
+func (_u *SourceUpdate) ClearSubmissions() *SourceUpdate {
+	_u.mutation.ClearSubmissions()
+	return _u
+}
+
+// RemoveSubmissionIDs removes the "submissions" edge to RequestSubmission entities by IDs.
+func (_u *SourceUpdate) RemoveSubmissionIDs(ids ...uuid.UUID) *SourceUpdate {
+	_u.mutation.RemoveSubmissionIDs(ids...)
+	return _u
+}
+
+// RemoveSubmissions removes "submissions" edges to RequestSubmission entities.
+func (_u *SourceUpdate) RemoveSubmissions(v ...*RequestSubmission) *SourceUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSubmissionIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -411,6 +515,27 @@ func (_u *SourceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.LastErrorCleared() {
 		_spec.ClearField(source.FieldLastError, field.TypeString)
+	}
+	if value, ok := _u.mutation.RequestProfileID(); ok {
+		_spec.SetField(source.FieldRequestProfileID, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedRequestProfileID(); ok {
+		_spec.AddField(source.FieldRequestProfileID, field.TypeInt, value)
+	}
+	if _u.mutation.RequestProfileIDCleared() {
+		_spec.ClearField(source.FieldRequestProfileID, field.TypeInt)
+	}
+	if value, ok := _u.mutation.RequestRootFolder(); ok {
+		_spec.SetField(source.FieldRequestRootFolder, field.TypeString, value)
+	}
+	if _u.mutation.RequestRootFolderCleared() {
+		_spec.ClearField(source.FieldRequestRootFolder, field.TypeString)
+	}
+	if value, ok := _u.mutation.RequestTag(); ok {
+		_spec.SetField(source.FieldRequestTag, field.TypeString, value)
+	}
+	if _u.mutation.RequestTagCleared() {
+		_spec.ClearField(source.FieldRequestTag, field.TypeString)
 	}
 	if _u.mutation.PathsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -585,6 +710,51 @@ func (_u *SourceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SubmissionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.SubmissionsTable,
+			Columns: []string{source.SubmissionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(requestsubmission.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSubmissionsIDs(); len(nodes) > 0 && !_u.mutation.SubmissionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.SubmissionsTable,
+			Columns: []string{source.SubmissionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(requestsubmission.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SubmissionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.SubmissionsTable,
+			Columns: []string{source.SubmissionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(requestsubmission.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -748,6 +918,73 @@ func (_u *SourceUpdateOne) ClearLastError() *SourceUpdateOne {
 	return _u
 }
 
+// SetRequestProfileID sets the "request_profile_id" field.
+func (_u *SourceUpdateOne) SetRequestProfileID(v int) *SourceUpdateOne {
+	_u.mutation.ResetRequestProfileID()
+	_u.mutation.SetRequestProfileID(v)
+	return _u
+}
+
+// SetNillableRequestProfileID sets the "request_profile_id" field if the given value is not nil.
+func (_u *SourceUpdateOne) SetNillableRequestProfileID(v *int) *SourceUpdateOne {
+	if v != nil {
+		_u.SetRequestProfileID(*v)
+	}
+	return _u
+}
+
+// AddRequestProfileID adds value to the "request_profile_id" field.
+func (_u *SourceUpdateOne) AddRequestProfileID(v int) *SourceUpdateOne {
+	_u.mutation.AddRequestProfileID(v)
+	return _u
+}
+
+// ClearRequestProfileID clears the value of the "request_profile_id" field.
+func (_u *SourceUpdateOne) ClearRequestProfileID() *SourceUpdateOne {
+	_u.mutation.ClearRequestProfileID()
+	return _u
+}
+
+// SetRequestRootFolder sets the "request_root_folder" field.
+func (_u *SourceUpdateOne) SetRequestRootFolder(v string) *SourceUpdateOne {
+	_u.mutation.SetRequestRootFolder(v)
+	return _u
+}
+
+// SetNillableRequestRootFolder sets the "request_root_folder" field if the given value is not nil.
+func (_u *SourceUpdateOne) SetNillableRequestRootFolder(v *string) *SourceUpdateOne {
+	if v != nil {
+		_u.SetRequestRootFolder(*v)
+	}
+	return _u
+}
+
+// ClearRequestRootFolder clears the value of the "request_root_folder" field.
+func (_u *SourceUpdateOne) ClearRequestRootFolder() *SourceUpdateOne {
+	_u.mutation.ClearRequestRootFolder()
+	return _u
+}
+
+// SetRequestTag sets the "request_tag" field.
+func (_u *SourceUpdateOne) SetRequestTag(v string) *SourceUpdateOne {
+	_u.mutation.SetRequestTag(v)
+	return _u
+}
+
+// SetNillableRequestTag sets the "request_tag" field if the given value is not nil.
+func (_u *SourceUpdateOne) SetNillableRequestTag(v *string) *SourceUpdateOne {
+	if v != nil {
+		_u.SetRequestTag(*v)
+	}
+	return _u
+}
+
+// ClearRequestTag clears the value of the "request_tag" field.
+func (_u *SourceUpdateOne) ClearRequestTag() *SourceUpdateOne {
+	_u.mutation.ClearRequestTag()
+	return _u
+}
+
 // AddPathIDs adds the "paths" edge to the SourcePath entity by IDs.
 func (_u *SourceUpdateOne) AddPathIDs(ids ...uuid.UUID) *SourceUpdateOne {
 	_u.mutation.AddPathIDs(ids...)
@@ -806,6 +1043,21 @@ func (_u *SourceUpdateOne) AddMemberships(v ...*LibraryItem) *SourceUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.AddMembershipIDs(ids...)
+}
+
+// AddSubmissionIDs adds the "submissions" edge to the RequestSubmission entity by IDs.
+func (_u *SourceUpdateOne) AddSubmissionIDs(ids ...uuid.UUID) *SourceUpdateOne {
+	_u.mutation.AddSubmissionIDs(ids...)
+	return _u
+}
+
+// AddSubmissions adds the "submissions" edges to the RequestSubmission entity.
+func (_u *SourceUpdateOne) AddSubmissions(v ...*RequestSubmission) *SourceUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSubmissionIDs(ids...)
 }
 
 // Mutation returns the SourceMutation object of the builder.
@@ -895,6 +1147,27 @@ func (_u *SourceUpdateOne) RemoveMemberships(v ...*LibraryItem) *SourceUpdateOne
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveMembershipIDs(ids...)
+}
+
+// ClearSubmissions clears all "submissions" edges to the RequestSubmission entity.
+func (_u *SourceUpdateOne) ClearSubmissions() *SourceUpdateOne {
+	_u.mutation.ClearSubmissions()
+	return _u
+}
+
+// RemoveSubmissionIDs removes the "submissions" edge to RequestSubmission entities by IDs.
+func (_u *SourceUpdateOne) RemoveSubmissionIDs(ids ...uuid.UUID) *SourceUpdateOne {
+	_u.mutation.RemoveSubmissionIDs(ids...)
+	return _u
+}
+
+// RemoveSubmissions removes "submissions" edges to RequestSubmission entities.
+func (_u *SourceUpdateOne) RemoveSubmissions(v ...*RequestSubmission) *SourceUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSubmissionIDs(ids...)
 }
 
 // Where appends a list predicates to the SourceUpdate builder.
@@ -1020,6 +1293,27 @@ func (_u *SourceUpdateOne) sqlSave(ctx context.Context) (_node *Source, err erro
 	}
 	if _u.mutation.LastErrorCleared() {
 		_spec.ClearField(source.FieldLastError, field.TypeString)
+	}
+	if value, ok := _u.mutation.RequestProfileID(); ok {
+		_spec.SetField(source.FieldRequestProfileID, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedRequestProfileID(); ok {
+		_spec.AddField(source.FieldRequestProfileID, field.TypeInt, value)
+	}
+	if _u.mutation.RequestProfileIDCleared() {
+		_spec.ClearField(source.FieldRequestProfileID, field.TypeInt)
+	}
+	if value, ok := _u.mutation.RequestRootFolder(); ok {
+		_spec.SetField(source.FieldRequestRootFolder, field.TypeString, value)
+	}
+	if _u.mutation.RequestRootFolderCleared() {
+		_spec.ClearField(source.FieldRequestRootFolder, field.TypeString)
+	}
+	if value, ok := _u.mutation.RequestTag(); ok {
+		_spec.SetField(source.FieldRequestTag, field.TypeString, value)
+	}
+	if _u.mutation.RequestTagCleared() {
+		_spec.ClearField(source.FieldRequestTag, field.TypeString)
 	}
 	if _u.mutation.PathsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1194,6 +1488,51 @@ func (_u *SourceUpdateOne) sqlSave(ctx context.Context) (_node *Source, err erro
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(libraryitem.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SubmissionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.SubmissionsTable,
+			Columns: []string{source.SubmissionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(requestsubmission.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSubmissionsIDs(); len(nodes) > 0 && !_u.mutation.SubmissionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.SubmissionsTable,
+			Columns: []string{source.SubmissionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(requestsubmission.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SubmissionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.SubmissionsTable,
+			Columns: []string{source.SubmissionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(requestsubmission.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

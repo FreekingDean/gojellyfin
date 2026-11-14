@@ -2,21 +2,36 @@ package userlibrary
 
 import (
 	"context"
+	"errors"
 	"time"
 
+	"github.com/FreekingDean/gojellyfin/internal/auth"
+	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/requests"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 	"github.com/google/uuid"
 )
 
-type Server struct {
-	items *items.Service
+type Unowned interface {
+	Title(ctx context.Context, id uuid.UUID) (discover.Title, bool, error)
 }
 
-func New(items *items.Service) *Server {
-	return &Server{items: items}
+type Requests interface {
+	Request(ctx context.Context, userID uuid.UUID, title discover.Title) error
+	Withdraw(ctx context.Context, userID uuid.UUID, key string) error
+}
+
+type Server struct {
+	items    *items.Service
+	unowned  Unowned
+	requests Requests
+}
+
+func New(items *items.Service, unowned *discover.Service, requests *requests.Service) *Server {
+	return &Server{items: items, unowned: unowned, requests: requests}
 }
 
 func (s *Server) GetItemUserData(ctx context.Context, request api.GetItemUserDataRequestObject) (api.GetItemUserDataResponseObject, error) {
@@ -30,6 +45,9 @@ func (s *Server) GetItemUserData(ctx context.Context, request api.GetItemUserDat
 
 func (s *Server) MarkFavoriteItem(ctx context.Context, request api.MarkFavoriteItemRequestObject) (api.MarkFavoriteItemResponseObject, error) {
 	datum, err := s.saveFavorite(ctx, request.ItemId, true)
+	if refused(err) {
+		return api.MarkFavoriteItem403Response{}, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +116,23 @@ func (s *Server) UpdateItemUserData(ctx context.Context, request api.UpdateItemU
 	return api.UpdateItemUserData200JSONResponse(dto.UserItemDataDto(datum)), nil
 }
 
+func refused(err error) bool {
+	return errors.Is(err, requests.ErrNowhere) || errors.Is(err, requests.ErrNotAllowed) || errors.Is(err, requests.ErrQuota)
+}
+
 func (s *Server) saveFavorite(ctx context.Context, itemID uuid.UUID, favorite bool) (*items.Datum, error) {
+	title, unowned, err := s.unowned.Title(ctx, itemID)
+	if err != nil {
+		return nil, err
+	}
+	if unowned {
+		held, err := s.items.ItemByKey(ctx, title.Key)
+		if err != nil || held.DeletedAt != nil {
+			return s.saveRequest(ctx, title, favorite)
+		}
+		itemID = held.ID
+	}
+
 	datum, err := dto.CurrentUserDatum(ctx, s.items, itemID)
 	if err != nil {
 		return nil, err
@@ -107,6 +141,20 @@ func (s *Server) saveFavorite(ctx context.Context, itemID uuid.UUID, favorite bo
 	datum.IsFavorite = favorite
 
 	return datum, s.items.SaveUserItemDatum(ctx, datum)
+}
+
+func (s *Server) saveRequest(ctx context.Context, title discover.Title, wanted bool) (*items.Datum, error) {
+	userID := auth.UserID(ctx)
+	if userID == uuid.Nil {
+		return nil, auth.ErrUnauthorized
+	}
+
+	datum := &items.Datum{UserID: userID, ItemID: title.ID, IsFavorite: wanted}
+	if !wanted {
+		return datum, s.requests.Withdraw(ctx, userID, title.Key)
+	}
+
+	return datum, s.requests.Request(ctx, userID, title)
 }
 
 func (s *Server) savePlayed(ctx context.Context, itemID uuid.UUID, played bool) (*items.Datum, error) {
