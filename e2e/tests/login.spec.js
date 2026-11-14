@@ -12,7 +12,7 @@ test.describe('signing in', () => {
     await signIn(page, harness, 'not-the-password');
 
     await expect(page.getByText('Invalid username or password')).toBeVisible();
-    await expect(page).toHaveURL(/login\.html/);
+    await expect(page).toHaveURL(/#\/login/);
   });
 
   test('lands on the home screen', async ({ signedIn: page }) => {
