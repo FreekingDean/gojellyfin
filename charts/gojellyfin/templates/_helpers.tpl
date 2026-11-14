@@ -25,6 +25,22 @@ app.kubernetes.io/instance: {{ .root.Release.Name }}
 app.kubernetes.io/component: {{ .component }}
 {{- end }}
 
+{{- define "gojellyfin.podLabels" -}}
+{{- $selector := fromYaml (include "gojellyfin.selectorLabels" (dict "root" .root "component" .component)) }}
+{{- toYaml (merge $selector (default dict .pod.labels)) }}
+{{- end }}
+
+{{- define "gojellyfin.serviceLabels" -}}
+{{- $labels := fromYaml (include "gojellyfin.labels" (dict "root" .root "component" .component)) }}
+{{- toYaml (merge $labels (default dict .root.Values.service.labels)) }}
+{{- end }}
+
+{{- define "gojellyfin.extraEnv" -}}
+{{- with .Values.env }}
+{{- toYaml . }}
+{{ end }}
+{{- end }}
+
 {{- define "gojellyfin.labels" -}}
 helm.sh/chart: {{ include "gojellyfin.chart" .root }}
 {{ include "gojellyfin.selectorLabels" . }}
@@ -57,7 +73,7 @@ IfNotPresent
 {{- end }}
 
 {{- define "gojellyfin.podSpec" -}}
-{{- range $field, $value := omit . "annotations" "containerSecurityContext" }}
+{{- range $field, $value := omit . "annotations" "labels" "containerSecurityContext" }}
 {{- if or (kindIs "bool" $value) (kindIs "float64" $value) (kindIs "int64" $value) (kindIs "int" $value) $value }}
 {{ $field }}:
 {{- if or (kindIs "map" $value) (kindIs "slice" $value) }}
@@ -93,7 +109,11 @@ IfNotPresent
 {{- end }}
 
 {{- define "gojellyfin.sharedEnv" -}}
-{{- with (default (list .Values.media.mountPath) .Values.media.directories) }}
+{{- $mounts := list .Values.media.mountPath }}
+{{- range .Values.media.extraVolumes }}
+{{- $mounts = append $mounts .mountPath }}
+{{- end }}
+{{- with (default $mounts .Values.media.directories) }}
 - name: MEDIA_DIRECTORIES
   value: {{ join "," . | quote }}
 {{- end }}
@@ -112,11 +132,13 @@ IfNotPresent
 {{- end }}
 
 {{- define "gojellyfin.workerEnv" -}}
+{{- include "gojellyfin.extraEnv" . }}
 {{- include "gojellyfin.databaseEnv" . }}
 {{- include "gojellyfin.sharedEnv" . }}
 {{- end }}
 
 {{- define "gojellyfin.serverEnv" -}}
+{{- include "gojellyfin.extraEnv" .root }}
 {{- include "gojellyfin.databaseEnv" .root }}
 - name: HTTP_PORT
   value: {{ .root.Values.httpPort | quote }}
@@ -163,10 +185,19 @@ IfNotPresent
 {{- else }}
   emptyDir: {}
 {{- end }}
+{{- range .Values.media.extraVolumes }}
+- name: {{ .name }}
+  {{- toYaml .volume | nindent 2 }}
+{{- end }}
 {{- end }}
 
 {{- define "gojellyfin.mediaVolumeMount" -}}
 - name: media
   mountPath: {{ .root.Values.media.mountPath }}
   readOnly: {{ .readOnly }}
+{{- range .root.Values.media.extraVolumes }}
+- name: {{ .name }}
+  mountPath: {{ .mountPath }}
+  readOnly: {{ $.readOnly }}
+{{- end }}
 {{- end }}
