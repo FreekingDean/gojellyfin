@@ -2,6 +2,7 @@ package dto
 
 import (
 	"context"
+	"slices"
 	"testing"
 
 	"github.com/google/uuid"
@@ -76,6 +77,21 @@ func TestItemDtos(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("failed to give the series an image: %v", err)
 	}
+	if err := service.SaveImage(ctx, series.ID, items.Image{
+		Kind: imagemodel.KindBackdrop, URL: "https://image.tmdb.org/t/p/w1280/backdrop.jpg", Tag: "backdrop",
+	}); err != nil {
+		t.Fatalf("failed to give the series a backdrop: %v", err)
+	}
+	if err := service.SaveImage(ctx, series.ID, items.Image{
+		Kind: imagemodel.KindThumb, URL: "https://image.tmdb.org/t/p/w780/thumb.jpg", Tag: "thumb",
+	}); err != nil {
+		t.Fatalf("failed to give the series a thumb: %v", err)
+	}
+	if err := service.SaveImage(ctx, movie.ID, items.Image{
+		Kind: imagemodel.KindBackdrop, URL: "https://image.tmdb.org/t/p/w1280/movie.jpg", Tag: "movie-backdrop",
+	}); err != nil {
+		t.Fatalf("failed to give the movie a backdrop: %v", err)
+	}
 
 	converted, err := ItemDtos(ctx, service, []*items.Item{episode, season, series, movie})
 	if err != nil {
@@ -104,6 +120,7 @@ func TestItemDtos(t *testing.T) {
 		if record.SeriesPrimaryImageTag == nil || *record.SeriesPrimaryImageTag != "poster" {
 			t.Errorf("series primary image tag = %v, want poster", record.SeriesPrimaryImageTag)
 		}
+		landscape(t, record, series.ID)
 	})
 
 	t.Run("a season carries its series and no season of its own", func(t *testing.T) {
@@ -117,6 +134,7 @@ func TestItemDtos(t *testing.T) {
 		if record.SeasonId != nil {
 			t.Errorf("season id = %v, want nothing", record.SeasonId)
 		}
+		landscape(t, record, series.ID)
 	})
 
 	t.Run("a series carries no series of its own", func(t *testing.T) {
@@ -131,5 +149,28 @@ func TestItemDtos(t *testing.T) {
 		if record.SeriesId != nil || record.SeasonId != nil {
 			t.Errorf("series id = %v and season id = %v, want nothing", record.SeriesId, record.SeasonId)
 		}
+		if record.ParentBackdropItemId != nil || record.ParentThumbItemId != nil {
+			t.Errorf("parent backdrop = %v and parent thumb = %v, want nothing", record.ParentBackdropItemId, record.ParentThumbItemId)
+		}
+		if record.BackdropImageTags == nil || !slices.Equal(*record.BackdropImageTags, []string{"movie-backdrop"}) {
+			t.Errorf("backdrop image tags = %v, want its own backdrop", record.BackdropImageTags)
+		}
 	})
+}
+
+func landscape(t *testing.T, record api.BaseItemDto, seriesID uuid.UUID) {
+	t.Helper()
+
+	if record.ParentBackdropItemId == nil || *record.ParentBackdropItemId != seriesID {
+		t.Errorf("parent backdrop item id = %v, want the series %s", record.ParentBackdropItemId, seriesID)
+	}
+	if record.ParentBackdropImageTags == nil || !slices.Equal(*record.ParentBackdropImageTags, []string{"backdrop"}) {
+		t.Errorf("parent backdrop image tags = %v, want the series backdrop", record.ParentBackdropImageTags)
+	}
+	if record.ParentThumbItemId == nil || *record.ParentThumbItemId != seriesID {
+		t.Errorf("parent thumb item id = %v, want the series %s", record.ParentThumbItemId, seriesID)
+	}
+	if record.ParentThumbImageTag == nil || *record.ParentThumbImageTag != "thumb" {
+		t.Errorf("parent thumb image tag = %v, want thumb", record.ParentThumbImageTag)
+	}
 }

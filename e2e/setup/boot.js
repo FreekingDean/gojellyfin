@@ -23,6 +23,7 @@ const SEASON = 'Season 1';
 const EPISODES = ['Fixture Pilot', 'Fixture Second'];
 const DRAMA = 'Fixture Drama';
 const FINALE = 'Fixture Finale';
+const RESUMED = ['Fixture Alpha', 'Fixture Beta', 'Fixture Pilot'];
 const SSO_USERNAME = 'sso-viewer';
 const SSO_CLIENT_ID = 'gojellyfin';
 const SSO_CLIENT_SECRET = 'not-a-real-secret';
@@ -118,6 +119,7 @@ async function boot() {
       episodes: EPISODES,
       drama: DRAMA,
       finale: FINALE,
+      resumed: RESUMED,
       jellyfin: {
         ...jellyfin,
         migrate: { command: binaries.migrate, args: ['--from', jellyfinData], env: serverEnv },
