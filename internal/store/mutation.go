@@ -6770,6 +6770,9 @@ type ItemMutation struct {
 	activity_log_entries        map[uuid.UUID]struct{}
 	removedactivity_log_entries map[uuid.UUID]struct{}
 	clearedactivity_log_entries bool
+	playing_sessions            map[uuid.UUID]struct{}
+	removedplaying_sessions     map[uuid.UUID]struct{}
+	clearedplaying_sessions     bool
 	playlist                    *uuid.UUID
 	clearedplaylist             bool
 	playlist_entries            map[uuid.UUID]struct{}
@@ -8616,6 +8619,60 @@ func (m *ItemMutation) ResetActivityLogEntries() {
 	m.removedactivity_log_entries = nil
 }
 
+// AddPlayingSessionIDs adds the "playing_sessions" edge to the Session entity by ids.
+func (m *ItemMutation) AddPlayingSessionIDs(ids ...uuid.UUID) {
+	if m.playing_sessions == nil {
+		m.playing_sessions = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.playing_sessions[ids[i]] = struct{}{}
+	}
+}
+
+// ClearPlayingSessions clears the "playing_sessions" edge to the Session entity.
+func (m *ItemMutation) ClearPlayingSessions() {
+	m.clearedplaying_sessions = true
+}
+
+// PlayingSessionsCleared reports if the "playing_sessions" edge to the Session entity was cleared.
+func (m *ItemMutation) PlayingSessionsCleared() bool {
+	return m.clearedplaying_sessions
+}
+
+// RemovePlayingSessionIDs removes the "playing_sessions" edge to the Session entity by IDs.
+func (m *ItemMutation) RemovePlayingSessionIDs(ids ...uuid.UUID) {
+	if m.removedplaying_sessions == nil {
+		m.removedplaying_sessions = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.playing_sessions, ids[i])
+		m.removedplaying_sessions[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedPlayingSessions returns the removed IDs of the "playing_sessions" edge to the Session entity.
+func (m *ItemMutation) RemovedPlayingSessionsIDs() (ids []uuid.UUID) {
+	for id := range m.removedplaying_sessions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// PlayingSessionsIDs returns the "playing_sessions" edge IDs in the mutation.
+func (m *ItemMutation) PlayingSessionsIDs() (ids []uuid.UUID) {
+	for id := range m.playing_sessions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetPlayingSessions resets all changes to the "playing_sessions" edge.
+func (m *ItemMutation) ResetPlayingSessions() {
+	m.playing_sessions = nil
+	m.clearedplaying_sessions = false
+	m.removedplaying_sessions = nil
+}
+
 // SetPlaylistID sets the "playlist" edge to the Playlist entity by id.
 func (m *ItemMutation) SetPlaylistID(id uuid.UUID) {
 	m.playlist = &id
@@ -9575,7 +9632,7 @@ func (m *ItemMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ItemMutation) AddedEdges() []string {
-	edges := make([]string, 0, 14)
+	edges := make([]string, 0, 15)
 	if m.parent != nil {
 		edges = append(edges, item.EdgeParent)
 	}
@@ -9602,6 +9659,9 @@ func (m *ItemMutation) AddedEdges() []string {
 	}
 	if m.activity_log_entries != nil {
 		edges = append(edges, item.EdgeActivityLogEntries)
+	}
+	if m.playing_sessions != nil {
+		edges = append(edges, item.EdgePlayingSessions)
 	}
 	if m.playlist != nil {
 		edges = append(edges, item.EdgePlaylist)
@@ -9677,6 +9737,12 @@ func (m *ItemMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case item.EdgePlayingSessions:
+		ids := make([]ent.Value, 0, len(m.playing_sessions))
+		for id := range m.playing_sessions {
+			ids = append(ids, id)
+		}
+		return ids
 	case item.EdgePlaylist:
 		if id := m.playlist; id != nil {
 			return []ent.Value{*id}
@@ -9711,7 +9777,7 @@ func (m *ItemMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ItemMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 14)
+	edges := make([]string, 0, 15)
 	if m.removedchildren != nil {
 		edges = append(edges, item.EdgeChildren)
 	}
@@ -9735,6 +9801,9 @@ func (m *ItemMutation) RemovedEdges() []string {
 	}
 	if m.removedactivity_log_entries != nil {
 		edges = append(edges, item.EdgeActivityLogEntries)
+	}
+	if m.removedplaying_sessions != nil {
+		edges = append(edges, item.EdgePlayingSessions)
 	}
 	if m.removedplaylist_entries != nil {
 		edges = append(edges, item.EdgePlaylistEntries)
@@ -9803,6 +9872,12 @@ func (m *ItemMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case item.EdgePlayingSessions:
+		ids := make([]ent.Value, 0, len(m.removedplaying_sessions))
+		for id := range m.removedplaying_sessions {
+			ids = append(ids, id)
+		}
+		return ids
 	case item.EdgePlaylistEntries:
 		ids := make([]ent.Value, 0, len(m.removedplaylist_entries))
 		for id := range m.removedplaylist_entries {
@@ -9833,7 +9908,7 @@ func (m *ItemMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ItemMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 14)
+	edges := make([]string, 0, 15)
 	if m.clearedparent {
 		edges = append(edges, item.EdgeParent)
 	}
@@ -9860,6 +9935,9 @@ func (m *ItemMutation) ClearedEdges() []string {
 	}
 	if m.clearedactivity_log_entries {
 		edges = append(edges, item.EdgeActivityLogEntries)
+	}
+	if m.clearedplaying_sessions {
+		edges = append(edges, item.EdgePlayingSessions)
 	}
 	if m.clearedplaylist {
 		edges = append(edges, item.EdgePlaylist)
@@ -9901,6 +9979,8 @@ func (m *ItemMutation) EdgeCleared(name string) bool {
 		return m.cleareduser_data
 	case item.EdgeActivityLogEntries:
 		return m.clearedactivity_log_entries
+	case item.EdgePlayingSessions:
+		return m.clearedplaying_sessions
 	case item.EdgePlaylist:
 		return m.clearedplaylist
 	case item.EdgePlaylistEntries:
@@ -9959,6 +10039,9 @@ func (m *ItemMutation) ResetEdge(name string) error {
 		return nil
 	case item.EdgeActivityLogEntries:
 		m.ResetActivityLogEntries()
+		return nil
+	case item.EdgePlayingSessions:
+		m.ResetPlayingSessions()
 		return nil
 	case item.EdgePlaylist:
 		m.ResetPlaylist()
@@ -25285,11 +25368,18 @@ type SessionMutation struct {
 	remote_endpoint              *string
 	last_activity_at             *time.Time
 	revoked_at                   *time.Time
+	position_ticks               *int64
+	addposition_ticks            *int64
+	play_method                  *string
+	is_paused                    *bool
+	playing_at                   *time.Time
 	clearedFields                map[string]struct{}
 	user                         *uuid.UUID
 	cleareduser                  bool
 	device                       *uuid.UUID
 	cleareddevice                bool
+	now_playing                  *uuid.UUID
+	clearednow_playing           bool
 	sync_play_memberships        map[uuid.UUID]struct{}
 	removedsync_play_memberships map[uuid.UUID]struct{}
 	clearedsync_play_memberships bool
@@ -25657,6 +25747,245 @@ func (m *SessionMutation) ResetRevokedAt() {
 	delete(m.clearedFields, session.FieldRevokedAt)
 }
 
+// SetNowPlayingItemID sets the "now_playing_item_id" field.
+func (m *SessionMutation) SetNowPlayingItemID(u uuid.UUID) {
+	m.now_playing = &u
+}
+
+// NowPlayingItemID returns the value of the "now_playing_item_id" field in the mutation.
+func (m *SessionMutation) NowPlayingItemID() (r uuid.UUID, exists bool) {
+	v := m.now_playing
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNowPlayingItemID returns the old "now_playing_item_id" field's value of the Session entity.
+// If the Session object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SessionMutation) OldNowPlayingItemID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNowPlayingItemID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNowPlayingItemID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNowPlayingItemID: %w", err)
+	}
+	return oldValue.NowPlayingItemID, nil
+}
+
+// ClearNowPlayingItemID clears the value of the "now_playing_item_id" field.
+func (m *SessionMutation) ClearNowPlayingItemID() {
+	m.now_playing = nil
+	m.clearedFields[session.FieldNowPlayingItemID] = struct{}{}
+}
+
+// NowPlayingItemIDCleared returns if the "now_playing_item_id" field was cleared in this mutation.
+func (m *SessionMutation) NowPlayingItemIDCleared() bool {
+	_, ok := m.clearedFields[session.FieldNowPlayingItemID]
+	return ok
+}
+
+// ResetNowPlayingItemID resets all changes to the "now_playing_item_id" field.
+func (m *SessionMutation) ResetNowPlayingItemID() {
+	m.now_playing = nil
+	delete(m.clearedFields, session.FieldNowPlayingItemID)
+}
+
+// SetPositionTicks sets the "position_ticks" field.
+func (m *SessionMutation) SetPositionTicks(i int64) {
+	m.position_ticks = &i
+	m.addposition_ticks = nil
+}
+
+// PositionTicks returns the value of the "position_ticks" field in the mutation.
+func (m *SessionMutation) PositionTicks() (r int64, exists bool) {
+	v := m.position_ticks
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPositionTicks returns the old "position_ticks" field's value of the Session entity.
+// If the Session object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SessionMutation) OldPositionTicks(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPositionTicks is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPositionTicks requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPositionTicks: %w", err)
+	}
+	return oldValue.PositionTicks, nil
+}
+
+// AddPositionTicks adds i to the "position_ticks" field.
+func (m *SessionMutation) AddPositionTicks(i int64) {
+	if m.addposition_ticks != nil {
+		*m.addposition_ticks += i
+	} else {
+		m.addposition_ticks = &i
+	}
+}
+
+// AddedPositionTicks returns the value that was added to the "position_ticks" field in this mutation.
+func (m *SessionMutation) AddedPositionTicks() (r int64, exists bool) {
+	v := m.addposition_ticks
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPositionTicks resets all changes to the "position_ticks" field.
+func (m *SessionMutation) ResetPositionTicks() {
+	m.position_ticks = nil
+	m.addposition_ticks = nil
+}
+
+// SetPlayMethod sets the "play_method" field.
+func (m *SessionMutation) SetPlayMethod(s string) {
+	m.play_method = &s
+}
+
+// PlayMethod returns the value of the "play_method" field in the mutation.
+func (m *SessionMutation) PlayMethod() (r string, exists bool) {
+	v := m.play_method
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPlayMethod returns the old "play_method" field's value of the Session entity.
+// If the Session object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SessionMutation) OldPlayMethod(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPlayMethod is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPlayMethod requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPlayMethod: %w", err)
+	}
+	return oldValue.PlayMethod, nil
+}
+
+// ClearPlayMethod clears the value of the "play_method" field.
+func (m *SessionMutation) ClearPlayMethod() {
+	m.play_method = nil
+	m.clearedFields[session.FieldPlayMethod] = struct{}{}
+}
+
+// PlayMethodCleared returns if the "play_method" field was cleared in this mutation.
+func (m *SessionMutation) PlayMethodCleared() bool {
+	_, ok := m.clearedFields[session.FieldPlayMethod]
+	return ok
+}
+
+// ResetPlayMethod resets all changes to the "play_method" field.
+func (m *SessionMutation) ResetPlayMethod() {
+	m.play_method = nil
+	delete(m.clearedFields, session.FieldPlayMethod)
+}
+
+// SetIsPaused sets the "is_paused" field.
+func (m *SessionMutation) SetIsPaused(b bool) {
+	m.is_paused = &b
+}
+
+// IsPaused returns the value of the "is_paused" field in the mutation.
+func (m *SessionMutation) IsPaused() (r bool, exists bool) {
+	v := m.is_paused
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsPaused returns the old "is_paused" field's value of the Session entity.
+// If the Session object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SessionMutation) OldIsPaused(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsPaused is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsPaused requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsPaused: %w", err)
+	}
+	return oldValue.IsPaused, nil
+}
+
+// ResetIsPaused resets all changes to the "is_paused" field.
+func (m *SessionMutation) ResetIsPaused() {
+	m.is_paused = nil
+}
+
+// SetPlayingAt sets the "playing_at" field.
+func (m *SessionMutation) SetPlayingAt(t time.Time) {
+	m.playing_at = &t
+}
+
+// PlayingAt returns the value of the "playing_at" field in the mutation.
+func (m *SessionMutation) PlayingAt() (r time.Time, exists bool) {
+	v := m.playing_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPlayingAt returns the old "playing_at" field's value of the Session entity.
+// If the Session object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SessionMutation) OldPlayingAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPlayingAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPlayingAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPlayingAt: %w", err)
+	}
+	return oldValue.PlayingAt, nil
+}
+
+// ClearPlayingAt clears the value of the "playing_at" field.
+func (m *SessionMutation) ClearPlayingAt() {
+	m.playing_at = nil
+	m.clearedFields[session.FieldPlayingAt] = struct{}{}
+}
+
+// PlayingAtCleared returns if the "playing_at" field was cleared in this mutation.
+func (m *SessionMutation) PlayingAtCleared() bool {
+	_, ok := m.clearedFields[session.FieldPlayingAt]
+	return ok
+}
+
+// ResetPlayingAt resets all changes to the "playing_at" field.
+func (m *SessionMutation) ResetPlayingAt() {
+	m.playing_at = nil
+	delete(m.clearedFields, session.FieldPlayingAt)
+}
+
 // SetUserID sets the "user" edge to the User entity by id.
 func (m *SessionMutation) SetUserID(id uuid.UUID) {
 	m.user = &id
@@ -25733,6 +26062,46 @@ func (m *SessionMutation) DeviceIDs() (ids []uuid.UUID) {
 func (m *SessionMutation) ResetDevice() {
 	m.device = nil
 	m.cleareddevice = false
+}
+
+// SetNowPlayingID sets the "now_playing" edge to the Item entity by id.
+func (m *SessionMutation) SetNowPlayingID(id uuid.UUID) {
+	m.now_playing = &id
+}
+
+// ClearNowPlaying clears the "now_playing" edge to the Item entity.
+func (m *SessionMutation) ClearNowPlaying() {
+	m.clearednow_playing = true
+	m.clearedFields[session.FieldNowPlayingItemID] = struct{}{}
+}
+
+// NowPlayingCleared reports if the "now_playing" edge to the Item entity was cleared.
+func (m *SessionMutation) NowPlayingCleared() bool {
+	return m.NowPlayingItemIDCleared() || m.clearednow_playing
+}
+
+// NowPlayingID returns the "now_playing" edge ID in the mutation.
+func (m *SessionMutation) NowPlayingID() (id uuid.UUID, exists bool) {
+	if m.now_playing != nil {
+		return *m.now_playing, true
+	}
+	return
+}
+
+// NowPlayingIDs returns the "now_playing" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// NowPlayingID instead. It exists only for internal usage by the builders.
+func (m *SessionMutation) NowPlayingIDs() (ids []uuid.UUID) {
+	if id := m.now_playing; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetNowPlaying resets all changes to the "now_playing" edge.
+func (m *SessionMutation) ResetNowPlaying() {
+	m.now_playing = nil
+	m.clearednow_playing = false
 }
 
 // AddSyncPlayMembershipIDs adds the "sync_play_memberships" edge to the SyncPlayGroupMember entity by ids.
@@ -25823,7 +26192,7 @@ func (m *SessionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SessionMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 11)
 	if m.created_at != nil {
 		fields = append(fields, session.FieldCreatedAt)
 	}
@@ -25841,6 +26210,21 @@ func (m *SessionMutation) Fields() []string {
 	}
 	if m.revoked_at != nil {
 		fields = append(fields, session.FieldRevokedAt)
+	}
+	if m.now_playing != nil {
+		fields = append(fields, session.FieldNowPlayingItemID)
+	}
+	if m.position_ticks != nil {
+		fields = append(fields, session.FieldPositionTicks)
+	}
+	if m.play_method != nil {
+		fields = append(fields, session.FieldPlayMethod)
+	}
+	if m.is_paused != nil {
+		fields = append(fields, session.FieldIsPaused)
+	}
+	if m.playing_at != nil {
+		fields = append(fields, session.FieldPlayingAt)
 	}
 	return fields
 }
@@ -25862,6 +26246,16 @@ func (m *SessionMutation) Field(name string) (ent.Value, bool) {
 		return m.LastActivityAt()
 	case session.FieldRevokedAt:
 		return m.RevokedAt()
+	case session.FieldNowPlayingItemID:
+		return m.NowPlayingItemID()
+	case session.FieldPositionTicks:
+		return m.PositionTicks()
+	case session.FieldPlayMethod:
+		return m.PlayMethod()
+	case session.FieldIsPaused:
+		return m.IsPaused()
+	case session.FieldPlayingAt:
+		return m.PlayingAt()
 	}
 	return nil, false
 }
@@ -25883,6 +26277,16 @@ func (m *SessionMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldLastActivityAt(ctx)
 	case session.FieldRevokedAt:
 		return m.OldRevokedAt(ctx)
+	case session.FieldNowPlayingItemID:
+		return m.OldNowPlayingItemID(ctx)
+	case session.FieldPositionTicks:
+		return m.OldPositionTicks(ctx)
+	case session.FieldPlayMethod:
+		return m.OldPlayMethod(ctx)
+	case session.FieldIsPaused:
+		return m.OldIsPaused(ctx)
+	case session.FieldPlayingAt:
+		return m.OldPlayingAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown Session field %s", name)
 }
@@ -25934,6 +26338,41 @@ func (m *SessionMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetRevokedAt(v)
 		return nil
+	case session.FieldNowPlayingItemID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNowPlayingItemID(v)
+		return nil
+	case session.FieldPositionTicks:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPositionTicks(v)
+		return nil
+	case session.FieldPlayMethod:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPlayMethod(v)
+		return nil
+	case session.FieldIsPaused:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsPaused(v)
+		return nil
+	case session.FieldPlayingAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPlayingAt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Session field %s", name)
 }
@@ -25941,13 +26380,21 @@ func (m *SessionMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *SessionMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addposition_ticks != nil {
+		fields = append(fields, session.FieldPositionTicks)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *SessionMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case session.FieldPositionTicks:
+		return m.AddedPositionTicks()
+	}
 	return nil, false
 }
 
@@ -25956,6 +26403,13 @@ func (m *SessionMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *SessionMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case session.FieldPositionTicks:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPositionTicks(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Session numeric field %s", name)
 }
@@ -25972,6 +26426,15 @@ func (m *SessionMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(session.FieldRevokedAt) {
 		fields = append(fields, session.FieldRevokedAt)
+	}
+	if m.FieldCleared(session.FieldNowPlayingItemID) {
+		fields = append(fields, session.FieldNowPlayingItemID)
+	}
+	if m.FieldCleared(session.FieldPlayMethod) {
+		fields = append(fields, session.FieldPlayMethod)
+	}
+	if m.FieldCleared(session.FieldPlayingAt) {
+		fields = append(fields, session.FieldPlayingAt)
 	}
 	return fields
 }
@@ -25995,6 +26458,15 @@ func (m *SessionMutation) ClearField(name string) error {
 		return nil
 	case session.FieldRevokedAt:
 		m.ClearRevokedAt()
+		return nil
+	case session.FieldNowPlayingItemID:
+		m.ClearNowPlayingItemID()
+		return nil
+	case session.FieldPlayMethod:
+		m.ClearPlayMethod()
+		return nil
+	case session.FieldPlayingAt:
+		m.ClearPlayingAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Session nullable field %s", name)
@@ -26022,18 +26494,36 @@ func (m *SessionMutation) ResetField(name string) error {
 	case session.FieldRevokedAt:
 		m.ResetRevokedAt()
 		return nil
+	case session.FieldNowPlayingItemID:
+		m.ResetNowPlayingItemID()
+		return nil
+	case session.FieldPositionTicks:
+		m.ResetPositionTicks()
+		return nil
+	case session.FieldPlayMethod:
+		m.ResetPlayMethod()
+		return nil
+	case session.FieldIsPaused:
+		m.ResetIsPaused()
+		return nil
+	case session.FieldPlayingAt:
+		m.ResetPlayingAt()
+		return nil
 	}
 	return fmt.Errorf("unknown Session field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *SessionMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.user != nil {
 		edges = append(edges, session.EdgeUser)
 	}
 	if m.device != nil {
 		edges = append(edges, session.EdgeDevice)
+	}
+	if m.now_playing != nil {
+		edges = append(edges, session.EdgeNowPlaying)
 	}
 	if m.sync_play_memberships != nil {
 		edges = append(edges, session.EdgeSyncPlayMemberships)
@@ -26053,6 +26543,10 @@ func (m *SessionMutation) AddedIDs(name string) []ent.Value {
 		if id := m.device; id != nil {
 			return []ent.Value{*id}
 		}
+	case session.EdgeNowPlaying:
+		if id := m.now_playing; id != nil {
+			return []ent.Value{*id}
+		}
 	case session.EdgeSyncPlayMemberships:
 		ids := make([]ent.Value, 0, len(m.sync_play_memberships))
 		for id := range m.sync_play_memberships {
@@ -26065,7 +26559,7 @@ func (m *SessionMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *SessionMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedsync_play_memberships != nil {
 		edges = append(edges, session.EdgeSyncPlayMemberships)
 	}
@@ -26088,12 +26582,15 @@ func (m *SessionMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *SessionMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.cleareduser {
 		edges = append(edges, session.EdgeUser)
 	}
 	if m.cleareddevice {
 		edges = append(edges, session.EdgeDevice)
+	}
+	if m.clearednow_playing {
+		edges = append(edges, session.EdgeNowPlaying)
 	}
 	if m.clearedsync_play_memberships {
 		edges = append(edges, session.EdgeSyncPlayMemberships)
@@ -26109,6 +26606,8 @@ func (m *SessionMutation) EdgeCleared(name string) bool {
 		return m.cleareduser
 	case session.EdgeDevice:
 		return m.cleareddevice
+	case session.EdgeNowPlaying:
+		return m.clearednow_playing
 	case session.EdgeSyncPlayMemberships:
 		return m.clearedsync_play_memberships
 	}
@@ -26125,6 +26624,9 @@ func (m *SessionMutation) ClearEdge(name string) error {
 	case session.EdgeDevice:
 		m.ClearDevice()
 		return nil
+	case session.EdgeNowPlaying:
+		m.ClearNowPlaying()
+		return nil
 	}
 	return fmt.Errorf("unknown Session unique edge %s", name)
 }
@@ -26138,6 +26640,9 @@ func (m *SessionMutation) ResetEdge(name string) error {
 		return nil
 	case session.EdgeDevice:
 		m.ResetDevice()
+		return nil
+	case session.EdgeNowPlaying:
+		m.ResetNowPlaying()
 		return nil
 	case session.EdgeSyncPlayMemberships:
 		m.ResetSyncPlayMemberships()

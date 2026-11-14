@@ -27,7 +27,7 @@ test.describe('the admin app', () => {
     await expect(page.locator('.failure')).toHaveText('That username and password did not sign in.');
 
     await signIn(page, harness);
-    await expect(page.getByRole('heading', { name: 'Requests and Reports' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
     await expect(page.locator('nav')).toContainText('Signed in as ' + harness.username);
 
     await page.goto(harness.baseUrl + '/admin/requests');
@@ -35,6 +35,18 @@ test.describe('the admin app', () => {
 
     await page.getByRole('button', { name: 'Sign out' }).click();
     await expect(page.getByLabel('Username')).toBeVisible();
+  });
+
+  test('says how the server is doing', async ({ page, harness }) => {
+    await page.goto(harness.baseUrl + '/admin');
+    await signIn(page, harness);
+
+    const health = page.locator('.health');
+    await expect(health.locator('div', { hasText: 'Database' })).toContainText('schema current');
+    await expect(health.locator('div', { hasText: 'Background work' })).toContainText('Set TEMPORAL_HOSTPORT');
+    await expect(health.locator('div', { hasText: 'Single sign-on' })).toContainText('127.0.0.1');
+    await expect(health.locator('div', { hasText: 'Transcoding' })).toContainText('ffmpeg found');
+    await expect(page.locator('main')).toContainText('Nobody is watching anything.');
   });
 
   test('closes a report somebody filed', async ({ page, harness }) => {
@@ -50,6 +62,7 @@ test.describe('the admin app', () => {
 
     await page.goto(harness.baseUrl + '/admin');
     await signIn(page, harness);
+    await page.getByRole('link', { name: 'Requests and Reports' }).click();
     await page.getByRole('tab', { name: 'Reports' }).click();
 
     const report = page.locator('tr', { hasText: 'filed by the admin spec' });
@@ -161,5 +174,72 @@ test.describe('the admin app', () => {
     await expect(main.locator('tr', { hasText: 'DATABASE_URL' })).toContainText('Set');
     await expect(main.locator('tr', { hasText: 'SOURCE_API_KEY_FIXTURES' })).toContainText('Set');
     await expect(main).not.toContainText('postgres://');
+  });
+
+  test('shows what a session is playing and where it connects from', async ({ page, harness }) => {
+    const { user, headers } = await session(harness);
+    const search = new URLSearchParams({ searchTerm: harness.playable, recursive: 'true', includeItemTypes: 'Movie', userId: user });
+    const [movie] = (await (await fetch(`${harness.baseUrl}/Items?${search}`, { headers })).json()).Items;
+    const report = (path, body) => fetch(harness.baseUrl + path, { method: 'POST', headers, body: JSON.stringify(body) });
+    expect((await report('/Sessions/Playing', { ItemId: movie.Id, PositionTicks: 0, PlayMethod: 'DirectPlay' })).ok).toBe(true);
+
+    try {
+      await page.goto(harness.baseUrl + '/admin');
+      await signIn(page, harness);
+      await expect(page.locator('main')).toContainText(harness.playable);
+
+      await page.getByRole('link', { name: 'Activity' }).click();
+      const row = page.locator('tr', { hasText: 'Playwright' }).filter({ hasText: harness.playable });
+      await expect(row).toContainText('DirectPlay');
+      await expect(row).toContainText('127.0.0.1');
+    } finally {
+      await report('/Sessions/Playing/Stopped', { ItemId: movie.Id, PositionTicks: 0 });
+    }
+  });
+
+  test('saves the sign-in message without the sign-on button', async ({ page, harness }) => {
+    const { headers } = await session(harness);
+    const stored = async () => (await (await fetch(harness.baseUrl + '/System/Configuration/branding', { headers })).json()).LoginDisclaimer ?? '';
+    const before = await stored();
+
+    await page.goto(harness.baseUrl + '/admin');
+    await signIn(page, harness);
+    await page.getByRole('link', { name: 'Settings' }).click();
+
+    try {
+      await page.getByLabel('Sign-in message').fill('Ask the admin spec for an account.');
+      await page.getByRole('button', { name: 'Save branding' }).click();
+      await expect(page.getByRole('status').filter({ hasText: 'Branding saved' })).toBeVisible();
+      expect(await stored()).toBe('Ask the admin spec for an account.');
+
+      const shown = await (await fetch(harness.baseUrl + '/Branding/Configuration')).json();
+      expect(shown.LoginDisclaimer).toContain('Ask the admin spec for an account.');
+      expect(shown.LoginDisclaimer).toContain('/sso/oidc/start');
+    } finally {
+      await fetch(harness.baseUrl + '/System/Configuration/branding', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ ...(await (await fetch(harness.baseUrl + '/System/Configuration/branding', { headers })).json()), LoginDisclaimer: before }),
+      });
+    }
+  });
+
+  test('makes an API key, shows it once and revokes it', async ({ page, harness }) => {
+    await page.goto(harness.baseUrl + '/admin');
+    await signIn(page, harness);
+    await page.getByRole('link', { name: 'Settings' }).click();
+
+    await page.getByRole('button', { name: 'New key' }).click();
+    await page.getByLabel('Which app is it for').fill('Admin spec app');
+    await page.getByRole('button', { name: 'Make key' }).click();
+    const made = page.getByRole('status').filter({ hasText: 'The key for Admin spec app is' });
+    await expect(made).toBeVisible();
+    const token = (await made.locator('code').textContent()).trim();
+    expect(token.length).toBeGreaterThan(16);
+
+    const row = page.locator('tr', { hasText: 'Admin spec app' });
+    await row.getByRole('button', { name: 'Revoke' }).click();
+    await expect(row).toHaveCount(0);
+    await expect(made).toHaveCount(0);
   });
 });

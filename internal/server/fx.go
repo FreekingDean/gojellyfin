@@ -19,6 +19,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/environment"
 	"github.com/FreekingDean/gojellyfin/internal/server/filter"
 	"github.com/FreekingDean/gojellyfin/internal/server/genres"
+	"github.com/FreekingDean/gojellyfin/internal/server/health"
 	"github.com/FreekingDean/gojellyfin/internal/server/image"
 	"github.com/FreekingDean/gojellyfin/internal/server/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/itemupdate"
@@ -83,6 +84,7 @@ var Module = fx.Module(
 	plugins.Module,
 	reports.Module,
 	requests.Module,
+	health.Module,
 	settings.Module,
 	sources.Module,
 	quickconnect.Module,

@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/device"
+	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/syncplaygroupmember"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
@@ -103,6 +104,76 @@ func (_c *SessionCreate) SetNillableRevokedAt(v *time.Time) *SessionCreate {
 	return _c
 }
 
+// SetNowPlayingItemID sets the "now_playing_item_id" field.
+func (_c *SessionCreate) SetNowPlayingItemID(v uuid.UUID) *SessionCreate {
+	_c.mutation.SetNowPlayingItemID(v)
+	return _c
+}
+
+// SetNillableNowPlayingItemID sets the "now_playing_item_id" field if the given value is not nil.
+func (_c *SessionCreate) SetNillableNowPlayingItemID(v *uuid.UUID) *SessionCreate {
+	if v != nil {
+		_c.SetNowPlayingItemID(*v)
+	}
+	return _c
+}
+
+// SetPositionTicks sets the "position_ticks" field.
+func (_c *SessionCreate) SetPositionTicks(v int64) *SessionCreate {
+	_c.mutation.SetPositionTicks(v)
+	return _c
+}
+
+// SetNillablePositionTicks sets the "position_ticks" field if the given value is not nil.
+func (_c *SessionCreate) SetNillablePositionTicks(v *int64) *SessionCreate {
+	if v != nil {
+		_c.SetPositionTicks(*v)
+	}
+	return _c
+}
+
+// SetPlayMethod sets the "play_method" field.
+func (_c *SessionCreate) SetPlayMethod(v string) *SessionCreate {
+	_c.mutation.SetPlayMethod(v)
+	return _c
+}
+
+// SetNillablePlayMethod sets the "play_method" field if the given value is not nil.
+func (_c *SessionCreate) SetNillablePlayMethod(v *string) *SessionCreate {
+	if v != nil {
+		_c.SetPlayMethod(*v)
+	}
+	return _c
+}
+
+// SetIsPaused sets the "is_paused" field.
+func (_c *SessionCreate) SetIsPaused(v bool) *SessionCreate {
+	_c.mutation.SetIsPaused(v)
+	return _c
+}
+
+// SetNillableIsPaused sets the "is_paused" field if the given value is not nil.
+func (_c *SessionCreate) SetNillableIsPaused(v *bool) *SessionCreate {
+	if v != nil {
+		_c.SetIsPaused(*v)
+	}
+	return _c
+}
+
+// SetPlayingAt sets the "playing_at" field.
+func (_c *SessionCreate) SetPlayingAt(v time.Time) *SessionCreate {
+	_c.mutation.SetPlayingAt(v)
+	return _c
+}
+
+// SetNillablePlayingAt sets the "playing_at" field if the given value is not nil.
+func (_c *SessionCreate) SetNillablePlayingAt(v *time.Time) *SessionCreate {
+	if v != nil {
+		_c.SetPlayingAt(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *SessionCreate) SetID(v uuid.UUID) *SessionCreate {
 	_c.mutation.SetID(v)
@@ -129,6 +200,25 @@ func (_c *SessionCreate) SetDeviceID(id uuid.UUID) *SessionCreate {
 // SetDevice sets the "device" edge to the Device entity.
 func (_c *SessionCreate) SetDevice(v *Device) *SessionCreate {
 	return _c.SetDeviceID(v.ID)
+}
+
+// SetNowPlayingID sets the "now_playing" edge to the Item entity by ID.
+func (_c *SessionCreate) SetNowPlayingID(id uuid.UUID) *SessionCreate {
+	_c.mutation.SetNowPlayingID(id)
+	return _c
+}
+
+// SetNillableNowPlayingID sets the "now_playing" edge to the Item entity by ID if the given value is not nil.
+func (_c *SessionCreate) SetNillableNowPlayingID(id *uuid.UUID) *SessionCreate {
+	if id != nil {
+		_c = _c.SetNowPlayingID(*id)
+	}
+	return _c
+}
+
+// SetNowPlaying sets the "now_playing" edge to the Item entity.
+func (_c *SessionCreate) SetNowPlaying(v *Item) *SessionCreate {
+	return _c.SetNowPlayingID(v.ID)
 }
 
 // AddSyncPlayMembershipIDs adds the "sync_play_memberships" edge to the SyncPlayGroupMember entity by IDs.
@@ -189,6 +279,14 @@ func (_c *SessionCreate) defaults() {
 		v := session.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.PositionTicks(); !ok {
+		v := session.DefaultPositionTicks
+		_c.mutation.SetPositionTicks(v)
+	}
+	if _, ok := _c.mutation.IsPaused(); !ok {
+		v := session.DefaultIsPaused
+		_c.mutation.SetIsPaused(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -201,6 +299,12 @@ func (_c *SessionCreate) check() error {
 	}
 	if _, ok := _c.mutation.AccessToken(); !ok {
 		return &ValidationError{Name: "access_token", err: errors.New(`store: missing required field "Session.access_token"`)}
+	}
+	if _, ok := _c.mutation.PositionTicks(); !ok {
+		return &ValidationError{Name: "position_ticks", err: errors.New(`store: missing required field "Session.position_ticks"`)}
+	}
+	if _, ok := _c.mutation.IsPaused(); !ok {
+		return &ValidationError{Name: "is_paused", err: errors.New(`store: missing required field "Session.is_paused"`)}
 	}
 	if len(_c.mutation.UserIDs()) == 0 {
 		return &ValidationError{Name: "user", err: errors.New(`store: missing required edge "Session.user"`)}
@@ -268,6 +372,22 @@ func (_c *SessionCreate) createSpec() (*Session, *sqlgraph.CreateSpec) {
 		_spec.SetField(session.FieldRevokedAt, field.TypeTime, value)
 		_node.RevokedAt = &value
 	}
+	if value, ok := _c.mutation.PositionTicks(); ok {
+		_spec.SetField(session.FieldPositionTicks, field.TypeInt64, value)
+		_node.PositionTicks = value
+	}
+	if value, ok := _c.mutation.PlayMethod(); ok {
+		_spec.SetField(session.FieldPlayMethod, field.TypeString, value)
+		_node.PlayMethod = value
+	}
+	if value, ok := _c.mutation.IsPaused(); ok {
+		_spec.SetField(session.FieldIsPaused, field.TypeBool, value)
+		_node.IsPaused = value
+	}
+	if value, ok := _c.mutation.PlayingAt(); ok {
+		_spec.SetField(session.FieldPlayingAt, field.TypeTime, value)
+		_node.PlayingAt = &value
+	}
 	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -300,6 +420,23 @@ func (_c *SessionCreate) createSpec() (*Session, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.device_sessions = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.NowPlayingIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   session.NowPlayingTable,
+			Columns: []string{session.NowPlayingColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.NowPlayingItemID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.SyncPlayMembershipsIDs(); len(nodes) > 0 {
@@ -460,6 +597,90 @@ func (u *SessionUpsert) ClearRevokedAt() *SessionUpsert {
 	return u
 }
 
+// SetNowPlayingItemID sets the "now_playing_item_id" field.
+func (u *SessionUpsert) SetNowPlayingItemID(v uuid.UUID) *SessionUpsert {
+	u.Set(session.FieldNowPlayingItemID, v)
+	return u
+}
+
+// UpdateNowPlayingItemID sets the "now_playing_item_id" field to the value that was provided on create.
+func (u *SessionUpsert) UpdateNowPlayingItemID() *SessionUpsert {
+	u.SetExcluded(session.FieldNowPlayingItemID)
+	return u
+}
+
+// ClearNowPlayingItemID clears the value of the "now_playing_item_id" field.
+func (u *SessionUpsert) ClearNowPlayingItemID() *SessionUpsert {
+	u.SetNull(session.FieldNowPlayingItemID)
+	return u
+}
+
+// SetPositionTicks sets the "position_ticks" field.
+func (u *SessionUpsert) SetPositionTicks(v int64) *SessionUpsert {
+	u.Set(session.FieldPositionTicks, v)
+	return u
+}
+
+// UpdatePositionTicks sets the "position_ticks" field to the value that was provided on create.
+func (u *SessionUpsert) UpdatePositionTicks() *SessionUpsert {
+	u.SetExcluded(session.FieldPositionTicks)
+	return u
+}
+
+// AddPositionTicks adds v to the "position_ticks" field.
+func (u *SessionUpsert) AddPositionTicks(v int64) *SessionUpsert {
+	u.Add(session.FieldPositionTicks, v)
+	return u
+}
+
+// SetPlayMethod sets the "play_method" field.
+func (u *SessionUpsert) SetPlayMethod(v string) *SessionUpsert {
+	u.Set(session.FieldPlayMethod, v)
+	return u
+}
+
+// UpdatePlayMethod sets the "play_method" field to the value that was provided on create.
+func (u *SessionUpsert) UpdatePlayMethod() *SessionUpsert {
+	u.SetExcluded(session.FieldPlayMethod)
+	return u
+}
+
+// ClearPlayMethod clears the value of the "play_method" field.
+func (u *SessionUpsert) ClearPlayMethod() *SessionUpsert {
+	u.SetNull(session.FieldPlayMethod)
+	return u
+}
+
+// SetIsPaused sets the "is_paused" field.
+func (u *SessionUpsert) SetIsPaused(v bool) *SessionUpsert {
+	u.Set(session.FieldIsPaused, v)
+	return u
+}
+
+// UpdateIsPaused sets the "is_paused" field to the value that was provided on create.
+func (u *SessionUpsert) UpdateIsPaused() *SessionUpsert {
+	u.SetExcluded(session.FieldIsPaused)
+	return u
+}
+
+// SetPlayingAt sets the "playing_at" field.
+func (u *SessionUpsert) SetPlayingAt(v time.Time) *SessionUpsert {
+	u.Set(session.FieldPlayingAt, v)
+	return u
+}
+
+// UpdatePlayingAt sets the "playing_at" field to the value that was provided on create.
+func (u *SessionUpsert) UpdatePlayingAt() *SessionUpsert {
+	u.SetExcluded(session.FieldPlayingAt)
+	return u
+}
+
+// ClearPlayingAt clears the value of the "playing_at" field.
+func (u *SessionUpsert) ClearPlayingAt() *SessionUpsert {
+	u.SetNull(session.FieldPlayingAt)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -610,6 +831,104 @@ func (u *SessionUpsertOne) UpdateRevokedAt() *SessionUpsertOne {
 func (u *SessionUpsertOne) ClearRevokedAt() *SessionUpsertOne {
 	return u.Update(func(s *SessionUpsert) {
 		s.ClearRevokedAt()
+	})
+}
+
+// SetNowPlayingItemID sets the "now_playing_item_id" field.
+func (u *SessionUpsertOne) SetNowPlayingItemID(v uuid.UUID) *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.SetNowPlayingItemID(v)
+	})
+}
+
+// UpdateNowPlayingItemID sets the "now_playing_item_id" field to the value that was provided on create.
+func (u *SessionUpsertOne) UpdateNowPlayingItemID() *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.UpdateNowPlayingItemID()
+	})
+}
+
+// ClearNowPlayingItemID clears the value of the "now_playing_item_id" field.
+func (u *SessionUpsertOne) ClearNowPlayingItemID() *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.ClearNowPlayingItemID()
+	})
+}
+
+// SetPositionTicks sets the "position_ticks" field.
+func (u *SessionUpsertOne) SetPositionTicks(v int64) *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.SetPositionTicks(v)
+	})
+}
+
+// AddPositionTicks adds v to the "position_ticks" field.
+func (u *SessionUpsertOne) AddPositionTicks(v int64) *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.AddPositionTicks(v)
+	})
+}
+
+// UpdatePositionTicks sets the "position_ticks" field to the value that was provided on create.
+func (u *SessionUpsertOne) UpdatePositionTicks() *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.UpdatePositionTicks()
+	})
+}
+
+// SetPlayMethod sets the "play_method" field.
+func (u *SessionUpsertOne) SetPlayMethod(v string) *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.SetPlayMethod(v)
+	})
+}
+
+// UpdatePlayMethod sets the "play_method" field to the value that was provided on create.
+func (u *SessionUpsertOne) UpdatePlayMethod() *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.UpdatePlayMethod()
+	})
+}
+
+// ClearPlayMethod clears the value of the "play_method" field.
+func (u *SessionUpsertOne) ClearPlayMethod() *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.ClearPlayMethod()
+	})
+}
+
+// SetIsPaused sets the "is_paused" field.
+func (u *SessionUpsertOne) SetIsPaused(v bool) *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.SetIsPaused(v)
+	})
+}
+
+// UpdateIsPaused sets the "is_paused" field to the value that was provided on create.
+func (u *SessionUpsertOne) UpdateIsPaused() *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.UpdateIsPaused()
+	})
+}
+
+// SetPlayingAt sets the "playing_at" field.
+func (u *SessionUpsertOne) SetPlayingAt(v time.Time) *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.SetPlayingAt(v)
+	})
+}
+
+// UpdatePlayingAt sets the "playing_at" field to the value that was provided on create.
+func (u *SessionUpsertOne) UpdatePlayingAt() *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.UpdatePlayingAt()
+	})
+}
+
+// ClearPlayingAt clears the value of the "playing_at" field.
+func (u *SessionUpsertOne) ClearPlayingAt() *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.ClearPlayingAt()
 	})
 }
 
@@ -930,6 +1249,104 @@ func (u *SessionUpsertBulk) UpdateRevokedAt() *SessionUpsertBulk {
 func (u *SessionUpsertBulk) ClearRevokedAt() *SessionUpsertBulk {
 	return u.Update(func(s *SessionUpsert) {
 		s.ClearRevokedAt()
+	})
+}
+
+// SetNowPlayingItemID sets the "now_playing_item_id" field.
+func (u *SessionUpsertBulk) SetNowPlayingItemID(v uuid.UUID) *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.SetNowPlayingItemID(v)
+	})
+}
+
+// UpdateNowPlayingItemID sets the "now_playing_item_id" field to the value that was provided on create.
+func (u *SessionUpsertBulk) UpdateNowPlayingItemID() *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.UpdateNowPlayingItemID()
+	})
+}
+
+// ClearNowPlayingItemID clears the value of the "now_playing_item_id" field.
+func (u *SessionUpsertBulk) ClearNowPlayingItemID() *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.ClearNowPlayingItemID()
+	})
+}
+
+// SetPositionTicks sets the "position_ticks" field.
+func (u *SessionUpsertBulk) SetPositionTicks(v int64) *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.SetPositionTicks(v)
+	})
+}
+
+// AddPositionTicks adds v to the "position_ticks" field.
+func (u *SessionUpsertBulk) AddPositionTicks(v int64) *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.AddPositionTicks(v)
+	})
+}
+
+// UpdatePositionTicks sets the "position_ticks" field to the value that was provided on create.
+func (u *SessionUpsertBulk) UpdatePositionTicks() *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.UpdatePositionTicks()
+	})
+}
+
+// SetPlayMethod sets the "play_method" field.
+func (u *SessionUpsertBulk) SetPlayMethod(v string) *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.SetPlayMethod(v)
+	})
+}
+
+// UpdatePlayMethod sets the "play_method" field to the value that was provided on create.
+func (u *SessionUpsertBulk) UpdatePlayMethod() *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.UpdatePlayMethod()
+	})
+}
+
+// ClearPlayMethod clears the value of the "play_method" field.
+func (u *SessionUpsertBulk) ClearPlayMethod() *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.ClearPlayMethod()
+	})
+}
+
+// SetIsPaused sets the "is_paused" field.
+func (u *SessionUpsertBulk) SetIsPaused(v bool) *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.SetIsPaused(v)
+	})
+}
+
+// UpdateIsPaused sets the "is_paused" field to the value that was provided on create.
+func (u *SessionUpsertBulk) UpdateIsPaused() *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.UpdateIsPaused()
+	})
+}
+
+// SetPlayingAt sets the "playing_at" field.
+func (u *SessionUpsertBulk) SetPlayingAt(v time.Time) *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.SetPlayingAt(v)
+	})
+}
+
+// UpdatePlayingAt sets the "playing_at" field to the value that was provided on create.
+func (u *SessionUpsertBulk) UpdatePlayingAt() *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.UpdatePlayingAt()
+	})
+}
+
+// ClearPlayingAt clears the value of the "playing_at" field.
+func (u *SessionUpsertBulk) ClearPlayingAt() *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.ClearPlayingAt()
 	})
 }
 
