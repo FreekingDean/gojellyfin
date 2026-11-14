@@ -16,6 +16,13 @@ function emulatorSetup({ PACKAGE, apk }) {
   return async function globalSetup() {
     const phone = device();
     phone.adb(['wait-for-device']);
+    // A freshly booted image compiles its apps in the background for minutes,
+    // slow enough that the first tests time out, so that is done first.
+    try {
+      phone.shell('cmd package bg-dexopt-job', { timeout: 900000, allowFailure: true });
+    } catch (error) {
+      console.log(`Carrying on with the background compile unfinished: ${error.message}`);
+    }
 
     const app = await boot({ mediaSeconds: MEDIA_SECONDS });
 

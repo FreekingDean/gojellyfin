@@ -194,7 +194,7 @@ function device(serial = process.env.ANDROID_SERIAL) {
 
   async function fill(matcher, text) {
     const field = await tapOn(matcher);
-    await sleep(500);
+    await waitFor({ ...matcher, focused: true }, { timeout: 10000 }).catch(() => {});
     if (field.text) {
       key('moveEnd');
       key('deleteBack', field.text.length);
@@ -237,7 +237,7 @@ function device(serial = process.env.ANDROID_SERIAL) {
     reverse: (port) => adb(['reverse', `tcp:${port}`, `tcp:${port}`]),
     clear: (app) => shell(`pm clear ${app}`),
     stop: (app) => shell(`am force-stop ${app}`),
-    start: (component) => shell(`am start -S -W -n ${component}`),
+    start: (component) => shell(`am start -S -W -n ${component}`, { timeout: 180000 }),
     clearLog: () => adb(['logcat', '-c'], { allowFailure: true }),
   };
 }
