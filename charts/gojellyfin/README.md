@@ -113,8 +113,8 @@ reads the environment.
 | `database.secretKey` | — | `DATABASE_URL` | Key within that Secret |
 | `tmdb.existingSecret` | `TMDB_API_KEY` | `""` | Secret holding the TMDB key. Empty turns metadata lookups off, so items keep their source's titles and get no artwork |
 | `tmdb.secretKey` | — | `TMDB_API_KEY` | Key within that Secret |
-| `oidc.issuerUrl` | `OIDC_ISSUER_URL` | `""` | OpenID Connect issuer. Set, the login page offers "Sign in with SSO"; it needs `hostname`, and the redirect URI to register is `<scheme>://<hostname>/sso/oidc/callback` |
-| `oidc.clientId` | `OIDC_CLIENT_ID` | `""` | Client id registered with the provider. Required with `issuerUrl` |
+| `oidc.issuerUrl` | `OIDC_ISSUER_URL` | `""` | OpenID Connect issuer. Set together with `clientId`, the login page offers "Sign in with SSO"; it needs `hostname`, and the redirect URI to register is `<scheme>://<hostname>/sso/oidc/callback` |
+| `oidc.clientId` | `OIDC_CLIENT_ID` | `""` | Client id registered with the provider. Sign-on stays off while it is empty, so the other values can be set first |
 | `oidc.existingSecret` | `OIDC_CLIENT_SECRET` | `""` | Secret holding the client secret. Empty is a public client |
 | `oidc.secretKey` | — | `OIDC_CLIENT_SECRET` | Key within that Secret |
 | `oidc.scopes` | `OIDC_SCOPES` | `""` | Space separated. Empty asks for `openid profile email` |

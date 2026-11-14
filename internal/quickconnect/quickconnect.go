@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
@@ -84,6 +85,18 @@ func (s *Service) Pending(ctx context.Context, secret string) (*Request, error) 
 	}
 
 	return request, nil
+}
+
+func (s *Service) Waiting(ctx context.Context) ([]*Request, error) {
+	requests, err := s.store.QuickConnectRequest.Query().
+		Where(requestmodel.ExpiresAtGT(time.Now()), requestmodel.AuthorizedByIDIsNil()).
+		Order(requestmodel.ByCreatedAt(sql.OrderDesc())).
+		AllModels(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query the waiting quick connect requests: %w", err)
+	}
+
+	return requests, nil
 }
 
 func (s *Service) Authorize(ctx context.Context, code string, userID uuid.UUID) error {

@@ -9,6 +9,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
+	"github.com/FreekingDean/gojellyfin/internal/server/link"
 	"github.com/FreekingDean/gojellyfin/internal/shelves"
 	"github.com/FreekingDean/gojellyfin/internal/sso"
 )
@@ -25,6 +26,11 @@ type SignOn interface {
 	Enabled() bool
 }
 
+type Styling interface {
+	Enabled() bool
+	CSS() string
+}
+
 type Shelves interface {
 	Titles() []shelves.Title
 }
@@ -32,11 +38,12 @@ type Shelves interface {
 type Server struct {
 	config  *config.Service
 	signOn  SignOn
+	links   Styling
 	shelves Shelves
 }
 
-func New(config *config.Service, signOn *sso.Service, shelves *shelves.Service) *Server {
-	return &Server{config: config, signOn: signOn, shelves: shelves}
+func New(config *config.Service, signOn *sso.Service, links *link.Handler, shelves *shelves.Service) *Server {
+	return &Server{config: config, signOn: signOn, links: links, shelves: shelves}
 }
 
 func (s *Server) GetBrandingOptions(ctx context.Context, request api.GetBrandingOptionsRequestObject) (api.GetBrandingOptionsResponseObject, error) {
@@ -47,6 +54,10 @@ func (s *Server) GetBrandingOptions(ctx context.Context, request api.GetBranding
 
 	if s.signOn.Enabled() {
 		branding.LoginDisclaimer = apiutil.Ptr(strings.TrimSpace(apiutil.Deref(branding.LoginDisclaimer) + "\n\n" + signOnButton))
+	}
+
+	if s.links.Enabled() {
+		branding.SplashscreenEnabled = apiutil.Ptr(true)
 	}
 
 	return api.GetBrandingOptions200JSONResponse(branding), nil
@@ -84,6 +95,7 @@ func (s *Server) brandingCss(ctx context.Context) (string, error) {
 
 	css := strings.Builder{}
 	css.WriteString(apiutil.Deref(branding.CustomCss))
+	css.WriteString(s.links.CSS())
 	for _, title := range s.shelves.Titles() {
 		fmt.Fprintf(&css, shelfTitle, title.ID, cssString.Replace(title.Name))
 	}
