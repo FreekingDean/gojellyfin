@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
@@ -22,25 +23,31 @@ type Catalogue interface {
 	LastPlayed(ctx context.Context, viewer items.Viewer, userID uuid.UUID, kind items.Kind) (*items.Item, []string, error)
 }
 
+type Discovery interface {
+	Enabled() bool
+}
+
 type Shelf struct {
 	ID         uuid.UUID
 	Slug       string
 	Name       string
 	Collection libraries.CollectionType
+	Unowned    items.Kind
 	query      items.LatestQuery
 }
 
 type Service struct {
 	catalogue Catalogue
+	discovery Discovery
 	enabled   []definition
 	now       func() time.Time
 }
 
-func New(catalogue *items.Service, config env.Config) (*Service, error) {
-	return newService(catalogue, config.Shelves, time.Now)
+func New(catalogue *items.Service, discovery *discover.Service, config env.Config) (*Service, error) {
+	return newService(catalogue, discovery, config.Shelves, time.Now)
 }
 
-func newService(catalogue Catalogue, slugs []string, now func() time.Time) (*Service, error) {
+func newService(catalogue Catalogue, discovery Discovery, slugs []string, now func() time.Time) (*Service, error) {
 	if slugs == nil {
 		slugs = Defaults
 	}
@@ -57,7 +64,7 @@ func newService(catalogue Catalogue, slugs []string, now func() time.Time) (*Ser
 		enabled = append(enabled, definitions[index])
 	}
 
-	return &Service{catalogue: catalogue, enabled: enabled, now: now}, nil
+	return &Service{catalogue: catalogue, discovery: discovery, enabled: enabled, now: now}, nil
 }
 
 func Slugs() []string {
@@ -104,8 +111,12 @@ func (s *Service) resolve(ctx context.Context, entry definition, viewer items.Vi
 		return Shelf{}, false, fmt.Errorf("failed to resolve the %s shelf: %w", entry.slug, err)
 	}
 
+	if entry.unowned != "" && !s.discovery.Enabled() {
+		ok = false
+	}
+
 	query.Viewer = viewer
-	return Shelf{ID: ID(entry.slug), Slug: entry.slug, Name: name, Collection: entry.collection, query: query}, ok, nil
+	return Shelf{ID: ID(entry.slug), Slug: entry.slug, Name: name, Collection: entry.collection, Unowned: entry.unowned, query: query}, ok, nil
 }
 
 func (s *Service) Latest(ctx context.Context, shelf Shelf, limit int, ungrouped bool) ([]items.Latest, error) {

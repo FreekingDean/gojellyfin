@@ -46,6 +46,8 @@ var definitions = []definition{
 	}),
 	{slug: "genre-spotlight", collection: libraries.CollectionTypeMovies, resolve: genreSpotlight},
 	{slug: "because-you-watched", collection: libraries.CollectionTypeMovies, resolve: becauseYouWatched},
+	trending("trending-movies", "Trending Movies", libraries.CollectionTypeMovies, itemmodel.KindMovie),
+	trending("trending-shows", "Trending Shows", libraries.CollectionTypeTvshows, itemmodel.KindSeries),
 }
 
 var (
@@ -59,6 +61,13 @@ type definition struct {
 	slug       string
 	collection libraries.CollectionType
 	resolve    resolver
+	unowned    items.Kind
+}
+
+func trending(slug, name string, collection libraries.CollectionType, kind items.Kind) definition {
+	return definition{slug: slug, collection: collection, unowned: kind, resolve: func(context.Context, Catalogue, items.Viewer, uuid.UUID, time.Time) (string, items.LatestQuery, bool, error) {
+		return name, items.LatestQuery{}, true, nil
+	}}
 }
 
 func fixed(slug, name string, collection libraries.CollectionType, query items.LatestQuery) definition {

@@ -18,7 +18,8 @@ type (
 )
 
 const (
-	ImageKindPrimary = imagemodel.KindPrimary
+	ImageKindPrimary  = imagemodel.KindPrimary
+	ImageKindBackdrop = imagemodel.KindBackdrop
 )
 
 var ValidImageKind = imagemodel.KindValidator
