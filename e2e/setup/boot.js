@@ -63,7 +63,12 @@ async function boot() {
   });
 
   const api = spawn(binaries.gojellyfin, ['server'], {
-    env: { ...process.env, ...serverEnv, HTTP_PORT: String(apiPort) },
+    env: {
+      ...process.env,
+      ...serverEnv,
+      HTTP_PORT: String(apiPort),
+      PUBLISHED_SERVER_URL: `http://127.0.0.1:${webPort}`,
+    },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 

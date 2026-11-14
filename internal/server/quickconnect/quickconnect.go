@@ -3,12 +3,14 @@ package quickconnect
 import (
 	"context"
 	"errors"
+	"net/http"
 
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/quickconnect"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
+	"github.com/FreekingDean/gojellyfin/internal/server/link"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
@@ -25,13 +27,29 @@ type UsersService interface {
 	User(ctx context.Context, id uuid.UUID) (*users.User, error)
 }
 
+type Remembering interface {
+	Remember(w http.ResponseWriter, request *quickconnect.Request)
+}
+
 type Server struct {
 	quickconnect QuickConnectService
 	users        UsersService
+	codes        Remembering
 }
 
-func New(quickconnect *quickconnect.Service, users *users.Service) *Server {
-	return &Server{quickconnect: quickconnect, users: users}
+func New(quickconnect *quickconnect.Service, users *users.Service, codes *link.Handler) *Server {
+	return &Server{quickconnect: quickconnect, users: users, codes: codes}
+}
+
+type initiated struct {
+	api.InitiateQuickConnect200JSONResponse
+	remember func(http.ResponseWriter)
+}
+
+func (response initiated) VisitInitiateQuickConnectResponse(w http.ResponseWriter) error {
+	response.remember(w)
+
+	return response.InitiateQuickConnect200JSONResponse.VisitInitiateQuickConnectResponse(w)
 }
 
 func (s *Server) GetQuickConnectEnabled(ctx context.Context, request api.GetQuickConnectEnabledRequestObject) (api.GetQuickConnectEnabledResponseObject, error) {
@@ -44,7 +62,10 @@ func (s *Server) InitiateQuickConnect(ctx context.Context, request api.InitiateQ
 		return nil, err
 	}
 
-	return api.InitiateQuickConnect200JSONResponse(resultDto(pending)), nil
+	return initiated{
+		InitiateQuickConnect200JSONResponse: api.InitiateQuickConnect200JSONResponse(resultDto(pending)),
+		remember:                            func(w http.ResponseWriter) { s.codes.Remember(w, pending) },
+	}, nil
 }
 
 func (s *Server) GetQuickConnectState(ctx context.Context, request api.GetQuickConnectStateRequestObject) (api.GetQuickConnectStateResponseObject, error) {
