@@ -2,6 +2,21 @@ const { test, expect, view, card, open } = require('./fixtures');
 
 const SECTIONS = /\/(Similar|SpecialFeatures|LocalTrailers|Intros)$/i;
 
+// The client loads a card's image when the card nears the viewport, so a row
+// far down a tall page is drawn or not depending on timing. Walking the page
+// once brings every row in, and the wait holds until the requests that walk
+// started have finished.
+async function settle(page) {
+  await page.evaluate(async () => {
+    for (let top = 0; top < document.documentElement.scrollHeight; top += window.innerHeight / 2) {
+      window.scrollTo(0, top);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    window.scrollTo(0, 0);
+  });
+  await page.waitForLoadState('networkidle');
+}
+
 test.describe('the home screen', () => {
   test('shows a card for each library and the latest items', async ({ signedIn: page, harness }) => {
     const home = view(page);
@@ -12,6 +27,10 @@ test.describe('the home screen', () => {
       await expect(home).toContainText(movie);
     }
 
+    await expect(home).toContainText(harness.wantedMovie.name);
+    await expect(home).toContainText(harness.wantedShow.name);
+
+    await settle(page);
     await expect(page).toHaveScreenshot('home.png', { fullPage: true });
   });
 

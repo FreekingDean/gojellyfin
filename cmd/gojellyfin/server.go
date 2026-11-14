@@ -9,6 +9,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/collage"
 	"github.com/FreekingDean/gojellyfin/internal/config"
+	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/displaypreferences"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
@@ -43,6 +44,7 @@ var serverModules = fx.Options(
 	auth.Module,
 	collage.Module,
 	config.Module,
+	discover.Module,
 	displaypreferences.Module,
 	ffmpeg.Module,
 	filesystem.Module,

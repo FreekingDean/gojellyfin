@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -18,10 +19,13 @@ const (
 	SourceAPIKeyPrefix = "SOURCE_API_KEY_"
 )
 
+var serverIDPattern = regexp.MustCompile(`^[0-9a-f]{32}$`)
+
 type Config struct {
 	DatabaseURL        string     `mapstructure:"DATABASE_URL"`
 	HTTPPort           int        `mapstructure:"HTTP_PORT"`
 	PublishedServerURL string     `mapstructure:"PUBLISHED_SERVER_URL"`
+	ServerID           string     `mapstructure:"SERVER_ID"`
 	CORSOrigins        []string   `mapstructure:"CORS_ORIGINS"`
 	Transcoder         Transcoder `mapstructure:",squash"`
 	Temporal           Temporal   `mapstructure:",squash"`
@@ -50,7 +54,8 @@ type Tracing struct {
 }
 
 type TMDB struct {
-	APIKey string `mapstructure:"TMDB_API_KEY"`
+	APIKey  string `mapstructure:"TMDB_API_KEY"`
+	BaseURL string `mapstructure:"TMDB_BASE_URL"`
 }
 
 type OIDC struct {
@@ -107,6 +112,10 @@ func (c Config) validate() error {
 	if c.Temporal.WorkerStopTimeout < 0 {
 		return fmt.Errorf("TEMPORAL_WORKER_STOP_TIMEOUT must be a positive duration such as 5m, got %s", c.Temporal.WorkerStopTimeout)
 	}
+	if c.ServerID != "" && !serverIDPattern.MatchString(c.ServerID) {
+		return fmt.Errorf("SERVER_ID must be 32 lowercase hex characters, the form Jellyfin writes to device.txt, got %q", c.ServerID)
+	}
+
 	return c.validateOIDC()
 }
 

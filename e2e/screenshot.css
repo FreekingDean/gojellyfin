@@ -12,3 +12,11 @@
 .defaultCardBackground5 {
   background-color: #00a4dc !important;
 }
+
+/*
+ * A detail page says when a title started now would end, which is the time of
+ * the run.
+ */
+.endsAt {
+  visibility: hidden !important;
+}

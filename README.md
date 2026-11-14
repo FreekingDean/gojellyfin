@@ -80,3 +80,66 @@ Migrations never run at startup unless `MIGRATE_ON_START=true`, which is unsafe
 with rolling replicas, so the chart does not offer it. Run `gojellyfin migrate`
 as a one-off or set `migration.enabled=true` for a pre-upgrade hook Job;
 `charts/gojellyfin/README.md` documents the tradeoff and every other value.
+
+## Moving over from Jellyfin
+
+`scripts/jellyfinmigrate` carries an existing Jellyfin install into gojellyfin
+so nobody has to sign in again. It is a script rather than a part of the server:
+it runs once, from a checkout, against the two databases.
+
+It reads Jellyfin's data directory — the one holding `jellyfin.db`, `library.db`
+and `device.txt`, which is `/config/data` in the official image — and never
+writes to it. Jellyfin 10.10 and 10.11 are both read. It carries:
+
+- **Users**, with the ids Jellyfin gave them, their password hashes, their
+  policy and their playback preferences. A Jellyfin password keeps working.
+- **Signed-in devices and their access tokens**, so a phone, a television and a
+  browser that were signed in stay signed in.
+- **API keys.**
+- **Watch state**: played, play count, resume position, favourites and ratings.
+  A title is matched by its TMDB id, then by its IMDb or TVDB id, then by its
+  file path.
+
+Not carried: libraries and metadata, which gojellyfin fills from Sonarr and
+Radarr; which libraries a restricted user may see, because the library ids
+differ; parental ratings; and display preferences.
+
+### Cutover
+
+1. **Fill gojellyfin first.** Create the libraries, bind the sources and let a
+   refresh finish, so the titles exist for the watch state to land on.
+2. **Rehearse.** Copy Jellyfin's data directory somewhere the script can read
+   and run it with `--dry-run`. It prints what it would carry and every title it
+   could not match, and writes nothing.
+
+   ```sh
+   DATABASE_URL='postgres://…' go run ./scripts/jellyfinmigrate --from ./jellyfin-data --dry-run
+   ```
+
+3. **Stop Jellyfin**, so nothing changes underneath the copy, and copy the data
+   directory again.
+4. **Run it for real**: the same command without `--dry-run`. It is one
+   transaction, so a failure writes nothing.
+5. **Give gojellyfin Jellyfin's server id.** The script ends by printing it. Set
+   `serverId` in the chart (`SERVER_ID` in the environment) and restart. A
+   client keeps its token filed under the server's id, so without this every
+   client asks for a sign-in however many tokens were carried.
+6. **Point the hostname at gojellyfin.** Clients come back to the same address,
+   find the same server id and the token they already hold, and carry on.
+
+Running it again is safe. A user, a token and an api key that are already here
+are left alone, and watch state is merged rather than overwritten: played and
+favourite if either side says so, and the further of the two play counts and
+positions. So a title that had no match the first time is picked up by a later
+run once a scan has it.
+
+Three things it reports rather than guesses at. A Jellyfin user whose name an
+account here already holds is skipped with their devices, since a matching name
+is not a matching person; rename or delete the account here and run it again. A
+user with no Jellyfin password, such as one signed in through a plugin, has none
+here until `gojellyfin resetpassword`. And a user Jellyfin limited to chosen
+libraries sees none here until theirs are ticked in the dashboard.
+
+A carried token is as good here as it was there, so a token that leaked from the
+old install signs in to the new one too. Changing a password revokes that
+user's sessions.

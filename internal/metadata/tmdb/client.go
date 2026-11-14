@@ -32,7 +32,7 @@ type Client struct {
 }
 
 func NewClient(config env.Config) (*Client, error) {
-	return newClient("", config.TMDB.APIKey)
+	return newClient(config.TMDB.BaseURL, config.TMDB.APIKey)
 }
 
 func newClient(baseURL, apiKey string) (*Client, error) {

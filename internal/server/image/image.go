@@ -10,6 +10,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/collage"
+	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
@@ -26,11 +27,12 @@ type Splash interface {
 type Server struct {
 	items    *items.Service
 	collages *collage.Service
+	discover *discover.Service
 	splash   Splash
 }
 
-func New(items *items.Service, collages *collage.Service, links *link.Handler) *Server {
-	return &Server{items: items, collages: collages, splash: links}
+func New(items *items.Service, collages *collage.Service, discover *discover.Service, links *link.Handler) *Server {
+	return &Server{items: items, collages: collages, discover: discover, splash: links}
 }
 
 func (s *Server) GetSplashscreen(ctx context.Context, request api.GetSplashscreenRequestObject) (api.GetSplashscreenResponseObject, error) {
@@ -103,7 +105,15 @@ func (s *Server) answer(ctx context.Context, itemID uuid.UUID, imageType api.Ima
 	if err == nil {
 		return redirect(record.URL), true
 	}
-	if kind != items.ImageKindPrimary || index != 0 {
+	if index != 0 {
+		return nil, false
+	}
+	if title, found, err := s.discover.Summary(ctx, itemID); err == nil && found {
+		url, found := title.Image(kind)
+
+		return redirect(url), found
+	}
+	if kind != items.ImageKindPrimary {
 		return nil, false
 	}
 

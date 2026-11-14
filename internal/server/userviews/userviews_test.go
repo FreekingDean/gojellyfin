@@ -3,6 +3,7 @@ package userviews
 import (
 	"context"
 	"github.com/FreekingDean/gojellyfin/internal/collage"
+	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"reflect"
 	"slices"
@@ -58,12 +59,28 @@ func newFixture(t *testing.T) *fixture {
 	})
 
 	catalogue := items.New(client)
-	shown, err := shelves.New(catalogue, env.Config{})
+	shown, err := shelves.New(catalogue, discover.New(noProvider{}, catalogue), env.Config{})
 	if err != nil {
 		t.Fatalf("failed to build the shelves: %v", err)
 	}
 
 	return &fixture{server: New(libraries.New(client), shown, allLibraries{}, collage.New(catalogue)), client: client, prefix: prefix}
+}
+
+type noProvider struct{}
+
+func (noProvider) Enabled() bool { return false }
+
+func (noProvider) Movie(context.Context, int) (items.Metadata, bool, error) {
+	return items.Metadata{}, false, nil
+}
+
+func (noProvider) Series(context.Context, int) (items.Metadata, bool, error) {
+	return items.Metadata{}, false, nil
+}
+
+func (noProvider) Trending(context.Context, items.Kind) ([]items.Metadata, error) {
+	return nil, nil
 }
 
 type allLibraries struct{}

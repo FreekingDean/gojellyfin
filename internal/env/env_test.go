@@ -16,6 +16,7 @@ var settings = []string{
 	"DATABASE_URL",
 	"HTTP_PORT",
 	"PUBLISHED_SERVER_URL",
+	"SERVER_ID",
 	"CORS_ORIGINS",
 	"TRANSCODER_JOBS",
 	"TRANSCODER_STALL_TIMEOUT",
@@ -24,6 +25,7 @@ var settings = []string{
 	"TEMPORAL_WORKER_STOP_TIMEOUT",
 	"OTEL_EXPORTER_OTLP_ENDPOINT",
 	"TMDB_API_KEY",
+	"TMDB_BASE_URL",
 	"MEDIA_DIRECTORIES",
 	"SHELVES",
 	"OIDC_ISSUER_URL",
@@ -77,6 +79,7 @@ func TestLoad(t *testing.T) {
 				"DATABASE_URL":                 testDatabaseURL,
 				"HTTP_PORT":                    "9000",
 				"PUBLISHED_SERVER_URL":         "https://jellyfin.example",
+				"SERVER_ID":                    "0123456789abcdef0123456789abcdef",
 				"CORS_ORIGINS":                 "https://one.example, https://two.example ",
 				"TRANSCODER_JOBS":              "4",
 				"TRANSCODER_STALL_TIMEOUT":     "45s",
@@ -101,6 +104,7 @@ func TestLoad(t *testing.T) {
 				DatabaseURL:        testDatabaseURL,
 				HTTPPort:           9000,
 				PublishedServerURL: "https://jellyfin.example",
+				ServerID:           "0123456789abcdef0123456789abcdef",
 				CORSOrigins:        []string{"https://one.example", "https://two.example"},
 				Transcoder:         Transcoder{Jobs: 4, StallTimeout: 45 * time.Second},
 				Temporal:           Temporal{HostPort: "temporal:7233", Namespace: "gojellyfin_production", WorkerStopTimeout: 5 * time.Minute},
@@ -173,6 +177,11 @@ func TestLoad(t *testing.T) {
 		{
 			name:    "refuses a negative TEMPORAL_WORKER_STOP_TIMEOUT",
 			env:     map[string]string{"DATABASE_URL": testDatabaseURL, "TEMPORAL_WORKER_STOP_TIMEOUT": "-1m"},
+			wantErr: true,
+		},
+		{
+			name:    "refuses a SERVER_ID that is not what device.txt holds",
+			env:     map[string]string{"DATABASE_URL": testDatabaseURL, "SERVER_ID": "E10A32FC-A793-42D7-B8B9-D96E255CE1BC"},
 			wantErr: true,
 		},
 		{

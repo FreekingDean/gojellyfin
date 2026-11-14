@@ -107,6 +107,7 @@ reads the environment.
 |---|---|---|---|
 | `hostname` | `PUBLISHED_SERVER_URL` | `""` | The name clients reach the server by. The routes match it, and the public endpoints advertise `<scheme>://<hostname>`. Empty advertises no address at all — a client prefers `LocalAddress` when it believes it shares a network with the server, so naming one it cannot reach sends it nowhere |
 | `scheme` | | `https` | What the gateway in front of this listens on, and the only thing it is used for. Advertising `https` over a plain listener loses a client exactly as advertising a wrong hostname does |
+| `serverId` | `SERVER_ID` | `""` | The id the server answers with. A client keys the token it holds by it, so a server taking over from a Jellyfin install is given that install's id: the contents of `device.txt` beside its `jellyfin.db`, which `scripts/jellyfinmigrate` prints. Empty keeps gojellyfin's own |
 | `httpPort` | `HTTP_PORT` | `8081` | What the server listens on. The container port, the Service target and the probes follow it |
 | `env` | anything | `[]` | Extra container env for the API, the streaming pods and the worker, in Kubernetes' own `env` shape. It is rendered first, so another value can refer to one of these as `$(NAME)` — `tracing.otlpEndpoint: http://$(HOST_IP):4318` with `HOST_IP` read from `status.hostIP` reaches a node-local collector's OTLP/HTTP receiver, which is what the exporter speaks |
 | `database.existingSecret` | `DATABASE_URL` | `""` | Secret holding the URL. Empty means the release's own fullname |
