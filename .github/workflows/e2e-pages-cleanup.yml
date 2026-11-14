@@ -41,7 +41,7 @@ jobs:
               exit 0
             fi
             rm -rf "pr-$PR"
-            git add -A
+            git add -A -- "pr-$PR"
             commit=$(git commit-tree "$(git write-tree)" -m "Remove e2e screenshots for #$PR")
             if git push --force-with-lease="gh-pages:$(git rev-parse origin/gh-pages)" origin "$commit:refs/heads/gh-pages"; then
               exit 0
