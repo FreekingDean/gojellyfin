@@ -124,7 +124,7 @@ func newFixture(t *testing.T) *fixture {
 		if err := sessionService.RemoveDevice(ctx, unique); err != nil {
 			t.Errorf("failed to delete the device: %v", err)
 		}
-		if err := userService.DeleteUser(ctx, user.ID); err != nil {
+		if err := client.User.DeleteOneID(user.ID).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the user: %v", err)
 		}
 		if err := connection.Stop(); err != nil {

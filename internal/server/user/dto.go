@@ -159,7 +159,13 @@ func (s *Server) saveConfiguration(ctx context.Context, id uuid.UUID, req *api.U
 }
 
 func (s *Server) savePolicy(ctx context.Context, id uuid.UUID, req *api.UserPolicy) error {
-	update := s.users.UpdatePolicy(id).
+	return s.users.SavePolicy(ctx, id, func(update *users.PolicyUpdate) {
+		applyPolicy(update, req)
+	})
+}
+
+func applyPolicy(update *users.PolicyUpdate, req *api.UserPolicy) {
+	update.
 		SetNillableIsAdministrator(req.IsAdministrator).
 		SetNillableIsHidden(req.IsHidden).
 		SetNillableIsDisabled(req.IsDisabled).
@@ -241,6 +247,4 @@ func (s *Server) savePolicy(ctx context.Context, id uuid.UUID, req *api.UserPoli
 		}
 		update.SetAccessSchedules(schedules)
 	}
-
-	return update.Exec(ctx)
 }
