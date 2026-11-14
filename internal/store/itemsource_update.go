@@ -249,6 +249,60 @@ func (_u *ItemSourceUpdate) ClearProbedAt() *ItemSourceUpdate {
 	return _u
 }
 
+// SetExternalID sets the "external_id" field.
+func (_u *ItemSourceUpdate) SetExternalID(v int64) *ItemSourceUpdate {
+	_u.mutation.ResetExternalID()
+	_u.mutation.SetExternalID(v)
+	return _u
+}
+
+// SetNillableExternalID sets the "external_id" field if the given value is not nil.
+func (_u *ItemSourceUpdate) SetNillableExternalID(v *int64) *ItemSourceUpdate {
+	if v != nil {
+		_u.SetExternalID(*v)
+	}
+	return _u
+}
+
+// AddExternalID adds value to the "external_id" field.
+func (_u *ItemSourceUpdate) AddExternalID(v int64) *ItemSourceUpdate {
+	_u.mutation.AddExternalID(v)
+	return _u
+}
+
+// ClearExternalID clears the value of the "external_id" field.
+func (_u *ItemSourceUpdate) ClearExternalID() *ItemSourceUpdate {
+	_u.mutation.ClearExternalID()
+	return _u
+}
+
+// SetExternalFileID sets the "external_file_id" field.
+func (_u *ItemSourceUpdate) SetExternalFileID(v int64) *ItemSourceUpdate {
+	_u.mutation.ResetExternalFileID()
+	_u.mutation.SetExternalFileID(v)
+	return _u
+}
+
+// SetNillableExternalFileID sets the "external_file_id" field if the given value is not nil.
+func (_u *ItemSourceUpdate) SetNillableExternalFileID(v *int64) *ItemSourceUpdate {
+	if v != nil {
+		_u.SetExternalFileID(*v)
+	}
+	return _u
+}
+
+// AddExternalFileID adds value to the "external_file_id" field.
+func (_u *ItemSourceUpdate) AddExternalFileID(v int64) *ItemSourceUpdate {
+	_u.mutation.AddExternalFileID(v)
+	return _u
+}
+
+// ClearExternalFileID clears the value of the "external_file_id" field.
+func (_u *ItemSourceUpdate) ClearExternalFileID() *ItemSourceUpdate {
+	_u.mutation.ClearExternalFileID()
+	return _u
+}
+
 // SetItem sets the "item" edge to the Item entity.
 func (_u *ItemSourceUpdate) SetItem(v *Item) *ItemSourceUpdate {
 	return _u.SetItemID(v.ID)
@@ -427,6 +481,24 @@ func (_u *ItemSourceUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	}
 	if _u.mutation.ProbedAtCleared() {
 		_spec.ClearField(itemsource.FieldProbedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ExternalID(); ok {
+		_spec.SetField(itemsource.FieldExternalID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedExternalID(); ok {
+		_spec.AddField(itemsource.FieldExternalID, field.TypeInt64, value)
+	}
+	if _u.mutation.ExternalIDCleared() {
+		_spec.ClearField(itemsource.FieldExternalID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.ExternalFileID(); ok {
+		_spec.SetField(itemsource.FieldExternalFileID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedExternalFileID(); ok {
+		_spec.AddField(itemsource.FieldExternalFileID, field.TypeInt64, value)
+	}
+	if _u.mutation.ExternalFileIDCleared() {
+		_spec.ClearField(itemsource.FieldExternalFileID, field.TypeInt64)
 	}
 	if _u.mutation.ItemCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -768,6 +840,60 @@ func (_u *ItemSourceUpdateOne) ClearProbedAt() *ItemSourceUpdateOne {
 	return _u
 }
 
+// SetExternalID sets the "external_id" field.
+func (_u *ItemSourceUpdateOne) SetExternalID(v int64) *ItemSourceUpdateOne {
+	_u.mutation.ResetExternalID()
+	_u.mutation.SetExternalID(v)
+	return _u
+}
+
+// SetNillableExternalID sets the "external_id" field if the given value is not nil.
+func (_u *ItemSourceUpdateOne) SetNillableExternalID(v *int64) *ItemSourceUpdateOne {
+	if v != nil {
+		_u.SetExternalID(*v)
+	}
+	return _u
+}
+
+// AddExternalID adds value to the "external_id" field.
+func (_u *ItemSourceUpdateOne) AddExternalID(v int64) *ItemSourceUpdateOne {
+	_u.mutation.AddExternalID(v)
+	return _u
+}
+
+// ClearExternalID clears the value of the "external_id" field.
+func (_u *ItemSourceUpdateOne) ClearExternalID() *ItemSourceUpdateOne {
+	_u.mutation.ClearExternalID()
+	return _u
+}
+
+// SetExternalFileID sets the "external_file_id" field.
+func (_u *ItemSourceUpdateOne) SetExternalFileID(v int64) *ItemSourceUpdateOne {
+	_u.mutation.ResetExternalFileID()
+	_u.mutation.SetExternalFileID(v)
+	return _u
+}
+
+// SetNillableExternalFileID sets the "external_file_id" field if the given value is not nil.
+func (_u *ItemSourceUpdateOne) SetNillableExternalFileID(v *int64) *ItemSourceUpdateOne {
+	if v != nil {
+		_u.SetExternalFileID(*v)
+	}
+	return _u
+}
+
+// AddExternalFileID adds value to the "external_file_id" field.
+func (_u *ItemSourceUpdateOne) AddExternalFileID(v int64) *ItemSourceUpdateOne {
+	_u.mutation.AddExternalFileID(v)
+	return _u
+}
+
+// ClearExternalFileID clears the value of the "external_file_id" field.
+func (_u *ItemSourceUpdateOne) ClearExternalFileID() *ItemSourceUpdateOne {
+	_u.mutation.ClearExternalFileID()
+	return _u
+}
+
 // SetItem sets the "item" edge to the Item entity.
 func (_u *ItemSourceUpdateOne) SetItem(v *Item) *ItemSourceUpdateOne {
 	return _u.SetItemID(v.ID)
@@ -976,6 +1102,24 @@ func (_u *ItemSourceUpdateOne) sqlSave(ctx context.Context) (_node *ItemSource, 
 	}
 	if _u.mutation.ProbedAtCleared() {
 		_spec.ClearField(itemsource.FieldProbedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ExternalID(); ok {
+		_spec.SetField(itemsource.FieldExternalID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedExternalID(); ok {
+		_spec.AddField(itemsource.FieldExternalID, field.TypeInt64, value)
+	}
+	if _u.mutation.ExternalIDCleared() {
+		_spec.ClearField(itemsource.FieldExternalID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.ExternalFileID(); ok {
+		_spec.SetField(itemsource.FieldExternalFileID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedExternalFileID(); ok {
+		_spec.AddField(itemsource.FieldExternalFileID, field.TypeInt64, value)
+	}
+	if _u.mutation.ExternalFileIDCleared() {
+		_spec.ClearField(itemsource.FieldExternalFileID, field.TypeInt64)
 	}
 	if _u.mutation.ItemCleared() {
 		edge := &sqlgraph.EdgeSpec{

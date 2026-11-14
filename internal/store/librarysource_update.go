@@ -99,6 +99,46 @@ func (_u *LibrarySourceUpdate) ClearTagFilter() *LibrarySourceUpdate {
 	return _u
 }
 
+// SetLastSyncedAt sets the "last_synced_at" field.
+func (_u *LibrarySourceUpdate) SetLastSyncedAt(v time.Time) *LibrarySourceUpdate {
+	_u.mutation.SetLastSyncedAt(v)
+	return _u
+}
+
+// SetNillableLastSyncedAt sets the "last_synced_at" field if the given value is not nil.
+func (_u *LibrarySourceUpdate) SetNillableLastSyncedAt(v *time.Time) *LibrarySourceUpdate {
+	if v != nil {
+		_u.SetLastSyncedAt(*v)
+	}
+	return _u
+}
+
+// ClearLastSyncedAt clears the value of the "last_synced_at" field.
+func (_u *LibrarySourceUpdate) ClearLastSyncedAt() *LibrarySourceUpdate {
+	_u.mutation.ClearLastSyncedAt()
+	return _u
+}
+
+// SetLastError sets the "last_error" field.
+func (_u *LibrarySourceUpdate) SetLastError(v string) *LibrarySourceUpdate {
+	_u.mutation.SetLastError(v)
+	return _u
+}
+
+// SetNillableLastError sets the "last_error" field if the given value is not nil.
+func (_u *LibrarySourceUpdate) SetNillableLastError(v *string) *LibrarySourceUpdate {
+	if v != nil {
+		_u.SetLastError(*v)
+	}
+	return _u
+}
+
+// ClearLastError clears the value of the "last_error" field.
+func (_u *LibrarySourceUpdate) ClearLastError() *LibrarySourceUpdate {
+	_u.mutation.ClearLastError()
+	return _u
+}
+
 // SetLibrary sets the "library" edge to the Library entity.
 func (_u *LibrarySourceUpdate) SetLibrary(v *Library) *LibrarySourceUpdate {
 	return _u.SetLibraryID(v.ID)
@@ -196,6 +236,18 @@ func (_u *LibrarySourceUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	}
 	if _u.mutation.TagFilterCleared() {
 		_spec.ClearField(librarysource.FieldTagFilter, field.TypeString)
+	}
+	if value, ok := _u.mutation.LastSyncedAt(); ok {
+		_spec.SetField(librarysource.FieldLastSyncedAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastSyncedAtCleared() {
+		_spec.ClearField(librarysource.FieldLastSyncedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LastError(); ok {
+		_spec.SetField(librarysource.FieldLastError, field.TypeString, value)
+	}
+	if _u.mutation.LastErrorCleared() {
+		_spec.ClearField(librarysource.FieldLastError, field.TypeString)
 	}
 	if _u.mutation.LibraryCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -343,6 +395,46 @@ func (_u *LibrarySourceUpdateOne) ClearTagFilter() *LibrarySourceUpdateOne {
 	return _u
 }
 
+// SetLastSyncedAt sets the "last_synced_at" field.
+func (_u *LibrarySourceUpdateOne) SetLastSyncedAt(v time.Time) *LibrarySourceUpdateOne {
+	_u.mutation.SetLastSyncedAt(v)
+	return _u
+}
+
+// SetNillableLastSyncedAt sets the "last_synced_at" field if the given value is not nil.
+func (_u *LibrarySourceUpdateOne) SetNillableLastSyncedAt(v *time.Time) *LibrarySourceUpdateOne {
+	if v != nil {
+		_u.SetLastSyncedAt(*v)
+	}
+	return _u
+}
+
+// ClearLastSyncedAt clears the value of the "last_synced_at" field.
+func (_u *LibrarySourceUpdateOne) ClearLastSyncedAt() *LibrarySourceUpdateOne {
+	_u.mutation.ClearLastSyncedAt()
+	return _u
+}
+
+// SetLastError sets the "last_error" field.
+func (_u *LibrarySourceUpdateOne) SetLastError(v string) *LibrarySourceUpdateOne {
+	_u.mutation.SetLastError(v)
+	return _u
+}
+
+// SetNillableLastError sets the "last_error" field if the given value is not nil.
+func (_u *LibrarySourceUpdateOne) SetNillableLastError(v *string) *LibrarySourceUpdateOne {
+	if v != nil {
+		_u.SetLastError(*v)
+	}
+	return _u
+}
+
+// ClearLastError clears the value of the "last_error" field.
+func (_u *LibrarySourceUpdateOne) ClearLastError() *LibrarySourceUpdateOne {
+	_u.mutation.ClearLastError()
+	return _u
+}
+
 // SetLibrary sets the "library" edge to the Library entity.
 func (_u *LibrarySourceUpdateOne) SetLibrary(v *Library) *LibrarySourceUpdateOne {
 	return _u.SetLibraryID(v.ID)
@@ -470,6 +562,18 @@ func (_u *LibrarySourceUpdateOne) sqlSave(ctx context.Context) (_node *LibrarySo
 	}
 	if _u.mutation.TagFilterCleared() {
 		_spec.ClearField(librarysource.FieldTagFilter, field.TypeString)
+	}
+	if value, ok := _u.mutation.LastSyncedAt(); ok {
+		_spec.SetField(librarysource.FieldLastSyncedAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastSyncedAtCleared() {
+		_spec.ClearField(librarysource.FieldLastSyncedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LastError(); ok {
+		_spec.SetField(librarysource.FieldLastError, field.TypeString, value)
+	}
+	if _u.mutation.LastErrorCleared() {
+		_spec.ClearField(librarysource.FieldLastError, field.TypeString)
 	}
 	if _u.mutation.LibraryCleared() {
 		edge := &sqlgraph.EdgeSpec{

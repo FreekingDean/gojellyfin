@@ -44,6 +44,10 @@ type ItemSource struct {
 	DateModified *time.Time `json:"date_modified,omitempty"`
 	// ProbedAt holds the value of the "probed_at" field.
 	ProbedAt *time.Time `json:"probed_at,omitempty"`
+	// ExternalID holds the value of the "external_id" field.
+	ExternalID *int64 `json:"external_id,omitempty"`
+	// ExternalFileID holds the value of the "external_file_id" field.
+	ExternalFileID *int64 `json:"external_file_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ItemSourceQuery when eager-loading is set.
 	Edges        ItemSourceEdges `json:"edges"`
@@ -99,7 +103,7 @@ func (*ItemSource) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case itemsource.FieldSize, itemsource.FieldRunTimeTicks, itemsource.FieldBitrate:
+		case itemsource.FieldSize, itemsource.FieldRunTimeTicks, itemsource.FieldBitrate, itemsource.FieldExternalID, itemsource.FieldExternalFileID:
 			values[i] = new(sql.NullInt64)
 		case itemsource.FieldName, itemsource.FieldPath, itemsource.FieldContainer:
 			values[i] = new(sql.NullString)
@@ -205,6 +209,20 @@ func (_m *ItemSource) assignValues(columns []string, values []any) error {
 				_m.ProbedAt = new(time.Time)
 				*_m.ProbedAt = value.Time
 			}
+		case itemsource.FieldExternalID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field external_id", values[i])
+			} else if value.Valid {
+				_m.ExternalID = new(int64)
+				*_m.ExternalID = value.Int64
+			}
+		case itemsource.FieldExternalFileID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field external_file_id", values[i])
+			} else if value.Valid {
+				_m.ExternalFileID = new(int64)
+				*_m.ExternalFileID = value.Int64
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -300,6 +318,16 @@ func (_m *ItemSource) String() string {
 	if v := _m.ProbedAt; v != nil {
 		builder.WriteString("probed_at=")
 		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.ExternalID; v != nil {
+		builder.WriteString("external_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.ExternalFileID; v != nil {
+		builder.WriteString("external_file_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteByte(')')
 	return builder.String()

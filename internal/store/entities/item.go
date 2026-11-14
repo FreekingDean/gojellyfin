@@ -1,7 +1,12 @@
 package entities
 
 import (
+	"fmt"
+	"strings"
+
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -12,15 +17,24 @@ type Item struct {
 	ent.Schema
 }
 
+const playlistKind = "Playlist"
+
+var itemKinds = []string{"Movie", "Series", "Season", "Episode", playlistKind, "Audio"}
+
+func (Item) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entsql.Checks(map[string]string{
+			"item_kind_known":          fmt.Sprintf("kind IN ('%s')", strings.Join(itemKinds, "', '")),
+			"item_key_unless_playlist": fmt.Sprintf("kind = '%s' OR key IS NOT NULL", playlistKind),
+		}),
+	}
+}
+
 func (Item) Fields() []ent.Field {
 	return withDefaultFields(
 		field.UUID("parent_id", uuid.UUID{}).Optional().Nillable(),
 
-		field.Enum("kind").Values(
-			"Movie", "Series", "Season", "Episode", "Playlist",
-			"Audio", "AudioBook", "Trailer", "Video",
-			"Folder", "CollectionFolder", "BoxSet", "PlaylistsFolder", "UserRootFolder",
-		),
+		field.Enum("kind").Values(itemKinds...),
 
 		field.String("key").Optional(),
 		field.String("name"),

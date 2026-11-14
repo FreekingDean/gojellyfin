@@ -30,6 +30,10 @@ type LibrarySource struct {
 	SourceID uuid.UUID `json:"source_id,omitempty"`
 	// TagFilter holds the value of the "tag_filter" field.
 	TagFilter string `json:"tag_filter,omitempty"`
+	// LastSyncedAt holds the value of the "last_synced_at" field.
+	LastSyncedAt *time.Time `json:"last_synced_at,omitempty"`
+	// LastError holds the value of the "last_error" field.
+	LastError string `json:"last_error,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the LibrarySourceQuery when eager-loading is set.
 	Edges        LibrarySourceEdges `json:"edges"`
@@ -74,9 +78,9 @@ func (*LibrarySource) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case librarysource.FieldTagFilter:
+		case librarysource.FieldTagFilter, librarysource.FieldLastError:
 			values[i] = new(sql.NullString)
-		case librarysource.FieldCreatedAt, librarysource.FieldUpdatedAt:
+		case librarysource.FieldCreatedAt, librarysource.FieldUpdatedAt, librarysource.FieldLastSyncedAt:
 			values[i] = new(sql.NullTime)
 		case librarysource.FieldID, librarysource.FieldLibraryID, librarysource.FieldSourceID:
 			values[i] = new(uuid.UUID)
@@ -130,6 +134,19 @@ func (_m *LibrarySource) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field tag_filter", values[i])
 			} else if value.Valid {
 				_m.TagFilter = value.String
+			}
+		case librarysource.FieldLastSyncedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field last_synced_at", values[i])
+			} else if value.Valid {
+				_m.LastSyncedAt = new(time.Time)
+				*_m.LastSyncedAt = value.Time
+			}
+		case librarysource.FieldLastError:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field last_error", values[i])
+			} else if value.Valid {
+				_m.LastError = value.String
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -191,6 +208,14 @@ func (_m *LibrarySource) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("tag_filter=")
 	builder.WriteString(_m.TagFilter)
+	builder.WriteString(", ")
+	if v := _m.LastSyncedAt; v != nil {
+		builder.WriteString("last_synced_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("last_error=")
+	builder.WriteString(_m.LastError)
 	builder.WriteByte(')')
 	return builder.String()
 }

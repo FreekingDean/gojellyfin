@@ -40,27 +40,19 @@ func New(client *store.Client) *Service {
 }
 
 var isFolderKind = map[Kind]bool{
-	itemmodel.KindSeries:           true,
-	itemmodel.KindSeason:           true,
-	itemmodel.KindFolder:           true,
-	itemmodel.KindCollectionFolder: true,
-	itemmodel.KindBoxSet:           true,
-	itemmodel.KindPlaylistsFolder:  true,
-	itemmodel.KindUserRootFolder:   true,
+	itemmodel.KindSeries: true,
+	itemmodel.KindSeason: true,
 }
 
 var (
 	folderKinds   = []Kind{itemmodel.KindSeries, itemmodel.KindSeason}
 	playableKinds = []Kind{itemmodel.KindMovie, itemmodel.KindEpisode}
 
-	audioKinds = []Kind{itemmodel.KindAudio, itemmodel.KindAudioBook}
+	audioKinds = []Kind{itemmodel.KindAudio}
 
 	allKinds = []Kind{
 		itemmodel.KindMovie, itemmodel.KindSeries, itemmodel.KindSeason,
 		itemmodel.KindEpisode, itemmodel.KindPlaylist, itemmodel.KindAudio,
-		itemmodel.KindAudioBook, itemmodel.KindTrailer, itemmodel.KindVideo,
-		itemmodel.KindFolder, itemmodel.KindCollectionFolder, itemmodel.KindBoxSet,
-		itemmodel.KindPlaylistsFolder, itemmodel.KindUserRootFolder,
 	}
 )
 
@@ -260,7 +252,7 @@ func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int
 	if query.ParentID != nil {
 		items = items.Where(itemmodel.ParentID(*query.ParentID))
 	}
-	if len(query.Kinds) > 0 {
+	if query.Kinds != nil {
 		items = items.Where(itemmodel.KindIn(query.Kinds...))
 	}
 	if len(query.MediaTypes) > 0 {
@@ -517,7 +509,7 @@ func (s *Service) DistinctYears(ctx context.Context, viewer Viewer, libraryID *u
 	if libraryID != nil {
 		items = items.Where(inLibrary(*libraryID))
 	}
-	if len(kinds) > 0 {
+	if kinds != nil {
 		items = items.Where(itemmodel.KindIn(kinds...))
 	}
 
@@ -540,7 +532,7 @@ func (s *Service) DistinctYears(ctx context.Context, viewer Viewer, libraryID *u
 
 func (s *Service) ResumeItems(ctx context.Context, userID uuid.UUID, kinds []Kind, libraryID *uuid.UUID, startIndex, limit int) ([]*Item, int, error) {
 	playable := []predicate.Item{itemmodel.KindNotIn(folderKinds...)}
-	if len(kinds) > 0 {
+	if kinds != nil {
 		playable = append(playable, itemmodel.KindIn(kinds...))
 	}
 	if libraryID != nil {

@@ -116,6 +116,16 @@ func ProbedAt(v time.Time) predicate.ItemSource {
 	return predicate.ItemSource(sql.FieldEQ(FieldProbedAt, v))
 }
 
+// ExternalID applies equality check predicate on the "external_id" field. It's identical to ExternalIDEQ.
+func ExternalID(v int64) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldEQ(FieldExternalID, v))
+}
+
+// ExternalFileID applies equality check predicate on the "external_file_id" field. It's identical to ExternalFileIDEQ.
+func ExternalFileID(v int64) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldEQ(FieldExternalFileID, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.ItemSource {
 	return predicate.ItemSource(sql.FieldEQ(FieldCreatedAt, v))
@@ -689,6 +699,106 @@ func ProbedAtIsNil() predicate.ItemSource {
 // ProbedAtNotNil applies the NotNil predicate on the "probed_at" field.
 func ProbedAtNotNil() predicate.ItemSource {
 	return predicate.ItemSource(sql.FieldNotNull(FieldProbedAt))
+}
+
+// ExternalIDEQ applies the EQ predicate on the "external_id" field.
+func ExternalIDEQ(v int64) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldEQ(FieldExternalID, v))
+}
+
+// ExternalIDNEQ applies the NEQ predicate on the "external_id" field.
+func ExternalIDNEQ(v int64) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldNEQ(FieldExternalID, v))
+}
+
+// ExternalIDIn applies the In predicate on the "external_id" field.
+func ExternalIDIn(vs ...int64) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldIn(FieldExternalID, vs...))
+}
+
+// ExternalIDNotIn applies the NotIn predicate on the "external_id" field.
+func ExternalIDNotIn(vs ...int64) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldNotIn(FieldExternalID, vs...))
+}
+
+// ExternalIDGT applies the GT predicate on the "external_id" field.
+func ExternalIDGT(v int64) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldGT(FieldExternalID, v))
+}
+
+// ExternalIDGTE applies the GTE predicate on the "external_id" field.
+func ExternalIDGTE(v int64) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldGTE(FieldExternalID, v))
+}
+
+// ExternalIDLT applies the LT predicate on the "external_id" field.
+func ExternalIDLT(v int64) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldLT(FieldExternalID, v))
+}
+
+// ExternalIDLTE applies the LTE predicate on the "external_id" field.
+func ExternalIDLTE(v int64) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldLTE(FieldExternalID, v))
+}
+
+// ExternalIDIsNil applies the IsNil predicate on the "external_id" field.
+func ExternalIDIsNil() predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldIsNull(FieldExternalID))
+}
+
+// ExternalIDNotNil applies the NotNil predicate on the "external_id" field.
+func ExternalIDNotNil() predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldNotNull(FieldExternalID))
+}
+
+// ExternalFileIDEQ applies the EQ predicate on the "external_file_id" field.
+func ExternalFileIDEQ(v int64) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldEQ(FieldExternalFileID, v))
+}
+
+// ExternalFileIDNEQ applies the NEQ predicate on the "external_file_id" field.
+func ExternalFileIDNEQ(v int64) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldNEQ(FieldExternalFileID, v))
+}
+
+// ExternalFileIDIn applies the In predicate on the "external_file_id" field.
+func ExternalFileIDIn(vs ...int64) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldIn(FieldExternalFileID, vs...))
+}
+
+// ExternalFileIDNotIn applies the NotIn predicate on the "external_file_id" field.
+func ExternalFileIDNotIn(vs ...int64) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldNotIn(FieldExternalFileID, vs...))
+}
+
+// ExternalFileIDGT applies the GT predicate on the "external_file_id" field.
+func ExternalFileIDGT(v int64) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldGT(FieldExternalFileID, v))
+}
+
+// ExternalFileIDGTE applies the GTE predicate on the "external_file_id" field.
+func ExternalFileIDGTE(v int64) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldGTE(FieldExternalFileID, v))
+}
+
+// ExternalFileIDLT applies the LT predicate on the "external_file_id" field.
+func ExternalFileIDLT(v int64) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldLT(FieldExternalFileID, v))
+}
+
+// ExternalFileIDLTE applies the LTE predicate on the "external_file_id" field.
+func ExternalFileIDLTE(v int64) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldLTE(FieldExternalFileID, v))
+}
+
+// ExternalFileIDIsNil applies the IsNil predicate on the "external_file_id" field.
+func ExternalFileIDIsNil() predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldIsNull(FieldExternalFileID))
+}
+
+// ExternalFileIDNotNil applies the NotNil predicate on the "external_file_id" field.
+func ExternalFileIDNotNil() predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldNotNull(FieldExternalFileID))
 }
 
 // HasItem applies the HasEdge predicate on the "item" edge.

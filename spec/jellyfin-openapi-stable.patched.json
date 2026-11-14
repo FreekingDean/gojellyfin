@@ -47283,6 +47283,17 @@
           "TagFilter": {
             "type": "string",
             "nullable": true
+          },
+          "LastSyncedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "readOnly": true
+          },
+          "LastError": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
           }
         }
       }, "SourceTestRequest": {

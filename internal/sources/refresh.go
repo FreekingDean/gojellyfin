@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -37,6 +38,26 @@ func (s *Service) refresh(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	readErr := s.read(ctx, binding)
+	if err := s.recordSync(ctx, binding.Library.ID, readErr); err != nil {
+		log.Printf("failed to record the sync of %s: %v", binding.Source.Name, err)
+	}
+
+	return readErr
+}
+
+func (s *Service) recordSync(ctx context.Context, bindingID uuid.UUID, readErr error) error {
+	update := s.store.LibrarySource.UpdateOneID(bindingID)
+	if readErr != nil {
+		return update.SetLastError(readErr.Error()).Exec(ctx)
+	}
+
+	return update.SetLastSyncedAt(time.Now()).SetLastError("").Exec(ctx)
+}
+
+func (s *Service) read(ctx context.Context, binding Binding) error {
+	libraryID, sourceID := binding.Library.LibraryID, binding.Source.ID
 
 	titles, err := s.Titles(ctx, binding)
 	if err != nil {
@@ -104,7 +125,12 @@ func (s *Service) binding(ctx context.Context, libraryID, sourceID uuid.UUID) (B
 func scanned(title Title) items.Scanned {
 	files := make([]items.ScannedFile, 0, len(title.Files))
 	for _, file := range title.Files {
-		files = append(files, items.ScannedFile{Path: file.Path, DateModified: file.DateModified})
+		files = append(files, items.ScannedFile{
+			Path:           file.Path,
+			DateModified:   file.DateModified,
+			ExternalID:     file.ExternalID,
+			ExternalFileID: file.ExternalFileID,
+		})
 	}
 
 	return items.Scanned{

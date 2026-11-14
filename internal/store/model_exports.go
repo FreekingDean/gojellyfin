@@ -768,18 +768,20 @@ func (c *ItemClient) GetModel(ctx context.Context, id uuid.UUID) (*ItemModel, er
 type ItemSourceModel struct {
 	ID uuid.UUID
 
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-	ItemID       uuid.UUID
-	SourceID     uuid.UUID
-	Name         string
-	Path         string
-	Container    string
-	Size         *int64
-	RunTimeTicks *int64
-	Bitrate      *int32
-	DateModified *time.Time
-	ProbedAt     *time.Time
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	ItemID         uuid.UUID
+	SourceID       uuid.UUID
+	Name           string
+	Path           string
+	Container      string
+	Size           *int64
+	RunTimeTicks   *int64
+	Bitrate        *int32
+	DateModified   *time.Time
+	ProbedAt       *time.Time
+	ExternalID     *int64
+	ExternalFileID *int64
 
 	Item    *ItemModel
 	Source  *SourceModel
@@ -800,19 +802,21 @@ func fromItemSource(_m *ItemSource) *ItemSourceModel {
 	}
 
 	return &ItemSourceModel{
-		ID:           _m.ID,
-		CreatedAt:    _m.CreatedAt,
-		UpdatedAt:    _m.UpdatedAt,
-		ItemID:       _m.ItemID,
-		SourceID:     _m.SourceID,
-		Name:         _m.Name,
-		Path:         _m.Path,
-		Container:    _m.Container,
-		Size:         _m.Size,
-		RunTimeTicks: _m.RunTimeTicks,
-		Bitrate:      _m.Bitrate,
-		DateModified: _m.DateModified,
-		ProbedAt:     _m.ProbedAt,
+		ID:             _m.ID,
+		CreatedAt:      _m.CreatedAt,
+		UpdatedAt:      _m.UpdatedAt,
+		ItemID:         _m.ItemID,
+		SourceID:       _m.SourceID,
+		Name:           _m.Name,
+		Path:           _m.Path,
+		Container:      _m.Container,
+		Size:           _m.Size,
+		RunTimeTicks:   _m.RunTimeTicks,
+		Bitrate:        _m.Bitrate,
+		DateModified:   _m.DateModified,
+		ProbedAt:       _m.ProbedAt,
+		ExternalID:     _m.ExternalID,
+		ExternalFileID: _m.ExternalFileID,
 
 		Item:    fromItem(_m.Edges.Item),
 		Source:  fromSource(_m.Edges.Source),
@@ -1154,11 +1158,13 @@ func (c *LibraryOptionsClient) GetModel(ctx context.Context, id uuid.UUID) (*Lib
 type LibrarySourceModel struct {
 	ID uuid.UUID
 
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	LibraryID uuid.UUID
-	SourceID  uuid.UUID
-	TagFilter string
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	LibraryID    uuid.UUID
+	SourceID     uuid.UUID
+	TagFilter    string
+	LastSyncedAt *time.Time
+	LastError    string
 
 	Library *LibraryModel
 	Source  *SourceModel
@@ -1178,12 +1184,14 @@ func fromLibrarySource(_m *LibrarySource) *LibrarySourceModel {
 	}
 
 	return &LibrarySourceModel{
-		ID:        _m.ID,
-		CreatedAt: _m.CreatedAt,
-		UpdatedAt: _m.UpdatedAt,
-		LibraryID: _m.LibraryID,
-		SourceID:  _m.SourceID,
-		TagFilter: _m.TagFilter,
+		ID:           _m.ID,
+		CreatedAt:    _m.CreatedAt,
+		UpdatedAt:    _m.UpdatedAt,
+		LibraryID:    _m.LibraryID,
+		SourceID:     _m.SourceID,
+		TagFilter:    _m.TagFilter,
+		LastSyncedAt: _m.LastSyncedAt,
+		LastError:    _m.LastError,
 
 		Library: fromLibrary(_m.Edges.Library),
 		Source:  fromSource(_m.Edges.Source),
