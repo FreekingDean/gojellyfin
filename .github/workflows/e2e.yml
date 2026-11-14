@@ -396,8 +396,8 @@ jobs:
             echo "::warning::no suite collected any screenshots"
             exit 0
           fi
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           for attempt in 1 2 3 4; do
             git fetch --depth 1 origin gh-pages
             git reset --hard origin/gh-pages
