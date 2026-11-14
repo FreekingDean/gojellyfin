@@ -20,6 +20,10 @@ func Hash(password string) (string, error) {
 }
 
 func Verify(password, hash string) (bool, error) {
+	if isJellyfinHash(hash) {
+		return verifyJellyfin(password, hash)
+	}
+
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 		return false, nil
