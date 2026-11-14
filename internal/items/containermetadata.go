@@ -254,7 +254,9 @@ func genreIDs(ctx context.Context, tx *store.Tx, names []string) ([]uuid.UUID, e
 		if err != nil {
 			return nil, fmt.Errorf("failed to save genre: %w", err)
 		}
-		ids = append(ids, id)
+		if !slices.Contains(ids, id) {
+			ids = append(ids, id)
+		}
 	}
 
 	return ids, nil

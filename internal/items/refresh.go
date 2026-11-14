@@ -24,6 +24,7 @@ type Scanned struct {
 	Index       *int32
 	ParentIndex *int32
 	Files       []ScannedFile
+	Genres      []string
 	Images      []RemoteImage
 }
 
@@ -106,6 +107,12 @@ func (s *Service) RefreshItem(ctx context.Context, libraryID, sourceID uuid.UUID
 
 	for _, reference := range scanned.Images {
 		if err := s.SaveImage(ctx, item.ID, reference.Image()); err != nil {
+			return err
+		}
+	}
+
+	if len(scanned.Genres) > 0 {
+		if err := s.replaceNamed(ctx, item.ID, Metadata{Genres: &scanned.Genres}); err != nil {
 			return err
 		}
 	}

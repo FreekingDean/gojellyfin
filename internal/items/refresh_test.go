@@ -104,6 +104,7 @@ func TestService_RefreshItem_Music(t *testing.T) {
 	for _, scanned := range []Scanned{
 		{
 			Key: artistKey, Tagged: true, Kind: itemmodel.KindMusicArtist, Name: "The Band", SortName: "band",
+			Genres: []string{"Rock", "Rock"},
 			Images: []RemoteImage{{Kind: ImageKindPrimary, URL: "https://art/" + uuid.NewString() + ".jpg"}},
 		},
 		{Key: albumKey, ParentKey: artistKey, Tagged: true, Kind: itemmodel.KindMusicAlbum, Name: "First", SortName: "first"},
@@ -128,6 +129,11 @@ func TestService_RefreshItem_Music(t *testing.T) {
 	images, err := fixture.service.Images(ctx, artist.ID)
 	if err != nil || len(images) != 1 || images[0].Tag == "" {
 		t.Errorf("images = %+v (%v), want the artist's poster with a tag", images, err)
+	}
+
+	genres, err := fixture.client.Item.QueryGenres(fixture.client.Item.GetX(ctx, artist.ID)).All(ctx)
+	if err != nil || len(genres) != 1 || genres[0].Name != "Rock" {
+		t.Errorf("genres = %v (%v), want Rock once", genres, err)
 	}
 
 	album, err := fixture.service.ItemByKey(ctx, albumKey)

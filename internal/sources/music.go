@@ -59,6 +59,7 @@ func (s *Service) music(ctx context.Context, binding Binding) ([]Title, error) {
 			Kind:     itemmodel.KindMusicArtist,
 			Name:     artist.ArtistName,
 			SortName: items.SortName(artist.ArtistName),
+			Genres:   artist.Genres,
 			Images:   images(artist.Images, artistImages),
 		})
 		titles = append(titles, below...)
@@ -112,6 +113,7 @@ func (s *Service) albums(ctx context.Context, source Source, artist lidarr.Artis
 			Name:      album.Title,
 			SortName:  items.SortName(album.Title),
 			Year:      year,
+			Genres:    album.Genres,
 			Images:    images(album.Images, albumImages),
 		})
 

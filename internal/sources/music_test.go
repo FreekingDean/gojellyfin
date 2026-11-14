@@ -20,7 +20,7 @@ func lidarrServer(t *testing.T, asked *[]string) *httptest.Server {
 		"/api/v1/tag": []map[string]any{{"id": 4, "label": "kids"}},
 		"/api/v1/artist": []map[string]any{
 			{
-				"id": 1, "foreignArtistId": "A-ONE", "artistName": "The Band", "tags": []int{4},
+				"id": 1, "foreignArtistId": "A-ONE", "artistName": "The Band", "tags": []int{4}, "genres": []string{"Rock"},
 				"images": []map[string]any{
 					{"coverType": "poster", "remoteUrl": "https://art/poster.jpg"},
 					{"coverType": "poster", "remoteUrl": "https://art/second.jpg"},
@@ -109,6 +109,9 @@ func TestTitles_Lidarr(t *testing.T) {
 	}
 	if len(artist.Images) != 2 || artist.Images[0].URL != "https://art/poster.jpg" || artist.Images[1].Kind != items.ImageKindBackdrop {
 		t.Errorf("artist images = %+v, want the first poster and the fanart", artist.Images)
+	}
+	if len(artist.Genres) != 1 || artist.Genres[0] != "Rock" {
+		t.Errorf("artist genres = %v, want Lidarr's", artist.Genres)
 	}
 
 	album := byKey["album:mb:r-one"]

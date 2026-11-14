@@ -15,19 +15,21 @@ type Image struct {
 }
 
 type Artist struct {
-	ID              int     `json:"id"`
-	ForeignArtistID string  `json:"foreignArtistId"`
-	ArtistName      string  `json:"artistName"`
-	Tags            []int   `json:"tags"`
-	Images          []Image `json:"images"`
+	ID              int      `json:"id"`
+	ForeignArtistID string   `json:"foreignArtistId"`
+	ArtistName      string   `json:"artistName"`
+	Tags            []int    `json:"tags"`
+	Genres          []string `json:"genres"`
+	Images          []Image  `json:"images"`
 }
 
 type Album struct {
-	ID             int     `json:"id"`
-	ForeignAlbumID string  `json:"foreignAlbumId"`
-	Title          string  `json:"title"`
-	ReleaseDate    string  `json:"releaseDate"`
-	Images         []Image `json:"images"`
+	ID             int      `json:"id"`
+	ForeignAlbumID string   `json:"foreignAlbumId"`
+	Title          string   `json:"title"`
+	ReleaseDate    string   `json:"releaseDate"`
+	Genres         []string `json:"genres"`
+	Images         []Image  `json:"images"`
 }
 
 type Track struct {

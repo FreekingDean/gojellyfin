@@ -39,6 +39,7 @@ type Title struct {
 	Index       *int32
 	ParentIndex *int32
 	Files       []File
+	Genres      []string
 	Images      []items.RemoteImage
 }
 
