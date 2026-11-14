@@ -12,7 +12,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/auth"
-	"github.com/FreekingDean/gojellyfin/internal/collage"
+	"github.com/FreekingDean/gojellyfin/internal/cards"
 	settings "github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/env"
@@ -129,7 +129,7 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
-	server := New(items.New(client), libraries.New(client), users.New(client), filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}), jobs.NewService(disconnected(t), jobs.NewRegistry()), collages(client), reports.New(client, nil))
+	server := New(items.New(client), libraries.New(client), users.New(client), filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}), jobs.NewService(disconnected(t), jobs.NewRegistry()), drawn(client), reports.New(client, nil))
 
 	downloader, err := client.Source.Create().
 		SetName(t.Name() + "-" + uuid.NewString()).
@@ -536,8 +536,8 @@ func (noProvider) Search(context.Context, items.Kind, string) ([]items.Metadata,
 	return nil, nil
 }
 
-func collages(client *store.Client) *collage.Service {
+func drawn(client *store.Client) *cards.Service {
 	catalogue := items.New(client)
 
-	return collage.New(catalogue, libraries.New(client), shelves.New(catalogue, discover.New(noProvider{}, catalogue), settings.New(client)))
+	return cards.New(catalogue, libraries.New(client), shelves.New(catalogue, discover.New(noProvider{}, catalogue), settings.New(client)), users.New(client))
 }

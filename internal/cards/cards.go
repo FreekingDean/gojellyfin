@@ -1,4 +1,4 @@
-package collage
+package cards
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/shelves"
+	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
 const (
@@ -33,7 +35,7 @@ type held struct {
 	body []byte
 }
 
-type Collage struct {
+type Picture struct {
 	Body     []byte
 	Complete bool
 }
@@ -50,10 +52,15 @@ type Names interface {
 }
 
 type Shelves interface {
-	Card(ctx context.Context, id uuid.UUID, viewer items.Viewer, limit int) (shelves.Card, bool, error)
+	Card(ctx context.Context, id uuid.UUID, viewer items.Viewer, userID uuid.UUID, limit int) (shelves.Card, bool, error)
+}
+
+type Access interface {
+	Access(ctx context.Context, id uuid.UUID) (users.Access, error)
 }
 
 type plan struct {
+	owner   uuid.UUID
 	posters []*items.Image
 	arrange layout
 	caption string
@@ -63,45 +70,63 @@ type Service struct {
 	libraries Libraries
 	names     Names
 	shelves   Shelves
+	access    Access
 	client    *http.Client
 	now       func() time.Time
 
 	flight singleflight.Group
 	mutex  sync.RWMutex
-	held   map[uuid.UUID]held
+	held   map[key]held
 }
 
-func New(records *items.Service, named *libraries.Service, shelved *shelves.Service) *Service {
-	return newService(records, named, shelved, time.Now)
+type key struct {
+	id    uuid.UUID
+	owner uuid.UUID
 }
 
-func newService(listing Libraries, named Names, shelved Shelves, now func() time.Time) *Service {
+func New(records *items.Service, named *libraries.Service, shelved *shelves.Service, access *users.Service) *Service {
+	return newService(records, named, shelved, access, time.Now)
+}
+
+func newService(listing Libraries, named Names, shelved Shelves, access Access, now func() time.Time) *Service {
 	return &Service{
 		libraries: listing,
 		names:     named,
 		shelves:   shelved,
+		access:    access,
 		now:       now,
 		client:    &http.Client{Timeout: fetchTimeout},
-		held:      map[uuid.UUID]held{},
+		held:      map[key]held{},
 	}
 }
 
-func (s *Service) Tag(ctx context.Context, id uuid.UUID) (string, error) {
-	planned, err := s.plan(ctx, id)
+func (s *Service) Tag(ctx context.Context, id, userID uuid.UUID) (string, error) {
+	planned, err := s.plan(ctx, id, userID)
 	if err != nil {
 		return "", err
 	}
 
-	return planned.fingerprint(), nil
+	return planned.tag(), nil
 }
 
-func (s *Service) plan(ctx context.Context, id uuid.UUID) (plan, error) {
-	card, found, err := s.shelves.Card(ctx, id, items.Everyone, stacked)
+func (s *Service) plan(ctx context.Context, id, userID uuid.UUID) (plan, error) {
+	card, found, err := s.shelves.Card(ctx, id, items.Everyone, uuid.Nil, stacked)
 	if err != nil {
 		return plan{}, err
 	}
+	if !found && userID != uuid.Nil {
+		card, found, err = s.personal(ctx, id, userID)
+		if err != nil {
+			return plan{}, err
+		}
+	}
 	if found {
-		return titledPlan(card.Name, card.Fresh, card.Posters), nil
+		planned := titledPlan(card.Name, card.Fresh, card.Posters)
+		if card.Personal {
+			planned.owner = userID
+		}
+
+		return planned, nil
 	}
 
 	listed, err := s.libraries.LibraryPosters(ctx, id, stacked)
@@ -122,50 +147,77 @@ func (s *Service) plan(ctx context.Context, id uuid.UUID) (plan, error) {
 	return titledPlan(library.Name, fresh, listed), nil
 }
 
+func (s *Service) personal(ctx context.Context, id, userID uuid.UUID) (shelves.Card, bool, error) {
+	access, err := s.access.Access(ctx, userID)
+	if err != nil {
+		return shelves.Card{}, false, err
+	}
+
+	return s.shelves.Card(ctx, id, items.Viewer{All: access.All, Libraries: access.Libraries}, userID, stacked)
+}
+
 func titledPlan(name string, fresh int, posters []*items.Image) plan {
 	return plan{posters: posters, arrange: titled(name, fresh), caption: name + "\x00" + headline(fresh)}
 }
 
-func (s *Service) Image(ctx context.Context, id uuid.UUID) (Collage, bool) {
-	planned, err := s.plan(ctx, id)
+func (s *Service) Image(ctx context.Context, id uuid.UUID, asked string) (Picture, bool) {
+	owner := ownerOf(asked)
+	planned, err := s.plan(ctx, id, owner)
 	if err != nil {
-		log.Printf("collage %s: %v", id, err)
+		log.Printf("card %s: %v", id, err)
 
-		return Collage{}, false
+		return Picture{}, false
 	}
 
-	tag := planned.fingerprint()
-	if tag == "" {
-		return Collage{}, false
+	tag := planned.tag()
+	if tag == "" || planned.owner != owner || owner != uuid.Nil && tag != asked {
+		return Picture{}, false
 	}
-	if body, ok := s.cached(id, tag); ok {
-		return Collage{Body: body, Complete: true}, true
+
+	held := key{id: id, owner: owner}
+	if body, ok := s.cached(held, tag); ok {
+		return Picture{Body: body, Complete: true}, true
 	}
 
 	built, err, _ := s.flight.Do(id.String()+":"+tag, func() (any, error) {
-		return s.build(context.WithoutCancel(ctx), id, tag, planned)
+		return s.build(context.WithoutCancel(ctx), held, tag, planned)
 	})
 	if err != nil {
-		log.Printf("collage %s: %v", id, err)
+		log.Printf("card %s: %v", id, err)
 
-		return Collage{}, false
+		return Picture{}, false
 	}
 
-	answer, ok := built.(Collage)
+	answer, ok := built.(Picture)
 
 	return answer, ok && len(answer.Body) > 0
 }
 
-func (s *Service) cached(id uuid.UUID, tag string) ([]byte, bool) {
+func ownerOf(tag string) uuid.UUID {
+	prefix, _, personal := strings.Cut(tag, "-")
+	if !personal {
+		return uuid.Nil
+	}
+
+	owner, err := uuid.Parse(prefix)
+	if err != nil {
+		return uuid.Nil
+	}
+
+	return owner
+}
+
+func (s *Service) cached(held key, tag string) ([]byte, bool) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
-	entry, ok := s.held[id]
+	entry, ok := s.held[held]
 
 	return entry.body, ok && entry.tag == tag
 }
 
-func (s *Service) build(ctx context.Context, id uuid.UUID, tag string, planned plan) (Collage, error) {
+func (s *Service) build(ctx context.Context, slot key, tag string, planned plan) (Picture, error) {
+	id := slot.id
 	posters := planned.posters
 	decoded := make([]image.Image, len(posters))
 
@@ -174,7 +226,7 @@ func (s *Service) build(ctx context.Context, id uuid.UUID, tag string, planned p
 		group.Go(func() error {
 			picture, err := s.fetch(ctx, poster.URL)
 			if err != nil {
-				log.Printf("collage %s poster: %v", id, err)
+				log.Printf("card %s poster: %v", id, err)
 
 				return nil
 			}
@@ -192,22 +244,22 @@ func (s *Service) build(ctx context.Context, id uuid.UUID, tag string, planned p
 		}
 	}
 	if len(fetched) == 0 {
-		return Collage{}, nil
+		return Picture{}, nil
 	}
 
 	body, err := planned.arrange(fetched)
 	if err != nil {
-		return Collage{}, err
+		return Picture{}, err
 	}
 
 	complete := len(fetched) == len(posters)
 	if complete {
 		s.mutex.Lock()
-		s.held[id] = held{tag: tag, body: body}
+		s.held[slot] = held{tag: tag, body: body}
 		s.mutex.Unlock()
 	}
 
-	return Collage{Body: body, Complete: complete}, nil
+	return Picture{Body: body, Complete: complete}, nil
 }
 
 func (s *Service) fetch(ctx context.Context, url string) (image.Image, error) {
@@ -232,6 +284,15 @@ func (s *Service) fetch(ctx context.Context, url string) (image.Image, error) {
 	}
 
 	return picture, nil
+}
+
+func (p plan) tag() string {
+	fingerprint := p.fingerprint()
+	if fingerprint == "" || p.owner == uuid.Nil {
+		return fingerprint
+	}
+
+	return hex.EncodeToString(p.owner[:]) + "-" + fingerprint
 }
 
 func (p plan) fingerprint() string {

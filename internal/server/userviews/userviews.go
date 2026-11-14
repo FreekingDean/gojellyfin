@@ -15,11 +15,11 @@ type Server struct {
 	libraries *libraries.Service
 	shelves   *shelves.Service
 	policies  dto.Access
-	collages  dto.Collages
+	cards     dto.Cards
 }
 
-func New(libraries *libraries.Service, shelves *shelves.Service, policies dto.Access, collages dto.Collages) *Server {
-	return &Server{libraries: libraries, shelves: shelves, policies: policies, collages: collages}
+func New(libraries *libraries.Service, shelves *shelves.Service, policies dto.Access, cards dto.Cards) *Server {
+	return &Server{libraries: libraries, shelves: shelves, policies: policies, cards: cards}
 }
 
 func (s *Server) GetUserViews(ctx context.Context, request api.GetUserViewsRequestObject) (api.GetUserViewsResponseObject, error) {
@@ -28,7 +28,7 @@ func (s *Server) GetUserViews(ctx context.Context, request api.GetUserViewsReque
 		return nil, err
 	}
 
-	views, err := dto.LibraryViews(ctx, s.collages, records)
+	views, err := dto.LibraryViews(ctx, s.cards, records)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func (s *Server) GetUserViews(ctx context.Context, request api.GetUserViewsReque
 		return nil, err
 	}
 	for _, shelf := range shown {
-		view, err := dto.ShelfView(ctx, s.collages, shelf)
+		view, err := dto.ShelfView(ctx, s.cards, shelf)
 		if err != nil {
 			return nil, err
 		}
