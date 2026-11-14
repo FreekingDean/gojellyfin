@@ -10,18 +10,24 @@ import (
 )
 
 type Server struct {
-	items *items.Service
+	items    *items.Service
+	policies dto.Access
 }
 
-func New(items *items.Service) *Server {
-	return &Server{items: items}
+func New(items *items.Service, policies dto.Access) *Server {
+	return &Server{items: items, policies: policies}
 }
 
 func (s *Server) GetStudios(ctx context.Context, request api.GetStudiosRequestObject) (api.GetStudiosResponseObject, error) {
+	viewer, err := dto.ViewerFor(ctx, s.policies)
+	if err != nil {
+		return nil, err
+	}
+
 	startIndex := apiutil.Deref(request.Params.StartIndex)
 
 	named, total, err := s.items.DistinctStudios(ctx, items.MetadataQuery{
-		Viewer:     items.Everyone,
+		Viewer:     viewer,
 		LibraryID:  request.Params.ParentId,
 		Kinds:      dto.Kinds(request.Params.IncludeItemTypes),
 		SearchTerm: apiutil.Deref(request.Params.SearchTerm),

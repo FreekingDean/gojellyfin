@@ -15,6 +15,7 @@ import (
 	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	downloadermodel "github.com/FreekingDean/gojellyfin/internal/store/source"
+	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
 func TestServer_GetGenres(t *testing.T) {
@@ -91,7 +92,17 @@ func TestServer_GetGenres(t *testing.T) {
 		t.Fatalf("failed to save the probe: %v", err)
 	}
 
-	response, err := New(service).GetGenres(ctx, api.GetGenresRequestObject{
+	hidden, err := New(service, access{}).GetGenres(ctx, api.GetGenresRequestObject{
+		Params: api.GetGenresParams{ParentId: &library.ID},
+	})
+	if err != nil {
+		t.Fatalf("failed to get the genres: %v", err)
+	}
+	if listed := hidden.(api.GetGenres200JSONResponse); len(*listed.Items) != 0 {
+		t.Errorf("genres = %d, want none for a user who cannot see the library", len(*listed.Items))
+	}
+
+	response, err := New(service, access{All: true}).GetGenres(ctx, api.GetGenresRequestObject{
 		Params: api.GetGenresParams{ParentId: &library.ID},
 	})
 	if err != nil {
@@ -116,4 +127,10 @@ func TestServer_GetGenres(t *testing.T) {
 	if dto.Id == nil || *dto.Id == uuid.Nil {
 		t.Errorf("id = %v, want a genre id", dto.Id)
 	}
+}
+
+type access users.Access
+
+func (a access) Access(context.Context, uuid.UUID) (users.Access, error) {
+	return users.Access(a), nil
 }
