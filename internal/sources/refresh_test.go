@@ -125,7 +125,10 @@ func (f *fixture) library(t *testing.T, filter string) uuid.UUID {
 	t.Helper()
 
 	ctx := context.Background()
-	library, err := f.client.Library.Create().SetName(t.Name() + "-" + uuid.NewString()).Save(ctx)
+	library, err := f.client.Library.Create().
+		SetName(t.Name() + "-" + uuid.NewString()).
+		SetLocations([]string{"/media"}).
+		Save(ctx)
 	if err != nil {
 		t.Fatalf("failed to create the library: %v", err)
 	}
