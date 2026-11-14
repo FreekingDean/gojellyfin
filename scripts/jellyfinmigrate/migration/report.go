@@ -15,10 +15,10 @@ const (
 )
 
 type UserOutcome struct {
-	Username   string
-	State      UserState
+	Username    string
+	State       UserState
 	SignInUnset bool
-	Restricted bool
+	Restricted  bool
 }
 
 type Unmatched struct {
