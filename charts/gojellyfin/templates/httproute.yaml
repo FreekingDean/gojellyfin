@@ -82,7 +82,7 @@ spec:
     - matches:
         - path:
             type: RegularExpression
-            value: (?i)^/web/configurationpages?$
+            value: "(?i)^/web/configurationpages?$"
       backendRefs:
         - name: {{ include "gojellyfin.fullname" . }}
           port: {{ .Values.service.port }}
