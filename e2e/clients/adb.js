@@ -247,13 +247,16 @@ function unescape(value) {
     .replace(/&amp;/g, '&');
 }
 
-// { id }, { text } and { description } all have to hold; a string is matched
+// { id }, { type }, { text } and { description } all have to hold; a string is matched
 // whole and a RegExp is tested. `label` is the text or the description,
 // whichever the view carries.
 function matches(node, matcher) {
   const holds = (value, wanted) => (wanted instanceof RegExp ? wanted.test(value) : value === wanted);
 
   if (matcher.id !== undefined && node.id !== matcher.id) {
+    return false;
+  }
+  if (matcher.type !== undefined && node.type !== matcher.type) {
     return false;
   }
   if (matcher.text !== undefined && !holds(node.text, matcher.text)) {
