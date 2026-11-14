@@ -16,6 +16,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/FreekingDean/gojellyfin/internal/store/syncplaygroup"
 	"github.com/FreekingDean/gojellyfin/internal/store/syncplaygroupmember"
+	"github.com/FreekingDean/gojellyfin/internal/store/syncplayqueueentry"
 	"github.com/google/uuid"
 )
 
@@ -27,6 +28,7 @@ type SyncPlayGroupQuery struct {
 	inters      []Interceptor
 	predicates  []predicate.SyncPlayGroup
 	withMembers *SyncPlayGroupMemberQuery
+	withQueue   *SyncPlayQueueEntryQuery
 	modifiers   []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -79,6 +81,28 @@ func (_q *SyncPlayGroupQuery) QueryMembers() *SyncPlayGroupMemberQuery {
 			sqlgraph.From(syncplaygroup.Table, syncplaygroup.FieldID, selector),
 			sqlgraph.To(syncplaygroupmember.Table, syncplaygroupmember.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, syncplaygroup.MembersTable, syncplaygroup.MembersColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryQueue chains the current query on the "queue" edge.
+func (_q *SyncPlayGroupQuery) QueryQueue() *SyncPlayQueueEntryQuery {
+	query := (&SyncPlayQueueEntryClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(syncplaygroup.Table, syncplaygroup.FieldID, selector),
+			sqlgraph.To(syncplayqueueentry.Table, syncplayqueueentry.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, syncplaygroup.QueueTable, syncplaygroup.QueueColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -279,6 +303,7 @@ func (_q *SyncPlayGroupQuery) Clone() *SyncPlayGroupQuery {
 		inters:      append([]Interceptor{}, _q.inters...),
 		predicates:  append([]predicate.SyncPlayGroup{}, _q.predicates...),
 		withMembers: _q.withMembers.Clone(),
+		withQueue:   _q.withQueue.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -293,6 +318,17 @@ func (_q *SyncPlayGroupQuery) WithMembers(opts ...func(*SyncPlayGroupMemberQuery
 		opt(query)
 	}
 	_q.withMembers = query
+	return _q
+}
+
+// WithQueue tells the query-builder to eager-load the nodes that are connected to
+// the "queue" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *SyncPlayGroupQuery) WithQueue(opts ...func(*SyncPlayQueueEntryQuery)) *SyncPlayGroupQuery {
+	query := (&SyncPlayQueueEntryClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withQueue = query
 	return _q
 }
 
@@ -374,8 +410,9 @@ func (_q *SyncPlayGroupQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([
 	var (
 		nodes       = []*SyncPlayGroup{}
 		_spec       = _q.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			_q.withMembers != nil,
+			_q.withQueue != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -406,6 +443,13 @@ func (_q *SyncPlayGroupQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([
 			return nil, err
 		}
 	}
+	if query := _q.withQueue; query != nil {
+		if err := _q.loadQueue(ctx, query, nodes,
+			func(n *SyncPlayGroup) { n.Edges.Queue = []*SyncPlayQueueEntry{} },
+			func(n *SyncPlayGroup, e *SyncPlayQueueEntry) { n.Edges.Queue = append(n.Edges.Queue, e) }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
 }
 
@@ -424,6 +468,36 @@ func (_q *SyncPlayGroupQuery) loadMembers(ctx context.Context, query *SyncPlayGr
 	}
 	query.Where(predicate.SyncPlayGroupMember(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(syncplaygroup.MembersColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.GroupID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "group_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *SyncPlayGroupQuery) loadQueue(ctx context.Context, query *SyncPlayQueueEntryQuery, nodes []*SyncPlayGroup, init func(*SyncPlayGroup), assign func(*SyncPlayGroup, *SyncPlayQueueEntry)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*SyncPlayGroup)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(syncplayqueueentry.FieldGroupID)
+	}
+	query.Where(predicate.SyncPlayQueueEntry(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(syncplaygroup.QueueColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

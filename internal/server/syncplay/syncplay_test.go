@@ -13,6 +13,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/env"
+	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
@@ -22,11 +23,14 @@ import (
 	groupmodal "github.com/FreekingDean/gojellyfin/internal/store/syncplaygroup"
 	usermodal "github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/FreekingDean/gojellyfin/internal/syncplay"
+	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
 type published struct {
-	sessionIDs []uuid.UUID
-	update     groupUpdate
+	sessionIDs  []uuid.UUID
+	messageType string
+	update      syncplay.Update
+	command     syncplay.Command
 }
 
 type recorder struct {
@@ -38,11 +42,17 @@ func (r *recorder) Publish(_ context.Context, sessionIDs []uuid.UUID, messageTyp
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if messageType != groupUpdateMessage {
+	sent := published{sessionIDs: sessionIDs, messageType: messageType}
+	switch messageType {
+	case syncplay.UpdateMessage:
+		sent.update = data.(syncplay.Update)
+	case syncplay.CommandMessage:
+		sent.command = data.(syncplay.Command)
+	default:
 		return fmt.Errorf("unexpected message type %q", messageType)
 	}
 
-	r.sent = append(r.sent, published{sessionIDs: sessionIDs, update: data.(groupUpdate)})
+	r.sent = append(r.sent, sent)
 
 	return nil
 }
@@ -53,7 +63,7 @@ func (r *recorder) of(updateType string) []published {
 
 	var matching []published
 	for _, sent := range r.sent {
-		if sent.update.Type == updateType {
+		if sent.messageType == syncplay.UpdateMessage && sent.update.Type == updateType {
 			matching = append(matching, sent)
 		}
 	}
@@ -63,6 +73,7 @@ func (r *recorder) of(updateType string) []published {
 
 type fixture struct {
 	server    *Server
+	service   *syncplay.Service
 	client    *store.Client
 	auth      *auth.Service
 	sessions  *sessions.Service
@@ -92,8 +103,10 @@ func newFixture(t *testing.T) *fixture {
 	sessionService := sessions.New(client, activity.New(client))
 
 	recorded := &recorder{}
+	service := syncplay.New(client, items.New(client), users.New(client), recorded)
 	f := &fixture{
-		server:    New(syncplay.New(client), recorded),
+		server:    New(service, recorded),
+		service:   service,
 		client:    client,
 		auth:      auth.New(sessionService),
 		sessions:  sessionService,
@@ -433,7 +446,7 @@ func TestServer_SyncPlayLeaveGroup(t *testing.T) {
 		f.missing(t, owner, *created.GroupId)
 	})
 
-	t.Run("leaving without a group is accepted and tells nobody", func(t *testing.T) {
+	t.Run("leaving without a group is accepted and tells the session it is in none", func(t *testing.T) {
 		f := newFixture(t)
 		owner := f.signIn(t, "owner")
 
@@ -442,6 +455,7 @@ func TestServer_SyncPlayLeaveGroup(t *testing.T) {
 		if sent := f.published.of(groupLeft); len(sent) != 0 {
 			t.Fatalf("published %d GroupLeft updates, want none", len(sent))
 		}
+		addressed(t, f.published.of(notInGroup), auth.SessionFrom(owner).ID)
 	})
 }
 

@@ -61,9 +61,14 @@ func (s *Server) SyncPlayJoinGroup(ctx context.Context, request api.SyncPlayJoin
 
 	groupID := *body.GroupId
 
-	joined, err := s.syncplay.Join(ctx, groupID, session.ID)
+	joined, err := s.syncplay.Join(ctx, groupID, session.ID, auth.UserID(ctx))
 	if errors.Is(err, syncplay.ErrNoGroup) {
 		s.publish(ctx, []uuid.UUID{session.ID}, groupID, groupDoesNotExist, groupID.String())
+
+		return api.SyncPlayJoinGroup204Response{}, nil
+	}
+	if errors.Is(err, syncplay.ErrAccessDenied) {
+		s.publish(ctx, []uuid.UUID{session.ID}, groupID, libraryAccessDenied, "")
 
 		return api.SyncPlayJoinGroup204Response{}, nil
 	}
@@ -83,18 +88,22 @@ func (s *Server) SyncPlayLeaveGroup(ctx context.Context, request api.SyncPlayLea
 	}
 
 	left, err := s.syncplay.Leave(ctx, session.ID)
+	if errors.Is(err, syncplay.ErrNotInGroup) {
+		s.publish(ctx, []uuid.UUID{session.ID}, uuid.Nil, notInGroup, "")
+
+		return api.SyncPlayLeaveGroup204Response{}, nil
+	}
 	if err != nil {
 		return nil, err
 	}
-	if left != nil {
-		s.depart(ctx, session, left)
-	}
+
+	s.depart(ctx, session, left)
 
 	return api.SyncPlayLeaveGroup204Response{}, nil
 }
 
 func (s *Server) SyncPlayGetGroups(ctx context.Context, request api.SyncPlayGetGroupsRequestObject) (api.SyncPlayGetGroupsResponseObject, error) {
-	groups, err := s.syncplay.List(ctx)
+	groups, err := s.syncplay.List(ctx, auth.UserID(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +112,7 @@ func (s *Server) SyncPlayGetGroups(ctx context.Context, request api.SyncPlayGetG
 }
 
 func (s *Server) SyncPlayGetGroup(ctx context.Context, request api.SyncPlayGetGroupRequestObject) (api.SyncPlayGetGroupResponseObject, error) {
-	group, err := s.syncplay.GroupByID(ctx, request.Id)
+	group, err := s.syncplay.GroupFor(ctx, auth.UserID(ctx), request.Id)
 	if errors.Is(err, syncplay.ErrNoGroup) {
 		return api.SyncPlayGetGroup404JSONResponse{}, nil
 	}
@@ -121,15 +130,16 @@ func (s *Server) announce(ctx context.Context, session *sessions.Session, joined
 
 	s.publish(ctx, []uuid.UUID{session.ID}, joined.Group.ID, groupJoined, groupInfo(joined.Group))
 
-	if joined.Rejoined {
-		return
+	if !joined.Rejoined {
+		others := sessionIDs(syncplay.Participants(joined.Group), session.ID)
+		s.publish(ctx, others, joined.Group.ID, userJoined, userName(session))
 	}
 
-	others := sessionIDs(syncplay.Participants(joined.Group), session.ID)
-	s.publish(ctx, others, joined.Group.ID, userJoined, userName(session))
+	s.syncplay.Publish(ctx, joined.Messages)
 }
 
 func (s *Server) depart(ctx context.Context, session *sessions.Session, left *syncplay.Departure) {
+	s.syncplay.Publish(ctx, left.Messages)
 	s.publish(ctx, []uuid.UUID{session.ID}, left.GroupID, groupLeft, left.GroupID.String())
 	s.publish(ctx, sessionIDs(left.Remaining, session.ID), left.GroupID, userLeft, userName(session))
 }
@@ -139,9 +149,9 @@ func (s *Server) publish(ctx context.Context, sessionIDs []uuid.UUID, groupID uu
 		return
 	}
 
-	update := groupUpdate{GroupId: groupID, Type: updateType, Data: data}
+	update := syncplay.Update{GroupID: groupID, Type: updateType, Data: data}
 
-	if err := s.publisher.Publish(ctx, sessionIDs, groupUpdateMessage, update); err != nil {
+	if err := s.publisher.Publish(ctx, sessionIDs, syncplay.UpdateMessage, update); err != nil {
 		log.Printf("failed to publish %s for group %s: %v", updateType, groupID, err)
 	}
 }

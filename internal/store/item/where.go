@@ -1474,6 +1474,29 @@ func HasPlaylistEntriesWith(preds ...predicate.PlaylistEntry) predicate.Item {
 	})
 }
 
+// HasSyncPlayEntries applies the HasEdge predicate on the "sync_play_entries" edge.
+func HasSyncPlayEntries() predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SyncPlayEntriesTable, SyncPlayEntriesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSyncPlayEntriesWith applies the HasEdge predicate on the "sync_play_entries" edge with a given conditions (other predicates).
+func HasSyncPlayEntriesWith(preds ...predicate.SyncPlayQueueEntry) predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := newSyncPlayEntriesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasGenres applies the HasEdge predicate on the "genres" edge.
 func HasGenres() predicate.Item {
 	return predicate.Item(func(s *sql.Selector) {

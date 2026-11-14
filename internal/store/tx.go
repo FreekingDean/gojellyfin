@@ -72,6 +72,8 @@ type Tx struct {
 	SyncPlayGroup *SyncPlayGroupClient
 	// SyncPlayGroupMember is the client for interacting with the SyncPlayGroupMember builders.
 	SyncPlayGroupMember *SyncPlayGroupMemberClient
+	// SyncPlayQueueEntry is the client for interacting with the SyncPlayQueueEntry builders.
+	SyncPlayQueueEntry *SyncPlayQueueEntryClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 	// UserConfiguration is the client for interacting with the UserConfiguration builders.
@@ -240,6 +242,7 @@ func (tx *Tx) init() {
 	tx.Studio = NewStudioClient(tx.config)
 	tx.SyncPlayGroup = NewSyncPlayGroupClient(tx.config)
 	tx.SyncPlayGroupMember = NewSyncPlayGroupMemberClient(tx.config)
+	tx.SyncPlayQueueEntry = NewSyncPlayQueueEntryClient(tx.config)
 	tx.User = NewUserClient(tx.config)
 	tx.UserConfiguration = NewUserConfigurationClient(tx.config)
 	tx.UserItemData = NewUserItemDataClient(tx.config)

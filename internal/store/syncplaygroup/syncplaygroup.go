@@ -3,6 +3,7 @@
 package syncplaygroup
 
 import (
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -20,8 +21,36 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
+	// FieldState holds the string denoting the state field in the database.
+	FieldState = "state"
+	// FieldPositionTicks holds the string denoting the position_ticks field in the database.
+	FieldPositionTicks = "position_ticks"
+	// FieldRunTimeTicks holds the string denoting the run_time_ticks field in the database.
+	FieldRunTimeTicks = "run_time_ticks"
+	// FieldLastActivity holds the string denoting the last_activity field in the database.
+	FieldLastActivity = "last_activity"
+	// FieldPlayingIndex holds the string denoting the playing_index field in the database.
+	FieldPlayingIndex = "playing_index"
+	// FieldShuffleMode holds the string denoting the shuffle_mode field in the database.
+	FieldShuffleMode = "shuffle_mode"
+	// FieldRepeatMode holds the string denoting the repeat_mode field in the database.
+	FieldRepeatMode = "repeat_mode"
+	// FieldQueueChangedAt holds the string denoting the queue_changed_at field in the database.
+	FieldQueueChangedAt = "queue_changed_at"
+	// FieldResumePlaying holds the string denoting the resume_playing field in the database.
+	FieldResumePlaying = "resume_playing"
+	// FieldWaitingFrom holds the string denoting the waiting_from field in the database.
+	FieldWaitingFrom = "waiting_from"
+	// FieldPositionJumped holds the string denoting the position_jumped field in the database.
+	FieldPositionJumped = "position_jumped"
+	// FieldIgnoreBuffering holds the string denoting the ignore_buffering field in the database.
+	FieldIgnoreBuffering = "ignore_buffering"
+	// FieldWaitDeadline holds the string denoting the wait_deadline field in the database.
+	FieldWaitDeadline = "wait_deadline"
 	// EdgeMembers holds the string denoting the members edge name in mutations.
 	EdgeMembers = "members"
+	// EdgeQueue holds the string denoting the queue edge name in mutations.
+	EdgeQueue = "queue"
 	// Table holds the table name of the syncplaygroup in the database.
 	Table = "sync_play_groups"
 	// MembersTable is the table that holds the members relation/edge.
@@ -31,6 +60,13 @@ const (
 	MembersInverseTable = "sync_play_group_members"
 	// MembersColumn is the table column denoting the members relation/edge.
 	MembersColumn = "group_id"
+	// QueueTable is the table that holds the queue relation/edge.
+	QueueTable = "sync_play_queue_entries"
+	// QueueInverseTable is the table name for the SyncPlayQueueEntry entity.
+	// It exists in this package in order to avoid circular dependency with the "syncplayqueueentry" package.
+	QueueInverseTable = "sync_play_queue_entries"
+	// QueueColumn is the table column denoting the queue relation/edge.
+	QueueColumn = "group_id"
 )
 
 // Columns holds all SQL columns for syncplaygroup fields.
@@ -39,6 +75,19 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldName,
+	FieldState,
+	FieldPositionTicks,
+	FieldRunTimeTicks,
+	FieldLastActivity,
+	FieldPlayingIndex,
+	FieldShuffleMode,
+	FieldRepeatMode,
+	FieldQueueChangedAt,
+	FieldResumePlaying,
+	FieldWaitingFrom,
+	FieldPositionJumped,
+	FieldIgnoreBuffering,
+	FieldWaitDeadline,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -58,7 +107,129 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultPositionTicks holds the default value on creation for the "position_ticks" field.
+	DefaultPositionTicks int64
+	// DefaultRunTimeTicks holds the default value on creation for the "run_time_ticks" field.
+	DefaultRunTimeTicks int64
+	// DefaultLastActivity holds the default value on creation for the "last_activity" field.
+	DefaultLastActivity func() time.Time
+	// DefaultPlayingIndex holds the default value on creation for the "playing_index" field.
+	DefaultPlayingIndex int
+	// DefaultQueueChangedAt holds the default value on creation for the "queue_changed_at" field.
+	DefaultQueueChangedAt func() time.Time
+	// DefaultResumePlaying holds the default value on creation for the "resume_playing" field.
+	DefaultResumePlaying bool
+	// DefaultPositionJumped holds the default value on creation for the "position_jumped" field.
+	DefaultPositionJumped bool
+	// DefaultIgnoreBuffering holds the default value on creation for the "ignore_buffering" field.
+	DefaultIgnoreBuffering bool
 )
+
+// State defines the type for the "state" enum field.
+type State string
+
+// StateIdle is the default value of the State enum.
+const DefaultState = StateIdle
+
+// State values.
+const (
+	StateIdle    State = "Idle"
+	StateWaiting State = "Waiting"
+	StatePaused  State = "Paused"
+	StatePlaying State = "Playing"
+)
+
+func (s State) String() string {
+	return string(s)
+}
+
+// StateValidator is a validator for the "state" field enum values. It is called by the builders before save.
+func StateValidator(s State) error {
+	switch s {
+	case StateIdle, StateWaiting, StatePaused, StatePlaying:
+		return nil
+	default:
+		return fmt.Errorf("syncplaygroup: invalid enum value for state field: %q", s)
+	}
+}
+
+// ShuffleMode defines the type for the "shuffle_mode" enum field.
+type ShuffleMode string
+
+// ShuffleModeSorted is the default value of the ShuffleMode enum.
+const DefaultShuffleMode = ShuffleModeSorted
+
+// ShuffleMode values.
+const (
+	ShuffleModeSorted  ShuffleMode = "Sorted"
+	ShuffleModeShuffle ShuffleMode = "Shuffle"
+)
+
+func (sm ShuffleMode) String() string {
+	return string(sm)
+}
+
+// ShuffleModeValidator is a validator for the "shuffle_mode" field enum values. It is called by the builders before save.
+func ShuffleModeValidator(sm ShuffleMode) error {
+	switch sm {
+	case ShuffleModeSorted, ShuffleModeShuffle:
+		return nil
+	default:
+		return fmt.Errorf("syncplaygroup: invalid enum value for shuffle_mode field: %q", sm)
+	}
+}
+
+// RepeatMode defines the type for the "repeat_mode" enum field.
+type RepeatMode string
+
+// RepeatModeRepeatNone is the default value of the RepeatMode enum.
+const DefaultRepeatMode = RepeatModeRepeatNone
+
+// RepeatMode values.
+const (
+	RepeatModeRepeatOne  RepeatMode = "RepeatOne"
+	RepeatModeRepeatAll  RepeatMode = "RepeatAll"
+	RepeatModeRepeatNone RepeatMode = "RepeatNone"
+)
+
+func (rm RepeatMode) String() string {
+	return string(rm)
+}
+
+// RepeatModeValidator is a validator for the "repeat_mode" field enum values. It is called by the builders before save.
+func RepeatModeValidator(rm RepeatMode) error {
+	switch rm {
+	case RepeatModeRepeatOne, RepeatModeRepeatAll, RepeatModeRepeatNone:
+		return nil
+	default:
+		return fmt.Errorf("syncplaygroup: invalid enum value for repeat_mode field: %q", rm)
+	}
+}
+
+// WaitingFrom defines the type for the "waiting_from" enum field.
+type WaitingFrom string
+
+// WaitingFrom values.
+const (
+	WaitingFromIdle    WaitingFrom = "Idle"
+	WaitingFromWaiting WaitingFrom = "Waiting"
+	WaitingFromPaused  WaitingFrom = "Paused"
+	WaitingFromPlaying WaitingFrom = "Playing"
+)
+
+func (wf WaitingFrom) String() string {
+	return string(wf)
+}
+
+// WaitingFromValidator is a validator for the "waiting_from" field enum values. It is called by the builders before save.
+func WaitingFromValidator(wf WaitingFrom) error {
+	switch wf {
+	case WaitingFromIdle, WaitingFromWaiting, WaitingFromPaused, WaitingFromPlaying:
+		return nil
+	default:
+		return fmt.Errorf("syncplaygroup: invalid enum value for waiting_from field: %q", wf)
+	}
+}
 
 // OrderOption defines the ordering options for the SyncPlayGroup queries.
 type OrderOption func(*sql.Selector)
@@ -83,6 +254,71 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
 }
 
+// ByState orders the results by the state field.
+func ByState(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldState, opts...).ToFunc()
+}
+
+// ByPositionTicks orders the results by the position_ticks field.
+func ByPositionTicks(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPositionTicks, opts...).ToFunc()
+}
+
+// ByRunTimeTicks orders the results by the run_time_ticks field.
+func ByRunTimeTicks(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRunTimeTicks, opts...).ToFunc()
+}
+
+// ByLastActivity orders the results by the last_activity field.
+func ByLastActivity(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastActivity, opts...).ToFunc()
+}
+
+// ByPlayingIndex orders the results by the playing_index field.
+func ByPlayingIndex(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPlayingIndex, opts...).ToFunc()
+}
+
+// ByShuffleMode orders the results by the shuffle_mode field.
+func ByShuffleMode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldShuffleMode, opts...).ToFunc()
+}
+
+// ByRepeatMode orders the results by the repeat_mode field.
+func ByRepeatMode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRepeatMode, opts...).ToFunc()
+}
+
+// ByQueueChangedAt orders the results by the queue_changed_at field.
+func ByQueueChangedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldQueueChangedAt, opts...).ToFunc()
+}
+
+// ByResumePlaying orders the results by the resume_playing field.
+func ByResumePlaying(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldResumePlaying, opts...).ToFunc()
+}
+
+// ByWaitingFrom orders the results by the waiting_from field.
+func ByWaitingFrom(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWaitingFrom, opts...).ToFunc()
+}
+
+// ByPositionJumped orders the results by the position_jumped field.
+func ByPositionJumped(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPositionJumped, opts...).ToFunc()
+}
+
+// ByIgnoreBuffering orders the results by the ignore_buffering field.
+func ByIgnoreBuffering(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIgnoreBuffering, opts...).ToFunc()
+}
+
+// ByWaitDeadline orders the results by the wait_deadline field.
+func ByWaitDeadline(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWaitDeadline, opts...).ToFunc()
+}
+
 // ByMembersCount orders the results by members count.
 func ByMembersCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -96,10 +332,31 @@ func ByMembers(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newMembersStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByQueueCount orders the results by queue count.
+func ByQueueCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newQueueStep(), opts...)
+	}
+}
+
+// ByQueue orders the results by queue terms.
+func ByQueue(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newQueueStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newMembersStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(MembersInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, MembersTable, MembersColumn),
+	)
+}
+func newQueueStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(QueueInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, QueueTable, QueueColumn),
 	)
 }

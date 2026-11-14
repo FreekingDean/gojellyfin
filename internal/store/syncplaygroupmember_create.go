@@ -66,6 +66,48 @@ func (_c *SyncPlayGroupMemberCreate) SetSessionID(v uuid.UUID) *SyncPlayGroupMem
 	return _c
 }
 
+// SetPing sets the "ping" field.
+func (_c *SyncPlayGroupMemberCreate) SetPing(v int64) *SyncPlayGroupMemberCreate {
+	_c.mutation.SetPing(v)
+	return _c
+}
+
+// SetNillablePing sets the "ping" field if the given value is not nil.
+func (_c *SyncPlayGroupMemberCreate) SetNillablePing(v *int64) *SyncPlayGroupMemberCreate {
+	if v != nil {
+		_c.SetPing(*v)
+	}
+	return _c
+}
+
+// SetIsBuffering sets the "is_buffering" field.
+func (_c *SyncPlayGroupMemberCreate) SetIsBuffering(v bool) *SyncPlayGroupMemberCreate {
+	_c.mutation.SetIsBuffering(v)
+	return _c
+}
+
+// SetNillableIsBuffering sets the "is_buffering" field if the given value is not nil.
+func (_c *SyncPlayGroupMemberCreate) SetNillableIsBuffering(v *bool) *SyncPlayGroupMemberCreate {
+	if v != nil {
+		_c.SetIsBuffering(*v)
+	}
+	return _c
+}
+
+// SetIgnoreWait sets the "ignore_wait" field.
+func (_c *SyncPlayGroupMemberCreate) SetIgnoreWait(v bool) *SyncPlayGroupMemberCreate {
+	_c.mutation.SetIgnoreWait(v)
+	return _c
+}
+
+// SetNillableIgnoreWait sets the "ignore_wait" field if the given value is not nil.
+func (_c *SyncPlayGroupMemberCreate) SetNillableIgnoreWait(v *bool) *SyncPlayGroupMemberCreate {
+	if v != nil {
+		_c.SetIgnoreWait(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *SyncPlayGroupMemberCreate) SetID(v uuid.UUID) *SyncPlayGroupMemberCreate {
 	_c.mutation.SetID(v)
@@ -125,6 +167,18 @@ func (_c *SyncPlayGroupMemberCreate) defaults() {
 		v := syncplaygroupmember.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Ping(); !ok {
+		v := syncplaygroupmember.DefaultPing
+		_c.mutation.SetPing(v)
+	}
+	if _, ok := _c.mutation.IsBuffering(); !ok {
+		v := syncplaygroupmember.DefaultIsBuffering
+		_c.mutation.SetIsBuffering(v)
+	}
+	if _, ok := _c.mutation.IgnoreWait(); !ok {
+		v := syncplaygroupmember.DefaultIgnoreWait
+		_c.mutation.SetIgnoreWait(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -140,6 +194,15 @@ func (_c *SyncPlayGroupMemberCreate) check() error {
 	}
 	if _, ok := _c.mutation.SessionID(); !ok {
 		return &ValidationError{Name: "session_id", err: errors.New(`store: missing required field "SyncPlayGroupMember.session_id"`)}
+	}
+	if _, ok := _c.mutation.Ping(); !ok {
+		return &ValidationError{Name: "ping", err: errors.New(`store: missing required field "SyncPlayGroupMember.ping"`)}
+	}
+	if _, ok := _c.mutation.IsBuffering(); !ok {
+		return &ValidationError{Name: "is_buffering", err: errors.New(`store: missing required field "SyncPlayGroupMember.is_buffering"`)}
+	}
+	if _, ok := _c.mutation.IgnoreWait(); !ok {
+		return &ValidationError{Name: "ignore_wait", err: errors.New(`store: missing required field "SyncPlayGroupMember.ignore_wait"`)}
 	}
 	if len(_c.mutation.GroupIDs()) == 0 {
 		return &ValidationError{Name: "group", err: errors.New(`store: missing required edge "SyncPlayGroupMember.group"`)}
@@ -190,6 +253,18 @@ func (_c *SyncPlayGroupMemberCreate) createSpec() (*SyncPlayGroupMember, *sqlgra
 	if value, ok := _c.mutation.UpdatedAt(); ok {
 		_spec.SetField(syncplaygroupmember.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
+	}
+	if value, ok := _c.mutation.Ping(); ok {
+		_spec.SetField(syncplaygroupmember.FieldPing, field.TypeInt64, value)
+		_node.Ping = value
+	}
+	if value, ok := _c.mutation.IsBuffering(); ok {
+		_spec.SetField(syncplaygroupmember.FieldIsBuffering, field.TypeBool, value)
+		_node.IsBuffering = value
+	}
+	if value, ok := _c.mutation.IgnoreWait(); ok {
+		_spec.SetField(syncplaygroupmember.FieldIgnoreWait, field.TypeBool, value)
+		_node.IgnoreWait = value
 	}
 	if nodes := _c.mutation.GroupIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -325,6 +400,48 @@ func (u *SyncPlayGroupMemberUpsert) UpdateSessionID() *SyncPlayGroupMemberUpsert
 	return u
 }
 
+// SetPing sets the "ping" field.
+func (u *SyncPlayGroupMemberUpsert) SetPing(v int64) *SyncPlayGroupMemberUpsert {
+	u.Set(syncplaygroupmember.FieldPing, v)
+	return u
+}
+
+// UpdatePing sets the "ping" field to the value that was provided on create.
+func (u *SyncPlayGroupMemberUpsert) UpdatePing() *SyncPlayGroupMemberUpsert {
+	u.SetExcluded(syncplaygroupmember.FieldPing)
+	return u
+}
+
+// AddPing adds v to the "ping" field.
+func (u *SyncPlayGroupMemberUpsert) AddPing(v int64) *SyncPlayGroupMemberUpsert {
+	u.Add(syncplaygroupmember.FieldPing, v)
+	return u
+}
+
+// SetIsBuffering sets the "is_buffering" field.
+func (u *SyncPlayGroupMemberUpsert) SetIsBuffering(v bool) *SyncPlayGroupMemberUpsert {
+	u.Set(syncplaygroupmember.FieldIsBuffering, v)
+	return u
+}
+
+// UpdateIsBuffering sets the "is_buffering" field to the value that was provided on create.
+func (u *SyncPlayGroupMemberUpsert) UpdateIsBuffering() *SyncPlayGroupMemberUpsert {
+	u.SetExcluded(syncplaygroupmember.FieldIsBuffering)
+	return u
+}
+
+// SetIgnoreWait sets the "ignore_wait" field.
+func (u *SyncPlayGroupMemberUpsert) SetIgnoreWait(v bool) *SyncPlayGroupMemberUpsert {
+	u.Set(syncplaygroupmember.FieldIgnoreWait, v)
+	return u
+}
+
+// UpdateIgnoreWait sets the "ignore_wait" field to the value that was provided on create.
+func (u *SyncPlayGroupMemberUpsert) UpdateIgnoreWait() *SyncPlayGroupMemberUpsert {
+	u.SetExcluded(syncplaygroupmember.FieldIgnoreWait)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -426,6 +543,55 @@ func (u *SyncPlayGroupMemberUpsertOne) SetSessionID(v uuid.UUID) *SyncPlayGroupM
 func (u *SyncPlayGroupMemberUpsertOne) UpdateSessionID() *SyncPlayGroupMemberUpsertOne {
 	return u.Update(func(s *SyncPlayGroupMemberUpsert) {
 		s.UpdateSessionID()
+	})
+}
+
+// SetPing sets the "ping" field.
+func (u *SyncPlayGroupMemberUpsertOne) SetPing(v int64) *SyncPlayGroupMemberUpsertOne {
+	return u.Update(func(s *SyncPlayGroupMemberUpsert) {
+		s.SetPing(v)
+	})
+}
+
+// AddPing adds v to the "ping" field.
+func (u *SyncPlayGroupMemberUpsertOne) AddPing(v int64) *SyncPlayGroupMemberUpsertOne {
+	return u.Update(func(s *SyncPlayGroupMemberUpsert) {
+		s.AddPing(v)
+	})
+}
+
+// UpdatePing sets the "ping" field to the value that was provided on create.
+func (u *SyncPlayGroupMemberUpsertOne) UpdatePing() *SyncPlayGroupMemberUpsertOne {
+	return u.Update(func(s *SyncPlayGroupMemberUpsert) {
+		s.UpdatePing()
+	})
+}
+
+// SetIsBuffering sets the "is_buffering" field.
+func (u *SyncPlayGroupMemberUpsertOne) SetIsBuffering(v bool) *SyncPlayGroupMemberUpsertOne {
+	return u.Update(func(s *SyncPlayGroupMemberUpsert) {
+		s.SetIsBuffering(v)
+	})
+}
+
+// UpdateIsBuffering sets the "is_buffering" field to the value that was provided on create.
+func (u *SyncPlayGroupMemberUpsertOne) UpdateIsBuffering() *SyncPlayGroupMemberUpsertOne {
+	return u.Update(func(s *SyncPlayGroupMemberUpsert) {
+		s.UpdateIsBuffering()
+	})
+}
+
+// SetIgnoreWait sets the "ignore_wait" field.
+func (u *SyncPlayGroupMemberUpsertOne) SetIgnoreWait(v bool) *SyncPlayGroupMemberUpsertOne {
+	return u.Update(func(s *SyncPlayGroupMemberUpsert) {
+		s.SetIgnoreWait(v)
+	})
+}
+
+// UpdateIgnoreWait sets the "ignore_wait" field to the value that was provided on create.
+func (u *SyncPlayGroupMemberUpsertOne) UpdateIgnoreWait() *SyncPlayGroupMemberUpsertOne {
+	return u.Update(func(s *SyncPlayGroupMemberUpsert) {
+		s.UpdateIgnoreWait()
 	})
 }
 
@@ -697,6 +863,55 @@ func (u *SyncPlayGroupMemberUpsertBulk) SetSessionID(v uuid.UUID) *SyncPlayGroup
 func (u *SyncPlayGroupMemberUpsertBulk) UpdateSessionID() *SyncPlayGroupMemberUpsertBulk {
 	return u.Update(func(s *SyncPlayGroupMemberUpsert) {
 		s.UpdateSessionID()
+	})
+}
+
+// SetPing sets the "ping" field.
+func (u *SyncPlayGroupMemberUpsertBulk) SetPing(v int64) *SyncPlayGroupMemberUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupMemberUpsert) {
+		s.SetPing(v)
+	})
+}
+
+// AddPing adds v to the "ping" field.
+func (u *SyncPlayGroupMemberUpsertBulk) AddPing(v int64) *SyncPlayGroupMemberUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupMemberUpsert) {
+		s.AddPing(v)
+	})
+}
+
+// UpdatePing sets the "ping" field to the value that was provided on create.
+func (u *SyncPlayGroupMemberUpsertBulk) UpdatePing() *SyncPlayGroupMemberUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupMemberUpsert) {
+		s.UpdatePing()
+	})
+}
+
+// SetIsBuffering sets the "is_buffering" field.
+func (u *SyncPlayGroupMemberUpsertBulk) SetIsBuffering(v bool) *SyncPlayGroupMemberUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupMemberUpsert) {
+		s.SetIsBuffering(v)
+	})
+}
+
+// UpdateIsBuffering sets the "is_buffering" field to the value that was provided on create.
+func (u *SyncPlayGroupMemberUpsertBulk) UpdateIsBuffering() *SyncPlayGroupMemberUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupMemberUpsert) {
+		s.UpdateIsBuffering()
+	})
+}
+
+// SetIgnoreWait sets the "ignore_wait" field.
+func (u *SyncPlayGroupMemberUpsertBulk) SetIgnoreWait(v bool) *SyncPlayGroupMemberUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupMemberUpsert) {
+		s.SetIgnoreWait(v)
+	})
+}
+
+// UpdateIgnoreWait sets the "ignore_wait" field to the value that was provided on create.
+func (u *SyncPlayGroupMemberUpsertBulk) UpdateIgnoreWait() *SyncPlayGroupMemberUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupMemberUpsert) {
+		s.UpdateIgnoreWait()
 	})
 }
 

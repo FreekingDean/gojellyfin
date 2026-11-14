@@ -16,6 +16,9 @@ func (SyncPlayGroupMember) Fields() []ent.Field {
 	return withDefaultFields(
 		field.UUID("group_id", uuid.UUID{}),
 		field.UUID("session_id", uuid.UUID{}),
+		field.Int64("ping").Default(500),
+		field.Bool("is_buffering").Default(false),
+		field.Bool("ignore_wait").Default(false),
 	)
 }
 

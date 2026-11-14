@@ -28,6 +28,12 @@ type SyncPlayGroupMember struct {
 	GroupID uuid.UUID `json:"group_id,omitempty"`
 	// SessionID holds the value of the "session_id" field.
 	SessionID uuid.UUID `json:"session_id,omitempty"`
+	// Ping holds the value of the "ping" field.
+	Ping int64 `json:"ping,omitempty"`
+	// IsBuffering holds the value of the "is_buffering" field.
+	IsBuffering bool `json:"is_buffering,omitempty"`
+	// IgnoreWait holds the value of the "ignore_wait" field.
+	IgnoreWait bool `json:"ignore_wait,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SyncPlayGroupMemberQuery when eager-loading is set.
 	Edges        SyncPlayGroupMemberEdges `json:"edges"`
@@ -72,6 +78,10 @@ func (*SyncPlayGroupMember) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case syncplaygroupmember.FieldIsBuffering, syncplaygroupmember.FieldIgnoreWait:
+			values[i] = new(sql.NullBool)
+		case syncplaygroupmember.FieldPing:
+			values[i] = new(sql.NullInt64)
 		case syncplaygroupmember.FieldCreatedAt, syncplaygroupmember.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		case syncplaygroupmember.FieldID, syncplaygroupmember.FieldGroupID, syncplaygroupmember.FieldSessionID:
@@ -120,6 +130,24 @@ func (_m *SyncPlayGroupMember) assignValues(columns []string, values []any) erro
 				return fmt.Errorf("unexpected type %T for field session_id", values[i])
 			} else if value != nil {
 				_m.SessionID = *value
+			}
+		case syncplaygroupmember.FieldPing:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field ping", values[i])
+			} else if value.Valid {
+				_m.Ping = value.Int64
+			}
+		case syncplaygroupmember.FieldIsBuffering:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_buffering", values[i])
+			} else if value.Valid {
+				_m.IsBuffering = value.Bool
+			}
+		case syncplaygroupmember.FieldIgnoreWait:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field ignore_wait", values[i])
+			} else if value.Valid {
+				_m.IgnoreWait = value.Bool
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -178,6 +206,15 @@ func (_m *SyncPlayGroupMember) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("session_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SessionID))
+	builder.WriteString(", ")
+	builder.WriteString("ping=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Ping))
+	builder.WriteString(", ")
+	builder.WriteString("is_buffering=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IsBuffering))
+	builder.WriteString(", ")
+	builder.WriteString("ignore_wait=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IgnoreWait))
 	builder.WriteByte(')')
 	return builder.String()
 }

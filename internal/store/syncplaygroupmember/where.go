@@ -76,6 +76,21 @@ func SessionID(v uuid.UUID) predicate.SyncPlayGroupMember {
 	return predicate.SyncPlayGroupMember(sql.FieldEQ(FieldSessionID, v))
 }
 
+// Ping applies equality check predicate on the "ping" field. It's identical to PingEQ.
+func Ping(v int64) predicate.SyncPlayGroupMember {
+	return predicate.SyncPlayGroupMember(sql.FieldEQ(FieldPing, v))
+}
+
+// IsBuffering applies equality check predicate on the "is_buffering" field. It's identical to IsBufferingEQ.
+func IsBuffering(v bool) predicate.SyncPlayGroupMember {
+	return predicate.SyncPlayGroupMember(sql.FieldEQ(FieldIsBuffering, v))
+}
+
+// IgnoreWait applies equality check predicate on the "ignore_wait" field. It's identical to IgnoreWaitEQ.
+func IgnoreWait(v bool) predicate.SyncPlayGroupMember {
+	return predicate.SyncPlayGroupMember(sql.FieldEQ(FieldIgnoreWait, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.SyncPlayGroupMember {
 	return predicate.SyncPlayGroupMember(sql.FieldEQ(FieldCreatedAt, v))
@@ -194,6 +209,66 @@ func SessionIDIn(vs ...uuid.UUID) predicate.SyncPlayGroupMember {
 // SessionIDNotIn applies the NotIn predicate on the "session_id" field.
 func SessionIDNotIn(vs ...uuid.UUID) predicate.SyncPlayGroupMember {
 	return predicate.SyncPlayGroupMember(sql.FieldNotIn(FieldSessionID, vs...))
+}
+
+// PingEQ applies the EQ predicate on the "ping" field.
+func PingEQ(v int64) predicate.SyncPlayGroupMember {
+	return predicate.SyncPlayGroupMember(sql.FieldEQ(FieldPing, v))
+}
+
+// PingNEQ applies the NEQ predicate on the "ping" field.
+func PingNEQ(v int64) predicate.SyncPlayGroupMember {
+	return predicate.SyncPlayGroupMember(sql.FieldNEQ(FieldPing, v))
+}
+
+// PingIn applies the In predicate on the "ping" field.
+func PingIn(vs ...int64) predicate.SyncPlayGroupMember {
+	return predicate.SyncPlayGroupMember(sql.FieldIn(FieldPing, vs...))
+}
+
+// PingNotIn applies the NotIn predicate on the "ping" field.
+func PingNotIn(vs ...int64) predicate.SyncPlayGroupMember {
+	return predicate.SyncPlayGroupMember(sql.FieldNotIn(FieldPing, vs...))
+}
+
+// PingGT applies the GT predicate on the "ping" field.
+func PingGT(v int64) predicate.SyncPlayGroupMember {
+	return predicate.SyncPlayGroupMember(sql.FieldGT(FieldPing, v))
+}
+
+// PingGTE applies the GTE predicate on the "ping" field.
+func PingGTE(v int64) predicate.SyncPlayGroupMember {
+	return predicate.SyncPlayGroupMember(sql.FieldGTE(FieldPing, v))
+}
+
+// PingLT applies the LT predicate on the "ping" field.
+func PingLT(v int64) predicate.SyncPlayGroupMember {
+	return predicate.SyncPlayGroupMember(sql.FieldLT(FieldPing, v))
+}
+
+// PingLTE applies the LTE predicate on the "ping" field.
+func PingLTE(v int64) predicate.SyncPlayGroupMember {
+	return predicate.SyncPlayGroupMember(sql.FieldLTE(FieldPing, v))
+}
+
+// IsBufferingEQ applies the EQ predicate on the "is_buffering" field.
+func IsBufferingEQ(v bool) predicate.SyncPlayGroupMember {
+	return predicate.SyncPlayGroupMember(sql.FieldEQ(FieldIsBuffering, v))
+}
+
+// IsBufferingNEQ applies the NEQ predicate on the "is_buffering" field.
+func IsBufferingNEQ(v bool) predicate.SyncPlayGroupMember {
+	return predicate.SyncPlayGroupMember(sql.FieldNEQ(FieldIsBuffering, v))
+}
+
+// IgnoreWaitEQ applies the EQ predicate on the "ignore_wait" field.
+func IgnoreWaitEQ(v bool) predicate.SyncPlayGroupMember {
+	return predicate.SyncPlayGroupMember(sql.FieldEQ(FieldIgnoreWait, v))
+}
+
+// IgnoreWaitNEQ applies the NEQ predicate on the "ignore_wait" field.
+func IgnoreWaitNEQ(v bool) predicate.SyncPlayGroupMember {
+	return predicate.SyncPlayGroupMember(sql.FieldNEQ(FieldIgnoreWait, v))
 }
 
 // HasGroup applies the HasEdge predicate on the "group" edge.

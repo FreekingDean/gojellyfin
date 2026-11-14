@@ -35,6 +35,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
 	"github.com/FreekingDean/gojellyfin/internal/store/syncplaygroup"
 	"github.com/FreekingDean/gojellyfin/internal/store/syncplaygroupmember"
+	"github.com/FreekingDean/gojellyfin/internal/store/syncplayqueueentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
 	"github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
@@ -614,6 +615,38 @@ func init() {
 	syncplaygroup.DefaultUpdatedAt = syncplaygroupDescUpdatedAt.Default.(func() time.Time)
 	// syncplaygroup.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	syncplaygroup.UpdateDefaultUpdatedAt = syncplaygroupDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// syncplaygroupDescPositionTicks is the schema descriptor for position_ticks field.
+	syncplaygroupDescPositionTicks := syncplaygroupFields[5].Descriptor()
+	// syncplaygroup.DefaultPositionTicks holds the default value on creation for the position_ticks field.
+	syncplaygroup.DefaultPositionTicks = syncplaygroupDescPositionTicks.Default.(int64)
+	// syncplaygroupDescRunTimeTicks is the schema descriptor for run_time_ticks field.
+	syncplaygroupDescRunTimeTicks := syncplaygroupFields[6].Descriptor()
+	// syncplaygroup.DefaultRunTimeTicks holds the default value on creation for the run_time_ticks field.
+	syncplaygroup.DefaultRunTimeTicks = syncplaygroupDescRunTimeTicks.Default.(int64)
+	// syncplaygroupDescLastActivity is the schema descriptor for last_activity field.
+	syncplaygroupDescLastActivity := syncplaygroupFields[7].Descriptor()
+	// syncplaygroup.DefaultLastActivity holds the default value on creation for the last_activity field.
+	syncplaygroup.DefaultLastActivity = syncplaygroupDescLastActivity.Default.(func() time.Time)
+	// syncplaygroupDescPlayingIndex is the schema descriptor for playing_index field.
+	syncplaygroupDescPlayingIndex := syncplaygroupFields[8].Descriptor()
+	// syncplaygroup.DefaultPlayingIndex holds the default value on creation for the playing_index field.
+	syncplaygroup.DefaultPlayingIndex = syncplaygroupDescPlayingIndex.Default.(int)
+	// syncplaygroupDescQueueChangedAt is the schema descriptor for queue_changed_at field.
+	syncplaygroupDescQueueChangedAt := syncplaygroupFields[11].Descriptor()
+	// syncplaygroup.DefaultQueueChangedAt holds the default value on creation for the queue_changed_at field.
+	syncplaygroup.DefaultQueueChangedAt = syncplaygroupDescQueueChangedAt.Default.(func() time.Time)
+	// syncplaygroupDescResumePlaying is the schema descriptor for resume_playing field.
+	syncplaygroupDescResumePlaying := syncplaygroupFields[12].Descriptor()
+	// syncplaygroup.DefaultResumePlaying holds the default value on creation for the resume_playing field.
+	syncplaygroup.DefaultResumePlaying = syncplaygroupDescResumePlaying.Default.(bool)
+	// syncplaygroupDescPositionJumped is the schema descriptor for position_jumped field.
+	syncplaygroupDescPositionJumped := syncplaygroupFields[14].Descriptor()
+	// syncplaygroup.DefaultPositionJumped holds the default value on creation for the position_jumped field.
+	syncplaygroup.DefaultPositionJumped = syncplaygroupDescPositionJumped.Default.(bool)
+	// syncplaygroupDescIgnoreBuffering is the schema descriptor for ignore_buffering field.
+	syncplaygroupDescIgnoreBuffering := syncplaygroupFields[15].Descriptor()
+	// syncplaygroup.DefaultIgnoreBuffering holds the default value on creation for the ignore_buffering field.
+	syncplaygroup.DefaultIgnoreBuffering = syncplaygroupDescIgnoreBuffering.Default.(bool)
 	syncplaygroupmemberFields := entities.SyncPlayGroupMember{}.Fields()
 	_ = syncplaygroupmemberFields
 	// syncplaygroupmemberDescCreatedAt is the schema descriptor for created_at field.
@@ -626,6 +659,30 @@ func init() {
 	syncplaygroupmember.DefaultUpdatedAt = syncplaygroupmemberDescUpdatedAt.Default.(func() time.Time)
 	// syncplaygroupmember.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	syncplaygroupmember.UpdateDefaultUpdatedAt = syncplaygroupmemberDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// syncplaygroupmemberDescPing is the schema descriptor for ping field.
+	syncplaygroupmemberDescPing := syncplaygroupmemberFields[5].Descriptor()
+	// syncplaygroupmember.DefaultPing holds the default value on creation for the ping field.
+	syncplaygroupmember.DefaultPing = syncplaygroupmemberDescPing.Default.(int64)
+	// syncplaygroupmemberDescIsBuffering is the schema descriptor for is_buffering field.
+	syncplaygroupmemberDescIsBuffering := syncplaygroupmemberFields[6].Descriptor()
+	// syncplaygroupmember.DefaultIsBuffering holds the default value on creation for the is_buffering field.
+	syncplaygroupmember.DefaultIsBuffering = syncplaygroupmemberDescIsBuffering.Default.(bool)
+	// syncplaygroupmemberDescIgnoreWait is the schema descriptor for ignore_wait field.
+	syncplaygroupmemberDescIgnoreWait := syncplaygroupmemberFields[7].Descriptor()
+	// syncplaygroupmember.DefaultIgnoreWait holds the default value on creation for the ignore_wait field.
+	syncplaygroupmember.DefaultIgnoreWait = syncplaygroupmemberDescIgnoreWait.Default.(bool)
+	syncplayqueueentryFields := entities.SyncPlayQueueEntry{}.Fields()
+	_ = syncplayqueueentryFields
+	// syncplayqueueentryDescCreatedAt is the schema descriptor for created_at field.
+	syncplayqueueentryDescCreatedAt := syncplayqueueentryFields[1].Descriptor()
+	// syncplayqueueentry.DefaultCreatedAt holds the default value on creation for the created_at field.
+	syncplayqueueentry.DefaultCreatedAt = syncplayqueueentryDescCreatedAt.Default.(func() time.Time)
+	// syncplayqueueentryDescUpdatedAt is the schema descriptor for updated_at field.
+	syncplayqueueentryDescUpdatedAt := syncplayqueueentryFields[2].Descriptor()
+	// syncplayqueueentry.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	syncplayqueueentry.DefaultUpdatedAt = syncplayqueueentryDescUpdatedAt.Default.(func() time.Time)
+	// syncplayqueueentry.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	syncplayqueueentry.UpdateDefaultUpdatedAt = syncplayqueueentryDescUpdatedAt.UpdateDefault.(func() time.Time)
 	userFields := entities.User{}.Fields()
 	_ = userFields
 	// userDescCreatedAt is the schema descriptor for created_at field.

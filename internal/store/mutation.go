@@ -43,6 +43,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
 	"github.com/FreekingDean/gojellyfin/internal/store/syncplaygroup"
 	"github.com/FreekingDean/gojellyfin/internal/store/syncplaygroupmember"
+	"github.com/FreekingDean/gojellyfin/internal/store/syncplayqueueentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
 	"github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
@@ -88,6 +89,7 @@ const (
 	TypeStudio              = "Studio"
 	TypeSyncPlayGroup       = "SyncPlayGroup"
 	TypeSyncPlayGroupMember = "SyncPlayGroupMember"
+	TypeSyncPlayQueueEntry  = "SyncPlayQueueEntry"
 	TypeUser                = "User"
 	TypeUserConfiguration   = "UserConfiguration"
 	TypeUserItemData        = "UserItemData"
@@ -6773,6 +6775,9 @@ type ItemMutation struct {
 	playlist_entries            map[uuid.UUID]struct{}
 	removedplaylist_entries     map[uuid.UUID]struct{}
 	clearedplaylist_entries     bool
+	sync_play_entries           map[uuid.UUID]struct{}
+	removedsync_play_entries    map[uuid.UUID]struct{}
+	clearedsync_play_entries    bool
 	genres                      map[uuid.UUID]struct{}
 	removedgenres               map[uuid.UUID]struct{}
 	clearedgenres               bool
@@ -8704,6 +8709,60 @@ func (m *ItemMutation) ResetPlaylistEntries() {
 	m.removedplaylist_entries = nil
 }
 
+// AddSyncPlayEntryIDs adds the "sync_play_entries" edge to the SyncPlayQueueEntry entity by ids.
+func (m *ItemMutation) AddSyncPlayEntryIDs(ids ...uuid.UUID) {
+	if m.sync_play_entries == nil {
+		m.sync_play_entries = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.sync_play_entries[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSyncPlayEntries clears the "sync_play_entries" edge to the SyncPlayQueueEntry entity.
+func (m *ItemMutation) ClearSyncPlayEntries() {
+	m.clearedsync_play_entries = true
+}
+
+// SyncPlayEntriesCleared reports if the "sync_play_entries" edge to the SyncPlayQueueEntry entity was cleared.
+func (m *ItemMutation) SyncPlayEntriesCleared() bool {
+	return m.clearedsync_play_entries
+}
+
+// RemoveSyncPlayEntryIDs removes the "sync_play_entries" edge to the SyncPlayQueueEntry entity by IDs.
+func (m *ItemMutation) RemoveSyncPlayEntryIDs(ids ...uuid.UUID) {
+	if m.removedsync_play_entries == nil {
+		m.removedsync_play_entries = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.sync_play_entries, ids[i])
+		m.removedsync_play_entries[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSyncPlayEntries returns the removed IDs of the "sync_play_entries" edge to the SyncPlayQueueEntry entity.
+func (m *ItemMutation) RemovedSyncPlayEntriesIDs() (ids []uuid.UUID) {
+	for id := range m.removedsync_play_entries {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SyncPlayEntriesIDs returns the "sync_play_entries" edge IDs in the mutation.
+func (m *ItemMutation) SyncPlayEntriesIDs() (ids []uuid.UUID) {
+	for id := range m.sync_play_entries {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSyncPlayEntries resets all changes to the "sync_play_entries" edge.
+func (m *ItemMutation) ResetSyncPlayEntries() {
+	m.sync_play_entries = nil
+	m.clearedsync_play_entries = false
+	m.removedsync_play_entries = nil
+}
+
 // AddGenreIDs adds the "genres" edge to the Genre entity by ids.
 func (m *ItemMutation) AddGenreIDs(ids ...uuid.UUID) {
 	if m.genres == nil {
@@ -9516,7 +9575,7 @@ func (m *ItemMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ItemMutation) AddedEdges() []string {
-	edges := make([]string, 0, 13)
+	edges := make([]string, 0, 14)
 	if m.parent != nil {
 		edges = append(edges, item.EdgeParent)
 	}
@@ -9549,6 +9608,9 @@ func (m *ItemMutation) AddedEdges() []string {
 	}
 	if m.playlist_entries != nil {
 		edges = append(edges, item.EdgePlaylistEntries)
+	}
+	if m.sync_play_entries != nil {
+		edges = append(edges, item.EdgeSyncPlayEntries)
 	}
 	if m.genres != nil {
 		edges = append(edges, item.EdgeGenres)
@@ -9625,6 +9687,12 @@ func (m *ItemMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case item.EdgeSyncPlayEntries:
+		ids := make([]ent.Value, 0, len(m.sync_play_entries))
+		for id := range m.sync_play_entries {
+			ids = append(ids, id)
+		}
+		return ids
 	case item.EdgeGenres:
 		ids := make([]ent.Value, 0, len(m.genres))
 		for id := range m.genres {
@@ -9643,7 +9711,7 @@ func (m *ItemMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ItemMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 13)
+	edges := make([]string, 0, 14)
 	if m.removedchildren != nil {
 		edges = append(edges, item.EdgeChildren)
 	}
@@ -9670,6 +9738,9 @@ func (m *ItemMutation) RemovedEdges() []string {
 	}
 	if m.removedplaylist_entries != nil {
 		edges = append(edges, item.EdgePlaylistEntries)
+	}
+	if m.removedsync_play_entries != nil {
+		edges = append(edges, item.EdgeSyncPlayEntries)
 	}
 	if m.removedgenres != nil {
 		edges = append(edges, item.EdgeGenres)
@@ -9738,6 +9809,12 @@ func (m *ItemMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case item.EdgeSyncPlayEntries:
+		ids := make([]ent.Value, 0, len(m.removedsync_play_entries))
+		for id := range m.removedsync_play_entries {
+			ids = append(ids, id)
+		}
+		return ids
 	case item.EdgeGenres:
 		ids := make([]ent.Value, 0, len(m.removedgenres))
 		for id := range m.removedgenres {
@@ -9756,7 +9833,7 @@ func (m *ItemMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ItemMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 13)
+	edges := make([]string, 0, 14)
 	if m.clearedparent {
 		edges = append(edges, item.EdgeParent)
 	}
@@ -9789,6 +9866,9 @@ func (m *ItemMutation) ClearedEdges() []string {
 	}
 	if m.clearedplaylist_entries {
 		edges = append(edges, item.EdgePlaylistEntries)
+	}
+	if m.clearedsync_play_entries {
+		edges = append(edges, item.EdgeSyncPlayEntries)
 	}
 	if m.clearedgenres {
 		edges = append(edges, item.EdgeGenres)
@@ -9825,6 +9905,8 @@ func (m *ItemMutation) EdgeCleared(name string) bool {
 		return m.clearedplaylist
 	case item.EdgePlaylistEntries:
 		return m.clearedplaylist_entries
+	case item.EdgeSyncPlayEntries:
+		return m.clearedsync_play_entries
 	case item.EdgeGenres:
 		return m.clearedgenres
 	case item.EdgeStudios:
@@ -9883,6 +9965,9 @@ func (m *ItemMutation) ResetEdge(name string) error {
 		return nil
 	case item.EdgePlaylistEntries:
 		m.ResetPlaylistEntries()
+		return nil
+	case item.EdgeSyncPlayEntries:
+		m.ResetSyncPlayEntries()
 		return nil
 	case item.EdgeGenres:
 		m.ResetGenres()
@@ -28704,19 +28789,38 @@ func (m *StudioMutation) ResetEdge(name string) error {
 // SyncPlayGroupMutation represents an operation that mutates the SyncPlayGroup nodes in the graph.
 type SyncPlayGroupMutation struct {
 	config
-	op             Op
-	typ            string
-	id             *uuid.UUID
-	created_at     *time.Time
-	updated_at     *time.Time
-	name           *string
-	clearedFields  map[string]struct{}
-	members        map[uuid.UUID]struct{}
-	removedmembers map[uuid.UUID]struct{}
-	clearedmembers bool
-	done           bool
-	oldValue       func(context.Context) (*SyncPlayGroup, error)
-	predicates     []predicate.SyncPlayGroup
+	op                Op
+	typ               string
+	id                *uuid.UUID
+	created_at        *time.Time
+	updated_at        *time.Time
+	name              *string
+	state             *syncplaygroup.State
+	position_ticks    *int64
+	addposition_ticks *int64
+	run_time_ticks    *int64
+	addrun_time_ticks *int64
+	last_activity     *time.Time
+	playing_index     *int
+	addplaying_index  *int
+	shuffle_mode      *syncplaygroup.ShuffleMode
+	repeat_mode       *syncplaygroup.RepeatMode
+	queue_changed_at  *time.Time
+	resume_playing    *bool
+	waiting_from      *syncplaygroup.WaitingFrom
+	position_jumped   *bool
+	ignore_buffering  *bool
+	wait_deadline     *time.Time
+	clearedFields     map[string]struct{}
+	members           map[uuid.UUID]struct{}
+	removedmembers    map[uuid.UUID]struct{}
+	clearedmembers    bool
+	queue             map[uuid.UUID]struct{}
+	removedqueue      map[uuid.UUID]struct{}
+	clearedqueue      bool
+	done              bool
+	oldValue          func(context.Context) (*SyncPlayGroup, error)
+	predicates        []predicate.SyncPlayGroup
 }
 
 var _ ent.Mutation = (*SyncPlayGroupMutation)(nil)
@@ -28931,6 +29035,560 @@ func (m *SyncPlayGroupMutation) ResetName() {
 	m.name = nil
 }
 
+// SetState sets the "state" field.
+func (m *SyncPlayGroupMutation) SetState(s syncplaygroup.State) {
+	m.state = &s
+}
+
+// State returns the value of the "state" field in the mutation.
+func (m *SyncPlayGroupMutation) State() (r syncplaygroup.State, exists bool) {
+	v := m.state
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldState returns the old "state" field's value of the SyncPlayGroup entity.
+// If the SyncPlayGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SyncPlayGroupMutation) OldState(ctx context.Context) (v syncplaygroup.State, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldState is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldState requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldState: %w", err)
+	}
+	return oldValue.State, nil
+}
+
+// ResetState resets all changes to the "state" field.
+func (m *SyncPlayGroupMutation) ResetState() {
+	m.state = nil
+}
+
+// SetPositionTicks sets the "position_ticks" field.
+func (m *SyncPlayGroupMutation) SetPositionTicks(i int64) {
+	m.position_ticks = &i
+	m.addposition_ticks = nil
+}
+
+// PositionTicks returns the value of the "position_ticks" field in the mutation.
+func (m *SyncPlayGroupMutation) PositionTicks() (r int64, exists bool) {
+	v := m.position_ticks
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPositionTicks returns the old "position_ticks" field's value of the SyncPlayGroup entity.
+// If the SyncPlayGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SyncPlayGroupMutation) OldPositionTicks(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPositionTicks is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPositionTicks requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPositionTicks: %w", err)
+	}
+	return oldValue.PositionTicks, nil
+}
+
+// AddPositionTicks adds i to the "position_ticks" field.
+func (m *SyncPlayGroupMutation) AddPositionTicks(i int64) {
+	if m.addposition_ticks != nil {
+		*m.addposition_ticks += i
+	} else {
+		m.addposition_ticks = &i
+	}
+}
+
+// AddedPositionTicks returns the value that was added to the "position_ticks" field in this mutation.
+func (m *SyncPlayGroupMutation) AddedPositionTicks() (r int64, exists bool) {
+	v := m.addposition_ticks
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPositionTicks resets all changes to the "position_ticks" field.
+func (m *SyncPlayGroupMutation) ResetPositionTicks() {
+	m.position_ticks = nil
+	m.addposition_ticks = nil
+}
+
+// SetRunTimeTicks sets the "run_time_ticks" field.
+func (m *SyncPlayGroupMutation) SetRunTimeTicks(i int64) {
+	m.run_time_ticks = &i
+	m.addrun_time_ticks = nil
+}
+
+// RunTimeTicks returns the value of the "run_time_ticks" field in the mutation.
+func (m *SyncPlayGroupMutation) RunTimeTicks() (r int64, exists bool) {
+	v := m.run_time_ticks
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRunTimeTicks returns the old "run_time_ticks" field's value of the SyncPlayGroup entity.
+// If the SyncPlayGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SyncPlayGroupMutation) OldRunTimeTicks(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRunTimeTicks is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRunTimeTicks requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRunTimeTicks: %w", err)
+	}
+	return oldValue.RunTimeTicks, nil
+}
+
+// AddRunTimeTicks adds i to the "run_time_ticks" field.
+func (m *SyncPlayGroupMutation) AddRunTimeTicks(i int64) {
+	if m.addrun_time_ticks != nil {
+		*m.addrun_time_ticks += i
+	} else {
+		m.addrun_time_ticks = &i
+	}
+}
+
+// AddedRunTimeTicks returns the value that was added to the "run_time_ticks" field in this mutation.
+func (m *SyncPlayGroupMutation) AddedRunTimeTicks() (r int64, exists bool) {
+	v := m.addrun_time_ticks
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRunTimeTicks resets all changes to the "run_time_ticks" field.
+func (m *SyncPlayGroupMutation) ResetRunTimeTicks() {
+	m.run_time_ticks = nil
+	m.addrun_time_ticks = nil
+}
+
+// SetLastActivity sets the "last_activity" field.
+func (m *SyncPlayGroupMutation) SetLastActivity(t time.Time) {
+	m.last_activity = &t
+}
+
+// LastActivity returns the value of the "last_activity" field in the mutation.
+func (m *SyncPlayGroupMutation) LastActivity() (r time.Time, exists bool) {
+	v := m.last_activity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastActivity returns the old "last_activity" field's value of the SyncPlayGroup entity.
+// If the SyncPlayGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SyncPlayGroupMutation) OldLastActivity(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastActivity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastActivity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastActivity: %w", err)
+	}
+	return oldValue.LastActivity, nil
+}
+
+// ResetLastActivity resets all changes to the "last_activity" field.
+func (m *SyncPlayGroupMutation) ResetLastActivity() {
+	m.last_activity = nil
+}
+
+// SetPlayingIndex sets the "playing_index" field.
+func (m *SyncPlayGroupMutation) SetPlayingIndex(i int) {
+	m.playing_index = &i
+	m.addplaying_index = nil
+}
+
+// PlayingIndex returns the value of the "playing_index" field in the mutation.
+func (m *SyncPlayGroupMutation) PlayingIndex() (r int, exists bool) {
+	v := m.playing_index
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPlayingIndex returns the old "playing_index" field's value of the SyncPlayGroup entity.
+// If the SyncPlayGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SyncPlayGroupMutation) OldPlayingIndex(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPlayingIndex is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPlayingIndex requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPlayingIndex: %w", err)
+	}
+	return oldValue.PlayingIndex, nil
+}
+
+// AddPlayingIndex adds i to the "playing_index" field.
+func (m *SyncPlayGroupMutation) AddPlayingIndex(i int) {
+	if m.addplaying_index != nil {
+		*m.addplaying_index += i
+	} else {
+		m.addplaying_index = &i
+	}
+}
+
+// AddedPlayingIndex returns the value that was added to the "playing_index" field in this mutation.
+func (m *SyncPlayGroupMutation) AddedPlayingIndex() (r int, exists bool) {
+	v := m.addplaying_index
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPlayingIndex resets all changes to the "playing_index" field.
+func (m *SyncPlayGroupMutation) ResetPlayingIndex() {
+	m.playing_index = nil
+	m.addplaying_index = nil
+}
+
+// SetShuffleMode sets the "shuffle_mode" field.
+func (m *SyncPlayGroupMutation) SetShuffleMode(sm syncplaygroup.ShuffleMode) {
+	m.shuffle_mode = &sm
+}
+
+// ShuffleMode returns the value of the "shuffle_mode" field in the mutation.
+func (m *SyncPlayGroupMutation) ShuffleMode() (r syncplaygroup.ShuffleMode, exists bool) {
+	v := m.shuffle_mode
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldShuffleMode returns the old "shuffle_mode" field's value of the SyncPlayGroup entity.
+// If the SyncPlayGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SyncPlayGroupMutation) OldShuffleMode(ctx context.Context) (v syncplaygroup.ShuffleMode, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldShuffleMode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldShuffleMode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldShuffleMode: %w", err)
+	}
+	return oldValue.ShuffleMode, nil
+}
+
+// ResetShuffleMode resets all changes to the "shuffle_mode" field.
+func (m *SyncPlayGroupMutation) ResetShuffleMode() {
+	m.shuffle_mode = nil
+}
+
+// SetRepeatMode sets the "repeat_mode" field.
+func (m *SyncPlayGroupMutation) SetRepeatMode(sm syncplaygroup.RepeatMode) {
+	m.repeat_mode = &sm
+}
+
+// RepeatMode returns the value of the "repeat_mode" field in the mutation.
+func (m *SyncPlayGroupMutation) RepeatMode() (r syncplaygroup.RepeatMode, exists bool) {
+	v := m.repeat_mode
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRepeatMode returns the old "repeat_mode" field's value of the SyncPlayGroup entity.
+// If the SyncPlayGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SyncPlayGroupMutation) OldRepeatMode(ctx context.Context) (v syncplaygroup.RepeatMode, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRepeatMode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRepeatMode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRepeatMode: %w", err)
+	}
+	return oldValue.RepeatMode, nil
+}
+
+// ResetRepeatMode resets all changes to the "repeat_mode" field.
+func (m *SyncPlayGroupMutation) ResetRepeatMode() {
+	m.repeat_mode = nil
+}
+
+// SetQueueChangedAt sets the "queue_changed_at" field.
+func (m *SyncPlayGroupMutation) SetQueueChangedAt(t time.Time) {
+	m.queue_changed_at = &t
+}
+
+// QueueChangedAt returns the value of the "queue_changed_at" field in the mutation.
+func (m *SyncPlayGroupMutation) QueueChangedAt() (r time.Time, exists bool) {
+	v := m.queue_changed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldQueueChangedAt returns the old "queue_changed_at" field's value of the SyncPlayGroup entity.
+// If the SyncPlayGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SyncPlayGroupMutation) OldQueueChangedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldQueueChangedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldQueueChangedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldQueueChangedAt: %w", err)
+	}
+	return oldValue.QueueChangedAt, nil
+}
+
+// ResetQueueChangedAt resets all changes to the "queue_changed_at" field.
+func (m *SyncPlayGroupMutation) ResetQueueChangedAt() {
+	m.queue_changed_at = nil
+}
+
+// SetResumePlaying sets the "resume_playing" field.
+func (m *SyncPlayGroupMutation) SetResumePlaying(b bool) {
+	m.resume_playing = &b
+}
+
+// ResumePlaying returns the value of the "resume_playing" field in the mutation.
+func (m *SyncPlayGroupMutation) ResumePlaying() (r bool, exists bool) {
+	v := m.resume_playing
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldResumePlaying returns the old "resume_playing" field's value of the SyncPlayGroup entity.
+// If the SyncPlayGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SyncPlayGroupMutation) OldResumePlaying(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldResumePlaying is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldResumePlaying requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldResumePlaying: %w", err)
+	}
+	return oldValue.ResumePlaying, nil
+}
+
+// ResetResumePlaying resets all changes to the "resume_playing" field.
+func (m *SyncPlayGroupMutation) ResetResumePlaying() {
+	m.resume_playing = nil
+}
+
+// SetWaitingFrom sets the "waiting_from" field.
+func (m *SyncPlayGroupMutation) SetWaitingFrom(sf syncplaygroup.WaitingFrom) {
+	m.waiting_from = &sf
+}
+
+// WaitingFrom returns the value of the "waiting_from" field in the mutation.
+func (m *SyncPlayGroupMutation) WaitingFrom() (r syncplaygroup.WaitingFrom, exists bool) {
+	v := m.waiting_from
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWaitingFrom returns the old "waiting_from" field's value of the SyncPlayGroup entity.
+// If the SyncPlayGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SyncPlayGroupMutation) OldWaitingFrom(ctx context.Context) (v *syncplaygroup.WaitingFrom, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWaitingFrom is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWaitingFrom requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWaitingFrom: %w", err)
+	}
+	return oldValue.WaitingFrom, nil
+}
+
+// ClearWaitingFrom clears the value of the "waiting_from" field.
+func (m *SyncPlayGroupMutation) ClearWaitingFrom() {
+	m.waiting_from = nil
+	m.clearedFields[syncplaygroup.FieldWaitingFrom] = struct{}{}
+}
+
+// WaitingFromCleared returns if the "waiting_from" field was cleared in this mutation.
+func (m *SyncPlayGroupMutation) WaitingFromCleared() bool {
+	_, ok := m.clearedFields[syncplaygroup.FieldWaitingFrom]
+	return ok
+}
+
+// ResetWaitingFrom resets all changes to the "waiting_from" field.
+func (m *SyncPlayGroupMutation) ResetWaitingFrom() {
+	m.waiting_from = nil
+	delete(m.clearedFields, syncplaygroup.FieldWaitingFrom)
+}
+
+// SetPositionJumped sets the "position_jumped" field.
+func (m *SyncPlayGroupMutation) SetPositionJumped(b bool) {
+	m.position_jumped = &b
+}
+
+// PositionJumped returns the value of the "position_jumped" field in the mutation.
+func (m *SyncPlayGroupMutation) PositionJumped() (r bool, exists bool) {
+	v := m.position_jumped
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPositionJumped returns the old "position_jumped" field's value of the SyncPlayGroup entity.
+// If the SyncPlayGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SyncPlayGroupMutation) OldPositionJumped(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPositionJumped is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPositionJumped requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPositionJumped: %w", err)
+	}
+	return oldValue.PositionJumped, nil
+}
+
+// ResetPositionJumped resets all changes to the "position_jumped" field.
+func (m *SyncPlayGroupMutation) ResetPositionJumped() {
+	m.position_jumped = nil
+}
+
+// SetIgnoreBuffering sets the "ignore_buffering" field.
+func (m *SyncPlayGroupMutation) SetIgnoreBuffering(b bool) {
+	m.ignore_buffering = &b
+}
+
+// IgnoreBuffering returns the value of the "ignore_buffering" field in the mutation.
+func (m *SyncPlayGroupMutation) IgnoreBuffering() (r bool, exists bool) {
+	v := m.ignore_buffering
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIgnoreBuffering returns the old "ignore_buffering" field's value of the SyncPlayGroup entity.
+// If the SyncPlayGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SyncPlayGroupMutation) OldIgnoreBuffering(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIgnoreBuffering is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIgnoreBuffering requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIgnoreBuffering: %w", err)
+	}
+	return oldValue.IgnoreBuffering, nil
+}
+
+// ResetIgnoreBuffering resets all changes to the "ignore_buffering" field.
+func (m *SyncPlayGroupMutation) ResetIgnoreBuffering() {
+	m.ignore_buffering = nil
+}
+
+// SetWaitDeadline sets the "wait_deadline" field.
+func (m *SyncPlayGroupMutation) SetWaitDeadline(t time.Time) {
+	m.wait_deadline = &t
+}
+
+// WaitDeadline returns the value of the "wait_deadline" field in the mutation.
+func (m *SyncPlayGroupMutation) WaitDeadline() (r time.Time, exists bool) {
+	v := m.wait_deadline
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWaitDeadline returns the old "wait_deadline" field's value of the SyncPlayGroup entity.
+// If the SyncPlayGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SyncPlayGroupMutation) OldWaitDeadline(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWaitDeadline is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWaitDeadline requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWaitDeadline: %w", err)
+	}
+	return oldValue.WaitDeadline, nil
+}
+
+// ClearWaitDeadline clears the value of the "wait_deadline" field.
+func (m *SyncPlayGroupMutation) ClearWaitDeadline() {
+	m.wait_deadline = nil
+	m.clearedFields[syncplaygroup.FieldWaitDeadline] = struct{}{}
+}
+
+// WaitDeadlineCleared returns if the "wait_deadline" field was cleared in this mutation.
+func (m *SyncPlayGroupMutation) WaitDeadlineCleared() bool {
+	_, ok := m.clearedFields[syncplaygroup.FieldWaitDeadline]
+	return ok
+}
+
+// ResetWaitDeadline resets all changes to the "wait_deadline" field.
+func (m *SyncPlayGroupMutation) ResetWaitDeadline() {
+	m.wait_deadline = nil
+	delete(m.clearedFields, syncplaygroup.FieldWaitDeadline)
+}
+
 // AddMemberIDs adds the "members" edge to the SyncPlayGroupMember entity by ids.
 func (m *SyncPlayGroupMutation) AddMemberIDs(ids ...uuid.UUID) {
 	if m.members == nil {
@@ -28985,6 +29643,60 @@ func (m *SyncPlayGroupMutation) ResetMembers() {
 	m.removedmembers = nil
 }
 
+// AddQueueIDs adds the "queue" edge to the SyncPlayQueueEntry entity by ids.
+func (m *SyncPlayGroupMutation) AddQueueIDs(ids ...uuid.UUID) {
+	if m.queue == nil {
+		m.queue = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.queue[ids[i]] = struct{}{}
+	}
+}
+
+// ClearQueue clears the "queue" edge to the SyncPlayQueueEntry entity.
+func (m *SyncPlayGroupMutation) ClearQueue() {
+	m.clearedqueue = true
+}
+
+// QueueCleared reports if the "queue" edge to the SyncPlayQueueEntry entity was cleared.
+func (m *SyncPlayGroupMutation) QueueCleared() bool {
+	return m.clearedqueue
+}
+
+// RemoveQueueIDs removes the "queue" edge to the SyncPlayQueueEntry entity by IDs.
+func (m *SyncPlayGroupMutation) RemoveQueueIDs(ids ...uuid.UUID) {
+	if m.removedqueue == nil {
+		m.removedqueue = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.queue, ids[i])
+		m.removedqueue[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedQueue returns the removed IDs of the "queue" edge to the SyncPlayQueueEntry entity.
+func (m *SyncPlayGroupMutation) RemovedQueueIDs() (ids []uuid.UUID) {
+	for id := range m.removedqueue {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// QueueIDs returns the "queue" edge IDs in the mutation.
+func (m *SyncPlayGroupMutation) QueueIDs() (ids []uuid.UUID) {
+	for id := range m.queue {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetQueue resets all changes to the "queue" edge.
+func (m *SyncPlayGroupMutation) ResetQueue() {
+	m.queue = nil
+	m.clearedqueue = false
+	m.removedqueue = nil
+}
+
 // Where appends a list predicates to the SyncPlayGroupMutation builder.
 func (m *SyncPlayGroupMutation) Where(ps ...predicate.SyncPlayGroup) {
 	m.predicates = append(m.predicates, ps...)
@@ -29019,7 +29731,7 @@ func (m *SyncPlayGroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SyncPlayGroupMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 16)
 	if m.created_at != nil {
 		fields = append(fields, syncplaygroup.FieldCreatedAt)
 	}
@@ -29028,6 +29740,45 @@ func (m *SyncPlayGroupMutation) Fields() []string {
 	}
 	if m.name != nil {
 		fields = append(fields, syncplaygroup.FieldName)
+	}
+	if m.state != nil {
+		fields = append(fields, syncplaygroup.FieldState)
+	}
+	if m.position_ticks != nil {
+		fields = append(fields, syncplaygroup.FieldPositionTicks)
+	}
+	if m.run_time_ticks != nil {
+		fields = append(fields, syncplaygroup.FieldRunTimeTicks)
+	}
+	if m.last_activity != nil {
+		fields = append(fields, syncplaygroup.FieldLastActivity)
+	}
+	if m.playing_index != nil {
+		fields = append(fields, syncplaygroup.FieldPlayingIndex)
+	}
+	if m.shuffle_mode != nil {
+		fields = append(fields, syncplaygroup.FieldShuffleMode)
+	}
+	if m.repeat_mode != nil {
+		fields = append(fields, syncplaygroup.FieldRepeatMode)
+	}
+	if m.queue_changed_at != nil {
+		fields = append(fields, syncplaygroup.FieldQueueChangedAt)
+	}
+	if m.resume_playing != nil {
+		fields = append(fields, syncplaygroup.FieldResumePlaying)
+	}
+	if m.waiting_from != nil {
+		fields = append(fields, syncplaygroup.FieldWaitingFrom)
+	}
+	if m.position_jumped != nil {
+		fields = append(fields, syncplaygroup.FieldPositionJumped)
+	}
+	if m.ignore_buffering != nil {
+		fields = append(fields, syncplaygroup.FieldIgnoreBuffering)
+	}
+	if m.wait_deadline != nil {
+		fields = append(fields, syncplaygroup.FieldWaitDeadline)
 	}
 	return fields
 }
@@ -29043,6 +29794,32 @@ func (m *SyncPlayGroupMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case syncplaygroup.FieldName:
 		return m.Name()
+	case syncplaygroup.FieldState:
+		return m.State()
+	case syncplaygroup.FieldPositionTicks:
+		return m.PositionTicks()
+	case syncplaygroup.FieldRunTimeTicks:
+		return m.RunTimeTicks()
+	case syncplaygroup.FieldLastActivity:
+		return m.LastActivity()
+	case syncplaygroup.FieldPlayingIndex:
+		return m.PlayingIndex()
+	case syncplaygroup.FieldShuffleMode:
+		return m.ShuffleMode()
+	case syncplaygroup.FieldRepeatMode:
+		return m.RepeatMode()
+	case syncplaygroup.FieldQueueChangedAt:
+		return m.QueueChangedAt()
+	case syncplaygroup.FieldResumePlaying:
+		return m.ResumePlaying()
+	case syncplaygroup.FieldWaitingFrom:
+		return m.WaitingFrom()
+	case syncplaygroup.FieldPositionJumped:
+		return m.PositionJumped()
+	case syncplaygroup.FieldIgnoreBuffering:
+		return m.IgnoreBuffering()
+	case syncplaygroup.FieldWaitDeadline:
+		return m.WaitDeadline()
 	}
 	return nil, false
 }
@@ -29058,6 +29835,32 @@ func (m *SyncPlayGroupMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldUpdatedAt(ctx)
 	case syncplaygroup.FieldName:
 		return m.OldName(ctx)
+	case syncplaygroup.FieldState:
+		return m.OldState(ctx)
+	case syncplaygroup.FieldPositionTicks:
+		return m.OldPositionTicks(ctx)
+	case syncplaygroup.FieldRunTimeTicks:
+		return m.OldRunTimeTicks(ctx)
+	case syncplaygroup.FieldLastActivity:
+		return m.OldLastActivity(ctx)
+	case syncplaygroup.FieldPlayingIndex:
+		return m.OldPlayingIndex(ctx)
+	case syncplaygroup.FieldShuffleMode:
+		return m.OldShuffleMode(ctx)
+	case syncplaygroup.FieldRepeatMode:
+		return m.OldRepeatMode(ctx)
+	case syncplaygroup.FieldQueueChangedAt:
+		return m.OldQueueChangedAt(ctx)
+	case syncplaygroup.FieldResumePlaying:
+		return m.OldResumePlaying(ctx)
+	case syncplaygroup.FieldWaitingFrom:
+		return m.OldWaitingFrom(ctx)
+	case syncplaygroup.FieldPositionJumped:
+		return m.OldPositionJumped(ctx)
+	case syncplaygroup.FieldIgnoreBuffering:
+		return m.OldIgnoreBuffering(ctx)
+	case syncplaygroup.FieldWaitDeadline:
+		return m.OldWaitDeadline(ctx)
 	}
 	return nil, fmt.Errorf("unknown SyncPlayGroup field %s", name)
 }
@@ -29088,6 +29891,97 @@ func (m *SyncPlayGroupMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetName(v)
 		return nil
+	case syncplaygroup.FieldState:
+		v, ok := value.(syncplaygroup.State)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetState(v)
+		return nil
+	case syncplaygroup.FieldPositionTicks:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPositionTicks(v)
+		return nil
+	case syncplaygroup.FieldRunTimeTicks:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRunTimeTicks(v)
+		return nil
+	case syncplaygroup.FieldLastActivity:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastActivity(v)
+		return nil
+	case syncplaygroup.FieldPlayingIndex:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPlayingIndex(v)
+		return nil
+	case syncplaygroup.FieldShuffleMode:
+		v, ok := value.(syncplaygroup.ShuffleMode)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetShuffleMode(v)
+		return nil
+	case syncplaygroup.FieldRepeatMode:
+		v, ok := value.(syncplaygroup.RepeatMode)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRepeatMode(v)
+		return nil
+	case syncplaygroup.FieldQueueChangedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetQueueChangedAt(v)
+		return nil
+	case syncplaygroup.FieldResumePlaying:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetResumePlaying(v)
+		return nil
+	case syncplaygroup.FieldWaitingFrom:
+		v, ok := value.(syncplaygroup.WaitingFrom)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWaitingFrom(v)
+		return nil
+	case syncplaygroup.FieldPositionJumped:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPositionJumped(v)
+		return nil
+	case syncplaygroup.FieldIgnoreBuffering:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIgnoreBuffering(v)
+		return nil
+	case syncplaygroup.FieldWaitDeadline:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWaitDeadline(v)
+		return nil
 	}
 	return fmt.Errorf("unknown SyncPlayGroup field %s", name)
 }
@@ -29095,13 +29989,31 @@ func (m *SyncPlayGroupMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *SyncPlayGroupMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addposition_ticks != nil {
+		fields = append(fields, syncplaygroup.FieldPositionTicks)
+	}
+	if m.addrun_time_ticks != nil {
+		fields = append(fields, syncplaygroup.FieldRunTimeTicks)
+	}
+	if m.addplaying_index != nil {
+		fields = append(fields, syncplaygroup.FieldPlayingIndex)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *SyncPlayGroupMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case syncplaygroup.FieldPositionTicks:
+		return m.AddedPositionTicks()
+	case syncplaygroup.FieldRunTimeTicks:
+		return m.AddedRunTimeTicks()
+	case syncplaygroup.FieldPlayingIndex:
+		return m.AddedPlayingIndex()
+	}
 	return nil, false
 }
 
@@ -29110,6 +30022,27 @@ func (m *SyncPlayGroupMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *SyncPlayGroupMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case syncplaygroup.FieldPositionTicks:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPositionTicks(v)
+		return nil
+	case syncplaygroup.FieldRunTimeTicks:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRunTimeTicks(v)
+		return nil
+	case syncplaygroup.FieldPlayingIndex:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPlayingIndex(v)
+		return nil
 	}
 	return fmt.Errorf("unknown SyncPlayGroup numeric field %s", name)
 }
@@ -29117,7 +30050,14 @@ func (m *SyncPlayGroupMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *SyncPlayGroupMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(syncplaygroup.FieldWaitingFrom) {
+		fields = append(fields, syncplaygroup.FieldWaitingFrom)
+	}
+	if m.FieldCleared(syncplaygroup.FieldWaitDeadline) {
+		fields = append(fields, syncplaygroup.FieldWaitDeadline)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -29130,6 +30070,14 @@ func (m *SyncPlayGroupMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *SyncPlayGroupMutation) ClearField(name string) error {
+	switch name {
+	case syncplaygroup.FieldWaitingFrom:
+		m.ClearWaitingFrom()
+		return nil
+	case syncplaygroup.FieldWaitDeadline:
+		m.ClearWaitDeadline()
+		return nil
+	}
 	return fmt.Errorf("unknown SyncPlayGroup nullable field %s", name)
 }
 
@@ -29146,15 +30094,57 @@ func (m *SyncPlayGroupMutation) ResetField(name string) error {
 	case syncplaygroup.FieldName:
 		m.ResetName()
 		return nil
+	case syncplaygroup.FieldState:
+		m.ResetState()
+		return nil
+	case syncplaygroup.FieldPositionTicks:
+		m.ResetPositionTicks()
+		return nil
+	case syncplaygroup.FieldRunTimeTicks:
+		m.ResetRunTimeTicks()
+		return nil
+	case syncplaygroup.FieldLastActivity:
+		m.ResetLastActivity()
+		return nil
+	case syncplaygroup.FieldPlayingIndex:
+		m.ResetPlayingIndex()
+		return nil
+	case syncplaygroup.FieldShuffleMode:
+		m.ResetShuffleMode()
+		return nil
+	case syncplaygroup.FieldRepeatMode:
+		m.ResetRepeatMode()
+		return nil
+	case syncplaygroup.FieldQueueChangedAt:
+		m.ResetQueueChangedAt()
+		return nil
+	case syncplaygroup.FieldResumePlaying:
+		m.ResetResumePlaying()
+		return nil
+	case syncplaygroup.FieldWaitingFrom:
+		m.ResetWaitingFrom()
+		return nil
+	case syncplaygroup.FieldPositionJumped:
+		m.ResetPositionJumped()
+		return nil
+	case syncplaygroup.FieldIgnoreBuffering:
+		m.ResetIgnoreBuffering()
+		return nil
+	case syncplaygroup.FieldWaitDeadline:
+		m.ResetWaitDeadline()
+		return nil
 	}
 	return fmt.Errorf("unknown SyncPlayGroup field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *SyncPlayGroupMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.members != nil {
 		edges = append(edges, syncplaygroup.EdgeMembers)
+	}
+	if m.queue != nil {
+		edges = append(edges, syncplaygroup.EdgeQueue)
 	}
 	return edges
 }
@@ -29169,15 +30159,24 @@ func (m *SyncPlayGroupMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case syncplaygroup.EdgeQueue:
+		ids := make([]ent.Value, 0, len(m.queue))
+		for id := range m.queue {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *SyncPlayGroupMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.removedmembers != nil {
 		edges = append(edges, syncplaygroup.EdgeMembers)
+	}
+	if m.removedqueue != nil {
+		edges = append(edges, syncplaygroup.EdgeQueue)
 	}
 	return edges
 }
@@ -29192,15 +30191,24 @@ func (m *SyncPlayGroupMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case syncplaygroup.EdgeQueue:
+		ids := make([]ent.Value, 0, len(m.removedqueue))
+		for id := range m.removedqueue {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *SyncPlayGroupMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedmembers {
 		edges = append(edges, syncplaygroup.EdgeMembers)
+	}
+	if m.clearedqueue {
+		edges = append(edges, syncplaygroup.EdgeQueue)
 	}
 	return edges
 }
@@ -29211,6 +30219,8 @@ func (m *SyncPlayGroupMutation) EdgeCleared(name string) bool {
 	switch name {
 	case syncplaygroup.EdgeMembers:
 		return m.clearedmembers
+	case syncplaygroup.EdgeQueue:
+		return m.clearedqueue
 	}
 	return false
 }
@@ -29230,6 +30240,9 @@ func (m *SyncPlayGroupMutation) ResetEdge(name string) error {
 	case syncplaygroup.EdgeMembers:
 		m.ResetMembers()
 		return nil
+	case syncplaygroup.EdgeQueue:
+		m.ResetQueue()
+		return nil
 	}
 	return fmt.Errorf("unknown SyncPlayGroup edge %s", name)
 }
@@ -29242,6 +30255,10 @@ type SyncPlayGroupMemberMutation struct {
 	id             *uuid.UUID
 	created_at     *time.Time
 	updated_at     *time.Time
+	ping           *int64
+	addping        *int64
+	is_buffering   *bool
+	ignore_wait    *bool
 	clearedFields  map[string]struct{}
 	group          *uuid.UUID
 	clearedgroup   bool
@@ -29500,6 +30517,134 @@ func (m *SyncPlayGroupMemberMutation) ResetSessionID() {
 	m.session = nil
 }
 
+// SetPing sets the "ping" field.
+func (m *SyncPlayGroupMemberMutation) SetPing(i int64) {
+	m.ping = &i
+	m.addping = nil
+}
+
+// Ping returns the value of the "ping" field in the mutation.
+func (m *SyncPlayGroupMemberMutation) Ping() (r int64, exists bool) {
+	v := m.ping
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPing returns the old "ping" field's value of the SyncPlayGroupMember entity.
+// If the SyncPlayGroupMember object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SyncPlayGroupMemberMutation) OldPing(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPing is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPing requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPing: %w", err)
+	}
+	return oldValue.Ping, nil
+}
+
+// AddPing adds i to the "ping" field.
+func (m *SyncPlayGroupMemberMutation) AddPing(i int64) {
+	if m.addping != nil {
+		*m.addping += i
+	} else {
+		m.addping = &i
+	}
+}
+
+// AddedPing returns the value that was added to the "ping" field in this mutation.
+func (m *SyncPlayGroupMemberMutation) AddedPing() (r int64, exists bool) {
+	v := m.addping
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPing resets all changes to the "ping" field.
+func (m *SyncPlayGroupMemberMutation) ResetPing() {
+	m.ping = nil
+	m.addping = nil
+}
+
+// SetIsBuffering sets the "is_buffering" field.
+func (m *SyncPlayGroupMemberMutation) SetIsBuffering(b bool) {
+	m.is_buffering = &b
+}
+
+// IsBuffering returns the value of the "is_buffering" field in the mutation.
+func (m *SyncPlayGroupMemberMutation) IsBuffering() (r bool, exists bool) {
+	v := m.is_buffering
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsBuffering returns the old "is_buffering" field's value of the SyncPlayGroupMember entity.
+// If the SyncPlayGroupMember object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SyncPlayGroupMemberMutation) OldIsBuffering(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsBuffering is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsBuffering requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsBuffering: %w", err)
+	}
+	return oldValue.IsBuffering, nil
+}
+
+// ResetIsBuffering resets all changes to the "is_buffering" field.
+func (m *SyncPlayGroupMemberMutation) ResetIsBuffering() {
+	m.is_buffering = nil
+}
+
+// SetIgnoreWait sets the "ignore_wait" field.
+func (m *SyncPlayGroupMemberMutation) SetIgnoreWait(b bool) {
+	m.ignore_wait = &b
+}
+
+// IgnoreWait returns the value of the "ignore_wait" field in the mutation.
+func (m *SyncPlayGroupMemberMutation) IgnoreWait() (r bool, exists bool) {
+	v := m.ignore_wait
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIgnoreWait returns the old "ignore_wait" field's value of the SyncPlayGroupMember entity.
+// If the SyncPlayGroupMember object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SyncPlayGroupMemberMutation) OldIgnoreWait(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIgnoreWait is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIgnoreWait requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIgnoreWait: %w", err)
+	}
+	return oldValue.IgnoreWait, nil
+}
+
+// ResetIgnoreWait resets all changes to the "ignore_wait" field.
+func (m *SyncPlayGroupMemberMutation) ResetIgnoreWait() {
+	m.ignore_wait = nil
+}
+
 // ClearGroup clears the "group" edge to the SyncPlayGroup entity.
 func (m *SyncPlayGroupMemberMutation) ClearGroup() {
 	m.clearedgroup = true
@@ -29588,7 +30733,7 @@ func (m *SyncPlayGroupMemberMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SyncPlayGroupMemberMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, syncplaygroupmember.FieldCreatedAt)
 	}
@@ -29600,6 +30745,15 @@ func (m *SyncPlayGroupMemberMutation) Fields() []string {
 	}
 	if m.session != nil {
 		fields = append(fields, syncplaygroupmember.FieldSessionID)
+	}
+	if m.ping != nil {
+		fields = append(fields, syncplaygroupmember.FieldPing)
+	}
+	if m.is_buffering != nil {
+		fields = append(fields, syncplaygroupmember.FieldIsBuffering)
+	}
+	if m.ignore_wait != nil {
+		fields = append(fields, syncplaygroupmember.FieldIgnoreWait)
 	}
 	return fields
 }
@@ -29617,6 +30771,12 @@ func (m *SyncPlayGroupMemberMutation) Field(name string) (ent.Value, bool) {
 		return m.GroupID()
 	case syncplaygroupmember.FieldSessionID:
 		return m.SessionID()
+	case syncplaygroupmember.FieldPing:
+		return m.Ping()
+	case syncplaygroupmember.FieldIsBuffering:
+		return m.IsBuffering()
+	case syncplaygroupmember.FieldIgnoreWait:
+		return m.IgnoreWait()
 	}
 	return nil, false
 }
@@ -29634,6 +30794,12 @@ func (m *SyncPlayGroupMemberMutation) OldField(ctx context.Context, name string)
 		return m.OldGroupID(ctx)
 	case syncplaygroupmember.FieldSessionID:
 		return m.OldSessionID(ctx)
+	case syncplaygroupmember.FieldPing:
+		return m.OldPing(ctx)
+	case syncplaygroupmember.FieldIsBuffering:
+		return m.OldIsBuffering(ctx)
+	case syncplaygroupmember.FieldIgnoreWait:
+		return m.OldIgnoreWait(ctx)
 	}
 	return nil, fmt.Errorf("unknown SyncPlayGroupMember field %s", name)
 }
@@ -29671,6 +30837,27 @@ func (m *SyncPlayGroupMemberMutation) SetField(name string, value ent.Value) err
 		}
 		m.SetSessionID(v)
 		return nil
+	case syncplaygroupmember.FieldPing:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPing(v)
+		return nil
+	case syncplaygroupmember.FieldIsBuffering:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsBuffering(v)
+		return nil
+	case syncplaygroupmember.FieldIgnoreWait:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIgnoreWait(v)
+		return nil
 	}
 	return fmt.Errorf("unknown SyncPlayGroupMember field %s", name)
 }
@@ -29678,13 +30865,21 @@ func (m *SyncPlayGroupMemberMutation) SetField(name string, value ent.Value) err
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *SyncPlayGroupMemberMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addping != nil {
+		fields = append(fields, syncplaygroupmember.FieldPing)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *SyncPlayGroupMemberMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case syncplaygroupmember.FieldPing:
+		return m.AddedPing()
+	}
 	return nil, false
 }
 
@@ -29693,6 +30888,13 @@ func (m *SyncPlayGroupMemberMutation) AddedField(name string) (ent.Value, bool) 
 // type.
 func (m *SyncPlayGroupMemberMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case syncplaygroupmember.FieldPing:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPing(v)
+		return nil
 	}
 	return fmt.Errorf("unknown SyncPlayGroupMember numeric field %s", name)
 }
@@ -29731,6 +30933,15 @@ func (m *SyncPlayGroupMemberMutation) ResetField(name string) error {
 		return nil
 	case syncplaygroupmember.FieldSessionID:
 		m.ResetSessionID()
+		return nil
+	case syncplaygroupmember.FieldPing:
+		m.ResetPing()
+		return nil
+	case syncplaygroupmember.FieldIsBuffering:
+		m.ResetIsBuffering()
+		return nil
+	case syncplaygroupmember.FieldIgnoreWait:
+		m.ResetIgnoreWait()
 		return nil
 	}
 	return fmt.Errorf("unknown SyncPlayGroupMember field %s", name)
@@ -29826,6 +31037,800 @@ func (m *SyncPlayGroupMemberMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown SyncPlayGroupMember edge %s", name)
+}
+
+// SyncPlayQueueEntryMutation represents an operation that mutates the SyncPlayQueueEntry nodes in the graph.
+type SyncPlayQueueEntryMutation struct {
+	config
+	op                Op
+	typ               string
+	id                *uuid.UUID
+	created_at        *time.Time
+	updated_at        *time.Time
+	sorted_index      *int
+	addsorted_index   *int
+	shuffled_index    *int
+	addshuffled_index *int
+	clearedFields     map[string]struct{}
+	group             *uuid.UUID
+	clearedgroup      bool
+	item              *uuid.UUID
+	cleareditem       bool
+	done              bool
+	oldValue          func(context.Context) (*SyncPlayQueueEntry, error)
+	predicates        []predicate.SyncPlayQueueEntry
+}
+
+var _ ent.Mutation = (*SyncPlayQueueEntryMutation)(nil)
+
+// syncplayqueueentryOption allows management of the mutation configuration using functional options.
+type syncplayqueueentryOption func(*SyncPlayQueueEntryMutation)
+
+// newSyncPlayQueueEntryMutation creates new mutation for the SyncPlayQueueEntry entity.
+func newSyncPlayQueueEntryMutation(c config, op Op, opts ...syncplayqueueentryOption) *SyncPlayQueueEntryMutation {
+	m := &SyncPlayQueueEntryMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSyncPlayQueueEntry,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSyncPlayQueueEntryID sets the ID field of the mutation.
+func withSyncPlayQueueEntryID(id uuid.UUID) syncplayqueueentryOption {
+	return func(m *SyncPlayQueueEntryMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *SyncPlayQueueEntry
+		)
+		m.oldValue = func(ctx context.Context) (*SyncPlayQueueEntry, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().SyncPlayQueueEntry.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSyncPlayQueueEntry sets the old SyncPlayQueueEntry of the mutation.
+func withSyncPlayQueueEntry(node *SyncPlayQueueEntry) syncplayqueueentryOption {
+	return func(m *SyncPlayQueueEntryMutation) {
+		m.oldValue = func(context.Context) (*SyncPlayQueueEntry, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m SyncPlayQueueEntryMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m SyncPlayQueueEntryMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("store: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of SyncPlayQueueEntry entities.
+func (m *SyncPlayQueueEntryMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *SyncPlayQueueEntryMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *SyncPlayQueueEntryMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().SyncPlayQueueEntry.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *SyncPlayQueueEntryMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *SyncPlayQueueEntryMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the SyncPlayQueueEntry entity.
+// If the SyncPlayQueueEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SyncPlayQueueEntryMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *SyncPlayQueueEntryMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *SyncPlayQueueEntryMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *SyncPlayQueueEntryMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the SyncPlayQueueEntry entity.
+// If the SyncPlayQueueEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SyncPlayQueueEntryMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *SyncPlayQueueEntryMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetGroupID sets the "group_id" field.
+func (m *SyncPlayQueueEntryMutation) SetGroupID(u uuid.UUID) {
+	m.group = &u
+}
+
+// GroupID returns the value of the "group_id" field in the mutation.
+func (m *SyncPlayQueueEntryMutation) GroupID() (r uuid.UUID, exists bool) {
+	v := m.group
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGroupID returns the old "group_id" field's value of the SyncPlayQueueEntry entity.
+// If the SyncPlayQueueEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SyncPlayQueueEntryMutation) OldGroupID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGroupID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGroupID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGroupID: %w", err)
+	}
+	return oldValue.GroupID, nil
+}
+
+// ResetGroupID resets all changes to the "group_id" field.
+func (m *SyncPlayQueueEntryMutation) ResetGroupID() {
+	m.group = nil
+}
+
+// SetItemID sets the "item_id" field.
+func (m *SyncPlayQueueEntryMutation) SetItemID(u uuid.UUID) {
+	m.item = &u
+}
+
+// ItemID returns the value of the "item_id" field in the mutation.
+func (m *SyncPlayQueueEntryMutation) ItemID() (r uuid.UUID, exists bool) {
+	v := m.item
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldItemID returns the old "item_id" field's value of the SyncPlayQueueEntry entity.
+// If the SyncPlayQueueEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SyncPlayQueueEntryMutation) OldItemID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldItemID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldItemID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldItemID: %w", err)
+	}
+	return oldValue.ItemID, nil
+}
+
+// ResetItemID resets all changes to the "item_id" field.
+func (m *SyncPlayQueueEntryMutation) ResetItemID() {
+	m.item = nil
+}
+
+// SetSortedIndex sets the "sorted_index" field.
+func (m *SyncPlayQueueEntryMutation) SetSortedIndex(i int) {
+	m.sorted_index = &i
+	m.addsorted_index = nil
+}
+
+// SortedIndex returns the value of the "sorted_index" field in the mutation.
+func (m *SyncPlayQueueEntryMutation) SortedIndex() (r int, exists bool) {
+	v := m.sorted_index
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSortedIndex returns the old "sorted_index" field's value of the SyncPlayQueueEntry entity.
+// If the SyncPlayQueueEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SyncPlayQueueEntryMutation) OldSortedIndex(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSortedIndex is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSortedIndex requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSortedIndex: %w", err)
+	}
+	return oldValue.SortedIndex, nil
+}
+
+// AddSortedIndex adds i to the "sorted_index" field.
+func (m *SyncPlayQueueEntryMutation) AddSortedIndex(i int) {
+	if m.addsorted_index != nil {
+		*m.addsorted_index += i
+	} else {
+		m.addsorted_index = &i
+	}
+}
+
+// AddedSortedIndex returns the value that was added to the "sorted_index" field in this mutation.
+func (m *SyncPlayQueueEntryMutation) AddedSortedIndex() (r int, exists bool) {
+	v := m.addsorted_index
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSortedIndex resets all changes to the "sorted_index" field.
+func (m *SyncPlayQueueEntryMutation) ResetSortedIndex() {
+	m.sorted_index = nil
+	m.addsorted_index = nil
+}
+
+// SetShuffledIndex sets the "shuffled_index" field.
+func (m *SyncPlayQueueEntryMutation) SetShuffledIndex(i int) {
+	m.shuffled_index = &i
+	m.addshuffled_index = nil
+}
+
+// ShuffledIndex returns the value of the "shuffled_index" field in the mutation.
+func (m *SyncPlayQueueEntryMutation) ShuffledIndex() (r int, exists bool) {
+	v := m.shuffled_index
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldShuffledIndex returns the old "shuffled_index" field's value of the SyncPlayQueueEntry entity.
+// If the SyncPlayQueueEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SyncPlayQueueEntryMutation) OldShuffledIndex(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldShuffledIndex is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldShuffledIndex requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldShuffledIndex: %w", err)
+	}
+	return oldValue.ShuffledIndex, nil
+}
+
+// AddShuffledIndex adds i to the "shuffled_index" field.
+func (m *SyncPlayQueueEntryMutation) AddShuffledIndex(i int) {
+	if m.addshuffled_index != nil {
+		*m.addshuffled_index += i
+	} else {
+		m.addshuffled_index = &i
+	}
+}
+
+// AddedShuffledIndex returns the value that was added to the "shuffled_index" field in this mutation.
+func (m *SyncPlayQueueEntryMutation) AddedShuffledIndex() (r int, exists bool) {
+	v := m.addshuffled_index
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearShuffledIndex clears the value of the "shuffled_index" field.
+func (m *SyncPlayQueueEntryMutation) ClearShuffledIndex() {
+	m.shuffled_index = nil
+	m.addshuffled_index = nil
+	m.clearedFields[syncplayqueueentry.FieldShuffledIndex] = struct{}{}
+}
+
+// ShuffledIndexCleared returns if the "shuffled_index" field was cleared in this mutation.
+func (m *SyncPlayQueueEntryMutation) ShuffledIndexCleared() bool {
+	_, ok := m.clearedFields[syncplayqueueentry.FieldShuffledIndex]
+	return ok
+}
+
+// ResetShuffledIndex resets all changes to the "shuffled_index" field.
+func (m *SyncPlayQueueEntryMutation) ResetShuffledIndex() {
+	m.shuffled_index = nil
+	m.addshuffled_index = nil
+	delete(m.clearedFields, syncplayqueueentry.FieldShuffledIndex)
+}
+
+// ClearGroup clears the "group" edge to the SyncPlayGroup entity.
+func (m *SyncPlayQueueEntryMutation) ClearGroup() {
+	m.clearedgroup = true
+	m.clearedFields[syncplayqueueentry.FieldGroupID] = struct{}{}
+}
+
+// GroupCleared reports if the "group" edge to the SyncPlayGroup entity was cleared.
+func (m *SyncPlayQueueEntryMutation) GroupCleared() bool {
+	return m.clearedgroup
+}
+
+// GroupIDs returns the "group" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// GroupID instead. It exists only for internal usage by the builders.
+func (m *SyncPlayQueueEntryMutation) GroupIDs() (ids []uuid.UUID) {
+	if id := m.group; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetGroup resets all changes to the "group" edge.
+func (m *SyncPlayQueueEntryMutation) ResetGroup() {
+	m.group = nil
+	m.clearedgroup = false
+}
+
+// ClearItem clears the "item" edge to the Item entity.
+func (m *SyncPlayQueueEntryMutation) ClearItem() {
+	m.cleareditem = true
+	m.clearedFields[syncplayqueueentry.FieldItemID] = struct{}{}
+}
+
+// ItemCleared reports if the "item" edge to the Item entity was cleared.
+func (m *SyncPlayQueueEntryMutation) ItemCleared() bool {
+	return m.cleareditem
+}
+
+// ItemIDs returns the "item" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ItemID instead. It exists only for internal usage by the builders.
+func (m *SyncPlayQueueEntryMutation) ItemIDs() (ids []uuid.UUID) {
+	if id := m.item; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetItem resets all changes to the "item" edge.
+func (m *SyncPlayQueueEntryMutation) ResetItem() {
+	m.item = nil
+	m.cleareditem = false
+}
+
+// Where appends a list predicates to the SyncPlayQueueEntryMutation builder.
+func (m *SyncPlayQueueEntryMutation) Where(ps ...predicate.SyncPlayQueueEntry) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the SyncPlayQueueEntryMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *SyncPlayQueueEntryMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.SyncPlayQueueEntry, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *SyncPlayQueueEntryMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *SyncPlayQueueEntryMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (SyncPlayQueueEntry).
+func (m *SyncPlayQueueEntryMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *SyncPlayQueueEntryMutation) Fields() []string {
+	fields := make([]string, 0, 6)
+	if m.created_at != nil {
+		fields = append(fields, syncplayqueueentry.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, syncplayqueueentry.FieldUpdatedAt)
+	}
+	if m.group != nil {
+		fields = append(fields, syncplayqueueentry.FieldGroupID)
+	}
+	if m.item != nil {
+		fields = append(fields, syncplayqueueentry.FieldItemID)
+	}
+	if m.sorted_index != nil {
+		fields = append(fields, syncplayqueueentry.FieldSortedIndex)
+	}
+	if m.shuffled_index != nil {
+		fields = append(fields, syncplayqueueentry.FieldShuffledIndex)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *SyncPlayQueueEntryMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case syncplayqueueentry.FieldCreatedAt:
+		return m.CreatedAt()
+	case syncplayqueueentry.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case syncplayqueueentry.FieldGroupID:
+		return m.GroupID()
+	case syncplayqueueentry.FieldItemID:
+		return m.ItemID()
+	case syncplayqueueentry.FieldSortedIndex:
+		return m.SortedIndex()
+	case syncplayqueueentry.FieldShuffledIndex:
+		return m.ShuffledIndex()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *SyncPlayQueueEntryMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case syncplayqueueentry.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case syncplayqueueentry.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case syncplayqueueentry.FieldGroupID:
+		return m.OldGroupID(ctx)
+	case syncplayqueueentry.FieldItemID:
+		return m.OldItemID(ctx)
+	case syncplayqueueentry.FieldSortedIndex:
+		return m.OldSortedIndex(ctx)
+	case syncplayqueueentry.FieldShuffledIndex:
+		return m.OldShuffledIndex(ctx)
+	}
+	return nil, fmt.Errorf("unknown SyncPlayQueueEntry field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SyncPlayQueueEntryMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case syncplayqueueentry.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case syncplayqueueentry.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case syncplayqueueentry.FieldGroupID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGroupID(v)
+		return nil
+	case syncplayqueueentry.FieldItemID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetItemID(v)
+		return nil
+	case syncplayqueueentry.FieldSortedIndex:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSortedIndex(v)
+		return nil
+	case syncplayqueueentry.FieldShuffledIndex:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetShuffledIndex(v)
+		return nil
+	}
+	return fmt.Errorf("unknown SyncPlayQueueEntry field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *SyncPlayQueueEntryMutation) AddedFields() []string {
+	var fields []string
+	if m.addsorted_index != nil {
+		fields = append(fields, syncplayqueueentry.FieldSortedIndex)
+	}
+	if m.addshuffled_index != nil {
+		fields = append(fields, syncplayqueueentry.FieldShuffledIndex)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *SyncPlayQueueEntryMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case syncplayqueueentry.FieldSortedIndex:
+		return m.AddedSortedIndex()
+	case syncplayqueueentry.FieldShuffledIndex:
+		return m.AddedShuffledIndex()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SyncPlayQueueEntryMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case syncplayqueueentry.FieldSortedIndex:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSortedIndex(v)
+		return nil
+	case syncplayqueueentry.FieldShuffledIndex:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddShuffledIndex(v)
+		return nil
+	}
+	return fmt.Errorf("unknown SyncPlayQueueEntry numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *SyncPlayQueueEntryMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(syncplayqueueentry.FieldShuffledIndex) {
+		fields = append(fields, syncplayqueueentry.FieldShuffledIndex)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *SyncPlayQueueEntryMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *SyncPlayQueueEntryMutation) ClearField(name string) error {
+	switch name {
+	case syncplayqueueentry.FieldShuffledIndex:
+		m.ClearShuffledIndex()
+		return nil
+	}
+	return fmt.Errorf("unknown SyncPlayQueueEntry nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *SyncPlayQueueEntryMutation) ResetField(name string) error {
+	switch name {
+	case syncplayqueueentry.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case syncplayqueueentry.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case syncplayqueueentry.FieldGroupID:
+		m.ResetGroupID()
+		return nil
+	case syncplayqueueentry.FieldItemID:
+		m.ResetItemID()
+		return nil
+	case syncplayqueueentry.FieldSortedIndex:
+		m.ResetSortedIndex()
+		return nil
+	case syncplayqueueentry.FieldShuffledIndex:
+		m.ResetShuffledIndex()
+		return nil
+	}
+	return fmt.Errorf("unknown SyncPlayQueueEntry field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *SyncPlayQueueEntryMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.group != nil {
+		edges = append(edges, syncplayqueueentry.EdgeGroup)
+	}
+	if m.item != nil {
+		edges = append(edges, syncplayqueueentry.EdgeItem)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *SyncPlayQueueEntryMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case syncplayqueueentry.EdgeGroup:
+		if id := m.group; id != nil {
+			return []ent.Value{*id}
+		}
+	case syncplayqueueentry.EdgeItem:
+		if id := m.item; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *SyncPlayQueueEntryMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *SyncPlayQueueEntryMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *SyncPlayQueueEntryMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedgroup {
+		edges = append(edges, syncplayqueueentry.EdgeGroup)
+	}
+	if m.cleareditem {
+		edges = append(edges, syncplayqueueentry.EdgeItem)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *SyncPlayQueueEntryMutation) EdgeCleared(name string) bool {
+	switch name {
+	case syncplayqueueentry.EdgeGroup:
+		return m.clearedgroup
+	case syncplayqueueentry.EdgeItem:
+		return m.cleareditem
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *SyncPlayQueueEntryMutation) ClearEdge(name string) error {
+	switch name {
+	case syncplayqueueentry.EdgeGroup:
+		m.ClearGroup()
+		return nil
+	case syncplayqueueentry.EdgeItem:
+		m.ClearItem()
+		return nil
+	}
+	return fmt.Errorf("unknown SyncPlayQueueEntry unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *SyncPlayQueueEntryMutation) ResetEdge(name string) error {
+	switch name {
+	case syncplayqueueentry.EdgeGroup:
+		m.ResetGroup()
+		return nil
+	case syncplayqueueentry.EdgeItem:
+		m.ResetItem()
+		return nil
+	}
+	return fmt.Errorf("unknown SyncPlayQueueEntry edge %s", name)
 }
 
 // UserMutation represents an operation that mutates the User nodes in the graph.

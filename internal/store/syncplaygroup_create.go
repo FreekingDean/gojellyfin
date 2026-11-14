@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/syncplaygroup"
 	"github.com/FreekingDean/gojellyfin/internal/store/syncplaygroupmember"
+	"github.com/FreekingDean/gojellyfin/internal/store/syncplayqueueentry"
 	"github.com/google/uuid"
 )
 
@@ -59,6 +60,188 @@ func (_c *SyncPlayGroupCreate) SetName(v string) *SyncPlayGroupCreate {
 	return _c
 }
 
+// SetState sets the "state" field.
+func (_c *SyncPlayGroupCreate) SetState(v syncplaygroup.State) *SyncPlayGroupCreate {
+	_c.mutation.SetState(v)
+	return _c
+}
+
+// SetNillableState sets the "state" field if the given value is not nil.
+func (_c *SyncPlayGroupCreate) SetNillableState(v *syncplaygroup.State) *SyncPlayGroupCreate {
+	if v != nil {
+		_c.SetState(*v)
+	}
+	return _c
+}
+
+// SetPositionTicks sets the "position_ticks" field.
+func (_c *SyncPlayGroupCreate) SetPositionTicks(v int64) *SyncPlayGroupCreate {
+	_c.mutation.SetPositionTicks(v)
+	return _c
+}
+
+// SetNillablePositionTicks sets the "position_ticks" field if the given value is not nil.
+func (_c *SyncPlayGroupCreate) SetNillablePositionTicks(v *int64) *SyncPlayGroupCreate {
+	if v != nil {
+		_c.SetPositionTicks(*v)
+	}
+	return _c
+}
+
+// SetRunTimeTicks sets the "run_time_ticks" field.
+func (_c *SyncPlayGroupCreate) SetRunTimeTicks(v int64) *SyncPlayGroupCreate {
+	_c.mutation.SetRunTimeTicks(v)
+	return _c
+}
+
+// SetNillableRunTimeTicks sets the "run_time_ticks" field if the given value is not nil.
+func (_c *SyncPlayGroupCreate) SetNillableRunTimeTicks(v *int64) *SyncPlayGroupCreate {
+	if v != nil {
+		_c.SetRunTimeTicks(*v)
+	}
+	return _c
+}
+
+// SetLastActivity sets the "last_activity" field.
+func (_c *SyncPlayGroupCreate) SetLastActivity(v time.Time) *SyncPlayGroupCreate {
+	_c.mutation.SetLastActivity(v)
+	return _c
+}
+
+// SetNillableLastActivity sets the "last_activity" field if the given value is not nil.
+func (_c *SyncPlayGroupCreate) SetNillableLastActivity(v *time.Time) *SyncPlayGroupCreate {
+	if v != nil {
+		_c.SetLastActivity(*v)
+	}
+	return _c
+}
+
+// SetPlayingIndex sets the "playing_index" field.
+func (_c *SyncPlayGroupCreate) SetPlayingIndex(v int) *SyncPlayGroupCreate {
+	_c.mutation.SetPlayingIndex(v)
+	return _c
+}
+
+// SetNillablePlayingIndex sets the "playing_index" field if the given value is not nil.
+func (_c *SyncPlayGroupCreate) SetNillablePlayingIndex(v *int) *SyncPlayGroupCreate {
+	if v != nil {
+		_c.SetPlayingIndex(*v)
+	}
+	return _c
+}
+
+// SetShuffleMode sets the "shuffle_mode" field.
+func (_c *SyncPlayGroupCreate) SetShuffleMode(v syncplaygroup.ShuffleMode) *SyncPlayGroupCreate {
+	_c.mutation.SetShuffleMode(v)
+	return _c
+}
+
+// SetNillableShuffleMode sets the "shuffle_mode" field if the given value is not nil.
+func (_c *SyncPlayGroupCreate) SetNillableShuffleMode(v *syncplaygroup.ShuffleMode) *SyncPlayGroupCreate {
+	if v != nil {
+		_c.SetShuffleMode(*v)
+	}
+	return _c
+}
+
+// SetRepeatMode sets the "repeat_mode" field.
+func (_c *SyncPlayGroupCreate) SetRepeatMode(v syncplaygroup.RepeatMode) *SyncPlayGroupCreate {
+	_c.mutation.SetRepeatMode(v)
+	return _c
+}
+
+// SetNillableRepeatMode sets the "repeat_mode" field if the given value is not nil.
+func (_c *SyncPlayGroupCreate) SetNillableRepeatMode(v *syncplaygroup.RepeatMode) *SyncPlayGroupCreate {
+	if v != nil {
+		_c.SetRepeatMode(*v)
+	}
+	return _c
+}
+
+// SetQueueChangedAt sets the "queue_changed_at" field.
+func (_c *SyncPlayGroupCreate) SetQueueChangedAt(v time.Time) *SyncPlayGroupCreate {
+	_c.mutation.SetQueueChangedAt(v)
+	return _c
+}
+
+// SetNillableQueueChangedAt sets the "queue_changed_at" field if the given value is not nil.
+func (_c *SyncPlayGroupCreate) SetNillableQueueChangedAt(v *time.Time) *SyncPlayGroupCreate {
+	if v != nil {
+		_c.SetQueueChangedAt(*v)
+	}
+	return _c
+}
+
+// SetResumePlaying sets the "resume_playing" field.
+func (_c *SyncPlayGroupCreate) SetResumePlaying(v bool) *SyncPlayGroupCreate {
+	_c.mutation.SetResumePlaying(v)
+	return _c
+}
+
+// SetNillableResumePlaying sets the "resume_playing" field if the given value is not nil.
+func (_c *SyncPlayGroupCreate) SetNillableResumePlaying(v *bool) *SyncPlayGroupCreate {
+	if v != nil {
+		_c.SetResumePlaying(*v)
+	}
+	return _c
+}
+
+// SetWaitingFrom sets the "waiting_from" field.
+func (_c *SyncPlayGroupCreate) SetWaitingFrom(v syncplaygroup.WaitingFrom) *SyncPlayGroupCreate {
+	_c.mutation.SetWaitingFrom(v)
+	return _c
+}
+
+// SetNillableWaitingFrom sets the "waiting_from" field if the given value is not nil.
+func (_c *SyncPlayGroupCreate) SetNillableWaitingFrom(v *syncplaygroup.WaitingFrom) *SyncPlayGroupCreate {
+	if v != nil {
+		_c.SetWaitingFrom(*v)
+	}
+	return _c
+}
+
+// SetPositionJumped sets the "position_jumped" field.
+func (_c *SyncPlayGroupCreate) SetPositionJumped(v bool) *SyncPlayGroupCreate {
+	_c.mutation.SetPositionJumped(v)
+	return _c
+}
+
+// SetNillablePositionJumped sets the "position_jumped" field if the given value is not nil.
+func (_c *SyncPlayGroupCreate) SetNillablePositionJumped(v *bool) *SyncPlayGroupCreate {
+	if v != nil {
+		_c.SetPositionJumped(*v)
+	}
+	return _c
+}
+
+// SetIgnoreBuffering sets the "ignore_buffering" field.
+func (_c *SyncPlayGroupCreate) SetIgnoreBuffering(v bool) *SyncPlayGroupCreate {
+	_c.mutation.SetIgnoreBuffering(v)
+	return _c
+}
+
+// SetNillableIgnoreBuffering sets the "ignore_buffering" field if the given value is not nil.
+func (_c *SyncPlayGroupCreate) SetNillableIgnoreBuffering(v *bool) *SyncPlayGroupCreate {
+	if v != nil {
+		_c.SetIgnoreBuffering(*v)
+	}
+	return _c
+}
+
+// SetWaitDeadline sets the "wait_deadline" field.
+func (_c *SyncPlayGroupCreate) SetWaitDeadline(v time.Time) *SyncPlayGroupCreate {
+	_c.mutation.SetWaitDeadline(v)
+	return _c
+}
+
+// SetNillableWaitDeadline sets the "wait_deadline" field if the given value is not nil.
+func (_c *SyncPlayGroupCreate) SetNillableWaitDeadline(v *time.Time) *SyncPlayGroupCreate {
+	if v != nil {
+		_c.SetWaitDeadline(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *SyncPlayGroupCreate) SetID(v uuid.UUID) *SyncPlayGroupCreate {
 	_c.mutation.SetID(v)
@@ -78,6 +261,21 @@ func (_c *SyncPlayGroupCreate) AddMembers(v ...*SyncPlayGroupMember) *SyncPlayGr
 		ids[i] = v[i].ID
 	}
 	return _c.AddMemberIDs(ids...)
+}
+
+// AddQueueIDs adds the "queue" edge to the SyncPlayQueueEntry entity by IDs.
+func (_c *SyncPlayGroupCreate) AddQueueIDs(ids ...uuid.UUID) *SyncPlayGroupCreate {
+	_c.mutation.AddQueueIDs(ids...)
+	return _c
+}
+
+// AddQueue adds the "queue" edges to the SyncPlayQueueEntry entity.
+func (_c *SyncPlayGroupCreate) AddQueue(v ...*SyncPlayQueueEntry) *SyncPlayGroupCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddQueueIDs(ids...)
 }
 
 // Mutation returns the SyncPlayGroupMutation object of the builder.
@@ -123,6 +321,50 @@ func (_c *SyncPlayGroupCreate) defaults() {
 		v := syncplaygroup.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.State(); !ok {
+		v := syncplaygroup.DefaultState
+		_c.mutation.SetState(v)
+	}
+	if _, ok := _c.mutation.PositionTicks(); !ok {
+		v := syncplaygroup.DefaultPositionTicks
+		_c.mutation.SetPositionTicks(v)
+	}
+	if _, ok := _c.mutation.RunTimeTicks(); !ok {
+		v := syncplaygroup.DefaultRunTimeTicks
+		_c.mutation.SetRunTimeTicks(v)
+	}
+	if _, ok := _c.mutation.LastActivity(); !ok {
+		v := syncplaygroup.DefaultLastActivity()
+		_c.mutation.SetLastActivity(v)
+	}
+	if _, ok := _c.mutation.PlayingIndex(); !ok {
+		v := syncplaygroup.DefaultPlayingIndex
+		_c.mutation.SetPlayingIndex(v)
+	}
+	if _, ok := _c.mutation.ShuffleMode(); !ok {
+		v := syncplaygroup.DefaultShuffleMode
+		_c.mutation.SetShuffleMode(v)
+	}
+	if _, ok := _c.mutation.RepeatMode(); !ok {
+		v := syncplaygroup.DefaultRepeatMode
+		_c.mutation.SetRepeatMode(v)
+	}
+	if _, ok := _c.mutation.QueueChangedAt(); !ok {
+		v := syncplaygroup.DefaultQueueChangedAt()
+		_c.mutation.SetQueueChangedAt(v)
+	}
+	if _, ok := _c.mutation.ResumePlaying(); !ok {
+		v := syncplaygroup.DefaultResumePlaying
+		_c.mutation.SetResumePlaying(v)
+	}
+	if _, ok := _c.mutation.PositionJumped(); !ok {
+		v := syncplaygroup.DefaultPositionJumped
+		_c.mutation.SetPositionJumped(v)
+	}
+	if _, ok := _c.mutation.IgnoreBuffering(); !ok {
+		v := syncplaygroup.DefaultIgnoreBuffering
+		_c.mutation.SetIgnoreBuffering(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -135,6 +377,59 @@ func (_c *SyncPlayGroupCreate) check() error {
 	}
 	if _, ok := _c.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`store: missing required field "SyncPlayGroup.name"`)}
+	}
+	if _, ok := _c.mutation.State(); !ok {
+		return &ValidationError{Name: "state", err: errors.New(`store: missing required field "SyncPlayGroup.state"`)}
+	}
+	if v, ok := _c.mutation.State(); ok {
+		if err := syncplaygroup.StateValidator(v); err != nil {
+			return &ValidationError{Name: "state", err: fmt.Errorf(`store: validator failed for field "SyncPlayGroup.state": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.PositionTicks(); !ok {
+		return &ValidationError{Name: "position_ticks", err: errors.New(`store: missing required field "SyncPlayGroup.position_ticks"`)}
+	}
+	if _, ok := _c.mutation.RunTimeTicks(); !ok {
+		return &ValidationError{Name: "run_time_ticks", err: errors.New(`store: missing required field "SyncPlayGroup.run_time_ticks"`)}
+	}
+	if _, ok := _c.mutation.LastActivity(); !ok {
+		return &ValidationError{Name: "last_activity", err: errors.New(`store: missing required field "SyncPlayGroup.last_activity"`)}
+	}
+	if _, ok := _c.mutation.PlayingIndex(); !ok {
+		return &ValidationError{Name: "playing_index", err: errors.New(`store: missing required field "SyncPlayGroup.playing_index"`)}
+	}
+	if _, ok := _c.mutation.ShuffleMode(); !ok {
+		return &ValidationError{Name: "shuffle_mode", err: errors.New(`store: missing required field "SyncPlayGroup.shuffle_mode"`)}
+	}
+	if v, ok := _c.mutation.ShuffleMode(); ok {
+		if err := syncplaygroup.ShuffleModeValidator(v); err != nil {
+			return &ValidationError{Name: "shuffle_mode", err: fmt.Errorf(`store: validator failed for field "SyncPlayGroup.shuffle_mode": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.RepeatMode(); !ok {
+		return &ValidationError{Name: "repeat_mode", err: errors.New(`store: missing required field "SyncPlayGroup.repeat_mode"`)}
+	}
+	if v, ok := _c.mutation.RepeatMode(); ok {
+		if err := syncplaygroup.RepeatModeValidator(v); err != nil {
+			return &ValidationError{Name: "repeat_mode", err: fmt.Errorf(`store: validator failed for field "SyncPlayGroup.repeat_mode": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.QueueChangedAt(); !ok {
+		return &ValidationError{Name: "queue_changed_at", err: errors.New(`store: missing required field "SyncPlayGroup.queue_changed_at"`)}
+	}
+	if _, ok := _c.mutation.ResumePlaying(); !ok {
+		return &ValidationError{Name: "resume_playing", err: errors.New(`store: missing required field "SyncPlayGroup.resume_playing"`)}
+	}
+	if v, ok := _c.mutation.WaitingFrom(); ok {
+		if err := syncplaygroup.WaitingFromValidator(v); err != nil {
+			return &ValidationError{Name: "waiting_from", err: fmt.Errorf(`store: validator failed for field "SyncPlayGroup.waiting_from": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.PositionJumped(); !ok {
+		return &ValidationError{Name: "position_jumped", err: errors.New(`store: missing required field "SyncPlayGroup.position_jumped"`)}
+	}
+	if _, ok := _c.mutation.IgnoreBuffering(); !ok {
+		return &ValidationError{Name: "ignore_buffering", err: errors.New(`store: missing required field "SyncPlayGroup.ignore_buffering"`)}
 	}
 	return nil
 }
@@ -184,6 +479,58 @@ func (_c *SyncPlayGroupCreate) createSpec() (*SyncPlayGroup, *sqlgraph.CreateSpe
 		_spec.SetField(syncplaygroup.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
+	if value, ok := _c.mutation.State(); ok {
+		_spec.SetField(syncplaygroup.FieldState, field.TypeEnum, value)
+		_node.State = value
+	}
+	if value, ok := _c.mutation.PositionTicks(); ok {
+		_spec.SetField(syncplaygroup.FieldPositionTicks, field.TypeInt64, value)
+		_node.PositionTicks = value
+	}
+	if value, ok := _c.mutation.RunTimeTicks(); ok {
+		_spec.SetField(syncplaygroup.FieldRunTimeTicks, field.TypeInt64, value)
+		_node.RunTimeTicks = value
+	}
+	if value, ok := _c.mutation.LastActivity(); ok {
+		_spec.SetField(syncplaygroup.FieldLastActivity, field.TypeTime, value)
+		_node.LastActivity = value
+	}
+	if value, ok := _c.mutation.PlayingIndex(); ok {
+		_spec.SetField(syncplaygroup.FieldPlayingIndex, field.TypeInt, value)
+		_node.PlayingIndex = value
+	}
+	if value, ok := _c.mutation.ShuffleMode(); ok {
+		_spec.SetField(syncplaygroup.FieldShuffleMode, field.TypeEnum, value)
+		_node.ShuffleMode = value
+	}
+	if value, ok := _c.mutation.RepeatMode(); ok {
+		_spec.SetField(syncplaygroup.FieldRepeatMode, field.TypeEnum, value)
+		_node.RepeatMode = value
+	}
+	if value, ok := _c.mutation.QueueChangedAt(); ok {
+		_spec.SetField(syncplaygroup.FieldQueueChangedAt, field.TypeTime, value)
+		_node.QueueChangedAt = value
+	}
+	if value, ok := _c.mutation.ResumePlaying(); ok {
+		_spec.SetField(syncplaygroup.FieldResumePlaying, field.TypeBool, value)
+		_node.ResumePlaying = value
+	}
+	if value, ok := _c.mutation.WaitingFrom(); ok {
+		_spec.SetField(syncplaygroup.FieldWaitingFrom, field.TypeEnum, value)
+		_node.WaitingFrom = &value
+	}
+	if value, ok := _c.mutation.PositionJumped(); ok {
+		_spec.SetField(syncplaygroup.FieldPositionJumped, field.TypeBool, value)
+		_node.PositionJumped = value
+	}
+	if value, ok := _c.mutation.IgnoreBuffering(); ok {
+		_spec.SetField(syncplaygroup.FieldIgnoreBuffering, field.TypeBool, value)
+		_node.IgnoreBuffering = value
+	}
+	if value, ok := _c.mutation.WaitDeadline(); ok {
+		_spec.SetField(syncplaygroup.FieldWaitDeadline, field.TypeTime, value)
+		_node.WaitDeadline = &value
+	}
 	if nodes := _c.mutation.MembersIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -193,6 +540,22 @@ func (_c *SyncPlayGroupCreate) createSpec() (*SyncPlayGroup, *sqlgraph.CreateSpe
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(syncplaygroupmember.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.QueueIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   syncplaygroup.QueueTable,
+			Columns: []string{syncplaygroup.QueueColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(syncplayqueueentry.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -288,6 +651,192 @@ func (u *SyncPlayGroupUpsert) UpdateName() *SyncPlayGroupUpsert {
 	return u
 }
 
+// SetState sets the "state" field.
+func (u *SyncPlayGroupUpsert) SetState(v syncplaygroup.State) *SyncPlayGroupUpsert {
+	u.Set(syncplaygroup.FieldState, v)
+	return u
+}
+
+// UpdateState sets the "state" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsert) UpdateState() *SyncPlayGroupUpsert {
+	u.SetExcluded(syncplaygroup.FieldState)
+	return u
+}
+
+// SetPositionTicks sets the "position_ticks" field.
+func (u *SyncPlayGroupUpsert) SetPositionTicks(v int64) *SyncPlayGroupUpsert {
+	u.Set(syncplaygroup.FieldPositionTicks, v)
+	return u
+}
+
+// UpdatePositionTicks sets the "position_ticks" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsert) UpdatePositionTicks() *SyncPlayGroupUpsert {
+	u.SetExcluded(syncplaygroup.FieldPositionTicks)
+	return u
+}
+
+// AddPositionTicks adds v to the "position_ticks" field.
+func (u *SyncPlayGroupUpsert) AddPositionTicks(v int64) *SyncPlayGroupUpsert {
+	u.Add(syncplaygroup.FieldPositionTicks, v)
+	return u
+}
+
+// SetRunTimeTicks sets the "run_time_ticks" field.
+func (u *SyncPlayGroupUpsert) SetRunTimeTicks(v int64) *SyncPlayGroupUpsert {
+	u.Set(syncplaygroup.FieldRunTimeTicks, v)
+	return u
+}
+
+// UpdateRunTimeTicks sets the "run_time_ticks" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsert) UpdateRunTimeTicks() *SyncPlayGroupUpsert {
+	u.SetExcluded(syncplaygroup.FieldRunTimeTicks)
+	return u
+}
+
+// AddRunTimeTicks adds v to the "run_time_ticks" field.
+func (u *SyncPlayGroupUpsert) AddRunTimeTicks(v int64) *SyncPlayGroupUpsert {
+	u.Add(syncplaygroup.FieldRunTimeTicks, v)
+	return u
+}
+
+// SetLastActivity sets the "last_activity" field.
+func (u *SyncPlayGroupUpsert) SetLastActivity(v time.Time) *SyncPlayGroupUpsert {
+	u.Set(syncplaygroup.FieldLastActivity, v)
+	return u
+}
+
+// UpdateLastActivity sets the "last_activity" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsert) UpdateLastActivity() *SyncPlayGroupUpsert {
+	u.SetExcluded(syncplaygroup.FieldLastActivity)
+	return u
+}
+
+// SetPlayingIndex sets the "playing_index" field.
+func (u *SyncPlayGroupUpsert) SetPlayingIndex(v int) *SyncPlayGroupUpsert {
+	u.Set(syncplaygroup.FieldPlayingIndex, v)
+	return u
+}
+
+// UpdatePlayingIndex sets the "playing_index" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsert) UpdatePlayingIndex() *SyncPlayGroupUpsert {
+	u.SetExcluded(syncplaygroup.FieldPlayingIndex)
+	return u
+}
+
+// AddPlayingIndex adds v to the "playing_index" field.
+func (u *SyncPlayGroupUpsert) AddPlayingIndex(v int) *SyncPlayGroupUpsert {
+	u.Add(syncplaygroup.FieldPlayingIndex, v)
+	return u
+}
+
+// SetShuffleMode sets the "shuffle_mode" field.
+func (u *SyncPlayGroupUpsert) SetShuffleMode(v syncplaygroup.ShuffleMode) *SyncPlayGroupUpsert {
+	u.Set(syncplaygroup.FieldShuffleMode, v)
+	return u
+}
+
+// UpdateShuffleMode sets the "shuffle_mode" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsert) UpdateShuffleMode() *SyncPlayGroupUpsert {
+	u.SetExcluded(syncplaygroup.FieldShuffleMode)
+	return u
+}
+
+// SetRepeatMode sets the "repeat_mode" field.
+func (u *SyncPlayGroupUpsert) SetRepeatMode(v syncplaygroup.RepeatMode) *SyncPlayGroupUpsert {
+	u.Set(syncplaygroup.FieldRepeatMode, v)
+	return u
+}
+
+// UpdateRepeatMode sets the "repeat_mode" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsert) UpdateRepeatMode() *SyncPlayGroupUpsert {
+	u.SetExcluded(syncplaygroup.FieldRepeatMode)
+	return u
+}
+
+// SetQueueChangedAt sets the "queue_changed_at" field.
+func (u *SyncPlayGroupUpsert) SetQueueChangedAt(v time.Time) *SyncPlayGroupUpsert {
+	u.Set(syncplaygroup.FieldQueueChangedAt, v)
+	return u
+}
+
+// UpdateQueueChangedAt sets the "queue_changed_at" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsert) UpdateQueueChangedAt() *SyncPlayGroupUpsert {
+	u.SetExcluded(syncplaygroup.FieldQueueChangedAt)
+	return u
+}
+
+// SetResumePlaying sets the "resume_playing" field.
+func (u *SyncPlayGroupUpsert) SetResumePlaying(v bool) *SyncPlayGroupUpsert {
+	u.Set(syncplaygroup.FieldResumePlaying, v)
+	return u
+}
+
+// UpdateResumePlaying sets the "resume_playing" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsert) UpdateResumePlaying() *SyncPlayGroupUpsert {
+	u.SetExcluded(syncplaygroup.FieldResumePlaying)
+	return u
+}
+
+// SetWaitingFrom sets the "waiting_from" field.
+func (u *SyncPlayGroupUpsert) SetWaitingFrom(v syncplaygroup.WaitingFrom) *SyncPlayGroupUpsert {
+	u.Set(syncplaygroup.FieldWaitingFrom, v)
+	return u
+}
+
+// UpdateWaitingFrom sets the "waiting_from" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsert) UpdateWaitingFrom() *SyncPlayGroupUpsert {
+	u.SetExcluded(syncplaygroup.FieldWaitingFrom)
+	return u
+}
+
+// ClearWaitingFrom clears the value of the "waiting_from" field.
+func (u *SyncPlayGroupUpsert) ClearWaitingFrom() *SyncPlayGroupUpsert {
+	u.SetNull(syncplaygroup.FieldWaitingFrom)
+	return u
+}
+
+// SetPositionJumped sets the "position_jumped" field.
+func (u *SyncPlayGroupUpsert) SetPositionJumped(v bool) *SyncPlayGroupUpsert {
+	u.Set(syncplaygroup.FieldPositionJumped, v)
+	return u
+}
+
+// UpdatePositionJumped sets the "position_jumped" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsert) UpdatePositionJumped() *SyncPlayGroupUpsert {
+	u.SetExcluded(syncplaygroup.FieldPositionJumped)
+	return u
+}
+
+// SetIgnoreBuffering sets the "ignore_buffering" field.
+func (u *SyncPlayGroupUpsert) SetIgnoreBuffering(v bool) *SyncPlayGroupUpsert {
+	u.Set(syncplaygroup.FieldIgnoreBuffering, v)
+	return u
+}
+
+// UpdateIgnoreBuffering sets the "ignore_buffering" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsert) UpdateIgnoreBuffering() *SyncPlayGroupUpsert {
+	u.SetExcluded(syncplaygroup.FieldIgnoreBuffering)
+	return u
+}
+
+// SetWaitDeadline sets the "wait_deadline" field.
+func (u *SyncPlayGroupUpsert) SetWaitDeadline(v time.Time) *SyncPlayGroupUpsert {
+	u.Set(syncplaygroup.FieldWaitDeadline, v)
+	return u
+}
+
+// UpdateWaitDeadline sets the "wait_deadline" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsert) UpdateWaitDeadline() *SyncPlayGroupUpsert {
+	u.SetExcluded(syncplaygroup.FieldWaitDeadline)
+	return u
+}
+
+// ClearWaitDeadline clears the value of the "wait_deadline" field.
+func (u *SyncPlayGroupUpsert) ClearWaitDeadline() *SyncPlayGroupUpsert {
+	u.SetNull(syncplaygroup.FieldWaitDeadline)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -375,6 +924,223 @@ func (u *SyncPlayGroupUpsertOne) SetName(v string) *SyncPlayGroupUpsertOne {
 func (u *SyncPlayGroupUpsertOne) UpdateName() *SyncPlayGroupUpsertOne {
 	return u.Update(func(s *SyncPlayGroupUpsert) {
 		s.UpdateName()
+	})
+}
+
+// SetState sets the "state" field.
+func (u *SyncPlayGroupUpsertOne) SetState(v syncplaygroup.State) *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.SetState(v)
+	})
+}
+
+// UpdateState sets the "state" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsertOne) UpdateState() *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.UpdateState()
+	})
+}
+
+// SetPositionTicks sets the "position_ticks" field.
+func (u *SyncPlayGroupUpsertOne) SetPositionTicks(v int64) *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.SetPositionTicks(v)
+	})
+}
+
+// AddPositionTicks adds v to the "position_ticks" field.
+func (u *SyncPlayGroupUpsertOne) AddPositionTicks(v int64) *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.AddPositionTicks(v)
+	})
+}
+
+// UpdatePositionTicks sets the "position_ticks" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsertOne) UpdatePositionTicks() *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.UpdatePositionTicks()
+	})
+}
+
+// SetRunTimeTicks sets the "run_time_ticks" field.
+func (u *SyncPlayGroupUpsertOne) SetRunTimeTicks(v int64) *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.SetRunTimeTicks(v)
+	})
+}
+
+// AddRunTimeTicks adds v to the "run_time_ticks" field.
+func (u *SyncPlayGroupUpsertOne) AddRunTimeTicks(v int64) *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.AddRunTimeTicks(v)
+	})
+}
+
+// UpdateRunTimeTicks sets the "run_time_ticks" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsertOne) UpdateRunTimeTicks() *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.UpdateRunTimeTicks()
+	})
+}
+
+// SetLastActivity sets the "last_activity" field.
+func (u *SyncPlayGroupUpsertOne) SetLastActivity(v time.Time) *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.SetLastActivity(v)
+	})
+}
+
+// UpdateLastActivity sets the "last_activity" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsertOne) UpdateLastActivity() *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.UpdateLastActivity()
+	})
+}
+
+// SetPlayingIndex sets the "playing_index" field.
+func (u *SyncPlayGroupUpsertOne) SetPlayingIndex(v int) *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.SetPlayingIndex(v)
+	})
+}
+
+// AddPlayingIndex adds v to the "playing_index" field.
+func (u *SyncPlayGroupUpsertOne) AddPlayingIndex(v int) *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.AddPlayingIndex(v)
+	})
+}
+
+// UpdatePlayingIndex sets the "playing_index" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsertOne) UpdatePlayingIndex() *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.UpdatePlayingIndex()
+	})
+}
+
+// SetShuffleMode sets the "shuffle_mode" field.
+func (u *SyncPlayGroupUpsertOne) SetShuffleMode(v syncplaygroup.ShuffleMode) *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.SetShuffleMode(v)
+	})
+}
+
+// UpdateShuffleMode sets the "shuffle_mode" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsertOne) UpdateShuffleMode() *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.UpdateShuffleMode()
+	})
+}
+
+// SetRepeatMode sets the "repeat_mode" field.
+func (u *SyncPlayGroupUpsertOne) SetRepeatMode(v syncplaygroup.RepeatMode) *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.SetRepeatMode(v)
+	})
+}
+
+// UpdateRepeatMode sets the "repeat_mode" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsertOne) UpdateRepeatMode() *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.UpdateRepeatMode()
+	})
+}
+
+// SetQueueChangedAt sets the "queue_changed_at" field.
+func (u *SyncPlayGroupUpsertOne) SetQueueChangedAt(v time.Time) *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.SetQueueChangedAt(v)
+	})
+}
+
+// UpdateQueueChangedAt sets the "queue_changed_at" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsertOne) UpdateQueueChangedAt() *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.UpdateQueueChangedAt()
+	})
+}
+
+// SetResumePlaying sets the "resume_playing" field.
+func (u *SyncPlayGroupUpsertOne) SetResumePlaying(v bool) *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.SetResumePlaying(v)
+	})
+}
+
+// UpdateResumePlaying sets the "resume_playing" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsertOne) UpdateResumePlaying() *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.UpdateResumePlaying()
+	})
+}
+
+// SetWaitingFrom sets the "waiting_from" field.
+func (u *SyncPlayGroupUpsertOne) SetWaitingFrom(v syncplaygroup.WaitingFrom) *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.SetWaitingFrom(v)
+	})
+}
+
+// UpdateWaitingFrom sets the "waiting_from" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsertOne) UpdateWaitingFrom() *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.UpdateWaitingFrom()
+	})
+}
+
+// ClearWaitingFrom clears the value of the "waiting_from" field.
+func (u *SyncPlayGroupUpsertOne) ClearWaitingFrom() *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.ClearWaitingFrom()
+	})
+}
+
+// SetPositionJumped sets the "position_jumped" field.
+func (u *SyncPlayGroupUpsertOne) SetPositionJumped(v bool) *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.SetPositionJumped(v)
+	})
+}
+
+// UpdatePositionJumped sets the "position_jumped" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsertOne) UpdatePositionJumped() *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.UpdatePositionJumped()
+	})
+}
+
+// SetIgnoreBuffering sets the "ignore_buffering" field.
+func (u *SyncPlayGroupUpsertOne) SetIgnoreBuffering(v bool) *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.SetIgnoreBuffering(v)
+	})
+}
+
+// UpdateIgnoreBuffering sets the "ignore_buffering" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsertOne) UpdateIgnoreBuffering() *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.UpdateIgnoreBuffering()
+	})
+}
+
+// SetWaitDeadline sets the "wait_deadline" field.
+func (u *SyncPlayGroupUpsertOne) SetWaitDeadline(v time.Time) *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.SetWaitDeadline(v)
+	})
+}
+
+// UpdateWaitDeadline sets the "wait_deadline" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsertOne) UpdateWaitDeadline() *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.UpdateWaitDeadline()
+	})
+}
+
+// ClearWaitDeadline clears the value of the "wait_deadline" field.
+func (u *SyncPlayGroupUpsertOne) ClearWaitDeadline() *SyncPlayGroupUpsertOne {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.ClearWaitDeadline()
 	})
 }
 
@@ -632,6 +1398,223 @@ func (u *SyncPlayGroupUpsertBulk) SetName(v string) *SyncPlayGroupUpsertBulk {
 func (u *SyncPlayGroupUpsertBulk) UpdateName() *SyncPlayGroupUpsertBulk {
 	return u.Update(func(s *SyncPlayGroupUpsert) {
 		s.UpdateName()
+	})
+}
+
+// SetState sets the "state" field.
+func (u *SyncPlayGroupUpsertBulk) SetState(v syncplaygroup.State) *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.SetState(v)
+	})
+}
+
+// UpdateState sets the "state" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsertBulk) UpdateState() *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.UpdateState()
+	})
+}
+
+// SetPositionTicks sets the "position_ticks" field.
+func (u *SyncPlayGroupUpsertBulk) SetPositionTicks(v int64) *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.SetPositionTicks(v)
+	})
+}
+
+// AddPositionTicks adds v to the "position_ticks" field.
+func (u *SyncPlayGroupUpsertBulk) AddPositionTicks(v int64) *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.AddPositionTicks(v)
+	})
+}
+
+// UpdatePositionTicks sets the "position_ticks" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsertBulk) UpdatePositionTicks() *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.UpdatePositionTicks()
+	})
+}
+
+// SetRunTimeTicks sets the "run_time_ticks" field.
+func (u *SyncPlayGroupUpsertBulk) SetRunTimeTicks(v int64) *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.SetRunTimeTicks(v)
+	})
+}
+
+// AddRunTimeTicks adds v to the "run_time_ticks" field.
+func (u *SyncPlayGroupUpsertBulk) AddRunTimeTicks(v int64) *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.AddRunTimeTicks(v)
+	})
+}
+
+// UpdateRunTimeTicks sets the "run_time_ticks" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsertBulk) UpdateRunTimeTicks() *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.UpdateRunTimeTicks()
+	})
+}
+
+// SetLastActivity sets the "last_activity" field.
+func (u *SyncPlayGroupUpsertBulk) SetLastActivity(v time.Time) *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.SetLastActivity(v)
+	})
+}
+
+// UpdateLastActivity sets the "last_activity" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsertBulk) UpdateLastActivity() *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.UpdateLastActivity()
+	})
+}
+
+// SetPlayingIndex sets the "playing_index" field.
+func (u *SyncPlayGroupUpsertBulk) SetPlayingIndex(v int) *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.SetPlayingIndex(v)
+	})
+}
+
+// AddPlayingIndex adds v to the "playing_index" field.
+func (u *SyncPlayGroupUpsertBulk) AddPlayingIndex(v int) *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.AddPlayingIndex(v)
+	})
+}
+
+// UpdatePlayingIndex sets the "playing_index" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsertBulk) UpdatePlayingIndex() *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.UpdatePlayingIndex()
+	})
+}
+
+// SetShuffleMode sets the "shuffle_mode" field.
+func (u *SyncPlayGroupUpsertBulk) SetShuffleMode(v syncplaygroup.ShuffleMode) *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.SetShuffleMode(v)
+	})
+}
+
+// UpdateShuffleMode sets the "shuffle_mode" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsertBulk) UpdateShuffleMode() *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.UpdateShuffleMode()
+	})
+}
+
+// SetRepeatMode sets the "repeat_mode" field.
+func (u *SyncPlayGroupUpsertBulk) SetRepeatMode(v syncplaygroup.RepeatMode) *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.SetRepeatMode(v)
+	})
+}
+
+// UpdateRepeatMode sets the "repeat_mode" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsertBulk) UpdateRepeatMode() *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.UpdateRepeatMode()
+	})
+}
+
+// SetQueueChangedAt sets the "queue_changed_at" field.
+func (u *SyncPlayGroupUpsertBulk) SetQueueChangedAt(v time.Time) *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.SetQueueChangedAt(v)
+	})
+}
+
+// UpdateQueueChangedAt sets the "queue_changed_at" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsertBulk) UpdateQueueChangedAt() *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.UpdateQueueChangedAt()
+	})
+}
+
+// SetResumePlaying sets the "resume_playing" field.
+func (u *SyncPlayGroupUpsertBulk) SetResumePlaying(v bool) *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.SetResumePlaying(v)
+	})
+}
+
+// UpdateResumePlaying sets the "resume_playing" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsertBulk) UpdateResumePlaying() *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.UpdateResumePlaying()
+	})
+}
+
+// SetWaitingFrom sets the "waiting_from" field.
+func (u *SyncPlayGroupUpsertBulk) SetWaitingFrom(v syncplaygroup.WaitingFrom) *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.SetWaitingFrom(v)
+	})
+}
+
+// UpdateWaitingFrom sets the "waiting_from" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsertBulk) UpdateWaitingFrom() *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.UpdateWaitingFrom()
+	})
+}
+
+// ClearWaitingFrom clears the value of the "waiting_from" field.
+func (u *SyncPlayGroupUpsertBulk) ClearWaitingFrom() *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.ClearWaitingFrom()
+	})
+}
+
+// SetPositionJumped sets the "position_jumped" field.
+func (u *SyncPlayGroupUpsertBulk) SetPositionJumped(v bool) *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.SetPositionJumped(v)
+	})
+}
+
+// UpdatePositionJumped sets the "position_jumped" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsertBulk) UpdatePositionJumped() *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.UpdatePositionJumped()
+	})
+}
+
+// SetIgnoreBuffering sets the "ignore_buffering" field.
+func (u *SyncPlayGroupUpsertBulk) SetIgnoreBuffering(v bool) *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.SetIgnoreBuffering(v)
+	})
+}
+
+// UpdateIgnoreBuffering sets the "ignore_buffering" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsertBulk) UpdateIgnoreBuffering() *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.UpdateIgnoreBuffering()
+	})
+}
+
+// SetWaitDeadline sets the "wait_deadline" field.
+func (u *SyncPlayGroupUpsertBulk) SetWaitDeadline(v time.Time) *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.SetWaitDeadline(v)
+	})
+}
+
+// UpdateWaitDeadline sets the "wait_deadline" field to the value that was provided on create.
+func (u *SyncPlayGroupUpsertBulk) UpdateWaitDeadline() *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.UpdateWaitDeadline()
+	})
+}
+
+// ClearWaitDeadline clears the value of the "wait_deadline" field.
+func (u *SyncPlayGroupUpsertBulk) ClearWaitDeadline() *SyncPlayGroupUpsertBulk {
+	return u.Update(func(s *SyncPlayGroupUpsert) {
+		s.ClearWaitDeadline()
 	})
 }
 
