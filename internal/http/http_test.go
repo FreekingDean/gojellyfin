@@ -112,10 +112,13 @@ func TestNewHTTPMiddleware(t *testing.T) {
 	for _, test := range []struct {
 		name    string
 		origins []string
+		origin  string
 		want    string
 	}{
-		{"unset", nil, ""},
-		{"configured", []string{"https://gojellyfin.example.dev"}, "https://gojellyfin.example.dev"},
+		{"unset", nil, "https://gojellyfin.example.dev", ""},
+		{"configured", []string{"https://gojellyfin.example.dev"}, "https://gojellyfin.example.dev", "https://gojellyfin.example.dev"},
+		{"cast receiver unset", nil, "https://apps.jellyfin.org", "https://apps.jellyfin.org"},
+		{"cast receiver configured", []string{"https://gojellyfin.example.dev"}, "https://apps.jellyfin.org", "https://apps.jellyfin.org"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			handler := http.Handler(http.NotFoundHandler())
@@ -124,7 +127,7 @@ func TestNewHTTPMiddleware(t *testing.T) {
 			}
 
 			request := httptest.NewRequest(http.MethodOptions, "/Users/AuthenticateByName", nil)
-			request.Header.Set("Origin", "https://gojellyfin.example.dev")
+			request.Header.Set("Origin", test.origin)
 			request.Header.Set("Access-Control-Request-Method", "POST")
 
 			recorder := httptest.NewRecorder()

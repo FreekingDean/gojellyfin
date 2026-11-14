@@ -83,9 +83,9 @@ oidc:
   # their own username.
   linkExistingUsers: false
 
-# CORS_ORIGINS. Off reflects whatever origin asks; a literal "*" is not
-# equivalent, because browsers reject it on credentialed requests. Enabled
-# needs an origin — the chart refuses to render a restriction that would
+# CORS_ORIGINS. Off allows only https://apps.jellyfin.org, the Google Cast
+# receiver, which the server always allows. Enabled adds one origin and needs
+# it — the chart refuses to render a restriction that would
 # restrict nothing.
 cors:
   enabled: false
