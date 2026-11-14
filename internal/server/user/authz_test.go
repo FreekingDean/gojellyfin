@@ -67,7 +67,7 @@ func newAccounts(t *testing.T) *accounts {
 
 	t.Cleanup(func() {
 		for _, user := range []*users.User{admin, member} {
-			if err := service.DeleteUser(ctx, user.ID); err != nil {
+			if err := client.User.DeleteOneID(user.ID).Exec(ctx); err != nil {
 				t.Errorf("failed to delete %s: %v", user.Name, err)
 			}
 		}

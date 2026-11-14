@@ -170,14 +170,6 @@ func (s *Service) UpdatePolicy(id uuid.UUID) *store.UserPolicyUpdate {
 		Where(policymodel.HasUserWith(usermodel.ID(id)))
 }
 
-func (s *Service) DeleteUser(ctx context.Context, id uuid.UUID) error {
-	if err := s.store.User.DeleteOneID(id).Exec(ctx); err != nil {
-		return fmt.Errorf("failed to delete user: %w", err)
-	}
-
-	return nil
-}
-
 func (s *Service) TouchLogin(ctx context.Context, id uuid.UUID) error {
 	now := time.Now()
 	err := s.store.User.UpdateOneID(id).

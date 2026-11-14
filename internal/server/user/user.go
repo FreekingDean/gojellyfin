@@ -135,7 +135,9 @@ func (s *Server) UpdateUserPolicy(ctx context.Context, request api.UpdateUserPol
 		return api.UpdateUserPolicy403JSONResponse{}, nil
 	}
 
-	if err := s.savePolicy(ctx, user.ID, req); err != nil {
+	if err := s.savePolicy(ctx, user.ID, req); errors.Is(err, users.ErrLastAdministrator) {
+		return api.UpdateUserPolicy403JSONResponse{}, nil
+	} else if err != nil {
 		return nil, err
 	}
 
@@ -187,7 +189,9 @@ func (s *Server) DeleteUser(ctx context.Context, request api.DeleteUserRequestOb
 		return api.DeleteUser404JSONResponse{}, nil
 	}
 
-	if err := s.users.DeleteUser(ctx, request.UserId); err != nil {
+	if err := s.users.DeleteUser(ctx, request.UserId); errors.Is(err, users.ErrLastAdministrator) {
+		return api.DeleteUser403Response{}, nil
+	} else if err != nil {
 		return nil, err
 	}
 
