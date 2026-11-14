@@ -146,6 +146,10 @@ IfNotPresent
 - name: PUBLISHED_SERVER_URL
   value: {{ printf "%s://%s" $.root.Values.scheme . | quote }}
 {{- end }}
+{{- with .root.Values.serverId }}
+- name: SERVER_ID
+  value: {{ . | quote }}
+{{- end }}
 {{- if .root.Values.cors.enabled }}
 {{- if not .root.Values.cors.origin }}
 {{- fail "cors.enabled needs cors.origin: an empty origin reflects whatever origin asks, so the restriction would restrict nothing" }}
