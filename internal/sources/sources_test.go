@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+
+	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 )
 
 func (f *fixture) configured(t *testing.T) Configured {
@@ -170,5 +172,40 @@ func TestUpdate_KeepsTheBindingsItStillNames(t *testing.T) {
 	}
 	if got := updated.Libraries[0]; got.ID != before[kept] || got.TagFilter != "4k" {
 		t.Errorf("binding = %s filtering %q, want %s kept in place with the new filter", got.ID, got.TagFilter, before[kept])
+	}
+}
+
+func TestUpdate_UnbindingALibraryTakesItsTitlesOutOfIt(t *testing.T) {
+	reported := []movie{
+		{TmdbID: 949, Title: "Heat", Year: 1995, HasFile: true,
+			Path: "/media/Heat", File: at("/media/Heat/heat.mkv")},
+	}
+
+	fixture := newFixture(t, &reported)
+	kept := fixture.library(t, "")
+	dropped := fixture.library(t, "")
+	for _, library := range []uuid.UUID{kept, dropped} {
+		fixture.write(t, library, fixture.refresh(t, library))
+	}
+
+	entry := fixture.configured(t)
+	entry.Libraries = []LibrarySource{{LibraryID: kept}}
+	if _, err := fixture.service.Update(context.Background(), fixture.sourceID, entry); err != nil {
+		t.Fatalf("failed to update: %v", err)
+	}
+
+	for library, want := range map[uuid.UUID]int{kept: 1, dropped: 0} {
+		held, err := fixture.client.LibraryItem.Query().
+			Where(librarymembership.LibraryID(library)).
+			Count(context.Background())
+		if err != nil {
+			t.Fatalf("failed to count the membership: %v", err)
+		}
+		if held != want {
+			t.Errorf("library %s holds %d titles, want %d", library, held, want)
+		}
+	}
+	if files := fixture.files(t); len(files) != 1 {
+		t.Errorf("files = %v, want the source's file kept for the library still bound", files)
 	}
 }

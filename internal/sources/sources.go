@@ -18,6 +18,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/sources/arr"
 	"github.com/FreekingDean/gojellyfin/internal/store"
+	libraryitemmodel "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	librarysourcemodel "github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/source"
 	sourcepathmodel "github.com/FreekingDean/gojellyfin/internal/store/sourcepath"
@@ -231,6 +232,11 @@ func (s *Service) Update(ctx context.Context, id uuid.UUID, entry Configured) (C
 			Exec(ctx); err != nil {
 			return err
 		}
+		if _, err := tx.LibraryItem.Delete().
+			Where(libraryitemmodel.SourceID(id), libraryitemmodel.LibraryIDNotIn(bound...)).
+			Exec(ctx); err != nil {
+			return err
+		}
 
 		return children(ctx, tx, id, entry)
 	})
@@ -290,6 +296,10 @@ func invalid(format string, args ...any) error {
 }
 
 func validate(ctx context.Context, tx *store.Tx, id uuid.UUID, entry Configured) error {
+	if _, err := tx.ExecContext(ctx, "SELECT pg_advisory_xact_lock(hashtext('source_paths'))"); err != nil {
+		return err
+	}
+
 	source := entry.Source
 	if strings.TrimSpace(source.Name) == "" {
 		return invalid("a source needs a name")
