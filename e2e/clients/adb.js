@@ -41,7 +41,7 @@ function device(serial = process.env.ANDROID_SERIAL) {
   // uiautomator refuses while the window never goes idle, which is every
   // frame of a playing video, so a caller that needs the tree during playback
   // has to be ready for an empty answer.
-  function dump() {
+  function read() {
     const out = adb(['exec-out', 'uiautomator', 'dump', '/dev/tty'], { allowFailure: true });
     const end = out.lastIndexOf('</hierarchy>');
     if (end === -1) {
@@ -49,6 +49,23 @@ function device(serial = process.env.ANDROID_SERIAL) {
     }
 
     return parse(out.slice(out.indexOf('<?xml'), end));
+  }
+
+  // A slow emulator's own apps stop answering now and then, and Android puts
+  // its "isn't responding" dialog over whatever is on screen until someone
+  // chooses to wait, so that choice is made before anything is looked at.
+  function dump() {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const nodes = read();
+      const wait = nodes.find((node) => node.id === 'aerr_wait');
+      if (!wait) {
+        return nodes;
+      }
+      tap(wait);
+      spawnSync('sleep', ['1']);
+    }
+
+    return read();
   }
 
   function find(matcher) {
