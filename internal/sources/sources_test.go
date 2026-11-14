@@ -206,6 +206,9 @@ func TestUpdate_KeepsTheFilesAcrossANewURL(t *testing.T) {
 	if len(before) != 1 {
 		t.Fatalf("files = %v, want the one the source reported", before)
 	}
+	if counted := fixture.configured(t).Files; counted != 1 {
+		t.Errorf("Files = %d, want the one the source reported", counted)
+	}
 
 	entry := fixture.configured(t)
 	entry.Source.URL = "http://moved-" + uuid.NewString() + ".invalid"

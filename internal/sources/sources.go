@@ -18,6 +18,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/sources/arr"
 	"github.com/FreekingDean/gojellyfin/internal/store"
+	itemsourcemodel "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	librarymodel "github.com/FreekingDean/gojellyfin/internal/store/library"
 	libraryitemmodel "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	librarysourcemodel "github.com/FreekingDean/gojellyfin/internal/store/librarysource"
@@ -91,6 +92,7 @@ type (
 type Configured struct {
 	Source    Source
 	Libraries []LibrarySource
+	Files     int
 }
 
 func (s *Service) List(ctx context.Context) ([]Configured, error) {
@@ -103,9 +105,15 @@ func (s *Service) List(ctx context.Context) ([]Configured, error) {
 		return nil, err
 	}
 
+	counts, err := s.fileCounts(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	configured := make([]Configured, len(records))
 	for i, record := range records {
 		configured[i] = fromRecord(record)
+		configured[i].Files = counts[record.ID]
 	}
 
 	return configured, nil
@@ -124,7 +132,37 @@ func (s *Service) Get(ctx context.Context, id uuid.UUID) (Configured, error) {
 		return Configured{}, err
 	}
 
-	return fromRecord(record), nil
+	counts, err := s.fileCounts(ctx, id)
+	if err != nil {
+		return Configured{}, err
+	}
+
+	configured := fromRecord(record)
+	configured.Files = counts[id]
+
+	return configured, nil
+}
+
+func (s *Service) fileCounts(ctx context.Context, ids ...uuid.UUID) (map[uuid.UUID]int, error) {
+	query := s.store.ItemSource.Query()
+	if len(ids) > 0 {
+		query.Where(itemsourcemodel.SourceIDIn(ids...))
+	}
+
+	var rows []struct {
+		SourceID uuid.UUID `json:"source_id"`
+		Count    int       `json:"count"`
+	}
+	if err := query.GroupBy(itemsourcemodel.FieldSourceID).Aggregate(store.Count()).Scan(ctx, &rows); err != nil {
+		return nil, err
+	}
+
+	counts := make(map[uuid.UUID]int, len(rows))
+	for _, row := range rows {
+		counts[row.SourceID] = row.Count
+	}
+
+	return counts, nil
 }
 
 func byRemotePath(query *store.SourcePathQuery) {
