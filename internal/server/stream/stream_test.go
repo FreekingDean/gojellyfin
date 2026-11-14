@@ -415,3 +415,28 @@ func (f *fixture) newDownloader(t *testing.T) uuid.UUID {
 
 	return record.ID
 }
+
+func TestHandler_StopEncodings(t *testing.T) {
+	fixture := newFixture(t)
+
+	t.Run("lets a seek go ahead", func(t *testing.T) {
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodDelete, "/Videos/ActiveEncodings?PlaySessionId=s&api_key="+fixture.token, nil)
+
+		fixture.handler.StopEncodings(recorder, request)
+
+		if recorder.Code != http.StatusNoContent {
+			t.Errorf("status = %d, want %d, since jellyfin-web drops the seek when this fails", recorder.Code, http.StatusNoContent)
+		}
+	})
+
+	t.Run("refuses an anonymous caller", func(t *testing.T) {
+		recorder := httptest.NewRecorder()
+
+		fixture.handler.StopEncodings(recorder, httptest.NewRequest(http.MethodDelete, "/Videos/ActiveEncodings", nil))
+
+		if recorder.Code != http.StatusUnauthorized {
+			t.Errorf("status = %d, want %d", recorder.Code, http.StatusUnauthorized)
+		}
+	})
+}
