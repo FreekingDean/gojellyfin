@@ -77,7 +77,7 @@ func (s *Service) LatestItems(ctx context.Context, query LatestQuery) ([]Latest,
 
 func byAdded(selector *sql.Selector) {
 	selector.OrderExpr(sql.Expr(fmt.Sprintf(
-		"COALESCE(%s, %s) DESC",
+		"COALESCE(%[1]s, %[2]s) DESC, %[2]s DESC",
 		selector.C(itemmodel.FieldDateModified),
 		selector.C(itemmodel.FieldCreatedAt),
 	)))

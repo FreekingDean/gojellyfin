@@ -20,6 +20,8 @@ const SHOWS = 'Smoke Shows';
 const SERIES = 'Fixture Show';
 const SEASON = 'Season 1';
 const EPISODES = ['Fixture Pilot', 'Fixture Second'];
+const DRAMA = 'Fixture Drama';
+const FINALE = 'Fixture Finale';
 
 const CLIENT_IMAGE = 'jellyfin/jellyfin:10.10.0';
 
@@ -89,6 +91,8 @@ async function boot() {
       series: SERIES,
       season: SEASON,
       episodes: EPISODES,
+      drama: DRAMA,
+      finale: FINALE,
     },
     serverLog: () => log.join(''),
     async stop() {
