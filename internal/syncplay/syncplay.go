@@ -35,8 +35,8 @@ type Participant struct {
 }
 
 type Departure struct {
-	GroupID   uuid.UUID
-	Messages  []Outgoing
+	GroupID  uuid.UUID
+	Messages []Outgoing
 }
 
 type Joined struct {
