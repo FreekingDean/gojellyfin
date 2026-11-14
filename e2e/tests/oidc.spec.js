@@ -1,6 +1,10 @@
+const crypto = require('node:crypto');
+
 const { test, expect, loadLogin, view } = require('./fixtures');
 
 const TV = 'MediaBrowser Client="Android TV", Device="Living Room", DeviceId="e2e-tv", Version="1.0.0"';
+
+const SCANNED = '/link/tv/' + crypto.createHash('sha256').update('e2e-tv').digest('hex').slice(0, 16);
 
 test.describe('single sign-on', () => {
   // The page fixture refuses every origin but the client's, and the sign-in
@@ -18,7 +22,7 @@ test.describe('single sign-on', () => {
   test('signs in as the account the provider vouched for', async ({ page, harness }) => {
     await signInWithSSO(page, harness);
 
-    await expect(page).toHaveURL(/home\.html/, { timeout: 30000 });
+    await expect(page).toHaveURL(/#\/home/, { timeout: 30000 });
     await expect(view(page)).toContainText('My Media');
     expect(await signedInAs(page, harness)).toBe(harness.ssoUsername);
   });
@@ -45,6 +49,26 @@ test.describe('single sign-on', () => {
     const signedIn = await tv.post('/Users/AuthenticateWithQuickConnect', { data: { Secret: secret } });
     expect(signedIn.ok()).toBe(true);
     expect((await signedIn.json()).User.Name).toBe(harness.ssoUsername);
+
+    await tv.dispose();
+  });
+
+  test('comes back to the code of a scanned TV after signing in', async ({ page, harness, playwright }) => {
+    const tv = await playwright.request.newContext({ baseURL: harness.baseUrl, extraHTTPHeaders: { Authorization: TV } });
+    const { Code: code, Secret: secret } = await (await tv.post('/QuickConnect/Initiate')).json();
+
+    await page.goto(harness.baseUrl + SCANNED);
+    await expect(page.getByRole('button', { name: 'Sign in with SSO' })).toBeVisible({ timeout: 30000 });
+    await page.getByRole('button', { name: 'Sign in with SSO' }).click();
+
+    await expect(page).toHaveURL(new RegExp(`#/quickconnect\\?code=${code}`), { timeout: 30000 });
+    await expect(view(page).locator('#txtQuickConnectCode')).toHaveValue(code);
+    await view(page).locator('button[type=submit]').click();
+
+    await expect(async () => {
+      const state = await tv.get(`/QuickConnect/Connect?secret=${secret}`);
+      expect((await state.json()).Authenticated).toBe(true);
+    }).toPass({ timeout: 15000 });
 
     await tv.dispose();
   });
