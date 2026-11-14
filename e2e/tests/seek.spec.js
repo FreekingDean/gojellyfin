@@ -69,6 +69,7 @@ test.describe('seeking', () => {
 
   test('a resume starts where it stopped and reports that position, not twice it', async ({ signedIn: page, harness }) => {
     await open(page, harness.playable);
+    await expect(page).toHaveURL(/[?&]id=/);
     const id = itemId(page);
     const resumeAt = 8;
 
