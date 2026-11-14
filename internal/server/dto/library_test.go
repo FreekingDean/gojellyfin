@@ -11,7 +11,7 @@ import (
 
 type collageTag string
 
-func (c collageTag) Tag(context.Context, uuid.UUID) (string, error) {
+func (c collageTag) Tag(context.Context, uuid.UUID, uuid.UUID) (string, error) {
 	return string(c), nil
 }
 

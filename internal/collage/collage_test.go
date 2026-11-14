@@ -3,11 +3,13 @@ package collage
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"image"
 	"image/color"
 	"image/png"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -22,6 +24,7 @@ import (
 	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/source"
+	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
 type fixture struct {
@@ -70,7 +73,7 @@ func newFixture(t *testing.T) *fixture {
 	}
 
 	f := &fixture{
-		service:   newService(items.New(client), libraries.New(client), unshelved{}, time.Now),
+		service:   newService(items.New(client), libraries.New(client), unshelved{}, everything{}, time.Now),
 		client:    client,
 		libraryID: library.ID,
 		sourceID:  downloader.ID,
@@ -151,7 +154,7 @@ func (f *fixture) title(t *testing.T, poster []byte) uuid.UUID {
 func (f *fixture) image(t *testing.T) []byte {
 	t.Helper()
 
-	built, ok := f.service.Image(context.Background(), f.libraryID)
+	built, ok := f.service.Image(context.Background(), f.libraryID, "")
 	if !ok {
 		t.Fatal("the library has no collage")
 	}
@@ -162,7 +165,7 @@ func (f *fixture) image(t *testing.T) []byte {
 func (f *fixture) tag(t *testing.T) string {
 	t.Helper()
 
-	tag, err := f.service.Tag(context.Background(), f.libraryID)
+	tag, err := f.service.Tag(context.Background(), f.libraryID, uuid.Nil)
 	if err != nil {
 		t.Fatalf("failed to read the tag: %v", err)
 	}
@@ -218,7 +221,7 @@ func TestService_Image(t *testing.T) {
 	t.Run("answers nothing for a library with no posters", func(t *testing.T) {
 		fixture := newFixture(t)
 
-		if _, ok := fixture.service.Image(context.Background(), fixture.libraryID); ok {
+		if _, ok := fixture.service.Image(context.Background(), fixture.libraryID, ""); ok {
 			t.Error("a library with no posters was given a collage")
 		}
 		if tag := fixture.tag(t); tag != "" {
@@ -261,7 +264,7 @@ func TestService_Image(t *testing.T) {
 		fixture.title(t, painted(t, red))
 		fixture.title(t, []byte("not an image"))
 
-		built, ok := fixture.service.Image(context.Background(), fixture.libraryID)
+		built, ok := fixture.service.Image(context.Background(), fixture.libraryID, "")
 		if !ok {
 			t.Fatal("the library has no collage")
 		}
@@ -283,7 +286,7 @@ func TestService_Image(t *testing.T) {
 		fixture := newFixture(t)
 		fixture.title(t, []byte("not an image"))
 
-		if _, ok := fixture.service.Image(context.Background(), fixture.libraryID); ok {
+		if _, ok := fixture.service.Image(context.Background(), fixture.libraryID, ""); ok {
 			t.Error("a collage was built out of nothing")
 		}
 	})
@@ -304,8 +307,8 @@ func TestService_Image(t *testing.T) {
 		fixture.title(t, painted(t, red))
 
 		now := fixture.tag(t)
-		later := newService(items.New(fixture.client), libraries.New(fixture.client), unshelved{}, func() time.Time { return time.Now().Add(shelves.FreshWindow + time.Hour) })
-		aged, err := later.Tag(context.Background(), fixture.libraryID)
+		later := newService(items.New(fixture.client), libraries.New(fixture.client), unshelved{}, everything{}, func() time.Time { return time.Now().Add(shelves.FreshWindow + time.Hour) })
+		aged, err := later.Tag(context.Background(), fixture.libraryID, uuid.Nil)
 		if err != nil {
 			t.Fatalf("failed to read the aged tag: %v", err)
 		}
@@ -317,17 +320,24 @@ func TestService_Image(t *testing.T) {
 
 type unshelved struct{}
 
-func (unshelved) Card(context.Context, uuid.UUID, items.Viewer, int) (shelves.Card, bool, error) {
+func (unshelved) Card(context.Context, uuid.UUID, items.Viewer, uuid.UUID, int) (shelves.Card, bool, error) {
 	return shelves.Card{}, false, nil
 }
 
-type shelved struct {
-	id   uuid.UUID
-	card shelves.Card
+type everything struct{}
+
+func (everything) Access(context.Context, uuid.UUID) (users.Access, error) {
+	return users.Access{All: true}, nil
 }
 
-func (s shelved) Card(_ context.Context, id uuid.UUID, viewer items.Viewer, _ int) (shelves.Card, bool, error) {
-	if id != s.id || !viewer.All {
+type shelved struct {
+	id    uuid.UUID
+	card  shelves.Card
+	owner uuid.UUID
+}
+
+func (s shelved) Card(_ context.Context, id uuid.UUID, viewer items.Viewer, userID uuid.UUID, _ int) (shelves.Card, bool, error) {
+	if id != s.id || !viewer.All || s.card.Personal && userID != s.owner {
 		return shelves.Card{}, false, nil
 	}
 
@@ -347,9 +357,9 @@ func TestService_Shelf(t *testing.T) {
 
 	shelfID := uuid.New()
 	card := shelves.Card{Name: "Recently Aired", Fresh: 3, Posters: posters}
-	service := newService(items.New(fixture.client), libraries.New(fixture.client), shelved{id: shelfID, card: card}, time.Now)
+	service := newService(items.New(fixture.client), libraries.New(fixture.client), shelved{id: shelfID, card: card}, everything{}, time.Now)
 
-	tag, err := service.Tag(ctx, shelfID)
+	tag, err := service.Tag(ctx, shelfID, uuid.Nil)
 	if err != nil {
 		t.Fatalf("failed to read the shelf's tag: %v", err)
 	}
@@ -358,7 +368,7 @@ func TestService_Shelf(t *testing.T) {
 	}
 
 	card.Fresh = 4
-	recounted, err := newService(items.New(fixture.client), libraries.New(fixture.client), shelved{id: shelfID, card: card}, time.Now).Tag(ctx, shelfID)
+	recounted, err := newService(items.New(fixture.client), libraries.New(fixture.client), shelved{id: shelfID, card: card}, everything{}, time.Now).Tag(ctx, shelfID, uuid.Nil)
 	if err != nil {
 		t.Fatalf("failed to read the recounted tag: %v", err)
 	}
@@ -366,7 +376,7 @@ func TestService_Shelf(t *testing.T) {
 		t.Error("a new count kept the old tag, so a client would keep the old card")
 	}
 
-	built, ok := service.Image(ctx, shelfID)
+	built, ok := service.Image(ctx, shelfID, tag)
 	if !ok || !built.Complete {
 		t.Fatalf("shelf card = %v complete %v, want a complete card", ok, built.Complete)
 	}
@@ -382,5 +392,53 @@ func TestService_Shelf(t *testing.T) {
 	corner := drawn.At(4, height-4)
 	if r, g, b, _ := corner.RGBA(); r>>8 > 40 || g>>8 > 40 || b>>8 > 40 {
 		t.Errorf("corner = %v, want the dark side the title sits on", corner)
+	}
+}
+
+func TestService_PersonalShelf(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := context.Background()
+	fixture.title(t, painted(t, red))
+	fixture.title(t, painted(t, green))
+
+	posters, err := items.New(fixture.client).LibraryPosters(ctx, fixture.libraryID, stacked)
+	if err != nil {
+		t.Fatalf("failed to read the library's posters: %v", err)
+	}
+
+	shelfID := uuid.New()
+	owner := uuid.New()
+	card := shelves.Card{Name: "Because You Watched The Godfather Part II", Posters: posters, Personal: true}
+	service := newService(items.New(fixture.client), libraries.New(fixture.client), shelved{id: shelfID, card: card, owner: owner}, everything{}, time.Now)
+
+	tag, err := service.Tag(ctx, shelfID, owner)
+	if err != nil {
+		t.Fatalf("failed to read the shelf's tag: %v", err)
+	}
+	if !strings.HasPrefix(tag, hex.EncodeToString(owner[:])+"-") {
+		t.Fatalf("tag = %q, want one naming the user it was drawn for", tag)
+	}
+
+	if anonymous, err := service.Tag(ctx, shelfID, uuid.Nil); err != nil || anonymous != "" {
+		t.Errorf("tag with nobody signed in = %q, %v, want none", anonymous, err)
+	}
+
+	built, ok := service.Image(ctx, shelfID, tag)
+	if !ok || !built.Complete {
+		t.Fatalf("card = %v complete %v, want the user's card", ok, built.Complete)
+	}
+
+	_, fingerprint, _ := strings.Cut(tag, "-")
+	other := uuid.New()
+	stranger := hex.EncodeToString(other[:])
+	for name, asked := range map[string]string{
+		"no tag":               "",
+		"the bare fingerprint": fingerprint,
+		"another user's":       stranger + "-" + fingerprint,
+		"a stale fingerprint":  hex.EncodeToString(owner[:]) + "-" + strings.Repeat("0", len(fingerprint)),
+	} {
+		if _, ok := service.Image(ctx, shelfID, asked); ok {
+			t.Errorf("%s answered a card, want none since only the tag the user was handed draws theirs", name)
+		}
 	}
 }

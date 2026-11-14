@@ -47,6 +47,9 @@ const (
 	titleLine     = 60
 	titleSize     = 54.0
 	titleWidth    = 340
+	titleLines    = 4
+	titleShrink   = 0.9
+	titleSmallest = 24.0
 	countSize     = 22.0
 	countGap      = 14
 	barLeft       = 56
@@ -105,26 +108,20 @@ func caption(canvas *image.RGBA, name string, fresh int) error {
 		return err
 	}
 
-	words := strings.Fields(strings.ToUpper(name))
-	size := titleSize
-	for _, word := range words {
-		measured, err := measure(parsed, word, size)
-		if err != nil {
-			return err
-		}
-		if measured > titleWidth {
-			size *= float64(titleWidth) / float64(measured)
-		}
+	size, lines, err := fitted(parsed, strings.Fields(strings.ToUpper(name)))
+	if err != nil {
+		return err
 	}
 
+	line := int(titleLine * size / titleSize)
 	baseline := titleTop + int(size)
-	for _, word := range words {
-		if err := write(canvas, parsed, word, size, ink, image.Pt(titleLeft, baseline)); err != nil {
+	for _, text := range lines {
+		if err := write(canvas, parsed, text, size, ink, image.Pt(titleLeft, baseline)); err != nil {
 			return err
 		}
-		baseline += titleLine
+		baseline += line
 	}
-	bar := image.Rect(barLeft, titleTop+barInset, barLeft+barWidth, titleTop+len(words)*titleLine-titleLine/3)
+	bar := image.Rect(barLeft, titleTop+barInset, barLeft+barWidth, titleTop+len(lines)*line-line/3)
 	draw.Draw(canvas, bar, image.NewUniform(accent), image.Point{}, draw.Src)
 
 	text := headline(fresh)
@@ -132,7 +129,50 @@ func caption(canvas *image.RGBA, name string, fresh int) error {
 		return nil
 	}
 
-	return write(canvas, parsed, text, countSize, muted, image.Pt(titleLeft+2, baseline-titleLine+countGap+int(countSize)))
+	return write(canvas, parsed, text, countSize, muted, image.Pt(titleLeft+2, baseline-line+countGap+int(countSize)))
+}
+
+func fitted(parsed *opentype.Font, words []string) (float64, []string, error) {
+	size := titleSize
+	for {
+		lines, widest, err := wrapped(parsed, words, size)
+		if err != nil {
+			return 0, nil, err
+		}
+		if widest <= titleWidth && len(lines) <= titleLines || size <= titleSmallest {
+			return size, lines, nil
+		}
+		size = max(titleSmallest, size*titleShrink)
+	}
+}
+
+func wrapped(parsed *opentype.Font, words []string, size float64) ([]string, int, error) {
+	lines := []string{}
+	widest := 0
+	for _, word := range words {
+		if len(lines) > 0 {
+			joined := lines[len(lines)-1] + " " + word
+			measured, err := measure(parsed, joined, size)
+			if err != nil {
+				return nil, 0, err
+			}
+			if measured <= titleWidth {
+				lines[len(lines)-1] = joined
+				widest = max(widest, measured)
+
+				continue
+			}
+		}
+
+		measured, err := measure(parsed, word, size)
+		if err != nil {
+			return nil, 0, err
+		}
+		lines = append(lines, word)
+		widest = max(widest, measured)
+	}
+
+	return lines, widest, nil
 }
 
 func measure(parsed *opentype.Font, text string, size float64) (int, error) {

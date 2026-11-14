@@ -22,6 +22,7 @@ import (
 	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	downloadermodel "github.com/FreekingDean/gojellyfin/internal/store/source"
+	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
 type fixture struct {
@@ -100,7 +101,7 @@ func newFixture(t *testing.T) *fixture {
 	shelved := shelves.New(catalogue, found, settings.New(client))
 
 	return &fixture{
-		server:    New(catalogue, collage.New(catalogue, libraries.New(client), shelved), found, nil),
+		server:    New(catalogue, collage.New(catalogue, libraries.New(client), shelved, users.New(client)), found, nil),
 		client:    client,
 		itemID:    item.ID,
 		libraryID: library.ID,

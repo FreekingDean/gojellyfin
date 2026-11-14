@@ -53,7 +53,7 @@ func (s *Server) GetSplashscreen(ctx context.Context, request api.GetSplashscree
 }
 
 func (s *Server) GetItemImage(ctx context.Context, request api.GetItemImageRequestObject) (api.GetItemImageResponseObject, error) {
-	answer, ok := s.answer(ctx, request.ItemId, request.ImageType, apiutil.Deref(request.Params.ImageIndex))
+	answer, ok := s.answer(ctx, request.ItemId, request.ImageType, apiutil.Deref(request.Params.ImageIndex), apiutil.Deref(request.Params.Tag))
 	if !ok {
 		return api.GetItemImage404JSONResponse{}, nil
 	}
@@ -62,7 +62,7 @@ func (s *Server) GetItemImage(ctx context.Context, request api.GetItemImageReque
 }
 
 func (s *Server) HeadItemImage(ctx context.Context, request api.HeadItemImageRequestObject) (api.HeadItemImageResponseObject, error) {
-	answer, ok := s.answer(ctx, request.ItemId, request.ImageType, apiutil.Deref(request.Params.ImageIndex))
+	answer, ok := s.answer(ctx, request.ItemId, request.ImageType, apiutil.Deref(request.Params.ImageIndex), apiutil.Deref(request.Params.Tag))
 	if !ok {
 		return api.HeadItemImage404JSONResponse{}, nil
 	}
@@ -71,7 +71,7 @@ func (s *Server) HeadItemImage(ctx context.Context, request api.HeadItemImageReq
 }
 
 func (s *Server) GetItemImageByIndex(ctx context.Context, request api.GetItemImageByIndexRequestObject) (api.GetItemImageByIndexResponseObject, error) {
-	answer, ok := s.answer(ctx, request.ItemId, request.ImageType, request.ImageIndex)
+	answer, ok := s.answer(ctx, request.ItemId, request.ImageType, request.ImageIndex, apiutil.Deref(request.Params.Tag))
 	if !ok {
 		return api.GetItemImageByIndex404JSONResponse{}, nil
 	}
@@ -80,7 +80,7 @@ func (s *Server) GetItemImageByIndex(ctx context.Context, request api.GetItemIma
 }
 
 func (s *Server) HeadItemImageByIndex(ctx context.Context, request api.HeadItemImageByIndexRequestObject) (api.HeadItemImageByIndexResponseObject, error) {
-	answer, ok := s.answer(ctx, request.ItemId, request.ImageType, request.ImageIndex)
+	answer, ok := s.answer(ctx, request.ItemId, request.ImageType, request.ImageIndex, apiutil.Deref(request.Params.Tag))
 	if !ok {
 		return api.HeadItemImageByIndex404JSONResponse{}, nil
 	}
@@ -95,7 +95,7 @@ type answer interface {
 	api.HeadItemImageByIndexResponseObject
 }
 
-func (s *Server) answer(ctx context.Context, itemID uuid.UUID, imageType api.ImageType, index int32) (answer, bool) {
+func (s *Server) answer(ctx context.Context, itemID uuid.UUID, imageType api.ImageType, index int32, tag string) (answer, bool) {
 	kind := items.ImageKind(imageType)
 	if items.ValidImageKind(kind) != nil {
 		return nil, false
@@ -117,7 +117,7 @@ func (s *Server) answer(ctx context.Context, itemID uuid.UUID, imageType api.Ima
 		return nil, false
 	}
 
-	built, ok := s.collages.Image(ctx, itemID)
+	built, ok := s.collages.Image(ctx, itemID, tag)
 	if !ok {
 		return nil, false
 	}
