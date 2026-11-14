@@ -20,6 +20,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
+	"github.com/FreekingDean/gojellyfin/internal/reports"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
@@ -151,7 +152,7 @@ func newFixture(t *testing.T) *fixture {
 	return &fixture{
 		downloader: downloader.ID,
 		client:     client,
-		handler:    New(sessionService, itemService, filesystem.New(config), transcoder),
+		handler:    New(sessionService, itemService, filesystem.New(config), transcoder, reports.New(client, nil)),
 		items:      itemService,
 		transcoder: transcoder,
 		library:    library.ID,

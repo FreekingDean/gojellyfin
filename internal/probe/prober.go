@@ -2,7 +2,10 @@ package probe
 
 import (
 	"context"
+	"errors"
 	"log"
+	"os"
+	"os/exec"
 	"runtime"
 
 	"github.com/google/uuid"
@@ -11,16 +14,22 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
+	"github.com/FreekingDean/gojellyfin/internal/reports"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 )
 
-type Prober struct {
-	items  *items.Service
-	ffmpeg *ffmpeg.FFMpeg
+type Reports interface {
+	File(ctx context.Context, filing reports.Filing) error
 }
 
-func New(records *items.Service, probe *ffmpeg.FFMpeg) *Prober {
-	return &Prober{items: records, ffmpeg: probe}
+type Prober struct {
+	items   *items.Service
+	ffmpeg  *ffmpeg.FFMpeg
+	reports Reports
+}
+
+func New(records *items.Service, probe *ffmpeg.FFMpeg, filed *reports.Service) *Prober {
+	return &Prober{items: records, ffmpeg: probe, reports: filed}
 }
 
 func (s *Prober) FileJob() jobs.Job {
@@ -77,6 +86,17 @@ func (s *Prober) run(ctx context.Context) error {
 	return group.Wait()
 }
 
+func unreadable(err error, path string) bool {
+	var exited *exec.ExitError
+	if !errors.As(err, &exited) {
+		return false
+	}
+
+	_, missing := os.Stat(path)
+
+	return missing == nil
+}
+
 func (s *Prober) ProbeSource(ctx context.Context, id uuid.UUID) error {
 	source, err := s.items.SourceByID(ctx, id)
 	if store.IsNotFound(err) {
@@ -92,6 +112,15 @@ func (s *Prober) ProbeSource(ctx context.Context, id uuid.UUID) error {
 	}
 
 	probed, err := s.probeFile(ctx, source)
+	if unreadable(err, source.Path) {
+		return errors.Join(err, s.reports.File(ctx, reports.Filing{
+			ItemID: source.ItemID,
+			FileID: &source.ID,
+			Kind:   reports.KindUnplayable,
+			Origin: reports.OriginProbe,
+			Note:   err.Error(),
+		}))
+	}
 	if err != nil || probed == nil {
 		return err
 	}

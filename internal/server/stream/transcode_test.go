@@ -18,9 +18,11 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/reports"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	streammodel "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
+	reportmodel "github.com/FreekingDean/gojellyfin/internal/store/report"
 	"github.com/FreekingDean/gojellyfin/internal/transcode"
 )
 
@@ -294,6 +296,86 @@ func TestHandler_relay(t *testing.T) {
 		body, err := io.ReadAll(response.Body)
 		if err != nil || string(body) != "complete" {
 			t.Fatalf("read %q, %v; want %q and a clean end", body, err, "complete")
+		}
+	})
+}
+
+func TestHandler_ReportsWhatWillNotPlay(t *testing.T) {
+	filed := func(t *testing.T, fixture *fixture, id uuid.UUID) []*reports.Report {
+		t.Helper()
+
+		found, err := fixture.client.Report.Query().Where(reportmodel.ItemID(id)).AllModels(context.Background())
+		if err != nil {
+			t.Fatalf("failed to query the reports: %v", err)
+		}
+
+		return found
+	}
+
+	t.Run("a source ffmpeg cannot read is reported once", func(t *testing.T) {
+		fixture := newFixture(t)
+		id := fixture.add(t, uuid.NewString()+".flac", "flac")
+		fixture.transcoder.enabled = true
+		fixture.transcoder.open = func(context.Context, transcode.Spec) (io.ReadCloser, error) {
+			return nil, errors.New("ffmpeg exited: exit status 1")
+		}
+
+		for range 2 {
+			request := fixture.get(t, http.MethodGet, "/Audio/"+id.String()+"/stream.mp3?", id)
+			request.SetPathValue("container", "mp3")
+			recorder := httptest.NewRecorder()
+			fixture.handler.Serve(recorder, request)
+
+			if recorder.Code != http.StatusUnsupportedMediaType {
+				t.Fatalf("status = %d, want %d", recorder.Code, http.StatusUnsupportedMediaType)
+			}
+		}
+
+		found := filed(t, fixture, id)
+		if len(found) != 1 {
+			t.Fatalf("got %d reports, want one", len(found))
+		}
+		if found[0].Origin != reports.OriginPlayback || found[0].Kind != reports.KindUnplayable || found[0].ItemSourceID == nil {
+			t.Errorf("report = %+v", found[0])
+		}
+	})
+
+	t.Run("a pod with every slot taken reports nothing", func(t *testing.T) {
+		fixture := newFixture(t)
+		id := fixture.add(t, uuid.NewString()+".flac", "flac")
+		fixture.transcoder.enabled = true
+		fixture.transcoder.open = func(context.Context, transcode.Spec) (io.ReadCloser, error) {
+			return nil, transcode.ErrBusy
+		}
+
+		request := fixture.get(t, http.MethodGet, "/Audio/"+id.String()+"/stream.mp3?", id)
+		request.SetPathValue("container", "mp3")
+		fixture.handler.Serve(httptest.NewRecorder(), request)
+
+		if found := filed(t, fixture, id); len(found) != 0 {
+			t.Errorf("got %d reports, want none", len(found))
+		}
+	})
+
+	t.Run("a file that has gone from the disk is reported", func(t *testing.T) {
+		fixture := newFixture(t)
+		id := fixture.add(t, uuid.NewString()+".mp3", "mp3")
+		paths, err := fixture.items.SourcePaths(context.Background(), id)
+		if err != nil || len(paths) != 1 {
+			t.Fatalf("paths = %v, %v", paths, err)
+		}
+		if err := os.Remove(paths[0]); err != nil {
+			t.Fatalf("failed to remove the file: %v", err)
+		}
+
+		recorder := httptest.NewRecorder()
+		fixture.handler.Serve(recorder, fixture.get(t, http.MethodGet, "/Audio/"+id.String()+"/stream?", id))
+
+		if recorder.Code != http.StatusNotFound {
+			t.Fatalf("status = %d, want %d", recorder.Code, http.StatusNotFound)
+		}
+		if found := filed(t, fixture, id); len(found) != 1 {
+			t.Errorf("got %d reports, want one", len(found))
 		}
 	})
 }
