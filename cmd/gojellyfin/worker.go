@@ -39,8 +39,15 @@ func workerCommand() *cobra.Command {
 		Use:   "worker",
 		Short: "Run background workflows",
 		Args:  cobra.NoArgs,
-		Run: func(*cobra.Command, []string) {
-			fx.New(workerModules).Run()
+		RunE: func(*cobra.Command, []string) error {
+			config, err := env.Load()
+			if err != nil {
+				return err
+			}
+
+			fx.New(workerModules, fx.StopTimeout(config.Temporal.WorkerStopTimeout+fx.DefaultTimeout)).Run()
+
+			return nil
 		},
 	}
 }

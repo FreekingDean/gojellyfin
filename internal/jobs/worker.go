@@ -4,19 +4,24 @@ import (
 	"context"
 	"log"
 	"runtime"
+	"sync"
+	"time"
 
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/worker"
 	"go.temporal.io/sdk/workflow"
+
+	"github.com/FreekingDean/gojellyfin/internal/env"
 )
 
 type Worker struct {
-	service *Service
-	workers []worker.Worker
+	service     *Service
+	stopTimeout time.Duration
+	workers     []worker.Worker
 }
 
-func NewWorker(service *Service) *Worker {
-	return &Worker{service: service}
+func NewWorker(service *Service, config env.Config) *Worker {
+	return &Worker{service: service, stopTimeout: config.Temporal.WorkerStopTimeout}
 }
 
 func (w *Worker) Start() error {
@@ -28,6 +33,7 @@ func (w *Worker) Start() error {
 	for _, queue := range w.service.registry.Queues() {
 		polling := worker.New(connection, queue, worker.Options{
 			MaxConcurrentActivityExecutionSize: runtime.GOMAXPROCS(0),
+			WorkerStopTimeout:                  w.stopTimeout,
 		})
 		polling.RegisterWorkflowWithOptions(run, workflow.RegisterOptions{Name: runWorkflow})
 
@@ -59,9 +65,11 @@ func (w *Worker) activity(job Job) func(context.Context, Params) error {
 }
 
 func (w *Worker) Stop() error {
+	var stopping sync.WaitGroup
 	for _, polling := range w.workers {
-		polling.Stop()
+		stopping.Go(polling.Stop)
 	}
+	stopping.Wait()
 	w.service.client.Close()
 
 	return nil
