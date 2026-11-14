@@ -17,6 +17,7 @@ import (
 	"golang.org/x/sync/singleflight"
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/shelves"
 )
 
@@ -41,6 +42,11 @@ type layout func([]image.Image) ([]byte, error)
 
 type Libraries interface {
 	LibraryPosters(ctx context.Context, libraryID uuid.UUID, limit int) ([]*items.Image, error)
+	LibraryFresh(ctx context.Context, libraryID uuid.UUID, since time.Time) (int, error)
+}
+
+type Names interface {
+	Library(ctx context.Context, id uuid.UUID) (*libraries.Library, error)
 }
 
 type Shelves interface {
@@ -55,22 +61,26 @@ type plan struct {
 
 type Service struct {
 	libraries Libraries
+	names     Names
 	shelves   Shelves
 	client    *http.Client
+	now       func() time.Time
 
 	flight singleflight.Group
 	mutex  sync.RWMutex
 	held   map[uuid.UUID]held
 }
 
-func New(records *items.Service, shelved *shelves.Service) *Service {
-	return newService(records, shelved)
+func New(records *items.Service, named *libraries.Service, shelved *shelves.Service) *Service {
+	return newService(records, named, shelved, time.Now)
 }
 
-func newService(libraries Libraries, shelved Shelves) *Service {
+func newService(listing Libraries, named Names, shelved Shelves, now func() time.Time) *Service {
 	return &Service{
-		libraries: libraries,
+		libraries: listing,
+		names:     named,
 		shelves:   shelved,
+		now:       now,
 		client:    &http.Client{Timeout: fetchTimeout},
 		held:      map[uuid.UUID]held{},
 	}
@@ -91,12 +101,29 @@ func (s *Service) plan(ctx context.Context, id uuid.UUID) (plan, error) {
 		return plan{}, err
 	}
 	if found {
-		return plan{posters: card.Posters, arrange: titled(card.Name, card.Fresh), caption: card.Name + "\x00" + headline(card.Fresh)}, nil
+		return titledPlan(card.Name, card.Fresh, card.Posters), nil
 	}
 
-	listed, err := s.libraries.LibraryPosters(ctx, id, cells)
+	listed, err := s.libraries.LibraryPosters(ctx, id, stacked)
+	if err != nil || len(listed) == 0 {
+		return plan{}, err
+	}
 
-	return plan{posters: listed, arrange: compose}, err
+	library, err := s.names.Library(ctx, id)
+	if err != nil {
+		return plan{}, err
+	}
+
+	fresh, err := s.libraries.LibraryFresh(ctx, id, s.now().Add(-shelves.FreshWindow))
+	if err != nil {
+		return plan{}, err
+	}
+
+	return titledPlan(library.Name, fresh, listed), nil
+}
+
+func titledPlan(name string, fresh int, posters []*items.Image) plan {
+	return plan{posters: posters, arrange: titled(name, fresh), caption: name + "\x00" + headline(fresh)}
 }
 
 func (s *Service) Image(ctx context.Context, id uuid.UUID) (Collage, bool) {

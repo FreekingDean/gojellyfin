@@ -10,6 +10,8 @@ import (
 	"strings"
 	"sync"
 
+	_ "image/png"
+
 	"golang.org/x/image/draw"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/gofont/gobold"
@@ -20,6 +22,9 @@ import (
 )
 
 const (
+	width         = 960
+	height        = 540
+	quality       = 90
 	stacked       = 5
 	stackLeft     = 440
 	stackStep     = 76

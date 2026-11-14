@@ -15,6 +15,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/shelves"
 	"github.com/FreekingDean/gojellyfin/internal/store"
@@ -99,7 +100,7 @@ func newFixture(t *testing.T) *fixture {
 	shelved := shelves.New(catalogue, found, settings.New(client))
 
 	return &fixture{
-		server:    New(catalogue, collage.New(catalogue, shelved), found, nil),
+		server:    New(catalogue, collage.New(catalogue, libraries.New(client), shelved), found, nil),
 		client:    client,
 		itemID:    item.ID,
 		libraryID: library.ID,
