@@ -56,3 +56,23 @@ func (s *Service) SetConfiguration(ctx context.Context, key string, value json.R
 		UpdateNewValues().
 		Exec(ctx)
 }
+
+type CastReceiver struct {
+	ID   string
+	Name string
+}
+
+var CastReceivers = []CastReceiver{
+	{ID: "F007D354", Name: "Stable"},
+	{ID: "6F511C87", Name: "Unstable"},
+}
+
+func CastReceiverID(chosen string) string {
+	for _, receiver := range CastReceivers {
+		if receiver.ID == chosen {
+			return chosen
+		}
+	}
+
+	return CastReceivers[0].ID
+}

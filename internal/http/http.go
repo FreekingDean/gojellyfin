@@ -129,13 +129,12 @@ type Server struct {
 	apiOptions     api.StrictHTTPServerOptions
 }
 
-func newHTTPMiddleware(config env.Config) []middleware.HttpMiddleware {
-	stack := make([]middleware.HttpMiddleware, 0, 3)
-	if len(config.CORSOrigins) > 0 {
-		stack = append(stack, middleware.HttpCORS(config.CORSOrigins))
-	}
+const castReceiverOrigin = "https://apps.jellyfin.org"
 
-	return append(stack, middleware.HttpLogging, middleware.HttpCanonicalQuery)
+func newHTTPMiddleware(config env.Config) []middleware.HttpMiddleware {
+	origins := append([]string{castReceiverOrigin}, config.CORSOrigins...)
+
+	return []middleware.HttpMiddleware{middleware.HttpCORS(origins), middleware.HttpLogging, middleware.HttpCanonicalQuery}
 }
 
 func newAPIMiddleware(tracing *tracing.Tracing, tracingMiddleware *middleware.OapiTracing, authMiddleware *middleware.Auth, policies middleware.Policies) []api.StrictMiddlewareFunc {

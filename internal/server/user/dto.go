@@ -39,7 +39,7 @@ func configurationDto(configuration *users.Configuration) api.UserConfiguration 
 	}
 
 	return api.UserConfiguration{
-		CastReceiverId:             apiutil.Ptr(configuration.CastReceiverID),
+		CastReceiverId:             apiutil.Ptr(config.CastReceiverID(configuration.CastReceiverID)),
 		AudioLanguagePreference:    apiutil.Ptr(configuration.AudioLanguagePreference),
 		SubtitleLanguagePreference: apiutil.Ptr(configuration.SubtitleLanguagePreference),
 		PlayDefaultAudioTrack:      apiutil.Ptr(configuration.PlayDefaultAudioTrack),

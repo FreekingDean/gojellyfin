@@ -125,8 +125,8 @@ reads the environment.
 | `oidc.allowedGroup` | `OIDC_ALLOWED_GROUP` | `""` | Only members may sign in. Empty admits anyone the provider vouches for |
 | `oidc.linkExistingUsers` | `OIDC_LINK_EXISTING_USERS` | `false` | Let a first sign-in claim the local account with the same username instead of refusing it |
 | `sources.existingSecret` | `SOURCE_API_KEY_*` | `""` | Secret whose keys are the variable names Sonarr and Radarr sources are configured with, loaded into the API and the worker. Empty leaves every source failing its test and its scan |
-| `cors.enabled` | `CORS_ORIGINS` | `false` | Off reflects whatever origin asks; a literal `*` is not equivalent, because browsers reject it on credentialed requests |
-| `cors.origin` | | `""` | The one origin allowed when enabled. Enabling without one refuses to render: an empty value reflects every origin, so the restriction would restrict nothing |
+| `cors.enabled` | `CORS_ORIGINS` | `false` | Off allows only `https://apps.jellyfin.org`, the Google Cast receiver, which the server always allows |
+| `cors.origin` | | `""` | The origin added beside the cast receiver when enabled. Enabling without one refuses to render: an empty value reflects every origin, so the restriction would restrict nothing |
 | `tracing.otlpEndpoint` | `OTEL_EXPORTER_OTLP_ENDPOINT` | `""` | Empty exports no traces |
 | `media.directories` | `MEDIA_DIRECTORIES` | `[]` | The roots the library browser offers; empty follows `media.mountPath` and every `media.extraVolumes` path |
 | `temporal.hostPort` | `TEMPORAL_HOSTPORT` | `""` | Empty turns background work off and the server still starts |
