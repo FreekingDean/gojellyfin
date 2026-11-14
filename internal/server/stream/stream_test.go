@@ -448,6 +448,18 @@ func TestHandler_StopEncodings(t *testing.T) {
 		}
 	})
 
+	t.Run("takes the token from the header jellyfin-web sends", func(t *testing.T) {
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodDelete, "/Videos/ActiveEncodings?PlaySessionId=s", nil)
+		request.Header.Set("Authorization", `MediaBrowser Client="Jellyfin Web", Device="Chrome", DeviceId="ZGV2aWNl", Version="10.10.0", Token="`+fixture.token+`"`)
+
+		fixture.handler.StopEncodings(recorder, request)
+
+		if recorder.Code != http.StatusNoContent {
+			t.Errorf("status = %d, want %d", recorder.Code, http.StatusNoContent)
+		}
+	})
+
 	t.Run("refuses an anonymous caller", func(t *testing.T) {
 		recorder := httptest.NewRecorder()
 
