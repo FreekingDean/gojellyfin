@@ -16,6 +16,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/shelves"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
@@ -69,7 +70,7 @@ func newFixture(t *testing.T) *fixture {
 	}
 
 	f := &fixture{
-		service:   newService(items.New(client), unshelved{}),
+		service:   newService(items.New(client), libraries.New(client), unshelved{}, time.Now),
 		client:    client,
 		libraryID: library.ID,
 		sourceID:  downloader.ID,
@@ -291,10 +292,25 @@ func TestService_Image(t *testing.T) {
 		fixture := newFixture(t)
 		fixture.title(t, painted(t, red))
 
-		cell := opened(t, fixture.image(t)).At(cellWidth/2, cellHeight/2)
-		r, g, b, _ := cell.RGBA()
+		front := opened(t, fixture.image(t)).At(850, height/2)
+		r, g, b, _ := front.RGBA()
 		if r>>8 < 150 || g>>8 > 80 || b>>8 > 80 {
-			t.Errorf("cell = %v, want the red poster", cell)
+			t.Errorf("front = %v, want the red poster", front)
+		}
+	})
+
+	t.Run("retags once what the library added ages out of the week", func(t *testing.T) {
+		fixture := newFixture(t)
+		fixture.title(t, painted(t, red))
+
+		now := fixture.tag(t)
+		later := newService(items.New(fixture.client), libraries.New(fixture.client), unshelved{}, func() time.Time { return time.Now().Add(shelves.FreshWindow + time.Hour) })
+		aged, err := later.Tag(context.Background(), fixture.libraryID)
+		if err != nil {
+			t.Fatalf("failed to read the aged tag: %v", err)
+		}
+		if aged == "" || aged == now {
+			t.Errorf("tag a week on = %q, want a new tag beside %q", aged, now)
 		}
 	})
 }
@@ -324,14 +340,14 @@ func TestService_Shelf(t *testing.T) {
 	fixture.title(t, painted(t, red))
 	fixture.title(t, painted(t, green))
 
-	posters, err := items.New(fixture.client).LibraryPosters(ctx, fixture.libraryID, cells)
+	posters, err := items.New(fixture.client).LibraryPosters(ctx, fixture.libraryID, stacked)
 	if err != nil {
 		t.Fatalf("failed to read the library's posters: %v", err)
 	}
 
 	shelfID := uuid.New()
 	card := shelves.Card{Name: "Recently Aired", Fresh: 3, Posters: posters}
-	service := newService(items.New(fixture.client), shelved{id: shelfID, card: card})
+	service := newService(items.New(fixture.client), libraries.New(fixture.client), shelved{id: shelfID, card: card}, time.Now)
 
 	tag, err := service.Tag(ctx, shelfID)
 	if err != nil {
@@ -342,7 +358,7 @@ func TestService_Shelf(t *testing.T) {
 	}
 
 	card.Fresh = 4
-	recounted, err := newService(items.New(fixture.client), shelved{id: shelfID, card: card}).Tag(ctx, shelfID)
+	recounted, err := newService(items.New(fixture.client), libraries.New(fixture.client), shelved{id: shelfID, card: card}, time.Now).Tag(ctx, shelfID)
 	if err != nil {
 		t.Fatalf("failed to read the recounted tag: %v", err)
 	}
@@ -355,7 +371,7 @@ func TestService_Shelf(t *testing.T) {
 		t.Fatalf("shelf card = %v complete %v, want a complete card", ok, built.Complete)
 	}
 	if bytes.Equal(built.Body, fixture.image(t)) {
-		t.Error("the shelf's card is the library's grid, want the titled card")
+		t.Error("the shelf's card is the library's, want one titled with the shelf's name")
 	}
 
 	drawn := opened(t, built.Body)

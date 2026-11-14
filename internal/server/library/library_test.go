@@ -539,5 +539,5 @@ func (noProvider) Search(context.Context, items.Kind, string) ([]items.Metadata,
 func collages(client *store.Client) *collage.Service {
 	catalogue := items.New(client)
 
-	return collage.New(catalogue, shelves.New(catalogue, discover.New(noProvider{}, catalogue), settings.New(client)))
+	return collage.New(catalogue, libraries.New(client), shelves.New(catalogue, discover.New(noProvider{}, catalogue), settings.New(client)))
 }

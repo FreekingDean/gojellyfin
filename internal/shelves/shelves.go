@@ -47,7 +47,7 @@ type Card struct {
 
 const (
 	FreshLimit  = 99
-	freshWindow = 7 * 24 * time.Hour
+	FreshWindow = 7 * 24 * time.Hour
 )
 
 type Settings interface {
@@ -294,7 +294,7 @@ func (s *Service) fresh(ctx context.Context, shelf Shelf) (int, error) {
 		return 0, err
 	}
 
-	since := s.now().Add(-freshWindow)
+	since := s.now().Add(-FreshWindow)
 	count := 0
 	for _, entry := range aired {
 		if entry.Item.PremiereDate != nil && entry.Item.PremiereDate.After(since) {

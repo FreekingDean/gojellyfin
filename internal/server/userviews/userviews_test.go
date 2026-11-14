@@ -61,7 +61,7 @@ func newFixture(t *testing.T) *fixture {
 	catalogue := items.New(client)
 	shown := shelves.New(catalogue, discover.New(noProvider{}, catalogue), config.New(client))
 
-	return &fixture{server: New(libraries.New(client), shown, allLibraries{}, collage.New(catalogue, shown)), client: client, prefix: prefix}
+	return &fixture{server: New(libraries.New(client), shown, allLibraries{}, collage.New(catalogue, libraries.New(client), shown)), client: client, prefix: prefix}
 }
 
 type noProvider struct{}

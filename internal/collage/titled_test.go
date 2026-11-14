@@ -7,6 +7,36 @@ import (
 	"testing"
 )
 
+func shades(count int) []image.Image {
+	posters := make([]image.Image, 0, count)
+	for index := range count {
+		poster := image.NewRGBA(image.Rect(0, 0, 200, 300))
+		shade := color.RGBA{R: uint8(20 + index*20), G: 40, B: uint8(220 - index*20), A: 255}
+		for x := range 200 {
+			for y := range 300 {
+				poster.SetRGBA(x, y, shade)
+			}
+		}
+		posters = append(posters, poster)
+	}
+
+	return posters
+}
+
+func near(t *testing.T, got, want color.RGBA) bool {
+	t.Helper()
+
+	off := func(a, b uint8) int {
+		if a > b {
+			return int(a - b)
+		}
+
+		return int(b - a)
+	}
+
+	return off(got.R, want.R) <= 8 && off(got.G, want.G) <= 8 && off(got.B, want.B) <= 8
+}
+
 func drawn(t *testing.T, name string, fresh int, posters []image.Image) image.Image {
 	t.Helper()
 
