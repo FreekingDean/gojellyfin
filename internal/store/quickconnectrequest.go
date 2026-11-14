@@ -35,6 +35,8 @@ type QuickConnectRequest struct {
 	AppName string `json:"app_name,omitempty"`
 	// AppVersion holds the value of the "app_version" field.
 	AppVersion string `json:"app_version,omitempty"`
+	// RemoteAddress holds the value of the "remote_address" field.
+	RemoteAddress string `json:"remote_address,omitempty"`
 	// ExpiresAt holds the value of the "expires_at" field.
 	ExpiresAt time.Time `json:"expires_at,omitempty"`
 	// AuthorizedByID holds the value of the "authorized_by_id" field.
@@ -72,7 +74,7 @@ func (*QuickConnectRequest) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case quickconnectrequest.FieldAuthorizedByID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case quickconnectrequest.FieldSecret, quickconnectrequest.FieldCode, quickconnectrequest.FieldDeviceID, quickconnectrequest.FieldDeviceName, quickconnectrequest.FieldAppName, quickconnectrequest.FieldAppVersion:
+		case quickconnectrequest.FieldSecret, quickconnectrequest.FieldCode, quickconnectrequest.FieldDeviceID, quickconnectrequest.FieldDeviceName, quickconnectrequest.FieldAppName, quickconnectrequest.FieldAppVersion, quickconnectrequest.FieldRemoteAddress:
 			values[i] = new(sql.NullString)
 		case quickconnectrequest.FieldCreatedAt, quickconnectrequest.FieldUpdatedAt, quickconnectrequest.FieldExpiresAt:
 			values[i] = new(sql.NullTime)
@@ -146,6 +148,12 @@ func (_m *QuickConnectRequest) assignValues(columns []string, values []any) erro
 				return fmt.Errorf("unexpected type %T for field app_version", values[i])
 			} else if value.Valid {
 				_m.AppVersion = value.String
+			}
+		case quickconnectrequest.FieldRemoteAddress:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field remote_address", values[i])
+			} else if value.Valid {
+				_m.RemoteAddress = value.String
 			}
 		case quickconnectrequest.FieldExpiresAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -223,6 +231,9 @@ func (_m *QuickConnectRequest) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("app_version=")
 	builder.WriteString(_m.AppVersion)
+	builder.WriteString(", ")
+	builder.WriteString("remote_address=")
+	builder.WriteString(_m.RemoteAddress)
 	builder.WriteString(", ")
 	builder.WriteString("expires_at=")
 	builder.WriteString(_m.ExpiresAt.Format(time.ANSIC))

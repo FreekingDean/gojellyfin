@@ -96,6 +96,11 @@ func AppVersion(v string) predicate.QuickConnectRequest {
 	return predicate.QuickConnectRequest(sql.FieldEQ(FieldAppVersion, v))
 }
 
+// RemoteAddress applies equality check predicate on the "remote_address" field. It's identical to RemoteAddressEQ.
+func RemoteAddress(v string) predicate.QuickConnectRequest {
+	return predicate.QuickConnectRequest(sql.FieldEQ(FieldRemoteAddress, v))
+}
+
 // ExpiresAt applies equality check predicate on the "expires_at" field. It's identical to ExpiresAtEQ.
 func ExpiresAt(v time.Time) predicate.QuickConnectRequest {
 	return predicate.QuickConnectRequest(sql.FieldEQ(FieldExpiresAt, v))
@@ -574,6 +579,71 @@ func AppVersionEqualFold(v string) predicate.QuickConnectRequest {
 // AppVersionContainsFold applies the ContainsFold predicate on the "app_version" field.
 func AppVersionContainsFold(v string) predicate.QuickConnectRequest {
 	return predicate.QuickConnectRequest(sql.FieldContainsFold(FieldAppVersion, v))
+}
+
+// RemoteAddressEQ applies the EQ predicate on the "remote_address" field.
+func RemoteAddressEQ(v string) predicate.QuickConnectRequest {
+	return predicate.QuickConnectRequest(sql.FieldEQ(FieldRemoteAddress, v))
+}
+
+// RemoteAddressNEQ applies the NEQ predicate on the "remote_address" field.
+func RemoteAddressNEQ(v string) predicate.QuickConnectRequest {
+	return predicate.QuickConnectRequest(sql.FieldNEQ(FieldRemoteAddress, v))
+}
+
+// RemoteAddressIn applies the In predicate on the "remote_address" field.
+func RemoteAddressIn(vs ...string) predicate.QuickConnectRequest {
+	return predicate.QuickConnectRequest(sql.FieldIn(FieldRemoteAddress, vs...))
+}
+
+// RemoteAddressNotIn applies the NotIn predicate on the "remote_address" field.
+func RemoteAddressNotIn(vs ...string) predicate.QuickConnectRequest {
+	return predicate.QuickConnectRequest(sql.FieldNotIn(FieldRemoteAddress, vs...))
+}
+
+// RemoteAddressGT applies the GT predicate on the "remote_address" field.
+func RemoteAddressGT(v string) predicate.QuickConnectRequest {
+	return predicate.QuickConnectRequest(sql.FieldGT(FieldRemoteAddress, v))
+}
+
+// RemoteAddressGTE applies the GTE predicate on the "remote_address" field.
+func RemoteAddressGTE(v string) predicate.QuickConnectRequest {
+	return predicate.QuickConnectRequest(sql.FieldGTE(FieldRemoteAddress, v))
+}
+
+// RemoteAddressLT applies the LT predicate on the "remote_address" field.
+func RemoteAddressLT(v string) predicate.QuickConnectRequest {
+	return predicate.QuickConnectRequest(sql.FieldLT(FieldRemoteAddress, v))
+}
+
+// RemoteAddressLTE applies the LTE predicate on the "remote_address" field.
+func RemoteAddressLTE(v string) predicate.QuickConnectRequest {
+	return predicate.QuickConnectRequest(sql.FieldLTE(FieldRemoteAddress, v))
+}
+
+// RemoteAddressContains applies the Contains predicate on the "remote_address" field.
+func RemoteAddressContains(v string) predicate.QuickConnectRequest {
+	return predicate.QuickConnectRequest(sql.FieldContains(FieldRemoteAddress, v))
+}
+
+// RemoteAddressHasPrefix applies the HasPrefix predicate on the "remote_address" field.
+func RemoteAddressHasPrefix(v string) predicate.QuickConnectRequest {
+	return predicate.QuickConnectRequest(sql.FieldHasPrefix(FieldRemoteAddress, v))
+}
+
+// RemoteAddressHasSuffix applies the HasSuffix predicate on the "remote_address" field.
+func RemoteAddressHasSuffix(v string) predicate.QuickConnectRequest {
+	return predicate.QuickConnectRequest(sql.FieldHasSuffix(FieldRemoteAddress, v))
+}
+
+// RemoteAddressEqualFold applies the EqualFold predicate on the "remote_address" field.
+func RemoteAddressEqualFold(v string) predicate.QuickConnectRequest {
+	return predicate.QuickConnectRequest(sql.FieldEqualFold(FieldRemoteAddress, v))
+}
+
+// RemoteAddressContainsFold applies the ContainsFold predicate on the "remote_address" field.
+func RemoteAddressContainsFold(v string) predicate.QuickConnectRequest {
+	return predicate.QuickConnectRequest(sql.FieldContainsFold(FieldRemoteAddress, v))
 }
 
 // ExpiresAtEQ applies the EQ predicate on the "expires_at" field.

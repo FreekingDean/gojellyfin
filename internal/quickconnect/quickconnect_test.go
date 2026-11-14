@@ -3,6 +3,8 @@ package quickconnect
 import (
 	"context"
 	"errors"
+	"slices"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -76,9 +78,15 @@ func (f *fixture) account(t *testing.T, name string) uuid.UUID {
 func (f *fixture) initiate(t *testing.T) *Request {
 	t.Helper()
 
+	return f.initiateFrom(t, "192.0.2.1:40000")
+}
+
+func (f *fixture) initiateFrom(t *testing.T, address string) *Request {
+	t.Helper()
+
 	request, err := f.service.Initiate(context.Background(), sessions.Device{
 		ClientID: f.prefix + "tv", Name: "tv", AppName: "Jellyfin Web", AppVersion: "10.10.0",
-	})
+	}, address)
 	if err != nil {
 		t.Fatalf("failed to initiate: %v", err)
 	}
@@ -106,6 +114,9 @@ func TestService_Initiate(t *testing.T) {
 
 	if first.DeviceName != "tv" || first.AppName != "Jellyfin Web" || first.AppVersion != "10.10.0" {
 		t.Errorf("request = %+v, want it to describe the device that asked", first)
+	}
+	if first.RemoteAddress != "192.0.2.1:40000" {
+		t.Errorf("RemoteAddress = %q, want the address that asked", first.RemoteAddress)
 	}
 	if len(first.Code) != 6 {
 		t.Errorf("Code = %q, want six digits", first.Code)
@@ -256,5 +267,75 @@ func TestService_Waiting(t *testing.T) {
 	}
 	if len(codes) != 2 || codes[0] != newer.Code || codes[1] != older.Code {
 		t.Errorf("Waiting = %v, want the newest first: %s then %s", codes, newer.Code, older.Code)
+	}
+}
+
+func TestService_Nearby(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := context.Background()
+
+	home := fixture.initiateFrom(t, "198.51.100.7:40000")
+	fixture.initiateFrom(t, "198.51.100.8:40000")
+	lan := fixture.initiateFrom(t, "10.1.20.31:40000")
+	taken, _ := fixture.authorized(t, "dean")
+	if _, err := fixture.client.QuickConnectRequest.UpdateOneID(taken.ID).SetRemoteAddress("198.51.100.7:1").Save(ctx); err != nil {
+		t.Fatalf("failed to move the authorized request: %v", err)
+	}
+
+	tests := []struct {
+		name    string
+		address string
+		want    []string
+	}{
+		{name: "finds the sign-in from the same public address", address: "198.51.100.7:51000", want: []string{home.Code}},
+		{name: "finds the sign-in from the same private network", address: "10.1.20.44:51000", want: []string{lan.Code}},
+		{name: "finds nothing from another private network", address: "10.1.21.44:51000"},
+		{name: "finds nothing from an unreadable address", address: "phone"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			near, err := fixture.service.Nearby(ctx, tt.address)
+			if err != nil {
+				t.Fatalf("failed to look nearby: %v", err)
+			}
+
+			codes := []string{}
+			for _, request := range near {
+				if strings.HasPrefix(request.DeviceID, fixture.prefix) {
+					codes = append(codes, request.Code)
+				}
+			}
+			if tt.want == nil {
+				tt.want = []string{}
+			}
+			if !slices.Equal(codes, tt.want) {
+				t.Errorf("codes = %v, want %v", codes, tt.want)
+			}
+		})
+	}
+}
+
+func TestSameNetwork(t *testing.T) {
+	tests := []struct {
+		a, b string
+		want bool
+	}{
+		{"198.51.100.7:1", "198.51.100.7:2", true},
+		{"198.51.100.7:1", "198.51.100.8:2", false},
+		{"10.1.20.31:1", "10.1.20.44:2", true},
+		{"10.1.20.31:1", "10.1.21.31:2", false},
+		{"127.0.0.1:1", "127.0.0.1:2", true},
+		{"[2001:db8:1:2::10]:1", "[2001:db8:1:2::99]:2", true},
+		{"[2001:db8:1:2::10]:1", "[2001:db8:1:3::10]:2", false},
+		{"[::ffff:198.51.100.7]:1", "198.51.100.7:2", true},
+		{"[::1]:1", "[::1]:2", true},
+		{"198.51.100.7:1", "[2001:db8:1:2::10]:2", false},
+		{"", "198.51.100.7:2", false},
+		{"10.1.20.31:1", "198.51.100.7:2", false},
+	}
+	for _, tt := range tests {
+		if got := SameNetwork(tt.a, tt.b); got != tt.want {
+			t.Errorf("SameNetwork(%q, %q) = %v, want %v", tt.a, tt.b, got, tt.want)
+		}
 	}
 }

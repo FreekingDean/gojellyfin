@@ -22,6 +22,17 @@ func (w waiting) Waiting(context.Context) ([]*quickconnect.Request, error) {
 	return w, nil
 }
 
+func (w waiting) Nearby(_ context.Context, address string) ([]*quickconnect.Request, error) {
+	near := []*quickconnect.Request{}
+	for _, request := range w {
+		if quickconnect.SameNetwork(request.RemoteAddress, address) {
+			near = append(near, request)
+		}
+	}
+
+	return near, nil
+}
+
 func handler(published string, requests waiting) (*Handler, *mux.Mux) {
 	h := New(env.Config{PublishedServerURL: published}, nil)
 	h.quickconnect = requests
@@ -77,6 +88,40 @@ func TestRedirect(t *testing.T) {
 			}
 			if cookie := cookies[0]; cookie.Name != "gojellyfin_sso_return" || cookie.Path != "/sso/oidc" || cookie.MaxAge != 600 || !cookie.Secure || !cookie.HttpOnly || cookie.SameSite != http.SameSiteLaxMode {
 				t.Errorf("want the return cookie the sign-in reads, got %+v", cookie)
+			}
+		})
+	}
+}
+
+func TestRedirectFindsTheOneSignInNearby(t *testing.T) {
+	tv := &quickconnect.Request{Code: "836724", DeviceID: "living-room", DeviceName: "BRAVIA", AppName: "Android TV", RemoteAddress: "198.51.100.7:40000"}
+	again := &quickconnect.Request{Code: "333333", DeviceID: "living-room-earlier", DeviceName: "BRAVIA", AppName: "Android TV", RemoteAddress: "198.51.100.7:40000"}
+	elsewhere := &quickconnect.Request{Code: "111111", DeviceID: "stranger", DeviceName: "Shield", AppName: "Android TV", RemoteAddress: "203.0.113.4:40000"}
+	neighbour := &quickconnect.Request{Code: "222222", DeviceID: "bedroom", DeviceName: "Chromecast", AppName: "Android TV", RemoteAddress: "198.51.100.7:40001"}
+
+	tests := []struct {
+		name    string
+		waiting waiting
+		path    string
+		want    string
+	}{
+		{"one waiting on the phone's network", waiting{tv, elsewhere}, "/link", "/web/#/quickconnect?code=836724"},
+		{"none waiting on the phone's network", waiting{elsewhere}, "/link", "/web/#/quickconnect"},
+		{"one television asking twice is answered with its newest code", waiting{tv, again}, "/link", "/web/#/quickconnect?code=836724"},
+		{"two televisions waiting on the phone's network", waiting{tv, neighbour}, "/link", "/web/#/quickconnect"},
+		{"a typed code wins", waiting{tv}, "/link/123456", "/web/#/quickconnect?code=123456"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, m := handler("https://tv.example", tt.waiting)
+			request := httptest.NewRequest(http.MethodGet, tt.path, nil)
+			request.RemoteAddr = "198.51.100.7:51000"
+			recorder := httptest.NewRecorder()
+			m.ServeHTTP(recorder, request)
+
+			if got := recorder.Header().Get("Location"); got != tt.want {
+				t.Errorf("want Location %q, got %q", tt.want, got)
 			}
 		})
 	}

@@ -19,6 +19,7 @@ func (QuickConnectRequest) Fields() []ent.Field {
 		field.String("device_name"),
 		field.String("app_name"),
 		field.String("app_version"),
+		field.String("remote_address").Default(""),
 		field.Time("expires_at"),
 		field.UUID("authorized_by_id", uuid.UUID{}).Optional().Nillable(),
 	)

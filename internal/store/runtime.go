@@ -504,6 +504,10 @@ func init() {
 	quickconnectrequest.DefaultUpdatedAt = quickconnectrequestDescUpdatedAt.Default.(func() time.Time)
 	// quickconnectrequest.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	quickconnectrequest.UpdateDefaultUpdatedAt = quickconnectrequestDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// quickconnectrequestDescRemoteAddress is the schema descriptor for remote_address field.
+	quickconnectrequestDescRemoteAddress := quickconnectrequestFields[9].Descriptor()
+	// quickconnectrequest.DefaultRemoteAddress holds the default value on creation for the remote_address field.
+	quickconnectrequest.DefaultRemoteAddress = quickconnectrequestDescRemoteAddress.Default.(string)
 	reportFields := entities.Report{}.Fields()
 	_ = reportFields
 	// reportDescCreatedAt is the schema descriptor for created_at field.
