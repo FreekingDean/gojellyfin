@@ -19,6 +19,12 @@ on:
 permissions:
   contents: read
 
+# A label added right after a push would otherwise leave two runs publishing
+# one pull request's gallery.
+concurrency:
+  group: e2e-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   e2e:
     if: >-

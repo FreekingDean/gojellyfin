@@ -1,4 +1,6 @@
 const fs = require('node:fs');
+const jsQR = require('jsqr');
+const { PNG } = require('pngjs');
 const { test: base, expect } = require('@playwright/test');
 
 const { harness } = require('../../setup/harness');
@@ -44,7 +46,10 @@ const test = base.extend({
   shot: async ({ tv }, use, testInfo) => {
     await use(async (name) => {
       await sleep(1500);
-      await testInfo.attach(`${name}-current.png`, { path: tv.screenshot(testInfo.outputPath(`${name}.png`)) });
+      const file = tv.screenshot(testInfo.outputPath(`${name}.png`));
+      await testInfo.attach(`${name}-current.png`, { path: file });
+
+      return file;
     });
   },
 
@@ -122,6 +127,15 @@ async function quickConnectCode(tv) {
   return shown.text.replace(/\s/g, '');
 }
 
+// What a phone's camera would make of the screen, or null when it finds no
+// code on it.
+function qrOn(file) {
+  const picture = PNG.sync.read(fs.readFileSync(file));
+  const found = jsQR(new Uint8ClampedArray(picture.data), picture.width, picture.height);
+
+  return found ? found.data : null;
+}
+
 function home(tv, app) {
   return tv.waitFor({ label: app.library }, { timeout: 90000 });
 }
@@ -158,6 +172,7 @@ module.exports = {
   openSignIn,
   signInWithPassword,
   quickConnectCode,
+  qrOn,
   home,
   openLibrary,
   openDetails,
