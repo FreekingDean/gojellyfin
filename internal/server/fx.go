@@ -50,7 +50,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/trailers"
 	"github.com/FreekingDean/gojellyfin/internal/server/tvshows"
 	"github.com/FreekingDean/gojellyfin/internal/server/user"
-	"github.com/FreekingDean/gojellyfin/internal/server/userlibrary"
+	"github.com/FreekingDean/gojellyfin/internal/server/userdata"
 	"github.com/FreekingDean/gojellyfin/internal/server/userviews"
 	"github.com/FreekingDean/gojellyfin/internal/server/years"
 )
@@ -101,7 +101,7 @@ var Module = fx.Module(
 	trailers.Module,
 	tvshows.Module,
 	user.Module,
-	userlibrary.Module,
+	userdata.Module,
 	userviews.Module,
 	years.Module,
 	fx.Provide(
