@@ -30,11 +30,15 @@ func (s *Service) SaveSource(ctx context.Context, scanned MediaSource) (*MediaSo
 		SetPath(scanned.Path).
 		SetName(scanned.Name).
 		SetNillableDateModified(scanned.DateModified).
+		SetNillableExternalID(scanned.ExternalID).
+		SetNillableExternalFileID(scanned.ExternalFileID).
 		OnConflictColumns(sourcemodel.FieldPath).
 		UpdateItemID().
 		UpdateSourceID().
 		UpdateName().
 		UpdateDateModified().
+		UpdateExternalID().
+		UpdateExternalFileID().
 		UpdateUpdatedAt().
 		ID(ctx)
 	if err != nil {
@@ -230,10 +234,5 @@ func NeedsProbe(source *MediaSource) bool {
 }
 
 func IsAudio(item *Item) bool {
-	switch item.Kind {
-	case itemmodel.KindAudio, itemmodel.KindAudioBook:
-		return true
-	default:
-		return false
-	}
+	return item.Kind == itemmodel.KindAudio
 }

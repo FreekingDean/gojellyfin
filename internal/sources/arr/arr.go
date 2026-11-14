@@ -14,6 +14,7 @@ type Tag struct {
 }
 
 type File struct {
+	ID        int64     `json:"id"`
 	Path      string    `json:"path"`
 	Size      int64     `json:"size"`
 	DateAdded time.Time `json:"dateAdded"`

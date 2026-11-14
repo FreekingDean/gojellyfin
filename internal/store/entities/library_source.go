@@ -17,6 +17,8 @@ func (LibrarySource) Fields() []ent.Field {
 		field.UUID("library_id", uuid.UUID{}),
 		field.UUID("source_id", uuid.UUID{}),
 		field.String("tag_filter").Optional(),
+		field.Time("last_synced_at").Optional().Nillable(),
+		field.String("last_error").Optional(),
 	)
 }
 

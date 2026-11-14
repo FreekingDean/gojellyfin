@@ -17,6 +17,7 @@ type Series struct {
 }
 
 type Episode struct {
+	ID            int64    `json:"id"`
 	SeasonNumber  int32    `json:"seasonNumber"`
 	EpisodeNumber int32    `json:"episodeNumber"`
 	Title         string   `json:"title"`

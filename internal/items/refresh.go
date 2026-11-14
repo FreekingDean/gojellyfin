@@ -27,8 +27,10 @@ type Scanned struct {
 }
 
 type ScannedFile struct {
-	Path         string
-	DateModified time.Time
+	Path           string
+	DateModified   time.Time
+	ExternalID     *int64
+	ExternalFileID *int64
 }
 
 func (s *Service) RefreshItemJob() jobs.Job {
@@ -84,11 +86,13 @@ func (s *Service) RefreshItem(ctx context.Context, libraryID, sourceID uuid.UUID
 		jobs.Heartbeat(ctx, file.Path)
 
 		saved, err := s.SaveSource(ctx, MediaSource{
-			SourceID:     sourceID,
-			ItemID:       item.ID,
-			Path:         file.Path,
-			Name:         filepath.Base(file.Path),
-			DateModified: &file.DateModified,
+			SourceID:       sourceID,
+			ItemID:         item.ID,
+			Path:           file.Path,
+			Name:           filepath.Base(file.Path),
+			DateModified:   &file.DateModified,
+			ExternalID:     file.ExternalID,
+			ExternalFileID: file.ExternalFileID,
 		})
 		if err != nil {
 			return err

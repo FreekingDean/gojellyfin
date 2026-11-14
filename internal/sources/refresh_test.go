@@ -16,14 +16,17 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemsourcemodel "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
+	librarysourcemodel "github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
 
 type movieFile struct {
+	ID   int64  `json:"id,omitempty"`
 	Path string `json:"path"`
 }
 
 type movie struct {
+	ID      int64     `json:"id,omitempty"`
 	TmdbID  int       `json:"tmdbId"`
 	Title   string    `json:"title"`
 	Year    int32     `json:"year"`
@@ -231,5 +234,125 @@ func TestRefreshLibrarySource_SharedSource(t *testing.T) {
 			t.Errorf("%s was deleted and rewritten by the other library's refresh, "+
 				"so it lost its probe and will be read again every run", path)
 		}
+	}
+}
+
+func (f *fixture) binding(t *testing.T, libraryID uuid.UUID) *store.LibrarySourceModel {
+	t.Helper()
+
+	record, err := f.client.LibrarySource.Query().
+		Where(
+			librarysourcemodel.LibraryID(libraryID),
+			librarysourcemodel.SourceID(f.sourceID),
+		).
+		OnlyModel(context.Background())
+	if err != nil {
+		t.Fatalf("failed to read the binding back: %v", err)
+	}
+
+	return record
+}
+
+func TestRefreshLibrarySource_RecordsTheIDsTheInstanceAnswered(t *testing.T) {
+	reported := []movie{
+		{ID: 41, TmdbID: 603, Title: "The Matrix", Year: 1999, HasFile: true,
+			Path: "/media/Matrix", File: movieFile{ID: 4100, Path: "/media/Matrix/matrix.mkv"}},
+		{TmdbID: 949, Title: "Heat", Year: 1995, HasFile: true,
+			Path: "/media/Heat", File: at("/media/Heat/heat.mkv")},
+	}
+
+	fixture := newFixture(t, &reported)
+	library := fixture.library(t, "")
+	fixture.write(t, library, fixture.refresh(t, library))
+
+	records, err := fixture.client.ItemSource.Query().
+		Where(itemsourcemodel.SourceID(fixture.sourceID)).
+		AllModels(context.Background())
+	if err != nil {
+		t.Fatalf("failed to read the files back: %v", err)
+	}
+
+	byPath := map[string]*store.ItemSourceModel{}
+	for _, record := range records {
+		byPath[record.Path] = record
+	}
+
+	matrix := byPath["/media/Matrix/matrix.mkv"]
+	if matrix == nil || matrix.ExternalID == nil || *matrix.ExternalID != 41 {
+		t.Errorf("matrix external id = %v, want 41", matrix)
+	}
+	if matrix == nil || matrix.ExternalFileID == nil || *matrix.ExternalFileID != 4100 {
+		t.Errorf("matrix external file id = %v, want 4100", matrix)
+	}
+
+	heat := byPath["/media/Heat/heat.mkv"]
+	if heat == nil || heat.ExternalID != nil || heat.ExternalFileID != nil {
+		t.Errorf("heat = %+v, want no external ids for an instance that answered none", heat)
+	}
+}
+
+func TestRefreshLibrarySource_RecordsTheSync(t *testing.T) {
+	reported := []movie{
+		{TmdbID: 949, Title: "Heat", Year: 1995, HasFile: true,
+			Path: "/media/Heat", File: at("/media/Heat/heat.mkv")},
+	}
+
+	fixture := newFixture(t, &reported)
+
+	t.Run("a read that succeeds stamps the time and clears the error", func(t *testing.T) {
+		library := fixture.library(t, "")
+		if err := fixture.client.LibrarySource.Update().
+			Where(librarysourcemodel.LibraryID(library)).
+			SetLastError("earlier failure").
+			Exec(context.Background()); err != nil {
+			t.Fatalf("failed to seed an error: %v", err)
+		}
+
+		fixture.refresh(t, library)
+
+		binding := fixture.binding(t, library)
+		if binding.LastSyncedAt == nil {
+			t.Error("last synced at = nil, want the time of the read")
+		}
+		if binding.LastError != "" {
+			t.Errorf("last error = %q, want it cleared", binding.LastError)
+		}
+	})
+
+	t.Run("a read that fails keeps the last success and says why", func(t *testing.T) {
+		library := fixture.library(t, "missing")
+
+		if _, err := jobs.RunJob(t, fixture.service.RefreshJob(),
+			jobs.With(jobs.ParamLibrary, library),
+			jobs.With(jobs.ParamSource, fixture.sourceID),
+		); err == nil {
+			t.Fatal("refresh succeeded, want the unknown tag to fail it")
+		}
+
+		binding := fixture.binding(t, library)
+		if binding.LastSyncedAt != nil {
+			t.Errorf("last synced at = %v, want nil: nothing has synced", binding.LastSyncedAt)
+		}
+		if binding.LastError == "" {
+			t.Error("last error is empty, want the reason the read failed")
+		}
+	})
+}
+
+func TestRefreshLibrarySource_RecordsACancelledRead(t *testing.T) {
+	reported := []movie{}
+	fixture := newFixture(t, &reported)
+	library := fixture.library(t, "")
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	binding := fixture.binding(t, library)
+	if err := fixture.service.recordSync(ctx, binding.ID, context.Canceled); err != nil {
+		t.Fatalf("failed to record a cancelled read: %v", err)
+	}
+
+	if got := fixture.binding(t, library).LastError; got != context.Canceled.Error() {
+		t.Errorf("last error = %q, want %q", got, context.Canceled.Error())
 	}
 }

@@ -81,6 +81,16 @@ func TagFilter(v string) predicate.LibrarySource {
 	return predicate.LibrarySource(sql.FieldEQ(FieldTagFilter, v))
 }
 
+// LastSyncedAt applies equality check predicate on the "last_synced_at" field. It's identical to LastSyncedAtEQ.
+func LastSyncedAt(v time.Time) predicate.LibrarySource {
+	return predicate.LibrarySource(sql.FieldEQ(FieldLastSyncedAt, v))
+}
+
+// LastError applies equality check predicate on the "last_error" field. It's identical to LastErrorEQ.
+func LastError(v string) predicate.LibrarySource {
+	return predicate.LibrarySource(sql.FieldEQ(FieldLastError, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.LibrarySource {
 	return predicate.LibrarySource(sql.FieldEQ(FieldCreatedAt, v))
@@ -274,6 +284,131 @@ func TagFilterEqualFold(v string) predicate.LibrarySource {
 // TagFilterContainsFold applies the ContainsFold predicate on the "tag_filter" field.
 func TagFilterContainsFold(v string) predicate.LibrarySource {
 	return predicate.LibrarySource(sql.FieldContainsFold(FieldTagFilter, v))
+}
+
+// LastSyncedAtEQ applies the EQ predicate on the "last_synced_at" field.
+func LastSyncedAtEQ(v time.Time) predicate.LibrarySource {
+	return predicate.LibrarySource(sql.FieldEQ(FieldLastSyncedAt, v))
+}
+
+// LastSyncedAtNEQ applies the NEQ predicate on the "last_synced_at" field.
+func LastSyncedAtNEQ(v time.Time) predicate.LibrarySource {
+	return predicate.LibrarySource(sql.FieldNEQ(FieldLastSyncedAt, v))
+}
+
+// LastSyncedAtIn applies the In predicate on the "last_synced_at" field.
+func LastSyncedAtIn(vs ...time.Time) predicate.LibrarySource {
+	return predicate.LibrarySource(sql.FieldIn(FieldLastSyncedAt, vs...))
+}
+
+// LastSyncedAtNotIn applies the NotIn predicate on the "last_synced_at" field.
+func LastSyncedAtNotIn(vs ...time.Time) predicate.LibrarySource {
+	return predicate.LibrarySource(sql.FieldNotIn(FieldLastSyncedAt, vs...))
+}
+
+// LastSyncedAtGT applies the GT predicate on the "last_synced_at" field.
+func LastSyncedAtGT(v time.Time) predicate.LibrarySource {
+	return predicate.LibrarySource(sql.FieldGT(FieldLastSyncedAt, v))
+}
+
+// LastSyncedAtGTE applies the GTE predicate on the "last_synced_at" field.
+func LastSyncedAtGTE(v time.Time) predicate.LibrarySource {
+	return predicate.LibrarySource(sql.FieldGTE(FieldLastSyncedAt, v))
+}
+
+// LastSyncedAtLT applies the LT predicate on the "last_synced_at" field.
+func LastSyncedAtLT(v time.Time) predicate.LibrarySource {
+	return predicate.LibrarySource(sql.FieldLT(FieldLastSyncedAt, v))
+}
+
+// LastSyncedAtLTE applies the LTE predicate on the "last_synced_at" field.
+func LastSyncedAtLTE(v time.Time) predicate.LibrarySource {
+	return predicate.LibrarySource(sql.FieldLTE(FieldLastSyncedAt, v))
+}
+
+// LastSyncedAtIsNil applies the IsNil predicate on the "last_synced_at" field.
+func LastSyncedAtIsNil() predicate.LibrarySource {
+	return predicate.LibrarySource(sql.FieldIsNull(FieldLastSyncedAt))
+}
+
+// LastSyncedAtNotNil applies the NotNil predicate on the "last_synced_at" field.
+func LastSyncedAtNotNil() predicate.LibrarySource {
+	return predicate.LibrarySource(sql.FieldNotNull(FieldLastSyncedAt))
+}
+
+// LastErrorEQ applies the EQ predicate on the "last_error" field.
+func LastErrorEQ(v string) predicate.LibrarySource {
+	return predicate.LibrarySource(sql.FieldEQ(FieldLastError, v))
+}
+
+// LastErrorNEQ applies the NEQ predicate on the "last_error" field.
+func LastErrorNEQ(v string) predicate.LibrarySource {
+	return predicate.LibrarySource(sql.FieldNEQ(FieldLastError, v))
+}
+
+// LastErrorIn applies the In predicate on the "last_error" field.
+func LastErrorIn(vs ...string) predicate.LibrarySource {
+	return predicate.LibrarySource(sql.FieldIn(FieldLastError, vs...))
+}
+
+// LastErrorNotIn applies the NotIn predicate on the "last_error" field.
+func LastErrorNotIn(vs ...string) predicate.LibrarySource {
+	return predicate.LibrarySource(sql.FieldNotIn(FieldLastError, vs...))
+}
+
+// LastErrorGT applies the GT predicate on the "last_error" field.
+func LastErrorGT(v string) predicate.LibrarySource {
+	return predicate.LibrarySource(sql.FieldGT(FieldLastError, v))
+}
+
+// LastErrorGTE applies the GTE predicate on the "last_error" field.
+func LastErrorGTE(v string) predicate.LibrarySource {
+	return predicate.LibrarySource(sql.FieldGTE(FieldLastError, v))
+}
+
+// LastErrorLT applies the LT predicate on the "last_error" field.
+func LastErrorLT(v string) predicate.LibrarySource {
+	return predicate.LibrarySource(sql.FieldLT(FieldLastError, v))
+}
+
+// LastErrorLTE applies the LTE predicate on the "last_error" field.
+func LastErrorLTE(v string) predicate.LibrarySource {
+	return predicate.LibrarySource(sql.FieldLTE(FieldLastError, v))
+}
+
+// LastErrorContains applies the Contains predicate on the "last_error" field.
+func LastErrorContains(v string) predicate.LibrarySource {
+	return predicate.LibrarySource(sql.FieldContains(FieldLastError, v))
+}
+
+// LastErrorHasPrefix applies the HasPrefix predicate on the "last_error" field.
+func LastErrorHasPrefix(v string) predicate.LibrarySource {
+	return predicate.LibrarySource(sql.FieldHasPrefix(FieldLastError, v))
+}
+
+// LastErrorHasSuffix applies the HasSuffix predicate on the "last_error" field.
+func LastErrorHasSuffix(v string) predicate.LibrarySource {
+	return predicate.LibrarySource(sql.FieldHasSuffix(FieldLastError, v))
+}
+
+// LastErrorIsNil applies the IsNil predicate on the "last_error" field.
+func LastErrorIsNil() predicate.LibrarySource {
+	return predicate.LibrarySource(sql.FieldIsNull(FieldLastError))
+}
+
+// LastErrorNotNil applies the NotNil predicate on the "last_error" field.
+func LastErrorNotNil() predicate.LibrarySource {
+	return predicate.LibrarySource(sql.FieldNotNull(FieldLastError))
+}
+
+// LastErrorEqualFold applies the EqualFold predicate on the "last_error" field.
+func LastErrorEqualFold(v string) predicate.LibrarySource {
+	return predicate.LibrarySource(sql.FieldEqualFold(FieldLastError, v))
+}
+
+// LastErrorContainsFold applies the ContainsFold predicate on the "last_error" field.
+func LastErrorContainsFold(v string) predicate.LibrarySource {
+	return predicate.LibrarySource(sql.FieldContainsFold(FieldLastError, v))
 }
 
 // HasLibrary applies the HasEdge predicate on the "library" edge.

@@ -24,6 +24,10 @@ const (
 	FieldSourceID = "source_id"
 	// FieldTagFilter holds the string denoting the tag_filter field in the database.
 	FieldTagFilter = "tag_filter"
+	// FieldLastSyncedAt holds the string denoting the last_synced_at field in the database.
+	FieldLastSyncedAt = "last_synced_at"
+	// FieldLastError holds the string denoting the last_error field in the database.
+	FieldLastError = "last_error"
 	// EdgeLibrary holds the string denoting the library edge name in mutations.
 	EdgeLibrary = "library"
 	// EdgeSource holds the string denoting the source edge name in mutations.
@@ -54,6 +58,8 @@ var Columns = []string{
 	FieldLibraryID,
 	FieldSourceID,
 	FieldTagFilter,
+	FieldLastSyncedAt,
+	FieldLastError,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -106,6 +112,16 @@ func BySourceID(opts ...sql.OrderTermOption) OrderOption {
 // ByTagFilter orders the results by the tag_filter field.
 func ByTagFilter(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTagFilter, opts...).ToFunc()
+}
+
+// ByLastSyncedAt orders the results by the last_synced_at field.
+func ByLastSyncedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastSyncedAt, opts...).ToFunc()
+}
+
+// ByLastError orders the results by the last_error field.
+func ByLastError(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastError, opts...).ToFunc()
 }
 
 // ByLibraryField orders the results by library field.

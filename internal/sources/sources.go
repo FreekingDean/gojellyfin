@@ -168,17 +168,28 @@ func (s *Service) Update(ctx context.Context, configured []Configured) error {
 				return err
 			}
 
+			bound := make([]uuid.UUID, len(entry.Libraries))
+			for i, library := range entry.Libraries {
+				bound[i] = library.LibraryID
+			}
+
 			if _, err := tx.LibrarySource.Delete().
-				Where(librarysourcemodel.SourceID(id)).
+				Where(
+					librarysourcemodel.SourceID(id),
+					librarysourcemodel.LibraryIDNotIn(bound...),
+				).
 				Exec(ctx); err != nil {
 				return err
 			}
 
-			for _, bound := range entry.Libraries {
+			for _, library := range entry.Libraries {
 				if err := tx.LibrarySource.Create().
 					SetSourceID(id).
-					SetLibraryID(bound.LibraryID).
-					SetTagFilter(bound.TagFilter).
+					SetLibraryID(library.LibraryID).
+					SetTagFilter(library.TagFilter).
+					OnConflictColumns(librarysourcemodel.FieldLibraryID, librarysourcemodel.FieldSourceID).
+					UpdateTagFilter().
+					UpdateUpdatedAt().
 					Exec(ctx); err != nil {
 					return err
 				}

@@ -9802,33 +9802,37 @@ func (m *ItemMutation) ResetEdge(name string) error {
 // ItemSourceMutation represents an operation that mutates the ItemSource nodes in the graph.
 type ItemSourceMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *uuid.UUID
-	created_at        *time.Time
-	updated_at        *time.Time
-	name              *string
-	_path             *string
-	container         *string
-	size              *int64
-	addsize           *int64
-	run_time_ticks    *int64
-	addrun_time_ticks *int64
-	bitrate           *int32
-	addbitrate        *int32
-	date_modified     *time.Time
-	probed_at         *time.Time
-	clearedFields     map[string]struct{}
-	item              *uuid.UUID
-	cleareditem       bool
-	source            *uuid.UUID
-	clearedsource     bool
-	streams           map[uuid.UUID]struct{}
-	removedstreams    map[uuid.UUID]struct{}
-	clearedstreams    bool
-	done              bool
-	oldValue          func(context.Context) (*ItemSource, error)
-	predicates        []predicate.ItemSource
+	op                  Op
+	typ                 string
+	id                  *uuid.UUID
+	created_at          *time.Time
+	updated_at          *time.Time
+	name                *string
+	_path               *string
+	container           *string
+	size                *int64
+	addsize             *int64
+	run_time_ticks      *int64
+	addrun_time_ticks   *int64
+	bitrate             *int32
+	addbitrate          *int32
+	date_modified       *time.Time
+	probed_at           *time.Time
+	external_id         *int64
+	addexternal_id      *int64
+	external_file_id    *int64
+	addexternal_file_id *int64
+	clearedFields       map[string]struct{}
+	item                *uuid.UUID
+	cleareditem         bool
+	source              *uuid.UUID
+	clearedsource       bool
+	streams             map[uuid.UUID]struct{}
+	removedstreams      map[uuid.UUID]struct{}
+	clearedstreams      bool
+	done                bool
+	oldValue            func(context.Context) (*ItemSource, error)
+	predicates          []predicate.ItemSource
 }
 
 var _ ent.Mutation = (*ItemSourceMutation)(nil)
@@ -10508,6 +10512,146 @@ func (m *ItemSourceMutation) ResetProbedAt() {
 	delete(m.clearedFields, itemsource.FieldProbedAt)
 }
 
+// SetExternalID sets the "external_id" field.
+func (m *ItemSourceMutation) SetExternalID(i int64) {
+	m.external_id = &i
+	m.addexternal_id = nil
+}
+
+// ExternalID returns the value of the "external_id" field in the mutation.
+func (m *ItemSourceMutation) ExternalID() (r int64, exists bool) {
+	v := m.external_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExternalID returns the old "external_id" field's value of the ItemSource entity.
+// If the ItemSource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemSourceMutation) OldExternalID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExternalID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExternalID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExternalID: %w", err)
+	}
+	return oldValue.ExternalID, nil
+}
+
+// AddExternalID adds i to the "external_id" field.
+func (m *ItemSourceMutation) AddExternalID(i int64) {
+	if m.addexternal_id != nil {
+		*m.addexternal_id += i
+	} else {
+		m.addexternal_id = &i
+	}
+}
+
+// AddedExternalID returns the value that was added to the "external_id" field in this mutation.
+func (m *ItemSourceMutation) AddedExternalID() (r int64, exists bool) {
+	v := m.addexternal_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearExternalID clears the value of the "external_id" field.
+func (m *ItemSourceMutation) ClearExternalID() {
+	m.external_id = nil
+	m.addexternal_id = nil
+	m.clearedFields[itemsource.FieldExternalID] = struct{}{}
+}
+
+// ExternalIDCleared returns if the "external_id" field was cleared in this mutation.
+func (m *ItemSourceMutation) ExternalIDCleared() bool {
+	_, ok := m.clearedFields[itemsource.FieldExternalID]
+	return ok
+}
+
+// ResetExternalID resets all changes to the "external_id" field.
+func (m *ItemSourceMutation) ResetExternalID() {
+	m.external_id = nil
+	m.addexternal_id = nil
+	delete(m.clearedFields, itemsource.FieldExternalID)
+}
+
+// SetExternalFileID sets the "external_file_id" field.
+func (m *ItemSourceMutation) SetExternalFileID(i int64) {
+	m.external_file_id = &i
+	m.addexternal_file_id = nil
+}
+
+// ExternalFileID returns the value of the "external_file_id" field in the mutation.
+func (m *ItemSourceMutation) ExternalFileID() (r int64, exists bool) {
+	v := m.external_file_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExternalFileID returns the old "external_file_id" field's value of the ItemSource entity.
+// If the ItemSource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemSourceMutation) OldExternalFileID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExternalFileID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExternalFileID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExternalFileID: %w", err)
+	}
+	return oldValue.ExternalFileID, nil
+}
+
+// AddExternalFileID adds i to the "external_file_id" field.
+func (m *ItemSourceMutation) AddExternalFileID(i int64) {
+	if m.addexternal_file_id != nil {
+		*m.addexternal_file_id += i
+	} else {
+		m.addexternal_file_id = &i
+	}
+}
+
+// AddedExternalFileID returns the value that was added to the "external_file_id" field in this mutation.
+func (m *ItemSourceMutation) AddedExternalFileID() (r int64, exists bool) {
+	v := m.addexternal_file_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearExternalFileID clears the value of the "external_file_id" field.
+func (m *ItemSourceMutation) ClearExternalFileID() {
+	m.external_file_id = nil
+	m.addexternal_file_id = nil
+	m.clearedFields[itemsource.FieldExternalFileID] = struct{}{}
+}
+
+// ExternalFileIDCleared returns if the "external_file_id" field was cleared in this mutation.
+func (m *ItemSourceMutation) ExternalFileIDCleared() bool {
+	_, ok := m.clearedFields[itemsource.FieldExternalFileID]
+	return ok
+}
+
+// ResetExternalFileID resets all changes to the "external_file_id" field.
+func (m *ItemSourceMutation) ResetExternalFileID() {
+	m.external_file_id = nil
+	m.addexternal_file_id = nil
+	delete(m.clearedFields, itemsource.FieldExternalFileID)
+}
+
 // ClearItem clears the "item" edge to the Item entity.
 func (m *ItemSourceMutation) ClearItem() {
 	m.cleareditem = true
@@ -10650,7 +10794,7 @@ func (m *ItemSourceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemSourceMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 14)
 	if m.created_at != nil {
 		fields = append(fields, itemsource.FieldCreatedAt)
 	}
@@ -10687,6 +10831,12 @@ func (m *ItemSourceMutation) Fields() []string {
 	if m.probed_at != nil {
 		fields = append(fields, itemsource.FieldProbedAt)
 	}
+	if m.external_id != nil {
+		fields = append(fields, itemsource.FieldExternalID)
+	}
+	if m.external_file_id != nil {
+		fields = append(fields, itemsource.FieldExternalFileID)
+	}
 	return fields
 }
 
@@ -10719,6 +10869,10 @@ func (m *ItemSourceMutation) Field(name string) (ent.Value, bool) {
 		return m.DateModified()
 	case itemsource.FieldProbedAt:
 		return m.ProbedAt()
+	case itemsource.FieldExternalID:
+		return m.ExternalID()
+	case itemsource.FieldExternalFileID:
+		return m.ExternalFileID()
 	}
 	return nil, false
 }
@@ -10752,6 +10906,10 @@ func (m *ItemSourceMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldDateModified(ctx)
 	case itemsource.FieldProbedAt:
 		return m.OldProbedAt(ctx)
+	case itemsource.FieldExternalID:
+		return m.OldExternalID(ctx)
+	case itemsource.FieldExternalFileID:
+		return m.OldExternalFileID(ctx)
 	}
 	return nil, fmt.Errorf("unknown ItemSource field %s", name)
 }
@@ -10845,6 +11003,20 @@ func (m *ItemSourceMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetProbedAt(v)
 		return nil
+	case itemsource.FieldExternalID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExternalID(v)
+		return nil
+	case itemsource.FieldExternalFileID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExternalFileID(v)
+		return nil
 	}
 	return fmt.Errorf("unknown ItemSource field %s", name)
 }
@@ -10862,6 +11034,12 @@ func (m *ItemSourceMutation) AddedFields() []string {
 	if m.addbitrate != nil {
 		fields = append(fields, itemsource.FieldBitrate)
 	}
+	if m.addexternal_id != nil {
+		fields = append(fields, itemsource.FieldExternalID)
+	}
+	if m.addexternal_file_id != nil {
+		fields = append(fields, itemsource.FieldExternalFileID)
+	}
 	return fields
 }
 
@@ -10876,6 +11054,10 @@ func (m *ItemSourceMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedRunTimeTicks()
 	case itemsource.FieldBitrate:
 		return m.AddedBitrate()
+	case itemsource.FieldExternalID:
+		return m.AddedExternalID()
+	case itemsource.FieldExternalFileID:
+		return m.AddedExternalFileID()
 	}
 	return nil, false
 }
@@ -10906,6 +11088,20 @@ func (m *ItemSourceMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddBitrate(v)
 		return nil
+	case itemsource.FieldExternalID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddExternalID(v)
+		return nil
+	case itemsource.FieldExternalFileID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddExternalFileID(v)
+		return nil
 	}
 	return fmt.Errorf("unknown ItemSource numeric field %s", name)
 }
@@ -10931,6 +11127,12 @@ func (m *ItemSourceMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(itemsource.FieldProbedAt) {
 		fields = append(fields, itemsource.FieldProbedAt)
+	}
+	if m.FieldCleared(itemsource.FieldExternalID) {
+		fields = append(fields, itemsource.FieldExternalID)
+	}
+	if m.FieldCleared(itemsource.FieldExternalFileID) {
+		fields = append(fields, itemsource.FieldExternalFileID)
 	}
 	return fields
 }
@@ -10963,6 +11165,12 @@ func (m *ItemSourceMutation) ClearField(name string) error {
 		return nil
 	case itemsource.FieldProbedAt:
 		m.ClearProbedAt()
+		return nil
+	case itemsource.FieldExternalID:
+		m.ClearExternalID()
+		return nil
+	case itemsource.FieldExternalFileID:
+		m.ClearExternalFileID()
 		return nil
 	}
 	return fmt.Errorf("unknown ItemSource nullable field %s", name)
@@ -11007,6 +11215,12 @@ func (m *ItemSourceMutation) ResetField(name string) error {
 		return nil
 	case itemsource.FieldProbedAt:
 		m.ResetProbedAt()
+		return nil
+	case itemsource.FieldExternalID:
+		m.ResetExternalID()
+		return nil
+	case itemsource.FieldExternalFileID:
+		m.ResetExternalFileID()
 		return nil
 	}
 	return fmt.Errorf("unknown ItemSource field %s", name)
@@ -15808,6 +16022,8 @@ type LibrarySourceMutation struct {
 	created_at     *time.Time
 	updated_at     *time.Time
 	tag_filter     *string
+	last_synced_at *time.Time
+	last_error     *string
 	clearedFields  map[string]struct{}
 	library        *uuid.UUID
 	clearedlibrary bool
@@ -16115,6 +16331,104 @@ func (m *LibrarySourceMutation) ResetTagFilter() {
 	delete(m.clearedFields, librarysource.FieldTagFilter)
 }
 
+// SetLastSyncedAt sets the "last_synced_at" field.
+func (m *LibrarySourceMutation) SetLastSyncedAt(t time.Time) {
+	m.last_synced_at = &t
+}
+
+// LastSyncedAt returns the value of the "last_synced_at" field in the mutation.
+func (m *LibrarySourceMutation) LastSyncedAt() (r time.Time, exists bool) {
+	v := m.last_synced_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastSyncedAt returns the old "last_synced_at" field's value of the LibrarySource entity.
+// If the LibrarySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LibrarySourceMutation) OldLastSyncedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastSyncedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastSyncedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastSyncedAt: %w", err)
+	}
+	return oldValue.LastSyncedAt, nil
+}
+
+// ClearLastSyncedAt clears the value of the "last_synced_at" field.
+func (m *LibrarySourceMutation) ClearLastSyncedAt() {
+	m.last_synced_at = nil
+	m.clearedFields[librarysource.FieldLastSyncedAt] = struct{}{}
+}
+
+// LastSyncedAtCleared returns if the "last_synced_at" field was cleared in this mutation.
+func (m *LibrarySourceMutation) LastSyncedAtCleared() bool {
+	_, ok := m.clearedFields[librarysource.FieldLastSyncedAt]
+	return ok
+}
+
+// ResetLastSyncedAt resets all changes to the "last_synced_at" field.
+func (m *LibrarySourceMutation) ResetLastSyncedAt() {
+	m.last_synced_at = nil
+	delete(m.clearedFields, librarysource.FieldLastSyncedAt)
+}
+
+// SetLastError sets the "last_error" field.
+func (m *LibrarySourceMutation) SetLastError(s string) {
+	m.last_error = &s
+}
+
+// LastError returns the value of the "last_error" field in the mutation.
+func (m *LibrarySourceMutation) LastError() (r string, exists bool) {
+	v := m.last_error
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastError returns the old "last_error" field's value of the LibrarySource entity.
+// If the LibrarySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LibrarySourceMutation) OldLastError(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastError is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastError requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastError: %w", err)
+	}
+	return oldValue.LastError, nil
+}
+
+// ClearLastError clears the value of the "last_error" field.
+func (m *LibrarySourceMutation) ClearLastError() {
+	m.last_error = nil
+	m.clearedFields[librarysource.FieldLastError] = struct{}{}
+}
+
+// LastErrorCleared returns if the "last_error" field was cleared in this mutation.
+func (m *LibrarySourceMutation) LastErrorCleared() bool {
+	_, ok := m.clearedFields[librarysource.FieldLastError]
+	return ok
+}
+
+// ResetLastError resets all changes to the "last_error" field.
+func (m *LibrarySourceMutation) ResetLastError() {
+	m.last_error = nil
+	delete(m.clearedFields, librarysource.FieldLastError)
+}
+
 // ClearLibrary clears the "library" edge to the Library entity.
 func (m *LibrarySourceMutation) ClearLibrary() {
 	m.clearedlibrary = true
@@ -16203,7 +16517,7 @@ func (m *LibrarySourceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *LibrarySourceMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, librarysource.FieldCreatedAt)
 	}
@@ -16218,6 +16532,12 @@ func (m *LibrarySourceMutation) Fields() []string {
 	}
 	if m.tag_filter != nil {
 		fields = append(fields, librarysource.FieldTagFilter)
+	}
+	if m.last_synced_at != nil {
+		fields = append(fields, librarysource.FieldLastSyncedAt)
+	}
+	if m.last_error != nil {
+		fields = append(fields, librarysource.FieldLastError)
 	}
 	return fields
 }
@@ -16237,6 +16557,10 @@ func (m *LibrarySourceMutation) Field(name string) (ent.Value, bool) {
 		return m.SourceID()
 	case librarysource.FieldTagFilter:
 		return m.TagFilter()
+	case librarysource.FieldLastSyncedAt:
+		return m.LastSyncedAt()
+	case librarysource.FieldLastError:
+		return m.LastError()
 	}
 	return nil, false
 }
@@ -16256,6 +16580,10 @@ func (m *LibrarySourceMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldSourceID(ctx)
 	case librarysource.FieldTagFilter:
 		return m.OldTagFilter(ctx)
+	case librarysource.FieldLastSyncedAt:
+		return m.OldLastSyncedAt(ctx)
+	case librarysource.FieldLastError:
+		return m.OldLastError(ctx)
 	}
 	return nil, fmt.Errorf("unknown LibrarySource field %s", name)
 }
@@ -16300,6 +16628,20 @@ func (m *LibrarySourceMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetTagFilter(v)
 		return nil
+	case librarysource.FieldLastSyncedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastSyncedAt(v)
+		return nil
+	case librarysource.FieldLastError:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastError(v)
+		return nil
 	}
 	return fmt.Errorf("unknown LibrarySource field %s", name)
 }
@@ -16333,6 +16675,12 @@ func (m *LibrarySourceMutation) ClearedFields() []string {
 	if m.FieldCleared(librarysource.FieldTagFilter) {
 		fields = append(fields, librarysource.FieldTagFilter)
 	}
+	if m.FieldCleared(librarysource.FieldLastSyncedAt) {
+		fields = append(fields, librarysource.FieldLastSyncedAt)
+	}
+	if m.FieldCleared(librarysource.FieldLastError) {
+		fields = append(fields, librarysource.FieldLastError)
+	}
 	return fields
 }
 
@@ -16349,6 +16697,12 @@ func (m *LibrarySourceMutation) ClearField(name string) error {
 	switch name {
 	case librarysource.FieldTagFilter:
 		m.ClearTagFilter()
+		return nil
+	case librarysource.FieldLastSyncedAt:
+		m.ClearLastSyncedAt()
+		return nil
+	case librarysource.FieldLastError:
+		m.ClearLastError()
 		return nil
 	}
 	return fmt.Errorf("unknown LibrarySource nullable field %s", name)
@@ -16372,6 +16726,12 @@ func (m *LibrarySourceMutation) ResetField(name string) error {
 		return nil
 	case librarysource.FieldTagFilter:
 		m.ResetTagFilter()
+		return nil
+	case librarysource.FieldLastSyncedAt:
+		m.ResetLastSyncedAt()
+		return nil
+	case librarysource.FieldLastError:
+		m.ResetLastError()
 		return nil
 	}
 	return fmt.Errorf("unknown LibrarySource field %s", name)

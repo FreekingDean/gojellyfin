@@ -229,20 +229,12 @@ type Kind string
 
 // Kind values.
 const (
-	KindMovie            Kind = "Movie"
-	KindSeries           Kind = "Series"
-	KindSeason           Kind = "Season"
-	KindEpisode          Kind = "Episode"
-	KindPlaylist         Kind = "Playlist"
-	KindAudio            Kind = "Audio"
-	KindAudioBook        Kind = "AudioBook"
-	KindTrailer          Kind = "Trailer"
-	KindVideo            Kind = "Video"
-	KindFolder           Kind = "Folder"
-	KindCollectionFolder Kind = "CollectionFolder"
-	KindBoxSet           Kind = "BoxSet"
-	KindPlaylistsFolder  Kind = "PlaylistsFolder"
-	KindUserRootFolder   Kind = "UserRootFolder"
+	KindMovie    Kind = "Movie"
+	KindSeries   Kind = "Series"
+	KindSeason   Kind = "Season"
+	KindEpisode  Kind = "Episode"
+	KindPlaylist Kind = "Playlist"
+	KindAudio    Kind = "Audio"
 )
 
 func (k Kind) String() string {
@@ -252,7 +244,7 @@ func (k Kind) String() string {
 // KindValidator is a validator for the "kind" field enum values. It is called by the builders before save.
 func KindValidator(k Kind) error {
 	switch k {
-	case KindMovie, KindSeries, KindSeason, KindEpisode, KindPlaylist, KindAudio, KindAudioBook, KindTrailer, KindVideo, KindFolder, KindCollectionFolder, KindBoxSet, KindPlaylistsFolder, KindUserRootFolder:
+	case KindMovie, KindSeries, KindSeason, KindEpisode, KindPlaylist, KindAudio:
 		return nil
 	default:
 		return fmt.Errorf("item: invalid enum value for kind field: %q", k)

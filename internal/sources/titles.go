@@ -22,8 +22,10 @@ import (
 )
 
 type File struct {
-	Path         string
-	DateModified time.Time
+	Path           string
+	DateModified   time.Time
+	ExternalID     *int64
+	ExternalFileID *int64
 }
 
 type Title struct {
@@ -72,7 +74,7 @@ func (s *Service) movies(ctx context.Context, binding Binding) ([]Title, error) 
 			continue
 		}
 
-		found, err := file(binding.Source, movie.File)
+		found, err := file(binding.Source, movie.ID, movie.File)
 		if err != nil {
 			return nil, err
 		}
@@ -155,7 +157,7 @@ func seasons(source Source, tmdbID int, tagged bool, episodes []sonarr.Episode) 
 			continue
 		}
 
-		found, err := file(source, episode.File)
+		found, err := file(source, episode.ID, episode.File)
 		if err != nil {
 			log.Printf("skipping %s: %v", episode.Title, err)
 
@@ -218,13 +220,26 @@ func (s *Service) tagFilter(ctx context.Context, binding Binding) (func([]int) b
 	return nil, fmt.Errorf("%s has no tag %q", binding.Source.Name, binding.Library.TagFilter)
 }
 
-func file(source Source, from arr.File) (File, error) {
+func file(source Source, titleID int64, from arr.File) (File, error) {
 	path, err := Localise(source, from.Path)
 	if err != nil {
 		return File{}, err
 	}
 
-	return File{Path: path, DateModified: from.DateAdded}, nil
+	return File{
+		Path:           path,
+		DateModified:   from.DateAdded,
+		ExternalID:     known(titleID),
+		ExternalFileID: known(from.ID),
+	}, nil
+}
+
+func known(id int64) *int64 {
+	if id == 0 {
+		return nil
+	}
+
+	return &id
 }
 
 func Localise(source Source, path string) (string, error) {

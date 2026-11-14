@@ -3,6 +3,7 @@
 package migrate
 
 import (
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/dialect/sql/schema"
 	"entgo.io/ent/schema/field"
 )
@@ -224,7 +225,7 @@ var (
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Movie", "Series", "Season", "Episode", "Playlist", "Audio", "AudioBook", "Trailer", "Video", "Folder", "CollectionFolder", "BoxSet", "PlaylistsFolder", "UserRootFolder"}},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Movie", "Series", "Season", "Episode", "Playlist", "Audio"}},
 		{Name: "key", Type: field.TypeString, Nullable: true},
 		{Name: "name", Type: field.TypeString},
 		{Name: "sort_name", Type: field.TypeString, Nullable: true},
@@ -291,6 +292,8 @@ var (
 		{Name: "bitrate", Type: field.TypeInt32, Nullable: true},
 		{Name: "date_modified", Type: field.TypeTime, Nullable: true},
 		{Name: "probed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "external_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "external_file_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "item_id", Type: field.TypeUUID},
 		{Name: "source_id", Type: field.TypeUUID},
 	}
@@ -302,13 +305,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "item_sources_items_item_sources",
-				Columns:    []*schema.Column{ItemSourcesColumns[11]},
+				Columns:    []*schema.Column{ItemSourcesColumns[13]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "item_sources_sources_files",
-				Columns:    []*schema.Column{ItemSourcesColumns[12]},
+				Columns:    []*schema.Column{ItemSourcesColumns[14]},
 				RefColumns: []*schema.Column{SourcesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -317,12 +320,17 @@ var (
 			{
 				Name:    "itemsource_item_id_source_id",
 				Unique:  true,
-				Columns: []*schema.Column{ItemSourcesColumns[11], ItemSourcesColumns[12]},
+				Columns: []*schema.Column{ItemSourcesColumns[13], ItemSourcesColumns[14]},
 			},
 			{
 				Name:    "itemsource_path",
 				Unique:  true,
 				Columns: []*schema.Column{ItemSourcesColumns[4]},
+			},
+			{
+				Name:    "itemsource_source_id_external_file_id",
+				Unique:  false,
+				Columns: []*schema.Column{ItemSourcesColumns[14], ItemSourcesColumns[12]},
 			},
 		},
 	}
@@ -456,6 +464,8 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "tag_filter", Type: field.TypeString, Nullable: true},
+		{Name: "last_synced_at", Type: field.TypeTime, Nullable: true},
+		{Name: "last_error", Type: field.TypeString, Nullable: true},
 		{Name: "library_id", Type: field.TypeUUID},
 		{Name: "source_id", Type: field.TypeUUID},
 	}
@@ -467,13 +477,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "library_sources_libraries_sources",
-				Columns:    []*schema.Column{LibrarySourcesColumns[4]},
+				Columns:    []*schema.Column{LibrarySourcesColumns[6]},
 				RefColumns: []*schema.Column{LibrariesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "library_sources_sources_libraries",
-				Columns:    []*schema.Column{LibrarySourcesColumns[5]},
+				Columns:    []*schema.Column{LibrarySourcesColumns[7]},
 				RefColumns: []*schema.Column{SourcesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -482,12 +492,12 @@ var (
 			{
 				Name:    "librarysource_library_id_source_id",
 				Unique:  true,
-				Columns: []*schema.Column{LibrarySourcesColumns[4], LibrarySourcesColumns[5]},
+				Columns: []*schema.Column{LibrarySourcesColumns[6], LibrarySourcesColumns[7]},
 			},
 			{
 				Name:    "librarysource_source_id",
 				Unique:  false,
-				Columns: []*schema.Column{LibrarySourcesColumns[5]},
+				Columns: []*schema.Column{LibrarySourcesColumns[7]},
 			},
 		},
 	}
@@ -996,6 +1006,11 @@ func init() {
 	DisplayPreferencesTable.ForeignKeys[0].RefTable = UsersTable
 	ImagesTable.ForeignKeys[0].RefTable = ItemsTable
 	ItemsTable.ForeignKeys[0].RefTable = ItemsTable
+	ItemsTable.Annotation = &entsql.Annotation{}
+	ItemsTable.Annotation.Checks = map[string]string{
+		"item_key_unless_playlist": "kind = 'Playlist' OR key IS NOT NULL",
+		"item_kind_known":          "kind IN ('Movie', 'Series', 'Season', 'Episode', 'Playlist', 'Audio')",
+	}
 	ItemSourcesTable.ForeignKeys[0].RefTable = ItemsTable
 	ItemSourcesTable.ForeignKeys[1].RefTable = SourcesTable
 	LibraryItemsTable.ForeignKeys[0].RefTable = ItemsTable

@@ -210,7 +210,7 @@ func TestService_SeriesEpisodes(t *testing.T) {
 	fixture.add(t, seed{kind: itemmodel.KindEpisode, name: "S01E02", parentID: &seasonOne, index: number(2), parentIndex: number(1)})
 	fixture.add(t, seed{kind: itemmodel.KindEpisode, name: "S01E01", parentID: &seasonOne, index: number(1), parentIndex: number(1)})
 	fixture.add(t, seed{kind: itemmodel.KindEpisode, name: "S02 Extra", parentID: &seasonTwo, parentIndex: number(2)})
-	fixture.add(t, seed{kind: itemmodel.KindVideo, name: "Behind The Scenes", parentID: &seasonOne, index: number(1), parentIndex: number(1)})
+	fixture.add(t, seed{kind: itemmodel.KindMovie, name: "Behind The Scenes", parentID: &seasonOne, index: number(1), parentIndex: number(1)})
 	fixture.add(t, seed{kind: itemmodel.KindEpisode, name: "Elsewhere", parentID: &otherSeason, index: number(1), parentIndex: number(1)})
 
 	tests := []struct {

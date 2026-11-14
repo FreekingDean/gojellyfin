@@ -80,6 +80,34 @@ func (_c *LibrarySourceCreate) SetNillableTagFilter(v *string) *LibrarySourceCre
 	return _c
 }
 
+// SetLastSyncedAt sets the "last_synced_at" field.
+func (_c *LibrarySourceCreate) SetLastSyncedAt(v time.Time) *LibrarySourceCreate {
+	_c.mutation.SetLastSyncedAt(v)
+	return _c
+}
+
+// SetNillableLastSyncedAt sets the "last_synced_at" field if the given value is not nil.
+func (_c *LibrarySourceCreate) SetNillableLastSyncedAt(v *time.Time) *LibrarySourceCreate {
+	if v != nil {
+		_c.SetLastSyncedAt(*v)
+	}
+	return _c
+}
+
+// SetLastError sets the "last_error" field.
+func (_c *LibrarySourceCreate) SetLastError(v string) *LibrarySourceCreate {
+	_c.mutation.SetLastError(v)
+	return _c
+}
+
+// SetNillableLastError sets the "last_error" field if the given value is not nil.
+func (_c *LibrarySourceCreate) SetNillableLastError(v *string) *LibrarySourceCreate {
+	if v != nil {
+		_c.SetLastError(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *LibrarySourceCreate) SetID(v uuid.UUID) *LibrarySourceCreate {
 	_c.mutation.SetID(v)
@@ -208,6 +236,14 @@ func (_c *LibrarySourceCreate) createSpec() (*LibrarySource, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.TagFilter(); ok {
 		_spec.SetField(librarysource.FieldTagFilter, field.TypeString, value)
 		_node.TagFilter = value
+	}
+	if value, ok := _c.mutation.LastSyncedAt(); ok {
+		_spec.SetField(librarysource.FieldLastSyncedAt, field.TypeTime, value)
+		_node.LastSyncedAt = &value
+	}
+	if value, ok := _c.mutation.LastError(); ok {
+		_spec.SetField(librarysource.FieldLastError, field.TypeString, value)
+		_node.LastError = value
 	}
 	if nodes := _c.mutation.LibraryIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -361,6 +397,42 @@ func (u *LibrarySourceUpsert) ClearTagFilter() *LibrarySourceUpsert {
 	return u
 }
 
+// SetLastSyncedAt sets the "last_synced_at" field.
+func (u *LibrarySourceUpsert) SetLastSyncedAt(v time.Time) *LibrarySourceUpsert {
+	u.Set(librarysource.FieldLastSyncedAt, v)
+	return u
+}
+
+// UpdateLastSyncedAt sets the "last_synced_at" field to the value that was provided on create.
+func (u *LibrarySourceUpsert) UpdateLastSyncedAt() *LibrarySourceUpsert {
+	u.SetExcluded(librarysource.FieldLastSyncedAt)
+	return u
+}
+
+// ClearLastSyncedAt clears the value of the "last_synced_at" field.
+func (u *LibrarySourceUpsert) ClearLastSyncedAt() *LibrarySourceUpsert {
+	u.SetNull(librarysource.FieldLastSyncedAt)
+	return u
+}
+
+// SetLastError sets the "last_error" field.
+func (u *LibrarySourceUpsert) SetLastError(v string) *LibrarySourceUpsert {
+	u.Set(librarysource.FieldLastError, v)
+	return u
+}
+
+// UpdateLastError sets the "last_error" field to the value that was provided on create.
+func (u *LibrarySourceUpsert) UpdateLastError() *LibrarySourceUpsert {
+	u.SetExcluded(librarysource.FieldLastError)
+	return u
+}
+
+// ClearLastError clears the value of the "last_error" field.
+func (u *LibrarySourceUpsert) ClearLastError() *LibrarySourceUpsert {
+	u.SetNull(librarysource.FieldLastError)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -483,6 +555,48 @@ func (u *LibrarySourceUpsertOne) UpdateTagFilter() *LibrarySourceUpsertOne {
 func (u *LibrarySourceUpsertOne) ClearTagFilter() *LibrarySourceUpsertOne {
 	return u.Update(func(s *LibrarySourceUpsert) {
 		s.ClearTagFilter()
+	})
+}
+
+// SetLastSyncedAt sets the "last_synced_at" field.
+func (u *LibrarySourceUpsertOne) SetLastSyncedAt(v time.Time) *LibrarySourceUpsertOne {
+	return u.Update(func(s *LibrarySourceUpsert) {
+		s.SetLastSyncedAt(v)
+	})
+}
+
+// UpdateLastSyncedAt sets the "last_synced_at" field to the value that was provided on create.
+func (u *LibrarySourceUpsertOne) UpdateLastSyncedAt() *LibrarySourceUpsertOne {
+	return u.Update(func(s *LibrarySourceUpsert) {
+		s.UpdateLastSyncedAt()
+	})
+}
+
+// ClearLastSyncedAt clears the value of the "last_synced_at" field.
+func (u *LibrarySourceUpsertOne) ClearLastSyncedAt() *LibrarySourceUpsertOne {
+	return u.Update(func(s *LibrarySourceUpsert) {
+		s.ClearLastSyncedAt()
+	})
+}
+
+// SetLastError sets the "last_error" field.
+func (u *LibrarySourceUpsertOne) SetLastError(v string) *LibrarySourceUpsertOne {
+	return u.Update(func(s *LibrarySourceUpsert) {
+		s.SetLastError(v)
+	})
+}
+
+// UpdateLastError sets the "last_error" field to the value that was provided on create.
+func (u *LibrarySourceUpsertOne) UpdateLastError() *LibrarySourceUpsertOne {
+	return u.Update(func(s *LibrarySourceUpsert) {
+		s.UpdateLastError()
+	})
+}
+
+// ClearLastError clears the value of the "last_error" field.
+func (u *LibrarySourceUpsertOne) ClearLastError() *LibrarySourceUpsertOne {
+	return u.Update(func(s *LibrarySourceUpsert) {
+		s.ClearLastError()
 	})
 }
 
@@ -775,6 +889,48 @@ func (u *LibrarySourceUpsertBulk) UpdateTagFilter() *LibrarySourceUpsertBulk {
 func (u *LibrarySourceUpsertBulk) ClearTagFilter() *LibrarySourceUpsertBulk {
 	return u.Update(func(s *LibrarySourceUpsert) {
 		s.ClearTagFilter()
+	})
+}
+
+// SetLastSyncedAt sets the "last_synced_at" field.
+func (u *LibrarySourceUpsertBulk) SetLastSyncedAt(v time.Time) *LibrarySourceUpsertBulk {
+	return u.Update(func(s *LibrarySourceUpsert) {
+		s.SetLastSyncedAt(v)
+	})
+}
+
+// UpdateLastSyncedAt sets the "last_synced_at" field to the value that was provided on create.
+func (u *LibrarySourceUpsertBulk) UpdateLastSyncedAt() *LibrarySourceUpsertBulk {
+	return u.Update(func(s *LibrarySourceUpsert) {
+		s.UpdateLastSyncedAt()
+	})
+}
+
+// ClearLastSyncedAt clears the value of the "last_synced_at" field.
+func (u *LibrarySourceUpsertBulk) ClearLastSyncedAt() *LibrarySourceUpsertBulk {
+	return u.Update(func(s *LibrarySourceUpsert) {
+		s.ClearLastSyncedAt()
+	})
+}
+
+// SetLastError sets the "last_error" field.
+func (u *LibrarySourceUpsertBulk) SetLastError(v string) *LibrarySourceUpsertBulk {
+	return u.Update(func(s *LibrarySourceUpsert) {
+		s.SetLastError(v)
+	})
+}
+
+// UpdateLastError sets the "last_error" field to the value that was provided on create.
+func (u *LibrarySourceUpsertBulk) UpdateLastError() *LibrarySourceUpsertBulk {
+	return u.Update(func(s *LibrarySourceUpsert) {
+		s.UpdateLastError()
+	})
+}
+
+// ClearLastError clears the value of the "last_error" field.
+func (u *LibrarySourceUpsertBulk) ClearLastError() *LibrarySourceUpsertBulk {
+	return u.Update(func(s *LibrarySourceUpsert) {
+		s.ClearLastError()
 	})
 }
 

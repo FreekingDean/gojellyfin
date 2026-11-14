@@ -38,6 +38,10 @@ const (
 	FieldDateModified = "date_modified"
 	// FieldProbedAt holds the string denoting the probed_at field in the database.
 	FieldProbedAt = "probed_at"
+	// FieldExternalID holds the string denoting the external_id field in the database.
+	FieldExternalID = "external_id"
+	// FieldExternalFileID holds the string denoting the external_file_id field in the database.
+	FieldExternalFileID = "external_file_id"
 	// EdgeItem holds the string denoting the item edge name in mutations.
 	EdgeItem = "item"
 	// EdgeSource holds the string denoting the source edge name in mutations.
@@ -84,6 +88,8 @@ var Columns = []string{
 	FieldBitrate,
 	FieldDateModified,
 	FieldProbedAt,
+	FieldExternalID,
+	FieldExternalFileID,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -171,6 +177,16 @@ func ByDateModified(opts ...sql.OrderTermOption) OrderOption {
 // ByProbedAt orders the results by the probed_at field.
 func ByProbedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldProbedAt, opts...).ToFunc()
+}
+
+// ByExternalID orders the results by the external_id field.
+func ByExternalID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExternalID, opts...).ToFunc()
+}
+
+// ByExternalFileID orders the results by the external_file_id field.
+func ByExternalFileID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExternalFileID, opts...).ToFunc()
 }
 
 // ByItemField orders the results by item field.

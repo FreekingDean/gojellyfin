@@ -94,8 +94,10 @@ func modelToParams(entry sources.Configured) api.Source {
 	bound := make([]api.SourceLibrary, len(entry.Libraries))
 	for i, library := range entry.Libraries {
 		bound[i] = api.SourceLibrary{
-			Id:        library.LibraryID,
-			TagFilter: apiutil.Ptr(library.TagFilter),
+			Id:           library.LibraryID,
+			TagFilter:    apiutil.Ptr(library.TagFilter),
+			LastSyncedAt: library.LastSyncedAt,
+			LastError:    apiutil.ZeroOrNilPtr(library.LastError),
 		}
 	}
 

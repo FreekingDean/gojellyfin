@@ -44,7 +44,7 @@ func (q MetadataQuery) items() []predicate.Item {
 	if q.ItemID != nil {
 		filters = append(filters, itemmodel.ID(*q.ItemID))
 	}
-	if len(q.Kinds) > 0 {
+	if q.Kinds != nil {
 		filters = append(filters, itemmodel.KindIn(q.Kinds...))
 	}
 

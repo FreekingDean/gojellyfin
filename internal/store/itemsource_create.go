@@ -163,6 +163,34 @@ func (_c *ItemSourceCreate) SetNillableProbedAt(v *time.Time) *ItemSourceCreate 
 	return _c
 }
 
+// SetExternalID sets the "external_id" field.
+func (_c *ItemSourceCreate) SetExternalID(v int64) *ItemSourceCreate {
+	_c.mutation.SetExternalID(v)
+	return _c
+}
+
+// SetNillableExternalID sets the "external_id" field if the given value is not nil.
+func (_c *ItemSourceCreate) SetNillableExternalID(v *int64) *ItemSourceCreate {
+	if v != nil {
+		_c.SetExternalID(*v)
+	}
+	return _c
+}
+
+// SetExternalFileID sets the "external_file_id" field.
+func (_c *ItemSourceCreate) SetExternalFileID(v int64) *ItemSourceCreate {
+	_c.mutation.SetExternalFileID(v)
+	return _c
+}
+
+// SetNillableExternalFileID sets the "external_file_id" field if the given value is not nil.
+func (_c *ItemSourceCreate) SetNillableExternalFileID(v *int64) *ItemSourceCreate {
+	if v != nil {
+		_c.SetExternalFileID(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *ItemSourceCreate) SetID(v uuid.UUID) *ItemSourceCreate {
 	_c.mutation.SetID(v)
@@ -340,6 +368,14 @@ func (_c *ItemSourceCreate) createSpec() (*ItemSource, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ProbedAt(); ok {
 		_spec.SetField(itemsource.FieldProbedAt, field.TypeTime, value)
 		_node.ProbedAt = &value
+	}
+	if value, ok := _c.mutation.ExternalID(); ok {
+		_spec.SetField(itemsource.FieldExternalID, field.TypeInt64, value)
+		_node.ExternalID = &value
+	}
+	if value, ok := _c.mutation.ExternalFileID(); ok {
+		_spec.SetField(itemsource.FieldExternalFileID, field.TypeInt64, value)
+		_node.ExternalFileID = &value
 	}
 	if nodes := _c.mutation.ItemIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -641,6 +677,54 @@ func (u *ItemSourceUpsert) ClearProbedAt() *ItemSourceUpsert {
 	return u
 }
 
+// SetExternalID sets the "external_id" field.
+func (u *ItemSourceUpsert) SetExternalID(v int64) *ItemSourceUpsert {
+	u.Set(itemsource.FieldExternalID, v)
+	return u
+}
+
+// UpdateExternalID sets the "external_id" field to the value that was provided on create.
+func (u *ItemSourceUpsert) UpdateExternalID() *ItemSourceUpsert {
+	u.SetExcluded(itemsource.FieldExternalID)
+	return u
+}
+
+// AddExternalID adds v to the "external_id" field.
+func (u *ItemSourceUpsert) AddExternalID(v int64) *ItemSourceUpsert {
+	u.Add(itemsource.FieldExternalID, v)
+	return u
+}
+
+// ClearExternalID clears the value of the "external_id" field.
+func (u *ItemSourceUpsert) ClearExternalID() *ItemSourceUpsert {
+	u.SetNull(itemsource.FieldExternalID)
+	return u
+}
+
+// SetExternalFileID sets the "external_file_id" field.
+func (u *ItemSourceUpsert) SetExternalFileID(v int64) *ItemSourceUpsert {
+	u.Set(itemsource.FieldExternalFileID, v)
+	return u
+}
+
+// UpdateExternalFileID sets the "external_file_id" field to the value that was provided on create.
+func (u *ItemSourceUpsert) UpdateExternalFileID() *ItemSourceUpsert {
+	u.SetExcluded(itemsource.FieldExternalFileID)
+	return u
+}
+
+// AddExternalFileID adds v to the "external_file_id" field.
+func (u *ItemSourceUpsert) AddExternalFileID(v int64) *ItemSourceUpsert {
+	u.Add(itemsource.FieldExternalFileID, v)
+	return u
+}
+
+// ClearExternalFileID clears the value of the "external_file_id" field.
+func (u *ItemSourceUpsert) ClearExternalFileID() *ItemSourceUpsert {
+	u.SetNull(itemsource.FieldExternalFileID)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -917,6 +1001,62 @@ func (u *ItemSourceUpsertOne) UpdateProbedAt() *ItemSourceUpsertOne {
 func (u *ItemSourceUpsertOne) ClearProbedAt() *ItemSourceUpsertOne {
 	return u.Update(func(s *ItemSourceUpsert) {
 		s.ClearProbedAt()
+	})
+}
+
+// SetExternalID sets the "external_id" field.
+func (u *ItemSourceUpsertOne) SetExternalID(v int64) *ItemSourceUpsertOne {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.SetExternalID(v)
+	})
+}
+
+// AddExternalID adds v to the "external_id" field.
+func (u *ItemSourceUpsertOne) AddExternalID(v int64) *ItemSourceUpsertOne {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.AddExternalID(v)
+	})
+}
+
+// UpdateExternalID sets the "external_id" field to the value that was provided on create.
+func (u *ItemSourceUpsertOne) UpdateExternalID() *ItemSourceUpsertOne {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.UpdateExternalID()
+	})
+}
+
+// ClearExternalID clears the value of the "external_id" field.
+func (u *ItemSourceUpsertOne) ClearExternalID() *ItemSourceUpsertOne {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.ClearExternalID()
+	})
+}
+
+// SetExternalFileID sets the "external_file_id" field.
+func (u *ItemSourceUpsertOne) SetExternalFileID(v int64) *ItemSourceUpsertOne {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.SetExternalFileID(v)
+	})
+}
+
+// AddExternalFileID adds v to the "external_file_id" field.
+func (u *ItemSourceUpsertOne) AddExternalFileID(v int64) *ItemSourceUpsertOne {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.AddExternalFileID(v)
+	})
+}
+
+// UpdateExternalFileID sets the "external_file_id" field to the value that was provided on create.
+func (u *ItemSourceUpsertOne) UpdateExternalFileID() *ItemSourceUpsertOne {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.UpdateExternalFileID()
+	})
+}
+
+// ClearExternalFileID clears the value of the "external_file_id" field.
+func (u *ItemSourceUpsertOne) ClearExternalFileID() *ItemSourceUpsertOne {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.ClearExternalFileID()
 	})
 }
 
@@ -1363,6 +1503,62 @@ func (u *ItemSourceUpsertBulk) UpdateProbedAt() *ItemSourceUpsertBulk {
 func (u *ItemSourceUpsertBulk) ClearProbedAt() *ItemSourceUpsertBulk {
 	return u.Update(func(s *ItemSourceUpsert) {
 		s.ClearProbedAt()
+	})
+}
+
+// SetExternalID sets the "external_id" field.
+func (u *ItemSourceUpsertBulk) SetExternalID(v int64) *ItemSourceUpsertBulk {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.SetExternalID(v)
+	})
+}
+
+// AddExternalID adds v to the "external_id" field.
+func (u *ItemSourceUpsertBulk) AddExternalID(v int64) *ItemSourceUpsertBulk {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.AddExternalID(v)
+	})
+}
+
+// UpdateExternalID sets the "external_id" field to the value that was provided on create.
+func (u *ItemSourceUpsertBulk) UpdateExternalID() *ItemSourceUpsertBulk {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.UpdateExternalID()
+	})
+}
+
+// ClearExternalID clears the value of the "external_id" field.
+func (u *ItemSourceUpsertBulk) ClearExternalID() *ItemSourceUpsertBulk {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.ClearExternalID()
+	})
+}
+
+// SetExternalFileID sets the "external_file_id" field.
+func (u *ItemSourceUpsertBulk) SetExternalFileID(v int64) *ItemSourceUpsertBulk {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.SetExternalFileID(v)
+	})
+}
+
+// AddExternalFileID adds v to the "external_file_id" field.
+func (u *ItemSourceUpsertBulk) AddExternalFileID(v int64) *ItemSourceUpsertBulk {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.AddExternalFileID(v)
+	})
+}
+
+// UpdateExternalFileID sets the "external_file_id" field to the value that was provided on create.
+func (u *ItemSourceUpsertBulk) UpdateExternalFileID() *ItemSourceUpsertBulk {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.UpdateExternalFileID()
+	})
+}
+
+// ClearExternalFileID clears the value of the "external_file_id" field.
+func (u *ItemSourceUpsertBulk) ClearExternalFileID() *ItemSourceUpsertBulk {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.ClearExternalFileID()
 	})
 }
 
