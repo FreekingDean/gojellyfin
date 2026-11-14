@@ -126,17 +126,19 @@ func (s *Service) Report(ctx context.Context) (Report, error) {
 	}
 
 	probes := []func(context.Context) Check{s.database, s.background, s.metadataCheck, s.signOnCheck, s.transcoding}
-	checks := make([]Check, len(probes))
+	asked := make([]Check, len(probes))
 	var wait sync.WaitGroup
 	for i, probe := range probes {
 		wait.Go(func() {
 			bounded, cancel := context.WithTimeout(ctx, checkTimeout)
 			defer cancel()
-			checks[i] = probe(bounded)
+			asked[i] = probe(bounded)
 		})
 	}
 	wait.Wait()
 
+	checks := make([]Check, 0, len(asked)+len(configured)+1)
+	checks = append(checks, asked...)
 	for _, entry := range configured {
 		checks = append(checks, downloader(entry))
 	}
