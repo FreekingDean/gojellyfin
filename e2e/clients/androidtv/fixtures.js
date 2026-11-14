@@ -31,6 +31,10 @@ const test = base.extend({
 
     if (testInfo.status !== testInfo.expectedStatus) {
       console.log(`On screen when "${testInfo.title}" ended:\n${tv.summary()}`);
+      console.log(`What the app logged:\n${appLog(tv)}`);
+      if (fs.existsSync(SERVER_LOG)) {
+        console.log(`What the server logged last:\n${fs.readFileSync(SERVER_LOG, 'utf8').split('\n').slice(-40).join('\n')}`);
+      }
       const name = 'failed-' + testInfo.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
       await testInfo.attach(`${name}-current.png`, { path: tv.screenshot(testInfo.outputPath('failure.png')) });
       await testInfo.attach('logcat.txt', { path: tv.logcat(testInfo.outputPath('logcat.txt')) });
@@ -101,13 +105,21 @@ async function connect(tv, app) {
   await tv.waitFor({ id: 'add_user_button' }, { timeout: 60000 });
 }
 
-// A server that lists its users publicly shows a card for each; one that
-// does not offers only "Add account". Either leads to the same sign-in.
-async function openSignIn(tv, app) {
-  const [card] = tv.find({ label: app.username });
-  await tv.press(card || (await tv.waitFor({ id: 'add_user_button' })));
+async function openSignIn(tv) {
+  await tv.tapOn({ id: 'add_user_button' });
 
   return tv.waitForAny({ quickConnect: { id: 'quick_connect_code' }, password: { id: 'password' } });
+}
+
+// The app's own lines out of the device log, which is where it says why a
+// screen did not change.
+function appLog(tv) {
+  const pid = tv.shell(`pidof ${PACKAGE}`, { allowFailure: true }).trim().split(/\s+/)[0];
+  if (!pid) {
+    return '  (the app is not running)';
+  }
+
+  return tv.adb(['logcat', '-d', '-v', 'brief', `--pid=${pid}`], { allowFailure: true }).split('\n').slice(-80).join('\n');
 }
 
 async function signInWithPassword(tv, app) {
