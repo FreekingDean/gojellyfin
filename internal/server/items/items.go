@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
+	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
@@ -25,11 +26,49 @@ type Server struct {
 	items     *items.Service
 	libraries *libraries.Service
 	shelves   *shelves.Service
+	discover  *discover.Service
 	collages  dto.Collages
 }
 
-func New(items *items.Service, libraries *libraries.Service, shelves *shelves.Service, policies dto.Access, collages dto.Collages) *Server {
-	return &Server{items: items, libraries: libraries, shelves: shelves, policies: policies, collages: collages}
+func New(items *items.Service, libraries *libraries.Service, shelves *shelves.Service, discover *discover.Service, policies dto.Access, collages dto.Collages) *Server {
+	return &Server{items: items, libraries: libraries, shelves: shelves, discover: discover, policies: policies, collages: collages}
+}
+
+func (s *Server) shelved(ctx context.Context, shelf shelves.Shelf, limit int, ungrouped bool) ([]api.BaseItemDto, error) {
+	if shelf.Unowned != "" {
+		titles, err := s.discover.Trending(ctx, shelf.Unowned, limit)
+		if err != nil {
+			return nil, err
+		}
+
+		return dto.UnownedDtos(titles), nil
+	}
+
+	latest, err := s.shelves.Latest(ctx, shelf, limit, ungrouped)
+	if err != nil {
+		return nil, err
+	}
+
+	return dto.LatestDtos(ctx, s.items, latest)
+}
+
+func (s *Server) unowned(ctx context.Context, id uuid.UUID) (api.BaseItemDto, bool, error) {
+	title, found, err := s.discover.Title(ctx, id)
+	if err != nil || !found {
+		return api.BaseItemDto{}, false, err
+	}
+
+	held, err := s.items.ItemByKey(ctx, title.Key)
+	if err != nil || held.DeletedAt != nil {
+		return dto.UnownedDto(title), true, nil
+	}
+
+	converted, err := dto.ItemDtos(ctx, s.items, []*items.Item{held})
+	if err != nil {
+		return api.BaseItemDto{}, false, err
+	}
+
+	return converted[0], true, nil
 }
 
 func (s *Server) shelf(ctx context.Context, id *uuid.UUID) (shelves.Shelf, bool, error) {
@@ -63,12 +102,7 @@ func (s *Server) GetItems(ctx context.Context, request api.GetItemsRequestObject
 		return nil, err
 	}
 	if found {
-		latest, err := s.shelves.Latest(ctx, shelf, int(apiutil.OrElse(request.Params.Limit, int32(shelfPage))), true)
-		if err != nil {
-			return nil, err
-		}
-
-		converted, err := dto.LatestDtos(ctx, s.items, latest)
+		converted, err := s.shelved(ctx, shelf, int(apiutil.OrElse(request.Params.Limit, int32(shelfPage))), true)
 		if err != nil {
 			return nil, err
 		}
@@ -91,6 +125,10 @@ func (s *Server) GetItems(ctx context.Context, request api.GetItemsRequestObject
 func (s *Server) GetItem(ctx context.Context, request api.GetItemRequestObject) (api.GetItemResponseObject, error) {
 	item, err := s.items.ItemByID(ctx, items.Everyone, request.ItemId)
 	if err != nil {
+		if title, found, err := s.unowned(ctx, request.ItemId); err != nil || found {
+			return api.GetItem200JSONResponse(title), err
+		}
+
 		view, found, err := s.view(ctx, request.ItemId)
 		if err != nil {
 			return nil, err
@@ -128,19 +166,23 @@ func (s *Server) GetLatestMedia(ctx context.Context, request api.GetLatestMediaR
 		return nil, err
 	}
 
-	var latest []items.Latest
 	if found {
-		latest, err = s.shelves.Latest(ctx, shelf, limit, ungrouped)
-	} else {
-		latest, err = s.items.LatestItems(ctx, items.LatestQuery{
-			Viewer:    viewer,
-			LibraryID: request.Params.ParentId,
-			Order:     items.LatestAdded,
-			Now:       time.Now(),
-			Limit:     limit,
-			Ungrouped: ungrouped,
-		})
+		converted, err := s.shelved(ctx, shelf, limit, ungrouped)
+		if err != nil {
+			return nil, err
+		}
+
+		return api.GetLatestMedia200JSONResponse(converted), nil
 	}
+
+	latest, err := s.items.LatestItems(ctx, items.LatestQuery{
+		Viewer:    viewer,
+		LibraryID: request.Params.ParentId,
+		Order:     items.LatestAdded,
+		Now:       time.Now(),
+		Limit:     limit,
+		Ungrouped: ungrouped,
+	})
 	if err != nil {
 		return nil, err
 	}

@@ -91,7 +91,47 @@ const (
 	}`
 )
 
+const (
+	trendingMovies = `{
+		"page": 1,
+		"results": [
+			{
+				"id": 603,
+				"media_type": "movie",
+				"title": "The Matrix",
+				"overview": "Set in the 22nd century, The Matrix tells the story of a computer hacker.",
+				"release_date": "1999-03-30",
+				"vote_average": 8.2,
+				"poster_path": "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
+				"backdrop_path": "/ByDf0zjLSumz1MP1cDEo2JmHkrn.jpg"
+			},
+			{"id": 604, "media_type": "movie", "title": "The Matrix Reloaded", "release_date": ""}
+		],
+		"total_pages": 1,
+		"total_results": 2
+	}`
+
+	trendingShows = `{
+		"page": 1,
+		"results": [
+			{
+				"id": 1396,
+				"media_type": "tv",
+				"name": "Breaking Bad",
+				"overview": "A high school chemistry teacher turns to a life of crime.",
+				"first_air_date": "2008-01-20",
+				"vote_average": 8.9,
+				"poster_path": "/ggFHVNu6YYI5L9pCfOacjizRGt.jpg"
+			}
+		],
+		"total_pages": 1,
+		"total_results": 1
+	}`
+)
+
 var details = map[string]string{
+	"/3/trending/movie/week":        trendingMovies,
+	"/3/trending/tv/week":           trendingShows,
 	"/3/configuration":              configuration,
 	"/3/movie/603":                  matrixDetail,
 	"/3/tv/1396":                    breakingBadDetail,

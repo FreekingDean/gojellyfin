@@ -152,3 +152,19 @@ func newest(files []ScannedFile) *time.Time {
 
 	return latest
 }
+
+func (s *Service) HeldKeys(ctx context.Context, keys []string) ([]string, error) {
+	if len(keys) == 0 {
+		return nil, nil
+	}
+
+	held, err := s.store.Item.Query().
+		Where(itemmodel.KeyIn(keys...), itemmodel.DeletedAtIsNil()).
+		Select(itemmodel.FieldKey).
+		Strings(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query which keys are held: %w", err)
+	}
+
+	return held, nil
+}

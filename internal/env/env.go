@@ -54,7 +54,8 @@ type Tracing struct {
 }
 
 type TMDB struct {
-	APIKey string `mapstructure:"TMDB_API_KEY"`
+	APIKey  string `mapstructure:"TMDB_API_KEY"`
+	BaseURL string `mapstructure:"TMDB_BASE_URL"`
 }
 
 type OIDC struct {

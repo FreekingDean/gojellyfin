@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/collage"
+	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
@@ -92,7 +93,7 @@ func newFixture(t *testing.T) *fixture {
 	})
 
 	return &fixture{
-		server:    New(items.New(client), collage.New(items.New(client)), nil),
+		server:    New(items.New(client), collage.New(items.New(client)), discover.New(trendingProvider{}, items.New(client)), nil),
 		client:    client,
 		itemID:    item.ID,
 		libraryID: library.ID,
@@ -113,6 +114,30 @@ func (f *fixture) store(t *testing.T, kind items.ImageKind, index int32, url, ta
 	if err != nil {
 		t.Fatalf("failed to create the image row: %v", err)
 	}
+}
+
+const (
+	unownedPoster   = "https://image.tmdb.org/t/p/w780/unowned.jpg"
+	unownedBackdrop = "https://image.tmdb.org/t/p/w1280/unowned.jpg"
+)
+
+type trendingProvider struct{}
+
+func (trendingProvider) Enabled() bool { return true }
+
+func (trendingProvider) Movie(context.Context, int) (items.Metadata, bool, error) {
+	return items.Metadata{Images: []items.RemoteImage{
+		{Kind: imagemodel.KindPrimary, URL: unownedPoster},
+		{Kind: imagemodel.KindBackdrop, URL: unownedBackdrop},
+	}}, true, nil
+}
+
+func (trendingProvider) Series(context.Context, int) (items.Metadata, bool, error) {
+	return items.Metadata{}, true, nil
+}
+
+func (trendingProvider) Trending(context.Context, items.Kind) ([]items.Metadata, error) {
+	return nil, nil
 }
 
 const poster = "https://image.tmdb.org/t/p/w780/poster.jpg"
@@ -175,6 +200,49 @@ func TestServer_GetItemImage(t *testing.T) {
 			t.Errorf("response = %T, want a 404", response)
 		}
 	})
+}
+
+func TestServer_GetItemImage_Unowned(t *testing.T) {
+	fixture := newFixture(t)
+
+	tests := []struct {
+		name      string
+		itemID    uuid.UUID
+		imageType api.ImageType
+		want      string
+	}{
+		{name: "the poster of a title the library lacks", itemID: discover.ID(itemmodel.KindMovie, 603), imageType: api.Primary, want: unownedPoster},
+		{name: "its backdrop", itemID: discover.ID(itemmodel.KindMovie, 603), imageType: api.Backdrop, want: unownedBackdrop},
+		{name: "a kind the provider sent no picture for", itemID: discover.ID(itemmodel.KindMovie, 603), imageType: api.Logo},
+		{name: "a title with no artwork", itemID: discover.ID(itemmodel.KindSeries, 1396), imageType: api.Primary},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			response, err := fixture.server.GetItemImage(context.Background(), api.GetItemImageRequestObject{
+				ItemId:    test.itemID,
+				ImageType: test.imageType,
+			})
+			if err != nil {
+				t.Fatalf("failed to get the image: %v", err)
+			}
+
+			if test.want == "" {
+				if _, ok := response.(api.GetItemImage404JSONResponse); !ok {
+					t.Errorf("response = %T, want a 404", response)
+				}
+				return
+			}
+
+			recorder := httptest.NewRecorder()
+			if err := response.VisitGetItemImageResponse(recorder); err != nil {
+				t.Fatalf("failed to write the response: %v", err)
+			}
+			if got := recorder.Header().Get("Location"); recorder.Code != http.StatusFound || got != test.want {
+				t.Errorf("answered %d to %q, want a 302 to %q", recorder.Code, got, test.want)
+			}
+		})
+	}
 }
 
 func TestServer_GetItemImageByIndex(t *testing.T) {
