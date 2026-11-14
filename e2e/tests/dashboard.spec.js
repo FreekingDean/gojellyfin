@@ -1,4 +1,4 @@
-const { test, expect, view } = require('./fixtures');
+const { test, expect, view, route } = require('./fixtures');
 
 test.describe('the Media Downloaders dashboard page', () => {
   test('is in the dashboard nav and lists the seeded connection', async ({ signedIn: page }) => {
@@ -17,7 +17,7 @@ test.describe('the Media Downloaders dashboard page', () => {
   });
 
   test('lists who may ask for titles on the Requests page', async ({ signedIn: page, harness }) => {
-    await page.goto(harness.baseUrl + '/web/#/configurationpage?name=requests');
+    await route(page, '#/configurationpage?name=requests');
 
     const requests = page.locator('#gojellyfinRequestsPage');
     await expect(requests).toContainText('Who may ask');
