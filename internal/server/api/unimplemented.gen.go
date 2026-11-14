@@ -271,6 +271,26 @@ func (Unimplemented) GetUtcTime(ctx context.Context, request GetUtcTimeRequestOb
 	return nil, ErrNotImplemented
 }
 
+func (Unimplemented) GoJellyfinListReports(ctx context.Context, request GoJellyfinListReportsRequestObject) (GoJellyfinListReportsResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) GoJellyfinFileReport(ctx context.Context, request GoJellyfinFileReportRequestObject) (GoJellyfinFileReportResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) GoJellyfinDismissReport(ctx context.Context, request GoJellyfinDismissReportRequestObject) (GoJellyfinDismissReportResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) GoJellyfinReplaceReported(ctx context.Context, request GoJellyfinReplaceReportedRequestObject) (GoJellyfinReplaceReportedResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) GoJellyfinResolveReport(ctx context.Context, request GoJellyfinResolveReportRequestObject) (GoJellyfinResolveReportResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
 func (Unimplemented) GoJellyfinListRequestUsers(ctx context.Context, request GoJellyfinListRequestUsersRequestObject) (GoJellyfinListRequestUsersResponseObject, error) {
 	return nil, ErrNotImplemented
 }

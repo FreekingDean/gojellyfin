@@ -10,7 +10,225 @@
       "url": "http://localhost"
     }
   ],
-  "paths": {"/GoJellyfin/RequestUsers": {
+  "paths": {"/GoJellyfin/Reports": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Lists every report of a broken title, newest first.",
+        "operationId": "GoJellyfinListReports",
+        "responses": {
+          "200": {
+            "description": "The reports.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Reports"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "RequiresElevation"
+            ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Reports something wrong with a title.",
+        "operationId": "GoJellyfinFileReport",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportFiling"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Report filed."
+          },
+          "400": {
+            "description": "The report was refused, and why.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such title."
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization"
+            ]
+          }
+        ]
+      }
+    }, "/GoJellyfin/Reports/{reportId}/Dismiss": {
+      "post": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Marks one report as not worth acting on.",
+        "operationId": "GoJellyfinDismissReport",
+        "parameters": [
+          {
+            "name": "reportId",
+            "in": "path",
+            "required": true,
+            "description": "The report id.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Report updated."
+          },
+          "404": {
+            "description": "No such report."
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "RequiresElevation"
+            ]
+          }
+        ]
+      }
+    }, "/GoJellyfin/Reports/{reportId}/Replace": {
+      "post": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Deletes the reported file on its downloader, blocklists the release it came from and searches for another.",
+        "operationId": "GoJellyfinReplaceReported",
+        "parameters": [
+          {
+            "name": "reportId",
+            "in": "path",
+            "required": true,
+            "description": "The report id.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The downloader was asked for another copy, and the title's open reports are resolved."
+          },
+          "400": {
+            "description": "The file could not be replaced, and why.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such report."
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "RequiresElevation"
+            ]
+          }
+        ]
+      }
+    }, "/GoJellyfin/Reports/{reportId}/Resolve": {
+      "post": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Marks one report as dealt with.",
+        "operationId": "GoJellyfinResolveReport",
+        "parameters": [
+          {
+            "name": "reportId",
+            "in": "path",
+            "required": true,
+            "description": "The report id.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Report updated."
+          },
+          "404": {
+            "description": "No such report."
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "RequiresElevation"
+            ]
+          }
+        ]
+      }
+    }, "/GoJellyfin/RequestUsers": {
       "get": {
         "tags": [
           "Requests"
@@ -47658,7 +47876,92 @@
     }
   },
   "components": {
-    "schemas": {"RequestAllowance": {
+    "schemas": {"Report": {
+        "type": "object",
+        "required": [
+          "Id",
+          "ItemId",
+          "ItemName",
+          "Kind",
+          "Origin",
+          "Note",
+          "Status",
+          "CreatedAt",
+          "Replaceable"
+        ],
+        "properties": {
+          "Id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ItemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ItemName": {
+            "type": "string",
+            "description": "The title, with its series and numbers when it is an episode."
+          },
+          "Kind": {
+            "type": "string",
+            "description": "Unplayable, Video, Audio, Subtitles or Other."
+          },
+          "Origin": {
+            "type": "string",
+            "description": "User, Delete, Probe or Playback."
+          },
+          "Note": {
+            "type": "string"
+          },
+          "Status": {
+            "type": "string",
+            "description": "Open, Resolved or Dismissed."
+          },
+          "UserName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Who reported it. Absent when the server did."
+          },
+          "Path": {
+            "type": "string",
+            "nullable": true,
+            "description": "The file the report names, when it names one."
+          },
+          "CreatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "Replaceable": {
+            "type": "boolean",
+            "description": "Whether a downloader names a file for the title, so another copy can be asked for."
+          }
+        }
+      }, "ReportFiling": {
+        "type": "object",
+        "required": [
+          "ItemId",
+          "Kind"
+        ],
+        "properties": {
+          "ItemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "Kind": {
+            "type": "string",
+            "description": "Unplayable, Video, Audio, Subtitles or Other."
+          },
+          "Note": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      }, "Reports": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Report"
+        }
+      }, "RequestAllowance": {
         "type": "object",
         "required": [
           "CanRequest",

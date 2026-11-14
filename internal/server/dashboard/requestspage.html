@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Requests</title>
+    <title>Requests and Reports</title>
 </head>
 <body>
 <div data-role="page" id="gojellyfinRequestsPage" class="page type-interior pluginConfigurationPage fullWidthContent"
@@ -18,6 +18,19 @@
             <p data-id="noRequests" class="fieldDescription" style="display:none">Nobody has asked for anything yet.</p>
             <table style="width:100%">
                 <tbody data-id="queueHost"></tbody>
+            </table>
+        </div>
+
+        <div class="verticalSection">
+            <h2 class="sectionTitle">Reports</h2>
+            <p class="fieldDescription">
+                A copy somebody reported, a Delete pressed in a client, or a file this server could not read.
+                Replace deletes the file from its downloader, blocklists the release it came from and searches
+                for another. Resolve and Dismiss only close the report.
+            </p>
+            <p data-id="noReports" class="fieldDescription" style="display:none">Nothing is reported.</p>
+            <table style="width:100%">
+                <tbody data-id="reportsHost"></tbody>
             </table>
         </div>
 
@@ -65,6 +78,30 @@
                 <span>Decline</span>
             </button>
         </div>
+    </template>
+
+    <template id="reportTemplate">
+        <tr>
+            <td style="padding:.5em 1em .5em 0;vertical-align:top">
+                <a is="emby-linkbutton" data-id="title" class="button-link"></a>
+                <div data-id="path" class="fieldDescription" style="margin:0"></div>
+            </td>
+            <td style="padding:.5em 1em .5em 0;vertical-align:top">
+                <div data-id="what"></div>
+                <div data-id="note" class="fieldDescription" style="margin:0"></div>
+            </td>
+            <td style="padding:.5em 0;vertical-align:top;text-align:right">
+                <button is="emby-button" data-id="replace" type="button" class="raised raised-mini button-submit">
+                    <span>Replace</span>
+                </button>
+                <button is="emby-button" data-id="resolve" type="button" class="raised raised-mini">
+                    <span>Resolve</span>
+                </button>
+                <button is="emby-button" data-id="dismiss" type="button" class="raised raised-mini">
+                    <span>Dismiss</span>
+                </button>
+            </td>
+        </tr>
     </template>
 
     <template id="userTemplate">
@@ -160,6 +197,49 @@
                 return clone;
             },
 
+            close: function (report, decision) {
+                const requests = window.GoJellyfinRequests;
+
+                window.ApiClient.ajax({
+                    type: 'POST',
+                    url: window.ApiClient.getUrl('GoJellyfin/Reports/' + report.Id + '/' + decision)
+                }).then(function () {
+                    requests.load();
+                }).catch(function (error) {
+                    console.error(error);
+                    Dashboard.alert(decision === 'Replace'
+                        ? 'The downloader did not replace this copy. Check that it is reachable.'
+                        : 'The report could not be closed.');
+                });
+            },
+
+            report: function (report) {
+                const requests = window.GoJellyfinRequests;
+                const clone = document.querySelector('#reportTemplate').content.cloneNode(true);
+                const link = clone.querySelector('[data-id=title]');
+                const open = report.Status === 'Open';
+
+                link.textContent = report.ItemName;
+                link.href = '#/details?id=' + report.ItemId;
+                clone.querySelector('[data-id=path]').textContent = report.Path || '';
+                clone.querySelector('[data-id=what]').textContent = report.Kind + ', ' +
+                    (report.UserName || report.Origin) + ', ' + new Date(report.CreatedAt).toLocaleDateString() +
+                    (open ? '' : ', ' + report.Status);
+                clone.querySelector('[data-id=note]').textContent = report.Note ||
+                    (report.Origin === 'Delete' ? 'Delete was pressed in a client' : '');
+
+                ['Replace', 'Resolve', 'Dismiss'].forEach(function (decision) {
+                    const button = clone.querySelector('[data-id=' + decision.toLowerCase() + ']');
+
+                    button.style.display = open && (decision !== 'Replace' || report.Replaceable) ? '' : 'none';
+                    button.addEventListener('click', function () {
+                        requests.close(report, decision);
+                    });
+                });
+
+                return clone;
+            },
+
             saveUser: function (user, row) {
                 const result = row.querySelector('[data-id=saveResult]');
                 const quota = row.querySelector('[data-id=txtQuota]').value.trim();
@@ -208,12 +288,19 @@
 
                 Promise.all([
                     window.ApiClient.getJSON(window.ApiClient.getUrl('GoJellyfin/Requests')),
-                    window.ApiClient.getJSON(window.ApiClient.getUrl('GoJellyfin/RequestUsers'))
+                    window.ApiClient.getJSON(window.ApiClient.getUrl('GoJellyfin/RequestUsers')),
+                    window.ApiClient.getJSON(window.ApiClient.getUrl('GoJellyfin/Reports'))
                 ]).then(function (loaded) {
                     const queue = page.querySelector('[data-id=queueHost]');
                     const users = page.querySelector('[data-id=usersHost]');
+                    const reports = page.querySelector('[data-id=reportsHost]');
 
                     queue.innerHTML = '';
+                    reports.innerHTML = '';
+                    page.querySelector('[data-id=noReports]').style.display = loaded[2].length ? 'none' : '';
+                    loaded[2].forEach(function (report) {
+                        reports.appendChild(requests.report(report));
+                    });
                     users.innerHTML = '';
                     page.querySelector('[data-id=noRequests]').style.display = loaded[0].length ? 'none' : '';
                     loaded[0].forEach(function (title) {
@@ -224,7 +311,7 @@
                     });
                 }).catch(function (error) {
                     console.error(error);
-                    Dashboard.alert('The requests could not be loaded.');
+                    Dashboard.alert('The requests and reports could not be loaded.');
                 }).finally(function () {
                     Dashboard.hideLoadingMsg();
                 });
