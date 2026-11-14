@@ -12,6 +12,12 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store"
 )
 
+type styling string
+
+func (s styling) CSS() string { return string(s) }
+
+func (s styling) Enabled() bool { return s != "" }
+
 type signOn bool
 
 func (s signOn) Enabled() bool { return bool(s) }
@@ -41,7 +47,7 @@ func TestServer_GetBrandingOptions(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server := &Server{config: config.New(connection.Client()), signOn: signOn(test.enabled)}
+			server := &Server{config: config.New(connection.Client()), signOn: signOn(test.enabled), links: styling("")}
 
 			response, err := server.GetBrandingOptions(context.Background(), api.GetBrandingOptionsRequestObject{})
 			if err != nil {

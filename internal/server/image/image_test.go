@@ -92,7 +92,7 @@ func newFixture(t *testing.T) *fixture {
 	})
 
 	return &fixture{
-		server:    New(items.New(client), collage.New(items.New(client))),
+		server:    New(items.New(client), collage.New(items.New(client)), nil),
 		client:    client,
 		itemID:    item.ID,
 		libraryID: library.ID,
