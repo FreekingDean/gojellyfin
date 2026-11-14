@@ -4,16 +4,32 @@
 # screenshots were rendered in.
 name: E2E
 
+# The native clients run on an emulator, which is slow and less steady than a
+# browser, so they are not part of every push: they run nightly against main,
+# on demand, and on a pull request carrying the `e2e-clients` label.
 on:
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
   push:
     branches: [main]
+  schedule:
+    - cron: '23 8 * * *'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+# A label added right after a push would otherwise leave two runs publishing
+# one pull request's gallery.
+concurrency:
+  group: e2e-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   e2e:
+    if: >-
+      github.event_name != 'schedule'
+      && (github.event.action != 'labeled' || github.event.label.name == 'e2e-clients')
     runs-on: ubuntu-latest
 
     services:
@@ -80,21 +96,19 @@ jobs:
         working-directory: e2e
 
       # On a pull request, every screenshot this commit rendered and the diff of
-      # each that changed, as a directory the publish job serves from Pages.
-      - name: Build the gallery
+      # each that changed, beside a summary the gallery job renders from.
+      - name: Collect the screenshots
         if: always() && github.event_name == 'pull_request' && hashFiles('e2e/.build/results.json') != ''
         working-directory: e2e
-        env:
-          PAGES: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/pr-${{ github.event.pull_request.number }}/${{ github.event.pull_request.head.sha }}
         run: |
-          node setup/gallery.js .build/results.json .build/gallery "$PAGES" "${{ github.event.pull_request.head.sha }}"
+          node setup/gallery.js collect web jellyfin-web .build/results.json .build/gallery tests/__screenshots__
           if [ -d playwright-report ]; then cp -r playwright-report .build/gallery/report; fi
 
-      - name: Upload the gallery
-        if: always() && github.event_name == 'pull_request' && hashFiles('e2e/.build/gallery/comment.md') != ''
+      - name: Upload the screenshots
+        if: always() && github.event_name == 'pull_request' && hashFiles('e2e/.build/gallery/web.json') != ''
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-gallery
+          name: gallery-web
           path: e2e/.build/gallery
           retention-days: 3
 
@@ -112,16 +126,160 @@ jobs:
             e2e/test-results
           retention-days: 14
 
+  # The stock Android TV app on an emulator, driven over adb against the same
+  # harness the browser suite boots.
+  androidtv:
+    if: >-
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+      || contains(github.event.pull_request.labels.*.name, 'e2e-clients'))
+      && (github.event.action != 'labeled' || github.event.label.name == 'e2e-clients')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: gojellyfin
+          POSTGRES_PASSWORD: gojellyfin
+          POSTGRES_DB: gojellyfin_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgres://gojellyfin:gojellyfin@localhost:5432/gojellyfin_test?sslmode=disable
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - uses: ariga/setup-atlas@v0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+
+      # The harness fronts the API with jellyfin-web the way a deployment does,
+      # and a phone approving the television's code is served from it.
+      - name: Cache the web client
+        id: client
+        uses: actions/cache@v4
+        with:
+          path: e2e/.client
+          key: jellyfin-web-10.10.0
+
+      - name: Fetch the web client
+        if: steps.client.outputs.cache-hit != 'true'
+        run: docker pull jellyfin/jellyfin:10.10.0
+
+      - name: Cache the app
+        uses: actions/cache@v4
+        with:
+          path: e2e/.clients
+          key: androidtv-${{ hashFiles('e2e/clients/androidtv/app.js') }}
+
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - name: Install
+        run: npm ci
+        working-directory: e2e
+
+      # Without this the runner user cannot open /dev/kvm and the emulator
+      # falls back to software, where it does not finish booting.
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: android-tv
+          arch: x86
+          profile: tv_1080p
+          ram-size: 4096M
+          disable-animations: true
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          working-directory: e2e
+          script: npm run androidtv
+
+      - name: Collect the screenshots
+        if: always() && github.event_name == 'pull_request' && hashFiles('e2e/.build/androidtv-results.json') != ''
+        working-directory: e2e
+        run: node setup/gallery.js collect androidtv "Android TV" .build/androidtv-results.json .build/gallery
+
+      - name: Upload the screenshots
+        if: always() && github.event_name == 'pull_request' && hashFiles('e2e/.build/gallery/androidtv.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: gallery-androidtv
+          path: e2e/.build/gallery
+          retention-days: 3
+
+      # What was on screen, the device's log and the server's, for each test
+      # that failed.
+      - name: Upload results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: androidtv-results
+          path: |
+            e2e/test-results/androidtv
+            e2e/.build/server.log
+          retention-days: 14
+
+  # One page and one comment over every suite that ran. The suites collect in
+  # their own jobs, so this only reads their summaries.
+  gallery:
+    needs: [e2e, androidtv]
+    if: >-
+      always() && github.event_name == 'pull_request'
+      && needs.e2e.result != 'cancelled' && needs.e2e.result != 'skipped'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: gallery-*
+          merge-multiple: true
+          path: gallery
+
+      - name: Render
+        env:
+          PAGES: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/pr-${{ github.event.pull_request.number }}/${{ github.event.pull_request.head.sha }}
+        run: node e2e/setup/gallery.js render gallery "$PAGES" "${{ github.event.pull_request.head.sha }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: e2e-gallery
+          path: gallery
+          retention-days: 3
+
   # Serves the gallery from gh-pages under pr-<number>/<sha>/ and keeps one
   # comment on the PR pointing at it. A fork's token cannot write, so only a
   # branch of this repository is published. gh-pages holds a single commit
   # that is replaced on every publish, so it never accumulates history.
   publish:
-    needs: e2e
+    needs: gallery
     if: >-
       always() && github.event_name == 'pull_request'
       && github.event.pull_request.head.repo.full_name == github.repository
-      && needs.e2e.result != 'cancelled' && needs.e2e.result != 'skipped'
+      && needs.gallery.result == 'success'
     runs-on: ubuntu-latest
     continue-on-error: true
     concurrency:

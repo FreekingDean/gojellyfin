@@ -93,6 +93,12 @@ e2e-update:
 e2e-local:
 	cd e2e && npm ci && npx playwright install chromium && npm test
 
+# The stock Android TV app, driven over adb. Wants a running emulator or a
+# television `adb devices` lists, on top of what `e2e` wants.
+.PHONY: e2e-androidtv
+e2e-androidtv:
+	cd e2e && npm ci && npm run androidtv
+
 .PHONY: fmt
 fmt:
 	gofmt -w internal cmd

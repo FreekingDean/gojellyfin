@@ -13,15 +13,16 @@ func ShelfView(shelf shelves.Shelf) api.BaseItemDto {
 	collectionType := api.CollectionType(shelf.Collection)
 
 	return api.BaseItemDto{
-		Id:                apiutil.Ptr(shelf.ID),
-		ServerId:          apiutil.Ptr(config.ServerID),
-		Name:              apiutil.Ptr(shelf.Name),
-		SortName:          apiutil.Ptr(strings.ToLower(shelf.Name)),
-		Type:              apiutil.Ptr(api.BaseItemKindCollectionFolder),
-		CollectionType:    &collectionType,
-		IsFolder:          apiutil.Ptr(true),
-		LocationType:      apiutil.Ptr(api.Virtual),
-		ImageTags:         &map[string]*string{},
-		BackdropImageTags: &[]string{},
+		Id:                   apiutil.Ptr(shelf.ID),
+		ServerId:             apiutil.Ptr(config.ServerID),
+		Name:                 apiutil.Ptr(shelf.Name),
+		SortName:             apiutil.Ptr(strings.ToLower(shelf.Name)),
+		Type:                 apiutil.Ptr(api.BaseItemKindCollectionFolder),
+		CollectionType:       &collectionType,
+		DisplayPreferencesId: displayPreferencesID(shelf.ID),
+		IsFolder:             apiutil.Ptr(true),
+		LocationType:         apiutil.Ptr(api.Virtual),
+		ImageTags:            &map[string]*string{},
+		BackdropImageTags:    &[]string{},
 	}
 }

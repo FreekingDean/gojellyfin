@@ -52,7 +52,7 @@ const WANTED_SHOW = {
 
 const CLIENT_IMAGE = 'jellyfin/jellyfin:12.4';
 
-async function boot() {
+async function boot({ mediaSeconds = 20 } = {}) {
   const adminUrl = process.env.DATABASE_URL;
   if (!adminUrl) {
     throw new Error('DATABASE_URL is not set, so there is no server to create a scratch database on');
@@ -60,7 +60,7 @@ async function boot() {
 
   const binaries = build();
   const client = fetchClient();
-  const media = encodeMedia();
+  const media = encodeMedia(mediaSeconds);
 
   const scratch = 'gojellyfin_e2e_' + Math.random().toString(36).slice(2, 12).replace(/[^a-z0-9]/g, '0');
   const scratchEnv = { ADMIN_DATABASE_URL: adminUrl, SCRATCH_DATABASE: scratch };
@@ -146,6 +146,7 @@ async function boot() {
   return {
     facts: {
       baseUrl,
+      port: webPort,
       issuer: provider.url,
       ssoUsername: SSO_USERNAME,
       username: USERNAME,
@@ -205,8 +206,8 @@ function build() {
 // The playable title is VP9 and Opus in WebM, which every Chromium build
 // direct plays. The transcoded one is MPEG-4 Part 2, which no browser profile
 // names, at 1440 lines, so the server has to encode it down to 1080p H.264.
-function encodeMedia() {
-  return { playable: encodePlayable(), transcoded: encodeTranscoded() };
+function encodeMedia(seconds) {
+  return { playable: encodePlayable(seconds), transcoded: encodeTranscoded() };
 }
 
 function encodeTranscoded() {
@@ -228,8 +229,8 @@ function encodeTranscoded() {
   return target;
 }
 
-function encodePlayable() {
-  const target = path.join(BUILD, 'media', 'playable.webm');
+function encodePlayable(seconds) {
+  const target = path.join(BUILD, 'media', seconds === 20 ? 'playable.webm' : `playable-${seconds}s.webm`);
   if (fs.existsSync(target)) {
     return target;
   }
@@ -237,8 +238,8 @@ function encodePlayable() {
   fs.mkdirSync(path.dirname(target), { recursive: true });
   run('ffmpeg', [
     '-hide_banner', '-loglevel', 'error', '-y',
-    '-f', 'lavfi', '-i', 'testsrc2=size=640x360:rate=24:duration=20',
-    '-f', 'lavfi', '-i', 'sine=frequency=440:duration=20',
+    '-f', 'lavfi', '-i', `testsrc2=size=640x360:rate=24:duration=${seconds}`,
+    '-f', 'lavfi', '-i', `sine=frequency=440:duration=${seconds}`,
     '-c:v', 'libvpx-vp9', '-b:v', '300k', '-deadline', 'realtime', '-cpu-used', '8',
     '-c:a', 'libopus', '-b:a', '64k',
     '-shortest', target,

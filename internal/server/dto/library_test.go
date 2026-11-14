@@ -38,4 +38,15 @@ func TestLibraryView(t *testing.T) {
 			t.Errorf("image tags = %v, want Primary=abc", *view.ImageTags)
 		}
 	})
+	t.Run("names its display preferences the way upstream does, which the Android TV app needs to open it", func(t *testing.T) {
+		id := uuid.MustParse("6645f6b8-5fc3-576b-94bf-fffc31f0a11e")
+		view, err := LibraryView(context.Background(), collageTag(""), &libraries.Library{ID: id, Name: "Movies"})
+		if err != nil {
+			t.Fatalf("failed to build the view: %v", err)
+		}
+
+		if got := view.DisplayPreferencesId; got == nil || *got != "6645f6b85fc3576b94bffffc31f0a11e" {
+			t.Errorf("display preferences id = %v, want the id without dashes", got)
+		}
+	})
 }
