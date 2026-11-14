@@ -14,6 +14,8 @@ const testDatabaseURL = "postgres://localhost:5432/test?sslmode=disable"
 
 var settings = []string{
 	"DATABASE_URL",
+	"DATABASE_MAX_CONNS",
+	"DATABASE_CONN_MAX_LIFETIME",
 	"HTTP_PORT",
 	"PUBLISHED_SERVER_URL",
 	"SERVER_ID",
@@ -67,6 +69,7 @@ func TestLoad(t *testing.T) {
 			env:  map[string]string{"DATABASE_URL": testDatabaseURL},
 			want: Config{
 				DatabaseURL:      testDatabaseURL,
+				Database:         Database{MaxConns: defaultDatabaseConns, ConnMaxLifetime: defaultConnMaxLifetime},
 				HTTPPort:         defaultHTTPPort,
 				CORSOrigins:      []string{},
 				TrustedProxies:   []string{},
@@ -78,6 +81,8 @@ func TestLoad(t *testing.T) {
 			name: "every setting comes back as the environment spelled it",
 			env: map[string]string{
 				"DATABASE_URL":                 testDatabaseURL,
+				"DATABASE_MAX_CONNS":           "8",
+				"DATABASE_CONN_MAX_LIFETIME":   "5m",
 				"HTTP_PORT":                    "9000",
 				"PUBLISHED_SERVER_URL":         "https://jellyfin.example",
 				"SERVER_ID":                    "0123456789abcdef0123456789abcdef",
@@ -103,6 +108,7 @@ func TestLoad(t *testing.T) {
 			},
 			want: Config{
 				DatabaseURL:        testDatabaseURL,
+				Database:           Database{MaxConns: 8, ConnMaxLifetime: 5 * time.Minute},
 				HTTPPort:           9000,
 				PublishedServerURL: "https://jellyfin.example",
 				ServerID:           "0123456789abcdef0123456789abcdef",
@@ -140,6 +146,7 @@ func TestLoad(t *testing.T) {
 			},
 			want: Config{
 				DatabaseURL:      testDatabaseURL,
+				Database:         Database{MaxConns: defaultDatabaseConns, ConnMaxLifetime: defaultConnMaxLifetime},
 				HTTPPort:         defaultHTTPPort,
 				CORSOrigins:      []string{},
 				TrustedProxies:   []string{},
@@ -159,6 +166,16 @@ func TestLoad(t *testing.T) {
 		{
 			name:    "refuses a TRUSTED_PROXIES entry that is not a network",
 			env:     map[string]string{"DATABASE_URL": testDatabaseURL, "TRUSTED_PROXIES": "10.201.0.0/16, gateway"},
+			wantErr: true,
+		},
+		{
+			name:    "refuses a pool of no connections",
+			env:     map[string]string{"DATABASE_URL": testDatabaseURL, "DATABASE_MAX_CONNS": "0"},
+			wantErr: true,
+		},
+		{
+			name:    "refuses a unitless DATABASE_CONN_MAX_LIFETIME",
+			env:     map[string]string{"DATABASE_URL": testDatabaseURL, "DATABASE_CONN_MAX_LIFETIME": "30"},
 			wantErr: true,
 		},
 		{

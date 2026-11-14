@@ -55,6 +55,8 @@ The reading is `viper`, bound to the environment only — no config file, no fla
 
 A malformed value is refused at start rather than ignored. `TRANSCODER_JOBS=lots` used to fall through to the core count and `TRANSCODER_STALL_TIMEOUT=30` to thirty seconds, so a typo in a manifest became a capacity problem with nothing to point at.
 
+`DATABASE_MAX_CONNS` (20) and `DATABASE_CONN_MAX_LIFETIME` (30m) size each process's pool, applied in the `fx.tmpl` behind `store.NewStore`. `database/sql` otherwise opens a connection per concurrent query with no ceiling and keeps two idle, so every replica could take as many of Postgres' `max_connections` as it had requests in flight and churn the rest. Idle connections are kept up to the same ceiling, because a pool that closes what it just opened pays the handshake again on the next burst, and the lifetime is what lets a Postgres or pgbouncer restart drain rather than wedge. The figures are a starting point with no measurement behind them; the variables are there so an operator sizes replicas times the ceiling against the server.
+
 `HTTP_PORT` is what the server listens on and defaults to 8081, which is the port the `Dockerfile` and the chart in `charts/gojellyfin` already name — the variable exists so a second process can be brought up beside them, not to move the default.
 
 `serverModules` and `workerModules` in `cmd/gojellyfin` both list `env.Module`, and `TestWorkerModules` guards the second the way `TestServerModules` guards the first — a command that composes its graph inline has nothing to validate, so the worker starting without a config it needs is only found by running it.

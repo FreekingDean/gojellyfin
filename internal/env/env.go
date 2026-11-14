@@ -14,8 +14,10 @@ import (
 )
 
 const (
-	defaultHTTPPort = 8081
-	maxPort         = 65535
+	defaultHTTPPort        = 8081
+	defaultDatabaseConns   = 20
+	defaultConnMaxLifetime = 30 * time.Minute
+	maxPort                = 65535
 
 	SourceAPIKeyPrefix = "SOURCE_API_KEY_"
 )
@@ -24,6 +26,7 @@ var serverIDPattern = regexp.MustCompile(`^[0-9a-f]{32}$`)
 
 type Config struct {
 	DatabaseURL        string     `mapstructure:"DATABASE_URL" secret:"true"`
+	Database           Database   `mapstructure:",squash"`
 	HTTPPort           int        `mapstructure:"HTTP_PORT"`
 	PublishedServerURL string     `mapstructure:"PUBLISHED_SERVER_URL"`
 	ServerID           string     `mapstructure:"SERVER_ID"`
@@ -37,6 +40,11 @@ type Config struct {
 	MediaDirectories   []string   `mapstructure:"MEDIA_DIRECTORIES"`
 
 	SourceAPIKeys map[string]string `mapstructure:"-"`
+}
+
+type Database struct {
+	MaxConns        int           `mapstructure:"DATABASE_MAX_CONNS"`
+	ConnMaxLifetime time.Duration `mapstructure:"DATABASE_CONN_MAX_LIFETIME"`
 }
 
 type Transcoder struct {
@@ -74,6 +82,8 @@ type OIDC struct {
 func Load() (Config, error) {
 	v := viper.NewWithOptions(viper.ExperimentalBindStruct())
 	v.SetDefault("HTTP_PORT", defaultHTTPPort)
+	v.SetDefault("DATABASE_MAX_CONNS", defaultDatabaseConns)
+	v.SetDefault("DATABASE_CONN_MAX_LIFETIME", defaultConnMaxLifetime)
 	v.SetDefault("MEDIA_DIRECTORIES", []string{"/"})
 
 	v.AutomaticEnv()
@@ -98,6 +108,12 @@ func Load() (Config, error) {
 func (c Config) validate() error {
 	if c.DatabaseURL == "" {
 		return errors.New("DATABASE_URL is not set, so there is no database to open")
+	}
+	if c.Database.MaxConns < 1 {
+		return fmt.Errorf("DATABASE_MAX_CONNS must be a whole number of connections above zero, got %d", c.Database.MaxConns)
+	}
+	if c.Database.ConnMaxLifetime <= 0 {
+		return fmt.Errorf("DATABASE_CONN_MAX_LIFETIME must be a duration above zero such as 30m, got %s", c.Database.ConnMaxLifetime)
 	}
 	if c.HTTPPort < 1 || c.HTTPPort > maxPort {
 		return fmt.Errorf("HTTP_PORT must be a port between 1 and %d, got %d", maxPort, c.HTTPPort)
