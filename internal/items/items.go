@@ -224,6 +224,12 @@ type ItemQuery struct {
 	NameStartsWithOrGreater string
 	NameLessThan            string
 
+	User      uuid.UUID
+	Played    *bool
+	Favorite  *bool
+	Resumable bool
+	Folder    *bool
+
 	SortBy     []string
 	Descending bool
 	StartIndex int
@@ -272,6 +278,22 @@ func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int
 	}
 	if query.NameLessThan != "" {
 		items = items.Where(itemmodel.SortNameLT(sorted(query.NameLessThan)))
+	}
+	if query.Played != nil {
+		items = items.Where(marked(query.User, *query.Played, datamodel.Played(true)))
+	}
+	if query.Favorite != nil {
+		items = items.Where(marked(query.User, *query.Favorite, datamodel.IsFavorite(true)))
+	}
+	if query.Resumable {
+		items = items.Where(marked(query.User, true, datamodel.PlaybackPositionTicksGT(0)))
+	}
+	if query.Folder != nil {
+		folders := itemmodel.KindIn(folderKinds...)
+		if !*query.Folder {
+			folders = itemmodel.Not(folders)
+		}
+		items = items.Where(folders)
 	}
 
 	total, err := items.Clone().Count(ctx)
@@ -355,6 +377,15 @@ type Viewer struct {
 }
 
 var Everyone = Viewer{All: true}
+
+func marked(user uuid.UUID, want bool, mark predicate.UserItemData) predicate.Item {
+	has := itemmodel.HasUserDataWith(datamodel.UserID(user), mark)
+	if want {
+		return has
+	}
+
+	return itemmodel.Not(has)
+}
 
 func (v Viewer) visible() []predicate.Item {
 	if v.All {

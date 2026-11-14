@@ -3,6 +3,9 @@ package dto
 import (
 	"context"
 
+	"github.com/google/uuid"
+
+	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
@@ -60,6 +63,8 @@ func ItemQuery(ctx context.Context, collections *libraries.Service, viewer items
 		query.IDs = *params.Ids
 	}
 
+	filter(&query, auth.UserID(ctx), params)
+
 	if params.ParentId != nil {
 		if library, err := collections.Library(ctx, *params.ParentId); err == nil {
 			query.LibraryID = &library.ID
@@ -104,5 +109,28 @@ func EmptyItems() api.BaseItemDtoQueryResult {
 		Items:            &[]api.BaseItemDto{},
 		StartIndex:       apiutil.Ptr(int32(0)),
 		TotalRecordCount: apiutil.Ptr(int32(0)),
+	}
+}
+
+func filter(query *items.ItemQuery, user uuid.UUID, params api.GetItemsParams) {
+	query.User = user
+	query.Played = params.IsPlayed
+	query.Favorite = params.IsFavorite
+
+	for _, by := range apiutil.Deref(params.Filters) {
+		switch by {
+		case api.ItemFilterIsPlayed:
+			query.Played = apiutil.Ptr(true)
+		case api.ItemFilterIsUnplayed:
+			query.Played = apiutil.Ptr(false)
+		case api.ItemFilterIsFavorite, api.ItemFilterIsFavoriteOrLikes:
+			query.Favorite = apiutil.Ptr(true)
+		case api.ItemFilterIsResumable:
+			query.Resumable = true
+		case api.ItemFilterIsFolder:
+			query.Folder = apiutil.Ptr(true)
+		case api.ItemFilterIsNotFolder:
+			query.Folder = apiutil.Ptr(false)
+		}
 	}
 }
