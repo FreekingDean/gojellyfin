@@ -20,6 +20,7 @@ function emulatorSetup({ PACKAGE, apk }) {
     const app = await boot({ mediaSeconds: MEDIA_SECONDS });
 
     phone.reverse(app.facts.port);
+    phone.shell('settings put secure immersive_mode_confirmations confirmed', { allowFailure: true });
     phone.install(await apk());
     phone.clear(PACKAGE);
 

@@ -91,8 +91,19 @@ async function freshStart(phone) {
   await launch(phone, { connect: { type: 'EditText' } });
 }
 
+// The connect screen is drawn before its field takes typing, so the address
+// is typed until the field holds it.
 async function connect(phone, app) {
-  await phone.fill({ type: 'EditText' }, app.baseUrl);
+  for (let attempt = 0; ; attempt++) {
+    await sleep(1500);
+    await phone.fill({ type: 'EditText' }, app.baseUrl);
+    if (phone.find({ type: 'EditText', text: app.baseUrl }).length) {
+      break;
+    }
+    if (attempt === 3) {
+      throw new Error(`the server's address never reached its field. On screen:\n${phone.summary()}`);
+    }
+  }
   await phone.tapOn({ label: /^connect$/i });
   await phone.waitForAny({ login: screens(app).login, users: { label: app.username } }, { timeout: 90000 });
 }

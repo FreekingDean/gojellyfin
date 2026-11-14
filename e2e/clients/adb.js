@@ -51,17 +51,26 @@ function device(serial = process.env.ANDROID_SERIAL) {
     return parse(out.slice(out.indexOf('<?xml'), end));
   }
 
-  // A slow emulator's own apps stop answering now and then, and Android puts
-  // its "isn't responding" dialog over whatever is on screen until someone
-  // chooses to wait, so that choice is made before anything is looked at.
+  // Android draws two things of its own over whatever is on screen until
+  // someone answers them: the dialog saying one of a slow emulator's apps
+  // is not responding, and the first full screen video's note on how to
+  // leave it. Each is answered before anything is looked at.
+  function interruption(nodes) {
+    if (nodes.some((node) => node.id === 'immersive_cling_title')) {
+      return nodes.find((node) => node.id === 'ok');
+    }
+
+    return nodes.find((node) => node.id === 'aerr_wait');
+  }
+
   function dump() {
     for (let attempt = 0; attempt < 5; attempt++) {
       const nodes = read();
-      const wait = nodes.find((node) => node.id === 'aerr_wait');
-      if (!wait) {
+      const answer = interruption(nodes);
+      if (!answer) {
         return nodes;
       }
-      tap(wait);
+      tap(answer);
       spawnSync('sleep', ['1']);
     }
 
