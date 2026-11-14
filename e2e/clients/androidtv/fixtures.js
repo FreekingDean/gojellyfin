@@ -116,7 +116,9 @@ async function openSignIn(tv) {
 function appLog(tv) {
   const pid = tv.shell(`pidof ${PACKAGE}`, { allowFailure: true }).trim().split(/\s+/)[0];
   if (!pid) {
-    return '  (the app is not running)';
+    const crash = tv.adb(['logcat', '-d', '-b', 'crash', '-v', 'brief'], { allowFailure: true }).trim();
+
+    return `  (the app is not running)\n${crash.split('\n').slice(-80).join('\n')}`;
   }
 
   return tv.adb(['logcat', '-d', '-v', 'brief', `--pid=${pid}`], { allowFailure: true }).split('\n').slice(-80).join('\n');
