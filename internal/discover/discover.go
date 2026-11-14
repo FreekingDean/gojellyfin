@@ -18,17 +18,18 @@ import (
 )
 
 const (
-	trendingFor = time.Hour
-	detailFor   = 24 * time.Hour
-	detailLimit = 4096
-	providerKey = "Tmdb"
+	trendingFor   = time.Hour
+	trendingPages = 5
+	detailFor     = 24 * time.Hour
+	detailLimit   = 4096
+	providerKey   = "Tmdb"
 )
 
 type Provider interface {
 	Enabled() bool
 	Movie(ctx context.Context, tmdbID int) (items.Metadata, bool, error)
 	Series(ctx context.Context, tmdbID int) (items.Metadata, bool, error)
-	Trending(ctx context.Context, kind items.Kind) ([]items.Metadata, error)
+	Trending(ctx context.Context, kind items.Kind, page int) ([]items.Metadata, error)
 	Search(ctx context.Context, kind items.Kind, term string) ([]items.Metadata, error)
 }
 
@@ -83,13 +84,8 @@ func (s *Service) Enabled() bool {
 	return s.provider.Enabled()
 }
 
-func (s *Service) Trending(ctx context.Context, kind items.Kind, limit int) ([]Title, error) {
-	listed, err := s.listed(ctx, kind)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.unowned(ctx, listed, limit)
+func (s *Service) Trending(ctx context.Context, kind items.Kind) ([]Title, error) {
+	return s.listed(ctx, kind)
 }
 
 func (s *Service) Search(ctx context.Context, kind items.Kind, term string, limit int) ([]Title, error) {
@@ -163,7 +159,7 @@ func (s *Service) listed(ctx context.Context, kind items.Kind) ([]Title, error) 
 		return held.titles, nil
 	}
 
-	answered, err := s.provider.Trending(ctx, kind)
+	answered, err := s.pages(ctx, kind)
 	if err != nil {
 		if cached {
 			log.Printf("discover: serving the last trending %s list, the provider did not answer: %v", kind, err)
@@ -178,6 +174,27 @@ func (s *Service) listed(ctx context.Context, kind items.Kind) ([]Title, error) 
 	s.trending[kind] = listing{titles: titles, fetched: s.now()}
 
 	return titles, nil
+}
+
+func (s *Service) pages(ctx context.Context, kind items.Kind) ([]items.Metadata, error) {
+	var answered []items.Metadata
+	for page := 1; page <= trendingPages; page++ {
+		listed, err := s.provider.Trending(ctx, kind, page)
+		if err != nil {
+			if page == 1 {
+				return nil, err
+			}
+			log.Printf("discover: keeping %d pages of trending %s, page %d did not answer: %v", page-1, kind, page, err)
+
+			break
+		}
+		if len(listed) == 0 {
+			break
+		}
+		answered = append(answered, listed...)
+	}
+
+	return answered, nil
 }
 
 func titled(kind items.Kind, metadata items.Metadata) (Title, bool) {

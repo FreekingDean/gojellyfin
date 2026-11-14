@@ -3,6 +3,7 @@ package tmdb
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
@@ -16,7 +17,7 @@ var trendingTypes = map[items.Kind]string{
 	itemmodel.KindSeries: "tv",
 }
 
-func (c *Client) Trending(ctx context.Context, kind items.Kind) ([]items.Metadata, error) {
+func (c *Client) Trending(ctx context.Context, kind items.Kind, page int) ([]items.Metadata, error) {
 	mediaType, known := trendingTypes[kind]
 	if !known {
 		return nil, fmt.Errorf("tmdb: nothing trends as %s", kind)
@@ -25,7 +26,7 @@ func (c *Client) Trending(ctx context.Context, kind items.Kind) ([]items.Metadat
 		return nil, err
 	}
 
-	trending, err := c.api.GetTrending(mediaType, trendingWindow, nil)
+	trending, err := c.api.GetTrending(mediaType, trendingWindow, map[string]string{"page": strconv.Itoa(page)})
 	if err != nil {
 		return nil, err
 	}

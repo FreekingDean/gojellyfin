@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"slices"
 	"strings"
 	"time"
@@ -24,10 +25,12 @@ type Catalogue interface {
 	DistinctGenres(ctx context.Context, query items.MetadataQuery) ([]items.Named, int, error)
 	LastPlayed(ctx context.Context, viewer items.Viewer, userID uuid.UUID, kind items.Kind) (*items.Item, []string, error)
 	Posters(ctx context.Context, records []*items.Item, limit int) ([]*items.Image, error)
+	PlayableKeyed(ctx context.Context, viewer items.Viewer, keys []string, limit int) ([]*items.Item, error)
 }
 
 type Discovery interface {
 	Enabled() bool
+	Trending(ctx context.Context, kind items.Kind) ([]discover.Title, error)
 }
 
 type Shelf struct {
@@ -35,7 +38,7 @@ type Shelf struct {
 	Slug       string
 	Name       string
 	Collection libraries.CollectionType
-	Unowned    items.Kind
+	trending   items.Kind
 	query      items.LatestQuery
 }
 
@@ -235,15 +238,59 @@ func (s *Service) resolve(ctx context.Context, entry definition, viewer items.Vi
 		return Shelf{}, false, fmt.Errorf("failed to resolve the %s shelf: %w", entry.slug, err)
 	}
 
-	if entry.unowned != "" && !s.discovery.Enabled() {
-		ok = false
+	query.Viewer = viewer
+	shelf := Shelf{ID: ID(entry.slug), Slug: entry.slug, Name: name, Collection: entry.collection, trending: entry.trending, query: query}
+	if ok && entry.trending != "" {
+		ok = s.trendingHolds(ctx, shelf)
 	}
 
-	query.Viewer = viewer
-	return Shelf{ID: ID(entry.slug), Slug: entry.slug, Name: name, Collection: entry.collection, Unowned: entry.unowned, query: query}, ok, nil
+	return shelf, ok, nil
+}
+
+func (s *Service) trendingHolds(ctx context.Context, shelf Shelf) bool {
+	if !s.discovery.Enabled() {
+		return false
+	}
+
+	held, err := s.Latest(ctx, shelf, 1, false)
+	if err != nil {
+		log.Printf("shelves: leaving %s out, what is trending could not be read: %v", shelf.Slug, err)
+
+		return false
+	}
+
+	return len(held) > 0
+}
+
+func (s *Service) trended(ctx context.Context, shelf Shelf, limit int) ([]items.Latest, error) {
+	titles, err := s.discovery.Trending(ctx, shelf.trending)
+	if err != nil {
+		return nil, err
+	}
+
+	keys := make([]string, 0, len(titles))
+	for _, title := range titles {
+		keys = append(keys, title.Key)
+	}
+
+	records, err := s.catalogue.PlayableKeyed(ctx, shelf.query.Viewer, keys, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	latest := make([]items.Latest, 0, len(records))
+	for _, record := range records {
+		latest = append(latest, items.Latest{Item: record})
+	}
+
+	return latest, nil
 }
 
 func (s *Service) Latest(ctx context.Context, shelf Shelf, limit int, ungrouped bool) ([]items.Latest, error) {
+	if shelf.trending != "" {
+		return s.trended(ctx, shelf, limit)
+	}
+
 	query := shelf.query
 	query.Now = s.now()
 	query.Limit = limit

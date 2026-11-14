@@ -46,7 +46,7 @@ func (q LatestQuery) filters() []predicate.Item {
 		kinds = []Kind{itemmodel.KindMovie, itemmodel.KindEpisode}
 	}
 
-	filters := []predicate.Item{itemmodel.KindIn(kinds...)}
+	filters := []predicate.Item{itemmodel.KindIn(kinds...), itemmodel.HasItemSources()}
 	if q.LibraryID != nil {
 		filters = append(filters, inLibrary(*q.LibraryID))
 	}

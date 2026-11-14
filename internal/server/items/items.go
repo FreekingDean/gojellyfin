@@ -37,15 +37,6 @@ func New(items *items.Service, libraries *libraries.Service, shelves *shelves.Se
 }
 
 func (s *Server) shelved(ctx context.Context, shelf shelves.Shelf, limit int, ungrouped bool) ([]api.BaseItemDto, error) {
-	if shelf.Unowned != "" {
-		titles, err := s.discover.Trending(ctx, shelf.Unowned, limit)
-		if err != nil {
-			return nil, err
-		}
-
-		return dto.UnownedDtos(ctx, s.requests, titles)
-	}
-
 	latest, err := s.shelves.Latest(ctx, shelf, limit, ungrouped)
 	if err != nil {
 		return nil, err

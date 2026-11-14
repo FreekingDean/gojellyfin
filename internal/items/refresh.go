@@ -159,7 +159,7 @@ func (s *Service) HeldKeys(ctx context.Context, keys []string) ([]string, error)
 	}
 
 	held, err := s.store.Item.Query().
-		Where(itemmodel.KeyIn(keys...), itemmodel.DeletedAtIsNil()).
+		Where(itemmodel.KeyIn(keys...), itemmodel.DeletedAtIsNil(), withFile()).
 		Select(itemmodel.FieldKey).
 		Strings(ctx)
 	if err != nil {

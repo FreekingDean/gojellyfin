@@ -2,6 +2,7 @@ package items
 
 import (
 	"context"
+	"fmt"
 	"slices"
 	"testing"
 	"time"
@@ -57,6 +58,11 @@ func TestService_LatestItems(t *testing.T) {
 	unaired := fixture.add(t, seed{kind: itemmodel.KindEpisode, name: "Airing E2", parentID: &airingSeason, index: number(2), parentIndex: number(1), premiere: func() *time.Time { at := now.AddDate(0, 0, 5); return &at }()})
 
 	movie := fixture.add(t, seed{kind: itemmodel.KindMovie, name: "Movie", premiere: day(30)})
+
+	for index, leaf := range []uuid.UUID{endedOne, endedTwo, airingOne, unaired, movie} {
+		fixture.source(t, leaf, fmt.Sprintf("/%s/%d.mkv", fixture.libraryID, index))
+	}
+	fixture.add(t, seed{kind: itemmodel.KindMovie, name: "Fileless", premiere: day(1)})
 
 	fixture.added(t, endedOne, *day(0))
 	fixture.added(t, endedTwo, *day(0))
