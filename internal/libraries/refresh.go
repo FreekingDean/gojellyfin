@@ -15,6 +15,7 @@ func (s *Service) RefreshLibrariesJob() jobs.Job {
 		Category:    "Library",
 		Description: "Refreshes every library from its Sonarr and Radarr sources.",
 		Startable:   true,
+		Queue:       jobs.RefreshQueue,
 		Run:         s.refreshAll,
 	}
 }
@@ -24,6 +25,7 @@ func (s *Service) RefreshLibraryJob() jobs.Job {
 		Name:        jobs.RefreshLibrary,
 		Category:    "Library",
 		Description: "Refreshes one library from each source bound to it.",
+		Queue:       jobs.RefreshQueue,
 		Run:         s.refreshOne,
 	}
 }

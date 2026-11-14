@@ -3,8 +3,10 @@ package sources
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"testing"
 
 	"github.com/google/uuid"
@@ -365,5 +367,30 @@ func TestRefreshLibrarySource_RecordsACancelledRead(t *testing.T) {
 
 	if got := fixture.binding(t, library).LastError; got != context.Canceled.Error() {
 		t.Errorf("last error = %q, want %q", got, context.Canceled.Error())
+	}
+}
+
+func TestRefreshLibrarySource_EnqueuesEveryTitle(t *testing.T) {
+	reported := make([]movie, 0, 500)
+	for n := range 500 {
+		path := fmt.Sprintf("/media/Film %d/film.mkv", n)
+		reported = append(reported, movie{
+			TmdbID: 100000 + n, Title: fmt.Sprintf("Film %d", n), Year: 2000, HasFile: true,
+			Path: filepath.Dir(path), File: at(path),
+		})
+	}
+
+	fixture := newFixture(t, &reported)
+	library := fixture.library(t, "")
+
+	enqueued := fixture.refresh(t, library)
+	if len(enqueued) != len(reported) {
+		t.Fatalf("enqueued = %d, want every title the source holds (%d)", len(enqueued), len(reported))
+	}
+}
+
+func TestRefreshLibrarySource_WaitsOnItsOwnQueue(t *testing.T) {
+	if queue := (&Service{}).RefreshJob().Queue; queue != jobs.RefreshQueue {
+		t.Errorf("queue = %q, want %q so a listing never waits behind the titles it enqueues", queue, jobs.RefreshQueue)
 	}
 }
