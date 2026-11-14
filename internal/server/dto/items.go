@@ -8,6 +8,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
+	"github.com/FreekingDean/gojellyfin/internal/reports"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/google/uuid"
@@ -44,6 +45,7 @@ func ItemDto(item *items.Item, held items.Held, childCount int32, imageTags map[
 		RunTimeTicks:      runtime(item, held),
 		DateCreated:       apiutil.Ptr(item.CreatedAt),
 		LocationType:      apiutil.Ptr(api.FileSystem),
+		CanDelete:         apiutil.Ptr(reports.Takes(item.Kind)),
 		ImageTags:         &map[string]*string{},
 		BackdropImageTags: &[]string{},
 	}
