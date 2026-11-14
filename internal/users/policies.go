@@ -52,7 +52,7 @@ func (s *Service) Satisfies(ctx context.Context, id uuid.UUID, scopes []string) 
 
 func granted(policy *Policy, scope string) bool {
 	switch scope {
-	case "DefaultAuthorization", "FirstTimeSetupOrDefault", "FirstTimeSetupOrIgnoreParentalControl":
+	case "DefaultAuthorization", "IgnoreParentalControl", "FirstTimeSetupOrDefault", "FirstTimeSetupOrIgnoreParentalControl":
 		return true
 	case "LiveTvAccess":
 		return policy.EnableLiveTvAccess
