@@ -59,6 +59,20 @@ func (_c *PersonCreate) SetName(v string) *PersonCreate {
 	return _c
 }
 
+// SetImageURL sets the "image_url" field.
+func (_c *PersonCreate) SetImageURL(v string) *PersonCreate {
+	_c.mutation.SetImageURL(v)
+	return _c
+}
+
+// SetNillableImageURL sets the "image_url" field if the given value is not nil.
+func (_c *PersonCreate) SetNillableImageURL(v *string) *PersonCreate {
+	if v != nil {
+		_c.SetImageURL(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *PersonCreate) SetID(v uuid.UUID) *PersonCreate {
 	_c.mutation.SetID(v)
@@ -184,6 +198,10 @@ func (_c *PersonCreate) createSpec() (*Person, *sqlgraph.CreateSpec) {
 		_spec.SetField(person.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
+	if value, ok := _c.mutation.ImageURL(); ok {
+		_spec.SetField(person.FieldImageURL, field.TypeString, value)
+		_node.ImageURL = value
+	}
 	if nodes := _c.mutation.CreditsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -288,6 +306,24 @@ func (u *PersonUpsert) UpdateName() *PersonUpsert {
 	return u
 }
 
+// SetImageURL sets the "image_url" field.
+func (u *PersonUpsert) SetImageURL(v string) *PersonUpsert {
+	u.Set(person.FieldImageURL, v)
+	return u
+}
+
+// UpdateImageURL sets the "image_url" field to the value that was provided on create.
+func (u *PersonUpsert) UpdateImageURL() *PersonUpsert {
+	u.SetExcluded(person.FieldImageURL)
+	return u
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (u *PersonUpsert) ClearImageURL() *PersonUpsert {
+	u.SetNull(person.FieldImageURL)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -375,6 +411,27 @@ func (u *PersonUpsertOne) SetName(v string) *PersonUpsertOne {
 func (u *PersonUpsertOne) UpdateName() *PersonUpsertOne {
 	return u.Update(func(s *PersonUpsert) {
 		s.UpdateName()
+	})
+}
+
+// SetImageURL sets the "image_url" field.
+func (u *PersonUpsertOne) SetImageURL(v string) *PersonUpsertOne {
+	return u.Update(func(s *PersonUpsert) {
+		s.SetImageURL(v)
+	})
+}
+
+// UpdateImageURL sets the "image_url" field to the value that was provided on create.
+func (u *PersonUpsertOne) UpdateImageURL() *PersonUpsertOne {
+	return u.Update(func(s *PersonUpsert) {
+		s.UpdateImageURL()
+	})
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (u *PersonUpsertOne) ClearImageURL() *PersonUpsertOne {
+	return u.Update(func(s *PersonUpsert) {
+		s.ClearImageURL()
 	})
 }
 
@@ -632,6 +689,27 @@ func (u *PersonUpsertBulk) SetName(v string) *PersonUpsertBulk {
 func (u *PersonUpsertBulk) UpdateName() *PersonUpsertBulk {
 	return u.Update(func(s *PersonUpsert) {
 		s.UpdateName()
+	})
+}
+
+// SetImageURL sets the "image_url" field.
+func (u *PersonUpsertBulk) SetImageURL(v string) *PersonUpsertBulk {
+	return u.Update(func(s *PersonUpsert) {
+		s.SetImageURL(v)
+	})
+}
+
+// UpdateImageURL sets the "image_url" field to the value that was provided on create.
+func (u *PersonUpsertBulk) UpdateImageURL() *PersonUpsertBulk {
+	return u.Update(func(s *PersonUpsert) {
+		s.UpdateImageURL()
+	})
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (u *PersonUpsertBulk) ClearImageURL() *PersonUpsertBulk {
+	return u.Update(func(s *PersonUpsert) {
+		s.ClearImageURL()
 	})
 }
 

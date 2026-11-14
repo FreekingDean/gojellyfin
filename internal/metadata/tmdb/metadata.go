@@ -24,6 +24,7 @@ const (
 	posterSize   = "w780"
 	backdropSize = "w1280"
 	stillSize    = "w300"
+	profileSize  = "h632"
 )
 
 var statuses = map[string]string{
@@ -53,7 +54,7 @@ func movieMetadata(movie *gotmdb.MovieDetails, base string) items.Metadata {
 		Genres:          named(movie.Genres),
 		RunTimeTicks:    ticks(movie.Runtime),
 		Studios:         companies(movie.ProductionCompanies),
-		People:          movieCredits(movie),
+		People:          movieCredits(movie, base),
 		ProviderIds:     providerIDs(movie.ID, movie.IMDbID),
 		Images: artwork(
 			remote(imagemodel.KindPrimary, base, posterSize, movie.PosterPath),
@@ -76,7 +77,7 @@ func seriesMetadata(series *gotmdb.TVDetails, base string) items.Metadata {
 		Taglines:        list(series.Tagline),
 		Genres:          named(series.Genres),
 		Studios:         companies(series.ProductionCompanies),
-		People:          seriesCredits(series),
+		People:          seriesCredits(series, base),
 		ProviderIds:     seriesProviderIDs(series),
 		Images: artwork(
 			remote(imagemodel.KindPrimary, base, posterSize, series.PosterPath),
@@ -240,18 +241,18 @@ func text(value string) *string {
 	return &value
 }
 
-func movieCredits(movie *gotmdb.MovieDetails) *[]items.Credit {
+func movieCredits(movie *gotmdb.MovieDetails, base string) *[]items.Credit {
 	if movie.MovieCreditsAppend == nil || movie.Credits.MovieCredits == nil {
 		return nil
 	}
 
 	people := make([]items.Credit, 0, len(movie.Credits.Cast)+len(movie.Credits.Crew))
 	for _, member := range movie.Credits.Cast {
-		people = append(people, cast(member.Name, member.Character, member.Order))
+		people = append(people, pictured(cast(member.Name, member.Character, member.Order), base, member.ProfilePath))
 	}
 	for _, member := range movie.Credits.Crew {
 		if credit, wanted := crew(member.Name, member.Job); wanted {
-			people = append(people, credit)
+			people = append(people, pictured(credit, base, member.ProfilePath))
 		}
 	}
 
@@ -262,18 +263,18 @@ func movieCredits(movie *gotmdb.MovieDetails) *[]items.Credit {
 	return &people
 }
 
-func seriesCredits(series *gotmdb.TVDetails) *[]items.Credit {
+func seriesCredits(series *gotmdb.TVDetails, base string) *[]items.Credit {
 	if series.TVCreditsAppend == nil || series.Credits.TVCredits == nil {
 		return nil
 	}
 
 	people := make([]items.Credit, 0, len(series.Credits.Cast)+len(series.Credits.Crew))
 	for _, member := range series.Credits.Cast {
-		people = append(people, cast(member.Name, member.Character, member.Order))
+		people = append(people, pictured(cast(member.Name, member.Character, member.Order), base, member.ProfilePath))
 	}
 	for _, member := range series.Credits.Crew {
 		if credit, wanted := crew(member.Name, member.Job); wanted {
-			people = append(people, credit)
+			people = append(people, pictured(credit, base, member.ProfilePath))
 		}
 	}
 
@@ -286,6 +287,12 @@ func seriesCredits(series *gotmdb.TVDetails) *[]items.Credit {
 
 func cast(name, character string, order int) items.Credit {
 	return items.Credit{Name: name, Kind: creditmodel.KindActor, Role: character, Order: int32(order)}
+}
+
+func pictured(credit items.Credit, base, path string) items.Credit {
+	credit.ImageURL = remote(imagemodel.KindPrimary, base, profileSize, path).URL
+
+	return credit
 }
 
 func crew(name, job string) (items.Credit, bool) {

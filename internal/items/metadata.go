@@ -84,10 +84,11 @@ func (s *Service) UpdateMetadata(ctx context.Context, id uuid.UUID, metadata Met
 }
 
 type Credit struct {
-	Name  string
-	Kind  CreditKind
-	Role  string
-	Order int32
+	Name     string
+	Kind     CreditKind
+	Role     string
+	Order    int32
+	ImageURL string
 }
 
 func (s *Service) replaceNamed(ctx context.Context, id uuid.UUID, metadata Metadata) error {

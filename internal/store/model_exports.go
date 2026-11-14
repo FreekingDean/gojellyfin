@@ -1350,6 +1350,7 @@ type PersonModel struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	Name      string
+	ImageURL  string
 
 	Credits []*CreditModel
 }
@@ -1372,6 +1373,7 @@ func fromPerson(_m *Person) *PersonModel {
 		CreatedAt: _m.CreatedAt,
 		UpdatedAt: _m.UpdatedAt,
 		Name:      _m.Name,
+		ImageURL:  _m.ImageURL,
 
 		Credits: fromAllCredit(_m.Edges.Credits),
 	}

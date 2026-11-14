@@ -554,6 +554,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "image_url", Type: field.TypeString, Nullable: true},
 	}
 	// PersonsTable holds the schema information for the "persons" table.
 	PersonsTable = &schema.Table{

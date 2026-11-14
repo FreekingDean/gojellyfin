@@ -36,9 +36,17 @@ type RemoteImage struct {
 }
 
 func (r RemoteImage) Image() Image {
-	sum := sha1.Sum([]byte(r.URL))
+	return Image{Kind: r.Kind, URL: r.URL, Tag: imageTag(r.URL)}
+}
 
-	return Image{Kind: r.Kind, URL: r.URL, Tag: hex.EncodeToString(sum[:])}
+func imageTag(url string) string {
+	if url == "" {
+		return ""
+	}
+
+	sum := sha1.Sum([]byte(url))
+
+	return hex.EncodeToString(sum[:])
 }
 
 func (s *Service) SaveImage(ctx context.Context, itemID uuid.UUID, artwork Image) error {

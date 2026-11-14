@@ -19124,6 +19124,7 @@ type PersonMutation struct {
 	created_at     *time.Time
 	updated_at     *time.Time
 	name           *string
+	image_url      *string
 	clearedFields  map[string]struct{}
 	credits        map[uuid.UUID]struct{}
 	removedcredits map[uuid.UUID]struct{}
@@ -19345,6 +19346,55 @@ func (m *PersonMutation) ResetName() {
 	m.name = nil
 }
 
+// SetImageURL sets the "image_url" field.
+func (m *PersonMutation) SetImageURL(s string) {
+	m.image_url = &s
+}
+
+// ImageURL returns the value of the "image_url" field in the mutation.
+func (m *PersonMutation) ImageURL() (r string, exists bool) {
+	v := m.image_url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldImageURL returns the old "image_url" field's value of the Person entity.
+// If the Person object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PersonMutation) OldImageURL(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldImageURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldImageURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldImageURL: %w", err)
+	}
+	return oldValue.ImageURL, nil
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (m *PersonMutation) ClearImageURL() {
+	m.image_url = nil
+	m.clearedFields[person.FieldImageURL] = struct{}{}
+}
+
+// ImageURLCleared returns if the "image_url" field was cleared in this mutation.
+func (m *PersonMutation) ImageURLCleared() bool {
+	_, ok := m.clearedFields[person.FieldImageURL]
+	return ok
+}
+
+// ResetImageURL resets all changes to the "image_url" field.
+func (m *PersonMutation) ResetImageURL() {
+	m.image_url = nil
+	delete(m.clearedFields, person.FieldImageURL)
+}
+
 // AddCreditIDs adds the "credits" edge to the Credit entity by ids.
 func (m *PersonMutation) AddCreditIDs(ids ...uuid.UUID) {
 	if m.credits == nil {
@@ -19433,7 +19483,7 @@ func (m *PersonMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PersonMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 4)
 	if m.created_at != nil {
 		fields = append(fields, person.FieldCreatedAt)
 	}
@@ -19442,6 +19492,9 @@ func (m *PersonMutation) Fields() []string {
 	}
 	if m.name != nil {
 		fields = append(fields, person.FieldName)
+	}
+	if m.image_url != nil {
+		fields = append(fields, person.FieldImageURL)
 	}
 	return fields
 }
@@ -19457,6 +19510,8 @@ func (m *PersonMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case person.FieldName:
 		return m.Name()
+	case person.FieldImageURL:
+		return m.ImageURL()
 	}
 	return nil, false
 }
@@ -19472,6 +19527,8 @@ func (m *PersonMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldUpdatedAt(ctx)
 	case person.FieldName:
 		return m.OldName(ctx)
+	case person.FieldImageURL:
+		return m.OldImageURL(ctx)
 	}
 	return nil, fmt.Errorf("unknown Person field %s", name)
 }
@@ -19502,6 +19559,13 @@ func (m *PersonMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetName(v)
 		return nil
+	case person.FieldImageURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetImageURL(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Person field %s", name)
 }
@@ -19531,7 +19595,11 @@ func (m *PersonMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *PersonMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(person.FieldImageURL) {
+		fields = append(fields, person.FieldImageURL)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -19544,6 +19612,11 @@ func (m *PersonMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *PersonMutation) ClearField(name string) error {
+	switch name {
+	case person.FieldImageURL:
+		m.ClearImageURL()
+		return nil
+	}
 	return fmt.Errorf("unknown Person nullable field %s", name)
 }
 
@@ -19559,6 +19632,9 @@ func (m *PersonMutation) ResetField(name string) error {
 		return nil
 	case person.FieldName:
 		m.ResetName()
+		return nil
+	case person.FieldImageURL:
+		m.ResetImageURL()
 		return nil
 	}
 	return fmt.Errorf("unknown Person field %s", name)

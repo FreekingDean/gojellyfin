@@ -108,6 +108,11 @@ func (s *Server) answer(ctx context.Context, itemID uuid.UUID, imageType api.Ima
 	if index != 0 {
 		return nil, false
 	}
+	if kind == items.ImageKindPrimary {
+		if url, err := s.items.PersonImage(ctx, itemID); err == nil {
+			return redirect(url), true
+		}
+	}
 	if title, found, err := s.discover.Summary(ctx, itemID); err == nil && found {
 		url, found := title.Image(kind)
 
