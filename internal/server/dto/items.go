@@ -242,3 +242,21 @@ func Kinds(types *[]api.BaseItemKind) []items.Kind {
 
 	return kinds
 }
+
+func LatestDtos(ctx context.Context, store *items.Service, latest []items.Latest) ([]api.BaseItemDto, error) {
+	records := make([]*items.Item, 0, len(latest))
+	for _, entry := range latest {
+		records = append(records, entry.Item)
+	}
+
+	converted, err := ItemDtos(ctx, store, records)
+	if err != nil {
+		return nil, err
+	}
+
+	for index, entry := range latest {
+		converted[index].ChildCount = apiutil.Ptr(entry.Count)
+	}
+
+	return converted, nil
+}
