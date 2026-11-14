@@ -55,6 +55,8 @@ sources:
 # <scheme>://<hostname>/sso/oidc/callback, which is the redirect URI to
 # register with it. The client secret comes out of a Secret you create; leave
 # existingSecret empty for a public client, which PKCE still protects.
+# Sign-on stays off until issuerUrl and clientId are both set, so the rest can
+# be written down before the provider has issued a client id.
 oidc:
   issuerUrl: ""
   clientId: ""

@@ -22,6 +22,9 @@ const SEASON = 'Season 1';
 const EPISODES = ['Fixture Pilot', 'Fixture Second'];
 const DRAMA = 'Fixture Drama';
 const FINALE = 'Fixture Finale';
+const SSO_USERNAME = 'sso-viewer';
+const SSO_CLIENT_ID = 'gojellyfin';
+const SSO_CLIENT_SECRET = 'not-a-real-secret';
 
 const CLIENT_IMAGE = 'jellyfin/jellyfin:10.10.0';
 
@@ -62,12 +65,18 @@ async function boot() {
     },
   });
 
+  const baseUrl = `http://127.0.0.1:${webPort}`;
+  const provider = await startProvider(binaries.fixtures, baseUrl);
+
   const api = spawn(binaries.gojellyfin, ['server'], {
     env: {
       ...process.env,
       ...serverEnv,
       HTTP_PORT: String(apiPort),
-      PUBLISHED_SERVER_URL: `http://127.0.0.1:${webPort}`,
+      PUBLISHED_SERVER_URL: baseUrl,
+      OIDC_ISSUER_URL: provider.url,
+      OIDC_CLIENT_ID: SSO_CLIENT_ID,
+      OIDC_CLIENT_SECRET: SSO_CLIENT_SECRET,
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -86,7 +95,9 @@ async function boot() {
 
   return {
     facts: {
-      baseUrl: `http://127.0.0.1:${webPort}`,
+      baseUrl,
+      issuer: provider.url,
+      ssoUsername: SSO_USERNAME,
       username: USERNAME,
       password: PASSWORD,
       library: LIBRARY,
@@ -104,6 +115,8 @@ async function boot() {
       await new Promise((resolve) => front.close(resolve));
       api.kill('SIGTERM');
       await once(api);
+      provider.child.kill('SIGTERM');
+      await once(provider.child);
       file.end();
       run(binaries.fixtures, ['drop'], { env: scratchEnv, allowFailure: true });
     },
@@ -168,6 +181,31 @@ function fetchClient() {
   }
 
   return WEB;
+}
+
+// The provider is the same mock the Go tests sign in against, served from the
+// fixtures binary because a browser has to be redirected to it. It prints its
+// address once it is listening.
+function startProvider(fixtures, baseUrl) {
+  const child = spawn(fixtures, ['oidc'], {
+    env: { ...process.env, OIDC_REDIRECT_URI: baseUrl + '/sso/oidc/callback', OIDC_USERNAME: SSO_USERNAME },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+
+  return new Promise((resolve, reject) => {
+    let output = '';
+    child.stdout.on('data', (chunk) => {
+      output += chunk.toString();
+      const line = output.split('\n')[0];
+      if (output.includes('\n')) {
+        resolve({ child, url: line.trim() });
+      }
+    });
+    child.stderr.on('data', (chunk) => {
+      output += chunk.toString();
+    });
+    child.on('exit', (code) => reject(new Error(`the mock provider exited with ${code}:\n${output}`)));
+  });
 }
 
 function run(command, args, options = {}) {
