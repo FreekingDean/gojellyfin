@@ -24,6 +24,15 @@ var settings = []string{
 	"OTEL_EXPORTER_OTLP_ENDPOINT",
 	"TMDB_API_KEY",
 	"MEDIA_DIRECTORIES",
+	"OIDC_ISSUER_URL",
+	"OIDC_CLIENT_ID",
+	"OIDC_CLIENT_SECRET",
+	"OIDC_SCOPES",
+	"OIDC_USERNAME_CLAIM",
+	"OIDC_GROUPS_CLAIM",
+	"OIDC_ADMIN_GROUP",
+	"OIDC_ALLOWED_GROUP",
+	"OIDC_LINK_EXISTING_USERS",
 }
 
 func setEnvironment(t *testing.T, env map[string]string) {
@@ -74,6 +83,15 @@ func TestLoad(t *testing.T) {
 				"OTEL_EXPORTER_OTLP_ENDPOINT": "http://collector:4318",
 				"TMDB_API_KEY":                "not-a-real-key",
 				"MEDIA_DIRECTORIES":           "/media, /library ",
+				"OIDC_ISSUER_URL":             "https://auth.example",
+				"OIDC_CLIENT_ID":              "gojellyfin",
+				"OIDC_CLIENT_SECRET":          "not-a-real-secret",
+				"OIDC_SCOPES":                 "openid email",
+				"OIDC_USERNAME_CLAIM":         "email",
+				"OIDC_GROUPS_CLAIM":           "roles",
+				"OIDC_ADMIN_GROUP":            "jellyfin-admins",
+				"OIDC_ALLOWED_GROUP":          "jellyfin-users",
+				"OIDC_LINK_EXISTING_USERS":    "true",
 			},
 			want: Config{
 				DatabaseURL:        testDatabaseURL,
@@ -85,7 +103,18 @@ func TestLoad(t *testing.T) {
 				Tracing:            Tracing{OTLPEndpoint: "http://collector:4318"},
 				TMDB:               TMDB{APIKey: "not-a-real-key"},
 				MediaDirectories:   []string{"/media", "/library"},
-				SourceAPIKeys:      map[string]string{},
+				OIDC: OIDC{
+					IssuerURL:         "https://auth.example",
+					ClientID:          "gojellyfin",
+					ClientSecret:      "not-a-real-secret",
+					Scopes:            "openid email",
+					UsernameClaim:     "email",
+					GroupsClaim:       "roles",
+					AdminGroup:        "jellyfin-admins",
+					AllowedGroup:      "jellyfin-users",
+					LinkExistingUsers: true,
+				},
+				SourceAPIKeys: map[string]string{},
 			},
 		},
 		{
@@ -134,6 +163,26 @@ func TestLoad(t *testing.T) {
 		{
 			name:    "refuses a non numeric HTTP_PORT",
 			env:     map[string]string{"DATABASE_URL": testDatabaseURL, "HTTP_PORT": "http"},
+			wantErr: true,
+		},
+		{
+			name:    "refuses an OIDC_ISSUER_URL that is not a URL",
+			env:     map[string]string{"DATABASE_URL": testDatabaseURL, "PUBLISHED_SERVER_URL": "https://jellyfin.example", "OIDC_ISSUER_URL": "auth.example", "OIDC_CLIENT_ID": "gojellyfin"},
+			wantErr: true,
+		},
+		{
+			name:    "refuses an OIDC_ISSUER_URL without OIDC_CLIENT_ID",
+			env:     map[string]string{"DATABASE_URL": testDatabaseURL, "PUBLISHED_SERVER_URL": "https://jellyfin.example", "OIDC_ISSUER_URL": "https://auth.example"},
+			wantErr: true,
+		},
+		{
+			name:    "refuses an OIDC_ISSUER_URL without PUBLISHED_SERVER_URL",
+			env:     map[string]string{"DATABASE_URL": testDatabaseURL, "OIDC_ISSUER_URL": "https://auth.example", "OIDC_CLIENT_ID": "gojellyfin"},
+			wantErr: true,
+		},
+		{
+			name:    "refuses a non boolean OIDC_LINK_EXISTING_USERS",
+			env:     map[string]string{"DATABASE_URL": testDatabaseURL, "OIDC_LINK_EXISTING_USERS": "sure"},
 			wantErr: true,
 		},
 		{
