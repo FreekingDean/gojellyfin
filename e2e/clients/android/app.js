@@ -6,8 +6,9 @@ const PACKAGE = 'org.jellyfin.mobile';
 const RELEASE = `https://api.github.com/repos/jellyfin/jellyfin-android/releases/tags/v${VERSION}`;
 const CACHE = path.join(__dirname, '..', '..', '.clients');
 
-// The libre build of the release, which needs no Google services on the
-// device. ANDROID_APK points at another build instead.
+// The libre release build, which needs no Google services on the device.
+// The release also carries debug builds, which install under another
+// package. ANDROID_APK points at another build instead.
 async function apk() {
   if (process.env.ANDROID_APK) {
     return process.env.ANDROID_APK;
@@ -27,10 +28,9 @@ async function apk() {
     throw new Error(`${RELEASE} answered ${release.status}`);
   }
   const { assets } = await release.json();
-  const apks = assets.filter((asset) => asset.name.endsWith('.apk'));
-  const chosen = apks.find((asset) => /libre/i.test(asset.name)) || apks[0];
+  const chosen = assets.find((asset) => /libre-release\.apk$/i.test(asset.name));
   if (!chosen) {
-    throw new Error(`v${VERSION} carries no apk: ${assets.map((asset) => asset.name).join(', ')}`);
+    throw new Error(`v${VERSION} carries no libre release apk: ${assets.map((asset) => asset.name).join(', ')}`);
   }
   console.log(`Installing ${chosen.name}`);
 
