@@ -90,6 +90,40 @@ test.describe('the admin app', () => {
     await expect(page.locator('tr', { hasText: name })).toHaveCount(0);
   });
 
+  test('adds a Radarr to Movies, tests it and deletes it', async ({ page, harness }) => {
+    page.on('dialog', (dialog) => dialog.accept());
+    const name = 'Admin spec Radarr';
+    const local = harness.mediaDirectory + '/admin-spec';
+
+    await page.goto(harness.baseUrl + '/admin');
+    await signIn(page, harness);
+    await page.getByRole('link', { name: 'Libraries' }).click();
+
+    const movies = page.locator('section.library', { has: page.getByRole('heading', { name: 'Movies' }) });
+    await expect(movies.locator('.card', { hasText: 'Fixtures' })).toContainText('SOURCE_API_KEY_FIXTURES set');
+    await expect(page.getByRole('heading', { name: 'Shows' })).toBeVisible();
+
+    await movies.getByRole('link', { name: 'Add Radarr' }).click();
+    await page.getByLabel('Name').fill(name);
+    await page.getByLabel('API key variable').selectOption('SOURCE_API_KEY_FIXTURES');
+    await page.getByLabel('Address').fill(harness.downloaderUrl.replace('127.0.0.1', 'localhost'));
+    await page.getByRole('button', { name: 'Test connection' }).click();
+    await expect(page.getByText('Radarr ' + harness.downloaderVersion + ' answered')).toBeVisible();
+    await page.getByLabel('Root folder in Radarr').selectOption(harness.downloaderRootFolder);
+    await page.getByLabel('Path on this server').fill(local);
+    await page.getByRole('button', { name: 'Save' }).click();
+
+    const card = movies.locator('.card', { hasText: name });
+    await expect(card).toContainText(harness.downloaderRootFolder + ' opened here as ' + local);
+    await card.getByRole('button', { name: 'Test' }).click();
+    await expect(card).toContainText('Radarr ' + harness.downloaderVersion);
+
+    await card.getByRole('link', { name: 'Edit' }).click();
+    await page.getByRole('button', { name: 'Delete downloader' }).click();
+    await expect(movies.locator('.card', { hasText: 'Fixtures' })).toBeVisible();
+    await expect(movies.locator('.card', { hasText: name })).toHaveCount(0);
+  });
+
   test('shows who is signed in, what happened and the background jobs', async ({ page, harness }) => {
     await page.goto(harness.baseUrl + '/admin');
     await signIn(page, harness);

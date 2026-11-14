@@ -23,7 +23,7 @@ type State =
   | { stage: 'refused'; user: User }
   | { stage: 'ready'; user: User };
 
-const wired = ['requests', 'users', 'jobs', 'activity', 'settings'];
+const wired = ['requests', 'libraries', 'users', 'jobs', 'activity', 'settings'];
 
 const screens = [
   { path: 'overview', label: 'Overview' },
