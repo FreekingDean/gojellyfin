@@ -21,6 +21,26 @@ func (f *fixture) configured(t *testing.T) Configured {
 	return entry
 }
 
+func (f *fixture) folder(t *testing.T) string {
+	t.Helper()
+
+	folder := "/srv/" + uuid.NewString()
+	library, err := f.client.Library.Create().
+		SetName(t.Name() + "-" + uuid.NewString()).
+		SetLocations([]string{folder}).
+		Save(context.Background())
+	if err != nil {
+		t.Fatalf("failed to create the library: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := f.client.Library.DeleteOne(library).Exec(context.Background()); err != nil {
+			t.Errorf("failed to delete the library: %v", err)
+		}
+	})
+
+	return folder
+}
+
 func candidate(local ...string) Configured {
 	paths := make([]*Path, len(local))
 	for i, path := range local {
@@ -38,14 +58,16 @@ func candidate(local ...string) Configured {
 
 func TestCreate_RefusesWhatCannotBeServed(t *testing.T) {
 	fixture := newFixture(t, &[]movie{})
-	elsewhere := "/srv/" + uuid.NewString()
+	fixture.library(t, "")
+	elsewhere := fixture.folder(t)
 
 	for name, entry := range map[string]Configured{
-		"no folders":               candidate(),
-		"a relative folder":        candidate("srv/tv"),
-		"another source's folder":  candidate("/media/tv"),
-		"a folder above another's": candidate("/"),
-		"one folder twice":         candidate(elsewhere, elsewhere+"/tv"),
+		"no folders":                candidate(),
+		"a folder no library holds": candidate("/srv/" + uuid.NewString()),
+		"a relative folder":         candidate("srv/tv"),
+		"another source's folder":   candidate("/media/tv"),
+		"a folder above another's":  candidate("/"),
+		"one folder twice":          candidate(elsewhere, elsewhere+"/tv"),
 		"a key outside the prefix": func() Configured {
 			entry := candidate(elsewhere)
 			entry.Source.APIKeyVariable = "DATABASE_URL"
@@ -71,7 +93,7 @@ func TestCreate_RefusesWhatCannotBeServed(t *testing.T) {
 func TestCreateUpdateDelete(t *testing.T) {
 	fixture := newFixture(t, &[]movie{})
 	ctx := context.Background()
-	elsewhere := "/srv/" + uuid.NewString()
+	elsewhere := fixture.folder(t)
 
 	created, err := fixture.service.Create(ctx, candidate(elsewhere+"/tv", elsewhere+"/anime"))
 	if err != nil {

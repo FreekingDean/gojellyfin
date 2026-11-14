@@ -18,6 +18,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/sources/arr"
 	"github.com/FreekingDean/gojellyfin/internal/store"
+	librarymodel "github.com/FreekingDean/gojellyfin/internal/store/library"
 	libraryitemmodel "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	librarysourcemodel "github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/source"
@@ -332,6 +333,16 @@ func validate(ctx context.Context, tx *store.Tx, id uuid.UUID, entry Configured)
 		}
 	}
 
+	folders, err := libraryFolders(ctx, tx)
+	if err != nil {
+		return err
+	}
+	for _, mapping := range source.Paths {
+		if !slices.ContainsFunc(folders, func(folder string) bool { return within(mapping.LocalPath, folder) }) {
+			return invalid("%s maps %s onto %s, which is in no library's folders: add it to a library first", source.Name, mapping.RemotePath, mapping.LocalPath)
+		}
+	}
+
 	claimed, err := tx.SourcePath.Query().
 		Where(sourcepathmodel.SourceIDNEQ(id)).
 		WithSource().
@@ -357,6 +368,20 @@ func validate(ctx context.Context, tx *store.Tx, id uuid.UUID, entry Configured)
 	}
 
 	return nil
+}
+
+func libraryFolders(ctx context.Context, tx *store.Tx) ([]string, error) {
+	libraries, err := tx.Library.Query().Select(librarymodel.FieldLocations).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	folders := []string{}
+	for _, library := range libraries {
+		folders = append(folders, library.Locations...)
+	}
+
+	return folders, nil
 }
 
 func overlaps(one, other string) bool {

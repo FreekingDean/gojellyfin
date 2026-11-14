@@ -67,14 +67,11 @@
 
             <div class="inputContainer">
                 <label class="inputLabel inputLabelUnfocused">API key variable</label>
-                <input type="text" data-id="txtApiKeyVariable" class="emby-input" autocomplete="off"
-                       list="gojellyfinApiKeyVariables" placeholder="SOURCE_API_KEY_RADARR" />
-                <datalist id="gojellyfinApiKeyVariables"></datalist>
+                <select data-id="selApiKeyVariable" class="emby-select-withcolor emby-select"></select>
                 <div class="fieldDescription">
-                    The name of an environment variable on the server holding the key, not the key itself.
-                    It must begin with SOURCE_API_KEY_. Take the key from Settings &rarr; General &rarr; Security
-                    in Sonarr or Radarr and set it on the server, then pick the variable here. Only the names
-                    of variables already set are offered.
+                    The environment variable on the server that holds the key; the key itself is never stored.
+                    Take the key from Settings &rarr; General &rarr; Security in Sonarr or Radarr and set it on
+                    the server as a variable beginning with SOURCE_API_KEY_. Only variables already set are offered.
                 </div>
             </div>
 
@@ -87,9 +84,13 @@
 
             <h3 class="checkboxListLabel">Folders</h3>
             <p class="fieldDescription">
-                Each row maps a folder the instance reports its files under to where this server opens the same
-                files. Use the same path on both sides if they share a filesystem. Test connection adds a row
-                for each root folder the instance has. No two instances may claim the same folder on this server.
+                Test connection lists the instance's root folders. For each one, pick the library folder this
+                server opens the same files at. No two instances may claim the same folder.
+            </p>
+            <p data-id="noFolders" class="fieldDescription" style="display:none">
+                No library has a folder yet. Add the folder to a library under
+                <a is="emby-linkbutton" class="button-link" href="#/dashboard/libraries">Libraries</a> first,
+                then come back here.
             </p>
             <table style="width:100%">
                 <thead>
@@ -142,10 +143,10 @@
     <template id="pathTemplate">
         <tr>
             <td style="vertical-align:top;padding-right:1em">
-                <input type="text" data-id="txtRemotePath" class="emby-input" placeholder="/data/movies" />
+                <select data-id="selRemotePath" class="emby-select-withcolor emby-select"></select>
             </td>
             <td style="vertical-align:top;padding-right:1em">
-                <input type="text" data-id="txtLocalPath" class="emby-input" placeholder="/media/movies" />
+                <select data-id="selLocalPath" class="emby-select-withcolor emby-select"></select>
             </td>
             <td style="vertical-align:top;text-align:right">
                 <button is="emby-button" data-id="removePath" type="button" class="raised raised-mini">
@@ -261,7 +262,7 @@
             fillLibraries: function (select, kind, selected) {
                 const wanted = window.GoJellyfinSources.collectionTypes[kind];
                 const matching = window.GoJellyfinSources.libraries.filter(function (library) {
-                    return !wanted || !library.CollectionType ||
+                    return library.ItemId === selected || !wanted || !library.CollectionType ||
                         library.CollectionType === wanted || library.CollectionType === 'mixed';
                 });
 
@@ -293,18 +294,123 @@
                 editor.querySelector('[data-id=bindingsHost]').appendChild(clone);
             },
 
+            fillSelect: function (select, placeholder, choices, selected) {
+                select.innerHTML = '';
+
+                const blank = document.createElement('option');
+                blank.value = '';
+                blank.textContent = placeholder;
+                select.appendChild(blank);
+
+                choices.forEach(function (choice) {
+                    const option = document.createElement('option');
+                    option.value = choice.value;
+                    option.textContent = choice.label;
+                    if (choice.library) {
+                        option.dataset.library = choice.library;
+                    }
+                    select.appendChild(option);
+                });
+
+                if (selected && !choices.some(function (choice) { return choice.value === selected; })) {
+                    const missing = document.createElement('option');
+                    missing.value = selected;
+                    missing.textContent = choices.length ? selected + ' (no longer offered)' : selected;
+                    select.appendChild(missing);
+                }
+
+                select.value = selected || '';
+            },
+
+            fillVariable: function (editor, selected) {
+                const source = window.GoJellyfinSources;
+
+                source.fillSelect(editor.querySelector('[data-id=selApiKeyVariable]'),
+                    source.variables.length ? 'Choose a variable' : 'No SOURCE_API_KEY_ variable is set on the server',
+                    source.variables.map(function (name) { return { value: name, label: name }; }),
+                    selected);
+            },
+
+            libraryFolders: function () {
+                const folders = [];
+
+                window.GoJellyfinSources.libraries.forEach(function (library) {
+                    (library.Locations || []).forEach(function (location) {
+                        folders.push({ value: location, label: location + ' (' + library.Name + ')', library: library.ItemId });
+                    });
+                });
+
+                return folders;
+            },
+
+            fillRemote: function (editor, select, selected) {
+                window.GoJellyfinSources.fillSelect(select,
+                    editor.rootFolders.length ? 'Choose a root folder' : 'Test connection to list root folders',
+                    editor.rootFolders.map(function (folder) { return { value: folder, label: folder }; }),
+                    selected);
+            },
+
+            bindFolder: function (editor, local) {
+                const chosen = local.selectedOptions[0];
+                const library = chosen && chosen.dataset.library;
+
+                if (!library) {
+                    return;
+                }
+
+                const bound = Array.prototype.some.call(editor.querySelectorAll('[data-id=selLibrary]'), function (select) {
+                    return select.value === library;
+                });
+                if (!bound) {
+                    window.GoJellyfinSources.addBinding(editor, { Id: library });
+                }
+            },
+
             addPath: function (editor, mapping) {
+                const source = window.GoJellyfinSources;
                 const clone = document.querySelector('#pathTemplate').content.cloneNode(true);
                 const row = clone.querySelector('tr');
+                const remote = row.querySelector('[data-id=selRemotePath]');
+                const local = row.querySelector('[data-id=selLocalPath]');
 
-                row.querySelector('[data-id=txtRemotePath]').value = mapping.RemotePath || '';
-                row.querySelector('[data-id=txtLocalPath]').value = mapping.LocalPath || '';
+                source.fillRemote(editor, remote, mapping.RemotePath);
+                source.fillSelect(local, 'Choose a library folder', source.libraryFolders(), mapping.LocalPath);
+
+                local.addEventListener('change', function () {
+                    source.bindFolder(editor, local);
+                });
 
                 row.querySelector('[data-id=removePath]').addEventListener('click', function () {
                     row.remove();
                 });
 
                 editor.querySelector('[data-id=pathsHost]').appendChild(clone);
+
+                return row;
+            },
+
+            offerFolders: function (editor, folders) {
+                const source = window.GoJellyfinSources;
+                const rows = Array.prototype.slice.call(editor.querySelectorAll('[data-id=pathsHost] tr'));
+                const mapped = rows.map(function (row) { return row.querySelector('[data-id=selRemotePath]').value; });
+                const libraryFolders = source.libraryFolders();
+
+                editor.rootFolders = folders;
+                rows.forEach(function (row) {
+                    const remote = row.querySelector('[data-id=selRemotePath]');
+                    source.fillRemote(editor, remote, remote.value);
+                });
+
+                const added = folders.filter(function (folder) { return mapped.indexOf(folder) < 0; });
+                added.forEach(function (folder) {
+                    const same = libraryFolders.some(function (candidate) { return candidate.value === folder; });
+                    const row = source.addPath(editor, { RemotePath: folder, LocalPath: same ? folder : '' });
+                    if (same) {
+                        source.bindFolder(editor, row.querySelector('[data-id=selLocalPath]'));
+                    }
+                });
+
+                return added.length;
             },
 
             openEditor: function (index) {
@@ -319,7 +425,9 @@
                 editor.querySelector('[data-id=txtName]').value = connection.Name || '';
                 editor.querySelector('[data-id=selKind]').value = source.kind(connection);
                 editor.querySelector('[data-id=txtUrl]').value = connection.Url || '';
-                editor.querySelector('[data-id=txtApiKeyVariable]').value = connection.ApiKeyVariable || '';
+                editor.rootFolders = [];
+                source.fillVariable(editor, connection.ApiKeyVariable);
+                editor.querySelector('[data-id=noFolders]').style.display = source.libraryFolders().length ? 'none' : '';
                 editor.querySelector('[data-id=removeConnection]').style.display = index < 0 ? 'none' : '';
 
                 editor.querySelector('[data-id=selKind]').addEventListener('change', function (e) {
@@ -355,14 +463,16 @@
                 host.innerHTML = '';
                 host.appendChild(clone);
                 host.style.display = '';
-                source.fillVariables(source.variables);
 
-                (connection.Paths || []).forEach(function (mapping) {
-                    source.addPath(editor, mapping);
-                });
                 (connection.Libraries || []).forEach(function (binding) {
                     source.addBinding(editor, binding);
                 });
+                (connection.Paths || []).forEach(function (mapping) {
+                    source.addPath(editor, mapping);
+                });
+                if (index >= 0) {
+                    source.testConnection(editor);
+                }
 
                 host.scrollIntoView({ block: 'nearest' });
             },
@@ -384,14 +494,12 @@
                     Name: editor.querySelector('[data-id=txtName]').value.trim(),
                     Kind: editor.querySelector('[data-id=selKind]').value,
                     Url: editor.querySelector('[data-id=txtUrl]').value.trim().replace(/\/+$/, ''),
-                    ApiKeyVariable: editor.querySelector('[data-id=txtApiKeyVariable]').value.trim(),
+                    ApiKeyVariable: editor.querySelector('[data-id=selApiKeyVariable]').value,
                     Paths: rows('[data-id=pathsHost] tr').map(function (row) {
                         return {
-                            RemotePath: row.querySelector('[data-id=txtRemotePath]').value.trim(),
-                            LocalPath: row.querySelector('[data-id=txtLocalPath]').value.trim()
+                            RemotePath: row.querySelector('[data-id=selRemotePath]').value,
+                            LocalPath: row.querySelector('[data-id=selLocalPath]').value
                         };
-                    }).filter(function (mapping) {
-                        return mapping.RemotePath || mapping.LocalPath;
                     }),
                     Libraries: rows('[data-id=bindingsHost] tr').map(function (row) {
                         return {
@@ -406,6 +514,12 @@
                 const source = window.GoJellyfinSources;
                 const result = editor.querySelector('[data-id=testResult]');
                 const connection = source.readEditor(editor);
+
+                if (!connection.Url || !connection.ApiKeyVariable) {
+                    result.textContent = 'Enter the URL and choose the API key variable first.';
+
+                    return;
+                }
 
                 result.textContent = 'Testing…';
 
@@ -426,16 +540,10 @@
                         return;
                     }
 
-                    const mapped = connection.Paths.map(function (mapping) { return mapping.RemotePath; });
-                    const added = (response.RootFolders || []).filter(function (folder) {
-                        return mapped.indexOf(folder) < 0;
-                    });
-                    added.forEach(function (folder) {
-                        source.addPath(editor, { RemotePath: folder, LocalPath: folder });
-                    });
+                    const added = source.offerFolders(editor, response.RootFolders || []);
 
                     result.textContent = 'Reachable' + (response.Version ? ', version ' + response.Version : '') +
-                        (added.length ? '. Added ' + added.length + ' folder(s): check where this server opens them.' : '');
+                        (added ? '. Added ' + added + ' root folder(s): pick the library folder for each.' : '');
                 }).catch(function (error) {
                     result.textContent = 'Failed: ' + (error && error.statusText ? error.statusText : 'request refused');
                 });
@@ -458,6 +566,18 @@
                 const result = editor.querySelector('[data-id=saveResult]');
                 const existing = source.editing < 0 ? null : source.connections[source.editing];
                 const connection = source.readEditor(editor);
+                const unpicked = connection.Paths.some(function (mapping) { return !mapping.RemotePath || !mapping.LocalPath; });
+
+                if (!connection.ApiKeyVariable) {
+                    result.textContent = 'Not saved: choose the API key variable.';
+
+                    return;
+                }
+                if (unpicked) {
+                    result.textContent = 'Not saved: pick both folders on every row, or remove the row.';
+
+                    return;
+                }
 
                 result.textContent = 'Saving…';
 
@@ -492,17 +612,6 @@
                 }).catch(function (error) {
                     console.error(error);
                     Dashboard.alert('The connection could not be removed.');
-                });
-            },
-
-            fillVariables: function (names) {
-                const list = window.GoJellyfinSources.page().querySelector('#gojellyfinApiKeyVariables');
-
-                list.innerHTML = '';
-                (names || []).forEach(function (name) {
-                    const option = document.createElement('option');
-                    option.value = name;
-                    list.appendChild(option);
                 });
             },
 
