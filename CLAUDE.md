@@ -278,7 +278,7 @@ RefreshItem            items      one title            -> ProbeFile per unprobed
 ProbeFile              probe      one file
 ProbeFiles             probe      every unprobed file                                     *
 RefreshItemMetadata    metadata   one item
-RefreshMetadata        metadata   every unidentified item                                 *
+RefreshMetadata        metadata   every unidentified or artless item                      *
 SweepItems             items      the reference count                                     *
 ```
 
@@ -290,7 +290,7 @@ A batch and its leaf are two names rather than one job branching on whether a pa
 
 `RefreshItem` then asks for the two things a new title needs, and only when it needs them: `ProbeFile` for a file whose `probed_at` is missing or older than it, and `RefreshItemMetadata` for a title carrying no `provider_ids`. So a title that lands in a refresh is probed and identified without waiting for either schedule.
 
-The batch jobs stay, and are what makes the chain safe to lose: an enqueue that failed, a worker that died mid-run, a title TMDB gained since. `RefreshMetadata` selects every row whose `provider_ids` is null, so the next scheduled run picks up whatever the chain did not answer. An episode does not depend on its series being identified first — its key carries the series id — so nothing about the order matters.
+The batch jobs stay, and are what makes the chain safe to lose: an enqueue that failed, a worker that died mid-run, a title TMDB gained since. `RefreshMetadata` selects every row whose `provider_ids` is null or that has no `image` row, so the next scheduled run picks up whatever the chain did not answer. An episode does not depend on its series being identified first — its key carries the series id — so nothing about the order matters.
 
 Each enqueue is fire and forget, so a level never waits on the one below it and a failure stops one title rather than a library. The two jobs that used to ride along are their own now and run on their own schedule: `ProbeFiles` in `internal/probe` reads every file `items.SourcesNeedingProbe` returns, and `SweepItems` in `internal/items` is the reference count. Neither belongs to a refresh — one is bounded by ffmpeg and the other is a garbage collector.
 
@@ -384,7 +384,9 @@ It is bring your own key: `TMDB_API_KEY` reaches the client as `env.Config.TMDB.
 
 The job runs on its own rather than inside the scan, and fans out: `RefreshMetadata` selects what needs identifying and enqueues one `RefreshItemMetadata` per item, in no particular order, so each item is its own execution with its own retries and one bad title fails alone. The provider's limiter is what bounds the request rate, not the batch. What a run still leaves, the next run picks up.
 
-The batch is derived from the rows — `items.ItemsNeedingMetadata` asks for items whose `provider_ids` is null — rather than handed over, so a crash re-asks the question instead of replaying a stale list.
+The batch is derived from the rows — `items.ItemsNeedingMetadata` asks for items whose `provider_ids` is null or that hold no `image` row — rather than handed over, so a crash re-asks the question instead of replaying a stale list.
+
+**An identified item with no artwork is not finished.** `provider_ids` alone used to decide, so a title identified while `/configuration` was unreachable, or before artwork had a table, or whose rows `drop_image_bytes` deleted, kept its metadata and stayed a placeholder forever: nothing asked again short of a forced refresh. The batch takes those back, so the next scheduled run is the backfill and no migration has to call the provider. The price is that a title TMDB has no picture for is asked again each run, the same price an unmatched title already pays, and it stops the run TMDB gains one.
 
 **Every lookup is by id, and the id comes out of the item's own key.** `items.TmdbID` reads it back out of `movie:tmdb:603`, so identifying a title is one request to `/movie/603` rather than a search for its name followed by a fetch of whatever came back first. That halves the requests and removes the guess: a search returned `Results[0]`, so two films sharing a title and year were a coin toss, and a title Radarr had renamed searched for the wrong thing.
 
@@ -410,6 +412,8 @@ The two packages test at their own seam: `metadata` runs the loop and the locks 
 **An image row is a url the provider answered, and no row holds bytes.** `image` carries the item, the kind, the index, the `url` and a `tag`, and `GET /Items/{id}/Images/{type}` answers `302` with that url in `Location`. So there is no blob table, no storage backend, no download, no size limit and no sweep of orphaned bytes — a poster is fetched by the client from TMDB's CDN, which is where it was going to come from anyway. What was here before was `internal/artwork` over `image_blobs`, plus a fetcher in `internal/metadata` that knew about storage keys, plus `items.SaveDownloadedImage`: three packages for one row.
 
 **The tag is the sha1 of the url**, which is what makes `?tag=` bust a client's cache when TMDB changes a poster: a different picture is a different url, so a different tag, and `SaveImage` upserts on `(item, kind, index)` so the row is rewritten in place.
+
+**A landscape card falls back through the parents, and the DTO has to name them.** `jellyfin-web`'s Continue Watching and Next Up rows ask for `Thumb`, then `ParentThumbItemId`, then the item's own `BackdropImageTags`, then for an episode `ParentBackdropItemId`/`ParentBackdropImageTags`, and only then `Primary`. TMDB has no thumb, so a movie's card is its backdrop and an episode's is its series' backdrop; `dto.applyShowFields` writes the series' `Backdrop` and `Thumb` onto its seasons and episodes as the `Parent*` fields, the same lookup that already fills `SeriesPrimaryImageTag`. A movie with neither a backdrop nor a poster is the clapperboard.
 
 **`internal/metadata` is the only writer.** It is handed `items.RemoteImage` references by the provider on the same detail response it already fetched, and writes one `image` row each. The scan writes none — there is no local artwork path any more (see Library sources).
 

@@ -78,6 +78,12 @@ func applyShowFields(ctx context.Context, store *items.Service, records []*items
 		}
 		if tag, ok := tags[series.ID]["Thumb"]; ok {
 			converted[index].SeriesThumbImageTag = apiutil.Ptr(tag)
+			converted[index].ParentThumbItemId = apiutil.Ptr(series.ID)
+			converted[index].ParentThumbImageTag = apiutil.Ptr(tag)
+		}
+		if tag, ok := tags[series.ID]["Backdrop"]; ok {
+			converted[index].ParentBackdropItemId = apiutil.Ptr(series.ID)
+			converted[index].ParentBackdropImageTags = &[]string{tag}
 		}
 	}
 

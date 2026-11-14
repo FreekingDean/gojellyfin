@@ -7,20 +7,30 @@ import (
 
 	"github.com/google/uuid"
 
+	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
 func TestService_ItemsNeedingMetadata(t *testing.T) {
 	wanted := []Kind{itemmodel.KindMovie, itemmodel.KindSeries, itemmodel.KindSeason, itemmodel.KindEpisode}
 
+	identify := func(t *testing.T, fixed *fixture, id uuid.UUID) {
+		t.Helper()
+		if _, err := fixed.service.UpdateMetadata(context.Background(), id, Metadata{
+			ProviderIds: &map[string]string{"Stub": "603"},
+		}); err != nil {
+			t.Fatalf("failed to identify the item: %v", err)
+		}
+	}
+
 	t.Run("leaves an identified item out unless forced", func(t *testing.T) {
 		fixed := newFixture(t)
 		movie := fixed.add(t, seed{kind: itemmodel.KindMovie, name: "The Matrix"})
-
-		if _, err := fixed.service.UpdateMetadata(context.Background(), movie, Metadata{
-			ProviderIds: &map[string]string{"Stub": "603"},
+		identify(t, fixed, movie)
+		if err := fixed.service.SaveImage(context.Background(), movie, Image{
+			Kind: imagemodel.KindPrimary, URL: "https://image.tmdb.org/t/p/w780/matrix.jpg", Tag: "matrix",
 		}); err != nil {
-			t.Fatalf("failed to identify the movie: %v", err)
+			t.Fatalf("failed to give the movie artwork: %v", err)
 		}
 
 		pending, err := fixed.service.ItemsNeedingMetadata(context.Background(), wanted, false, uuid.Nil)
@@ -37,6 +47,20 @@ func TestService_ItemsNeedingMetadata(t *testing.T) {
 		}
 		if !slices.Contains(forced, movie) {
 			t.Error("the identified movie was not selected when forced, want it back")
+		}
+	})
+
+	t.Run("takes back an identified item that has no artwork", func(t *testing.T) {
+		fixed := newFixture(t)
+		movie := fixed.add(t, seed{kind: itemmodel.KindMovie, name: "12 Years a Slave"})
+		identify(t, fixed, movie)
+
+		pending, err := fixed.service.ItemsNeedingMetadata(context.Background(), wanted, false, uuid.Nil)
+		if err != nil {
+			t.Fatalf("failed to select the items needing metadata: %v", err)
+		}
+		if !slices.Contains(pending, movie) {
+			t.Error("the identified movie with no artwork was left out, want it selected so its artwork is fetched")
 		}
 	})
 
