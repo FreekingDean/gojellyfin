@@ -53,7 +53,7 @@ func (s *Server) GetSystemInfo(ctx context.Context, request api.GetSystemInfoReq
 		ServerName:               configuration.ServerName,
 		ProductName:              apiutil.Ptr(s.system.ProductName()),
 		PackageName:              apiutil.Ptr(s.system.PackageName()),
-		Version:                  apiutil.Ptr(s.system.Version()),
+		Version:                  apiutil.Ptr(s.system.DetailedVersion()),
 		CastReceiverApplications: configuration.CastReceiverApplications,
 		StartupWizardCompleted:   configuration.IsStartupWizardCompleted,
 		HasPendingRestart:        apiutil.Ptr(false),
