@@ -2,11 +2,12 @@
   "name": "gojellyfin-e2e",
   "version": "0.0.0",
   "private": true,
-  "description": "Playwright tests that drive the real jellyfin-web client against gojellyfin",
+  "description": "Tests that drive the real Jellyfin clients against gojellyfin",
   "scripts": {
     "test": "playwright test",
     "visual": "node setup/visual.js",
-    "visual:update": "node setup/visual.js --update-snapshots=all"
+    "visual:update": "node setup/visual.js --update-snapshots=all",
+    "androidtv": "playwright test --config androidtv.config.js"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0"

@@ -1,20 +1,24 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-// Turns a run's results into a directory GitHub Pages can serve and the
+// Turns each suite's results into a directory GitHub Pages can serve and the
 // comment the PR carries: every screenshot as this commit renders it, and for
 // each one that changed, the baseline, what was rendered and the diff.
 //
-//   node setup/gallery.js <results.json> <out dir> <url the out dir is served at> <sha>
+// A suite runs in its own job, so the work is split where the jobs are. Each
+// collects its own screenshots beside a summary, and one render reads every
+// summary it finds and writes the page and the comment over all of them.
+//
+//   node setup/gallery.js collect <slug> <title> <results.json> <out dir> [baselines dir]
+//   node setup/gallery.js render <dir> <url the dir is served at> <sha>
 
 const MARKER = '<!-- e2e-screenshots -->';
-const BASELINES = path.join(__dirname, '..', 'tests', '__screenshots__');
-const SHOT = /^(.*)-(expected|actual|diff)\.png$/;
+const SHOT = /^(.*)-(expected|actual|diff|current)\.png$/;
 
-function main([resultsPath, out, url, sha]) {
+function collect([slug, title, resultsPath, out, baselines]) {
   const results = JSON.parse(fs.readFileSync(resultsPath, 'utf8'));
-  const tests = collect(results);
-  const shots = screenshots(tests);
+  const tests = walk(results);
+  const shots = screenshots(slug, tests, baselines);
 
   fs.mkdirSync(out, { recursive: true });
   for (const shot of shots) {
@@ -23,14 +27,40 @@ function main([resultsPath, out, url, sha]) {
     }
   }
 
-  const summary = { stats: results.stats, tests, shots, url: url.replace(/\/$/, ''), sha };
-  fs.writeFileSync(path.join(out, 'index.html'), page(summary));
-  fs.writeFileSync(path.join(out, 'comment.md'), comment(summary));
+  const summary = {
+    slug,
+    title,
+    stats: results.stats,
+    failing: tests.filter((test) => test.status === 'unexpected').map((test) => `${test.file} › ${test.title}`),
+    shots: shots.map(({ files, ...shot }) => shot),
+  };
+  fs.writeFileSync(path.join(out, `${slug}.json`), JSON.stringify(summary, null, 2));
 }
 
-function collect(results) {
+function render([dir, url, sha]) {
+  const suites = fs
+    .readdirSync(dir)
+    .filter((name) => name.endsWith('.json'))
+    .sort()
+    .map((name) => JSON.parse(fs.readFileSync(path.join(dir, name), 'utf8')))
+    .sort((a, b) => Number(b.slug === 'web') - Number(a.slug === 'web'));
+  if (!suites.length) {
+    throw new Error(`${dir} holds no suite summary to render`);
+  }
+
+  const summary = {
+    suites,
+    url: url.replace(/\/$/, ''),
+    sha,
+    report: fs.existsSync(path.join(dir, 'report', 'index.html')),
+  };
+  fs.writeFileSync(path.join(dir, 'index.html'), page(summary));
+  fs.writeFileSync(path.join(dir, 'comment.md'), comment(summary));
+}
+
+function walk(results) {
   const tests = [];
-  const walk = (suite, titles) => {
+  const visit = (suite, titles) => {
     for (const spec of suite.specs || []) {
       for (const test of spec.tests) {
         const last = test.results[test.results.length - 1] || { status: 'skipped', attachments: [] };
@@ -43,29 +73,29 @@ function collect(results) {
       }
     }
     for (const child of suite.suites || []) {
-      walk(child, [...titles, child.title]);
+      visit(child, [...titles, child.title]);
     }
   };
   for (const suite of results.suites) {
-    walk(suite, []);
+    visit(suite, []);
   }
   return tests;
 }
 
-function screenshots(tests) {
+function screenshots(slug, tests, baselines) {
   const shots = new Map();
   const shot = (file, name) => {
-    const key = `${file}/${name}`;
+    const key = `${slug}/${file}/${name}`;
     if (!shots.has(key)) {
-      shots.set(key, { key, dir: path.join('shots', file), name, title: '', files: {} });
+      shots.set(key, { key, dir: path.join('shots', slug, file), name, title: '', files: {} });
     }
     return shots.get(key);
   };
 
-  for (const file of listDir(BASELINES)) {
-    for (const image of listDir(path.join(BASELINES, file))) {
+  for (const file of listDir(baselines)) {
+    for (const image of listDir(path.join(baselines, file))) {
       if (image.endsWith('.png')) {
-        shot(file, image.slice(0, -4)).files.current = path.join(BASELINES, file, image);
+        shot(file, image.slice(0, -4)).files.current = path.join(baselines, file, image);
       }
     }
   }
@@ -101,20 +131,30 @@ function state(files) {
   return 'unchanged';
 }
 
-function comment({ stats, shots, url, sha }) {
-  const changed = shots.filter((shot) => shot.state !== 'unchanged');
-  const failed = stats.unexpected;
-  const headline = failed
-    ? `❌ ${failed} failed, ${stats.expected} passed${stats.flaky ? `, ${stats.flaky} flaky` : ''}`
-    : `✅ ${stats.expected} passed${stats.flaky ? `, ${stats.flaky} flaky` : ''}`;
+function headline({ title, stats }) {
+  const flaky = stats.flaky ? `, ${stats.flaky} flaky` : '';
+
+  return stats.unexpected
+    ? `❌ ${title}: ${stats.unexpected} failed, ${stats.expected} passed${flaky}`
+    : `✅ ${title}: ${stats.expected} passed${flaky}`;
+}
+
+function comment({ suites, url, sha, report }) {
+  const changed = suites.flatMap((suite) => suite.shots).filter((shot) => shot.state !== 'unchanged');
 
   const lines = [
     MARKER,
-    `### E2E screenshots: ${headline}`,
+    `### E2E screenshots: ${suites.map(headline).join(' · ')}`,
     '',
-    `Rendered at ${sha.slice(0, 7)}. [Gallery](${url}/) · [Playwright report](${url}/report/)`,
+    `Rendered at ${sha.slice(0, 7)}. [Gallery](${url}/)${report ? ` · [Playwright report](${url}/report/)` : ''}`,
     '',
   ];
+
+  for (const suite of suites) {
+    if (suite.failing.length) {
+      lines.push(`**${suite.title} failed:**`, '', ...suite.failing.map((test) => `- ${test}`), '');
+    }
+  }
 
   if (changed.length) {
     lines.push(`#### ${changed.length} screenshot${changed.length === 1 ? ' differs' : 's differ'} from the baseline`, '');
@@ -138,20 +178,22 @@ function comment({ stats, shots, url, sha }) {
     );
   }
 
-  lines.push(
-    `<details><summary>All ${shots.length} screenshots</summary>`,
-    '',
-    ...shots.map(
-      (shot) => `**${shot.key}.png**<br><img src="${url}/${shot.dir}/${shot.name}-current.png" width="420">\n`,
-    ),
-    '</details>',
-    '',
-  );
+  for (const suite of suites) {
+    lines.push(
+      `<details><summary>${suite.title}: all ${suite.shots.length} screenshots</summary>`,
+      '',
+      ...suite.shots.map(
+        (shot) => `**${shot.key}.png**<br><img src="${url}/${shot.dir}/${shot.name}-current.png" width="420">\n`,
+      ),
+      '</details>',
+      '',
+    );
+  }
 
   return lines.join('\n');
 }
 
-function page({ stats, tests, shots, sha }) {
+function page({ suites, sha, report }) {
   const escape = (text) => text.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
   const figure = (shot) => {
     const src = (kind) => `${shot.dir}/${shot.name}-${kind}.png`;
@@ -161,7 +203,11 @@ function page({ stats, tests, shots, sha }) {
         : [`<a href="${src('current')}"><img src="${src('current')}" alt=""></a>`];
     return `<section class="${shot.state}"><h2>${escape(shot.key)}.png <span>${shot.state}</span></h2><div class="row">${images.join('')}</div></section>`;
   };
-  const failing = tests.filter((test) => test.status === 'unexpected');
+  const section = (suite) => `<h1>${escape(suite.title)}</h1>
+<p>${suite.stats.expected} passed, ${suite.stats.unexpected} failed, ${suite.stats.flaky} flaky.${suite.slug === 'web' && report ? ' <a href="report/">Playwright report</a>' : ''}</p>
+${suite.failing.length ? `<ul>${suite.failing.map((test) => `<li>${escape(test)}</li>`).join('')}</ul>` : ''}
+${suite.shots.filter((shot) => shot.state !== 'unchanged').map(figure).join('\n')}
+${suite.shots.filter((shot) => shot.state === 'unchanged').map(figure).join('\n')}`;
 
   return `<!doctype html>
 <html lang="en">
@@ -173,7 +219,7 @@ function page({ stats, tests, shots, sha }) {
   :root { color-scheme: light dark; --bg: #fff; --fg: #1f2328; --muted: #59636e; --line: #d1d9e0; --bad: #cf222e; --new: #9a6700; }
   @media (prefers-color-scheme: dark) { :root { --bg: #0d1117; --fg: #e6edf3; --muted: #9198a1; --line: #3d444d; --bad: #f85149; --new: #d29922; } }
   body { margin: 0 auto; max-width: 1400px; padding: 24px 16px; background: var(--bg); color: var(--fg); font: 14px/1.5 system-ui, sans-serif; }
-  h1 { font-size: 20px; margin: 0 0 4px; }
+  h1 { font-size: 20px; margin: 24px 0 4px; }
   p { color: var(--muted); margin: 0 0 24px; }
   section { border-top: 1px solid var(--line); padding: 16px 0; }
   h2 { font-size: 15px; margin: 0 0 12px; font-family: ui-monospace, monospace; }
@@ -186,18 +232,15 @@ function page({ stats, tests, shots, sha }) {
 </style>
 </head>
 <body>
-<h1>E2E screenshots at ${sha.slice(0, 7)}</h1>
-<p>${stats.expected} passed, ${stats.unexpected} failed, ${stats.flaky} flaky. <a href="report/">Playwright report</a></p>
-${failing.length ? `<ul>${failing.map((test) => `<li>${escape(test.file)} › ${escape(test.title)}</li>`).join('')}</ul>` : ''}
-${shots.filter((shot) => shot.state !== 'unchanged').map(figure).join('\n')}
-${shots.filter((shot) => shot.state === 'unchanged').map(figure).join('\n')}
+<p>E2E screenshots at ${sha.slice(0, 7)}</p>
+${suites.map(section).join('\n')}
 </body>
 </html>
 `;
 }
 
 function listDir(dir) {
-  return fs.existsSync(dir) ? fs.readdirSync(dir).sort() : [];
+  return dir && fs.existsSync(dir) ? fs.readdirSync(dir).sort() : [];
 }
 
 function copy(from, to) {
@@ -208,5 +251,11 @@ function copy(from, to) {
 module.exports = { MARKER };
 
 if (require.main === module) {
-  main(process.argv.slice(2));
+  const [command, ...args] = process.argv.slice(2);
+  const commands = { collect, render };
+  if (!commands[command]) {
+    console.error('usage: gallery.js collect <slug> <title> <results.json> <out> [baselines] | render <dir> <url> <sha>');
+    process.exit(2);
+  }
+  commands[command](args);
 }

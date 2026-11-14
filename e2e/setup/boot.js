@@ -23,7 +23,7 @@ const EPISODES = ['Fixture Pilot', 'Fixture Second'];
 
 const CLIENT_IMAGE = 'jellyfin/jellyfin:10.10.0';
 
-async function boot() {
+async function boot({ mediaSeconds = 20 } = {}) {
   const adminUrl = process.env.DATABASE_URL;
   if (!adminUrl) {
     throw new Error('DATABASE_URL is not set, so there is no server to create a scratch database on');
@@ -31,7 +31,7 @@ async function boot() {
 
   const binaries = build();
   const client = fetchClient();
-  const media = encodeMedia();
+  const media = encodeMedia(mediaSeconds);
 
   const scratch = 'gojellyfin_e2e_' + Math.random().toString(36).slice(2, 12).replace(/[^a-z0-9]/g, '0');
   const scratchEnv = { ADMIN_DATABASE_URL: adminUrl, SCRATCH_DATABASE: scratch };
@@ -80,6 +80,7 @@ async function boot() {
   return {
     facts: {
       baseUrl: `http://127.0.0.1:${webPort}`,
+      port: webPort,
       username: USERNAME,
       password: PASSWORD,
       library: LIBRARY,
@@ -114,8 +115,8 @@ function build() {
 
 // VP9 and Opus in WebM because Playwright's Chromium carries no H.264 or AAC
 // decoder, so that is the only pairing it will direct play.
-function encodeMedia() {
-  const target = path.join(BUILD, 'media', 'playable.webm');
+function encodeMedia(seconds) {
+  const target = path.join(BUILD, 'media', seconds === 20 ? 'playable.webm' : `playable-${seconds}s.webm`);
   if (fs.existsSync(target)) {
     return target;
   }
@@ -123,8 +124,8 @@ function encodeMedia() {
   fs.mkdirSync(path.dirname(target), { recursive: true });
   run('ffmpeg', [
     '-hide_banner', '-loglevel', 'error', '-y',
-    '-f', 'lavfi', '-i', 'testsrc2=size=640x360:rate=24:duration=20',
-    '-f', 'lavfi', '-i', 'sine=frequency=440:duration=20',
+    '-f', 'lavfi', '-i', `testsrc2=size=640x360:rate=24:duration=${seconds}`,
+    '-f', 'lavfi', '-i', `sine=frequency=440:duration=${seconds}`,
     '-c:v', 'libvpx-vp9', '-b:v', '300k', '-deadline', 'realtime', '-cpu-used', '8',
     '-c:a', 'libopus', '-b:a', '64k',
     '-shortest', target,
