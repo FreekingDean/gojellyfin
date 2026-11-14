@@ -50,6 +50,17 @@ const WANTED_SHOW = {
   poster: '/wanted-show.png',
 };
 
+// What TMDB calls trending and the library does hold: the seed keys the
+// playable title under this id, so the trending row lists it and nothing else.
+const TRENDING_HELD = {
+  id: 900003,
+  name: PLAYABLE,
+  overview: 'A film the library holds.',
+  tagline: 'Already here.',
+  released: '2024-01-12',
+  poster: '/trending-held.png',
+};
+
 const CLIENT_IMAGE = 'jellyfin/jellyfin:12.4';
 
 async function boot({ mediaSeconds = 20 } = {}) {
@@ -84,7 +95,7 @@ async function boot({ mediaSeconds = 20 } = {}) {
 
   const catalogue = tmdb.start({
     imageBase: `http://127.0.0.1:${webPort}${proxy.POSTERS}/`,
-    movies: [WANTED_MOVIE],
+    movies: [WANTED_MOVIE, TRENDING_HELD],
     shows: [WANTED_SHOW],
   });
   const cataloguePort = await listen(catalogue);
@@ -108,6 +119,7 @@ async function boot({ mediaSeconds = 20 } = {}) {
       FIXTURE_MEDIA: media.playable,
       FIXTURE_TRANSCODE: media.transcoded,
       FIXTURE_DOWNLOADER: downloaderUrl,
+      FIXTURE_TRENDING_TMDB: String(TRENDING_HELD.id),
       POSTER_DIR: posterRoot,
       UNOWNED_POSTER_DIR: path.join(posterRoot, POSTER_SIZE),
       POSTER_URL: `http://127.0.0.1:${webPort}${proxy.POSTERS}`,

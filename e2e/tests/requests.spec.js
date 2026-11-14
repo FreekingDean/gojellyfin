@@ -7,10 +7,9 @@ async function added(harness) {
 }
 
 async function openWanted(page, harness) {
-  const row = view(page).locator('.verticalSection').filter({
-    has: page.locator('.sectionTitle', { hasText: 'Recently Added in Trending Movies' }),
-  });
-  await row.scrollIntoViewIfNeeded();
+  await page.getByRole('link', { name: 'Search' }).click();
+  await expect(page).toHaveURL(/search/);
+  await view(page).locator('.searchfields-txtSearch').fill('Wanted');
   await open(page, harness.wantedMovie.name);
   await expect(page).toHaveURL(/details/);
 
@@ -59,9 +58,24 @@ test.describe('a search', () => {
 
     await expect(card(page, harness.wantedMovie.name)).toBeVisible();
     await expect(card(page, harness.wantedShow.name)).toHaveCount(0);
+  });
 
-    await open(page, harness.wantedMovie.name);
-    await expect(page).toHaveURL(/details/);
-    await expect(view(page).locator('h1.itemName')).toHaveText(harness.wantedMovie.name);
+  test('opens a title the library lacks as an item with nothing to play', async ({ signedIn: page, harness }) => {
+    const failed = [];
+    page.on('response', (response) => {
+      if (response.status() >= 400) {
+        failed.push(`${response.status()} ${new URL(response.url()).pathname}`);
+      }
+    });
+
+    const details = await openWanted(page, harness);
+    await expect(details.locator('h1.itemName')).toHaveText(harness.wantedMovie.name);
+    await expect(details.locator('.overview')).toContainText(harness.wantedMovie.overview);
+    await expect(details.locator('.tagline')).toContainText(harness.wantedMovie.tagline);
+    await expect(details.locator('.mainDetailButtons .btnPlay')).toBeHidden();
+    await expect(details.locator('.mainDetailButtons .btnUserRating')).toBeVisible();
+
+    await expect(page).toHaveScreenshot('wanted-movie.png');
+    expect(failed).toEqual([]);
   });
 });
