@@ -2,11 +2,12 @@ apiVersion: v2
 name: gojellyfin
 description: A Go reimplementation of a Jellyfin media server, serving the Jellyfin 12.0.0 HTTP API
 type: application
-version: 0.1.0
-# The image tag the chart defaults to. There are no version tags on the
-# repository yet, so latest is what docker.yml publishes from main; the build
-# actually running is stamped into the binary and answered as
-# SystemInfo.PackageName. Pin both when the chart is published (#555).
+# Placeholders for an unreleased checkout. Every merge to main is a release,
+# and docker.yml packages the chart with both set to that release's version
+# and pushes it to oci://ghcr.io/freekingdean/charts after the image, so a
+# published chart names an image that exists. A checkout defaults to latest;
+# pin image.tag when installing from one.
+version: 0.0.0
 appVersion: "latest"
 home: https://github.com/FreekingDean/gojellyfin
 sources:
