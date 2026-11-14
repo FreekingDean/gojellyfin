@@ -86,6 +86,12 @@ spec:
         - path:
             type: Exact
             value: /web/ConfigurationPages
+        - path:
+            type: Exact
+            value: /web/configurationpage
+        - path:
+            type: Exact
+            value: /web/configurationpages
       backendRefs:
         - name: {{ include "gojellyfin.fullname" . }}
           port: {{ .Values.service.port }}

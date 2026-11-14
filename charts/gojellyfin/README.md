@@ -310,6 +310,15 @@ specified on applicable Routes, precedence must be given to the match having:
 so the three routes need no ordering between them. Writing your own gateway
 config means carrying those two exceptions with it.
 
+**Both spellings, because an `Exact` match is case-sensitive.** The menu asks
+for `web/ConfigurationPages`, but opening a page asks for
+`/web/configurationpage?name=…` in lower case (`ServerContentPage` in
+`jellyfin-web`), and the server's own router does not care which. With only
+the capitalised rules the list appeared and every page under it was nginx's
+404, so the chart carries all four. A `RegularExpression` match would say it
+once, but its support is implementation-specific in the Gateway API, and an
+`Exact` match is core.
+
 They are rendered whether or not `web.enabled` is set. With the client off they
 are merely redundant with `/`, and they still point at the API, which this chart
 always deploys; with a client served from outside the chart they are what keeps
