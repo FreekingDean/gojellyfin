@@ -343,7 +343,17 @@ func TestService_Shelf(t *testing.T) {
 	if !ok || !built.Complete {
 		t.Fatalf("shelf collage = %v complete %v, want a complete collage", ok, built.Complete)
 	}
-	if !bytes.Equal(built.Body, fixture.image(t)) {
-		t.Error("the shelf's collage differs from one built from the same posters")
+	if bytes.Equal(built.Body, fixture.image(t)) {
+		t.Error("the shelf's card is the library's grid, want the fanned stack")
+	}
+
+	fanned := opened(t, built.Body)
+	front := fanned.At(width/2, height/2)
+	if r, g, b, _ := front.RGBA(); g>>8 < 150 || r>>8 > 80 || b>>8 > 80 {
+		t.Errorf("centre = %v, want the newest poster, which is green", front)
+	}
+	corner := fanned.At(4, 4)
+	if r, g, b, _ := corner.RGBA(); r>>8 > 120 || g>>8 > 120 || b>>8 > 120 {
+		t.Errorf("corner = %v, want the dimmed backdrop", corner)
 	}
 }

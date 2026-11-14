@@ -37,6 +37,8 @@ type Collage struct {
 	Complete bool
 }
 
+type layout func([]image.Image) ([]byte, error)
+
 type Libraries interface {
 	LibraryPosters(ctx context.Context, libraryID uuid.UUID, limit int) ([]*items.Image, error)
 }
@@ -69,7 +71,7 @@ func newService(libraries Libraries, shelved Shelves) *Service {
 }
 
 func (s *Service) Tag(ctx context.Context, id uuid.UUID) (string, error) {
-	posters, err := s.posters(ctx, id)
+	posters, _, err := s.posters(ctx, id)
 	if err != nil {
 		return "", err
 	}
@@ -77,17 +79,19 @@ func (s *Service) Tag(ctx context.Context, id uuid.UUID) (string, error) {
 	return fingerprint(posters), nil
 }
 
-func (s *Service) posters(ctx context.Context, id uuid.UUID) ([]*items.Image, error) {
-	shelved, found, err := s.shelves.Posters(ctx, id, items.Everyone, cells)
+func (s *Service) posters(ctx context.Context, id uuid.UUID) ([]*items.Image, layout, error) {
+	shelved, found, err := s.shelves.Posters(ctx, id, items.Everyone, len(slots))
 	if err != nil || found {
-		return shelved, err
+		return shelved, fan, err
 	}
 
-	return s.libraries.LibraryPosters(ctx, id, cells)
+	listed, err := s.libraries.LibraryPosters(ctx, id, cells)
+
+	return listed, compose, err
 }
 
 func (s *Service) Image(ctx context.Context, id uuid.UUID) (Collage, bool) {
-	posters, err := s.posters(ctx, id)
+	posters, arrange, err := s.posters(ctx, id)
 	if err != nil {
 		log.Printf("collage %s: %v", id, err)
 
@@ -103,7 +107,7 @@ func (s *Service) Image(ctx context.Context, id uuid.UUID) (Collage, bool) {
 	}
 
 	built, err, _ := s.flight.Do(id.String()+":"+tag, func() (any, error) {
-		return s.build(context.WithoutCancel(ctx), id, tag, posters)
+		return s.build(context.WithoutCancel(ctx), id, tag, posters, arrange)
 	})
 	if err != nil {
 		log.Printf("collage %s: %v", id, err)
@@ -125,7 +129,7 @@ func (s *Service) cached(id uuid.UUID, tag string) ([]byte, bool) {
 	return entry.body, ok && entry.tag == tag
 }
 
-func (s *Service) build(ctx context.Context, id uuid.UUID, tag string, posters []*items.Image) (Collage, error) {
+func (s *Service) build(ctx context.Context, id uuid.UUID, tag string, posters []*items.Image, arrange layout) (Collage, error) {
 	decoded := make([]image.Image, len(posters))
 
 	var group errgroup.Group
@@ -154,7 +158,7 @@ func (s *Service) build(ctx context.Context, id uuid.UUID, tag string, posters [
 		return Collage{}, nil
 	}
 
-	body, err := compose(fetched)
+	body, err := arrange(fetched)
 	if err != nil {
 		return Collage{}, err
 	}

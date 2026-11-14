@@ -23,28 +23,40 @@ test.describe('the library cards', () => {
 });
 
 test.describe('the shelf cards', () => {
-  test('draw Recently Aired as a collage of the shows it lists', async ({ signedIn: page }) => {
-    const cells = await collage(page, 'Recently Aired');
+  test('fan Recently Aired out with the newest show in front', async ({ signedIn: page }) => {
+    const [front, , corner] = await sampled(page, 'Recently Aired', FAN);
 
-    expect(cells.every((cell) => near(cell, GREEN))).toBe(true);
+    expect(near(front, GREEN)).toBe(true);
+    expect(near(corner, GREEN)).toBe(false);
   });
 
-  test('draw New Releases as a collage of the movies it lists', async ({ signedIn: page }) => {
-    const cells = await collage(page, 'New Releases');
+  test('fan New Releases out with the newest movie in front and the next beside it', async ({ signedIn: page }) => {
+    const [front, beside, corner] = await sampled(page, 'New Releases', FAN);
 
-    expect(cells.every((cell) => near(cell, RED) || near(cell, BLUE))).toBe(true);
-    expect(cells.some((cell) => near(cell, RED))).toBe(true);
-    expect(cells.some((cell) => near(cell, BLUE))).toBe(true);
+    expect(near(front, RED) || near(front, BLUE)).toBe(true);
+    expect(near(beside, near(front, RED) ? BLUE : RED)).toBe(true);
+    expect(near(corner, front)).toBe(false);
   });
 });
 
-async function collage(page, library) {
+const GRID = Array.from({ length: 10 }, (_, cell) => [((cell % 5) + 0.5) / 5, (Math.floor(cell / 5) + 0.5) / 2]);
+const FAN = [
+  [0.5, 0.5],
+  [0.7, 0.6],
+  [0.02, 0.04],
+];
+
+function collage(page, library) {
+  return sampled(page, library, GRID);
+}
+
+async function sampled(page, library, points) {
   const picture = card(page, library).locator('.cardImageContainer[style*="/Images/Primary"]').first();
   await expect(picture).toBeVisible();
   const style = await picture.getAttribute('style');
   const url = style.match(/url\("?([^")]+)"?\)/)[1];
 
-  return page.evaluate(async (source) => {
+  return page.evaluate(async ({ source, spots }) => {
     const response = await fetch(source);
     if (!response.ok || response.headers.get('Content-Type') !== 'image/jpeg') {
       throw new Error(`${source} answered ${response.status} ${response.headers.get('Content-Type')}`);
@@ -55,20 +67,14 @@ async function collage(page, library) {
     const context = canvas.getContext('2d');
     context.drawImage(bitmap, 0, 0);
 
-    const columns = 5;
-    const rows = 2;
-    const cells = [];
-    for (let row = 0; row < rows; row++) {
-      for (let column = 0; column < columns; column++) {
-        const x = Math.floor(((column + 0.5) * bitmap.width) / columns);
-        const y = Math.floor(((row + 0.5) * bitmap.height) / rows);
-        const [r, g, b] = context.getImageData(x, y, 1, 1).data;
-        cells.push([r, g, b]);
-      }
-    }
+    return spots.map(([across, down]) => {
+      const x = Math.floor(across * bitmap.width);
+      const y = Math.floor(down * bitmap.height);
+      const [r, g, b] = context.getImageData(x, y, 1, 1).data;
 
-    return cells;
-  }, url);
+      return [r, g, b];
+    });
+  }, { source: url, spots: points });
 }
 
 function near(cell, want) {
