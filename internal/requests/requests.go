@@ -240,7 +240,7 @@ func (s *Service) submit(ctx context.Context, target sources.Source, key string,
 
 	submission := s.store.RequestSubmission.Create().SetSourceID(target.ID).SetKey(key)
 	if refused := s.downloaders.Submit(ctx, target, wanted); refused != nil {
-		log.Printf("requests: %s did not take %s: %v", target.Name, key, refused)
+		log.Printf("requests: a downloader did not take %s, and the queue says why", key)
 		submission.SetLastError(refused.Error())
 	} else {
 		submission.SetAcceptedAt(time.Now()).SetLastError("")
