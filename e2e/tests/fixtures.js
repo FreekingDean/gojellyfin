@@ -44,7 +44,7 @@ async function signIn(page, app, password = app.password) {
   await loadLogin(page, app);
   await page.locator('#loginPage button.card').filter({ hasText: app.username }).click();
   await page.locator('#txtManualPassword').fill(password);
-  await page.locator('#loginPage button[type=submit]').click();
+  await page.getByRole('button', { name: 'Sign In', exact: true }).click();
 }
 
 function view(page) {
