@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -102,7 +101,7 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if items.IsAudio(item) {
-		if h.serveTranscode(w, r, item, source, path, []string{requested}) {
+		if h.serveTranscode(w, r, source, path, requested) {
 			return
 		}
 	} else if h.serveRemux(w, r, source, path) {
@@ -122,55 +121,68 @@ func (h *Handler) StopEncodings(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ServeUniversal(w http.ResponseWriter, r *http.Request) {
-	item, source, path, ok := h.item(w, r)
+	item, _, _, ok := h.item(w, r)
 	if !ok {
 		return
 	}
 
-	requested := r.URL.Query()["container"]
-	profiles := directPlayProfiles(requested)
-	if len(profiles) == 0 {
-		h.serveFile(w, r, source, path)
+	plan, err := h.items.SourceFor(r.Context(), item, universal(r))
+	if errors.Is(err, items.ErrNoPlayable) {
+		unsupported(w, r, "refused by every file", strings.Join(r.URL.Query()["container"], ","))
+		return
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	container, codec := items.Container(source), items.AudioCodec(source)
-	if !playable(profiles, container, codec) {
-		containers := make([]string, 0, len(profiles))
-		for _, profile := range profiles {
-			containers = append(containers, profile.container)
-		}
-		if h.serveTranscode(w, r, item, source, path, containers) {
-			return
-		}
-
-		unsupported(w, r, describe(container, codec), strings.Join(requested, ","))
+	path, ok := h.resolve(w, r, plan.Source)
+	if !ok {
 		return
 	}
 
-	h.serveFile(w, r, source, path)
+	if plan.Change == items.ChangeNone {
+		h.serveFile(w, r, plan.Source, path)
+		return
+	}
+	if h.serveTranscode(w, r, plan.Source, path, plan.Container) {
+		return
+	}
+
+	unsupported(w, r, describe(items.Container(plan.Source), items.AudioCodec(plan.Source)), plan.Container)
 }
 
-func (h *Handler) serveTranscode(
-	w http.ResponseWriter,
-	r *http.Request,
-	item *items.Item,
-	source *items.MediaSource,
-	path string,
-	accepted []string,
-) bool {
-	if !h.transcoder.Enabled() || !items.IsAudio(item) {
-		return false
+func universal(r *http.Request) items.Capabilities {
+	query := r.URL.Query()
+
+	var can items.Capabilities
+	for _, value := range query["container"] {
+		for _, entry := range strings.Split(value, ",") {
+			parts := strings.Split(strings.ToLower(strings.TrimSpace(entry)), "|")
+			if parts[0] == "" {
+				continue
+			}
+
+			can.Audio = append(can.Audio, items.Profile{Container: parts[0], AudioCodec: strings.Join(parts[1:], ",")})
+		}
 	}
 
-	container := transcode.Choose(candidates(r, accepted))
-	if container == "" {
+	requested := strings.ToLower(strings.TrimSpace(query.Get("transcodingContainer")))
+	if requested != "" && !strings.EqualFold(query.Get("transcodingProtocol"), "hls") {
+		can.AudioEncodes = []string{requested}
+	}
+
+	return can
+}
+
+func (h *Handler) serveTranscode(w http.ResponseWriter, r *http.Request, source *items.MediaSource, path, container string) bool {
+	if !h.transcoder.Enabled() || !transcode.Supported(container) {
 		return false
 	}
 
 	return h.relay(w, r, source, transcode.Spec{
 		Path:       path,
-		Container:  container,
+		Container:  strings.ToLower(container),
 		Bitrate:    audioBitrate(r),
 		StartTicks: startTicks(r),
 	})
@@ -268,17 +280,6 @@ func (h *Handler) relay(w http.ResponseWriter, r *http.Request, source *items.Me
 	return true
 }
 
-func candidates(r *http.Request, accepted []string) []string {
-	query := r.URL.Query()
-
-	requested := query.Get("transcodingContainer")
-	if requested == "" || strings.EqualFold(query.Get("transcodingProtocol"), "hls") {
-		return accepted
-	}
-
-	return append([]string{requested}, accepted...)
-}
-
 func audioBitrate(r *http.Request) int32 {
 	query := r.URL.Query()
 	for _, name := range []string{"audioBitRate", "maxStreamingBitrate"} {
@@ -346,15 +347,24 @@ func (h *Handler) item(w http.ResponseWriter, r *http.Request) (*items.Item, *it
 		return nil, nil, "", false
 	}
 
+	path, ok := h.resolve(w, r, source)
+	if !ok {
+		return nil, nil, "", false
+	}
+
+	return item, source, path, true
+}
+
+func (h *Handler) resolve(w http.ResponseWriter, r *http.Request, source *items.MediaSource) (string, bool) {
 	path, err := h.files.Resolve(source.Path)
 	if err != nil {
 		log.Printf("refusing %s: %q is outside the directories this server serves", r.URL.Path, source.Path)
 		w.WriteHeader(http.StatusNotFound)
 
-		return nil, nil, "", false
+		return "", false
 	}
 
-	return item, source, path, true
+	return path, true
 }
 
 func (h *Handler) authenticated(r *http.Request) bool {
@@ -388,42 +398,6 @@ func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, source *item
 	w.Header().Set("Accept-Ranges", "bytes")
 
 	http.ServeContent(w, r, filepath.Base(path), info.ModTime(), file)
-}
-
-type directPlayProfile struct {
-	container string
-	codecs    []string
-}
-
-func directPlayProfiles(values []string) []directPlayProfile {
-	profiles := make([]directPlayProfile, 0, len(values))
-	for _, value := range values {
-		for _, entry := range strings.Split(value, ",") {
-			parts := strings.FieldsFunc(strings.ToLower(strings.TrimSpace(entry)), func(r rune) bool {
-				return r == '|'
-			})
-			if len(parts) == 0 {
-				continue
-			}
-
-			profiles = append(profiles, directPlayProfile{container: parts[0], codecs: parts[1:]})
-		}
-	}
-
-	return profiles
-}
-
-func playable(profiles []directPlayProfile, container, codec string) bool {
-	for _, profile := range profiles {
-		if profile.container != container {
-			continue
-		}
-		if len(profile.codecs) == 0 || codec == "" || slices.Contains(profile.codecs, codec) {
-			return true
-		}
-	}
-
-	return false
 }
 
 func describe(container, codec string) string {

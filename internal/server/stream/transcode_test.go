@@ -155,6 +155,24 @@ func TestHandler_serveTranscode(t *testing.T) {
 		}
 	})
 
+	t.Run("universal encodes into the transcoding container the client named", func(t *testing.T) {
+		fixture := newFixture(t)
+		fixture.withEncoder(t)
+		id := fixture.addTone(t)
+
+		recorder := httptest.NewRecorder()
+		target := "/Audio/" + id.String() + "/universal?container=mp3&transcodingContainer=opus&transcodingProtocol=http&"
+
+		fixture.handler.ServeUniversal(recorder, fixture.get(t, http.MethodGet, target, id))
+
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("status = %d, want %d: %s", recorder.Code, http.StatusOK, recorder.Body)
+		}
+		if got := recorder.Header().Get("Content-Type"); got != "audio/opus" {
+			t.Errorf("content type = %q, want audio/opus", got)
+		}
+	})
+
 	t.Run("universal honours startTimeTicks", func(t *testing.T) {
 		fixture := newFixture(t)
 		fixture.withEncoder(t)
