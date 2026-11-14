@@ -435,17 +435,20 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		}
 	})
 
-	t.Run("a picture nothing declared can carry is answered as no compatible stream", func(t *testing.T) {
+	t.Run("a picture nothing declared can carry is handed over as an h264 encode", func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.addRipped(t, itemmodel.KindMovie, "mkv", "mpeg4", "aac")
 
-		answer := fixture.answer(t, id, firstPlay(&chrome))
+		source := fixture.source(t, id, firstPlay(&chrome))
 
-		if got := len(*answer.MediaSources); got != 0 {
-			t.Errorf("answered with %d sources, want none the client cannot play", got)
+		if apiutil.Deref(source.SupportsDirectPlay) || apiutil.Deref(source.SupportsDirectStream) {
+			t.Error("an encode was offered as a direct play or a direct stream")
 		}
-		if got := apiutil.Deref(answer.ErrorCode); got != api.NoCompatibleStream {
-			t.Errorf("error code = %q, want %q", got, api.NoCompatibleStream)
+		url := apiutil.Deref(source.TranscodingUrl)
+		for _, want := range []string{"/stream.mp4?", "videoCodec=h264", "maxHeight=1080", "audioCodec=aac", "allowVideoStreamCopy=false"} {
+			if !strings.Contains(url, want) {
+				t.Errorf("transcoding url = %q, want it to carry %q", url, want)
+			}
 		}
 	})
 
