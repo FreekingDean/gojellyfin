@@ -72,9 +72,11 @@ type UserEdges struct {
 	QuickConnectRequests []*QuickConnectRequest `json:"quick_connect_requests,omitempty"`
 	// Requests holds the value of the requests edge.
 	Requests []*Request `json:"requests,omitempty"`
+	// Reports holds the value of the reports edge.
+	Reports []*Report `json:"reports,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [10]bool
+	loadedTypes [11]bool
 }
 
 // ConfigurationOrErr returns the Configuration value or an error if the edge
@@ -169,6 +171,15 @@ func (e UserEdges) RequestsOrErr() ([]*Request, error) {
 		return e.Requests, nil
 	}
 	return nil, &NotLoadedError{edge: "requests"}
+}
+
+// ReportsOrErr returns the Reports value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) ReportsOrErr() ([]*Report, error) {
+	if e.loadedTypes[10] {
+		return e.Reports, nil
+	}
+	return nil, &NotLoadedError{edge: "reports"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -345,6 +356,11 @@ func (_m *User) QueryQuickConnectRequests() *QuickConnectRequestQuery {
 // QueryRequests queries the "requests" edge of the User entity.
 func (_m *User) QueryRequests() *RequestQuery {
 	return NewUserClient(_m.config).QueryRequests(_m)
+}
+
+// QueryReports queries the "reports" edge of the User entity.
+func (_m *User) QueryReports() *ReportQuery {
+	return NewUserClient(_m.config).QueryReports(_m)
 }
 
 // Update returns a builder for updating this User.

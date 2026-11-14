@@ -58,6 +58,8 @@ const (
 	EdgeQuickConnectRequests = "quick_connect_requests"
 	// EdgeRequests holds the string denoting the requests edge name in mutations.
 	EdgeRequests = "requests"
+	// EdgeReports holds the string denoting the reports edge name in mutations.
+	EdgeReports = "reports"
 	// Table holds the table name of the user in the database.
 	Table = "users"
 	// ConfigurationTable is the table that holds the configuration relation/edge.
@@ -130,6 +132,13 @@ const (
 	RequestsInverseTable = "requests"
 	// RequestsColumn is the table column denoting the requests relation/edge.
 	RequestsColumn = "user_id"
+	// ReportsTable is the table that holds the reports relation/edge.
+	ReportsTable = "reports"
+	// ReportsInverseTable is the table name for the Report entity.
+	// It exists in this package in order to avoid circular dependency with the "report" package.
+	ReportsInverseTable = "reports"
+	// ReportsColumn is the table column denoting the reports relation/edge.
+	ReportsColumn = "user_id"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -365,6 +374,20 @@ func ByRequests(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newRequestsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByReportsCount orders the results by reports count.
+func ByReportsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newReportsStep(), opts...)
+	}
+}
+
+// ByReports orders the results by reports terms.
+func ByReports(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newReportsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newConfigurationStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -433,5 +456,12 @@ func newRequestsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(RequestsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, RequestsTable, RequestsColumn),
+	)
+}
+func newReportsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ReportsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ReportsTable, ReportsColumn),
 	)
 }

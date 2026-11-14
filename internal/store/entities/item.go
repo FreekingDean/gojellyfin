@@ -70,6 +70,7 @@ func (Item) Edges() []ent.Edge {
 		edge.To("children", Item.Type).Annotations(cascadeOnDelete).From("parent").Unique().Field("parent_id"),
 		edge.To("libraries", LibraryItem.Type).Annotations(cascadeOnDelete),
 		edge.To("item_sources", ItemSource.Type).Annotations(cascadeOnDelete),
+		edge.To("reports", Report.Type).Annotations(cascadeOnDelete),
 		edge.To("credits", Credit.Type).Annotations(cascadeOnDelete),
 		edge.To("images", Image.Type).Annotations(cascadeOnDelete),
 		edge.To("user_data", UserItemData.Type).Annotations(cascadeOnDelete),

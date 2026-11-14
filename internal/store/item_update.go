@@ -22,6 +22,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
+	"github.com/FreekingDean/gojellyfin/internal/store/report"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
 	"github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
 	"github.com/google/uuid"
@@ -553,6 +554,21 @@ func (_u *ItemUpdate) AddItemSources(v ...*ItemSource) *ItemUpdate {
 	return _u.AddItemSourceIDs(ids...)
 }
 
+// AddReportIDs adds the "reports" edge to the Report entity by IDs.
+func (_u *ItemUpdate) AddReportIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.AddReportIDs(ids...)
+	return _u
+}
+
+// AddReports adds the "reports" edges to the Report entity.
+func (_u *ItemUpdate) AddReports(v ...*Report) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddReportIDs(ids...)
+}
+
 // AddCreditIDs adds the "credits" edge to the Credit entity by IDs.
 func (_u *ItemUpdate) AddCreditIDs(ids ...uuid.UUID) *ItemUpdate {
 	_u.mutation.AddCreditIDs(ids...)
@@ -749,6 +765,27 @@ func (_u *ItemUpdate) RemoveItemSources(v ...*ItemSource) *ItemUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveItemSourceIDs(ids...)
+}
+
+// ClearReports clears all "reports" edges to the Report entity.
+func (_u *ItemUpdate) ClearReports() *ItemUpdate {
+	_u.mutation.ClearReports()
+	return _u
+}
+
+// RemoveReportIDs removes the "reports" edge to Report entities by IDs.
+func (_u *ItemUpdate) RemoveReportIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.RemoveReportIDs(ids...)
+	return _u
+}
+
+// RemoveReports removes "reports" edges to Report entities.
+func (_u *ItemUpdate) RemoveReports(v ...*Report) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveReportIDs(ids...)
 }
 
 // ClearCredits clears all "credits" edges to the Credit entity.
@@ -1272,6 +1309,51 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ReportsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ReportsTable,
+			Columns: []string{item.ReportsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(report.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedReportsIDs(); len(nodes) > 0 && !_u.mutation.ReportsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ReportsTable,
+			Columns: []string{item.ReportsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(report.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ReportsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ReportsTable,
+			Columns: []string{item.ReportsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(report.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -2156,6 +2238,21 @@ func (_u *ItemUpdateOne) AddItemSources(v ...*ItemSource) *ItemUpdateOne {
 	return _u.AddItemSourceIDs(ids...)
 }
 
+// AddReportIDs adds the "reports" edge to the Report entity by IDs.
+func (_u *ItemUpdateOne) AddReportIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.AddReportIDs(ids...)
+	return _u
+}
+
+// AddReports adds the "reports" edges to the Report entity.
+func (_u *ItemUpdateOne) AddReports(v ...*Report) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddReportIDs(ids...)
+}
+
 // AddCreditIDs adds the "credits" edge to the Credit entity by IDs.
 func (_u *ItemUpdateOne) AddCreditIDs(ids ...uuid.UUID) *ItemUpdateOne {
 	_u.mutation.AddCreditIDs(ids...)
@@ -2352,6 +2449,27 @@ func (_u *ItemUpdateOne) RemoveItemSources(v ...*ItemSource) *ItemUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveItemSourceIDs(ids...)
+}
+
+// ClearReports clears all "reports" edges to the Report entity.
+func (_u *ItemUpdateOne) ClearReports() *ItemUpdateOne {
+	_u.mutation.ClearReports()
+	return _u
+}
+
+// RemoveReportIDs removes the "reports" edge to Report entities by IDs.
+func (_u *ItemUpdateOne) RemoveReportIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.RemoveReportIDs(ids...)
+	return _u
+}
+
+// RemoveReports removes "reports" edges to Report entities.
+func (_u *ItemUpdateOne) RemoveReports(v ...*Report) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveReportIDs(ids...)
 }
 
 // ClearCredits clears all "credits" edges to the Credit entity.
@@ -2905,6 +3023,51 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ReportsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ReportsTable,
+			Columns: []string{item.ReportsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(report.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedReportsIDs(); len(nodes) > 0 && !_u.mutation.ReportsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ReportsTable,
+			Columns: []string{item.ReportsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(report.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ReportsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ReportsTable,
+			Columns: []string{item.ReportsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(report.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

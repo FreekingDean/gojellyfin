@@ -17,6 +17,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
+	"github.com/FreekingDean/gojellyfin/internal/store/report"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/google/uuid"
 )
@@ -31,6 +32,7 @@ type ItemSourceQuery struct {
 	withItem    *ItemQuery
 	withSource  *SourceQuery
 	withStreams *MediaStreamQuery
+	withReports *ReportQuery
 	modifiers   []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -127,6 +129,28 @@ func (_q *ItemSourceQuery) QueryStreams() *MediaStreamQuery {
 			sqlgraph.From(itemsource.Table, itemsource.FieldID, selector),
 			sqlgraph.To(mediastream.Table, mediastream.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, itemsource.StreamsTable, itemsource.StreamsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryReports chains the current query on the "reports" edge.
+func (_q *ItemSourceQuery) QueryReports() *ReportQuery {
+	query := (&ReportClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(itemsource.Table, itemsource.FieldID, selector),
+			sqlgraph.To(report.Table, report.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, itemsource.ReportsTable, itemsource.ReportsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -329,6 +353,7 @@ func (_q *ItemSourceQuery) Clone() *ItemSourceQuery {
 		withItem:    _q.withItem.Clone(),
 		withSource:  _q.withSource.Clone(),
 		withStreams: _q.withStreams.Clone(),
+		withReports: _q.withReports.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -365,6 +390,17 @@ func (_q *ItemSourceQuery) WithStreams(opts ...func(*MediaStreamQuery)) *ItemSou
 		opt(query)
 	}
 	_q.withStreams = query
+	return _q
+}
+
+// WithReports tells the query-builder to eager-load the nodes that are connected to
+// the "reports" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemSourceQuery) WithReports(opts ...func(*ReportQuery)) *ItemSourceQuery {
+	query := (&ReportClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withReports = query
 	return _q
 }
 
@@ -446,10 +482,11 @@ func (_q *ItemSourceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*I
 	var (
 		nodes       = []*ItemSource{}
 		_spec       = _q.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			_q.withItem != nil,
 			_q.withSource != nil,
 			_q.withStreams != nil,
+			_q.withReports != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -489,6 +526,13 @@ func (_q *ItemSourceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*I
 		if err := _q.loadStreams(ctx, query, nodes,
 			func(n *ItemSource) { n.Edges.Streams = []*MediaStream{} },
 			func(n *ItemSource, e *MediaStream) { n.Edges.Streams = append(n.Edges.Streams, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withReports; query != nil {
+		if err := _q.loadReports(ctx, query, nodes,
+			func(n *ItemSource) { n.Edges.Reports = []*Report{} },
+			func(n *ItemSource, e *Report) { n.Edges.Reports = append(n.Edges.Reports, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -578,6 +622,39 @@ func (_q *ItemSourceQuery) loadStreams(ctx context.Context, query *MediaStreamQu
 		node, ok := nodeids[fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "item_source_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *ItemSourceQuery) loadReports(ctx context.Context, query *ReportQuery, nodes []*ItemSource, init func(*ItemSource), assign func(*ItemSource, *Report)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*ItemSource)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(report.FieldItemSourceID)
+	}
+	query.Where(predicate.Report(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(itemsource.ReportsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ItemSourceID
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "item_source_id" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "item_source_id" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

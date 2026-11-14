@@ -17,6 +17,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
+	"github.com/FreekingDean/gojellyfin/internal/store/report"
 	"github.com/FreekingDean/gojellyfin/internal/store/request"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
@@ -668,6 +669,7 @@ type ItemModel struct {
 	Children           []*ItemModel
 	Libraries          []*LibraryItemModel
 	ItemSources        []*ItemSourceModel
+	Reports            []*ReportModel
 	Credits            []*CreditModel
 	Images             []*ImageModel
 	UserData           []*UserItemDataModel
@@ -722,6 +724,7 @@ func fromItem(_m *Item) *ItemModel {
 		Children:           fromAllItem(_m.Edges.Children),
 		Libraries:          fromAllLibraryItem(_m.Edges.Libraries),
 		ItemSources:        fromAllItemSource(_m.Edges.ItemSources),
+		Reports:            fromAllReport(_m.Edges.Reports),
 		Credits:            fromAllCredit(_m.Edges.Credits),
 		Images:             fromAllImage(_m.Edges.Images),
 		UserData:           fromAllUserItemData(_m.Edges.UserData),
@@ -787,6 +790,7 @@ type ItemSourceModel struct {
 	Item    *ItemModel
 	Source  *SourceModel
 	Streams []*MediaStreamModel
+	Reports []*ReportModel
 }
 
 func fromAllItemSource(_m []*ItemSource) []*ItemSourceModel {
@@ -822,6 +826,7 @@ func fromItemSource(_m *ItemSource) *ItemSourceModel {
 		Item:    fromItem(_m.Edges.Item),
 		Source:  fromSource(_m.Edges.Source),
 		Streams: fromAllMediaStream(_m.Edges.Streams),
+		Reports: fromAllReport(_m.Edges.Reports),
 	}
 }
 
@@ -1702,6 +1707,88 @@ func (c *QuickConnectRequestClient) GetModel(ctx context.Context, id uuid.UUID) 
 	return fromQuickConnectRequest(_m), err
 }
 
+type ReportModel struct {
+	ID uuid.UUID
+
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	ItemID       uuid.UUID
+	ItemSourceID *uuid.UUID
+	UserID       *uuid.UUID
+	Kind         report.Kind
+	Origin       report.Origin
+	Note         string
+	Status       report.Status
+
+	Item *ItemModel
+	File *ItemSourceModel
+	User *UserModel
+}
+
+func fromAllReport(_m []*Report) []*ReportModel {
+	models := make([]*ReportModel, len(_m))
+	for i, v := range _m {
+		models[i] = fromReport(v)
+	}
+	return models
+}
+
+func fromReport(_m *Report) *ReportModel {
+	if _m == nil {
+		return nil
+	}
+
+	return &ReportModel{
+		ID:           _m.ID,
+		CreatedAt:    _m.CreatedAt,
+		UpdatedAt:    _m.UpdatedAt,
+		ItemID:       _m.ItemID,
+		ItemSourceID: _m.ItemSourceID,
+		UserID:       _m.UserID,
+		Kind:         _m.Kind,
+		Origin:       _m.Origin,
+		Note:         _m.Note,
+		Status:       _m.Status,
+
+		Item: fromItem(_m.Edges.Item),
+		File: fromItemSource(_m.Edges.File),
+		User: fromUser(_m.Edges.User),
+	}
+}
+
+func (_c *ReportCreate) SaveModel(ctx context.Context) (*ReportModel, error) {
+	_m, err := _c.Save(ctx)
+	return fromReport(_m), err
+}
+
+func (_u *ReportUpdateOne) SaveModel(ctx context.Context) (*ReportModel, error) {
+	_m, err := _u.Save(ctx)
+	return fromReport(_m), err
+}
+
+func (_q *ReportQuery) OnlyModel(ctx context.Context) (*ReportModel, error) {
+	_m, err := _q.Only(ctx)
+	return fromReport(_m), err
+}
+
+func (_q *ReportQuery) FirstModel(ctx context.Context) (*ReportModel, error) {
+	_m, err := _q.First(ctx)
+	return fromReport(_m), err
+}
+
+func (_q *ReportQuery) AllModels(ctx context.Context) ([]*ReportModel, error) {
+	_m, err := _q.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return fromAllReport(_m), nil
+}
+
+func (c *ReportClient) GetModel(ctx context.Context, id uuid.UUID) (*ReportModel, error) {
+	_m, err := c.Get(ctx, id)
+	return fromReport(_m), err
+}
+
 type RequestModel struct {
 	ID uuid.UUID
 
@@ -2186,6 +2273,7 @@ type UserModel struct {
 	PlaylistShares       []*PlaylistShareModel
 	QuickConnectRequests []*QuickConnectRequestModel
 	Requests             []*RequestModel
+	Reports              []*ReportModel
 }
 
 func fromAllUser(_m []*User) []*UserModel {
@@ -2226,6 +2314,7 @@ func fromUser(_m *User) *UserModel {
 		PlaylistShares:       fromAllPlaylistShare(_m.Edges.PlaylistShares),
 		QuickConnectRequests: fromAllQuickConnectRequest(_m.Edges.QuickConnectRequests),
 		Requests:             fromAllRequest(_m.Edges.Requests),
+		Reports:              fromAllReport(_m.Edges.Reports),
 	}
 }
 

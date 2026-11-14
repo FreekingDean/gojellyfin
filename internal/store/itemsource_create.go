@@ -15,6 +15,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
+	"github.com/FreekingDean/gojellyfin/internal/store/report"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/google/uuid"
 )
@@ -222,6 +223,21 @@ func (_c *ItemSourceCreate) AddStreams(v ...*MediaStream) *ItemSourceCreate {
 	return _c.AddStreamIDs(ids...)
 }
 
+// AddReportIDs adds the "reports" edge to the Report entity by IDs.
+func (_c *ItemSourceCreate) AddReportIDs(ids ...uuid.UUID) *ItemSourceCreate {
+	_c.mutation.AddReportIDs(ids...)
+	return _c
+}
+
+// AddReports adds the "reports" edges to the Report entity.
+func (_c *ItemSourceCreate) AddReports(v ...*Report) *ItemSourceCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddReportIDs(ids...)
+}
+
 // Mutation returns the ItemSourceMutation object of the builder.
 func (_c *ItemSourceCreate) Mutation() *ItemSourceMutation {
 	return _c.mutation
@@ -420,6 +436,22 @@ func (_c *ItemSourceCreate) createSpec() (*ItemSource, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(mediastream.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ReportsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemsource.ReportsTable,
+			Columns: []string{itemsource.ReportsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(report.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

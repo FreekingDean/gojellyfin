@@ -62,9 +62,11 @@ type ItemSourceEdges struct {
 	Source *Source `json:"source,omitempty"`
 	// Streams holds the value of the streams edge.
 	Streams []*MediaStream `json:"streams,omitempty"`
+	// Reports holds the value of the reports edge.
+	Reports []*Report `json:"reports,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // ItemOrErr returns the Item value or an error if the edge
@@ -96,6 +98,15 @@ func (e ItemSourceEdges) StreamsOrErr() ([]*MediaStream, error) {
 		return e.Streams, nil
 	}
 	return nil, &NotLoadedError{edge: "streams"}
+}
+
+// ReportsOrErr returns the Reports value or an error if the edge
+// was not loaded in eager-loading.
+func (e ItemSourceEdges) ReportsOrErr() ([]*Report, error) {
+	if e.loadedTypes[3] {
+		return e.Reports, nil
+	}
+	return nil, &NotLoadedError{edge: "reports"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -249,6 +260,11 @@ func (_m *ItemSource) QuerySource() *SourceQuery {
 // QueryStreams queries the "streams" edge of the ItemSource entity.
 func (_m *ItemSource) QueryStreams() *MediaStreamQuery {
 	return NewItemSourceClient(_m.config).QueryStreams(_m)
+}
+
+// QueryReports queries the "reports" edge of the ItemSource entity.
+func (_m *ItemSource) QueryReports() *ReportQuery {
+	return NewItemSourceClient(_m.config).QueryReports(_m)
 }
 
 // Update returns a builder for updating this ItemSource.
