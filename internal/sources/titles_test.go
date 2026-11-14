@@ -3,11 +3,15 @@ package sources
 import "testing"
 
 func TestLocalise(t *testing.T) {
-	source := Source{Name: "Radarr", RootPath: "/movies/", LocalPath: "/media/movies"}
+	source := Source{Name: "Radarr", Paths: []*Path{
+		{RemotePath: "/movies/", LocalPath: "/media/movies"},
+		{RemotePath: "/movies-4k", LocalPath: "/media/4k"},
+	}}
 
 	for path, want := range map[string]string{
 		"/movies/Film (2001)/film.mkv": "/media/movies/Film (2001)/film.mkv",
 		"/movies":                      "/media/movies",
+		"/movies-4k/Film/film.mkv":     "/media/4k/Film/film.mkv",
 	} {
 		got, err := Localise(source, path)
 		if err != nil || got != want {
@@ -23,7 +27,7 @@ func TestLocalise(t *testing.T) {
 		"/tv/show.mkv",
 	} {
 		if got, err := Localise(source, path); err == nil {
-			t.Errorf("Localise(%q) = %q, want it refused as outside the root", path, got)
+			t.Errorf("Localise(%q) = %q, want it refused as outside every mapped folder", path, got)
 		}
 	}
 }

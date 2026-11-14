@@ -16,6 +16,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
+	"github.com/FreekingDean/gojellyfin/internal/store/sourcepath"
 	"github.com/google/uuid"
 )
 
@@ -94,46 +95,6 @@ func (_u *SourceUpdate) SetNillableAPIKeyVariable(v *string) *SourceUpdate {
 	return _u
 }
 
-// SetRootPath sets the "root_path" field.
-func (_u *SourceUpdate) SetRootPath(v string) *SourceUpdate {
-	_u.mutation.SetRootPath(v)
-	return _u
-}
-
-// SetNillableRootPath sets the "root_path" field if the given value is not nil.
-func (_u *SourceUpdate) SetNillableRootPath(v *string) *SourceUpdate {
-	if v != nil {
-		_u.SetRootPath(*v)
-	}
-	return _u
-}
-
-// ClearRootPath clears the value of the "root_path" field.
-func (_u *SourceUpdate) ClearRootPath() *SourceUpdate {
-	_u.mutation.ClearRootPath()
-	return _u
-}
-
-// SetLocalPath sets the "local_path" field.
-func (_u *SourceUpdate) SetLocalPath(v string) *SourceUpdate {
-	_u.mutation.SetLocalPath(v)
-	return _u
-}
-
-// SetNillableLocalPath sets the "local_path" field if the given value is not nil.
-func (_u *SourceUpdate) SetNillableLocalPath(v *string) *SourceUpdate {
-	if v != nil {
-		_u.SetLocalPath(*v)
-	}
-	return _u
-}
-
-// ClearLocalPath clears the value of the "local_path" field.
-func (_u *SourceUpdate) ClearLocalPath() *SourceUpdate {
-	_u.mutation.ClearLocalPath()
-	return _u
-}
-
 // SetKind sets the "kind" field.
 func (_u *SourceUpdate) SetKind(v source.Kind) *SourceUpdate {
 	_u.mutation.SetKind(v)
@@ -146,6 +107,81 @@ func (_u *SourceUpdate) SetNillableKind(v *source.Kind) *SourceUpdate {
 		_u.SetKind(*v)
 	}
 	return _u
+}
+
+// SetVersion sets the "version" field.
+func (_u *SourceUpdate) SetVersion(v string) *SourceUpdate {
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *SourceUpdate) SetNillableVersion(v *string) *SourceUpdate {
+	if v != nil {
+		_u.SetVersion(*v)
+	}
+	return _u
+}
+
+// ClearVersion clears the value of the "version" field.
+func (_u *SourceUpdate) ClearVersion() *SourceUpdate {
+	_u.mutation.ClearVersion()
+	return _u
+}
+
+// SetContactedAt sets the "contacted_at" field.
+func (_u *SourceUpdate) SetContactedAt(v time.Time) *SourceUpdate {
+	_u.mutation.SetContactedAt(v)
+	return _u
+}
+
+// SetNillableContactedAt sets the "contacted_at" field if the given value is not nil.
+func (_u *SourceUpdate) SetNillableContactedAt(v *time.Time) *SourceUpdate {
+	if v != nil {
+		_u.SetContactedAt(*v)
+	}
+	return _u
+}
+
+// ClearContactedAt clears the value of the "contacted_at" field.
+func (_u *SourceUpdate) ClearContactedAt() *SourceUpdate {
+	_u.mutation.ClearContactedAt()
+	return _u
+}
+
+// SetLastError sets the "last_error" field.
+func (_u *SourceUpdate) SetLastError(v string) *SourceUpdate {
+	_u.mutation.SetLastError(v)
+	return _u
+}
+
+// SetNillableLastError sets the "last_error" field if the given value is not nil.
+func (_u *SourceUpdate) SetNillableLastError(v *string) *SourceUpdate {
+	if v != nil {
+		_u.SetLastError(*v)
+	}
+	return _u
+}
+
+// ClearLastError clears the value of the "last_error" field.
+func (_u *SourceUpdate) ClearLastError() *SourceUpdate {
+	_u.mutation.ClearLastError()
+	return _u
+}
+
+// AddPathIDs adds the "paths" edge to the SourcePath entity by IDs.
+func (_u *SourceUpdate) AddPathIDs(ids ...uuid.UUID) *SourceUpdate {
+	_u.mutation.AddPathIDs(ids...)
+	return _u
+}
+
+// AddPaths adds the "paths" edges to the SourcePath entity.
+func (_u *SourceUpdate) AddPaths(v ...*SourcePath) *SourceUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddPathIDs(ids...)
 }
 
 // AddLibraryIDs adds the "libraries" edge to the LibrarySource entity by IDs.
@@ -196,6 +232,27 @@ func (_u *SourceUpdate) AddMemberships(v ...*LibraryItem) *SourceUpdate {
 // Mutation returns the SourceMutation object of the builder.
 func (_u *SourceUpdate) Mutation() *SourceMutation {
 	return _u.mutation
+}
+
+// ClearPaths clears all "paths" edges to the SourcePath entity.
+func (_u *SourceUpdate) ClearPaths() *SourceUpdate {
+	_u.mutation.ClearPaths()
+	return _u
+}
+
+// RemovePathIDs removes the "paths" edge to SourcePath entities by IDs.
+func (_u *SourceUpdate) RemovePathIDs(ids ...uuid.UUID) *SourceUpdate {
+	_u.mutation.RemovePathIDs(ids...)
+	return _u
+}
+
+// RemovePaths removes "paths" edges to SourcePath entities.
+func (_u *SourceUpdate) RemovePaths(v ...*SourcePath) *SourceUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemovePathIDs(ids...)
 }
 
 // ClearLibraries clears all "libraries" edges to the LibrarySource entity.
@@ -334,20 +391,71 @@ func (_u *SourceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.APIKeyVariable(); ok {
 		_spec.SetField(source.FieldAPIKeyVariable, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.RootPath(); ok {
-		_spec.SetField(source.FieldRootPath, field.TypeString, value)
-	}
-	if _u.mutation.RootPathCleared() {
-		_spec.ClearField(source.FieldRootPath, field.TypeString)
-	}
-	if value, ok := _u.mutation.LocalPath(); ok {
-		_spec.SetField(source.FieldLocalPath, field.TypeString, value)
-	}
-	if _u.mutation.LocalPathCleared() {
-		_spec.ClearField(source.FieldLocalPath, field.TypeString)
-	}
 	if value, ok := _u.mutation.Kind(); ok {
 		_spec.SetField(source.FieldKind, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(source.FieldVersion, field.TypeString, value)
+	}
+	if _u.mutation.VersionCleared() {
+		_spec.ClearField(source.FieldVersion, field.TypeString)
+	}
+	if value, ok := _u.mutation.ContactedAt(); ok {
+		_spec.SetField(source.FieldContactedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ContactedAtCleared() {
+		_spec.ClearField(source.FieldContactedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LastError(); ok {
+		_spec.SetField(source.FieldLastError, field.TypeString, value)
+	}
+	if _u.mutation.LastErrorCleared() {
+		_spec.ClearField(source.FieldLastError, field.TypeString)
+	}
+	if _u.mutation.PathsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.PathsTable,
+			Columns: []string{source.PathsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sourcepath.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedPathsIDs(); len(nodes) > 0 && !_u.mutation.PathsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.PathsTable,
+			Columns: []string{source.PathsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sourcepath.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PathsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.PathsTable,
+			Columns: []string{source.PathsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sourcepath.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _u.mutation.LibrariesCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -566,46 +674,6 @@ func (_u *SourceUpdateOne) SetNillableAPIKeyVariable(v *string) *SourceUpdateOne
 	return _u
 }
 
-// SetRootPath sets the "root_path" field.
-func (_u *SourceUpdateOne) SetRootPath(v string) *SourceUpdateOne {
-	_u.mutation.SetRootPath(v)
-	return _u
-}
-
-// SetNillableRootPath sets the "root_path" field if the given value is not nil.
-func (_u *SourceUpdateOne) SetNillableRootPath(v *string) *SourceUpdateOne {
-	if v != nil {
-		_u.SetRootPath(*v)
-	}
-	return _u
-}
-
-// ClearRootPath clears the value of the "root_path" field.
-func (_u *SourceUpdateOne) ClearRootPath() *SourceUpdateOne {
-	_u.mutation.ClearRootPath()
-	return _u
-}
-
-// SetLocalPath sets the "local_path" field.
-func (_u *SourceUpdateOne) SetLocalPath(v string) *SourceUpdateOne {
-	_u.mutation.SetLocalPath(v)
-	return _u
-}
-
-// SetNillableLocalPath sets the "local_path" field if the given value is not nil.
-func (_u *SourceUpdateOne) SetNillableLocalPath(v *string) *SourceUpdateOne {
-	if v != nil {
-		_u.SetLocalPath(*v)
-	}
-	return _u
-}
-
-// ClearLocalPath clears the value of the "local_path" field.
-func (_u *SourceUpdateOne) ClearLocalPath() *SourceUpdateOne {
-	_u.mutation.ClearLocalPath()
-	return _u
-}
-
 // SetKind sets the "kind" field.
 func (_u *SourceUpdateOne) SetKind(v source.Kind) *SourceUpdateOne {
 	_u.mutation.SetKind(v)
@@ -618,6 +686,81 @@ func (_u *SourceUpdateOne) SetNillableKind(v *source.Kind) *SourceUpdateOne {
 		_u.SetKind(*v)
 	}
 	return _u
+}
+
+// SetVersion sets the "version" field.
+func (_u *SourceUpdateOne) SetVersion(v string) *SourceUpdateOne {
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *SourceUpdateOne) SetNillableVersion(v *string) *SourceUpdateOne {
+	if v != nil {
+		_u.SetVersion(*v)
+	}
+	return _u
+}
+
+// ClearVersion clears the value of the "version" field.
+func (_u *SourceUpdateOne) ClearVersion() *SourceUpdateOne {
+	_u.mutation.ClearVersion()
+	return _u
+}
+
+// SetContactedAt sets the "contacted_at" field.
+func (_u *SourceUpdateOne) SetContactedAt(v time.Time) *SourceUpdateOne {
+	_u.mutation.SetContactedAt(v)
+	return _u
+}
+
+// SetNillableContactedAt sets the "contacted_at" field if the given value is not nil.
+func (_u *SourceUpdateOne) SetNillableContactedAt(v *time.Time) *SourceUpdateOne {
+	if v != nil {
+		_u.SetContactedAt(*v)
+	}
+	return _u
+}
+
+// ClearContactedAt clears the value of the "contacted_at" field.
+func (_u *SourceUpdateOne) ClearContactedAt() *SourceUpdateOne {
+	_u.mutation.ClearContactedAt()
+	return _u
+}
+
+// SetLastError sets the "last_error" field.
+func (_u *SourceUpdateOne) SetLastError(v string) *SourceUpdateOne {
+	_u.mutation.SetLastError(v)
+	return _u
+}
+
+// SetNillableLastError sets the "last_error" field if the given value is not nil.
+func (_u *SourceUpdateOne) SetNillableLastError(v *string) *SourceUpdateOne {
+	if v != nil {
+		_u.SetLastError(*v)
+	}
+	return _u
+}
+
+// ClearLastError clears the value of the "last_error" field.
+func (_u *SourceUpdateOne) ClearLastError() *SourceUpdateOne {
+	_u.mutation.ClearLastError()
+	return _u
+}
+
+// AddPathIDs adds the "paths" edge to the SourcePath entity by IDs.
+func (_u *SourceUpdateOne) AddPathIDs(ids ...uuid.UUID) *SourceUpdateOne {
+	_u.mutation.AddPathIDs(ids...)
+	return _u
+}
+
+// AddPaths adds the "paths" edges to the SourcePath entity.
+func (_u *SourceUpdateOne) AddPaths(v ...*SourcePath) *SourceUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddPathIDs(ids...)
 }
 
 // AddLibraryIDs adds the "libraries" edge to the LibrarySource entity by IDs.
@@ -668,6 +811,27 @@ func (_u *SourceUpdateOne) AddMemberships(v ...*LibraryItem) *SourceUpdateOne {
 // Mutation returns the SourceMutation object of the builder.
 func (_u *SourceUpdateOne) Mutation() *SourceMutation {
 	return _u.mutation
+}
+
+// ClearPaths clears all "paths" edges to the SourcePath entity.
+func (_u *SourceUpdateOne) ClearPaths() *SourceUpdateOne {
+	_u.mutation.ClearPaths()
+	return _u
+}
+
+// RemovePathIDs removes the "paths" edge to SourcePath entities by IDs.
+func (_u *SourceUpdateOne) RemovePathIDs(ids ...uuid.UUID) *SourceUpdateOne {
+	_u.mutation.RemovePathIDs(ids...)
+	return _u
+}
+
+// RemovePaths removes "paths" edges to SourcePath entities.
+func (_u *SourceUpdateOne) RemovePaths(v ...*SourcePath) *SourceUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemovePathIDs(ids...)
 }
 
 // ClearLibraries clears all "libraries" edges to the LibrarySource entity.
@@ -836,20 +1000,71 @@ func (_u *SourceUpdateOne) sqlSave(ctx context.Context) (_node *Source, err erro
 	if value, ok := _u.mutation.APIKeyVariable(); ok {
 		_spec.SetField(source.FieldAPIKeyVariable, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.RootPath(); ok {
-		_spec.SetField(source.FieldRootPath, field.TypeString, value)
-	}
-	if _u.mutation.RootPathCleared() {
-		_spec.ClearField(source.FieldRootPath, field.TypeString)
-	}
-	if value, ok := _u.mutation.LocalPath(); ok {
-		_spec.SetField(source.FieldLocalPath, field.TypeString, value)
-	}
-	if _u.mutation.LocalPathCleared() {
-		_spec.ClearField(source.FieldLocalPath, field.TypeString)
-	}
 	if value, ok := _u.mutation.Kind(); ok {
 		_spec.SetField(source.FieldKind, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(source.FieldVersion, field.TypeString, value)
+	}
+	if _u.mutation.VersionCleared() {
+		_spec.ClearField(source.FieldVersion, field.TypeString)
+	}
+	if value, ok := _u.mutation.ContactedAt(); ok {
+		_spec.SetField(source.FieldContactedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ContactedAtCleared() {
+		_spec.ClearField(source.FieldContactedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LastError(); ok {
+		_spec.SetField(source.FieldLastError, field.TypeString, value)
+	}
+	if _u.mutation.LastErrorCleared() {
+		_spec.ClearField(source.FieldLastError, field.TypeString)
+	}
+	if _u.mutation.PathsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.PathsTable,
+			Columns: []string{source.PathsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sourcepath.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedPathsIDs(); len(nodes) > 0 && !_u.mutation.PathsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.PathsTable,
+			Columns: []string{source.PathsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sourcepath.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PathsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.PathsTable,
+			Columns: []string{source.PathsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sourcepath.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _u.mutation.LibrariesCleared() {
 		edge := &sqlgraph.EdgeSpec{

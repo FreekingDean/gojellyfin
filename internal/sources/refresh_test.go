@@ -64,6 +64,8 @@ func newFixture(t *testing.T, reported *[]movie) *fixture {
 	radarr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
+		case "/api/v3/system/status":
+			_ = json.NewEncoder(w).Encode(map[string]any{"version": "5.14.0"})
 		case "/api/v3/tag":
 			_ = json.NewEncoder(w).Encode([]map[string]any{
 				{"id": 1, "label": "kids"},
@@ -82,11 +84,17 @@ func newFixture(t *testing.T, reported *[]movie) *fixture {
 		SetURL(radarr.URL).
 		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
 		SetKind(sourcemodel.KindRadarr).
-		SetRootPath("/media").
-		SetLocalPath("/media").
 		Save(context.Background())
 	if err != nil {
 		t.Fatalf("failed to create the source: %v", err)
+	}
+
+	if err := client.SourcePath.Create().
+		SetSourceID(source.ID).
+		SetRemotePath("/media").
+		SetLocalPath("/media").
+		Exec(context.Background()); err != nil {
+		t.Fatalf("failed to map the source's folder: %v", err)
 	}
 
 	records := items.New(client)

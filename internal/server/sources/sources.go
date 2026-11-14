@@ -2,6 +2,7 @@ package sources
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -36,34 +37,97 @@ func (s *Server) GoJellyfinListSources(
 
 	resp := make([]api.Source, len(configured))
 	for i, entry := range configured {
-		resp[i] = modelToParams(entry)
+		resp[i] = sourceDto(entry)
 	}
 
 	return api.GoJellyfinListSources200JSONResponse(resp), nil
 }
 
-func (s *Server) GoJellyfinUpdateSources(
+func (s *Server) GoJellyfinGetSource(
 	ctx context.Context,
-	request api.GoJellyfinUpdateSourcesRequestObject,
-) (api.GoJellyfinUpdateSourcesResponseObject, error) {
-	if request.Body == nil {
-		return nil, fmt.Errorf("no request body")
+	request api.GoJellyfinGetSourceRequestObject,
+) (api.GoJellyfinGetSourceResponseObject, error) {
+	entry, err := s.sources.Get(ctx, request.SourceId)
+	if errors.Is(err, sources.ErrNotFound) {
+		return api.GoJellyfinGetSource404Response{}, nil
 	}
-
-	configured := make([]sources.Configured, len(*request.Body))
-	for i, source := range *request.Body {
-		entry, err := paramsToModel(source)
-		if err != nil {
-			return nil, err
-		}
-		configured[i] = entry
-	}
-
-	if err := s.sources.Update(ctx, configured); err != nil {
+	if err != nil {
 		return nil, err
 	}
 
-	return api.GoJellyfinUpdateSources204Response{}, nil
+	return api.GoJellyfinGetSource200JSONResponse(sourceDto(entry)), nil
+}
+
+func (s *Server) GoJellyfinCreateSource(
+	ctx context.Context,
+	request api.GoJellyfinCreateSourceRequestObject,
+) (api.GoJellyfinCreateSourceResponseObject, error) {
+	if request.Body == nil {
+		return api.GoJellyfinCreateSource400JSONResponse{Message: "no request body"}, nil
+	}
+
+	entry, err := configured(*request.Body)
+	if err != nil {
+		return api.GoJellyfinCreateSource400JSONResponse{Message: err.Error()}, nil
+	}
+
+	saved, err := s.sources.Create(ctx, entry)
+	if errors.Is(err, sources.ErrInvalid) {
+		return api.GoJellyfinCreateSource400JSONResponse{Message: err.Error()}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return api.GoJellyfinCreateSource200JSONResponse(sourceDto(saved)), nil
+}
+
+func (s *Server) GoJellyfinUpdateSource(
+	ctx context.Context,
+	request api.GoJellyfinUpdateSourceRequestObject,
+) (api.GoJellyfinUpdateSourceResponseObject, error) {
+	if request.Body == nil {
+		return api.GoJellyfinUpdateSource400JSONResponse{Message: "no request body"}, nil
+	}
+
+	entry, err := configured(*request.Body)
+	if err != nil {
+		return api.GoJellyfinUpdateSource400JSONResponse{Message: err.Error()}, nil
+	}
+
+	saved, err := s.sources.Update(ctx, request.SourceId, entry)
+	switch {
+	case errors.Is(err, sources.ErrNotFound):
+		return api.GoJellyfinUpdateSource404Response{}, nil
+	case errors.Is(err, sources.ErrInvalid):
+		return api.GoJellyfinUpdateSource400JSONResponse{Message: err.Error()}, nil
+	case err != nil:
+		return nil, err
+	}
+
+	return api.GoJellyfinUpdateSource200JSONResponse(sourceDto(saved)), nil
+}
+
+func (s *Server) GoJellyfinDeleteSource(
+	ctx context.Context,
+	request api.GoJellyfinDeleteSourceRequestObject,
+) (api.GoJellyfinDeleteSourceResponseObject, error) {
+	err := s.sources.Delete(ctx, request.SourceId)
+	if errors.Is(err, sources.ErrNotFound) {
+		return api.GoJellyfinDeleteSource404Response{}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return api.GoJellyfinDeleteSource204Response{}, nil
+}
+
+func (s *Server) GoJellyfinListSourceApiKeyVariables(
+	_ context.Context,
+	_ api.GoJellyfinListSourceApiKeyVariablesRequestObject,
+) (api.GoJellyfinListSourceApiKeyVariablesResponseObject, error) {
+	return api.GoJellyfinListSourceApiKeyVariables200JSONResponse(s.sources.APIKeyVariables()), nil
 }
 
 func (s *Server) GoJellyfinTestSource(
@@ -74,12 +138,15 @@ func (s *Server) GoJellyfinTestSource(
 		return unreachable("no request body"), nil
 	}
 
-	if err := s.sources.Test(ctx, request.Body.Url, request.Body.ApiKeyVariable); err != nil {
+	found, err := s.sources.Test(ctx, request.Body.Url, request.Body.ApiKeyVariable)
+	if err != nil {
 		return unreachable(err.Error()), nil
 	}
 
 	return api.GoJellyfinTestSource200JSONResponse{
-		Reachable: true,
+		Reachable:   true,
+		Version:     apiutil.Ptr(found.Version),
+		RootFolders: apiutil.Ptr(found.RootFolders),
 	}, nil
 }
 
@@ -90,7 +157,7 @@ func unreachable(reason string) api.GoJellyfinTestSource200JSONResponse {
 	}
 }
 
-func modelToParams(entry sources.Configured) api.Source {
+func sourceDto(entry sources.Configured) api.Source {
 	bound := make([]api.SourceLibrary, len(entry.Libraries))
 	for i, library := range entry.Libraries {
 		bound[i] = api.SourceLibrary{
@@ -101,32 +168,51 @@ func modelToParams(entry sources.Configured) api.Source {
 		}
 	}
 
+	paths := make([]api.SourcePath, len(entry.Source.Paths))
+	for i, mapping := range entry.Source.Paths {
+		paths[i] = api.SourcePath{
+			RemotePath: mapping.RemotePath,
+			LocalPath:  mapping.LocalPath,
+		}
+	}
+
 	return api.Source{
+		Id:             apiutil.Ptr(entry.Source.ID),
 		Name:           apiutil.Ptr(entry.Source.Name),
 		Kind:           apiutil.Ptr(apiKind(entry.Source.Kind)),
 		Url:            apiutil.Ptr(entry.Source.URL),
-		RootPath:       apiutil.Ptr(entry.Source.RootPath),
-		LocalPath:      apiutil.Ptr(entry.Source.LocalPath),
 		ApiKeyVariable: apiutil.Ptr(entry.Source.APIKeyVariable),
+		Paths:          apiutil.Ptr(paths),
 		Libraries:      apiutil.Ptr(bound),
+		Version:        apiutil.ZeroOrNilPtr(entry.Source.Version),
+		ContactedAt:    entry.Source.ContactedAt,
+		LastError:      apiutil.ZeroOrNilPtr(entry.Source.LastError),
 	}
 }
 
-func paramsToModel(req api.Source) (sources.Configured, error) {
+func configured(req api.Source) (sources.Configured, error) {
 	kind, err := modelKind(apiutil.Deref(req.Kind))
 	if err != nil {
 		return sources.Configured{}, err
 	}
 
+	mapped := apiutil.Deref(req.Paths)
+	paths := make([]*sources.Path, len(mapped))
+	for i, mapping := range mapped {
+		paths[i] = &sources.Path{
+			RemotePath: strings.TrimSpace(mapping.RemotePath),
+			LocalPath:  strings.TrimSpace(mapping.LocalPath),
+		}
+	}
+
 	bound := apiutil.Deref(req.Libraries)
 	entry := sources.Configured{
 		Source: sources.Source{
-			Name:           apiutil.Deref(req.Name),
+			Name:           strings.TrimSpace(apiutil.Deref(req.Name)),
 			Kind:           kind,
-			URL:            apiutil.Deref(req.Url),
-			RootPath:       apiutil.Deref(req.RootPath),
-			LocalPath:      apiutil.Deref(req.LocalPath),
-			APIKeyVariable: apiutil.Deref(req.ApiKeyVariable),
+			URL:            strings.TrimSpace(apiutil.Deref(req.Url)),
+			APIKeyVariable: strings.TrimSpace(apiutil.Deref(req.ApiKeyVariable)),
+			Paths:          paths,
 		},
 		Libraries: make([]sources.LibrarySource, len(bound)),
 	}
@@ -134,7 +220,7 @@ func paramsToModel(req api.Source) (sources.Configured, error) {
 	for i, library := range bound {
 		entry.Libraries[i] = sources.LibrarySource{
 			LibraryID: library.Id,
-			TagFilter: apiutil.Deref(library.TagFilter),
+			TagFilter: strings.TrimSpace(apiutil.Deref(library.TagFilter)),
 		}
 	}
 

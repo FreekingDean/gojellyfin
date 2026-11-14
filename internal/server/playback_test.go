@@ -135,8 +135,6 @@ func newPlaybackFixture(t *testing.T) *playbackFixture {
 		SetURL("http://" + uuid.NewString() + ".invalid").
 		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
 		SetKind(downloadermodel.KindRadarr).
-		SetRootPath("/media").
-		SetLocalPath("/media").
 		Save(context.Background())
 	if err != nil {
 		t.Fatalf("failed to create the source: %v", err)
@@ -592,8 +590,6 @@ func (f *playbackFixture) newDownloader(t *testing.T) uuid.UUID {
 		SetURL("http://" + uuid.NewString() + ".invalid").
 		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
 		SetKind(downloadermodel.KindRadarr).
-		SetRootPath("/media").
-		SetLocalPath("/media").
 		Save(context.Background())
 	if err != nil {
 		t.Fatalf("failed to create the source: %v", err)

@@ -38,6 +38,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/quickconnectrequest"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
+	"github.com/FreekingDean/gojellyfin/internal/store/sourcepath"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
@@ -96,6 +97,8 @@ type Client struct {
 	Session *SessionClient
 	// Source is the client for interacting with the Source builders.
 	Source *SourceClient
+	// SourcePath is the client for interacting with the SourcePath builders.
+	SourcePath *SourcePathClient
 	// Studio is the client for interacting with the Studio builders.
 	Studio *StudioClient
 	// User is the client for interacting with the User builders.
@@ -139,6 +142,7 @@ func (c *Client) init() {
 	c.QuickConnectRequest = NewQuickConnectRequestClient(c.config)
 	c.Session = NewSessionClient(c.config)
 	c.Source = NewSourceClient(c.config)
+	c.SourcePath = NewSourcePathClient(c.config)
 	c.Studio = NewStudioClient(c.config)
 	c.User = NewUserClient(c.config)
 	c.UserConfiguration = NewUserConfigurationClient(c.config)
@@ -258,6 +262,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		QuickConnectRequest: NewQuickConnectRequestClient(cfg),
 		Session:             NewSessionClient(cfg),
 		Source:              NewSourceClient(cfg),
+		SourcePath:          NewSourcePathClient(cfg),
 		Studio:              NewStudioClient(cfg),
 		User:                NewUserClient(cfg),
 		UserConfiguration:   NewUserConfigurationClient(cfg),
@@ -304,6 +309,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		QuickConnectRequest: NewQuickConnectRequestClient(cfg),
 		Session:             NewSessionClient(cfg),
 		Source:              NewSourceClient(cfg),
+		SourcePath:          NewSourcePathClient(cfg),
 		Studio:              NewStudioClient(cfg),
 		User:                NewUserClient(cfg),
 		UserConfiguration:   NewUserConfigurationClient(cfg),
@@ -342,7 +348,8 @@ func (c *Client) Use(hooks ...Hook) {
 		c.DisplayPreferences, c.Genre, c.Image, c.Item, c.ItemSource, c.Library,
 		c.LibraryItem, c.LibraryOptions, c.LibrarySource, c.MediaStream, c.Person,
 		c.Playlist, c.PlaylistEntry, c.PlaylistShare, c.QuickConnectRequest, c.Session,
-		c.Source, c.Studio, c.User, c.UserConfiguration, c.UserItemData, c.UserPolicy,
+		c.Source, c.SourcePath, c.Studio, c.User, c.UserConfiguration, c.UserItemData,
+		c.UserPolicy,
 	} {
 		n.Use(hooks...)
 	}
@@ -356,7 +363,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.DisplayPreferences, c.Genre, c.Image, c.Item, c.ItemSource, c.Library,
 		c.LibraryItem, c.LibraryOptions, c.LibrarySource, c.MediaStream, c.Person,
 		c.Playlist, c.PlaylistEntry, c.PlaylistShare, c.QuickConnectRequest, c.Session,
-		c.Source, c.Studio, c.User, c.UserConfiguration, c.UserItemData, c.UserPolicy,
+		c.Source, c.SourcePath, c.Studio, c.User, c.UserConfiguration, c.UserItemData,
+		c.UserPolicy,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -409,6 +417,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Session.mutate(ctx, m)
 	case *SourceMutation:
 		return c.Source.mutate(ctx, m)
+	case *SourcePathMutation:
+		return c.SourcePath.mutate(ctx, m)
 	case *StudioMutation:
 		return c.Studio.mutate(ctx, m)
 	case *UserMutation:
@@ -4045,6 +4055,22 @@ func (c *SourceClient) GetX(ctx context.Context, id uuid.UUID) *Source {
 	return obj
 }
 
+// QueryPaths queries the paths edge of a Source.
+func (c *SourceClient) QueryPaths(_m *Source) *SourcePathQuery {
+	query := (&SourcePathClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(source.Table, source.FieldID, id),
+			sqlgraph.To(sourcepath.Table, sourcepath.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, source.PathsTable, source.PathsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryLibraries queries the libraries edge of a Source.
 func (c *SourceClient) QueryLibraries(_m *Source) *LibrarySourceQuery {
 	query := (&LibrarySourceClient{config: c.config}).Query()
@@ -4115,6 +4141,155 @@ func (c *SourceClient) mutate(ctx context.Context, m *SourceMutation) (Value, er
 		return (&SourceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("store: unknown Source mutation op: %q", m.Op())
+	}
+}
+
+// SourcePathClient is a client for the SourcePath schema.
+type SourcePathClient struct {
+	config
+}
+
+// NewSourcePathClient returns a client for the SourcePath from the given config.
+func NewSourcePathClient(c config) *SourcePathClient {
+	return &SourcePathClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `sourcepath.Hooks(f(g(h())))`.
+func (c *SourcePathClient) Use(hooks ...Hook) {
+	c.hooks.SourcePath = append(c.hooks.SourcePath, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `sourcepath.Intercept(f(g(h())))`.
+func (c *SourcePathClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SourcePath = append(c.inters.SourcePath, interceptors...)
+}
+
+// Create returns a builder for creating a SourcePath entity.
+func (c *SourcePathClient) Create() *SourcePathCreate {
+	mutation := newSourcePathMutation(c.config, OpCreate)
+	return &SourcePathCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SourcePath entities.
+func (c *SourcePathClient) CreateBulk(builders ...*SourcePathCreate) *SourcePathCreateBulk {
+	return &SourcePathCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SourcePathClient) MapCreateBulk(slice any, setFunc func(*SourcePathCreate, int)) *SourcePathCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SourcePathCreateBulk{err: fmt.Errorf("calling to SourcePathClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SourcePathCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SourcePathCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SourcePath.
+func (c *SourcePathClient) Update() *SourcePathUpdate {
+	mutation := newSourcePathMutation(c.config, OpUpdate)
+	return &SourcePathUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SourcePathClient) UpdateOne(_m *SourcePath) *SourcePathUpdateOne {
+	mutation := newSourcePathMutation(c.config, OpUpdateOne, withSourcePath(_m))
+	return &SourcePathUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SourcePathClient) UpdateOneID(id uuid.UUID) *SourcePathUpdateOne {
+	mutation := newSourcePathMutation(c.config, OpUpdateOne, withSourcePathID(id))
+	return &SourcePathUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SourcePath.
+func (c *SourcePathClient) Delete() *SourcePathDelete {
+	mutation := newSourcePathMutation(c.config, OpDelete)
+	return &SourcePathDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SourcePathClient) DeleteOne(_m *SourcePath) *SourcePathDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SourcePathClient) DeleteOneID(id uuid.UUID) *SourcePathDeleteOne {
+	builder := c.Delete().Where(sourcepath.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SourcePathDeleteOne{builder}
+}
+
+// Query returns a query builder for SourcePath.
+func (c *SourcePathClient) Query() *SourcePathQuery {
+	return &SourcePathQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSourcePath},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SourcePath entity by its id.
+func (c *SourcePathClient) Get(ctx context.Context, id uuid.UUID) (*SourcePath, error) {
+	return c.Query().Where(sourcepath.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SourcePathClient) GetX(ctx context.Context, id uuid.UUID) *SourcePath {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QuerySource queries the source edge of a SourcePath.
+func (c *SourcePathClient) QuerySource(_m *SourcePath) *SourceQuery {
+	query := (&SourceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sourcepath.Table, sourcepath.FieldID, id),
+			sqlgraph.To(source.Table, source.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, sourcepath.SourceTable, sourcepath.SourceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *SourcePathClient) Hooks() []Hook {
+	return c.hooks.SourcePath
+}
+
+// Interceptors returns the client interceptors.
+func (c *SourcePathClient) Interceptors() []Interceptor {
+	return c.inters.SourcePath
+}
+
+func (c *SourcePathClient) mutate(ctx context.Context, m *SourcePathMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SourcePathCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SourcePathUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SourcePathUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SourcePathDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("store: unknown SourcePath mutation op: %q", m.Op())
 	}
 }
 
@@ -5013,15 +5188,15 @@ type (
 		ActivityLogEntry, ApiKey, Configuration, Credit, Device, DisplayPreferences,
 		Genre, Image, Item, ItemSource, Library, LibraryItem, LibraryOptions,
 		LibrarySource, MediaStream, Person, Playlist, PlaylistEntry, PlaylistShare,
-		QuickConnectRequest, Session, Source, Studio, User, UserConfiguration,
-		UserItemData, UserPolicy []ent.Hook
+		QuickConnectRequest, Session, Source, SourcePath, Studio, User,
+		UserConfiguration, UserItemData, UserPolicy []ent.Hook
 	}
 	inters struct {
 		ActivityLogEntry, ApiKey, Configuration, Credit, Device, DisplayPreferences,
 		Genre, Image, Item, ItemSource, Library, LibraryItem, LibraryOptions,
 		LibrarySource, MediaStream, Person, Playlist, PlaylistEntry, PlaylistShare,
-		QuickConnectRequest, Session, Source, Studio, User, UserConfiguration,
-		UserItemData, UserPolicy []ent.Interceptor
+		QuickConnectRequest, Session, Source, SourcePath, Studio, User,
+		UserConfiguration, UserItemData, UserPolicy []ent.Interceptor
 	}
 )
 

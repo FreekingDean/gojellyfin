@@ -28,12 +28,14 @@ type Source struct {
 	URL string `json:"url,omitempty"`
 	// APIKeyVariable holds the value of the "api_key_variable" field.
 	APIKeyVariable string `json:"api_key_variable,omitempty"`
-	// RootPath holds the value of the "root_path" field.
-	RootPath string `json:"root_path,omitempty"`
-	// LocalPath holds the value of the "local_path" field.
-	LocalPath string `json:"local_path,omitempty"`
 	// Kind holds the value of the "kind" field.
 	Kind source.Kind `json:"kind,omitempty"`
+	// Version holds the value of the "version" field.
+	Version string `json:"version,omitempty"`
+	// ContactedAt holds the value of the "contacted_at" field.
+	ContactedAt *time.Time `json:"contacted_at,omitempty"`
+	// LastError holds the value of the "last_error" field.
+	LastError string `json:"last_error,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SourceQuery when eager-loading is set.
 	Edges        SourceEdges `json:"edges"`
@@ -42,6 +44,8 @@ type Source struct {
 
 // SourceEdges holds the relations/edges for other nodes in the graph.
 type SourceEdges struct {
+	// Paths holds the value of the paths edge.
+	Paths []*SourcePath `json:"paths,omitempty"`
 	// Libraries holds the value of the libraries edge.
 	Libraries []*LibrarySource `json:"libraries,omitempty"`
 	// Files holds the value of the files edge.
@@ -50,13 +54,22 @@ type SourceEdges struct {
 	Memberships []*LibraryItem `json:"memberships,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
+}
+
+// PathsOrErr returns the Paths value or an error if the edge
+// was not loaded in eager-loading.
+func (e SourceEdges) PathsOrErr() ([]*SourcePath, error) {
+	if e.loadedTypes[0] {
+		return e.Paths, nil
+	}
+	return nil, &NotLoadedError{edge: "paths"}
 }
 
 // LibrariesOrErr returns the Libraries value or an error if the edge
 // was not loaded in eager-loading.
 func (e SourceEdges) LibrariesOrErr() ([]*LibrarySource, error) {
-	if e.loadedTypes[0] {
+	if e.loadedTypes[1] {
 		return e.Libraries, nil
 	}
 	return nil, &NotLoadedError{edge: "libraries"}
@@ -65,7 +78,7 @@ func (e SourceEdges) LibrariesOrErr() ([]*LibrarySource, error) {
 // FilesOrErr returns the Files value or an error if the edge
 // was not loaded in eager-loading.
 func (e SourceEdges) FilesOrErr() ([]*ItemSource, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		return e.Files, nil
 	}
 	return nil, &NotLoadedError{edge: "files"}
@@ -74,7 +87,7 @@ func (e SourceEdges) FilesOrErr() ([]*ItemSource, error) {
 // MembershipsOrErr returns the Memberships value or an error if the edge
 // was not loaded in eager-loading.
 func (e SourceEdges) MembershipsOrErr() ([]*LibraryItem, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.Memberships, nil
 	}
 	return nil, &NotLoadedError{edge: "memberships"}
@@ -85,9 +98,9 @@ func (*Source) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case source.FieldName, source.FieldURL, source.FieldAPIKeyVariable, source.FieldRootPath, source.FieldLocalPath, source.FieldKind:
+		case source.FieldName, source.FieldURL, source.FieldAPIKeyVariable, source.FieldKind, source.FieldVersion, source.FieldLastError:
 			values[i] = new(sql.NullString)
-		case source.FieldCreatedAt, source.FieldUpdatedAt:
+		case source.FieldCreatedAt, source.FieldUpdatedAt, source.FieldContactedAt:
 			values[i] = new(sql.NullTime)
 		case source.FieldID:
 			values[i] = new(uuid.UUID)
@@ -142,23 +155,30 @@ func (_m *Source) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.APIKeyVariable = value.String
 			}
-		case source.FieldRootPath:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field root_path", values[i])
-			} else if value.Valid {
-				_m.RootPath = value.String
-			}
-		case source.FieldLocalPath:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field local_path", values[i])
-			} else if value.Valid {
-				_m.LocalPath = value.String
-			}
 		case source.FieldKind:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field kind", values[i])
 			} else if value.Valid {
 				_m.Kind = source.Kind(value.String)
+			}
+		case source.FieldVersion:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field version", values[i])
+			} else if value.Valid {
+				_m.Version = value.String
+			}
+		case source.FieldContactedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field contacted_at", values[i])
+			} else if value.Valid {
+				_m.ContactedAt = new(time.Time)
+				*_m.ContactedAt = value.Time
+			}
+		case source.FieldLastError:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field last_error", values[i])
+			} else if value.Valid {
+				_m.LastError = value.String
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -171,6 +191,11 @@ func (_m *Source) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (_m *Source) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
+}
+
+// QueryPaths queries the "paths" edge of the Source entity.
+func (_m *Source) QueryPaths() *SourcePathQuery {
+	return NewSourceClient(_m.config).QueryPaths(_m)
 }
 
 // QueryLibraries queries the "libraries" edge of the Source entity.
@@ -226,14 +251,19 @@ func (_m *Source) String() string {
 	builder.WriteString("api_key_variable=")
 	builder.WriteString(_m.APIKeyVariable)
 	builder.WriteString(", ")
-	builder.WriteString("root_path=")
-	builder.WriteString(_m.RootPath)
-	builder.WriteString(", ")
-	builder.WriteString("local_path=")
-	builder.WriteString(_m.LocalPath)
-	builder.WriteString(", ")
 	builder.WriteString("kind=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Kind))
+	builder.WriteString(", ")
+	builder.WriteString("version=")
+	builder.WriteString(_m.Version)
+	builder.WriteString(", ")
+	if v := _m.ContactedAt; v != nil {
+		builder.WriteString("contacted_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("last_error=")
+	builder.WriteString(_m.LastError)
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -15,14 +15,16 @@ func (Source) Fields() []ent.Field {
 		field.String("name").Unique(),
 		field.String("url").Unique(),
 		field.String("api_key_variable"),
-		field.String("root_path").Optional(),
-		field.String("local_path").Optional(),
-		field.Enum("kind").Values("radarr", "sonarr", "lidarr", "readarr", "bazarr"),
+		field.Enum("kind").Values("radarr", "sonarr"),
+		field.String("version").Optional(),
+		field.Time("contacted_at").Optional().Nillable(),
+		field.String("last_error").Optional(),
 	)
 }
 
 func (Source) Edges() []ent.Edge {
 	return []ent.Edge{
+		edge.To("paths", SourcePath.Type).Annotations(cascadeOnDelete),
 		edge.To("libraries", LibrarySource.Type).Annotations(cascadeOnDelete),
 		edge.To("files", ItemSource.Type).Annotations(cascadeOnDelete),
 		edge.To("memberships", LibraryItem.Type).Annotations(cascadeOnDelete),

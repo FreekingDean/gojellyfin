@@ -142,10 +142,16 @@ func seed() error {
 		SetURL("http://fixtures.invalid").
 		SetAPIKeyVariable(env.SourceAPIKeyPrefix + "FIXTURES").
 		SetKind(sourcemodel.KindRadarr).
-		SetRootPath("/fixtures").
-		SetLocalPath("/fixtures").
 		Save(ctx)
 	if err != nil {
+		return err
+	}
+
+	if err := client.SourcePath.Create().
+		SetSourceID(downloader.ID).
+		SetRemotePath("/fixtures").
+		SetLocalPath("/fixtures").
+		Exec(ctx); err != nil {
 		return err
 	}
 

@@ -271,15 +271,31 @@ func (Unimplemented) GetUtcTime(ctx context.Context, request GetUtcTimeRequestOb
 	return nil, ErrNotImplemented
 }
 
+func (Unimplemented) GoJellyfinListSourceApiKeyVariables(ctx context.Context, request GoJellyfinListSourceApiKeyVariablesRequestObject) (GoJellyfinListSourceApiKeyVariablesResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
 func (Unimplemented) GoJellyfinListSources(ctx context.Context, request GoJellyfinListSourcesRequestObject) (GoJellyfinListSourcesResponseObject, error) {
 	return nil, ErrNotImplemented
 }
 
-func (Unimplemented) GoJellyfinUpdateSources(ctx context.Context, request GoJellyfinUpdateSourcesRequestObject) (GoJellyfinUpdateSourcesResponseObject, error) {
+func (Unimplemented) GoJellyfinCreateSource(ctx context.Context, request GoJellyfinCreateSourceRequestObject) (GoJellyfinCreateSourceResponseObject, error) {
 	return nil, ErrNotImplemented
 }
 
 func (Unimplemented) GoJellyfinTestSource(ctx context.Context, request GoJellyfinTestSourceRequestObject) (GoJellyfinTestSourceResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) GoJellyfinDeleteSource(ctx context.Context, request GoJellyfinDeleteSourceRequestObject) (GoJellyfinDeleteSourceResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) GoJellyfinGetSource(ctx context.Context, request GoJellyfinGetSourceRequestObject) (GoJellyfinGetSourceResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) GoJellyfinUpdateSource(ctx context.Context, request GoJellyfinUpdateSourceRequestObject) (GoJellyfinUpdateSourceResponseObject, error) {
 	return nil, ErrNotImplemented
 }
 

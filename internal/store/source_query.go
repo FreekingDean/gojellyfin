@@ -18,6 +18,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
+	"github.com/FreekingDean/gojellyfin/internal/store/sourcepath"
 	"github.com/google/uuid"
 )
 
@@ -28,6 +29,7 @@ type SourceQuery struct {
 	order           []source.OrderOption
 	inters          []Interceptor
 	predicates      []predicate.Source
+	withPaths       *SourcePathQuery
 	withLibraries   *LibrarySourceQuery
 	withFiles       *ItemSourceQuery
 	withMemberships *LibraryItemQuery
@@ -66,6 +68,28 @@ func (_q *SourceQuery) Unique(unique bool) *SourceQuery {
 func (_q *SourceQuery) Order(o ...source.OrderOption) *SourceQuery {
 	_q.order = append(_q.order, o...)
 	return _q
+}
+
+// QueryPaths chains the current query on the "paths" edge.
+func (_q *SourceQuery) QueryPaths() *SourcePathQuery {
+	query := (&SourcePathClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(source.Table, source.FieldID, selector),
+			sqlgraph.To(sourcepath.Table, sourcepath.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, source.PathsTable, source.PathsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QueryLibraries chains the current query on the "libraries" edge.
@@ -326,6 +350,7 @@ func (_q *SourceQuery) Clone() *SourceQuery {
 		order:           append([]source.OrderOption{}, _q.order...),
 		inters:          append([]Interceptor{}, _q.inters...),
 		predicates:      append([]predicate.Source{}, _q.predicates...),
+		withPaths:       _q.withPaths.Clone(),
 		withLibraries:   _q.withLibraries.Clone(),
 		withFiles:       _q.withFiles.Clone(),
 		withMemberships: _q.withMemberships.Clone(),
@@ -333,6 +358,17 @@ func (_q *SourceQuery) Clone() *SourceQuery {
 		sql:  _q.sql.Clone(),
 		path: _q.path,
 	}
+}
+
+// WithPaths tells the query-builder to eager-load the nodes that are connected to
+// the "paths" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *SourceQuery) WithPaths(opts ...func(*SourcePathQuery)) *SourceQuery {
+	query := (&SourcePathClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withPaths = query
+	return _q
 }
 
 // WithLibraries tells the query-builder to eager-load the nodes that are connected to
@@ -446,7 +482,8 @@ func (_q *SourceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Sourc
 	var (
 		nodes       = []*Source{}
 		_spec       = _q.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
+			_q.withPaths != nil,
 			_q.withLibraries != nil,
 			_q.withFiles != nil,
 			_q.withMemberships != nil,
@@ -473,6 +510,13 @@ func (_q *SourceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Sourc
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := _q.withPaths; query != nil {
+		if err := _q.loadPaths(ctx, query, nodes,
+			func(n *Source) { n.Edges.Paths = []*SourcePath{} },
+			func(n *Source, e *SourcePath) { n.Edges.Paths = append(n.Edges.Paths, e) }); err != nil {
+			return nil, err
+		}
+	}
 	if query := _q.withLibraries; query != nil {
 		if err := _q.loadLibraries(ctx, query, nodes,
 			func(n *Source) { n.Edges.Libraries = []*LibrarySource{} },
@@ -497,6 +541,36 @@ func (_q *SourceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Sourc
 	return nodes, nil
 }
 
+func (_q *SourceQuery) loadPaths(ctx context.Context, query *SourcePathQuery, nodes []*Source, init func(*Source), assign func(*Source, *SourcePath)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Source)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(sourcepath.FieldSourceID)
+	}
+	query.Where(predicate.SourcePath(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(source.PathsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.SourceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "source_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 func (_q *SourceQuery) loadLibraries(ctx context.Context, query *LibrarySourceQuery, nodes []*Source, init func(*Source), assign func(*Source, *LibrarySource)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*Source)

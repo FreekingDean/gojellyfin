@@ -11,6 +11,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
+	"github.com/FreekingDean/gojellyfin/internal/store"
 	librarysourcemodel "github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 )
 
@@ -64,6 +65,10 @@ func (s *Service) recordSync(ctx context.Context, bindingID uuid.UUID, readErr e
 func (s *Service) read(ctx context.Context, binding Binding) error {
 	libraryID, sourceID := binding.Library.LibraryID, binding.Source.ID
 
+	if err := s.contact(ctx, binding.Source); err != nil {
+		return err
+	}
+
 	titles, err := s.Titles(ctx, binding)
 	if err != nil {
 		return err
@@ -115,7 +120,7 @@ func (s *Service) binding(ctx context.Context, libraryID, sourceID uuid.UUID) (B
 			librarysourcemodel.LibraryID(libraryID),
 			librarysourcemodel.SourceID(sourceID),
 		).
-		WithSource().
+		WithSource(func(query *store.SourceQuery) { query.WithPaths() }).
 		OnlyModel(ctx)
 	if err != nil {
 		return Binding{}, fmt.Errorf("failed to find the binding: %w", err)
