@@ -257,13 +257,11 @@ web:
   enabled: true
   replicas: 2
   client:
-    # Pin this to a released client, not to the API version the server
-    # announces: that is 12.0.0 out of the vendored spec, 12 has no released
-    # all-in-one image to copy a client out of, and a client newer than what is
-    # implemented calls endpoints that answer 501. 10.10.0 is what `make e2e`
-    # drives.
+    # Pin this to the client `make e2e` drives, which is the only one the
+    # suite has shown to work: a client newer than what is implemented calls
+    # endpoints that answer 501.
     repository: jellyfin/jellyfin
-    tag: "10.10.0"
+    tag: "12.4"
     pullPolicy: ""
     resources:
       requests:

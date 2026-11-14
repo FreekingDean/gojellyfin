@@ -67,6 +67,15 @@ async function open(page, name) {
     await card(page, name).locator('.cardScalable').click({ position: { x: 10, y: 10 }, timeout: 5000 });
     await expect(page).not.toHaveURL(from, { timeout: 5000 });
   }).toPass({ timeout: 30000 });
+  await expect(page.locator(VIEW)).toHaveCount(1);
 }
 
-module.exports = { test, expect, loadLogin, signIn, view, card, open };
+// The client draws its own app bar on a desktop-sized window, so the
+// dashboard is reached through the user menu rather than the side drawer.
+async function openDashboard(page) {
+  await page.getByRole('button', { name: 'User Menu' }).click();
+  await page.getByRole('menuitem', { name: 'Dashboard' }).click();
+  await expect(page).toHaveURL(/dashboard/);
+}
+
+module.exports = { test, expect, loadLogin, signIn, view, card, open, openDashboard };

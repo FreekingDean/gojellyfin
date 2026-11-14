@@ -1,4 +1,4 @@
-const { test, expect } = require('./fixtures');
+const { test, expect, openDashboard } = require('./fixtures');
 const { GRAB } = require('../setup/radarr');
 
 async function replaced(harness) {
@@ -38,9 +38,7 @@ async function remember(page, signed) {
 }
 
 async function openQueue(page) {
-  await page.locator('.headerButton.mainDrawerButton').click();
-  await page.locator('.mainDrawer').getByText('Dashboard').click();
-  await expect(page).toHaveURL(/dashboard/);
+  await openDashboard(page);
 
   await page.getByRole('link', { name: 'Requests and Reports' }).click();
   await expect(page).toHaveURL(/configurationpage\?name=requests/i);

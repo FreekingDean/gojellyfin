@@ -6,7 +6,7 @@ function itemId(page) {
   return new URL(page.url().replace('#', '')).searchParams.get('id');
 }
 
-const CLIENT = 'MediaBrowser Client="Jellyfin Web", Device="Chrome", DeviceId="seek-spec", Version="10.10.0"';
+const CLIENT = 'MediaBrowser Client="Jellyfin Web", Device="Chrome", DeviceId="seek-spec", Version="12.4"';
 
 async function authorization(page, harness) {
   const login = await page.request.post(harness.baseUrl + '/Users/AuthenticateByName', {

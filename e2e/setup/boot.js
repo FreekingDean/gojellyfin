@@ -51,7 +51,7 @@ const WANTED_SHOW = {
 };
 const SHELVES = 'recently-aired,new-releases,trending-movies,trending-shows';
 
-const CLIENT_IMAGE = 'jellyfin/jellyfin:10.10.0';
+const CLIENT_IMAGE = 'jellyfin/jellyfin:12.4';
 
 async function boot() {
   const adminUrl = process.env.DATABASE_URL;
