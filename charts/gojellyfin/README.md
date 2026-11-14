@@ -108,6 +108,7 @@ reads the environment.
 | `hostname` | `PUBLISHED_SERVER_URL` | `""` | The name clients reach the server by. The routes match it, and the public endpoints advertise `<scheme>://<hostname>`. Empty advertises no address at all — a client prefers `LocalAddress` when it believes it shares a network with the server, so naming one it cannot reach sends it nowhere |
 | `scheme` | | `https` | What the gateway in front of this listens on, and the only thing it is used for. Advertising `https` over a plain listener loses a client exactly as advertising a wrong hostname does |
 | `httpPort` | `HTTP_PORT` | `8081` | What the server listens on. The container port, the Service target and the probes follow it |
+| `env` | anything | `[]` | Extra container env for the API, the streaming pods and the worker, in Kubernetes' own `env` shape. It is rendered first, so another value can refer to one of these as `$(NAME)` — `tracing.otlpEndpoint: http://$(HOST_IP):4318` with `HOST_IP` read from `status.hostIP` reaches a node-local collector's OTLP/HTTP receiver, which is what the exporter speaks |
 | `database.existingSecret` | `DATABASE_URL` | `""` | Secret holding the URL. Empty means the release's own fullname |
 | `database.secretKey` | — | `DATABASE_URL` | Key within that Secret |
 | `tmdb.existingSecret` | `TMDB_API_KEY` | `""` | Secret holding the TMDB key. Empty turns metadata lookups off, so items keep their source's titles and get no artwork |
@@ -116,7 +117,7 @@ reads the environment.
 | `cors.enabled` | `CORS_ORIGINS` | `false` | Off reflects whatever origin asks; a literal `*` is not equivalent, because browsers reject it on credentialed requests |
 | `cors.origin` | | `""` | The one origin allowed when enabled. Enabling without one refuses to render: an empty value reflects every origin, so the restriction would restrict nothing |
 | `tracing.otlpEndpoint` | `OTEL_EXPORTER_OTLP_ENDPOINT` | `""` | Empty exports no traces |
-| `media.directories` | `MEDIA_DIRECTORIES` | `[]` | The roots the library browser offers; empty follows `media.mountPath` |
+| `media.directories` | `MEDIA_DIRECTORIES` | `[]` | The roots the library browser offers; empty follows `media.mountPath` and every `media.extraVolumes` path |
 | `temporal.hostPort` | `TEMPORAL_HOSTPORT` | `""` | Empty turns background work off and the server still starts |
 | `temporal.namespace` | `TEMPORAL_NAMESPACE` | `""` | Required once `hostPort` is set; the binary refuses to invent one, and so does the chart |
 | `api.transcoderJobs`, `streaming.transcoderJobs` | `TRANSCODER_JOBS` | `""` | Concurrent encodes on one pod. Empty follows the cpu request |
@@ -168,7 +169,7 @@ item is an API path, and nothing else has a reason to.
 ### Pods
 
 `pod` is merged into every pod the chart renders, and each workload's own `pod`
-overrides it key by key. Every key except `annotations` and
+overrides it key by key. Every key except `annotations`, `labels` and
 `containerSecurityContext` is passed through to the pod spec verbatim, so
 anything Kubernetes accepts there works without the chart naming it. A `false`
 or a `0` is passed through too; only an empty value is left out.
@@ -176,6 +177,7 @@ or a `0` is passed through too; only an empty value is left out.
 | Value | Default | Description |
 |---|---|---|
 | `pod.annotations` | `{}` | On the pod template's metadata |
+| `pod.labels` | `{}` | Added to the pod template's labels — a mesh opt-out like `istio.io/dataplane-mode: none`, say. The chart's selector labels win a collision, because a pod that stops matching its own Deployment's selector is orphaned rather than relabelled |
 | `pod.automountServiceAccountToken` | `false` | Nothing here talks to the Kubernetes API, so no pod carries a token |
 | `pod.containerSecurityContext` | no privilege escalation, drops ALL, `RuntimeDefault` seccomp | On each container, init containers included. No `runAsNonRoot` for the gojellyfin containers: the image's `USER` is a name rather than a uid and kubelet refuses to start a container whose non-rootness it cannot check numerically. The image drops privilege on its own. The web pod sets `runAsNonRoot` and uid 101, nginx's, at the pod level through `web.pod.securityContext`, so the init container copying the client out of the root-by-default `jellyfin/jellyfin` image runs unprivileged too |
 | `pod.securityContext` | `{}` | Pod-level, passed through |
@@ -206,9 +208,10 @@ declares. That is the point: the chart does not have to grow a value, and your
 
 | Value | Default | Description |
 |---|---|---|
-| `service.type`, `.port`, `.annotations` | `ClusterIP`, `80`, `{}` | Applied to all three Services. An Ingress needs a controller this chart cannot guess; `httpRoute` below is the supported edge |
+| `service.type`, `.port`, `.annotations`, `.labels` | `ClusterIP`, `80`, `{}`, `{}` | Applied to all three Services. An Ingress needs a controller this chart cannot guess; `httpRoute` below is the supported edge |
 | `media.mountPath` | `/media` | The same in every workload, by construction: the API hands ffmpeg the path stored on the item row, so the media has to resolve to the same path in every pod that reads it |
 | `media.volume` | `{}` | Any volume source — `persistentVolumeClaim`, `nfs`, `hostPath`. Empty mounts an `emptyDir`, which is a library with nothing in it |
+| `media.extraVolumes` | `[]` | More media beside the first, each `name`, `mountPath` and `volume`, mounted into every workload exactly as `media.volume` is — writable on the API, read-only elsewhere. A library whose files live on two claims needs both at the same path in every pod, for the same reason the first one does |
 
 ```yaml
 media:

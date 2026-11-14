@@ -24,6 +24,12 @@ image:
 # HTTP_PORT.
 httpPort: 8081
 
+# Extra environment for the API, the streaming pods and the worker, as a
+# container env list. It comes first, so a value elsewhere in the chart can
+# refer to one of these as $(NAME) — a node-local collector's address read off
+# status.hostIP, say.
+env: []
+
 database:
   # DATABASE_URL is required and the binary carries no default. Create the
   # Secret yourself so no credential passes through values. Empty names a
@@ -75,6 +81,15 @@ media:
   # Any volume source: persistentVolumeClaim, nfs, hostPath. Empty mounts an
   # emptyDir, which is a library with nothing in it.
   volume: {}
+  # More media beside it, each a name, a mountPath and a volume source, mounted
+  # into every workload the same way the first one is. Their paths join
+  # MEDIA_DIRECTORIES when that is left empty.
+  extraVolumes: []
+  # - name: archive
+  #   mountPath: /archive
+  #   volume:
+  #     persistentVolumeClaim:
+  #       claimName: archive
 
 # `gojellyfin migrate` as a pre-install/pre-upgrade hook. We will default this to true
 # whenever a release includes a migration. You may hardcode it to false if you want
@@ -96,12 +111,17 @@ service:
   type: ClusterIP
   port: 80
   annotations: {}
+  labels: {}
 
 # Merged into every pod the chart renders. A workload's own `pod:` overrides
 # this key by key, which is the escape hatch for anything the chart does not
 # name: a toleration, a runtime class, a topology constraint.
 pod:
   annotations: {}
+  # Added to the pod template's labels. The selector labels are the chart's and
+  # win a collision, because a pod that stops matching its own Deployment is
+  # orphaned rather than relabelled.
+  labels: {}
   # Nothing here talks to the Kubernetes API, so no pod is handed a token.
   automountServiceAccountToken: false
   imagePullSecrets: []

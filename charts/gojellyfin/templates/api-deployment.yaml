@@ -18,7 +18,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 8 }}
+        {{- include "gojellyfin.podLabels" (dict "root" $ "component" $component "pod" $pod) | nindent 8 }}
     spec:
       {{- with (include "gojellyfin.podSpec" $pod | trim) }}
       {{- . | nindent 6 }}
