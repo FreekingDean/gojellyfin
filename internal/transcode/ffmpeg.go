@@ -3,6 +3,7 @@ package transcode
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os/exec"
@@ -16,7 +17,9 @@ type process struct {
 	cmd    *exec.Cmd
 	stdout io.ReadCloser
 	output *bufio.Reader
-	errors *tail
+	stderr *tail
+	exited bool
+	exit   error
 }
 
 func start(ctx context.Context, spec Spec) (io.ReadCloser, error) {
@@ -27,8 +30,8 @@ func start(ctx context.Context, spec Spec) (io.ReadCloser, error) {
 	cmd := exec.CommandContext(ctx, "ffmpeg", spec.Args()...)
 	cmd.WaitDelay = time.Second
 
-	errors := &tail{limit: stderrLimit}
-	cmd.Stderr = errors
+	stderr := &tail{limit: stderrLimit}
+	cmd.Stderr = stderr
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -43,23 +46,38 @@ func start(ctx context.Context, spec Spec) (io.ReadCloser, error) {
 		_ = stdout.Close()
 		_ = cmd.Wait()
 
-		return nil, fmt.Errorf("ffmpeg produced no output: %s", errors)
+		return nil, fmt.Errorf("ffmpeg produced no output: %s", stderr)
 	}
 
-	return &process{cmd: cmd, stdout: stdout, output: output, errors: errors}, nil
+	return &process{cmd: cmd, stdout: stdout, output: output, stderr: stderr}, nil
 }
 
 func (p *process) Read(b []byte) (int, error) {
-	return p.output.Read(b)
+	n, err := p.output.Read(b)
+	if errors.Is(err, io.EOF) {
+		if exited := p.wait(); exited != nil {
+			return n, exited
+		}
+	}
+
+	return n, err
 }
 
 func (p *process) Close() error {
 	_ = p.stdout.Close()
-	if err := p.cmd.Wait(); err != nil {
-		return fmt.Errorf("ffmpeg exited: %w: %s", err, p.errors)
+
+	return p.wait()
+}
+
+func (p *process) wait() error {
+	if !p.exited {
+		p.exited = true
+		if err := p.cmd.Wait(); err != nil {
+			p.exit = fmt.Errorf("ffmpeg exited: %w: %s", err, p.stderr)
+		}
 	}
 
-	return nil
+	return p.exit
 }
 
 func UntilStalled(ctx context.Context, output io.Reader, timeout time.Duration, kill func()) io.Reader {

@@ -189,6 +189,7 @@ func Register(s *Server, apiServer *server.Server, sock *socket.Socket, streams 
 	for _, pattern := range streamRoutes {
 		m.HandleFunc(pattern, streams.Serve)
 	}
+	m.HandleFunc("DELETE /Videos/ActiveEncodings", streams.StopEncodings)
 	for _, pattern := range universalAudioRoutes {
 		m.HandleFunc(pattern, streams.ServeUniversal)
 	}

@@ -19,6 +19,10 @@ const TYPES = {
   '.webmanifest': 'application/manifest+json',
 };
 
+// Posters the seed painted, on the same origin as the client so the browser
+// lets them through and the server can fetch them for a collage.
+const POSTERS = '/fixture-posters';
+
 // One origin, the way the chart's httproute.yaml serves it: /web is a file on
 // disk and everything else is the API. Two would mean CORS and the client's
 // server picker before any assertion. /web/ConfigurationPage and
@@ -27,11 +31,15 @@ const TYPES = {
 // index.html instead of a list and the React dashboard dies on it.
 const API_UNDER_WEB = /^\/web\/configurationpages?(\?|$)/i;
 
-function start({ webRoot, apiPort }) {
+function start({ webRoot, apiPort, posterRoot }) {
   const server = http.createServer((request, response) => {
     const isWeb = request.url === '/web' || request.url.startsWith('/web/');
     if (isWeb && !API_UNDER_WEB.test(request.url)) {
-      serveFile(webRoot, request, response);
+      serveFile(webRoot, '/web', request, response);
+      return;
+    }
+    if (posterRoot && request.url.startsWith(POSTERS + '/')) {
+      serveFile(posterRoot, POSTERS, request, response);
       return;
     }
 
@@ -64,8 +72,8 @@ function rebuildHead(request) {
   return lines.join('\r\n') + '\r\n\r\n';
 }
 
-function serveFile(webRoot, request, response) {
-  const relative = decodeURIComponent(request.url.slice('/web'.length).split('?')[0]) || '/';
+function serveFile(webRoot, prefix, request, response) {
+  const relative = decodeURIComponent(request.url.slice(prefix.length).split('?')[0]) || '/';
   const resolved = path.join(webRoot, path.normalize(relative));
 
   if (!resolved.startsWith(webRoot)) {
@@ -116,4 +124,4 @@ function proxy(apiPort, request, response) {
   request.pipe(upstream);
 }
 
-module.exports = { start };
+module.exports = { start, POSTERS };

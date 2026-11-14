@@ -6,7 +6,7 @@
   "scripts": {
     "test": "playwright test",
     "visual": "node setup/visual.js",
-    "visual:update": "node setup/visual.js --update-snapshots"
+    "visual:update": "node setup/visual.js --update-snapshots=all"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0"

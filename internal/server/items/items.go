@@ -15,10 +15,11 @@ type Server struct {
 	policies  dto.Access
 	items     *items.Service
 	libraries *libraries.Service
+	collages  dto.Collages
 }
 
-func New(items *items.Service, libraries *libraries.Service, policies dto.Access) *Server {
-	return &Server{items: items, libraries: libraries, policies: policies}
+func New(items *items.Service, libraries *libraries.Service, policies dto.Access, collages dto.Collages) *Server {
+	return &Server{items: items, libraries: libraries, policies: policies, collages: collages}
 }
 
 func (s *Server) GetItems(ctx context.Context, request api.GetItemsRequestObject) (api.GetItemsResponseObject, error) {
@@ -38,7 +39,12 @@ func (s *Server) GetItem(ctx context.Context, request api.GetItemRequestObject) 
 			return api.GetItem403Response{}, nil
 		}
 
-		return api.GetItem200JSONResponse(dto.LibraryView(library)), nil
+		view, err := dto.LibraryView(ctx, s.collages, library)
+		if err != nil {
+			return nil, err
+		}
+
+		return api.GetItem200JSONResponse(view), nil
 	}
 
 	converted, err := dto.ItemDtos(ctx, s.items, []*items.Item{item})

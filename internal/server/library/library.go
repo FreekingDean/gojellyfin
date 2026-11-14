@@ -10,6 +10,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
@@ -19,6 +20,7 @@ type Server struct {
 	users      *users.Service
 	filesystem *filesystem.Service
 	tasks      *jobs.Service
+	collages   dto.Collages
 }
 
 func New(
@@ -27,8 +29,9 @@ func New(
 	users *users.Service,
 	filesystem *filesystem.Service,
 	service *jobs.Service,
+	collages dto.Collages,
 ) *Server {
-	return &Server{items: items, libraries: libraries, users: users, filesystem: filesystem, tasks: service}
+	return &Server{items: items, libraries: libraries, users: users, filesystem: filesystem, tasks: service, collages: collages}
 }
 
 func (s *Server) RefreshLibrary(ctx context.Context, request api.RefreshLibraryRequestObject) (api.RefreshLibraryResponseObject, error) {

@@ -92,6 +92,15 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 	unsupported(w, r, container, requested)
 }
 
+func (h *Handler) StopEncodings(w http.ResponseWriter, r *http.Request) {
+	if !h.authenticated(r) {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *Handler) ServeUniversal(w http.ResponseWriter, r *http.Request) {
 	item, source, path, ok := h.item(w, r)
 	if !ok {
@@ -185,11 +194,6 @@ func (h *Handler) relay(w http.ResponseWriter, r *http.Request, source *items.Me
 
 		return false
 	}
-	defer func() {
-		if err := output.Close(); err != nil {
-			log.Printf("transcode of %s ended: %v", source.Path, err)
-		}
-	}()
 
 	w.Header().Set("Content-Type", transcode.ContentType(container))
 	w.Header().Set("Accept-Ranges", "none")
@@ -202,8 +206,13 @@ func (h *Handler) relay(w http.ResponseWriter, r *http.Request, source *items.Me
 	}
 
 	stalling := transcode.UntilStalled(ctx, output, h.transcoder.Stall(), kill)
-	if _, err := transcode.Relay(w, stalling); err != nil {
-		log.Printf("transcode of %s stopped: %v", source.Path, err)
+	relayed, err := transcode.Relay(w, stalling)
+	if closed := output.Close(); err == nil {
+		err = closed
+	}
+	if err != nil {
+		log.Printf("transcode of %s to %s stopped after %d bytes: %v", source.Path, container, relayed, err)
+		panic(http.ErrAbortHandler)
 	}
 
 	return true
@@ -251,12 +260,7 @@ func unsupported(w http.ResponseWriter, r *http.Request, source, requested strin
 }
 
 func (h *Handler) item(w http.ResponseWriter, r *http.Request) (*items.Item, *items.MediaSource, string, bool) {
-	token := middleware.TokenFrom(r)
-	if token == "" {
-		w.WriteHeader(http.StatusUnauthorized)
-		return nil, nil, "", false
-	}
-	if _, err := h.sessions.ByToken(r.Context(), token); err != nil {
+	if !h.authenticated(r) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return nil, nil, "", false
 	}
@@ -301,6 +305,16 @@ func (h *Handler) item(w http.ResponseWriter, r *http.Request) (*items.Item, *it
 	}
 
 	return item, source, path, true
+}
+
+func (h *Handler) authenticated(r *http.Request) bool {
+	token := middleware.TokenFrom(r)
+	if token == "" {
+		return false
+	}
+	_, err := h.sessions.ByToken(r.Context(), token)
+
+	return err == nil
 }
 
 func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, path string) {
