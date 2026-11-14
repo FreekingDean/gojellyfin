@@ -59,6 +59,10 @@ func setEnvironment(t *testing.T, env map[string]string) {
 	}
 }
 
+func TestKeysCoverEveryVariable(t *testing.T) {
+	assert.ElementsMatch(t, settings, keys())
+}
+
 func TestLoad(t *testing.T) {
 	tests := []struct {
 		name    string

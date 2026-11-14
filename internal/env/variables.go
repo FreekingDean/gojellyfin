@@ -29,6 +29,16 @@ func (c Config) Variables() []Variable {
 	return variables
 }
 
+func keys() []string {
+	described := described(reflect.ValueOf(Config{}))
+	names := make([]string, 0, len(described))
+	for _, variable := range described {
+		names = append(names, variable.Name)
+	}
+
+	return names
+}
+
 func described(value reflect.Value) []Variable {
 	variables := []Variable{}
 	for i := range value.NumField() {
