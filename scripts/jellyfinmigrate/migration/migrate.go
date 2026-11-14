@@ -120,7 +120,7 @@ func writeUsers(ctx context.Context, tx *store.Tx, found []User, report *Report)
 			outcome.State = UserNameTaken
 		default:
 			outcome.State = UserCreated
-			outcome.NoPassword = user.PasswordHash == ""
+			outcome.SignInUnset = user.PasswordHash == ""
 			migrated[user.ID] = true
 			byUsername[strings.ToLower(user.Username)] = true
 			if err := createUser(ctx, tx, user); err != nil {
@@ -299,12 +299,12 @@ func writeAPIKeys(ctx context.Context, tx *store.Tx, keys []APIKey, report *Repo
 
 	for _, key := range keys {
 		if tokens[key.Token] {
-			report.APIKeysAlreadyHere++
+			report.IntegrationsAlreadyHere++
 
 			continue
 		}
 		tokens[key.Token] = true
-		report.APIKeysCarried++
+		report.IntegrationsCarried++
 
 		if err := tx.ApiKey.Create().SetAppName(key.Name).SetAccessToken(key.Token).Exec(ctx); err != nil {
 			return fmt.Errorf("failed to carry the api key %q: %w", key.Name, err)

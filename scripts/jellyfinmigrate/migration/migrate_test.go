@@ -172,11 +172,11 @@ func TestRun(t *testing.T) {
 				require.Equal(t, []UserOutcome{
 					{Username: fixture.CarolUsername, State: UserNameTaken},
 					{Username: fixture.AliceUsername, State: UserCreated},
-					{Username: "bob", State: UserCreated, NoPassword: true, Restricted: true},
+					{Username: "bob", State: UserCreated, SignInUnset: true, Restricted: true},
 				}, report.Users)
 				require.Equal(t, 3, report.SessionsCarried)
 				require.Equal(t, 1, report.SessionsSkipped)
-				require.Equal(t, 1, report.APIKeysCarried)
+				require.Equal(t, 1, report.IntegrationsCarried)
 				require.Equal(t, 8, report.WatchedCarried)
 				require.Equal(t, 1, report.WatchedSkipped)
 				require.Equal(t, 2, report.Orphaned)
@@ -274,7 +274,7 @@ func TestRun(t *testing.T) {
 				require.Equal(t, UserAlreadyHere, again.Users[2].State)
 				require.Zero(t, again.SessionsCarried)
 				require.Equal(t, 3, again.SessionsAlreadyHere)
-				require.Zero(t, again.APIKeysCarried)
+				require.Zero(t, again.IntegrationsCarried)
 				require.Zero(t, again.WatchedCarried)
 				require.Zero(t, again.WatchedMerged)
 				require.Equal(t, 8, again.WatchedAlreadyHere)

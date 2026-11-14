@@ -17,7 +17,7 @@ const (
 type UserOutcome struct {
 	Username   string
 	State      UserState
-	NoPassword bool
+	SignInUnset bool
 	Restricted bool
 }
 
@@ -37,8 +37,8 @@ type Report struct {
 	SessionsAlreadyHere int
 	SessionsSkipped     int
 
-	APIKeysCarried     int
-	APIKeysAlreadyHere int
+	IntegrationsCarried     int
+	IntegrationsAlreadyHere int
 
 	WatchedCarried     int
 	WatchedMerged      int
@@ -105,7 +105,7 @@ func (r *Report) String() string {
 
 	fmt.Fprintln(out)
 	fmt.Fprintf(out, "Sessions     %s %d, %d already here, %s %d behind\n", verb, r.SessionsCarried, r.SessionsAlreadyHere, tense, r.SessionsSkipped)
-	fmt.Fprintf(out, "API keys     %s %d, %d already here\n", verb, r.APIKeysCarried, r.APIKeysAlreadyHere)
+	fmt.Fprintf(out, "API keys     %s %d, %d already here\n", verb, r.IntegrationsCarried, r.IntegrationsAlreadyHere)
 	fmt.Fprintf(out, "Watch state  %s %d, merged %d, %d already here, %s %d behind with their users\n",
 		verb, r.WatchedCarried, r.WatchedMerged, r.WatchedAlreadyHere, tense, r.WatchedSkipped)
 	if r.Orphaned > 0 {
@@ -138,7 +138,7 @@ func userLine(user UserOutcome) string {
 		UserNameTaken:   "SKIPPED: another account here holds the name. Rename or delete it and run again",
 	}[user.State]
 
-	if user.NoPassword {
+	if user.SignInUnset {
 		line += "; no password in Jellyfin, so none here until `gojellyfin resetpassword`"
 	}
 	if user.Restricted && user.State != UserNameTaken {
