@@ -6,6 +6,13 @@ function row(page, library) {
   });
 }
 
+function shownTitle(section) {
+  return section.locator('h2.sectionTitle').evaluate((heading) => {
+    const replaced = getComputedStyle(heading, '::after').content;
+    return replaced === 'none' ? heading.textContent : JSON.parse(replaced);
+  });
+}
+
 test.describe('the recently added row of a show library', () => {
   test('shows a lone new episode as itself and folds several into their series', async ({ signedIn: page, harness }) => {
     const shows = row(page, harness.shows);
@@ -32,6 +39,8 @@ test.describe('the virtual rows', () => {
   test('list the newest aired episode of each show, newest first', async ({ signedIn: page, harness }) => {
     const aired = row(page, 'Recently Aired');
     await aired.scrollIntoViewIfNeeded();
+    await expect.poll(() => shownTitle(aired)).toBe('Recently Aired');
+    expect(await shownTitle(row(page, harness.shows))).toBe(`Recently Added in ${harness.shows}`);
 
     const cards = aired.locator('.card');
     await expect(cards).toHaveCount(2);
@@ -47,6 +56,7 @@ test.describe('the virtual rows', () => {
     const [alpha, beta] = harness.movies;
     const releases = row(page, 'New Releases');
     await releases.scrollIntoViewIfNeeded();
+    await expect.poll(() => shownTitle(releases)).toBe('New Releases');
 
     const cards = releases.locator('.card');
     await expect(cards).toHaveCount(2);

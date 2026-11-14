@@ -17,12 +17,16 @@ const PASSWORD = 'smoke-password';
 const LIBRARY = 'Smoke Movies';
 const MOVIES = ['Fixture Alpha', 'Fixture Beta'];
 const PLAYABLE = 'Fixture Playable';
+const TRANSCODED = 'Fixture Transcoded';
 const SHOWS = 'Smoke Shows';
 const SERIES = 'Fixture Show';
 const SEASON = 'Season 1';
 const EPISODES = ['Fixture Pilot', 'Fixture Second'];
 const DRAMA = 'Fixture Drama';
 const FINALE = 'Fixture Finale';
+const SSO_USERNAME = 'sso-viewer';
+const SSO_CLIENT_ID = 'gojellyfin';
+const SSO_CLIENT_SECRET = 'not-a-real-secret';
 
 // What TMDB calls trending and the library does not hold. The seed paints a
 // poster for each under the size segment the server asks for.
@@ -72,18 +76,18 @@ async function boot() {
   const front = proxy.start({ webRoot: client, apiPort, posterRoot });
   const webPort = await listen(front);
 
-  const provider = tmdb.start({
+  const catalogue = tmdb.start({
     imageBase: `http://127.0.0.1:${webPort}${proxy.POSTERS}/`,
     movies: [WANTED_MOVIE],
     shows: [WANTED_SHOW],
   });
-  const providerPort = await listen(provider);
+  const cataloguePort = await listen(catalogue);
 
   const serverEnv = clean({
     DATABASE_URL: databaseUrl,
-    MEDIA_DIRECTORIES: path.dirname(media),
+    MEDIA_DIRECTORIES: path.dirname(media.playable),
     TMDB_API_KEY: 'e2e',
-    TMDB_BASE_URL: `http://127.0.0.1:${providerPort}/3`,
+    TMDB_BASE_URL: `http://127.0.0.1:${cataloguePort}/3`,
     SHELVES,
   });
 
@@ -92,19 +96,26 @@ async function boot() {
   run(binaries.fixtures, ['seed'], {
     env: {
       ...serverEnv,
-      FIXTURE_MEDIA: media,
+      FIXTURE_MEDIA: media.playable,
+      FIXTURE_TRANSCODE: media.transcoded,
       POSTER_DIR: posterRoot,
       UNOWNED_POSTER_DIR: path.join(posterRoot, POSTER_SIZE),
       POSTER_URL: `http://127.0.0.1:${webPort}${proxy.POSTERS}`,
     },
   });
 
+  const baseUrl = `http://127.0.0.1:${webPort}`;
+  const provider = await startProvider(binaries.fixtures, baseUrl);
+
   const api = spawn(binaries.gojellyfin, ['server'], {
     env: {
       ...process.env,
       ...serverEnv,
       HTTP_PORT: String(apiPort),
-      PUBLISHED_SERVER_URL: `http://127.0.0.1:${webPort}`,
+      PUBLISHED_SERVER_URL: baseUrl,
+      OIDC_ISSUER_URL: provider.url,
+      OIDC_CLIENT_ID: SSO_CLIENT_ID,
+      OIDC_CLIENT_SECRET: SSO_CLIENT_SECRET,
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -123,12 +134,15 @@ async function boot() {
 
   return {
     facts: {
-      baseUrl: `http://127.0.0.1:${webPort}`,
+      baseUrl,
+      issuer: provider.url,
+      ssoUsername: SSO_USERNAME,
       username: USERNAME,
       password: PASSWORD,
       library: LIBRARY,
       movies: MOVIES,
       playable: PLAYABLE,
+      transcoded: TRANSCODED,
       shows: SHOWS,
       series: SERIES,
       season: SEASON,
@@ -141,9 +155,11 @@ async function boot() {
     serverLog: () => log.join(''),
     async stop() {
       await new Promise((resolve) => front.close(resolve));
-      await new Promise((resolve) => provider.close(resolve));
+      await new Promise((resolve) => catalogue.close(resolve));
       api.kill('SIGTERM');
       await once(api);
+      provider.child.kill('SIGTERM');
+      await once(provider.child);
       file.end();
       run(binaries.fixtures, ['drop'], { env: scratchEnv, allowFailure: true });
     },
@@ -161,9 +177,33 @@ function build() {
   return { gojellyfin, fixtures };
 }
 
-// VP9 and Opus in WebM because Playwright's Chromium carries no H.264 or AAC
-// decoder, so that is the only pairing it will direct play.
+// The playable title is VP9 and Opus in WebM, which every Chromium build
+// direct plays. The transcoded one is MPEG-4 Part 2, which no browser profile
+// names, at 1440 lines, so the server has to encode it down to 1080p H.264.
 function encodeMedia() {
+  return { playable: encodePlayable(), transcoded: encodeTranscoded() };
+}
+
+function encodeTranscoded() {
+  const target = path.join(BUILD, 'media', 'transcoded.mkv');
+  if (fs.existsSync(target)) {
+    return target;
+  }
+
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  run('ffmpeg', [
+    '-hide_banner', '-loglevel', 'error', '-y',
+    '-f', 'lavfi', '-i', 'testsrc2=size=1920x1440:rate=24:duration=20',
+    '-f', 'lavfi', '-i', 'sine=frequency=440:duration=20',
+    '-c:v', 'mpeg4', '-q:v', '8',
+    '-c:a', 'aac', '-b:a', '64k',
+    '-shortest', target,
+  ]);
+
+  return target;
+}
+
+function encodePlayable() {
   const target = path.join(BUILD, 'media', 'playable.webm');
   if (fs.existsSync(target)) {
     return target;
@@ -208,6 +248,31 @@ function fetchClient() {
   }
 
   return WEB;
+}
+
+// The provider is the same mock the Go tests sign in against, served from the
+// fixtures binary because a browser has to be redirected to it. It prints its
+// address once it is listening.
+function startProvider(fixtures, baseUrl) {
+  const child = spawn(fixtures, ['oidc'], {
+    env: { ...process.env, OIDC_REDIRECT_URI: baseUrl + '/sso/oidc/callback', OIDC_USERNAME: SSO_USERNAME },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+
+  return new Promise((resolve, reject) => {
+    let output = '';
+    child.stdout.on('data', (chunk) => {
+      output += chunk.toString();
+      const line = output.split('\n')[0];
+      if (output.includes('\n')) {
+        resolve({ child, url: line.trim() });
+      }
+    });
+    child.stderr.on('data', (chunk) => {
+      output += chunk.toString();
+    });
+    child.on('exit', (code) => reject(new Error(`the mock provider exited with ${code}:\n${output}`)));
+  });
 }
 
 function run(command, args, options = {}) {

@@ -80,6 +80,22 @@ func ID(slug string) uuid.UUID {
 	return uuid.NewSHA1(namespace, []byte(slug))
 }
 
+type Title struct {
+	ID   uuid.UUID
+	Name string
+}
+
+func (s *Service) Titles() []Title {
+	titles := make([]Title, 0, len(s.enabled))
+	for _, entry := range s.enabled {
+		if entry.title != "" {
+			titles = append(titles, Title{ID: ID(entry.slug), Name: entry.title})
+		}
+	}
+
+	return titles
+}
+
 func (s *Service) Shelves(ctx context.Context, viewer items.Viewer, userID uuid.UUID) ([]Shelf, error) {
 	shelves := make([]Shelf, 0, len(s.enabled))
 	for _, entry := range s.enabled {

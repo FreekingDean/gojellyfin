@@ -30,13 +30,14 @@ import (
 )
 
 const (
-	library  = "Smoke Movies"
-	playable = "Fixture Playable"
-	shows    = "Smoke Shows"
-	series   = "Fixture Show"
-	season   = "Season 1"
-	drama    = "Fixture Drama"
-	finale   = "Fixture Finale"
+	library    = "Smoke Movies"
+	playable   = "Fixture Playable"
+	shows      = "Smoke Shows"
+	series     = "Fixture Show"
+	season     = "Season 1"
+	drama      = "Fixture Drama"
+	finale     = "Fixture Finale"
+	transcoded = "Fixture Transcoded"
 )
 
 var (
@@ -66,7 +67,7 @@ var (
 
 func main() {
 	if len(os.Args) < 2 {
-		fail(fmt.Errorf("usage: fixtures create|drop|seed"))
+		fail(fmt.Errorf("usage: fixtures create|drop|seed|oidc"))
 	}
 
 	var err error
@@ -77,6 +78,8 @@ func main() {
 		err = drop()
 	case "seed":
 		err = seed()
+	case "oidc":
+		err = oidc()
 	default:
 		err = fmt.Errorf("unknown action %q", os.Args[1])
 	}
@@ -218,7 +221,10 @@ func seed() error {
 		}
 	}
 
-	if err := playableMovie(ctx, client, catalogue, record.ID, downloader.ID); err != nil {
+	if err := playableMovie(ctx, client, catalogue, record.ID, downloader.ID, playable, os.Getenv("FIXTURE_MEDIA")); err != nil {
+		return err
+	}
+	if err := playableMovie(ctx, client, catalogue, record.ID, downloader.ID, transcoded, os.Getenv("FIXTURE_TRANSCODE")); err != nil {
 		return err
 	}
 
@@ -313,18 +319,17 @@ func (s shelf) series(ctx context.Context, name string, titles []string, modifie
 	return nil
 }
 
-func playableMovie(ctx context.Context, client *store.Client, catalogue *items.Service, libraryID, sourceID uuid.UUID) error {
-	path := os.Getenv("FIXTURE_MEDIA")
+func playableMovie(ctx context.Context, client *store.Client, catalogue *items.Service, libraryID, sourceID uuid.UUID, name, path string) error {
 	if path == "" {
-		return fmt.Errorf("FIXTURE_MEDIA is not set")
+		return fmt.Errorf("no media file was handed over for %q", name)
 	}
 
 	modified := time.Now()
 	item, err := catalogue.SaveScanned(ctx, items.Item{
 		Kind:         itemmodel.KindMovie,
-		Key:          "movie:" + slugify(playable),
-		Name:         playable,
-		SortName:     strings.ToLower(playable),
+		Key:          "movie:" + slugify(name),
+		Name:         name,
+		SortName:     strings.ToLower(name),
 		DateModified: &modified,
 	})
 	if err != nil {
@@ -335,7 +340,7 @@ func playableMovie(ctx context.Context, client *store.Client, catalogue *items.S
 		SourceID:     sourceID,
 		ItemID:       item.ID,
 		Path:         path,
-		Name:         playable,
+		Name:         name,
 		DateModified: &modified,
 	})
 	if err != nil {
