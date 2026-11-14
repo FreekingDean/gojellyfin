@@ -1,6 +1,8 @@
 package dto
 
 import (
+	"time"
+
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
@@ -12,8 +14,11 @@ func SessionDto(session *sessions.Session) *api.SessionInfoDto {
 		Id:                    apiutil.Ptr(session.ID.String()),
 		ServerId:              apiutil.Ptr(config.ServerID),
 		LastActivityDate:      session.LastActivityAt,
+		LastPlaybackCheckIn:   &time.Time{},
 		IsActive:              apiutil.Ptr(true),
 		SupportsRemoteControl: apiutil.Ptr(false),
+		SupportsMediaControl:  apiutil.Ptr(false),
+		HasCustomDeviceName:   apiutil.Ptr(false),
 		PlayableMediaTypes:    &[]api.MediaType{},
 		SupportedCommands:     &[]api.GeneralCommandType{},
 		AdditionalUsers:       &[]api.SessionUserInfo{},
@@ -34,6 +39,8 @@ func SessionDto(session *sessions.Session) *api.SessionInfoDto {
 		dto.DeviceName = apiutil.Ptr(device.Name)
 		dto.ApplicationVersion = apiutil.Ptr(device.AppVersion)
 		dto.SupportsRemoteControl = apiutil.Ptr(device.SupportsMediaControl)
+		dto.SupportsMediaControl = apiutil.Ptr(device.SupportsMediaControl)
+		dto.HasCustomDeviceName = apiutil.Ptr(device.CustomName != "")
 		dto.PlayableMediaTypes = &playable
 		dto.SupportedCommands = &commands
 	}
