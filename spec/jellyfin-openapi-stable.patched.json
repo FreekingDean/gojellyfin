@@ -48350,6 +48350,12 @@
           },
           "Requests": {
             "$ref": "#/components/schemas/SourceRequests"
+          },
+          "Files": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true,
+            "description": "How many files the instance reported, across every root folder."
           }
         }
       }, "SourceError": {

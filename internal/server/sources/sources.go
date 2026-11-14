@@ -195,6 +195,7 @@ func sourceDto(entry sources.Configured) api.Source {
 		ContactedAt:    entry.Source.ContactedAt,
 		LastError:      apiutil.ZeroOrNilPtr(entry.Source.LastError),
 		Requests:       requestsDto(entry.Source),
+		Files:          apiutil.Ptr(int32(entry.Files)),
 	}
 }
 

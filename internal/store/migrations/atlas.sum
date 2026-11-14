@@ -1,4 +1,4 @@
-h1:H+1i0Ksu9BaPzU1m7OHP6eHep7h4aLM/NMWaLWkRJ2w=
+h1:GpgHqsPpHbv6n5LxVw5lAlCNm4VvsTdyDsjcNIuNqtg=
 20260808161932_schema.sql h1:TSsMFoNc1lu6mOmwk6WUpVAleagab51CYpT8AcXjFe8=
 20260809054423_schema.sql h1:V8LqoR24+BY3zT0+YlBHRxazmflw/ECnIQrC9e8FboE=
 20260809060012_configurations.sql h1:lWCojwN/ZmPBP/uS9aNCdmvBPXLv1rSc21+W+ZeyrJg=
@@ -36,3 +36,4 @@ h1:H+1i0Ksu9BaPzU1m7OHP6eHep7h4aLM/NMWaLWkRJ2w=
 20261114200000_quick_connect_remote_address.sql h1:vpTjvzTzqRxN2V0g9YP9bDaJfTbz2SUX1LzwNq9Ox00=
 20261114215500_syncplay_groups.sql h1:A8s65l6/HONdz8fB+JBhM+ke0yUR/wapj3hFT+kAPzw=
 20261114230000_syncplay_playback.sql h1:7j7N/KLrxm+IO7RwdyjTAdXnhMzPArkmtqQdDDkkZZY=
+20261114235000_two_libraries.sql h1:hiskXIBQHC91kzGiJ5Rk1LQjZaHbexPlgUU/69kTL/Y=

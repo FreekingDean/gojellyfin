@@ -6,7 +6,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
-	librarymodel "github.com/FreekingDean/gojellyfin/internal/store/library"
 )
 
 type Server struct {
@@ -31,46 +30,12 @@ func (s *Server) GetVirtualFolders(ctx context.Context, request api.GetVirtualFo
 	return api.GetVirtualFolders200JSONResponse(folders), nil
 }
 
-func (s *Server) AddVirtualFolder(ctx context.Context, request api.AddVirtualFolderRequestObject) (api.AddVirtualFolderResponseObject, error) {
-	if request.Params.Name == nil {
-		return api.AddVirtualFolder403Response{}, nil
-	}
-
-	collectionType := librarymodel.CollectionTypeMixed
-	if request.Params.CollectionType != nil {
-		collectionType = libraries.CollectionType(*request.Params.CollectionType)
-	}
-
-	var options *api.LibraryOptions
-	if req := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody); req != nil {
-		options = req.LibraryOptions
-	}
-
-	locations := requestedPaths(request.Params.Paths, options)
-
-	library, err := s.libraries.CreateLibrary(ctx, *request.Params.Name, collectionType, locations)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := s.saveOptions(ctx, library.ID, options); err != nil {
-		return nil, err
-	}
-
-	return api.AddVirtualFolder204Response{}, nil
+func (s *Server) AddVirtualFolder(_ context.Context, _ api.AddVirtualFolderRequestObject) (api.AddVirtualFolderResponseObject, error) {
+	return api.AddVirtualFolder403Response{}, nil
 }
 
-func (s *Server) RemoveVirtualFolder(ctx context.Context, request api.RemoveVirtualFolderRequestObject) (api.RemoveVirtualFolderResponseObject, error) {
-	library, err := s.libraryByName(ctx, request.Params.Name)
-	if err != nil {
-		return api.RemoveVirtualFolder204Response{}, nil
-	}
-
-	if err := s.libraries.DeleteLibrary(ctx, library.ID); err != nil {
-		return nil, err
-	}
-
-	return api.RemoveVirtualFolder204Response{}, nil
+func (s *Server) RemoveVirtualFolder(_ context.Context, _ api.RemoveVirtualFolderRequestObject) (api.RemoveVirtualFolderResponseObject, error) {
+	return api.RemoveVirtualFolder403Response{}, nil
 }
 
 func (s *Server) RenameVirtualFolder(ctx context.Context, request api.RenameVirtualFolderRequestObject) (api.RenameVirtualFolderResponseObject, error) {
@@ -108,43 +73,12 @@ func (s *Server) UpdateLibraryOptions(ctx context.Context, request api.UpdateLib
 	return api.UpdateLibraryOptions204Response{}, nil
 }
 
-func (s *Server) AddMediaPath(ctx context.Context, request api.AddMediaPathRequestObject) (api.AddMediaPathResponseObject, error) {
-	req := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
-	if req == nil {
-		return api.AddMediaPath403Response{}, nil
-	}
-
-	library, err := s.libraryByName(ctx, &req.Name)
-	if err != nil {
-		return api.AddMediaPath403Response{}, nil
-	}
-
-	path := apiutil.Deref(req.Path)
-	if req.PathInfo != nil {
-		path = apiutil.Deref(req.PathInfo.Path)
-	}
-	if path == "" {
-		return api.AddMediaPath403Response{}, nil
-	}
-
-	if err := s.libraries.AddLocation(ctx, library.ID, path); err != nil {
-		return nil, err
-	}
-
-	return api.AddMediaPath204Response{}, nil
+func (s *Server) AddMediaPath(_ context.Context, _ api.AddMediaPathRequestObject) (api.AddMediaPathResponseObject, error) {
+	return api.AddMediaPath403Response{}, nil
 }
 
-func (s *Server) RemoveMediaPath(ctx context.Context, request api.RemoveMediaPathRequestObject) (api.RemoveMediaPathResponseObject, error) {
-	library, err := s.libraryByName(ctx, request.Params.Name)
-	if err != nil {
-		return api.RemoveMediaPath204Response{}, nil
-	}
-
-	if err := s.libraries.RemoveLocation(ctx, library.ID, apiutil.Deref(request.Params.Path)); err != nil {
-		return nil, err
-	}
-
-	return api.RemoveMediaPath204Response{}, nil
+func (s *Server) RemoveMediaPath(_ context.Context, _ api.RemoveMediaPathRequestObject) (api.RemoveMediaPathResponseObject, error) {
+	return api.RemoveMediaPath403Response{}, nil
 }
 
 func (s *Server) UpdateMediaPath(ctx context.Context, request api.UpdateMediaPathRequestObject) (api.UpdateMediaPathResponseObject, error) {

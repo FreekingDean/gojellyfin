@@ -4,7 +4,8 @@ const http = require('node:http');
 // id and the add that takes it. What was added is kept and answered on /added,
 // which is the test's window rather than anything Radarr serves. A broken copy
 // is replaced through the history, the file record and a search command, and
-// /replaced answers those calls in the order they arrived.
+// /replaced answers those calls in the order they arrived. The status, root
+// folders and profiles are what the admin app's connection test reads.
 function start() {
   const added = [];
   const replaced = [];
@@ -30,6 +31,12 @@ function start() {
       answer(200, { tmdbId: Number(url.searchParams.get('tmdbId')), title: 'Looked up' });
     } else if (url.pathname === '/api/v3/tag') {
       answer(200, []);
+    } else if (url.pathname === '/api/v3/system/status') {
+      answer(200, { version: VERSION });
+    } else if (url.pathname === '/api/v3/rootfolder') {
+      answer(200, [{ id: 1, path: ROOT_FOLDER }]);
+    } else if (url.pathname === '/api/v3/qualityprofile') {
+      answer(200, [{ id: 1, name: 'HD-1080p' }]);
     } else if (url.pathname === '/api/v3/movie' && request.method === 'POST') {
       let body = '';
       request.on('data', (chunk) => (body += chunk));
@@ -44,5 +51,7 @@ function start() {
 }
 
 const GRAB = 9;
+const VERSION = '5.14.0';
+const ROOT_FOLDER = '/fixtures';
 
-module.exports = { start, GRAB };
+module.exports = { start, GRAB, VERSION, ROOT_FOLDER };

@@ -15,7 +15,8 @@ var Module = fx.Module(
 	fx.Invoke(register),
 )
 
-func register(registry *jobs.Registry, service *Service, bindings *sources.Service) {
+func register(lifecycle fx.Lifecycle, registry *jobs.Registry, service *Service, bindings *sources.Service) {
+	lifecycle.Append(fx.Hook{OnStart: service.EnsureFixed})
 	service.UseSources(bindings)
 	registry.Register(service.RefreshLibrariesJob())
 	registry.Register(service.RefreshLibraryJob())
