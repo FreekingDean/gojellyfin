@@ -244,18 +244,3 @@ func (s *Server) savePolicy(ctx context.Context, id uuid.UUID, req *api.UserPoli
 
 	return update.Exec(ctx)
 }
-
-func publicUserDto(user *users.User) api.UserDto {
-	if user == nil {
-		return api.UserDto{}
-	}
-
-	return api.UserDto{
-		Id:                        &user.ID,
-		Name:                      apiutil.Ptr(user.Name),
-		ServerId:                  apiutil.Ptr(config.ServerID),
-		HasPassword:               apiutil.Ptr(user.PasswordHash != ""),
-		HasConfiguredPassword:     apiutil.Ptr(user.PasswordHash != ""),
-		HasConfiguredEasyPassword: apiutil.Ptr(false),
-	}
-}

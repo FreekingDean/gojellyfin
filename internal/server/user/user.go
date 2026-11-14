@@ -55,17 +55,7 @@ func (s *Server) GetUserById(ctx context.Context, request api.GetUserByIdRequest
 }
 
 func (s *Server) GetPublicUsers(ctx context.Context, request api.GetPublicUsersRequestObject) (api.GetPublicUsersResponseObject, error) {
-	records, err := s.users.Users(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	converted := make([]api.UserDto, 0, len(records))
-	for _, record := range records {
-		converted = append(converted, publicUserDto(record))
-	}
-
-	return api.GetPublicUsers200JSONResponse(converted), nil
+	return api.GetPublicUsers200JSONResponse{}, nil
 }
 
 func (s *Server) CreateUserByName(ctx context.Context, request api.CreateUserByNameRequestObject) (api.CreateUserByNameResponseObject, error) {
