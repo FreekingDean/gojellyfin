@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const http = require('node:http');
 
 const proxy = require('./proxy');
+const tmdb = require('./tmdb');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const BUILD = path.join(__dirname, '..', '.build');
@@ -22,6 +23,27 @@ const SEASON = 'Season 1';
 const EPISODES = ['Fixture Pilot', 'Fixture Second'];
 const DRAMA = 'Fixture Drama';
 const FINALE = 'Fixture Finale';
+
+// What TMDB calls trending and the library does not hold. The seed paints a
+// poster for each under the size segment the server asks for.
+const POSTER_SIZE = 'w780';
+const WANTED_MOVIE = {
+  id: 900001,
+  name: 'Wanted Film',
+  overview: 'A film the library does not hold yet.',
+  tagline: 'Not here yet.',
+  released: '2024-05-17',
+  poster: '/wanted-film.png',
+};
+const WANTED_SHOW = {
+  id: 900002,
+  name: 'Wanted Show',
+  overview: 'A show the library does not hold yet.',
+  tagline: 'Coming, perhaps.',
+  released: '2023-09-08',
+  poster: '/wanted-show.png',
+};
+const SHELVES = 'recently-aired,new-releases,trending-movies,trending-shows';
 
 const CLIENT_IMAGE = 'jellyfin/jellyfin:10.10.0';
 
@@ -41,15 +63,29 @@ async function boot() {
   run(binaries.fixtures, ['create'], { env: scratchEnv });
 
   const databaseUrl = withDatabase(adminUrl, scratch);
-  const serverEnv = clean({ DATABASE_URL: databaseUrl, MEDIA_DIRECTORIES: path.dirname(media) });
 
   const apiPort = await freePort();
   const posterRoot = path.join(BUILD, 'posters');
   fs.rmSync(posterRoot, { recursive: true, force: true });
-  fs.mkdirSync(posterRoot, { recursive: true });
+  fs.mkdirSync(path.join(posterRoot, POSTER_SIZE), { recursive: true });
 
   const front = proxy.start({ webRoot: client, apiPort, posterRoot });
   const webPort = await listen(front);
+
+  const provider = tmdb.start({
+    imageBase: `http://127.0.0.1:${webPort}${proxy.POSTERS}/`,
+    movies: [WANTED_MOVIE],
+    shows: [WANTED_SHOW],
+  });
+  const providerPort = await listen(provider);
+
+  const serverEnv = clean({
+    DATABASE_URL: databaseUrl,
+    MEDIA_DIRECTORIES: path.dirname(media),
+    TMDB_API_KEY: 'e2e',
+    TMDB_BASE_URL: `http://127.0.0.1:${providerPort}/3`,
+    SHELVES,
+  });
 
   run(binaries.gojellyfin, ['migrate'], { env: serverEnv });
   run(binaries.gojellyfin, ['adduser', USERNAME], { env: serverEnv, input: PASSWORD + '\n' });
@@ -58,6 +94,7 @@ async function boot() {
       ...serverEnv,
       FIXTURE_MEDIA: media,
       POSTER_DIR: posterRoot,
+      UNOWNED_POSTER_DIR: path.join(posterRoot, POSTER_SIZE),
       POSTER_URL: `http://127.0.0.1:${webPort}${proxy.POSTERS}`,
     },
   });
@@ -98,10 +135,13 @@ async function boot() {
       episodes: EPISODES,
       drama: DRAMA,
       finale: FINALE,
+      wantedMovie: WANTED_MOVIE,
+      wantedShow: WANTED_SHOW,
     },
     serverLog: () => log.join(''),
     async stop() {
       await new Promise((resolve) => front.close(resolve));
+      await new Promise((resolve) => provider.close(resolve));
       api.kill('SIGTERM');
       await once(api);
       file.end();
@@ -197,6 +237,8 @@ function clean(overrides) {
     TEMPORAL_NAMESPACE: '',
     OTEL_EXPORTER_OTLP_ENDPOINT: '',
     TMDB_API_KEY: '',
+    TMDB_BASE_URL: '',
+    SHELVES: '',
     ...overrides,
   };
 }

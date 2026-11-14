@@ -57,6 +57,11 @@ var (
 		"Fixture Show":  {R: 40, G: 200, B: 70, A: 255},
 		"Fixture Drama": {R: 40, G: 200, B: 70, A: 255},
 	}
+
+	unownedShades = map[string]color.RGBA{
+		"Wanted Film": {R: 230, G: 150, B: 30, A: 255},
+		"Wanted Show": {R: 150, G: 60, B: 200, A: 255},
+	}
 )
 
 func main() {
@@ -154,6 +159,10 @@ func seed() error {
 		return err
 	}
 	defer func() { _ = connection.Stop() }()
+
+	if err := paintUnowned(); err != nil {
+		return err
+	}
 
 	ctx := context.Background()
 	client := connection.Client()
@@ -387,6 +396,21 @@ func poster(ctx context.Context, catalogue *items.Service, itemID uuid.UUID, nam
 		URL:  url,
 		Tag:  hex.EncodeToString(digest[:]),
 	})
+}
+
+func paintUnowned() error {
+	directory := os.Getenv("UNOWNED_POSTER_DIR")
+	if directory == "" {
+		return nil
+	}
+
+	for name, shade := range unownedShades {
+		if err := paint(filepath.Join(directory, slugify(name)+".png"), shade); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func paint(path string, shade color.RGBA) error {
