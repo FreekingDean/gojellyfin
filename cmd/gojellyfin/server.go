@@ -20,6 +20,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/localization"
 	"github.com/FreekingDean/gojellyfin/internal/metadata"
+	"github.com/FreekingDean/gojellyfin/internal/notify"
 	"github.com/FreekingDean/gojellyfin/internal/observability"
 	"github.com/FreekingDean/gojellyfin/internal/playlists"
 	"github.com/FreekingDean/gojellyfin/internal/probe"
@@ -32,6 +33,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/sources"
 	"github.com/FreekingDean/gojellyfin/internal/sso"
 	"github.com/FreekingDean/gojellyfin/internal/store"
+	"github.com/FreekingDean/gojellyfin/internal/syncplay"
 	"github.com/FreekingDean/gojellyfin/internal/system"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
@@ -54,6 +56,7 @@ var serverModules = fx.Options(
 	libraries.Module,
 	localization.Module,
 	metadata.Module,
+	notify.Module,
 	playlists.Module,
 	probe.Module,
 	quickconnect.Module,
@@ -63,6 +66,7 @@ var serverModules = fx.Options(
 	sources.Module,
 	sessions.Module,
 	sso.Module,
+	syncplay.Module,
 	system.Module,
 	jobs.Module,
 	users.Module,

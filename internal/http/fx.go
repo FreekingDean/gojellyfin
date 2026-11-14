@@ -7,6 +7,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/http/mux"
+	"github.com/FreekingDean/gojellyfin/internal/notify"
 	"github.com/FreekingDean/gojellyfin/internal/server/admin"
 	"github.com/FreekingDean/gojellyfin/internal/server/link"
 	"github.com/FreekingDean/gojellyfin/internal/server/report"
@@ -29,6 +30,7 @@ var Module = fx.Module(
 		link.New,
 		report.New,
 		sso.New,
+		func(s *socket.Socket) notify.Handler { return s.Deliver },
 		func(encoder *transcode.Encoder) stream.Transcoder { return encoder },
 		func(service *users.Service) middleware.Policies { return service },
 		stream.New,

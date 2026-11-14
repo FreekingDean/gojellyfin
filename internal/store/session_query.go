@@ -4,6 +4,7 @@ package store
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/device"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
+	"github.com/FreekingDean/gojellyfin/internal/store/syncplaygroupmember"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/google/uuid"
 )
@@ -22,14 +24,15 @@ import (
 // SessionQuery is the builder for querying Session entities.
 type SessionQuery struct {
 	config
-	ctx        *QueryContext
-	order      []session.OrderOption
-	inters     []Interceptor
-	predicates []predicate.Session
-	withUser   *UserQuery
-	withDevice *DeviceQuery
-	withFKs    bool
-	modifiers  []func(*sql.Selector)
+	ctx                     *QueryContext
+	order                   []session.OrderOption
+	inters                  []Interceptor
+	predicates              []predicate.Session
+	withUser                *UserQuery
+	withDevice              *DeviceQuery
+	withSyncPlayMemberships *SyncPlayGroupMemberQuery
+	withFKs                 bool
+	modifiers               []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -103,6 +106,28 @@ func (_q *SessionQuery) QueryDevice() *DeviceQuery {
 			sqlgraph.From(session.Table, session.FieldID, selector),
 			sqlgraph.To(device.Table, device.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, session.DeviceTable, session.DeviceColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySyncPlayMemberships chains the current query on the "sync_play_memberships" edge.
+func (_q *SessionQuery) QuerySyncPlayMemberships() *SyncPlayGroupMemberQuery {
+	query := (&SyncPlayGroupMemberClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(session.Table, session.FieldID, selector),
+			sqlgraph.To(syncplaygroupmember.Table, syncplaygroupmember.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, session.SyncPlayMembershipsTable, session.SyncPlayMembershipsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -297,13 +322,14 @@ func (_q *SessionQuery) Clone() *SessionQuery {
 		return nil
 	}
 	return &SessionQuery{
-		config:     _q.config,
-		ctx:        _q.ctx.Clone(),
-		order:      append([]session.OrderOption{}, _q.order...),
-		inters:     append([]Interceptor{}, _q.inters...),
-		predicates: append([]predicate.Session{}, _q.predicates...),
-		withUser:   _q.withUser.Clone(),
-		withDevice: _q.withDevice.Clone(),
+		config:                  _q.config,
+		ctx:                     _q.ctx.Clone(),
+		order:                   append([]session.OrderOption{}, _q.order...),
+		inters:                  append([]Interceptor{}, _q.inters...),
+		predicates:              append([]predicate.Session{}, _q.predicates...),
+		withUser:                _q.withUser.Clone(),
+		withDevice:              _q.withDevice.Clone(),
+		withSyncPlayMemberships: _q.withSyncPlayMemberships.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -329,6 +355,17 @@ func (_q *SessionQuery) WithDevice(opts ...func(*DeviceQuery)) *SessionQuery {
 		opt(query)
 	}
 	_q.withDevice = query
+	return _q
+}
+
+// WithSyncPlayMemberships tells the query-builder to eager-load the nodes that are connected to
+// the "sync_play_memberships" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *SessionQuery) WithSyncPlayMemberships(opts ...func(*SyncPlayGroupMemberQuery)) *SessionQuery {
+	query := (&SyncPlayGroupMemberClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withSyncPlayMemberships = query
 	return _q
 }
 
@@ -411,9 +448,10 @@ func (_q *SessionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Sess
 		nodes       = []*Session{}
 		withFKs     = _q.withFKs
 		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			_q.withUser != nil,
 			_q.withDevice != nil,
+			_q.withSyncPlayMemberships != nil,
 		}
 	)
 	if _q.withUser != nil || _q.withDevice != nil {
@@ -452,6 +490,15 @@ func (_q *SessionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Sess
 	if query := _q.withDevice; query != nil {
 		if err := _q.loadDevice(ctx, query, nodes, nil,
 			func(n *Session, e *Device) { n.Edges.Device = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withSyncPlayMemberships; query != nil {
+		if err := _q.loadSyncPlayMemberships(ctx, query, nodes,
+			func(n *Session) { n.Edges.SyncPlayMemberships = []*SyncPlayGroupMember{} },
+			func(n *Session, e *SyncPlayGroupMember) {
+				n.Edges.SyncPlayMemberships = append(n.Edges.SyncPlayMemberships, e)
+			}); err != nil {
 			return nil, err
 		}
 	}
@@ -519,6 +566,36 @@ func (_q *SessionQuery) loadDevice(ctx context.Context, query *DeviceQuery, node
 		for i := range nodes {
 			assign(nodes[i], n)
 		}
+	}
+	return nil
+}
+func (_q *SessionQuery) loadSyncPlayMemberships(ctx context.Context, query *SyncPlayGroupMemberQuery, nodes []*Session, init func(*Session), assign func(*Session, *SyncPlayGroupMember)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Session)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(syncplaygroupmember.FieldSessionID)
+	}
+	query.Where(predicate.SyncPlayGroupMember(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(session.SyncPlayMembershipsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.SessionID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "session_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
 	}
 	return nil
 }
