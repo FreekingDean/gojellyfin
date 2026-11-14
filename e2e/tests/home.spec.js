@@ -15,6 +15,13 @@ test.describe('the home screen', () => {
     await expect(home).toContainText(harness.wantedMovie.name);
     await expect(home).toContainText(harness.wantedShow.name);
 
+    // A poster is fetched once its card nears the viewport, and a full-page
+    // screenshot grows the viewport to take the picture, so which posters had
+    // arrived used to depend on how fast that went. A viewport taller than the
+    // page asks for all of them first.
+    await page.setViewportSize({ width: 1280, height: 3200 });
+    await page.waitForLoadState('networkidle');
+
     await expect(page).toHaveScreenshot('home.png', { fullPage: true });
   });
 
