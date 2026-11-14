@@ -19,10 +19,17 @@ test.describe('playing on a phone', () => {
     await shot('playing');
 
     const before = await server.positionSeconds(harness.playable);
-    phone.key('fastForward');
+    // The page skips ahead on the arrow key, the way it does on a keyboard.
+    // Taking the time played since off the position is what keeps ordinary
+    // playback from passing for a skip.
+    const pressed = Date.now();
+    phone.key('right');
     await expect
-      .poll(() => server.positionSeconds(harness.playable), { timeout: 90000, intervals: [2000] })
-      .toBeGreaterThan(before + 20);
+      .poll(async () => (await server.positionSeconds(harness.playable)) - (Date.now() - pressed) / 1000, {
+        timeout: 60000,
+        intervals: [2000],
+      })
+      .toBeGreaterThan(before + 15);
     await shot('after-skip');
 
     await leavePlayer(phone);

@@ -62,7 +62,7 @@ const test = base.extend({
 const screens = (app) => ({
   home: { label: app.library },
   connect: { type: 'EditText' },
-  login: { label: /^(Sign In|Quick Connect)$/i },
+  login: { label: /^(Sign In|Use Quick Connect)$/i },
 });
 
 function launcherActivity(phone) {
@@ -130,7 +130,7 @@ async function signInWithPassword(phone, app) {
 }
 
 async function quickConnectCode(phone) {
-  await phone.tapOn({ label: /^Quick Connect$/i });
+  await phone.tapOn({ label: /^(Use )?Quick Connect$/i });
   const shown = await phone.waitFor({ label: /\b\d{6}\b/ }, { timeout: 30000 });
 
   return /\b(\d{6})\b/.exec(shown.text || shown.description)[1];
@@ -159,16 +159,21 @@ async function openDetails(phone, app, name) {
   await phone.waitFor({ label: /^(Play|Resume)$/i }, { timeout: 60000 });
 }
 
+// uiautomator cannot read the screen while the video plays, and Back does
+// not stop jellyfin-web's player in the app, so the player is stopped with
+// the remote's stop key, which the page takes as its own Stop.
 async function leavePlayer(phone) {
-  for (let attempt = 0; attempt < 4; attempt++) {
-    phone.key('back');
+  for (let attempt = 0; attempt < 3; attempt++) {
+    phone.key('stop');
     await sleep(2500);
     if (phone.find({ label: /^(Play|Resume)$/i }).length) {
       return;
     }
+    phone.key('back');
+    await sleep(2500);
   }
 
-  throw new Error(`Back never left the player. On screen:\n${phone.summary()}`);
+  throw new Error(`the player never stopped. On screen:\n${phone.summary()}`);
 }
 
 module.exports = {

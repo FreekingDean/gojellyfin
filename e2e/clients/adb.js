@@ -12,6 +12,9 @@ const KEYS = {
   playPause: 85,
   fastForward: 90,
   rewind: 89,
+  stop: 86,
+  moveEnd: 123,
+  deleteBack: 67,
 };
 
 // A device is driven the way a person without a debugger would see it: what
@@ -190,8 +193,12 @@ function device(serial = process.env.ANDROID_SERIAL) {
   }
 
   async function fill(matcher, text) {
-    await tapOn(matcher);
+    const field = await tapOn(matcher);
     await sleep(500);
+    if (field.text) {
+      key('moveEnd');
+      key('deleteBack', field.text.length);
+    }
     type(text);
     await sleep(500);
     await hideKeyboard();
