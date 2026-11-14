@@ -2,13 +2,13 @@ package items
 
 import (
 	"context"
+	"time"
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/server/dto"
-	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
 type Server struct {
@@ -60,23 +60,24 @@ func (s *Server) GetRootFolder(ctx context.Context, request api.GetRootFolderReq
 }
 
 func (s *Server) GetLatestMedia(ctx context.Context, request api.GetLatestMediaRequestObject) (api.GetLatestMediaResponseObject, error) {
-	query := items.ItemQuery{
-		Viewer:     items.Everyone,
-		Kinds:      []items.Kind{itemmodel.KindMovie, itemmodel.KindSeries},
-		SortBy:     []string{"DateCreated"},
-		Descending: true,
-		Limit:      int(apiutil.OrElse(request.Params.Limit, int32(20))),
-	}
-	if request.Params.ParentId != nil {
-		query.LibraryID = request.Params.ParentId
-	}
-
-	records, _, err := s.items.QueryItems(ctx, query)
+	viewer, err := dto.ViewerFor(ctx, s.policies)
 	if err != nil {
 		return nil, err
 	}
 
-	converted, err := dto.ItemDtos(ctx, s.items, records)
+	latest, err := s.items.LatestItems(ctx, items.LatestQuery{
+		Viewer:    viewer,
+		LibraryID: request.Params.ParentId,
+		Order:     items.LatestAdded,
+		Now:       time.Now(),
+		Limit:     int(apiutil.OrElse(request.Params.Limit, int32(20))),
+		Ungrouped: !apiutil.OrElse(request.Params.GroupItems, true),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	converted, err := dto.LatestDtos(ctx, s.items, latest)
 	if err != nil {
 		return nil, err
 	}
