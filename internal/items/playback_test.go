@@ -392,7 +392,7 @@ func TestService_SourceForOrder(t *testing.T) {
 				fixture.copyRanged(t, film, file.path, file.video, file.audio, file.height, rangeType)
 			}
 
-			plan, err := fixture.service.SourceFor(ctx, film.ID, chrome)
+			plan, err := fixture.service.SourceFor(ctx, film, chrome)
 			if tc.refused {
 				if !errors.Is(err, ErrNoPlayable) {
 					t.Fatalf("err = %v, want %v", err, ErrNoPlayable)
@@ -418,7 +418,7 @@ func TestService_SourceForOrder(t *testing.T) {
 		fixture.copy(t, film, "/fat.mkv", "h264", "aac", 1080)
 		fixture.bitrate(t, film, "/fat.mkv", 20_000_000)
 
-		plan, err := fixture.service.SourceFor(ctx, film.ID, chrome)
+		plan, err := fixture.service.SourceFor(ctx, film, chrome)
 		if err != nil {
 			t.Fatalf("nothing was chosen: %v", err)
 		}
@@ -517,7 +517,7 @@ func TestService_SourceFor(t *testing.T) {
 			t.Fatalf("the fixture has %d sources: %v", len(sources), err)
 		}
 
-		plan, err := fixture.service.SourceFor(ctx, film.ID, chrome)
+		plan, err := fixture.service.SourceFor(ctx, film, chrome)
 		if err != nil {
 			t.Fatalf("failed to choose a source: %v", err)
 		}
@@ -532,7 +532,7 @@ func TestService_SourceFor(t *testing.T) {
 		fixture.copy(t, film, "/media/uhd.mkv", "h264", "ac3", 2160)
 		fixture.copy(t, film, "/media/hd.mkv", "h264", "aac", 1080)
 
-		plan, err := fixture.service.SourceFor(ctx, film.ID, chrome)
+		plan, err := fixture.service.SourceFor(ctx, film, chrome)
 		if err != nil {
 			t.Fatalf("failed to choose a source: %v", err)
 		}
@@ -550,7 +550,7 @@ func TestService_SourceFor(t *testing.T) {
 		fixture.copy(t, film, "/media/uhd.mkv", "mpeg4", "aac", 2160)
 		fixture.copy(t, film, "/media/hd.mkv", "h264", "aac", 1080)
 
-		plan, err := fixture.service.SourceFor(ctx, film.ID, chrome)
+		plan, err := fixture.service.SourceFor(ctx, film, chrome)
 		if err != nil {
 			t.Fatalf("failed to choose a source: %v", err)
 		}
@@ -564,7 +564,7 @@ func TestService_SourceFor(t *testing.T) {
 		film := fixture.film(t, "movie:unencodable")
 		fixture.copy(t, film, "/media/only.mkv", "mpeg4", "aac", 1080)
 
-		plan, err := fixture.service.SourceFor(ctx, film.ID, chrome)
+		plan, err := fixture.service.SourceFor(ctx, film, chrome)
 		if err != nil {
 			t.Fatalf("failed to choose a source: %v", err)
 		}
@@ -579,7 +579,7 @@ func TestService_SourceFor(t *testing.T) {
 		fixture.copy(t, film, "/media/only.mkv", "mpeg4", "aac", 1080)
 
 		vp9 := Capabilities{Profiles: []Profile{{Container: "webm", VideoCodec: "vp9", AudioCodec: "opus"}}}
-		if _, err := fixture.service.SourceFor(ctx, film.ID, vp9); !errors.Is(err, ErrNoPlayable) {
+		if _, err := fixture.service.SourceFor(ctx, film, vp9); !errors.Is(err, ErrNoPlayable) {
 			t.Errorf("err = %v, want %v", err, ErrNoPlayable)
 		}
 	})
@@ -590,7 +590,7 @@ func TestService_SourceFor(t *testing.T) {
 		fixture.copyRanged(t, film, "/media/uhd.mkv", "h264", "aac", 2160, ptr(streammodel.VideoRangeTypeHDR10))
 		fixture.copyRanged(t, film, "/media/hd.mkv", "h264", "aac", 1080, ptr(streammodel.VideoRangeTypeSDR))
 
-		plan, err := fixture.service.SourceFor(ctx, film.ID, chrome)
+		plan, err := fixture.service.SourceFor(ctx, film, chrome)
 		if err != nil {
 			t.Fatalf("failed to choose a source: %v", err)
 		}
@@ -607,7 +607,7 @@ func TestService_SourceFor(t *testing.T) {
 		film := fixture.film(t, "movie:hdr-only")
 		fixture.copyRanged(t, film, "/media/only.mkv", "h264", "aac", 2160, ptr(streammodel.VideoRangeTypeHDR10))
 
-		plan, err := fixture.service.SourceFor(ctx, film.ID, chrome)
+		plan, err := fixture.service.SourceFor(ctx, film, chrome)
 		if err != nil {
 			t.Fatalf("failed to choose a source: %v", err)
 		}
@@ -624,7 +624,7 @@ func TestService_SourceFor(t *testing.T) {
 		film := fixture.film(t, "movie:unread-range")
 		fixture.copy(t, film, "/media/only.mkv", "h264", "aac", 1080)
 
-		plan, err := fixture.service.SourceFor(ctx, film.ID, chrome)
+		plan, err := fixture.service.SourceFor(ctx, film, chrome)
 		if err != nil {
 			t.Fatalf("a file whose range nobody probed was refused: %v", err)
 		}
@@ -637,7 +637,7 @@ func TestService_SourceFor(t *testing.T) {
 		fixture := newFixture(t)
 		film := fixture.film(t, "movie:nofile")
 
-		if _, err := fixture.service.SourceFor(ctx, film.ID, chrome); !errors.Is(err, ErrNoSource) {
+		if _, err := fixture.service.SourceFor(ctx, film, chrome); !errors.Is(err, ErrNoSource) {
 			t.Errorf("err = %v, want %v", err, ErrNoSource)
 		}
 	})
@@ -647,7 +647,7 @@ func TestService_SourceFor(t *testing.T) {
 		film := fixture.film(t, "movie:silent-client")
 		fixture.copy(t, film, "/media/only.mkv", "mpeg4", "ac3", 1080)
 
-		plan, err := fixture.service.SourceFor(ctx, film.ID, Capabilities{})
+		plan, err := fixture.service.SourceFor(ctx, film, Capabilities{})
 		if err != nil {
 			t.Fatalf("failed to choose a source: %v", err)
 		}
@@ -655,4 +655,65 @@ func TestService_SourceFor(t *testing.T) {
 			t.Errorf("change = %v, want %v", plan.Change, ChangeNone)
 		}
 	})
+}
+
+var listener = Capabilities{
+	Audio: []Profile{
+		{Container: "mp3"},
+		{Container: "m4a", AudioCodec: "aac"},
+		{Container: "flac"},
+	},
+}
+
+func song(container, codec string) *MediaSource {
+	return ripped(container, "", 0, codec)
+}
+
+func TestSoundPlan(t *testing.T) {
+	for _, tc := range []struct {
+		name      string
+		can       Capabilities
+		source    *MediaSource
+		change    Change
+		container string
+		codec     string
+	}{
+		{name: "a container the client takes whole", can: listener, source: song("flac", "flac"), change: ChangeNone, container: "flac", codec: "flac"},
+		{name: "a container and the codec it names", can: listener, source: song("m4a", "aac"), change: ChangeNone, container: "m4a", codec: "aac"},
+		{name: "the container but not the codec", can: listener, source: song("m4a", "alac"), change: ChangeAudio, container: "mp3", codec: "mp3"},
+		{name: "a container the client does not take", can: listener, source: song("ogg", "vorbis"), change: ChangeAudio, container: "mp3", codec: "mp3"},
+		{
+			name:      "a transcoding profile comes before a direct play container",
+			can:       Capabilities{Audio: listener.Audio, AudioEncodes: []string{"opus"}},
+			source:    song("ogg", "vorbis"),
+			change:    ChangeAudio,
+			container: "opus",
+			codec:     "opus",
+		},
+		{
+			name:   "nothing this server can write",
+			can:    Capabilities{Audio: []Profile{{Container: "wav"}}},
+			source: song("flac", "flac"),
+			change: ChangeRefused,
+		},
+		{name: "a client that declared nothing about audio", can: chrome, source: song("flac", "flac"), change: ChangeNone, container: "flac", codec: "flac"},
+		{name: "an unprobed file in a container the client takes", can: listener, source: &MediaSource{Container: "mp3"}, change: ChangeNone, container: "mp3"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			plan := tc.can.soundPlan(tc.source)
+
+			if plan.Change != tc.change {
+				t.Fatalf("change = %v, want %v", plan.Change, tc.change)
+			}
+			if !plan.Change.Available() {
+				return
+			}
+			if plan.Container != tc.container || plan.AudioCodec != tc.codec {
+				t.Errorf("plan = %s|%s, want %s|%s", plan.Container, plan.AudioCodec, tc.container, tc.codec)
+			}
+			if plan.VideoCodec != "" {
+				t.Errorf("a song was planned a picture encode to %q", plan.VideoCodec)
+			}
+		})
+	}
 }

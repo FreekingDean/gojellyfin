@@ -29,6 +29,11 @@ func capabilities(profile api.DeviceProfile) items.Capabilities {
 			items.Profile
 			Type string
 		}
+		TranscodingProfiles []struct {
+			Type      string
+			Container string
+			Protocol  string
+		}
 		CodecProfiles []struct {
 			Type       string
 			Codec      string
@@ -43,10 +48,20 @@ func capabilities(profile api.DeviceProfile) items.Capabilities {
 		return items.Capabilities{}
 	}
 
-	video := make([]items.Profile, 0, len(parsed.DirectPlayProfiles))
+	var video, audio []items.Profile
 	for _, entry := range parsed.DirectPlayProfiles {
-		if strings.EqualFold(entry.Type, string(api.DlnaProfileTypeVideo)) {
+		switch {
+		case strings.EqualFold(entry.Type, string(api.DlnaProfileTypeVideo)):
 			video = append(video, entry.Profile)
+		case strings.EqualFold(entry.Type, string(api.DlnaProfileTypeAudio)):
+			audio = append(audio, entry.Profile)
+		}
+	}
+
+	var encodes []string
+	for _, entry := range parsed.TranscodingProfiles {
+		if strings.EqualFold(entry.Type, string(api.DlnaProfileTypeAudio)) && !strings.EqualFold(entry.Protocol, "hls") {
+			encodes = append(encodes, strings.ToLower(strings.TrimSpace(entry.Container)))
 		}
 	}
 
@@ -65,10 +80,10 @@ func capabilities(profile api.DeviceProfile) items.Capabilities {
 		}
 	}
 
-	return items.Capabilities{Profiles: video, Conditions: conditions}
+	return items.Capabilities{Profiles: video, Conditions: conditions, Audio: audio, AudioEncodes: encodes}
 }
 
-func streamURL(itemID uuid.UUID, plan items.Plan, token, session string, startTicks int64) string {
+func streamURL(root string, itemID uuid.UUID, plan items.Plan, token, session string, startTicks int64) string {
 	query := url.Values{
 		"mediaSourceId": {plan.Source.ID.String()},
 		"container":     {plan.Container},
@@ -91,5 +106,5 @@ func streamURL(itemID uuid.UUID, plan items.Plan, token, session string, startTi
 	query.Set("allowVideoStreamCopy", "false")
 	query.Set("allowAudioStreamCopy", "false")
 
-	return fmt.Sprintf("/Videos/%s/stream.%s?%s", itemID, plan.Container, query.Encode())
+	return fmt.Sprintf("/%s/%s/stream.%s?%s", root, itemID, plan.Container, query.Encode())
 }

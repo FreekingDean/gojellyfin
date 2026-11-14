@@ -75,7 +75,7 @@ func TestStreamURL(t *testing.T) {
 	t.Run("the suffix names the container the response will carry", func(t *testing.T) {
 		plan := planFor("mp4", "aac")
 
-		path, values := splitURL(t, streamURL(item, plan, "the-token", "the-session", 0))
+		path, values := splitURL(t, streamURL("Videos", item, plan, "the-token", "the-session", 0))
 
 		if want := "/Videos/" + item.String() + "/stream.mp4"; path != want {
 			t.Errorf("path = %q, want %q", path, want)
@@ -91,7 +91,7 @@ func TestStreamURL(t *testing.T) {
 	untouched := planFor("mkv", "ac3")
 
 	t.Run("the client is given no way to ask for the source instead", func(t *testing.T) {
-		_, values := splitURL(t, streamURL(item, untouched, "the-token", "the-session", 0))
+		_, values := splitURL(t, streamURL("Videos", item, untouched, "the-token", "the-session", 0))
 
 		if values.Has("static") {
 			t.Error("the url lets the client ask for the file as it is")
@@ -108,7 +108,7 @@ func TestStreamURL(t *testing.T) {
 	})
 
 	t.Run("a seek carries the position rather than a byte offset", func(t *testing.T) {
-		_, values := splitURL(t, streamURL(item, untouched, "t", "s", 25_000_000))
+		_, values := splitURL(t, streamURL("Videos", item, untouched, "t", "s", 25_000_000))
 
 		if got := values.Get("startTimeTicks"); got != "25000000" {
 			t.Errorf("start time ticks = %q, want 25000000", got)
@@ -116,7 +116,7 @@ func TestStreamURL(t *testing.T) {
 	})
 
 	t.Run("playing from the start asks for no position", func(t *testing.T) {
-		_, values := splitURL(t, streamURL(item, untouched, "t", "s", 0))
+		_, values := splitURL(t, streamURL("Videos", item, untouched, "t", "s", 0))
 
 		if values.Has("startTimeTicks") {
 			t.Error("the url asks for a position nobody seeked to")
@@ -124,7 +124,7 @@ func TestStreamURL(t *testing.T) {
 	})
 
 	t.Run("a file served whole keeps its own clock", func(t *testing.T) {
-		_, values := splitURL(t, streamURL(item, untouched, "t", "s", 25_000_000))
+		_, values := splitURL(t, streamURL("Videos", item, untouched, "t", "s", 25_000_000))
 
 		if got := values.Get("copyTimestamps"); got != "true" {
 			t.Errorf("copy timestamps = %q, want true so the client does not add the start position to the file's own", got)
@@ -132,7 +132,7 @@ func TestStreamURL(t *testing.T) {
 	})
 
 	t.Run("a remux starts its clock at the position asked for", func(t *testing.T) {
-		_, values := splitURL(t, streamURL(item, planFor("mp4", "aac"), "t", "s", 25_000_000))
+		_, values := splitURL(t, streamURL("Videos", item, planFor("mp4", "aac"), "t", "s", 25_000_000))
 
 		if values.Has("copyTimestamps") {
 			t.Error("the url tells the client a remux that starts at zero carries the source's timestamps")
@@ -140,7 +140,7 @@ func TestStreamURL(t *testing.T) {
 	})
 
 	t.Run("a playback error has somewhere to stop", func(t *testing.T) {
-		raw := strings.ToLower(streamURL(item, untouched, "t", "s", 0))
+		raw := strings.ToLower(streamURL("Videos", item, untouched, "t", "s", 0))
 
 		for _, refusal := range []string{"allowvideostreamcopy=false", "allowaudiostreamcopy=false"} {
 			if !strings.Contains(raw, refusal) {
