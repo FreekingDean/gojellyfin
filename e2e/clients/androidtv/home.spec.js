@@ -1,4 +1,4 @@
-const { test, expect, openLibrary } = require('./fixtures');
+const { test, expect, openLibrary, libraryTitles } = require('./fixtures');
 
 test.describe('browsing on the television', () => {
   test('lists the libraries on the home screen', async ({ signedIn: tv, harness, shot }) => {
@@ -19,9 +19,11 @@ test.describe('browsing on the television', () => {
   test('opens a library and lists its titles', async ({ signedIn: tv, harness, shot }) => {
     await openLibrary(tv, harness);
 
-    for (const movie of harness.movies) {
-      expect(tv.find({ label: movie }).length).toBeGreaterThan(0);
-    }
     await shot('library');
+
+    const titles = await libraryTitles(tv);
+    for (const movie of harness.movies) {
+      expect(titles).toContain(movie);
+    }
   });
 });

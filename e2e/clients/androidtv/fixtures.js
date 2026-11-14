@@ -163,14 +163,66 @@ function home(tv, app) {
   return tv.waitFor({ label: app.library }, { timeout: 90000 });
 }
 
+// A library opens as a grid of posters with no text on them: the app writes
+// the focused title above the grid and its place below it, so the titles are
+// read by walking the focus along the grid with the remote.
 async function openLibrary(tv, app) {
   await tv.tapOn({ label: app.library });
-  await tv.waitFor({ label: app.playable }, { timeout: 60000 });
+  await tv.waitFor({ id: 'counter', text: /^\d+ \| \d+$/ }, { timeout: 60000 });
+}
+
+function focusedTitle(tv) {
+  const nodes = tv.dump();
+  const title = nodes.find((node) => node.id === 'title');
+  const counter = nodes.find((node) => node.id === 'counter');
+  const place = counter && /^(\d+) \| (\d+)$/.exec(counter.text);
+
+  return { title: title ? title.text : '', index: place ? Number(place[1]) : 0, total: place ? Number(place[2]) : 0 };
+}
+
+async function walkGrid(tv, visit) {
+  let focused = focusedTitle(tv);
+  for (let step = 0; step < 50; step++) {
+    if (visit(focused)) {
+      return focused;
+    }
+    if (focused.total && focused.index >= focused.total) {
+      return null;
+    }
+    const before = focused.index;
+    tv.key('right');
+    await sleep(700);
+    focused = focusedTitle(tv);
+    if (focused.index === before) {
+      tv.key('down');
+      await sleep(700);
+      focused = focusedTitle(tv);
+    }
+  }
+
+  return null;
+}
+
+async function libraryTitles(tv) {
+  const titles = [];
+  await walkGrid(tv, ({ title }) => {
+    if (title && !titles.includes(title)) {
+      titles.push(title);
+    }
+
+    return false;
+  });
+
+  return titles;
 }
 
 async function openDetails(tv, app, name) {
   await openLibrary(tv, app);
-  await tv.tapOn({ label: name });
+  const found = await walkGrid(tv, ({ title }) => title === name);
+  if (!found) {
+    throw new Error(`${name} is not in ${app.library}. On screen:\n${tv.summary()}`);
+  }
+  tv.key('center');
   await tv.waitFor({ label: /^(Play|Resume from .*)$/ }, { timeout: 60000 });
 }
 
@@ -198,6 +250,7 @@ module.exports = {
   qrOn,
   home,
   openLibrary,
+  libraryTitles,
   openDetails,
   leavePlayer,
 };
