@@ -10,23 +10,60 @@
       "url": "http://localhost"
     }
   ],
-  "paths": {"/GoJellyfin/Sources": {
+  "paths": {"/GoJellyfin/SourceApiKeyVariables": {
       "get": {
         "tags": [
           "Sources"
         ],
-        "summary": "Lists the sources configuration.",
+        "summary": "Lists the SOURCE_API_KEY_ variables set on this server, by name only.",
+        "operationId": "GoJellyfinListSourceApiKeyVariables",
+        "responses": {
+          "200": {
+            "description": "The variable names.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "RequiresElevation"
+            ]
+          }
+        ]
+      }
+    }, "/GoJellyfin/Sources": {
+      "get": {
+        "tags": [
+          "Sources"
+        ],
+        "summary": "Lists every configured Sonarr and Radarr instance.",
         "operationId": "GoJellyfinListSources",
         "responses": {
           "200": {
+            "description": "The configured sources.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Sources"
                 }
               }
-            },
-            "description": "Source saved."
+            }
           },
           "401": {
             "description": "Unauthorized"
@@ -44,25 +81,42 @@
           }
         ]
       },
-      "put": {
+      "post": {
         "tags": [
           "Sources"
         ],
-        "summary": "Updates the sources configuration.",
-        "operationId": "GoJellyfinUpdateSources",
+        "summary": "Adds a Sonarr or Radarr instance.",
+        "operationId": "GoJellyfinCreateSource",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Sources"
+                "$ref": "#/components/schemas/Source"
               }
             }
           }
         },
         "responses": {
-          "204": {
-            "description": "Source saved."
+          "200": {
+            "description": "Source saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Source"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The source was refused, and why.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceError"
+                }
+              }
+            }
           },
           "401": {
             "description": "Unauthorized"
@@ -85,7 +139,7 @@
         "tags": [
           "Sources"
         ],
-        "summary": "Tests whether a Sonarr or Radarr instance is reachable.",
+        "summary": "Tests a Sonarr or Radarr instance and lists its root folders.",
         "operationId": "GoJellyfinTestSource",
         "requestBody": {
           "required": true,
@@ -107,6 +161,164 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "RequiresElevation"
+            ]
+          }
+        ]
+      }
+    }, "/GoJellyfin/Sources/{sourceId}": {
+      "get": {
+        "tags": [
+          "Sources"
+        ],
+        "summary": "Gets one source.",
+        "operationId": "GoJellyfinGetSource",
+        "parameters": [
+          {
+            "name": "sourceId",
+            "in": "path",
+            "required": true,
+            "description": "The source id.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The source.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Source"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such source."
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "RequiresElevation"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Sources"
+        ],
+        "summary": "Replaces one source's configuration.",
+        "operationId": "GoJellyfinUpdateSource",
+        "parameters": [
+          {
+            "name": "sourceId",
+            "in": "path",
+            "required": true,
+            "description": "The source id.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Source"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Source saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Source"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The source was refused, and why.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such source."
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "RequiresElevation"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Sources"
+        ],
+        "summary": "Removes one source, along with every file it reported.",
+        "operationId": "GoJellyfinDeleteSource",
+        "parameters": [
+          {
+            "name": "sourceId",
+            "in": "path",
+            "required": true,
+            "description": "The source id.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Source removed."
+          },
+          "404": {
+            "description": "No such source."
           },
           "401": {
             "description": "Unauthorized"
@@ -47235,6 +47447,11 @@
     "schemas": {"Source": {
         "type": "object",
         "properties": {
+          "Id": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
           "Name": {
             "type": "string"
           },
@@ -47249,19 +47466,47 @@
             "type": "string",
             "description": "Name of the environment variable holding the API key. Must begin with SOURCE_API_KEY_."
           },
-          "RootPath": {
-            "type": "string",
-            "description": "Directory this instance reports its files under."
-          },
-          "LocalPath": {
-            "type": "string",
-            "description": "Directory this server opens those files at."
-          },
           "Libraries": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/SourceLibrary"
             }
+          },
+          "Paths": {
+            "type": "array",
+            "description": "Where each folder the instance reports is opened on this server.",
+            "items": {
+              "$ref": "#/components/schemas/SourcePath"
+            }
+          },
+          "Version": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true,
+            "description": "Version the instance last reported."
+          },
+          "ContactedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "readOnly": true,
+            "description": "When the instance last answered."
+          },
+          "LastError": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true,
+            "description": "Why the instance last failed to answer, empty once it does."
+          }
+        }
+      }, "SourceError": {
+        "type": "object",
+        "required": [
+          "Message"
+        ],
+        "properties": {
+          "Message": {
+            "type": "string"
           }
         }
       }, "SourceKind": {
@@ -47296,6 +47541,22 @@
             "readOnly": true
           }
         }
+      }, "SourcePath": {
+        "type": "object",
+        "required": [
+          "RemotePath",
+          "LocalPath"
+        ],
+        "properties": {
+          "RemotePath": {
+            "type": "string",
+            "description": "A folder the instance reports its files under."
+          },
+          "LocalPath": {
+            "type": "string",
+            "description": "Where this server opens that folder."
+          }
+        }
       }, "SourceTestRequest": {
         "type": "object",
         "required": [
@@ -47327,6 +47588,17 @@
           },
           "Error": {
             "type": "string",
+            "nullable": true
+          },
+          "Version": {
+            "type": "string",
+            "nullable": true
+          },
+          "RootFolders": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
             "nullable": true
           }
         }

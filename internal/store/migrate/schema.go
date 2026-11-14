@@ -730,15 +730,46 @@ var (
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "url", Type: field.TypeString, Unique: true},
 		{Name: "api_key_variable", Type: field.TypeString},
-		{Name: "root_path", Type: field.TypeString, Nullable: true},
-		{Name: "local_path", Type: field.TypeString, Nullable: true},
-		{Name: "kind", Type: field.TypeEnum, Enums: []string{"radarr", "sonarr", "lidarr", "readarr", "bazarr"}},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"radarr", "sonarr"}},
+		{Name: "version", Type: field.TypeString, Nullable: true},
+		{Name: "contacted_at", Type: field.TypeTime, Nullable: true},
+		{Name: "last_error", Type: field.TypeString, Nullable: true},
 	}
 	// SourcesTable holds the schema information for the "sources" table.
 	SourcesTable = &schema.Table{
 		Name:       "sources",
 		Columns:    SourcesColumns,
 		PrimaryKey: []*schema.Column{SourcesColumns[0]},
+	}
+	// SourcePathsColumns holds the columns for the "source_paths" table.
+	SourcePathsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "remote_path", Type: field.TypeString},
+		{Name: "local_path", Type: field.TypeString, Unique: true},
+		{Name: "source_id", Type: field.TypeUUID},
+	}
+	// SourcePathsTable holds the schema information for the "source_paths" table.
+	SourcePathsTable = &schema.Table{
+		Name:       "source_paths",
+		Columns:    SourcePathsColumns,
+		PrimaryKey: []*schema.Column{SourcePathsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "source_paths_sources_paths",
+				Columns:    []*schema.Column{SourcePathsColumns[5]},
+				RefColumns: []*schema.Column{SourcesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "sourcepath_source_id_remote_path",
+				Unique:  true,
+				Columns: []*schema.Column{SourcePathsColumns[5], SourcePathsColumns[3]},
+			},
+		},
 	}
 	// StudiosColumns holds the columns for the "studios" table.
 	StudiosColumns = []*schema.Column{
@@ -988,6 +1019,7 @@ var (
 		QuickConnectRequestsTable,
 		SessionsTable,
 		SourcesTable,
+		SourcePathsTable,
 		StudiosTable,
 		UsersTable,
 		UserConfigurationsTable,
@@ -1029,6 +1061,7 @@ func init() {
 	QuickConnectRequestsTable.ForeignKeys[0].RefTable = UsersTable
 	SessionsTable.ForeignKeys[0].RefTable = DevicesTable
 	SessionsTable.ForeignKeys[1].RefTable = UsersTable
+	SourcePathsTable.ForeignKeys[0].RefTable = SourcesTable
 	UserConfigurationsTable.ForeignKeys[0].RefTable = UsersTable
 	UserItemDataTable.ForeignKeys[0].RefTable = ItemsTable
 	UserItemDataTable.ForeignKeys[1].RefTable = UsersTable

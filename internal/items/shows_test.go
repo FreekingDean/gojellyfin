@@ -30,8 +30,6 @@ func (f *fixture) downloader(t *testing.T) uuid.UUID {
 		SetURL("http://" + uuid.NewString() + ".invalid").
 		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
 		SetKind(sourcemodel.KindRadarr).
-		SetRootPath("/media").
-		SetLocalPath("/media").
 		Save(context.Background())
 	if err != nil {
 		t.Fatalf("failed to create the source: %v", err)
@@ -83,8 +81,6 @@ func newFixture(t *testing.T) *fixture {
 		SetURL("http://" + uuid.NewString() + ".invalid").
 		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
 		SetKind(sourcemodel.KindRadarr).
-		SetRootPath("/media").
-		SetLocalPath("/media").
 		Save(context.Background())
 	if err != nil {
 		t.Fatalf("failed to create the source: %v", err)

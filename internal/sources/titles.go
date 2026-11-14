@@ -243,12 +243,16 @@ func known(id int64) *int64 {
 }
 
 func Localise(source Source, path string) (string, error) {
-	relative, err := filepath.Rel(source.RootPath, path)
-	if err != nil || !filepath.IsAbs(path) || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
-		return "", fmt.Errorf("%s reported %q, which is outside its root %s", source.Name, path, source.RootPath)
+	if filepath.IsAbs(path) {
+		for _, mapping := range source.Paths {
+			relative, err := filepath.Rel(mapping.RemotePath, path)
+			if err == nil && relative != ".." && !strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+				return filepath.Join(mapping.LocalPath, relative), nil
+			}
+		}
 	}
 
-	return filepath.Join(source.LocalPath, relative), nil
+	return "", fmt.Errorf("%s reported %q, which is outside every folder it maps", source.Name, path)
 }
 
 func released(year int32) *int32 {
@@ -264,6 +268,10 @@ func ptr[T any](value T) *T {
 }
 
 func get[T any](ctx context.Context, s *Service, source Source, path string, query url.Values) (T, error) {
+	return fetch[T](ctx, s, s.lister, source, path, query)
+}
+
+func fetch[T any](ctx context.Context, s *Service, client *http.Client, source Source, path string, query url.Values) (T, error) {
 	var out T
 
 	parsed, err := url.Parse(source.URL)
@@ -284,7 +292,7 @@ func get[T any](ctx context.Context, s *Service, source Source, path string, que
 	}
 	req.Header.Set(arr.APIKeyName, apiKey)
 
-	resp, err := s.lister.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return out, err
 	}

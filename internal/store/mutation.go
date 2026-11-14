@@ -36,6 +36,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/quickconnectrequest"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
+	"github.com/FreekingDean/gojellyfin/internal/store/sourcepath"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
@@ -75,6 +76,7 @@ const (
 	TypeQuickConnectRequest = "QuickConnectRequest"
 	TypeSession             = "Session"
 	TypeSource              = "Source"
+	TypeSourcePath          = "SourcePath"
 	TypeStudio              = "Studio"
 	TypeUser                = "User"
 	TypeUserConfiguration   = "UserConfiguration"
@@ -23207,10 +23209,14 @@ type SourceMutation struct {
 	name               *string
 	url                *string
 	api_key_variable   *string
-	root_path          *string
-	local_path         *string
 	kind               *source.Kind
+	version            *string
+	contacted_at       *time.Time
+	last_error         *string
 	clearedFields      map[string]struct{}
+	paths              map[uuid.UUID]struct{}
+	removedpaths       map[uuid.UUID]struct{}
+	clearedpaths       bool
 	libraries          map[uuid.UUID]struct{}
 	removedlibraries   map[uuid.UUID]struct{}
 	clearedlibraries   bool
@@ -23509,104 +23515,6 @@ func (m *SourceMutation) ResetAPIKeyVariable() {
 	m.api_key_variable = nil
 }
 
-// SetRootPath sets the "root_path" field.
-func (m *SourceMutation) SetRootPath(s string) {
-	m.root_path = &s
-}
-
-// RootPath returns the value of the "root_path" field in the mutation.
-func (m *SourceMutation) RootPath() (r string, exists bool) {
-	v := m.root_path
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldRootPath returns the old "root_path" field's value of the Source entity.
-// If the Source object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SourceMutation) OldRootPath(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldRootPath is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldRootPath requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldRootPath: %w", err)
-	}
-	return oldValue.RootPath, nil
-}
-
-// ClearRootPath clears the value of the "root_path" field.
-func (m *SourceMutation) ClearRootPath() {
-	m.root_path = nil
-	m.clearedFields[source.FieldRootPath] = struct{}{}
-}
-
-// RootPathCleared returns if the "root_path" field was cleared in this mutation.
-func (m *SourceMutation) RootPathCleared() bool {
-	_, ok := m.clearedFields[source.FieldRootPath]
-	return ok
-}
-
-// ResetRootPath resets all changes to the "root_path" field.
-func (m *SourceMutation) ResetRootPath() {
-	m.root_path = nil
-	delete(m.clearedFields, source.FieldRootPath)
-}
-
-// SetLocalPath sets the "local_path" field.
-func (m *SourceMutation) SetLocalPath(s string) {
-	m.local_path = &s
-}
-
-// LocalPath returns the value of the "local_path" field in the mutation.
-func (m *SourceMutation) LocalPath() (r string, exists bool) {
-	v := m.local_path
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldLocalPath returns the old "local_path" field's value of the Source entity.
-// If the Source object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SourceMutation) OldLocalPath(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldLocalPath is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldLocalPath requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldLocalPath: %w", err)
-	}
-	return oldValue.LocalPath, nil
-}
-
-// ClearLocalPath clears the value of the "local_path" field.
-func (m *SourceMutation) ClearLocalPath() {
-	m.local_path = nil
-	m.clearedFields[source.FieldLocalPath] = struct{}{}
-}
-
-// LocalPathCleared returns if the "local_path" field was cleared in this mutation.
-func (m *SourceMutation) LocalPathCleared() bool {
-	_, ok := m.clearedFields[source.FieldLocalPath]
-	return ok
-}
-
-// ResetLocalPath resets all changes to the "local_path" field.
-func (m *SourceMutation) ResetLocalPath() {
-	m.local_path = nil
-	delete(m.clearedFields, source.FieldLocalPath)
-}
-
 // SetKind sets the "kind" field.
 func (m *SourceMutation) SetKind(s source.Kind) {
 	m.kind = &s
@@ -23641,6 +23549,207 @@ func (m *SourceMutation) OldKind(ctx context.Context) (v source.Kind, err error)
 // ResetKind resets all changes to the "kind" field.
 func (m *SourceMutation) ResetKind() {
 	m.kind = nil
+}
+
+// SetVersion sets the "version" field.
+func (m *SourceMutation) SetVersion(s string) {
+	m.version = &s
+}
+
+// Version returns the value of the "version" field in the mutation.
+func (m *SourceMutation) Version() (r string, exists bool) {
+	v := m.version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVersion returns the old "version" field's value of the Source entity.
+// If the Source object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SourceMutation) OldVersion(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVersion: %w", err)
+	}
+	return oldValue.Version, nil
+}
+
+// ClearVersion clears the value of the "version" field.
+func (m *SourceMutation) ClearVersion() {
+	m.version = nil
+	m.clearedFields[source.FieldVersion] = struct{}{}
+}
+
+// VersionCleared returns if the "version" field was cleared in this mutation.
+func (m *SourceMutation) VersionCleared() bool {
+	_, ok := m.clearedFields[source.FieldVersion]
+	return ok
+}
+
+// ResetVersion resets all changes to the "version" field.
+func (m *SourceMutation) ResetVersion() {
+	m.version = nil
+	delete(m.clearedFields, source.FieldVersion)
+}
+
+// SetContactedAt sets the "contacted_at" field.
+func (m *SourceMutation) SetContactedAt(t time.Time) {
+	m.contacted_at = &t
+}
+
+// ContactedAt returns the value of the "contacted_at" field in the mutation.
+func (m *SourceMutation) ContactedAt() (r time.Time, exists bool) {
+	v := m.contacted_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldContactedAt returns the old "contacted_at" field's value of the Source entity.
+// If the Source object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SourceMutation) OldContactedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldContactedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldContactedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldContactedAt: %w", err)
+	}
+	return oldValue.ContactedAt, nil
+}
+
+// ClearContactedAt clears the value of the "contacted_at" field.
+func (m *SourceMutation) ClearContactedAt() {
+	m.contacted_at = nil
+	m.clearedFields[source.FieldContactedAt] = struct{}{}
+}
+
+// ContactedAtCleared returns if the "contacted_at" field was cleared in this mutation.
+func (m *SourceMutation) ContactedAtCleared() bool {
+	_, ok := m.clearedFields[source.FieldContactedAt]
+	return ok
+}
+
+// ResetContactedAt resets all changes to the "contacted_at" field.
+func (m *SourceMutation) ResetContactedAt() {
+	m.contacted_at = nil
+	delete(m.clearedFields, source.FieldContactedAt)
+}
+
+// SetLastError sets the "last_error" field.
+func (m *SourceMutation) SetLastError(s string) {
+	m.last_error = &s
+}
+
+// LastError returns the value of the "last_error" field in the mutation.
+func (m *SourceMutation) LastError() (r string, exists bool) {
+	v := m.last_error
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastError returns the old "last_error" field's value of the Source entity.
+// If the Source object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SourceMutation) OldLastError(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastError is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastError requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastError: %w", err)
+	}
+	return oldValue.LastError, nil
+}
+
+// ClearLastError clears the value of the "last_error" field.
+func (m *SourceMutation) ClearLastError() {
+	m.last_error = nil
+	m.clearedFields[source.FieldLastError] = struct{}{}
+}
+
+// LastErrorCleared returns if the "last_error" field was cleared in this mutation.
+func (m *SourceMutation) LastErrorCleared() bool {
+	_, ok := m.clearedFields[source.FieldLastError]
+	return ok
+}
+
+// ResetLastError resets all changes to the "last_error" field.
+func (m *SourceMutation) ResetLastError() {
+	m.last_error = nil
+	delete(m.clearedFields, source.FieldLastError)
+}
+
+// AddPathIDs adds the "paths" edge to the SourcePath entity by ids.
+func (m *SourceMutation) AddPathIDs(ids ...uuid.UUID) {
+	if m.paths == nil {
+		m.paths = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.paths[ids[i]] = struct{}{}
+	}
+}
+
+// ClearPaths clears the "paths" edge to the SourcePath entity.
+func (m *SourceMutation) ClearPaths() {
+	m.clearedpaths = true
+}
+
+// PathsCleared reports if the "paths" edge to the SourcePath entity was cleared.
+func (m *SourceMutation) PathsCleared() bool {
+	return m.clearedpaths
+}
+
+// RemovePathIDs removes the "paths" edge to the SourcePath entity by IDs.
+func (m *SourceMutation) RemovePathIDs(ids ...uuid.UUID) {
+	if m.removedpaths == nil {
+		m.removedpaths = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.paths, ids[i])
+		m.removedpaths[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedPaths returns the removed IDs of the "paths" edge to the SourcePath entity.
+func (m *SourceMutation) RemovedPathsIDs() (ids []uuid.UUID) {
+	for id := range m.removedpaths {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// PathsIDs returns the "paths" edge IDs in the mutation.
+func (m *SourceMutation) PathsIDs() (ids []uuid.UUID) {
+	for id := range m.paths {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetPaths resets all changes to the "paths" edge.
+func (m *SourceMutation) ResetPaths() {
+	m.paths = nil
+	m.clearedpaths = false
+	m.removedpaths = nil
 }
 
 // AddLibraryIDs adds the "libraries" edge to the LibrarySource entity by ids.
@@ -23839,7 +23948,7 @@ func (m *SourceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SourceMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, source.FieldCreatedAt)
 	}
@@ -23855,14 +23964,17 @@ func (m *SourceMutation) Fields() []string {
 	if m.api_key_variable != nil {
 		fields = append(fields, source.FieldAPIKeyVariable)
 	}
-	if m.root_path != nil {
-		fields = append(fields, source.FieldRootPath)
-	}
-	if m.local_path != nil {
-		fields = append(fields, source.FieldLocalPath)
-	}
 	if m.kind != nil {
 		fields = append(fields, source.FieldKind)
+	}
+	if m.version != nil {
+		fields = append(fields, source.FieldVersion)
+	}
+	if m.contacted_at != nil {
+		fields = append(fields, source.FieldContactedAt)
+	}
+	if m.last_error != nil {
+		fields = append(fields, source.FieldLastError)
 	}
 	return fields
 }
@@ -23882,12 +23994,14 @@ func (m *SourceMutation) Field(name string) (ent.Value, bool) {
 		return m.URL()
 	case source.FieldAPIKeyVariable:
 		return m.APIKeyVariable()
-	case source.FieldRootPath:
-		return m.RootPath()
-	case source.FieldLocalPath:
-		return m.LocalPath()
 	case source.FieldKind:
 		return m.Kind()
+	case source.FieldVersion:
+		return m.Version()
+	case source.FieldContactedAt:
+		return m.ContactedAt()
+	case source.FieldLastError:
+		return m.LastError()
 	}
 	return nil, false
 }
@@ -23907,12 +24021,14 @@ func (m *SourceMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldURL(ctx)
 	case source.FieldAPIKeyVariable:
 		return m.OldAPIKeyVariable(ctx)
-	case source.FieldRootPath:
-		return m.OldRootPath(ctx)
-	case source.FieldLocalPath:
-		return m.OldLocalPath(ctx)
 	case source.FieldKind:
 		return m.OldKind(ctx)
+	case source.FieldVersion:
+		return m.OldVersion(ctx)
+	case source.FieldContactedAt:
+		return m.OldContactedAt(ctx)
+	case source.FieldLastError:
+		return m.OldLastError(ctx)
 	}
 	return nil, fmt.Errorf("unknown Source field %s", name)
 }
@@ -23957,26 +24073,33 @@ func (m *SourceMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetAPIKeyVariable(v)
 		return nil
-	case source.FieldRootPath:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetRootPath(v)
-		return nil
-	case source.FieldLocalPath:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetLocalPath(v)
-		return nil
 	case source.FieldKind:
 		v, ok := value.(source.Kind)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetKind(v)
+		return nil
+	case source.FieldVersion:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVersion(v)
+		return nil
+	case source.FieldContactedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetContactedAt(v)
+		return nil
+	case source.FieldLastError:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastError(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Source field %s", name)
@@ -24008,11 +24131,14 @@ func (m *SourceMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *SourceMutation) ClearedFields() []string {
 	var fields []string
-	if m.FieldCleared(source.FieldRootPath) {
-		fields = append(fields, source.FieldRootPath)
+	if m.FieldCleared(source.FieldVersion) {
+		fields = append(fields, source.FieldVersion)
 	}
-	if m.FieldCleared(source.FieldLocalPath) {
-		fields = append(fields, source.FieldLocalPath)
+	if m.FieldCleared(source.FieldContactedAt) {
+		fields = append(fields, source.FieldContactedAt)
+	}
+	if m.FieldCleared(source.FieldLastError) {
+		fields = append(fields, source.FieldLastError)
 	}
 	return fields
 }
@@ -24028,11 +24154,14 @@ func (m *SourceMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *SourceMutation) ClearField(name string) error {
 	switch name {
-	case source.FieldRootPath:
-		m.ClearRootPath()
+	case source.FieldVersion:
+		m.ClearVersion()
 		return nil
-	case source.FieldLocalPath:
-		m.ClearLocalPath()
+	case source.FieldContactedAt:
+		m.ClearContactedAt()
+		return nil
+	case source.FieldLastError:
+		m.ClearLastError()
 		return nil
 	}
 	return fmt.Errorf("unknown Source nullable field %s", name)
@@ -24057,14 +24186,17 @@ func (m *SourceMutation) ResetField(name string) error {
 	case source.FieldAPIKeyVariable:
 		m.ResetAPIKeyVariable()
 		return nil
-	case source.FieldRootPath:
-		m.ResetRootPath()
-		return nil
-	case source.FieldLocalPath:
-		m.ResetLocalPath()
-		return nil
 	case source.FieldKind:
 		m.ResetKind()
+		return nil
+	case source.FieldVersion:
+		m.ResetVersion()
+		return nil
+	case source.FieldContactedAt:
+		m.ResetContactedAt()
+		return nil
+	case source.FieldLastError:
+		m.ResetLastError()
 		return nil
 	}
 	return fmt.Errorf("unknown Source field %s", name)
@@ -24072,7 +24204,10 @@ func (m *SourceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *SourceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
+	if m.paths != nil {
+		edges = append(edges, source.EdgePaths)
+	}
 	if m.libraries != nil {
 		edges = append(edges, source.EdgeLibraries)
 	}
@@ -24089,6 +24224,12 @@ func (m *SourceMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *SourceMutation) AddedIDs(name string) []ent.Value {
 	switch name {
+	case source.EdgePaths:
+		ids := make([]ent.Value, 0, len(m.paths))
+		for id := range m.paths {
+			ids = append(ids, id)
+		}
+		return ids
 	case source.EdgeLibraries:
 		ids := make([]ent.Value, 0, len(m.libraries))
 		for id := range m.libraries {
@@ -24113,7 +24254,10 @@ func (m *SourceMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *SourceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
+	if m.removedpaths != nil {
+		edges = append(edges, source.EdgePaths)
+	}
 	if m.removedlibraries != nil {
 		edges = append(edges, source.EdgeLibraries)
 	}
@@ -24130,6 +24274,12 @@ func (m *SourceMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *SourceMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
+	case source.EdgePaths:
+		ids := make([]ent.Value, 0, len(m.removedpaths))
+		for id := range m.removedpaths {
+			ids = append(ids, id)
+		}
+		return ids
 	case source.EdgeLibraries:
 		ids := make([]ent.Value, 0, len(m.removedlibraries))
 		for id := range m.removedlibraries {
@@ -24154,7 +24304,10 @@ func (m *SourceMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *SourceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
+	if m.clearedpaths {
+		edges = append(edges, source.EdgePaths)
+	}
 	if m.clearedlibraries {
 		edges = append(edges, source.EdgeLibraries)
 	}
@@ -24171,6 +24324,8 @@ func (m *SourceMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *SourceMutation) EdgeCleared(name string) bool {
 	switch name {
+	case source.EdgePaths:
+		return m.clearedpaths
 	case source.EdgeLibraries:
 		return m.clearedlibraries
 	case source.EdgeFiles:
@@ -24193,6 +24348,9 @@ func (m *SourceMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *SourceMutation) ResetEdge(name string) error {
 	switch name {
+	case source.EdgePaths:
+		m.ResetPaths()
+		return nil
 	case source.EdgeLibraries:
 		m.ResetLibraries()
 		return nil
@@ -24204,6 +24362,608 @@ func (m *SourceMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Source edge %s", name)
+}
+
+// SourcePathMutation represents an operation that mutates the SourcePath nodes in the graph.
+type SourcePathMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *uuid.UUID
+	created_at    *time.Time
+	updated_at    *time.Time
+	remote_path   *string
+	local_path    *string
+	clearedFields map[string]struct{}
+	source        *uuid.UUID
+	clearedsource bool
+	done          bool
+	oldValue      func(context.Context) (*SourcePath, error)
+	predicates    []predicate.SourcePath
+}
+
+var _ ent.Mutation = (*SourcePathMutation)(nil)
+
+// sourcepathOption allows management of the mutation configuration using functional options.
+type sourcepathOption func(*SourcePathMutation)
+
+// newSourcePathMutation creates new mutation for the SourcePath entity.
+func newSourcePathMutation(c config, op Op, opts ...sourcepathOption) *SourcePathMutation {
+	m := &SourcePathMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSourcePath,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSourcePathID sets the ID field of the mutation.
+func withSourcePathID(id uuid.UUID) sourcepathOption {
+	return func(m *SourcePathMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *SourcePath
+		)
+		m.oldValue = func(ctx context.Context) (*SourcePath, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().SourcePath.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSourcePath sets the old SourcePath of the mutation.
+func withSourcePath(node *SourcePath) sourcepathOption {
+	return func(m *SourcePathMutation) {
+		m.oldValue = func(context.Context) (*SourcePath, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m SourcePathMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m SourcePathMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("store: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of SourcePath entities.
+func (m *SourcePathMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *SourcePathMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *SourcePathMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().SourcePath.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *SourcePathMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *SourcePathMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the SourcePath entity.
+// If the SourcePath object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SourcePathMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *SourcePathMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *SourcePathMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *SourcePathMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the SourcePath entity.
+// If the SourcePath object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SourcePathMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *SourcePathMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetSourceID sets the "source_id" field.
+func (m *SourcePathMutation) SetSourceID(u uuid.UUID) {
+	m.source = &u
+}
+
+// SourceID returns the value of the "source_id" field in the mutation.
+func (m *SourcePathMutation) SourceID() (r uuid.UUID, exists bool) {
+	v := m.source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSourceID returns the old "source_id" field's value of the SourcePath entity.
+// If the SourcePath object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SourcePathMutation) OldSourceID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSourceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSourceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSourceID: %w", err)
+	}
+	return oldValue.SourceID, nil
+}
+
+// ResetSourceID resets all changes to the "source_id" field.
+func (m *SourcePathMutation) ResetSourceID() {
+	m.source = nil
+}
+
+// SetRemotePath sets the "remote_path" field.
+func (m *SourcePathMutation) SetRemotePath(s string) {
+	m.remote_path = &s
+}
+
+// RemotePath returns the value of the "remote_path" field in the mutation.
+func (m *SourcePathMutation) RemotePath() (r string, exists bool) {
+	v := m.remote_path
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRemotePath returns the old "remote_path" field's value of the SourcePath entity.
+// If the SourcePath object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SourcePathMutation) OldRemotePath(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRemotePath is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRemotePath requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRemotePath: %w", err)
+	}
+	return oldValue.RemotePath, nil
+}
+
+// ResetRemotePath resets all changes to the "remote_path" field.
+func (m *SourcePathMutation) ResetRemotePath() {
+	m.remote_path = nil
+}
+
+// SetLocalPath sets the "local_path" field.
+func (m *SourcePathMutation) SetLocalPath(s string) {
+	m.local_path = &s
+}
+
+// LocalPath returns the value of the "local_path" field in the mutation.
+func (m *SourcePathMutation) LocalPath() (r string, exists bool) {
+	v := m.local_path
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLocalPath returns the old "local_path" field's value of the SourcePath entity.
+// If the SourcePath object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SourcePathMutation) OldLocalPath(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLocalPath is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLocalPath requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLocalPath: %w", err)
+	}
+	return oldValue.LocalPath, nil
+}
+
+// ResetLocalPath resets all changes to the "local_path" field.
+func (m *SourcePathMutation) ResetLocalPath() {
+	m.local_path = nil
+}
+
+// ClearSource clears the "source" edge to the Source entity.
+func (m *SourcePathMutation) ClearSource() {
+	m.clearedsource = true
+	m.clearedFields[sourcepath.FieldSourceID] = struct{}{}
+}
+
+// SourceCleared reports if the "source" edge to the Source entity was cleared.
+func (m *SourcePathMutation) SourceCleared() bool {
+	return m.clearedsource
+}
+
+// SourceIDs returns the "source" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// SourceID instead. It exists only for internal usage by the builders.
+func (m *SourcePathMutation) SourceIDs() (ids []uuid.UUID) {
+	if id := m.source; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetSource resets all changes to the "source" edge.
+func (m *SourcePathMutation) ResetSource() {
+	m.source = nil
+	m.clearedsource = false
+}
+
+// Where appends a list predicates to the SourcePathMutation builder.
+func (m *SourcePathMutation) Where(ps ...predicate.SourcePath) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the SourcePathMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *SourcePathMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.SourcePath, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *SourcePathMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *SourcePathMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (SourcePath).
+func (m *SourcePathMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *SourcePathMutation) Fields() []string {
+	fields := make([]string, 0, 5)
+	if m.created_at != nil {
+		fields = append(fields, sourcepath.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, sourcepath.FieldUpdatedAt)
+	}
+	if m.source != nil {
+		fields = append(fields, sourcepath.FieldSourceID)
+	}
+	if m.remote_path != nil {
+		fields = append(fields, sourcepath.FieldRemotePath)
+	}
+	if m.local_path != nil {
+		fields = append(fields, sourcepath.FieldLocalPath)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *SourcePathMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case sourcepath.FieldCreatedAt:
+		return m.CreatedAt()
+	case sourcepath.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case sourcepath.FieldSourceID:
+		return m.SourceID()
+	case sourcepath.FieldRemotePath:
+		return m.RemotePath()
+	case sourcepath.FieldLocalPath:
+		return m.LocalPath()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *SourcePathMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case sourcepath.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case sourcepath.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case sourcepath.FieldSourceID:
+		return m.OldSourceID(ctx)
+	case sourcepath.FieldRemotePath:
+		return m.OldRemotePath(ctx)
+	case sourcepath.FieldLocalPath:
+		return m.OldLocalPath(ctx)
+	}
+	return nil, fmt.Errorf("unknown SourcePath field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SourcePathMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case sourcepath.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case sourcepath.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case sourcepath.FieldSourceID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSourceID(v)
+		return nil
+	case sourcepath.FieldRemotePath:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRemotePath(v)
+		return nil
+	case sourcepath.FieldLocalPath:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLocalPath(v)
+		return nil
+	}
+	return fmt.Errorf("unknown SourcePath field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *SourcePathMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *SourcePathMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SourcePathMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown SourcePath numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *SourcePathMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *SourcePathMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *SourcePathMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown SourcePath nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *SourcePathMutation) ResetField(name string) error {
+	switch name {
+	case sourcepath.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case sourcepath.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case sourcepath.FieldSourceID:
+		m.ResetSourceID()
+		return nil
+	case sourcepath.FieldRemotePath:
+		m.ResetRemotePath()
+		return nil
+	case sourcepath.FieldLocalPath:
+		m.ResetLocalPath()
+		return nil
+	}
+	return fmt.Errorf("unknown SourcePath field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *SourcePathMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.source != nil {
+		edges = append(edges, sourcepath.EdgeSource)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *SourcePathMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case sourcepath.EdgeSource:
+		if id := m.source; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *SourcePathMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *SourcePathMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *SourcePathMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedsource {
+		edges = append(edges, sourcepath.EdgeSource)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *SourcePathMutation) EdgeCleared(name string) bool {
+	switch name {
+	case sourcepath.EdgeSource:
+		return m.clearedsource
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *SourcePathMutation) ClearEdge(name string) error {
+	switch name {
+	case sourcepath.EdgeSource:
+		m.ClearSource()
+		return nil
+	}
+	return fmt.Errorf("unknown SourcePath unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *SourcePathMutation) ResetEdge(name string) error {
+	switch name {
+	case sourcepath.EdgeSource:
+		m.ResetSource()
+		return nil
+	}
+	return fmt.Errorf("unknown SourcePath edge %s", name)
 }
 
 // StudioMutation represents an operation that mutates the Studio nodes in the graph.

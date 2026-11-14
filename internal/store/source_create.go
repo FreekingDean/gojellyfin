@@ -16,6 +16,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
+	"github.com/FreekingDean/gojellyfin/internal/store/sourcepath"
 	"github.com/google/uuid"
 )
 
@@ -73,37 +74,51 @@ func (_c *SourceCreate) SetAPIKeyVariable(v string) *SourceCreate {
 	return _c
 }
 
-// SetRootPath sets the "root_path" field.
-func (_c *SourceCreate) SetRootPath(v string) *SourceCreate {
-	_c.mutation.SetRootPath(v)
-	return _c
-}
-
-// SetNillableRootPath sets the "root_path" field if the given value is not nil.
-func (_c *SourceCreate) SetNillableRootPath(v *string) *SourceCreate {
-	if v != nil {
-		_c.SetRootPath(*v)
-	}
-	return _c
-}
-
-// SetLocalPath sets the "local_path" field.
-func (_c *SourceCreate) SetLocalPath(v string) *SourceCreate {
-	_c.mutation.SetLocalPath(v)
-	return _c
-}
-
-// SetNillableLocalPath sets the "local_path" field if the given value is not nil.
-func (_c *SourceCreate) SetNillableLocalPath(v *string) *SourceCreate {
-	if v != nil {
-		_c.SetLocalPath(*v)
-	}
-	return _c
-}
-
 // SetKind sets the "kind" field.
 func (_c *SourceCreate) SetKind(v source.Kind) *SourceCreate {
 	_c.mutation.SetKind(v)
+	return _c
+}
+
+// SetVersion sets the "version" field.
+func (_c *SourceCreate) SetVersion(v string) *SourceCreate {
+	_c.mutation.SetVersion(v)
+	return _c
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_c *SourceCreate) SetNillableVersion(v *string) *SourceCreate {
+	if v != nil {
+		_c.SetVersion(*v)
+	}
+	return _c
+}
+
+// SetContactedAt sets the "contacted_at" field.
+func (_c *SourceCreate) SetContactedAt(v time.Time) *SourceCreate {
+	_c.mutation.SetContactedAt(v)
+	return _c
+}
+
+// SetNillableContactedAt sets the "contacted_at" field if the given value is not nil.
+func (_c *SourceCreate) SetNillableContactedAt(v *time.Time) *SourceCreate {
+	if v != nil {
+		_c.SetContactedAt(*v)
+	}
+	return _c
+}
+
+// SetLastError sets the "last_error" field.
+func (_c *SourceCreate) SetLastError(v string) *SourceCreate {
+	_c.mutation.SetLastError(v)
+	return _c
+}
+
+// SetNillableLastError sets the "last_error" field if the given value is not nil.
+func (_c *SourceCreate) SetNillableLastError(v *string) *SourceCreate {
+	if v != nil {
+		_c.SetLastError(*v)
+	}
 	return _c
 }
 
@@ -111,6 +126,21 @@ func (_c *SourceCreate) SetKind(v source.Kind) *SourceCreate {
 func (_c *SourceCreate) SetID(v uuid.UUID) *SourceCreate {
 	_c.mutation.SetID(v)
 	return _c
+}
+
+// AddPathIDs adds the "paths" edge to the SourcePath entity by IDs.
+func (_c *SourceCreate) AddPathIDs(ids ...uuid.UUID) *SourceCreate {
+	_c.mutation.AddPathIDs(ids...)
+	return _c
+}
+
+// AddPaths adds the "paths" edges to the SourcePath entity.
+func (_c *SourceCreate) AddPaths(v ...*SourcePath) *SourceCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddPathIDs(ids...)
 }
 
 // AddLibraryIDs adds the "libraries" edge to the LibrarySource entity by IDs.
@@ -284,17 +314,37 @@ func (_c *SourceCreate) createSpec() (*Source, *sqlgraph.CreateSpec) {
 		_spec.SetField(source.FieldAPIKeyVariable, field.TypeString, value)
 		_node.APIKeyVariable = value
 	}
-	if value, ok := _c.mutation.RootPath(); ok {
-		_spec.SetField(source.FieldRootPath, field.TypeString, value)
-		_node.RootPath = value
-	}
-	if value, ok := _c.mutation.LocalPath(); ok {
-		_spec.SetField(source.FieldLocalPath, field.TypeString, value)
-		_node.LocalPath = value
-	}
 	if value, ok := _c.mutation.Kind(); ok {
 		_spec.SetField(source.FieldKind, field.TypeEnum, value)
 		_node.Kind = value
+	}
+	if value, ok := _c.mutation.Version(); ok {
+		_spec.SetField(source.FieldVersion, field.TypeString, value)
+		_node.Version = value
+	}
+	if value, ok := _c.mutation.ContactedAt(); ok {
+		_spec.SetField(source.FieldContactedAt, field.TypeTime, value)
+		_node.ContactedAt = &value
+	}
+	if value, ok := _c.mutation.LastError(); ok {
+		_spec.SetField(source.FieldLastError, field.TypeString, value)
+		_node.LastError = value
+	}
+	if nodes := _c.mutation.PathsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.PathsTable,
+			Columns: []string{source.PathsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sourcepath.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.LibrariesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -456,42 +506,6 @@ func (u *SourceUpsert) UpdateAPIKeyVariable() *SourceUpsert {
 	return u
 }
 
-// SetRootPath sets the "root_path" field.
-func (u *SourceUpsert) SetRootPath(v string) *SourceUpsert {
-	u.Set(source.FieldRootPath, v)
-	return u
-}
-
-// UpdateRootPath sets the "root_path" field to the value that was provided on create.
-func (u *SourceUpsert) UpdateRootPath() *SourceUpsert {
-	u.SetExcluded(source.FieldRootPath)
-	return u
-}
-
-// ClearRootPath clears the value of the "root_path" field.
-func (u *SourceUpsert) ClearRootPath() *SourceUpsert {
-	u.SetNull(source.FieldRootPath)
-	return u
-}
-
-// SetLocalPath sets the "local_path" field.
-func (u *SourceUpsert) SetLocalPath(v string) *SourceUpsert {
-	u.Set(source.FieldLocalPath, v)
-	return u
-}
-
-// UpdateLocalPath sets the "local_path" field to the value that was provided on create.
-func (u *SourceUpsert) UpdateLocalPath() *SourceUpsert {
-	u.SetExcluded(source.FieldLocalPath)
-	return u
-}
-
-// ClearLocalPath clears the value of the "local_path" field.
-func (u *SourceUpsert) ClearLocalPath() *SourceUpsert {
-	u.SetNull(source.FieldLocalPath)
-	return u
-}
-
 // SetKind sets the "kind" field.
 func (u *SourceUpsert) SetKind(v source.Kind) *SourceUpsert {
 	u.Set(source.FieldKind, v)
@@ -501,6 +515,60 @@ func (u *SourceUpsert) SetKind(v source.Kind) *SourceUpsert {
 // UpdateKind sets the "kind" field to the value that was provided on create.
 func (u *SourceUpsert) UpdateKind() *SourceUpsert {
 	u.SetExcluded(source.FieldKind)
+	return u
+}
+
+// SetVersion sets the "version" field.
+func (u *SourceUpsert) SetVersion(v string) *SourceUpsert {
+	u.Set(source.FieldVersion, v)
+	return u
+}
+
+// UpdateVersion sets the "version" field to the value that was provided on create.
+func (u *SourceUpsert) UpdateVersion() *SourceUpsert {
+	u.SetExcluded(source.FieldVersion)
+	return u
+}
+
+// ClearVersion clears the value of the "version" field.
+func (u *SourceUpsert) ClearVersion() *SourceUpsert {
+	u.SetNull(source.FieldVersion)
+	return u
+}
+
+// SetContactedAt sets the "contacted_at" field.
+func (u *SourceUpsert) SetContactedAt(v time.Time) *SourceUpsert {
+	u.Set(source.FieldContactedAt, v)
+	return u
+}
+
+// UpdateContactedAt sets the "contacted_at" field to the value that was provided on create.
+func (u *SourceUpsert) UpdateContactedAt() *SourceUpsert {
+	u.SetExcluded(source.FieldContactedAt)
+	return u
+}
+
+// ClearContactedAt clears the value of the "contacted_at" field.
+func (u *SourceUpsert) ClearContactedAt() *SourceUpsert {
+	u.SetNull(source.FieldContactedAt)
+	return u
+}
+
+// SetLastError sets the "last_error" field.
+func (u *SourceUpsert) SetLastError(v string) *SourceUpsert {
+	u.Set(source.FieldLastError, v)
+	return u
+}
+
+// UpdateLastError sets the "last_error" field to the value that was provided on create.
+func (u *SourceUpsert) UpdateLastError() *SourceUpsert {
+	u.SetExcluded(source.FieldLastError)
+	return u
+}
+
+// ClearLastError clears the value of the "last_error" field.
+func (u *SourceUpsert) ClearLastError() *SourceUpsert {
+	u.SetNull(source.FieldLastError)
 	return u
 }
 
@@ -622,48 +690,6 @@ func (u *SourceUpsertOne) UpdateAPIKeyVariable() *SourceUpsertOne {
 	})
 }
 
-// SetRootPath sets the "root_path" field.
-func (u *SourceUpsertOne) SetRootPath(v string) *SourceUpsertOne {
-	return u.Update(func(s *SourceUpsert) {
-		s.SetRootPath(v)
-	})
-}
-
-// UpdateRootPath sets the "root_path" field to the value that was provided on create.
-func (u *SourceUpsertOne) UpdateRootPath() *SourceUpsertOne {
-	return u.Update(func(s *SourceUpsert) {
-		s.UpdateRootPath()
-	})
-}
-
-// ClearRootPath clears the value of the "root_path" field.
-func (u *SourceUpsertOne) ClearRootPath() *SourceUpsertOne {
-	return u.Update(func(s *SourceUpsert) {
-		s.ClearRootPath()
-	})
-}
-
-// SetLocalPath sets the "local_path" field.
-func (u *SourceUpsertOne) SetLocalPath(v string) *SourceUpsertOne {
-	return u.Update(func(s *SourceUpsert) {
-		s.SetLocalPath(v)
-	})
-}
-
-// UpdateLocalPath sets the "local_path" field to the value that was provided on create.
-func (u *SourceUpsertOne) UpdateLocalPath() *SourceUpsertOne {
-	return u.Update(func(s *SourceUpsert) {
-		s.UpdateLocalPath()
-	})
-}
-
-// ClearLocalPath clears the value of the "local_path" field.
-func (u *SourceUpsertOne) ClearLocalPath() *SourceUpsertOne {
-	return u.Update(func(s *SourceUpsert) {
-		s.ClearLocalPath()
-	})
-}
-
 // SetKind sets the "kind" field.
 func (u *SourceUpsertOne) SetKind(v source.Kind) *SourceUpsertOne {
 	return u.Update(func(s *SourceUpsert) {
@@ -675,6 +701,69 @@ func (u *SourceUpsertOne) SetKind(v source.Kind) *SourceUpsertOne {
 func (u *SourceUpsertOne) UpdateKind() *SourceUpsertOne {
 	return u.Update(func(s *SourceUpsert) {
 		s.UpdateKind()
+	})
+}
+
+// SetVersion sets the "version" field.
+func (u *SourceUpsertOne) SetVersion(v string) *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.SetVersion(v)
+	})
+}
+
+// UpdateVersion sets the "version" field to the value that was provided on create.
+func (u *SourceUpsertOne) UpdateVersion() *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.UpdateVersion()
+	})
+}
+
+// ClearVersion clears the value of the "version" field.
+func (u *SourceUpsertOne) ClearVersion() *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.ClearVersion()
+	})
+}
+
+// SetContactedAt sets the "contacted_at" field.
+func (u *SourceUpsertOne) SetContactedAt(v time.Time) *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.SetContactedAt(v)
+	})
+}
+
+// UpdateContactedAt sets the "contacted_at" field to the value that was provided on create.
+func (u *SourceUpsertOne) UpdateContactedAt() *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.UpdateContactedAt()
+	})
+}
+
+// ClearContactedAt clears the value of the "contacted_at" field.
+func (u *SourceUpsertOne) ClearContactedAt() *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.ClearContactedAt()
+	})
+}
+
+// SetLastError sets the "last_error" field.
+func (u *SourceUpsertOne) SetLastError(v string) *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.SetLastError(v)
+	})
+}
+
+// UpdateLastError sets the "last_error" field to the value that was provided on create.
+func (u *SourceUpsertOne) UpdateLastError() *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.UpdateLastError()
+	})
+}
+
+// ClearLastError clears the value of the "last_error" field.
+func (u *SourceUpsertOne) ClearLastError() *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.ClearLastError()
 	})
 }
 
@@ -963,48 +1052,6 @@ func (u *SourceUpsertBulk) UpdateAPIKeyVariable() *SourceUpsertBulk {
 	})
 }
 
-// SetRootPath sets the "root_path" field.
-func (u *SourceUpsertBulk) SetRootPath(v string) *SourceUpsertBulk {
-	return u.Update(func(s *SourceUpsert) {
-		s.SetRootPath(v)
-	})
-}
-
-// UpdateRootPath sets the "root_path" field to the value that was provided on create.
-func (u *SourceUpsertBulk) UpdateRootPath() *SourceUpsertBulk {
-	return u.Update(func(s *SourceUpsert) {
-		s.UpdateRootPath()
-	})
-}
-
-// ClearRootPath clears the value of the "root_path" field.
-func (u *SourceUpsertBulk) ClearRootPath() *SourceUpsertBulk {
-	return u.Update(func(s *SourceUpsert) {
-		s.ClearRootPath()
-	})
-}
-
-// SetLocalPath sets the "local_path" field.
-func (u *SourceUpsertBulk) SetLocalPath(v string) *SourceUpsertBulk {
-	return u.Update(func(s *SourceUpsert) {
-		s.SetLocalPath(v)
-	})
-}
-
-// UpdateLocalPath sets the "local_path" field to the value that was provided on create.
-func (u *SourceUpsertBulk) UpdateLocalPath() *SourceUpsertBulk {
-	return u.Update(func(s *SourceUpsert) {
-		s.UpdateLocalPath()
-	})
-}
-
-// ClearLocalPath clears the value of the "local_path" field.
-func (u *SourceUpsertBulk) ClearLocalPath() *SourceUpsertBulk {
-	return u.Update(func(s *SourceUpsert) {
-		s.ClearLocalPath()
-	})
-}
-
 // SetKind sets the "kind" field.
 func (u *SourceUpsertBulk) SetKind(v source.Kind) *SourceUpsertBulk {
 	return u.Update(func(s *SourceUpsert) {
@@ -1016,6 +1063,69 @@ func (u *SourceUpsertBulk) SetKind(v source.Kind) *SourceUpsertBulk {
 func (u *SourceUpsertBulk) UpdateKind() *SourceUpsertBulk {
 	return u.Update(func(s *SourceUpsert) {
 		s.UpdateKind()
+	})
+}
+
+// SetVersion sets the "version" field.
+func (u *SourceUpsertBulk) SetVersion(v string) *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.SetVersion(v)
+	})
+}
+
+// UpdateVersion sets the "version" field to the value that was provided on create.
+func (u *SourceUpsertBulk) UpdateVersion() *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.UpdateVersion()
+	})
+}
+
+// ClearVersion clears the value of the "version" field.
+func (u *SourceUpsertBulk) ClearVersion() *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.ClearVersion()
+	})
+}
+
+// SetContactedAt sets the "contacted_at" field.
+func (u *SourceUpsertBulk) SetContactedAt(v time.Time) *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.SetContactedAt(v)
+	})
+}
+
+// UpdateContactedAt sets the "contacted_at" field to the value that was provided on create.
+func (u *SourceUpsertBulk) UpdateContactedAt() *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.UpdateContactedAt()
+	})
+}
+
+// ClearContactedAt clears the value of the "contacted_at" field.
+func (u *SourceUpsertBulk) ClearContactedAt() *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.ClearContactedAt()
+	})
+}
+
+// SetLastError sets the "last_error" field.
+func (u *SourceUpsertBulk) SetLastError(v string) *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.SetLastError(v)
+	})
+}
+
+// UpdateLastError sets the "last_error" field to the value that was provided on create.
+func (u *SourceUpsertBulk) UpdateLastError() *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.UpdateLastError()
+	})
+}
+
+// ClearLastError clears the value of the "last_error" field.
+func (u *SourceUpsertBulk) ClearLastError() *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.ClearLastError()
 	})
 }
 

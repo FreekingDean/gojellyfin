@@ -25,12 +25,16 @@ const (
 	FieldURL = "url"
 	// FieldAPIKeyVariable holds the string denoting the api_key_variable field in the database.
 	FieldAPIKeyVariable = "api_key_variable"
-	// FieldRootPath holds the string denoting the root_path field in the database.
-	FieldRootPath = "root_path"
-	// FieldLocalPath holds the string denoting the local_path field in the database.
-	FieldLocalPath = "local_path"
 	// FieldKind holds the string denoting the kind field in the database.
 	FieldKind = "kind"
+	// FieldVersion holds the string denoting the version field in the database.
+	FieldVersion = "version"
+	// FieldContactedAt holds the string denoting the contacted_at field in the database.
+	FieldContactedAt = "contacted_at"
+	// FieldLastError holds the string denoting the last_error field in the database.
+	FieldLastError = "last_error"
+	// EdgePaths holds the string denoting the paths edge name in mutations.
+	EdgePaths = "paths"
 	// EdgeLibraries holds the string denoting the libraries edge name in mutations.
 	EdgeLibraries = "libraries"
 	// EdgeFiles holds the string denoting the files edge name in mutations.
@@ -39,6 +43,13 @@ const (
 	EdgeMemberships = "memberships"
 	// Table holds the table name of the source in the database.
 	Table = "sources"
+	// PathsTable is the table that holds the paths relation/edge.
+	PathsTable = "source_paths"
+	// PathsInverseTable is the table name for the SourcePath entity.
+	// It exists in this package in order to avoid circular dependency with the "sourcepath" package.
+	PathsInverseTable = "source_paths"
+	// PathsColumn is the table column denoting the paths relation/edge.
+	PathsColumn = "source_id"
 	// LibrariesTable is the table that holds the libraries relation/edge.
 	LibrariesTable = "library_sources"
 	// LibrariesInverseTable is the table name for the LibrarySource entity.
@@ -70,9 +81,10 @@ var Columns = []string{
 	FieldName,
 	FieldURL,
 	FieldAPIKeyVariable,
-	FieldRootPath,
-	FieldLocalPath,
 	FieldKind,
+	FieldVersion,
+	FieldContactedAt,
+	FieldLastError,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -99,11 +111,8 @@ type Kind string
 
 // Kind values.
 const (
-	KindRadarr  Kind = "radarr"
-	KindSonarr  Kind = "sonarr"
-	KindLidarr  Kind = "lidarr"
-	KindReadarr Kind = "readarr"
-	KindBazarr  Kind = "bazarr"
+	KindRadarr Kind = "radarr"
+	KindSonarr Kind = "sonarr"
 )
 
 func (k Kind) String() string {
@@ -113,7 +122,7 @@ func (k Kind) String() string {
 // KindValidator is a validator for the "kind" field enum values. It is called by the builders before save.
 func KindValidator(k Kind) error {
 	switch k {
-	case KindRadarr, KindSonarr, KindLidarr, KindReadarr, KindBazarr:
+	case KindRadarr, KindSonarr:
 		return nil
 	default:
 		return fmt.Errorf("source: invalid enum value for kind field: %q", k)
@@ -153,19 +162,38 @@ func ByAPIKeyVariable(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAPIKeyVariable, opts...).ToFunc()
 }
 
-// ByRootPath orders the results by the root_path field.
-func ByRootPath(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldRootPath, opts...).ToFunc()
-}
-
-// ByLocalPath orders the results by the local_path field.
-func ByLocalPath(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldLocalPath, opts...).ToFunc()
-}
-
 // ByKind orders the results by the kind field.
 func ByKind(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldKind, opts...).ToFunc()
+}
+
+// ByVersion orders the results by the version field.
+func ByVersion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVersion, opts...).ToFunc()
+}
+
+// ByContactedAt orders the results by the contacted_at field.
+func ByContactedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldContactedAt, opts...).ToFunc()
+}
+
+// ByLastError orders the results by the last_error field.
+func ByLastError(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastError, opts...).ToFunc()
+}
+
+// ByPathsCount orders the results by paths count.
+func ByPathsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newPathsStep(), opts...)
+	}
+}
+
+// ByPaths orders the results by paths terms.
+func ByPaths(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newPathsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
 }
 
 // ByLibrariesCount orders the results by libraries count.
@@ -208,6 +236,13 @@ func ByMemberships(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newMembershipsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
+}
+func newPathsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(PathsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, PathsTable, PathsColumn),
+	)
 }
 func newLibrariesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(

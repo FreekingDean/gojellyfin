@@ -273,6 +273,18 @@ func (f SourceFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, 
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.SourceMutation", m)
 }
 
+// The SourcePathFunc type is an adapter to allow the use of ordinary
+// function as SourcePath mutator.
+type SourcePathFunc func(context.Context, *store.SourcePathMutation) (store.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SourcePathFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, error) {
+	if mv, ok := m.(*store.SourcePathMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.SourcePathMutation", m)
+}
+
 // The StudioFunc type is an adapter to allow the use of ordinary
 // function as Studio mutator.
 type StudioFunc func(context.Context, *store.StudioMutation) (store.Value, error)

@@ -211,8 +211,6 @@ func newFixtureEnabled(t *testing.T, enabled bool) *fixture {
 		SetURL("http://" + uuid.NewString() + ".invalid").
 		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
 		SetKind(sourcemodel.KindRadarr).
-		SetRootPath("/media").
-		SetLocalPath("/media").
 		Save(context.Background())
 	if err != nil {
 		t.Fatalf("failed to create the source: %v", err)

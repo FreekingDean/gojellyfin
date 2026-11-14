@@ -58,6 +58,8 @@ type Tx struct {
 	Session *SessionClient
 	// Source is the client for interacting with the Source builders.
 	Source *SourceClient
+	// SourcePath is the client for interacting with the SourcePath builders.
+	SourcePath *SourcePathClient
 	// Studio is the client for interacting with the Studio builders.
 	Studio *StudioClient
 	// User is the client for interacting with the User builders.
@@ -221,6 +223,7 @@ func (tx *Tx) init() {
 	tx.QuickConnectRequest = NewQuickConnectRequestClient(tx.config)
 	tx.Session = NewSessionClient(tx.config)
 	tx.Source = NewSourceClient(tx.config)
+	tx.SourcePath = NewSourcePathClient(tx.config)
 	tx.Studio = NewStudioClient(tx.config)
 	tx.User = NewUserClient(tx.config)
 	tx.UserConfiguration = NewUserConfigurationClient(tx.config)

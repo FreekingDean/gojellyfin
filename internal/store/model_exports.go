@@ -1789,10 +1789,12 @@ type SourceModel struct {
 	Name           string
 	URL            string
 	APIKeyVariable string
-	RootPath       string
-	LocalPath      string
 	Kind           source.Kind
+	Version        string
+	ContactedAt    *time.Time
+	LastError      string
 
+	Paths       []*SourcePathModel
 	Libraries   []*LibrarySourceModel
 	Files       []*ItemSourceModel
 	Memberships []*LibraryItemModel
@@ -1818,10 +1820,12 @@ func fromSource(_m *Source) *SourceModel {
 		Name:           _m.Name,
 		URL:            _m.URL,
 		APIKeyVariable: _m.APIKeyVariable,
-		RootPath:       _m.RootPath,
-		LocalPath:      _m.LocalPath,
 		Kind:           _m.Kind,
+		Version:        _m.Version,
+		ContactedAt:    _m.ContactedAt,
+		LastError:      _m.LastError,
 
+		Paths:       fromAllSourcePath(_m.Edges.Paths),
 		Libraries:   fromAllLibrarySource(_m.Edges.Libraries),
 		Files:       fromAllItemSource(_m.Edges.Files),
 		Memberships: fromAllLibraryItem(_m.Edges.Memberships),
@@ -1859,6 +1863,76 @@ func (_q *SourceQuery) AllModels(ctx context.Context) ([]*SourceModel, error) {
 func (c *SourceClient) GetModel(ctx context.Context, id uuid.UUID) (*SourceModel, error) {
 	_m, err := c.Get(ctx, id)
 	return fromSource(_m), err
+}
+
+type SourcePathModel struct {
+	ID uuid.UUID
+
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+	SourceID   uuid.UUID
+	RemotePath string
+	LocalPath  string
+
+	Source *SourceModel
+}
+
+func fromAllSourcePath(_m []*SourcePath) []*SourcePathModel {
+	models := make([]*SourcePathModel, len(_m))
+	for i, v := range _m {
+		models[i] = fromSourcePath(v)
+	}
+	return models
+}
+
+func fromSourcePath(_m *SourcePath) *SourcePathModel {
+	if _m == nil {
+		return nil
+	}
+
+	return &SourcePathModel{
+		ID:         _m.ID,
+		CreatedAt:  _m.CreatedAt,
+		UpdatedAt:  _m.UpdatedAt,
+		SourceID:   _m.SourceID,
+		RemotePath: _m.RemotePath,
+		LocalPath:  _m.LocalPath,
+
+		Source: fromSource(_m.Edges.Source),
+	}
+}
+
+func (_c *SourcePathCreate) SaveModel(ctx context.Context) (*SourcePathModel, error) {
+	_m, err := _c.Save(ctx)
+	return fromSourcePath(_m), err
+}
+
+func (_u *SourcePathUpdateOne) SaveModel(ctx context.Context) (*SourcePathModel, error) {
+	_m, err := _u.Save(ctx)
+	return fromSourcePath(_m), err
+}
+
+func (_q *SourcePathQuery) OnlyModel(ctx context.Context) (*SourcePathModel, error) {
+	_m, err := _q.Only(ctx)
+	return fromSourcePath(_m), err
+}
+
+func (_q *SourcePathQuery) FirstModel(ctx context.Context) (*SourcePathModel, error) {
+	_m, err := _q.First(ctx)
+	return fromSourcePath(_m), err
+}
+
+func (_q *SourcePathQuery) AllModels(ctx context.Context) ([]*SourcePathModel, error) {
+	_m, err := _q.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return fromAllSourcePath(_m), nil
+}
+
+func (c *SourcePathClient) GetModel(ctx context.Context, id uuid.UUID) (*SourcePathModel, error) {
+	_m, err := c.Get(ctx, id)
+	return fromSourcePath(_m), err
 }
 
 type StudioModel struct {

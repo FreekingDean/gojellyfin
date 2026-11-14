@@ -34,6 +34,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/quickconnectrequest"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
+	"github.com/FreekingDean/gojellyfin/internal/store/sourcepath"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
@@ -121,6 +122,7 @@ func checkColumn(t, c string) error {
 			quickconnectrequest.Table: quickconnectrequest.ValidColumn,
 			session.Table:             session.ValidColumn,
 			source.Table:              source.ValidColumn,
+			sourcepath.Table:          sourcepath.ValidColumn,
 			studio.Table:              studio.ValidColumn,
 			user.Table:                user.ValidColumn,
 			userconfiguration.Table:   userconfiguration.ValidColumn,
