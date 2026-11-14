@@ -86,6 +86,16 @@ func TestQueryItems_UserDataFilters(t *testing.T) {
 			query: ItemQuery{User: user, Folder: &no},
 			want:  []string{"Halfway", "Loved", "Untouched", "Watched"},
 		},
+		{
+			name:  "an excluded kind drops out",
+			query: ItemQuery{User: user, ExcludeKinds: []Kind{itemmodel.KindMovie}},
+			want:  []string{"Show"},
+		},
+		{
+			name:  "the search page's videos row finds no film a second time",
+			query: ItemQuery{User: user, MediaTypes: []MediaType{"Video"}, ExcludeKinds: []Kind{itemmodel.KindMovie, itemmodel.KindEpisode}},
+			want:  nil,
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			if got := fixture.picked(t, test.query); !slices.Equal(got, test.want) {
