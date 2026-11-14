@@ -40,10 +40,15 @@ const (
 	ChangeAudio
 	ChangeVideo
 	ChangeVideoAudio
+	ChangeRefused
 )
 
 func (c Change) Available() bool {
-	return c < ChangeVideo
+	return c < ChangeRefused
+}
+
+func (c Change) EncodesVideo() bool {
+	return c == ChangeVideo || c == ChangeVideoAudio
 }
 
 type Plan struct {
@@ -51,6 +56,7 @@ type Plan struct {
 	Change     Change
 	Container  string
 	AudioCodec string
+	VideoCodec string
 }
 
 var (
@@ -82,13 +88,28 @@ func (s *Service) SourceFor(ctx context.Context, itemID uuid.UUID, can Capabilit
 		return 0
 	})
 
+	var encode *Plan
 	for _, source := range ordered {
-		if plan := can.plan(source); plan.Change.Available() {
+		plan := can.plan(source)
+		if !plan.Change.Available() {
+			continue
+		}
+		if !plan.Change.EncodesVideo() {
 			return plan, nil
 		}
+		if encode == nil || shorterYetFull(source, encode.Source) {
+			encode = &plan
+		}
+	}
+	if encode != nil {
+		return *encode, nil
 	}
 
 	return Plan{}, ErrNoPlayable
+}
+
+func shorterYetFull(source, than *MediaSource) bool {
+	return height(source) >= transcode.MaxHeight && height(source) < height(than)
 }
 
 func (c Capabilities) plan(source *MediaSource) Plan {
@@ -134,10 +155,7 @@ func (c Capabilities) plan(source *MediaSource) Plan {
 
 	switch {
 	case !playsVideo:
-		plan.Change = ChangeVideo
-		if !playsAudio {
-			plan.Change = ChangeVideoAudio
-		}
+		return c.encodePlan(plan, audio)
 	case copyInto != "":
 		plan.Change, plan.Container = ChangeContainer, copyInto
 	default:
@@ -145,6 +163,40 @@ func (c Capabilities) plan(source *MediaSource) Plan {
 			encodeInto = transcode.VideoContainer
 		}
 		plan.Change, plan.Container, plan.AudioCodec = ChangeAudio, encodeInto, transcode.AudioCodec(encodeInto)
+	}
+
+	return plan
+}
+
+func (c Capabilities) encodePlan(plan Plan, audio string) Plan {
+	copyInto, encodeInto := "", ""
+	for _, profile := range c.Profiles {
+		if !lists(profile.VideoCodec, transcode.VideoCodec) {
+			continue
+		}
+
+		for _, name := range strings.Split(profile.Container, ",") {
+			name = strings.ToLower(strings.TrimSpace(name))
+			if !transcode.CarriesVideo(name) {
+				name = transcode.VideoContainer
+			}
+			if copyInto == "" && lists(profile.AudioCodec, audio) {
+				copyInto = name
+			}
+			if encodeInto == "" && lists(profile.AudioCodec, transcode.AudioCodec(name)) {
+				encodeInto = name
+			}
+		}
+	}
+
+	plan.VideoCodec = transcode.VideoCodec
+	switch {
+	case copyInto != "":
+		plan.Change, plan.Container = ChangeVideo, copyInto
+	case encodeInto != "":
+		plan.Change, plan.Container, plan.AudioCodec = ChangeVideoAudio, encodeInto, transcode.AudioCodec(encodeInto)
+	default:
+		plan.Change, plan.VideoCodec = ChangeRefused, ""
 	}
 
 	return plan
@@ -227,6 +279,20 @@ func height(source *MediaSource) int32 {
 	}
 
 	return 0
+}
+
+func IsHDR(source *MediaSource) bool {
+	picture := stream(source, streammodel.KindVideo)
+	if picture == nil {
+		return false
+	}
+
+	switch deref(picture.VideoRangeType) {
+	case "", streammodel.VideoRangeTypeUnknown, streammodel.VideoRangeTypeSDR, streammodel.VideoRangeTypeDOVIWithSDR:
+		return false
+	default:
+		return true
+	}
 }
 
 func AudioCodec(source *MediaSource) string {

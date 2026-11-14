@@ -490,18 +490,58 @@ func TestPlayback(t *testing.T) {
 		}
 	})
 
-	t.Run("a picture nothing can convert is refused rather than sent", func(t *testing.T) {
+	t.Run("a picture the client cannot decode is encoded to h264 and its audio kept", func(t *testing.T) {
 		fixture := newPlaybackFixture(t)
 		id := fixture.ripped(t, "oddball.mkv", "mpeg4", "mpeg4", "aac")
 
-		answer := fixture.answer(t, id, chromeProfile, 0)
+		source := fixture.offer(t, id, chromeProfile, 0)
+		raw := apiutil.Deref(source.TranscodingUrl)
+		if !strings.Contains(raw, "videoCodec=h264") || !strings.Contains(raw, "maxHeight=1080") {
+			t.Errorf("url = %q, want it to name the h264 encode and the 1080p ceiling", raw)
+		}
+
+		recorder := fixture.follow(t, raw)
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("status = %d, want %d: %s", recorder.Code, http.StatusOK, recorder.Body)
+		}
+		if got := recorder.Header().Get("Content-Type"); got != "video/mp4" {
+			t.Errorf("content type = %q, want video/mp4", got)
+		}
+
+		answered := received(t, recorder.Body.Bytes())
+		if video, _ := codecs(decoded(t, recorder.Body.Bytes())); video != "h264" {
+			t.Errorf("video is %q, want h264", video)
+		}
+		if got, want := fingerprint(t, answered, "a:0"), fingerprint(t, fixture.paths["oddball.mkv"], "a:0"); got != want {
+			t.Errorf("audio = %s, want the source's aac %s copied through", got, want)
+		}
+	})
+
+	t.Run("a picture and audio the client cannot decode are both converted", func(t *testing.T) {
+		fixture := newPlaybackFixture(t)
+		id := fixture.ripped(t, "worse.mkv", "mpeg4", "mpeg4", "ac3")
+
+		recorder := fixture.follow(t, apiutil.Deref(fixture.offer(t, id, chromeProfile, 0).TranscodingUrl))
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("status = %d, want %d: %s", recorder.Code, http.StatusOK, recorder.Body)
+		}
+
+		if video, audio := codecs(decoded(t, recorder.Body.Bytes())); video != "h264" || audio != "aac" {
+			t.Errorf("streams are %s/%s, want h264/aac", video, audio)
+		}
+	})
+
+	t.Run("a picture nothing here can encode into is refused rather than sent", func(t *testing.T) {
+		fixture := newPlaybackFixture(t)
+		id := fixture.ripped(t, "vp9only.mkv", "mpeg4", "mpeg4", "aac")
+
+		answer := fixture.answer(t, id, `{"DirectPlayProfiles": [{"Container": "webm", "Type": "Video", "VideoCodec": "vp9", "AudioCodec": "opus"}]}`, 0)
 		if got := len(*answer.MediaSources); got != 0 {
 			t.Errorf("answered with %d sources, want none for a picture nothing here can make", got)
 		}
 		if got := apiutil.Deref(answer.ErrorCode); got != api.NoCompatibleStream {
 			t.Errorf("error code = %q, want %q", got, api.NoCompatibleStream)
 		}
-
 	})
 
 	t.Run("a client that declared nothing gets the file untouched", func(t *testing.T) {

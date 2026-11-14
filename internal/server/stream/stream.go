@@ -158,14 +158,31 @@ func (h *Handler) serveRemux(w http.ResponseWriter, r *http.Request, source *ite
 		container = transcode.VideoContainer
 	}
 
-	return h.relay(w, r, source, transcode.Spec{
+	query := r.URL.Query()
+	spec := transcode.Spec{
 		Path:       path,
 		Container:  strings.ToLower(container),
 		Bitrate:    audioBitrate(r),
 		StartTicks: startTicks(r),
 		Video:      true,
 		CopyAudio:  asked != "" && strings.EqualFold(asked, items.AudioCodec(source)),
-	})
+		VideoCodec: strings.ToLower(strings.TrimSpace(query.Get("videoCodec"))),
+	}
+	if spec.VideoCodec != "" {
+		spec.MaxHeight = maxHeight(r)
+		spec.ToneMap = items.IsHDR(source)
+	}
+
+	return h.relay(w, r, source, spec)
+}
+
+func maxHeight(r *http.Request) int32 {
+	height, err := strconv.ParseInt(r.URL.Query().Get("maxHeight"), 10, 32)
+	if err != nil || height <= 0 {
+		return transcode.MaxHeight
+	}
+
+	return int32(min(height, transcode.MaxHeight))
 }
 
 func (h *Handler) relay(w http.ResponseWriter, r *http.Request, source *items.MediaSource, spec transcode.Spec) bool {

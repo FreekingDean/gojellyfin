@@ -415,3 +415,21 @@ func (f *fixture) newDownloader(t *testing.T) uuid.UUID {
 
 	return record.ID
 }
+
+func TestMaxHeight(t *testing.T) {
+	for query, want := range map[string]int32{
+		"":                transcode.MaxHeight,
+		"maxHeight=720":   720,
+		"maxHeight=2160":  transcode.MaxHeight,
+		"maxHeight=0":     transcode.MaxHeight,
+		"maxHeight=lots":  transcode.MaxHeight,
+		"maxHeight=-1080": transcode.MaxHeight,
+	} {
+		t.Run(query, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodGet, "/Videos/x/stream.mp4?"+query, nil)
+			if got := maxHeight(request); got != want {
+				t.Errorf("max height = %d, want %d", got, want)
+			}
+		})
+	}
+}
