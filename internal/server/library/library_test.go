@@ -13,6 +13,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/collage"
+	settings "github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
@@ -22,6 +23,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/reports"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
+	"github.com/FreekingDean/gojellyfin/internal/shelves"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	devicemodel "github.com/FreekingDean/gojellyfin/internal/store/device"
 	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
@@ -127,7 +129,7 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
-	server := New(items.New(client), libraries.New(client), users.New(client), filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}), jobs.NewService(disconnected(t), jobs.NewRegistry()), collage.New(items.New(client)), reports.New(client, nil))
+	server := New(items.New(client), libraries.New(client), users.New(client), filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}), jobs.NewService(disconnected(t), jobs.NewRegistry()), collages(client), reports.New(client, nil))
 
 	downloader, err := client.Source.Create().
 		SetName(t.Name() + "-" + uuid.NewString()).
@@ -512,4 +514,30 @@ func TestServer_GetItemCollections(t *testing.T) {
 	if result.Items == nil || len(*result.Items) != 0 {
 		t.Errorf("items = %v, want an empty list", result.Items)
 	}
+}
+
+type noProvider struct{}
+
+func (noProvider) Enabled() bool { return false }
+
+func (noProvider) Movie(context.Context, int) (items.Metadata, bool, error) {
+	return items.Metadata{}, false, nil
+}
+
+func (noProvider) Series(context.Context, int) (items.Metadata, bool, error) {
+	return items.Metadata{}, false, nil
+}
+
+func (noProvider) Trending(context.Context, items.Kind) ([]items.Metadata, error) {
+	return nil, nil
+}
+
+func (noProvider) Search(context.Context, items.Kind, string) ([]items.Metadata, error) {
+	return nil, nil
+}
+
+func collages(client *store.Client) *collage.Service {
+	catalogue := items.New(client)
+
+	return collage.New(catalogue, shelves.New(catalogue, discover.New(noProvider{}, catalogue), settings.New(client)))
 }

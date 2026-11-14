@@ -23,6 +23,7 @@ type Catalogue interface {
 	LatestItems(ctx context.Context, query items.LatestQuery) ([]items.Latest, error)
 	DistinctGenres(ctx context.Context, query items.MetadataQuery) ([]items.Named, int, error)
 	LastPlayed(ctx context.Context, viewer items.Viewer, userID uuid.UUID, kind items.Kind) (*items.Item, []string, error)
+	Posters(ctx context.Context, records []*items.Item, limit int) ([]*items.Image, error)
 }
 
 type Discovery interface {
@@ -238,4 +239,35 @@ func (s *Service) Latest(ctx context.Context, shelf Shelf, limit int, ungrouped 
 	query.Ungrouped = ungrouped
 
 	return s.catalogue.LatestItems(ctx, query)
+}
+
+func (s *Service) Posters(ctx context.Context, id uuid.UUID, viewer items.Viewer, limit int) ([]*items.Image, bool, error) {
+	enabled, err := s.enabled(ctx)
+	if err != nil {
+		return nil, false, err
+	}
+
+	index := slices.IndexFunc(enabled, func(entry definition) bool { return entry.shared && ID(entry.slug) == id })
+	if index < 0 {
+		return nil, false, nil
+	}
+
+	shelf, ok, err := s.resolve(ctx, enabled[index], viewer, uuid.Nil)
+	if err != nil || !ok {
+		return nil, false, err
+	}
+
+	latest, err := s.Latest(ctx, shelf, limit*2, false)
+	if err != nil {
+		return nil, false, err
+	}
+
+	records := make([]*items.Item, 0, len(latest))
+	for _, entry := range latest {
+		records = append(records, entry.Item)
+	}
+
+	posters, err := s.catalogue.Posters(ctx, records, limit)
+
+	return posters, true, err
 }

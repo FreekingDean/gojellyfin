@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/FreekingDean/gojellyfin/internal/collage"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
@@ -40,7 +39,7 @@ func (f *fixture) expecting(t *testing.T, job string) *Server {
 		users.New(f.client),
 		filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}),
 		jobs.NewService(disconnected(t), registry),
-		collage.New(items.New(f.client)),
+		collages(f.client),
 		nil,
 	)
 }

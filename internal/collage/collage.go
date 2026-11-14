@@ -17,6 +17,7 @@ import (
 	"golang.org/x/sync/singleflight"
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/shelves"
 )
 
 const (
@@ -36,25 +37,39 @@ type Collage struct {
 	Complete bool
 }
 
+type Libraries interface {
+	LibraryPosters(ctx context.Context, libraryID uuid.UUID, limit int) ([]*items.Image, error)
+}
+
+type Shelves interface {
+	Posters(ctx context.Context, id uuid.UUID, viewer items.Viewer, limit int) ([]*items.Image, bool, error)
+}
+
 type Service struct {
-	items  *items.Service
-	client *http.Client
+	libraries Libraries
+	shelves   Shelves
+	client    *http.Client
 
 	flight singleflight.Group
 	mutex  sync.RWMutex
 	held   map[uuid.UUID]held
 }
 
-func New(records *items.Service) *Service {
+func New(records *items.Service, shelved *shelves.Service) *Service {
+	return newService(records, shelved)
+}
+
+func newService(libraries Libraries, shelved Shelves) *Service {
 	return &Service{
-		items:  records,
-		client: &http.Client{Timeout: fetchTimeout},
-		held:   map[uuid.UUID]held{},
+		libraries: libraries,
+		shelves:   shelved,
+		client:    &http.Client{Timeout: fetchTimeout},
+		held:      map[uuid.UUID]held{},
 	}
 }
 
-func (s *Service) Tag(ctx context.Context, libraryID uuid.UUID) (string, error) {
-	posters, err := s.items.LibraryPosters(ctx, libraryID, cells)
+func (s *Service) Tag(ctx context.Context, id uuid.UUID) (string, error) {
+	posters, err := s.posters(ctx, id)
 	if err != nil {
 		return "", err
 	}
@@ -62,10 +77,19 @@ func (s *Service) Tag(ctx context.Context, libraryID uuid.UUID) (string, error) 
 	return fingerprint(posters), nil
 }
 
-func (s *Service) Image(ctx context.Context, libraryID uuid.UUID) (Collage, bool) {
-	posters, err := s.items.LibraryPosters(ctx, libraryID, cells)
+func (s *Service) posters(ctx context.Context, id uuid.UUID) ([]*items.Image, error) {
+	shelved, found, err := s.shelves.Posters(ctx, id, items.Everyone, cells)
+	if err != nil || found {
+		return shelved, err
+	}
+
+	return s.libraries.LibraryPosters(ctx, id, cells)
+}
+
+func (s *Service) Image(ctx context.Context, id uuid.UUID) (Collage, bool) {
+	posters, err := s.posters(ctx, id)
 	if err != nil {
-		log.Printf("collage %s: %v", libraryID, err)
+		log.Printf("collage %s: %v", id, err)
 
 		return Collage{}, false
 	}
@@ -74,15 +98,15 @@ func (s *Service) Image(ctx context.Context, libraryID uuid.UUID) (Collage, bool
 	if tag == "" {
 		return Collage{}, false
 	}
-	if body, ok := s.cached(libraryID, tag); ok {
+	if body, ok := s.cached(id, tag); ok {
 		return Collage{Body: body, Complete: true}, true
 	}
 
-	built, err, _ := s.flight.Do(libraryID.String()+":"+tag, func() (any, error) {
-		return s.build(context.WithoutCancel(ctx), libraryID, tag, posters)
+	built, err, _ := s.flight.Do(id.String()+":"+tag, func() (any, error) {
+		return s.build(context.WithoutCancel(ctx), id, tag, posters)
 	})
 	if err != nil {
-		log.Printf("collage %s: %v", libraryID, err)
+		log.Printf("collage %s: %v", id, err)
 
 		return Collage{}, false
 	}
@@ -92,16 +116,16 @@ func (s *Service) Image(ctx context.Context, libraryID uuid.UUID) (Collage, bool
 	return answer, ok && len(answer.Body) > 0
 }
 
-func (s *Service) cached(libraryID uuid.UUID, tag string) ([]byte, bool) {
+func (s *Service) cached(id uuid.UUID, tag string) ([]byte, bool) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
-	entry, ok := s.held[libraryID]
+	entry, ok := s.held[id]
 
 	return entry.body, ok && entry.tag == tag
 }
 
-func (s *Service) build(ctx context.Context, libraryID uuid.UUID, tag string, posters []*items.Image) (Collage, error) {
+func (s *Service) build(ctx context.Context, id uuid.UUID, tag string, posters []*items.Image) (Collage, error) {
 	decoded := make([]image.Image, len(posters))
 
 	var group errgroup.Group
@@ -109,7 +133,7 @@ func (s *Service) build(ctx context.Context, libraryID uuid.UUID, tag string, po
 		group.Go(func() error {
 			picture, err := s.fetch(ctx, poster.URL)
 			if err != nil {
-				log.Printf("collage %s poster: %v", libraryID, err)
+				log.Printf("collage %s poster: %v", id, err)
 
 				return nil
 			}
@@ -138,7 +162,7 @@ func (s *Service) build(ctx context.Context, libraryID uuid.UUID, tag string, po
 	complete := len(fetched) == len(posters)
 	if complete {
 		s.mutex.Lock()
-		s.held[libraryID] = held{tag: tag, body: body}
+		s.held[id] = held{tag: tag, body: body}
 		s.mutex.Unlock()
 	}
 

@@ -43,7 +43,11 @@ func (s *Server) GetUserViews(ctx context.Context, request api.GetUserViewsReque
 		return nil, err
 	}
 	for _, shelf := range shown {
-		views = append(views, dto.ShelfView(shelf))
+		view, err := dto.ShelfView(ctx, s.collages, shelf)
+		if err != nil {
+			return nil, err
+		}
+		views = append(views, view)
 	}
 
 	return api.GetUserViews200JSONResponse{
