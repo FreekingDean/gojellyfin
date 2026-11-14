@@ -30,7 +30,7 @@ const test = base.extend({
 
   signedIn: async ({ page, harness: app }, use) => {
     await signIn(page, app);
-    await expect(page).toHaveURL(/home\.html/, { timeout: 30000 });
+    await expect(page).toHaveURL(/#\/home/, { timeout: 30000 });
     await use(page);
   },
 });

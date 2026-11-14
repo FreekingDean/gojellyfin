@@ -40,7 +40,7 @@ test.describe('taking over from Jellyfin', () => {
 
     await page.goto(harness.baseUrl + '/web/');
 
-    await expect(page).toHaveURL(/home\.html/, { timeout: 30000 });
+    await expect(page).toHaveURL(/#\/home/, { timeout: 30000 });
     await expect(view(page)).toContainText('My Media');
     await expect(page.locator('#loginPage')).toHaveCount(0);
 

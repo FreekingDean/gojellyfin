@@ -5,7 +5,7 @@ test.describe('a series', () => {
     const { shows, series, season, episodes } = harness;
 
     await open(page, shows);
-    await expect(page).toHaveURL(/tv\.html/);
+    await expect(page).toHaveURL(/#\/tv/);
 
     await open(page, series);
     await expect(page).toHaveURL(/details/);

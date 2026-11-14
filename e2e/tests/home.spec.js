@@ -37,7 +37,7 @@ test.describe('the home screen', () => {
   test('lists the movies when a library card is opened', async ({ signedIn: page, harness }) => {
     await open(page, harness.library);
 
-    await expect(page).toHaveURL(/movies\.html/);
+    await expect(page).toHaveURL(/#\/movies/);
     for (const movie of [...harness.movies, harness.playable]) {
       await expect(card(page, movie)).toBeVisible();
     }
