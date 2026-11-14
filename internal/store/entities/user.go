@@ -4,6 +4,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 type User struct {
@@ -17,7 +18,15 @@ func (User) Fields() []ent.Field {
 		field.String("password_hash").Sensitive(),
 		field.Time("last_login_at").Optional().Nillable(),
 		field.Time("last_activity_at").Optional().Nillable(),
+		field.String("oidc_issuer").Optional().Nillable(),
+		field.String("oidc_subject").Optional().Nillable(),
 	)
+}
+
+func (User) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("oidc_issuer", "oidc_subject").Unique(),
+	}
 }
 
 func (User) Edges() []ent.Edge {

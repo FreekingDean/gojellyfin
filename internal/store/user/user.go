@@ -28,6 +28,10 @@ const (
 	FieldLastLoginAt = "last_login_at"
 	// FieldLastActivityAt holds the string denoting the last_activity_at field in the database.
 	FieldLastActivityAt = "last_activity_at"
+	// FieldOidcIssuer holds the string denoting the oidc_issuer field in the database.
+	FieldOidcIssuer = "oidc_issuer"
+	// FieldOidcSubject holds the string denoting the oidc_subject field in the database.
+	FieldOidcSubject = "oidc_subject"
 	// EdgeConfiguration holds the string denoting the configuration edge name in mutations.
 	EdgeConfiguration = "configuration"
 	// EdgePolicy holds the string denoting the policy edge name in mutations.
@@ -123,6 +127,8 @@ var Columns = []string{
 	FieldPasswordHash,
 	FieldLastLoginAt,
 	FieldLastActivityAt,
+	FieldOidcIssuer,
+	FieldOidcSubject,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -185,6 +191,16 @@ func ByLastLoginAt(opts ...sql.OrderTermOption) OrderOption {
 // ByLastActivityAt orders the results by the last_activity_at field.
 func ByLastActivityAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastActivityAt, opts...).ToFunc()
+}
+
+// ByOidcIssuer orders the results by the oidc_issuer field.
+func ByOidcIssuer(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOidcIssuer, opts...).ToFunc()
+}
+
+// ByOidcSubject orders the results by the oidc_subject field.
+func ByOidcSubject(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOidcSubject, opts...).ToFunc()
 }
 
 // ByConfigurationField orders the results by configuration field.
