@@ -12,7 +12,8 @@ has no default and fails at start without one — so create the Secret first:
 kubectl create secret generic gojellyfin \
   --from-literal DATABASE_URL='postgres://user:password@host:5432/gojellyfin?sslmode=require'
 
-helm install gojellyfin ./charts/gojellyfin \
+helm install gojellyfin oci://ghcr.io/freekingdean/charts/gojellyfin \
+  --version 0.0.1 \
   --set hostname=media.example.com \
   --set-json 'media.volume={"persistentVolumeClaim":{"claimName":"media"}}'
 ```
@@ -20,6 +21,14 @@ helm install gojellyfin ./charts/gojellyfin \
 The release name decides the Secret's default name: an install named `gojellyfin`
 looks for a Secret named `gojellyfin`, and `database.existingSecret` names a
 different one. Nothing in `values.yaml` ever holds the URL.
+
+Every merge to `main` is a release, and each publishes the chart at the same
+version as the image it deploys, so `--version` pins both: an upgrade is
+`helm upgrade --version <next>`, and a rollback is a rollback to a build rather
+than to whatever `latest` meant that day. The versions are the image's, without
+the git tag's `v`. Installing from a checkout of `charts/gojellyfin` instead
+gets `latest`, because an unreleased chart has no version to name; pin
+`image.tag` when you do.
 
 Then apply the schema (see [Migrations](#migrations)) and create the first user
 — a fresh database has no way in through the API:
@@ -86,8 +95,8 @@ else has to be set for a working install.
 | `nameOverride` | `""` | Replaces the chart name in resource names and labels |
 | `fullnameOverride` | `""` | Replaces the whole generated name |
 | `image.repository` | `ghcr.io/freekingdean/gojellyfin` | The one image every gojellyfin workload runs |
-| `image.tag` | `""` | Empty takes the chart's `appVersion`, which is `latest` because the repository carries no version tags yet (#555). The API, the streaming pods, the worker and the migration Job all use it — the migrations are embedded in the binary, so two tags mean the schema one image applied and the schema the other expects can differ. Which build is actually running is stamped into the binary at image build time and answered as `SystemInfo.PackageName` |
-| `image.pullPolicy` | `""` | Empty is `Always` for a tag that moves and `IfNotPresent` for one that does not. A node that has already pulled `latest` would otherwise keep serving that build across every rollout, which is the same drift a shared tag is meant to prevent |
+| `image.tag` | `""` | Empty takes the chart's `appVersion`, which a published chart sets to its own version and a checkout leaves at `latest`. The API, the streaming pods, the worker and the migration Job all use it — the migrations are embedded in the binary, so two tags mean the schema one image applied and the schema the other expects can differ. Which build is actually running is stamped into the binary at image build time and answered as `SystemInfo.PackageName` |
+| `image.pullPolicy` | `""` | Empty is `Always` for a tag that moves and `IfNotPresent` for one that does not. A node that has already pulled `latest` would otherwise keep serving that build across every rollout. `Always` does not make `latest` safe: a `helm upgrade` that renders the same tag changes no pod spec and rolls nothing out, which is why a release pins a version |
 
 ### Server environment
 
@@ -233,10 +242,15 @@ when you decide to, which is what you want when a migration is long or has to
 land before the new image does:
 
 ```sh
-kubectl run gojellyfin-migrate --rm --attach --restart Never \
-  --image ghcr.io/freekingdean/gojellyfin:latest \
-  --env DATABASE_URL="$DATABASE_URL" -- migrate
+IMAGE=ghcr.io/freekingdean/gojellyfin:0.0.1
+kubectl run gojellyfin-migrate --rm --attach --restart Never --image "$IMAGE" \
+  --overrides '{"spec":{"containers":[{"name":"gojellyfin-migrate","image":"'"$IMAGE"'","args":["migrate"],"env":[{"name":"DATABASE_URL","valueFrom":{"secretKeyRef":{"name":"gojellyfin","key":"DATABASE_URL"}}}]}]}}'
 ```
+
+The URL is read out of the Secret by the kubelet rather than passed with
+`--env`, which would write it in plain text into the pod spec. Use the tag the
+release runs; the notes `helm install` prints carry this command with the tag
+and the Secret filled in.
 
 Migrations are safe to re-run either way — atlas records what it has applied in
 `atlas_schema_revisions` and verifies `atlas.sum` on every run — so a retry

@@ -16,7 +16,7 @@ Migrations did not run. Apply them from the same image tag before the API serves
 
   kubectl --namespace {{ .Release.Namespace }} run gojellyfin-migrate --rm --attach --restart Never \
     --image {{ include "gojellyfin.image" . }} \
-    --env DATABASE_URL="$DATABASE_URL" -- migrate
+    --overrides '{{ dict "spec" (dict "containers" (list (dict "name" "gojellyfin-migrate" "image" (include "gojellyfin.image" .) "args" (list "migrate") "env" (list (dict "name" "DATABASE_URL" "valueFrom" (dict "secretKeyRef" (dict "name" (include "gojellyfin.databaseSecretName" .) "key" .Values.database.secretKey))))))) | toJson }}'
 
 or set migration.enabled=true to have the chart run it.
 {{- end }}

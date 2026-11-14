@@ -59,8 +59,10 @@ Secret holding `DATABASE_URL` — the chart carries no credential — and instal
 
 ```sh
 kubectl create secret generic gojellyfin --from-literal DATABASE_URL='postgres://…'
-helm install gojellyfin ./charts/gojellyfin
+helm install gojellyfin oci://ghcr.io/freekingdean/charts/gojellyfin --version 0.0.1
 ```
+
+Every merge to `main` publishes the image and the chart at the same version.
 
 It is one image run as up to four workloads: the API, the streaming pods, the
 Temporal worker and nginx serving `jellyfin-web`. The streaming pods are the
