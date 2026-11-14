@@ -33,7 +33,6 @@ type Config struct {
 	TMDB               TMDB       `mapstructure:",squash"`
 	OIDC               OIDC       `mapstructure:",squash"`
 	MediaDirectories   []string   `mapstructure:"MEDIA_DIRECTORIES"`
-	Shelves            []string   `mapstructure:"SHELVES"`
 
 	SourceAPIKeys map[string]string `mapstructure:"-"`
 }
@@ -84,9 +83,6 @@ func Load() (Config, error) {
 
 	config.CORSOrigins = trimmed(config.CORSOrigins)
 	config.MediaDirectories = trimmed(config.MediaDirectories)
-	if config.Shelves != nil {
-		config.Shelves = trimmed(config.Shelves)
-	}
 	config.SourceAPIKeys = sourceAPIKeys()
 
 	if err := config.validate(); err != nil {

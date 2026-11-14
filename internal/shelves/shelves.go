@@ -2,6 +2,8 @@ package shelves
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -9,8 +11,8 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/discover"
-	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 )
@@ -36,35 +38,114 @@ type Shelf struct {
 	query      items.LatestQuery
 }
 
+type Settings interface {
+	Configuration(ctx context.Context, key string) (json.RawMessage, error)
+	SetConfiguration(ctx context.Context, key string, value json.RawMessage) error
+}
+
 type Service struct {
 	catalogue Catalogue
 	discovery Discovery
-	enabled   []definition
+	settings  Settings
 	now       func() time.Time
 }
 
-func New(catalogue *items.Service, discovery *discover.Service, config env.Config) (*Service, error) {
-	return newService(catalogue, discovery, config.Shelves, time.Now)
+type Choice struct {
+	Slug    string
+	Name    string
+	Enabled bool
 }
 
-func newService(catalogue Catalogue, discovery Discovery, slugs []string, now func() time.Time) (*Service, error) {
-	if slugs == nil {
-		slugs = Defaults
+const settingsKey = "shelves"
+
+var ErrUnknown = errors.New("no such shelf")
+
+func New(catalogue *items.Service, discovery *discover.Service, settings *config.Service) *Service {
+	return newService(catalogue, discovery, settings, time.Now)
+}
+
+func newService(catalogue Catalogue, discovery Discovery, settings Settings, now func() time.Time) *Service {
+	return &Service{catalogue: catalogue, discovery: discovery, settings: settings, now: now}
+}
+
+func (s *Service) slugs(ctx context.Context) ([]string, error) {
+	stored, err := s.settings.Configuration(ctx, settingsKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read which shelves are on: %w", err)
+	}
+	if stored == nil {
+		return Defaults, nil
+	}
+
+	var slugs []string
+	if err := json.Unmarshal(stored, &slugs); err != nil {
+		return nil, fmt.Errorf("failed to read which shelves are on: %w", err)
+	}
+
+	return slugs, nil
+}
+
+func (s *Service) enabled(ctx context.Context) ([]definition, error) {
+	slugs, err := s.slugs(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	enabled := make([]definition, 0, len(slugs))
-	for _, slug := range slugs {
-		if strings.EqualFold(slug, "none") {
-			continue
+	for _, entry := range definitions {
+		if slices.Contains(slugs, entry.slug) {
+			enabled = append(enabled, entry)
 		}
-		index := slices.IndexFunc(definitions, func(candidate definition) bool { return candidate.slug == slug })
-		if index < 0 {
-			return nil, fmt.Errorf("SHELVES names %q, which is not one of %s", slug, strings.Join(Slugs(), ", "))
-		}
-		enabled = append(enabled, definitions[index])
 	}
 
-	return &Service{catalogue: catalogue, discovery: discovery, enabled: enabled, now: now}, nil
+	return enabled, nil
+}
+
+func (s *Service) Choices(ctx context.Context) ([]Choice, error) {
+	slugs, err := s.slugs(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	choices := make([]Choice, 0, len(definitions))
+	for _, entry := range definitions {
+		choices = append(choices, Choice{Slug: entry.slug, Name: entry.name(), Enabled: slices.Contains(slugs, entry.slug)})
+	}
+
+	return choices, nil
+}
+
+func (s *Service) Enable(ctx context.Context, slugs []string) error {
+	known := Slugs()
+	enabled := make([]string, 0, len(slugs))
+	for _, slug := range slugs {
+		if !slices.Contains(known, slug) {
+			return fmt.Errorf("%w: %q is not one of %s", ErrUnknown, slug, strings.Join(known, ", "))
+		}
+		if !slices.Contains(enabled, slug) {
+			enabled = append(enabled, slug)
+		}
+	}
+
+	value, err := json.Marshal(enabled)
+	if err != nil {
+		return err
+	}
+
+	return s.settings.SetConfiguration(ctx, settingsKey, value)
+}
+
+func (d definition) name() string {
+	if d.title != "" {
+		return d.title
+	}
+
+	words := strings.Split(d.slug, "-")
+	for i, word := range words {
+		words[i] = strings.ToUpper(word[:1]) + word[1:]
+	}
+
+	return strings.Join(words, " ")
 }
 
 func Slugs() []string {
@@ -85,20 +166,30 @@ type Title struct {
 	Name string
 }
 
-func (s *Service) Titles() []Title {
-	titles := make([]Title, 0, len(s.enabled))
-	for _, entry := range s.enabled {
+func (s *Service) Titles(ctx context.Context) ([]Title, error) {
+	enabled, err := s.enabled(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	titles := make([]Title, 0, len(enabled))
+	for _, entry := range enabled {
 		if entry.title != "" {
 			titles = append(titles, Title{ID: ID(entry.slug), Name: entry.title})
 		}
 	}
 
-	return titles
+	return titles, nil
 }
 
 func (s *Service) Shelves(ctx context.Context, viewer items.Viewer, userID uuid.UUID) ([]Shelf, error) {
-	shelves := make([]Shelf, 0, len(s.enabled))
-	for _, entry := range s.enabled {
+	enabled, err := s.enabled(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	shelves := make([]Shelf, 0, len(enabled))
+	for _, entry := range enabled {
 		shelf, ok, err := s.resolve(ctx, entry, viewer, userID)
 		if err != nil {
 			return nil, err
@@ -112,7 +203,12 @@ func (s *Service) Shelves(ctx context.Context, viewer items.Viewer, userID uuid.
 }
 
 func (s *Service) Shelf(ctx context.Context, id uuid.UUID, viewer items.Viewer, userID uuid.UUID) (Shelf, bool, error) {
-	for _, entry := range s.enabled {
+	enabled, err := s.enabled(ctx)
+	if err != nil {
+		return Shelf{}, false, err
+	}
+
+	for _, entry := range enabled {
 		if ID(entry.slug) == id {
 			return s.resolve(ctx, entry, viewer, userID)
 		}
