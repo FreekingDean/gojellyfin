@@ -95,17 +95,17 @@ jobs:
         run: npm run visual
         working-directory: e2e
 
-      # On a pull request, every screenshot this commit rendered and the diff of
+      # On a pull request and on main, every screenshot this commit rendered and the diff of
       # each that changed, beside a summary the gallery job renders from.
       - name: Collect the screenshots
-        if: always() && github.event_name == 'pull_request' && hashFiles('e2e/.build/results.json') != ''
+        if: always() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') && hashFiles('e2e/.build/results.json') != ''
         working-directory: e2e
         run: |
           node setup/gallery.js collect web jellyfin-web .build/results.json .build/gallery tests/__screenshots__
           if [ -d playwright-report ]; then cp -r playwright-report .build/gallery/report; fi
 
       - name: Upload the screenshots
-        if: always() && github.event_name == 'pull_request' && hashFiles('e2e/.build/gallery/web.json') != ''
+        if: always() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') && hashFiles('e2e/.build/gallery/web.json') != ''
         uses: actions/upload-artifact@v4
         with:
           name: gallery-web
@@ -217,12 +217,12 @@ jobs:
           script: npm run androidtv
 
       - name: Collect the screenshots
-        if: always() && github.event_name == 'pull_request' && hashFiles('e2e/.build/androidtv-results.json') != ''
+        if: always() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') && hashFiles('e2e/.build/androidtv-results.json') != ''
         working-directory: e2e
         run: node setup/gallery.js collect androidtv "Android TV" .build/androidtv-results.json .build/gallery
 
       - name: Upload the screenshots
-        if: always() && github.event_name == 'pull_request' && hashFiles('e2e/.build/gallery/androidtv.json') != ''
+        if: always() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') && hashFiles('e2e/.build/gallery/androidtv.json') != ''
         uses: actions/upload-artifact@v4
         with:
           name: gallery-androidtv
@@ -349,3 +349,79 @@ jobs:
           else
             gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -F body=@gallery/comment.md >/dev/null
           fi
+
+  # main keeps a gallery of its own at /main/ that no pull request's cleanup
+  # touches. The suites run on different triggers, the browser on every push
+  # and the emulators nightly, so each run replaces only the suites it ran and
+  # the page is rendered again over all of them, each stamped with the commit
+  # it last ran at.
+  main-gallery:
+    needs: [e2e, androidtv]
+    if: >-
+      always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+      && (needs.e2e.result == 'success' || needs.e2e.result == 'failure'
+      || needs.androidtv.result == 'success' || needs.androidtv.result == 'failure')
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    concurrency:
+      group: gh-pages-main
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: source
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: gallery-*
+          merge-multiple: true
+          path: gallery
+
+      - uses: actions/checkout@v7
+        with:
+          ref: gh-pages
+          path: site
+          fetch-depth: 1
+
+      - name: Publish
+        working-directory: site
+        env:
+          PAGES: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/main
+        run: |
+          shopt -s nullglob
+          summaries=(../gallery/*.json)
+          if [ ${#summaries[@]} = 0 ]; then
+            echo "::warning::no suite collected any screenshots"
+            exit 0
+          fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          for attempt in 1 2 3 4; do
+            git fetch --depth 1 origin gh-pages
+            git reset --hard origin/gh-pages
+            mkdir -p main/shots
+            for summary in "${summaries[@]}"; do
+              slug=$(basename "$summary" .json)
+              rm -rf "main/shots/$slug"
+              if [ -d "../gallery/shots/$slug" ]; then cp -r "../gallery/shots/$slug" main/shots/; fi
+              jq --arg sha "$GITHUB_SHA" --arg at "$(date -u +%Y-%m-%dT%H:%MZ)" '. + {sha: $sha, at: $at}' "$summary" > "main/$slug.json"
+              if [ "$slug" = web ]; then
+                rm -rf main/report
+                if [ -d ../gallery/report ]; then cp -r ../gallery/report main/report; fi
+              fi
+            done
+            node ../source/e2e/setup/gallery.js render main "$PAGES" "$GITHUB_SHA"
+            rm main/comment.md
+            cat > index.html <<'HTML'
+          <!doctype html><meta charset="utf-8"><title>gojellyfin e2e</title><p>The screenshots of <a href="main/">main</a> as it last ran. Reports for open pull requests live under <code>/pr-&lt;number&gt;/</code>.</p>
+          HTML
+            git add -A -- main index.html
+            commit=$(git commit-tree "$(git write-tree)" -m "Publish e2e screenshots for main at $GITHUB_SHA")
+            if git push --force-with-lease="gh-pages:$(git rev-parse origin/gh-pages)" origin "$commit:refs/heads/gh-pages"; then
+              exit 0
+            fi
+            sleep $((attempt * 5))
+          done
+          exit 1

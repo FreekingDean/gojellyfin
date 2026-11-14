@@ -204,7 +204,7 @@ function page({ suites, sha, report }) {
     return `<section class="${shot.state}"><h2>${escape(shot.key)}.png <span>${shot.state}</span></h2><div class="row">${images.join('')}</div></section>`;
   };
   const section = (suite) => `<h1>${escape(suite.title)}</h1>
-<p>${suite.stats.expected} passed, ${suite.stats.unexpected} failed, ${suite.stats.flaky} flaky.${suite.slug === 'web' && report ? ' <a href="report/">Playwright report</a>' : ''}</p>
+<p>${suite.sha ? `At ${suite.sha.slice(0, 7)}, ${escape(suite.at)}. ` : ''}${suite.stats.expected} passed, ${suite.stats.unexpected} failed, ${suite.stats.flaky} flaky.${suite.slug === 'web' && report ? ' <a href="report/">Playwright report</a>' : ''}</p>
 ${suite.failing.length ? `<ul>${suite.failing.map((test) => `<li>${escape(test)}</li>`).join('')}</ul>` : ''}
 ${suite.shots.filter((shot) => shot.state !== 'unchanged').map(figure).join('\n')}
 ${suite.shots.filter((shot) => shot.state === 'unchanged').map(figure).join('\n')}`;
