@@ -7,6 +7,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/http/mux"
+	"github.com/FreekingDean/gojellyfin/internal/server/admin"
 	"github.com/FreekingDean/gojellyfin/internal/server/link"
 	"github.com/FreekingDean/gojellyfin/internal/server/report"
 	"github.com/FreekingDean/gojellyfin/internal/server/socket"
@@ -24,6 +25,7 @@ var Module = fx.Module(
 		middleware.NewAuth,
 		middleware.NewOapiTracing,
 		socket.New,
+		admin.New,
 		link.New,
 		report.New,
 		sso.New,

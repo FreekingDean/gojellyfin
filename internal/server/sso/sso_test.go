@@ -213,6 +213,9 @@ func TestHandler_ReturnsToTheRouteTheLinkPageLeft(t *testing.T) {
 	}{
 		{name: "cookie", cookie: url.QueryEscape("/quickconnect?code=123456"), want: "/web/#/quickconnect?code=123456"},
 		{name: "query", query: "?redirect=" + url.QueryEscape("/quickconnect"), want: "/web/#/quickconnect"},
+		{name: "admin", query: "?redirect=" + url.QueryEscape("/admin"), want: "/admin"},
+		{name: "admin route", query: "?redirect=" + url.QueryEscape("/admin/users"), want: "/admin/users"},
+		{name: "not admin", query: "?redirect=" + url.QueryEscape("/administrators"), want: "/web/#/administrators"},
 		{name: "protocol relative", cookie: url.QueryEscape("//evil.example"), want: "/web/"},
 		{name: "backslash", cookie: url.QueryEscape("/\\evil.example"), want: "/web/"},
 		{name: "absolute", query: "?redirect=" + url.QueryEscape("https://evil.example"), want: "/web/"},

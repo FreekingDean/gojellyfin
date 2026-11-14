@@ -20,12 +20,14 @@ import (
 	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5/stdlib"
 
+	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/probe"
 	"github.com/FreekingDean/gojellyfin/internal/reports"
+	"github.com/FreekingDean/gojellyfin/internal/shelves"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
@@ -50,6 +52,7 @@ const (
 )
 
 var (
+	shelved  = []string{"recently-aired", "new-releases", "trending-movies", "trending-shows"}
 	movies   = []string{"Fixture Alpha", "Fixture Beta"}
 	episodes = []string{"Fixture Pilot", "Fixture Second"}
 
@@ -184,12 +187,12 @@ func admin(statement string) error {
 }
 
 func seed() error {
-	config, err := env.Load()
+	environment, err := env.Load()
 	if err != nil {
 		return err
 	}
 
-	connection, err := store.NewStore(config)
+	connection, err := store.NewStore(environment)
 	if err != nil {
 		return err
 	}
@@ -228,6 +231,10 @@ func seed() error {
 		SetRemotePath("/fixtures").
 		SetLocalPath("/fixtures").
 		Exec(ctx); err != nil {
+		return err
+	}
+
+	if err := shelves.New(nil, nil, config.New(client)).Enable(ctx, shelved); err != nil {
 		return err
 	}
 

@@ -442,6 +442,120 @@
           }
         ]
       }
+    }, "/GoJellyfin/Settings": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Lists every environment variable this server reads and what it is set to, with secrets withheld.",
+        "operationId": "GoJellyfinListSettings",
+        "responses": {
+          "200": {
+            "description": "The variables.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Settings"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "RequiresElevation"
+            ]
+          }
+        ]
+      }
+    }, "/GoJellyfin/Shelves": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Lists every shelf and whether it is on.",
+        "operationId": "GoJellyfinListShelves",
+        "responses": {
+          "200": {
+            "description": "The shelves.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShelfChoices"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "RequiresElevation"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Replaces which shelves are on.",
+        "operationId": "GoJellyfinUpdateShelves",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShelfSelection"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Shelves saved."
+          },
+          "400": {
+            "description": "A slug names no shelf.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "RequiresElevation"
+            ]
+          }
+        ]
+      }
     }, "/GoJellyfin/SourceApiKeyVariables": {
       "get": {
         "tags": [
@@ -48111,6 +48225,74 @@
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/RequestedTitle"
+        }
+      }, "Setting": {
+        "type": "object",
+        "required": [
+          "Name",
+          "Value",
+          "Set",
+          "Secret"
+        ],
+        "properties": {
+          "Name": {
+            "type": "string",
+            "description": "The environment variable."
+          },
+          "Value": {
+            "type": "string",
+            "description": "What it is set to. Always empty for a secret."
+          },
+          "Set": {
+            "type": "boolean",
+            "description": "Whether the variable holds a value."
+          },
+          "Secret": {
+            "type": "boolean",
+            "description": "Whether the value is withheld."
+          }
+        }
+      }, "Settings": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Setting"
+        }
+      }, "ShelfChoice": {
+        "type": "object",
+        "required": [
+          "Slug",
+          "Name",
+          "Enabled"
+        ],
+        "properties": {
+          "Slug": {
+            "type": "string"
+          },
+          "Name": {
+            "type": "string"
+          },
+          "Enabled": {
+            "type": "boolean"
+          }
+        }
+      }, "ShelfChoices": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ShelfChoice"
+        }
+      }, "ShelfSelection": {
+        "type": "object",
+        "required": [
+          "Enabled"
+        ],
+        "properties": {
+          "Enabled": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The slugs of the shelves that are on."
+          }
         }
       }, "Source": {
         "type": "object",

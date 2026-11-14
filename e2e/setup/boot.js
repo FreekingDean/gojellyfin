@@ -49,7 +49,6 @@ const WANTED_SHOW = {
   released: '2023-09-08',
   poster: '/wanted-show.png',
 };
-const SHELVES = 'recently-aired,new-releases,trending-movies,trending-shows';
 
 const CLIENT_IMAGE = 'jellyfin/jellyfin:10.10.0';
 
@@ -98,7 +97,6 @@ async function boot() {
     MEDIA_DIRECTORIES: path.dirname(media.playable),
     TMDB_API_KEY: 'e2e',
     TMDB_BASE_URL: `http://127.0.0.1:${cataloguePort}/3`,
-    SHELVES,
     SOURCE_API_KEY_FIXTURES: 'e2e',
   });
 
@@ -191,6 +189,11 @@ function build() {
   const gojellyfin = path.join(BUILD, 'gojellyfin');
   const fixtures = path.join(BUILD, 'fixtures');
   const migrate = path.join(BUILD, 'jellyfinmigrate');
+
+  // The binary embeds the admin app, so it is built first or /admin answers 503.
+  const admin = path.join(ROOT, 'admin');
+  run('npm', ['ci'], { cwd: admin });
+  run('npm', ['run', 'build'], { cwd: admin });
 
   run('go', ['build', '-o', gojellyfin, './cmd/gojellyfin'], { cwd: ROOT });
   run('go', ['build', '-o', fixtures, './e2e/fixtures'], { cwd: ROOT });
@@ -325,7 +328,6 @@ function clean(overrides) {
     OTEL_EXPORTER_OTLP_ENDPOINT: '',
     TMDB_API_KEY: '',
     TMDB_BASE_URL: '',
-    SHELVES: '',
     SERVER_ID: '',
     ...overrides,
   };
