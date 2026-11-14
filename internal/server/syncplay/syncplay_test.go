@@ -567,3 +567,27 @@ func TestServer_SyncPlayGetGroups(t *testing.T) {
 		}
 	})
 }
+
+func TestService_CollectEmpty(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	owner := f.signIn(t, "owner")
+	guest := f.signIn(t, "guest")
+
+	emptied := f.create(t, owner, t.Name()+" emptied")
+	if _, err := f.server.SyncPlayLeaveGroup(owner, api.SyncPlayLeaveGroupRequestObject{}); err != nil {
+		t.Fatalf("failed to leave: %v", err)
+	}
+	kept := f.create(t, guest, t.Name()+" kept")
+
+	if _, err := f.service.CollectEmpty(ctx); err != nil {
+		t.Fatalf("failed to collect: %v", err)
+	}
+
+	if exists, err := f.client.SyncPlayGroup.Query().Where(groupmodal.ID(*emptied.GroupId)).Exist(ctx); err != nil || exists {
+		t.Fatalf("emptied group exists = %v (%v), want it collected", exists, err)
+	}
+	if exists, err := f.client.SyncPlayGroup.Query().Where(groupmodal.ID(*kept.GroupId)).Exist(ctx); err != nil || !exists {
+		t.Fatalf("occupied group exists = %v (%v), want it kept", exists, err)
+	}
+}
