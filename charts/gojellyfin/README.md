@@ -151,8 +151,14 @@ use.
 | `streaming.replicas` | `3` | |
 | `streaming.resources` | 2 cpu/512Mi, limits 2 cpu/2Gi | |
 | `worker.enabled` | `false` | Needs `temporal.hostPort`; the chart refuses to render an enabled worker with nothing to dial, because it would only crash loop |
-| `worker.replicas` | `1` | |
-| `worker.resources` | 200m/256Mi, limits 1 cpu/1Gi | |
+| `worker.replicas` | `1` | Left off the Deployment while `worker.autoscaling.enabled`, so an upgrade does not reset what the autoscaler chose |
+| `worker.resources` | 200m/256Mi, limits 1 cpu/1Gi | The cpu limit is also the worker's slots: it runs `GOMAXPROCS` activities per task queue, and Go reads that off the limit |
+| `worker.stopTimeoutSeconds` | `300` | `TEMPORAL_WORKER_STOP_TIMEOUT`. On SIGTERM the worker stops polling and gives running activities this long to finish; what is left is cancelled and retried on another worker. `terminationGracePeriodSeconds` follows it with 30s to spare unless `worker.pod` names one |
+| `worker.autoscaling.enabled` | `false` | A cpu `HorizontalPodAutoscaler`. Needs `worker.resources.requests.cpu`, since utilization is measured against it, and metrics-server in the cluster |
+| `worker.autoscaling.minReplicas`, `.maxReplicas` | `1`, `3` | |
+| `worker.autoscaling.targetCPUUtilizationPercentage` | `80` | Of the request, not the limit |
+| `worker.autoscaling.behavior` | one pod every 2m after 5m quiet | The HPA's `behavior`, passed through. The default scale-in is slow so a lull between two scans does not drain a worker the second one wants |
+| `worker.podDisruptionBudget.enabled`, `.maxUnavailable` | `false`, `1` | What a drain, kured and the descheduler honour. The autoscaler scales in without evicting, so this does not slow it |
 | `web.enabled` | `true` | |
 | `web.replicas` | `2` | |
 | `web.client.repository`, `.tag`, `.pullPolicy` | `jellyfin/jellyfin`, `10.10.0`, `""` | `jellyfin-web` is not published on its own — no image, no npm package, no built assets in its releases — so an init container copies it out of the all-in-one image into an emptyDir. Pin it to a released client rather than to the announced API version: the server says 12.0.0 out of the vendored spec, 12 has no released all-in-one image, and a client newer than what is implemented calls endpoints that answer 501. 10.10.0 is what `make e2e` drives |
