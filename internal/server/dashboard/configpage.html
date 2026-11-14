@@ -262,7 +262,7 @@
             fillLibraries: function (select, kind, selected) {
                 const wanted = window.GoJellyfinSources.collectionTypes[kind];
                 const matching = window.GoJellyfinSources.libraries.filter(function (library) {
-                    return !wanted || !library.CollectionType ||
+                    return library.ItemId === selected || !wanted || !library.CollectionType ||
                         library.CollectionType === wanted || library.CollectionType === 'mixed';
                 });
 
@@ -306,6 +306,9 @@
                     const option = document.createElement('option');
                     option.value = choice.value;
                     option.textContent = choice.label;
+                    if (choice.library) {
+                        option.dataset.library = choice.library;
+                    }
                     select.appendChild(option);
                 });
 
@@ -348,18 +351,18 @@
             },
 
             bindFolder: function (editor, local) {
-                const source = window.GoJellyfinSources;
-                const folder = source.libraryFolders().find(function (candidate) { return candidate.value === local; });
+                const chosen = local.selectedOptions[0];
+                const library = chosen && chosen.dataset.library;
 
-                if (!folder) {
+                if (!library) {
                     return;
                 }
 
                 const bound = Array.prototype.some.call(editor.querySelectorAll('[data-id=selLibrary]'), function (select) {
-                    return select.value === folder.library;
+                    return select.value === library;
                 });
                 if (!bound) {
-                    source.addBinding(editor, { Id: folder.library });
+                    window.GoJellyfinSources.addBinding(editor, { Id: library });
                 }
             },
 
@@ -374,7 +377,7 @@
                 source.fillSelect(local, 'Choose a library folder', source.libraryFolders(), mapping.LocalPath);
 
                 local.addEventListener('change', function () {
-                    source.bindFolder(editor, local.value);
+                    source.bindFolder(editor, local);
                 });
 
                 row.querySelector('[data-id=removePath]').addEventListener('click', function () {
@@ -382,6 +385,8 @@
                 });
 
                 editor.querySelector('[data-id=pathsHost]').appendChild(clone);
+
+                return row;
             },
 
             offerFolders: function (editor, folders) {
@@ -399,9 +404,9 @@
                 const added = folders.filter(function (folder) { return mapped.indexOf(folder) < 0; });
                 added.forEach(function (folder) {
                     const same = libraryFolders.some(function (candidate) { return candidate.value === folder; });
-                    source.addPath(editor, { RemotePath: folder, LocalPath: same ? folder : '' });
+                    const row = source.addPath(editor, { RemotePath: folder, LocalPath: same ? folder : '' });
                     if (same) {
-                        source.bindFolder(editor, folder);
+                        source.bindFolder(editor, row.querySelector('[data-id=selLocalPath]'));
                     }
                 });
 
