@@ -76,7 +76,7 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 
 	container := items.Container(source)
 	requested := r.PathValue("container")
-	if requested == "" || isStatic(r) || strings.EqualFold(requested, container) {
+	if requested == "" || isStatic(r) || (strings.EqualFold(requested, container) && !converts(r, item, source)) {
 		h.serveFile(w, r, path)
 		return
 	}
@@ -167,14 +167,41 @@ func (h *Handler) serveRemux(w http.ResponseWriter, r *http.Request, source *ite
 		container = transcode.VideoContainer
 	}
 
-	return h.relay(w, r, source, transcode.Spec{
+	query := r.URL.Query()
+	spec := transcode.Spec{
 		Path:       path,
 		Container:  strings.ToLower(container),
 		Bitrate:    audioBitrate(r),
 		StartTicks: startTicks(r),
 		Video:      true,
 		CopyAudio:  asked != "" && strings.EqualFold(asked, items.AudioCodec(source)),
-	})
+		VideoCodec: strings.ToLower(strings.TrimSpace(query.Get("videoCodec"))),
+	}
+	if spec.VideoCodec != "" {
+		spec.MaxHeight = maxHeight(r)
+		spec.Transfer = items.HDRTransfer(source)
+	}
+
+	return h.relay(w, r, source, spec)
+}
+
+func converts(r *http.Request, item *items.Item, source *items.MediaSource) bool {
+	query := r.URL.Query()
+	if query.Get("videoCodec") != "" {
+		return true
+	}
+	asked := strings.TrimSpace(query.Get("audioCodec"))
+
+	return !items.IsAudio(item) && asked != "" && !strings.EqualFold(asked, items.AudioCodec(source))
+}
+
+func maxHeight(r *http.Request) int32 {
+	height, err := strconv.ParseInt(r.URL.Query().Get("maxHeight"), 10, 32)
+	if err != nil || height <= 0 {
+		return transcode.MaxHeight
+	}
+
+	return int32(min(height, transcode.MaxHeight))
 }
 
 func (h *Handler) relay(w http.ResponseWriter, r *http.Request, source *items.MediaSource, spec transcode.Spec) bool {

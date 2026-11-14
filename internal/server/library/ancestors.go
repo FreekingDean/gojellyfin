@@ -26,7 +26,11 @@ func (s *Server) GetAncestors(ctx context.Context, request api.GetAncestorsReque
 		if err != nil {
 			return nil, err
 		}
-		converted = append(converted, dto.LibraryView(library))
+		view, err := dto.LibraryView(ctx, s.collages, library)
+		if err != nil {
+			return nil, err
+		}
+		converted = append(converted, view)
 	}
 
 	return api.GetAncestors200JSONResponse(append(converted, dto.RootView())), nil

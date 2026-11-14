@@ -2,6 +2,8 @@ package userviews
 
 import (
 	"context"
+	"github.com/FreekingDean/gojellyfin/internal/collage"
+	"github.com/FreekingDean/gojellyfin/internal/items"
 	"reflect"
 	"slices"
 	"strings"
@@ -53,7 +55,7 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
-	return &fixture{server: New(libraries.New(client)), client: client, prefix: prefix}
+	return &fixture{server: New(libraries.New(client), collage.New(items.New(client))), client: client, prefix: prefix}
 }
 
 func (f *fixture) add(t *testing.T, collectionType librarymodel.CollectionType, name string) uuid.UUID {
