@@ -165,7 +165,9 @@ function home(tv, app) {
 
 // A library opens as a grid of posters with no text on them: the app writes
 // the focused title above the grid and its place below it, so the titles are
-// read by walking the focus along the grid with the remote.
+// read by walking the focus along the grid with the remote. The grid fills
+// its columns top to bottom, so the walk goes down a column, then across to
+// the next and back up to its top.
 async function openLibrary(tv, app) {
   await tv.tapOn({ label: app.library });
   await tv.waitFor({ id: 'counter', text: /^\d+ \| \d+$/ }, { timeout: 60000 });
@@ -181,6 +183,13 @@ function focusedTitle(tv) {
 }
 
 async function walkGrid(tv, visit) {
+  const move = async (name) => {
+    tv.key(name);
+    await sleep(700);
+
+    return focusedTitle(tv);
+  };
+
   let focused = focusedTitle(tv);
   for (let step = 0; step < 50; step++) {
     if (visit(focused)) {
@@ -190,13 +199,20 @@ async function walkGrid(tv, visit) {
       return null;
     }
     const before = focused.index;
-    tv.key('right');
-    await sleep(700);
-    focused = focusedTitle(tv);
+    focused = await move('down');
+    if (focused.index !== before) {
+      continue;
+    }
+    focused = await move('right');
+    for (let climb = 0; climb < 10 && focused.index > before + 1; climb++) {
+      const above = await move('up');
+      if (above.index === focused.index) {
+        break;
+      }
+      focused = above;
+    }
     if (focused.index === before) {
-      tv.key('down');
-      await sleep(700);
-      focused = focusedTitle(tv);
+      return null;
     }
   }
 
