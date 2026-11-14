@@ -28,6 +28,10 @@ func New(provider Provider, service *items.Service) *Service {
 	return &Service{provider: provider, items: service}
 }
 
+func (s *Service) Enabled() bool {
+	return s.provider.Enabled()
+}
+
 func (s *Service) IdentifyItem(ctx context.Context, id uuid.UUID) error {
 	if !s.provider.Enabled() {
 		return nil

@@ -892,6 +892,41 @@
           }
         ]
       }
+    },
+    "/GoJellyfin/Health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Says whether each part of the server is working, and what the library holds.",
+        "operationId": "GoJellyfinGetHealth",
+        "responses": {
+          "200": {
+            "description": "The checks and the library counts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "RequiresElevation"
+            ]
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -1448,6 +1483,100 @@
               "type": "string"
             },
             "description": "The slugs of the shelves that are on."
+          }
+        }
+      },
+      "HealthStatus": {
+        "type": "string",
+        "enum": [
+          "Ok",
+          "Warn",
+          "Bad",
+          "Off"
+        ],
+        "description": "Ok works, Warn works with something to look at, Bad does not work, Off is not configured."
+      },
+      "HealthCheck": {
+        "type": "object",
+        "required": [
+          "Name",
+          "Status",
+          "Detail"
+        ],
+        "properties": {
+          "Name": {
+            "type": "string"
+          },
+          "Status": {
+            "$ref": "#/components/schemas/HealthStatus"
+          },
+          "Detail": {
+            "type": "string",
+            "description": "What was found, or what to set."
+          },
+          "At": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When what Detail describes happened, for a downloader the last time it answered."
+          }
+        }
+      },
+      "HealthLibrary": {
+        "type": "object",
+        "required": [
+          "Movies",
+          "Shows",
+          "Episodes",
+          "Unprobed",
+          "Unidentified"
+        ],
+        "properties": {
+          "Movies": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Shows": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Episodes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Unprobed": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Files ffprobe has not read since they last changed."
+          },
+          "Unidentified": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Titles with no provider ids or no artwork yet."
+          },
+          "RefreshedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When a downloader was last read successfully."
+          }
+        }
+      },
+      "Health": {
+        "type": "object",
+        "required": [
+          "Checks",
+          "Library"
+        ],
+        "properties": {
+          "Checks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HealthCheck"
+            }
+          },
+          "Library": {
+            "$ref": "#/components/schemas/HealthLibrary"
           }
         }
       }

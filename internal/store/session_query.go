@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/device"
+	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/syncplaygroupmember"
@@ -30,6 +31,7 @@ type SessionQuery struct {
 	predicates              []predicate.Session
 	withUser                *UserQuery
 	withDevice              *DeviceQuery
+	withNowPlaying          *ItemQuery
 	withSyncPlayMemberships *SyncPlayGroupMemberQuery
 	withFKs                 bool
 	modifiers               []func(*sql.Selector)
@@ -106,6 +108,28 @@ func (_q *SessionQuery) QueryDevice() *DeviceQuery {
 			sqlgraph.From(session.Table, session.FieldID, selector),
 			sqlgraph.To(device.Table, device.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, session.DeviceTable, session.DeviceColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryNowPlaying chains the current query on the "now_playing" edge.
+func (_q *SessionQuery) QueryNowPlaying() *ItemQuery {
+	query := (&ItemClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(session.Table, session.FieldID, selector),
+			sqlgraph.To(item.Table, item.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, session.NowPlayingTable, session.NowPlayingColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -329,6 +353,7 @@ func (_q *SessionQuery) Clone() *SessionQuery {
 		predicates:              append([]predicate.Session{}, _q.predicates...),
 		withUser:                _q.withUser.Clone(),
 		withDevice:              _q.withDevice.Clone(),
+		withNowPlaying:          _q.withNowPlaying.Clone(),
 		withSyncPlayMemberships: _q.withSyncPlayMemberships.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
@@ -355,6 +380,17 @@ func (_q *SessionQuery) WithDevice(opts ...func(*DeviceQuery)) *SessionQuery {
 		opt(query)
 	}
 	_q.withDevice = query
+	return _q
+}
+
+// WithNowPlaying tells the query-builder to eager-load the nodes that are connected to
+// the "now_playing" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *SessionQuery) WithNowPlaying(opts ...func(*ItemQuery)) *SessionQuery {
+	query := (&ItemClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withNowPlaying = query
 	return _q
 }
 
@@ -448,9 +484,10 @@ func (_q *SessionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Sess
 		nodes       = []*Session{}
 		withFKs     = _q.withFKs
 		_spec       = _q.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			_q.withUser != nil,
 			_q.withDevice != nil,
+			_q.withNowPlaying != nil,
 			_q.withSyncPlayMemberships != nil,
 		}
 	)
@@ -490,6 +527,12 @@ func (_q *SessionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Sess
 	if query := _q.withDevice; query != nil {
 		if err := _q.loadDevice(ctx, query, nodes, nil,
 			func(n *Session, e *Device) { n.Edges.Device = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withNowPlaying; query != nil {
+		if err := _q.loadNowPlaying(ctx, query, nodes, nil,
+			func(n *Session, e *Item) { n.Edges.NowPlaying = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -569,6 +612,38 @@ func (_q *SessionQuery) loadDevice(ctx context.Context, query *DeviceQuery, node
 	}
 	return nil
 }
+func (_q *SessionQuery) loadNowPlaying(ctx context.Context, query *ItemQuery, nodes []*Session, init func(*Session), assign func(*Session, *Item)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Session)
+	for i := range nodes {
+		if nodes[i].NowPlayingItemID == nil {
+			continue
+		}
+		fk := *nodes[i].NowPlayingItemID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(item.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "now_playing_item_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 func (_q *SessionQuery) loadSyncPlayMemberships(ctx context.Context, query *SyncPlayGroupMemberQuery, nodes []*Session, init func(*Session), assign func(*Session, *SyncPlayGroupMember)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*Session)
@@ -627,6 +702,9 @@ func (_q *SessionQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != session.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withNowPlaying != nil {
+			_spec.Node.AddColumnOnce(session.FieldNowPlayingItemID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

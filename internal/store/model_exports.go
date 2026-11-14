@@ -675,6 +675,7 @@ type ItemModel struct {
 	Images             []*ImageModel
 	UserData           []*UserItemDataModel
 	ActivityLogEntries []*ActivityLogEntryModel
+	PlayingSessions    []*SessionModel
 	Playlist           *PlaylistModel
 	PlaylistEntries    []*PlaylistEntryModel
 	SyncPlayEntries    []*SyncPlayQueueEntryModel
@@ -731,6 +732,7 @@ func fromItem(_m *Item) *ItemModel {
 		Images:             fromAllImage(_m.Edges.Images),
 		UserData:           fromAllUserItemData(_m.Edges.UserData),
 		ActivityLogEntries: fromAllActivityLogEntry(_m.Edges.ActivityLogEntries),
+		PlayingSessions:    fromAllSession(_m.Edges.PlayingSessions),
 		Playlist:           fromPlaylist(_m.Edges.Playlist),
 		PlaylistEntries:    fromAllPlaylistEntry(_m.Edges.PlaylistEntries),
 		SyncPlayEntries:    fromAllSyncPlayQueueEntry(_m.Edges.SyncPlayEntries),
@@ -1951,18 +1953,24 @@ func (c *RequestSubmissionClient) GetModel(ctx context.Context, id uuid.UUID) (*
 type SessionModel struct {
 	ID uuid.UUID
 
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-	AccessToken    string
-	RemoteEndpoint string
-	LastActivityAt *time.Time
-	RevokedAt      *time.Time
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+	AccessToken      string
+	RemoteEndpoint   string
+	LastActivityAt   *time.Time
+	RevokedAt        *time.Time
+	NowPlayingItemID *uuid.UUID
+	PositionTicks    int64
+	PlayMethod       string
+	IsPaused         bool
+	PlayingAt        *time.Time
 
 	DeviceID *uuid.UUID
 	UserID   *uuid.UUID
 
 	User                *UserModel
 	Device              *DeviceModel
+	NowPlaying          *ItemModel
 	SyncPlayMemberships []*SyncPlayGroupMemberModel
 }
 
@@ -1980,19 +1988,25 @@ func fromSession(_m *Session) *SessionModel {
 	}
 
 	return &SessionModel{
-		ID:             _m.ID,
-		CreatedAt:      _m.CreatedAt,
-		UpdatedAt:      _m.UpdatedAt,
-		AccessToken:    _m.AccessToken,
-		RemoteEndpoint: _m.RemoteEndpoint,
-		LastActivityAt: _m.LastActivityAt,
-		RevokedAt:      _m.RevokedAt,
+		ID:               _m.ID,
+		CreatedAt:        _m.CreatedAt,
+		UpdatedAt:        _m.UpdatedAt,
+		AccessToken:      _m.AccessToken,
+		RemoteEndpoint:   _m.RemoteEndpoint,
+		LastActivityAt:   _m.LastActivityAt,
+		RevokedAt:        _m.RevokedAt,
+		NowPlayingItemID: _m.NowPlayingItemID,
+		PositionTicks:    _m.PositionTicks,
+		PlayMethod:       _m.PlayMethod,
+		IsPaused:         _m.IsPaused,
+		PlayingAt:        _m.PlayingAt,
 
 		DeviceID: _m.device_sessions,
 		UserID:   _m.user_sessions,
 
 		User:                fromUser(_m.Edges.User),
 		Device:              fromDevice(_m.Edges.Device),
+		NowPlaying:          fromItem(_m.Edges.NowPlaying),
 		SyncPlayMemberships: fromAllSyncPlayGroupMember(_m.Edges.SyncPlayMemberships),
 	}
 }

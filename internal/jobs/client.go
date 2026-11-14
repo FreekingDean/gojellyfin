@@ -172,6 +172,28 @@ func (s *Service) Enqueue(ctx context.Context, name string, params ...Param) err
 	return s.client.start(ctx, job.queue(), name, params...)
 }
 
+func (s *Service) Enabled() bool {
+	return s.client.Enabled()
+}
+
+func (s *Service) Pollers(ctx context.Context) (map[string]int, error) {
+	connection, err := s.client.connection()
+	if err != nil {
+		return nil, err
+	}
+
+	pollers := map[string]int{}
+	for _, queue := range s.registry.Queues() {
+		described, err := connection.DescribeTaskQueue(ctx, queue, enums.TASK_QUEUE_TYPE_WORKFLOW)
+		if err != nil {
+			return nil, err
+		}
+		pollers[queue] = len(described.GetPollers())
+	}
+
+	return pollers, nil
+}
+
 func (s *Service) Cancel(ctx context.Context, name string) error {
 	job, err := s.registry.Find(name)
 	if err != nil {

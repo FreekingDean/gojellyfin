@@ -14,6 +14,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
+	"github.com/FreekingDean/gojellyfin/internal/health"
 	"github.com/FreekingDean/gojellyfin/internal/http"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
@@ -52,6 +53,7 @@ var serverModules = fx.Options(
 	displaypreferences.Module,
 	ffmpeg.Module,
 	filesystem.Module,
+	health.Module,
 	items.Module,
 	libraries.Module,
 	localization.Module,

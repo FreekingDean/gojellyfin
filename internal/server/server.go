@@ -15,6 +15,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/environment"
 	"github.com/FreekingDean/gojellyfin/internal/server/filter"
 	"github.com/FreekingDean/gojellyfin/internal/server/genres"
+	"github.com/FreekingDean/gojellyfin/internal/server/health"
 	"github.com/FreekingDean/gojellyfin/internal/server/image"
 	"github.com/FreekingDean/gojellyfin/internal/server/instantmix"
 	"github.com/FreekingDean/gojellyfin/internal/server/items"
@@ -93,6 +94,7 @@ type (
 	SessionServer            = session.Server
 	ReportsServer            = reports.Server
 	RequestsServer           = requests.Server
+	HealthServer             = health.Server
 	SettingsServer           = settings.Server
 	SourcesServer            = sources.Server
 	SuggestionsServer        = suggestions.Server
@@ -143,6 +145,7 @@ type Server struct {
 	*SessionServer
 	*ReportsServer
 	*RequestsServer
+	*HealthServer
 	*SettingsServer
 	*SourcesServer
 	*SuggestionsServer
@@ -195,6 +198,7 @@ func New(
 	session *session.Server,
 	reports *reports.Server,
 	requests *requests.Server,
+	health *health.Server,
 	settings *settings.Server,
 	sources *sources.Server,
 	suggestions *suggestions.Server,
@@ -244,6 +248,7 @@ func New(
 		SessionServer:            session,
 		ReportsServer:            reports,
 		RequestsServer:           requests,
+		HealthServer:             health,
 		SettingsServer:           settings,
 		SourcesServer:            sources,
 		SuggestionsServer:        suggestions,

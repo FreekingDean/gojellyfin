@@ -828,7 +828,12 @@ var (
 		{Name: "remote_endpoint", Type: field.TypeString, Nullable: true},
 		{Name: "last_activity_at", Type: field.TypeTime, Nullable: true},
 		{Name: "revoked_at", Type: field.TypeTime, Nullable: true},
+		{Name: "position_ticks", Type: field.TypeInt64, Default: 0},
+		{Name: "play_method", Type: field.TypeString, Nullable: true},
+		{Name: "is_paused", Type: field.TypeBool, Default: false},
+		{Name: "playing_at", Type: field.TypeTime, Nullable: true},
 		{Name: "device_sessions", Type: field.TypeUUID},
+		{Name: "now_playing_item_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "user_sessions", Type: field.TypeUUID},
 	}
 	// SessionsTable holds the schema information for the "sessions" table.
@@ -839,13 +844,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "sessions_devices_sessions",
-				Columns:    []*schema.Column{SessionsColumns[7]},
+				Columns:    []*schema.Column{SessionsColumns[11]},
 				RefColumns: []*schema.Column{DevicesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
+				Symbol:     "sessions_items_playing_sessions",
+				Columns:    []*schema.Column{SessionsColumns[12]},
+				RefColumns: []*schema.Column{ItemsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
 				Symbol:     "sessions_users_sessions",
-				Columns:    []*schema.Column{SessionsColumns[8]},
+				Columns:    []*schema.Column{SessionsColumns[13]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -1328,7 +1339,8 @@ func init() {
 	RequestsTable.ForeignKeys[0].RefTable = UsersTable
 	RequestSubmissionsTable.ForeignKeys[0].RefTable = SourcesTable
 	SessionsTable.ForeignKeys[0].RefTable = DevicesTable
-	SessionsTable.ForeignKeys[1].RefTable = UsersTable
+	SessionsTable.ForeignKeys[1].RefTable = ItemsTable
+	SessionsTable.ForeignKeys[2].RefTable = UsersTable
 	SourcePathsTable.ForeignKeys[0].RefTable = SourcesTable
 	SyncPlayGroupMembersTable.ForeignKeys[0].RefTable = SessionsTable
 	SyncPlayGroupMembersTable.ForeignKeys[1].RefTable = SyncPlayGroupsTable

@@ -42,6 +42,13 @@ func (e *Encoder) Enabled() bool {
 	return Available()
 }
 
+func (e *Encoder) Slots() (busy, total int) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	return e.taken, e.jobs
+}
+
 func (e *Encoder) Stall() time.Duration {
 	return e.stall
 }
