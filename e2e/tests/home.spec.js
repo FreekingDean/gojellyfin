@@ -12,6 +12,9 @@ test.describe('the home screen', () => {
       await expect(home).toContainText(movie);
     }
 
+    await expect(home).toContainText(harness.wantedMovie.name);
+    await expect(home).toContainText(harness.wantedShow.name);
+
     await expect(page).toHaveScreenshot('home.png', { fullPage: true });
   });
 
