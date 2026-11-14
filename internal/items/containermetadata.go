@@ -37,7 +37,7 @@ type MetadataQuery struct {
 }
 
 func (q MetadataQuery) items() []predicate.Item {
-	filters := make([]predicate.Item, 0, 3)
+	filters := append([]predicate.Item{itemmodel.DeletedAtIsNil()}, q.Viewer.visible()...)
 	if q.LibraryID != nil {
 		filters = append(filters, inLibrary(*q.LibraryID))
 	}
@@ -176,6 +176,21 @@ func (s *Service) DistinctTags(ctx context.Context, query MetadataQuery) ([]stri
 	slices.Sort(tags)
 
 	return tags, nil
+}
+
+func (s *Service) DistinctOfficialRatings(ctx context.Context, query MetadataQuery) ([]string, error) {
+	ratings, err := s.query(query.Viewer).
+		Where(query.items()...).
+		Where(itemmodel.OfficialRatingNotNil(), itemmodel.OfficialRatingNEQ("")).
+		Order(itemmodel.ByOfficialRating()).
+		Unique(true).
+		Select(itemmodel.FieldOfficialRating).
+		Strings(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query official ratings: %w", err)
+	}
+
+	return ratings, nil
 }
 
 func replaceCredits(ctx context.Context, tx *store.Tx, itemID uuid.UUID, people []Credit) error {
