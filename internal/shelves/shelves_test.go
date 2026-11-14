@@ -371,7 +371,7 @@ func TestService_Titles(t *testing.T) {
 	}
 }
 
-func TestService_Posters(t *testing.T) {
+func TestService_Card(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 	november := time.Date(2026, time.November, 14, 0, 0, 0, 0, time.UTC)
@@ -380,6 +380,8 @@ func TestService_Posters(t *testing.T) {
 	older := fixture.movie(t, film{name: "Older", rating: 8, minutes: 90, genre: "Drama", released: year(2010)})
 	newer := fixture.movie(t, film{name: "Newer", rating: 8, minutes: 90, genre: "Drama", released: year(2024)})
 	fixture.movie(t, film{name: "Bare", rating: 8, minutes: 90, genre: "Drama", released: year(2020)})
+	fixture.movie(t, film{name: "This Week", rating: 8, minutes: 90, genre: "Drama", released: november.AddDate(0, 0, -3)})
+	fixture.movie(t, film{name: "Next Week", rating: 8, minutes: 90, genre: "Drama", released: november.AddDate(0, 0, 3)})
 	for tag, itemID := range map[string]uuid.UUID{"older": older, "newer": newer} {
 		if err := fixture.catalogue.SaveImage(ctx, itemID, items.Image{Kind: items.ImageKindPrimary, URL: "https://cdn.invalid/" + tag, Tag: tag}); err != nil {
 			t.Fatalf("failed to save %q: %v", tag, err)
@@ -393,9 +395,11 @@ func TestService_Posters(t *testing.T) {
 		enabled []string
 		slug    string
 		want    []string
+		title   string
+		fresh   int
 		found   bool
 	}{
-		{name: "a shelf everyone sees alike answers its titles' posters newest first", enabled: []string{"new-releases"}, slug: "new-releases", want: []string{"newer", "older"}, found: true},
+		{name: "a shelf everyone sees alike answers its name, what aired this week and its titles' posters newest first", enabled: []string{"new-releases"}, slug: "new-releases", want: []string{"newer", "older"}, title: "New Releases", fresh: 1, found: true},
 		{name: "a shelf that differs per user has none", enabled: []string{"hidden-gems"}, slug: "hidden-gems"},
 		{name: "a shelf that is off has none", enabled: []string{"recently-aired"}, slug: "new-releases"},
 	}
@@ -404,16 +408,19 @@ func TestService_Posters(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			service := newService(fixture.catalogue, available(true), stored(test.enabled...), func() time.Time { return november })
 
-			posters, found, err := service.Posters(ctx, ID(test.slug), viewer, 10)
+			card, found, err := service.Card(ctx, ID(test.slug), viewer, 10)
 			if err != nil {
-				t.Fatalf("failed to read the posters: %v", err)
+				t.Fatalf("failed to read the card: %v", err)
 			}
 			if found != test.found {
 				t.Fatalf("found = %v, want %v", found, test.found)
 			}
+			if card.Name != test.title || card.Fresh != test.fresh {
+				t.Errorf("card = %q with %d new, want %q with %d", card.Name, card.Fresh, test.title, test.fresh)
+			}
 
-			got := make([]string, 0, len(posters))
-			for _, poster := range posters {
+			got := make([]string, 0, len(card.Posters))
+			for _, poster := range card.Posters {
 				got = append(got, poster.Tag)
 			}
 			if !slices.Equal(got, test.want) && (len(got) != 0 || len(test.want) != 0) {

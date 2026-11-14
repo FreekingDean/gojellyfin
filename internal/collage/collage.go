@@ -37,12 +37,20 @@ type Collage struct {
 	Complete bool
 }
 
+type layout func([]image.Image) ([]byte, error)
+
 type Libraries interface {
 	LibraryPosters(ctx context.Context, libraryID uuid.UUID, limit int) ([]*items.Image, error)
 }
 
 type Shelves interface {
-	Posters(ctx context.Context, id uuid.UUID, viewer items.Viewer, limit int) ([]*items.Image, bool, error)
+	Card(ctx context.Context, id uuid.UUID, viewer items.Viewer, limit int) (shelves.Card, bool, error)
+}
+
+type plan struct {
+	posters []*items.Image
+	arrange layout
+	caption string
 }
 
 type Service struct {
@@ -69,32 +77,37 @@ func newService(libraries Libraries, shelved Shelves) *Service {
 }
 
 func (s *Service) Tag(ctx context.Context, id uuid.UUID) (string, error) {
-	posters, err := s.posters(ctx, id)
+	planned, err := s.plan(ctx, id)
 	if err != nil {
 		return "", err
 	}
 
-	return fingerprint(posters), nil
+	return planned.fingerprint(), nil
 }
 
-func (s *Service) posters(ctx context.Context, id uuid.UUID) ([]*items.Image, error) {
-	shelved, found, err := s.shelves.Posters(ctx, id, items.Everyone, cells)
-	if err != nil || found {
-		return shelved, err
+func (s *Service) plan(ctx context.Context, id uuid.UUID) (plan, error) {
+	card, found, err := s.shelves.Card(ctx, id, items.Everyone, stacked)
+	if err != nil {
+		return plan{}, err
+	}
+	if found {
+		return plan{posters: card.Posters, arrange: titled(card.Name, card.Fresh), caption: card.Name + "\x00" + headline(card.Fresh)}, nil
 	}
 
-	return s.libraries.LibraryPosters(ctx, id, cells)
+	listed, err := s.libraries.LibraryPosters(ctx, id, cells)
+
+	return plan{posters: listed, arrange: compose}, err
 }
 
 func (s *Service) Image(ctx context.Context, id uuid.UUID) (Collage, bool) {
-	posters, err := s.posters(ctx, id)
+	planned, err := s.plan(ctx, id)
 	if err != nil {
 		log.Printf("collage %s: %v", id, err)
 
 		return Collage{}, false
 	}
 
-	tag := fingerprint(posters)
+	tag := planned.fingerprint()
 	if tag == "" {
 		return Collage{}, false
 	}
@@ -103,7 +116,7 @@ func (s *Service) Image(ctx context.Context, id uuid.UUID) (Collage, bool) {
 	}
 
 	built, err, _ := s.flight.Do(id.String()+":"+tag, func() (any, error) {
-		return s.build(context.WithoutCancel(ctx), id, tag, posters)
+		return s.build(context.WithoutCancel(ctx), id, tag, planned)
 	})
 	if err != nil {
 		log.Printf("collage %s: %v", id, err)
@@ -125,7 +138,8 @@ func (s *Service) cached(id uuid.UUID, tag string) ([]byte, bool) {
 	return entry.body, ok && entry.tag == tag
 }
 
-func (s *Service) build(ctx context.Context, id uuid.UUID, tag string, posters []*items.Image) (Collage, error) {
+func (s *Service) build(ctx context.Context, id uuid.UUID, tag string, planned plan) (Collage, error) {
+	posters := planned.posters
 	decoded := make([]image.Image, len(posters))
 
 	var group errgroup.Group
@@ -154,7 +168,7 @@ func (s *Service) build(ctx context.Context, id uuid.UUID, tag string, posters [
 		return Collage{}, nil
 	}
 
-	body, err := compose(fetched)
+	body, err := planned.arrange(fetched)
 	if err != nil {
 		return Collage{}, err
 	}
@@ -193,13 +207,14 @@ func (s *Service) fetch(ctx context.Context, url string) (image.Image, error) {
 	return picture, nil
 }
 
-func fingerprint(posters []*items.Image) string {
-	if len(posters) == 0 {
+func (p plan) fingerprint() string {
+	if len(p.posters) == 0 {
 		return ""
 	}
 
 	hash := sha1.New()
-	for _, poster := range posters {
+	_, _ = io.WriteString(hash, p.caption)
+	for _, poster := range p.posters {
 		_, _ = io.WriteString(hash, poster.Tag)
 		_, _ = hash.Write([]byte{0})
 	}
