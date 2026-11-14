@@ -25,6 +25,7 @@ type fixture struct {
 	client    *store.Client
 	itemID    uuid.UUID
 	libraryID uuid.UUID
+	sourceID  uuid.UUID
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -95,6 +96,7 @@ func newFixture(t *testing.T) *fixture {
 		client:    client,
 		itemID:    item.ID,
 		libraryID: library.ID,
+		sourceID:  downloader.ID,
 	}
 }
 
@@ -201,6 +203,11 @@ func TestServer_GetItemImageByIndex(t *testing.T) {
 
 func TestServer_GetItemImage_Library(t *testing.T) {
 	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/missing" {
+			http.NotFound(w, r)
+
+			return
+		}
 		poster := image.NewRGBA(image.Rect(0, 0, 20, 30))
 		_ = png.Encode(w, poster)
 	}))
@@ -234,6 +241,54 @@ func TestServer_GetItemImage_Library(t *testing.T) {
 		}
 		if _, _, err := image.Decode(recorder.Body); err != nil {
 			t.Errorf("failed to decode the collage: %v", err)
+		}
+	})
+
+	t.Run("tells the client not to keep a collage missing a poster", func(t *testing.T) {
+		fixture := newFixture(t)
+		fixture.store(t, imagemodel.KindPrimary, 0, cdn.URL+"/poster.png", "postertag")
+
+		other, err := fixture.client.Item.Create().
+			SetKind(itemmodel.KindMovie).
+			SetName("Other").
+			SetSortName("Other").
+			SetKey("test:other:" + fixture.libraryID.String()).
+			Save(context.Background())
+		if err != nil {
+			t.Fatalf("failed to create the item: %v", err)
+		}
+		t.Cleanup(func() { _ = fixture.client.Item.DeleteOne(other).Exec(context.Background()) })
+		if err := fixture.client.LibraryItem.Create().
+			SetLibraryID(fixture.libraryID).
+			SetSourceID(fixture.sourceID).
+			SetItemID(other.ID).
+			Exec(context.Background()); err != nil {
+			t.Fatalf("failed to place the item in the library: %v", err)
+		}
+		if _, err := fixture.client.Image.Create().
+			SetItemID(other.ID).
+			SetKind(imagemodel.KindPrimary).
+			SetURL(cdn.URL + "/missing").
+			SetTag("missingtag").
+			Save(context.Background()); err != nil {
+			t.Fatalf("failed to create the image row: %v", err)
+		}
+
+		response, err := fixture.server.GetItemImage(context.Background(), api.GetItemImageRequestObject{
+			ItemId:    fixture.libraryID,
+			ImageType: api.Primary,
+		})
+		if err != nil {
+			t.Fatalf("failed to get the image: %v", err)
+		}
+
+		recorder := httptest.NewRecorder()
+		if err := response.VisitGetItemImageResponse(recorder); err != nil {
+			t.Fatalf("failed to write the response: %v", err)
+		}
+
+		if got := recorder.Header().Get("Cache-Control"); got != "no-store" {
+			t.Errorf("cache control = %q, want no-store", got)
 		}
 	})
 

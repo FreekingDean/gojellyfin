@@ -82,12 +82,12 @@ func (s *Server) answer(ctx context.Context, itemID uuid.UUID, imageType api.Ima
 		return nil, false
 	}
 
-	body, ok := s.collages.Image(ctx, itemID)
+	built, ok := s.collages.Image(ctx, itemID)
 	if !ok {
 		return nil, false
 	}
 
-	return composed(body), true
+	return composed(built), true
 }
 
 type redirect string
@@ -105,17 +105,25 @@ func (r redirect) VisitHeadItemImageResponse(w http.ResponseWriter) error       
 func (r redirect) VisitGetItemImageByIndexResponse(w http.ResponseWriter) error  { return r.write(w) }
 func (r redirect) VisitHeadItemImageByIndexResponse(w http.ResponseWriter) error { return r.write(w) }
 
-type composed []byte
+type composed collage.Collage
 
 func (c composed) write(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", collage.ContentType)
-	w.Header().Set("Content-Length", strconv.Itoa(len(c)))
-	w.Header().Set("Cache-Control", cacheFor)
+	w.Header().Set("Content-Length", strconv.Itoa(len(c.Body)))
+	w.Header().Set("Cache-Control", c.caching())
 	w.WriteHeader(http.StatusOK)
 
-	_, err := bytes.NewReader(c).WriteTo(w)
+	_, err := bytes.NewReader(c.Body).WriteTo(w)
 
 	return err
+}
+
+func (c composed) caching() string {
+	if c.Complete {
+		return cacheFor
+	}
+
+	return "no-store"
 }
 
 func (c composed) VisitGetItemImageResponse(w http.ResponseWriter) error         { return c.write(w) }

@@ -31,6 +31,11 @@ type held struct {
 	body []byte
 }
 
+type Collage struct {
+	Body     []byte
+	Complete bool
+}
+
 type Service struct {
 	items  *items.Service
 	client *http.Client
@@ -57,20 +62,20 @@ func (s *Service) Tag(ctx context.Context, libraryID uuid.UUID) (string, error) 
 	return fingerprint(posters), nil
 }
 
-func (s *Service) Image(ctx context.Context, libraryID uuid.UUID) ([]byte, bool) {
+func (s *Service) Image(ctx context.Context, libraryID uuid.UUID) (Collage, bool) {
 	posters, err := s.items.LibraryPosters(ctx, libraryID, cells)
 	if err != nil {
 		log.Printf("collage %s: %v", libraryID, err)
 
-		return nil, false
+		return Collage{}, false
 	}
 
 	tag := fingerprint(posters)
 	if tag == "" {
-		return nil, false
+		return Collage{}, false
 	}
 	if body, ok := s.cached(libraryID, tag); ok {
-		return body, true
+		return Collage{Body: body, Complete: true}, true
 	}
 
 	built, err, _ := s.flight.Do(libraryID.String()+":"+tag, func() (any, error) {
@@ -79,12 +84,12 @@ func (s *Service) Image(ctx context.Context, libraryID uuid.UUID) ([]byte, bool)
 	if err != nil {
 		log.Printf("collage %s: %v", libraryID, err)
 
-		return nil, false
+		return Collage{}, false
 	}
 
-	body, ok := built.([]byte)
+	answer, ok := built.(Collage)
 
-	return body, ok && len(body) > 0
+	return answer, ok && len(answer.Body) > 0
 }
 
 func (s *Service) cached(libraryID uuid.UUID, tag string) ([]byte, bool) {
@@ -96,7 +101,7 @@ func (s *Service) cached(libraryID uuid.UUID, tag string) ([]byte, bool) {
 	return entry.body, ok && entry.tag == tag
 }
 
-func (s *Service) build(ctx context.Context, libraryID uuid.UUID, tag string, posters []*items.Image) ([]byte, error) {
+func (s *Service) build(ctx context.Context, libraryID uuid.UUID, tag string, posters []*items.Image) (Collage, error) {
 	decoded := make([]image.Image, len(posters))
 
 	var group errgroup.Group
@@ -122,21 +127,22 @@ func (s *Service) build(ctx context.Context, libraryID uuid.UUID, tag string, po
 		}
 	}
 	if len(fetched) == 0 {
-		return nil, nil
+		return Collage{}, nil
 	}
 
 	body, err := compose(fetched)
 	if err != nil {
-		return nil, err
+		return Collage{}, err
 	}
 
-	if len(fetched) == len(posters) {
+	complete := len(fetched) == len(posters)
+	if complete {
 		s.mutex.Lock()
 		s.held[libraryID] = held{tag: tag, body: body}
 		s.mutex.Unlock()
 	}
 
-	return body, nil
+	return Collage{Body: body, Complete: complete}, nil
 }
 
 func (s *Service) fetch(ctx context.Context, url string) (image.Image, error) {

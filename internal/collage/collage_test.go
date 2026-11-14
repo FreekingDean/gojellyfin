@@ -149,12 +149,12 @@ func (f *fixture) title(t *testing.T, poster []byte) uuid.UUID {
 func (f *fixture) image(t *testing.T) []byte {
 	t.Helper()
 
-	body, ok := f.service.Image(context.Background(), f.libraryID)
+	built, ok := f.service.Image(context.Background(), f.libraryID)
 	if !ok {
 		t.Fatal("the library has no collage")
 	}
 
-	return body
+	return built.Body
 }
 
 func (f *fixture) tag(t *testing.T) string {
@@ -259,7 +259,14 @@ func TestService_Image(t *testing.T) {
 		fixture.title(t, painted(t, red))
 		fixture.title(t, []byte("not an image"))
 
-		if bounds := opened(t, fixture.image(t)).Bounds(); bounds.Dx() != width {
+		built, ok := fixture.service.Image(context.Background(), fixture.libraryID)
+		if !ok {
+			t.Fatal("the library has no collage")
+		}
+		if built.Complete {
+			t.Error("a collage missing a poster was called complete")
+		}
+		if bounds := opened(t, built.Body).Bounds(); bounds.Dx() != width {
 			t.Errorf("collage = %dx%d, want a full collage", bounds.Dx(), bounds.Dy())
 		}
 
