@@ -19,6 +19,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/link"
 	"github.com/FreekingDean/gojellyfin/internal/server/socket"
+	"github.com/FreekingDean/gojellyfin/internal/server/sso"
 	"github.com/FreekingDean/gojellyfin/internal/server/stream"
 )
 
@@ -183,11 +184,14 @@ func New(config env.Config, m *mux.Mux, authMiddleware *middleware.Auth, tracing
 	}
 }
 
-func Register(s *Server, apiServer *server.Server, sock *socket.Socket, streams *stream.Handler, m *mux.Mux) {
+func Register(s *Server, apiServer *server.Server, sock *socket.Socket, streams *stream.Handler, signOn *sso.Handler, m *mux.Mux) {
 	h := api.NewStrictHandlerWithOptions(apiServer, s.apiMiddleware, s.apiOptions)
 	m.HandleFunc("GET /socket", sock.Handle)
 	for _, pattern := range link.Routes {
 		m.HandleFunc(pattern, link.Redirect)
+	}
+	for _, pattern := range sso.Routes {
+		m.HandleFunc(pattern, signOn.Serve)
 	}
 
 	for _, pattern := range streamRoutes {

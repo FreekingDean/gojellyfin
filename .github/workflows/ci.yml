@@ -57,6 +57,8 @@ jobs:
           render --set sources.existingSecret=gojellyfin-sources
           render --set hostname=example.test --set httpRoute.enabled=true --set httpRoute.parentRefs[0].name=gateway
           render --set cors.enabled=true --set cors.origin=https://example.test
+          render --set hostname=example.test --set oidc.issuerUrl=https://auth.example.test --set oidc.clientId=gojellyfin \
+            --set oidc.existingSecret=gojellyfin-oidc --set oidc.adminGroup=admins --set oidc.linkExistingUsers=true
           render --set pod=null --set api.resources=null
           render --set worker.enabled=true --set temporal.hostPort=temporal:7233 --set temporal.namespace=default \
             --set worker.autoscaling.enabled=true --set worker.podDisruptionBudget.enabled=true
@@ -70,7 +72,7 @@ jobs:
             --set-json 'pod.labels={"istio.io/dataplane-mode":"none"}' \
             --set-json 'service.labels={"istio.io/use-waypoint":"none"}'
 
-      # The chart refuses five combinations that would deploy something quietly
+      # The chart refuses the combinations that would deploy something quietly
       # broken. A guard nothing tests is a guard that stops firing.
       - name: Refuse what cannot work
         run: |
@@ -87,6 +89,8 @@ jobs:
             --set worker.autoscaling.enabled=true --set worker.resources=null
           refuses --set worker.enabled=true --set temporal.hostPort=temporal:7233 --set temporal.namespace=default \
             --set worker.autoscaling.enabled=true --set worker.autoscaling.minReplicas=4 --set worker.autoscaling.maxReplicas=2
+          refuses --set oidc.issuerUrl=https://auth.example.test --set oidc.clientId=gojellyfin
+          refuses --set hostname=example.test --set oidc.issuerUrl=https://auth.example.test
 
   generate:
     runs-on: ubuntu-latest

@@ -107,6 +107,34 @@ func (_c *UserCreate) SetNillableLastActivityAt(v *time.Time) *UserCreate {
 	return _c
 }
 
+// SetOidcIssuer sets the "oidc_issuer" field.
+func (_c *UserCreate) SetOidcIssuer(v string) *UserCreate {
+	_c.mutation.SetOidcIssuer(v)
+	return _c
+}
+
+// SetNillableOidcIssuer sets the "oidc_issuer" field if the given value is not nil.
+func (_c *UserCreate) SetNillableOidcIssuer(v *string) *UserCreate {
+	if v != nil {
+		_c.SetOidcIssuer(*v)
+	}
+	return _c
+}
+
+// SetOidcSubject sets the "oidc_subject" field.
+func (_c *UserCreate) SetOidcSubject(v string) *UserCreate {
+	_c.mutation.SetOidcSubject(v)
+	return _c
+}
+
+// SetNillableOidcSubject sets the "oidc_subject" field if the given value is not nil.
+func (_c *UserCreate) SetNillableOidcSubject(v *string) *UserCreate {
+	if v != nil {
+		_c.SetOidcSubject(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *UserCreate) SetID(v uuid.UUID) *UserCreate {
 	_c.mutation.SetID(v)
@@ -381,6 +409,14 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.LastActivityAt(); ok {
 		_spec.SetField(user.FieldLastActivityAt, field.TypeTime, value)
 		_node.LastActivityAt = &value
+	}
+	if value, ok := _c.mutation.OidcIssuer(); ok {
+		_spec.SetField(user.FieldOidcIssuer, field.TypeString, value)
+		_node.OidcIssuer = &value
+	}
+	if value, ok := _c.mutation.OidcSubject(); ok {
+		_spec.SetField(user.FieldOidcSubject, field.TypeString, value)
+		_node.OidcSubject = &value
 	}
 	if nodes := _c.mutation.ConfigurationIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -674,6 +710,42 @@ func (u *UserUpsert) ClearLastActivityAt() *UserUpsert {
 	return u
 }
 
+// SetOidcIssuer sets the "oidc_issuer" field.
+func (u *UserUpsert) SetOidcIssuer(v string) *UserUpsert {
+	u.Set(user.FieldOidcIssuer, v)
+	return u
+}
+
+// UpdateOidcIssuer sets the "oidc_issuer" field to the value that was provided on create.
+func (u *UserUpsert) UpdateOidcIssuer() *UserUpsert {
+	u.SetExcluded(user.FieldOidcIssuer)
+	return u
+}
+
+// ClearOidcIssuer clears the value of the "oidc_issuer" field.
+func (u *UserUpsert) ClearOidcIssuer() *UserUpsert {
+	u.SetNull(user.FieldOidcIssuer)
+	return u
+}
+
+// SetOidcSubject sets the "oidc_subject" field.
+func (u *UserUpsert) SetOidcSubject(v string) *UserUpsert {
+	u.Set(user.FieldOidcSubject, v)
+	return u
+}
+
+// UpdateOidcSubject sets the "oidc_subject" field to the value that was provided on create.
+func (u *UserUpsert) UpdateOidcSubject() *UserUpsert {
+	u.SetExcluded(user.FieldOidcSubject)
+	return u
+}
+
+// ClearOidcSubject clears the value of the "oidc_subject" field.
+func (u *UserUpsert) ClearOidcSubject() *UserUpsert {
+	u.SetNull(user.FieldOidcSubject)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -831,6 +903,48 @@ func (u *UserUpsertOne) UpdateLastActivityAt() *UserUpsertOne {
 func (u *UserUpsertOne) ClearLastActivityAt() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearLastActivityAt()
+	})
+}
+
+// SetOidcIssuer sets the "oidc_issuer" field.
+func (u *UserUpsertOne) SetOidcIssuer(v string) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetOidcIssuer(v)
+	})
+}
+
+// UpdateOidcIssuer sets the "oidc_issuer" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateOidcIssuer() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateOidcIssuer()
+	})
+}
+
+// ClearOidcIssuer clears the value of the "oidc_issuer" field.
+func (u *UserUpsertOne) ClearOidcIssuer() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearOidcIssuer()
+	})
+}
+
+// SetOidcSubject sets the "oidc_subject" field.
+func (u *UserUpsertOne) SetOidcSubject(v string) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetOidcSubject(v)
+	})
+}
+
+// UpdateOidcSubject sets the "oidc_subject" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateOidcSubject() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateOidcSubject()
+	})
+}
+
+// ClearOidcSubject clears the value of the "oidc_subject" field.
+func (u *UserUpsertOne) ClearOidcSubject() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearOidcSubject()
 	})
 }
 
@@ -1158,6 +1272,48 @@ func (u *UserUpsertBulk) UpdateLastActivityAt() *UserUpsertBulk {
 func (u *UserUpsertBulk) ClearLastActivityAt() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearLastActivityAt()
+	})
+}
+
+// SetOidcIssuer sets the "oidc_issuer" field.
+func (u *UserUpsertBulk) SetOidcIssuer(v string) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetOidcIssuer(v)
+	})
+}
+
+// UpdateOidcIssuer sets the "oidc_issuer" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateOidcIssuer() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateOidcIssuer()
+	})
+}
+
+// ClearOidcIssuer clears the value of the "oidc_issuer" field.
+func (u *UserUpsertBulk) ClearOidcIssuer() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearOidcIssuer()
+	})
+}
+
+// SetOidcSubject sets the "oidc_subject" field.
+func (u *UserUpsertBulk) SetOidcSubject(v string) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetOidcSubject(v)
+	})
+}
+
+// UpdateOidcSubject sets the "oidc_subject" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateOidcSubject() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateOidcSubject()
+	})
+}
+
+// ClearOidcSubject clears the value of the "oidc_subject" field.
+func (u *UserUpsertBulk) ClearOidcSubject() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearOidcSubject()
 	})
 }
 

@@ -33,13 +33,20 @@ func New(client *store.Client) *Service {
 }
 
 func (s *Service) CreateUser(ctx context.Context, name, passwordHash string, isAdministrator bool) (*User, error) {
+	return s.create(ctx, name, passwordHash, isAdministrator, nil)
+}
+
+func (s *Service) create(ctx context.Context, name, passwordHash string, isAdministrator bool, identity *Identity) (*User, error) {
 	var id uuid.UUID
 	err := s.store.WithTx(ctx, func(tx *store.Tx) error {
-		user, err := tx.User.Create().
+		create := tx.User.Create().
 			SetName(name).
 			SetUsername(name).
-			SetPasswordHash(passwordHash).
-			Save(ctx)
+			SetPasswordHash(passwordHash)
+		if identity != nil {
+			create.SetOidcIssuer(identity.Issuer).SetOidcSubject(identity.Subject)
+		}
+		user, err := create.Save(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to create user: %w", err)
 		}

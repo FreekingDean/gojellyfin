@@ -3,6 +3,7 @@ package env
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -26,6 +27,7 @@ type Config struct {
 	Temporal           Temporal   `mapstructure:",squash"`
 	Tracing            Tracing    `mapstructure:",squash"`
 	TMDB               TMDB       `mapstructure:",squash"`
+	OIDC               OIDC       `mapstructure:",squash"`
 	MediaDirectories   []string   `mapstructure:"MEDIA_DIRECTORIES"`
 
 	SourceAPIKeys map[string]string `mapstructure:"-"`
@@ -48,6 +50,18 @@ type Tracing struct {
 
 type TMDB struct {
 	APIKey string `mapstructure:"TMDB_API_KEY"`
+}
+
+type OIDC struct {
+	IssuerURL         string `mapstructure:"OIDC_ISSUER_URL"`
+	ClientID          string `mapstructure:"OIDC_CLIENT_ID"`
+	ClientSecret      string `mapstructure:"OIDC_CLIENT_SECRET"`
+	Scopes            string `mapstructure:"OIDC_SCOPES"`
+	UsernameClaim     string `mapstructure:"OIDC_USERNAME_CLAIM"`
+	GroupsClaim       string `mapstructure:"OIDC_GROUPS_CLAIM"`
+	AdminGroup        string `mapstructure:"OIDC_ADMIN_GROUP"`
+	AllowedGroup      string `mapstructure:"OIDC_ALLOWED_GROUP"`
+	LinkExistingUsers bool   `mapstructure:"OIDC_LINK_EXISTING_USERS"`
 }
 
 func Load() (Config, error) {
@@ -89,6 +103,23 @@ func (c Config) validate() error {
 	if c.Temporal.WorkerStopTimeout < 0 {
 		return fmt.Errorf("TEMPORAL_WORKER_STOP_TIMEOUT must be a positive duration such as 5m, got %s", c.Temporal.WorkerStopTimeout)
 	}
+	return c.validateOIDC()
+}
+
+func (c Config) validateOIDC() error {
+	if c.OIDC.IssuerURL == "" {
+		return nil
+	}
+	if issuer, err := url.Parse(c.OIDC.IssuerURL); err != nil || !issuer.IsAbs() || issuer.Host == "" {
+		return fmt.Errorf("OIDC_ISSUER_URL must be an absolute URL such as https://auth.example, got %q", c.OIDC.IssuerURL)
+	}
+	if c.OIDC.ClientID == "" {
+		return errors.New("OIDC_ISSUER_URL is set but OIDC_CLIENT_ID is not, and a provider cannot be asked to sign in an unnamed client")
+	}
+	if published, err := url.Parse(c.PublishedServerURL); c.PublishedServerURL == "" || err != nil || !published.IsAbs() || published.Host == "" {
+		return errors.New("OIDC_ISSUER_URL is set but PUBLISHED_SERVER_URL is not an absolute URL, and the provider needs one to send the browser back to")
+	}
+
 	return nil
 }
 

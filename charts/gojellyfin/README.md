@@ -113,6 +113,16 @@ reads the environment.
 | `database.secretKey` | — | `DATABASE_URL` | Key within that Secret |
 | `tmdb.existingSecret` | `TMDB_API_KEY` | `""` | Secret holding the TMDB key. Empty turns metadata lookups off, so items keep their source's titles and get no artwork |
 | `tmdb.secretKey` | — | `TMDB_API_KEY` | Key within that Secret |
+| `oidc.issuerUrl` | `OIDC_ISSUER_URL` | `""` | OpenID Connect issuer. Set, the login page offers "Sign in with SSO"; it needs `hostname`, and the redirect URI to register is `<scheme>://<hostname>/sso/oidc/callback` |
+| `oidc.clientId` | `OIDC_CLIENT_ID` | `""` | Client id registered with the provider. Required with `issuerUrl` |
+| `oidc.existingSecret` | `OIDC_CLIENT_SECRET` | `""` | Secret holding the client secret. Empty is a public client |
+| `oidc.secretKey` | — | `OIDC_CLIENT_SECRET` | Key within that Secret |
+| `oidc.scopes` | `OIDC_SCOPES` | `""` | Space separated. Empty asks for `openid profile email` |
+| `oidc.usernameClaim` | `OIDC_USERNAME_CLAIM` | `""` | Claim a new account is named by. Empty reads `preferred_username` |
+| `oidc.groupsClaim` | `OIDC_GROUPS_CLAIM` | `""` | Claim listing groups. Empty reads `groups` |
+| `oidc.adminGroup` | `OIDC_ADMIN_GROUP` | `""` | Members sign in as administrators, and lose it on the next sign-in after leaving |
+| `oidc.allowedGroup` | `OIDC_ALLOWED_GROUP` | `""` | Only members may sign in. Empty admits anyone the provider vouches for |
+| `oidc.linkExistingUsers` | `OIDC_LINK_EXISTING_USERS` | `false` | Let a first sign-in claim the local account with the same username instead of refusing it |
 | `sources.existingSecret` | `SOURCE_API_KEY_*` | `""` | Secret whose keys are the variable names Sonarr and Radarr sources are configured with, loaded into the API and the worker. Empty leaves every source failing its test and its scan |
 | `cors.enabled` | `CORS_ORIGINS` | `false` | Off reflects whatever origin asks; a literal `*` is not equivalent, because browsers reject it on credentialed requests |
 | `cors.origin` | | `""` | The one origin allowed when enabled. Enabling without one refuses to render: an empty value reflects every origin, so the restriction would restrict nothing |
