@@ -222,7 +222,13 @@ func (s *Service) Update(ctx context.Context, id uuid.UUID, entry Configured) (C
 		if _, err := tx.SourcePath.Delete().Where(sourcepathmodel.SourceID(id)).Exec(ctx); err != nil {
 			return err
 		}
-		if _, err := tx.LibrarySource.Delete().Where(librarysourcemodel.SourceID(id)).Exec(ctx); err != nil {
+		bound := make([]uuid.UUID, len(entry.Libraries))
+		for i, library := range entry.Libraries {
+			bound[i] = library.LibraryID
+		}
+		if _, err := tx.LibrarySource.Delete().
+			Where(librarysourcemodel.SourceID(id), librarysourcemodel.LibraryIDNotIn(bound...)).
+			Exec(ctx); err != nil {
 			return err
 		}
 
@@ -260,6 +266,8 @@ func children(ctx context.Context, tx *store.Tx, id uuid.UUID, entry Configured)
 			SetSourceID(id).
 			SetLibraryID(bound.LibraryID).
 			SetTagFilter(bound.TagFilter).
+			OnConflictColumns(librarysourcemodel.FieldLibraryID, librarysourcemodel.FieldSourceID).
+			UpdateTagFilter().
 			Exec(ctx); err != nil {
 			return conflict(err)
 		}
@@ -270,7 +278,7 @@ func children(ctx context.Context, tx *store.Tx, id uuid.UUID, entry Configured)
 
 func conflict(err error) error {
 	if store.IsConstraintError(err) {
-		return fmt.Errorf("%w: %v", ErrInvalid, err)
+		return fmt.Errorf("%w: %w", ErrInvalid, err)
 	}
 
 	return err
