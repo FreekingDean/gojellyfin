@@ -130,16 +130,17 @@ func TestServer_GetUserViews(t *testing.T) {
 	}
 
 	want := api.BaseItemDto{
-		Id:                &id,
-		ServerId:          apiutil.Ptr(config.ServerID),
-		Name:              apiutil.Ptr(fixture.prefix + "Feature Films"),
-		SortName:          apiutil.Ptr(strings.ToLower(fixture.prefix + "Feature Films")),
-		Type:              apiutil.Ptr(api.BaseItemKindCollectionFolder),
-		CollectionType:    apiutil.Ptr(api.CollectionType(librarymodel.CollectionTypeMovies)),
-		IsFolder:          apiutil.Ptr(true),
-		LocationType:      apiutil.Ptr(api.FileSystem),
-		ImageTags:         &map[string]*string{},
-		BackdropImageTags: &[]string{},
+		Id:                   &id,
+		ServerId:             apiutil.Ptr(config.ServerID),
+		Name:                 apiutil.Ptr(fixture.prefix + "Feature Films"),
+		SortName:             apiutil.Ptr(strings.ToLower(fixture.prefix + "Feature Films")),
+		Type:                 apiutil.Ptr(api.BaseItemKindCollectionFolder),
+		CollectionType:       apiutil.Ptr(api.CollectionType(librarymodel.CollectionTypeMovies)),
+		DisplayPreferencesId: apiutil.Ptr(strings.ReplaceAll(id.String(), "-", "")),
+		IsFolder:             apiutil.Ptr(true),
+		LocationType:         apiutil.Ptr(api.FileSystem),
+		ImageTags:            &map[string]*string{},
+		BackdropImageTags:    &[]string{},
 	}
 	if !reflect.DeepEqual(view, want) {
 		t.Errorf("view = %+v, want %+v", view, want)
