@@ -25,6 +25,19 @@ const (
 
 var ValidImageKind = imagemodel.KindValidator
 
+const (
+	PosterAspectRatio = 2.0 / 3.0
+	StillAspectRatio  = 16.0 / 9.0
+)
+
+func PrimaryAspectRatio(kind Kind) float64 {
+	if kind == itemmodel.KindEpisode {
+		return StillAspectRatio
+	}
+
+	return PosterAspectRatio
+}
+
 type RemoteImage struct {
 	Kind ImageKind
 	URL  string

@@ -62,6 +62,9 @@ func ItemDto(item *items.Item, held items.Held, childCount int32, imageTags map[
 		}
 		dto.ImageTags = &tags
 		dto.BackdropImageTags = &backdrops
+		if _, ok := tags[string(api.Primary)]; ok {
+			dto.PrimaryImageAspectRatio = apiutil.Ptr(items.PrimaryAspectRatio(item.Kind))
+		}
 	}
 
 	if item.Overview != "" {
