@@ -475,6 +475,8 @@ A client that goes away cancels the request context, which kills ffmpeg. A clien
 
 ffmpeg answers a source it cannot read by exiting rather than by writing a short file, so `start` holds its return until the first byte of output arrives. A failure therefore reaches the handler as an error it can still answer 415 to, instead of as an empty stream the client believes.
 
+After the first byte the status is spent, so a failure there is told by how the body ends. A progressive response carries no `Content-Length`, which leaves the chunked terminator as the only thing separating a finished encode from one that died: `process.Read` waits for ffmpeg at end of output and answers its exit status in place of `io.EOF`, and `relay` answers any relay or exit error by panicking with `http.ErrAbortHandler`, which drops the connection without the terminator (an `RST_STREAM` on HTTP/2) and logs nothing further. The client reads `unexpected EOF` instead of a track that simply ended, and `jellyfin-web`'s answer to a playback error is to re-post `PlaybackInfo` at the position it reached, which is the resume. The server does not resume itself, because a byte count maps back to a timestamp for CBR mp3 and for nothing else (#480). A pod killed mid-stream drops the connection the same way.
+
 Only containers ffmpeg can write to a non-seekable pipe are in the table, which rules out plain mp4; ogg is out for the second reason that it wants libvorbis, which not every ffmpeg build carries.
 
 The tests run real ffmpeg and ffprobe what comes back, so CI installs ffmpeg and a green run means bytes a player can decode.
