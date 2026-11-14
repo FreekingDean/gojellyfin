@@ -1613,6 +1613,86 @@ func (c *PlaylistShareClient) GetModel(ctx context.Context, id uuid.UUID) (*Play
 	return fromPlaylistShare(_m), err
 }
 
+type QuickConnectRequestModel struct {
+	ID uuid.UUID
+
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	Secret         string
+	Code           string
+	DeviceID       string
+	DeviceName     string
+	AppName        string
+	AppVersion     string
+	ExpiresAt      time.Time
+	AuthorizedByID *uuid.UUID
+
+	AuthorizedBy *UserModel
+}
+
+func fromAllQuickConnectRequest(_m []*QuickConnectRequest) []*QuickConnectRequestModel {
+	models := make([]*QuickConnectRequestModel, len(_m))
+	for i, v := range _m {
+		models[i] = fromQuickConnectRequest(v)
+	}
+	return models
+}
+
+func fromQuickConnectRequest(_m *QuickConnectRequest) *QuickConnectRequestModel {
+	if _m == nil {
+		return nil
+	}
+
+	return &QuickConnectRequestModel{
+		ID:             _m.ID,
+		CreatedAt:      _m.CreatedAt,
+		UpdatedAt:      _m.UpdatedAt,
+		Secret:         _m.Secret,
+		Code:           _m.Code,
+		DeviceID:       _m.DeviceID,
+		DeviceName:     _m.DeviceName,
+		AppName:        _m.AppName,
+		AppVersion:     _m.AppVersion,
+		ExpiresAt:      _m.ExpiresAt,
+		AuthorizedByID: _m.AuthorizedByID,
+
+		AuthorizedBy: fromUser(_m.Edges.AuthorizedBy),
+	}
+}
+
+func (_c *QuickConnectRequestCreate) SaveModel(ctx context.Context) (*QuickConnectRequestModel, error) {
+	_m, err := _c.Save(ctx)
+	return fromQuickConnectRequest(_m), err
+}
+
+func (_u *QuickConnectRequestUpdateOne) SaveModel(ctx context.Context) (*QuickConnectRequestModel, error) {
+	_m, err := _u.Save(ctx)
+	return fromQuickConnectRequest(_m), err
+}
+
+func (_q *QuickConnectRequestQuery) OnlyModel(ctx context.Context) (*QuickConnectRequestModel, error) {
+	_m, err := _q.Only(ctx)
+	return fromQuickConnectRequest(_m), err
+}
+
+func (_q *QuickConnectRequestQuery) FirstModel(ctx context.Context) (*QuickConnectRequestModel, error) {
+	_m, err := _q.First(ctx)
+	return fromQuickConnectRequest(_m), err
+}
+
+func (_q *QuickConnectRequestQuery) AllModels(ctx context.Context) ([]*QuickConnectRequestModel, error) {
+	_m, err := _q.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return fromAllQuickConnectRequest(_m), nil
+}
+
+func (c *QuickConnectRequestClient) GetModel(ctx context.Context, id uuid.UUID) (*QuickConnectRequestModel, error) {
+	_m, err := c.Get(ctx, id)
+	return fromQuickConnectRequest(_m), err
+}
+
 type SessionModel struct {
 	ID uuid.UUID
 
@@ -1850,14 +1930,15 @@ type UserModel struct {
 	LastLoginAt    *time.Time
 	LastActivityAt *time.Time
 
-	Configuration      *UserConfigurationModel
-	Policy             *UserPolicyModel
-	Sessions           []*SessionModel
-	ItemData           []*UserItemDataModel
-	DisplayPreferences []*DisplayPreferencesModel
-	ActivityLogEntries []*ActivityLogEntryModel
-	Playlists          []*PlaylistModel
-	PlaylistShares     []*PlaylistShareModel
+	Configuration        *UserConfigurationModel
+	Policy               *UserPolicyModel
+	Sessions             []*SessionModel
+	ItemData             []*UserItemDataModel
+	DisplayPreferences   []*DisplayPreferencesModel
+	ActivityLogEntries   []*ActivityLogEntryModel
+	Playlists            []*PlaylistModel
+	PlaylistShares       []*PlaylistShareModel
+	QuickConnectRequests []*QuickConnectRequestModel
 }
 
 func fromAllUser(_m []*User) []*UserModel {
@@ -1883,14 +1964,15 @@ func fromUser(_m *User) *UserModel {
 		LastLoginAt:    _m.LastLoginAt,
 		LastActivityAt: _m.LastActivityAt,
 
-		Configuration:      fromUserConfiguration(_m.Edges.Configuration),
-		Policy:             fromUserPolicy(_m.Edges.Policy),
-		Sessions:           fromAllSession(_m.Edges.Sessions),
-		ItemData:           fromAllUserItemData(_m.Edges.ItemData),
-		DisplayPreferences: fromAllDisplayPreferences(_m.Edges.DisplayPreferences),
-		ActivityLogEntries: fromAllActivityLogEntry(_m.Edges.ActivityLogEntries),
-		Playlists:          fromAllPlaylist(_m.Edges.Playlists),
-		PlaylistShares:     fromAllPlaylistShare(_m.Edges.PlaylistShares),
+		Configuration:        fromUserConfiguration(_m.Edges.Configuration),
+		Policy:               fromUserPolicy(_m.Edges.Policy),
+		Sessions:             fromAllSession(_m.Edges.Sessions),
+		ItemData:             fromAllUserItemData(_m.Edges.ItemData),
+		DisplayPreferences:   fromAllDisplayPreferences(_m.Edges.DisplayPreferences),
+		ActivityLogEntries:   fromAllActivityLogEntry(_m.Edges.ActivityLogEntries),
+		Playlists:            fromAllPlaylist(_m.Edges.Playlists),
+		PlaylistShares:       fromAllPlaylistShare(_m.Edges.PlaylistShares),
+		QuickConnectRequests: fromAllQuickConnectRequest(_m.Edges.QuickConnectRequests),
 	}
 }
 
