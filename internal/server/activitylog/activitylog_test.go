@@ -67,6 +67,43 @@ func TestServer_GetLogEntries(t *testing.T) {
 			mockTotal:    9,
 		},
 		{
+			name: "passes the filters and the sort through",
+			request: api.GetLogEntriesRequestObject{Params: api.GetLogEntriesParams{
+				Name:          apiutil.Ptr("scan"),
+				Overview:      apiutil.Ptr("over"),
+				ShortOverview: apiutil.Ptr("short"),
+				Type:          apiutil.Ptr("Library"),
+				Username:      apiutil.Ptr("dean"),
+				ItemId:        &itemID,
+				Severity:      apiutil.Ptr(api.LogLevelWarning),
+				SortBy: &[]api.ActivityLogSortBy{
+					api.ActivityLogSortByLogSeverity,
+					"Unknown",
+					api.ActivityLogSortByUsername,
+				},
+				SortOrder: &[]api.SortOrder{api.Descending},
+			}},
+			expectedResponse: api.GetLogEntries200JSONResponse{
+				Items:            &[]api.ActivityLogEntry{},
+				StartIndex:       apiutil.Ptr(int32(0)),
+				TotalRecordCount: apiutil.Ptr(int32(0)),
+			},
+			mockExpectedQuery: activity.Query{
+				Name:          "scan",
+				Overview:      "over",
+				ShortOverview: "short",
+				Kind:          "Library",
+				Username:      "dean",
+				ItemID:        &itemID,
+				Severity:      apiutil.Ptr(activity.Severity("Warning")),
+				Sort: []activity.Sort{
+					{Field: activity.SortBySeverity, Descending: true},
+					{Field: activity.SortByUsername},
+				},
+			},
+			mockResponse: []*activity.Entry{},
+		},
+		{
 			name:    "translates an entry",
 			request: api.GetLogEntriesRequestObject{},
 			expectedResponse: api.GetLogEntries200JSONResponse{
