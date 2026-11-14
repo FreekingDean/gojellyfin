@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/items"
@@ -15,13 +16,17 @@ import (
 	librarysourcemodel "github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 )
 
-const recordTimeout = 5 * time.Second
+const (
+	recordTimeout      = 5 * time.Second
+	enqueueConcurrency = 32
+)
 
 func (s *Service) RefreshJob() jobs.Job {
 	return jobs.Job{
 		Name:        jobs.RefreshLibrarySource,
 		Category:    "Library",
 		Description: "Reads one Sonarr or Radarr instance for one library.",
+		Queue:       jobs.RefreshQueue,
 		Run:         s.refresh,
 	}
 }
@@ -92,16 +97,27 @@ func (s *Service) read(ctx context.Context, binding Binding) error {
 		return err
 	}
 
+	enqueuing, enqueueCtx := errgroup.WithContext(ctx)
+	enqueuing.SetLimit(enqueueConcurrency)
+
 	for _, title := range titles {
 		jobs.Heartbeat(ctx, title.Name)
 
-		if err := jobs.Enqueue(ctx, jobs.RefreshItem,
-			jobs.With(jobs.ParamItem, scanned(title)),
-			jobs.With(jobs.ParamLibrary, libraryID),
-			jobs.With(jobs.ParamSource, sourceID),
-		); err != nil {
-			log.Printf("failed to enqueue %s: %v", title.Key, err)
-		}
+		enqueuing.Go(func() error {
+			if err := jobs.Enqueue(enqueueCtx, jobs.RefreshItem,
+				jobs.With(jobs.ParamItem, scanned(title)),
+				jobs.With(jobs.ParamLibrary, libraryID),
+				jobs.With(jobs.ParamSource, sourceID),
+			); err != nil {
+				log.Printf("failed to enqueue %s: %v", title.Key, err)
+			}
+
+			return enqueueCtx.Err()
+		})
+	}
+
+	if err := enqueuing.Wait(); err != nil {
+		return err
 	}
 
 	s.activity.Record(ctx, activity.Entry{

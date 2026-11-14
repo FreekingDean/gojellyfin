@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"context"
+	"sync"
 	"testing"
 
 	"go.temporal.io/sdk/testsuite"
@@ -13,6 +14,7 @@ type Queued struct {
 }
 
 type recorder struct {
+	mu       sync.Mutex
 	enqueued []Queued
 }
 
@@ -21,6 +23,8 @@ func (r *recorder) Enqueue(_ context.Context, name string, params ...Param) erro
 	for _, param := range params {
 		held[param.Name] = param.Value
 	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	r.enqueued = append(r.enqueued, Queued{Name: name, Params: held})
 
 	return nil
