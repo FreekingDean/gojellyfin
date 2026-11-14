@@ -60,4 +60,33 @@ test.describe('the admin app', () => {
     await expect(report).toContainText('Dismissed');
     await expect(report.getByRole('button', { name: 'Dismiss' })).toHaveCount(0);
   });
+
+  test('adds a user, limits what they can ask for and deletes them', async ({ page, harness }) => {
+    const name = 'admin-spec-' + Date.now();
+    page.on('dialog', (dialog) => dialog.accept());
+
+    await page.goto(harness.baseUrl + '/admin');
+    await signIn(page, harness);
+    await page.getByRole('link', { name: 'Users' }).click();
+    await expect(page.locator('tr', { hasText: harness.username })).toContainText('Admin');
+
+    await page.getByRole('link', { name: 'Add user' }).click();
+    await page.getByLabel('Name').fill(name);
+    await page.getByLabel('Password').fill('admin-spec-password');
+    await page.getByRole('button', { name: 'Add user' }).click();
+    await expect(page.getByRole('heading', { name })).toBeVisible();
+
+    await page.getByLabel('An administrator approves each request first').check();
+    await page.getByLabel('Most titles in seven days').fill('3');
+    await page.getByRole('button', { name: 'Save' }).click();
+
+    const row = page.locator('tr', { hasText: name });
+    await expect(row).toContainText('0 of 3 this week');
+    await expect(row).toContainText('Needs approval');
+
+    await row.getByRole('link', { name: 'Edit' }).click();
+    await page.getByRole('button', { name: 'Delete user' }).click();
+    await expect(page.locator('tr', { hasText: harness.username })).toBeVisible();
+    await expect(page.locator('tr', { hasText: name })).toHaveCount(0);
+  });
 });
