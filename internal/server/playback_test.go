@@ -48,6 +48,15 @@ const chromeProfile = `{
 	]
 }`
 
+const sdrChromeProfile = `{
+	"DirectPlayProfiles": [
+		{"Container": "mp4,m4v", "Type": "Video", "VideoCodec": "h264,vp8,vp9,av1", "AudioCodec": "aac,mp3,opus,flac,vorbis"}
+	],
+	"CodecProfiles": [
+		{"Type": "Video", "Codec": "h264", "Conditions": [{"Condition": "EqualsAny", "Property": "VideoRangeType", "Value": "SDR"}]}
+	]
+}`
+
 type playbackFixture struct {
 	sessions   *sessions.Service
 	info       *mediainfo.Server
@@ -514,6 +523,39 @@ func TestPlayback(t *testing.T) {
 		}
 		if got, want := fingerprint(t, answered, "a:0"), fingerprint(t, fixture.paths["oddball.mkv"], "a:0"); got != want {
 			t.Errorf("audio = %s, want the source's aac %s copied through", got, want)
+		}
+	})
+
+	t.Run("an HDR picture already in the container the client asked for is still encoded", func(t *testing.T) {
+		fixture := newPlaybackFixture(t)
+		id := fixture.ripped(t, "hdr.mp4", "libx264", "h264", "aac")
+		err := fixture.client.MediaStream.Update().
+			Where(
+				streammodel.HasSourceWith(sourcemodel.Path(fixture.paths["hdr.mp4"])),
+				streammodel.KindEQ(streammodel.KindVideo),
+			).
+			SetVideoRangeType(streammodel.VideoRangeTypeHDR10).
+			Exec(context.Background())
+		if err != nil {
+			t.Fatalf("failed to mark the picture HDR: %v", err)
+		}
+
+		raw := apiutil.Deref(fixture.offer(t, id, sdrChromeProfile, 0).TranscodingUrl)
+		if !strings.Contains(raw, "/stream.mp4?") || !strings.Contains(raw, "videoCodec=h264") {
+			t.Fatalf("url = %q, want an h264 encode into the mp4 the source already is", raw)
+		}
+
+		recorder := fixture.follow(t, raw)
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("status = %d, want %d: %s", recorder.Code, http.StatusOK, recorder.Body)
+		}
+		if got := recorder.Header().Get("Accept-Ranges"); got != "none" {
+			t.Errorf("accept ranges = %q, want the encode's none rather than the file served as it is", got)
+		}
+
+		answered := received(t, recorder.Body.Bytes())
+		if got, source := fingerprint(t, answered, "v:0"), fingerprint(t, fixture.paths["hdr.mp4"], "v:0"); got == source {
+			t.Error("the picture is the source's own bytes, want it encoded")
 		}
 	})
 

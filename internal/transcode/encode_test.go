@@ -3,9 +3,11 @@ package transcode
 import (
 	"context"
 	"io"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
@@ -65,7 +67,7 @@ func TestStart_VideoEncode(t *testing.T) {
 			"-c:a", "ac3",
 		)
 
-		probed := encoded(t, Spec{Path: uhd, Container: VideoContainer, Video: true, VideoCodec: VideoCodec, ToneMap: true})
+		probed := encoded(t, Spec{Path: uhd, Container: VideoContainer, Video: true, VideoCodec: VideoCodec, Transfer: TransferPQ})
 		video, audio := streamOf(probed, "video"), streamOf(probed, "audio")
 
 		if video.CodecName != "h264" || video.Profile != "High" {
@@ -132,6 +134,92 @@ func TestStart_VideoEncode(t *testing.T) {
 
 		if seconds := probed.Format.Duration; seconds > sourceSeconds-1 {
 			t.Errorf("seeking 2s into a %ds source produced %.2fs", sourceSeconds, seconds)
+		}
+	})
+}
+
+func frameRate(t *testing.T, path string) string {
+	t.Helper()
+
+	output, err := exec.Command("ffprobe", "-v", "error", "-select_streams", "v:0",
+		"-show_entries", "stream=avg_frame_rate", "-of", "default=nw=1:nk=1", path).Output()
+	if err != nil {
+		t.Fatalf("failed to read the frame rate of %s: %v", path, err)
+	}
+
+	return strings.TrimSpace(string(output))
+}
+
+func encodedFile(t *testing.T, spec Spec) string {
+	t.Helper()
+
+	output, err := start(context.Background(), spec)
+	if err != nil {
+		t.Fatalf("failed to start the encode: %v", err)
+	}
+	defer func() { _ = output.Close() }()
+
+	body, err := io.ReadAll(output)
+	if err != nil {
+		t.Fatalf("failed to read the encode: %v", err)
+	}
+
+	path := filepath.Join(t.TempDir(), "out."+spec.Container)
+	if err := os.WriteFile(path, body, 0o600); err != nil {
+		t.Fatalf("failed to write the encode: %v", err)
+	}
+
+	return path
+}
+
+func TestStart_VideoEncodeShape(t *testing.T) {
+	t.Run("an anamorphic picture keeps its display shape", func(t *testing.T) {
+		pal := pictureSource(t, "pal.mkv", "720x576", "-vf", "setsar=64/45", "-c:v", "mpeg4", "-c:a", "aac")
+
+		video := streamOf(encoded(t, Spec{Path: pal, Container: VideoContainer, Video: true, VideoCodec: VideoCodec}), "video")
+
+		if video.Width != 1024 || video.Height != 576 {
+			t.Errorf("video is %dx%d, want the 16:9 1024x576 it displays as", video.Width, video.Height)
+		}
+		if video.AspectRatio != "1:1" {
+			t.Errorf("sample aspect ratio is %q, want square pixels", video.AspectRatio)
+		}
+	})
+
+	t.Run("a 60fps picture comes out at 30 so level 4.1 holds at 1080p", func(t *testing.T) {
+		fast := pictureSource(t, "fast.mkv", "1920x1080", "-r", "60", "-c:v", "mpeg4", "-c:a", "aac")
+
+		if got := frameRate(t, encodedFile(t, Spec{Path: fast, Container: VideoContainer, Video: true, VideoCodec: VideoCodec})); got != "30/1" {
+			t.Errorf("frame rate is %s, want 30/1", got)
+		}
+	})
+
+	t.Run("an interlaced picture is deinterlaced to one frame per frame", func(t *testing.T) {
+		interlaced := pictureSource(t, "interlaced.mkv", "1920x1080",
+			"-c:v", "mpeg2video", "-flags", "+ilme+ildct", "-top", "1", "-c:a", "aac")
+
+		path := encodedFile(t, Spec{Path: interlaced, Container: VideoContainer, Video: true, VideoCodec: VideoCodec})
+		if got := frameRate(t, path); got != "24/1" {
+			t.Errorf("frame rate is %s, want the source's 24/1 rather than a field per frame", got)
+		}
+
+		probed, err := ffmpeg.New().ProbeFile(context.Background(), path)
+		if err != nil {
+			t.Fatalf("the output is not decodable: %v", err)
+		}
+		if order := streamOf(probed, "video").FieldOrder; order != "" && order != "progressive" {
+			t.Errorf("field order is %q, want progressive", order)
+		}
+	})
+
+	t.Run("an untagged picture said to be HDR still tone maps", func(t *testing.T) {
+		for _, transfer := range []string{TransferPQ, TransferHLG} {
+			untagged := pictureSource(t, "untagged.mkv", "640x360", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac")
+
+			video := streamOf(encoded(t, Spec{Path: untagged, Container: VideoContainer, Video: true, VideoCodec: VideoCodec, Transfer: transfer}), "video")
+			if video.ColorTransfer != "bt709" {
+				t.Errorf("%s: transfer is %q, want bt709", transfer, video.ColorTransfer)
+			}
 		}
 	})
 }

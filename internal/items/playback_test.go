@@ -614,7 +614,7 @@ func TestService_SourceFor(t *testing.T) {
 		if plan.Change != ChangeVideo {
 			t.Errorf("change = %v, want %v", plan.Change, ChangeVideo)
 		}
-		if !IsHDR(plan.Source) {
+		if HDRTransfer(plan.Source) != "smpte2084" {
 			t.Error("the HDR source is not reported as HDR, so nothing would tone map it")
 		}
 	})

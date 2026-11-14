@@ -76,7 +76,8 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 
 	container := items.Container(source)
 	requested := r.PathValue("container")
-	if requested == "" || isStatic(r) || strings.EqualFold(requested, container) {
+	encodes := r.URL.Query().Get("videoCodec") != ""
+	if requested == "" || isStatic(r) || (strings.EqualFold(requested, container) && !encodes) {
 		h.serveFile(w, r, path)
 		return
 	}
@@ -170,7 +171,7 @@ func (h *Handler) serveRemux(w http.ResponseWriter, r *http.Request, source *ite
 	}
 	if spec.VideoCodec != "" {
 		spec.MaxHeight = maxHeight(r)
-		spec.ToneMap = items.IsHDR(source)
+		spec.Transfer = items.HDRTransfer(source)
 	}
 
 	return h.relay(w, r, source, spec)

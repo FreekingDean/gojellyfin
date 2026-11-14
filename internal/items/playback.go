@@ -281,17 +281,19 @@ func height(source *MediaSource) int32 {
 	return 0
 }
 
-func IsHDR(source *MediaSource) bool {
+func HDRTransfer(source *MediaSource) string {
 	picture := stream(source, streammodel.KindVideo)
 	if picture == nil {
-		return false
+		return ""
 	}
 
 	switch deref(picture.VideoRangeType) {
 	case "", streammodel.VideoRangeTypeUnknown, streammodel.VideoRangeTypeSDR, streammodel.VideoRangeTypeDOVIWithSDR:
-		return false
+		return ""
+	case streammodel.VideoRangeTypeHLG, streammodel.VideoRangeTypeDOVIWithHLG:
+		return transcode.TransferHLG
 	default:
-		return true
+		return transcode.TransferPQ
 	}
 }
 

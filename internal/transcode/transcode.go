@@ -17,7 +17,7 @@ type Spec struct {
 	CopyAudio  bool
 	VideoCodec string
 	MaxHeight  int32
-	ToneMap    bool
+	Transfer   string
 }
 
 type format struct {
@@ -50,9 +50,13 @@ const (
 	MaxHeight      = 1080
 	maxWidth       = MaxHeight * 16 / 9
 	keyframeSecs   = 2
+	maxFrameRate   = 30
+	TransferPQ     = "smpte2084"
+	TransferHLG    = "arib-std-b67"
 )
 
-const toneMap = "zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709," +
+const toneMap = "setparams=color_trc=%s:color_primaries=bt2020:colorspace=bt2020nc:range=tv," +
+	"zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709," +
 	"tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv"
 
 func CarriesVideo(container string) bool {
@@ -139,11 +143,13 @@ func (s Spec) videoEncode() []string {
 	}
 	width := min(height*16/9, maxWidth)
 
-	filters := []string{"bwdif=deint=interlaced"}
-	if s.ToneMap {
-		filters = append(filters, toneMap)
+	filters := []string{"bwdif=mode=send_frame:deint=interlaced"}
+	if s.Transfer != "" {
+		filters = append(filters, fmt.Sprintf(toneMap, s.Transfer))
 	}
 	filters = append(filters,
+		"scale=w='trunc(iw*sar/2)*2':h=ih",
+		"setsar=1",
 		fmt.Sprintf("scale=w='min(%d,iw)':h='min(%d,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2", width, height),
 		"setsar=1",
 		"format=yuv420p",
@@ -158,5 +164,6 @@ func (s Spec) videoEncode() []string {
 		"-level:v", "4.1",
 		"-force_key_frames", fmt.Sprintf("expr:gte(t,n_forced*%d)", keyframeSecs),
 		"-sc_threshold", "0",
+		"-fpsmax", strconv.Itoa(maxFrameRate),
 	}
 }
