@@ -25,6 +25,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/sources"
+	"github.com/FreekingDean/gojellyfin/internal/sso"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	"github.com/FreekingDean/gojellyfin/internal/system"
 	"github.com/FreekingDean/gojellyfin/internal/users"
@@ -51,6 +52,7 @@ var serverModules = fx.Options(
 	quickconnect.Module,
 	sources.Module,
 	sessions.Module,
+	sso.Module,
 	system.Module,
 	jobs.Module,
 	users.Module,

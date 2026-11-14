@@ -9,8 +9,10 @@ tool (
 
 require (
 	entgo.io/ent v0.14.6
+	github.com/coreos/go-oidc/v3 v3.17.0
 	github.com/cyruzin/golang-tmdb v1.9.4
 	github.com/getkin/kin-openapi v0.142.0
+	github.com/go-jose/go-jose/v4 v4.1.4
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/jackc/pgx/v5 v5.10.0
@@ -29,6 +31,7 @@ require (
 	go.uber.org/mock v0.6.0
 	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.54.0
+	golang.org/x/oauth2 v0.36.0
 	golang.org/x/sync v0.22.0
 )
 
