@@ -52,9 +52,19 @@ type Provider struct {
 func New(t *testing.T) *Provider {
 	t.Helper()
 
+	p, err := Start()
+	if err != nil {
+		t.Fatalf("failed to start the provider: %v", err)
+	}
+	t.Cleanup(p.Close)
+
+	return p
+}
+
+func Start() (*Provider, error) {
 	key, err := rsa.GenerateKey(rand.Reader, keyBits)
 	if err != nil {
-		t.Fatalf("failed to generate a signing key: %v", err)
+		return nil, err
 	}
 
 	p := &Provider{key: key, grants: map[string]grant{}, tokens: map[string]Claims{}}
@@ -66,9 +76,12 @@ func New(t *testing.T) *Provider {
 	mux.HandleFunc("GET /userinfo", p.info)
 	p.server = httptest.NewServer(mux)
 	p.URL = p.server.URL
-	t.Cleanup(p.server.Close)
 
-	return p
+	return p, nil
+}
+
+func (p *Provider) Close() {
+	p.server.Close()
 }
 
 func (p *Provider) Register(redirectURI string) {

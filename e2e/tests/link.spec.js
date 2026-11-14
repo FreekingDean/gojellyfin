@@ -30,7 +30,7 @@ async function signInHere(page, app) {
   await page.locator('#loginPage .chkRememberLogin').evaluate((box) => {
     box.checked = true;
   });
-  await page.locator('#loginPage button[type=submit]').click();
+  await page.getByRole('button', { name: 'Sign In', exact: true }).click();
 }
 
 // The login route carries the way back as url=%2Fquickconnect, so only the

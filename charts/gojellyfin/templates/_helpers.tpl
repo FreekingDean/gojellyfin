@@ -163,12 +163,9 @@ IfNotPresent
 
 {{- define "gojellyfin.oidcEnv" -}}
 {{- with .Values.oidc }}
-{{- if .issuerUrl }}
+{{- if and .issuerUrl .clientId }}
 {{- if not $.Values.hostname }}
 {{- fail "oidc.issuerUrl needs hostname: the provider has to be told where to send the browser back to" }}
-{{- end }}
-{{- if not .clientId }}
-{{- fail "oidc.issuerUrl needs oidc.clientId" }}
 {{- end }}
 - name: OIDC_ISSUER_URL
   value: {{ .issuerUrl | quote }}
