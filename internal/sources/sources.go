@@ -16,6 +16,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 	"github.com/FreekingDean/gojellyfin/internal/sources/arr"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	librarymodel "github.com/FreekingDean/gojellyfin/internal/store/library"
@@ -49,8 +50,8 @@ type Service struct {
 
 func New(store *store.Client, config env.Config, records *items.Service, activities *activity.Service) *Service {
 	return &Service{
-		client:   &http.Client{Timeout: testTimeout},
-		lister:   &http.Client{Timeout: listTimeout},
+		client:   &http.Client{Timeout: testTimeout, Transport: tracing.Transport(nil)},
+		lister:   &http.Client{Timeout: listTimeout, Transport: tracing.Transport(nil)},
 		store:    store,
 		config:   config,
 		items:    records,

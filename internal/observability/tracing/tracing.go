@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/propagation"
@@ -17,6 +19,7 @@ import (
 	"go.opentelemetry.io/otel/trace/noop"
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
+	"github.com/FreekingDean/gojellyfin/internal/system"
 )
 
 const (
@@ -47,15 +50,40 @@ func New(config env.Config) (*Tracing, error) {
 		return nil, err
 	}
 
+	described, err := describe(config.Tracing)
+	if err != nil {
+		return nil, err
+	}
+
 	tracing.provider = sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(exporter),
-		sdktrace.WithResource(resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.ServiceName(serviceName),
-		)),
+		sdktrace.WithResource(described),
 	)
 
 	return tracing, nil
+}
+
+func describe(config env.Tracing) (*resource.Resource, error) {
+	name := config.ServiceName
+	if name == "" {
+		name = serviceName
+	}
+
+	attributes := []attribute.KeyValue{semconv.ServiceName(name), semconv.ServiceVersion(system.Build())}
+	for pair := range strings.SplitSeq(config.ResourceAttributes, ",") {
+		if strings.TrimSpace(pair) == "" {
+			continue
+		}
+		key, value, split := strings.Cut(pair, "=")
+		key = strings.TrimSpace(key)
+		decoded, err := url.PathUnescape(strings.TrimSpace(value))
+		if !split || key == "" || err != nil {
+			return nil, fmt.Errorf("OTEL_RESOURCE_ATTRIBUTES must be a comma separated list of key=value pairs such as k8s.pod.ip=10.0.0.1, got %q", config.ResourceAttributes)
+		}
+		attributes = append(attributes, attribute.String(key, decoded))
+	}
+
+	return resource.NewWithAttributes(semconv.SchemaURL, attributes...), nil
 }
 
 func (t *Tracing) Enabled() bool {
@@ -64,7 +92,7 @@ func (t *Tracing) Enabled() bool {
 
 func (t *Tracing) StartRequest(ctx context.Context, header http.Header, operation, method string) (context.Context, *Span) {
 	ctx = t.propagator.Extract(ctx, propagation.HeaderCarrier(header))
-	ctx, span := t.tracer().Start(ctx, operation,
+	ctx, span := t.Tracer().Start(ctx, operation,
 		trace.WithSpanKind(trace.SpanKindServer),
 		trace.WithAttributes(semconv.HTTPRequestMethodKey.String(method)),
 	)
@@ -85,12 +113,16 @@ func (s *Span) Fail(err error) {
 	s.span.SetStatus(codes.Error, "")
 }
 
-func (t *Tracing) tracer() trace.Tracer {
+func (t *Tracing) Tracer() trace.Tracer {
 	if t.provider == nil {
 		return noop.NewTracerProvider().Tracer(serviceName)
 	}
 
 	return t.provider.Tracer(serviceName)
+}
+
+func (t *Tracing) Propagator() propagation.TextMapPropagator {
+	return t.propagator
 }
 
 func (t *Tracing) Stop(ctx context.Context) error {

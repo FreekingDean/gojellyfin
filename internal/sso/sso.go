@@ -15,6 +15,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/env"
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
@@ -57,7 +58,7 @@ func New(config env.Config, users *users.Service) *Service {
 		config:      config.OIDC,
 		redirectURL: strings.TrimSuffix(config.PublishedServerURL, "/") + CallbackPath,
 		users:       users,
-		client:      &http.Client{Timeout: providerTimeout},
+		client:      &http.Client{Timeout: providerTimeout, Transport: tracing.Transport(nil)},
 	}
 }
 

@@ -17,6 +17,7 @@ import (
 	"golang.org/x/sync/singleflight"
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 )
 
 const (
@@ -48,7 +49,7 @@ type Service struct {
 func New(records *items.Service) *Service {
 	return &Service{
 		items:  records,
-		client: &http.Client{Timeout: fetchTimeout},
+		client: &http.Client{Timeout: fetchTimeout, Transport: tracing.Transport(nil)},
 		held:   map[uuid.UUID]held{},
 	}
 }

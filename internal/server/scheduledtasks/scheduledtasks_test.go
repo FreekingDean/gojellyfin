@@ -6,6 +6,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
@@ -13,7 +14,7 @@ import (
 func newServer(t *testing.T) *Server {
 	t.Helper()
 
-	client, err := jobs.NewClient(env.Config{})
+	client, err := jobs.NewClient(env.Config{}, &tracing.Tracing{})
 	if err != nil {
 		t.Fatalf("failed to build the temporal client: %v", err)
 	}
