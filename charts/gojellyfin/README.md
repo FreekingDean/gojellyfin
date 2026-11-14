@@ -305,18 +305,15 @@ them in both cases from different places: the dashboard menu fetches
 opening a page fetches `/web/configurationpage?name=…` and resource urls use
 `web/ConfigurationPage`. A gateway that sends all of `/web` to the client has
 nginx look for those files and 404, and the plugin pages disappear. The chart
-carries one case-insensitive `RegularExpression` rule, `(?i)^/web/configurationpages?$`,
-back to the API service; the server's own router does not care about case
-either. Two `Exact` rules on the capitalised spellings were here before and
-let the lower-case page request through to nginx.
-
-`RegularExpression` is an extended Gateway API feature, so it needs a gateway
-that implements it with RE2 syntax (Envoy Gateway, Istio and Cilium do), and
-its precedence against the `/web` prefix is implementation-specific rather than
-fixed by the spec. After a deploy, `/web/configurationpage?name=media_downloaders`
-answering HTML from the API rather than nginx's 404 is the check that the
-gateway ordered it ahead of the prefix. Writing your own gateway config means
-carrying this exception with it.
+carries an `Exact` rule for each of the four spellings back to the API service;
+the server's own router does not care about case either. Two `Exact` rules on
+the capitalised spellings alone let the lower-case page request through to
+nginx, and a single case-insensitive `RegularExpression` rule did not work on a
+real gateway: it is an extended feature whose support and precedence against
+the `/web` prefix are implementation-specific. `Exact` is core, and the spec
+gives an exact match precedence over any prefix across every route, so four
+literal rules work on any conformant gateway. Writing your own gateway config
+means carrying these four with it.
 
 They are rendered whether or not `web.enabled` is set. With the client off they
 are merely redundant with `/`, and they still point at the API, which this chart
