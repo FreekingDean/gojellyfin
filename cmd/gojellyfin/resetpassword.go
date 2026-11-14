@@ -5,7 +5,9 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/auth"
+	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
@@ -18,7 +20,7 @@ func resetPasswordCommand() *cobra.Command {
 			"ForgotPassword answers ContactAdmin because the server has no channel that\n" +
 			"reaches the account holder and nobody else.\n\n" +
 			"The password is read from stdin, which keeps it out of the shell history\n" +
-			"and the process list.",
+			"and the process list. Every session the account already had is revoked.",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			password, err := readPassword()
@@ -38,6 +40,9 @@ func resetPasswordCommand() *cobra.Command {
 					return err
 				}
 				if err := service.SetPassword(cmd.Context(), user.ID, hash); err != nil {
+					return err
+				}
+				if err := sessions.New(client, activity.New(client)).RevokeForUser(cmd.Context(), user.ID); err != nil {
 					return err
 				}
 

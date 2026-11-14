@@ -44,6 +44,8 @@ const (
 	EdgePlaylists = "playlists"
 	// EdgePlaylistShares holds the string denoting the playlist_shares edge name in mutations.
 	EdgePlaylistShares = "playlist_shares"
+	// EdgeQuickConnectRequests holds the string denoting the quick_connect_requests edge name in mutations.
+	EdgeQuickConnectRequests = "quick_connect_requests"
 	// Table holds the table name of the user in the database.
 	Table = "users"
 	// ConfigurationTable is the table that holds the configuration relation/edge.
@@ -102,6 +104,13 @@ const (
 	PlaylistSharesInverseTable = "playlist_shares"
 	// PlaylistSharesColumn is the table column denoting the playlist_shares relation/edge.
 	PlaylistSharesColumn = "user_id"
+	// QuickConnectRequestsTable is the table that holds the quick_connect_requests relation/edge.
+	QuickConnectRequestsTable = "quick_connect_requests"
+	// QuickConnectRequestsInverseTable is the table name for the QuickConnectRequest entity.
+	// It exists in this package in order to avoid circular dependency with the "quickconnectrequest" package.
+	QuickConnectRequestsInverseTable = "quick_connect_requests"
+	// QuickConnectRequestsColumn is the table column denoting the quick_connect_requests relation/edge.
+	QuickConnectRequestsColumn = "authorized_by_id"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -275,6 +284,20 @@ func ByPlaylistShares(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newPlaylistSharesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByQuickConnectRequestsCount orders the results by quick_connect_requests count.
+func ByQuickConnectRequestsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newQuickConnectRequestsStep(), opts...)
+	}
+}
+
+// ByQuickConnectRequests orders the results by quick_connect_requests terms.
+func ByQuickConnectRequests(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newQuickConnectRequestsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newConfigurationStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -329,5 +352,12 @@ func newPlaylistSharesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(PlaylistSharesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, PlaylistSharesTable, PlaylistSharesColumn),
+	)
+}
+func newQuickConnectRequestsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(QuickConnectRequestsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, QuickConnectRequestsTable, QuickConnectRequestsColumn),
 	)
 }

@@ -1,8 +1,6 @@
 package tmdb
 
 const (
-	matrixSearch = `{"page":1,"results":[{"id":603,"title":"The Matrix","original_title":"The Matrix","release_date":"1999-03-30"}],"total_results":1}`
-
 	matrixDetail = `{
 		"id": 603,
 		"imdb_id": "tt0133093",
@@ -28,8 +26,6 @@ const (
 			]
 		}
 	}`
-
-	breakingBadSearch = `{"page":1,"results":[{"id":1396,"name":"Breaking Bad","first_air_date":"2008-01-20"}],"total_results":1}`
 
 	breakingBadDetail = `{
 		"id": 1396,
@@ -94,11 +90,6 @@ const (
 		}
 	}`
 )
-
-var searches = map[string]string{
-	"The Matrix":   matrixSearch,
-	"Breaking Bad": breakingBadSearch,
-}
 
 var details = map[string]string{
 	"/3/configuration":              configuration,
