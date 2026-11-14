@@ -665,3 +665,30 @@ h2 + p {
 table.rows.folders {
   table-layout: fixed;
 }
+
+.shelfgrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px 18px;
+}
+
+label.shelf {
+  align-items: flex-start;
+  min-width: 0;
+}
+
+label.shelf > span {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+label.shelf input {
+  margin-top: 3px;
+}
+
+@media (max-width: 900px) {
+  .shelfgrid {
+    grid-template-columns: 1fr;
+  }
+}

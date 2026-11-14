@@ -3,8 +3,30 @@ import { Card, Cell, Page, Pill, since } from '../ui';
 
 export function Settings() {
   return (
-    <Page title="Settings" lead="What this server is running with. These are set in the environment, so they are shown here and changed in your deployment.">
-      <div class="grid two">
+    <Page title="Settings" lead="Shelves, branding and API keys are edited here. Everything else is set in the environment, so it is shown here and changed in your deployment.">
+      <Card class="shelves">
+        <header class="cardhead">
+          <b>Home shelves</b>
+          <button class="primary">Save shelves</button>
+        </header>
+        <p class="muted small">Extra rows on everyone's home screen. Each one that is on also appears as a tile under My Media.</p>
+        <div class="shelfgrid">
+          {mock.shelves.map((shelf) => (
+            <label class="check shelf" key={shelf.slug}>
+              <input type="checkbox" checked={shelf.on} />
+              <span>
+                <span class="line">
+                  {shelf.name}
+                  {shelf.note && <Pill>{shelf.note}</Pill>}
+                </span>
+                <span class="line small muted">{shelf.shows}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+      </Card>
+
+      <div class="grid two spaced">
         {mock.settings.map((group) => (
           <Card key={group.title}>
             <header class="cardhead">

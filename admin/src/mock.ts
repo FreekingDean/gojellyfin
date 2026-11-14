@@ -378,14 +378,6 @@ export const settings: SettingGroup[] = [
     ],
   },
   {
-    title: 'Home shelves',
-    state: 'On',
-    settings: [
-      { label: 'Shelves shown', value: 'recently-aired, new-releases, trending-movies', variable: 'SHELVES' },
-      { label: 'Available, not shown', value: 'trending-shows, spooky-season, genre-spotlight, because-you-watched', variable: 'SHELVES' },
-    ],
-  },
-  {
     title: 'Single sign-on',
     state: 'On',
     settings: [
@@ -436,4 +428,18 @@ export type ApiKey = { name: string; created: string; used?: string };
 export const apiKeys: ApiKey[] = [
   { name: 'Home Assistant', created: ago(90 * DAY), used: ago(5) },
   { name: 'Jellyseerr (retired)', created: ago(200 * DAY), used: ago(60 * DAY) },
+];
+
+export type Shelf = { slug: string; name: string; shows: string; on: boolean; note?: string };
+
+export const shelves: Shelf[] = [
+  { slug: 'recently-aired', name: 'Recently Aired', shows: 'Episodes that aired lately', on: true },
+  { slug: 'new-releases', name: 'New Releases', shows: 'Movies released lately', on: true },
+  { slug: 'trending-movies', name: 'Trending Movies', shows: 'Movies the library lacks, which people can request', on: true },
+  { slug: 'trending-shows', name: 'Trending Shows', shows: 'Shows the library lacks, which people can request', on: false },
+  { slug: 'hidden-gems', name: 'Hidden Gems', shows: 'Highly rated movies each person has not watched', on: false },
+  { slug: 'short-on-time', name: 'Short on Time', shows: 'Short, well rated movies each person has not watched', on: false },
+  { slug: 'spooky-season', name: 'Spooky Season', shows: 'Horror movies', on: false, note: 'Only in October' },
+  { slug: 'genre-spotlight', name: 'Genre Spotlight', shows: 'A different genre each week', on: false },
+  { slug: 'because-you-watched', name: 'Because You Watched', shows: 'Movies like one each person finished', on: false },
 ];
