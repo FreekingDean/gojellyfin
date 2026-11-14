@@ -24,13 +24,7 @@ func New(activity *activity.Service) *Server {
 func (s *Server) GetLogEntries(ctx context.Context, request api.GetLogEntriesRequestObject) (api.GetLogEntriesResponseObject, error) {
 	startIndex := apiutil.Deref(request.Params.StartIndex)
 
-	entries, total, err := s.activity.Entries(ctx, activity.Query{
-		StartIndex: int(startIndex),
-		Limit:      int(apiutil.Deref(request.Params.Limit)),
-		MinDate:    request.Params.MinDate,
-		MaxDate:    request.Params.MaxDate,
-		HasUserID:  request.Params.HasUserId,
-	})
+	entries, total, err := s.activity.Entries(ctx, query(request.Params))
 	if err != nil {
 		return nil, err
 	}
