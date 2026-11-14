@@ -141,4 +141,13 @@ func TestService_RefreshItem_Music(t *testing.T) {
 	if !IsFolder(album.Kind) || !IsFolder(artist.Kind) || IsFolder(track.Kind) {
 		t.Error("an artist and an album are folders and a track is not")
 	}
+
+	credited, _, err := fixture.service.QueryItems(ctx, ItemQuery{Viewer: Everyone, ArtistIDs: []uuid.UUID{artist.ID}})
+	if err != nil || len(credited) != 2 {
+		t.Errorf("by artist = %d items (%v), want the album and its track", len(credited), err)
+	}
+	onAlbum, _, err := fixture.service.QueryItems(ctx, ItemQuery{Viewer: Everyone, AlbumIDs: []uuid.UUID{album.ID}})
+	if err != nil || len(onAlbum) != 1 || onAlbum[0].ID != track.ID {
+		t.Errorf("by album = %+v (%v), want the track", onAlbum, err)
+	}
 }

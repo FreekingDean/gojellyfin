@@ -3,6 +3,8 @@ package dto
 import (
 	"context"
 
+	"github.com/google/uuid"
+
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
@@ -58,6 +60,14 @@ func ItemQuery(ctx context.Context, collections *libraries.Service, viewer items
 
 	if params.Ids != nil {
 		query.IDs = *params.Ids
+	}
+	for _, artists := range []*[]uuid.UUID{params.ArtistIds, params.AlbumArtistIds, params.ContributingArtistIds} {
+		if artists != nil {
+			query.ArtistIDs = append(query.ArtistIDs, *artists...)
+		}
+	}
+	if params.AlbumIds != nil {
+		query.AlbumIDs = *params.AlbumIds
 	}
 
 	if params.ParentId != nil {

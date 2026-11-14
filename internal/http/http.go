@@ -14,6 +14,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/http/mux"
+	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 	"github.com/FreekingDean/gojellyfin/internal/server"
 	"github.com/FreekingDean/gojellyfin/internal/server/admin"
@@ -177,6 +178,10 @@ func New(config env.Config, m *mux.Mux, authMiddleware *middleware.Auth, tracing
 				}
 				if errors.Is(err, auth.ErrForbidden) {
 					http.Error(w, err.Error(), http.StatusForbidden)
+					return
+				}
+				if errors.Is(err, items.ErrNotFound) {
+					http.Error(w, err.Error(), http.StatusNotFound)
 					return
 				}
 				http.Error(w, err.Error(), http.StatusInternalServerError)
