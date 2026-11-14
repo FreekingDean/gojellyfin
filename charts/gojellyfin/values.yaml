@@ -202,6 +202,8 @@ streaming:
 # without one it crash loops, so the chart refuses to render it.
 worker:
   enabled: false
+  # Ignored while autoscaling is enabled: the Deployment then carries no
+  # replica count, so an upgrade does not reset what the autoscaler chose.
   replicas: 1
   resources:
     requests:
@@ -210,6 +212,34 @@ worker:
     limits:
       cpu: "1"
       memory: 1Gi
+  # TEMPORAL_WORKER_STOP_TIMEOUT. On SIGTERM the worker stops polling and gives
+  # the activities it holds this long to finish; what is still running after
+  # that is cancelled and retried elsewhere. The pod's
+  # terminationGracePeriodSeconds follows it with 30s to spare, unless
+  # worker.pod names one itself.
+  stopTimeoutSeconds: 300
+  # A HorizontalPodAutoscaler on cpu. Utilization is measured against
+  # resources.requests.cpu, so the chart refuses to render one without it.
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 80
+    # Passed through as the HPA's behavior. The default takes a pod away at
+    # most once every two minutes after five quiet ones, so a lull between
+    # two scans does not drain a worker the second scan wants back.
+    behavior:
+      scaleDown:
+        stabilizationWindowSeconds: 300
+        policies:
+          - type: Pods
+            value: 1
+            periodSeconds: 120
+  # A PodDisruptionBudget, which is what a node drain, kured or the descheduler
+  # honours. It does not slow the autoscaler, which scales in without evicting.
+  podDisruptionBudget:
+    enabled: false
+    maxUnavailable: 1
   pod: {}
 
 # jellyfin-web is not published on its own — no image, no npm package, and the

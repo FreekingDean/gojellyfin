@@ -60,6 +60,11 @@ jobs:
           render --set hostname=example.test --set oidc.issuerUrl=https://auth.example.test --set oidc.clientId=gojellyfin \
             --set oidc.existingSecret=gojellyfin-oidc --set oidc.adminGroup=admins --set oidc.linkExistingUsers=true
           render --set pod=null --set api.resources=null
+          render --set worker.enabled=true --set temporal.hostPort=temporal:7233 --set temporal.namespace=default \
+            --set worker.autoscaling.enabled=true --set worker.podDisruptionBudget.enabled=true
+          render --set worker.enabled=true --set temporal.hostPort=temporal:7233 --set temporal.namespace=default \
+            --set worker.autoscaling.enabled=true --set worker.autoscaling.behavior=null --set worker.stopTimeoutSeconds=0 \
+            --set pod=null --set worker.pod.terminationGracePeriodSeconds=60
           render --set worker.enabled=true --set temporal.hostPort=temporal:7233 --set temporal.namespace=default --set migration.enabled=true \
             --set-json 'env=[{"name":"HOST_IP","valueFrom":{"fieldRef":{"fieldPath":"status.hostIP"}}}]' \
             --set 'tracing.otlpEndpoint=http://$(HOST_IP):4318' \
@@ -80,6 +85,10 @@ jobs:
           refuses --set cors.enabled=true
           refuses --set worker.enabled=true
           refuses --set temporal.hostPort=temporal:7233
+          refuses --set worker.enabled=true --set temporal.hostPort=temporal:7233 --set temporal.namespace=default \
+            --set worker.autoscaling.enabled=true --set worker.resources=null
+          refuses --set worker.enabled=true --set temporal.hostPort=temporal:7233 --set temporal.namespace=default \
+            --set worker.autoscaling.enabled=true --set worker.autoscaling.minReplicas=4 --set worker.autoscaling.maxReplicas=2
           refuses --set oidc.issuerUrl=https://auth.example.test --set oidc.clientId=gojellyfin
           refuses --set hostname=example.test --set oidc.issuerUrl=https://auth.example.test
 

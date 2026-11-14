@@ -39,8 +39,9 @@ type Transcoder struct {
 }
 
 type Temporal struct {
-	HostPort  string `mapstructure:"TEMPORAL_HOSTPORT"`
-	Namespace string `mapstructure:"TEMPORAL_NAMESPACE"`
+	HostPort          string        `mapstructure:"TEMPORAL_HOSTPORT"`
+	Namespace         string        `mapstructure:"TEMPORAL_NAMESPACE"`
+	WorkerStopTimeout time.Duration `mapstructure:"TEMPORAL_WORKER_STOP_TIMEOUT"`
 }
 
 type Tracing struct {
@@ -98,6 +99,9 @@ func (c Config) validate() error {
 	}
 	if c.Transcoder.StallTimeout < 0 {
 		return fmt.Errorf("TRANSCODER_STALL_TIMEOUT must be a positive duration such as 30s, got %s", c.Transcoder.StallTimeout)
+	}
+	if c.Temporal.WorkerStopTimeout < 0 {
+		return fmt.Errorf("TEMPORAL_WORKER_STOP_TIMEOUT must be a positive duration such as 5m, got %s", c.Temporal.WorkerStopTimeout)
 	}
 	return c.validateOIDC()
 }
