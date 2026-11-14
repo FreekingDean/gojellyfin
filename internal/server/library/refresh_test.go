@@ -39,7 +39,7 @@ func (f *fixture) expecting(t *testing.T, job string) *Server {
 		users.New(f.client),
 		filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}),
 		jobs.NewService(disconnected(t), registry),
-		collages(f.client),
+		drawn(f.client),
 		nil,
 	)
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
-	"github.com/FreekingDean/gojellyfin/internal/collage"
+	"github.com/FreekingDean/gojellyfin/internal/cards"
 	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
@@ -26,13 +26,13 @@ type Splash interface {
 
 type Server struct {
 	items    *items.Service
-	collages *collage.Service
+	cards    *cards.Service
 	discover *discover.Service
 	splash   Splash
 }
 
-func New(items *items.Service, collages *collage.Service, discover *discover.Service, links *link.Handler) *Server {
-	return &Server{items: items, collages: collages, discover: discover, splash: links}
+func New(items *items.Service, cards *cards.Service, discover *discover.Service, links *link.Handler) *Server {
+	return &Server{items: items, cards: cards, discover: discover, splash: links}
 }
 
 func (s *Server) GetSplashscreen(ctx context.Context, request api.GetSplashscreenRequestObject) (api.GetSplashscreenResponseObject, error) {
@@ -117,7 +117,7 @@ func (s *Server) answer(ctx context.Context, itemID uuid.UUID, imageType api.Ima
 		return nil, false
 	}
 
-	built, ok := s.collages.Image(ctx, itemID, tag)
+	built, ok := s.cards.Image(ctx, itemID, tag)
 	if !ok {
 		return nil, false
 	}
@@ -140,10 +140,10 @@ func (r redirect) VisitHeadItemImageResponse(w http.ResponseWriter) error       
 func (r redirect) VisitGetItemImageByIndexResponse(w http.ResponseWriter) error  { return r.write(w) }
 func (r redirect) VisitHeadItemImageByIndexResponse(w http.ResponseWriter) error { return r.write(w) }
 
-type composed collage.Collage
+type composed cards.Picture
 
 func (c composed) write(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", collage.ContentType)
+	w.Header().Set("Content-Type", cards.ContentType)
 	w.Header().Set("Content-Length", strconv.Itoa(len(c.Body)))
 	w.Header().Set("Cache-Control", c.caching())
 	w.WriteHeader(http.StatusOK)

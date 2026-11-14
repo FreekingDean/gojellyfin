@@ -1,4 +1,4 @@
-package collage
+package cards
 
 import (
 	"bytes"
@@ -93,7 +93,7 @@ func newFixture(t *testing.T) *fixture {
 
 	t.Cleanup(func() {
 		f.cdn.Close()
-		if _, err := client.Item.Delete().Where(itemmodel.KeyHasPrefix("collage:" + library.ID.String())).Exec(ctx); err != nil {
+		if _, err := client.Item.Delete().Where(itemmodel.KeyHasPrefix("card:" + library.ID.String())).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the items: %v", err)
 		}
 		if err := client.Source.DeleteOne(downloader).Exec(ctx); err != nil {
@@ -121,7 +121,7 @@ func (f *fixture) title(t *testing.T, poster []byte) uuid.UUID {
 		SetKind(itemmodel.KindMovie).
 		SetName(name).
 		SetSortName(name).
-		SetKey("collage:" + f.libraryID.String() + ":" + name).
+		SetKey("card:" + f.libraryID.String() + ":" + name).
 		Save(ctx)
 	if err != nil {
 		t.Fatalf("failed to create the item: %v", err)
@@ -156,7 +156,7 @@ func (f *fixture) image(t *testing.T) []byte {
 
 	built, ok := f.service.Image(context.Background(), f.libraryID, "")
 	if !ok {
-		t.Fatal("the library has no collage")
+		t.Fatal("the library has no card")
 	}
 
 	return built.Body
@@ -178,7 +178,7 @@ func opened(t *testing.T, body []byte) image.Image {
 
 	picture, _, err := image.Decode(bytes.NewReader(body))
 	if err != nil {
-		t.Fatalf("failed to decode the collage: %v", err)
+		t.Fatalf("failed to decode the card: %v", err)
 	}
 
 	return picture
@@ -208,13 +208,13 @@ var (
 )
 
 func TestService_Image(t *testing.T) {
-	t.Run("builds a collage sized to the card the client draws", func(t *testing.T) {
+	t.Run("builds a card sized to the card the client draws", func(t *testing.T) {
 		fixture := newFixture(t)
 		fixture.title(t, painted(t, red))
 
 		bounds := opened(t, fixture.image(t)).Bounds()
 		if bounds.Dx() != width || bounds.Dy() != height {
-			t.Errorf("collage = %dx%d, want %dx%d", bounds.Dx(), bounds.Dy(), width, height)
+			t.Errorf("card = %dx%d, want %dx%d", bounds.Dx(), bounds.Dy(), width, height)
 		}
 	})
 
@@ -222,7 +222,7 @@ func TestService_Image(t *testing.T) {
 		fixture := newFixture(t)
 
 		if _, ok := fixture.service.Image(context.Background(), fixture.libraryID, ""); ok {
-			t.Error("a library with no posters was given a collage")
+			t.Error("a library with no posters was given a card")
 		}
 		if tag := fixture.tag(t); tag != "" {
 			t.Errorf("tag = %q, want none", tag)
@@ -237,10 +237,10 @@ func TestService_Image(t *testing.T) {
 		fetched := fixture.fetched.Load()
 
 		if second := fixture.image(t); !bytes.Equal(first, second) {
-			t.Error("the collage changed while its posters did not")
+			t.Error("the card changed while its posters did not")
 		}
 		if again := fixture.fetched.Load(); again != fetched {
-			t.Errorf("fetched %d posters for a collage already held", again-fetched)
+			t.Errorf("fetched %d posters for a card already held", again-fetched)
 		}
 	})
 
@@ -255,7 +255,7 @@ func TestService_Image(t *testing.T) {
 			t.Error("the tag did not change, so a client would keep the old picture")
 		}
 		if second := fixture.image(t); bytes.Equal(first, second) {
-			t.Error("the collage was not rebuilt for the new poster")
+			t.Error("the card was not rebuilt for the new poster")
 		}
 	})
 
@@ -266,19 +266,19 @@ func TestService_Image(t *testing.T) {
 
 		built, ok := fixture.service.Image(context.Background(), fixture.libraryID, "")
 		if !ok {
-			t.Fatal("the library has no collage")
+			t.Fatal("the library has no card")
 		}
 		if built.Complete {
-			t.Error("a collage missing a poster was called complete")
+			t.Error("a card missing a poster was called complete")
 		}
 		if bounds := opened(t, built.Body).Bounds(); bounds.Dx() != width {
-			t.Errorf("collage = %dx%d, want a full collage", bounds.Dx(), bounds.Dy())
+			t.Errorf("card = %dx%d, want a full card", bounds.Dx(), bounds.Dy())
 		}
 
 		fetched := fixture.fetched.Load()
 		fixture.image(t)
 		if fixture.fetched.Load() == fetched {
-			t.Error("an incomplete collage was held, so the missing poster would never be retried")
+			t.Error("an incomplete card was held, so the missing poster would never be retried")
 		}
 	})
 
@@ -287,7 +287,7 @@ func TestService_Image(t *testing.T) {
 		fixture.title(t, []byte("not an image"))
 
 		if _, ok := fixture.service.Image(context.Background(), fixture.libraryID, ""); ok {
-			t.Error("a collage was built out of nothing")
+			t.Error("a card was built out of nothing")
 		}
 	})
 

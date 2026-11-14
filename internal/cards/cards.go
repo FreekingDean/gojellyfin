@@ -1,4 +1,4 @@
-package collage
+package cards
 
 import (
 	"context"
@@ -35,7 +35,7 @@ type held struct {
 	body []byte
 }
 
-type Collage struct {
+type Picture struct {
 	Body     []byte
 	Complete bool
 }
@@ -160,35 +160,35 @@ func titledPlan(name string, fresh int, posters []*items.Image) plan {
 	return plan{posters: posters, arrange: titled(name, fresh), caption: name + "\x00" + headline(fresh)}
 }
 
-func (s *Service) Image(ctx context.Context, id uuid.UUID, asked string) (Collage, bool) {
+func (s *Service) Image(ctx context.Context, id uuid.UUID, asked string) (Picture, bool) {
 	owner := ownerOf(asked)
 	planned, err := s.plan(ctx, id, owner)
 	if err != nil {
-		log.Printf("collage %s: %v", id, err)
+		log.Printf("card %s: %v", id, err)
 
-		return Collage{}, false
+		return Picture{}, false
 	}
 
 	tag := planned.tag()
 	if tag == "" || planned.owner != owner || owner != uuid.Nil && tag != asked {
-		return Collage{}, false
+		return Picture{}, false
 	}
 
 	held := key{id: id, owner: owner}
 	if body, ok := s.cached(held, tag); ok {
-		return Collage{Body: body, Complete: true}, true
+		return Picture{Body: body, Complete: true}, true
 	}
 
 	built, err, _ := s.flight.Do(id.String()+":"+tag, func() (any, error) {
 		return s.build(context.WithoutCancel(ctx), held, tag, planned)
 	})
 	if err != nil {
-		log.Printf("collage %s: %v", id, err)
+		log.Printf("card %s: %v", id, err)
 
-		return Collage{}, false
+		return Picture{}, false
 	}
 
-	answer, ok := built.(Collage)
+	answer, ok := built.(Picture)
 
 	return answer, ok && len(answer.Body) > 0
 }
@@ -216,7 +216,7 @@ func (s *Service) cached(held key, tag string) ([]byte, bool) {
 	return entry.body, ok && entry.tag == tag
 }
 
-func (s *Service) build(ctx context.Context, slot key, tag string, planned plan) (Collage, error) {
+func (s *Service) build(ctx context.Context, slot key, tag string, planned plan) (Picture, error) {
 	id := slot.id
 	posters := planned.posters
 	decoded := make([]image.Image, len(posters))
@@ -226,7 +226,7 @@ func (s *Service) build(ctx context.Context, slot key, tag string, planned plan)
 		group.Go(func() error {
 			picture, err := s.fetch(ctx, poster.URL)
 			if err != nil {
-				log.Printf("collage %s poster: %v", id, err)
+				log.Printf("card %s poster: %v", id, err)
 
 				return nil
 			}
@@ -244,12 +244,12 @@ func (s *Service) build(ctx context.Context, slot key, tag string, planned plan)
 		}
 	}
 	if len(fetched) == 0 {
-		return Collage{}, nil
+		return Picture{}, nil
 	}
 
 	body, err := planned.arrange(fetched)
 	if err != nil {
-		return Collage{}, err
+		return Picture{}, err
 	}
 
 	complete := len(fetched) == len(posters)
@@ -259,7 +259,7 @@ func (s *Service) build(ctx context.Context, slot key, tag string, planned plan)
 		s.mutex.Unlock()
 	}
 
-	return Collage{Body: body, Complete: complete}, nil
+	return Picture{Body: body, Complete: complete}, nil
 }
 
 func (s *Service) fetch(ctx context.Context, url string) (image.Image, error) {

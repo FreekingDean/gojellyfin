@@ -11,10 +11,10 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/shelves"
 )
 
-func ShelfView(ctx context.Context, collages Collages, shelf shelves.Shelf) (api.BaseItemDto, error) {
+func ShelfView(ctx context.Context, cards Cards, shelf shelves.Shelf) (api.BaseItemDto, error) {
 	collectionType := api.CollectionType(shelf.Collection)
 
-	tag, err := collages.Tag(ctx, shelf.ID, auth.UserID(ctx))
+	tag, err := cards.Tag(ctx, shelf.ID, auth.UserID(ctx))
 	if err != nil {
 		return api.BaseItemDto{}, err
 	}

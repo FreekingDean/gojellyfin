@@ -1,4 +1,4 @@
-package collage
+package cards
 
 import (
 	"bytes"

@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/FreekingDean/gojellyfin/internal/collage"
+	"github.com/FreekingDean/gojellyfin/internal/cards"
 	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 	"go.uber.org/fx"
@@ -107,6 +107,6 @@ var Module = fx.Module(
 	fx.Provide(
 		New,
 		func(policies *users.Service) dto.Access { return policies },
-		func(collages *collage.Service) dto.Collages { return collages },
+		func(cards *cards.Service) dto.Cards { return cards },
 	),
 )

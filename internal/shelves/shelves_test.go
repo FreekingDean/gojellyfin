@@ -391,9 +391,9 @@ func TestService_Card(t *testing.T) {
 	viewer := items.Viewer{Libraries: []uuid.UUID{fixture.libraryID}}
 
 	tests := []struct {
-		name    string
-		enabled []string
-		slug    string
+		name     string
+		enabled  []string
+		slug     string
 		user     uuid.UUID
 		want     []string
 		title    string

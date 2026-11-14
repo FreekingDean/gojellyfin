@@ -163,14 +163,14 @@ func ItemDtos(ctx context.Context, store *items.Service, records []*items.Item) 
 	return converted, nil
 }
 
-type Collages interface {
+type Cards interface {
 	Tag(ctx context.Context, id, userID uuid.UUID) (string, error)
 }
 
-func LibraryViews(ctx context.Context, collages Collages, records []*libraries.Library) ([]api.BaseItemDto, error) {
+func LibraryViews(ctx context.Context, cards Cards, records []*libraries.Library) ([]api.BaseItemDto, error) {
 	views := make([]api.BaseItemDto, 0, len(records))
 	for _, library := range records {
-		view, err := LibraryView(ctx, collages, library)
+		view, err := LibraryView(ctx, cards, library)
 		if err != nil {
 			return nil, err
 		}
@@ -180,10 +180,10 @@ func LibraryViews(ctx context.Context, collages Collages, records []*libraries.L
 	return views, nil
 }
 
-func LibraryView(ctx context.Context, collages Collages, library *libraries.Library) (api.BaseItemDto, error) {
+func LibraryView(ctx context.Context, cards Cards, library *libraries.Library) (api.BaseItemDto, error) {
 	collectionType := api.CollectionType(library.CollectionType)
 
-	tag, err := collages.Tag(ctx, library.ID, uuid.Nil)
+	tag, err := cards.Tag(ctx, library.ID, uuid.Nil)
 	if err != nil {
 		return api.BaseItemDto{}, err
 	}
