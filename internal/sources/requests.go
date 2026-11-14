@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -118,17 +119,25 @@ func (s *Service) requestTags(ctx context.Context, source Source) ([]int, error)
 }
 
 func (s *Service) post(ctx context.Context, source Source, path string, body record) error {
+	return s.send(ctx, source, http.MethodPost, path, body)
+}
+
+func (s *Service) send(ctx context.Context, source Source, method, path string, body any) error {
 	parsed, err := url.Parse(source.URL)
 	if err != nil {
 		return err
 	}
 
-	encoded, err := json.Marshal(body)
-	if err != nil {
-		return err
+	var payload io.Reader = http.NoBody
+	if body != nil {
+		encoded, err := json.Marshal(body)
+		if err != nil {
+			return err
+		}
+		payload = bytes.NewReader(encoded)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, parsed.JoinPath(path).String(), bytes.NewReader(encoded))
+	req, err := http.NewRequestWithContext(ctx, method, parsed.JoinPath(path).String(), payload)
 	if err != nil {
 		return err
 	}
@@ -145,8 +154,8 @@ func (s *Service) post(ctx context.Context, source Source, path string, body rec
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return fmt.Errorf("%s answered %s for %s", parsed.Host, resp.Status, path)
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		return fmt.Errorf("%s answered %s for %s %s", parsed.Host, resp.Status, method, path)
 	}
 
 	return nil
