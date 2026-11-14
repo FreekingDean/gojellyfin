@@ -10,6 +10,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	devicemodel "github.com/FreekingDean/gojellyfin/internal/store/device"
+	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	sessionmodel "github.com/FreekingDean/gojellyfin/internal/store/session"
 	usermodel "github.com/FreekingDean/gojellyfin/internal/store/user"
 	policymodel "github.com/FreekingDean/gojellyfin/internal/store/userpolicy"
@@ -21,9 +22,26 @@ type (
 	User    = store.UserModel
 )
 
+type EndingHook func(ctx context.Context, sessionIDs []uuid.UUID)
+
 type Service struct {
 	store    *store.Client
 	activity *activity.Service
+	ending   []EndingHook
+}
+
+func (s *Service) OnEnding(hook EndingHook) {
+	s.ending = append(s.ending, hook)
+}
+
+func (s *Service) end(ctx context.Context, sessionIDs []uuid.UUID) {
+	if len(sessionIDs) == 0 {
+		return
+	}
+
+	for _, hook := range s.ending {
+		hook(ctx, sessionIDs)
+	}
 }
 
 func New(client *store.Client, activity *activity.Service) *Service {
@@ -114,14 +132,19 @@ func (s *Service) List(ctx context.Context) ([]*Session, error) {
 }
 
 func (s *Service) RevokeForUser(ctx context.Context, userID uuid.UUID) error {
-	_, err := s.store.Session.Update().
-		Where(
-			sessionmodel.HasUserWith(usermodel.ID(userID)),
-			sessionmodel.RevokedAtIsNil(),
-		).
-		SetRevokedAt(time.Now()).
-		Save(ctx)
+	live := []predicate.Session{
+		sessionmodel.HasUserWith(usermodel.ID(userID)),
+		sessionmodel.RevokedAtIsNil(),
+	}
+
+	ids, err := s.store.Session.Query().Where(live...).IDs(ctx)
 	if err != nil {
+		return fmt.Errorf("failed to find sessions for user: %w", err)
+	}
+
+	s.end(ctx, ids)
+
+	if _, err := s.store.Session.Update().Where(live...).SetRevokedAt(time.Now()).Save(ctx); err != nil {
 		return fmt.Errorf("failed to revoke sessions for user: %w", err)
 	}
 
@@ -132,6 +155,10 @@ func (s *Service) DeleteByToken(ctx context.Context, token string) error {
 	session, err := s.ByToken(ctx, token)
 	if err != nil && !store.IsNotFound(err) {
 		return err
+	}
+
+	if session != nil {
+		s.end(ctx, []uuid.UUID{session.ID})
 	}
 
 	if _, err := s.store.Session.Delete().Where(sessionmodel.AccessToken(token)).Exec(ctx); err != nil {
