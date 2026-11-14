@@ -52,6 +52,11 @@ echo hunter2 | DATABASE_URL=... go run ./cmd/gojellyfin adduser Dean   # bootstr
 
 `CLAUDE.md` carries the architecture and the reasoning behind it.
 
+The [screenshot gallery](https://freekingdean.github.io/gojellyfin/main/) shows
+what `main` looks like in `jellyfin-web` and in the stock Android TV app, as the
+end-to-end suites last rendered it: the browser on every merge, the emulators
+nightly.
+
 ## Deployment
 
 `charts/gojellyfin` is a Helm chart for the shape this runs in. Create the
