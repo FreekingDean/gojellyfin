@@ -132,6 +132,8 @@ const (
 var details = map[string]string{
 	"/3/trending/movie/week":        trendingMovies,
 	"/3/trending/tv/week":           trendingShows,
+	"/3/search/movie":               trendingMovies,
+	"/3/search/tv":                  trendingShows,
 	"/3/configuration":              configuration,
 	"/3/movie/603":                  matrixDetail,
 	"/3/tv/1396":                    breakingBadDetail,

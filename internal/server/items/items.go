@@ -28,7 +28,7 @@ type Server struct {
 	libraries *libraries.Service
 	shelves   *shelves.Service
 	discover  *discover.Service
-	requests  dto.Requests
+	requests  *requests.Service
 	collages  dto.Collages
 }
 
@@ -124,6 +124,16 @@ func (s *Server) GetItems(ctx context.Context, request api.GetItemsRequestObject
 	result, err := dto.QueryResult(ctx, s.items, s.libraries, s.policies, request.Params)
 	if err != nil {
 		return nil, err
+	}
+
+	wanted, err := s.searched(ctx, request.Params)
+	if err != nil {
+		return nil, err
+	}
+	if len(wanted) > 0 {
+		held := append(apiutil.Deref(result.Items), wanted...)
+		result.Items = &held
+		result.TotalRecordCount = apiutil.Ptr(apiutil.Deref(result.TotalRecordCount) + int32(len(wanted)))
 	}
 
 	return api.GetItems200JSONResponse(result), nil

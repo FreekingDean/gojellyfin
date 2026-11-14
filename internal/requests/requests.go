@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/discover"
+	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/sources"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
@@ -51,16 +52,25 @@ type Mark struct {
 	Mine      bool
 }
 
-func downloaderFor(title discover.Title) sources.Kind {
-	if title.Kind == itemmodel.KindSeries {
+func downloaderOf(kind items.Kind) sources.Kind {
+	if kind == itemmodel.KindSeries {
 		return sources.KindSonarr
 	}
 
 	return sources.KindRadarr
 }
 
+func (s *Service) Taken(ctx context.Context, kind items.Kind) (bool, error) {
+	targets, err := s.downloaders.Requestable(ctx, downloaderOf(kind))
+	if err != nil {
+		return false, err
+	}
+
+	return len(targets) > 0, nil
+}
+
 func (s *Service) Request(ctx context.Context, userID uuid.UUID, title discover.Title) error {
-	targets, err := s.downloaders.Requestable(ctx, downloaderFor(title))
+	targets, err := s.downloaders.Requestable(ctx, downloaderOf(title.Kind))
 	if err != nil {
 		return err
 	}

@@ -1,8 +1,9 @@
 const http = require('node:http');
 
-// TMDB as the server sees it: the image configuration, the two trending lists
-// and the detail record behind each title. Artwork is named under the proxy's
-// own origin, because the browser is only let through to that one.
+// TMDB as the server sees it: the image configuration, the two trending lists,
+// a search over the same titles and the detail record behind each. Artwork is
+// named under the proxy's own origin, because the browser is only let through
+// to that one.
 function start({ imageBase, movies, shows }) {
   const routes = {
     '/3/configuration': { images: { base_url: imageBase, secure_base_url: imageBase } },
@@ -16,13 +17,24 @@ function start({ imageBase, movies, shows }) {
     routes[`/3/tv/${show.id}`] = { ...showSummary(show), tagline: show.tagline, status: 'Returning Series' };
   }
 
+  const searches = {
+    '/3/search/movie': (term) => listing(matching(movies, term), movieSummary),
+    '/3/search/tv': (term) => listing(matching(shows, term), showSummary),
+  };
+
   return http.createServer((request, response) => {
-    const found = routes[new URL(request.url, 'http://tmdb.invalid').pathname];
+    const url = new URL(request.url, 'http://tmdb.invalid');
+    const search = searches[url.pathname];
+    const found = search ? search(url.searchParams.get('query') || '') : routes[url.pathname];
     const body = found || { success: false, status_code: 34, status_message: 'The resource you requested could not be found.' };
 
     response.writeHead(found ? 200 : 404, { 'Content-Type': 'application/json' });
     response.end(JSON.stringify(body));
   });
+}
+
+function matching(titles, term) {
+  return titles.filter((title) => title.name.toLowerCase().includes(term.toLowerCase()));
 }
 
 function listing(titles, summarise) {

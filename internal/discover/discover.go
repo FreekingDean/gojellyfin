@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -28,6 +29,7 @@ type Provider interface {
 	Movie(ctx context.Context, tmdbID int) (items.Metadata, bool, error)
 	Series(ctx context.Context, tmdbID int) (items.Metadata, bool, error)
 	Trending(ctx context.Context, kind items.Kind) ([]items.Metadata, error)
+	Search(ctx context.Context, kind items.Kind, term string) ([]items.Metadata, error)
 }
 
 type Library interface {
@@ -87,6 +89,27 @@ func (s *Service) Trending(ctx context.Context, kind items.Kind, limit int) ([]T
 		return nil, err
 	}
 
+	return s.unowned(ctx, listed, limit)
+}
+
+func (s *Service) Search(ctx context.Context, kind items.Kind, term string, limit int) ([]Title, error) {
+	if !s.provider.Enabled() || strings.TrimSpace(term) == "" {
+		return nil, nil
+	}
+
+	answered, err := s.provider.Search(ctx, kind, term)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search the provider for %q: %w", term, err)
+	}
+
+	s.mutex.Lock()
+	found := s.summarised(kind, answered)
+	s.mutex.Unlock()
+
+	return s.unowned(ctx, found, limit)
+}
+
+func (s *Service) unowned(ctx context.Context, listed []Title, limit int) ([]Title, error) {
 	keys := make([]string, 0, len(listed))
 	for _, title := range listed {
 		keys = append(keys, title.Key)
@@ -115,6 +138,22 @@ func (s *Service) Trending(ctx context.Context, kind items.Kind, limit int) ([]T
 	return unowned, nil
 }
 
+func (s *Service) summarised(kind items.Kind, answered []items.Metadata) []Title {
+	titles := make([]Title, 0, len(answered))
+	for _, metadata := range answered {
+		title, ok := titled(kind, metadata)
+		if !ok {
+			continue
+		}
+		titles = append(titles, title)
+		if known, seen := s.details[title.ID]; !seen || !known.complete {
+			s.remember(title, false)
+		}
+	}
+
+	return titles
+}
+
 func (s *Service) listed(ctx context.Context, kind items.Kind) ([]Title, error) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -135,17 +174,7 @@ func (s *Service) listed(ctx context.Context, kind items.Kind) ([]Title, error) 
 		return nil, fmt.Errorf("failed to read what is trending: %w", err)
 	}
 
-	titles := make([]Title, 0, len(answered))
-	for _, metadata := range answered {
-		title, ok := titled(kind, metadata)
-		if !ok {
-			continue
-		}
-		titles = append(titles, title)
-		if known, seen := s.details[title.ID]; !seen || !known.complete {
-			s.remember(title, false)
-		}
-	}
+	titles := s.summarised(kind, answered)
 	s.trending[kind] = listing{titles: titles, fetched: s.now()}
 
 	return titles, nil

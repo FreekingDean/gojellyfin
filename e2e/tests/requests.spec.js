@@ -1,4 +1,4 @@
-const { test, expect, view, open } = require('./fixtures');
+const { test, expect, view, card, open } = require('./fixtures');
 
 async function added(harness) {
   const response = await fetch(harness.downloaderUrl + '/added');
@@ -48,5 +48,19 @@ test.describe('a title the library lacks', () => {
     await page.reload();
     await expect(view(page).locator('.tagline')).toContainText(harness.wantedMovie.tagline);
     expect(await added(harness)).toHaveLength(1);
+  });
+});
+
+test.describe('a search', () => {
+  test('finds a title the library lacks, and only of a kind a downloader takes', async ({ signedIn: page, harness }) => {
+    await page.goto(harness.baseUrl + '/web/#/search.html');
+    await view(page).locator('.searchfields-txtSearch').fill('Wanted');
+
+    await expect(card(page, harness.wantedMovie.name)).toBeVisible();
+    await expect(card(page, harness.wantedShow.name)).toHaveCount(0);
+
+    await open(page, harness.wantedMovie.name);
+    await expect(page).toHaveURL(/details/);
+    await expect(view(page).locator('h1.itemName')).toHaveText(harness.wantedMovie.name);
   });
 });
