@@ -57,25 +57,26 @@ type resolver func(ctx context.Context, catalogue Catalogue, viewer items.Viewer
 
 type definition struct {
 	slug       string
+	title      string
 	collection libraries.CollectionType
 	resolve    resolver
 }
 
 func fixed(slug, name string, collection libraries.CollectionType, query items.LatestQuery) definition {
-	return definition{slug: slug, collection: collection, resolve: func(context.Context, Catalogue, items.Viewer, uuid.UUID, time.Time) (string, items.LatestQuery, bool, error) {
+	return definition{slug: slug, title: name, collection: collection, resolve: func(context.Context, Catalogue, items.Viewer, uuid.UUID, time.Time) (string, items.LatestQuery, bool, error) {
 		return name, query, true, nil
 	}}
 }
 
 func unwatched(slug, name string, collection libraries.CollectionType, query items.LatestQuery) definition {
-	return definition{slug: slug, collection: collection, resolve: func(_ context.Context, _ Catalogue, _ items.Viewer, userID uuid.UUID, _ time.Time) (string, items.LatestQuery, bool, error) {
+	return definition{slug: slug, title: name, collection: collection, resolve: func(_ context.Context, _ Catalogue, _ items.Viewer, userID uuid.UUID, _ time.Time) (string, items.LatestQuery, bool, error) {
 		query.UnplayedBy = userID
 		return name, query, true, nil
 	}}
 }
 
 func seasonal(slug, name string, month time.Month, query items.LatestQuery) definition {
-	return definition{slug: slug, collection: libraries.CollectionTypeMovies, resolve: func(_ context.Context, _ Catalogue, _ items.Viewer, _ uuid.UUID, now time.Time) (string, items.LatestQuery, bool, error) {
+	return definition{slug: slug, title: name, collection: libraries.CollectionTypeMovies, resolve: func(_ context.Context, _ Catalogue, _ items.Viewer, _ uuid.UUID, now time.Time) (string, items.LatestQuery, bool, error) {
 		return name, query, now.Month() == month, nil
 	}}
 }
