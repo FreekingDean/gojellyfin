@@ -153,11 +153,60 @@ IfNotPresent
 - name: CORS_ORIGINS
   value: {{ .root.Values.cors.origin | quote }}
 {{- end }}
+{{- include "gojellyfin.oidcEnv" .root }}
 - name: TRANSCODER_JOBS
   value: {{ include "gojellyfin.transcoderJobs" .workload | quote }}
 - name: TRANSCODER_STALL_TIMEOUT
   value: {{ .workload.transcoderStallTimeout | quote }}
 {{- include "gojellyfin.sharedEnv" .root }}
+{{- end }}
+
+{{- define "gojellyfin.oidcEnv" -}}
+{{- with .Values.oidc }}
+{{- if .issuerUrl }}
+{{- if not $.Values.hostname }}
+{{- fail "oidc.issuerUrl needs hostname: the provider has to be told where to send the browser back to" }}
+{{- end }}
+{{- if not .clientId }}
+{{- fail "oidc.issuerUrl needs oidc.clientId" }}
+{{- end }}
+- name: OIDC_ISSUER_URL
+  value: {{ .issuerUrl | quote }}
+- name: OIDC_CLIENT_ID
+  value: {{ .clientId | quote }}
+{{- with .existingSecret }}
+- name: OIDC_CLIENT_SECRET
+  valueFrom:
+    secretKeyRef:
+      name: {{ . }}
+      key: {{ $.Values.oidc.secretKey }}
+{{- end }}
+{{- with .scopes }}
+- name: OIDC_SCOPES
+  value: {{ . | quote }}
+{{- end }}
+{{- with .usernameClaim }}
+- name: OIDC_USERNAME_CLAIM
+  value: {{ . | quote }}
+{{- end }}
+{{- with .groupsClaim }}
+- name: OIDC_GROUPS_CLAIM
+  value: {{ . | quote }}
+{{- end }}
+{{- with .adminGroup }}
+- name: OIDC_ADMIN_GROUP
+  value: {{ . | quote }}
+{{- end }}
+{{- with .allowedGroup }}
+- name: OIDC_ALLOWED_GROUP
+  value: {{ . | quote }}
+{{- end }}
+{{- if .linkExistingUsers }}
+- name: OIDC_LINK_EXISTING_USERS
+  value: "true"
+{{- end }}
+{{- end }}
+{{- end }}
 {{- end }}
 
 {{- define "gojellyfin.cpuCores" -}}

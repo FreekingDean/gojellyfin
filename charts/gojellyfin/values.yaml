@@ -49,6 +49,32 @@ tmdb:
 sources:
   existingSecret: ""
 
+# Single sign-on through an OpenID Connect provider, offered on the login page
+# as a "Sign in with SSO" button. Empty issuerUrl leaves it off. It needs
+# hostname, because the provider sends the browser back to
+# <scheme>://<hostname>/sso/oidc/callback, which is the redirect URI to
+# register with it. The client secret comes out of a Secret you create; leave
+# existingSecret empty for a public client, which PKCE still protects.
+oidc:
+  issuerUrl: ""
+  clientId: ""
+  existingSecret: ""
+  secretKey: OIDC_CLIENT_SECRET
+  # Space separated. Empty asks for "openid profile email".
+  scopes: ""
+  # Empty reads preferred_username and groups.
+  usernameClaim: ""
+  groupsClaim: ""
+  # A member of adminGroup signs in as an administrator and loses it on the
+  # next sign-in after leaving. Empty leaves administrator alone.
+  adminGroup: ""
+  # Empty lets anyone the provider vouches for sign in, creating their account.
+  allowedGroup: ""
+  # Let the first sign-in claim a local account with the same username rather
+  # than refusing it. Only safe when the provider does not let people choose
+  # their own username.
+  linkExistingUsers: false
+
 # CORS_ORIGINS. Off reflects whatever origin asks; a literal "*" is not
 # equivalent, because browsers reject it on credentialed requests. Enabled
 # needs an origin — the chart refuses to render a restriction that would
