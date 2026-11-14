@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"slices"
 	"strings"
 	"sync"
+	"time"
 
 	gooidc "github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
@@ -22,6 +24,8 @@ const (
 	defaultScopes        = "openid profile email"
 	defaultUsernameClaim = "preferred_username"
 	defaultGroupsClaim   = "groups"
+
+	providerTimeout = 15 * time.Second
 )
 
 var (
@@ -42,6 +46,8 @@ type Service struct {
 	redirectURL string
 	users       *users.Service
 
+	client *http.Client
+
 	mu       sync.Mutex
 	provider *gooidc.Provider
 }
@@ -51,7 +57,12 @@ func New(config env.Config, users *users.Service) *Service {
 		config:      config.OIDC,
 		redirectURL: strings.TrimSuffix(config.PublishedServerURL, "/") + CallbackPath,
 		users:       users,
+		client:      &http.Client{Timeout: providerTimeout},
 	}
+}
+
+func (s *Service) bounded(ctx context.Context) context.Context {
+	return gooidc.ClientContext(ctx, s.client)
 }
 
 func (s *Service) Enabled() bool {
@@ -59,6 +70,7 @@ func (s *Service) Enabled() bool {
 }
 
 func (s *Service) Begin(ctx context.Context) (string, Flow, error) {
+	ctx = s.bounded(ctx)
 	oauth, _, err := s.oauth(ctx)
 	if err != nil {
 		return "", Flow{}, err
@@ -78,6 +90,7 @@ func (s *Service) Begin(ctx context.Context) (string, Flow, error) {
 }
 
 func (s *Service) Finish(ctx context.Context, flow Flow, state, code string) (*users.User, error) {
+	ctx = s.bounded(ctx)
 	if flow.State == "" || state != flow.State {
 		return nil, ErrStateInvalid
 	}

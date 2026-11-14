@@ -9,7 +9,7 @@ import (
 	usermodel "github.com/FreekingDean/gojellyfin/internal/store/user"
 )
 
-var ErrUsernameClaimed = errors.New("a local account already holds this username and linking existing accounts is off")
+var ErrUsernameClaimed = errors.New("a local account already holds this username and no identity may claim it")
 
 type Identity struct {
 	Issuer        string
@@ -54,21 +54,20 @@ func (s *Service) adopt(ctx context.Context, identity Identity, linkExisting boo
 		return nil, err
 	}
 
-	created, err := s.CreateUser(ctx, identity.Username, "", identity.Administrator != nil && *identity.Administrator)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.link(ctx, created, identity)
+	return s.create(ctx, identity.Username, "", false, &identity)
 }
 
 func (s *Service) link(ctx context.Context, user *User, identity Identity) (*User, error) {
-	err := s.store.User.UpdateOneID(user.ID).
+	linked, err := s.store.User.Update().
+		Where(usermodel.ID(user.ID), usermodel.OidcIssuerIsNil(), usermodel.OidcSubjectIsNil()).
 		SetOidcIssuer(identity.Issuer).
 		SetOidcSubject(identity.Subject).
-		Exec(ctx)
+		Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to link identity: %w", err)
+	}
+	if linked == 0 {
+		return nil, ErrUsernameClaimed
 	}
 
 	return s.User(ctx, user.ID)

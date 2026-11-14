@@ -326,8 +326,12 @@ func TestHandler_AdminGroupDecidesAdministrator(t *testing.T) {
 
 	f.provider.SignIn(ssotest.Claims{"sub": username, "preferred_username": username, "groups": []string{"jellyfin-admins"}})
 	f.get(t, f.browser(t), StartPath)
-	if user, err := f.users.UserByUsername(context.Background(), username); err != nil || !user.Policy.IsAdministrator {
+	user, err := f.users.UserByUsername(context.Background(), username)
+	if err != nil || !user.Policy.IsAdministrator {
 		t.Fatalf("a member of the admin group is not an administrator: %v", err)
+	}
+	if user.Policy.EnableContentDeletion || user.Policy.EnableCollectionManagement || user.Policy.EnableRemoteControlOfOtherUsers {
+		t.Errorf("policy = %+v, want only IsAdministrator to follow the group", user.Policy)
 	}
 
 	f.provider.SignIn(ssotest.Claims{"sub": username, "preferred_username": username, "groups": []string{}})
