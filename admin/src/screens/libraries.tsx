@@ -151,7 +151,7 @@ function Editor({ kind, downloader }: { kind: mock.Downloader['kind']; downloade
             </label>
             <label>
               API key variable
-              <Select options={mock.pickers.variables} value={downloader?.variable} />
+              <Select options={mock.pickers.variables} value={downloader?.variable} empty={downloader ? undefined : "Pick a variable"} />
             </label>
             <label class="span">
               Address
@@ -191,7 +191,7 @@ function Editor({ kind, downloader }: { kind: mock.Downloader['kind']; downloade
               {(downloader?.paths ?? [{ remote: '', local: '' }]).map((path) => (
                 <tr key={path.remote}>
                   <td>
-                    <Select options={mock.pickers.remoteFolders} value={path.remote} />
+                    <Select options={mock.pickers.remoteFolders} value={path.remote} empty={downloader ? undefined : "Test the connection to list folders"} />
                   </td>
                   <td>
                     <span class="browse">
@@ -216,11 +216,11 @@ function Editor({ kind, downloader }: { kind: mock.Downloader['kind']; downloade
           <div class="form">
             <label>
               Quality profile
-              <Select options={mock.pickers.profiles} value={downloader?.requests?.profile} />
+              <Select options={mock.pickers.profiles} value={downloader?.requests?.profile} empty={downloader?.requests ? undefined : "Pick a profile"} />
             </label>
             <label>
               Add under
-              <Select options={mock.pickers.remoteFolders} value={downloader?.requests?.folder} />
+              <Select options={mock.pickers.remoteFolders} value={downloader?.requests?.folder} empty={downloader?.requests ? undefined : "Pick a folder"} />
             </label>
             <label>
               Tag requested titles
