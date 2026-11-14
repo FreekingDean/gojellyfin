@@ -91,8 +91,8 @@ type clock struct{ at time.Time }
 
 func (c *clock) now() time.Time { return c.at }
 
-func ids(titles []Title) []int {
-	found := make([]int, 0, len(titles))
+func ids(titles []Title) []uint32 {
+	found := make([]uint32, 0, len(titles))
 	for _, title := range titles {
 		found = append(found, title.TmdbID)
 	}
@@ -107,12 +107,12 @@ func TestService_Trending(t *testing.T) {
 		name  string
 		held  held
 		limit int
-		want  []int
+		want  []uint32
 	}{
-		{name: "everything the library lacks, in the provider's order", want: []int{603, 604, 605}},
-		{name: "without a title the library holds", held: held{"movie:tmdb:604"}, want: []int{603, 605}},
-		{name: "a series sharing the id does not hide the movie", held: held{"series:tmdb:604"}, want: []int{603, 604, 605}},
-		{name: "the limit counts what is left after the library's own", held: held{"movie:tmdb:603"}, limit: 2, want: []int{604, 605}},
+		{name: "everything the library lacks, in the provider's order", want: []uint32{603, 604, 605}},
+		{name: "without a title the library holds", held: held{"movie:tmdb:604"}, want: []uint32{603, 605}},
+		{name: "a series sharing the id does not hide the movie", held: held{"series:tmdb:604"}, want: []uint32{603, 604, 605}},
+		{name: "the limit counts what is left after the library's own", held: held{"movie:tmdb:603"}, limit: 2, want: []uint32{604, 605}},
 	}
 
 	for _, test := range tests {
@@ -128,7 +128,7 @@ func TestService_Trending(t *testing.T) {
 				t.Errorf("trending = %v, want %v", got, test.want)
 			}
 			for _, title := range titles {
-				if title.ID != ID(itemmodel.KindMovie, title.TmdbID) || title.Key != items.MovieKey(title.TmdbID) {
+				if title.ID != ID(itemmodel.KindMovie, title.TmdbID) || title.Key != items.MovieKey(int(title.TmdbID)) {
 					t.Errorf("title %d carries id %s and key %q", title.TmdbID, title.ID, title.Key)
 				}
 			}
@@ -157,7 +157,7 @@ func TestService_Trending_AsksOncePerHour(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to read what is trending: %v", err)
 	}
-	if got := ids(titles); !slices.Equal(got, []int{700}) {
+	if got := ids(titles); !slices.Equal(got, []uint32{700}) {
 		t.Errorf("trending after an hour = %v, want the new list", got)
 	}
 
@@ -167,7 +167,7 @@ func TestService_Trending_AsksOncePerHour(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a provider that stopped answering failed the row: %v", err)
 	}
-	if got := ids(titles); !slices.Equal(got, []int{700}) {
+	if got := ids(titles); !slices.Equal(got, []uint32{700}) {
 		t.Errorf("trending with the provider down = %v, want the last list", got)
 	}
 }
@@ -282,4 +282,18 @@ func TestService_Title(t *testing.T) {
 			t.Errorf("err = %v, want the provider's", err)
 		}
 	})
+}
+
+func TestTitled_SkipsAnIDItCannotCarry(t *testing.T) {
+	for name, id := range map[string]string{
+		"an id past thirty-two bits": "4294967296",
+		"zero":                       "0",
+		"a negative id":              "-603",
+		"not a number":               "tt0133093",
+	} {
+		ids := map[string]string{providerKey: id}
+		if title, ok := titled(itemmodel.KindMovie, items.Metadata{ProviderIds: &ids}); ok {
+			t.Errorf("%s became %s", name, title.ID)
+		}
+	}
 }

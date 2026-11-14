@@ -13,7 +13,7 @@ func TestID(t *testing.T) {
 	tests := []struct {
 		name    string
 		kind    items.Kind
-		tmdbID  int
+		tmdbID  uint32
 		wantKey string
 	}{
 		{name: "a movie", kind: itemmodel.KindMovie, tmdbID: 603, wantKey: "movie:tmdb:603"},

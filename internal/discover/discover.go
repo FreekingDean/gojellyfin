@@ -37,7 +37,7 @@ type Library interface {
 type Title struct {
 	ID       uuid.UUID
 	Kind     items.Kind
-	TmdbID   int
+	TmdbID   uint32
 	Key      string
 	Metadata items.Metadata
 }
@@ -156,10 +156,11 @@ func titled(kind items.Kind, metadata items.Metadata) (Title, bool) {
 		return Title{}, false
 	}
 
-	tmdbID, err := strconv.Atoi((*metadata.ProviderIds)[providerKey])
-	if err != nil || tmdbID <= 0 {
+	parsed, err := strconv.ParseUint((*metadata.ProviderIds)[providerKey], 10, 32)
+	if err != nil || parsed == 0 {
 		return Title{}, false
 	}
+	tmdbID := uint32(parsed)
 
 	return Title{ID: ID(kind, tmdbID), Kind: kind, TmdbID: tmdbID, Key: Key(kind, tmdbID), Metadata: metadata}, true
 }
@@ -197,7 +198,7 @@ func (s *Service) title(ctx context.Context, id uuid.UUID, complete bool) (Title
 		lookup = s.provider.Series
 	}
 
-	metadata, found, err := lookup(ctx, tmdbID)
+	metadata, found, err := lookup(ctx, int(tmdbID))
 	if err != nil {
 		if cached {
 			return known.title, true, nil
