@@ -140,7 +140,7 @@ export const watching: Watching[] = [
   { user: 'sam', device: 'Swiftfin', title: 'The Bear S3 E1', method: 'Direct', progress: 81 },
 ];
 
-export const library = { titles: 4812, libraries: 4, refreshed: ago(38), unprobed: 12, unidentified: 3 };
+export const library = { movies: 2204, shows: 186, episodes: 9870, refreshed: ago(38), unprobed: 12, unidentified: 3 };
 
 export type Activity = { at: string; text: string; tone?: Tone };
 
@@ -165,7 +165,8 @@ export type Downloader = {
   contacted: string;
   error?: string;
   paths: { remote: string; local: string }[];
-  feeds: { library: string; tag?: string; synced: string; files: number }[];
+  synced: string;
+  files: number;
   requests?: { profile: string; folder: string; tag?: string };
 };
 
@@ -179,7 +180,8 @@ export const downloaders: Downloader[] = [
     variable: 'SOURCE_API_KEY_RADARR',
     contacted: ago(4),
     paths: [{ remote: '/movies', local: '/media/movies' }],
-    feeds: [{ library: 'Movies', synced: ago(38), files: 2140 }],
+    synced: ago(38),
+    files: 2140,
     requests: { profile: 'HD-1080p', folder: '/movies', tag: 'requested' },
   },
   {
@@ -192,10 +194,8 @@ export const downloaders: Downloader[] = [
     contacted: ago(2 * HOUR),
     error: '401 Unauthorized',
     paths: [{ remote: '/movies-4k', local: '/media/movies-4k' }],
-    feeds: [
-      { library: 'Movies', tag: '4k', synced: ago(2 * HOUR), files: 310 },
-      { library: 'Kids', tag: 'kids', synced: ago(2 * HOUR), files: 44 },
-    ],
+    synced: ago(2 * HOUR),
+    files: 310,
     requests: { profile: 'Ultra-HD', folder: '/movies-4k' },
   },
   {
@@ -207,34 +207,30 @@ export const downloaders: Downloader[] = [
     variable: 'SOURCE_API_KEY_SONARR',
     contacted: ago(4),
     paths: [{ remote: '/tv', local: '/media/tv' }],
-    feeds: [{ library: 'Shows', synced: ago(36), files: 9870 }],
+    synced: ago(36),
+    files: 9870,
   },
 ];
 
 export const pickers = {
   variables: ['SOURCE_API_KEY_RADARR', 'SOURCE_API_KEY_RADARR_4K', 'SOURCE_API_KEY_SONARR'],
   remoteFolders: ['/movies', '/movies-4k', '/tv'],
-  localFolders: ['/media/movies', '/media/movies-4k', '/media/tv', '/media/kids'],
+  localFolders: ['/media/movies', '/media/movies-4k', '/media/tv'],
   profiles: ['Any', 'HD-1080p', 'Ultra-HD'],
   tags: ['4k', 'kids', 'requested'],
 };
 
 export type Library = {
-  id: string;
+  id: 'movies' | 'shows';
   name: string;
-  type: 'Movies' | 'Shows';
-  folders: string[];
-  fedBy: string[];
-  synced?: string;
-  titles: number;
-  error?: string;
+  kind: Downloader['kind'];
+  counts: string;
+  synced: string;
 };
 
 export const libraries: Library[] = [
-  { id: 'movies', name: 'Movies', type: 'Movies', folders: ['/media/movies', '/media/movies-4k'], fedBy: ['Radarr HD', 'Radarr 4K'], synced: ago(38), titles: 2204 },
-  { id: 'shows', name: 'Shows', type: 'Shows', folders: ['/media/tv'], fedBy: ['Sonarr'], synced: ago(36), titles: 2561 },
-  { id: 'kids', name: 'Kids', type: 'Movies', folders: ['/media/movies-4k'], fedBy: ['Radarr 4K'], synced: ago(2 * HOUR), titles: 44, error: 'Radarr 4K: 401 Unauthorized' },
-  { id: 'docs', name: 'Documentaries', type: 'Movies', folders: ['/media/docs'], fedBy: [], titles: 0 },
+  { id: 'movies', name: 'Movies', kind: 'Radarr', counts: '2,204 movies', synced: ago(38) },
+  { id: 'shows', name: 'Shows', kind: 'Sonarr', counts: '186 shows, 9,870 episodes', synced: ago(36) },
 ];
 
 export type Person = {
@@ -293,7 +289,7 @@ export const people: Person[] = [
     disabled: false,
     sso: false,
     password: true,
-    libraries: ['Movies', 'Kids'],
+    libraries: ['Movies'],
     canRequest: true,
     needsApproval: true,
     quota: 5,
@@ -323,7 +319,7 @@ export const people: Person[] = [
     disabled: true,
     sso: false,
     password: true,
-    libraries: ['Kids'],
+    libraries: ['Movies'],
     canRequest: false,
     needsApproval: true,
     used: 0,

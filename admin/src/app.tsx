@@ -6,7 +6,6 @@ import type { Config } from './config';
 import * as mock from './mock';
 import { Link, navigate, useRoute } from './router';
 import { Activity } from './screens/activity';
-import { Downloaders } from './screens/downloaders';
 import { Jobs } from './screens/jobs';
 import { Libraries } from './screens/libraries';
 import { Overview } from './screens/overview';
@@ -27,7 +26,6 @@ type State =
 const screens = [
   { path: 'overview', label: 'Overview' },
   { path: 'requests', label: 'Requests and Reports' },
-  { path: 'downloaders', label: 'Downloaders' },
   { path: 'libraries', label: 'Libraries' },
   { path: 'users', label: 'Users' },
   { path: 'jobs', label: 'Jobs' },
@@ -39,10 +37,8 @@ function Screen({ route }: { route: string[] }) {
   switch (route[0]) {
     case 'requests':
       return <Requests />;
-    case 'downloaders':
-      return <Downloaders id={route[1]} />;
     case 'libraries':
-      return <Libraries />;
+      return <Libraries id={route[1]} />;
     case 'users':
       return <Users id={route[1]} />;
     case 'jobs':

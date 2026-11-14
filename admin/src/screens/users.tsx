@@ -3,7 +3,7 @@ import { Link } from '../router';
 import { Card, Cell, Page, Pill, since } from '../ui';
 
 function access(person: mock.Person): string {
-  return person.libraries === 'all' ? 'All libraries' : person.libraries.join(', ');
+  return person.libraries === 'all' ? 'Movies and Shows' : person.libraries.join(', ') + ' only';
 }
 
 function asking(person: mock.Person): { main: string; sub: string } {
@@ -121,14 +121,10 @@ function Detail({ person }: { person: mock.Person }) {
           <p class="muted small">{person.used} asked for in the last seven days.</p>
         </Card>
 
-        <Card title="Libraries">
-          <label class="check">
-            <input type="checkbox" checked={person.libraries === 'all'} /> All libraries, including ones added later
-          </label>
+        <Card title="Can see">
           {mock.libraries.map((library) => (
             <label class="check" key={library.id}>
-              <input type="checkbox" checked={person.libraries === 'all' || person.libraries.includes(library.name)} disabled={person.libraries === 'all'} />{' '}
-              {library.name}
+              <input type="checkbox" checked={person.libraries === 'all' || person.libraries.includes(library.name)} /> {library.name}
             </label>
           ))}
         </Card>

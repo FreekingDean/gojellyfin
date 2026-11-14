@@ -64,8 +64,10 @@ export function Overview() {
 
         <Card title="Library">
           <div class="stat">
-            <span class="big">{mock.library.titles.toLocaleString()}</span>
-            <span class="muted">titles in {mock.library.libraries} libraries</span>
+            <span class="big">{mock.library.movies.toLocaleString()}</span>
+            <span class="muted">
+              movies, and {mock.library.shows} shows with {mock.library.episodes.toLocaleString()} episodes
+            </span>
           </div>
           <dl class="fields tight">
             <dt>Last refresh</dt>

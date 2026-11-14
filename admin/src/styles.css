@@ -634,3 +634,34 @@ table.settings .line {
   white-space: normal;
   overflow-wrap: anywhere;
 }
+
+h2 {
+  font-size: 17px;
+  margin: 0 0 2px;
+}
+
+h2 + p {
+  margin: 0 0 12px;
+}
+
+.library {
+  margin-bottom: 26px;
+}
+
+.form .span {
+  grid-column: 1 / -1;
+}
+
+.browse {
+  display: flex;
+  gap: 8px;
+}
+
+.browse input {
+  flex: 1;
+  min-width: 0;
+}
+
+table.rows.folders {
+  table-layout: fixed;
+}
