@@ -1,4 +1,4 @@
-const { test, expect, view, route } = require('./fixtures');
+const { test, expect, view } = require('./fixtures');
 
 test.describe('the Media Downloaders dashboard page', () => {
   test('is in the dashboard nav and lists the seeded connection', async ({ signedIn: page }) => {
@@ -17,7 +17,12 @@ test.describe('the Media Downloaders dashboard page', () => {
   });
 
   test('lists who may ask for titles on the Requests page', async ({ signedIn: page, harness }) => {
-    await route(page, '#/configurationpage?name=requests');
+    await page.locator('.headerButton.mainDrawerButton').click();
+    await page.locator('.mainDrawer').getByText('Dashboard').click();
+    await expect(page).toHaveURL(/dashboard/);
+
+    await page.getByRole('link', { name: 'Requests' }).click();
+    await expect(page).toHaveURL(/configurationpage\?name=requests/i);
 
     const requests = page.locator('#gojellyfinRequestsPage');
     await expect(requests).toContainText('Who may ask');

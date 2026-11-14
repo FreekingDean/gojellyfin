@@ -47,15 +47,6 @@ async function signIn(page, app, password = app.password) {
   await page.getByRole('button', { name: 'Sign In', exact: true }).click();
 }
 
-// The client routes on the hash, and setting it is a navigation inside the
-// document that is already signed in. Loading the url instead starts the
-// client again, and it lands on home whatever the hash said.
-async function route(page, hash) {
-  await page.evaluate((target) => {
-    window.location.hash = target;
-  }, hash);
-}
-
 function view(page) {
   return page.locator(VIEW);
 }
@@ -78,4 +69,4 @@ async function open(page, name) {
   }).toPass({ timeout: 30000 });
 }
 
-module.exports = { test, expect, loadLogin, signIn, view, route, card, open };
+module.exports = { test, expect, loadLogin, signIn, view, card, open };

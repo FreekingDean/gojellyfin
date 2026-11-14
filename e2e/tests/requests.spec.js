@@ -1,4 +1,4 @@
-const { test, expect, view, card, open, route } = require('./fixtures');
+const { test, expect, view, card, open } = require('./fixtures');
 
 async function added(harness) {
   const response = await fetch(harness.downloaderUrl + '/added');
@@ -53,7 +53,8 @@ test.describe('a title the library lacks', () => {
 
 test.describe('a search', () => {
   test('finds a title the library lacks, and only of a kind a downloader takes', async ({ signedIn: page, harness }) => {
-    await route(page, '#/search.html');
+    await page.locator('.headerSearchButton').click();
+    await expect(page).toHaveURL(/search/);
     await view(page).locator('.searchfields-txtSearch').fill('Wanted');
 
     await expect(card(page, harness.wantedMovie.name)).toBeVisible();
