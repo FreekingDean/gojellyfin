@@ -1,0 +1,22 @@
+{
+  "name": "gojellyfin-admin",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The admin app gojellyfin serves at /admin",
+  "scripts": {
+    "generate": "openapi-typescript ../spec/jellyfin-openapi-stable.patched.json -o src/api.gen.ts",
+    "dev": "npm run generate && vite",
+    "build": "npm run generate && tsc --noEmit && vite build"
+  },
+  "dependencies": {
+    "openapi-fetch": "0.17.0",
+    "preact": "11.2.0"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "2.10.6",
+    "openapi-typescript": "7.13.0",
+    "typescript": "5.9.3",
+    "vite": "8.3.8"
+  }
+}
