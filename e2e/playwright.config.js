@@ -14,7 +14,9 @@ module.exports = defineConfig({
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
   timeout: 60000,
-  reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
+  reporter: process.env.CI
+    ? [['list'], ['html', { open: 'never' }], ['json', { outputFile: '.build/results.json' }]]
+    : 'list',
   ignoreSnapshots: !remote,
   snapshotPathTemplate: '{testDir}/__screenshots__/{testFilePath}/{arg}{ext}',
   expect: {
@@ -22,7 +24,6 @@ module.exports = defineConfig({
     toHaveScreenshot: {
       animations: 'disabled',
       caret: 'hide',
-      maxDiffPixelRatio: 0.01,
       stylePath: require.resolve('./screenshot.css'),
     },
   },
@@ -34,6 +35,7 @@ module.exports = defineConfig({
     colorScheme: 'dark',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
+    launchOptions: { args: ['--disable-lcd-text'] },
     connectOptions: remote ? { wsEndpoint: remote, exposeNetwork: '<loopback>' } : undefined,
   },
 });

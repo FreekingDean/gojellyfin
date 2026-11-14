@@ -2011,6 +2011,8 @@ type UserModel struct {
 	PasswordHash   string
 	LastLoginAt    *time.Time
 	LastActivityAt *time.Time
+	OidcIssuer     *string
+	OidcSubject    *string
 
 	Configuration        *UserConfigurationModel
 	Policy               *UserPolicyModel
@@ -2045,6 +2047,8 @@ func fromUser(_m *User) *UserModel {
 		PasswordHash:   _m.PasswordHash,
 		LastLoginAt:    _m.LastLoginAt,
 		LastActivityAt: _m.LastActivityAt,
+		OidcIssuer:     _m.OidcIssuer,
+		OidcSubject:    _m.OidcSubject,
 
 		Configuration:        fromUserConfiguration(_m.Edges.Configuration),
 		Policy:               fromUserPolicy(_m.Edges.Policy),

@@ -1,11 +1,15 @@
 const { test, expect, view, open } = require('./fixtures');
 
 test.describe('transcoding', () => {
+  let played;
+
   test('encodes a picture the browser cannot decode to 1080p H.264 and plays it', async ({ signedIn: page, harness }) => {
     const streams = [];
     page.on('response', (response) => {
       const url = new URL(response.url());
-      if (/\/Videos\/[^/]+\/stream/i.test(url.pathname)) {
+      const stream = url.pathname.match(/\/Videos\/([^/]+)\/stream/i);
+      if (stream) {
+        played = stream[1];
         streams.push({ url, status: response.status(), type: response.headers()['content-type'] });
       }
     });
@@ -29,5 +33,21 @@ test.describe('transcoding', () => {
 
     const size = await video.evaluate((element) => ({ width: element.videoWidth, height: element.videoHeight }));
     expect(size).toEqual({ width: 1440, height: 1080 });
+  });
+
+  test.afterEach(async ({ page, harness }) => {
+    if (!played) {
+      return;
+    }
+    const { AccessToken: token, UserId: user } = await page.evaluate(
+      () => JSON.parse(localStorage.getItem('jellyfin_credentials')).Servers[0],
+    );
+    await page.goto('about:blank');
+
+    const response = await page.request.post(`${harness.baseUrl}/UserItems/${played}/UserData?userId=${user}`, {
+      headers: { Authorization: `MediaBrowser Token="${token}"` },
+      data: { PlaybackPositionTicks: 0, Played: false, PlayCount: 0, LastPlayedDate: null },
+    });
+    expect(response.ok()).toBe(true);
   });
 });

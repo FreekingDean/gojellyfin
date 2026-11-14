@@ -794,12 +794,21 @@ var (
 		{Name: "password_hash", Type: field.TypeString},
 		{Name: "last_login_at", Type: field.TypeTime, Nullable: true},
 		{Name: "last_activity_at", Type: field.TypeTime, Nullable: true},
+		{Name: "oidc_issuer", Type: field.TypeString, Nullable: true},
+		{Name: "oidc_subject", Type: field.TypeString, Nullable: true},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
 		Name:       "users",
 		Columns:    UsersColumns,
 		PrimaryKey: []*schema.Column{UsersColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "user_oidc_issuer_oidc_subject",
+				Unique:  true,
+				Columns: []*schema.Column{UsersColumns[8], UsersColumns[9]},
+			},
+		},
 	}
 	// UserConfigurationsColumns holds the columns for the "user_configurations" table.
 	UserConfigurationsColumns = []*schema.Column{
