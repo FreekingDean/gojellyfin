@@ -591,3 +591,29 @@ func TestService_CollectEmpty(t *testing.T) {
 		t.Fatalf("occupied group exists = %v (%v), want it kept", exists, err)
 	}
 }
+
+func TestServer_Resync(t *testing.T) {
+	f := newFixture(t)
+	owner := f.signIn(t, "owner")
+	guest := f.signIn(t, "guest")
+	outsider := f.signIn(t, "outsider")
+
+	created := f.create(t, owner, t.Name())
+	f.join(t, guest, *created.GroupId)
+	before := len(f.published.of("GroupJoined"))
+
+	f.server.Resync(context.Background(), []uuid.UUID{
+		auth.SessionFrom(guest).ID,
+		auth.SessionFrom(outsider).ID,
+	})
+
+	joined := f.published.of("GroupJoined")[before:]
+	if len(joined) != 1 || !slices.Equal(joined[0].sessionIDs, []uuid.UUID{auth.SessionFrom(guest).ID}) {
+		t.Fatalf("GroupJoined = %+v, want one to the guest alone", joined)
+	}
+
+	info, ok := joined[0].update.Data.(api.GroupInfoDto)
+	if !ok || *info.GroupId != *created.GroupId || !slices.Equal(apiutil.Deref(info.Participants), []string{"owner", "guest"}) {
+		t.Fatalf("GroupJoined data = %+v, want the group as it stands", joined[0].update.Data)
+	}
+}

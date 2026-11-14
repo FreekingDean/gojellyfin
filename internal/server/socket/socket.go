@@ -1,6 +1,7 @@
 package socket
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -35,8 +36,28 @@ type wsMessage struct {
 type Socket struct {
 	sessions *sessions.Service
 
-	mu      sync.RWMutex
-	clients map[uuid.UUID][]chan wsMessage
+	mu        sync.RWMutex
+	clients   map[uuid.UUID][]chan wsMessage
+	connected []func(ctx context.Context, sessionID uuid.UUID)
+}
+
+func (s *Socket) OnConnect(hook func(ctx context.Context, sessionID uuid.UUID)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.connected = append(s.connected, hook)
+}
+
+func (s *Socket) Sessions() []uuid.UUID {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	ids := make([]uuid.UUID, 0, len(s.clients))
+	for id := range s.clients {
+		ids = append(ids, id)
+	}
+
+	return ids
 }
 
 func New(sessions *sessions.Service) *Socket {
@@ -119,6 +140,14 @@ func (s *Socket) Handle(w http.ResponseWriter, r *http.Request) {
 
 	if err := conn.WriteJSON(forceKeepAlive()); err != nil {
 		return
+	}
+
+	s.mu.RLock()
+	connected := slices.Clone(s.connected)
+	s.mu.RUnlock()
+
+	for _, hook := range connected {
+		hook(r.Context(), session.ID)
 	}
 
 	ticker := time.NewTicker(keepAliveInterval)

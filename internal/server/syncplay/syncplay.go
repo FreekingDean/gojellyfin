@@ -123,6 +123,31 @@ func (s *Server) SyncPlayGetGroup(ctx context.Context, request api.SyncPlayGetGr
 	return api.SyncPlayGetGroup200JSONResponse(groupInfo(group)), nil
 }
 
+func (s *Server) Resync(ctx context.Context, sessionIDs []uuid.UUID) {
+	groups, err := s.syncplay.GroupsBySessionIDs(ctx, sessionIDs)
+	if err != nil {
+		log.Printf("failed to re-sync syncplay groups: %v", err)
+
+		return
+	}
+
+	asked := make(map[uuid.UUID]bool, len(sessionIDs))
+	for _, id := range sessionIDs {
+		asked[id] = true
+	}
+
+	for _, group := range groups {
+		var members []uuid.UUID
+		for _, participant := range syncplay.Participants(group) {
+			if asked[participant.SessionID] {
+				members = append(members, participant.SessionID)
+			}
+		}
+
+		s.publish(ctx, members, group.ID, groupJoined, groupInfo(group))
+	}
+}
+
 func (s *Server) announce(ctx context.Context, session *sessions.Session, joined syncplay.Joined) {
 	if joined.Left != nil {
 		s.depart(ctx, joined.Left)

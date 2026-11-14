@@ -295,6 +295,21 @@ func (s *Service) GroupBySessionID(ctx context.Context, sessionID uuid.UUID) (*G
 	return s.GroupByID(ctx, member.GroupID)
 }
 
+func (s *Service) GroupsBySessionIDs(ctx context.Context, sessionIDs []uuid.UUID) ([]*Group, error) {
+	if len(sessionIDs) == 0 {
+		return nil, nil
+	}
+
+	groups, err := withRoom(s.store.SyncPlayGroup.Query()).
+		Where(groupmodal.HasMembersWith(membermodal.SessionIDIn(sessionIDs...))).
+		AllModels(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query the syncplay groups of %d sessions: %w", len(sessionIDs), err)
+	}
+
+	return groups, nil
+}
+
 func (s *Service) joined(ctx context.Context, groupID uuid.UUID, left *Departure, rejoined bool, messages []Outgoing) (Joined, error) {
 	group, err := s.GroupByID(ctx, groupID)
 	if err != nil {
