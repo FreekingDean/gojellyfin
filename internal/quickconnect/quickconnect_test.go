@@ -232,3 +232,29 @@ func TestService_RedeemRace(t *testing.T) {
 		t.Fatalf("the secret was redeemed %d times, want exactly once", handed)
 	}
 }
+
+func TestService_Waiting(t *testing.T) {
+	fixture := newFixture(t)
+
+	older := fixture.initiate(t)
+	approved, _ := fixture.authorized(t, "approver")
+	newer := fixture.initiate(t)
+
+	waiting, err := fixture.service.Waiting(context.Background())
+	if err != nil {
+		t.Fatalf("Waiting returned %v", err)
+	}
+
+	var codes []string
+	for _, request := range waiting {
+		if request.DeviceID == older.DeviceID {
+			codes = append(codes, request.Code)
+		}
+		if request.Code == approved.Code {
+			t.Errorf("Waiting returned %s, which is already approved", approved.Code)
+		}
+	}
+	if len(codes) != 2 || codes[0] != newer.Code || codes[1] != older.Code {
+		t.Errorf("Waiting = %v, want the newest first: %s then %s", codes, newer.Code, older.Code)
+	}
+}

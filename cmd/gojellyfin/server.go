@@ -25,6 +25,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/quickconnect"
 	"github.com/FreekingDean/gojellyfin/internal/server"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
+	"github.com/FreekingDean/gojellyfin/internal/shelves"
 	"github.com/FreekingDean/gojellyfin/internal/sources"
 	"github.com/FreekingDean/gojellyfin/internal/sso"
 	"github.com/FreekingDean/gojellyfin/internal/store"
@@ -52,6 +53,7 @@ var serverModules = fx.Options(
 	playlists.Module,
 	probe.Module,
 	quickconnect.Module,
+	shelves.Module,
 	sources.Module,
 	sessions.Module,
 	sso.Module,

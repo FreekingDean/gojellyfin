@@ -3,6 +3,8 @@ package quickconnect
 import (
 	"context"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -26,7 +28,8 @@ func signedIn(userID uuid.UUID) context.Context {
 func TestServer_InitiateQuickConnect(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	service := mocks.NewMockQuickConnectService(ctrl)
-	server := &Server{quickconnect: service}
+	codes := &remembered{}
+	server := &Server{quickconnect: service, codes: codes}
 
 	at := time.Date(2026, time.September, 1, 12, 0, 0, 0, time.UTC)
 	ctx := auth.ContextWithAuthorization(context.Background(), auth.Authorization{
@@ -43,6 +46,10 @@ func TestServer_InitiateQuickConnect(t *testing.T) {
 	response, err := server.InitiateQuickConnect(ctx, api.InitiateQuickConnectRequestObject{})
 
 	assert.NoError(t, err)
+	recorder := httptest.NewRecorder()
+	assert.NoError(t, response.VisitInitiateQuickConnectResponse(recorder))
+	assert.Equal(t, "123456", codes.code, "want the TV's browser told which code its QR should carry")
+	assert.Equal(t, http.StatusOK, recorder.Code)
 	assert.Equal(t, api.InitiateQuickConnect200JSONResponse{
 		Authenticated: apiutil.Ptr(false),
 		Secret:        apiutil.Ptr("secret"),
@@ -52,7 +59,15 @@ func TestServer_InitiateQuickConnect(t *testing.T) {
 		AppName:       apiutil.Ptr("Jellyfin Web"),
 		AppVersion:    apiutil.Ptr("10.10.0"),
 		DateAdded:     apiutil.Ptr(at),
-	}, response)
+	}, response.(initiated).InitiateQuickConnect200JSONResponse)
+}
+
+type remembered struct {
+	code string
+}
+
+func (r *remembered) Remember(_ http.ResponseWriter, request *quickconnect.Request) {
+	r.code = request.Code
 }
 
 func TestServer_GetQuickConnectState(t *testing.T) {

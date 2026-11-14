@@ -11,6 +11,7 @@ package mocks
 
 import (
 	context "context"
+	http "net/http"
 	reflect "reflect"
 
 	quickconnect "github.com/FreekingDean/gojellyfin/internal/quickconnect"
@@ -140,4 +141,40 @@ func (m *MockUsersService) User(ctx context.Context, id uuid.UUID) (*users.User,
 func (mr *MockUsersServiceMockRecorder) User(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "User", reflect.TypeOf((*MockUsersService)(nil).User), ctx, id)
+}
+
+// MockRemembering is a mock of Remembering interface.
+type MockRemembering struct {
+	ctrl     *gomock.Controller
+	recorder *MockRememberingMockRecorder
+	isgomock struct{}
+}
+
+// MockRememberingMockRecorder is the mock recorder for MockRemembering.
+type MockRememberingMockRecorder struct {
+	mock *MockRemembering
+}
+
+// NewMockRemembering creates a new mock instance.
+func NewMockRemembering(ctrl *gomock.Controller) *MockRemembering {
+	mock := &MockRemembering{ctrl: ctrl}
+	mock.recorder = &MockRememberingMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockRemembering) EXPECT() *MockRememberingMockRecorder {
+	return m.recorder
+}
+
+// Remember mocks base method.
+func (m *MockRemembering) Remember(w http.ResponseWriter, request *quickconnect.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Remember", w, request)
+}
+
+// Remember indicates an expected call of Remember.
+func (mr *MockRememberingMockRecorder) Remember(w, request any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remember", reflect.TypeOf((*MockRemembering)(nil).Remember), w, request)
 }
