@@ -3,6 +3,7 @@ package stream
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"math"
 	"net/http"
@@ -238,80 +239,184 @@ func (d *dying) Close() error {
 	return d.err
 }
 
+func (f *fixture) streamed(t *testing.T, id uuid.UUID) ([]byte, error) {
+	t.Helper()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.SetPathValue("itemId", id.String())
+		r.SetPathValue("container", "mp3")
+		f.handler.Serve(w, r)
+	}))
+	t.Cleanup(server.Close)
+
+	response, err := http.Get(server.URL + "/Audio/" + id.String() + "/stream.mp3?api_key=" + f.token)
+	if err != nil {
+		t.Fatalf("failed to request the stream: %v", err)
+	}
+	defer func() { _ = response.Body.Close() }()
+
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want %d", response.StatusCode, http.StatusOK)
+	}
+
+	return io.ReadAll(response.Body)
+}
+
+func (f *fixture) filed(t *testing.T, id uuid.UUID) []*reports.Report {
+	t.Helper()
+
+	found, err := f.client.Report.Query().Where(reportmodel.ItemID(id)).AllModels(context.Background())
+	if err != nil {
+		t.Fatalf("failed to query the reports: %v", err)
+	}
+
+	return found
+}
+
+type killed struct {
+	ctx  context.Context
+	sent bool
+}
+
+func (k *killed) Read(b []byte) (int, error) {
+	if !k.sent {
+		k.sent = true
+
+		return copy(b, "partial"), nil
+	}
+	<-k.ctx.Done()
+
+	return 0, fmt.Errorf("%w: signal: killed", transcode.ErrExited)
+}
+
+func (k *killed) Close() error {
+	return nil
+}
+
 func TestHandler_relay(t *testing.T) {
-	t.Run("aborts the response when ffmpeg dies partway", func(t *testing.T) {
+	exited := fmt.Errorf("%w: exit status 1: Error while decoding", transcode.ErrExited)
+
+	t.Run("aborts the response and reports the file when ffmpeg dies partway", func(t *testing.T) {
 		fixture := newFixture(t)
-		id := fixture.add(t, "track.flac", "flac")
+		id := fixture.add(t, uuid.NewString()+".flac", "flac")
 
 		fixture.transcoder.enabled = true
 		fixture.transcoder.open = func(context.Context, transcode.Spec) (io.ReadCloser, error) {
-			return &dying{body: []byte("partial"), err: errors.New("ffmpeg exited: exit status 1")}, nil
+			return &dying{body: []byte("partial"), err: exited}, nil
+		}
+
+		body, err := fixture.streamed(t, id)
+		if !errors.Is(err, io.ErrUnexpectedEOF) {
+			t.Fatalf("read %q then %v, want the truncation to reach the client as io.ErrUnexpectedEOF", body, err)
+		}
+
+		found := fixture.filed(t, id)
+		if len(found) != 1 {
+			t.Fatalf("got %d reports, want one", len(found))
+		}
+		if found[0].Origin != reports.OriginPlayback || found[0].Kind != reports.KindUnplayable || found[0].ItemSourceID == nil {
+			t.Errorf("report = %+v", found[0])
+		}
+		if !strings.Contains(found[0].Note, "Error while decoding") {
+			t.Errorf("note = %q, want what ffmpeg said", found[0].Note)
+		}
+	})
+
+	t.Run("reports nothing when the relay fails for a reason other than ffmpeg", func(t *testing.T) {
+		fixture := newFixture(t)
+		id := fixture.add(t, uuid.NewString()+".flac", "flac")
+
+		fixture.transcoder.enabled = true
+		fixture.transcoder.open = func(context.Context, transcode.Spec) (io.ReadCloser, error) {
+			return &dying{body: []byte("partial"), err: errors.New("write: broken pipe")}, nil
+		}
+
+		if _, err := fixture.streamed(t, id); !errors.Is(err, io.ErrUnexpectedEOF) {
+			t.Fatalf("read error = %v, want io.ErrUnexpectedEOF", err)
+		}
+		if found := fixture.filed(t, id); len(found) != 0 {
+			t.Errorf("got %d reports, want none", len(found))
+		}
+	})
+
+	t.Run("reports nothing when the stall timer kills the encode", func(t *testing.T) {
+		fixture := newFixture(t)
+		id := fixture.add(t, uuid.NewString()+".flac", "flac")
+
+		fixture.transcoder.enabled = true
+		fixture.transcoder.stall = 50 * time.Millisecond
+		fixture.transcoder.open = func(ctx context.Context, _ transcode.Spec) (io.ReadCloser, error) {
+			return &killed{ctx: ctx}, nil
+		}
+
+		if _, err := fixture.streamed(t, id); err == nil {
+			t.Fatal("a killed encode ended the response cleanly")
+		}
+		if found := fixture.filed(t, id); len(found) != 0 {
+			t.Errorf("got %d reports, want none", len(found))
+		}
+	})
+
+	t.Run("reports nothing when the client goes away", func(t *testing.T) {
+		fixture := newFixture(t)
+		id := fixture.add(t, uuid.NewString()+".flac", "flac")
+
+		fixture.transcoder.enabled = true
+		finished := make(chan struct{})
+		fixture.transcoder.open = func(ctx context.Context, _ transcode.Spec) (io.ReadCloser, error) {
+			return &killed{ctx: ctx}, nil
 		}
 
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			defer close(finished)
 			r.SetPathValue("itemId", id.String())
 			r.SetPathValue("container", "mp3")
 			fixture.handler.Serve(w, r)
 		}))
 		t.Cleanup(server.Close)
 
-		response, err := http.Get(server.URL + "/Audio/" + id.String() + "/stream.mp3?api_key=" + fixture.token)
+		ctx, cancel := context.WithCancel(context.Background())
+		request, err := http.NewRequestWithContext(ctx, http.MethodGet, server.URL+"/Audio/"+id.String()+"/stream.mp3?api_key="+fixture.token, nil)
+		if err != nil {
+			t.Fatalf("failed to build the request: %v", err)
+		}
+		response, err := http.DefaultClient.Do(request)
 		if err != nil {
 			t.Fatalf("failed to request the stream: %v", err)
 		}
-		defer func() { _ = response.Body.Close() }()
+		cancel()
+		_ = response.Body.Close()
 
-		if response.StatusCode != http.StatusOK {
-			t.Fatalf("status = %d, want %d", response.StatusCode, http.StatusOK)
+		select {
+		case <-finished:
+		case <-time.After(5 * time.Second):
+			t.Fatal("the handler did not notice the client leave")
 		}
-
-		body, err := io.ReadAll(response.Body)
-		if !errors.Is(err, io.ErrUnexpectedEOF) {
-			t.Fatalf("read %q then %v, want the truncation to reach the client as io.ErrUnexpectedEOF", body, err)
+		if found := fixture.filed(t, id); len(found) != 0 {
+			t.Errorf("got %d reports, want none", len(found))
 		}
 	})
 
 	t.Run("ends the response cleanly when ffmpeg finishes", func(t *testing.T) {
 		fixture := newFixture(t)
-		id := fixture.add(t, "track.flac", "flac")
+		id := fixture.add(t, uuid.NewString()+".flac", "flac")
 
 		fixture.transcoder.enabled = true
 		fixture.transcoder.open = func(context.Context, transcode.Spec) (io.ReadCloser, error) {
 			return io.NopCloser(strings.NewReader("complete")), nil
 		}
 
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			r.SetPathValue("itemId", id.String())
-			r.SetPathValue("container", "mp3")
-			fixture.handler.Serve(w, r)
-		}))
-		t.Cleanup(server.Close)
-
-		response, err := http.Get(server.URL + "/Audio/" + id.String() + "/stream.mp3?api_key=" + fixture.token)
-		if err != nil {
-			t.Fatalf("failed to request the stream: %v", err)
-		}
-		defer func() { _ = response.Body.Close() }()
-
-		body, err := io.ReadAll(response.Body)
+		body, err := fixture.streamed(t, id)
 		if err != nil || string(body) != "complete" {
 			t.Fatalf("read %q, %v; want %q and a clean end", body, err, "complete")
+		}
+		if found := fixture.filed(t, id); len(found) != 0 {
+			t.Errorf("got %d reports, want none", len(found))
 		}
 	})
 }
 
 func TestHandler_ReportsWhatWillNotPlay(t *testing.T) {
-	filed := func(t *testing.T, fixture *fixture, id uuid.UUID) []*reports.Report {
-		t.Helper()
-
-		found, err := fixture.client.Report.Query().Where(reportmodel.ItemID(id)).AllModels(context.Background())
-		if err != nil {
-			t.Fatalf("failed to query the reports: %v", err)
-		}
-
-		return found
-	}
-
 	t.Run("a source ffmpeg cannot read is reported once", func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.add(t, uuid.NewString()+".flac", "flac")
@@ -331,7 +436,7 @@ func TestHandler_ReportsWhatWillNotPlay(t *testing.T) {
 			}
 		}
 
-		found := filed(t, fixture, id)
+		found := fixture.filed(t, id)
 		if len(found) != 1 {
 			t.Fatalf("got %d reports, want one", len(found))
 		}
@@ -352,7 +457,7 @@ func TestHandler_ReportsWhatWillNotPlay(t *testing.T) {
 		request.SetPathValue("container", "mp3")
 		fixture.handler.Serve(httptest.NewRecorder(), request)
 
-		if found := filed(t, fixture, id); len(found) != 0 {
+		if found := fixture.filed(t, id); len(found) != 0 {
 			t.Errorf("got %d reports, want none", len(found))
 		}
 	})
@@ -374,7 +479,7 @@ func TestHandler_ReportsWhatWillNotPlay(t *testing.T) {
 		if recorder.Code != http.StatusNotFound {
 			t.Fatalf("status = %d, want %d", recorder.Code, http.StatusNotFound)
 		}
-		if found := filed(t, fixture, id); len(found) != 1 {
+		if found := fixture.filed(t, id); len(found) != 1 {
 			t.Errorf("got %d reports, want one", len(found))
 		}
 	})

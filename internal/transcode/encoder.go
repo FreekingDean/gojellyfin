@@ -13,6 +13,7 @@ const defaultStall = 30 * time.Second
 var (
 	ErrBusy         = errors.New("every encode slot is taken")
 	ErrNotAvailable = errors.New("ffmpeg is not installed")
+	ErrExited       = errors.New("ffmpeg exited")
 )
 
 type Encoder struct {
