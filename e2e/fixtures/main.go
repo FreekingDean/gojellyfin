@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"image"
 	"image/color"
@@ -27,6 +28,7 @@ import (
 	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/source"
+	"github.com/FreekingDean/gojellyfin/scripts/jellyfinmigrate/migration/fixture"
 )
 
 const (
@@ -67,7 +69,7 @@ var (
 
 func main() {
 	if len(os.Args) < 2 {
-		fail(fmt.Errorf("usage: fixtures create|drop|seed|oidc"))
+		fail(fmt.Errorf("usage: fixtures create|drop|seed|oidc|jellyfin"))
 	}
 
 	var err error
@@ -80,6 +82,8 @@ func main() {
 		err = seed()
 	case "oidc":
 		err = oidc()
+	case "jellyfin":
+		err = jellyfin()
 	default:
 		err = fmt.Errorf("unknown action %q", os.Args[1])
 	}
@@ -91,6 +95,23 @@ func main() {
 func fail(err error) {
 	fmt.Fprintln(os.Stderr, err)
 	os.Exit(1)
+}
+
+func jellyfin() error {
+	if len(os.Args) < 3 {
+		return fmt.Errorf("usage: fixtures jellyfin <directory>")
+	}
+	if err := fixture.Write(os.Args[2], fixture.Legacy); err != nil {
+		return err
+	}
+
+	return json.NewEncoder(os.Stdout).Encode(map[string]string{
+		"serverId": fixture.ServerID,
+		"userId":   fixture.AliceID,
+		"username": fixture.AliceUsername,
+		"token":    fixture.AliceWebToken,
+		"deviceId": fixture.AliceWebDevice,
+	})
 }
 
 func create() error {

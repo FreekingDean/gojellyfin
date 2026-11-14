@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"slices"
 
 	"github.com/google/uuid"
 
@@ -135,10 +136,17 @@ func mediaSourceDto(source *items.MediaSource) api.MediaSourceInfo {
 		RequiresOpening:            apiutil.Ptr(false),
 		RequiresClosing:            apiutil.Ptr(false),
 		RequiresLooping:            apiutil.Ptr(false),
+		ReadAtNativeFramerate:      apiutil.Ptr(false),
+		IgnoreDts:                  apiutil.Ptr(false),
+		IgnoreIndex:                apiutil.Ptr(false),
+		GenPtsInput:                apiutil.Ptr(false),
+		HasSegments:                apiutil.Ptr(false),
 		DefaultAudioStreamIndex:    defaultStreamIndex(streams, streammodel.KindAudio),
 		DefaultSubtitleStreamIndex: defaultStreamIndex(streams, streammodel.KindSubtitle),
 	}
 }
+
+var pictureSubtitles = []string{"hdmv_pgs_subtitle", "dvd_subtitle", "dvb_subtitle", "xsub"}
 
 func mediaStreamDto(stream *items.MediaStream) api.MediaStream {
 	kind := api.MediaStreamType(stream.Kind)
@@ -153,6 +161,8 @@ func mediaStreamDto(stream *items.MediaStream) api.MediaStream {
 		IsForced:               apiutil.Ptr(stream.IsForced),
 		IsExternal:             apiutil.Ptr(false),
 		IsInterlaced:           apiutil.Ptr(false),
+		IsHearingImpaired:      apiutil.Ptr(false),
+		IsTextSubtitleStream:   apiutil.Ptr(stream.Kind == streammodel.KindSubtitle && !slices.Contains(pictureSubtitles, stream.Codec)),
 		SupportsExternalStream: apiutil.Ptr(false),
 		DisplayTitle:           apiutil.Ptr(streamDisplayTitle(stream)),
 	}
