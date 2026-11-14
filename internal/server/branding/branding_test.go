@@ -63,6 +63,19 @@ func TestServer_GetBrandingCss(t *testing.T) {
 		}
 	}
 
+	server.links = styling("#quickConnectAlert{}")
+	options, err := server.GetBrandingOptions(context.Background(), api.GetBrandingOptionsRequestObject{})
+	if err != nil {
+		t.Fatalf("GetBrandingOptions returned %v", err)
+	}
+	custom := apiutil.Deref(options.(api.GetBrandingOptions200JSONResponse).CustomCss)
+	for _, want := range []string{"#quickConnectAlert{}", "sectionTitleTextButton"} {
+		if !strings.Contains(custom, want) {
+			t.Errorf("CustomCss = %q, want it to contain %q, since jellyfin-web 10.11 reads its stylesheet from there", custom, want)
+		}
+	}
+	server.links = styling("")
+
 	server.shelves = titles(nil)
 	plain, err := server.brandingCss(context.Background())
 	if err != nil {

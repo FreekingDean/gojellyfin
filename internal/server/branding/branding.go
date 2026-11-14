@@ -60,6 +60,12 @@ func (s *Server) GetBrandingOptions(ctx context.Context, request api.GetBranding
 		branding.SplashscreenEnabled = apiutil.Ptr(true)
 	}
 
+	css, err := s.brandingCss(ctx)
+	if err != nil {
+		return nil, err
+	}
+	branding.CustomCss = apiutil.Ptr(css)
+
 	return api.GetBrandingOptions200JSONResponse(branding), nil
 }
 

@@ -241,7 +241,7 @@ func TestCSS(t *testing.T) {
 	h, _ := handler("https://tv.example", nil)
 	css := h.CSS()
 
-	for _, want := range []string{`#quickConnectAlert`, `url("/link/qr.svg")`, `"Or scan this with your phone, or open tv.example/link"`} {
+	for _, want := range []string{`#quickConnectAlert`, `url("/link/qr.svg")`, `.backdropImage[data-url*="/Branding/Splashscreen"]{display:none}`, `"Or scan this with your phone, or open tv.example/link"`} {
 		if !strings.Contains(css, want) {
 			t.Errorf("want the stylesheet to carry %q, got %s", want, css)
 		}
