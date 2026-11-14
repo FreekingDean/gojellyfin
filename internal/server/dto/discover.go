@@ -14,7 +14,10 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
-const requestedTagline = "Requested"
+const (
+	requestedTagline = "Requested"
+	pendingTagline   = "Awaiting approval"
+)
 
 type Requests interface {
 	Marks(ctx context.Context, userID uuid.UUID, keys []string) (map[string]requests.Mark, error)
@@ -93,9 +96,12 @@ func UnownedDto(title discover.Title, mark requests.Mark) api.BaseItemDto {
 }
 
 func taglines(provided *[]string, mark requests.Mark) *[]string {
-	if !mark.Requested {
+	switch {
+	case mark.Requested:
+		return apiutil.Ptr(append([]string{requestedTagline}, apiutil.Deref(provided)...))
+	case mark.Pending:
+		return apiutil.Ptr(append([]string{pendingTagline}, apiutil.Deref(provided)...))
+	default:
 		return provided
 	}
-
-	return apiutil.Ptr(append([]string{requestedTagline}, apiutil.Deref(provided)...))
 }

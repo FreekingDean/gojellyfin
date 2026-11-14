@@ -1711,7 +1711,9 @@ type RequestModel struct {
 	Key       string
 	Kind      request.Kind
 	TmdbID    int
+	TvdbID    int
 	Name      string
+	Status    request.Status
 
 	User *UserModel
 }
@@ -1737,7 +1739,9 @@ func fromRequest(_m *Request) *RequestModel {
 		Key:       _m.Key,
 		Kind:      _m.Kind,
 		TmdbID:    _m.TmdbID,
+		TvdbID:    _m.TvdbID,
 		Name:      _m.Name,
+		Status:    _m.Status,
 
 		User: fromUser(_m.Edges.User),
 	}
@@ -2159,15 +2163,18 @@ func (c *StudioClient) GetModel(ctx context.Context, id uuid.UUID) (*StudioModel
 type UserModel struct {
 	ID uuid.UUID
 
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-	Name           string
-	Username       string
-	PasswordHash   string
-	LastLoginAt    *time.Time
-	LastActivityAt *time.Time
-	OidcIssuer     *string
-	OidcSubject    *string
+	CreatedAt            time.Time
+	UpdatedAt            time.Time
+	Name                 string
+	Username             string
+	PasswordHash         string
+	LastLoginAt          *time.Time
+	LastActivityAt       *time.Time
+	OidcIssuer           *string
+	OidcSubject          *string
+	CanRequest           bool
+	RequestsNeedApproval bool
+	RequestQuota         *int
 
 	Configuration        *UserConfigurationModel
 	Policy               *UserPolicyModel
@@ -2195,16 +2202,19 @@ func fromUser(_m *User) *UserModel {
 	}
 
 	return &UserModel{
-		ID:             _m.ID,
-		CreatedAt:      _m.CreatedAt,
-		UpdatedAt:      _m.UpdatedAt,
-		Name:           _m.Name,
-		Username:       _m.Username,
-		PasswordHash:   _m.PasswordHash,
-		LastLoginAt:    _m.LastLoginAt,
-		LastActivityAt: _m.LastActivityAt,
-		OidcIssuer:     _m.OidcIssuer,
-		OidcSubject:    _m.OidcSubject,
+		ID:                   _m.ID,
+		CreatedAt:            _m.CreatedAt,
+		UpdatedAt:            _m.UpdatedAt,
+		Name:                 _m.Name,
+		Username:             _m.Username,
+		PasswordHash:         _m.PasswordHash,
+		LastLoginAt:          _m.LastLoginAt,
+		LastActivityAt:       _m.LastActivityAt,
+		OidcIssuer:           _m.OidcIssuer,
+		OidcSubject:          _m.OidcSubject,
+		CanRequest:           _m.CanRequest,
+		RequestsNeedApproval: _m.RequestsNeedApproval,
+		RequestQuota:         _m.RequestQuota,
 
 		Configuration:        fromUserConfiguration(_m.Edges.Configuration),
 		Policy:               fromUserPolicy(_m.Edges.Policy),

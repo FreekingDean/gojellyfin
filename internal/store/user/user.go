@@ -32,6 +32,12 @@ const (
 	FieldOidcIssuer = "oidc_issuer"
 	// FieldOidcSubject holds the string denoting the oidc_subject field in the database.
 	FieldOidcSubject = "oidc_subject"
+	// FieldCanRequest holds the string denoting the can_request field in the database.
+	FieldCanRequest = "can_request"
+	// FieldRequestsNeedApproval holds the string denoting the requests_need_approval field in the database.
+	FieldRequestsNeedApproval = "requests_need_approval"
+	// FieldRequestQuota holds the string denoting the request_quota field in the database.
+	FieldRequestQuota = "request_quota"
 	// EdgeConfiguration holds the string denoting the configuration edge name in mutations.
 	EdgeConfiguration = "configuration"
 	// EdgePolicy holds the string denoting the policy edge name in mutations.
@@ -138,6 +144,9 @@ var Columns = []string{
 	FieldLastActivityAt,
 	FieldOidcIssuer,
 	FieldOidcSubject,
+	FieldCanRequest,
+	FieldRequestsNeedApproval,
+	FieldRequestQuota,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -157,6 +166,10 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultCanRequest holds the default value on creation for the "can_request" field.
+	DefaultCanRequest bool
+	// DefaultRequestsNeedApproval holds the default value on creation for the "requests_need_approval" field.
+	DefaultRequestsNeedApproval bool
 )
 
 // OrderOption defines the ordering options for the User queries.
@@ -210,6 +223,21 @@ func ByOidcIssuer(opts ...sql.OrderTermOption) OrderOption {
 // ByOidcSubject orders the results by the oidc_subject field.
 func ByOidcSubject(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldOidcSubject, opts...).ToFunc()
+}
+
+// ByCanRequest orders the results by the can_request field.
+func ByCanRequest(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCanRequest, opts...).ToFunc()
+}
+
+// ByRequestsNeedApproval orders the results by the requests_need_approval field.
+func ByRequestsNeedApproval(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRequestsNeedApproval, opts...).ToFunc()
+}
+
+// ByRequestQuota orders the results by the request_quota field.
+func ByRequestQuota(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRequestQuota, opts...).ToFunc()
 }
 
 // ByConfigurationField orders the results by configuration field.

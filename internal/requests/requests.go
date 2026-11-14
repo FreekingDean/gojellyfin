@@ -2,7 +2,6 @@ package requests
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -18,11 +17,19 @@ import (
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	requestmodel "github.com/FreekingDean/gojellyfin/internal/store/request"
 	submissionmodel "github.com/FreekingDean/gojellyfin/internal/store/requestsubmission"
+	usermodel "github.com/FreekingDean/gojellyfin/internal/store/user"
 )
 
 const tvdbProvider = "Tvdb"
 
-var ErrNowhere = errors.New("no source takes requests for this kind of title")
+const QuotaWindow = 7 * 24 * time.Hour
+
+var (
+	ErrNowhere    = errors.New("no source takes requests for this kind of title")
+	ErrNotAllowed = errors.New("this user may not make requests")
+	ErrQuota      = errors.New("this user has asked for as much as a week allows")
+	ErrNotFound   = errors.New("no such request")
+)
 
 type (
 	Request    = store.RequestModel
@@ -49,6 +56,7 @@ func newService(store *store.Client, downloaders Downloaders) *Service {
 
 type Mark struct {
 	Requested bool
+	Pending   bool
 	Mine      bool
 }
 
@@ -78,32 +86,132 @@ func (s *Service) Request(ctx context.Context, userID uuid.UUID, title discover.
 		return ErrNowhere
 	}
 
+	asker, err := s.store.User.Query().Where(usermodel.ID(userID)).WithPolicy().OnlyModel(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to query who is asking: %w", err)
+	}
+	if !asker.CanRequest {
+		return ErrNotAllowed
+	}
+
+	asked, err := s.asked(ctx, asker, title)
+	if err != nil {
+		return err
+	}
+	if asked.Status != requestmodel.StatusApproved {
+		return nil
+	}
+
+	return s.submitAll(ctx, targets, asked)
+}
+
+func (s *Service) asked(ctx context.Context, asker *store.UserModel, title discover.Title) (*Request, error) {
+	existing, err := s.store.Request.Query().
+		Where(requestmodel.UserID(asker.ID), requestmodel.Key(title.Key)).
+		OnlyModel(ctx)
+	if err == nil {
+		return existing, nil
+	}
+	if !store.IsNotFound(err) {
+		return nil, fmt.Errorf("failed to query the request for %s: %w", title.Key, err)
+	}
+
+	if asker.RequestQuota != nil {
+		used, err := s.used(ctx, asker.ID)
+		if err != nil {
+			return nil, err
+		}
+		if used >= *asker.RequestQuota {
+			return nil, ErrQuota
+		}
+	}
+
 	name := ""
 	if title.Metadata.Name != nil {
 		name = *title.Metadata.Name
 	}
 
-	err = s.store.Request.Create().
-		SetUserID(userID).
+	status := requestmodel.StatusApproved
+	if asker.RequestsNeedApproval && (asker.Policy == nil || !asker.Policy.IsAdministrator) {
+		status = requestmodel.StatusPending
+	}
+
+	created, err := s.store.Request.Create().
+		SetUserID(asker.ID).
 		SetKey(title.Key).
 		SetKind(requestmodel.Kind(title.Kind)).
 		SetTmdbID(int(title.TmdbID)).
+		SetTvdbID(tvdbID(title)).
 		SetName(name).
-		OnConflictColumns(requestmodel.FieldUserID, requestmodel.FieldKey).
-		DoNothing().
-		Exec(ctx)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return fmt.Errorf("failed to record the request for %s: %w", title.Key, err)
+		SetStatus(status).
+		SaveModel(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to record the request for %s: %w", title.Key, err)
 	}
 
-	wanted := sources.Wanted{Name: name, TmdbID: int(title.TmdbID), TvdbID: tvdbID(title)}
+	return created, nil
+}
+
+func (s *Service) used(ctx context.Context, userID uuid.UUID) (int, error) {
+	used, err := s.store.Request.Query().
+		Where(requestmodel.UserID(userID), requestmodel.CreatedAtGT(time.Now().Add(-QuotaWindow))).
+		Count(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count what was asked for lately: %w", err)
+	}
+
+	return used, nil
+}
+
+func (s *Service) submitAll(ctx context.Context, targets []sources.Source, asked *Request) error {
+	wanted := sources.Wanted{Name: asked.Name, TmdbID: asked.TmdbID, TvdbID: asked.TvdbID}
 	for _, target := range targets {
-		if err := s.submit(ctx, target, title.Key, wanted); err != nil {
+		if err := s.submit(ctx, target, asked.Key, wanted); err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+func (s *Service) Approve(ctx context.Context, requestID uuid.UUID) error {
+	asked, err := s.decide(ctx, requestID, requestmodel.StatusApproved)
+	if err != nil {
+		return err
+	}
+
+	kind := sources.KindRadarr
+	if asked.Kind == requestmodel.KindSeries {
+		kind = sources.KindSonarr
+	}
+
+	targets, err := s.downloaders.Requestable(ctx, kind)
+	if err != nil {
+		return err
+	}
+	if len(targets) == 0 {
+		return ErrNowhere
+	}
+
+	return s.submitAll(ctx, targets, asked)
+}
+
+func (s *Service) Decline(ctx context.Context, requestID uuid.UUID) error {
+	_, err := s.decide(ctx, requestID, requestmodel.StatusDeclined)
+
+	return err
+}
+
+func (s *Service) decide(ctx context.Context, requestID uuid.UUID, status requestmodel.Status) (*Request, error) {
+	decided, err := s.store.Request.UpdateOneID(requestID).SetStatus(status).SaveModel(ctx)
+	if store.IsNotFound(err) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to record the decision: %w", err)
+	}
+
+	return decided, nil
 }
 
 func tvdbID(title discover.Title) int {
@@ -170,15 +278,20 @@ func (s *Service) Marks(ctx context.Context, userID uuid.UUID, keys []string) (m
 
 	records, err := s.store.Request.Query().
 		Where(requestmodel.KeyIn(keys...)).
-		Select(requestmodel.FieldKey, requestmodel.FieldUserID).
+		Select(requestmodel.FieldKey, requestmodel.FieldUserID, requestmodel.FieldStatus).
 		AllModels(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query the requests: %w", err)
 	}
 
 	for _, record := range records {
+		if record.Status == requestmodel.StatusDeclined {
+			continue
+		}
+
 		mark := marks[record.Key]
-		mark.Requested = true
+		mark.Requested = mark.Requested || record.Status == requestmodel.StatusApproved
+		mark.Pending = mark.Pending || record.Status == requestmodel.StatusPending
 		mark.Mine = mark.Mine || record.UserID == userID
 		marks[record.Key] = mark
 	}

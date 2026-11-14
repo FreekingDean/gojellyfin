@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Requests</title>
+</head>
+<body>
+<div data-role="page" id="gojellyfinRequestsPage" class="page type-interior pluginConfigurationPage fullWidthContent"
+     data-require="emby-input,emby-button,emby-checkbox">
+    <div class="content-primary">
+        <div class="verticalSection">
+            <div class="sectionTitleContainer flex align-items-center">
+                <h2 class="sectionTitle">Requests</h2>
+            </div>
+            <p class="fieldDescription">
+                A title somebody hearts that no library holds is asked of every downloader that takes requests.
+                Approve asks again, so it is also how a title a downloader refused is retried.
+            </p>
+            <p data-id="noRequests" class="fieldDescription" style="display:none">Nobody has asked for anything yet.</p>
+            <table style="width:100%">
+                <tbody data-id="queueHost"></tbody>
+            </table>
+        </div>
+
+        <div class="verticalSection">
+            <h2 class="sectionTitle">Who may ask</h2>
+            <p class="fieldDescription">
+                The limit counts titles asked for in the last seven days, and empty means no limit. A user whose
+                requests need approval waits here until an administrator approves each one.
+            </p>
+            <table style="width:100%">
+                <thead>
+                    <tr>
+                        <th style="text-align:left">User</th>
+                        <th style="text-align:left">May ask</th>
+                        <th style="text-align:left">Needs approval</th>
+                        <th style="text-align:left">Limit a week</th>
+                        <th style="text-align:left">Asked this week</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody data-id="usersHost"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <template id="requestTemplate">
+        <tr>
+            <td style="padding:.5em 1em .5em 0;vertical-align:top">
+                <a is="emby-linkbutton" data-id="title" class="button-link"></a>
+                <div data-id="kind" class="fieldDescription" style="margin:0"></div>
+            </td>
+            <td data-id="askers" style="padding:.5em 1em .5em 0;vertical-align:top"></td>
+            <td data-id="answers" style="padding:.5em 0;vertical-align:top"></td>
+        </tr>
+    </template>
+
+    <template id="askerTemplate">
+        <div class="flex align-items-center" style="gap:.75em;margin-bottom:.25em">
+            <span data-id="who"></span>
+            <span data-id="status" class="fieldDescription" style="margin:0"></span>
+            <button is="emby-button" data-id="approve" type="button" class="raised raised-mini button-submit">
+                <span>Approve</span>
+            </button>
+            <button is="emby-button" data-id="decline" type="button" class="raised raised-mini">
+                <span>Decline</span>
+            </button>
+        </div>
+    </template>
+
+    <template id="userTemplate">
+        <tr>
+            <td data-id="name" style="padding:.25em 1em .25em 0"></td>
+            <td><input type="checkbox" data-id="chkCanRequest" /></td>
+            <td><input type="checkbox" data-id="chkNeedsApproval" /></td>
+            <td><input type="number" min="0" data-id="txtQuota" class="emby-input" style="width:6em" /></td>
+            <td data-id="used"></td>
+            <td style="text-align:right">
+                <button is="emby-button" data-id="saveUser" type="button" class="raised raised-mini">
+                    <span>Save</span>
+                </button>
+                <span data-id="saveResult" class="fieldDescription" style="margin:0"></span>
+            </td>
+        </tr>
+    </template>
+
+    <script type="text/javascript">
+        window.GoJellyfinRequests = {
+            page: function () {
+                return document.querySelector('#gojellyfinRequestsPage');
+            },
+
+            decide: function (entry, decision) {
+                const requests = window.GoJellyfinRequests;
+
+                window.ApiClient.ajax({
+                    type: 'POST',
+                    url: window.ApiClient.getUrl('GoJellyfin/Requests/' + entry.Id + '/' + decision)
+                }).then(function () {
+                    requests.load();
+                }).catch(function (error) {
+                    console.error(error);
+                    Dashboard.alert('The request could not be ' + (decision === 'Approve' ? 'approved' : 'declined') +
+                        '. Check that a downloader takes requests for this kind of title.');
+                });
+            },
+
+            asker: function (entry) {
+                const requests = window.GoJellyfinRequests;
+                const clone = document.querySelector('#askerTemplate').content.cloneNode(true);
+                const approve = clone.querySelector('[data-id=approve]');
+                const decline = clone.querySelector('[data-id=decline]');
+
+                clone.querySelector('[data-id=who]').textContent = entry.UserName;
+                clone.querySelector('[data-id=status]').textContent =
+                    entry.Status + ', ' + new Date(entry.CreatedAt).toLocaleDateString();
+
+                approve.querySelector('span').textContent = entry.Status === 'Approved' ? 'Ask again' : 'Approve';
+                decline.style.display = entry.Status === 'Declined' ? 'none' : '';
+                approve.addEventListener('click', function () {
+                    requests.decide(entry, 'Approve');
+                });
+                decline.addEventListener('click', function () {
+                    requests.decide(entry, 'Decline');
+                });
+
+                return clone;
+            },
+
+            answer: function (submission) {
+                const line = document.createElement('div');
+
+                line.textContent = submission.SourceName + ': ' + (submission.AcceptedAt
+                    ? 'added ' + new Date(submission.AcceptedAt).toLocaleDateString()
+                    : 'refused, ' + (submission.Error || 'no reason given'));
+
+                return line;
+            },
+
+            row: function (title) {
+                const requests = window.GoJellyfinRequests;
+                const clone = document.querySelector('#requestTemplate').content.cloneNode(true);
+                const link = clone.querySelector('[data-id=title]');
+                const askers = clone.querySelector('[data-id=askers]');
+                const answers = clone.querySelector('[data-id=answers]');
+
+                link.textContent = title.Name;
+                link.href = '#/details?id=' + title.ItemId;
+                clone.querySelector('[data-id=kind]').textContent = title.Kind;
+
+                title.Requests.forEach(function (entry) {
+                    askers.appendChild(requests.asker(entry));
+                });
+                title.Submissions.forEach(function (submission) {
+                    answers.appendChild(requests.answer(submission));
+                });
+                if (!title.Submissions.length) {
+                    answers.textContent = 'No downloader asked yet';
+                }
+
+                return clone;
+            },
+
+            saveUser: function (user, row) {
+                const result = row.querySelector('[data-id=saveResult]');
+                const quota = row.querySelector('[data-id=txtQuota]').value.trim();
+
+                result.textContent = 'Saving…';
+
+                window.ApiClient.ajax({
+                    type: 'PUT',
+                    url: window.ApiClient.getUrl('GoJellyfin/RequestUsers/' + user.Id),
+                    data: JSON.stringify({
+                        CanRequest: row.querySelector('[data-id=chkCanRequest]').checked,
+                        NeedsApproval: row.querySelector('[data-id=chkNeedsApproval]').checked,
+                        Quota: quota === '' ? null : parseInt(quota, 10)
+                    }),
+                    contentType: 'application/json'
+                }).then(function () {
+                    result.textContent = 'Saved';
+                }).catch(function (error) {
+                    console.error(error);
+                    result.textContent = 'Not saved';
+                });
+            },
+
+            user: function (user) {
+                const requests = window.GoJellyfinRequests;
+                const clone = document.querySelector('#userTemplate').content.cloneNode(true);
+                const row = clone.querySelector('tr');
+
+                row.querySelector('[data-id=name]').textContent = user.Name;
+                row.querySelector('[data-id=chkCanRequest]').checked = user.CanRequest;
+                row.querySelector('[data-id=chkNeedsApproval]').checked = user.NeedsApproval;
+                row.querySelector('[data-id=txtQuota]').value = user.Quota === undefined || user.Quota === null ? '' : user.Quota;
+                row.querySelector('[data-id=used]').textContent = user.Used;
+                row.querySelector('[data-id=saveUser]').addEventListener('click', function () {
+                    requests.saveUser(user, row);
+                });
+
+                return clone;
+            },
+
+            load: function () {
+                const requests = window.GoJellyfinRequests;
+                const page = requests.page();
+
+                Dashboard.showLoadingMsg();
+
+                Promise.all([
+                    window.ApiClient.getJSON(window.ApiClient.getUrl('GoJellyfin/Requests')),
+                    window.ApiClient.getJSON(window.ApiClient.getUrl('GoJellyfin/RequestUsers'))
+                ]).then(function (loaded) {
+                    const queue = page.querySelector('[data-id=queueHost]');
+                    const users = page.querySelector('[data-id=usersHost]');
+
+                    queue.innerHTML = '';
+                    users.innerHTML = '';
+                    page.querySelector('[data-id=noRequests]').style.display = loaded[0].length ? 'none' : '';
+                    loaded[0].forEach(function (title) {
+                        queue.appendChild(requests.row(title));
+                    });
+                    loaded[1].forEach(function (user) {
+                        users.appendChild(requests.user(user));
+                    });
+                }).catch(function (error) {
+                    console.error(error);
+                    Dashboard.alert('The requests could not be loaded.');
+                }).finally(function () {
+                    Dashboard.hideLoadingMsg();
+                });
+            }
+        };
+
+        document.querySelector('#gojellyfinRequestsPage').addEventListener('pageshow', function () {
+            window.GoJellyfinRequests.load();
+        });
+    </script>
+</div>
+</body>
+</html>

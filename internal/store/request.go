@@ -31,8 +31,12 @@ type Request struct {
 	Kind request.Kind `json:"kind,omitempty"`
 	// TmdbID holds the value of the "tmdb_id" field.
 	TmdbID int `json:"tmdb_id,omitempty"`
+	// TvdbID holds the value of the "tvdb_id" field.
+	TvdbID int `json:"tvdb_id,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
+	// Status holds the value of the "status" field.
+	Status request.Status `json:"status,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the RequestQuery when eager-loading is set.
 	Edges        RequestEdges `json:"edges"`
@@ -64,9 +68,9 @@ func (*Request) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case request.FieldTmdbID:
+		case request.FieldTmdbID, request.FieldTvdbID:
 			values[i] = new(sql.NullInt64)
-		case request.FieldKey, request.FieldKind, request.FieldName:
+		case request.FieldKey, request.FieldKind, request.FieldName, request.FieldStatus:
 			values[i] = new(sql.NullString)
 		case request.FieldCreatedAt, request.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -129,11 +133,23 @@ func (_m *Request) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.TmdbID = int(value.Int64)
 			}
+		case request.FieldTvdbID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field tvdb_id", values[i])
+			} else if value.Valid {
+				_m.TvdbID = int(value.Int64)
+			}
 		case request.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				_m.Name = value.String
+			}
+		case request.FieldStatus:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field status", values[i])
+			} else if value.Valid {
+				_m.Status = request.Status(value.String)
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -194,8 +210,14 @@ func (_m *Request) String() string {
 	builder.WriteString("tmdb_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.TmdbID))
 	builder.WriteString(", ")
+	builder.WriteString("tvdb_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.TvdbID))
+	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)
+	builder.WriteString(", ")
+	builder.WriteString("status=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Status))
 	builder.WriteByte(')')
 	return builder.String()
 }

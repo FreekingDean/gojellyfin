@@ -45,7 +45,7 @@ func (s *Server) GetItemUserData(ctx context.Context, request api.GetItemUserDat
 
 func (s *Server) MarkFavoriteItem(ctx context.Context, request api.MarkFavoriteItemRequestObject) (api.MarkFavoriteItemResponseObject, error) {
 	datum, err := s.saveFavorite(ctx, request.ItemId, true)
-	if errors.Is(err, requests.ErrNowhere) {
+	if refused(err) {
 		return api.MarkFavoriteItem403Response{}, nil
 	}
 	if err != nil {
@@ -114,6 +114,10 @@ func (s *Server) UpdateItemUserData(ctx context.Context, request api.UpdateItemU
 	}
 
 	return api.UpdateItemUserData200JSONResponse(dto.UserItemDataDto(datum)), nil
+}
+
+func refused(err error) bool {
+	return errors.Is(err, requests.ErrNowhere) || errors.Is(err, requests.ErrNotAllowed) || errors.Is(err, requests.ErrQuota)
 }
 
 func (s *Server) saveFavorite(ctx context.Context, itemID uuid.UUID, favorite bool) (*items.Datum, error) {

@@ -77,9 +77,37 @@ func (_c *RequestCreate) SetTmdbID(v int) *RequestCreate {
 	return _c
 }
 
+// SetTvdbID sets the "tvdb_id" field.
+func (_c *RequestCreate) SetTvdbID(v int) *RequestCreate {
+	_c.mutation.SetTvdbID(v)
+	return _c
+}
+
+// SetNillableTvdbID sets the "tvdb_id" field if the given value is not nil.
+func (_c *RequestCreate) SetNillableTvdbID(v *int) *RequestCreate {
+	if v != nil {
+		_c.SetTvdbID(*v)
+	}
+	return _c
+}
+
 // SetName sets the "name" field.
 func (_c *RequestCreate) SetName(v string) *RequestCreate {
 	_c.mutation.SetName(v)
+	return _c
+}
+
+// SetStatus sets the "status" field.
+func (_c *RequestCreate) SetStatus(v request.Status) *RequestCreate {
+	_c.mutation.SetStatus(v)
+	return _c
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (_c *RequestCreate) SetNillableStatus(v *request.Status) *RequestCreate {
+	if v != nil {
+		_c.SetStatus(*v)
+	}
 	return _c
 }
 
@@ -137,6 +165,14 @@ func (_c *RequestCreate) defaults() {
 		v := request.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.TvdbID(); !ok {
+		v := request.DefaultTvdbID
+		_c.mutation.SetTvdbID(v)
+	}
+	if _, ok := _c.mutation.Status(); !ok {
+		v := request.DefaultStatus
+		_c.mutation.SetStatus(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -164,8 +200,19 @@ func (_c *RequestCreate) check() error {
 	if _, ok := _c.mutation.TmdbID(); !ok {
 		return &ValidationError{Name: "tmdb_id", err: errors.New(`store: missing required field "Request.tmdb_id"`)}
 	}
+	if _, ok := _c.mutation.TvdbID(); !ok {
+		return &ValidationError{Name: "tvdb_id", err: errors.New(`store: missing required field "Request.tvdb_id"`)}
+	}
 	if _, ok := _c.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`store: missing required field "Request.name"`)}
+	}
+	if _, ok := _c.mutation.Status(); !ok {
+		return &ValidationError{Name: "status", err: errors.New(`store: missing required field "Request.status"`)}
+	}
+	if v, ok := _c.mutation.Status(); ok {
+		if err := request.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`store: validator failed for field "Request.status": %w`, err)}
+		}
 	}
 	if len(_c.mutation.UserIDs()) == 0 {
 		return &ValidationError{Name: "user", err: errors.New(`store: missing required edge "Request.user"`)}
@@ -226,9 +273,17 @@ func (_c *RequestCreate) createSpec() (*Request, *sqlgraph.CreateSpec) {
 		_spec.SetField(request.FieldTmdbID, field.TypeInt, value)
 		_node.TmdbID = value
 	}
+	if value, ok := _c.mutation.TvdbID(); ok {
+		_spec.SetField(request.FieldTvdbID, field.TypeInt, value)
+		_node.TvdbID = value
+	}
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(request.FieldName, field.TypeString, value)
 		_node.Name = value
+	}
+	if value, ok := _c.mutation.Status(); ok {
+		_spec.SetField(request.FieldStatus, field.TypeEnum, value)
+		_node.Status = value
 	}
 	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -377,6 +432,24 @@ func (u *RequestUpsert) AddTmdbID(v int) *RequestUpsert {
 	return u
 }
 
+// SetTvdbID sets the "tvdb_id" field.
+func (u *RequestUpsert) SetTvdbID(v int) *RequestUpsert {
+	u.Set(request.FieldTvdbID, v)
+	return u
+}
+
+// UpdateTvdbID sets the "tvdb_id" field to the value that was provided on create.
+func (u *RequestUpsert) UpdateTvdbID() *RequestUpsert {
+	u.SetExcluded(request.FieldTvdbID)
+	return u
+}
+
+// AddTvdbID adds v to the "tvdb_id" field.
+func (u *RequestUpsert) AddTvdbID(v int) *RequestUpsert {
+	u.Add(request.FieldTvdbID, v)
+	return u
+}
+
 // SetName sets the "name" field.
 func (u *RequestUpsert) SetName(v string) *RequestUpsert {
 	u.Set(request.FieldName, v)
@@ -386,6 +459,18 @@ func (u *RequestUpsert) SetName(v string) *RequestUpsert {
 // UpdateName sets the "name" field to the value that was provided on create.
 func (u *RequestUpsert) UpdateName() *RequestUpsert {
 	u.SetExcluded(request.FieldName)
+	return u
+}
+
+// SetStatus sets the "status" field.
+func (u *RequestUpsert) SetStatus(v request.Status) *RequestUpsert {
+	u.Set(request.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *RequestUpsert) UpdateStatus() *RequestUpsert {
+	u.SetExcluded(request.FieldStatus)
 	return u
 }
 
@@ -528,6 +613,27 @@ func (u *RequestUpsertOne) UpdateTmdbID() *RequestUpsertOne {
 	})
 }
 
+// SetTvdbID sets the "tvdb_id" field.
+func (u *RequestUpsertOne) SetTvdbID(v int) *RequestUpsertOne {
+	return u.Update(func(s *RequestUpsert) {
+		s.SetTvdbID(v)
+	})
+}
+
+// AddTvdbID adds v to the "tvdb_id" field.
+func (u *RequestUpsertOne) AddTvdbID(v int) *RequestUpsertOne {
+	return u.Update(func(s *RequestUpsert) {
+		s.AddTvdbID(v)
+	})
+}
+
+// UpdateTvdbID sets the "tvdb_id" field to the value that was provided on create.
+func (u *RequestUpsertOne) UpdateTvdbID() *RequestUpsertOne {
+	return u.Update(func(s *RequestUpsert) {
+		s.UpdateTvdbID()
+	})
+}
+
 // SetName sets the "name" field.
 func (u *RequestUpsertOne) SetName(v string) *RequestUpsertOne {
 	return u.Update(func(s *RequestUpsert) {
@@ -539,6 +645,20 @@ func (u *RequestUpsertOne) SetName(v string) *RequestUpsertOne {
 func (u *RequestUpsertOne) UpdateName() *RequestUpsertOne {
 	return u.Update(func(s *RequestUpsert) {
 		s.UpdateName()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *RequestUpsertOne) SetStatus(v request.Status) *RequestUpsertOne {
+	return u.Update(func(s *RequestUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *RequestUpsertOne) UpdateStatus() *RequestUpsertOne {
+	return u.Update(func(s *RequestUpsert) {
+		s.UpdateStatus()
 	})
 }
 
@@ -848,6 +968,27 @@ func (u *RequestUpsertBulk) UpdateTmdbID() *RequestUpsertBulk {
 	})
 }
 
+// SetTvdbID sets the "tvdb_id" field.
+func (u *RequestUpsertBulk) SetTvdbID(v int) *RequestUpsertBulk {
+	return u.Update(func(s *RequestUpsert) {
+		s.SetTvdbID(v)
+	})
+}
+
+// AddTvdbID adds v to the "tvdb_id" field.
+func (u *RequestUpsertBulk) AddTvdbID(v int) *RequestUpsertBulk {
+	return u.Update(func(s *RequestUpsert) {
+		s.AddTvdbID(v)
+	})
+}
+
+// UpdateTvdbID sets the "tvdb_id" field to the value that was provided on create.
+func (u *RequestUpsertBulk) UpdateTvdbID() *RequestUpsertBulk {
+	return u.Update(func(s *RequestUpsert) {
+		s.UpdateTvdbID()
+	})
+}
+
 // SetName sets the "name" field.
 func (u *RequestUpsertBulk) SetName(v string) *RequestUpsertBulk {
 	return u.Update(func(s *RequestUpsert) {
@@ -859,6 +1000,20 @@ func (u *RequestUpsertBulk) SetName(v string) *RequestUpsertBulk {
 func (u *RequestUpsertBulk) UpdateName() *RequestUpsertBulk {
 	return u.Update(func(s *RequestUpsert) {
 		s.UpdateName()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *RequestUpsertBulk) SetStatus(v request.Status) *RequestUpsertBulk {
+	return u.Update(func(s *RequestUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *RequestUpsertBulk) UpdateStatus() *RequestUpsertBulk {
+	return u.Update(func(s *RequestUpsert) {
+		s.UpdateStatus()
 	})
 }
 

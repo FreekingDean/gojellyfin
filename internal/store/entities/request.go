@@ -18,7 +18,9 @@ func (Request) Fields() []ent.Field {
 		field.String("key"),
 		field.Enum("kind").Values("Movie", "Series"),
 		field.Int("tmdb_id"),
+		field.Int("tvdb_id").Default(0),
 		field.String("name"),
+		field.Enum("status").Values("Pending", "Approved", "Declined").Default("Approved"),
 	)
 }
 

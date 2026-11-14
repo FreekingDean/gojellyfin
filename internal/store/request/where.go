@@ -81,6 +81,11 @@ func TmdbID(v int) predicate.Request {
 	return predicate.Request(sql.FieldEQ(FieldTmdbID, v))
 }
 
+// TvdbID applies equality check predicate on the "tvdb_id" field. It's identical to TvdbIDEQ.
+func TvdbID(v int) predicate.Request {
+	return predicate.Request(sql.FieldEQ(FieldTvdbID, v))
+}
+
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
 func Name(v string) predicate.Request {
 	return predicate.Request(sql.FieldEQ(FieldName, v))
@@ -311,6 +316,46 @@ func TmdbIDLTE(v int) predicate.Request {
 	return predicate.Request(sql.FieldLTE(FieldTmdbID, v))
 }
 
+// TvdbIDEQ applies the EQ predicate on the "tvdb_id" field.
+func TvdbIDEQ(v int) predicate.Request {
+	return predicate.Request(sql.FieldEQ(FieldTvdbID, v))
+}
+
+// TvdbIDNEQ applies the NEQ predicate on the "tvdb_id" field.
+func TvdbIDNEQ(v int) predicate.Request {
+	return predicate.Request(sql.FieldNEQ(FieldTvdbID, v))
+}
+
+// TvdbIDIn applies the In predicate on the "tvdb_id" field.
+func TvdbIDIn(vs ...int) predicate.Request {
+	return predicate.Request(sql.FieldIn(FieldTvdbID, vs...))
+}
+
+// TvdbIDNotIn applies the NotIn predicate on the "tvdb_id" field.
+func TvdbIDNotIn(vs ...int) predicate.Request {
+	return predicate.Request(sql.FieldNotIn(FieldTvdbID, vs...))
+}
+
+// TvdbIDGT applies the GT predicate on the "tvdb_id" field.
+func TvdbIDGT(v int) predicate.Request {
+	return predicate.Request(sql.FieldGT(FieldTvdbID, v))
+}
+
+// TvdbIDGTE applies the GTE predicate on the "tvdb_id" field.
+func TvdbIDGTE(v int) predicate.Request {
+	return predicate.Request(sql.FieldGTE(FieldTvdbID, v))
+}
+
+// TvdbIDLT applies the LT predicate on the "tvdb_id" field.
+func TvdbIDLT(v int) predicate.Request {
+	return predicate.Request(sql.FieldLT(FieldTvdbID, v))
+}
+
+// TvdbIDLTE applies the LTE predicate on the "tvdb_id" field.
+func TvdbIDLTE(v int) predicate.Request {
+	return predicate.Request(sql.FieldLTE(FieldTvdbID, v))
+}
+
 // NameEQ applies the EQ predicate on the "name" field.
 func NameEQ(v string) predicate.Request {
 	return predicate.Request(sql.FieldEQ(FieldName, v))
@@ -374,6 +419,26 @@ func NameEqualFold(v string) predicate.Request {
 // NameContainsFold applies the ContainsFold predicate on the "name" field.
 func NameContainsFold(v string) predicate.Request {
 	return predicate.Request(sql.FieldContainsFold(FieldName, v))
+}
+
+// StatusEQ applies the EQ predicate on the "status" field.
+func StatusEQ(v Status) predicate.Request {
+	return predicate.Request(sql.FieldEQ(FieldStatus, v))
+}
+
+// StatusNEQ applies the NEQ predicate on the "status" field.
+func StatusNEQ(v Status) predicate.Request {
+	return predicate.Request(sql.FieldNEQ(FieldStatus, v))
+}
+
+// StatusIn applies the In predicate on the "status" field.
+func StatusIn(vs ...Status) predicate.Request {
+	return predicate.Request(sql.FieldIn(FieldStatus, vs...))
+}
+
+// StatusNotIn applies the NotIn predicate on the "status" field.
+func StatusNotIn(vs ...Status) predicate.Request {
+	return predicate.Request(sql.FieldNotIn(FieldStatus, vs...))
 }
 
 // HasUser applies the HasEdge predicate on the "user" edge.

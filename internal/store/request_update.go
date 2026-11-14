@@ -113,6 +113,27 @@ func (_u *RequestUpdate) AddTmdbID(v int) *RequestUpdate {
 	return _u
 }
 
+// SetTvdbID sets the "tvdb_id" field.
+func (_u *RequestUpdate) SetTvdbID(v int) *RequestUpdate {
+	_u.mutation.ResetTvdbID()
+	_u.mutation.SetTvdbID(v)
+	return _u
+}
+
+// SetNillableTvdbID sets the "tvdb_id" field if the given value is not nil.
+func (_u *RequestUpdate) SetNillableTvdbID(v *int) *RequestUpdate {
+	if v != nil {
+		_u.SetTvdbID(*v)
+	}
+	return _u
+}
+
+// AddTvdbID adds value to the "tvdb_id" field.
+func (_u *RequestUpdate) AddTvdbID(v int) *RequestUpdate {
+	_u.mutation.AddTvdbID(v)
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *RequestUpdate) SetName(v string) *RequestUpdate {
 	_u.mutation.SetName(v)
@@ -123,6 +144,20 @@ func (_u *RequestUpdate) SetName(v string) *RequestUpdate {
 func (_u *RequestUpdate) SetNillableName(v *string) *RequestUpdate {
 	if v != nil {
 		_u.SetName(*v)
+	}
+	return _u
+}
+
+// SetStatus sets the "status" field.
+func (_u *RequestUpdate) SetStatus(v request.Status) *RequestUpdate {
+	_u.mutation.SetStatus(v)
+	return _u
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (_u *RequestUpdate) SetNillableStatus(v *request.Status) *RequestUpdate {
+	if v != nil {
+		_u.SetStatus(*v)
 	}
 	return _u
 }
@@ -186,6 +221,11 @@ func (_u *RequestUpdate) check() error {
 			return &ValidationError{Name: "kind", err: fmt.Errorf(`store: validator failed for field "Request.kind": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Status(); ok {
+		if err := request.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`store: validator failed for field "Request.status": %w`, err)}
+		}
+	}
 	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
 		return errors.New(`store: clearing a required unique edge "Request.user"`)
 	}
@@ -222,8 +262,17 @@ func (_u *RequestUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.AddedTmdbID(); ok {
 		_spec.AddField(request.FieldTmdbID, field.TypeInt, value)
 	}
+	if value, ok := _u.mutation.TvdbID(); ok {
+		_spec.SetField(request.FieldTvdbID, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedTvdbID(); ok {
+		_spec.AddField(request.FieldTvdbID, field.TypeInt, value)
+	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(request.FieldName, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Status(); ok {
+		_spec.SetField(request.FieldStatus, field.TypeEnum, value)
 	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -357,6 +406,27 @@ func (_u *RequestUpdateOne) AddTmdbID(v int) *RequestUpdateOne {
 	return _u
 }
 
+// SetTvdbID sets the "tvdb_id" field.
+func (_u *RequestUpdateOne) SetTvdbID(v int) *RequestUpdateOne {
+	_u.mutation.ResetTvdbID()
+	_u.mutation.SetTvdbID(v)
+	return _u
+}
+
+// SetNillableTvdbID sets the "tvdb_id" field if the given value is not nil.
+func (_u *RequestUpdateOne) SetNillableTvdbID(v *int) *RequestUpdateOne {
+	if v != nil {
+		_u.SetTvdbID(*v)
+	}
+	return _u
+}
+
+// AddTvdbID adds value to the "tvdb_id" field.
+func (_u *RequestUpdateOne) AddTvdbID(v int) *RequestUpdateOne {
+	_u.mutation.AddTvdbID(v)
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *RequestUpdateOne) SetName(v string) *RequestUpdateOne {
 	_u.mutation.SetName(v)
@@ -367,6 +437,20 @@ func (_u *RequestUpdateOne) SetName(v string) *RequestUpdateOne {
 func (_u *RequestUpdateOne) SetNillableName(v *string) *RequestUpdateOne {
 	if v != nil {
 		_u.SetName(*v)
+	}
+	return _u
+}
+
+// SetStatus sets the "status" field.
+func (_u *RequestUpdateOne) SetStatus(v request.Status) *RequestUpdateOne {
+	_u.mutation.SetStatus(v)
+	return _u
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (_u *RequestUpdateOne) SetNillableStatus(v *request.Status) *RequestUpdateOne {
+	if v != nil {
+		_u.SetStatus(*v)
 	}
 	return _u
 }
@@ -443,6 +527,11 @@ func (_u *RequestUpdateOne) check() error {
 			return &ValidationError{Name: "kind", err: fmt.Errorf(`store: validator failed for field "Request.kind": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Status(); ok {
+		if err := request.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`store: validator failed for field "Request.status": %w`, err)}
+		}
+	}
 	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
 		return errors.New(`store: clearing a required unique edge "Request.user"`)
 	}
@@ -496,8 +585,17 @@ func (_u *RequestUpdateOne) sqlSave(ctx context.Context) (_node *Request, err er
 	if value, ok := _u.mutation.AddedTmdbID(); ok {
 		_spec.AddField(request.FieldTmdbID, field.TypeInt, value)
 	}
+	if value, ok := _u.mutation.TvdbID(); ok {
+		_spec.SetField(request.FieldTvdbID, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedTvdbID(); ok {
+		_spec.AddField(request.FieldTvdbID, field.TypeInt, value)
+	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(request.FieldName, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Status(); ok {
+		_spec.SetField(request.FieldStatus, field.TypeEnum, value)
 	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -515,6 +515,10 @@ func init() {
 	request.DefaultUpdatedAt = requestDescUpdatedAt.Default.(func() time.Time)
 	// request.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	request.UpdateDefaultUpdatedAt = requestDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// requestDescTvdbID is the schema descriptor for tvdb_id field.
+	requestDescTvdbID := requestFields[7].Descriptor()
+	// request.DefaultTvdbID holds the default value on creation for the tvdb_id field.
+	request.DefaultTvdbID = requestDescTvdbID.Default.(int)
 	requestsubmissionFields := entities.RequestSubmission{}.Fields()
 	_ = requestsubmissionFields
 	// requestsubmissionDescCreatedAt is the schema descriptor for created_at field.
@@ -587,6 +591,14 @@ func init() {
 	user.DefaultUpdatedAt = userDescUpdatedAt.Default.(func() time.Time)
 	// user.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	user.UpdateDefaultUpdatedAt = userDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// userDescCanRequest is the schema descriptor for can_request field.
+	userDescCanRequest := userFields[10].Descriptor()
+	// user.DefaultCanRequest holds the default value on creation for the can_request field.
+	user.DefaultCanRequest = userDescCanRequest.Default.(bool)
+	// userDescRequestsNeedApproval is the schema descriptor for requests_need_approval field.
+	userDescRequestsNeedApproval := userFields[11].Descriptor()
+	// user.DefaultRequestsNeedApproval holds the default value on creation for the requests_need_approval field.
+	user.DefaultRequestsNeedApproval = userDescRequestsNeedApproval.Default.(bool)
 	userconfigurationFields := entities.UserConfiguration{}.Fields()
 	_ = userconfigurationFields
 	// userconfigurationDescCreatedAt is the schema descriptor for created_at field.

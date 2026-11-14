@@ -181,6 +181,61 @@ func (_u *UserUpdate) ClearOidcSubject() *UserUpdate {
 	return _u
 }
 
+// SetCanRequest sets the "can_request" field.
+func (_u *UserUpdate) SetCanRequest(v bool) *UserUpdate {
+	_u.mutation.SetCanRequest(v)
+	return _u
+}
+
+// SetNillableCanRequest sets the "can_request" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableCanRequest(v *bool) *UserUpdate {
+	if v != nil {
+		_u.SetCanRequest(*v)
+	}
+	return _u
+}
+
+// SetRequestsNeedApproval sets the "requests_need_approval" field.
+func (_u *UserUpdate) SetRequestsNeedApproval(v bool) *UserUpdate {
+	_u.mutation.SetRequestsNeedApproval(v)
+	return _u
+}
+
+// SetNillableRequestsNeedApproval sets the "requests_need_approval" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableRequestsNeedApproval(v *bool) *UserUpdate {
+	if v != nil {
+		_u.SetRequestsNeedApproval(*v)
+	}
+	return _u
+}
+
+// SetRequestQuota sets the "request_quota" field.
+func (_u *UserUpdate) SetRequestQuota(v int) *UserUpdate {
+	_u.mutation.ResetRequestQuota()
+	_u.mutation.SetRequestQuota(v)
+	return _u
+}
+
+// SetNillableRequestQuota sets the "request_quota" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableRequestQuota(v *int) *UserUpdate {
+	if v != nil {
+		_u.SetRequestQuota(*v)
+	}
+	return _u
+}
+
+// AddRequestQuota adds value to the "request_quota" field.
+func (_u *UserUpdate) AddRequestQuota(v int) *UserUpdate {
+	_u.mutation.AddRequestQuota(v)
+	return _u
+}
+
+// ClearRequestQuota clears the value of the "request_quota" field.
+func (_u *UserUpdate) ClearRequestQuota() *UserUpdate {
+	_u.mutation.ClearRequestQuota()
+	return _u
+}
+
 // SetConfigurationID sets the "configuration" edge to the UserConfiguration entity by ID.
 func (_u *UserUpdate) SetConfigurationID(id uuid.UUID) *UserUpdate {
 	_u.mutation.SetConfigurationID(id)
@@ -607,6 +662,21 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.OidcSubjectCleared() {
 		_spec.ClearField(user.FieldOidcSubject, field.TypeString)
+	}
+	if value, ok := _u.mutation.CanRequest(); ok {
+		_spec.SetField(user.FieldCanRequest, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.RequestsNeedApproval(); ok {
+		_spec.SetField(user.FieldRequestsNeedApproval, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.RequestQuota(); ok {
+		_spec.SetField(user.FieldRequestQuota, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedRequestQuota(); ok {
+		_spec.AddField(user.FieldRequestQuota, field.TypeInt, value)
+	}
+	if _u.mutation.RequestQuotaCleared() {
+		_spec.ClearField(user.FieldRequestQuota, field.TypeInt)
 	}
 	if _u.mutation.ConfigurationCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1188,6 +1258,61 @@ func (_u *UserUpdateOne) ClearOidcSubject() *UserUpdateOne {
 	return _u
 }
 
+// SetCanRequest sets the "can_request" field.
+func (_u *UserUpdateOne) SetCanRequest(v bool) *UserUpdateOne {
+	_u.mutation.SetCanRequest(v)
+	return _u
+}
+
+// SetNillableCanRequest sets the "can_request" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableCanRequest(v *bool) *UserUpdateOne {
+	if v != nil {
+		_u.SetCanRequest(*v)
+	}
+	return _u
+}
+
+// SetRequestsNeedApproval sets the "requests_need_approval" field.
+func (_u *UserUpdateOne) SetRequestsNeedApproval(v bool) *UserUpdateOne {
+	_u.mutation.SetRequestsNeedApproval(v)
+	return _u
+}
+
+// SetNillableRequestsNeedApproval sets the "requests_need_approval" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableRequestsNeedApproval(v *bool) *UserUpdateOne {
+	if v != nil {
+		_u.SetRequestsNeedApproval(*v)
+	}
+	return _u
+}
+
+// SetRequestQuota sets the "request_quota" field.
+func (_u *UserUpdateOne) SetRequestQuota(v int) *UserUpdateOne {
+	_u.mutation.ResetRequestQuota()
+	_u.mutation.SetRequestQuota(v)
+	return _u
+}
+
+// SetNillableRequestQuota sets the "request_quota" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableRequestQuota(v *int) *UserUpdateOne {
+	if v != nil {
+		_u.SetRequestQuota(*v)
+	}
+	return _u
+}
+
+// AddRequestQuota adds value to the "request_quota" field.
+func (_u *UserUpdateOne) AddRequestQuota(v int) *UserUpdateOne {
+	_u.mutation.AddRequestQuota(v)
+	return _u
+}
+
+// ClearRequestQuota clears the value of the "request_quota" field.
+func (_u *UserUpdateOne) ClearRequestQuota() *UserUpdateOne {
+	_u.mutation.ClearRequestQuota()
+	return _u
+}
+
 // SetConfigurationID sets the "configuration" edge to the UserConfiguration entity by ID.
 func (_u *UserUpdateOne) SetConfigurationID(id uuid.UUID) *UserUpdateOne {
 	_u.mutation.SetConfigurationID(id)
@@ -1644,6 +1769,21 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	}
 	if _u.mutation.OidcSubjectCleared() {
 		_spec.ClearField(user.FieldOidcSubject, field.TypeString)
+	}
+	if value, ok := _u.mutation.CanRequest(); ok {
+		_spec.SetField(user.FieldCanRequest, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.RequestsNeedApproval(); ok {
+		_spec.SetField(user.FieldRequestsNeedApproval, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.RequestQuota(); ok {
+		_spec.SetField(user.FieldRequestQuota, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedRequestQuota(); ok {
+		_spec.AddField(user.FieldRequestQuota, field.TypeInt, value)
+	}
+	if _u.mutation.RequestQuotaCleared() {
+		_spec.ClearField(user.FieldRequestQuota, field.TypeInt)
 	}
 	if _u.mutation.ConfigurationCleared() {
 		edge := &sqlgraph.EdgeSpec{

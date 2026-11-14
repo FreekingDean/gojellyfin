@@ -22426,7 +22426,10 @@ type RequestMutation struct {
 	kind          *request.Kind
 	tmdb_id       *int
 	addtmdb_id    *int
+	tvdb_id       *int
+	addtvdb_id    *int
 	name          *string
+	status        *request.Status
 	clearedFields map[string]struct{}
 	user          *uuid.UUID
 	cleareduser   bool
@@ -22775,6 +22778,62 @@ func (m *RequestMutation) ResetTmdbID() {
 	m.addtmdb_id = nil
 }
 
+// SetTvdbID sets the "tvdb_id" field.
+func (m *RequestMutation) SetTvdbID(i int) {
+	m.tvdb_id = &i
+	m.addtvdb_id = nil
+}
+
+// TvdbID returns the value of the "tvdb_id" field in the mutation.
+func (m *RequestMutation) TvdbID() (r int, exists bool) {
+	v := m.tvdb_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTvdbID returns the old "tvdb_id" field's value of the Request entity.
+// If the Request object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RequestMutation) OldTvdbID(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTvdbID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTvdbID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTvdbID: %w", err)
+	}
+	return oldValue.TvdbID, nil
+}
+
+// AddTvdbID adds i to the "tvdb_id" field.
+func (m *RequestMutation) AddTvdbID(i int) {
+	if m.addtvdb_id != nil {
+		*m.addtvdb_id += i
+	} else {
+		m.addtvdb_id = &i
+	}
+}
+
+// AddedTvdbID returns the value that was added to the "tvdb_id" field in this mutation.
+func (m *RequestMutation) AddedTvdbID() (r int, exists bool) {
+	v := m.addtvdb_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTvdbID resets all changes to the "tvdb_id" field.
+func (m *RequestMutation) ResetTvdbID() {
+	m.tvdb_id = nil
+	m.addtvdb_id = nil
+}
+
 // SetName sets the "name" field.
 func (m *RequestMutation) SetName(s string) {
 	m.name = &s
@@ -22809,6 +22868,42 @@ func (m *RequestMutation) OldName(ctx context.Context) (v string, err error) {
 // ResetName resets all changes to the "name" field.
 func (m *RequestMutation) ResetName() {
 	m.name = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *RequestMutation) SetStatus(r request.Status) {
+	m.status = &r
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *RequestMutation) Status() (r request.Status, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the Request entity.
+// If the Request object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RequestMutation) OldStatus(ctx context.Context) (v request.Status, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *RequestMutation) ResetStatus() {
+	m.status = nil
 }
 
 // ClearUser clears the "user" edge to the User entity.
@@ -22872,7 +22967,7 @@ func (m *RequestMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RequestMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, request.FieldCreatedAt)
 	}
@@ -22891,8 +22986,14 @@ func (m *RequestMutation) Fields() []string {
 	if m.tmdb_id != nil {
 		fields = append(fields, request.FieldTmdbID)
 	}
+	if m.tvdb_id != nil {
+		fields = append(fields, request.FieldTvdbID)
+	}
 	if m.name != nil {
 		fields = append(fields, request.FieldName)
+	}
+	if m.status != nil {
+		fields = append(fields, request.FieldStatus)
 	}
 	return fields
 }
@@ -22914,8 +23015,12 @@ func (m *RequestMutation) Field(name string) (ent.Value, bool) {
 		return m.Kind()
 	case request.FieldTmdbID:
 		return m.TmdbID()
+	case request.FieldTvdbID:
+		return m.TvdbID()
 	case request.FieldName:
 		return m.Name()
+	case request.FieldStatus:
+		return m.Status()
 	}
 	return nil, false
 }
@@ -22937,8 +23042,12 @@ func (m *RequestMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldKind(ctx)
 	case request.FieldTmdbID:
 		return m.OldTmdbID(ctx)
+	case request.FieldTvdbID:
+		return m.OldTvdbID(ctx)
 	case request.FieldName:
 		return m.OldName(ctx)
+	case request.FieldStatus:
+		return m.OldStatus(ctx)
 	}
 	return nil, fmt.Errorf("unknown Request field %s", name)
 }
@@ -22990,12 +23099,26 @@ func (m *RequestMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetTmdbID(v)
 		return nil
+	case request.FieldTvdbID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTvdbID(v)
+		return nil
 	case request.FieldName:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetName(v)
+		return nil
+	case request.FieldStatus:
+		v, ok := value.(request.Status)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Request field %s", name)
@@ -23008,6 +23131,9 @@ func (m *RequestMutation) AddedFields() []string {
 	if m.addtmdb_id != nil {
 		fields = append(fields, request.FieldTmdbID)
 	}
+	if m.addtvdb_id != nil {
+		fields = append(fields, request.FieldTvdbID)
+	}
 	return fields
 }
 
@@ -23018,6 +23144,8 @@ func (m *RequestMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case request.FieldTmdbID:
 		return m.AddedTmdbID()
+	case request.FieldTvdbID:
+		return m.AddedTvdbID()
 	}
 	return nil, false
 }
@@ -23033,6 +23161,13 @@ func (m *RequestMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddTmdbID(v)
+		return nil
+	case request.FieldTvdbID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTvdbID(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Request numeric field %s", name)
@@ -23079,8 +23214,14 @@ func (m *RequestMutation) ResetField(name string) error {
 	case request.FieldTmdbID:
 		m.ResetTmdbID()
 		return nil
+	case request.FieldTvdbID:
+		m.ResetTvdbID()
+		return nil
 	case request.FieldName:
 		m.ResetName()
+		return nil
+	case request.FieldStatus:
+		m.ResetStatus()
 		return nil
 	}
 	return fmt.Errorf("unknown Request field %s", name)
@@ -27300,6 +27441,10 @@ type UserMutation struct {
 	last_activity_at              *time.Time
 	oidc_issuer                   *string
 	oidc_subject                  *string
+	can_request                   *bool
+	requests_need_approval        *bool
+	request_quota                 *int
+	addrequest_quota              *int
 	clearedFields                 map[string]struct{}
 	configuration                 *uuid.UUID
 	clearedconfiguration          bool
@@ -27812,6 +27957,148 @@ func (m *UserMutation) OidcSubjectCleared() bool {
 func (m *UserMutation) ResetOidcSubject() {
 	m.oidc_subject = nil
 	delete(m.clearedFields, user.FieldOidcSubject)
+}
+
+// SetCanRequest sets the "can_request" field.
+func (m *UserMutation) SetCanRequest(b bool) {
+	m.can_request = &b
+}
+
+// CanRequest returns the value of the "can_request" field in the mutation.
+func (m *UserMutation) CanRequest() (r bool, exists bool) {
+	v := m.can_request
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCanRequest returns the old "can_request" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldCanRequest(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCanRequest is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCanRequest requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCanRequest: %w", err)
+	}
+	return oldValue.CanRequest, nil
+}
+
+// ResetCanRequest resets all changes to the "can_request" field.
+func (m *UserMutation) ResetCanRequest() {
+	m.can_request = nil
+}
+
+// SetRequestsNeedApproval sets the "requests_need_approval" field.
+func (m *UserMutation) SetRequestsNeedApproval(b bool) {
+	m.requests_need_approval = &b
+}
+
+// RequestsNeedApproval returns the value of the "requests_need_approval" field in the mutation.
+func (m *UserMutation) RequestsNeedApproval() (r bool, exists bool) {
+	v := m.requests_need_approval
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRequestsNeedApproval returns the old "requests_need_approval" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldRequestsNeedApproval(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRequestsNeedApproval is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRequestsNeedApproval requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRequestsNeedApproval: %w", err)
+	}
+	return oldValue.RequestsNeedApproval, nil
+}
+
+// ResetRequestsNeedApproval resets all changes to the "requests_need_approval" field.
+func (m *UserMutation) ResetRequestsNeedApproval() {
+	m.requests_need_approval = nil
+}
+
+// SetRequestQuota sets the "request_quota" field.
+func (m *UserMutation) SetRequestQuota(i int) {
+	m.request_quota = &i
+	m.addrequest_quota = nil
+}
+
+// RequestQuota returns the value of the "request_quota" field in the mutation.
+func (m *UserMutation) RequestQuota() (r int, exists bool) {
+	v := m.request_quota
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRequestQuota returns the old "request_quota" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldRequestQuota(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRequestQuota is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRequestQuota requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRequestQuota: %w", err)
+	}
+	return oldValue.RequestQuota, nil
+}
+
+// AddRequestQuota adds i to the "request_quota" field.
+func (m *UserMutation) AddRequestQuota(i int) {
+	if m.addrequest_quota != nil {
+		*m.addrequest_quota += i
+	} else {
+		m.addrequest_quota = &i
+	}
+}
+
+// AddedRequestQuota returns the value that was added to the "request_quota" field in this mutation.
+func (m *UserMutation) AddedRequestQuota() (r int, exists bool) {
+	v := m.addrequest_quota
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearRequestQuota clears the value of the "request_quota" field.
+func (m *UserMutation) ClearRequestQuota() {
+	m.request_quota = nil
+	m.addrequest_quota = nil
+	m.clearedFields[user.FieldRequestQuota] = struct{}{}
+}
+
+// RequestQuotaCleared returns if the "request_quota" field was cleared in this mutation.
+func (m *UserMutation) RequestQuotaCleared() bool {
+	_, ok := m.clearedFields[user.FieldRequestQuota]
+	return ok
+}
+
+// ResetRequestQuota resets all changes to the "request_quota" field.
+func (m *UserMutation) ResetRequestQuota() {
+	m.request_quota = nil
+	m.addrequest_quota = nil
+	delete(m.clearedFields, user.FieldRequestQuota)
 }
 
 // SetConfigurationID sets the "configuration" edge to the UserConfiguration entity by id.
@@ -28358,7 +28645,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 12)
 	if m.created_at != nil {
 		fields = append(fields, user.FieldCreatedAt)
 	}
@@ -28386,6 +28673,15 @@ func (m *UserMutation) Fields() []string {
 	if m.oidc_subject != nil {
 		fields = append(fields, user.FieldOidcSubject)
 	}
+	if m.can_request != nil {
+		fields = append(fields, user.FieldCanRequest)
+	}
+	if m.requests_need_approval != nil {
+		fields = append(fields, user.FieldRequestsNeedApproval)
+	}
+	if m.request_quota != nil {
+		fields = append(fields, user.FieldRequestQuota)
+	}
 	return fields
 }
 
@@ -28412,6 +28708,12 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.OidcIssuer()
 	case user.FieldOidcSubject:
 		return m.OidcSubject()
+	case user.FieldCanRequest:
+		return m.CanRequest()
+	case user.FieldRequestsNeedApproval:
+		return m.RequestsNeedApproval()
+	case user.FieldRequestQuota:
+		return m.RequestQuota()
 	}
 	return nil, false
 }
@@ -28439,6 +28741,12 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldOidcIssuer(ctx)
 	case user.FieldOidcSubject:
 		return m.OldOidcSubject(ctx)
+	case user.FieldCanRequest:
+		return m.OldCanRequest(ctx)
+	case user.FieldRequestsNeedApproval:
+		return m.OldRequestsNeedApproval(ctx)
+	case user.FieldRequestQuota:
+		return m.OldRequestQuota(ctx)
 	}
 	return nil, fmt.Errorf("unknown User field %s", name)
 }
@@ -28511,6 +28819,27 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetOidcSubject(v)
 		return nil
+	case user.FieldCanRequest:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCanRequest(v)
+		return nil
+	case user.FieldRequestsNeedApproval:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRequestsNeedApproval(v)
+		return nil
+	case user.FieldRequestQuota:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRequestQuota(v)
+		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)
 }
@@ -28518,13 +28847,21 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *UserMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addrequest_quota != nil {
+		fields = append(fields, user.FieldRequestQuota)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *UserMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case user.FieldRequestQuota:
+		return m.AddedRequestQuota()
+	}
 	return nil, false
 }
 
@@ -28533,6 +28870,13 @@ func (m *UserMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *UserMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case user.FieldRequestQuota:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRequestQuota(v)
+		return nil
 	}
 	return fmt.Errorf("unknown User numeric field %s", name)
 }
@@ -28552,6 +28896,9 @@ func (m *UserMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(user.FieldOidcSubject) {
 		fields = append(fields, user.FieldOidcSubject)
+	}
+	if m.FieldCleared(user.FieldRequestQuota) {
+		fields = append(fields, user.FieldRequestQuota)
 	}
 	return fields
 }
@@ -28578,6 +28925,9 @@ func (m *UserMutation) ClearField(name string) error {
 		return nil
 	case user.FieldOidcSubject:
 		m.ClearOidcSubject()
+		return nil
+	case user.FieldRequestQuota:
+		m.ClearRequestQuota()
 		return nil
 	}
 	return fmt.Errorf("unknown User nullable field %s", name)
@@ -28613,6 +28963,15 @@ func (m *UserMutation) ResetField(name string) error {
 		return nil
 	case user.FieldOidcSubject:
 		m.ResetOidcSubject()
+		return nil
+	case user.FieldCanRequest:
+		m.ResetCanRequest()
+		return nil
+	case user.FieldRequestsNeedApproval:
+		m.ResetRequestsNeedApproval()
+		return nil
+	case user.FieldRequestQuota:
+		m.ResetRequestQuota()
 		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)

@@ -27,8 +27,12 @@ const (
 	FieldKind = "kind"
 	// FieldTmdbID holds the string denoting the tmdb_id field in the database.
 	FieldTmdbID = "tmdb_id"
+	// FieldTvdbID holds the string denoting the tvdb_id field in the database.
+	FieldTvdbID = "tvdb_id"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
+	// FieldStatus holds the string denoting the status field in the database.
+	FieldStatus = "status"
 	// EdgeUser holds the string denoting the user edge name in mutations.
 	EdgeUser = "user"
 	// Table holds the table name of the request in the database.
@@ -51,7 +55,9 @@ var Columns = []string{
 	FieldKey,
 	FieldKind,
 	FieldTmdbID,
+	FieldTvdbID,
 	FieldName,
+	FieldStatus,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -71,6 +77,8 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultTvdbID holds the default value on creation for the "tvdb_id" field.
+	DefaultTvdbID int
 )
 
 // Kind defines the type for the "kind" enum field.
@@ -93,6 +101,33 @@ func KindValidator(k Kind) error {
 		return nil
 	default:
 		return fmt.Errorf("request: invalid enum value for kind field: %q", k)
+	}
+}
+
+// Status defines the type for the "status" enum field.
+type Status string
+
+// StatusApproved is the default value of the Status enum.
+const DefaultStatus = StatusApproved
+
+// Status values.
+const (
+	StatusPending  Status = "Pending"
+	StatusApproved Status = "Approved"
+	StatusDeclined Status = "Declined"
+)
+
+func (s Status) String() string {
+	return string(s)
+}
+
+// StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
+func StatusValidator(s Status) error {
+	switch s {
+	case StatusPending, StatusApproved, StatusDeclined:
+		return nil
+	default:
+		return fmt.Errorf("request: invalid enum value for status field: %q", s)
 	}
 }
 
@@ -134,9 +169,19 @@ func ByTmdbID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTmdbID, opts...).ToFunc()
 }
 
+// ByTvdbID orders the results by the tvdb_id field.
+func ByTvdbID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTvdbID, opts...).ToFunc()
+}
+
 // ByName orders the results by the name field.
 func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// ByStatus orders the results by the status field.
+func ByStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStatus, opts...).ToFunc()
 }
 
 // ByUserField orders the results by user field.

@@ -698,7 +698,9 @@ var (
 		{Name: "key", Type: field.TypeString},
 		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Movie", "Series"}},
 		{Name: "tmdb_id", Type: field.TypeInt},
+		{Name: "tvdb_id", Type: field.TypeInt, Default: 0},
 		{Name: "name", Type: field.TypeString},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"Pending", "Approved", "Declined"}, Default: "Approved"},
 		{Name: "user_id", Type: field.TypeUUID},
 	}
 	// RequestsTable holds the schema information for the "requests" table.
@@ -709,7 +711,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "requests_users_requests",
-				Columns:    []*schema.Column{RequestsColumns[7]},
+				Columns:    []*schema.Column{RequestsColumns[9]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -718,7 +720,7 @@ var (
 			{
 				Name:    "request_user_id_key",
 				Unique:  true,
-				Columns: []*schema.Column{RequestsColumns[7], RequestsColumns[3]},
+				Columns: []*schema.Column{RequestsColumns[9], RequestsColumns[3]},
 			},
 			{
 				Name:    "request_key",
@@ -872,6 +874,9 @@ var (
 		{Name: "last_activity_at", Type: field.TypeTime, Nullable: true},
 		{Name: "oidc_issuer", Type: field.TypeString, Nullable: true},
 		{Name: "oidc_subject", Type: field.TypeString, Nullable: true},
+		{Name: "can_request", Type: field.TypeBool, Default: true},
+		{Name: "requests_need_approval", Type: field.TypeBool, Default: false},
+		{Name: "request_quota", Type: field.TypeInt, Nullable: true},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
