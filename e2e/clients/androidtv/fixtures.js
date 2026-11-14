@@ -54,19 +54,13 @@ const test = base.extend({
   },
 
   signedIn: async ({ tv, harness: app }, use) => {
-    tv.stop(PACKAGE);
-    tv.start(ACTIVITY);
-
-    const landed = await tv.waitForAny(
-      {
-        home: { label: app.library },
-        servers: { id: 'enter_server_address' },
-        users: { id: 'add_user_button' },
-        login: { id: 'login_method' },
-      },
-      { timeout: 90000 },
-    );
-    if (landed.name !== 'home') {
+    const landed = await launch(tv, {
+      home: { label: app.library },
+      servers: { id: 'enter_server_address' },
+      users: { id: 'add_user_button' },
+      login: { id: 'login_method' },
+    });
+    if (landed !== 'home') {
       await freshStart(tv);
       await connect(tv, app);
       await openSignIn(tv, app);
@@ -78,11 +72,26 @@ const test = base.extend({
   },
 });
 
+// The emulator's launcher draws a tutorial over whatever is in front of it
+// the first few times it is seen, so one that turns up is dismissed and the
+// app is brought back.
+async function launch(tv, screens) {
+  for (let attempt = 0; ; attempt++) {
+    tv.start(ACTIVITY);
+    const landed = await tv.waitForAny({ ...screens, tutorial: { id: 'tutorial_negative_action' } }, { timeout: 90000 });
+    if (landed.name !== 'tutorial') {
+      return landed.name;
+    }
+    if (attempt === 3) {
+      throw new Error('the launcher tutorial would not go away');
+    }
+    await tv.press(landed.node);
+  }
+}
+
 async function freshStart(tv) {
-  tv.stop(PACKAGE);
   tv.clear(PACKAGE);
-  tv.start(ACTIVITY);
-  await tv.waitFor({ id: 'enter_server_address' }, { timeout: 90000 });
+  await launch(tv, { servers: { id: 'enter_server_address' } });
 }
 
 async function connect(tv, app) {
@@ -96,7 +105,7 @@ async function connect(tv, app) {
 // does not offers only "Add account". Either leads to the same sign-in.
 async function openSignIn(tv, app) {
   const [card] = tv.find({ label: app.username });
-  tv.tap(card || (await tv.waitFor({ id: 'add_user_button' })));
+  await tv.press(card || (await tv.waitFor({ id: 'add_user_button' })));
 
   return tv.waitForAny({ quickConnect: { id: 'quick_connect_code' }, password: { id: 'password' } });
 }
@@ -104,7 +113,7 @@ async function openSignIn(tv, app) {
 async function signInWithPassword(tv, app) {
   const [toggle] = tv.find({ id: 'use_credentials' });
   if (toggle) {
-    tv.tap(toggle);
+    await tv.press(toggle);
   }
 
   await tv.waitFor({ id: 'password' });
@@ -119,7 +128,7 @@ async function signInWithPassword(tv, app) {
 async function quickConnectCode(tv) {
   const [toggle] = tv.find({ id: 'use_quickconnect' });
   if (toggle && !tv.find({ id: 'quick_connect_code' }).length) {
-    tv.tap(toggle);
+    await tv.press(toggle);
   }
 
   const shown = await tv.waitFor({ id: 'quick_connect_code', text: /^\d{3} \d{3}$/ }, { timeout: 30000 });

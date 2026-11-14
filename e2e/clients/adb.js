@@ -105,9 +105,29 @@ function device(serial = process.env.ANDROID_SERIAL) {
     shell(`input tap ${Math.round((x1 + x2) / 2)} ${Math.round((y1 + y2) / 2)}`);
   }
 
+  // A view that takes focus in touch mode spends the first tap on taking it,
+  // which is most of a television app, so a tap that only moved the focus
+  // onto its target is finished with the remote's centre key.
+  async function press(node) {
+    tap(node);
+    await sleep(800);
+
+    const [x1, y1, x2, y2] = node.bounds;
+    const x = (x1 + x2) / 2;
+    const y = (y1 + y2) / 2;
+    const nodes = dump();
+    const still = nodes.some((other) => other.bounds.join() === node.bounds.join() && other.text === node.text && other.id === node.id);
+    const focused = nodes.some(
+      (other) => other.focused && other.bounds[0] <= x && x <= other.bounds[2] && other.bounds[1] <= y && y <= other.bounds[3],
+    );
+    if (still && focused) {
+      key('center');
+    }
+  }
+
   async function tapOn(matcher, options) {
     const node = await waitFor(matcher, options);
-    tap(node);
+    await press(node);
 
     return node;
   }
@@ -168,6 +188,7 @@ function device(serial = process.env.ANDROID_SERIAL) {
     waitFor,
     waitForAny,
     tap,
+    press,
     tapOn,
     key,
     type,
@@ -180,7 +201,7 @@ function device(serial = process.env.ANDROID_SERIAL) {
     reverse: (port) => adb(['reverse', `tcp:${port}`, `tcp:${port}`]),
     clear: (app) => shell(`pm clear ${app}`),
     stop: (app) => shell(`am force-stop ${app}`),
-    start: (component) => shell(`am start -W -n ${component}`),
+    start: (component) => shell(`am start -S -W -n ${component}`),
     clearLog: () => adb(['logcat', '-c'], { allowFailure: true }),
   };
 }
