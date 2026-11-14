@@ -2,6 +2,7 @@ package branding
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/FreekingDean/gojellyfin/internal/config"
@@ -9,10 +10,17 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
 	"github.com/FreekingDean/gojellyfin/internal/server/link"
+	"github.com/FreekingDean/gojellyfin/internal/shelves"
 	"github.com/FreekingDean/gojellyfin/internal/sso"
 )
 
 const signOnButton = `<form action="/sso/oidc/start" method="get" style="margin-top:1em"><button is="emby-button" type="submit" class="raised block emby-button button-submit">Sign in with SSO</button></form>`
+
+const shelfTitle = `
+a.sectionTitleTextButton[href*="%[1]s"]>h2.sectionTitle{text-indent:-9999px;line-height:0}
+a.sectionTitleTextButton[href*="%[1]s"]>h2.sectionTitle::after{content:"%[2]s";display:block;text-indent:0;line-height:normal}`
+
+var cssString = strings.NewReplacer(`\`, `\\`, `"`, `\"`, "\n", " ")
 
 type SignOn interface {
 	Enabled() bool
@@ -23,14 +31,19 @@ type Styling interface {
 	CSS() string
 }
 
-type Server struct {
-	config *config.Service
-	signOn SignOn
-	links  Styling
+type Shelves interface {
+	Titles() []shelves.Title
 }
 
-func New(config *config.Service, signOn *sso.Service, links *link.Handler) *Server {
-	return &Server{config: config, signOn: signOn, links: links}
+type Server struct {
+	config  *config.Service
+	signOn  SignOn
+	links   Styling
+	shelves Shelves
+}
+
+func New(config *config.Service, signOn *sso.Service, links *link.Handler, shelves *shelves.Service) *Server {
+	return &Server{config: config, signOn: signOn, links: links, shelves: shelves}
 }
 
 func (s *Server) GetBrandingOptions(ctx context.Context, request api.GetBrandingOptionsRequestObject) (api.GetBrandingOptionsResponseObject, error) {
@@ -80,5 +93,12 @@ func (s *Server) brandingCss(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	return apiutil.Deref(branding.CustomCss) + s.links.CSS(), nil
+	css := strings.Builder{}
+	css.WriteString(apiutil.Deref(branding.CustomCss))
+	css.WriteString(s.links.CSS())
+	for _, title := range s.shelves.Titles() {
+		fmt.Fprintf(&css, shelfTitle, title.ID, cssString.Replace(title.Name))
+	}
+
+	return strings.TrimSpace(css.String()), nil
 }

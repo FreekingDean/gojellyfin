@@ -263,3 +263,18 @@ func TestNew_RefusesAnUnknownShelf(t *testing.T) {
 		t.Errorf("unset = %v, %v, want the defaults", service, err)
 	}
 }
+
+func TestService_Titles(t *testing.T) {
+	service, err := newService(nil, []string{"recently-aired", "genre-spotlight", "because-you-watched", "hidden-gems"}, time.Now)
+	if err != nil {
+		t.Fatalf("failed to build the shelves: %v", err)
+	}
+
+	want := []Title{
+		{ID: ID("recently-aired"), Name: "Recently Aired"},
+		{ID: ID("hidden-gems"), Name: "Hidden Gems"},
+	}
+	if got := service.Titles(); !slices.Equal(got, want) {
+		t.Errorf("titles = %v, want %v", got, want)
+	}
+}

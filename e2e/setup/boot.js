@@ -16,6 +16,7 @@ const PASSWORD = 'smoke-password';
 const LIBRARY = 'Smoke Movies';
 const MOVIES = ['Fixture Alpha', 'Fixture Beta'];
 const PLAYABLE = 'Fixture Playable';
+const TRANSCODED = 'Fixture Transcoded';
 const SHOWS = 'Smoke Shows';
 const SERIES = 'Fixture Show';
 const SEASON = 'Season 1';
@@ -44,7 +45,7 @@ async function boot({ mediaSeconds = 20 } = {}) {
   run(binaries.fixtures, ['create'], { env: scratchEnv });
 
   const databaseUrl = withDatabase(adminUrl, scratch);
-  const serverEnv = clean({ DATABASE_URL: databaseUrl, MEDIA_DIRECTORIES: path.dirname(media) });
+  const serverEnv = clean({ DATABASE_URL: databaseUrl, MEDIA_DIRECTORIES: path.dirname(media.playable) });
 
   const apiPort = await freePort();
   const posterRoot = path.join(BUILD, 'posters');
@@ -59,7 +60,8 @@ async function boot({ mediaSeconds = 20 } = {}) {
   run(binaries.fixtures, ['seed'], {
     env: {
       ...serverEnv,
-      FIXTURE_MEDIA: media,
+      FIXTURE_MEDIA: media.playable,
+      FIXTURE_TRANSCODE: media.transcoded,
       POSTER_DIR: posterRoot,
       POSTER_URL: `http://127.0.0.1:${webPort}${proxy.POSTERS}`,
     },
@@ -104,6 +106,7 @@ async function boot({ mediaSeconds = 20 } = {}) {
       library: LIBRARY,
       movies: MOVIES,
       playable: PLAYABLE,
+      transcoded: TRANSCODED,
       shows: SHOWS,
       series: SERIES,
       season: SEASON,
@@ -135,9 +138,33 @@ function build() {
   return { gojellyfin, fixtures };
 }
 
-// VP9 and Opus in WebM because Playwright's Chromium carries no H.264 or AAC
-// decoder, so that is the only pairing it will direct play.
+// The playable title is VP9 and Opus in WebM, which every Chromium build
+// direct plays. The transcoded one is MPEG-4 Part 2, which no browser profile
+// names, at 1440 lines, so the server has to encode it down to 1080p H.264.
 function encodeMedia(seconds) {
+  return { playable: encodePlayable(seconds), transcoded: encodeTranscoded() };
+}
+
+function encodeTranscoded() {
+  const target = path.join(BUILD, 'media', 'transcoded.mkv');
+  if (fs.existsSync(target)) {
+    return target;
+  }
+
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  run('ffmpeg', [
+    '-hide_banner', '-loglevel', 'error', '-y',
+    '-f', 'lavfi', '-i', 'testsrc2=size=1920x1440:rate=24:duration=20',
+    '-f', 'lavfi', '-i', 'sine=frequency=440:duration=20',
+    '-c:v', 'mpeg4', '-q:v', '8',
+    '-c:a', 'aac', '-b:a', '64k',
+    '-shortest', target,
+  ]);
+
+  return target;
+}
+
+function encodePlayable(seconds) {
   const target = path.join(BUILD, 'media', seconds === 20 ? 'playable.webm' : `playable-${seconds}s.webm`);
   if (fs.existsSync(target)) {
     return target;
