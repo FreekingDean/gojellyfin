@@ -4,19 +4,27 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	"github.com/FreekingDean/gojellyfin/internal/store/configuration"
 	"github.com/google/uuid"
 )
 
 const (
-	ServerID     = "e10a32fca79342d7b8b9d96e255ce1bc"
-	RootFolderID = "e9d5075a555c1cbc394eec4cef295274"
+	defaultServerID = "e10a32fca79342d7b8b9d96e255ce1bc"
+	RootFolderID    = "e9d5075a555c1cbc394eec4cef295274"
 )
 
 var (
+	ServerID         = defaultServerID
 	RootFolderUID, _ = uuid.Parse(RootFolderID)
 )
+
+func adoptServerID(environment env.Config) {
+	if environment.ServerID != "" {
+		ServerID = environment.ServerID
+	}
+}
 
 type Service struct {
 	client *store.Client

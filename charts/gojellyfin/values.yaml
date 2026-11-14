@@ -11,6 +11,12 @@ hostname: ""
 # listener is the same lost client as advertising a wrong hostname.
 scheme: https
 
+# The id this server answers with. A client keys the token it holds by it, so a
+# server taking over from a Jellyfin install is given that install's id, which
+# is the contents of device.txt beside its jellyfin.db and what
+# scripts/jellyfinmigrate prints. Empty keeps gojellyfin's own.
+serverId: ""
+
 image:
   repository: ghcr.io/freekingdean/gojellyfin
   # Empty takes the chart's appVersion. Every workload and the migration Job

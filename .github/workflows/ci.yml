@@ -57,6 +57,7 @@ jobs:
           render --set sources.existingSecret=gojellyfin-sources
           render --set hostname=example.test --set httpRoute.enabled=true --set httpRoute.parentRefs[0].name=gateway
           render --set cors.enabled=true --set cors.origin=https://example.test
+          render --set serverId=5f0a1b2c3d4e4f6a8b9c0d1e2f3a4b5c
           render --set hostname=example.test --set oidc.issuerUrl=https://auth.example.test --set oidc.clientId=gojellyfin \
             --set oidc.existingSecret=gojellyfin-oidc --set oidc.adminGroup=admins --set oidc.linkExistingUsers=true
           render --set oidc.issuerUrl=https://auth.example.test --set oidc.existingSecret=gojellyfin-oidc
