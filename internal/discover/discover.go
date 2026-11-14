@@ -156,7 +156,7 @@ func titled(kind items.Kind, metadata items.Metadata) (Title, bool) {
 		return Title{}, false
 	}
 
-	parsed, err := strconv.ParseUint((*metadata.ProviderIds)[providerKey], 10, 32)
+	parsed, err := strconv.ParseUint((*metadata.ProviderIds)[providerKey], 10, 31)
 	if err != nil || parsed == 0 {
 		return Title{}, false
 	}
