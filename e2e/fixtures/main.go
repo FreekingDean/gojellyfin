@@ -35,16 +35,27 @@ const (
 	shows    = "Smoke Shows"
 	series   = "Fixture Show"
 	season   = "Season 1"
+	drama    = "Fixture Drama"
+	finale   = "Fixture Finale"
 )
 
 var (
 	movies   = []string{"Fixture Alpha", "Fixture Beta"}
 	episodes = []string{"Fixture Pilot", "Fixture Second"}
 
+	released = map[string]int{
+		"Fixture Alpha":  2021,
+		"Fixture Beta":   2019,
+		"Fixture Pilot":  2020,
+		"Fixture Second": 2024,
+		"Fixture Finale": 2022,
+	}
+
 	posterShades = map[string]color.RGBA{
 		"Fixture Alpha": {R: 220, G: 40, B: 40, A: 255},
 		"Fixture Beta":  {R: 40, G: 60, B: 220, A: 255},
 		"Fixture Show":  {R: 40, G: 200, B: 70, A: 255},
+		"Fixture Drama": {R: 40, G: 200, B: 70, A: 255},
 	}
 
 	backdropShades = map[string]color.RGBA{
@@ -201,6 +212,9 @@ func seed() error {
 		if err := poster(ctx, catalogue, item.ID, name); err != nil {
 			return err
 		}
+		if err := aired(ctx, catalogue, item.ID, released[name]); err != nil {
+			return err
+		}
 		if err := backdrop(ctx, catalogue, item.ID, name); err != nil {
 			return err
 		}
@@ -216,67 +230,12 @@ func seed() error {
 		return err
 	}
 
-	number := int32(1)
-
-	show, err := catalogue.SaveScanned(ctx, items.Item{
-		Kind:         itemmodel.KindSeries,
-		Key:          "series:" + slugify(series),
-		Name:         series,
-		SortName:     strings.ToLower(series),
-		DateModified: &modified,
-	})
-	if err != nil {
+	shelf := shelf{client: client, catalogue: catalogue, libraryID: shown.ID, sourceID: downloader.ID, watching: watching}
+	if err := shelf.series(ctx, series, episodes, modified); err != nil {
 		return err
 	}
-	if err := poster(ctx, catalogue, show.ID, series); err != nil {
+	if err := shelf.series(ctx, drama, []string{finale}, modified.Add(time.Minute)); err != nil {
 		return err
-	}
-	if err := backdrop(ctx, catalogue, show.ID, series); err != nil {
-		return err
-	}
-
-	first, err := catalogue.SaveScanned(ctx, items.Item{
-		ParentID:     &show.ID,
-		Kind:         itemmodel.KindSeason,
-		Key:          "season:" + slugify(series) + ":1",
-		Name:         season,
-		SortName:     strings.ToLower(season),
-		IndexNumber:  &number,
-		DateModified: &modified,
-	})
-	if err != nil {
-		return err
-	}
-
-	for index, name := range episodes {
-		position := int32(index + 1)
-		item, err := catalogue.SaveScanned(ctx, items.Item{
-			ParentID:          &first.ID,
-			Kind:              itemmodel.KindEpisode,
-			Key:               fmt.Sprintf("episode:%s:1:%d", slugify(series), position),
-			Name:              name,
-			SortName:          strings.ToLower(name),
-			IndexNumber:       &position,
-			ParentIndexNumber: &number,
-			DateModified:      &modified,
-		})
-		if err != nil {
-			return err
-		}
-
-		if err := file(ctx, catalogue, downloader.ID, item.ID, name); err != nil {
-			return err
-		}
-		if err := member(ctx, client, shown.ID, downloader.ID, item.ID); err != nil {
-			return err
-		}
-		watching[name] = item.ID
-	}
-
-	for _, id := range []uuid.UUID{show.ID, first.ID} {
-		if err := member(ctx, client, shown.ID, downloader.ID, id); err != nil {
-			return err
-		}
 	}
 
 	if err := resume(ctx, client, watching); err != nil {
@@ -303,6 +262,84 @@ func resume(ctx context.Context, client *store.Client, watching map[string]uuid.
 			SetPlaybackPositionTicks(int64(5 * time.Second / 100)).
 			SetLastPlayedAt(played).
 			Exec(ctx); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+type shelf struct {
+	client    *store.Client
+	catalogue *items.Service
+	libraryID uuid.UUID
+	sourceID  uuid.UUID
+	watching  map[string]uuid.UUID
+}
+
+func (s shelf) series(ctx context.Context, name string, titles []string, modified time.Time) error {
+	number := int32(1)
+
+	show, err := s.catalogue.SaveScanned(ctx, items.Item{
+		Kind:         itemmodel.KindSeries,
+		Key:          "series:" + slugify(name),
+		Name:         name,
+		SortName:     strings.ToLower(name),
+		DateModified: &modified,
+	})
+	if err != nil {
+		return err
+	}
+	if err := poster(ctx, s.catalogue, show.ID, name); err != nil {
+		return err
+	}
+	if err := backdrop(ctx, s.catalogue, show.ID, name); err != nil {
+		return err
+	}
+
+	first, err := s.catalogue.SaveScanned(ctx, items.Item{
+		ParentID:     &show.ID,
+		Kind:         itemmodel.KindSeason,
+		Key:          "season:" + slugify(name) + ":1",
+		Name:         season,
+		SortName:     strings.ToLower(season),
+		IndexNumber:  &number,
+		DateModified: &modified,
+	})
+	if err != nil {
+		return err
+	}
+
+	for index, title := range titles {
+		position := int32(index + 1)
+		item, err := s.catalogue.SaveScanned(ctx, items.Item{
+			ParentID:          &first.ID,
+			Kind:              itemmodel.KindEpisode,
+			Key:               fmt.Sprintf("episode:%s:1:%d", slugify(name), position),
+			Name:              title,
+			SortName:          strings.ToLower(title),
+			IndexNumber:       &position,
+			ParentIndexNumber: &number,
+			DateModified:      &modified,
+		})
+		if err != nil {
+			return err
+		}
+
+		if err := file(ctx, s.catalogue, s.sourceID, item.ID, title); err != nil {
+			return err
+		}
+		if err := member(ctx, s.client, s.libraryID, s.sourceID, item.ID); err != nil {
+			return err
+		}
+		if err := aired(ctx, s.catalogue, item.ID, released[title]); err != nil {
+			return err
+		}
+		s.watching[title] = item.ID
+	}
+
+	for _, id := range []uuid.UUID{show.ID, first.ID} {
+		if err := member(ctx, s.client, s.libraryID, s.sourceID, id); err != nil {
 			return err
 		}
 	}
@@ -344,6 +381,13 @@ func playableMovie(ctx context.Context, client *store.Client, catalogue *items.S
 	}
 
 	return member(ctx, client, libraryID, sourceID, item.ID)
+}
+
+func aired(ctx context.Context, catalogue *items.Service, itemID uuid.UUID, year int) error {
+	premiere := time.Date(year, time.March, 1, 0, 0, 0, 0, time.UTC)
+	_, err := catalogue.UpdateMetadata(ctx, itemID, items.Metadata{PremiereDate: &premiere})
+
+	return err
 }
 
 func member(ctx context.Context, client *store.Client, libraryID, sourceID, itemID uuid.UUID) error {

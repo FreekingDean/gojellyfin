@@ -13,6 +13,6 @@ test.describe('the Media Downloaders dashboard page', () => {
     await expect(view(page)).toContainText('Fixtures');
     await expect(view(page)).toContainText('Add connection');
 
-    await expect(page).toHaveScreenshot('media-downloaders.png');
+    await expect(view(page)).toHaveScreenshot('media-downloaders.png');
   });
 });

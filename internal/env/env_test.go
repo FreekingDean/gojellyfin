@@ -25,6 +25,7 @@ var settings = []string{
 	"OTEL_EXPORTER_OTLP_ENDPOINT",
 	"TMDB_API_KEY",
 	"MEDIA_DIRECTORIES",
+	"SHELVES",
 	"OIDC_ISSUER_URL",
 	"OIDC_CLIENT_ID",
 	"OIDC_CLIENT_SECRET",
@@ -85,6 +86,7 @@ func TestLoad(t *testing.T) {
 				"OTEL_EXPORTER_OTLP_ENDPOINT":  "http://collector:4318",
 				"TMDB_API_KEY":                 "not-a-real-key",
 				"MEDIA_DIRECTORIES":            "/media, /library ",
+				"SHELVES":                      "recently-aired, hidden-gems ",
 				"OIDC_ISSUER_URL":              "https://auth.example",
 				"OIDC_CLIENT_ID":               "gojellyfin",
 				"OIDC_CLIENT_SECRET":           "not-a-real-secret",
@@ -105,6 +107,7 @@ func TestLoad(t *testing.T) {
 				Tracing:            Tracing{OTLPEndpoint: "http://collector:4318"},
 				TMDB:               TMDB{APIKey: "not-a-real-key"},
 				MediaDirectories:   []string{"/media", "/library"},
+				Shelves:            []string{"recently-aired", "hidden-gems"},
 				OIDC: OIDC{
 					IssuerURL:         "https://auth.example",
 					ClientID:          "gojellyfin",

@@ -1,10 +1,14 @@
 const { test, expect, view, card, open } = require('./fixtures');
 
 test.describe('playback', () => {
+  let played;
+
   test('starts the video from the detail page', async ({ signedIn: page, harness }) => {
     const streams = [];
     page.on('response', (response) => {
-      if (/\/Videos\/[^/]+\/stream/i.test(new URL(response.url()).pathname)) {
+      const stream = new URL(response.url()).pathname.match(/\/Videos\/([^/]+)\/stream/i);
+      if (stream) {
+        played = stream[1];
         streams.push(response.status());
       }
     });
@@ -20,5 +24,23 @@ test.describe('playback', () => {
       .toBeGreaterThan(1);
     expect(streams.length).toBeGreaterThan(0);
     expect(streams.every((status) => status === 200 || status === 206)).toBe(true);
+  });
+
+  // Playing the item leaves a resume position, which puts a Continue Watching
+  // row on the home screen of every test that runs after this one.
+  test.afterEach(async ({ page, harness }) => {
+    if (!played) {
+      return;
+    }
+    const { AccessToken: token, UserId: user } = await page.evaluate(
+      () => JSON.parse(localStorage.getItem('jellyfin_credentials')).Servers[0],
+    );
+    await page.goto('about:blank');
+
+    const response = await page.request.post(`${harness.baseUrl}/UserItems/${played}/UserData?userId=${user}`, {
+      headers: { Authorization: `MediaBrowser Token="${token}"` },
+      data: { PlaybackPositionTicks: 0, Played: false, PlayCount: 0, LastPlayedDate: null },
+    });
+    expect(response.ok()).toBe(true);
   });
 });

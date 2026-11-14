@@ -79,6 +79,25 @@ jobs:
         run: npm run visual
         working-directory: e2e
 
+      # On a pull request, every screenshot this commit rendered and the diff of
+      # each that changed, as a directory the publish job serves from Pages.
+      - name: Build the gallery
+        if: always() && github.event_name == 'pull_request' && hashFiles('e2e/.build/results.json') != ''
+        working-directory: e2e
+        env:
+          PAGES: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/pr-${{ github.event.pull_request.number }}/${{ github.event.pull_request.head.sha }}
+        run: |
+          node setup/gallery.js .build/results.json .build/gallery "$PAGES" "${{ github.event.pull_request.head.sha }}"
+          if [ -d playwright-report ]; then cp -r playwright-report .build/gallery/report; fi
+
+      - name: Upload the gallery
+        if: always() && github.event_name == 'pull_request' && hashFiles('e2e/.build/gallery/comment.md') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-gallery
+          path: e2e/.build/gallery
+          retention-days: 3
+
       # Holds the actual, expected and diff images of every failed screenshot,
       # and a trace of every failed test. A deliberate visual change is
       # accepted by committing the actual images over the baselines, or by
@@ -92,3 +111,83 @@ jobs:
             e2e/playwright-report
             e2e/test-results
           retention-days: 14
+
+  # Serves the gallery from gh-pages under pr-<number>/<sha>/ and keeps one
+  # comment on the PR pointing at it. A fork's token cannot write, so only a
+  # branch of this repository is published. gh-pages holds a single commit
+  # that is replaced on every publish, so it never accumulates history.
+  publish:
+    needs: e2e
+    if: >-
+      always() && github.event_name == 'pull_request'
+      && github.event.pull_request.head.repo.full_name == github.repository
+      && needs.e2e.result != 'cancelled' && needs.e2e.result != 'skipped'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    concurrency:
+      group: gh-pages-pr-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    permissions:
+      contents: write
+      pull-requests: write
+
+    env:
+      PR: ${{ github.event.pull_request.number }}
+      SHA: ${{ github.event.pull_request.head.sha }}
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: e2e-gallery
+          path: gallery
+
+      - uses: actions/checkout@v7
+        with:
+          ref: gh-pages
+          path: site
+          fetch-depth: 1
+
+      - name: Publish
+        working-directory: site
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          for attempt in 1 2 3 4; do
+            git fetch --depth 1 origin gh-pages
+            git reset --hard origin/gh-pages
+            rm -rf "pr-$PR"
+            mkdir -p "pr-$PR/$SHA"
+            cp -r ../gallery/. "pr-$PR/$SHA/"
+            rm "pr-$PR/$SHA/comment.md"
+            git add -A -- "pr-$PR"
+            commit=$(git commit-tree "$(git write-tree)" -m "Publish e2e screenshots for #$PR at $SHA")
+            if git push --force-with-lease="gh-pages:$(git rev-parse origin/gh-pages)" origin "$commit:refs/heads/gh-pages"; then
+              exit 0
+            fi
+            sleep $((attempt * 5))
+          done
+          exit 1
+
+      # Pages deploys a minute or so after the push. Posting before then would
+      # have GitHub's image proxy fetch, and remember, a 404.
+      - name: Wait for Pages
+        run: |
+          url=$(grep -o 'https://[^")]*-current.png' gallery/comment.md | head -1)
+          for _ in $(seq 60); do
+            if [ "$(curl -s -o /dev/null -w '%{http_code}' "$url")" = 200 ]; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::warning::$url did not come up within ten minutes"
+
+      - name: Comment
+        run: |
+          id=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
+            --jq '.[] | select(.body | startswith("<!-- e2e-screenshots -->")) | .id' | head -1)
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" -F body=@gallery/comment.md >/dev/null
+          else
+            gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -F body=@gallery/comment.md >/dev/null
+          fi
