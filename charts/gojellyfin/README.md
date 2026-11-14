@@ -299,16 +299,24 @@ httpRoute:
 
 **`/web` is two things, and a naive prefix route breaks one of them.** It is
 where the client is served, and it is also where two API endpoints live:
-`/web/ConfigurationPage` and `/web/ConfigurationPages`. `jellyfin-web` calls the
-second on every dashboard load to build the admin left-nav, so a gateway that
-sends all of `/web` to the client has nginx look for a file named
-`ConfigurationPages`, 404, and the dashboard's plugin pages disappear. The chart
-carries an `Exact` rule for each of the two back to the API service, which the
-Gateway API spec resolves ahead of any prefix match — "Across all rules
-specified on applicable Routes, precedence must be given to the match having:
-'Exact' path match" — before path length, route age or list order is consulted,
-so the three routes need no ordering between them. Writing your own gateway
-config means carrying those two exceptions with it.
+`/web/ConfigurationPage` and `/web/ConfigurationPages`. `jellyfin-web` asks for
+them in both cases from different places: the dashboard menu fetches
+`/web/ConfigurationPages`, My Plugins fetches `web/configurationpages`,
+opening a page fetches `/web/configurationpage?name=…` and resource urls use
+`web/ConfigurationPage`. A gateway that sends all of `/web` to the client has
+nginx look for those files and 404, and the plugin pages disappear. The chart
+carries one case-insensitive `RegularExpression` rule, `(?i)^/web/configurationpages?$`,
+back to the API service; the server's own router does not care about case
+either. Two `Exact` rules on the capitalised spellings were here before and
+let the lower-case page request through to nginx.
+
+`RegularExpression` is an extended Gateway API feature, so it needs a gateway
+that implements it with RE2 syntax (Envoy Gateway, Istio and Cilium do), and
+its precedence against the `/web` prefix is implementation-specific rather than
+fixed by the spec. After a deploy, `/web/configurationpage?name=media_downloaders`
+answering HTML from the API rather than nginx's 404 is the check that the
+gateway ordered it ahead of the prefix. Writing your own gateway config means
+carrying this exception with it.
 
 They are rendered whether or not `web.enabled` is set. With the client off they
 are merely redundant with `/`, and they still point at the API, which this chart
