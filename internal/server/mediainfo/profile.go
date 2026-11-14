@@ -80,6 +80,9 @@ func streamURL(itemID uuid.UUID, plan items.Plan, token, session string, startTi
 	if startTicks > 0 {
 		query.Set("startTimeTicks", strconv.FormatInt(startTicks, 10))
 	}
+	if plan.Container == items.Container(plan.Source) {
+		query.Set("copyTimestamps", "true")
+	}
 	query.Set("allowVideoStreamCopy", "false")
 	query.Set("allowAudioStreamCopy", "false")
 
