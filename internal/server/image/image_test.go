@@ -2,12 +2,15 @@ package image
 
 import (
 	"context"
+	"image"
+	"image/png"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/collage"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
@@ -18,9 +21,10 @@ import (
 )
 
 type fixture struct {
-	server *Server
-	client *store.Client
-	itemID uuid.UUID
+	server    *Server
+	client    *store.Client
+	itemID    uuid.UUID
+	libraryID uuid.UUID
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -87,9 +91,10 @@ func newFixture(t *testing.T) *fixture {
 	})
 
 	return &fixture{
-		server: New(items.New(client)),
-		client: client,
-		itemID: item.ID,
+		server:    New(items.New(client), collage.New(items.New(client))),
+		client:    client,
+		itemID:    item.ID,
+		libraryID: library.ID,
 	}
 }
 
@@ -192,4 +197,76 @@ func TestServer_GetItemImageByIndex(t *testing.T) {
 	if got := recorder.Header().Get("Location"); got != second {
 		t.Errorf("location = %q, want %q", got, second)
 	}
+}
+
+func TestServer_GetItemImage_Library(t *testing.T) {
+	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		poster := image.NewRGBA(image.Rect(0, 0, 20, 30))
+		_ = png.Encode(w, poster)
+	}))
+	t.Cleanup(cdn.Close)
+
+	t.Run("serves a collage of the library's posters", func(t *testing.T) {
+		fixture := newFixture(t)
+		fixture.store(t, imagemodel.KindPrimary, 0, cdn.URL+"/poster.png", "postertag")
+
+		response, err := fixture.server.GetItemImage(context.Background(), api.GetItemImageRequestObject{
+			ItemId:    fixture.libraryID,
+			ImageType: api.Primary,
+		})
+		if err != nil {
+			t.Fatalf("failed to get the image: %v", err)
+		}
+
+		recorder := httptest.NewRecorder()
+		if err := response.VisitGetItemImageResponse(recorder); err != nil {
+			t.Fatalf("failed to write the response: %v", err)
+		}
+
+		if recorder.Code != http.StatusOK {
+			t.Errorf("status = %d, want 200", recorder.Code)
+		}
+		if got := recorder.Header().Get("Content-Type"); got != "image/jpeg" {
+			t.Errorf("content type = %q, want image/jpeg", got)
+		}
+		if got := recorder.Header().Get("Cache-Control"); got != cacheFor {
+			t.Errorf("cache control = %q, want %q", got, cacheFor)
+		}
+		if _, _, err := image.Decode(recorder.Body); err != nil {
+			t.Errorf("failed to decode the collage: %v", err)
+		}
+	})
+
+	t.Run("answers 404 for a library with no posters", func(t *testing.T) {
+		fixture := newFixture(t)
+
+		response, err := fixture.server.GetItemImage(context.Background(), api.GetItemImageRequestObject{
+			ItemId:    fixture.libraryID,
+			ImageType: api.Primary,
+		})
+		if err != nil {
+			t.Fatalf("failed to get the image: %v", err)
+		}
+
+		if _, ok := response.(api.GetItemImage404JSONResponse); !ok {
+			t.Errorf("response = %T, want a 404", response)
+		}
+	})
+
+	t.Run("answers 404 for a library image that is not its primary", func(t *testing.T) {
+		fixture := newFixture(t)
+		fixture.store(t, imagemodel.KindPrimary, 0, cdn.URL+"/poster.png", "postertag")
+
+		response, err := fixture.server.GetItemImage(context.Background(), api.GetItemImageRequestObject{
+			ItemId:    fixture.libraryID,
+			ImageType: api.Backdrop,
+		})
+		if err != nil {
+			t.Fatalf("failed to get the image: %v", err)
+		}
+
+		if _, ok := response.(api.GetItemImage404JSONResponse); !ok {
+			t.Errorf("response = %T, want a 404", response)
+		}
+	})
 }

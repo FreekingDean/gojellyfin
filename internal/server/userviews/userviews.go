@@ -11,10 +11,11 @@ import (
 
 type Server struct {
 	libraries *libraries.Service
+	collages  dto.Collages
 }
 
-func New(libraries *libraries.Service) *Server {
-	return &Server{libraries: libraries}
+func New(libraries *libraries.Service, collages dto.Collages) *Server {
+	return &Server{libraries: libraries, collages: collages}
 }
 
 func (s *Server) GetUserViews(ctx context.Context, request api.GetUserViewsRequestObject) (api.GetUserViewsResponseObject, error) {
@@ -23,9 +24,9 @@ func (s *Server) GetUserViews(ctx context.Context, request api.GetUserViewsReque
 		return nil, err
 	}
 
-	views := make([]api.BaseItemDto, 0, len(records))
-	for _, library := range records {
-		views = append(views, dto.LibraryView(library))
+	views, err := dto.LibraryViews(ctx, s.collages, records)
+	if err != nil {
+		return nil, err
 	}
 
 	return api.GetUserViews200JSONResponse{
