@@ -23,6 +23,8 @@ type State =
   | { stage: 'refused'; user: User }
   | { stage: 'ready'; user: User };
 
+const wired = ['requests'];
+
 const screens = [
   { path: 'overview', label: 'Overview' },
   { path: 'requests', label: 'Requests and Reports' },
@@ -31,10 +33,12 @@ const screens = [
   { path: 'jobs', label: 'Jobs' },
   { path: 'activity', label: 'Activity' },
   { path: 'settings', label: 'Settings' },
-];
+].filter((screen) => mock.mocked || wired.includes(screen.path));
+
+const home = screens[0]?.path ?? 'requests';
 
 function Screen({ route }: { route: string[] }) {
-  switch (route[0]) {
+  switch (screens.some((screen) => screen.path === route[0]) ? route[0] : home) {
     case 'requests':
       return <Requests />;
     case 'libraries':
@@ -47,8 +51,10 @@ function Screen({ route }: { route: string[] }) {
       return <Activity />;
     case 'settings':
       return <Settings />;
-    default:
+    case 'overview':
       return <Overview />;
+    default:
+      return null;
   }
 }
 
@@ -121,7 +127,7 @@ export function App({ config }: { config: Config }) {
           go<span>jellyfin</span> admin
         </div>
         {screens.map((screen) => (
-          <Link key={screen.path} to={'/' + screen.path} class={(route[0] ?? 'overview') === screen.path ? 'on' : ''}>
+          <Link key={screen.path} to={'/' + screen.path} class={(route[0] ?? home) === screen.path ? 'on' : ''}>
             {screen.label}
             {screen.path === 'requests' && waiting > 0 && <span class="count">{waiting}</span>}
           </Link>
