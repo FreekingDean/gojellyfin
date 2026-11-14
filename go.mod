@@ -34,6 +34,7 @@ require (
 	golang.org/x/image v0.33.0
 	golang.org/x/oauth2 v0.36.0
 	golang.org/x/sync v0.22.0
+	rsc.io/qr v0.2.0
 )
 
 require (

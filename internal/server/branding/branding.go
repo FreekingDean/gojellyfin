@@ -8,6 +8,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
+	"github.com/FreekingDean/gojellyfin/internal/server/link"
 	"github.com/FreekingDean/gojellyfin/internal/sso"
 )
 
@@ -17,13 +18,19 @@ type SignOn interface {
 	Enabled() bool
 }
 
+type Styling interface {
+	Enabled() bool
+	CSS() string
+}
+
 type Server struct {
 	config *config.Service
 	signOn SignOn
+	links  Styling
 }
 
-func New(config *config.Service, signOn *sso.Service) *Server {
-	return &Server{config: config, signOn: signOn}
+func New(config *config.Service, signOn *sso.Service, links *link.Handler) *Server {
+	return &Server{config: config, signOn: signOn, links: links}
 }
 
 func (s *Server) GetBrandingOptions(ctx context.Context, request api.GetBrandingOptionsRequestObject) (api.GetBrandingOptionsResponseObject, error) {
@@ -34,6 +41,10 @@ func (s *Server) GetBrandingOptions(ctx context.Context, request api.GetBranding
 
 	if s.signOn.Enabled() {
 		branding.LoginDisclaimer = apiutil.Ptr(strings.TrimSpace(apiutil.Deref(branding.LoginDisclaimer) + "\n\n" + signOnButton))
+	}
+
+	if s.links.Enabled() {
+		branding.SplashscreenEnabled = apiutil.Ptr(true)
 	}
 
 	return api.GetBrandingOptions200JSONResponse(branding), nil
@@ -69,5 +80,5 @@ func (s *Server) brandingCss(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	return apiutil.Deref(branding.CustomCss), nil
+	return apiutil.Deref(branding.CustomCss) + s.links.CSS(), nil
 }

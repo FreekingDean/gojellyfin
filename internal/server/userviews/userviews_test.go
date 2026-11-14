@@ -16,8 +16,10 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/shelves"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	librarymodel "github.com/FreekingDean/gojellyfin/internal/store/library"
+	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
 type fixture struct {
@@ -55,7 +57,19 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
-	return &fixture{server: New(libraries.New(client), collage.New(items.New(client))), client: client, prefix: prefix}
+	catalogue := items.New(client)
+	shown, err := shelves.New(catalogue, env.Config{})
+	if err != nil {
+		t.Fatalf("failed to build the shelves: %v", err)
+	}
+
+	return &fixture{server: New(libraries.New(client), shown, allLibraries{}, collage.New(catalogue)), client: client, prefix: prefix}
+}
+
+type allLibraries struct{}
+
+func (allLibraries) Access(context.Context, uuid.UUID) (users.Access, error) {
+	return users.Access{All: true}, nil
 }
 
 func (f *fixture) add(t *testing.T, collectionType librarymodel.CollectionType, name string) uuid.UUID {
@@ -111,6 +125,42 @@ func TestServer_GetUserViews(t *testing.T) {
 	}
 	if !reflect.DeepEqual(view, want) {
 		t.Errorf("view = %+v, want %+v", view, want)
+	}
+}
+
+func TestServer_GetUserViews_Shelves(t *testing.T) {
+	fixture := newFixture(t)
+
+	response, err := fixture.server.GetUserViews(context.Background(), api.GetUserViewsRequestObject{})
+	if err != nil {
+		t.Fatalf("failed to get the user views: %v", err)
+	}
+
+	result, ok := response.(api.GetUserViews200JSONResponse)
+	if !ok {
+		t.Fatalf("response = %T, want api.GetUserViews200JSONResponse", response)
+	}
+
+	found := map[uuid.UUID]api.BaseItemDto{}
+	for _, view := range *result.Items {
+		found[*view.Id] = view
+	}
+
+	for slug, want := range map[string]struct {
+		name       string
+		collection librarymodel.CollectionType
+	}{
+		"recently-aired": {name: "Recently Aired", collection: librarymodel.CollectionTypeTvshows},
+		"new-releases":   {name: "New Releases", collection: librarymodel.CollectionTypeMovies},
+	} {
+		view, ok := found[shelves.ID(slug)]
+		if !ok {
+			t.Errorf("views do not contain the %s shelf", slug)
+			continue
+		}
+		if *view.Name != want.name || *view.CollectionType != api.CollectionType(want.collection) || *view.LocationType != api.Virtual {
+			t.Errorf("%s view = %s %s %s, want %s %s Virtual", slug, *view.Name, *view.CollectionType, *view.LocationType, want.name, want.collection)
+		}
 	}
 }
 
