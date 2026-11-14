@@ -134,7 +134,7 @@ const castReceiverOrigin = "https://apps.jellyfin.org"
 func newHTTPMiddleware(config env.Config) []middleware.HttpMiddleware {
 	origins := append([]string{castReceiverOrigin}, config.CORSOrigins...)
 
-	return []middleware.HttpMiddleware{middleware.HttpCORS(origins), middleware.HttpLogging, middleware.HttpCanonicalQuery}
+	return []middleware.HttpMiddleware{middleware.HttpCORS(origins), middleware.HttpClientAddress(middleware.Prefixes(config.TrustedProxies)), middleware.HttpLogging, middleware.HttpCanonicalQuery}
 }
 
 func newAPIMiddleware(tracing *tracing.Tracing, tracingMiddleware *middleware.OapiTracing, authMiddleware *middleware.Auth, policies middleware.Policies) []api.StrictMiddlewareFunc {

@@ -3,6 +3,7 @@ package env
 import (
 	"errors"
 	"fmt"
+	"net/netip"
 	"net/url"
 	"os"
 	"regexp"
@@ -27,6 +28,7 @@ type Config struct {
 	PublishedServerURL string     `mapstructure:"PUBLISHED_SERVER_URL"`
 	ServerID           string     `mapstructure:"SERVER_ID"`
 	CORSOrigins        []string   `mapstructure:"CORS_ORIGINS"`
+	TrustedProxies     []string   `mapstructure:"TRUSTED_PROXIES"`
 	Transcoder         Transcoder `mapstructure:",squash"`
 	Temporal           Temporal   `mapstructure:",squash"`
 	Tracing            Tracing    `mapstructure:",squash"`
@@ -82,6 +84,7 @@ func Load() (Config, error) {
 	}
 
 	config.CORSOrigins = trimmed(config.CORSOrigins)
+	config.TrustedProxies = trimmed(config.TrustedProxies)
 	config.MediaDirectories = trimmed(config.MediaDirectories)
 	config.SourceAPIKeys = sourceAPIKeys()
 
@@ -110,6 +113,12 @@ func (c Config) validate() error {
 	}
 	if c.ServerID != "" && !serverIDPattern.MatchString(c.ServerID) {
 		return fmt.Errorf("SERVER_ID must be 32 lowercase hex characters, the form Jellyfin writes to device.txt, got %q", c.ServerID)
+	}
+
+	for _, proxy := range c.TrustedProxies {
+		if _, err := netip.ParsePrefix(proxy); err != nil {
+			return fmt.Errorf("TRUSTED_PROXIES must be a comma separated list of networks such as 10.201.0.0/16, got %q", proxy)
+		}
 	}
 
 	return c.validateOIDC()

@@ -83,6 +83,13 @@ oidc:
   # their own username.
   linkExistingUsers: false
 
+# TRUSTED_PROXIES. The networks the gateway's pods sit in, usually the pod
+# CIDR. A request from one of them is taken to be from the rightmost address in
+# X-Forwarded-For that is not, which is what lets a phone's /link find the
+# television signing in on the same network. Empty trusts no header and sees
+# every request as coming from the gateway.
+trustedProxies: []
+
 # CORS_ORIGINS. Off allows only https://apps.jellyfin.org, the Google Cast
 # receiver, which the server always allows. Enabled adds one origin and needs
 # it — the chart refuses to render a restriction that would

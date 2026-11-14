@@ -18,6 +18,7 @@ var settings = []string{
 	"PUBLISHED_SERVER_URL",
 	"SERVER_ID",
 	"CORS_ORIGINS",
+	"TRUSTED_PROXIES",
 	"TRANSCODER_JOBS",
 	"TRANSCODER_STALL_TIMEOUT",
 	"TEMPORAL_HOSTPORT",
@@ -68,6 +69,7 @@ func TestLoad(t *testing.T) {
 				DatabaseURL:      testDatabaseURL,
 				HTTPPort:         defaultHTTPPort,
 				CORSOrigins:      []string{},
+				TrustedProxies:   []string{},
 				MediaDirectories: []string{"/"},
 				SourceAPIKeys:    map[string]string{},
 			},
@@ -80,6 +82,7 @@ func TestLoad(t *testing.T) {
 				"PUBLISHED_SERVER_URL":         "https://jellyfin.example",
 				"SERVER_ID":                    "0123456789abcdef0123456789abcdef",
 				"CORS_ORIGINS":                 "https://one.example, https://two.example ",
+				"TRUSTED_PROXIES":              "10.201.0.0/16, fd00::/8 ",
 				"TRANSCODER_JOBS":              "4",
 				"TRANSCODER_STALL_TIMEOUT":     "45s",
 				"TEMPORAL_HOSTPORT":            "temporal:7233",
@@ -104,6 +107,7 @@ func TestLoad(t *testing.T) {
 				PublishedServerURL: "https://jellyfin.example",
 				ServerID:           "0123456789abcdef0123456789abcdef",
 				CORSOrigins:        []string{"https://one.example", "https://two.example"},
+				TrustedProxies:     []string{"10.201.0.0/16", "fd00::/8"},
 				Transcoder:         Transcoder{Jobs: 4, StallTimeout: 45 * time.Second},
 				Temporal:           Temporal{HostPort: "temporal:7233", Namespace: "gojellyfin_production", WorkerStopTimeout: 5 * time.Minute},
 				Tracing:            Tracing{OTLPEndpoint: "http://collector:4318"},
@@ -138,6 +142,7 @@ func TestLoad(t *testing.T) {
 				DatabaseURL:      testDatabaseURL,
 				HTTPPort:         defaultHTTPPort,
 				CORSOrigins:      []string{},
+				TrustedProxies:   []string{},
 				MediaDirectories: []string{"/"},
 				TMDB:             TMDB{APIKey: "not-a-real-key"},
 				SourceAPIKeys: map[string]string{
@@ -149,6 +154,11 @@ func TestLoad(t *testing.T) {
 		{
 			name:    "refuses an unset DATABASE_URL",
 			env:     map[string]string{},
+			wantErr: true,
+		},
+		{
+			name:    "refuses a TRUSTED_PROXIES entry that is not a network",
+			env:     map[string]string{"DATABASE_URL": testDatabaseURL, "TRUSTED_PROXIES": "10.201.0.0/16, gateway"},
 			wantErr: true,
 		},
 		{

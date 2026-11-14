@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"net/netip"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -21,6 +22,11 @@ const (
 	expiry    = 10 * time.Minute
 	codeFloor = 100_000
 	codeSpace = 900_000
+
+	ipv4Bits          = 32
+	privateIPv4Bits   = 24
+	ipv6Bits          = 128
+	ipv6HouseholdBits = 64
 )
 
 const redeemQuery = `
@@ -40,7 +46,7 @@ func New(client *store.Client) *Service {
 	return &Service{store: client}
 }
 
-func (s *Service) Initiate(ctx context.Context, device sessions.Device) (*Request, error) {
+func (s *Service) Initiate(ctx context.Context, device sessions.Device, address string) (*Request, error) {
 	if _, err := s.store.QuickConnectRequest.Delete().
 		Where(requestmodel.ExpiresAtLTE(time.Now())).
 		Exec(ctx); err != nil {
@@ -64,6 +70,7 @@ func (s *Service) Initiate(ctx context.Context, device sessions.Device) (*Reques
 		SetDeviceName(device.Name).
 		SetAppName(device.AppName).
 		SetAppVersion(device.AppVersion).
+		SetRemoteAddress(address).
 		SetExpiresAt(time.Now().Add(expiry)).
 		SaveModel(ctx)
 	if err != nil {
@@ -97,6 +104,62 @@ func (s *Service) Waiting(ctx context.Context) ([]*Request, error) {
 	}
 
 	return requests, nil
+}
+
+func (s *Service) Nearby(ctx context.Context, address string) ([]*Request, error) {
+	waiting, err := s.Waiting(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	near := []*Request{}
+	for _, request := range waiting {
+		if SameNetwork(request.RemoteAddress, address) {
+			near = append(near, request)
+		}
+	}
+
+	return near, nil
+}
+
+func SameNetwork(a, b string) bool {
+	first, ok := host(a)
+	if !ok {
+		return false
+	}
+	second, ok := host(b)
+	if !ok || first.Is4() != second.Is4() {
+		return false
+	}
+
+	bits := householdBits(first)
+	if bits != householdBits(second) {
+		return false
+	}
+
+	return netip.PrefixFrom(first, bits).Masked() == netip.PrefixFrom(second, bits).Masked()
+}
+
+func host(address string) (netip.Addr, bool) {
+	if port, err := netip.ParseAddrPort(address); err == nil {
+		return port.Addr().Unmap(), true
+	}
+	addr, err := netip.ParseAddr(address)
+
+	return addr.Unmap(), err == nil
+}
+
+func householdBits(addr netip.Addr) int {
+	switch {
+	case addr.Is6() && addr.IsLoopback():
+		return ipv6Bits
+	case addr.Is6():
+		return ipv6HouseholdBits
+	case addr.IsPrivate() || addr.IsLoopback() || addr.IsLinkLocalUnicast():
+		return privateIPv4Bits
+	default:
+		return ipv4Bits
+	}
 }
 
 func (s *Service) Authorize(ctx context.Context, code string, userID uuid.UUID) error {

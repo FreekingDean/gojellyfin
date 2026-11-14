@@ -89,6 +89,20 @@ func (_c *QuickConnectRequestCreate) SetAppVersion(v string) *QuickConnectReques
 	return _c
 }
 
+// SetRemoteAddress sets the "remote_address" field.
+func (_c *QuickConnectRequestCreate) SetRemoteAddress(v string) *QuickConnectRequestCreate {
+	_c.mutation.SetRemoteAddress(v)
+	return _c
+}
+
+// SetNillableRemoteAddress sets the "remote_address" field if the given value is not nil.
+func (_c *QuickConnectRequestCreate) SetNillableRemoteAddress(v *string) *QuickConnectRequestCreate {
+	if v != nil {
+		_c.SetRemoteAddress(*v)
+	}
+	return _c
+}
+
 // SetExpiresAt sets the "expires_at" field.
 func (_c *QuickConnectRequestCreate) SetExpiresAt(v time.Time) *QuickConnectRequestCreate {
 	_c.mutation.SetExpiresAt(v)
@@ -163,6 +177,10 @@ func (_c *QuickConnectRequestCreate) defaults() {
 		v := quickconnectrequest.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.RemoteAddress(); !ok {
+		v := quickconnectrequest.DefaultRemoteAddress
+		_c.mutation.SetRemoteAddress(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -190,6 +208,9 @@ func (_c *QuickConnectRequestCreate) check() error {
 	}
 	if _, ok := _c.mutation.AppVersion(); !ok {
 		return &ValidationError{Name: "app_version", err: errors.New(`store: missing required field "QuickConnectRequest.app_version"`)}
+	}
+	if _, ok := _c.mutation.RemoteAddress(); !ok {
+		return &ValidationError{Name: "remote_address", err: errors.New(`store: missing required field "QuickConnectRequest.remote_address"`)}
 	}
 	if _, ok := _c.mutation.ExpiresAt(); !ok {
 		return &ValidationError{Name: "expires_at", err: errors.New(`store: missing required field "QuickConnectRequest.expires_at"`)}
@@ -261,6 +282,10 @@ func (_c *QuickConnectRequestCreate) createSpec() (*QuickConnectRequest, *sqlgra
 	if value, ok := _c.mutation.AppVersion(); ok {
 		_spec.SetField(quickconnectrequest.FieldAppVersion, field.TypeString, value)
 		_node.AppVersion = value
+	}
+	if value, ok := _c.mutation.RemoteAddress(); ok {
+		_spec.SetField(quickconnectrequest.FieldRemoteAddress, field.TypeString, value)
+		_node.RemoteAddress = value
 	}
 	if value, ok := _c.mutation.ExpiresAt(); ok {
 		_spec.SetField(quickconnectrequest.FieldExpiresAt, field.TypeTime, value)
@@ -428,6 +453,18 @@ func (u *QuickConnectRequestUpsert) SetAppVersion(v string) *QuickConnectRequest
 // UpdateAppVersion sets the "app_version" field to the value that was provided on create.
 func (u *QuickConnectRequestUpsert) UpdateAppVersion() *QuickConnectRequestUpsert {
 	u.SetExcluded(quickconnectrequest.FieldAppVersion)
+	return u
+}
+
+// SetRemoteAddress sets the "remote_address" field.
+func (u *QuickConnectRequestUpsert) SetRemoteAddress(v string) *QuickConnectRequestUpsert {
+	u.Set(quickconnectrequest.FieldRemoteAddress, v)
+	return u
+}
+
+// UpdateRemoteAddress sets the "remote_address" field to the value that was provided on create.
+func (u *QuickConnectRequestUpsert) UpdateRemoteAddress() *QuickConnectRequestUpsert {
+	u.SetExcluded(quickconnectrequest.FieldRemoteAddress)
 	return u
 }
 
@@ -618,6 +655,20 @@ func (u *QuickConnectRequestUpsertOne) SetAppVersion(v string) *QuickConnectRequ
 func (u *QuickConnectRequestUpsertOne) UpdateAppVersion() *QuickConnectRequestUpsertOne {
 	return u.Update(func(s *QuickConnectRequestUpsert) {
 		s.UpdateAppVersion()
+	})
+}
+
+// SetRemoteAddress sets the "remote_address" field.
+func (u *QuickConnectRequestUpsertOne) SetRemoteAddress(v string) *QuickConnectRequestUpsertOne {
+	return u.Update(func(s *QuickConnectRequestUpsert) {
+		s.SetRemoteAddress(v)
+	})
+}
+
+// UpdateRemoteAddress sets the "remote_address" field to the value that was provided on create.
+func (u *QuickConnectRequestUpsertOne) UpdateRemoteAddress() *QuickConnectRequestUpsertOne {
+	return u.Update(func(s *QuickConnectRequestUpsert) {
+		s.UpdateRemoteAddress()
 	})
 }
 
@@ -980,6 +1031,20 @@ func (u *QuickConnectRequestUpsertBulk) SetAppVersion(v string) *QuickConnectReq
 func (u *QuickConnectRequestUpsertBulk) UpdateAppVersion() *QuickConnectRequestUpsertBulk {
 	return u.Update(func(s *QuickConnectRequestUpsert) {
 		s.UpdateAppVersion()
+	})
+}
+
+// SetRemoteAddress sets the "remote_address" field.
+func (u *QuickConnectRequestUpsertBulk) SetRemoteAddress(v string) *QuickConnectRequestUpsertBulk {
+	return u.Update(func(s *QuickConnectRequestUpsert) {
+		s.SetRemoteAddress(v)
+	})
+}
+
+// UpdateRemoteAddress sets the "remote_address" field to the value that was provided on create.
+func (u *QuickConnectRequestUpsertBulk) UpdateRemoteAddress() *QuickConnectRequestUpsertBulk {
+	return u.Update(func(s *QuickConnectRequestUpsert) {
+		s.UpdateRemoteAddress()
 	})
 }
 

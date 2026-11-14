@@ -9,11 +9,20 @@ const SCANNED = '/link/tv/' + crypto.createHash('sha256').update('smoke-tv').dig
 
 test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
-async function initiate(request, app) {
-  const response = await request.post(app.baseUrl + '/QuickConnect/Initiate', { headers: { Authorization: TV } });
+async function initiate(request, app, headers = {}) {
+  const response = await request.post(app.baseUrl + '/QuickConnect/Initiate', {
+    headers: { Authorization: TV, ...headers },
+  });
   expect(response.status()).toBe(200);
 
   return response.json();
+}
+
+// The server trusts the harness's own address as a proxy, so this header is
+// where a test says which network a device is on. Each test gets its own, so
+// a code another test left waiting is never on it.
+function network() {
+  return `198.18.${crypto.randomInt(0, 256)}.${crypto.randomInt(1, 255)}`;
 }
 
 async function authenticated(request, app, secret) {
@@ -66,12 +75,30 @@ test.describe('linking a TV from a phone', () => {
     expect(await authenticated(request, harness, tv.Secret)).toBe(true);
   });
 
-  test('opens an empty code field when no code was typed, and skips the login once signed in', async ({
+  test('fills in the code of the one television waiting on the phone\'s network', async ({ page, request, harness }) => {
+    const home = { 'X-Forwarded-For': network() };
+    const tv = await initiate(request, harness, home);
+    await page.setExtraHTTPHeaders(home);
+
+    await page.goto(harness.baseUrl + '/link');
+    await signInHere(page, harness);
+    await onQuickConnect(page);
+
+    await expect(codeField(page)).toHaveValue(tv.Code);
+  });
+
+  test('opens an empty code field when two televisions wait, and skips the login once signed in', async ({
     page,
     request,
     harness,
   }) => {
-    const tv = await initiate(request, harness);
+    const home = { 'X-Forwarded-For': network() };
+    const tv = await initiate(request, harness, home);
+    await initiate(request, harness, {
+      ...home,
+      Authorization: 'MediaBrowser Client="Smoke TV", Device="Bedroom", DeviceId="smoke-bedroom", Version="1.0.0"',
+    });
+    await page.setExtraHTTPHeaders(home);
     const spaced = tv.Code.slice(0, 3) + ' ' + tv.Code.slice(3);
 
     await page.goto(harness.baseUrl + '/link');

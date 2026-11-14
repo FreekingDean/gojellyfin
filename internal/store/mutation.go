@@ -21702,6 +21702,7 @@ type QuickConnectRequestMutation struct {
 	device_name          *string
 	app_name             *string
 	app_version          *string
+	remote_address       *string
 	expires_at           *time.Time
 	clearedFields        map[string]struct{}
 	authorized_by        *uuid.UUID
@@ -22103,6 +22104,42 @@ func (m *QuickConnectRequestMutation) ResetAppVersion() {
 	m.app_version = nil
 }
 
+// SetRemoteAddress sets the "remote_address" field.
+func (m *QuickConnectRequestMutation) SetRemoteAddress(s string) {
+	m.remote_address = &s
+}
+
+// RemoteAddress returns the value of the "remote_address" field in the mutation.
+func (m *QuickConnectRequestMutation) RemoteAddress() (r string, exists bool) {
+	v := m.remote_address
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRemoteAddress returns the old "remote_address" field's value of the QuickConnectRequest entity.
+// If the QuickConnectRequest object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QuickConnectRequestMutation) OldRemoteAddress(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRemoteAddress is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRemoteAddress requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRemoteAddress: %w", err)
+	}
+	return oldValue.RemoteAddress, nil
+}
+
+// ResetRemoteAddress resets all changes to the "remote_address" field.
+func (m *QuickConnectRequestMutation) ResetRemoteAddress() {
+	m.remote_address = nil
+}
+
 // SetExpiresAt sets the "expires_at" field.
 func (m *QuickConnectRequestMutation) SetExpiresAt(t time.Time) {
 	m.expires_at = &t
@@ -22249,7 +22286,7 @@ func (m *QuickConnectRequestMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *QuickConnectRequestMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 11)
 	if m.created_at != nil {
 		fields = append(fields, quickconnectrequest.FieldCreatedAt)
 	}
@@ -22273,6 +22310,9 @@ func (m *QuickConnectRequestMutation) Fields() []string {
 	}
 	if m.app_version != nil {
 		fields = append(fields, quickconnectrequest.FieldAppVersion)
+	}
+	if m.remote_address != nil {
+		fields = append(fields, quickconnectrequest.FieldRemoteAddress)
 	}
 	if m.expires_at != nil {
 		fields = append(fields, quickconnectrequest.FieldExpiresAt)
@@ -22304,6 +22344,8 @@ func (m *QuickConnectRequestMutation) Field(name string) (ent.Value, bool) {
 		return m.AppName()
 	case quickconnectrequest.FieldAppVersion:
 		return m.AppVersion()
+	case quickconnectrequest.FieldRemoteAddress:
+		return m.RemoteAddress()
 	case quickconnectrequest.FieldExpiresAt:
 		return m.ExpiresAt()
 	case quickconnectrequest.FieldAuthorizedByID:
@@ -22333,6 +22375,8 @@ func (m *QuickConnectRequestMutation) OldField(ctx context.Context, name string)
 		return m.OldAppName(ctx)
 	case quickconnectrequest.FieldAppVersion:
 		return m.OldAppVersion(ctx)
+	case quickconnectrequest.FieldRemoteAddress:
+		return m.OldRemoteAddress(ctx)
 	case quickconnectrequest.FieldExpiresAt:
 		return m.OldExpiresAt(ctx)
 	case quickconnectrequest.FieldAuthorizedByID:
@@ -22401,6 +22445,13 @@ func (m *QuickConnectRequestMutation) SetField(name string, value ent.Value) err
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetAppVersion(v)
+		return nil
+	case quickconnectrequest.FieldRemoteAddress:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRemoteAddress(v)
 		return nil
 	case quickconnectrequest.FieldExpiresAt:
 		v, ok := value.(time.Time)
@@ -22497,6 +22548,9 @@ func (m *QuickConnectRequestMutation) ResetField(name string) error {
 		return nil
 	case quickconnectrequest.FieldAppVersion:
 		m.ResetAppVersion()
+		return nil
+	case quickconnectrequest.FieldRemoteAddress:
+		m.ResetRemoteAddress()
 		return nil
 	case quickconnectrequest.FieldExpiresAt:
 		m.ResetExpiresAt()

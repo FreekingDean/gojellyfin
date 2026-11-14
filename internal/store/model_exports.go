@@ -1638,6 +1638,7 @@ type QuickConnectRequestModel struct {
 	DeviceName     string
 	AppName        string
 	AppVersion     string
+	RemoteAddress  string
 	ExpiresAt      time.Time
 	AuthorizedByID *uuid.UUID
 
@@ -1667,6 +1668,7 @@ func fromQuickConnectRequest(_m *QuickConnectRequest) *QuickConnectRequestModel 
 		DeviceName:     _m.DeviceName,
 		AppName:        _m.AppName,
 		AppVersion:     _m.AppVersion,
+		RemoteAddress:  _m.RemoteAddress,
 		ExpiresAt:      _m.ExpiresAt,
 		AuthorizedByID: _m.AuthorizedByID,
 

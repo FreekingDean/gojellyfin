@@ -157,6 +157,10 @@ IfNotPresent
 - name: CORS_ORIGINS
   value: {{ .root.Values.cors.origin | quote }}
 {{- end }}
+{{- with .root.Values.trustedProxies }}
+- name: TRUSTED_PROXIES
+  value: {{ join "," . | quote }}
+{{- end }}
 {{- include "gojellyfin.oidcEnv" .root }}
 - name: TRANSCODER_JOBS
   value: {{ include "gojellyfin.transcoderJobs" .workload | quote }}

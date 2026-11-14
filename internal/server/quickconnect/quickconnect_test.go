@@ -33,11 +33,11 @@ func TestServer_InitiateQuickConnect(t *testing.T) {
 
 	at := time.Date(2026, time.September, 1, 12, 0, 0, 0, time.UTC)
 	ctx := auth.ContextWithAuthorization(context.Background(), auth.Authorization{
-		Client: "Jellyfin Web", Device: "tv", DeviceID: "tv-1", Version: "10.10.0",
+		Client: "Jellyfin Web", Device: "tv", DeviceID: "tv-1", Version: "10.10.0", RemoteAddr: "198.51.100.7:40000",
 	})
 
 	service.EXPECT().
-		Initiate(ctx, sessions.Device{ClientID: "tv-1", Name: "tv", AppName: "Jellyfin Web", AppVersion: "10.10.0"}).
+		Initiate(ctx, sessions.Device{ClientID: "tv-1", Name: "tv", AppName: "Jellyfin Web", AppVersion: "10.10.0"}, "198.51.100.7:40000").
 		Return(&quickconnect.Request{
 			Secret: "secret", Code: "123456", DeviceID: "tv-1", DeviceName: "tv",
 			AppName: "Jellyfin Web", AppVersion: "10.10.0", CreatedAt: at,

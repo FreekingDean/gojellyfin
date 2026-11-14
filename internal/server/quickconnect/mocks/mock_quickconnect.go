@@ -60,18 +60,18 @@ func (mr *MockQuickConnectServiceMockRecorder) Authorize(ctx, code, userID any) 
 }
 
 // Initiate mocks base method.
-func (m *MockQuickConnectService) Initiate(ctx context.Context, device sessions.Device) (*quickconnect.Request, error) {
+func (m *MockQuickConnectService) Initiate(ctx context.Context, device sessions.Device, address string) (*quickconnect.Request, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Initiate", ctx, device)
+	ret := m.ctrl.Call(m, "Initiate", ctx, device, address)
 	ret0, _ := ret[0].(*quickconnect.Request)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Initiate indicates an expected call of Initiate.
-func (mr *MockQuickConnectServiceMockRecorder) Initiate(ctx, device any) *gomock.Call {
+func (mr *MockQuickConnectServiceMockRecorder) Initiate(ctx, device, address any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Initiate", reflect.TypeOf((*MockQuickConnectService)(nil).Initiate), ctx, device)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Initiate", reflect.TypeOf((*MockQuickConnectService)(nil).Initiate), ctx, device, address)
 }
 
 // Pending mocks base method.

@@ -673,6 +673,7 @@ var (
 		{Name: "device_name", Type: field.TypeString},
 		{Name: "app_name", Type: field.TypeString},
 		{Name: "app_version", Type: field.TypeString},
+		{Name: "remote_address", Type: field.TypeString, Default: ""},
 		{Name: "expires_at", Type: field.TypeTime},
 		{Name: "authorized_by_id", Type: field.TypeUUID, Nullable: true},
 	}
@@ -684,7 +685,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "quick_connect_requests_users_quick_connect_requests",
-				Columns:    []*schema.Column{QuickConnectRequestsColumns[10]},
+				Columns:    []*schema.Column{QuickConnectRequestsColumns[11]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
