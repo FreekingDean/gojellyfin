@@ -4,6 +4,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/activitylog"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apikey"
+	"github.com/FreekingDean/gojellyfin/internal/server/artists"
 	"github.com/FreekingDean/gojellyfin/internal/server/branding"
 	"github.com/FreekingDean/gojellyfin/internal/server/channels"
 	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
@@ -63,6 +64,7 @@ type (
 	DevicesServer            = devices.Server
 	ScheduledTasksServer     = scheduledtasks.Server
 	DashboardServer          = dashboard.Server
+	ArtistsServer            = artists.Server
 	ChannelsServer           = channels.Server
 	EnvironmentServer        = environment.Server
 	ActivityLogServer        = activitylog.Server
@@ -107,6 +109,7 @@ type Server struct {
 	*DevicesServer
 	*ScheduledTasksServer
 	*DashboardServer
+	*ArtistsServer
 	*ChannelsServer
 	*EnvironmentServer
 	*ActivityLogServer
@@ -153,6 +156,7 @@ func New(
 	devices *devices.Server,
 	scheduledtasks *scheduledtasks.Server,
 	dashboard *dashboard.Server,
+	artists *artists.Server,
 	channels *channels.Server,
 	environment *environment.Server,
 	activityLog *activitylog.Server,
@@ -196,6 +200,7 @@ func New(
 		DevicesServer:            devices,
 		ScheduledTasksServer:     scheduledtasks,
 		DashboardServer:          dashboard,
+		ArtistsServer:            artists,
 		ChannelsServer:           channels,
 		EnvironmentServer:        environment,
 		ActivityLogServer:        activityLog,
