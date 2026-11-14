@@ -185,11 +185,6 @@ func (h *Handler) relay(w http.ResponseWriter, r *http.Request, source *items.Me
 
 		return false
 	}
-	defer func() {
-		if err := output.Close(); err != nil {
-			log.Printf("transcode of %s ended: %v", source.Path, err)
-		}
-	}()
 
 	w.Header().Set("Content-Type", transcode.ContentType(container))
 	w.Header().Set("Accept-Ranges", "none")
@@ -202,8 +197,13 @@ func (h *Handler) relay(w http.ResponseWriter, r *http.Request, source *items.Me
 	}
 
 	stalling := transcode.UntilStalled(ctx, output, h.transcoder.Stall(), kill)
-	if _, err := transcode.Relay(w, stalling); err != nil {
-		log.Printf("transcode of %s stopped: %v", source.Path, err)
+	relayed, err := transcode.Relay(w, stalling)
+	if closed := output.Close(); err == nil {
+		err = closed
+	}
+	if err != nil {
+		log.Printf("transcode of %s to %s stopped after %d bytes: %v", source.Path, container, relayed, err)
+		panic(http.ErrAbortHandler)
 	}
 
 	return true
