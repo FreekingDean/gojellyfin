@@ -2,7 +2,10 @@ package radarr
 
 import "github.com/FreekingDean/gojellyfin/internal/sources/arr"
 
-const MoviesPath = "api/v3/movie"
+const (
+	MoviesPath = "api/v3/movie"
+	LookupPath = "api/v3/movie/lookup/tmdb"
+)
 
 type Movie struct {
 	ID      int64    `json:"id"`

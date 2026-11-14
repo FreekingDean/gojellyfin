@@ -17,6 +17,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
+	"github.com/FreekingDean/gojellyfin/internal/store/request"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
 	"github.com/FreekingDean/gojellyfin/internal/store/userpolicy"
@@ -1701,6 +1702,152 @@ func (c *QuickConnectRequestClient) GetModel(ctx context.Context, id uuid.UUID) 
 	return fromQuickConnectRequest(_m), err
 }
 
+type RequestModel struct {
+	ID uuid.UUID
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	UserID    uuid.UUID
+	Key       string
+	Kind      request.Kind
+	TmdbID    int
+	Name      string
+
+	User *UserModel
+}
+
+func fromAllRequest(_m []*Request) []*RequestModel {
+	models := make([]*RequestModel, len(_m))
+	for i, v := range _m {
+		models[i] = fromRequest(v)
+	}
+	return models
+}
+
+func fromRequest(_m *Request) *RequestModel {
+	if _m == nil {
+		return nil
+	}
+
+	return &RequestModel{
+		ID:        _m.ID,
+		CreatedAt: _m.CreatedAt,
+		UpdatedAt: _m.UpdatedAt,
+		UserID:    _m.UserID,
+		Key:       _m.Key,
+		Kind:      _m.Kind,
+		TmdbID:    _m.TmdbID,
+		Name:      _m.Name,
+
+		User: fromUser(_m.Edges.User),
+	}
+}
+
+func (_c *RequestCreate) SaveModel(ctx context.Context) (*RequestModel, error) {
+	_m, err := _c.Save(ctx)
+	return fromRequest(_m), err
+}
+
+func (_u *RequestUpdateOne) SaveModel(ctx context.Context) (*RequestModel, error) {
+	_m, err := _u.Save(ctx)
+	return fromRequest(_m), err
+}
+
+func (_q *RequestQuery) OnlyModel(ctx context.Context) (*RequestModel, error) {
+	_m, err := _q.Only(ctx)
+	return fromRequest(_m), err
+}
+
+func (_q *RequestQuery) FirstModel(ctx context.Context) (*RequestModel, error) {
+	_m, err := _q.First(ctx)
+	return fromRequest(_m), err
+}
+
+func (_q *RequestQuery) AllModels(ctx context.Context) ([]*RequestModel, error) {
+	_m, err := _q.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return fromAllRequest(_m), nil
+}
+
+func (c *RequestClient) GetModel(ctx context.Context, id uuid.UUID) (*RequestModel, error) {
+	_m, err := c.Get(ctx, id)
+	return fromRequest(_m), err
+}
+
+type RequestSubmissionModel struct {
+	ID uuid.UUID
+
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+	SourceID   uuid.UUID
+	Key        string
+	AcceptedAt *time.Time
+	LastError  string
+
+	Source *SourceModel
+}
+
+func fromAllRequestSubmission(_m []*RequestSubmission) []*RequestSubmissionModel {
+	models := make([]*RequestSubmissionModel, len(_m))
+	for i, v := range _m {
+		models[i] = fromRequestSubmission(v)
+	}
+	return models
+}
+
+func fromRequestSubmission(_m *RequestSubmission) *RequestSubmissionModel {
+	if _m == nil {
+		return nil
+	}
+
+	return &RequestSubmissionModel{
+		ID:         _m.ID,
+		CreatedAt:  _m.CreatedAt,
+		UpdatedAt:  _m.UpdatedAt,
+		SourceID:   _m.SourceID,
+		Key:        _m.Key,
+		AcceptedAt: _m.AcceptedAt,
+		LastError:  _m.LastError,
+
+		Source: fromSource(_m.Edges.Source),
+	}
+}
+
+func (_c *RequestSubmissionCreate) SaveModel(ctx context.Context) (*RequestSubmissionModel, error) {
+	_m, err := _c.Save(ctx)
+	return fromRequestSubmission(_m), err
+}
+
+func (_u *RequestSubmissionUpdateOne) SaveModel(ctx context.Context) (*RequestSubmissionModel, error) {
+	_m, err := _u.Save(ctx)
+	return fromRequestSubmission(_m), err
+}
+
+func (_q *RequestSubmissionQuery) OnlyModel(ctx context.Context) (*RequestSubmissionModel, error) {
+	_m, err := _q.Only(ctx)
+	return fromRequestSubmission(_m), err
+}
+
+func (_q *RequestSubmissionQuery) FirstModel(ctx context.Context) (*RequestSubmissionModel, error) {
+	_m, err := _q.First(ctx)
+	return fromRequestSubmission(_m), err
+}
+
+func (_q *RequestSubmissionQuery) AllModels(ctx context.Context) ([]*RequestSubmissionModel, error) {
+	_m, err := _q.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return fromAllRequestSubmission(_m), nil
+}
+
+func (c *RequestSubmissionClient) GetModel(ctx context.Context, id uuid.UUID) (*RequestSubmissionModel, error) {
+	_m, err := c.Get(ctx, id)
+	return fromRequestSubmission(_m), err
+}
+
 type SessionModel struct {
 	ID uuid.UUID
 
@@ -1784,20 +1931,24 @@ func (c *SessionClient) GetModel(ctx context.Context, id uuid.UUID) (*SessionMod
 type SourceModel struct {
 	ID uuid.UUID
 
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-	Name           string
-	URL            string
-	APIKeyVariable string
-	Kind           source.Kind
-	Version        string
-	ContactedAt    *time.Time
-	LastError      string
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+	Name              string
+	URL               string
+	APIKeyVariable    string
+	Kind              source.Kind
+	Version           string
+	ContactedAt       *time.Time
+	LastError         string
+	RequestProfileID  *int
+	RequestRootFolder string
+	RequestTag        string
 
 	Paths       []*SourcePathModel
 	Libraries   []*LibrarySourceModel
 	Files       []*ItemSourceModel
 	Memberships []*LibraryItemModel
+	Submissions []*RequestSubmissionModel
 }
 
 func fromAllSource(_m []*Source) []*SourceModel {
@@ -1814,21 +1965,25 @@ func fromSource(_m *Source) *SourceModel {
 	}
 
 	return &SourceModel{
-		ID:             _m.ID,
-		CreatedAt:      _m.CreatedAt,
-		UpdatedAt:      _m.UpdatedAt,
-		Name:           _m.Name,
-		URL:            _m.URL,
-		APIKeyVariable: _m.APIKeyVariable,
-		Kind:           _m.Kind,
-		Version:        _m.Version,
-		ContactedAt:    _m.ContactedAt,
-		LastError:      _m.LastError,
+		ID:                _m.ID,
+		CreatedAt:         _m.CreatedAt,
+		UpdatedAt:         _m.UpdatedAt,
+		Name:              _m.Name,
+		URL:               _m.URL,
+		APIKeyVariable:    _m.APIKeyVariable,
+		Kind:              _m.Kind,
+		Version:           _m.Version,
+		ContactedAt:       _m.ContactedAt,
+		LastError:         _m.LastError,
+		RequestProfileID:  _m.RequestProfileID,
+		RequestRootFolder: _m.RequestRootFolder,
+		RequestTag:        _m.RequestTag,
 
 		Paths:       fromAllSourcePath(_m.Edges.Paths),
 		Libraries:   fromAllLibrarySource(_m.Edges.Libraries),
 		Files:       fromAllItemSource(_m.Edges.Files),
 		Memberships: fromAllLibraryItem(_m.Edges.Memberships),
+		Submissions: fromAllRequestSubmission(_m.Edges.Submissions),
 	}
 }
 
@@ -2023,6 +2178,7 @@ type UserModel struct {
 	Playlists            []*PlaylistModel
 	PlaylistShares       []*PlaylistShareModel
 	QuickConnectRequests []*QuickConnectRequestModel
+	Requests             []*RequestModel
 }
 
 func fromAllUser(_m []*User) []*UserModel {
@@ -2059,6 +2215,7 @@ func fromUser(_m *User) *UserModel {
 		Playlists:            fromAllPlaylist(_m.Edges.Playlists),
 		PlaylistShares:       fromAllPlaylistShare(_m.Edges.PlaylistShares),
 		QuickConnectRequests: fromAllQuickConnectRequest(_m.Edges.QuickConnectRequests),
+		Requests:             fromAllRequest(_m.Edges.Requests),
 	}
 }
 

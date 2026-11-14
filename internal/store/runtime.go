@@ -26,6 +26,8 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
 	"github.com/FreekingDean/gojellyfin/internal/store/quickconnectrequest"
+	"github.com/FreekingDean/gojellyfin/internal/store/request"
+	"github.com/FreekingDean/gojellyfin/internal/store/requestsubmission"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/FreekingDean/gojellyfin/internal/store/sourcepath"
@@ -501,6 +503,30 @@ func init() {
 	quickconnectrequest.DefaultUpdatedAt = quickconnectrequestDescUpdatedAt.Default.(func() time.Time)
 	// quickconnectrequest.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	quickconnectrequest.UpdateDefaultUpdatedAt = quickconnectrequestDescUpdatedAt.UpdateDefault.(func() time.Time)
+	requestFields := entities.Request{}.Fields()
+	_ = requestFields
+	// requestDescCreatedAt is the schema descriptor for created_at field.
+	requestDescCreatedAt := requestFields[1].Descriptor()
+	// request.DefaultCreatedAt holds the default value on creation for the created_at field.
+	request.DefaultCreatedAt = requestDescCreatedAt.Default.(func() time.Time)
+	// requestDescUpdatedAt is the schema descriptor for updated_at field.
+	requestDescUpdatedAt := requestFields[2].Descriptor()
+	// request.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	request.DefaultUpdatedAt = requestDescUpdatedAt.Default.(func() time.Time)
+	// request.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	request.UpdateDefaultUpdatedAt = requestDescUpdatedAt.UpdateDefault.(func() time.Time)
+	requestsubmissionFields := entities.RequestSubmission{}.Fields()
+	_ = requestsubmissionFields
+	// requestsubmissionDescCreatedAt is the schema descriptor for created_at field.
+	requestsubmissionDescCreatedAt := requestsubmissionFields[1].Descriptor()
+	// requestsubmission.DefaultCreatedAt holds the default value on creation for the created_at field.
+	requestsubmission.DefaultCreatedAt = requestsubmissionDescCreatedAt.Default.(func() time.Time)
+	// requestsubmissionDescUpdatedAt is the schema descriptor for updated_at field.
+	requestsubmissionDescUpdatedAt := requestsubmissionFields[2].Descriptor()
+	// requestsubmission.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	requestsubmission.DefaultUpdatedAt = requestsubmissionDescUpdatedAt.Default.(func() time.Time)
+	// requestsubmission.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	requestsubmission.UpdateDefaultUpdatedAt = requestsubmissionDescUpdatedAt.UpdateDefault.(func() time.Time)
 	sessionFields := entities.Session{}.Fields()
 	_ = sessionFields
 	// sessionDescCreatedAt is the schema descriptor for created_at field.

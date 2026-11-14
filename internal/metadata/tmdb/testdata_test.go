@@ -41,7 +41,7 @@ const (
 		"poster_path": "/ggFHVNu6YYI5L9pCfOacjizRGt.jpg",
 		"backdrop_path": "/tsRy63Mu5cu8etL1X7ZLyf7UP1M.jpg",
 		"production_countries": [{"iso_3166_1": "US", "name": "United States of America"}],
-		"external_ids": {"imdb_id": "tt0903747"},
+		"external_ids": {"imdb_id": "tt0903747", "tvdb_id": 81189},
 		"content_ratings": {"results": [{"iso_3166_1": "US", "rating": "TV-MA"}]},
 		"credits": {
 			"cast": [{"id": 17419, "name": "Bryan Cranston", "character": "Walter White", "order": 0}],

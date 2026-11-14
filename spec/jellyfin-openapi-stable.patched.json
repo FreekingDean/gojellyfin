@@ -47497,6 +47497,9 @@
             "nullable": true,
             "readOnly": true,
             "description": "Why the instance last failed to answer, empty once it does."
+          },
+          "Requests": {
+            "$ref": "#/components/schemas/SourceRequests"
           }
         }
       }, "SourceError": {
@@ -47557,6 +47560,45 @@
             "description": "Where this server opens that folder."
           }
         }
+      }, "SourceQualityProfile": {
+        "type": "object",
+        "required": [
+          "Id",
+          "Name"
+        ],
+        "properties": {
+          "Id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Name": {
+            "type": "string"
+          }
+        }
+      }, "SourceRequests": {
+        "type": "object",
+        "nullable": true,
+        "description": "Where a title somebody asks for is added on the instance. Absent means the instance takes no requests.",
+        "required": [
+          "QualityProfileId",
+          "RootFolder"
+        ],
+        "properties": {
+          "QualityProfileId": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The instance's own id for the quality profile a requested title is given."
+          },
+          "RootFolder": {
+            "type": "string",
+            "description": "The folder on the instance a requested title is added under."
+          },
+          "Tag": {
+            "type": "string",
+            "nullable": true,
+            "description": "A tag the instance puts on a requested title, so a library that filters on it shows what arrives."
+          }
+        }
       }, "SourceTestRequest": {
         "type": "object",
         "required": [
@@ -47600,6 +47642,20 @@
               "type": "string"
             },
             "nullable": true
+          },
+          "QualityProfiles": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/SourceQualityProfile"
+            }
+          },
+          "Tags": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "type": "string"
+            }
           }
         }
       }, "Sources": {

@@ -19,6 +19,9 @@ func (Source) Fields() []ent.Field {
 		field.String("version").Optional(),
 		field.Time("contacted_at").Optional().Nillable(),
 		field.String("last_error").Optional(),
+		field.Int("request_profile_id").Optional().Nillable(),
+		field.String("request_root_folder").Optional(),
+		field.String("request_tag").Optional(),
 	)
 }
 
@@ -28,5 +31,6 @@ func (Source) Edges() []ent.Edge {
 		edge.To("libraries", LibrarySource.Type).Annotations(cascadeOnDelete),
 		edge.To("files", ItemSource.Type).Annotations(cascadeOnDelete),
 		edge.To("memberships", LibraryItem.Type).Annotations(cascadeOnDelete),
+		edge.To("submissions", RequestSubmission.Type).Annotations(cascadeOnDelete),
 	}
 }

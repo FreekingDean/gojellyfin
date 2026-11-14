@@ -33,6 +33,12 @@ const (
 	FieldContactedAt = "contacted_at"
 	// FieldLastError holds the string denoting the last_error field in the database.
 	FieldLastError = "last_error"
+	// FieldRequestProfileID holds the string denoting the request_profile_id field in the database.
+	FieldRequestProfileID = "request_profile_id"
+	// FieldRequestRootFolder holds the string denoting the request_root_folder field in the database.
+	FieldRequestRootFolder = "request_root_folder"
+	// FieldRequestTag holds the string denoting the request_tag field in the database.
+	FieldRequestTag = "request_tag"
 	// EdgePaths holds the string denoting the paths edge name in mutations.
 	EdgePaths = "paths"
 	// EdgeLibraries holds the string denoting the libraries edge name in mutations.
@@ -41,6 +47,8 @@ const (
 	EdgeFiles = "files"
 	// EdgeMemberships holds the string denoting the memberships edge name in mutations.
 	EdgeMemberships = "memberships"
+	// EdgeSubmissions holds the string denoting the submissions edge name in mutations.
+	EdgeSubmissions = "submissions"
 	// Table holds the table name of the source in the database.
 	Table = "sources"
 	// PathsTable is the table that holds the paths relation/edge.
@@ -71,6 +79,13 @@ const (
 	MembershipsInverseTable = "library_items"
 	// MembershipsColumn is the table column denoting the memberships relation/edge.
 	MembershipsColumn = "source_id"
+	// SubmissionsTable is the table that holds the submissions relation/edge.
+	SubmissionsTable = "request_submissions"
+	// SubmissionsInverseTable is the table name for the RequestSubmission entity.
+	// It exists in this package in order to avoid circular dependency with the "requestsubmission" package.
+	SubmissionsInverseTable = "request_submissions"
+	// SubmissionsColumn is the table column denoting the submissions relation/edge.
+	SubmissionsColumn = "source_id"
 )
 
 // Columns holds all SQL columns for source fields.
@@ -85,6 +100,9 @@ var Columns = []string{
 	FieldVersion,
 	FieldContactedAt,
 	FieldLastError,
+	FieldRequestProfileID,
+	FieldRequestRootFolder,
+	FieldRequestTag,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -182,6 +200,21 @@ func ByLastError(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastError, opts...).ToFunc()
 }
 
+// ByRequestProfileID orders the results by the request_profile_id field.
+func ByRequestProfileID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRequestProfileID, opts...).ToFunc()
+}
+
+// ByRequestRootFolder orders the results by the request_root_folder field.
+func ByRequestRootFolder(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRequestRootFolder, opts...).ToFunc()
+}
+
+// ByRequestTag orders the results by the request_tag field.
+func ByRequestTag(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRequestTag, opts...).ToFunc()
+}
+
 // ByPathsCount orders the results by paths count.
 func ByPathsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -237,6 +270,20 @@ func ByMemberships(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newMembershipsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// BySubmissionsCount orders the results by submissions count.
+func BySubmissionsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSubmissionsStep(), opts...)
+	}
+}
+
+// BySubmissions orders the results by submissions terms.
+func BySubmissions(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSubmissionsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newPathsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -263,5 +310,12 @@ func newMembershipsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(MembershipsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, MembershipsTable, MembershipsColumn),
+	)
+}
+func newSubmissionsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SubmissionsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SubmissionsTable, SubmissionsColumn),
 	)
 }

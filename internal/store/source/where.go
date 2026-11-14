@@ -96,6 +96,21 @@ func LastError(v string) predicate.Source {
 	return predicate.Source(sql.FieldEQ(FieldLastError, v))
 }
 
+// RequestProfileID applies equality check predicate on the "request_profile_id" field. It's identical to RequestProfileIDEQ.
+func RequestProfileID(v int) predicate.Source {
+	return predicate.Source(sql.FieldEQ(FieldRequestProfileID, v))
+}
+
+// RequestRootFolder applies equality check predicate on the "request_root_folder" field. It's identical to RequestRootFolderEQ.
+func RequestRootFolder(v string) predicate.Source {
+	return predicate.Source(sql.FieldEQ(FieldRequestRootFolder, v))
+}
+
+// RequestTag applies equality check predicate on the "request_tag" field. It's identical to RequestTagEQ.
+func RequestTag(v string) predicate.Source {
+	return predicate.Source(sql.FieldEQ(FieldRequestTag, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Source {
 	return predicate.Source(sql.FieldEQ(FieldCreatedAt, v))
@@ -591,6 +606,206 @@ func LastErrorContainsFold(v string) predicate.Source {
 	return predicate.Source(sql.FieldContainsFold(FieldLastError, v))
 }
 
+// RequestProfileIDEQ applies the EQ predicate on the "request_profile_id" field.
+func RequestProfileIDEQ(v int) predicate.Source {
+	return predicate.Source(sql.FieldEQ(FieldRequestProfileID, v))
+}
+
+// RequestProfileIDNEQ applies the NEQ predicate on the "request_profile_id" field.
+func RequestProfileIDNEQ(v int) predicate.Source {
+	return predicate.Source(sql.FieldNEQ(FieldRequestProfileID, v))
+}
+
+// RequestProfileIDIn applies the In predicate on the "request_profile_id" field.
+func RequestProfileIDIn(vs ...int) predicate.Source {
+	return predicate.Source(sql.FieldIn(FieldRequestProfileID, vs...))
+}
+
+// RequestProfileIDNotIn applies the NotIn predicate on the "request_profile_id" field.
+func RequestProfileIDNotIn(vs ...int) predicate.Source {
+	return predicate.Source(sql.FieldNotIn(FieldRequestProfileID, vs...))
+}
+
+// RequestProfileIDGT applies the GT predicate on the "request_profile_id" field.
+func RequestProfileIDGT(v int) predicate.Source {
+	return predicate.Source(sql.FieldGT(FieldRequestProfileID, v))
+}
+
+// RequestProfileIDGTE applies the GTE predicate on the "request_profile_id" field.
+func RequestProfileIDGTE(v int) predicate.Source {
+	return predicate.Source(sql.FieldGTE(FieldRequestProfileID, v))
+}
+
+// RequestProfileIDLT applies the LT predicate on the "request_profile_id" field.
+func RequestProfileIDLT(v int) predicate.Source {
+	return predicate.Source(sql.FieldLT(FieldRequestProfileID, v))
+}
+
+// RequestProfileIDLTE applies the LTE predicate on the "request_profile_id" field.
+func RequestProfileIDLTE(v int) predicate.Source {
+	return predicate.Source(sql.FieldLTE(FieldRequestProfileID, v))
+}
+
+// RequestProfileIDIsNil applies the IsNil predicate on the "request_profile_id" field.
+func RequestProfileIDIsNil() predicate.Source {
+	return predicate.Source(sql.FieldIsNull(FieldRequestProfileID))
+}
+
+// RequestProfileIDNotNil applies the NotNil predicate on the "request_profile_id" field.
+func RequestProfileIDNotNil() predicate.Source {
+	return predicate.Source(sql.FieldNotNull(FieldRequestProfileID))
+}
+
+// RequestRootFolderEQ applies the EQ predicate on the "request_root_folder" field.
+func RequestRootFolderEQ(v string) predicate.Source {
+	return predicate.Source(sql.FieldEQ(FieldRequestRootFolder, v))
+}
+
+// RequestRootFolderNEQ applies the NEQ predicate on the "request_root_folder" field.
+func RequestRootFolderNEQ(v string) predicate.Source {
+	return predicate.Source(sql.FieldNEQ(FieldRequestRootFolder, v))
+}
+
+// RequestRootFolderIn applies the In predicate on the "request_root_folder" field.
+func RequestRootFolderIn(vs ...string) predicate.Source {
+	return predicate.Source(sql.FieldIn(FieldRequestRootFolder, vs...))
+}
+
+// RequestRootFolderNotIn applies the NotIn predicate on the "request_root_folder" field.
+func RequestRootFolderNotIn(vs ...string) predicate.Source {
+	return predicate.Source(sql.FieldNotIn(FieldRequestRootFolder, vs...))
+}
+
+// RequestRootFolderGT applies the GT predicate on the "request_root_folder" field.
+func RequestRootFolderGT(v string) predicate.Source {
+	return predicate.Source(sql.FieldGT(FieldRequestRootFolder, v))
+}
+
+// RequestRootFolderGTE applies the GTE predicate on the "request_root_folder" field.
+func RequestRootFolderGTE(v string) predicate.Source {
+	return predicate.Source(sql.FieldGTE(FieldRequestRootFolder, v))
+}
+
+// RequestRootFolderLT applies the LT predicate on the "request_root_folder" field.
+func RequestRootFolderLT(v string) predicate.Source {
+	return predicate.Source(sql.FieldLT(FieldRequestRootFolder, v))
+}
+
+// RequestRootFolderLTE applies the LTE predicate on the "request_root_folder" field.
+func RequestRootFolderLTE(v string) predicate.Source {
+	return predicate.Source(sql.FieldLTE(FieldRequestRootFolder, v))
+}
+
+// RequestRootFolderContains applies the Contains predicate on the "request_root_folder" field.
+func RequestRootFolderContains(v string) predicate.Source {
+	return predicate.Source(sql.FieldContains(FieldRequestRootFolder, v))
+}
+
+// RequestRootFolderHasPrefix applies the HasPrefix predicate on the "request_root_folder" field.
+func RequestRootFolderHasPrefix(v string) predicate.Source {
+	return predicate.Source(sql.FieldHasPrefix(FieldRequestRootFolder, v))
+}
+
+// RequestRootFolderHasSuffix applies the HasSuffix predicate on the "request_root_folder" field.
+func RequestRootFolderHasSuffix(v string) predicate.Source {
+	return predicate.Source(sql.FieldHasSuffix(FieldRequestRootFolder, v))
+}
+
+// RequestRootFolderIsNil applies the IsNil predicate on the "request_root_folder" field.
+func RequestRootFolderIsNil() predicate.Source {
+	return predicate.Source(sql.FieldIsNull(FieldRequestRootFolder))
+}
+
+// RequestRootFolderNotNil applies the NotNil predicate on the "request_root_folder" field.
+func RequestRootFolderNotNil() predicate.Source {
+	return predicate.Source(sql.FieldNotNull(FieldRequestRootFolder))
+}
+
+// RequestRootFolderEqualFold applies the EqualFold predicate on the "request_root_folder" field.
+func RequestRootFolderEqualFold(v string) predicate.Source {
+	return predicate.Source(sql.FieldEqualFold(FieldRequestRootFolder, v))
+}
+
+// RequestRootFolderContainsFold applies the ContainsFold predicate on the "request_root_folder" field.
+func RequestRootFolderContainsFold(v string) predicate.Source {
+	return predicate.Source(sql.FieldContainsFold(FieldRequestRootFolder, v))
+}
+
+// RequestTagEQ applies the EQ predicate on the "request_tag" field.
+func RequestTagEQ(v string) predicate.Source {
+	return predicate.Source(sql.FieldEQ(FieldRequestTag, v))
+}
+
+// RequestTagNEQ applies the NEQ predicate on the "request_tag" field.
+func RequestTagNEQ(v string) predicate.Source {
+	return predicate.Source(sql.FieldNEQ(FieldRequestTag, v))
+}
+
+// RequestTagIn applies the In predicate on the "request_tag" field.
+func RequestTagIn(vs ...string) predicate.Source {
+	return predicate.Source(sql.FieldIn(FieldRequestTag, vs...))
+}
+
+// RequestTagNotIn applies the NotIn predicate on the "request_tag" field.
+func RequestTagNotIn(vs ...string) predicate.Source {
+	return predicate.Source(sql.FieldNotIn(FieldRequestTag, vs...))
+}
+
+// RequestTagGT applies the GT predicate on the "request_tag" field.
+func RequestTagGT(v string) predicate.Source {
+	return predicate.Source(sql.FieldGT(FieldRequestTag, v))
+}
+
+// RequestTagGTE applies the GTE predicate on the "request_tag" field.
+func RequestTagGTE(v string) predicate.Source {
+	return predicate.Source(sql.FieldGTE(FieldRequestTag, v))
+}
+
+// RequestTagLT applies the LT predicate on the "request_tag" field.
+func RequestTagLT(v string) predicate.Source {
+	return predicate.Source(sql.FieldLT(FieldRequestTag, v))
+}
+
+// RequestTagLTE applies the LTE predicate on the "request_tag" field.
+func RequestTagLTE(v string) predicate.Source {
+	return predicate.Source(sql.FieldLTE(FieldRequestTag, v))
+}
+
+// RequestTagContains applies the Contains predicate on the "request_tag" field.
+func RequestTagContains(v string) predicate.Source {
+	return predicate.Source(sql.FieldContains(FieldRequestTag, v))
+}
+
+// RequestTagHasPrefix applies the HasPrefix predicate on the "request_tag" field.
+func RequestTagHasPrefix(v string) predicate.Source {
+	return predicate.Source(sql.FieldHasPrefix(FieldRequestTag, v))
+}
+
+// RequestTagHasSuffix applies the HasSuffix predicate on the "request_tag" field.
+func RequestTagHasSuffix(v string) predicate.Source {
+	return predicate.Source(sql.FieldHasSuffix(FieldRequestTag, v))
+}
+
+// RequestTagIsNil applies the IsNil predicate on the "request_tag" field.
+func RequestTagIsNil() predicate.Source {
+	return predicate.Source(sql.FieldIsNull(FieldRequestTag))
+}
+
+// RequestTagNotNil applies the NotNil predicate on the "request_tag" field.
+func RequestTagNotNil() predicate.Source {
+	return predicate.Source(sql.FieldNotNull(FieldRequestTag))
+}
+
+// RequestTagEqualFold applies the EqualFold predicate on the "request_tag" field.
+func RequestTagEqualFold(v string) predicate.Source {
+	return predicate.Source(sql.FieldEqualFold(FieldRequestTag, v))
+}
+
+// RequestTagContainsFold applies the ContainsFold predicate on the "request_tag" field.
+func RequestTagContainsFold(v string) predicate.Source {
+	return predicate.Source(sql.FieldContainsFold(FieldRequestTag, v))
+}
+
 // HasPaths applies the HasEdge predicate on the "paths" edge.
 func HasPaths() predicate.Source {
 	return predicate.Source(func(s *sql.Selector) {
@@ -675,6 +890,29 @@ func HasMemberships() predicate.Source {
 func HasMembershipsWith(preds ...predicate.LibraryItem) predicate.Source {
 	return predicate.Source(func(s *sql.Selector) {
 		step := newMembershipsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasSubmissions applies the HasEdge predicate on the "submissions" edge.
+func HasSubmissions() predicate.Source {
+	return predicate.Source(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SubmissionsTable, SubmissionsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSubmissionsWith applies the HasEdge predicate on the "submissions" edge with a given conditions (other predicates).
+func HasSubmissionsWith(preds ...predicate.RequestSubmission) predicate.Source {
+	return predicate.Source(func(s *sql.Selector) {
+		step := newSubmissionsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

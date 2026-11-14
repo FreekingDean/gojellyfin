@@ -17,6 +17,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
 	"github.com/FreekingDean/gojellyfin/internal/store/quickconnectrequest"
+	"github.com/FreekingDean/gojellyfin/internal/store/request"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
@@ -282,6 +283,21 @@ func (_c *UserCreate) AddQuickConnectRequests(v ...*QuickConnectRequest) *UserCr
 		ids[i] = v[i].ID
 	}
 	return _c.AddQuickConnectRequestIDs(ids...)
+}
+
+// AddRequestIDs adds the "requests" edge to the Request entity by IDs.
+func (_c *UserCreate) AddRequestIDs(ids ...uuid.UUID) *UserCreate {
+	_c.mutation.AddRequestIDs(ids...)
+	return _c
+}
+
+// AddRequests adds the "requests" edges to the Request entity.
+func (_c *UserCreate) AddRequests(v ...*Request) *UserCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddRequestIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -555,6 +571,22 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(quickconnectrequest.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.RequestsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.RequestsTable,
+			Columns: []string{user.RequestsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(request.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

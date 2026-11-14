@@ -143,10 +143,17 @@ func (s *Server) GoJellyfinTestSource(
 		return unreachable(err.Error()), nil
 	}
 
+	profiles := make([]api.SourceQualityProfile, len(found.Profiles))
+	for i, profile := range found.Profiles {
+		profiles[i] = api.SourceQualityProfile{Id: int32(profile.ID), Name: profile.Name}
+	}
+
 	return api.GoJellyfinTestSource200JSONResponse{
-		Reachable:   true,
-		Version:     apiutil.Ptr(found.Version),
-		RootFolders: apiutil.Ptr(found.RootFolders),
+		Reachable:       true,
+		Version:         apiutil.Ptr(found.Version),
+		RootFolders:     apiutil.Ptr(found.RootFolders),
+		QualityProfiles: apiutil.Ptr(profiles),
+		Tags:            apiutil.Ptr(found.Tags),
 	}, nil
 }
 
@@ -187,6 +194,19 @@ func sourceDto(entry sources.Configured) api.Source {
 		Version:        apiutil.ZeroOrNilPtr(entry.Source.Version),
 		ContactedAt:    entry.Source.ContactedAt,
 		LastError:      apiutil.ZeroOrNilPtr(entry.Source.LastError),
+		Requests:       requestsDto(entry.Source),
+	}
+}
+
+func requestsDto(source sources.Source) *api.SourceRequests {
+	if source.RequestProfileID == nil {
+		return nil
+	}
+
+	return &api.SourceRequests{
+		QualityProfileId: int32(*source.RequestProfileID),
+		RootFolder:       source.RequestRootFolder,
+		Tag:              apiutil.ZeroOrNilPtr(source.RequestTag),
 	}
 }
 
@@ -215,6 +235,12 @@ func configured(req api.Source) (sources.Configured, error) {
 			Paths:          paths,
 		},
 		Libraries: make([]sources.LibrarySource, len(bound)),
+	}
+
+	if req.Requests != nil {
+		entry.Source.RequestProfileID = apiutil.Ptr(int(req.Requests.QualityProfileId))
+		entry.Source.RequestRootFolder = strings.TrimSpace(req.Requests.RootFolder)
+		entry.Source.RequestTag = strings.TrimSpace(apiutil.Deref(req.Requests.Tag))
 	}
 
 	for i, library := range bound {
