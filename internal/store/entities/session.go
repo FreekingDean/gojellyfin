@@ -23,5 +23,6 @@ func (Session) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("user", User.Type).Ref("sessions").Unique().Required(),
 		edge.From("device", Device.Type).Ref("sessions").Unique().Required(),
+		edge.To("sync_play_memberships", SyncPlayGroupMember.Type).Annotations(cascadeOnDelete),
 	}
 }

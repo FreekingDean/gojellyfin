@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/device"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
+	"github.com/FreekingDean/gojellyfin/internal/store/syncplaygroupmember"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/google/uuid"
 )
@@ -128,6 +129,21 @@ func (_c *SessionCreate) SetDeviceID(id uuid.UUID) *SessionCreate {
 // SetDevice sets the "device" edge to the Device entity.
 func (_c *SessionCreate) SetDevice(v *Device) *SessionCreate {
 	return _c.SetDeviceID(v.ID)
+}
+
+// AddSyncPlayMembershipIDs adds the "sync_play_memberships" edge to the SyncPlayGroupMember entity by IDs.
+func (_c *SessionCreate) AddSyncPlayMembershipIDs(ids ...uuid.UUID) *SessionCreate {
+	_c.mutation.AddSyncPlayMembershipIDs(ids...)
+	return _c
+}
+
+// AddSyncPlayMemberships adds the "sync_play_memberships" edges to the SyncPlayGroupMember entity.
+func (_c *SessionCreate) AddSyncPlayMemberships(v ...*SyncPlayGroupMember) *SessionCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddSyncPlayMembershipIDs(ids...)
 }
 
 // Mutation returns the SessionMutation object of the builder.
@@ -284,6 +300,22 @@ func (_c *SessionCreate) createSpec() (*Session, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.device_sessions = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SyncPlayMembershipsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   session.SyncPlayMembershipsTable,
+			Columns: []string{session.SyncPlayMembershipsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(syncplaygroupmember.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

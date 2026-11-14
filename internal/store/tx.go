@@ -68,6 +68,10 @@ type Tx struct {
 	SourcePath *SourcePathClient
 	// Studio is the client for interacting with the Studio builders.
 	Studio *StudioClient
+	// SyncPlayGroup is the client for interacting with the SyncPlayGroup builders.
+	SyncPlayGroup *SyncPlayGroupClient
+	// SyncPlayGroupMember is the client for interacting with the SyncPlayGroupMember builders.
+	SyncPlayGroupMember *SyncPlayGroupMemberClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 	// UserConfiguration is the client for interacting with the UserConfiguration builders.
@@ -234,6 +238,8 @@ func (tx *Tx) init() {
 	tx.Source = NewSourceClient(tx.config)
 	tx.SourcePath = NewSourcePathClient(tx.config)
 	tx.Studio = NewStudioClient(tx.config)
+	tx.SyncPlayGroup = NewSyncPlayGroupClient(tx.config)
+	tx.SyncPlayGroupMember = NewSyncPlayGroupMemberClient(tx.config)
 	tx.User = NewUserClient(tx.config)
 	tx.UserConfiguration = NewUserConfigurationClient(tx.config)
 	tx.UserItemData = NewUserItemDataClient(tx.config)
