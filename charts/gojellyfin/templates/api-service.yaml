@@ -1,0 +1,19 @@
+{{- $component := "api" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "gojellyfin.fullname" . }}
+  labels:
+    {{- include "gojellyfin.labels" (dict "root" $ "component" $component) | nindent 4 }}
+  {{- with .Values.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      targetPort: http
