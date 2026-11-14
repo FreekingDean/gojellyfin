@@ -201,6 +201,7 @@ func (h *Handler) CSS() string {
 	return `
 #quickConnectAlert .dialogContentInner .text::after{content:` + caption + `;display:block;margin-top:1em;opacity:.8}
 #quickConnectAlert .dialogContentInner::after{content:"";display:block;width:14em;height:14em;max-width:100%;margin:1.5em auto 0;background:url("` + qrPath + `") center/contain no-repeat}
+.backdropImage[data-url*="/Branding/Splashscreen"]{display:none}
 `
 }
 
