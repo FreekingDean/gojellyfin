@@ -57,7 +57,7 @@ func TestRedirect(t *testing.T) {
 			if got := "/web/#" + returnTo; got != tt.want {
 				t.Errorf("want the sign-in to return to %q, got %q", tt.want, got)
 			}
-			if cookie := cookies[0]; cookie.Name != "gojellyfin_sso_return" || cookie.Path != "/sso/oidc" || cookie.MaxAge != 600 || !cookie.HttpOnly || cookie.SameSite != http.SameSiteLaxMode {
+			if cookie := cookies[0]; cookie.Name != "gojellyfin_sso_return" || cookie.Path != "/sso/oidc" || cookie.MaxAge != 600 || !cookie.Secure || !cookie.HttpOnly || cookie.SameSite != http.SameSiteLaxMode {
 				t.Errorf("want the return cookie the sign-in reads, got %+v", cookie)
 			}
 		})

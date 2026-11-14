@@ -31,6 +31,7 @@ func Redirect(w http.ResponseWriter, r *http.Request) {
 		Value:    url.QueryEscape(route),
 		Path:     ssoReturnPath,
 		MaxAge:   ssoReturnMaxAge,
+		Secure:   true,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	})
