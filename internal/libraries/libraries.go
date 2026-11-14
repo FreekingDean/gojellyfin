@@ -183,6 +183,19 @@ func (s *Service) ListLibraries(ctx context.Context) ([]*Library, error) {
 	return libraries, nil
 }
 
+func (s *Service) ShownLibraries(ctx context.Context) ([]*Library, error) {
+	libraries, err := s.store.Library.Query().
+		Where(librarymodel.Or(librarymodel.CollectionTypeNEQ(CollectionTypeMusic), librarymodel.HasSources())).
+		WithOptions().
+		Order(librarymodel.ByName()).
+		AllModels(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list the libraries shown: %w", err)
+	}
+
+	return libraries, nil
+}
+
 var groupableCollectionTypes = []CollectionType{
 	CollectionTypeMovies,
 	CollectionTypeTvshows,

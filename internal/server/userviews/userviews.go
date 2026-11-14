@@ -23,7 +23,7 @@ func New(libraries *libraries.Service, shelves *shelves.Service, policies dto.Ac
 }
 
 func (s *Server) GetUserViews(ctx context.Context, request api.GetUserViewsRequestObject) (api.GetUserViewsResponseObject, error) {
-	records, err := s.libraries.ListLibraries(ctx)
+	records, err := s.libraries.ShownLibraries(ctx)
 	if err != nil {
 		return nil, err
 	}

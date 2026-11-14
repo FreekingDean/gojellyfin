@@ -9,7 +9,7 @@ import (
 )
 
 func (s *Server) GetMediaFolders(ctx context.Context, request api.GetMediaFoldersRequestObject) (api.GetMediaFoldersResponseObject, error) {
-	records, err := s.libraries.ListLibraries(ctx)
+	records, err := s.libraries.ShownLibraries(ctx)
 	if err != nil {
 		return nil, err
 	}
