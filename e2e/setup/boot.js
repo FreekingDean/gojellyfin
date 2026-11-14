@@ -39,7 +39,7 @@ async function boot() {
   run(binaries.fixtures, ['create'], { env: scratchEnv });
 
   const databaseUrl = withDatabase(adminUrl, scratch);
-  const serverEnv = clean({ DATABASE_URL: databaseUrl });
+  const serverEnv = clean({ DATABASE_URL: databaseUrl, MEDIA_DIRECTORIES: path.dirname(media) });
 
   const apiPort = await freePort();
   const posterRoot = path.join(BUILD, 'posters');
