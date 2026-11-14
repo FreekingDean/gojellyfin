@@ -2,9 +2,15 @@ package main
 
 import (
 	"context"
+	"crypto/sha1"
 	"database/sql"
+	"encoding/hex"
 	"fmt"
+	"image"
+	"image/color"
+	"image/png"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 	"unicode"
@@ -16,6 +22,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/store"
+	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
@@ -30,6 +37,12 @@ const (
 var (
 	movies   = []string{"Fixture Alpha", "Fixture Beta"}
 	episodes = []string{"Fixture Pilot", "Fixture Second"}
+
+	posterShades = map[string]color.RGBA{
+		"Fixture Alpha": {R: 220, G: 40, B: 40, A: 255},
+		"Fixture Beta":  {R: 40, G: 60, B: 220, A: 255},
+		"Fixture Show":  {R: 40, G: 200, B: 70, A: 255},
+	}
 )
 
 func main() {
@@ -174,6 +187,9 @@ func seed() error {
 		if err := member(ctx, client, record.ID, downloader.ID, item.ID); err != nil {
 			return err
 		}
+		if err := poster(ctx, catalogue, item.ID, name); err != nil {
+			return err
+		}
 	}
 
 	shown, err := libraries.New(client).CreateLibrary(ctx, shows, libraries.CollectionTypeTvshows, []string{"/fixtures/shows"})
@@ -191,6 +207,9 @@ func seed() error {
 		DateModified: &modified,
 	})
 	if err != nil {
+		return err
+	}
+	if err := poster(ctx, catalogue, show.ID, series); err != nil {
 		return err
 	}
 
@@ -261,6 +280,48 @@ func file(ctx context.Context, catalogue *items.Service, sourceID, itemID uuid.U
 	})
 
 	return err
+}
+
+func poster(ctx context.Context, catalogue *items.Service, itemID uuid.UUID, name string) error {
+	directory, base := os.Getenv("POSTER_DIR"), os.Getenv("POSTER_URL")
+	if directory == "" || base == "" {
+		return nil
+	}
+
+	file := slugify(name) + ".png"
+	if err := paint(filepath.Join(directory, file), posterShades[name]); err != nil {
+		return err
+	}
+
+	url := base + "/" + file
+	digest := sha1.Sum([]byte(url))
+
+	return catalogue.SaveImage(ctx, itemID, items.Image{
+		Kind: imagemodel.KindPrimary,
+		URL:  url,
+		Tag:  hex.EncodeToString(digest[:]),
+	})
+}
+
+func paint(path string, shade color.RGBA) error {
+	picture := image.NewRGBA(image.Rect(0, 0, 200, 300))
+	for x := range 200 {
+		for y := range 300 {
+			picture.SetRGBA(x, y, shade)
+		}
+	}
+
+	written, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	if err := png.Encode(written, picture); err != nil {
+		_ = written.Close()
+
+		return err
+	}
+
+	return written.Close()
 }
 
 func slugify(name string) string {

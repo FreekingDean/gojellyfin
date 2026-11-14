@@ -79,3 +79,11 @@ jobs:
         working-directory: e2e
         env:
           CHROME_PATH: /usr/bin/google-chrome
+
+      - name: Keep the screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-screenshots
+          path: e2e/.build/screenshots
+          if-no-files-found: ignore

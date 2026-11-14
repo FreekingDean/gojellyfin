@@ -38,11 +38,20 @@ async function boot() {
   const databaseUrl = withDatabase(adminUrl, scratch);
   const serverEnv = clean({ DATABASE_URL: databaseUrl });
 
+  const apiPort = await freePort();
+  const posterRoot = path.join(BUILD, 'posters');
+  fs.rmSync(posterRoot, { recursive: true, force: true });
+  fs.mkdirSync(posterRoot, { recursive: true });
+
+  const front = proxy.start({ webRoot: client, apiPort, posterRoot });
+  const webPort = await listen(front);
+
   run(binaries.gojellyfin, ['migrate'], { env: serverEnv });
   run(binaries.gojellyfin, ['adduser', USERNAME], { env: serverEnv, input: PASSWORD + '\n' });
-  run(binaries.fixtures, ['seed'], { env: serverEnv });
+  run(binaries.fixtures, ['seed'], {
+    env: { ...serverEnv, POSTER_DIR: posterRoot, POSTER_URL: `http://127.0.0.1:${webPort}${proxy.POSTERS}` },
+  });
 
-  const apiPort = await freePort();
   const api = spawn(binaries.gojellyfin, ['server'], {
     env: { ...process.env, ...serverEnv, HTTP_PORT: String(apiPort) },
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -57,9 +66,6 @@ async function boot() {
   api.stderr.on('data', record);
 
   await waitForApi(apiPort, api, log);
-
-  const front = proxy.start({ webRoot: client, apiPort });
-  const webPort = await listen(front);
 
   return {
     baseUrl: `http://127.0.0.1:${webPort}`,
