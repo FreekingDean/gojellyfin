@@ -212,13 +212,14 @@ func (s *Service) ItemsNeedingMetadata(ctx context.Context, kinds []Kind, force 
 type ItemQuery struct {
 	Viewer Viewer
 
-	LibraryID  *uuid.UUID
-	ParentID   *uuid.UUID
-	TopLevel   bool
-	Kinds      []Kind
-	MediaTypes []MediaType
-	IDs        []uuid.UUID
-	SearchTerm string
+	LibraryID    *uuid.UUID
+	ParentID     *uuid.UUID
+	TopLevel     bool
+	Kinds        []Kind
+	ExcludeKinds []Kind
+	MediaTypes   []MediaType
+	IDs          []uuid.UUID
+	SearchTerm   string
 
 	NameStartsWith          string
 	NameStartsWithOrGreater string
@@ -260,6 +261,9 @@ func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int
 	}
 	if query.Kinds != nil {
 		items = items.Where(itemmodel.KindIn(query.Kinds...))
+	}
+	if len(query.ExcludeKinds) > 0 {
+		items = items.Where(itemmodel.KindNotIn(query.ExcludeKinds...))
 	}
 	if len(query.MediaTypes) > 0 {
 		items = items.Where(itemmodel.KindIn(kindsOf(query.MediaTypes)...))
