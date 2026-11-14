@@ -16,6 +16,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/filter"
 	"github.com/FreekingDean/gojellyfin/internal/server/genres"
 	"github.com/FreekingDean/gojellyfin/internal/server/image"
+	"github.com/FreekingDean/gojellyfin/internal/server/instantmix"
 	"github.com/FreekingDean/gojellyfin/internal/server/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/itemupdate"
 	"github.com/FreekingDean/gojellyfin/internal/server/library"
@@ -70,6 +71,7 @@ type (
 	DashboardServer          = dashboard.Server
 	ArtistsServer            = artists.Server
 	LyricsServer             = lyrics.Server
+	InstantMixServer         = instantmix.Server
 	BackupServer             = backup.Server
 	ChannelsServer           = channels.Server
 	EnvironmentServer        = environment.Server
@@ -119,6 +121,7 @@ type Server struct {
 	*DashboardServer
 	*ArtistsServer
 	*LyricsServer
+	*InstantMixServer
 	*BackupServer
 	*ChannelsServer
 	*EnvironmentServer
@@ -170,6 +173,7 @@ func New(
 	dashboard *dashboard.Server,
 	artists *artists.Server,
 	lyrics *lyrics.Server,
+	instantMix *instantmix.Server,
 	backups *backup.Server,
 	channels *channels.Server,
 	environment *environment.Server,
@@ -218,6 +222,7 @@ func New(
 		DashboardServer:          dashboard,
 		ArtistsServer:            artists,
 		LyricsServer:             lyrics,
+		InstantMixServer:         instantMix,
 		BackupServer:             backups,
 		ChannelsServer:           channels,
 		EnvironmentServer:        environment,

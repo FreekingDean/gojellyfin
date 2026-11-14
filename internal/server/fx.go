@@ -20,6 +20,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/filter"
 	"github.com/FreekingDean/gojellyfin/internal/server/genres"
 	"github.com/FreekingDean/gojellyfin/internal/server/image"
+	"github.com/FreekingDean/gojellyfin/internal/server/instantmix"
 	"github.com/FreekingDean/gojellyfin/internal/server/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/itemupdate"
 	"github.com/FreekingDean/gojellyfin/internal/server/library"
@@ -61,6 +62,7 @@ var Module = fx.Module(
 	branding.Module,
 	artists.Module,
 	lyrics.Module,
+	instantmix.Module,
 	backup.Module,
 	channels.Module,
 	configuration.Module,
