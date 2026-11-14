@@ -1,0 +1,72 @@
+const fs = require('node:fs');
+const { test: base, expect } = require('@playwright/test');
+
+const { harness } = require('../setup/harness');
+const { SERVER_LOG } = require('../setup/boot');
+
+// Each view the client has shown stays in the DOM, hidden, after it routes
+// away. Scoping to the one on screen keeps text the outgoing view still carries
+// from satisfying an assertion meant for the incoming one.
+const VIEW = '.page:visible';
+
+const test = base.extend({
+  harness: [
+    async ({}, use) => {
+      await use(harness());
+    },
+    { scope: 'worker' },
+  ],
+
+  // The client asks gstatic.com for the Chromecast sender, which would make a
+  // run depend on the network and on Google being up.
+  page: async ({ page, harness: app }, use, testInfo) => {
+    await page.route((url) => !url.href.startsWith(app.baseUrl), (route) => route.abort());
+    await use(page);
+
+    if (testInfo.status !== testInfo.expectedStatus && fs.existsSync(SERVER_LOG)) {
+      await testInfo.attach('server.log', { path: SERVER_LOG, contentType: 'text/plain' });
+    }
+  },
+
+  signedIn: async ({ page, harness: app }, use) => {
+    await signIn(page, app);
+    await expect(page).toHaveURL(/home\.html/, { timeout: 30000 });
+    await use(page);
+  },
+});
+
+async function loadLogin(page, app) {
+  await page.goto(app.baseUrl + '/web/');
+  await expect(page.locator('#loginPage button.card').first()).toBeVisible({ timeout: 30000 });
+}
+
+async function signIn(page, app, password = app.password) {
+  await loadLogin(page, app);
+  await page.locator('#loginPage button.card').filter({ hasText: app.username }).click();
+  await page.locator('#txtManualPassword').fill(password);
+  await page.locator('#loginPage button[type=submit]').click();
+}
+
+function view(page) {
+  return page.locator(VIEW);
+}
+
+function card(page, name) {
+  return view(page).locator('.card').filter({ has: page.locator('.cardText', { hasText: name }) }).first();
+}
+
+// A poster's centre carries a play button, so a click there starts playback
+// instead of opening the item. Its corner opens it. The outgoing view fades
+// rather than vanishing, so a click can land on its copy of the same card
+// while it still counts as visible; the click is retried until the route
+// moves.
+async function open(page, name) {
+  const from = page.url();
+
+  await expect(async () => {
+    await card(page, name).locator('.cardScalable').click({ position: { x: 10, y: 10 }, timeout: 5000 });
+    await expect(page).not.toHaveURL(from, { timeout: 5000 });
+  }).toPass({ timeout: 30000 });
+}
+
+module.exports = { test, expect, loadLogin, signIn, view, card, open };

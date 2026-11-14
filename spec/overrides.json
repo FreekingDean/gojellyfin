@@ -18,5 +18,15 @@
     "pointer": "/components/schemas/DeviceProfile",
     "x-go-type": "map[string]interface{}",
     "why": "The device profile is forty-odd nested structs describing codecs we do not read. It is accepted opaquely and handed back unchanged."
+  },
+  {
+    "pointer": "/components/schemas/PlaybackInfoDto/properties/SubtitleStreamIndex",
+    "x-go-type": "json.RawMessage",
+    "why": "jellyfin-web posts the value of the detail page's subtitle select, which is an empty string when the file has no subtitle streams, and an int32 refused that whole PlaybackInfo with a 400. Nothing here reads the index, so it is accepted unparsed."
+  },
+  {
+    "pointer": "/components/schemas/PlaybackInfoDto/properties/AudioStreamIndex",
+    "x-go-type": "json.RawMessage",
+    "why": "jellyfin-web posts the value of the detail page's audio select, which is an empty string when the file has no audio streams, and an int32 refused that whole PlaybackInfo with a 400. Nothing here reads the index, so it is accepted unparsed."
   }
 ]

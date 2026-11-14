@@ -56236,13 +56236,13 @@
             "format": "int64",
             "nullable": true
           },
-          "AudioStreamIndex": {
+          "AudioStreamIndex": {"x-go-type": "json.RawMessage", 
             "type": "integer",
             "description": "Gets or sets the audio stream index.",
             "format": "int32",
             "nullable": true
           },
-          "SubtitleStreamIndex": {
+          "SubtitleStreamIndex": {"x-go-type": "json.RawMessage", 
             "type": "integer",
             "description": "Gets or sets the subtitle stream index.",
             "format": "int32",

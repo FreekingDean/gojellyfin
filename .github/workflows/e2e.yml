@@ -1,7 +1,7 @@
-# Jest driving the real jellyfin-web client in Chrome, in its own workflow so
-# it runs beside the Go jobs rather than after them. continue-on-error keeps a
-# red run from blocking a PR while the suite is new; take it off once it has
-# been green for a while.
+# Playwright driving the real jellyfin-web client, in its own workflow so it
+# runs beside the Go jobs rather than after them. The browser runs in the
+# Playwright image matching e2e/package-lock.json, which is what the committed
+# screenshots were rendered in.
 name: E2E
 
 on:
@@ -15,7 +15,6 @@ permissions:
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    continue-on-error: true
 
     services:
       postgres:
@@ -68,22 +67,28 @@ jobs:
         if: steps.client.outputs.cache-hit != 'true'
         run: docker pull jellyfin/jellyfin:10.10.0
 
+      # The playback spec encodes its fixture and the seed probes it.
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+
       - name: Install
         run: npm ci
         working-directory: e2e
 
-      # ubuntu-latest ships Chrome, so puppeteer-core drives that rather than
-      # downloading a browser of its own.
       - name: Test
-        run: npm test
+        run: npm run visual
         working-directory: e2e
-        env:
-          CHROME_PATH: /usr/bin/google-chrome
 
-      - name: Keep the screenshots
-        if: always()
+      # Holds the actual, expected and diff images of every failed screenshot,
+      # and a trace of every failed test. A deliberate visual change is
+      # accepted by committing the actual images over the baselines, or by
+      # running `make e2e-update` locally.
+      - name: Upload report
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-screenshots
-          path: e2e/.build/screenshots
-          if-no-files-found: ignore
+          name: playwright-report
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+          retention-days: 14

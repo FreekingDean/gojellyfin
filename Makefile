@@ -64,11 +64,22 @@ migrate: build
 test: build
 	go test ./...
 
-# Jest driving the real jellyfin-web client in Chrome. Apart from `make test`
-# because it wants Node, Docker and a browser.
+# Playwright driving the real jellyfin-web client. Apart from `make test`
+# because it wants Node, Docker, ffmpeg and a browser. `e2e` renders in the
+# pinned Playwright image and compares screenshots, as CI does; `e2e-update`
+# rewrites the baselines from that same image; `e2e-local` uses a browser on
+# this machine and skips the pixels.
 .PHONY: e2e
 e2e:
-	cd e2e && npm ci && npm test
+	cd e2e && npm ci && npm run visual
+
+.PHONY: e2e-update
+e2e-update:
+	cd e2e && npm ci && npm run visual:update
+
+.PHONY: e2e-local
+e2e-local:
+	cd e2e && npm ci && npx playwright install chromium && npm test
 
 .PHONY: fmt
 fmt:
