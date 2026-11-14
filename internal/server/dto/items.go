@@ -62,6 +62,9 @@ func ItemDto(item *items.Item, held items.Held, childCount int32, imageTags map[
 		}
 		dto.ImageTags = &tags
 		dto.BackdropImageTags = &backdrops
+		if _, ok := tags["Primary"]; ok {
+			dto.PrimaryImageAspectRatio = apiutil.Ptr(primaryAspect(kind))
+		}
 	}
 
 	if item.Overview != "" {
@@ -95,6 +98,19 @@ func ItemDto(item *items.Item, held items.Held, childCount int32, imageTags map[
 	}
 
 	return dto
+}
+
+const (
+	posterAspect = 2.0 / 3.0
+	stillAspect  = 16.0 / 9.0
+)
+
+func primaryAspect(kind api.BaseItemKind) float64 {
+	if kind == api.BaseItemKindEpisode {
+		return stillAspect
+	}
+
+	return posterAspect
 }
 
 func ItemDtos(ctx context.Context, store *items.Service, records []*items.Item) ([]api.BaseItemDto, error) {
