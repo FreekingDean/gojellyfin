@@ -8,20 +8,32 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
+	"github.com/FreekingDean/gojellyfin/internal/sso"
 )
+
+const signOnButton = `<form action="/sso/oidc/start" method="get" style="margin-top:1em"><button is="emby-button" type="submit" class="raised block emby-button button-submit">Sign in with SSO</button></form>`
+
+type SignOn interface {
+	Enabled() bool
+}
 
 type Server struct {
 	config *config.Service
+	signOn SignOn
 }
 
-func New(config *config.Service) *Server {
-	return &Server{config: config}
+func New(config *config.Service, signOn *sso.Service) *Server {
+	return &Server{config: config, signOn: signOn}
 }
 
 func (s *Server) GetBrandingOptions(ctx context.Context, request api.GetBrandingOptionsRequestObject) (api.GetBrandingOptionsResponseObject, error) {
 	branding, err := configuration.BrandingConfiguration(ctx, s.config)
 	if err != nil {
 		return nil, err
+	}
+
+	if s.signOn.Enabled() {
+		branding.LoginDisclaimer = apiutil.Ptr(strings.TrimSpace(apiutil.Deref(branding.LoginDisclaimer) + "\n\n" + signOnButton))
 	}
 
 	return api.GetBrandingOptions200JSONResponse(branding), nil
