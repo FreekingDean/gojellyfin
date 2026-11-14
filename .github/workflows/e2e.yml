@@ -61,11 +61,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: e2e/.client
-          key: jellyfin-web-10.10.0
+          key: jellyfin-web-12.4
 
       - name: Fetch the client
         if: steps.client.outputs.cache-hit != 'true'
-        run: docker pull jellyfin/jellyfin:10.10.0
+        run: docker pull jellyfin/jellyfin:12.4
 
       # The playback spec encodes its fixture and the seed probes it.
       - name: Install ffmpeg

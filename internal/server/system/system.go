@@ -101,6 +101,10 @@ func storageDto(name string) api.FolderStorageDto {
 	}
 }
 
+func (s *Server) GetServerLogs(ctx context.Context, request api.GetServerLogsRequestObject) (api.GetServerLogsResponseObject, error) {
+	return api.GetServerLogs200JSONResponse{}, nil
+}
+
 func (s *Server) GetPingSystem(ctx context.Context, request api.GetPingSystemRequestObject) (api.GetPingSystemResponseObject, error) {
 	return api.GetPingSystem200JSONResponse(s.system.ProductName()), nil
 }

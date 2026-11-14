@@ -53,7 +53,7 @@ test.describe('a title the library lacks', () => {
 
 test.describe('a search', () => {
   test('finds a title the library lacks, and only of a kind a downloader takes', async ({ signedIn: page, harness }) => {
-    await page.locator('.headerSearchButton').click();
+    await page.getByRole('link', { name: 'Search' }).click();
     await expect(page).toHaveURL(/search/);
     await view(page).locator('.searchfields-txtSearch').fill('Wanted');
 

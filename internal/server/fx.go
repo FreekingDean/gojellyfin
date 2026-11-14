@@ -9,6 +9,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/activitylog"
 	"github.com/FreekingDean/gojellyfin/internal/server/apikey"
 	"github.com/FreekingDean/gojellyfin/internal/server/artists"
+	"github.com/FreekingDean/gojellyfin/internal/server/backup"
 	"github.com/FreekingDean/gojellyfin/internal/server/branding"
 	"github.com/FreekingDean/gojellyfin/internal/server/channels"
 	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
@@ -58,6 +59,7 @@ var Module = fx.Module(
 	apikey.Module,
 	branding.Module,
 	artists.Module,
+	backup.Module,
 	channels.Module,
 	configuration.Module,
 	dashboard.Module,

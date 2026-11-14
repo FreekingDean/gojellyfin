@@ -13,6 +13,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/collage"
+	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/items"
@@ -294,6 +295,21 @@ func TestServer_GetAncestors(t *testing.T) {
 		}
 	})
 
+	t.Run("places a title the library lacks under the root folder alone", func(t *testing.T) {
+		response, err := fixture.server.GetAncestors(ctx, api.GetAncestorsRequestObject{ItemId: discover.ID(itemmodel.KindMovie, 603)})
+		if err != nil {
+			t.Fatalf("failed to get the ancestors: %v", err)
+		}
+
+		dtos, ok := response.(api.GetAncestors200JSONResponse)
+		if !ok {
+			t.Fatalf("response = %T, want api.GetAncestors200JSONResponse", response)
+		}
+		if got := names(dtos); !slices.Equal(got, []string{"Media Folders"}) {
+			t.Errorf("ancestors = %v, want the root folder alone", got)
+		}
+	})
+
 	t.Run("reports an unknown item as missing", func(t *testing.T) {
 		response, err := fixture.server.GetAncestors(ctx, api.GetAncestorsRequestObject{ItemId: uuid.New()})
 		if err != nil {
@@ -479,4 +495,21 @@ func disconnected(t *testing.T) *jobs.Client {
 	}
 
 	return client
+}
+
+func TestServer_GetItemCollections(t *testing.T) {
+	server := &Server{}
+
+	response, err := server.GetItemCollections(context.Background(), api.GetItemCollectionsRequestObject{ItemId: uuid.New()})
+	if err != nil {
+		t.Fatalf("failed to get the collections: %v", err)
+	}
+
+	result, ok := response.(api.GetItemCollections200JSONResponse)
+	if !ok {
+		t.Fatalf("response = %T, want api.GetItemCollections200JSONResponse", response)
+	}
+	if result.Items == nil || len(*result.Items) != 0 {
+		t.Errorf("items = %v, want an empty list", result.Items)
+	}
 }

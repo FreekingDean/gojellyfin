@@ -3,11 +3,16 @@ package library
 import (
 	"context"
 
+	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 )
 
 func (s *Server) GetAncestors(ctx context.Context, request api.GetAncestorsRequestObject) (api.GetAncestorsResponseObject, error) {
+	if _, _, unowned := discover.Parse(request.ItemId); unowned {
+		return api.GetAncestors200JSONResponse{dto.RootView()}, nil
+	}
+
 	ancestry, err := s.items.Ancestors(ctx, request.ItemId)
 	if err != nil {
 		return nil, err

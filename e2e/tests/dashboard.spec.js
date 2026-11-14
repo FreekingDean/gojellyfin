@@ -1,10 +1,8 @@
-const { test, expect, view } = require('./fixtures');
+const { test, expect, view, openDashboard } = require('./fixtures');
 
 test.describe('the Media Downloaders dashboard page', () => {
   test('is in the dashboard nav and lists the seeded connection', async ({ signedIn: page }) => {
-    await page.locator('.headerButton.mainDrawerButton').click();
-    await page.locator('.mainDrawer').getByText('Dashboard').click();
-    await expect(page).toHaveURL(/dashboard/);
+    await openDashboard(page);
 
     await page.getByRole('link', { name: 'Media Downloaders' }).click();
     await expect(page).toHaveURL(/configurationpage\?name=media_downloaders/i);
@@ -17,9 +15,7 @@ test.describe('the Media Downloaders dashboard page', () => {
   });
 
   test('lists who may ask for titles on the Requests page', async ({ signedIn: page, harness }) => {
-    await page.locator('.headerButton.mainDrawerButton').click();
-    await page.locator('.mainDrawer').getByText('Dashboard').click();
-    await expect(page).toHaveURL(/dashboard/);
+    await openDashboard(page);
 
     await page.getByRole('link', { name: 'Requests' }).click();
     await expect(page).toHaveURL(/configurationpage\?name=requests/i);

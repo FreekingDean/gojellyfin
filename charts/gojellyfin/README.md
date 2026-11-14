@@ -172,7 +172,7 @@ use.
 | `worker.podDisruptionBudget.enabled`, `.maxUnavailable` | `false`, `1` | What a drain, kured and the descheduler honour. The autoscaler scales in without evicting, so this does not slow it |
 | `web.enabled` | `true` | |
 | `web.replicas` | `2` | |
-| `web.client.repository`, `.tag`, `.pullPolicy` | `jellyfin/jellyfin`, `10.10.0`, `""` | `jellyfin-web` is not published on its own — no image, no npm package, no built assets in its releases — so an init container copies it out of the all-in-one image into an emptyDir. Pin it to a released client rather than to the announced API version: the server says 12.0.0 out of the vendored spec, 12 has no released all-in-one image, and a client newer than what is implemented calls endpoints that answer 501. 10.10.0 is what `make e2e` drives |
+| `web.client.repository`, `.tag`, `.pullPolicy` | `jellyfin/jellyfin`, `12.4`, `""` | `jellyfin-web` is not published on its own — no image, no npm package, no built assets in its releases — so an init container copies it out of the all-in-one image into an emptyDir. Pin it to the client `make e2e` drives, which is the only one the suite has shown to work: a client newer than what is implemented calls endpoints that answer 501 |
 | `web.client.resources` | 50m/64Mi, limit 256Mi | |
 | `web.image.repository`, `.tag`, `.pullPolicy` | `nginxinc/nginx-unprivileged`, `1.31.7-alpine`, `""` | Pinned, because a floating tag is the same drift `latest` is. The unprivileged image listens on 8080 and owns the directories nginx writes to, which is what lets `runAsNonRoot` hold. The port is not a value: nothing here rewrites nginx's config, so it listens on 8080 whatever a value said |
 | `web.resources` | 10m/32Mi, limit 128Mi | |

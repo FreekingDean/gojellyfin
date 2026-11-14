@@ -79,3 +79,18 @@ func TestServer_GetEndpointInfo(t *testing.T) {
 		})
 	}
 }
+
+func TestServer_GetServerLogs(t *testing.T) {
+	response, err := testServer().GetServerLogs(context.Background(), api.GetServerLogsRequestObject{})
+	if err != nil {
+		t.Fatalf("failed to list the logs: %v", err)
+	}
+
+	logs, ok := response.(api.GetServerLogs200JSONResponse)
+	if !ok {
+		t.Fatalf("response = %T, want api.GetServerLogs200JSONResponse", response)
+	}
+	if logs == nil || len(logs) != 0 {
+		t.Errorf("logs = %v, want an empty list", logs)
+	}
+}
