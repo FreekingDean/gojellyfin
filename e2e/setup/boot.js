@@ -172,13 +172,9 @@ async function boot({ mediaSeconds = 20 } = {}) {
     },
     serverLog: () => log.join(''),
     async stop() {
-      await new Promise((resolve) => front.close(resolve));
-      await new Promise((resolve) => catalogue.close(resolve));
-      await new Promise((resolve) => downloader.close(resolve));
-      api.kill('SIGTERM');
-      await once(api);
-      provider.child.kill('SIGTERM');
-      await once(provider.child);
+      await Promise.all([front, catalogue, downloader].map(shut));
+      await terminate(api);
+      await terminate(provider.child);
       file.end();
       run(binaries.fixtures, ['drop'], { env: scratchEnv, allowFailure: true });
     },
@@ -353,10 +349,27 @@ function freePort() {
   });
 }
 
+const connections = new WeakMap();
+
 function listen(server) {
+  const open = new Set();
+  connections.set(server, open);
+  server.on('connection', (socket) => {
+    open.add(socket);
+    socket.on('close', () => open.delete(socket));
+  });
   return new Promise((resolve, reject) => {
     server.on('error', reject);
     server.listen(0, '127.0.0.1', () => resolve(server.address().port));
+  });
+}
+
+// A client still connected, such as a WebView holding the websocket, keeps
+// close from ever calling back, so whatever is still open is cut.
+function shut(server) {
+  return new Promise((resolve) => {
+    server.close(resolve);
+    for (const socket of connections.get(server) ?? []) socket.destroy();
   });
 }
 
@@ -391,6 +404,13 @@ function answers(port) {
       resolve(false);
     });
   });
+}
+
+async function terminate(child) {
+  child.kill('SIGTERM');
+  const killing = setTimeout(() => child.kill('SIGKILL'), 15000);
+  await once(child);
+  clearTimeout(killing);
 }
 
 function once(child) {

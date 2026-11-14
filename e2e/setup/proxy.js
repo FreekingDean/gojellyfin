@@ -56,6 +56,8 @@ function start({ webRoot, apiPort, posterRoot }) {
       socket.pipe(upstream);
     });
 
+    upstream.on('close', () => socket.destroy());
+    socket.on('close', () => upstream.destroy());
     upstream.on('error', () => socket.destroy());
     socket.on('error', () => upstream.destroy());
   });
