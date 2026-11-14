@@ -11,6 +11,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
+	"github.com/FreekingDean/gojellyfin/internal/transcode"
 )
 
 func capabilities(profile api.DeviceProfile) items.Capabilities {
@@ -80,7 +81,11 @@ func streamURL(itemID uuid.UUID, plan items.Plan, token, session string, startTi
 	if startTicks > 0 {
 		query.Set("startTimeTicks", strconv.FormatInt(startTicks, 10))
 	}
-	if plan.Container == items.Container(plan.Source) {
+	if plan.VideoCodec != "" {
+		query.Set("videoCodec", plan.VideoCodec)
+		query.Set("maxHeight", strconv.Itoa(transcode.MaxHeight))
+	}
+	if plan.VideoCodec == "" && plan.Container == items.Container(plan.Source) && plan.AudioCodec == items.AudioCodec(plan.Source) {
 		query.Set("copyTimestamps", "true")
 	}
 	query.Set("allowVideoStreamCopy", "false")

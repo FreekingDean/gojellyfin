@@ -3,7 +3,8 @@
 {{- fail "worker.enabled needs temporal.hostPort: a worker with nothing to dial crash loops" }}
 {{- end }}
 {{- $component := "worker" }}
-{{- $pod := mergeOverwrite (deepCopy (default dict .Values.pod)) (default dict .Values.worker.pod) }}
+{{- $grace := dict "terminationGracePeriodSeconds" (add (int .Values.worker.stopTimeoutSeconds) 30) }}
+{{- $pod := mergeOverwrite $grace (deepCopy (default dict .Values.pod)) (default dict .Values.worker.pod) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -11,7 +12,9 @@ metadata:
   labels:
     {{- include "gojellyfin.labels" (dict "root" $ "component" $component) | nindent 4 }}
 spec:
+  {{- if not .Values.worker.autoscaling.enabled }}
   replicas: {{ .Values.worker.replicas }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 6 }}
@@ -34,6 +37,8 @@ spec:
           args: ["worker"]
           env:
             {{- include "gojellyfin.workerEnv" . | nindent 12 }}
+            - name: TEMPORAL_WORKER_STOP_TIMEOUT
+              value: {{ printf "%ds" (int .Values.worker.stopTimeoutSeconds) | quote }}
           {{- with .Values.sources.existingSecret }}
           envFrom:
             - secretRef:

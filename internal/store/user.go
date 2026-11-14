@@ -34,6 +34,10 @@ type User struct {
 	LastLoginAt *time.Time `json:"last_login_at,omitempty"`
 	// LastActivityAt holds the value of the "last_activity_at" field.
 	LastActivityAt *time.Time `json:"last_activity_at,omitempty"`
+	// OidcIssuer holds the value of the "oidc_issuer" field.
+	OidcIssuer *string `json:"oidc_issuer,omitempty"`
+	// OidcSubject holds the value of the "oidc_subject" field.
+	OidcSubject *string `json:"oidc_subject,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
 	Edges        UserEdges `json:"edges"`
@@ -155,7 +159,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case user.FieldName, user.FieldUsername, user.FieldPasswordHash:
+		case user.FieldName, user.FieldUsername, user.FieldPasswordHash, user.FieldOidcIssuer, user.FieldOidcSubject:
 			values[i] = new(sql.NullString)
 		case user.FieldCreatedAt, user.FieldUpdatedAt, user.FieldLastLoginAt, user.FieldLastActivityAt:
 			values[i] = new(sql.NullTime)
@@ -225,6 +229,20 @@ func (_m *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.LastActivityAt = new(time.Time)
 				*_m.LastActivityAt = value.Time
+			}
+		case user.FieldOidcIssuer:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field oidc_issuer", values[i])
+			} else if value.Valid {
+				_m.OidcIssuer = new(string)
+				*_m.OidcIssuer = value.String
+			}
+		case user.FieldOidcSubject:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field oidc_subject", values[i])
+			} else if value.Valid {
+				_m.OidcSubject = new(string)
+				*_m.OidcSubject = value.String
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -329,6 +347,16 @@ func (_m *User) String() string {
 	if v := _m.LastActivityAt; v != nil {
 		builder.WriteString("last_activity_at=")
 		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.OidcIssuer; v != nil {
+		builder.WriteString("oidc_issuer=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.OidcSubject; v != nil {
+		builder.WriteString("oidc_subject=")
+		builder.WriteString(*v)
 	}
 	builder.WriteByte(')')
 	return builder.String()
