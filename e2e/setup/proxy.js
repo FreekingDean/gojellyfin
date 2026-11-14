@@ -46,7 +46,22 @@ function start({ webRoot, apiPort, posterRoot }) {
     proxy(apiPort, request, response);
   });
 
+  // A signed-in client holds its websocket open for as long as it runs, and
+  // close() waits for every connection, so the harness ends the upgraded
+  // ones itself or a suite that finishes signed in never exits.
+  const upgraded = new Set();
+  const close = server.close.bind(server);
+  server.close = (callback) => {
+    for (const socket of upgraded) {
+      socket.destroy();
+    }
+    server.closeAllConnections();
+    return close(callback);
+  };
+
   server.on('upgrade', (request, socket, head) => {
+    upgraded.add(socket);
+    socket.on('close', () => upgraded.delete(socket));
     const upstream = net.connect(apiPort, '127.0.0.1', () => {
       upstream.write(rebuildHead(request));
       if (head && head.length) {
@@ -56,6 +71,7 @@ function start({ webRoot, apiPort, posterRoot }) {
       socket.pipe(upstream);
     });
 
+    socket.on('close', () => upstream.destroy());
     upstream.on('error', () => socket.destroy());
     socket.on('error', () => upstream.destroy());
   });
