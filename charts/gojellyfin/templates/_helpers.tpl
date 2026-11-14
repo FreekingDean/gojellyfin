@@ -58,7 +58,7 @@ IfNotPresent
 
 {{- define "gojellyfin.podSpec" -}}
 {{- range $field, $value := omit . "annotations" "containerSecurityContext" }}
-{{- if $value }}
+{{- if or (kindIs "bool" $value) (kindIs "float64" $value) (kindIs "int64" $value) (kindIs "int" $value) $value }}
 {{ $field }}:
 {{- if or (kindIs "map" $value) (kindIs "slice" $value) }}
 {{- toYaml $value | nindent 2 }}

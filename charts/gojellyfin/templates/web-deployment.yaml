@@ -28,12 +28,16 @@ spec:
         - name: client
           image: {{ printf "%s:%s" .Values.web.client.repository .Values.web.client.tag }}
           imagePullPolicy: {{ include "gojellyfin.pullPolicy" (dict "policy" .Values.web.client.pullPolicy "tag" .Values.web.client.tag) }}
-          command: ["cp", "-a", "/jellyfin/jellyfin-web/.", "/client/"]
+          command: ["cp", "-R", "/jellyfin/jellyfin-web/.", "/client/"]
           volumeMounts:
             - name: client
               mountPath: /client
           {{- with .Values.web.client.resources }}
           resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $pod.containerSecurityContext }}
+          securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
       containers:

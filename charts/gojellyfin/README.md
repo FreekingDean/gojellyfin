@@ -156,7 +156,7 @@ use.
 | `web.replicas` | `2` | |
 | `web.client.repository`, `.tag`, `.pullPolicy` | `jellyfin/jellyfin`, `10.10.0`, `""` | `jellyfin-web` is not published on its own — no image, no npm package, no built assets in its releases — so an init container copies it out of the all-in-one image into an emptyDir. Pin it to a released client rather than to the announced API version: the server says 12.0.0 out of the vendored spec, 12 has no released all-in-one image, and a client newer than what is implemented calls endpoints that answer 501. 10.10.0 is what `make e2e` drives |
 | `web.client.resources` | 50m/64Mi, limit 256Mi | |
-| `web.image.repository`, `.tag`, `.pullPolicy` | `nginxinc/nginx-unprivileged`, `alpine`, `""` | The unprivileged image listens on 8080 and owns the directories nginx writes to, which is what lets `runAsNonRoot` hold. The port is not a value: nothing here rewrites nginx's config, so it listens on 8080 whatever a value said |
+| `web.image.repository`, `.tag`, `.pullPolicy` | `nginxinc/nginx-unprivileged`, `1.31.7-alpine`, `""` | Pinned, because a floating tag is the same drift `latest` is. The unprivileged image listens on 8080 and owns the directories nginx writes to, which is what lets `runAsNonRoot` hold. The port is not a value: nothing here rewrites nginx's config, so it listens on 8080 whatever a value said |
 | `web.resources` | 10m/32Mi, limit 128Mi | |
 
 What the chart owns rather than exposing: the probes (`/System/Ping` is the only
@@ -170,12 +170,14 @@ item is an API path, and nothing else has a reason to.
 `pod` is merged into every pod the chart renders, and each workload's own `pod`
 overrides it key by key. Every key except `annotations` and
 `containerSecurityContext` is passed through to the pod spec verbatim, so
-anything Kubernetes accepts there works without the chart naming it.
+anything Kubernetes accepts there works without the chart naming it. A `false`
+or a `0` is passed through too; only an empty value is left out.
 
 | Value | Default | Description |
 |---|---|---|
 | `pod.annotations` | `{}` | On the pod template's metadata |
-| `pod.containerSecurityContext` | no privilege escalation, drops ALL | On each container. No `runAsNonRoot` for the gojellyfin containers: the image's `USER` is a name rather than a uid and kubelet refuses to start a container whose non-rootness it cannot check numerically. The image drops privilege on its own; the nginx one can and does, through `web.pod` |
+| `pod.automountServiceAccountToken` | `false` | Nothing here talks to the Kubernetes API, so no pod carries a token |
+| `pod.containerSecurityContext` | no privilege escalation, drops ALL, `RuntimeDefault` seccomp | On each container, init containers included. No `runAsNonRoot` for the gojellyfin containers: the image's `USER` is a name rather than a uid and kubelet refuses to start a container whose non-rootness it cannot check numerically. The image drops privilege on its own. The web pod sets `runAsNonRoot` and uid 101, nginx's, at the pod level through `web.pod.securityContext`, so the init container copying the client out of the root-by-default `jellyfin/jellyfin` image runs unprivileged too |
 | `pod.securityContext` | `{}` | Pod-level, passed through |
 | `pod.imagePullSecrets` | `[]` | Passed through |
 | `pod.nodeSelector`, `.tolerations`, `.affinity` | empty | Passed through, and named here only because they are the common ones |
