@@ -47,39 +47,6 @@ func newServer(t *testing.T) (*Server, string) {
 	return New(libraries.New(client)), name
 }
 
-func pathInfos(paths ...string) *[]api.MediaPathInfo {
-	infos := make([]api.MediaPathInfo, 0, len(paths))
-	for _, path := range paths {
-		infos = append(infos, api.MediaPathInfo{Path: apiutil.Ptr(path)})
-	}
-
-	return &infos
-}
-
-func addVirtualFolder(t *testing.T, server *Server, name string, params *[]string, infos *[]api.MediaPathInfo) {
-	t.Helper()
-
-	collectionType := api.CollectionTypeOptions(librarymodel.CollectionTypeMovies)
-	body := api.AddVirtualFolderJSONRequestBody{
-		LibraryOptions: &api.LibraryOptions{PathInfos: infos},
-	}
-
-	response, err := server.AddVirtualFolder(context.Background(), api.AddVirtualFolderRequestObject{
-		Params: api.AddVirtualFolderParams{
-			Name:           apiutil.Ptr(name),
-			CollectionType: &collectionType,
-			Paths:          params,
-		},
-		JSONBody: &body,
-	})
-	if err != nil {
-		t.Fatalf("failed to add the virtual folder: %v", err)
-	}
-	if _, ok := response.(api.AddVirtualFolder204Response); !ok {
-		t.Fatalf("response = %T, want 204", response)
-	}
-}
-
 func locations(t *testing.T, server *Server, name string) []string {
 	t.Helper()
 
@@ -117,40 +84,48 @@ func locations(t *testing.T, server *Server, name string) []string {
 	return nil
 }
 
-func TestServer_AddVirtualFolder(t *testing.T) {
-	tests := []struct {
-		name  string
-		paths *[]string
-		infos *[]api.MediaPathInfo
-		want  []string
-	}{
-		{
-			name:  "stores the path infos from the body",
-			infos: pathInfos("/media/movies"),
-			want:  []string{"/media/movies"},
-		},
-		{
-			name:  "stores the paths from the query",
-			paths: apiutil.Ptr([]string{"/media/movies"}),
-			want:  []string{"/media/movies"},
-		},
-		{
-			name:  "unions both spellings",
-			paths: apiutil.Ptr([]string{"/media/movies", "/media/shared"}),
-			infos: pathInfos("/media/shared", "/media/extra", ""),
-			want:  []string{"/media/movies", "/media/shared", "/media/extra"},
-		},
+func TestServer_ListsLocations(t *testing.T) {
+	server, name := newServer(t)
+	want := []string{"/media/movies", "/media/movies-4k"}
+
+	if _, err := server.libraries.CreateLibrary(context.Background(), name, libraries.CollectionTypeMovies, want); err != nil {
+		t.Fatalf("failed to create the library: %v", err)
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			server, name := newServer(t)
+	if found := locations(t, server, name); !slices.Equal(found, want) {
+		t.Errorf("Locations = %v, want %v", found, want)
+	}
+}
 
-			addVirtualFolder(t, server, name, test.paths, test.infos)
+func TestServer_RefusesReshapingTheLibraries(t *testing.T) {
+	server, name := newServer(t)
+	ctx := context.Background()
+	if _, err := server.libraries.CreateLibrary(ctx, name, libraries.CollectionTypeMovies, nil); err != nil {
+		t.Fatalf("failed to create the library: %v", err)
+	}
 
-			if found := locations(t, server, name); !slices.Equal(found, test.want) {
-				t.Errorf("Locations = %v, want %v", found, test.want)
-			}
-		})
+	added, err := server.AddVirtualFolder(ctx, api.AddVirtualFolderRequestObject{
+		Params: api.AddVirtualFolderParams{Name: apiutil.Ptr(name + "-added")},
+	})
+	if _, ok := added.(api.AddVirtualFolder403Response); !ok || err != nil {
+		t.Errorf("AddVirtualFolder = %T, %v, want 403", added, err)
+	}
+
+	removed, err := server.RemoveVirtualFolder(ctx, api.RemoveVirtualFolderRequestObject{
+		Params: api.RemoveVirtualFolderParams{Name: apiutil.Ptr(name)},
+	})
+	if _, ok := removed.(api.RemoveVirtualFolder403Response); !ok || err != nil {
+		t.Errorf("RemoveVirtualFolder = %T, %v, want 403", removed, err)
+	}
+
+	pathAdded, err := server.AddMediaPath(ctx, api.AddMediaPathRequestObject{
+		JSONBody: &api.AddMediaPathJSONRequestBody{Name: name, Path: apiutil.Ptr("/elsewhere")},
+	})
+	if _, ok := pathAdded.(api.AddMediaPath403Response); !ok || err != nil {
+		t.Errorf("AddMediaPath = %T, %v, want 403", pathAdded, err)
+	}
+
+	if found := locations(t, server, name); len(found) != 0 {
+		t.Errorf("Locations = %v, want none", found)
 	}
 }

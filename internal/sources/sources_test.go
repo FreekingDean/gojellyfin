@@ -3,10 +3,12 @@ package sources
 import (
 	"context"
 	"errors"
+	"slices"
 	"testing"
 
 	"github.com/google/uuid"
 
+	librarymodel "github.com/FreekingDean/gojellyfin/internal/store/library"
 	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 )
 
@@ -24,10 +26,15 @@ func (f *fixture) configured(t *testing.T) Configured {
 func (f *fixture) folder(t *testing.T) string {
 	t.Helper()
 
-	folder := "/srv/" + uuid.NewString()
+	return "/srv/" + uuid.NewString()
+}
+
+func (f *fixture) shows(t *testing.T) uuid.UUID {
+	t.Helper()
+
 	library, err := f.client.Library.Create().
 		SetName(t.Name() + "-" + uuid.NewString()).
-		SetLocations([]string{folder}).
+		SetCollectionType(librarymodel.CollectionTypeTvshows).
 		Save(context.Background())
 	if err != nil {
 		t.Fatalf("failed to create the library: %v", err)
@@ -38,7 +45,7 @@ func (f *fixture) folder(t *testing.T) string {
 		}
 	})
 
-	return folder
+	return library.ID
 }
 
 func candidate(local ...string) Configured {
@@ -58,16 +65,29 @@ func candidate(local ...string) Configured {
 
 func TestCreate_RefusesWhatCannotBeServed(t *testing.T) {
 	fixture := newFixture(t, &[]movie{})
-	fixture.library(t, "")
+	movies := fixture.library(t, "")
+	fixture.service.config.MediaDirectories = []string{"/srv", "/media"}
 	elsewhere := fixture.folder(t)
 
 	for name, entry := range map[string]Configured{
-		"no folders":                candidate(),
-		"a folder no library holds": candidate("/srv/" + uuid.NewString()),
-		"a relative folder":         candidate("srv/tv"),
-		"another source's folder":   candidate("/media/tv"),
-		"a folder above another's":  candidate("/"),
-		"one folder twice":          candidate(elsewhere, elsewhere+"/tv"),
+		"no folders":                 candidate(),
+		"a folder outside the media": candidate("/opt/" + uuid.NewString()),
+		"a Sonarr feeding the movies": func() Configured {
+			entry := candidate(elsewhere)
+			entry.Libraries = []LibrarySource{{LibraryID: movies}}
+
+			return entry
+		}(),
+		"a library that does not exist": func() Configured {
+			entry := candidate(elsewhere)
+			entry.Libraries = []LibrarySource{{LibraryID: uuid.New()}}
+
+			return entry
+		}(),
+		"a relative folder":        candidate("srv/tv"),
+		"another source's folder":  candidate("/media/tv"),
+		"a folder above another's": candidate("/"),
+		"one folder twice":         candidate(elsewhere, elsewhere+"/tv"),
 		"a key outside the prefix": func() Configured {
 			entry := candidate(elsewhere)
 			entry.Source.APIKeyVariable = "DATABASE_URL"
@@ -127,6 +147,48 @@ func TestCreateUpdateDelete(t *testing.T) {
 	}
 	if err := fixture.service.Delete(ctx, created.Source.ID); !errors.Is(err, ErrNotFound) {
 		t.Errorf("Delete after Delete = %v, want ErrNotFound", err)
+	}
+}
+
+func TestCreateUpdateDelete_KeepTheLibraryFoldersToWhatItsDownloadersMap(t *testing.T) {
+	fixture := newFixture(t, &[]movie{})
+	ctx := context.Background()
+	shows := fixture.shows(t)
+	elsewhere := fixture.folder(t)
+
+	folders := func() []string {
+		t.Helper()
+		library, err := fixture.client.Library.Get(ctx, shows)
+		if err != nil {
+			t.Fatalf("failed to read the library: %v", err)
+		}
+
+		return library.Locations
+	}
+
+	entry := candidate(elsewhere+"/tv", elsewhere+"/anime")
+	entry.Libraries = []LibrarySource{{LibraryID: shows}}
+	created, err := fixture.service.Create(ctx, entry)
+	if err != nil {
+		t.Fatalf("failed to create: %v", err)
+	}
+	if got := folders(); !slices.Equal(got, []string{elsewhere + "/anime", elsewhere + "/tv"}) {
+		t.Errorf("folders after Create = %v, want both mapped folders", got)
+	}
+
+	entry.Source.Paths = entry.Source.Paths[:1]
+	if _, err := fixture.service.Update(ctx, created.Source.ID, entry); err != nil {
+		t.Fatalf("failed to update: %v", err)
+	}
+	if got := folders(); !slices.Equal(got, []string{elsewhere + "/tv"}) {
+		t.Errorf("folders after Update = %v, want the folder still mapped", got)
+	}
+
+	if err := fixture.service.Delete(ctx, created.Source.ID); err != nil {
+		t.Fatalf("failed to delete: %v", err)
+	}
+	if got := folders(); len(got) != 0 {
+		t.Errorf("folders after Delete = %v, want none", got)
 	}
 }
 

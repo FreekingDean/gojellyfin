@@ -17,6 +17,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemsourcemodel "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	librarymodel "github.com/FreekingDean/gojellyfin/internal/store/library"
 	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	librarysourcemodel "github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/source"
@@ -129,6 +130,7 @@ func (f *fixture) library(t *testing.T, filter string) uuid.UUID {
 	ctx := context.Background()
 	library, err := f.client.Library.Create().
 		SetName(t.Name() + "-" + uuid.NewString()).
+		SetCollectionType(librarymodel.CollectionTypeMovies).
 		SetLocations([]string{"/media"}).
 		Save(ctx)
 	if err != nil {
