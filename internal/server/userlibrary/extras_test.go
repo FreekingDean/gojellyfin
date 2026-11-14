@@ -10,7 +10,7 @@ import (
 )
 
 func TestServer_GetIntros(t *testing.T) {
-	response, err := New(nil).GetIntros(context.Background(), api.GetIntrosRequestObject{})
+	response, err := New(nil, nil, nil).GetIntros(context.Background(), api.GetIntrosRequestObject{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -28,7 +28,7 @@ func TestServer_GetIntros(t *testing.T) {
 }
 
 func TestServer_Extras(t *testing.T) {
-	s := New(nil)
+	s := New(nil, nil, nil)
 	ctx := context.Background()
 
 	for _, tc := range []struct {

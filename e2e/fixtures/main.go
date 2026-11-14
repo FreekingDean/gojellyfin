@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"crypto/sha1"
 	"database/sql"
@@ -40,6 +41,8 @@ const (
 	drama      = "Fixture Drama"
 	finale     = "Fixture Finale"
 	transcoded = "Fixture Transcoded"
+
+	requestProfile = 1
 )
 
 var (
@@ -206,9 +209,11 @@ func seed() error {
 
 	downloader, err := client.Source.Create().
 		SetName("Fixtures").
-		SetURL("http://fixtures.invalid").
+		SetURL(cmp.Or(os.Getenv("FIXTURE_DOWNLOADER"), "http://fixtures.invalid")).
 		SetAPIKeyVariable(env.SourceAPIKeyPrefix + "FIXTURES").
 		SetKind(sourcemodel.KindRadarr).
+		SetRequestProfileID(requestProfile).
+		SetRequestRootFolder("/fixtures").
 		Save(ctx)
 	if err != nil {
 		return err

@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const http = require('node:http');
 
 const proxy = require('./proxy');
+const radarr = require('./radarr');
 const tmdb = require('./tmdb');
 
 const ROOT = path.resolve(__dirname, '..', '..');
@@ -89,12 +90,16 @@ async function boot() {
   });
   const cataloguePort = await listen(catalogue);
 
+  const downloader = radarr.start();
+  const downloaderUrl = `http://127.0.0.1:${await listen(downloader)}`;
+
   const serverEnv = clean({
     DATABASE_URL: databaseUrl,
     MEDIA_DIRECTORIES: path.dirname(media.playable),
     TMDB_API_KEY: 'e2e',
     TMDB_BASE_URL: `http://127.0.0.1:${cataloguePort}/3`,
     SHELVES,
+    SOURCE_API_KEY_FIXTURES: 'e2e',
   });
 
   run(binaries.gojellyfin, ['migrate'], { env: serverEnv });
@@ -104,6 +109,7 @@ async function boot() {
       ...serverEnv,
       FIXTURE_MEDIA: media.playable,
       FIXTURE_TRANSCODE: media.transcoded,
+      FIXTURE_DOWNLOADER: downloaderUrl,
       POSTER_DIR: posterRoot,
       UNOWNED_POSTER_DIR: path.join(posterRoot, POSTER_SIZE),
       POSTER_URL: `http://127.0.0.1:${webPort}${proxy.POSTERS}`,
@@ -163,11 +169,13 @@ async function boot() {
         ...jellyfin,
         migrate: { command: binaries.migrate, args: ['--from', jellyfinData], env: serverEnv },
       },
+      downloaderUrl,
     },
     serverLog: () => log.join(''),
     async stop() {
       await new Promise((resolve) => front.close(resolve));
       await new Promise((resolve) => catalogue.close(resolve));
+      await new Promise((resolve) => downloader.close(resolve));
       api.kill('SIGTERM');
       await once(api);
       provider.child.kill('SIGTERM');
