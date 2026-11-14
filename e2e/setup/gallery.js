@@ -117,7 +117,7 @@ function comment({ stats, shots, url, sha }) {
   ];
 
   if (changed.length) {
-    lines.push(`#### ${changed.length} screenshot${changed.length === 1 ? '' : 's'} differ from the baseline`, '');
+    lines.push(`#### ${changed.length} screenshot${changed.length === 1 ? ' differs' : 's differ'} from the baseline`, '');
     for (const shot of changed) {
       const src = (kind) => `${url}/${shot.dir}/${shot.name}-${kind}.png`;
       lines.push(`**${shot.key}.png** (${shot.state})`, '');
