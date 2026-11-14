@@ -12,7 +12,7 @@ func (s *Service) Job() jobs.Job {
 	return jobs.Job{
 		Name:        jobs.RefreshMetadata,
 		Category:    "Library",
-		Description: "Identifies every item nothing has identified yet.",
+		Description: "Identifies every item nothing has identified yet, and fetches artwork for any item that has none.",
 		Startable:   true,
 		Queue:       jobs.MetadataQueue,
 		Run:         s.runBatch,

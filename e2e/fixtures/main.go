@@ -65,6 +65,13 @@ var (
 		"Wanted Film": {R: 230, G: 150, B: 30, A: 255},
 		"Wanted Show": {R: 150, G: 60, B: 200, A: 255},
 	}
+
+	backdropShades = map[string]color.RGBA{
+		"Fixture Beta": {R: 230, G: 160, B: 30, A: 255},
+		"Fixture Show": {R: 150, G: 40, B: 200, A: 255},
+	}
+
+	resumed = []string{"Fixture Alpha", "Fixture Beta", "Fixture Pilot"}
 )
 
 func main() {
@@ -216,6 +223,7 @@ func seed() error {
 	}
 
 	catalogue := items.New(client)
+	watching := map[string]uuid.UUID{}
 	for _, name := range movies {
 		item, err := catalogue.SaveScanned(ctx, items.Item{
 			Kind:         itemmodel.KindMovie,
@@ -240,6 +248,10 @@ func seed() error {
 		if err := aired(ctx, catalogue, item.ID, released[name]); err != nil {
 			return err
 		}
+		if err := backdrop(ctx, catalogue, item.ID, name); err != nil {
+			return err
+		}
+		watching[name] = item.ID
 	}
 
 	if err := playableMovie(ctx, client, catalogue, record.ID, downloader.ID, playable, os.Getenv("FIXTURE_MEDIA")); err != nil {
@@ -254,7 +266,7 @@ func seed() error {
 		return err
 	}
 
-	shelf := shelf{client: client, catalogue: catalogue, libraryID: shown.ID, sourceID: downloader.ID}
+	shelf := shelf{client: client, catalogue: catalogue, libraryID: shown.ID, sourceID: downloader.ID, watching: watching}
 	if err := shelf.series(ctx, series, episodes, modified); err != nil {
 		return err
 	}
@@ -262,7 +274,33 @@ func seed() error {
 		return err
 	}
 
+	if err := resume(ctx, client, watching); err != nil {
+		return err
+	}
+
 	fmt.Println(record.ID)
+
+	return nil
+}
+
+func resume(ctx context.Context, client *store.Client, watching map[string]uuid.UUID) error {
+	viewer, err := client.User.Query().Only(ctx)
+	if err != nil {
+		return err
+	}
+
+	started := time.Now().Add(-time.Hour)
+	for order, name := range resumed {
+		played := started.Add(-time.Duration(order) * time.Minute)
+		if err := client.UserItemData.Create().
+			SetUserID(viewer.ID).
+			SetItemID(watching[name]).
+			SetPlaybackPositionTicks(int64(5 * time.Second / 100)).
+			SetLastPlayedAt(played).
+			Exec(ctx); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -272,6 +310,7 @@ type shelf struct {
 	catalogue *items.Service
 	libraryID uuid.UUID
 	sourceID  uuid.UUID
+	watching  map[string]uuid.UUID
 }
 
 func (s shelf) series(ctx context.Context, name string, titles []string, modified time.Time) error {
@@ -288,6 +327,9 @@ func (s shelf) series(ctx context.Context, name string, titles []string, modifie
 		return err
 	}
 	if err := poster(ctx, s.catalogue, show.ID, name); err != nil {
+		return err
+	}
+	if err := backdrop(ctx, s.catalogue, show.ID, name); err != nil {
 		return err
 	}
 
@@ -329,6 +371,7 @@ func (s shelf) series(ctx context.Context, name string, titles []string, modifie
 		if err := aired(ctx, s.catalogue, item.ID, released[title]); err != nil {
 			return err
 		}
+		s.watching[title] = item.ID
 	}
 
 	for _, id := range []uuid.UUID{show.ID, first.ID} {
@@ -404,13 +447,25 @@ func file(ctx context.Context, catalogue *items.Service, sourceID, itemID uuid.U
 }
 
 func poster(ctx context.Context, catalogue *items.Service, itemID uuid.UUID, name string) error {
+	return artwork(ctx, catalogue, itemID, imagemodel.KindPrimary, slugify(name)+".png", image.Rect(0, 0, 200, 300), posterShades[name])
+}
+
+func backdrop(ctx context.Context, catalogue *items.Service, itemID uuid.UUID, name string) error {
+	shade, ok := backdropShades[name]
+	if !ok {
+		return nil
+	}
+
+	return artwork(ctx, catalogue, itemID, imagemodel.KindBackdrop, slugify(name)+"-backdrop.png", image.Rect(0, 0, 640, 360), shade)
+}
+
+func artwork(ctx context.Context, catalogue *items.Service, itemID uuid.UUID, kind imagemodel.Kind, file string, bounds image.Rectangle, shade color.RGBA) error {
 	directory, base := os.Getenv("POSTER_DIR"), os.Getenv("POSTER_URL")
 	if directory == "" || base == "" {
 		return nil
 	}
 
-	file := slugify(name) + ".png"
-	if err := paint(filepath.Join(directory, file), posterShades[name]); err != nil {
+	if err := paint(filepath.Join(directory, file), bounds, shade); err != nil {
 		return err
 	}
 
@@ -418,7 +473,7 @@ func poster(ctx context.Context, catalogue *items.Service, itemID uuid.UUID, nam
 	digest := sha1.Sum([]byte(url))
 
 	return catalogue.SaveImage(ctx, itemID, items.Image{
-		Kind: imagemodel.KindPrimary,
+		Kind: kind,
 		URL:  url,
 		Tag:  hex.EncodeToString(digest[:]),
 	})
@@ -431,7 +486,7 @@ func paintUnowned() error {
 	}
 
 	for name, shade := range unownedShades {
-		if err := paint(filepath.Join(directory, slugify(name)+".png"), shade); err != nil {
+		if err := paint(filepath.Join(directory, slugify(name)+".png"), image.Rect(0, 0, 200, 300), shade); err != nil {
 			return err
 		}
 	}
@@ -439,10 +494,10 @@ func paintUnowned() error {
 	return nil
 }
 
-func paint(path string, shade color.RGBA) error {
-	picture := image.NewRGBA(image.Rect(0, 0, 200, 300))
-	for x := range 200 {
-		for y := range 300 {
+func paint(path string, bounds image.Rectangle, shade color.RGBA) error {
+	picture := image.NewRGBA(bounds)
+	for x := range bounds.Dx() {
+		for y := range bounds.Dy() {
 			picture.SetRGBA(x, y, shade)
 		}
 	}

@@ -19,6 +19,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	creditmodel "github.com/FreekingDean/gojellyfin/internal/store/credit"
+	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	librarymodel "github.com/FreekingDean/gojellyfin/internal/store/library"
 	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/source"
@@ -280,10 +281,17 @@ func (f *fixture) reload(t *testing.T, id uuid.UUID) *items.Item {
 func (f *fixture) identified(t *testing.T, added *items.Item, overview string) *items.Item {
 	t.Helper()
 
-	return f.lock(t, added, items.Metadata{
+	identified := f.lock(t, added, items.Metadata{
 		Overview:    text(overview),
 		ProviderIds: &map[string]string{"Stub": "603"},
 	})
+	if err := f.items.SaveImage(context.Background(), added.ID, items.Image{
+		Kind: imagemodel.KindPrimary, URL: "https://image.example/" + added.ID.String() + ".jpg", Tag: added.ID.String(),
+	}); err != nil {
+		t.Fatalf("failed to give %q artwork: %v", added.Name, err)
+	}
+
+	return identified
 }
 
 func (f *fixture) identify(t *testing.T) {
@@ -555,6 +563,34 @@ func TestService_IdentifyItems(t *testing.T) {
 		}
 		if fixed.reload(t, witness.ID).ProviderIds["Stub"] != "603" {
 			t.Fatal("the run identified nothing, so the lock proves nothing")
+		}
+	})
+
+	t.Run("fetches artwork for an identified item that has none", func(t *testing.T) {
+		fixed := newFixture(t)
+		fixed.provider.images = []items.RemoteImage{
+			{Kind: imagemodel.KindPrimary, URL: "https://image.example/w780/poster.jpg"},
+			{Kind: imagemodel.KindBackdrop, URL: "https://image.example/w1280/backdrop.jpg"},
+		}
+		movie := fixed.lock(t, fixed.add(t, items.Item{
+			Kind:           itemmodel.KindMovie,
+			Name:           "The Matrix",
+			ProductionYear: index(1999),
+		}), items.Metadata{ProviderIds: &map[string]string{"Stub": "603"}})
+
+		fixed.identify(t)
+
+		saved, err := fixed.items.Images(context.Background(), movie.ID)
+		if err != nil {
+			t.Fatalf("failed to read the artwork back: %v", err)
+		}
+		kinds := make([]items.ImageKind, 0, len(saved))
+		for _, image := range saved {
+			kinds = append(kinds, image.Kind)
+		}
+		slices.Sort(kinds)
+		if !slices.Equal(kinds, []items.ImageKind{imagemodel.KindBackdrop, imagemodel.KindPrimary}) {
+			t.Errorf("artwork = %v, want the poster and the backdrop", kinds)
 		}
 	})
 

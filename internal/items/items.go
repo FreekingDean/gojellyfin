@@ -190,7 +190,7 @@ func (s *Service) Ancestors(ctx context.Context, id uuid.UUID) (*Ancestry, error
 func (s *Service) ItemsNeedingMetadata(ctx context.Context, kinds []Kind, force bool, scope uuid.UUID) ([]uuid.UUID, error) {
 	query := s.query(Everyone).Where(itemmodel.KindIn(kinds...), itemmodel.LockData(false))
 	if !force {
-		query = query.Where(itemmodel.ProviderIdsIsNil())
+		query = query.Where(itemmodel.Or(itemmodel.ProviderIdsIsNil(), itemmodel.Not(itemmodel.HasImages())))
 	}
 	if scope != uuid.Nil {
 		query = query.Where(itemmodel.Or(
