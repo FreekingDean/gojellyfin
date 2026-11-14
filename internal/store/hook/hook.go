@@ -249,6 +249,18 @@ func (f QuickConnectRequestFunc) Mutate(ctx context.Context, m store.Mutation) (
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.QuickConnectRequestMutation", m)
 }
 
+// The ReportFunc type is an adapter to allow the use of ordinary
+// function as Report mutator.
+type ReportFunc func(context.Context, *store.ReportMutation) (store.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ReportFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, error) {
+	if mv, ok := m.(*store.ReportMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.ReportMutation", m)
+}
+
 // The RequestFunc type is an adapter to allow the use of ordinary
 // function as Request mutator.
 type RequestFunc func(context.Context, *store.RequestMutation) (store.Value, error)

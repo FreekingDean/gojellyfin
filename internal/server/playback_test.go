@@ -24,6 +24,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
+	"github.com/FreekingDean/gojellyfin/internal/reports"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/server/mediainfo"
@@ -159,7 +160,7 @@ func newPlaybackFixture(t *testing.T) *playbackFixture {
 		client:     client,
 		sessions:   sessionService,
 		info:       mediainfo.New(itemService, allLibraries{}),
-		streams:    stream.New(sessionService, itemService, filesystem.New(config), transcode.NewEncoder(2, 0)),
+		streams:    stream.New(sessionService, itemService, filesystem.New(config), transcode.NewEncoder(2, 0), reports.New(client, nil)),
 		items:      itemService,
 		library:    library.ID,
 		token:      token,

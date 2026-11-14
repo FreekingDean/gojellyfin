@@ -8,11 +8,21 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
+	"github.com/FreekingDean/gojellyfin/internal/reports"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 )
 
 func (s *Server) DeleteItem(ctx context.Context, request api.DeleteItemRequestObject) (api.DeleteItemResponseObject, error) {
+	reported, err := s.reportBroken(ctx, request.ItemId)
+	if err != nil {
+		return nil, err
+	}
+	if reported {
+		return api.DeleteItem204Response{}, nil
+	}
+
 	allowed, err := s.users.MayDeleteContent(ctx, auth.UserID(ctx))
 	if err != nil {
 		return nil, err
@@ -28,6 +38,37 @@ func (s *Server) DeleteItem(ctx context.Context, request api.DeleteItemRequestOb
 	}
 
 	return api.DeleteItem204Response{}, nil
+}
+
+func (s *Server) reportBroken(ctx context.Context, itemID uuid.UUID) (bool, error) {
+	userID := auth.UserID(ctx)
+	if userID == uuid.Nil {
+		return false, nil
+	}
+
+	viewer, err := dto.ViewerFor(ctx, s.users)
+	if err != nil {
+		return false, err
+	}
+
+	held, err := s.items.ItemsByIDs(ctx, viewer, []uuid.UUID{itemID})
+	if err != nil {
+		return false, err
+	}
+
+	item, ok := held[itemID]
+	if !ok || !reports.Takes(item.Kind) {
+		return false, nil
+	}
+
+	err = s.reports.File(ctx, reports.Filing{
+		ItemID: itemID,
+		UserID: &userID,
+		Kind:   reports.KindUnplayable,
+		Origin: reports.OriginDelete,
+	})
+
+	return err == nil, err
 }
 
 func (s *Server) DeleteItems(ctx context.Context, request api.DeleteItemsRequestObject) (api.DeleteItemsResponseObject, error) {

@@ -33,7 +33,7 @@ type page struct {
 
 var pages = []page{
 	{name: "media_downloaders", displayName: "Media Downloaders", icon: "download", body: configPage},
-	{name: "requests", displayName: "Requests", icon: "favorite", body: requestsPage},
+	{name: "requests", displayName: "Requests and Reports", icon: "favorite", body: requestsPage},
 }
 
 func (s *Server) GetConfigurationPages(

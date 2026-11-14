@@ -5,6 +5,11 @@ import "github.com/FreekingDean/gojellyfin/internal/sources/arr"
 const (
 	MoviesPath = "api/v3/movie"
 	LookupPath = "api/v3/movie/lookup/tmdb"
+	FilePath   = "api/v3/moviefile"
+	GrabsPath  = "api/v3/history/movie"
+	Search     = "MoviesSearch"
+
+	GrabbedEvent = "grabbed"
 )
 
 type Movie struct {

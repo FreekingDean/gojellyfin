@@ -15,6 +15,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
+	"github.com/FreekingDean/gojellyfin/internal/store/report"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/google/uuid"
 )
@@ -328,6 +329,21 @@ func (_u *ItemSourceUpdate) AddStreams(v ...*MediaStream) *ItemSourceUpdate {
 	return _u.AddStreamIDs(ids...)
 }
 
+// AddReportIDs adds the "reports" edge to the Report entity by IDs.
+func (_u *ItemSourceUpdate) AddReportIDs(ids ...uuid.UUID) *ItemSourceUpdate {
+	_u.mutation.AddReportIDs(ids...)
+	return _u
+}
+
+// AddReports adds the "reports" edges to the Report entity.
+func (_u *ItemSourceUpdate) AddReports(v ...*Report) *ItemSourceUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddReportIDs(ids...)
+}
+
 // Mutation returns the ItemSourceMutation object of the builder.
 func (_u *ItemSourceUpdate) Mutation() *ItemSourceMutation {
 	return _u.mutation
@@ -364,6 +380,27 @@ func (_u *ItemSourceUpdate) RemoveStreams(v ...*MediaStream) *ItemSourceUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveStreamIDs(ids...)
+}
+
+// ClearReports clears all "reports" edges to the Report entity.
+func (_u *ItemSourceUpdate) ClearReports() *ItemSourceUpdate {
+	_u.mutation.ClearReports()
+	return _u
+}
+
+// RemoveReportIDs removes the "reports" edge to Report entities by IDs.
+func (_u *ItemSourceUpdate) RemoveReportIDs(ids ...uuid.UUID) *ItemSourceUpdate {
+	_u.mutation.RemoveReportIDs(ids...)
+	return _u
+}
+
+// RemoveReports removes "reports" edges to Report entities.
+func (_u *ItemSourceUpdate) RemoveReports(v ...*Report) *ItemSourceUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveReportIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -596,6 +633,51 @@ func (_u *ItemSourceUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(mediastream.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ReportsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemsource.ReportsTable,
+			Columns: []string{itemsource.ReportsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(report.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedReportsIDs(); len(nodes) > 0 && !_u.mutation.ReportsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemsource.ReportsTable,
+			Columns: []string{itemsource.ReportsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(report.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ReportsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemsource.ReportsTable,
+			Columns: []string{itemsource.ReportsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(report.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -919,6 +1001,21 @@ func (_u *ItemSourceUpdateOne) AddStreams(v ...*MediaStream) *ItemSourceUpdateOn
 	return _u.AddStreamIDs(ids...)
 }
 
+// AddReportIDs adds the "reports" edge to the Report entity by IDs.
+func (_u *ItemSourceUpdateOne) AddReportIDs(ids ...uuid.UUID) *ItemSourceUpdateOne {
+	_u.mutation.AddReportIDs(ids...)
+	return _u
+}
+
+// AddReports adds the "reports" edges to the Report entity.
+func (_u *ItemSourceUpdateOne) AddReports(v ...*Report) *ItemSourceUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddReportIDs(ids...)
+}
+
 // Mutation returns the ItemSourceMutation object of the builder.
 func (_u *ItemSourceUpdateOne) Mutation() *ItemSourceMutation {
 	return _u.mutation
@@ -955,6 +1052,27 @@ func (_u *ItemSourceUpdateOne) RemoveStreams(v ...*MediaStream) *ItemSourceUpdat
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveStreamIDs(ids...)
+}
+
+// ClearReports clears all "reports" edges to the Report entity.
+func (_u *ItemSourceUpdateOne) ClearReports() *ItemSourceUpdateOne {
+	_u.mutation.ClearReports()
+	return _u
+}
+
+// RemoveReportIDs removes the "reports" edge to Report entities by IDs.
+func (_u *ItemSourceUpdateOne) RemoveReportIDs(ids ...uuid.UUID) *ItemSourceUpdateOne {
+	_u.mutation.RemoveReportIDs(ids...)
+	return _u
+}
+
+// RemoveReports removes "reports" edges to Report entities.
+func (_u *ItemSourceUpdateOne) RemoveReports(v ...*Report) *ItemSourceUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveReportIDs(ids...)
 }
 
 // Where appends a list predicates to the ItemSourceUpdate builder.
@@ -1217,6 +1335,51 @@ func (_u *ItemSourceUpdateOne) sqlSave(ctx context.Context) (_node *ItemSource, 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(mediastream.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ReportsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemsource.ReportsTable,
+			Columns: []string{itemsource.ReportsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(report.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedReportsIDs(); len(nodes) > 0 && !_u.mutation.ReportsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemsource.ReportsTable,
+			Columns: []string{itemsource.ReportsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(report.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ReportsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemsource.ReportsTable,
+			Columns: []string{itemsource.ReportsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(report.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

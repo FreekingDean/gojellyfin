@@ -25,6 +25,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/probe"
+	"github.com/FreekingDean/gojellyfin/internal/reports"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
@@ -43,6 +44,9 @@ const (
 	transcoded = "Fixture Transcoded"
 
 	requestProfile = 1
+
+	downloaderTitle = 71
+	downloaderFile  = 72
 )
 
 var (
@@ -394,6 +398,7 @@ func playableMovie(ctx context.Context, client *store.Client, catalogue *items.S
 	}
 
 	modified := time.Now()
+	title, copied := int64(downloaderTitle), int64(downloaderFile)
 	item, err := catalogue.SaveScanned(ctx, items.Item{
 		Kind:         itemmodel.KindMovie,
 		Key:          "movie:" + slugify(name),
@@ -406,17 +411,19 @@ func playableMovie(ctx context.Context, client *store.Client, catalogue *items.S
 	}
 
 	source, err := catalogue.SaveSource(ctx, items.MediaSource{
-		SourceID:     sourceID,
-		ItemID:       item.ID,
-		Path:         path,
-		Name:         name,
-		DateModified: &modified,
+		SourceID:       sourceID,
+		ItemID:         item.ID,
+		Path:           path,
+		Name:           name,
+		DateModified:   &modified,
+		ExternalID:     &title,
+		ExternalFileID: &copied,
 	})
 	if err != nil {
 		return err
 	}
 
-	if err := probe.New(catalogue, ffmpeg.New()).ProbeSource(ctx, source.ID); err != nil {
+	if err := probe.New(catalogue, ffmpeg.New(), reports.New(client, nil)).ProbeSource(ctx, source.ID); err != nil {
 		return err
 	}
 

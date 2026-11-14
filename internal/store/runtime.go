@@ -26,6 +26,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
 	"github.com/FreekingDean/gojellyfin/internal/store/quickconnectrequest"
+	"github.com/FreekingDean/gojellyfin/internal/store/report"
 	"github.com/FreekingDean/gojellyfin/internal/store/request"
 	"github.com/FreekingDean/gojellyfin/internal/store/requestsubmission"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
@@ -503,6 +504,22 @@ func init() {
 	quickconnectrequest.DefaultUpdatedAt = quickconnectrequestDescUpdatedAt.Default.(func() time.Time)
 	// quickconnectrequest.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	quickconnectrequest.UpdateDefaultUpdatedAt = quickconnectrequestDescUpdatedAt.UpdateDefault.(func() time.Time)
+	reportFields := entities.Report{}.Fields()
+	_ = reportFields
+	// reportDescCreatedAt is the schema descriptor for created_at field.
+	reportDescCreatedAt := reportFields[1].Descriptor()
+	// report.DefaultCreatedAt holds the default value on creation for the created_at field.
+	report.DefaultCreatedAt = reportDescCreatedAt.Default.(func() time.Time)
+	// reportDescUpdatedAt is the schema descriptor for updated_at field.
+	reportDescUpdatedAt := reportFields[2].Descriptor()
+	// report.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	report.DefaultUpdatedAt = reportDescUpdatedAt.Default.(func() time.Time)
+	// report.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	report.UpdateDefaultUpdatedAt = reportDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// reportDescNote is the schema descriptor for note field.
+	reportDescNote := reportFields[8].Descriptor()
+	// report.DefaultNote holds the default value on creation for the note field.
+	report.DefaultNote = reportDescNote.Default.(string)
 	requestFields := entities.Request{}.Fields()
 	_ = requestFields
 	// requestDescCreatedAt is the schema descriptor for created_at field.

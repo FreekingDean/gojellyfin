@@ -44,5 +44,6 @@ func (User) Edges() []ent.Edge {
 		edge.To("playlist_shares", PlaylistShare.Type).Annotations(cascadeOnDelete),
 		edge.To("quick_connect_requests", QuickConnectRequest.Type).Annotations(cascadeOnDelete),
 		edge.To("requests", Request.Type).Annotations(cascadeOnDelete),
+		edge.To("reports", Report.Type),
 	}
 }
