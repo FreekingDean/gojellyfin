@@ -338,3 +338,21 @@ func TestRefreshLibrarySource_RecordsTheSync(t *testing.T) {
 		}
 	})
 }
+
+func TestRefreshLibrarySource_RecordsACancelledRead(t *testing.T) {
+	reported := []movie{}
+	fixture := newFixture(t, &reported)
+	library := fixture.library(t, "")
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	binding := fixture.binding(t, library)
+	if err := fixture.service.recordSync(ctx, binding.ID, context.Canceled); err != nil {
+		t.Fatalf("failed to record a cancelled read: %v", err)
+	}
+
+	if got := fixture.binding(t, library).LastError; got != context.Canceled.Error() {
+		t.Errorf("last error = %q, want %q", got, context.Canceled.Error())
+	}
+}

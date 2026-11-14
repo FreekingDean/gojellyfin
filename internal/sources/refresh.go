@@ -14,6 +14,8 @@ import (
 	librarysourcemodel "github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 )
 
+const recordTimeout = 5 * time.Second
+
 func (s *Service) RefreshJob() jobs.Job {
 	return jobs.Job{
 		Name:        jobs.RefreshLibrarySource,
@@ -48,6 +50,9 @@ func (s *Service) refresh(ctx context.Context) error {
 }
 
 func (s *Service) recordSync(ctx context.Context, bindingID uuid.UUID, readErr error) error {
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), recordTimeout)
+	defer cancel()
+
 	update := s.store.LibrarySource.UpdateOneID(bindingID)
 	if readErr != nil {
 		return update.SetLastError(readErr.Error()).Exec(ctx)
