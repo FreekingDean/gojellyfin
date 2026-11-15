@@ -93,6 +93,20 @@ func TestServer_GoJellyfinListReports(t *testing.T) {
 			Parent:            &items.Item{Parent: &items.Item{Name: "Breaking Bad"}},
 			ItemSources:       []*store.ItemSourceModel{{ID: fileID, ExternalID: &title, ExternalFileID: &file}},
 		},
+		Attempt: &reports.Attempt{
+			UserName:      "Dean",
+			DeviceName:    "Living Room",
+			Client:        "Android TV",
+			ClientVersion: "0.19.0",
+			Build:         "0.0.1",
+			Playback: &items.Playback{
+				VideoDirect: true,
+				Container:   "mp4",
+				VideoCodec:  "h264",
+				AudioCodec:  "aac",
+				Reasons:     []string{"AudioCodecNotSupported"},
+			},
+		},
 	}}}
 
 	response, err := (&Server{reports: queue}).GoJellyfinListReports(context.Background(), api.GoJellyfinListReportsRequestObject{})
@@ -113,6 +127,14 @@ func TestServer_GoJellyfinListReports(t *testing.T) {
 		`"UserName":"Dean"`,
 		`"Path":"/media/show/s02e05.mkv"`,
 		`"Replaceable":true`,
+		`"DeviceName":"Living Room"`,
+		`"Client":"Android TV"`,
+		`"ClientVersion":"0.19.0"`,
+		`"Direct":false`,
+		`"VideoDirect":true`,
+		`"AudioDirect":false`,
+		`"AudioCodec":"aac"`,
+		`"Reasons":["AudioCodecNotSupported"]`,
 	} {
 		if !strings.Contains(string(encoded), want) {
 			t.Errorf("%s is missing %s", encoded, want)

@@ -215,7 +215,7 @@ func (h *Handler) cut(w http.ResponseWriter, r *http.Request, source *items.Medi
 			http.Error(w, "segments cannot be cut on this server", http.StatusUnsupportedMediaType)
 		default:
 			if r.Context().Err() == nil {
-				h.broken(r, source, err)
+				h.broken(r, source, segmented(source, segment), err)
 			}
 			http.Error(w, "the segment could not be cut", http.StatusInternalServerError)
 		}
@@ -379,4 +379,21 @@ func audioCodecTag(codec string) string {
 	default:
 		return ""
 	}
+}
+
+func segmented(source *items.MediaSource, segment transcode.Segment) items.Playback {
+	served := whole(source)
+	served.Direct = false
+	served.Container = "hls"
+
+	switch {
+	case segment.Track == transcode.TrackVideo && segment.Encode:
+		served.VideoDirect = false
+		served.VideoCodec = transcode.VideoCodec
+	case segment.Track == transcode.TrackAudio && segment.Encode:
+		served.AudioDirect = false
+		served.AudioCodec = transcode.SegmentAudioCodec
+	}
+
+	return served
 }

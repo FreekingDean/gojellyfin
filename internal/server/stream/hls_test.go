@@ -21,6 +21,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	streammodel "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
+	"github.com/FreekingDean/gojellyfin/internal/transcode"
 )
 
 const (
@@ -245,4 +246,44 @@ func TestHandler_HLS(t *testing.T) {
 			t.Errorf("status = %d, want %d", listed.Code, http.StatusUnauthorized)
 		}
 	})
+}
+
+func TestSegmented(t *testing.T) {
+	source := &items.MediaSource{
+		Container: "mkv",
+		Streams: []*items.MediaStream{
+			{Kind: streammodel.KindVideo, Codec: "hevc"},
+			{Kind: streammodel.KindAudio, Codec: "eac3"},
+		},
+	}
+
+	for _, tc := range []struct {
+		name    string
+		segment transcode.Segment
+		want    items.Playback
+	}{
+		{
+			name:    "a copied picture keeps the source's codec",
+			segment: transcode.Segment{Track: transcode.TrackVideo},
+			want:    items.Playback{VideoDirect: true, AudioDirect: true, Container: "hls", VideoCodec: "hevc", AudioCodec: "eac3"},
+		},
+		{
+			name:    "an encoded picture names what it becomes",
+			segment: transcode.Segment{Track: transcode.TrackVideo, Encode: true},
+			want:    items.Playback{AudioDirect: true, Container: "hls", VideoCodec: transcode.VideoCodec, AudioCodec: "eac3"},
+		},
+		{
+			name:    "encoded sound names what it becomes",
+			segment: transcode.Segment{Track: transcode.TrackAudio, Encode: true},
+			want:    items.Playback{VideoDirect: true, Container: "hls", VideoCodec: "hevc", AudioCodec: transcode.SegmentAudioCodec},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got := segmented(source, tc.segment)
+			if got.Direct != tc.want.Direct || got.VideoDirect != tc.want.VideoDirect || got.AudioDirect != tc.want.AudioDirect ||
+				got.Container != tc.want.Container || got.VideoCodec != tc.want.VideoCodec || got.AudioCodec != tc.want.AudioCodec {
+				t.Errorf("segmented = %+v, want %+v", got, tc.want)
+			}
+		})
+	}
 }

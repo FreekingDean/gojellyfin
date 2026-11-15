@@ -1881,6 +1881,7 @@ type ReportModel struct {
 	Origin       report.Origin
 	Note         string
 	Status       report.Status
+	Attempt      *entities.ReportAttempt
 
 	Item *ItemModel
 	File *ItemSourceModel
@@ -1911,6 +1912,7 @@ func fromReport(_m *Report) *ReportModel {
 		Origin:       _m.Origin,
 		Note:         _m.Note,
 		Status:       _m.Status,
+		Attempt:      _m.Attempt,
 
 		Item: fromItem(_m.Edges.Item),
 		File: fromItemSource(_m.Edges.File),

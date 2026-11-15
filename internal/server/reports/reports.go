@@ -82,11 +82,12 @@ func (s *Server) GoJellyfinFileReport(
 	}
 
 	err = s.reports.File(ctx, reports.Filing{
-		ItemID: request.Body.ItemId,
-		UserID: &userID,
-		Kind:   kind,
-		Origin: reports.OriginUser,
-		Note:   strings.TrimSpace(apiutil.Deref(request.Body.Note)),
+		ItemID:  request.Body.ItemId,
+		UserID:  &userID,
+		Kind:    kind,
+		Origin:  reports.OriginUser,
+		Note:    strings.TrimSpace(apiutil.Deref(request.Body.Note)),
+		Attempt: reports.AttemptBy(auth.SessionFrom(ctx)),
 	})
 	if err != nil {
 		return nil, err
@@ -158,6 +159,38 @@ func reportDto(filed *reports.Report) api.Report {
 	if filed.File != nil {
 		listed.Path = apiutil.Ptr(filed.File.Path)
 	}
+	if filed.Attempt != nil {
+		listed.Attempt = attemptDto(filed.Attempt)
+	}
+
+	return listed
+}
+
+func attemptDto(attempt *reports.Attempt) *api.ReportAttempt {
+	listed := &api.ReportAttempt{
+		UserId:        attempt.UserID,
+		UserName:      apiutil.ZeroOrNilPtr(attempt.UserName),
+		DeviceId:      apiutil.ZeroOrNilPtr(attempt.DeviceID),
+		DeviceName:    apiutil.ZeroOrNilPtr(attempt.DeviceName),
+		Client:        apiutil.ZeroOrNilPtr(attempt.Client),
+		ClientVersion: apiutil.ZeroOrNilPtr(attempt.ClientVersion),
+		RemoteAddress: apiutil.ZeroOrNilPtr(attempt.RemoteAddress),
+		Build:         apiutil.ZeroOrNilPtr(attempt.Build),
+	}
+
+	served := attempt.Playback
+	if served == nil {
+		return listed
+	}
+
+	listed.Direct = apiutil.Ptr(served.Direct)
+	listed.VideoDirect = apiutil.Ptr(served.VideoDirect)
+	listed.AudioDirect = apiutil.Ptr(served.AudioDirect)
+	listed.Container = apiutil.ZeroOrNilPtr(served.Container)
+	listed.VideoCodec = apiutil.ZeroOrNilPtr(served.VideoCodec)
+	listed.AudioCodec = apiutil.ZeroOrNilPtr(served.AudioCodec)
+	listed.Reasons = apiutil.Ptr(append([]string{}, served.Reasons...))
+	listed.StartTicks = apiutil.Ptr(attempt.StartTicks)
 
 	return listed
 }

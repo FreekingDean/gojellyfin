@@ -8,6 +8,19 @@ import (
 	"github.com/google/uuid"
 )
 
+type ReportAttempt struct {
+	UserID        *uuid.UUID    `json:"user_id,omitempty"`
+	UserName      string        `json:"user_name,omitempty"`
+	DeviceID      string        `json:"device_id,omitempty"`
+	DeviceName    string        `json:"device_name,omitempty"`
+	Client        string        `json:"client,omitempty"`
+	ClientVersion string        `json:"client_version,omitempty"`
+	RemoteAddress string        `json:"remote_address,omitempty"`
+	Playback      *PlaybackPlan `json:"playback,omitempty"`
+	StartTicks    int64         `json:"start_ticks,omitempty"`
+	Build         string        `json:"build,omitempty"`
+}
+
 type Report struct {
 	ent.Schema
 }
@@ -21,6 +34,7 @@ func (Report) Fields() []ent.Field {
 		field.Enum("origin").Values("User", "Delete", "Probe", "Playback"),
 		field.String("note").Default(""),
 		field.Enum("status").Values("Open", "Resolved", "Dismissed").Default("Open"),
+		field.JSON("attempt", &ReportAttempt{}).Optional(),
 	)
 }
 
