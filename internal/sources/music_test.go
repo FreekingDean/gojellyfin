@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
@@ -52,6 +54,15 @@ func lidarrServer(t *testing.T, asked *[]string) *httptest.Server {
 		*asked = append(*asked, r.URL.Path+"?"+r.URL.RawQuery)
 		if r.Header.Get("X-Api-Key") != "key" {
 			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		if r.URL.Path == "/api/v1/artist/1" {
+			_ = json.NewEncoder(w).Encode(answers["/api/v1/artist"].([]map[string]any)[0])
+			return
+		}
+		if strings.HasPrefix(r.URL.Path, "/api/v1/artist/") {
+			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
@@ -141,4 +152,64 @@ func TestTitles_Lidarr(t *testing.T) {
 			t.Errorf("asked %q, want everything under Lidarr's v1 api", path)
 		}
 	}
+}
+
+func TestReported_Lidarr(t *testing.T) {
+	var asked []string
+	server := lidarrServer(t, &asked)
+	service := New(nil, env.Config{SourceAPIKeys: map[string]string{"SOURCE_API_KEY_TEST": "key"}}, nil, nil)
+	source := Source{
+		Name: "lidarr", Kind: KindLidarr, URL: server.URL, APIKeyVariable: "SOURCE_API_KEY_TEST",
+		Paths: []*store.SourcePathModel{{RemotePath: "/music", LocalPath: "/media/music"}},
+	}
+	ctx := context.Background()
+
+	t.Run("an import reads the artist and everything on disk beneath it", func(t *testing.T) {
+		held, err := service.reported(ctx, source, Hooked{ID: 1})
+		if err != nil {
+			t.Fatalf("failed to read the artist: %v", err)
+		}
+		if !reflect.DeepEqual(held.scope(), items.ArtistScope("A-ONE")) {
+			t.Errorf("scope = %+v, want the artist's tree", held.scope())
+		}
+
+		for _, test := range []struct {
+			name   string
+			tagged func([]int) bool
+		}{
+			{"a binding taking the artist's tag", func(tags []int) bool { return len(tags) == 1 && tags[0] == 4 }},
+			{"a binding taking another tag", func([]int) bool { return false }},
+		} {
+			titles, err := held.titles(source, test.tagged)
+			if err != nil {
+				t.Fatalf("failed to build the titles: %v", err)
+			}
+			if len(titles) != 4 {
+				t.Fatalf("%s: titles = %d, want the artist, its album and two tracks", test.name, len(titles))
+			}
+			for _, title := range titles {
+				if title.Tagged != test.tagged([]int{4}) {
+					t.Errorf("%s: %s tagged = %v, want the artist's answer", test.name, title.Key, title.Tagged)
+				}
+			}
+		}
+	})
+
+	t.Run("a deleted artist sweeps the tree the event named", func(t *testing.T) {
+		held, err := service.reported(ctx, source, Hooked{ID: 9, MusicBrainzID: "GONE"})
+		if err != nil {
+			t.Fatalf("failed to read the artist: %v", err)
+		}
+		titles, _ := held.titles(source, func([]int) bool { return true })
+		if !held.known() || !reflect.DeepEqual(held.scope(), items.ArtistScope("GONE")) || len(titles) != 0 {
+			t.Errorf("report = %+v, want nothing reported under the deleted artist's scope", held)
+		}
+	})
+
+	t.Run("a deleted artist the event did not name is left for the next refresh", func(t *testing.T) {
+		held, err := service.reported(ctx, source, Hooked{ID: 9})
+		if err != nil || held.known() {
+			t.Errorf("report = %+v, err = %v, want nothing known", held, err)
+		}
+	})
 }

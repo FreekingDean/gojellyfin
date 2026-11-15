@@ -17,6 +17,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/sources/arr"
+	"github.com/FreekingDean/gojellyfin/internal/sources/lidarr"
 	"github.com/FreekingDean/gojellyfin/internal/sources/radarr"
 	"github.com/FreekingDean/gojellyfin/internal/sources/sonarr"
 	"github.com/FreekingDean/gojellyfin/internal/store"
@@ -32,13 +33,14 @@ const (
 var (
 	ErrUnauthorized = errors.New("the webhook does not carry this source's secret")
 
-	refreshingEvents = []string{"Download", "Rename", "MovieDelete", "MovieFileDelete", "SeriesDelete", "EpisodeFileDelete"}
+	refreshingEvents = []string{"Download", "Rename", "MovieDelete", "MovieFileDelete", "SeriesDelete", "EpisodeFileDelete", "ArtistDelete", "AlbumDelete"}
 )
 
 type Hooked struct {
-	ID         int64
-	TmdbID     int
-	ReceivedAt time.Time
+	ID            int64
+	TmdbID        int
+	MusicBrainzID string
+	ReceivedAt    time.Time
 }
 
 func (s *Service) Authenticate(ctx context.Context, id uuid.UUID, username, password string) (Source, error) {
@@ -69,14 +71,17 @@ func Heard(source Source, body io.Reader) (Hooked, bool, error) {
 	}
 
 	subject := event.Movie
-	if source.Kind == KindSonarr {
+	switch source.Kind {
+	case KindSonarr:
 		subject = event.Series
+	case KindLidarr:
+		subject = event.Artist
 	}
 	if subject == nil || subject.ID == 0 {
 		return Hooked{}, false, nil
 	}
 
-	return Hooked{ID: subject.ID, TmdbID: subject.TmdbID, ReceivedAt: time.Now()}, true, nil
+	return Hooked{ID: subject.ID, TmdbID: subject.TmdbID, MusicBrainzID: subject.MBID, ReceivedAt: time.Now()}, true, nil
 }
 
 func (h Hooked) Params(sourceID uuid.UUID) []jobs.Param {
@@ -90,7 +95,7 @@ func (s *Service) RefreshTitleJob() jobs.Job {
 	return jobs.Job{
 		Name:        jobs.RefreshSourceTitle,
 		Category:    "Library",
-		Description: "Reads one movie or series a Sonarr or Radarr webhook named.",
+		Description: "Reads one movie, series or artist a Sonarr, Radarr or Lidarr webhook named.",
 		Queue:       jobs.RefreshQueue,
 		Run:         s.refreshTitle,
 	}
@@ -121,8 +126,8 @@ func (s *Service) RefreshTitle(ctx context.Context, sourceID uuid.UUID, hooked H
 	if err != nil {
 		return err
 	}
-	if held.tmdbID == 0 {
-		log.Printf("%s named %d, which carries no TMDB id: the next refresh reads it", source.Name, hooked.ID)
+	if !held.known() {
+		log.Printf("%s named %d, which carries no TMDB or MusicBrainz id: the next refresh reads it", source.Name, hooked.ID)
 
 		return nil
 	}
@@ -192,14 +197,24 @@ func (s *Service) refreshBound(ctx context.Context, binding Binding, held report
 }
 
 type report struct {
-	tmdbID   int
-	series   bool
-	movie    *radarr.Movie
-	show     *sonarr.Series
-	episodes []sonarr.Episode
+	tmdbID        int
+	musicBrainzID string
+	series        bool
+	movie         *radarr.Movie
+	show          *sonarr.Series
+	episodes      []sonarr.Episode
+	artist        *lidarr.Artist
+	music         []Title
+}
+
+func (r report) known() bool {
+	return r.tmdbID != 0 || r.musicBrainzID != ""
 }
 
 func (r report) scope() items.Scope {
+	if r.musicBrainzID != "" {
+		return items.ArtistScope(r.musicBrainzID)
+	}
 	if r.series {
 		return items.SeriesScope(r.tmdbID)
 	}
@@ -213,6 +228,8 @@ func (r report) titles(source Source, tagged func([]int) bool) ([]Title, error) 
 		return movieTitles(source, tagged, *r.movie)
 	case r.show != nil:
 		return seriesTitles(source, tagged, *r.show, r.episodes), nil
+	case r.artist != nil:
+		return retagged(r.music, tagged(r.artist.Tags)), nil
 	default:
 		return nil, nil
 	}
@@ -220,6 +237,10 @@ func (r report) titles(source Source, tagged func([]int) bool) ([]Title, error) 
 
 func (s *Service) reported(ctx context.Context, source Source, hooked Hooked) (report, error) {
 	id := strconv.FormatInt(hooked.ID, 10)
+
+	if source.Kind == KindLidarr {
+		return s.reportedArtist(ctx, source, hooked)
+	}
 
 	if source.Kind == KindSonarr {
 		show, err := get[sonarr.Series](ctx, s, source, sonarr.SeriesPath+"/"+id, nil)
@@ -247,6 +268,36 @@ func (s *Service) reported(ctx context.Context, source Source, hooked Hooked) (r
 	}
 
 	return report{tmdbID: movie.TmdbID, movie: &movie}, nil
+}
+
+func (s *Service) reportedArtist(ctx context.Context, source Source, hooked Hooked) (report, error) {
+	artist, err := get[lidarr.Artist](ctx, s, source, lidarr.ArtistsPath+"/"+strconv.FormatInt(hooked.ID, 10), nil)
+	if errors.Is(err, errAbsent) {
+		return report{musicBrainzID: hooked.MusicBrainzID}, nil
+	}
+	if err != nil {
+		return report{}, err
+	}
+	if artist.ForeignArtistID == "" {
+		return report{}, nil
+	}
+
+	music, err := s.artistTitles(ctx, source, artist, true)
+	if err != nil {
+		return report{}, err
+	}
+
+	return report{musicBrainzID: artist.ForeignArtistID, artist: &artist, music: music}, nil
+}
+
+func retagged(titles []Title, tagged bool) []Title {
+	out := make([]Title, len(titles))
+	for i, title := range titles {
+		title.Tagged = tagged
+		out[i] = title
+	}
+
+	return out
 }
 
 func (s *Service) bindingsOf(ctx context.Context, sourceID uuid.UUID) ([]Binding, error) {
