@@ -20,6 +20,8 @@ type CreditKind = creditmodel.Kind
 
 var ValidCreditKind = creditmodel.KindValidator
 
+const CreditKindUnknown = creditmodel.KindUnknown
+
 type Named struct {
 	ID       uuid.UUID
 	Name     string
