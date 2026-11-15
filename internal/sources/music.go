@@ -45,27 +45,31 @@ func (s *Service) music(ctx context.Context, binding Binding) ([]Title, error) {
 
 		jobs.Heartbeat(ctx, artist.ArtistName)
 
-		below, err := s.albums(ctx, binding.Source, artist, tagged(artist.Tags))
+		found, err := s.artistTitles(ctx, binding.Source, artist, tagged(artist.Tags))
 		if err != nil {
 			return nil, err
 		}
-		if len(below) == 0 {
-			continue
-		}
-
-		titles = append(titles, Title{
-			Key:      items.ArtistKey(artist.ForeignArtistID),
-			Tagged:   tagged(artist.Tags),
-			Kind:     itemmodel.KindMusicArtist,
-			Name:     artist.ArtistName,
-			SortName: items.SortName(artist.ArtistName),
-			Genres:   artist.Genres,
-			Images:   images(artist.Images, artistImages),
-		})
-		titles = append(titles, below...)
+		titles = append(titles, found...)
 	}
 
 	return titles, nil
+}
+
+func (s *Service) artistTitles(ctx context.Context, source Source, artist lidarr.Artist, tagged bool) ([]Title, error) {
+	below, err := s.albums(ctx, source, artist, tagged)
+	if err != nil || len(below) == 0 {
+		return nil, err
+	}
+
+	return append([]Title{{
+		Key:      items.ArtistKey(artist.ForeignArtistID),
+		Tagged:   tagged,
+		Kind:     itemmodel.KindMusicArtist,
+		Name:     artist.ArtistName,
+		SortName: items.SortName(artist.ArtistName),
+		Genres:   artist.Genres,
+		Images:   images(artist.Images, artistImages),
+	}}, below...), nil
 }
 
 func (s *Service) albums(ctx context.Context, source Source, artist lidarr.Artist, tagged bool) ([]Title, error) {

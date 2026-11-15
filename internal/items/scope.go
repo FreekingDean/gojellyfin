@@ -10,6 +10,7 @@ import (
 type Scope struct {
 	key         string
 	descendants []string
+	tree        bool
 }
 
 func MovieScope(tmdbID int) Scope {
@@ -26,8 +27,18 @@ func SeriesScope(tmdbID int) Scope {
 	}
 }
 
+func ArtistScope(musicBrainzID string) Scope {
+	return Scope{key: ArtistKey(musicBrainzID), tree: true}
+}
+
 func (s Scope) items() predicate.Item {
 	keys := []predicate.Item{itemmodel.Key(s.key)}
+	if s.tree {
+		keys = append(keys,
+			itemmodel.HasParentWith(itemmodel.Key(s.key)),
+			itemmodel.HasParentWith(itemmodel.HasParentWith(itemmodel.Key(s.key))),
+		)
+	}
 	for _, prefix := range s.descendants {
 		keys = append(keys, itemmodel.KeyHasPrefix(prefix))
 	}
