@@ -54,7 +54,4 @@ func TestService_Lyrics(t *testing.T) {
 	if !held[sung.ID].HasLyrics || held[silent.ID].HasLyrics {
 		t.Errorf("held = %+v, want only the sung track to have lyrics", held)
 	}
-	if held[sung.ID].Path == "" {
-		t.Error("selecting the columns the listing needs dropped the path")
-	}
 }

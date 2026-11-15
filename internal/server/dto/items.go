@@ -34,7 +34,6 @@ func ItemDto(item *items.Item, held items.Held, childCount int32, imageTags map[
 		Name:              apiutil.Ptr(item.Name),
 		SortName:          apiutil.Ptr(item.SortName),
 		Type:              &kind,
-		Path:              apiutil.Ptr(held.Path),
 		IsFolder:          apiutil.Ptr(items.IsFolder(item.Kind)),
 		LockData:          apiutil.Ptr(item.LockData),
 		ParentId:          item.ParentID,

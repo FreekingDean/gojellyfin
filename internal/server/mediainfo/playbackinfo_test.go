@@ -304,6 +304,7 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "aac")
 		fixture.addCopy(t, id, "/media/uhd.mkv", "h264", "aac", 2160)
 		named := fixture.sourceID(t, id, "/media/rip.mkv")
+		chosen := fixture.sourceID(t, id, "/media/uhd.mkv")
 
 		body := firstPlay(&chrome)
 		body.MediaSourceId = apiutil.Ptr(named)
@@ -318,8 +319,11 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		if len(sources) != 1 {
 			t.Fatalf("got %d media sources, want 1", len(sources))
 		}
-		if got := apiutil.Deref(sources[0].Path); got != "/media/uhd.mkv" {
-			t.Errorf("answered the file at %q, want the one this server chose", got)
+		if got := apiutil.Deref(sources[0].Id); got != chosen {
+			t.Errorf("answered the file %q, want the one this server chose, %q", got, chosen)
+		}
+		if sources[0].Path != nil {
+			t.Errorf("answered the path %q, and where a file sits on this server's disk is not a client's to know", *sources[0].Path)
 		}
 	})
 
@@ -615,6 +619,10 @@ func TestItemDtos_ListAFile(t *testing.T) {
 	converted, err := dto.ItemDtos(ctx, fixture.server.items, []*items.Item{item})
 	if err != nil {
 		t.Fatalf("failed to convert the item: %v", err)
+	}
+
+	if converted[0].Path != nil {
+		t.Errorf("the item names the path %q, and where a file sits on this server's disk is not a client's to know", *converted[0].Path)
 	}
 
 	listed := apiutil.Deref(converted[0].MediaSources)

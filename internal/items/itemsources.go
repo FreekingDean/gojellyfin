@@ -230,7 +230,6 @@ func (s *Service) PlayedSources(ctx context.Context, itemIDs []uuid.UUID) (map[u
 }
 
 type Held struct {
-	Path         string
 	RunTimeTicks *int64
 	HasSubtitles bool
 	HasLyrics    bool
@@ -245,7 +244,7 @@ func (s *Service) FilesByItem(ctx context.Context, itemIDs []uuid.UUID) (map[uui
 	sources, err := s.store.ItemSource.Query().
 		Where(sourcemodel.ItemIDIn(itemIDs...)).
 		Order(sourcemodel.ByCreatedAt(), sourcemodel.ByPath()).
-		Select(sourcemodel.FieldID, sourcemodel.FieldItemID, sourcemodel.FieldPath, sourcemodel.FieldRunTimeTicks).
+		Select(sourcemodel.FieldID, sourcemodel.FieldItemID, sourcemodel.FieldRunTimeTicks).
 		WithStreams(func(query *store.MediaStreamQuery) {
 			query.Where(streammodel.KindEQ(streammodel.KindSubtitle))
 		}).
@@ -266,7 +265,7 @@ func (s *Service) FilesByItem(ctx context.Context, itemIDs []uuid.UUID) (map[uui
 	for _, source := range sources {
 		entry, seen := held[source.ItemID]
 		if !seen {
-			entry = Held{Path: source.Path, RunTimeTicks: source.RunTimeTicks}
+			entry = Held{RunTimeTicks: source.RunTimeTicks}
 		}
 
 		entry.HasSubtitles = entry.HasSubtitles || len(source.Streams) > 0
