@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const VERSION = '2.6.4';
+const VERSION = '2.7.3';
 const PACKAGE = 'org.jellyfin.mobile';
 const RELEASE = `https://api.github.com/repos/jellyfin/jellyfin-android/releases/tags/v${VERSION}`;
 const CACHE = path.join(__dirname, '..', '..', '.clients');
