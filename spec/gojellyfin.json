@@ -927,6 +927,40 @@
           }
         ]
       }
+    },
+    "/GoJellyfin/MyRequests": {
+      "get": {
+        "tags": [
+          "Requests"
+        ],
+        "summary": "Lists what the signed-in user asked for, newest first, with where each request stands.",
+        "operationId": "GoJellyfinListMyRequests",
+        "responses": {
+          "200": {
+            "description": "The user's requests.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyRequests"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization"
+            ]
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -1696,6 +1730,44 @@
           }
         },
         "description": "The client, the account and how the file was being served when the report was filed. Absent for a probe's report and for reports filed before this was recorded. The serving fields are absent for a report filed from a client rather than by a stream."
+      },
+      "MyRequests": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MyRequest"
+        }
+      },
+      "MyRequest": {
+        "type": "object",
+        "required": [
+          "ItemId",
+          "Name",
+          "Kind",
+          "State",
+          "CreatedAt"
+        ],
+        "properties": {
+          "ItemId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The id the title is opened by, which answers the library's own item once it holds the title."
+          },
+          "Name": {
+            "type": "string"
+          },
+          "Kind": {
+            "type": "string",
+            "description": "Movie or Series."
+          },
+          "State": {
+            "type": "string",
+            "description": "Pending while it waits for an administrator, Declined, Requested once approved and asked of a downloader, Ready once the library holds it."
+          },
+          "CreatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
       }
     },
     "securitySchemes": {

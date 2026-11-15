@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/discover"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
@@ -146,4 +147,32 @@ func TestService_Allowance(t *testing.T) {
 			t.Errorf("allow = %v, want ErrNotFound", err)
 		}
 	})
+}
+
+func TestService_Mine(t *testing.T) {
+	ctx := context.Background()
+	fixture := newFixture(t)
+	fixture.allow(t, fixture.users[0], Allowance{CanRequest: true})
+	first, second, theirs := wanted(itemmodel.KindMovie, nil), wanted(itemmodel.KindMovie, nil), wanted(itemmodel.KindMovie, nil)
+
+	for _, asking := range []struct {
+		userID uuid.UUID
+		title  discover.Title
+	}{{fixture.users[0], first}, {fixture.users[0], second}, {fixture.users[1], theirs}} {
+		if err := fixture.service.Request(ctx, asking.userID, asking.title); err != nil {
+			t.Fatalf("failed to request %s: %v", asking.title.Key, err)
+		}
+	}
+
+	mine, err := fixture.service.Mine(ctx, fixture.users[0])
+	if err != nil {
+		t.Fatalf("failed to list the user's requests: %v", err)
+	}
+	keys := []string{}
+	for _, record := range mine {
+		keys = append(keys, record.Key)
+	}
+	if len(keys) != 2 || keys[0] != second.Key || keys[1] != first.Key {
+		t.Errorf("mine = %v, want %s then %s, newest first and only this user's", keys, second.Key, first.Key)
+	}
 }

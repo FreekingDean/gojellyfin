@@ -3,9 +3,11 @@ package requests
 import (
 	"context"
 	"errors"
+	"slices"
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/requests"
@@ -19,14 +21,70 @@ type Queue interface {
 	Decline(ctx context.Context, requestID uuid.UUID) error
 	Askers(ctx context.Context) ([]requests.Asker, error)
 	Allow(ctx context.Context, userID uuid.UUID, allowance requests.Allowance) error
+	Mine(ctx context.Context, userID uuid.UUID) ([]*requests.Request, error)
+}
+
+type Holdings interface {
+	HeldKeys(ctx context.Context, keys []string) ([]string, error)
 }
 
 type Server struct {
 	requests Queue
+	library  Holdings
 }
 
-func New(requests *requests.Service) *Server {
-	return &Server{requests: requests}
+func New(requests *requests.Service, library *items.Service) *Server {
+	return &Server{requests: requests, library: library}
+}
+
+func (s *Server) GoJellyfinListMyRequests(
+	ctx context.Context,
+	_ api.GoJellyfinListMyRequestsRequestObject,
+) (api.GoJellyfinListMyRequestsResponseObject, error) {
+	userID := auth.UserID(ctx)
+	if userID == uuid.Nil {
+		return nil, auth.ErrUnauthorized
+	}
+
+	mine, err := s.requests.Mine(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	keys := make([]string, len(mine))
+	for i, record := range mine {
+		keys[i] = record.Key
+	}
+	held, err := s.library.HeldKeys(ctx, keys)
+	if err != nil {
+		return nil, err
+	}
+
+	listed := make(api.GoJellyfinListMyRequests200JSONResponse, len(mine))
+	for i, record := range mine {
+		listed[i] = api.MyRequest{
+			ItemId:    discover.ID(items.Kind(record.Kind), uint32(record.TmdbID)),
+			Name:      record.Name,
+			Kind:      string(record.Kind),
+			State:     state(record.Status, slices.Contains(held, record.Key)),
+			CreatedAt: record.CreatedAt,
+		}
+	}
+
+	return listed, nil
+}
+
+func state(status requests.Status, held bool) string {
+	switch {
+	case status == requests.StatusDeclined:
+		return "Declined"
+	case held:
+		return "Ready"
+	case status == requests.StatusPending:
+		return "Pending"
+	default:
+		return "Requested"
+	}
 }
 
 func (s *Server) GoJellyfinListRequests(
