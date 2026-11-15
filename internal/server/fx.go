@@ -12,6 +12,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/backup"
 	"github.com/FreekingDean/gojellyfin/internal/server/branding"
 	"github.com/FreekingDean/gojellyfin/internal/server/channels"
+	"github.com/FreekingDean/gojellyfin/internal/server/clientlog"
 	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
 	"github.com/FreekingDean/gojellyfin/internal/server/dashboard"
 	"github.com/FreekingDean/gojellyfin/internal/server/devices"
@@ -69,6 +70,7 @@ var Module = fx.Module(
 	movies.Module,
 	backup.Module,
 	channels.Module,
+	clientlog.Module,
 	configuration.Module,
 	dashboard.Module,
 	devices.Module,
