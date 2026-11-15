@@ -79,14 +79,11 @@ func (s *Service) hook(ctx context.Context, source Source) error {
 		return err
 	}
 
-	method, path := http.MethodPut, ""
-	if found == nil {
-		method, path = http.MethodPost, arr.NotifyPath
-		if found, err = s.webhookSchema(ctx, source); err != nil {
-			return err
-		}
-	} else {
-		path = arr.NotifyPath + "/" + strconv.FormatInt(recordID(found), 10)
+	method, path := http.MethodPost, arr.NotifyPath
+	if found != nil {
+		method, path = http.MethodPut, arr.NotifyPath+"/"+strconv.FormatInt(recordID(found), 10)
+	} else if found, err = s.webhookSchema(ctx, source); err != nil {
+		return err
 	}
 
 	configure(found, target, source.WebhookSecret)
