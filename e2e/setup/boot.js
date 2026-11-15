@@ -19,6 +19,7 @@ const LIBRARY = 'Smoke Movies';
 const MOVIES = ['Fixture Alpha', 'Fixture Beta'];
 const PLAYABLE = 'Fixture Playable';
 const TRANSCODED = 'Fixture Transcoded';
+const INTRO = { start: 3, end: 12 };
 const SHOWS = 'Smoke Shows';
 const SERIES = 'Fixture Show';
 const SEASON = 'Season 1';
@@ -63,7 +64,7 @@ const TRENDING_HELD = {
 
 const CLIENT_IMAGE = 'jellyfin/jellyfin:12.4';
 
-async function boot({ mediaSeconds = 20 } = {}) {
+async function boot({ mediaSeconds = 20, playableEpisodes = false } = {}) {
   const adminUrl = process.env.DATABASE_URL;
   if (!adminUrl) {
     throw new Error('DATABASE_URL is not set, so there is no server to create a scratch database on');
@@ -85,7 +86,8 @@ async function boot({ mediaSeconds = 20 } = {}) {
   fs.mkdirSync(jellyfinData, { recursive: true });
   const jellyfin = JSON.parse(run(binaries.fixtures, ['jellyfin', jellyfinData]));
 
-  const apiPort = await freePort();
+  const reserved = await reservePort();
+  const apiPort = reserved.port;
   const posterRoot = path.join(BUILD, 'posters');
   fs.rmSync(posterRoot, { recursive: true, force: true });
   fs.mkdirSync(path.join(posterRoot, POSTER_SIZE), { recursive: true });
@@ -118,6 +120,7 @@ async function boot({ mediaSeconds = 20 } = {}) {
       ...serverEnv,
       FIXTURE_MEDIA: media.playable,
       FIXTURE_TRANSCODE: media.transcoded,
+      ...(playableEpisodes ? { FIXTURE_EPISODES: episodeMedia(media.playable, mediaSeconds) } : {}),
       FIXTURE_DOWNLOADER: downloaderUrl,
       FIXTURE_TRENDING_TMDB: String(TRENDING_HELD.id),
       POSTER_DIR: posterRoot,
@@ -129,6 +132,7 @@ async function boot({ mediaSeconds = 20 } = {}) {
   const baseUrl = `http://127.0.0.1:${webPort}`;
   const provider = await startProvider(binaries.fixtures, baseUrl);
 
+  await reserved.release();
   const api = spawn(binaries.gojellyfin, ['server'], {
     env: {
       ...process.env,
@@ -167,6 +171,7 @@ async function boot({ mediaSeconds = 20 } = {}) {
       library: LIBRARY,
       movies: MOVIES,
       playable: PLAYABLE,
+      intro: INTRO,
       transcoded: TRANSCODED,
       shows: SHOWS,
       series: SERIES,
@@ -188,13 +193,9 @@ async function boot({ mediaSeconds = 20 } = {}) {
     },
     serverLog: () => log.join(''),
     async stop() {
-      await new Promise((resolve) => front.close(resolve));
-      await new Promise((resolve) => catalogue.close(resolve));
-      await new Promise((resolve) => downloader.close(resolve));
-      api.kill('SIGTERM');
-      await once(api);
-      provider.child.kill('SIGTERM');
-      await once(provider.child);
+      await Promise.all([front, catalogue, downloader].map(shut));
+      await terminate(api);
+      await terminate(provider.child);
       file.end();
       run(binaries.fixtures, ['drop'], { env: scratchEnv, allowFailure: true });
     },
@@ -245,6 +246,37 @@ function encodeTranscoded() {
   return target;
 }
 
+// Each episode a file of its own, since a path belongs to one item, so that
+// the player has a next episode to move on to. They are H.264 with E-AC-3 in
+// Matroska, which is what a downloader usually imports and what a television
+// without a receiver cannot decode, so the server converts the sound and the
+// episode reaches the player through ffmpeg rather than as the file.
+function episodeMedia(playable, seconds) {
+  const directory = path.join(path.dirname(playable), 'episodes');
+  fs.rmSync(directory, { recursive: true, force: true });
+  fs.mkdirSync(directory, { recursive: true });
+
+  const episode = path.join(directory, 'episode.mkv');
+  run('ffmpeg', [
+    '-hide_banner', '-loglevel', 'error', '-y',
+    '-f', 'lavfi', '-i', `testsrc2=size=640x360:rate=24:duration=${seconds}`,
+    '-f', 'lavfi', '-i', `sine=frequency=440:duration=${seconds}`,
+    '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-g', '48',
+    '-c:a', 'eac3', '-b:a', '128k',
+    '-shortest', episode,
+  ]);
+  for (const title of [...EPISODES, FINALE]) {
+    fs.copyFileSync(episode, path.join(directory, slugify(title) + '.mkv'));
+  }
+  fs.rmSync(episode);
+
+  return directory;
+}
+
+function slugify(title) {
+  return title.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean).join('-');
+}
+
 function encodePlayable(seconds) {
   const target = path.join(BUILD, 'media', seconds === 20 ? 'playable.webm' : `playable-${seconds}s.webm`);
   if (fs.existsSync(target)) {
@@ -252,10 +284,19 @@ function encodePlayable(seconds) {
   }
 
   fs.mkdirSync(path.dirname(target), { recursive: true });
+  const chapters = `${target}.chapters`;
+  fs.writeFileSync(chapters, [
+    ';FFMETADATA1',
+    '[CHAPTER]', 'TIMEBASE=1/1000', 'START=0', `END=${INTRO.start * 1000}`, 'title=Cold Open',
+    '[CHAPTER]', 'TIMEBASE=1/1000', `START=${INTRO.start * 1000}`, `END=${INTRO.end * 1000}`, 'title=Intro',
+    '[CHAPTER]', 'TIMEBASE=1/1000', `START=${INTRO.end * 1000}`, `END=${seconds * 1000}`, 'title=Story',
+    '',
+  ].join('\n'));
   run('ffmpeg', [
     '-hide_banner', '-loglevel', 'error', '-y',
     '-f', 'lavfi', '-i', `testsrc2=size=640x360:rate=24:duration=${seconds}`,
     '-f', 'lavfi', '-i', `sine=frequency=440:duration=${seconds}`,
+    '-i', chapters, '-map', '0:v', '-map', '1:a', '-map_chapters', '2',
     '-c:v', 'libvpx-vp9', '-b:v', '300k', '-deadline', 'realtime', '-cpu-used', '8',
     '-c:a', 'libopus', '-b:a', '64k',
     '-shortest', target,
@@ -358,21 +399,40 @@ function withDatabase(dsn, name) {
 }
 
 // :0 rather than a fixed port, so a run can never take :8081 from `make dev`.
-function freePort() {
+// The port stays held until the server is about to bind it, because every
+// listen(0) the harness makes in between could otherwise be handed it.
+function reservePort() {
   return new Promise((resolve, reject) => {
     const probe = net.createServer();
     probe.on('error', reject);
     probe.listen(0, '127.0.0.1', () => {
       const { port } = probe.address();
-      probe.close(() => resolve(port));
+      resolve({ port, release: () => new Promise((done) => probe.close(done)) });
     });
   });
 }
 
+const connections = new WeakMap();
+
 function listen(server) {
+  const open = new Set();
+  connections.set(server, open);
+  server.on('connection', (socket) => {
+    open.add(socket);
+    socket.on('close', () => open.delete(socket));
+  });
   return new Promise((resolve, reject) => {
     server.on('error', reject);
     server.listen(0, '127.0.0.1', () => resolve(server.address().port));
+  });
+}
+
+// A client still connected, such as a WebView holding the websocket, keeps
+// close from ever calling back, so whatever is still open is cut.
+function shut(server) {
+  return new Promise((resolve) => {
+    server.close(resolve);
+    for (const socket of connections.get(server) ?? []) socket.destroy();
   });
 }
 
@@ -407,6 +467,13 @@ function answers(port) {
       resolve(false);
     });
   });
+}
+
+async function terminate(child) {
+  child.kill('SIGTERM');
+  const killing = setTimeout(() => child.kill('SIGKILL'), 15000);
+  await once(child);
+  clearTimeout(killing);
 }
 
 function once(child) {

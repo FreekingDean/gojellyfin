@@ -411,6 +411,14 @@ func TestService_TrendingShelves(t *testing.T) {
 			if !slices.Equal(got, test.want) {
 				t.Errorf("trending = %v, want %v", got, test.want)
 			}
+
+			card, found, err := service.Card(ctx, listed[0].ID, test.viewer, uuid.Nil, 5)
+			if err != nil || !found {
+				t.Fatalf("card = %v, %v, want the trending card", found, err)
+			}
+			if card.Name != "Trending Movies" || card.Personal || card.Fresh != 0 {
+				t.Errorf("card = %q personal %v fresh %d, want the shelf's name, shared, with no count", card.Name, card.Personal, card.Fresh)
+			}
 		})
 	}
 }

@@ -20,6 +20,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 	"github.com/FreekingDean/gojellyfin/internal/reports"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
@@ -491,7 +492,7 @@ func TestServer_GetDownload(t *testing.T) {
 func disconnected(t *testing.T) *jobs.Client {
 	t.Helper()
 
-	client, err := jobs.NewClient(env.Config{})
+	client, err := jobs.NewClient(env.Config{}, &tracing.Tracing{})
 	if err != nil {
 		t.Fatalf("failed to build the temporal client: %v", err)
 	}

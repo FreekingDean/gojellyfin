@@ -30,6 +30,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
 	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
+	"github.com/FreekingDean/gojellyfin/internal/store/mediasegment"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/person"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
@@ -87,6 +88,8 @@ type Client struct {
 	LibraryOptions *LibraryOptionsClient
 	// LibrarySource is the client for interacting with the LibrarySource builders.
 	LibrarySource *LibrarySourceClient
+	// MediaSegment is the client for interacting with the MediaSegment builders.
+	MediaSegment *MediaSegmentClient
 	// MediaStream is the client for interacting with the MediaStream builders.
 	MediaStream *MediaStreamClient
 	// Person is the client for interacting with the Person builders.
@@ -152,6 +155,7 @@ func (c *Client) init() {
 	c.LibraryItem = NewLibraryItemClient(c.config)
 	c.LibraryOptions = NewLibraryOptionsClient(c.config)
 	c.LibrarySource = NewLibrarySourceClient(c.config)
+	c.MediaSegment = NewMediaSegmentClient(c.config)
 	c.MediaStream = NewMediaStreamClient(c.config)
 	c.Person = NewPersonClient(c.config)
 	c.Playlist = NewPlaylistClient(c.config)
@@ -278,6 +282,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		LibraryItem:         NewLibraryItemClient(cfg),
 		LibraryOptions:      NewLibraryOptionsClient(cfg),
 		LibrarySource:       NewLibrarySourceClient(cfg),
+		MediaSegment:        NewMediaSegmentClient(cfg),
 		MediaStream:         NewMediaStreamClient(cfg),
 		Person:              NewPersonClient(cfg),
 		Playlist:            NewPlaylistClient(cfg),
@@ -331,6 +336,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		LibraryItem:         NewLibraryItemClient(cfg),
 		LibraryOptions:      NewLibraryOptionsClient(cfg),
 		LibrarySource:       NewLibrarySourceClient(cfg),
+		MediaSegment:        NewMediaSegmentClient(cfg),
 		MediaStream:         NewMediaStreamClient(cfg),
 		Person:              NewPersonClient(cfg),
 		Playlist:            NewPlaylistClient(cfg),
@@ -382,11 +388,12 @@ func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.ActivityLogEntry, c.ApiKey, c.Configuration, c.Credit, c.Device,
 		c.DisplayPreferences, c.Genre, c.Image, c.Item, c.ItemSource, c.Library,
-		c.LibraryItem, c.LibraryOptions, c.LibrarySource, c.MediaStream, c.Person,
-		c.Playlist, c.PlaylistEntry, c.PlaylistShare, c.QuickConnectRequest, c.Report,
-		c.Request, c.RequestSubmission, c.Session, c.Source, c.SourcePath, c.Studio,
-		c.SyncPlayGroup, c.SyncPlayGroupMember, c.SyncPlayQueueEntry, c.User,
-		c.UserConfiguration, c.UserItemData, c.UserPolicy,
+		c.LibraryItem, c.LibraryOptions, c.LibrarySource, c.MediaSegment,
+		c.MediaStream, c.Person, c.Playlist, c.PlaylistEntry, c.PlaylistShare,
+		c.QuickConnectRequest, c.Report, c.Request, c.RequestSubmission, c.Session,
+		c.Source, c.SourcePath, c.Studio, c.SyncPlayGroup, c.SyncPlayGroupMember,
+		c.SyncPlayQueueEntry, c.User, c.UserConfiguration, c.UserItemData,
+		c.UserPolicy,
 	} {
 		n.Use(hooks...)
 	}
@@ -398,11 +405,12 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.ActivityLogEntry, c.ApiKey, c.Configuration, c.Credit, c.Device,
 		c.DisplayPreferences, c.Genre, c.Image, c.Item, c.ItemSource, c.Library,
-		c.LibraryItem, c.LibraryOptions, c.LibrarySource, c.MediaStream, c.Person,
-		c.Playlist, c.PlaylistEntry, c.PlaylistShare, c.QuickConnectRequest, c.Report,
-		c.Request, c.RequestSubmission, c.Session, c.Source, c.SourcePath, c.Studio,
-		c.SyncPlayGroup, c.SyncPlayGroupMember, c.SyncPlayQueueEntry, c.User,
-		c.UserConfiguration, c.UserItemData, c.UserPolicy,
+		c.LibraryItem, c.LibraryOptions, c.LibrarySource, c.MediaSegment,
+		c.MediaStream, c.Person, c.Playlist, c.PlaylistEntry, c.PlaylistShare,
+		c.QuickConnectRequest, c.Report, c.Request, c.RequestSubmission, c.Session,
+		c.Source, c.SourcePath, c.Studio, c.SyncPlayGroup, c.SyncPlayGroupMember,
+		c.SyncPlayQueueEntry, c.User, c.UserConfiguration, c.UserItemData,
+		c.UserPolicy,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -439,6 +447,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.LibraryOptions.mutate(ctx, m)
 	case *LibrarySourceMutation:
 		return c.LibrarySource.mutate(ctx, m)
+	case *MediaSegmentMutation:
+		return c.MediaSegment.mutate(ctx, m)
 	case *MediaStreamMutation:
 		return c.MediaStream.mutate(ctx, m)
 	case *PersonMutation:
@@ -2205,6 +2215,22 @@ func (c *ItemSourceClient) QueryStreams(_m *ItemSource) *MediaStreamQuery {
 	return query
 }
 
+// QuerySegments queries the segments edge of a ItemSource.
+func (c *ItemSourceClient) QuerySegments(_m *ItemSource) *MediaSegmentQuery {
+	query := (&MediaSegmentClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(itemsource.Table, itemsource.FieldID, id),
+			sqlgraph.To(mediasegment.Table, mediasegment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, itemsource.SegmentsTable, itemsource.SegmentsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryReports queries the reports edge of a ItemSource.
 func (c *ItemSourceClient) QueryReports(_m *ItemSource) *ReportQuery {
 	query := (&ReportClient{config: c.config}).Query()
@@ -2919,6 +2945,155 @@ func (c *LibrarySourceClient) mutate(ctx context.Context, m *LibrarySourceMutati
 		return (&LibrarySourceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("store: unknown LibrarySource mutation op: %q", m.Op())
+	}
+}
+
+// MediaSegmentClient is a client for the MediaSegment schema.
+type MediaSegmentClient struct {
+	config
+}
+
+// NewMediaSegmentClient returns a client for the MediaSegment from the given config.
+func NewMediaSegmentClient(c config) *MediaSegmentClient {
+	return &MediaSegmentClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `mediasegment.Hooks(f(g(h())))`.
+func (c *MediaSegmentClient) Use(hooks ...Hook) {
+	c.hooks.MediaSegment = append(c.hooks.MediaSegment, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `mediasegment.Intercept(f(g(h())))`.
+func (c *MediaSegmentClient) Intercept(interceptors ...Interceptor) {
+	c.inters.MediaSegment = append(c.inters.MediaSegment, interceptors...)
+}
+
+// Create returns a builder for creating a MediaSegment entity.
+func (c *MediaSegmentClient) Create() *MediaSegmentCreate {
+	mutation := newMediaSegmentMutation(c.config, OpCreate)
+	return &MediaSegmentCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of MediaSegment entities.
+func (c *MediaSegmentClient) CreateBulk(builders ...*MediaSegmentCreate) *MediaSegmentCreateBulk {
+	return &MediaSegmentCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *MediaSegmentClient) MapCreateBulk(slice any, setFunc func(*MediaSegmentCreate, int)) *MediaSegmentCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &MediaSegmentCreateBulk{err: fmt.Errorf("calling to MediaSegmentClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*MediaSegmentCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &MediaSegmentCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for MediaSegment.
+func (c *MediaSegmentClient) Update() *MediaSegmentUpdate {
+	mutation := newMediaSegmentMutation(c.config, OpUpdate)
+	return &MediaSegmentUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *MediaSegmentClient) UpdateOne(_m *MediaSegment) *MediaSegmentUpdateOne {
+	mutation := newMediaSegmentMutation(c.config, OpUpdateOne, withMediaSegment(_m))
+	return &MediaSegmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *MediaSegmentClient) UpdateOneID(id uuid.UUID) *MediaSegmentUpdateOne {
+	mutation := newMediaSegmentMutation(c.config, OpUpdateOne, withMediaSegmentID(id))
+	return &MediaSegmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for MediaSegment.
+func (c *MediaSegmentClient) Delete() *MediaSegmentDelete {
+	mutation := newMediaSegmentMutation(c.config, OpDelete)
+	return &MediaSegmentDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *MediaSegmentClient) DeleteOne(_m *MediaSegment) *MediaSegmentDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *MediaSegmentClient) DeleteOneID(id uuid.UUID) *MediaSegmentDeleteOne {
+	builder := c.Delete().Where(mediasegment.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &MediaSegmentDeleteOne{builder}
+}
+
+// Query returns a query builder for MediaSegment.
+func (c *MediaSegmentClient) Query() *MediaSegmentQuery {
+	return &MediaSegmentQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeMediaSegment},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a MediaSegment entity by its id.
+func (c *MediaSegmentClient) Get(ctx context.Context, id uuid.UUID) (*MediaSegment, error) {
+	return c.Query().Where(mediasegment.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *MediaSegmentClient) GetX(ctx context.Context, id uuid.UUID) *MediaSegment {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QuerySource queries the source edge of a MediaSegment.
+func (c *MediaSegmentClient) QuerySource(_m *MediaSegment) *ItemSourceQuery {
+	query := (&ItemSourceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(mediasegment.Table, mediasegment.FieldID, id),
+			sqlgraph.To(itemsource.Table, itemsource.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, mediasegment.SourceTable, mediasegment.SourceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *MediaSegmentClient) Hooks() []Hook {
+	return c.hooks.MediaSegment
+}
+
+// Interceptors returns the client interceptors.
+func (c *MediaSegmentClient) Interceptors() []Interceptor {
+	return c.inters.MediaSegment
+}
+
+func (c *MediaSegmentClient) mutate(ctx context.Context, m *MediaSegmentMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&MediaSegmentCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&MediaSegmentUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&MediaSegmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&MediaSegmentDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("store: unknown MediaSegment mutation op: %q", m.Op())
 	}
 }
 
@@ -6355,18 +6530,20 @@ type (
 	hooks struct {
 		ActivityLogEntry, ApiKey, Configuration, Credit, Device, DisplayPreferences,
 		Genre, Image, Item, ItemSource, Library, LibraryItem, LibraryOptions,
-		LibrarySource, MediaStream, Person, Playlist, PlaylistEntry, PlaylistShare,
-		QuickConnectRequest, Report, Request, RequestSubmission, Session, Source,
-		SourcePath, Studio, SyncPlayGroup, SyncPlayGroupMember, SyncPlayQueueEntry,
-		User, UserConfiguration, UserItemData, UserPolicy []ent.Hook
+		LibrarySource, MediaSegment, MediaStream, Person, Playlist, PlaylistEntry,
+		PlaylistShare, QuickConnectRequest, Report, Request, RequestSubmission,
+		Session, Source, SourcePath, Studio, SyncPlayGroup, SyncPlayGroupMember,
+		SyncPlayQueueEntry, User, UserConfiguration, UserItemData,
+		UserPolicy []ent.Hook
 	}
 	inters struct {
 		ActivityLogEntry, ApiKey, Configuration, Credit, Device, DisplayPreferences,
 		Genre, Image, Item, ItemSource, Library, LibraryItem, LibraryOptions,
-		LibrarySource, MediaStream, Person, Playlist, PlaylistEntry, PlaylistShare,
-		QuickConnectRequest, Report, Request, RequestSubmission, Session, Source,
-		SourcePath, Studio, SyncPlayGroup, SyncPlayGroupMember, SyncPlayQueueEntry,
-		User, UserConfiguration, UserItemData, UserPolicy []ent.Interceptor
+		LibrarySource, MediaSegment, MediaStream, Person, Playlist, PlaylistEntry,
+		PlaylistShare, QuickConnectRequest, Report, Request, RequestSubmission,
+		Session, Source, SourcePath, Studio, SyncPlayGroup, SyncPlayGroupMember,
+		SyncPlayQueueEntry, User, UserConfiguration, UserItemData,
+		UserPolicy []ent.Interceptor
 	}
 )
 

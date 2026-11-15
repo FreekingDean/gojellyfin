@@ -1,6 +1,6 @@
 {{- if .Values.web.enabled }}
 {{- $component := "web" }}
-{{- $pod := mergeOverwrite (deepCopy (default dict .Values.pod)) (default dict .Values.web.pod) }}
+{{- $pod := mergeOverwrite (include "gojellyfin.spread" (dict "root" $ "component" $component) | fromYaml) (deepCopy (default dict .Values.pod)) (default dict .Values.web.pod) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:

@@ -17,6 +17,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 	"github.com/FreekingDean/gojellyfin/internal/sources/arr"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemsourcemodel "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
@@ -33,6 +34,7 @@ const (
 
 	KindRadarr = sourcemodel.KindRadarr
 	KindSonarr = sourcemodel.KindSonarr
+	KindLidarr = sourcemodel.KindLidarr
 )
 
 var (
@@ -53,8 +55,8 @@ type Service struct {
 
 func New(store *store.Client, config env.Config, records *items.Service, activities *activity.Service) *Service {
 	return &Service{
-		client:   &http.Client{Timeout: testTimeout},
-		lister:   &http.Client{Timeout: listTimeout},
+		client:   &http.Client{Timeout: testTimeout, Transport: tracing.Transport(nil)},
+		lister:   &http.Client{Timeout: listTimeout, Transport: tracing.Transport(nil)},
 		store:    store,
 		config:   config,
 		items:    records,
@@ -543,7 +545,7 @@ func validateLibraries(ctx context.Context, tx *store.Tx, entry Configured) erro
 
 	for _, library := range libraries {
 		if library.CollectionType != Fills(entry.Source.Kind) {
-			return invalid("%s cannot fill %s: Radarr fills a movies library and Sonarr a shows one", entry.Source.Name, library.Name)
+			return invalid("%s cannot fill %s: Radarr fills a movies library, Sonarr a shows one and Lidarr a music one", entry.Source.Name, library.Name)
 		}
 	}
 
@@ -551,11 +553,14 @@ func validateLibraries(ctx context.Context, tx *store.Tx, entry Configured) erro
 }
 
 func Fills(kind Kind) librarymodel.CollectionType {
-	if kind == KindSonarr {
+	switch kind {
+	case KindSonarr:
 		return librarymodel.CollectionTypeTvshows
+	case KindLidarr:
+		return librarymodel.CollectionTypeMusic
+	default:
+		return librarymodel.CollectionTypeMovies
 	}
-
-	return librarymodel.CollectionTypeMovies
 }
 
 func overlaps(one, other string) bool {
@@ -593,12 +598,12 @@ type Instance struct {
 	Tags        []string
 }
 
-func (s *Service) Test(ctx context.Context, apiURL, variable string) (Instance, error) {
+func (s *Service) Test(ctx context.Context, kind Kind, apiURL, variable string) (Instance, error) {
 	if err := checkURL(apiURL); err != nil {
 		return Instance{}, err
 	}
 
-	source := Source{URL: apiURL, APIKeyVariable: variable}
+	source := Source{Kind: kind, URL: apiURL, APIKeyVariable: variable}
 
 	status, err := fetch[arr.Status](ctx, s, s.client, source, arr.StatusPath, nil)
 	if err != nil {

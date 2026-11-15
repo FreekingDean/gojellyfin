@@ -63,6 +63,14 @@ func ItemQuery(ctx context.Context, collections *libraries.Service, viewer items
 	if params.Ids != nil {
 		query.IDs = *params.Ids
 	}
+	for _, artists := range []*[]uuid.UUID{params.ArtistIds, params.AlbumArtistIds, params.ContributingArtistIds} {
+		if artists != nil {
+			query.ArtistIDs = append(query.ArtistIDs, *artists...)
+		}
+	}
+	if params.AlbumIds != nil {
+		query.AlbumIDs = *params.AlbumIds
+	}
 
 	filter(&query, auth.UserID(ctx), params)
 

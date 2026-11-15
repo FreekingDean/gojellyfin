@@ -11,14 +11,19 @@ import (
 	"go.temporal.io/api/workflow/v1"
 	"go.temporal.io/api/workflowservice/v1"
 	"go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/contrib/opentelemetry"
+	"go.temporal.io/sdk/interceptor"
+	"google.golang.org/grpc"
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 )
 
 const (
 	TaskQueue     = "gojellyfin"
 	MetadataQueue = "gojellyfin-metadata"
 	RefreshQueue  = "gojellyfin-refresh"
+	SegmentsQueue = "gojellyfin-segments"
 )
 
 var ErrNotConfigured = errors.New("jobs: TEMPORAL_HOSTPORT is not set")
@@ -36,7 +41,7 @@ type Client struct {
 	client client.Client
 }
 
-func NewClient(config env.Config) (*Client, error) {
+func NewClient(config env.Config, traces *tracing.Tracing) (*Client, error) {
 	if config.Temporal.HostPort == "" {
 		return &Client{}, nil
 	}
@@ -44,10 +49,25 @@ func NewClient(config env.Config) (*Client, error) {
 		return nil, ErrNoNamespace
 	}
 
-	connected, err := client.Dial(client.Options{
+	options := client.Options{
 		HostPort:  config.Temporal.HostPort,
 		Namespace: config.Temporal.Namespace,
-	})
+		ConnectionOptions: client.ConnectionOptions{
+			DialOptions: []grpc.DialOption{grpc.WithChainUnaryInterceptor(tracing.UnaryClientInterceptor)},
+		},
+	}
+	if traces.Enabled() {
+		traced, err := opentelemetry.NewTracingInterceptor(opentelemetry.TracerOptions{
+			Tracer:            traces.Tracer(),
+			TextMapPropagator: traces.Propagator(),
+		})
+		if err != nil {
+			return nil, err
+		}
+		options.Interceptors = []interceptor.ClientInterceptor{traced}
+	}
+
+	connected, err := client.Dial(options)
 	if err != nil {
 		return nil, err
 	}

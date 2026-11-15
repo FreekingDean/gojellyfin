@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
@@ -18,6 +19,9 @@ var trendingTypes = map[items.Kind]string{
 }
 
 func (c *Client) Trending(ctx context.Context, kind items.Kind, page int) ([]items.Metadata, error) {
+	ctx, span := tracing.Start(ctx, "tmdb Trending")
+	defer span.End()
+
 	mediaType, known := trendingTypes[kind]
 	if !known {
 		return nil, fmt.Errorf("tmdb: nothing trends as %s", kind)

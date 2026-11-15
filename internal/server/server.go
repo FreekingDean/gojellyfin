@@ -17,13 +17,16 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/genres"
 	"github.com/FreekingDean/gojellyfin/internal/server/health"
 	"github.com/FreekingDean/gojellyfin/internal/server/image"
+	"github.com/FreekingDean/gojellyfin/internal/server/instantmix"
 	"github.com/FreekingDean/gojellyfin/internal/server/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/itemupdate"
 	"github.com/FreekingDean/gojellyfin/internal/server/library"
 	"github.com/FreekingDean/gojellyfin/internal/server/librarystructure"
 	"github.com/FreekingDean/gojellyfin/internal/server/livetv"
 	"github.com/FreekingDean/gojellyfin/internal/server/localization"
+	"github.com/FreekingDean/gojellyfin/internal/server/lyrics"
 	"github.com/FreekingDean/gojellyfin/internal/server/mediainfo"
+	"github.com/FreekingDean/gojellyfin/internal/server/mediasegment"
 	"github.com/FreekingDean/gojellyfin/internal/server/movies"
 	"github.com/FreekingDean/gojellyfin/internal/server/packages"
 	"github.com/FreekingDean/gojellyfin/internal/server/persons"
@@ -46,7 +49,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/trailers"
 	"github.com/FreekingDean/gojellyfin/internal/server/tvshows"
 	"github.com/FreekingDean/gojellyfin/internal/server/user"
-	"github.com/FreekingDean/gojellyfin/internal/server/userlibrary"
+	"github.com/FreekingDean/gojellyfin/internal/server/userdata"
 	"github.com/FreekingDean/gojellyfin/internal/server/userviews"
 	"github.com/FreekingDean/gojellyfin/internal/server/years"
 )
@@ -70,6 +73,8 @@ type (
 	ScheduledTasksServer     = scheduledtasks.Server
 	DashboardServer          = dashboard.Server
 	ArtistsServer            = artists.Server
+	LyricsServer             = lyrics.Server
+	InstantMixServer         = instantmix.Server
 	MoviesServer             = movies.Server
 	BackupServer             = backup.Server
 	ChannelsServer           = channels.Server
@@ -84,6 +89,7 @@ type (
 	LibraryStructureServer   = librarystructure.Server
 	LocalizationServer       = localization.Server
 	MediaInfoServer          = mediainfo.Server
+	MediaSegmentServer       = mediasegment.Server
 	PlaylistsServer          = playlists.Server
 	PlaystateServer          = playstate.Server
 	PluginsServer            = plugins.Server
@@ -101,7 +107,7 @@ type (
 	TimeSyncServer           = timesync.Server
 	TrailersServer           = trailers.Server
 	UserServer               = user.Server
-	UserLibraryServer        = userlibrary.Server
+	UserDataServer           = userdata.Server
 	UserViewsServer          = userviews.Server
 )
 
@@ -120,6 +126,8 @@ type Server struct {
 	*ScheduledTasksServer
 	*DashboardServer
 	*ArtistsServer
+	*LyricsServer
+	*InstantMixServer
 	*MoviesServer
 	*BackupServer
 	*ChannelsServer
@@ -134,6 +142,7 @@ type Server struct {
 	*LibraryStructureServer
 	*LocalizationServer
 	*MediaInfoServer
+	*MediaSegmentServer
 	*PlaylistsServer
 	*PlaystateServer
 	*PluginsServer
@@ -151,7 +160,7 @@ type Server struct {
 	*TimeSyncServer
 	*TrailersServer
 	*UserServer
-	*UserLibraryServer
+	*UserDataServer
 	*UserViewsServer
 
 	nestedUnimplemented
@@ -172,6 +181,8 @@ func New(
 	scheduledtasks *scheduledtasks.Server,
 	dashboard *dashboard.Server,
 	artists *artists.Server,
+	lyrics *lyrics.Server,
+	instantMix *instantmix.Server,
 	movies *movies.Server,
 	backups *backup.Server,
 	channels *channels.Server,
@@ -186,6 +197,7 @@ func New(
 	libraryStructure *librarystructure.Server,
 	localization *localization.Server,
 	mediaInfo *mediainfo.Server,
+	mediaSegment *mediasegment.Server,
 	playlists *playlists.Server,
 	playstate *playstate.Server,
 	plugins *plugins.Server,
@@ -203,7 +215,7 @@ func New(
 	timeSync *timesync.Server,
 	trailers *trailers.Server,
 	user *user.Server,
-	userLibrary *userlibrary.Server,
+	userData *userdata.Server,
 	userViews *userviews.Server,
 ) *Server {
 	return &Server{
@@ -221,6 +233,8 @@ func New(
 		ScheduledTasksServer:     scheduledtasks,
 		DashboardServer:          dashboard,
 		ArtistsServer:            artists,
+		LyricsServer:             lyrics,
+		InstantMixServer:         instantMix,
 		MoviesServer:             movies,
 		BackupServer:             backups,
 		ChannelsServer:           channels,
@@ -235,6 +249,7 @@ func New(
 		LibraryStructureServer:   libraryStructure,
 		LocalizationServer:       localization,
 		MediaInfoServer:          mediaInfo,
+		MediaSegmentServer:       mediaSegment,
 		PlaylistsServer:          playlists,
 		PlaystateServer:          playstate,
 		PluginsServer:            plugins,
@@ -252,7 +267,7 @@ func New(
 		TimeSyncServer:           timeSync,
 		TrailersServer:           trailers,
 		UserServer:               user,
-		UserLibraryServer:        userLibrary,
+		UserDataServer:           userData,
 		UserViewsServer:          userViews,
 	}
 }

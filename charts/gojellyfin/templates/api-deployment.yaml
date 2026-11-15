@@ -1,5 +1,6 @@
 {{- $component := "api" }}
-{{- $pod := mergeOverwrite (deepCopy (default dict .Values.pod)) (default dict .Values.api.pod) }}
+{{- $grace := dict "terminationGracePeriodSeconds" (add (int .Values.drainSeconds) 25) }}
+{{- $pod := mergeOverwrite (include "gojellyfin.spread" (dict "root" $ "component" $component) | fromYaml) $grace (deepCopy (default dict .Values.pod)) (default dict .Values.api.pod) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -7,7 +8,9 @@ metadata:
   labels:
     {{- include "gojellyfin.labels" (dict "root" $ "component" $component) | nindent 4 }}
 spec:
+  {{- if not .Values.api.autoscaling.enabled }}
   replicas: {{ .Values.api.replicas }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 6 }}
@@ -33,11 +36,16 @@ spec:
               containerPort: {{ .Values.httpPort }}
           env:
             {{- include "gojellyfin.serverEnv" (dict "root" $ "workload" .Values.api) | nindent 12 }}
+            {{- include "gojellyfin.tracingEnv" (dict "root" $ "component" $component) | nindent 12 }}
           {{- with .Values.sources.existingSecret }}
           envFrom:
             - secretRef:
                 name: {{ . }}
           {{- end }}
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "{{ .Values.drainSeconds }}"]
           livenessProbe:
             httpGet:
               path: /System/Ping

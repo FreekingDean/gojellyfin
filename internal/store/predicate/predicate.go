@@ -48,6 +48,9 @@ type LibraryOptions func(*sql.Selector)
 // LibrarySource is the predicate function for librarysource builders.
 type LibrarySource func(*sql.Selector)
 
+// MediaSegment is the predicate function for mediasegment builders.
+type MediaSegment func(*sql.Selector)
+
 // MediaStream is the predicate function for mediastream builders.
 type MediaStream func(*sql.Selector)
 

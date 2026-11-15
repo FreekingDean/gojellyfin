@@ -1,0 +1,40 @@
+{{- $workloads := list
+  (dict "component" "api" "name" "" "enabled" true "values" .Values.api)
+  (dict "component" "streaming" "name" "-streaming" "enabled" .Values.streaming.enabled "values" .Values.streaming)
+  (dict "component" "worker" "name" "-worker" "enabled" .Values.worker.enabled "values" .Values.worker) }}
+{{- range $workloads }}
+{{- $autoscaling := .values.autoscaling }}
+{{- if and .enabled $autoscaling.enabled }}
+{{- if not (dig "requests" "cpu" "" (.values.resources | default dict)) }}
+{{- fail (printf "%s.autoscaling needs %s.resources.requests.cpu: cpu utilization is measured against the request" .component .component) }}
+{{- end }}
+{{- if gt (int $autoscaling.minReplicas) (int $autoscaling.maxReplicas) }}
+{{- fail (printf "%s.autoscaling.minReplicas is above maxReplicas" .component) }}
+{{- end }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "gojellyfin.fullname" $ }}{{ .name }}
+  labels:
+    {{- include "gojellyfin.labels" (dict "root" $ "component" .component) | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "gojellyfin.fullname" $ }}{{ .name }}
+  minReplicas: {{ $autoscaling.minReplicas }}
+  maxReplicas: {{ $autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $autoscaling.targetCPUUtilizationPercentage }}
+  {{- with $autoscaling.behavior }}
+  behavior:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+{{- end }}

@@ -127,7 +127,7 @@ reads the environment.
 | `sources.existingSecret` | `SOURCE_API_KEY_*` | `""` | Secret whose keys are the variable names Sonarr and Radarr sources are configured with, loaded into the API and the worker. Empty leaves every source failing its test and its scan |
 | `cors.enabled` | `CORS_ORIGINS` | `false` | Off allows only `https://apps.jellyfin.org`, the Google Cast receiver, which the server always allows |
 | `cors.origin` | | `""` | The origin added beside the cast receiver when enabled. Enabling without one refuses to render: an empty value reflects every origin, so the restriction would restrict nothing |
-| `tracing.otlpEndpoint` | `OTEL_EXPORTER_OTLP_ENDPOINT` | `""` | Empty exports no traces |
+| `tracing.otlpEndpoint` | `OTEL_EXPORTER_OTLP_ENDPOINT` | `""` | Empty exports no traces. Set, each workload also gets `OTEL_SERVICE_NAME` (`<release>-api`, `-streaming`, `-worker`) and `OTEL_RESOURCE_ATTRIBUTES` naming its pod ip, pod name and namespace, which is what a collector's `k8sattributes` processor associates a span with |
 | `media.directories` | `MEDIA_DIRECTORIES` | `[]` | The roots the library browser offers; empty follows `media.mountPath` and every `media.extraVolumes` path |
 | `temporal.hostPort` | `TEMPORAL_HOSTPORT` | `""` | Empty turns background work off and the server still starts |
 | `temporal.namespace` | `TEMPORAL_NAMESPACE` | `""` | Required once `hostPort` is set; the binary refuses to invent one, and so does the chart |
@@ -163,9 +163,16 @@ use.
 |---|---|---|
 | `api.replicas` | `2` | The API holds no per-request state and needs no session affinity |
 | `api.resources` | 200m/256Mi, limits 1 cpu/1Gi | Also decides the encode slots, above |
+| `api.autoscaling.enabled` | `false` | A cpu `HorizontalPodAutoscaler`, shaped like the worker's. `replicas` is left off the Deployment while it is on. Every API pod is interchangeable — sessions, quick connect, SyncPlay and websocket delivery are all Postgres — so nothing needs affinity |
+| `api.autoscaling.minReplicas`, `.maxReplicas`, `.targetCPUUtilizationPercentage`, `.behavior` | `2`, `6`, `80`, one pod every 2m after 5m quiet | |
+| `api.podDisruptionBudget.enabled`, `.maxUnavailable` | `false`, `1` | |
 | `streaming.enabled` | `true` | Disabled, the API serves `/Videos` and `/Audio` itself |
 | `streaming.replicas` | `3` | |
 | `streaming.resources` | 2 cpu/512Mi, limits 2 cpu/2Gi | |
+| `streaming.autoscaling.enabled` | `false` | The same autoscaler for the streaming pods. An encode is one request start to finish, so streams need no affinity; a pod out of slots answers 503 and the gateway tries another |
+| `streaming.autoscaling.minReplicas`, `.maxReplicas`, `.targetCPUUtilizationPercentage`, `.behavior` | `2`, `6`, `70`, one pod every 5m after 10m quiet | Scaling in cuts the streams on the pod that goes and each client resumes on another pod from where it was, which is why the default scale-in is slower than the API's |
+| `streaming.podDisruptionBudget.enabled`, `.maxUnavailable` | `false`, `1` | |
+| `drainSeconds` | `5` | A `preStop` pause on the API and streaming pods before the listener closes, so a gateway still holding the old endpoints does not send requests to a pod that stopped accepting them. `terminationGracePeriodSeconds` is this plus 25, which leaves the server its 15s to finish what it holds |
 | `worker.enabled` | `false` | Needs `temporal.hostPort`; the chart refuses to render an enabled worker with nothing to dial, because it would only crash loop |
 | `worker.replicas` | `1` | Left off the Deployment while `worker.autoscaling.enabled`, so an upgrade does not reset what the autoscaler chose |
 | `worker.resources` | 200m/256Mi, limits 1 cpu/1Gi | The cpu limit is also the worker's slots: it runs `GOMAXPROCS` activities per task queue, and Go reads that off the limit |
@@ -177,6 +184,7 @@ use.
 | `worker.podDisruptionBudget.enabled`, `.maxUnavailable` | `false`, `1` | What a drain, kured and the descheduler honour. The autoscaler scales in without evicting, so this does not slow it |
 | `web.enabled` | `true` | |
 | `web.replicas` | `2` | |
+| `web.podDisruptionBudget.enabled`, `.maxUnavailable` | `false`, `1` | |
 | `web.client.repository`, `.tag`, `.pullPolicy` | `jellyfin/jellyfin`, `12.4`, `""` | `jellyfin-web` is not published on its own — no image, no npm package, no built assets in its releases — so an init container copies it out of the all-in-one image into an emptyDir. Pin it to the client `make e2e` drives, which is the only one the suite has shown to work: a client newer than what is implemented calls endpoints that answer 501 |
 | `web.client.resources` | 50m/64Mi, limit 256Mi | |
 | `web.image.repository`, `.tag`, `.pullPolicy` | `nginxinc/nginx-unprivileged`, `1.31.7-alpine`, `""` | Pinned, because a floating tag is the same drift `latest` is. The unprivileged image listens on 8080 and owns the directories nginx writes to, which is what lets `runAsNonRoot` hold. The port is not a value: nothing here rewrites nginx's config, so it listens on 8080 whatever a value said |
@@ -205,6 +213,7 @@ or a `0` is passed through too; only an empty value is left out.
 | `pod.securityContext` | `{}` | Pod-level, passed through |
 | `pod.imagePullSecrets` | `[]` | Passed through |
 | `pod.nodeSelector`, `.tolerations`, `.affinity` | empty | Passed through, and named here only because they are the common ones |
+| `pod.topologySpreadConstraints` | each workload's pods spread over nodes, `ScheduleAnyway` | A soft spread on `kubernetes.io/hostname` keyed on the workload's own selector, so two replicas do not share a node when another has room. A list given here replaces it |
 
 ```yaml
 pod:
@@ -213,17 +222,9 @@ pod:
 streaming:
   pod:
     runtimeClassName: gvisor
-    topologySpreadConstraints:
-      - maxSkew: 1
-        topologyKey: kubernetes.io/hostname
-        whenUnsatisfiable: ScheduleAnyway
-        labelSelector:
-          matchLabels:
-            app.kubernetes.io/component: streaming
 ```
 
-Neither `runtimeClassName` nor `topologySpreadConstraints` is a value this chart
-declares. That is the point: the chart does not have to grow a value, and your
+`runtimeClassName` is not a value this chart declares. That is the point: the chart does not have to grow a value, and your
 `values.yaml` does not have to wait for it to.
 
 ### Services and media

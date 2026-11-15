@@ -265,7 +265,7 @@ func TestAuthenticate(t *testing.T) {
 }
 
 func TestHeard(t *testing.T) {
-	radarr, sonarr := Source{Kind: KindRadarr}, Source{Kind: KindSonarr}
+	radarr, sonarr, lidarr := Source{Kind: KindRadarr}, Source{Kind: KindSonarr}, Source{Kind: KindLidarr}
 
 	for _, test := range []struct {
 		name   string
@@ -281,6 +281,10 @@ func TestHeard(t *testing.T) {
 		{"a series deleted", sonarr, `{"eventType":"SeriesDelete","series":{"id":3,"tmdbId":1396}}`, &Hooked{ID: 3, TmdbID: 1396}},
 		{"a series event sent to a Radarr", radarr, `{"eventType":"Download","series":{"id":3}}`, nil},
 		{"a health warning", sonarr, `{"eventType":"Health"}`, nil},
+		{"an album imported", lidarr, `{"eventType":"Download","artist":{"id":5,"mbId":"A-ONE"},"albums":[{"id":8}]}`, &Hooked{ID: 5, MusicBrainzID: "A-ONE"}},
+		{"an artist deleted", lidarr, `{"eventType":"ArtistDelete","artist":{"id":5,"mbId":"A-ONE"}}`, &Hooked{ID: 5, MusicBrainzID: "A-ONE"}},
+		{"an album deleted", lidarr, `{"eventType":"AlbumDelete","artist":{"id":5,"mbId":"A-ONE"},"album":{"id":8}}`, &Hooked{ID: 5, MusicBrainzID: "A-ONE"}},
+		{"a retag, which moves no file", lidarr, `{"eventType":"Retag","artist":{"id":5}}`, nil},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			hooked, refreshes, err := Heard(test.source, strings.NewReader(test.body))
@@ -290,7 +294,7 @@ func TestHeard(t *testing.T) {
 			if refreshes != (test.want != nil) {
 				t.Fatalf("refreshes = %v, want %v", refreshes, test.want != nil)
 			}
-			if test.want != nil && (hooked.ID != test.want.ID || hooked.TmdbID != test.want.TmdbID) {
+			if test.want != nil && (hooked.ID != test.want.ID || hooked.TmdbID != test.want.TmdbID || hooked.MusicBrainzID != test.want.MusicBrainzID) {
 				t.Errorf("hooked = %+v, want %+v", hooked, *test.want)
 			}
 		})

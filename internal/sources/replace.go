@@ -30,6 +30,10 @@ func (s *Service) Replace(ctx context.Context, sourceID uuid.UUID, broken Copy) 
 }
 
 func (s *Service) replace(ctx context.Context, source Source, broken Copy) error {
+	if source.Kind == KindLidarr {
+		return fmt.Errorf("%s is a Lidarr, which replaces no file", source.Name)
+	}
+
 	filePath, search := radarr.FilePath, record{"name": radarr.Search, "movieIds": []int64{broken.TitleID}}
 	if source.Kind == KindSonarr {
 		filePath, search = sonarr.FilePath, record{"name": sonarr.Search, "episodeIds": []int64{broken.TitleID}}

@@ -1,9 +1,9 @@
-package userlibrary
+package mediasegment
 
 import "go.uber.org/fx"
 
 var Module = fx.Module(
-	"server/userlibrary",
+	"server/mediasegment",
 	fx.Provide(
 		New,
 	),

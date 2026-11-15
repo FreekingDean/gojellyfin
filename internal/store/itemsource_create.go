@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	"github.com/FreekingDean/gojellyfin/internal/store/mediasegment"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/report"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
@@ -164,6 +165,20 @@ func (_c *ItemSourceCreate) SetNillableProbedAt(v *time.Time) *ItemSourceCreate 
 	return _c
 }
 
+// SetSegmentsDetectedAt sets the "segments_detected_at" field.
+func (_c *ItemSourceCreate) SetSegmentsDetectedAt(v time.Time) *ItemSourceCreate {
+	_c.mutation.SetSegmentsDetectedAt(v)
+	return _c
+}
+
+// SetNillableSegmentsDetectedAt sets the "segments_detected_at" field if the given value is not nil.
+func (_c *ItemSourceCreate) SetNillableSegmentsDetectedAt(v *time.Time) *ItemSourceCreate {
+	if v != nil {
+		_c.SetSegmentsDetectedAt(*v)
+	}
+	return _c
+}
+
 // SetExternalID sets the "external_id" field.
 func (_c *ItemSourceCreate) SetExternalID(v int64) *ItemSourceCreate {
 	_c.mutation.SetExternalID(v)
@@ -188,6 +203,20 @@ func (_c *ItemSourceCreate) SetExternalFileID(v int64) *ItemSourceCreate {
 func (_c *ItemSourceCreate) SetNillableExternalFileID(v *int64) *ItemSourceCreate {
 	if v != nil {
 		_c.SetExternalFileID(*v)
+	}
+	return _c
+}
+
+// SetLyrics sets the "lyrics" field.
+func (_c *ItemSourceCreate) SetLyrics(v string) *ItemSourceCreate {
+	_c.mutation.SetLyrics(v)
+	return _c
+}
+
+// SetNillableLyrics sets the "lyrics" field if the given value is not nil.
+func (_c *ItemSourceCreate) SetNillableLyrics(v *string) *ItemSourceCreate {
+	if v != nil {
+		_c.SetLyrics(*v)
 	}
 	return _c
 }
@@ -221,6 +250,21 @@ func (_c *ItemSourceCreate) AddStreams(v ...*MediaStream) *ItemSourceCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddStreamIDs(ids...)
+}
+
+// AddSegmentIDs adds the "segments" edge to the MediaSegment entity by IDs.
+func (_c *ItemSourceCreate) AddSegmentIDs(ids ...uuid.UUID) *ItemSourceCreate {
+	_c.mutation.AddSegmentIDs(ids...)
+	return _c
+}
+
+// AddSegments adds the "segments" edges to the MediaSegment entity.
+func (_c *ItemSourceCreate) AddSegments(v ...*MediaSegment) *ItemSourceCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddSegmentIDs(ids...)
 }
 
 // AddReportIDs adds the "reports" edge to the Report entity by IDs.
@@ -385,6 +429,10 @@ func (_c *ItemSourceCreate) createSpec() (*ItemSource, *sqlgraph.CreateSpec) {
 		_spec.SetField(itemsource.FieldProbedAt, field.TypeTime, value)
 		_node.ProbedAt = &value
 	}
+	if value, ok := _c.mutation.SegmentsDetectedAt(); ok {
+		_spec.SetField(itemsource.FieldSegmentsDetectedAt, field.TypeTime, value)
+		_node.SegmentsDetectedAt = &value
+	}
 	if value, ok := _c.mutation.ExternalID(); ok {
 		_spec.SetField(itemsource.FieldExternalID, field.TypeInt64, value)
 		_node.ExternalID = &value
@@ -392,6 +440,10 @@ func (_c *ItemSourceCreate) createSpec() (*ItemSource, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ExternalFileID(); ok {
 		_spec.SetField(itemsource.FieldExternalFileID, field.TypeInt64, value)
 		_node.ExternalFileID = &value
+	}
+	if value, ok := _c.mutation.Lyrics(); ok {
+		_spec.SetField(itemsource.FieldLyrics, field.TypeString, value)
+		_node.Lyrics = value
 	}
 	if nodes := _c.mutation.ItemIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -436,6 +488,22 @@ func (_c *ItemSourceCreate) createSpec() (*ItemSource, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(mediastream.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SegmentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemsource.SegmentsTable,
+			Columns: []string{itemsource.SegmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(mediasegment.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -709,6 +777,24 @@ func (u *ItemSourceUpsert) ClearProbedAt() *ItemSourceUpsert {
 	return u
 }
 
+// SetSegmentsDetectedAt sets the "segments_detected_at" field.
+func (u *ItemSourceUpsert) SetSegmentsDetectedAt(v time.Time) *ItemSourceUpsert {
+	u.Set(itemsource.FieldSegmentsDetectedAt, v)
+	return u
+}
+
+// UpdateSegmentsDetectedAt sets the "segments_detected_at" field to the value that was provided on create.
+func (u *ItemSourceUpsert) UpdateSegmentsDetectedAt() *ItemSourceUpsert {
+	u.SetExcluded(itemsource.FieldSegmentsDetectedAt)
+	return u
+}
+
+// ClearSegmentsDetectedAt clears the value of the "segments_detected_at" field.
+func (u *ItemSourceUpsert) ClearSegmentsDetectedAt() *ItemSourceUpsert {
+	u.SetNull(itemsource.FieldSegmentsDetectedAt)
+	return u
+}
+
 // SetExternalID sets the "external_id" field.
 func (u *ItemSourceUpsert) SetExternalID(v int64) *ItemSourceUpsert {
 	u.Set(itemsource.FieldExternalID, v)
@@ -754,6 +840,24 @@ func (u *ItemSourceUpsert) AddExternalFileID(v int64) *ItemSourceUpsert {
 // ClearExternalFileID clears the value of the "external_file_id" field.
 func (u *ItemSourceUpsert) ClearExternalFileID() *ItemSourceUpsert {
 	u.SetNull(itemsource.FieldExternalFileID)
+	return u
+}
+
+// SetLyrics sets the "lyrics" field.
+func (u *ItemSourceUpsert) SetLyrics(v string) *ItemSourceUpsert {
+	u.Set(itemsource.FieldLyrics, v)
+	return u
+}
+
+// UpdateLyrics sets the "lyrics" field to the value that was provided on create.
+func (u *ItemSourceUpsert) UpdateLyrics() *ItemSourceUpsert {
+	u.SetExcluded(itemsource.FieldLyrics)
+	return u
+}
+
+// ClearLyrics clears the value of the "lyrics" field.
+func (u *ItemSourceUpsert) ClearLyrics() *ItemSourceUpsert {
+	u.SetNull(itemsource.FieldLyrics)
 	return u
 }
 
@@ -1036,6 +1140,27 @@ func (u *ItemSourceUpsertOne) ClearProbedAt() *ItemSourceUpsertOne {
 	})
 }
 
+// SetSegmentsDetectedAt sets the "segments_detected_at" field.
+func (u *ItemSourceUpsertOne) SetSegmentsDetectedAt(v time.Time) *ItemSourceUpsertOne {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.SetSegmentsDetectedAt(v)
+	})
+}
+
+// UpdateSegmentsDetectedAt sets the "segments_detected_at" field to the value that was provided on create.
+func (u *ItemSourceUpsertOne) UpdateSegmentsDetectedAt() *ItemSourceUpsertOne {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.UpdateSegmentsDetectedAt()
+	})
+}
+
+// ClearSegmentsDetectedAt clears the value of the "segments_detected_at" field.
+func (u *ItemSourceUpsertOne) ClearSegmentsDetectedAt() *ItemSourceUpsertOne {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.ClearSegmentsDetectedAt()
+	})
+}
+
 // SetExternalID sets the "external_id" field.
 func (u *ItemSourceUpsertOne) SetExternalID(v int64) *ItemSourceUpsertOne {
 	return u.Update(func(s *ItemSourceUpsert) {
@@ -1089,6 +1214,27 @@ func (u *ItemSourceUpsertOne) UpdateExternalFileID() *ItemSourceUpsertOne {
 func (u *ItemSourceUpsertOne) ClearExternalFileID() *ItemSourceUpsertOne {
 	return u.Update(func(s *ItemSourceUpsert) {
 		s.ClearExternalFileID()
+	})
+}
+
+// SetLyrics sets the "lyrics" field.
+func (u *ItemSourceUpsertOne) SetLyrics(v string) *ItemSourceUpsertOne {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.SetLyrics(v)
+	})
+}
+
+// UpdateLyrics sets the "lyrics" field to the value that was provided on create.
+func (u *ItemSourceUpsertOne) UpdateLyrics() *ItemSourceUpsertOne {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.UpdateLyrics()
+	})
+}
+
+// ClearLyrics clears the value of the "lyrics" field.
+func (u *ItemSourceUpsertOne) ClearLyrics() *ItemSourceUpsertOne {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.ClearLyrics()
 	})
 }
 
@@ -1538,6 +1684,27 @@ func (u *ItemSourceUpsertBulk) ClearProbedAt() *ItemSourceUpsertBulk {
 	})
 }
 
+// SetSegmentsDetectedAt sets the "segments_detected_at" field.
+func (u *ItemSourceUpsertBulk) SetSegmentsDetectedAt(v time.Time) *ItemSourceUpsertBulk {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.SetSegmentsDetectedAt(v)
+	})
+}
+
+// UpdateSegmentsDetectedAt sets the "segments_detected_at" field to the value that was provided on create.
+func (u *ItemSourceUpsertBulk) UpdateSegmentsDetectedAt() *ItemSourceUpsertBulk {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.UpdateSegmentsDetectedAt()
+	})
+}
+
+// ClearSegmentsDetectedAt clears the value of the "segments_detected_at" field.
+func (u *ItemSourceUpsertBulk) ClearSegmentsDetectedAt() *ItemSourceUpsertBulk {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.ClearSegmentsDetectedAt()
+	})
+}
+
 // SetExternalID sets the "external_id" field.
 func (u *ItemSourceUpsertBulk) SetExternalID(v int64) *ItemSourceUpsertBulk {
 	return u.Update(func(s *ItemSourceUpsert) {
@@ -1591,6 +1758,27 @@ func (u *ItemSourceUpsertBulk) UpdateExternalFileID() *ItemSourceUpsertBulk {
 func (u *ItemSourceUpsertBulk) ClearExternalFileID() *ItemSourceUpsertBulk {
 	return u.Update(func(s *ItemSourceUpsert) {
 		s.ClearExternalFileID()
+	})
+}
+
+// SetLyrics sets the "lyrics" field.
+func (u *ItemSourceUpsertBulk) SetLyrics(v string) *ItemSourceUpsertBulk {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.SetLyrics(v)
+	})
+}
+
+// UpdateLyrics sets the "lyrics" field to the value that was provided on create.
+func (u *ItemSourceUpsertBulk) UpdateLyrics() *ItemSourceUpsertBulk {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.UpdateLyrics()
+	})
+}
+
+// ClearLyrics clears the value of the "lyrics" field.
+func (u *ItemSourceUpsertBulk) ClearLyrics() *ItemSourceUpsertBulk {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.ClearLyrics()
 	})
 }
 

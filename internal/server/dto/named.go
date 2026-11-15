@@ -8,6 +8,11 @@ import (
 )
 
 func NamedItem(named items.Named, kind api.BaseItemKind, isFolder bool) api.BaseItemDto {
+	tags := map[string]*string{}
+	if named.ImageTag != "" {
+		tags[string(api.Primary)] = apiutil.Ptr(named.ImageTag)
+	}
+
 	return api.BaseItemDto{
 		Id:                &named.ID,
 		ServerId:          apiutil.Ptr(config.ServerID),
@@ -15,7 +20,7 @@ func NamedItem(named items.Named, kind api.BaseItemKind, isFolder bool) api.Base
 		SortName:          apiutil.Ptr(named.Name),
 		Type:              &kind,
 		IsFolder:          apiutil.Ptr(isFolder),
-		ImageTags:         &map[string]*string{},
+		ImageTags:         &tags,
 		BackdropImageTags: &[]string{},
 	}
 }

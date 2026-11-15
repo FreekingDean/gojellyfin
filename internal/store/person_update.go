@@ -64,6 +64,26 @@ func (_u *PersonUpdate) SetNillableName(v *string) *PersonUpdate {
 	return _u
 }
 
+// SetImageURL sets the "image_url" field.
+func (_u *PersonUpdate) SetImageURL(v string) *PersonUpdate {
+	_u.mutation.SetImageURL(v)
+	return _u
+}
+
+// SetNillableImageURL sets the "image_url" field if the given value is not nil.
+func (_u *PersonUpdate) SetNillableImageURL(v *string) *PersonUpdate {
+	if v != nil {
+		_u.SetImageURL(*v)
+	}
+	return _u
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (_u *PersonUpdate) ClearImageURL() *PersonUpdate {
+	_u.mutation.ClearImageURL()
+	return _u
+}
+
 // AddCreditIDs adds the "credits" edge to the Credit entity by IDs.
 func (_u *PersonUpdate) AddCreditIDs(ids ...uuid.UUID) *PersonUpdate {
 	_u.mutation.AddCreditIDs(ids...)
@@ -158,6 +178,12 @@ func (_u *PersonUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(person.FieldName, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ImageURL(); ok {
+		_spec.SetField(person.FieldImageURL, field.TypeString, value)
+	}
+	if _u.mutation.ImageURLCleared() {
+		_spec.ClearField(person.FieldImageURL, field.TypeString)
 	}
 	if _u.mutation.CreditsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -255,6 +281,26 @@ func (_u *PersonUpdateOne) SetNillableName(v *string) *PersonUpdateOne {
 	if v != nil {
 		_u.SetName(*v)
 	}
+	return _u
+}
+
+// SetImageURL sets the "image_url" field.
+func (_u *PersonUpdateOne) SetImageURL(v string) *PersonUpdateOne {
+	_u.mutation.SetImageURL(v)
+	return _u
+}
+
+// SetNillableImageURL sets the "image_url" field if the given value is not nil.
+func (_u *PersonUpdateOne) SetNillableImageURL(v *string) *PersonUpdateOne {
+	if v != nil {
+		_u.SetImageURL(*v)
+	}
+	return _u
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (_u *PersonUpdateOne) ClearImageURL() *PersonUpdateOne {
+	_u.mutation.ClearImageURL()
 	return _u
 }
 
@@ -382,6 +428,12 @@ func (_u *PersonUpdateOne) sqlSave(ctx context.Context) (_node *Person, err erro
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(person.FieldName, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ImageURL(); ok {
+		_spec.SetField(person.FieldImageURL, field.TypeString, value)
+	}
+	if _u.mutation.ImageURLCleared() {
+		_spec.ClearField(person.FieldImageURL, field.TypeString)
 	}
 	if _u.mutation.CreditsCleared() {
 		edge := &sqlgraph.EdgeSpec{

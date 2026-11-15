@@ -15,6 +15,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
+	"github.com/FreekingDean/gojellyfin/internal/store/mediasegment"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/report"
@@ -777,25 +778,28 @@ func (c *ItemClient) GetModel(ctx context.Context, id uuid.UUID) (*ItemModel, er
 type ItemSourceModel struct {
 	ID uuid.UUID
 
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-	ItemID         uuid.UUID
-	SourceID       uuid.UUID
-	Name           string
-	Path           string
-	Container      string
-	Size           *int64
-	RunTimeTicks   *int64
-	Bitrate        *int32
-	DateModified   *time.Time
-	ProbedAt       *time.Time
-	ExternalID     *int64
-	ExternalFileID *int64
+	CreatedAt          time.Time
+	UpdatedAt          time.Time
+	ItemID             uuid.UUID
+	SourceID           uuid.UUID
+	Name               string
+	Path               string
+	Container          string
+	Size               *int64
+	RunTimeTicks       *int64
+	Bitrate            *int32
+	DateModified       *time.Time
+	ProbedAt           *time.Time
+	SegmentsDetectedAt *time.Time
+	ExternalID         *int64
+	ExternalFileID     *int64
+	Lyrics             string
 
-	Item    *ItemModel
-	Source  *SourceModel
-	Streams []*MediaStreamModel
-	Reports []*ReportModel
+	Item     *ItemModel
+	Source   *SourceModel
+	Streams  []*MediaStreamModel
+	Segments []*MediaSegmentModel
+	Reports  []*ReportModel
 }
 
 func fromAllItemSource(_m []*ItemSource) []*ItemSourceModel {
@@ -812,26 +816,29 @@ func fromItemSource(_m *ItemSource) *ItemSourceModel {
 	}
 
 	return &ItemSourceModel{
-		ID:             _m.ID,
-		CreatedAt:      _m.CreatedAt,
-		UpdatedAt:      _m.UpdatedAt,
-		ItemID:         _m.ItemID,
-		SourceID:       _m.SourceID,
-		Name:           _m.Name,
-		Path:           _m.Path,
-		Container:      _m.Container,
-		Size:           _m.Size,
-		RunTimeTicks:   _m.RunTimeTicks,
-		Bitrate:        _m.Bitrate,
-		DateModified:   _m.DateModified,
-		ProbedAt:       _m.ProbedAt,
-		ExternalID:     _m.ExternalID,
-		ExternalFileID: _m.ExternalFileID,
+		ID:                 _m.ID,
+		CreatedAt:          _m.CreatedAt,
+		UpdatedAt:          _m.UpdatedAt,
+		ItemID:             _m.ItemID,
+		SourceID:           _m.SourceID,
+		Name:               _m.Name,
+		Path:               _m.Path,
+		Container:          _m.Container,
+		Size:               _m.Size,
+		RunTimeTicks:       _m.RunTimeTicks,
+		Bitrate:            _m.Bitrate,
+		DateModified:       _m.DateModified,
+		ProbedAt:           _m.ProbedAt,
+		SegmentsDetectedAt: _m.SegmentsDetectedAt,
+		ExternalID:         _m.ExternalID,
+		ExternalFileID:     _m.ExternalFileID,
+		Lyrics:             _m.Lyrics,
 
-		Item:    fromItem(_m.Edges.Item),
-		Source:  fromSource(_m.Edges.Source),
-		Streams: fromAllMediaStream(_m.Edges.Streams),
-		Reports: fromAllReport(_m.Edges.Reports),
+		Item:     fromItem(_m.Edges.Item),
+		Source:   fromSource(_m.Edges.Source),
+		Streams:  fromAllMediaStream(_m.Edges.Streams),
+		Segments: fromAllMediaSegment(_m.Edges.Segments),
+		Reports:  fromAllReport(_m.Edges.Reports),
 	}
 }
 
@@ -1242,6 +1249,80 @@ func (c *LibrarySourceClient) GetModel(ctx context.Context, id uuid.UUID) (*Libr
 	return fromLibrarySource(_m), err
 }
 
+type MediaSegmentModel struct {
+	ID uuid.UUID
+
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	ItemSourceID uuid.UUID
+	Kind         mediasegment.Kind
+	Origin       mediasegment.Origin
+	StartTicks   int64
+	EndTicks     int64
+
+	Source *ItemSourceModel
+}
+
+func fromAllMediaSegment(_m []*MediaSegment) []*MediaSegmentModel {
+	models := make([]*MediaSegmentModel, len(_m))
+	for i, v := range _m {
+		models[i] = fromMediaSegment(v)
+	}
+	return models
+}
+
+func fromMediaSegment(_m *MediaSegment) *MediaSegmentModel {
+	if _m == nil {
+		return nil
+	}
+
+	return &MediaSegmentModel{
+		ID:           _m.ID,
+		CreatedAt:    _m.CreatedAt,
+		UpdatedAt:    _m.UpdatedAt,
+		ItemSourceID: _m.ItemSourceID,
+		Kind:         _m.Kind,
+		Origin:       _m.Origin,
+		StartTicks:   _m.StartTicks,
+		EndTicks:     _m.EndTicks,
+
+		Source: fromItemSource(_m.Edges.Source),
+	}
+}
+
+func (_c *MediaSegmentCreate) SaveModel(ctx context.Context) (*MediaSegmentModel, error) {
+	_m, err := _c.Save(ctx)
+	return fromMediaSegment(_m), err
+}
+
+func (_u *MediaSegmentUpdateOne) SaveModel(ctx context.Context) (*MediaSegmentModel, error) {
+	_m, err := _u.Save(ctx)
+	return fromMediaSegment(_m), err
+}
+
+func (_q *MediaSegmentQuery) OnlyModel(ctx context.Context) (*MediaSegmentModel, error) {
+	_m, err := _q.Only(ctx)
+	return fromMediaSegment(_m), err
+}
+
+func (_q *MediaSegmentQuery) FirstModel(ctx context.Context) (*MediaSegmentModel, error) {
+	_m, err := _q.First(ctx)
+	return fromMediaSegment(_m), err
+}
+
+func (_q *MediaSegmentQuery) AllModels(ctx context.Context) ([]*MediaSegmentModel, error) {
+	_m, err := _q.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return fromAllMediaSegment(_m), nil
+}
+
+func (c *MediaSegmentClient) GetModel(ctx context.Context, id uuid.UUID) (*MediaSegmentModel, error) {
+	_m, err := c.Get(ctx, id)
+	return fromMediaSegment(_m), err
+}
+
 type MediaStreamModel struct {
 	ID uuid.UUID
 
@@ -1350,6 +1431,7 @@ type PersonModel struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	Name      string
+	ImageURL  string
 
 	Credits []*CreditModel
 }
@@ -1372,6 +1454,7 @@ func fromPerson(_m *Person) *PersonModel {
 		CreatedAt: _m.CreatedAt,
 		UpdatedAt: _m.UpdatedAt,
 		Name:      _m.Name,
+		ImageURL:  _m.ImageURL,
 
 		Credits: fromAllCredit(_m.Edges.Credits),
 	}

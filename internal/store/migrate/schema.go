@@ -237,7 +237,7 @@ var (
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Movie", "Series", "Season", "Episode", "Playlist", "Audio"}},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Movie", "Series", "Season", "Episode", "Playlist", "MusicArtist", "MusicAlbum", "Audio"}},
 		{Name: "key", Type: field.TypeString, Nullable: true},
 		{Name: "name", Type: field.TypeString},
 		{Name: "sort_name", Type: field.TypeString, Nullable: true},
@@ -309,8 +309,10 @@ var (
 		{Name: "bitrate", Type: field.TypeInt32, Nullable: true},
 		{Name: "date_modified", Type: field.TypeTime, Nullable: true},
 		{Name: "probed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "segments_detected_at", Type: field.TypeTime, Nullable: true},
 		{Name: "external_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "external_file_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "lyrics", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "item_id", Type: field.TypeUUID},
 		{Name: "source_id", Type: field.TypeUUID},
 	}
@@ -322,13 +324,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "item_sources_items_item_sources",
-				Columns:    []*schema.Column{ItemSourcesColumns[13]},
+				Columns:    []*schema.Column{ItemSourcesColumns[15]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "item_sources_sources_files",
-				Columns:    []*schema.Column{ItemSourcesColumns[14]},
+				Columns:    []*schema.Column{ItemSourcesColumns[16]},
 				RefColumns: []*schema.Column{SourcesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -337,7 +339,7 @@ var (
 			{
 				Name:    "itemsource_item_id_source_id",
 				Unique:  true,
-				Columns: []*schema.Column{ItemSourcesColumns[13], ItemSourcesColumns[14]},
+				Columns: []*schema.Column{ItemSourcesColumns[15], ItemSourcesColumns[16]},
 			},
 			{
 				Name:    "itemsource_path",
@@ -347,7 +349,7 @@ var (
 			{
 				Name:    "itemsource_source_id_external_file_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemSourcesColumns[14], ItemSourcesColumns[12]},
+				Columns: []*schema.Column{ItemSourcesColumns[16], ItemSourcesColumns[13]},
 			},
 		},
 	}
@@ -518,6 +520,38 @@ var (
 			},
 		},
 	}
+	// MediaSegmentsColumns holds the columns for the "media_segments" table.
+	MediaSegmentsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Unknown", "Commercial", "Preview", "Recap", "Outro", "Intro"}},
+		{Name: "origin", Type: field.TypeEnum, Enums: []string{"Chapter", "Fingerprint"}},
+		{Name: "start_ticks", Type: field.TypeInt64},
+		{Name: "end_ticks", Type: field.TypeInt64},
+		{Name: "item_source_id", Type: field.TypeUUID},
+	}
+	// MediaSegmentsTable holds the schema information for the "media_segments" table.
+	MediaSegmentsTable = &schema.Table{
+		Name:       "media_segments",
+		Columns:    MediaSegmentsColumns,
+		PrimaryKey: []*schema.Column{MediaSegmentsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "media_segments_item_sources_segments",
+				Columns:    []*schema.Column{MediaSegmentsColumns[7]},
+				RefColumns: []*schema.Column{ItemSourcesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "mediasegment_item_source_id_origin_kind",
+				Unique:  true,
+				Columns: []*schema.Column{MediaSegmentsColumns[7], MediaSegmentsColumns[4], MediaSegmentsColumns[3]},
+			},
+		},
+	}
 	// MediaStreamsColumns holds the columns for the "media_streams" table.
 	MediaStreamsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
@@ -570,6 +604,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "image_url", Type: field.TypeString, Nullable: true},
 	}
 	// PersonsTable holds the schema information for the "persons" table.
 	PersonsTable = &schema.Table{
@@ -897,7 +932,7 @@ var (
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "url", Type: field.TypeString, Unique: true},
 		{Name: "api_key_variable", Type: field.TypeString},
-		{Name: "kind", Type: field.TypeEnum, Enums: []string{"radarr", "sonarr"}},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"radarr", "sonarr", "lidarr"}},
 		{Name: "version", Type: field.TypeString, Nullable: true},
 		{Name: "contacted_at", Type: field.TypeTime, Nullable: true},
 		{Name: "last_error", Type: field.TypeString, Nullable: true},
@@ -1314,6 +1349,7 @@ var (
 		LibraryItemsTable,
 		LibraryOptionsTable,
 		LibrarySourcesTable,
+		MediaSegmentsTable,
 		MediaStreamsTable,
 		PersonsTable,
 		PlaylistsTable,
@@ -1350,7 +1386,7 @@ func init() {
 	ItemsTable.Annotation = &entsql.Annotation{}
 	ItemsTable.Annotation.Checks = map[string]string{
 		"item_key_unless_playlist": "kind = 'Playlist' OR key IS NOT NULL",
-		"item_kind_known":          "kind IN ('Movie', 'Series', 'Season', 'Episode', 'Playlist', 'Audio')",
+		"item_kind_known":          "kind IN ('Movie', 'Series', 'Season', 'Episode', 'Playlist', 'MusicArtist', 'MusicAlbum', 'Audio')",
 	}
 	ItemSourcesTable.ForeignKeys[0].RefTable = ItemsTable
 	ItemSourcesTable.ForeignKeys[1].RefTable = SourcesTable
@@ -1360,6 +1396,7 @@ func init() {
 	LibraryOptionsTable.ForeignKeys[0].RefTable = LibrariesTable
 	LibrarySourcesTable.ForeignKeys[0].RefTable = LibrariesTable
 	LibrarySourcesTable.ForeignKeys[1].RefTable = SourcesTable
+	MediaSegmentsTable.ForeignKeys[0].RefTable = ItemSourcesTable
 	MediaStreamsTable.ForeignKeys[0].RefTable = ItemSourcesTable
 	PlaylistsTable.ForeignKeys[0].RefTable = ItemsTable
 	PlaylistsTable.ForeignKeys[1].RefTable = UsersTable

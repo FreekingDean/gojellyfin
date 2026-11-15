@@ -40,19 +40,22 @@ func New(client *store.Client) *Service {
 }
 
 var isFolderKind = map[Kind]bool{
-	itemmodel.KindSeries: true,
-	itemmodel.KindSeason: true,
+	itemmodel.KindSeries:      true,
+	itemmodel.KindSeason:      true,
+	itemmodel.KindMusicArtist: true,
+	itemmodel.KindMusicAlbum:  true,
 }
 
 var (
-	folderKinds   = []Kind{itemmodel.KindSeries, itemmodel.KindSeason}
-	playableKinds = []Kind{itemmodel.KindMovie, itemmodel.KindEpisode}
+	folderKinds   = []Kind{itemmodel.KindSeries, itemmodel.KindSeason, itemmodel.KindMusicArtist, itemmodel.KindMusicAlbum}
+	playableKinds = []Kind{itemmodel.KindMovie, itemmodel.KindEpisode, itemmodel.KindAudio}
 
 	audioKinds = []Kind{itemmodel.KindAudio}
 
 	allKinds = []Kind{
 		itemmodel.KindMovie, itemmodel.KindSeries, itemmodel.KindSeason,
-		itemmodel.KindEpisode, itemmodel.KindPlaylist, itemmodel.KindAudio,
+		itemmodel.KindEpisode, itemmodel.KindPlaylist, itemmodel.KindMusicArtist,
+		itemmodel.KindMusicAlbum, itemmodel.KindAudio,
 	}
 )
 
@@ -219,6 +222,8 @@ type ItemQuery struct {
 	ExcludeKinds []Kind
 	MediaTypes   []MediaType
 	IDs          []uuid.UUID
+	ArtistIDs    []uuid.UUID
+	AlbumIDs     []uuid.UUID
 	SearchTerm   string
 
 	NameStartsWith          string
@@ -270,6 +275,15 @@ func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int
 	}
 	if len(query.IDs) > 0 {
 		items = items.Where(itemmodel.IDIn(query.IDs...))
+	}
+	if len(query.ArtistIDs) > 0 {
+		items = items.Where(itemmodel.Or(
+			itemmodel.And(itemmodel.KindEQ(itemmodel.KindMusicAlbum), itemmodel.ParentIDIn(query.ArtistIDs...)),
+			itemmodel.And(itemmodel.KindEQ(itemmodel.KindAudio), itemmodel.HasParentWith(itemmodel.ParentIDIn(query.ArtistIDs...))),
+		))
+	}
+	if len(query.AlbumIDs) > 0 {
+		items = items.Where(itemmodel.ParentIDIn(query.AlbumIDs...))
 	}
 	if query.SearchTerm != "" {
 		items = items.Where(itemmodel.NameContainsFold(query.SearchTerm))
@@ -333,6 +347,21 @@ func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int
 	}
 
 	return records, total, nil
+}
+
+func (s *Service) NamedItem(ctx context.Context, viewer Viewer, kind Kind, name string) (*Item, error) {
+	item, err := s.query(viewer).
+		Where(itemmodel.KindEQ(kind), itemmodel.NameEqualFold(name)).
+		Order(itemmodel.ByCreatedAt()).
+		FirstModel(ctx)
+	if store.IsNotFound(err) {
+		return nil, fmt.Errorf("%w: no %s is named %q", ErrNotFound, kind, name)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to find the %s %q: %w", kind, name, err)
+	}
+
+	return item, nil
 }
 
 func orderRandom(selector *sql.Selector) {

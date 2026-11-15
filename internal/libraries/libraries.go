@@ -60,8 +60,9 @@ type Fixed struct {
 var (
 	Movies = Fixed{ID: uuid.MustParse("4d6f7669-6573-4000-8000-000000000001"), Name: "Movies", CollectionType: CollectionTypeMovies}
 	Shows  = Fixed{ID: uuid.MustParse("53686f77-7300-4000-8000-000000000002"), Name: "Shows", CollectionType: CollectionTypeTvshows}
+	Music  = Fixed{ID: uuid.MustParse("4d757369-6300-4000-8000-000000000003"), Name: "Music", CollectionType: CollectionTypeMusic}
 
-	ErrFixed = errors.New("there are two libraries, Movies and Shows, and neither is added or removed")
+	ErrFixed = errors.New("there are three libraries, Movies, Shows and Music, and none is added or removed")
 )
 
 type Service struct {
@@ -104,7 +105,7 @@ func (s *Service) CreateLibrary(ctx context.Context, name string, collectionType
 }
 
 func (s *Service) EnsureFixed(ctx context.Context) error {
-	for _, fixed := range []Fixed{Movies, Shows} {
+	for _, fixed := range []Fixed{Movies, Shows, Music} {
 		err := s.ensure(ctx, fixed)
 		if store.IsConstraintError(err) {
 			err = s.ensure(ctx, fixed)
@@ -177,6 +178,19 @@ func (s *Service) ListLibraries(ctx context.Context) ([]*Library, error) {
 		AllModels(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list libraries: %w", err)
+	}
+
+	return libraries, nil
+}
+
+func (s *Service) ShownLibraries(ctx context.Context) ([]*Library, error) {
+	libraries, err := s.store.Library.Query().
+		Where(librarymodel.Or(librarymodel.CollectionTypeNEQ(CollectionTypeMusic), librarymodel.HasSources())).
+		WithOptions().
+		Order(librarymodel.ByName()).
+		AllModels(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list the libraries shown: %w", err)
 	}
 
 	return libraries, nil

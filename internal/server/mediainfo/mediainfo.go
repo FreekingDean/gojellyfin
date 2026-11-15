@@ -143,7 +143,7 @@ func mediaSourceDto(source *items.MediaSource) api.MediaSourceInfo {
 		IgnoreDts:                  apiutil.Ptr(false),
 		IgnoreIndex:                apiutil.Ptr(false),
 		GenPtsInput:                apiutil.Ptr(false),
-		HasSegments:                apiutil.Ptr(false),
+		HasSegments:                apiutil.Ptr(len(source.Segments) > 0),
 		DefaultAudioStreamIndex:    defaultStreamIndex(streams, streammodel.KindAudio),
 		DefaultSubtitleStreamIndex: defaultStreamIndex(streams, streammodel.KindSubtitle),
 	}

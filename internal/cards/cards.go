@@ -19,6 +19,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 	"github.com/FreekingDean/gojellyfin/internal/shelves"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
@@ -95,7 +96,7 @@ func newService(listing Libraries, named Names, shelved Shelves, access Access, 
 		shelves:   shelved,
 		access:    access,
 		now:       now,
-		client:    &http.Client{Timeout: fetchTimeout},
+		client:    &http.Client{Timeout: fetchTimeout, Transport: tracing.Transport(nil)},
 		held:      map[key]held{},
 	}
 }

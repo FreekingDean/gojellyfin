@@ -24,6 +24,8 @@ type Scanned struct {
 	Index       *int32
 	ParentIndex *int32
 	Files       []ScannedFile
+	Genres      []string
+	Images      []RemoteImage
 }
 
 type ScannedFile struct {
@@ -83,6 +85,7 @@ func (s *Service) RefreshItem(ctx context.Context, libraryID, sourceID uuid.UUID
 	}
 
 	var previous []uuid.UUID
+	unheard := false
 	for _, file := range scanned.Files {
 		jobs.Heartbeat(ctx, file.Path)
 
@@ -110,13 +113,30 @@ func (s *Service) RefreshItem(ctx context.Context, libraryID, sourceID uuid.UUID
 		if NeedsProbe(saved) {
 			enqueue(ctx, jobs.ProbeFile, jobs.With(jobs.ParamSource, saved.ID))
 		}
+		unheard = unheard || saved.SegmentsDetectedAt == nil
+	}
+
+	if unheard && item.Kind == itemmodel.KindEpisode && item.ParentID != nil {
+		enqueue(ctx, jobs.DetectSeasonIntros, jobs.With(jobs.ParamSeason, *item.ParentID))
+	}
+
+	for _, reference := range scanned.Images {
+		if err := s.SaveImage(ctx, item.ID, reference.Image()); err != nil {
+			return err
+		}
+	}
+
+	if len(scanned.Genres) > 0 {
+		if err := s.replaceNamed(ctx, item.ID, Metadata{Genres: &scanned.Genres}); err != nil {
+			return err
+		}
 	}
 
 	if err := s.SweepUnreachable(ctx, previous); err != nil {
 		return err
 	}
 
-	if item.ProviderIds == nil {
+	if _, identifiable := TmdbID(item.Key); identifiable && item.ProviderIds == nil {
 		enqueue(ctx, jobs.RefreshItemMetadata, jobs.With(jobs.ParamItem, item.ID))
 	}
 

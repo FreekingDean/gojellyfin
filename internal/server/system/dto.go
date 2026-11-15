@@ -3,13 +3,15 @@ package system
 import (
 	"net"
 
+	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
-func endpointInfo(remoteAddr string) api.EndPointInfo {
-	ip := remoteIP(remoteAddr)
-	local := ip != nil && ip.IsLoopback()
+func endpointInfo(authorization auth.Authorization) api.EndPointInfo {
+	ip := remoteIP(authorization.RemoteAddr)
+	server := remoteIP(authorization.LocalAddr)
+	local := ip != nil && (ip.IsLoopback() || ip.Equal(server))
 
 	return api.EndPointInfo{
 		IsLocal:     apiutil.Ptr(local),

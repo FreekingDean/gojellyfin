@@ -56,3 +56,44 @@ func TestService_DeleteScopedSourcesNotInPaths(t *testing.T) {
 		t.Errorf("files = %v, want %v: a series' scope reaches neither a series whose id begins with its own nor a film sharing its id", got, want)
 	}
 }
+
+func TestService_DeleteScopedSourcesNotInPaths_Artist(t *testing.T) {
+	fixture := newFixture(t)
+	downloader := fixture.downloader(t)
+	ctx := context.Background()
+	band, neighbour := uuid.NewString(), uuid.NewString()
+
+	under := func(parent *Item, key, path string) *Item {
+		t.Helper()
+
+		saved := fixture.scannedFrom(t, downloader, key, path)
+		if err := fixture.service.store.Item.UpdateOneID(saved.ID).SetParentID(parent.ID).Exec(ctx); err != nil {
+			t.Fatalf("failed to hang %s beneath its parent: %v", key, err)
+		}
+
+		return saved
+	}
+
+	at := func(name string) string { return "/media/music/" + band + "/" + name }
+
+	artist := fixture.scannedFrom(t, downloader, ArtistKey(band), at("artist.nfo"))
+	album := under(artist, AlbumKey(uuid.NewString()), at("album/cover.jpg"))
+	under(album, TrackKey(uuid.NewString()), at("album/01.flac"))
+	under(album, TrackKey(uuid.NewString()), at("album/02.flac"))
+	other := fixture.scannedFrom(t, downloader, ArtistKey(neighbour), at("other/artist.nfo"))
+	under(other, AlbumKey(uuid.NewString()), at("other/album.flac"))
+
+	dropped, err := fixture.service.DeleteScopedSourcesNotInPaths(ctx, downloader, ArtistScope(band), []string{at("album/02.flac")})
+	if err != nil {
+		t.Fatalf("failed to delete: %v", err)
+	}
+
+	if len(dropped) != 3 {
+		t.Errorf("dropped = %d, want the artist's, the album's and the first track's files", len(dropped))
+	}
+
+	want := []string{at("album/02.flac"), at("other/album.flac"), at("other/artist.nfo")}
+	if got := fixture.paths(t, downloader); !slices.Equal(got, want) {
+		t.Errorf("files = %v, want %v: an artist's scope reaches its albums and tracks and nobody else's", got, want)
+	}
+}

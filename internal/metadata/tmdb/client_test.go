@@ -75,6 +75,46 @@ func TestRetrying_RoundTrip(t *testing.T) {
 	})
 }
 
+func TestNewClient_Credential(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		credential string
+		query      string
+		header     string
+	}{
+		{name: "a v3 api key rides in the query", credential: "0123456789abcdef0123456789abcdef", query: "0123456789abcdef0123456789abcdef"},
+		{name: "a v4 read access token is a bearer", credential: "eyJhbGciOiJIUzI1NiJ9.e30.signature", header: "Bearer eyJhbGciOiJIUzI1NiJ9.e30.signature"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var query, header string
+			server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+				if request.URL.Path == "/3/movie/603" {
+					query = request.URL.Query().Get("api_key")
+					header = request.Header.Get("Authorization")
+				}
+				writer.Header().Set("Content-Type", "application/json")
+				_, _ = writer.Write([]byte(`{"id":603,"title":"The Matrix"}`))
+			}))
+			defer server.Close()
+
+			client, err := newClient(server.URL+"/3", tc.credential)
+			if err != nil {
+				t.Fatalf("failed to build the client: %v", err)
+			}
+			if _, _, err := client.Movie(context.Background(), 603); err != nil {
+				t.Fatalf("failed to fetch the movie: %v", err)
+			}
+
+			if query != tc.query {
+				t.Errorf("api_key = %q, want %q", query, tc.query)
+			}
+			if header != tc.header {
+				t.Errorf("Authorization = %q, want %q", header, tc.header)
+			}
+		})
+	}
+}
+
 func TestLimiter_wait(t *testing.T) {
 	t.Run("spaces the requests it lets through", func(t *testing.T) {
 		limiter := newLimiter(20 * time.Millisecond)

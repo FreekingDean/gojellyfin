@@ -27,6 +27,8 @@ var settings = []string{
 	"TEMPORAL_NAMESPACE",
 	"TEMPORAL_WORKER_STOP_TIMEOUT",
 	"OTEL_EXPORTER_OTLP_ENDPOINT",
+	"OTEL_SERVICE_NAME",
+	"OTEL_RESOURCE_ATTRIBUTES",
 	"TMDB_API_KEY",
 	"TMDB_BASE_URL",
 	"MEDIA_DIRECTORIES",
@@ -55,6 +57,10 @@ func setEnvironment(t *testing.T, env map[string]string) {
 	for name, value := range env {
 		t.Setenv(name, value)
 	}
+}
+
+func TestKeysCoverEveryVariable(t *testing.T) {
+	assert.ElementsMatch(t, settings, keys())
 }
 
 func TestLoad(t *testing.T) {
@@ -94,6 +100,8 @@ func TestLoad(t *testing.T) {
 				"TEMPORAL_NAMESPACE":           "gojellyfin_production",
 				"TEMPORAL_WORKER_STOP_TIMEOUT": "5m",
 				"OTEL_EXPORTER_OTLP_ENDPOINT":  "http://collector:4318",
+				"OTEL_SERVICE_NAME":            "gojellyfin-api",
+				"OTEL_RESOURCE_ATTRIBUTES":     "k8s.pod.ip=10.0.0.1",
 				"TMDB_API_KEY":                 "not-a-real-key",
 				"MEDIA_DIRECTORIES":            "/media, /library ",
 				"OIDC_ISSUER_URL":              "https://auth.example",
@@ -116,7 +124,7 @@ func TestLoad(t *testing.T) {
 				TrustedProxies:     []string{"10.201.0.0/16", "fd00::/8"},
 				Transcoder:         Transcoder{Jobs: 4, StallTimeout: 45 * time.Second},
 				Temporal:           Temporal{HostPort: "temporal:7233", Namespace: "gojellyfin_production", WorkerStopTimeout: 5 * time.Minute},
-				Tracing:            Tracing{OTLPEndpoint: "http://collector:4318"},
+				Tracing:            Tracing{OTLPEndpoint: "http://collector:4318", ServiceName: "gojellyfin-api", ResourceAttributes: "k8s.pod.ip=10.0.0.1"},
 				TMDB:               TMDB{APIKey: "not-a-real-key"},
 				MediaDirectories:   []string{"/media", "/library"},
 				OIDC: OIDC{

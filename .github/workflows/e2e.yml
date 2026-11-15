@@ -126,15 +126,32 @@ jobs:
             e2e/test-results
           retention-days: 14
 
-  # The stock Android TV app on an emulator, driven over adb against the same
-  # harness the browser suite boots.
-  androidtv:
+  # The stock Android apps on an emulator each, driven over adb against the
+  # same harness the browser suite boots.
+  clients:
     if: >-
       (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
       || contains(github.event.pull_request.labels.*.name, 'e2e-clients'))
       && (github.event.action != 'labeled' || github.event.label.name == 'e2e-clients')
     runs-on: ubuntu-latest
     timeout-minutes: 60
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suite: androidtv
+            title: Android TV
+            target: android-tv
+            arch: x86
+            profile: tv_1080p
+          - suite: android
+            title: Android
+            target: google_apis
+            arch: x86_64
+            profile: pixel_6
+
+    name: ${{ matrix.title }}
 
     services:
       postgres:
@@ -153,6 +170,7 @@ jobs:
 
     env:
       DATABASE_URL: postgres://gojellyfin:gojellyfin@localhost:5432/gojellyfin_test?sslmode=disable
+      GITHUB_TOKEN: ${{ github.token }}
 
     steps:
       - uses: actions/checkout@v7
@@ -170,23 +188,24 @@ jobs:
           cache-dependency-path: e2e/package-lock.json
 
       # The harness fronts the API with jellyfin-web the way a deployment does,
-      # and a phone approving the television's code is served from it.
+      # a phone approving the television's code is served from it, and the
+      # phone app is that client in a WebView.
       - name: Cache the web client
         id: client
         uses: actions/cache@v4
         with:
           path: e2e/.client
-          key: jellyfin-web-10.10.0
+          key: jellyfin-web-12.4
 
       - name: Fetch the web client
         if: steps.client.outputs.cache-hit != 'true'
-        run: docker pull jellyfin/jellyfin:10.10.0
+        run: docker pull jellyfin/jellyfin:12.4
 
       - name: Cache the app
         uses: actions/cache@v4
         with:
           path: e2e/.clients
-          key: androidtv-${{ hashFiles('e2e/clients/androidtv/app.js') }}
+          key: ${{ matrix.suite }}-${{ hashFiles(format('e2e/clients/{0}/app.js', matrix.suite)) }}
 
       - name: Install ffmpeg
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
@@ -207,25 +226,26 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
-          target: android-tv
-          arch: x86
-          profile: tv_1080p
+          target: ${{ matrix.target }}
+          arch: ${{ matrix.arch }}
+          profile: ${{ matrix.profile }}
           ram-size: 4096M
+          cores: 4
           disable-animations: true
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           working-directory: e2e
-          script: npm run androidtv
+          script: npm run ${{ matrix.suite }}
 
       - name: Collect the screenshots
-        if: always() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') && hashFiles('e2e/.build/androidtv-results.json') != ''
+        if: always() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') && hashFiles(format('e2e/.build/{0}-results.json', matrix.suite)) != ''
         working-directory: e2e
-        run: node setup/gallery.js collect androidtv "Android TV" .build/androidtv-results.json .build/gallery
+        run: node setup/gallery.js collect ${{ matrix.suite }} "${{ matrix.title }}" .build/${{ matrix.suite }}-results.json .build/gallery
 
       - name: Upload the screenshots
-        if: always() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') && hashFiles('e2e/.build/gallery/androidtv.json') != ''
+        if: always() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') && hashFiles(format('e2e/.build/gallery/{0}.json', matrix.suite)) != ''
         uses: actions/upload-artifact@v4
         with:
-          name: gallery-androidtv
+          name: gallery-${{ matrix.suite }}
           path: e2e/.build/gallery
           retention-days: 3
 
@@ -235,16 +255,16 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: androidtv-results
+          name: ${{ matrix.suite }}-results
           path: |
-            e2e/test-results/androidtv
+            e2e/test-results/${{ matrix.suite }}
             e2e/.build/server.log
           retention-days: 14
 
   # One page and one comment over every suite that ran. The suites collect in
   # their own jobs, so this only reads their summaries.
   gallery:
-    needs: [e2e, androidtv]
+    needs: [e2e, clients]
     if: >-
       always() && github.event_name == 'pull_request'
       && needs.e2e.result != 'cancelled' && needs.e2e.result != 'skipped'
@@ -356,11 +376,11 @@ jobs:
   # the page is rendered again over all of them, each stamped with the commit
   # it last ran at.
   main-gallery:
-    needs: [e2e, androidtv]
+    needs: [e2e, clients]
     if: >-
       always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
       && (needs.e2e.result == 'success' || needs.e2e.result == 'failure'
-      || needs.androidtv.result == 'success' || needs.androidtv.result == 'failure')
+      || needs.clients.result == 'success' || needs.clients.result == 'failure')
     runs-on: ubuntu-latest
     continue-on-error: true
     concurrency:

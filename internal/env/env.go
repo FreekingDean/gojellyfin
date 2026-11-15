@@ -59,7 +59,9 @@ type Temporal struct {
 }
 
 type Tracing struct {
-	OTLPEndpoint string `mapstructure:"OTEL_EXPORTER_OTLP_ENDPOINT"`
+	OTLPEndpoint       string `mapstructure:"OTEL_EXPORTER_OTLP_ENDPOINT"`
+	ServiceName        string `mapstructure:"OTEL_SERVICE_NAME"`
+	ResourceAttributes string `mapstructure:"OTEL_RESOURCE_ATTRIBUTES"`
 }
 
 type TMDB struct {
@@ -80,13 +82,16 @@ type OIDC struct {
 }
 
 func Load() (Config, error) {
-	v := viper.NewWithOptions(viper.ExperimentalBindStruct())
+	v := viper.New()
+	for _, key := range keys() {
+		if err := v.BindEnv(key); err != nil {
+			return Config{}, fmt.Errorf("failed to bind %s: %w", key, err)
+		}
+	}
 	v.SetDefault("HTTP_PORT", defaultHTTPPort)
 	v.SetDefault("DATABASE_MAX_CONNS", defaultDatabaseConns)
 	v.SetDefault("DATABASE_CONN_MAX_LIFETIME", defaultConnMaxLifetime)
 	v.SetDefault("MEDIA_DIRECTORIES", []string{"/"})
-
-	v.AutomaticEnv()
 
 	var config Config
 	if err := v.Unmarshal(&config); err != nil {

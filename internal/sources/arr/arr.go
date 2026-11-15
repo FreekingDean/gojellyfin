@@ -3,14 +3,14 @@ package arr
 import "time"
 
 const (
-	StatusPath     = "api/v3/system/status"
-	TagsPath       = "api/v3/tag"
-	RootFolderPath = "api/v3/rootfolder"
-	ProfilesPath   = "api/v3/qualityprofile"
-	CommandPath    = "api/v3/command"
-	FailedPath     = "api/v3/history/failed"
-	NotifyPath     = "api/v3/notification"
-	NotifySchema   = "api/v3/notification/schema"
+	StatusPath     = "system/status"
+	TagsPath       = "tag"
+	RootFolderPath = "rootfolder"
+	ProfilesPath   = "qualityprofile"
+	CommandPath    = "command"
+	FailedPath     = "history/failed"
+	NotifyPath     = "notification"
+	NotifySchema   = "notification/schema"
 	APIKeyName     = "X-Api-Key"
 )
 
@@ -63,9 +63,11 @@ type Webhook struct {
 	EventType string   `json:"eventType"`
 	Movie     *Subject `json:"movie"`
 	Series    *Subject `json:"series"`
+	Artist    *Subject `json:"artist"`
 }
 
 type Subject struct {
-	ID     int64 `json:"id"`
-	TmdbID int   `json:"tmdbId"`
+	ID     int64  `json:"id"`
+	TmdbID int    `json:"tmdbId"`
+	MBID   string `json:"mbId"`
 }

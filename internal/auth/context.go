@@ -28,6 +28,7 @@ type Authorization struct {
 	Version    string
 	Token      string
 	RemoteAddr string
+	LocalAddr  string
 }
 
 func (a Authorization) ClientDevice() sessions.Device {

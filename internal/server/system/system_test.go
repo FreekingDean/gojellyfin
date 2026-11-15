@@ -48,6 +48,7 @@ func TestServer_GetEndpointInfo(t *testing.T) {
 	for _, tc := range []struct {
 		name        string
 		remoteAddr  string
+		localAddr   string
 		isLocal     bool
 		isInNetwork bool
 	}{
@@ -56,10 +57,12 @@ func TestServer_GetEndpointInfo(t *testing.T) {
 		{name: "private", remoteAddr: "192.168.1.24:52341", isInNetwork: true},
 		{name: "unique local ipv6", remoteAddr: "[fd00::1]:52341", isInNetwork: true},
 		{name: "public", remoteAddr: "8.8.8.8:52341"},
+		{name: "the server's own address", remoteAddr: "192.168.1.5:52341", localAddr: "192.168.1.5:8081", isLocal: true, isInNetwork: true},
+		{name: "another host on the server's network", remoteAddr: "192.168.1.6:52341", localAddr: "192.168.1.5:8081", isInNetwork: true},
 		{name: "unknown", remoteAddr: ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			ctx := auth.ContextWithAuthorization(context.Background(), auth.Authorization{RemoteAddr: tc.remoteAddr})
+			ctx := auth.ContextWithAuthorization(context.Background(), auth.Authorization{RemoteAddr: tc.remoteAddr, LocalAddr: tc.localAddr})
 
 			response, err := testServer().GetEndpointInfo(ctx, api.GetEndpointInfoRequestObject{})
 			if err != nil {

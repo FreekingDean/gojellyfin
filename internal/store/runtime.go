@@ -20,6 +20,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
 	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
+	"github.com/FreekingDean/gojellyfin/internal/store/mediasegment"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/person"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
@@ -415,6 +416,18 @@ func init() {
 	librarysource.DefaultUpdatedAt = librarysourceDescUpdatedAt.Default.(func() time.Time)
 	// librarysource.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	librarysource.UpdateDefaultUpdatedAt = librarysourceDescUpdatedAt.UpdateDefault.(func() time.Time)
+	mediasegmentFields := entities.MediaSegment{}.Fields()
+	_ = mediasegmentFields
+	// mediasegmentDescCreatedAt is the schema descriptor for created_at field.
+	mediasegmentDescCreatedAt := mediasegmentFields[1].Descriptor()
+	// mediasegment.DefaultCreatedAt holds the default value on creation for the created_at field.
+	mediasegment.DefaultCreatedAt = mediasegmentDescCreatedAt.Default.(func() time.Time)
+	// mediasegmentDescUpdatedAt is the schema descriptor for updated_at field.
+	mediasegmentDescUpdatedAt := mediasegmentFields[2].Descriptor()
+	// mediasegment.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	mediasegment.DefaultUpdatedAt = mediasegmentDescUpdatedAt.Default.(func() time.Time)
+	// mediasegment.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	mediasegment.UpdateDefaultUpdatedAt = mediasegmentDescUpdatedAt.UpdateDefault.(func() time.Time)
 	mediastreamFields := entities.MediaStream{}.Fields()
 	_ = mediastreamFields
 	// mediastreamDescCreatedAt is the schema descriptor for created_at field.

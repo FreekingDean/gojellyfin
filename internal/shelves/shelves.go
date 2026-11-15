@@ -338,6 +338,10 @@ func (s *Service) Card(ctx context.Context, id uuid.UUID, viewer items.Viewer, u
 		return Card{}, false, err
 	}
 
+	if shelf.trending != "" {
+		return Card{Name: shelf.Name, Posters: posters}, true, nil
+	}
+
 	fresh, err := s.fresh(ctx, shelf)
 
 	return Card{Name: shelf.Name, Fresh: fresh, Posters: posters, Personal: !entry.shared}, true, err

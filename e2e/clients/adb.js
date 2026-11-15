@@ -12,6 +12,9 @@ const KEYS = {
   playPause: 85,
   fastForward: 90,
   rewind: 89,
+  stop: 86,
+  moveEnd: 123,
+  deleteBack: 67,
 };
 
 // A device is driven the way a person without a debugger would see it: what
@@ -41,7 +44,7 @@ function device(serial = process.env.ANDROID_SERIAL) {
   // uiautomator refuses while the window never goes idle, which is every
   // frame of a playing video, so a caller that needs the tree during playback
   // has to be ready for an empty answer.
-  function dump() {
+  function read() {
     const out = adb(['exec-out', 'uiautomator', 'dump', '/dev/tty'], { allowFailure: true });
     const end = out.lastIndexOf('</hierarchy>');
     if (end === -1) {
@@ -49,6 +52,32 @@ function device(serial = process.env.ANDROID_SERIAL) {
     }
 
     return parse(out.slice(out.indexOf('<?xml'), end));
+  }
+
+  // Android draws two things of its own over whatever is on screen until
+  // someone answers them: the dialog saying one of a slow emulator's apps
+  // is not responding, and the first full screen video's note on how to
+  // leave it. Each is answered before anything is looked at.
+  function interruption(nodes) {
+    if (nodes.some((node) => node.id === 'immersive_cling_title')) {
+      return nodes.find((node) => node.id === 'ok');
+    }
+
+    return nodes.find((node) => node.id === 'aerr_wait');
+  }
+
+  function dump() {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const nodes = read();
+      const answer = interruption(nodes);
+      if (!answer) {
+        return nodes;
+      }
+      tap(answer);
+      spawnSync('sleep', ['1']);
+    }
+
+    return read();
   }
 
   function find(matcher) {
@@ -164,8 +193,12 @@ function device(serial = process.env.ANDROID_SERIAL) {
   }
 
   async function fill(matcher, text) {
-    await tapOn(matcher);
-    await sleep(500);
+    const field = await tapOn(matcher);
+    await waitFor({ ...matcher, focused: true }, { timeout: 10000 }).catch(() => {});
+    if (field.text) {
+      key('moveEnd');
+      key('deleteBack', field.text.length);
+    }
     type(text);
     await sleep(500);
     await hideKeyboard();
@@ -204,7 +237,7 @@ function device(serial = process.env.ANDROID_SERIAL) {
     reverse: (port) => adb(['reverse', `tcp:${port}`, `tcp:${port}`]),
     clear: (app) => shell(`pm clear ${app}`),
     stop: (app) => shell(`am force-stop ${app}`),
-    start: (component) => shell(`am start -S -W -n ${component}`),
+    start: (component) => shell(`am start -S -W -n ${component}`, { timeout: 180000 }),
     clearLog: () => adb(['logcat', '-c'], { allowFailure: true }),
   };
 }
@@ -247,13 +280,16 @@ function unescape(value) {
     .replace(/&amp;/g, '&');
 }
 
-// { id }, { text } and { description } all have to hold; a string is matched
+// { id }, { type }, { text } and { description } all have to hold; a string is matched
 // whole and a RegExp is tested. `label` is the text or the description,
 // whichever the view carries.
 function matches(node, matcher) {
   const holds = (value, wanted) => (wanted instanceof RegExp ? wanted.test(value) : value === wanted);
 
   if (matcher.id !== undefined && node.id !== matcher.id) {
+    return false;
+  }
+  if (matcher.type !== undefined && node.type !== matcher.type) {
     return false;
   }
   if (matcher.text !== undefined && !holds(node.text, matcher.text)) {
