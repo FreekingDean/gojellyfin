@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/FreekingDean/gojellyfin/internal/store/apikey"
 	"github.com/FreekingDean/gojellyfin/internal/store/device"
 	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
@@ -256,6 +257,26 @@ func (_u *SessionUpdate) ClearPlaybackPlan() *SessionUpdate {
 	return _u
 }
 
+// SetAPIKeyID sets the "api_key_id" field.
+func (_u *SessionUpdate) SetAPIKeyID(v uuid.UUID) *SessionUpdate {
+	_u.mutation.SetAPIKeyID(v)
+	return _u
+}
+
+// SetNillableAPIKeyID sets the "api_key_id" field if the given value is not nil.
+func (_u *SessionUpdate) SetNillableAPIKeyID(v *uuid.UUID) *SessionUpdate {
+	if v != nil {
+		_u.SetAPIKeyID(*v)
+	}
+	return _u
+}
+
+// ClearAPIKeyID clears the value of the "api_key_id" field.
+func (_u *SessionUpdate) ClearAPIKeyID() *SessionUpdate {
+	_u.mutation.ClearAPIKeyID()
+	return _u
+}
+
 // SetUserID sets the "user" edge to the User entity by ID.
 func (_u *SessionUpdate) SetUserID(id uuid.UUID) *SessionUpdate {
 	_u.mutation.SetUserID(id)
@@ -302,6 +323,11 @@ func (_u *SessionUpdate) SetPlannedSource(v *ItemSource) *SessionUpdate {
 	return _u.SetPlannedSourceID(v.ID)
 }
 
+// SetAPIKey sets the "api_key" edge to the ApiKey entity.
+func (_u *SessionUpdate) SetAPIKey(v *ApiKey) *SessionUpdate {
+	return _u.SetAPIKeyID(v.ID)
+}
+
 // AddSyncPlayMembershipIDs adds the "sync_play_memberships" edge to the SyncPlayGroupMember entity by IDs.
 func (_u *SessionUpdate) AddSyncPlayMembershipIDs(ids ...uuid.UUID) *SessionUpdate {
 	_u.mutation.AddSyncPlayMembershipIDs(ids...)
@@ -343,6 +369,12 @@ func (_u *SessionUpdate) ClearNowPlaying() *SessionUpdate {
 // ClearPlannedSource clears the "planned_source" edge to the ItemSource entity.
 func (_u *SessionUpdate) ClearPlannedSource() *SessionUpdate {
 	_u.mutation.ClearPlannedSource()
+	return _u
+}
+
+// ClearAPIKey clears the "api_key" edge to the ApiKey entity.
+func (_u *SessionUpdate) ClearAPIKey() *SessionUpdate {
+	_u.mutation.ClearAPIKey()
 	return _u
 }
 
@@ -589,6 +621,35 @@ func (_u *SessionUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.APIKeyCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   session.APIKeyTable,
+			Columns: []string{session.APIKeyColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(apikey.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.APIKeyIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   session.APIKeyTable,
+			Columns: []string{session.APIKeyColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(apikey.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -882,6 +943,26 @@ func (_u *SessionUpdateOne) ClearPlaybackPlan() *SessionUpdateOne {
 	return _u
 }
 
+// SetAPIKeyID sets the "api_key_id" field.
+func (_u *SessionUpdateOne) SetAPIKeyID(v uuid.UUID) *SessionUpdateOne {
+	_u.mutation.SetAPIKeyID(v)
+	return _u
+}
+
+// SetNillableAPIKeyID sets the "api_key_id" field if the given value is not nil.
+func (_u *SessionUpdateOne) SetNillableAPIKeyID(v *uuid.UUID) *SessionUpdateOne {
+	if v != nil {
+		_u.SetAPIKeyID(*v)
+	}
+	return _u
+}
+
+// ClearAPIKeyID clears the value of the "api_key_id" field.
+func (_u *SessionUpdateOne) ClearAPIKeyID() *SessionUpdateOne {
+	_u.mutation.ClearAPIKeyID()
+	return _u
+}
+
 // SetUserID sets the "user" edge to the User entity by ID.
 func (_u *SessionUpdateOne) SetUserID(id uuid.UUID) *SessionUpdateOne {
 	_u.mutation.SetUserID(id)
@@ -928,6 +1009,11 @@ func (_u *SessionUpdateOne) SetPlannedSource(v *ItemSource) *SessionUpdateOne {
 	return _u.SetPlannedSourceID(v.ID)
 }
 
+// SetAPIKey sets the "api_key" edge to the ApiKey entity.
+func (_u *SessionUpdateOne) SetAPIKey(v *ApiKey) *SessionUpdateOne {
+	return _u.SetAPIKeyID(v.ID)
+}
+
 // AddSyncPlayMembershipIDs adds the "sync_play_memberships" edge to the SyncPlayGroupMember entity by IDs.
 func (_u *SessionUpdateOne) AddSyncPlayMembershipIDs(ids ...uuid.UUID) *SessionUpdateOne {
 	_u.mutation.AddSyncPlayMembershipIDs(ids...)
@@ -969,6 +1055,12 @@ func (_u *SessionUpdateOne) ClearNowPlaying() *SessionUpdateOne {
 // ClearPlannedSource clears the "planned_source" edge to the ItemSource entity.
 func (_u *SessionUpdateOne) ClearPlannedSource() *SessionUpdateOne {
 	_u.mutation.ClearPlannedSource()
+	return _u
+}
+
+// ClearAPIKey clears the "api_key" edge to the ApiKey entity.
+func (_u *SessionUpdateOne) ClearAPIKey() *SessionUpdateOne {
+	_u.mutation.ClearAPIKey()
 	return _u
 }
 
@@ -1245,6 +1337,35 @@ func (_u *SessionUpdateOne) sqlSave(ctx context.Context) (_node *Session, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.APIKeyCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   session.APIKeyTable,
+			Columns: []string{session.APIKeyColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(apikey.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.APIKeyIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   session.APIKeyTable,
+			Columns: []string{session.APIKeyColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(apikey.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

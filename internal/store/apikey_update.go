@@ -13,6 +13,9 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/apikey"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
+	"github.com/FreekingDean/gojellyfin/internal/store/session"
+	"github.com/FreekingDean/gojellyfin/internal/store/user"
+	"github.com/google/uuid"
 )
 
 // ApiKeyUpdate is the builder for updating ApiKey entities.
@@ -96,9 +99,76 @@ func (_u *ApiKeyUpdate) ClearRevokedAt() *ApiKeyUpdate {
 	return _u
 }
 
+// SetUserID sets the "user_id" field.
+func (_u *ApiKeyUpdate) SetUserID(v uuid.UUID) *ApiKeyUpdate {
+	_u.mutation.SetUserID(v)
+	return _u
+}
+
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (_u *ApiKeyUpdate) SetNillableUserID(v *uuid.UUID) *ApiKeyUpdate {
+	if v != nil {
+		_u.SetUserID(*v)
+	}
+	return _u
+}
+
+// ClearUserID clears the value of the "user_id" field.
+func (_u *ApiKeyUpdate) ClearUserID() *ApiKeyUpdate {
+	_u.mutation.ClearUserID()
+	return _u
+}
+
+// SetUser sets the "user" edge to the User entity.
+func (_u *ApiKeyUpdate) SetUser(v *User) *ApiKeyUpdate {
+	return _u.SetUserID(v.ID)
+}
+
+// AddSessionIDs adds the "sessions" edge to the Session entity by IDs.
+func (_u *ApiKeyUpdate) AddSessionIDs(ids ...uuid.UUID) *ApiKeyUpdate {
+	_u.mutation.AddSessionIDs(ids...)
+	return _u
+}
+
+// AddSessions adds the "sessions" edges to the Session entity.
+func (_u *ApiKeyUpdate) AddSessions(v ...*Session) *ApiKeyUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSessionIDs(ids...)
+}
+
 // Mutation returns the ApiKeyMutation object of the builder.
 func (_u *ApiKeyUpdate) Mutation() *ApiKeyMutation {
 	return _u.mutation
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (_u *ApiKeyUpdate) ClearUser() *ApiKeyUpdate {
+	_u.mutation.ClearUser()
+	return _u
+}
+
+// ClearSessions clears all "sessions" edges to the Session entity.
+func (_u *ApiKeyUpdate) ClearSessions() *ApiKeyUpdate {
+	_u.mutation.ClearSessions()
+	return _u
+}
+
+// RemoveSessionIDs removes the "sessions" edge to Session entities by IDs.
+func (_u *ApiKeyUpdate) RemoveSessionIDs(ids ...uuid.UUID) *ApiKeyUpdate {
+	_u.mutation.RemoveSessionIDs(ids...)
+	return _u
+}
+
+// RemoveSessions removes "sessions" edges to Session entities.
+func (_u *ApiKeyUpdate) RemoveSessions(v ...*Session) *ApiKeyUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSessionIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -163,6 +233,80 @@ func (_u *ApiKeyUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.RevokedAtCleared() {
 		_spec.ClearField(apikey.FieldRevokedAt, field.TypeTime)
+	}
+	if _u.mutation.UserCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   apikey.UserTable,
+			Columns: []string{apikey.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.UserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   apikey.UserTable,
+			Columns: []string{apikey.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SessionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   apikey.SessionsTable,
+			Columns: []string{apikey.SessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSessionsIDs(); len(nodes) > 0 && !_u.mutation.SessionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   apikey.SessionsTable,
+			Columns: []string{apikey.SessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SessionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   apikey.SessionsTable,
+			Columns: []string{apikey.SessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -252,9 +396,76 @@ func (_u *ApiKeyUpdateOne) ClearRevokedAt() *ApiKeyUpdateOne {
 	return _u
 }
 
+// SetUserID sets the "user_id" field.
+func (_u *ApiKeyUpdateOne) SetUserID(v uuid.UUID) *ApiKeyUpdateOne {
+	_u.mutation.SetUserID(v)
+	return _u
+}
+
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (_u *ApiKeyUpdateOne) SetNillableUserID(v *uuid.UUID) *ApiKeyUpdateOne {
+	if v != nil {
+		_u.SetUserID(*v)
+	}
+	return _u
+}
+
+// ClearUserID clears the value of the "user_id" field.
+func (_u *ApiKeyUpdateOne) ClearUserID() *ApiKeyUpdateOne {
+	_u.mutation.ClearUserID()
+	return _u
+}
+
+// SetUser sets the "user" edge to the User entity.
+func (_u *ApiKeyUpdateOne) SetUser(v *User) *ApiKeyUpdateOne {
+	return _u.SetUserID(v.ID)
+}
+
+// AddSessionIDs adds the "sessions" edge to the Session entity by IDs.
+func (_u *ApiKeyUpdateOne) AddSessionIDs(ids ...uuid.UUID) *ApiKeyUpdateOne {
+	_u.mutation.AddSessionIDs(ids...)
+	return _u
+}
+
+// AddSessions adds the "sessions" edges to the Session entity.
+func (_u *ApiKeyUpdateOne) AddSessions(v ...*Session) *ApiKeyUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSessionIDs(ids...)
+}
+
 // Mutation returns the ApiKeyMutation object of the builder.
 func (_u *ApiKeyUpdateOne) Mutation() *ApiKeyMutation {
 	return _u.mutation
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (_u *ApiKeyUpdateOne) ClearUser() *ApiKeyUpdateOne {
+	_u.mutation.ClearUser()
+	return _u
+}
+
+// ClearSessions clears all "sessions" edges to the Session entity.
+func (_u *ApiKeyUpdateOne) ClearSessions() *ApiKeyUpdateOne {
+	_u.mutation.ClearSessions()
+	return _u
+}
+
+// RemoveSessionIDs removes the "sessions" edge to Session entities by IDs.
+func (_u *ApiKeyUpdateOne) RemoveSessionIDs(ids ...uuid.UUID) *ApiKeyUpdateOne {
+	_u.mutation.RemoveSessionIDs(ids...)
+	return _u
+}
+
+// RemoveSessions removes "sessions" edges to Session entities.
+func (_u *ApiKeyUpdateOne) RemoveSessions(v ...*Session) *ApiKeyUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSessionIDs(ids...)
 }
 
 // Where appends a list predicates to the ApiKeyUpdate builder.
@@ -349,6 +560,80 @@ func (_u *ApiKeyUpdateOne) sqlSave(ctx context.Context) (_node *ApiKey, err erro
 	}
 	if _u.mutation.RevokedAtCleared() {
 		_spec.ClearField(apikey.FieldRevokedAt, field.TypeTime)
+	}
+	if _u.mutation.UserCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   apikey.UserTable,
+			Columns: []string{apikey.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.UserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   apikey.UserTable,
+			Columns: []string{apikey.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SessionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   apikey.SessionsTable,
+			Columns: []string{apikey.SessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSessionsIDs(); len(nodes) > 0 && !_u.mutation.SessionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   apikey.SessionsTable,
+			Columns: []string{apikey.SessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SessionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   apikey.SessionsTable,
+			Columns: []string{apikey.SessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &ApiKey{config: _u.config}
 	_spec.Assign = _node.assignValues

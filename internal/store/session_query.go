@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/FreekingDean/gojellyfin/internal/store/apikey"
 	"github.com/FreekingDean/gojellyfin/internal/store/device"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
@@ -34,6 +35,7 @@ type SessionQuery struct {
 	withDevice              *DeviceQuery
 	withNowPlaying          *ItemQuery
 	withPlannedSource       *ItemSourceQuery
+	withAPIKey              *ApiKeyQuery
 	withSyncPlayMemberships *SyncPlayGroupMemberQuery
 	withFKs                 bool
 	modifiers               []func(*sql.Selector)
@@ -154,6 +156,28 @@ func (_q *SessionQuery) QueryPlannedSource() *ItemSourceQuery {
 			sqlgraph.From(session.Table, session.FieldID, selector),
 			sqlgraph.To(itemsource.Table, itemsource.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, session.PlannedSourceTable, session.PlannedSourceColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryAPIKey chains the current query on the "api_key" edge.
+func (_q *SessionQuery) QueryAPIKey() *ApiKeyQuery {
+	query := (&ApiKeyClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(session.Table, session.FieldID, selector),
+			sqlgraph.To(apikey.Table, apikey.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, session.APIKeyTable, session.APIKeyColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -379,6 +403,7 @@ func (_q *SessionQuery) Clone() *SessionQuery {
 		withDevice:              _q.withDevice.Clone(),
 		withNowPlaying:          _q.withNowPlaying.Clone(),
 		withPlannedSource:       _q.withPlannedSource.Clone(),
+		withAPIKey:              _q.withAPIKey.Clone(),
 		withSyncPlayMemberships: _q.withSyncPlayMemberships.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
@@ -427,6 +452,17 @@ func (_q *SessionQuery) WithPlannedSource(opts ...func(*ItemSourceQuery)) *Sessi
 		opt(query)
 	}
 	_q.withPlannedSource = query
+	return _q
+}
+
+// WithAPIKey tells the query-builder to eager-load the nodes that are connected to
+// the "api_key" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *SessionQuery) WithAPIKey(opts ...func(*ApiKeyQuery)) *SessionQuery {
+	query := (&ApiKeyClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withAPIKey = query
 	return _q
 }
 
@@ -520,11 +556,12 @@ func (_q *SessionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Sess
 		nodes       = []*Session{}
 		withFKs     = _q.withFKs
 		_spec       = _q.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [6]bool{
 			_q.withUser != nil,
 			_q.withDevice != nil,
 			_q.withNowPlaying != nil,
 			_q.withPlannedSource != nil,
+			_q.withAPIKey != nil,
 			_q.withSyncPlayMemberships != nil,
 		}
 	)
@@ -576,6 +613,12 @@ func (_q *SessionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Sess
 	if query := _q.withPlannedSource; query != nil {
 		if err := _q.loadPlannedSource(ctx, query, nodes, nil,
 			func(n *Session, e *ItemSource) { n.Edges.PlannedSource = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withAPIKey; query != nil {
+		if err := _q.loadAPIKey(ctx, query, nodes, nil,
+			func(n *Session, e *ApiKey) { n.Edges.APIKey = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -719,6 +762,38 @@ func (_q *SessionQuery) loadPlannedSource(ctx context.Context, query *ItemSource
 	}
 	return nil
 }
+func (_q *SessionQuery) loadAPIKey(ctx context.Context, query *ApiKeyQuery, nodes []*Session, init func(*Session), assign func(*Session, *ApiKey)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Session)
+	for i := range nodes {
+		if nodes[i].APIKeyID == nil {
+			continue
+		}
+		fk := *nodes[i].APIKeyID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(apikey.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "api_key_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 func (_q *SessionQuery) loadSyncPlayMemberships(ctx context.Context, query *SyncPlayGroupMemberQuery, nodes []*Session, init func(*Session), assign func(*Session, *SyncPlayGroupMember)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*Session)
@@ -783,6 +858,9 @@ func (_q *SessionQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withPlannedSource != nil {
 			_spec.Node.AddColumnOnce(session.FieldPlannedSourceID)
+		}
+		if _q.withAPIKey != nil {
+			_spec.Node.AddColumnOnce(session.FieldAPIKeyID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

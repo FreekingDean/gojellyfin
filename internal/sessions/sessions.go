@@ -9,6 +9,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/store"
+	apikeymodel "github.com/FreekingDean/gojellyfin/internal/store/apikey"
 	devicemodel "github.com/FreekingDean/gojellyfin/internal/store/device"
 	streammodel "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
@@ -51,7 +52,28 @@ func New(client *store.Client, activity *activity.Service) *Service {
 }
 
 func (s *Service) Create(ctx context.Context, userID uuid.UUID, token string, device Device) (*Session, error) {
-	err := s.store.WithTx(ctx, func(tx *store.Tx) error {
+	if err := s.insert(ctx, userID, token, device, nil); err != nil {
+		return nil, err
+	}
+
+	session, err := s.ByToken(ctx, token)
+	if err != nil {
+		return nil, err
+	}
+
+	s.activity.Record(ctx, activity.Entry{
+		Name:          fmt.Sprintf("%s has been authenticated", session.User.Username),
+		Kind:          activity.KindAuthenticationSucceeded,
+		ShortOverview: device.Name,
+		Severity:      activity.SeverityInformation,
+		UserID:        &userID,
+	})
+
+	return session, nil
+}
+
+func (s *Service) insert(ctx context.Context, userID uuid.UUID, token string, device Device, apiKeyID *uuid.UUID) error {
+	return s.store.WithTx(ctx, func(tx *store.Tx) error {
 		now := time.Now()
 		deviceID, err := tx.Device.Create().
 			SetClientID(device.ClientID).
@@ -76,6 +98,7 @@ func (s *Service) Create(ctx context.Context, userID uuid.UUID, token string, de
 			SetDeviceID(deviceID).
 			SetAccessToken(token).
 			SetLastActivityAt(now).
+			SetNillableAPIKeyID(apiKeyID).
 			Save(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to create session: %w", err)
@@ -83,32 +106,35 @@ func (s *Service) Create(ctx context.Context, userID uuid.UUID, token string, de
 
 		return nil
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	session, err := s.ByToken(ctx, token)
-	if err != nil {
-		return nil, err
-	}
-
-	s.activity.Record(ctx, activity.Entry{
-		Name:          fmt.Sprintf("%s has been authenticated", session.User.Username),
-		Kind:          activity.KindAuthenticationSucceeded,
-		ShortOverview: device.Name,
-		Severity:      activity.SeverityInformation,
-		UserID:        &userID,
-	})
-
-	return session, nil
 }
 
 func (s *Service) ByToken(ctx context.Context, token string) (*Session, error) {
+	session, err := s.byToken(ctx, token)
+	if !store.IsNotFound(err) {
+		return session, err
+	}
+
+	opened, keyErr := s.openKey(ctx, token)
+	if keyErr != nil {
+		return nil, keyErr
+	}
+	if !opened {
+		return nil, err
+	}
+
+	return s.byToken(ctx, token)
+}
+
+func (s *Service) byToken(ctx context.Context, token string) (*Session, error) {
 	session, err := s.store.Session.Query().
 		Where(
 			sessionmodel.AccessToken(token),
 			sessionmodel.RevokedAtIsNil(),
 			sessionmodel.HasUserWith(usermodel.Not(usermodel.HasPolicyWith(policymodel.IsDisabled(true)))),
+			sessionmodel.Or(
+				sessionmodel.APIKeyIDIsNil(),
+				sessionmodel.HasAPIKeyWith(liveKey(time.Now())...),
+			),
 		).
 		WithUser().
 		WithDevice().
@@ -118,6 +144,36 @@ func (s *Service) ByToken(ctx context.Context, token string) (*Session, error) {
 	}
 
 	return session, nil
+}
+
+func liveKey(now time.Time) []predicate.ApiKey {
+	return []predicate.ApiKey{
+		apikeymodel.Or(apikeymodel.RevokedAtIsNil(), apikeymodel.RevokedAtGT(now)),
+		apikeymodel.HasUserWith(usermodel.HasPolicyWith(policymodel.IsAdministrator(true), policymodel.IsDisabled(false))),
+	}
+}
+
+func (s *Service) openKey(ctx context.Context, token string) (bool, error) {
+	key, err := s.store.ApiKey.Query().
+		Where(append(liveKey(time.Now()), apikeymodel.AccessToken(token))...).
+		Only(ctx)
+	if store.IsNotFound(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("failed to query api key by token: %w", err)
+	}
+
+	device := Device{ClientID: KeyClientID(key.ID), Name: key.AppName, AppName: key.AppName}
+	if err := s.insert(ctx, *key.UserID, token, device, &key.ID); err != nil && !store.IsConstraintError(err) {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func KeyClientID(keyID uuid.UUID) string {
+	return "apikey-" + keyID.String()
 }
 
 func (s *Service) List(ctx context.Context) ([]*Session, error) {
@@ -147,6 +203,7 @@ func (s *Service) RevokeForUser(ctx context.Context, userID uuid.UUID) error {
 	live := []predicate.Session{
 		sessionmodel.HasUserWith(usermodel.ID(userID)),
 		sessionmodel.RevokedAtIsNil(),
+		sessionmodel.APIKeyIDIsNil(),
 	}
 
 	ids, err := s.store.Session.Query().Where(live...).IDs(ctx)

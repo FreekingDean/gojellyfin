@@ -45,5 +45,6 @@ func (User) Edges() []ent.Edge {
 		edge.To("quick_connect_requests", QuickConnectRequest.Type).Annotations(cascadeOnDelete),
 		edge.To("requests", Request.Type).Annotations(cascadeOnDelete),
 		edge.To("reports", Report.Type),
+		edge.To("api_keys", ApiKey.Type).Annotations(cascadeOnDelete),
 	}
 }
