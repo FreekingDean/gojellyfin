@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -93,6 +94,7 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	instructed(r)
 	container := items.Container(source)
 	requested := r.PathValue("container")
 	if requested == "" || isStatic(r) || (strings.EqualFold(requested, container) && !converts(r, item, source)) {
@@ -215,6 +217,21 @@ func (h *Handler) serveRemux(w http.ResponseWriter, r *http.Request, source *ite
 	}
 
 	return h.relay(w, r, source, spec)
+}
+
+func instructed(r *http.Request) {
+	query := r.URL.Query()
+	given, err := url.ParseQuery(query.Get("playSessionId"))
+	if err != nil {
+		return
+	}
+
+	for _, key := range []string{"audioCodec", "videoCodec", "maxHeight"} {
+		if query.Get(key) == "" && given.Get(key) != "" {
+			query.Set(key, given.Get(key))
+		}
+	}
+	r.URL.RawQuery = query.Encode()
 }
 
 func converts(r *http.Request, item *items.Item, source *items.MediaSource) bool {

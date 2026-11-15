@@ -83,22 +83,42 @@ func capabilities(profile api.DeviceProfile) items.Capabilities {
 	return items.Capabilities{Profiles: video, Conditions: conditions, Audio: audio, AudioEncodes: encodes}
 }
 
-func streamURL(root string, itemID uuid.UUID, plan items.Plan, token, session string, startTicks int64) string {
-	query := url.Values{
-		"mediaSourceId": {plan.Source.ID.String()},
-		"container":     {plan.Container},
-		"playSessionId": {session},
-		"api_key":       {token},
+const (
+	nativeAndroidProfile = "Jellyfin Android"
+	sessionKey           = "session"
+)
+
+func buildsItsOwnURL(profile api.DeviceProfile) bool {
+	for key, value := range profile {
+		if strings.EqualFold(key, "Name") {
+			return value == nativeAndroidProfile
+		}
 	}
+
+	return false
+}
+
+func conversion(plan items.Plan) url.Values {
+	query := url.Values{}
 	if plan.AudioCodec != "" {
 		query.Set("audioCodec", plan.AudioCodec)
-	}
-	if startTicks > 0 {
-		query.Set("startTimeTicks", strconv.FormatInt(startTicks, 10))
 	}
 	if plan.VideoCodec != "" {
 		query.Set("videoCodec", plan.VideoCodec)
 		query.Set("maxHeight", strconv.Itoa(transcode.MaxHeight))
+	}
+
+	return query
+}
+
+func streamURL(root string, itemID uuid.UUID, plan items.Plan, token, session string, startTicks int64) string {
+	query := conversion(plan)
+	query.Set("mediaSourceId", plan.Source.ID.String())
+	query.Set("container", plan.Container)
+	query.Set("playSessionId", session)
+	query.Set("api_key", token)
+	if startTicks > 0 {
+		query.Set("startTimeTicks", strconv.FormatInt(startTicks, 10))
 	}
 	if plan.VideoCodec == "" && plan.Container == items.Container(plan.Source) && plan.AudioCodec == items.AudioCodec(plan.Source) {
 		query.Set("copyTimestamps", "true")
