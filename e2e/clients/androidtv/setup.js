@@ -1,3 +1,5 @@
 const { emulatorSetup } = require('../setup');
 
-module.exports = emulatorSetup(require('./app'));
+// The television plays a series' episodes one after another, so each is a
+// real file there.
+module.exports = emulatorSetup({ ...require('./app'), playableEpisodes: true });

@@ -12,7 +12,7 @@ const MEDIA_SECONDS = 180;
 // Boots the harness for an app on whatever device adb lists. The device's own
 // 127.0.0.1 is forwarded to the harness, so the app is given the same address
 // the server publishes and the posters live at.
-function emulatorSetup({ PACKAGE, apk, display }) {
+function emulatorSetup({ PACKAGE, apk, display, playableEpisodes = false }) {
   return async function globalSetup() {
     const phone = device();
     phone.adb(['wait-for-device']);
@@ -28,7 +28,7 @@ function emulatorSetup({ PACKAGE, apk, display }) {
       console.log(`Carrying on with the background compile unfinished: ${error.message}`);
     }
 
-    const app = await boot({ mediaSeconds: MEDIA_SECONDS });
+    const app = await boot({ mediaSeconds: MEDIA_SECONDS, playableEpisodes });
 
     phone.reverse(app.facts.port);
     phone.shell('settings put secure immersive_mode_confirmations confirmed', { allowFailure: true });

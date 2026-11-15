@@ -52,7 +52,7 @@ const WANTED_SHOW = {
 
 const CLIENT_IMAGE = 'jellyfin/jellyfin:12.4';
 
-async function boot({ mediaSeconds = 20 } = {}) {
+async function boot({ mediaSeconds = 20, playableEpisodes = false } = {}) {
   const adminUrl = process.env.DATABASE_URL;
   if (!adminUrl) {
     throw new Error('DATABASE_URL is not set, so there is no server to create a scratch database on');
@@ -108,6 +108,7 @@ async function boot({ mediaSeconds = 20 } = {}) {
       ...serverEnv,
       FIXTURE_MEDIA: media.playable,
       FIXTURE_TRANSCODE: media.transcoded,
+      ...(playableEpisodes ? { FIXTURE_EPISODES: episodeMedia(media.playable, mediaSeconds) } : {}),
       FIXTURE_DOWNLOADER: downloaderUrl,
       POSTER_DIR: posterRoot,
       UNOWNED_POSTER_DIR: path.join(posterRoot, POSTER_SIZE),
@@ -229,6 +230,37 @@ function encodeTranscoded() {
   ]);
 
   return target;
+}
+
+// Each episode a file of its own, since a path belongs to one item, so that
+// the player has a next episode to move on to. They are H.264 with E-AC-3 in
+// Matroska, which is what a downloader usually imports and what a television
+// without a receiver cannot decode, so the server converts the sound and the
+// episode reaches the player through ffmpeg rather than as the file.
+function episodeMedia(playable, seconds) {
+  const directory = path.join(path.dirname(playable), 'episodes');
+  fs.rmSync(directory, { recursive: true, force: true });
+  fs.mkdirSync(directory, { recursive: true });
+
+  const episode = path.join(directory, 'episode.mkv');
+  run('ffmpeg', [
+    '-hide_banner', '-loglevel', 'error', '-y',
+    '-f', 'lavfi', '-i', `testsrc2=size=640x360:rate=24:duration=${seconds}`,
+    '-f', 'lavfi', '-i', `sine=frequency=440:duration=${seconds}`,
+    '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-g', '48',
+    '-c:a', 'eac3', '-b:a', '128k',
+    '-shortest', episode,
+  ]);
+  for (const title of [...EPISODES, FINALE]) {
+    fs.copyFileSync(episode, path.join(directory, slugify(title) + '.mkv'));
+  }
+  fs.rmSync(episode);
+
+  return directory;
+}
+
+function slugify(title) {
+  return title.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean).join('-');
 }
 
 function encodePlayable(seconds) {

@@ -3,6 +3,7 @@ package items
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -29,11 +30,13 @@ func (s *Service) SeriesSeasons(ctx context.Context, viewer Viewer, seriesID uui
 type EpisodeQuery struct {
 	Viewer Viewer
 
-	SeriesID   uuid.UUID
-	SeasonID   *uuid.UUID
-	Season     *int32
-	StartIndex int
-	Limit      int
+	SeriesID    uuid.UUID
+	SeasonID    *uuid.UUID
+	Season      *int32
+	StartItemID *uuid.UUID
+	Shuffled    bool
+	StartIndex  int
+	Limit       int
 }
 
 func (s *Service) SeriesEpisodes(ctx context.Context, query EpisodeQuery) ([]*Item, int, error) {
@@ -48,21 +51,14 @@ func (s *Service) SeriesEpisodes(ctx context.Context, query EpisodeQuery) ([]*It
 		episodes = episodes.Where(itemmodel.ParentIndexNumber(*query.Season))
 	}
 
-	total, err := episodes.Clone().Count(ctx)
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to count episodes: %w", err)
-	}
-
-	episodes = episodes.Order(
-		itemmodel.ByParentIndexNumber(sql.OrderNullsLast()),
-		itemmodel.ByIndexNumber(sql.OrderNullsLast()),
-		itemmodel.BySortName(),
-	)
-	if query.StartIndex > 0 {
-		episodes = episodes.Offset(query.StartIndex)
-	}
-	if query.Limit > 0 {
-		episodes = episodes.Limit(query.Limit)
+	if query.Shuffled {
+		episodes = episodes.Order(orderRandom)
+	} else {
+		episodes = episodes.Order(
+			itemmodel.ByParentIndexNumber(sql.OrderNullsLast()),
+			itemmodel.ByIndexNumber(sql.OrderNullsLast()),
+			itemmodel.BySortName(),
+		)
 	}
 
 	records, err := episodes.AllModels(ctx)
@@ -70,7 +66,22 @@ func (s *Service) SeriesEpisodes(ctx context.Context, query EpisodeQuery) ([]*It
 		return nil, 0, fmt.Errorf("failed to query episodes: %w", err)
 	}
 
-	return records, total, nil
+	if query.StartItemID != nil {
+		if start := slices.IndexFunc(records, func(record *Item) bool { return record.ID == *query.StartItemID }); start >= 0 {
+			records = records[start:]
+		}
+	}
+
+	return page(records, query.StartIndex, query.Limit), len(records), nil
+}
+
+func page(records []*Item, startIndex, limit int) []*Item {
+	records = records[min(startIndex, len(records)):]
+	if limit > 0 && limit < len(records) {
+		records = records[:limit]
+	}
+
+	return records
 }
 
 func (s *Service) UpcomingEpisodes(ctx context.Context, viewer Viewer, libraryID *uuid.UUID, startIndex, limit int) ([]*Item, int, error) {
