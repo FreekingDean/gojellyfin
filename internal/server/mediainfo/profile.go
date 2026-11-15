@@ -83,21 +83,6 @@ func capabilities(profile api.DeviceProfile) items.Capabilities {
 	return items.Capabilities{Profiles: video, Conditions: conditions, Audio: audio, AudioEncodes: encodes}
 }
 
-const (
-	nativeAndroidProfile = "Jellyfin Android"
-	sessionKey           = "session"
-)
-
-func buildsItsOwnURL(profile api.DeviceProfile) bool {
-	for key, value := range profile {
-		if strings.EqualFold(key, "Name") {
-			return value == nativeAndroidProfile
-		}
-	}
-
-	return false
-}
-
 func conversion(plan items.Plan) url.Values {
 	query := url.Values{}
 	if plan.AudioCodec != "" {
@@ -112,19 +97,29 @@ func conversion(plan items.Plan) url.Values {
 }
 
 func streamURL(root string, itemID uuid.UUID, plan items.Plan, token, session string, startTicks int64) string {
+	query := instruction(plan, token, session, startTicks)
+	query.Set("container", plan.Container)
+	if plan.VideoCodec == "" && plan.Container == items.Container(plan.Source) && plan.AudioCodec == items.AudioCodec(plan.Source) {
+		query.Set("copyTimestamps", "true")
+	}
+
+	return fmt.Sprintf("/%s/%s/stream.%s?%s", root, itemID, plan.Container, query.Encode())
+}
+
+func playlistURL(itemID uuid.UUID, plan items.Plan, token, session string, startTicks int64) string {
+	return fmt.Sprintf("/Videos/%s/master.m3u8?%s", itemID, instruction(plan, token, session, startTicks).Encode())
+}
+
+func instruction(plan items.Plan, token, session string, startTicks int64) url.Values {
 	query := conversion(plan)
 	query.Set("mediaSourceId", plan.Source.ID.String())
-	query.Set("container", plan.Container)
 	query.Set("playSessionId", session)
 	query.Set("api_key", token)
 	if startTicks > 0 {
 		query.Set("startTimeTicks", strconv.FormatInt(startTicks, 10))
 	}
-	if plan.VideoCodec == "" && plan.Container == items.Container(plan.Source) && plan.AudioCodec == items.AudioCodec(plan.Source) {
-		query.Set("copyTimestamps", "true")
-	}
 	query.Set("allowVideoStreamCopy", "false")
 	query.Set("allowAudioStreamCopy", "false")
 
-	return fmt.Sprintf("/%s/%s/stream.%s?%s", root, itemID, plan.Container, query.Encode())
+	return query
 }

@@ -383,8 +383,13 @@ func TestService_SourceForOrder(t *testing.T) {
 			change: ChangeNone,
 		},
 		{
-			name:   "an HDR 4K with nothing beside it is encoded",
-			copies: []copy{{path: "/only.mkv", video: "h264", audio: "aac", height: 2160, hdr: true}},
+			name:    "an HDR 4K with nothing beside it is never encoded down",
+			copies:  []copy{{path: "/only.mkv", video: "h264", audio: "aac", height: 2160, hdr: true}},
+			refused: true,
+		},
+		{
+			name:   "an HDR 1080p with nothing beside it is encoded",
+			copies: []copy{{path: "/only.mkv", video: "h264", audio: "aac", height: 1080, hdr: true}},
 			want:   "/only.mkv",
 			change: ChangeVideo,
 		},
@@ -619,7 +624,7 @@ func TestService_SourceFor(t *testing.T) {
 	t.Run("encodes when the only copy is one the client cannot decode", func(t *testing.T) {
 		fixture := newFixture(t)
 		film := fixture.film(t, "movie:hdr-only")
-		fixture.copyRanged(t, film, "/media/only.mkv", "h264", "aac", 2160, ptr(streammodel.VideoRangeTypeHDR10))
+		fixture.copyRanged(t, film, "/media/only.mkv", "h264", "aac", 1080, ptr(streammodel.VideoRangeTypeHDR10))
 
 		plan, err := fixture.service.SourceFor(ctx, film, chrome)
 		if err != nil {
