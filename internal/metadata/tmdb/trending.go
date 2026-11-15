@@ -3,6 +3,7 @@ package tmdb
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
@@ -17,7 +18,7 @@ var trendingTypes = map[items.Kind]string{
 	itemmodel.KindSeries: "tv",
 }
 
-func (c *Client) Trending(ctx context.Context, kind items.Kind) ([]items.Metadata, error) {
+func (c *Client) Trending(ctx context.Context, kind items.Kind, page int) ([]items.Metadata, error) {
 	ctx, span := tracing.Start(ctx, "tmdb Trending")
 	defer span.End()
 
@@ -29,7 +30,7 @@ func (c *Client) Trending(ctx context.Context, kind items.Kind) ([]items.Metadat
 		return nil, err
 	}
 
-	trending, err := c.api.GetTrending(mediaType, trendingWindow, nil)
+	trending, err := c.api.GetTrending(mediaType, trendingWindow, map[string]string{"page": strconv.Itoa(page)})
 	if err != nil {
 		return nil, err
 	}

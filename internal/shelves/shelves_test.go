@@ -15,7 +15,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/store"
-	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
@@ -101,6 +100,7 @@ type film struct {
 	minutes  int64
 	genre    string
 	released time.Time
+	fileless bool
 }
 
 func (f *fixture) movie(t *testing.T, movie film) uuid.UUID {
@@ -118,6 +118,16 @@ func (f *fixture) movie(t *testing.T, movie film) uuid.UUID {
 	}
 	if err := f.catalogue.SaveMembership(ctx, f.libraryID, f.sourceID, []uuid.UUID{record.ID}); err != nil {
 		t.Fatalf("failed to place %q in the library: %v", movie.name, err)
+	}
+	if !movie.fileless {
+		if _, err := f.catalogue.SaveSource(ctx, items.MediaSource{
+			SourceID: f.sourceID,
+			ItemID:   record.ID,
+			Path:     "/" + f.prefix + "/" + movie.name + ".mkv",
+			Name:     movie.name,
+		}); err != nil {
+			t.Fatalf("failed to give %q a file: %v", movie.name, err)
+		}
 	}
 
 	runtime := movie.minutes * ticksPerMinute
@@ -322,89 +332,92 @@ type available bool
 
 func (a available) Enabled() bool { return bool(a) }
 
-func (available) Trending(context.Context, items.Kind, int) ([]discover.Title, error) {
+func (a available) Trending(context.Context, items.Kind) ([]discover.Title, error) {
 	return nil, nil
 }
 
-type trended []discover.Title
-
-func (trended) Enabled() bool { return true }
-
-func (t trended) Trending(_ context.Context, kind items.Kind, limit int) ([]discover.Title, error) {
-	listed := []discover.Title{}
-	for _, title := range t {
-		if title.Kind == kind && len(listed) < limit {
-			listed = append(listed, title)
-		}
-	}
-
-	return listed, nil
+type trendingStub struct {
+	keys   []string
+	failed bool
 }
 
-func TestService_TrendingCard(t *testing.T) {
-	ctx := context.Background()
-	poster := func(kind items.Kind, url string) discover.Title {
-		return discover.Title{Kind: kind, Metadata: items.Metadata{Images: []items.RemoteImage{{Kind: imagemodel.KindPrimary, URL: url}}}}
-	}
-	listed := trended{
-		poster(itemmodel.KindMovie, "https://cdn.invalid/first.jpg"),
-		{Kind: itemmodel.KindMovie},
-		poster(itemmodel.KindSeries, "https://cdn.invalid/show.jpg"),
-		poster(itemmodel.KindMovie, "https://cdn.invalid/second.jpg"),
-	}
-	service := newService(nil, listed, stored("trending-movies"), time.Now)
+func (t trendingStub) Enabled() bool { return true }
 
-	card, found, err := service.Card(ctx, ID("trending-movies"), items.Viewer{}, uuid.Nil, 5)
-	if err != nil || !found {
-		t.Fatalf("card = %v, %v, want the trending card", found, err)
+func (t trendingStub) Trending(_ context.Context, kind items.Kind) ([]discover.Title, error) {
+	if t.failed {
+		return nil, errors.New("the provider is unreachable")
 	}
 
-	urls := []string{}
-	for _, image := range card.Posters {
-		urls = append(urls, image.URL)
-	}
-	if want := []string{"https://cdn.invalid/first.jpg", "https://cdn.invalid/second.jpg"}; !slices.Equal(urls, want) {
-		t.Errorf("posters = %v, want %v, the movies the provider has a poster for in its order", urls, want)
-	}
-	if card.Name != "Trending Movies" || card.Personal || card.Fresh != 0 {
-		t.Errorf("card = %q personal %v fresh %d, want the shelf's name, shared, with no count", card.Name, card.Personal, card.Fresh)
+	titles := make([]discover.Title, 0, len(t.keys))
+	for _, key := range t.keys {
+		titles = append(titles, discover.Title{Kind: kind, Key: key})
 	}
 
-	if _, found, err := newService(nil, available(false), stored("trending-movies"), time.Now).Card(ctx, ID("trending-movies"), items.Everyone, uuid.Nil, 5); err != nil || found {
-		t.Errorf("card with no provider = %v, %v, want none", found, err)
-	}
+	return titles, nil
 }
 
 func TestService_TrendingShelves(t *testing.T) {
+	fixture := newFixture(t)
 	ctx := context.Background()
+	key := func(name string) string { return fixture.prefix + ":" + name }
+
+	fixture.movie(t, film{name: "Second", rating: 7, minutes: 90, genre: "Drama"})
+	fixture.movie(t, film{name: "First", rating: 7, minutes: 90, genre: "Drama"})
+	fixture.movie(t, film{name: "Orphan", rating: 7, minutes: 90, genre: "Drama", fileless: true})
+
+	everything := trendingStub{keys: []string{key("Missing"), key("First"), key("Orphan"), key("Second")}}
 
 	tests := []struct {
 		name      string
-		discovery available
+		discovery Discovery
+		viewer    items.Viewer
 		want      []string
+		absent    bool
 	}{
-		{name: "offered while the provider answers", discovery: true, want: []string{"Trending Movies", "Trending Shows"}},
-		{name: "left out with no provider to ask", discovery: false, want: []string{}},
+		{name: "only what the library holds with a file, in the provider's order", discovery: everything, viewer: items.Everyone, want: []string{"First", "Second"}},
+		{name: "what the viewer cannot see is left out", discovery: everything, viewer: items.Viewer{Libraries: []uuid.UUID{uuid.New()}}, absent: true},
+		{name: "nothing held leaves the shelf out", discovery: trendingStub{keys: []string{key("Missing"), key("Orphan")}}, viewer: items.Everyone, absent: true},
+		{name: "a provider that cannot answer leaves the shelf out", discovery: trendingStub{failed: true}, viewer: items.Everyone, absent: true},
+		{name: "no provider leaves the shelf out", discovery: available(false), viewer: items.Everyone, absent: true},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			service := newService(nil, test.discovery, stored("trending-movies", "trending-shows"), time.Now)
+			service := newService(fixture.catalogue, test.discovery, stored("trending-movies"), time.Now)
 
-			listed, err := service.Shelves(ctx, items.Everyone, uuid.New())
+			listed, err := service.Shelves(ctx, test.viewer, fixture.userID)
 			if err != nil {
 				t.Fatalf("failed to list the shelves: %v", err)
 			}
-
-			names := make([]string, 0, len(listed))
-			for _, shelf := range listed {
-				names = append(names, shelf.Name)
-				if shelf.Unowned == "" {
-					t.Errorf("%s names no kind to discover", shelf.Name)
+			if test.absent {
+				if len(listed) != 0 {
+					t.Fatalf("shelves = %v, want none", listed)
 				}
+
+				return
 			}
-			if !slices.Equal(names, test.want) {
-				t.Errorf("shelves = %v, want %v", names, test.want)
+			if len(listed) != 1 || listed[0].Name != "Trending Movies" {
+				t.Fatalf("shelves = %v, want Trending Movies", listed)
+			}
+
+			latest, err := service.Latest(ctx, listed[0], 20, false)
+			if err != nil {
+				t.Fatalf("failed to read the shelf: %v", err)
+			}
+			got := make([]string, 0, len(latest))
+			for _, entry := range latest {
+				got = append(got, entry.Item.Name)
+			}
+			if !slices.Equal(got, test.want) {
+				t.Errorf("trending = %v, want %v", got, test.want)
+			}
+
+			card, found, err := service.Card(ctx, listed[0].ID, test.viewer, uuid.Nil, 5)
+			if err != nil || !found {
+				t.Fatalf("card = %v, %v, want the trending card", found, err)
+			}
+			if card.Name != "Trending Movies" || card.Personal || card.Fresh != 0 {
+				t.Errorf("card = %q personal %v fresh %d, want the shelf's name, shared, with no count", card.Name, card.Personal, card.Fresh)
 			}
 		})
 	}

@@ -17,10 +17,12 @@ import (
 var errUnreachable = errors.New("the provider is unreachable")
 
 type stubProvider struct {
-	disabled bool
-	trending []int
-	failing  bool
-	asked    []string
+	disabled   bool
+	trending   []int
+	later      []int
+	failing    bool
+	failsLater bool
+	asked      []string
 }
 
 func (s *stubProvider) Enabled() bool { return !s.disabled }
@@ -60,14 +62,21 @@ func (s *stubProvider) Series(_ context.Context, tmdbID int) (items.Metadata, bo
 	return s.detail("series", tmdbID)
 }
 
-func (s *stubProvider) Trending(_ context.Context, kind items.Kind) ([]items.Metadata, error) {
-	s.asked = append(s.asked, "trending:"+string(kind))
-	if s.failing {
+func (s *stubProvider) Trending(_ context.Context, kind items.Kind, page int) ([]items.Metadata, error) {
+	if page == 1 {
+		s.asked = append(s.asked, "trending:"+string(kind))
+	}
+	if s.failing || (page > 1 && s.failsLater) {
 		return nil, errUnreachable
 	}
 
-	titles := make([]items.Metadata, 0, len(s.trending)+1)
-	for _, tmdbID := range s.trending {
+	listed := map[int][]int{1: s.trending, 2: s.later}[page]
+	if len(listed) == 0 {
+		return nil, nil
+	}
+
+	titles := make([]items.Metadata, 0, len(listed)+1)
+	for _, tmdbID := range listed {
 		titles = append(titles, summary(tmdbID))
 	}
 
@@ -118,23 +127,20 @@ func TestService_Trending(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name  string
-		held  held
-		limit int
-		want  []uint32
+		name     string
+		provider *stubProvider
+		want     []uint32
 	}{
-		{name: "everything the library lacks, in the provider's order", want: []uint32{603, 604, 605}},
-		{name: "without a title the library holds", held: held{"movie:tmdb:604"}, want: []uint32{603, 605}},
-		{name: "a series sharing the id does not hide the movie", held: held{"series:tmdb:604"}, want: []uint32{603, 604, 605}},
-		{name: "the limit counts what is left after the library's own", held: held{"movie:tmdb:603"}, limit: 2, want: []uint32{604, 605}},
+		{name: "one page, in the provider's order", provider: &stubProvider{trending: []int{603, 604}}, want: []uint32{603, 604}},
+		{name: "later pages follow the first", provider: &stubProvider{trending: []int{603, 604}, later: []int{605}}, want: []uint32{603, 604, 605}},
+		{name: "a later page that fails keeps what came before", provider: &stubProvider{trending: []int{603}, later: []int{605}, failsLater: true}, want: []uint32{603}},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			provider := &stubProvider{trending: []int{603, 604, 605}}
-			service := newService(provider, test.held, time.Now)
+			service := newService(test.provider, held{}, time.Now)
 
-			titles, err := service.Trending(ctx, itemmodel.KindMovie, test.limit)
+			titles, err := service.Trending(ctx, itemmodel.KindMovie)
 			if err != nil {
 				t.Fatalf("failed to read what is trending: %v", err)
 			}
@@ -157,7 +163,7 @@ func TestService_Trending_AsksOncePerHour(t *testing.T) {
 	service := newService(provider, held{}, clock.now)
 
 	for range 3 {
-		if _, err := service.Trending(ctx, itemmodel.KindMovie, 0); err != nil {
+		if _, err := service.Trending(ctx, itemmodel.KindMovie); err != nil {
 			t.Fatalf("failed to read what is trending: %v", err)
 		}
 	}
@@ -167,7 +173,7 @@ func TestService_Trending_AsksOncePerHour(t *testing.T) {
 
 	clock.at = clock.at.Add(trendingFor)
 	provider.trending = []int{700}
-	titles, err := service.Trending(ctx, itemmodel.KindMovie, 0)
+	titles, err := service.Trending(ctx, itemmodel.KindMovie)
 	if err != nil {
 		t.Fatalf("failed to read what is trending: %v", err)
 	}
@@ -177,7 +183,7 @@ func TestService_Trending_AsksOncePerHour(t *testing.T) {
 
 	clock.at = clock.at.Add(trendingFor)
 	provider.failing = true
-	titles, err = service.Trending(ctx, itemmodel.KindMovie, 0)
+	titles, err = service.Trending(ctx, itemmodel.KindMovie)
 	if err != nil {
 		t.Fatalf("a provider that stopped answering failed the row: %v", err)
 	}
@@ -189,7 +195,7 @@ func TestService_Trending_AsksOncePerHour(t *testing.T) {
 func TestService_Trending_FailsWithNothingToServe(t *testing.T) {
 	service := newService(&stubProvider{failing: true}, held{}, time.Now)
 
-	if _, err := service.Trending(context.Background(), itemmodel.KindMovie, 0); !errors.Is(err, errUnreachable) {
+	if _, err := service.Trending(context.Background(), itemmodel.KindMovie); !errors.Is(err, errUnreachable) {
 		t.Errorf("err = %v, want the provider's", err)
 	}
 }
@@ -200,7 +206,7 @@ func TestService_Title(t *testing.T) {
 	t.Run("a summary is answered from the trending list without a request", func(t *testing.T) {
 		provider := &stubProvider{trending: []int{603}}
 		service := newService(provider, held{}, time.Now)
-		if _, err := service.Trending(ctx, itemmodel.KindMovie, 0); err != nil {
+		if _, err := service.Trending(ctx, itemmodel.KindMovie); err != nil {
 			t.Fatalf("failed to read what is trending: %v", err)
 		}
 
@@ -219,7 +225,7 @@ func TestService_Title(t *testing.T) {
 	t.Run("the whole record is fetched once and kept", func(t *testing.T) {
 		provider := &stubProvider{trending: []int{603}}
 		service := newService(provider, held{}, time.Now)
-		if _, err := service.Trending(ctx, itemmodel.KindMovie, 0); err != nil {
+		if _, err := service.Trending(ctx, itemmodel.KindMovie); err != nil {
 			t.Fatalf("failed to read what is trending: %v", err)
 		}
 
@@ -232,7 +238,7 @@ func TestService_Title(t *testing.T) {
 				t.Error("the title carries the summary rather than the record")
 			}
 		}
-		if _, err := service.Trending(ctx, itemmodel.KindMovie, 0); err != nil {
+		if _, err := service.Trending(ctx, itemmodel.KindMovie); err != nil {
 			t.Fatalf("failed to read what is trending: %v", err)
 		}
 		title, _, _ := service.Summary(ctx, ID(itemmodel.KindMovie, 603))

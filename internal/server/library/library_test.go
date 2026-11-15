@@ -529,7 +529,7 @@ func (noProvider) Series(context.Context, int) (items.Metadata, bool, error) {
 	return items.Metadata{}, false, nil
 }
 
-func (noProvider) Trending(context.Context, items.Kind) ([]items.Metadata, error) {
+func (noProvider) Trending(context.Context, items.Kind, int) ([]items.Metadata, error) {
 	return nil, nil
 }
 

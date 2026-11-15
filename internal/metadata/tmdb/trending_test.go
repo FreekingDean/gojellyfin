@@ -14,7 +14,7 @@ func TestClient_Trending(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("movies carry what a card needs", func(t *testing.T) {
-		titles, err := stub(t).Trending(ctx, itemmodel.KindMovie)
+		titles, err := stub(t).Trending(ctx, itemmodel.KindMovie, 1)
 		if err != nil {
 			t.Fatalf("failed to read what is trending: %v", err)
 		}
@@ -43,7 +43,7 @@ func TestClient_Trending(t *testing.T) {
 	})
 
 	t.Run("a series is named and dated by the fields a series uses", func(t *testing.T) {
-		titles, err := stub(t).Trending(ctx, itemmodel.KindSeries)
+		titles, err := stub(t).Trending(ctx, itemmodel.KindSeries, 1)
 		if err != nil {
 			t.Fatalf("failed to read what is trending: %v", err)
 		}
@@ -54,7 +54,7 @@ func TestClient_Trending(t *testing.T) {
 
 	t.Run("a kind nothing trends as is refused before a request", func(t *testing.T) {
 		stubbing := newStub(t)
-		if _, err := stubbing.client.Trending(ctx, itemmodel.KindEpisode); err == nil {
+		if _, err := stubbing.client.Trending(ctx, itemmodel.KindEpisode, 1); err == nil {
 			t.Error("episodes trended")
 		}
 		if asked := stubbing.requests(); len(asked) != 0 {
@@ -67,7 +67,7 @@ func TestClient_Trending(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to build the client: %v", err)
 		}
-		if _, err := client.Trending(ctx, items.Kind(itemmodel.KindMovie)); !errors.Is(err, ErrNotConfigured) {
+		if _, err := client.Trending(ctx, items.Kind(itemmodel.KindMovie), 1); !errors.Is(err, ErrNotConfigured) {
 			t.Errorf("err = %v, want ErrNotConfigured", err)
 		}
 	})

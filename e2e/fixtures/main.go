@@ -13,6 +13,7 @@ import (
 	"image/png"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -270,10 +271,14 @@ func seed() error {
 		watching[name] = item.ID
 	}
 
-	if err := playableMovie(ctx, client, catalogue, record.ID, downloader.ID, playable, os.Getenv("FIXTURE_MEDIA")); err != nil {
+	trending, err := strconv.Atoi(os.Getenv("FIXTURE_TRENDING_TMDB"))
+	if err != nil {
+		return fmt.Errorf("FIXTURE_TRENDING_TMDB names no TMDB id: %w", err)
+	}
+	if err := playableMovie(ctx, client, catalogue, record.ID, downloader.ID, playable, items.MovieKey(trending), os.Getenv("FIXTURE_MEDIA")); err != nil {
 		return err
 	}
-	if err := playableMovie(ctx, client, catalogue, record.ID, downloader.ID, transcoded, os.Getenv("FIXTURE_TRANSCODE")); err != nil {
+	if err := playableMovie(ctx, client, catalogue, record.ID, downloader.ID, transcoded, "movie:"+slugify(transcoded), os.Getenv("FIXTURE_TRANSCODE")); err != nil {
 		return err
 	}
 
@@ -420,7 +425,7 @@ func (s shelf) episode(ctx context.Context, itemID uuid.UUID, title string) erro
 	return probe.New(s.catalogue, ffmpeg.New(), reports.New(s.client, nil)).ProbeSource(ctx, source.ID)
 }
 
-func playableMovie(ctx context.Context, client *store.Client, catalogue *items.Service, libraryID, sourceID uuid.UUID, name, path string) error {
+func playableMovie(ctx context.Context, client *store.Client, catalogue *items.Service, libraryID, sourceID uuid.UUID, name, key, path string) error {
 	if path == "" {
 		return fmt.Errorf("no media file was handed over for %q", name)
 	}
@@ -429,7 +434,7 @@ func playableMovie(ctx context.Context, client *store.Client, catalogue *items.S
 	title, copied := int64(downloaderTitle), int64(downloaderFile)
 	item, err := catalogue.SaveScanned(ctx, items.Item{
 		Kind:         itemmodel.KindMovie,
-		Key:          "movie:" + slugify(name),
+		Key:          key,
 		Name:         name,
 		SortName:     strings.ToLower(name),
 		DateModified: &modified,

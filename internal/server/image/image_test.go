@@ -144,7 +144,7 @@ func (trendingProvider) Series(context.Context, int) (items.Metadata, bool, erro
 	return items.Metadata{}, true, nil
 }
 
-func (trendingProvider) Trending(context.Context, items.Kind) ([]items.Metadata, error) {
+func (trendingProvider) Trending(context.Context, items.Kind, int) ([]items.Metadata, error) {
 	return nil, nil
 }
 
