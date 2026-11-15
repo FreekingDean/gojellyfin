@@ -52,7 +52,7 @@ const WANTED_SHOW = {
 
 const CLIENT_IMAGE = 'jellyfin/jellyfin:12.4';
 
-async function boot({ mediaSeconds = 20 } = {}) {
+async function boot({ mediaSeconds = 20, playableEpisodes = false } = {}) {
   const adminUrl = process.env.DATABASE_URL;
   if (!adminUrl) {
     throw new Error('DATABASE_URL is not set, so there is no server to create a scratch database on');
@@ -107,6 +107,7 @@ async function boot({ mediaSeconds = 20 } = {}) {
       ...serverEnv,
       FIXTURE_MEDIA: media.playable,
       FIXTURE_TRANSCODE: media.transcoded,
+      ...(playableEpisodes ? { FIXTURE_EPISODES: episodeMedia(media.playable) } : {}),
       FIXTURE_DOWNLOADER: downloaderUrl,
       POSTER_DIR: posterRoot,
       UNOWNED_POSTER_DIR: path.join(posterRoot, POSTER_SIZE),
@@ -231,6 +232,23 @@ function encodeTranscoded() {
   ]);
 
   return target;
+}
+
+// Each episode a file of its own, since a path belongs to one item, so that
+// the player has a next episode to move on to.
+function episodeMedia(playable) {
+  const directory = path.join(path.dirname(playable), 'episodes');
+  fs.rmSync(directory, { recursive: true, force: true });
+  fs.mkdirSync(directory, { recursive: true });
+  for (const title of [...EPISODES, FINALE]) {
+    fs.copyFileSync(playable, path.join(directory, slugify(title) + '.webm'));
+  }
+
+  return directory;
+}
+
+function slugify(title) {
+  return title.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean).join('-');
 }
 
 function encodePlayable(seconds) {

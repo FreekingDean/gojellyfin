@@ -282,7 +282,7 @@ func seed() error {
 		return err
 	}
 
-	shelf := shelf{client: client, catalogue: catalogue, libraryID: shown.ID, sourceID: downloader.ID, watching: watching}
+	shelf := shelf{client: client, catalogue: catalogue, libraryID: shown.ID, sourceID: downloader.ID, watching: watching, media: os.Getenv("FIXTURE_EPISODES")}
 	if err := shelf.series(ctx, series, episodes, modified); err != nil {
 		return err
 	}
@@ -327,6 +327,7 @@ type shelf struct {
 	libraryID uuid.UUID
 	sourceID  uuid.UUID
 	watching  map[string]uuid.UUID
+	media     string
 }
 
 func (s shelf) series(ctx context.Context, name string, titles []string, modified time.Time) error {
@@ -378,7 +379,7 @@ func (s shelf) series(ctx context.Context, name string, titles []string, modifie
 			return err
 		}
 
-		if err := file(ctx, s.catalogue, s.sourceID, item.ID, title); err != nil {
+		if err := s.episode(ctx, item.ID, title); err != nil {
 			return err
 		}
 		if err := member(ctx, s.client, s.libraryID, s.sourceID, item.ID); err != nil {
@@ -397,6 +398,26 @@ func (s shelf) series(ctx context.Context, name string, titles []string, modifie
 	}
 
 	return nil
+}
+
+func (s shelf) episode(ctx context.Context, itemID uuid.UUID, title string) error {
+	if s.media == "" {
+		return file(ctx, s.catalogue, s.sourceID, itemID, title)
+	}
+
+	modified := time.Now()
+	source, err := s.catalogue.SaveSource(ctx, items.MediaSource{
+		SourceID:     s.sourceID,
+		ItemID:       itemID,
+		Path:         filepath.Join(s.media, slugify(title)+".webm"),
+		Name:         title,
+		DateModified: &modified,
+	})
+	if err != nil {
+		return err
+	}
+
+	return probe.New(s.catalogue, ffmpeg.New(), reports.New(s.client, nil)).ProbeSource(ctx, source.ID)
 }
 
 func playableMovie(ctx context.Context, client *store.Client, catalogue *items.Service, libraryID, sourceID uuid.UUID, name, path string) error {

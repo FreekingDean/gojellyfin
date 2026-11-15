@@ -14,7 +14,7 @@ module.exports = async function globalSetup() {
   const tv = device();
   tv.adb(['wait-for-device']);
 
-  const app = await boot({ mediaSeconds: MEDIA_SECONDS });
+  const app = await boot({ mediaSeconds: MEDIA_SECONDS, playableEpisodes: true });
 
   // The emulator's own 127.0.0.1 is forwarded to the harness, so the app is
   // given the same address the server publishes and the posters live at.
