@@ -17,14 +17,14 @@ export const build = '12.0.0+gojellyfin.0.0.214';
 export const titles: Schemas['RequestedTitle'][] = [
   {
     ItemId: '1',
-    Name: 'The Brutalist',
+    Name: 'Example Movie A',
     Kind: 'Movie',
     Requests: [{ Id: 'r1', UserId: 'u3', UserName: 'sam', Status: 'Pending', CreatedAt: ago(41) }],
     Submissions: [],
   },
   {
     ItemId: '2',
-    Name: 'Shōgun',
+    Name: 'Example Series A',
     Kind: 'Series',
     Requests: [
       { Id: 'r2', UserId: 'u4', UserName: 'alex', Status: 'Pending', CreatedAt: ago(3 * HOUR) },
@@ -34,14 +34,14 @@ export const titles: Schemas['RequestedTitle'][] = [
   },
   {
     ItemId: '3',
-    Name: 'Anora',
+    Name: 'Example Movie B',
     Kind: 'Movie',
     Requests: [{ Id: 'r4', UserId: 'u4', UserName: 'alex', Status: 'Pending', CreatedAt: ago(DAY) }],
     Submissions: [],
   },
   {
     ItemId: '4',
-    Name: 'Conclave',
+    Name: 'Example Movie C',
     Kind: 'Movie',
     Requests: [{ Id: 'r5', UserId: 'u1', UserName: 'dean', Status: 'Approved', CreatedAt: ago(DAY + 2 * HOUR) }],
     Submissions: [
@@ -51,14 +51,14 @@ export const titles: Schemas['RequestedTitle'][] = [
   },
   {
     ItemId: '5',
-    Name: 'Slow Horses',
+    Name: 'Example Series B',
     Kind: 'Series',
     Requests: [{ Id: 'r6', UserId: 'u2', UserName: 'maya', Status: 'Approved', CreatedAt: ago(2 * DAY) }],
     Submissions: [{ SourceName: 'Sonarr', AcceptedAt: ago(2 * DAY) }],
   },
   {
     ItemId: '6',
-    Name: 'Megalopolis',
+    Name: 'Example Movie D',
     Kind: 'Movie',
     Requests: [{ Id: 'r7', UserId: 'u3', UserName: 'sam', Status: 'Declined', CreatedAt: ago(4 * DAY) }],
     Submissions: [],
@@ -69,51 +69,51 @@ export const reports: Schemas['Report'][] = [
   {
     Id: 'p1',
     ItemId: '11',
-    ItemName: 'Heat',
+    ItemName: 'Example Movie E',
     Kind: 'Unplayable',
     Origin: 'Probe',
     Note: 'ffprobe could not read the file',
     Status: 'Open',
-    Path: '/media/movies/Heat (1995)/Heat (1995) Bluray-1080p.mkv',
+    Path: '/media/movies/Example Movie E (2020)/Example Movie E (2020) Bluray-1080p.mkv',
     CreatedAt: ago(HOUR),
     Replaceable: true,
   },
   {
     Id: 'p2',
     ItemId: '12',
-    ItemName: 'Severance S2 E3',
+    ItemName: 'Example Series C S2 E3',
     Kind: 'Audio',
     Origin: 'User',
     Note: 'Sound drops out after the cold open',
     Status: 'Open',
     UserName: 'maya',
-    Path: '/media/tv/Severance/Season 02/Severance - S02E03 - Who Is Alive WEBDL-2160p.mkv',
+    Path: '/media/tv/Example Series C/Season 02/Example Series C - S02E03 WEBDL-2160p.mkv',
     CreatedAt: ago(6 * HOUR),
     Replaceable: true,
   },
   {
     Id: 'p3',
     ItemId: '13',
-    ItemName: 'Paddington 2',
+    ItemName: 'Example Movie F',
     Kind: 'Unplayable',
     Origin: 'Delete',
     Note: '',
     Status: 'Open',
     UserName: 'sam',
-    Path: '/media/movies/Paddington 2 (2017)/Paddington 2 (2017) WEBDL-1080p.mkv',
+    Path: '/media/movies/Example Movie F (2021)/Example Movie F (2021) WEBDL-1080p.mkv',
     CreatedAt: ago(DAY),
     Replaceable: false,
   },
   {
     Id: 'p4',
     ItemId: '14',
-    ItemName: 'The Bear S3 E1',
+    ItemName: 'Example Series D S3 E1',
     Kind: 'Subtitles',
     Origin: 'User',
     Note: 'English subtitles are out of sync',
     Status: 'Resolved',
     UserName: 'alex',
-    Path: '/media/tv/The Bear/Season 03/The Bear - S03E01 - Tomorrow WEBDL-1080p.mkv',
+    Path: '/media/tv/Example Series D/Season 03/Example Series D - S03E01 WEBDL-1080p.mkv',
     CreatedAt: ago(3 * DAY),
     Replaceable: true,
   },
@@ -135,9 +135,9 @@ export const health: Health[] = [
 export type Watching = { user: string; device: string; title: string; method: 'Direct' | 'Remux' | 'Encoding 1080p'; progress: number };
 
 export const watching: Watching[] = [
-  { user: 'maya', device: 'Android TV', title: 'Severance S2 E4', method: 'Remux', progress: 62 },
-  { user: 'dean', device: 'Chrome', title: 'Dune: Part Two', method: 'Encoding 1080p', progress: 18 },
-  { user: 'sam', device: 'Swiftfin', title: 'The Bear S3 E1', method: 'Direct', progress: 81 },
+  { user: 'maya', device: 'Android TV', title: 'Example Series C S2 E4', method: 'Remux', progress: 62 },
+  { user: 'dean', device: 'Chrome', title: 'Example Movie G', method: 'Encoding 1080p', progress: 18 },
+  { user: 'sam', device: 'Swiftfin', title: 'Example Series D S3 E1', method: 'Direct', progress: 81 },
 ];
 
 export const library = { movies: 1200, shows: 80, episodes: 4000, refreshed: ago(38), unprobed: 12, unidentified: 3 };
@@ -145,13 +145,13 @@ export const library = { movies: 1200, shows: 80, episodes: 4000, refreshed: ago
 export type Activity = { at: string; text: string; tone?: Tone };
 
 export const activity: Activity[] = [
-  { at: ago(2), text: 'maya started playing Severance S2 E4' },
-  { at: ago(41), text: 'sam requested The Brutalist' },
-  { at: ago(HOUR), text: 'Probe reported Heat as unplayable', tone: 'warn' },
-  { at: ago(2 * HOUR), text: 'Radarr 4K refused Conclave: 401 Unauthorized', tone: 'bad' },
+  { at: ago(2), text: 'maya started playing Example Series C S2 E4' },
+  { at: ago(41), text: 'sam requested Example Movie A' },
+  { at: ago(HOUR), text: 'Probe reported Example Movie E as unplayable', tone: 'warn' },
+  { at: ago(2 * HOUR), text: 'Radarr 4K refused Example Movie C: 401 Unauthorized', tone: 'bad' },
   { at: ago(3 * HOUR), text: 'alex signed in with single sign-on for the first time' },
   { at: ago(5 * HOUR), text: 'dean changed the password for sam' },
-  { at: ago(DAY), text: 'sam pressed Delete on Paddington 2' },
+  { at: ago(DAY), text: 'sam pressed Delete on Example Movie F' },
   { at: ago(DAY + HOUR), text: 'Refresh Libraries finished: 14 titles added, 2 removed' },
 ];
 
