@@ -40,6 +40,7 @@ type rendition struct {
 }
 
 func (h *Handler) ServeMasterPlaylist(w http.ResponseWriter, r *http.Request) {
+	log.Printf("hls-debug master %s", r.URL.Path)
 	_, source, _, ok := h.item(w, r)
 	if !ok {
 		return
@@ -205,7 +206,11 @@ func (h *Handler) cut(w http.ResponseWriter, r *http.Request, source *items.Medi
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 
+	began := time.Now()
+	log.Printf("hls-debug begin %s header=%v %+v", r.URL.Path, header, segment.Window)
+	defer func() { log.Printf("hls-debug end %s after %s ctx=%v", r.URL.Path, time.Since(began), r.Context().Err()) }()
 	output, err := h.transcoder.Segment(ctx, segment)
+	log.Printf("hls-debug opened %s after %s err=%v", r.URL.Path, time.Since(began), err)
 	if err != nil {
 		log.Printf("failed to cut segment %+v of %s: %v", segment.Window, source.Path, err)
 		switch {
@@ -247,6 +252,7 @@ func (h *Handler) cut(w http.ResponseWriter, r *http.Request, source *items.Medi
 	} else {
 		err = transcode.Fragments(body, stalling, segment.Bounds())
 	}
+	log.Printf("hls-debug written %s after %s err=%v", r.URL.Path, time.Since(began), err)
 	if err != nil {
 		log.Printf("segment %+v of %s stopped: %v", segment.Window, source.Path, err)
 		panic(http.ErrAbortHandler)
