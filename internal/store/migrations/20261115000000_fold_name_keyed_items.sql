@@ -15,8 +15,10 @@
 --   * Every old row left over has no file beneath it, so it is marked deleted, which is what the sweep would have
 --     done with it.
 -- Every step is a set join, and a lock held longer than the timeout fails the run rather than stalling a live server
--- behind it. Running it again finds no old rows without a file and changes nothing.
+-- behind it, and a run whose client has gone away, its Job deleted, notices within ten seconds and rolls back rather
+-- holding its locks against the next one. Running it again finds no old rows without a file and changes nothing.
 SET LOCAL lock_timeout = '30s';
+SET LOCAL client_connection_check_interval = '10s';
 
 CREATE INDEX IF NOT EXISTS "item_parent_id" ON "items" ("parent_id");
 CREATE INDEX IF NOT EXISTS "useritemdata_item_id" ON "user_item_data" ("item_id");
