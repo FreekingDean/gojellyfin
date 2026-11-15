@@ -3,6 +3,7 @@ package activity
 import (
 	"context"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	entrymodel "github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
+	usermodel "github.com/FreekingDean/gojellyfin/internal/store/user"
 )
 
 type fixture struct {
@@ -139,6 +141,66 @@ func TestService_Entries(t *testing.T) {
 			}
 			if total != test.total {
 				t.Errorf("total = %d, want %d", total, test.total)
+			}
+		})
+	}
+}
+
+func TestService_EntriesFilters(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := context.Background()
+
+	username, err := fixture.client.User.Query().Where(usermodel.ID(fixture.userID)).OnlyModel(ctx)
+	if err != nil {
+		t.Fatalf("failed to read the user: %v", err)
+	}
+
+	seed := func(name, kind, overview string, severity Severity, at time.Duration, userID *uuid.UUID) {
+		entry, err := fixture.client.ActivityLogEntry.Create().
+			SetName(name).
+			SetKind(kind).
+			SetOverview(overview).
+			SetShortOverview("short " + name).
+			SetSeverity(severity).
+			SetCreatedAt(fixture.future.Add(at)).
+			SetNillableUserID(userID).
+			Save(ctx)
+		if err != nil {
+			t.Fatalf("failed to create %q: %v", name, err)
+		}
+		fixture.ids = append(fixture.ids, entry.ID)
+	}
+
+	seed("Alpha Scan", KindLibraryScanCompleted, "Scanned the films", entrymodel.SeverityInformation, 0, nil)
+	seed("Bravo Login", KindAuthenticationSucceeded, "Signed in from a phone", entrymodel.SeverityWarning, time.Minute, &fixture.userID)
+	seed("Charlie Error", KindLibraryScanCompleted, "Scan failed", entrymodel.SeverityError, 2*time.Minute, nil)
+
+	warning := entrymodel.SeverityWarning
+	tests := []struct {
+		name  string
+		query Query
+		want  []string
+	}{
+		{"matches part of a name in any case", Query{Name: "SCAN"}, []string{"Alpha Scan"}},
+		{"matches part of an overview", Query{Overview: "phone"}, []string{"Bravo Login"}},
+		{"matches part of a short overview", Query{ShortOverview: "charlie"}, []string{"Charlie Error"}},
+		{"matches part of a type", Query{Kind: "authentication"}, []string{"Bravo Login"}},
+		{"matches part of the username", Query{Username: strings.ToUpper(username.Username[:6])}, []string{"Bravo Login"}},
+		{"matches a severity exactly", Query{Severity: &warning}, []string{"Bravo Login"}},
+		{"sorts by severity as a level rather than a word", Query{Sort: []Sort{{Field: SortBySeverity, Descending: true}}}, []string{"Charlie Error", "Bravo Login", "Alpha Scan"}},
+		{"sorts by name ascending", Query{Sort: []Sort{{Field: SortByName}}}, []string{"Alpha Scan", "Bravo Login", "Charlie Error"}},
+		{"breaks a tie with the next key", Query{Sort: []Sort{{Field: SortByKind}, {Field: SortByCreated, Descending: true}}}, []string{"Bravo Login", "Charlie Error", "Alpha Scan"}},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			test.query.MinDate = &fixture.future
+			got, total := fixture.names(t, test.query)
+			if !slices.Equal(got, test.want) {
+				t.Errorf("entries = %v, want %v", got, test.want)
+			}
+			if total != len(test.want) {
+				t.Errorf("total = %d, want %d", total, len(test.want))
 			}
 		})
 	}

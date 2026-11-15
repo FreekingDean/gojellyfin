@@ -12,7 +12,7 @@
                 <h2 class="sectionTitle">Library Sources</h2>
             </div>
             <p class="fieldDescription">
-                Connect a Sonarr or Radarr instance and bind it to a library. Several instances may feed one
+                Connect a Sonarr, Radarr or Lidarr instance and bind it to a library. Several instances may feed one
                 library, and one instance may feed several libraries when each binding names a different tag.
                 Each connection is saved on its own.
             </p>
@@ -55,6 +55,7 @@
                     <select data-id="selKind" class="emby-select-withcolor emby-select">
                         <option value="radarr">Radarr</option>
                         <option value="sonarr">Sonarr</option>
+                        <option value="lidarr">Lidarr</option>
                     </select>
                 </div>
             </div>
@@ -70,7 +71,7 @@
                 <select data-id="selApiKeyVariable" class="emby-select-withcolor emby-select"></select>
                 <div class="fieldDescription">
                     The environment variable on the server that holds the key; the key itself is never stored.
-                    Take the key from Settings &rarr; General &rarr; Security in Sonarr or Radarr and set it on
+                    Take the key from Settings &rarr; General &rarr; Security in Sonarr, Radarr or Lidarr and set it on
                     the server as a variable beginning with SOURCE_API_KEY_. Only variables already set are offered.
                 </div>
             </div>
@@ -195,9 +196,9 @@
 
     <script type="text/javascript">
         window.GoJellyfinSources = {
-            collectionTypes: { radarr: 'movies', sonarr: 'tvshows' },
-            icons: { radarr: 'movie', sonarr: 'live_tv' },
-            names: { radarr: 'Radarr', sonarr: 'Sonarr' },
+            collectionTypes: { radarr: 'movies', sonarr: 'tvshows', lidarr: 'music' },
+            icons: { radarr: 'movie', sonarr: 'live_tv', lidarr: 'library_music' },
+            names: { radarr: 'Radarr', sonarr: 'Sonarr', lidarr: 'Lidarr' },
 
             libraries: [],
             connections: [],
@@ -258,7 +259,7 @@
                 const card = clone.querySelector('.card');
 
                 card.querySelector('[data-id=name]').textContent = 'Add connection';
-                card.querySelector('[data-id=detail]').textContent = 'Sonarr or Radarr';
+                card.querySelector('[data-id=detail]').textContent = 'Sonarr, Radarr or Lidarr';
                 card.querySelector('[data-id=icon]').classList.add('add');
                 card.querySelector('[data-id=tile]').classList.add('defaultCardBackground5');
 

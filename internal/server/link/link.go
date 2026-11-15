@@ -45,6 +45,7 @@ var (
 
 type WaitingService interface {
 	Waiting(ctx context.Context) ([]*quickconnect.Request, error)
+	Nearby(ctx context.Context, address string) ([]*quickconnect.Request, error)
 }
 
 type Handler struct {
@@ -70,7 +71,11 @@ func (h *Handler) Register(m *mux.Mux) {
 }
 
 func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
-	route := Route(codeFrom(r))
+	code := codeFrom(r)
+	if code == "" {
+		code = h.onlyNearby(r)
+	}
+	route := Route(code)
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     ssoReturnCookie,
@@ -82,6 +87,21 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 	})
 	http.Redirect(w, r, clientRoot+route, http.StatusFound)
+}
+
+func (h *Handler) onlyNearby(r *http.Request) string {
+	near, err := h.quickconnect.Nearby(r.Context(), r.RemoteAddr)
+	if err != nil || len(near) == 0 {
+		return ""
+	}
+
+	for _, request := range near[1:] {
+		if request.DeviceName != near[0].DeviceName || request.AppName != near[0].AppName {
+			return ""
+		}
+	}
+
+	return near[0].Code
 }
 
 func Route(code string) string {

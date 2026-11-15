@@ -94,4 +94,106 @@ func TestService_RefreshItem(t *testing.T) {
 			t.Errorf("metadata = %d, want the identified title left alone", len(identify))
 		}
 	})
+
+	t.Run("deletes the title a file was moved off when it has no file left", func(t *testing.T) {
+		fixture := newFixture(t)
+		ctx := context.Background()
+		path := "/media/Renumbered/" + uuid.NewString() + ".mkv"
+
+		before := Scanned{
+			Key:      MovieKey(tmdbID()),
+			Kind:     itemmodel.KindMovie,
+			Name:     "Renumbered",
+			SortName: "renumbered",
+			Files:    []ScannedFile{{Path: path, DateModified: time.Now()}},
+		}
+		fixture.refresh(t, before)
+
+		after := before
+		after.Key = MovieKey(tmdbID())
+		fixture.refresh(t, after)
+
+		left, err := fixture.service.ItemByKey(ctx, before.Key)
+		if err != nil {
+			t.Fatalf("failed to read the old title back: %v", err)
+		}
+		if left.DeletedAt == nil {
+			t.Error("the title the file moved off is still live with nothing to play")
+		}
+
+		took, err := fixture.service.ItemByKey(ctx, after.Key)
+		if err != nil {
+			t.Fatalf("failed to read the new title back: %v", err)
+		}
+		if took.DeletedAt != nil {
+			t.Error("the title the file moved onto was deleted")
+		}
+	})
+}
+
+func TestService_RefreshItem_Music(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := context.Background()
+	artistKey, albumKey, trackKey := ArtistKey(uuid.NewString()), AlbumKey(uuid.NewString()), TrackKey(uuid.NewString())
+	t.Cleanup(func() {
+		if _, err := fixture.client.Item.Delete().Where(itemmodel.KeyIn(trackKey, albumKey, artistKey)).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the music: %v", err)
+		}
+	})
+
+	for _, scanned := range []Scanned{
+		{
+			Key: artistKey, Tagged: true, Kind: itemmodel.KindMusicArtist, Name: "The Band", SortName: "band",
+			Genres: []string{"Rock", "Rock"},
+			Images: []RemoteImage{{Kind: ImageKindPrimary, URL: "https://art/" + uuid.NewString() + ".jpg"}},
+		},
+		{Key: albumKey, ParentKey: artistKey, Tagged: true, Kind: itemmodel.KindMusicAlbum, Name: "First", SortName: "first"},
+	} {
+		if enqueued := fixture.refresh(t, scanned); len(jobs.Enqueued(t, enqueued, jobs.RefreshItemMetadata)) != 0 {
+			t.Errorf("%s was sent to a provider that has nothing to say about music", scanned.Key)
+		}
+	}
+
+	enqueued := fixture.refresh(t, Scanned{
+		Key: trackKey, ParentKey: albumKey, Tagged: true, Kind: itemmodel.KindAudio, Name: "Opener", SortName: "opener",
+		Files: []ScannedFile{{Path: "/media/music/" + uuid.NewString() + ".flac", DateModified: time.Now()}},
+	})
+	if probes := jobs.Enqueued(t, enqueued, jobs.ProbeFile); len(probes) != 1 {
+		t.Errorf("probes = %d, want the new track probed", len(probes))
+	}
+
+	artist, err := fixture.service.ItemByKey(ctx, artistKey)
+	if err != nil {
+		t.Fatalf("failed to read the artist back: %v", err)
+	}
+	images, err := fixture.service.Images(ctx, artist.ID)
+	if err != nil || len(images) != 1 || images[0].Tag == "" {
+		t.Errorf("images = %+v (%v), want the artist's poster with a tag", images, err)
+	}
+
+	genres, err := fixture.client.Item.QueryGenres(fixture.client.Item.GetX(ctx, artist.ID)).All(ctx)
+	if err != nil || len(genres) != 1 || genres[0].Name != "Rock" {
+		t.Errorf("genres = %v (%v), want Rock once", genres, err)
+	}
+
+	album, err := fixture.service.ItemByKey(ctx, albumKey)
+	if err != nil || album.ParentID == nil || *album.ParentID != artist.ID {
+		t.Fatalf("album = %+v (%v), want it under the artist", album, err)
+	}
+	track, err := fixture.service.ItemByKey(ctx, trackKey)
+	if err != nil || track.ParentID == nil || *track.ParentID != album.ID {
+		t.Fatalf("track = %+v (%v), want it under the album", track, err)
+	}
+	if !IsFolder(album.Kind) || !IsFolder(artist.Kind) || IsFolder(track.Kind) {
+		t.Error("an artist and an album are folders and a track is not")
+	}
+
+	credited, _, err := fixture.service.QueryItems(ctx, ItemQuery{Viewer: Everyone, ArtistIDs: []uuid.UUID{artist.ID}})
+	if err != nil || len(credited) != 2 {
+		t.Errorf("by artist = %d items (%v), want the album and its track", len(credited), err)
+	}
+	onAlbum, _, err := fixture.service.QueryItems(ctx, ItemQuery{Viewer: Everyone, AlbumIDs: []uuid.UUID{album.ID}})
+	if err != nil || len(onAlbum) != 1 || onAlbum[0].ID != track.ID {
+		t.Errorf("by album = %+v (%v), want the track", onAlbum, err)
+	}
 }

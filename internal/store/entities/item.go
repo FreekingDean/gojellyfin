@@ -19,7 +19,7 @@ type Item struct {
 
 const playlistKind = "Playlist"
 
-var itemKinds = []string{"Movie", "Series", "Season", "Episode", playlistKind, "Audio"}
+var itemKinds = []string{"Movie", "Series", "Season", "Episode", playlistKind, "MusicArtist", "MusicAlbum", "Audio"}
 
 func (Item) Annotations() []schema.Annotation {
 	return []schema.Annotation{
@@ -75,8 +75,10 @@ func (Item) Edges() []ent.Edge {
 		edge.To("images", Image.Type).Annotations(cascadeOnDelete),
 		edge.To("user_data", UserItemData.Type).Annotations(cascadeOnDelete),
 		edge.To("activity_log_entries", ActivityLogEntry.Type),
+		edge.To("playing_sessions", Session.Type),
 		edge.To("playlist", Playlist.Type).Unique().Annotations(cascadeOnDelete),
 		edge.To("playlist_entries", PlaylistEntry.Type).Annotations(cascadeOnDelete),
+		edge.To("sync_play_entries", SyncPlayQueueEntry.Type).Annotations(cascadeOnDelete),
 		edge.To("genres", Genre.Type),
 		edge.To("studios", Studio.Type),
 	}
@@ -87,5 +89,6 @@ func (Item) Indexes() []ent.Index {
 		index.Fields("key").Unique(),
 		index.Fields("kind", "sort_name"),
 		index.Fields("deleted_at"),
+		index.Fields("parent_id"),
 	}
 }

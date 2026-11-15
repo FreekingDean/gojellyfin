@@ -29,11 +29,11 @@ type Server struct {
 	shelves   *shelves.Service
 	discover  *discover.Service
 	requests  *requests.Service
-	collages  dto.Collages
+	cards     dto.Cards
 }
 
-func New(items *items.Service, libraries *libraries.Service, shelves *shelves.Service, discover *discover.Service, requests *requests.Service, policies dto.Access, collages dto.Collages) *Server {
-	return &Server{items: items, libraries: libraries, shelves: shelves, discover: discover, requests: requests, policies: policies, collages: collages}
+func New(items *items.Service, libraries *libraries.Service, shelves *shelves.Service, discover *discover.Service, requests *requests.Service, policies dto.Access, cards dto.Cards) *Server {
+	return &Server{items: items, libraries: libraries, shelves: shelves, discover: discover, requests: requests, policies: policies, cards: cards}
 }
 
 func (s *Server) shelved(ctx context.Context, shelf shelves.Shelf, limit int, ungrouped bool) ([]api.BaseItemDto, error) {
@@ -93,14 +93,19 @@ func (s *Server) shelf(ctx context.Context, id *uuid.UUID) (shelves.Shelf, bool,
 
 func (s *Server) view(ctx context.Context, id uuid.UUID) (api.BaseItemDto, bool, error) {
 	if library, err := s.libraries.Library(ctx, id); err == nil {
-		view, err := dto.LibraryView(ctx, s.collages, library)
+		view, err := dto.LibraryView(ctx, s.cards, library)
 
 		return view, true, err
 	}
 
 	shelf, found, err := s.shelf(ctx, &id)
+	if err != nil || !found {
+		return api.BaseItemDto{}, found, err
+	}
 
-	return dto.ShelfView(shelf), found, err
+	view, err := dto.ShelfView(ctx, s.cards, shelf)
+
+	return view, true, err
 }
 
 func (s *Server) GetItems(ctx context.Context, request api.GetItemsRequestObject) (api.GetItemsResponseObject, error) {

@@ -24,6 +24,8 @@ type Scanned struct {
 	Index       *int32
 	ParentIndex *int32
 	Files       []ScannedFile
+	Genres      []string
+	Images      []RemoteImage
 }
 
 type ScannedFile struct {
@@ -82,8 +84,17 @@ func (s *Service) RefreshItem(ctx context.Context, libraryID, sourceID uuid.UUID
 		return err
 	}
 
+	var previous []uuid.UUID
 	for _, file := range scanned.Files {
 		jobs.Heartbeat(ctx, file.Path)
+
+		owner, err := s.fileOwner(ctx, file.Path)
+		if err != nil {
+			return err
+		}
+		if owner != nil && *owner != item.ID {
+			previous = append(previous, *owner)
+		}
 
 		saved, err := s.SaveSource(ctx, MediaSource{
 			SourceID:       sourceID,
@@ -103,7 +114,23 @@ func (s *Service) RefreshItem(ctx context.Context, libraryID, sourceID uuid.UUID
 		}
 	}
 
-	if item.ProviderIds == nil {
+	for _, reference := range scanned.Images {
+		if err := s.SaveImage(ctx, item.ID, reference.Image()); err != nil {
+			return err
+		}
+	}
+
+	if len(scanned.Genres) > 0 {
+		if err := s.replaceNamed(ctx, item.ID, Metadata{Genres: &scanned.Genres}); err != nil {
+			return err
+		}
+	}
+
+	if err := s.SweepUnreachable(ctx, previous); err != nil {
+		return err
+	}
+
+	if _, identifiable := TmdbID(item.Key); identifiable && item.ProviderIds == nil {
 		enqueue(ctx, jobs.RefreshItemMetadata, jobs.With(jobs.ParamItem, item.ID))
 	}
 

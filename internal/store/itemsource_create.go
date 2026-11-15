@@ -192,6 +192,20 @@ func (_c *ItemSourceCreate) SetNillableExternalFileID(v *int64) *ItemSourceCreat
 	return _c
 }
 
+// SetLyrics sets the "lyrics" field.
+func (_c *ItemSourceCreate) SetLyrics(v string) *ItemSourceCreate {
+	_c.mutation.SetLyrics(v)
+	return _c
+}
+
+// SetNillableLyrics sets the "lyrics" field if the given value is not nil.
+func (_c *ItemSourceCreate) SetNillableLyrics(v *string) *ItemSourceCreate {
+	if v != nil {
+		_c.SetLyrics(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *ItemSourceCreate) SetID(v uuid.UUID) *ItemSourceCreate {
 	_c.mutation.SetID(v)
@@ -392,6 +406,10 @@ func (_c *ItemSourceCreate) createSpec() (*ItemSource, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ExternalFileID(); ok {
 		_spec.SetField(itemsource.FieldExternalFileID, field.TypeInt64, value)
 		_node.ExternalFileID = &value
+	}
+	if value, ok := _c.mutation.Lyrics(); ok {
+		_spec.SetField(itemsource.FieldLyrics, field.TypeString, value)
+		_node.Lyrics = value
 	}
 	if nodes := _c.mutation.ItemIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -757,6 +775,24 @@ func (u *ItemSourceUpsert) ClearExternalFileID() *ItemSourceUpsert {
 	return u
 }
 
+// SetLyrics sets the "lyrics" field.
+func (u *ItemSourceUpsert) SetLyrics(v string) *ItemSourceUpsert {
+	u.Set(itemsource.FieldLyrics, v)
+	return u
+}
+
+// UpdateLyrics sets the "lyrics" field to the value that was provided on create.
+func (u *ItemSourceUpsert) UpdateLyrics() *ItemSourceUpsert {
+	u.SetExcluded(itemsource.FieldLyrics)
+	return u
+}
+
+// ClearLyrics clears the value of the "lyrics" field.
+func (u *ItemSourceUpsert) ClearLyrics() *ItemSourceUpsert {
+	u.SetNull(itemsource.FieldLyrics)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -1089,6 +1125,27 @@ func (u *ItemSourceUpsertOne) UpdateExternalFileID() *ItemSourceUpsertOne {
 func (u *ItemSourceUpsertOne) ClearExternalFileID() *ItemSourceUpsertOne {
 	return u.Update(func(s *ItemSourceUpsert) {
 		s.ClearExternalFileID()
+	})
+}
+
+// SetLyrics sets the "lyrics" field.
+func (u *ItemSourceUpsertOne) SetLyrics(v string) *ItemSourceUpsertOne {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.SetLyrics(v)
+	})
+}
+
+// UpdateLyrics sets the "lyrics" field to the value that was provided on create.
+func (u *ItemSourceUpsertOne) UpdateLyrics() *ItemSourceUpsertOne {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.UpdateLyrics()
+	})
+}
+
+// ClearLyrics clears the value of the "lyrics" field.
+func (u *ItemSourceUpsertOne) ClearLyrics() *ItemSourceUpsertOne {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.ClearLyrics()
 	})
 }
 
@@ -1591,6 +1648,27 @@ func (u *ItemSourceUpsertBulk) UpdateExternalFileID() *ItemSourceUpsertBulk {
 func (u *ItemSourceUpsertBulk) ClearExternalFileID() *ItemSourceUpsertBulk {
 	return u.Update(func(s *ItemSourceUpsert) {
 		s.ClearExternalFileID()
+	})
+}
+
+// SetLyrics sets the "lyrics" field.
+func (u *ItemSourceUpsertBulk) SetLyrics(v string) *ItemSourceUpsertBulk {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.SetLyrics(v)
+	})
+}
+
+// UpdateLyrics sets the "lyrics" field to the value that was provided on create.
+func (u *ItemSourceUpsertBulk) UpdateLyrics() *ItemSourceUpsertBulk {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.UpdateLyrics()
+	})
+}
+
+// ClearLyrics clears the value of the "lyrics" field.
+func (u *ItemSourceUpsertBulk) ClearLyrics() *ItemSourceUpsertBulk {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.ClearLyrics()
 	})
 }
 

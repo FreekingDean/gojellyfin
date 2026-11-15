@@ -245,7 +245,7 @@ func TestServer_AuthenticateWithQuickConnect(t *testing.T) {
 		}
 	}
 
-	request, err := pending.Initiate(ctx, auth.AuthorizationFrom(ctx).ClientDevice())
+	request, err := pending.Initiate(ctx, auth.AuthorizationFrom(ctx).ClientDevice(), "")
 	if err != nil {
 		t.Fatalf("failed to initiate: %v", err)
 	}

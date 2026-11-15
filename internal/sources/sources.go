@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -16,8 +17,10 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 	"github.com/FreekingDean/gojellyfin/internal/sources/arr"
 	"github.com/FreekingDean/gojellyfin/internal/store"
+	itemsourcemodel "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	librarymodel "github.com/FreekingDean/gojellyfin/internal/store/library"
 	libraryitemmodel "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	librarysourcemodel "github.com/FreekingDean/gojellyfin/internal/store/librarysource"
@@ -31,11 +34,14 @@ const (
 
 	KindRadarr = sourcemodel.KindRadarr
 	KindSonarr = sourcemodel.KindSonarr
+	KindLidarr = sourcemodel.KindLidarr
 )
 
 var (
 	ErrInvalid  = errors.New("invalid source")
 	ErrNotFound = errors.New("no such source")
+
+	errAbsent = errors.New("the instance has no such record")
 )
 
 type Service struct {
@@ -49,8 +55,8 @@ type Service struct {
 
 func New(store *store.Client, config env.Config, records *items.Service, activities *activity.Service) *Service {
 	return &Service{
-		client:   &http.Client{Timeout: testTimeout},
-		lister:   &http.Client{Timeout: listTimeout},
+		client:   &http.Client{Timeout: testTimeout, Transport: tracing.Transport(nil)},
+		lister:   &http.Client{Timeout: listTimeout, Transport: tracing.Transport(nil)},
 		store:    store,
 		config:   config,
 		items:    records,
@@ -89,8 +95,10 @@ type (
 )
 
 type Configured struct {
-	Source    Source
-	Libraries []LibrarySource
+	Source     Source
+	Libraries  []LibrarySource
+	Files      int
+	WebhookURL string
 }
 
 func (s *Service) List(ctx context.Context) ([]Configured, error) {
@@ -103,9 +111,16 @@ func (s *Service) List(ctx context.Context) ([]Configured, error) {
 		return nil, err
 	}
 
+	counts, err := s.fileCounts(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	configured := make([]Configured, len(records))
 	for i, record := range records {
 		configured[i] = fromRecord(record)
+		configured[i].Files = counts[record.ID]
+		configured[i].WebhookURL = s.WebhookURL(*record)
 	}
 
 	return configured, nil
@@ -124,7 +139,38 @@ func (s *Service) Get(ctx context.Context, id uuid.UUID) (Configured, error) {
 		return Configured{}, err
 	}
 
-	return fromRecord(record), nil
+	counts, err := s.fileCounts(ctx, id)
+	if err != nil {
+		return Configured{}, err
+	}
+
+	configured := fromRecord(record)
+	configured.Files = counts[id]
+	configured.WebhookURL = s.WebhookURL(*record)
+
+	return configured, nil
+}
+
+func (s *Service) fileCounts(ctx context.Context, ids ...uuid.UUID) (map[uuid.UUID]int, error) {
+	query := s.store.ItemSource.Query()
+	if len(ids) > 0 {
+		query.Where(itemsourcemodel.SourceIDIn(ids...))
+	}
+
+	var rows []struct {
+		SourceID uuid.UUID `json:"source_id"`
+		Count    int       `json:"count"`
+	}
+	if err := query.GroupBy(itemsourcemodel.FieldSourceID).Aggregate(store.Count()).Scan(ctx, &rows); err != nil {
+		return nil, err
+	}
+
+	counts := make(map[uuid.UUID]int, len(rows))
+	for _, row := range rows {
+		counts[row.SourceID] = row.Count
+	}
+
+	return counts, nil
 }
 
 func byRemotePath(query *store.SourcePathQuery) {
@@ -178,7 +224,7 @@ func libraries(records []*LibrarySource) []LibrarySource {
 func (s *Service) Create(ctx context.Context, entry Configured) (Configured, error) {
 	var id uuid.UUID
 	err := s.store.WithTx(ctx, func(tx *store.Tx) error {
-		if err := validate(ctx, tx, uuid.Nil, entry); err != nil {
+		if err := validate(ctx, tx, s.config.MediaDirectories, uuid.Nil, entry); err != nil {
 			return err
 		}
 
@@ -196,18 +242,29 @@ func (s *Service) Create(ctx context.Context, entry Configured) (Configured, err
 		}
 		id = created.ID
 
-		return children(ctx, tx, id, entry)
+		if err := children(ctx, tx, id, entry); err != nil {
+			return err
+		}
+
+		return relocate(ctx, tx, bound(entry))
 	})
 	if err != nil {
 		return Configured{}, err
 	}
+
+	s.hookQuietly(ctx, id)
 
 	return s.Get(ctx, id)
 }
 
 func (s *Service) Update(ctx context.Context, id uuid.UUID, entry Configured) (Configured, error) {
 	err := s.store.WithTx(ctx, func(tx *store.Tx) error {
-		if err := validate(ctx, tx, id, entry); err != nil {
+		if err := validate(ctx, tx, s.config.MediaDirectories, id, entry); err != nil {
+			return err
+		}
+
+		before, err := boundLibraries(ctx, tx, id)
+		if err != nil {
 			return err
 		}
 
@@ -224,7 +281,7 @@ func (s *Service) Update(ctx context.Context, id uuid.UUID, entry Configured) (C
 			update.SetRequestProfileID(*entry.Source.RequestProfileID)
 		}
 
-		err := update.Exec(ctx)
+		err = update.Exec(ctx)
 		if store.IsNotFound(err) {
 			return ErrNotFound
 		}
@@ -235,37 +292,106 @@ func (s *Service) Update(ctx context.Context, id uuid.UUID, entry Configured) (C
 		if _, err := tx.SourcePath.Delete().Where(sourcepathmodel.SourceID(id)).Exec(ctx); err != nil {
 			return err
 		}
-		bound := make([]uuid.UUID, len(entry.Libraries))
-		for i, library := range entry.Libraries {
-			bound[i] = library.LibraryID
-		}
+		after := bound(entry)
 		if _, err := tx.LibrarySource.Delete().
-			Where(librarysourcemodel.SourceID(id), librarysourcemodel.LibraryIDNotIn(bound...)).
+			Where(librarysourcemodel.SourceID(id), librarysourcemodel.LibraryIDNotIn(after...)).
 			Exec(ctx); err != nil {
 			return err
 		}
 		if _, err := tx.LibraryItem.Delete().
-			Where(libraryitemmodel.SourceID(id), libraryitemmodel.LibraryIDNotIn(bound...)).
+			Where(libraryitemmodel.SourceID(id), libraryitemmodel.LibraryIDNotIn(after...)).
 			Exec(ctx); err != nil {
 			return err
 		}
 
-		return children(ctx, tx, id, entry)
+		if err := children(ctx, tx, id, entry); err != nil {
+			return err
+		}
+
+		return relocate(ctx, tx, append(before, after...))
 	})
 	if err != nil {
 		return Configured{}, err
 	}
 
+	s.hookQuietly(ctx, id)
+
 	return s.Get(ctx, id)
 }
 
 func (s *Service) Delete(ctx context.Context, id uuid.UUID) error {
-	err := s.store.Source.DeleteOneID(id).Exec(ctx)
-	if store.IsNotFound(err) {
-		return ErrNotFound
+	if source, err := s.store.Source.Query().Where(sourcemodel.ID(id)).OnlyModel(ctx); err == nil {
+		if err := s.unhook(ctx, *source); err != nil {
+			log.Printf("the gojellyfin webhook is still on %s at %s: remove it under Settings, Connect", source.Name, source.URL)
+		}
 	}
 
-	return err
+	return s.store.WithTx(ctx, func(tx *store.Tx) error {
+		before, err := boundLibraries(ctx, tx, id)
+		if err != nil {
+			return err
+		}
+
+		err = tx.Source.DeleteOneID(id).Exec(ctx)
+		if store.IsNotFound(err) {
+			return ErrNotFound
+		}
+		if err != nil {
+			return err
+		}
+
+		return relocate(ctx, tx, before)
+	})
+}
+
+func bound(entry Configured) []uuid.UUID {
+	ids := make([]uuid.UUID, len(entry.Libraries))
+	for i, library := range entry.Libraries {
+		ids[i] = library.LibraryID
+	}
+
+	return ids
+}
+
+func boundLibraries(ctx context.Context, tx *store.Tx, id uuid.UUID) ([]uuid.UUID, error) {
+	bindings, err := tx.LibrarySource.Query().Where(librarysourcemodel.SourceID(id)).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]uuid.UUID, len(bindings))
+	for i, binding := range bindings {
+		ids[i] = binding.LibraryID
+	}
+
+	return ids, nil
+}
+
+func distinct(ids []uuid.UUID) []uuid.UUID {
+	sorted := slices.Clone(ids)
+	slices.SortFunc(sorted, func(one, other uuid.UUID) int { return strings.Compare(one.String(), other.String()) })
+
+	return slices.Compact(sorted)
+}
+
+func relocate(ctx context.Context, tx *store.Tx, ids []uuid.UUID) error {
+	for _, id := range distinct(ids) {
+		folders, err := tx.SourcePath.Query().
+			Where(sourcepathmodel.HasSourceWith(sourcemodel.HasLibrariesWith(librarysourcemodel.LibraryID(id)))).
+			Select(sourcepathmodel.FieldLocalPath).
+			Strings(ctx)
+		if err != nil {
+			return err
+		}
+		slices.Sort(folders)
+
+		err = tx.Library.UpdateOneID(id).SetLocations(slices.Compact(folders)).Exec(ctx)
+		if err != nil && !store.IsNotFound(err) {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func children(ctx context.Context, tx *store.Tx, id uuid.UUID, entry Configured) error {
@@ -307,7 +433,7 @@ func invalid(format string, args ...any) error {
 	return fmt.Errorf("%w: %s", ErrInvalid, fmt.Sprintf(format, args...))
 }
 
-func validate(ctx context.Context, tx *store.Tx, id uuid.UUID, entry Configured) error {
+func validate(ctx context.Context, tx *store.Tx, roots []string, id uuid.UUID, entry Configured) error {
 	if _, err := tx.ExecContext(ctx, "SELECT pg_advisory_xact_lock(hashtext('source_paths'))"); err != nil {
 		return err
 	}
@@ -348,14 +474,14 @@ func validate(ctx context.Context, tx *store.Tx, id uuid.UUID, entry Configured)
 		return err
 	}
 
-	folders, err := libraryFolders(ctx, tx)
-	if err != nil {
-		return err
-	}
 	for _, mapping := range source.Paths {
-		if !slices.ContainsFunc(folders, func(folder string) bool { return within(mapping.LocalPath, folder) }) {
-			return invalid("%s maps %s onto %s, which is in no library's folders: add it to a library first", source.Name, mapping.RemotePath, mapping.LocalPath)
+		if !slices.ContainsFunc(roots, func(root string) bool { return within(mapping.LocalPath, root) }) {
+			return invalid("%s maps %s onto %s, which is outside MEDIA_DIRECTORIES", source.Name, mapping.RemotePath, mapping.LocalPath)
 		}
+	}
+
+	if err := validateLibraries(ctx, tx, entry); err != nil {
+		return err
 	}
 
 	claimed, err := tx.SourcePath.Query().
@@ -407,18 +533,34 @@ func validateRequests(source Source) error {
 	return nil
 }
 
-func libraryFolders(ctx context.Context, tx *store.Tx) ([]string, error) {
-	libraries, err := tx.Library.Query().Select(librarymodel.FieldLocations).All(ctx)
+func validateLibraries(ctx context.Context, tx *store.Tx, entry Configured) error {
+	ids := distinct(bound(entry))
+	libraries, err := tx.Library.Query().Where(librarymodel.IDIn(ids...)).All(ctx)
 	if err != nil {
-		return nil, err
+		return err
+	}
+	if len(libraries) != len(ids) {
+		return invalid("%s names a library that does not exist", entry.Source.Name)
 	}
 
-	folders := []string{}
 	for _, library := range libraries {
-		folders = append(folders, library.Locations...)
+		if library.CollectionType != Fills(entry.Source.Kind) {
+			return invalid("%s cannot fill %s: Radarr fills a movies library, Sonarr a shows one and Lidarr a music one", entry.Source.Name, library.Name)
+		}
 	}
 
-	return folders, nil
+	return nil
+}
+
+func Fills(kind Kind) librarymodel.CollectionType {
+	switch kind {
+	case KindSonarr:
+		return librarymodel.CollectionTypeTvshows
+	case KindLidarr:
+		return librarymodel.CollectionTypeMusic
+	default:
+		return librarymodel.CollectionTypeMovies
+	}
 }
 
 func overlaps(one, other string) bool {
@@ -456,12 +598,12 @@ type Instance struct {
 	Tags        []string
 }
 
-func (s *Service) Test(ctx context.Context, apiURL, variable string) (Instance, error) {
+func (s *Service) Test(ctx context.Context, kind Kind, apiURL, variable string) (Instance, error) {
 	if err := checkURL(apiURL); err != nil {
 		return Instance{}, err
 	}
 
-	source := Source{URL: apiURL, APIKeyVariable: variable}
+	source := Source{Kind: kind, URL: apiURL, APIKeyVariable: variable}
 
 	status, err := fetch[arr.Status](ctx, s, s.client, source, arr.StatusPath, nil)
 	if err != nil {

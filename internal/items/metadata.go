@@ -23,27 +23,25 @@ var titleColumns = []string{
 }
 
 type Metadata struct {
-	Name              *string
-	SortName          *string
-	Overview          *string
-	OfficialRating    *consts.Rating
-	CommunityRating   *float64
-	ProductionYear    *int32
-	PremiereDate      *time.Time
-	EndDate           *time.Time
-	IndexNumber       *int32
-	ParentIndexNumber *int32
-	Status            *string
-	RunTimeTicks      *int64
-	LockData          *bool
-	Tags              *[]string
-	Taglines          *[]string
-	Genres            *[]string
-	Studios           *[]string
-	People            *[]Credit
-	LockedFields      *[]string
-	ProviderIds       *map[string]string
-	Images            []RemoteImage
+	Name            *string
+	SortName        *string
+	Overview        *string
+	OfficialRating  *consts.Rating
+	CommunityRating *float64
+	ProductionYear  *int32
+	PremiereDate    *time.Time
+	EndDate         *time.Time
+	Status          *string
+	RunTimeTicks    *int64
+	LockData        *bool
+	Tags            *[]string
+	Taglines        *[]string
+	Genres          *[]string
+	Studios         *[]string
+	People          *[]Credit
+	LockedFields    *[]string
+	ProviderIds     *map[string]string
+	Images          []RemoteImage
 }
 
 func (s *Service) UpdateMetadata(ctx context.Context, id uuid.UUID, metadata Metadata) (*Item, error) {
@@ -56,8 +54,6 @@ func (s *Service) UpdateMetadata(ctx context.Context, id uuid.UUID, metadata Met
 		SetNillableProductionYear(metadata.ProductionYear).
 		SetNillablePremiereDate(metadata.PremiereDate).
 		SetNillableEndDate(metadata.EndDate).
-		SetNillableIndexNumber(metadata.IndexNumber).
-		SetNillableParentIndexNumber(metadata.ParentIndexNumber).
 		SetNillableStatus(metadata.Status).
 		SetNillableRunTimeTicks(metadata.RunTimeTicks).
 		SetNillableLockData(metadata.LockData)
@@ -88,10 +84,11 @@ func (s *Service) UpdateMetadata(ctx context.Context, id uuid.UUID, metadata Met
 }
 
 type Credit struct {
-	Name  string
-	Kind  CreditKind
-	Role  string
-	Order int32
+	Name     string
+	Kind     CreditKind
+	Role     string
+	Order    int32
+	ImageURL string
 }
 
 func (s *Service) replaceNamed(ctx context.Context, id uuid.UUID, metadata Metadata) error {

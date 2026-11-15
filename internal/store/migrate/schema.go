@@ -41,6 +41,13 @@ var (
 				OnDelete:   schema.SetNull,
 			},
 		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "activitylogentry_item_activity_log_entries",
+				Unique:  false,
+				Columns: []*schema.Column{ActivityLogEntriesColumns[8]},
+			},
+		},
 	}
 	// APIKeysColumns holds the columns for the "api_keys" table.
 	APIKeysColumns = []*schema.Column{
@@ -106,6 +113,11 @@ var (
 				Name:    "credit_kind_role_item_credits_person_credits",
 				Unique:  true,
 				Columns: []*schema.Column{CreditsColumns[3], CreditsColumns[4], CreditsColumns[6], CreditsColumns[7]},
+			},
+			{
+				Name:    "credit_item_credits",
+				Unique:  false,
+				Columns: []*schema.Column{CreditsColumns[6]},
 			},
 		},
 	}
@@ -225,7 +237,7 @@ var (
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Movie", "Series", "Season", "Episode", "Playlist", "Audio"}},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Movie", "Series", "Season", "Episode", "Playlist", "MusicArtist", "MusicAlbum", "Audio"}},
 		{Name: "key", Type: field.TypeString, Nullable: true},
 		{Name: "name", Type: field.TypeString},
 		{Name: "sort_name", Type: field.TypeString, Nullable: true},
@@ -277,6 +289,11 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{ItemsColumns[7]},
 			},
+			{
+				Name:    "item_parent_id",
+				Unique:  false,
+				Columns: []*schema.Column{ItemsColumns[24]},
+			},
 		},
 	}
 	// ItemSourcesColumns holds the columns for the "item_sources" table.
@@ -294,6 +311,7 @@ var (
 		{Name: "probed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "external_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "external_file_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "lyrics", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "item_id", Type: field.TypeUUID},
 		{Name: "source_id", Type: field.TypeUUID},
 	}
@@ -305,13 +323,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "item_sources_items_item_sources",
-				Columns:    []*schema.Column{ItemSourcesColumns[13]},
+				Columns:    []*schema.Column{ItemSourcesColumns[14]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "item_sources_sources_files",
-				Columns:    []*schema.Column{ItemSourcesColumns[14]},
+				Columns:    []*schema.Column{ItemSourcesColumns[15]},
 				RefColumns: []*schema.Column{SourcesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -320,7 +338,7 @@ var (
 			{
 				Name:    "itemsource_item_id_source_id",
 				Unique:  true,
-				Columns: []*schema.Column{ItemSourcesColumns[13], ItemSourcesColumns[14]},
+				Columns: []*schema.Column{ItemSourcesColumns[14], ItemSourcesColumns[15]},
 			},
 			{
 				Name:    "itemsource_path",
@@ -330,7 +348,7 @@ var (
 			{
 				Name:    "itemsource_source_id_external_file_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemSourcesColumns[14], ItemSourcesColumns[12]},
+				Columns: []*schema.Column{ItemSourcesColumns[15], ItemSourcesColumns[12]},
 			},
 		},
 	}
@@ -553,6 +571,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "image_url", Type: field.TypeString, Nullable: true},
 	}
 	// PersonsTable holds the schema information for the "persons" table.
 	PersonsTable = &schema.Table{
@@ -624,6 +643,11 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{PlaylistEntriesColumns[5], PlaylistEntriesColumns[3]},
 			},
+			{
+				Name:    "playlistentry_item_id",
+				Unique:  false,
+				Columns: []*schema.Column{PlaylistEntriesColumns[4]},
+			},
 		},
 	}
 	// PlaylistSharesColumns holds the columns for the "playlist_shares" table.
@@ -673,6 +697,7 @@ var (
 		{Name: "device_name", Type: field.TypeString},
 		{Name: "app_name", Type: field.TypeString},
 		{Name: "app_version", Type: field.TypeString},
+		{Name: "remote_address", Type: field.TypeString, Default: ""},
 		{Name: "expires_at", Type: field.TypeTime},
 		{Name: "authorized_by_id", Type: field.TypeUUID, Nullable: true},
 	}
@@ -684,7 +709,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "quick_connect_requests_users_quick_connect_requests",
-				Columns:    []*schema.Column{QuickConnectRequestsColumns[10]},
+				Columns:    []*schema.Column{QuickConnectRequestsColumns[11]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -825,7 +850,12 @@ var (
 		{Name: "remote_endpoint", Type: field.TypeString, Nullable: true},
 		{Name: "last_activity_at", Type: field.TypeTime, Nullable: true},
 		{Name: "revoked_at", Type: field.TypeTime, Nullable: true},
+		{Name: "position_ticks", Type: field.TypeInt64, Default: 0},
+		{Name: "play_method", Type: field.TypeString, Nullable: true},
+		{Name: "is_paused", Type: field.TypeBool, Default: false},
+		{Name: "playing_at", Type: field.TypeTime, Nullable: true},
 		{Name: "device_sessions", Type: field.TypeUUID},
+		{Name: "now_playing_item_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "user_sessions", Type: field.TypeUUID},
 	}
 	// SessionsTable holds the schema information for the "sessions" table.
@@ -836,15 +866,28 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "sessions_devices_sessions",
-				Columns:    []*schema.Column{SessionsColumns[7]},
+				Columns:    []*schema.Column{SessionsColumns[11]},
 				RefColumns: []*schema.Column{DevicesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
+				Symbol:     "sessions_items_playing_sessions",
+				Columns:    []*schema.Column{SessionsColumns[12]},
+				RefColumns: []*schema.Column{ItemsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
 				Symbol:     "sessions_users_sessions",
-				Columns:    []*schema.Column{SessionsColumns[8]},
+				Columns:    []*schema.Column{SessionsColumns[13]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "session_now_playing_item_id",
+				Unique:  false,
+				Columns: []*schema.Column{SessionsColumns[12]},
 			},
 		},
 	}
@@ -856,13 +899,16 @@ var (
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "url", Type: field.TypeString, Unique: true},
 		{Name: "api_key_variable", Type: field.TypeString},
-		{Name: "kind", Type: field.TypeEnum, Enums: []string{"radarr", "sonarr"}},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"radarr", "sonarr", "lidarr"}},
 		{Name: "version", Type: field.TypeString, Nullable: true},
 		{Name: "contacted_at", Type: field.TypeTime, Nullable: true},
 		{Name: "last_error", Type: field.TypeString, Nullable: true},
 		{Name: "request_profile_id", Type: field.TypeInt, Nullable: true},
 		{Name: "request_root_folder", Type: field.TypeString, Nullable: true},
 		{Name: "request_tag", Type: field.TypeString, Nullable: true},
+		{Name: "webhook_secret", Type: field.TypeString},
+		{Name: "webhook_registered_at", Type: field.TypeTime, Nullable: true},
+		{Name: "webhook_error", Type: field.TypeString, Nullable: true},
 	}
 	// SourcesTable holds the schema information for the "sources" table.
 	SourcesTable = &schema.Table{
@@ -912,6 +958,119 @@ var (
 		Name:       "studios",
 		Columns:    StudiosColumns,
 		PrimaryKey: []*schema.Column{StudiosColumns[0]},
+	}
+	// SyncPlayGroupsColumns holds the columns for the "sync_play_groups" table.
+	SyncPlayGroupsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString},
+		{Name: "state", Type: field.TypeEnum, Enums: []string{"Idle", "Waiting", "Paused", "Playing"}, Default: "Idle"},
+		{Name: "position_ticks", Type: field.TypeInt64, Default: 0},
+		{Name: "run_time_ticks", Type: field.TypeInt64, Default: 0},
+		{Name: "last_activity", Type: field.TypeTime},
+		{Name: "playing_index", Type: field.TypeInt, Default: -1},
+		{Name: "shuffle_mode", Type: field.TypeEnum, Enums: []string{"Sorted", "Shuffle"}, Default: "Sorted"},
+		{Name: "repeat_mode", Type: field.TypeEnum, Enums: []string{"RepeatOne", "RepeatAll", "RepeatNone"}, Default: "RepeatNone"},
+		{Name: "queue_changed_at", Type: field.TypeTime},
+		{Name: "resume_playing", Type: field.TypeBool, Default: false},
+		{Name: "waiting_from", Type: field.TypeEnum, Nullable: true, Enums: []string{"Idle", "Waiting", "Paused", "Playing"}},
+		{Name: "position_jumped", Type: field.TypeBool, Default: false},
+		{Name: "ignore_buffering", Type: field.TypeBool, Default: false},
+		{Name: "wait_deadline", Type: field.TypeTime, Nullable: true},
+	}
+	// SyncPlayGroupsTable holds the schema information for the "sync_play_groups" table.
+	SyncPlayGroupsTable = &schema.Table{
+		Name:       "sync_play_groups",
+		Columns:    SyncPlayGroupsColumns,
+		PrimaryKey: []*schema.Column{SyncPlayGroupsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "syncplaygroup_wait_deadline",
+				Unique:  false,
+				Columns: []*schema.Column{SyncPlayGroupsColumns[16]},
+			},
+		},
+	}
+	// SyncPlayGroupMembersColumns holds the columns for the "sync_play_group_members" table.
+	SyncPlayGroupMembersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "ping", Type: field.TypeInt64, Default: 500},
+		{Name: "is_buffering", Type: field.TypeBool, Default: false},
+		{Name: "ignore_wait", Type: field.TypeBool, Default: false},
+		{Name: "session_id", Type: field.TypeUUID},
+		{Name: "group_id", Type: field.TypeUUID},
+	}
+	// SyncPlayGroupMembersTable holds the schema information for the "sync_play_group_members" table.
+	SyncPlayGroupMembersTable = &schema.Table{
+		Name:       "sync_play_group_members",
+		Columns:    SyncPlayGroupMembersColumns,
+		PrimaryKey: []*schema.Column{SyncPlayGroupMembersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "sync_play_group_members_sessions_sync_play_memberships",
+				Columns:    []*schema.Column{SyncPlayGroupMembersColumns[6]},
+				RefColumns: []*schema.Column{SessionsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "sync_play_group_members_sync_play_groups_members",
+				Columns:    []*schema.Column{SyncPlayGroupMembersColumns[7]},
+				RefColumns: []*schema.Column{SyncPlayGroupsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "syncplaygroupmember_session_id",
+				Unique:  true,
+				Columns: []*schema.Column{SyncPlayGroupMembersColumns[6]},
+			},
+		},
+	}
+	// SyncPlayQueueEntriesColumns holds the columns for the "sync_play_queue_entries" table.
+	SyncPlayQueueEntriesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "sorted_index", Type: field.TypeInt},
+		{Name: "shuffled_index", Type: field.TypeInt, Nullable: true},
+		{Name: "item_id", Type: field.TypeUUID},
+		{Name: "group_id", Type: field.TypeUUID},
+	}
+	// SyncPlayQueueEntriesTable holds the schema information for the "sync_play_queue_entries" table.
+	SyncPlayQueueEntriesTable = &schema.Table{
+		Name:       "sync_play_queue_entries",
+		Columns:    SyncPlayQueueEntriesColumns,
+		PrimaryKey: []*schema.Column{SyncPlayQueueEntriesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "sync_play_queue_entries_items_sync_play_entries",
+				Columns:    []*schema.Column{SyncPlayQueueEntriesColumns[5]},
+				RefColumns: []*schema.Column{ItemsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "sync_play_queue_entries_sync_play_groups_queue",
+				Columns:    []*schema.Column{SyncPlayQueueEntriesColumns[6]},
+				RefColumns: []*schema.Column{SyncPlayGroupsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "syncplayqueueentry_group_id_sorted_index",
+				Unique:  false,
+				Columns: []*schema.Column{SyncPlayQueueEntriesColumns[6], SyncPlayQueueEntriesColumns[3]},
+			},
+			{
+				Name:    "syncplayqueueentry_item_id",
+				Unique:  false,
+				Columns: []*schema.Column{SyncPlayQueueEntriesColumns[5]},
+			},
+		},
 	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
@@ -1018,6 +1177,11 @@ var (
 				Name:    "useritemdata_user_id_item_id",
 				Unique:  true,
 				Columns: []*schema.Column{UserItemDataColumns[11], UserItemDataColumns[10]},
+			},
+			{
+				Name:    "useritemdata_item_id",
+				Unique:  false,
+				Columns: []*schema.Column{UserItemDataColumns[10]},
 			},
 		},
 	}
@@ -1165,6 +1329,9 @@ var (
 		SourcesTable,
 		SourcePathsTable,
 		StudiosTable,
+		SyncPlayGroupsTable,
+		SyncPlayGroupMembersTable,
+		SyncPlayQueueEntriesTable,
 		UsersTable,
 		UserConfigurationsTable,
 		UserItemDataTable,
@@ -1185,7 +1352,7 @@ func init() {
 	ItemsTable.Annotation = &entsql.Annotation{}
 	ItemsTable.Annotation.Checks = map[string]string{
 		"item_key_unless_playlist": "kind = 'Playlist' OR key IS NOT NULL",
-		"item_kind_known":          "kind IN ('Movie', 'Series', 'Season', 'Episode', 'Playlist', 'Audio')",
+		"item_kind_known":          "kind IN ('Movie', 'Series', 'Season', 'Episode', 'Playlist', 'MusicArtist', 'MusicAlbum', 'Audio')",
 	}
 	ItemSourcesTable.ForeignKeys[0].RefTable = ItemsTable
 	ItemSourcesTable.ForeignKeys[1].RefTable = SourcesTable
@@ -1209,8 +1376,13 @@ func init() {
 	RequestsTable.ForeignKeys[0].RefTable = UsersTable
 	RequestSubmissionsTable.ForeignKeys[0].RefTable = SourcesTable
 	SessionsTable.ForeignKeys[0].RefTable = DevicesTable
-	SessionsTable.ForeignKeys[1].RefTable = UsersTable
+	SessionsTable.ForeignKeys[1].RefTable = ItemsTable
+	SessionsTable.ForeignKeys[2].RefTable = UsersTable
 	SourcePathsTable.ForeignKeys[0].RefTable = SourcesTable
+	SyncPlayGroupMembersTable.ForeignKeys[0].RefTable = SessionsTable
+	SyncPlayGroupMembersTable.ForeignKeys[1].RefTable = SyncPlayGroupsTable
+	SyncPlayQueueEntriesTable.ForeignKeys[0].RefTable = ItemsTable
+	SyncPlayQueueEntriesTable.ForeignKeys[1].RefTable = SyncPlayGroupsTable
 	UserConfigurationsTable.ForeignKeys[0].RefTable = UsersTable
 	UserItemDataTable.ForeignKeys[0].RefTable = ItemsTable
 	UserItemDataTable.ForeignKeys[1].RefTable = UsersTable

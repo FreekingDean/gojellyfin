@@ -21,8 +21,9 @@ type CreditKind = creditmodel.Kind
 var ValidCreditKind = creditmodel.KindValidator
 
 type Named struct {
-	ID   uuid.UUID
-	Name string
+	ID       uuid.UUID
+	Name     string
+	ImageTag string
 }
 
 type MetadataQuery struct {
@@ -37,7 +38,7 @@ type MetadataQuery struct {
 }
 
 func (q MetadataQuery) items() []predicate.Item {
-	filters := make([]predicate.Item, 0, 3)
+	filters := append([]predicate.Item{itemmodel.DeletedAtIsNil()}, q.Viewer.visible()...)
 	if q.LibraryID != nil {
 		filters = append(filters, inLibrary(*q.LibraryID))
 	}
@@ -146,10 +147,32 @@ func (s *Service) DistinctPeople(ctx context.Context, query MetadataQuery, kinds
 
 	named := make([]Named, 0, len(records))
 	for _, record := range records {
-		named = append(named, Named{ID: record.ID, Name: record.Name})
+		named = append(named, Named{ID: record.ID, Name: record.Name, ImageTag: imageTag(record.ImageURL)})
 	}
 
 	return named, total, nil
+}
+
+func (s *Service) PersonImage(ctx context.Context, id uuid.UUID) (string, error) {
+	return s.personImage(ctx, personmodel.ID(id), id.String())
+}
+
+func (s *Service) PersonImageNamed(ctx context.Context, name string) (string, error) {
+	return s.personImage(ctx, personmodel.NameEqualFold(name), name)
+}
+
+func (s *Service) personImage(ctx context.Context, which predicate.Person, described string) (string, error) {
+	person, err := s.store.Person.Query().
+		Where(which, personmodel.ImageURLNEQ("")).
+		First(ctx)
+	if store.IsNotFound(err) {
+		return "", fmt.Errorf("%w: no picture of %q", ErrNotFound, described)
+	}
+	if err != nil {
+		return "", fmt.Errorf("failed to find %q: %w", described, err)
+	}
+
+	return person.ImageURL, nil
 }
 
 func (s *Service) DistinctTags(ctx context.Context, query MetadataQuery) ([]string, error) {
@@ -178,6 +201,21 @@ func (s *Service) DistinctTags(ctx context.Context, query MetadataQuery) ([]stri
 	return tags, nil
 }
 
+func (s *Service) DistinctOfficialRatings(ctx context.Context, query MetadataQuery) ([]string, error) {
+	ratings, err := s.query(query.Viewer).
+		Where(query.items()...).
+		Where(itemmodel.OfficialRatingNotNil(), itemmodel.OfficialRatingNEQ("")).
+		Order(itemmodel.ByOfficialRating()).
+		Unique(true).
+		Select(itemmodel.FieldOfficialRating).
+		Strings(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query official ratings: %w", err)
+	}
+
+	return ratings, nil
+}
+
 func replaceCredits(ctx context.Context, tx *store.Tx, itemID uuid.UUID, people []Credit) error {
 	if _, err := tx.Credit.Delete().
 		Where(creditmodel.HasItemWith(itemmodel.ID(itemID))).
@@ -186,8 +224,11 @@ func replaceCredits(ctx context.Context, tx *store.Tx, itemID uuid.UUID, people 
 	}
 
 	for _, person := range people {
-		id, err := tx.Person.Create().
-			SetName(person.Name).
+		create := tx.Person.Create().SetName(person.Name)
+		if person.ImageURL != "" {
+			create = create.SetImageURL(person.ImageURL)
+		}
+		id, err := create.
 			OnConflictColumns(personmodel.FieldName).
 			UpdateNewValues().
 			ID(ctx)
@@ -228,7 +269,9 @@ func genreIDs(ctx context.Context, tx *store.Tx, names []string) ([]uuid.UUID, e
 		if err != nil {
 			return nil, fmt.Errorf("failed to save genre: %w", err)
 		}
-		ids = append(ids, id)
+		if !slices.Contains(ids, id) {
+			ids = append(ids, id)
+		}
 	}
 
 	return ids, nil

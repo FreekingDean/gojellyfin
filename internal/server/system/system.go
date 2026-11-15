@@ -2,6 +2,7 @@ package system
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
@@ -115,4 +116,21 @@ func (s *Server) PostPingSystem(ctx context.Context, request api.PostPingSystemR
 
 func (s *Server) GetEndpointInfo(ctx context.Context, request api.GetEndpointInfoRequestObject) (api.GetEndpointInfoResponseObject, error) {
 	return api.GetEndpointInfo200JSONResponse(endpointInfo(auth.AuthorizationFrom(ctx).RemoteAddr)), nil
+}
+
+func (s *Server) UpdateBrandingConfiguration(ctx context.Context, request api.UpdateBrandingConfigurationRequestObject) (api.UpdateBrandingConfigurationResponseObject, error) {
+	body := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
+	if body == nil {
+		return api.UpdateBrandingConfiguration403Response{}, nil
+	}
+
+	value, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.config.SetConfiguration(ctx, configuration.BrandingConfigurationKey, value); err != nil {
+		return nil, err
+	}
+
+	return api.UpdateBrandingConfiguration204Response{}, nil
 }

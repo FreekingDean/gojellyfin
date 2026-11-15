@@ -63,6 +63,7 @@ type definition struct {
 	collection libraries.CollectionType
 	resolve    resolver
 	unowned    items.Kind
+	shared     bool
 }
 
 func trending(slug, name string, collection libraries.CollectionType, kind items.Kind) definition {
@@ -72,7 +73,7 @@ func trending(slug, name string, collection libraries.CollectionType, kind items
 }
 
 func fixed(slug, name string, collection libraries.CollectionType, query items.LatestQuery) definition {
-	return definition{slug: slug, title: name, collection: collection, resolve: func(context.Context, Catalogue, items.Viewer, uuid.UUID, time.Time) (string, items.LatestQuery, bool, error) {
+	return definition{slug: slug, title: name, collection: collection, shared: true, resolve: func(context.Context, Catalogue, items.Viewer, uuid.UUID, time.Time) (string, items.LatestQuery, bool, error) {
 		return name, query, true, nil
 	}}
 }
@@ -85,7 +86,7 @@ func unwatched(slug, name string, collection libraries.CollectionType, query ite
 }
 
 func seasonal(slug, name string, month time.Month, query items.LatestQuery) definition {
-	return definition{slug: slug, title: name, collection: libraries.CollectionTypeMovies, resolve: func(_ context.Context, _ Catalogue, _ items.Viewer, _ uuid.UUID, now time.Time) (string, items.LatestQuery, bool, error) {
+	return definition{slug: slug, title: name, collection: libraries.CollectionTypeMovies, shared: true, resolve: func(_ context.Context, _ Catalogue, _ items.Viewer, _ uuid.UUID, now time.Time) (string, items.LatestQuery, bool, error) {
 		return name, query, now.Month() == month, nil
 	}}
 }

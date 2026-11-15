@@ -73,6 +73,9 @@ func (s *Service) read(ctx context.Context, binding Binding) error {
 	if err := s.contact(ctx, binding.Source); err != nil {
 		return err
 	}
+	if binding.Source.WebhookRegisteredAt == nil {
+		s.hookQuietly(ctx, sourceID)
+	}
 
 	titles, err := s.Titles(ctx, binding)
 	if err != nil {
@@ -170,5 +173,7 @@ func scanned(title Title) items.Scanned {
 		Index:       title.Index,
 		ParentIndex: title.ParentIndex,
 		Files:       files,
+		Genres:      title.Genres,
+		Images:      title.Images,
 	}
 }

@@ -44,8 +44,10 @@ test.describe('signing in on the television', () => {
   });
 
   // The app draws the server's splashscreen behind its sign-in screen, under
-  // a tint and beside its own controls, and that picture carries the QR.
-  test('shows a QR a phone can scan to reach this television\'s code', async ({ tv, harness, shot }) => {
+  // a tint and beside its own controls, and that picture carries the QR. The
+  // app caches the picture, so the QR names /link and the server finds the
+  // code by the network the phone scanning it is on.
+  test('shows a QR that lands a phone on this television\'s code', async ({ tv, harness, server, shot }) => {
     await freshStart(tv);
     await connect(tv, harness);
     await openSignIn(tv, harness);
@@ -58,9 +60,10 @@ test.describe('signing in on the television', () => {
 
     const followed = await fetch(scanned, { redirect: 'manual' });
     expect(followed.status).toBe(302);
-    expect(followed.headers.get('location')).toContain('quickconnect');
-    if (scanned.includes('/link/tv/')) {
-      expect(followed.headers.get('location')).toContain(code);
-    }
+    expect(followed.headers.get('location')).toContain('quickconnect?code=' + code);
+
+    await server.authorizeQuickConnect(code);
+    await home(tv, harness);
+    await shot('home-after-scan');
   });
 });

@@ -123,6 +123,7 @@ async function boot({ mediaSeconds = 20 } = {}) {
       ...serverEnv,
       HTTP_PORT: String(apiPort),
       PUBLISHED_SERVER_URL: baseUrl,
+      TRUSTED_PROXIES: '127.0.0.0/8,::1/128',
       OIDC_ISSUER_URL: provider.url,
       OIDC_CLIENT_ID: SSO_CLIENT_ID,
       OIDC_CLIENT_SECRET: SSO_CLIENT_SECRET,
@@ -169,6 +170,9 @@ async function boot({ mediaSeconds = 20 } = {}) {
         migrate: { command: binaries.migrate, args: ['--from', jellyfinData], env: serverEnv },
       },
       downloaderUrl,
+      downloaderVersion: radarr.VERSION,
+      downloaderRootFolder: radarr.ROOT_FOLDER,
+      mediaDirectory: path.dirname(media.playable),
     },
     serverLog: () => log.join(''),
     async stop() {

@@ -11,8 +11,12 @@ import (
 	"go.temporal.io/api/workflow/v1"
 	"go.temporal.io/api/workflowservice/v1"
 	"go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/contrib/opentelemetry"
+	"go.temporal.io/sdk/interceptor"
+	"google.golang.org/grpc"
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 )
 
 const (
@@ -36,7 +40,7 @@ type Client struct {
 	client client.Client
 }
 
-func NewClient(config env.Config) (*Client, error) {
+func NewClient(config env.Config, traces *tracing.Tracing) (*Client, error) {
 	if config.Temporal.HostPort == "" {
 		return &Client{}, nil
 	}
@@ -44,10 +48,25 @@ func NewClient(config env.Config) (*Client, error) {
 		return nil, ErrNoNamespace
 	}
 
-	connected, err := client.Dial(client.Options{
+	options := client.Options{
 		HostPort:  config.Temporal.HostPort,
 		Namespace: config.Temporal.Namespace,
-	})
+		ConnectionOptions: client.ConnectionOptions{
+			DialOptions: []grpc.DialOption{grpc.WithChainUnaryInterceptor(tracing.UnaryClientInterceptor)},
+		},
+	}
+	if traces.Enabled() {
+		traced, err := opentelemetry.NewTracingInterceptor(opentelemetry.TracerOptions{
+			Tracer:            traces.Tracer(),
+			TextMapPropagator: traces.Propagator(),
+		})
+		if err != nil {
+			return nil, err
+		}
+		options.Interceptors = []interceptor.ClientInterceptor{traced}
+	}
+
+	connected, err := client.Dial(options)
 	if err != nil {
 		return nil, err
 	}
@@ -170,6 +189,28 @@ func (s *Service) Enqueue(ctx context.Context, name string, params ...Param) err
 	}
 
 	return s.client.start(ctx, job.queue(), name, params...)
+}
+
+func (s *Service) Enabled() bool {
+	return s.client.Enabled()
+}
+
+func (s *Service) Pollers(ctx context.Context) (map[string]int, error) {
+	connection, err := s.client.connection()
+	if err != nil {
+		return nil, err
+	}
+
+	pollers := map[string]int{}
+	for _, queue := range s.registry.Queues() {
+		described, err := connection.DescribeTaskQueue(ctx, queue, enums.TASK_QUEUE_TYPE_WORKFLOW)
+		if err != nil {
+			return nil, err
+		}
+		pollers[queue] = len(described.GetPollers())
+	}
+
+	return pollers, nil
 }
 
 func (s *Service) Cancel(ctx context.Context, name string) error {

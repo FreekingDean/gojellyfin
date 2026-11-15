@@ -1,6 +1,8 @@
 package entities
 
 import (
+	"crypto/rand"
+
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -15,13 +17,16 @@ func (Source) Fields() []ent.Field {
 		field.String("name").Unique(),
 		field.String("url").Unique(),
 		field.String("api_key_variable"),
-		field.Enum("kind").Values("radarr", "sonarr"),
+		field.Enum("kind").Values("radarr", "sonarr", "lidarr"),
 		field.String("version").Optional(),
 		field.Time("contacted_at").Optional().Nillable(),
 		field.String("last_error").Optional(),
 		field.Int("request_profile_id").Optional().Nillable(),
 		field.String("request_root_folder").Optional(),
 		field.String("request_tag").Optional(),
+		field.String("webhook_secret").DefaultFunc(webhookSecret).Sensitive(),
+		field.Time("webhook_registered_at").Optional().Nillable(),
+		field.String("webhook_error").Optional(),
 	)
 }
 
@@ -33,4 +38,8 @@ func (Source) Edges() []ent.Edge {
 		edge.To("memberships", LibraryItem.Type).Annotations(cascadeOnDelete),
 		edge.To("submissions", RequestSubmission.Type).Annotations(cascadeOnDelete),
 	}
+}
+
+func webhookSecret() string {
+	return rand.Text()
 }

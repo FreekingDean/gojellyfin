@@ -13,6 +13,7 @@ type Person struct {
 func (Person) Fields() []ent.Field {
 	return withDefaultFields(
 		field.String("name").Unique(),
+		field.String("image_url").Optional(),
 	)
 }
 

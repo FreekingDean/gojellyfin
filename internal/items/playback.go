@@ -8,8 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/uuid"
-
 	streammodel "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/transcode"
 )
@@ -28,8 +26,10 @@ type Condition struct {
 }
 
 type Capabilities struct {
-	Profiles   []Profile
-	Conditions []Condition
+	Profiles     []Profile
+	Conditions   []Condition
+	Audio        []Profile
+	AudioEncodes []string
 }
 
 type Change int
@@ -51,6 +51,10 @@ func (c Change) EncodesVideo() bool {
 	return c == ChangeVideo || c == ChangeVideoAudio
 }
 
+func (c Change) EncodesAudio() bool {
+	return c != ChangeNone
+}
+
 type Plan struct {
 	Source     *MediaSource
 	Change     Change
@@ -60,12 +64,13 @@ type Plan struct {
 }
 
 var (
+	ErrNotFound   = errors.New("no such item")
 	ErrNoSource   = errors.New("the item has no file to play")
 	ErrNoPlayable = errors.New("no file can be played as this client asked")
 )
 
-func (s *Service) SourceFor(ctx context.Context, itemID uuid.UUID, can Capabilities) (Plan, error) {
-	sources, err := s.MediaSources(ctx, itemID)
+func (s *Service) SourceFor(ctx context.Context, item *Item, can Capabilities) (Plan, error) {
+	sources, err := s.MediaSources(ctx, item.ID)
 	if err != nil {
 		return Plan{}, err
 	}
@@ -88,13 +93,18 @@ func (s *Service) SourceFor(ctx context.Context, itemID uuid.UUID, can Capabilit
 		return 0
 	})
 
+	planned, costly := can.plan, Change.EncodesVideo
+	if IsAudio(item) {
+		planned, costly = can.soundPlan, Change.EncodesAudio
+	}
+
 	var encode *Plan
 	for _, source := range ordered {
-		plan := can.plan(source)
+		plan := planned(source)
 		if !plan.Change.Available() {
 			continue
 		}
-		if !plan.Change.EncodesVideo() {
+		if !costly(plan.Change) {
 			return plan, nil
 		}
 		if encode == nil || shorterYetFull(source, encode.Source) {
@@ -166,6 +176,54 @@ func (c Capabilities) plan(source *MediaSource) Plan {
 	}
 
 	return plan
+}
+
+func (c Capabilities) soundPlan(source *MediaSource) Plan {
+	plan := Plan{Source: source, Container: Container(source), AudioCodec: AudioCodec(source)}
+	if len(c.Audio) == 0 {
+		return plan
+	}
+
+	if c.decodesAudio(plan.Container, plan.AudioCodec) {
+		return plan
+	}
+
+	for _, name := range c.audioTargets() {
+		if !transcode.Supported(name) {
+			continue
+		}
+		encoded := transcode.AudioCodec(name)
+		if slices.Contains(c.AudioEncodes, name) || c.decodesAudio(name, encoded) {
+			plan.Change, plan.Container, plan.AudioCodec = ChangeAudio, name, encoded
+
+			return plan
+		}
+	}
+
+	plan.Change = ChangeRefused
+
+	return plan
+}
+
+func (c Capabilities) audioTargets() []string {
+	targets := slices.Clone(c.AudioEncodes)
+	for _, profile := range c.Audio {
+		for _, name := range strings.Split(profile.Container, ",") {
+			targets = append(targets, strings.ToLower(strings.TrimSpace(name)))
+		}
+	}
+
+	return targets
+}
+
+func (c Capabilities) decodesAudio(container, codec string) bool {
+	for _, profile := range c.Audio {
+		if lists(profile.Container, container) && lists(profile.AudioCodec, codec) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (c Capabilities) encodePlan(plan Plan, audio string) Plan {

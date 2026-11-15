@@ -1,10 +1,12 @@
 const { test, expect, loadLogin, signIn, view } = require('./fixtures');
 
 test.describe('signing in', () => {
-  test('offers the seeded user on the login page', async ({ page, harness }) => {
+  test('asks for a username rather than listing the accounts', async ({ page, harness }) => {
     await loadLogin(page, harness);
 
-    await expect(page.locator('#loginPage button.card')).toContainText(harness.username);
+    await expect(page.locator('#loginPage button.card')).toHaveCount(0);
+    await expect(page.locator('#loginPage')).not.toContainText(harness.username);
+    await expect(page.locator('#loginPage .btnQuick')).toBeVisible();
     await expect(page).toHaveScreenshot('login.png');
   });
 

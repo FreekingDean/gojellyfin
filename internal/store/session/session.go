@@ -26,10 +26,24 @@ const (
 	FieldLastActivityAt = "last_activity_at"
 	// FieldRevokedAt holds the string denoting the revoked_at field in the database.
 	FieldRevokedAt = "revoked_at"
+	// FieldNowPlayingItemID holds the string denoting the now_playing_item_id field in the database.
+	FieldNowPlayingItemID = "now_playing_item_id"
+	// FieldPositionTicks holds the string denoting the position_ticks field in the database.
+	FieldPositionTicks = "position_ticks"
+	// FieldPlayMethod holds the string denoting the play_method field in the database.
+	FieldPlayMethod = "play_method"
+	// FieldIsPaused holds the string denoting the is_paused field in the database.
+	FieldIsPaused = "is_paused"
+	// FieldPlayingAt holds the string denoting the playing_at field in the database.
+	FieldPlayingAt = "playing_at"
 	// EdgeUser holds the string denoting the user edge name in mutations.
 	EdgeUser = "user"
 	// EdgeDevice holds the string denoting the device edge name in mutations.
 	EdgeDevice = "device"
+	// EdgeNowPlaying holds the string denoting the now_playing edge name in mutations.
+	EdgeNowPlaying = "now_playing"
+	// EdgeSyncPlayMemberships holds the string denoting the sync_play_memberships edge name in mutations.
+	EdgeSyncPlayMemberships = "sync_play_memberships"
 	// Table holds the table name of the session in the database.
 	Table = "sessions"
 	// UserTable is the table that holds the user relation/edge.
@@ -46,6 +60,20 @@ const (
 	DeviceInverseTable = "devices"
 	// DeviceColumn is the table column denoting the device relation/edge.
 	DeviceColumn = "device_sessions"
+	// NowPlayingTable is the table that holds the now_playing relation/edge.
+	NowPlayingTable = "sessions"
+	// NowPlayingInverseTable is the table name for the Item entity.
+	// It exists in this package in order to avoid circular dependency with the "item" package.
+	NowPlayingInverseTable = "items"
+	// NowPlayingColumn is the table column denoting the now_playing relation/edge.
+	NowPlayingColumn = "now_playing_item_id"
+	// SyncPlayMembershipsTable is the table that holds the sync_play_memberships relation/edge.
+	SyncPlayMembershipsTable = "sync_play_group_members"
+	// SyncPlayMembershipsInverseTable is the table name for the SyncPlayGroupMember entity.
+	// It exists in this package in order to avoid circular dependency with the "syncplaygroupmember" package.
+	SyncPlayMembershipsInverseTable = "sync_play_group_members"
+	// SyncPlayMembershipsColumn is the table column denoting the sync_play_memberships relation/edge.
+	SyncPlayMembershipsColumn = "session_id"
 )
 
 // Columns holds all SQL columns for session fields.
@@ -57,6 +85,11 @@ var Columns = []string{
 	FieldRemoteEndpoint,
 	FieldLastActivityAt,
 	FieldRevokedAt,
+	FieldNowPlayingItemID,
+	FieldPositionTicks,
+	FieldPlayMethod,
+	FieldIsPaused,
+	FieldPlayingAt,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "sessions"
@@ -88,6 +121,10 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultPositionTicks holds the default value on creation for the "position_ticks" field.
+	DefaultPositionTicks int64
+	// DefaultIsPaused holds the default value on creation for the "is_paused" field.
+	DefaultIsPaused bool
 )
 
 // OrderOption defines the ordering options for the Session queries.
@@ -128,6 +165,31 @@ func ByRevokedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRevokedAt, opts...).ToFunc()
 }
 
+// ByNowPlayingItemID orders the results by the now_playing_item_id field.
+func ByNowPlayingItemID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldNowPlayingItemID, opts...).ToFunc()
+}
+
+// ByPositionTicks orders the results by the position_ticks field.
+func ByPositionTicks(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPositionTicks, opts...).ToFunc()
+}
+
+// ByPlayMethod orders the results by the play_method field.
+func ByPlayMethod(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPlayMethod, opts...).ToFunc()
+}
+
+// ByIsPaused orders the results by the is_paused field.
+func ByIsPaused(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsPaused, opts...).ToFunc()
+}
+
+// ByPlayingAt orders the results by the playing_at field.
+func ByPlayingAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPlayingAt, opts...).ToFunc()
+}
+
 // ByUserField orders the results by user field.
 func ByUserField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -139,6 +201,27 @@ func ByUserField(field string, opts ...sql.OrderTermOption) OrderOption {
 func ByDeviceField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newDeviceStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByNowPlayingField orders the results by now_playing field.
+func ByNowPlayingField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newNowPlayingStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// BySyncPlayMembershipsCount orders the results by sync_play_memberships count.
+func BySyncPlayMembershipsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSyncPlayMembershipsStep(), opts...)
+	}
+}
+
+// BySyncPlayMemberships orders the results by sync_play_memberships terms.
+func BySyncPlayMemberships(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSyncPlayMembershipsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 func newUserStep() *sqlgraph.Step {
@@ -153,5 +236,19 @@ func newDeviceStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(DeviceInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, DeviceTable, DeviceColumn),
+	)
+}
+func newNowPlayingStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(NowPlayingInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, NowPlayingTable, NowPlayingColumn),
+	)
+}
+func newSyncPlayMembershipsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SyncPlayMembershipsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SyncPlayMembershipsTable, SyncPlayMembershipsColumn),
 	)
 }

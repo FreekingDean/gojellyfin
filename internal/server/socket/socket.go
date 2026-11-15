@@ -1,15 +1,20 @@
 package socket
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"net/http"
+	"slices"
+	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
+	"github.com/FreekingDean/gojellyfin/internal/notify"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 )
 
@@ -30,10 +35,63 @@ type wsMessage struct {
 
 type Socket struct {
 	sessions *sessions.Service
+
+	mu        sync.RWMutex
+	clients   map[uuid.UUID][]chan wsMessage
+	connected []func(ctx context.Context, sessionID uuid.UUID)
+}
+
+func (s *Socket) OnConnect(hook func(ctx context.Context, sessionID uuid.UUID)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.connected = append(s.connected, hook)
+}
+
+func (s *Socket) Sessions() []uuid.UUID {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	ids := make([]uuid.UUID, 0, len(s.clients))
+	for id := range s.clients {
+		ids = append(ids, id)
+	}
+
+	return ids
 }
 
 func New(sessions *sessions.Service) *Socket {
-	return &Socket{sessions: sessions}
+	return &Socket{sessions: sessions, clients: make(map[uuid.UUID][]chan wsMessage)}
+}
+
+func (s *Socket) Deliver(envelope notify.Envelope) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	for _, sessionID := range envelope.SessionIDs {
+		for _, out := range s.clients[sessionID] {
+			enqueue(out, wsMessage{MessageType: envelope.Type, Data: envelope.Data, MessageId: newGUID()})
+		}
+	}
+}
+
+func (s *Socket) register(sessionID uuid.UUID, out chan wsMessage) func() {
+	s.mu.Lock()
+	s.clients[sessionID] = append(s.clients[sessionID], out)
+	s.mu.Unlock()
+
+	return func() {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+
+		remaining := slices.DeleteFunc(s.clients[sessionID], func(c chan wsMessage) bool { return c == out })
+		if len(remaining) == 0 {
+			delete(s.clients, sessionID)
+			return
+		}
+
+		s.clients[sessionID] = remaining
+	}
 }
 
 func (s *Socket) Handle(w http.ResponseWriter, r *http.Request) {
@@ -43,7 +101,8 @@ func (s *Socket) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := s.sessions.ByToken(r.Context(), token); err != nil {
+	session, err := s.sessions.ByToken(r.Context(), token)
+	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -56,6 +115,8 @@ func (s *Socket) Handle(w http.ResponseWriter, r *http.Request) {
 
 	replies := make(chan wsMessage, 8)
 	done := make(chan struct{})
+
+	defer s.register(session.ID, replies)()
 
 	go func() {
 		defer close(done)
@@ -79,6 +140,14 @@ func (s *Socket) Handle(w http.ResponseWriter, r *http.Request) {
 
 	if err := conn.WriteJSON(forceKeepAlive()); err != nil {
 		return
+	}
+
+	s.mu.RLock()
+	connected := slices.Clone(s.connected)
+	s.mu.RUnlock()
+
+	for _, hook := range connected {
+		hook(r.Context(), session.ID)
 	}
 
 	ticker := time.NewTicker(keepAliveInterval)

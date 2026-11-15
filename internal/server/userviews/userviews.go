@@ -15,20 +15,20 @@ type Server struct {
 	libraries *libraries.Service
 	shelves   *shelves.Service
 	policies  dto.Access
-	collages  dto.Collages
+	cards     dto.Cards
 }
 
-func New(libraries *libraries.Service, shelves *shelves.Service, policies dto.Access, collages dto.Collages) *Server {
-	return &Server{libraries: libraries, shelves: shelves, policies: policies, collages: collages}
+func New(libraries *libraries.Service, shelves *shelves.Service, policies dto.Access, cards dto.Cards) *Server {
+	return &Server{libraries: libraries, shelves: shelves, policies: policies, cards: cards}
 }
 
 func (s *Server) GetUserViews(ctx context.Context, request api.GetUserViewsRequestObject) (api.GetUserViewsResponseObject, error) {
-	records, err := s.libraries.ListLibraries(ctx)
+	records, err := s.libraries.ShownLibraries(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	views, err := dto.LibraryViews(ctx, s.collages, records)
+	views, err := dto.LibraryViews(ctx, s.cards, records)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,11 @@ func (s *Server) GetUserViews(ctx context.Context, request api.GetUserViewsReque
 		return nil, err
 	}
 	for _, shelf := range shown {
-		views = append(views, dto.ShelfView(shelf))
+		view, err := dto.ShelfView(ctx, s.cards, shelf)
+		if err != nil {
+			return nil, err
+		}
+		views = append(views, view)
 	}
 
 	return api.GetUserViews200JSONResponse{

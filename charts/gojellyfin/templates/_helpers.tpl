@@ -109,6 +109,10 @@ IfNotPresent
 {{- end }}
 
 {{- define "gojellyfin.sharedEnv" -}}
+{{- with .Values.hostname }}
+- name: PUBLISHED_SERVER_URL
+  value: {{ printf "%s://%s" $.Values.scheme . | quote }}
+{{- end }}
 {{- $mounts := list .Values.media.mountPath }}
 {{- range .Values.media.extraVolumes }}
 {{- $mounts = append $mounts .mountPath }}
@@ -124,11 +128,26 @@ IfNotPresent
       name: {{ . }}
       key: {{ $.Values.tmdb.secretKey }}
 {{- end }}
-{{- with .Values.tracing.otlpEndpoint }}
+{{- include "gojellyfin.temporalEnv" . }}
+{{- end }}
+
+{{- define "gojellyfin.tracingEnv" -}}
+{{- with .root.Values.tracing.otlpEndpoint }}
 - name: OTEL_EXPORTER_OTLP_ENDPOINT
   value: {{ . | quote }}
+- name: OTEL_SERVICE_NAME
+  value: {{ printf "%s-%s" (include "gojellyfin.fullname" $.root) $.component | quote }}
+- name: OTEL_POD_IP
+  valueFrom:
+    fieldRef:
+      fieldPath: status.podIP
+- name: OTEL_POD_NAME
+  valueFrom:
+    fieldRef:
+      fieldPath: metadata.name
+- name: OTEL_RESOURCE_ATTRIBUTES
+  value: {{ printf "k8s.pod.ip=$(OTEL_POD_IP),k8s.pod.name=$(OTEL_POD_NAME),k8s.namespace.name=%s" $.root.Release.Namespace | quote }}
 {{- end }}
-{{- include "gojellyfin.temporalEnv" . }}
 {{- end }}
 
 {{- define "gojellyfin.workerEnv" -}}
@@ -142,10 +161,6 @@ IfNotPresent
 {{- include "gojellyfin.databaseEnv" .root }}
 - name: HTTP_PORT
   value: {{ .root.Values.httpPort | quote }}
-{{- with .root.Values.hostname }}
-- name: PUBLISHED_SERVER_URL
-  value: {{ printf "%s://%s" $.root.Values.scheme . | quote }}
-{{- end }}
 {{- with .root.Values.serverId }}
 - name: SERVER_ID
   value: {{ . | quote }}
@@ -156,6 +171,10 @@ IfNotPresent
 {{- end }}
 - name: CORS_ORIGINS
   value: {{ .root.Values.cors.origin | quote }}
+{{- end }}
+{{- with .root.Values.trustedProxies }}
+- name: TRUSTED_PROXIES
+  value: {{ join "," . | quote }}
 {{- end }}
 {{- include "gojellyfin.oidcEnv" .root }}
 - name: TRANSCODER_JOBS

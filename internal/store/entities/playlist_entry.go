@@ -30,5 +30,6 @@ func (PlaylistEntry) Edges() []ent.Edge {
 func (PlaylistEntry) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("playlist_id", "sort_order"),
+		index.Fields("item_id"),
 	}
 }

@@ -271,6 +271,10 @@ func (Unimplemented) GetUtcTime(ctx context.Context, request GetUtcTimeRequestOb
 	return nil, ErrNotImplemented
 }
 
+func (Unimplemented) GoJellyfinGetHealth(ctx context.Context, request GoJellyfinGetHealthRequestObject) (GoJellyfinGetHealthResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
 func (Unimplemented) GoJellyfinListReports(ctx context.Context, request GoJellyfinListReportsRequestObject) (GoJellyfinListReportsResponseObject, error) {
 	return nil, ErrNotImplemented
 }

@@ -105,7 +105,7 @@ reads the environment.
 
 | Value | Environment variable | Default | Description |
 |---|---|---|---|
-| `hostname` | `PUBLISHED_SERVER_URL` | `""` | The name clients reach the server by. The routes match it, and the public endpoints advertise `<scheme>://<hostname>`. Empty advertises no address at all — a client prefers `LocalAddress` when it believes it shares a network with the server, so naming one it cannot reach sends it nowhere |
+| `hostname` | `PUBLISHED_SERVER_URL` | `""` | The name clients reach the server by. The routes match it, and the public endpoints advertise `<scheme>://<hostname>`. Empty advertises no address at all — a client prefers `LocalAddress` when it believes it shares a network with the server, so naming one it cannot reach sends it nowhere. It is also the address the server registers with each Sonarr and Radarr as their webhook, which is why the worker is given it too |
 | `scheme` | | `https` | What the gateway in front of this listens on, and the only thing it is used for. Advertising `https` over a plain listener loses a client exactly as advertising a wrong hostname does |
 | `serverId` | `SERVER_ID` | `""` | The id the server answers with. A client keys the token it holds by it, so a server taking over from a Jellyfin install is given that install's id: the contents of `device.txt` beside its `jellyfin.db`, which `scripts/jellyfinmigrate` prints. Empty keeps gojellyfin's own |
 | `httpPort` | `HTTP_PORT` | `8081` | What the server listens on. The container port, the Service target and the probes follow it |
@@ -125,9 +125,9 @@ reads the environment.
 | `oidc.allowedGroup` | `OIDC_ALLOWED_GROUP` | `""` | Only members may sign in. Empty admits anyone the provider vouches for |
 | `oidc.linkExistingUsers` | `OIDC_LINK_EXISTING_USERS` | `false` | Let a first sign-in claim the local account with the same username instead of refusing it |
 | `sources.existingSecret` | `SOURCE_API_KEY_*` | `""` | Secret whose keys are the variable names Sonarr and Radarr sources are configured with, loaded into the API and the worker. Empty leaves every source failing its test and its scan |
-| `cors.enabled` | `CORS_ORIGINS` | `false` | Off reflects whatever origin asks; a literal `*` is not equivalent, because browsers reject it on credentialed requests |
-| `cors.origin` | | `""` | The one origin allowed when enabled. Enabling without one refuses to render: an empty value reflects every origin, so the restriction would restrict nothing |
-| `tracing.otlpEndpoint` | `OTEL_EXPORTER_OTLP_ENDPOINT` | `""` | Empty exports no traces |
+| `cors.enabled` | `CORS_ORIGINS` | `false` | Off allows only `https://apps.jellyfin.org`, the Google Cast receiver, which the server always allows |
+| `cors.origin` | | `""` | The origin added beside the cast receiver when enabled. Enabling without one refuses to render: an empty value reflects every origin, so the restriction would restrict nothing |
+| `tracing.otlpEndpoint` | `OTEL_EXPORTER_OTLP_ENDPOINT` | `""` | Empty exports no traces. Set, each workload also gets `OTEL_SERVICE_NAME` (`<release>-api`, `-streaming`, `-worker`) and `OTEL_RESOURCE_ATTRIBUTES` naming its pod ip, pod name and namespace, which is what a collector's `k8sattributes` processor associates a span with |
 | `media.directories` | `MEDIA_DIRECTORIES` | `[]` | The roots the library browser offers; empty follows `media.mountPath` and every `media.extraVolumes` path |
 | `temporal.hostPort` | `TEMPORAL_HOSTPORT` | `""` | Empty turns background work off and the server still starts |
 | `temporal.namespace` | `TEMPORAL_NAMESPACE` | `""` | Required once `hostPort` is set; the binary refuses to invent one, and so does the chart |
@@ -143,6 +143,11 @@ workload's cpu request rounded down, and at least 1: 200m gets one slot, 2 gets
 two. Past its slots the pod answers 503 with a `Retry-After` and the gateway
 retries against another pod, and that refusal is the whole of the load
 balancing — there is no pool and no shared state.
+
+A picture encode, the 1080p H.264 the server makes when no copy of a title
+plays untouched, is pinned to three threads and takes three slots, so a pod
+with four slots runs one of those and one audio encode at a time. A pod with
+fewer than three slots gives a picture encode all of them.
 
 Raising the request raises the slots with it. Setting `transcoderJobs`
 explicitly overrides that in either direction, including above the request if

@@ -8,10 +8,12 @@ import (
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
-	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/fx"
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 )
 
 var Module = fx.Module(
@@ -26,10 +28,15 @@ type Store struct {
 }
 
 func NewStore(config env.Config) (*Store, error) {
-	db, err := sql.Open("pgx", config.DatabaseURL)
+	connection, err := pgx.ParseConfig(config.DatabaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
+	connection.Tracer = tracing.Queries{}
+	db := stdlib.OpenDB(*connection)
+	db.SetMaxOpenConns(config.Database.MaxConns)
+	db.SetMaxIdleConns(config.Database.MaxConns)
+	db.SetConnMaxLifetime(config.Database.ConnMaxLifetime)
 
 	return &Store{db: db, client: NewClient(Driver(entsql.OpenDB(dialect.Postgres, db)))}, nil
 }

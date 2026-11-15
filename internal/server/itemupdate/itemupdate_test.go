@@ -187,7 +187,6 @@ func TestServer_UpdateItem(t *testing.T) {
 			OfficialRating: apiutil.Ptr("R"),
 			ProductionYear: apiutil.Ptr(int32(1999)),
 			PremiereDate:   &premiere,
-			IndexNumber:    apiutil.Ptr(int32(3)),
 			LockData:       apiutil.Ptr(true),
 			Tags:           &[]string{"cyberpunk", "classic"},
 			ProviderIds:    &map[string]*string{"Imdb": apiutil.Ptr("tt0133093")},
@@ -215,9 +214,6 @@ func TestServer_UpdateItem(t *testing.T) {
 		}
 		if record.PremiereDate == nil || !record.PremiereDate.Equal(premiere) {
 			t.Errorf("premiere date = %v, want %v", record.PremiereDate, premiere)
-		}
-		if apiutil.Deref(record.IndexNumber) != 3 {
-			t.Errorf("index number = %v, want 3", record.IndexNumber)
 		}
 		if !record.LockData {
 			t.Error("lock data = false, want true")
@@ -247,12 +243,15 @@ func TestServer_UpdateItem(t *testing.T) {
 		fixture := newFixture(t)
 
 		fixture.update(t, fixture.itemID, api.BaseItemDto{
-			Name:         apiutil.Ptr("Renamed"),
-			RunTimeTicks: apiutil.Ptr(int64(1)),
-			Path:         apiutil.Ptr("/somewhere/else.mp4"),
-			Type:         apiutil.Ptr(api.BaseItemKindEpisode),
-			ParentId:     apiutil.Ptr(fixture.folderID),
-			MediaSources: &[]api.MediaSourceInfo{{Container: apiutil.Ptr("mp4")}},
+			Name:              apiutil.Ptr("Renamed"),
+			RunTimeTicks:      apiutil.Ptr(int64(1)),
+			Path:              apiutil.Ptr("/somewhere/else.mp4"),
+			Type:              apiutil.Ptr(api.BaseItemKindEpisode),
+			ParentId:          apiutil.Ptr(fixture.folderID),
+			MediaSources:      &[]api.MediaSourceInfo{{Container: apiutil.Ptr("mp4")}},
+			IndexNumber:       apiutil.Ptr(int32(9)),
+			IndexNumberEnd:    apiutil.Ptr(int32(10)),
+			ParentIndexNumber: apiutil.Ptr(int32(2)),
 		})
 
 		record := fixture.item(t)
@@ -273,6 +272,9 @@ func TestServer_UpdateItem(t *testing.T) {
 		}
 		if record.ParentID != nil {
 			t.Errorf("parent id = %v, want none", record.ParentID)
+		}
+		if record.IndexNumber != nil || record.ParentIndexNumber != nil {
+			t.Errorf("index numbers = %v, %v, want none: the scan owns them and would take the edit back", record.IndexNumber, record.ParentIndexNumber)
 		}
 		if sources, err := fixture.client.ItemSource.Query().Where(sourcemodel.ItemID(record.ID)).Count(context.Background()); err != nil {
 			t.Fatalf("failed to count the media sources: %v", err)
@@ -337,18 +339,11 @@ func TestServer_GetMetadataEditorInfo(t *testing.T) {
 		}
 	})
 
-	t.Run("offers the supported content types for a folder", func(t *testing.T) {
+	t.Run("offers no content type to change a folder to", func(t *testing.T) {
 		info := fixture.editorInfo(t, fixture.folderID)
 
-		values := make([]string, 0, len(apiutil.Deref(info.ContentTypeOptions)))
-		for _, option := range apiutil.Deref(info.ContentTypeOptions) {
-			values = append(values, apiutil.Deref(option.Value))
-		}
-		if !slices.Contains(values, string(libraries.CollectionTypeMovies)) {
-			t.Errorf("content type options = %v, want the supported collection types", values)
-		}
-		if len(values) != len(libraries.CollectionTypes) {
-			t.Errorf("content type options = %v, want %d", values, len(libraries.CollectionTypes))
+		if options := apiutil.Deref(info.ContentTypeOptions); len(options) != 0 {
+			t.Errorf("content type options = %v, want none: nothing stores a folder's own content type", options)
 		}
 	})
 
@@ -372,14 +367,15 @@ func TestServer_UpdateItemContentType(t *testing.T) {
 		contentType *string
 		want        api.UpdateItemContentTypeResponseObject
 	}{
-		{name: "supported", contentType: apiutil.Ptr("tvshows"), want: api.UpdateItemContentType204Response{}},
+		{name: "the library's own", contentType: apiutil.Ptr("movies"), want: api.UpdateItemContentType204Response{}},
 		{name: "inherited", contentType: nil, want: api.UpdateItemContentType204Response{}},
+		{name: "another it would not store", contentType: apiutil.Ptr("tvshows"), want: api.UpdateItemContentType403Response{}},
 		{name: "unhandleable", contentType: apiutil.Ptr("podcasts"), want: api.UpdateItemContentType403Response{}},
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
 			response, err := fixture.server.UpdateItemContentType(ctx, api.UpdateItemContentTypeRequestObject{
-				ItemId: fixture.folderID,
+				ItemId: fixture.itemID,
 				Params: api.UpdateItemContentTypeParams{ContentType: test.contentType},
 			})
 			if err != nil {

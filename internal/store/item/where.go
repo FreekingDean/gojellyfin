@@ -1428,6 +1428,29 @@ func HasActivityLogEntriesWith(preds ...predicate.ActivityLogEntry) predicate.It
 	})
 }
 
+// HasPlayingSessions applies the HasEdge predicate on the "playing_sessions" edge.
+func HasPlayingSessions() predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, PlayingSessionsTable, PlayingSessionsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasPlayingSessionsWith applies the HasEdge predicate on the "playing_sessions" edge with a given conditions (other predicates).
+func HasPlayingSessionsWith(preds ...predicate.Session) predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := newPlayingSessionsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasPlaylist applies the HasEdge predicate on the "playlist" edge.
 func HasPlaylist() predicate.Item {
 	return predicate.Item(func(s *sql.Selector) {
@@ -1466,6 +1489,29 @@ func HasPlaylistEntries() predicate.Item {
 func HasPlaylistEntriesWith(preds ...predicate.PlaylistEntry) predicate.Item {
 	return predicate.Item(func(s *sql.Selector) {
 		step := newPlaylistEntriesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasSyncPlayEntries applies the HasEdge predicate on the "sync_play_entries" edge.
+func HasSyncPlayEntries() predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SyncPlayEntriesTable, SyncPlayEntriesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSyncPlayEntriesWith applies the HasEdge predicate on the "sync_play_entries" edge with a given conditions (other predicates).
+func HasSyncPlayEntriesWith(preds ...predicate.SyncPlayQueueEntry) predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := newSyncPlayEntriesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

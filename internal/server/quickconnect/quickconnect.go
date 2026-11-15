@@ -17,7 +17,7 @@ import (
 
 //go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -destination=mocks/mock_$GOFILE -package=mocks
 type QuickConnectService interface {
-	Initiate(ctx context.Context, device sessions.Device) (*quickconnect.Request, error)
+	Initiate(ctx context.Context, device sessions.Device, address string) (*quickconnect.Request, error)
 	Pending(ctx context.Context, secret string) (*quickconnect.Request, error)
 	Authorize(ctx context.Context, code string, userID uuid.UUID) error
 }
@@ -57,7 +57,8 @@ func (s *Server) GetQuickConnectEnabled(ctx context.Context, request api.GetQuic
 }
 
 func (s *Server) InitiateQuickConnect(ctx context.Context, request api.InitiateQuickConnectRequestObject) (api.InitiateQuickConnectResponseObject, error) {
-	pending, err := s.quickconnect.Initiate(ctx, auth.AuthorizationFrom(ctx).ClientDevice())
+	authorization := auth.AuthorizationFrom(ctx)
+	pending, err := s.quickconnect.Initiate(ctx, authorization.ClientDevice(), authorization.RemoteAddr)
 	if err != nil {
 		return nil, err
 	}

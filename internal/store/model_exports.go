@@ -20,6 +20,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/report"
 	"github.com/FreekingDean/gojellyfin/internal/store/request"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
+	"github.com/FreekingDean/gojellyfin/internal/store/syncplaygroup"
 	"github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
 	"github.com/FreekingDean/gojellyfin/internal/store/userpolicy"
 	"github.com/google/uuid"
@@ -674,8 +675,10 @@ type ItemModel struct {
 	Images             []*ImageModel
 	UserData           []*UserItemDataModel
 	ActivityLogEntries []*ActivityLogEntryModel
+	PlayingSessions    []*SessionModel
 	Playlist           *PlaylistModel
 	PlaylistEntries    []*PlaylistEntryModel
+	SyncPlayEntries    []*SyncPlayQueueEntryModel
 	Genres             []*GenreModel
 	Studios            []*StudioModel
 }
@@ -729,8 +732,10 @@ func fromItem(_m *Item) *ItemModel {
 		Images:             fromAllImage(_m.Edges.Images),
 		UserData:           fromAllUserItemData(_m.Edges.UserData),
 		ActivityLogEntries: fromAllActivityLogEntry(_m.Edges.ActivityLogEntries),
+		PlayingSessions:    fromAllSession(_m.Edges.PlayingSessions),
 		Playlist:           fromPlaylist(_m.Edges.Playlist),
 		PlaylistEntries:    fromAllPlaylistEntry(_m.Edges.PlaylistEntries),
+		SyncPlayEntries:    fromAllSyncPlayQueueEntry(_m.Edges.SyncPlayEntries),
 		Genres:             fromAllGenre(_m.Edges.Genres),
 		Studios:            fromAllStudio(_m.Edges.Studios),
 	}
@@ -786,6 +791,7 @@ type ItemSourceModel struct {
 	ProbedAt       *time.Time
 	ExternalID     *int64
 	ExternalFileID *int64
+	Lyrics         string
 
 	Item    *ItemModel
 	Source  *SourceModel
@@ -822,6 +828,7 @@ func fromItemSource(_m *ItemSource) *ItemSourceModel {
 		ProbedAt:       _m.ProbedAt,
 		ExternalID:     _m.ExternalID,
 		ExternalFileID: _m.ExternalFileID,
+		Lyrics:         _m.Lyrics,
 
 		Item:    fromItem(_m.Edges.Item),
 		Source:  fromSource(_m.Edges.Source),
@@ -1345,6 +1352,7 @@ type PersonModel struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	Name      string
+	ImageURL  string
 
 	Credits []*CreditModel
 }
@@ -1367,6 +1375,7 @@ func fromPerson(_m *Person) *PersonModel {
 		CreatedAt: _m.CreatedAt,
 		UpdatedAt: _m.UpdatedAt,
 		Name:      _m.Name,
+		ImageURL:  _m.ImageURL,
 
 		Credits: fromAllCredit(_m.Edges.Credits),
 	}
@@ -1638,6 +1647,7 @@ type QuickConnectRequestModel struct {
 	DeviceName     string
 	AppName        string
 	AppVersion     string
+	RemoteAddress  string
 	ExpiresAt      time.Time
 	AuthorizedByID *uuid.UUID
 
@@ -1667,6 +1677,7 @@ func fromQuickConnectRequest(_m *QuickConnectRequest) *QuickConnectRequestModel 
 		DeviceName:     _m.DeviceName,
 		AppName:        _m.AppName,
 		AppVersion:     _m.AppVersion,
+		RemoteAddress:  _m.RemoteAddress,
 		ExpiresAt:      _m.ExpiresAt,
 		AuthorizedByID: _m.AuthorizedByID,
 
@@ -1942,18 +1953,25 @@ func (c *RequestSubmissionClient) GetModel(ctx context.Context, id uuid.UUID) (*
 type SessionModel struct {
 	ID uuid.UUID
 
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-	AccessToken    string
-	RemoteEndpoint string
-	LastActivityAt *time.Time
-	RevokedAt      *time.Time
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+	AccessToken      string
+	RemoteEndpoint   string
+	LastActivityAt   *time.Time
+	RevokedAt        *time.Time
+	NowPlayingItemID *uuid.UUID
+	PositionTicks    int64
+	PlayMethod       string
+	IsPaused         bool
+	PlayingAt        *time.Time
 
 	DeviceID *uuid.UUID
 	UserID   *uuid.UUID
 
-	User   *UserModel
-	Device *DeviceModel
+	User                *UserModel
+	Device              *DeviceModel
+	NowPlaying          *ItemModel
+	SyncPlayMemberships []*SyncPlayGroupMemberModel
 }
 
 func fromAllSession(_m []*Session) []*SessionModel {
@@ -1970,19 +1988,26 @@ func fromSession(_m *Session) *SessionModel {
 	}
 
 	return &SessionModel{
-		ID:             _m.ID,
-		CreatedAt:      _m.CreatedAt,
-		UpdatedAt:      _m.UpdatedAt,
-		AccessToken:    _m.AccessToken,
-		RemoteEndpoint: _m.RemoteEndpoint,
-		LastActivityAt: _m.LastActivityAt,
-		RevokedAt:      _m.RevokedAt,
+		ID:               _m.ID,
+		CreatedAt:        _m.CreatedAt,
+		UpdatedAt:        _m.UpdatedAt,
+		AccessToken:      _m.AccessToken,
+		RemoteEndpoint:   _m.RemoteEndpoint,
+		LastActivityAt:   _m.LastActivityAt,
+		RevokedAt:        _m.RevokedAt,
+		NowPlayingItemID: _m.NowPlayingItemID,
+		PositionTicks:    _m.PositionTicks,
+		PlayMethod:       _m.PlayMethod,
+		IsPaused:         _m.IsPaused,
+		PlayingAt:        _m.PlayingAt,
 
 		DeviceID: _m.device_sessions,
 		UserID:   _m.user_sessions,
 
-		User:   fromUser(_m.Edges.User),
-		Device: fromDevice(_m.Edges.Device),
+		User:                fromUser(_m.Edges.User),
+		Device:              fromDevice(_m.Edges.Device),
+		NowPlaying:          fromItem(_m.Edges.NowPlaying),
+		SyncPlayMemberships: fromAllSyncPlayGroupMember(_m.Edges.SyncPlayMemberships),
 	}
 }
 
@@ -2022,18 +2047,21 @@ func (c *SessionClient) GetModel(ctx context.Context, id uuid.UUID) (*SessionMod
 type SourceModel struct {
 	ID uuid.UUID
 
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
-	Name              string
-	URL               string
-	APIKeyVariable    string
-	Kind              source.Kind
-	Version           string
-	ContactedAt       *time.Time
-	LastError         string
-	RequestProfileID  *int
-	RequestRootFolder string
-	RequestTag        string
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+	Name                string
+	URL                 string
+	APIKeyVariable      string
+	Kind                source.Kind
+	Version             string
+	ContactedAt         *time.Time
+	LastError           string
+	RequestProfileID    *int
+	RequestRootFolder   string
+	RequestTag          string
+	WebhookSecret       string
+	WebhookRegisteredAt *time.Time
+	WebhookError        string
 
 	Paths       []*SourcePathModel
 	Libraries   []*LibrarySourceModel
@@ -2056,19 +2084,22 @@ func fromSource(_m *Source) *SourceModel {
 	}
 
 	return &SourceModel{
-		ID:                _m.ID,
-		CreatedAt:         _m.CreatedAt,
-		UpdatedAt:         _m.UpdatedAt,
-		Name:              _m.Name,
-		URL:               _m.URL,
-		APIKeyVariable:    _m.APIKeyVariable,
-		Kind:              _m.Kind,
-		Version:           _m.Version,
-		ContactedAt:       _m.ContactedAt,
-		LastError:         _m.LastError,
-		RequestProfileID:  _m.RequestProfileID,
-		RequestRootFolder: _m.RequestRootFolder,
-		RequestTag:        _m.RequestTag,
+		ID:                  _m.ID,
+		CreatedAt:           _m.CreatedAt,
+		UpdatedAt:           _m.UpdatedAt,
+		Name:                _m.Name,
+		URL:                 _m.URL,
+		APIKeyVariable:      _m.APIKeyVariable,
+		Kind:                _m.Kind,
+		Version:             _m.Version,
+		ContactedAt:         _m.ContactedAt,
+		LastError:           _m.LastError,
+		RequestProfileID:    _m.RequestProfileID,
+		RequestRootFolder:   _m.RequestRootFolder,
+		RequestTag:          _m.RequestTag,
+		WebhookSecret:       _m.WebhookSecret,
+		WebhookRegisteredAt: _m.WebhookRegisteredAt,
+		WebhookError:        _m.WebhookError,
 
 		Paths:       fromAllSourcePath(_m.Edges.Paths),
 		Libraries:   fromAllLibrarySource(_m.Edges.Libraries),
@@ -2245,6 +2276,250 @@ func (_q *StudioQuery) AllModels(ctx context.Context) ([]*StudioModel, error) {
 func (c *StudioClient) GetModel(ctx context.Context, id uuid.UUID) (*StudioModel, error) {
 	_m, err := c.Get(ctx, id)
 	return fromStudio(_m), err
+}
+
+type SyncPlayGroupModel struct {
+	ID uuid.UUID
+
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	Name            string
+	State           syncplaygroup.State
+	PositionTicks   int64
+	RunTimeTicks    int64
+	LastActivity    time.Time
+	PlayingIndex    int
+	ShuffleMode     syncplaygroup.ShuffleMode
+	RepeatMode      syncplaygroup.RepeatMode
+	QueueChangedAt  time.Time
+	ResumePlaying   bool
+	WaitingFrom     *syncplaygroup.WaitingFrom
+	PositionJumped  bool
+	IgnoreBuffering bool
+	WaitDeadline    *time.Time
+
+	Members []*SyncPlayGroupMemberModel
+	Queue   []*SyncPlayQueueEntryModel
+}
+
+func fromAllSyncPlayGroup(_m []*SyncPlayGroup) []*SyncPlayGroupModel {
+	models := make([]*SyncPlayGroupModel, len(_m))
+	for i, v := range _m {
+		models[i] = fromSyncPlayGroup(v)
+	}
+	return models
+}
+
+func fromSyncPlayGroup(_m *SyncPlayGroup) *SyncPlayGroupModel {
+	if _m == nil {
+		return nil
+	}
+
+	return &SyncPlayGroupModel{
+		ID:              _m.ID,
+		CreatedAt:       _m.CreatedAt,
+		UpdatedAt:       _m.UpdatedAt,
+		Name:            _m.Name,
+		State:           _m.State,
+		PositionTicks:   _m.PositionTicks,
+		RunTimeTicks:    _m.RunTimeTicks,
+		LastActivity:    _m.LastActivity,
+		PlayingIndex:    _m.PlayingIndex,
+		ShuffleMode:     _m.ShuffleMode,
+		RepeatMode:      _m.RepeatMode,
+		QueueChangedAt:  _m.QueueChangedAt,
+		ResumePlaying:   _m.ResumePlaying,
+		WaitingFrom:     _m.WaitingFrom,
+		PositionJumped:  _m.PositionJumped,
+		IgnoreBuffering: _m.IgnoreBuffering,
+		WaitDeadline:    _m.WaitDeadline,
+
+		Members: fromAllSyncPlayGroupMember(_m.Edges.Members),
+		Queue:   fromAllSyncPlayQueueEntry(_m.Edges.Queue),
+	}
+}
+
+func (_c *SyncPlayGroupCreate) SaveModel(ctx context.Context) (*SyncPlayGroupModel, error) {
+	_m, err := _c.Save(ctx)
+	return fromSyncPlayGroup(_m), err
+}
+
+func (_u *SyncPlayGroupUpdateOne) SaveModel(ctx context.Context) (*SyncPlayGroupModel, error) {
+	_m, err := _u.Save(ctx)
+	return fromSyncPlayGroup(_m), err
+}
+
+func (_q *SyncPlayGroupQuery) OnlyModel(ctx context.Context) (*SyncPlayGroupModel, error) {
+	_m, err := _q.Only(ctx)
+	return fromSyncPlayGroup(_m), err
+}
+
+func (_q *SyncPlayGroupQuery) FirstModel(ctx context.Context) (*SyncPlayGroupModel, error) {
+	_m, err := _q.First(ctx)
+	return fromSyncPlayGroup(_m), err
+}
+
+func (_q *SyncPlayGroupQuery) AllModels(ctx context.Context) ([]*SyncPlayGroupModel, error) {
+	_m, err := _q.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return fromAllSyncPlayGroup(_m), nil
+}
+
+func (c *SyncPlayGroupClient) GetModel(ctx context.Context, id uuid.UUID) (*SyncPlayGroupModel, error) {
+	_m, err := c.Get(ctx, id)
+	return fromSyncPlayGroup(_m), err
+}
+
+type SyncPlayGroupMemberModel struct {
+	ID uuid.UUID
+
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	GroupID     uuid.UUID
+	SessionID   uuid.UUID
+	Ping        int64
+	IsBuffering bool
+	IgnoreWait  bool
+
+	Group   *SyncPlayGroupModel
+	Session *SessionModel
+}
+
+func fromAllSyncPlayGroupMember(_m []*SyncPlayGroupMember) []*SyncPlayGroupMemberModel {
+	models := make([]*SyncPlayGroupMemberModel, len(_m))
+	for i, v := range _m {
+		models[i] = fromSyncPlayGroupMember(v)
+	}
+	return models
+}
+
+func fromSyncPlayGroupMember(_m *SyncPlayGroupMember) *SyncPlayGroupMemberModel {
+	if _m == nil {
+		return nil
+	}
+
+	return &SyncPlayGroupMemberModel{
+		ID:          _m.ID,
+		CreatedAt:   _m.CreatedAt,
+		UpdatedAt:   _m.UpdatedAt,
+		GroupID:     _m.GroupID,
+		SessionID:   _m.SessionID,
+		Ping:        _m.Ping,
+		IsBuffering: _m.IsBuffering,
+		IgnoreWait:  _m.IgnoreWait,
+
+		Group:   fromSyncPlayGroup(_m.Edges.Group),
+		Session: fromSession(_m.Edges.Session),
+	}
+}
+
+func (_c *SyncPlayGroupMemberCreate) SaveModel(ctx context.Context) (*SyncPlayGroupMemberModel, error) {
+	_m, err := _c.Save(ctx)
+	return fromSyncPlayGroupMember(_m), err
+}
+
+func (_u *SyncPlayGroupMemberUpdateOne) SaveModel(ctx context.Context) (*SyncPlayGroupMemberModel, error) {
+	_m, err := _u.Save(ctx)
+	return fromSyncPlayGroupMember(_m), err
+}
+
+func (_q *SyncPlayGroupMemberQuery) OnlyModel(ctx context.Context) (*SyncPlayGroupMemberModel, error) {
+	_m, err := _q.Only(ctx)
+	return fromSyncPlayGroupMember(_m), err
+}
+
+func (_q *SyncPlayGroupMemberQuery) FirstModel(ctx context.Context) (*SyncPlayGroupMemberModel, error) {
+	_m, err := _q.First(ctx)
+	return fromSyncPlayGroupMember(_m), err
+}
+
+func (_q *SyncPlayGroupMemberQuery) AllModels(ctx context.Context) ([]*SyncPlayGroupMemberModel, error) {
+	_m, err := _q.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return fromAllSyncPlayGroupMember(_m), nil
+}
+
+func (c *SyncPlayGroupMemberClient) GetModel(ctx context.Context, id uuid.UUID) (*SyncPlayGroupMemberModel, error) {
+	_m, err := c.Get(ctx, id)
+	return fromSyncPlayGroupMember(_m), err
+}
+
+type SyncPlayQueueEntryModel struct {
+	ID uuid.UUID
+
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	GroupID       uuid.UUID
+	ItemID        uuid.UUID
+	SortedIndex   int
+	ShuffledIndex *int
+
+	Group *SyncPlayGroupModel
+	Item  *ItemModel
+}
+
+func fromAllSyncPlayQueueEntry(_m []*SyncPlayQueueEntry) []*SyncPlayQueueEntryModel {
+	models := make([]*SyncPlayQueueEntryModel, len(_m))
+	for i, v := range _m {
+		models[i] = fromSyncPlayQueueEntry(v)
+	}
+	return models
+}
+
+func fromSyncPlayQueueEntry(_m *SyncPlayQueueEntry) *SyncPlayQueueEntryModel {
+	if _m == nil {
+		return nil
+	}
+
+	return &SyncPlayQueueEntryModel{
+		ID:            _m.ID,
+		CreatedAt:     _m.CreatedAt,
+		UpdatedAt:     _m.UpdatedAt,
+		GroupID:       _m.GroupID,
+		ItemID:        _m.ItemID,
+		SortedIndex:   _m.SortedIndex,
+		ShuffledIndex: _m.ShuffledIndex,
+
+		Group: fromSyncPlayGroup(_m.Edges.Group),
+		Item:  fromItem(_m.Edges.Item),
+	}
+}
+
+func (_c *SyncPlayQueueEntryCreate) SaveModel(ctx context.Context) (*SyncPlayQueueEntryModel, error) {
+	_m, err := _c.Save(ctx)
+	return fromSyncPlayQueueEntry(_m), err
+}
+
+func (_u *SyncPlayQueueEntryUpdateOne) SaveModel(ctx context.Context) (*SyncPlayQueueEntryModel, error) {
+	_m, err := _u.Save(ctx)
+	return fromSyncPlayQueueEntry(_m), err
+}
+
+func (_q *SyncPlayQueueEntryQuery) OnlyModel(ctx context.Context) (*SyncPlayQueueEntryModel, error) {
+	_m, err := _q.Only(ctx)
+	return fromSyncPlayQueueEntry(_m), err
+}
+
+func (_q *SyncPlayQueueEntryQuery) FirstModel(ctx context.Context) (*SyncPlayQueueEntryModel, error) {
+	_m, err := _q.First(ctx)
+	return fromSyncPlayQueueEntry(_m), err
+}
+
+func (_q *SyncPlayQueueEntryQuery) AllModels(ctx context.Context) ([]*SyncPlayQueueEntryModel, error) {
+	_m, err := _q.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return fromAllSyncPlayQueueEntry(_m), nil
+}
+
+func (c *SyncPlayQueueEntryClient) GetModel(ctx context.Context, id uuid.UUID) (*SyncPlayQueueEntryModel, error) {
+	_m, err := c.Get(ctx, id)
+	return fromSyncPlayQueueEntry(_m), err
 }
 
 type UserModel struct {

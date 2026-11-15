@@ -27,6 +27,8 @@ func ServerConfiguration(ctx context.Context, store *config.Service) (api.Server
 		}
 	}
 
+	configuration.CastReceiverApplications = castReceiverApplications()
+
 	return configuration, nil
 }
 
@@ -80,7 +82,6 @@ func defaultServerConfiguration() api.ServerConfiguration {
 		ContentTypes:                 &[]api.NameValuePair{},
 		PathSubstitutions:            &[]api.PathSubstitution{},
 		MetadataOptions:              &[]api.MetadataOptions{defaultMetadataOptions()},
-		CastReceiverApplications:     &[]api.CastReceiverApplication{},
 	}
 }
 
@@ -113,4 +114,13 @@ func defaultNamedConfiguration(key string) any {
 	default:
 		return defaultServerConfiguration()
 	}
+}
+
+func castReceiverApplications() *[]api.CastReceiverApplication {
+	applications := make([]api.CastReceiverApplication, 0, len(config.CastReceivers))
+	for _, receiver := range config.CastReceivers {
+		applications = append(applications, api.CastReceiverApplication{Id: receiver.ID, Name: receiver.Name})
+	}
+
+	return &applications
 }

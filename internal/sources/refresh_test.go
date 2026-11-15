@@ -17,6 +17,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemsourcemodel "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	librarymodel "github.com/FreekingDean/gojellyfin/internal/store/library"
 	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	librarysourcemodel "github.com/FreekingDean/gojellyfin/internal/store/librarysource"
 	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/source"
@@ -39,10 +40,12 @@ type movie struct {
 }
 
 type fixture struct {
-	service  *Service
-	items    *items.Service
-	client   *store.Client
-	sourceID uuid.UUID
+	service    *Service
+	items      *items.Service
+	client     *store.Client
+	sourceID   uuid.UUID
+	downloader *downloader
+	config     env.Config
 }
 
 func newFixture(t *testing.T, reported *[]movie) *fixture {
@@ -63,6 +66,7 @@ func newFixture(t *testing.T, reported *[]movie) *fixture {
 	}
 	client := connection.Client()
 
+	held := &downloader{reported: reported}
 	radarr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
@@ -76,7 +80,7 @@ func newFixture(t *testing.T, reported *[]movie) *fixture {
 		case "/api/v3/movie":
 			_ = json.NewEncoder(w).Encode(*reported)
 		default:
-			w.WriteHeader(http.StatusNotFound)
+			held.serve(w, r)
 		}
 	}))
 	t.Cleanup(radarr.Close)
@@ -116,10 +120,12 @@ func newFixture(t *testing.T, reported *[]movie) *fixture {
 	})
 
 	return &fixture{
-		service:  New(client, config, records, activity.New(client)),
-		items:    records,
-		client:   client,
-		sourceID: source.ID,
+		service:    New(client, config, records, activity.New(client)),
+		items:      records,
+		client:     client,
+		sourceID:   source.ID,
+		downloader: held,
+		config:     config,
 	}
 }
 
@@ -129,6 +135,7 @@ func (f *fixture) library(t *testing.T, filter string) uuid.UUID {
 	ctx := context.Background()
 	library, err := f.client.Library.Create().
 		SetName(t.Name() + "-" + uuid.NewString()).
+		SetCollectionType(librarymodel.CollectionTypeMovies).
 		SetLocations([]string{"/media"}).
 		Save(ctx)
 	if err != nil {
@@ -300,7 +307,7 @@ func TestRefreshLibrarySource_RecordsTheIDsTheInstanceAnswered(t *testing.T) {
 
 	heat := byPath["/media/Heat/heat.mkv"]
 	if heat == nil || heat.ExternalID != nil || heat.ExternalFileID != nil {
-		t.Errorf("heat = %+v, want no external ids for an instance that answered none", heat)
+		t.Errorf("heat = %+v, want no external ids for an downloader that answered none", heat)
 	}
 }
 

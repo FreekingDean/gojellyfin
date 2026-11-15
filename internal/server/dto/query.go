@@ -3,6 +3,9 @@ package dto
 import (
 	"context"
 
+	"github.com/google/uuid"
+
+	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
@@ -42,14 +45,15 @@ func QueryResult(
 
 func ItemQuery(ctx context.Context, collections *libraries.Service, viewer items.Viewer, params api.GetItemsParams) items.ItemQuery {
 	query := items.ItemQuery{
-		Viewer:     viewer,
-		SearchTerm: apiutil.Deref(params.SearchTerm),
-		StartIndex: int(apiutil.Deref(params.StartIndex)),
-		Limit:      int(apiutil.Deref(params.Limit)),
-		Descending: Descending(params.SortOrder),
-		SortBy:     SortFields(params.SortBy),
-		Kinds:      Kinds(params.IncludeItemTypes),
-		MediaTypes: MediaTypes(params.MediaTypes),
+		Viewer:       viewer,
+		SearchTerm:   apiutil.Deref(params.SearchTerm),
+		StartIndex:   int(apiutil.Deref(params.StartIndex)),
+		Limit:        int(apiutil.Deref(params.Limit)),
+		Descending:   Descending(params.SortOrder),
+		SortBy:       SortFields(params.SortBy),
+		Kinds:        Kinds(params.IncludeItemTypes),
+		ExcludeKinds: Kinds(params.ExcludeItemTypes),
+		MediaTypes:   MediaTypes(params.MediaTypes),
 
 		NameStartsWith:          apiutil.Deref(params.NameStartsWith),
 		NameStartsWithOrGreater: apiutil.Deref(params.NameStartsWithOrGreater),
@@ -59,6 +63,16 @@ func ItemQuery(ctx context.Context, collections *libraries.Service, viewer items
 	if params.Ids != nil {
 		query.IDs = *params.Ids
 	}
+	for _, artists := range []*[]uuid.UUID{params.ArtistIds, params.AlbumArtistIds, params.ContributingArtistIds} {
+		if artists != nil {
+			query.ArtistIDs = append(query.ArtistIDs, *artists...)
+		}
+	}
+	if params.AlbumIds != nil {
+		query.AlbumIDs = *params.AlbumIds
+	}
+
+	filter(&query, auth.UserID(ctx), params)
 
 	if params.ParentId != nil {
 		if library, err := collections.Library(ctx, *params.ParentId); err == nil {
@@ -104,5 +118,28 @@ func EmptyItems() api.BaseItemDtoQueryResult {
 		Items:            &[]api.BaseItemDto{},
 		StartIndex:       apiutil.Ptr(int32(0)),
 		TotalRecordCount: apiutil.Ptr(int32(0)),
+	}
+}
+
+func filter(query *items.ItemQuery, user uuid.UUID, params api.GetItemsParams) {
+	query.User = user
+	query.Played = params.IsPlayed
+	query.Favorite = params.IsFavorite
+
+	for _, by := range apiutil.Deref(params.Filters) {
+		switch by {
+		case api.ItemFilterIsPlayed:
+			query.Played = apiutil.Ptr(true)
+		case api.ItemFilterIsUnplayed:
+			query.Played = apiutil.Ptr(false)
+		case api.ItemFilterIsFavorite, api.ItemFilterIsFavoriteOrLikes:
+			query.Favorite = apiutil.Ptr(true)
+		case api.ItemFilterIsResumable:
+			query.Resumable = true
+		case api.ItemFilterIsFolder:
+			query.Folder = apiutil.Ptr(true)
+		case api.ItemFilterIsNotFolder:
+			query.Folder = apiutil.Ptr(false)
+		}
 	}
 }

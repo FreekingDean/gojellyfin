@@ -31,11 +31,19 @@ func canonicalQuery(values url.Values) (url.Values, bool) {
 		}
 
 		for _, single := range value {
-			if single == "" {
+			parts := []string{single}
+			if api.CommaDelimitedQueryParameters[key] && strings.Contains(single, ",") {
+				parts = strings.Split(single, ",")
 				changed = true
-				continue
 			}
-			canonical[key] = append(canonical[key], single)
+
+			for _, part := range parts {
+				if part == "" {
+					changed = true
+					continue
+				}
+				canonical[key] = append(canonical[key], part)
+			}
 		}
 	}
 

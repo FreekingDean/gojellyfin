@@ -12,6 +12,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 )
 
 var ErrNotConfigured = errors.New("tmdb: TMDB_API_KEY is not set")
@@ -63,6 +64,9 @@ func (c *Client) Enabled() bool {
 }
 
 func (c *Client) Movie(ctx context.Context, tmdbID int) (items.Metadata, bool, error) {
+	ctx, span := tracing.Start(ctx, "tmdb Movie")
+	defer span.End()
+
 	if err := c.ready(ctx); err != nil {
 		return items.Metadata{}, false, err
 	}
@@ -76,6 +80,9 @@ func (c *Client) Movie(ctx context.Context, tmdbID int) (items.Metadata, bool, e
 }
 
 func (c *Client) Series(ctx context.Context, tmdbID int) (items.Metadata, bool, error) {
+	ctx, span := tracing.Start(ctx, "tmdb Series")
+	defer span.End()
+
 	if err := c.ready(ctx); err != nil {
 		return items.Metadata{}, false, err
 	}
@@ -89,6 +96,9 @@ func (c *Client) Series(ctx context.Context, tmdbID int) (items.Metadata, bool, 
 }
 
 func (c *Client) Season(ctx context.Context, series int, season int32) (items.Metadata, bool, error) {
+	ctx, span := tracing.Start(ctx, "tmdb Season")
+	defer span.End()
+
 	if err := c.ready(ctx); err != nil {
 		return items.Metadata{}, false, err
 	}
@@ -102,6 +112,9 @@ func (c *Client) Season(ctx context.Context, series int, season int32) (items.Me
 }
 
 func (c *Client) Episode(ctx context.Context, series int, season, episode int32) (items.Metadata, bool, error) {
+	ctx, span := tracing.Start(ctx, "tmdb Episode")
+	defer span.End()
+
 	if err := c.ready(ctx); err != nil {
 		return items.Metadata{}, false, err
 	}

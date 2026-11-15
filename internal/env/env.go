@@ -3,6 +3,7 @@ package env
 import (
 	"errors"
 	"fmt"
+	"net/netip"
 	"net/url"
 	"os"
 	"regexp"
@@ -13,8 +14,10 @@ import (
 )
 
 const (
-	defaultHTTPPort = 8081
-	maxPort         = 65535
+	defaultHTTPPort        = 8081
+	defaultDatabaseConns   = 20
+	defaultConnMaxLifetime = 30 * time.Minute
+	maxPort                = 65535
 
 	SourceAPIKeyPrefix = "SOURCE_API_KEY_"
 )
@@ -23,10 +26,12 @@ var serverIDPattern = regexp.MustCompile(`^[0-9a-f]{32}$`)
 
 type Config struct {
 	DatabaseURL        string     `mapstructure:"DATABASE_URL" secret:"true"`
+	Database           Database   `mapstructure:",squash"`
 	HTTPPort           int        `mapstructure:"HTTP_PORT"`
 	PublishedServerURL string     `mapstructure:"PUBLISHED_SERVER_URL"`
 	ServerID           string     `mapstructure:"SERVER_ID"`
 	CORSOrigins        []string   `mapstructure:"CORS_ORIGINS"`
+	TrustedProxies     []string   `mapstructure:"TRUSTED_PROXIES"`
 	Transcoder         Transcoder `mapstructure:",squash"`
 	Temporal           Temporal   `mapstructure:",squash"`
 	Tracing            Tracing    `mapstructure:",squash"`
@@ -35,6 +40,11 @@ type Config struct {
 	MediaDirectories   []string   `mapstructure:"MEDIA_DIRECTORIES"`
 
 	SourceAPIKeys map[string]string `mapstructure:"-"`
+}
+
+type Database struct {
+	MaxConns        int           `mapstructure:"DATABASE_MAX_CONNS"`
+	ConnMaxLifetime time.Duration `mapstructure:"DATABASE_CONN_MAX_LIFETIME"`
 }
 
 type Transcoder struct {
@@ -49,7 +59,9 @@ type Temporal struct {
 }
 
 type Tracing struct {
-	OTLPEndpoint string `mapstructure:"OTEL_EXPORTER_OTLP_ENDPOINT"`
+	OTLPEndpoint       string `mapstructure:"OTEL_EXPORTER_OTLP_ENDPOINT"`
+	ServiceName        string `mapstructure:"OTEL_SERVICE_NAME"`
+	ResourceAttributes string `mapstructure:"OTEL_RESOURCE_ATTRIBUTES"`
 }
 
 type TMDB struct {
@@ -72,6 +84,8 @@ type OIDC struct {
 func Load() (Config, error) {
 	v := viper.NewWithOptions(viper.ExperimentalBindStruct())
 	v.SetDefault("HTTP_PORT", defaultHTTPPort)
+	v.SetDefault("DATABASE_MAX_CONNS", defaultDatabaseConns)
+	v.SetDefault("DATABASE_CONN_MAX_LIFETIME", defaultConnMaxLifetime)
 	v.SetDefault("MEDIA_DIRECTORIES", []string{"/"})
 
 	v.AutomaticEnv()
@@ -82,6 +96,7 @@ func Load() (Config, error) {
 	}
 
 	config.CORSOrigins = trimmed(config.CORSOrigins)
+	config.TrustedProxies = trimmed(config.TrustedProxies)
 	config.MediaDirectories = trimmed(config.MediaDirectories)
 	config.SourceAPIKeys = sourceAPIKeys()
 
@@ -95,6 +110,12 @@ func Load() (Config, error) {
 func (c Config) validate() error {
 	if c.DatabaseURL == "" {
 		return errors.New("DATABASE_URL is not set, so there is no database to open")
+	}
+	if c.Database.MaxConns < 1 {
+		return fmt.Errorf("DATABASE_MAX_CONNS must be a whole number of connections above zero, got %d", c.Database.MaxConns)
+	}
+	if c.Database.ConnMaxLifetime <= 0 {
+		return fmt.Errorf("DATABASE_CONN_MAX_LIFETIME must be a duration above zero such as 30m, got %s", c.Database.ConnMaxLifetime)
 	}
 	if c.HTTPPort < 1 || c.HTTPPort > maxPort {
 		return fmt.Errorf("HTTP_PORT must be a port between 1 and %d, got %d", maxPort, c.HTTPPort)
@@ -110,6 +131,12 @@ func (c Config) validate() error {
 	}
 	if c.ServerID != "" && !serverIDPattern.MatchString(c.ServerID) {
 		return fmt.Errorf("SERVER_ID must be 32 lowercase hex characters, the form Jellyfin writes to device.txt, got %q", c.ServerID)
+	}
+
+	for _, proxy := range c.TrustedProxies {
+		if _, err := netip.ParsePrefix(proxy); err != nil {
+			return fmt.Errorf("TRUSTED_PROXIES must be a comma separated list of networks such as 10.201.0.0/16, got %q", proxy)
+		}
 	}
 
 	return c.validateOIDC()

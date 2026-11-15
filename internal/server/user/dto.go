@@ -39,7 +39,7 @@ func configurationDto(configuration *users.Configuration) api.UserConfiguration 
 	}
 
 	return api.UserConfiguration{
-		CastReceiverId:             apiutil.Ptr(configuration.CastReceiverID),
+		CastReceiverId:             apiutil.Ptr(config.CastReceiverID(configuration.CastReceiverID)),
 		AudioLanguagePreference:    apiutil.Ptr(configuration.AudioLanguagePreference),
 		SubtitleLanguagePreference: apiutil.Ptr(configuration.SubtitleLanguagePreference),
 		PlayDefaultAudioTrack:      apiutil.Ptr(configuration.PlayDefaultAudioTrack),
@@ -159,7 +159,13 @@ func (s *Server) saveConfiguration(ctx context.Context, id uuid.UUID, req *api.U
 }
 
 func (s *Server) savePolicy(ctx context.Context, id uuid.UUID, req *api.UserPolicy) error {
-	update := s.users.UpdatePolicy(id).
+	return s.users.SavePolicy(ctx, id, func(update *users.PolicyUpdate) {
+		applyPolicy(update, req)
+	})
+}
+
+func applyPolicy(update *users.PolicyUpdate, req *api.UserPolicy) {
+	update.
 		SetNillableIsAdministrator(req.IsAdministrator).
 		SetNillableIsHidden(req.IsHidden).
 		SetNillableIsDisabled(req.IsDisabled).
@@ -240,22 +246,5 @@ func (s *Server) savePolicy(ctx context.Context, id uuid.UUID, req *api.UserPoli
 			})
 		}
 		update.SetAccessSchedules(schedules)
-	}
-
-	return update.Exec(ctx)
-}
-
-func publicUserDto(user *users.User) api.UserDto {
-	if user == nil {
-		return api.UserDto{}
-	}
-
-	return api.UserDto{
-		Id:                        &user.ID,
-		Name:                      apiutil.Ptr(user.Name),
-		ServerId:                  apiutil.Ptr(config.ServerID),
-		HasPassword:               apiutil.Ptr(user.PasswordHash != ""),
-		HasConfiguredPassword:     apiutil.Ptr(user.PasswordHash != ""),
-		HasConfiguredEasyPassword: apiutil.Ptr(false),
 	}
 }

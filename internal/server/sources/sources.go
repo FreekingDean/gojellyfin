@@ -14,6 +14,7 @@ import (
 const (
 	radarrKind api.SourceKind = "Radarr"
 	sonarrKind api.SourceKind = "Sonarr"
+	lidarrKind api.SourceKind = "Lidarr"
 )
 
 type Server struct {
@@ -138,7 +139,12 @@ func (s *Server) GoJellyfinTestSource(
 		return unreachable("no request body"), nil
 	}
 
-	found, err := s.sources.Test(ctx, request.Body.Url, request.Body.ApiKeyVariable)
+	kind, err := modelKind(request.Body.Kind)
+	if err != nil {
+		return unreachable(err.Error()), nil
+	}
+
+	found, err := s.sources.Test(ctx, kind, request.Body.Url, request.Body.ApiKeyVariable)
 	if err != nil {
 		return unreachable(err.Error()), nil
 	}
@@ -195,6 +201,14 @@ func sourceDto(entry sources.Configured) api.Source {
 		ContactedAt:    entry.Source.ContactedAt,
 		LastError:      apiutil.ZeroOrNilPtr(entry.Source.LastError),
 		Requests:       requestsDto(entry.Source),
+		Files:          apiutil.Ptr(int32(entry.Files)),
+		Webhook: &api.SourceWebhook{
+			Url:          apiutil.ZeroOrNilPtr(entry.WebhookURL),
+			Username:     apiutil.Ptr(sources.WebhookUsername),
+			Password:     apiutil.Ptr(entry.Source.WebhookSecret),
+			RegisteredAt: entry.Source.WebhookRegisteredAt,
+			Error:        apiutil.ZeroOrNilPtr(entry.Source.WebhookError),
+		},
 	}
 }
 
@@ -254,11 +268,14 @@ func configured(req api.Source) (sources.Configured, error) {
 }
 
 func apiKind(kind sources.Kind) api.SourceKind {
-	if kind == sources.KindSonarr {
+	switch kind {
+	case sources.KindSonarr:
 		return sonarrKind
+	case sources.KindLidarr:
+		return lidarrKind
+	default:
+		return radarrKind
 	}
-
-	return radarrKind
 }
 
 func modelKind(kind api.SourceKind) (sources.Kind, error) {
@@ -267,6 +284,8 @@ func modelKind(kind api.SourceKind) (sources.Kind, error) {
 		return sources.KindSonarr, nil
 	case strings.EqualFold(string(kind), string(radarrKind)):
 		return sources.KindRadarr, nil
+	case strings.EqualFold(string(kind), string(lidarrKind)):
+		return sources.KindLidarr, nil
 	default:
 		return "", fmt.Errorf("unsupported source kind %q", kind)
 	}

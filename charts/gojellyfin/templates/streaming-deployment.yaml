@@ -34,6 +34,7 @@ spec:
               containerPort: {{ .Values.httpPort }}
           env:
             {{- include "gojellyfin.serverEnv" (dict "root" $ "workload" .Values.streaming) | nindent 12 }}
+            {{- include "gojellyfin.tracingEnv" (dict "root" $ "component" $component) | nindent 12 }}
           livenessProbe:
             httpGet:
               path: /System/Ping

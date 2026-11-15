@@ -165,6 +165,48 @@ func (_c *SourceCreate) SetNillableRequestTag(v *string) *SourceCreate {
 	return _c
 }
 
+// SetWebhookSecret sets the "webhook_secret" field.
+func (_c *SourceCreate) SetWebhookSecret(v string) *SourceCreate {
+	_c.mutation.SetWebhookSecret(v)
+	return _c
+}
+
+// SetNillableWebhookSecret sets the "webhook_secret" field if the given value is not nil.
+func (_c *SourceCreate) SetNillableWebhookSecret(v *string) *SourceCreate {
+	if v != nil {
+		_c.SetWebhookSecret(*v)
+	}
+	return _c
+}
+
+// SetWebhookRegisteredAt sets the "webhook_registered_at" field.
+func (_c *SourceCreate) SetWebhookRegisteredAt(v time.Time) *SourceCreate {
+	_c.mutation.SetWebhookRegisteredAt(v)
+	return _c
+}
+
+// SetNillableWebhookRegisteredAt sets the "webhook_registered_at" field if the given value is not nil.
+func (_c *SourceCreate) SetNillableWebhookRegisteredAt(v *time.Time) *SourceCreate {
+	if v != nil {
+		_c.SetWebhookRegisteredAt(*v)
+	}
+	return _c
+}
+
+// SetWebhookError sets the "webhook_error" field.
+func (_c *SourceCreate) SetWebhookError(v string) *SourceCreate {
+	_c.mutation.SetWebhookError(v)
+	return _c
+}
+
+// SetNillableWebhookError sets the "webhook_error" field if the given value is not nil.
+func (_c *SourceCreate) SetNillableWebhookError(v *string) *SourceCreate {
+	if v != nil {
+		_c.SetWebhookError(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *SourceCreate) SetID(v uuid.UUID) *SourceCreate {
 	_c.mutation.SetID(v)
@@ -289,6 +331,10 @@ func (_c *SourceCreate) defaults() {
 		v := source.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.WebhookSecret(); !ok {
+		v := source.DefaultWebhookSecret()
+		_c.mutation.SetWebhookSecret(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -315,6 +361,9 @@ func (_c *SourceCreate) check() error {
 		if err := source.KindValidator(v); err != nil {
 			return &ValidationError{Name: "kind", err: fmt.Errorf(`store: validator failed for field "Source.kind": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.WebhookSecret(); !ok {
+		return &ValidationError{Name: "webhook_secret", err: errors.New(`store: missing required field "Source.webhook_secret"`)}
 	}
 	return nil
 }
@@ -399,6 +448,18 @@ func (_c *SourceCreate) createSpec() (*Source, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.RequestTag(); ok {
 		_spec.SetField(source.FieldRequestTag, field.TypeString, value)
 		_node.RequestTag = value
+	}
+	if value, ok := _c.mutation.WebhookSecret(); ok {
+		_spec.SetField(source.FieldWebhookSecret, field.TypeString, value)
+		_node.WebhookSecret = value
+	}
+	if value, ok := _c.mutation.WebhookRegisteredAt(); ok {
+		_spec.SetField(source.FieldWebhookRegisteredAt, field.TypeTime, value)
+		_node.WebhookRegisteredAt = &value
+	}
+	if value, ok := _c.mutation.WebhookError(); ok {
+		_spec.SetField(source.FieldWebhookError, field.TypeString, value)
+		_node.WebhookError = value
 	}
 	if nodes := _c.mutation.PathsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -718,6 +779,54 @@ func (u *SourceUpsert) ClearRequestTag() *SourceUpsert {
 	return u
 }
 
+// SetWebhookSecret sets the "webhook_secret" field.
+func (u *SourceUpsert) SetWebhookSecret(v string) *SourceUpsert {
+	u.Set(source.FieldWebhookSecret, v)
+	return u
+}
+
+// UpdateWebhookSecret sets the "webhook_secret" field to the value that was provided on create.
+func (u *SourceUpsert) UpdateWebhookSecret() *SourceUpsert {
+	u.SetExcluded(source.FieldWebhookSecret)
+	return u
+}
+
+// SetWebhookRegisteredAt sets the "webhook_registered_at" field.
+func (u *SourceUpsert) SetWebhookRegisteredAt(v time.Time) *SourceUpsert {
+	u.Set(source.FieldWebhookRegisteredAt, v)
+	return u
+}
+
+// UpdateWebhookRegisteredAt sets the "webhook_registered_at" field to the value that was provided on create.
+func (u *SourceUpsert) UpdateWebhookRegisteredAt() *SourceUpsert {
+	u.SetExcluded(source.FieldWebhookRegisteredAt)
+	return u
+}
+
+// ClearWebhookRegisteredAt clears the value of the "webhook_registered_at" field.
+func (u *SourceUpsert) ClearWebhookRegisteredAt() *SourceUpsert {
+	u.SetNull(source.FieldWebhookRegisteredAt)
+	return u
+}
+
+// SetWebhookError sets the "webhook_error" field.
+func (u *SourceUpsert) SetWebhookError(v string) *SourceUpsert {
+	u.Set(source.FieldWebhookError, v)
+	return u
+}
+
+// UpdateWebhookError sets the "webhook_error" field to the value that was provided on create.
+func (u *SourceUpsert) UpdateWebhookError() *SourceUpsert {
+	u.SetExcluded(source.FieldWebhookError)
+	return u
+}
+
+// ClearWebhookError clears the value of the "webhook_error" field.
+func (u *SourceUpsert) ClearWebhookError() *SourceUpsert {
+	u.SetNull(source.FieldWebhookError)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -980,6 +1089,62 @@ func (u *SourceUpsertOne) UpdateRequestTag() *SourceUpsertOne {
 func (u *SourceUpsertOne) ClearRequestTag() *SourceUpsertOne {
 	return u.Update(func(s *SourceUpsert) {
 		s.ClearRequestTag()
+	})
+}
+
+// SetWebhookSecret sets the "webhook_secret" field.
+func (u *SourceUpsertOne) SetWebhookSecret(v string) *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.SetWebhookSecret(v)
+	})
+}
+
+// UpdateWebhookSecret sets the "webhook_secret" field to the value that was provided on create.
+func (u *SourceUpsertOne) UpdateWebhookSecret() *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.UpdateWebhookSecret()
+	})
+}
+
+// SetWebhookRegisteredAt sets the "webhook_registered_at" field.
+func (u *SourceUpsertOne) SetWebhookRegisteredAt(v time.Time) *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.SetWebhookRegisteredAt(v)
+	})
+}
+
+// UpdateWebhookRegisteredAt sets the "webhook_registered_at" field to the value that was provided on create.
+func (u *SourceUpsertOne) UpdateWebhookRegisteredAt() *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.UpdateWebhookRegisteredAt()
+	})
+}
+
+// ClearWebhookRegisteredAt clears the value of the "webhook_registered_at" field.
+func (u *SourceUpsertOne) ClearWebhookRegisteredAt() *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.ClearWebhookRegisteredAt()
+	})
+}
+
+// SetWebhookError sets the "webhook_error" field.
+func (u *SourceUpsertOne) SetWebhookError(v string) *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.SetWebhookError(v)
+	})
+}
+
+// UpdateWebhookError sets the "webhook_error" field to the value that was provided on create.
+func (u *SourceUpsertOne) UpdateWebhookError() *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.UpdateWebhookError()
+	})
+}
+
+// ClearWebhookError clears the value of the "webhook_error" field.
+func (u *SourceUpsertOne) ClearWebhookError() *SourceUpsertOne {
+	return u.Update(func(s *SourceUpsert) {
+		s.ClearWebhookError()
 	})
 }
 
@@ -1412,6 +1577,62 @@ func (u *SourceUpsertBulk) UpdateRequestTag() *SourceUpsertBulk {
 func (u *SourceUpsertBulk) ClearRequestTag() *SourceUpsertBulk {
 	return u.Update(func(s *SourceUpsert) {
 		s.ClearRequestTag()
+	})
+}
+
+// SetWebhookSecret sets the "webhook_secret" field.
+func (u *SourceUpsertBulk) SetWebhookSecret(v string) *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.SetWebhookSecret(v)
+	})
+}
+
+// UpdateWebhookSecret sets the "webhook_secret" field to the value that was provided on create.
+func (u *SourceUpsertBulk) UpdateWebhookSecret() *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.UpdateWebhookSecret()
+	})
+}
+
+// SetWebhookRegisteredAt sets the "webhook_registered_at" field.
+func (u *SourceUpsertBulk) SetWebhookRegisteredAt(v time.Time) *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.SetWebhookRegisteredAt(v)
+	})
+}
+
+// UpdateWebhookRegisteredAt sets the "webhook_registered_at" field to the value that was provided on create.
+func (u *SourceUpsertBulk) UpdateWebhookRegisteredAt() *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.UpdateWebhookRegisteredAt()
+	})
+}
+
+// ClearWebhookRegisteredAt clears the value of the "webhook_registered_at" field.
+func (u *SourceUpsertBulk) ClearWebhookRegisteredAt() *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.ClearWebhookRegisteredAt()
+	})
+}
+
+// SetWebhookError sets the "webhook_error" field.
+func (u *SourceUpsertBulk) SetWebhookError(v string) *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.SetWebhookError(v)
+	})
+}
+
+// UpdateWebhookError sets the "webhook_error" field to the value that was provided on create.
+func (u *SourceUpsertBulk) UpdateWebhookError() *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.UpdateWebhookError()
+	})
+}
+
+// ClearWebhookError clears the value of the "webhook_error" field.
+func (u *SourceUpsertBulk) ClearWebhookError() *SourceUpsertBulk {
+	return u.Update(func(s *SourceUpsert) {
+		s.ClearWebhookError()
 	})
 }
 

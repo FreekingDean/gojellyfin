@@ -24,7 +24,9 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/FreekingDean/gojellyfin/internal/store/report"
+	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
+	"github.com/FreekingDean/gojellyfin/internal/store/syncplayqueueentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
 	"github.com/google/uuid"
 )
@@ -45,8 +47,10 @@ type ItemQuery struct {
 	withImages             *ImageQuery
 	withUserData           *UserItemDataQuery
 	withActivityLogEntries *ActivityLogEntryQuery
+	withPlayingSessions    *SessionQuery
 	withPlaylist           *PlaylistQuery
 	withPlaylistEntries    *PlaylistEntryQuery
+	withSyncPlayEntries    *SyncPlayQueueEntryQuery
 	withGenres             *GenreQuery
 	withStudios            *StudioQuery
 	modifiers              []func(*sql.Selector)
@@ -284,6 +288,28 @@ func (_q *ItemQuery) QueryActivityLogEntries() *ActivityLogEntryQuery {
 	return query
 }
 
+// QueryPlayingSessions chains the current query on the "playing_sessions" edge.
+func (_q *ItemQuery) QueryPlayingSessions() *SessionQuery {
+	query := (&SessionClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, selector),
+			sqlgraph.To(session.Table, session.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.PlayingSessionsTable, item.PlayingSessionsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // QueryPlaylist chains the current query on the "playlist" edge.
 func (_q *ItemQuery) QueryPlaylist() *PlaylistQuery {
 	query := (&PlaylistClient{config: _q.config}).Query()
@@ -321,6 +347,28 @@ func (_q *ItemQuery) QueryPlaylistEntries() *PlaylistEntryQuery {
 			sqlgraph.From(item.Table, item.FieldID, selector),
 			sqlgraph.To(playlistentry.Table, playlistentry.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, item.PlaylistEntriesTable, item.PlaylistEntriesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySyncPlayEntries chains the current query on the "sync_play_entries" edge.
+func (_q *ItemQuery) QuerySyncPlayEntries() *SyncPlayQueueEntryQuery {
+	query := (&SyncPlayQueueEntryClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, selector),
+			sqlgraph.To(syncplayqueueentry.Table, syncplayqueueentry.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.SyncPlayEntriesTable, item.SyncPlayEntriesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -573,8 +621,10 @@ func (_q *ItemQuery) Clone() *ItemQuery {
 		withImages:             _q.withImages.Clone(),
 		withUserData:           _q.withUserData.Clone(),
 		withActivityLogEntries: _q.withActivityLogEntries.Clone(),
+		withPlayingSessions:    _q.withPlayingSessions.Clone(),
 		withPlaylist:           _q.withPlaylist.Clone(),
 		withPlaylistEntries:    _q.withPlaylistEntries.Clone(),
+		withSyncPlayEntries:    _q.withSyncPlayEntries.Clone(),
 		withGenres:             _q.withGenres.Clone(),
 		withStudios:            _q.withStudios.Clone(),
 		// clone intermediate query.
@@ -682,6 +732,17 @@ func (_q *ItemQuery) WithActivityLogEntries(opts ...func(*ActivityLogEntryQuery)
 	return _q
 }
 
+// WithPlayingSessions tells the query-builder to eager-load the nodes that are connected to
+// the "playing_sessions" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemQuery) WithPlayingSessions(opts ...func(*SessionQuery)) *ItemQuery {
+	query := (&SessionClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withPlayingSessions = query
+	return _q
+}
+
 // WithPlaylist tells the query-builder to eager-load the nodes that are connected to
 // the "playlist" edge. The optional arguments are used to configure the query builder of the edge.
 func (_q *ItemQuery) WithPlaylist(opts ...func(*PlaylistQuery)) *ItemQuery {
@@ -701,6 +762,17 @@ func (_q *ItemQuery) WithPlaylistEntries(opts ...func(*PlaylistEntryQuery)) *Ite
 		opt(query)
 	}
 	_q.withPlaylistEntries = query
+	return _q
+}
+
+// WithSyncPlayEntries tells the query-builder to eager-load the nodes that are connected to
+// the "sync_play_entries" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemQuery) WithSyncPlayEntries(opts ...func(*SyncPlayQueueEntryQuery)) *ItemQuery {
+	query := (&SyncPlayQueueEntryClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withSyncPlayEntries = query
 	return _q
 }
 
@@ -804,7 +876,7 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 	var (
 		nodes       = []*Item{}
 		_spec       = _q.querySpec()
-		loadedTypes = [13]bool{
+		loadedTypes = [15]bool{
 			_q.withParent != nil,
 			_q.withChildren != nil,
 			_q.withLibraries != nil,
@@ -814,8 +886,10 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 			_q.withImages != nil,
 			_q.withUserData != nil,
 			_q.withActivityLogEntries != nil,
+			_q.withPlayingSessions != nil,
 			_q.withPlaylist != nil,
 			_q.withPlaylistEntries != nil,
+			_q.withSyncPlayEntries != nil,
 			_q.withGenres != nil,
 			_q.withStudios != nil,
 		}
@@ -903,6 +977,13 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 			return nil, err
 		}
 	}
+	if query := _q.withPlayingSessions; query != nil {
+		if err := _q.loadPlayingSessions(ctx, query, nodes,
+			func(n *Item) { n.Edges.PlayingSessions = []*Session{} },
+			func(n *Item, e *Session) { n.Edges.PlayingSessions = append(n.Edges.PlayingSessions, e) }); err != nil {
+			return nil, err
+		}
+	}
 	if query := _q.withPlaylist; query != nil {
 		if err := _q.loadPlaylist(ctx, query, nodes, nil,
 			func(n *Item, e *Playlist) { n.Edges.Playlist = e }); err != nil {
@@ -913,6 +994,13 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 		if err := _q.loadPlaylistEntries(ctx, query, nodes,
 			func(n *Item) { n.Edges.PlaylistEntries = []*PlaylistEntry{} },
 			func(n *Item, e *PlaylistEntry) { n.Edges.PlaylistEntries = append(n.Edges.PlaylistEntries, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withSyncPlayEntries; query != nil {
+		if err := _q.loadSyncPlayEntries(ctx, query, nodes,
+			func(n *Item) { n.Edges.SyncPlayEntries = []*SyncPlayQueueEntry{} },
+			func(n *Item, e *SyncPlayQueueEntry) { n.Edges.SyncPlayEntries = append(n.Edges.SyncPlayEntries, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -1210,6 +1298,40 @@ func (_q *ItemQuery) loadActivityLogEntries(ctx context.Context, query *Activity
 	}
 	return nil
 }
+func (_q *ItemQuery) loadPlayingSessions(ctx context.Context, query *SessionQuery, nodes []*Item, init func(*Item), assign func(*Item, *Session)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Item)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(session.FieldNowPlayingItemID)
+	}
+	query.Where(predicate.Session(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(item.PlayingSessionsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.NowPlayingItemID
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "now_playing_item_id" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "now_playing_item_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 func (_q *ItemQuery) loadPlaylist(ctx context.Context, query *PlaylistQuery, nodes []*Item, init func(*Item), assign func(*Item, *Playlist)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*Item)
@@ -1252,6 +1374,36 @@ func (_q *ItemQuery) loadPlaylistEntries(ctx context.Context, query *PlaylistEnt
 	}
 	query.Where(predicate.PlaylistEntry(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(item.PlaylistEntriesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ItemID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "item_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *ItemQuery) loadSyncPlayEntries(ctx context.Context, query *SyncPlayQueueEntryQuery, nodes []*Item, init func(*Item), assign func(*Item, *SyncPlayQueueEntry)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Item)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(syncplayqueueentry.FieldItemID)
+	}
+	query.Where(predicate.SyncPlayQueueEntry(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(item.SyncPlayEntriesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

@@ -13,6 +13,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	entrymodel "github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
 	devicemodel "github.com/FreekingDean/gojellyfin/internal/store/device"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	sessionmodel "github.com/FreekingDean/gojellyfin/internal/store/session"
 	usermodel "github.com/FreekingDean/gojellyfin/internal/store/user"
 )
@@ -192,4 +193,70 @@ func TestService_DeleteByToken(t *testing.T) {
 			t.Errorf("entries = %d, want 0 for a session that was already gone", len(entries))
 		}
 	})
+}
+
+func TestService_Playing(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := context.Background()
+	client := fixture.service.store
+	key := uuid.NewString()
+
+	series := client.Item.Create().SetKind(itemmodel.KindSeries).SetKey("series:" + key).SetName("Fixture Show").SaveX(ctx)
+	season := client.Item.Create().SetKind(itemmodel.KindSeason).SetKey("season:" + key).SetName("Season 1").SetParentID(series.ID).SaveX(ctx)
+	episode := client.Item.Create().SetKind(itemmodel.KindEpisode).SetKey("episode:" + key).SetName("Pilot").SetParentID(season.ID).SaveX(ctx)
+	t.Cleanup(func() {
+		if _, err := client.Item.Delete().Where(itemmodel.IDIn(episode.ID, season.ID, series.ID)).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the items: %v", err)
+		}
+	})
+
+	session, err := fixture.service.Create(ctx, fixture.user.ID, uuid.NewString(), fixture.device)
+	if err != nil {
+		t.Fatalf("failed to create the session: %v", err)
+	}
+
+	listed := func() *Session {
+		t.Helper()
+		all, err := fixture.service.List(ctx)
+		if err != nil {
+			t.Fatalf("failed to list the sessions: %v", err)
+		}
+		for _, candidate := range all {
+			if candidate.ID == session.ID {
+				return candidate
+			}
+		}
+		t.Fatalf("session %s was not listed", session.ID)
+
+		return nil
+	}
+
+	playback := Playback{ItemID: episode.ID, PositionTicks: 42, PlayMethod: "Transcode", IsPaused: true}
+	if err := fixture.service.Playing(ctx, session.ID, "203.0.113.7:51234", playback); err != nil {
+		t.Fatalf("failed to record playback: %v", err)
+	}
+
+	playing := listed()
+	if !NowPlaying(playing, time.Now()) {
+		t.Fatalf("NowPlaying = false after a progress report")
+	}
+	if playing.NowPlaying.Parent == nil || playing.NowPlaying.Parent.Parent == nil || playing.NowPlaying.Parent.Parent.Name != "Fixture Show" {
+		t.Errorf("the playing episode's series was not loaded")
+	}
+	if playing.PositionTicks != 42 || playing.PlayMethod != "Transcode" || !playing.IsPaused {
+		t.Errorf("state = %d %q %v, want 42 Transcode paused", playing.PositionTicks, playing.PlayMethod, playing.IsPaused)
+	}
+	if playing.RemoteEndpoint != "203.0.113.7" {
+		t.Errorf("RemoteEndpoint = %q, want the address without its port", playing.RemoteEndpoint)
+	}
+	if NowPlaying(playing, time.Now().Add(PlayingTimeout)) {
+		t.Errorf("NowPlaying = true for a session that has not reported in %s", PlayingTimeout)
+	}
+
+	if err := fixture.service.Stopped(ctx, session.ID, "203.0.113.7:51234"); err != nil {
+		t.Fatalf("failed to record the stop: %v", err)
+	}
+	if stopped := listed(); NowPlaying(stopped, time.Now()) || stopped.NowPlayingItemID != nil {
+		t.Errorf("the session still says it is playing after a stop")
+	}
 }

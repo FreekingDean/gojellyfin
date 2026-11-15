@@ -67,7 +67,7 @@ func newAccounts(t *testing.T) *accounts {
 
 	t.Cleanup(func() {
 		for _, user := range []*users.User{admin, member} {
-			if err := service.DeleteUser(ctx, user.ID); err != nil {
+			if err := client.User.DeleteOneID(user.ID).Exec(ctx); err != nil {
 				t.Errorf("failed to delete %s: %v", user.Name, err)
 			}
 		}
@@ -209,17 +209,8 @@ func TestServer_GetPublicUsers(t *testing.T) {
 	if !ok {
 		t.Fatalf("response = %T, want 200", response)
 	}
-	if len(listed) == 0 {
-		t.Fatal("no users were listed")
-	}
-
-	for _, dto := range listed {
-		if dto.Policy != nil {
-			t.Errorf("%v carries a policy, which names the administrator to an anonymous caller", dto.Name)
-		}
-		if dto.Configuration != nil {
-			t.Errorf("%v carries a configuration", dto.Name)
-		}
+	if listed == nil || len(listed) != 0 {
+		t.Errorf("listed %v, want an empty list so no username reaches a sign-in screen", listed)
 	}
 }
 

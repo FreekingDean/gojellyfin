@@ -11,9 +11,11 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/store"
+	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
@@ -320,6 +322,59 @@ type available bool
 
 func (a available) Enabled() bool { return bool(a) }
 
+func (available) Trending(context.Context, items.Kind, int) ([]discover.Title, error) {
+	return nil, nil
+}
+
+type trended []discover.Title
+
+func (trended) Enabled() bool { return true }
+
+func (t trended) Trending(_ context.Context, kind items.Kind, limit int) ([]discover.Title, error) {
+	listed := []discover.Title{}
+	for _, title := range t {
+		if title.Kind == kind && len(listed) < limit {
+			listed = append(listed, title)
+		}
+	}
+
+	return listed, nil
+}
+
+func TestService_TrendingCard(t *testing.T) {
+	ctx := context.Background()
+	poster := func(kind items.Kind, url string) discover.Title {
+		return discover.Title{Kind: kind, Metadata: items.Metadata{Images: []items.RemoteImage{{Kind: imagemodel.KindPrimary, URL: url}}}}
+	}
+	listed := trended{
+		poster(itemmodel.KindMovie, "https://cdn.invalid/first.jpg"),
+		{Kind: itemmodel.KindMovie},
+		poster(itemmodel.KindSeries, "https://cdn.invalid/show.jpg"),
+		poster(itemmodel.KindMovie, "https://cdn.invalid/second.jpg"),
+	}
+	service := newService(nil, listed, stored("trending-movies"), time.Now)
+
+	card, found, err := service.Card(ctx, ID("trending-movies"), items.Viewer{}, uuid.Nil, 5)
+	if err != nil || !found {
+		t.Fatalf("card = %v, %v, want the trending card", found, err)
+	}
+
+	urls := []string{}
+	for _, image := range card.Posters {
+		urls = append(urls, image.URL)
+	}
+	if want := []string{"https://cdn.invalid/first.jpg", "https://cdn.invalid/second.jpg"}; !slices.Equal(urls, want) {
+		t.Errorf("posters = %v, want %v, the movies the provider has a poster for in its order", urls, want)
+	}
+	if card.Name != "Trending Movies" || card.Personal || card.Fresh != 0 {
+		t.Errorf("card = %q personal %v fresh %d, want the shelf's name, shared, with no count", card.Name, card.Personal, card.Fresh)
+	}
+
+	if _, found, err := newService(nil, available(false), stored("trending-movies"), time.Now).Card(ctx, ID("trending-movies"), items.Everyone, uuid.Nil, 5); err != nil || found {
+		t.Errorf("card with no provider = %v, %v, want none", found, err)
+	}
+}
+
 func TestService_TrendingShelves(t *testing.T) {
 	ctx := context.Background()
 
@@ -368,5 +423,71 @@ func TestService_Titles(t *testing.T) {
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("titles = %v, want %v", got, want)
+	}
+}
+
+func TestService_Card(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := context.Background()
+	november := time.Date(2026, time.November, 14, 0, 0, 0, 0, time.UTC)
+	year := func(value int) time.Time { return time.Date(value, time.June, 1, 0, 0, 0, 0, time.UTC) }
+
+	older := fixture.movie(t, film{name: "Older", rating: 8, minutes: 90, genre: "Drama", released: year(2010)})
+	newer := fixture.movie(t, film{name: "Newer", rating: 8, minutes: 90, genre: "Drama", released: year(2024)})
+	fixture.movie(t, film{name: "Bare", rating: 8, minutes: 90, genre: "Drama", released: year(2020)})
+	fixture.movie(t, film{name: "This Week", rating: 8, minutes: 90, genre: "Drama", released: november.AddDate(0, 0, -3)})
+	fixture.movie(t, film{name: "Next Week", rating: 8, minutes: 90, genre: "Drama", released: november.AddDate(0, 0, 3)})
+	for tag, itemID := range map[string]uuid.UUID{"older": older, "newer": newer} {
+		if err := fixture.catalogue.SaveImage(ctx, itemID, items.Image{Kind: items.ImageKindPrimary, URL: "https://cdn.invalid/" + tag, Tag: tag}); err != nil {
+			t.Fatalf("failed to save %q: %v", tag, err)
+		}
+	}
+
+	viewer := items.Viewer{Libraries: []uuid.UUID{fixture.libraryID}}
+
+	tests := []struct {
+		name     string
+		enabled  []string
+		slug     string
+		user     uuid.UUID
+		want     []string
+		title    string
+		fresh    int
+		found    bool
+		personal bool
+	}{
+		{name: "a shelf everyone sees alike answers its name, what aired this week and its titles' posters newest first", enabled: []string{"new-releases"}, slug: "new-releases", want: []string{"newer", "older"}, title: "New Releases", fresh: 1, found: true},
+		{name: "a shelf everyone sees alike is the same card whoever asks", enabled: []string{"new-releases"}, slug: "new-releases", user: uuid.New(), want: []string{"newer", "older"}, title: "New Releases", fresh: 1, found: true},
+		{name: "a shelf that differs per user has none without a user", enabled: []string{"hidden-gems"}, slug: "hidden-gems"},
+		{name: "a shelf that differs per user is that user's card", enabled: []string{"hidden-gems"}, slug: "hidden-gems", user: uuid.New(), want: []string{"newer", "older"}, title: "Hidden Gems", fresh: 1, found: true, personal: true},
+		{name: "a shelf that is off has none", enabled: []string{"recently-aired"}, slug: "new-releases"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			service := newService(fixture.catalogue, available(true), stored(test.enabled...), func() time.Time { return november })
+
+			card, found, err := service.Card(ctx, ID(test.slug), viewer, test.user, 10)
+			if err != nil {
+				t.Fatalf("failed to read the card: %v", err)
+			}
+			if found != test.found {
+				t.Fatalf("found = %v, want %v", found, test.found)
+			}
+			if card.Name != test.title || card.Fresh != test.fresh || card.Personal != test.personal {
+				t.Errorf("card = %q with %d new, personal %v, want %q with %d, personal %v", card.Name, card.Fresh, card.Personal, test.title, test.fresh, test.personal)
+			}
+
+			got := make([]string, 0, len(card.Posters))
+			for _, poster := range card.Posters {
+				got = append(got, poster.Tag)
+			}
+			if test.personal {
+				slices.Sort(got)
+			}
+			if !slices.Equal(got, test.want) && (len(got) != 0 || len(test.want) != 0) {
+				t.Errorf("posters = %v, want %v", got, test.want)
+			}
+		})
 	}
 }

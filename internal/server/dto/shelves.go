@@ -1,16 +1,28 @@
 package dto
 
 import (
+	"context"
 	"strings"
 
+	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/shelves"
 )
 
-func ShelfView(shelf shelves.Shelf) api.BaseItemDto {
+func ShelfView(ctx context.Context, cards Cards, shelf shelves.Shelf) (api.BaseItemDto, error) {
 	collectionType := api.CollectionType(shelf.Collection)
+
+	tag, err := cards.Tag(ctx, shelf.ID, auth.UserID(ctx))
+	if err != nil {
+		return api.BaseItemDto{}, err
+	}
+
+	imageTags := map[string]*string{}
+	if tag != "" {
+		imageTags[string(api.Primary)] = &tag
+	}
 
 	return api.BaseItemDto{
 		Id:                   apiutil.Ptr(shelf.ID),
@@ -22,7 +34,7 @@ func ShelfView(shelf shelves.Shelf) api.BaseItemDto {
 		DisplayPreferencesId: displayPreferencesID(shelf.ID),
 		IsFolder:             apiutil.Ptr(true),
 		LocationType:         apiutil.Ptr(api.Virtual),
-		ImageTags:            &map[string]*string{},
+		ImageTags:            &imageTags,
 		BackdropImageTags:    &[]string{},
-	}
+	}, nil
 }

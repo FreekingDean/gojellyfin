@@ -73,7 +73,7 @@ func (p *process) wait() error {
 	if !p.exited {
 		p.exited = true
 		if err := p.cmd.Wait(); err != nil {
-			p.exit = fmt.Errorf("ffmpeg exited: %w: %s", err, p.stderr)
+			p.exit = fmt.Errorf("%w: %w: %s", ErrExited, err, p.stderr)
 		}
 	}
 

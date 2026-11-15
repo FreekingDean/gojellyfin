@@ -55,17 +55,7 @@ func (s *Server) GetUserById(ctx context.Context, request api.GetUserByIdRequest
 }
 
 func (s *Server) GetPublicUsers(ctx context.Context, request api.GetPublicUsersRequestObject) (api.GetPublicUsersResponseObject, error) {
-	records, err := s.users.Users(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	converted := make([]api.UserDto, 0, len(records))
-	for _, record := range records {
-		converted = append(converted, publicUserDto(record))
-	}
-
-	return api.GetPublicUsers200JSONResponse(converted), nil
+	return api.GetPublicUsers200JSONResponse{}, nil
 }
 
 func (s *Server) CreateUserByName(ctx context.Context, request api.CreateUserByNameRequestObject) (api.CreateUserByNameResponseObject, error) {
@@ -145,7 +135,9 @@ func (s *Server) UpdateUserPolicy(ctx context.Context, request api.UpdateUserPol
 		return api.UpdateUserPolicy403JSONResponse{}, nil
 	}
 
-	if err := s.savePolicy(ctx, user.ID, req); err != nil {
+	if err := s.savePolicy(ctx, user.ID, req); errors.Is(err, users.ErrLastAdministrator) {
+		return api.UpdateUserPolicy403JSONResponse{}, nil
+	} else if err != nil {
 		return nil, err
 	}
 
@@ -197,7 +189,9 @@ func (s *Server) DeleteUser(ctx context.Context, request api.DeleteUserRequestOb
 		return api.DeleteUser404JSONResponse{}, nil
 	}
 
-	if err := s.users.DeleteUser(ctx, request.UserId); err != nil {
+	if err := s.users.DeleteUser(ctx, request.UserId); errors.Is(err, users.ErrLastAdministrator) {
+		return api.DeleteUser403Response{}, nil
+	} else if err != nil {
 		return nil, err
 	}
 
@@ -289,6 +283,9 @@ func (s *Server) authenticate(ctx context.Context, user *users.User) (api.Authen
 
 	session, err := s.sessions.Create(ctx, user.ID, token, auth.AuthorizationFrom(ctx).ClientDevice())
 	if err != nil {
+		return api.AuthenticationResult{}, err
+	}
+	if err := s.sessions.Seen(ctx, session.ID, auth.AuthorizationFrom(ctx).RemoteAddr); err != nil {
 		return api.AuthenticationResult{}, err
 	}
 

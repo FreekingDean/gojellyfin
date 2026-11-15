@@ -15,6 +15,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/env"
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
@@ -57,7 +58,7 @@ func New(config env.Config, users *users.Service) *Service {
 		config:      config.OIDC,
 		redirectURL: strings.TrimSuffix(config.PublishedServerURL, "/") + CallbackPath,
 		users:       users,
-		client:      &http.Client{Timeout: providerTimeout},
+		client:      &http.Client{Timeout: providerTimeout, Transport: tracing.Transport(nil)},
 	}
 }
 
@@ -67,6 +68,16 @@ func (s *Service) bounded(ctx context.Context) context.Context {
 
 func (s *Service) Enabled() bool {
 	return s.config.IssuerURL != ""
+}
+
+func (s *Service) Issuer() string {
+	return s.config.IssuerURL
+}
+
+func (s *Service) Discover(ctx context.Context) error {
+	_, err := s.discover(s.bounded(ctx))
+
+	return err
 }
 
 func (s *Service) Begin(ctx context.Context) (string, Flow, error) {

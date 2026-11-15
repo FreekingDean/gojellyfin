@@ -173,7 +173,6 @@ func TestService_SaveScannedTitleOwnership(t *testing.T) {
 
 		if _, err := fixture.service.UpdateMetadata(ctx, record.ID, Metadata{
 			Name:        ptr("The Buys"),
-			IndexNumber: number(9),
 			ProviderIds: &map[string]string{"Tmdb": "62098"},
 		}); err != nil {
 			t.Fatalf("failed to identify the episode: %v", err)

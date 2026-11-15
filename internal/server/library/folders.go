@@ -9,12 +9,12 @@ import (
 )
 
 func (s *Server) GetMediaFolders(ctx context.Context, request api.GetMediaFoldersRequestObject) (api.GetMediaFoldersResponseObject, error) {
-	records, err := s.libraries.ListLibraries(ctx)
+	records, err := s.libraries.ShownLibraries(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	folders, err := dto.LibraryViews(ctx, s.collages, records)
+	folders, err := dto.LibraryViews(ctx, s.cards, records)
 	if err != nil {
 		return nil, err
 	}

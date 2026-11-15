@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/FreekingDean/gojellyfin/internal/config"
+	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
@@ -45,10 +46,45 @@ func SessionDto(session *sessions.Session) *api.SessionInfoDto {
 		dto.SupportedCommands = &commands
 	}
 
+	if session.RemoteEndpoint != "" {
+		dto.RemoteEndPoint = apiutil.Ptr(session.RemoteEndpoint)
+	}
+
+	dto.PlayState = &api.PlayerStateInfo{
+		CanSeek:       apiutil.Ptr(false),
+		IsPaused:      apiutil.Ptr(false),
+		IsMuted:       apiutil.Ptr(false),
+		RepeatMode:    apiutil.Ptr(api.RepeatModeRepeatNone),
+		PlaybackOrder: apiutil.Ptr(api.PlaybackOrderDefault),
+	}
+	if sessions.NowPlaying(session, time.Now()) {
+		item := ItemDto(session.NowPlaying, items.Held{}, 0, nil)
+		if series := seriesOf(session.NowPlaying); series != nil {
+			item.SeriesName = apiutil.Ptr(series.Name)
+			item.SeriesId = &series.ID
+		}
+		dto.NowPlayingItem = &item
+		dto.PlayState.CanSeek = apiutil.Ptr(true)
+		dto.PlayState.IsPaused = apiutil.Ptr(session.IsPaused)
+		dto.PlayState.PositionTicks = apiutil.Ptr(session.PositionTicks)
+		dto.LastPlaybackCheckIn = session.PlayingAt
+		if session.PlayMethod != "" {
+			dto.PlayState.PlayMethod = apiutil.Ptr(api.PlayMethod(session.PlayMethod))
+		}
+	}
+
 	if user := session.User; user != nil {
 		dto.UserId = &user.ID
 		dto.UserName = apiutil.Ptr(user.Name)
 	}
 
 	return dto
+}
+
+func seriesOf(item *items.Item) *items.Item {
+	if item.Kind != items.Kind(api.BaseItemKindEpisode) || item.Parent == nil {
+		return nil
+	}
+
+	return item.Parent.Parent
 }

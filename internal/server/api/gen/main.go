@@ -268,6 +268,25 @@ var PublicOperations = map[string]bool{
 	write(publicDst, out.Bytes())
 }
 
+type paramSchema struct {
+	Type   string        `json:"type"`
+	Format string        `json:"format"`
+	Ref    string        `json:"$ref"`
+	Enum   []any         `json:"enum"`
+	AllOf  []paramSchema `json:"allOf"`
+	Items  *paramSchema  `json:"items"`
+}
+
+func (s paramSchema) commaFree(schemas map[string]paramSchema) bool {
+	if s.Ref != "" {
+		return schemas[strings.TrimPrefix(s.Ref, "#/components/schemas/")].commaFree(schemas)
+	}
+	if len(s.AllOf) == 1 {
+		return s.AllOf[0].commaFree(schemas)
+	}
+	return len(s.Enum) > 0 || s.Format == "uuid" || s.Type == "integer" || s.Type == "number" || s.Type == "boolean"
+}
+
 func writeQueryParameters(pkg string) {
 	b, err := os.ReadFile(specPath)
 	if err != nil {
@@ -275,13 +294,18 @@ func writeQueryParameters(pkg string) {
 	}
 
 	var doc struct {
-		Paths map[string]map[string]json.RawMessage `json:"paths"`
+		Paths      map[string]map[string]json.RawMessage `json:"paths"`
+		Components struct {
+			Schemas map[string]paramSchema `json:"schemas"`
+		} `json:"components"`
 	}
 	if err := json.Unmarshal(b, &doc); err != nil {
 		log.Fatal(err)
 	}
 
 	canonical := map[string]string{}
+	arrays := map[string]bool{}
+	commaFree := map[string]bool{}
 	for _, item := range doc.Paths {
 		for method, raw := range item {
 			if !httpMethods[strings.ToLower(method)] {
@@ -290,8 +314,9 @@ func writeQueryParameters(pkg string) {
 
 			var op struct {
 				Parameters []struct {
-					Name string `json:"name"`
-					In   string `json:"in"`
+					Name   string      `json:"name"`
+					In     string      `json:"in"`
+					Schema paramSchema `json:"schema"`
 				} `json:"parameters"`
 			}
 			if err := json.Unmarshal(raw, &op); err != nil {
@@ -307,6 +332,15 @@ func writeQueryParameters(pkg string) {
 					log.Fatalf("query parameter %q collides with %q", parameter.Name, existing)
 				}
 				canonical[key] = parameter.Name
+
+				array := parameter.Schema.Type == "array" && parameter.Schema.Items != nil
+				if previous, ok := arrays[parameter.Name]; ok {
+					array = array && previous
+				}
+				arrays[parameter.Name] = array
+				if array && parameter.Schema.Items.commaFree(doc.Components.Schemas) {
+					commaFree[parameter.Name] = true
+				}
 			}
 		}
 	}
@@ -327,6 +361,13 @@ var QueryParameters = map[string]string{
 
 	for _, key := range keys {
 		fmt.Fprintf(out, "\t%q: %q,\n", key, canonical[key])
+	}
+	fmt.Fprint(out, "}\n\nvar CommaDelimitedQueryParameters = map[string]bool{\n")
+
+	for _, key := range keys {
+		if name := canonical[key]; arrays[name] && commaFree[name] {
+			fmt.Fprintf(out, "\t%q: true,\n", name)
+		}
 	}
 	fmt.Fprint(out, "}\n")
 

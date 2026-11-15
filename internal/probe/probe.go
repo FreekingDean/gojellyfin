@@ -3,15 +3,21 @@ package probe
 import (
 	"context"
 	"errors"
+	"io"
+	"os"
 	"path/filepath"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	streammodel "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 )
 
-const ticksPerSecond = 10_000_000
+const (
+	ticksPerSecond = 10_000_000
+	maxLyricsBytes = 1 << 20
+)
 
 func (s *Prober) probeFile(ctx context.Context, source *items.MediaSource) (*items.MediaSource, error) {
 	if !items.NeedsProbe(source) {
@@ -57,7 +63,41 @@ func (s *Prober) probeFile(ctx context.Context, source *items.MediaSource) (*ite
 		Size:         optional(probe.Format.Size),
 		Bitrate:      optional(probe.Format.BitRate),
 		Streams:      streams,
+		Lyrics:       lyricsOf(source.Path, probe),
 	}, nil
+}
+
+func lyricsOf(path string, probe *ffmpeg.Probe) string {
+	for _, tags := range tagSets(probe) {
+		for name, value := range tags {
+			lowered := strings.ToLower(name)
+			if (lowered == "lyrics" || lowered == "unsyncedlyrics" || strings.HasPrefix(lowered, "lyrics-")) && strings.TrimSpace(value) != "" {
+				return value
+			}
+		}
+	}
+
+	sidecar, err := os.Open(strings.TrimSuffix(path, filepath.Ext(path)) + ".lrc")
+	if err != nil {
+		return ""
+	}
+	defer func() { _ = sidecar.Close() }()
+
+	text, err := io.ReadAll(io.LimitReader(sidecar, maxLyricsBytes))
+	if err != nil || !utf8.Valid(text) {
+		return ""
+	}
+
+	return string(text)
+}
+
+func tagSets(probe *ffmpeg.Probe) []map[string]string {
+	sets := []map[string]string{probe.Format.Tags}
+	for _, stream := range probe.Streams {
+		sets = append(sets, stream.Tags)
+	}
+
+	return sets
 }
 
 func rangeType(transfer string) items.VideoRangeType {

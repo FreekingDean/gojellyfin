@@ -15,14 +15,18 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/environment"
 	"github.com/FreekingDean/gojellyfin/internal/server/filter"
 	"github.com/FreekingDean/gojellyfin/internal/server/genres"
+	"github.com/FreekingDean/gojellyfin/internal/server/health"
 	"github.com/FreekingDean/gojellyfin/internal/server/image"
+	"github.com/FreekingDean/gojellyfin/internal/server/instantmix"
 	"github.com/FreekingDean/gojellyfin/internal/server/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/itemupdate"
 	"github.com/FreekingDean/gojellyfin/internal/server/library"
 	"github.com/FreekingDean/gojellyfin/internal/server/librarystructure"
 	"github.com/FreekingDean/gojellyfin/internal/server/livetv"
 	"github.com/FreekingDean/gojellyfin/internal/server/localization"
+	"github.com/FreekingDean/gojellyfin/internal/server/lyrics"
 	"github.com/FreekingDean/gojellyfin/internal/server/mediainfo"
+	"github.com/FreekingDean/gojellyfin/internal/server/movies"
 	"github.com/FreekingDean/gojellyfin/internal/server/packages"
 	"github.com/FreekingDean/gojellyfin/internal/server/persons"
 	"github.com/FreekingDean/gojellyfin/internal/server/playlists"
@@ -44,7 +48,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/trailers"
 	"github.com/FreekingDean/gojellyfin/internal/server/tvshows"
 	"github.com/FreekingDean/gojellyfin/internal/server/user"
-	"github.com/FreekingDean/gojellyfin/internal/server/userlibrary"
+	"github.com/FreekingDean/gojellyfin/internal/server/userdata"
 	"github.com/FreekingDean/gojellyfin/internal/server/userviews"
 	"github.com/FreekingDean/gojellyfin/internal/server/years"
 )
@@ -68,6 +72,9 @@ type (
 	ScheduledTasksServer     = scheduledtasks.Server
 	DashboardServer          = dashboard.Server
 	ArtistsServer            = artists.Server
+	LyricsServer             = lyrics.Server
+	InstantMixServer         = instantmix.Server
+	MoviesServer             = movies.Server
 	BackupServer             = backup.Server
 	ChannelsServer           = channels.Server
 	EnvironmentServer        = environment.Server
@@ -89,6 +96,7 @@ type (
 	SessionServer            = session.Server
 	ReportsServer            = reports.Server
 	RequestsServer           = requests.Server
+	HealthServer             = health.Server
 	SettingsServer           = settings.Server
 	SourcesServer            = sources.Server
 	SuggestionsServer        = suggestions.Server
@@ -97,7 +105,7 @@ type (
 	TimeSyncServer           = timesync.Server
 	TrailersServer           = trailers.Server
 	UserServer               = user.Server
-	UserLibraryServer        = userlibrary.Server
+	UserDataServer           = userdata.Server
 	UserViewsServer          = userviews.Server
 )
 
@@ -116,6 +124,9 @@ type Server struct {
 	*ScheduledTasksServer
 	*DashboardServer
 	*ArtistsServer
+	*LyricsServer
+	*InstantMixServer
+	*MoviesServer
 	*BackupServer
 	*ChannelsServer
 	*EnvironmentServer
@@ -137,6 +148,7 @@ type Server struct {
 	*SessionServer
 	*ReportsServer
 	*RequestsServer
+	*HealthServer
 	*SettingsServer
 	*SourcesServer
 	*SuggestionsServer
@@ -145,7 +157,7 @@ type Server struct {
 	*TimeSyncServer
 	*TrailersServer
 	*UserServer
-	*UserLibraryServer
+	*UserDataServer
 	*UserViewsServer
 
 	nestedUnimplemented
@@ -166,6 +178,9 @@ func New(
 	scheduledtasks *scheduledtasks.Server,
 	dashboard *dashboard.Server,
 	artists *artists.Server,
+	lyrics *lyrics.Server,
+	instantMix *instantmix.Server,
+	movies *movies.Server,
 	backups *backup.Server,
 	channels *channels.Server,
 	environment *environment.Server,
@@ -187,6 +202,7 @@ func New(
 	session *session.Server,
 	reports *reports.Server,
 	requests *requests.Server,
+	health *health.Server,
 	settings *settings.Server,
 	sources *sources.Server,
 	suggestions *suggestions.Server,
@@ -195,7 +211,7 @@ func New(
 	timeSync *timesync.Server,
 	trailers *trailers.Server,
 	user *user.Server,
-	userLibrary *userlibrary.Server,
+	userData *userdata.Server,
 	userViews *userviews.Server,
 ) *Server {
 	return &Server{
@@ -213,6 +229,9 @@ func New(
 		ScheduledTasksServer:     scheduledtasks,
 		DashboardServer:          dashboard,
 		ArtistsServer:            artists,
+		LyricsServer:             lyrics,
+		InstantMixServer:         instantMix,
+		MoviesServer:             movies,
 		BackupServer:             backups,
 		ChannelsServer:           channels,
 		EnvironmentServer:        environment,
@@ -234,6 +253,7 @@ func New(
 		SessionServer:            session,
 		ReportsServer:            reports,
 		RequestsServer:           requests,
+		HealthServer:             health,
 		SettingsServer:           settings,
 		SourcesServer:            sources,
 		SuggestionsServer:        suggestions,
@@ -242,7 +262,7 @@ func New(
 		TimeSyncServer:           timeSync,
 		TrailersServer:           trailers,
 		UserServer:               user,
-		UserLibraryServer:        userLibrary,
+		UserDataServer:           userData,
 		UserViewsServer:          userViews,
 	}
 }

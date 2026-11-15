@@ -30,6 +30,8 @@ const (
 	FieldAppName = "app_name"
 	// FieldAppVersion holds the string denoting the app_version field in the database.
 	FieldAppVersion = "app_version"
+	// FieldRemoteAddress holds the string denoting the remote_address field in the database.
+	FieldRemoteAddress = "remote_address"
 	// FieldExpiresAt holds the string denoting the expires_at field in the database.
 	FieldExpiresAt = "expires_at"
 	// FieldAuthorizedByID holds the string denoting the authorized_by_id field in the database.
@@ -58,6 +60,7 @@ var Columns = []string{
 	FieldDeviceName,
 	FieldAppName,
 	FieldAppVersion,
+	FieldRemoteAddress,
 	FieldExpiresAt,
 	FieldAuthorizedByID,
 }
@@ -79,6 +82,8 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultRemoteAddress holds the default value on creation for the "remote_address" field.
+	DefaultRemoteAddress string
 )
 
 // OrderOption defines the ordering options for the QuickConnectRequest queries.
@@ -127,6 +132,11 @@ func ByAppName(opts ...sql.OrderTermOption) OrderOption {
 // ByAppVersion orders the results by the app_version field.
 func ByAppVersion(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAppVersion, opts...).ToFunc()
+}
+
+// ByRemoteAddress orders the results by the remote_address field.
+func ByRemoteAddress(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRemoteAddress, opts...).ToFunc()
 }
 
 // ByExpiresAt orders the results by the expires_at field.

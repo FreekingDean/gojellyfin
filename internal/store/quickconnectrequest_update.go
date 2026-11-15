@@ -134,6 +134,20 @@ func (_u *QuickConnectRequestUpdate) SetNillableAppVersion(v *string) *QuickConn
 	return _u
 }
 
+// SetRemoteAddress sets the "remote_address" field.
+func (_u *QuickConnectRequestUpdate) SetRemoteAddress(v string) *QuickConnectRequestUpdate {
+	_u.mutation.SetRemoteAddress(v)
+	return _u
+}
+
+// SetNillableRemoteAddress sets the "remote_address" field if the given value is not nil.
+func (_u *QuickConnectRequestUpdate) SetNillableRemoteAddress(v *string) *QuickConnectRequestUpdate {
+	if v != nil {
+		_u.SetRemoteAddress(*v)
+	}
+	return _u
+}
+
 // SetExpiresAt sets the "expires_at" field.
 func (_u *QuickConnectRequestUpdate) SetExpiresAt(v time.Time) *QuickConnectRequestUpdate {
 	_u.mutation.SetExpiresAt(v)
@@ -252,6 +266,9 @@ func (_u *QuickConnectRequestUpdate) sqlSave(ctx context.Context) (_node int, er
 	}
 	if value, ok := _u.mutation.AppVersion(); ok {
 		_spec.SetField(quickconnectrequest.FieldAppVersion, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.RemoteAddress(); ok {
+		_spec.SetField(quickconnectrequest.FieldRemoteAddress, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.ExpiresAt(); ok {
 		_spec.SetField(quickconnectrequest.FieldExpiresAt, field.TypeTime, value)
@@ -409,6 +426,20 @@ func (_u *QuickConnectRequestUpdateOne) SetNillableAppVersion(v *string) *QuickC
 	return _u
 }
 
+// SetRemoteAddress sets the "remote_address" field.
+func (_u *QuickConnectRequestUpdateOne) SetRemoteAddress(v string) *QuickConnectRequestUpdateOne {
+	_u.mutation.SetRemoteAddress(v)
+	return _u
+}
+
+// SetNillableRemoteAddress sets the "remote_address" field if the given value is not nil.
+func (_u *QuickConnectRequestUpdateOne) SetNillableRemoteAddress(v *string) *QuickConnectRequestUpdateOne {
+	if v != nil {
+		_u.SetRemoteAddress(*v)
+	}
+	return _u
+}
+
 // SetExpiresAt sets the "expires_at" field.
 func (_u *QuickConnectRequestUpdateOne) SetExpiresAt(v time.Time) *QuickConnectRequestUpdateOne {
 	_u.mutation.SetExpiresAt(v)
@@ -557,6 +588,9 @@ func (_u *QuickConnectRequestUpdateOne) sqlSave(ctx context.Context) (_node *Qui
 	}
 	if value, ok := _u.mutation.AppVersion(); ok {
 		_spec.SetField(quickconnectrequest.FieldAppVersion, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.RemoteAddress(); ok {
+		_spec.SetField(quickconnectrequest.FieldRemoteAddress, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.ExpiresAt(); ok {
 		_spec.SetField(quickconnectrequest.FieldExpiresAt, field.TypeTime, value)

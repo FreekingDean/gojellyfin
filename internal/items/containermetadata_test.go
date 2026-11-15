@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/consts"
 	creditmodel "github.com/FreekingDean/gojellyfin/internal/store/credit"
 	genremodel "github.com/FreekingDean/gojellyfin/internal/store/genre"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
@@ -385,6 +386,52 @@ func TestService_DistinctGenres(t *testing.T) {
 		}
 		if len(named) != 0 {
 			t.Errorf("genres = %v, want none", namesOf(named))
+		}
+	})
+}
+
+func TestService_DistinctOfficialRatings(t *testing.T) {
+	fixture := newMetadataFixture(t)
+	ctx := context.Background()
+
+	for name, rating := range map[string]consts.Rating{"Rated R": "R", "Rated PG": "PG", "Also R": "R"} {
+		item := fixture.item(t, name)
+		if _, err := fixture.service.UpdateMetadata(ctx, item.ID, Metadata{OfficialRating: &rating}); err != nil {
+			t.Fatalf("failed to rate %q: %v", name, err)
+		}
+	}
+	fixture.item(t, "Unrated")
+
+	t.Run("lists each rating once, in order", func(t *testing.T) {
+		ratings, err := fixture.service.DistinctOfficialRatings(ctx, MetadataQuery{Viewer: Everyone, LibraryID: &fixture.libraryID})
+		if err != nil {
+			t.Fatalf("failed to query ratings: %v", err)
+		}
+		if want := []string{"PG", "R"}; !slices.Equal(ratings, want) {
+			t.Errorf("ratings = %v, want %v", ratings, want)
+		}
+	})
+
+	t.Run("lists nothing a viewer cannot see", func(t *testing.T) {
+		ratings, err := fixture.service.DistinctOfficialRatings(ctx, MetadataQuery{Viewer: Viewer{}, LibraryID: &fixture.libraryID})
+		if err != nil {
+			t.Fatalf("failed to query ratings: %v", err)
+		}
+		if len(ratings) != 0 {
+			t.Errorf("ratings = %v, want none for a viewer with no libraries", ratings)
+		}
+	})
+
+	t.Run("lists no genre a viewer cannot see", func(t *testing.T) {
+		movie := fixture.item(t, "Hidden")
+		fixture.seed(t, movie, seeded{Genres: []string{fixture.name("Hidden Genre")}})
+
+		named, _, err := fixture.service.DistinctGenres(ctx, MetadataQuery{Viewer: Viewer{}, LibraryID: &fixture.libraryID})
+		if err != nil {
+			t.Fatalf("failed to query genres: %v", err)
+		}
+		if len(named) != 0 {
+			t.Errorf("genres = %v, want none for a viewer with no libraries", namesOf(named))
 		}
 	})
 }

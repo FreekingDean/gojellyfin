@@ -14,6 +14,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/http/mux"
+	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 	"github.com/FreekingDean/gojellyfin/internal/server"
 	"github.com/FreekingDean/gojellyfin/internal/server/admin"
@@ -23,6 +24,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/socket"
 	"github.com/FreekingDean/gojellyfin/internal/server/sso"
 	"github.com/FreekingDean/gojellyfin/internal/server/stream"
+	"github.com/FreekingDean/gojellyfin/internal/server/webhook"
 )
 
 var streamRoutes = []string{
@@ -129,13 +131,12 @@ type Server struct {
 	apiOptions     api.StrictHTTPServerOptions
 }
 
-func newHTTPMiddleware(config env.Config) []middleware.HttpMiddleware {
-	stack := make([]middleware.HttpMiddleware, 0, 3)
-	if len(config.CORSOrigins) > 0 {
-		stack = append(stack, middleware.HttpCORS(config.CORSOrigins))
-	}
+const castReceiverOrigin = "https://apps.jellyfin.org"
 
-	return append(stack, middleware.HttpLogging, middleware.HttpCanonicalQuery)
+func newHTTPMiddleware(config env.Config) []middleware.HttpMiddleware {
+	origins := append([]string{castReceiverOrigin}, config.CORSOrigins...)
+
+	return []middleware.HttpMiddleware{middleware.HttpCORS(origins), middleware.HttpClientAddress(middleware.Prefixes(config.TrustedProxies)), middleware.HttpLogging, middleware.HttpCanonicalQuery}
 }
 
 func newAPIMiddleware(tracing *tracing.Tracing, tracingMiddleware *middleware.OapiTracing, authMiddleware *middleware.Auth, policies middleware.Policies) []api.StrictMiddlewareFunc {
@@ -180,6 +181,10 @@ func New(config env.Config, m *mux.Mux, authMiddleware *middleware.Auth, tracing
 					http.Error(w, err.Error(), http.StatusForbidden)
 					return
 				}
+				if errors.Is(err, items.ErrNotFound) {
+					http.Error(w, err.Error(), http.StatusNotFound)
+					return
+				}
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 			},
 		},
@@ -193,6 +198,7 @@ func Register(
 	links *link.Handler,
 	administration *admin.Handler,
 	reporting *report.Handler,
+	hooks *webhook.Handler,
 	streams *stream.Handler,
 	signOn *sso.Handler,
 	m *mux.Mux,
@@ -203,6 +209,7 @@ func Register(
 	links.Register(m)
 	administration.Register(m)
 	reporting.Register(m)
+	hooks.Register(m)
 	for _, pattern := range sso.Routes {
 		m.HandleFunc(pattern, signOn.Serve)
 	}

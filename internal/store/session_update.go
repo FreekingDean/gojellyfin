@@ -12,8 +12,10 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/device"
+	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
+	"github.com/FreekingDean/gojellyfin/internal/store/syncplaygroupmember"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/google/uuid"
 )
@@ -125,6 +127,101 @@ func (_u *SessionUpdate) ClearRevokedAt() *SessionUpdate {
 	return _u
 }
 
+// SetNowPlayingItemID sets the "now_playing_item_id" field.
+func (_u *SessionUpdate) SetNowPlayingItemID(v uuid.UUID) *SessionUpdate {
+	_u.mutation.SetNowPlayingItemID(v)
+	return _u
+}
+
+// SetNillableNowPlayingItemID sets the "now_playing_item_id" field if the given value is not nil.
+func (_u *SessionUpdate) SetNillableNowPlayingItemID(v *uuid.UUID) *SessionUpdate {
+	if v != nil {
+		_u.SetNowPlayingItemID(*v)
+	}
+	return _u
+}
+
+// ClearNowPlayingItemID clears the value of the "now_playing_item_id" field.
+func (_u *SessionUpdate) ClearNowPlayingItemID() *SessionUpdate {
+	_u.mutation.ClearNowPlayingItemID()
+	return _u
+}
+
+// SetPositionTicks sets the "position_ticks" field.
+func (_u *SessionUpdate) SetPositionTicks(v int64) *SessionUpdate {
+	_u.mutation.ResetPositionTicks()
+	_u.mutation.SetPositionTicks(v)
+	return _u
+}
+
+// SetNillablePositionTicks sets the "position_ticks" field if the given value is not nil.
+func (_u *SessionUpdate) SetNillablePositionTicks(v *int64) *SessionUpdate {
+	if v != nil {
+		_u.SetPositionTicks(*v)
+	}
+	return _u
+}
+
+// AddPositionTicks adds value to the "position_ticks" field.
+func (_u *SessionUpdate) AddPositionTicks(v int64) *SessionUpdate {
+	_u.mutation.AddPositionTicks(v)
+	return _u
+}
+
+// SetPlayMethod sets the "play_method" field.
+func (_u *SessionUpdate) SetPlayMethod(v string) *SessionUpdate {
+	_u.mutation.SetPlayMethod(v)
+	return _u
+}
+
+// SetNillablePlayMethod sets the "play_method" field if the given value is not nil.
+func (_u *SessionUpdate) SetNillablePlayMethod(v *string) *SessionUpdate {
+	if v != nil {
+		_u.SetPlayMethod(*v)
+	}
+	return _u
+}
+
+// ClearPlayMethod clears the value of the "play_method" field.
+func (_u *SessionUpdate) ClearPlayMethod() *SessionUpdate {
+	_u.mutation.ClearPlayMethod()
+	return _u
+}
+
+// SetIsPaused sets the "is_paused" field.
+func (_u *SessionUpdate) SetIsPaused(v bool) *SessionUpdate {
+	_u.mutation.SetIsPaused(v)
+	return _u
+}
+
+// SetNillableIsPaused sets the "is_paused" field if the given value is not nil.
+func (_u *SessionUpdate) SetNillableIsPaused(v *bool) *SessionUpdate {
+	if v != nil {
+		_u.SetIsPaused(*v)
+	}
+	return _u
+}
+
+// SetPlayingAt sets the "playing_at" field.
+func (_u *SessionUpdate) SetPlayingAt(v time.Time) *SessionUpdate {
+	_u.mutation.SetPlayingAt(v)
+	return _u
+}
+
+// SetNillablePlayingAt sets the "playing_at" field if the given value is not nil.
+func (_u *SessionUpdate) SetNillablePlayingAt(v *time.Time) *SessionUpdate {
+	if v != nil {
+		_u.SetPlayingAt(*v)
+	}
+	return _u
+}
+
+// ClearPlayingAt clears the value of the "playing_at" field.
+func (_u *SessionUpdate) ClearPlayingAt() *SessionUpdate {
+	_u.mutation.ClearPlayingAt()
+	return _u
+}
+
 // SetUserID sets the "user" edge to the User entity by ID.
 func (_u *SessionUpdate) SetUserID(id uuid.UUID) *SessionUpdate {
 	_u.mutation.SetUserID(id)
@@ -147,6 +244,40 @@ func (_u *SessionUpdate) SetDevice(v *Device) *SessionUpdate {
 	return _u.SetDeviceID(v.ID)
 }
 
+// SetNowPlayingID sets the "now_playing" edge to the Item entity by ID.
+func (_u *SessionUpdate) SetNowPlayingID(id uuid.UUID) *SessionUpdate {
+	_u.mutation.SetNowPlayingID(id)
+	return _u
+}
+
+// SetNillableNowPlayingID sets the "now_playing" edge to the Item entity by ID if the given value is not nil.
+func (_u *SessionUpdate) SetNillableNowPlayingID(id *uuid.UUID) *SessionUpdate {
+	if id != nil {
+		_u = _u.SetNowPlayingID(*id)
+	}
+	return _u
+}
+
+// SetNowPlaying sets the "now_playing" edge to the Item entity.
+func (_u *SessionUpdate) SetNowPlaying(v *Item) *SessionUpdate {
+	return _u.SetNowPlayingID(v.ID)
+}
+
+// AddSyncPlayMembershipIDs adds the "sync_play_memberships" edge to the SyncPlayGroupMember entity by IDs.
+func (_u *SessionUpdate) AddSyncPlayMembershipIDs(ids ...uuid.UUID) *SessionUpdate {
+	_u.mutation.AddSyncPlayMembershipIDs(ids...)
+	return _u
+}
+
+// AddSyncPlayMemberships adds the "sync_play_memberships" edges to the SyncPlayGroupMember entity.
+func (_u *SessionUpdate) AddSyncPlayMemberships(v ...*SyncPlayGroupMember) *SessionUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSyncPlayMembershipIDs(ids...)
+}
+
 // Mutation returns the SessionMutation object of the builder.
 func (_u *SessionUpdate) Mutation() *SessionMutation {
 	return _u.mutation
@@ -162,6 +293,33 @@ func (_u *SessionUpdate) ClearUser() *SessionUpdate {
 func (_u *SessionUpdate) ClearDevice() *SessionUpdate {
 	_u.mutation.ClearDevice()
 	return _u
+}
+
+// ClearNowPlaying clears the "now_playing" edge to the Item entity.
+func (_u *SessionUpdate) ClearNowPlaying() *SessionUpdate {
+	_u.mutation.ClearNowPlaying()
+	return _u
+}
+
+// ClearSyncPlayMemberships clears all "sync_play_memberships" edges to the SyncPlayGroupMember entity.
+func (_u *SessionUpdate) ClearSyncPlayMemberships() *SessionUpdate {
+	_u.mutation.ClearSyncPlayMemberships()
+	return _u
+}
+
+// RemoveSyncPlayMembershipIDs removes the "sync_play_memberships" edge to SyncPlayGroupMember entities by IDs.
+func (_u *SessionUpdate) RemoveSyncPlayMembershipIDs(ids ...uuid.UUID) *SessionUpdate {
+	_u.mutation.RemoveSyncPlayMembershipIDs(ids...)
+	return _u
+}
+
+// RemoveSyncPlayMemberships removes "sync_play_memberships" edges to SyncPlayGroupMember entities.
+func (_u *SessionUpdate) RemoveSyncPlayMemberships(v ...*SyncPlayGroupMember) *SessionUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSyncPlayMembershipIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -250,6 +408,27 @@ func (_u *SessionUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.RevokedAtCleared() {
 		_spec.ClearField(session.FieldRevokedAt, field.TypeTime)
 	}
+	if value, ok := _u.mutation.PositionTicks(); ok {
+		_spec.SetField(session.FieldPositionTicks, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedPositionTicks(); ok {
+		_spec.AddField(session.FieldPositionTicks, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.PlayMethod(); ok {
+		_spec.SetField(session.FieldPlayMethod, field.TypeString, value)
+	}
+	if _u.mutation.PlayMethodCleared() {
+		_spec.ClearField(session.FieldPlayMethod, field.TypeString)
+	}
+	if value, ok := _u.mutation.IsPaused(); ok {
+		_spec.SetField(session.FieldIsPaused, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.PlayingAt(); ok {
+		_spec.SetField(session.FieldPlayingAt, field.TypeTime, value)
+	}
+	if _u.mutation.PlayingAtCleared() {
+		_spec.ClearField(session.FieldPlayingAt, field.TypeTime)
+	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -301,6 +480,80 @@ func (_u *SessionUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(device.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.NowPlayingCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   session.NowPlayingTable,
+			Columns: []string{session.NowPlayingColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.NowPlayingIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   session.NowPlayingTable,
+			Columns: []string{session.NowPlayingColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SyncPlayMembershipsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   session.SyncPlayMembershipsTable,
+			Columns: []string{session.SyncPlayMembershipsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(syncplaygroupmember.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSyncPlayMembershipsIDs(); len(nodes) > 0 && !_u.mutation.SyncPlayMembershipsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   session.SyncPlayMembershipsTable,
+			Columns: []string{session.SyncPlayMembershipsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(syncplaygroupmember.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SyncPlayMembershipsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   session.SyncPlayMembershipsTable,
+			Columns: []string{session.SyncPlayMembershipsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(syncplaygroupmember.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -422,6 +675,101 @@ func (_u *SessionUpdateOne) ClearRevokedAt() *SessionUpdateOne {
 	return _u
 }
 
+// SetNowPlayingItemID sets the "now_playing_item_id" field.
+func (_u *SessionUpdateOne) SetNowPlayingItemID(v uuid.UUID) *SessionUpdateOne {
+	_u.mutation.SetNowPlayingItemID(v)
+	return _u
+}
+
+// SetNillableNowPlayingItemID sets the "now_playing_item_id" field if the given value is not nil.
+func (_u *SessionUpdateOne) SetNillableNowPlayingItemID(v *uuid.UUID) *SessionUpdateOne {
+	if v != nil {
+		_u.SetNowPlayingItemID(*v)
+	}
+	return _u
+}
+
+// ClearNowPlayingItemID clears the value of the "now_playing_item_id" field.
+func (_u *SessionUpdateOne) ClearNowPlayingItemID() *SessionUpdateOne {
+	_u.mutation.ClearNowPlayingItemID()
+	return _u
+}
+
+// SetPositionTicks sets the "position_ticks" field.
+func (_u *SessionUpdateOne) SetPositionTicks(v int64) *SessionUpdateOne {
+	_u.mutation.ResetPositionTicks()
+	_u.mutation.SetPositionTicks(v)
+	return _u
+}
+
+// SetNillablePositionTicks sets the "position_ticks" field if the given value is not nil.
+func (_u *SessionUpdateOne) SetNillablePositionTicks(v *int64) *SessionUpdateOne {
+	if v != nil {
+		_u.SetPositionTicks(*v)
+	}
+	return _u
+}
+
+// AddPositionTicks adds value to the "position_ticks" field.
+func (_u *SessionUpdateOne) AddPositionTicks(v int64) *SessionUpdateOne {
+	_u.mutation.AddPositionTicks(v)
+	return _u
+}
+
+// SetPlayMethod sets the "play_method" field.
+func (_u *SessionUpdateOne) SetPlayMethod(v string) *SessionUpdateOne {
+	_u.mutation.SetPlayMethod(v)
+	return _u
+}
+
+// SetNillablePlayMethod sets the "play_method" field if the given value is not nil.
+func (_u *SessionUpdateOne) SetNillablePlayMethod(v *string) *SessionUpdateOne {
+	if v != nil {
+		_u.SetPlayMethod(*v)
+	}
+	return _u
+}
+
+// ClearPlayMethod clears the value of the "play_method" field.
+func (_u *SessionUpdateOne) ClearPlayMethod() *SessionUpdateOne {
+	_u.mutation.ClearPlayMethod()
+	return _u
+}
+
+// SetIsPaused sets the "is_paused" field.
+func (_u *SessionUpdateOne) SetIsPaused(v bool) *SessionUpdateOne {
+	_u.mutation.SetIsPaused(v)
+	return _u
+}
+
+// SetNillableIsPaused sets the "is_paused" field if the given value is not nil.
+func (_u *SessionUpdateOne) SetNillableIsPaused(v *bool) *SessionUpdateOne {
+	if v != nil {
+		_u.SetIsPaused(*v)
+	}
+	return _u
+}
+
+// SetPlayingAt sets the "playing_at" field.
+func (_u *SessionUpdateOne) SetPlayingAt(v time.Time) *SessionUpdateOne {
+	_u.mutation.SetPlayingAt(v)
+	return _u
+}
+
+// SetNillablePlayingAt sets the "playing_at" field if the given value is not nil.
+func (_u *SessionUpdateOne) SetNillablePlayingAt(v *time.Time) *SessionUpdateOne {
+	if v != nil {
+		_u.SetPlayingAt(*v)
+	}
+	return _u
+}
+
+// ClearPlayingAt clears the value of the "playing_at" field.
+func (_u *SessionUpdateOne) ClearPlayingAt() *SessionUpdateOne {
+	_u.mutation.ClearPlayingAt()
+	return _u
+}
+
 // SetUserID sets the "user" edge to the User entity by ID.
 func (_u *SessionUpdateOne) SetUserID(id uuid.UUID) *SessionUpdateOne {
 	_u.mutation.SetUserID(id)
@@ -444,6 +792,40 @@ func (_u *SessionUpdateOne) SetDevice(v *Device) *SessionUpdateOne {
 	return _u.SetDeviceID(v.ID)
 }
 
+// SetNowPlayingID sets the "now_playing" edge to the Item entity by ID.
+func (_u *SessionUpdateOne) SetNowPlayingID(id uuid.UUID) *SessionUpdateOne {
+	_u.mutation.SetNowPlayingID(id)
+	return _u
+}
+
+// SetNillableNowPlayingID sets the "now_playing" edge to the Item entity by ID if the given value is not nil.
+func (_u *SessionUpdateOne) SetNillableNowPlayingID(id *uuid.UUID) *SessionUpdateOne {
+	if id != nil {
+		_u = _u.SetNowPlayingID(*id)
+	}
+	return _u
+}
+
+// SetNowPlaying sets the "now_playing" edge to the Item entity.
+func (_u *SessionUpdateOne) SetNowPlaying(v *Item) *SessionUpdateOne {
+	return _u.SetNowPlayingID(v.ID)
+}
+
+// AddSyncPlayMembershipIDs adds the "sync_play_memberships" edge to the SyncPlayGroupMember entity by IDs.
+func (_u *SessionUpdateOne) AddSyncPlayMembershipIDs(ids ...uuid.UUID) *SessionUpdateOne {
+	_u.mutation.AddSyncPlayMembershipIDs(ids...)
+	return _u
+}
+
+// AddSyncPlayMemberships adds the "sync_play_memberships" edges to the SyncPlayGroupMember entity.
+func (_u *SessionUpdateOne) AddSyncPlayMemberships(v ...*SyncPlayGroupMember) *SessionUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSyncPlayMembershipIDs(ids...)
+}
+
 // Mutation returns the SessionMutation object of the builder.
 func (_u *SessionUpdateOne) Mutation() *SessionMutation {
 	return _u.mutation
@@ -459,6 +841,33 @@ func (_u *SessionUpdateOne) ClearUser() *SessionUpdateOne {
 func (_u *SessionUpdateOne) ClearDevice() *SessionUpdateOne {
 	_u.mutation.ClearDevice()
 	return _u
+}
+
+// ClearNowPlaying clears the "now_playing" edge to the Item entity.
+func (_u *SessionUpdateOne) ClearNowPlaying() *SessionUpdateOne {
+	_u.mutation.ClearNowPlaying()
+	return _u
+}
+
+// ClearSyncPlayMemberships clears all "sync_play_memberships" edges to the SyncPlayGroupMember entity.
+func (_u *SessionUpdateOne) ClearSyncPlayMemberships() *SessionUpdateOne {
+	_u.mutation.ClearSyncPlayMemberships()
+	return _u
+}
+
+// RemoveSyncPlayMembershipIDs removes the "sync_play_memberships" edge to SyncPlayGroupMember entities by IDs.
+func (_u *SessionUpdateOne) RemoveSyncPlayMembershipIDs(ids ...uuid.UUID) *SessionUpdateOne {
+	_u.mutation.RemoveSyncPlayMembershipIDs(ids...)
+	return _u
+}
+
+// RemoveSyncPlayMemberships removes "sync_play_memberships" edges to SyncPlayGroupMember entities.
+func (_u *SessionUpdateOne) RemoveSyncPlayMemberships(v ...*SyncPlayGroupMember) *SessionUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSyncPlayMembershipIDs(ids...)
 }
 
 // Where appends a list predicates to the SessionUpdate builder.
@@ -577,6 +986,27 @@ func (_u *SessionUpdateOne) sqlSave(ctx context.Context) (_node *Session, err er
 	if _u.mutation.RevokedAtCleared() {
 		_spec.ClearField(session.FieldRevokedAt, field.TypeTime)
 	}
+	if value, ok := _u.mutation.PositionTicks(); ok {
+		_spec.SetField(session.FieldPositionTicks, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedPositionTicks(); ok {
+		_spec.AddField(session.FieldPositionTicks, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.PlayMethod(); ok {
+		_spec.SetField(session.FieldPlayMethod, field.TypeString, value)
+	}
+	if _u.mutation.PlayMethodCleared() {
+		_spec.ClearField(session.FieldPlayMethod, field.TypeString)
+	}
+	if value, ok := _u.mutation.IsPaused(); ok {
+		_spec.SetField(session.FieldIsPaused, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.PlayingAt(); ok {
+		_spec.SetField(session.FieldPlayingAt, field.TypeTime, value)
+	}
+	if _u.mutation.PlayingAtCleared() {
+		_spec.ClearField(session.FieldPlayingAt, field.TypeTime)
+	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -628,6 +1058,80 @@ func (_u *SessionUpdateOne) sqlSave(ctx context.Context) (_node *Session, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(device.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.NowPlayingCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   session.NowPlayingTable,
+			Columns: []string{session.NowPlayingColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.NowPlayingIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   session.NowPlayingTable,
+			Columns: []string{session.NowPlayingColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SyncPlayMembershipsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   session.SyncPlayMembershipsTable,
+			Columns: []string{session.SyncPlayMembershipsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(syncplaygroupmember.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSyncPlayMembershipsIDs(); len(nodes) > 0 && !_u.mutation.SyncPlayMembershipsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   session.SyncPlayMembershipsTable,
+			Columns: []string{session.SyncPlayMembershipsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(syncplaygroupmember.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SyncPlayMembershipsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   session.SyncPlayMembershipsTable,
+			Columns: []string{session.SyncPlayMembershipsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(syncplaygroupmember.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
