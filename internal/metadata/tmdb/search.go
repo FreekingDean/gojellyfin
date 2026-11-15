@@ -5,10 +5,14 @@ import (
 	"fmt"
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
 func (c *Client) Search(ctx context.Context, kind items.Kind, term string) ([]items.Metadata, error) {
+	ctx, span := tracing.Start(ctx, "tmdb Search")
+	defer span.End()
+
 	if kind != itemmodel.KindMovie && kind != itemmodel.KindSeries {
 		return nil, fmt.Errorf("tmdb: nothing is searched for as %s", kind)
 	}

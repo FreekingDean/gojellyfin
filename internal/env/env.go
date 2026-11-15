@@ -59,7 +59,9 @@ type Temporal struct {
 }
 
 type Tracing struct {
-	OTLPEndpoint string `mapstructure:"OTEL_EXPORTER_OTLP_ENDPOINT"`
+	OTLPEndpoint       string `mapstructure:"OTEL_EXPORTER_OTLP_ENDPOINT"`
+	ServiceName        string `mapstructure:"OTEL_SERVICE_NAME"`
+	ResourceAttributes string `mapstructure:"OTEL_RESOURCE_ATTRIBUTES"`
 }
 
 type TMDB struct {
