@@ -147,19 +147,48 @@ async function freshStart(phone) {
   await launch(phone, { connect: { type: 'EditText' } });
 }
 
-// The connect screen is drawn before its field takes typing, so the address
-// is typed until the field holds it.
+// The connect screen's Compose field drops what is typed while the keyboard
+// is still coming up, and from 2.7 more than the first character of one
+// `input text`, so the address goes in a character at a time once the
+// keyboard is up, and each is checked for before the next.
+async function typeAddress(phone, address) {
+  const field = { type: 'EditText' };
+  await phone.tapOn(field);
+  for (let wait = 0; wait < 20 && !phone.keyboardShown(); wait++) {
+    await sleep(250);
+  }
+  let cleared;
+  for (let attempt = 0; attempt < address.length * 4; attempt++) {
+    const [node] = phone.find(field);
+    const shown = node?.text ?? '';
+    const typed = shown === cleared ? '' : shown;
+    if (typed === address) {
+      return true;
+    }
+    if (!address.startsWith(typed)) {
+      phone.key('moveEnd');
+      phone.key('deleteBack', typed.length);
+      cleared = typed;
+    } else {
+      phone.type(address[typed.length]);
+    }
+    await sleep(150);
+  }
+
+  return false;
+}
+
 async function connect(phone, app) {
   for (let attempt = 0; ; attempt++) {
     await sleep(1500);
-    await phone.fill({ type: 'EditText' }, app.baseUrl);
-    if (phone.find({ type: 'EditText', text: app.baseUrl }).length) {
+    if (await typeAddress(phone, app.baseUrl)) {
       break;
     }
     if (attempt === 3) {
       throw new Error(`the server's address never reached its field. On screen:\n${phone.summary()}`);
     }
   }
+  await phone.hideKeyboard();
   await phone.tapOn({ label: /^connect$/i });
   await phone.waitForAny({ login: screens(app).login, users: { label: app.username } }, { timeout: 90000 });
 }

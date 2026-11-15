@@ -230,6 +230,7 @@ function device(serial = process.env.ANDROID_SERIAL) {
     type,
     fill,
     hideKeyboard,
+    keyboardShown,
     screenshot,
     logcat,
     summary: () => summary(dump()),
