@@ -57,7 +57,33 @@ const test = base.extend({
 
     await use(phone);
   },
+
+  nativePlayer: async ({ signedIn: phone, harness: app }, use) => {
+    await choosePlayer(phone, app, 'exoplayer');
+    await use(phone);
+    await choosePlayer(phone, app, 'webui');
+  },
 });
+
+const PREFERENCES = `/data/data/${PACKAGE}/shared_prefs/${PACKAGE}_preferences.xml`;
+
+// The video player is a setting of the app's own, not of the page, and it
+// lives only in its shared preferences. An emulator image with Google APIs
+// carries su, so the file is rewritten as root and handed back to the app.
+async function choosePlayer(phone, app, player) {
+  phone.stop(PACKAGE);
+  const owner = phone.shell(`su 0 stat -c %u:%g /data/data/${PACKAGE}`).trim();
+  phone.shell(
+    `su 0 sed -i -e '/pref_video_player_type/d' -e 's#</map>#<string name="pref_video_player_type">${player}</string></map>#' ${PREFERENCES}`,
+  );
+  phone.shell(`su 0 chown ${owner} ${PREFERENCES}`);
+  phone.shell(`su 0 chmod 660 ${PREFERENCES}`);
+  phone.shell(`su 0 restorecon ${PREFERENCES}`, { allowFailure: true });
+  const landed = await launch(phone, screens(app));
+  if (landed !== 'home') {
+    throw new Error(`the app came back on ${landed} rather than home after choosing the ${player} player`);
+  }
+}
 
 const screens = (app) => ({
   home: { label: app.library },
