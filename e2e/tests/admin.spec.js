@@ -176,12 +176,14 @@ test.describe('the admin app', () => {
     await expect(main).not.toContainText('postgres://');
   });
 
-  test('shows what a session is playing and where it connects from', async ({ page, harness }) => {
+  test('shows what a session is playing, how it is served and where it connects from', async ({ page, harness }) => {
     const { user, headers } = await session(harness);
     const search = new URLSearchParams({ searchTerm: harness.playable, recursive: 'true', includeItemTypes: 'Movie', userId: user });
     const [movie] = (await (await fetch(`${harness.baseUrl}/Items?${search}`, { headers })).json()).Items;
     const report = (path, body) => fetch(harness.baseUrl + path, { method: 'POST', headers, body: JSON.stringify(body) });
-    expect((await report('/Sessions/Playing', { ItemId: movie.Id, PositionTicks: 0, PlayMethod: 'DirectPlay' })).ok).toBe(true);
+    const profile = { DirectPlayProfiles: [{ Container: 'mp4', VideoCodec: 'vp9', AudioCodec: 'opus', Type: 'Video' }] };
+    expect((await report(`/Items/${movie.Id}/PlaybackInfo`, { DeviceProfile: profile })).ok).toBe(true);
+    expect((await report('/Sessions/Playing', { ItemId: movie.Id, PositionTicks: 0, PlayMethod: 'Transcode' })).ok).toBe(true);
 
     try {
       await page.goto(harness.baseUrl + '/admin');
@@ -190,7 +192,9 @@ test.describe('the admin app', () => {
 
       await page.getByRole('link', { name: 'Activity' }).click();
       const row = page.locator('tr', { hasText: 'Playwright' }).filter({ hasText: harness.playable });
-      await expect(row).toContainText('DirectPlay');
+      await expect(row).toContainText('Remux');
+      await expect(row).toContainText('WEBM → MP4');
+      await expect(row).toContainText('WEBM container not supported');
       await expect(row).toContainText('127.0.0.1');
     } finally {
       await report('/Sessions/Playing/Stopped', { ItemId: movie.Id, PositionTicks: 0 });

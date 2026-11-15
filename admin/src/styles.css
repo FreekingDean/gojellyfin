@@ -467,6 +467,12 @@ button.bad {
   padding: 10px 12px;
 }
 
+.served small {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+}
+
 .health small {
   display: block;
   color: var(--muted);
