@@ -320,7 +320,7 @@ func (s *Service) Update(ctx context.Context, id uuid.UUID, entry Configured) (C
 func (s *Service) Delete(ctx context.Context, id uuid.UUID) error {
 	if source, err := s.store.Source.Query().Where(sourcemodel.ID(id)).OnlyModel(ctx); err == nil {
 		if err := s.unhook(ctx, *source); err != nil {
-			log.Printf("failed to remove the webhook from %s: %v", source.Name, err)
+			log.Printf("the gojellyfin webhook is still on %s at %s: remove it under Settings, Connect", source.Name, source.URL)
 		}
 	}
 

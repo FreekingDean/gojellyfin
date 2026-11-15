@@ -172,6 +172,6 @@ func recordID(found record) int64 {
 
 func (s *Service) hookQuietly(ctx context.Context, id uuid.UUID) {
 	if err := s.Hook(ctx, id); err != nil {
-		log.Printf("failed to register the webhook on %s: %v", id, err)
+		log.Printf("the webhook on source %s is not registered; its webhook error says why", id)
 	}
 }
