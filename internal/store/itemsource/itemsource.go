@@ -38,6 +38,8 @@ const (
 	FieldDateModified = "date_modified"
 	// FieldProbedAt holds the string denoting the probed_at field in the database.
 	FieldProbedAt = "probed_at"
+	// FieldSegmentsDetectedAt holds the string denoting the segments_detected_at field in the database.
+	FieldSegmentsDetectedAt = "segments_detected_at"
 	// FieldExternalID holds the string denoting the external_id field in the database.
 	FieldExternalID = "external_id"
 	// FieldExternalFileID holds the string denoting the external_file_id field in the database.
@@ -48,6 +50,8 @@ const (
 	EdgeSource = "source"
 	// EdgeStreams holds the string denoting the streams edge name in mutations.
 	EdgeStreams = "streams"
+	// EdgeSegments holds the string denoting the segments edge name in mutations.
+	EdgeSegments = "segments"
 	// EdgeReports holds the string denoting the reports edge name in mutations.
 	EdgeReports = "reports"
 	// Table holds the table name of the itemsource in the database.
@@ -73,6 +77,13 @@ const (
 	StreamsInverseTable = "media_streams"
 	// StreamsColumn is the table column denoting the streams relation/edge.
 	StreamsColumn = "item_source_id"
+	// SegmentsTable is the table that holds the segments relation/edge.
+	SegmentsTable = "media_segments"
+	// SegmentsInverseTable is the table name for the MediaSegment entity.
+	// It exists in this package in order to avoid circular dependency with the "mediasegment" package.
+	SegmentsInverseTable = "media_segments"
+	// SegmentsColumn is the table column denoting the segments relation/edge.
+	SegmentsColumn = "item_source_id"
 	// ReportsTable is the table that holds the reports relation/edge.
 	ReportsTable = "reports"
 	// ReportsInverseTable is the table name for the Report entity.
@@ -97,6 +108,7 @@ var Columns = []string{
 	FieldBitrate,
 	FieldDateModified,
 	FieldProbedAt,
+	FieldSegmentsDetectedAt,
 	FieldExternalID,
 	FieldExternalFileID,
 }
@@ -188,6 +200,11 @@ func ByProbedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldProbedAt, opts...).ToFunc()
 }
 
+// BySegmentsDetectedAt orders the results by the segments_detected_at field.
+func BySegmentsDetectedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSegmentsDetectedAt, opts...).ToFunc()
+}
+
 // ByExternalID orders the results by the external_id field.
 func ByExternalID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldExternalID, opts...).ToFunc()
@@ -226,6 +243,20 @@ func ByStreams(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// BySegmentsCount orders the results by segments count.
+func BySegmentsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSegmentsStep(), opts...)
+	}
+}
+
+// BySegments orders the results by segments terms.
+func BySegments(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSegmentsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByReportsCount orders the results by reports count.
 func ByReportsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -258,6 +289,13 @@ func newStreamsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(StreamsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, StreamsTable, StreamsColumn),
+	)
+}
+func newSegmentsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SegmentsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SegmentsTable, SegmentsColumn),
 	)
 }
 func newReportsStep() *sqlgraph.Step {

@@ -44,6 +44,8 @@ type ItemSource struct {
 	DateModified *time.Time `json:"date_modified,omitempty"`
 	// ProbedAt holds the value of the "probed_at" field.
 	ProbedAt *time.Time `json:"probed_at,omitempty"`
+	// SegmentsDetectedAt holds the value of the "segments_detected_at" field.
+	SegmentsDetectedAt *time.Time `json:"segments_detected_at,omitempty"`
 	// ExternalID holds the value of the "external_id" field.
 	ExternalID *int64 `json:"external_id,omitempty"`
 	// ExternalFileID holds the value of the "external_file_id" field.
@@ -62,11 +64,13 @@ type ItemSourceEdges struct {
 	Source *Source `json:"source,omitempty"`
 	// Streams holds the value of the streams edge.
 	Streams []*MediaStream `json:"streams,omitempty"`
+	// Segments holds the value of the segments edge.
+	Segments []*MediaSegment `json:"segments,omitempty"`
 	// Reports holds the value of the reports edge.
 	Reports []*Report `json:"reports,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 }
 
 // ItemOrErr returns the Item value or an error if the edge
@@ -100,10 +104,19 @@ func (e ItemSourceEdges) StreamsOrErr() ([]*MediaStream, error) {
 	return nil, &NotLoadedError{edge: "streams"}
 }
 
+// SegmentsOrErr returns the Segments value or an error if the edge
+// was not loaded in eager-loading.
+func (e ItemSourceEdges) SegmentsOrErr() ([]*MediaSegment, error) {
+	if e.loadedTypes[3] {
+		return e.Segments, nil
+	}
+	return nil, &NotLoadedError{edge: "segments"}
+}
+
 // ReportsOrErr returns the Reports value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemSourceEdges) ReportsOrErr() ([]*Report, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[4] {
 		return e.Reports, nil
 	}
 	return nil, &NotLoadedError{edge: "reports"}
@@ -118,7 +131,7 @@ func (*ItemSource) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case itemsource.FieldName, itemsource.FieldPath, itemsource.FieldContainer:
 			values[i] = new(sql.NullString)
-		case itemsource.FieldCreatedAt, itemsource.FieldUpdatedAt, itemsource.FieldDateModified, itemsource.FieldProbedAt:
+		case itemsource.FieldCreatedAt, itemsource.FieldUpdatedAt, itemsource.FieldDateModified, itemsource.FieldProbedAt, itemsource.FieldSegmentsDetectedAt:
 			values[i] = new(sql.NullTime)
 		case itemsource.FieldID, itemsource.FieldItemID, itemsource.FieldSourceID:
 			values[i] = new(uuid.UUID)
@@ -220,6 +233,13 @@ func (_m *ItemSource) assignValues(columns []string, values []any) error {
 				_m.ProbedAt = new(time.Time)
 				*_m.ProbedAt = value.Time
 			}
+		case itemsource.FieldSegmentsDetectedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field segments_detected_at", values[i])
+			} else if value.Valid {
+				_m.SegmentsDetectedAt = new(time.Time)
+				*_m.SegmentsDetectedAt = value.Time
+			}
 		case itemsource.FieldExternalID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field external_id", values[i])
@@ -260,6 +280,11 @@ func (_m *ItemSource) QuerySource() *SourceQuery {
 // QueryStreams queries the "streams" edge of the ItemSource entity.
 func (_m *ItemSource) QueryStreams() *MediaStreamQuery {
 	return NewItemSourceClient(_m.config).QueryStreams(_m)
+}
+
+// QuerySegments queries the "segments" edge of the ItemSource entity.
+func (_m *ItemSource) QuerySegments() *MediaSegmentQuery {
+	return NewItemSourceClient(_m.config).QuerySegments(_m)
 }
 
 // QueryReports queries the "reports" edge of the ItemSource entity.
@@ -333,6 +358,11 @@ func (_m *ItemSource) String() string {
 	builder.WriteString(", ")
 	if v := _m.ProbedAt; v != nil {
 		builder.WriteString("probed_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.SegmentsDetectedAt; v != nil {
+		builder.WriteString("segments_detected_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")

@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	"github.com/FreekingDean/gojellyfin/internal/store/mediasegment"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/report"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
@@ -164,6 +165,20 @@ func (_c *ItemSourceCreate) SetNillableProbedAt(v *time.Time) *ItemSourceCreate 
 	return _c
 }
 
+// SetSegmentsDetectedAt sets the "segments_detected_at" field.
+func (_c *ItemSourceCreate) SetSegmentsDetectedAt(v time.Time) *ItemSourceCreate {
+	_c.mutation.SetSegmentsDetectedAt(v)
+	return _c
+}
+
+// SetNillableSegmentsDetectedAt sets the "segments_detected_at" field if the given value is not nil.
+func (_c *ItemSourceCreate) SetNillableSegmentsDetectedAt(v *time.Time) *ItemSourceCreate {
+	if v != nil {
+		_c.SetSegmentsDetectedAt(*v)
+	}
+	return _c
+}
+
 // SetExternalID sets the "external_id" field.
 func (_c *ItemSourceCreate) SetExternalID(v int64) *ItemSourceCreate {
 	_c.mutation.SetExternalID(v)
@@ -221,6 +236,21 @@ func (_c *ItemSourceCreate) AddStreams(v ...*MediaStream) *ItemSourceCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddStreamIDs(ids...)
+}
+
+// AddSegmentIDs adds the "segments" edge to the MediaSegment entity by IDs.
+func (_c *ItemSourceCreate) AddSegmentIDs(ids ...uuid.UUID) *ItemSourceCreate {
+	_c.mutation.AddSegmentIDs(ids...)
+	return _c
+}
+
+// AddSegments adds the "segments" edges to the MediaSegment entity.
+func (_c *ItemSourceCreate) AddSegments(v ...*MediaSegment) *ItemSourceCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddSegmentIDs(ids...)
 }
 
 // AddReportIDs adds the "reports" edge to the Report entity by IDs.
@@ -385,6 +415,10 @@ func (_c *ItemSourceCreate) createSpec() (*ItemSource, *sqlgraph.CreateSpec) {
 		_spec.SetField(itemsource.FieldProbedAt, field.TypeTime, value)
 		_node.ProbedAt = &value
 	}
+	if value, ok := _c.mutation.SegmentsDetectedAt(); ok {
+		_spec.SetField(itemsource.FieldSegmentsDetectedAt, field.TypeTime, value)
+		_node.SegmentsDetectedAt = &value
+	}
 	if value, ok := _c.mutation.ExternalID(); ok {
 		_spec.SetField(itemsource.FieldExternalID, field.TypeInt64, value)
 		_node.ExternalID = &value
@@ -436,6 +470,22 @@ func (_c *ItemSourceCreate) createSpec() (*ItemSource, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(mediastream.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SegmentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemsource.SegmentsTable,
+			Columns: []string{itemsource.SegmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(mediasegment.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -706,6 +756,24 @@ func (u *ItemSourceUpsert) UpdateProbedAt() *ItemSourceUpsert {
 // ClearProbedAt clears the value of the "probed_at" field.
 func (u *ItemSourceUpsert) ClearProbedAt() *ItemSourceUpsert {
 	u.SetNull(itemsource.FieldProbedAt)
+	return u
+}
+
+// SetSegmentsDetectedAt sets the "segments_detected_at" field.
+func (u *ItemSourceUpsert) SetSegmentsDetectedAt(v time.Time) *ItemSourceUpsert {
+	u.Set(itemsource.FieldSegmentsDetectedAt, v)
+	return u
+}
+
+// UpdateSegmentsDetectedAt sets the "segments_detected_at" field to the value that was provided on create.
+func (u *ItemSourceUpsert) UpdateSegmentsDetectedAt() *ItemSourceUpsert {
+	u.SetExcluded(itemsource.FieldSegmentsDetectedAt)
+	return u
+}
+
+// ClearSegmentsDetectedAt clears the value of the "segments_detected_at" field.
+func (u *ItemSourceUpsert) ClearSegmentsDetectedAt() *ItemSourceUpsert {
+	u.SetNull(itemsource.FieldSegmentsDetectedAt)
 	return u
 }
 
@@ -1033,6 +1101,27 @@ func (u *ItemSourceUpsertOne) UpdateProbedAt() *ItemSourceUpsertOne {
 func (u *ItemSourceUpsertOne) ClearProbedAt() *ItemSourceUpsertOne {
 	return u.Update(func(s *ItemSourceUpsert) {
 		s.ClearProbedAt()
+	})
+}
+
+// SetSegmentsDetectedAt sets the "segments_detected_at" field.
+func (u *ItemSourceUpsertOne) SetSegmentsDetectedAt(v time.Time) *ItemSourceUpsertOne {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.SetSegmentsDetectedAt(v)
+	})
+}
+
+// UpdateSegmentsDetectedAt sets the "segments_detected_at" field to the value that was provided on create.
+func (u *ItemSourceUpsertOne) UpdateSegmentsDetectedAt() *ItemSourceUpsertOne {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.UpdateSegmentsDetectedAt()
+	})
+}
+
+// ClearSegmentsDetectedAt clears the value of the "segments_detected_at" field.
+func (u *ItemSourceUpsertOne) ClearSegmentsDetectedAt() *ItemSourceUpsertOne {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.ClearSegmentsDetectedAt()
 	})
 }
 
@@ -1535,6 +1624,27 @@ func (u *ItemSourceUpsertBulk) UpdateProbedAt() *ItemSourceUpsertBulk {
 func (u *ItemSourceUpsertBulk) ClearProbedAt() *ItemSourceUpsertBulk {
 	return u.Update(func(s *ItemSourceUpsert) {
 		s.ClearProbedAt()
+	})
+}
+
+// SetSegmentsDetectedAt sets the "segments_detected_at" field.
+func (u *ItemSourceUpsertBulk) SetSegmentsDetectedAt(v time.Time) *ItemSourceUpsertBulk {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.SetSegmentsDetectedAt(v)
+	})
+}
+
+// UpdateSegmentsDetectedAt sets the "segments_detected_at" field to the value that was provided on create.
+func (u *ItemSourceUpsertBulk) UpdateSegmentsDetectedAt() *ItemSourceUpsertBulk {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.UpdateSegmentsDetectedAt()
+	})
+}
+
+// ClearSegmentsDetectedAt clears the value of the "segments_detected_at" field.
+func (u *ItemSourceUpsertBulk) ClearSegmentsDetectedAt() *ItemSourceUpsertBulk {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.ClearSegmentsDetectedAt()
 	})
 }
 

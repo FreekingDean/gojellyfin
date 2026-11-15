@@ -25,6 +25,7 @@ func (ItemSource) Fields() []ent.Field {
 		field.Int32("bitrate").Optional().Nillable(),
 		field.Time("date_modified").Optional().Nillable(),
 		field.Time("probed_at").Optional().Nillable(),
+		field.Time("segments_detected_at").Optional().Nillable(),
 		field.Int64("external_id").Optional().Nillable(),
 		field.Int64("external_file_id").Optional().Nillable(),
 	)
@@ -35,6 +36,7 @@ func (ItemSource) Edges() []ent.Edge {
 		edge.From("item", Item.Type).Ref("item_sources").Unique().Required().Field("item_id"),
 		edge.From("source", Source.Type).Ref("files").Unique().Required().Field("source_id"),
 		edge.To("streams", MediaStream.Type).Annotations(cascadeOnDelete),
+		edge.To("segments", MediaSegment.Type).Annotations(cascadeOnDelete),
 		edge.To("reports", Report.Type),
 	}
 }

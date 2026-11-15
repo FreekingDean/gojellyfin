@@ -116,6 +116,11 @@ func ProbedAt(v time.Time) predicate.ItemSource {
 	return predicate.ItemSource(sql.FieldEQ(FieldProbedAt, v))
 }
 
+// SegmentsDetectedAt applies equality check predicate on the "segments_detected_at" field. It's identical to SegmentsDetectedAtEQ.
+func SegmentsDetectedAt(v time.Time) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldEQ(FieldSegmentsDetectedAt, v))
+}
+
 // ExternalID applies equality check predicate on the "external_id" field. It's identical to ExternalIDEQ.
 func ExternalID(v int64) predicate.ItemSource {
 	return predicate.ItemSource(sql.FieldEQ(FieldExternalID, v))
@@ -701,6 +706,56 @@ func ProbedAtNotNil() predicate.ItemSource {
 	return predicate.ItemSource(sql.FieldNotNull(FieldProbedAt))
 }
 
+// SegmentsDetectedAtEQ applies the EQ predicate on the "segments_detected_at" field.
+func SegmentsDetectedAtEQ(v time.Time) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldEQ(FieldSegmentsDetectedAt, v))
+}
+
+// SegmentsDetectedAtNEQ applies the NEQ predicate on the "segments_detected_at" field.
+func SegmentsDetectedAtNEQ(v time.Time) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldNEQ(FieldSegmentsDetectedAt, v))
+}
+
+// SegmentsDetectedAtIn applies the In predicate on the "segments_detected_at" field.
+func SegmentsDetectedAtIn(vs ...time.Time) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldIn(FieldSegmentsDetectedAt, vs...))
+}
+
+// SegmentsDetectedAtNotIn applies the NotIn predicate on the "segments_detected_at" field.
+func SegmentsDetectedAtNotIn(vs ...time.Time) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldNotIn(FieldSegmentsDetectedAt, vs...))
+}
+
+// SegmentsDetectedAtGT applies the GT predicate on the "segments_detected_at" field.
+func SegmentsDetectedAtGT(v time.Time) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldGT(FieldSegmentsDetectedAt, v))
+}
+
+// SegmentsDetectedAtGTE applies the GTE predicate on the "segments_detected_at" field.
+func SegmentsDetectedAtGTE(v time.Time) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldGTE(FieldSegmentsDetectedAt, v))
+}
+
+// SegmentsDetectedAtLT applies the LT predicate on the "segments_detected_at" field.
+func SegmentsDetectedAtLT(v time.Time) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldLT(FieldSegmentsDetectedAt, v))
+}
+
+// SegmentsDetectedAtLTE applies the LTE predicate on the "segments_detected_at" field.
+func SegmentsDetectedAtLTE(v time.Time) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldLTE(FieldSegmentsDetectedAt, v))
+}
+
+// SegmentsDetectedAtIsNil applies the IsNil predicate on the "segments_detected_at" field.
+func SegmentsDetectedAtIsNil() predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldIsNull(FieldSegmentsDetectedAt))
+}
+
+// SegmentsDetectedAtNotNil applies the NotNil predicate on the "segments_detected_at" field.
+func SegmentsDetectedAtNotNil() predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldNotNull(FieldSegmentsDetectedAt))
+}
+
 // ExternalIDEQ applies the EQ predicate on the "external_id" field.
 func ExternalIDEQ(v int64) predicate.ItemSource {
 	return predicate.ItemSource(sql.FieldEQ(FieldExternalID, v))
@@ -862,6 +917,29 @@ func HasStreams() predicate.ItemSource {
 func HasStreamsWith(preds ...predicate.MediaStream) predicate.ItemSource {
 	return predicate.ItemSource(func(s *sql.Selector) {
 		step := newStreamsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasSegments applies the HasEdge predicate on the "segments" edge.
+func HasSegments() predicate.ItemSource {
+	return predicate.ItemSource(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SegmentsTable, SegmentsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSegmentsWith applies the HasEdge predicate on the "segments" edge with a given conditions (other predicates).
+func HasSegmentsWith(preds ...predicate.MediaSegment) predicate.ItemSource {
+	return predicate.ItemSource(func(s *sql.Selector) {
+		step := newSegmentsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

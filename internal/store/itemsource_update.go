@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	"github.com/FreekingDean/gojellyfin/internal/store/mediasegment"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/FreekingDean/gojellyfin/internal/store/report"
@@ -250,6 +251,26 @@ func (_u *ItemSourceUpdate) ClearProbedAt() *ItemSourceUpdate {
 	return _u
 }
 
+// SetSegmentsDetectedAt sets the "segments_detected_at" field.
+func (_u *ItemSourceUpdate) SetSegmentsDetectedAt(v time.Time) *ItemSourceUpdate {
+	_u.mutation.SetSegmentsDetectedAt(v)
+	return _u
+}
+
+// SetNillableSegmentsDetectedAt sets the "segments_detected_at" field if the given value is not nil.
+func (_u *ItemSourceUpdate) SetNillableSegmentsDetectedAt(v *time.Time) *ItemSourceUpdate {
+	if v != nil {
+		_u.SetSegmentsDetectedAt(*v)
+	}
+	return _u
+}
+
+// ClearSegmentsDetectedAt clears the value of the "segments_detected_at" field.
+func (_u *ItemSourceUpdate) ClearSegmentsDetectedAt() *ItemSourceUpdate {
+	_u.mutation.ClearSegmentsDetectedAt()
+	return _u
+}
+
 // SetExternalID sets the "external_id" field.
 func (_u *ItemSourceUpdate) SetExternalID(v int64) *ItemSourceUpdate {
 	_u.mutation.ResetExternalID()
@@ -329,6 +350,21 @@ func (_u *ItemSourceUpdate) AddStreams(v ...*MediaStream) *ItemSourceUpdate {
 	return _u.AddStreamIDs(ids...)
 }
 
+// AddSegmentIDs adds the "segments" edge to the MediaSegment entity by IDs.
+func (_u *ItemSourceUpdate) AddSegmentIDs(ids ...uuid.UUID) *ItemSourceUpdate {
+	_u.mutation.AddSegmentIDs(ids...)
+	return _u
+}
+
+// AddSegments adds the "segments" edges to the MediaSegment entity.
+func (_u *ItemSourceUpdate) AddSegments(v ...*MediaSegment) *ItemSourceUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSegmentIDs(ids...)
+}
+
 // AddReportIDs adds the "reports" edge to the Report entity by IDs.
 func (_u *ItemSourceUpdate) AddReportIDs(ids ...uuid.UUID) *ItemSourceUpdate {
 	_u.mutation.AddReportIDs(ids...)
@@ -380,6 +416,27 @@ func (_u *ItemSourceUpdate) RemoveStreams(v ...*MediaStream) *ItemSourceUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveStreamIDs(ids...)
+}
+
+// ClearSegments clears all "segments" edges to the MediaSegment entity.
+func (_u *ItemSourceUpdate) ClearSegments() *ItemSourceUpdate {
+	_u.mutation.ClearSegments()
+	return _u
+}
+
+// RemoveSegmentIDs removes the "segments" edge to MediaSegment entities by IDs.
+func (_u *ItemSourceUpdate) RemoveSegmentIDs(ids ...uuid.UUID) *ItemSourceUpdate {
+	_u.mutation.RemoveSegmentIDs(ids...)
+	return _u
+}
+
+// RemoveSegments removes "segments" edges to MediaSegment entities.
+func (_u *ItemSourceUpdate) RemoveSegments(v ...*MediaSegment) *ItemSourceUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSegmentIDs(ids...)
 }
 
 // ClearReports clears all "reports" edges to the Report entity.
@@ -519,6 +576,12 @@ func (_u *ItemSourceUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	if _u.mutation.ProbedAtCleared() {
 		_spec.ClearField(itemsource.FieldProbedAt, field.TypeTime)
 	}
+	if value, ok := _u.mutation.SegmentsDetectedAt(); ok {
+		_spec.SetField(itemsource.FieldSegmentsDetectedAt, field.TypeTime, value)
+	}
+	if _u.mutation.SegmentsDetectedAtCleared() {
+		_spec.ClearField(itemsource.FieldSegmentsDetectedAt, field.TypeTime)
+	}
 	if value, ok := _u.mutation.ExternalID(); ok {
 		_spec.SetField(itemsource.FieldExternalID, field.TypeInt64, value)
 	}
@@ -633,6 +696,51 @@ func (_u *ItemSourceUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(mediastream.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SegmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemsource.SegmentsTable,
+			Columns: []string{itemsource.SegmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(mediasegment.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSegmentsIDs(); len(nodes) > 0 && !_u.mutation.SegmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemsource.SegmentsTable,
+			Columns: []string{itemsource.SegmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(mediasegment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SegmentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemsource.SegmentsTable,
+			Columns: []string{itemsource.SegmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(mediasegment.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -922,6 +1030,26 @@ func (_u *ItemSourceUpdateOne) ClearProbedAt() *ItemSourceUpdateOne {
 	return _u
 }
 
+// SetSegmentsDetectedAt sets the "segments_detected_at" field.
+func (_u *ItemSourceUpdateOne) SetSegmentsDetectedAt(v time.Time) *ItemSourceUpdateOne {
+	_u.mutation.SetSegmentsDetectedAt(v)
+	return _u
+}
+
+// SetNillableSegmentsDetectedAt sets the "segments_detected_at" field if the given value is not nil.
+func (_u *ItemSourceUpdateOne) SetNillableSegmentsDetectedAt(v *time.Time) *ItemSourceUpdateOne {
+	if v != nil {
+		_u.SetSegmentsDetectedAt(*v)
+	}
+	return _u
+}
+
+// ClearSegmentsDetectedAt clears the value of the "segments_detected_at" field.
+func (_u *ItemSourceUpdateOne) ClearSegmentsDetectedAt() *ItemSourceUpdateOne {
+	_u.mutation.ClearSegmentsDetectedAt()
+	return _u
+}
+
 // SetExternalID sets the "external_id" field.
 func (_u *ItemSourceUpdateOne) SetExternalID(v int64) *ItemSourceUpdateOne {
 	_u.mutation.ResetExternalID()
@@ -1001,6 +1129,21 @@ func (_u *ItemSourceUpdateOne) AddStreams(v ...*MediaStream) *ItemSourceUpdateOn
 	return _u.AddStreamIDs(ids...)
 }
 
+// AddSegmentIDs adds the "segments" edge to the MediaSegment entity by IDs.
+func (_u *ItemSourceUpdateOne) AddSegmentIDs(ids ...uuid.UUID) *ItemSourceUpdateOne {
+	_u.mutation.AddSegmentIDs(ids...)
+	return _u
+}
+
+// AddSegments adds the "segments" edges to the MediaSegment entity.
+func (_u *ItemSourceUpdateOne) AddSegments(v ...*MediaSegment) *ItemSourceUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSegmentIDs(ids...)
+}
+
 // AddReportIDs adds the "reports" edge to the Report entity by IDs.
 func (_u *ItemSourceUpdateOne) AddReportIDs(ids ...uuid.UUID) *ItemSourceUpdateOne {
 	_u.mutation.AddReportIDs(ids...)
@@ -1052,6 +1195,27 @@ func (_u *ItemSourceUpdateOne) RemoveStreams(v ...*MediaStream) *ItemSourceUpdat
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveStreamIDs(ids...)
+}
+
+// ClearSegments clears all "segments" edges to the MediaSegment entity.
+func (_u *ItemSourceUpdateOne) ClearSegments() *ItemSourceUpdateOne {
+	_u.mutation.ClearSegments()
+	return _u
+}
+
+// RemoveSegmentIDs removes the "segments" edge to MediaSegment entities by IDs.
+func (_u *ItemSourceUpdateOne) RemoveSegmentIDs(ids ...uuid.UUID) *ItemSourceUpdateOne {
+	_u.mutation.RemoveSegmentIDs(ids...)
+	return _u
+}
+
+// RemoveSegments removes "segments" edges to MediaSegment entities.
+func (_u *ItemSourceUpdateOne) RemoveSegments(v ...*MediaSegment) *ItemSourceUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSegmentIDs(ids...)
 }
 
 // ClearReports clears all "reports" edges to the Report entity.
@@ -1221,6 +1385,12 @@ func (_u *ItemSourceUpdateOne) sqlSave(ctx context.Context) (_node *ItemSource, 
 	if _u.mutation.ProbedAtCleared() {
 		_spec.ClearField(itemsource.FieldProbedAt, field.TypeTime)
 	}
+	if value, ok := _u.mutation.SegmentsDetectedAt(); ok {
+		_spec.SetField(itemsource.FieldSegmentsDetectedAt, field.TypeTime, value)
+	}
+	if _u.mutation.SegmentsDetectedAtCleared() {
+		_spec.ClearField(itemsource.FieldSegmentsDetectedAt, field.TypeTime)
+	}
 	if value, ok := _u.mutation.ExternalID(); ok {
 		_spec.SetField(itemsource.FieldExternalID, field.TypeInt64, value)
 	}
@@ -1335,6 +1505,51 @@ func (_u *ItemSourceUpdateOne) sqlSave(ctx context.Context) (_node *ItemSource, 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(mediastream.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SegmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemsource.SegmentsTable,
+			Columns: []string{itemsource.SegmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(mediasegment.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSegmentsIDs(); len(nodes) > 0 && !_u.mutation.SegmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemsource.SegmentsTable,
+			Columns: []string{itemsource.SegmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(mediasegment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SegmentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemsource.SegmentsTable,
+			Columns: []string{itemsource.SegmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(mediasegment.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

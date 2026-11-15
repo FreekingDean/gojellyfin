@@ -177,6 +177,18 @@ func (f LibrarySourceFunc) Mutate(ctx context.Context, m store.Mutation) (store.
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.LibrarySourceMutation", m)
 }
 
+// The MediaSegmentFunc type is an adapter to allow the use of ordinary
+// function as MediaSegment mutator.
+type MediaSegmentFunc func(context.Context, *store.MediaSegmentMutation) (store.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f MediaSegmentFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, error) {
+	if mv, ok := m.(*store.MediaSegmentMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.MediaSegmentMutation", m)
+}
+
 // The MediaStreamFunc type is an adapter to allow the use of ordinary
 // function as MediaStream mutator.
 type MediaStreamFunc func(context.Context, *store.MediaStreamMutation) (store.Value, error)
