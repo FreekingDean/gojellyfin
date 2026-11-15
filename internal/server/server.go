@@ -8,6 +8,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/backup"
 	"github.com/FreekingDean/gojellyfin/internal/server/branding"
 	"github.com/FreekingDean/gojellyfin/internal/server/channels"
+	"github.com/FreekingDean/gojellyfin/internal/server/clientlog"
 	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
 	"github.com/FreekingDean/gojellyfin/internal/server/dashboard"
 	"github.com/FreekingDean/gojellyfin/internal/server/devices"
@@ -105,6 +106,7 @@ type (
 	SyncPlayServer           = syncplay.Server
 	SystemServer             = system.Server
 	TimeSyncServer           = timesync.Server
+	ClientLogServer          = clientlog.Server
 	TrailersServer           = trailers.Server
 	UserServer               = user.Server
 	UserDataServer           = userdata.Server
@@ -158,6 +160,7 @@ type Server struct {
 	*SyncPlayServer
 	*SystemServer
 	*TimeSyncServer
+	*ClientLogServer
 	*TrailersServer
 	*UserServer
 	*UserDataServer
@@ -213,6 +216,7 @@ func New(
 	syncPlay *syncplay.Server,
 	system *system.Server,
 	timeSync *timesync.Server,
+	clientLog *clientlog.Server,
 	trailers *trailers.Server,
 	user *user.Server,
 	userData *userdata.Server,
@@ -265,6 +269,7 @@ func New(
 		SyncPlayServer:           syncPlay,
 		SystemServer:             system,
 		TimeSyncServer:           timeSync,
+		ClientLogServer:          clientLog,
 		TrailersServer:           trailers,
 		UserServer:               user,
 		UserDataServer:           userData,

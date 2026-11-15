@@ -252,7 +252,7 @@ func New(config env.Config, m *mux.Mux, authMiddleware *middleware.Auth, tracing
 				http.Error(w, err.Error(), http.StatusBadRequest)
 			},
 			ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-				log.Printf("Error: %v", err)
+				log.Printf("Error: %s %s: %v", r.Method, r.URL.Path, err)
 				if errors.Is(err, api.ErrNotImplemented) {
 					http.Error(w, err.Error(), http.StatusNotImplemented)
 					return
