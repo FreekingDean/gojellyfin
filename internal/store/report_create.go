@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/report"
@@ -126,6 +127,12 @@ func (_c *ReportCreate) SetNillableStatus(v *report.Status) *ReportCreate {
 	if v != nil {
 		_c.SetStatus(*v)
 	}
+	return _c
+}
+
+// SetAttempt sets the "attempt" field.
+func (_c *ReportCreate) SetAttempt(v *entities.ReportAttempt) *ReportCreate {
+	_c.mutation.SetAttempt(v)
 	return _c
 }
 
@@ -317,6 +324,10 @@ func (_c *ReportCreate) createSpec() (*Report, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(report.FieldStatus, field.TypeEnum, value)
 		_node.Status = value
+	}
+	if value, ok := _c.mutation.Attempt(); ok {
+		_spec.SetField(report.FieldAttempt, field.TypeJSON, value)
+		_node.Attempt = value
 	}
 	if nodes := _c.mutation.ItemIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -541,6 +552,24 @@ func (u *ReportUpsert) UpdateStatus() *ReportUpsert {
 	return u
 }
 
+// SetAttempt sets the "attempt" field.
+func (u *ReportUpsert) SetAttempt(v *entities.ReportAttempt) *ReportUpsert {
+	u.Set(report.FieldAttempt, v)
+	return u
+}
+
+// UpdateAttempt sets the "attempt" field to the value that was provided on create.
+func (u *ReportUpsert) UpdateAttempt() *ReportUpsert {
+	u.SetExcluded(report.FieldAttempt)
+	return u
+}
+
+// ClearAttempt clears the value of the "attempt" field.
+func (u *ReportUpsert) ClearAttempt() *ReportUpsert {
+	u.SetNull(report.FieldAttempt)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -726,6 +755,27 @@ func (u *ReportUpsertOne) SetStatus(v report.Status) *ReportUpsertOne {
 func (u *ReportUpsertOne) UpdateStatus() *ReportUpsertOne {
 	return u.Update(func(s *ReportUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetAttempt sets the "attempt" field.
+func (u *ReportUpsertOne) SetAttempt(v *entities.ReportAttempt) *ReportUpsertOne {
+	return u.Update(func(s *ReportUpsert) {
+		s.SetAttempt(v)
+	})
+}
+
+// UpdateAttempt sets the "attempt" field to the value that was provided on create.
+func (u *ReportUpsertOne) UpdateAttempt() *ReportUpsertOne {
+	return u.Update(func(s *ReportUpsert) {
+		s.UpdateAttempt()
+	})
+}
+
+// ClearAttempt clears the value of the "attempt" field.
+func (u *ReportUpsertOne) ClearAttempt() *ReportUpsertOne {
+	return u.Update(func(s *ReportUpsert) {
+		s.ClearAttempt()
 	})
 }
 
@@ -1081,6 +1131,27 @@ func (u *ReportUpsertBulk) SetStatus(v report.Status) *ReportUpsertBulk {
 func (u *ReportUpsertBulk) UpdateStatus() *ReportUpsertBulk {
 	return u.Update(func(s *ReportUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetAttempt sets the "attempt" field.
+func (u *ReportUpsertBulk) SetAttempt(v *entities.ReportAttempt) *ReportUpsertBulk {
+	return u.Update(func(s *ReportUpsert) {
+		s.SetAttempt(v)
+	})
+}
+
+// UpdateAttempt sets the "attempt" field to the value that was provided on create.
+func (u *ReportUpsertBulk) UpdateAttempt() *ReportUpsertBulk {
+	return u.Update(func(s *ReportUpsert) {
+		s.UpdateAttempt()
+	})
+}
+
+// ClearAttempt clears the value of the "attempt" field.
+func (u *ReportUpsertBulk) ClearAttempt() *ReportUpsertBulk {
+	return u.Update(func(s *ReportUpsert) {
+		s.ClearAttempt()
 	})
 }
 

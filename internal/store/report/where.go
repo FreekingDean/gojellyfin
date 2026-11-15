@@ -371,6 +371,16 @@ func StatusNotIn(vs ...Status) predicate.Report {
 	return predicate.Report(sql.FieldNotIn(FieldStatus, vs...))
 }
 
+// AttemptIsNil applies the IsNil predicate on the "attempt" field.
+func AttemptIsNil() predicate.Report {
+	return predicate.Report(sql.FieldIsNull(FieldAttempt))
+}
+
+// AttemptNotNil applies the NotNil predicate on the "attempt" field.
+func AttemptNotNil() predicate.Report {
+	return predicate.Report(sql.FieldNotNull(FieldAttempt))
+}
+
 // HasItem applies the HasEdge predicate on the "item" edge.
 func HasItem() predicate.Report {
 	return predicate.Report(func(s *sql.Selector) {

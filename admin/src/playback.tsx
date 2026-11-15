@@ -118,6 +118,37 @@ export function how(session: Schemas['SessionInfoDto']): How | undefined {
   return { kind: 'Video encode', tone: 'warn', change: changes.filter(Boolean).join(', '), reasons };
 }
 
+export function attempted(attempt?: Schemas['ReportAttempt'] | null): How | undefined {
+  if (!attempt || attempt.Direct == null) {
+    return undefined;
+  }
+
+  const reasons = (attempt.Reasons ?? []).map((name) => (name.endsWith('CodecNotSupported') ? spaced(name) : reason(name, '', undefined, undefined)));
+  const container = (attempt.Container ?? '').toUpperCase();
+  if (attempt.Direct) {
+    return { kind: 'Direct play', tone: 'ok', change: container, reasons };
+  }
+  if (attempt.VideoDirect && attempt.AudioDirect) {
+    return { kind: 'Remux', tone: 'off', change: container && `into ${container}`, reasons };
+  }
+
+  const into = [attempt.VideoDirect ? '' : codec(attempt.VideoCodec), attempt.AudioDirect ? '' : codec(attempt.AudioCodec), container].filter(Boolean).join(' ');
+  const kind = attempt.VideoDirect ? 'Audio conversion' : 'Video encode';
+
+  return { kind, tone: attempt.VideoDirect ? 'off' : 'warn', change: into && `to ${into}`, reasons };
+}
+
+export function client(attempt?: Schemas['ReportAttempt'] | null): string | undefined {
+  if (!attempt) {
+    return undefined;
+  }
+
+  const app = [attempt.Client, attempt.ClientVersion].filter(Boolean).join(' ');
+  const on = [app, attempt.DeviceName && `on ${attempt.DeviceName}`].filter(Boolean).join(' ');
+
+  return on || undefined;
+}
+
 export function Served({ how }: { how?: How }) {
   if (!how) {
     return null;

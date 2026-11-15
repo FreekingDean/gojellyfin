@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
@@ -162,6 +163,18 @@ func (_u *ReportUpdate) SetNillableStatus(v *report.Status) *ReportUpdate {
 	return _u
 }
 
+// SetAttempt sets the "attempt" field.
+func (_u *ReportUpdate) SetAttempt(v *entities.ReportAttempt) *ReportUpdate {
+	_u.mutation.SetAttempt(v)
+	return _u
+}
+
+// ClearAttempt clears the value of the "attempt" field.
+func (_u *ReportUpdate) ClearAttempt() *ReportUpdate {
+	_u.mutation.ClearAttempt()
+	return _u
+}
+
 // SetItem sets the "item" edge to the Item entity.
 func (_u *ReportUpdate) SetItem(v *Item) *ReportUpdate {
 	return _u.SetItemID(v.ID)
@@ -302,6 +315,12 @@ func (_u *ReportUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(report.FieldStatus, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.Attempt(); ok {
+		_spec.SetField(report.FieldAttempt, field.TypeJSON, value)
+	}
+	if _u.mutation.AttemptCleared() {
+		_spec.ClearField(report.FieldAttempt, field.TypeJSON)
 	}
 	if _u.mutation.ItemCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -540,6 +559,18 @@ func (_u *ReportUpdateOne) SetNillableStatus(v *report.Status) *ReportUpdateOne 
 	return _u
 }
 
+// SetAttempt sets the "attempt" field.
+func (_u *ReportUpdateOne) SetAttempt(v *entities.ReportAttempt) *ReportUpdateOne {
+	_u.mutation.SetAttempt(v)
+	return _u
+}
+
+// ClearAttempt clears the value of the "attempt" field.
+func (_u *ReportUpdateOne) ClearAttempt() *ReportUpdateOne {
+	_u.mutation.ClearAttempt()
+	return _u
+}
+
 // SetItem sets the "item" edge to the Item entity.
 func (_u *ReportUpdateOne) SetItem(v *Item) *ReportUpdateOne {
 	return _u.SetItemID(v.ID)
@@ -710,6 +741,12 @@ func (_u *ReportUpdateOne) sqlSave(ctx context.Context) (_node *Report, err erro
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(report.FieldStatus, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.Attempt(); ok {
+		_spec.SetField(report.FieldAttempt, field.TypeJSON, value)
+	}
+	if _u.mutation.AttemptCleared() {
+		_spec.ClearField(report.FieldAttempt, field.TypeJSON)
 	}
 	if _u.mutation.ItemCleared() {
 		edge := &sqlgraph.EdgeSpec{

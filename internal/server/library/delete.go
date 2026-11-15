@@ -62,10 +62,11 @@ func (s *Server) reportBroken(ctx context.Context, itemID uuid.UUID) (bool, erro
 	}
 
 	err = s.reports.File(ctx, reports.Filing{
-		ItemID: itemID,
-		UserID: &userID,
-		Kind:   reports.KindUnplayable,
-		Origin: reports.OriginDelete,
+		ItemID:  itemID,
+		UserID:  &userID,
+		Kind:    reports.KindUnplayable,
+		Origin:  reports.OriginDelete,
+		Attempt: reports.AttemptBy(auth.SessionFrom(ctx)),
 	})
 
 	return err == nil, err

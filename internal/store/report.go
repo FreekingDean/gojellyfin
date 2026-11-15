@@ -3,12 +3,14 @@
 package store
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/report"
@@ -39,6 +41,8 @@ type Report struct {
 	Note string `json:"note,omitempty"`
 	// Status holds the value of the "status" field.
 	Status report.Status `json:"status,omitempty"`
+	// Attempt holds the value of the "attempt" field.
+	Attempt *entities.ReportAttempt `json:"attempt,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ReportQuery when eager-loading is set.
 	Edges        ReportEdges `json:"edges"`
@@ -98,6 +102,8 @@ func (*Report) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case report.FieldItemSourceID, report.FieldUserID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+		case report.FieldAttempt:
+			values[i] = new([]byte)
 		case report.FieldKind, report.FieldOrigin, report.FieldNote, report.FieldStatus:
 			values[i] = new(sql.NullString)
 		case report.FieldCreatedAt, report.FieldUpdatedAt:
@@ -181,6 +187,14 @@ func (_m *Report) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Status = report.Status(value.String)
 			}
+		case report.FieldAttempt:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field attempt", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Attempt); err != nil {
+					return fmt.Errorf("unmarshal field attempt: %w", err)
+				}
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -262,6 +276,9 @@ func (_m *Report) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Status))
+	builder.WriteString(", ")
+	builder.WriteString("attempt=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Attempt))
 	builder.WriteByte(')')
 	return builder.String()
 }

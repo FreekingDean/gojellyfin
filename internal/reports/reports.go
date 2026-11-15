@@ -8,18 +8,22 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/sources"
 	"github.com/FreekingDean/gojellyfin/internal/store"
+	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	filemodel "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	reportmodel "github.com/FreekingDean/gojellyfin/internal/store/report"
+	"github.com/FreekingDean/gojellyfin/internal/system"
 )
 
 type (
-	Report = store.ReportModel
-	Kind   = reportmodel.Kind
-	Origin = reportmodel.Origin
-	Status = reportmodel.Status
+	Attempt = entities.ReportAttempt
+	Report  = store.ReportModel
+	Kind    = reportmodel.Kind
+	Origin  = reportmodel.Origin
+	Status  = reportmodel.Status
 )
 
 const (
@@ -68,12 +72,37 @@ func newService(store *store.Client, downloaders Downloaders) *Service {
 }
 
 type Filing struct {
-	ItemID uuid.UUID
-	FileID *uuid.UUID
-	UserID *uuid.UUID
-	Kind   Kind
-	Origin Origin
-	Note   string
+	ItemID  uuid.UUID
+	FileID  *uuid.UUID
+	UserID  *uuid.UUID
+	Kind    Kind
+	Origin  Origin
+	Note    string
+	Attempt *Attempt
+}
+
+func AttemptBy(session *sessions.Session) *Attempt {
+	attempt := &Attempt{Build: system.Build()}
+	if session == nil {
+		return attempt
+	}
+
+	attempt.UserID = session.UserID
+	attempt.RemoteAddress = session.RemoteEndpoint
+	if session.User != nil {
+		attempt.UserName = session.User.Name
+	}
+	if device := session.Device; device != nil {
+		attempt.DeviceID = device.ClientID
+		attempt.DeviceName = device.Name
+		if device.CustomName != "" {
+			attempt.DeviceName = device.CustomName
+		}
+		attempt.Client = device.AppName
+		attempt.ClientVersion = device.AppVersion
+	}
+
+	return attempt
 }
 
 func (s *Service) File(ctx context.Context, filing Filing) error {
@@ -107,14 +136,18 @@ func (s *Service) File(ctx context.Context, filing Filing) error {
 		return nil
 	}
 
-	err = s.store.Report.Create().
+	create := s.store.Report.Create().
 		SetItemID(filing.ItemID).
 		SetNillableItemSourceID(filing.FileID).
 		SetNillableUserID(filing.UserID).
 		SetKind(filing.Kind).
 		SetOrigin(filing.Origin).
-		SetNote(filing.Note).
-		Exec(ctx)
+		SetNote(filing.Note)
+	if filing.Attempt != nil {
+		create = create.SetAttempt(filing.Attempt)
+	}
+
+	err = create.Exec(ctx)
 	if store.IsConstraintError(err) {
 		return ErrNotFound
 	}

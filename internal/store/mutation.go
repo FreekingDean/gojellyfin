@@ -24002,6 +24002,7 @@ type ReportMutation struct {
 	origin        *report.Origin
 	note          *string
 	status        *report.Status
+	attempt       **entities.ReportAttempt
 	clearedFields map[string]struct{}
 	item          *uuid.UUID
 	cleareditem   bool
@@ -24468,6 +24469,55 @@ func (m *ReportMutation) ResetStatus() {
 	m.status = nil
 }
 
+// SetAttempt sets the "attempt" field.
+func (m *ReportMutation) SetAttempt(ea *entities.ReportAttempt) {
+	m.attempt = &ea
+}
+
+// Attempt returns the value of the "attempt" field in the mutation.
+func (m *ReportMutation) Attempt() (r *entities.ReportAttempt, exists bool) {
+	v := m.attempt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAttempt returns the old "attempt" field's value of the Report entity.
+// If the Report object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ReportMutation) OldAttempt(ctx context.Context) (v *entities.ReportAttempt, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAttempt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAttempt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAttempt: %w", err)
+	}
+	return oldValue.Attempt, nil
+}
+
+// ClearAttempt clears the value of the "attempt" field.
+func (m *ReportMutation) ClearAttempt() {
+	m.attempt = nil
+	m.clearedFields[report.FieldAttempt] = struct{}{}
+}
+
+// AttemptCleared returns if the "attempt" field was cleared in this mutation.
+func (m *ReportMutation) AttemptCleared() bool {
+	_, ok := m.clearedFields[report.FieldAttempt]
+	return ok
+}
+
+// ResetAttempt resets all changes to the "attempt" field.
+func (m *ReportMutation) ResetAttempt() {
+	m.attempt = nil
+	delete(m.clearedFields, report.FieldAttempt)
+}
+
 // ClearItem clears the "item" edge to the Item entity.
 func (m *ReportMutation) ClearItem() {
 	m.cleareditem = true
@@ -24596,7 +24646,7 @@ func (m *ReportMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ReportMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 10)
 	if m.created_at != nil {
 		fields = append(fields, report.FieldCreatedAt)
 	}
@@ -24624,6 +24674,9 @@ func (m *ReportMutation) Fields() []string {
 	if m.status != nil {
 		fields = append(fields, report.FieldStatus)
 	}
+	if m.attempt != nil {
+		fields = append(fields, report.FieldAttempt)
+	}
 	return fields
 }
 
@@ -24650,6 +24703,8 @@ func (m *ReportMutation) Field(name string) (ent.Value, bool) {
 		return m.Note()
 	case report.FieldStatus:
 		return m.Status()
+	case report.FieldAttempt:
+		return m.Attempt()
 	}
 	return nil, false
 }
@@ -24677,6 +24732,8 @@ func (m *ReportMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldNote(ctx)
 	case report.FieldStatus:
 		return m.OldStatus(ctx)
+	case report.FieldAttempt:
+		return m.OldAttempt(ctx)
 	}
 	return nil, fmt.Errorf("unknown Report field %s", name)
 }
@@ -24749,6 +24806,13 @@ func (m *ReportMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetStatus(v)
 		return nil
+	case report.FieldAttempt:
+		v, ok := value.(*entities.ReportAttempt)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAttempt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Report field %s", name)
 }
@@ -24785,6 +24849,9 @@ func (m *ReportMutation) ClearedFields() []string {
 	if m.FieldCleared(report.FieldUserID) {
 		fields = append(fields, report.FieldUserID)
 	}
+	if m.FieldCleared(report.FieldAttempt) {
+		fields = append(fields, report.FieldAttempt)
+	}
 	return fields
 }
 
@@ -24804,6 +24871,9 @@ func (m *ReportMutation) ClearField(name string) error {
 		return nil
 	case report.FieldUserID:
 		m.ClearUserID()
+		return nil
+	case report.FieldAttempt:
+		m.ClearAttempt()
 		return nil
 	}
 	return fmt.Errorf("unknown Report nullable field %s", name)
@@ -24839,6 +24909,9 @@ func (m *ReportMutation) ResetField(name string) error {
 		return nil
 	case report.FieldStatus:
 		m.ResetStatus()
+		return nil
+	case report.FieldAttempt:
+		m.ResetAttempt()
 		return nil
 	}
 	return fmt.Errorf("unknown Report field %s", name)

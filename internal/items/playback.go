@@ -103,7 +103,7 @@ func (p Plan) Playback() Playback {
 		AudioCodec:  p.AudioCodec,
 	}
 	if playback.VideoDirect {
-		playback.VideoCodec = codec(stream(p.Source, streammodel.KindVideo))
+		playback.VideoCodec = VideoCodec(p.Source)
 	}
 	for _, reason := range p.Reasons {
 		playback.Reasons = append(playback.Reasons, string(reason))
@@ -430,6 +430,10 @@ func HDRTransfer(source *MediaSource) string {
 	default:
 		return transcode.TransferPQ
 	}
+}
+
+func VideoCodec(source *MediaSource) string {
+	return codec(stream(source, streammodel.KindVideo))
 }
 
 func AudioCodec(source *MediaSource) string {

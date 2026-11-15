@@ -76,13 +76,24 @@ func New(
 	return &Handler{sessions: sessions, items: items, files: files, transcoder: transcoder, reports: reports}
 }
 
-func (h *Handler) broken(r *http.Request, source *items.MediaSource, reason error) {
-	err := h.reports.File(context.WithoutCancel(r.Context()), reports.Filing{
-		ItemID: source.ItemID,
-		FileID: &source.ID,
-		Kind:   reports.KindUnplayable,
-		Origin: reports.OriginPlayback,
-		Note:   reason.Error(),
+func (h *Handler) broken(r *http.Request, source *items.MediaSource, served items.Playback, reason error) {
+	ctx := context.WithoutCancel(r.Context())
+	session, _ := h.sessions.ByToken(ctx, middleware.TokenFrom(r))
+	if session != nil && session.PlaybackPlan != nil && session.PlannedSourceID != nil && *session.PlannedSourceID == source.ID {
+		served.Reasons = session.PlaybackPlan.Reasons
+	}
+
+	attempt := reports.AttemptBy(session)
+	attempt.Playback = &served
+	attempt.StartTicks = startTicks(r)
+
+	err := h.reports.File(ctx, reports.Filing{
+		ItemID:  source.ItemID,
+		FileID:  &source.ID,
+		Kind:    reports.KindUnplayable,
+		Origin:  reports.OriginPlayback,
+		Note:    reason.Error(),
+		Attempt: attempt,
 	})
 	if err != nil {
 		log.Printf("failed to report %s as broken: %v", source.Path, err)
@@ -280,7 +291,7 @@ func (h *Handler) relay(w http.ResponseWriter, r *http.Request, source *items.Me
 			return true
 		}
 		if !errors.Is(err, transcode.ErrNotAvailable) && r.Context().Err() == nil {
-			h.broken(r, source, err)
+			h.broken(r, source, encoded(r, source, spec), err)
 		}
 
 		return false
@@ -303,12 +314,41 @@ func (h *Handler) relay(w http.ResponseWriter, r *http.Request, source *items.Me
 	if err != nil {
 		log.Printf("transcode of %s to %s stopped after %d bytes: %v", source.Path, container, relayed, err)
 		if errors.Is(err, transcode.ErrExited) && ctx.Err() == nil {
-			h.broken(r, source, err)
+			h.broken(r, source, encoded(r, source, spec), err)
 		}
 		panic(http.ErrAbortHandler)
 	}
 
 	return true
+}
+
+func whole(source *items.MediaSource) items.Playback {
+	return items.Playback{
+		Direct:      true,
+		VideoDirect: true,
+		AudioDirect: true,
+		Container:   items.Container(source),
+		VideoCodec:  items.VideoCodec(source),
+		AudioCodec:  items.AudioCodec(source),
+	}
+}
+
+func encoded(r *http.Request, source *items.MediaSource, spec transcode.Spec) items.Playback {
+	served := items.Playback{
+		VideoDirect: spec.VideoCodec == "",
+		AudioDirect: spec.CopyAudio,
+		Container:   spec.Container,
+		VideoCodec:  spec.VideoCodec,
+		AudioCodec:  strings.ToLower(strings.TrimSpace(r.URL.Query().Get("audioCodec"))),
+	}
+	if spec.Video && served.VideoDirect {
+		served.VideoCodec = items.VideoCodec(source)
+	}
+	if served.AudioDirect || served.AudioCodec == "" && spec.Video {
+		served.AudioCodec = items.AudioCodec(source)
+	}
+
+	return served
 }
 
 func audioBitrate(r *http.Request) int32 {
@@ -421,7 +461,7 @@ func (h *Handler) authenticated(r *http.Request) bool {
 func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, source *items.MediaSource, path string) {
 	file, err := os.Open(path)
 	if err != nil {
-		h.broken(r, source, err)
+		h.broken(r, source, whole(source), err)
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
