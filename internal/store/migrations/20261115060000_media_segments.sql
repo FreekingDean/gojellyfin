@@ -1,6 +1,7 @@
 SET LOCAL lock_timeout = '30s';
 SET LOCAL client_connection_check_interval = '10s';
 ALTER TABLE "item_sources" ADD COLUMN IF NOT EXISTS "segments_detected_at" timestamptz NULL;
+UPDATE "item_sources" SET "probed_at" = NULL WHERE "segments_detected_at" IS NULL AND "probed_at" IS NOT NULL;
 CREATE TABLE IF NOT EXISTS "media_segments" (
   "id" uuid NOT NULL DEFAULT gen_random_uuid(),
   "created_at" timestamptz NOT NULL,

@@ -39,23 +39,31 @@ func New(client *store.Client, decoder *ffmpeg.FFMpeg) *Service {
 	return &Service{store: client, ffmpeg: decoder}
 }
 
-func (s *Service) ForItem(ctx context.Context, itemID uuid.UUID, kinds []Kind) ([]*Segment, error) {
+func (s *Service) ForItem(ctx context.Context, id uuid.UUID, kinds []Kind) (uuid.UUID, []*Segment, error) {
+	file, err := s.store.ItemSource.Query().Where(sourcemodel.ID(id)).WithSegments().OnlyModel(ctx)
+	if err == nil {
+		return file.ItemID, chosen(file.Segments, kinds), nil
+	}
+	if !store.IsNotFound(err) {
+		return uuid.Nil, nil, fmt.Errorf("failed to query the segments of %s: %w", id, err)
+	}
+
 	files, err := s.store.ItemSource.Query().
-		Where(sourcemodel.ItemID(itemID)).
+		Where(sourcemodel.ItemID(id)).
 		Order(sourcemodel.ByCreatedAt(), sourcemodel.ByPath()).
 		WithSegments().
 		AllModels(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query the segments of %s: %w", itemID, err)
+		return uuid.Nil, nil, fmt.Errorf("failed to query the segments of %s: %w", id, err)
 	}
 
 	for _, file := range files {
 		if len(file.Segments) > 0 {
-			return chosen(file.Segments, kinds), nil
+			return id, chosen(file.Segments, kinds), nil
 		}
 	}
 
-	return []*Segment{}, nil
+	return id, []*Segment{}, nil
 }
 
 func chosen(held []*Segment, kinds []Kind) []*Segment {

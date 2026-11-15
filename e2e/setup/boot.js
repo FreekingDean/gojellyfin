@@ -19,6 +19,7 @@ const LIBRARY = 'Smoke Movies';
 const MOVIES = ['Fixture Alpha', 'Fixture Beta'];
 const PLAYABLE = 'Fixture Playable';
 const TRANSCODED = 'Fixture Transcoded';
+const INTRO = { start: 3, end: 12 };
 const SHOWS = 'Smoke Shows';
 const SERIES = 'Fixture Show';
 const SEASON = 'Season 1';
@@ -155,6 +156,7 @@ async function boot({ mediaSeconds = 20 } = {}) {
       library: LIBRARY,
       movies: MOVIES,
       playable: PLAYABLE,
+      intro: INTRO,
       transcoded: TRANSCODED,
       shows: SHOWS,
       series: SERIES,
@@ -240,10 +242,19 @@ function encodePlayable(seconds) {
   }
 
   fs.mkdirSync(path.dirname(target), { recursive: true });
+  const chapters = `${target}.chapters`;
+  fs.writeFileSync(chapters, [
+    ';FFMETADATA1',
+    '[CHAPTER]', 'TIMEBASE=1/1000', 'START=0', `END=${INTRO.start * 1000}`, 'title=Cold Open',
+    '[CHAPTER]', 'TIMEBASE=1/1000', `START=${INTRO.start * 1000}`, `END=${INTRO.end * 1000}`, 'title=Intro',
+    '[CHAPTER]', 'TIMEBASE=1/1000', `START=${INTRO.end * 1000}`, `END=${seconds * 1000}`, 'title=Story',
+    '',
+  ].join('\n'));
   run('ffmpeg', [
     '-hide_banner', '-loglevel', 'error', '-y',
     '-f', 'lavfi', '-i', `testsrc2=size=640x360:rate=24:duration=${seconds}`,
     '-f', 'lavfi', '-i', `sine=frequency=440:duration=${seconds}`,
+    '-i', chapters, '-map', '0:v', '-map', '1:a', '-map_chapters', '2',
     '-c:v', 'libvpx-vp9', '-b:v', '300k', '-deadline', 'realtime', '-cpu-used', '8',
     '-c:a', 'libopus', '-b:a', '64k',
     '-shortest', target,

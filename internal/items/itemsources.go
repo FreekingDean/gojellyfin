@@ -192,6 +192,7 @@ func (s *Service) MediaSources(ctx context.Context, itemID uuid.UUID) ([]*MediaS
 		WithStreams(func(query *store.MediaStreamQuery) {
 			query.Order(streammodel.ByIndex())
 		}).
+		WithSegments().
 		AllModels(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query media sources: %w", err)

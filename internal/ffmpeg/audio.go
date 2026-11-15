@@ -13,7 +13,7 @@ import (
 
 const (
 	AudioSampleRate = 8000
-	decodeTimeout   = 5 * time.Minute
+	decodeTimeout   = 90 * time.Second
 )
 
 func (ffmpeg *FFMpeg) DecodeAudio(ctx context.Context, path string, length time.Duration) ([]int16, error) {

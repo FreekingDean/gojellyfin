@@ -23,32 +23,32 @@ func New(records *items.Service, found *segments.Service, policies dto.Access) *
 }
 
 func (s *Server) GetItemSegments(ctx context.Context, request api.GetItemSegmentsRequestObject) (api.GetItemSegmentsResponseObject, error) {
-	viewer, err := dto.ViewerFor(ctx, s.policies)
-	if err != nil {
-		return nil, err
-	}
-
-	held, err := s.items.ItemsByIDs(ctx, viewer, []uuid.UUID{request.ItemId})
-	if err != nil {
-		return nil, err
-	}
-	if _, ok := held[request.ItemId]; !ok {
-		return api.GetItemSegments404JSONResponse{}, nil
-	}
-
 	var kinds []segments.Kind
 	for _, kind := range apiutil.Deref(request.Params.IncludeSegmentTypes) {
 		kinds = append(kinds, segments.Kind(kind))
 	}
 
-	found, err := s.segments.ForItem(ctx, request.ItemId, kinds)
+	itemID, found, err := s.segments.ForItem(ctx, request.ItemId, kinds)
 	if err != nil {
 		return nil, err
 	}
 
+	viewer, err := dto.ViewerFor(ctx, s.policies)
+	if err != nil {
+		return nil, err
+	}
+
+	held, err := s.items.ItemsByIDs(ctx, viewer, []uuid.UUID{itemID})
+	if err != nil {
+		return nil, err
+	}
+	if _, ok := held[itemID]; !ok {
+		return api.GetItemSegments404JSONResponse{}, nil
+	}
+
 	answered := make([]api.MediaSegmentDto, 0, len(found))
 	for _, segment := range found {
-		answered = append(answered, segmentDto(request.ItemId, segment))
+		answered = append(answered, segmentDto(itemID, segment))
 	}
 
 	return api.GetItemSegments200JSONResponse{
