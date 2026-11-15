@@ -145,6 +145,7 @@ func (h *Handler) ServeUniversal(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	h.record(r, plan)
 
 	if plan.Change == items.ChangeNone {
 		h.serveFile(w, r, plan.Source, path)
@@ -395,6 +396,16 @@ func (h *Handler) resolve(w http.ResponseWriter, r *http.Request, source *items.
 	}
 
 	return path, true
+}
+
+func (h *Handler) record(r *http.Request, plan items.Plan) {
+	session, err := h.sessions.ByToken(r.Context(), middleware.TokenFrom(r))
+	if err != nil {
+		return
+	}
+	if err := h.sessions.Planned(r.Context(), session.ID, plan.Source.ID, plan.Playback()); err != nil {
+		log.Printf("failed to record how %s is served: %v", plan.Source.ID, err)
+	}
 }
 
 func (h *Handler) authenticated(r *http.Request) bool {

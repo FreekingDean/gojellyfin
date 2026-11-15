@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -79,6 +80,7 @@ func TestPlanFor(t *testing.T) {
 		container  string
 		audioCodec string
 		videoCodec string
+		reasons    []Reason
 	}{
 		{
 			name:       "everything declared is handed over as it is",
@@ -95,6 +97,7 @@ func TestPlanFor(t *testing.T) {
 			change:     ChangeContainer,
 			container:  "mp4",
 			audioCodec: "aac",
+			reasons:    []Reason{ReasonContainer},
 		},
 		{
 			name:       "audio the client cannot decode is the one stream converted",
@@ -103,6 +106,7 @@ func TestPlanFor(t *testing.T) {
 			change:     ChangeAudio,
 			container:  "mp4",
 			audioCodec: "aac",
+			reasons:    []Reason{ReasonAudioCodec},
 		},
 		{
 			name:       "a client declaring another container gets that one",
@@ -111,6 +115,7 @@ func TestPlanFor(t *testing.T) {
 			change:     ChangeAudio,
 			container:  "ts",
 			audioCodec: "aac",
+			reasons:    []Reason{ReasonAudioCodec},
 		},
 		{
 			name:       "a client that declared nothing keeps the source",
@@ -127,6 +132,7 @@ func TestPlanFor(t *testing.T) {
 			container:  "mp4",
 			audioCodec: "aac",
 			videoCodec: "h264",
+			reasons:    []Reason{ReasonRange},
 		},
 		{
 			name:       "an HDR picture beside audio the client also cannot decode converts both",
@@ -136,6 +142,7 @@ func TestPlanFor(t *testing.T) {
 			container:  "mp4",
 			audioCodec: "aac",
 			videoCodec: "h264",
+			reasons:    []Reason{ReasonRange, ReasonAudioCodec},
 		},
 		{
 			name:       "a picture nothing declared can carry is encoded to one it can",
@@ -145,6 +152,7 @@ func TestPlanFor(t *testing.T) {
 			container:  "mp4",
 			audioCodec: "aac",
 			videoCodec: "h264",
+			reasons:    []Reason{ReasonVideoCodec},
 		},
 		{
 			name:       "a picture and audio nothing declared can carry needs both",
@@ -154,6 +162,7 @@ func TestPlanFor(t *testing.T) {
 			container:  "mp4",
 			audioCodec: "aac",
 			videoCodec: "h264",
+			reasons:    []Reason{ReasonVideoCodec, ReasonAudioCodec},
 		},
 		{
 			name:       "a picture the real client never names",
@@ -163,6 +172,7 @@ func TestPlanFor(t *testing.T) {
 			container:  "mp4",
 			audioCodec: "aac",
 			videoCodec: "h264",
+			reasons:    []Reason{ReasonVideoCodec},
 		},
 		{
 			name:       "an encode goes into the container the client declared for h264",
@@ -172,6 +182,7 @@ func TestPlanFor(t *testing.T) {
 			container:  "ts",
 			audioCodec: "aac",
 			videoCodec: "h264",
+			reasons:    []Reason{ReasonVideoCodec, ReasonAudioCodec},
 		},
 		{
 			name:       "a client that decodes no h264 has nothing an encode could make",
@@ -204,6 +215,9 @@ func TestPlanFor(t *testing.T) {
 			}
 			if plan.VideoCodec != tc.videoCodec {
 				t.Errorf("video codec = %q, want %q", plan.VideoCodec, tc.videoCodec)
+			}
+			if plan.Change != ChangeRefused && !slices.Equal(plan.Reasons, tc.reasons) {
+				t.Errorf("reasons = %v, want %v", plan.Reasons, tc.reasons)
 			}
 		})
 	}

@@ -2247,6 +2247,22 @@ func (c *ItemSourceClient) QueryReports(_m *ItemSource) *ReportQuery {
 	return query
 }
 
+// QueryPlanningSessions queries the planning_sessions edge of a ItemSource.
+func (c *ItemSourceClient) QueryPlanningSessions(_m *ItemSource) *SessionQuery {
+	query := (&SessionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(itemsource.Table, itemsource.FieldID, id),
+			sqlgraph.To(session.Table, session.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, itemsource.PlanningSessionsTable, itemsource.PlanningSessionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *ItemSourceClient) Hooks() []Hook {
 	return c.hooks.ItemSource
@@ -4699,6 +4715,22 @@ func (c *SessionClient) QueryNowPlaying(_m *Session) *ItemQuery {
 			sqlgraph.From(session.Table, session.FieldID, id),
 			sqlgraph.To(item.Table, item.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, session.NowPlayingTable, session.NowPlayingColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryPlannedSource queries the planned_source edge of a Session.
+func (c *SessionClient) QueryPlannedSource(_m *Session) *ItemSourceQuery {
+	query := (&ItemSourceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(session.Table, session.FieldID, id),
+			sqlgraph.To(itemsource.Table, itemsource.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, session.PlannedSourceTable, session.PlannedSourceColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

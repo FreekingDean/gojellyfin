@@ -88,6 +88,9 @@ func mediaStreamDto(stream *items.MediaStream) api.MediaStream {
 		dto.Width = stream.Width
 		dto.Height = stream.Height
 		dto.AspectRatio = apiutil.Ptr(aspectRatio(stream))
+		if rangeType := apiutil.Deref(stream.VideoRangeType); rangeType != "" && rangeType != streammodel.VideoRangeTypeUnknown {
+			dto.VideoRangeType = apiutil.Ptr(api.VideoRangeType(rangeType))
+		}
 	case streammodel.KindAudio:
 		dto.Channels = stream.Channels
 		dto.SampleRate = stream.SampleRate

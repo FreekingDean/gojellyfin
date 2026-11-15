@@ -13,7 +13,9 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/device"
+	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
+	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/syncplaygroupmember"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
@@ -174,6 +176,26 @@ func (_c *SessionCreate) SetNillablePlayingAt(v *time.Time) *SessionCreate {
 	return _c
 }
 
+// SetPlannedSourceID sets the "planned_source_id" field.
+func (_c *SessionCreate) SetPlannedSourceID(v uuid.UUID) *SessionCreate {
+	_c.mutation.SetPlannedSourceID(v)
+	return _c
+}
+
+// SetNillablePlannedSourceID sets the "planned_source_id" field if the given value is not nil.
+func (_c *SessionCreate) SetNillablePlannedSourceID(v *uuid.UUID) *SessionCreate {
+	if v != nil {
+		_c.SetPlannedSourceID(*v)
+	}
+	return _c
+}
+
+// SetPlaybackPlan sets the "playback_plan" field.
+func (_c *SessionCreate) SetPlaybackPlan(v *entities.PlaybackPlan) *SessionCreate {
+	_c.mutation.SetPlaybackPlan(v)
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *SessionCreate) SetID(v uuid.UUID) *SessionCreate {
 	_c.mutation.SetID(v)
@@ -219,6 +241,11 @@ func (_c *SessionCreate) SetNillableNowPlayingID(id *uuid.UUID) *SessionCreate {
 // SetNowPlaying sets the "now_playing" edge to the Item entity.
 func (_c *SessionCreate) SetNowPlaying(v *Item) *SessionCreate {
 	return _c.SetNowPlayingID(v.ID)
+}
+
+// SetPlannedSource sets the "planned_source" edge to the ItemSource entity.
+func (_c *SessionCreate) SetPlannedSource(v *ItemSource) *SessionCreate {
+	return _c.SetPlannedSourceID(v.ID)
 }
 
 // AddSyncPlayMembershipIDs adds the "sync_play_memberships" edge to the SyncPlayGroupMember entity by IDs.
@@ -388,6 +415,10 @@ func (_c *SessionCreate) createSpec() (*Session, *sqlgraph.CreateSpec) {
 		_spec.SetField(session.FieldPlayingAt, field.TypeTime, value)
 		_node.PlayingAt = &value
 	}
+	if value, ok := _c.mutation.PlaybackPlan(); ok {
+		_spec.SetField(session.FieldPlaybackPlan, field.TypeJSON, value)
+		_node.PlaybackPlan = value
+	}
 	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -437,6 +468,23 @@ func (_c *SessionCreate) createSpec() (*Session, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.NowPlayingItemID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.PlannedSourceIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   session.PlannedSourceTable,
+			Columns: []string{session.PlannedSourceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.PlannedSourceID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.SyncPlayMembershipsIDs(); len(nodes) > 0 {
@@ -678,6 +726,42 @@ func (u *SessionUpsert) UpdatePlayingAt() *SessionUpsert {
 // ClearPlayingAt clears the value of the "playing_at" field.
 func (u *SessionUpsert) ClearPlayingAt() *SessionUpsert {
 	u.SetNull(session.FieldPlayingAt)
+	return u
+}
+
+// SetPlannedSourceID sets the "planned_source_id" field.
+func (u *SessionUpsert) SetPlannedSourceID(v uuid.UUID) *SessionUpsert {
+	u.Set(session.FieldPlannedSourceID, v)
+	return u
+}
+
+// UpdatePlannedSourceID sets the "planned_source_id" field to the value that was provided on create.
+func (u *SessionUpsert) UpdatePlannedSourceID() *SessionUpsert {
+	u.SetExcluded(session.FieldPlannedSourceID)
+	return u
+}
+
+// ClearPlannedSourceID clears the value of the "planned_source_id" field.
+func (u *SessionUpsert) ClearPlannedSourceID() *SessionUpsert {
+	u.SetNull(session.FieldPlannedSourceID)
+	return u
+}
+
+// SetPlaybackPlan sets the "playback_plan" field.
+func (u *SessionUpsert) SetPlaybackPlan(v *entities.PlaybackPlan) *SessionUpsert {
+	u.Set(session.FieldPlaybackPlan, v)
+	return u
+}
+
+// UpdatePlaybackPlan sets the "playback_plan" field to the value that was provided on create.
+func (u *SessionUpsert) UpdatePlaybackPlan() *SessionUpsert {
+	u.SetExcluded(session.FieldPlaybackPlan)
+	return u
+}
+
+// ClearPlaybackPlan clears the value of the "playback_plan" field.
+func (u *SessionUpsert) ClearPlaybackPlan() *SessionUpsert {
+	u.SetNull(session.FieldPlaybackPlan)
 	return u
 }
 
@@ -929,6 +1013,48 @@ func (u *SessionUpsertOne) UpdatePlayingAt() *SessionUpsertOne {
 func (u *SessionUpsertOne) ClearPlayingAt() *SessionUpsertOne {
 	return u.Update(func(s *SessionUpsert) {
 		s.ClearPlayingAt()
+	})
+}
+
+// SetPlannedSourceID sets the "planned_source_id" field.
+func (u *SessionUpsertOne) SetPlannedSourceID(v uuid.UUID) *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.SetPlannedSourceID(v)
+	})
+}
+
+// UpdatePlannedSourceID sets the "planned_source_id" field to the value that was provided on create.
+func (u *SessionUpsertOne) UpdatePlannedSourceID() *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.UpdatePlannedSourceID()
+	})
+}
+
+// ClearPlannedSourceID clears the value of the "planned_source_id" field.
+func (u *SessionUpsertOne) ClearPlannedSourceID() *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.ClearPlannedSourceID()
+	})
+}
+
+// SetPlaybackPlan sets the "playback_plan" field.
+func (u *SessionUpsertOne) SetPlaybackPlan(v *entities.PlaybackPlan) *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.SetPlaybackPlan(v)
+	})
+}
+
+// UpdatePlaybackPlan sets the "playback_plan" field to the value that was provided on create.
+func (u *SessionUpsertOne) UpdatePlaybackPlan() *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.UpdatePlaybackPlan()
+	})
+}
+
+// ClearPlaybackPlan clears the value of the "playback_plan" field.
+func (u *SessionUpsertOne) ClearPlaybackPlan() *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.ClearPlaybackPlan()
 	})
 }
 
@@ -1347,6 +1473,48 @@ func (u *SessionUpsertBulk) UpdatePlayingAt() *SessionUpsertBulk {
 func (u *SessionUpsertBulk) ClearPlayingAt() *SessionUpsertBulk {
 	return u.Update(func(s *SessionUpsert) {
 		s.ClearPlayingAt()
+	})
+}
+
+// SetPlannedSourceID sets the "planned_source_id" field.
+func (u *SessionUpsertBulk) SetPlannedSourceID(v uuid.UUID) *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.SetPlannedSourceID(v)
+	})
+}
+
+// UpdatePlannedSourceID sets the "planned_source_id" field to the value that was provided on create.
+func (u *SessionUpsertBulk) UpdatePlannedSourceID() *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.UpdatePlannedSourceID()
+	})
+}
+
+// ClearPlannedSourceID clears the value of the "planned_source_id" field.
+func (u *SessionUpsertBulk) ClearPlannedSourceID() *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.ClearPlannedSourceID()
+	})
+}
+
+// SetPlaybackPlan sets the "playback_plan" field.
+func (u *SessionUpsertBulk) SetPlaybackPlan(v *entities.PlaybackPlan) *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.SetPlaybackPlan(v)
+	})
+}
+
+// UpdatePlaybackPlan sets the "playback_plan" field to the value that was provided on create.
+func (u *SessionUpsertBulk) UpdatePlaybackPlan() *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.UpdatePlaybackPlan()
+	})
+}
+
+// ClearPlaybackPlan clears the value of the "playback_plan" field.
+func (u *SessionUpsertBulk) ClearPlaybackPlan() *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.ClearPlaybackPlan()
 	})
 }
 

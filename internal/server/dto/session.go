@@ -8,6 +8,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
+	"github.com/FreekingDean/gojellyfin/internal/transcode"
 )
 
 func SessionDto(session *sessions.Session) *api.SessionInfoDto {
@@ -78,6 +79,9 @@ func SessionDto(session *sessions.Session) *api.SessionInfoDto {
 		if session.PlayMethod != "" {
 			dto.PlayState.PlayMethod = apiutil.Ptr(api.PlayMethod(session.PlayMethod))
 		}
+		if source, plan := sessions.Planned(session); source != nil {
+			planned(dto, &item, source, plan)
+		}
 	}
 
 	if user := session.User; user != nil {
@@ -86,6 +90,39 @@ func SessionDto(session *sessions.Session) *api.SessionInfoDto {
 	}
 
 	return dto
+}
+
+func planned(dto *api.SessionInfoDto, item *api.BaseItemDto, source *items.MediaSource, plan *items.Playback) {
+	listed := MediaSourceDto(source)
+	listed.Id = apiutil.Ptr(item.Id.String())
+	item.MediaSources = &[]api.MediaSourceInfo{listed}
+	item.MediaStreams = listed.MediaStreams
+	dto.PlayState.MediaSourceId = listed.Id
+
+	if plan.Direct {
+		dto.PlayState.PlayMethod = apiutil.Ptr(api.DirectPlay)
+
+		return
+	}
+
+	reasons := make([]api.TranscodeReason, 0, len(plan.Reasons))
+	for _, reason := range plan.Reasons {
+		reasons = append(reasons, api.TranscodeReason(reason))
+	}
+	dto.PlayState.PlayMethod = apiutil.Ptr(api.Transcode)
+	dto.TranscodingInfo = &api.TranscodingInfo{
+		IsVideoDirect:    apiutil.Ptr(plan.VideoDirect),
+		IsAudioDirect:    apiutil.Ptr(plan.AudioDirect),
+		Container:        apiutil.ZeroOrNilPtr(plan.Container),
+		VideoCodec:       apiutil.ZeroOrNilPtr(plan.VideoCodec),
+		AudioCodec:       apiutil.ZeroOrNilPtr(plan.AudioCodec),
+		TranscodeReasons: &reasons,
+	}
+	if !plan.VideoDirect {
+		if height := items.Height(source); height > 0 {
+			dto.TranscodingInfo.Height = apiutil.Ptr(min(height, transcode.MaxHeight))
+		}
+	}
 }
 
 func seriesOf(item *items.Item) *items.Item {

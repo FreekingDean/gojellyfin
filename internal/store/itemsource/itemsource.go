@@ -56,6 +56,8 @@ const (
 	EdgeSegments = "segments"
 	// EdgeReports holds the string denoting the reports edge name in mutations.
 	EdgeReports = "reports"
+	// EdgePlanningSessions holds the string denoting the planning_sessions edge name in mutations.
+	EdgePlanningSessions = "planning_sessions"
 	// Table holds the table name of the itemsource in the database.
 	Table = "item_sources"
 	// ItemTable is the table that holds the item relation/edge.
@@ -93,6 +95,13 @@ const (
 	ReportsInverseTable = "reports"
 	// ReportsColumn is the table column denoting the reports relation/edge.
 	ReportsColumn = "item_source_id"
+	// PlanningSessionsTable is the table that holds the planning_sessions relation/edge.
+	PlanningSessionsTable = "sessions"
+	// PlanningSessionsInverseTable is the table name for the Session entity.
+	// It exists in this package in order to avoid circular dependency with the "session" package.
+	PlanningSessionsInverseTable = "sessions"
+	// PlanningSessionsColumn is the table column denoting the planning_sessions relation/edge.
+	PlanningSessionsColumn = "planned_source_id"
 )
 
 // Columns holds all SQL columns for itemsource fields.
@@ -278,6 +287,20 @@ func ByReports(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newReportsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByPlanningSessionsCount orders the results by planning_sessions count.
+func ByPlanningSessionsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newPlanningSessionsStep(), opts...)
+	}
+}
+
+// ByPlanningSessions orders the results by planning_sessions terms.
+func ByPlanningSessions(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newPlanningSessionsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newItemStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -311,5 +334,12 @@ func newReportsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ReportsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ReportsTable, ReportsColumn),
+	)
+}
+func newPlanningSessionsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(PlanningSessionsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, PlanningSessionsTable, PlanningSessionsColumn),
 	)
 }

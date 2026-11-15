@@ -39,6 +39,7 @@ func (ItemSource) Edges() []ent.Edge {
 		edge.To("streams", MediaStream.Type).Annotations(cascadeOnDelete),
 		edge.To("segments", MediaSegment.Type).Annotations(cascadeOnDelete),
 		edge.To("reports", Report.Type),
+		edge.To("planning_sessions", Session.Type),
 	}
 }
 
