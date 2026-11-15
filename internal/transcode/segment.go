@@ -173,12 +173,11 @@ func (s Segment) movflags() string {
 }
 
 func (s Segment) seek() int64 {
-	switch {
-	case s.Track == TrackVideo:
+	if s.Track == TrackVideo {
 		return s.Window.Start
-	default:
-		return max(0, s.Window.Start-seekLead)
 	}
+
+	return max(0, s.Window.Start-seekLead)
 }
 
 func (s Segment) until() []string {
@@ -187,7 +186,7 @@ func (s Segment) until() []string {
 	}
 
 	end := s.Window.End
-	if !(s.Track == TrackVideo && s.Encode) {
+	if !s.EncodesVideo() {
 		end += readPast
 	}
 

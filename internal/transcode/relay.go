@@ -9,6 +9,10 @@ func Relay(w http.ResponseWriter, output io.Reader) (int64, error) {
 	return io.Copy(&flushing{w: w}, output)
 }
 
+func Flushed(w http.ResponseWriter) io.Writer {
+	return &flushing{w: w}
+}
+
 type flushing struct {
 	w http.ResponseWriter
 }

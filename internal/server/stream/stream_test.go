@@ -71,6 +71,10 @@ func (s *stubTranscoder) Open(ctx context.Context, spec transcode.Spec) (io.Read
 	return s.open(ctx, spec)
 }
 
+func (s *stubTranscoder) Segment(context.Context, transcode.Segment) (io.ReadCloser, error) {
+	return nil, transcode.ErrNotAvailable
+}
+
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
 
