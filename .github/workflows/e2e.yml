@@ -95,10 +95,6 @@ jobs:
         run: npm run visual
         working-directory: e2e
 
-      - name: Debug HLS
-        if: failure()
-        run: grep -a 'hls-debug' e2e/.build/server.log | head -300 || true
-
       # On a pull request and on main, every screenshot this commit rendered and the diff of
       # each that changed, beside a summary the gallery job renders from.
       - name: Collect the screenshots
