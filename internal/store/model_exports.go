@@ -793,6 +793,7 @@ type ItemSourceModel struct {
 	SegmentsDetectedAt *time.Time
 	ExternalID         *int64
 	ExternalFileID     *int64
+	Lyrics             string
 
 	Item     *ItemModel
 	Source   *SourceModel
@@ -831,6 +832,7 @@ func fromItemSource(_m *ItemSource) *ItemSourceModel {
 		SegmentsDetectedAt: _m.SegmentsDetectedAt,
 		ExternalID:         _m.ExternalID,
 		ExternalFileID:     _m.ExternalFileID,
+		Lyrics:             _m.Lyrics,
 
 		Item:     fromItem(_m.Edges.Item),
 		Source:   fromSource(_m.Edges.Source),
@@ -1429,6 +1431,7 @@ type PersonModel struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	Name      string
+	ImageURL  string
 
 	Credits []*CreditModel
 }
@@ -1451,6 +1454,7 @@ func fromPerson(_m *Person) *PersonModel {
 		CreatedAt: _m.CreatedAt,
 		UpdatedAt: _m.UpdatedAt,
 		Name:      _m.Name,
+		ImageURL:  _m.ImageURL,
 
 		Credits: fromAllCredit(_m.Edges.Credits),
 	}

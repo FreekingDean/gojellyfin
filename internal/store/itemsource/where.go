@@ -131,6 +131,11 @@ func ExternalFileID(v int64) predicate.ItemSource {
 	return predicate.ItemSource(sql.FieldEQ(FieldExternalFileID, v))
 }
 
+// Lyrics applies equality check predicate on the "lyrics" field. It's identical to LyricsEQ.
+func Lyrics(v string) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldEQ(FieldLyrics, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.ItemSource {
 	return predicate.ItemSource(sql.FieldEQ(FieldCreatedAt, v))
@@ -854,6 +859,81 @@ func ExternalFileIDIsNil() predicate.ItemSource {
 // ExternalFileIDNotNil applies the NotNil predicate on the "external_file_id" field.
 func ExternalFileIDNotNil() predicate.ItemSource {
 	return predicate.ItemSource(sql.FieldNotNull(FieldExternalFileID))
+}
+
+// LyricsEQ applies the EQ predicate on the "lyrics" field.
+func LyricsEQ(v string) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldEQ(FieldLyrics, v))
+}
+
+// LyricsNEQ applies the NEQ predicate on the "lyrics" field.
+func LyricsNEQ(v string) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldNEQ(FieldLyrics, v))
+}
+
+// LyricsIn applies the In predicate on the "lyrics" field.
+func LyricsIn(vs ...string) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldIn(FieldLyrics, vs...))
+}
+
+// LyricsNotIn applies the NotIn predicate on the "lyrics" field.
+func LyricsNotIn(vs ...string) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldNotIn(FieldLyrics, vs...))
+}
+
+// LyricsGT applies the GT predicate on the "lyrics" field.
+func LyricsGT(v string) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldGT(FieldLyrics, v))
+}
+
+// LyricsGTE applies the GTE predicate on the "lyrics" field.
+func LyricsGTE(v string) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldGTE(FieldLyrics, v))
+}
+
+// LyricsLT applies the LT predicate on the "lyrics" field.
+func LyricsLT(v string) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldLT(FieldLyrics, v))
+}
+
+// LyricsLTE applies the LTE predicate on the "lyrics" field.
+func LyricsLTE(v string) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldLTE(FieldLyrics, v))
+}
+
+// LyricsContains applies the Contains predicate on the "lyrics" field.
+func LyricsContains(v string) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldContains(FieldLyrics, v))
+}
+
+// LyricsHasPrefix applies the HasPrefix predicate on the "lyrics" field.
+func LyricsHasPrefix(v string) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldHasPrefix(FieldLyrics, v))
+}
+
+// LyricsHasSuffix applies the HasSuffix predicate on the "lyrics" field.
+func LyricsHasSuffix(v string) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldHasSuffix(FieldLyrics, v))
+}
+
+// LyricsIsNil applies the IsNil predicate on the "lyrics" field.
+func LyricsIsNil() predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldIsNull(FieldLyrics))
+}
+
+// LyricsNotNil applies the NotNil predicate on the "lyrics" field.
+func LyricsNotNil() predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldNotNull(FieldLyrics))
+}
+
+// LyricsEqualFold applies the EqualFold predicate on the "lyrics" field.
+func LyricsEqualFold(v string) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldEqualFold(FieldLyrics, v))
+}
+
+// LyricsContainsFold applies the ContainsFold predicate on the "lyrics" field.
+func LyricsContainsFold(v string) predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldContainsFold(FieldLyrics, v))
 }
 
 // HasItem applies the HasEdge predicate on the "item" edge.

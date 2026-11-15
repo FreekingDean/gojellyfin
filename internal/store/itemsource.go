@@ -50,6 +50,8 @@ type ItemSource struct {
 	ExternalID *int64 `json:"external_id,omitempty"`
 	// ExternalFileID holds the value of the "external_file_id" field.
 	ExternalFileID *int64 `json:"external_file_id,omitempty"`
+	// Lyrics holds the value of the "lyrics" field.
+	Lyrics string `json:"lyrics,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ItemSourceQuery when eager-loading is set.
 	Edges        ItemSourceEdges `json:"edges"`
@@ -129,7 +131,7 @@ func (*ItemSource) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case itemsource.FieldSize, itemsource.FieldRunTimeTicks, itemsource.FieldBitrate, itemsource.FieldExternalID, itemsource.FieldExternalFileID:
 			values[i] = new(sql.NullInt64)
-		case itemsource.FieldName, itemsource.FieldPath, itemsource.FieldContainer:
+		case itemsource.FieldName, itemsource.FieldPath, itemsource.FieldContainer, itemsource.FieldLyrics:
 			values[i] = new(sql.NullString)
 		case itemsource.FieldCreatedAt, itemsource.FieldUpdatedAt, itemsource.FieldDateModified, itemsource.FieldProbedAt, itemsource.FieldSegmentsDetectedAt:
 			values[i] = new(sql.NullTime)
@@ -254,6 +256,12 @@ func (_m *ItemSource) assignValues(columns []string, values []any) error {
 				_m.ExternalFileID = new(int64)
 				*_m.ExternalFileID = value.Int64
 			}
+		case itemsource.FieldLyrics:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field lyrics", values[i])
+			} else if value.Valid {
+				_m.Lyrics = value.String
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -375,6 +383,9 @@ func (_m *ItemSource) String() string {
 		builder.WriteString("external_file_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("lyrics=")
+	builder.WriteString(_m.Lyrics)
 	builder.WriteByte(')')
 	return builder.String()
 }

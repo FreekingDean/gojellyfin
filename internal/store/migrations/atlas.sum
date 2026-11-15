@@ -1,4 +1,4 @@
-h1:YjKbAbrpF8kgqKzoKuQ2qU14Vk+F8/QA8rAUWq4/Jd0=
+h1:X3mztj0jbz0IfQtg7lQHydiGNPYlDmN+EustbC1CvmA=
 20260808161932_schema.sql h1:TSsMFoNc1lu6mOmwk6WUpVAleagab51CYpT8AcXjFe8=
 20260809054423_schema.sql h1:V8LqoR24+BY3zT0+YlBHRxazmflw/ECnIQrC9e8FboE=
 20260809060012_configurations.sql h1:lWCojwN/ZmPBP/uS9aNCdmvBPXLv1rSc21+W+ZeyrJg=
@@ -40,4 +40,7 @@ h1:YjKbAbrpF8kgqKzoKuQ2qU14Vk+F8/QA8rAUWq4/Jd0=
 20261114235500_session_now_playing.sql h1:sXwT2x01SJbRBS0H0OEOGrhmVtH0laauxXmz9RCx1b0=
 20261115000000_fold_name_keyed_items.sql h1:tuYxNmfwV5jv4kYd/O2w3/HqtpxWE1icxZj0S1CcDDI=
 20261115010000_source_webhooks.sql h1:sjPBYMmQubNOgjyHDhwWwWU0qgV/+tgr+sPfIN6UHVo=
-20261115060000_media_segments.sql h1:FnJl52GJT8Hbjs1fEe8OebZTwe+wt3i9u8enw4tjB6Y=
+20261115030000_music_kinds.sql h1:pPrsyAJ/01CXFLK1fAV34Kfuf/xZ1awbtbbdOngLBEY=
+20261115040000_lyrics.sql h1:c4N87wMnvuBYY898PI3P7Oao/l6IzLT45wGh0LmFab0=
+20261115050000_person_images.sql h1:JsPvdmOdjQ12CEf5tD/Nqxk8cms0sDTmREWv3JxZ6F0=
+20261115060000_media_segments.sql h1:C3vAQGkvRRuCnDKQnr/0AU99unUFAmNcmXu01zwvGMA=

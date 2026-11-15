@@ -6,8 +6,8 @@ import * as mock from "../mock";
 import { Link, navigate } from "../router";
 import { Card, Dot, Field, Page, Pill, since } from "../ui";
 
-type Kind = "Radarr" | "Sonarr";
-type Slug = "movies" | "shows";
+type Kind = "Radarr" | "Sonarr" | "Lidarr";
+type Slug = "movies" | "shows" | "music";
 type Folder = { remote: string; local: string };
 type Requests = {
   profileId: number;
@@ -56,7 +56,26 @@ type Instance = {
   tags: string[];
 };
 
-const kinds: Record<Slug, Kind> = { movies: "Radarr", shows: "Sonarr" };
+const kinds: Record<Slug, Kind> = {
+  movies: "Radarr",
+  shows: "Sonarr",
+  music: "Lidarr",
+};
+const collections: Record<Slug, string> = {
+  movies: "movies",
+  shows: "tvshows",
+  music: "music",
+};
+const placeholders: Record<Kind, string> = {
+  Radarr: "http://radarr:7878",
+  Sonarr: "http://sonarr:8989",
+  Lidarr: "http://lidarr:8686",
+};
+const filled: Record<Kind, string> = {
+  Radarr: "movies",
+  Sonarr: "shows",
+  Lidarr: "music",
+};
 
 function mocked(): Loaded {
   return {
@@ -83,7 +102,7 @@ function counted(value: number, one: string, many: string): string {
 
 async function count(
   parentId: string,
-  type: "Movie" | "Series" | "Episode",
+  type: "Movie" | "Series" | "Episode" | "MusicAlbum" | "Audio",
 ): Promise<number> {
   const { data } = await api.GET("/Items", {
     params: {
@@ -114,7 +133,10 @@ async function fetched(): Promise<Loaded | undefined> {
   const downloaders: Downloader[] = sources.data.map((source) => ({
     id: source.Id ?? "",
     name: source.Name ?? "",
-    kind: source.Kind === "Sonarr" ? "Sonarr" : "Radarr",
+    kind:
+      source.Kind === "Sonarr" || source.Kind === "Lidarr"
+        ? source.Kind
+        : "Radarr",
     version: source.Version ?? undefined,
     url: source.Url ?? "",
     variable: source.ApiKeyVariable ?? "",
@@ -140,11 +162,10 @@ async function fetched(): Promise<Loaded | undefined> {
   }));
 
   const libraries = await Promise.all(
-    (["movies", "shows"] as Slug[]).map(
+    (["movies", "shows", "music"] as Slug[]).map(
       async (slug): Promise<Library | undefined> => {
         const folder = folders.data.find(
-          (each) =>
-            each.CollectionType === (slug === "movies" ? "movies" : "tvshows"),
+          (each) => each.CollectionType === collections[slug],
         );
         if (!folder?.ItemId) {
           return undefined;
@@ -153,15 +174,25 @@ async function fetched(): Promise<Loaded | undefined> {
         const counts =
           slug === "movies"
             ? counted(await count(id, "Movie"), "movie", "movies")
-            : await Promise.all([
-                count(id, "Series"),
-                count(id, "Episode"),
-              ]).then(
-                ([shows, episodes]) =>
-                  counted(shows, "show", "shows") +
-                  ", " +
-                  counted(episodes, "episode", "episodes"),
-              );
+            : slug === "shows"
+              ? await Promise.all([
+                  count(id, "Series"),
+                  count(id, "Episode"),
+                ]).then(
+                  ([shows, episodes]) =>
+                    counted(shows, "show", "shows") +
+                    ", " +
+                    counted(episodes, "episode", "episodes"),
+                )
+              : await Promise.all([
+                  count(id, "MusicAlbum"),
+                  count(id, "Audio"),
+                ]).then(
+                  ([albums, tracks]) =>
+                    counted(albums, "album", "albums") +
+                    ", " +
+                    counted(tracks, "track", "tracks"),
+                );
         const synced = newest(
           downloaders.flatMap((downloader) =>
             downloader.bindings
@@ -262,7 +293,7 @@ export function Libraries({ id }: { id?: string }) {
     return (
       <Page
         title="Libraries"
-        lead="Movies come from Radarr and Shows from Sonarr."
+        lead="Movies come from Radarr, Shows from Sonarr and Music from Lidarr."
       >
         <p class={failure ? "failure" : "muted"}>{failure || "Loading…"}</p>
       </Page>
@@ -339,7 +370,7 @@ function Overview({ loaded }: { loaded: Loaded }) {
   return (
     <Page
       title="Libraries"
-      lead="Movies come from Radarr and Shows from Sonarr. Add a downloader and its folders, and the library fills itself."
+      lead="Movies come from Radarr, Shows from Sonarr and Music from Lidarr. Add a downloader and its folders, and the library fills itself."
     >
       {failure && (
         <p class="failure" role="alert">
@@ -662,7 +693,7 @@ function Editor({
   const [browsing, setBrowsing] = useState<number | undefined>(undefined);
   const [failure, setFailure] = useState("");
   const [busy, setBusy] = useState(false);
-  const what = kind === "Radarr" ? "movies" : "shows";
+  const what = filled[kind];
 
   async function test() {
     setInstance(await probe(kind, url.trim(), variable));
@@ -812,11 +843,7 @@ function Editor({
               Address
               <input
                 value={url}
-                placeholder={
-                  kind === "Radarr"
-                    ? "http://radarr:7878"
-                    : "http://sonarr:8989"
-                }
+                placeholder={placeholders[kind]}
                 onInput={(event) => setUrl(event.currentTarget.value)}
               />
             </label>
@@ -932,93 +959,96 @@ function Editor({
           </button>
         </Card>
 
-        <Card title="Requests">
-          <label class="check">
-            <input
-              type="checkbox"
-              checked={Boolean(requests)}
-              onChange={(event) =>
-                setRequests(
-                  event.currentTarget.checked
-                    ? {
-                        profileId: instance?.profiles[0]?.id ?? 0,
-                        folder: paths[0]?.remote ?? "",
-                      }
-                    : undefined,
-                )
-              }
-            />{" "}
-            Send {what} people ask for to this downloader
-          </label>
-          {requests && (
-            <div class="form">
-              <label>
-                Quality profile
-                <select
-                  onChange={(event) =>
-                    setRequests({
-                      ...requests,
-                      profileId: Number(event.currentTarget.value),
-                    })
-                  }
-                >
-                  {!instance?.profiles.some(
-                    (profile) => profile.id === requests.profileId,
-                  ) && (
-                    <option value={requests.profileId} selected>
-                      {requests.profileId
-                        ? (requests.profile ?? profileName(requests.profileId))
-                        : "Pick a profile"}
-                    </option>
-                  )}
-                  {instance?.profiles.map((profile) => (
-                    <option
-                      key={profile.id}
-                      value={profile.id}
-                      selected={profile.id === requests.profileId}
-                    >
-                      {profile.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Add under
-                <select
-                  onChange={(event) =>
-                    setRequests({
-                      ...requests,
-                      folder: event.currentTarget.value,
-                    })
-                  }
-                >
-                  <Options
-                    options={paths.map((path) => path.remote).filter(Boolean)}
-                    value={requests.folder}
-                    empty={requests.folder ? undefined : "Pick a folder"}
-                  />
-                </select>
-              </label>
-              <label>
-                Tag requested titles
-                <select
-                  onChange={(event) =>
-                    setRequests({
-                      ...requests,
-                      tag: event.currentTarget.value || undefined,
-                    })
-                  }
-                >
-                  <Options
-                    options={instance?.tags ?? []}
-                    value={requests.tag}
-                    empty="No tag"
-                  />
-                </select>
-              </label>
-            </div>
-          )}
-        </Card>
+        {kind !== "Lidarr" && (
+          <Card title="Requests">
+            <label class="check">
+              <input
+                type="checkbox"
+                checked={Boolean(requests)}
+                onChange={(event) =>
+                  setRequests(
+                    event.currentTarget.checked
+                      ? {
+                          profileId: instance?.profiles[0]?.id ?? 0,
+                          folder: paths[0]?.remote ?? "",
+                        }
+                      : undefined,
+                  )
+                }
+              />{" "}
+              Send {what} people ask for to this downloader
+            </label>
+            {requests && (
+              <div class="form">
+                <label>
+                  Quality profile
+                  <select
+                    onChange={(event) =>
+                      setRequests({
+                        ...requests,
+                        profileId: Number(event.currentTarget.value),
+                      })
+                    }
+                  >
+                    {!instance?.profiles.some(
+                      (profile) => profile.id === requests.profileId,
+                    ) && (
+                      <option value={requests.profileId} selected>
+                        {requests.profileId
+                          ? (requests.profile ??
+                            profileName(requests.profileId))
+                          : "Pick a profile"}
+                      </option>
+                    )}
+                    {instance?.profiles.map((profile) => (
+                      <option
+                        key={profile.id}
+                        value={profile.id}
+                        selected={profile.id === requests.profileId}
+                      >
+                        {profile.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Add under
+                  <select
+                    onChange={(event) =>
+                      setRequests({
+                        ...requests,
+                        folder: event.currentTarget.value,
+                      })
+                    }
+                  >
+                    <Options
+                      options={paths.map((path) => path.remote).filter(Boolean)}
+                      value={requests.folder}
+                      empty={requests.folder ? undefined : "Pick a folder"}
+                    />
+                  </select>
+                </label>
+                <label>
+                  Tag requested titles
+                  <select
+                    onChange={(event) =>
+                      setRequests({
+                        ...requests,
+                        tag: event.currentTarget.value || undefined,
+                      })
+                    }
+                  >
+                    <Options
+                      options={instance?.tags ?? []}
+                      value={requests.tag}
+                      empty="No tag"
+                    />
+                  </select>
+                </label>
+              </div>
+            )}
+          </Card>
+        )}
 
         {downloader && (
           <Card title="Remove">

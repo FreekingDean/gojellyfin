@@ -1,4 +1,4 @@
-package userlibrary
+package library
 
 import (
 	"context"

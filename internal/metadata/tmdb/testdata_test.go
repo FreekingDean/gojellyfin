@@ -17,7 +17,7 @@ const (
 		"release_dates": {"results": [{"iso_3166_1": "US", "release_dates": [{"certification": "R", "type": 3}]}]},
 		"credits": {
 			"cast": [
-				{"id": 6384, "name": "Keanu Reeves", "character": "Thomas A. Anderson", "order": 0},
+				{"id": 6384, "name": "Keanu Reeves", "character": "Thomas A. Anderson", "order": 0, "profile_path": "/keanu.jpg"},
 				{"id": 2975, "name": "Laurence Fishburne", "character": "Morpheus", "order": 1}
 			],
 			"crew": [

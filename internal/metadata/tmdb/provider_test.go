@@ -108,7 +108,7 @@ func TestClient_Movie(t *testing.T) {
 			t.Errorf("Status = %v, want none written for a movie", *found.Status)
 		}
 		want := []items.Credit{
-			{Name: "Keanu Reeves", Kind: creditmodel.KindActor, Role: "Thomas A. Anderson", Order: 0},
+			{Name: "Keanu Reeves", Kind: creditmodel.KindActor, Role: "Thomas A. Anderson", Order: 0, ImageURL: "https://image.tmdb.org/t/p/h632/keanu.jpg"},
 			{Name: "Laurence Fishburne", Kind: creditmodel.KindActor, Role: "Morpheus", Order: 1},
 			{Name: "Lana Wachowski", Kind: creditmodel.KindDirector},
 		}

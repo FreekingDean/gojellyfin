@@ -3,11 +3,11 @@ package sonarr
 import "github.com/FreekingDean/gojellyfin/internal/sources/arr"
 
 const (
-	SeriesPath   = "api/v3/series"
-	EpisodesPath = "api/v3/episode"
-	LookupPath   = "api/v3/series/lookup"
-	FilePath     = "api/v3/episodefile"
-	GrabsPath    = "api/v3/history"
+	SeriesPath   = "series"
+	EpisodesPath = "episode"
+	LookupPath   = "series/lookup"
+	FilePath     = "episodefile"
+	GrabsPath    = "history"
 	Search       = "EpisodeSearch"
 	GrabbedEvent = "1"
 )

@@ -13,6 +13,8 @@ import (
 	"go.temporal.io/sdk/activity"
 	sdktemporal "go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
+
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 )
 
 const (
@@ -117,7 +119,15 @@ func Enqueue(ctx context.Context, name string, params ...Param) error {
 		return fmt.Errorf("jobs: %q was enqueued outside a job", name)
 	}
 
-	return enqueuer.Enqueue(ctx, name, params...)
+	ctx, span := tracing.Detach(ctx, "Enqueue "+name)
+	defer span.End()
+
+	err := enqueuer.Enqueue(ctx, name, params...)
+	if err != nil {
+		span.Fail(err)
+	}
+
+	return err
 }
 
 func Heartbeat(ctx context.Context, detail ...any) {

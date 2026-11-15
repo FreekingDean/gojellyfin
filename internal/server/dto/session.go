@@ -46,6 +46,13 @@ func SessionDto(session *sessions.Session) *api.SessionInfoDto {
 		dto.SupportedCommands = &commands
 	}
 
+	dto.Capabilities = &api.ClientCapabilitiesDto{
+		PlayableMediaTypes:           dto.PlayableMediaTypes,
+		SupportedCommands:            dto.SupportedCommands,
+		SupportsMediaControl:         dto.SupportsMediaControl,
+		SupportsPersistentIdentifier: apiutil.Ptr(false),
+	}
+
 	if session.RemoteEndpoint != "" {
 		dto.RemoteEndPoint = apiutil.Ptr(session.RemoteEndpoint)
 	}

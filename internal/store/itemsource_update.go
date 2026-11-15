@@ -325,6 +325,26 @@ func (_u *ItemSourceUpdate) ClearExternalFileID() *ItemSourceUpdate {
 	return _u
 }
 
+// SetLyrics sets the "lyrics" field.
+func (_u *ItemSourceUpdate) SetLyrics(v string) *ItemSourceUpdate {
+	_u.mutation.SetLyrics(v)
+	return _u
+}
+
+// SetNillableLyrics sets the "lyrics" field if the given value is not nil.
+func (_u *ItemSourceUpdate) SetNillableLyrics(v *string) *ItemSourceUpdate {
+	if v != nil {
+		_u.SetLyrics(*v)
+	}
+	return _u
+}
+
+// ClearLyrics clears the value of the "lyrics" field.
+func (_u *ItemSourceUpdate) ClearLyrics() *ItemSourceUpdate {
+	_u.mutation.ClearLyrics()
+	return _u
+}
+
 // SetItem sets the "item" edge to the Item entity.
 func (_u *ItemSourceUpdate) SetItem(v *Item) *ItemSourceUpdate {
 	return _u.SetItemID(v.ID)
@@ -599,6 +619,12 @@ func (_u *ItemSourceUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	}
 	if _u.mutation.ExternalFileIDCleared() {
 		_spec.ClearField(itemsource.FieldExternalFileID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.Lyrics(); ok {
+		_spec.SetField(itemsource.FieldLyrics, field.TypeString, value)
+	}
+	if _u.mutation.LyricsCleared() {
+		_spec.ClearField(itemsource.FieldLyrics, field.TypeString)
 	}
 	if _u.mutation.ItemCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1104,6 +1130,26 @@ func (_u *ItemSourceUpdateOne) ClearExternalFileID() *ItemSourceUpdateOne {
 	return _u
 }
 
+// SetLyrics sets the "lyrics" field.
+func (_u *ItemSourceUpdateOne) SetLyrics(v string) *ItemSourceUpdateOne {
+	_u.mutation.SetLyrics(v)
+	return _u
+}
+
+// SetNillableLyrics sets the "lyrics" field if the given value is not nil.
+func (_u *ItemSourceUpdateOne) SetNillableLyrics(v *string) *ItemSourceUpdateOne {
+	if v != nil {
+		_u.SetLyrics(*v)
+	}
+	return _u
+}
+
+// ClearLyrics clears the value of the "lyrics" field.
+func (_u *ItemSourceUpdateOne) ClearLyrics() *ItemSourceUpdateOne {
+	_u.mutation.ClearLyrics()
+	return _u
+}
+
 // SetItem sets the "item" edge to the Item entity.
 func (_u *ItemSourceUpdateOne) SetItem(v *Item) *ItemSourceUpdateOne {
 	return _u.SetItemID(v.ID)
@@ -1408,6 +1454,12 @@ func (_u *ItemSourceUpdateOne) sqlSave(ctx context.Context) (_node *ItemSource, 
 	}
 	if _u.mutation.ExternalFileIDCleared() {
 		_spec.ClearField(itemsource.FieldExternalFileID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.Lyrics(); ok {
+		_spec.SetField(itemsource.FieldLyrics, field.TypeString, value)
+	}
+	if _u.mutation.LyricsCleared() {
+		_spec.ClearField(itemsource.FieldLyrics, field.TypeString)
 	}
 	if _u.mutation.ItemCleared() {
 		edge := &sqlgraph.EdgeSpec{

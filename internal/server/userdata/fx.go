@@ -1,9 +1,9 @@
-package userlibrary
+package userdata
 
 import "go.uber.org/fx"
 
 var Module = fx.Module(
-	"server/userlibrary",
+	"server/userdata",
 	fx.Provide(
 		New,
 	),

@@ -78,6 +78,13 @@ func TestCreate_RefusesWhatCannotBeServed(t *testing.T) {
 
 			return entry
 		}(),
+		"a Lidarr feeding the movies": func() Configured {
+			entry := candidate(elsewhere)
+			entry.Source.Kind = KindLidarr
+			entry.Libraries = []LibrarySource{{LibraryID: movies}}
+
+			return entry
+		}(),
 		"a library that does not exist": func() Configured {
 			entry := candidate(elsewhere)
 			entry.Libraries = []LibrarySource{{LibraryID: uuid.New()}}
@@ -294,5 +301,17 @@ func TestUpdate_UnbindingALibraryTakesItsTitlesOutOfIt(t *testing.T) {
 	}
 	if files := fixture.files(t); len(files) != 1 {
 		t.Errorf("files = %v, want the source's file kept for the library still bound", files)
+	}
+}
+
+func TestFills(t *testing.T) {
+	for kind, want := range map[Kind]librarymodel.CollectionType{
+		KindRadarr: librarymodel.CollectionTypeMovies,
+		KindSonarr: librarymodel.CollectionTypeTvshows,
+		KindLidarr: librarymodel.CollectionTypeMusic,
+	} {
+		if got := Fills(kind); got != want {
+			t.Errorf("Fills(%s) = %s, want %s", kind, got, want)
+		}
 	}
 }

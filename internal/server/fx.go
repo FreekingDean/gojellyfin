@@ -21,12 +21,14 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/genres"
 	"github.com/FreekingDean/gojellyfin/internal/server/health"
 	"github.com/FreekingDean/gojellyfin/internal/server/image"
+	"github.com/FreekingDean/gojellyfin/internal/server/instantmix"
 	"github.com/FreekingDean/gojellyfin/internal/server/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/itemupdate"
 	"github.com/FreekingDean/gojellyfin/internal/server/library"
 	"github.com/FreekingDean/gojellyfin/internal/server/librarystructure"
 	"github.com/FreekingDean/gojellyfin/internal/server/livetv"
 	"github.com/FreekingDean/gojellyfin/internal/server/localization"
+	"github.com/FreekingDean/gojellyfin/internal/server/lyrics"
 	"github.com/FreekingDean/gojellyfin/internal/server/mediainfo"
 	"github.com/FreekingDean/gojellyfin/internal/server/mediasegment"
 	"github.com/FreekingDean/gojellyfin/internal/server/movies"
@@ -51,7 +53,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/trailers"
 	"github.com/FreekingDean/gojellyfin/internal/server/tvshows"
 	"github.com/FreekingDean/gojellyfin/internal/server/user"
-	"github.com/FreekingDean/gojellyfin/internal/server/userlibrary"
+	"github.com/FreekingDean/gojellyfin/internal/server/userdata"
 	"github.com/FreekingDean/gojellyfin/internal/server/userviews"
 	"github.com/FreekingDean/gojellyfin/internal/server/years"
 )
@@ -62,6 +64,8 @@ var Module = fx.Module(
 	apikey.Module,
 	branding.Module,
 	artists.Module,
+	lyrics.Module,
+	instantmix.Module,
 	movies.Module,
 	backup.Module,
 	channels.Module,
@@ -103,7 +107,7 @@ var Module = fx.Module(
 	trailers.Module,
 	tvshows.Module,
 	user.Module,
-	userlibrary.Module,
+	userdata.Module,
 	userviews.Module,
 	years.Module,
 	fx.Provide(

@@ -82,6 +82,7 @@ func (s *Service) SaveProbe(ctx context.Context, item *Item, source *MediaSource
 			SetNillableRunTimeTicks(probe.RunTimeTicks).
 			SetNillableSize(probe.Size).
 			SetNillableBitrate(probe.Bitrate).
+			SetLyrics(probe.Lyrics).
 			SetProbedAt(time.Now()).
 			Exec(ctx)
 		if err != nil {
@@ -205,6 +206,7 @@ type Held struct {
 	Path         string
 	RunTimeTicks *int64
 	HasSubtitles bool
+	HasLyrics    bool
 }
 
 func (s *Service) FilesByItem(ctx context.Context, itemIDs []uuid.UUID) (map[uuid.UUID]Held, error) {
@@ -216,12 +218,22 @@ func (s *Service) FilesByItem(ctx context.Context, itemIDs []uuid.UUID) (map[uui
 	sources, err := s.store.ItemSource.Query().
 		Where(sourcemodel.ItemIDIn(itemIDs...)).
 		Order(sourcemodel.ByCreatedAt(), sourcemodel.ByPath()).
+		Select(sourcemodel.FieldID, sourcemodel.FieldItemID, sourcemodel.FieldPath, sourcemodel.FieldRunTimeTicks).
 		WithStreams(func(query *store.MediaStreamQuery) {
 			query.Where(streammodel.KindEQ(streammodel.KindSubtitle))
 		}).
 		AllModels(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query media source paths: %w", err)
+	}
+
+	sung, err := s.store.ItemSource.Query().
+		Where(sourcemodel.ItemIDIn(itemIDs...), sourcemodel.LyricsNotNil(), sourcemodel.LyricsNEQ("")).
+		Unique(true).
+		Select(sourcemodel.FieldItemID).
+		Strings(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query which items have lyrics: %w", err)
 	}
 
 	for _, source := range sources {
@@ -234,7 +246,35 @@ func (s *Service) FilesByItem(ctx context.Context, itemIDs []uuid.UUID) (map[uui
 		held[source.ItemID] = entry
 	}
 
+	for _, raw := range sung {
+		if id, err := uuid.Parse(raw); err == nil {
+			entry := held[id]
+			entry.HasLyrics = true
+			held[id] = entry
+		}
+	}
+
 	return held, nil
+}
+
+func (s *Service) Lyrics(ctx context.Context, viewer Viewer, itemID uuid.UUID) (string, error) {
+	if _, err := s.ItemByID(ctx, viewer, itemID); err != nil {
+		return "", err
+	}
+
+	found, err := s.store.ItemSource.Query().
+		Where(sourcemodel.ItemID(itemID), sourcemodel.LyricsNotNil(), sourcemodel.LyricsNEQ("")).
+		Order(sourcemodel.ByCreatedAt(), sourcemodel.ByPath()).
+		Select(sourcemodel.FieldLyrics).
+		Strings(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to query the lyrics: %w", err)
+	}
+	if len(found) == 0 {
+		return "", fmt.Errorf("%w: no file of %s carries lyrics", ErrNotFound, itemID)
+	}
+
+	return found[0], nil
 }
 
 func (s *Service) SourcePaths(ctx context.Context, id uuid.UUID) ([]string, error) {

@@ -64,6 +64,7 @@ type Plan struct {
 }
 
 var (
+	ErrNotFound   = errors.New("no such item")
 	ErrNoSource   = errors.New("the item has no file to play")
 	ErrNoPlayable = errors.New("no file can be played as this client asked")
 )
