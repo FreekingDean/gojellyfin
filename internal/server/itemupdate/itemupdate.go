@@ -40,11 +40,16 @@ func (s *Server) UpdateItem(ctx context.Context, request api.UpdateItemRequestOb
 }
 
 func (s *Server) UpdateItemContentType(ctx context.Context, request api.UpdateItemContentTypeRequestObject) (api.UpdateItemContentTypeResponseObject, error) {
-	if _, err := s.items.ItemByID(ctx, items.Everyone, request.ItemId); err != nil {
+	item, err := s.items.ItemByID(ctx, items.Everyone, request.ItemId)
+	if err != nil {
 		return api.UpdateItemContentType404JSONResponse{}, nil
 	}
 
-	if !supportedContentType(request.Params.ContentType) {
+	current, err := s.collectionType(ctx, item)
+	if err != nil {
+		return nil, err
+	}
+	if requested := apiutil.Deref(request.Params.ContentType); requested != "" && libraries.CollectionType(requested) != current {
 		return api.UpdateItemContentType403Response{}, nil
 	}
 
@@ -57,28 +62,34 @@ func (s *Server) GetMetadataEditorInfo(ctx context.Context, request api.GetMetad
 		return api.GetMetadataEditorInfo404JSONResponse{}, nil
 	}
 
-	info := api.MetadataEditorInfo{
+	current, err := s.collectionType(ctx, item)
+	if err != nil {
+		return nil, err
+	}
+
+	return api.GetMetadataEditorInfo200JSONResponse{
+		ContentType:           contentType(current),
 		ContentTypeOptions:    &[]api.NameValuePair{},
 		Countries:             apiutil.Ptr(dto.CountryInfos(s.localization.Countries())),
 		Cultures:              apiutil.Ptr(dto.CultureDtos(s.localization.Cultures())),
 		ParentalRatingOptions: apiutil.Ptr(dto.ParentalRatings(s.localization.ParentalRatings())),
 		ExternalIdInfos:       &[]api.ExternalIdInfo{},
-	}
-	if items.IsFolder(item.Kind) {
-		info.ContentTypeOptions = apiutil.Ptr(contentTypeOptions())
-	}
+	}, nil
+}
 
+func (s *Server) collectionType(ctx context.Context, item *items.Item) (libraries.CollectionType, error) {
 	ancestry, err := s.items.Ancestors(ctx, item.ID)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	if ancestry != nil && len(ancestry.LibraryIDs) > 0 {
-		library, err := s.libraries.Library(ctx, ancestry.LibraryIDs[0])
-		if err != nil {
-			return nil, err
-		}
-		info.ContentType = contentType(library.CollectionType)
+	if ancestry == nil || len(ancestry.LibraryIDs) == 0 {
+		return "", nil
 	}
 
-	return api.GetMetadataEditorInfo200JSONResponse(info), nil
+	library, err := s.libraries.Library(ctx, ancestry.LibraryIDs[0])
+	if err != nil {
+		return "", err
+	}
+
+	return library.CollectionType, nil
 }
