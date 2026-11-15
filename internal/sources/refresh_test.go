@@ -40,12 +40,12 @@ type movie struct {
 }
 
 type fixture struct {
-	service  *Service
-	items    *items.Service
-	client   *store.Client
-	sourceID uuid.UUID
+	service    *Service
+	items      *items.Service
+	client     *store.Client
+	sourceID   uuid.UUID
 	downloader *downloader
-	config   env.Config
+	config     env.Config
 }
 
 func newFixture(t *testing.T, reported *[]movie) *fixture {
@@ -120,12 +120,12 @@ func newFixture(t *testing.T, reported *[]movie) *fixture {
 	})
 
 	return &fixture{
-		service:  New(client, config, records, activity.New(client)),
-		items:    records,
-		client:   client,
-		sourceID: source.ID,
+		service:    New(client, config, records, activity.New(client)),
+		items:      records,
+		client:     client,
+		sourceID:   source.ID,
 		downloader: held,
-		config:   config,
+		config:     config,
 	}
 }
 
