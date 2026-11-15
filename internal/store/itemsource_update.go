@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	"github.com/FreekingDean/gojellyfin/internal/store/keyframeindex"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediasegment"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
@@ -386,6 +387,25 @@ func (_u *ItemSourceUpdate) AddSegments(v ...*MediaSegment) *ItemSourceUpdate {
 	return _u.AddSegmentIDs(ids...)
 }
 
+// SetKeyframesID sets the "keyframes" edge to the KeyframeIndex entity by ID.
+func (_u *ItemSourceUpdate) SetKeyframesID(id uuid.UUID) *ItemSourceUpdate {
+	_u.mutation.SetKeyframesID(id)
+	return _u
+}
+
+// SetNillableKeyframesID sets the "keyframes" edge to the KeyframeIndex entity by ID if the given value is not nil.
+func (_u *ItemSourceUpdate) SetNillableKeyframesID(id *uuid.UUID) *ItemSourceUpdate {
+	if id != nil {
+		_u = _u.SetKeyframesID(*id)
+	}
+	return _u
+}
+
+// SetKeyframes sets the "keyframes" edge to the KeyframeIndex entity.
+func (_u *ItemSourceUpdate) SetKeyframes(v *KeyframeIndex) *ItemSourceUpdate {
+	return _u.SetKeyframesID(v.ID)
+}
+
 // AddReportIDs adds the "reports" edge to the Report entity by IDs.
 func (_u *ItemSourceUpdate) AddReportIDs(ids ...uuid.UUID) *ItemSourceUpdate {
 	_u.mutation.AddReportIDs(ids...)
@@ -473,6 +493,12 @@ func (_u *ItemSourceUpdate) RemoveSegments(v ...*MediaSegment) *ItemSourceUpdate
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveSegmentIDs(ids...)
+}
+
+// ClearKeyframes clears the "keyframes" edge to the KeyframeIndex entity.
+func (_u *ItemSourceUpdate) ClearKeyframes() *ItemSourceUpdate {
+	_u.mutation.ClearKeyframes()
+	return _u
 }
 
 // ClearReports clears all "reports" edges to the Report entity.
@@ -804,6 +830,35 @@ func (_u *ItemSourceUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(mediasegment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.KeyframesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   itemsource.KeyframesTable,
+			Columns: []string{itemsource.KeyframesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(keyframeindex.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.KeyframesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   itemsource.KeyframesTable,
+			Columns: []string{itemsource.KeyframesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(keyframeindex.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1272,6 +1327,25 @@ func (_u *ItemSourceUpdateOne) AddSegments(v ...*MediaSegment) *ItemSourceUpdate
 	return _u.AddSegmentIDs(ids...)
 }
 
+// SetKeyframesID sets the "keyframes" edge to the KeyframeIndex entity by ID.
+func (_u *ItemSourceUpdateOne) SetKeyframesID(id uuid.UUID) *ItemSourceUpdateOne {
+	_u.mutation.SetKeyframesID(id)
+	return _u
+}
+
+// SetNillableKeyframesID sets the "keyframes" edge to the KeyframeIndex entity by ID if the given value is not nil.
+func (_u *ItemSourceUpdateOne) SetNillableKeyframesID(id *uuid.UUID) *ItemSourceUpdateOne {
+	if id != nil {
+		_u = _u.SetKeyframesID(*id)
+	}
+	return _u
+}
+
+// SetKeyframes sets the "keyframes" edge to the KeyframeIndex entity.
+func (_u *ItemSourceUpdateOne) SetKeyframes(v *KeyframeIndex) *ItemSourceUpdateOne {
+	return _u.SetKeyframesID(v.ID)
+}
+
 // AddReportIDs adds the "reports" edge to the Report entity by IDs.
 func (_u *ItemSourceUpdateOne) AddReportIDs(ids ...uuid.UUID) *ItemSourceUpdateOne {
 	_u.mutation.AddReportIDs(ids...)
@@ -1359,6 +1433,12 @@ func (_u *ItemSourceUpdateOne) RemoveSegments(v ...*MediaSegment) *ItemSourceUpd
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveSegmentIDs(ids...)
+}
+
+// ClearKeyframes clears the "keyframes" edge to the KeyframeIndex entity.
+func (_u *ItemSourceUpdateOne) ClearKeyframes() *ItemSourceUpdateOne {
+	_u.mutation.ClearKeyframes()
+	return _u
 }
 
 // ClearReports clears all "reports" edges to the Report entity.
@@ -1720,6 +1800,35 @@ func (_u *ItemSourceUpdateOne) sqlSave(ctx context.Context) (_node *ItemSource, 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(mediasegment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.KeyframesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   itemsource.KeyframesTable,
+			Columns: []string{itemsource.KeyframesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(keyframeindex.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.KeyframesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   itemsource.KeyframesTable,
+			Columns: []string{itemsource.KeyframesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(keyframeindex.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

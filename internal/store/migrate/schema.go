@@ -353,6 +353,28 @@ var (
 			},
 		},
 	}
+	// KeyframeIndexesColumns holds the columns for the "keyframe_indexes" table.
+	KeyframeIndexesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "ticks", Type: field.TypeJSON},
+		{Name: "item_source_id", Type: field.TypeUUID, Unique: true},
+	}
+	// KeyframeIndexesTable holds the schema information for the "keyframe_indexes" table.
+	KeyframeIndexesTable = &schema.Table{
+		Name:       "keyframe_indexes",
+		Columns:    KeyframeIndexesColumns,
+		PrimaryKey: []*schema.Column{KeyframeIndexesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "keyframe_indexes_item_sources_keyframes",
+				Columns:    []*schema.Column{KeyframeIndexesColumns[4]},
+				RefColumns: []*schema.Column{ItemSourcesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// LibrariesColumns holds the columns for the "libraries" table.
 	LibrariesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
@@ -1358,6 +1380,7 @@ var (
 		ImagesTable,
 		ItemsTable,
 		ItemSourcesTable,
+		KeyframeIndexesTable,
 		LibrariesTable,
 		LibraryItemsTable,
 		LibraryOptionsTable,
@@ -1403,6 +1426,7 @@ func init() {
 	}
 	ItemSourcesTable.ForeignKeys[0].RefTable = ItemsTable
 	ItemSourcesTable.ForeignKeys[1].RefTable = SourcesTable
+	KeyframeIndexesTable.ForeignKeys[0].RefTable = ItemSourcesTable
 	LibraryItemsTable.ForeignKeys[0].RefTable = ItemsTable
 	LibraryItemsTable.ForeignKeys[1].RefTable = LibrariesTable
 	LibraryItemsTable.ForeignKeys[2].RefTable = SourcesTable

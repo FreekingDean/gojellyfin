@@ -129,6 +129,18 @@ func (f ItemSourceFunc) Mutate(ctx context.Context, m store.Mutation) (store.Val
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.ItemSourceMutation", m)
 }
 
+// The KeyframeIndexFunc type is an adapter to allow the use of ordinary
+// function as KeyframeIndex mutator.
+type KeyframeIndexFunc func(context.Context, *store.KeyframeIndexMutation) (store.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f KeyframeIndexFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, error) {
+	if mv, ok := m.(*store.KeyframeIndexMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.KeyframeIndexMutation", m)
+}
+
 // The LibraryFunc type is an adapter to allow the use of ordinary
 // function as Library mutator.
 type LibraryFunc func(context.Context, *store.LibraryMutation) (store.Value, error)

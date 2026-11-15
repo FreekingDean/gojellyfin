@@ -696,6 +696,8 @@ Only containers ffmpeg can write to a non-seekable pipe are in the table, which 
 
 The tests run real ffmpeg and ffprobe what comes back, so CI installs ffmpeg and a green run means bytes a player can decode.
 
+**The probe records where each film's keyframes are.** `keyframe_index.ticks` is the presentation time, in ticks, of every keyframe of the first picture stream that is not cover art (`-select_streams V:0`), read by `ffmpeg.Keyframes` from ffprobe's packet flags rather than by decoding, so it costs a read of the file and no picture decode. It is the one thing a copied HLS segment cannot be cut without (#755): a segment that copies the picture has to start on a keyframe, and every pod has to cut at the same ones. It is a table of its own, one row per file, because a file's index runs to thousands of numbers and every listing that loads an item's files would otherwise carry them; `items.Keyframes` is the one read. A file with no picture has no row, and a row with an empty list is a picture with no keyframe ffprobe could name. The read takes the whole file, so it has its own thirty minute timeout and heartbeats while it runs, and the `keyframes` migration clears `probed_at` on every file with a picture and no index, so the next `ProbeFiles` fills in what was probed before it.
+
 ### Current state
 
 Users, sessions, devices, libraries, items and their user data are real rows, as are playlists, their entries and their shares; most other handlers still return hardcoded data or a 501. Audio transcodes when a client cannot take the source, and a picture no file can hand over untouched is encoded to 1080p H.264.

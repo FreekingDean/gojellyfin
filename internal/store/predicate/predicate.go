@@ -36,6 +36,9 @@ type Item func(*sql.Selector)
 // ItemSource is the predicate function for itemsource builders.
 type ItemSource func(*sql.Selector)
 
+// KeyframeIndex is the predicate function for keyframeindex builders.
+type KeyframeIndex func(*sql.Selector)
+
 // Library is the predicate function for library builders.
 type Library func(*sql.Selector)
 
