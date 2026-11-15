@@ -93,7 +93,7 @@ func TestLoad(t *testing.T) {
 				"PUBLISHED_SERVER_URL":         "https://jellyfin.example",
 				"SERVER_ID":                    "0123456789abcdef0123456789abcdef",
 				"CORS_ORIGINS":                 "https://one.example, https://two.example ",
-				"TRUSTED_PROXIES":              "10.201.0.0/16, fd00::/8 ",
+				"TRUSTED_PROXIES":              "10.244.0.0/16, fd00::/8 ",
 				"TRANSCODER_JOBS":              "4",
 				"TRANSCODER_STALL_TIMEOUT":     "45s",
 				"TEMPORAL_HOSTPORT":            "temporal:7233",
@@ -121,7 +121,7 @@ func TestLoad(t *testing.T) {
 				PublishedServerURL: "https://jellyfin.example",
 				ServerID:           "0123456789abcdef0123456789abcdef",
 				CORSOrigins:        []string{"https://one.example", "https://two.example"},
-				TrustedProxies:     []string{"10.201.0.0/16", "fd00::/8"},
+				TrustedProxies:     []string{"10.244.0.0/16", "fd00::/8"},
 				Transcoder:         Transcoder{Jobs: 4, StallTimeout: 45 * time.Second},
 				Temporal:           Temporal{HostPort: "temporal:7233", Namespace: "gojellyfin_production", WorkerStopTimeout: 5 * time.Minute},
 				Tracing:            Tracing{OTLPEndpoint: "http://collector:4318", ServiceName: "gojellyfin-api", ResourceAttributes: "k8s.pod.ip=10.0.0.1"},
@@ -173,7 +173,7 @@ func TestLoad(t *testing.T) {
 		},
 		{
 			name:    "refuses a TRUSTED_PROXIES entry that is not a network",
-			env:     map[string]string{"DATABASE_URL": testDatabaseURL, "TRUSTED_PROXIES": "10.201.0.0/16, gateway"},
+			env:     map[string]string{"DATABASE_URL": testDatabaseURL, "TRUSTED_PROXIES": "10.244.0.0/16, gateway"},
 			wantErr: true,
 		},
 		{
