@@ -11,9 +11,11 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/store"
+	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
@@ -319,6 +321,59 @@ func TestService_Choices(t *testing.T) {
 type available bool
 
 func (a available) Enabled() bool { return bool(a) }
+
+func (available) Trending(context.Context, items.Kind, int) ([]discover.Title, error) {
+	return nil, nil
+}
+
+type trended []discover.Title
+
+func (trended) Enabled() bool { return true }
+
+func (t trended) Trending(_ context.Context, kind items.Kind, limit int) ([]discover.Title, error) {
+	listed := []discover.Title{}
+	for _, title := range t {
+		if title.Kind == kind && len(listed) < limit {
+			listed = append(listed, title)
+		}
+	}
+
+	return listed, nil
+}
+
+func TestService_TrendingCard(t *testing.T) {
+	ctx := context.Background()
+	poster := func(kind items.Kind, url string) discover.Title {
+		return discover.Title{Kind: kind, Metadata: items.Metadata{Images: []items.RemoteImage{{Kind: imagemodel.KindPrimary, URL: url}}}}
+	}
+	listed := trended{
+		poster(itemmodel.KindMovie, "https://cdn.invalid/first.jpg"),
+		{Kind: itemmodel.KindMovie},
+		poster(itemmodel.KindSeries, "https://cdn.invalid/show.jpg"),
+		poster(itemmodel.KindMovie, "https://cdn.invalid/second.jpg"),
+	}
+	service := newService(nil, listed, stored("trending-movies"), time.Now)
+
+	card, found, err := service.Card(ctx, ID("trending-movies"), items.Viewer{}, uuid.Nil, 5)
+	if err != nil || !found {
+		t.Fatalf("card = %v, %v, want the trending card", found, err)
+	}
+
+	urls := []string{}
+	for _, image := range card.Posters {
+		urls = append(urls, image.URL)
+	}
+	if want := []string{"https://cdn.invalid/first.jpg", "https://cdn.invalid/second.jpg"}; !slices.Equal(urls, want) {
+		t.Errorf("posters = %v, want %v, the movies the provider has a poster for in its order", urls, want)
+	}
+	if card.Name != "Trending Movies" || card.Personal || card.Fresh != 0 {
+		t.Errorf("card = %q personal %v fresh %d, want the shelf's name, shared, with no count", card.Name, card.Personal, card.Fresh)
+	}
+
+	if _, found, err := newService(nil, available(false), stored("trending-movies"), time.Now).Card(ctx, ID("trending-movies"), items.Everyone, uuid.Nil, 5); err != nil || found {
+		t.Errorf("card with no provider = %v, %v, want none", found, err)
+	}
+}
 
 func TestService_TrendingShelves(t *testing.T) {
 	ctx := context.Background()

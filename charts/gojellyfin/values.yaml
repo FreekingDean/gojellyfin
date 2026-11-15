@@ -43,7 +43,8 @@ database:
   existingSecret: ""
   secretKey: DATABASE_URL
 
-# TMDB_API_KEY, out of a Secret you create. Empty turns metadata lookups off:
+# TMDB_API_KEY, a v3 API key or a v4 read access token, out of a Secret you
+# create. Empty turns metadata lookups off:
 # items keep the titles their source reported and get no artwork.
 tmdb:
   existingSecret: ""

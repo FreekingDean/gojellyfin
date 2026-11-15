@@ -2,6 +2,8 @@ package items
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"slices"
 	"time"
@@ -22,6 +24,9 @@ type (
 const (
 	ImageKindPrimary  = imagemodel.KindPrimary
 	ImageKindBackdrop = imagemodel.KindBackdrop
+	ImageKindBanner   = imagemodel.KindBanner
+	ImageKindLogo     = imagemodel.KindLogo
+	ImageKindDisc     = imagemodel.KindDisc
 )
 
 var ValidImageKind = imagemodel.KindValidator
@@ -29,6 +34,20 @@ var ValidImageKind = imagemodel.KindValidator
 type RemoteImage struct {
 	Kind ImageKind
 	URL  string
+}
+
+func (r RemoteImage) Image() Image {
+	return Image{Kind: r.Kind, URL: r.URL, Tag: imageTag(r.URL)}
+}
+
+func imageTag(url string) string {
+	if url == "" {
+		return ""
+	}
+
+	sum := sha1.Sum([]byte(url))
+
+	return hex.EncodeToString(sum[:])
 }
 
 func (s *Service) SaveImage(ctx context.Context, itemID uuid.UUID, artwork Image) error {

@@ -142,6 +142,7 @@ type Kind string
 const (
 	KindRadarr Kind = "radarr"
 	KindSonarr Kind = "sonarr"
+	KindLidarr Kind = "lidarr"
 )
 
 func (k Kind) String() string {
@@ -151,7 +152,7 @@ func (k Kind) String() string {
 // KindValidator is a validator for the "kind" field enum values. It is called by the builders before save.
 func KindValidator(k Kind) error {
 	switch k {
-	case KindRadarr, KindSonarr:
+	case KindRadarr, KindSonarr, KindLidarr:
 		return nil
 	default:
 		return fmt.Errorf("source: invalid enum value for kind field: %q", k)

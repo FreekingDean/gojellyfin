@@ -14,11 +14,12 @@ import (
 	"go.temporal.io/sdk/client"
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 )
 
 func TestNewClient(t *testing.T) {
 	t.Run("without an address is disabled", func(t *testing.T) {
-		client, err := NewClient(env.Config{})
+		client, err := NewClient(env.Config{}, &tracing.Tracing{})
 		if err != nil {
 			t.Fatalf("an unconfigured client failed to build: %v", err)
 		}
@@ -28,7 +29,7 @@ func TestNewClient(t *testing.T) {
 	})
 
 	t.Run("requires a namespace", func(t *testing.T) {
-		_, err := NewClient(env.Config{Temporal: env.Temporal{HostPort: "temporal:7233"}})
+		_, err := NewClient(env.Config{Temporal: env.Temporal{HostPort: "temporal:7233"}}, &tracing.Tracing{})
 
 		if !errors.Is(err, ErrNoNamespace) {
 			t.Errorf("err = %v, want ErrNoNamespace", err)

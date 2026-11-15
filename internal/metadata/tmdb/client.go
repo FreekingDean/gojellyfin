@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"regexp"
 	"sync"
 	"time"
 
@@ -12,9 +13,12 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 )
 
 var ErrNotConfigured = errors.New("tmdb: TMDB_API_KEY is not set")
+
+var v3APIKey = regexp.MustCompile(`^[0-9a-f]{32}$`)
 
 const (
 	requestSpacing = 50 * time.Millisecond
@@ -41,7 +45,7 @@ func newClient(baseURL, apiKey string) (*Client, error) {
 		return client, nil
 	}
 
-	api, err := gotmdb.InitV4(apiKey)
+	api, err := initialise(apiKey)
 	if err != nil {
 		return nil, err
 	}
@@ -58,11 +62,22 @@ func newClient(baseURL, apiKey string) (*Client, error) {
 	return client, nil
 }
 
+func initialise(credential string) (*gotmdb.Client, error) {
+	if v3APIKey.MatchString(credential) {
+		return gotmdb.Init(credential)
+	}
+
+	return gotmdb.InitV4(credential)
+}
+
 func (c *Client) Enabled() bool {
 	return c.api != nil
 }
 
 func (c *Client) Movie(ctx context.Context, tmdbID int) (items.Metadata, bool, error) {
+	ctx, span := tracing.Start(ctx, "tmdb Movie")
+	defer span.End()
+
 	if err := c.ready(ctx); err != nil {
 		return items.Metadata{}, false, err
 	}
@@ -76,6 +91,9 @@ func (c *Client) Movie(ctx context.Context, tmdbID int) (items.Metadata, bool, e
 }
 
 func (c *Client) Series(ctx context.Context, tmdbID int) (items.Metadata, bool, error) {
+	ctx, span := tracing.Start(ctx, "tmdb Series")
+	defer span.End()
+
 	if err := c.ready(ctx); err != nil {
 		return items.Metadata{}, false, err
 	}
@@ -89,6 +107,9 @@ func (c *Client) Series(ctx context.Context, tmdbID int) (items.Metadata, bool, 
 }
 
 func (c *Client) Season(ctx context.Context, series int, season int32) (items.Metadata, bool, error) {
+	ctx, span := tracing.Start(ctx, "tmdb Season")
+	defer span.End()
+
 	if err := c.ready(ctx); err != nil {
 		return items.Metadata{}, false, err
 	}
@@ -102,6 +123,9 @@ func (c *Client) Season(ctx context.Context, series int, season int32) (items.Me
 }
 
 func (c *Client) Episode(ctx context.Context, series int, season, episode int32) (items.Metadata, bool, error) {
+	ctx, span := tracing.Start(ctx, "tmdb Episode")
+	defer span.End()
+
 	if err := c.ready(ctx); err != nil {
 		return items.Metadata{}, false, err
 	}

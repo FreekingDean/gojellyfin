@@ -48499,7 +48499,8 @@
         "type": "string",
         "enum": [
           "Sonarr",
-          "Radarr"
+          "Radarr",
+          "Lidarr"
         ]
       }, "SourceLibrary": {
         "type": "object",

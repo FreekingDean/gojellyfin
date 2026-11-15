@@ -15,6 +15,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
+	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
 )
 
 var namespace = uuid.MustParse("6f1d7c2e-9a43-4f5b-8c1e-3d2a7b9e0c41")
@@ -28,6 +29,7 @@ type Catalogue interface {
 
 type Discovery interface {
 	Enabled() bool
+	Trending(ctx context.Context, kind items.Kind, limit int) ([]discover.Title, error)
 }
 
 type Shelf struct {
@@ -260,11 +262,15 @@ func (s *Service) Card(ctx context.Context, id uuid.UUID, viewer items.Viewer, u
 	}
 
 	index := slices.IndexFunc(enabled, func(entry definition) bool { return ID(entry.slug) == id })
-	if index < 0 || enabled[index].unowned != "" {
+	if index < 0 {
 		return Card{}, false, nil
 	}
 
 	entry := enabled[index]
+	if entry.unowned != "" {
+		return s.trendingCard(ctx, entry, limit)
+	}
+
 	if entry.shared {
 		userID = uuid.Nil
 	} else if userID == uuid.Nil {
@@ -294,6 +300,26 @@ func (s *Service) Card(ctx context.Context, id uuid.UUID, viewer items.Viewer, u
 	fresh, err := s.fresh(ctx, shelf)
 
 	return Card{Name: shelf.Name, Fresh: fresh, Posters: posters, Personal: !entry.shared}, true, err
+}
+
+func (s *Service) trendingCard(ctx context.Context, entry definition, limit int) (Card, bool, error) {
+	if !s.discovery.Enabled() {
+		return Card{}, false, nil
+	}
+
+	titles, err := s.discovery.Trending(ctx, entry.unowned, limit)
+	if err != nil {
+		return Card{}, false, err
+	}
+
+	posters := make([]*items.Image, 0, len(titles))
+	for _, title := range titles {
+		if url, ok := title.Image(imagemodel.KindPrimary); ok {
+			posters = append(posters, &items.Image{Kind: imagemodel.KindPrimary, URL: url, Tag: url})
+		}
+	}
+
+	return Card{Name: entry.title, Posters: posters}, true, nil
 }
 
 func (s *Service) fresh(ctx context.Context, shelf Shelf) (int, error) {

@@ -42,6 +42,8 @@ const (
 	FieldExternalID = "external_id"
 	// FieldExternalFileID holds the string denoting the external_file_id field in the database.
 	FieldExternalFileID = "external_file_id"
+	// FieldLyrics holds the string denoting the lyrics field in the database.
+	FieldLyrics = "lyrics"
 	// EdgeItem holds the string denoting the item edge name in mutations.
 	EdgeItem = "item"
 	// EdgeSource holds the string denoting the source edge name in mutations.
@@ -99,6 +101,7 @@ var Columns = []string{
 	FieldProbedAt,
 	FieldExternalID,
 	FieldExternalFileID,
+	FieldLyrics,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -196,6 +199,11 @@ func ByExternalID(opts ...sql.OrderTermOption) OrderOption {
 // ByExternalFileID orders the results by the external_file_id field.
 func ByExternalFileID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldExternalFileID, opts...).ToFunc()
+}
+
+// ByLyrics orders the results by the lyrics field.
+func ByLyrics(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLyrics, opts...).ToFunc()
 }
 
 // ByItemField orders the results by item field.
