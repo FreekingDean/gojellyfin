@@ -4,9 +4,12 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/requests"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
 func TestItemDto(t *testing.T) {
@@ -55,5 +58,19 @@ func TestItemDto_PrimaryImageAspectRatio(t *testing.T) {
 				t.Errorf("PrimaryImageAspectRatio = %v, want %v", got, test.want)
 			}
 		})
+	}
+}
+
+func TestUnownedDto_PrimaryImageAspectRatio(t *testing.T) {
+	poster := []items.RemoteImage{{Kind: items.ImageKindPrimary, URL: "https://image.tmdb.org/t/p/w780/poster.jpg"}}
+
+	dto := UnownedDto(discover.Title{Kind: itemmodel.KindMovie, Metadata: items.Metadata{Images: poster}}, requests.Mark{})
+	if got := apiutil.Deref(dto.PrimaryImageAspectRatio); got != posterAspect {
+		t.Errorf("PrimaryImageAspectRatio = %v, want %v: jellyfin-web draws the detail page's poster square without one", got, posterAspect)
+	}
+
+	bare := UnownedDto(discover.Title{Kind: itemmodel.KindMovie}, requests.Mark{})
+	if bare.PrimaryImageAspectRatio != nil {
+		t.Errorf("PrimaryImageAspectRatio = %v, want none for a title with no poster", *bare.PrimaryImageAspectRatio)
 	}
 }
