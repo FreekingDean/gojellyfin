@@ -14,6 +14,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 	"github.com/FreekingDean/gojellyfin/internal/server/link"
 )
 
@@ -29,10 +30,11 @@ type Server struct {
 	cards    *cards.Service
 	discover *discover.Service
 	splash   Splash
+	policies dto.Access
 }
 
-func New(items *items.Service, cards *cards.Service, discover *discover.Service, links *link.Handler) *Server {
-	return &Server{items: items, cards: cards, discover: discover, splash: links}
+func New(items *items.Service, cards *cards.Service, discover *discover.Service, links *link.Handler, policies dto.Access) *Server {
+	return &Server{items: items, cards: cards, discover: discover, splash: links, policies: policies}
 }
 
 func (s *Server) GetSplashscreen(ctx context.Context, request api.GetSplashscreenRequestObject) (api.GetSplashscreenResponseObject, error) {
@@ -88,7 +90,62 @@ func (s *Server) HeadItemImageByIndex(ctx context.Context, request api.HeadItemI
 	return answer, nil
 }
 
+func (s *Server) GetItemImage2(ctx context.Context, request api.GetItemImage2RequestObject) (api.GetItemImage2ResponseObject, error) {
+	answer, ok := s.answer(ctx, request.ItemId, request.ImageType, request.ImageIndex, request.Tag)
+	if !ok {
+		return api.GetItemImage2404JSONResponse{}, nil
+	}
+
+	return answer, nil
+}
+
+func (s *Server) HeadItemImage2(ctx context.Context, request api.HeadItemImage2RequestObject) (api.HeadItemImage2ResponseObject, error) {
+	answer, ok := s.answer(ctx, request.ItemId, request.ImageType, request.ImageIndex, request.Tag)
+	if !ok {
+		return api.HeadItemImage2404JSONResponse{}, nil
+	}
+
+	return answer, nil
+}
+
+func (s *Server) GetItemImageInfos(ctx context.Context, request api.GetItemImageInfosRequestObject) (api.GetItemImageInfosResponseObject, error) {
+	viewer, err := dto.ViewerFor(ctx, s.policies)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := s.items.ItemByID(ctx, viewer, request.ItemId); err != nil {
+		return api.GetItemImageInfos404JSONResponse{}, nil
+	}
+
+	records, err := s.items.Images(ctx, request.ItemId)
+	if err != nil {
+		return nil, err
+	}
+
+	infos := make(api.GetItemImageInfos200JSONResponse, 0, len(records))
+	for _, record := range records {
+		infos = append(infos, api.ImageInfo{
+			ImageType:  apiutil.Ptr(api.ImageType(record.Kind)),
+			ImageIndex: apiutil.Ptr(record.Index),
+			ImageTag:   apiutil.Ptr(record.Tag),
+		})
+	}
+
+	return infos, nil
+}
+
+func (s *Server) GetUserImage(context.Context, api.GetUserImageRequestObject) (api.GetUserImageResponseObject, error) {
+	return api.GetUserImage404JSONResponse{}, nil
+}
+
+func (s *Server) HeadUserImage(context.Context, api.HeadUserImageRequestObject) (api.HeadUserImageResponseObject, error) {
+	return api.HeadUserImage404JSONResponse{}, nil
+}
+
 type answer interface {
+	api.GetItemImage2ResponseObject
+	api.HeadItemImage2ResponseObject
 	api.GetItemImageResponseObject
 	api.HeadItemImageResponseObject
 	api.GetItemImageByIndexResponseObject
@@ -144,6 +201,8 @@ func (r redirect) VisitGetItemImageResponse(w http.ResponseWriter) error        
 func (r redirect) VisitHeadItemImageResponse(w http.ResponseWriter) error        { return r.write(w) }
 func (r redirect) VisitGetItemImageByIndexResponse(w http.ResponseWriter) error  { return r.write(w) }
 func (r redirect) VisitHeadItemImageByIndexResponse(w http.ResponseWriter) error { return r.write(w) }
+func (r redirect) VisitGetItemImage2Response(w http.ResponseWriter) error        { return r.write(w) }
+func (r redirect) VisitHeadItemImage2Response(w http.ResponseWriter) error       { return r.write(w) }
 
 type composed cards.Picture
 
@@ -170,3 +229,5 @@ func (c composed) VisitGetItemImageResponse(w http.ResponseWriter) error        
 func (c composed) VisitHeadItemImageResponse(w http.ResponseWriter) error        { return c.write(w) }
 func (c composed) VisitGetItemImageByIndexResponse(w http.ResponseWriter) error  { return c.write(w) }
 func (c composed) VisitHeadItemImageByIndexResponse(w http.ResponseWriter) error { return c.write(w) }
+func (c composed) VisitGetItemImage2Response(w http.ResponseWriter) error        { return c.write(w) }
+func (c composed) VisitHeadItemImage2Response(w http.ResponseWriter) error       { return c.write(w) }
