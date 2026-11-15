@@ -127,3 +127,30 @@ func TestService_Publish(t *testing.T) {
 		}
 	})
 }
+
+func TestService_OnReconnect(t *testing.T) {
+	service, received := newService(t)
+
+	reconnected := make(chan struct{}, 1)
+	service.OnReconnect(func(context.Context) {
+		reconnected <- struct{}{}
+	})
+
+	if _, err := service.store.ExecContext(context.Background(), "select pg_terminate_backend($1)", int(service.backend.Load())); err != nil {
+		t.Fatalf("failed to terminate the listener: %v", err)
+	}
+
+	select {
+	case <-reconnected:
+	case <-time.After(10 * time.Second):
+		t.Fatal("timed out waiting for the listener to reconnect")
+	}
+
+	session := uuid.New()
+	if err := service.Publish(context.Background(), []uuid.UUID{session}, "SyncPlayGroupUpdate", "payload"); err != nil {
+		t.Fatalf("failed to publish: %v", err)
+	}
+	if envelope := await(t, received); envelope.SessionIDs[0] != session {
+		t.Fatalf("envelope addressed to %v, want %v", envelope.SessionIDs, session)
+	}
+}

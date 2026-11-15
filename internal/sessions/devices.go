@@ -52,6 +52,13 @@ func (s *Service) RenameDevice(ctx context.Context, clientID string, customName 
 }
 
 func (s *Service) RemoveDevice(ctx context.Context, clientID string) error {
+	ids, err := s.store.Session.Query().Where(sessionmodel.HasDeviceWith(devicemodel.ClientID(clientID))).IDs(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to find the device's sessions: %w", err)
+	}
+
+	s.end(ctx, ids)
+
 	if _, err := s.store.Device.Delete().Where(devicemodel.ClientID(clientID)).Exec(ctx); err != nil {
 		return fmt.Errorf("failed to delete device: %w", err)
 	}

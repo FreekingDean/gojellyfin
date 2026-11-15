@@ -259,3 +259,27 @@ func TestSocket_Deliver(t *testing.T) {
 		})
 	})
 }
+
+func TestSocket_OnConnect(t *testing.T) {
+	f := newFixture(t)
+
+	connected := make(chan uuid.UUID, 1)
+	f.socket.OnConnect(func(_ context.Context, sessionID uuid.UUID) {
+		if sessions := f.socket.Sessions(); len(sessions) != 1 || sessions[0] != sessionID {
+			t.Errorf("Sessions() = %v while connecting, want the session registered first", sessions)
+		}
+		connected <- sessionID
+	})
+
+	conn := f.connect(t)
+	read(t, conn)
+
+	select {
+	case sessionID := <-connected:
+		if sessionID != f.sessionID {
+			t.Fatalf("connected %v, want %v", sessionID, f.sessionID)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("the connect hook never ran")
+	}
+}
