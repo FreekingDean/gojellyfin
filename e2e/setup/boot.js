@@ -250,7 +250,10 @@ function encodeTranscoded() {
 // the player has a next episode to move on to. They are H.264 with E-AC-3 in
 // Matroska, which is what a downloader usually imports and what a television
 // without a receiver cannot decode, so the server converts the sound and the
-// episode reaches the player through ffmpeg rather than as the file.
+// episode reaches the player through ffmpeg rather than as the file. The
+// sound names its language, as an imported file's does: having played one,
+// the Android TV app looks for that language on the next episode's listed
+// streams, which is the path that crashed it when an item listed none.
 function episodeMedia(playable, seconds) {
   const directory = path.join(path.dirname(playable), 'episodes');
   fs.rmSync(directory, { recursive: true, force: true });
@@ -263,6 +266,7 @@ function episodeMedia(playable, seconds) {
     '-f', 'lavfi', '-i', `sine=frequency=440:duration=${seconds}`,
     '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-g', '48',
     '-c:a', 'eac3', '-b:a', '128k',
+    '-metadata:s:a:0', 'language=eng',
     '-shortest', episode,
   ]);
   for (const title of [...EPISODES, FINALE]) {
