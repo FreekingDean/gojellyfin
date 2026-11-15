@@ -779,6 +779,7 @@ var (
 		{Name: "origin", Type: field.TypeEnum, Enums: []string{"User", "Delete", "Probe", "Playback"}},
 		{Name: "note", Type: field.TypeString, Default: ""},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"Open", "Resolved", "Dismissed"}, Default: "Open"},
+		{Name: "attempt", Type: field.TypeJSON, Nullable: true},
 		{Name: "item_id", Type: field.TypeUUID},
 		{Name: "item_source_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "user_id", Type: field.TypeUUID, Nullable: true},
@@ -791,19 +792,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "reports_items_reports",
-				Columns:    []*schema.Column{ReportsColumns[7]},
+				Columns:    []*schema.Column{ReportsColumns[8]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "reports_item_sources_reports",
-				Columns:    []*schema.Column{ReportsColumns[8]},
+				Columns:    []*schema.Column{ReportsColumns[9]},
 				RefColumns: []*schema.Column{ItemSourcesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "reports_users_reports",
-				Columns:    []*schema.Column{ReportsColumns[9]},
+				Columns:    []*schema.Column{ReportsColumns[10]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -817,7 +818,7 @@ var (
 			{
 				Name:    "report_item_id",
 				Unique:  false,
-				Columns: []*schema.Column{ReportsColumns[7]},
+				Columns: []*schema.Column{ReportsColumns[8]},
 			},
 		},
 	}

@@ -463,6 +463,38 @@ func TestHandler_ReportsWhatWillNotPlay(t *testing.T) {
 		if found[0].Origin != reports.OriginPlayback || found[0].Kind != reports.KindUnplayable || found[0].ItemSourceID == nil {
 			t.Errorf("report = %+v", found[0])
 		}
+
+		attempt := found[0].Attempt
+		if attempt == nil {
+			t.Fatal("the report records no attempt")
+		}
+		if attempt.UserID == nil || attempt.UserName == "" || attempt.Client != "Test" || attempt.ClientVersion != "1" || attempt.DeviceName != "Test" || attempt.Build == "" {
+			t.Errorf("attempt = %+v, want the account, the device and the build that asked", attempt)
+		}
+		want := items.Playback{VideoDirect: true, Container: "mp3"}
+		if served := attempt.Playback; served == nil || served.Direct != want.Direct || served.VideoDirect != want.VideoDirect ||
+			served.AudioDirect != want.AudioDirect || served.Container != want.Container {
+			t.Errorf("served = %+v, want %+v", served, want)
+		}
+	})
+
+	t.Run("a file served whole that cannot be opened records a direct play", func(t *testing.T) {
+		fixture := newFixture(t)
+		item, source := fixture.scan(t, uuid.NewString()+".mp3")
+		if err := os.Remove(source.Path); err != nil {
+			t.Fatalf("failed to remove the file: %v", err)
+		}
+
+		request := fixture.get(t, http.MethodGet, "/Audio/"+item.ID.String()+"/stream?startTimeTicks=600000000&", item.ID)
+		fixture.handler.Serve(httptest.NewRecorder(), request)
+
+		found := fixture.filed(t, item.ID)
+		if len(found) != 1 || found[0].Attempt == nil || found[0].Attempt.Playback == nil {
+			t.Fatalf("reports = %+v, want one recording how it was served", found)
+		}
+		if attempt := found[0].Attempt; !attempt.Playback.Direct || attempt.StartTicks != 600000000 {
+			t.Errorf("attempt = %+v, served = %+v, want a direct play from where the client asked", attempt, attempt.Playback)
+		}
 	})
 
 	t.Run("a pod with every slot taken reports nothing", func(t *testing.T) {

@@ -33,6 +33,8 @@ const (
 	FieldNote = "note"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
+	// FieldAttempt holds the string denoting the attempt field in the database.
+	FieldAttempt = "attempt"
 	// EdgeItem holds the string denoting the item edge name in mutations.
 	EdgeItem = "item"
 	// EdgeFile holds the string denoting the file edge name in mutations.
@@ -76,6 +78,7 @@ var Columns = []string{
 	FieldOrigin,
 	FieldNote,
 	FieldStatus,
+	FieldAttempt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

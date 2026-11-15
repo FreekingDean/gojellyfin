@@ -3,6 +3,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { api } from '../api';
 import type { Schemas } from '../api';
 import * as mock from '../mock';
+import { Served, attempted, client } from '../playback';
 import { Cell, Dot, Page, Pill, Tabs, since } from '../ui';
 import type { Tone } from '../ui';
 
@@ -258,8 +259,20 @@ function ReportTable({ reports, close }: { reports: Report[]; close: (report: Re
             {reports.map((report) => (
               <tr key={report.Id}>
                 <Cell main={<a href={'/web/#/details?id=' + report.ItemId}>{report.ItemName}</a>} sub={<span title={report.Path ?? ''}>{report.Path}</span>} />
-                <Cell main={report.UserName || (report.Origin === 'Probe' ? 'The probe' : 'Playback')} sub={since(report.CreatedAt)} />
-                <Cell main={report.Kind} sub={report.Note || (report.Origin === 'Delete' ? 'Delete was pressed in a client' : undefined)} />
+                <td>
+                  <div class="line">{report.UserName || report.Attempt?.UserName || (report.Origin === 'Probe' ? 'The probe' : 'Playback')}</div>
+                  <div class="line small muted">{since(report.CreatedAt)}</div>
+                  {client(report.Attempt) && (
+                    <div class="line small muted" title={client(report.Attempt)}>
+                      {client(report.Attempt)}
+                    </div>
+                  )}
+                </td>
+                <td>
+                  <div class="line">{report.Kind}</div>
+                  <div class="line small muted">{report.Note || (report.Origin === 'Delete' ? 'Delete was pressed in a client' : ' ')}</div>
+                  <Served how={attempted(report.Attempt)} />
+                </td>
                 <td>
                   <Pill tone={reportTones[report.Status]}>{report.Status}</Pill>
                 </td>

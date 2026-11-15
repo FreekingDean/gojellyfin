@@ -48172,8 +48172,92 @@
           "Replaceable": {
             "type": "boolean",
             "description": "Whether a downloader names a file for the title, so another copy can be asked for."
+          },
+          "Attempt": {
+            "$ref": "#/components/schemas/ReportAttempt"
           }
         }
+      }, "ReportAttempt": {
+        "type": "object",
+        "properties": {
+          "UserId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "UserName": {
+            "type": "string",
+            "nullable": true,
+            "description": "The account signed in on the client, as it was named then."
+          },
+          "DeviceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "DeviceName": {
+            "type": "string",
+            "nullable": true
+          },
+          "Client": {
+            "type": "string",
+            "nullable": true,
+            "description": "The app, as it names itself."
+          },
+          "ClientVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "RemoteAddress": {
+            "type": "string",
+            "nullable": true
+          },
+          "Build": {
+            "type": "string",
+            "nullable": true,
+            "description": "The gojellyfin build that served it."
+          },
+          "Direct": {
+            "type": "boolean",
+            "description": "The file was sent as it is.",
+            "nullable": true
+          },
+          "VideoDirect": {
+            "type": "boolean",
+            "description": "The picture was copied rather than encoded.",
+            "nullable": true
+          },
+          "AudioDirect": {
+            "type": "boolean",
+            "description": "The sound was copied rather than converted.",
+            "nullable": true
+          },
+          "Container": {
+            "type": "string",
+            "nullable": true
+          },
+          "VideoCodec": {
+            "type": "string",
+            "nullable": true
+          },
+          "AudioCodec": {
+            "type": "string",
+            "nullable": true
+          },
+          "Reasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The TranscodeReasons the plan recorded for this file."
+          },
+          "StartTicks": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "description": "Where in the file the stream started."
+          }
+        },
+        "description": "The client, the account and how the file was being served when the report was filed. Absent for a probe's report and for reports filed before this was recorded. The serving fields are absent for a report filed from a client rather than by a stream."
       }, "ReportFiling": {
         "type": "object",
         "required": [
