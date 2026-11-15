@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	"github.com/FreekingDean/gojellyfin/internal/store/keyframeindex"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/google/uuid"
 )
@@ -68,13 +69,15 @@ type ItemSourceEdges struct {
 	Streams []*MediaStream `json:"streams,omitempty"`
 	// Segments holds the value of the segments edge.
 	Segments []*MediaSegment `json:"segments,omitempty"`
+	// Keyframes holds the value of the keyframes edge.
+	Keyframes *KeyframeIndex `json:"keyframes,omitempty"`
 	// Reports holds the value of the reports edge.
 	Reports []*Report `json:"reports,omitempty"`
 	// PlanningSessions holds the value of the planning_sessions edge.
 	PlanningSessions []*Session `json:"planning_sessions,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [6]bool
+	loadedTypes [7]bool
 }
 
 // ItemOrErr returns the Item value or an error if the edge
@@ -117,10 +120,21 @@ func (e ItemSourceEdges) SegmentsOrErr() ([]*MediaSegment, error) {
 	return nil, &NotLoadedError{edge: "segments"}
 }
 
+// KeyframesOrErr returns the Keyframes value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ItemSourceEdges) KeyframesOrErr() (*KeyframeIndex, error) {
+	if e.Keyframes != nil {
+		return e.Keyframes, nil
+	} else if e.loadedTypes[4] {
+		return nil, &NotFoundError{label: keyframeindex.Label}
+	}
+	return nil, &NotLoadedError{edge: "keyframes"}
+}
+
 // ReportsOrErr returns the Reports value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemSourceEdges) ReportsOrErr() ([]*Report, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[5] {
 		return e.Reports, nil
 	}
 	return nil, &NotLoadedError{edge: "reports"}
@@ -129,7 +143,7 @@ func (e ItemSourceEdges) ReportsOrErr() ([]*Report, error) {
 // PlanningSessionsOrErr returns the PlanningSessions value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemSourceEdges) PlanningSessionsOrErr() ([]*Session, error) {
-	if e.loadedTypes[5] {
+	if e.loadedTypes[6] {
 		return e.PlanningSessions, nil
 	}
 	return nil, &NotLoadedError{edge: "planning_sessions"}
@@ -304,6 +318,11 @@ func (_m *ItemSource) QueryStreams() *MediaStreamQuery {
 // QuerySegments queries the "segments" edge of the ItemSource entity.
 func (_m *ItemSource) QuerySegments() *MediaSegmentQuery {
 	return NewItemSourceClient(_m.config).QuerySegments(_m)
+}
+
+// QueryKeyframes queries the "keyframes" edge of the ItemSource entity.
+func (_m *ItemSource) QueryKeyframes() *KeyframeIndexQuery {
+	return NewItemSourceClient(_m.config).QueryKeyframes(_m)
 }
 
 // QueryReports queries the "reports" edge of the ItemSource entity.

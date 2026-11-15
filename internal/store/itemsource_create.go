@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	"github.com/FreekingDean/gojellyfin/internal/store/keyframeindex"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediasegment"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/report"
@@ -268,6 +269,25 @@ func (_c *ItemSourceCreate) AddSegments(v ...*MediaSegment) *ItemSourceCreate {
 	return _c.AddSegmentIDs(ids...)
 }
 
+// SetKeyframesID sets the "keyframes" edge to the KeyframeIndex entity by ID.
+func (_c *ItemSourceCreate) SetKeyframesID(id uuid.UUID) *ItemSourceCreate {
+	_c.mutation.SetKeyframesID(id)
+	return _c
+}
+
+// SetNillableKeyframesID sets the "keyframes" edge to the KeyframeIndex entity by ID if the given value is not nil.
+func (_c *ItemSourceCreate) SetNillableKeyframesID(id *uuid.UUID) *ItemSourceCreate {
+	if id != nil {
+		_c = _c.SetKeyframesID(*id)
+	}
+	return _c
+}
+
+// SetKeyframes sets the "keyframes" edge to the KeyframeIndex entity.
+func (_c *ItemSourceCreate) SetKeyframes(v *KeyframeIndex) *ItemSourceCreate {
+	return _c.SetKeyframesID(v.ID)
+}
+
 // AddReportIDs adds the "reports" edge to the Report entity by IDs.
 func (_c *ItemSourceCreate) AddReportIDs(ids ...uuid.UUID) *ItemSourceCreate {
 	_c.mutation.AddReportIDs(ids...)
@@ -520,6 +540,22 @@ func (_c *ItemSourceCreate) createSpec() (*ItemSource, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(mediasegment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.KeyframesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   itemsource.KeyframesTable,
+			Columns: []string{itemsource.KeyframesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(keyframeindex.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

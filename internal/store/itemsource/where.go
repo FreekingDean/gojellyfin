@@ -1028,6 +1028,29 @@ func HasSegmentsWith(preds ...predicate.MediaSegment) predicate.ItemSource {
 	})
 }
 
+// HasKeyframes applies the HasEdge predicate on the "keyframes" edge.
+func HasKeyframes() predicate.ItemSource {
+	return predicate.ItemSource(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, KeyframesTable, KeyframesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasKeyframesWith applies the HasEdge predicate on the "keyframes" edge with a given conditions (other predicates).
+func HasKeyframesWith(preds ...predicate.KeyframeIndex) predicate.ItemSource {
+	return predicate.ItemSource(func(s *sql.Selector) {
+		step := newKeyframesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasReports applies the HasEdge predicate on the "reports" edge.
 func HasReports() predicate.ItemSource {
 	return predicate.ItemSource(func(s *sql.Selector) {
