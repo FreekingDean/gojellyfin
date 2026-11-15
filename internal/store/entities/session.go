@@ -4,6 +4,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
 )
 
@@ -31,5 +32,11 @@ func (Session) Edges() []ent.Edge {
 		edge.From("device", Device.Type).Ref("sessions").Unique().Required(),
 		edge.From("now_playing", Item.Type).Ref("playing_sessions").Unique().Field("now_playing_item_id"),
 		edge.To("sync_play_memberships", SyncPlayGroupMember.Type).Annotations(cascadeOnDelete),
+	}
+}
+
+func (Session) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("now_playing_item_id"),
 	}
 }
