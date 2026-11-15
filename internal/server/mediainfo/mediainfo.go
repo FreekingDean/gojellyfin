@@ -76,6 +76,7 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, profile api
 		MediaSources:  &[]api.MediaSourceInfo{},
 		PlaySessionId: apiutil.Ptr(session),
 	}
+	native := buildsItsOwnURL(profile)
 
 	plan, err := s.items.SourceFor(ctx, item, capabilities(profile))
 	if errors.Is(err, items.ErrNoSource) || errors.Is(err, items.ErrNoPlayable) {
@@ -94,7 +95,11 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, profile api
 	}
 
 	dto := mediaSourceDto(plan.Source)
-	served(&dto, plan, streamURL(root, itemID, plan, auth.AuthorizationFrom(ctx).Token, session, startTicks))
+	if native {
+		response.PlaySessionId = apiutil.Ptr(offered(&dto, plan, session))
+	} else {
+		served(&dto, plan, streamURL(root, itemID, plan, auth.AuthorizationFrom(ctx).Token, session, startTicks))
+	}
 
 	response.MediaSources = &[]api.MediaSourceInfo{dto}
 
@@ -107,7 +112,22 @@ func served(dto *api.MediaSourceInfo, plan items.Plan, url string) {
 	dto.SupportsTranscoding = apiutil.Ptr(true)
 	dto.TranscodingUrl = apiutil.Ptr(url)
 	dto.TranscodingContainer = apiutil.Ptr(plan.Container)
-	dto.TranscodingSubProtocol = apiutil.Ptr(api.MediaStreamProtocolHttp)
+}
+
+func offered(dto *api.MediaSourceInfo, plan items.Plan, session string) string {
+	dto.SupportsTranscoding = apiutil.Ptr(false)
+	if plan.Change == items.ChangeNone {
+		dto.SupportsDirectStream = apiutil.Ptr(false)
+
+		return session
+	}
+
+	dto.SupportsDirectPlay = apiutil.Ptr(false)
+	dto.Container = apiutil.Ptr(plan.Container)
+	instruction := conversion(plan)
+	instruction.Set(sessionKey, session)
+
+	return instruction.Encode()
 }
 
 func mediaSourceDto(source *items.MediaSource) api.MediaSourceInfo {
@@ -134,6 +154,7 @@ func mediaSourceDto(source *items.MediaSource) api.MediaSourceInfo {
 		SupportsDirectStream:       apiutil.Ptr(true),
 		SupportsTranscoding:        apiutil.Ptr(false),
 		SupportsProbing:            apiutil.Ptr(false),
+		TranscodingSubProtocol:     apiutil.Ptr(api.MediaStreamProtocolHttp),
 		IsRemote:                   apiutil.Ptr(false),
 		IsInfiniteStream:           apiutil.Ptr(false),
 		RequiresOpening:            apiutil.Ptr(false),

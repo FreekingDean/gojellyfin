@@ -1,9 +1,12 @@
+const fs = require('node:fs');
+
 const { test: base, expect } = require('@playwright/test');
 
 const { harness } = require('../../setup/harness');
 const { device, sleep } = require('../adb');
 const { api } = require('../api');
 const { reportFailure } = require('../failure');
+const { SERVER_LOG } = require('../../setup/boot');
 const { PACKAGE } = require('./app');
 
 // The phone app is a native screen that asks for the server and then
@@ -57,7 +60,60 @@ const test = base.extend({
 
     await use(phone);
   },
+
+  nativePlayer: async ({ signedIn: phone, harness: app }, use, testInfo) => {
+    await choosePlayer(phone, app, 'exoplayer');
+    await use(phone);
+    if (testInfo.status !== testInfo.expectedStatus) {
+      reportPlayback(phone);
+    }
+    await choosePlayer(phone, app, 'webui');
+  },
 });
+
+const PREFERENCES = `/data/data/${PACKAGE}/shared_prefs/${PACKAGE}_preferences.xml`;
+
+// The video player is a setting of the app's own, not of the page, and it
+// lives only in its shared preferences. An emulator image with Google APIs
+// carries su, so the file is rewritten as root and handed back to the app.
+async function choosePlayer(phone, app, player) {
+  phone.stop(PACKAGE);
+  const owner = phone.shell(`su 0 stat -c %u:%g /data/data/${PACKAGE}`).trim();
+  phone.shell(
+    `su 0 sed -i -e 's#<string name="pref_video_player_type">[^<]*</string>##' -e 's#</map>#<string name="pref_video_player_type">${player}</string></map>#' ${PREFERENCES}`,
+  );
+  phone.shell(`su 0 chown ${owner} ${PREFERENCES}`);
+  phone.shell(`su 0 chmod 660 ${PREFERENCES}`);
+  phone.shell(`su 0 restorecon ${PREFERENCES}`, { allowFailure: true });
+  const landed = await launch(phone, screens(app));
+  if (landed !== 'home') {
+    throw new Error(`the app came back on ${landed} rather than home after choosing the ${player} player`);
+  }
+}
+
+// The player's own story, told before the app is restarted on the way out:
+// what the server was asked for playback and what the app last said.
+function reportPlayback(phone) {
+  const asked = fs.existsSync(SERVER_LOG)
+    ? fs
+        .readFileSync(SERVER_LOG, 'utf8')
+        .split('\n')
+        .filter((line) => /PlaybackInfo|\/Videos\/|\/Sessions\/Playing|no direct play|nothing to play/i.test(line))
+        .slice(-40)
+        .join('\n')
+    : '(no server log)';
+  console.log(`What the server was asked for playback:\n${asked}`);
+  const crash = phone.adb(['logcat', '-d', '-b', 'crash', '-v', 'brief'], { allowFailure: true });
+  console.log(`What the device's crash log holds:\n${crash.split('\n').slice(-60).join('\n')}`);
+  const player = phone.adb(['logcat', '-d', '-v', 'brief'], { allowFailure: true });
+  console.log(
+    `What the player logged:\n${player
+      .split('\n')
+      .filter((line) => /ExoPlayer|MediaCodec|jellyfin|Player|Exception/i.test(line))
+      .slice(-80)
+      .join('\n')}`,
+  );
+}
 
 const screens = (app) => ({
   home: { label: app.library },
