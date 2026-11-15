@@ -145,6 +145,15 @@ migration:
       cpu: 500m
       memory: 256Mi
 
+# How long the API and streaming pods keep serving after they are told to stop,
+# before they close their listener. Removing a pod from its Service's endpoints
+# happens beside the SIGTERM rather than before it, so without the pause a
+# gateway still holding the old endpoints sends requests to a pod that has just
+# stopped accepting them. After it the server has 15s to finish what it holds;
+# a stream still running then is cut, and the client re-asks for it from where
+# it was, landing on another pod.
+drainSeconds: 5
+
 # Every Service this chart creates. They are ClusterIP addresses for the routes
 # below to name; an Ingress needs a controller and a class this chart cannot
 # guess.
@@ -182,6 +191,7 @@ pod:
   affinity: {}
 
 api:
+  # Ignored while autoscaling is enabled, as for the worker.
   replicas: 2
   # TRANSCODER_JOBS. Empty follows the cpu request, one encode to a core.
   transcoderJobs: ""
@@ -193,6 +203,24 @@ api:
     limits:
       cpu: "1"
       memory: 1Gi
+  # Every API pod is interchangeable: sessions, quick connect, SyncPlay and
+  # websocket delivery all live in Postgres, so a request can land anywhere and
+  # nothing needs session affinity.
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 80
+    behavior:
+      scaleDown:
+        stabilizationWindowSeconds: 300
+        policies:
+          - type: Pods
+            value: 1
+            periodSeconds: 120
+  podDisruptionBudget:
+    enabled: false
+    maxUnavailable: 1
   pod: {}
 
 # The same image and the same subcommand as the API. What makes these pods the
@@ -201,6 +229,7 @@ api:
 # paths itself.
 streaming:
   enabled: true
+  # Ignored while autoscaling is enabled.
   replicas: 3
   transcoderJobs: ""
   transcoderStallTimeout: 30s
@@ -211,6 +240,25 @@ streaming:
     limits:
       cpu: "2"
       memory: 2Gi
+  # An encode is one request from start to finish, so a stream needs no
+  # affinity either: a pod past its slots answers 503 and the gateway tries
+  # another. Scaling in cuts the streams on the pod that goes, and each client
+  # resumes on another, which is why scale-in is slow.
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 70
+    behavior:
+      scaleDown:
+        stabilizationWindowSeconds: 600
+        policies:
+          - type: Pods
+            value: 1
+            periodSeconds: 300
+  podDisruptionBudget:
+    enabled: false
+    maxUnavailable: 1
   pod: {}
 
 # `gojellyfin worker` — the Temporal worker. It needs temporal.hostPort;
@@ -263,6 +311,9 @@ worker:
 web:
   enabled: true
   replicas: 2
+  podDisruptionBudget:
+    enabled: false
+    maxUnavailable: 1
   client:
     # Pin this to the client `make e2e` drives, which is the only one the
     # suite has shown to work: a client newer than what is implemented calls

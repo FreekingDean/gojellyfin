@@ -67,6 +67,10 @@ jobs:
           render --set worker.enabled=true --set temporal.hostPort=temporal:7233 --set temporal.namespace=default \
             --set worker.autoscaling.enabled=true --set worker.autoscaling.behavior=null --set worker.stopTimeoutSeconds=0 \
             --set pod=null --set worker.pod.terminationGracePeriodSeconds=60
+          render --set api.autoscaling.enabled=true --set api.podDisruptionBudget.enabled=true \
+            --set streaming.autoscaling.enabled=true --set streaming.podDisruptionBudget.enabled=true \
+            --set web.podDisruptionBudget.enabled=true --set drainSeconds=20
+          render --set streaming.enabled=false --set streaming.autoscaling.enabled=true --set web.enabled=false --set web.podDisruptionBudget.enabled=true
           render --set worker.enabled=true --set temporal.hostPort=temporal:7233 --set temporal.namespace=default --set migration.enabled=true \
             --set-json 'env=[{"name":"HOST_IP","valueFrom":{"fieldRef":{"fieldPath":"status.hostIP"}}}]' \
             --set 'tracing.otlpEndpoint=http://$(HOST_IP):4318' \
@@ -91,6 +95,8 @@ jobs:
             --set worker.autoscaling.enabled=true --set worker.resources=null
           refuses --set worker.enabled=true --set temporal.hostPort=temporal:7233 --set temporal.namespace=default \
             --set worker.autoscaling.enabled=true --set worker.autoscaling.minReplicas=4 --set worker.autoscaling.maxReplicas=2
+          refuses --set api.autoscaling.enabled=true --set api.resources=null
+          refuses --set streaming.autoscaling.enabled=true --set streaming.autoscaling.minReplicas=7
           refuses --set oidc.issuerUrl=https://auth.example.test --set oidc.clientId=gojellyfin
 
   # The admin app is typechecked against the spec it is generated from, so a

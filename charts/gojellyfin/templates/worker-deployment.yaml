@@ -4,7 +4,7 @@
 {{- end }}
 {{- $component := "worker" }}
 {{- $grace := dict "terminationGracePeriodSeconds" (add (int .Values.worker.stopTimeoutSeconds) 30) }}
-{{- $pod := mergeOverwrite $grace (deepCopy (default dict .Values.pod)) (default dict .Values.worker.pod) }}
+{{- $pod := mergeOverwrite (include "gojellyfin.spread" (dict "root" $ "component" $component) | fromYaml) $grace (deepCopy (default dict .Values.pod)) (default dict .Values.worker.pod) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
