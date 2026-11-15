@@ -160,20 +160,10 @@ function focusedTitle(tv) {
 }
 
 // The last column can be shorter than the rest, and the grid will not move
-// right from a row that column does not reach, so the walk climbs to the top
-// of the column it is in and crosses there instead.
-async function climbToTop(move, focused) {
-  for (let climb = 0; climb < 10; climb++) {
-    const above = await move('up');
-    if (above.index === focused.index) {
-      break;
-    }
-    focused = above;
-  }
-
-  return focused;
-}
-
+// right from a row that column does not reach, so the walk climbs back to the
+// top of the column it is in and crosses there instead. It counts the climb
+// rather than climbing until nothing moves, because up from the top row
+// leaves the grid for the toolbar.
 async function walkGrid(tv, visit) {
   const move = async (name) => {
     tv.key(name);
@@ -183,6 +173,7 @@ async function walkGrid(tv, visit) {
   };
 
   let focused = focusedTitle(tv);
+  let top = focused.index;
   for (let step = 0; step < 50; step++) {
     if (visit(focused)) {
       return focused;
@@ -197,10 +188,11 @@ async function walkGrid(tv, visit) {
     }
     focused = await move('right');
     if (focused.index === before) {
-      focused = await climbToTop(move, focused);
-      const top = focused.index;
+      for (let climb = before - top; climb > 0; climb--) {
+        focused = await move('up');
+      }
       focused = await move('right');
-      if (focused.index === top) {
+      if (focused.index <= before) {
         return null;
       }
     }
@@ -214,6 +206,7 @@ async function walkGrid(tv, visit) {
     if (focused.index === before) {
       return null;
     }
+    top = focused.index;
   }
 
   return null;
