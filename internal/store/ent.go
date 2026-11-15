@@ -26,6 +26,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
 	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
+	"github.com/FreekingDean/gojellyfin/internal/store/mediasegment"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/person"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
@@ -120,6 +121,7 @@ func checkColumn(t, c string) error {
 			libraryitem.Table:         libraryitem.ValidColumn,
 			libraryoptions.Table:      libraryoptions.ValidColumn,
 			librarysource.Table:       librarysource.ValidColumn,
+			mediasegment.Table:        mediasegment.ValidColumn,
 			mediastream.Table:         mediastream.ValidColumn,
 			person.Table:              person.ValidColumn,
 			playlist.Table:            playlist.ValidColumn,

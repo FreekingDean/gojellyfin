@@ -30,6 +30,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/localization"
 	"github.com/FreekingDean/gojellyfin/internal/server/lyrics"
 	"github.com/FreekingDean/gojellyfin/internal/server/mediainfo"
+	"github.com/FreekingDean/gojellyfin/internal/server/mediasegment"
 	"github.com/FreekingDean/gojellyfin/internal/server/movies"
 	"github.com/FreekingDean/gojellyfin/internal/server/packages"
 	"github.com/FreekingDean/gojellyfin/internal/server/persons"
@@ -83,6 +84,7 @@ var Module = fx.Module(
 	livetv.Module,
 	localization.Module,
 	mediainfo.Module,
+	mediasegment.Module,
 	packages.Module,
 	persons.Module,
 	playlists.Module,

@@ -23,6 +23,7 @@ const (
 	TaskQueue     = "gojellyfin"
 	MetadataQueue = "gojellyfin-metadata"
 	RefreshQueue  = "gojellyfin-refresh"
+	SegmentsQueue = "gojellyfin-segments"
 )
 
 var ErrNotConfigured = errors.New("jobs: TEMPORAL_HOSTPORT is not set")

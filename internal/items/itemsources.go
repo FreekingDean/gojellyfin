@@ -11,6 +11,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	segmentmodel "github.com/FreekingDean/gojellyfin/internal/store/mediasegment"
 	streammodel "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 )
@@ -21,6 +22,10 @@ type (
 	StreamKind  = streammodel.Kind
 
 	VideoRangeType = streammodel.VideoRangeType
+
+	MediaSegment  = store.MediaSegmentModel
+	SegmentKind   = segmentmodel.Kind
+	SegmentOrigin = segmentmodel.Origin
 )
 
 func (s *Service) SaveSource(ctx context.Context, scanned MediaSource) (*MediaSource, error) {
@@ -84,6 +89,10 @@ func (s *Service) SaveProbe(ctx context.Context, item *Item, source *MediaSource
 			return fmt.Errorf("failed to save the probed media source: %w", err)
 		}
 
+		if err := saveChapterSegments(ctx, tx, source.ID, probe.Segments); err != nil {
+			return err
+		}
+
 		if _, err := tx.MediaStream.Delete().Where(streammodel.ItemSourceID(source.ID)).Exec(ctx); err != nil {
 			return fmt.Errorf("failed to clear media streams: %w", err)
 		}
@@ -123,6 +132,34 @@ func (s *Service) SaveProbe(ctx context.Context, item *Item, source *MediaSource
 	})
 }
 
+func saveChapterSegments(ctx context.Context, tx *store.Tx, sourceID uuid.UUID, found []*MediaSegment) error {
+	_, err := tx.MediaSegment.Delete().
+		Where(segmentmodel.ItemSourceID(sourceID), segmentmodel.OriginEQ(segmentmodel.OriginChapter)).
+		Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to clear chapter segments: %w", err)
+	}
+
+	if len(found) == 0 {
+		return nil
+	}
+
+	builders := make([]*store.MediaSegmentCreate, 0, len(found))
+	for _, segment := range found {
+		builders = append(builders, tx.MediaSegment.Create().
+			SetItemSourceID(sourceID).
+			SetKind(segment.Kind).
+			SetOrigin(segmentmodel.OriginChapter).
+			SetStartTicks(segment.StartTicks).
+			SetEndTicks(segment.EndTicks))
+	}
+	if err := tx.MediaSegment.CreateBulk(builders...).Exec(ctx); err != nil {
+		return fmt.Errorf("failed to create chapter segments: %w", err)
+	}
+
+	return nil
+}
+
 func (s *Service) SourceByID(ctx context.Context, id uuid.UUID) (*MediaSource, error) {
 	source, err := s.store.ItemSource.GetModel(ctx, id)
 	if err != nil {
@@ -156,6 +193,7 @@ func (s *Service) MediaSources(ctx context.Context, itemID uuid.UUID) ([]*MediaS
 		WithStreams(func(query *store.MediaStreamQuery) {
 			query.Order(streammodel.ByIndex())
 		}).
+		WithSegments().
 		AllModels(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query media sources: %w", err)

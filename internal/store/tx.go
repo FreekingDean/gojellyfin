@@ -42,6 +42,8 @@ type Tx struct {
 	LibraryOptions *LibraryOptionsClient
 	// LibrarySource is the client for interacting with the LibrarySource builders.
 	LibrarySource *LibrarySourceClient
+	// MediaSegment is the client for interacting with the MediaSegment builders.
+	MediaSegment *MediaSegmentClient
 	// MediaStream is the client for interacting with the MediaStream builders.
 	MediaStream *MediaStreamClient
 	// Person is the client for interacting with the Person builders.
@@ -227,6 +229,7 @@ func (tx *Tx) init() {
 	tx.LibraryItem = NewLibraryItemClient(tx.config)
 	tx.LibraryOptions = NewLibraryOptionsClient(tx.config)
 	tx.LibrarySource = NewLibrarySourceClient(tx.config)
+	tx.MediaSegment = NewMediaSegmentClient(tx.config)
 	tx.MediaStream = NewMediaStreamClient(tx.config)
 	tx.Person = NewPersonClient(tx.config)
 	tx.Playlist = NewPlaylistClient(tx.config)

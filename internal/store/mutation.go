@@ -27,6 +27,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
 	"github.com/FreekingDean/gojellyfin/internal/store/librarysource"
+	"github.com/FreekingDean/gojellyfin/internal/store/mediasegment"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/person"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
@@ -74,6 +75,7 @@ const (
 	TypeLibraryItem         = "LibraryItem"
 	TypeLibraryOptions      = "LibraryOptions"
 	TypeLibrarySource       = "LibrarySource"
+	TypeMediaSegment        = "MediaSegment"
 	TypeMediaStream         = "MediaStream"
 	TypePerson              = "Person"
 	TypePlaylist            = "Playlist"
@@ -10065,41 +10067,45 @@ func (m *ItemMutation) ResetEdge(name string) error {
 // ItemSourceMutation represents an operation that mutates the ItemSource nodes in the graph.
 type ItemSourceMutation struct {
 	config
-	op                  Op
-	typ                 string
-	id                  *uuid.UUID
-	created_at          *time.Time
-	updated_at          *time.Time
-	name                *string
-	_path               *string
-	container           *string
-	size                *int64
-	addsize             *int64
-	run_time_ticks      *int64
-	addrun_time_ticks   *int64
-	bitrate             *int32
-	addbitrate          *int32
-	date_modified       *time.Time
-	probed_at           *time.Time
-	external_id         *int64
-	addexternal_id      *int64
-	external_file_id    *int64
-	addexternal_file_id *int64
-	lyrics              *string
-	clearedFields       map[string]struct{}
-	item                *uuid.UUID
-	cleareditem         bool
-	source              *uuid.UUID
-	clearedsource       bool
-	streams             map[uuid.UUID]struct{}
-	removedstreams      map[uuid.UUID]struct{}
-	clearedstreams      bool
-	reports             map[uuid.UUID]struct{}
-	removedreports      map[uuid.UUID]struct{}
-	clearedreports      bool
-	done                bool
-	oldValue            func(context.Context) (*ItemSource, error)
-	predicates          []predicate.ItemSource
+	op                   Op
+	typ                  string
+	id                   *uuid.UUID
+	created_at           *time.Time
+	updated_at           *time.Time
+	name                 *string
+	_path                *string
+	container            *string
+	size                 *int64
+	addsize              *int64
+	run_time_ticks       *int64
+	addrun_time_ticks    *int64
+	bitrate              *int32
+	addbitrate           *int32
+	date_modified        *time.Time
+	probed_at            *time.Time
+	segments_detected_at *time.Time
+	external_id          *int64
+	addexternal_id       *int64
+	external_file_id     *int64
+	addexternal_file_id  *int64
+	lyrics               *string
+	clearedFields        map[string]struct{}
+	item                 *uuid.UUID
+	cleareditem          bool
+	source               *uuid.UUID
+	clearedsource        bool
+	streams              map[uuid.UUID]struct{}
+	removedstreams       map[uuid.UUID]struct{}
+	clearedstreams       bool
+	segments             map[uuid.UUID]struct{}
+	removedsegments      map[uuid.UUID]struct{}
+	clearedsegments      bool
+	reports              map[uuid.UUID]struct{}
+	removedreports       map[uuid.UUID]struct{}
+	clearedreports       bool
+	done                 bool
+	oldValue             func(context.Context) (*ItemSource, error)
+	predicates           []predicate.ItemSource
 }
 
 var _ ent.Mutation = (*ItemSourceMutation)(nil)
@@ -10779,6 +10785,55 @@ func (m *ItemSourceMutation) ResetProbedAt() {
 	delete(m.clearedFields, itemsource.FieldProbedAt)
 }
 
+// SetSegmentsDetectedAt sets the "segments_detected_at" field.
+func (m *ItemSourceMutation) SetSegmentsDetectedAt(t time.Time) {
+	m.segments_detected_at = &t
+}
+
+// SegmentsDetectedAt returns the value of the "segments_detected_at" field in the mutation.
+func (m *ItemSourceMutation) SegmentsDetectedAt() (r time.Time, exists bool) {
+	v := m.segments_detected_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSegmentsDetectedAt returns the old "segments_detected_at" field's value of the ItemSource entity.
+// If the ItemSource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemSourceMutation) OldSegmentsDetectedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSegmentsDetectedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSegmentsDetectedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSegmentsDetectedAt: %w", err)
+	}
+	return oldValue.SegmentsDetectedAt, nil
+}
+
+// ClearSegmentsDetectedAt clears the value of the "segments_detected_at" field.
+func (m *ItemSourceMutation) ClearSegmentsDetectedAt() {
+	m.segments_detected_at = nil
+	m.clearedFields[itemsource.FieldSegmentsDetectedAt] = struct{}{}
+}
+
+// SegmentsDetectedAtCleared returns if the "segments_detected_at" field was cleared in this mutation.
+func (m *ItemSourceMutation) SegmentsDetectedAtCleared() bool {
+	_, ok := m.clearedFields[itemsource.FieldSegmentsDetectedAt]
+	return ok
+}
+
+// ResetSegmentsDetectedAt resets all changes to the "segments_detected_at" field.
+func (m *ItemSourceMutation) ResetSegmentsDetectedAt() {
+	m.segments_detected_at = nil
+	delete(m.clearedFields, itemsource.FieldSegmentsDetectedAt)
+}
+
 // SetExternalID sets the "external_id" field.
 func (m *ItemSourceMutation) SetExternalID(i int64) {
 	m.external_id = &i
@@ -11076,6 +11131,60 @@ func (m *ItemSourceMutation) ResetStreams() {
 	m.removedstreams = nil
 }
 
+// AddSegmentIDs adds the "segments" edge to the MediaSegment entity by ids.
+func (m *ItemSourceMutation) AddSegmentIDs(ids ...uuid.UUID) {
+	if m.segments == nil {
+		m.segments = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.segments[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSegments clears the "segments" edge to the MediaSegment entity.
+func (m *ItemSourceMutation) ClearSegments() {
+	m.clearedsegments = true
+}
+
+// SegmentsCleared reports if the "segments" edge to the MediaSegment entity was cleared.
+func (m *ItemSourceMutation) SegmentsCleared() bool {
+	return m.clearedsegments
+}
+
+// RemoveSegmentIDs removes the "segments" edge to the MediaSegment entity by IDs.
+func (m *ItemSourceMutation) RemoveSegmentIDs(ids ...uuid.UUID) {
+	if m.removedsegments == nil {
+		m.removedsegments = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.segments, ids[i])
+		m.removedsegments[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSegments returns the removed IDs of the "segments" edge to the MediaSegment entity.
+func (m *ItemSourceMutation) RemovedSegmentsIDs() (ids []uuid.UUID) {
+	for id := range m.removedsegments {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SegmentsIDs returns the "segments" edge IDs in the mutation.
+func (m *ItemSourceMutation) SegmentsIDs() (ids []uuid.UUID) {
+	for id := range m.segments {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSegments resets all changes to the "segments" edge.
+func (m *ItemSourceMutation) ResetSegments() {
+	m.segments = nil
+	m.clearedsegments = false
+	m.removedsegments = nil
+}
+
 // AddReportIDs adds the "reports" edge to the Report entity by ids.
 func (m *ItemSourceMutation) AddReportIDs(ids ...uuid.UUID) {
 	if m.reports == nil {
@@ -11164,7 +11273,7 @@ func (m *ItemSourceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemSourceMutation) Fields() []string {
-	fields := make([]string, 0, 15)
+	fields := make([]string, 0, 16)
 	if m.created_at != nil {
 		fields = append(fields, itemsource.FieldCreatedAt)
 	}
@@ -11200,6 +11309,9 @@ func (m *ItemSourceMutation) Fields() []string {
 	}
 	if m.probed_at != nil {
 		fields = append(fields, itemsource.FieldProbedAt)
+	}
+	if m.segments_detected_at != nil {
+		fields = append(fields, itemsource.FieldSegmentsDetectedAt)
 	}
 	if m.external_id != nil {
 		fields = append(fields, itemsource.FieldExternalID)
@@ -11242,6 +11354,8 @@ func (m *ItemSourceMutation) Field(name string) (ent.Value, bool) {
 		return m.DateModified()
 	case itemsource.FieldProbedAt:
 		return m.ProbedAt()
+	case itemsource.FieldSegmentsDetectedAt:
+		return m.SegmentsDetectedAt()
 	case itemsource.FieldExternalID:
 		return m.ExternalID()
 	case itemsource.FieldExternalFileID:
@@ -11281,6 +11395,8 @@ func (m *ItemSourceMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldDateModified(ctx)
 	case itemsource.FieldProbedAt:
 		return m.OldProbedAt(ctx)
+	case itemsource.FieldSegmentsDetectedAt:
+		return m.OldSegmentsDetectedAt(ctx)
 	case itemsource.FieldExternalID:
 		return m.OldExternalID(ctx)
 	case itemsource.FieldExternalFileID:
@@ -11379,6 +11495,13 @@ func (m *ItemSourceMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetProbedAt(v)
+		return nil
+	case itemsource.FieldSegmentsDetectedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSegmentsDetectedAt(v)
 		return nil
 	case itemsource.FieldExternalID:
 		v, ok := value.(int64)
@@ -11512,6 +11635,9 @@ func (m *ItemSourceMutation) ClearedFields() []string {
 	if m.FieldCleared(itemsource.FieldProbedAt) {
 		fields = append(fields, itemsource.FieldProbedAt)
 	}
+	if m.FieldCleared(itemsource.FieldSegmentsDetectedAt) {
+		fields = append(fields, itemsource.FieldSegmentsDetectedAt)
+	}
 	if m.FieldCleared(itemsource.FieldExternalID) {
 		fields = append(fields, itemsource.FieldExternalID)
 	}
@@ -11552,6 +11678,9 @@ func (m *ItemSourceMutation) ClearField(name string) error {
 		return nil
 	case itemsource.FieldProbedAt:
 		m.ClearProbedAt()
+		return nil
+	case itemsource.FieldSegmentsDetectedAt:
+		m.ClearSegmentsDetectedAt()
 		return nil
 	case itemsource.FieldExternalID:
 		m.ClearExternalID()
@@ -11606,6 +11735,9 @@ func (m *ItemSourceMutation) ResetField(name string) error {
 	case itemsource.FieldProbedAt:
 		m.ResetProbedAt()
 		return nil
+	case itemsource.FieldSegmentsDetectedAt:
+		m.ResetSegmentsDetectedAt()
+		return nil
 	case itemsource.FieldExternalID:
 		m.ResetExternalID()
 		return nil
@@ -11621,7 +11753,7 @@ func (m *ItemSourceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ItemSourceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.item != nil {
 		edges = append(edges, itemsource.EdgeItem)
 	}
@@ -11630,6 +11762,9 @@ func (m *ItemSourceMutation) AddedEdges() []string {
 	}
 	if m.streams != nil {
 		edges = append(edges, itemsource.EdgeStreams)
+	}
+	if m.segments != nil {
+		edges = append(edges, itemsource.EdgeSegments)
 	}
 	if m.reports != nil {
 		edges = append(edges, itemsource.EdgeReports)
@@ -11655,6 +11790,12 @@ func (m *ItemSourceMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case itemsource.EdgeSegments:
+		ids := make([]ent.Value, 0, len(m.segments))
+		for id := range m.segments {
+			ids = append(ids, id)
+		}
+		return ids
 	case itemsource.EdgeReports:
 		ids := make([]ent.Value, 0, len(m.reports))
 		for id := range m.reports {
@@ -11667,9 +11808,12 @@ func (m *ItemSourceMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ItemSourceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.removedstreams != nil {
 		edges = append(edges, itemsource.EdgeStreams)
+	}
+	if m.removedsegments != nil {
+		edges = append(edges, itemsource.EdgeSegments)
 	}
 	if m.removedreports != nil {
 		edges = append(edges, itemsource.EdgeReports)
@@ -11687,6 +11831,12 @@ func (m *ItemSourceMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case itemsource.EdgeSegments:
+		ids := make([]ent.Value, 0, len(m.removedsegments))
+		for id := range m.removedsegments {
+			ids = append(ids, id)
+		}
+		return ids
 	case itemsource.EdgeReports:
 		ids := make([]ent.Value, 0, len(m.removedreports))
 		for id := range m.removedreports {
@@ -11699,7 +11849,7 @@ func (m *ItemSourceMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ItemSourceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.cleareditem {
 		edges = append(edges, itemsource.EdgeItem)
 	}
@@ -11708,6 +11858,9 @@ func (m *ItemSourceMutation) ClearedEdges() []string {
 	}
 	if m.clearedstreams {
 		edges = append(edges, itemsource.EdgeStreams)
+	}
+	if m.clearedsegments {
+		edges = append(edges, itemsource.EdgeSegments)
 	}
 	if m.clearedreports {
 		edges = append(edges, itemsource.EdgeReports)
@@ -11725,6 +11878,8 @@ func (m *ItemSourceMutation) EdgeCleared(name string) bool {
 		return m.clearedsource
 	case itemsource.EdgeStreams:
 		return m.clearedstreams
+	case itemsource.EdgeSegments:
+		return m.clearedsegments
 	case itemsource.EdgeReports:
 		return m.clearedreports
 	}
@@ -11757,6 +11912,9 @@ func (m *ItemSourceMutation) ResetEdge(name string) error {
 		return nil
 	case itemsource.EdgeStreams:
 		m.ResetStreams()
+		return nil
+	case itemsource.EdgeSegments:
+		m.ResetSegments()
 		return nil
 	case itemsource.EdgeReports:
 		m.ResetReports()
@@ -17246,6 +17404,798 @@ func (m *LibrarySourceMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown LibrarySource edge %s", name)
+}
+
+// MediaSegmentMutation represents an operation that mutates the MediaSegment nodes in the graph.
+type MediaSegmentMutation struct {
+	config
+	op             Op
+	typ            string
+	id             *uuid.UUID
+	created_at     *time.Time
+	updated_at     *time.Time
+	kind           *mediasegment.Kind
+	origin         *mediasegment.Origin
+	start_ticks    *int64
+	addstart_ticks *int64
+	end_ticks      *int64
+	addend_ticks   *int64
+	clearedFields  map[string]struct{}
+	source         *uuid.UUID
+	clearedsource  bool
+	done           bool
+	oldValue       func(context.Context) (*MediaSegment, error)
+	predicates     []predicate.MediaSegment
+}
+
+var _ ent.Mutation = (*MediaSegmentMutation)(nil)
+
+// mediasegmentOption allows management of the mutation configuration using functional options.
+type mediasegmentOption func(*MediaSegmentMutation)
+
+// newMediaSegmentMutation creates new mutation for the MediaSegment entity.
+func newMediaSegmentMutation(c config, op Op, opts ...mediasegmentOption) *MediaSegmentMutation {
+	m := &MediaSegmentMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeMediaSegment,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withMediaSegmentID sets the ID field of the mutation.
+func withMediaSegmentID(id uuid.UUID) mediasegmentOption {
+	return func(m *MediaSegmentMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *MediaSegment
+		)
+		m.oldValue = func(ctx context.Context) (*MediaSegment, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().MediaSegment.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withMediaSegment sets the old MediaSegment of the mutation.
+func withMediaSegment(node *MediaSegment) mediasegmentOption {
+	return func(m *MediaSegmentMutation) {
+		m.oldValue = func(context.Context) (*MediaSegment, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m MediaSegmentMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m MediaSegmentMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("store: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of MediaSegment entities.
+func (m *MediaSegmentMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *MediaSegmentMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *MediaSegmentMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().MediaSegment.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *MediaSegmentMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *MediaSegmentMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the MediaSegment entity.
+// If the MediaSegment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MediaSegmentMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *MediaSegmentMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *MediaSegmentMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *MediaSegmentMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the MediaSegment entity.
+// If the MediaSegment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MediaSegmentMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *MediaSegmentMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetItemSourceID sets the "item_source_id" field.
+func (m *MediaSegmentMutation) SetItemSourceID(u uuid.UUID) {
+	m.source = &u
+}
+
+// ItemSourceID returns the value of the "item_source_id" field in the mutation.
+func (m *MediaSegmentMutation) ItemSourceID() (r uuid.UUID, exists bool) {
+	v := m.source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldItemSourceID returns the old "item_source_id" field's value of the MediaSegment entity.
+// If the MediaSegment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MediaSegmentMutation) OldItemSourceID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldItemSourceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldItemSourceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldItemSourceID: %w", err)
+	}
+	return oldValue.ItemSourceID, nil
+}
+
+// ResetItemSourceID resets all changes to the "item_source_id" field.
+func (m *MediaSegmentMutation) ResetItemSourceID() {
+	m.source = nil
+}
+
+// SetKind sets the "kind" field.
+func (m *MediaSegmentMutation) SetKind(value mediasegment.Kind) {
+	m.kind = &value
+}
+
+// Kind returns the value of the "kind" field in the mutation.
+func (m *MediaSegmentMutation) Kind() (r mediasegment.Kind, exists bool) {
+	v := m.kind
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKind returns the old "kind" field's value of the MediaSegment entity.
+// If the MediaSegment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MediaSegmentMutation) OldKind(ctx context.Context) (v mediasegment.Kind, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKind is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKind requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKind: %w", err)
+	}
+	return oldValue.Kind, nil
+}
+
+// ResetKind resets all changes to the "kind" field.
+func (m *MediaSegmentMutation) ResetKind() {
+	m.kind = nil
+}
+
+// SetOrigin sets the "origin" field.
+func (m *MediaSegmentMutation) SetOrigin(value mediasegment.Origin) {
+	m.origin = &value
+}
+
+// Origin returns the value of the "origin" field in the mutation.
+func (m *MediaSegmentMutation) Origin() (r mediasegment.Origin, exists bool) {
+	v := m.origin
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOrigin returns the old "origin" field's value of the MediaSegment entity.
+// If the MediaSegment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MediaSegmentMutation) OldOrigin(ctx context.Context) (v mediasegment.Origin, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOrigin is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOrigin requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOrigin: %w", err)
+	}
+	return oldValue.Origin, nil
+}
+
+// ResetOrigin resets all changes to the "origin" field.
+func (m *MediaSegmentMutation) ResetOrigin() {
+	m.origin = nil
+}
+
+// SetStartTicks sets the "start_ticks" field.
+func (m *MediaSegmentMutation) SetStartTicks(i int64) {
+	m.start_ticks = &i
+	m.addstart_ticks = nil
+}
+
+// StartTicks returns the value of the "start_ticks" field in the mutation.
+func (m *MediaSegmentMutation) StartTicks() (r int64, exists bool) {
+	v := m.start_ticks
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStartTicks returns the old "start_ticks" field's value of the MediaSegment entity.
+// If the MediaSegment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MediaSegmentMutation) OldStartTicks(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStartTicks is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStartTicks requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStartTicks: %w", err)
+	}
+	return oldValue.StartTicks, nil
+}
+
+// AddStartTicks adds i to the "start_ticks" field.
+func (m *MediaSegmentMutation) AddStartTicks(i int64) {
+	if m.addstart_ticks != nil {
+		*m.addstart_ticks += i
+	} else {
+		m.addstart_ticks = &i
+	}
+}
+
+// AddedStartTicks returns the value that was added to the "start_ticks" field in this mutation.
+func (m *MediaSegmentMutation) AddedStartTicks() (r int64, exists bool) {
+	v := m.addstart_ticks
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetStartTicks resets all changes to the "start_ticks" field.
+func (m *MediaSegmentMutation) ResetStartTicks() {
+	m.start_ticks = nil
+	m.addstart_ticks = nil
+}
+
+// SetEndTicks sets the "end_ticks" field.
+func (m *MediaSegmentMutation) SetEndTicks(i int64) {
+	m.end_ticks = &i
+	m.addend_ticks = nil
+}
+
+// EndTicks returns the value of the "end_ticks" field in the mutation.
+func (m *MediaSegmentMutation) EndTicks() (r int64, exists bool) {
+	v := m.end_ticks
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEndTicks returns the old "end_ticks" field's value of the MediaSegment entity.
+// If the MediaSegment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MediaSegmentMutation) OldEndTicks(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEndTicks is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEndTicks requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEndTicks: %w", err)
+	}
+	return oldValue.EndTicks, nil
+}
+
+// AddEndTicks adds i to the "end_ticks" field.
+func (m *MediaSegmentMutation) AddEndTicks(i int64) {
+	if m.addend_ticks != nil {
+		*m.addend_ticks += i
+	} else {
+		m.addend_ticks = &i
+	}
+}
+
+// AddedEndTicks returns the value that was added to the "end_ticks" field in this mutation.
+func (m *MediaSegmentMutation) AddedEndTicks() (r int64, exists bool) {
+	v := m.addend_ticks
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetEndTicks resets all changes to the "end_ticks" field.
+func (m *MediaSegmentMutation) ResetEndTicks() {
+	m.end_ticks = nil
+	m.addend_ticks = nil
+}
+
+// SetSourceID sets the "source" edge to the ItemSource entity by id.
+func (m *MediaSegmentMutation) SetSourceID(id uuid.UUID) {
+	m.source = &id
+}
+
+// ClearSource clears the "source" edge to the ItemSource entity.
+func (m *MediaSegmentMutation) ClearSource() {
+	m.clearedsource = true
+	m.clearedFields[mediasegment.FieldItemSourceID] = struct{}{}
+}
+
+// SourceCleared reports if the "source" edge to the ItemSource entity was cleared.
+func (m *MediaSegmentMutation) SourceCleared() bool {
+	return m.clearedsource
+}
+
+// SourceID returns the "source" edge ID in the mutation.
+func (m *MediaSegmentMutation) SourceID() (id uuid.UUID, exists bool) {
+	if m.source != nil {
+		return *m.source, true
+	}
+	return
+}
+
+// SourceIDs returns the "source" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// SourceID instead. It exists only for internal usage by the builders.
+func (m *MediaSegmentMutation) SourceIDs() (ids []uuid.UUID) {
+	if id := m.source; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetSource resets all changes to the "source" edge.
+func (m *MediaSegmentMutation) ResetSource() {
+	m.source = nil
+	m.clearedsource = false
+}
+
+// Where appends a list predicates to the MediaSegmentMutation builder.
+func (m *MediaSegmentMutation) Where(ps ...predicate.MediaSegment) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the MediaSegmentMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *MediaSegmentMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.MediaSegment, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *MediaSegmentMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *MediaSegmentMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (MediaSegment).
+func (m *MediaSegmentMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *MediaSegmentMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.created_at != nil {
+		fields = append(fields, mediasegment.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, mediasegment.FieldUpdatedAt)
+	}
+	if m.source != nil {
+		fields = append(fields, mediasegment.FieldItemSourceID)
+	}
+	if m.kind != nil {
+		fields = append(fields, mediasegment.FieldKind)
+	}
+	if m.origin != nil {
+		fields = append(fields, mediasegment.FieldOrigin)
+	}
+	if m.start_ticks != nil {
+		fields = append(fields, mediasegment.FieldStartTicks)
+	}
+	if m.end_ticks != nil {
+		fields = append(fields, mediasegment.FieldEndTicks)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *MediaSegmentMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case mediasegment.FieldCreatedAt:
+		return m.CreatedAt()
+	case mediasegment.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case mediasegment.FieldItemSourceID:
+		return m.ItemSourceID()
+	case mediasegment.FieldKind:
+		return m.Kind()
+	case mediasegment.FieldOrigin:
+		return m.Origin()
+	case mediasegment.FieldStartTicks:
+		return m.StartTicks()
+	case mediasegment.FieldEndTicks:
+		return m.EndTicks()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *MediaSegmentMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case mediasegment.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case mediasegment.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case mediasegment.FieldItemSourceID:
+		return m.OldItemSourceID(ctx)
+	case mediasegment.FieldKind:
+		return m.OldKind(ctx)
+	case mediasegment.FieldOrigin:
+		return m.OldOrigin(ctx)
+	case mediasegment.FieldStartTicks:
+		return m.OldStartTicks(ctx)
+	case mediasegment.FieldEndTicks:
+		return m.OldEndTicks(ctx)
+	}
+	return nil, fmt.Errorf("unknown MediaSegment field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *MediaSegmentMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case mediasegment.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case mediasegment.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case mediasegment.FieldItemSourceID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetItemSourceID(v)
+		return nil
+	case mediasegment.FieldKind:
+		v, ok := value.(mediasegment.Kind)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKind(v)
+		return nil
+	case mediasegment.FieldOrigin:
+		v, ok := value.(mediasegment.Origin)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOrigin(v)
+		return nil
+	case mediasegment.FieldStartTicks:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStartTicks(v)
+		return nil
+	case mediasegment.FieldEndTicks:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEndTicks(v)
+		return nil
+	}
+	return fmt.Errorf("unknown MediaSegment field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *MediaSegmentMutation) AddedFields() []string {
+	var fields []string
+	if m.addstart_ticks != nil {
+		fields = append(fields, mediasegment.FieldStartTicks)
+	}
+	if m.addend_ticks != nil {
+		fields = append(fields, mediasegment.FieldEndTicks)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *MediaSegmentMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case mediasegment.FieldStartTicks:
+		return m.AddedStartTicks()
+	case mediasegment.FieldEndTicks:
+		return m.AddedEndTicks()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *MediaSegmentMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case mediasegment.FieldStartTicks:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddStartTicks(v)
+		return nil
+	case mediasegment.FieldEndTicks:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddEndTicks(v)
+		return nil
+	}
+	return fmt.Errorf("unknown MediaSegment numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *MediaSegmentMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *MediaSegmentMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *MediaSegmentMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown MediaSegment nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *MediaSegmentMutation) ResetField(name string) error {
+	switch name {
+	case mediasegment.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case mediasegment.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case mediasegment.FieldItemSourceID:
+		m.ResetItemSourceID()
+		return nil
+	case mediasegment.FieldKind:
+		m.ResetKind()
+		return nil
+	case mediasegment.FieldOrigin:
+		m.ResetOrigin()
+		return nil
+	case mediasegment.FieldStartTicks:
+		m.ResetStartTicks()
+		return nil
+	case mediasegment.FieldEndTicks:
+		m.ResetEndTicks()
+		return nil
+	}
+	return fmt.Errorf("unknown MediaSegment field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *MediaSegmentMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.source != nil {
+		edges = append(edges, mediasegment.EdgeSource)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *MediaSegmentMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case mediasegment.EdgeSource:
+		if id := m.source; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *MediaSegmentMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *MediaSegmentMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *MediaSegmentMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedsource {
+		edges = append(edges, mediasegment.EdgeSource)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *MediaSegmentMutation) EdgeCleared(name string) bool {
+	switch name {
+	case mediasegment.EdgeSource:
+		return m.clearedsource
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *MediaSegmentMutation) ClearEdge(name string) error {
+	switch name {
+	case mediasegment.EdgeSource:
+		m.ClearSource()
+		return nil
+	}
+	return fmt.Errorf("unknown MediaSegment unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *MediaSegmentMutation) ResetEdge(name string) error {
+	switch name {
+	case mediasegment.EdgeSource:
+		m.ResetSource()
+		return nil
+	}
+	return fmt.Errorf("unknown MediaSegment edge %s", name)
 }
 
 // MediaStreamMutation represents an operation that mutates the MediaStream nodes in the graph.

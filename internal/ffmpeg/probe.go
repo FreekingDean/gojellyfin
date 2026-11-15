@@ -15,8 +15,15 @@ const (
 )
 
 type Probe struct {
-	Format  Format   `json:"format"`
-	Streams []Stream `json:"streams"`
+	Format   Format    `json:"format"`
+	Streams  []Stream  `json:"streams"`
+	Chapters []Chapter `json:"chapters"`
+}
+
+type Chapter struct {
+	StartTime float64           `json:"start_time,string"`
+	EndTime   float64           `json:"end_time,string"`
+	Tags      map[string]string `json:"tags"`
 }
 
 type Format struct {
@@ -76,6 +83,7 @@ func (ffmpeg *FFMpeg) ProbeFile(ctx context.Context, path string) (*Probe, error
 		"-print_format", "json",
 		"-show_format",
 		"-show_streams",
+		"-show_chapters",
 		path,
 	)
 	cmd.WaitDelay = probeWaitDelay
