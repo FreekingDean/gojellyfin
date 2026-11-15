@@ -228,6 +228,8 @@ jobs:
 
       - name: Test
         uses: reactivecircus/android-emulator-runner@v2
+        env:
+          CLIENT_RELEASE: ${{ github.event_name == 'schedule' && 'latest' || '' }}
         with:
           api-level: 34
           target: ${{ matrix.target }}

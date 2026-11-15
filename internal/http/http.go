@@ -25,6 +25,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/link"
 	"github.com/FreekingDean/gojellyfin/internal/server/report"
+	"github.com/FreekingDean/gojellyfin/internal/server/request"
 	"github.com/FreekingDean/gojellyfin/internal/server/socket"
 	"github.com/FreekingDean/gojellyfin/internal/server/sso"
 	"github.com/FreekingDean/gojellyfin/internal/server/stream"
@@ -290,6 +291,7 @@ func Register(
 	links *link.Handler,
 	administration *admin.Handler,
 	reporting *report.Handler,
+	requesting *request.Handler,
 	hooks *webhook.Handler,
 	streams *stream.Handler,
 	signOn *sso.Handler,
@@ -301,6 +303,7 @@ func Register(
 	links.Register(m)
 	administration.Register(m)
 	reporting.Register(m)
+	requesting.Register(m)
 	hooks.Register(m)
 	for _, pattern := range sso.Routes {
 		m.HandleFunc(pattern, signOn.Serve)
