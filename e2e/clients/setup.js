@@ -12,10 +12,14 @@ const MEDIA_SECONDS = 180;
 // Boots the harness for an app on whatever device adb lists. The device's own
 // 127.0.0.1 is forwarded to the harness, so the app is given the same address
 // the server publishes and the posters live at.
-function emulatorSetup({ PACKAGE, apk }) {
+function emulatorSetup({ PACKAGE, apk, display }) {
   return async function globalSetup() {
     const phone = device();
     phone.adb(['wait-for-device']);
+    if (display) {
+      phone.shell(`wm size ${display.size}`);
+      phone.shell(`wm density ${display.density}`);
+    }
     // A freshly booted image compiles its apps in the background for minutes,
     // slow enough that the first tests time out, so that is done first.
     try {
