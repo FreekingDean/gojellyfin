@@ -192,21 +192,14 @@ function device(serial = process.env.ANDROID_SERIAL) {
     }
   }
 
-  async function fill(matcher, text, { perCharacter = false } = {}) {
+  async function fill(matcher, text) {
     const field = await tapOn(matcher);
     await waitFor({ ...matcher, focused: true }, { timeout: 10000 }).catch(() => {});
     if (field.text) {
       key('moveEnd');
       key('deleteBack', field.text.length);
     }
-    if (perCharacter) {
-      for (const character of text) {
-        type(character);
-        await sleep(60);
-      }
-    } else {
-      type(text);
-    }
+    type(text);
     await sleep(500);
     await hideKeyboard();
   }
@@ -237,6 +230,7 @@ function device(serial = process.env.ANDROID_SERIAL) {
     type,
     fill,
     hideKeyboard,
+    keyboardShown,
     screenshot,
     logcat,
     summary: () => summary(dump()),
