@@ -409,7 +409,7 @@ func (s shelf) episode(ctx context.Context, itemID uuid.UUID, title string) erro
 	source, err := s.catalogue.SaveSource(ctx, items.MediaSource{
 		SourceID:     s.sourceID,
 		ItemID:       itemID,
-		Path:         filepath.Join(s.media, slugify(title)+".webm"),
+		Path:         filepath.Join(s.media, slugify(title)+".mkv"),
 		Name:         title,
 		DateModified: &modified,
 	})
