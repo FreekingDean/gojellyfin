@@ -112,7 +112,6 @@ func served(dto *api.MediaSourceInfo, plan items.Plan, url string) {
 	dto.SupportsTranscoding = apiutil.Ptr(true)
 	dto.TranscodingUrl = apiutil.Ptr(url)
 	dto.TranscodingContainer = apiutil.Ptr(plan.Container)
-	dto.TranscodingSubProtocol = apiutil.Ptr(api.MediaStreamProtocolHttp)
 }
 
 func offered(dto *api.MediaSourceInfo, plan items.Plan, session string) string {
@@ -155,6 +154,7 @@ func mediaSourceDto(source *items.MediaSource) api.MediaSourceInfo {
 		SupportsDirectStream:       apiutil.Ptr(true),
 		SupportsTranscoding:        apiutil.Ptr(false),
 		SupportsProbing:            apiutil.Ptr(false),
+		TranscodingSubProtocol:     apiutil.Ptr(api.MediaStreamProtocolHttp),
 		IsRemote:                   apiutil.Ptr(false),
 		IsInfiniteStream:           apiutil.Ptr(false),
 		RequiresOpening:            apiutil.Ptr(false),

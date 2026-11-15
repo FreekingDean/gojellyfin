@@ -35,6 +35,9 @@ func TestServer_GetPostedPlaybackInfo_NativeAndroid(t *testing.T) {
 		if apiutil.Deref(source.SupportsTranscoding) || source.TranscodingUrl != nil {
 			t.Error("the player was offered a progressive transcode it refuses")
 		}
+		if source.TranscodingSubProtocol == nil {
+			t.Error("TranscodingSubProtocol is missing, and the Kotlin SDK refuses a source without it")
+		}
 	})
 
 	for _, tc := range []struct {
