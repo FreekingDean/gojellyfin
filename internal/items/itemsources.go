@@ -222,7 +222,19 @@ func (s *Service) DeleteSourcesNotInPaths(
 	sourceID uuid.UUID,
 	paths []string,
 ) ([]uuid.UUID, error) {
-	where := []predicate.ItemSource{sourcemodel.SourceID(sourceID)}
+	return s.deleteSourcesNotIn(ctx, paths, sourcemodel.SourceID(sourceID))
+}
+
+func (s *Service) DeleteScopedSourcesNotInPaths(
+	ctx context.Context,
+	sourceID uuid.UUID,
+	scope Scope,
+	paths []string,
+) ([]uuid.UUID, error) {
+	return s.deleteSourcesNotIn(ctx, paths, sourcemodel.SourceID(sourceID), sourcemodel.HasItemWith(scope.items()))
+}
+
+func (s *Service) deleteSourcesNotIn(ctx context.Context, paths []string, where ...predicate.ItemSource) ([]uuid.UUID, error) {
 	if len(paths) > 0 {
 		where = append(where, sourcemodel.PathNotIn(paths...))
 	}

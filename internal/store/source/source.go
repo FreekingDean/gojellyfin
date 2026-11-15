@@ -39,6 +39,12 @@ const (
 	FieldRequestRootFolder = "request_root_folder"
 	// FieldRequestTag holds the string denoting the request_tag field in the database.
 	FieldRequestTag = "request_tag"
+	// FieldWebhookSecret holds the string denoting the webhook_secret field in the database.
+	FieldWebhookSecret = "webhook_secret"
+	// FieldWebhookRegisteredAt holds the string denoting the webhook_registered_at field in the database.
+	FieldWebhookRegisteredAt = "webhook_registered_at"
+	// FieldWebhookError holds the string denoting the webhook_error field in the database.
+	FieldWebhookError = "webhook_error"
 	// EdgePaths holds the string denoting the paths edge name in mutations.
 	EdgePaths = "paths"
 	// EdgeLibraries holds the string denoting the libraries edge name in mutations.
@@ -103,6 +109,9 @@ var Columns = []string{
 	FieldRequestProfileID,
 	FieldRequestRootFolder,
 	FieldRequestTag,
+	FieldWebhookSecret,
+	FieldWebhookRegisteredAt,
+	FieldWebhookError,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -122,6 +131,8 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultWebhookSecret holds the default value on creation for the "webhook_secret" field.
+	DefaultWebhookSecret func() string
 )
 
 // Kind defines the type for the "kind" enum field.
@@ -213,6 +224,21 @@ func ByRequestRootFolder(opts ...sql.OrderTermOption) OrderOption {
 // ByRequestTag orders the results by the request_tag field.
 func ByRequestTag(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRequestTag, opts...).ToFunc()
+}
+
+// ByWebhookSecret orders the results by the webhook_secret field.
+func ByWebhookSecret(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWebhookSecret, opts...).ToFunc()
+}
+
+// ByWebhookRegisteredAt orders the results by the webhook_registered_at field.
+func ByWebhookRegisteredAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWebhookRegisteredAt, opts...).ToFunc()
+}
+
+// ByWebhookError orders the results by the webhook_error field.
+func ByWebhookError(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWebhookError, opts...).ToFunc()
 }
 
 // ByPathsCount orders the results by paths count.

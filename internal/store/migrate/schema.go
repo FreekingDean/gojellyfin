@@ -904,6 +904,9 @@ var (
 		{Name: "request_profile_id", Type: field.TypeInt, Nullable: true},
 		{Name: "request_root_folder", Type: field.TypeString, Nullable: true},
 		{Name: "request_tag", Type: field.TypeString, Nullable: true},
+		{Name: "webhook_secret", Type: field.TypeString},
+		{Name: "webhook_registered_at", Type: field.TypeTime, Nullable: true},
+		{Name: "webhook_error", Type: field.TypeString, Nullable: true},
 	}
 	// SourcesTable holds the schema information for the "sources" table.
 	SourcesTable = &schema.Table{

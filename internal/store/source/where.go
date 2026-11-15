@@ -111,6 +111,21 @@ func RequestTag(v string) predicate.Source {
 	return predicate.Source(sql.FieldEQ(FieldRequestTag, v))
 }
 
+// WebhookSecret applies equality check predicate on the "webhook_secret" field. It's identical to WebhookSecretEQ.
+func WebhookSecret(v string) predicate.Source {
+	return predicate.Source(sql.FieldEQ(FieldWebhookSecret, v))
+}
+
+// WebhookRegisteredAt applies equality check predicate on the "webhook_registered_at" field. It's identical to WebhookRegisteredAtEQ.
+func WebhookRegisteredAt(v time.Time) predicate.Source {
+	return predicate.Source(sql.FieldEQ(FieldWebhookRegisteredAt, v))
+}
+
+// WebhookError applies equality check predicate on the "webhook_error" field. It's identical to WebhookErrorEQ.
+func WebhookError(v string) predicate.Source {
+	return predicate.Source(sql.FieldEQ(FieldWebhookError, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Source {
 	return predicate.Source(sql.FieldEQ(FieldCreatedAt, v))
@@ -804,6 +819,196 @@ func RequestTagEqualFold(v string) predicate.Source {
 // RequestTagContainsFold applies the ContainsFold predicate on the "request_tag" field.
 func RequestTagContainsFold(v string) predicate.Source {
 	return predicate.Source(sql.FieldContainsFold(FieldRequestTag, v))
+}
+
+// WebhookSecretEQ applies the EQ predicate on the "webhook_secret" field.
+func WebhookSecretEQ(v string) predicate.Source {
+	return predicate.Source(sql.FieldEQ(FieldWebhookSecret, v))
+}
+
+// WebhookSecretNEQ applies the NEQ predicate on the "webhook_secret" field.
+func WebhookSecretNEQ(v string) predicate.Source {
+	return predicate.Source(sql.FieldNEQ(FieldWebhookSecret, v))
+}
+
+// WebhookSecretIn applies the In predicate on the "webhook_secret" field.
+func WebhookSecretIn(vs ...string) predicate.Source {
+	return predicate.Source(sql.FieldIn(FieldWebhookSecret, vs...))
+}
+
+// WebhookSecretNotIn applies the NotIn predicate on the "webhook_secret" field.
+func WebhookSecretNotIn(vs ...string) predicate.Source {
+	return predicate.Source(sql.FieldNotIn(FieldWebhookSecret, vs...))
+}
+
+// WebhookSecretGT applies the GT predicate on the "webhook_secret" field.
+func WebhookSecretGT(v string) predicate.Source {
+	return predicate.Source(sql.FieldGT(FieldWebhookSecret, v))
+}
+
+// WebhookSecretGTE applies the GTE predicate on the "webhook_secret" field.
+func WebhookSecretGTE(v string) predicate.Source {
+	return predicate.Source(sql.FieldGTE(FieldWebhookSecret, v))
+}
+
+// WebhookSecretLT applies the LT predicate on the "webhook_secret" field.
+func WebhookSecretLT(v string) predicate.Source {
+	return predicate.Source(sql.FieldLT(FieldWebhookSecret, v))
+}
+
+// WebhookSecretLTE applies the LTE predicate on the "webhook_secret" field.
+func WebhookSecretLTE(v string) predicate.Source {
+	return predicate.Source(sql.FieldLTE(FieldWebhookSecret, v))
+}
+
+// WebhookSecretContains applies the Contains predicate on the "webhook_secret" field.
+func WebhookSecretContains(v string) predicate.Source {
+	return predicate.Source(sql.FieldContains(FieldWebhookSecret, v))
+}
+
+// WebhookSecretHasPrefix applies the HasPrefix predicate on the "webhook_secret" field.
+func WebhookSecretHasPrefix(v string) predicate.Source {
+	return predicate.Source(sql.FieldHasPrefix(FieldWebhookSecret, v))
+}
+
+// WebhookSecretHasSuffix applies the HasSuffix predicate on the "webhook_secret" field.
+func WebhookSecretHasSuffix(v string) predicate.Source {
+	return predicate.Source(sql.FieldHasSuffix(FieldWebhookSecret, v))
+}
+
+// WebhookSecretEqualFold applies the EqualFold predicate on the "webhook_secret" field.
+func WebhookSecretEqualFold(v string) predicate.Source {
+	return predicate.Source(sql.FieldEqualFold(FieldWebhookSecret, v))
+}
+
+// WebhookSecretContainsFold applies the ContainsFold predicate on the "webhook_secret" field.
+func WebhookSecretContainsFold(v string) predicate.Source {
+	return predicate.Source(sql.FieldContainsFold(FieldWebhookSecret, v))
+}
+
+// WebhookRegisteredAtEQ applies the EQ predicate on the "webhook_registered_at" field.
+func WebhookRegisteredAtEQ(v time.Time) predicate.Source {
+	return predicate.Source(sql.FieldEQ(FieldWebhookRegisteredAt, v))
+}
+
+// WebhookRegisteredAtNEQ applies the NEQ predicate on the "webhook_registered_at" field.
+func WebhookRegisteredAtNEQ(v time.Time) predicate.Source {
+	return predicate.Source(sql.FieldNEQ(FieldWebhookRegisteredAt, v))
+}
+
+// WebhookRegisteredAtIn applies the In predicate on the "webhook_registered_at" field.
+func WebhookRegisteredAtIn(vs ...time.Time) predicate.Source {
+	return predicate.Source(sql.FieldIn(FieldWebhookRegisteredAt, vs...))
+}
+
+// WebhookRegisteredAtNotIn applies the NotIn predicate on the "webhook_registered_at" field.
+func WebhookRegisteredAtNotIn(vs ...time.Time) predicate.Source {
+	return predicate.Source(sql.FieldNotIn(FieldWebhookRegisteredAt, vs...))
+}
+
+// WebhookRegisteredAtGT applies the GT predicate on the "webhook_registered_at" field.
+func WebhookRegisteredAtGT(v time.Time) predicate.Source {
+	return predicate.Source(sql.FieldGT(FieldWebhookRegisteredAt, v))
+}
+
+// WebhookRegisteredAtGTE applies the GTE predicate on the "webhook_registered_at" field.
+func WebhookRegisteredAtGTE(v time.Time) predicate.Source {
+	return predicate.Source(sql.FieldGTE(FieldWebhookRegisteredAt, v))
+}
+
+// WebhookRegisteredAtLT applies the LT predicate on the "webhook_registered_at" field.
+func WebhookRegisteredAtLT(v time.Time) predicate.Source {
+	return predicate.Source(sql.FieldLT(FieldWebhookRegisteredAt, v))
+}
+
+// WebhookRegisteredAtLTE applies the LTE predicate on the "webhook_registered_at" field.
+func WebhookRegisteredAtLTE(v time.Time) predicate.Source {
+	return predicate.Source(sql.FieldLTE(FieldWebhookRegisteredAt, v))
+}
+
+// WebhookRegisteredAtIsNil applies the IsNil predicate on the "webhook_registered_at" field.
+func WebhookRegisteredAtIsNil() predicate.Source {
+	return predicate.Source(sql.FieldIsNull(FieldWebhookRegisteredAt))
+}
+
+// WebhookRegisteredAtNotNil applies the NotNil predicate on the "webhook_registered_at" field.
+func WebhookRegisteredAtNotNil() predicate.Source {
+	return predicate.Source(sql.FieldNotNull(FieldWebhookRegisteredAt))
+}
+
+// WebhookErrorEQ applies the EQ predicate on the "webhook_error" field.
+func WebhookErrorEQ(v string) predicate.Source {
+	return predicate.Source(sql.FieldEQ(FieldWebhookError, v))
+}
+
+// WebhookErrorNEQ applies the NEQ predicate on the "webhook_error" field.
+func WebhookErrorNEQ(v string) predicate.Source {
+	return predicate.Source(sql.FieldNEQ(FieldWebhookError, v))
+}
+
+// WebhookErrorIn applies the In predicate on the "webhook_error" field.
+func WebhookErrorIn(vs ...string) predicate.Source {
+	return predicate.Source(sql.FieldIn(FieldWebhookError, vs...))
+}
+
+// WebhookErrorNotIn applies the NotIn predicate on the "webhook_error" field.
+func WebhookErrorNotIn(vs ...string) predicate.Source {
+	return predicate.Source(sql.FieldNotIn(FieldWebhookError, vs...))
+}
+
+// WebhookErrorGT applies the GT predicate on the "webhook_error" field.
+func WebhookErrorGT(v string) predicate.Source {
+	return predicate.Source(sql.FieldGT(FieldWebhookError, v))
+}
+
+// WebhookErrorGTE applies the GTE predicate on the "webhook_error" field.
+func WebhookErrorGTE(v string) predicate.Source {
+	return predicate.Source(sql.FieldGTE(FieldWebhookError, v))
+}
+
+// WebhookErrorLT applies the LT predicate on the "webhook_error" field.
+func WebhookErrorLT(v string) predicate.Source {
+	return predicate.Source(sql.FieldLT(FieldWebhookError, v))
+}
+
+// WebhookErrorLTE applies the LTE predicate on the "webhook_error" field.
+func WebhookErrorLTE(v string) predicate.Source {
+	return predicate.Source(sql.FieldLTE(FieldWebhookError, v))
+}
+
+// WebhookErrorContains applies the Contains predicate on the "webhook_error" field.
+func WebhookErrorContains(v string) predicate.Source {
+	return predicate.Source(sql.FieldContains(FieldWebhookError, v))
+}
+
+// WebhookErrorHasPrefix applies the HasPrefix predicate on the "webhook_error" field.
+func WebhookErrorHasPrefix(v string) predicate.Source {
+	return predicate.Source(sql.FieldHasPrefix(FieldWebhookError, v))
+}
+
+// WebhookErrorHasSuffix applies the HasSuffix predicate on the "webhook_error" field.
+func WebhookErrorHasSuffix(v string) predicate.Source {
+	return predicate.Source(sql.FieldHasSuffix(FieldWebhookError, v))
+}
+
+// WebhookErrorIsNil applies the IsNil predicate on the "webhook_error" field.
+func WebhookErrorIsNil() predicate.Source {
+	return predicate.Source(sql.FieldIsNull(FieldWebhookError))
+}
+
+// WebhookErrorNotNil applies the NotNil predicate on the "webhook_error" field.
+func WebhookErrorNotNil() predicate.Source {
+	return predicate.Source(sql.FieldNotNull(FieldWebhookError))
+}
+
+// WebhookErrorEqualFold applies the EqualFold predicate on the "webhook_error" field.
+func WebhookErrorEqualFold(v string) predicate.Source {
+	return predicate.Source(sql.FieldEqualFold(FieldWebhookError, v))
+}
+
+// WebhookErrorContainsFold applies the ContainsFold predicate on the "webhook_error" field.
+func WebhookErrorContainsFold(v string) predicate.Source {
+	return predicate.Source(sql.FieldContainsFold(FieldWebhookError, v))
 }
 
 // HasPaths applies the HasEdge predicate on the "paths" edge.

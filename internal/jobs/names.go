@@ -4,6 +4,7 @@ const (
 	RefreshLibraries     = "RefreshLibraries"
 	RefreshLibrary       = "RefreshLibrary"
 	RefreshLibrarySource = "RefreshLibrarySource"
+	RefreshSourceTitle   = "RefreshSourceTitle"
 	RefreshItem          = "RefreshItem"
 	RefreshMetadata      = "RefreshMetadata"
 	RefreshItemMetadata  = "RefreshItemMetadata"
@@ -18,4 +19,5 @@ const (
 	ParamItem    = "item"
 	ParamScope   = "scope"
 	ParamForce   = "force"
+	ParamTitle   = "title"
 )

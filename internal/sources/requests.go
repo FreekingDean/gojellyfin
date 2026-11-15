@@ -23,6 +23,8 @@ type Wanted struct {
 	TvdbID int
 }
 
+const maxErrorBody = 1024
+
 type record = map[string]any
 
 func (s *Service) Requestable(ctx context.Context, kind Kind) ([]Source, error) {
@@ -155,6 +157,11 @@ func (s *Service) send(ctx context.Context, source Source, method, path string, 
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		said, _ := io.ReadAll(io.LimitReader(resp.Body, maxErrorBody))
+		if explained := strings.TrimSpace(string(said)); explained != "" {
+			return fmt.Errorf("%s answered %s for %s %s: %s", parsed.Host, resp.Status, method, path, explained)
+		}
+
 		return fmt.Errorf("%s answered %s for %s %s", parsed.Host, resp.Status, method, path)
 	}
 

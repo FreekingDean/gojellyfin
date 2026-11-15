@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -37,6 +38,8 @@ const (
 var (
 	ErrInvalid  = errors.New("invalid source")
 	ErrNotFound = errors.New("no such source")
+
+	errAbsent = errors.New("the instance has no such record")
 )
 
 type Service struct {
@@ -244,6 +247,8 @@ func (s *Service) Create(ctx context.Context, entry Configured) (Configured, err
 		return Configured{}, err
 	}
 
+	s.hookQuietly(ctx, id)
+
 	return s.Get(ctx, id)
 }
 
@@ -304,10 +309,18 @@ func (s *Service) Update(ctx context.Context, id uuid.UUID, entry Configured) (C
 		return Configured{}, err
 	}
 
+	s.hookQuietly(ctx, id)
+
 	return s.Get(ctx, id)
 }
 
 func (s *Service) Delete(ctx context.Context, id uuid.UUID) error {
+	if source, err := s.store.Source.Query().Where(sourcemodel.ID(id)).OnlyModel(ctx); err == nil {
+		if err := s.unhook(ctx, *source); err != nil {
+			log.Printf("failed to remove the webhook from %s: %v", source.Name, err)
+		}
+	}
+
 	return s.store.WithTx(ctx, func(tx *store.Tx) error {
 		before, err := boundLibraries(ctx, tx, id)
 		if err != nil {
