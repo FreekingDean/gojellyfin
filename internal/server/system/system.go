@@ -67,12 +67,8 @@ func (s *Server) GetSystemInfo(ctx context.Context, request api.GetSystemInfoReq
 		OperatingSystemDisplayName: apiutil.Ptr(s.system.OperatingSystem()),
 		CanSelfRestart:             apiutil.Ptr(false),
 		CanLaunchWebBrowser:        apiutil.Ptr(false),
-		WebPath:                    apiutil.Ptr("/gojelly/jellyfin-web"),
-		ItemsByNamePath:            apiutil.Ptr("/gojelly/items"),
-		CachePath:                  apiutil.Ptr(apiutil.OrElse(configuration.CachePath, "/gojelly/cache")),
-		LogPath:                    apiutil.Ptr("/gojelly/logs"),
-		InternalMetadataPath:       apiutil.Ptr(apiutil.OrElse(configuration.MetadataPath, "/gojelly/metadata")),
-		TranscodingTempPath:        apiutil.Ptr("/gojelly/transcoding"),
+		CachePath:                  configuration.CachePath,
+		InternalMetadataPath:       configuration.MetadataPath,
 		HasUpdateAvailable:         apiutil.Ptr(false),
 		EncoderLocation:            apiutil.Ptr(""),
 		SystemArchitecture:         apiutil.Ptr("amd64"),
@@ -115,7 +111,7 @@ func (s *Server) PostPingSystem(ctx context.Context, request api.PostPingSystemR
 }
 
 func (s *Server) GetEndpointInfo(ctx context.Context, request api.GetEndpointInfoRequestObject) (api.GetEndpointInfoResponseObject, error) {
-	return api.GetEndpointInfo200JSONResponse(endpointInfo(auth.AuthorizationFrom(ctx).RemoteAddr)), nil
+	return api.GetEndpointInfo200JSONResponse(endpointInfo(auth.AuthorizationFrom(ctx))), nil
 }
 
 func (s *Server) UpdateBrandingConfiguration(ctx context.Context, request api.UpdateBrandingConfigurationRequestObject) (api.UpdateBrandingConfigurationResponseObject, error) {

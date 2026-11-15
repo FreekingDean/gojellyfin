@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -57,6 +58,9 @@ func parseAuthorization(r *http.Request) auth.Authorization {
 	}
 
 	authorization := auth.Authorization{RemoteAddr: r.RemoteAddr}
+	if local, ok := r.Context().Value(http.LocalAddrContextKey).(net.Addr); ok {
+		authorization.LocalAddr = local.String()
+	}
 	for _, pair := range strings.Split(strings.TrimPrefix(header, "MediaBrowser"), ",") {
 		key, value, ok := strings.Cut(pair, "=")
 		if !ok {
