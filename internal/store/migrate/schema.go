@@ -313,7 +313,6 @@ var (
 		{Name: "external_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "external_file_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "lyrics", Type: field.TypeString, Nullable: true, Size: 2147483647},
-		{Name: "keyframes", Type: field.TypeJSON, Nullable: true},
 		{Name: "item_id", Type: field.TypeUUID},
 		{Name: "source_id", Type: field.TypeUUID},
 	}
@@ -325,13 +324,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "item_sources_items_item_sources",
-				Columns:    []*schema.Column{ItemSourcesColumns[16]},
+				Columns:    []*schema.Column{ItemSourcesColumns[15]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "item_sources_sources_files",
-				Columns:    []*schema.Column{ItemSourcesColumns[17]},
+				Columns:    []*schema.Column{ItemSourcesColumns[16]},
 				RefColumns: []*schema.Column{SourcesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -340,7 +339,7 @@ var (
 			{
 				Name:    "itemsource_item_id_source_id",
 				Unique:  true,
-				Columns: []*schema.Column{ItemSourcesColumns[16], ItemSourcesColumns[17]},
+				Columns: []*schema.Column{ItemSourcesColumns[15], ItemSourcesColumns[16]},
 			},
 			{
 				Name:    "itemsource_path",
@@ -350,7 +349,29 @@ var (
 			{
 				Name:    "itemsource_source_id_external_file_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemSourcesColumns[17], ItemSourcesColumns[13]},
+				Columns: []*schema.Column{ItemSourcesColumns[16], ItemSourcesColumns[13]},
+			},
+		},
+	}
+	// KeyframeIndexesColumns holds the columns for the "keyframe_indexes" table.
+	KeyframeIndexesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "ticks", Type: field.TypeJSON},
+		{Name: "item_source_id", Type: field.TypeUUID, Unique: true},
+	}
+	// KeyframeIndexesTable holds the schema information for the "keyframe_indexes" table.
+	KeyframeIndexesTable = &schema.Table{
+		Name:       "keyframe_indexes",
+		Columns:    KeyframeIndexesColumns,
+		PrimaryKey: []*schema.Column{KeyframeIndexesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "keyframe_indexes_item_sources_keyframes",
+				Columns:    []*schema.Column{KeyframeIndexesColumns[4]},
+				RefColumns: []*schema.Column{ItemSourcesColumns[0]},
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -1346,6 +1367,7 @@ var (
 		ImagesTable,
 		ItemsTable,
 		ItemSourcesTable,
+		KeyframeIndexesTable,
 		LibrariesTable,
 		LibraryItemsTable,
 		LibraryOptionsTable,
@@ -1391,6 +1413,7 @@ func init() {
 	}
 	ItemSourcesTable.ForeignKeys[0].RefTable = ItemsTable
 	ItemSourcesTable.ForeignKeys[1].RefTable = SourcesTable
+	KeyframeIndexesTable.ForeignKeys[0].RefTable = ItemSourcesTable
 	LibraryItemsTable.ForeignKeys[0].RefTable = ItemsTable
 	LibraryItemsTable.ForeignKeys[1].RefTable = LibrariesTable
 	LibraryItemsTable.ForeignKeys[2].RefTable = SourcesTable

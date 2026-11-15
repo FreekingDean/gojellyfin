@@ -16,7 +16,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/reports"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
-	itemsourcemodel "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	reportmodel "github.com/FreekingDean/gojellyfin/internal/store/report"
 	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
@@ -145,20 +144,25 @@ func TestProber(t *testing.T) {
 			}
 		}
 
-		stored, err := client.ItemSource.Get(ctx, filmFile)
+		library := items.New(client)
+		stored, err := library.Keyframes(ctx, filmFile)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if want := []int64{0, 20_000_000}; !slices.Equal(stored.Keyframes, want) {
-			t.Errorf("film keyframes = %v, want %v", stored.Keyframes, want)
+		if want := []int64{0, 20_000_000}; !slices.Equal(stored, want) {
+			t.Errorf("film keyframes = %v, want %v", stored, want)
 		}
 
-		indexed, err := client.ItemSource.Query().Where(itemsourcemodel.ID(songFile), itemsourcemodel.KeyframesIsNil()).Exist(ctx)
+		if err := prober.ProbeSource(ctx, filmFile); err != nil {
+			t.Fatalf("failed to probe the film again: %v", err)
+		}
+
+		songIndex, err := library.Keyframes(ctx, songFile)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !indexed {
-			t.Errorf("a song was stored with a keyframe index")
+		if songIndex != nil {
+			t.Errorf("a song was stored with a keyframe index %v", songIndex)
 		}
 	})
 }

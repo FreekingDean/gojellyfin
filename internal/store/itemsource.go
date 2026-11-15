@@ -3,7 +3,6 @@
 package store
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -12,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	"github.com/FreekingDean/gojellyfin/internal/store/keyframeindex"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/google/uuid"
 )
@@ -53,8 +53,6 @@ type ItemSource struct {
 	ExternalFileID *int64 `json:"external_file_id,omitempty"`
 	// Lyrics holds the value of the "lyrics" field.
 	Lyrics string `json:"lyrics,omitempty"`
-	// Keyframes holds the value of the "keyframes" field.
-	Keyframes []int64 `json:"keyframes,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ItemSourceQuery when eager-loading is set.
 	Edges        ItemSourceEdges `json:"edges"`
@@ -71,11 +69,13 @@ type ItemSourceEdges struct {
 	Streams []*MediaStream `json:"streams,omitempty"`
 	// Segments holds the value of the segments edge.
 	Segments []*MediaSegment `json:"segments,omitempty"`
+	// Keyframes holds the value of the keyframes edge.
+	Keyframes *KeyframeIndex `json:"keyframes,omitempty"`
 	// Reports holds the value of the reports edge.
 	Reports []*Report `json:"reports,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [6]bool
 }
 
 // ItemOrErr returns the Item value or an error if the edge
@@ -118,10 +118,21 @@ func (e ItemSourceEdges) SegmentsOrErr() ([]*MediaSegment, error) {
 	return nil, &NotLoadedError{edge: "segments"}
 }
 
+// KeyframesOrErr returns the Keyframes value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ItemSourceEdges) KeyframesOrErr() (*KeyframeIndex, error) {
+	if e.Keyframes != nil {
+		return e.Keyframes, nil
+	} else if e.loadedTypes[4] {
+		return nil, &NotFoundError{label: keyframeindex.Label}
+	}
+	return nil, &NotLoadedError{edge: "keyframes"}
+}
+
 // ReportsOrErr returns the Reports value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemSourceEdges) ReportsOrErr() ([]*Report, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[5] {
 		return e.Reports, nil
 	}
 	return nil, &NotLoadedError{edge: "reports"}
@@ -132,8 +143,6 @@ func (*ItemSource) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case itemsource.FieldKeyframes:
-			values[i] = new([]byte)
 		case itemsource.FieldSize, itemsource.FieldRunTimeTicks, itemsource.FieldBitrate, itemsource.FieldExternalID, itemsource.FieldExternalFileID:
 			values[i] = new(sql.NullInt64)
 		case itemsource.FieldName, itemsource.FieldPath, itemsource.FieldContainer, itemsource.FieldLyrics:
@@ -267,14 +276,6 @@ func (_m *ItemSource) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Lyrics = value.String
 			}
-		case itemsource.FieldKeyframes:
-			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field keyframes", values[i])
-			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &_m.Keyframes); err != nil {
-					return fmt.Errorf("unmarshal field keyframes: %w", err)
-				}
-			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -306,6 +307,11 @@ func (_m *ItemSource) QueryStreams() *MediaStreamQuery {
 // QuerySegments queries the "segments" edge of the ItemSource entity.
 func (_m *ItemSource) QuerySegments() *MediaSegmentQuery {
 	return NewItemSourceClient(_m.config).QuerySegments(_m)
+}
+
+// QueryKeyframes queries the "keyframes" edge of the ItemSource entity.
+func (_m *ItemSource) QueryKeyframes() *KeyframeIndexQuery {
+	return NewItemSourceClient(_m.config).QueryKeyframes(_m)
 }
 
 // QueryReports queries the "reports" edge of the ItemSource entity.
@@ -399,9 +405,6 @@ func (_m *ItemSource) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("lyrics=")
 	builder.WriteString(_m.Lyrics)
-	builder.WriteString(", ")
-	builder.WriteString("keyframes=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Keyframes))
 	builder.WriteByte(')')
 	return builder.String()
 }

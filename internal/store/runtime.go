@@ -16,6 +16,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	"github.com/FreekingDean/gojellyfin/internal/store/keyframeindex"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
@@ -204,6 +205,18 @@ func init() {
 	itemsource.DefaultUpdatedAt = itemsourceDescUpdatedAt.Default.(func() time.Time)
 	// itemsource.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	itemsource.UpdateDefaultUpdatedAt = itemsourceDescUpdatedAt.UpdateDefault.(func() time.Time)
+	keyframeindexFields := entities.KeyframeIndex{}.Fields()
+	_ = keyframeindexFields
+	// keyframeindexDescCreatedAt is the schema descriptor for created_at field.
+	keyframeindexDescCreatedAt := keyframeindexFields[1].Descriptor()
+	// keyframeindex.DefaultCreatedAt holds the default value on creation for the created_at field.
+	keyframeindex.DefaultCreatedAt = keyframeindexDescCreatedAt.Default.(func() time.Time)
+	// keyframeindexDescUpdatedAt is the schema descriptor for updated_at field.
+	keyframeindexDescUpdatedAt := keyframeindexFields[2].Descriptor()
+	// keyframeindex.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	keyframeindex.DefaultUpdatedAt = keyframeindexDescUpdatedAt.Default.(func() time.Time)
+	// keyframeindex.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	keyframeindex.UpdateDefaultUpdatedAt = keyframeindexDescUpdatedAt.UpdateDefault.(func() time.Time)
 	libraryFields := entities.Library{}.Fields()
 	_ = libraryFields
 	// libraryDescCreatedAt is the schema descriptor for created_at field.

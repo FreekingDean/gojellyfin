@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	"github.com/FreekingDean/gojellyfin/internal/store/keyframeindex"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediasegment"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/report"
@@ -221,12 +222,6 @@ func (_c *ItemSourceCreate) SetNillableLyrics(v *string) *ItemSourceCreate {
 	return _c
 }
 
-// SetKeyframes sets the "keyframes" field.
-func (_c *ItemSourceCreate) SetKeyframes(v []int64) *ItemSourceCreate {
-	_c.mutation.SetKeyframes(v)
-	return _c
-}
-
 // SetID sets the "id" field.
 func (_c *ItemSourceCreate) SetID(v uuid.UUID) *ItemSourceCreate {
 	_c.mutation.SetID(v)
@@ -271,6 +266,25 @@ func (_c *ItemSourceCreate) AddSegments(v ...*MediaSegment) *ItemSourceCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddSegmentIDs(ids...)
+}
+
+// SetKeyframesID sets the "keyframes" edge to the KeyframeIndex entity by ID.
+func (_c *ItemSourceCreate) SetKeyframesID(id uuid.UUID) *ItemSourceCreate {
+	_c.mutation.SetKeyframesID(id)
+	return _c
+}
+
+// SetNillableKeyframesID sets the "keyframes" edge to the KeyframeIndex entity by ID if the given value is not nil.
+func (_c *ItemSourceCreate) SetNillableKeyframesID(id *uuid.UUID) *ItemSourceCreate {
+	if id != nil {
+		_c = _c.SetKeyframesID(*id)
+	}
+	return _c
+}
+
+// SetKeyframes sets the "keyframes" edge to the KeyframeIndex entity.
+func (_c *ItemSourceCreate) SetKeyframes(v *KeyframeIndex) *ItemSourceCreate {
+	return _c.SetKeyframesID(v.ID)
 }
 
 // AddReportIDs adds the "reports" edge to the Report entity by IDs.
@@ -451,10 +465,6 @@ func (_c *ItemSourceCreate) createSpec() (*ItemSource, *sqlgraph.CreateSpec) {
 		_spec.SetField(itemsource.FieldLyrics, field.TypeString, value)
 		_node.Lyrics = value
 	}
-	if value, ok := _c.mutation.Keyframes(); ok {
-		_spec.SetField(itemsource.FieldKeyframes, field.TypeJSON, value)
-		_node.Keyframes = value
-	}
 	if nodes := _c.mutation.ItemIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -514,6 +524,22 @@ func (_c *ItemSourceCreate) createSpec() (*ItemSource, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(mediasegment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.KeyframesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   itemsource.KeyframesTable,
+			Columns: []string{itemsource.KeyframesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(keyframeindex.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -868,24 +894,6 @@ func (u *ItemSourceUpsert) UpdateLyrics() *ItemSourceUpsert {
 // ClearLyrics clears the value of the "lyrics" field.
 func (u *ItemSourceUpsert) ClearLyrics() *ItemSourceUpsert {
 	u.SetNull(itemsource.FieldLyrics)
-	return u
-}
-
-// SetKeyframes sets the "keyframes" field.
-func (u *ItemSourceUpsert) SetKeyframes(v []int64) *ItemSourceUpsert {
-	u.Set(itemsource.FieldKeyframes, v)
-	return u
-}
-
-// UpdateKeyframes sets the "keyframes" field to the value that was provided on create.
-func (u *ItemSourceUpsert) UpdateKeyframes() *ItemSourceUpsert {
-	u.SetExcluded(itemsource.FieldKeyframes)
-	return u
-}
-
-// ClearKeyframes clears the value of the "keyframes" field.
-func (u *ItemSourceUpsert) ClearKeyframes() *ItemSourceUpsert {
-	u.SetNull(itemsource.FieldKeyframes)
 	return u
 }
 
@@ -1263,27 +1271,6 @@ func (u *ItemSourceUpsertOne) UpdateLyrics() *ItemSourceUpsertOne {
 func (u *ItemSourceUpsertOne) ClearLyrics() *ItemSourceUpsertOne {
 	return u.Update(func(s *ItemSourceUpsert) {
 		s.ClearLyrics()
-	})
-}
-
-// SetKeyframes sets the "keyframes" field.
-func (u *ItemSourceUpsertOne) SetKeyframes(v []int64) *ItemSourceUpsertOne {
-	return u.Update(func(s *ItemSourceUpsert) {
-		s.SetKeyframes(v)
-	})
-}
-
-// UpdateKeyframes sets the "keyframes" field to the value that was provided on create.
-func (u *ItemSourceUpsertOne) UpdateKeyframes() *ItemSourceUpsertOne {
-	return u.Update(func(s *ItemSourceUpsert) {
-		s.UpdateKeyframes()
-	})
-}
-
-// ClearKeyframes clears the value of the "keyframes" field.
-func (u *ItemSourceUpsertOne) ClearKeyframes() *ItemSourceUpsertOne {
-	return u.Update(func(s *ItemSourceUpsert) {
-		s.ClearKeyframes()
 	})
 }
 
@@ -1828,27 +1815,6 @@ func (u *ItemSourceUpsertBulk) UpdateLyrics() *ItemSourceUpsertBulk {
 func (u *ItemSourceUpsertBulk) ClearLyrics() *ItemSourceUpsertBulk {
 	return u.Update(func(s *ItemSourceUpsert) {
 		s.ClearLyrics()
-	})
-}
-
-// SetKeyframes sets the "keyframes" field.
-func (u *ItemSourceUpsertBulk) SetKeyframes(v []int64) *ItemSourceUpsertBulk {
-	return u.Update(func(s *ItemSourceUpsert) {
-		s.SetKeyframes(v)
-	})
-}
-
-// UpdateKeyframes sets the "keyframes" field to the value that was provided on create.
-func (u *ItemSourceUpsertBulk) UpdateKeyframes() *ItemSourceUpsertBulk {
-	return u.Update(func(s *ItemSourceUpsert) {
-		s.UpdateKeyframes()
-	})
-}
-
-// ClearKeyframes clears the value of the "keyframes" field.
-func (u *ItemSourceUpsertBulk) ClearKeyframes() *ItemSourceUpsertBulk {
-	return u.Update(func(s *ItemSourceUpsert) {
-		s.ClearKeyframes()
 	})
 }
 

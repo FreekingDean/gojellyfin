@@ -26,6 +26,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	"github.com/FreekingDean/gojellyfin/internal/store/keyframeindex"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
@@ -80,6 +81,8 @@ type Client struct {
 	Item *ItemClient
 	// ItemSource is the client for interacting with the ItemSource builders.
 	ItemSource *ItemSourceClient
+	// KeyframeIndex is the client for interacting with the KeyframeIndex builders.
+	KeyframeIndex *KeyframeIndexClient
 	// Library is the client for interacting with the Library builders.
 	Library *LibraryClient
 	// LibraryItem is the client for interacting with the LibraryItem builders.
@@ -151,6 +154,7 @@ func (c *Client) init() {
 	c.Image = NewImageClient(c.config)
 	c.Item = NewItemClient(c.config)
 	c.ItemSource = NewItemSourceClient(c.config)
+	c.KeyframeIndex = NewKeyframeIndexClient(c.config)
 	c.Library = NewLibraryClient(c.config)
 	c.LibraryItem = NewLibraryItemClient(c.config)
 	c.LibraryOptions = NewLibraryOptionsClient(c.config)
@@ -278,6 +282,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Image:               NewImageClient(cfg),
 		Item:                NewItemClient(cfg),
 		ItemSource:          NewItemSourceClient(cfg),
+		KeyframeIndex:       NewKeyframeIndexClient(cfg),
 		Library:             NewLibraryClient(cfg),
 		LibraryItem:         NewLibraryItemClient(cfg),
 		LibraryOptions:      NewLibraryOptionsClient(cfg),
@@ -332,6 +337,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Image:               NewImageClient(cfg),
 		Item:                NewItemClient(cfg),
 		ItemSource:          NewItemSourceClient(cfg),
+		KeyframeIndex:       NewKeyframeIndexClient(cfg),
 		Library:             NewLibraryClient(cfg),
 		LibraryItem:         NewLibraryItemClient(cfg),
 		LibraryOptions:      NewLibraryOptionsClient(cfg),
@@ -387,8 +393,8 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.ActivityLogEntry, c.ApiKey, c.Configuration, c.Credit, c.Device,
-		c.DisplayPreferences, c.Genre, c.Image, c.Item, c.ItemSource, c.Library,
-		c.LibraryItem, c.LibraryOptions, c.LibrarySource, c.MediaSegment,
+		c.DisplayPreferences, c.Genre, c.Image, c.Item, c.ItemSource, c.KeyframeIndex,
+		c.Library, c.LibraryItem, c.LibraryOptions, c.LibrarySource, c.MediaSegment,
 		c.MediaStream, c.Person, c.Playlist, c.PlaylistEntry, c.PlaylistShare,
 		c.QuickConnectRequest, c.Report, c.Request, c.RequestSubmission, c.Session,
 		c.Source, c.SourcePath, c.Studio, c.SyncPlayGroup, c.SyncPlayGroupMember,
@@ -404,8 +410,8 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.ActivityLogEntry, c.ApiKey, c.Configuration, c.Credit, c.Device,
-		c.DisplayPreferences, c.Genre, c.Image, c.Item, c.ItemSource, c.Library,
-		c.LibraryItem, c.LibraryOptions, c.LibrarySource, c.MediaSegment,
+		c.DisplayPreferences, c.Genre, c.Image, c.Item, c.ItemSource, c.KeyframeIndex,
+		c.Library, c.LibraryItem, c.LibraryOptions, c.LibrarySource, c.MediaSegment,
 		c.MediaStream, c.Person, c.Playlist, c.PlaylistEntry, c.PlaylistShare,
 		c.QuickConnectRequest, c.Report, c.Request, c.RequestSubmission, c.Session,
 		c.Source, c.SourcePath, c.Studio, c.SyncPlayGroup, c.SyncPlayGroupMember,
@@ -439,6 +445,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Item.mutate(ctx, m)
 	case *ItemSourceMutation:
 		return c.ItemSource.mutate(ctx, m)
+	case *KeyframeIndexMutation:
+		return c.KeyframeIndex.mutate(ctx, m)
 	case *LibraryMutation:
 		return c.Library.mutate(ctx, m)
 	case *LibraryItemMutation:
@@ -2231,6 +2239,22 @@ func (c *ItemSourceClient) QuerySegments(_m *ItemSource) *MediaSegmentQuery {
 	return query
 }
 
+// QueryKeyframes queries the keyframes edge of a ItemSource.
+func (c *ItemSourceClient) QueryKeyframes(_m *ItemSource) *KeyframeIndexQuery {
+	query := (&KeyframeIndexClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(itemsource.Table, itemsource.FieldID, id),
+			sqlgraph.To(keyframeindex.Table, keyframeindex.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, itemsource.KeyframesTable, itemsource.KeyframesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryReports queries the reports edge of a ItemSource.
 func (c *ItemSourceClient) QueryReports(_m *ItemSource) *ReportQuery {
 	query := (&ReportClient{config: c.config}).Query()
@@ -2269,6 +2293,155 @@ func (c *ItemSourceClient) mutate(ctx context.Context, m *ItemSourceMutation) (V
 		return (&ItemSourceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("store: unknown ItemSource mutation op: %q", m.Op())
+	}
+}
+
+// KeyframeIndexClient is a client for the KeyframeIndex schema.
+type KeyframeIndexClient struct {
+	config
+}
+
+// NewKeyframeIndexClient returns a client for the KeyframeIndex from the given config.
+func NewKeyframeIndexClient(c config) *KeyframeIndexClient {
+	return &KeyframeIndexClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `keyframeindex.Hooks(f(g(h())))`.
+func (c *KeyframeIndexClient) Use(hooks ...Hook) {
+	c.hooks.KeyframeIndex = append(c.hooks.KeyframeIndex, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `keyframeindex.Intercept(f(g(h())))`.
+func (c *KeyframeIndexClient) Intercept(interceptors ...Interceptor) {
+	c.inters.KeyframeIndex = append(c.inters.KeyframeIndex, interceptors...)
+}
+
+// Create returns a builder for creating a KeyframeIndex entity.
+func (c *KeyframeIndexClient) Create() *KeyframeIndexCreate {
+	mutation := newKeyframeIndexMutation(c.config, OpCreate)
+	return &KeyframeIndexCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of KeyframeIndex entities.
+func (c *KeyframeIndexClient) CreateBulk(builders ...*KeyframeIndexCreate) *KeyframeIndexCreateBulk {
+	return &KeyframeIndexCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *KeyframeIndexClient) MapCreateBulk(slice any, setFunc func(*KeyframeIndexCreate, int)) *KeyframeIndexCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &KeyframeIndexCreateBulk{err: fmt.Errorf("calling to KeyframeIndexClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*KeyframeIndexCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &KeyframeIndexCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for KeyframeIndex.
+func (c *KeyframeIndexClient) Update() *KeyframeIndexUpdate {
+	mutation := newKeyframeIndexMutation(c.config, OpUpdate)
+	return &KeyframeIndexUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *KeyframeIndexClient) UpdateOne(_m *KeyframeIndex) *KeyframeIndexUpdateOne {
+	mutation := newKeyframeIndexMutation(c.config, OpUpdateOne, withKeyframeIndex(_m))
+	return &KeyframeIndexUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *KeyframeIndexClient) UpdateOneID(id uuid.UUID) *KeyframeIndexUpdateOne {
+	mutation := newKeyframeIndexMutation(c.config, OpUpdateOne, withKeyframeIndexID(id))
+	return &KeyframeIndexUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for KeyframeIndex.
+func (c *KeyframeIndexClient) Delete() *KeyframeIndexDelete {
+	mutation := newKeyframeIndexMutation(c.config, OpDelete)
+	return &KeyframeIndexDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *KeyframeIndexClient) DeleteOne(_m *KeyframeIndex) *KeyframeIndexDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *KeyframeIndexClient) DeleteOneID(id uuid.UUID) *KeyframeIndexDeleteOne {
+	builder := c.Delete().Where(keyframeindex.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &KeyframeIndexDeleteOne{builder}
+}
+
+// Query returns a query builder for KeyframeIndex.
+func (c *KeyframeIndexClient) Query() *KeyframeIndexQuery {
+	return &KeyframeIndexQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeKeyframeIndex},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a KeyframeIndex entity by its id.
+func (c *KeyframeIndexClient) Get(ctx context.Context, id uuid.UUID) (*KeyframeIndex, error) {
+	return c.Query().Where(keyframeindex.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *KeyframeIndexClient) GetX(ctx context.Context, id uuid.UUID) *KeyframeIndex {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QuerySource queries the source edge of a KeyframeIndex.
+func (c *KeyframeIndexClient) QuerySource(_m *KeyframeIndex) *ItemSourceQuery {
+	query := (&ItemSourceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(keyframeindex.Table, keyframeindex.FieldID, id),
+			sqlgraph.To(itemsource.Table, itemsource.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, keyframeindex.SourceTable, keyframeindex.SourceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *KeyframeIndexClient) Hooks() []Hook {
+	return c.hooks.KeyframeIndex
+}
+
+// Interceptors returns the client interceptors.
+func (c *KeyframeIndexClient) Interceptors() []Interceptor {
+	return c.inters.KeyframeIndex
+}
+
+func (c *KeyframeIndexClient) mutate(ctx context.Context, m *KeyframeIndexMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&KeyframeIndexCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&KeyframeIndexUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&KeyframeIndexUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&KeyframeIndexDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("store: unknown KeyframeIndex mutation op: %q", m.Op())
 	}
 }
 
@@ -6529,20 +6702,20 @@ func (c *UserPolicyClient) mutate(ctx context.Context, m *UserPolicyMutation) (V
 type (
 	hooks struct {
 		ActivityLogEntry, ApiKey, Configuration, Credit, Device, DisplayPreferences,
-		Genre, Image, Item, ItemSource, Library, LibraryItem, LibraryOptions,
-		LibrarySource, MediaSegment, MediaStream, Person, Playlist, PlaylistEntry,
-		PlaylistShare, QuickConnectRequest, Report, Request, RequestSubmission,
-		Session, Source, SourcePath, Studio, SyncPlayGroup, SyncPlayGroupMember,
-		SyncPlayQueueEntry, User, UserConfiguration, UserItemData,
+		Genre, Image, Item, ItemSource, KeyframeIndex, Library, LibraryItem,
+		LibraryOptions, LibrarySource, MediaSegment, MediaStream, Person, Playlist,
+		PlaylistEntry, PlaylistShare, QuickConnectRequest, Report, Request,
+		RequestSubmission, Session, Source, SourcePath, Studio, SyncPlayGroup,
+		SyncPlayGroupMember, SyncPlayQueueEntry, User, UserConfiguration, UserItemData,
 		UserPolicy []ent.Hook
 	}
 	inters struct {
 		ActivityLogEntry, ApiKey, Configuration, Credit, Device, DisplayPreferences,
-		Genre, Image, Item, ItemSource, Library, LibraryItem, LibraryOptions,
-		LibrarySource, MediaSegment, MediaStream, Person, Playlist, PlaylistEntry,
-		PlaylistShare, QuickConnectRequest, Report, Request, RequestSubmission,
-		Session, Source, SourcePath, Studio, SyncPlayGroup, SyncPlayGroupMember,
-		SyncPlayQueueEntry, User, UserConfiguration, UserItemData,
+		Genre, Image, Item, ItemSource, KeyframeIndex, Library, LibraryItem,
+		LibraryOptions, LibrarySource, MediaSegment, MediaStream, Person, Playlist,
+		PlaylistEntry, PlaylistShare, QuickConnectRequest, Report, Request,
+		RequestSubmission, Session, Source, SourcePath, Studio, SyncPlayGroup,
+		SyncPlayGroupMember, SyncPlayQueueEntry, User, UserConfiguration, UserItemData,
 		UserPolicy []ent.Interceptor
 	}
 )

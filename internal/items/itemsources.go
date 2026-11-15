@@ -11,6 +11,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	keyframemodel "github.com/FreekingDean/gojellyfin/internal/store/keyframeindex"
 	segmentmodel "github.com/FreekingDean/gojellyfin/internal/store/mediasegment"
 	streammodel "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
@@ -24,6 +25,7 @@ type (
 	VideoRangeType = streammodel.VideoRangeType
 
 	MediaSegment  = store.MediaSegmentModel
+	KeyframeIndex = store.KeyframeIndexModel
 	SegmentKind   = segmentmodel.Kind
 	SegmentOrigin = segmentmodel.Origin
 )
@@ -77,13 +79,7 @@ func (s *Service) fileOwner(ctx context.Context, path string) (*uuid.UUID, error
 
 func (s *Service) SaveProbe(ctx context.Context, item *Item, source *MediaSource, probe MediaSource) error {
 	return s.store.WithTx(ctx, func(tx *store.Tx) error {
-		update := tx.ItemSource.UpdateOneID(source.ID)
-		if probe.Keyframes == nil {
-			update.ClearKeyframes()
-		} else {
-			update.SetKeyframes(probe.Keyframes)
-		}
-		err := update.
+		err := tx.ItemSource.UpdateOneID(source.ID).
 			SetContainer(probe.Container).
 			SetNillableRunTimeTicks(probe.RunTimeTicks).
 			SetNillableSize(probe.Size).
@@ -96,6 +92,10 @@ func (s *Service) SaveProbe(ctx context.Context, item *Item, source *MediaSource
 		}
 
 		if err := saveChapterSegments(ctx, tx, source.ID, probe.Segments); err != nil {
+			return err
+		}
+
+		if err := saveKeyframes(ctx, tx, source.ID, probe.Keyframes); err != nil {
 			return err
 		}
 
@@ -374,4 +374,31 @@ func NeedsProbe(source *MediaSource) bool {
 
 func IsAudio(item *Item) bool {
 	return item.Kind == itemmodel.KindAudio
+}
+
+func saveKeyframes(ctx context.Context, tx *store.Tx, sourceID uuid.UUID, index *KeyframeIndex) error {
+	if _, err := tx.KeyframeIndex.Delete().Where(keyframemodel.ItemSourceID(sourceID)).Exec(ctx); err != nil {
+		return fmt.Errorf("failed to clear the keyframe index: %w", err)
+	}
+	if index == nil {
+		return nil
+	}
+
+	if err := tx.KeyframeIndex.Create().SetItemSourceID(sourceID).SetTicks(index.Ticks).Exec(ctx); err != nil {
+		return fmt.Errorf("failed to save the keyframe index: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Service) Keyframes(ctx context.Context, sourceID uuid.UUID) ([]int64, error) {
+	index, err := s.store.KeyframeIndex.Query().Where(keyframemodel.ItemSourceID(sourceID)).OnlyModel(ctx)
+	if store.IsNotFound(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to query the keyframe index: %w", err)
+	}
+
+	return index.Ticks, nil
 }

@@ -23,6 +23,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	"github.com/FreekingDean/gojellyfin/internal/store/keyframeindex"
 	"github.com/FreekingDean/gojellyfin/internal/store/library"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	"github.com/FreekingDean/gojellyfin/internal/store/libraryoptions"
@@ -71,6 +72,7 @@ const (
 	TypeImage               = "Image"
 	TypeItem                = "Item"
 	TypeItemSource          = "ItemSource"
+	TypeKeyframeIndex       = "KeyframeIndex"
 	TypeLibrary             = "Library"
 	TypeLibraryItem         = "LibraryItem"
 	TypeLibraryOptions      = "LibraryOptions"
@@ -10089,8 +10091,6 @@ type ItemSourceMutation struct {
 	external_file_id     *int64
 	addexternal_file_id  *int64
 	lyrics               *string
-	keyframes            *[]int64
-	appendkeyframes      []int64
 	clearedFields        map[string]struct{}
 	item                 *uuid.UUID
 	cleareditem          bool
@@ -10102,6 +10102,8 @@ type ItemSourceMutation struct {
 	segments             map[uuid.UUID]struct{}
 	removedsegments      map[uuid.UUID]struct{}
 	clearedsegments      bool
+	keyframes            *uuid.UUID
+	clearedkeyframes     bool
 	reports              map[uuid.UUID]struct{}
 	removedreports       map[uuid.UUID]struct{}
 	clearedreports       bool
@@ -11025,71 +11027,6 @@ func (m *ItemSourceMutation) ResetLyrics() {
 	delete(m.clearedFields, itemsource.FieldLyrics)
 }
 
-// SetKeyframes sets the "keyframes" field.
-func (m *ItemSourceMutation) SetKeyframes(i []int64) {
-	m.keyframes = &i
-	m.appendkeyframes = nil
-}
-
-// Keyframes returns the value of the "keyframes" field in the mutation.
-func (m *ItemSourceMutation) Keyframes() (r []int64, exists bool) {
-	v := m.keyframes
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldKeyframes returns the old "keyframes" field's value of the ItemSource entity.
-// If the ItemSource object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ItemSourceMutation) OldKeyframes(ctx context.Context) (v []int64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldKeyframes is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldKeyframes requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldKeyframes: %w", err)
-	}
-	return oldValue.Keyframes, nil
-}
-
-// AppendKeyframes adds i to the "keyframes" field.
-func (m *ItemSourceMutation) AppendKeyframes(i []int64) {
-	m.appendkeyframes = append(m.appendkeyframes, i...)
-}
-
-// AppendedKeyframes returns the list of values that were appended to the "keyframes" field in this mutation.
-func (m *ItemSourceMutation) AppendedKeyframes() ([]int64, bool) {
-	if len(m.appendkeyframes) == 0 {
-		return nil, false
-	}
-	return m.appendkeyframes, true
-}
-
-// ClearKeyframes clears the value of the "keyframes" field.
-func (m *ItemSourceMutation) ClearKeyframes() {
-	m.keyframes = nil
-	m.appendkeyframes = nil
-	m.clearedFields[itemsource.FieldKeyframes] = struct{}{}
-}
-
-// KeyframesCleared returns if the "keyframes" field was cleared in this mutation.
-func (m *ItemSourceMutation) KeyframesCleared() bool {
-	_, ok := m.clearedFields[itemsource.FieldKeyframes]
-	return ok
-}
-
-// ResetKeyframes resets all changes to the "keyframes" field.
-func (m *ItemSourceMutation) ResetKeyframes() {
-	m.keyframes = nil
-	m.appendkeyframes = nil
-	delete(m.clearedFields, itemsource.FieldKeyframes)
-}
-
 // ClearItem clears the "item" edge to the Item entity.
 func (m *ItemSourceMutation) ClearItem() {
 	m.cleareditem = true
@@ -11252,6 +11189,45 @@ func (m *ItemSourceMutation) ResetSegments() {
 	m.removedsegments = nil
 }
 
+// SetKeyframesID sets the "keyframes" edge to the KeyframeIndex entity by id.
+func (m *ItemSourceMutation) SetKeyframesID(id uuid.UUID) {
+	m.keyframes = &id
+}
+
+// ClearKeyframes clears the "keyframes" edge to the KeyframeIndex entity.
+func (m *ItemSourceMutation) ClearKeyframes() {
+	m.clearedkeyframes = true
+}
+
+// KeyframesCleared reports if the "keyframes" edge to the KeyframeIndex entity was cleared.
+func (m *ItemSourceMutation) KeyframesCleared() bool {
+	return m.clearedkeyframes
+}
+
+// KeyframesID returns the "keyframes" edge ID in the mutation.
+func (m *ItemSourceMutation) KeyframesID() (id uuid.UUID, exists bool) {
+	if m.keyframes != nil {
+		return *m.keyframes, true
+	}
+	return
+}
+
+// KeyframesIDs returns the "keyframes" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// KeyframesID instead. It exists only for internal usage by the builders.
+func (m *ItemSourceMutation) KeyframesIDs() (ids []uuid.UUID) {
+	if id := m.keyframes; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetKeyframes resets all changes to the "keyframes" edge.
+func (m *ItemSourceMutation) ResetKeyframes() {
+	m.keyframes = nil
+	m.clearedkeyframes = false
+}
+
 // AddReportIDs adds the "reports" edge to the Report entity by ids.
 func (m *ItemSourceMutation) AddReportIDs(ids ...uuid.UUID) {
 	if m.reports == nil {
@@ -11340,7 +11316,7 @@ func (m *ItemSourceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemSourceMutation) Fields() []string {
-	fields := make([]string, 0, 17)
+	fields := make([]string, 0, 16)
 	if m.created_at != nil {
 		fields = append(fields, itemsource.FieldCreatedAt)
 	}
@@ -11389,9 +11365,6 @@ func (m *ItemSourceMutation) Fields() []string {
 	if m.lyrics != nil {
 		fields = append(fields, itemsource.FieldLyrics)
 	}
-	if m.keyframes != nil {
-		fields = append(fields, itemsource.FieldKeyframes)
-	}
 	return fields
 }
 
@@ -11432,8 +11405,6 @@ func (m *ItemSourceMutation) Field(name string) (ent.Value, bool) {
 		return m.ExternalFileID()
 	case itemsource.FieldLyrics:
 		return m.Lyrics()
-	case itemsource.FieldKeyframes:
-		return m.Keyframes()
 	}
 	return nil, false
 }
@@ -11475,8 +11446,6 @@ func (m *ItemSourceMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldExternalFileID(ctx)
 	case itemsource.FieldLyrics:
 		return m.OldLyrics(ctx)
-	case itemsource.FieldKeyframes:
-		return m.OldKeyframes(ctx)
 	}
 	return nil, fmt.Errorf("unknown ItemSource field %s", name)
 }
@@ -11597,13 +11566,6 @@ func (m *ItemSourceMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetLyrics(v)
-		return nil
-	case itemsource.FieldKeyframes:
-		v, ok := value.([]int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetKeyframes(v)
 		return nil
 	}
 	return fmt.Errorf("unknown ItemSource field %s", name)
@@ -11728,9 +11690,6 @@ func (m *ItemSourceMutation) ClearedFields() []string {
 	if m.FieldCleared(itemsource.FieldLyrics) {
 		fields = append(fields, itemsource.FieldLyrics)
 	}
-	if m.FieldCleared(itemsource.FieldKeyframes) {
-		fields = append(fields, itemsource.FieldKeyframes)
-	}
 	return fields
 }
 
@@ -11774,9 +11733,6 @@ func (m *ItemSourceMutation) ClearField(name string) error {
 		return nil
 	case itemsource.FieldLyrics:
 		m.ClearLyrics()
-		return nil
-	case itemsource.FieldKeyframes:
-		m.ClearKeyframes()
 		return nil
 	}
 	return fmt.Errorf("unknown ItemSource nullable field %s", name)
@@ -11834,16 +11790,13 @@ func (m *ItemSourceMutation) ResetField(name string) error {
 	case itemsource.FieldLyrics:
 		m.ResetLyrics()
 		return nil
-	case itemsource.FieldKeyframes:
-		m.ResetKeyframes()
-		return nil
 	}
 	return fmt.Errorf("unknown ItemSource field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ItemSourceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.item != nil {
 		edges = append(edges, itemsource.EdgeItem)
 	}
@@ -11855,6 +11808,9 @@ func (m *ItemSourceMutation) AddedEdges() []string {
 	}
 	if m.segments != nil {
 		edges = append(edges, itemsource.EdgeSegments)
+	}
+	if m.keyframes != nil {
+		edges = append(edges, itemsource.EdgeKeyframes)
 	}
 	if m.reports != nil {
 		edges = append(edges, itemsource.EdgeReports)
@@ -11886,6 +11842,10 @@ func (m *ItemSourceMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case itemsource.EdgeKeyframes:
+		if id := m.keyframes; id != nil {
+			return []ent.Value{*id}
+		}
 	case itemsource.EdgeReports:
 		ids := make([]ent.Value, 0, len(m.reports))
 		for id := range m.reports {
@@ -11898,7 +11858,7 @@ func (m *ItemSourceMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ItemSourceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.removedstreams != nil {
 		edges = append(edges, itemsource.EdgeStreams)
 	}
@@ -11939,7 +11899,7 @@ func (m *ItemSourceMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ItemSourceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.cleareditem {
 		edges = append(edges, itemsource.EdgeItem)
 	}
@@ -11951,6 +11911,9 @@ func (m *ItemSourceMutation) ClearedEdges() []string {
 	}
 	if m.clearedsegments {
 		edges = append(edges, itemsource.EdgeSegments)
+	}
+	if m.clearedkeyframes {
+		edges = append(edges, itemsource.EdgeKeyframes)
 	}
 	if m.clearedreports {
 		edges = append(edges, itemsource.EdgeReports)
@@ -11970,6 +11933,8 @@ func (m *ItemSourceMutation) EdgeCleared(name string) bool {
 		return m.clearedstreams
 	case itemsource.EdgeSegments:
 		return m.clearedsegments
+	case itemsource.EdgeKeyframes:
+		return m.clearedkeyframes
 	case itemsource.EdgeReports:
 		return m.clearedreports
 	}
@@ -11985,6 +11950,9 @@ func (m *ItemSourceMutation) ClearEdge(name string) error {
 		return nil
 	case itemsource.EdgeSource:
 		m.ClearSource()
+		return nil
+	case itemsource.EdgeKeyframes:
+		m.ClearKeyframes()
 		return nil
 	}
 	return fmt.Errorf("unknown ItemSource unique edge %s", name)
@@ -12006,11 +11974,591 @@ func (m *ItemSourceMutation) ResetEdge(name string) error {
 	case itemsource.EdgeSegments:
 		m.ResetSegments()
 		return nil
+	case itemsource.EdgeKeyframes:
+		m.ResetKeyframes()
+		return nil
 	case itemsource.EdgeReports:
 		m.ResetReports()
 		return nil
 	}
 	return fmt.Errorf("unknown ItemSource edge %s", name)
+}
+
+// KeyframeIndexMutation represents an operation that mutates the KeyframeIndex nodes in the graph.
+type KeyframeIndexMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *uuid.UUID
+	created_at    *time.Time
+	updated_at    *time.Time
+	ticks         *[]int64
+	appendticks   []int64
+	clearedFields map[string]struct{}
+	source        *uuid.UUID
+	clearedsource bool
+	done          bool
+	oldValue      func(context.Context) (*KeyframeIndex, error)
+	predicates    []predicate.KeyframeIndex
+}
+
+var _ ent.Mutation = (*KeyframeIndexMutation)(nil)
+
+// keyframeindexOption allows management of the mutation configuration using functional options.
+type keyframeindexOption func(*KeyframeIndexMutation)
+
+// newKeyframeIndexMutation creates new mutation for the KeyframeIndex entity.
+func newKeyframeIndexMutation(c config, op Op, opts ...keyframeindexOption) *KeyframeIndexMutation {
+	m := &KeyframeIndexMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeKeyframeIndex,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withKeyframeIndexID sets the ID field of the mutation.
+func withKeyframeIndexID(id uuid.UUID) keyframeindexOption {
+	return func(m *KeyframeIndexMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *KeyframeIndex
+		)
+		m.oldValue = func(ctx context.Context) (*KeyframeIndex, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().KeyframeIndex.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withKeyframeIndex sets the old KeyframeIndex of the mutation.
+func withKeyframeIndex(node *KeyframeIndex) keyframeindexOption {
+	return func(m *KeyframeIndexMutation) {
+		m.oldValue = func(context.Context) (*KeyframeIndex, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m KeyframeIndexMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m KeyframeIndexMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("store: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of KeyframeIndex entities.
+func (m *KeyframeIndexMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *KeyframeIndexMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *KeyframeIndexMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().KeyframeIndex.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *KeyframeIndexMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *KeyframeIndexMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the KeyframeIndex entity.
+// If the KeyframeIndex object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *KeyframeIndexMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *KeyframeIndexMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *KeyframeIndexMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *KeyframeIndexMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the KeyframeIndex entity.
+// If the KeyframeIndex object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *KeyframeIndexMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *KeyframeIndexMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetItemSourceID sets the "item_source_id" field.
+func (m *KeyframeIndexMutation) SetItemSourceID(u uuid.UUID) {
+	m.source = &u
+}
+
+// ItemSourceID returns the value of the "item_source_id" field in the mutation.
+func (m *KeyframeIndexMutation) ItemSourceID() (r uuid.UUID, exists bool) {
+	v := m.source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldItemSourceID returns the old "item_source_id" field's value of the KeyframeIndex entity.
+// If the KeyframeIndex object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *KeyframeIndexMutation) OldItemSourceID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldItemSourceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldItemSourceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldItemSourceID: %w", err)
+	}
+	return oldValue.ItemSourceID, nil
+}
+
+// ResetItemSourceID resets all changes to the "item_source_id" field.
+func (m *KeyframeIndexMutation) ResetItemSourceID() {
+	m.source = nil
+}
+
+// SetTicks sets the "ticks" field.
+func (m *KeyframeIndexMutation) SetTicks(i []int64) {
+	m.ticks = &i
+	m.appendticks = nil
+}
+
+// Ticks returns the value of the "ticks" field in the mutation.
+func (m *KeyframeIndexMutation) Ticks() (r []int64, exists bool) {
+	v := m.ticks
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTicks returns the old "ticks" field's value of the KeyframeIndex entity.
+// If the KeyframeIndex object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *KeyframeIndexMutation) OldTicks(ctx context.Context) (v []int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTicks is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTicks requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTicks: %w", err)
+	}
+	return oldValue.Ticks, nil
+}
+
+// AppendTicks adds i to the "ticks" field.
+func (m *KeyframeIndexMutation) AppendTicks(i []int64) {
+	m.appendticks = append(m.appendticks, i...)
+}
+
+// AppendedTicks returns the list of values that were appended to the "ticks" field in this mutation.
+func (m *KeyframeIndexMutation) AppendedTicks() ([]int64, bool) {
+	if len(m.appendticks) == 0 {
+		return nil, false
+	}
+	return m.appendticks, true
+}
+
+// ResetTicks resets all changes to the "ticks" field.
+func (m *KeyframeIndexMutation) ResetTicks() {
+	m.ticks = nil
+	m.appendticks = nil
+}
+
+// SetSourceID sets the "source" edge to the ItemSource entity by id.
+func (m *KeyframeIndexMutation) SetSourceID(id uuid.UUID) {
+	m.source = &id
+}
+
+// ClearSource clears the "source" edge to the ItemSource entity.
+func (m *KeyframeIndexMutation) ClearSource() {
+	m.clearedsource = true
+	m.clearedFields[keyframeindex.FieldItemSourceID] = struct{}{}
+}
+
+// SourceCleared reports if the "source" edge to the ItemSource entity was cleared.
+func (m *KeyframeIndexMutation) SourceCleared() bool {
+	return m.clearedsource
+}
+
+// SourceID returns the "source" edge ID in the mutation.
+func (m *KeyframeIndexMutation) SourceID() (id uuid.UUID, exists bool) {
+	if m.source != nil {
+		return *m.source, true
+	}
+	return
+}
+
+// SourceIDs returns the "source" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// SourceID instead. It exists only for internal usage by the builders.
+func (m *KeyframeIndexMutation) SourceIDs() (ids []uuid.UUID) {
+	if id := m.source; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetSource resets all changes to the "source" edge.
+func (m *KeyframeIndexMutation) ResetSource() {
+	m.source = nil
+	m.clearedsource = false
+}
+
+// Where appends a list predicates to the KeyframeIndexMutation builder.
+func (m *KeyframeIndexMutation) Where(ps ...predicate.KeyframeIndex) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the KeyframeIndexMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *KeyframeIndexMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.KeyframeIndex, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *KeyframeIndexMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *KeyframeIndexMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (KeyframeIndex).
+func (m *KeyframeIndexMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *KeyframeIndexMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.created_at != nil {
+		fields = append(fields, keyframeindex.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, keyframeindex.FieldUpdatedAt)
+	}
+	if m.source != nil {
+		fields = append(fields, keyframeindex.FieldItemSourceID)
+	}
+	if m.ticks != nil {
+		fields = append(fields, keyframeindex.FieldTicks)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *KeyframeIndexMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case keyframeindex.FieldCreatedAt:
+		return m.CreatedAt()
+	case keyframeindex.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case keyframeindex.FieldItemSourceID:
+		return m.ItemSourceID()
+	case keyframeindex.FieldTicks:
+		return m.Ticks()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *KeyframeIndexMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case keyframeindex.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case keyframeindex.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case keyframeindex.FieldItemSourceID:
+		return m.OldItemSourceID(ctx)
+	case keyframeindex.FieldTicks:
+		return m.OldTicks(ctx)
+	}
+	return nil, fmt.Errorf("unknown KeyframeIndex field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *KeyframeIndexMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case keyframeindex.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case keyframeindex.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case keyframeindex.FieldItemSourceID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetItemSourceID(v)
+		return nil
+	case keyframeindex.FieldTicks:
+		v, ok := value.([]int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTicks(v)
+		return nil
+	}
+	return fmt.Errorf("unknown KeyframeIndex field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *KeyframeIndexMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *KeyframeIndexMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *KeyframeIndexMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown KeyframeIndex numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *KeyframeIndexMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *KeyframeIndexMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *KeyframeIndexMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown KeyframeIndex nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *KeyframeIndexMutation) ResetField(name string) error {
+	switch name {
+	case keyframeindex.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case keyframeindex.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case keyframeindex.FieldItemSourceID:
+		m.ResetItemSourceID()
+		return nil
+	case keyframeindex.FieldTicks:
+		m.ResetTicks()
+		return nil
+	}
+	return fmt.Errorf("unknown KeyframeIndex field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *KeyframeIndexMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.source != nil {
+		edges = append(edges, keyframeindex.EdgeSource)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *KeyframeIndexMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case keyframeindex.EdgeSource:
+		if id := m.source; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *KeyframeIndexMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *KeyframeIndexMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *KeyframeIndexMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedsource {
+		edges = append(edges, keyframeindex.EdgeSource)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *KeyframeIndexMutation) EdgeCleared(name string) bool {
+	switch name {
+	case keyframeindex.EdgeSource:
+		return m.clearedsource
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *KeyframeIndexMutation) ClearEdge(name string) error {
+	switch name {
+	case keyframeindex.EdgeSource:
+		m.ClearSource()
+		return nil
+	}
+	return fmt.Errorf("unknown KeyframeIndex unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *KeyframeIndexMutation) ResetEdge(name string) error {
+	switch name {
+	case keyframeindex.EdgeSource:
+		m.ResetSource()
+		return nil
+	}
+	return fmt.Errorf("unknown KeyframeIndex edge %s", name)
 }
 
 // LibraryMutation represents an operation that mutates the Library nodes in the graph.

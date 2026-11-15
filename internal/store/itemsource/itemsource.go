@@ -46,8 +46,6 @@ const (
 	FieldExternalFileID = "external_file_id"
 	// FieldLyrics holds the string denoting the lyrics field in the database.
 	FieldLyrics = "lyrics"
-	// FieldKeyframes holds the string denoting the keyframes field in the database.
-	FieldKeyframes = "keyframes"
 	// EdgeItem holds the string denoting the item edge name in mutations.
 	EdgeItem = "item"
 	// EdgeSource holds the string denoting the source edge name in mutations.
@@ -56,6 +54,8 @@ const (
 	EdgeStreams = "streams"
 	// EdgeSegments holds the string denoting the segments edge name in mutations.
 	EdgeSegments = "segments"
+	// EdgeKeyframes holds the string denoting the keyframes edge name in mutations.
+	EdgeKeyframes = "keyframes"
 	// EdgeReports holds the string denoting the reports edge name in mutations.
 	EdgeReports = "reports"
 	// Table holds the table name of the itemsource in the database.
@@ -88,6 +88,13 @@ const (
 	SegmentsInverseTable = "media_segments"
 	// SegmentsColumn is the table column denoting the segments relation/edge.
 	SegmentsColumn = "item_source_id"
+	// KeyframesTable is the table that holds the keyframes relation/edge.
+	KeyframesTable = "keyframe_indexes"
+	// KeyframesInverseTable is the table name for the KeyframeIndex entity.
+	// It exists in this package in order to avoid circular dependency with the "keyframeindex" package.
+	KeyframesInverseTable = "keyframe_indexes"
+	// KeyframesColumn is the table column denoting the keyframes relation/edge.
+	KeyframesColumn = "item_source_id"
 	// ReportsTable is the table that holds the reports relation/edge.
 	ReportsTable = "reports"
 	// ReportsInverseTable is the table name for the Report entity.
@@ -116,7 +123,6 @@ var Columns = []string{
 	FieldExternalID,
 	FieldExternalFileID,
 	FieldLyrics,
-	FieldKeyframes,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -268,6 +274,13 @@ func BySegments(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByKeyframesField orders the results by keyframes field.
+func ByKeyframesField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newKeyframesStep(), sql.OrderByField(field, opts...))
+	}
+}
+
 // ByReportsCount orders the results by reports count.
 func ByReportsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -307,6 +320,13 @@ func newSegmentsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(SegmentsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, SegmentsTable, SegmentsColumn),
+	)
+}
+func newKeyframesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(KeyframesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, KeyframesTable, KeyframesColumn),
 	)
 }
 func newReportsStep() *sqlgraph.Step {

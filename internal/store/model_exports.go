@@ -794,13 +794,13 @@ type ItemSourceModel struct {
 	ExternalID         *int64
 	ExternalFileID     *int64
 	Lyrics             string
-	Keyframes          []int64
 
-	Item     *ItemModel
-	Source   *SourceModel
-	Streams  []*MediaStreamModel
-	Segments []*MediaSegmentModel
-	Reports  []*ReportModel
+	Item      *ItemModel
+	Source    *SourceModel
+	Streams   []*MediaStreamModel
+	Segments  []*MediaSegmentModel
+	Keyframes *KeyframeIndexModel
+	Reports   []*ReportModel
 }
 
 func fromAllItemSource(_m []*ItemSource) []*ItemSourceModel {
@@ -834,13 +834,13 @@ func fromItemSource(_m *ItemSource) *ItemSourceModel {
 		ExternalID:         _m.ExternalID,
 		ExternalFileID:     _m.ExternalFileID,
 		Lyrics:             _m.Lyrics,
-		Keyframes:          _m.Keyframes,
 
-		Item:     fromItem(_m.Edges.Item),
-		Source:   fromSource(_m.Edges.Source),
-		Streams:  fromAllMediaStream(_m.Edges.Streams),
-		Segments: fromAllMediaSegment(_m.Edges.Segments),
-		Reports:  fromAllReport(_m.Edges.Reports),
+		Item:      fromItem(_m.Edges.Item),
+		Source:    fromSource(_m.Edges.Source),
+		Streams:   fromAllMediaStream(_m.Edges.Streams),
+		Segments:  fromAllMediaSegment(_m.Edges.Segments),
+		Keyframes: fromKeyframeIndex(_m.Edges.Keyframes),
+		Reports:   fromAllReport(_m.Edges.Reports),
 	}
 }
 
@@ -875,6 +875,74 @@ func (_q *ItemSourceQuery) AllModels(ctx context.Context) ([]*ItemSourceModel, e
 func (c *ItemSourceClient) GetModel(ctx context.Context, id uuid.UUID) (*ItemSourceModel, error) {
 	_m, err := c.Get(ctx, id)
 	return fromItemSource(_m), err
+}
+
+type KeyframeIndexModel struct {
+	ID uuid.UUID
+
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	ItemSourceID uuid.UUID
+	Ticks        []int64
+
+	Source *ItemSourceModel
+}
+
+func fromAllKeyframeIndex(_m []*KeyframeIndex) []*KeyframeIndexModel {
+	models := make([]*KeyframeIndexModel, len(_m))
+	for i, v := range _m {
+		models[i] = fromKeyframeIndex(v)
+	}
+	return models
+}
+
+func fromKeyframeIndex(_m *KeyframeIndex) *KeyframeIndexModel {
+	if _m == nil {
+		return nil
+	}
+
+	return &KeyframeIndexModel{
+		ID:           _m.ID,
+		CreatedAt:    _m.CreatedAt,
+		UpdatedAt:    _m.UpdatedAt,
+		ItemSourceID: _m.ItemSourceID,
+		Ticks:        _m.Ticks,
+
+		Source: fromItemSource(_m.Edges.Source),
+	}
+}
+
+func (_c *KeyframeIndexCreate) SaveModel(ctx context.Context) (*KeyframeIndexModel, error) {
+	_m, err := _c.Save(ctx)
+	return fromKeyframeIndex(_m), err
+}
+
+func (_u *KeyframeIndexUpdateOne) SaveModel(ctx context.Context) (*KeyframeIndexModel, error) {
+	_m, err := _u.Save(ctx)
+	return fromKeyframeIndex(_m), err
+}
+
+func (_q *KeyframeIndexQuery) OnlyModel(ctx context.Context) (*KeyframeIndexModel, error) {
+	_m, err := _q.Only(ctx)
+	return fromKeyframeIndex(_m), err
+}
+
+func (_q *KeyframeIndexQuery) FirstModel(ctx context.Context) (*KeyframeIndexModel, error) {
+	_m, err := _q.First(ctx)
+	return fromKeyframeIndex(_m), err
+}
+
+func (_q *KeyframeIndexQuery) AllModels(ctx context.Context) ([]*KeyframeIndexModel, error) {
+	_m, err := _q.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return fromAllKeyframeIndex(_m), nil
+}
+
+func (c *KeyframeIndexClient) GetModel(ctx context.Context, id uuid.UUID) (*KeyframeIndexModel, error) {
+	_m, err := c.Get(ctx, id)
+	return fromKeyframeIndex(_m), err
 }
 
 type LibraryModel struct {

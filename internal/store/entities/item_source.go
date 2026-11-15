@@ -29,7 +29,6 @@ func (ItemSource) Fields() []ent.Field {
 		field.Int64("external_id").Optional().Nillable(),
 		field.Int64("external_file_id").Optional().Nillable(),
 		field.Text("lyrics").Optional(),
-		field.JSON("keyframes", []int64{}).Optional(),
 	)
 }
 
@@ -39,6 +38,7 @@ func (ItemSource) Edges() []ent.Edge {
 		edge.From("source", Source.Type).Ref("files").Unique().Required().Field("source_id"),
 		edge.To("streams", MediaStream.Type).Annotations(cascadeOnDelete),
 		edge.To("segments", MediaSegment.Type).Annotations(cascadeOnDelete),
+		edge.To("keyframes", KeyframeIndex.Type).Unique().Annotations(cascadeOnDelete),
 		edge.To("reports", Report.Type),
 	}
 }

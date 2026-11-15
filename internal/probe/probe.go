@@ -78,7 +78,7 @@ func (s *Prober) probeFile(ctx context.Context, source *items.MediaSource) (*ite
 	}, nil
 }
 
-func (s *Prober) keyframes(ctx context.Context, path string, probe *ffmpeg.Probe) ([]int64, error) {
+func (s *Prober) keyframes(ctx context.Context, path string, probe *ffmpeg.Probe) (*items.KeyframeIndex, error) {
 	if !slices.ContainsFunc(probe.Streams, func(stream ffmpeg.Stream) bool { return stream.CodecType == "video" }) {
 		return nil, nil
 	}
@@ -87,7 +87,12 @@ func (s *Prober) keyframes(ctx context.Context, path string, probe *ffmpeg.Probe
 	defer close(done)
 	go beat(ctx, done, path)
 
-	return s.ffmpeg.Keyframes(ctx, path)
+	ticks, err := s.ffmpeg.Keyframes(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+
+	return &items.KeyframeIndex{Ticks: ticks}, nil
 }
 
 func beat(ctx context.Context, done <-chan struct{}, path string) {

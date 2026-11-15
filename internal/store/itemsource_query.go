@@ -15,6 +15,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
 	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
+	"github.com/FreekingDean/gojellyfin/internal/store/keyframeindex"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediasegment"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
@@ -26,16 +27,17 @@ import (
 // ItemSourceQuery is the builder for querying ItemSource entities.
 type ItemSourceQuery struct {
 	config
-	ctx          *QueryContext
-	order        []itemsource.OrderOption
-	inters       []Interceptor
-	predicates   []predicate.ItemSource
-	withItem     *ItemQuery
-	withSource   *SourceQuery
-	withStreams  *MediaStreamQuery
-	withSegments *MediaSegmentQuery
-	withReports  *ReportQuery
-	modifiers    []func(*sql.Selector)
+	ctx           *QueryContext
+	order         []itemsource.OrderOption
+	inters        []Interceptor
+	predicates    []predicate.ItemSource
+	withItem      *ItemQuery
+	withSource    *SourceQuery
+	withStreams   *MediaStreamQuery
+	withSegments  *MediaSegmentQuery
+	withKeyframes *KeyframeIndexQuery
+	withReports   *ReportQuery
+	modifiers     []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -153,6 +155,28 @@ func (_q *ItemSourceQuery) QuerySegments() *MediaSegmentQuery {
 			sqlgraph.From(itemsource.Table, itemsource.FieldID, selector),
 			sqlgraph.To(mediasegment.Table, mediasegment.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, itemsource.SegmentsTable, itemsource.SegmentsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryKeyframes chains the current query on the "keyframes" edge.
+func (_q *ItemSourceQuery) QueryKeyframes() *KeyframeIndexQuery {
+	query := (&KeyframeIndexClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(itemsource.Table, itemsource.FieldID, selector),
+			sqlgraph.To(keyframeindex.Table, keyframeindex.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, itemsource.KeyframesTable, itemsource.KeyframesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -369,16 +393,17 @@ func (_q *ItemSourceQuery) Clone() *ItemSourceQuery {
 		return nil
 	}
 	return &ItemSourceQuery{
-		config:       _q.config,
-		ctx:          _q.ctx.Clone(),
-		order:        append([]itemsource.OrderOption{}, _q.order...),
-		inters:       append([]Interceptor{}, _q.inters...),
-		predicates:   append([]predicate.ItemSource{}, _q.predicates...),
-		withItem:     _q.withItem.Clone(),
-		withSource:   _q.withSource.Clone(),
-		withStreams:  _q.withStreams.Clone(),
-		withSegments: _q.withSegments.Clone(),
-		withReports:  _q.withReports.Clone(),
+		config:        _q.config,
+		ctx:           _q.ctx.Clone(),
+		order:         append([]itemsource.OrderOption{}, _q.order...),
+		inters:        append([]Interceptor{}, _q.inters...),
+		predicates:    append([]predicate.ItemSource{}, _q.predicates...),
+		withItem:      _q.withItem.Clone(),
+		withSource:    _q.withSource.Clone(),
+		withStreams:   _q.withStreams.Clone(),
+		withSegments:  _q.withSegments.Clone(),
+		withKeyframes: _q.withKeyframes.Clone(),
+		withReports:   _q.withReports.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -426,6 +451,17 @@ func (_q *ItemSourceQuery) WithSegments(opts ...func(*MediaSegmentQuery)) *ItemS
 		opt(query)
 	}
 	_q.withSegments = query
+	return _q
+}
+
+// WithKeyframes tells the query-builder to eager-load the nodes that are connected to
+// the "keyframes" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemSourceQuery) WithKeyframes(opts ...func(*KeyframeIndexQuery)) *ItemSourceQuery {
+	query := (&KeyframeIndexClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withKeyframes = query
 	return _q
 }
 
@@ -518,11 +554,12 @@ func (_q *ItemSourceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*I
 	var (
 		nodes       = []*ItemSource{}
 		_spec       = _q.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [6]bool{
 			_q.withItem != nil,
 			_q.withSource != nil,
 			_q.withStreams != nil,
 			_q.withSegments != nil,
+			_q.withKeyframes != nil,
 			_q.withReports != nil,
 		}
 	)
@@ -570,6 +607,12 @@ func (_q *ItemSourceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*I
 		if err := _q.loadSegments(ctx, query, nodes,
 			func(n *ItemSource) { n.Edges.Segments = []*MediaSegment{} },
 			func(n *ItemSource, e *MediaSegment) { n.Edges.Segments = append(n.Edges.Segments, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withKeyframes; query != nil {
+		if err := _q.loadKeyframes(ctx, query, nodes, nil,
+			func(n *ItemSource, e *KeyframeIndex) { n.Edges.Keyframes = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -686,6 +729,33 @@ func (_q *ItemSourceQuery) loadSegments(ctx context.Context, query *MediaSegment
 	}
 	query.Where(predicate.MediaSegment(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(itemsource.SegmentsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ItemSourceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "item_source_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *ItemSourceQuery) loadKeyframes(ctx context.Context, query *KeyframeIndexQuery, nodes []*ItemSource, init func(*ItemSource), assign func(*ItemSource, *KeyframeIndex)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*ItemSource)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(keyframeindex.FieldItemSourceID)
+	}
+	query.Where(predicate.KeyframeIndex(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(itemsource.KeyframesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

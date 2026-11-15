@@ -34,6 +34,8 @@ type Tx struct {
 	Item *ItemClient
 	// ItemSource is the client for interacting with the ItemSource builders.
 	ItemSource *ItemSourceClient
+	// KeyframeIndex is the client for interacting with the KeyframeIndex builders.
+	KeyframeIndex *KeyframeIndexClient
 	// Library is the client for interacting with the Library builders.
 	Library *LibraryClient
 	// LibraryItem is the client for interacting with the LibraryItem builders.
@@ -225,6 +227,7 @@ func (tx *Tx) init() {
 	tx.Image = NewImageClient(tx.config)
 	tx.Item = NewItemClient(tx.config)
 	tx.ItemSource = NewItemSourceClient(tx.config)
+	tx.KeyframeIndex = NewKeyframeIndexClient(tx.config)
 	tx.Library = NewLibraryClient(tx.config)
 	tx.LibraryItem = NewLibraryItemClient(tx.config)
 	tx.LibraryOptions = NewLibraryOptionsClient(tx.config)
