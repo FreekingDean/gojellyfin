@@ -146,9 +146,19 @@ func ItemDtos(ctx context.Context, store *items.Service, records []*items.Item) 
 		}
 	}
 
+	played, err := store.PlayedSources(ctx, itemIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	converted := make([]api.BaseItemDto, 0, len(records))
 	for _, item := range records {
 		dto := ItemDto(item, held[item.ID], counts[item.ID], imageTags[item.ID])
+		if source, ok := played[item.ID]; ok {
+			listed := MediaSourceDto(source)
+			dto.MediaSources = &[]api.MediaSourceInfo{listed}
+			dto.MediaStreams = listed.MediaStreams
+		}
 		datum, ok := userData[item.ID]
 		if !ok {
 			datum = &items.Datum{ItemID: item.ID}

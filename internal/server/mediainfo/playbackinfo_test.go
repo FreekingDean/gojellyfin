@@ -15,6 +15,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
@@ -599,4 +600,31 @@ func (f *fixture) newDownloader(t *testing.T) uuid.UUID {
 	})
 
 	return record.ID
+}
+
+func TestItemDtos_ListAFile(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := context.Background()
+
+	id := fixture.addRipped(t, itemmodel.KindEpisode, "mkv", "h264", "eac3")
+	item, err := fixture.server.items.ItemByID(ctx, items.Everyone, id)
+	if err != nil {
+		t.Fatalf("failed to read the item back: %v", err)
+	}
+
+	converted, err := dto.ItemDtos(ctx, fixture.server.items, []*items.Item{item})
+	if err != nil {
+		t.Fatalf("failed to convert the item: %v", err)
+	}
+
+	listed := apiutil.Deref(converted[0].MediaSources)
+	if len(listed) != 1 {
+		t.Fatalf("media sources = %d, want the one file: the Android TV app reads the next episode's streams off its queue entry", len(listed))
+	}
+	if streams := apiutil.Deref(listed[0].MediaStreams); len(streams) != 2 {
+		t.Errorf("media streams = %d, want the picture and the sound", len(streams))
+	}
+	if streams := apiutil.Deref(converted[0].MediaStreams); len(streams) != 2 {
+		t.Errorf("the item's own media streams = %d, want the same two", len(streams))
+	}
 }

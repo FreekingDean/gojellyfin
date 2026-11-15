@@ -202,6 +202,33 @@ func (s *Service) MediaSources(ctx context.Context, itemID uuid.UUID) ([]*MediaS
 	return sources, nil
 }
 
+func (s *Service) PlayedSources(ctx context.Context, itemIDs []uuid.UUID) (map[uuid.UUID]*MediaSource, error) {
+	played := map[uuid.UUID]*MediaSource{}
+	if len(itemIDs) == 0 {
+		return played, nil
+	}
+
+	sources, err := s.store.ItemSource.Query().
+		Where(sourcemodel.ItemIDIn(itemIDs...)).
+		Order(sourcemodel.ByCreatedAt(), sourcemodel.ByPath()).
+		WithStreams(func(query *store.MediaStreamQuery) {
+			query.Order(streammodel.ByIndex())
+		}).
+		WithSegments().
+		AllModels(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query the media sources of items: %w", err)
+	}
+
+	for _, source := range sources {
+		if listed, seen := played[source.ItemID]; !seen || richer(source, listed) {
+			played[source.ItemID] = source
+		}
+	}
+
+	return played, nil
+}
+
 type Held struct {
 	Path         string
 	RunTimeTicks *int64
