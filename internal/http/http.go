@@ -1,13 +1,17 @@
 package http
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
@@ -64,6 +68,7 @@ var legacyRoutes = map[string]string{
 	"DELETE /Users/{userId}/PlayingItems/{itemId}":         "/PlayingItems/{itemId}",
 	"POST /Users/{userId}/PlayingItems/{itemId}/Progress":  "/PlayingItems/{itemId}/Progress",
 	"GET /Users/{userId}/Views":                            "/UserViews",
+	"GET /MusicGenres":                                     "/Genres",
 	"GET /Users/{userId}/GroupingOptions":                  "/UserViews/GroupingOptions",
 	"GET /Users/{userId}/Suggestions":                      "/Items/Suggestions",
 	"GET /Users/{userId}/Images/{imageType}":               "/UserImage",
@@ -77,6 +82,85 @@ var legacyRoutes = map[string]string{
 	"POST /Users/{userId}/Configuration":                   "/Users/Configuration",
 	"POST /Users/{userId}/Password":                        "/Users/Password",
 	"POST /Users/{userId}":                                 "/Users",
+}
+
+var legacyPlaybackRoutes = map[string]string{
+	"POST /PlayingItems/{itemId}":          "/Sessions/Playing",
+	"POST /PlayingItems/{itemId}/Progress": "/Sessions/Playing/Progress",
+	"DELETE /PlayingItems/{itemId}":        "/Sessions/Playing/Stopped",
+}
+
+type playbackKind int
+
+const (
+	playbackText playbackKind = iota
+	playbackNumber
+	playbackFlag
+)
+
+type playbackField struct {
+	name string
+	kind playbackKind
+}
+
+var playbackFields = map[string]playbackField{
+	"mediasourceid":       {"MediaSourceId", playbackText},
+	"playsessionid":       {"PlaySessionId", playbackText},
+	"livestreamid":        {"LiveStreamId", playbackText},
+	"playmethod":          {"PlayMethod", playbackText},
+	"repeatmode":          {"RepeatMode", playbackText},
+	"nextmediatype":       {"NextMediaType", playbackText},
+	"positionticks":       {"PositionTicks", playbackNumber},
+	"audiostreamindex":    {"AudioStreamIndex", playbackNumber},
+	"subtitlestreamindex": {"SubtitleStreamIndex", playbackNumber},
+	"volumelevel":         {"VolumeLevel", playbackNumber},
+	"canseek":             {"CanSeek", playbackFlag},
+	"ispaused":            {"IsPaused", playbackFlag},
+	"ismuted":             {"IsMuted", playbackFlag},
+}
+
+func legacyPlaybackRoute(m *mux.Mux, target string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		report := map[string]any{"ItemId": r.PathValue("itemId")}
+		for key, values := range r.URL.Query() {
+			field, ok := playbackFields[strings.ToLower(key)]
+			if !ok || len(values) == 0 || values[0] == "" {
+				continue
+			}
+
+			value, err := playbackValue(field.kind, values[0])
+			if err != nil {
+				http.Error(w, fmt.Sprintf("%s: %v", key, err), http.StatusBadRequest)
+				return
+			}
+			report[field.name] = value
+		}
+
+		body, err := json.Marshal(report)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		r.Method = http.MethodPost
+		r.URL.Path = target
+		r.Body = io.NopCloser(bytes.NewReader(body))
+		r.ContentLength = int64(len(body))
+		r.Header.Set("Content-Type", "application/json")
+
+		m.ServeHTTP(w, r)
+	}
+}
+
+func playbackValue(kind playbackKind, value string) (any, error) {
+	switch kind {
+	case playbackNumber:
+		return strconv.ParseInt(value, 10, 64)
+	case playbackFlag:
+		return strconv.ParseBool(value)
+	default:
+		return value, nil
+	}
 }
 
 var routeParam = regexp.MustCompile(`\{([^}]+)\}`)
@@ -205,6 +289,7 @@ func Register(
 ) {
 	h := api.NewStrictHandlerWithOptions(apiServer, s.apiMiddleware, s.apiOptions)
 	m.HandleFunc("GET /socket", sock.Handle)
+	registerRoot(m)
 	links.Register(m)
 	administration.Register(m)
 	reporting.Register(m)
@@ -229,6 +314,9 @@ func Register(
 	})
 	for _, pattern := range legacyPatterns() {
 		m.HandleFunc(pattern, legacyRoute(m, legacyRoutes[pattern]))
+	}
+	for pattern, target := range legacyPlaybackRoutes {
+		m.HandleFunc(pattern, legacyPlaybackRoute(m, target))
 	}
 	for _, mw := range s.httpMiddleware {
 		finalHandler = mw(finalHandler)

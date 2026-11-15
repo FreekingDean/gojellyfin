@@ -63,9 +63,11 @@ type Webhook struct {
 	EventType string   `json:"eventType"`
 	Movie     *Subject `json:"movie"`
 	Series    *Subject `json:"series"`
+	Artist    *Subject `json:"artist"`
 }
 
 type Subject struct {
-	ID     int64 `json:"id"`
-	TmdbID int   `json:"tmdbId"`
+	ID     int64  `json:"id"`
+	TmdbID int    `json:"tmdbId"`
+	MBID   string `json:"mbId"`
 }

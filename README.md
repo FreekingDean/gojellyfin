@@ -14,7 +14,7 @@ Everything ships as one binary, `cmd/gojellyfin`, with a subcommand each for
 | **Movies** | Scanned, played, and their metadata answered |
 | **TV** | Series, seasons and episodes, including next-up and resume |
 | **Library scanning** | Walks the tree, probes with ffprobe, sweeps what is gone |
-| **Metadata** | Movies, series and episodes identified against TMDB, with your own `TMDB_API_KEY` |
+| **Metadata** | Movies, series and episodes identified against TMDB, with your own `TMDB_API_KEY` (a v3 API key or a v4 read access token) |
 | **Background jobs** | Temporal workflows in a separate worker deployment |
 | **High availability** | The API is stateless — run as many replicas as you like |
 | **Automatic encoding** | Audio a client cannot decode is re-encoded on the fly; the video is copied, never transcoded |
@@ -83,16 +83,16 @@ which deletes files, read-only everywhere else.
 
 ### New downloads show up at once
 
-Saving a Sonarr or Radarr on the admin app's Libraries screen also adds a
+Saving a Sonarr, Radarr or Lidarr on the admin app's Libraries screen also adds a
 webhook named `gojellyfin` under its Settings, Connect, so an import, an
-upgrade, a rename or a delete refreshes that one movie or series straight away
+upgrade, a rename or a delete refreshes that one movie, series or artist straight away
 instead of waiting for the next library refresh. It needs `PUBLISHED_SERVER_URL`
 (the chart's `hostname`), and the downloader has to be able to reach that
 address: the instance tests the webhook before it saves it, and the card on the
 Libraries screen says why when it refused.
 
 If it cannot be registered, add it by hand: **Settings → Connect → + → Webhook**,
-with On Import, On Upgrade, On Rename and every delete ticked, method `POST`,
+with On Import (On Release Import in Lidarr), On Upgrade, On Rename and every delete ticked, method `POST`,
 URL `<your server>/webhooks/<source id>`, username `gojellyfin` and the password
 the Libraries card shows for that downloader. The scheduled refresh still runs,
 so a missed call is caught up on the next one.

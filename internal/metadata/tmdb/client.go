@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"regexp"
 	"sync"
 	"time"
 
@@ -16,6 +17,8 @@ import (
 )
 
 var ErrNotConfigured = errors.New("tmdb: TMDB_API_KEY is not set")
+
+var v3APIKey = regexp.MustCompile(`^[0-9a-f]{32}$`)
 
 const (
 	requestSpacing = 50 * time.Millisecond
@@ -42,7 +45,7 @@ func newClient(baseURL, apiKey string) (*Client, error) {
 		return client, nil
 	}
 
-	api, err := gotmdb.InitV4(apiKey)
+	api, err := initialise(apiKey)
 	if err != nil {
 		return nil, err
 	}
@@ -57,6 +60,14 @@ func newClient(baseURL, apiKey string) (*Client, error) {
 	client.api = api
 
 	return client, nil
+}
+
+func initialise(credential string) (*gotmdb.Client, error) {
+	if v3APIKey.MatchString(credential) {
+		return gotmdb.Init(credential)
+	}
+
+	return gotmdb.InitV4(credential)
 }
 
 func (c *Client) Enabled() bool {

@@ -1,6 +1,7 @@
 {{- if .Values.streaming.enabled }}
 {{- $component := "streaming" }}
-{{- $pod := mergeOverwrite (deepCopy (default dict .Values.pod)) (default dict .Values.streaming.pod) }}
+{{- $grace := dict "terminationGracePeriodSeconds" (add (int .Values.drainSeconds) 25) }}
+{{- $pod := mergeOverwrite (include "gojellyfin.spread" (dict "root" $ "component" $component) | fromYaml) $grace (deepCopy (default dict .Values.pod)) (default dict .Values.streaming.pod) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -8,7 +9,9 @@ metadata:
   labels:
     {{- include "gojellyfin.labels" (dict "root" $ "component" $component) | nindent 4 }}
 spec:
+  {{- if not .Values.streaming.autoscaling.enabled }}
   replicas: {{ .Values.streaming.replicas }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" $component) | nindent 6 }}
@@ -35,6 +38,10 @@ spec:
           env:
             {{- include "gojellyfin.serverEnv" (dict "root" $ "workload" .Values.streaming) | nindent 12 }}
             {{- include "gojellyfin.tracingEnv" (dict "root" $ "component" $component) | nindent 12 }}
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "{{ .Values.drainSeconds }}"]
           livenessProbe:
             httpGet:
               path: /System/Ping

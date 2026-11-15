@@ -1,0 +1,21 @@
+{{- $workloads := list
+  (dict "component" "api" "name" "" "enabled" true "values" .Values.api)
+  (dict "component" "streaming" "name" "-streaming" "enabled" .Values.streaming.enabled "values" .Values.streaming)
+  (dict "component" "worker" "name" "-worker" "enabled" .Values.worker.enabled "values" .Values.worker)
+  (dict "component" "web" "name" "-web" "enabled" .Values.web.enabled "values" .Values.web) }}
+{{- range $workloads }}
+{{- if and .enabled .values.podDisruptionBudget.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "gojellyfin.fullname" $ }}{{ .name }}
+  labels:
+    {{- include "gojellyfin.labels" (dict "root" $ "component" .component) | nindent 4 }}
+spec:
+  maxUnavailable: {{ .values.podDisruptionBudget.maxUnavailable }}
+  selector:
+    matchLabels:
+      {{- include "gojellyfin.selectorLabels" (dict "root" $ "component" .component) | nindent 6 }}
+{{- end }}
+{{- end }}

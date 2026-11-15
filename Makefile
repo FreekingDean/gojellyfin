@@ -99,6 +99,11 @@ e2e-local:
 e2e-androidtv:
 	cd e2e && npm ci && npm run androidtv
 
+# The stock Android phone app, the same way, on a phone emulator.
+.PHONY: e2e-android
+e2e-android:
+	cd e2e && npm ci && npm run android
+
 .PHONY: fmt
 fmt:
 	gofmt -w internal cmd

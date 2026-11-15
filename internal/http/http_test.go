@@ -1,6 +1,8 @@
 package http
 
 import (
+	"encoding/json"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -10,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
+	"github.com/FreekingDean/gojellyfin/internal/http/mux"
 )
 
 func TestLegacyPatterns(t *testing.T) {
@@ -60,10 +63,28 @@ func shadows(candidate, pattern string) bool {
 	return loose
 }
 
+const notHLS = "HLS is not served: a transcode is one progressive response, so there is no playlist or segment to answer"
+
 var unaliased = map[string]string{
-	"GET /QuickConnect/Initiate":        "the documented form is POST, so this is a method change rather than a path rewrite",
 	"POST /Users/{userId}/Authenticate": "authenticating by user id has no documented replacement; AuthenticateByName takes a username",
-	"POST /Users/{userId}/EasyPassword": "easy passwords were removed, with nothing to forward to",
+	"GET /Artists/InstantMix":           "the artist id rides in the query rather than the path, and there is no music for an instant mix to draw on",
+	"GET /LiveTv/Recordings/Groups":     "live TV has no recordings (#527)",
+	"GET /LiveTv/Recordings/Series":     "live TV has no recordings (#527)",
+	"DELETE /Videos/ActiveEncodings":    "served beside the stream routes by stream.Handler.StopEncodings, because jellyfin-web refuses to seek until it succeeds",
+
+	"GET /Audio/{itemId}/hls/{segmentId}/stream.aac":                       notHLS,
+	"GET /Audio/{itemId}/hls/{segmentId}/stream.mp3":                       notHLS,
+	"GET /Audio/{itemId}/hls1/{playlistId}/{segmentId}.{container}":        notHLS,
+	"GET /Audio/{itemId}/main.m3u8":                                        notHLS,
+	"GET /Audio/{itemId}/master.m3u8":                                      notHLS,
+	"HEAD /Audio/{itemId}/master.m3u8":                                     notHLS,
+	"GET /Videos/{itemId}/hls/{playlistId}/stream.m3u8":                    notHLS,
+	"GET /Videos/{itemId}/hls/{playlistId}/{segmentId}.{segmentContainer}": notHLS,
+	"GET /Videos/{itemId}/hls1/{playlistId}/{segmentId}.{container}":       notHLS,
+	"GET /Videos/{itemId}/live.m3u8":                                       notHLS,
+	"GET /Videos/{itemId}/main.m3u8":                                       notHLS,
+	"GET /Videos/{itemId}/master.m3u8":                                     notHLS,
+	"HEAD /Videos/{itemId}/master.m3u8":                                    notHLS,
 }
 
 func TestLegacyRoutes(t *testing.T) {
@@ -71,6 +92,8 @@ func TestLegacyRoutes(t *testing.T) {
 
 	for _, route := range hidden {
 		_, aliased := legacyRoutes[route]
+		_, converted := legacyPlaybackRoutes[route]
+		aliased = aliased || converted
 		_, excused := unaliased[route]
 		if !aliased && !excused {
 			t.Errorf("%q is hidden from the spec with no alias and no stated reason", route)
@@ -80,9 +103,11 @@ func TestLegacyRoutes(t *testing.T) {
 		}
 	}
 
-	for route := range legacyRoutes {
-		if !slices.Contains(hidden, route) {
-			t.Errorf("%q is aliased but is not a route Jellyfin hides", route)
+	for _, aliases := range []map[string]string{legacyRoutes, legacyPlaybackRoutes, unaliased} {
+		for route := range aliases {
+			if !slices.Contains(hidden, route) {
+				t.Errorf("%q is listed but is not a route Jellyfin hides", route)
+			}
 		}
 	}
 }
@@ -90,7 +115,7 @@ func TestLegacyRoutes(t *testing.T) {
 func readHiddenRoutes(t *testing.T) []string {
 	t.Helper()
 
-	body, err := os.ReadFile(filepath.Join("..", "..", "spec", "jellyfin-hidden-routes-10.10.0.txt"))
+	body, err := os.ReadFile(filepath.Join("..", "..", "spec", "jellyfin-hidden-routes-12.0.0.txt"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -138,4 +163,60 @@ func TestNewHTTPMiddleware(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestLegacyPlaybackRoute(t *testing.T) {
+	m := mux.New()
+	var method, path, apiKey string
+	var report map[string]any
+	for _, target := range legacyPlaybackRoutes {
+		m.HandleFunc("POST "+target, func(w http.ResponseWriter, r *http.Request) {
+			method, path, apiKey = r.Method, r.URL.Path, r.URL.Query().Get("api_key")
+			report = map[string]any{}
+			if err := json.NewDecoder(r.Body).Decode(&report); err != nil {
+				t.Errorf("the body is not json: %v", err)
+			}
+			w.WriteHeader(http.StatusNoContent)
+		})
+	}
+	for pattern, target := range legacyPlaybackRoutes {
+		m.HandleFunc(pattern, legacyPlaybackRoute(m, target))
+	}
+
+	t.Run("reports progress as the documented body", func(t *testing.T) {
+		recorder := httptest.NewRecorder()
+		m.ServeHTTP(recorder, httptest.NewRequest(http.MethodPost, "/PlayingItems/abc/Progress?positionTicks=420&isPaused=true&mediaSourceId=src&api_key=token&unknown=1", nil))
+
+		if recorder.Code != http.StatusNoContent {
+			t.Fatalf("status = %d, want 204", recorder.Code)
+		}
+		if method != http.MethodPost || path != "/Sessions/Playing/Progress" {
+			t.Errorf("forwarded to %s %s, want POST /Sessions/Playing/Progress", method, path)
+		}
+		if apiKey != "token" {
+			t.Errorf("api_key = %q, want the token kept for authentication", apiKey)
+		}
+		want := map[string]any{"ItemId": "abc", "PositionTicks": float64(420), "IsPaused": true, "MediaSourceId": "src"}
+		if !maps.Equal(report, want) {
+			t.Errorf("report = %v, want %v", report, want)
+		}
+	})
+
+	t.Run("reports a stop", func(t *testing.T) {
+		recorder := httptest.NewRecorder()
+		m.ServeHTTP(recorder, httptest.NewRequest(http.MethodDelete, "/PlayingItems/abc?positionTicks=9", nil))
+
+		if path != "/Sessions/Playing/Stopped" || report["PositionTicks"] != float64(9) {
+			t.Errorf("forwarded %v to %s, want the position at /Sessions/Playing/Stopped", report, path)
+		}
+	})
+
+	t.Run("refuses a position that is not a number", func(t *testing.T) {
+		recorder := httptest.NewRecorder()
+		m.ServeHTTP(recorder, httptest.NewRequest(http.MethodPost, "/PlayingItems/abc/Progress?positionTicks=soon", nil))
+
+		if recorder.Code != http.StatusBadRequest {
+			t.Errorf("status = %d, want 400", recorder.Code)
+		}
+	})
 }

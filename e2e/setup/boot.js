@@ -74,7 +74,8 @@ async function boot({ mediaSeconds = 20, playableEpisodes = false } = {}) {
   fs.mkdirSync(jellyfinData, { recursive: true });
   const jellyfin = JSON.parse(run(binaries.fixtures, ['jellyfin', jellyfinData]));
 
-  const apiPort = await freePort();
+  const reserved = await reservePort();
+  const apiPort = reserved.port;
   const posterRoot = path.join(BUILD, 'posters');
   fs.rmSync(posterRoot, { recursive: true, force: true });
   fs.mkdirSync(path.join(posterRoot, POSTER_SIZE), { recursive: true });
@@ -118,6 +119,7 @@ async function boot({ mediaSeconds = 20, playableEpisodes = false } = {}) {
   const baseUrl = `http://127.0.0.1:${webPort}`;
   const provider = await startProvider(binaries.fixtures, baseUrl);
 
+  await reserved.release();
   const api = spawn(binaries.gojellyfin, ['server'], {
     env: {
       ...process.env,
@@ -177,13 +179,9 @@ async function boot({ mediaSeconds = 20, playableEpisodes = false } = {}) {
     },
     serverLog: () => log.join(''),
     async stop() {
-      await new Promise((resolve) => front.close(resolve));
-      await new Promise((resolve) => catalogue.close(resolve));
-      await new Promise((resolve) => downloader.close(resolve));
-      api.kill('SIGTERM');
-      await once(api);
-      provider.child.kill('SIGTERM');
-      await once(provider.child);
+      await Promise.all([front, catalogue, downloader].map(shut));
+      await terminate(api);
+      await terminate(provider.child);
       file.end();
       run(binaries.fixtures, ['drop'], { env: scratchEnv, allowFailure: true });
     },
@@ -378,21 +376,40 @@ function withDatabase(dsn, name) {
 }
 
 // :0 rather than a fixed port, so a run can never take :8081 from `make dev`.
-function freePort() {
+// The port stays held until the server is about to bind it, because every
+// listen(0) the harness makes in between could otherwise be handed it.
+function reservePort() {
   return new Promise((resolve, reject) => {
     const probe = net.createServer();
     probe.on('error', reject);
     probe.listen(0, '127.0.0.1', () => {
       const { port } = probe.address();
-      probe.close(() => resolve(port));
+      resolve({ port, release: () => new Promise((done) => probe.close(done)) });
     });
   });
 }
 
+const connections = new WeakMap();
+
 function listen(server) {
+  const open = new Set();
+  connections.set(server, open);
+  server.on('connection', (socket) => {
+    open.add(socket);
+    socket.on('close', () => open.delete(socket));
+  });
   return new Promise((resolve, reject) => {
     server.on('error', reject);
     server.listen(0, '127.0.0.1', () => resolve(server.address().port));
+  });
+}
+
+// A client still connected, such as a WebView holding the websocket, keeps
+// close from ever calling back, so whatever is still open is cut.
+function shut(server) {
+  return new Promise((resolve) => {
+    server.close(resolve);
+    for (const socket of connections.get(server) ?? []) socket.destroy();
   });
 }
 
@@ -427,6 +444,13 @@ function answers(port) {
       resolve(false);
     });
   });
+}
+
+async function terminate(child) {
+  child.kill('SIGTERM');
+  const killing = setTimeout(() => child.kill('SIGKILL'), 15000);
+  await once(child);
+  clearTimeout(killing);
 }
 
 function once(child) {
