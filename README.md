@@ -81,6 +81,22 @@ hands ffmpeg the item's filesystem path straight out of the database, so it has
 to be the same media at the same path in every pod — read-write for the API,
 which deletes files, read-only everywhere else.
 
+### New downloads show up at once
+
+Saving a Sonarr or Radarr on the admin app's Libraries screen also adds a
+webhook named `gojellyfin` under its Settings, Connect, so an import, an
+upgrade, a rename or a delete refreshes that one movie or series straight away
+instead of waiting for the next library refresh. It needs `PUBLISHED_SERVER_URL`
+(the chart's `hostname`), and the downloader has to be able to reach that
+address: the instance tests the webhook before it saves it, and the card on the
+Libraries screen says why when it refused.
+
+If it cannot be registered, add it by hand: **Settings → Connect → + → Webhook**,
+with On Import, On Upgrade, On Rename and every delete ticked, method `POST`,
+URL `<your server>/webhooks/<source id>`, username `gojellyfin` and the password
+the Libraries card shows for that downloader. The scheduled refresh still runs,
+so a missed call is caught up on the next one.
+
 Migrations never run at startup unless `MIGRATE_ON_START=true`, which is unsafe
 with rolling replicas, so the chart does not offer it. Run `gojellyfin migrate`
 as a one-off or set `migration.enabled=true` for a pre-upgrade hook Job;
