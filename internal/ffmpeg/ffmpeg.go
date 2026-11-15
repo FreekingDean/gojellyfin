@@ -8,11 +8,13 @@ import (
 var ErrNotAvailable = errors.New("ffprobe is not installed")
 
 type FFMpeg struct {
-	probe string
+	probe  string
+	decode string
 }
 
 func New() *FFMpeg {
-	path, _ := exec.LookPath("ffprobe")
+	probe, _ := exec.LookPath("ffprobe")
+	decode, _ := exec.LookPath("ffmpeg")
 
-	return &FFMpeg{probe: path}
+	return &FFMpeg{probe: probe, decode: decode}
 }

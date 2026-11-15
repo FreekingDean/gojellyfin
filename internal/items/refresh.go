@@ -83,6 +83,7 @@ func (s *Service) RefreshItem(ctx context.Context, libraryID, sourceID uuid.UUID
 	}
 
 	var previous []uuid.UUID
+	unheard := false
 	for _, file := range scanned.Files {
 		jobs.Heartbeat(ctx, file.Path)
 
@@ -110,6 +111,11 @@ func (s *Service) RefreshItem(ctx context.Context, libraryID, sourceID uuid.UUID
 		if NeedsProbe(saved) {
 			enqueue(ctx, jobs.ProbeFile, jobs.With(jobs.ParamSource, saved.ID))
 		}
+		unheard = unheard || saved.SegmentsDetectedAt == nil
+	}
+
+	if unheard && item.Kind == itemmodel.KindEpisode && item.ParentID != nil {
+		enqueue(ctx, jobs.DetectSeasonIntros, jobs.With(jobs.ParamSeason, *item.ParentID))
 	}
 
 	if err := s.SweepUnreachable(ctx, previous); err != nil {

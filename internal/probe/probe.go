@@ -57,6 +57,7 @@ func (s *Prober) probeFile(ctx context.Context, source *items.MediaSource) (*ite
 		Size:         optional(probe.Format.Size),
 		Bitrate:      optional(probe.Format.BitRate),
 		Streams:      streams,
+		Segments:     chapterSegments(probe.Chapters),
 	}, nil
 }
 

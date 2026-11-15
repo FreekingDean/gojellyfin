@@ -24,6 +24,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/livetv"
 	"github.com/FreekingDean/gojellyfin/internal/server/localization"
 	"github.com/FreekingDean/gojellyfin/internal/server/mediainfo"
+	"github.com/FreekingDean/gojellyfin/internal/server/mediasegment"
 	"github.com/FreekingDean/gojellyfin/internal/server/movies"
 	"github.com/FreekingDean/gojellyfin/internal/server/packages"
 	"github.com/FreekingDean/gojellyfin/internal/server/persons"
@@ -84,6 +85,7 @@ type (
 	LibraryStructureServer   = librarystructure.Server
 	LocalizationServer       = localization.Server
 	MediaInfoServer          = mediainfo.Server
+	MediaSegmentServer       = mediasegment.Server
 	PlaylistsServer          = playlists.Server
 	PlaystateServer          = playstate.Server
 	PluginsServer            = plugins.Server
@@ -134,6 +136,7 @@ type Server struct {
 	*LibraryStructureServer
 	*LocalizationServer
 	*MediaInfoServer
+	*MediaSegmentServer
 	*PlaylistsServer
 	*PlaystateServer
 	*PluginsServer
@@ -186,6 +189,7 @@ func New(
 	libraryStructure *librarystructure.Server,
 	localization *localization.Server,
 	mediaInfo *mediainfo.Server,
+	mediaSegment *mediasegment.Server,
 	playlists *playlists.Server,
 	playstate *playstate.Server,
 	plugins *plugins.Server,
@@ -235,6 +239,7 @@ func New(
 		LibraryStructureServer:   libraryStructure,
 		LocalizationServer:       localization,
 		MediaInfoServer:          mediaInfo,
+		MediaSegmentServer:       mediaSegment,
 		PlaylistsServer:          playlists,
 		PlaystateServer:          playstate,
 		PluginsServer:            plugins,
