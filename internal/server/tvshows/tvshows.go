@@ -62,12 +62,14 @@ func (s *Server) GetSeasons(ctx context.Context, request api.GetSeasonsRequestOb
 func (s *Server) GetEpisodes(ctx context.Context, request api.GetEpisodesRequestObject) (api.GetEpisodesResponseObject, error) {
 	startIndex := int(apiutil.Deref(request.Params.StartIndex))
 	records, total, err := s.items.SeriesEpisodes(ctx, items.EpisodeQuery{
-		Viewer:     items.Everyone,
-		SeriesID:   request.SeriesId,
-		SeasonID:   request.Params.SeasonId,
-		Season:     request.Params.Season,
-		StartIndex: startIndex,
-		Limit:      int(apiutil.Deref(request.Params.Limit)),
+		Viewer:      items.Everyone,
+		SeriesID:    request.SeriesId,
+		SeasonID:    request.Params.SeasonId,
+		Season:      request.Params.Season,
+		StartItemID: request.Params.StartItemId,
+		Shuffled:    apiutil.Deref(request.Params.SortBy) == api.ItemSortByRandom,
+		StartIndex:  startIndex,
+		Limit:       int(apiutil.Deref(request.Params.Limit)),
 	})
 	if err != nil {
 		return nil, err

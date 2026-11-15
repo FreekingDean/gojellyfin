@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -203,7 +204,7 @@ func TestService_SeriesEpisodes(t *testing.T) {
 	otherSeason := fixture.add(t, seed{kind: itemmodel.KindSeason, name: "Other Season", parentID: &other, index: number(1)})
 
 	fixture.add(t, seed{kind: itemmodel.KindEpisode, name: "S02E01", parentID: &seasonTwo, index: number(1), parentIndex: number(2)})
-	fixture.add(t, seed{kind: itemmodel.KindEpisode, name: "S01E02", parentID: &seasonOne, index: number(2), parentIndex: number(1)})
+	second := fixture.add(t, seed{kind: itemmodel.KindEpisode, name: "S01E02", parentID: &seasonOne, index: number(2), parentIndex: number(1)})
 	fixture.add(t, seed{kind: itemmodel.KindEpisode, name: "S01E01", parentID: &seasonOne, index: number(1), parentIndex: number(1)})
 	fixture.add(t, seed{kind: itemmodel.KindEpisode, name: "S02 Extra", parentID: &seasonTwo, parentIndex: number(2)})
 	fixture.add(t, seed{kind: itemmodel.KindMovie, name: "Behind The Scenes", parentID: &seasonOne, index: number(1), parentIndex: number(1)})
@@ -239,6 +240,18 @@ func TestService_SeriesEpisodes(t *testing.T) {
 			want:      []string{"S01E02", "S02E01"},
 			wantTotal: 4,
 		},
+		{
+			name:      "starts at the episode asked for",
+			query:     EpisodeQuery{Viewer: Everyone, SeriesID: series, StartItemID: &second},
+			want:      []string{"S01E02", "S02E01", "S02 Extra"},
+			wantTotal: 3,
+		},
+		{
+			name:      "pages after the start",
+			query:     EpisodeQuery{Viewer: Everyone, SeriesID: series, StartItemID: &second, StartIndex: 1, Limit: 1},
+			want:      []string{"S02E01"},
+			wantTotal: 3,
+		},
 	}
 
 	for _, test := range tests {
@@ -255,6 +268,42 @@ func TestService_SeriesEpisodes(t *testing.T) {
 				t.Errorf("total = %d, want %d", total, test.wantTotal)
 			}
 		})
+	}
+}
+
+func TestService_SeriesEpisodes_Shuffled(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := context.Background()
+
+	series := fixture.add(t, seed{kind: itemmodel.KindSeries, name: "Series"})
+	season := fixture.add(t, seed{kind: itemmodel.KindSeason, name: "Season 1", parentID: &series, index: number(1)})
+	want := make([]string, 0, 20)
+	for episode := range int32(20) {
+		name := fmt.Sprintf("E%02d", episode)
+		fixture.add(t, seed{kind: itemmodel.KindEpisode, name: name, parentID: &season, index: number(episode), parentIndex: number(1)})
+		want = append(want, name)
+	}
+
+	orders := map[string]bool{}
+	for range 5 {
+		records, total, err := fixture.service.SeriesEpisodes(ctx, EpisodeQuery{Viewer: Everyone, SeriesID: series, Shuffled: true})
+		if err != nil {
+			t.Fatalf("failed to query episodes: %v", err)
+		}
+		if total != len(want) {
+			t.Errorf("total = %d, want %d", total, len(want))
+		}
+
+		got := names(records)
+		orders[strings.Join(got, ",")] = true
+		slices.Sort(got)
+		if !slices.Equal(got, want) {
+			t.Errorf("episodes = %v, want every one of %v", got, want)
+		}
+	}
+
+	if len(orders) == 1 {
+		t.Errorf("five shuffles all came back in one order")
 	}
 }
 
