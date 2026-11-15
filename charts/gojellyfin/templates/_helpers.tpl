@@ -270,3 +270,13 @@ IfNotPresent
   readOnly: {{ $.readOnly }}
 {{- end }}
 {{- end }}
+
+{{- define "gojellyfin.spread" -}}
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        {{- include "gojellyfin.selectorLabels" . | nindent 8 }}
+{{- end }}
