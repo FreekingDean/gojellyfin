@@ -73,8 +73,9 @@ var (
 	}
 
 	unownedShades = map[string]color.RGBA{
-		"Wanted Film": {R: 230, G: 150, B: 30, A: 255},
-		"Wanted Show": {R: 150, G: 60, B: 200, A: 255},
+		"Wanted Film":   {R: 230, G: 150, B: 30, A: 255},
+		"Wanted Show":   {R: 150, G: 60, B: 200, A: 255},
+		"Asked Picture": {R: 40, G: 170, B: 120, A: 255},
 	}
 
 	backdropShades = map[string]color.RGBA{

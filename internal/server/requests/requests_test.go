@@ -3,16 +3,21 @@ package requests
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/auth"
+	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/requests"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
+	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/sources"
 	"github.com/FreekingDean/gojellyfin/internal/store"
+	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
 type stubQueue struct {
@@ -22,7 +27,19 @@ type stubQueue struct {
 	approved []uuid.UUID
 	declined []uuid.UUID
 	allowed  map[uuid.UUID]requests.Allowance
+	mine     []*requests.Request
+	askedBy  uuid.UUID
 }
+
+func (s *stubQueue) Mine(_ context.Context, userID uuid.UUID) ([]*requests.Request, error) {
+	s.askedBy = userID
+
+	return s.mine, nil
+}
+
+type held []string
+
+func (h held) HeldKeys(context.Context, []string) ([]string, error) { return h, nil }
 
 func (s *stubQueue) Queue(context.Context) ([]requests.Asked, error) { return s.queue, nil }
 
@@ -187,4 +204,47 @@ func TestServer_RequestUsers(t *testing.T) {
 			t.Errorf("response = %#v, %v", response, err)
 		}
 	})
+}
+
+func TestServer_GoJellyfinListMyRequests(t *testing.T) {
+	userID := uuid.New()
+	asked := time.Date(2026, 11, 14, 9, 0, 0, 0, time.UTC)
+	request := func(key string, tmdbID int, status requests.Status) *requests.Request {
+		return &requests.Request{Key: key, Name: key, Kind: "Movie", TmdbID: tmdbID, Status: status, CreatedAt: asked}
+	}
+	queue := &stubQueue{mine: []*requests.Request{
+		request("movie:tmdb:1", 1, requests.StatusPending),
+		request("movie:tmdb:2", 2, requests.StatusApproved),
+		request("movie:tmdb:3", 3, requests.StatusApproved),
+		request("movie:tmdb:4", 4, requests.StatusDeclined),
+	}}
+	server := &Server{requests: queue, library: held{"movie:tmdb:3", "movie:tmdb:4"}}
+	ctx := auth.ContextWithSession(context.Background(), &sessions.Session{UserID: &userID})
+
+	response, err := server.GoJellyfinListMyRequests(ctx, api.GoJellyfinListMyRequestsRequestObject{})
+	if err != nil {
+		t.Fatalf("failed to list: %v", err)
+	}
+	listed, ok := response.(api.GoJellyfinListMyRequests200JSONResponse)
+	if !ok {
+		t.Fatalf("response = %T, want 200", response)
+	}
+	if queue.askedBy != userID {
+		t.Errorf("asked for %s's requests, want the signed-in user's", queue.askedBy)
+	}
+
+	states := []string{}
+	for _, entry := range listed {
+		states = append(states, entry.State)
+	}
+	if want := []string{"Pending", "Requested", "Ready", "Declined"}; strings.Join(states, ",") != strings.Join(want, ",") {
+		t.Errorf("states = %v, want %v", states, want)
+	}
+	if listed[0].ItemId != discover.ID(itemmodel.KindMovie, 1) || !listed[0].CreatedAt.Equal(asked) {
+		t.Errorf("first = %+v, want the title's unowned id and when it was asked", listed[0])
+	}
+
+	if _, err := server.GoJellyfinListMyRequests(context.Background(), api.GoJellyfinListMyRequestsRequestObject{}); !errors.Is(err, auth.ErrUnauthorized) {
+		t.Errorf("anonymous = %v, want ErrUnauthorized", err)
+	}
 }

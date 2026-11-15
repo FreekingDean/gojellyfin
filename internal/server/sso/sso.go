@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -35,11 +36,12 @@ const (
 
 	credentialsKey = "jellyfin_credentials"
 	webRoot        = "/web/"
-	adminRoot      = "/admin"
 	loginRoute     = "/web/#/login.html"
 	deviceName     = "Single sign-on"
 	appName        = "Jellyfin Web"
 )
+
+var pageRoots = []string{"/admin", "/request"}
 
 var Routes = []string{
 	"GET " + StartPath,
@@ -185,7 +187,7 @@ func (h *Handler) callback(w http.ResponseWriter, r *http.Request) {
 
 	target := webRoot
 	switch {
-	case state.Return == adminRoot || strings.HasPrefix(state.Return, adminRoot+"/"):
+	case ownPage(state.Return):
 		target = state.Return
 	case state.Return != "":
 		target = webRoot + "#" + state.Return
@@ -276,6 +278,12 @@ func (h *Handler) returnTo(r *http.Request) string {
 	}
 
 	return route
+}
+
+func ownPage(route string) bool {
+	return slices.ContainsFunc(pageRoots, func(root string) bool {
+		return route == root || strings.HasPrefix(route, root+"/") || strings.HasPrefix(route, root+"?")
+	})
 }
 
 func validReturn(route string) bool {

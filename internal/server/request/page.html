@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Request</title>
+<style>
+  body { background: #101010; color: #f2f2f2; font-family: system-ui, sans-serif; margin: 0; }
+  header { display: flex; align-items: center; gap: .5em; padding: .5em 1em; background: #181818; border-bottom: 1px solid #262626; }
+  header a { display: flex; align-items: center; justify-content: center; width: 2.75em; height: 2.75em; color: #d0d0d0; text-decoration: none; font-size: 1.1em; }
+  header h1 { font-size: 1.1em; font-weight: 600; margin: 0; }
+  main { max-width: 72em; margin: 0 auto; padding: 1em; display: grid; gap: 2em; }
+  @media (min-width: 60em) { main.signed { grid-template-columns: 1fr 20em; } }
+  h2 { font-size: 1.1em; font-weight: 600; margin: 0 0 .75em; }
+  a { color: #00a4dc; }
+  input { width: 100%; box-sizing: border-box; height: 3em; padding: 0 1em; border-radius: .6em; border: 1px solid #333; background: #1c1c1c; color: #f2f2f2; font: inherit; font-size: 1em; }
+  input::placeholder { color: #8a8a8a; }
+  button, .button { font: inherit; font-size: .9em; font-weight: 600; border: 0; border-radius: .5em; padding: 0 1em; height: 2.75em; cursor: pointer; background: #00a4dc; color: #06222c; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+  button:disabled { opacity: .6; cursor: default; }
+  [hidden] { display: none !important; }
+  #results { list-style: none; margin: 1em 0 0; padding: 0; display: grid; gap: .75em; grid-template-columns: repeat(auto-fill, minmax(10em, 1fr)); }
+  #results li { background: #181818; border-radius: .6em; overflow: hidden; display: flex; flex-direction: column; }
+  .poster { aspect-ratio: 2 / 3; background: #262626; background-size: cover; background-position: center; }
+  .about { padding: .6em .7em .75em; display: flex; flex-direction: column; gap: .5em; flex: 1; }
+  .name { font-weight: 600; font-size: .95em; }
+  .meta { font-size: .8em; color: #9a9a9a; }
+  .about > :last-child { margin-top: auto; }
+  .chip { display: inline-block; padding: .4em .7em; border-radius: .5em; font-size: .8em; font-weight: 600; border: 1px solid; text-align: center; }
+  .Requested { background: #10303b; color: #7fd6f2; border-color: #1d5668; }
+  .Pending { background: #3a2c10; color: #f2c46b; border-color: #6b5220; }
+  .Ready { background: #14261a; color: #8fe0a0; border-color: #2f6f3a; text-decoration: none; }
+  .Declined { background: #2a1616; color: #f0a0a0; border-color: #6b2b2b; }
+  #mine ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5em; }
+  #mine li { display: flex; align-items: center; justify-content: space-between; gap: .75em; background: #181818; border-radius: .6em; padding: .6em .75em; }
+  #mine li span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #signIn { max-width: 22em; margin: 2em auto; display: flex; flex-direction: column; gap: .75em; width: 100%; }
+  #said { color: #cfefff; background: #10303b; border: 1px solid #1d5668; border-radius: .6em; padding: .75em 1em; margin: 1em 0 0; }
+  #said:empty { display: none; }
+  .quiet { color: #9a9a9a; }
+</style>
+</head>
+<body>
+<header>
+  <a href="/web/" aria-label="Back to Jellyfin">&#8249;</a>
+  <h1>Request</h1>
+</header>
+<main id="main">
+  <form id="signIn" hidden>
+    <h2>Sign in to request</h2>
+    <input id="username" autocomplete="username" placeholder="Username" required>
+    <input id="password" type="password" autocomplete="current-password" placeholder="Password">
+    <button type="submit">Sign in</button>
+    {{if .SingleSignOn}}<a class="button" id="singleSignOn" href="/sso/oidc/start?redirect=%2Frequest">Sign in with single sign-on</a>{{end}}
+    <p id="refused" class="quiet"></p>
+  </form>
+
+  <section id="find" hidden>
+    <input type="search" id="term" aria-label="Search movies and shows" placeholder="Search movies and shows" autocomplete="off">
+    <p id="said" role="status"></p>
+    <p id="listed" class="quiet"></p>
+    <ul id="results"></ul>
+  </section>
+
+  <section id="mine" hidden>
+    <h2>My requests</h2>
+    <p id="none" class="quiet">Nothing yet. Search for a title and press Request.</p>
+    <ul id="requested"></ul>
+  </section>
+</main>
+<script>
+(function () {
+  var serverId = {{.ServerID}};
+  var element = function (id) { return document.getElementById(id); };
+  var labels = { Requested: 'Requested', Pending: 'Awaiting approval', Ready: 'Ready', Declined: 'Declined' };
+
+  var read = function () {
+    try { return JSON.parse(localStorage.getItem('jellyfin_credentials')) || {}; } catch (e) { return {}; }
+  };
+  var stored = function () {
+    var servers = (read().Servers || []).filter(function (entry) { return entry.AccessToken; });
+
+    return servers.filter(function (entry) { return entry.Id === serverId; })[0] || servers[0];
+  };
+  var store = function (token, userId) {
+    var credentials = read();
+    var servers = credentials.Servers || [];
+    var entry = servers.filter(function (candidate) { return candidate.Id === serverId; })[0];
+    if (!entry) {
+      entry = { Id: serverId, ManualAddress: location.origin, LastConnectionMode: 2 };
+      servers.push(entry);
+    }
+    entry.AccessToken = token;
+    entry.UserId = userId;
+    entry.DateLastAccessed = Date.now();
+    credentials.Servers = servers;
+    localStorage.setItem('jellyfin_credentials', JSON.stringify(credentials));
+  };
+
+  var device = function () {
+    var id = '';
+    try { id = localStorage.getItem('gojellyfin_request_device') || ''; } catch (e) {}
+    if (!id) {
+      id = 'request-' + Math.random().toString(16).slice(2) + Date.now().toString(16);
+      try { localStorage.setItem('gojellyfin_request_device', id); } catch (e) {}
+    }
+
+    return id;
+  };
+
+  var server = stored();
+  var call = function (path, options) {
+    options = options || {};
+    options.headers = {
+      'Authorization': 'MediaBrowser Client="Request", Device="Browser", DeviceId="' + device() + '", Version="1"' + (server ? ', Token="' + server.AccessToken + '"' : ''),
+      'Content-Type': 'application/json'
+    };
+
+    return fetch(path, options).then(function (response) {
+      if (response.status === 401 && server) {
+        signIn();
+      }
+      if (!response.ok) {
+        var error = new Error(path + ' answered ' + response.status);
+        error.status = response.status;
+        throw error;
+      }
+
+      return response.status === 204 ? null : response.json();
+    });
+  };
+
+  var say = function (text) { element('said').textContent = text; };
+
+  var signIn = function () {
+    server = null;
+    element('main').className = '';
+    element('find').hidden = true;
+    element('mine').hidden = true;
+    element('signIn').hidden = false;
+  };
+
+  var chip = function (state, href) {
+    var tag = document.createElement(href ? 'a' : 'span');
+    tag.className = 'chip ' + state;
+    tag.textContent = labels[state] || state;
+    if (href) {
+      tag.href = href;
+    }
+
+    return tag;
+  };
+  var details = function (id) { return '/web/#/details?id=' + encodeURIComponent(id) + '&serverId=' + encodeURIComponent(serverId); };
+
+  var mine = function () {
+    call('/GoJellyfin/MyRequests').then(function (requests) {
+      var list = element('requested');
+      list.textContent = '';
+      element('none').hidden = requests.length > 0;
+      requests.forEach(function (request) {
+        var row = document.createElement('li');
+        var name = document.createElement('span');
+        name.textContent = request.Name;
+        row.appendChild(name);
+        row.appendChild(chip(request.State, request.State === 'Ready' ? details(request.ItemId) : ''));
+        list.appendChild(row);
+      });
+    }).catch(failed);
+  };
+
+  var action = function (item) {
+    if (item.LocationType !== 'Virtual') {
+      return chip('Ready', details(item.Id));
+    }
+
+    var tagline = (item.Taglines || [])[0];
+    if (tagline === 'Awaiting approval') {
+      return chip('Pending');
+    }
+    if (tagline === 'Requested' || (item.UserData && item.UserData.IsFavorite)) {
+      return chip('Requested');
+    }
+
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = 'Request';
+    button.addEventListener('click', function () {
+      button.disabled = true;
+      call('/UserFavoriteItems/' + item.Id + '?userId=' + server.UserId, { method: 'POST' }).then(function () {
+        say('Requested ' + item.Name + '.');
+        search();
+        mine();
+      }).catch(function (error) {
+        button.disabled = false;
+        say(error.status === 403 ? 'You cannot request ' + item.Name + ' right now. You may be over your weekly limit.' : 'That did not work. Try again in a moment.');
+      });
+    });
+
+    return button;
+  };
+
+  var show = function (items) {
+    var results = element('results');
+    results.textContent = '';
+    element('listed').textContent = items.length ? '' : 'Nothing found';
+    items.forEach(function (item) {
+      var card = document.createElement('li');
+      var poster = document.createElement('div');
+      var about = document.createElement('div');
+      var name = document.createElement('span');
+      var meta = document.createElement('span');
+
+      poster.className = 'poster';
+      if (item.ImageTags && item.ImageTags.Primary) {
+        poster.style.backgroundImage = 'url("/Items/' + item.Id + '/Images/Primary?maxWidth=300&tag=' + encodeURIComponent(item.ImageTags.Primary) + '")';
+      }
+      about.className = 'about';
+      name.className = 'name';
+      name.textContent = item.Name;
+      meta.className = 'meta';
+      meta.textContent = [item.ProductionYear, item.Type === 'Series' ? 'Show' : 'Movie'].filter(Boolean).join(' · ');
+      about.appendChild(name);
+      about.appendChild(meta);
+      about.appendChild(action(item));
+      card.appendChild(poster);
+      card.appendChild(about);
+      results.appendChild(card);
+    });
+  };
+
+  var failed = function (error) {
+    console.error(error);
+    say('That did not work. Try again in a moment.');
+  };
+
+  var asked = 0;
+  var search = function () {
+    var term = element('term').value.trim();
+    var ask = ++asked;
+    if (!term) {
+      element('results').textContent = '';
+      element('listed').textContent = '';
+
+      return;
+    }
+
+    call('/Items?Recursive=true&IncludeItemTypes=Movie&IncludeItemTypes=Series&Fields=Taglines&Limit=24&UserId=' + server.UserId +
+      '&SearchTerm=' + encodeURIComponent(term)).then(function (found) {
+      if (ask === asked) {
+        show(found.Items);
+      }
+    }).catch(failed);
+  };
+
+  var waiting = null;
+  element('term').addEventListener('input', function () {
+    clearTimeout(waiting);
+    waiting = setTimeout(search, 300);
+  });
+
+  var start = function () {
+    element('signIn').hidden = true;
+    element('main').className = 'signed';
+    element('find').hidden = false;
+    element('mine').hidden = false;
+    var term = new URLSearchParams(location.search).get('q');
+    if (term) {
+      element('term').value = term;
+      search();
+    }
+    mine();
+  };
+
+  element('signIn').addEventListener('submit', function (event) {
+    event.preventDefault();
+    element('refused').textContent = '';
+    call('/Users/AuthenticateByName', {
+      method: 'POST',
+      body: JSON.stringify({ Username: element('username').value, Pw: element('password').value })
+    }).then(function (answer) {
+      store(answer.AccessToken, answer.User.Id);
+      server = stored();
+      start();
+    }).catch(function () {
+      element('refused').textContent = 'That username and password did not match.';
+    });
+  });
+
+  if (server) {
+    start();
+  } else {
+    signIn();
+  }
+})();
+</script>
+</body>
+</html>

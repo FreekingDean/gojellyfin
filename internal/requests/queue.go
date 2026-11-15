@@ -148,3 +148,15 @@ func (s *Service) Allow(ctx context.Context, userID uuid.UUID, allowance Allowan
 
 	return nil
 }
+
+func (s *Service) Mine(ctx context.Context, userID uuid.UUID) ([]*Request, error) {
+	records, err := s.store.Request.Query().
+		Where(requestmodel.UserID(userID)).
+		Order(requestmodel.ByCreatedAt(sql.OrderDesc())).
+		AllModels(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query the user's requests: %w", err)
+	}
+
+	return records, nil
+}

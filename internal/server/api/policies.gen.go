@@ -213,6 +213,7 @@ var OperationPolicies = map[string][]string{
 	"GoJellyfinFileReport":                {"DefaultAuthorization"},
 	"GoJellyfinGetHealth":                 {"DefaultAuthorization", "RequiresElevation"},
 	"GoJellyfinGetSource":                 {"DefaultAuthorization", "RequiresElevation"},
+	"GoJellyfinListMyRequests":            {"DefaultAuthorization"},
 	"GoJellyfinListReports":               {"DefaultAuthorization", "RequiresElevation"},
 	"GoJellyfinListRequestUsers":          {"DefaultAuthorization", "RequiresElevation"},
 	"GoJellyfinListRequests":              {"DefaultAuthorization", "RequiresElevation"},
