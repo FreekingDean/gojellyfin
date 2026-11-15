@@ -3,7 +3,9 @@ package probe
 import (
 	"context"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/google/uuid"
@@ -14,11 +16,12 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/reports"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
+	itemsourcemodel "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	reportmodel "github.com/FreekingDean/gojellyfin/internal/store/report"
 	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
 
-func TestProber_ReportsAFileItCannotRead(t *testing.T) {
+func TestProber(t *testing.T) {
 	ctx := context.Background()
 
 	config, err := env.Load()
@@ -118,6 +121,44 @@ func TestProber_ReportsAFileItCannotRead(t *testing.T) {
 		}
 		if reported {
 			t.Errorf("a missing file was reported as broken")
+		}
+	})
+
+	t.Run("a film is stored with its keyframes and a song with none", func(t *testing.T) {
+		film := filepath.Join(directory, "film.mkv")
+		song := filepath.Join(directory, "song.mka")
+		for path, args := range map[string][]string{
+			film: {"-f", "lavfi", "-i", "testsrc=size=160x120:rate=25:duration=4", "-c:v", "libx264", "-g", "50", "-sc_threshold", "0"},
+			song: {"-f", "lavfi", "-i", "sine=frequency=440:duration=1", "-c:a", "aac"},
+		} {
+			build := exec.Command("ffmpeg", append(append([]string{"-nostdin", "-loglevel", "error"}, args...), path)...)
+			if output, err := build.CombinedOutput(); err != nil {
+				t.Skipf("this ffmpeg cannot build the fixture: %v: %s", err, output)
+			}
+		}
+
+		_, filmFile := held(t, film)
+		_, songFile := held(t, song)
+		for _, file := range []uuid.UUID{filmFile, songFile} {
+			if err := prober.ProbeSource(ctx, file); err != nil {
+				t.Fatalf("failed to probe: %v", err)
+			}
+		}
+
+		stored, err := client.ItemSource.Get(ctx, filmFile)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := []int64{0, 20_000_000}; !slices.Equal(stored.Keyframes, want) {
+			t.Errorf("film keyframes = %v, want %v", stored.Keyframes, want)
+		}
+
+		indexed, err := client.ItemSource.Query().Where(itemsourcemodel.ID(songFile), itemsourcemodel.KeyframesIsNil()).Exist(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !indexed {
+			t.Errorf("a song was stored with a keyframe index")
 		}
 	})
 }

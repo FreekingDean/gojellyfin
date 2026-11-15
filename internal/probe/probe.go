@@ -6,17 +6,21 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/FreekingDean/gojellyfin/internal/ffmpeg"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	streammodel "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 )
 
 const (
 	ticksPerSecond = 10_000_000
 	maxLyricsBytes = 1 << 20
+	heartbeatEvery = 30 * time.Second
 )
 
 func (s *Prober) probeFile(ctx context.Context, source *items.MediaSource) (*items.MediaSource, error) {
@@ -57,7 +61,13 @@ func (s *Prober) probeFile(ctx context.Context, source *items.MediaSource) (*ite
 		})
 	}
 
+	keyframes, err := s.keyframes(ctx, source.Path, probe)
+	if err != nil {
+		return nil, err
+	}
+
 	return &items.MediaSource{
+		Keyframes:    keyframes,
 		Container:    container(probe.Format.FormatName, source.Path),
 		RunTimeTicks: optional(int64(probe.Format.Duration * ticksPerSecond)),
 		Size:         optional(probe.Format.Size),
@@ -66,6 +76,34 @@ func (s *Prober) probeFile(ctx context.Context, source *items.MediaSource) (*ite
 		Segments:     chapterSegments(probe.Chapters),
 		Lyrics:       lyricsOf(source.Path, probe),
 	}, nil
+}
+
+func (s *Prober) keyframes(ctx context.Context, path string, probe *ffmpeg.Probe) ([]int64, error) {
+	if !slices.ContainsFunc(probe.Streams, func(stream ffmpeg.Stream) bool { return stream.CodecType == "video" }) {
+		return nil, nil
+	}
+
+	done := make(chan struct{})
+	defer close(done)
+	go beat(ctx, done, path)
+
+	return s.ffmpeg.Keyframes(ctx, path)
+}
+
+func beat(ctx context.Context, done <-chan struct{}, path string) {
+	ticker := time.NewTicker(heartbeatEvery)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-done:
+			return
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			jobs.Heartbeat(ctx, path)
+		}
+	}
 }
 
 func lyricsOf(path string, probe *ffmpeg.Probe) string {

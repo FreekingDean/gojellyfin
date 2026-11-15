@@ -46,6 +46,8 @@ const (
 	FieldExternalFileID = "external_file_id"
 	// FieldLyrics holds the string denoting the lyrics field in the database.
 	FieldLyrics = "lyrics"
+	// FieldKeyframes holds the string denoting the keyframes field in the database.
+	FieldKeyframes = "keyframes"
 	// EdgeItem holds the string denoting the item edge name in mutations.
 	EdgeItem = "item"
 	// EdgeSource holds the string denoting the source edge name in mutations.
@@ -114,6 +116,7 @@ var Columns = []string{
 	FieldExternalID,
 	FieldExternalFileID,
 	FieldLyrics,
+	FieldKeyframes,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

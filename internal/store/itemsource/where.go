@@ -936,6 +936,16 @@ func LyricsContainsFold(v string) predicate.ItemSource {
 	return predicate.ItemSource(sql.FieldContainsFold(FieldLyrics, v))
 }
 
+// KeyframesIsNil applies the IsNil predicate on the "keyframes" field.
+func KeyframesIsNil() predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldIsNull(FieldKeyframes))
+}
+
+// KeyframesNotNil applies the NotNil predicate on the "keyframes" field.
+func KeyframesNotNil() predicate.ItemSource {
+	return predicate.ItemSource(sql.FieldNotNull(FieldKeyframes))
+}
+
 // HasItem applies the HasEdge predicate on the "item" edge.
 func HasItem() predicate.ItemSource {
 	return predicate.ItemSource(func(s *sql.Selector) {

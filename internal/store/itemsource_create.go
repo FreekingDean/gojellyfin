@@ -221,6 +221,12 @@ func (_c *ItemSourceCreate) SetNillableLyrics(v *string) *ItemSourceCreate {
 	return _c
 }
 
+// SetKeyframes sets the "keyframes" field.
+func (_c *ItemSourceCreate) SetKeyframes(v []int64) *ItemSourceCreate {
+	_c.mutation.SetKeyframes(v)
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *ItemSourceCreate) SetID(v uuid.UUID) *ItemSourceCreate {
 	_c.mutation.SetID(v)
@@ -444,6 +450,10 @@ func (_c *ItemSourceCreate) createSpec() (*ItemSource, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Lyrics(); ok {
 		_spec.SetField(itemsource.FieldLyrics, field.TypeString, value)
 		_node.Lyrics = value
+	}
+	if value, ok := _c.mutation.Keyframes(); ok {
+		_spec.SetField(itemsource.FieldKeyframes, field.TypeJSON, value)
+		_node.Keyframes = value
 	}
 	if nodes := _c.mutation.ItemIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -861,6 +871,24 @@ func (u *ItemSourceUpsert) ClearLyrics() *ItemSourceUpsert {
 	return u
 }
 
+// SetKeyframes sets the "keyframes" field.
+func (u *ItemSourceUpsert) SetKeyframes(v []int64) *ItemSourceUpsert {
+	u.Set(itemsource.FieldKeyframes, v)
+	return u
+}
+
+// UpdateKeyframes sets the "keyframes" field to the value that was provided on create.
+func (u *ItemSourceUpsert) UpdateKeyframes() *ItemSourceUpsert {
+	u.SetExcluded(itemsource.FieldKeyframes)
+	return u
+}
+
+// ClearKeyframes clears the value of the "keyframes" field.
+func (u *ItemSourceUpsert) ClearKeyframes() *ItemSourceUpsert {
+	u.SetNull(itemsource.FieldKeyframes)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -1235,6 +1263,27 @@ func (u *ItemSourceUpsertOne) UpdateLyrics() *ItemSourceUpsertOne {
 func (u *ItemSourceUpsertOne) ClearLyrics() *ItemSourceUpsertOne {
 	return u.Update(func(s *ItemSourceUpsert) {
 		s.ClearLyrics()
+	})
+}
+
+// SetKeyframes sets the "keyframes" field.
+func (u *ItemSourceUpsertOne) SetKeyframes(v []int64) *ItemSourceUpsertOne {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.SetKeyframes(v)
+	})
+}
+
+// UpdateKeyframes sets the "keyframes" field to the value that was provided on create.
+func (u *ItemSourceUpsertOne) UpdateKeyframes() *ItemSourceUpsertOne {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.UpdateKeyframes()
+	})
+}
+
+// ClearKeyframes clears the value of the "keyframes" field.
+func (u *ItemSourceUpsertOne) ClearKeyframes() *ItemSourceUpsertOne {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.ClearKeyframes()
 	})
 }
 
@@ -1779,6 +1828,27 @@ func (u *ItemSourceUpsertBulk) UpdateLyrics() *ItemSourceUpsertBulk {
 func (u *ItemSourceUpsertBulk) ClearLyrics() *ItemSourceUpsertBulk {
 	return u.Update(func(s *ItemSourceUpsert) {
 		s.ClearLyrics()
+	})
+}
+
+// SetKeyframes sets the "keyframes" field.
+func (u *ItemSourceUpsertBulk) SetKeyframes(v []int64) *ItemSourceUpsertBulk {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.SetKeyframes(v)
+	})
+}
+
+// UpdateKeyframes sets the "keyframes" field to the value that was provided on create.
+func (u *ItemSourceUpsertBulk) UpdateKeyframes() *ItemSourceUpsertBulk {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.UpdateKeyframes()
+	})
+}
+
+// ClearKeyframes clears the value of the "keyframes" field.
+func (u *ItemSourceUpsertBulk) ClearKeyframes() *ItemSourceUpsertBulk {
+	return u.Update(func(s *ItemSourceUpsert) {
+		s.ClearKeyframes()
 	})
 }
 

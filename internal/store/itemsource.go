@@ -3,6 +3,7 @@
 package store
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -52,6 +53,8 @@ type ItemSource struct {
 	ExternalFileID *int64 `json:"external_file_id,omitempty"`
 	// Lyrics holds the value of the "lyrics" field.
 	Lyrics string `json:"lyrics,omitempty"`
+	// Keyframes holds the value of the "keyframes" field.
+	Keyframes []int64 `json:"keyframes,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ItemSourceQuery when eager-loading is set.
 	Edges        ItemSourceEdges `json:"edges"`
@@ -129,6 +132,8 @@ func (*ItemSource) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case itemsource.FieldKeyframes:
+			values[i] = new([]byte)
 		case itemsource.FieldSize, itemsource.FieldRunTimeTicks, itemsource.FieldBitrate, itemsource.FieldExternalID, itemsource.FieldExternalFileID:
 			values[i] = new(sql.NullInt64)
 		case itemsource.FieldName, itemsource.FieldPath, itemsource.FieldContainer, itemsource.FieldLyrics:
@@ -262,6 +267,14 @@ func (_m *ItemSource) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Lyrics = value.String
 			}
+		case itemsource.FieldKeyframes:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field keyframes", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Keyframes); err != nil {
+					return fmt.Errorf("unmarshal field keyframes: %w", err)
+				}
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -386,6 +399,9 @@ func (_m *ItemSource) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("lyrics=")
 	builder.WriteString(_m.Lyrics)
+	builder.WriteString(", ")
+	builder.WriteString("keyframes=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Keyframes))
 	builder.WriteByte(')')
 	return builder.String()
 }

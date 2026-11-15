@@ -10089,6 +10089,8 @@ type ItemSourceMutation struct {
 	external_file_id     *int64
 	addexternal_file_id  *int64
 	lyrics               *string
+	keyframes            *[]int64
+	appendkeyframes      []int64
 	clearedFields        map[string]struct{}
 	item                 *uuid.UUID
 	cleareditem          bool
@@ -11023,6 +11025,71 @@ func (m *ItemSourceMutation) ResetLyrics() {
 	delete(m.clearedFields, itemsource.FieldLyrics)
 }
 
+// SetKeyframes sets the "keyframes" field.
+func (m *ItemSourceMutation) SetKeyframes(i []int64) {
+	m.keyframes = &i
+	m.appendkeyframes = nil
+}
+
+// Keyframes returns the value of the "keyframes" field in the mutation.
+func (m *ItemSourceMutation) Keyframes() (r []int64, exists bool) {
+	v := m.keyframes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKeyframes returns the old "keyframes" field's value of the ItemSource entity.
+// If the ItemSource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemSourceMutation) OldKeyframes(ctx context.Context) (v []int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKeyframes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKeyframes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKeyframes: %w", err)
+	}
+	return oldValue.Keyframes, nil
+}
+
+// AppendKeyframes adds i to the "keyframes" field.
+func (m *ItemSourceMutation) AppendKeyframes(i []int64) {
+	m.appendkeyframes = append(m.appendkeyframes, i...)
+}
+
+// AppendedKeyframes returns the list of values that were appended to the "keyframes" field in this mutation.
+func (m *ItemSourceMutation) AppendedKeyframes() ([]int64, bool) {
+	if len(m.appendkeyframes) == 0 {
+		return nil, false
+	}
+	return m.appendkeyframes, true
+}
+
+// ClearKeyframes clears the value of the "keyframes" field.
+func (m *ItemSourceMutation) ClearKeyframes() {
+	m.keyframes = nil
+	m.appendkeyframes = nil
+	m.clearedFields[itemsource.FieldKeyframes] = struct{}{}
+}
+
+// KeyframesCleared returns if the "keyframes" field was cleared in this mutation.
+func (m *ItemSourceMutation) KeyframesCleared() bool {
+	_, ok := m.clearedFields[itemsource.FieldKeyframes]
+	return ok
+}
+
+// ResetKeyframes resets all changes to the "keyframes" field.
+func (m *ItemSourceMutation) ResetKeyframes() {
+	m.keyframes = nil
+	m.appendkeyframes = nil
+	delete(m.clearedFields, itemsource.FieldKeyframes)
+}
+
 // ClearItem clears the "item" edge to the Item entity.
 func (m *ItemSourceMutation) ClearItem() {
 	m.cleareditem = true
@@ -11273,7 +11340,7 @@ func (m *ItemSourceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemSourceMutation) Fields() []string {
-	fields := make([]string, 0, 16)
+	fields := make([]string, 0, 17)
 	if m.created_at != nil {
 		fields = append(fields, itemsource.FieldCreatedAt)
 	}
@@ -11322,6 +11389,9 @@ func (m *ItemSourceMutation) Fields() []string {
 	if m.lyrics != nil {
 		fields = append(fields, itemsource.FieldLyrics)
 	}
+	if m.keyframes != nil {
+		fields = append(fields, itemsource.FieldKeyframes)
+	}
 	return fields
 }
 
@@ -11362,6 +11432,8 @@ func (m *ItemSourceMutation) Field(name string) (ent.Value, bool) {
 		return m.ExternalFileID()
 	case itemsource.FieldLyrics:
 		return m.Lyrics()
+	case itemsource.FieldKeyframes:
+		return m.Keyframes()
 	}
 	return nil, false
 }
@@ -11403,6 +11475,8 @@ func (m *ItemSourceMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldExternalFileID(ctx)
 	case itemsource.FieldLyrics:
 		return m.OldLyrics(ctx)
+	case itemsource.FieldKeyframes:
+		return m.OldKeyframes(ctx)
 	}
 	return nil, fmt.Errorf("unknown ItemSource field %s", name)
 }
@@ -11523,6 +11597,13 @@ func (m *ItemSourceMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetLyrics(v)
+		return nil
+	case itemsource.FieldKeyframes:
+		v, ok := value.([]int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKeyframes(v)
 		return nil
 	}
 	return fmt.Errorf("unknown ItemSource field %s", name)
@@ -11647,6 +11728,9 @@ func (m *ItemSourceMutation) ClearedFields() []string {
 	if m.FieldCleared(itemsource.FieldLyrics) {
 		fields = append(fields, itemsource.FieldLyrics)
 	}
+	if m.FieldCleared(itemsource.FieldKeyframes) {
+		fields = append(fields, itemsource.FieldKeyframes)
+	}
 	return fields
 }
 
@@ -11690,6 +11774,9 @@ func (m *ItemSourceMutation) ClearField(name string) error {
 		return nil
 	case itemsource.FieldLyrics:
 		m.ClearLyrics()
+		return nil
+	case itemsource.FieldKeyframes:
+		m.ClearKeyframes()
 		return nil
 	}
 	return fmt.Errorf("unknown ItemSource nullable field %s", name)
@@ -11746,6 +11833,9 @@ func (m *ItemSourceMutation) ResetField(name string) error {
 		return nil
 	case itemsource.FieldLyrics:
 		m.ResetLyrics()
+		return nil
+	case itemsource.FieldKeyframes:
+		m.ResetKeyframes()
 		return nil
 	}
 	return fmt.Errorf("unknown ItemSource field %s", name)

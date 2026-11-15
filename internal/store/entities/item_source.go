@@ -29,6 +29,7 @@ func (ItemSource) Fields() []ent.Field {
 		field.Int64("external_id").Optional().Nillable(),
 		field.Int64("external_file_id").Optional().Nillable(),
 		field.Text("lyrics").Optional(),
+		field.JSON("keyframes", []int64{}).Optional(),
 	)
 }
 

@@ -794,6 +794,7 @@ type ItemSourceModel struct {
 	ExternalID         *int64
 	ExternalFileID     *int64
 	Lyrics             string
+	Keyframes          []int64
 
 	Item     *ItemModel
 	Source   *SourceModel
@@ -833,6 +834,7 @@ func fromItemSource(_m *ItemSource) *ItemSourceModel {
 		ExternalID:         _m.ExternalID,
 		ExternalFileID:     _m.ExternalFileID,
 		Lyrics:             _m.Lyrics,
+		Keyframes:          _m.Keyframes,
 
 		Item:     fromItem(_m.Edges.Item),
 		Source:   fromSource(_m.Edges.Source),

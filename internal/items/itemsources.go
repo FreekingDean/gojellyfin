@@ -77,7 +77,13 @@ func (s *Service) fileOwner(ctx context.Context, path string) (*uuid.UUID, error
 
 func (s *Service) SaveProbe(ctx context.Context, item *Item, source *MediaSource, probe MediaSource) error {
 	return s.store.WithTx(ctx, func(tx *store.Tx) error {
-		err := tx.ItemSource.UpdateOneID(source.ID).
+		update := tx.ItemSource.UpdateOneID(source.ID)
+		if probe.Keyframes == nil {
+			update.ClearKeyframes()
+		} else {
+			update.SetKeyframes(probe.Keyframes)
+		}
+		err := update.
 			SetContainer(probe.Container).
 			SetNillableRunTimeTicks(probe.RunTimeTicks).
 			SetNillableSize(probe.Size).
