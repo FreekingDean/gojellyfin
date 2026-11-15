@@ -62,6 +62,7 @@ type Handler struct {
 	files      *filesystem.Service
 	transcoder Transcoder
 	reports    Reports
+	pictures   encodes
 }
 
 func New(
@@ -116,6 +117,8 @@ func (h *Handler) StopEncodings(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
+
+	h.pictures.stop(middleware.TokenFrom(r))
 
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -242,6 +245,14 @@ func (h *Handler) relay(w http.ResponseWriter, r *http.Request, source *items.Me
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 
+	stop := func() {
+		cancel()
+		_ = http.NewResponseController(w).SetWriteDeadline(time.Now())
+	}
+	if spec.Video {
+		defer h.pictures.begin(middleware.TokenFrom(r), stop)()
+	}
+
 	output, err := h.transcoder.Open(ctx, spec)
 	if err != nil {
 		log.Printf("failed to transcode %s to %s: %v", source.Path, container, err)
@@ -263,8 +274,7 @@ func (h *Handler) relay(w http.ResponseWriter, r *http.Request, source *items.Me
 
 	kill := func() {
 		log.Printf("transcode of %s moved nothing in %s", source.Path, h.transcoder.Stall())
-		cancel()
-		_ = http.NewResponseController(w).SetWriteDeadline(time.Now())
+		stop()
 	}
 
 	stalling := transcode.UntilStalled(ctx, output, h.transcoder.Stall(), kill)

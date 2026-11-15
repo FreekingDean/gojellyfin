@@ -6,6 +6,7 @@ import (
 	"io"
 	"slices"
 	"testing"
+	"time"
 )
 
 func TestEncoder_Open(t *testing.T) {
@@ -26,6 +27,7 @@ func TestEncoder_Open(t *testing.T) {
 	refused := func(t *testing.T, encoder *Encoder, spec Spec) {
 		t.Helper()
 
+		encoder.patience = 20 * time.Millisecond
 		if output, err := encoder.Open(context.Background(), spec); !errors.Is(err, ErrBusy) {
 			if output != nil {
 				_ = output.Close()
@@ -47,6 +49,16 @@ func TestEncoder_Open(t *testing.T) {
 			t.Fatalf("failed to close the picture encode: %v", err)
 		}
 		open(t, encoder, picture)
+	})
+
+	t.Run("a slot freed while an open waits is taken rather than refused", func(t *testing.T) {
+		fakeFFmpeg(t, "printf x")
+		encoder := NewEncoder(1, 0)
+
+		held := open(t, encoder, audio)
+		time.AfterFunc(150*time.Millisecond, func() { _ = held.Close() })
+
+		open(t, encoder, audio)
 	})
 
 	t.Run("a pod with fewer slots than a picture weighs still takes one", func(t *testing.T) {
