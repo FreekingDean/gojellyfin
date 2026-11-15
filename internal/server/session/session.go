@@ -18,6 +18,10 @@ func New(sessions *sessions.Service) *Server {
 }
 
 func (s *Server) GetSessions(ctx context.Context, request api.GetSessionsRequestObject) (api.GetSessionsResponseObject, error) {
+	if request.Params.ControllableByUserId != nil {
+		return api.GetSessions200JSONResponse{}, nil
+	}
+
 	active, err := s.sessions.List(ctx)
 	if err != nil {
 		return nil, err
