@@ -37,5 +37,6 @@ func (UserItemData) Edges() []ent.Edge {
 func (UserItemData) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("user_id", "item_id").Unique(),
+		index.Fields("item_id"),
 	}
 }

@@ -41,6 +41,13 @@ var (
 				OnDelete:   schema.SetNull,
 			},
 		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "activitylogentry_item_activity_log_entries",
+				Unique:  false,
+				Columns: []*schema.Column{ActivityLogEntriesColumns[8]},
+			},
+		},
 	}
 	// APIKeysColumns holds the columns for the "api_keys" table.
 	APIKeysColumns = []*schema.Column{
@@ -106,6 +113,11 @@ var (
 				Name:    "credit_kind_role_item_credits_person_credits",
 				Unique:  true,
 				Columns: []*schema.Column{CreditsColumns[3], CreditsColumns[4], CreditsColumns[6], CreditsColumns[7]},
+			},
+			{
+				Name:    "credit_item_credits",
+				Unique:  false,
+				Columns: []*schema.Column{CreditsColumns[6]},
 			},
 		},
 	}
@@ -276,6 +288,11 @@ var (
 				Name:    "item_deleted_at",
 				Unique:  false,
 				Columns: []*schema.Column{ItemsColumns[7]},
+			},
+			{
+				Name:    "item_parent_id",
+				Unique:  false,
+				Columns: []*schema.Column{ItemsColumns[24]},
 			},
 		},
 	}
@@ -624,6 +641,11 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{PlaylistEntriesColumns[5], PlaylistEntriesColumns[3]},
 			},
+			{
+				Name:    "playlistentry_item_id",
+				Unique:  false,
+				Columns: []*schema.Column{PlaylistEntriesColumns[4]},
+			},
 		},
 	}
 	// PlaylistSharesColumns holds the columns for the "playlist_shares" table.
@@ -857,6 +879,13 @@ var (
 				Columns:    []*schema.Column{SessionsColumns[13]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "session_now_playing_item_id",
+				Unique:  false,
+				Columns: []*schema.Column{SessionsColumns[12]},
 			},
 		},
 	}
@@ -1143,6 +1172,11 @@ var (
 				Name:    "useritemdata_user_id_item_id",
 				Unique:  true,
 				Columns: []*schema.Column{UserItemDataColumns[11], UserItemDataColumns[10]},
+			},
+			{
+				Name:    "useritemdata_item_id",
+				Unique:  false,
+				Columns: []*schema.Column{UserItemDataColumns[10]},
 			},
 		},
 	}

@@ -89,5 +89,6 @@ func (Item) Indexes() []ent.Index {
 		index.Fields("key").Unique(),
 		index.Fields("kind", "sort_name"),
 		index.Fields("deleted_at"),
+		index.Fields("parent_id"),
 	}
 }
