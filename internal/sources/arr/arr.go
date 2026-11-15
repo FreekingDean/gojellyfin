@@ -9,6 +9,8 @@ const (
 	ProfilesPath   = "api/v3/qualityprofile"
 	CommandPath    = "api/v3/command"
 	FailedPath     = "api/v3/history/failed"
+	NotifyPath     = "api/v3/notification"
+	NotifySchema   = "api/v3/notification/schema"
 	APIKeyName     = "X-Api-Key"
 )
 
@@ -55,4 +57,15 @@ func Newest(grabs []Grab) (Grab, bool) {
 	}
 
 	return newest, true
+}
+
+type Webhook struct {
+	EventType string   `json:"eventType"`
+	Movie     *Subject `json:"movie"`
+	Series    *Subject `json:"series"`
+}
+
+type Subject struct {
+	ID     int64 `json:"id"`
+	TmdbID int   `json:"tmdbId"`
 }

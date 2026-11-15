@@ -465,10 +465,26 @@ func (s *Service) DeleteMembershipNotInKeys(
 	libraryID, sourceID uuid.UUID,
 	keys []string,
 ) ([]uuid.UUID, error) {
-	where := []predicate.LibraryItem{
+	return s.deleteMembershipNotIn(ctx, keys,
 		librarymembership.LibraryID(libraryID),
 		librarymembership.SourceID(sourceID),
-	}
+	)
+}
+
+func (s *Service) DeleteScopedMembershipNotInKeys(
+	ctx context.Context,
+	libraryID, sourceID uuid.UUID,
+	scope Scope,
+	keys []string,
+) ([]uuid.UUID, error) {
+	return s.deleteMembershipNotIn(ctx, keys,
+		librarymembership.LibraryID(libraryID),
+		librarymembership.SourceID(sourceID),
+		librarymembership.HasItemWith(scope.items()),
+	)
+}
+
+func (s *Service) deleteMembershipNotIn(ctx context.Context, keys []string, where ...predicate.LibraryItem) ([]uuid.UUID, error) {
 	if len(keys) > 0 {
 		where = append(where, librarymembership.HasItemWith(itemmodel.KeyNotIn(keys...)))
 	}
@@ -501,6 +517,24 @@ func (s *Service) UnreachableItems(ctx context.Context) ([]uuid.UUID, error) {
 	}
 
 	return orphans, nil
+}
+
+func (s *Service) SweepUnreported(ctx context.Context, disturbed []uuid.UUID, reported []string) error {
+	if len(disturbed) == 0 {
+		return nil
+	}
+
+	query := s.store.Item.Query().Where(itemmodel.IDIn(disturbed...))
+	if len(reported) > 0 {
+		query.Where(itemmodel.KeyNotIn(reported...))
+	}
+
+	unreported, err := query.IDs(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to query the titles no longer reported: %w", err)
+	}
+
+	return s.SweepUnreachable(ctx, unreported)
 }
 
 func (s *Service) SweepUnreachable(ctx context.Context, disturbed []uuid.UUID) error {

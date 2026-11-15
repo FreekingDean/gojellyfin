@@ -109,6 +109,10 @@ IfNotPresent
 {{- end }}
 
 {{- define "gojellyfin.sharedEnv" -}}
+{{- with .Values.hostname }}
+- name: PUBLISHED_SERVER_URL
+  value: {{ printf "%s://%s" $.Values.scheme . | quote }}
+{{- end }}
 {{- $mounts := list .Values.media.mountPath }}
 {{- range .Values.media.extraVolumes }}
 {{- $mounts = append $mounts .mountPath }}
@@ -142,10 +146,6 @@ IfNotPresent
 {{- include "gojellyfin.databaseEnv" .root }}
 - name: HTTP_PORT
   value: {{ .root.Values.httpPort | quote }}
-{{- with .root.Values.hostname }}
-- name: PUBLISHED_SERVER_URL
-  value: {{ printf "%s://%s" $.root.Values.scheme . | quote }}
-{{- end }}
 {{- with .root.Values.serverId }}
 - name: SERVER_ID
   value: {{ . | quote }}

@@ -70,33 +70,41 @@ func (s *Service) movies(ctx context.Context, binding Binding) ([]Title, error) 
 
 	titles := make([]Title, 0, len(movies))
 	for _, movie := range movies {
-		if !movie.HasFile {
-			continue
-		}
-
-		found, err := file(binding.Source, movie.ID, movie.File)
+		found, err := movieTitles(binding.Source, tagged, movie)
 		if err != nil {
 			return nil, err
 		}
-
-		if movie.TmdbID == 0 {
-			log.Printf("skipping %s: %s reports no TMDB id", movie.Title, binding.Source.Name)
-
-			continue
-		}
-
-		titles = append(titles, Title{
-			Key:      items.MovieKey(movie.TmdbID),
-			Tagged:   tagged(movie.Tags),
-			Kind:     itemmodel.KindMovie,
-			Name:     movie.Title,
-			SortName: items.SortName(movie.Title),
-			Year:     released(movie.Year),
-			Files:    []File{found},
-		})
+		titles = append(titles, found...)
 	}
 
 	return titles, nil
+}
+
+func movieTitles(source Source, tagged func([]int) bool, movie radarr.Movie) ([]Title, error) {
+	if !movie.HasFile {
+		return nil, nil
+	}
+
+	found, err := file(source, movie.ID, movie.File)
+	if err != nil {
+		return nil, err
+	}
+
+	if movie.TmdbID == 0 {
+		log.Printf("skipping %s: %s reports no TMDB id", movie.Title, source.Name)
+
+		return nil, nil
+	}
+
+	return []Title{{
+		Key:      items.MovieKey(movie.TmdbID),
+		Tagged:   tagged(movie.Tags),
+		Kind:     itemmodel.KindMovie,
+		Name:     movie.Title,
+		SortName: items.SortName(movie.Title),
+		Year:     released(movie.Year),
+		Files:    []File{found},
+	}}, nil
 }
 
 func (s *Service) series(ctx context.Context, binding Binding) ([]Title, error) {
@@ -112,40 +120,55 @@ func (s *Service) series(ctx context.Context, binding Binding) ([]Title, error) 
 
 	titles := make([]Title, 0, len(shows))
 	for _, show := range shows {
-		if show.TmdbID == 0 {
-			log.Printf("skipping %s: %s reports no TMDB id", show.Title, binding.Source.Name)
-
-			continue
-		}
-
-		query := url.Values{}
-		query.Set("seriesId", strconv.Itoa(show.ID))
-		query.Set("includeEpisodeFile", "true")
-
-		jobs.Heartbeat(ctx, show.Title)
-
-		episodes, err := get[[]sonarr.Episode](ctx, s, binding.Source, sonarr.EpisodesPath, query)
+		found, err := s.showTitles(ctx, binding.Source, tagged, show)
 		if err != nil {
 			return nil, err
 		}
-
-		below := seasons(binding.Source, show.TmdbID, tagged(show.Tags), episodes)
-		if len(below) == 0 {
-			continue
-		}
-
-		titles = append(titles, Title{
-			Key:      items.SeriesKey(show.TmdbID),
-			Tagged:   tagged(show.Tags),
-			Kind:     itemmodel.KindSeries,
-			Name:     show.Title,
-			SortName: items.SortName(show.Title),
-			Year:     released(show.Year),
-		})
-		titles = append(titles, below...)
+		titles = append(titles, found...)
 	}
 
 	return titles, nil
+}
+
+func (s *Service) showTitles(ctx context.Context, source Source, tagged func([]int) bool, show sonarr.Series) ([]Title, error) {
+	if show.TmdbID == 0 {
+		log.Printf("skipping %s: %s reports no TMDB id", show.Title, source.Name)
+
+		return nil, nil
+	}
+
+	episodes, err := s.episodes(ctx, source, show)
+	if err != nil {
+		return nil, err
+	}
+
+	return seriesTitles(source, tagged, show, episodes), nil
+}
+
+func (s *Service) episodes(ctx context.Context, source Source, show sonarr.Series) ([]sonarr.Episode, error) {
+	query := url.Values{}
+	query.Set("seriesId", strconv.Itoa(show.ID))
+	query.Set("includeEpisodeFile", "true")
+
+	jobs.Heartbeat(ctx, show.Title)
+
+	return get[[]sonarr.Episode](ctx, s, source, sonarr.EpisodesPath, query)
+}
+
+func seriesTitles(source Source, tagged func([]int) bool, show sonarr.Series, episodes []sonarr.Episode) []Title {
+	below := seasons(source, show.TmdbID, tagged(show.Tags), episodes)
+	if len(below) == 0 {
+		return nil
+	}
+
+	return append([]Title{{
+		Key:      items.SeriesKey(show.TmdbID),
+		Tagged:   tagged(show.Tags),
+		Kind:     itemmodel.KindSeries,
+		Name:     show.Title,
+		SortName: items.SortName(show.Title),
+		Year:     released(show.Year),
+	}}, below...)
 }
 
 func seasons(source Source, tmdbID int, tagged bool, episodes []sonarr.Episode) []Title {
@@ -298,6 +321,9 @@ func fetch[T any](ctx context.Context, s *Service, client *http.Client, source S
 	}
 	defer func() { _ = resp.Body.Close() }()
 
+	if resp.StatusCode == http.StatusNotFound {
+		return out, fmt.Errorf("%w: %s answered %s for %s", errAbsent, parsed.Host, resp.Status, path)
+	}
 	if resp.StatusCode != http.StatusOK {
 		return out, fmt.Errorf("%s answered %s for %s", parsed.Host, resp.Status, path)
 	}

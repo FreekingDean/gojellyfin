@@ -105,7 +105,7 @@ reads the environment.
 
 | Value | Environment variable | Default | Description |
 |---|---|---|---|
-| `hostname` | `PUBLISHED_SERVER_URL` | `""` | The name clients reach the server by. The routes match it, and the public endpoints advertise `<scheme>://<hostname>`. Empty advertises no address at all — a client prefers `LocalAddress` when it believes it shares a network with the server, so naming one it cannot reach sends it nowhere |
+| `hostname` | `PUBLISHED_SERVER_URL` | `""` | The name clients reach the server by. The routes match it, and the public endpoints advertise `<scheme>://<hostname>`. Empty advertises no address at all — a client prefers `LocalAddress` when it believes it shares a network with the server, so naming one it cannot reach sends it nowhere. It is also the address the server registers with each Sonarr and Radarr as their webhook, which is why the worker is given it too |
 | `scheme` | | `https` | What the gateway in front of this listens on, and the only thing it is used for. Advertising `https` over a plain listener loses a client exactly as advertising a wrong hostname does |
 | `serverId` | `SERVER_ID` | `""` | The id the server answers with. A client keys the token it holds by it, so a server taking over from a Jellyfin install is given that install's id: the contents of `device.txt` beside its `jellyfin.db`, which `scripts/jellyfinmigrate` prints. Empty keeps gojellyfin's own |
 | `httpPort` | `HTTP_PORT` | `8081` | What the server listens on. The container port, the Service target and the probes follow it |

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -37,6 +38,8 @@ const (
 var (
 	ErrInvalid  = errors.New("invalid source")
 	ErrNotFound = errors.New("no such source")
+
+	errAbsent = errors.New("the instance has no such record")
 )
 
 type Service struct {
@@ -90,9 +93,10 @@ type (
 )
 
 type Configured struct {
-	Source    Source
-	Libraries []LibrarySource
-	Files     int
+	Source     Source
+	Libraries  []LibrarySource
+	Files      int
+	WebhookURL string
 }
 
 func (s *Service) List(ctx context.Context) ([]Configured, error) {
@@ -114,6 +118,7 @@ func (s *Service) List(ctx context.Context) ([]Configured, error) {
 	for i, record := range records {
 		configured[i] = fromRecord(record)
 		configured[i].Files = counts[record.ID]
+		configured[i].WebhookURL = s.WebhookURL(*record)
 	}
 
 	return configured, nil
@@ -139,6 +144,7 @@ func (s *Service) Get(ctx context.Context, id uuid.UUID) (Configured, error) {
 
 	configured := fromRecord(record)
 	configured.Files = counts[id]
+	configured.WebhookURL = s.WebhookURL(*record)
 
 	return configured, nil
 }
@@ -244,6 +250,8 @@ func (s *Service) Create(ctx context.Context, entry Configured) (Configured, err
 		return Configured{}, err
 	}
 
+	s.hookQuietly(ctx, id)
+
 	return s.Get(ctx, id)
 }
 
@@ -304,10 +312,18 @@ func (s *Service) Update(ctx context.Context, id uuid.UUID, entry Configured) (C
 		return Configured{}, err
 	}
 
+	s.hookQuietly(ctx, id)
+
 	return s.Get(ctx, id)
 }
 
 func (s *Service) Delete(ctx context.Context, id uuid.UUID) error {
+	if source, err := s.store.Source.Query().Where(sourcemodel.ID(id)).OnlyModel(ctx); err == nil {
+		if err := s.unhook(ctx, *source); err != nil {
+			log.Printf("the gojellyfin webhook is still on %s at %s: remove it under Settings, Connect", source.Name, source.URL)
+		}
+	}
+
 	return s.store.WithTx(ctx, func(tx *store.Tx) error {
 		before, err := boundLibraries(ctx, tx, id)
 		if err != nil {

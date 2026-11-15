@@ -40,10 +40,12 @@ type movie struct {
 }
 
 type fixture struct {
-	service  *Service
-	items    *items.Service
-	client   *store.Client
-	sourceID uuid.UUID
+	service    *Service
+	items      *items.Service
+	client     *store.Client
+	sourceID   uuid.UUID
+	downloader *downloader
+	config     env.Config
 }
 
 func newFixture(t *testing.T, reported *[]movie) *fixture {
@@ -64,6 +66,7 @@ func newFixture(t *testing.T, reported *[]movie) *fixture {
 	}
 	client := connection.Client()
 
+	held := &downloader{reported: reported}
 	radarr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
@@ -77,7 +80,7 @@ func newFixture(t *testing.T, reported *[]movie) *fixture {
 		case "/api/v3/movie":
 			_ = json.NewEncoder(w).Encode(*reported)
 		default:
-			w.WriteHeader(http.StatusNotFound)
+			held.serve(w, r)
 		}
 	}))
 	t.Cleanup(radarr.Close)
@@ -117,10 +120,12 @@ func newFixture(t *testing.T, reported *[]movie) *fixture {
 	})
 
 	return &fixture{
-		service:  New(client, config, records, activity.New(client)),
-		items:    records,
-		client:   client,
-		sourceID: source.ID,
+		service:    New(client, config, records, activity.New(client)),
+		items:      records,
+		client:     client,
+		sourceID:   source.ID,
+		downloader: held,
+		config:     config,
 	}
 }
 
@@ -302,7 +307,7 @@ func TestRefreshLibrarySource_RecordsTheIDsTheInstanceAnswered(t *testing.T) {
 
 	heat := byPath["/media/Heat/heat.mkv"]
 	if heat == nil || heat.ExternalID != nil || heat.ExternalFileID != nil {
-		t.Errorf("heat = %+v, want no external ids for an instance that answered none", heat)
+		t.Errorf("heat = %+v, want no external ids for an downloader that answered none", heat)
 	}
 }
 

@@ -23,6 +23,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/socket"
 	"github.com/FreekingDean/gojellyfin/internal/server/sso"
 	"github.com/FreekingDean/gojellyfin/internal/server/stream"
+	"github.com/FreekingDean/gojellyfin/internal/server/webhook"
 )
 
 var streamRoutes = []string{
@@ -192,6 +193,7 @@ func Register(
 	links *link.Handler,
 	administration *admin.Handler,
 	reporting *report.Handler,
+	hooks *webhook.Handler,
 	streams *stream.Handler,
 	signOn *sso.Handler,
 	m *mux.Mux,
@@ -201,6 +203,7 @@ func Register(
 	links.Register(m)
 	administration.Register(m)
 	reporting.Register(m)
+	hooks.Register(m)
 	for _, pattern := range sso.Routes {
 		m.HandleFunc(pattern, signOn.Serve)
 	}
