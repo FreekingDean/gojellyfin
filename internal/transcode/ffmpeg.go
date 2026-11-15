@@ -27,7 +27,11 @@ func start(ctx context.Context, spec Spec) (io.ReadCloser, error) {
 		return nil, err
 	}
 
-	cmd := exec.CommandContext(ctx, "ffmpeg", spec.Args()...)
+	return run(ctx, spec.Args())
+}
+
+func run(ctx context.Context, args []string) (io.ReadCloser, error) {
+	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
 	cmd.WaitDelay = time.Second
 
 	stderr := &tail{limit: stderrLimit}
