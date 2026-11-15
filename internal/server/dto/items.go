@@ -155,6 +155,7 @@ func ItemDtos(ctx context.Context, store *items.Service, records []*items.Item) 
 		dto := ItemDto(item, held[item.ID], counts[item.ID], imageTags[item.ID])
 		if source, ok := played[item.ID]; ok {
 			listed := MediaSourceDto(source)
+			listed.Id = apiutil.Ptr(item.ID.String())
 			dto.MediaSources = &[]api.MediaSourceInfo{listed}
 			dto.MediaStreams = listed.MediaStreams
 		}

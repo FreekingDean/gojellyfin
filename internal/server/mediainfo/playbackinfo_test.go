@@ -629,6 +629,9 @@ func TestItemDtos_ListAFile(t *testing.T) {
 	if len(listed) != 1 {
 		t.Fatalf("media sources = %d, want the one file: the Android TV app reads the next episode's streams off its queue entry", len(listed))
 	}
+	if got := apiutil.Deref(listed[0].Id); got != id.String() {
+		t.Errorf("the listed source is %q, want the item's own id %q: jellyfin-web fetches an item by the source id its detail page hands to play", got, id)
+	}
 	if streams := apiutil.Deref(listed[0].MediaStreams); len(streams) != 2 {
 		t.Errorf("media streams = %d, want the picture and the sound", len(streams))
 	}
