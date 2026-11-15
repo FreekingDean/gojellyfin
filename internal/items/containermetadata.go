@@ -35,6 +35,7 @@ type MetadataQuery struct {
 	ItemID     *uuid.UUID
 	Kinds      []Kind
 	SearchTerm string
+	Name       string
 	StartIndex int
 	Limit      int
 }
@@ -59,31 +60,13 @@ func (s *Service) DistinctGenres(ctx context.Context, query MetadataQuery) ([]Na
 	if query.SearchTerm != "" {
 		genres = genres.Where(genremodel.NameContainsFold(query.SearchTerm))
 	}
-
-	total, err := genres.Clone().Count(ctx)
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to count genres: %w", err)
+	if query.Name != "" {
+		genres = genres.Where(genremodel.NameEqualFold(query.Name))
 	}
 
-	genres = genres.Order(genremodel.ByName())
-	if query.StartIndex > 0 {
-		genres = genres.Offset(query.StartIndex)
-	}
-	if query.Limit > 0 {
-		genres = genres.Limit(query.Limit)
-	}
-
-	records, err := genres.All(ctx)
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to query genres: %w", err)
-	}
-
-	named := make([]Named, 0, len(records))
-	for _, record := range records {
-		named = append(named, Named{ID: record.ID, Name: record.Name})
-	}
-
-	return named, total, nil
+	return namedPage(ctx, genres.Order(genremodel.ByName()), query, func(record *store.Genre) Named {
+		return Named{ID: record.ID, Name: record.Name}
+	})
 }
 
 func (s *Service) DistinctStudios(ctx context.Context, query MetadataQuery) ([]Named, int, error) {
@@ -91,31 +74,13 @@ func (s *Service) DistinctStudios(ctx context.Context, query MetadataQuery) ([]N
 	if query.SearchTerm != "" {
 		studios = studios.Where(studiomodel.NameContainsFold(query.SearchTerm))
 	}
-
-	total, err := studios.Clone().Count(ctx)
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to count studios: %w", err)
+	if query.Name != "" {
+		studios = studios.Where(studiomodel.NameEqualFold(query.Name))
 	}
 
-	studios = studios.Order(studiomodel.ByName())
-	if query.StartIndex > 0 {
-		studios = studios.Offset(query.StartIndex)
-	}
-	if query.Limit > 0 {
-		studios = studios.Limit(query.Limit)
-	}
-
-	records, err := studios.All(ctx)
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to query studios: %w", err)
-	}
-
-	named := make([]Named, 0, len(records))
-	for _, record := range records {
-		named = append(named, Named{ID: record.ID, Name: record.Name})
-	}
-
-	return named, total, nil
+	return namedPage(ctx, studios.Order(studiomodel.ByName()), query, func(record *store.Studio) Named {
+		return Named{ID: record.ID, Name: record.Name}
+	})
 }
 
 func (s *Service) DistinctPeople(ctx context.Context, query MetadataQuery, kinds []CreditKind) ([]Named, int, error) {
@@ -128,31 +93,80 @@ func (s *Service) DistinctPeople(ctx context.Context, query MetadataQuery, kinds
 	if query.SearchTerm != "" {
 		people = people.Where(personmodel.NameContainsFold(query.SearchTerm))
 	}
-
-	total, err := people.Clone().Count(ctx)
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to count people: %w", err)
+	if query.Name != "" {
+		people = people.Where(personmodel.NameEqualFold(query.Name))
 	}
 
-	people = people.Order(personmodel.ByName())
+	return namedPage(ctx, people.Order(personmodel.ByName()), query, func(record *store.Person) Named {
+		return Named{ID: record.ID, Name: record.Name, ImageTag: imageTag(record.ImageURL)}
+	})
+}
+
+func (s *Service) GenreNamed(ctx context.Context, query MetadataQuery, name string) (Named, error) {
+	return only(s.DistinctGenres(ctx, query.named(name)))("genre", name)
+}
+
+func (s *Service) StudioNamed(ctx context.Context, query MetadataQuery, name string) (Named, error) {
+	return only(s.DistinctStudios(ctx, query.named(name)))("studio", name)
+}
+
+func (s *Service) PersonNamed(ctx context.Context, query MetadataQuery, name string) (Named, error) {
+	return only(s.DistinctPeople(ctx, query.named(name), nil))("person", name)
+}
+
+func (q MetadataQuery) named(name string) MetadataQuery {
+	q.Name = name
+	q.StartIndex = 0
+	q.Limit = 1
+
+	return q
+}
+
+func only(named []Named, _ int, err error) func(what, name string) (Named, error) {
+	return func(what, name string) (Named, error) {
+		if err != nil {
+			return Named{}, err
+		}
+		if len(named) == 0 {
+			return Named{}, fmt.Errorf("%w: no %s is named %q", ErrNotFound, what, name)
+		}
+
+		return named[0], nil
+	}
+}
+
+type pageable[Q, T any] interface {
+	Clone() Q
+	Count(ctx context.Context) (int, error)
+	Offset(offset int) Q
+	Limit(limit int) Q
+	All(ctx context.Context) ([]*T, error)
+}
+
+func namedPage[Q pageable[Q, T], T any](ctx context.Context, rows Q, query MetadataQuery, named func(*T) Named) ([]Named, int, error) {
+	total, err := rows.Clone().Count(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to count names: %w", err)
+	}
+
 	if query.StartIndex > 0 {
-		people = people.Offset(query.StartIndex)
+		rows = rows.Offset(query.StartIndex)
 	}
 	if query.Limit > 0 {
-		people = people.Limit(query.Limit)
+		rows = rows.Limit(query.Limit)
 	}
 
-	records, err := people.All(ctx)
+	records, err := rows.All(ctx)
 	if err != nil {
-		return nil, 0, fmt.Errorf("failed to query people: %w", err)
+		return nil, 0, fmt.Errorf("failed to query names: %w", err)
 	}
 
-	named := make([]Named, 0, len(records))
+	found := make([]Named, 0, len(records))
 	for _, record := range records {
-		named = append(named, Named{ID: record.ID, Name: record.Name, ImageTag: imageTag(record.ImageURL)})
+		found = append(found, named(record))
 	}
 
-	return named, total, nil
+	return found, total, nil
 }
 
 func (s *Service) PersonImage(ctx context.Context, id uuid.UUID) (string, error) {
@@ -261,36 +275,27 @@ func replaceCredits(ctx context.Context, tx *store.Tx, itemID uuid.UUID, people 
 }
 
 func genreIDs(ctx context.Context, tx *store.Tx, names []string) ([]uuid.UUID, error) {
+	return nameIDs(names, func(name string) (uuid.UUID, error) {
+		return tx.Genre.Create().SetName(name).OnConflictColumns(genremodel.FieldName).UpdateName().ID(ctx)
+	})
+}
+
+func studioIDs(ctx context.Context, tx *store.Tx, names []string) ([]uuid.UUID, error) {
+	return nameIDs(names, func(name string) (uuid.UUID, error) {
+		return tx.Studio.Create().SetName(name).OnConflictColumns(studiomodel.FieldName).UpdateName().ID(ctx)
+	})
+}
+
+func nameIDs(names []string, save func(name string) (uuid.UUID, error)) ([]uuid.UUID, error) {
 	ids := make([]uuid.UUID, 0, len(names))
 	for _, name := range names {
-		id, err := tx.Genre.Create().
-			SetName(name).
-			OnConflictColumns(genremodel.FieldName).
-			UpdateName().
-			ID(ctx)
+		id, err := save(name)
 		if err != nil {
-			return nil, fmt.Errorf("failed to save genre: %w", err)
+			return nil, fmt.Errorf("failed to save %q: %w", name, err)
 		}
 		if !slices.Contains(ids, id) {
 			ids = append(ids, id)
 		}
-	}
-
-	return ids, nil
-}
-
-func studioIDs(ctx context.Context, tx *store.Tx, names []string) ([]uuid.UUID, error) {
-	ids := make([]uuid.UUID, 0, len(names))
-	for _, name := range names {
-		id, err := tx.Studio.Create().
-			SetName(name).
-			OnConflictColumns(studiomodel.FieldName).
-			UpdateName().
-			ID(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("failed to save studio: %w", err)
-		}
-		ids = append(ids, id)
 	}
 
 	return ids, nil

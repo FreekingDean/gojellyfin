@@ -61,3 +61,17 @@ func creditKinds(types *[]string) []items.CreditKind {
 
 	return valid
 }
+
+func (s *Server) GetPerson(ctx context.Context, request api.GetPersonRequestObject) (api.GetPersonResponseObject, error) {
+	viewer, err := dto.ViewerFor(ctx, s.policies)
+	if err != nil {
+		return nil, err
+	}
+
+	person, err := s.items.PersonNamed(ctx, items.MetadataQuery{Viewer: viewer}, request.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	return api.GetPerson200JSONResponse(dto.NamedItem(person, api.BaseItemKindPerson, false)), nil
+}
