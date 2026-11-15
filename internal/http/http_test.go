@@ -63,7 +63,10 @@ func shadows(candidate, pattern string) bool {
 	return loose
 }
 
-const notHLS = "HLS is not served: a transcode is one progressive response, so there is no playlist or segment to answer"
+const (
+	notHLS    = "only the fragmented MP4 HLS of a video is served: audio plays progressively, and the legacy MPEG-TS segments and live playlists have no caller"
+	servedHLS = "served beside the stream routes by stream.Handler, because the HLS controllers are hidden from the spec"
+)
 
 var unaliased = map[string]string{
 	"POST /Users/{userId}/Authenticate": "authenticating by user id has no documented replacement; AuthenticateByName takes a username",
@@ -80,11 +83,11 @@ var unaliased = map[string]string{
 	"HEAD /Audio/{itemId}/master.m3u8":                                     notHLS,
 	"GET /Videos/{itemId}/hls/{playlistId}/stream.m3u8":                    notHLS,
 	"GET /Videos/{itemId}/hls/{playlistId}/{segmentId}.{segmentContainer}": notHLS,
-	"GET /Videos/{itemId}/hls1/{playlistId}/{segmentId}.{container}":       notHLS,
+	"GET /Videos/{itemId}/hls1/{playlistId}/{segmentId}.{container}":       servedHLS,
 	"GET /Videos/{itemId}/live.m3u8":                                       notHLS,
-	"GET /Videos/{itemId}/main.m3u8":                                       notHLS,
-	"GET /Videos/{itemId}/master.m3u8":                                     notHLS,
-	"HEAD /Videos/{itemId}/master.m3u8":                                    notHLS,
+	"GET /Videos/{itemId}/main.m3u8":                                       servedHLS,
+	"GET /Videos/{itemId}/master.m3u8":                                     servedHLS,
+	"HEAD /Videos/{itemId}/master.m3u8":                                    servedHLS,
 }
 
 func TestLegacyRoutes(t *testing.T) {

@@ -96,6 +96,33 @@ func (e *Encoder) Open(ctx context.Context, spec Spec) (io.ReadCloser, error) {
 	return &slot{ReadCloser: output, free: func() { e.free(weight) }}, nil
 }
 
+func (e *Encoder) Segment(ctx context.Context, segment Segment) (io.ReadCloser, error) {
+	if !Available() {
+		return nil, ErrNotAvailable
+	}
+	if err := segment.Valid(); err != nil {
+		return nil, err
+	}
+
+	weight := 1
+	if segment.EncodesVideo() {
+		segment.Threads = min(VideoSlots, e.jobs)
+		weight = segment.Threads * SlotShares
+	}
+	if !e.wait(ctx, weight) {
+		return nil, ErrBusy
+	}
+
+	output, err := run(ctx, segment.Args())
+	if err != nil {
+		e.free(weight)
+
+		return nil, err
+	}
+
+	return &slot{ReadCloser: output, free: func() { e.free(weight) }}, nil
+}
+
 func (e *Encoder) wait(ctx context.Context, weight int) bool {
 	deadline := time.NewTimer(e.patience)
 	defer deadline.Stop()

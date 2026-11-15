@@ -443,3 +443,11 @@ func Container(source *MediaSource) string {
 
 	return strings.TrimPrefix(strings.ToLower(filepath.Ext(source.Path)), ".")
 }
+
+func Picture(source *MediaSource) *MediaStream {
+	return stream(source, streammodel.KindVideo)
+}
+
+func Sound(source *MediaSource) *MediaStream {
+	return stream(source, streammodel.KindAudio)
+}

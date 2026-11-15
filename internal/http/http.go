@@ -42,6 +42,14 @@ var streamRoutes = []string{
 	"HEAD /Audio/{itemId}/stream.{container}",
 }
 
+var hlsRoutes = map[string]func(*stream.Handler) http.HandlerFunc{
+	"GET /Videos/{itemId}/master.m3u8":                               func(h *stream.Handler) http.HandlerFunc { return h.ServeMasterPlaylist },
+	"HEAD /Videos/{itemId}/master.m3u8":                              func(h *stream.Handler) http.HandlerFunc { return h.ServeMasterPlaylist },
+	"GET /Videos/{itemId}/main.m3u8":                                 func(h *stream.Handler) http.HandlerFunc { return h.ServeMediaPlaylist },
+	"GET /Videos/{itemId}/audio.m3u8":                                func(h *stream.Handler) http.HandlerFunc { return h.ServeAudioPlaylist },
+	"GET /Videos/{itemId}/hls1/{playlistId}/{segmentId}.{container}": func(h *stream.Handler) http.HandlerFunc { return h.ServeSegment },
+}
+
 var universalAudioRoutes = []string{
 	"GET /Audio/{itemId}/universal",
 	"HEAD /Audio/{itemId}/universal",
@@ -302,6 +310,9 @@ func Register(
 		m.HandleFunc(pattern, streams.Serve)
 	}
 	m.HandleFunc("DELETE /Videos/ActiveEncodings", streams.StopEncodings)
+	for pattern, handler := range hlsRoutes {
+		m.HandleFunc(pattern, handler(streams))
+	}
 	for _, pattern := range universalAudioRoutes {
 		m.HandleFunc(pattern, streams.ServeUniversal)
 	}

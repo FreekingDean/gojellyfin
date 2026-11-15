@@ -50,6 +50,7 @@ var contentTypes = map[string]string{
 type Transcoder interface {
 	Enabled() bool
 	Open(ctx context.Context, spec transcode.Spec) (io.ReadCloser, error)
+	Segment(ctx context.Context, segment transcode.Segment) (io.ReadCloser, error)
 	Stall() time.Duration
 }
 
