@@ -12,6 +12,7 @@ import (
 const (
 	defaultStall = 30 * time.Second
 	VideoSlots   = 3
+	SlotShares   = 8
 	slotWait     = 8 * time.Second
 	slotPoll     = 100 * time.Millisecond
 )
@@ -49,7 +50,7 @@ func (e *Encoder) Slots() (busy, total int) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	return e.taken, e.jobs
+	return (e.taken + SlotShares - 1) / SlotShares, e.jobs
 }
 
 func (e *Encoder) Stall() time.Duration {
@@ -58,10 +59,18 @@ func (e *Encoder) Stall() time.Duration {
 
 func (e *Encoder) Weight(spec Spec) int {
 	if spec.VideoCodec == "" {
-		return 1
+		return 0
 	}
 
 	return min(VideoSlots, e.jobs)
+}
+
+func (e *Encoder) shares(spec Spec) int {
+	if weight := e.Weight(spec); weight > 0 {
+		return weight * SlotShares
+	}
+
+	return 1
 }
 
 func (e *Encoder) Open(ctx context.Context, spec Spec) (io.ReadCloser, error) {
@@ -69,12 +78,12 @@ func (e *Encoder) Open(ctx context.Context, spec Spec) (io.ReadCloser, error) {
 		return nil, ErrNotAvailable
 	}
 
-	weight := e.Weight(spec)
+	weight := e.shares(spec)
 	if !e.wait(ctx, weight) {
 		return nil, ErrBusy
 	}
 	if spec.VideoCodec != "" {
-		spec.Threads = weight
+		spec.Threads = e.Weight(spec)
 	}
 
 	output, err := start(ctx, spec)
@@ -110,7 +119,7 @@ func (e *Encoder) take(weight int) bool {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	if e.taken+weight > e.jobs {
+	if e.taken+weight > e.jobs*SlotShares {
 		return false
 	}
 	e.taken += weight

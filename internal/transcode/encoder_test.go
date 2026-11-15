@@ -36,13 +36,15 @@ func TestEncoder_Open(t *testing.T) {
 		}
 	}
 
-	t.Run("a picture encode takes several slots and an audio encode one", func(t *testing.T) {
+	t.Run("a picture encode takes whole slots and a lighter one a share of one", func(t *testing.T) {
 		fakeFFmpeg(t, "printf x")
 		encoder := NewEncoder(4, 0)
 
 		video := open(t, encoder, picture)
 		refused(t, encoder, picture)
-		open(t, encoder, audio)
+		for range SlotShares {
+			open(t, encoder, audio)
+		}
 		refused(t, encoder, audio)
 
 		if err := video.Close(); err != nil {
@@ -51,14 +53,29 @@ func TestEncoder_Open(t *testing.T) {
 		open(t, encoder, picture)
 	})
 
+	t.Run("a pod holds several lighter encodes to a slot", func(t *testing.T) {
+		fakeFFmpeg(t, "printf x")
+		encoder := NewEncoder(2, 0)
+
+		for range 2 * SlotShares {
+			open(t, encoder, audio)
+		}
+		refused(t, encoder, audio)
+		refused(t, encoder, picture)
+
+		if busy, total := encoder.Slots(); busy != 2 || total != 2 {
+			t.Fatalf("slots = %d of %d, want 2 of 2", busy, total)
+		}
+	})
+
 	t.Run("a slot freed while an open waits is taken rather than refused", func(t *testing.T) {
 		fakeFFmpeg(t, "printf x")
 		encoder := NewEncoder(1, 0)
 
-		held := open(t, encoder, audio)
+		held := open(t, encoder, picture)
 		time.AfterFunc(150*time.Millisecond, func() { _ = held.Close() })
 
-		open(t, encoder, audio)
+		open(t, encoder, picture)
 	})
 
 	t.Run("a pod with fewer slots than a picture weighs still takes one", func(t *testing.T) {
@@ -89,7 +106,9 @@ func TestEncoder_Open(t *testing.T) {
 		_ = video.Close()
 		_ = video.Close()
 		open(t, encoder, picture)
-		open(t, encoder, audio)
+		for range SlotShares {
+			open(t, encoder, audio)
+		}
 		refused(t, encoder, audio)
 	})
 }
