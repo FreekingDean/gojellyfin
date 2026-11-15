@@ -93,9 +93,10 @@ type (
 )
 
 type Configured struct {
-	Source    Source
-	Libraries []LibrarySource
-	Files     int
+	Source     Source
+	Libraries  []LibrarySource
+	Files      int
+	WebhookURL string
 }
 
 func (s *Service) List(ctx context.Context) ([]Configured, error) {
@@ -117,6 +118,7 @@ func (s *Service) List(ctx context.Context) ([]Configured, error) {
 	for i, record := range records {
 		configured[i] = fromRecord(record)
 		configured[i].Files = counts[record.ID]
+		configured[i].WebhookURL = s.WebhookURL(*record)
 	}
 
 	return configured, nil
@@ -142,6 +144,7 @@ func (s *Service) Get(ctx context.Context, id uuid.UUID) (Configured, error) {
 
 	configured := fromRecord(record)
 	configured.Files = counts[id]
+	configured.WebhookURL = s.WebhookURL(*record)
 
 	return configured, nil
 }
