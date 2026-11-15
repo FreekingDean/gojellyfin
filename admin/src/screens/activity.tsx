@@ -2,17 +2,18 @@ import { useEffect, useState } from 'preact/hooks';
 
 import { api } from '../api';
 import * as mock from '../mock';
-import { Cell, Dot, Page, Pill, Tabs, since } from '../ui';
+import { Served, how } from '../playback';
+import type { How } from '../playback';
+import { Cell, Dot, Page, Tabs, since } from '../ui';
 import type { Tone } from '../ui';
 
 type Tab = 'sessions' | 'devices' | 'log';
-type Playing = { title: string; progress: number; method: string };
+type Playing = { title: string; progress: number; how?: How };
 type Session = { id: string; device: string; user: string; where: string; app: string; address?: string; seen?: string; playing?: Playing };
 type Device = { id: string; name: string; app: string; user: string; seen?: string };
 type Entry = { at: string; text: string; tone?: Tone };
 type Loaded = { sessions: Session[]; devices: Device[]; log: Entry[] };
 
-const methods: Record<string, Tone> = { Direct: 'ok', DirectPlay: 'ok', Remux: 'off', DirectStream: 'off', Transcode: 'warn', 'Encoding 1080p': 'warn' };
 const severities: Record<string, Tone> = { Warning: 'warn', Error: 'bad', Critical: 'bad' };
 
 function mocked(): Loaded {
@@ -50,7 +51,7 @@ async function fetched(): Promise<Loaded | undefined> {
           ? {
               title: [item.SeriesName, item.Name].filter(Boolean).join(', '),
               progress: length > 0 ? Math.min(100, ((session.PlayState?.PositionTicks ?? 0) / length) * 100) : 0,
-              method: session.PlayState?.PlayMethod ?? '',
+              how: how(session),
             }
           : undefined,
       };
@@ -162,7 +163,9 @@ export function Activity() {
                   ) : (
                     <Cell main={<span class="muted">Nothing</span>} sub={session.seen && 'Last active ' + since(session.seen)} />
                   )}
-                  <td>{session.playing?.method && <Pill tone={methods[session.playing.method]}>{session.playing.method}</Pill>}</td>
+                  <td>
+                    <Served how={session.playing?.how} />
+                  </td>
                   <td class="muted">{session.address}</td>
                   <td>
                     <div class="actions right">

@@ -13,15 +13,17 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/server/dto"
+	"github.com/FreekingDean/gojellyfin/internal/sessions"
 )
 
 type Server struct {
 	policies dto.Access
 	items    *items.Service
+	sessions *sessions.Service
 }
 
-func New(items *items.Service, policies dto.Access) *Server {
-	return &Server{items: items, policies: policies}
+func New(items *items.Service, policies dto.Access, sessions *sessions.Service) *Server {
+	return &Server{items: items, policies: policies, sessions: sessions}
 }
 
 func (s *Server) GetPlaybackInfo(ctx context.Context, request api.GetPlaybackInfoRequestObject) (api.GetPlaybackInfoResponseObject, error) {
@@ -86,6 +88,8 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, profile api
 		return api.PlaybackInfoResponse{}, err
 	}
 
+	s.record(ctx, plan)
+
 	root := "Videos"
 	if items.IsAudio(item) {
 		root = "Audio"
@@ -101,6 +105,16 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, profile api
 	response.MediaSources = &[]api.MediaSourceInfo{source}
 
 	return response, nil
+}
+
+func (s *Server) record(ctx context.Context, plan items.Plan) {
+	session := auth.SessionFrom(ctx)
+	if session == nil {
+		return
+	}
+	if err := s.sessions.Planned(ctx, session.ID, plan.Source.ID, plan.Playback()); err != nil {
+		log.Printf("failed to record how %s is served: %v", plan.Source.ID, err)
+	}
 }
 
 func served(dto *api.MediaSourceInfo, plan items.Plan, url string) {

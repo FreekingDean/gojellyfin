@@ -111,6 +111,11 @@ func PlayingAt(v time.Time) predicate.Session {
 	return predicate.Session(sql.FieldEQ(FieldPlayingAt, v))
 }
 
+// PlannedSourceID applies equality check predicate on the "planned_source_id" field. It's identical to PlannedSourceIDEQ.
+func PlannedSourceID(v uuid.UUID) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldPlannedSourceID, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Session {
 	return predicate.Session(sql.FieldEQ(FieldCreatedAt, v))
@@ -636,6 +641,46 @@ func PlayingAtNotNil() predicate.Session {
 	return predicate.Session(sql.FieldNotNull(FieldPlayingAt))
 }
 
+// PlannedSourceIDEQ applies the EQ predicate on the "planned_source_id" field.
+func PlannedSourceIDEQ(v uuid.UUID) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldPlannedSourceID, v))
+}
+
+// PlannedSourceIDNEQ applies the NEQ predicate on the "planned_source_id" field.
+func PlannedSourceIDNEQ(v uuid.UUID) predicate.Session {
+	return predicate.Session(sql.FieldNEQ(FieldPlannedSourceID, v))
+}
+
+// PlannedSourceIDIn applies the In predicate on the "planned_source_id" field.
+func PlannedSourceIDIn(vs ...uuid.UUID) predicate.Session {
+	return predicate.Session(sql.FieldIn(FieldPlannedSourceID, vs...))
+}
+
+// PlannedSourceIDNotIn applies the NotIn predicate on the "planned_source_id" field.
+func PlannedSourceIDNotIn(vs ...uuid.UUID) predicate.Session {
+	return predicate.Session(sql.FieldNotIn(FieldPlannedSourceID, vs...))
+}
+
+// PlannedSourceIDIsNil applies the IsNil predicate on the "planned_source_id" field.
+func PlannedSourceIDIsNil() predicate.Session {
+	return predicate.Session(sql.FieldIsNull(FieldPlannedSourceID))
+}
+
+// PlannedSourceIDNotNil applies the NotNil predicate on the "planned_source_id" field.
+func PlannedSourceIDNotNil() predicate.Session {
+	return predicate.Session(sql.FieldNotNull(FieldPlannedSourceID))
+}
+
+// PlaybackPlanIsNil applies the IsNil predicate on the "playback_plan" field.
+func PlaybackPlanIsNil() predicate.Session {
+	return predicate.Session(sql.FieldIsNull(FieldPlaybackPlan))
+}
+
+// PlaybackPlanNotNil applies the NotNil predicate on the "playback_plan" field.
+func PlaybackPlanNotNil() predicate.Session {
+	return predicate.Session(sql.FieldNotNull(FieldPlaybackPlan))
+}
+
 // HasUser applies the HasEdge predicate on the "user" edge.
 func HasUser() predicate.Session {
 	return predicate.Session(func(s *sql.Selector) {
@@ -697,6 +742,29 @@ func HasNowPlaying() predicate.Session {
 func HasNowPlayingWith(preds ...predicate.Item) predicate.Session {
 	return predicate.Session(func(s *sql.Selector) {
 		step := newNowPlayingStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasPlannedSource applies the HasEdge predicate on the "planned_source" edge.
+func HasPlannedSource() predicate.Session {
+	return predicate.Session(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, PlannedSourceTable, PlannedSourceColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasPlannedSourceWith applies the HasEdge predicate on the "planned_source" edge with a given conditions (other predicates).
+func HasPlannedSourceWith(preds ...predicate.ItemSource) predicate.Session {
+	return predicate.Session(func(s *sql.Selector) {
+		step := newPlannedSourceStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

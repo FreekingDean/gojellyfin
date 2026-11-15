@@ -3,6 +3,7 @@
 package store
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -10,7 +11,9 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/FreekingDean/gojellyfin/internal/store/device"
+	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
+	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/google/uuid"
@@ -43,6 +46,10 @@ type Session struct {
 	IsPaused bool `json:"is_paused,omitempty"`
 	// PlayingAt holds the value of the "playing_at" field.
 	PlayingAt *time.Time `json:"playing_at,omitempty"`
+	// PlannedSourceID holds the value of the "planned_source_id" field.
+	PlannedSourceID *uuid.UUID `json:"planned_source_id,omitempty"`
+	// PlaybackPlan holds the value of the "playback_plan" field.
+	PlaybackPlan *entities.PlaybackPlan `json:"playback_plan,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SessionQuery when eager-loading is set.
 	Edges           SessionEdges `json:"edges"`
@@ -59,11 +66,13 @@ type SessionEdges struct {
 	Device *Device `json:"device,omitempty"`
 	// NowPlaying holds the value of the now_playing edge.
 	NowPlaying *Item `json:"now_playing,omitempty"`
+	// PlannedSource holds the value of the planned_source edge.
+	PlannedSource *ItemSource `json:"planned_source,omitempty"`
 	// SyncPlayMemberships holds the value of the sync_play_memberships edge.
 	SyncPlayMemberships []*SyncPlayGroupMember `json:"sync_play_memberships,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 }
 
 // UserOrErr returns the User value or an error if the edge
@@ -99,10 +108,21 @@ func (e SessionEdges) NowPlayingOrErr() (*Item, error) {
 	return nil, &NotLoadedError{edge: "now_playing"}
 }
 
+// PlannedSourceOrErr returns the PlannedSource value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e SessionEdges) PlannedSourceOrErr() (*ItemSource, error) {
+	if e.PlannedSource != nil {
+		return e.PlannedSource, nil
+	} else if e.loadedTypes[3] {
+		return nil, &NotFoundError{label: itemsource.Label}
+	}
+	return nil, &NotLoadedError{edge: "planned_source"}
+}
+
 // SyncPlayMembershipsOrErr returns the SyncPlayMemberships value or an error if the edge
 // was not loaded in eager-loading.
 func (e SessionEdges) SyncPlayMembershipsOrErr() ([]*SyncPlayGroupMember, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[4] {
 		return e.SyncPlayMemberships, nil
 	}
 	return nil, &NotLoadedError{edge: "sync_play_memberships"}
@@ -113,8 +133,10 @@ func (*Session) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case session.FieldNowPlayingItemID:
+		case session.FieldNowPlayingItemID, session.FieldPlannedSourceID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+		case session.FieldPlaybackPlan:
+			values[i] = new([]byte)
 		case session.FieldIsPaused:
 			values[i] = new(sql.NullBool)
 		case session.FieldPositionTicks:
@@ -220,6 +242,21 @@ func (_m *Session) assignValues(columns []string, values []any) error {
 				_m.PlayingAt = new(time.Time)
 				*_m.PlayingAt = value.Time
 			}
+		case session.FieldPlannedSourceID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field planned_source_id", values[i])
+			} else if value.Valid {
+				_m.PlannedSourceID = new(uuid.UUID)
+				*_m.PlannedSourceID = *value.S.(*uuid.UUID)
+			}
+		case session.FieldPlaybackPlan:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field playback_plan", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.PlaybackPlan); err != nil {
+					return fmt.Errorf("unmarshal field playback_plan: %w", err)
+				}
+			}
 		case session.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field device_sessions", values[i])
@@ -260,6 +297,11 @@ func (_m *Session) QueryDevice() *DeviceQuery {
 // QueryNowPlaying queries the "now_playing" edge of the Session entity.
 func (_m *Session) QueryNowPlaying() *ItemQuery {
 	return NewSessionClient(_m.config).QueryNowPlaying(_m)
+}
+
+// QueryPlannedSource queries the "planned_source" edge of the Session entity.
+func (_m *Session) QueryPlannedSource() *ItemSourceQuery {
+	return NewSessionClient(_m.config).QueryPlannedSource(_m)
 }
 
 // QuerySyncPlayMemberships queries the "sync_play_memberships" edge of the Session entity.
@@ -329,6 +371,14 @@ func (_m *Session) String() string {
 		builder.WriteString("playing_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
+	builder.WriteString(", ")
+	if v := _m.PlannedSourceID; v != nil {
+		builder.WriteString("planned_source_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("playback_plan=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PlaybackPlan))
 	builder.WriteByte(')')
 	return builder.String()
 }

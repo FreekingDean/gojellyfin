@@ -17,6 +17,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/FreekingDean/gojellyfin/internal/store/report"
+	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/google/uuid"
 )
@@ -400,6 +401,21 @@ func (_u *ItemSourceUpdate) AddReports(v ...*Report) *ItemSourceUpdate {
 	return _u.AddReportIDs(ids...)
 }
 
+// AddPlanningSessionIDs adds the "planning_sessions" edge to the Session entity by IDs.
+func (_u *ItemSourceUpdate) AddPlanningSessionIDs(ids ...uuid.UUID) *ItemSourceUpdate {
+	_u.mutation.AddPlanningSessionIDs(ids...)
+	return _u
+}
+
+// AddPlanningSessions adds the "planning_sessions" edges to the Session entity.
+func (_u *ItemSourceUpdate) AddPlanningSessions(v ...*Session) *ItemSourceUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddPlanningSessionIDs(ids...)
+}
+
 // Mutation returns the ItemSourceMutation object of the builder.
 func (_u *ItemSourceUpdate) Mutation() *ItemSourceMutation {
 	return _u.mutation
@@ -478,6 +494,27 @@ func (_u *ItemSourceUpdate) RemoveReports(v ...*Report) *ItemSourceUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveReportIDs(ids...)
+}
+
+// ClearPlanningSessions clears all "planning_sessions" edges to the Session entity.
+func (_u *ItemSourceUpdate) ClearPlanningSessions() *ItemSourceUpdate {
+	_u.mutation.ClearPlanningSessions()
+	return _u
+}
+
+// RemovePlanningSessionIDs removes the "planning_sessions" edge to Session entities by IDs.
+func (_u *ItemSourceUpdate) RemovePlanningSessionIDs(ids ...uuid.UUID) *ItemSourceUpdate {
+	_u.mutation.RemovePlanningSessionIDs(ids...)
+	return _u
+}
+
+// RemovePlanningSessions removes "planning_sessions" edges to Session entities.
+func (_u *ItemSourceUpdate) RemovePlanningSessions(v ...*Session) *ItemSourceUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemovePlanningSessionIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -812,6 +849,51 @@ func (_u *ItemSourceUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(report.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.PlanningSessionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemsource.PlanningSessionsTable,
+			Columns: []string{itemsource.PlanningSessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedPlanningSessionsIDs(); len(nodes) > 0 && !_u.mutation.PlanningSessionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemsource.PlanningSessionsTable,
+			Columns: []string{itemsource.PlanningSessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PlanningSessionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemsource.PlanningSessionsTable,
+			Columns: []string{itemsource.PlanningSessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1205,6 +1287,21 @@ func (_u *ItemSourceUpdateOne) AddReports(v ...*Report) *ItemSourceUpdateOne {
 	return _u.AddReportIDs(ids...)
 }
 
+// AddPlanningSessionIDs adds the "planning_sessions" edge to the Session entity by IDs.
+func (_u *ItemSourceUpdateOne) AddPlanningSessionIDs(ids ...uuid.UUID) *ItemSourceUpdateOne {
+	_u.mutation.AddPlanningSessionIDs(ids...)
+	return _u
+}
+
+// AddPlanningSessions adds the "planning_sessions" edges to the Session entity.
+func (_u *ItemSourceUpdateOne) AddPlanningSessions(v ...*Session) *ItemSourceUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddPlanningSessionIDs(ids...)
+}
+
 // Mutation returns the ItemSourceMutation object of the builder.
 func (_u *ItemSourceUpdateOne) Mutation() *ItemSourceMutation {
 	return _u.mutation
@@ -1283,6 +1380,27 @@ func (_u *ItemSourceUpdateOne) RemoveReports(v ...*Report) *ItemSourceUpdateOne 
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveReportIDs(ids...)
+}
+
+// ClearPlanningSessions clears all "planning_sessions" edges to the Session entity.
+func (_u *ItemSourceUpdateOne) ClearPlanningSessions() *ItemSourceUpdateOne {
+	_u.mutation.ClearPlanningSessions()
+	return _u
+}
+
+// RemovePlanningSessionIDs removes the "planning_sessions" edge to Session entities by IDs.
+func (_u *ItemSourceUpdateOne) RemovePlanningSessionIDs(ids ...uuid.UUID) *ItemSourceUpdateOne {
+	_u.mutation.RemovePlanningSessionIDs(ids...)
+	return _u
+}
+
+// RemovePlanningSessions removes "planning_sessions" edges to Session entities.
+func (_u *ItemSourceUpdateOne) RemovePlanningSessions(v ...*Session) *ItemSourceUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemovePlanningSessionIDs(ids...)
 }
 
 // Where appends a list predicates to the ItemSourceUpdate builder.
@@ -1647,6 +1765,51 @@ func (_u *ItemSourceUpdateOne) sqlSave(ctx context.Context) (_node *ItemSource, 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(report.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.PlanningSessionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemsource.PlanningSessionsTable,
+			Columns: []string{itemsource.PlanningSessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedPlanningSessionsIDs(); len(nodes) > 0 && !_u.mutation.PlanningSessionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemsource.PlanningSessionsTable,
+			Columns: []string{itemsource.PlanningSessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PlanningSessionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemsource.PlanningSessionsTable,
+			Columns: []string{itemsource.PlanningSessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

@@ -36,12 +36,18 @@ const (
 	FieldIsPaused = "is_paused"
 	// FieldPlayingAt holds the string denoting the playing_at field in the database.
 	FieldPlayingAt = "playing_at"
+	// FieldPlannedSourceID holds the string denoting the planned_source_id field in the database.
+	FieldPlannedSourceID = "planned_source_id"
+	// FieldPlaybackPlan holds the string denoting the playback_plan field in the database.
+	FieldPlaybackPlan = "playback_plan"
 	// EdgeUser holds the string denoting the user edge name in mutations.
 	EdgeUser = "user"
 	// EdgeDevice holds the string denoting the device edge name in mutations.
 	EdgeDevice = "device"
 	// EdgeNowPlaying holds the string denoting the now_playing edge name in mutations.
 	EdgeNowPlaying = "now_playing"
+	// EdgePlannedSource holds the string denoting the planned_source edge name in mutations.
+	EdgePlannedSource = "planned_source"
 	// EdgeSyncPlayMemberships holds the string denoting the sync_play_memberships edge name in mutations.
 	EdgeSyncPlayMemberships = "sync_play_memberships"
 	// Table holds the table name of the session in the database.
@@ -67,6 +73,13 @@ const (
 	NowPlayingInverseTable = "items"
 	// NowPlayingColumn is the table column denoting the now_playing relation/edge.
 	NowPlayingColumn = "now_playing_item_id"
+	// PlannedSourceTable is the table that holds the planned_source relation/edge.
+	PlannedSourceTable = "sessions"
+	// PlannedSourceInverseTable is the table name for the ItemSource entity.
+	// It exists in this package in order to avoid circular dependency with the "itemsource" package.
+	PlannedSourceInverseTable = "item_sources"
+	// PlannedSourceColumn is the table column denoting the planned_source relation/edge.
+	PlannedSourceColumn = "planned_source_id"
 	// SyncPlayMembershipsTable is the table that holds the sync_play_memberships relation/edge.
 	SyncPlayMembershipsTable = "sync_play_group_members"
 	// SyncPlayMembershipsInverseTable is the table name for the SyncPlayGroupMember entity.
@@ -90,6 +103,8 @@ var Columns = []string{
 	FieldPlayMethod,
 	FieldIsPaused,
 	FieldPlayingAt,
+	FieldPlannedSourceID,
+	FieldPlaybackPlan,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "sessions"
@@ -190,6 +205,11 @@ func ByPlayingAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPlayingAt, opts...).ToFunc()
 }
 
+// ByPlannedSourceID orders the results by the planned_source_id field.
+func ByPlannedSourceID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPlannedSourceID, opts...).ToFunc()
+}
+
 // ByUserField orders the results by user field.
 func ByUserField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -208,6 +228,13 @@ func ByDeviceField(field string, opts ...sql.OrderTermOption) OrderOption {
 func ByNowPlayingField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newNowPlayingStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByPlannedSourceField orders the results by planned_source field.
+func ByPlannedSourceField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newPlannedSourceStep(), sql.OrderByField(field, opts...))
 	}
 }
 
@@ -243,6 +270,13 @@ func newNowPlayingStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(NowPlayingInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, NowPlayingTable, NowPlayingColumn),
+	)
+}
+func newPlannedSourceStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(PlannedSourceInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, PlannedSourceTable, PlannedSourceColumn),
 	)
 }
 func newSyncPlayMembershipsStep() *sqlgraph.Step {

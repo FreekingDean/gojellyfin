@@ -70,9 +70,11 @@ type ItemSourceEdges struct {
 	Segments []*MediaSegment `json:"segments,omitempty"`
 	// Reports holds the value of the reports edge.
 	Reports []*Report `json:"reports,omitempty"`
+	// PlanningSessions holds the value of the planning_sessions edge.
+	PlanningSessions []*Session `json:"planning_sessions,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [6]bool
 }
 
 // ItemOrErr returns the Item value or an error if the edge
@@ -122,6 +124,15 @@ func (e ItemSourceEdges) ReportsOrErr() ([]*Report, error) {
 		return e.Reports, nil
 	}
 	return nil, &NotLoadedError{edge: "reports"}
+}
+
+// PlanningSessionsOrErr returns the PlanningSessions value or an error if the edge
+// was not loaded in eager-loading.
+func (e ItemSourceEdges) PlanningSessionsOrErr() ([]*Session, error) {
+	if e.loadedTypes[5] {
+		return e.PlanningSessions, nil
+	}
+	return nil, &NotLoadedError{edge: "planning_sessions"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -298,6 +309,11 @@ func (_m *ItemSource) QuerySegments() *MediaSegmentQuery {
 // QueryReports queries the "reports" edge of the ItemSource entity.
 func (_m *ItemSource) QueryReports() *ReportQuery {
 	return NewItemSourceClient(_m.config).QueryReports(_m)
+}
+
+// QueryPlanningSessions queries the "planning_sessions" edge of the ItemSource entity.
+func (_m *ItemSource) QueryPlanningSessions() *SessionQuery {
+	return NewItemSourceClient(_m.config).QueryPlanningSessions(_m)
 }
 
 // Update returns a builder for updating this ItemSource.

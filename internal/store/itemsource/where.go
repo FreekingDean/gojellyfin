@@ -1051,6 +1051,29 @@ func HasReportsWith(preds ...predicate.Report) predicate.ItemSource {
 	})
 }
 
+// HasPlanningSessions applies the HasEdge predicate on the "planning_sessions" edge.
+func HasPlanningSessions() predicate.ItemSource {
+	return predicate.ItemSource(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, PlanningSessionsTable, PlanningSessionsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasPlanningSessionsWith applies the HasEdge predicate on the "planning_sessions" edge with a given conditions (other predicates).
+func HasPlanningSessionsWith(preds ...predicate.Session) predicate.ItemSource {
+	return predicate.ItemSource(func(s *sql.Selector) {
+		step := newPlanningSessionsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.ItemSource) predicate.ItemSource {
 	return predicate.ItemSource(sql.AndPredicates(predicates...))

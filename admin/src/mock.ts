@@ -1,5 +1,6 @@
 import type { Schemas } from './api';
 import type { Tone } from './ui';
+import type { How } from './playback';
 
 export const mocked = new URLSearchParams(location.search).has('mock');
 
@@ -132,12 +133,31 @@ export const health: Health[] = [
   { name: 'Tracing', tone: 'off', detail: 'Off. Set OTEL_EXPORTER_OTLP_ENDPOINT' },
 ];
 
-export type Watching = { user: string; device: string; title: string; method: 'Direct' | 'Remux' | 'Encoding 1080p'; progress: number };
+export type Watching = { user: string; device: string; title: string; how: How; progress: number };
 
 export const watching: Watching[] = [
-  { user: 'maya', device: 'Android TV', title: 'Example Series C S2 E4', method: 'Remux', progress: 62 },
-  { user: 'dean', device: 'Chrome', title: 'Example Movie G', method: 'Encoding 1080p', progress: 18 },
-  { user: 'sam', device: 'Swiftfin', title: 'Example Series D S3 E1', method: 'Direct', progress: 81 },
+  {
+    user: 'maya',
+    device: 'Android TV',
+    title: 'Example Series C S2 E4',
+    how: { kind: 'Audio conversion', tone: 'off', change: 'E-AC-3 → AAC', reasons: ['E-AC-3 audio not supported'] },
+    progress: 62,
+  },
+  {
+    user: 'dean',
+    device: 'Chrome',
+    title: 'Example Movie G',
+    how: { kind: 'Video encode', tone: 'warn', change: 'HEVC → H.264 1080p', reasons: ['HEVC video not supported', 'HDR10 tone mapped to SDR'] },
+    progress: 18,
+  },
+  { user: 'sam', device: 'Swiftfin', title: 'Example Series D S3 E1', how: { kind: 'Direct play', tone: 'ok', reasons: [] }, progress: 81 },
+  {
+    user: 'alex',
+    device: 'Firefox',
+    title: 'Example Movie H',
+    how: { kind: 'Remux', tone: 'off', change: 'AVI → MP4', reasons: ['AVI container not supported'] },
+    progress: 40,
+  },
 ];
 
 export const library = { movies: 1200, shows: 80, episodes: 4000, refreshed: ago(38), unprobed: 12, unidentified: 3 };
@@ -360,7 +380,7 @@ export const sessions: Session[] = [
   { user: 'maya', device: 'Bedroom TV', app: 'Android TV 0.18.4', address: '10.0.4.21', seen: ago(0), playing: watching[0] },
   { user: 'dean', device: 'Chrome', app: 'Jellyfin Web 10.10.0', address: '10.0.4.12', seen: ago(0), playing: watching[1] },
   { user: 'sam', device: 'iPhone', app: 'Swiftfin 1.3', address: '172.58.14.9', seen: ago(1), playing: watching[2] },
-  { user: 'alex', device: 'Firefox', app: 'Jellyfin Web 10.10.0', address: '10.0.4.40', seen: ago(3 * HOUR) },
+  { user: 'alex', device: 'Firefox', app: 'Jellyfin Web 10.10.0', address: '10.0.4.40', seen: ago(0), playing: watching[3] },
 ];
 
 export type Setting = { label: string; value: string; variable: string; tone?: Tone };
