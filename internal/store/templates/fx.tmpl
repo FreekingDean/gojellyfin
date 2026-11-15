@@ -34,6 +34,9 @@ func NewStore(config env.Config) (*Store, error) {
   }
   connection.Tracer = tracing.Queries{}
   db := stdlib.OpenDB(*connection)
+  db.SetMaxOpenConns(config.Database.MaxConns)
+  db.SetMaxIdleConns(config.Database.MaxConns)
+  db.SetConnMaxLifetime(config.Database.ConnMaxLifetime)
 
   return &Store{db: db, client: NewClient(Driver(entsql.OpenDB(dialect.Postgres, db)))}, nil
 }

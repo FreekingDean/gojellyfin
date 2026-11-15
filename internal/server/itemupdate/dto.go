@@ -10,20 +10,18 @@ import (
 
 func metadata(req *api.BaseItemDto) items.Metadata {
 	converted := items.Metadata{
-		Name:              req.Name,
-		SortName:          req.SortName,
-		Overview:          req.Overview,
-		OfficialRating:    rating(req.OfficialRating),
-		CommunityRating:   score(req.CommunityRating),
-		ProductionYear:    req.ProductionYear,
-		PremiereDate:      req.PremiereDate,
-		EndDate:           req.EndDate,
-		IndexNumber:       req.IndexNumber,
-		ParentIndexNumber: req.ParentIndexNumber,
-		Status:            req.Status,
-		LockData:          req.LockData,
-		Tags:              req.Tags,
-		Taglines:          req.Taglines,
+		Name:            req.Name,
+		SortName:        req.SortName,
+		Overview:        req.Overview,
+		OfficialRating:  rating(req.OfficialRating),
+		CommunityRating: score(req.CommunityRating),
+		ProductionYear:  req.ProductionYear,
+		PremiereDate:    req.PremiereDate,
+		EndDate:         req.EndDate,
+		Status:          req.Status,
+		LockData:        req.LockData,
+		Tags:            req.Tags,
+		Taglines:        req.Taglines,
 	}
 
 	if req.LockedFields != nil {

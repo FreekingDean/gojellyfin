@@ -10,16 +10,22 @@ import (
 )
 
 type Server struct {
-	items *items.Service
+	items    *items.Service
+	policies dto.Access
 }
 
-func New(items *items.Service) *Server {
-	return &Server{items: items}
+func New(items *items.Service, policies dto.Access) *Server {
+	return &Server{items: items, policies: policies}
 }
 
 func (s *Server) GetPersons(ctx context.Context, request api.GetPersonsRequestObject) (api.GetPersonsResponseObject, error) {
+	viewer, err := dto.ViewerFor(ctx, s.policies)
+	if err != nil {
+		return nil, err
+	}
+
 	named, total, err := s.items.DistinctPeople(ctx, items.MetadataQuery{
-		Viewer:     items.Everyone,
+		Viewer:     viewer,
 		ItemID:     request.Params.AppearsInItemId,
 		SearchTerm: apiutil.Deref(request.Params.SearchTerm),
 		Limit:      int(apiutil.Deref(request.Params.Limit)),

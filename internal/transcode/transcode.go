@@ -18,6 +18,7 @@ type Spec struct {
 	VideoCodec string
 	MaxHeight  int32
 	Transfer   string
+	Threads    int
 }
 
 type format struct {
@@ -155,7 +156,7 @@ func (s Spec) videoEncode() []string {
 		"format=yuv420p",
 	)
 
-	return []string{
+	args := []string{
 		"-vf", strings.Join(filters, ","),
 		"-c:v", "libx264",
 		"-preset", "veryfast",
@@ -166,4 +167,9 @@ func (s Spec) videoEncode() []string {
 		"-sc_threshold", "0",
 		"-fpsmax", strconv.Itoa(maxFrameRate),
 	}
+	if s.Threads > 0 {
+		args = append(args, "-threads", strconv.Itoa(s.Threads))
+	}
+
+	return args
 }

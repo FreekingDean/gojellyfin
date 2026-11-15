@@ -70,6 +70,16 @@ func (s *Service) Enabled() bool {
 	return s.config.IssuerURL != ""
 }
 
+func (s *Service) Issuer() string {
+	return s.config.IssuerURL
+}
+
+func (s *Service) Discover(ctx context.Context) error {
+	_, err := s.discover(s.bounded(ctx))
+
+	return err
+}
+
 func (s *Service) Begin(ctx context.Context) (string, Flow, error) {
 	ctx = s.bounded(ctx)
 	oauth, _, err := s.oauth(ctx)

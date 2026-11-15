@@ -77,7 +77,7 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, profile api
 		PlaySessionId: apiutil.Ptr(session),
 	}
 
-	plan, err := s.items.SourceFor(ctx, itemID, capabilities(profile))
+	plan, err := s.items.SourceFor(ctx, item, capabilities(profile))
 	if errors.Is(err, items.ErrNoSource) || errors.Is(err, items.ErrNoPlayable) {
 		log.Printf("nothing to play for %s: %v", item.Name, err)
 		response.ErrorCode = apiutil.Ptr(api.NoCompatibleStream)
@@ -88,10 +88,13 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, profile api
 		return api.PlaybackInfoResponse{}, err
 	}
 
-	dto := mediaSourceDto(plan.Source)
-	if !items.IsAudio(item) {
-		served(&dto, plan, streamURL(itemID, plan, auth.AuthorizationFrom(ctx).Token, session, startTicks))
+	root := "Videos"
+	if items.IsAudio(item) {
+		root = "Audio"
 	}
+
+	dto := mediaSourceDto(plan.Source)
+	served(&dto, plan, streamURL(root, itemID, plan, auth.AuthorizationFrom(ctx).Token, session, startTicks))
 
 	response.MediaSources = &[]api.MediaSourceInfo{dto}
 

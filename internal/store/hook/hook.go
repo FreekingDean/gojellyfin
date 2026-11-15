@@ -333,6 +333,42 @@ func (f StudioFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, 
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.StudioMutation", m)
 }
 
+// The SyncPlayGroupFunc type is an adapter to allow the use of ordinary
+// function as SyncPlayGroup mutator.
+type SyncPlayGroupFunc func(context.Context, *store.SyncPlayGroupMutation) (store.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SyncPlayGroupFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, error) {
+	if mv, ok := m.(*store.SyncPlayGroupMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.SyncPlayGroupMutation", m)
+}
+
+// The SyncPlayGroupMemberFunc type is an adapter to allow the use of ordinary
+// function as SyncPlayGroupMember mutator.
+type SyncPlayGroupMemberFunc func(context.Context, *store.SyncPlayGroupMemberMutation) (store.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SyncPlayGroupMemberFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, error) {
+	if mv, ok := m.(*store.SyncPlayGroupMemberMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.SyncPlayGroupMemberMutation", m)
+}
+
+// The SyncPlayQueueEntryFunc type is an adapter to allow the use of ordinary
+// function as SyncPlayQueueEntry mutator.
+type SyncPlayQueueEntryFunc func(context.Context, *store.SyncPlayQueueEntryMutation) (store.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SyncPlayQueueEntryFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, error) {
+	if mv, ok := m.(*store.SyncPlayQueueEntryMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.SyncPlayQueueEntryMutation", m)
+}
+
 // The UserFunc type is an adapter to allow the use of ordinary
 // function as User mutator.
 type UserFunc func(context.Context, *store.UserMutation) (store.Value, error)

@@ -50,6 +50,7 @@ type stubTranscoder struct {
 	enabled bool
 	open    func(ctx context.Context, spec transcode.Spec) (io.ReadCloser, error)
 	spec    transcode.Spec
+	stall   time.Duration
 }
 
 func (s *stubTranscoder) Enabled() bool {
@@ -57,6 +58,10 @@ func (s *stubTranscoder) Enabled() bool {
 }
 
 func (s *stubTranscoder) Stall() time.Duration {
+	if s.stall > 0 {
+		return s.stall
+	}
+
 	return time.Minute
 }
 
@@ -124,7 +129,7 @@ func newFixture(t *testing.T) *fixture {
 		if err := sessionService.RemoveDevice(ctx, unique); err != nil {
 			t.Errorf("failed to delete the device: %v", err)
 		}
-		if err := userService.DeleteUser(ctx, user.ID); err != nil {
+		if err := client.User.DeleteOneID(user.ID).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the user: %v", err)
 		}
 		if err := connection.Stop(); err != nil {

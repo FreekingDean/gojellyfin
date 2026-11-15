@@ -170,6 +170,9 @@ async function boot({ mediaSeconds = 20 } = {}) {
         migrate: { command: binaries.migrate, args: ['--from', jellyfinData], env: serverEnv },
       },
       downloaderUrl,
+      downloaderVersion: radarr.VERSION,
+      downloaderRootFolder: radarr.ROOT_FOLDER,
+      mediaDirectory: path.dirname(media.playable),
     },
     serverLog: () => log.join(''),
     async stop() {

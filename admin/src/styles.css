@@ -662,6 +662,25 @@ h2 + p {
   min-width: 0;
 }
 
+.picker {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.picker ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.picker li {
+  padding: 3px 0;
+}
+
 table.rows.folders {
   table-layout: fixed;
 }

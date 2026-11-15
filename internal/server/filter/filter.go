@@ -9,16 +9,21 @@ import (
 )
 
 type Server struct {
-	items *items.Service
+	items    *items.Service
+	policies dto.Access
 }
 
-func New(items *items.Service) *Server {
-	return &Server{items: items}
+func New(items *items.Service, policies dto.Access) *Server {
+	return &Server{items: items, policies: policies}
 }
 
 func (s *Server) GetQueryFilters(ctx context.Context, request api.GetQueryFiltersRequestObject) (api.GetQueryFiltersResponseObject, error) {
+	viewer, err := dto.ViewerFor(ctx, s.policies)
+	if err != nil {
+		return nil, err
+	}
 	query := items.MetadataQuery{
-		Viewer:    items.Everyone,
+		Viewer:    viewer,
 		LibraryID: request.Params.ParentId,
 		Kinds:     dto.Kinds(request.Params.IncludeItemTypes),
 	}
@@ -44,13 +49,17 @@ func (s *Server) GetQueryFilters(ctx context.Context, request api.GetQueryFilter
 }
 
 func (s *Server) GetQueryFiltersLegacy(ctx context.Context, request api.GetQueryFiltersLegacyRequestObject) (api.GetQueryFiltersLegacyResponseObject, error) {
+	viewer, err := dto.ViewerFor(ctx, s.policies)
+	if err != nil {
+		return nil, err
+	}
 	query := items.MetadataQuery{
-		Viewer:    items.Everyone,
+		Viewer:    viewer,
 		LibraryID: request.Params.ParentId,
 		Kinds:     dto.Kinds(request.Params.IncludeItemTypes),
 	}
 
-	years, err := s.items.DistinctYears(ctx, items.Everyone, request.Params.ParentId, query.Kinds)
+	years, err := s.items.DistinctYears(ctx, viewer, request.Params.ParentId, query.Kinds)
 	if err != nil {
 		return nil, err
 	}
@@ -59,6 +68,10 @@ func (s *Server) GetQueryFiltersLegacy(ctx context.Context, request api.GetQuery
 		return nil, err
 	}
 	tags, err := s.items.DistinctTags(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	ratings, err := s.items.DistinctOfficialRatings(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +84,7 @@ func (s *Server) GetQueryFiltersLegacy(ctx context.Context, request api.GetQuery
 	return api.GetQueryFiltersLegacy200JSONResponse{
 		Genres:          &genres,
 		Tags:            &tags,
-		OfficialRatings: &[]string{},
+		OfficialRatings: &ratings,
 		Years:           &years,
 	}, nil
 }

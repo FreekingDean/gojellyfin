@@ -144,6 +144,11 @@ two. Past its slots the pod answers 503 with a `Retry-After` and the gateway
 retries against another pod, and that refusal is the whole of the load
 balancing — there is no pool and no shared state.
 
+A picture encode, the 1080p H.264 the server makes when no copy of a title
+plays untouched, is pinned to three threads and takes three slots, so a pod
+with four slots runs one of those and one audio encode at a time. A pod with
+fewer than three slots gives a picture encode all of them.
+
 Raising the request raises the slots with it. Setting `transcoderJobs`
 explicitly overrides that in either direction, including above the request if
 that is what you want.

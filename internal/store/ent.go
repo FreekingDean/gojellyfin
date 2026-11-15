@@ -39,6 +39,9 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/FreekingDean/gojellyfin/internal/store/sourcepath"
 	"github.com/FreekingDean/gojellyfin/internal/store/studio"
+	"github.com/FreekingDean/gojellyfin/internal/store/syncplaygroup"
+	"github.com/FreekingDean/gojellyfin/internal/store/syncplaygroupmember"
+	"github.com/FreekingDean/gojellyfin/internal/store/syncplayqueueentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
 	"github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
@@ -130,6 +133,9 @@ func checkColumn(t, c string) error {
 			source.Table:              source.ValidColumn,
 			sourcepath.Table:          sourcepath.ValidColumn,
 			studio.Table:              studio.ValidColumn,
+			syncplaygroup.Table:       syncplaygroup.ValidColumn,
+			syncplaygroupmember.Table: syncplaygroupmember.ValidColumn,
+			syncplayqueueentry.Table:  syncplayqueueentry.ValidColumn,
 			user.Table:                user.ValidColumn,
 			userconfiguration.Table:   userconfiguration.ValidColumn,
 			useritemdata.Table:        useritemdata.ValidColumn,

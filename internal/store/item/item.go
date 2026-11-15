@@ -81,10 +81,14 @@ const (
 	EdgeUserData = "user_data"
 	// EdgeActivityLogEntries holds the string denoting the activity_log_entries edge name in mutations.
 	EdgeActivityLogEntries = "activity_log_entries"
+	// EdgePlayingSessions holds the string denoting the playing_sessions edge name in mutations.
+	EdgePlayingSessions = "playing_sessions"
 	// EdgePlaylist holds the string denoting the playlist edge name in mutations.
 	EdgePlaylist = "playlist"
 	// EdgePlaylistEntries holds the string denoting the playlist_entries edge name in mutations.
 	EdgePlaylistEntries = "playlist_entries"
+	// EdgeSyncPlayEntries holds the string denoting the sync_play_entries edge name in mutations.
+	EdgeSyncPlayEntries = "sync_play_entries"
 	// EdgeGenres holds the string denoting the genres edge name in mutations.
 	EdgeGenres = "genres"
 	// EdgeStudios holds the string denoting the studios edge name in mutations.
@@ -148,6 +152,13 @@ const (
 	ActivityLogEntriesInverseTable = "activity_log_entries"
 	// ActivityLogEntriesColumn is the table column denoting the activity_log_entries relation/edge.
 	ActivityLogEntriesColumn = "item_activity_log_entries"
+	// PlayingSessionsTable is the table that holds the playing_sessions relation/edge.
+	PlayingSessionsTable = "sessions"
+	// PlayingSessionsInverseTable is the table name for the Session entity.
+	// It exists in this package in order to avoid circular dependency with the "session" package.
+	PlayingSessionsInverseTable = "sessions"
+	// PlayingSessionsColumn is the table column denoting the playing_sessions relation/edge.
+	PlayingSessionsColumn = "now_playing_item_id"
 	// PlaylistTable is the table that holds the playlist relation/edge.
 	PlaylistTable = "playlists"
 	// PlaylistInverseTable is the table name for the Playlist entity.
@@ -162,6 +173,13 @@ const (
 	PlaylistEntriesInverseTable = "playlist_entries"
 	// PlaylistEntriesColumn is the table column denoting the playlist_entries relation/edge.
 	PlaylistEntriesColumn = "item_id"
+	// SyncPlayEntriesTable is the table that holds the sync_play_entries relation/edge.
+	SyncPlayEntriesTable = "sync_play_queue_entries"
+	// SyncPlayEntriesInverseTable is the table name for the SyncPlayQueueEntry entity.
+	// It exists in this package in order to avoid circular dependency with the "syncplayqueueentry" package.
+	SyncPlayEntriesInverseTable = "sync_play_queue_entries"
+	// SyncPlayEntriesColumn is the table column denoting the sync_play_entries relation/edge.
+	SyncPlayEntriesColumn = "item_id"
 	// GenresTable is the table that holds the genres relation/edge. The primary key declared below.
 	GenresTable = "item_genres"
 	// GenresInverseTable is the table name for the Genre entity.
@@ -487,6 +505,20 @@ func ByActivityLogEntries(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOptio
 	}
 }
 
+// ByPlayingSessionsCount orders the results by playing_sessions count.
+func ByPlayingSessionsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newPlayingSessionsStep(), opts...)
+	}
+}
+
+// ByPlayingSessions orders the results by playing_sessions terms.
+func ByPlayingSessions(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newPlayingSessionsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByPlaylistField orders the results by playlist field.
 func ByPlaylistField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -505,6 +537,20 @@ func ByPlaylistEntriesCount(opts ...sql.OrderTermOption) OrderOption {
 func ByPlaylistEntries(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newPlaylistEntriesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// BySyncPlayEntriesCount orders the results by sync_play_entries count.
+func BySyncPlayEntriesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSyncPlayEntriesStep(), opts...)
+	}
+}
+
+// BySyncPlayEntries orders the results by sync_play_entries terms.
+func BySyncPlayEntries(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSyncPlayEntriesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
@@ -598,6 +644,13 @@ func newActivityLogEntriesStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2M, false, ActivityLogEntriesTable, ActivityLogEntriesColumn),
 	)
 }
+func newPlayingSessionsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(PlayingSessionsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, PlayingSessionsTable, PlayingSessionsColumn),
+	)
+}
 func newPlaylistStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -610,6 +663,13 @@ func newPlaylistEntriesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(PlaylistEntriesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, PlaylistEntriesTable, PlaylistEntriesColumn),
+	)
+}
+func newSyncPlayEntriesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SyncPlayEntriesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SyncPlayEntriesTable, SyncPlayEntriesColumn),
 	)
 }
 func newGenresStep() *sqlgraph.Step {

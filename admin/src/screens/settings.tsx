@@ -157,7 +157,7 @@ export function Settings() {
 
   if (!shelves) {
     return (
-      <Page title="Settings" lead="Shelves are edited here. Everything else is set in the environment, so it is shown here and changed in your deployment.">
+      <Page title="Settings" lead="Shelves, branding and API keys are edited here. Everything else is set in the environment, so it is shown here and changed in your deployment.">
         <p class={failure ? 'failure' : 'muted'}>{failure || 'Loading…'}</p>
       </Page>
     );
@@ -167,9 +167,7 @@ export function Settings() {
     <Page
       title="Settings"
       lead={
-        mock.mocked
-          ? 'Shelves, branding and API keys are edited here. Everything else is set in the environment, so it is shown here and changed in your deployment.'
-          : 'Shelves are edited here. Everything else is set in the environment, so it is shown here and changed in your deployment.'
+        'Shelves, branding and API keys are edited here. Everything else is set in the environment, so it is shown here and changed in your deployment.'
       }
     >
       {failure && (
@@ -232,48 +230,193 @@ export function Settings() {
           </Card>
         ))}
 
-        {mock.mocked && (
-          <>
-            <Card title="Branding">
-              <div class="form one">
-                <label>
-                  Sign-in message
-                  <textarea rows={2}>{mock.branding.disclaimer}</textarea>
-                </label>
-                <label>
-                  Custom CSS for the web client
-                  <textarea rows={3} class="mono">
-                    {mock.branding.css}
-                  </textarea>
-                </label>
-              </div>
-              <div class="actions spaced">
-                <button class="primary">Save branding</button>
-              </div>
-            </Card>
-
-            <Card>
-              <header class="cardhead">
-                <b>API keys</b>
-                <button>New key</button>
-              </header>
-              <table class="rows plain">
-                <tbody>
-                  {mock.apiKeys.map((key) => (
-                    <tr key={key.name}>
-                      <Cell main={key.name} sub={'Created ' + since(key.created)} />
-                      <td class="muted">{key.used ? 'Used ' + since(key.used) : 'Never used'}</td>
-                      <td class="end">
-                        <button>Revoke</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </Card>
-          </>
-        )}
+        <Branding />
+        <Keys />
       </div>
     </Page>
+  );
+}
+
+type Stored = { LoginDisclaimer?: string; CustomCss?: string; SplashscreenEnabled?: boolean } & Record<string, unknown>;
+
+function Branding() {
+  const [stored, setStored] = useState<Stored | undefined>(mock.mocked ? { LoginDisclaimer: mock.branding.disclaimer, CustomCss: mock.branding.css } : undefined);
+  const [failure, setFailure] = useState('');
+  const [notice, setNotice] = useState('');
+
+  useEffect(() => {
+    if (mock.mocked) {
+      return;
+    }
+    void (async () => {
+      const { data } = await api.GET('/System/Configuration/{key}', { params: { path: { key: 'branding' } } });
+      if (!data) {
+        setFailure('The branding could not be loaded.');
+        return;
+      }
+      setStored(data as unknown as Stored);
+    })();
+  }, []);
+
+  function edit(field: 'LoginDisclaimer' | 'CustomCss') {
+    return (event: Event) => {
+      setNotice('');
+      setStored({ ...stored, [field]: (event.currentTarget as HTMLTextAreaElement).value });
+    };
+  }
+
+  async function save() {
+    if (mock.mocked || !stored) {
+      return;
+    }
+    const { response } = await api.POST('/System/Configuration/{key}', { params: { path: { key: 'branding' } }, body: stored });
+    setFailure(response.ok ? '' : 'The branding could not be saved.');
+    setNotice(response.ok ? 'Branding saved. Clients pick it up the next time they load.' : '');
+  }
+
+  return (
+    <Card title="Branding">
+      {failure && (
+        <p class="failure" role="alert">
+          {failure}
+        </p>
+      )}
+      {stored && (
+        <>
+          <div class="form one">
+            <label>
+              Sign-in message
+              <textarea rows={2} value={stored.LoginDisclaimer ?? ''} onInput={edit('LoginDisclaimer')} />
+            </label>
+            <label>
+              Custom CSS for the web client
+              <textarea rows={3} class="mono" value={stored.CustomCss ?? ''} onInput={edit('CustomCss')} />
+            </label>
+          </div>
+          <p class="muted small">The single sign-on button and the home shelves' titles are added on the way out, so they are not part of what is saved here.</p>
+          <div class="actions spaced">
+            <button class="primary" onClick={save}>
+              Save branding
+            </button>
+          </div>
+          {notice && (
+            <p class="muted small" role="status">
+              {notice}
+            </p>
+          )}
+        </>
+      )}
+    </Card>
+  );
+}
+
+type Key = { token: string; name: string; created: string };
+
+function Keys() {
+  const [keys, setKeys] = useState<Key[] | undefined>(
+    mock.mocked ? mock.apiKeys.map((key, i) => ({ token: 'mock' + i, name: key.name, created: key.created })) : undefined,
+  );
+  const [made, setMade] = useState<Key | undefined>();
+  const [naming, setNaming] = useState<string | undefined>();
+  const [failure, setFailure] = useState('');
+
+  async function load(): Promise<Key[]> {
+    const { data } = await api.GET('/Auth/Keys');
+    if (!data) {
+      setFailure('The API keys could not be loaded.');
+      return [];
+    }
+    const active = (data.Items ?? [])
+      .filter((key) => key.IsActive !== false && key.AccessToken)
+      .map((key) => ({ token: key.AccessToken ?? '', name: key.AppName ?? '', created: key.DateCreated ?? '' }));
+    setKeys(active);
+
+    return active;
+  }
+
+  useEffect(() => {
+    if (!mock.mocked) {
+      void load();
+    }
+  }, []);
+
+  async function create() {
+    const name = naming?.trim();
+    if (mock.mocked || !name) {
+      return;
+    }
+    const before = new Set(keys?.map((key) => key.token));
+    const { response } = await api.POST('/Auth/Keys', { params: { query: { app: name } } });
+    if (!response.ok) {
+      setFailure('The key could not be made.');
+      return;
+    }
+    setFailure('');
+    setNaming(undefined);
+    setMade((await load()).find((key) => !before.has(key.token)));
+  }
+
+  async function revoke(key: Key) {
+    if (mock.mocked) {
+      return;
+    }
+    const { response } = await api.DELETE('/Auth/Keys/{key}', { params: { path: { key: key.token } } });
+    setFailure(response.ok ? '' : 'The key could not be revoked.');
+    if (made?.token === key.token) {
+      setMade(undefined);
+    }
+    await load();
+  }
+
+  return (
+    <Card>
+      <header class="cardhead">
+        <b>API keys</b>
+        {naming === undefined && <button onClick={() => setNaming('')}>New key</button>}
+      </header>
+      <p class="muted small">A key is for an app such as Home Assistant, and is shown in full once, when it is made. This server does not accept one in place of a sign-in yet (#722).</p>
+      {failure && (
+        <p class="failure" role="alert">
+          {failure}
+        </p>
+      )}
+      {naming !== undefined && (
+        <div class="form one">
+          <label>
+            Which app is it for
+            <input value={naming} onInput={(event) => setNaming(event.currentTarget.value)} />
+          </label>
+          <div class="actions">
+            <button class="primary" onClick={create} disabled={!naming.trim()}>
+              Make key
+            </button>
+            <button onClick={() => setNaming(undefined)}>Cancel</button>
+          </div>
+        </div>
+      )}
+      {made && (
+        <p role="status">
+          The key for {made.name} is <code class="mono">{made.token}</code>
+        </p>
+      )}
+      {keys && keys.length === 0 && <p class="muted">No app has a key.</p>}
+      {keys && keys.length > 0 && (
+        <table class="rows plain">
+          <tbody>
+            {keys.map((key) => (
+              <tr key={key.token}>
+                <Cell main={key.name} sub={key.created ? 'Made ' + since(key.created) : undefined} />
+                <td class="muted">
+                  <code class="small">{key.token.slice(0, 6)}…</code>
+                </td>
+                <td class="end">
+                  <button onClick={() => revoke(key)}>Revoke</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </Card>
   );
 }

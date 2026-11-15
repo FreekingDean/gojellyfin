@@ -2,6 +2,7 @@ package libraries
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 
@@ -50,6 +51,19 @@ var (
 	}
 )
 
+type Fixed struct {
+	ID             uuid.UUID
+	Name           string
+	CollectionType CollectionType
+}
+
+var (
+	Movies = Fixed{ID: uuid.MustParse("4d6f7669-6573-4000-8000-000000000001"), Name: "Movies", CollectionType: CollectionTypeMovies}
+	Shows  = Fixed{ID: uuid.MustParse("53686f77-7300-4000-8000-000000000002"), Name: "Shows", CollectionType: CollectionTypeTvshows}
+
+	ErrFixed = errors.New("there are two libraries, Movies and Shows, and neither is added or removed")
+)
+
 type Service struct {
 	store   *store.Client
 	sources *sources.Service
@@ -87,6 +101,49 @@ func (s *Service) CreateLibrary(ctx context.Context, name string, collectionType
 	}
 
 	return s.Library(ctx, id)
+}
+
+func (s *Service) EnsureFixed(ctx context.Context) error {
+	for _, fixed := range []Fixed{Movies, Shows} {
+		err := s.ensure(ctx, fixed)
+		if store.IsConstraintError(err) {
+			err = s.ensure(ctx, fixed)
+		}
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *Service) ensure(ctx context.Context, fixed Fixed) error {
+	return s.store.WithTx(ctx, func(tx *store.Tx) error {
+		library, err := tx.Library.Query().
+			Where(librarymodel.CollectionTypeEQ(fixed.CollectionType)).
+			Order(librarymodel.ByCreatedAt(), librarymodel.ByID()).
+			WithOptions().
+			First(ctx)
+		if store.IsNotFound(err) {
+			library, err = tx.Library.Create().
+				SetID(fixed.ID).
+				SetName(fixed.Name).
+				SetCollectionType(fixed.CollectionType).
+				Save(ctx)
+		}
+		if err != nil {
+			return fmt.Errorf("failed to find or create %s: %w", fixed.Name, err)
+		}
+		if library.Edges.Options != nil {
+			return nil
+		}
+
+		if err := tx.LibraryOptions.Create().SetLibrary(library).Exec(ctx); err != nil {
+			return fmt.Errorf("failed to create the options of %s: %w", fixed.Name, err)
+		}
+
+		return nil
+	})
 }
 
 func (s *Service) Library(ctx context.Context, id uuid.UUID) (*Library, error) {
@@ -199,40 +256,4 @@ func (s *Service) DeleteLibrary(ctx context.Context, id uuid.UUID) error {
 func (s *Service) UpdateOptions(id uuid.UUID) *store.LibraryOptionsUpdate {
 	return s.store.LibraryOptions.Update().
 		Where(optionsmodel.HasLibraryWith(librarymodel.ID(id)))
-}
-
-func (s *Service) AddLocation(ctx context.Context, id uuid.UUID, path string) error {
-	library, err := s.Library(ctx, id)
-	if err != nil {
-		return err
-	}
-	if slices.Contains(library.Locations, path) {
-		return nil
-	}
-
-	err = s.store.Library.UpdateOneID(id).
-		SetLocations(append(library.Locations, path)).
-		Exec(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to add library location: %w", err)
-	}
-
-	return nil
-}
-
-func (s *Service) RemoveLocation(ctx context.Context, id uuid.UUID, path string) error {
-	library, err := s.Library(ctx, id)
-	if err != nil {
-		return err
-	}
-
-	locations := slices.DeleteFunc(slices.Clone(library.Locations), func(location string) bool {
-		return location == path
-	})
-
-	if err := s.store.Library.UpdateOneID(id).SetLocations(locations).Exec(ctx); err != nil {
-		return fmt.Errorf("failed to remove library location: %w", err)
-	}
-
-	return nil
 }

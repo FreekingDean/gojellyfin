@@ -23,6 +23,7 @@ type Catalogue interface {
 	LatestItems(ctx context.Context, query items.LatestQuery) ([]items.Latest, error)
 	DistinctGenres(ctx context.Context, query items.MetadataQuery) ([]items.Named, int, error)
 	LastPlayed(ctx context.Context, viewer items.Viewer, userID uuid.UUID, kind items.Kind) (*items.Item, []string, error)
+	Posters(ctx context.Context, records []*items.Item, limit int) ([]*items.Image, error)
 }
 
 type Discovery interface {
@@ -37,6 +38,18 @@ type Shelf struct {
 	Unowned    items.Kind
 	query      items.LatestQuery
 }
+
+type Card struct {
+	Name     string
+	Fresh    int
+	Posters  []*items.Image
+	Personal bool
+}
+
+const (
+	FreshLimit  = 99
+	FreshWindow = 7 * 24 * time.Hour
+)
 
 type Settings interface {
 	Configuration(ctx context.Context, key string) (json.RawMessage, error)
@@ -238,4 +251,65 @@ func (s *Service) Latest(ctx context.Context, shelf Shelf, limit int, ungrouped 
 	query.Ungrouped = ungrouped
 
 	return s.catalogue.LatestItems(ctx, query)
+}
+
+func (s *Service) Card(ctx context.Context, id uuid.UUID, viewer items.Viewer, userID uuid.UUID, limit int) (Card, bool, error) {
+	enabled, err := s.enabled(ctx)
+	if err != nil {
+		return Card{}, false, err
+	}
+
+	index := slices.IndexFunc(enabled, func(entry definition) bool { return ID(entry.slug) == id })
+	if index < 0 || enabled[index].unowned != "" {
+		return Card{}, false, nil
+	}
+
+	entry := enabled[index]
+	if entry.shared {
+		userID = uuid.Nil
+	} else if userID == uuid.Nil {
+		return Card{}, false, nil
+	}
+
+	shelf, ok, err := s.resolve(ctx, entry, viewer, userID)
+	if err != nil || !ok {
+		return Card{}, false, err
+	}
+
+	latest, err := s.Latest(ctx, shelf, limit*2, false)
+	if err != nil {
+		return Card{}, false, err
+	}
+
+	records := make([]*items.Item, 0, len(latest))
+	for _, entry := range latest {
+		records = append(records, entry.Item)
+	}
+
+	posters, err := s.catalogue.Posters(ctx, records, limit)
+	if err != nil {
+		return Card{}, false, err
+	}
+
+	fresh, err := s.fresh(ctx, shelf)
+
+	return Card{Name: shelf.Name, Fresh: fresh, Posters: posters, Personal: !entry.shared}, true, err
+}
+
+func (s *Service) fresh(ctx context.Context, shelf Shelf) (int, error) {
+	aired, err := s.Latest(ctx, shelf, FreshLimit, true)
+	if err != nil {
+		return 0, err
+	}
+
+	now := s.now()
+	since := now.Add(-FreshWindow)
+	count := 0
+	for _, entry := range aired {
+		if premiere := entry.Item.PremiereDate; premiere != nil && premiere.After(since) && !premiere.After(now) {
+			count++
+		}
+	}
+
+	return count, nil
 }
