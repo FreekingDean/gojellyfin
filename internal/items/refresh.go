@@ -84,8 +84,17 @@ func (s *Service) RefreshItem(ctx context.Context, libraryID, sourceID uuid.UUID
 		return err
 	}
 
+	var previous []uuid.UUID
 	for _, file := range scanned.Files {
 		jobs.Heartbeat(ctx, file.Path)
+
+		owner, err := s.fileOwner(ctx, file.Path)
+		if err != nil {
+			return err
+		}
+		if owner != nil && *owner != item.ID {
+			previous = append(previous, *owner)
+		}
 
 		saved, err := s.SaveSource(ctx, MediaSource{
 			SourceID:       sourceID,
@@ -115,6 +124,10 @@ func (s *Service) RefreshItem(ctx context.Context, libraryID, sourceID uuid.UUID
 		if err := s.replaceNamed(ctx, item.ID, Metadata{Genres: &scanned.Genres}); err != nil {
 			return err
 		}
+	}
+
+	if err := s.SweepUnreachable(ctx, previous); err != nil {
+		return err
 	}
 
 	if _, identifiable := TmdbID(item.Key); identifiable && item.ProviderIds == nil {

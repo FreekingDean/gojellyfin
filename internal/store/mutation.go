@@ -26819,6 +26819,9 @@ type SourceMutation struct {
 	addrequest_profile_id *int
 	request_root_folder   *string
 	request_tag           *string
+	webhook_secret        *string
+	webhook_registered_at *time.Time
+	webhook_error         *string
 	clearedFields         map[string]struct{}
 	paths                 map[uuid.UUID]struct{}
 	removedpaths          map[uuid.UUID]struct{}
@@ -27475,6 +27478,140 @@ func (m *SourceMutation) ResetRequestTag() {
 	delete(m.clearedFields, source.FieldRequestTag)
 }
 
+// SetWebhookSecret sets the "webhook_secret" field.
+func (m *SourceMutation) SetWebhookSecret(s string) {
+	m.webhook_secret = &s
+}
+
+// WebhookSecret returns the value of the "webhook_secret" field in the mutation.
+func (m *SourceMutation) WebhookSecret() (r string, exists bool) {
+	v := m.webhook_secret
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWebhookSecret returns the old "webhook_secret" field's value of the Source entity.
+// If the Source object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SourceMutation) OldWebhookSecret(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWebhookSecret is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWebhookSecret requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWebhookSecret: %w", err)
+	}
+	return oldValue.WebhookSecret, nil
+}
+
+// ResetWebhookSecret resets all changes to the "webhook_secret" field.
+func (m *SourceMutation) ResetWebhookSecret() {
+	m.webhook_secret = nil
+}
+
+// SetWebhookRegisteredAt sets the "webhook_registered_at" field.
+func (m *SourceMutation) SetWebhookRegisteredAt(t time.Time) {
+	m.webhook_registered_at = &t
+}
+
+// WebhookRegisteredAt returns the value of the "webhook_registered_at" field in the mutation.
+func (m *SourceMutation) WebhookRegisteredAt() (r time.Time, exists bool) {
+	v := m.webhook_registered_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWebhookRegisteredAt returns the old "webhook_registered_at" field's value of the Source entity.
+// If the Source object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SourceMutation) OldWebhookRegisteredAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWebhookRegisteredAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWebhookRegisteredAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWebhookRegisteredAt: %w", err)
+	}
+	return oldValue.WebhookRegisteredAt, nil
+}
+
+// ClearWebhookRegisteredAt clears the value of the "webhook_registered_at" field.
+func (m *SourceMutation) ClearWebhookRegisteredAt() {
+	m.webhook_registered_at = nil
+	m.clearedFields[source.FieldWebhookRegisteredAt] = struct{}{}
+}
+
+// WebhookRegisteredAtCleared returns if the "webhook_registered_at" field was cleared in this mutation.
+func (m *SourceMutation) WebhookRegisteredAtCleared() bool {
+	_, ok := m.clearedFields[source.FieldWebhookRegisteredAt]
+	return ok
+}
+
+// ResetWebhookRegisteredAt resets all changes to the "webhook_registered_at" field.
+func (m *SourceMutation) ResetWebhookRegisteredAt() {
+	m.webhook_registered_at = nil
+	delete(m.clearedFields, source.FieldWebhookRegisteredAt)
+}
+
+// SetWebhookError sets the "webhook_error" field.
+func (m *SourceMutation) SetWebhookError(s string) {
+	m.webhook_error = &s
+}
+
+// WebhookError returns the value of the "webhook_error" field in the mutation.
+func (m *SourceMutation) WebhookError() (r string, exists bool) {
+	v := m.webhook_error
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWebhookError returns the old "webhook_error" field's value of the Source entity.
+// If the Source object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SourceMutation) OldWebhookError(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWebhookError is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWebhookError requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWebhookError: %w", err)
+	}
+	return oldValue.WebhookError, nil
+}
+
+// ClearWebhookError clears the value of the "webhook_error" field.
+func (m *SourceMutation) ClearWebhookError() {
+	m.webhook_error = nil
+	m.clearedFields[source.FieldWebhookError] = struct{}{}
+}
+
+// WebhookErrorCleared returns if the "webhook_error" field was cleared in this mutation.
+func (m *SourceMutation) WebhookErrorCleared() bool {
+	_, ok := m.clearedFields[source.FieldWebhookError]
+	return ok
+}
+
+// ResetWebhookError resets all changes to the "webhook_error" field.
+func (m *SourceMutation) ResetWebhookError() {
+	m.webhook_error = nil
+	delete(m.clearedFields, source.FieldWebhookError)
+}
+
 // AddPathIDs adds the "paths" edge to the SourcePath entity by ids.
 func (m *SourceMutation) AddPathIDs(ids ...uuid.UUID) {
 	if m.paths == nil {
@@ -27779,7 +27916,7 @@ func (m *SourceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SourceMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 15)
 	if m.created_at != nil {
 		fields = append(fields, source.FieldCreatedAt)
 	}
@@ -27816,6 +27953,15 @@ func (m *SourceMutation) Fields() []string {
 	if m.request_tag != nil {
 		fields = append(fields, source.FieldRequestTag)
 	}
+	if m.webhook_secret != nil {
+		fields = append(fields, source.FieldWebhookSecret)
+	}
+	if m.webhook_registered_at != nil {
+		fields = append(fields, source.FieldWebhookRegisteredAt)
+	}
+	if m.webhook_error != nil {
+		fields = append(fields, source.FieldWebhookError)
+	}
 	return fields
 }
 
@@ -27848,6 +27994,12 @@ func (m *SourceMutation) Field(name string) (ent.Value, bool) {
 		return m.RequestRootFolder()
 	case source.FieldRequestTag:
 		return m.RequestTag()
+	case source.FieldWebhookSecret:
+		return m.WebhookSecret()
+	case source.FieldWebhookRegisteredAt:
+		return m.WebhookRegisteredAt()
+	case source.FieldWebhookError:
+		return m.WebhookError()
 	}
 	return nil, false
 }
@@ -27881,6 +28033,12 @@ func (m *SourceMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldRequestRootFolder(ctx)
 	case source.FieldRequestTag:
 		return m.OldRequestTag(ctx)
+	case source.FieldWebhookSecret:
+		return m.OldWebhookSecret(ctx)
+	case source.FieldWebhookRegisteredAt:
+		return m.OldWebhookRegisteredAt(ctx)
+	case source.FieldWebhookError:
+		return m.OldWebhookError(ctx)
 	}
 	return nil, fmt.Errorf("unknown Source field %s", name)
 }
@@ -27974,6 +28132,27 @@ func (m *SourceMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetRequestTag(v)
 		return nil
+	case source.FieldWebhookSecret:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWebhookSecret(v)
+		return nil
+	case source.FieldWebhookRegisteredAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWebhookRegisteredAt(v)
+		return nil
+	case source.FieldWebhookError:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWebhookError(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Source field %s", name)
 }
@@ -28037,6 +28216,12 @@ func (m *SourceMutation) ClearedFields() []string {
 	if m.FieldCleared(source.FieldRequestTag) {
 		fields = append(fields, source.FieldRequestTag)
 	}
+	if m.FieldCleared(source.FieldWebhookRegisteredAt) {
+		fields = append(fields, source.FieldWebhookRegisteredAt)
+	}
+	if m.FieldCleared(source.FieldWebhookError) {
+		fields = append(fields, source.FieldWebhookError)
+	}
 	return fields
 }
 
@@ -28068,6 +28253,12 @@ func (m *SourceMutation) ClearField(name string) error {
 		return nil
 	case source.FieldRequestTag:
 		m.ClearRequestTag()
+		return nil
+	case source.FieldWebhookRegisteredAt:
+		m.ClearWebhookRegisteredAt()
+		return nil
+	case source.FieldWebhookError:
+		m.ClearWebhookError()
 		return nil
 	}
 	return fmt.Errorf("unknown Source nullable field %s", name)
@@ -28112,6 +28303,15 @@ func (m *SourceMutation) ResetField(name string) error {
 		return nil
 	case source.FieldRequestTag:
 		m.ResetRequestTag()
+		return nil
+	case source.FieldWebhookSecret:
+		m.ResetWebhookSecret()
+		return nil
+	case source.FieldWebhookRegisteredAt:
+		m.ResetWebhookRegisteredAt()
+		return nil
+	case source.FieldWebhookError:
+		m.ResetWebhookError()
 		return nil
 	}
 	return fmt.Errorf("unknown Source field %s", name)

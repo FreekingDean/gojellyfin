@@ -10,17 +10,19 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/FreekingDean/gojellyfin/internal/collage"
+	"github.com/FreekingDean/gojellyfin/internal/cards"
 	settings "github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/shelves"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	downloadermodel "github.com/FreekingDean/gojellyfin/internal/store/source"
+	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
 type fixture struct {
@@ -99,7 +101,7 @@ func newFixture(t *testing.T) *fixture {
 	shelved := shelves.New(catalogue, found, settings.New(client))
 
 	return &fixture{
-		server:    New(catalogue, collage.New(catalogue, shelved), found, nil),
+		server:    New(catalogue, cards.New(catalogue, libraries.New(client), shelved, users.New(client)), found, nil),
 		client:    client,
 		itemID:    item.ID,
 		libraryID: library.ID,
@@ -291,7 +293,7 @@ func TestServer_GetItemImage_Library(t *testing.T) {
 	}))
 	t.Cleanup(cdn.Close)
 
-	t.Run("serves a collage of the library's posters", func(t *testing.T) {
+	t.Run("serves a card of the library's posters", func(t *testing.T) {
 		fixture := newFixture(t)
 		fixture.store(t, imagemodel.KindPrimary, 0, cdn.URL+"/poster.png", "postertag")
 
@@ -318,11 +320,11 @@ func TestServer_GetItemImage_Library(t *testing.T) {
 			t.Errorf("cache control = %q, want %q", got, cacheFor)
 		}
 		if _, _, err := image.Decode(recorder.Body); err != nil {
-			t.Errorf("failed to decode the collage: %v", err)
+			t.Errorf("failed to decode the card: %v", err)
 		}
 	})
 
-	t.Run("tells the client not to keep a collage missing a poster", func(t *testing.T) {
+	t.Run("tells the client not to keep a card missing a poster", func(t *testing.T) {
 		fixture := newFixture(t)
 		fixture.store(t, imagemodel.KindPrimary, 0, cdn.URL+"/poster.png", "postertag")
 

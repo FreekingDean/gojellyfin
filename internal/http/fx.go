@@ -14,6 +14,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/socket"
 	"github.com/FreekingDean/gojellyfin/internal/server/sso"
 	"github.com/FreekingDean/gojellyfin/internal/server/stream"
+	"github.com/FreekingDean/gojellyfin/internal/server/webhook"
 	"github.com/FreekingDean/gojellyfin/internal/transcode"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
@@ -29,6 +30,7 @@ var Module = fx.Module(
 		admin.New,
 		link.New,
 		report.New,
+		webhook.New,
 		sso.New,
 		func(s *socket.Socket) notify.Handler { return s.Deliver },
 		func(encoder *transcode.Encoder) stream.Transcoder { return encoder },

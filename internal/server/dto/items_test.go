@@ -37,3 +37,23 @@ func TestItemDto(t *testing.T) {
 		}
 	})
 }
+
+func TestItemDto_PrimaryImageAspectRatio(t *testing.T) {
+	for _, test := range []struct {
+		kind items.Kind
+		tags map[string]string
+		want *float64
+	}{
+		{kind: "Movie", tags: map[string]string{"Primary": "a"}, want: apiutil.Ptr(posterAspect)},
+		{kind: "Series", tags: map[string]string{"Primary": "a"}, want: apiutil.Ptr(posterAspect)},
+		{kind: "Episode", tags: map[string]string{"Primary": "a"}, want: apiutil.Ptr(stillAspect)},
+		{kind: "Movie", tags: map[string]string{"Backdrop": "a"}, want: nil},
+	} {
+		t.Run(string(test.kind), func(t *testing.T) {
+			got := ItemDto(&items.Item{Kind: test.kind}, items.Held{}, 0, test.tags).PrimaryImageAspectRatio
+			if (got == nil) != (test.want == nil) || (got != nil && *got != *test.want) {
+				t.Errorf("PrimaryImageAspectRatio = %v, want %v", got, test.want)
+			}
+		})
+	}
+}

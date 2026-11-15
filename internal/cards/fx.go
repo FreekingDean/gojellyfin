@@ -1,8 +1,8 @@
-package collage
+package cards
 
 import "go.uber.org/fx"
 
 var Module = fx.Module(
-	"collage",
+	"cards",
 	fx.Provide(New),
 )

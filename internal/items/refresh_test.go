@@ -94,6 +94,41 @@ func TestService_RefreshItem(t *testing.T) {
 			t.Errorf("metadata = %d, want the identified title left alone", len(identify))
 		}
 	})
+
+	t.Run("deletes the title a file was moved off when it has no file left", func(t *testing.T) {
+		fixture := newFixture(t)
+		ctx := context.Background()
+		path := "/media/Renumbered/" + uuid.NewString() + ".mkv"
+
+		before := Scanned{
+			Key:      MovieKey(tmdbID()),
+			Kind:     itemmodel.KindMovie,
+			Name:     "Renumbered",
+			SortName: "renumbered",
+			Files:    []ScannedFile{{Path: path, DateModified: time.Now()}},
+		}
+		fixture.refresh(t, before)
+
+		after := before
+		after.Key = MovieKey(tmdbID())
+		fixture.refresh(t, after)
+
+		left, err := fixture.service.ItemByKey(ctx, before.Key)
+		if err != nil {
+			t.Fatalf("failed to read the old title back: %v", err)
+		}
+		if left.DeletedAt == nil {
+			t.Error("the title the file moved off is still live with nothing to play")
+		}
+
+		took, err := fixture.service.ItemByKey(ctx, after.Key)
+		if err != nil {
+			t.Fatalf("failed to read the new title back: %v", err)
+		}
+		if took.DeletedAt != nil {
+			t.Error("the title the file moved onto was deleted")
+		}
+	})
 }
 
 func TestService_RefreshItem_Music(t *testing.T) {

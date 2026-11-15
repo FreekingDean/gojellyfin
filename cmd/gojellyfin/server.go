@@ -7,7 +7,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/apikeys"
 	"github.com/FreekingDean/gojellyfin/internal/auth"
-	"github.com/FreekingDean/gojellyfin/internal/collage"
+	"github.com/FreekingDean/gojellyfin/internal/cards"
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/displaypreferences"
@@ -47,7 +47,7 @@ var serverModules = fx.Options(
 	activity.Module,
 	apikeys.Module,
 	auth.Module,
-	collage.Module,
+	cards.Module,
 	config.Module,
 	discover.Module,
 	displaypreferences.Module,

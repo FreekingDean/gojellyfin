@@ -48480,6 +48480,9 @@
             "format": "int32",
             "readOnly": true,
             "description": "How many files the instance reported, across every root folder."
+          },
+          "Webhook": {
+            "$ref": "#/components/schemas/SourceWebhook"
           }
         }
       }, "SourceError": {
@@ -48637,6 +48640,34 @@
             "items": {
               "type": "string"
             }
+          }
+        }
+      }, "SourceWebhook": {
+        "type": "object",
+        "readOnly": true,
+        "description": "The webhook the instance calls when it imports, upgrades, renames or deletes a file. It is registered on the instance whenever the source is saved; the fields are what to type into Settings, Connect, Webhook by hand when it could not be.",
+        "properties": {
+          "Url": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where the instance posts, empty while PUBLISHED_SERVER_URL is not set."
+          },
+          "Username": {
+            "type": "string"
+          },
+          "Password": {
+            "type": "string"
+          },
+          "RegisteredAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When the instance last accepted the webhook."
+          },
+          "Error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why the instance last refused it, empty once it accepts."
           }
         }
       }, "Sources": {

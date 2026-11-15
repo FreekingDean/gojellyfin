@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"slices"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
@@ -134,6 +135,25 @@ func (s *Service) LibraryPosters(ctx context.Context, libraryID uuid.UUID, limit
 	}
 
 	return posters, nil
+}
+
+func (s *Service) LibraryFresh(ctx context.Context, libraryID uuid.UUID, since time.Time) (int, error) {
+	count, err := s.store.Item.Query().
+		Where(
+			inLibrary(libraryID),
+			itemmodel.DeletedAtIsNil(),
+			itemmodel.KindIn(itemmodel.KindMovie, itemmodel.KindEpisode),
+			itemmodel.Or(
+				itemmodel.DateModifiedGT(since),
+				itemmodel.And(itemmodel.DateModifiedIsNil(), itemmodel.CreatedAtGT(since)),
+			),
+		).
+		Count(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count what the library added: %w", err)
+	}
+
+	return count, nil
 }
 
 func (s *Service) Posters(ctx context.Context, records []*Item, limit int) ([]*Image, error) {

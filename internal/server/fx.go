@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/FreekingDean/gojellyfin/internal/collage"
+	"github.com/FreekingDean/gojellyfin/internal/cards"
 	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 	"go.uber.org/fx"
@@ -30,6 +30,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/localization"
 	"github.com/FreekingDean/gojellyfin/internal/server/lyrics"
 	"github.com/FreekingDean/gojellyfin/internal/server/mediainfo"
+	"github.com/FreekingDean/gojellyfin/internal/server/movies"
 	"github.com/FreekingDean/gojellyfin/internal/server/packages"
 	"github.com/FreekingDean/gojellyfin/internal/server/persons"
 	"github.com/FreekingDean/gojellyfin/internal/server/playlists"
@@ -64,6 +65,7 @@ var Module = fx.Module(
 	artists.Module,
 	lyrics.Module,
 	instantmix.Module,
+	movies.Module,
 	backup.Module,
 	channels.Module,
 	configuration.Module,
@@ -109,6 +111,6 @@ var Module = fx.Module(
 	fx.Provide(
 		New,
 		func(policies *users.Service) dto.Access { return policies },
-		func(collages *collage.Service) dto.Collages { return collages },
+		func(cards *cards.Service) dto.Cards { return cards },
 	),
 )

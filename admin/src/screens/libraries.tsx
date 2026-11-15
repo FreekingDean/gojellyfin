@@ -1,15 +1,20 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useState } from "preact/hooks";
 
-import { api } from '../api';
-import type { Schemas } from '../api';
-import * as mock from '../mock';
-import { Link, navigate } from '../router';
-import { Card, Dot, Field, Page, Pill, since } from '../ui';
+import { api } from "../api";
+import type { Schemas } from "../api";
+import * as mock from "../mock";
+import { Link, navigate } from "../router";
+import { Card, Dot, Field, Page, Pill, since } from "../ui";
 
-type Kind = 'Radarr' | 'Sonarr' | 'Lidarr';
-type Slug = 'movies' | 'shows' | 'music';
+type Kind = "Radarr" | "Sonarr" | "Lidarr";
+type Slug = "movies" | "shows" | "music";
 type Folder = { remote: string; local: string };
-type Requests = { profileId: number; profile?: string; folder: string; tag?: string };
+type Requests = {
+  profileId: number;
+  profile?: string;
+  folder: string;
+  tag?: string;
+};
 
 type Downloader = {
   id: string;
@@ -24,120 +29,248 @@ type Downloader = {
   synced?: string;
   files: number;
   requests?: Requests;
-  bindings: Schemas['SourceLibrary'][];
+  webhook?: Schemas["SourceWebhook"];
+  bindings: Schemas["SourceLibrary"][];
 };
 
-type Library = { id: string; slug: Slug; name: string; kind: Kind; counts: string; synced?: string };
+type Library = {
+  id: string;
+  slug: Slug;
+  name: string;
+  kind: Kind;
+  counts: string;
+  synced?: string;
+};
 
-type Loaded = { libraries: Library[]; downloaders: Downloader[]; variables: string[] };
+type Loaded = {
+  libraries: Library[];
+  downloaders: Downloader[];
+  variables: string[];
+};
 
-type Instance = { version?: string; error?: string; folders: string[]; profiles: { id: number; name: string }[]; tags: string[] };
+type Instance = {
+  version?: string;
+  error?: string;
+  folders: string[];
+  profiles: { id: number; name: string }[];
+  tags: string[];
+};
 
-const kinds: Record<Slug, Kind> = { movies: 'Radarr', shows: 'Sonarr', music: 'Lidarr' };
-const collections: Record<Slug, string> = { movies: 'movies', shows: 'tvshows', music: 'music' };
-const placeholders: Record<Kind, string> = { Radarr: 'http://radarr:7878', Sonarr: 'http://sonarr:8989', Lidarr: 'http://lidarr:8686' };
-const filled: Record<Kind, string> = { Radarr: 'movies', Sonarr: 'shows', Lidarr: 'music' };
+const kinds: Record<Slug, Kind> = {
+  movies: "Radarr",
+  shows: "Sonarr",
+  music: "Lidarr",
+};
+const collections: Record<Slug, string> = {
+  movies: "movies",
+  shows: "tvshows",
+  music: "music",
+};
+const placeholders: Record<Kind, string> = {
+  Radarr: "http://radarr:7878",
+  Sonarr: "http://sonarr:8989",
+  Lidarr: "http://lidarr:8686",
+};
+const filled: Record<Kind, string> = {
+  Radarr: "movies",
+  Sonarr: "shows",
+  Lidarr: "music",
+};
 
 function mocked(): Loaded {
   return {
     variables: mock.pickers.variables,
-    libraries: mock.libraries.map((library) => ({ ...library, slug: library.id })),
+    libraries: mock.libraries.map((library) => ({
+      ...library,
+      slug: library.id,
+    })),
     downloaders: mock.downloaders.map((downloader) => ({
       ...downloader,
-      requests: downloader.requests && { ...downloader.requests, profileId: mock.pickers.profiles.indexOf(downloader.requests.profile) + 1 },
+      requests: downloader.requests && {
+        ...downloader.requests,
+        profileId:
+          mock.pickers.profiles.indexOf(downloader.requests.profile) + 1,
+      },
       bindings: [],
     })),
   };
 }
 
 function counted(value: number, one: string, many: string): string {
-  return value.toLocaleString() + ' ' + (value === 1 ? one : many);
+  return value.toLocaleString() + " " + (value === 1 ? one : many);
 }
 
-async function count(parentId: string, type: 'Movie' | 'Series' | 'Episode' | 'MusicAlbum' | 'Audio'): Promise<number> {
-  const { data } = await api.GET('/Items', { params: { query: { parentId, recursive: true, includeItemTypes: [type], limit: 0 } } });
+async function count(
+  parentId: string,
+  type: "Movie" | "Series" | "Episode" | "MusicAlbum" | "Audio",
+): Promise<number> {
+  const { data } = await api.GET("/Items", {
+    params: {
+      query: { parentId, recursive: true, includeItemTypes: [type], limit: 0 },
+    },
+  });
 
   return data?.TotalRecordCount ?? 0;
 }
 
 function newest(values: (string | null | undefined)[]): string | undefined {
-  return values.filter((value): value is string => Boolean(value)).sort().pop();
+  return values
+    .filter((value): value is string => Boolean(value))
+    .sort()
+    .pop();
 }
 
 async function fetched(): Promise<Loaded | undefined> {
-  const [folders, sources, variables] = await Promise.all([api.GET('/Library/VirtualFolders'), api.GET('/GoJellyfin/Sources'), api.GET('/GoJellyfin/SourceApiKeyVariables')]);
+  const [folders, sources, variables] = await Promise.all([
+    api.GET("/Library/VirtualFolders"),
+    api.GET("/GoJellyfin/Sources"),
+    api.GET("/GoJellyfin/SourceApiKeyVariables"),
+  ]);
   if (!folders.data || !sources.data || !variables.data) {
     return undefined;
   }
 
   const downloaders: Downloader[] = sources.data.map((source) => ({
-    id: source.Id ?? '',
-    name: source.Name ?? '',
-    kind: source.Kind === 'Sonarr' || source.Kind === 'Lidarr' ? source.Kind : 'Radarr',
+    id: source.Id ?? "",
+    name: source.Name ?? "",
+    kind:
+      source.Kind === "Sonarr" || source.Kind === "Lidarr"
+        ? source.Kind
+        : "Radarr",
     version: source.Version ?? undefined,
-    url: source.Url ?? '',
-    variable: source.ApiKeyVariable ?? '',
+    url: source.Url ?? "",
+    variable: source.ApiKeyVariable ?? "",
     contacted: source.ContactedAt ?? undefined,
     error: source.LastError ?? undefined,
-    paths: (source.Paths ?? []).map((path) => ({ remote: path.RemotePath, local: path.LocalPath })),
-    synced: newest((source.Libraries ?? []).map((binding) => binding.LastSyncedAt)),
+    paths: (source.Paths ?? []).map((path) => ({
+      remote: path.RemotePath,
+      local: path.LocalPath,
+    })),
+    synced: newest(
+      (source.Libraries ?? []).map((binding) => binding.LastSyncedAt),
+    ),
     files: source.Files ?? 0,
     requests: source.Requests
-      ? { profileId: source.Requests.QualityProfileId, folder: source.Requests.RootFolder, tag: source.Requests.Tag ?? undefined }
+      ? {
+          profileId: source.Requests.QualityProfileId,
+          folder: source.Requests.RootFolder,
+          tag: source.Requests.Tag ?? undefined,
+        }
       : undefined,
+    webhook: source.Webhook,
     bindings: source.Libraries ?? [],
   }));
 
   const libraries = await Promise.all(
-    (['movies', 'shows', 'music'] as Slug[]).map(async (slug): Promise<Library | undefined> => {
-      const folder = folders.data.find((each) => each.CollectionType === collections[slug]);
-      if (!folder?.ItemId) {
-        return undefined;
-      }
-      const id = folder.ItemId;
-      const counts =
-        slug === 'movies'
-          ? counted(await count(id, 'Movie'), 'movie', 'movies')
-          : slug === 'shows'
-            ? await Promise.all([count(id, 'Series'), count(id, 'Episode')]).then(([shows, episodes]) => counted(shows, 'show', 'shows') + ', ' + counted(episodes, 'episode', 'episodes'))
-            : await Promise.all([count(id, 'MusicAlbum'), count(id, 'Audio')]).then(([albums, tracks]) => counted(albums, 'album', 'albums') + ', ' + counted(tracks, 'track', 'tracks'));
-      const synced = newest(downloaders.flatMap((downloader) => downloader.bindings.filter((binding) => binding.Id === id).map((binding) => binding.LastSyncedAt)));
+    (["movies", "shows", "music"] as Slug[]).map(
+      async (slug): Promise<Library | undefined> => {
+        const folder = folders.data.find(
+          (each) => each.CollectionType === collections[slug],
+        );
+        if (!folder?.ItemId) {
+          return undefined;
+        }
+        const id = folder.ItemId;
+        const counts =
+          slug === "movies"
+            ? counted(await count(id, "Movie"), "movie", "movies")
+            : slug === "shows"
+              ? await Promise.all([
+                  count(id, "Series"),
+                  count(id, "Episode"),
+                ]).then(
+                  ([shows, episodes]) =>
+                    counted(shows, "show", "shows") +
+                    ", " +
+                    counted(episodes, "episode", "episodes"),
+                )
+              : await Promise.all([
+                  count(id, "MusicAlbum"),
+                  count(id, "Audio"),
+                ]).then(
+                  ([albums, tracks]) =>
+                    counted(albums, "album", "albums") +
+                    ", " +
+                    counted(tracks, "track", "tracks"),
+                );
+        const synced = newest(
+          downloaders.flatMap((downloader) =>
+            downloader.bindings
+              .filter((binding) => binding.Id === id)
+              .map((binding) => binding.LastSyncedAt),
+          ),
+        );
 
-      return { id, slug, name: folder.Name ?? '', kind: kinds[slug], counts, synced };
-    }),
+        return {
+          id,
+          slug,
+          name: folder.Name ?? "",
+          kind: kinds[slug],
+          counts,
+          synced,
+        };
+      },
+    ),
   );
 
-  return { variables: variables.data, downloaders, libraries: libraries.filter((library): library is Library => Boolean(library)) };
+  return {
+    variables: variables.data,
+    downloaders,
+    libraries: libraries.filter((library): library is Library =>
+      Boolean(library),
+    ),
+  };
 }
 
-async function probe(kind: Kind, url: string, variable: string): Promise<Instance> {
+async function probe(
+  kind: Kind,
+  url: string,
+  variable: string,
+): Promise<Instance> {
   if (mock.mocked) {
     return {
-      version: '5.14',
+      version: "5.14",
       folders: mock.pickers.remoteFolders,
       profiles: mock.pickers.profiles.map((name, i) => ({ id: i + 1, name })),
       tags: mock.pickers.tags,
     };
   }
-  const { data } = await api.POST('/GoJellyfin/Sources/Test', { body: { Kind: kind, Url: url, ApiKeyVariable: variable } });
+  const { data } = await api.POST("/GoJellyfin/Sources/Test", {
+    body: { Kind: kind, Url: url, ApiKeyVariable: variable },
+  });
   if (!data) {
-    return { error: 'The test could not be run.', folders: [], profiles: [], tags: [] };
+    return {
+      error: "The test could not be run.",
+      folders: [],
+      profiles: [],
+      tags: [],
+    };
   }
   if (!data.Reachable) {
-    return { error: data.Error ?? 'Did not answer.', folders: [], profiles: [], tags: [] };
+    return {
+      error: data.Error ?? "Did not answer.",
+      folders: [],
+      profiles: [],
+      tags: [],
+    };
   }
 
   return {
     version: data.Version ?? undefined,
     folders: data.RootFolders ?? [],
-    profiles: (data.QualityProfiles ?? []).map((profile) => ({ id: profile.Id, name: profile.Name })),
+    profiles: (data.QualityProfiles ?? []).map((profile) => ({
+      id: profile.Id,
+      name: profile.Name,
+    })),
     tags: data.Tags ?? [],
   };
 }
 
 export function Libraries({ id }: { id?: string }) {
-  const [loaded, setLoaded] = useState<Loaded | undefined>(mock.mocked ? mocked() : undefined);
-  const [failure, setFailure] = useState('');
+  const [loaded, setLoaded] = useState<Loaded | undefined>(
+    mock.mocked ? mocked() : undefined,
+  );
+  const [failure, setFailure] = useState("");
 
   async function load() {
     if (mock.mocked) {
@@ -145,10 +278,10 @@ export function Libraries({ id }: { id?: string }) {
     }
     const answer = await fetched();
     if (!answer) {
-      setFailure('The libraries could not be loaded.');
+      setFailure("The libraries could not be loaded.");
       return;
     }
-    setFailure('');
+    setFailure("");
     setLoaded(answer);
   }
 
@@ -158,8 +291,11 @@ export function Libraries({ id }: { id?: string }) {
 
   if (!loaded) {
     return (
-      <Page title="Libraries" lead="Movies come from Radarr, Shows from Sonarr and Music from Lidarr.">
-        <p class={failure ? 'failure' : 'muted'}>{failure || 'Loading…'}</p>
+      <Page
+        title="Libraries"
+        lead="Movies come from Radarr, Shows from Sonarr and Music from Lidarr."
+      >
+        <p class={failure ? "failure" : "muted"}>{failure || "Loading…"}</p>
       </Page>
     );
   }
@@ -168,41 +304,74 @@ export function Libraries({ id }: { id?: string }) {
   if (editing) {
     const library = loaded.libraries.find((each) => each.kind === editing.kind);
 
-    return <Editor key={editing.id} kind={editing.kind} library={library} variables={loaded.variables} downloader={editing} saved={load} />;
+    return (
+      <Editor
+        key={editing.id}
+        kind={editing.kind}
+        library={library}
+        variables={loaded.variables}
+        downloader={editing}
+        saved={load}
+      />
+    );
   }
-  const adding = loaded.libraries.find((library) => 'new-' + library.slug === id);
+  const adding = loaded.libraries.find(
+    (library) => "new-" + library.slug === id,
+  );
   if (adding) {
-    return <Editor key={adding.slug} kind={adding.kind} library={adding} variables={loaded.variables} saved={load} />;
+    return (
+      <Editor
+        key={adding.slug}
+        kind={adding.kind}
+        library={adding}
+        variables={loaded.variables}
+        saved={load}
+      />
+    );
   }
 
   return <Overview loaded={loaded} />;
 }
 
 function Overview({ loaded }: { loaded: Loaded }) {
-  const [notice, setNotice] = useState('');
-  const [failure, setFailure] = useState('');
+  const [notice, setNotice] = useState("");
+  const [failure, setFailure] = useState("");
   const [tested, setTested] = useState<Record<string, Instance>>({});
 
   async function refresh() {
     if (mock.mocked) {
       return;
     }
-    const { response } = await api.POST('/Library/Refresh');
+    const { response } = await api.POST("/Library/Refresh");
     if (response.ok) {
-      setFailure('');
-      setNotice('Refreshing. Every downloader is read again, and what changed shows up as it lands.');
+      setFailure("");
+      setNotice(
+        "Refreshing. Every downloader is read again, and what changed shows up as it lands.",
+      );
     } else {
-      setNotice('');
-      setFailure('The refresh could not be started. Background work may be off on this server.');
+      setNotice("");
+      setFailure(
+        "The refresh could not be started. Background work may be off on this server.",
+      );
     }
   }
 
   async function test(downloader: Downloader) {
-    setTested({ ...tested, [downloader.id]: await probe(downloader.kind, downloader.url, downloader.variable) });
+    setTested({
+      ...tested,
+      [downloader.id]: await probe(
+        downloader.kind,
+        downloader.url,
+        downloader.variable,
+      ),
+    });
   }
 
   return (
-    <Page title="Libraries" lead="Movies come from Radarr, Shows from Sonarr and Music from Lidarr. Add a downloader and its folders, and the library fills itself.">
+    <Page
+      title="Libraries"
+      lead="Movies come from Radarr, Shows from Sonarr and Music from Lidarr. Add a downloader and its folders, and the library fills itself."
+    >
       {failure && (
         <p class="failure" role="alert">
           {failure}
@@ -210,7 +379,9 @@ function Overview({ loaded }: { loaded: Loaded }) {
       )}
       {notice && <p class="muted">{notice}</p>}
       {loaded.libraries.map((library) => {
-        const feeding = loaded.downloaders.filter((downloader) => downloader.kind === library.kind);
+        const feeding = loaded.downloaders.filter(
+          (downloader) => downloader.kind === library.kind,
+        );
 
         return (
           <section class="library" key={library.id}>
@@ -219,14 +390,17 @@ function Overview({ loaded }: { loaded: Loaded }) {
                 <h2>{library.name}</h2>
                 <p class="muted">
                   {library.counts}
-                  {library.synced && ' · refreshed ' + since(library.synced)}
+                  {library.synced && " · refreshed " + since(library.synced)}
                 </p>
               </div>
               <span class="actions">
                 <button disabled={feeding.length === 0} onClick={refresh}>
                   Refresh now
                 </button>
-                <Link to={'/libraries/new-' + library.slug} class="button primary">
+                <Link
+                  to={"/libraries/new-" + library.slug}
+                  class="button primary"
+                >
                   Add {library.kind}
                 </Link>
               </span>
@@ -234,7 +408,8 @@ function Overview({ loaded }: { loaded: Loaded }) {
 
             {feeding.length === 0 && (
               <div class="card hint">
-                No {library.kind} yet. Add one and {library.name} appears for everyone who can see it.
+                No {library.kind} yet. Add one and {library.name} appears for
+                everyone who can see it.
               </div>
             )}
 
@@ -244,20 +419,21 @@ function Overview({ loaded }: { loaded: Loaded }) {
                 const error = answer ? answer.error : downloader.error;
 
                 return (
-                  <Card key={downloader.id} class={error ? 'troubled' : ''}>
+                  <Card key={downloader.id} class={error ? "troubled" : ""}>
                     <header class="cardhead">
                       <b>
-                        <Dot tone={error ? 'warn' : 'ok'} />
+                        <Dot tone={error ? "warn" : "ok"} />
                         {downloader.name}
                       </b>
                       <span class="actions">
                         {(answer?.version ?? downloader.version) && (
                           <Pill>
-                            {downloader.kind} {answer?.version ?? downloader.version}
+                            {downloader.kind}{" "}
+                            {answer?.version ?? downloader.version}
                           </Pill>
                         )}
                         <button onClick={() => test(downloader)}>Test</button>
-                        <Link to={'/libraries/' + downloader.id} class="button">
+                        <Link to={"/libraries/" + downloader.id} class="button">
                           Edit
                         </Link>
                       </span>
@@ -265,39 +441,57 @@ function Overview({ loaded }: { loaded: Loaded }) {
                     <dl class="fields">
                       <Field label="Address">{downloader.url}</Field>
                       <Field label="API key">
-                        <code>{downloader.variable}</code> {loaded.variables.includes(downloader.variable) ? 'set' : <span class="bad">not set on this server</span>}
+                        <code>{downloader.variable}</code>{" "}
+                        {loaded.variables.includes(downloader.variable) ? (
+                          "set"
+                        ) : (
+                          <span class="bad">not set on this server</span>
+                        )}
                       </Field>
                       <Field label="Last answered">
                         {answer ? (
                           answer.error ? (
                             <span class="warn">just now · {answer.error}</span>
                           ) : (
-                            'just now'
+                            "just now"
                           )
                         ) : downloader.error ? (
                           <span class="warn">
-                            {downloader.contacted ? since(downloader.contacted) : 'never'} · {downloader.error}
+                            {downloader.contacted
+                              ? since(downloader.contacted)
+                              : "never"}{" "}
+                            · {downloader.error}
                           </span>
                         ) : downloader.contacted ? (
                           since(downloader.contacted)
                         ) : (
-                          'not yet'
+                          "not yet"
                         )}
                       </Field>
                       <Field label="Folders">
                         {downloader.paths.map((path) => (
                           <div key={path.remote}>
-                            {path.remote} <span class="muted">opened here as</span> {path.local}
+                            {path.remote}{" "}
+                            <span class="muted">opened here as</span>{" "}
+                            {path.local}
                           </div>
                         ))}
                       </Field>
                       <Field label="Files">
-                        {downloader.files.toLocaleString()} {downloader.synced && <span class="muted">· synced {since(downloader.synced)}</span>}
+                        {downloader.files.toLocaleString()}{" "}
+                        {downloader.synced && (
+                          <span class="muted">
+                            · synced {since(downloader.synced)}
+                          </span>
+                        )}
                       </Field>
                       <Field label="Requests">
                         {downloader.requests ? (
                           <>
-                            <Pill tone="ok">On</Pill> {downloader.requests.profile ?? 'profile ' + downloader.requests.profileId} into {downloader.requests.folder}
+                            <Pill tone="ok">On</Pill>{" "}
+                            {downloader.requests.profile ??
+                              "profile " + downloader.requests.profileId}{" "}
+                            into {downloader.requests.folder}
                             {downloader.requests.tag && (
                               <>
                                 , tag <code>{downloader.requests.tag}</code>
@@ -306,10 +500,18 @@ function Overview({ loaded }: { loaded: Loaded }) {
                           </>
                         ) : (
                           <>
-                            <Pill>Off</Pill> <span class="muted">Pick a quality profile to take requests</span>
+                            <Pill>Off</Pill>{" "}
+                            <span class="muted">
+                              Pick a quality profile to take requests
+                            </span>
                           </>
                         )}
                       </Field>
+                      {downloader.webhook && (
+                        <Field label="Webhook">
+                          <Hook webhook={downloader.webhook} />
+                        </Field>
+                      )}
                     </dl>
                   </Card>
                 );
@@ -319,15 +521,66 @@ function Overview({ loaded }: { loaded: Loaded }) {
         );
       })}
       <p class="muted small">
-        Two downloaders holding the same title show it once, with a version from each. Keys are never stored here: a downloader names an environment
+        Two downloaders holding the same title show it once, with a version from
+        each. Keys are never stored here: a downloader names an environment
         variable starting with SOURCE_API_KEY_.
       </p>
     </Page>
   );
 }
 
-function Options({ options, value, empty }: { options: string[]; value?: string; empty?: string }) {
-  const listed = value && !options.includes(value) ? [value, ...options] : options;
+function Hook({ webhook }: { webhook: Schemas["SourceWebhook"] }) {
+  if (webhook.RegisteredAt) {
+    return (
+      <>
+        <Pill tone="ok">On</Pill>{" "}
+        <span class="muted">
+          new files appear as soon as they are imported · registered{" "}
+          {since(webhook.RegisteredAt)}
+        </span>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <span class="warn">
+        not registered{webhook.Error && " · " + webhook.Error}
+      </span>
+      <details>
+        <summary class="muted">
+          Add it by hand under Settings, Connect, Webhook
+        </summary>
+        <div>
+          URL{" "}
+          <code>
+            {webhook.Url ?? "<published address>/webhooks/<source id>"}
+          </code>
+        </div>
+        <div>
+          Method <code>POST</code>, username <code>{webhook.Username}</code>,
+          password <code>{webhook.Password}</code>
+        </div>
+        <div class="muted">
+          On Import, On Upgrade, On Rename and the deletes; the next save or
+          refresh registers it again.
+        </div>
+      </details>
+    </>
+  );
+}
+
+function Options({
+  options,
+  value,
+  empty,
+}: {
+  options: string[];
+  value?: string;
+  empty?: string;
+}) {
+  const listed =
+    value && !options.includes(value) ? [value, ...options] : options;
 
   return (
     <>
@@ -345,32 +598,51 @@ function Options({ options, value, empty }: { options: string[]; value?: string;
   );
 }
 
-function Browser({ path, choose, close }: { path: string; choose: (path: string) => void; close: () => void }) {
-  const [entries, setEntries] = useState<{ name: string; path: string }[] | undefined>(undefined);
-  const [failure, setFailure] = useState('');
+function Browser({
+  path,
+  choose,
+  close,
+}: {
+  path: string;
+  choose: (path: string) => void;
+  close: () => void;
+}) {
+  const [entries, setEntries] = useState<
+    { name: string; path: string }[] | undefined
+  >(undefined);
+  const [failure, setFailure] = useState("");
 
   useEffect(() => {
     void (async () => {
       setEntries(undefined);
       const { data } = path
-        ? await api.GET('/Environment/DirectoryContents', { params: { query: { path, includeDirectories: true, includeFiles: false } } })
-        : await api.GET('/Environment/Drives');
+        ? await api.GET("/Environment/DirectoryContents", {
+            params: {
+              query: { path, includeDirectories: true, includeFiles: false },
+            },
+          })
+        : await api.GET("/Environment/Drives");
       if (!data) {
-        setFailure(path + ' cannot be listed here.');
+        setFailure(path + " cannot be listed here.");
         setEntries([]);
         return;
       }
-      setFailure('');
-      setEntries(data.map((entry) => ({ name: entry.Name ?? entry.Path ?? '', path: entry.Path ?? '' })));
+      setFailure("");
+      setEntries(
+        data.map((entry) => ({
+          name: entry.Name ?? entry.Path ?? "",
+          path: entry.Path ?? "",
+        })),
+      );
     })();
   }, [path]);
 
-  const parent = path.replace(/\/[^/]*\/?$/, '');
+  const parent = path.replace(/\/[^/]*\/?$/, "");
 
   return (
     <div class="picker">
       <div class="actions">
-        <b>{path || 'Media folders'}</b>
+        <b>{path || "Media folders"}</b>
         {path && <button onClick={() => choose(parent)}>Up</button>}
         <button onClick={close}>Done</button>
       </div>
@@ -386,22 +658,40 @@ function Browser({ path, choose, close }: { path: string; choose: (path: string)
               </button>
             </li>
           ))}
-          {entries.length === 0 && !failure && <li class="muted">No folders inside.</li>}
+          {entries.length === 0 && !failure && (
+            <li class="muted">No folders inside.</li>
+          )}
         </ul>
       )}
     </div>
   );
 }
 
-function Editor({ kind, library, variables, downloader, saved }: { kind: Kind; library?: Library; variables: string[]; downloader?: Downloader; saved: () => Promise<void> }) {
-  const [name, setName] = useState(downloader?.name ?? '');
-  const [variable, setVariable] = useState(downloader?.variable ?? '');
-  const [url, setUrl] = useState(downloader?.url ?? '');
-  const [paths, setPaths] = useState<Folder[]>(downloader?.paths.length ? downloader.paths : [{ remote: '', local: '' }]);
-  const [requests, setRequests] = useState<Requests | undefined>(downloader?.requests);
+function Editor({
+  kind,
+  library,
+  variables,
+  downloader,
+  saved,
+}: {
+  kind: Kind;
+  library?: Library;
+  variables: string[];
+  downloader?: Downloader;
+  saved: () => Promise<void>;
+}) {
+  const [name, setName] = useState(downloader?.name ?? "");
+  const [variable, setVariable] = useState(downloader?.variable ?? "");
+  const [url, setUrl] = useState(downloader?.url ?? "");
+  const [paths, setPaths] = useState<Folder[]>(
+    downloader?.paths.length ? downloader.paths : [{ remote: "", local: "" }],
+  );
+  const [requests, setRequests] = useState<Requests | undefined>(
+    downloader?.requests,
+  );
   const [instance, setInstance] = useState<Instance | undefined>(undefined);
   const [browsing, setBrowsing] = useState<number | undefined>(undefined);
-  const [failure, setFailure] = useState('');
+  const [failure, setFailure] = useState("");
   const [busy, setBusy] = useState(false);
   const what = filled[kind];
 
@@ -416,7 +706,9 @@ function Editor({ kind, library, variables, downloader, saved }: { kind: Kind; l
   }, []);
 
   function setPath(index: number, change: Partial<Folder>) {
-    setPaths(paths.map((path, i) => (i === index ? { ...path, ...change } : path)));
+    setPaths(
+      paths.map((path, i) => (i === index ? { ...path, ...change } : path)),
+    );
   }
 
   async function save() {
@@ -424,51 +716,90 @@ function Editor({ kind, library, variables, downloader, saved }: { kind: Kind; l
       return;
     }
     setBusy(true);
-    const bindings = library ? [{ Id: library.id, TagFilter: downloader?.bindings.find((binding) => binding.Id === library.id)?.TagFilter ?? '' }] : [];
-    const body: Schemas['Source'] = {
+    const bindings = library
+      ? [
+          {
+            Id: library.id,
+            TagFilter:
+              downloader?.bindings.find((binding) => binding.Id === library.id)
+                ?.TagFilter ?? "",
+          },
+        ]
+      : [];
+    const body: Schemas["Source"] = {
       Name: name.trim(),
       Kind: kind,
       Url: url.trim(),
       ApiKeyVariable: variable,
-      Paths: paths.filter((path) => path.remote || path.local).map((path) => ({ RemotePath: path.remote, LocalPath: path.local.trim() })),
+      Paths: paths
+        .filter((path) => path.remote || path.local)
+        .map((path) => ({
+          RemotePath: path.remote,
+          LocalPath: path.local.trim(),
+        })),
       Libraries: bindings,
-      Requests: requests ? { QualityProfileId: requests.profileId, RootFolder: requests.folder, Tag: requests.tag || null } : null,
+      Requests: requests
+        ? {
+            QualityProfileId: requests.profileId,
+            RootFolder: requests.folder,
+            Tag: requests.tag || null,
+          }
+        : null,
     };
     const answer = downloader
-      ? await api.PUT('/GoJellyfin/Sources/{sourceId}', { params: { path: { sourceId: downloader.id } }, body })
-      : await api.POST('/GoJellyfin/Sources', { body });
+      ? await api.PUT("/GoJellyfin/Sources/{sourceId}", {
+          params: { path: { sourceId: downloader.id } },
+          body,
+        })
+      : await api.POST("/GoJellyfin/Sources", { body });
     setBusy(false);
     if (!answer.response.ok) {
-      setFailure(answer.error?.Message ?? 'The downloader could not be saved.');
+      setFailure(answer.error?.Message ?? "The downloader could not be saved.");
       return;
     }
     await saved();
-    navigate('/libraries');
+    navigate("/libraries");
   }
 
   async function remove() {
     if (mock.mocked || !downloader) {
       return;
     }
-    if (!window.confirm('Delete ' + downloader.name + '? Titles no other downloader holds leave ' + (library?.name ?? 'the library') + '.')) {
+    if (
+      !window.confirm(
+        "Delete " +
+          downloader.name +
+          "? Titles no other downloader holds leave " +
+          (library?.name ?? "the library") +
+          ".",
+      )
+    ) {
       return;
     }
-    const { response } = await api.DELETE('/GoJellyfin/Sources/{sourceId}', { params: { path: { sourceId: downloader.id } } });
+    const { response } = await api.DELETE("/GoJellyfin/Sources/{sourceId}", {
+      params: { path: { sourceId: downloader.id } },
+    });
     if (!response.ok) {
-      setFailure('The downloader could not be deleted.');
+      setFailure("The downloader could not be deleted.");
       return;
     }
     await saved();
-    navigate('/libraries');
+    navigate("/libraries");
   }
 
   const folders = instance?.folders ?? [];
-  const profileName = (id: number) => instance?.profiles.find((profile) => profile.id === id)?.name ?? 'Profile ' + id;
+  const profileName = (id: number) =>
+    instance?.profiles.find((profile) => profile.id === id)?.name ??
+    "Profile " + id;
 
   return (
     <Page
-      title={downloader ? downloader.name : 'Add ' + kind}
-      lead={'Fills ' + (library?.name ?? what) + '. Test the connection first, and the folder, profile and tag pickers fill in from what it answers.'}
+      title={downloader ? downloader.name : "Add " + kind}
+      lead={
+        "Fills " +
+        (library?.name ?? what) +
+        ". Test the connection first, and the folder, profile and tag pickers fill in from what it answers."
+      }
       action={
         <span class="actions">
           <Link to="/libraries" class="button">
@@ -490,20 +821,39 @@ function Editor({ kind, library, variables, downloader, saved }: { kind: Kind; l
           <div class="form">
             <label>
               Name
-              <input value={name} placeholder={kind} onInput={(event) => setName(event.currentTarget.value)} />
+              <input
+                value={name}
+                placeholder={kind}
+                onInput={(event) => setName(event.currentTarget.value)}
+              />
             </label>
             <label>
               API key variable
-              <select onChange={(event) => setVariable(event.currentTarget.value)}>
-                <Options options={variables} value={variable} empty={variable ? undefined : 'Pick a variable'} />
+              <select
+                onChange={(event) => setVariable(event.currentTarget.value)}
+              >
+                <Options
+                  options={variables}
+                  value={variable}
+                  empty={variable ? undefined : "Pick a variable"}
+                />
               </select>
             </label>
             <label class="span">
               Address
-              <input value={url} placeholder={placeholders[kind]} onInput={(event) => setUrl(event.currentTarget.value)} />
+              <input
+                value={url}
+                placeholder={placeholders[kind]}
+                onInput={(event) => setUrl(event.currentTarget.value)}
+              />
             </label>
           </div>
-          {variables.length === 0 && <p class="muted small">No SOURCE_API_KEY_ variable is set on this server. Set one to the instance's API key and restart it.</p>}
+          {variables.length === 0 && (
+            <p class="muted small">
+              No SOURCE_API_KEY_ variable is set on this server. Set one to the
+              instance's API key and restart it.
+            </p>
+          )}
           <div class="actions spaced">
             <button disabled={!url || !variable} onClick={test}>
               Test connection
@@ -525,7 +875,9 @@ function Editor({ kind, library, variables, downloader, saved }: { kind: Kind; l
 
         <Card title="Folders">
           <p class="muted small">
-            Each root folder {kind} manages, and where this server finds the same files. Leave them equal when both see the same disk at the same path.
+            Each root folder {kind} manages, and where this server finds the
+            same files. Leave them equal when both see the same disk at the same
+            path.
           </p>
           <table class="rows plain folders">
             <thead>
@@ -539,21 +891,59 @@ function Editor({ kind, library, variables, downloader, saved }: { kind: Kind; l
               {paths.map((path, index) => (
                 <tr key={index}>
                   <td>
-                    <select aria-label={'Root folder in ' + kind} onChange={(event) => setPath(index, { remote: event.currentTarget.value })}>
-                      <Options options={folders} value={path.remote} empty={path.remote ? undefined : folders.length ? 'Pick a folder' : 'Test the connection to list folders'} />
+                    <select
+                      aria-label={"Root folder in " + kind}
+                      onChange={(event) =>
+                        setPath(index, { remote: event.currentTarget.value })
+                      }
+                    >
+                      <Options
+                        options={folders}
+                        value={path.remote}
+                        empty={
+                          path.remote
+                            ? undefined
+                            : folders.length
+                              ? "Pick a folder"
+                              : "Test the connection to list folders"
+                        }
+                      />
                     </select>
                   </td>
                   <td>
                     <span class="browse">
-                      <input aria-label="Path on this server" value={path.local} placeholder="/media/…" onInput={(event) => setPath(index, { local: event.currentTarget.value })} />
-                      <button disabled={mock.mocked} onClick={() => setBrowsing(browsing === index ? undefined : index)}>
+                      <input
+                        aria-label="Path on this server"
+                        value={path.local}
+                        placeholder="/media/…"
+                        onInput={(event) =>
+                          setPath(index, { local: event.currentTarget.value })
+                        }
+                      />
+                      <button
+                        disabled={mock.mocked}
+                        onClick={() =>
+                          setBrowsing(browsing === index ? undefined : index)
+                        }
+                      >
                         Browse
                       </button>
                     </span>
-                    {browsing === index && <Browser path={path.local} choose={(local) => setPath(index, { local })} close={() => setBrowsing(undefined)} />}
+                    {browsing === index && (
+                      <Browser
+                        path={path.local}
+                        choose={(local) => setPath(index, { local })}
+                        close={() => setBrowsing(undefined)}
+                      />
+                    )}
                   </td>
                   <td class="end">
-                    <button disabled={paths.length === 1} onClick={() => setPaths(paths.filter((_, i) => i !== index))}>
+                    <button
+                      disabled={paths.length === 1}
+                      onClick={() =>
+                        setPaths(paths.filter((_, i) => i !== index))
+                      }
+                    >
                       Remove
                     </button>
                   </td>
@@ -561,62 +951,111 @@ function Editor({ kind, library, variables, downloader, saved }: { kind: Kind; l
               ))}
             </tbody>
           </table>
-          <button class="spaced" onClick={() => setPaths([...paths, { remote: '', local: '' }])}>
+          <button
+            class="spaced"
+            onClick={() => setPaths([...paths, { remote: "", local: "" }])}
+          >
             Add folder
           </button>
         </Card>
 
-        {kind !== 'Lidarr' && (
-        <Card title="Requests">
-          <label class="check">
-            <input
-              type="checkbox"
-              checked={Boolean(requests)}
-              onChange={(event) =>
-                setRequests(event.currentTarget.checked ? { profileId: instance?.profiles[0]?.id ?? 0, folder: paths[0]?.remote ?? '' } : undefined)
-              }
-            />{' '}
-            Send {what} people ask for to this downloader
-          </label>
-          {requests && (
-            <div class="form">
-              <label>
-                Quality profile
-                <select onChange={(event) => setRequests({ ...requests, profileId: Number(event.currentTarget.value) })}>
-                  {!instance?.profiles.some((profile) => profile.id === requests.profileId) && (
-                    <option value={requests.profileId} selected>
-                      {requests.profileId ? (requests.profile ?? profileName(requests.profileId)) : 'Pick a profile'}
-                    </option>
-                  )}
-                  {instance?.profiles.map((profile) => (
-                    <option key={profile.id} value={profile.id} selected={profile.id === requests.profileId}>
-                      {profile.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Add under
-                <select onChange={(event) => setRequests({ ...requests, folder: event.currentTarget.value })}>
-                  <Options options={paths.map((path) => path.remote).filter(Boolean)} value={requests.folder} empty={requests.folder ? undefined : 'Pick a folder'} />
-                </select>
-              </label>
-              <label>
-                Tag requested titles
-                <select onChange={(event) => setRequests({ ...requests, tag: event.currentTarget.value || undefined })}>
-                  <Options options={instance?.tags ?? []} value={requests.tag} empty="No tag" />
-                </select>
-              </label>
-            </div>
-          )}
-        </Card>
+        {kind !== "Lidarr" && (
+          <Card title="Requests">
+            <label class="check">
+              <input
+                type="checkbox"
+                checked={Boolean(requests)}
+                onChange={(event) =>
+                  setRequests(
+                    event.currentTarget.checked
+                      ? {
+                          profileId: instance?.profiles[0]?.id ?? 0,
+                          folder: paths[0]?.remote ?? "",
+                        }
+                      : undefined,
+                  )
+                }
+              />{" "}
+              Send {what} people ask for to this downloader
+            </label>
+            {requests && (
+              <div class="form">
+                <label>
+                  Quality profile
+                  <select
+                    onChange={(event) =>
+                      setRequests({
+                        ...requests,
+                        profileId: Number(event.currentTarget.value),
+                      })
+                    }
+                  >
+                    {!instance?.profiles.some(
+                      (profile) => profile.id === requests.profileId,
+                    ) && (
+                      <option value={requests.profileId} selected>
+                        {requests.profileId
+                          ? (requests.profile ??
+                            profileName(requests.profileId))
+                          : "Pick a profile"}
+                      </option>
+                    )}
+                    {instance?.profiles.map((profile) => (
+                      <option
+                        key={profile.id}
+                        value={profile.id}
+                        selected={profile.id === requests.profileId}
+                      >
+                        {profile.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Add under
+                  <select
+                    onChange={(event) =>
+                      setRequests({
+                        ...requests,
+                        folder: event.currentTarget.value,
+                      })
+                    }
+                  >
+                    <Options
+                      options={paths.map((path) => path.remote).filter(Boolean)}
+                      value={requests.folder}
+                      empty={requests.folder ? undefined : "Pick a folder"}
+                    />
+                  </select>
+                </label>
+                <label>
+                  Tag requested titles
+                  <select
+                    onChange={(event) =>
+                      setRequests({
+                        ...requests,
+                        tag: event.currentTarget.value || undefined,
+                      })
+                    }
+                  >
+                    <Options
+                      options={instance?.tags ?? []}
+                      value={requests.tag}
+                      empty="No tag"
+                    />
+                  </select>
+                </label>
+              </div>
+            )}
+          </Card>
         )}
 
         {downloader && (
           <Card title="Remove">
             <p class="muted">
-              Deleting removes every file record this downloader reported. Titles no other downloader holds leave {library?.name ?? 'the library'}, along with their watch
-              history.
+              Deleting removes every file record this downloader reported.
+              Titles no other downloader holds leave{" "}
+              {library?.name ?? "the library"}, along with their watch history.
             </p>
             <button class="bad" onClick={remove}>
               Delete downloader

@@ -16,6 +16,7 @@ import (
 	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	personmodel "github.com/FreekingDean/gojellyfin/internal/store/person"
+	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
 func credit(t *testing.T, client *store.Client, itemID uuid.UUID, name string, kind creditmodel.Kind) {
@@ -101,7 +102,7 @@ func TestServer_GetPersons(t *testing.T) {
 	credit(t, client, movie.ID, director, creditmodel.KindDirector)
 	credit(t, client, movie.ID, writer, creditmodel.KindWriter)
 
-	server := New(service)
+	server := New(service, everyone{})
 
 	writerOnly := []string{string(creditmodel.KindWriter)}
 	unknownKind := []string{"NotAKind"}
@@ -187,4 +188,10 @@ func namesOf(result api.GetPersons200JSONResponse) []string {
 	}
 
 	return found
+}
+
+type everyone struct{}
+
+func (everyone) Access(context.Context, uuid.UUID) (users.Access, error) {
+	return users.Access{All: true}, nil
 }

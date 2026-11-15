@@ -215,19 +215,26 @@ func (s *Service) ItemsNeedingMetadata(ctx context.Context, kinds []Kind, force 
 type ItemQuery struct {
 	Viewer Viewer
 
-	LibraryID  *uuid.UUID
-	ParentID   *uuid.UUID
-	TopLevel   bool
-	Kinds      []Kind
-	MediaTypes []MediaType
-	IDs        []uuid.UUID
-	ArtistIDs  []uuid.UUID
-	AlbumIDs   []uuid.UUID
-	SearchTerm string
+	LibraryID    *uuid.UUID
+	ParentID     *uuid.UUID
+	TopLevel     bool
+	Kinds        []Kind
+	ExcludeKinds []Kind
+	MediaTypes   []MediaType
+	IDs          []uuid.UUID
+	ArtistIDs    []uuid.UUID
+	AlbumIDs     []uuid.UUID
+	SearchTerm   string
 
 	NameStartsWith          string
 	NameStartsWithOrGreater string
 	NameLessThan            string
+
+	User      uuid.UUID
+	Played    *bool
+	Favorite  *bool
+	Resumable bool
+	Folder    *bool
 
 	SortBy     []string
 	Descending bool
@@ -260,6 +267,9 @@ func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int
 	if query.Kinds != nil {
 		items = items.Where(itemmodel.KindIn(query.Kinds...))
 	}
+	if len(query.ExcludeKinds) > 0 {
+		items = items.Where(itemmodel.KindNotIn(query.ExcludeKinds...))
+	}
 	if len(query.MediaTypes) > 0 {
 		items = items.Where(itemmodel.KindIn(kindsOf(query.MediaTypes)...))
 	}
@@ -286,6 +296,22 @@ func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int
 	}
 	if query.NameLessThan != "" {
 		items = items.Where(itemmodel.SortNameLT(sorted(query.NameLessThan)))
+	}
+	if query.Played != nil {
+		items = items.Where(marked(query.User, *query.Played, datamodel.Played(true)))
+	}
+	if query.Favorite != nil {
+		items = items.Where(marked(query.User, *query.Favorite, datamodel.IsFavorite(true)))
+	}
+	if query.Resumable {
+		items = items.Where(marked(query.User, true, datamodel.PlaybackPositionTicksGT(0)))
+	}
+	if query.Folder != nil {
+		folders := itemmodel.KindIn(folderKinds...)
+		if !*query.Folder {
+			folders = itemmodel.Not(folders)
+		}
+		items = items.Where(folders)
 	}
 
 	total, err := items.Clone().Count(ctx)
@@ -385,6 +411,15 @@ type Viewer struct {
 
 var Everyone = Viewer{All: true}
 
+func marked(user uuid.UUID, want bool, mark predicate.UserItemData) predicate.Item {
+	has := itemmodel.HasUserDataWith(datamodel.UserID(user), mark)
+	if want {
+		return has
+	}
+
+	return itemmodel.Not(has)
+}
+
 func (v Viewer) visible() []predicate.Item {
 	if v.All {
 		return nil
@@ -459,10 +494,26 @@ func (s *Service) DeleteMembershipNotInKeys(
 	libraryID, sourceID uuid.UUID,
 	keys []string,
 ) ([]uuid.UUID, error) {
-	where := []predicate.LibraryItem{
+	return s.deleteMembershipNotIn(ctx, keys,
 		librarymembership.LibraryID(libraryID),
 		librarymembership.SourceID(sourceID),
-	}
+	)
+}
+
+func (s *Service) DeleteScopedMembershipNotInKeys(
+	ctx context.Context,
+	libraryID, sourceID uuid.UUID,
+	scope Scope,
+	keys []string,
+) ([]uuid.UUID, error) {
+	return s.deleteMembershipNotIn(ctx, keys,
+		librarymembership.LibraryID(libraryID),
+		librarymembership.SourceID(sourceID),
+		librarymembership.HasItemWith(scope.items()),
+	)
+}
+
+func (s *Service) deleteMembershipNotIn(ctx context.Context, keys []string, where ...predicate.LibraryItem) ([]uuid.UUID, error) {
 	if len(keys) > 0 {
 		where = append(where, librarymembership.HasItemWith(itemmodel.KeyNotIn(keys...)))
 	}
@@ -495,6 +546,24 @@ func (s *Service) UnreachableItems(ctx context.Context) ([]uuid.UUID, error) {
 	}
 
 	return orphans, nil
+}
+
+func (s *Service) SweepUnreported(ctx context.Context, disturbed []uuid.UUID, reported []string) error {
+	if len(disturbed) == 0 {
+		return nil
+	}
+
+	query := s.store.Item.Query().Where(itemmodel.IDIn(disturbed...))
+	if len(reported) > 0 {
+		query.Where(itemmodel.KeyNotIn(reported...))
+	}
+
+	unreported, err := query.IDs(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to query the titles no longer reported: %w", err)
+	}
+
+	return s.SweepUnreachable(ctx, unreported)
 }
 
 func (s *Service) SweepUnreachable(ctx context.Context, disturbed []uuid.UUID) error {

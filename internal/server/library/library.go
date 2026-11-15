@@ -25,7 +25,7 @@ type Server struct {
 	users      *users.Service
 	filesystem *filesystem.Service
 	tasks      *jobs.Service
-	collages   dto.Collages
+	cards      dto.Cards
 	reports    Reports
 }
 
@@ -35,7 +35,7 @@ func New(
 	users *users.Service,
 	filesystem *filesystem.Service,
 	service *jobs.Service,
-	collages dto.Collages,
+	cards dto.Cards,
 	reports *reports.Service,
 ) *Server {
 	return &Server{
@@ -44,7 +44,7 @@ func New(
 		users:      users,
 		filesystem: filesystem,
 		tasks:      service,
-		collages:   collages,
+		cards:      cards,
 		reports:    reports,
 	}
 }

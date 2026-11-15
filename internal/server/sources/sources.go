@@ -202,6 +202,13 @@ func sourceDto(entry sources.Configured) api.Source {
 		LastError:      apiutil.ZeroOrNilPtr(entry.Source.LastError),
 		Requests:       requestsDto(entry.Source),
 		Files:          apiutil.Ptr(int32(entry.Files)),
+		Webhook: &api.SourceWebhook{
+			Url:          apiutil.ZeroOrNilPtr(entry.WebhookURL),
+			Username:     apiutil.Ptr(sources.WebhookUsername),
+			Password:     apiutil.Ptr(entry.Source.WebhookSecret),
+			RegisteredAt: entry.Source.WebhookRegisteredAt,
+			Error:        apiutil.ZeroOrNilPtr(entry.Source.WebhookError),
+		},
 	}
 }
 

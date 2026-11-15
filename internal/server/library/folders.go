@@ -14,7 +14,7 @@ func (s *Server) GetMediaFolders(ctx context.Context, request api.GetMediaFolder
 		return nil, err
 	}
 
-	folders, err := dto.LibraryViews(ctx, s.collages, records)
+	folders, err := dto.LibraryViews(ctx, s.cards, records)
 	if err != nil {
 		return nil, err
 	}
