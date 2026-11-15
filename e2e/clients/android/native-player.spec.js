@@ -10,7 +10,7 @@ async function openEpisode(phone, harness, name) {
   await phone.tapOn({ label: harness.shows });
   await phone.tapOn({ label: harness.series }, { timeout: 60000 });
   await phone.tapOn({ label: harness.season }, { timeout: 60000 });
-  await phone.tapOn({ label: name }, { timeout: 60000 });
+  await phone.tapOn({ label: new RegExp(`^(\\d+\\. )?${name}$`) }, { timeout: 60000 });
   await phone.waitFor({ label: /^(Play|Resume)$/i }, { timeout: 60000 });
 }
 
