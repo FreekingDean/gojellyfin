@@ -4,16 +4,17 @@ import (
 	"context"
 	"strings"
 
+	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/shelves"
 )
 
-func ShelfView(ctx context.Context, collages Collages, shelf shelves.Shelf) (api.BaseItemDto, error) {
+func ShelfView(ctx context.Context, cards Cards, shelf shelves.Shelf) (api.BaseItemDto, error) {
 	collectionType := api.CollectionType(shelf.Collection)
 
-	tag, err := collages.Tag(ctx, shelf.ID)
+	tag, err := cards.Tag(ctx, shelf.ID, auth.UserID(ctx))
 	if err != nil {
 		return api.BaseItemDto{}, err
 	}

@@ -35,5 +35,6 @@ func (Credit) Edges() []ent.Edge {
 func (Credit) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("kind", "role").Edges("item", "person").Unique(),
+		index.Edges("item"),
 	}
 }

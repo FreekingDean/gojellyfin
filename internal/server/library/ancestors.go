@@ -31,7 +31,7 @@ func (s *Server) GetAncestors(ctx context.Context, request api.GetAncestorsReque
 		if err != nil {
 			return nil, err
 		}
-		view, err := dto.LibraryView(ctx, s.collages, library)
+		view, err := dto.LibraryView(ctx, s.cards, library)
 		if err != nil {
 			return nil, err
 		}

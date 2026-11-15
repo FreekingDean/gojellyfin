@@ -62,8 +62,8 @@ func ItemDto(item *items.Item, held items.Held, childCount int32, imageTags map[
 		}
 		dto.ImageTags = &tags
 		dto.BackdropImageTags = &backdrops
-		if _, ok := tags[string(api.Primary)]; ok {
-			dto.PrimaryImageAspectRatio = apiutil.Ptr(items.PrimaryAspectRatio(item.Kind))
+		if _, ok := tags["Primary"]; ok {
+			dto.PrimaryImageAspectRatio = apiutil.Ptr(primaryAspect(kind))
 		}
 	}
 
@@ -98,6 +98,19 @@ func ItemDto(item *items.Item, held items.Held, childCount int32, imageTags map[
 	}
 
 	return dto
+}
+
+const (
+	posterAspect = 2.0 / 3.0
+	stillAspect  = 16.0 / 9.0
+)
+
+func primaryAspect(kind api.BaseItemKind) float64 {
+	if kind == api.BaseItemKindEpisode {
+		return stillAspect
+	}
+
+	return posterAspect
 }
 
 func ItemDtos(ctx context.Context, store *items.Service, records []*items.Item) ([]api.BaseItemDto, error) {
@@ -150,14 +163,14 @@ func ItemDtos(ctx context.Context, store *items.Service, records []*items.Item) 
 	return converted, nil
 }
 
-type Collages interface {
-	Tag(ctx context.Context, libraryID uuid.UUID) (string, error)
+type Cards interface {
+	Tag(ctx context.Context, id, userID uuid.UUID) (string, error)
 }
 
-func LibraryViews(ctx context.Context, collages Collages, records []*libraries.Library) ([]api.BaseItemDto, error) {
+func LibraryViews(ctx context.Context, cards Cards, records []*libraries.Library) ([]api.BaseItemDto, error) {
 	views := make([]api.BaseItemDto, 0, len(records))
 	for _, library := range records {
-		view, err := LibraryView(ctx, collages, library)
+		view, err := LibraryView(ctx, cards, library)
 		if err != nil {
 			return nil, err
 		}
@@ -167,10 +180,10 @@ func LibraryViews(ctx context.Context, collages Collages, records []*libraries.L
 	return views, nil
 }
 
-func LibraryView(ctx context.Context, collages Collages, library *libraries.Library) (api.BaseItemDto, error) {
+func LibraryView(ctx context.Context, cards Cards, library *libraries.Library) (api.BaseItemDto, error) {
 	collectionType := api.CollectionType(library.CollectionType)
 
-	tag, err := collages.Tag(ctx, library.ID)
+	tag, err := cards.Tag(ctx, library.ID, uuid.Nil)
 	if err != nil {
 		return api.BaseItemDto{}, err
 	}
