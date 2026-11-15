@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -84,14 +85,16 @@ func capabilities(profile api.DeviceProfile) items.Capabilities {
 }
 
 const (
-	nativeAndroidProfile = "Jellyfin Android"
-	sessionKey           = "session"
+	sessionKey = "session"
 )
+
+var nativeAndroidProfiles = []string{"Jellyfin Android", "Jellyfin for Android"}
 
 func buildsItsOwnURL(profile api.DeviceProfile) bool {
 	for key, value := range profile {
 		if strings.EqualFold(key, "Name") {
-			return value == nativeAndroidProfile
+			name, _ := value.(string)
+			return slices.Contains(nativeAndroidProfiles, name)
 		}
 	}
 

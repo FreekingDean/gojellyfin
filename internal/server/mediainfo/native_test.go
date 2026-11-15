@@ -4,6 +4,7 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
@@ -86,4 +87,20 @@ func TestServer_GetPostedPlaybackInfo_NativeAndroid(t *testing.T) {
 			t.Error("a browser was answered the way the native player is")
 		}
 	})
+}
+
+func TestBuildsItsOwnURL(t *testing.T) {
+	for name, want := range map[string]bool{
+		"Jellyfin Android":                     true,
+		"Jellyfin for Android":                 true,
+		"Jellyfin for Android External Player": false,
+		"Jellyfin Web":                         false,
+		"":                                     false,
+	} {
+		t.Run(name, func(t *testing.T) {
+			if got := buildsItsOwnURL(api.DeviceProfile{"Name": name}); got != want {
+				t.Errorf("buildsItsOwnURL(%q) = %v, want %v", name, got, want)
+			}
+		})
+	}
 }
