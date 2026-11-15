@@ -12,6 +12,8 @@ import (
 const (
 	defaultStall = 30 * time.Second
 	VideoSlots   = 3
+	slotWait     = 8 * time.Second
+	slotPoll     = 100 * time.Millisecond
 )
 
 var (
@@ -21,10 +23,11 @@ var (
 )
 
 type Encoder struct {
-	mu    sync.Mutex
-	jobs  int
-	taken int
-	stall time.Duration
+	mu       sync.Mutex
+	jobs     int
+	taken    int
+	stall    time.Duration
+	patience time.Duration
 }
 
 func NewEncoder(jobs int, stall time.Duration) *Encoder {
@@ -35,7 +38,7 @@ func NewEncoder(jobs int, stall time.Duration) *Encoder {
 		stall = defaultStall
 	}
 
-	return &Encoder{jobs: jobs, stall: stall}
+	return &Encoder{jobs: jobs, stall: stall, patience: slotWait}
 }
 
 func (e *Encoder) Enabled() bool {
@@ -67,7 +70,7 @@ func (e *Encoder) Open(ctx context.Context, spec Spec) (io.ReadCloser, error) {
 	}
 
 	weight := e.Weight(spec)
-	if !e.take(weight) {
+	if !e.wait(ctx, weight) {
 		return nil, ErrBusy
 	}
 	if spec.VideoCodec != "" {
@@ -82,6 +85,25 @@ func (e *Encoder) Open(ctx context.Context, spec Spec) (io.ReadCloser, error) {
 	}
 
 	return &slot{ReadCloser: output, free: func() { e.free(weight) }}, nil
+}
+
+func (e *Encoder) wait(ctx context.Context, weight int) bool {
+	deadline := time.NewTimer(e.patience)
+	defer deadline.Stop()
+	poll := time.NewTicker(slotPoll)
+	defer poll.Stop()
+
+	for !e.take(weight) {
+		select {
+		case <-ctx.Done():
+			return false
+		case <-deadline.C:
+			return false
+		case <-poll.C:
+		}
+	}
+
+	return true
 }
 
 func (e *Encoder) take(weight int) bool {
