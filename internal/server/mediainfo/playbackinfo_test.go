@@ -90,7 +90,7 @@ func newFixture(t *testing.T) *fixture {
 
 	return &fixture{
 		downloader: downloader.ID,
-		client:     client, server: New(items.New(client), allLibraries{}), library: library.ID}
+		client:     client, server: New(items.New(client), allLibraries{}, nil), library: library.ID}
 }
 
 func (f *fixture) addRip(t *testing.T, kind items.Kind, container, codec string) uuid.UUID {

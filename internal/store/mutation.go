@@ -10069,47 +10069,50 @@ func (m *ItemMutation) ResetEdge(name string) error {
 // ItemSourceMutation represents an operation that mutates the ItemSource nodes in the graph.
 type ItemSourceMutation struct {
 	config
-	op                   Op
-	typ                  string
-	id                   *uuid.UUID
-	created_at           *time.Time
-	updated_at           *time.Time
-	name                 *string
-	_path                *string
-	container            *string
-	size                 *int64
-	addsize              *int64
-	run_time_ticks       *int64
-	addrun_time_ticks    *int64
-	bitrate              *int32
-	addbitrate           *int32
-	date_modified        *time.Time
-	probed_at            *time.Time
-	segments_detected_at *time.Time
-	external_id          *int64
-	addexternal_id       *int64
-	external_file_id     *int64
-	addexternal_file_id  *int64
-	lyrics               *string
-	clearedFields        map[string]struct{}
-	item                 *uuid.UUID
-	cleareditem          bool
-	source               *uuid.UUID
-	clearedsource        bool
-	streams              map[uuid.UUID]struct{}
-	removedstreams       map[uuid.UUID]struct{}
-	clearedstreams       bool
-	segments             map[uuid.UUID]struct{}
-	removedsegments      map[uuid.UUID]struct{}
-	clearedsegments      bool
-	keyframes            *uuid.UUID
-	clearedkeyframes     bool
-	reports              map[uuid.UUID]struct{}
-	removedreports       map[uuid.UUID]struct{}
-	clearedreports       bool
-	done                 bool
-	oldValue             func(context.Context) (*ItemSource, error)
-	predicates           []predicate.ItemSource
+	op                       Op
+	typ                      string
+	id                       *uuid.UUID
+	created_at               *time.Time
+	updated_at               *time.Time
+	name                     *string
+	_path                    *string
+	container                *string
+	size                     *int64
+	addsize                  *int64
+	run_time_ticks           *int64
+	addrun_time_ticks        *int64
+	bitrate                  *int32
+	addbitrate               *int32
+	date_modified            *time.Time
+	probed_at                *time.Time
+	segments_detected_at     *time.Time
+	external_id              *int64
+	addexternal_id           *int64
+	external_file_id         *int64
+	addexternal_file_id      *int64
+	lyrics                   *string
+	clearedFields            map[string]struct{}
+	item                     *uuid.UUID
+	cleareditem              bool
+	source                   *uuid.UUID
+	clearedsource            bool
+	streams                  map[uuid.UUID]struct{}
+	removedstreams           map[uuid.UUID]struct{}
+	clearedstreams           bool
+	segments                 map[uuid.UUID]struct{}
+	removedsegments          map[uuid.UUID]struct{}
+	clearedsegments          bool
+	keyframes                *uuid.UUID
+	clearedkeyframes         bool
+	reports                  map[uuid.UUID]struct{}
+	removedreports           map[uuid.UUID]struct{}
+	clearedreports           bool
+	planning_sessions        map[uuid.UUID]struct{}
+	removedplanning_sessions map[uuid.UUID]struct{}
+	clearedplanning_sessions bool
+	done                     bool
+	oldValue                 func(context.Context) (*ItemSource, error)
+	predicates               []predicate.ItemSource
 }
 
 var _ ent.Mutation = (*ItemSourceMutation)(nil)
@@ -11282,6 +11285,60 @@ func (m *ItemSourceMutation) ResetReports() {
 	m.removedreports = nil
 }
 
+// AddPlanningSessionIDs adds the "planning_sessions" edge to the Session entity by ids.
+func (m *ItemSourceMutation) AddPlanningSessionIDs(ids ...uuid.UUID) {
+	if m.planning_sessions == nil {
+		m.planning_sessions = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.planning_sessions[ids[i]] = struct{}{}
+	}
+}
+
+// ClearPlanningSessions clears the "planning_sessions" edge to the Session entity.
+func (m *ItemSourceMutation) ClearPlanningSessions() {
+	m.clearedplanning_sessions = true
+}
+
+// PlanningSessionsCleared reports if the "planning_sessions" edge to the Session entity was cleared.
+func (m *ItemSourceMutation) PlanningSessionsCleared() bool {
+	return m.clearedplanning_sessions
+}
+
+// RemovePlanningSessionIDs removes the "planning_sessions" edge to the Session entity by IDs.
+func (m *ItemSourceMutation) RemovePlanningSessionIDs(ids ...uuid.UUID) {
+	if m.removedplanning_sessions == nil {
+		m.removedplanning_sessions = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.planning_sessions, ids[i])
+		m.removedplanning_sessions[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedPlanningSessions returns the removed IDs of the "planning_sessions" edge to the Session entity.
+func (m *ItemSourceMutation) RemovedPlanningSessionsIDs() (ids []uuid.UUID) {
+	for id := range m.removedplanning_sessions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// PlanningSessionsIDs returns the "planning_sessions" edge IDs in the mutation.
+func (m *ItemSourceMutation) PlanningSessionsIDs() (ids []uuid.UUID) {
+	for id := range m.planning_sessions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetPlanningSessions resets all changes to the "planning_sessions" edge.
+func (m *ItemSourceMutation) ResetPlanningSessions() {
+	m.planning_sessions = nil
+	m.clearedplanning_sessions = false
+	m.removedplanning_sessions = nil
+}
+
 // Where appends a list predicates to the ItemSourceMutation builder.
 func (m *ItemSourceMutation) Where(ps ...predicate.ItemSource) {
 	m.predicates = append(m.predicates, ps...)
@@ -11796,7 +11853,7 @@ func (m *ItemSourceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ItemSourceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.item != nil {
 		edges = append(edges, itemsource.EdgeItem)
 	}
@@ -11814,6 +11871,9 @@ func (m *ItemSourceMutation) AddedEdges() []string {
 	}
 	if m.reports != nil {
 		edges = append(edges, itemsource.EdgeReports)
+	}
+	if m.planning_sessions != nil {
+		edges = append(edges, itemsource.EdgePlanningSessions)
 	}
 	return edges
 }
@@ -11852,13 +11912,19 @@ func (m *ItemSourceMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case itemsource.EdgePlanningSessions:
+		ids := make([]ent.Value, 0, len(m.planning_sessions))
+		for id := range m.planning_sessions {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ItemSourceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.removedstreams != nil {
 		edges = append(edges, itemsource.EdgeStreams)
 	}
@@ -11867,6 +11933,9 @@ func (m *ItemSourceMutation) RemovedEdges() []string {
 	}
 	if m.removedreports != nil {
 		edges = append(edges, itemsource.EdgeReports)
+	}
+	if m.removedplanning_sessions != nil {
+		edges = append(edges, itemsource.EdgePlanningSessions)
 	}
 	return edges
 }
@@ -11893,13 +11962,19 @@ func (m *ItemSourceMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case itemsource.EdgePlanningSessions:
+		ids := make([]ent.Value, 0, len(m.removedplanning_sessions))
+		for id := range m.removedplanning_sessions {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ItemSourceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.cleareditem {
 		edges = append(edges, itemsource.EdgeItem)
 	}
@@ -11917,6 +11992,9 @@ func (m *ItemSourceMutation) ClearedEdges() []string {
 	}
 	if m.clearedreports {
 		edges = append(edges, itemsource.EdgeReports)
+	}
+	if m.clearedplanning_sessions {
+		edges = append(edges, itemsource.EdgePlanningSessions)
 	}
 	return edges
 }
@@ -11937,6 +12015,8 @@ func (m *ItemSourceMutation) EdgeCleared(name string) bool {
 		return m.clearedkeyframes
 	case itemsource.EdgeReports:
 		return m.clearedreports
+	case itemsource.EdgePlanningSessions:
+		return m.clearedplanning_sessions
 	}
 	return false
 }
@@ -11979,6 +12059,9 @@ func (m *ItemSourceMutation) ResetEdge(name string) error {
 		return nil
 	case itemsource.EdgeReports:
 		m.ResetReports()
+		return nil
+	case itemsource.EdgePlanningSessions:
+		m.ResetPlanningSessions()
 		return nil
 	}
 	return fmt.Errorf("unknown ItemSource edge %s", name)
@@ -27110,6 +27193,7 @@ type SessionMutation struct {
 	play_method                  *string
 	is_paused                    *bool
 	playing_at                   *time.Time
+	playback_plan                **entities.PlaybackPlan
 	clearedFields                map[string]struct{}
 	user                         *uuid.UUID
 	cleareduser                  bool
@@ -27117,6 +27201,8 @@ type SessionMutation struct {
 	cleareddevice                bool
 	now_playing                  *uuid.UUID
 	clearednow_playing           bool
+	planned_source               *uuid.UUID
+	clearedplanned_source        bool
 	sync_play_memberships        map[uuid.UUID]struct{}
 	removedsync_play_memberships map[uuid.UUID]struct{}
 	clearedsync_play_memberships bool
@@ -27723,6 +27809,104 @@ func (m *SessionMutation) ResetPlayingAt() {
 	delete(m.clearedFields, session.FieldPlayingAt)
 }
 
+// SetPlannedSourceID sets the "planned_source_id" field.
+func (m *SessionMutation) SetPlannedSourceID(u uuid.UUID) {
+	m.planned_source = &u
+}
+
+// PlannedSourceID returns the value of the "planned_source_id" field in the mutation.
+func (m *SessionMutation) PlannedSourceID() (r uuid.UUID, exists bool) {
+	v := m.planned_source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPlannedSourceID returns the old "planned_source_id" field's value of the Session entity.
+// If the Session object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SessionMutation) OldPlannedSourceID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPlannedSourceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPlannedSourceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPlannedSourceID: %w", err)
+	}
+	return oldValue.PlannedSourceID, nil
+}
+
+// ClearPlannedSourceID clears the value of the "planned_source_id" field.
+func (m *SessionMutation) ClearPlannedSourceID() {
+	m.planned_source = nil
+	m.clearedFields[session.FieldPlannedSourceID] = struct{}{}
+}
+
+// PlannedSourceIDCleared returns if the "planned_source_id" field was cleared in this mutation.
+func (m *SessionMutation) PlannedSourceIDCleared() bool {
+	_, ok := m.clearedFields[session.FieldPlannedSourceID]
+	return ok
+}
+
+// ResetPlannedSourceID resets all changes to the "planned_source_id" field.
+func (m *SessionMutation) ResetPlannedSourceID() {
+	m.planned_source = nil
+	delete(m.clearedFields, session.FieldPlannedSourceID)
+}
+
+// SetPlaybackPlan sets the "playback_plan" field.
+func (m *SessionMutation) SetPlaybackPlan(ep *entities.PlaybackPlan) {
+	m.playback_plan = &ep
+}
+
+// PlaybackPlan returns the value of the "playback_plan" field in the mutation.
+func (m *SessionMutation) PlaybackPlan() (r *entities.PlaybackPlan, exists bool) {
+	v := m.playback_plan
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPlaybackPlan returns the old "playback_plan" field's value of the Session entity.
+// If the Session object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SessionMutation) OldPlaybackPlan(ctx context.Context) (v *entities.PlaybackPlan, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPlaybackPlan is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPlaybackPlan requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPlaybackPlan: %w", err)
+	}
+	return oldValue.PlaybackPlan, nil
+}
+
+// ClearPlaybackPlan clears the value of the "playback_plan" field.
+func (m *SessionMutation) ClearPlaybackPlan() {
+	m.playback_plan = nil
+	m.clearedFields[session.FieldPlaybackPlan] = struct{}{}
+}
+
+// PlaybackPlanCleared returns if the "playback_plan" field was cleared in this mutation.
+func (m *SessionMutation) PlaybackPlanCleared() bool {
+	_, ok := m.clearedFields[session.FieldPlaybackPlan]
+	return ok
+}
+
+// ResetPlaybackPlan resets all changes to the "playback_plan" field.
+func (m *SessionMutation) ResetPlaybackPlan() {
+	m.playback_plan = nil
+	delete(m.clearedFields, session.FieldPlaybackPlan)
+}
+
 // SetUserID sets the "user" edge to the User entity by id.
 func (m *SessionMutation) SetUserID(id uuid.UUID) {
 	m.user = &id
@@ -27841,6 +28025,33 @@ func (m *SessionMutation) ResetNowPlaying() {
 	m.clearednow_playing = false
 }
 
+// ClearPlannedSource clears the "planned_source" edge to the ItemSource entity.
+func (m *SessionMutation) ClearPlannedSource() {
+	m.clearedplanned_source = true
+	m.clearedFields[session.FieldPlannedSourceID] = struct{}{}
+}
+
+// PlannedSourceCleared reports if the "planned_source" edge to the ItemSource entity was cleared.
+func (m *SessionMutation) PlannedSourceCleared() bool {
+	return m.PlannedSourceIDCleared() || m.clearedplanned_source
+}
+
+// PlannedSourceIDs returns the "planned_source" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// PlannedSourceID instead. It exists only for internal usage by the builders.
+func (m *SessionMutation) PlannedSourceIDs() (ids []uuid.UUID) {
+	if id := m.planned_source; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetPlannedSource resets all changes to the "planned_source" edge.
+func (m *SessionMutation) ResetPlannedSource() {
+	m.planned_source = nil
+	m.clearedplanned_source = false
+}
+
 // AddSyncPlayMembershipIDs adds the "sync_play_memberships" edge to the SyncPlayGroupMember entity by ids.
 func (m *SessionMutation) AddSyncPlayMembershipIDs(ids ...uuid.UUID) {
 	if m.sync_play_memberships == nil {
@@ -27929,7 +28140,7 @@ func (m *SessionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SessionMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 13)
 	if m.created_at != nil {
 		fields = append(fields, session.FieldCreatedAt)
 	}
@@ -27963,6 +28174,12 @@ func (m *SessionMutation) Fields() []string {
 	if m.playing_at != nil {
 		fields = append(fields, session.FieldPlayingAt)
 	}
+	if m.planned_source != nil {
+		fields = append(fields, session.FieldPlannedSourceID)
+	}
+	if m.playback_plan != nil {
+		fields = append(fields, session.FieldPlaybackPlan)
+	}
 	return fields
 }
 
@@ -27993,6 +28210,10 @@ func (m *SessionMutation) Field(name string) (ent.Value, bool) {
 		return m.IsPaused()
 	case session.FieldPlayingAt:
 		return m.PlayingAt()
+	case session.FieldPlannedSourceID:
+		return m.PlannedSourceID()
+	case session.FieldPlaybackPlan:
+		return m.PlaybackPlan()
 	}
 	return nil, false
 }
@@ -28024,6 +28245,10 @@ func (m *SessionMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldIsPaused(ctx)
 	case session.FieldPlayingAt:
 		return m.OldPlayingAt(ctx)
+	case session.FieldPlannedSourceID:
+		return m.OldPlannedSourceID(ctx)
+	case session.FieldPlaybackPlan:
+		return m.OldPlaybackPlan(ctx)
 	}
 	return nil, fmt.Errorf("unknown Session field %s", name)
 }
@@ -28110,6 +28335,20 @@ func (m *SessionMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetPlayingAt(v)
 		return nil
+	case session.FieldPlannedSourceID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPlannedSourceID(v)
+		return nil
+	case session.FieldPlaybackPlan:
+		v, ok := value.(*entities.PlaybackPlan)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPlaybackPlan(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Session field %s", name)
 }
@@ -28173,6 +28412,12 @@ func (m *SessionMutation) ClearedFields() []string {
 	if m.FieldCleared(session.FieldPlayingAt) {
 		fields = append(fields, session.FieldPlayingAt)
 	}
+	if m.FieldCleared(session.FieldPlannedSourceID) {
+		fields = append(fields, session.FieldPlannedSourceID)
+	}
+	if m.FieldCleared(session.FieldPlaybackPlan) {
+		fields = append(fields, session.FieldPlaybackPlan)
+	}
 	return fields
 }
 
@@ -28204,6 +28449,12 @@ func (m *SessionMutation) ClearField(name string) error {
 		return nil
 	case session.FieldPlayingAt:
 		m.ClearPlayingAt()
+		return nil
+	case session.FieldPlannedSourceID:
+		m.ClearPlannedSourceID()
+		return nil
+	case session.FieldPlaybackPlan:
+		m.ClearPlaybackPlan()
 		return nil
 	}
 	return fmt.Errorf("unknown Session nullable field %s", name)
@@ -28246,13 +28497,19 @@ func (m *SessionMutation) ResetField(name string) error {
 	case session.FieldPlayingAt:
 		m.ResetPlayingAt()
 		return nil
+	case session.FieldPlannedSourceID:
+		m.ResetPlannedSourceID()
+		return nil
+	case session.FieldPlaybackPlan:
+		m.ResetPlaybackPlan()
+		return nil
 	}
 	return fmt.Errorf("unknown Session field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *SessionMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.user != nil {
 		edges = append(edges, session.EdgeUser)
 	}
@@ -28261,6 +28518,9 @@ func (m *SessionMutation) AddedEdges() []string {
 	}
 	if m.now_playing != nil {
 		edges = append(edges, session.EdgeNowPlaying)
+	}
+	if m.planned_source != nil {
+		edges = append(edges, session.EdgePlannedSource)
 	}
 	if m.sync_play_memberships != nil {
 		edges = append(edges, session.EdgeSyncPlayMemberships)
@@ -28284,6 +28544,10 @@ func (m *SessionMutation) AddedIDs(name string) []ent.Value {
 		if id := m.now_playing; id != nil {
 			return []ent.Value{*id}
 		}
+	case session.EdgePlannedSource:
+		if id := m.planned_source; id != nil {
+			return []ent.Value{*id}
+		}
 	case session.EdgeSyncPlayMemberships:
 		ids := make([]ent.Value, 0, len(m.sync_play_memberships))
 		for id := range m.sync_play_memberships {
@@ -28296,7 +28560,7 @@ func (m *SessionMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *SessionMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.removedsync_play_memberships != nil {
 		edges = append(edges, session.EdgeSyncPlayMemberships)
 	}
@@ -28319,7 +28583,7 @@ func (m *SessionMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *SessionMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.cleareduser {
 		edges = append(edges, session.EdgeUser)
 	}
@@ -28328,6 +28592,9 @@ func (m *SessionMutation) ClearedEdges() []string {
 	}
 	if m.clearednow_playing {
 		edges = append(edges, session.EdgeNowPlaying)
+	}
+	if m.clearedplanned_source {
+		edges = append(edges, session.EdgePlannedSource)
 	}
 	if m.clearedsync_play_memberships {
 		edges = append(edges, session.EdgeSyncPlayMemberships)
@@ -28345,6 +28612,8 @@ func (m *SessionMutation) EdgeCleared(name string) bool {
 		return m.cleareddevice
 	case session.EdgeNowPlaying:
 		return m.clearednow_playing
+	case session.EdgePlannedSource:
+		return m.clearedplanned_source
 	case session.EdgeSyncPlayMemberships:
 		return m.clearedsync_play_memberships
 	}
@@ -28364,6 +28633,9 @@ func (m *SessionMutation) ClearEdge(name string) error {
 	case session.EdgeNowPlaying:
 		m.ClearNowPlaying()
 		return nil
+	case session.EdgePlannedSource:
+		m.ClearPlannedSource()
+		return nil
 	}
 	return fmt.Errorf("unknown Session unique edge %s", name)
 }
@@ -28380,6 +28652,9 @@ func (m *SessionMutation) ResetEdge(name string) error {
 		return nil
 	case session.EdgeNowPlaying:
 		m.ResetNowPlaying()
+		return nil
+	case session.EdgePlannedSource:
+		m.ResetPlannedSource()
 		return nil
 	case session.EdgeSyncPlayMemberships:
 		m.ResetSyncPlayMemberships()

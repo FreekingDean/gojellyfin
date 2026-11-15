@@ -2,18 +2,19 @@ import { useEffect, useState } from 'preact/hooks';
 
 import { api } from '../api';
 import * as mock from '../mock';
+import { Served, how } from '../playback';
+import type { How } from '../playback';
 import { Link } from '../router';
-import { Card, Dot, Page, Pill, since } from '../ui';
+import { Card, Dot, Page, since } from '../ui';
 import type { Tone } from '../ui';
 
 type Check = { name: string; tone: Tone; detail: string; at?: string };
-type Watching = { id: string; user: string; device: string; title: string; method?: string; progress: number };
+type Watching = { id: string; user: string; device: string; title: string; how?: How; progress: number };
 type Entry = { at: string; text: string; tone?: Tone };
 type Library = { movies: number; shows: number; episodes: number; refreshed?: string; unprobed: number; unidentified: number };
 type Loaded = { checks: Check[]; watching: Watching[]; waiting: number; open: number; library: Library; activity: Entry[] };
 
 const tones: Record<string, Tone> = { Ok: 'ok', Warn: 'warn', Bad: 'bad', Off: 'off' };
-const methods: Record<string, Tone> = { Direct: 'ok', DirectPlay: 'ok', Remux: 'off', DirectStream: 'off', Transcode: 'warn', 'Encoding 1080p': 'warn' };
 const severities: Record<string, Tone> = { Warning: 'warn', Error: 'bad', Critical: 'bad' };
 
 function mocked(): Loaded {
@@ -60,7 +61,7 @@ async function fetched(): Promise<Loaded | undefined> {
           user: session.UserName ?? '',
           device: session.DeviceName ?? '',
           title: [item.SeriesName, item.Name].filter(Boolean).join(', '),
-          method: session.PlayState?.PlayMethod ?? undefined,
+          how: how(session),
           progress: length > 0 ? Math.min(100, ((session.PlayState?.PositionTicks ?? 0) / length) * 100) : 0,
         },
       ];
@@ -155,7 +156,9 @@ export function Overview() {
                         <span style={{ width: stream.progress + '%' }} />
                       </div>
                     </td>
-                    <td class="end">{stream.method && <Pill tone={methods[stream.method] ?? 'off'}>{stream.method}</Pill>}</td>
+                    <td class="end">
+                      <Served how={stream.how} />
+                    </td>
                   </tr>
                 ))}
               </tbody>

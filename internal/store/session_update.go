@@ -12,7 +12,9 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/device"
+	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
+	"github.com/FreekingDean/gojellyfin/internal/store/itemsource"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/syncplaygroupmember"
@@ -222,6 +224,38 @@ func (_u *SessionUpdate) ClearPlayingAt() *SessionUpdate {
 	return _u
 }
 
+// SetPlannedSourceID sets the "planned_source_id" field.
+func (_u *SessionUpdate) SetPlannedSourceID(v uuid.UUID) *SessionUpdate {
+	_u.mutation.SetPlannedSourceID(v)
+	return _u
+}
+
+// SetNillablePlannedSourceID sets the "planned_source_id" field if the given value is not nil.
+func (_u *SessionUpdate) SetNillablePlannedSourceID(v *uuid.UUID) *SessionUpdate {
+	if v != nil {
+		_u.SetPlannedSourceID(*v)
+	}
+	return _u
+}
+
+// ClearPlannedSourceID clears the value of the "planned_source_id" field.
+func (_u *SessionUpdate) ClearPlannedSourceID() *SessionUpdate {
+	_u.mutation.ClearPlannedSourceID()
+	return _u
+}
+
+// SetPlaybackPlan sets the "playback_plan" field.
+func (_u *SessionUpdate) SetPlaybackPlan(v *entities.PlaybackPlan) *SessionUpdate {
+	_u.mutation.SetPlaybackPlan(v)
+	return _u
+}
+
+// ClearPlaybackPlan clears the value of the "playback_plan" field.
+func (_u *SessionUpdate) ClearPlaybackPlan() *SessionUpdate {
+	_u.mutation.ClearPlaybackPlan()
+	return _u
+}
+
 // SetUserID sets the "user" edge to the User entity by ID.
 func (_u *SessionUpdate) SetUserID(id uuid.UUID) *SessionUpdate {
 	_u.mutation.SetUserID(id)
@@ -263,6 +297,11 @@ func (_u *SessionUpdate) SetNowPlaying(v *Item) *SessionUpdate {
 	return _u.SetNowPlayingID(v.ID)
 }
 
+// SetPlannedSource sets the "planned_source" edge to the ItemSource entity.
+func (_u *SessionUpdate) SetPlannedSource(v *ItemSource) *SessionUpdate {
+	return _u.SetPlannedSourceID(v.ID)
+}
+
 // AddSyncPlayMembershipIDs adds the "sync_play_memberships" edge to the SyncPlayGroupMember entity by IDs.
 func (_u *SessionUpdate) AddSyncPlayMembershipIDs(ids ...uuid.UUID) *SessionUpdate {
 	_u.mutation.AddSyncPlayMembershipIDs(ids...)
@@ -298,6 +337,12 @@ func (_u *SessionUpdate) ClearDevice() *SessionUpdate {
 // ClearNowPlaying clears the "now_playing" edge to the Item entity.
 func (_u *SessionUpdate) ClearNowPlaying() *SessionUpdate {
 	_u.mutation.ClearNowPlaying()
+	return _u
+}
+
+// ClearPlannedSource clears the "planned_source" edge to the ItemSource entity.
+func (_u *SessionUpdate) ClearPlannedSource() *SessionUpdate {
+	_u.mutation.ClearPlannedSource()
 	return _u
 }
 
@@ -429,6 +474,12 @@ func (_u *SessionUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.PlayingAtCleared() {
 		_spec.ClearField(session.FieldPlayingAt, field.TypeTime)
 	}
+	if value, ok := _u.mutation.PlaybackPlan(); ok {
+		_spec.SetField(session.FieldPlaybackPlan, field.TypeJSON, value)
+	}
+	if _u.mutation.PlaybackPlanCleared() {
+		_spec.ClearField(session.FieldPlaybackPlan, field.TypeJSON)
+	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -509,6 +560,35 @@ func (_u *SessionUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.PlannedSourceCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   session.PlannedSourceTable,
+			Columns: []string{session.PlannedSourceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PlannedSourceIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   session.PlannedSourceTable,
+			Columns: []string{session.PlannedSourceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -770,6 +850,38 @@ func (_u *SessionUpdateOne) ClearPlayingAt() *SessionUpdateOne {
 	return _u
 }
 
+// SetPlannedSourceID sets the "planned_source_id" field.
+func (_u *SessionUpdateOne) SetPlannedSourceID(v uuid.UUID) *SessionUpdateOne {
+	_u.mutation.SetPlannedSourceID(v)
+	return _u
+}
+
+// SetNillablePlannedSourceID sets the "planned_source_id" field if the given value is not nil.
+func (_u *SessionUpdateOne) SetNillablePlannedSourceID(v *uuid.UUID) *SessionUpdateOne {
+	if v != nil {
+		_u.SetPlannedSourceID(*v)
+	}
+	return _u
+}
+
+// ClearPlannedSourceID clears the value of the "planned_source_id" field.
+func (_u *SessionUpdateOne) ClearPlannedSourceID() *SessionUpdateOne {
+	_u.mutation.ClearPlannedSourceID()
+	return _u
+}
+
+// SetPlaybackPlan sets the "playback_plan" field.
+func (_u *SessionUpdateOne) SetPlaybackPlan(v *entities.PlaybackPlan) *SessionUpdateOne {
+	_u.mutation.SetPlaybackPlan(v)
+	return _u
+}
+
+// ClearPlaybackPlan clears the value of the "playback_plan" field.
+func (_u *SessionUpdateOne) ClearPlaybackPlan() *SessionUpdateOne {
+	_u.mutation.ClearPlaybackPlan()
+	return _u
+}
+
 // SetUserID sets the "user" edge to the User entity by ID.
 func (_u *SessionUpdateOne) SetUserID(id uuid.UUID) *SessionUpdateOne {
 	_u.mutation.SetUserID(id)
@@ -811,6 +923,11 @@ func (_u *SessionUpdateOne) SetNowPlaying(v *Item) *SessionUpdateOne {
 	return _u.SetNowPlayingID(v.ID)
 }
 
+// SetPlannedSource sets the "planned_source" edge to the ItemSource entity.
+func (_u *SessionUpdateOne) SetPlannedSource(v *ItemSource) *SessionUpdateOne {
+	return _u.SetPlannedSourceID(v.ID)
+}
+
 // AddSyncPlayMembershipIDs adds the "sync_play_memberships" edge to the SyncPlayGroupMember entity by IDs.
 func (_u *SessionUpdateOne) AddSyncPlayMembershipIDs(ids ...uuid.UUID) *SessionUpdateOne {
 	_u.mutation.AddSyncPlayMembershipIDs(ids...)
@@ -846,6 +963,12 @@ func (_u *SessionUpdateOne) ClearDevice() *SessionUpdateOne {
 // ClearNowPlaying clears the "now_playing" edge to the Item entity.
 func (_u *SessionUpdateOne) ClearNowPlaying() *SessionUpdateOne {
 	_u.mutation.ClearNowPlaying()
+	return _u
+}
+
+// ClearPlannedSource clears the "planned_source" edge to the ItemSource entity.
+func (_u *SessionUpdateOne) ClearPlannedSource() *SessionUpdateOne {
+	_u.mutation.ClearPlannedSource()
 	return _u
 }
 
@@ -1007,6 +1130,12 @@ func (_u *SessionUpdateOne) sqlSave(ctx context.Context) (_node *Session, err er
 	if _u.mutation.PlayingAtCleared() {
 		_spec.ClearField(session.FieldPlayingAt, field.TypeTime)
 	}
+	if value, ok := _u.mutation.PlaybackPlan(); ok {
+		_spec.SetField(session.FieldPlaybackPlan, field.TypeJSON, value)
+	}
+	if _u.mutation.PlaybackPlanCleared() {
+		_spec.ClearField(session.FieldPlaybackPlan, field.TypeJSON)
+	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -1087,6 +1216,35 @@ func (_u *SessionUpdateOne) sqlSave(ctx context.Context) (_node *Session, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.PlannedSourceCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   session.PlannedSourceTable,
+			Columns: []string{session.PlannedSourceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PlannedSourceIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   session.PlannedSourceTable,
+			Columns: []string{session.PlannedSourceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemsource.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

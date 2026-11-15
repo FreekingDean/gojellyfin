@@ -18,6 +18,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/store/mediasegment"
 	"github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/report"
+	"github.com/FreekingDean/gojellyfin/internal/store/session"
 	"github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/google/uuid"
 )
@@ -302,6 +303,21 @@ func (_c *ItemSourceCreate) AddReports(v ...*Report) *ItemSourceCreate {
 	return _c.AddReportIDs(ids...)
 }
 
+// AddPlanningSessionIDs adds the "planning_sessions" edge to the Session entity by IDs.
+func (_c *ItemSourceCreate) AddPlanningSessionIDs(ids ...uuid.UUID) *ItemSourceCreate {
+	_c.mutation.AddPlanningSessionIDs(ids...)
+	return _c
+}
+
+// AddPlanningSessions adds the "planning_sessions" edges to the Session entity.
+func (_c *ItemSourceCreate) AddPlanningSessions(v ...*Session) *ItemSourceCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddPlanningSessionIDs(ids...)
+}
+
 // Mutation returns the ItemSourceMutation object of the builder.
 func (_c *ItemSourceCreate) Mutation() *ItemSourceMutation {
 	return _c.mutation
@@ -556,6 +572,22 @@ func (_c *ItemSourceCreate) createSpec() (*ItemSource, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(report.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.PlanningSessionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemsource.PlanningSessionsTable,
+			Columns: []string{itemsource.PlanningSessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

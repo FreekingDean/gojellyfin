@@ -40,6 +40,7 @@ func (ItemSource) Edges() []ent.Edge {
 		edge.To("segments", MediaSegment.Type).Annotations(cascadeOnDelete),
 		edge.To("keyframes", KeyframeIndex.Type).Unique().Annotations(cascadeOnDelete),
 		edge.To("reports", Report.Type),
+		edge.To("planning_sessions", Session.Type),
 	}
 }
 

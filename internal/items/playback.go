@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 	streammodel "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/transcode"
 )
@@ -55,12 +56,66 @@ func (c Change) EncodesAudio() bool {
 	return c != ChangeNone
 }
 
+type Reason string
+
+const (
+	ReasonContainer  Reason = "ContainerNotSupported"
+	ReasonVideoCodec Reason = "VideoCodecNotSupported"
+	ReasonAudioCodec Reason = "AudioCodecNotSupported"
+	ReasonRange      Reason = "VideoRangeTypeNotSupported"
+	ReasonProfile    Reason = "VideoProfileNotSupported"
+	ReasonLevel      Reason = "VideoLevelNotSupported"
+	ReasonInterlaced Reason = "InterlacedVideoNotSupported"
+	ReasonAnamorphic Reason = "AnamorphicVideoNotSupported"
+	ReasonResolution Reason = "VideoResolutionNotSupported"
+	ReasonBitrate    Reason = "VideoBitrateNotSupported"
+)
+
+var refusals = map[string]Reason{
+	"VideoRangeType": ReasonRange,
+	"VideoProfile":   ReasonProfile,
+	"VideoLevel":     ReasonLevel,
+	"IsInterlaced":   ReasonInterlaced,
+	"IsAnamorphic":   ReasonAnamorphic,
+	"Width":          ReasonResolution,
+	"Height":         ReasonResolution,
+	"VideoBitrate":   ReasonBitrate,
+}
+
 type Plan struct {
 	Source     *MediaSource
 	Change     Change
 	Container  string
 	AudioCodec string
 	VideoCodec string
+	Reasons    []Reason
+}
+
+type Playback = entities.PlaybackPlan
+
+func (p Plan) Playback() Playback {
+	playback := Playback{
+		Direct:      p.Change == ChangeNone,
+		VideoDirect: !p.Change.EncodesVideo(),
+		AudioDirect: p.Change == ChangeNone || p.Change == ChangeContainer || p.Change == ChangeVideo,
+		Container:   p.Container,
+		VideoCodec:  p.VideoCodec,
+		AudioCodec:  p.AudioCodec,
+	}
+	if playback.VideoDirect {
+		playback.VideoCodec = codec(stream(p.Source, streammodel.KindVideo))
+	}
+	for _, reason := range p.Reasons {
+		playback.Reasons = append(playback.Reasons, string(reason))
+	}
+
+	return playback
+}
+
+func (p *Plan) because(reason Reason) {
+	if !slices.Contains(p.Reasons, reason) {
+		p.Reasons = append(p.Reasons, reason)
+	}
 }
 
 var (
@@ -80,7 +135,7 @@ func (s *Service) SourceFor(ctx context.Context, item *Item, can Capabilities) (
 
 	ordered := slices.Clone(sources)
 	slices.SortStableFunc(ordered, func(source, than *MediaSource) int {
-		if taller := int(height(than) - height(source)); taller != 0 {
+		if taller := int(Height(than) - Height(source)); taller != 0 {
 			return taller
 		}
 		if richer(source, than) {
@@ -119,7 +174,7 @@ func (s *Service) SourceFor(ctx context.Context, item *Item, can Capabilities) (
 }
 
 func shorterYetFull(source, than *MediaSource) bool {
-	return height(source) >= transcode.MaxHeight && height(source) < height(than)
+	return Height(source) >= transcode.MaxHeight && Height(source) < Height(than)
 }
 
 func (c Capabilities) plan(source *MediaSource) Plan {
@@ -130,18 +185,19 @@ func (c Capabilities) plan(source *MediaSource) Plan {
 		return plan
 	}
 
-	decodes := true
+	var refused []Reason
 	for _, condition := range c.Conditions {
 		if picture != nil && lists(condition.Codec, video) && !condition.holds(picture) {
-			decodes = false
+			refused = append(refused, refusals[condition.Property])
 		}
 	}
+	decodes := len(refused) == 0
 
-	playsVideo, playsAudio := false, false
+	named, playsVideo := false, false
 	copyInto, encodeInto := "", ""
 	for _, profile := range c.Profiles {
 		carries, keeps := decodes && lists(profile.VideoCodec, video), lists(profile.AudioCodec, audio)
-		playsVideo, playsAudio = playsVideo || carries, playsAudio || keeps
+		named, playsVideo = named || lists(profile.VideoCodec, video), playsVideo || carries
 		if !carries {
 			continue
 		}
@@ -165,14 +221,23 @@ func (c Capabilities) plan(source *MediaSource) Plan {
 
 	switch {
 	case !playsVideo:
+		if !named {
+			plan.because(ReasonVideoCodec)
+		}
+		for _, reason := range refused {
+			plan.because(reason)
+		}
+
 		return c.encodePlan(plan, audio)
 	case copyInto != "":
 		plan.Change, plan.Container = ChangeContainer, copyInto
+		plan.because(ReasonContainer)
 	default:
 		if encodeInto == "" {
 			encodeInto = transcode.VideoContainer
 		}
 		plan.Change, plan.Container, plan.AudioCodec = ChangeAudio, encodeInto, transcode.AudioCodec(encodeInto)
+		plan.because(ReasonAudioCodec)
 	}
 
 	return plan
@@ -195,6 +260,7 @@ func (c Capabilities) soundPlan(source *MediaSource) Plan {
 		encoded := transcode.AudioCodec(name)
 		if slices.Contains(c.AudioEncodes, name) || c.decodesAudio(name, encoded) {
 			plan.Change, plan.Container, plan.AudioCodec = ChangeAudio, name, encoded
+			plan.because(c.soundRefusal(plan.Source))
 
 			return plan
 		}
@@ -203,6 +269,16 @@ func (c Capabilities) soundPlan(source *MediaSource) Plan {
 	plan.Change = ChangeRefused
 
 	return plan
+}
+
+func (c Capabilities) soundRefusal(source *MediaSource) Reason {
+	for _, profile := range c.Audio {
+		if lists(profile.AudioCodec, AudioCodec(source)) {
+			return ReasonContainer
+		}
+	}
+
+	return ReasonAudioCodec
 }
 
 func (c Capabilities) audioTargets() []string {
@@ -253,6 +329,7 @@ func (c Capabilities) encodePlan(plan Plan, audio string) Plan {
 		plan.Change, plan.Container = ChangeVideo, copyInto
 	case encodeInto != "":
 		plan.Change, plan.Container, plan.AudioCodec = ChangeVideoAudio, encodeInto, transcode.AudioCodec(encodeInto)
+		plan.because(ReasonAudioCodec)
 	default:
 		plan.Change, plan.VideoCodec = ChangeRefused, ""
 	}
@@ -331,7 +408,7 @@ func codec(stream *MediaStream) string {
 	return strings.ToLower(stream.Codec)
 }
 
-func height(source *MediaSource) int32 {
+func Height(source *MediaSource) int32 {
 	if picture := stream(source, streammodel.KindVideo); picture != nil {
 		return deref(picture.Height)
 	}

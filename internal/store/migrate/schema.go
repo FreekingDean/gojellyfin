@@ -909,8 +909,10 @@ var (
 		{Name: "play_method", Type: field.TypeString, Nullable: true},
 		{Name: "is_paused", Type: field.TypeBool, Default: false},
 		{Name: "playing_at", Type: field.TypeTime, Nullable: true},
+		{Name: "playback_plan", Type: field.TypeJSON, Nullable: true},
 		{Name: "device_sessions", Type: field.TypeUUID},
 		{Name: "now_playing_item_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "planned_source_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "user_sessions", Type: field.TypeUUID},
 	}
 	// SessionsTable holds the schema information for the "sessions" table.
@@ -921,19 +923,25 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "sessions_devices_sessions",
-				Columns:    []*schema.Column{SessionsColumns[11]},
+				Columns:    []*schema.Column{SessionsColumns[12]},
 				RefColumns: []*schema.Column{DevicesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "sessions_items_playing_sessions",
-				Columns:    []*schema.Column{SessionsColumns[12]},
+				Columns:    []*schema.Column{SessionsColumns[13]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
+				Symbol:     "sessions_item_sources_planning_sessions",
+				Columns:    []*schema.Column{SessionsColumns[14]},
+				RefColumns: []*schema.Column{ItemSourcesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
 				Symbol:     "sessions_users_sessions",
-				Columns:    []*schema.Column{SessionsColumns[13]},
+				Columns:    []*schema.Column{SessionsColumns[15]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -942,7 +950,12 @@ var (
 			{
 				Name:    "session_now_playing_item_id",
 				Unique:  false,
-				Columns: []*schema.Column{SessionsColumns[12]},
+				Columns: []*schema.Column{SessionsColumns[13]},
+			},
+			{
+				Name:    "session_planned_source_id",
+				Unique:  false,
+				Columns: []*schema.Column{SessionsColumns[14]},
 			},
 		},
 	}
@@ -1436,7 +1449,8 @@ func init() {
 	RequestSubmissionsTable.ForeignKeys[0].RefTable = SourcesTable
 	SessionsTable.ForeignKeys[0].RefTable = DevicesTable
 	SessionsTable.ForeignKeys[1].RefTable = ItemsTable
-	SessionsTable.ForeignKeys[2].RefTable = UsersTable
+	SessionsTable.ForeignKeys[2].RefTable = ItemSourcesTable
+	SessionsTable.ForeignKeys[3].RefTable = UsersTable
 	SourcePathsTable.ForeignKeys[0].RefTable = SourcesTable
 	SyncPlayGroupMembersTable.ForeignKeys[0].RefTable = SessionsTable
 	SyncPlayGroupMembersTable.ForeignKeys[1].RefTable = SyncPlayGroupsTable

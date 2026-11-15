@@ -138,7 +138,7 @@ func (c Config) validate() error {
 
 	for _, proxy := range c.TrustedProxies {
 		if _, err := netip.ParsePrefix(proxy); err != nil {
-			return fmt.Errorf("TRUSTED_PROXIES must be a comma separated list of networks such as 10.201.0.0/16, got %q", proxy)
+			return fmt.Errorf("TRUSTED_PROXIES must be a comma separated list of networks such as 10.244.0.0/16, got %q", proxy)
 		}
 	}
 

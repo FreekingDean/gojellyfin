@@ -795,12 +795,13 @@ type ItemSourceModel struct {
 	ExternalFileID     *int64
 	Lyrics             string
 
-	Item      *ItemModel
-	Source    *SourceModel
-	Streams   []*MediaStreamModel
-	Segments  []*MediaSegmentModel
-	Keyframes *KeyframeIndexModel
-	Reports   []*ReportModel
+	Item             *ItemModel
+	Source           *SourceModel
+	Streams          []*MediaStreamModel
+	Segments         []*MediaSegmentModel
+	Keyframes        *KeyframeIndexModel
+	Reports          []*ReportModel
+	PlanningSessions []*SessionModel
 }
 
 func fromAllItemSource(_m []*ItemSource) []*ItemSourceModel {
@@ -835,12 +836,13 @@ func fromItemSource(_m *ItemSource) *ItemSourceModel {
 		ExternalFileID:     _m.ExternalFileID,
 		Lyrics:             _m.Lyrics,
 
-		Item:      fromItem(_m.Edges.Item),
-		Source:    fromSource(_m.Edges.Source),
-		Streams:   fromAllMediaStream(_m.Edges.Streams),
-		Segments:  fromAllMediaSegment(_m.Edges.Segments),
-		Keyframes: fromKeyframeIndex(_m.Edges.Keyframes),
-		Reports:   fromAllReport(_m.Edges.Reports),
+		Item:             fromItem(_m.Edges.Item),
+		Source:           fromSource(_m.Edges.Source),
+		Streams:          fromAllMediaStream(_m.Edges.Streams),
+		Segments:         fromAllMediaSegment(_m.Edges.Segments),
+		Keyframes:        fromKeyframeIndex(_m.Edges.Keyframes),
+		Reports:          fromAllReport(_m.Edges.Reports),
+		PlanningSessions: fromAllSession(_m.Edges.PlanningSessions),
 	}
 }
 
@@ -2113,6 +2115,8 @@ type SessionModel struct {
 	PlayMethod       string
 	IsPaused         bool
 	PlayingAt        *time.Time
+	PlannedSourceID  *uuid.UUID
+	PlaybackPlan     *entities.PlaybackPlan
 
 	DeviceID *uuid.UUID
 	UserID   *uuid.UUID
@@ -2120,6 +2124,7 @@ type SessionModel struct {
 	User                *UserModel
 	Device              *DeviceModel
 	NowPlaying          *ItemModel
+	PlannedSource       *ItemSourceModel
 	SyncPlayMemberships []*SyncPlayGroupMemberModel
 }
 
@@ -2149,6 +2154,8 @@ func fromSession(_m *Session) *SessionModel {
 		PlayMethod:       _m.PlayMethod,
 		IsPaused:         _m.IsPaused,
 		PlayingAt:        _m.PlayingAt,
+		PlannedSourceID:  _m.PlannedSourceID,
+		PlaybackPlan:     _m.PlaybackPlan,
 
 		DeviceID: _m.device_sessions,
 		UserID:   _m.user_sessions,
@@ -2156,6 +2163,7 @@ func fromSession(_m *Session) *SessionModel {
 		User:                fromUser(_m.Edges.User),
 		Device:              fromDevice(_m.Edges.Device),
 		NowPlaying:          fromItem(_m.Edges.NowPlaying),
+		PlannedSource:       fromItemSource(_m.Edges.PlannedSource),
 		SyncPlayMemberships: fromAllSyncPlayGroupMember(_m.Edges.SyncPlayMemberships),
 	}
 }

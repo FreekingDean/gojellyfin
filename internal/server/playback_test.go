@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -27,6 +28,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/reports"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 	"github.com/FreekingDean/gojellyfin/internal/server/mediainfo"
 	"github.com/FreekingDean/gojellyfin/internal/server/stream"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
@@ -159,7 +161,7 @@ func newPlaybackFixture(t *testing.T) *playbackFixture {
 		downloader: downloader.ID,
 		client:     client,
 		sessions:   sessionService,
-		info:       mediainfo.New(itemService, allLibraries{}),
+		info:       mediainfo.New(itemService, allLibraries{}, sessionService),
 		streams:    stream.New(sessionService, itemService, filesystem.New(config), transcode.NewEncoder(2, 0), reports.New(client, nil)),
 		items:      itemService,
 		library:    library.ID,
@@ -708,4 +710,95 @@ type allLibraries struct{}
 
 func (allLibraries) Access(context.Context, uuid.UUID) (users.Access, error) {
 	return users.Access{All: true}, nil
+}
+
+func TestPlaybackIsShownOnTheSession(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		file    string
+		audio   string
+		method  api.PlayMethod
+		shown   *api.TranscodingInfo
+		reasons []api.TranscodeReason
+	}{
+		{
+			name:   "a file handed over untouched is a direct play",
+			file:   "untouched.mkv",
+			audio:  "aac",
+			method: api.DirectPlay,
+		},
+		{
+			name:    "audio the client cannot decode is converted and says so",
+			file:    "surround.mkv",
+			audio:   "ac3",
+			method:  api.Transcode,
+			shown:   &api.TranscodingInfo{IsVideoDirect: apiutil.Ptr(true), IsAudioDirect: apiutil.Ptr(false), VideoCodec: apiutil.Ptr("h264"), AudioCodec: apiutil.Ptr("aac")},
+			reasons: []api.TranscodeReason{api.AudioCodecNotSupported},
+		},
+		{
+			name:    "a container the client cannot open is a remux",
+			file:    "boxed.mov",
+			audio:   "aac",
+			method:  api.Transcode,
+			shown:   &api.TranscodingInfo{IsVideoDirect: apiutil.Ptr(true), IsAudioDirect: apiutil.Ptr(true), VideoCodec: apiutil.Ptr("h264"), AudioCodec: apiutil.Ptr("aac")},
+			reasons: []api.TranscodeReason{api.ContainerNotSupported},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			fixture := newPlaybackFixture(t)
+			id := fixture.rip(t, tc.file, tc.audio)
+			fixture.offer(t, id, chromeProfile, 0)
+
+			ctx := context.Background()
+			mine, err := fixture.sessions.ByToken(ctx, fixture.token)
+			if err != nil {
+				t.Fatalf("failed to read the session: %v", err)
+			}
+			if err := fixture.sessions.Playing(ctx, mine.ID, "", sessions.Playback{ItemID: id, PlayMethod: "Transcode"}); err != nil {
+				t.Fatalf("failed to report playing: %v", err)
+			}
+
+			listed, err := fixture.sessions.List(ctx)
+			if err != nil {
+				t.Fatalf("failed to list sessions: %v", err)
+			}
+			var shown *api.SessionInfoDto
+			for _, session := range listed {
+				if session.ID == mine.ID {
+					shown = dto.SessionDto(session)
+				}
+			}
+			if shown == nil {
+				t.Fatal("the session is not listed")
+			}
+
+			if got := apiutil.Deref(shown.PlayState.PlayMethod); got != tc.method {
+				t.Errorf("play method = %q, want %q", got, tc.method)
+			}
+			streams := apiutil.Deref(shown.NowPlayingItem.MediaStreams)
+			if len(streams) == 0 || apiutil.Deref(streams[len(streams)-1].Codec) != tc.audio {
+				t.Errorf("now playing streams = %+v, want the planned file's, ending in %s", streams, tc.audio)
+			}
+
+			info := shown.TranscodingInfo
+			if tc.shown == nil {
+				if info != nil {
+					t.Errorf("transcoding info = %+v, want none for a direct play", info)
+				}
+				return
+			}
+			if info == nil {
+				t.Fatal("transcoding info is missing")
+			}
+			if apiutil.Deref(info.IsVideoDirect) != apiutil.Deref(tc.shown.IsVideoDirect) || apiutil.Deref(info.IsAudioDirect) != apiutil.Deref(tc.shown.IsAudioDirect) {
+				t.Errorf("video direct %v, audio direct %v, want %v and %v", apiutil.Deref(info.IsVideoDirect), apiutil.Deref(info.IsAudioDirect), apiutil.Deref(tc.shown.IsVideoDirect), apiutil.Deref(tc.shown.IsAudioDirect))
+			}
+			if apiutil.Deref(info.VideoCodec) != apiutil.Deref(tc.shown.VideoCodec) || apiutil.Deref(info.AudioCodec) != apiutil.Deref(tc.shown.AudioCodec) {
+				t.Errorf("codecs = %q and %q, want %q and %q", apiutil.Deref(info.VideoCodec), apiutil.Deref(info.AudioCodec), apiutil.Deref(tc.shown.VideoCodec), apiutil.Deref(tc.shown.AudioCodec))
+			}
+			if !slices.Equal(apiutil.Deref(info.TranscodeReasons), tc.reasons) {
+				t.Errorf("reasons = %v, want %v", apiutil.Deref(info.TranscodeReasons), tc.reasons)
+			}
+		})
+	}
 }

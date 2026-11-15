@@ -10,6 +10,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	devicemodel "github.com/FreekingDean/gojellyfin/internal/store/device"
+	streammodel "github.com/FreekingDean/gojellyfin/internal/store/mediastream"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	sessionmodel "github.com/FreekingDean/gojellyfin/internal/store/session"
 	usermodel "github.com/FreekingDean/gojellyfin/internal/store/user"
@@ -17,9 +18,10 @@ import (
 )
 
 type (
-	Session = store.SessionModel
-	Device  = store.DeviceModel
-	User    = store.UserModel
+	Session     = store.SessionModel
+	MediaSource = store.ItemSourceModel
+	Device      = store.DeviceModel
+	User        = store.UserModel
 )
 
 type EndingHook func(ctx context.Context, sessionIDs []uuid.UUID)
@@ -126,6 +128,11 @@ func (s *Service) List(ctx context.Context) ([]*Session, error) {
 		WithNowPlaying(func(query *store.ItemQuery) {
 			query.WithParent(func(query *store.ItemQuery) {
 				query.WithParent()
+			})
+		}).
+		WithPlannedSource(func(query *store.ItemSourceQuery) {
+			query.WithStreams(func(query *store.MediaStreamQuery) {
+				query.Order(streammodel.ByIndex())
 			})
 		}).
 		AllModels(ctx)

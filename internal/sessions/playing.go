@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
+	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 )
 
 const PlayingTimeout = 5 * time.Minute
@@ -34,6 +36,27 @@ func (s *Service) Playing(ctx context.Context, sessionID uuid.UUID, address stri
 	}
 
 	return nil
+}
+
+func (s *Service) Planned(ctx context.Context, sessionID, sourceID uuid.UUID, plan entities.PlaybackPlan) error {
+	err := s.store.Session.UpdateOneID(sessionID).
+		SetPlannedSourceID(sourceID).
+		SetPlaybackPlan(&plan).
+		Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to record how the session is being served: %w", err)
+	}
+
+	return nil
+}
+
+func Planned(session *Session) (*MediaSource, *entities.PlaybackPlan) {
+	source := session.PlannedSource
+	if session.PlaybackPlan == nil || source == nil || session.NowPlaying == nil || source.ItemID != session.NowPlaying.ID {
+		return nil, nil
+	}
+
+	return source, session.PlaybackPlan
 }
 
 func (s *Service) Stopped(ctx context.Context, sessionID uuid.UUID, address string) error {
