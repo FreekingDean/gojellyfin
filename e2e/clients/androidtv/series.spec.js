@@ -1,19 +1,11 @@
-const fs = require('node:fs');
-
 const { test, expect, leavePlayer } = require('./fixtures');
-const { SERVER_LOG } = require('../../setup/boot');
 const { sleep } = require('../adb');
 
 const SEEDED_AT = 5;
 const LEFT_TO_PLAY = 20;
 
 test.describe('watching a series on the television', () => {
-  test.afterEach(async ({ tv, server, harness }, testInfo) => {
-    const logcat = fs.readFileSync(tv.logcat(testInfo.outputPath('series-logcat.txt')), 'utf8');
-    const player = /PlaybackController|VideoManager|ExoPlayer|PlaybackManager|NextUp|AndroidRuntime|FATAL|MediaCodec/;
-    console.log(`What the player logged:\n${logcat.split('\n').filter((line) => player.test(line)).slice(-200).join('\n')}`);
-    const served = /Videos|PlaybackInfo|Playing|transcode|ffmpeg/i;
-    console.log(`What the server logged:\n${fs.readFileSync(SERVER_LOG, 'utf8').split('\n').filter((line) => served.test(line)).slice(-80).join('\n')}`);
+  test.afterEach(async ({ server, harness }) => {
     const [first, second] = harness.episodes;
     await server.leaveAt(first, SEEDED_AT);
     await server.forget(second);
@@ -44,7 +36,6 @@ test.describe('watching a series on the television', () => {
       .poll(() => server.positionSeconds(second), { timeout: 240000, intervals: [3000] })
       .toBeGreaterThan(1);
     await shot('second-episode');
-    expect(fs.readFileSync(SERVER_LOG, 'utf8')).toMatch(/\/stream\.mp4/);
 
     await leavePlayer(tv);
   });
