@@ -2043,18 +2043,21 @@ func (c *SessionClient) GetModel(ctx context.Context, id uuid.UUID) (*SessionMod
 type SourceModel struct {
 	ID uuid.UUID
 
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
-	Name              string
-	URL               string
-	APIKeyVariable    string
-	Kind              source.Kind
-	Version           string
-	ContactedAt       *time.Time
-	LastError         string
-	RequestProfileID  *int
-	RequestRootFolder string
-	RequestTag        string
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+	Name                string
+	URL                 string
+	APIKeyVariable      string
+	Kind                source.Kind
+	Version             string
+	ContactedAt         *time.Time
+	LastError           string
+	RequestProfileID    *int
+	RequestRootFolder   string
+	RequestTag          string
+	WebhookSecret       string
+	WebhookRegisteredAt *time.Time
+	WebhookError        string
 
 	Paths       []*SourcePathModel
 	Libraries   []*LibrarySourceModel
@@ -2077,19 +2080,22 @@ func fromSource(_m *Source) *SourceModel {
 	}
 
 	return &SourceModel{
-		ID:                _m.ID,
-		CreatedAt:         _m.CreatedAt,
-		UpdatedAt:         _m.UpdatedAt,
-		Name:              _m.Name,
-		URL:               _m.URL,
-		APIKeyVariable:    _m.APIKeyVariable,
-		Kind:              _m.Kind,
-		Version:           _m.Version,
-		ContactedAt:       _m.ContactedAt,
-		LastError:         _m.LastError,
-		RequestProfileID:  _m.RequestProfileID,
-		RequestRootFolder: _m.RequestRootFolder,
-		RequestTag:        _m.RequestTag,
+		ID:                  _m.ID,
+		CreatedAt:           _m.CreatedAt,
+		UpdatedAt:           _m.UpdatedAt,
+		Name:                _m.Name,
+		URL:                 _m.URL,
+		APIKeyVariable:      _m.APIKeyVariable,
+		Kind:                _m.Kind,
+		Version:             _m.Version,
+		ContactedAt:         _m.ContactedAt,
+		LastError:           _m.LastError,
+		RequestProfileID:    _m.RequestProfileID,
+		RequestRootFolder:   _m.RequestRootFolder,
+		RequestTag:          _m.RequestTag,
+		WebhookSecret:       _m.WebhookSecret,
+		WebhookRegisteredAt: _m.WebhookRegisteredAt,
+		WebhookError:        _m.WebhookError,
 
 		Paths:       fromAllSourcePath(_m.Edges.Paths),
 		Libraries:   fromAllLibrarySource(_m.Edges.Libraries),

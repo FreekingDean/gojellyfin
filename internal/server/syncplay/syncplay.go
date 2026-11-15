@@ -97,7 +97,7 @@ func (s *Server) SyncPlayLeaveGroup(ctx context.Context, request api.SyncPlayLea
 		return nil, err
 	}
 
-	s.depart(ctx, session, left)
+	s.depart(ctx, left)
 
 	return api.SyncPlayLeaveGroup204Response{}, nil
 }
@@ -123,9 +123,34 @@ func (s *Server) SyncPlayGetGroup(ctx context.Context, request api.SyncPlayGetGr
 	return api.SyncPlayGetGroup200JSONResponse(groupInfo(group)), nil
 }
 
+func (s *Server) Resync(ctx context.Context, sessionIDs []uuid.UUID) {
+	groups, err := s.syncplay.GroupsBySessionIDs(ctx, sessionIDs)
+	if err != nil {
+		log.Printf("failed to re-sync syncplay groups: %v", err)
+
+		return
+	}
+
+	asked := make(map[uuid.UUID]bool, len(sessionIDs))
+	for _, id := range sessionIDs {
+		asked[id] = true
+	}
+
+	for _, group := range groups {
+		var members []uuid.UUID
+		for _, participant := range syncplay.Participants(group) {
+			if asked[participant.SessionID] {
+				members = append(members, participant.SessionID)
+			}
+		}
+
+		s.publish(ctx, members, group.ID, groupJoined, groupInfo(group))
+	}
+}
+
 func (s *Server) announce(ctx context.Context, session *sessions.Session, joined syncplay.Joined) {
 	if joined.Left != nil {
-		s.depart(ctx, session, joined.Left)
+		s.depart(ctx, joined.Left)
 	}
 
 	s.publish(ctx, []uuid.UUID{session.ID}, joined.Group.ID, groupJoined, groupInfo(joined.Group))
@@ -138,10 +163,8 @@ func (s *Server) announce(ctx context.Context, session *sessions.Session, joined
 	s.syncplay.Publish(ctx, joined.Messages)
 }
 
-func (s *Server) depart(ctx context.Context, session *sessions.Session, left *syncplay.Departure) {
+func (s *Server) depart(ctx context.Context, left *syncplay.Departure) {
 	s.syncplay.Publish(ctx, left.Messages)
-	s.publish(ctx, []uuid.UUID{session.ID}, left.GroupID, groupLeft, left.GroupID.String())
-	s.publish(ctx, sessionIDs(left.Remaining, session.ID), left.GroupID, userLeft, userName(session))
 }
 
 func (s *Server) publish(ctx context.Context, sessionIDs []uuid.UUID, groupID uuid.UUID, updateType string, data any) {

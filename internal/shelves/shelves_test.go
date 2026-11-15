@@ -451,16 +451,20 @@ func TestService_Card(t *testing.T) {
 	viewer := items.Viewer{Libraries: []uuid.UUID{fixture.libraryID}}
 
 	tests := []struct {
-		name    string
-		enabled []string
-		slug    string
-		want    []string
-		title   string
-		fresh   int
-		found   bool
+		name     string
+		enabled  []string
+		slug     string
+		user     uuid.UUID
+		want     []string
+		title    string
+		fresh    int
+		found    bool
+		personal bool
 	}{
 		{name: "a shelf everyone sees alike answers its name, what aired this week and its titles' posters newest first", enabled: []string{"new-releases"}, slug: "new-releases", want: []string{"newer", "older"}, title: "New Releases", fresh: 1, found: true},
-		{name: "a shelf that differs per user has none", enabled: []string{"hidden-gems"}, slug: "hidden-gems"},
+		{name: "a shelf everyone sees alike is the same card whoever asks", enabled: []string{"new-releases"}, slug: "new-releases", user: uuid.New(), want: []string{"newer", "older"}, title: "New Releases", fresh: 1, found: true},
+		{name: "a shelf that differs per user has none without a user", enabled: []string{"hidden-gems"}, slug: "hidden-gems"},
+		{name: "a shelf that differs per user is that user's card", enabled: []string{"hidden-gems"}, slug: "hidden-gems", user: uuid.New(), want: []string{"newer", "older"}, title: "Hidden Gems", fresh: 1, found: true, personal: true},
 		{name: "a shelf that is off has none", enabled: []string{"recently-aired"}, slug: "new-releases"},
 	}
 
@@ -468,20 +472,23 @@ func TestService_Card(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			service := newService(fixture.catalogue, available(true), stored(test.enabled...), func() time.Time { return november })
 
-			card, found, err := service.Card(ctx, ID(test.slug), viewer, 10)
+			card, found, err := service.Card(ctx, ID(test.slug), viewer, test.user, 10)
 			if err != nil {
 				t.Fatalf("failed to read the card: %v", err)
 			}
 			if found != test.found {
 				t.Fatalf("found = %v, want %v", found, test.found)
 			}
-			if card.Name != test.title || card.Fresh != test.fresh {
-				t.Errorf("card = %q with %d new, want %q with %d", card.Name, card.Fresh, test.title, test.fresh)
+			if card.Name != test.title || card.Fresh != test.fresh || card.Personal != test.personal {
+				t.Errorf("card = %q with %d new, personal %v, want %q with %d, personal %v", card.Name, card.Fresh, card.Personal, test.title, test.fresh, test.personal)
 			}
 
 			got := make([]string, 0, len(card.Posters))
 			for _, poster := range card.Posters {
 				got = append(got, poster.Tag)
+			}
+			if test.personal {
+				slices.Sort(got)
 			}
 			if !slices.Equal(got, test.want) && (len(got) != 0 || len(test.want) != 0) {
 				t.Errorf("posters = %v, want %v", got, test.want)

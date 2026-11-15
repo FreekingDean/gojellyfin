@@ -12,6 +12,8 @@ const (
 
 	PlayQueueUpdateType = "PlayQueue"
 	StateUpdateType     = "StateUpdate"
+	GroupLeftType       = "GroupLeft"
+	UserLeftType        = "UserLeft"
 )
 
 type RequestType string

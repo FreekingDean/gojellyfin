@@ -42,6 +42,12 @@ type Source struct {
 	RequestRootFolder string `json:"request_root_folder,omitempty"`
 	// RequestTag holds the value of the "request_tag" field.
 	RequestTag string `json:"request_tag,omitempty"`
+	// WebhookSecret holds the value of the "webhook_secret" field.
+	WebhookSecret string `json:"-"`
+	// WebhookRegisteredAt holds the value of the "webhook_registered_at" field.
+	WebhookRegisteredAt *time.Time `json:"webhook_registered_at,omitempty"`
+	// WebhookError holds the value of the "webhook_error" field.
+	WebhookError string `json:"webhook_error,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SourceQuery when eager-loading is set.
 	Edges        SourceEdges `json:"edges"`
@@ -117,9 +123,9 @@ func (*Source) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case source.FieldRequestProfileID:
 			values[i] = new(sql.NullInt64)
-		case source.FieldName, source.FieldURL, source.FieldAPIKeyVariable, source.FieldKind, source.FieldVersion, source.FieldLastError, source.FieldRequestRootFolder, source.FieldRequestTag:
+		case source.FieldName, source.FieldURL, source.FieldAPIKeyVariable, source.FieldKind, source.FieldVersion, source.FieldLastError, source.FieldRequestRootFolder, source.FieldRequestTag, source.FieldWebhookSecret, source.FieldWebhookError:
 			values[i] = new(sql.NullString)
-		case source.FieldCreatedAt, source.FieldUpdatedAt, source.FieldContactedAt:
+		case source.FieldCreatedAt, source.FieldUpdatedAt, source.FieldContactedAt, source.FieldWebhookRegisteredAt:
 			values[i] = new(sql.NullTime)
 		case source.FieldID:
 			values[i] = new(uuid.UUID)
@@ -217,6 +223,25 @@ func (_m *Source) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field request_tag", values[i])
 			} else if value.Valid {
 				_m.RequestTag = value.String
+			}
+		case source.FieldWebhookSecret:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field webhook_secret", values[i])
+			} else if value.Valid {
+				_m.WebhookSecret = value.String
+			}
+		case source.FieldWebhookRegisteredAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field webhook_registered_at", values[i])
+			} else if value.Valid {
+				_m.WebhookRegisteredAt = new(time.Time)
+				*_m.WebhookRegisteredAt = value.Time
+			}
+		case source.FieldWebhookError:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field webhook_error", values[i])
+			} else if value.Valid {
+				_m.WebhookError = value.String
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -318,6 +343,16 @@ func (_m *Source) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("request_tag=")
 	builder.WriteString(_m.RequestTag)
+	builder.WriteString(", ")
+	builder.WriteString("webhook_secret=<sensitive>")
+	builder.WriteString(", ")
+	if v := _m.WebhookRegisteredAt; v != nil {
+		builder.WriteString("webhook_registered_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("webhook_error=")
+	builder.WriteString(_m.WebhookError)
 	builder.WriteByte(')')
 	return builder.String()
 }

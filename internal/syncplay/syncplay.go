@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -34,9 +35,8 @@ type Participant struct {
 }
 
 type Departure struct {
-	GroupID   uuid.UUID
-	Remaining []Participant
-	Messages  []Outgoing
+	GroupID  uuid.UUID
+	Messages []Outgoing
 }
 
 type Joined struct {
@@ -54,15 +54,6 @@ func Participants(group *Group) []Participant {
 			continue
 		}
 		participants = append(participants, Participant{SessionID: session.ID, UserName: session.User.Name})
-	}
-
-	return participants
-}
-
-func seated(room *Room) []Participant {
-	participants := make([]Participant, 0, len(room.Seats))
-	for _, seat := range room.Seats {
-		participants = append(participants, Participant{SessionID: seat.SessionID, UserName: seat.UserName})
 	}
 
 	return participants
@@ -183,6 +174,22 @@ func (s *Service) Leave(ctx context.Context, sessionID uuid.UUID) (*Departure, e
 	return left, nil
 }
 
+func (s *Service) SessionsEnding(ctx context.Context, sessionIDs []uuid.UUID) {
+	for _, sessionID := range sessionIDs {
+		left, err := s.Leave(ctx, sessionID)
+		if errors.Is(err, ErrNotInGroup) {
+			continue
+		}
+		if err != nil {
+			log.Printf("syncplay: failed to leave the group of ending session %s: %v", sessionID, err)
+
+			continue
+		}
+
+		s.Publish(ctx, left.Messages)
+	}
+}
+
 func (s *Service) Apply(ctx context.Context, sessionID uuid.UUID, request Request) ([]Outgoing, error) {
 	var messages []Outgoing
 
@@ -288,6 +295,21 @@ func (s *Service) GroupBySessionID(ctx context.Context, sessionID uuid.UUID) (*G
 	return s.GroupByID(ctx, member.GroupID)
 }
 
+func (s *Service) GroupsBySessionIDs(ctx context.Context, sessionIDs []uuid.UUID) ([]*Group, error) {
+	if len(sessionIDs) == 0 {
+		return nil, nil
+	}
+
+	groups, err := withRoom(s.store.SyncPlayGroup.Query()).
+		Where(groupmodal.HasMembersWith(membermodal.SessionIDIn(sessionIDs...))).
+		AllModels(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query the syncplay groups of %d sessions: %w", len(sessionIDs), err)
+	}
+
+	return groups, nil
+}
+
 func (s *Service) joined(ctx context.Context, groupID uuid.UUID, left *Departure, rejoined bool, messages []Outgoing) (Joined, error) {
 	group, err := s.GroupByID(ctx, groupID)
 	if err != nil {
@@ -316,7 +338,7 @@ func (s *Service) vacate(ctx context.Context, tx *store.Tx, sessionID, staying u
 		return nil, err
 	}
 
-	return &Departure{GroupID: room.ID, Remaining: seated(room), Messages: room.out}, nil
+	return &Departure{GroupID: room.ID, Messages: room.out}, nil
 }
 
 func (s *Service) seat(ctx context.Context, tx *store.Tx, groupID, sessionID uuid.UUID) ([]Outgoing, error) {

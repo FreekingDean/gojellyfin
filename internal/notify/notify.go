@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"slices"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -32,6 +35,9 @@ type Service struct {
 	store       *store.Client
 	databaseURL string
 	handler     Handler
+	hooks       sync.Mutex
+	reconnected []func(ctx context.Context)
+	backend     atomic.Uint32
 
 	cancel context.CancelFunc
 	done   chan struct{}
@@ -39,6 +45,13 @@ type Service struct {
 
 func New(config env.Config, client *store.Client, handler Handler) *Service {
 	return &Service{store: client, databaseURL: config.DatabaseURL, handler: handler, done: make(chan struct{})}
+}
+
+func (s *Service) OnReconnect(hook func(ctx context.Context)) {
+	s.hooks.Lock()
+	defer s.hooks.Unlock()
+
+	s.reconnected = append(s.reconnected, hook)
 }
 
 func (s *Service) Publish(ctx context.Context, sessionIDs []uuid.UUID, messageType string, data any) error {
@@ -102,6 +115,8 @@ func (s *Service) listen(ctx context.Context) (*pgx.Conn, error) {
 		return nil, fmt.Errorf("failed to listen on %s: %w", channel, err)
 	}
 
+	s.backend.Store(conn.PgConn().PID())
+
 	return conn, nil
 }
 
@@ -120,7 +135,7 @@ func (s *Service) run(ctx context.Context, conn *pgx.Conn) {
 			}
 
 			lost = time.Now()
-			log.Printf("notify listener lost, updates for sessions on this pod are dropped until it reconnects: %v", err)
+			log.Printf("notify listener on backend %d lost, updates for sessions on this pod are dropped until it reconnects: %v", s.backend.Load(), err)
 		}
 
 		select {
@@ -141,9 +156,21 @@ func (s *Service) run(ctx context.Context, conn *pgx.Conn) {
 			continue
 		}
 
-		log.Printf("notify listener reconnected after %s, updates published in that window were missed", time.Since(lost).Round(time.Millisecond))
+		log.Printf("notify listener reconnected after %s, re-syncing the sessions on this pod", time.Since(lost).Round(time.Millisecond))
 
 		conn = next
+
+		s.resync(ctx)
+	}
+}
+
+func (s *Service) resync(ctx context.Context) {
+	s.hooks.Lock()
+	hooks := slices.Clone(s.reconnected)
+	s.hooks.Unlock()
+
+	for _, hook := range hooks {
+		hook(ctx)
 	}
 }
 

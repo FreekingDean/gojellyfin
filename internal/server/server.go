@@ -24,6 +24,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/livetv"
 	"github.com/FreekingDean/gojellyfin/internal/server/localization"
 	"github.com/FreekingDean/gojellyfin/internal/server/mediainfo"
+	"github.com/FreekingDean/gojellyfin/internal/server/movies"
 	"github.com/FreekingDean/gojellyfin/internal/server/packages"
 	"github.com/FreekingDean/gojellyfin/internal/server/persons"
 	"github.com/FreekingDean/gojellyfin/internal/server/playlists"
@@ -69,6 +70,7 @@ type (
 	ScheduledTasksServer     = scheduledtasks.Server
 	DashboardServer          = dashboard.Server
 	ArtistsServer            = artists.Server
+	MoviesServer             = movies.Server
 	BackupServer             = backup.Server
 	ChannelsServer           = channels.Server
 	EnvironmentServer        = environment.Server
@@ -118,6 +120,7 @@ type Server struct {
 	*ScheduledTasksServer
 	*DashboardServer
 	*ArtistsServer
+	*MoviesServer
 	*BackupServer
 	*ChannelsServer
 	*EnvironmentServer
@@ -169,6 +172,7 @@ func New(
 	scheduledtasks *scheduledtasks.Server,
 	dashboard *dashboard.Server,
 	artists *artists.Server,
+	movies *movies.Server,
 	backups *backup.Server,
 	channels *channels.Server,
 	environment *environment.Server,
@@ -217,6 +221,7 @@ func New(
 		ScheduledTasksServer:     scheduledtasks,
 		DashboardServer:          dashboard,
 		ArtistsServer:            artists,
+		MoviesServer:             movies,
 		BackupServer:             backups,
 		ChannelsServer:           channels,
 		EnvironmentServer:        environment,

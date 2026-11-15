@@ -67,7 +67,7 @@ type definition struct {
 }
 
 func trending(slug, name string, collection libraries.CollectionType, kind items.Kind) definition {
-	return definition{slug: slug, title: name, collection: collection, trending: kind, resolve: func(context.Context, Catalogue, items.Viewer, uuid.UUID, time.Time) (string, items.LatestQuery, bool, error) {
+	return definition{slug: slug, title: name, collection: collection, trending: kind, shared: true, resolve: func(context.Context, Catalogue, items.Viewer, uuid.UUID, time.Time) (string, items.LatestQuery, bool, error) {
 		return name, items.LatestQuery{}, true, nil
 	}}
 }

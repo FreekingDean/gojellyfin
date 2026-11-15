@@ -587,6 +587,10 @@ func init() {
 	source.DefaultUpdatedAt = sourceDescUpdatedAt.Default.(func() time.Time)
 	// source.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	source.UpdateDefaultUpdatedAt = sourceDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// sourceDescWebhookSecret is the schema descriptor for webhook_secret field.
+	sourceDescWebhookSecret := sourceFields[13].Descriptor()
+	// source.DefaultWebhookSecret holds the default value on creation for the webhook_secret field.
+	source.DefaultWebhookSecret = sourceDescWebhookSecret.Default.(func() string)
 	sourcepathFields := entities.SourcePath{}.Fields()
 	_ = sourcepathFields
 	// sourcepathDescCreatedAt is the schema descriptor for created_at field.

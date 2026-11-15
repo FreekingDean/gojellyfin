@@ -11,9 +11,7 @@ import (
 
 const (
 	userJoined          = "UserJoined"
-	userLeft            = "UserLeft"
 	groupJoined         = "GroupJoined"
-	groupLeft           = "GroupLeft"
 	groupDoesNotExist   = "GroupDoesNotExist"
 	notInGroup          = "NotInGroup"
 	libraryAccessDenied = "LibraryAccessDenied"

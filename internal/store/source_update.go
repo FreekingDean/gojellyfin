@@ -237,6 +237,60 @@ func (_u *SourceUpdate) ClearRequestTag() *SourceUpdate {
 	return _u
 }
 
+// SetWebhookSecret sets the "webhook_secret" field.
+func (_u *SourceUpdate) SetWebhookSecret(v string) *SourceUpdate {
+	_u.mutation.SetWebhookSecret(v)
+	return _u
+}
+
+// SetNillableWebhookSecret sets the "webhook_secret" field if the given value is not nil.
+func (_u *SourceUpdate) SetNillableWebhookSecret(v *string) *SourceUpdate {
+	if v != nil {
+		_u.SetWebhookSecret(*v)
+	}
+	return _u
+}
+
+// SetWebhookRegisteredAt sets the "webhook_registered_at" field.
+func (_u *SourceUpdate) SetWebhookRegisteredAt(v time.Time) *SourceUpdate {
+	_u.mutation.SetWebhookRegisteredAt(v)
+	return _u
+}
+
+// SetNillableWebhookRegisteredAt sets the "webhook_registered_at" field if the given value is not nil.
+func (_u *SourceUpdate) SetNillableWebhookRegisteredAt(v *time.Time) *SourceUpdate {
+	if v != nil {
+		_u.SetWebhookRegisteredAt(*v)
+	}
+	return _u
+}
+
+// ClearWebhookRegisteredAt clears the value of the "webhook_registered_at" field.
+func (_u *SourceUpdate) ClearWebhookRegisteredAt() *SourceUpdate {
+	_u.mutation.ClearWebhookRegisteredAt()
+	return _u
+}
+
+// SetWebhookError sets the "webhook_error" field.
+func (_u *SourceUpdate) SetWebhookError(v string) *SourceUpdate {
+	_u.mutation.SetWebhookError(v)
+	return _u
+}
+
+// SetNillableWebhookError sets the "webhook_error" field if the given value is not nil.
+func (_u *SourceUpdate) SetNillableWebhookError(v *string) *SourceUpdate {
+	if v != nil {
+		_u.SetWebhookError(*v)
+	}
+	return _u
+}
+
+// ClearWebhookError clears the value of the "webhook_error" field.
+func (_u *SourceUpdate) ClearWebhookError() *SourceUpdate {
+	_u.mutation.ClearWebhookError()
+	return _u
+}
+
 // AddPathIDs adds the "paths" edge to the SourcePath entity by IDs.
 func (_u *SourceUpdate) AddPathIDs(ids ...uuid.UUID) *SourceUpdate {
 	_u.mutation.AddPathIDs(ids...)
@@ -536,6 +590,21 @@ func (_u *SourceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.RequestTagCleared() {
 		_spec.ClearField(source.FieldRequestTag, field.TypeString)
+	}
+	if value, ok := _u.mutation.WebhookSecret(); ok {
+		_spec.SetField(source.FieldWebhookSecret, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.WebhookRegisteredAt(); ok {
+		_spec.SetField(source.FieldWebhookRegisteredAt, field.TypeTime, value)
+	}
+	if _u.mutation.WebhookRegisteredAtCleared() {
+		_spec.ClearField(source.FieldWebhookRegisteredAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.WebhookError(); ok {
+		_spec.SetField(source.FieldWebhookError, field.TypeString, value)
+	}
+	if _u.mutation.WebhookErrorCleared() {
+		_spec.ClearField(source.FieldWebhookError, field.TypeString)
 	}
 	if _u.mutation.PathsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -985,6 +1054,60 @@ func (_u *SourceUpdateOne) ClearRequestTag() *SourceUpdateOne {
 	return _u
 }
 
+// SetWebhookSecret sets the "webhook_secret" field.
+func (_u *SourceUpdateOne) SetWebhookSecret(v string) *SourceUpdateOne {
+	_u.mutation.SetWebhookSecret(v)
+	return _u
+}
+
+// SetNillableWebhookSecret sets the "webhook_secret" field if the given value is not nil.
+func (_u *SourceUpdateOne) SetNillableWebhookSecret(v *string) *SourceUpdateOne {
+	if v != nil {
+		_u.SetWebhookSecret(*v)
+	}
+	return _u
+}
+
+// SetWebhookRegisteredAt sets the "webhook_registered_at" field.
+func (_u *SourceUpdateOne) SetWebhookRegisteredAt(v time.Time) *SourceUpdateOne {
+	_u.mutation.SetWebhookRegisteredAt(v)
+	return _u
+}
+
+// SetNillableWebhookRegisteredAt sets the "webhook_registered_at" field if the given value is not nil.
+func (_u *SourceUpdateOne) SetNillableWebhookRegisteredAt(v *time.Time) *SourceUpdateOne {
+	if v != nil {
+		_u.SetWebhookRegisteredAt(*v)
+	}
+	return _u
+}
+
+// ClearWebhookRegisteredAt clears the value of the "webhook_registered_at" field.
+func (_u *SourceUpdateOne) ClearWebhookRegisteredAt() *SourceUpdateOne {
+	_u.mutation.ClearWebhookRegisteredAt()
+	return _u
+}
+
+// SetWebhookError sets the "webhook_error" field.
+func (_u *SourceUpdateOne) SetWebhookError(v string) *SourceUpdateOne {
+	_u.mutation.SetWebhookError(v)
+	return _u
+}
+
+// SetNillableWebhookError sets the "webhook_error" field if the given value is not nil.
+func (_u *SourceUpdateOne) SetNillableWebhookError(v *string) *SourceUpdateOne {
+	if v != nil {
+		_u.SetWebhookError(*v)
+	}
+	return _u
+}
+
+// ClearWebhookError clears the value of the "webhook_error" field.
+func (_u *SourceUpdateOne) ClearWebhookError() *SourceUpdateOne {
+	_u.mutation.ClearWebhookError()
+	return _u
+}
+
 // AddPathIDs adds the "paths" edge to the SourcePath entity by IDs.
 func (_u *SourceUpdateOne) AddPathIDs(ids ...uuid.UUID) *SourceUpdateOne {
 	_u.mutation.AddPathIDs(ids...)
@@ -1314,6 +1437,21 @@ func (_u *SourceUpdateOne) sqlSave(ctx context.Context) (_node *Source, err erro
 	}
 	if _u.mutation.RequestTagCleared() {
 		_spec.ClearField(source.FieldRequestTag, field.TypeString)
+	}
+	if value, ok := _u.mutation.WebhookSecret(); ok {
+		_spec.SetField(source.FieldWebhookSecret, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.WebhookRegisteredAt(); ok {
+		_spec.SetField(source.FieldWebhookRegisteredAt, field.TypeTime, value)
+	}
+	if _u.mutation.WebhookRegisteredAtCleared() {
+		_spec.ClearField(source.FieldWebhookRegisteredAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.WebhookError(); ok {
+		_spec.SetField(source.FieldWebhookError, field.TypeString, value)
+	}
+	if _u.mutation.WebhookErrorCleared() {
+		_spec.ClearField(source.FieldWebhookError, field.TypeString)
 	}
 	if _u.mutation.PathsCleared() {
 		edge := &sqlgraph.EdgeSpec{

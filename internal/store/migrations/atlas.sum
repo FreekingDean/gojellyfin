@@ -1,4 +1,4 @@
-h1:GkjNsLcXzBY6pmlqsNgnn0AQTqxwqXy+FUaqauV/1Pc=
+h1:b/5hmcRHhW8XmbEPe99YY28PjAGKXr7PRJ+363LEEpk=
 20260808161932_schema.sql h1:TSsMFoNc1lu6mOmwk6WUpVAleagab51CYpT8AcXjFe8=
 20260809054423_schema.sql h1:V8LqoR24+BY3zT0+YlBHRxazmflw/ECnIQrC9e8FboE=
 20260809060012_configurations.sql h1:lWCojwN/ZmPBP/uS9aNCdmvBPXLv1rSc21+W+ZeyrJg=
@@ -37,4 +37,6 @@ h1:GkjNsLcXzBY6pmlqsNgnn0AQTqxwqXy+FUaqauV/1Pc=
 20261114215500_syncplay_groups.sql h1:A8s65l6/HONdz8fB+JBhM+ke0yUR/wapj3hFT+kAPzw=
 20261114230000_syncplay_playback.sql h1:7j7N/KLrxm+IO7RwdyjTAdXnhMzPArkmtqQdDDkkZZY=
 20261114235000_two_libraries.sql h1:hiskXIBQHC91kzGiJ5Rk1LQjZaHbexPlgUU/69kTL/Y=
-20261114235500_session_now_playing.sql h1:fqRtcxN5lHl96DA2zw9UTHFB7bKRXpTyrkmPSLyIjjE=
+20261114235500_session_now_playing.sql h1:sXwT2x01SJbRBS0H0OEOGrhmVtH0laauxXmz9RCx1b0=
+20261115000000_fold_name_keyed_items.sql h1:tuYxNmfwV5jv4kYd/O2w3/HqtpxWE1icxZj0S1CcDDI=
+20261115010000_source_webhooks.sql h1:sjPBYMmQubNOgjyHDhwWwWU0qgV/+tgr+sPfIN6UHVo=

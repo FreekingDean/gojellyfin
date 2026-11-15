@@ -4,6 +4,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 type ActivityLogEntry struct {
@@ -26,5 +27,11 @@ func (ActivityLogEntry) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("user", User.Type).Ref("activity_log_entries").Unique(),
 		edge.From("item", Item.Type).Ref("activity_log_entries").Unique(),
+	}
+}
+
+func (ActivityLogEntry) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Edges("item"),
 	}
 }

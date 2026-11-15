@@ -1,3 +1,5 @@
+SET LOCAL lock_timeout = '30s';
+SET LOCAL client_connection_check_interval = '10s';
 ALTER TABLE "sessions"
   ADD COLUMN IF NOT EXISTS "position_ticks" bigint NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS "play_method" character varying NULL,

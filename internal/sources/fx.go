@@ -16,4 +16,5 @@ var Module = fx.Module(
 
 func register(registry *jobs.Registry, service *Service) {
 	registry.Register(service.RefreshJob())
+	registry.Register(service.RefreshTitleJob())
 }

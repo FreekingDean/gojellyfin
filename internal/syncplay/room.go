@@ -287,6 +287,9 @@ func (r *Room) leave(sessionID uuid.UUID) {
 	r.sessionLeaving(seat)
 	r.Seats = slices.DeleteFunc(r.Seats, func(s *Seat) bool { return s == seat })
 	r.updateWaitDeadline(false)
+
+	r.sendUpdate(seat, currentSession, GroupLeftType, r.ID.String())
+	r.sendUpdate(seat, allGroup, UserLeftType, seat.UserName)
 }
 
 func (r *Room) sessionJoined(seat *Seat) {
