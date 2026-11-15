@@ -140,7 +140,7 @@ export const watching: Watching[] = [
   { user: 'sam', device: 'Swiftfin', title: 'The Bear S3 E1', method: 'Direct', progress: 81 },
 ];
 
-export const library = { movies: 2204, shows: 186, episodes: 9870, refreshed: ago(38), unprobed: 12, unidentified: 3 };
+export const library = { movies: 1200, shows: 80, episodes: 4000, refreshed: ago(38), unprobed: 12, unidentified: 3 };
 
 export type Activity = { at: string; text: string; tone?: Tone };
 
@@ -181,7 +181,7 @@ export const downloaders: Downloader[] = [
     contacted: ago(4),
     paths: [{ remote: '/movies', local: '/media/movies' }],
     synced: ago(38),
-    files: 2140,
+    files: 1100,
     requests: { profile: 'HD-1080p', folder: '/movies', tag: 'requested' },
   },
   {
@@ -195,7 +195,7 @@ export const downloaders: Downloader[] = [
     error: '401 Unauthorized',
     paths: [{ remote: '/movies-4k', local: '/media/movies-4k' }],
     synced: ago(2 * HOUR),
-    files: 310,
+    files: 100,
     requests: { profile: 'Ultra-HD', folder: '/movies-4k' },
   },
   {
@@ -208,7 +208,7 @@ export const downloaders: Downloader[] = [
     contacted: ago(4),
     paths: [{ remote: '/tv', local: '/media/tv' }],
     synced: ago(36),
-    files: 9870,
+    files: 4000,
   },
 ];
 
@@ -229,8 +229,8 @@ export type Library = {
 };
 
 export const libraries: Library[] = [
-  { id: 'movies', name: 'Movies', kind: 'Radarr', counts: '2,204 movies', synced: ago(38) },
-  { id: 'shows', name: 'Shows', kind: 'Sonarr', counts: '186 shows, 9,870 episodes', synced: ago(36) },
+  { id: 'movies', name: 'Movies', kind: 'Radarr', counts: '1,200 movies', synced: ago(38) },
+  { id: 'shows', name: 'Shows', kind: 'Sonarr', counts: '80 shows, 4,000 episodes', synced: ago(36) },
 ];
 
 export type Person = {
