@@ -184,7 +184,7 @@ use.
 | `worker.podDisruptionBudget.enabled`, `.maxUnavailable` | `false`, `1` | What a drain, kured and the descheduler honour. The autoscaler scales in without evicting, so this does not slow it |
 | `web.enabled` | `true` | |
 | `web.replicas` | `2` | |
-| `web.menuLinks` | a `Request` link to `/request` | Written into the client's `config.json` as `menuLinks`, which `jellyfin-web` draws in its side menu, and so does the Android app, which is the same client in a WebView. An empty list leaves the file as the image shipped it |
+| `web.menuLinks` | a `Request` link to `/request` and a `Report a problem` link to `/report` | Written into the client's `config.json` as `menuLinks`, which `jellyfin-web` draws in its side menu, and so does the Android app, which is the same client in a WebView. An empty list leaves the file as the image shipped it |
 | `web.podDisruptionBudget.enabled`, `.maxUnavailable` | `false`, `1` | |
 | `web.client.repository`, `.tag`, `.pullPolicy` | `jellyfin/jellyfin`, `12.4`, `""` | `jellyfin-web` is not published on its own — no image, no npm package, no built assets in its releases — so an init container copies it out of the all-in-one image into an emptyDir. Pin it to the client `make e2e` drives, which is the only one the suite has shown to work: a client newer than what is implemented calls endpoints that answer 501 |
 | `web.client.resources` | 50m/64Mi, limit 256Mi | |
