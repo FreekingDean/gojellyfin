@@ -9,6 +9,8 @@ import (
 	"os/exec"
 	"sync/atomic"
 	"time"
+
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 )
 
 const stderrLimit = 4096
@@ -31,6 +33,9 @@ func start(ctx context.Context, spec Spec) (io.ReadCloser, error) {
 }
 
 func run(ctx context.Context, args []string) (io.ReadCloser, error) {
+	_, span := tracing.Start(ctx, "ffmpeg")
+	defer span.End()
+
 	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
 	cmd.WaitDelay = time.Second
 
@@ -42,11 +47,14 @@ func run(ctx context.Context, args []string) (io.ReadCloser, error) {
 		return nil, fmt.Errorf("failed to pipe ffmpeg output: %w", err)
 	}
 	if err := cmd.Start(); err != nil {
+		span.Failed()
+
 		return nil, fmt.Errorf("failed to start ffmpeg: %w", err)
 	}
 
 	output := bufio.NewReader(stdout)
 	if _, err := output.Peek(1); err != nil {
+		span.Failed()
 		_ = stdout.Close()
 		_ = cmd.Wait()
 
