@@ -159,6 +159,21 @@ function focusedTitle(tv) {
   return { title: title ? title.text : '', index: place ? Number(place[1]) : 0, total: place ? Number(place[2]) : 0 };
 }
 
+// The last column can be shorter than the rest, and the grid will not move
+// right from a row that column does not reach, so the walk climbs to the top
+// of the column it is in and crosses there instead.
+async function climbToTop(move, focused) {
+  for (let climb = 0; climb < 10; climb++) {
+    const above = await move('up');
+    if (above.index === focused.index) {
+      break;
+    }
+    focused = above;
+  }
+
+  return focused;
+}
+
 async function walkGrid(tv, visit) {
   const move = async (name) => {
     tv.key(name);
@@ -181,6 +196,14 @@ async function walkGrid(tv, visit) {
       continue;
     }
     focused = await move('right');
+    if (focused.index === before) {
+      focused = await climbToTop(move, focused);
+      const top = focused.index;
+      focused = await move('right');
+      if (focused.index === top) {
+        return null;
+      }
+    }
     for (let climb = 0; climb < 10 && focused.index > before + 1; climb++) {
       const above = await move('up');
       if (above.index === focused.index) {
