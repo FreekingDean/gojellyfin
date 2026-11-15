@@ -51,6 +51,9 @@ func (s *Service) Hook(ctx context.Context, id uuid.UUID) error {
 	if err != nil {
 		return fmt.Errorf("failed to query the source: %w", err)
 	}
+	if source.Kind == KindLidarr {
+		return nil
+	}
 
 	hookErr := s.hook(ctx, *source)
 

@@ -17,7 +17,7 @@ func (Source) Fields() []ent.Field {
 		field.String("name").Unique(),
 		field.String("url").Unique(),
 		field.String("api_key_variable"),
-		field.Enum("kind").Values("radarr", "sonarr"),
+		field.Enum("kind").Values("radarr", "sonarr", "lidarr"),
 		field.String("version").Optional(),
 		field.Time("contacted_at").Optional().Nillable(),
 		field.String("last_error").Optional(),

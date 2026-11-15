@@ -39,6 +39,8 @@ type Title struct {
 	Index       *int32
 	ParentIndex *int32
 	Files       []File
+	Genres      []string
+	Images      []items.RemoteImage
 }
 
 type Binding struct {
@@ -52,6 +54,8 @@ func (s *Service) Titles(ctx context.Context, binding Binding) ([]Title, error) 
 		return s.movies(ctx, binding)
 	case KindSonarr:
 		return s.series(ctx, binding)
+	case KindLidarr:
+		return s.music(ctx, binding)
 	default:
 		return nil, fmt.Errorf("unsupported source kind %q", binding.Source.Kind)
 	}
@@ -290,6 +294,14 @@ func ptr[T any](value T) *T {
 	return &value
 }
 
+func apiRoot(kind Kind) string {
+	if kind == KindLidarr {
+		return "api/v1"
+	}
+
+	return "api/v3"
+}
+
 func get[T any](ctx context.Context, s *Service, source Source, path string, query url.Values) (T, error) {
 	return fetch[T](ctx, s, s.lister, source, path, query)
 }
@@ -302,7 +314,7 @@ func fetch[T any](ctx context.Context, s *Service, client *http.Client, source S
 		return out, err
 	}
 
-	target := parsed.JoinPath(path)
+	target := parsed.JoinPath(apiRoot(source.Kind), path)
 	target.RawQuery = query.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target.String(), nil)

@@ -7,7 +7,10 @@ import (
 	"strings"
 )
 
-const provider = "tmdb"
+const (
+	provider      = "tmdb"
+	musicProvider = "mb"
+)
 
 var articlePattern = regexp.MustCompile(`(?i)^(the|a|an)\s+`)
 
@@ -25,6 +28,18 @@ func SeasonKey(tmdbID int, season int32) string {
 
 func EpisodeKey(tmdbID int, season, episode int32) string {
 	return fmt.Sprintf("episode:%s:%d:%d:%d", provider, tmdbID, season, episode)
+}
+
+func ArtistKey(musicBrainzID string) string {
+	return fmt.Sprintf("artist:%s:%s", musicProvider, strings.ToLower(musicBrainzID))
+}
+
+func AlbumKey(musicBrainzID string) string {
+	return fmt.Sprintf("album:%s:%s", musicProvider, strings.ToLower(musicBrainzID))
+}
+
+func TrackKey(musicBrainzID string) string {
+	return fmt.Sprintf("track:%s:%s", musicProvider, strings.ToLower(musicBrainzID))
 }
 
 func TmdbID(key string) (int, bool) {
