@@ -222,13 +222,14 @@ function build() {
 
 // The playable title is VP9 and Opus in WebM, which every Chromium build
 // direct plays. The transcoded one is MPEG-4 Part 2, which no browser profile
-// names, at 1440 lines, so the server has to encode it down to 1080p H.264.
+// names, at 1080 lines, so the server has to encode it to 1080p H.264. It is
+// no taller, because nothing above 1080p is ever encoded.
 function encodeMedia(seconds) {
   return { playable: encodePlayable(seconds), transcoded: encodeTranscoded() };
 }
 
 function encodeTranscoded() {
-  const target = path.join(BUILD, 'media', 'transcoded.mkv');
+  const target = path.join(BUILD, 'media', 'transcoded-1080.mkv');
   if (fs.existsSync(target)) {
     return target;
   }
@@ -236,7 +237,7 @@ function encodeTranscoded() {
   fs.mkdirSync(path.dirname(target), { recursive: true });
   run('ffmpeg', [
     '-hide_banner', '-loglevel', 'error', '-y',
-    '-f', 'lavfi', '-i', 'testsrc2=size=1920x1440:rate=24:duration=20',
+    '-f', 'lavfi', '-i', 'testsrc2=size=1440x1080:rate=24:duration=20',
     '-f', 'lavfi', '-i', 'sine=frequency=440:duration=20',
     '-c:v', 'mpeg4', '-q:v', '8',
     '-c:a', 'aac', '-b:a', '64k',
