@@ -34,6 +34,7 @@ func TestSessionDto_CarriesWhatTheKotlinSDKRequires(t *testing.T) {
 		"HasCustomDeviceName",
 		"SupportedCommands",
 		"PlayState",
+		"Capabilities",
 	} {
 		if _, ok := fields[required]; !ok {
 			t.Errorf("SessionInfoDto carries no %s, which the Kotlin SDK refuses to decode", required)
