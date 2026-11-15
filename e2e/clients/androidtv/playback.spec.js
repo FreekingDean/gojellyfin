@@ -38,10 +38,12 @@ test.describe('playing on the television', () => {
     await shot('details-resume');
     await tv.tapOn({ label: /^Resume from / });
 
+    // The player's first report can be the 0 it held before seeking, so what
+    // proves the resume is passing the point it was left at sooner than a
+    // play from the start could.
     await expect
-      .poll(() => server.positionSeconds(harness.playable), { timeout: 120000, intervals: [2000] })
-      .not.toBe(RESUME_AT);
-    expect(await server.positionSeconds(harness.playable)).toBeGreaterThan(RESUME_AT - 15);
+      .poll(() => server.positionSeconds(harness.playable), { timeout: (RESUME_AT - 15) * 1000, intervals: [2000] })
+      .toBeGreaterThan(RESUME_AT);
     await shot('resumed');
 
     await leavePlayer(tv);

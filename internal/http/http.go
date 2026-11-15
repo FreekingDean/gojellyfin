@@ -289,6 +289,7 @@ func Register(
 ) {
 	h := api.NewStrictHandlerWithOptions(apiServer, s.apiMiddleware, s.apiOptions)
 	m.HandleFunc("GET /socket", sock.Handle)
+	registerRoot(m)
 	links.Register(m)
 	administration.Register(m)
 	reporting.Register(m)
