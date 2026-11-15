@@ -328,6 +328,12 @@ web:
         memory: 64Mi
       limits:
         memory: 256Mi
+  # Written into the client's config.json as its menuLinks, which
+  # jellyfin-web draws in its side menu. An empty list leaves the file alone.
+  menuLinks:
+    - name: Request
+      icon: add_circle
+      url: /request
   # The unprivileged image listens on 8080 and owns the directories nginx
   # writes to, which is what lets runAsNonRoot hold.
   image:

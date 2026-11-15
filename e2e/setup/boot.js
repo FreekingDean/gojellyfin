@@ -51,6 +51,17 @@ const WANTED_SHOW = {
   poster: '/wanted-show.png',
 };
 
+// Asked for from the /request page rather than by a heart, so the heart's spec
+// still finds Radarr with nothing added.
+const ASKED_MOVIE = {
+  id: 900004,
+  name: 'Asked Picture',
+  overview: 'A film asked for from the request page.',
+  tagline: 'Ask and it may come.',
+  released: '2022-03-04',
+  poster: '/asked-picture.png',
+};
+
 // What TMDB calls trending and the library does hold: the seed keys the
 // playable title under this id, so the trending row lists it and nothing else.
 const TRENDING_HELD = {
@@ -97,7 +108,7 @@ async function boot({ mediaSeconds = 20, playableEpisodes = false } = {}) {
 
   const catalogue = tmdb.start({
     imageBase: `http://127.0.0.1:${webPort}${proxy.POSTERS}/`,
-    movies: [WANTED_MOVIE, TRENDING_HELD],
+    movies: [WANTED_MOVIE, ASKED_MOVIE, TRENDING_HELD],
     shows: [WANTED_SHOW],
   });
   const cataloguePort = await listen(catalogue);
@@ -181,6 +192,7 @@ async function boot({ mediaSeconds = 20, playableEpisodes = false } = {}) {
       finale: FINALE,
       wantedMovie: WANTED_MOVIE,
       wantedShow: WANTED_SHOW,
+      askedMovie: ASKED_MOVIE,
       resumed: RESUMED,
       jellyfin: {
         ...jellyfin,

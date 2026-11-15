@@ -28,7 +28,19 @@ spec:
         - name: client
           image: {{ printf "%s:%s" .Values.web.client.repository .Values.web.client.tag }}
           imagePullPolicy: {{ include "gojellyfin.pullPolicy" (dict "policy" .Values.web.client.pullPolicy "tag" .Values.web.client.tag) }}
-          command: ["cp", "-R", "/jellyfin/jellyfin-web/.", "/client/"]
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              cp -R /jellyfin/jellyfin-web/. /client/
+              if [ -n "$MENU_LINKS" ]; then
+                links=$(printf '%s' "$MENU_LINKS" | sed 's/[&|\\]/\\&/g')
+                sed -i "s|\"menuLinks\": *\[\]|\"menuLinks\": $links|" /client/config.json
+              fi
+          env:
+            - name: MENU_LINKS
+              value: {{ if .Values.web.menuLinks }}{{ .Values.web.menuLinks | toJson | quote }}{{ else }}""{{ end }}
           volumeMounts:
             - name: client
               mountPath: /client

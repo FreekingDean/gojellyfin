@@ -3,7 +3,7 @@ const { test, expect, view, card, open } = require('./fixtures');
 async function added(harness) {
   const response = await fetch(harness.downloaderUrl + '/added');
 
-  return response.json();
+  return (await response.json()).filter((movie) => movie.tmdbId === harness.wantedMovie.id);
 }
 
 async function openWanted(page, harness) {
