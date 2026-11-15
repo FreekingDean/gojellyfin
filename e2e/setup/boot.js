@@ -74,7 +74,8 @@ async function boot({ mediaSeconds = 20 } = {}) {
   fs.mkdirSync(jellyfinData, { recursive: true });
   const jellyfin = JSON.parse(run(binaries.fixtures, ['jellyfin', jellyfinData]));
 
-  const apiPort = await freePort();
+  const reserved = await reservePort();
+  const apiPort = reserved.port;
   const posterRoot = path.join(BUILD, 'posters');
   fs.rmSync(posterRoot, { recursive: true, force: true });
   fs.mkdirSync(path.join(posterRoot, POSTER_SIZE), { recursive: true });
@@ -117,6 +118,7 @@ async function boot({ mediaSeconds = 20 } = {}) {
   const baseUrl = `http://127.0.0.1:${webPort}`;
   const provider = await startProvider(binaries.fixtures, baseUrl);
 
+  await reserved.release();
   const api = spawn(binaries.gojellyfin, ['server'], {
     env: {
       ...process.env,
@@ -342,13 +344,15 @@ function withDatabase(dsn, name) {
 }
 
 // :0 rather than a fixed port, so a run can never take :8081 from `make dev`.
-function freePort() {
+// The port stays held until the server is about to bind it, because every
+// listen(0) the harness makes in between could otherwise be handed it.
+function reservePort() {
   return new Promise((resolve, reject) => {
     const probe = net.createServer();
     probe.on('error', reject);
     probe.listen(0, '127.0.0.1', () => {
       const { port } = probe.address();
-      probe.close(() => resolve(port));
+      resolve({ port, release: () => new Promise((done) => probe.close(done)) });
     });
   });
 }
