@@ -104,6 +104,7 @@ func newFixture(t *testing.T) *fixture {
 
 	recorded := &recorder{}
 	service := syncplay.New(client, items.New(client), users.New(client), recorded)
+	sessionService.OnEnding(service.SessionsEnding)
 	f := &fixture{
 		server:    New(service, recorded),
 		service:   service,
@@ -297,8 +298,8 @@ func TestServer_SyncPlayCreateGroup(t *testing.T) {
 
 		f.create(t, guest, t.Name()+"-second")
 
-		addressed(t, f.published.of(userLeft), auth.SessionFrom(owner).ID)
-		addressed(t, f.published.of(groupLeft), auth.SessionFrom(guest).ID)
+		addressed(t, f.published.of(syncplay.UserLeftType), auth.SessionFrom(owner).ID)
+		addressed(t, f.published.of(syncplay.GroupLeftType), auth.SessionFrom(guest).ID)
 	})
 }
 
@@ -385,8 +386,8 @@ func TestServer_SyncPlayJoinGroup(t *testing.T) {
 		f.join(t, mover, *first.GroupId)
 		f.join(t, mover, *second.GroupId)
 
-		addressed(t, f.published.of(userLeft), auth.SessionFrom(owner).ID)
-		if left := f.published.of(groupLeft); left[0].update.Data != first.GroupId.String() {
+		addressed(t, f.published.of(syncplay.UserLeftType), auth.SessionFrom(owner).ID)
+		if left := f.published.of(syncplay.GroupLeftType); left[0].update.Data != first.GroupId.String() {
 			t.Fatalf("GroupLeft data = %v, want %v", left[0].update.Data, first.GroupId)
 		}
 
@@ -424,9 +425,9 @@ func TestServer_SyncPlayLeaveGroup(t *testing.T) {
 		f.join(t, guest, *created.GroupId)
 		f.leave(t, guest)
 
-		addressed(t, f.published.of(groupLeft), auth.SessionFrom(guest).ID)
+		addressed(t, f.published.of(syncplay.GroupLeftType), auth.SessionFrom(guest).ID)
 
-		announced := f.published.of(userLeft)
+		announced := f.published.of(syncplay.UserLeftType)
 		addressed(t, announced, auth.SessionFrom(owner).ID)
 		if announced[0].update.Data != "guest" {
 			t.Fatalf("UserLeft data = %v, want guest", announced[0].update.Data)
@@ -452,7 +453,7 @@ func TestServer_SyncPlayLeaveGroup(t *testing.T) {
 
 		f.leave(t, owner)
 
-		if sent := f.published.of(groupLeft); len(sent) != 0 {
+		if sent := f.published.of(syncplay.GroupLeftType); len(sent) != 0 {
 			t.Fatalf("published %d GroupLeft updates, want none", len(sent))
 		}
 		addressed(t, f.published.of(notInGroup), auth.SessionFrom(owner).ID)
@@ -521,5 +522,98 @@ func TestServer_SyncPlayGetGroups(t *testing.T) {
 		if participants := apiutil.Deref(f.group(t, owner, *created.GroupId).Participants); !slices.Equal(participants, []string{"owner"}) {
 			t.Fatalf("participants = %v, want [owner]", participants)
 		}
+
+		left := f.published.of("UserLeft")
+		if len(left) != 1 || !slices.Equal(left[0].sessionIDs, []uuid.UUID{auth.SessionFrom(owner).ID}) || left[0].update.Data != "guest" {
+			t.Fatalf("UserLeft = %+v, want guest announced to the owner", left)
+		}
 	})
+
+	t.Run("removing a device announces its sessions leaving", func(t *testing.T) {
+		f := newFixture(t)
+		owner := f.signIn(t, "owner")
+		guest := f.signIn(t, "guest")
+
+		created := f.create(t, owner, t.Name())
+		f.join(t, guest, *created.GroupId)
+
+		if err := f.sessions.RemoveDevice(context.Background(), auth.SessionFrom(guest).Device.ClientID); err != nil {
+			t.Fatalf("failed to remove the guest device: %v", err)
+		}
+
+		left := f.published.of("UserLeft")
+		if len(left) != 1 || !slices.Equal(left[0].sessionIDs, []uuid.UUID{auth.SessionFrom(owner).ID}) {
+			t.Fatalf("UserLeft = %+v, want one to the owner", left)
+		}
+	})
+
+	t.Run("changing a password announces its sessions leaving", func(t *testing.T) {
+		f := newFixture(t)
+		owner := f.signIn(t, "owner")
+		guest := f.signIn(t, "guest")
+
+		created := f.create(t, owner, t.Name())
+		f.join(t, guest, *created.GroupId)
+
+		if err := f.sessions.RevokeForUser(context.Background(), auth.UserID(guest)); err != nil {
+			t.Fatalf("failed to revoke the guest sessions: %v", err)
+		}
+
+		if participants := apiutil.Deref(f.group(t, owner, *created.GroupId).Participants); !slices.Equal(participants, []string{"owner"}) {
+			t.Fatalf("participants = %v, want [owner]", participants)
+		}
+		if left := f.published.of("UserLeft"); len(left) != 1 {
+			t.Fatalf("UserLeft = %+v, want one", left)
+		}
+	})
+}
+
+func TestService_CollectEmpty(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	owner := f.signIn(t, "owner")
+	guest := f.signIn(t, "guest")
+
+	emptied := f.create(t, owner, t.Name()+" emptied")
+	if _, err := f.server.SyncPlayLeaveGroup(owner, api.SyncPlayLeaveGroupRequestObject{}); err != nil {
+		t.Fatalf("failed to leave: %v", err)
+	}
+	kept := f.create(t, guest, t.Name()+" kept")
+
+	if _, err := f.service.CollectEmpty(ctx); err != nil {
+		t.Fatalf("failed to collect: %v", err)
+	}
+
+	if exists, err := f.client.SyncPlayGroup.Query().Where(groupmodal.ID(*emptied.GroupId)).Exist(ctx); err != nil || exists {
+		t.Fatalf("emptied group exists = %v (%v), want it collected", exists, err)
+	}
+	if exists, err := f.client.SyncPlayGroup.Query().Where(groupmodal.ID(*kept.GroupId)).Exist(ctx); err != nil || !exists {
+		t.Fatalf("occupied group exists = %v (%v), want it kept", exists, err)
+	}
+}
+
+func TestServer_Resync(t *testing.T) {
+	f := newFixture(t)
+	owner := f.signIn(t, "owner")
+	guest := f.signIn(t, "guest")
+	outsider := f.signIn(t, "outsider")
+
+	created := f.create(t, owner, t.Name())
+	f.join(t, guest, *created.GroupId)
+	before := len(f.published.of("GroupJoined"))
+
+	f.server.Resync(context.Background(), []uuid.UUID{
+		auth.SessionFrom(guest).ID,
+		auth.SessionFrom(outsider).ID,
+	})
+
+	joined := f.published.of("GroupJoined")[before:]
+	if len(joined) != 1 || !slices.Equal(joined[0].sessionIDs, []uuid.UUID{auth.SessionFrom(guest).ID}) {
+		t.Fatalf("GroupJoined = %+v, want one to the guest alone", joined)
+	}
+
+	info, ok := joined[0].update.Data.(api.GroupInfoDto)
+	if !ok || *info.GroupId != *created.GroupId || !slices.Equal(apiutil.Deref(info.Participants), []string{"owner", "guest"}) {
+		t.Fatalf("GroupJoined data = %+v, want the group as it stands", joined[0].update.Data)
+	}
 }

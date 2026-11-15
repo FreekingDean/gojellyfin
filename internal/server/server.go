@@ -48,7 +48,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/trailers"
 	"github.com/FreekingDean/gojellyfin/internal/server/tvshows"
 	"github.com/FreekingDean/gojellyfin/internal/server/user"
-	"github.com/FreekingDean/gojellyfin/internal/server/userlibrary"
+	"github.com/FreekingDean/gojellyfin/internal/server/userdata"
 	"github.com/FreekingDean/gojellyfin/internal/server/userviews"
 	"github.com/FreekingDean/gojellyfin/internal/server/years"
 )
@@ -105,7 +105,7 @@ type (
 	TimeSyncServer           = timesync.Server
 	TrailersServer           = trailers.Server
 	UserServer               = user.Server
-	UserLibraryServer        = userlibrary.Server
+	UserDataServer           = userdata.Server
 	UserViewsServer          = userviews.Server
 )
 
@@ -157,7 +157,7 @@ type Server struct {
 	*TimeSyncServer
 	*TrailersServer
 	*UserServer
-	*UserLibraryServer
+	*UserDataServer
 	*UserViewsServer
 
 	nestedUnimplemented
@@ -211,7 +211,7 @@ func New(
 	timeSync *timesync.Server,
 	trailers *trailers.Server,
 	user *user.Server,
-	userLibrary *userlibrary.Server,
+	userData *userdata.Server,
 	userViews *userviews.Server,
 ) *Server {
 	return &Server{
@@ -262,7 +262,7 @@ func New(
 		TimeSyncServer:           timeSync,
 		TrailersServer:           trailers,
 		UserServer:               user,
-		UserLibraryServer:        userLibrary,
+		UserDataServer:           userData,
 		UserViewsServer:          userViews,
 	}
 }

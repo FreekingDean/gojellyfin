@@ -80,6 +80,9 @@ func UnownedDto(title discover.Title, mark requests.Mark) api.BaseItemDto {
 		UserData:          apiutil.Ptr(UserItemDataDto(&items.Datum{ItemID: title.ID, IsFavorite: mark.Mine})),
 	}
 
+	if _, ok := imageTags[string(api.Primary)]; ok {
+		dto.PrimaryImageAspectRatio = apiutil.Ptr(primaryAspect(kind))
+	}
 	if metadata.OfficialRating != nil {
 		dto.OfficialRating = apiutil.Ptr(string(*metadata.OfficialRating))
 	}
