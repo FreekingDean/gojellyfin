@@ -215,14 +215,16 @@ func TestHandler_serveTranscode(t *testing.T) {
 		encoder := transcode.NewEncoder(1, 0)
 		fixture.handler.transcoder = encoder
 
-		held, err := encoder.Open(context.Background(), transcode.Spec{
-			Path:      fixture.tonePath(t, id),
-			Container: "mp3",
-		})
-		if err != nil {
-			t.Fatalf("failed to take the only slot: %v", err)
+		for range transcode.SlotShares {
+			held, err := encoder.Open(context.Background(), transcode.Spec{
+				Path:      fixture.tonePath(t, id),
+				Container: "mp3",
+			})
+			if err != nil {
+				t.Fatalf("failed to take a share of the only slot: %v", err)
+			}
+			t.Cleanup(func() { _ = held.Close() })
 		}
-		t.Cleanup(func() { _ = held.Close() })
 
 		recorder := httptest.NewRecorder()
 		target := "/Audio/" + id.String() + "/universal?container=mp3&"

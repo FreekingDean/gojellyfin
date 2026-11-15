@@ -42,7 +42,7 @@ func TestEncoder_Open(t *testing.T) {
 
 		video := open(t, encoder, picture)
 		refused(t, encoder, picture)
-		for range slotShares {
+		for range SlotShares {
 			open(t, encoder, audio)
 		}
 		refused(t, encoder, audio)
@@ -57,7 +57,7 @@ func TestEncoder_Open(t *testing.T) {
 		fakeFFmpeg(t, "printf x")
 		encoder := NewEncoder(2, 0)
 
-		for range 2 * slotShares {
+		for range 2 * SlotShares {
 			open(t, encoder, audio)
 		}
 		refused(t, encoder, audio)
@@ -106,7 +106,7 @@ func TestEncoder_Open(t *testing.T) {
 		_ = video.Close()
 		_ = video.Close()
 		open(t, encoder, picture)
-		for range slotShares {
+		for range SlotShares {
 			open(t, encoder, audio)
 		}
 		refused(t, encoder, audio)
