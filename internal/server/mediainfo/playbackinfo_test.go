@@ -15,6 +15,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
@@ -303,6 +304,7 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "aac")
 		fixture.addCopy(t, id, "/media/uhd.mkv", "h264", "aac", 2160)
 		named := fixture.sourceID(t, id, "/media/rip.mkv")
+		chosen := fixture.sourceID(t, id, "/media/uhd.mkv")
 
 		body := firstPlay(&chrome)
 		body.MediaSourceId = apiutil.Ptr(named)
@@ -317,8 +319,11 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		if len(sources) != 1 {
 			t.Fatalf("got %d media sources, want 1", len(sources))
 		}
-		if got := apiutil.Deref(sources[0].Path); got != "/media/uhd.mkv" {
-			t.Errorf("answered the file at %q, want the one this server chose", got)
+		if got := apiutil.Deref(sources[0].Id); got != chosen {
+			t.Errorf("answered the file %q, want the one this server chose, %q", got, chosen)
+		}
+		if sources[0].Path != nil {
+			t.Errorf("answered the path %q, and where a file sits on this server's disk is not a client's to know", *sources[0].Path)
 		}
 	})
 
@@ -599,4 +604,38 @@ func (f *fixture) newDownloader(t *testing.T) uuid.UUID {
 	})
 
 	return record.ID
+}
+
+func TestItemDtos_ListAFile(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := context.Background()
+
+	id := fixture.addRipped(t, itemmodel.KindEpisode, "mkv", "h264", "eac3")
+	item, err := fixture.server.items.ItemByID(ctx, items.Everyone, id)
+	if err != nil {
+		t.Fatalf("failed to read the item back: %v", err)
+	}
+
+	converted, err := dto.ItemDtos(ctx, fixture.server.items, []*items.Item{item})
+	if err != nil {
+		t.Fatalf("failed to convert the item: %v", err)
+	}
+
+	if converted[0].Path != nil {
+		t.Errorf("the item names the path %q, and where a file sits on this server's disk is not a client's to know", *converted[0].Path)
+	}
+
+	listed := apiutil.Deref(converted[0].MediaSources)
+	if len(listed) != 1 {
+		t.Fatalf("media sources = %d, want the one file: the Android TV app reads the next episode's streams off its queue entry", len(listed))
+	}
+	if got := apiutil.Deref(listed[0].Id); got != id.String() {
+		t.Errorf("the listed source is %q, want the item's own id %q: jellyfin-web fetches an item by the source id its detail page hands to play", got, id)
+	}
+	if streams := apiutil.Deref(listed[0].MediaStreams); len(streams) != 2 {
+		t.Errorf("media streams = %d, want the picture and the sound", len(streams))
+	}
+	if streams := apiutil.Deref(converted[0].MediaStreams); len(streams) != 2 {
+		t.Errorf("the item's own media streams = %d, want the same two", len(streams))
+	}
 }

@@ -34,7 +34,6 @@ func ItemDto(item *items.Item, held items.Held, childCount int32, imageTags map[
 		Name:              apiutil.Ptr(item.Name),
 		SortName:          apiutil.Ptr(item.SortName),
 		Type:              &kind,
-		Path:              apiutil.Ptr(held.Path),
 		IsFolder:          apiutil.Ptr(items.IsFolder(item.Kind)),
 		LockData:          apiutil.Ptr(item.LockData),
 		ParentId:          item.ParentID,
@@ -146,9 +145,20 @@ func ItemDtos(ctx context.Context, store *items.Service, records []*items.Item) 
 		}
 	}
 
+	played, err := store.PlayedSources(ctx, itemIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	converted := make([]api.BaseItemDto, 0, len(records))
 	for _, item := range records {
 		dto := ItemDto(item, held[item.ID], counts[item.ID], imageTags[item.ID])
+		if source, ok := played[item.ID]; ok {
+			listed := MediaSourceDto(source)
+			listed.Id = apiutil.Ptr(item.ID.String())
+			dto.MediaSources = &[]api.MediaSourceInfo{listed}
+			dto.MediaStreams = listed.MediaStreams
+		}
 		datum, ok := userData[item.ID]
 		if !ok {
 			datum = &items.Datum{ItemID: item.ID}

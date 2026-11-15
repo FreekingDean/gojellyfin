@@ -1,4 +1,4 @@
-package mediainfo
+package dto
 
 import (
 	"encoding/json"
@@ -14,7 +14,7 @@ func TestMediaSourceDto_CarriesWhatTheKotlinSDKRequires(t *testing.T) {
 		{Kind: streammodel.KindSubtitle, Codec: "hdmv_pgs_subtitle"},
 	}}
 
-	encoded, err := json.Marshal(mediaSourceDto(source))
+	encoded, err := json.Marshal(MediaSourceDto(source))
 	if err != nil {
 		t.Fatalf("failed to encode the source: %v", err)
 	}
