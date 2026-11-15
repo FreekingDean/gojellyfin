@@ -148,11 +148,13 @@ async function freshStart(phone) {
 }
 
 // The connect screen is drawn before its field takes typing, so the address
-// is typed until the field holds it.
+// is typed until the field holds it. From 2.7 its Compose field keeps only the
+// first characters of one `input text`, so the address goes in a character at
+// a time.
 async function connect(phone, app) {
   for (let attempt = 0; ; attempt++) {
     await sleep(1500);
-    await phone.fill({ type: 'EditText' }, app.baseUrl);
+    await phone.fill({ type: 'EditText' }, app.baseUrl, { perCharacter: true });
     if (phone.find({ type: 'EditText', text: app.baseUrl }).length) {
       break;
     }

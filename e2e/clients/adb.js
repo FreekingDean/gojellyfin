@@ -192,14 +192,21 @@ function device(serial = process.env.ANDROID_SERIAL) {
     }
   }
 
-  async function fill(matcher, text) {
+  async function fill(matcher, text, { perCharacter = false } = {}) {
     const field = await tapOn(matcher);
     await waitFor({ ...matcher, focused: true }, { timeout: 10000 }).catch(() => {});
     if (field.text) {
       key('moveEnd');
       key('deleteBack', field.text.length);
     }
-    type(text);
+    if (perCharacter) {
+      for (const character of text) {
+        type(character);
+        await sleep(60);
+      }
+    } else {
+      type(text);
+    }
     await sleep(500);
     await hideKeyboard();
   }
