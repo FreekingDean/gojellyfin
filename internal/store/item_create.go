@@ -471,6 +471,21 @@ func (_c *ItemCreate) AddPlayingSessions(v ...*Session) *ItemCreate {
 	return _c.AddPlayingSessionIDs(ids...)
 }
 
+// AddViewingSessionIDs adds the "viewing_sessions" edge to the Session entity by IDs.
+func (_c *ItemCreate) AddViewingSessionIDs(ids ...uuid.UUID) *ItemCreate {
+	_c.mutation.AddViewingSessionIDs(ids...)
+	return _c
+}
+
+// AddViewingSessions adds the "viewing_sessions" edges to the Session entity.
+func (_c *ItemCreate) AddViewingSessions(v ...*Session) *ItemCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddViewingSessionIDs(ids...)
+}
+
 // SetPlaylistID sets the "playlist" edge to the Playlist entity by ID.
 func (_c *ItemCreate) SetPlaylistID(id uuid.UUID) *ItemCreate {
 	_c.mutation.SetPlaylistID(id)
@@ -900,6 +915,22 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 			Inverse: false,
 			Table:   item.PlayingSessionsTable,
 			Columns: []string{item.PlayingSessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ViewingSessionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ViewingSessionsTable,
+			Columns: []string{item.ViewingSessionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),

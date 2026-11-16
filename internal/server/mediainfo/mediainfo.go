@@ -56,6 +56,10 @@ func (s *Server) GetPostedPlaybackInfo(ctx context.Context, request api.GetPoste
 }
 
 func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, profile api.DeviceProfile, startTicks int64) (api.PlaybackInfoResponse, error) {
+	if len(profile) == 0 {
+		profile = sessions.Profile(auth.SessionFrom(ctx))
+	}
+
 	viewer, err := dto.ViewerFor(ctx, s.policies)
 	if err != nil {
 		return api.PlaybackInfoResponse{}, err

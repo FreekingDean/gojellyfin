@@ -1,11 +1,16 @@
 package mediainfo
 
 import (
+	"context"
 	"net/url"
 	"testing"
 
+	"github.com/google/uuid"
+
+	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
@@ -102,5 +107,28 @@ func TestBuildsItsOwnURL(t *testing.T) {
 				t.Errorf("buildsItsOwnURL(%q) = %v, want %v", name, got, want)
 			}
 		})
+	}
+}
+
+func TestServer_GetPostedPlaybackInfo_DeviceProfileFallsBackToTheSession(t *testing.T) {
+	native := profileFrom(t, nativeAndroid)
+	fixture := newFixture(t)
+	id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "aac")
+
+	fixture.server.sessions = sessions.New(fixture.client, nil)
+	reported := &sessions.Session{ID: uuid.New(), Device: &sessions.Device{Profile: native}}
+	ctx := auth.ContextWithSession(auth.ContextWithAuthorization(context.Background(), auth.Authorization{Token: "the-token"}), reported)
+
+	response, err := fixture.server.GetPostedPlaybackInfo(ctx, api.GetPostedPlaybackInfoRequestObject{ItemId: id, JSONBody: firstPlay(nil)})
+	if err != nil {
+		t.Fatalf("failed to answer playback info: %v", err)
+	}
+	answered, ok := response.(api.GetPostedPlaybackInfo200JSONResponse)
+	if !ok {
+		t.Fatalf("playback info answered %T, want a 200", response)
+	}
+
+	if source := (*answered.MediaSources)[0]; !apiutil.Deref(source.SupportsDirectPlay) {
+		t.Error("a request with no profile was not planned from the profile the device reported")
 	}
 }

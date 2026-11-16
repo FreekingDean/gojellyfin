@@ -199,6 +199,8 @@ func (s *Service) List(ctx context.Context) ([]*Session, error) {
 				query.WithParent()
 			})
 		}).
+		WithAdditionalUsers().
+		WithNowViewing().
 		WithPlannedSource(func(query *store.ItemSourceQuery) {
 			query.WithStreams(func(query *store.MediaStreamQuery) {
 				query.Order(streammodel.ByIndex())

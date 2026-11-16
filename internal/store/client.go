@@ -1994,6 +1994,22 @@ func (c *ItemClient) QueryPlayingSessions(_m *Item) *SessionQuery {
 	return query
 }
 
+// QueryViewingSessions queries the viewing_sessions edge of a Item.
+func (c *ItemClient) QueryViewingSessions(_m *Item) *SessionQuery {
+	query := (&SessionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, id),
+			sqlgraph.To(session.Table, session.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.ViewingSessionsTable, item.ViewingSessionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryPlaylist queries the playlist edge of a Item.
 func (c *ItemClient) QueryPlaylist(_m *Item) *PlaylistQuery {
 	query := (&PlaylistClient{config: c.config}).Query()
@@ -4959,6 +4975,38 @@ func (c *SessionClient) QueryAPIKey(_m *Session) *ApiKeyQuery {
 	return query
 }
 
+// QueryNowViewing queries the now_viewing edge of a Session.
+func (c *SessionClient) QueryNowViewing(_m *Session) *ItemQuery {
+	query := (&ItemClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(session.Table, session.FieldID, id),
+			sqlgraph.To(item.Table, item.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, session.NowViewingTable, session.NowViewingColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAdditionalUsers queries the additional_users edge of a Session.
+func (c *SessionClient) QueryAdditionalUsers(_m *Session) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(session.Table, session.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, session.AdditionalUsersTable, session.AdditionalUsersPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QuerySyncPlayMemberships queries the sync_play_memberships edge of a Session.
 func (c *SessionClient) QuerySyncPlayMemberships(_m *Session) *SyncPlayGroupMemberQuery {
 	query := (&SyncPlayGroupMemberClient{config: c.config}).Query()
@@ -6155,6 +6203,22 @@ func (c *UserClient) QuerySessions(_m *User) *SessionQuery {
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(session.Table, session.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.SessionsTable, user.SessionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryJoinedSessions queries the joined_sessions edge of a User.
+func (c *UserClient) QueryJoinedSessions(_m *User) *SessionQuery {
+	query := (&SessionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(session.Table, session.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, user.JoinedSessionsTable, user.JoinedSessionsPrimaryKey...),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

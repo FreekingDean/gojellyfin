@@ -2,6 +2,7 @@ package sessions
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -260,5 +261,145 @@ func TestService_Playing(t *testing.T) {
 	}
 	if stopped := listed(); NowPlaying(stopped, time.Now()) || stopped.NowPlayingItemID != nil {
 		t.Errorf("the session still says it is playing after a stop")
+	}
+}
+
+func (f *fixture) listed(t *testing.T, id uuid.UUID) *Session {
+	t.Helper()
+
+	all, err := f.service.List(context.Background())
+	if err != nil {
+		t.Fatalf("failed to list the sessions: %v", err)
+	}
+	for _, candidate := range all {
+		if candidate.ID == id {
+			return candidate
+		}
+	}
+	t.Fatalf("session %s was not listed", id)
+
+	return nil
+}
+
+func TestService_Viewing(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := context.Background()
+	client := fixture.service.store
+
+	movie := client.Item.Create().SetKind(itemmodel.KindMovie).SetKey("movie:" + uuid.NewString()).SetName("Fixture Movie").SaveX(ctx)
+	t.Cleanup(func() {
+		if err := client.Item.DeleteOneID(movie.ID).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the item: %v", err)
+		}
+	})
+
+	session, err := fixture.service.Create(ctx, fixture.user.ID, uuid.NewString(), fixture.device)
+	if err != nil {
+		t.Fatalf("failed to create the session: %v", err)
+	}
+
+	if err := fixture.service.Viewing(ctx, session.ID, uuid.New()); !errors.Is(err, ErrNoSuchItem) {
+		t.Errorf("viewing an unknown item = %v, want ErrNoSuchItem", err)
+	}
+
+	if err := fixture.service.Viewing(ctx, session.ID, movie.ID); err != nil {
+		t.Fatalf("failed to record what is being viewed: %v", err)
+	}
+
+	viewing := fixture.listed(t, session.ID)
+	if !NowViewing(viewing, time.Now()) || viewing.NowViewing.Name != "Fixture Movie" {
+		t.Errorf("NowViewing = false or the wrong item after a report")
+	}
+	if NowViewing(viewing, time.Now().Add(ViewingTimeout)) {
+		t.Errorf("NowViewing = true for a session that has not reported in %s", ViewingTimeout)
+	}
+}
+
+func TestService_AdditionalUsers(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := context.Background()
+	client := fixture.service.store
+
+	name := "guest-" + uuid.NewString()
+	guest := client.User.Create().SetName(name).SetUsername(name).SetPasswordHash("").SaveX(ctx)
+	t.Cleanup(func() {
+		if err := client.User.DeleteOneID(guest.ID).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the guest: %v", err)
+		}
+	})
+
+	session, err := fixture.service.Create(ctx, fixture.user.ID, uuid.NewString(), fixture.device)
+	if err != nil {
+		t.Fatalf("failed to create the session: %v", err)
+	}
+
+	if err := fixture.service.AddUser(ctx, session.ID, fixture.user.ID); !errors.Is(err, ErrPrimaryUser) {
+		t.Errorf("adding the owner = %v, want ErrPrimaryUser", err)
+	}
+	if err := fixture.service.AddUser(ctx, session.ID, uuid.New()); !errors.Is(err, ErrNoUser) {
+		t.Errorf("adding nobody = %v, want ErrNoUser", err)
+	}
+	if err := fixture.service.AddUser(ctx, uuid.New(), guest.ID); !errors.Is(err, ErrNoSession) {
+		t.Errorf("adding to no session = %v, want ErrNoSession", err)
+	}
+
+	for range 2 {
+		if err := fixture.service.AddUser(ctx, session.ID, guest.ID); err != nil {
+			t.Fatalf("failed to add the guest: %v", err)
+		}
+	}
+	if users := fixture.listed(t, session.ID).AdditionalUsers; len(users) != 1 || users[0].ID != guest.ID {
+		t.Errorf("additional users = %v, want the guest once", users)
+	}
+
+	if err := fixture.service.RemoveUser(ctx, session.ID, guest.ID); err != nil {
+		t.Fatalf("failed to remove the guest: %v", err)
+	}
+	if users := fixture.listed(t, session.ID).AdditionalUsers; len(users) != 0 {
+		t.Errorf("additional users = %v, want none after the guest left", users)
+	}
+}
+
+func TestService_ReportCapabilities(t *testing.T) {
+	fixture := newFixture(t)
+	ctx := context.Background()
+	token := uuid.NewString()
+
+	if _, err := fixture.service.Create(ctx, fixture.user.ID, token, fixture.device); err != nil {
+		t.Fatalf("failed to create the session: %v", err)
+	}
+	session, err := fixture.service.ByToken(ctx, token)
+	if err != nil {
+		t.Fatalf("failed to read the session back: %v", err)
+	}
+
+	profile := map[string]any{"Name": "Example Player"}
+	if err := fixture.service.ReportCapabilities(ctx, session, Capabilities{
+		PlayableMediaTypes:   []string{"Video"},
+		SupportedCommands:    []string{"Play"},
+		SupportsMediaControl: true,
+		Profile:              profile,
+	}); err != nil {
+		t.Fatalf("failed to report the capabilities: %v", err)
+	}
+
+	reported, err := fixture.service.ByToken(ctx, token)
+	if err != nil {
+		t.Fatalf("failed to read the session back: %v", err)
+	}
+	if got := Profile(reported); got["Name"] != "Example Player" {
+		t.Errorf("profile = %v, want the one the device reported", got)
+	}
+	if !reported.Device.SupportsMediaControl || len(reported.Device.PlayableMediaTypes) != 1 || len(reported.Device.SupportedCommands) != 1 {
+		t.Errorf("device = %+v, want the reported capabilities", reported.Device)
+	}
+
+	if err := fixture.service.ReportCapabilities(ctx, reported, Capabilities{}); err != nil {
+		t.Fatalf("failed to report the capabilities again: %v", err)
+	}
+	if again, err := fixture.service.ByToken(ctx, token); err != nil {
+		t.Fatalf("failed to read the session back: %v", err)
+	} else if Profile(again) != nil {
+		t.Errorf("profile = %v, want it cleared by a report that carried none", Profile(again))
 	}
 }

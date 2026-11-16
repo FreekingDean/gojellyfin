@@ -291,6 +291,21 @@ func (_u *UserUpdate) AddSessions(v ...*Session) *UserUpdate {
 	return _u.AddSessionIDs(ids...)
 }
 
+// AddJoinedSessionIDs adds the "joined_sessions" edge to the Session entity by IDs.
+func (_u *UserUpdate) AddJoinedSessionIDs(ids ...uuid.UUID) *UserUpdate {
+	_u.mutation.AddJoinedSessionIDs(ids...)
+	return _u
+}
+
+// AddJoinedSessions adds the "joined_sessions" edges to the Session entity.
+func (_u *UserUpdate) AddJoinedSessions(v ...*Session) *UserUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddJoinedSessionIDs(ids...)
+}
+
 // AddItemDatumIDs adds the "item_data" edge to the UserItemData entity by IDs.
 func (_u *UserUpdate) AddItemDatumIDs(ids ...uuid.UUID) *UserUpdate {
 	_u.mutation.AddItemDatumIDs(ids...)
@@ -462,6 +477,27 @@ func (_u *UserUpdate) RemoveSessions(v ...*Session) *UserUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveSessionIDs(ids...)
+}
+
+// ClearJoinedSessions clears all "joined_sessions" edges to the Session entity.
+func (_u *UserUpdate) ClearJoinedSessions() *UserUpdate {
+	_u.mutation.ClearJoinedSessions()
+	return _u
+}
+
+// RemoveJoinedSessionIDs removes the "joined_sessions" edge to Session entities by IDs.
+func (_u *UserUpdate) RemoveJoinedSessionIDs(ids ...uuid.UUID) *UserUpdate {
+	_u.mutation.RemoveJoinedSessionIDs(ids...)
+	return _u
+}
+
+// RemoveJoinedSessions removes "joined_sessions" edges to Session entities.
+func (_u *UserUpdate) RemoveJoinedSessions(v ...*Session) *UserUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveJoinedSessionIDs(ids...)
 }
 
 // ClearItemData clears all "item_data" edges to the UserItemData entity.
@@ -845,6 +881,51 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Inverse: false,
 			Table:   user.SessionsTable,
 			Columns: []string{user.SessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.JoinedSessionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   user.JoinedSessionsTable,
+			Columns: user.JoinedSessionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedJoinedSessionsIDs(); len(nodes) > 0 && !_u.mutation.JoinedSessionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   user.JoinedSessionsTable,
+			Columns: user.JoinedSessionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.JoinedSessionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   user.JoinedSessionsTable,
+			Columns: user.JoinedSessionsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
@@ -1530,6 +1611,21 @@ func (_u *UserUpdateOne) AddSessions(v ...*Session) *UserUpdateOne {
 	return _u.AddSessionIDs(ids...)
 }
 
+// AddJoinedSessionIDs adds the "joined_sessions" edge to the Session entity by IDs.
+func (_u *UserUpdateOne) AddJoinedSessionIDs(ids ...uuid.UUID) *UserUpdateOne {
+	_u.mutation.AddJoinedSessionIDs(ids...)
+	return _u
+}
+
+// AddJoinedSessions adds the "joined_sessions" edges to the Session entity.
+func (_u *UserUpdateOne) AddJoinedSessions(v ...*Session) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddJoinedSessionIDs(ids...)
+}
+
 // AddItemDatumIDs adds the "item_data" edge to the UserItemData entity by IDs.
 func (_u *UserUpdateOne) AddItemDatumIDs(ids ...uuid.UUID) *UserUpdateOne {
 	_u.mutation.AddItemDatumIDs(ids...)
@@ -1701,6 +1797,27 @@ func (_u *UserUpdateOne) RemoveSessions(v ...*Session) *UserUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveSessionIDs(ids...)
+}
+
+// ClearJoinedSessions clears all "joined_sessions" edges to the Session entity.
+func (_u *UserUpdateOne) ClearJoinedSessions() *UserUpdateOne {
+	_u.mutation.ClearJoinedSessions()
+	return _u
+}
+
+// RemoveJoinedSessionIDs removes the "joined_sessions" edge to Session entities by IDs.
+func (_u *UserUpdateOne) RemoveJoinedSessionIDs(ids ...uuid.UUID) *UserUpdateOne {
+	_u.mutation.RemoveJoinedSessionIDs(ids...)
+	return _u
+}
+
+// RemoveJoinedSessions removes "joined_sessions" edges to Session entities.
+func (_u *UserUpdateOne) RemoveJoinedSessions(v ...*Session) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveJoinedSessionIDs(ids...)
 }
 
 // ClearItemData clears all "item_data" edges to the UserItemData entity.
@@ -2114,6 +2231,51 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 			Inverse: false,
 			Table:   user.SessionsTable,
 			Columns: []string{user.SessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.JoinedSessionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   user.JoinedSessionsTable,
+			Columns: user.JoinedSessionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedJoinedSessionsIDs(); len(nodes) > 0 && !_u.mutation.JoinedSessionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   user.JoinedSessionsTable,
+			Columns: user.JoinedSessionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.JoinedSessionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   user.JoinedSessionsTable,
+			Columns: user.JoinedSessionsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),

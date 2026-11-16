@@ -780,6 +780,29 @@ func HasSessionsWith(preds ...predicate.Session) predicate.User {
 	})
 }
 
+// HasJoinedSessions applies the HasEdge predicate on the "joined_sessions" edge.
+func HasJoinedSessions() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, JoinedSessionsTable, JoinedSessionsPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasJoinedSessionsWith applies the HasEdge predicate on the "joined_sessions" edge with a given conditions (other predicates).
+func HasJoinedSessionsWith(preds ...predicate.Session) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newJoinedSessionsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasItemData applies the HasEdge predicate on the "item_data" edge.
 func HasItemData() predicate.User {
 	return predicate.User(func(s *sql.Selector) {

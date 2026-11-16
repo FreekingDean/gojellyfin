@@ -37,6 +37,7 @@ func (User) Edges() []ent.Edge {
 		edge.To("configuration", UserConfiguration.Type).Unique().Annotations(cascadeOnDelete),
 		edge.To("policy", UserPolicy.Type).Unique().Annotations(cascadeOnDelete),
 		edge.To("sessions", Session.Type).Annotations(cascadeOnDelete),
+		edge.From("joined_sessions", Session.Type).Ref("additional_users"),
 		edge.To("item_data", UserItemData.Type).Annotations(cascadeOnDelete),
 		edge.To("display_preferences", DisplayPreferences.Type).Annotations(cascadeOnDelete),
 		edge.To("activity_log_entries", ActivityLogEntry.Type),

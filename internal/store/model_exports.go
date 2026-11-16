@@ -685,6 +685,7 @@ type ItemModel struct {
 	UserData           []*UserItemDataModel
 	ActivityLogEntries []*ActivityLogEntryModel
 	PlayingSessions    []*SessionModel
+	ViewingSessions    []*SessionModel
 	Playlist           *PlaylistModel
 	PlaylistEntries    []*PlaylistEntryModel
 	SyncPlayEntries    []*SyncPlayQueueEntryModel
@@ -742,6 +743,7 @@ func fromItem(_m *Item) *ItemModel {
 		UserData:           fromAllUserItemData(_m.Edges.UserData),
 		ActivityLogEntries: fromAllActivityLogEntry(_m.Edges.ActivityLogEntries),
 		PlayingSessions:    fromAllSession(_m.Edges.PlayingSessions),
+		ViewingSessions:    fromAllSession(_m.Edges.ViewingSessions),
 		Playlist:           fromPlaylist(_m.Edges.Playlist),
 		PlaylistEntries:    fromAllPlaylistEntry(_m.Edges.PlaylistEntries),
 		SyncPlayEntries:    fromAllSyncPlayQueueEntry(_m.Edges.SyncPlayEntries),
@@ -2128,6 +2130,8 @@ type SessionModel struct {
 	PlannedSourceID  *uuid.UUID
 	PlaybackPlan     *entities.PlaybackPlan
 	APIKeyID         *uuid.UUID
+	NowViewingItemID *uuid.UUID
+	ViewingAt        *time.Time
 
 	DeviceID *uuid.UUID
 	UserID   *uuid.UUID
@@ -2137,6 +2141,8 @@ type SessionModel struct {
 	NowPlaying          *ItemModel
 	PlannedSource       *ItemSourceModel
 	APIKey              *ApiKeyModel
+	NowViewing          *ItemModel
+	AdditionalUsers     []*UserModel
 	SyncPlayMemberships []*SyncPlayGroupMemberModel
 }
 
@@ -2169,6 +2175,8 @@ func fromSession(_m *Session) *SessionModel {
 		PlannedSourceID:  _m.PlannedSourceID,
 		PlaybackPlan:     _m.PlaybackPlan,
 		APIKeyID:         _m.APIKeyID,
+		NowViewingItemID: _m.NowViewingItemID,
+		ViewingAt:        _m.ViewingAt,
 
 		DeviceID: _m.device_sessions,
 		UserID:   _m.user_sessions,
@@ -2178,6 +2186,8 @@ func fromSession(_m *Session) *SessionModel {
 		NowPlaying:          fromItem(_m.Edges.NowPlaying),
 		PlannedSource:       fromItemSource(_m.Edges.PlannedSource),
 		APIKey:              fromApiKey(_m.Edges.APIKey),
+		NowViewing:          fromItem(_m.Edges.NowViewing),
+		AdditionalUsers:     fromAllUser(_m.Edges.AdditionalUsers),
 		SyncPlayMemberships: fromAllSyncPlayGroupMember(_m.Edges.SyncPlayMemberships),
 	}
 }
@@ -2712,6 +2722,7 @@ type UserModel struct {
 	Configuration        *UserConfigurationModel
 	Policy               *UserPolicyModel
 	Sessions             []*SessionModel
+	JoinedSessions       []*SessionModel
 	ItemData             []*UserItemDataModel
 	DisplayPreferences   []*DisplayPreferencesModel
 	ActivityLogEntries   []*ActivityLogEntryModel
@@ -2754,6 +2765,7 @@ func fromUser(_m *User) *UserModel {
 		Configuration:        fromUserConfiguration(_m.Edges.Configuration),
 		Policy:               fromUserPolicy(_m.Edges.Policy),
 		Sessions:             fromAllSession(_m.Edges.Sessions),
+		JoinedSessions:       fromAllSession(_m.Edges.JoinedSessions),
 		ItemData:             fromAllUserItemData(_m.Edges.ItemData),
 		DisplayPreferences:   fromAllDisplayPreferences(_m.Edges.DisplayPreferences),
 		ActivityLogEntries:   fromAllActivityLogEntry(_m.Edges.ActivityLogEntries),

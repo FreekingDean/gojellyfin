@@ -646,6 +646,21 @@ func (_u *ItemUpdate) AddPlayingSessions(v ...*Session) *ItemUpdate {
 	return _u.AddPlayingSessionIDs(ids...)
 }
 
+// AddViewingSessionIDs adds the "viewing_sessions" edge to the Session entity by IDs.
+func (_u *ItemUpdate) AddViewingSessionIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.AddViewingSessionIDs(ids...)
+	return _u
+}
+
+// AddViewingSessions adds the "viewing_sessions" edges to the Session entity.
+func (_u *ItemUpdate) AddViewingSessions(v ...*Session) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddViewingSessionIDs(ids...)
+}
+
 // SetPlaylistID sets the "playlist" edge to the Playlist entity by ID.
 func (_u *ItemUpdate) SetPlaylistID(id uuid.UUID) *ItemUpdate {
 	_u.mutation.SetPlaylistID(id)
@@ -923,6 +938,27 @@ func (_u *ItemUpdate) RemovePlayingSessions(v ...*Session) *ItemUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemovePlayingSessionIDs(ids...)
+}
+
+// ClearViewingSessions clears all "viewing_sessions" edges to the Session entity.
+func (_u *ItemUpdate) ClearViewingSessions() *ItemUpdate {
+	_u.mutation.ClearViewingSessions()
+	return _u
+}
+
+// RemoveViewingSessionIDs removes the "viewing_sessions" edge to Session entities by IDs.
+func (_u *ItemUpdate) RemoveViewingSessionIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.RemoveViewingSessionIDs(ids...)
+	return _u
+}
+
+// RemoveViewingSessions removes "viewing_sessions" edges to Session entities.
+func (_u *ItemUpdate) RemoveViewingSessions(v ...*Session) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveViewingSessionIDs(ids...)
 }
 
 // ClearPlaylist clears the "playlist" edge to the Playlist entity.
@@ -1650,6 +1686,51 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Inverse: false,
 			Table:   item.PlayingSessionsTable,
 			Columns: []string{item.PlayingSessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ViewingSessionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ViewingSessionsTable,
+			Columns: []string{item.ViewingSessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedViewingSessionsIDs(); len(nodes) > 0 && !_u.mutation.ViewingSessionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ViewingSessionsTable,
+			Columns: []string{item.ViewingSessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ViewingSessionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ViewingSessionsTable,
+			Columns: []string{item.ViewingSessionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
@@ -2492,6 +2573,21 @@ func (_u *ItemUpdateOne) AddPlayingSessions(v ...*Session) *ItemUpdateOne {
 	return _u.AddPlayingSessionIDs(ids...)
 }
 
+// AddViewingSessionIDs adds the "viewing_sessions" edge to the Session entity by IDs.
+func (_u *ItemUpdateOne) AddViewingSessionIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.AddViewingSessionIDs(ids...)
+	return _u
+}
+
+// AddViewingSessions adds the "viewing_sessions" edges to the Session entity.
+func (_u *ItemUpdateOne) AddViewingSessions(v ...*Session) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddViewingSessionIDs(ids...)
+}
+
 // SetPlaylistID sets the "playlist" edge to the Playlist entity by ID.
 func (_u *ItemUpdateOne) SetPlaylistID(id uuid.UUID) *ItemUpdateOne {
 	_u.mutation.SetPlaylistID(id)
@@ -2769,6 +2865,27 @@ func (_u *ItemUpdateOne) RemovePlayingSessions(v ...*Session) *ItemUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemovePlayingSessionIDs(ids...)
+}
+
+// ClearViewingSessions clears all "viewing_sessions" edges to the Session entity.
+func (_u *ItemUpdateOne) ClearViewingSessions() *ItemUpdateOne {
+	_u.mutation.ClearViewingSessions()
+	return _u
+}
+
+// RemoveViewingSessionIDs removes the "viewing_sessions" edge to Session entities by IDs.
+func (_u *ItemUpdateOne) RemoveViewingSessionIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.RemoveViewingSessionIDs(ids...)
+	return _u
+}
+
+// RemoveViewingSessions removes "viewing_sessions" edges to Session entities.
+func (_u *ItemUpdateOne) RemoveViewingSessions(v ...*Session) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveViewingSessionIDs(ids...)
 }
 
 // ClearPlaylist clears the "playlist" edge to the Playlist entity.
@@ -3526,6 +3643,51 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 			Inverse: false,
 			Table:   item.PlayingSessionsTable,
 			Columns: []string{item.PlayingSessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ViewingSessionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ViewingSessionsTable,
+			Columns: []string{item.ViewingSessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedViewingSessionsIDs(); len(nodes) > 0 && !_u.mutation.ViewingSessionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ViewingSessionsTable,
+			Columns: []string{item.ViewingSessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ViewingSessionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ViewingSessionsTable,
+			Columns: []string{item.ViewingSessionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),

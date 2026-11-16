@@ -277,6 +277,46 @@ func (_u *SessionUpdate) ClearAPIKeyID() *SessionUpdate {
 	return _u
 }
 
+// SetNowViewingItemID sets the "now_viewing_item_id" field.
+func (_u *SessionUpdate) SetNowViewingItemID(v uuid.UUID) *SessionUpdate {
+	_u.mutation.SetNowViewingItemID(v)
+	return _u
+}
+
+// SetNillableNowViewingItemID sets the "now_viewing_item_id" field if the given value is not nil.
+func (_u *SessionUpdate) SetNillableNowViewingItemID(v *uuid.UUID) *SessionUpdate {
+	if v != nil {
+		_u.SetNowViewingItemID(*v)
+	}
+	return _u
+}
+
+// ClearNowViewingItemID clears the value of the "now_viewing_item_id" field.
+func (_u *SessionUpdate) ClearNowViewingItemID() *SessionUpdate {
+	_u.mutation.ClearNowViewingItemID()
+	return _u
+}
+
+// SetViewingAt sets the "viewing_at" field.
+func (_u *SessionUpdate) SetViewingAt(v time.Time) *SessionUpdate {
+	_u.mutation.SetViewingAt(v)
+	return _u
+}
+
+// SetNillableViewingAt sets the "viewing_at" field if the given value is not nil.
+func (_u *SessionUpdate) SetNillableViewingAt(v *time.Time) *SessionUpdate {
+	if v != nil {
+		_u.SetViewingAt(*v)
+	}
+	return _u
+}
+
+// ClearViewingAt clears the value of the "viewing_at" field.
+func (_u *SessionUpdate) ClearViewingAt() *SessionUpdate {
+	_u.mutation.ClearViewingAt()
+	return _u
+}
+
 // SetUserID sets the "user" edge to the User entity by ID.
 func (_u *SessionUpdate) SetUserID(id uuid.UUID) *SessionUpdate {
 	_u.mutation.SetUserID(id)
@@ -328,6 +368,40 @@ func (_u *SessionUpdate) SetAPIKey(v *ApiKey) *SessionUpdate {
 	return _u.SetAPIKeyID(v.ID)
 }
 
+// SetNowViewingID sets the "now_viewing" edge to the Item entity by ID.
+func (_u *SessionUpdate) SetNowViewingID(id uuid.UUID) *SessionUpdate {
+	_u.mutation.SetNowViewingID(id)
+	return _u
+}
+
+// SetNillableNowViewingID sets the "now_viewing" edge to the Item entity by ID if the given value is not nil.
+func (_u *SessionUpdate) SetNillableNowViewingID(id *uuid.UUID) *SessionUpdate {
+	if id != nil {
+		_u = _u.SetNowViewingID(*id)
+	}
+	return _u
+}
+
+// SetNowViewing sets the "now_viewing" edge to the Item entity.
+func (_u *SessionUpdate) SetNowViewing(v *Item) *SessionUpdate {
+	return _u.SetNowViewingID(v.ID)
+}
+
+// AddAdditionalUserIDs adds the "additional_users" edge to the User entity by IDs.
+func (_u *SessionUpdate) AddAdditionalUserIDs(ids ...uuid.UUID) *SessionUpdate {
+	_u.mutation.AddAdditionalUserIDs(ids...)
+	return _u
+}
+
+// AddAdditionalUsers adds the "additional_users" edges to the User entity.
+func (_u *SessionUpdate) AddAdditionalUsers(v ...*User) *SessionUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddAdditionalUserIDs(ids...)
+}
+
 // AddSyncPlayMembershipIDs adds the "sync_play_memberships" edge to the SyncPlayGroupMember entity by IDs.
 func (_u *SessionUpdate) AddSyncPlayMembershipIDs(ids ...uuid.UUID) *SessionUpdate {
 	_u.mutation.AddSyncPlayMembershipIDs(ids...)
@@ -376,6 +450,33 @@ func (_u *SessionUpdate) ClearPlannedSource() *SessionUpdate {
 func (_u *SessionUpdate) ClearAPIKey() *SessionUpdate {
 	_u.mutation.ClearAPIKey()
 	return _u
+}
+
+// ClearNowViewing clears the "now_viewing" edge to the Item entity.
+func (_u *SessionUpdate) ClearNowViewing() *SessionUpdate {
+	_u.mutation.ClearNowViewing()
+	return _u
+}
+
+// ClearAdditionalUsers clears all "additional_users" edges to the User entity.
+func (_u *SessionUpdate) ClearAdditionalUsers() *SessionUpdate {
+	_u.mutation.ClearAdditionalUsers()
+	return _u
+}
+
+// RemoveAdditionalUserIDs removes the "additional_users" edge to User entities by IDs.
+func (_u *SessionUpdate) RemoveAdditionalUserIDs(ids ...uuid.UUID) *SessionUpdate {
+	_u.mutation.RemoveAdditionalUserIDs(ids...)
+	return _u
+}
+
+// RemoveAdditionalUsers removes "additional_users" edges to User entities.
+func (_u *SessionUpdate) RemoveAdditionalUsers(v ...*User) *SessionUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveAdditionalUserIDs(ids...)
 }
 
 // ClearSyncPlayMemberships clears all "sync_play_memberships" edges to the SyncPlayGroupMember entity.
@@ -511,6 +612,12 @@ func (_u *SessionUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.PlaybackPlanCleared() {
 		_spec.ClearField(session.FieldPlaybackPlan, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.ViewingAt(); ok {
+		_spec.SetField(session.FieldViewingAt, field.TypeTime, value)
+	}
+	if _u.mutation.ViewingAtCleared() {
+		_spec.ClearField(session.FieldViewingAt, field.TypeTime)
 	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -650,6 +757,80 @@ func (_u *SessionUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(apikey.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.NowViewingCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   session.NowViewingTable,
+			Columns: []string{session.NowViewingColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.NowViewingIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   session.NowViewingTable,
+			Columns: []string{session.NowViewingColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.AdditionalUsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   session.AdditionalUsersTable,
+			Columns: session.AdditionalUsersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedAdditionalUsersIDs(); len(nodes) > 0 && !_u.mutation.AdditionalUsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   session.AdditionalUsersTable,
+			Columns: session.AdditionalUsersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.AdditionalUsersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   session.AdditionalUsersTable,
+			Columns: session.AdditionalUsersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -963,6 +1144,46 @@ func (_u *SessionUpdateOne) ClearAPIKeyID() *SessionUpdateOne {
 	return _u
 }
 
+// SetNowViewingItemID sets the "now_viewing_item_id" field.
+func (_u *SessionUpdateOne) SetNowViewingItemID(v uuid.UUID) *SessionUpdateOne {
+	_u.mutation.SetNowViewingItemID(v)
+	return _u
+}
+
+// SetNillableNowViewingItemID sets the "now_viewing_item_id" field if the given value is not nil.
+func (_u *SessionUpdateOne) SetNillableNowViewingItemID(v *uuid.UUID) *SessionUpdateOne {
+	if v != nil {
+		_u.SetNowViewingItemID(*v)
+	}
+	return _u
+}
+
+// ClearNowViewingItemID clears the value of the "now_viewing_item_id" field.
+func (_u *SessionUpdateOne) ClearNowViewingItemID() *SessionUpdateOne {
+	_u.mutation.ClearNowViewingItemID()
+	return _u
+}
+
+// SetViewingAt sets the "viewing_at" field.
+func (_u *SessionUpdateOne) SetViewingAt(v time.Time) *SessionUpdateOne {
+	_u.mutation.SetViewingAt(v)
+	return _u
+}
+
+// SetNillableViewingAt sets the "viewing_at" field if the given value is not nil.
+func (_u *SessionUpdateOne) SetNillableViewingAt(v *time.Time) *SessionUpdateOne {
+	if v != nil {
+		_u.SetViewingAt(*v)
+	}
+	return _u
+}
+
+// ClearViewingAt clears the value of the "viewing_at" field.
+func (_u *SessionUpdateOne) ClearViewingAt() *SessionUpdateOne {
+	_u.mutation.ClearViewingAt()
+	return _u
+}
+
 // SetUserID sets the "user" edge to the User entity by ID.
 func (_u *SessionUpdateOne) SetUserID(id uuid.UUID) *SessionUpdateOne {
 	_u.mutation.SetUserID(id)
@@ -1014,6 +1235,40 @@ func (_u *SessionUpdateOne) SetAPIKey(v *ApiKey) *SessionUpdateOne {
 	return _u.SetAPIKeyID(v.ID)
 }
 
+// SetNowViewingID sets the "now_viewing" edge to the Item entity by ID.
+func (_u *SessionUpdateOne) SetNowViewingID(id uuid.UUID) *SessionUpdateOne {
+	_u.mutation.SetNowViewingID(id)
+	return _u
+}
+
+// SetNillableNowViewingID sets the "now_viewing" edge to the Item entity by ID if the given value is not nil.
+func (_u *SessionUpdateOne) SetNillableNowViewingID(id *uuid.UUID) *SessionUpdateOne {
+	if id != nil {
+		_u = _u.SetNowViewingID(*id)
+	}
+	return _u
+}
+
+// SetNowViewing sets the "now_viewing" edge to the Item entity.
+func (_u *SessionUpdateOne) SetNowViewing(v *Item) *SessionUpdateOne {
+	return _u.SetNowViewingID(v.ID)
+}
+
+// AddAdditionalUserIDs adds the "additional_users" edge to the User entity by IDs.
+func (_u *SessionUpdateOne) AddAdditionalUserIDs(ids ...uuid.UUID) *SessionUpdateOne {
+	_u.mutation.AddAdditionalUserIDs(ids...)
+	return _u
+}
+
+// AddAdditionalUsers adds the "additional_users" edges to the User entity.
+func (_u *SessionUpdateOne) AddAdditionalUsers(v ...*User) *SessionUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddAdditionalUserIDs(ids...)
+}
+
 // AddSyncPlayMembershipIDs adds the "sync_play_memberships" edge to the SyncPlayGroupMember entity by IDs.
 func (_u *SessionUpdateOne) AddSyncPlayMembershipIDs(ids ...uuid.UUID) *SessionUpdateOne {
 	_u.mutation.AddSyncPlayMembershipIDs(ids...)
@@ -1062,6 +1317,33 @@ func (_u *SessionUpdateOne) ClearPlannedSource() *SessionUpdateOne {
 func (_u *SessionUpdateOne) ClearAPIKey() *SessionUpdateOne {
 	_u.mutation.ClearAPIKey()
 	return _u
+}
+
+// ClearNowViewing clears the "now_viewing" edge to the Item entity.
+func (_u *SessionUpdateOne) ClearNowViewing() *SessionUpdateOne {
+	_u.mutation.ClearNowViewing()
+	return _u
+}
+
+// ClearAdditionalUsers clears all "additional_users" edges to the User entity.
+func (_u *SessionUpdateOne) ClearAdditionalUsers() *SessionUpdateOne {
+	_u.mutation.ClearAdditionalUsers()
+	return _u
+}
+
+// RemoveAdditionalUserIDs removes the "additional_users" edge to User entities by IDs.
+func (_u *SessionUpdateOne) RemoveAdditionalUserIDs(ids ...uuid.UUID) *SessionUpdateOne {
+	_u.mutation.RemoveAdditionalUserIDs(ids...)
+	return _u
+}
+
+// RemoveAdditionalUsers removes "additional_users" edges to User entities.
+func (_u *SessionUpdateOne) RemoveAdditionalUsers(v ...*User) *SessionUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveAdditionalUserIDs(ids...)
 }
 
 // ClearSyncPlayMemberships clears all "sync_play_memberships" edges to the SyncPlayGroupMember entity.
@@ -1228,6 +1510,12 @@ func (_u *SessionUpdateOne) sqlSave(ctx context.Context) (_node *Session, err er
 	if _u.mutation.PlaybackPlanCleared() {
 		_spec.ClearField(session.FieldPlaybackPlan, field.TypeJSON)
 	}
+	if value, ok := _u.mutation.ViewingAt(); ok {
+		_spec.SetField(session.FieldViewingAt, field.TypeTime, value)
+	}
+	if _u.mutation.ViewingAtCleared() {
+		_spec.ClearField(session.FieldViewingAt, field.TypeTime)
+	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -1366,6 +1654,80 @@ func (_u *SessionUpdateOne) sqlSave(ctx context.Context) (_node *Session, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(apikey.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.NowViewingCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   session.NowViewingTable,
+			Columns: []string{session.NowViewingColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.NowViewingIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   session.NowViewingTable,
+			Columns: []string{session.NowViewingColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.AdditionalUsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   session.AdditionalUsersTable,
+			Columns: session.AdditionalUsersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedAdditionalUsersIDs(); len(nodes) > 0 && !_u.mutation.AdditionalUsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   session.AdditionalUsersTable,
+			Columns: session.AdditionalUsersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.AdditionalUsersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   session.AdditionalUsersTable,
+			Columns: session.AdditionalUsersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
