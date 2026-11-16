@@ -392,6 +392,47 @@ func TestHook(t *testing.T) {
 		}
 	})
 
+	t.Run("a duplicate left on the downloader is removed", func(t *testing.T) {
+		fixture.downloader.Lock()
+		duplicate := map[string]any{}
+		for key, value := range fixture.downloader.notifications[0] {
+			duplicate[key] = value
+		}
+		fixture.downloader.nextID++
+		duplicate["id"] = float64(fixture.downloader.nextID)
+		fixture.downloader.notifications = append(fixture.downloader.notifications, duplicate)
+		fixture.downloader.Unlock()
+
+		if err := published.Hook(ctx, fixture.sourceID); err != nil {
+			t.Fatalf("failed to register again: %v", err)
+		}
+		if held := fixture.downloader.held(); len(held) != 1 {
+			t.Errorf("notifications = %d, want the duplicate gone", len(held))
+		}
+	})
+
+	t.Run("registrations racing on two replicas add one webhook", func(t *testing.T) {
+		fixture.downloader.Lock()
+		fixture.downloader.notifications = nil
+		fixture.downloader.Unlock()
+
+		var group sync.WaitGroup
+		for range 4 {
+			group.Add(1)
+			go func() {
+				defer group.Done()
+				if err := published.Hook(ctx, fixture.sourceID); err != nil {
+					t.Errorf("failed to register: %v", err)
+				}
+			}()
+		}
+		group.Wait()
+
+		if held := fixture.downloader.held(); len(held) != 1 {
+			t.Errorf("notifications = %d, want one", len(held))
+		}
+	})
+
 	t.Run("deleting the source takes it off the downloader", func(t *testing.T) {
 		source, err := fixture.client.Source.Query().Where(sourcemodel.ID(fixture.sourceID)).OnlyModel(ctx)
 		if err != nil {

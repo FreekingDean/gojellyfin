@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/sources/arr"
+	"github.com/FreekingDean/gojellyfin/internal/store"
 	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
 
@@ -50,24 +51,25 @@ func (s *Service) WebhookURL(source Source) string {
 }
 
 func (s *Service) Hook(ctx context.Context, id uuid.UUID) error {
-	source, err := s.store.Source.Query().Where(sourcemodel.ID(id)).OnlyModel(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to query the source: %w", err)
-	}
-	hookErr := s.hook(ctx, *source)
+	var hookErr error
+	err := s.store.WithTx(ctx, func(tx *store.Tx) error {
+		source, err := tx.Source.Query().Where(sourcemodel.ID(id)).ForUpdate().OnlyModel(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to query the source: %w", err)
+		}
+		hookErr = s.hook(ctx, *source)
 
-	update := s.store.Source.UpdateOneID(id)
-	if hookErr != nil {
-		update.ClearWebhookRegisteredAt().SetWebhookError(hookErr.Error())
-	} else {
-		update.SetWebhookRegisteredAt(time.Now()).SetWebhookError("")
-	}
+		update := tx.Source.UpdateOneID(id)
+		if hookErr != nil {
+			update.ClearWebhookRegisteredAt().SetWebhookError(hookErr.Error())
+		} else {
+			update.SetWebhookRegisteredAt(time.Now()).SetWebhookError("")
+		}
 
-	if err := update.Exec(ctx); err != nil {
-		return errors.Join(hookErr, err)
-	}
+		return update.Exec(ctx)
+	})
 
-	return hookErr
+	return errors.Join(hookErr, err)
 }
 
 func (s *Service) hook(ctx context.Context, source Source) error {
@@ -76,14 +78,22 @@ func (s *Service) hook(ctx context.Context, source Source) error {
 		return errUnpublished
 	}
 
-	found, err := s.hooked(ctx, source)
+	held, err := s.hooked(ctx, source)
 	if err != nil {
 		return err
 	}
 
+	if len(held) > 1 {
+		if err := s.drop(ctx, source, held[1:]); err != nil {
+			return err
+		}
+	}
+
+	var found record
 	method, path := http.MethodPost, arr.NotifyPath
-	if found != nil {
-		method, path = http.MethodPut, arr.NotifyPath+"/"+strconv.FormatInt(recordID(found), 10)
+	if len(held) > 0 {
+		found = held[0]
+		method, path = http.MethodPut, notificationPath(found)
 	} else if found, err = s.webhookSchema(ctx, source); err != nil {
 		return err
 	}
@@ -94,27 +104,42 @@ func (s *Service) hook(ctx context.Context, source Source) error {
 }
 
 func (s *Service) unhook(ctx context.Context, source Source) error {
-	found, err := s.hooked(ctx, source)
-	if err != nil || found == nil {
+	held, err := s.hooked(ctx, source)
+	if err != nil {
 		return err
 	}
 
-	return s.send(ctx, source, http.MethodDelete, arr.NotifyPath+"/"+strconv.FormatInt(recordID(found), 10), nil)
+	return s.drop(ctx, source, held)
 }
 
-func (s *Service) hooked(ctx context.Context, source Source) (record, error) {
+func (s *Service) drop(ctx context.Context, source Source, held []record) error {
+	for _, found := range held {
+		if err := s.send(ctx, source, http.MethodDelete, notificationPath(found), nil); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func notificationPath(found record) string {
+	return arr.NotifyPath + "/" + strconv.FormatInt(recordID(found), 10)
+}
+
+func (s *Service) hooked(ctx context.Context, source Source) ([]record, error) {
 	notifications, err := fetch[[]record](ctx, s, s.client, source, arr.NotifyPath, nil)
 	if err != nil {
 		return nil, err
 	}
 
+	var held []record
 	for _, notification := range notifications {
 		if notification["implementation"] == webhookImplementation && notification["name"] == webhookName {
-			return notification, nil
+			held = append(held, notification)
 		}
 	}
 
-	return nil, nil
+	return held, nil
 }
 
 func (s *Service) webhookSchema(ctx context.Context, source Source) (record, error) {
