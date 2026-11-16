@@ -31,6 +31,7 @@ type Service struct {
 	store    *store.Client
 	activity *activity.Service
 	ending   []EndingHook
+	now      func() time.Time
 }
 
 func (s *Service) OnEnding(hook EndingHook) {
@@ -48,10 +49,20 @@ func (s *Service) end(ctx context.Context, sessionIDs []uuid.UUID) {
 }
 
 func New(client *store.Client, activity *activity.Service) *Service {
-	return &Service{store: client, activity: activity}
+	return &Service{store: client, activity: activity, now: time.Now}
 }
 
 func (s *Service) Create(ctx context.Context, userID uuid.UUID, token string, device Device) (*Session, error) {
+	admitted, err := s.store.User.Query().
+		Where(usermodel.ID(userID), admittedNow(s.now())).
+		Exist(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check the user's access schedule: %w", err)
+	}
+	if !admitted {
+		return nil, ErrOutsideSchedule
+	}
+
 	if err := s.insert(ctx, userID, token, device, nil); err != nil {
 		return nil, err
 	}
@@ -126,14 +137,16 @@ func (s *Service) ByToken(ctx context.Context, token string) (*Session, error) {
 }
 
 func (s *Service) byToken(ctx context.Context, token string) (*Session, error) {
+	now := s.now()
 	session, err := s.store.Session.Query().
 		Where(
 			sessionmodel.AccessToken(token),
 			sessionmodel.RevokedAtIsNil(),
 			sessionmodel.HasUserWith(usermodel.Not(usermodel.HasPolicyWith(policymodel.IsDisabled(true)))),
+			sessionmodel.HasUserWith(admittedNow(now)),
 			sessionmodel.Or(
 				sessionmodel.APIKeyIDIsNil(),
-				sessionmodel.HasAPIKeyWith(liveKey(time.Now())...),
+				sessionmodel.HasAPIKeyWith(liveKey(now)...),
 			),
 		).
 		WithUser().
@@ -155,7 +168,7 @@ func liveKey(now time.Time) []predicate.ApiKey {
 
 func (s *Service) openKey(ctx context.Context, token string) (bool, error) {
 	key, err := s.store.ApiKey.Query().
-		Where(append(liveKey(time.Now()), apikeymodel.AccessToken(token))...).
+		Where(append(liveKey(s.now()), apikeymodel.AccessToken(token))...).
 		Only(ctx)
 	if store.IsNotFound(err) {
 		return false, nil
