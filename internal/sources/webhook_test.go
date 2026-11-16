@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -30,6 +31,14 @@ type downloader struct {
 }
 
 func (i *downloader) serve(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == "/api/v3/notification" && r.Method == http.MethodGet {
+		held := i.held()
+		time.Sleep(20 * time.Millisecond)
+		_ = json.NewEncoder(w).Encode(held)
+
+		return
+	}
+
 	i.Lock()
 	defer i.Unlock()
 
@@ -68,8 +77,6 @@ func (i *downloader) serve(w http.ResponseWriter, r *http.Request) {
 				},
 			},
 		})
-	case r.URL.Path == "/api/v3/notification" && r.Method == http.MethodGet:
-		_ = json.NewEncoder(w).Encode(i.notifications)
 	case r.URL.Path == "/api/v3/notification" && r.Method == http.MethodPost:
 		i.methods = append(i.methods, r.Method)
 		var created map[string]any
@@ -389,6 +396,47 @@ func TestHook(t *testing.T) {
 		}
 		if methods := fixture.downloader.methods; methods[len(methods)-1] != http.MethodPut {
 			t.Errorf("methods = %v, want the second registration to be a PUT", methods)
+		}
+	})
+
+	t.Run("a duplicate left on the downloader is removed", func(t *testing.T) {
+		fixture.downloader.Lock()
+		duplicate := map[string]any{}
+		for key, value := range fixture.downloader.notifications[0] {
+			duplicate[key] = value
+		}
+		fixture.downloader.nextID++
+		duplicate["id"] = float64(fixture.downloader.nextID)
+		fixture.downloader.notifications = append(fixture.downloader.notifications, duplicate)
+		fixture.downloader.Unlock()
+
+		if err := published.Hook(ctx, fixture.sourceID); err != nil {
+			t.Fatalf("failed to register again: %v", err)
+		}
+		if held := fixture.downloader.held(); len(held) != 1 {
+			t.Errorf("notifications = %d, want the duplicate gone", len(held))
+		}
+	})
+
+	t.Run("registrations racing on two replicas add one webhook", func(t *testing.T) {
+		fixture.downloader.Lock()
+		fixture.downloader.notifications = nil
+		fixture.downloader.Unlock()
+
+		var group sync.WaitGroup
+		for range 4 {
+			group.Add(1)
+			go func() {
+				defer group.Done()
+				if err := published.Hook(ctx, fixture.sourceID); err != nil {
+					t.Errorf("failed to register: %v", err)
+				}
+			}()
+		}
+		group.Wait()
+
+		if held := fixture.downloader.held(); len(held) != 1 {
+			t.Errorf("notifications = %d, want one", len(held))
 		}
 	})
 
