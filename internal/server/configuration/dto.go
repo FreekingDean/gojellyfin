@@ -28,22 +28,6 @@ func serverConfiguration(ctx context.Context, store *config.Service) (api.Server
 	return configuration, nil
 }
 
-func brandingConfiguration(ctx context.Context, store *config.Service) (api.BrandingOptionsDto, error) {
-	branding := defaultBrandingOptions()
-
-	value, err := store.Configuration(ctx, config.BrandingKey)
-	if err != nil {
-		return api.BrandingOptionsDto{}, err
-	}
-	if value != nil {
-		if err := json.Unmarshal(value, &branding); err != nil {
-			return api.BrandingOptionsDto{}, err
-		}
-	}
-
-	return branding, nil
-}
-
 func defaultServerConfiguration() api.ServerConfiguration {
 	stored := config.DefaultServer()
 
