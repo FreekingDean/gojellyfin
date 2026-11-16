@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	_ "time/tzdata"
 
 	"github.com/spf13/viper"
 )
@@ -38,6 +39,7 @@ type Config struct {
 	TMDB               TMDB       `mapstructure:",squash"`
 	OIDC               OIDC       `mapstructure:",squash"`
 	MediaDirectories   []string   `mapstructure:"MEDIA_DIRECTORIES"`
+	TimeZone           string     `mapstructure:"TZ"`
 
 	SourceAPIKeys map[string]string `mapstructure:"-"`
 }
@@ -131,6 +133,9 @@ func (c Config) validate() error {
 	}
 	if c.Temporal.WorkerStopTimeout < 0 {
 		return fmt.Errorf("TEMPORAL_WORKER_STOP_TIMEOUT must be a positive duration such as 5m, got %s", c.Temporal.WorkerStopTimeout)
+	}
+	if _, err := time.LoadLocation(c.TimeZone); err != nil {
+		return fmt.Errorf("TZ must name a time zone such as Europe/London, got %q", c.TimeZone)
 	}
 	if c.ServerID != "" && !serverIDPattern.MatchString(c.ServerID) {
 		return fmt.Errorf("SERVER_ID must be 32 lowercase hex characters, the form Jellyfin writes to device.txt, got %q", c.ServerID)
