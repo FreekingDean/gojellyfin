@@ -48,6 +48,7 @@ type ItemQuery struct {
 	withUserData           *UserItemDataQuery
 	withActivityLogEntries *ActivityLogEntryQuery
 	withPlayingSessions    *SessionQuery
+	withViewingSessions    *SessionQuery
 	withPlaylist           *PlaylistQuery
 	withPlaylistEntries    *PlaylistEntryQuery
 	withSyncPlayEntries    *SyncPlayQueueEntryQuery
@@ -303,6 +304,28 @@ func (_q *ItemQuery) QueryPlayingSessions() *SessionQuery {
 			sqlgraph.From(item.Table, item.FieldID, selector),
 			sqlgraph.To(session.Table, session.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, item.PlayingSessionsTable, item.PlayingSessionsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryViewingSessions chains the current query on the "viewing_sessions" edge.
+func (_q *ItemQuery) QueryViewingSessions() *SessionQuery {
+	query := (&SessionClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, selector),
+			sqlgraph.To(session.Table, session.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.ViewingSessionsTable, item.ViewingSessionsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -622,6 +645,7 @@ func (_q *ItemQuery) Clone() *ItemQuery {
 		withUserData:           _q.withUserData.Clone(),
 		withActivityLogEntries: _q.withActivityLogEntries.Clone(),
 		withPlayingSessions:    _q.withPlayingSessions.Clone(),
+		withViewingSessions:    _q.withViewingSessions.Clone(),
 		withPlaylist:           _q.withPlaylist.Clone(),
 		withPlaylistEntries:    _q.withPlaylistEntries.Clone(),
 		withSyncPlayEntries:    _q.withSyncPlayEntries.Clone(),
@@ -740,6 +764,17 @@ func (_q *ItemQuery) WithPlayingSessions(opts ...func(*SessionQuery)) *ItemQuery
 		opt(query)
 	}
 	_q.withPlayingSessions = query
+	return _q
+}
+
+// WithViewingSessions tells the query-builder to eager-load the nodes that are connected to
+// the "viewing_sessions" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemQuery) WithViewingSessions(opts ...func(*SessionQuery)) *ItemQuery {
+	query := (&SessionClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withViewingSessions = query
 	return _q
 }
 
@@ -876,7 +911,7 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 	var (
 		nodes       = []*Item{}
 		_spec       = _q.querySpec()
-		loadedTypes = [15]bool{
+		loadedTypes = [16]bool{
 			_q.withParent != nil,
 			_q.withChildren != nil,
 			_q.withLibraries != nil,
@@ -887,6 +922,7 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 			_q.withUserData != nil,
 			_q.withActivityLogEntries != nil,
 			_q.withPlayingSessions != nil,
+			_q.withViewingSessions != nil,
 			_q.withPlaylist != nil,
 			_q.withPlaylistEntries != nil,
 			_q.withSyncPlayEntries != nil,
@@ -981,6 +1017,13 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 		if err := _q.loadPlayingSessions(ctx, query, nodes,
 			func(n *Item) { n.Edges.PlayingSessions = []*Session{} },
 			func(n *Item, e *Session) { n.Edges.PlayingSessions = append(n.Edges.PlayingSessions, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withViewingSessions; query != nil {
+		if err := _q.loadViewingSessions(ctx, query, nodes,
+			func(n *Item) { n.Edges.ViewingSessions = []*Session{} },
+			func(n *Item, e *Session) { n.Edges.ViewingSessions = append(n.Edges.ViewingSessions, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -1327,6 +1370,40 @@ func (_q *ItemQuery) loadPlayingSessions(ctx context.Context, query *SessionQuer
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "now_playing_item_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *ItemQuery) loadViewingSessions(ctx context.Context, query *SessionQuery, nodes []*Item, init func(*Item), assign func(*Item, *Session)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Item)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(session.FieldNowViewingItemID)
+	}
+	query.Where(predicate.Session(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(item.ViewingSessionsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.NowViewingItemID
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "now_viewing_item_id" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "now_viewing_item_id" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

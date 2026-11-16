@@ -83,6 +83,8 @@ const (
 	EdgeActivityLogEntries = "activity_log_entries"
 	// EdgePlayingSessions holds the string denoting the playing_sessions edge name in mutations.
 	EdgePlayingSessions = "playing_sessions"
+	// EdgeViewingSessions holds the string denoting the viewing_sessions edge name in mutations.
+	EdgeViewingSessions = "viewing_sessions"
 	// EdgePlaylist holds the string denoting the playlist edge name in mutations.
 	EdgePlaylist = "playlist"
 	// EdgePlaylistEntries holds the string denoting the playlist_entries edge name in mutations.
@@ -159,6 +161,13 @@ const (
 	PlayingSessionsInverseTable = "sessions"
 	// PlayingSessionsColumn is the table column denoting the playing_sessions relation/edge.
 	PlayingSessionsColumn = "now_playing_item_id"
+	// ViewingSessionsTable is the table that holds the viewing_sessions relation/edge.
+	ViewingSessionsTable = "sessions"
+	// ViewingSessionsInverseTable is the table name for the Session entity.
+	// It exists in this package in order to avoid circular dependency with the "session" package.
+	ViewingSessionsInverseTable = "sessions"
+	// ViewingSessionsColumn is the table column denoting the viewing_sessions relation/edge.
+	ViewingSessionsColumn = "now_viewing_item_id"
 	// PlaylistTable is the table that holds the playlist relation/edge.
 	PlaylistTable = "playlists"
 	// PlaylistInverseTable is the table name for the Playlist entity.
@@ -521,6 +530,20 @@ func ByPlayingSessions(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByViewingSessionsCount orders the results by viewing_sessions count.
+func ByViewingSessionsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newViewingSessionsStep(), opts...)
+	}
+}
+
+// ByViewingSessions orders the results by viewing_sessions terms.
+func ByViewingSessions(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newViewingSessionsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByPlaylistField orders the results by playlist field.
 func ByPlaylistField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -651,6 +674,13 @@ func newPlayingSessionsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(PlayingSessionsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, PlayingSessionsTable, PlayingSessionsColumn),
+	)
+}
+func newViewingSessionsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ViewingSessionsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ViewingSessionsTable, ViewingSessionsColumn),
 	)
 }
 func newPlaylistStep() *sqlgraph.Step {

@@ -23,7 +23,6 @@ func SessionDto(session *sessions.Session) *api.SessionInfoDto {
 		HasCustomDeviceName:   apiutil.Ptr(false),
 		PlayableMediaTypes:    &[]api.MediaType{},
 		SupportedCommands:     &[]api.GeneralCommandType{},
-		AdditionalUsers:       &[]api.SessionUserInfo{},
 	}
 
 	if device := session.Device; device != nil {
@@ -87,6 +86,16 @@ func SessionDto(session *sessions.Session) *api.SessionInfoDto {
 	if user := session.User; user != nil {
 		dto.UserId = &user.ID
 		dto.UserName = apiutil.Ptr(user.Name)
+	}
+
+	additional := make([]api.SessionUserInfo, 0, len(session.AdditionalUsers))
+	for _, user := range session.AdditionalUsers {
+		additional = append(additional, api.SessionUserInfo{UserId: apiutil.Ptr(user.ID), UserName: apiutil.Ptr(user.Name)})
+	}
+	dto.AdditionalUsers = &additional
+
+	if sessions.NowViewing(session, time.Now()) {
+		dto.NowViewingItem = apiutil.Ptr(ItemDto(session.NowViewing, items.Held{}, 0, nil))
 	}
 
 	return dto

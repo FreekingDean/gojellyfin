@@ -121,6 +121,16 @@ func APIKeyID(v uuid.UUID) predicate.Session {
 	return predicate.Session(sql.FieldEQ(FieldAPIKeyID, v))
 }
 
+// NowViewingItemID applies equality check predicate on the "now_viewing_item_id" field. It's identical to NowViewingItemIDEQ.
+func NowViewingItemID(v uuid.UUID) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldNowViewingItemID, v))
+}
+
+// ViewingAt applies equality check predicate on the "viewing_at" field. It's identical to ViewingAtEQ.
+func ViewingAt(v time.Time) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldViewingAt, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Session {
 	return predicate.Session(sql.FieldEQ(FieldCreatedAt, v))
@@ -716,6 +726,86 @@ func APIKeyIDNotNil() predicate.Session {
 	return predicate.Session(sql.FieldNotNull(FieldAPIKeyID))
 }
 
+// NowViewingItemIDEQ applies the EQ predicate on the "now_viewing_item_id" field.
+func NowViewingItemIDEQ(v uuid.UUID) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldNowViewingItemID, v))
+}
+
+// NowViewingItemIDNEQ applies the NEQ predicate on the "now_viewing_item_id" field.
+func NowViewingItemIDNEQ(v uuid.UUID) predicate.Session {
+	return predicate.Session(sql.FieldNEQ(FieldNowViewingItemID, v))
+}
+
+// NowViewingItemIDIn applies the In predicate on the "now_viewing_item_id" field.
+func NowViewingItemIDIn(vs ...uuid.UUID) predicate.Session {
+	return predicate.Session(sql.FieldIn(FieldNowViewingItemID, vs...))
+}
+
+// NowViewingItemIDNotIn applies the NotIn predicate on the "now_viewing_item_id" field.
+func NowViewingItemIDNotIn(vs ...uuid.UUID) predicate.Session {
+	return predicate.Session(sql.FieldNotIn(FieldNowViewingItemID, vs...))
+}
+
+// NowViewingItemIDIsNil applies the IsNil predicate on the "now_viewing_item_id" field.
+func NowViewingItemIDIsNil() predicate.Session {
+	return predicate.Session(sql.FieldIsNull(FieldNowViewingItemID))
+}
+
+// NowViewingItemIDNotNil applies the NotNil predicate on the "now_viewing_item_id" field.
+func NowViewingItemIDNotNil() predicate.Session {
+	return predicate.Session(sql.FieldNotNull(FieldNowViewingItemID))
+}
+
+// ViewingAtEQ applies the EQ predicate on the "viewing_at" field.
+func ViewingAtEQ(v time.Time) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldViewingAt, v))
+}
+
+// ViewingAtNEQ applies the NEQ predicate on the "viewing_at" field.
+func ViewingAtNEQ(v time.Time) predicate.Session {
+	return predicate.Session(sql.FieldNEQ(FieldViewingAt, v))
+}
+
+// ViewingAtIn applies the In predicate on the "viewing_at" field.
+func ViewingAtIn(vs ...time.Time) predicate.Session {
+	return predicate.Session(sql.FieldIn(FieldViewingAt, vs...))
+}
+
+// ViewingAtNotIn applies the NotIn predicate on the "viewing_at" field.
+func ViewingAtNotIn(vs ...time.Time) predicate.Session {
+	return predicate.Session(sql.FieldNotIn(FieldViewingAt, vs...))
+}
+
+// ViewingAtGT applies the GT predicate on the "viewing_at" field.
+func ViewingAtGT(v time.Time) predicate.Session {
+	return predicate.Session(sql.FieldGT(FieldViewingAt, v))
+}
+
+// ViewingAtGTE applies the GTE predicate on the "viewing_at" field.
+func ViewingAtGTE(v time.Time) predicate.Session {
+	return predicate.Session(sql.FieldGTE(FieldViewingAt, v))
+}
+
+// ViewingAtLT applies the LT predicate on the "viewing_at" field.
+func ViewingAtLT(v time.Time) predicate.Session {
+	return predicate.Session(sql.FieldLT(FieldViewingAt, v))
+}
+
+// ViewingAtLTE applies the LTE predicate on the "viewing_at" field.
+func ViewingAtLTE(v time.Time) predicate.Session {
+	return predicate.Session(sql.FieldLTE(FieldViewingAt, v))
+}
+
+// ViewingAtIsNil applies the IsNil predicate on the "viewing_at" field.
+func ViewingAtIsNil() predicate.Session {
+	return predicate.Session(sql.FieldIsNull(FieldViewingAt))
+}
+
+// ViewingAtNotNil applies the NotNil predicate on the "viewing_at" field.
+func ViewingAtNotNil() predicate.Session {
+	return predicate.Session(sql.FieldNotNull(FieldViewingAt))
+}
+
 // HasUser applies the HasEdge predicate on the "user" edge.
 func HasUser() predicate.Session {
 	return predicate.Session(func(s *sql.Selector) {
@@ -823,6 +913,52 @@ func HasAPIKey() predicate.Session {
 func HasAPIKeyWith(preds ...predicate.ApiKey) predicate.Session {
 	return predicate.Session(func(s *sql.Selector) {
 		step := newAPIKeyStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasNowViewing applies the HasEdge predicate on the "now_viewing" edge.
+func HasNowViewing() predicate.Session {
+	return predicate.Session(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, NowViewingTable, NowViewingColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasNowViewingWith applies the HasEdge predicate on the "now_viewing" edge with a given conditions (other predicates).
+func HasNowViewingWith(preds ...predicate.Item) predicate.Session {
+	return predicate.Session(func(s *sql.Selector) {
+		step := newNowViewingStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasAdditionalUsers applies the HasEdge predicate on the "additional_users" edge.
+func HasAdditionalUsers() predicate.Session {
+	return predicate.Session(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, AdditionalUsersTable, AdditionalUsersPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasAdditionalUsersWith applies the HasEdge predicate on the "additional_users" edge with a given conditions (other predicates).
+func HasAdditionalUsersWith(preds ...predicate.User) predicate.Session {
+	return predicate.Session(func(s *sql.Selector) {
+		step := newAdditionalUsersStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

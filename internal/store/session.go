@@ -53,6 +53,10 @@ type Session struct {
 	PlaybackPlan *entities.PlaybackPlan `json:"playback_plan,omitempty"`
 	// APIKeyID holds the value of the "api_key_id" field.
 	APIKeyID *uuid.UUID `json:"api_key_id,omitempty"`
+	// NowViewingItemID holds the value of the "now_viewing_item_id" field.
+	NowViewingItemID *uuid.UUID `json:"now_viewing_item_id,omitempty"`
+	// ViewingAt holds the value of the "viewing_at" field.
+	ViewingAt *time.Time `json:"viewing_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SessionQuery when eager-loading is set.
 	Edges           SessionEdges `json:"edges"`
@@ -73,11 +77,15 @@ type SessionEdges struct {
 	PlannedSource *ItemSource `json:"planned_source,omitempty"`
 	// APIKey holds the value of the api_key edge.
 	APIKey *ApiKey `json:"api_key,omitempty"`
+	// NowViewing holds the value of the now_viewing edge.
+	NowViewing *Item `json:"now_viewing,omitempty"`
+	// AdditionalUsers holds the value of the additional_users edge.
+	AdditionalUsers []*User `json:"additional_users,omitempty"`
 	// SyncPlayMemberships holds the value of the sync_play_memberships edge.
 	SyncPlayMemberships []*SyncPlayGroupMember `json:"sync_play_memberships,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [6]bool
+	loadedTypes [8]bool
 }
 
 // UserOrErr returns the User value or an error if the edge
@@ -135,10 +143,30 @@ func (e SessionEdges) APIKeyOrErr() (*ApiKey, error) {
 	return nil, &NotLoadedError{edge: "api_key"}
 }
 
+// NowViewingOrErr returns the NowViewing value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e SessionEdges) NowViewingOrErr() (*Item, error) {
+	if e.NowViewing != nil {
+		return e.NowViewing, nil
+	} else if e.loadedTypes[5] {
+		return nil, &NotFoundError{label: item.Label}
+	}
+	return nil, &NotLoadedError{edge: "now_viewing"}
+}
+
+// AdditionalUsersOrErr returns the AdditionalUsers value or an error if the edge
+// was not loaded in eager-loading.
+func (e SessionEdges) AdditionalUsersOrErr() ([]*User, error) {
+	if e.loadedTypes[6] {
+		return e.AdditionalUsers, nil
+	}
+	return nil, &NotLoadedError{edge: "additional_users"}
+}
+
 // SyncPlayMembershipsOrErr returns the SyncPlayMemberships value or an error if the edge
 // was not loaded in eager-loading.
 func (e SessionEdges) SyncPlayMembershipsOrErr() ([]*SyncPlayGroupMember, error) {
-	if e.loadedTypes[5] {
+	if e.loadedTypes[7] {
 		return e.SyncPlayMemberships, nil
 	}
 	return nil, &NotLoadedError{edge: "sync_play_memberships"}
@@ -149,7 +177,7 @@ func (*Session) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case session.FieldNowPlayingItemID, session.FieldPlannedSourceID, session.FieldAPIKeyID:
+		case session.FieldNowPlayingItemID, session.FieldPlannedSourceID, session.FieldAPIKeyID, session.FieldNowViewingItemID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case session.FieldPlaybackPlan:
 			values[i] = new([]byte)
@@ -159,7 +187,7 @@ func (*Session) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case session.FieldAccessToken, session.FieldRemoteEndpoint, session.FieldPlayMethod:
 			values[i] = new(sql.NullString)
-		case session.FieldCreatedAt, session.FieldUpdatedAt, session.FieldLastActivityAt, session.FieldRevokedAt, session.FieldPlayingAt:
+		case session.FieldCreatedAt, session.FieldUpdatedAt, session.FieldLastActivityAt, session.FieldRevokedAt, session.FieldPlayingAt, session.FieldViewingAt:
 			values[i] = new(sql.NullTime)
 		case session.FieldID:
 			values[i] = new(uuid.UUID)
@@ -280,6 +308,20 @@ func (_m *Session) assignValues(columns []string, values []any) error {
 				_m.APIKeyID = new(uuid.UUID)
 				*_m.APIKeyID = *value.S.(*uuid.UUID)
 			}
+		case session.FieldNowViewingItemID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field now_viewing_item_id", values[i])
+			} else if value.Valid {
+				_m.NowViewingItemID = new(uuid.UUID)
+				*_m.NowViewingItemID = *value.S.(*uuid.UUID)
+			}
+		case session.FieldViewingAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field viewing_at", values[i])
+			} else if value.Valid {
+				_m.ViewingAt = new(time.Time)
+				*_m.ViewingAt = value.Time
+			}
 		case session.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field device_sessions", values[i])
@@ -330,6 +372,16 @@ func (_m *Session) QueryPlannedSource() *ItemSourceQuery {
 // QueryAPIKey queries the "api_key" edge of the Session entity.
 func (_m *Session) QueryAPIKey() *ApiKeyQuery {
 	return NewSessionClient(_m.config).QueryAPIKey(_m)
+}
+
+// QueryNowViewing queries the "now_viewing" edge of the Session entity.
+func (_m *Session) QueryNowViewing() *ItemQuery {
+	return NewSessionClient(_m.config).QueryNowViewing(_m)
+}
+
+// QueryAdditionalUsers queries the "additional_users" edge of the Session entity.
+func (_m *Session) QueryAdditionalUsers() *UserQuery {
+	return NewSessionClient(_m.config).QueryAdditionalUsers(_m)
 }
 
 // QuerySyncPlayMemberships queries the "sync_play_memberships" edge of the Session entity.
@@ -411,6 +463,16 @@ func (_m *Session) String() string {
 	if v := _m.APIKeyID; v != nil {
 		builder.WriteString("api_key_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.NowViewingItemID; v != nil {
+		builder.WriteString("now_viewing_item_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.ViewingAt; v != nil {
+		builder.WriteString("viewing_at=")
+		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteByte(')')
 	return builder.String()

@@ -1451,6 +1451,29 @@ func HasPlayingSessionsWith(preds ...predicate.Session) predicate.Item {
 	})
 }
 
+// HasViewingSessions applies the HasEdge predicate on the "viewing_sessions" edge.
+func HasViewingSessions() predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ViewingSessionsTable, ViewingSessionsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasViewingSessionsWith applies the HasEdge predicate on the "viewing_sessions" edge with a given conditions (other predicates).
+func HasViewingSessionsWith(preds ...predicate.Session) predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := newViewingSessionsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasPlaylist applies the HasEdge predicate on the "playlist" edge.
 func HasPlaylist() predicate.Item {
 	return predicate.Item(func(s *sql.Selector) {

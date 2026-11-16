@@ -36,6 +36,8 @@ type SessionQuery struct {
 	withNowPlaying          *ItemQuery
 	withPlannedSource       *ItemSourceQuery
 	withAPIKey              *ApiKeyQuery
+	withNowViewing          *ItemQuery
+	withAdditionalUsers     *UserQuery
 	withSyncPlayMemberships *SyncPlayGroupMemberQuery
 	withFKs                 bool
 	modifiers               []func(*sql.Selector)
@@ -178,6 +180,50 @@ func (_q *SessionQuery) QueryAPIKey() *ApiKeyQuery {
 			sqlgraph.From(session.Table, session.FieldID, selector),
 			sqlgraph.To(apikey.Table, apikey.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, session.APIKeyTable, session.APIKeyColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryNowViewing chains the current query on the "now_viewing" edge.
+func (_q *SessionQuery) QueryNowViewing() *ItemQuery {
+	query := (&ItemClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(session.Table, session.FieldID, selector),
+			sqlgraph.To(item.Table, item.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, session.NowViewingTable, session.NowViewingColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryAdditionalUsers chains the current query on the "additional_users" edge.
+func (_q *SessionQuery) QueryAdditionalUsers() *UserQuery {
+	query := (&UserClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(session.Table, session.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, session.AdditionalUsersTable, session.AdditionalUsersPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -404,6 +450,8 @@ func (_q *SessionQuery) Clone() *SessionQuery {
 		withNowPlaying:          _q.withNowPlaying.Clone(),
 		withPlannedSource:       _q.withPlannedSource.Clone(),
 		withAPIKey:              _q.withAPIKey.Clone(),
+		withNowViewing:          _q.withNowViewing.Clone(),
+		withAdditionalUsers:     _q.withAdditionalUsers.Clone(),
 		withSyncPlayMemberships: _q.withSyncPlayMemberships.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
@@ -463,6 +511,28 @@ func (_q *SessionQuery) WithAPIKey(opts ...func(*ApiKeyQuery)) *SessionQuery {
 		opt(query)
 	}
 	_q.withAPIKey = query
+	return _q
+}
+
+// WithNowViewing tells the query-builder to eager-load the nodes that are connected to
+// the "now_viewing" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *SessionQuery) WithNowViewing(opts ...func(*ItemQuery)) *SessionQuery {
+	query := (&ItemClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withNowViewing = query
+	return _q
+}
+
+// WithAdditionalUsers tells the query-builder to eager-load the nodes that are connected to
+// the "additional_users" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *SessionQuery) WithAdditionalUsers(opts ...func(*UserQuery)) *SessionQuery {
+	query := (&UserClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withAdditionalUsers = query
 	return _q
 }
 
@@ -556,12 +626,14 @@ func (_q *SessionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Sess
 		nodes       = []*Session{}
 		withFKs     = _q.withFKs
 		_spec       = _q.querySpec()
-		loadedTypes = [6]bool{
+		loadedTypes = [8]bool{
 			_q.withUser != nil,
 			_q.withDevice != nil,
 			_q.withNowPlaying != nil,
 			_q.withPlannedSource != nil,
 			_q.withAPIKey != nil,
+			_q.withNowViewing != nil,
+			_q.withAdditionalUsers != nil,
 			_q.withSyncPlayMemberships != nil,
 		}
 	)
@@ -619,6 +691,19 @@ func (_q *SessionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Sess
 	if query := _q.withAPIKey; query != nil {
 		if err := _q.loadAPIKey(ctx, query, nodes, nil,
 			func(n *Session, e *ApiKey) { n.Edges.APIKey = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withNowViewing; query != nil {
+		if err := _q.loadNowViewing(ctx, query, nodes, nil,
+			func(n *Session, e *Item) { n.Edges.NowViewing = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withAdditionalUsers; query != nil {
+		if err := _q.loadAdditionalUsers(ctx, query, nodes,
+			func(n *Session) { n.Edges.AdditionalUsers = []*User{} },
+			func(n *Session, e *User) { n.Edges.AdditionalUsers = append(n.Edges.AdditionalUsers, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -794,6 +879,99 @@ func (_q *SessionQuery) loadAPIKey(ctx context.Context, query *ApiKeyQuery, node
 	}
 	return nil
 }
+func (_q *SessionQuery) loadNowViewing(ctx context.Context, query *ItemQuery, nodes []*Session, init func(*Session), assign func(*Session, *Item)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Session)
+	for i := range nodes {
+		if nodes[i].NowViewingItemID == nil {
+			continue
+		}
+		fk := *nodes[i].NowViewingItemID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(item.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "now_viewing_item_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *SessionQuery) loadAdditionalUsers(ctx context.Context, query *UserQuery, nodes []*Session, init func(*Session), assign func(*Session, *User)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[uuid.UUID]*Session)
+	nids := make(map[uuid.UUID]map[*Session]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(session.AdditionalUsersTable)
+		s.Join(joinT).On(s.C(user.FieldID), joinT.C(session.AdditionalUsersPrimaryKey[1]))
+		s.Where(sql.InValues(joinT.C(session.AdditionalUsersPrimaryKey[0]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(session.AdditionalUsersPrimaryKey[0]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
+		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+			assign := spec.Assign
+			values := spec.ScanValues
+			spec.ScanValues = func(columns []string) ([]any, error) {
+				values, err := values(columns[1:])
+				if err != nil {
+					return nil, err
+				}
+				return append([]any{new(uuid.UUID)}, values...), nil
+			}
+			spec.Assign = func(columns []string, values []any) error {
+				outValue := *values[0].(*uuid.UUID)
+				inValue := *values[1].(*uuid.UUID)
+				if nids[inValue] == nil {
+					nids[inValue] = map[*Session]struct{}{byID[outValue]: {}}
+					return assign(columns[1:], values[1:])
+				}
+				nids[inValue][byID[outValue]] = struct{}{}
+				return nil
+			}
+		})
+	})
+	neighbors, err := withInterceptors[[]*User](ctx, query, qr, query.inters)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "additional_users" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
+}
 func (_q *SessionQuery) loadSyncPlayMemberships(ctx context.Context, query *SyncPlayGroupMemberQuery, nodes []*Session, init func(*Session), assign func(*Session, *SyncPlayGroupMember)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*Session)
@@ -861,6 +1039,9 @@ func (_q *SessionQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withAPIKey != nil {
 			_spec.Node.AddColumnOnce(session.FieldAPIKeyID)
+		}
+		if _q.withNowViewing != nil {
+			_spec.Node.AddColumnOnce(session.FieldNowViewingItemID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

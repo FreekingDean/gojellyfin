@@ -44,6 +44,8 @@ const (
 	EdgePolicy = "policy"
 	// EdgeSessions holds the string denoting the sessions edge name in mutations.
 	EdgeSessions = "sessions"
+	// EdgeJoinedSessions holds the string denoting the joined_sessions edge name in mutations.
+	EdgeJoinedSessions = "joined_sessions"
 	// EdgeItemData holds the string denoting the item_data edge name in mutations.
 	EdgeItemData = "item_data"
 	// EdgeDisplayPreferences holds the string denoting the display_preferences edge name in mutations.
@@ -85,6 +87,11 @@ const (
 	SessionsInverseTable = "sessions"
 	// SessionsColumn is the table column denoting the sessions relation/edge.
 	SessionsColumn = "user_sessions"
+	// JoinedSessionsTable is the table that holds the joined_sessions relation/edge. The primary key declared below.
+	JoinedSessionsTable = "session_additional_users"
+	// JoinedSessionsInverseTable is the table name for the Session entity.
+	// It exists in this package in order to avoid circular dependency with the "session" package.
+	JoinedSessionsInverseTable = "sessions"
 	// ItemDataTable is the table that holds the item_data relation/edge.
 	ItemDataTable = "user_item_data"
 	// ItemDataInverseTable is the table name for the UserItemData entity.
@@ -166,6 +173,12 @@ var Columns = []string{
 	FieldRequestsNeedApproval,
 	FieldRequestQuota,
 }
+
+var (
+	// JoinedSessionsPrimaryKey and JoinedSessionsColumn2 are the table columns denoting the
+	// primary key for the joined_sessions relation (M2M).
+	JoinedSessionsPrimaryKey = []string{"session_id", "user_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
@@ -283,6 +296,20 @@ func BySessionsCount(opts ...sql.OrderTermOption) OrderOption {
 func BySessions(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newSessionsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByJoinedSessionsCount orders the results by joined_sessions count.
+func ByJoinedSessionsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newJoinedSessionsStep(), opts...)
+	}
+}
+
+// ByJoinedSessions orders the results by joined_sessions terms.
+func ByJoinedSessions(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newJoinedSessionsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
@@ -430,6 +457,13 @@ func newSessionsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(SessionsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, SessionsTable, SessionsColumn),
+	)
+}
+func newJoinedSessionsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(JoinedSessionsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, true, JoinedSessionsTable, JoinedSessionsPrimaryKey...),
 	)
 }
 func newItemDataStep() *sqlgraph.Step {
