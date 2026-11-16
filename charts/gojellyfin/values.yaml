@@ -286,6 +286,10 @@ worker:
   # terminationGracePeriodSeconds follows it with 30s to spare, unless
   # worker.pod names one itself.
   stopTimeoutSeconds: 300
+  # TEMPORAL_WORKER_ACTIVITIES. How many activities each task queue runs at
+  # once on one pod. The intro detection queue ignores it and runs one per
+  # core, since a decode saturates one.
+  activities: 16
   # A HorizontalPodAutoscaler on cpu. Utilization is measured against
   # resources.requests.cpu, so the chart refuses to render one without it.
   autoscaling:

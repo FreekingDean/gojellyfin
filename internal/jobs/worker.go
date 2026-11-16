@@ -19,13 +19,22 @@ const bootTimeout = 30 * time.Second
 type Worker struct {
 	service     *Service
 	stopTimeout time.Duration
+	activities  int
 	workers     []worker.Worker
 	stopBoot    context.CancelFunc
 	booting     sync.WaitGroup
 }
 
 func NewWorker(service *Service, config env.Config) *Worker {
-	return &Worker{service: service, stopTimeout: config.Temporal.WorkerStopTimeout}
+	return &Worker{service: service, stopTimeout: config.Temporal.WorkerStopTimeout, activities: config.Temporal.WorkerActivities}
+}
+
+func (w *Worker) slots(queue string) int {
+	if queue == SegmentsQueue || w.activities < 1 {
+		return runtime.GOMAXPROCS(0)
+	}
+
+	return w.activities
 }
 
 func (w *Worker) Start() error {
@@ -35,8 +44,10 @@ func (w *Worker) Start() error {
 	}
 
 	for _, queue := range w.service.registry.Queues() {
+		slots := w.slots(queue)
 		polling := worker.New(connection, queue, worker.Options{
-			MaxConcurrentActivityExecutionSize: runtime.GOMAXPROCS(0),
+			MaxConcurrentActivityExecutionSize: slots,
+			MaxConcurrentActivityTaskPollers:   max(2, slots/4),
 			WorkerStopTimeout:                  w.stopTimeout,
 		})
 		polling.RegisterWorkflowWithOptions(w.run, workflow.RegisterOptions{Name: runWorkflow})
@@ -56,7 +67,7 @@ func (w *Worker) Start() error {
 			return err
 		}
 		w.workers = append(w.workers, polling)
-		log.Printf("polling task queue %s", queue)
+		log.Printf("polling task queue %s with %d activity slots", queue, slots)
 	}
 
 	for _, job := range w.service.registry.All() {
