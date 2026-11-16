@@ -147,8 +147,12 @@ async function launch(phone, wanted) {
   return landed.name;
 }
 
+// The app asks for battery optimisation to be turned off in a snackbar
+// over the middle of the page, and its button opens the system's settings
+// rather than putting it away, so the app is exempted before it can ask.
 async function freshStart(phone) {
   phone.clear(PACKAGE);
+  phone.exemptFromBatteryOptimisation(PACKAGE);
   await launch(phone, { connect: { type: 'EditText' } });
 }
 
@@ -207,23 +211,12 @@ async function signInWithPassword(phone, app) {
     await phone.press(card);
   }
   await phone.waitFor({ type: 'EditText' });
-  await dismissSnackbar(phone);
   if (phone.find({ type: 'EditText' }).length > 1) {
     await phone.fill({ type: 'EditText' }, app.username);
   }
   await typeInto(phone, { id: 'txtManualPassword' }, app.password);
   await phone.tapOn({ label: /^Sign In$/i });
   step(phone, 'pressed Sign In');
-}
-
-// The app asks once, in a snackbar over the middle of the page, for battery
-// optimisation to be turned off; its OK puts it away.
-async function dismissSnackbar(phone) {
-  const [ok] = phone.find({ id: 'snackbar_action' });
-  if (ok) {
-    await phone.press(ok);
-    await sleep(500);
-  }
 }
 
 // A tap on a field in the WebView can land while the page is still laying

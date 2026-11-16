@@ -237,6 +237,7 @@ function device(serial = process.env.ANDROID_SERIAL) {
     install: (apk) => adb(['install', '-r', '-g', apk], { timeout: 300000 }),
     reverse: (port) => adb(['reverse', `tcp:${port}`, `tcp:${port}`]),
     clear: (app) => shell(`pm clear ${app}`),
+    exemptFromBatteryOptimisation: (app) => shell(`dumpsys deviceidle whitelist +${app}`),
     stop: (app) => shell(`am force-stop ${app}`),
     start: (component) => shell(`am start -S -W -n ${component}`, { timeout: 180000 }),
     clearLog: () => adb(['logcat', '-c'], { allowFailure: true }),
