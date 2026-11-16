@@ -20,8 +20,9 @@ type Slot struct {
 
 type Airing struct {
 	Slot
-	Start time.Time
-	End   time.Time
+	Number int64
+	Start  time.Time
+	End    time.Time
 }
 
 type Schedule struct {
@@ -79,7 +80,7 @@ func (s Schedule) Between(from, to time.Time) []Airing {
 			if !began.Before(to) {
 				break
 			}
-			airings = append(airings, Airing{Slot: order[i], Start: began, End: began.Add(order[i].Length)})
+			airings = append(airings, s.airing(cycle, i, order[i], began))
 		}
 
 		cycle++
@@ -87,6 +88,15 @@ func (s Schedule) Between(from, to time.Time) []Airing {
 	}
 
 	return airings
+}
+
+func (s Schedule) airing(cycle int64, position int, slot Slot, began time.Time) Airing {
+	return Airing{
+		Slot:   slot,
+		Number: cycle*int64(len(s.slots)) + int64(position),
+		Start:  began,
+		End:    began.Add(slot.Length),
+	}
 }
 
 func (s Schedule) ordered(cycle int64) ([]Slot, []time.Duration) {

@@ -40,6 +40,14 @@ type rendition struct {
 }
 
 func (h *Handler) ServeMasterPlaylist(w http.ResponseWriter, r *http.Request) {
+	if schedule, live := h.tune(w, r); live {
+		if schedule != nil {
+			h.serveLiveMaster(w, r)
+		}
+
+		return
+	}
+
 	_, source, _, ok := h.item(w, r)
 	if !ok {
 		return
@@ -81,6 +89,14 @@ func (h *Handler) ServeAudioPlaylist(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) servePlaylist(w http.ResponseWriter, r *http.Request, playlist string) {
+	if schedule, live := h.tune(w, r); live {
+		if schedule != nil {
+			h.serveLivePlaylist(w, r, schedule, playlist)
+		}
+
+		return
+	}
+
 	chosen, ok := h.rendition(w, r, playlist)
 	if !ok {
 		return
@@ -110,6 +126,14 @@ func (h *Handler) servePlaylist(w http.ResponseWriter, r *http.Request, playlist
 }
 
 func (h *Handler) ServeSegment(w http.ResponseWriter, r *http.Request) {
+	if schedule, live := h.tune(w, r); live {
+		if schedule != nil {
+			h.serveLiveSegment(w, r, schedule)
+		}
+
+		return
+	}
+
 	playlist := strings.ToLower(r.PathValue("playlistId"))
 	index, err := strconv.Atoi(r.PathValue("segmentId"))
 	if err != nil || index < headerSegment || !strings.EqualFold(r.PathValue("container"), segmentContainer) {
