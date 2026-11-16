@@ -20,6 +20,8 @@ type Worker struct {
 	service     *Service
 	stopTimeout time.Duration
 	workers     []worker.Worker
+	stopBoot    context.CancelFunc
+	booting     sync.WaitGroup
 }
 
 func NewWorker(service *Service, config env.Config) *Worker {
@@ -62,10 +64,13 @@ func (w *Worker) Start() error {
 	}
 
 	booting, cancel := context.WithTimeout(context.Background(), bootTimeout)
-	defer cancel()
-	if err := w.service.startOnBoot(booting); err != nil {
-		log.Printf("failed to start the jobs that run at startup: %v", err)
-	}
+	w.stopBoot = cancel
+	w.booting.Go(func() {
+		defer cancel()
+		if err := w.service.startOnBoot(booting); err != nil {
+			log.Printf("failed to start the jobs that run at startup: %v", err)
+		}
+	})
 
 	return nil
 }
@@ -77,6 +82,11 @@ func (w *Worker) activity(job Job) func(context.Context, Params) error {
 }
 
 func (w *Worker) Stop() error {
+	if w.stopBoot != nil {
+		w.stopBoot()
+	}
+	w.booting.Wait()
+
 	var stopping sync.WaitGroup
 	for _, polling := range w.workers {
 		stopping.Go(polling.Stop)
