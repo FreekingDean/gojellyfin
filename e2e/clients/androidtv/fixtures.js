@@ -184,8 +184,10 @@ async function walkGrid(tv, visit) {
       }
     }
     await sleep(250);
+    const landed = focusedTitle(tv);
+    console.log(`grid walk: ${name} from ${from.index} at ${from.where} to ${landed.index} at ${landed.where} (${landed.inGrid ? 'grid' : 'outside'}) ${landed.title}`);
 
-    return focusedTitle(tv);
+    return landed;
   };
 
   let focused = focusedTitle(tv);
