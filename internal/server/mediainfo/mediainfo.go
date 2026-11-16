@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
+	"github.com/FreekingDean/gojellyfin/internal/channels"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
@@ -18,13 +19,19 @@ import (
 )
 
 type Server struct {
+	channels Channels
 	policies dto.Access
 	items    *items.Service
 	sessions *sessions.Service
 }
 
-func New(items *items.Service, policies dto.Access, sessions *sessions.Service) *Server {
-	return &Server{items: items, policies: policies, sessions: sessions}
+func New(items *items.Service, policies dto.Access, sessions *sessions.Service, channels *channels.Service) *Server {
+	server := &Server{items: items, policies: policies, sessions: sessions}
+	if channels != nil {
+		server.channels = channels
+	}
+
+	return server
 }
 
 type asked struct {
@@ -77,12 +84,22 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, question as
 		return api.PlaybackInfoResponse{}, err
 	}
 
-	item, err := s.items.ItemByID(ctx, viewer, itemID)
+	session, err := newPlaySessionId()
 	if err != nil {
 		return api.PlaybackInfoResponse{}, err
 	}
 
-	session, err := newPlaySessionId()
+	if s.channels != nil {
+		channel, err := s.channels.Channel(ctx, viewer, itemID)
+		if err == nil {
+			return s.tuned(ctx, channel, session)
+		}
+		if !errors.Is(err, channels.ErrNotFound) {
+			return api.PlaybackInfoResponse{}, err
+		}
+	}
+
+	item, err := s.items.ItemByID(ctx, viewer, itemID)
 	if err != nil {
 		return api.PlaybackInfoResponse{}, err
 	}

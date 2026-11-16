@@ -14,6 +14,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/channels"
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/items"
@@ -57,7 +58,14 @@ type Reports interface {
 	File(ctx context.Context, filing reports.Filing) error
 }
 
+type Channels interface {
+	Channel(ctx context.Context, viewer items.Viewer, id uuid.UUID) (*channels.Channel, error)
+	Schedule(ctx context.Context, channel *channels.Channel) (channels.Schedule, error)
+	Now() time.Time
+}
+
 type Handler struct {
+	channels   Channels
 	sessions   *sessions.Service
 	items      *items.Service
 	files      *filesystem.Service
@@ -72,8 +80,14 @@ func New(
 	files *filesystem.Service,
 	transcoder Transcoder,
 	reports *reports.Service,
+	channels *channels.Service,
 ) *Handler {
-	return &Handler{sessions: sessions, items: items, files: files, transcoder: transcoder, reports: reports}
+	handler := &Handler{sessions: sessions, items: items, files: files, transcoder: transcoder, reports: reports}
+	if channels != nil {
+		handler.channels = channels
+	}
+
+	return handler
 }
 
 func (h *Handler) broken(r *http.Request, source *items.MediaSource, served items.Playback, reason error) {

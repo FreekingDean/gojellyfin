@@ -92,7 +92,7 @@ func newFixture(t *testing.T) *fixture {
 	return &fixture{
 		downloader: downloader.ID,
 		client:     client,
-		server:     New(items.New(client), allLibraries{}, nil),
+		server:     New(items.New(client), allLibraries{}, nil, nil),
 		library:    library.ID,
 		keyframes:  &items.KeyframeIndex{Ticks: []int64{0, 60_000_000}},
 	}
