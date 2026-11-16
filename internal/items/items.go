@@ -455,6 +455,10 @@ type Viewer struct {
 
 var Everyone = Viewer{All: true}
 
+func (v Viewer) Sees(library uuid.UUID) bool {
+	return v.All || slices.Contains(v.Libraries, library)
+}
+
 func marked(user uuid.UUID, want bool, mark predicate.UserItemData) predicate.Item {
 	has := itemmodel.HasUserDataWith(datamodel.UserID(user), mark)
 	if want {

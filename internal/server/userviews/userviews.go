@@ -2,6 +2,7 @@ package userviews
 
 import (
 	"context"
+	"slices"
 
 	"github.com/google/uuid"
 
@@ -56,17 +57,18 @@ func (s *Server) liveTv(ctx context.Context, viewer items.Viewer) (bool, error) 
 }
 
 func (s *Server) GetUserViews(ctx context.Context, request api.GetUserViewsRequestObject) (api.GetUserViewsResponseObject, error) {
+	viewer, err := dto.ViewerFor(ctx, s.policies)
+	if err != nil {
+		return nil, err
+	}
+
 	records, err := s.libraries.ShownLibraries(ctx)
 	if err != nil {
 		return nil, err
 	}
+	records = slices.DeleteFunc(records, func(library *libraries.Library) bool { return !viewer.Sees(library.ID) })
 
 	views, err := dto.LibraryViews(ctx, s.cards, records)
-	if err != nil {
-		return nil, err
-	}
-
-	viewer, err := dto.ViewerFor(ctx, s.policies)
 	if err != nil {
 		return nil, err
 	}
