@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -30,6 +31,14 @@ type downloader struct {
 }
 
 func (i *downloader) serve(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == "/api/v3/notification" && r.Method == http.MethodGet {
+		held := i.held()
+		time.Sleep(20 * time.Millisecond)
+		_ = json.NewEncoder(w).Encode(held)
+
+		return
+	}
+
 	i.Lock()
 	defer i.Unlock()
 
@@ -68,8 +77,6 @@ func (i *downloader) serve(w http.ResponseWriter, r *http.Request) {
 				},
 			},
 		})
-	case r.URL.Path == "/api/v3/notification" && r.Method == http.MethodGet:
-		_ = json.NewEncoder(w).Encode(i.notifications)
 	case r.URL.Path == "/api/v3/notification" && r.Method == http.MethodPost:
 		i.methods = append(i.methods, r.Method)
 		var created map[string]any
