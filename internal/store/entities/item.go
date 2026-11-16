@@ -80,6 +80,7 @@ func (Item) Edges() []ent.Edge {
 		edge.To("playlist", Playlist.Type).Unique().Annotations(cascadeOnDelete),
 		edge.To("playlist_entries", PlaylistEntry.Type).Annotations(cascadeOnDelete),
 		edge.To("sync_play_entries", SyncPlayQueueEntry.Type).Annotations(cascadeOnDelete),
+		edge.To("channel_entries", ChannelEntry.Type).Annotations(cascadeOnDelete),
 		edge.To("genres", Genre.Type),
 		edge.To("studios", Studio.Type),
 	}

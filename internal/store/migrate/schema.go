@@ -80,6 +80,64 @@ var (
 			},
 		},
 	}
+	// ChannelsColumns holds the columns for the "channels" table.
+	ChannelsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "number", Type: field.TypeInt32, Unique: true},
+		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "order", Type: field.TypeEnum, Enums: []string{"Shuffle", "Sequential"}, Default: "Shuffle"},
+		{Name: "seed", Type: field.TypeInt64},
+		{Name: "epoch", Type: field.TypeTime},
+	}
+	// ChannelsTable holds the schema information for the "channels" table.
+	ChannelsTable = &schema.Table{
+		Name:       "channels",
+		Columns:    ChannelsColumns,
+		PrimaryKey: []*schema.Column{ChannelsColumns[0]},
+	}
+	// ChannelEntriesColumns holds the columns for the "channel_entries" table.
+	ChannelEntriesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "position", Type: field.TypeInt32},
+		{Name: "channel_id", Type: field.TypeUUID},
+		{Name: "item_id", Type: field.TypeUUID},
+	}
+	// ChannelEntriesTable holds the schema information for the "channel_entries" table.
+	ChannelEntriesTable = &schema.Table{
+		Name:       "channel_entries",
+		Columns:    ChannelEntriesColumns,
+		PrimaryKey: []*schema.Column{ChannelEntriesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "channel_entries_channels_entries",
+				Columns:    []*schema.Column{ChannelEntriesColumns[4]},
+				RefColumns: []*schema.Column{ChannelsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "channel_entries_items_channel_entries",
+				Columns:    []*schema.Column{ChannelEntriesColumns[5]},
+				RefColumns: []*schema.Column{ItemsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "channelentry_channel_id_item_id",
+				Unique:  true,
+				Columns: []*schema.Column{ChannelEntriesColumns[4], ChannelEntriesColumns[5]},
+			},
+			{
+				Name:    "channelentry_item_id",
+				Unique:  false,
+				Columns: []*schema.Column{ChannelEntriesColumns[5]},
+			},
+		},
+	}
 	// ConfigurationsColumns holds the columns for the "configurations" table.
 	ConfigurationsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
@@ -1311,7 +1369,7 @@ var (
 		{Name: "enable_shared_device_control", Type: field.TypeBool, Default: true},
 		{Name: "enable_remote_access", Type: field.TypeBool, Default: true},
 		{Name: "enable_live_tv_management", Type: field.TypeBool, Default: false},
-		{Name: "enable_live_tv_access", Type: field.TypeBool, Default: false},
+		{Name: "enable_live_tv_access", Type: field.TypeBool, Default: true},
 		{Name: "enable_media_playback", Type: field.TypeBool, Default: true},
 		{Name: "enable_audio_playback_transcoding", Type: field.TypeBool, Default: true},
 		{Name: "enable_video_playback_transcoding", Type: field.TypeBool, Default: true},
@@ -1439,6 +1497,8 @@ var (
 	Tables = []*schema.Table{
 		ActivityLogEntriesTable,
 		APIKeysTable,
+		ChannelsTable,
+		ChannelEntriesTable,
 		ConfigurationsTable,
 		CreditsTable,
 		DevicesTable,
@@ -1483,6 +1543,8 @@ func init() {
 	ActivityLogEntriesTable.ForeignKeys[0].RefTable = ItemsTable
 	ActivityLogEntriesTable.ForeignKeys[1].RefTable = UsersTable
 	APIKeysTable.ForeignKeys[0].RefTable = UsersTable
+	ChannelEntriesTable.ForeignKeys[0].RefTable = ChannelsTable
+	ChannelEntriesTable.ForeignKeys[1].RefTable = ItemsTable
 	CreditsTable.ForeignKeys[0].RefTable = ItemsTable
 	CreditsTable.ForeignKeys[1].RefTable = PersonsTable
 	DisplayPreferencesTable.ForeignKeys[0].RefTable = UsersTable

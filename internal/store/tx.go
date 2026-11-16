@@ -18,6 +18,10 @@ type Tx struct {
 	ActivityLogEntry *ActivityLogEntryClient
 	// ApiKey is the client for interacting with the ApiKey builders.
 	ApiKey *ApiKeyClient
+	// Channel is the client for interacting with the Channel builders.
+	Channel *ChannelClient
+	// ChannelEntry is the client for interacting with the ChannelEntry builders.
+	ChannelEntry *ChannelEntryClient
 	// Configuration is the client for interacting with the Configuration builders.
 	Configuration *ConfigurationClient
 	// Credit is the client for interacting with the Credit builders.
@@ -219,6 +223,8 @@ func (tx *Tx) Client() *Client {
 func (tx *Tx) init() {
 	tx.ActivityLogEntry = NewActivityLogEntryClient(tx.config)
 	tx.ApiKey = NewApiKeyClient(tx.config)
+	tx.Channel = NewChannelClient(tx.config)
+	tx.ChannelEntry = NewChannelEntryClient(tx.config)
 	tx.Configuration = NewConfigurationClient(tx.config)
 	tx.Credit = NewCreditClient(tx.config)
 	tx.Device = NewDeviceClient(tx.config)

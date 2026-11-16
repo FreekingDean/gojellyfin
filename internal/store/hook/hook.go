@@ -33,6 +33,30 @@ func (f ApiKeyFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, 
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.ApiKeyMutation", m)
 }
 
+// The ChannelFunc type is an adapter to allow the use of ordinary
+// function as Channel mutator.
+type ChannelFunc func(context.Context, *store.ChannelMutation) (store.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ChannelFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, error) {
+	if mv, ok := m.(*store.ChannelMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.ChannelMutation", m)
+}
+
+// The ChannelEntryFunc type is an adapter to allow the use of ordinary
+// function as ChannelEntry mutator.
+type ChannelEntryFunc func(context.Context, *store.ChannelEntryMutation) (store.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ChannelEntryFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, error) {
+	if mv, ok := m.(*store.ChannelEntryMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.ChannelEntryMutation", m)
+}
+
 // The ConfigurationFunc type is an adapter to allow the use of ordinary
 // function as Configuration mutator.
 type ConfigurationFunc func(context.Context, *store.ConfigurationMutation) (store.Value, error)
