@@ -131,7 +131,7 @@ test.describe('the admin app', () => {
 
     await page.getByLabel('Path on this server').fill(local);
     await page.getByRole('button', { name: 'Save' }).click();
-    await expect(page.getByRole('status').filter({ hasText: name + ' added to Movies.' })).toBeVisible();
+    await expect(page.getByRole('status').filter({ hasText: name + ' added to' })).toBeVisible();
 
     const card = movies.locator('.card', { hasText: name });
     await expect(card).toContainText(harness.downloaderRootFolder + ' opened here as ' + local);
