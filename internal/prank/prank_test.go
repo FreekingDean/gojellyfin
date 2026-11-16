@@ -93,21 +93,27 @@ func TestService_Swap(t *testing.T) {
 		swapped  bool
 	}{
 		{
-			name:     "an episode becomes the stand-in inside the window",
-			override: func(w *world) Override { return Override{Enabled: true, ItemID: &w.standIn.ID, From: at(-1), Until: at(1)} },
-			swapped:  true,
+			name: "an episode becomes the stand-in inside the window",
+			override: func(w *world) Override {
+				return Override{Enabled: true, ItemID: &w.standIn.ID, From: at(-1), Until: at(1)}
+			},
+			swapped: true,
 		},
 		{
 			name:     "nothing is swapped while it is off",
 			override: func(w *world) Override { return Override{ItemID: &w.standIn.ID} },
 		},
 		{
-			name:     "nothing is swapped before the window opens",
-			override: func(w *world) Override { return Override{Enabled: true, ItemID: &w.standIn.ID, From: at(1), Until: at(2)} },
+			name: "nothing is swapped before the window opens",
+			override: func(w *world) Override {
+				return Override{Enabled: true, ItemID: &w.standIn.ID, From: at(1), Until: at(2)}
+			},
 		},
 		{
-			name:     "nothing is swapped once the window closes",
-			override: func(w *world) Override { return Override{Enabled: true, ItemID: &w.standIn.ID, From: at(-2), Until: at(-1)} },
+			name: "nothing is swapped once the window closes",
+			override: func(w *world) Override {
+				return Override{Enabled: true, ItemID: &w.standIn.ID, From: at(-2), Until: at(-1)}
+			},
 		},
 		{
 			name:     "no window means for as long as it is on",

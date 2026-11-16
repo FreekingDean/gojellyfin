@@ -178,3 +178,19 @@ func (s *Service) target(ctx context.Context, userID, itemID uuid.UUID) (uuid.UU
 
 	return *override.ItemID, true, nil
 }
+
+func (s *Service) Name(ctx context.Context, override Override) (string, error) {
+	if override.ItemID == nil {
+		return "", nil
+	}
+
+	item, err := s.catalogue.ItemByID(ctx, items.Everyone, *override.ItemID)
+	if store.IsNotFound(err) {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+
+	return item.Name, nil
+}
