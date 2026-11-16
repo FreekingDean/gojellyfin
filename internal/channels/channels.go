@@ -103,13 +103,21 @@ func (s *Service) one(ctx context.Context, viewer items.Viewer, which ...predica
 }
 
 func (s *Service) visible(ctx context.Context, viewer items.Viewer, channel *Channel) (bool, error) {
+	if viewer.All {
+		return true, nil
+	}
+
 	ids := EntryIDs(channel)
-	found, err := s.items.ItemsByIDs(ctx, viewer, ids)
+	held, err := s.items.ItemsByIDs(ctx, items.Everyone, ids)
+	if err != nil {
+		return false, err
+	}
+	seen, err := s.items.ItemsByIDs(ctx, viewer, ids)
 	if err != nil {
 		return false, err
 	}
 
-	return len(found) == len(ids), nil
+	return len(seen) == len(held), nil
 }
 
 func EntryIDs(channel *Channel) []uuid.UUID {

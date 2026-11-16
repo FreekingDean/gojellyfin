@@ -10,6 +10,7 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/cards"
+	"github.com/FreekingDean/gojellyfin/internal/channels"
 	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
@@ -29,12 +30,13 @@ type Server struct {
 	items    *items.Service
 	cards    *cards.Service
 	discover *discover.Service
+	channels *channels.Service
 	splash   Splash
 	policies dto.Access
 }
 
-func New(items *items.Service, cards *cards.Service, discover *discover.Service, links *link.Handler, policies dto.Access) *Server {
-	return &Server{items: items, cards: cards, discover: discover, splash: links, policies: policies}
+func New(items *items.Service, cards *cards.Service, discover *discover.Service, links *link.Handler, policies dto.Access, channels *channels.Service) *Server {
+	return &Server{items: items, cards: cards, discover: discover, splash: links, policies: policies, channels: channels}
 }
 
 func (s *Server) GetSplashscreen(ctx context.Context, request api.GetSplashscreenRequestObject) (api.GetSplashscreenResponseObject, error) {
@@ -156,6 +158,10 @@ func (s *Server) answer(ctx context.Context, itemID uuid.UUID, imageType api.Ima
 	kind := items.ImageKind(imageType)
 	if items.ValidImageKind(kind) != nil {
 		return nil, false
+	}
+
+	if program, err := s.channels.Program(ctx, items.Everyone, itemID); err == nil {
+		itemID = program.ItemID
 	}
 
 	record, err := s.items.Image(ctx, itemID, kind, index)

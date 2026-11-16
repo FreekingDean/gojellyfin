@@ -961,6 +961,205 @@
           }
         ]
       }
+    },
+    "/GoJellyfin/Channels": {
+      "get": {
+        "tags": [
+          "LiveTv"
+        ],
+        "summary": "Lists every live channel and what it airs.",
+        "operationId": "GoJellyfinListChannels",
+        "responses": {
+          "200": {
+            "description": "The channels.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveChannels"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "LiveTvManagement"
+            ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "LiveTv"
+        ],
+        "summary": "Creates a live channel.",
+        "operationId": "GoJellyfinCreateChannel",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LiveChannelDefinition"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The channel.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveChannel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The channel cannot air as described.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "LiveTvManagement"
+            ]
+          }
+        ]
+      }
+    },
+    "/GoJellyfin/Channels/{channelId}": {
+      "put": {
+        "tags": [
+          "LiveTv"
+        ],
+        "summary": "Replaces a live channel's number, name, order and titles, keeping its schedule's seed.",
+        "operationId": "GoJellyfinUpdateChannel",
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "The channel id.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LiveChannelDefinition"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The channel.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveChannel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The channel cannot air as described.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such channel."
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "LiveTvManagement"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "LiveTv"
+        ],
+        "summary": "Removes a live channel.",
+        "operationId": "GoJellyfinDeleteChannel",
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "The channel id.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Channel removed."
+          },
+          "404": {
+            "description": "No such channel."
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "LiveTvManagement"
+            ]
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -1767,6 +1966,87 @@
             "type": "string",
             "format": "date-time"
           }
+        }
+      },
+      "LiveChannelOrder": {
+        "type": "string",
+        "enum": [
+          "Shuffle",
+          "Sequential"
+        ],
+        "description": "Shuffle reshuffles the titles on every pass; Sequential airs them in the order listed, a series by season and episode."
+      },
+      "LiveChannelDefinition": {
+        "type": "object",
+        "required": [
+          "Number",
+          "Name",
+          "Order",
+          "ItemIds"
+        ],
+        "properties": {
+          "Number": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "Name": {
+            "type": "string"
+          },
+          "Order": {
+            "$ref": "#/components/schemas/LiveChannelOrder"
+          },
+          "ItemIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Movies, series, seasons or episodes, in the order a sequential channel airs them."
+          }
+        }
+      },
+      "LiveChannel": {
+        "type": "object",
+        "required": [
+          "Id",
+          "Number",
+          "Name",
+          "Order",
+          "ItemIds"
+        ],
+        "properties": {
+          "Id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "Number": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "Name": {
+            "type": "string"
+          },
+          "Order": {
+            "$ref": "#/components/schemas/LiveChannelOrder"
+          },
+          "ItemIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Movies, series, seasons or episodes, in the order a sequential channel airs them."
+          }
+        }
+      },
+      "LiveChannels": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/LiveChannel"
         }
       }
     },
