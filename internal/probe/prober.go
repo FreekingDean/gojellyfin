@@ -61,7 +61,14 @@ func (s *Prober) Job() jobs.Job {
 		Description: "Reads the streams of every file it has not seen before.",
 		Startable:   true,
 		Run:         s.run,
+		Outstanding: s.outstanding,
 	}
+}
+
+func (s *Prober) outstanding(ctx context.Context) (int, error) {
+	files, err := s.items.SourcesNeedingProbe(ctx)
+
+	return len(files), err
 }
 
 func (s *Prober) run(ctx context.Context) error {

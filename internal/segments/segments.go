@@ -94,7 +94,14 @@ func (s *Service) BatchJob() jobs.Job {
 		Startable:   true,
 		Queue:       jobs.SegmentsQueue,
 		Run:         s.runBatch,
+		Outstanding: s.outstanding,
 	}
+}
+
+func (s *Service) outstanding(ctx context.Context) (int, error) {
+	seasons, err := s.SeasonsNeedingDetection(ctx)
+
+	return len(seasons), err
 }
 
 func (s *Service) SeasonJob() jobs.Job {

@@ -87,6 +87,13 @@ migrate: build
 test: build
 	go test ./...
 
+# The jobs suite against a real Temporal server: `make temporal` in another
+# terminal first. Kept behind a build tag so `make test` needs no server.
+.PHONY: test-temporal
+test-temporal:
+	TEMPORAL_HOSTPORT=$(TEMPORAL_HOSTPORT) TEMPORAL_NAMESPACE=$(TEMPORAL_NAMESPACE) \
+		go test -tags temporal -count=1 -run TestLive ./internal/jobs
+
 # Playwright driving the real jellyfin-web client. Apart from `make test`
 # because it wants Node, Docker, ffmpeg and a browser. `e2e` renders in the
 # pinned Playwright image and compares screenshots, as CI does; `e2e-update`

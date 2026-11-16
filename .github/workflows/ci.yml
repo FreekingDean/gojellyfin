@@ -138,6 +138,37 @@ jobs:
       - name: No diff
         run: git diff --exit-code
 
+  # The jobs suite against a real Temporal server, which is the only thing that
+  # can say the singleton id, cancellation, retries and schedules hold. The dev
+  # server comes from the CLI's release rather than a service container, because
+  # a service cannot be given the `server start-dev` command.
+  temporal:
+    runs-on: ubuntu-latest
+
+    env:
+      DATABASE_URL: postgres://unused@localhost:5432/unused
+      TEMPORAL_HOSTPORT: localhost:7233
+      TEMPORAL_NAMESPACE: gojellyfin_test
+      TEMPORAL_CLI: 1.5.1
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Start Temporal
+        run: |
+          curl -sSfL "https://github.com/temporalio/cli/releases/download/v${TEMPORAL_CLI}/temporal_cli_${TEMPORAL_CLI}_linux_amd64.tar.gz" | sudo tar xz -C /usr/local/bin temporal
+          temporal server start-dev --headless --ip 127.0.0.1 --namespace "$TEMPORAL_NAMESPACE" > temporal.log 2>&1 &
+          for _ in $(seq 60); do temporal operator cluster health --address "$TEMPORAL_HOSTPORT" && exit 0; sleep 1; done
+          cat temporal.log
+          exit 1
+
+      - name: Test
+        run: go test -race -tags temporal -count=1 -run TestLive ./internal/jobs
+
   test:
     runs-on: ubuntu-latest
 

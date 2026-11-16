@@ -31,7 +31,11 @@ func (s *Server) GetTasks(ctx context.Context, request api.GetTasksRequestObject
 		return nil, err
 	}
 	for _, status := range statuses {
-		infos = append(infos, taskInfo(status))
+		triggers, err := s.jobs.Triggers(ctx, status.Job.Name)
+		if err != nil {
+			return nil, err
+		}
+		infos = append(infos, taskInfo(status, triggers))
 	}
 
 	return api.GetTasks200JSONResponse(infos), nil
@@ -46,7 +50,12 @@ func (s *Server) GetTask(ctx context.Context, request api.GetTaskRequestObject) 
 		return nil, err
 	}
 
-	return api.GetTask200JSONResponse(taskInfo(status)), nil
+	triggers, err := s.jobs.Triggers(ctx, request.TaskId)
+	if err != nil {
+		return nil, err
+	}
+
+	return api.GetTask200JSONResponse(taskInfo(status, triggers)), nil
 }
 
 func (s *Server) StartTask(ctx context.Context, request api.StartTaskRequestObject) (api.StartTaskResponseObject, error) {
@@ -74,9 +83,21 @@ func (s *Server) StopTask(ctx context.Context, request api.StopTaskRequestObject
 }
 
 func (s *Server) UpdateTask(ctx context.Context, request api.UpdateTaskRequestObject) (api.UpdateTaskResponseObject, error) {
-	if _, err := s.jobs.Status(ctx, request.TaskId); errors.Is(err, jobs.ErrNotFound) {
-		return api.UpdateTask404JSONResponse{}, nil
+	infos := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody)
+	triggers := make([]jobs.Trigger, 0)
+	if infos != nil {
+		for _, info := range *infos {
+			triggers = append(triggers, trigger(info))
+		}
 	}
 
-	return nil, api.ErrNotImplemented
+	err := s.jobs.Schedule(ctx, request.TaskId, triggers)
+	if errors.Is(err, jobs.ErrNotFound) {
+		return api.UpdateTask404JSONResponse{}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return api.UpdateTask204Response{}, nil
 }
