@@ -27,21 +27,11 @@ func recorded(t *testing.T, operationID, method, target string) *tracing.Recorde
 }
 
 func TestOapiTracing_Middleware(t *testing.T) {
-	t.Run("a span held open for a transcode is a leak, so streaming roots produce none", func(t *testing.T) {
-		paths := []string{
-			"/Videos/6f1b/stream",
-			"/Videos/6f1b/stream.mkv",
-			"/videos/6f1b/stream",
-			"/Audio/6f1b/stream",
-			"/Audio/6f1b/stream.mp3",
-			"/Audio/6f1b/universal",
-			"/audio/6f1b/universal",
-		}
+	t.Run("a short operation under a streaming root is traced like any other", func(t *testing.T) {
+		names := recorded(t, "GetAdditionalPart", http.MethodGet, "/Videos/6f1b/AdditionalParts").Names()
 
-		for _, path := range paths {
-			if names := recorded(t, "GetVideoStream", http.MethodGet, path).Names(); len(names) != 0 {
-				t.Errorf("%q: want no span, got %v", path, names)
-			}
+		if len(names) != 1 || names[0] != "GetAdditionalPart" {
+			t.Errorf("want one span named for the operation, got %v", names)
 		}
 	})
 

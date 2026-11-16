@@ -15,6 +15,14 @@ const (
 	TrackAudio
 )
 
+func (t Track) String() string {
+	if t == TrackAudio {
+		return "audio"
+	}
+
+	return "video"
+}
+
 const (
 	SegmentTicks      = 6 * ticksPerSecond
 	AudioRate         = 48000

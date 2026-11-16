@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 )
 
 const (
@@ -22,6 +24,9 @@ func (ffmpeg *FFMpeg) Keyframes(ctx context.Context, path string) ([]int64, erro
 	if ffmpeg.probe == "" {
 		return nil, ErrNotAvailable
 	}
+
+	ctx, span := tracing.Start(ctx, "ffprobe keyframes")
+	defer span.End()
 
 	ctx, cancel := context.WithTimeout(ctx, keyframeTimeout)
 	defer cancel()
@@ -40,6 +45,8 @@ func (ffmpeg *FFMpeg) Keyframes(ctx context.Context, path string) ([]int64, erro
 		return nil, err
 	}
 	if err := cmd.Start(); err != nil {
+		span.Failed()
+
 		return nil, fmt.Errorf("failed to start ffprobe: %w", err)
 	}
 
@@ -53,19 +60,26 @@ func (ffmpeg *FFMpeg) Keyframes(ctx context.Context, path string) ([]int64, erro
 	scanned := lines.Err()
 
 	if err := cmd.Wait(); err != nil {
+		span.Failed()
 		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			span.Set(tracing.Bool("ffmpeg.timed_out", true))
+
 			return nil, fmt.Errorf("ffprobe ran out of time reading the keyframes of %s", path)
 		}
 
 		return nil, fmt.Errorf("failed to read the keyframes of %s: %w", path, err)
 	}
 	if scanned != nil {
+		span.Failed()
+
 		return nil, scanned
 	}
 
 	slices.Sort(keyframes)
+	keyframes = slices.Compact(keyframes)
+	span.Set(tracing.Int("ffmpeg.keyframes", len(keyframes)))
 
-	return slices.Compact(keyframes), nil
+	return keyframes, nil
 }
 
 func keyframe(line string) (int64, bool) {
