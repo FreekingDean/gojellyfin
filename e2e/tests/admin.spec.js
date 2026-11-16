@@ -254,4 +254,55 @@ test.describe('the admin app', () => {
     await expect(row).toHaveCount(0);
     await expect(made).toHaveCount(0);
   });
+
+  test('changes what several users may do at once and leaves the rest alone', async ({ page, harness }) => {
+    const { headers } = await session(harness);
+    const stamp = Date.now();
+    const names = ['bulk-spec-a-' + stamp, 'bulk-spec-b-' + stamp];
+    const ids = [];
+    for (const name of names) {
+      const made = await fetch(harness.baseUrl + '/Users/New', { method: 'POST', headers, body: JSON.stringify({ Name: name, Password: 'bulk-spec-password' }) });
+      ids.push((await made.json()).Id);
+    }
+    await fetch(harness.baseUrl + '/GoJellyfin/RequestUsers/' + ids[0], {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ CanRequest: true, NeedsApproval: true, Quota: 3 }),
+    });
+    const libraries = await (await fetch(harness.baseUrl + '/Library/VirtualFolders', { headers })).json();
+    const hidden = libraries[0];
+
+    await page.goto(harness.baseUrl + '/admin');
+    await signIn(page, harness);
+    await page.getByRole('link', { name: 'Users' }).click();
+    for (const name of names) {
+      await page.getByLabel('Select ' + name, { exact: true }).check();
+    }
+    await page.getByRole('button', { name: 'Edit 2 users' }).click();
+    await expect(page.getByRole('heading', { name: 'Edit 2 users' })).toBeVisible();
+
+    await page.getByLabel(hidden.Name, { exact: true }).selectOption('off');
+    await page.getByLabel('Download titles').selectOption('off');
+    await page.getByLabel('Sign-in hours').selectOption('only');
+    await page.getByLabel('Days', { exact: true }).selectOption('Weekend');
+    await page.getByRole('button', { name: 'Save to 2 users' }).click();
+    await expect(page.getByRole('status').filter({ hasText: '2 users changed.' })).toBeVisible();
+    await expect(page.locator('tr', { hasText: names[0] })).toContainText('Weekends 09:00–22:00');
+
+    for (const id of ids) {
+      const user = await (await fetch(harness.baseUrl + '/Users/' + id, { headers })).json();
+      expect(user.Policy.EnableAllFolders).toBe(false);
+      expect(user.Policy.EnabledFolders).not.toContain(hidden.ItemId);
+      expect(user.Policy.EnabledFolders.length).toBe(libraries.length - 1);
+      expect(user.Policy.EnableContentDownloading).toBe(false);
+      expect(user.Policy.EnableLiveTvAccess).toBe(true);
+      expect(user.Policy.AccessSchedules).toEqual([expect.objectContaining({ DayOfWeek: 'Weekend', StartHour: 9, EndHour: 22 })]);
+    }
+    const allowances = await (await fetch(harness.baseUrl + '/GoJellyfin/RequestUsers', { headers })).json();
+    expect(allowances.find((each) => each.Id === ids[0])).toEqual(expect.objectContaining({ NeedsApproval: true, Quota: 3 }));
+
+    for (const id of ids) {
+      await fetch(harness.baseUrl + '/Users/' + id, { method: 'DELETE', headers });
+    }
+  });
 });

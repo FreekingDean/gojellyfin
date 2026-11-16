@@ -295,6 +295,8 @@ export type Person = {
   used: number;
   seen?: string;
   devices: { name: string; app: string; seen: string }[];
+  schedules?: { day: 'Everyday' | 'Weekday' | 'Weekend'; start: number; end: number }[];
+  grants?: { EnableLiveTvAccess?: boolean; EnableContentDownloading?: boolean };
 };
 
 export const people: Person[] = [
@@ -344,6 +346,11 @@ export const people: Person[] = [
     used: 2,
     seen: ago(20),
     devices: [{ name: 'iPhone', app: 'Swiftfin 1.3', seen: ago(20) }],
+    schedules: [
+      { day: 'Weekday', start: 16, end: 21 },
+      { day: 'Weekend', start: 9, end: 22 },
+    ],
+    grants: { EnableContentDownloading: false },
   },
   {
     id: 'u4',
@@ -373,6 +380,7 @@ export const people: Person[] = [
     used: 0,
     seen: ago(40 * DAY),
     devices: [],
+    grants: { EnableLiveTvAccess: false, EnableContentDownloading: false },
   },
 ];
 
