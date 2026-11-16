@@ -926,18 +926,23 @@ func (m *ActivityLogEntryMutation) ResetEdge(name string) error {
 // ApiKeyMutation represents an operation that mutates the ApiKey nodes in the graph.
 type ApiKeyMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uuid.UUID
-	created_at    *time.Time
-	updated_at    *time.Time
-	access_token  *string
-	app_name      *string
-	revoked_at    *time.Time
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*ApiKey, error)
-	predicates    []predicate.ApiKey
+	op              Op
+	typ             string
+	id              *uuid.UUID
+	created_at      *time.Time
+	updated_at      *time.Time
+	access_token    *string
+	app_name        *string
+	revoked_at      *time.Time
+	clearedFields   map[string]struct{}
+	user            *uuid.UUID
+	cleareduser     bool
+	sessions        map[uuid.UUID]struct{}
+	removedsessions map[uuid.UUID]struct{}
+	clearedsessions bool
+	done            bool
+	oldValue        func(context.Context) (*ApiKey, error)
+	predicates      []predicate.ApiKey
 }
 
 var _ ent.Mutation = (*ApiKeyMutation)(nil)
@@ -1237,6 +1242,136 @@ func (m *ApiKeyMutation) ResetRevokedAt() {
 	delete(m.clearedFields, apikey.FieldRevokedAt)
 }
 
+// SetUserID sets the "user_id" field.
+func (m *ApiKeyMutation) SetUserID(u uuid.UUID) {
+	m.user = &u
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *ApiKeyMutation) UserID() (r uuid.UUID, exists bool) {
+	v := m.user
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the ApiKey entity.
+// If the ApiKey object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ApiKeyMutation) OldUserID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// ClearUserID clears the value of the "user_id" field.
+func (m *ApiKeyMutation) ClearUserID() {
+	m.user = nil
+	m.clearedFields[apikey.FieldUserID] = struct{}{}
+}
+
+// UserIDCleared returns if the "user_id" field was cleared in this mutation.
+func (m *ApiKeyMutation) UserIDCleared() bool {
+	_, ok := m.clearedFields[apikey.FieldUserID]
+	return ok
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *ApiKeyMutation) ResetUserID() {
+	m.user = nil
+	delete(m.clearedFields, apikey.FieldUserID)
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (m *ApiKeyMutation) ClearUser() {
+	m.cleareduser = true
+	m.clearedFields[apikey.FieldUserID] = struct{}{}
+}
+
+// UserCleared reports if the "user" edge to the User entity was cleared.
+func (m *ApiKeyMutation) UserCleared() bool {
+	return m.UserIDCleared() || m.cleareduser
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
+func (m *ApiKeyMutation) UserIDs() (ids []uuid.UUID) {
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *ApiKeyMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+}
+
+// AddSessionIDs adds the "sessions" edge to the Session entity by ids.
+func (m *ApiKeyMutation) AddSessionIDs(ids ...uuid.UUID) {
+	if m.sessions == nil {
+		m.sessions = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.sessions[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSessions clears the "sessions" edge to the Session entity.
+func (m *ApiKeyMutation) ClearSessions() {
+	m.clearedsessions = true
+}
+
+// SessionsCleared reports if the "sessions" edge to the Session entity was cleared.
+func (m *ApiKeyMutation) SessionsCleared() bool {
+	return m.clearedsessions
+}
+
+// RemoveSessionIDs removes the "sessions" edge to the Session entity by IDs.
+func (m *ApiKeyMutation) RemoveSessionIDs(ids ...uuid.UUID) {
+	if m.removedsessions == nil {
+		m.removedsessions = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.sessions, ids[i])
+		m.removedsessions[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSessions returns the removed IDs of the "sessions" edge to the Session entity.
+func (m *ApiKeyMutation) RemovedSessionsIDs() (ids []uuid.UUID) {
+	for id := range m.removedsessions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SessionsIDs returns the "sessions" edge IDs in the mutation.
+func (m *ApiKeyMutation) SessionsIDs() (ids []uuid.UUID) {
+	for id := range m.sessions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSessions resets all changes to the "sessions" edge.
+func (m *ApiKeyMutation) ResetSessions() {
+	m.sessions = nil
+	m.clearedsessions = false
+	m.removedsessions = nil
+}
+
 // Where appends a list predicates to the ApiKeyMutation builder.
 func (m *ApiKeyMutation) Where(ps ...predicate.ApiKey) {
 	m.predicates = append(m.predicates, ps...)
@@ -1271,7 +1406,7 @@ func (m *ApiKeyMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ApiKeyMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 6)
 	if m.created_at != nil {
 		fields = append(fields, apikey.FieldCreatedAt)
 	}
@@ -1286,6 +1421,9 @@ func (m *ApiKeyMutation) Fields() []string {
 	}
 	if m.revoked_at != nil {
 		fields = append(fields, apikey.FieldRevokedAt)
+	}
+	if m.user != nil {
+		fields = append(fields, apikey.FieldUserID)
 	}
 	return fields
 }
@@ -1305,6 +1443,8 @@ func (m *ApiKeyMutation) Field(name string) (ent.Value, bool) {
 		return m.AppName()
 	case apikey.FieldRevokedAt:
 		return m.RevokedAt()
+	case apikey.FieldUserID:
+		return m.UserID()
 	}
 	return nil, false
 }
@@ -1324,6 +1464,8 @@ func (m *ApiKeyMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldAppName(ctx)
 	case apikey.FieldRevokedAt:
 		return m.OldRevokedAt(ctx)
+	case apikey.FieldUserID:
+		return m.OldUserID(ctx)
 	}
 	return nil, fmt.Errorf("unknown ApiKey field %s", name)
 }
@@ -1368,6 +1510,13 @@ func (m *ApiKeyMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetRevokedAt(v)
 		return nil
+	case apikey.FieldUserID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
 	}
 	return fmt.Errorf("unknown ApiKey field %s", name)
 }
@@ -1401,6 +1550,9 @@ func (m *ApiKeyMutation) ClearedFields() []string {
 	if m.FieldCleared(apikey.FieldRevokedAt) {
 		fields = append(fields, apikey.FieldRevokedAt)
 	}
+	if m.FieldCleared(apikey.FieldUserID) {
+		fields = append(fields, apikey.FieldUserID)
+	}
 	return fields
 }
 
@@ -1417,6 +1569,9 @@ func (m *ApiKeyMutation) ClearField(name string) error {
 	switch name {
 	case apikey.FieldRevokedAt:
 		m.ClearRevokedAt()
+		return nil
+	case apikey.FieldUserID:
+		m.ClearUserID()
 		return nil
 	}
 	return fmt.Errorf("unknown ApiKey nullable field %s", name)
@@ -1441,55 +1596,112 @@ func (m *ApiKeyMutation) ResetField(name string) error {
 	case apikey.FieldRevokedAt:
 		m.ResetRevokedAt()
 		return nil
+	case apikey.FieldUserID:
+		m.ResetUserID()
+		return nil
 	}
 	return fmt.Errorf("unknown ApiKey field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ApiKeyMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 2)
+	if m.user != nil {
+		edges = append(edges, apikey.EdgeUser)
+	}
+	if m.sessions != nil {
+		edges = append(edges, apikey.EdgeSessions)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *ApiKeyMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case apikey.EdgeUser:
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
+		}
+	case apikey.EdgeSessions:
+		ids := make([]ent.Value, 0, len(m.sessions))
+		for id := range m.sessions {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ApiKeyMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 2)
+	if m.removedsessions != nil {
+		edges = append(edges, apikey.EdgeSessions)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *ApiKeyMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case apikey.EdgeSessions:
+		ids := make([]ent.Value, 0, len(m.removedsessions))
+		for id := range m.removedsessions {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ApiKeyMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 2)
+	if m.cleareduser {
+		edges = append(edges, apikey.EdgeUser)
+	}
+	if m.clearedsessions {
+		edges = append(edges, apikey.EdgeSessions)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *ApiKeyMutation) EdgeCleared(name string) bool {
+	switch name {
+	case apikey.EdgeUser:
+		return m.cleareduser
+	case apikey.EdgeSessions:
+		return m.clearedsessions
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *ApiKeyMutation) ClearEdge(name string) error {
+	switch name {
+	case apikey.EdgeUser:
+		m.ClearUser()
+		return nil
+	}
 	return fmt.Errorf("unknown ApiKey unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *ApiKeyMutation) ResetEdge(name string) error {
+	switch name {
+	case apikey.EdgeUser:
+		m.ResetUser()
+		return nil
+	case apikey.EdgeSessions:
+		m.ResetSessions()
+		return nil
+	}
 	return fmt.Errorf("unknown ApiKey edge %s", name)
 }
 
@@ -6777,6 +6989,9 @@ type ItemMutation struct {
 	playing_sessions            map[uuid.UUID]struct{}
 	removedplaying_sessions     map[uuid.UUID]struct{}
 	clearedplaying_sessions     bool
+	viewing_sessions            map[uuid.UUID]struct{}
+	removedviewing_sessions     map[uuid.UUID]struct{}
+	clearedviewing_sessions     bool
 	playlist                    *uuid.UUID
 	clearedplaylist             bool
 	playlist_entries            map[uuid.UUID]struct{}
@@ -8677,6 +8892,60 @@ func (m *ItemMutation) ResetPlayingSessions() {
 	m.removedplaying_sessions = nil
 }
 
+// AddViewingSessionIDs adds the "viewing_sessions" edge to the Session entity by ids.
+func (m *ItemMutation) AddViewingSessionIDs(ids ...uuid.UUID) {
+	if m.viewing_sessions == nil {
+		m.viewing_sessions = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.viewing_sessions[ids[i]] = struct{}{}
+	}
+}
+
+// ClearViewingSessions clears the "viewing_sessions" edge to the Session entity.
+func (m *ItemMutation) ClearViewingSessions() {
+	m.clearedviewing_sessions = true
+}
+
+// ViewingSessionsCleared reports if the "viewing_sessions" edge to the Session entity was cleared.
+func (m *ItemMutation) ViewingSessionsCleared() bool {
+	return m.clearedviewing_sessions
+}
+
+// RemoveViewingSessionIDs removes the "viewing_sessions" edge to the Session entity by IDs.
+func (m *ItemMutation) RemoveViewingSessionIDs(ids ...uuid.UUID) {
+	if m.removedviewing_sessions == nil {
+		m.removedviewing_sessions = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.viewing_sessions, ids[i])
+		m.removedviewing_sessions[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedViewingSessions returns the removed IDs of the "viewing_sessions" edge to the Session entity.
+func (m *ItemMutation) RemovedViewingSessionsIDs() (ids []uuid.UUID) {
+	for id := range m.removedviewing_sessions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ViewingSessionsIDs returns the "viewing_sessions" edge IDs in the mutation.
+func (m *ItemMutation) ViewingSessionsIDs() (ids []uuid.UUID) {
+	for id := range m.viewing_sessions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetViewingSessions resets all changes to the "viewing_sessions" edge.
+func (m *ItemMutation) ResetViewingSessions() {
+	m.viewing_sessions = nil
+	m.clearedviewing_sessions = false
+	m.removedviewing_sessions = nil
+}
+
 // SetPlaylistID sets the "playlist" edge to the Playlist entity by id.
 func (m *ItemMutation) SetPlaylistID(id uuid.UUID) {
 	m.playlist = &id
@@ -9636,7 +9905,7 @@ func (m *ItemMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ItemMutation) AddedEdges() []string {
-	edges := make([]string, 0, 15)
+	edges := make([]string, 0, 16)
 	if m.parent != nil {
 		edges = append(edges, item.EdgeParent)
 	}
@@ -9666,6 +9935,9 @@ func (m *ItemMutation) AddedEdges() []string {
 	}
 	if m.playing_sessions != nil {
 		edges = append(edges, item.EdgePlayingSessions)
+	}
+	if m.viewing_sessions != nil {
+		edges = append(edges, item.EdgeViewingSessions)
 	}
 	if m.playlist != nil {
 		edges = append(edges, item.EdgePlaylist)
@@ -9747,6 +10019,12 @@ func (m *ItemMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case item.EdgeViewingSessions:
+		ids := make([]ent.Value, 0, len(m.viewing_sessions))
+		for id := range m.viewing_sessions {
+			ids = append(ids, id)
+		}
+		return ids
 	case item.EdgePlaylist:
 		if id := m.playlist; id != nil {
 			return []ent.Value{*id}
@@ -9781,7 +10059,7 @@ func (m *ItemMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ItemMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 15)
+	edges := make([]string, 0, 16)
 	if m.removedchildren != nil {
 		edges = append(edges, item.EdgeChildren)
 	}
@@ -9808,6 +10086,9 @@ func (m *ItemMutation) RemovedEdges() []string {
 	}
 	if m.removedplaying_sessions != nil {
 		edges = append(edges, item.EdgePlayingSessions)
+	}
+	if m.removedviewing_sessions != nil {
+		edges = append(edges, item.EdgeViewingSessions)
 	}
 	if m.removedplaylist_entries != nil {
 		edges = append(edges, item.EdgePlaylistEntries)
@@ -9882,6 +10163,12 @@ func (m *ItemMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case item.EdgeViewingSessions:
+		ids := make([]ent.Value, 0, len(m.removedviewing_sessions))
+		for id := range m.removedviewing_sessions {
+			ids = append(ids, id)
+		}
+		return ids
 	case item.EdgePlaylistEntries:
 		ids := make([]ent.Value, 0, len(m.removedplaylist_entries))
 		for id := range m.removedplaylist_entries {
@@ -9912,7 +10199,7 @@ func (m *ItemMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ItemMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 15)
+	edges := make([]string, 0, 16)
 	if m.clearedparent {
 		edges = append(edges, item.EdgeParent)
 	}
@@ -9942,6 +10229,9 @@ func (m *ItemMutation) ClearedEdges() []string {
 	}
 	if m.clearedplaying_sessions {
 		edges = append(edges, item.EdgePlayingSessions)
+	}
+	if m.clearedviewing_sessions {
+		edges = append(edges, item.EdgeViewingSessions)
 	}
 	if m.clearedplaylist {
 		edges = append(edges, item.EdgePlaylist)
@@ -9985,6 +10275,8 @@ func (m *ItemMutation) EdgeCleared(name string) bool {
 		return m.clearedactivity_log_entries
 	case item.EdgePlayingSessions:
 		return m.clearedplaying_sessions
+	case item.EdgeViewingSessions:
+		return m.clearedviewing_sessions
 	case item.EdgePlaylist:
 		return m.clearedplaylist
 	case item.EdgePlaylistEntries:
@@ -10046,6 +10338,9 @@ func (m *ItemMutation) ResetEdge(name string) error {
 		return nil
 	case item.EdgePlayingSessions:
 		m.ResetPlayingSessions()
+		return nil
+	case item.EdgeViewingSessions:
+		m.ResetViewingSessions()
 		return nil
 	case item.EdgePlaylist:
 		m.ResetPlaylist()
@@ -27267,6 +27562,7 @@ type SessionMutation struct {
 	is_paused                    *bool
 	playing_at                   *time.Time
 	playback_plan                **entities.PlaybackPlan
+	viewing_at                   *time.Time
 	clearedFields                map[string]struct{}
 	user                         *uuid.UUID
 	cleareduser                  bool
@@ -27276,6 +27572,13 @@ type SessionMutation struct {
 	clearednow_playing           bool
 	planned_source               *uuid.UUID
 	clearedplanned_source        bool
+	api_key                      *uuid.UUID
+	clearedapi_key               bool
+	now_viewing                  *uuid.UUID
+	clearednow_viewing           bool
+	additional_users             map[uuid.UUID]struct{}
+	removedadditional_users      map[uuid.UUID]struct{}
+	clearedadditional_users      bool
 	sync_play_memberships        map[uuid.UUID]struct{}
 	removedsync_play_memberships map[uuid.UUID]struct{}
 	clearedsync_play_memberships bool
@@ -27980,6 +28283,153 @@ func (m *SessionMutation) ResetPlaybackPlan() {
 	delete(m.clearedFields, session.FieldPlaybackPlan)
 }
 
+// SetAPIKeyID sets the "api_key_id" field.
+func (m *SessionMutation) SetAPIKeyID(u uuid.UUID) {
+	m.api_key = &u
+}
+
+// APIKeyID returns the value of the "api_key_id" field in the mutation.
+func (m *SessionMutation) APIKeyID() (r uuid.UUID, exists bool) {
+	v := m.api_key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAPIKeyID returns the old "api_key_id" field's value of the Session entity.
+// If the Session object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SessionMutation) OldAPIKeyID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAPIKeyID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAPIKeyID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAPIKeyID: %w", err)
+	}
+	return oldValue.APIKeyID, nil
+}
+
+// ClearAPIKeyID clears the value of the "api_key_id" field.
+func (m *SessionMutation) ClearAPIKeyID() {
+	m.api_key = nil
+	m.clearedFields[session.FieldAPIKeyID] = struct{}{}
+}
+
+// APIKeyIDCleared returns if the "api_key_id" field was cleared in this mutation.
+func (m *SessionMutation) APIKeyIDCleared() bool {
+	_, ok := m.clearedFields[session.FieldAPIKeyID]
+	return ok
+}
+
+// ResetAPIKeyID resets all changes to the "api_key_id" field.
+func (m *SessionMutation) ResetAPIKeyID() {
+	m.api_key = nil
+	delete(m.clearedFields, session.FieldAPIKeyID)
+}
+
+// SetNowViewingItemID sets the "now_viewing_item_id" field.
+func (m *SessionMutation) SetNowViewingItemID(u uuid.UUID) {
+	m.now_viewing = &u
+}
+
+// NowViewingItemID returns the value of the "now_viewing_item_id" field in the mutation.
+func (m *SessionMutation) NowViewingItemID() (r uuid.UUID, exists bool) {
+	v := m.now_viewing
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNowViewingItemID returns the old "now_viewing_item_id" field's value of the Session entity.
+// If the Session object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SessionMutation) OldNowViewingItemID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNowViewingItemID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNowViewingItemID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNowViewingItemID: %w", err)
+	}
+	return oldValue.NowViewingItemID, nil
+}
+
+// ClearNowViewingItemID clears the value of the "now_viewing_item_id" field.
+func (m *SessionMutation) ClearNowViewingItemID() {
+	m.now_viewing = nil
+	m.clearedFields[session.FieldNowViewingItemID] = struct{}{}
+}
+
+// NowViewingItemIDCleared returns if the "now_viewing_item_id" field was cleared in this mutation.
+func (m *SessionMutation) NowViewingItemIDCleared() bool {
+	_, ok := m.clearedFields[session.FieldNowViewingItemID]
+	return ok
+}
+
+// ResetNowViewingItemID resets all changes to the "now_viewing_item_id" field.
+func (m *SessionMutation) ResetNowViewingItemID() {
+	m.now_viewing = nil
+	delete(m.clearedFields, session.FieldNowViewingItemID)
+}
+
+// SetViewingAt sets the "viewing_at" field.
+func (m *SessionMutation) SetViewingAt(t time.Time) {
+	m.viewing_at = &t
+}
+
+// ViewingAt returns the value of the "viewing_at" field in the mutation.
+func (m *SessionMutation) ViewingAt() (r time.Time, exists bool) {
+	v := m.viewing_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldViewingAt returns the old "viewing_at" field's value of the Session entity.
+// If the Session object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SessionMutation) OldViewingAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldViewingAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldViewingAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldViewingAt: %w", err)
+	}
+	return oldValue.ViewingAt, nil
+}
+
+// ClearViewingAt clears the value of the "viewing_at" field.
+func (m *SessionMutation) ClearViewingAt() {
+	m.viewing_at = nil
+	m.clearedFields[session.FieldViewingAt] = struct{}{}
+}
+
+// ViewingAtCleared returns if the "viewing_at" field was cleared in this mutation.
+func (m *SessionMutation) ViewingAtCleared() bool {
+	_, ok := m.clearedFields[session.FieldViewingAt]
+	return ok
+}
+
+// ResetViewingAt resets all changes to the "viewing_at" field.
+func (m *SessionMutation) ResetViewingAt() {
+	m.viewing_at = nil
+	delete(m.clearedFields, session.FieldViewingAt)
+}
+
 // SetUserID sets the "user" edge to the User entity by id.
 func (m *SessionMutation) SetUserID(id uuid.UUID) {
 	m.user = &id
@@ -28125,6 +28575,127 @@ func (m *SessionMutation) ResetPlannedSource() {
 	m.clearedplanned_source = false
 }
 
+// ClearAPIKey clears the "api_key" edge to the ApiKey entity.
+func (m *SessionMutation) ClearAPIKey() {
+	m.clearedapi_key = true
+	m.clearedFields[session.FieldAPIKeyID] = struct{}{}
+}
+
+// APIKeyCleared reports if the "api_key" edge to the ApiKey entity was cleared.
+func (m *SessionMutation) APIKeyCleared() bool {
+	return m.APIKeyIDCleared() || m.clearedapi_key
+}
+
+// APIKeyIDs returns the "api_key" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// APIKeyID instead. It exists only for internal usage by the builders.
+func (m *SessionMutation) APIKeyIDs() (ids []uuid.UUID) {
+	if id := m.api_key; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetAPIKey resets all changes to the "api_key" edge.
+func (m *SessionMutation) ResetAPIKey() {
+	m.api_key = nil
+	m.clearedapi_key = false
+}
+
+// SetNowViewingID sets the "now_viewing" edge to the Item entity by id.
+func (m *SessionMutation) SetNowViewingID(id uuid.UUID) {
+	m.now_viewing = &id
+}
+
+// ClearNowViewing clears the "now_viewing" edge to the Item entity.
+func (m *SessionMutation) ClearNowViewing() {
+	m.clearednow_viewing = true
+	m.clearedFields[session.FieldNowViewingItemID] = struct{}{}
+}
+
+// NowViewingCleared reports if the "now_viewing" edge to the Item entity was cleared.
+func (m *SessionMutation) NowViewingCleared() bool {
+	return m.NowViewingItemIDCleared() || m.clearednow_viewing
+}
+
+// NowViewingID returns the "now_viewing" edge ID in the mutation.
+func (m *SessionMutation) NowViewingID() (id uuid.UUID, exists bool) {
+	if m.now_viewing != nil {
+		return *m.now_viewing, true
+	}
+	return
+}
+
+// NowViewingIDs returns the "now_viewing" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// NowViewingID instead. It exists only for internal usage by the builders.
+func (m *SessionMutation) NowViewingIDs() (ids []uuid.UUID) {
+	if id := m.now_viewing; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetNowViewing resets all changes to the "now_viewing" edge.
+func (m *SessionMutation) ResetNowViewing() {
+	m.now_viewing = nil
+	m.clearednow_viewing = false
+}
+
+// AddAdditionalUserIDs adds the "additional_users" edge to the User entity by ids.
+func (m *SessionMutation) AddAdditionalUserIDs(ids ...uuid.UUID) {
+	if m.additional_users == nil {
+		m.additional_users = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.additional_users[ids[i]] = struct{}{}
+	}
+}
+
+// ClearAdditionalUsers clears the "additional_users" edge to the User entity.
+func (m *SessionMutation) ClearAdditionalUsers() {
+	m.clearedadditional_users = true
+}
+
+// AdditionalUsersCleared reports if the "additional_users" edge to the User entity was cleared.
+func (m *SessionMutation) AdditionalUsersCleared() bool {
+	return m.clearedadditional_users
+}
+
+// RemoveAdditionalUserIDs removes the "additional_users" edge to the User entity by IDs.
+func (m *SessionMutation) RemoveAdditionalUserIDs(ids ...uuid.UUID) {
+	if m.removedadditional_users == nil {
+		m.removedadditional_users = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.additional_users, ids[i])
+		m.removedadditional_users[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedAdditionalUsers returns the removed IDs of the "additional_users" edge to the User entity.
+func (m *SessionMutation) RemovedAdditionalUsersIDs() (ids []uuid.UUID) {
+	for id := range m.removedadditional_users {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// AdditionalUsersIDs returns the "additional_users" edge IDs in the mutation.
+func (m *SessionMutation) AdditionalUsersIDs() (ids []uuid.UUID) {
+	for id := range m.additional_users {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetAdditionalUsers resets all changes to the "additional_users" edge.
+func (m *SessionMutation) ResetAdditionalUsers() {
+	m.additional_users = nil
+	m.clearedadditional_users = false
+	m.removedadditional_users = nil
+}
+
 // AddSyncPlayMembershipIDs adds the "sync_play_memberships" edge to the SyncPlayGroupMember entity by ids.
 func (m *SessionMutation) AddSyncPlayMembershipIDs(ids ...uuid.UUID) {
 	if m.sync_play_memberships == nil {
@@ -28213,7 +28784,7 @@ func (m *SessionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SessionMutation) Fields() []string {
-	fields := make([]string, 0, 13)
+	fields := make([]string, 0, 16)
 	if m.created_at != nil {
 		fields = append(fields, session.FieldCreatedAt)
 	}
@@ -28253,6 +28824,15 @@ func (m *SessionMutation) Fields() []string {
 	if m.playback_plan != nil {
 		fields = append(fields, session.FieldPlaybackPlan)
 	}
+	if m.api_key != nil {
+		fields = append(fields, session.FieldAPIKeyID)
+	}
+	if m.now_viewing != nil {
+		fields = append(fields, session.FieldNowViewingItemID)
+	}
+	if m.viewing_at != nil {
+		fields = append(fields, session.FieldViewingAt)
+	}
 	return fields
 }
 
@@ -28287,6 +28867,12 @@ func (m *SessionMutation) Field(name string) (ent.Value, bool) {
 		return m.PlannedSourceID()
 	case session.FieldPlaybackPlan:
 		return m.PlaybackPlan()
+	case session.FieldAPIKeyID:
+		return m.APIKeyID()
+	case session.FieldNowViewingItemID:
+		return m.NowViewingItemID()
+	case session.FieldViewingAt:
+		return m.ViewingAt()
 	}
 	return nil, false
 }
@@ -28322,6 +28908,12 @@ func (m *SessionMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldPlannedSourceID(ctx)
 	case session.FieldPlaybackPlan:
 		return m.OldPlaybackPlan(ctx)
+	case session.FieldAPIKeyID:
+		return m.OldAPIKeyID(ctx)
+	case session.FieldNowViewingItemID:
+		return m.OldNowViewingItemID(ctx)
+	case session.FieldViewingAt:
+		return m.OldViewingAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown Session field %s", name)
 }
@@ -28422,6 +29014,27 @@ func (m *SessionMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetPlaybackPlan(v)
 		return nil
+	case session.FieldAPIKeyID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAPIKeyID(v)
+		return nil
+	case session.FieldNowViewingItemID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNowViewingItemID(v)
+		return nil
+	case session.FieldViewingAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetViewingAt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Session field %s", name)
 }
@@ -28491,6 +29104,15 @@ func (m *SessionMutation) ClearedFields() []string {
 	if m.FieldCleared(session.FieldPlaybackPlan) {
 		fields = append(fields, session.FieldPlaybackPlan)
 	}
+	if m.FieldCleared(session.FieldAPIKeyID) {
+		fields = append(fields, session.FieldAPIKeyID)
+	}
+	if m.FieldCleared(session.FieldNowViewingItemID) {
+		fields = append(fields, session.FieldNowViewingItemID)
+	}
+	if m.FieldCleared(session.FieldViewingAt) {
+		fields = append(fields, session.FieldViewingAt)
+	}
 	return fields
 }
 
@@ -28528,6 +29150,15 @@ func (m *SessionMutation) ClearField(name string) error {
 		return nil
 	case session.FieldPlaybackPlan:
 		m.ClearPlaybackPlan()
+		return nil
+	case session.FieldAPIKeyID:
+		m.ClearAPIKeyID()
+		return nil
+	case session.FieldNowViewingItemID:
+		m.ClearNowViewingItemID()
+		return nil
+	case session.FieldViewingAt:
+		m.ClearViewingAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Session nullable field %s", name)
@@ -28576,13 +29207,22 @@ func (m *SessionMutation) ResetField(name string) error {
 	case session.FieldPlaybackPlan:
 		m.ResetPlaybackPlan()
 		return nil
+	case session.FieldAPIKeyID:
+		m.ResetAPIKeyID()
+		return nil
+	case session.FieldNowViewingItemID:
+		m.ResetNowViewingItemID()
+		return nil
+	case session.FieldViewingAt:
+		m.ResetViewingAt()
+		return nil
 	}
 	return fmt.Errorf("unknown Session field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *SessionMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 8)
 	if m.user != nil {
 		edges = append(edges, session.EdgeUser)
 	}
@@ -28594,6 +29234,15 @@ func (m *SessionMutation) AddedEdges() []string {
 	}
 	if m.planned_source != nil {
 		edges = append(edges, session.EdgePlannedSource)
+	}
+	if m.api_key != nil {
+		edges = append(edges, session.EdgeAPIKey)
+	}
+	if m.now_viewing != nil {
+		edges = append(edges, session.EdgeNowViewing)
+	}
+	if m.additional_users != nil {
+		edges = append(edges, session.EdgeAdditionalUsers)
 	}
 	if m.sync_play_memberships != nil {
 		edges = append(edges, session.EdgeSyncPlayMemberships)
@@ -28621,6 +29270,20 @@ func (m *SessionMutation) AddedIDs(name string) []ent.Value {
 		if id := m.planned_source; id != nil {
 			return []ent.Value{*id}
 		}
+	case session.EdgeAPIKey:
+		if id := m.api_key; id != nil {
+			return []ent.Value{*id}
+		}
+	case session.EdgeNowViewing:
+		if id := m.now_viewing; id != nil {
+			return []ent.Value{*id}
+		}
+	case session.EdgeAdditionalUsers:
+		ids := make([]ent.Value, 0, len(m.additional_users))
+		for id := range m.additional_users {
+			ids = append(ids, id)
+		}
+		return ids
 	case session.EdgeSyncPlayMemberships:
 		ids := make([]ent.Value, 0, len(m.sync_play_memberships))
 		for id := range m.sync_play_memberships {
@@ -28633,7 +29296,10 @@ func (m *SessionMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *SessionMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 8)
+	if m.removedadditional_users != nil {
+		edges = append(edges, session.EdgeAdditionalUsers)
+	}
 	if m.removedsync_play_memberships != nil {
 		edges = append(edges, session.EdgeSyncPlayMemberships)
 	}
@@ -28644,6 +29310,12 @@ func (m *SessionMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *SessionMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
+	case session.EdgeAdditionalUsers:
+		ids := make([]ent.Value, 0, len(m.removedadditional_users))
+		for id := range m.removedadditional_users {
+			ids = append(ids, id)
+		}
+		return ids
 	case session.EdgeSyncPlayMemberships:
 		ids := make([]ent.Value, 0, len(m.removedsync_play_memberships))
 		for id := range m.removedsync_play_memberships {
@@ -28656,7 +29328,7 @@ func (m *SessionMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *SessionMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 8)
 	if m.cleareduser {
 		edges = append(edges, session.EdgeUser)
 	}
@@ -28668,6 +29340,15 @@ func (m *SessionMutation) ClearedEdges() []string {
 	}
 	if m.clearedplanned_source {
 		edges = append(edges, session.EdgePlannedSource)
+	}
+	if m.clearedapi_key {
+		edges = append(edges, session.EdgeAPIKey)
+	}
+	if m.clearednow_viewing {
+		edges = append(edges, session.EdgeNowViewing)
+	}
+	if m.clearedadditional_users {
+		edges = append(edges, session.EdgeAdditionalUsers)
 	}
 	if m.clearedsync_play_memberships {
 		edges = append(edges, session.EdgeSyncPlayMemberships)
@@ -28687,6 +29368,12 @@ func (m *SessionMutation) EdgeCleared(name string) bool {
 		return m.clearednow_playing
 	case session.EdgePlannedSource:
 		return m.clearedplanned_source
+	case session.EdgeAPIKey:
+		return m.clearedapi_key
+	case session.EdgeNowViewing:
+		return m.clearednow_viewing
+	case session.EdgeAdditionalUsers:
+		return m.clearedadditional_users
 	case session.EdgeSyncPlayMemberships:
 		return m.clearedsync_play_memberships
 	}
@@ -28709,6 +29396,12 @@ func (m *SessionMutation) ClearEdge(name string) error {
 	case session.EdgePlannedSource:
 		m.ClearPlannedSource()
 		return nil
+	case session.EdgeAPIKey:
+		m.ClearAPIKey()
+		return nil
+	case session.EdgeNowViewing:
+		m.ClearNowViewing()
+		return nil
 	}
 	return fmt.Errorf("unknown Session unique edge %s", name)
 }
@@ -28728,6 +29421,15 @@ func (m *SessionMutation) ResetEdge(name string) error {
 		return nil
 	case session.EdgePlannedSource:
 		m.ResetPlannedSource()
+		return nil
+	case session.EdgeAPIKey:
+		m.ResetAPIKey()
+		return nil
+	case session.EdgeNowViewing:
+		m.ResetNowViewing()
+		return nil
+	case session.EdgeAdditionalUsers:
+		m.ResetAdditionalUsers()
 		return nil
 	case session.EdgeSyncPlayMemberships:
 		m.ResetSyncPlayMemberships()
@@ -34650,6 +35352,9 @@ type UserMutation struct {
 	sessions                      map[uuid.UUID]struct{}
 	removedsessions               map[uuid.UUID]struct{}
 	clearedsessions               bool
+	joined_sessions               map[uuid.UUID]struct{}
+	removedjoined_sessions        map[uuid.UUID]struct{}
+	clearedjoined_sessions        bool
 	item_data                     map[uuid.UUID]struct{}
 	removeditem_data              map[uuid.UUID]struct{}
 	cleareditem_data              bool
@@ -34674,6 +35379,9 @@ type UserMutation struct {
 	reports                       map[uuid.UUID]struct{}
 	removedreports                map[uuid.UUID]struct{}
 	clearedreports                bool
+	api_keys                      map[uuid.UUID]struct{}
+	removedapi_keys               map[uuid.UUID]struct{}
+	clearedapi_keys               bool
 	done                          bool
 	oldValue                      func(context.Context) (*User, error)
 	predicates                    []predicate.User
@@ -35433,6 +36141,60 @@ func (m *UserMutation) ResetSessions() {
 	m.removedsessions = nil
 }
 
+// AddJoinedSessionIDs adds the "joined_sessions" edge to the Session entity by ids.
+func (m *UserMutation) AddJoinedSessionIDs(ids ...uuid.UUID) {
+	if m.joined_sessions == nil {
+		m.joined_sessions = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.joined_sessions[ids[i]] = struct{}{}
+	}
+}
+
+// ClearJoinedSessions clears the "joined_sessions" edge to the Session entity.
+func (m *UserMutation) ClearJoinedSessions() {
+	m.clearedjoined_sessions = true
+}
+
+// JoinedSessionsCleared reports if the "joined_sessions" edge to the Session entity was cleared.
+func (m *UserMutation) JoinedSessionsCleared() bool {
+	return m.clearedjoined_sessions
+}
+
+// RemoveJoinedSessionIDs removes the "joined_sessions" edge to the Session entity by IDs.
+func (m *UserMutation) RemoveJoinedSessionIDs(ids ...uuid.UUID) {
+	if m.removedjoined_sessions == nil {
+		m.removedjoined_sessions = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.joined_sessions, ids[i])
+		m.removedjoined_sessions[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedJoinedSessions returns the removed IDs of the "joined_sessions" edge to the Session entity.
+func (m *UserMutation) RemovedJoinedSessionsIDs() (ids []uuid.UUID) {
+	for id := range m.removedjoined_sessions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// JoinedSessionsIDs returns the "joined_sessions" edge IDs in the mutation.
+func (m *UserMutation) JoinedSessionsIDs() (ids []uuid.UUID) {
+	for id := range m.joined_sessions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetJoinedSessions resets all changes to the "joined_sessions" edge.
+func (m *UserMutation) ResetJoinedSessions() {
+	m.joined_sessions = nil
+	m.clearedjoined_sessions = false
+	m.removedjoined_sessions = nil
+}
+
 // AddItemDatumIDs adds the "item_data" edge to the UserItemData entity by ids.
 func (m *UserMutation) AddItemDatumIDs(ids ...uuid.UUID) {
 	if m.item_data == nil {
@@ -35865,6 +36627,60 @@ func (m *UserMutation) ResetReports() {
 	m.removedreports = nil
 }
 
+// AddAPIKeyIDs adds the "api_keys" edge to the ApiKey entity by ids.
+func (m *UserMutation) AddAPIKeyIDs(ids ...uuid.UUID) {
+	if m.api_keys == nil {
+		m.api_keys = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.api_keys[ids[i]] = struct{}{}
+	}
+}
+
+// ClearAPIKeys clears the "api_keys" edge to the ApiKey entity.
+func (m *UserMutation) ClearAPIKeys() {
+	m.clearedapi_keys = true
+}
+
+// APIKeysCleared reports if the "api_keys" edge to the ApiKey entity was cleared.
+func (m *UserMutation) APIKeysCleared() bool {
+	return m.clearedapi_keys
+}
+
+// RemoveAPIKeyIDs removes the "api_keys" edge to the ApiKey entity by IDs.
+func (m *UserMutation) RemoveAPIKeyIDs(ids ...uuid.UUID) {
+	if m.removedapi_keys == nil {
+		m.removedapi_keys = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.api_keys, ids[i])
+		m.removedapi_keys[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedAPIKeys returns the removed IDs of the "api_keys" edge to the ApiKey entity.
+func (m *UserMutation) RemovedAPIKeysIDs() (ids []uuid.UUID) {
+	for id := range m.removedapi_keys {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// APIKeysIDs returns the "api_keys" edge IDs in the mutation.
+func (m *UserMutation) APIKeysIDs() (ids []uuid.UUID) {
+	for id := range m.api_keys {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetAPIKeys resets all changes to the "api_keys" edge.
+func (m *UserMutation) ResetAPIKeys() {
+	m.api_keys = nil
+	m.clearedapi_keys = false
+	m.removedapi_keys = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -36233,7 +37049,7 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 11)
+	edges := make([]string, 0, 13)
 	if m.configuration != nil {
 		edges = append(edges, user.EdgeConfiguration)
 	}
@@ -36242,6 +37058,9 @@ func (m *UserMutation) AddedEdges() []string {
 	}
 	if m.sessions != nil {
 		edges = append(edges, user.EdgeSessions)
+	}
+	if m.joined_sessions != nil {
+		edges = append(edges, user.EdgeJoinedSessions)
 	}
 	if m.item_data != nil {
 		edges = append(edges, user.EdgeItemData)
@@ -36267,6 +37086,9 @@ func (m *UserMutation) AddedEdges() []string {
 	if m.reports != nil {
 		edges = append(edges, user.EdgeReports)
 	}
+	if m.api_keys != nil {
+		edges = append(edges, user.EdgeAPIKeys)
+	}
 	return edges
 }
 
@@ -36285,6 +37107,12 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 	case user.EdgeSessions:
 		ids := make([]ent.Value, 0, len(m.sessions))
 		for id := range m.sessions {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeJoinedSessions:
+		ids := make([]ent.Value, 0, len(m.joined_sessions))
+		for id := range m.joined_sessions {
 			ids = append(ids, id)
 		}
 		return ids
@@ -36336,15 +37164,24 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeAPIKeys:
+		ids := make([]ent.Value, 0, len(m.api_keys))
+		for id := range m.api_keys {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 11)
+	edges := make([]string, 0, 13)
 	if m.removedsessions != nil {
 		edges = append(edges, user.EdgeSessions)
+	}
+	if m.removedjoined_sessions != nil {
+		edges = append(edges, user.EdgeJoinedSessions)
 	}
 	if m.removeditem_data != nil {
 		edges = append(edges, user.EdgeItemData)
@@ -36370,6 +37207,9 @@ func (m *UserMutation) RemovedEdges() []string {
 	if m.removedreports != nil {
 		edges = append(edges, user.EdgeReports)
 	}
+	if m.removedapi_keys != nil {
+		edges = append(edges, user.EdgeAPIKeys)
+	}
 	return edges
 }
 
@@ -36380,6 +37220,12 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 	case user.EdgeSessions:
 		ids := make([]ent.Value, 0, len(m.removedsessions))
 		for id := range m.removedsessions {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeJoinedSessions:
+		ids := make([]ent.Value, 0, len(m.removedjoined_sessions))
+		for id := range m.removedjoined_sessions {
 			ids = append(ids, id)
 		}
 		return ids
@@ -36431,13 +37277,19 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeAPIKeys:
+		ids := make([]ent.Value, 0, len(m.removedapi_keys))
+		for id := range m.removedapi_keys {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 11)
+	edges := make([]string, 0, 13)
 	if m.clearedconfiguration {
 		edges = append(edges, user.EdgeConfiguration)
 	}
@@ -36446,6 +37298,9 @@ func (m *UserMutation) ClearedEdges() []string {
 	}
 	if m.clearedsessions {
 		edges = append(edges, user.EdgeSessions)
+	}
+	if m.clearedjoined_sessions {
+		edges = append(edges, user.EdgeJoinedSessions)
 	}
 	if m.cleareditem_data {
 		edges = append(edges, user.EdgeItemData)
@@ -36471,6 +37326,9 @@ func (m *UserMutation) ClearedEdges() []string {
 	if m.clearedreports {
 		edges = append(edges, user.EdgeReports)
 	}
+	if m.clearedapi_keys {
+		edges = append(edges, user.EdgeAPIKeys)
+	}
 	return edges
 }
 
@@ -36484,6 +37342,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 		return m.clearedpolicy
 	case user.EdgeSessions:
 		return m.clearedsessions
+	case user.EdgeJoinedSessions:
+		return m.clearedjoined_sessions
 	case user.EdgeItemData:
 		return m.cleareditem_data
 	case user.EdgeDisplayPreferences:
@@ -36500,6 +37360,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 		return m.clearedrequests
 	case user.EdgeReports:
 		return m.clearedreports
+	case user.EdgeAPIKeys:
+		return m.clearedapi_keys
 	}
 	return false
 }
@@ -36531,6 +37393,9 @@ func (m *UserMutation) ResetEdge(name string) error {
 	case user.EdgeSessions:
 		m.ResetSessions()
 		return nil
+	case user.EdgeJoinedSessions:
+		m.ResetJoinedSessions()
+		return nil
 	case user.EdgeItemData:
 		m.ResetItemData()
 		return nil
@@ -36554,6 +37419,9 @@ func (m *UserMutation) ResetEdge(name string) error {
 		return nil
 	case user.EdgeReports:
 		m.ResetReports()
+		return nil
+	case user.EdgeAPIKeys:
+		m.ResetAPIKeys()
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)

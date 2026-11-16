@@ -49,3 +49,17 @@ func (s *Server) GetStudios(ctx context.Context, request api.GetStudiosRequestOb
 		TotalRecordCount: apiutil.Ptr(int32(total)),
 	}, nil
 }
+
+func (s *Server) GetStudio(ctx context.Context, request api.GetStudioRequestObject) (api.GetStudioResponseObject, error) {
+	viewer, err := dto.ViewerFor(ctx, s.policies)
+	if err != nil {
+		return nil, err
+	}
+
+	studio, err := s.items.StudioNamed(ctx, items.MetadataQuery{Viewer: viewer}, request.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	return api.GetStudio200JSONResponse(dto.NamedItem(studio, api.BaseItemKindStudio, true)), nil
+}

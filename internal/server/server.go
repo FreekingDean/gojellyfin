@@ -29,6 +29,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/mediainfo"
 	"github.com/FreekingDean/gojellyfin/internal/server/mediasegment"
 	"github.com/FreekingDean/gojellyfin/internal/server/movies"
+	"github.com/FreekingDean/gojellyfin/internal/server/musicgenres"
 	"github.com/FreekingDean/gojellyfin/internal/server/packages"
 	"github.com/FreekingDean/gojellyfin/internal/server/persons"
 	"github.com/FreekingDean/gojellyfin/internal/server/playlists"
@@ -52,6 +53,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/user"
 	"github.com/FreekingDean/gojellyfin/internal/server/userdata"
 	"github.com/FreekingDean/gojellyfin/internal/server/userviews"
+	"github.com/FreekingDean/gojellyfin/internal/server/videos"
 	"github.com/FreekingDean/gojellyfin/internal/server/years"
 )
 
@@ -66,6 +68,7 @@ type (
 	SearchServer             = search.Server
 	StudiosServer            = studios.Server
 	GenresServer             = genres.Server
+	MusicGenresServer        = musicgenres.Server
 	ImageServer              = image.Server
 	PersonsServer            = persons.Server
 	LiveTvServer             = livetv.Server
@@ -111,6 +114,7 @@ type (
 	UserServer               = user.Server
 	UserDataServer           = userdata.Server
 	UserViewsServer          = userviews.Server
+	VideosServer             = videos.Server
 )
 
 type Server struct {
@@ -120,6 +124,7 @@ type Server struct {
 	*SearchServer
 	*StudiosServer
 	*GenresServer
+	*MusicGenresServer
 	*ImageServer
 	*PersonsServer
 	*LiveTvServer
@@ -165,6 +170,7 @@ type Server struct {
 	*UserServer
 	*UserDataServer
 	*UserViewsServer
+	*VideosServer
 
 	nestedUnimplemented
 }
@@ -176,6 +182,7 @@ func New(
 	search *search.Server,
 	studios *studios.Server,
 	genres *genres.Server,
+	musicGenres *musicgenres.Server,
 	image *image.Server,
 	persons *persons.Server,
 	liveTv *livetv.Server,
@@ -221,6 +228,7 @@ func New(
 	user *user.Server,
 	userData *userdata.Server,
 	userViews *userviews.Server,
+	videos *videos.Server,
 ) *Server {
 	return &Server{
 		ApiKeyServer:             apiKey,
@@ -229,6 +237,7 @@ func New(
 		SearchServer:             search,
 		StudiosServer:            studios,
 		GenresServer:             genres,
+		MusicGenresServer:        musicGenres,
 		ImageServer:              image,
 		PersonsServer:            persons,
 		LiveTvServer:             liveTv,
@@ -274,5 +283,6 @@ func New(
 		UserServer:               user,
 		UserDataServer:           userData,
 		UserViewsServer:          userViews,
+		VideosServer:             videos,
 	}
 }

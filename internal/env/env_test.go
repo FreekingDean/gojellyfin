@@ -32,6 +32,7 @@ var settings = []string{
 	"TMDB_API_KEY",
 	"TMDB_BASE_URL",
 	"MEDIA_DIRECTORIES",
+	"TZ",
 	"OIDC_ISSUER_URL",
 	"OIDC_CLIENT_ID",
 	"OIDC_CLIENT_SECRET",
@@ -104,6 +105,7 @@ func TestLoad(t *testing.T) {
 				"OTEL_RESOURCE_ATTRIBUTES":     "k8s.pod.ip=10.0.0.1",
 				"TMDB_API_KEY":                 "not-a-real-key",
 				"MEDIA_DIRECTORIES":            "/media, /library ",
+				"TZ":                           "Europe/London",
 				"OIDC_ISSUER_URL":              "https://auth.example",
 				"OIDC_CLIENT_ID":               "gojellyfin",
 				"OIDC_CLIENT_SECRET":           "not-a-real-secret",
@@ -127,6 +129,7 @@ func TestLoad(t *testing.T) {
 				Tracing:            Tracing{OTLPEndpoint: "http://collector:4318", ServiceName: "gojellyfin-api", ResourceAttributes: "k8s.pod.ip=10.0.0.1"},
 				TMDB:               TMDB{APIKey: "not-a-real-key"},
 				MediaDirectories:   []string{"/media", "/library"},
+				TimeZone:           "Europe/London",
 				OIDC: OIDC{
 					IssuerURL:         "https://auth.example",
 					ClientID:          "gojellyfin",
@@ -209,6 +212,11 @@ func TestLoad(t *testing.T) {
 		{
 			name:    "refuses a negative TEMPORAL_WORKER_STOP_TIMEOUT",
 			env:     map[string]string{"DATABASE_URL": testDatabaseURL, "TEMPORAL_WORKER_STOP_TIMEOUT": "-1m"},
+			wantErr: true,
+		},
+		{
+			name:    "refuses a TZ that names no time zone",
+			env:     map[string]string{"DATABASE_URL": testDatabaseURL, "TZ": "Mars/Olympus"},
 			wantErr: true,
 		},
 		{

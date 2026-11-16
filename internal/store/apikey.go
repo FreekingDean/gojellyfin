@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/FreekingDean/gojellyfin/internal/store/apikey"
+	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/google/uuid"
 )
 
@@ -27,8 +28,44 @@ type ApiKey struct {
 	// AppName holds the value of the "app_name" field.
 	AppName string `json:"app_name,omitempty"`
 	// RevokedAt holds the value of the "revoked_at" field.
-	RevokedAt    *time.Time `json:"revoked_at,omitempty"`
+	RevokedAt *time.Time `json:"revoked_at,omitempty"`
+	// UserID holds the value of the "user_id" field.
+	UserID *uuid.UUID `json:"user_id,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the ApiKeyQuery when eager-loading is set.
+	Edges        ApiKeyEdges `json:"edges"`
 	selectValues sql.SelectValues
+}
+
+// ApiKeyEdges holds the relations/edges for other nodes in the graph.
+type ApiKeyEdges struct {
+	// User holds the value of the user edge.
+	User *User `json:"user,omitempty"`
+	// Sessions holds the value of the sessions edge.
+	Sessions []*Session `json:"sessions,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [2]bool
+}
+
+// UserOrErr returns the User value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ApiKeyEdges) UserOrErr() (*User, error) {
+	if e.User != nil {
+		return e.User, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: user.Label}
+	}
+	return nil, &NotLoadedError{edge: "user"}
+}
+
+// SessionsOrErr returns the Sessions value or an error if the edge
+// was not loaded in eager-loading.
+func (e ApiKeyEdges) SessionsOrErr() ([]*Session, error) {
+	if e.loadedTypes[1] {
+		return e.Sessions, nil
+	}
+	return nil, &NotLoadedError{edge: "sessions"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -36,6 +73,8 @@ func (*ApiKey) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case apikey.FieldUserID:
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case apikey.FieldAccessToken, apikey.FieldAppName:
 			values[i] = new(sql.NullString)
 		case apikey.FieldCreatedAt, apikey.FieldUpdatedAt, apikey.FieldRevokedAt:
@@ -94,6 +133,13 @@ func (_m *ApiKey) assignValues(columns []string, values []any) error {
 				_m.RevokedAt = new(time.Time)
 				*_m.RevokedAt = value.Time
 			}
+		case apikey.FieldUserID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field user_id", values[i])
+			} else if value.Valid {
+				_m.UserID = new(uuid.UUID)
+				*_m.UserID = *value.S.(*uuid.UUID)
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -105,6 +151,16 @@ func (_m *ApiKey) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (_m *ApiKey) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
+}
+
+// QueryUser queries the "user" edge of the ApiKey entity.
+func (_m *ApiKey) QueryUser() *UserQuery {
+	return NewApiKeyClient(_m.config).QueryUser(_m)
+}
+
+// QuerySessions queries the "sessions" edge of the ApiKey entity.
+func (_m *ApiKey) QuerySessions() *SessionQuery {
+	return NewApiKeyClient(_m.config).QuerySessions(_m)
 }
 
 // Update returns a builder for updating this ApiKey.
@@ -144,6 +200,11 @@ func (_m *ApiKey) String() string {
 	if v := _m.RevokedAt; v != nil {
 		builder.WriteString("revoked_at=")
 		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.UserID; v != nil {
+		builder.WriteString("user_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteByte(')')
 	return builder.String()

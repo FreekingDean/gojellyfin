@@ -14,6 +14,8 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/env"
 )
 
+const bootTimeout = 30 * time.Second
+
 type Worker struct {
 	service     *Service
 	stopTimeout time.Duration
@@ -35,13 +37,17 @@ func (w *Worker) Start() error {
 			MaxConcurrentActivityExecutionSize: runtime.GOMAXPROCS(0),
 			WorkerStopTimeout:                  w.stopTimeout,
 		})
-		polling.RegisterWorkflowWithOptions(run, workflow.RegisterOptions{Name: runWorkflow})
+		polling.RegisterWorkflowWithOptions(w.run, workflow.RegisterOptions{Name: runWorkflow})
+		polling.RegisterWorkflowWithOptions(w.schedule, workflow.RegisterOptions{Name: scheduleWorkflow})
 
 		for _, job := range w.service.registry.All() {
 			polling.RegisterActivityWithOptions(
 				w.activity(job),
 				activity.RegisterOptions{Name: job.Name},
 			)
+			if job.Outstanding != nil {
+				polling.RegisterActivityWithOptions(job.Outstanding, activity.RegisterOptions{Name: countName(job.Name)})
+			}
 		}
 
 		if err := polling.Start(); err != nil {
@@ -53,6 +59,12 @@ func (w *Worker) Start() error {
 
 	for _, job := range w.service.registry.All() {
 		log.Printf("registered job %s on %s", job.Name, job.queue())
+	}
+
+	booting, cancel := context.WithTimeout(context.Background(), bootTimeout)
+	defer cancel()
+	if err := w.service.startOnBoot(booting); err != nil {
+		log.Printf("failed to start the jobs that run at startup: %v", err)
 	}
 
 	return nil

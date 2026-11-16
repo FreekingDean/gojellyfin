@@ -68,6 +68,10 @@ func (s *Server) GetPostedPlaybackInfo(ctx context.Context, request api.GetPoste
 }
 
 func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, question asked) (api.PlaybackInfoResponse, error) {
+	if len(question.profile) == 0 {
+		question.profile = sessions.Profile(auth.SessionFrom(ctx))
+	}
+
 	viewer, err := dto.ViewerFor(ctx, s.policies)
 	if err != nil {
 		return api.PlaybackInfoResponse{}, err

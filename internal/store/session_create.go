@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/FreekingDean/gojellyfin/internal/store/apikey"
 	"github.com/FreekingDean/gojellyfin/internal/store/device"
 	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
@@ -196,6 +197,48 @@ func (_c *SessionCreate) SetPlaybackPlan(v *entities.PlaybackPlan) *SessionCreat
 	return _c
 }
 
+// SetAPIKeyID sets the "api_key_id" field.
+func (_c *SessionCreate) SetAPIKeyID(v uuid.UUID) *SessionCreate {
+	_c.mutation.SetAPIKeyID(v)
+	return _c
+}
+
+// SetNillableAPIKeyID sets the "api_key_id" field if the given value is not nil.
+func (_c *SessionCreate) SetNillableAPIKeyID(v *uuid.UUID) *SessionCreate {
+	if v != nil {
+		_c.SetAPIKeyID(*v)
+	}
+	return _c
+}
+
+// SetNowViewingItemID sets the "now_viewing_item_id" field.
+func (_c *SessionCreate) SetNowViewingItemID(v uuid.UUID) *SessionCreate {
+	_c.mutation.SetNowViewingItemID(v)
+	return _c
+}
+
+// SetNillableNowViewingItemID sets the "now_viewing_item_id" field if the given value is not nil.
+func (_c *SessionCreate) SetNillableNowViewingItemID(v *uuid.UUID) *SessionCreate {
+	if v != nil {
+		_c.SetNowViewingItemID(*v)
+	}
+	return _c
+}
+
+// SetViewingAt sets the "viewing_at" field.
+func (_c *SessionCreate) SetViewingAt(v time.Time) *SessionCreate {
+	_c.mutation.SetViewingAt(v)
+	return _c
+}
+
+// SetNillableViewingAt sets the "viewing_at" field if the given value is not nil.
+func (_c *SessionCreate) SetNillableViewingAt(v *time.Time) *SessionCreate {
+	if v != nil {
+		_c.SetViewingAt(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *SessionCreate) SetID(v uuid.UUID) *SessionCreate {
 	_c.mutation.SetID(v)
@@ -246,6 +289,45 @@ func (_c *SessionCreate) SetNowPlaying(v *Item) *SessionCreate {
 // SetPlannedSource sets the "planned_source" edge to the ItemSource entity.
 func (_c *SessionCreate) SetPlannedSource(v *ItemSource) *SessionCreate {
 	return _c.SetPlannedSourceID(v.ID)
+}
+
+// SetAPIKey sets the "api_key" edge to the ApiKey entity.
+func (_c *SessionCreate) SetAPIKey(v *ApiKey) *SessionCreate {
+	return _c.SetAPIKeyID(v.ID)
+}
+
+// SetNowViewingID sets the "now_viewing" edge to the Item entity by ID.
+func (_c *SessionCreate) SetNowViewingID(id uuid.UUID) *SessionCreate {
+	_c.mutation.SetNowViewingID(id)
+	return _c
+}
+
+// SetNillableNowViewingID sets the "now_viewing" edge to the Item entity by ID if the given value is not nil.
+func (_c *SessionCreate) SetNillableNowViewingID(id *uuid.UUID) *SessionCreate {
+	if id != nil {
+		_c = _c.SetNowViewingID(*id)
+	}
+	return _c
+}
+
+// SetNowViewing sets the "now_viewing" edge to the Item entity.
+func (_c *SessionCreate) SetNowViewing(v *Item) *SessionCreate {
+	return _c.SetNowViewingID(v.ID)
+}
+
+// AddAdditionalUserIDs adds the "additional_users" edge to the User entity by IDs.
+func (_c *SessionCreate) AddAdditionalUserIDs(ids ...uuid.UUID) *SessionCreate {
+	_c.mutation.AddAdditionalUserIDs(ids...)
+	return _c
+}
+
+// AddAdditionalUsers adds the "additional_users" edges to the User entity.
+func (_c *SessionCreate) AddAdditionalUsers(v ...*User) *SessionCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddAdditionalUserIDs(ids...)
 }
 
 // AddSyncPlayMembershipIDs adds the "sync_play_memberships" edge to the SyncPlayGroupMember entity by IDs.
@@ -419,6 +501,10 @@ func (_c *SessionCreate) createSpec() (*Session, *sqlgraph.CreateSpec) {
 		_spec.SetField(session.FieldPlaybackPlan, field.TypeJSON, value)
 		_node.PlaybackPlan = value
 	}
+	if value, ok := _c.mutation.ViewingAt(); ok {
+		_spec.SetField(session.FieldViewingAt, field.TypeTime, value)
+		_node.ViewingAt = &value
+	}
 	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -485,6 +571,56 @@ func (_c *SessionCreate) createSpec() (*Session, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.PlannedSourceID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.APIKeyIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   session.APIKeyTable,
+			Columns: []string{session.APIKeyColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(apikey.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.APIKeyID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.NowViewingIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   session.NowViewingTable,
+			Columns: []string{session.NowViewingColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.NowViewingItemID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.AdditionalUsersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   session.AdditionalUsersTable,
+			Columns: session.AdditionalUsersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.SyncPlayMembershipsIDs(); len(nodes) > 0 {
@@ -762,6 +898,60 @@ func (u *SessionUpsert) UpdatePlaybackPlan() *SessionUpsert {
 // ClearPlaybackPlan clears the value of the "playback_plan" field.
 func (u *SessionUpsert) ClearPlaybackPlan() *SessionUpsert {
 	u.SetNull(session.FieldPlaybackPlan)
+	return u
+}
+
+// SetAPIKeyID sets the "api_key_id" field.
+func (u *SessionUpsert) SetAPIKeyID(v uuid.UUID) *SessionUpsert {
+	u.Set(session.FieldAPIKeyID, v)
+	return u
+}
+
+// UpdateAPIKeyID sets the "api_key_id" field to the value that was provided on create.
+func (u *SessionUpsert) UpdateAPIKeyID() *SessionUpsert {
+	u.SetExcluded(session.FieldAPIKeyID)
+	return u
+}
+
+// ClearAPIKeyID clears the value of the "api_key_id" field.
+func (u *SessionUpsert) ClearAPIKeyID() *SessionUpsert {
+	u.SetNull(session.FieldAPIKeyID)
+	return u
+}
+
+// SetNowViewingItemID sets the "now_viewing_item_id" field.
+func (u *SessionUpsert) SetNowViewingItemID(v uuid.UUID) *SessionUpsert {
+	u.Set(session.FieldNowViewingItemID, v)
+	return u
+}
+
+// UpdateNowViewingItemID sets the "now_viewing_item_id" field to the value that was provided on create.
+func (u *SessionUpsert) UpdateNowViewingItemID() *SessionUpsert {
+	u.SetExcluded(session.FieldNowViewingItemID)
+	return u
+}
+
+// ClearNowViewingItemID clears the value of the "now_viewing_item_id" field.
+func (u *SessionUpsert) ClearNowViewingItemID() *SessionUpsert {
+	u.SetNull(session.FieldNowViewingItemID)
+	return u
+}
+
+// SetViewingAt sets the "viewing_at" field.
+func (u *SessionUpsert) SetViewingAt(v time.Time) *SessionUpsert {
+	u.Set(session.FieldViewingAt, v)
+	return u
+}
+
+// UpdateViewingAt sets the "viewing_at" field to the value that was provided on create.
+func (u *SessionUpsert) UpdateViewingAt() *SessionUpsert {
+	u.SetExcluded(session.FieldViewingAt)
+	return u
+}
+
+// ClearViewingAt clears the value of the "viewing_at" field.
+func (u *SessionUpsert) ClearViewingAt() *SessionUpsert {
+	u.SetNull(session.FieldViewingAt)
 	return u
 }
 
@@ -1055,6 +1245,69 @@ func (u *SessionUpsertOne) UpdatePlaybackPlan() *SessionUpsertOne {
 func (u *SessionUpsertOne) ClearPlaybackPlan() *SessionUpsertOne {
 	return u.Update(func(s *SessionUpsert) {
 		s.ClearPlaybackPlan()
+	})
+}
+
+// SetAPIKeyID sets the "api_key_id" field.
+func (u *SessionUpsertOne) SetAPIKeyID(v uuid.UUID) *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.SetAPIKeyID(v)
+	})
+}
+
+// UpdateAPIKeyID sets the "api_key_id" field to the value that was provided on create.
+func (u *SessionUpsertOne) UpdateAPIKeyID() *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.UpdateAPIKeyID()
+	})
+}
+
+// ClearAPIKeyID clears the value of the "api_key_id" field.
+func (u *SessionUpsertOne) ClearAPIKeyID() *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.ClearAPIKeyID()
+	})
+}
+
+// SetNowViewingItemID sets the "now_viewing_item_id" field.
+func (u *SessionUpsertOne) SetNowViewingItemID(v uuid.UUID) *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.SetNowViewingItemID(v)
+	})
+}
+
+// UpdateNowViewingItemID sets the "now_viewing_item_id" field to the value that was provided on create.
+func (u *SessionUpsertOne) UpdateNowViewingItemID() *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.UpdateNowViewingItemID()
+	})
+}
+
+// ClearNowViewingItemID clears the value of the "now_viewing_item_id" field.
+func (u *SessionUpsertOne) ClearNowViewingItemID() *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.ClearNowViewingItemID()
+	})
+}
+
+// SetViewingAt sets the "viewing_at" field.
+func (u *SessionUpsertOne) SetViewingAt(v time.Time) *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.SetViewingAt(v)
+	})
+}
+
+// UpdateViewingAt sets the "viewing_at" field to the value that was provided on create.
+func (u *SessionUpsertOne) UpdateViewingAt() *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.UpdateViewingAt()
+	})
+}
+
+// ClearViewingAt clears the value of the "viewing_at" field.
+func (u *SessionUpsertOne) ClearViewingAt() *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.ClearViewingAt()
 	})
 }
 
@@ -1515,6 +1768,69 @@ func (u *SessionUpsertBulk) UpdatePlaybackPlan() *SessionUpsertBulk {
 func (u *SessionUpsertBulk) ClearPlaybackPlan() *SessionUpsertBulk {
 	return u.Update(func(s *SessionUpsert) {
 		s.ClearPlaybackPlan()
+	})
+}
+
+// SetAPIKeyID sets the "api_key_id" field.
+func (u *SessionUpsertBulk) SetAPIKeyID(v uuid.UUID) *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.SetAPIKeyID(v)
+	})
+}
+
+// UpdateAPIKeyID sets the "api_key_id" field to the value that was provided on create.
+func (u *SessionUpsertBulk) UpdateAPIKeyID() *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.UpdateAPIKeyID()
+	})
+}
+
+// ClearAPIKeyID clears the value of the "api_key_id" field.
+func (u *SessionUpsertBulk) ClearAPIKeyID() *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.ClearAPIKeyID()
+	})
+}
+
+// SetNowViewingItemID sets the "now_viewing_item_id" field.
+func (u *SessionUpsertBulk) SetNowViewingItemID(v uuid.UUID) *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.SetNowViewingItemID(v)
+	})
+}
+
+// UpdateNowViewingItemID sets the "now_viewing_item_id" field to the value that was provided on create.
+func (u *SessionUpsertBulk) UpdateNowViewingItemID() *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.UpdateNowViewingItemID()
+	})
+}
+
+// ClearNowViewingItemID clears the value of the "now_viewing_item_id" field.
+func (u *SessionUpsertBulk) ClearNowViewingItemID() *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.ClearNowViewingItemID()
+	})
+}
+
+// SetViewingAt sets the "viewing_at" field.
+func (u *SessionUpsertBulk) SetViewingAt(v time.Time) *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.SetViewingAt(v)
+	})
+}
+
+// UpdateViewingAt sets the "viewing_at" field to the value that was provided on create.
+func (u *SessionUpsertBulk) UpdateViewingAt() *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.UpdateViewingAt()
+	})
+}
+
+// ClearViewingAt clears the value of the "viewing_at" field.
+func (u *SessionUpsertBulk) ClearViewingAt() *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.ClearViewingAt()
 	})
 }
 

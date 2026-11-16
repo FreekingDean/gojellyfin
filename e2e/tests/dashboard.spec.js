@@ -1,17 +1,14 @@
-const { test, expect, view, openDashboard } = require('./fixtures');
+const { test, expect, openDashboard } = require('./fixtures');
 
-test.describe('the Media Downloaders dashboard page', () => {
-  test('is in the dashboard nav and lists the seeded connection', async ({ signedIn: page }) => {
+test.describe('the Requests dashboard page', () => {
+  test('links the admin app for downloaders', async ({ signedIn: page }) => {
     await openDashboard(page);
 
-    await page.getByRole('link', { name: 'Media Downloaders' }).click();
-    await expect(page).toHaveURL(/configurationpage\?name=media_downloaders/i);
+    await expect(page.getByRole('link', { name: 'Media Downloaders' })).toHaveCount(0);
+    await page.getByRole('link', { name: 'Requests' }).click();
+    await expect(page).toHaveURL(/configurationpage\?name=requests/i);
 
-    await expect(view(page)).toContainText('Library Sources');
-    await expect(view(page)).toContainText('Fixtures');
-    await expect(view(page)).toContainText('Add connection');
-
-    await expect(view(page)).toHaveScreenshot('media-downloaders.png');
+    await expect(page.locator('#gojellyfinRequestsPage').getByRole('link', { name: 'admin app' })).toHaveAttribute('href', '/admin/libraries');
   });
 
   test('lists who may ask for titles on the Requests page', async ({ signedIn: page, harness }) => {

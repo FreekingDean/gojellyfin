@@ -1,6 +1,8 @@
 package itemupdate
 
 import (
+	"slices"
+
 	"github.com/FreekingDean/gojellyfin/internal/consts"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
@@ -31,6 +33,21 @@ func metadata(req *api.BaseItemDto) items.Metadata {
 		}
 		converted.LockedFields = &fields
 	}
+	if req.Genres != nil {
+		converted.Genres = apiutil.Ptr(slices.Clone(*req.Genres))
+	}
+	if req.Studios != nil {
+		studios := make([]string, 0, len(*req.Studios))
+		for _, studio := range *req.Studios {
+			if name := apiutil.Deref(studio.Name); name != "" {
+				studios = append(studios, name)
+			}
+		}
+		converted.Studios = &studios
+	}
+	if req.People != nil {
+		converted.People = apiutil.Ptr(credits(*req.People))
+	}
 	if req.ProviderIds != nil {
 		providers := make(map[string]string, len(*req.ProviderIds))
 		for name, value := range *req.ProviderIds {
@@ -39,6 +56,28 @@ func metadata(req *api.BaseItemDto) items.Metadata {
 			}
 		}
 		converted.ProviderIds = &providers
+	}
+
+	return converted
+}
+
+func credits(people []api.BaseItemPerson) []items.Credit {
+	converted := make([]items.Credit, 0, len(people))
+	for _, person := range people {
+		name := apiutil.Deref(person.Name)
+		if name == "" {
+			continue
+		}
+		kind := items.CreditKind(apiutil.Deref(person.Type))
+		if items.ValidCreditKind(kind) != nil {
+			kind = items.CreditKindUnknown
+		}
+		converted = append(converted, items.Credit{
+			Name:  name,
+			Kind:  kind,
+			Role:  apiutil.Deref(person.Role),
+			Order: int32(len(converted)),
+		})
 	}
 
 	return converted

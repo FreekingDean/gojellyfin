@@ -57,12 +57,28 @@ var (
 		{Name: "access_token", Type: field.TypeString, Unique: true},
 		{Name: "app_name", Type: field.TypeString},
 		{Name: "revoked_at", Type: field.TypeTime, Nullable: true},
+		{Name: "user_id", Type: field.TypeUUID, Nullable: true},
 	}
 	// APIKeysTable holds the schema information for the "api_keys" table.
 	APIKeysTable = &schema.Table{
 		Name:       "api_keys",
 		Columns:    APIKeysColumns,
 		PrimaryKey: []*schema.Column{APIKeysColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "api_keys_users_api_keys",
+				Columns:    []*schema.Column{APIKeysColumns[6]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "apikey_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{APIKeysColumns[6]},
+			},
+		},
 	}
 	// ConfigurationsColumns holds the columns for the "configurations" table.
 	ConfigurationsColumns = []*schema.Column{
@@ -911,8 +927,11 @@ var (
 		{Name: "is_paused", Type: field.TypeBool, Default: false},
 		{Name: "playing_at", Type: field.TypeTime, Nullable: true},
 		{Name: "playback_plan", Type: field.TypeJSON, Nullable: true},
+		{Name: "viewing_at", Type: field.TypeTime, Nullable: true},
+		{Name: "api_key_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "device_sessions", Type: field.TypeUUID},
 		{Name: "now_playing_item_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "now_viewing_item_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "planned_source_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "user_sessions", Type: field.TypeUUID},
 	}
@@ -923,26 +942,38 @@ var (
 		PrimaryKey: []*schema.Column{SessionsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
+				Symbol:     "sessions_api_keys_sessions",
+				Columns:    []*schema.Column{SessionsColumns[13]},
+				RefColumns: []*schema.Column{APIKeysColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
 				Symbol:     "sessions_devices_sessions",
-				Columns:    []*schema.Column{SessionsColumns[12]},
+				Columns:    []*schema.Column{SessionsColumns[14]},
 				RefColumns: []*schema.Column{DevicesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "sessions_items_playing_sessions",
-				Columns:    []*schema.Column{SessionsColumns[13]},
+				Columns:    []*schema.Column{SessionsColumns[15]},
+				RefColumns: []*schema.Column{ItemsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "sessions_items_viewing_sessions",
+				Columns:    []*schema.Column{SessionsColumns[16]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "sessions_item_sources_planning_sessions",
-				Columns:    []*schema.Column{SessionsColumns[14]},
+				Columns:    []*schema.Column{SessionsColumns[17]},
 				RefColumns: []*schema.Column{ItemSourcesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "sessions_users_sessions",
-				Columns:    []*schema.Column{SessionsColumns[15]},
+				Columns:    []*schema.Column{SessionsColumns[18]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -951,12 +982,22 @@ var (
 			{
 				Name:    "session_now_playing_item_id",
 				Unique:  false,
-				Columns: []*schema.Column{SessionsColumns[13]},
+				Columns: []*schema.Column{SessionsColumns[15]},
 			},
 			{
 				Name:    "session_planned_source_id",
 				Unique:  false,
-				Columns: []*schema.Column{SessionsColumns[14]},
+				Columns: []*schema.Column{SessionsColumns[17]},
+			},
+			{
+				Name:    "session_api_key_id",
+				Unique:  false,
+				Columns: []*schema.Column{SessionsColumns[13]},
+			},
+			{
+				Name:    "session_now_viewing_item_id",
+				Unique:  false,
+				Columns: []*schema.Column{SessionsColumns[16]},
 			},
 		},
 	}
@@ -1369,6 +1410,31 @@ var (
 			},
 		},
 	}
+	// SessionAdditionalUsersColumns holds the columns for the "session_additional_users" table.
+	SessionAdditionalUsersColumns = []*schema.Column{
+		{Name: "session_id", Type: field.TypeUUID},
+		{Name: "user_id", Type: field.TypeUUID},
+	}
+	// SessionAdditionalUsersTable holds the schema information for the "session_additional_users" table.
+	SessionAdditionalUsersTable = &schema.Table{
+		Name:       "session_additional_users",
+		Columns:    SessionAdditionalUsersColumns,
+		PrimaryKey: []*schema.Column{SessionAdditionalUsersColumns[0], SessionAdditionalUsersColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "session_additional_users_session_id",
+				Columns:    []*schema.Column{SessionAdditionalUsersColumns[0]},
+				RefColumns: []*schema.Column{SessionsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "session_additional_users_user_id",
+				Columns:    []*schema.Column{SessionAdditionalUsersColumns[1]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		ActivityLogEntriesTable,
@@ -1409,12 +1475,14 @@ var (
 		UserPoliciesTable,
 		ItemGenresTable,
 		ItemStudiosTable,
+		SessionAdditionalUsersTable,
 	}
 )
 
 func init() {
 	ActivityLogEntriesTable.ForeignKeys[0].RefTable = ItemsTable
 	ActivityLogEntriesTable.ForeignKeys[1].RefTable = UsersTable
+	APIKeysTable.ForeignKeys[0].RefTable = UsersTable
 	CreditsTable.ForeignKeys[0].RefTable = ItemsTable
 	CreditsTable.ForeignKeys[1].RefTable = PersonsTable
 	DisplayPreferencesTable.ForeignKeys[0].RefTable = UsersTable
@@ -1448,10 +1516,12 @@ func init() {
 	ReportsTable.ForeignKeys[2].RefTable = UsersTable
 	RequestsTable.ForeignKeys[0].RefTable = UsersTable
 	RequestSubmissionsTable.ForeignKeys[0].RefTable = SourcesTable
-	SessionsTable.ForeignKeys[0].RefTable = DevicesTable
-	SessionsTable.ForeignKeys[1].RefTable = ItemsTable
-	SessionsTable.ForeignKeys[2].RefTable = ItemSourcesTable
-	SessionsTable.ForeignKeys[3].RefTable = UsersTable
+	SessionsTable.ForeignKeys[0].RefTable = APIKeysTable
+	SessionsTable.ForeignKeys[1].RefTable = DevicesTable
+	SessionsTable.ForeignKeys[2].RefTable = ItemsTable
+	SessionsTable.ForeignKeys[3].RefTable = ItemsTable
+	SessionsTable.ForeignKeys[4].RefTable = ItemSourcesTable
+	SessionsTable.ForeignKeys[5].RefTable = UsersTable
 	SourcePathsTable.ForeignKeys[0].RefTable = SourcesTable
 	SyncPlayGroupMembersTable.ForeignKeys[0].RefTable = SessionsTable
 	SyncPlayGroupMembersTable.ForeignKeys[1].RefTable = SyncPlayGroupsTable
@@ -1465,4 +1535,6 @@ func init() {
 	ItemGenresTable.ForeignKeys[1].RefTable = GenresTable
 	ItemStudiosTable.ForeignKeys[0].RefTable = ItemsTable
 	ItemStudiosTable.ForeignKeys[1].RefTable = StudiosTable
+	SessionAdditionalUsersTable.ForeignKeys[0].RefTable = SessionsTable
+	SessionAdditionalUsersTable.ForeignKeys[1].RefTable = UsersTable
 }

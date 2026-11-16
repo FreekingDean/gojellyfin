@@ -775,6 +775,38 @@ func (c *ApiKeyClient) GetX(ctx context.Context, id uuid.UUID) *ApiKey {
 	return obj
 }
 
+// QueryUser queries the user edge of a ApiKey.
+func (c *ApiKeyClient) QueryUser(_m *ApiKey) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(apikey.Table, apikey.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, apikey.UserTable, apikey.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySessions queries the sessions edge of a ApiKey.
+func (c *ApiKeyClient) QuerySessions(_m *ApiKey) *SessionQuery {
+	query := (&SessionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(apikey.Table, apikey.FieldID, id),
+			sqlgraph.To(session.Table, session.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, apikey.SessionsTable, apikey.SessionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *ApiKeyClient) Hooks() []Hook {
 	return c.hooks.ApiKey
@@ -1955,6 +1987,22 @@ func (c *ItemClient) QueryPlayingSessions(_m *Item) *SessionQuery {
 			sqlgraph.From(item.Table, item.FieldID, id),
 			sqlgraph.To(session.Table, session.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, item.PlayingSessionsTable, item.PlayingSessionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryViewingSessions queries the viewing_sessions edge of a Item.
+func (c *ItemClient) QueryViewingSessions(_m *Item) *SessionQuery {
+	query := (&SessionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, id),
+			sqlgraph.To(session.Table, session.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.ViewingSessionsTable, item.ViewingSessionsColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -4911,6 +4959,54 @@ func (c *SessionClient) QueryPlannedSource(_m *Session) *ItemSourceQuery {
 	return query
 }
 
+// QueryAPIKey queries the api_key edge of a Session.
+func (c *SessionClient) QueryAPIKey(_m *Session) *ApiKeyQuery {
+	query := (&ApiKeyClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(session.Table, session.FieldID, id),
+			sqlgraph.To(apikey.Table, apikey.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, session.APIKeyTable, session.APIKeyColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryNowViewing queries the now_viewing edge of a Session.
+func (c *SessionClient) QueryNowViewing(_m *Session) *ItemQuery {
+	query := (&ItemClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(session.Table, session.FieldID, id),
+			sqlgraph.To(item.Table, item.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, session.NowViewingTable, session.NowViewingColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAdditionalUsers queries the additional_users edge of a Session.
+func (c *SessionClient) QueryAdditionalUsers(_m *Session) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(session.Table, session.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, session.AdditionalUsersTable, session.AdditionalUsersPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QuerySyncPlayMemberships queries the sync_play_memberships edge of a Session.
 func (c *SessionClient) QuerySyncPlayMemberships(_m *Session) *SyncPlayGroupMemberQuery {
 	query := (&SyncPlayGroupMemberClient{config: c.config}).Query()
@@ -6114,6 +6210,22 @@ func (c *UserClient) QuerySessions(_m *User) *SessionQuery {
 	return query
 }
 
+// QueryJoinedSessions queries the joined_sessions edge of a User.
+func (c *UserClient) QueryJoinedSessions(_m *User) *SessionQuery {
+	query := (&SessionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(session.Table, session.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, user.JoinedSessionsTable, user.JoinedSessionsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryItemData queries the item_data edge of a User.
 func (c *UserClient) QueryItemData(_m *User) *UserItemDataQuery {
 	query := (&UserItemDataClient{config: c.config}).Query()
@@ -6235,6 +6347,22 @@ func (c *UserClient) QueryReports(_m *User) *ReportQuery {
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(report.Table, report.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.ReportsTable, user.ReportsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAPIKeys queries the api_keys edge of a User.
+func (c *UserClient) QueryAPIKeys(_m *User) *ApiKeyQuery {
+	query := (&ApiKeyClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(apikey.Table, apikey.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.APIKeysTable, user.APIKeysColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

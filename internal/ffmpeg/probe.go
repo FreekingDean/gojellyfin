@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"os/exec"
 	"time"
+
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 )
 
 const (
@@ -75,6 +77,9 @@ func (ffmpeg *FFMpeg) ProbeFile(ctx context.Context, path string) (*Probe, error
 		return nil, ErrNotAvailable
 	}
 
+	ctx, span := tracing.Start(ctx, "ffprobe")
+	defer span.End()
+
 	ctx, cancel := context.WithTimeout(ctx, probeTimeout)
 	defer cancel()
 
@@ -90,7 +95,10 @@ func (ffmpeg *FFMpeg) ProbeFile(ctx context.Context, path string) (*Probe, error
 
 	output, err := cmd.Output()
 	if err != nil {
+		span.Failed()
 		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			span.Set(tracing.Bool("ffmpeg.timed_out", true))
+
 			return nil, fmt.Errorf("ffprobe ran out of time reading %s", path)
 		}
 
@@ -99,8 +107,11 @@ func (ffmpeg *FFMpeg) ProbeFile(ctx context.Context, path string) (*Probe, error
 
 	probe := &Probe{}
 	if err := json.Unmarshal(output, probe); err != nil {
+		span.Failed()
+
 		return nil, err
 	}
+	span.Set(tracing.Int("ffmpeg.streams", len(probe.Streams)))
 
 	return probe, nil
 }

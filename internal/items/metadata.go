@@ -145,13 +145,26 @@ func unclaimedTitle(upsert *store.ItemUpsert) {
 }
 
 func (s *Service) EditMetadata(ctx context.Context, item *Item, metadata Metadata) (*Item, error) {
+	described, err := s.Description(ctx, item.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	claimed := described.edited(metadata)
 	if retitled(item, metadata) {
+		claimed = append(claimed, LockedName)
+	}
+
+	if len(claimed) > 0 {
 		locked := item.LockedFields
 		if metadata.LockedFields != nil {
 			locked = *metadata.LockedFields
 		}
-		if !slices.Contains(locked, LockedName) {
-			locked = append(slices.Clone(locked), LockedName)
+		locked = slices.Clone(locked)
+		for _, field := range claimed {
+			if !slices.Contains(locked, field) {
+				locked = append(locked, field)
+			}
 		}
 		metadata.LockedFields = &locked
 	}

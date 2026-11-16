@@ -2,7 +2,6 @@ package playstate
 
 import (
 	"context"
-	"time"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/items"
@@ -12,8 +11,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/google/uuid"
 )
-
-const playedThreshold = 0.9
 
 type Server struct {
 	items    *items.Service
@@ -87,44 +84,19 @@ func (s *Server) playing(ctx context.Context, itemID uuid.UUID, position *int64,
 }
 
 func (s *Server) recordProgress(ctx context.Context, itemID uuid.UUID, position int64) error {
-	datum, err := dto.CurrentUserDatum(ctx, s.items, itemID)
+	userID, err := dto.SignedIn(ctx)
 	if err != nil {
 		return err
 	}
 
-	datum.PlaybackPositionTicks = position
-	datum.LastPlayedAt = apiutil.Ptr(time.Now())
-
-	return s.items.SaveUserItemDatum(ctx, datum)
+	return s.items.RecordProgress(ctx, userID, itemID, position)
 }
 
 func (s *Server) recordStop(ctx context.Context, itemID uuid.UUID, position int64) error {
-	datum, err := dto.CurrentUserDatum(ctx, s.items, itemID)
+	userID, err := dto.SignedIn(ctx)
 	if err != nil {
 		return err
 	}
 
-	item, err := s.items.ItemByID(ctx, items.Everyone, itemID)
-	if err != nil {
-		return err
-	}
-
-	datum.LastPlayedAt = apiutil.Ptr(time.Now())
-	datum.PlaybackPositionTicks = position
-
-	if watched(item.RunTimeTicks, position) {
-		datum.Played = true
-		datum.PlayCount++
-		datum.PlaybackPositionTicks = 0
-	}
-
-	return s.items.SaveUserItemDatum(ctx, datum)
-}
-
-func watched(runTimeTicks *int64, position int64) bool {
-	if runTimeTicks == nil || *runTimeTicks == 0 {
-		return false
-	}
-
-	return float64(position)/float64(*runTimeTicks) >= playedThreshold
+	return s.items.RecordStop(ctx, userID, itemID, position)
 }

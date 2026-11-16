@@ -2,7 +2,10 @@ package scheduledtasks
 
 import (
 	"context"
+	"encoding/json"
+	"reflect"
 	"testing"
+	"time"
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
@@ -101,4 +104,52 @@ var scanJob = jobs.Job{
 	Category:    "Library",
 	Startable:   true,
 	Run:         func(context.Context) error { return nil },
+}
+
+func TestTrigger(t *testing.T) {
+	hour := int64(36_000_000_000)
+	for name, info := range map[string]api.TaskTriggerInfo{
+		"daily":    {Type: apiutil.Ptr(api.DailyTrigger), TimeOfDayTicks: apiutil.Ptr(3 * hour)},
+		"weekly":   {Type: apiutil.Ptr(api.WeeklyTrigger), TimeOfDayTicks: apiutil.Ptr(22 * hour), DayOfWeek: apiutil.Ptr(api.DayOfWeekFriday)},
+		"interval": {Type: apiutil.Ptr(api.IntervalTrigger), IntervalTicks: apiutil.Ptr(12 * hour), MaxRuntimeTicks: apiutil.Ptr(2 * hour)},
+		"startup":  {Type: apiutil.Ptr(api.StartupTrigger)},
+	} {
+		t.Run(name, func(t *testing.T) {
+			got := triggerInfo(trigger(info))
+			if !reflect.DeepEqual(got, info) {
+				t.Errorf("round trip = %s, want %s", describe(got), describe(info))
+			}
+		})
+	}
+
+	t.Run("reads ticks as time", func(t *testing.T) {
+		got := trigger(api.TaskTriggerInfo{
+			Type:           apiutil.Ptr(api.WeeklyTrigger),
+			TimeOfDayTicks: apiutil.Ptr(3*hour + hour/2),
+			DayOfWeek:      apiutil.Ptr(api.DayOfWeekMonday),
+		})
+		want := jobs.Trigger{Kind: jobs.TriggerWeekly, TimeOfDay: 3*time.Hour + 30*time.Minute, Day: time.Monday}
+		if got != want {
+			t.Errorf("trigger = %+v, want %+v", got, want)
+		}
+	})
+}
+
+func describe(info api.TaskTriggerInfo) string {
+	written, _ := json.Marshal(info)
+
+	return string(written)
+}
+
+func TestServer_UpdateTask(t *testing.T) {
+	response, err := newServer(t).UpdateTask(context.Background(), api.UpdateTaskRequestObject{
+		TaskId:   "NoSuchTask",
+		JSONBody: &api.UpdateTaskJSONRequestBody{},
+	})
+	if err != nil {
+		t.Fatalf("UpdateTask returned %v", err)
+	}
+	if _, ok := response.(api.UpdateTask404JSONResponse); !ok {
+		t.Errorf("UpdateTask = %T, want 404", response)
+	}
 }

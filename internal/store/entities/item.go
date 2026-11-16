@@ -76,6 +76,7 @@ func (Item) Edges() []ent.Edge {
 		edge.To("user_data", UserItemData.Type).Annotations(cascadeOnDelete),
 		edge.To("activity_log_entries", ActivityLogEntry.Type),
 		edge.To("playing_sessions", Session.Type),
+		edge.To("viewing_sessions", Session.Type),
 		edge.To("playlist", Playlist.Type).Unique().Annotations(cascadeOnDelete),
 		edge.To("playlist_entries", PlaylistEntry.Type).Annotations(cascadeOnDelete),
 		edge.To("sync_play_entries", SyncPlayQueueEntry.Type).Annotations(cascadeOnDelete),

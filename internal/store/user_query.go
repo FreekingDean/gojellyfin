@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
+	"github.com/FreekingDean/gojellyfin/internal/store/apikey"
 	"github.com/FreekingDean/gojellyfin/internal/store/displaypreferences"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
@@ -39,6 +40,7 @@ type UserQuery struct {
 	withConfiguration        *UserConfigurationQuery
 	withPolicy               *UserPolicyQuery
 	withSessions             *SessionQuery
+	withJoinedSessions       *SessionQuery
 	withItemData             *UserItemDataQuery
 	withDisplayPreferences   *DisplayPreferencesQuery
 	withActivityLogEntries   *ActivityLogEntryQuery
@@ -47,6 +49,7 @@ type UserQuery struct {
 	withQuickConnectRequests *QuickConnectRequestQuery
 	withRequests             *RequestQuery
 	withReports              *ReportQuery
+	withAPIKeys              *ApiKeyQuery
 	modifiers                []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -143,6 +146,28 @@ func (_q *UserQuery) QuerySessions() *SessionQuery {
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(session.Table, session.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.SessionsTable, user.SessionsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryJoinedSessions chains the current query on the "joined_sessions" edge.
+func (_q *UserQuery) QueryJoinedSessions() *SessionQuery {
+	query := (&SessionClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(session.Table, session.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, user.JoinedSessionsTable, user.JoinedSessionsPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -319,6 +344,28 @@ func (_q *UserQuery) QueryReports() *ReportQuery {
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(report.Table, report.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.ReportsTable, user.ReportsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryAPIKeys chains the current query on the "api_keys" edge.
+func (_q *UserQuery) QueryAPIKeys() *ApiKeyQuery {
+	query := (&ApiKeyClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(apikey.Table, apikey.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.APIKeysTable, user.APIKeysColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -521,6 +568,7 @@ func (_q *UserQuery) Clone() *UserQuery {
 		withConfiguration:        _q.withConfiguration.Clone(),
 		withPolicy:               _q.withPolicy.Clone(),
 		withSessions:             _q.withSessions.Clone(),
+		withJoinedSessions:       _q.withJoinedSessions.Clone(),
 		withItemData:             _q.withItemData.Clone(),
 		withDisplayPreferences:   _q.withDisplayPreferences.Clone(),
 		withActivityLogEntries:   _q.withActivityLogEntries.Clone(),
@@ -529,6 +577,7 @@ func (_q *UserQuery) Clone() *UserQuery {
 		withQuickConnectRequests: _q.withQuickConnectRequests.Clone(),
 		withRequests:             _q.withRequests.Clone(),
 		withReports:              _q.withReports.Clone(),
+		withAPIKeys:              _q.withAPIKeys.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -565,6 +614,17 @@ func (_q *UserQuery) WithSessions(opts ...func(*SessionQuery)) *UserQuery {
 		opt(query)
 	}
 	_q.withSessions = query
+	return _q
+}
+
+// WithJoinedSessions tells the query-builder to eager-load the nodes that are connected to
+// the "joined_sessions" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserQuery) WithJoinedSessions(opts ...func(*SessionQuery)) *UserQuery {
+	query := (&SessionClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withJoinedSessions = query
 	return _q
 }
 
@@ -656,6 +716,17 @@ func (_q *UserQuery) WithReports(opts ...func(*ReportQuery)) *UserQuery {
 	return _q
 }
 
+// WithAPIKeys tells the query-builder to eager-load the nodes that are connected to
+// the "api_keys" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserQuery) WithAPIKeys(opts ...func(*ApiKeyQuery)) *UserQuery {
+	query := (&ApiKeyClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withAPIKeys = query
+	return _q
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -734,10 +805,11 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	var (
 		nodes       = []*User{}
 		_spec       = _q.querySpec()
-		loadedTypes = [11]bool{
+		loadedTypes = [13]bool{
 			_q.withConfiguration != nil,
 			_q.withPolicy != nil,
 			_q.withSessions != nil,
+			_q.withJoinedSessions != nil,
 			_q.withItemData != nil,
 			_q.withDisplayPreferences != nil,
 			_q.withActivityLogEntries != nil,
@@ -746,6 +818,7 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			_q.withQuickConnectRequests != nil,
 			_q.withRequests != nil,
 			_q.withReports != nil,
+			_q.withAPIKeys != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -785,6 +858,13 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		if err := _q.loadSessions(ctx, query, nodes,
 			func(n *User) { n.Edges.Sessions = []*Session{} },
 			func(n *User, e *Session) { n.Edges.Sessions = append(n.Edges.Sessions, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withJoinedSessions; query != nil {
+		if err := _q.loadJoinedSessions(ctx, query, nodes,
+			func(n *User) { n.Edges.JoinedSessions = []*Session{} },
+			func(n *User, e *Session) { n.Edges.JoinedSessions = append(n.Edges.JoinedSessions, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -845,6 +925,13 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		if err := _q.loadReports(ctx, query, nodes,
 			func(n *User) { n.Edges.Reports = []*Report{} },
 			func(n *User, e *Report) { n.Edges.Reports = append(n.Edges.Reports, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withAPIKeys; query != nil {
+		if err := _q.loadAPIKeys(ctx, query, nodes,
+			func(n *User) { n.Edges.APIKeys = []*ApiKey{} },
+			func(n *User, e *ApiKey) { n.Edges.APIKeys = append(n.Edges.APIKeys, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -935,6 +1022,67 @@ func (_q *UserQuery) loadSessions(ctx context.Context, query *SessionQuery, node
 			return fmt.Errorf(`unexpected referenced foreign-key "user_sessions" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
+	}
+	return nil
+}
+func (_q *UserQuery) loadJoinedSessions(ctx context.Context, query *SessionQuery, nodes []*User, init func(*User), assign func(*User, *Session)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[uuid.UUID]*User)
+	nids := make(map[uuid.UUID]map[*User]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(user.JoinedSessionsTable)
+		s.Join(joinT).On(s.C(session.FieldID), joinT.C(user.JoinedSessionsPrimaryKey[0]))
+		s.Where(sql.InValues(joinT.C(user.JoinedSessionsPrimaryKey[1]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(user.JoinedSessionsPrimaryKey[1]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
+		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+			assign := spec.Assign
+			values := spec.ScanValues
+			spec.ScanValues = func(columns []string) ([]any, error) {
+				values, err := values(columns[1:])
+				if err != nil {
+					return nil, err
+				}
+				return append([]any{new(uuid.UUID)}, values...), nil
+			}
+			spec.Assign = func(columns []string, values []any) error {
+				outValue := *values[0].(*uuid.UUID)
+				inValue := *values[1].(*uuid.UUID)
+				if nids[inValue] == nil {
+					nids[inValue] = map[*User]struct{}{byID[outValue]: {}}
+					return assign(columns[1:], values[1:])
+				}
+				nids[inValue][byID[outValue]] = struct{}{}
+				return nil
+			}
+		})
+	})
+	neighbors, err := withInterceptors[[]*Session](ctx, query, qr, query.inters)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "joined_sessions" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
 	}
 	return nil
 }
@@ -1167,6 +1315,39 @@ func (_q *UserQuery) loadReports(ctx context.Context, query *ReportQuery, nodes 
 	}
 	query.Where(predicate.Report(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(user.ReportsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.UserID
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "user_id" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *UserQuery) loadAPIKeys(ctx context.Context, query *ApiKeyQuery, nodes []*User, init func(*User), assign func(*User, *ApiKey)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(apikey.FieldUserID)
+	}
+	query.Where(predicate.ApiKey(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.APIKeysColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

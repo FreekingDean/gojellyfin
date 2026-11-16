@@ -7,6 +7,8 @@ import (
 	"runtime"
 	"sync"
 	"time"
+
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 )
 
 const (
@@ -78,8 +80,20 @@ func (e *Encoder) Open(ctx context.Context, spec Spec) (io.ReadCloser, error) {
 		return nil, ErrNotAvailable
 	}
 
+	ctx, span := tracing.Start(ctx, "transcode")
+	defer span.End()
+	span.Set(
+		tracing.String("transcode.container", spec.Container),
+		tracing.String("transcode.video_codec", spec.VideoCodec),
+		tracing.Bool("transcode.video", spec.Video),
+		tracing.Bool("transcode.copy_audio", spec.CopyAudio),
+		tracing.Bool("transcode.tone_map", spec.Transfer != ""),
+	)
+
 	weight := e.shares(spec)
 	if !e.wait(ctx, weight) {
+		span.Failed()
+
 		return nil, ErrBusy
 	}
 	if spec.VideoCodec != "" {
@@ -104,12 +118,23 @@ func (e *Encoder) Segment(ctx context.Context, segment Segment) (io.ReadCloser, 
 		return nil, err
 	}
 
+	ctx, span := tracing.Start(ctx, "transcode.segment")
+	defer span.End()
+	span.Set(
+		tracing.String("transcode.track", segment.Track.String()),
+		tracing.Bool("transcode.encode", segment.Encode),
+		tracing.String("transcode.codec", segment.Codec),
+		tracing.Bool("transcode.tone_map", segment.Transfer != ""),
+	)
+
 	weight := 1
 	if segment.EncodesVideo() {
 		segment.Threads = min(VideoSlots, e.jobs)
 		weight = segment.Threads * SlotShares
 	}
 	if !e.wait(ctx, weight) {
+		span.Failed()
+
 		return nil, ErrBusy
 	}
 
@@ -124,6 +149,10 @@ func (e *Encoder) Segment(ctx context.Context, segment Segment) (io.ReadCloser, 
 }
 
 func (e *Encoder) wait(ctx context.Context, weight int) bool {
+	_, span := tracing.Start(ctx, "transcode.slot")
+	defer span.End()
+	span.Set(tracing.Int("transcode.shares", weight))
+
 	deadline := time.NewTimer(e.patience)
 	defer deadline.Stop()
 	poll := time.NewTicker(slotPoll)

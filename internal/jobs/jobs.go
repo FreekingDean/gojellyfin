@@ -38,6 +38,7 @@ type Job struct {
 	Startable   bool
 	Queue       string
 	Run         func(ctx context.Context) error
+	Outstanding func(ctx context.Context) (int, error)
 }
 
 func (j Job) queue() string {
@@ -136,10 +137,11 @@ func Heartbeat(ctx context.Context, detail ...any) {
 	}
 }
 
-func run(ctx workflow.Context, name string, params Params) error {
-	ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
+func stepOptions(ctx workflow.Context) workflow.Context {
+	return workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
 		StartToCloseTimeout: stepTimeout,
 		HeartbeatTimeout:    heartbeat,
+		WaitForCancellation: true,
 		RetryPolicy: &sdktemporal.RetryPolicy{
 			InitialInterval:    retryFirst,
 			BackoffCoefficient: retryGrowth,
@@ -147,6 +149,18 @@ func run(ctx workflow.Context, name string, params Params) error {
 			MaximumAttempts:    retryAttempts,
 		},
 	})
+}
 
-	return workflow.ExecuteActivity(ctx, name, params).Get(ctx, nil)
+func (w *Worker) run(ctx workflow.Context, name string, params Params) error {
+	ctx = stepOptions(ctx)
+
+	job, err := w.service.registry.Find(name)
+	if err != nil || job.Outstanding == nil || len(params) > 0 {
+		return workflow.ExecuteActivity(ctx, name, params).Get(ctx, nil)
+	}
+	if workflow.GetVersion(ctx, progressChange, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+		return workflow.ExecuteActivity(ctx, name, params).Get(ctx, nil)
+	}
+
+	return watched(ctx, name, params)
 }

@@ -176,6 +176,10 @@ IfNotPresent
 - name: TRUSTED_PROXIES
   value: {{ join "," . | quote }}
 {{- end }}
+{{- with .root.Values.timeZone }}
+- name: TZ
+  value: {{ . | quote }}
+{{- end }}
 {{- include "gojellyfin.oidcEnv" .root }}
 - name: TRANSCODER_JOBS
   value: {{ include "gojellyfin.transcoderJobs" .workload | quote }}

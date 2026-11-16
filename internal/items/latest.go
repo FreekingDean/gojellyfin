@@ -237,3 +237,29 @@ func (s *Service) LastPlayed(ctx context.Context, viewer Viewer, userID uuid.UUI
 
 	return datum.Item, genres, nil
 }
+
+func (s *Service) RecentlyPlayed(ctx context.Context, viewer Viewer, userID uuid.UUID, kind Kind, limit int) ([]*Item, error) {
+	visible := append([]predicate.Item{itemmodel.DeletedAtIsNil(), itemmodel.KindEQ(kind)}, viewer.visible()...)
+
+	data, err := s.store.UserItemData.Query().
+		Where(
+			datamodel.UserID(userID),
+			datamodel.Played(true),
+			datamodel.LastPlayedAtNotNil(),
+			datamodel.HasItemWith(visible...),
+		).
+		WithItem().
+		Order(datamodel.ByLastPlayedAt(sql.OrderDesc())).
+		Limit(limit).
+		AllModels(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find the recently played items: %w", err)
+	}
+
+	played := make([]*Item, 0, len(data))
+	for _, datum := range data {
+		played = append(played, datum.Item)
+	}
+
+	return played, nil
+}

@@ -96,6 +96,8 @@ type ItemEdges struct {
 	ActivityLogEntries []*ActivityLogEntry `json:"activity_log_entries,omitempty"`
 	// PlayingSessions holds the value of the playing_sessions edge.
 	PlayingSessions []*Session `json:"playing_sessions,omitempty"`
+	// ViewingSessions holds the value of the viewing_sessions edge.
+	ViewingSessions []*Session `json:"viewing_sessions,omitempty"`
 	// Playlist holds the value of the playlist edge.
 	Playlist *Playlist `json:"playlist,omitempty"`
 	// PlaylistEntries holds the value of the playlist_entries edge.
@@ -108,7 +110,7 @@ type ItemEdges struct {
 	Studios []*Studio `json:"studios,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [15]bool
+	loadedTypes [16]bool
 }
 
 // ParentOrErr returns the Parent value or an error if the edge
@@ -203,12 +205,21 @@ func (e ItemEdges) PlayingSessionsOrErr() ([]*Session, error) {
 	return nil, &NotLoadedError{edge: "playing_sessions"}
 }
 
+// ViewingSessionsOrErr returns the ViewingSessions value or an error if the edge
+// was not loaded in eager-loading.
+func (e ItemEdges) ViewingSessionsOrErr() ([]*Session, error) {
+	if e.loadedTypes[10] {
+		return e.ViewingSessions, nil
+	}
+	return nil, &NotLoadedError{edge: "viewing_sessions"}
+}
+
 // PlaylistOrErr returns the Playlist value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ItemEdges) PlaylistOrErr() (*Playlist, error) {
 	if e.Playlist != nil {
 		return e.Playlist, nil
-	} else if e.loadedTypes[10] {
+	} else if e.loadedTypes[11] {
 		return nil, &NotFoundError{label: playlist.Label}
 	}
 	return nil, &NotLoadedError{edge: "playlist"}
@@ -217,7 +228,7 @@ func (e ItemEdges) PlaylistOrErr() (*Playlist, error) {
 // PlaylistEntriesOrErr returns the PlaylistEntries value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) PlaylistEntriesOrErr() ([]*PlaylistEntry, error) {
-	if e.loadedTypes[11] {
+	if e.loadedTypes[12] {
 		return e.PlaylistEntries, nil
 	}
 	return nil, &NotLoadedError{edge: "playlist_entries"}
@@ -226,7 +237,7 @@ func (e ItemEdges) PlaylistEntriesOrErr() ([]*PlaylistEntry, error) {
 // SyncPlayEntriesOrErr returns the SyncPlayEntries value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) SyncPlayEntriesOrErr() ([]*SyncPlayQueueEntry, error) {
-	if e.loadedTypes[12] {
+	if e.loadedTypes[13] {
 		return e.SyncPlayEntries, nil
 	}
 	return nil, &NotLoadedError{edge: "sync_play_entries"}
@@ -235,7 +246,7 @@ func (e ItemEdges) SyncPlayEntriesOrErr() ([]*SyncPlayQueueEntry, error) {
 // GenresOrErr returns the Genres value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) GenresOrErr() ([]*Genre, error) {
-	if e.loadedTypes[13] {
+	if e.loadedTypes[14] {
 		return e.Genres, nil
 	}
 	return nil, &NotLoadedError{edge: "genres"}
@@ -244,7 +255,7 @@ func (e ItemEdges) GenresOrErr() ([]*Genre, error) {
 // StudiosOrErr returns the Studios value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) StudiosOrErr() ([]*Studio, error) {
-	if e.loadedTypes[14] {
+	if e.loadedTypes[15] {
 		return e.Studios, nil
 	}
 	return nil, &NotLoadedError{edge: "studios"}
@@ -515,6 +526,11 @@ func (_m *Item) QueryActivityLogEntries() *ActivityLogEntryQuery {
 // QueryPlayingSessions queries the "playing_sessions" edge of the Item entity.
 func (_m *Item) QueryPlayingSessions() *SessionQuery {
 	return NewItemClient(_m.config).QueryPlayingSessions(_m)
+}
+
+// QueryViewingSessions queries the "viewing_sessions" edge of the Item entity.
+func (_m *Item) QueryViewingSessions() *SessionQuery {
+	return NewItemClient(_m.config).QueryViewingSessions(_m)
 }
 
 // QueryPlaylist queries the "playlist" edge of the Item entity.

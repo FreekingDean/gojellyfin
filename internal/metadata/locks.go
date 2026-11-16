@@ -18,6 +18,15 @@ func stripLockedFields(metadata *items.Metadata, locked []string) {
 		"Tags": func() {
 			metadata.Tags = nil
 		},
+		items.LockedGenres: func() {
+			metadata.Genres = nil
+		},
+		items.LockedStudios: func() {
+			metadata.Studios = nil
+		},
+		items.LockedCast: func() {
+			metadata.People = nil
+		},
 	}
 
 	for _, field := range locked {

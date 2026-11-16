@@ -33,6 +33,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/mediainfo"
 	"github.com/FreekingDean/gojellyfin/internal/server/mediasegment"
 	"github.com/FreekingDean/gojellyfin/internal/server/movies"
+	"github.com/FreekingDean/gojellyfin/internal/server/musicgenres"
 	"github.com/FreekingDean/gojellyfin/internal/server/packages"
 	"github.com/FreekingDean/gojellyfin/internal/server/persons"
 	"github.com/FreekingDean/gojellyfin/internal/server/playlists"
@@ -56,6 +57,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/user"
 	"github.com/FreekingDean/gojellyfin/internal/server/userdata"
 	"github.com/FreekingDean/gojellyfin/internal/server/userviews"
+	"github.com/FreekingDean/gojellyfin/internal/server/videos"
 	"github.com/FreekingDean/gojellyfin/internal/server/years"
 )
 
@@ -78,6 +80,7 @@ var Module = fx.Module(
 	environment.Module,
 	filter.Module,
 	genres.Module,
+	musicgenres.Module,
 	image.Module,
 	items.Module,
 	itemupdate.Module,
@@ -111,6 +114,7 @@ var Module = fx.Module(
 	user.Module,
 	userdata.Module,
 	userviews.Module,
+	videos.Module,
 	years.Module,
 	fx.Provide(
 		New,

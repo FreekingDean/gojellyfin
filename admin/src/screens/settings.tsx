@@ -374,7 +374,7 @@ function Keys() {
         <b>API keys</b>
         {naming === undefined && <button onClick={() => setNaming('')}>New key</button>}
       </header>
-      <p class="muted small">A key is for an app such as Home Assistant, and is shown in full once, when it is made. This server does not accept one in place of a sign-in yet (#722).</p>
+      <p class="muted small">A key is for an app such as Home Assistant, and is shown in full once, when it is made. It signs in as the administrator who made it, and stops working if that account is demoted, disabled or deleted.</p>
       {failure && (
         <p class="failure" role="alert">
           {failure}

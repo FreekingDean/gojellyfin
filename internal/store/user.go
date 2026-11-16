@@ -58,6 +58,8 @@ type UserEdges struct {
 	Policy *UserPolicy `json:"policy,omitempty"`
 	// Sessions holds the value of the sessions edge.
 	Sessions []*Session `json:"sessions,omitempty"`
+	// JoinedSessions holds the value of the joined_sessions edge.
+	JoinedSessions []*Session `json:"joined_sessions,omitempty"`
 	// ItemData holds the value of the item_data edge.
 	ItemData []*UserItemData `json:"item_data,omitempty"`
 	// DisplayPreferences holds the value of the display_preferences edge.
@@ -74,9 +76,11 @@ type UserEdges struct {
 	Requests []*Request `json:"requests,omitempty"`
 	// Reports holds the value of the reports edge.
 	Reports []*Report `json:"reports,omitempty"`
+	// APIKeys holds the value of the api_keys edge.
+	APIKeys []*ApiKey `json:"api_keys,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [11]bool
+	loadedTypes [13]bool
 }
 
 // ConfigurationOrErr returns the Configuration value or an error if the edge
@@ -110,10 +114,19 @@ func (e UserEdges) SessionsOrErr() ([]*Session, error) {
 	return nil, &NotLoadedError{edge: "sessions"}
 }
 
+// JoinedSessionsOrErr returns the JoinedSessions value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) JoinedSessionsOrErr() ([]*Session, error) {
+	if e.loadedTypes[3] {
+		return e.JoinedSessions, nil
+	}
+	return nil, &NotLoadedError{edge: "joined_sessions"}
+}
+
 // ItemDataOrErr returns the ItemData value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) ItemDataOrErr() ([]*UserItemData, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[4] {
 		return e.ItemData, nil
 	}
 	return nil, &NotLoadedError{edge: "item_data"}
@@ -122,7 +135,7 @@ func (e UserEdges) ItemDataOrErr() ([]*UserItemData, error) {
 // DisplayPreferencesOrErr returns the DisplayPreferences value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) DisplayPreferencesOrErr() ([]*DisplayPreferences, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[5] {
 		return e.DisplayPreferences, nil
 	}
 	return nil, &NotLoadedError{edge: "display_preferences"}
@@ -131,7 +144,7 @@ func (e UserEdges) DisplayPreferencesOrErr() ([]*DisplayPreferences, error) {
 // ActivityLogEntriesOrErr returns the ActivityLogEntries value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) ActivityLogEntriesOrErr() ([]*ActivityLogEntry, error) {
-	if e.loadedTypes[5] {
+	if e.loadedTypes[6] {
 		return e.ActivityLogEntries, nil
 	}
 	return nil, &NotLoadedError{edge: "activity_log_entries"}
@@ -140,7 +153,7 @@ func (e UserEdges) ActivityLogEntriesOrErr() ([]*ActivityLogEntry, error) {
 // PlaylistsOrErr returns the Playlists value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) PlaylistsOrErr() ([]*Playlist, error) {
-	if e.loadedTypes[6] {
+	if e.loadedTypes[7] {
 		return e.Playlists, nil
 	}
 	return nil, &NotLoadedError{edge: "playlists"}
@@ -149,7 +162,7 @@ func (e UserEdges) PlaylistsOrErr() ([]*Playlist, error) {
 // PlaylistSharesOrErr returns the PlaylistShares value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) PlaylistSharesOrErr() ([]*PlaylistShare, error) {
-	if e.loadedTypes[7] {
+	if e.loadedTypes[8] {
 		return e.PlaylistShares, nil
 	}
 	return nil, &NotLoadedError{edge: "playlist_shares"}
@@ -158,7 +171,7 @@ func (e UserEdges) PlaylistSharesOrErr() ([]*PlaylistShare, error) {
 // QuickConnectRequestsOrErr returns the QuickConnectRequests value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) QuickConnectRequestsOrErr() ([]*QuickConnectRequest, error) {
-	if e.loadedTypes[8] {
+	if e.loadedTypes[9] {
 		return e.QuickConnectRequests, nil
 	}
 	return nil, &NotLoadedError{edge: "quick_connect_requests"}
@@ -167,7 +180,7 @@ func (e UserEdges) QuickConnectRequestsOrErr() ([]*QuickConnectRequest, error) {
 // RequestsOrErr returns the Requests value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) RequestsOrErr() ([]*Request, error) {
-	if e.loadedTypes[9] {
+	if e.loadedTypes[10] {
 		return e.Requests, nil
 	}
 	return nil, &NotLoadedError{edge: "requests"}
@@ -176,10 +189,19 @@ func (e UserEdges) RequestsOrErr() ([]*Request, error) {
 // ReportsOrErr returns the Reports value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) ReportsOrErr() ([]*Report, error) {
-	if e.loadedTypes[10] {
+	if e.loadedTypes[11] {
 		return e.Reports, nil
 	}
 	return nil, &NotLoadedError{edge: "reports"}
+}
+
+// APIKeysOrErr returns the APIKeys value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) APIKeysOrErr() ([]*ApiKey, error) {
+	if e.loadedTypes[12] {
+		return e.APIKeys, nil
+	}
+	return nil, &NotLoadedError{edge: "api_keys"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -323,6 +345,11 @@ func (_m *User) QuerySessions() *SessionQuery {
 	return NewUserClient(_m.config).QuerySessions(_m)
 }
 
+// QueryJoinedSessions queries the "joined_sessions" edge of the User entity.
+func (_m *User) QueryJoinedSessions() *SessionQuery {
+	return NewUserClient(_m.config).QueryJoinedSessions(_m)
+}
+
 // QueryItemData queries the "item_data" edge of the User entity.
 func (_m *User) QueryItemData() *UserItemDataQuery {
 	return NewUserClient(_m.config).QueryItemData(_m)
@@ -361,6 +388,11 @@ func (_m *User) QueryRequests() *RequestQuery {
 // QueryReports queries the "reports" edge of the User entity.
 func (_m *User) QueryReports() *ReportQuery {
 	return NewUserClient(_m.config).QueryReports(_m)
+}
+
+// QueryAPIKeys queries the "api_keys" edge of the User entity.
+func (_m *User) QueryAPIKeys() *ApiKeyQuery {
+	return NewUserClient(_m.config).QueryAPIKeys(_m)
 }
 
 // Update returns a builder for updating this User.

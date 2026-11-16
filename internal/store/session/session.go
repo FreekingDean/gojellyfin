@@ -40,6 +40,12 @@ const (
 	FieldPlannedSourceID = "planned_source_id"
 	// FieldPlaybackPlan holds the string denoting the playback_plan field in the database.
 	FieldPlaybackPlan = "playback_plan"
+	// FieldAPIKeyID holds the string denoting the api_key_id field in the database.
+	FieldAPIKeyID = "api_key_id"
+	// FieldNowViewingItemID holds the string denoting the now_viewing_item_id field in the database.
+	FieldNowViewingItemID = "now_viewing_item_id"
+	// FieldViewingAt holds the string denoting the viewing_at field in the database.
+	FieldViewingAt = "viewing_at"
 	// EdgeUser holds the string denoting the user edge name in mutations.
 	EdgeUser = "user"
 	// EdgeDevice holds the string denoting the device edge name in mutations.
@@ -48,6 +54,12 @@ const (
 	EdgeNowPlaying = "now_playing"
 	// EdgePlannedSource holds the string denoting the planned_source edge name in mutations.
 	EdgePlannedSource = "planned_source"
+	// EdgeAPIKey holds the string denoting the api_key edge name in mutations.
+	EdgeAPIKey = "api_key"
+	// EdgeNowViewing holds the string denoting the now_viewing edge name in mutations.
+	EdgeNowViewing = "now_viewing"
+	// EdgeAdditionalUsers holds the string denoting the additional_users edge name in mutations.
+	EdgeAdditionalUsers = "additional_users"
 	// EdgeSyncPlayMemberships holds the string denoting the sync_play_memberships edge name in mutations.
 	EdgeSyncPlayMemberships = "sync_play_memberships"
 	// Table holds the table name of the session in the database.
@@ -80,6 +92,25 @@ const (
 	PlannedSourceInverseTable = "item_sources"
 	// PlannedSourceColumn is the table column denoting the planned_source relation/edge.
 	PlannedSourceColumn = "planned_source_id"
+	// APIKeyTable is the table that holds the api_key relation/edge.
+	APIKeyTable = "sessions"
+	// APIKeyInverseTable is the table name for the ApiKey entity.
+	// It exists in this package in order to avoid circular dependency with the "apikey" package.
+	APIKeyInverseTable = "api_keys"
+	// APIKeyColumn is the table column denoting the api_key relation/edge.
+	APIKeyColumn = "api_key_id"
+	// NowViewingTable is the table that holds the now_viewing relation/edge.
+	NowViewingTable = "sessions"
+	// NowViewingInverseTable is the table name for the Item entity.
+	// It exists in this package in order to avoid circular dependency with the "item" package.
+	NowViewingInverseTable = "items"
+	// NowViewingColumn is the table column denoting the now_viewing relation/edge.
+	NowViewingColumn = "now_viewing_item_id"
+	// AdditionalUsersTable is the table that holds the additional_users relation/edge. The primary key declared below.
+	AdditionalUsersTable = "session_additional_users"
+	// AdditionalUsersInverseTable is the table name for the User entity.
+	// It exists in this package in order to avoid circular dependency with the "user" package.
+	AdditionalUsersInverseTable = "users"
 	// SyncPlayMembershipsTable is the table that holds the sync_play_memberships relation/edge.
 	SyncPlayMembershipsTable = "sync_play_group_members"
 	// SyncPlayMembershipsInverseTable is the table name for the SyncPlayGroupMember entity.
@@ -105,6 +136,9 @@ var Columns = []string{
 	FieldPlayingAt,
 	FieldPlannedSourceID,
 	FieldPlaybackPlan,
+	FieldAPIKeyID,
+	FieldNowViewingItemID,
+	FieldViewingAt,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "sessions"
@@ -113,6 +147,12 @@ var ForeignKeys = []string{
 	"device_sessions",
 	"user_sessions",
 }
+
+var (
+	// AdditionalUsersPrimaryKey and AdditionalUsersColumn2 are the table columns denoting the
+	// primary key for the additional_users relation (M2M).
+	AdditionalUsersPrimaryKey = []string{"session_id", "user_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
@@ -210,6 +250,21 @@ func ByPlannedSourceID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPlannedSourceID, opts...).ToFunc()
 }
 
+// ByAPIKeyID orders the results by the api_key_id field.
+func ByAPIKeyID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAPIKeyID, opts...).ToFunc()
+}
+
+// ByNowViewingItemID orders the results by the now_viewing_item_id field.
+func ByNowViewingItemID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldNowViewingItemID, opts...).ToFunc()
+}
+
+// ByViewingAt orders the results by the viewing_at field.
+func ByViewingAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldViewingAt, opts...).ToFunc()
+}
+
 // ByUserField orders the results by user field.
 func ByUserField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -235,6 +290,34 @@ func ByNowPlayingField(field string, opts ...sql.OrderTermOption) OrderOption {
 func ByPlannedSourceField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newPlannedSourceStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByAPIKeyField orders the results by api_key field.
+func ByAPIKeyField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAPIKeyStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByNowViewingField orders the results by now_viewing field.
+func ByNowViewingField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newNowViewingStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByAdditionalUsersCount orders the results by additional_users count.
+func ByAdditionalUsersCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newAdditionalUsersStep(), opts...)
+	}
+}
+
+// ByAdditionalUsers orders the results by additional_users terms.
+func ByAdditionalUsers(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAdditionalUsersStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
@@ -277,6 +360,27 @@ func newPlannedSourceStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(PlannedSourceInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, PlannedSourceTable, PlannedSourceColumn),
+	)
+}
+func newAPIKeyStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(APIKeyInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, APIKeyTable, APIKeyColumn),
+	)
+}
+func newNowViewingStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(NowViewingInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, NowViewingTable, NowViewingColumn),
+	)
+}
+func newAdditionalUsersStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(AdditionalUsersInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, false, AdditionalUsersTable, AdditionalUsersPrimaryKey...),
 	)
 }
 func newSyncPlayMembershipsStep() *sqlgraph.Step {

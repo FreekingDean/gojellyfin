@@ -125,7 +125,21 @@ func TestServer_RefusesReshapingTheLibraries(t *testing.T) {
 		t.Errorf("AddMediaPath = %T, %v, want 403", pathAdded, err)
 	}
 
+	library, err := server.libraries.LibraryByName(ctx, name)
+	if err != nil {
+		t.Fatalf("failed to read the library back: %v", err)
+	}
+	updated, err := server.UpdateLibraryOptions(ctx, api.UpdateLibraryOptionsRequestObject{
+		JSONBody: &api.UpdateLibraryOptionsDto{
+			Id:             &library.ID,
+			LibraryOptions: &api.LibraryOptions{PathInfos: &[]api.MediaPathInfo{{Path: apiutil.Ptr("/elsewhere")}}},
+		},
+	})
+	if _, ok := updated.(api.UpdateLibraryOptions204Response); !ok || err != nil {
+		t.Errorf("UpdateLibraryOptions = %T, %v, want 204 for the options it does store", updated, err)
+	}
+
 	if found := locations(t, server, name); len(found) != 0 {
-		t.Errorf("Locations = %v, want none", found)
+		t.Errorf("Locations = %v, want none: a library's folders are its downloaders'", found)
 	}
 }

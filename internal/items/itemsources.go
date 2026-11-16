@@ -290,7 +290,11 @@ func (s *Service) FilesByItem(ctx context.Context, itemIDs []uuid.UUID) (map[uui
 }
 
 func (s *Service) Lyrics(ctx context.Context, viewer Viewer, itemID uuid.UUID) (string, error) {
-	if _, err := s.ItemByID(ctx, viewer, itemID); err != nil {
+	_, err := s.ItemByID(ctx, viewer, itemID)
+	if store.IsNotFound(err) {
+		return "", fmt.Errorf("%w: no item %s", ErrNotFound, itemID)
+	}
+	if err != nil {
 		return "", err
 	}
 
@@ -307,6 +311,48 @@ func (s *Service) Lyrics(ctx context.Context, viewer Viewer, itemID uuid.UUID) (
 	}
 
 	return found[0], nil
+}
+
+func (s *Service) SaveLyrics(ctx context.Context, viewer Viewer, itemID uuid.UUID, text string) error {
+	item, err := s.ItemByID(ctx, viewer, itemID)
+	if store.IsNotFound(err) || (err == nil && !IsAudio(item)) {
+		return fmt.Errorf("%w: no track %s", ErrNotFound, itemID)
+	}
+	if err != nil {
+		return err
+	}
+
+	first, err := s.store.ItemSource.Query().
+		Where(sourcemodel.ItemID(itemID)).
+		Order(sourcemodel.ByCreatedAt(), sourcemodel.ByPath()).
+		FirstID(ctx)
+	if store.IsNotFound(err) {
+		return fmt.Errorf("%w: no file of %s to hold lyrics", ErrNotFound, itemID)
+	}
+	if err != nil {
+		return fmt.Errorf("failed to find the file to hold the lyrics: %w", err)
+	}
+
+	if err := s.store.ItemSource.UpdateOneID(first).SetLyrics(text).Exec(ctx); err != nil {
+		return fmt.Errorf("failed to save the lyrics: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Service) ClearLyrics(ctx context.Context, viewer Viewer, itemID uuid.UUID) error {
+	if _, err := s.Lyrics(ctx, viewer, itemID); err != nil {
+		return err
+	}
+
+	if err := s.store.ItemSource.Update().
+		Where(sourcemodel.ItemID(itemID)).
+		ClearLyrics().
+		Exec(ctx); err != nil {
+		return fmt.Errorf("failed to clear the lyrics: %w", err)
+	}
+
+	return nil
 }
 
 func (s *Service) SourcePaths(ctx context.Context, id uuid.UUID) ([]string, error) {

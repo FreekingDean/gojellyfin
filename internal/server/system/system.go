@@ -9,7 +9,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
-	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 	systemsvc "github.com/FreekingDean/gojellyfin/internal/system"
 )
 
@@ -26,7 +26,7 @@ func (s *Server) GetPublicSystemInfo(
 	ctx context.Context,
 	request api.GetPublicSystemInfoRequestObject,
 ) (api.GetPublicSystemInfoResponseObject, error) {
-	configuration, err := configuration.ServerConfiguration(ctx, s.config)
+	stored, err := s.config.Server(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -34,16 +34,16 @@ func (s *Server) GetPublicSystemInfo(
 	return api.GetPublicSystemInfo200JSONResponse{
 		Id:                     apiutil.Ptr(config.ServerID),
 		LocalAddress:           apiutil.Ptr(s.system.LocalAddress()),
-		ServerName:             configuration.ServerName,
+		ServerName:             apiutil.Ptr(stored.ServerName),
 		ProductName:            apiutil.Ptr(s.system.ProductName()),
 		Version:                apiutil.Ptr(s.system.Version()),
-		StartupWizardCompleted: configuration.IsStartupWizardCompleted,
+		StartupWizardCompleted: apiutil.Ptr(stored.IsStartupWizardCompleted),
 		OperatingSystem:        apiutil.Ptr(s.system.OperatingSystem()),
 	}, nil
 }
 
 func (s *Server) GetSystemInfo(ctx context.Context, request api.GetSystemInfoRequestObject) (api.GetSystemInfoResponseObject, error) {
-	configuration, err := configuration.ServerConfiguration(ctx, s.config)
+	stored, err := s.config.Server(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -51,12 +51,12 @@ func (s *Server) GetSystemInfo(ctx context.Context, request api.GetSystemInfoReq
 	return api.GetSystemInfo200JSONResponse{
 		Id:                       apiutil.Ptr(config.ServerID),
 		LocalAddress:             apiutil.Ptr(s.system.LocalAddress()),
-		ServerName:               configuration.ServerName,
+		ServerName:               apiutil.Ptr(stored.ServerName),
 		ProductName:              apiutil.Ptr(s.system.ProductName()),
 		PackageName:              apiutil.Ptr(s.system.PackageName()),
 		Version:                  apiutil.Ptr(s.system.DetailedVersion()),
-		CastReceiverApplications: configuration.CastReceiverApplications,
-		StartupWizardCompleted:   configuration.IsStartupWizardCompleted,
+		CastReceiverApplications: dto.CastReceiverApplications(),
+		StartupWizardCompleted:   apiutil.Ptr(stored.IsStartupWizardCompleted),
 		HasPendingRestart:        apiutil.Ptr(false),
 		IsShuttingDown:           apiutil.Ptr(false),
 		SupportsLibraryMonitor:   apiutil.Ptr(true),
@@ -67,8 +67,8 @@ func (s *Server) GetSystemInfo(ctx context.Context, request api.GetSystemInfoReq
 		OperatingSystemDisplayName: apiutil.Ptr(s.system.OperatingSystem()),
 		CanSelfRestart:             apiutil.Ptr(false),
 		CanLaunchWebBrowser:        apiutil.Ptr(false),
-		CachePath:                  configuration.CachePath,
-		InternalMetadataPath:       configuration.MetadataPath,
+		CachePath:                  apiutil.ZeroOrNilPtr(stored.CachePath),
+		InternalMetadataPath:       apiutil.ZeroOrNilPtr(stored.MetadataPath),
 		HasUpdateAvailable:         apiutil.Ptr(false),
 		EncoderLocation:            apiutil.Ptr(""),
 		SystemArchitecture:         apiutil.Ptr("amd64"),
@@ -102,6 +102,10 @@ func (s *Server) GetServerLogs(ctx context.Context, request api.GetServerLogsReq
 	return api.GetServerLogs200JSONResponse{}, nil
 }
 
+func (s *Server) GetLogFile(context.Context, api.GetLogFileRequestObject) (api.GetLogFileResponseObject, error) {
+	return api.GetLogFile404JSONResponse{}, nil
+}
+
 func (s *Server) GetPingSystem(ctx context.Context, request api.GetPingSystemRequestObject) (api.GetPingSystemResponseObject, error) {
 	return api.GetPingSystem200JSONResponse(s.system.ProductName()), nil
 }
@@ -124,7 +128,7 @@ func (s *Server) UpdateBrandingConfiguration(ctx context.Context, request api.Up
 	if err != nil {
 		return nil, err
 	}
-	if err := s.config.SetConfiguration(ctx, configuration.BrandingConfigurationKey, value); err != nil {
+	if err := s.config.SetConfiguration(ctx, config.BrandingKey, value); err != nil {
 		return nil, err
 	}
 
