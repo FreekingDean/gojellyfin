@@ -739,13 +739,18 @@ label.shelf input {
   border-left: 3px solid var(--ok);
   border-radius: 8px;
   box-shadow: 0 6px 20px rgb(0 0 0 / 25%);
+  color: var(--text);
 }
 
 .toast.bad {
   border-left-color: var(--bad);
 }
 
-.toast span {
+.toast .dot {
+  flex: none;
+}
+
+.toast .said {
   flex: 1;
 }
 

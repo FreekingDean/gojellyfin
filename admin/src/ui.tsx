@@ -143,7 +143,7 @@ export function Toasts() {
       {shown.map((toast) => (
         <div key={toast.id} class={'toast ' + toast.tone} role={toast.tone === 'ok' ? 'status' : 'alert'}>
           <Dot tone={toast.tone} />
-          <span>{toast.text}</span>
+          <span class="said">{toast.text}</span>
           <button class="link" aria-label="Dismiss" onClick={() => dismiss(toast.id)}>
             ×
           </button>
