@@ -284,7 +284,7 @@ test.describe('the admin app', () => {
     await page.getByLabel(hidden.Name, { exact: true }).selectOption('off');
     await page.getByLabel('Download titles').selectOption('off');
     await page.getByLabel('Sign-in hours').selectOption('only');
-    await page.getByLabel('Days').selectOption('Weekend');
+    await page.getByLabel('Days', { exact: true }).selectOption('Weekend');
     await page.getByRole('button', { name: 'Save to 2 users' }).click();
     await expect(page.getByRole('status').filter({ hasText: '2 users changed.' })).toBeVisible();
     await expect(page.locator('tr', { hasText: names[0] })).toContainText('Weekends 09:00–22:00');
