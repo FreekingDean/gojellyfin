@@ -51,11 +51,16 @@ const test = base.extend({
 
   signedIn: async ({ phone, harness: app }, use) => {
     const landed = await launch(phone, screens(app));
+    step(phone, `launched on ${landed}`);
     if (landed !== 'home') {
-      await freshStart(phone);
-      await connect(phone, app);
+      if (landed !== 'login') {
+        await freshStart(phone);
+        await connect(phone, app);
+        step(phone, 'connected');
+      }
       await signInWithPassword(phone, app);
       await home(phone, app);
+      step(phone, 'home');
     }
 
     await use(phone);
@@ -142,8 +147,12 @@ async function launch(phone, wanted) {
   return landed.name;
 }
 
+// The app asks for battery optimisation to be turned off in a snackbar
+// over the middle of the page, and its button opens the system's settings
+// rather than putting it away, so the app is exempted before it can ask.
 async function freshStart(phone) {
   phone.clear(PACKAGE);
+  phone.exemptFromBatteryOptimisation(PACKAGE);
   await launch(phone, { connect: { type: 'EditText' } });
 }
 
@@ -182,6 +191,7 @@ async function connect(phone, app) {
   for (let attempt = 0; ; attempt++) {
     await sleep(1500);
     if (await typeAddress(phone, app.baseUrl)) {
+      step(phone, `typed the address on attempt ${attempt + 1}`);
       break;
     }
     if (attempt === 3) {
@@ -201,17 +211,38 @@ async function signInWithPassword(phone, app) {
     await phone.press(card);
   }
   await phone.waitFor({ type: 'EditText' });
-  const fields = phone.find({ type: 'EditText' });
-  if (fields.length > 1) {
+  if (phone.find({ type: 'EditText' }).length > 1) {
     await phone.fill({ type: 'EditText' }, app.username);
   }
-  const password = phone.find({ type: 'EditText' }).pop();
-  phone.tap(password);
-  await sleep(500);
-  phone.type(app.password);
-  await sleep(500);
-  await phone.hideKeyboard();
+  await typeInto(phone, { id: 'txtManualPassword' }, app.password);
   await phone.tapOn({ label: /^Sign In$/i });
+  step(phone, 'pressed Sign In');
+}
+
+// A tap on a field in the WebView can land while the page is still laying
+// out under the keyboard and leave the focus where it was, so the field is
+// tapped until it holds the focus before anything is typed into it.
+async function typeInto(phone, field, text) {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    await phone.tapOn(field);
+    const focused = await phone.waitFor({ ...field, focused: true }, { timeout: 5000 }).catch(() => null);
+    if (focused) {
+      phone.type(text);
+      await sleep(500);
+      await phone.hideKeyboard();
+
+      return;
+    }
+    await phone.hideKeyboard();
+  }
+
+  throw new Error(`${JSON.stringify(field)} never took the focus. On screen:\n${phone.summary()}`);
+}
+
+// What the fixture got to and when, so a run cut off by the job's timeout
+// still says where the time went.
+function step(phone, what) {
+  console.log(`phone: ${what} at ${new Date().toISOString()}`);
 }
 
 async function quickConnectCode(phone) {
