@@ -285,6 +285,8 @@ test.describe('the admin app', () => {
     await page.getByLabel('Download titles').selectOption('off');
     await page.getByLabel('Sign-in hours').selectOption('only');
     await page.getByLabel('Days', { exact: true }).selectOption('Weekend');
+    await page.getByLabel('Highest rating they can see').selectOption({ index: 2 });
+    await page.getByLabel('Unrated movies', { exact: true }).selectOption('on');
     await page.getByRole('button', { name: 'Save to 2 users' }).click();
     await expect(page.getByRole('status').filter({ hasText: '2 users changed.' })).toBeVisible();
     await expect(page.locator('tr', { hasText: names[0] })).toContainText('Weekends 09:00–22:00');
@@ -297,6 +299,8 @@ test.describe('the admin app', () => {
       expect(user.Policy.EnableContentDownloading).toBe(false);
       expect(user.Policy.EnableLiveTvAccess).toBe(true);
       expect(user.Policy.AccessSchedules).toEqual([expect.objectContaining({ DayOfWeek: 'Weekend', StartHour: 9, EndHour: 22 })]);
+      expect(typeof user.Policy.MaxParentalRating).toBe('number');
+      expect(user.Policy.BlockUnratedItems).toEqual(['Movie']);
     }
     const allowances = await (await fetch(harness.baseUrl + '/GoJellyfin/RequestUsers', { headers })).json();
     expect(allowances.find((each) => each.Id === ids[0])).toEqual(expect.objectContaining({ NeedsApproval: true, Quota: 3 }));
