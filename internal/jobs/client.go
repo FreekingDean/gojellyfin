@@ -109,12 +109,13 @@ type Result struct {
 }
 
 type Status struct {
-	Job   Job
-	State State
-	Last  *Result
+	Job      Job
+	State    State
+	Last     *Result
+	Progress *float64
 }
 
-func (c *Client) start(ctx context.Context, queue string, name string, params ...Param) error {
+func (c *Client) start(ctx context.Context, queue string, limit time.Duration, name string, params ...Param) error {
 	connection, err := c.connection()
 	if err != nil {
 		return err
@@ -128,7 +129,7 @@ func (c *Client) start(ctx context.Context, queue string, name string, params ..
 	_, err = connection.ExecuteWorkflow(ctx, client.StartWorkflowOptions{
 		ID:                       held.id(name),
 		TaskQueue:                queue,
-		WorkflowExecutionTimeout: runTimeoutMax,
+		WorkflowExecutionTimeout: limit,
 		WorkflowIDReusePolicy:    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 	}, runWorkflow, name, held)
 
@@ -180,7 +181,7 @@ func (s *Service) Start(ctx context.Context, name string, params ...Param) error
 		return fmt.Errorf("%w: %s is only ever enqueued by another job", ErrNotFound, name)
 	}
 
-	return s.client.start(ctx, job.queue(), name, params...)
+	return s.client.start(ctx, job.queue(), runTimeoutMax, name, params...)
 }
 
 func (s *Service) Enqueue(ctx context.Context, name string, params ...Param) error {
@@ -189,7 +190,7 @@ func (s *Service) Enqueue(ctx context.Context, name string, params ...Param) err
 		return err
 	}
 
-	return s.client.start(ctx, job.queue(), name, params...)
+	return s.client.start(ctx, job.queue(), runTimeoutMax, name, params...)
 }
 
 func (s *Service) Enabled() bool {
@@ -274,7 +275,11 @@ func (s *Service) status(ctx context.Context, job Job) (Status, error) {
 		return Status{}, err
 	}
 	if len(running) > 0 {
-		status.State = StateRunning
+		id := running[0].GetExecution().GetWorkflowId()
+		status.State = s.runningState(ctx, connection, id)
+		if job.Outstanding != nil {
+			status.Progress = s.progress(ctx, id)
+		}
 
 		return status, nil
 	}
@@ -290,9 +295,6 @@ func (s *Service) status(ctx context.Context, job Job) (Status, error) {
 	info := finished[0]
 	cancelled := info.GetStatus() == enums.WORKFLOW_EXECUTION_STATUS_CANCELED ||
 		info.GetStatus() == enums.WORKFLOW_EXECUTION_STATUS_TERMINATED
-	if cancelled {
-		status.State = StateCancelling
-	}
 
 	status.Last = &Result{
 		Succeeded: info.GetStatus() == enums.WORKFLOW_EXECUTION_STATUS_COMPLETED,
@@ -302,4 +304,19 @@ func (s *Service) status(ctx context.Context, job Job) (Status, error) {
 	}
 
 	return status, nil
+}
+
+func (s *Service) runningState(ctx context.Context, connection client.Client, id string) State {
+	described, err := connection.DescribeWorkflowExecution(ctx, id, "")
+	if err != nil {
+		return StateRunning
+	}
+
+	for _, pending := range described.GetPendingActivities() {
+		if pending.GetState() == enums.PENDING_ACTIVITY_STATE_CANCEL_REQUESTED {
+			return StateCancelling
+		}
+	}
+
+	return StateRunning
 }

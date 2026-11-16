@@ -16,7 +16,18 @@ func (s *Service) Job() jobs.Job {
 		Startable:   true,
 		Queue:       jobs.MetadataQueue,
 		Run:         s.runBatch,
+		Outstanding: s.outstanding,
 	}
+}
+
+func (s *Service) outstanding(ctx context.Context) (int, error) {
+	if !s.provider.Enabled() {
+		return 0, nil
+	}
+
+	pending, err := s.items.ItemsNeedingMetadata(ctx, identifiable, false, uuid.Nil)
+
+	return len(pending), err
 }
 
 func (s *Service) ItemJob() jobs.Job {
