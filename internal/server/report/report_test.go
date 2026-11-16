@@ -25,7 +25,7 @@ func TestHandler_Page(t *testing.T) {
 	}
 
 	body := recorder.Body.String()
-	for _, want := range []string{`var serverId = "` + config.ServerID + `";`, "/GoJellyfin/Reports", "jellyfin_credentials"} {
+	for _, want := range []string{`var serverId = "` + config.ServerID + `";`, "/GoJellyfin/Reports", "jellyfin_credentials", `<a href="/web/" aria-label="Back to Jellyfin">`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("the page is missing %s", want)
 		}

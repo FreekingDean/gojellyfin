@@ -58,7 +58,8 @@ test.describe('a broken copy', () => {
     await page.getByRole('button', { name: 'Send report' }).click();
     await expect(page.locator('#done')).toContainText(harness.playable);
 
-    await page.goto(harness.baseUrl + '/web/');
+    await page.getByRole('link', { name: 'Back to Jellyfin' }).click();
+    await expect(page).toHaveURL(/\/web\//);
     await openQueue(page);
     const report = queued(page, harness.playable).filter({ hasText: 'Audio' });
     await expect(report).toContainText('silent after the titles');

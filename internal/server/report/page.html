@@ -6,8 +6,10 @@
 <title>Report a problem</title>
 <style>
   body { background: #101010; color: #fff; font-family: sans-serif; margin: 0; }
+  header { display: flex; align-items: center; gap: .5em; padding: .5em 1em; background: #181818; border-bottom: 1px solid #262626; }
+  header a { display: flex; align-items: center; justify-content: center; width: 2.75em; height: 2.75em; color: #d0d0d0; text-decoration: none; font-size: 1.1em; }
+  header h1 { font-size: 1.1em; font-weight: 600; margin: 0; }
   main { max-width: 34em; margin: 0 auto; padding: 1.5em 1em 3em; }
-  h1 { font-size: 1.4em; font-weight: 500; }
   h2 { font-size: 1em; font-weight: 500; color: #aaa; margin: 1.5em 0 .5em; }
   a { color: #00a4dc; }
   input[type=search], textarea { width: 100%; box-sizing: border-box; background: #292929; color: #fff; border: 1px solid #444; border-radius: .2em; padding: .7em; font: inherit; }
@@ -22,8 +24,11 @@
 </style>
 </head>
 <body>
-<main>
+<header>
+  <a href="/web/" aria-label="Back to Jellyfin">&#8249;</a>
   <h1>Report a problem</h1>
+</header>
+<main>
 
   <section id="signedOut" hidden>
     <p>Sign in first, then come back to this page.</p>
