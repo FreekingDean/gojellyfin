@@ -2,8 +2,8 @@ import { useState } from 'preact/hooks';
 
 import * as mock from '../mock';
 import { Card, Page, notify, refused } from '../ui';
-import { Schedules, permissions, saveAllowance, savePolicy, syncPlay, when } from './policy';
-import type { Answer, Folder, Grants, Person, Schedule, SyncPlay } from './policy';
+import { Schedules, limit, permissions, saveAllowance, savePolicy, syncPlay, unratedKinds, when } from './policy';
+import type { Answer, Folder, Grants, Level, Person, Schedule, SyncPlay, Unrated } from './policy';
 
 type Turn = 'leave' | 'on' | 'off';
 type Permission = Exclude<keyof Grants, 'SyncPlayAccess'>;
@@ -14,6 +14,8 @@ export type Change = {
   windows: Schedule[];
   grants: Partial<Record<Permission, Turn>>;
   syncPlay: 'leave' | SyncPlay;
+  rating: string;
+  unrated: Partial<Record<Unrated, Turn>>;
   disabled: Turn;
   canRequest: Turn;
   needsApproval: Turn;
@@ -27,6 +29,8 @@ const untouched: Change = {
   windows: [{ day: 'Everyday', start: 9, end: 22 }],
   grants: {},
   syncPlay: 'leave',
+  rating: 'leave',
+  unrated: {},
   disabled: 'leave',
   canRequest: 'leave',
   needsApproval: 'leave',
@@ -44,6 +48,8 @@ export function policyTouched(change: Change): boolean {
     change.schedules !== 'leave' ||
     Object.values(change.grants).some((turn) => turn !== 'leave') ||
     change.syncPlay !== 'leave' ||
+    change.rating !== 'leave' ||
+    Object.values(change.unrated).some((turn) => turn !== 'leave') ||
     change.disabled !== 'leave'
   );
 }
@@ -68,8 +74,15 @@ export function changed(person: Person, change: Change, folders: Folder[]): Pers
     grants.SyncPlayAccess = change.syncPlay;
   }
 
+  const unrated = unratedKinds
+    .map((each) => each.kind)
+    .filter((kind) => turned(person.rating.unrated.includes(kind), change.unrated[kind]))
+    .concat(person.rating.unrated.filter((kind) => !unratedKinds.some((each) => each.kind === kind)));
+  const max = change.rating === 'leave' ? person.rating.max : change.rating === 'none' ? undefined : Number(change.rating);
+
   return {
     ...person,
+    rating: { max, unrated },
     folders: folders.every((folder) => visible.includes(folder.id)) ? 'all' : visible,
     schedules: change.schedules === 'any' ? [] : change.schedules === 'only' ? change.windows : person.schedules,
     grants,
@@ -80,16 +93,16 @@ export function changed(person: Person, change: Change, folders: Folder[]): Pers
   };
 }
 
-function tally(people: Person[], holds: (person: Person) => boolean): string {
+function tally(people: Person[], holds: (person: Person) => boolean, state = 'now'): string {
   const count = people.filter(holds).length;
   if (count === people.length) {
-    return 'All of them now';
+    return 'All of them ' + state;
   }
   if (count === 0) {
-    return 'None of them now';
+    return 'None of them ' + state;
   }
 
-  return count + ' of ' + people.length + ' now';
+  return count + ' of ' + people.length + ' ' + state;
 }
 
 function Choice<T extends string>({
@@ -141,11 +154,13 @@ function Turns({ label, now, value, on, off, choose }: { label: string; now: str
 export function Bulk({
   people,
   folders,
+  ratings,
   cancel,
   finish,
 }: {
   people: Person[];
   folders: Folder[];
+  ratings: Level[];
   cancel: () => void;
   finish: (failed: string[], drafts: Person[]) => Promise<void>;
 }) {
@@ -273,6 +288,32 @@ export function Bulk({
             choose={(value) => edit({ syncPlay: value })}
             options={[{ value: 'leave' as const, label: 'Leave as is' }, ...syncPlay]}
           />
+        </Card>
+
+        <Card title="Parental controls">
+          <Choice
+            label="Highest rating they can see"
+            now={new Set(people.map((person) => limit(person.rating, ratings))).size === 1 ? limit(people[0]?.rating ?? { unrated: [] }, ratings) : 'Differs'}
+            value={change.rating}
+            choose={(rating) => edit({ rating })}
+            options={[
+              { value: 'leave', label: 'Leave as is' },
+              { value: 'none', label: 'No limit' },
+              ...ratings.map((level) => ({ value: String(level.value), label: 'Up to ' + level.label })),
+            ]}
+          />
+          {unratedKinds.map((each) => (
+            <Turns
+              key={each.kind}
+              label={each.label}
+              now={tally(people, (person) => person.rating.unrated.includes(each.kind), 'hidden now')}
+              value={change.unrated[each.kind] ?? 'leave'}
+              on="Hide"
+              off="Show"
+              choose={(turn) => edit({ unrated: { ...change.unrated, [each.kind]: turn } })}
+            />
+          ))}
+          {admins > 0 && <p class="muted small">Administrators see everything whatever is chosen here.</p>}
         </Card>
 
         <Card title="Requests and account">

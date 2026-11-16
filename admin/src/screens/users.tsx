@@ -4,33 +4,36 @@ import { api } from '../api';
 import * as mock from '../mock';
 import { Link, navigate } from '../router';
 import { Card, Cell, Page, Pill, notify, refused, since } from '../ui';
-import { Schedules, grantsOf, permissions, saveAllowance, savePolicy, schedulesOf, syncPlay, when } from './policy';
-import type { Device, Folder, Person, SyncPlay } from './policy';
+import { Schedules, grantsOf, levels, permissions, ratingOf, saveAllowance, savePolicy, schedulesOf, syncPlay, unratedKinds, when } from './policy';
+import type { Device, Folder, Level, Person, SyncPlay } from './policy';
 import { Bulk } from './users-bulk';
 
-type Loaded = { people: Person[]; folders: Folder[] };
+type Loaded = { people: Person[]; folders: Folder[]; ratings: Level[] };
 
 function mocked(): Loaded {
   const folders = mock.libraries.map((library) => ({ id: library.id, name: library.name }));
 
   return {
     folders,
+    ratings: levels(mock.ratings),
     people: mock.people.map((person) => ({
       ...person,
       folders: person.libraries === 'all' ? 'all' : folders.filter((folder) => person.libraries.includes(folder.name)).map((folder) => folder.id),
       devices: person.devices.map((device) => ({ ...device, id: device.name })),
       schedules: person.schedules ?? [],
       grants: { ...grantsOf(), ...person.grants },
+      rating: person.rating ?? ratingOf(),
     })),
   };
 }
 
 async function fetched(): Promise<Loaded | undefined> {
-  const [users, allowances, devices, libraries] = await Promise.all([
+  const [users, allowances, devices, libraries, ratings] = await Promise.all([
     api.GET('/Users'),
     api.GET('/GoJellyfin/RequestUsers'),
     api.GET('/Devices'),
     api.GET('/Library/VirtualFolders'),
+    api.GET('/Localization/ParentalRatings'),
   ]);
   if (!users.data || !allowances.data || !devices.data || !libraries.data) {
     return undefined;
@@ -38,6 +41,7 @@ async function fetched(): Promise<Loaded | undefined> {
 
   return {
     folders: libraries.data.map((library) => ({ id: library.ItemId ?? '', name: library.Name ?? '' })),
+    ratings: levels(ratings.data ?? []),
     people: users.data.map((user) => {
       const allowance = allowances.data.find((each) => each.Id === user.Id);
 
@@ -56,6 +60,7 @@ async function fetched(): Promise<Loaded | undefined> {
         policy: user.Policy ?? undefined,
         schedules: schedulesOf(user.Policy ?? undefined),
         grants: grantsOf(user.Policy ?? undefined),
+        rating: ratingOf(user.Policy ?? undefined),
         devices: (devices.data.Items ?? [])
           .filter((device) => device.LastUserId === user.Id)
           .map((device) => ({
@@ -133,7 +138,7 @@ export function Users({ id }: { id?: string }) {
 
   const person = loaded.people.find((each) => each.id === id);
   if (person) {
-    return <Detail key={person.id} person={person} folders={loaded.folders} reload={load} />;
+    return <Detail key={person.id} person={person} folders={loaded.folders} ratings={loaded.ratings} reload={load} />;
   }
 
   const chosen = loaded.people.filter((each) => picked.includes(each.id));
@@ -142,6 +147,7 @@ export function Users({ id }: { id?: string }) {
       <Bulk
         people={chosen}
         folders={loaded.folders}
+        ratings={loaded.ratings}
         cancel={() => setBulk(false)}
         finish={async (failed, drafts) => {
           if (mock.mocked) {
@@ -289,7 +295,7 @@ function Add({ reload }: { reload: () => Promise<void> }) {
   );
 }
 
-function Detail({ person, folders, reload }: { person: Person; folders: Folder[]; reload: () => Promise<void> }) {
+function Detail({ person, folders, ratings, reload }: { person: Person; folders: Folder[]; ratings: Level[]; reload: () => Promise<void> }) {
   const [draft, setDraft] = useState(person);
   const [password, setPassword] = useState<string | undefined>(undefined);
 
@@ -475,6 +481,45 @@ function Detail({ person, folders, reload }: { person: Person; folders: Folder[]
             </label>
           </div>
           {draft.admin && <p class="muted small">An administrator can do all of these whatever is ticked.</p>}
+        </Card>
+
+        <Card title="Parental controls">
+          <div class="form one">
+            <label>
+              Highest rating they can see
+              <select
+                value={draft.rating.max === undefined ? '' : String(draft.rating.max)}
+                onChange={(event) =>
+                  change({ rating: { ...draft.rating, max: event.currentTarget.value === '' ? undefined : Number(event.currentTarget.value) } })
+                }
+              >
+                <option value="">No limit</option>
+                {ratings.map((level) => (
+                  <option key={level.value} value={String(level.value)}>
+                    {level.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          {unratedKinds.map((each) => (
+            <label class="check" key={each.kind}>
+              <input
+                type="checkbox"
+                checked={draft.rating.unrated.includes(each.kind)}
+                onChange={(event) =>
+                  change({
+                    rating: {
+                      ...draft.rating,
+                      unrated: event.currentTarget.checked ? [...draft.rating.unrated, each.kind] : draft.rating.unrated.filter((kind) => kind !== each.kind),
+                    },
+                  })
+                }
+              />{' '}
+              Hide {each.label.toLowerCase()}
+            </label>
+          ))}
+          <p class="muted small">{draft.admin ? 'An administrator sees everything whatever is set here.' : 'An episode with no rating of its own takes its show\'s.'}</p>
         </Card>
 
         <Card title="Devices">

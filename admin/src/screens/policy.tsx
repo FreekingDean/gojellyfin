@@ -29,8 +29,43 @@ export type Person = {
   devices: Device[];
   schedules: Schedule[];
   grants: Grants;
+  rating: Rating;
   policy?: Schemas['UserPolicy'];
 };
+
+export type Unrated = Schemas['UnratedItem'];
+export type Rating = { max?: number; unrated: Unrated[] };
+export type Level = { value: number; label: string };
+
+export const unratedKinds: { kind: Unrated; label: string }[] = [
+  { kind: 'Movie', label: 'Unrated movies' },
+  { kind: 'Series', label: 'Unrated shows' },
+  { kind: 'Music', label: 'Unrated music' },
+];
+
+export function ratingOf(policy?: Schemas['UserPolicy']): Rating {
+  return { max: policy?.MaxParentalRating ?? undefined, unrated: policy?.BlockUnratedItems ?? [] };
+}
+
+export function levels(ratings: Schemas['ParentalRating'][]): Level[] {
+  const grouped = new Map<number, string[]>();
+  ratings.forEach((rating) => {
+    if (rating.Value === undefined || rating.Value === null || !rating.Name) {
+      return;
+    }
+    grouped.set(rating.Value, [...(grouped.get(rating.Value) ?? []), rating.Name]);
+  });
+
+  return [...grouped.entries()].sort(([a], [b]) => a - b).map(([value, names]) => ({ value, label: names.join(', ') }));
+}
+
+export function limit(rating: Rating, ratings: Level[]): string {
+  if (rating.max === undefined) {
+    return 'No rating limit';
+  }
+
+  return 'Up to ' + (ratings.find((level) => level.value === rating.max)?.label ?? rating.max);
+}
 
 export const days: { day: Day; label: string }[] = [
   { day: 'Everyday', label: 'Every day' },
@@ -97,6 +132,8 @@ export function policyBody(person: Person, draft: Person): Schemas['UserPolicy']
     ...draft.grants,
     IsAdministrator: draft.admin,
     IsDisabled: draft.disabled,
+    MaxParentalRating: draft.rating.max ?? null,
+    BlockUnratedItems: draft.rating.unrated,
     EnableAllFolders: draft.folders === 'all',
     EnabledFolders: draft.folders === 'all' ? [] : draft.folders,
     AccessSchedules: draft.schedules.map((each) => ({ DayOfWeek: each.day, StartHour: each.start, EndHour: each.end })),
