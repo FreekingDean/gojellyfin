@@ -7,17 +7,13 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 )
 
-const (
-	SystemConfigurationKey   = "system"
-	BrandingConfigurationKey = "branding"
-)
-
-func ServerConfiguration(ctx context.Context, store *config.Service) (api.ServerConfiguration, error) {
+func serverConfiguration(ctx context.Context, store *config.Service) (api.ServerConfiguration, error) {
 	configuration := defaultServerConfiguration()
 
-	value, err := store.Configuration(ctx, SystemConfigurationKey)
+	value, err := store.Configuration(ctx, config.SystemKey)
 	if err != nil {
 		return api.ServerConfiguration{}, err
 	}
@@ -27,15 +23,15 @@ func ServerConfiguration(ctx context.Context, store *config.Service) (api.Server
 		}
 	}
 
-	configuration.CastReceiverApplications = castReceiverApplications()
+	configuration.CastReceiverApplications = dto.CastReceiverApplications()
 
 	return configuration, nil
 }
 
-func BrandingConfiguration(ctx context.Context, store *config.Service) (api.BrandingOptionsDto, error) {
+func brandingConfiguration(ctx context.Context, store *config.Service) (api.BrandingOptionsDto, error) {
 	branding := defaultBrandingOptions()
 
-	value, err := store.Configuration(ctx, BrandingConfigurationKey)
+	value, err := store.Configuration(ctx, config.BrandingKey)
 	if err != nil {
 		return api.BrandingOptionsDto{}, err
 	}
@@ -49,10 +45,12 @@ func BrandingConfiguration(ctx context.Context, store *config.Service) (api.Bran
 }
 
 func defaultServerConfiguration() api.ServerConfiguration {
+	stored := config.DefaultServer()
+
 	return api.ServerConfiguration{
-		ServerName:                   apiutil.Ptr("gojellyfin"),
+		ServerName:                   apiutil.Ptr(stored.ServerName),
 		UICulture:                    apiutil.Ptr("en-US"),
-		IsStartupWizardCompleted:     apiutil.Ptr(true),
+		IsStartupWizardCompleted:     apiutil.Ptr(stored.IsStartupWizardCompleted),
 		IsPortAuthorized:             apiutil.Ptr(true),
 		QuickConnectAvailable:        apiutil.Ptr(true),
 		EnableMetrics:                apiutil.Ptr(false),
@@ -86,10 +84,12 @@ func defaultServerConfiguration() api.ServerConfiguration {
 }
 
 func defaultBrandingOptions() api.BrandingOptionsDto {
+	stored := config.DefaultBranding()
+
 	return api.BrandingOptionsDto{
-		CustomCss:           apiutil.Ptr(""),
-		LoginDisclaimer:     apiutil.Ptr("This is a go server mimicing jellyfin dont be afraid."),
-		SplashscreenEnabled: apiutil.Ptr(false),
+		CustomCss:           apiutil.Ptr(stored.CustomCss),
+		LoginDisclaimer:     apiutil.Ptr(stored.LoginDisclaimer),
+		SplashscreenEnabled: apiutil.Ptr(stored.SplashscreenEnabled),
 	}
 }
 
@@ -107,20 +107,11 @@ func defaultMetadataOptions() api.MetadataOptions {
 
 func defaultNamedConfiguration(key string) any {
 	switch key {
-	case BrandingConfigurationKey:
+	case config.BrandingKey:
 		return defaultBrandingOptions()
 	case "metadata":
 		return defaultMetadataOptions()
 	default:
 		return defaultServerConfiguration()
 	}
-}
-
-func castReceiverApplications() *[]api.CastReceiverApplication {
-	applications := make([]api.CastReceiverApplication, 0, len(config.CastReceivers))
-	for _, receiver := range config.CastReceivers {
-		applications = append(applications, api.CastReceiverApplication{Id: receiver.ID, Name: receiver.Name})
-	}
-
-	return &applications
 }

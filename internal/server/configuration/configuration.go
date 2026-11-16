@@ -19,7 +19,7 @@ func New(config *config.Service) *Server {
 }
 
 func (s *Server) GetConfiguration(ctx context.Context, request api.GetConfigurationRequestObject) (api.GetConfigurationResponseObject, error) {
-	configuration, err := ServerConfiguration(ctx, s.config)
+	configuration, err := serverConfiguration(ctx, s.config)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +37,7 @@ func (s *Server) UpdateConfiguration(ctx context.Context, request api.UpdateConf
 	if err != nil {
 		return nil, err
 	}
-	if err := s.config.SetConfiguration(ctx, SystemConfigurationKey, value); err != nil {
+	if err := s.config.SetConfiguration(ctx, config.SystemKey, value); err != nil {
 		return nil, err
 	}
 
