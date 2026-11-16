@@ -90,6 +90,12 @@ func (allLibraries) Access(context.Context, uuid.UUID) (users.Access, error) {
 	return users.Access{All: true}, nil
 }
 
+type someLibraries []uuid.UUID
+
+func (s someLibraries) Access(context.Context, uuid.UUID) (users.Access, error) {
+	return users.Access{Libraries: s}, nil
+}
+
 func (f *fixture) add(t *testing.T, collectionType librarymodel.CollectionType, name string) uuid.UUID {
 	t.Helper()
 
@@ -144,6 +150,30 @@ func TestServer_GetUserViews(t *testing.T) {
 	}
 	if !reflect.DeepEqual(view, want) {
 		t.Errorf("view = %+v, want %+v", view, want)
+	}
+}
+
+func TestServer_GetUserViews_HidesLibrariesTheUserCannotSee(t *testing.T) {
+	fixture := newFixture(t)
+
+	allowed := fixture.add(t, librarymodel.CollectionTypeMovies, "Allowed Films")
+	hidden := fixture.add(t, librarymodel.CollectionTypeTvshows, "Hidden Shows")
+	fixture.server.policies = someLibraries{allowed}
+
+	response, err := fixture.server.GetUserViews(context.Background(), api.GetUserViewsRequestObject{})
+	if err != nil {
+		t.Fatalf("failed to get the user views: %v", err)
+	}
+
+	var ids []uuid.UUID
+	for _, view := range *response.(api.GetUserViews200JSONResponse).Items {
+		ids = append(ids, *view.Id)
+	}
+	if !slices.Contains(ids, allowed) {
+		t.Errorf("views %v do not contain the library the user may see", ids)
+	}
+	if slices.Contains(ids, hidden) {
+		t.Errorf("views %v contain a library the user may not see", ids)
 	}
 }
 
