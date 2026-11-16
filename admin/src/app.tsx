@@ -15,6 +15,7 @@ import { Settings } from './screens/settings';
 import { Users } from './screens/users';
 import { forgetToken, storedToken } from './session';
 import { SignIn } from './signin';
+import { Toasts } from './ui';
 
 type User = Schemas['UserDto'];
 
@@ -150,6 +151,7 @@ export function App({ config }: { config: Config }) {
       <main>
         <Screen route={route} />
       </main>
+      <Toasts />
     </div>
   );
 }

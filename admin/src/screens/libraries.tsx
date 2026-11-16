@@ -4,7 +4,7 @@ import { api } from "../api";
 import type { Schemas } from "../api";
 import * as mock from "../mock";
 import { Link, navigate } from "../router";
-import { Card, Dot, Field, Page, Pill, since } from "../ui";
+import { Card, Dot, Field, Page, Pill, notify, reason, refused, since } from "../ui";
 
 type Kind = "Radarr" | "Sonarr" | "Lidarr";
 type Slug = "movies" | "shows" | "music";
@@ -235,12 +235,12 @@ async function probe(
       tags: mock.pickers.tags,
     };
   }
-  const { data } = await api.POST("/GoJellyfin/Sources/Test", {
+  const { data, error } = await api.POST("/GoJellyfin/Sources/Test", {
     body: { Kind: kind, Url: url, ApiKeyVariable: variable },
   });
   if (!data) {
     return {
-      error: "The test could not be run.",
+      error: reason(error) || "The test could not be run.",
       folders: [],
       profiles: [],
       tags: [],
@@ -334,23 +334,20 @@ export function Libraries({ id }: { id?: string }) {
 }
 
 function Overview({ loaded }: { loaded: Loaded }) {
-  const [notice, setNotice] = useState("");
-  const [failure, setFailure] = useState("");
   const [tested, setTested] = useState<Record<string, Instance>>({});
 
   async function refresh() {
     if (mock.mocked) {
       return;
     }
-    const { response } = await api.POST("/Library/Refresh");
+    const { response, error } = await api.POST("/Library/Refresh");
     if (response.ok) {
-      setFailure("");
-      setNotice(
+      notify(
         "Refreshing. Every downloader is read again, and what changed shows up as it lands.",
       );
     } else {
-      setNotice("");
-      setFailure(
+      refused(
+        error,
         "The refresh could not be started. Background work may be off on this server.",
       );
     }
@@ -372,12 +369,6 @@ function Overview({ loaded }: { loaded: Loaded }) {
       title="Libraries"
       lead="Movies come from Radarr, Shows from Sonarr and Music from Lidarr. Add a downloader and its folders, and the library fills itself."
     >
-      {failure && (
-        <p class="failure" role="alert">
-          {failure}
-        </p>
-      )}
-      {notice && <p class="muted">{notice}</p>}
       {loaded.libraries.map((library) => {
         const feeding = loaded.downloaders.filter(
           (downloader) => downloader.kind === library.kind,
@@ -691,7 +682,6 @@ function Editor({
   );
   const [instance, setInstance] = useState<Instance | undefined>(undefined);
   const [browsing, setBrowsing] = useState<number | undefined>(undefined);
-  const [failure, setFailure] = useState("");
   const [busy, setBusy] = useState(false);
   const what = filled[kind];
 
@@ -713,6 +703,8 @@ function Editor({
 
   async function save() {
     if (mock.mocked) {
+      notify((name.trim() || kind) + " saved.");
+      navigate("/libraries");
       return;
     }
     setBusy(true);
@@ -746,17 +738,22 @@ function Editor({
           }
         : null,
     };
-    const answer = downloader
-      ? await api.PUT("/GoJellyfin/Sources/{sourceId}", {
+    const answer = await (downloader
+      ? api.PUT("/GoJellyfin/Sources/{sourceId}", {
           params: { path: { sourceId: downloader.id } },
           body,
         })
-      : await api.POST("/GoJellyfin/Sources", { body });
+      : api.POST("/GoJellyfin/Sources", { body })
+    ).catch(() => undefined);
     setBusy(false);
-    if (!answer.response.ok) {
-      setFailure(answer.error?.Message ?? "The downloader could not be saved.");
+    if (!answer?.response.ok) {
+      refused(answer?.error, "The downloader could not be saved.");
       return;
     }
+    notify(
+      body.Name +
+        (downloader ? " saved." : " added to " + (library?.name ?? what) + "."),
+    );
     await saved();
     navigate("/libraries");
   }
@@ -776,13 +773,15 @@ function Editor({
     ) {
       return;
     }
-    const { response } = await api.DELETE("/GoJellyfin/Sources/{sourceId}", {
-      params: { path: { sourceId: downloader.id } },
-    });
+    const { response, error } = await api.DELETE(
+      "/GoJellyfin/Sources/{sourceId}",
+      { params: { path: { sourceId: downloader.id } } },
+    );
     if (!response.ok) {
-      setFailure("The downloader could not be deleted.");
+      refused(error, "The downloader could not be deleted.");
       return;
     }
+    notify(downloader.name + " deleted.");
     await saved();
     navigate("/libraries");
   }
@@ -806,16 +805,11 @@ function Editor({
             Cancel
           </Link>
           <button class="primary" disabled={busy} onClick={save}>
-            Save
+            {busy ? "Saving…" : "Save"}
           </button>
         </span>
       }
     >
-      {failure && (
-        <p class="failure" role="alert">
-          {failure}
-        </p>
-      )}
       <div class="grid two">
         <Card title="Connection">
           <div class="form">

@@ -1,4 +1,5 @@
 import type { ComponentChildren } from 'preact';
+import { useEffect, useState } from 'preact/hooks';
 
 export type Tone = 'ok' | 'warn' | 'bad' | 'off';
 
@@ -79,4 +80,75 @@ export function since(value: string): string {
   const days = Math.round(minutes / (60 * 24));
 
   return days === 1 ? 'yesterday' : days + ' days ago';
+}
+
+export type Toast = { id: number; tone: 'ok' | 'bad'; text: string };
+
+let toasts: Toast[] = [];
+let counter = 0;
+const listeners = new Set<(shown: Toast[]) => void>();
+
+function publish(next: Toast[]) {
+  toasts = next;
+  listeners.forEach((listener) => listener(toasts));
+}
+
+export function dismiss(id: number): void {
+  publish(toasts.filter((toast) => toast.id !== id));
+}
+
+export function notify(text: string, tone: Toast['tone'] = 'ok'): void {
+  counter += 1;
+  const toast = { id: counter, tone, text };
+  publish([...toasts.filter((each) => each.text !== text), toast]);
+  if (tone === 'ok') {
+    setTimeout(() => dismiss(toast.id), 5000);
+  }
+}
+
+export function reason(error: unknown): string {
+  if (typeof error === 'string' && error.trim()) {
+    return error.trim();
+  }
+  if (error && typeof error === 'object') {
+    for (const key of ['Message', 'message', 'detail', 'title']) {
+      const value = (error as Record<string, unknown>)[key];
+      if (typeof value === 'string' && value.trim()) {
+        return value.trim();
+      }
+    }
+  }
+
+  return '';
+}
+
+export function refused(error: unknown, fallback: string): void {
+  const said = reason(error);
+  notify(said ? fallback + ' The server said: ' + said : fallback, 'bad');
+}
+
+export function Toasts() {
+  const [shown, setShown] = useState(toasts);
+
+  useEffect(() => {
+    listeners.add(setShown);
+
+    return () => {
+      listeners.delete(setShown);
+    };
+  }, []);
+
+  return (
+    <div class="toasts">
+      {shown.map((toast) => (
+        <div key={toast.id} class={'toast ' + toast.tone} role={toast.tone === 'ok' ? 'status' : 'alert'}>
+          <Dot tone={toast.tone} />
+          <span class="said">{toast.text}</span>
+          <button class="link" aria-label="Dismiss" onClick={() => dismiss(toast.id)}>
+            ×
+          </button>
+        </div>
+      ))}
+    </div>
+  );
 }

@@ -717,3 +717,47 @@ label.shelf input {
     grid-template-columns: 1fr;
   }
 }
+
+.toasts {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: min(440px, calc(100vw - 32px));
+}
+
+.toast {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--ok);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 25%);
+  color: var(--text);
+}
+
+.toast.bad {
+  border-left-color: var(--bad);
+}
+
+.toast .dot {
+  flex: none;
+}
+
+.toast .said {
+  flex: 1;
+}
+
+.toast button.link {
+  text-decoration: none;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  margin-left: 8px;
+}
