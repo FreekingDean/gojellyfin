@@ -320,7 +320,7 @@ func Register(
 	}
 
 	for _, route := range streamRoutes {
-		m.HandleFunc(route.pattern, middleware.StreamTracing(s.tracing, route.operation, route.handler(streams)))
+		m.HandleFunc(route.pattern, middleware.StreamTracing(s.tracing, route.operation, streams.Tagged(route.handler(streams))))
 	}
 	m.HandleFunc("DELETE /Videos/ActiveEncodings", streams.StopEncodings)
 	finalHandler := api.HandlerWithOptions(h, api.StdHTTPServerOptions{

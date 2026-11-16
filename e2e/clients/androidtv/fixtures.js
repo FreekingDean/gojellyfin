@@ -29,8 +29,16 @@ const test = base.extend({
     tv.clearLog();
     await use(tv);
 
-    if (testInfo.status !== testInfo.expectedStatus) {
+    const retried = playerErrors(tv);
+    if (testInfo.status !== testInfo.expectedStatus || retried.length > 0) {
       await reportFailure(tv, PACKAGE, testInfo);
+    }
+    if (retried.length > 0) {
+      const why = tv.adb(['logcat', '-d', '-v', 'brief'], { allowFailure: true })
+        .split('\n')
+        .filter((line) => /ExoPlayerImplInternal|Exception|Caused by/.test(line))
+        .slice(0, 60);
+      throw new Error(`the player failed and retried:\n${retried.join('\n')}\n${why.join('\n')}`);
     }
   },
 
@@ -65,6 +73,15 @@ const test = base.extend({
     await use(tv);
   },
 });
+
+// The app answers a player error by showing "Player error encountered. Will
+// re-try…" and starting the item again, which looks like playback to every
+// other check, so what it logged is the only witness.
+function playerErrors(tv) {
+  const log = tv.adb(['logcat', '-d', '-v', 'brief'], { allowFailure: true });
+
+  return log.split('\n').filter((line) => /Player error encountered|Got error from player/.test(line));
+}
 
 // The emulator's launcher draws a tutorial over whatever is in front of it
 // the first few times it is seen, so one that turns up is dismissed and the
