@@ -116,6 +116,11 @@ func PlannedSourceID(v uuid.UUID) predicate.Session {
 	return predicate.Session(sql.FieldEQ(FieldPlannedSourceID, v))
 }
 
+// APIKeyID applies equality check predicate on the "api_key_id" field. It's identical to APIKeyIDEQ.
+func APIKeyID(v uuid.UUID) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldAPIKeyID, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Session {
 	return predicate.Session(sql.FieldEQ(FieldCreatedAt, v))
@@ -681,6 +686,36 @@ func PlaybackPlanNotNil() predicate.Session {
 	return predicate.Session(sql.FieldNotNull(FieldPlaybackPlan))
 }
 
+// APIKeyIDEQ applies the EQ predicate on the "api_key_id" field.
+func APIKeyIDEQ(v uuid.UUID) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldAPIKeyID, v))
+}
+
+// APIKeyIDNEQ applies the NEQ predicate on the "api_key_id" field.
+func APIKeyIDNEQ(v uuid.UUID) predicate.Session {
+	return predicate.Session(sql.FieldNEQ(FieldAPIKeyID, v))
+}
+
+// APIKeyIDIn applies the In predicate on the "api_key_id" field.
+func APIKeyIDIn(vs ...uuid.UUID) predicate.Session {
+	return predicate.Session(sql.FieldIn(FieldAPIKeyID, vs...))
+}
+
+// APIKeyIDNotIn applies the NotIn predicate on the "api_key_id" field.
+func APIKeyIDNotIn(vs ...uuid.UUID) predicate.Session {
+	return predicate.Session(sql.FieldNotIn(FieldAPIKeyID, vs...))
+}
+
+// APIKeyIDIsNil applies the IsNil predicate on the "api_key_id" field.
+func APIKeyIDIsNil() predicate.Session {
+	return predicate.Session(sql.FieldIsNull(FieldAPIKeyID))
+}
+
+// APIKeyIDNotNil applies the NotNil predicate on the "api_key_id" field.
+func APIKeyIDNotNil() predicate.Session {
+	return predicate.Session(sql.FieldNotNull(FieldAPIKeyID))
+}
+
 // HasUser applies the HasEdge predicate on the "user" edge.
 func HasUser() predicate.Session {
 	return predicate.Session(func(s *sql.Selector) {
@@ -765,6 +800,29 @@ func HasPlannedSource() predicate.Session {
 func HasPlannedSourceWith(preds ...predicate.ItemSource) predicate.Session {
 	return predicate.Session(func(s *sql.Selector) {
 		step := newPlannedSourceStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasAPIKey applies the HasEdge predicate on the "api_key" edge.
+func HasAPIKey() predicate.Session {
+	return predicate.Session(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, APIKeyTable, APIKeyColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasAPIKeyWith applies the HasEdge predicate on the "api_key" edge with a given conditions (other predicates).
+func HasAPIKeyWith(preds ...predicate.ApiKey) predicate.Session {
+	return predicate.Session(func(s *sql.Selector) {
+		step := newAPIKeyStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

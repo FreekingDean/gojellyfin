@@ -334,6 +334,9 @@ web:
     - name: Request
       icon: add_circle
       url: /request
+    - name: Report a problem
+      icon: report_problem
+      url: /report
   # The unprivileged image listens on 8080 and owns the directories nginx
   # writes to, which is what lets runAsNonRoot hold.
   image:

@@ -775,6 +775,38 @@ func (c *ApiKeyClient) GetX(ctx context.Context, id uuid.UUID) *ApiKey {
 	return obj
 }
 
+// QueryUser queries the user edge of a ApiKey.
+func (c *ApiKeyClient) QueryUser(_m *ApiKey) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(apikey.Table, apikey.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, apikey.UserTable, apikey.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySessions queries the sessions edge of a ApiKey.
+func (c *ApiKeyClient) QuerySessions(_m *ApiKey) *SessionQuery {
+	query := (&SessionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(apikey.Table, apikey.FieldID, id),
+			sqlgraph.To(session.Table, session.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, apikey.SessionsTable, apikey.SessionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *ApiKeyClient) Hooks() []Hook {
 	return c.hooks.ApiKey
@@ -4911,6 +4943,22 @@ func (c *SessionClient) QueryPlannedSource(_m *Session) *ItemSourceQuery {
 	return query
 }
 
+// QueryAPIKey queries the api_key edge of a Session.
+func (c *SessionClient) QueryAPIKey(_m *Session) *ApiKeyQuery {
+	query := (&ApiKeyClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(session.Table, session.FieldID, id),
+			sqlgraph.To(apikey.Table, apikey.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, session.APIKeyTable, session.APIKeyColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QuerySyncPlayMemberships queries the sync_play_memberships edge of a Session.
 func (c *SessionClient) QuerySyncPlayMemberships(_m *Session) *SyncPlayGroupMemberQuery {
 	query := (&SyncPlayGroupMemberClient{config: c.config}).Query()
@@ -6235,6 +6283,22 @@ func (c *UserClient) QueryReports(_m *User) *ReportQuery {
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(report.Table, report.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.ReportsTable, user.ReportsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAPIKeys queries the api_keys edge of a User.
+func (c *UserClient) QueryAPIKeys(_m *User) *ApiKeyQuery {
+	query := (&ApiKeyClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(apikey.Table, apikey.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.APIKeysTable, user.APIKeysColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

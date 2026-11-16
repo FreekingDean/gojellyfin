@@ -74,9 +74,11 @@ type UserEdges struct {
 	Requests []*Request `json:"requests,omitempty"`
 	// Reports holds the value of the reports edge.
 	Reports []*Report `json:"reports,omitempty"`
+	// APIKeys holds the value of the api_keys edge.
+	APIKeys []*ApiKey `json:"api_keys,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [11]bool
+	loadedTypes [12]bool
 }
 
 // ConfigurationOrErr returns the Configuration value or an error if the edge
@@ -180,6 +182,15 @@ func (e UserEdges) ReportsOrErr() ([]*Report, error) {
 		return e.Reports, nil
 	}
 	return nil, &NotLoadedError{edge: "reports"}
+}
+
+// APIKeysOrErr returns the APIKeys value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) APIKeysOrErr() ([]*ApiKey, error) {
+	if e.loadedTypes[11] {
+		return e.APIKeys, nil
+	}
+	return nil, &NotLoadedError{edge: "api_keys"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -361,6 +372,11 @@ func (_m *User) QueryRequests() *RequestQuery {
 // QueryReports queries the "reports" edge of the User entity.
 func (_m *User) QueryReports() *ReportQuery {
 	return NewUserClient(_m.config).QueryReports(_m)
+}
+
+// QueryAPIKeys queries the "api_keys" edge of the User entity.
+func (_m *User) QueryAPIKeys() *ApiKeyQuery {
+	return NewUserClient(_m.config).QueryAPIKeys(_m)
 }
 
 // Update returns a builder for updating this User.

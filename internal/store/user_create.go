@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
+	"github.com/FreekingDean/gojellyfin/internal/store/apikey"
 	"github.com/FreekingDean/gojellyfin/internal/store/displaypreferences"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
@@ -358,6 +359,21 @@ func (_c *UserCreate) AddReports(v ...*Report) *UserCreate {
 	return _c.AddReportIDs(ids...)
 }
 
+// AddAPIKeyIDs adds the "api_keys" edge to the ApiKey entity by IDs.
+func (_c *UserCreate) AddAPIKeyIDs(ids ...uuid.UUID) *UserCreate {
+	_c.mutation.AddAPIKeyIDs(ids...)
+	return _c
+}
+
+// AddAPIKeys adds the "api_keys" edges to the ApiKey entity.
+func (_c *UserCreate) AddAPIKeys(v ...*ApiKey) *UserCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddAPIKeyIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (_c *UserCreate) Mutation() *UserMutation {
 	return _c.mutation
@@ -687,6 +703,22 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(report.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.APIKeysIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.APIKeysTable,
+			Columns: []string{user.APIKeysColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(apikey.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
