@@ -54,4 +54,28 @@ func TestService_Lyrics(t *testing.T) {
 	if !held[sung.ID].HasLyrics || held[silent.ID].HasLyrics {
 		t.Errorf("held = %+v, want only the sung track to have lyrics", held)
 	}
+
+	if err := fixture.service.SaveLyrics(ctx, Everyone, silent.ID, "[00:02.00]uploaded"); err != nil {
+		t.Fatalf("SaveLyrics: %v", err)
+	}
+	if text, err := fixture.service.Lyrics(ctx, Everyone, silent.ID); err != nil || text != "[00:02.00]uploaded" {
+		t.Errorf("lyrics = %q (%v), want what was uploaded", text, err)
+	}
+
+	if err := fixture.service.ClearLyrics(ctx, Everyone, sung.ID); err != nil {
+		t.Fatalf("ClearLyrics: %v", err)
+	}
+	if _, err := fixture.service.Lyrics(ctx, Everyone, sung.ID); !errors.Is(err, ErrNotFound) {
+		t.Errorf("err = %v after a delete, want %v", err, ErrNotFound)
+	}
+	if err := fixture.service.ClearLyrics(ctx, Everyone, sung.ID); !errors.Is(err, ErrNotFound) {
+		t.Errorf("a second delete answered %v, want %v", err, ErrNotFound)
+	}
+
+	if err := fixture.service.SaveLyrics(ctx, Viewer{}, sung.ID, "hidden"); !errors.Is(err, ErrNotFound) {
+		t.Errorf("an upload to a track the viewer cannot see answered %v, want %v", err, ErrNotFound)
+	}
+	if err := fixture.service.SaveLyrics(ctx, Everyone, uuid.New(), "nowhere"); !errors.Is(err, ErrNotFound) {
+		t.Errorf("an upload to no track answered %v, want %v", err, ErrNotFound)
+	}
 }

@@ -53,6 +53,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/user"
 	"github.com/FreekingDean/gojellyfin/internal/server/userdata"
 	"github.com/FreekingDean/gojellyfin/internal/server/userviews"
+	"github.com/FreekingDean/gojellyfin/internal/server/videos"
 	"github.com/FreekingDean/gojellyfin/internal/server/years"
 )
 
@@ -113,6 +114,7 @@ type (
 	UserServer               = user.Server
 	UserDataServer           = userdata.Server
 	UserViewsServer          = userviews.Server
+	VideosServer             = videos.Server
 )
 
 type Server struct {
@@ -168,6 +170,7 @@ type Server struct {
 	*UserServer
 	*UserDataServer
 	*UserViewsServer
+	*VideosServer
 
 	nestedUnimplemented
 }
@@ -225,6 +228,7 @@ func New(
 	user *user.Server,
 	userData *userdata.Server,
 	userViews *userviews.Server,
+	videos *videos.Server,
 ) *Server {
 	return &Server{
 		ApiKeyServer:             apiKey,
@@ -279,5 +283,6 @@ func New(
 		UserServer:               user,
 		UserDataServer:           userData,
 		UserViewsServer:          userViews,
+		VideosServer:             videos,
 	}
 }

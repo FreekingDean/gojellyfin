@@ -10,10 +10,7 @@ import (
 	"testing"
 )
 
-var exportedTranslation = map[string]string{
-	"configuration.ServerConfiguration":   "read helper for system and branding, not translation",
-	"configuration.BrandingConfiguration": "read helper for branding, not translation",
-}
+var exportedTranslation = map[string]string{}
 
 func Test(t *testing.T) {
 	entries, err := os.ReadDir(".")

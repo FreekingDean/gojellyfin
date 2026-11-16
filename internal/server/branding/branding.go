@@ -8,7 +8,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
-	"github.com/FreekingDean/gojellyfin/internal/server/configuration"
 	"github.com/FreekingDean/gojellyfin/internal/server/link"
 	"github.com/FreekingDean/gojellyfin/internal/shelves"
 	"github.com/FreekingDean/gojellyfin/internal/sso"
@@ -47,26 +46,26 @@ func New(config *config.Service, signOn *sso.Service, links *link.Handler, shelv
 }
 
 func (s *Server) GetBrandingOptions(ctx context.Context, request api.GetBrandingOptionsRequestObject) (api.GetBrandingOptionsResponseObject, error) {
-	branding, err := configuration.BrandingConfiguration(ctx, s.config)
+	stored, err := s.config.Branding(ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	disclaimer := stored.LoginDisclaimer
 	if s.signOn.Enabled() {
-		branding.LoginDisclaimer = apiutil.Ptr(strings.TrimSpace(apiutil.Deref(branding.LoginDisclaimer) + "\n\n" + signOnButton))
-	}
-
-	if s.links.Enabled() {
-		branding.SplashscreenEnabled = apiutil.Ptr(true)
+		disclaimer = strings.TrimSpace(disclaimer + "\n\n" + signOnButton)
 	}
 
 	css, err := s.brandingCss(ctx)
 	if err != nil {
 		return nil, err
 	}
-	branding.CustomCss = apiutil.Ptr(css)
 
-	return api.GetBrandingOptions200JSONResponse(branding), nil
+	return api.GetBrandingOptions200JSONResponse{
+		CustomCss:           apiutil.Ptr(css),
+		LoginDisclaimer:     apiutil.Ptr(disclaimer),
+		SplashscreenEnabled: apiutil.Ptr(stored.SplashscreenEnabled || s.links.Enabled()),
+	}, nil
 }
 
 func (s *Server) GetBrandingCss(ctx context.Context, request api.GetBrandingCssRequestObject) (api.GetBrandingCssResponseObject, error) {
@@ -94,13 +93,13 @@ func (s *Server) GetBrandingCss2(ctx context.Context, request api.GetBrandingCss
 }
 
 func (s *Server) brandingCss(ctx context.Context) (string, error) {
-	branding, err := configuration.BrandingConfiguration(ctx, s.config)
+	stored, err := s.config.Branding(ctx)
 	if err != nil {
 		return "", err
 	}
 
 	css := strings.Builder{}
-	css.WriteString(apiutil.Deref(branding.CustomCss))
+	css.WriteString(stored.CustomCss)
 	css.WriteString(s.links.CSS())
 	titles, err := s.shelves.Titles(ctx)
 	if err != nil {

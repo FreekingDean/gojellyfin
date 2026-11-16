@@ -62,3 +62,26 @@ func (s *Service) subtree(ctx context.Context, root uuid.UUID) ([]uuid.UUID, err
 
 	return ids, nil
 }
+
+type Remover interface {
+	RemoveAll(ctx context.Context, path string) error
+}
+
+func (s *Service) DeleteWithFiles(ctx context.Context, ids []uuid.UUID, files Remover) error {
+	for _, id := range ids {
+		paths, err := s.SourcePaths(ctx, id)
+		if err != nil {
+			return err
+		}
+		for _, path := range paths {
+			if err := files.RemoveAll(ctx, path); err != nil {
+				return err
+			}
+		}
+		if err := s.DeleteItem(ctx, id); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

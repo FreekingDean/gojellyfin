@@ -96,20 +96,10 @@ func (s *Server) deleteItems(ctx context.Context, ids []uuid.UUID) error {
 		return err
 	}
 
+	found := make([]uuid.UUID, 0, len(records))
 	for _, record := range records {
-		paths, err := s.items.SourcePaths(ctx, record.ID)
-		if err != nil {
-			return err
-		}
-		for _, path := range paths {
-			if err := s.filesystem.RemoveAll(ctx, path); err != nil {
-				return err
-			}
-		}
-		if err := s.items.DeleteItem(ctx, record.ID); err != nil {
-			return err
-		}
+		found = append(found, record.ID)
 	}
 
-	return nil
+	return s.items.DeleteWithFiles(ctx, found, s.filesystem)
 }
