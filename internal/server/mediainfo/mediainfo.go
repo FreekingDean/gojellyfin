@@ -129,6 +129,9 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, question as
 	case plan.Change == items.ChangeNone:
 		served(&source, plan, streamURL("Videos", itemID, plan, token, session, question.startTicks))
 		source.SupportsDirectPlay = apiutil.Ptr(!question.noDirect)
+		if caller := auth.SessionFrom(ctx); caller != nil {
+			source.ETag = apiutil.Ptr(auth.StreamTag(caller.ID, token, plan.Source.ID))
+		}
 	default:
 		segmented, err := s.segmented(ctx, plan)
 		if err != nil {
