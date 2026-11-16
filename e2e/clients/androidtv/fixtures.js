@@ -156,7 +156,12 @@ function focusedTitle(tv) {
   const counter = nodes.find((node) => node.id === 'counter');
   const place = counter && /^(\d+) \| (\d+)$/.exec(counter.text);
 
-  return { title: title ? title.text : '', index: place ? Number(place[1]) : 0, total: place ? Number(place[2]) : 0 };
+  const grid = nodes.find((node) => node.id === 'horizontal_grid');
+  const focus = nodes.find((node) => node.focused);
+  const inGrid = Boolean(grid && focus && focus.bounds[1] >= grid.bounds[1]);
+  const where = focus ? focus.bounds.join() : '';
+
+  return { title: title ? title.text : '', index: place ? Number(place[1]) : 0, total: place ? Number(place[2]) : 0, inGrid, where };
 }
 
 // The last column can be shorter than the rest, and the grid will not move
@@ -165,9 +170,20 @@ function focusedTitle(tv) {
 // rather than climbing until nothing moves, because up from the top row
 // leaves the grid for the toolbar.
 async function walkGrid(tv, visit) {
+  // The counter can trail the focus, so a move waits for the focus to land
+  // somewhere new before it is read, and gives up quietly when it never does.
   const move = async (name) => {
+    const from = focusedTitle(tv);
     tv.key(name);
-    await sleep(700);
+    let now = from;
+    for (let wait = 0; wait < 12; wait++) {
+      await sleep(250);
+      now = focusedTitle(tv);
+      if (now.where !== from.where && now.index !== from.index) {
+        break;
+      }
+    }
+    await sleep(250);
 
     return focusedTitle(tv);
   };
@@ -188,8 +204,12 @@ async function walkGrid(tv, visit) {
     }
     focused = await move('right');
     if (focused.index === before) {
-      for (let climb = before - top; climb > 0; climb--) {
+      for (let climb = before - top; climb > 0 && focused.index > top; climb--) {
         focused = await move('up');
+        if (!focused.inGrid) {
+          focused = await move('down');
+          break;
+        }
       }
       focused = await move('right');
       if (focused.index <= before) {
