@@ -18,7 +18,7 @@ const (
 	defaultHTTPPort         = 8081
 	defaultDatabaseConns    = 20
 	defaultConnMaxLifetime  = 30 * time.Minute
-	defaultWorkerActivities = 16
+	defaultWorkerActivities = 64
 	maxPort                 = 65535
 
 	SourceAPIKeyPrefix = "SOURCE_API_KEY_"

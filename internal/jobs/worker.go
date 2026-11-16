@@ -30,7 +30,7 @@ func NewWorker(service *Service, config env.Config) *Worker {
 }
 
 func (w *Worker) slots(queue string) int {
-	if queue == SegmentsQueue || w.activities < 1 {
+	if queue == SegmentsQueue || queue == ProbeQueue || w.activities < 1 {
 		return runtime.GOMAXPROCS(0)
 	}
 
