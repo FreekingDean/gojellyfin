@@ -175,19 +175,60 @@ func (s *Service) Ancestors(ctx context.Context, id uuid.UUID) (*Ancestry, error
 		return nil, fmt.Errorf("failed to query the item's libraries: %w", err)
 	}
 
-	ancestry := &Ancestry{Parents: []*Item{}, LibraryIDs: parsed(libraries)}
-	seen := map[uuid.UUID]bool{item.ID: true}
-	for item.ParentID != nil && !seen[*item.ParentID] {
-		parent, err := s.ItemByID(ctx, Everyone, *item.ParentID)
-		if err != nil {
-			return nil, err
-		}
-		seen[parent.ID] = true
-		ancestry.Parents = append(ancestry.Parents, parent)
-		item = parent
+	parents, err := s.parents(ctx, item.ID)
+	if err != nil {
+		return nil, err
 	}
 
-	return ancestry, nil
+	return &Ancestry{Parents: parents, LibraryIDs: parsed(libraries)}, nil
+}
+
+const ancestorsQuery = `
+	WITH RECURSIVE chain (id, parent_id, depth) AS (
+		SELECT id, parent_id, 0 FROM items WHERE id = $1
+		UNION ALL
+		SELECT parent.id, parent.parent_id, chain.depth + 1
+		FROM items AS parent
+		JOIN chain ON parent.id = chain.parent_id
+	) CYCLE id SET looped USING path
+	SELECT id FROM chain WHERE depth > 0 AND NOT looped ORDER BY depth`
+
+func (s *Service) parents(ctx context.Context, id uuid.UUID) ([]*Item, error) {
+	rows, err := s.store.QueryContext(ctx, ancestorsQuery, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query the item's parents: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var ids []uuid.UUID
+	for rows.Next() {
+		var parentID uuid.UUID
+		if err := rows.Scan(&parentID); err != nil {
+			return nil, fmt.Errorf("failed to scan a parent: %w", err)
+		}
+		if parentID != id {
+			ids = append(ids, parentID)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to read the item's parents: %w", err)
+	}
+
+	found, err := s.ItemsByIDs(ctx, Everyone, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	parents := make([]*Item, 0, len(ids))
+	for _, parentID := range ids {
+		parent, ok := found[parentID]
+		if !ok {
+			return nil, fmt.Errorf("failed to query item: parent %s is gone", parentID)
+		}
+		parents = append(parents, parent)
+	}
+
+	return parents, nil
 }
 
 func (s *Service) ItemsNeedingMetadata(ctx context.Context, kinds []Kind, force bool, scope uuid.UUID) ([]uuid.UUID, error) {
