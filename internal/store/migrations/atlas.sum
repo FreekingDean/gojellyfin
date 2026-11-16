@@ -1,4 +1,4 @@
-h1:Oq/R5tfdtThOR+SZlgNnwoCafaXpEmZMPG8A1e32Y9s=
+h1:VUECoE2vnhfc919BxcQdvXwSEJTi6rn3rWxIPkmn80M=
 20260808161932_schema.sql h1:TSsMFoNc1lu6mOmwk6WUpVAleagab51CYpT8AcXjFe8=
 20260809054423_schema.sql h1:V8LqoR24+BY3zT0+YlBHRxazmflw/ECnIQrC9e8FboE=
 20260809060012_configurations.sql h1:lWCojwN/ZmPBP/uS9aNCdmvBPXLv1rSc21+W+ZeyrJg=
@@ -50,3 +50,4 @@ h1:Oq/R5tfdtThOR+SZlgNnwoCafaXpEmZMPG8A1e32Y9s=
 20261116000000_api_key_sessions.sql h1:DWKaNrCm0VurTaZG2bLy7arYz24fwRggtp7SU6EdPeU=
 20261116003000_session_viewing.sql h1:ts6MlmTd1aeZVOznhQaeRxx5JcSTZp5qkEec1+c/gEg=
 20261116015257_live_channels.sql h1:Gu/1bkQqqJImsx1sDLq2kDttuzWXbslwvLzicy1bGWo=
+20261116051500_parental_ratings.sql h1:vTiQrpLIu0tTGtehtdrchFPyVo0bn+9NTg6yxLf7jUM=

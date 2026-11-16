@@ -11,6 +11,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
+	"github.com/FreekingDean/gojellyfin/internal/localization"
 	"github.com/FreekingDean/gojellyfin/internal/metadata"
 	"github.com/FreekingDean/gojellyfin/internal/observability"
 	"github.com/FreekingDean/gojellyfin/internal/probe"
@@ -33,6 +34,7 @@ var workerModules = fx.Options(
 	reports.Module,
 	probe.Module,
 	segments.Module,
+	localization.Module,
 	metadata.Module,
 	jobs.Module,
 	jobs.WorkerModule,

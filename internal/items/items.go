@@ -449,8 +449,10 @@ func inLibrary(id uuid.UUID) predicate.Item {
 }
 
 type Viewer struct {
-	All       bool
-	Libraries []uuid.UUID
+	All          bool
+	Libraries    []uuid.UUID
+	MaxRating    *int
+	BlockUnrated []string
 }
 
 var Everyone = Viewer{All: true}
@@ -470,15 +472,13 @@ func marked(user uuid.UUID, want bool, mark predicate.UserItemData) predicate.It
 
 func (v Viewer) visible() []predicate.Item {
 	if v.All {
-		return nil
+		return v.rated()
 	}
 
-	return []predicate.Item{
-		itemmodel.Or(
-			itemmodel.KindEQ(itemmodel.KindPlaylist),
-			itemmodel.HasLibrariesWith(librarymembership.LibraryIDIn(v.Libraries...)),
-		),
-	}
+	return append(v.rated(), itemmodel.Or(
+		itemmodel.KindEQ(itemmodel.KindPlaylist),
+		itemmodel.HasLibrariesWith(librarymembership.LibraryIDIn(v.Libraries...)),
+	))
 }
 
 func (s *Service) SaveMembership(ctx context.Context, libraryID, sourceID uuid.UUID, itemIDs []uuid.UUID) error {

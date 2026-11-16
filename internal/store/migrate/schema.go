@@ -323,6 +323,7 @@ var (
 		{Name: "date_modified", Type: field.TypeTime, Nullable: true},
 		{Name: "production_year", Type: field.TypeInt32, Nullable: true},
 		{Name: "official_rating", Type: field.TypeString, Nullable: true},
+		{Name: "parental_rating", Type: field.TypeInt, Nullable: true},
 		{Name: "community_rating", Type: field.TypeFloat64, Nullable: true},
 		{Name: "run_time_ticks", Type: field.TypeInt64, Nullable: true},
 		{Name: "index_number", Type: field.TypeInt32, Nullable: true},
@@ -342,7 +343,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "items_items_children",
-				Columns:    []*schema.Column{ItemsColumns[24]},
+				Columns:    []*schema.Column{ItemsColumns[25]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -366,7 +367,7 @@ var (
 			{
 				Name:    "item_parent_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[24]},
+				Columns: []*schema.Column{ItemsColumns[25]},
 			},
 		},
 	}
@@ -1383,8 +1384,8 @@ var (
 		{Name: "enable_all_devices", Type: field.TypeBool, Default: true},
 		{Name: "enable_all_channels", Type: field.TypeBool, Default: true},
 		{Name: "enable_all_folders", Type: field.TypeBool, Default: true},
-		{Name: "max_parental_rating", Type: field.TypeEnum, Nullable: true, Enums: []string{"Approved", "G", "PG", "PG-13", "R", "NC-17", "TV-Y", "TV-G", "TV-PG", "TV-14", "TV-MA"}},
-		{Name: "max_parental_sub_rating", Type: field.TypeEnum, Nullable: true, Enums: []string{"Approved", "G", "PG", "PG-13", "R", "NC-17", "TV-Y", "TV-G", "TV-PG", "TV-14", "TV-MA"}},
+		{Name: "max_parental_rating", Type: field.TypeInt, Nullable: true},
+		{Name: "max_parental_sub_rating", Type: field.TypeInt, Nullable: true},
 		{Name: "invalid_login_attempt_count", Type: field.TypeInt32, Default: 0},
 		{Name: "login_attempts_before_lockout", Type: field.TypeInt32, Default: -1},
 		{Name: "max_active_sessions", Type: field.TypeInt32, Default: 0},

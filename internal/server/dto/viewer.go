@@ -20,5 +20,5 @@ func ViewerFor(ctx context.Context, policies Access) (items.Viewer, error) {
 		return items.Viewer{}, err
 	}
 
-	return items.Viewer{All: access.All, Libraries: access.Libraries}, nil
+	return items.Viewer{All: access.All, Libraries: access.Libraries, MaxRating: access.MaxRating, BlockUnrated: access.BlockUnrated}, nil
 }

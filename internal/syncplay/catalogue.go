@@ -100,7 +100,7 @@ func (s *Service) visibleTo(ctx context.Context, userID uuid.UUID, ids []uuid.UU
 		return nil, err
 	}
 
-	return s.library.ItemsByIDs(ctx, items.Viewer{All: access.All, Libraries: access.Libraries}, ids)
+	return s.library.ItemsByIDs(ctx, items.Viewer{All: access.All, Libraries: access.Libraries, MaxRating: access.MaxRating, BlockUnrated: access.BlockUnrated}, ids)
 }
 
 func (s *Service) CanSeeQueue(ctx context.Context, userID uuid.UUID, group *Group) (bool, error) {

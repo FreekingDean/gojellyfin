@@ -50,6 +50,7 @@ func (Item) Fields() []ent.Field {
 		field.Int32("production_year").Optional().Nillable(),
 
 		field.String("official_rating").Optional(),
+		field.Int("parental_rating").Optional().Nillable(),
 		field.Float("community_rating").Optional().Nillable(),
 
 		field.Int64("run_time_ticks").Optional().Nillable(),

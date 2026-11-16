@@ -32,7 +32,9 @@ func (s *Server) UpdateItem(ctx context.Context, request api.UpdateItemRequestOb
 		return api.UpdateItem404JSONResponse{}, nil
 	}
 
-	if _, err := s.items.EditMetadata(ctx, item, metadata(req)); err != nil {
+	edited := metadata(req)
+	edited.Rate(s.localization)
+	if _, err := s.items.EditMetadata(ctx, item, edited); err != nil {
 		return nil, err
 	}
 

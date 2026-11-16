@@ -812,6 +812,7 @@ type ItemModel struct {
 	DateModified      *time.Time
 	ProductionYear    *int32
 	OfficialRating    string
+	ParentalRating    *int
 	CommunityRating   *float64
 	RunTimeTicks      *int64
 	IndexNumber       *int32
@@ -871,6 +872,7 @@ func fromItem(_m *Item) *ItemModel {
 		DateModified:      _m.DateModified,
 		ProductionYear:    _m.ProductionYear,
 		OfficialRating:    _m.OfficialRating,
+		ParentalRating:    _m.ParentalRating,
 		CommunityRating:   _m.CommunityRating,
 		RunTimeTicks:      _m.RunTimeTicks,
 		IndexNumber:       _m.IndexNumber,
@@ -3174,8 +3176,8 @@ type UserPolicyModel struct {
 	EnableAllDevices                 bool
 	EnableAllChannels                bool
 	EnableAllFolders                 bool
-	MaxParentalRating                *userpolicy.MaxParentalRating
-	MaxParentalSubRating             *userpolicy.MaxParentalSubRating
+	MaxParentalRating                *int
+	MaxParentalSubRating             *int
 	InvalidLoginAttemptCount         int32
 	LoginAttemptsBeforeLockout       int32
 	MaxActiveSessions                int32

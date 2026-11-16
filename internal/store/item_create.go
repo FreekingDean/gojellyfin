@@ -232,6 +232,20 @@ func (_c *ItemCreate) SetNillableOfficialRating(v *string) *ItemCreate {
 	return _c
 }
 
+// SetParentalRating sets the "parental_rating" field.
+func (_c *ItemCreate) SetParentalRating(v int) *ItemCreate {
+	_c.mutation.SetParentalRating(v)
+	return _c
+}
+
+// SetNillableParentalRating sets the "parental_rating" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableParentalRating(v *int) *ItemCreate {
+	if v != nil {
+		_c.SetParentalRating(*v)
+	}
+	return _c
+}
+
 // SetCommunityRating sets the "community_rating" field.
 func (_c *ItemCreate) SetCommunityRating(v float64) *ItemCreate {
 	_c.mutation.SetCommunityRating(v)
@@ -743,6 +757,10 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.OfficialRating(); ok {
 		_spec.SetField(item.FieldOfficialRating, field.TypeString, value)
 		_node.OfficialRating = value
+	}
+	if value, ok := _c.mutation.ParentalRating(); ok {
+		_spec.SetField(item.FieldParentalRating, field.TypeInt, value)
+		_node.ParentalRating = &value
 	}
 	if value, ok := _c.mutation.CommunityRating(); ok {
 		_spec.SetField(item.FieldCommunityRating, field.TypeFloat64, value)
@@ -1351,6 +1369,30 @@ func (u *ItemUpsert) ClearOfficialRating() *ItemUpsert {
 	return u
 }
 
+// SetParentalRating sets the "parental_rating" field.
+func (u *ItemUpsert) SetParentalRating(v int) *ItemUpsert {
+	u.Set(item.FieldParentalRating, v)
+	return u
+}
+
+// UpdateParentalRating sets the "parental_rating" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateParentalRating() *ItemUpsert {
+	u.SetExcluded(item.FieldParentalRating)
+	return u
+}
+
+// AddParentalRating adds v to the "parental_rating" field.
+func (u *ItemUpsert) AddParentalRating(v int) *ItemUpsert {
+	u.Add(item.FieldParentalRating, v)
+	return u
+}
+
+// ClearParentalRating clears the value of the "parental_rating" field.
+func (u *ItemUpsert) ClearParentalRating() *ItemUpsert {
+	u.SetNull(item.FieldParentalRating)
+	return u
+}
+
 // SetCommunityRating sets the "community_rating" field.
 func (u *ItemUpsert) SetCommunityRating(v float64) *ItemUpsert {
 	u.Set(item.FieldCommunityRating, v)
@@ -1869,6 +1911,34 @@ func (u *ItemUpsertOne) UpdateOfficialRating() *ItemUpsertOne {
 func (u *ItemUpsertOne) ClearOfficialRating() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearOfficialRating()
+	})
+}
+
+// SetParentalRating sets the "parental_rating" field.
+func (u *ItemUpsertOne) SetParentalRating(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetParentalRating(v)
+	})
+}
+
+// AddParentalRating adds v to the "parental_rating" field.
+func (u *ItemUpsertOne) AddParentalRating(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddParentalRating(v)
+	})
+}
+
+// UpdateParentalRating sets the "parental_rating" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateParentalRating() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateParentalRating()
+	})
+}
+
+// ClearParentalRating clears the value of the "parental_rating" field.
+func (u *ItemUpsertOne) ClearParentalRating() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearParentalRating()
 	})
 }
 
@@ -2588,6 +2658,34 @@ func (u *ItemUpsertBulk) UpdateOfficialRating() *ItemUpsertBulk {
 func (u *ItemUpsertBulk) ClearOfficialRating() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearOfficialRating()
+	})
+}
+
+// SetParentalRating sets the "parental_rating" field.
+func (u *ItemUpsertBulk) SetParentalRating(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetParentalRating(v)
+	})
+}
+
+// AddParentalRating adds v to the "parental_rating" field.
+func (u *ItemUpsertBulk) AddParentalRating(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddParentalRating(v)
+	})
+}
+
+// UpdateParentalRating sets the "parental_rating" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateParentalRating() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateParentalRating()
+	})
+}
+
+// ClearParentalRating clears the value of the "parental_rating" field.
+func (u *ItemUpsertBulk) ClearParentalRating() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearParentalRating()
 	})
 }
 

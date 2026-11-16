@@ -405,13 +405,13 @@ func (_c *UserPolicyCreate) SetNillableEnableAllFolders(v *bool) *UserPolicyCrea
 }
 
 // SetMaxParentalRating sets the "max_parental_rating" field.
-func (_c *UserPolicyCreate) SetMaxParentalRating(v userpolicy.MaxParentalRating) *UserPolicyCreate {
+func (_c *UserPolicyCreate) SetMaxParentalRating(v int) *UserPolicyCreate {
 	_c.mutation.SetMaxParentalRating(v)
 	return _c
 }
 
 // SetNillableMaxParentalRating sets the "max_parental_rating" field if the given value is not nil.
-func (_c *UserPolicyCreate) SetNillableMaxParentalRating(v *userpolicy.MaxParentalRating) *UserPolicyCreate {
+func (_c *UserPolicyCreate) SetNillableMaxParentalRating(v *int) *UserPolicyCreate {
 	if v != nil {
 		_c.SetMaxParentalRating(*v)
 	}
@@ -419,13 +419,13 @@ func (_c *UserPolicyCreate) SetNillableMaxParentalRating(v *userpolicy.MaxParent
 }
 
 // SetMaxParentalSubRating sets the "max_parental_sub_rating" field.
-func (_c *UserPolicyCreate) SetMaxParentalSubRating(v userpolicy.MaxParentalSubRating) *UserPolicyCreate {
+func (_c *UserPolicyCreate) SetMaxParentalSubRating(v int) *UserPolicyCreate {
 	_c.mutation.SetMaxParentalSubRating(v)
 	return _c
 }
 
 // SetNillableMaxParentalSubRating sets the "max_parental_sub_rating" field if the given value is not nil.
-func (_c *UserPolicyCreate) SetNillableMaxParentalSubRating(v *userpolicy.MaxParentalSubRating) *UserPolicyCreate {
+func (_c *UserPolicyCreate) SetNillableMaxParentalSubRating(v *int) *UserPolicyCreate {
 	if v != nil {
 		_c.SetMaxParentalSubRating(*v)
 	}
@@ -911,16 +911,6 @@ func (_c *UserPolicyCreate) check() error {
 	if _, ok := _c.mutation.EnableAllFolders(); !ok {
 		return &ValidationError{Name: "enable_all_folders", err: errors.New(`store: missing required field "UserPolicy.enable_all_folders"`)}
 	}
-	if v, ok := _c.mutation.MaxParentalRating(); ok {
-		if err := userpolicy.MaxParentalRatingValidator(v); err != nil {
-			return &ValidationError{Name: "max_parental_rating", err: fmt.Errorf(`store: validator failed for field "UserPolicy.max_parental_rating": %w`, err)}
-		}
-	}
-	if v, ok := _c.mutation.MaxParentalSubRating(); ok {
-		if err := userpolicy.MaxParentalSubRatingValidator(v); err != nil {
-			return &ValidationError{Name: "max_parental_sub_rating", err: fmt.Errorf(`store: validator failed for field "UserPolicy.max_parental_sub_rating": %w`, err)}
-		}
-	}
 	if _, ok := _c.mutation.InvalidLoginAttemptCount(); !ok {
 		return &ValidationError{Name: "invalid_login_attempt_count", err: errors.New(`store: missing required field "UserPolicy.invalid_login_attempt_count"`)}
 	}
@@ -1102,11 +1092,11 @@ func (_c *UserPolicyCreate) createSpec() (*UserPolicy, *sqlgraph.CreateSpec) {
 		_node.EnableAllFolders = value
 	}
 	if value, ok := _c.mutation.MaxParentalRating(); ok {
-		_spec.SetField(userpolicy.FieldMaxParentalRating, field.TypeEnum, value)
+		_spec.SetField(userpolicy.FieldMaxParentalRating, field.TypeInt, value)
 		_node.MaxParentalRating = &value
 	}
 	if value, ok := _c.mutation.MaxParentalSubRating(); ok {
-		_spec.SetField(userpolicy.FieldMaxParentalSubRating, field.TypeEnum, value)
+		_spec.SetField(userpolicy.FieldMaxParentalSubRating, field.TypeInt, value)
 		_node.MaxParentalSubRating = &value
 	}
 	if value, ok := _c.mutation.InvalidLoginAttemptCount(); ok {
@@ -1571,7 +1561,7 @@ func (u *UserPolicyUpsert) UpdateEnableAllFolders() *UserPolicyUpsert {
 }
 
 // SetMaxParentalRating sets the "max_parental_rating" field.
-func (u *UserPolicyUpsert) SetMaxParentalRating(v userpolicy.MaxParentalRating) *UserPolicyUpsert {
+func (u *UserPolicyUpsert) SetMaxParentalRating(v int) *UserPolicyUpsert {
 	u.Set(userpolicy.FieldMaxParentalRating, v)
 	return u
 }
@@ -1582,6 +1572,12 @@ func (u *UserPolicyUpsert) UpdateMaxParentalRating() *UserPolicyUpsert {
 	return u
 }
 
+// AddMaxParentalRating adds v to the "max_parental_rating" field.
+func (u *UserPolicyUpsert) AddMaxParentalRating(v int) *UserPolicyUpsert {
+	u.Add(userpolicy.FieldMaxParentalRating, v)
+	return u
+}
+
 // ClearMaxParentalRating clears the value of the "max_parental_rating" field.
 func (u *UserPolicyUpsert) ClearMaxParentalRating() *UserPolicyUpsert {
 	u.SetNull(userpolicy.FieldMaxParentalRating)
@@ -1589,7 +1585,7 @@ func (u *UserPolicyUpsert) ClearMaxParentalRating() *UserPolicyUpsert {
 }
 
 // SetMaxParentalSubRating sets the "max_parental_sub_rating" field.
-func (u *UserPolicyUpsert) SetMaxParentalSubRating(v userpolicy.MaxParentalSubRating) *UserPolicyUpsert {
+func (u *UserPolicyUpsert) SetMaxParentalSubRating(v int) *UserPolicyUpsert {
 	u.Set(userpolicy.FieldMaxParentalSubRating, v)
 	return u
 }
@@ -1597,6 +1593,12 @@ func (u *UserPolicyUpsert) SetMaxParentalSubRating(v userpolicy.MaxParentalSubRa
 // UpdateMaxParentalSubRating sets the "max_parental_sub_rating" field to the value that was provided on create.
 func (u *UserPolicyUpsert) UpdateMaxParentalSubRating() *UserPolicyUpsert {
 	u.SetExcluded(userpolicy.FieldMaxParentalSubRating)
+	return u
+}
+
+// AddMaxParentalSubRating adds v to the "max_parental_sub_rating" field.
+func (u *UserPolicyUpsert) AddMaxParentalSubRating(v int) *UserPolicyUpsert {
+	u.Add(userpolicy.FieldMaxParentalSubRating, v)
 	return u
 }
 
@@ -2321,9 +2323,16 @@ func (u *UserPolicyUpsertOne) UpdateEnableAllFolders() *UserPolicyUpsertOne {
 }
 
 // SetMaxParentalRating sets the "max_parental_rating" field.
-func (u *UserPolicyUpsertOne) SetMaxParentalRating(v userpolicy.MaxParentalRating) *UserPolicyUpsertOne {
+func (u *UserPolicyUpsertOne) SetMaxParentalRating(v int) *UserPolicyUpsertOne {
 	return u.Update(func(s *UserPolicyUpsert) {
 		s.SetMaxParentalRating(v)
+	})
+}
+
+// AddMaxParentalRating adds v to the "max_parental_rating" field.
+func (u *UserPolicyUpsertOne) AddMaxParentalRating(v int) *UserPolicyUpsertOne {
+	return u.Update(func(s *UserPolicyUpsert) {
+		s.AddMaxParentalRating(v)
 	})
 }
 
@@ -2342,9 +2351,16 @@ func (u *UserPolicyUpsertOne) ClearMaxParentalRating() *UserPolicyUpsertOne {
 }
 
 // SetMaxParentalSubRating sets the "max_parental_sub_rating" field.
-func (u *UserPolicyUpsertOne) SetMaxParentalSubRating(v userpolicy.MaxParentalSubRating) *UserPolicyUpsertOne {
+func (u *UserPolicyUpsertOne) SetMaxParentalSubRating(v int) *UserPolicyUpsertOne {
 	return u.Update(func(s *UserPolicyUpsert) {
 		s.SetMaxParentalSubRating(v)
+	})
+}
+
+// AddMaxParentalSubRating adds v to the "max_parental_sub_rating" field.
+func (u *UserPolicyUpsertOne) AddMaxParentalSubRating(v int) *UserPolicyUpsertOne {
+	return u.Update(func(s *UserPolicyUpsert) {
+		s.AddMaxParentalSubRating(v)
 	})
 }
 
@@ -3292,9 +3308,16 @@ func (u *UserPolicyUpsertBulk) UpdateEnableAllFolders() *UserPolicyUpsertBulk {
 }
 
 // SetMaxParentalRating sets the "max_parental_rating" field.
-func (u *UserPolicyUpsertBulk) SetMaxParentalRating(v userpolicy.MaxParentalRating) *UserPolicyUpsertBulk {
+func (u *UserPolicyUpsertBulk) SetMaxParentalRating(v int) *UserPolicyUpsertBulk {
 	return u.Update(func(s *UserPolicyUpsert) {
 		s.SetMaxParentalRating(v)
+	})
+}
+
+// AddMaxParentalRating adds v to the "max_parental_rating" field.
+func (u *UserPolicyUpsertBulk) AddMaxParentalRating(v int) *UserPolicyUpsertBulk {
+	return u.Update(func(s *UserPolicyUpsert) {
+		s.AddMaxParentalRating(v)
 	})
 }
 
@@ -3313,9 +3336,16 @@ func (u *UserPolicyUpsertBulk) ClearMaxParentalRating() *UserPolicyUpsertBulk {
 }
 
 // SetMaxParentalSubRating sets the "max_parental_sub_rating" field.
-func (u *UserPolicyUpsertBulk) SetMaxParentalSubRating(v userpolicy.MaxParentalSubRating) *UserPolicyUpsertBulk {
+func (u *UserPolicyUpsertBulk) SetMaxParentalSubRating(v int) *UserPolicyUpsertBulk {
 	return u.Update(func(s *UserPolicyUpsert) {
 		s.SetMaxParentalSubRating(v)
+	})
+}
+
+// AddMaxParentalSubRating adds v to the "max_parental_sub_rating" field.
+func (u *UserPolicyUpsertBulk) AddMaxParentalSubRating(v int) *UserPolicyUpsertBulk {
+	return u.Update(func(s *UserPolicyUpsert) {
+		s.AddMaxParentalSubRating(v)
 	})
 }
 

@@ -9,8 +9,10 @@ import (
 )
 
 type Access struct {
-	All       bool
-	Libraries []uuid.UUID
+	All          bool
+	Libraries    []uuid.UUID
+	MaxRating    *int
+	BlockUnrated []string
 }
 
 func (s *Service) Access(ctx context.Context, id uuid.UUID) (Access, error) {
@@ -22,11 +24,16 @@ func (s *Service) Access(ctx context.Context, id uuid.UUID) (Access, error) {
 	if err != nil {
 		return Access{}, err
 	}
-	if policy == nil || policy.IsAdministrator || policy.EnableAllFolders {
+	if policy == nil || policy.IsAdministrator {
 		return Access{All: true}, nil
 	}
 
-	return Access{Libraries: policy.EnabledFolders}, nil
+	return Access{
+		All:          policy.EnableAllFolders,
+		Libraries:    policy.EnabledFolders,
+		MaxRating:    policy.MaxParentalRating,
+		BlockUnrated: policy.BlockUnratedItems,
+	}, nil
 }
 
 func (s *Service) Satisfies(ctx context.Context, id uuid.UUID, scopes []string) (bool, error) {

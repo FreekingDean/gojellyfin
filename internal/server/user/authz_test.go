@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"errors"
+	"slices"
 	"testing"
 
 	"github.com/google/uuid"
@@ -291,5 +292,51 @@ func TestServer_UpdateUserPolicyRefusesDisablingAnAdministrator(t *testing.T) {
 		},
 	}); err != nil {
 		t.Errorf("AuthenticateUserByName = %v, want the administrator still able to log in", err)
+	}
+}
+
+func TestServer_UpdateUserPolicyLimitsWhatAMemberSees(t *testing.T) {
+	accounts := newAccounts(t)
+	ctx := context.Background()
+
+	save := func(body api.UpdateUserPolicyJSONRequestBody) {
+		t.Helper()
+		response, err := accounts.server.UpdateUserPolicy(as(accounts.admin), api.UpdateUserPolicyRequestObject{UserId: accounts.member.ID, JSONBody: &body})
+		if err != nil {
+			t.Fatalf("UpdateUserPolicy = %v", err)
+		}
+		if _, ok := response.(api.UpdateUserPolicy204Response); !ok {
+			t.Fatalf("response = %T, want 204", response)
+		}
+	}
+
+	save(api.UpdateUserPolicyJSONRequestBody{
+		EnableAllFolders:  apiutil.Ptr(true),
+		MaxParentalRating: apiutil.Ptr(int32(13)),
+		BlockUnratedItems: &[]api.UnratedItem{api.UnratedItemMovie},
+	})
+	access, err := accounts.users.Access(ctx, accounts.member.ID)
+	if err != nil {
+		t.Fatalf("Access = %v", err)
+	}
+	if access.MaxRating == nil || *access.MaxRating != 13 || !slices.Equal(access.BlockUnrated, []string{"Movie"}) {
+		t.Errorf("access = %+v, want a limit of 13 with unrated movies blocked", access)
+	}
+
+	save(api.UpdateUserPolicyJSONRequestBody{EnableAllFolders: apiutil.Ptr(true)})
+	access, err = accounts.users.Access(ctx, accounts.member.ID)
+	if err != nil {
+		t.Fatalf("Access = %v", err)
+	}
+	if access.MaxRating != nil {
+		t.Errorf("MaxRating = %d, want a policy saved without one to lift the limit", *access.MaxRating)
+	}
+
+	adminAccess, err := accounts.users.Access(ctx, accounts.admin.ID)
+	if err != nil {
+		t.Fatalf("Access = %v", err)
+	}
+	if adminAccess.MaxRating != nil || !adminAccess.All {
+		t.Errorf("administrator access = %+v, want no limit", adminAccess)
 	}
 }
