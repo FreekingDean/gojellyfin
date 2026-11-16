@@ -761,3 +761,13 @@ label.shelf input {
   line-height: 1;
   margin-left: 8px;
 }
+
+fieldset.people {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
