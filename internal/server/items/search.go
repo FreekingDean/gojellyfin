@@ -23,7 +23,8 @@ func plainSearch(params api.GetItemsParams) bool {
 		params.IsFavorite == nil &&
 		params.Filters == nil &&
 		params.Ids == nil &&
-		apiutil.Deref(params.StartIndex) == 0
+		apiutil.Deref(params.StartIndex) == 0 &&
+		apiutil.OrElse(params.Limit, 1) > 0
 }
 
 func (s *Server) searched(ctx context.Context, params api.GetItemsParams) ([]api.BaseItemDto, error) {

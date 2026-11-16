@@ -280,7 +280,7 @@ type ItemQuery struct {
 	SortBy     []string
 	Descending bool
 	StartIndex int
-	Limit      int
+	Limit      *int
 }
 
 var sortFields = map[string]string{
@@ -359,6 +359,9 @@ func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to count items: %w", err)
 	}
+	if query.Limit != nil && *query.Limit <= 0 {
+		return []*Item{}, total, nil
+	}
 
 	direction := sql.OrderAsc()
 	if query.Descending {
@@ -378,8 +381,8 @@ func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int
 	if query.StartIndex > 0 {
 		items = items.Offset(query.StartIndex)
 	}
-	if query.Limit > 0 {
-		items = items.Limit(query.Limit)
+	if query.Limit != nil {
+		items = items.Limit(*query.Limit)
 	}
 
 	records, err := items.AllModels(ctx)

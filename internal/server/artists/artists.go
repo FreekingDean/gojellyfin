@@ -69,7 +69,7 @@ func (s *Server) artists(ctx context.Context, params api.GetArtistsParams) (api.
 		Kinds:                   []items.Kind{itemmodel.KindMusicArtist},
 		SearchTerm:              apiutil.Deref(params.SearchTerm),
 		StartIndex:              int(apiutil.Deref(params.StartIndex)),
-		Limit:                   int(apiutil.Deref(params.Limit)),
+		Limit:                   dto.Limit(params.Limit),
 		Descending:              dto.Descending(params.SortOrder),
 		SortBy:                  dto.SortFields(params.SortBy),
 		NameStartsWith:          apiutil.Deref(params.NameStartsWith),

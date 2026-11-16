@@ -45,6 +45,23 @@ func (s *Server) shelved(ctx context.Context, shelf shelves.Shelf, limit int, un
 	return dto.LatestDtos(ctx, s.items, latest)
 }
 
+func (s *Server) shelvedItems(ctx context.Context, shelf shelves.Shelf, limit *int32) (api.GetItemsResponseObject, error) {
+	wanted := int(apiutil.OrElse(limit, int32(shelfPage)))
+	converted, err := s.shelved(ctx, shelf, max(wanted, shelfPage), true)
+	if err != nil {
+		return nil, err
+	}
+
+	total := len(converted)
+	converted = converted[:min(max(wanted, 0), total)]
+
+	return api.GetItems200JSONResponse(api.BaseItemDtoQueryResult{
+		Items:            &converted,
+		StartIndex:       apiutil.Ptr(int32(0)),
+		TotalRecordCount: apiutil.Ptr(int32(total)),
+	}), nil
+}
+
 func (s *Server) unowned(ctx context.Context, id uuid.UUID) (api.BaseItemDto, bool, error) {
 	title, found, err := s.discover.Title(ctx, id)
 	if err != nil || !found {
@@ -105,16 +122,7 @@ func (s *Server) GetItems(ctx context.Context, request api.GetItemsRequestObject
 		return nil, err
 	}
 	if found {
-		converted, err := s.shelved(ctx, shelf, int(apiutil.OrElse(request.Params.Limit, int32(shelfPage))), true)
-		if err != nil {
-			return nil, err
-		}
-
-		return api.GetItems200JSONResponse(api.BaseItemDtoQueryResult{
-			Items:            &converted,
-			StartIndex:       apiutil.Ptr(int32(0)),
-			TotalRecordCount: apiutil.Ptr(int32(len(converted))),
-		}), nil
+		return s.shelvedItems(ctx, shelf, request.Params.Limit)
 	}
 
 	result, err := dto.QueryResult(ctx, s.items, s.libraries, s.policies, request.Params)
