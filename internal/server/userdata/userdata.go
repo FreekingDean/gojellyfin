@@ -3,7 +3,6 @@ package userdata
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/discover"
@@ -133,14 +132,12 @@ func (s *Server) saveFavorite(ctx context.Context, itemID uuid.UUID, favorite bo
 		itemID = held.ID
 	}
 
-	datum, err := dto.CurrentUserDatum(ctx, s.items, itemID)
+	userID, err := dto.SignedIn(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	datum.IsFavorite = favorite
-
-	return datum, s.items.SaveUserItemDatum(ctx, datum)
+	return s.items.MarkFavorite(ctx, userID, itemID, favorite)
 }
 
 func (s *Server) saveRequest(ctx context.Context, title discover.Title, wanted bool) (*items.Datum, error) {
@@ -158,17 +155,10 @@ func (s *Server) saveRequest(ctx context.Context, title discover.Title, wanted b
 }
 
 func (s *Server) savePlayed(ctx context.Context, itemID uuid.UUID, played bool) (*items.Datum, error) {
-	datum, err := dto.CurrentUserDatum(ctx, s.items, itemID)
+	userID, err := dto.SignedIn(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	datum.Played = played
-	datum.PlaybackPositionTicks = 0
-	if played {
-		datum.PlayCount++
-		datum.LastPlayedAt = apiutil.Ptr(time.Now())
-	}
-
-	return datum, s.items.SaveUserItemDatum(ctx, datum)
+	return s.items.MarkPlayed(ctx, userID, itemID, played)
 }
