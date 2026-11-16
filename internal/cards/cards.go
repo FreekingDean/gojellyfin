@@ -154,7 +154,7 @@ func (s *Service) personal(ctx context.Context, id, userID uuid.UUID) (shelves.C
 		return shelves.Card{}, false, err
 	}
 
-	return s.shelves.Card(ctx, id, items.Viewer{All: access.All, Libraries: access.Libraries}, userID, stacked)
+	return s.shelves.Card(ctx, id, items.Viewer{All: access.All, Libraries: access.Libraries, MaxRating: access.MaxRating, BlockUnrated: access.BlockUnrated}, userID, stacked)
 }
 
 func titledPlan(name string, fresh int, posters []*items.Image) plan {

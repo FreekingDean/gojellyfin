@@ -20,11 +20,6 @@ type UserPolicy struct {
 }
 
 func (UserPolicy) Fields() []ent.Field {
-	ratings := []string{
-		"Approved", "G", "PG", "PG-13", "R", "NC-17",
-		"TV-Y", "TV-G", "TV-PG", "TV-14", "TV-MA",
-	}
-
 	return withDefaultFields(
 		field.Bool("is_administrator").Default(false),
 		field.Bool("is_hidden").Default(false),
@@ -53,8 +48,8 @@ func (UserPolicy) Fields() []ent.Field {
 		field.Bool("enable_all_channels").Default(true),
 		field.Bool("enable_all_folders").Default(true),
 
-		field.Enum("max_parental_rating").Optional().Nillable().Values(ratings...),
-		field.Enum("max_parental_sub_rating").Optional().Nillable().Values(ratings...),
+		field.Int("max_parental_rating").Optional().Nillable(),
+		field.Int("max_parental_sub_rating").Optional().Nillable(),
 
 		field.Int32("invalid_login_attempt_count").Default(0),
 		field.Int32("login_attempts_before_lockout").Default(-1),

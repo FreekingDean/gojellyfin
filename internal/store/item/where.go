@@ -126,6 +126,11 @@ func OfficialRating(v string) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldOfficialRating, v))
 }
 
+// ParentalRating applies equality check predicate on the "parental_rating" field. It's identical to ParentalRatingEQ.
+func ParentalRating(v int) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldParentalRating, v))
+}
+
 // CommunityRating applies equality check predicate on the "community_rating" field. It's identical to CommunityRatingEQ.
 func CommunityRating(v float64) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldCommunityRating, v))
@@ -904,6 +909,56 @@ func OfficialRatingEqualFold(v string) predicate.Item {
 // OfficialRatingContainsFold applies the ContainsFold predicate on the "official_rating" field.
 func OfficialRatingContainsFold(v string) predicate.Item {
 	return predicate.Item(sql.FieldContainsFold(FieldOfficialRating, v))
+}
+
+// ParentalRatingEQ applies the EQ predicate on the "parental_rating" field.
+func ParentalRatingEQ(v int) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldParentalRating, v))
+}
+
+// ParentalRatingNEQ applies the NEQ predicate on the "parental_rating" field.
+func ParentalRatingNEQ(v int) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldParentalRating, v))
+}
+
+// ParentalRatingIn applies the In predicate on the "parental_rating" field.
+func ParentalRatingIn(vs ...int) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldParentalRating, vs...))
+}
+
+// ParentalRatingNotIn applies the NotIn predicate on the "parental_rating" field.
+func ParentalRatingNotIn(vs ...int) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldParentalRating, vs...))
+}
+
+// ParentalRatingGT applies the GT predicate on the "parental_rating" field.
+func ParentalRatingGT(v int) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldParentalRating, v))
+}
+
+// ParentalRatingGTE applies the GTE predicate on the "parental_rating" field.
+func ParentalRatingGTE(v int) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldParentalRating, v))
+}
+
+// ParentalRatingLT applies the LT predicate on the "parental_rating" field.
+func ParentalRatingLT(v int) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldParentalRating, v))
+}
+
+// ParentalRatingLTE applies the LTE predicate on the "parental_rating" field.
+func ParentalRatingLTE(v int) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldParentalRating, v))
+}
+
+// ParentalRatingIsNil applies the IsNil predicate on the "parental_rating" field.
+func ParentalRatingIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldParentalRating))
+}
+
+// ParentalRatingNotNil applies the NotNil predicate on the "parental_rating" field.
+func ParentalRatingNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldParentalRating))
 }
 
 // CommunityRatingEQ applies the EQ predicate on the "community_rating" field.

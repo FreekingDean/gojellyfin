@@ -22,10 +22,11 @@ var identifiable = []items.Kind{
 type Service struct {
 	provider Provider
 	items    *items.Service
+	ratings  items.RatingLevels
 }
 
-func New(provider Provider, service *items.Service) *Service {
-	return &Service{provider: provider, items: service}
+func New(provider Provider, service *items.Service, ratings items.RatingLevels) *Service {
+	return &Service{provider: provider, items: service, ratings: ratings}
 }
 
 func (s *Service) Enabled() bool {
@@ -84,6 +85,7 @@ func (s *Service) identify(ctx context.Context, pendingItem *items.Item) error {
 	}
 
 	stripLockedFields(&found, pendingItem.LockedFields)
+	found.Rate(s.ratings)
 
 	if _, err := s.items.UpdateMetadata(ctx, pendingItem.ID, found); err != nil {
 		return err

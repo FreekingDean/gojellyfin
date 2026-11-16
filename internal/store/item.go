@@ -50,6 +50,8 @@ type Item struct {
 	ProductionYear *int32 `json:"production_year,omitempty"`
 	// OfficialRating holds the value of the "official_rating" field.
 	OfficialRating string `json:"official_rating,omitempty"`
+	// ParentalRating holds the value of the "parental_rating" field.
+	ParentalRating *int `json:"parental_rating,omitempty"`
 	// CommunityRating holds the value of the "community_rating" field.
 	CommunityRating *float64 `json:"community_rating,omitempty"`
 	// RunTimeTicks holds the value of the "run_time_ticks" field.
@@ -285,7 +287,7 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case item.FieldCommunityRating:
 			values[i] = new(sql.NullFloat64)
-		case item.FieldProductionYear, item.FieldRunTimeTicks, item.FieldIndexNumber, item.FieldParentIndexNumber:
+		case item.FieldProductionYear, item.FieldParentalRating, item.FieldRunTimeTicks, item.FieldIndexNumber, item.FieldParentIndexNumber:
 			values[i] = new(sql.NullInt64)
 		case item.FieldKind, item.FieldKey, item.FieldName, item.FieldSortName, item.FieldOverview, item.FieldOfficialRating, item.FieldStatus:
 			values[i] = new(sql.NullString)
@@ -409,6 +411,13 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field official_rating", values[i])
 			} else if value.Valid {
 				_m.OfficialRating = value.String
+			}
+		case item.FieldParentalRating:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field parental_rating", values[i])
+			} else if value.Valid {
+				_m.ParentalRating = new(int)
+				*_m.ParentalRating = int(value.Int64)
 			}
 		case item.FieldCommunityRating:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
@@ -653,6 +662,11 @@ func (_m *Item) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("official_rating=")
 	builder.WriteString(_m.OfficialRating)
+	builder.WriteString(", ")
+	if v := _m.ParentalRating; v != nil {
+		builder.WriteString("parental_rating=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	if v := _m.CommunityRating; v != nil {
 		builder.WriteString("community_rating=")

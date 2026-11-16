@@ -45,6 +45,8 @@ const (
 	FieldProductionYear = "production_year"
 	// FieldOfficialRating holds the string denoting the official_rating field in the database.
 	FieldOfficialRating = "official_rating"
+	// FieldParentalRating holds the string denoting the parental_rating field in the database.
+	FieldParentalRating = "parental_rating"
 	// FieldCommunityRating holds the string denoting the community_rating field in the database.
 	FieldCommunityRating = "community_rating"
 	// FieldRunTimeTicks holds the string denoting the run_time_ticks field in the database.
@@ -228,6 +230,7 @@ var Columns = []string{
 	FieldDateModified,
 	FieldProductionYear,
 	FieldOfficialRating,
+	FieldParentalRating,
 	FieldCommunityRating,
 	FieldRunTimeTicks,
 	FieldIndexNumber,
@@ -379,6 +382,11 @@ func ByProductionYear(opts ...sql.OrderTermOption) OrderOption {
 // ByOfficialRating orders the results by the official_rating field.
 func ByOfficialRating(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldOfficialRating, opts...).ToFunc()
+}
+
+// ByParentalRating orders the results by the parental_rating field.
+func ByParentalRating(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldParentalRating, opts...).ToFunc()
 }
 
 // ByCommunityRating orders the results by the community_rating field.

@@ -313,6 +313,33 @@ func (_u *ItemUpdate) ClearOfficialRating() *ItemUpdate {
 	return _u
 }
 
+// SetParentalRating sets the "parental_rating" field.
+func (_u *ItemUpdate) SetParentalRating(v int) *ItemUpdate {
+	_u.mutation.ResetParentalRating()
+	_u.mutation.SetParentalRating(v)
+	return _u
+}
+
+// SetNillableParentalRating sets the "parental_rating" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableParentalRating(v *int) *ItemUpdate {
+	if v != nil {
+		_u.SetParentalRating(*v)
+	}
+	return _u
+}
+
+// AddParentalRating adds value to the "parental_rating" field.
+func (_u *ItemUpdate) AddParentalRating(v int) *ItemUpdate {
+	_u.mutation.AddParentalRating(v)
+	return _u
+}
+
+// ClearParentalRating clears the value of the "parental_rating" field.
+func (_u *ItemUpdate) ClearParentalRating() *ItemUpdate {
+	_u.mutation.ClearParentalRating()
+	return _u
+}
+
 // SetCommunityRating sets the "community_rating" field.
 func (_u *ItemUpdate) SetCommunityRating(v float64) *ItemUpdate {
 	_u.mutation.ResetCommunityRating()
@@ -1217,6 +1244,15 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.OfficialRatingCleared() {
 		_spec.ClearField(item.FieldOfficialRating, field.TypeString)
+	}
+	if value, ok := _u.mutation.ParentalRating(); ok {
+		_spec.SetField(item.FieldParentalRating, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedParentalRating(); ok {
+		_spec.AddField(item.FieldParentalRating, field.TypeInt, value)
+	}
+	if _u.mutation.ParentalRatingCleared() {
+		_spec.ClearField(item.FieldParentalRating, field.TypeInt)
 	}
 	if value, ok := _u.mutation.CommunityRating(); ok {
 		_spec.SetField(item.FieldCommunityRating, field.TypeFloat64, value)
@@ -2321,6 +2357,33 @@ func (_u *ItemUpdateOne) ClearOfficialRating() *ItemUpdateOne {
 	return _u
 }
 
+// SetParentalRating sets the "parental_rating" field.
+func (_u *ItemUpdateOne) SetParentalRating(v int) *ItemUpdateOne {
+	_u.mutation.ResetParentalRating()
+	_u.mutation.SetParentalRating(v)
+	return _u
+}
+
+// SetNillableParentalRating sets the "parental_rating" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableParentalRating(v *int) *ItemUpdateOne {
+	if v != nil {
+		_u.SetParentalRating(*v)
+	}
+	return _u
+}
+
+// AddParentalRating adds value to the "parental_rating" field.
+func (_u *ItemUpdateOne) AddParentalRating(v int) *ItemUpdateOne {
+	_u.mutation.AddParentalRating(v)
+	return _u
+}
+
+// ClearParentalRating clears the value of the "parental_rating" field.
+func (_u *ItemUpdateOne) ClearParentalRating() *ItemUpdateOne {
+	_u.mutation.ClearParentalRating()
+	return _u
+}
+
 // SetCommunityRating sets the "community_rating" field.
 func (_u *ItemUpdateOne) SetCommunityRating(v float64) *ItemUpdateOne {
 	_u.mutation.ResetCommunityRating()
@@ -3255,6 +3318,15 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	}
 	if _u.mutation.OfficialRatingCleared() {
 		_spec.ClearField(item.FieldOfficialRating, field.TypeString)
+	}
+	if value, ok := _u.mutation.ParentalRating(); ok {
+		_spec.SetField(item.FieldParentalRating, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedParentalRating(); ok {
+		_spec.AddField(item.FieldParentalRating, field.TypeInt, value)
+	}
+	if _u.mutation.ParentalRatingCleared() {
+		_spec.ClearField(item.FieldParentalRating, field.TypeInt)
 	}
 	if value, ok := _u.mutation.CommunityRating(); ok {
 		_spec.SetField(item.FieldCommunityRating, field.TypeFloat64, value)

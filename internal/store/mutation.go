@@ -8449,6 +8449,8 @@ type ItemMutation struct {
 	production_year             *int32
 	addproduction_year          *int32
 	official_rating             *string
+	parental_rating             *int
+	addparental_rating          *int
 	community_rating            *float64
 	addcommunity_rating         *float64
 	run_time_ticks              *int64
@@ -9313,6 +9315,76 @@ func (m *ItemMutation) OfficialRatingCleared() bool {
 func (m *ItemMutation) ResetOfficialRating() {
 	m.official_rating = nil
 	delete(m.clearedFields, item.FieldOfficialRating)
+}
+
+// SetParentalRating sets the "parental_rating" field.
+func (m *ItemMutation) SetParentalRating(i int) {
+	m.parental_rating = &i
+	m.addparental_rating = nil
+}
+
+// ParentalRating returns the value of the "parental_rating" field in the mutation.
+func (m *ItemMutation) ParentalRating() (r int, exists bool) {
+	v := m.parental_rating
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldParentalRating returns the old "parental_rating" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldParentalRating(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldParentalRating is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldParentalRating requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldParentalRating: %w", err)
+	}
+	return oldValue.ParentalRating, nil
+}
+
+// AddParentalRating adds i to the "parental_rating" field.
+func (m *ItemMutation) AddParentalRating(i int) {
+	if m.addparental_rating != nil {
+		*m.addparental_rating += i
+	} else {
+		m.addparental_rating = &i
+	}
+}
+
+// AddedParentalRating returns the value that was added to the "parental_rating" field in this mutation.
+func (m *ItemMutation) AddedParentalRating() (r int, exists bool) {
+	v := m.addparental_rating
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearParentalRating clears the value of the "parental_rating" field.
+func (m *ItemMutation) ClearParentalRating() {
+	m.parental_rating = nil
+	m.addparental_rating = nil
+	m.clearedFields[item.FieldParentalRating] = struct{}{}
+}
+
+// ParentalRatingCleared returns if the "parental_rating" field was cleared in this mutation.
+func (m *ItemMutation) ParentalRatingCleared() bool {
+	_, ok := m.clearedFields[item.FieldParentalRating]
+	return ok
+}
+
+// ResetParentalRating resets all changes to the "parental_rating" field.
+func (m *ItemMutation) ResetParentalRating() {
+	m.parental_rating = nil
+	m.addparental_rating = nil
+	delete(m.clearedFields, item.FieldParentalRating)
 }
 
 // SetCommunityRating sets the "community_rating" field.
@@ -10798,7 +10870,7 @@ func (m *ItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemMutation) Fields() []string {
-	fields := make([]string, 0, 24)
+	fields := make([]string, 0, 25)
 	if m.created_at != nil {
 		fields = append(fields, item.FieldCreatedAt)
 	}
@@ -10843,6 +10915,9 @@ func (m *ItemMutation) Fields() []string {
 	}
 	if m.official_rating != nil {
 		fields = append(fields, item.FieldOfficialRating)
+	}
+	if m.parental_rating != nil {
+		fields = append(fields, item.FieldParentalRating)
 	}
 	if m.community_rating != nil {
 		fields = append(fields, item.FieldCommunityRating)
@@ -10909,6 +10984,8 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.ProductionYear()
 	case item.FieldOfficialRating:
 		return m.OfficialRating()
+	case item.FieldParentalRating:
+		return m.ParentalRating()
 	case item.FieldCommunityRating:
 		return m.CommunityRating()
 	case item.FieldRunTimeTicks:
@@ -10966,6 +11043,8 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldProductionYear(ctx)
 	case item.FieldOfficialRating:
 		return m.OldOfficialRating(ctx)
+	case item.FieldParentalRating:
+		return m.OldParentalRating(ctx)
 	case item.FieldCommunityRating:
 		return m.OldCommunityRating(ctx)
 	case item.FieldRunTimeTicks:
@@ -11098,6 +11177,13 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetOfficialRating(v)
 		return nil
+	case item.FieldParentalRating:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetParentalRating(v)
+		return nil
 	case item.FieldCommunityRating:
 		v, ok := value.(float64)
 		if !ok {
@@ -11172,6 +11258,9 @@ func (m *ItemMutation) AddedFields() []string {
 	if m.addproduction_year != nil {
 		fields = append(fields, item.FieldProductionYear)
 	}
+	if m.addparental_rating != nil {
+		fields = append(fields, item.FieldParentalRating)
+	}
 	if m.addcommunity_rating != nil {
 		fields = append(fields, item.FieldCommunityRating)
 	}
@@ -11194,6 +11283,8 @@ func (m *ItemMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case item.FieldProductionYear:
 		return m.AddedProductionYear()
+	case item.FieldParentalRating:
+		return m.AddedParentalRating()
 	case item.FieldCommunityRating:
 		return m.AddedCommunityRating()
 	case item.FieldRunTimeTicks:
@@ -11217,6 +11308,13 @@ func (m *ItemMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddProductionYear(v)
+		return nil
+	case item.FieldParentalRating:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddParentalRating(v)
 		return nil
 	case item.FieldCommunityRating:
 		v, ok := value.(float64)
@@ -11283,6 +11381,9 @@ func (m *ItemMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(item.FieldOfficialRating) {
 		fields = append(fields, item.FieldOfficialRating)
+	}
+	if m.FieldCleared(item.FieldParentalRating) {
+		fields = append(fields, item.FieldParentalRating)
 	}
 	if m.FieldCleared(item.FieldCommunityRating) {
 		fields = append(fields, item.FieldCommunityRating)
@@ -11354,6 +11455,9 @@ func (m *ItemMutation) ClearField(name string) error {
 		return nil
 	case item.FieldOfficialRating:
 		m.ClearOfficialRating()
+		return nil
+	case item.FieldParentalRating:
+		m.ClearParentalRating()
 		return nil
 	case item.FieldCommunityRating:
 		m.ClearCommunityRating()
@@ -11434,6 +11538,9 @@ func (m *ItemMutation) ResetField(name string) error {
 		return nil
 	case item.FieldOfficialRating:
 		m.ResetOfficialRating()
+		return nil
+	case item.FieldParentalRating:
+		m.ResetParentalRating()
 		return nil
 	case item.FieldCommunityRating:
 		m.ResetCommunityRating()
@@ -41705,8 +41812,10 @@ type UserPolicyMutation struct {
 	enable_all_devices                         *bool
 	enable_all_channels                        *bool
 	enable_all_folders                         *bool
-	max_parental_rating                        *userpolicy.MaxParentalRating
-	max_parental_sub_rating                    *userpolicy.MaxParentalSubRating
+	max_parental_rating                        *int
+	addmax_parental_rating                     *int
+	max_parental_sub_rating                    *int
+	addmax_parental_sub_rating                 *int
 	invalid_login_attempt_count                *int32
 	addinvalid_login_attempt_count             *int32
 	login_attempts_before_lockout              *int32
@@ -42823,12 +42932,13 @@ func (m *UserPolicyMutation) ResetEnableAllFolders() {
 }
 
 // SetMaxParentalRating sets the "max_parental_rating" field.
-func (m *UserPolicyMutation) SetMaxParentalRating(upr userpolicy.MaxParentalRating) {
-	m.max_parental_rating = &upr
+func (m *UserPolicyMutation) SetMaxParentalRating(i int) {
+	m.max_parental_rating = &i
+	m.addmax_parental_rating = nil
 }
 
 // MaxParentalRating returns the value of the "max_parental_rating" field in the mutation.
-func (m *UserPolicyMutation) MaxParentalRating() (r userpolicy.MaxParentalRating, exists bool) {
+func (m *UserPolicyMutation) MaxParentalRating() (r int, exists bool) {
 	v := m.max_parental_rating
 	if v == nil {
 		return
@@ -42839,7 +42949,7 @@ func (m *UserPolicyMutation) MaxParentalRating() (r userpolicy.MaxParentalRating
 // OldMaxParentalRating returns the old "max_parental_rating" field's value of the UserPolicy entity.
 // If the UserPolicy object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserPolicyMutation) OldMaxParentalRating(ctx context.Context) (v *userpolicy.MaxParentalRating, err error) {
+func (m *UserPolicyMutation) OldMaxParentalRating(ctx context.Context) (v *int, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldMaxParentalRating is only allowed on UpdateOne operations")
 	}
@@ -42853,9 +42963,28 @@ func (m *UserPolicyMutation) OldMaxParentalRating(ctx context.Context) (v *userp
 	return oldValue.MaxParentalRating, nil
 }
 
+// AddMaxParentalRating adds i to the "max_parental_rating" field.
+func (m *UserPolicyMutation) AddMaxParentalRating(i int) {
+	if m.addmax_parental_rating != nil {
+		*m.addmax_parental_rating += i
+	} else {
+		m.addmax_parental_rating = &i
+	}
+}
+
+// AddedMaxParentalRating returns the value that was added to the "max_parental_rating" field in this mutation.
+func (m *UserPolicyMutation) AddedMaxParentalRating() (r int, exists bool) {
+	v := m.addmax_parental_rating
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
 // ClearMaxParentalRating clears the value of the "max_parental_rating" field.
 func (m *UserPolicyMutation) ClearMaxParentalRating() {
 	m.max_parental_rating = nil
+	m.addmax_parental_rating = nil
 	m.clearedFields[userpolicy.FieldMaxParentalRating] = struct{}{}
 }
 
@@ -42868,16 +42997,18 @@ func (m *UserPolicyMutation) MaxParentalRatingCleared() bool {
 // ResetMaxParentalRating resets all changes to the "max_parental_rating" field.
 func (m *UserPolicyMutation) ResetMaxParentalRating() {
 	m.max_parental_rating = nil
+	m.addmax_parental_rating = nil
 	delete(m.clearedFields, userpolicy.FieldMaxParentalRating)
 }
 
 // SetMaxParentalSubRating sets the "max_parental_sub_rating" field.
-func (m *UserPolicyMutation) SetMaxParentalSubRating(upsr userpolicy.MaxParentalSubRating) {
-	m.max_parental_sub_rating = &upsr
+func (m *UserPolicyMutation) SetMaxParentalSubRating(i int) {
+	m.max_parental_sub_rating = &i
+	m.addmax_parental_sub_rating = nil
 }
 
 // MaxParentalSubRating returns the value of the "max_parental_sub_rating" field in the mutation.
-func (m *UserPolicyMutation) MaxParentalSubRating() (r userpolicy.MaxParentalSubRating, exists bool) {
+func (m *UserPolicyMutation) MaxParentalSubRating() (r int, exists bool) {
 	v := m.max_parental_sub_rating
 	if v == nil {
 		return
@@ -42888,7 +43019,7 @@ func (m *UserPolicyMutation) MaxParentalSubRating() (r userpolicy.MaxParentalSub
 // OldMaxParentalSubRating returns the old "max_parental_sub_rating" field's value of the UserPolicy entity.
 // If the UserPolicy object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserPolicyMutation) OldMaxParentalSubRating(ctx context.Context) (v *userpolicy.MaxParentalSubRating, err error) {
+func (m *UserPolicyMutation) OldMaxParentalSubRating(ctx context.Context) (v *int, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldMaxParentalSubRating is only allowed on UpdateOne operations")
 	}
@@ -42902,9 +43033,28 @@ func (m *UserPolicyMutation) OldMaxParentalSubRating(ctx context.Context) (v *us
 	return oldValue.MaxParentalSubRating, nil
 }
 
+// AddMaxParentalSubRating adds i to the "max_parental_sub_rating" field.
+func (m *UserPolicyMutation) AddMaxParentalSubRating(i int) {
+	if m.addmax_parental_sub_rating != nil {
+		*m.addmax_parental_sub_rating += i
+	} else {
+		m.addmax_parental_sub_rating = &i
+	}
+}
+
+// AddedMaxParentalSubRating returns the value that was added to the "max_parental_sub_rating" field in this mutation.
+func (m *UserPolicyMutation) AddedMaxParentalSubRating() (r int, exists bool) {
+	v := m.addmax_parental_sub_rating
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
 // ClearMaxParentalSubRating clears the value of the "max_parental_sub_rating" field.
 func (m *UserPolicyMutation) ClearMaxParentalSubRating() {
 	m.max_parental_sub_rating = nil
+	m.addmax_parental_sub_rating = nil
 	m.clearedFields[userpolicy.FieldMaxParentalSubRating] = struct{}{}
 }
 
@@ -42917,6 +43067,7 @@ func (m *UserPolicyMutation) MaxParentalSubRatingCleared() bool {
 // ResetMaxParentalSubRating resets all changes to the "max_parental_sub_rating" field.
 func (m *UserPolicyMutation) ResetMaxParentalSubRating() {
 	m.max_parental_sub_rating = nil
+	m.addmax_parental_sub_rating = nil
 	delete(m.clearedFields, userpolicy.FieldMaxParentalSubRating)
 }
 
@@ -44514,14 +44665,14 @@ func (m *UserPolicyMutation) SetField(name string, value ent.Value) error {
 		m.SetEnableAllFolders(v)
 		return nil
 	case userpolicy.FieldMaxParentalRating:
-		v, ok := value.(userpolicy.MaxParentalRating)
+		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetMaxParentalRating(v)
 		return nil
 	case userpolicy.FieldMaxParentalSubRating:
-		v, ok := value.(userpolicy.MaxParentalSubRating)
+		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -44654,6 +44805,12 @@ func (m *UserPolicyMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *UserPolicyMutation) AddedFields() []string {
 	var fields []string
+	if m.addmax_parental_rating != nil {
+		fields = append(fields, userpolicy.FieldMaxParentalRating)
+	}
+	if m.addmax_parental_sub_rating != nil {
+		fields = append(fields, userpolicy.FieldMaxParentalSubRating)
+	}
 	if m.addinvalid_login_attempt_count != nil {
 		fields = append(fields, userpolicy.FieldInvalidLoginAttemptCount)
 	}
@@ -44674,6 +44831,10 @@ func (m *UserPolicyMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *UserPolicyMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case userpolicy.FieldMaxParentalRating:
+		return m.AddedMaxParentalRating()
+	case userpolicy.FieldMaxParentalSubRating:
+		return m.AddedMaxParentalSubRating()
 	case userpolicy.FieldInvalidLoginAttemptCount:
 		return m.AddedInvalidLoginAttemptCount()
 	case userpolicy.FieldLoginAttemptsBeforeLockout:
@@ -44691,6 +44852,20 @@ func (m *UserPolicyMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *UserPolicyMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case userpolicy.FieldMaxParentalRating:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMaxParentalRating(v)
+		return nil
+	case userpolicy.FieldMaxParentalSubRating:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMaxParentalSubRating(v)
+		return nil
 	case userpolicy.FieldInvalidLoginAttemptCount:
 		v, ok := value.(int32)
 		if !ok {
