@@ -761,3 +761,52 @@ label.shelf input {
   line-height: 1;
   margin-left: 8px;
 }
+
+label.choice {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 210px;
+  align-items: center;
+  gap: 12px;
+  color: var(--text);
+  margin: 8px 0;
+}
+
+select.touched {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+tr.picked td {
+  background: var(--raised);
+}
+
+td input[type='checkbox'],
+th input[type='checkbox'] {
+  width: auto;
+}
+
+.names {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 14px;
+}
+
+.names .pill {
+  margin-left: 0;
+}
+
+table.schedules td {
+  padding-right: 8px;
+}
+
+table.schedules input {
+  width: 100%;
+}
+
+@media (max-width: 600px) {
+  label.choice {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}
