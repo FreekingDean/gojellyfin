@@ -7,6 +7,8 @@ import (
 
 	"github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/apikey"
+	"github.com/FreekingDean/gojellyfin/internal/store/channel"
+	"github.com/FreekingDean/gojellyfin/internal/store/channelentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/configuration"
 	"github.com/FreekingDean/gojellyfin/internal/store/credit"
 	"github.com/FreekingDean/gojellyfin/internal/store/device"
@@ -73,6 +75,52 @@ func init() {
 	apikey.DefaultUpdatedAt = apikeyDescUpdatedAt.Default.(func() time.Time)
 	// apikey.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	apikey.UpdateDefaultUpdatedAt = apikeyDescUpdatedAt.UpdateDefault.(func() time.Time)
+	channelFields := entities.Channel{}.Fields()
+	_ = channelFields
+	// channelDescCreatedAt is the schema descriptor for created_at field.
+	channelDescCreatedAt := channelFields[1].Descriptor()
+	// channel.DefaultCreatedAt holds the default value on creation for the created_at field.
+	channel.DefaultCreatedAt = channelDescCreatedAt.Default.(func() time.Time)
+	// channelDescUpdatedAt is the schema descriptor for updated_at field.
+	channelDescUpdatedAt := channelFields[2].Descriptor()
+	// channel.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	channel.DefaultUpdatedAt = channelDescUpdatedAt.Default.(func() time.Time)
+	// channel.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	channel.UpdateDefaultUpdatedAt = channelDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// channelDescNumber is the schema descriptor for number field.
+	channelDescNumber := channelFields[3].Descriptor()
+	// channel.NumberValidator is a validator for the "number" field. It is called by the builders before save.
+	channel.NumberValidator = func() func(int32) error {
+		validators := channelDescNumber.Validators
+		fns := [...]func(int32) error{
+			validators[0].(func(int32) error),
+			validators[1].(func(int32) error),
+		}
+		return func(number int32) error {
+			for _, fn := range fns {
+				if err := fn(number); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// channelDescName is the schema descriptor for name field.
+	channelDescName := channelFields[4].Descriptor()
+	// channel.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	channel.NameValidator = channelDescName.Validators[0].(func(string) error)
+	channelentryFields := entities.ChannelEntry{}.Fields()
+	_ = channelentryFields
+	// channelentryDescCreatedAt is the schema descriptor for created_at field.
+	channelentryDescCreatedAt := channelentryFields[1].Descriptor()
+	// channelentry.DefaultCreatedAt holds the default value on creation for the created_at field.
+	channelentry.DefaultCreatedAt = channelentryDescCreatedAt.Default.(func() time.Time)
+	// channelentryDescUpdatedAt is the schema descriptor for updated_at field.
+	channelentryDescUpdatedAt := channelentryFields[2].Descriptor()
+	// channelentry.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	channelentry.DefaultUpdatedAt = channelentryDescUpdatedAt.Default.(func() time.Time)
+	// channelentry.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	channelentry.UpdateDefaultUpdatedAt = channelentryDescUpdatedAt.UpdateDefault.(func() time.Time)
 	configurationFields := entities.Configuration{}.Fields()
 	_ = configurationFields
 	// configurationDescCreatedAt is the schema descriptor for created_at field.

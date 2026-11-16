@@ -12,6 +12,12 @@ type ActivityLogEntry func(*sql.Selector)
 // ApiKey is the predicate function for apikey builders.
 type ApiKey func(*sql.Selector)
 
+// Channel is the predicate function for channel builders.
+type Channel func(*sql.Selector)
+
+// ChannelEntry is the predicate function for channelentry builders.
+type ChannelEntry func(*sql.Selector)
+
 // Configuration is the predicate function for configuration builders.
 type Configuration func(*sql.Selector)
 

@@ -91,6 +91,8 @@ const (
 	EdgePlaylistEntries = "playlist_entries"
 	// EdgeSyncPlayEntries holds the string denoting the sync_play_entries edge name in mutations.
 	EdgeSyncPlayEntries = "sync_play_entries"
+	// EdgeChannelEntries holds the string denoting the channel_entries edge name in mutations.
+	EdgeChannelEntries = "channel_entries"
 	// EdgeGenres holds the string denoting the genres edge name in mutations.
 	EdgeGenres = "genres"
 	// EdgeStudios holds the string denoting the studios edge name in mutations.
@@ -189,6 +191,13 @@ const (
 	SyncPlayEntriesInverseTable = "sync_play_queue_entries"
 	// SyncPlayEntriesColumn is the table column denoting the sync_play_entries relation/edge.
 	SyncPlayEntriesColumn = "item_id"
+	// ChannelEntriesTable is the table that holds the channel_entries relation/edge.
+	ChannelEntriesTable = "channel_entries"
+	// ChannelEntriesInverseTable is the table name for the ChannelEntry entity.
+	// It exists in this package in order to avoid circular dependency with the "channelentry" package.
+	ChannelEntriesInverseTable = "channel_entries"
+	// ChannelEntriesColumn is the table column denoting the channel_entries relation/edge.
+	ChannelEntriesColumn = "item_id"
 	// GenresTable is the table that holds the genres relation/edge. The primary key declared below.
 	GenresTable = "item_genres"
 	// GenresInverseTable is the table name for the Genre entity.
@@ -579,6 +588,20 @@ func BySyncPlayEntries(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByChannelEntriesCount orders the results by channel_entries count.
+func ByChannelEntriesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newChannelEntriesStep(), opts...)
+	}
+}
+
+// ByChannelEntries orders the results by channel_entries terms.
+func ByChannelEntries(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newChannelEntriesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByGenresCount orders the results by genres count.
 func ByGenresCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -702,6 +725,13 @@ func newSyncPlayEntriesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(SyncPlayEntriesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, SyncPlayEntriesTable, SyncPlayEntriesColumn),
+	)
+}
+func newChannelEntriesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ChannelEntriesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ChannelEntriesTable, ChannelEntriesColumn),
 	)
 }
 func newGenresStep() *sqlgraph.Step {

@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/cards"
+	"github.com/FreekingDean/gojellyfin/internal/channels"
 	settings "github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/env"
@@ -101,7 +102,7 @@ func newFixture(t *testing.T) *fixture {
 	shelved := shelves.New(catalogue, found, settings.New(client))
 
 	return &fixture{
-		server:    New(catalogue, cards.New(catalogue, libraries.New(client), shelved, users.New(client)), found, nil, everyone{}),
+		server:    New(catalogue, cards.New(catalogue, libraries.New(client), shelved, users.New(client)), found, nil, everyone{}, channels.New(client, catalogue)),
 		client:    client,
 		itemID:    item.ID,
 		libraryID: library.ID,

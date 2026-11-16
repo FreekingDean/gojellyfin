@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
+	"github.com/FreekingDean/gojellyfin/internal/store/channelentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/credit"
 	"github.com/FreekingDean/gojellyfin/internal/store/genre"
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
@@ -535,6 +536,21 @@ func (_c *ItemCreate) AddSyncPlayEntries(v ...*SyncPlayQueueEntry) *ItemCreate {
 	return _c.AddSyncPlayEntryIDs(ids...)
 }
 
+// AddChannelEntryIDs adds the "channel_entries" edge to the ChannelEntry entity by IDs.
+func (_c *ItemCreate) AddChannelEntryIDs(ids ...uuid.UUID) *ItemCreate {
+	_c.mutation.AddChannelEntryIDs(ids...)
+	return _c
+}
+
+// AddChannelEntries adds the "channel_entries" edges to the ChannelEntry entity.
+func (_c *ItemCreate) AddChannelEntries(v ...*ChannelEntry) *ItemCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddChannelEntryIDs(ids...)
+}
+
 // AddGenreIDs adds the "genres" edge to the Genre entity by IDs.
 func (_c *ItemCreate) AddGenreIDs(ids ...uuid.UUID) *ItemCreate {
 	_c.mutation.AddGenreIDs(ids...)
@@ -982,6 +998,22 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(syncplayqueueentry.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ChannelEntriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ChannelEntriesTable,
+			Columns: []string{item.ChannelEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(channelentry.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
