@@ -8,6 +8,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/apikeys"
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/cards"
+	"github.com/FreekingDean/gojellyfin/internal/channels"
 	"github.com/FreekingDean/gojellyfin/internal/config"
 	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/displaypreferences"
@@ -67,6 +68,7 @@ var serverModules = fx.Options(
 	reports.Module,
 	requests.Module,
 	shelves.Module,
+	channels.Module,
 	sources.Module,
 	sessions.Module,
 	sso.Module,
