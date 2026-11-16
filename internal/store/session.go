@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/FreekingDean/gojellyfin/internal/store/apikey"
 	"github.com/FreekingDean/gojellyfin/internal/store/device"
 	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
@@ -50,6 +51,8 @@ type Session struct {
 	PlannedSourceID *uuid.UUID `json:"planned_source_id,omitempty"`
 	// PlaybackPlan holds the value of the "playback_plan" field.
 	PlaybackPlan *entities.PlaybackPlan `json:"playback_plan,omitempty"`
+	// APIKeyID holds the value of the "api_key_id" field.
+	APIKeyID *uuid.UUID `json:"api_key_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SessionQuery when eager-loading is set.
 	Edges           SessionEdges `json:"edges"`
@@ -68,11 +71,13 @@ type SessionEdges struct {
 	NowPlaying *Item `json:"now_playing,omitempty"`
 	// PlannedSource holds the value of the planned_source edge.
 	PlannedSource *ItemSource `json:"planned_source,omitempty"`
+	// APIKey holds the value of the api_key edge.
+	APIKey *ApiKey `json:"api_key,omitempty"`
 	// SyncPlayMemberships holds the value of the sync_play_memberships edge.
 	SyncPlayMemberships []*SyncPlayGroupMember `json:"sync_play_memberships,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [6]bool
 }
 
 // UserOrErr returns the User value or an error if the edge
@@ -119,10 +124,21 @@ func (e SessionEdges) PlannedSourceOrErr() (*ItemSource, error) {
 	return nil, &NotLoadedError{edge: "planned_source"}
 }
 
+// APIKeyOrErr returns the APIKey value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e SessionEdges) APIKeyOrErr() (*ApiKey, error) {
+	if e.APIKey != nil {
+		return e.APIKey, nil
+	} else if e.loadedTypes[4] {
+		return nil, &NotFoundError{label: apikey.Label}
+	}
+	return nil, &NotLoadedError{edge: "api_key"}
+}
+
 // SyncPlayMembershipsOrErr returns the SyncPlayMemberships value or an error if the edge
 // was not loaded in eager-loading.
 func (e SessionEdges) SyncPlayMembershipsOrErr() ([]*SyncPlayGroupMember, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[5] {
 		return e.SyncPlayMemberships, nil
 	}
 	return nil, &NotLoadedError{edge: "sync_play_memberships"}
@@ -133,7 +149,7 @@ func (*Session) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case session.FieldNowPlayingItemID, session.FieldPlannedSourceID:
+		case session.FieldNowPlayingItemID, session.FieldPlannedSourceID, session.FieldAPIKeyID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case session.FieldPlaybackPlan:
 			values[i] = new([]byte)
@@ -257,6 +273,13 @@ func (_m *Session) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field playback_plan: %w", err)
 				}
 			}
+		case session.FieldAPIKeyID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field api_key_id", values[i])
+			} else if value.Valid {
+				_m.APIKeyID = new(uuid.UUID)
+				*_m.APIKeyID = *value.S.(*uuid.UUID)
+			}
 		case session.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field device_sessions", values[i])
@@ -302,6 +325,11 @@ func (_m *Session) QueryNowPlaying() *ItemQuery {
 // QueryPlannedSource queries the "planned_source" edge of the Session entity.
 func (_m *Session) QueryPlannedSource() *ItemSourceQuery {
 	return NewSessionClient(_m.config).QueryPlannedSource(_m)
+}
+
+// QueryAPIKey queries the "api_key" edge of the Session entity.
+func (_m *Session) QueryAPIKey() *ApiKeyQuery {
+	return NewSessionClient(_m.config).QueryAPIKey(_m)
 }
 
 // QuerySyncPlayMemberships queries the "sync_play_memberships" edge of the Session entity.
@@ -379,6 +407,11 @@ func (_m *Session) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("playback_plan=")
 	builder.WriteString(fmt.Sprintf("%v", _m.PlaybackPlan))
+	builder.WriteString(", ")
+	if v := _m.APIKeyID; v != nil {
+		builder.WriteString("api_key_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

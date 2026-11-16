@@ -41,7 +41,7 @@ func (s *Server) CreateKey(ctx context.Context, request api.CreateKeyRequestObje
 		return nil, err
 	}
 
-	if _, err := s.apikeys.Create(ctx, request.Params.App, token); err != nil {
+	if _, err := s.apikeys.Create(ctx, auth.UserID(ctx), request.Params.App, token); err != nil {
 		return nil, err
 	}
 

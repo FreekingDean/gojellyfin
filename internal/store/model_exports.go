@@ -117,6 +117,10 @@ type ApiKeyModel struct {
 	AccessToken string
 	AppName     string
 	RevokedAt   *time.Time
+	UserID      *uuid.UUID
+
+	User     *UserModel
+	Sessions []*SessionModel
 }
 
 func fromAllApiKey(_m []*ApiKey) []*ApiKeyModel {
@@ -139,6 +143,10 @@ func fromApiKey(_m *ApiKey) *ApiKeyModel {
 		AccessToken: _m.AccessToken,
 		AppName:     _m.AppName,
 		RevokedAt:   _m.RevokedAt,
+		UserID:      _m.UserID,
+
+		User:     fromUser(_m.Edges.User),
+		Sessions: fromAllSession(_m.Edges.Sessions),
 	}
 }
 
@@ -2119,6 +2127,7 @@ type SessionModel struct {
 	PlayingAt        *time.Time
 	PlannedSourceID  *uuid.UUID
 	PlaybackPlan     *entities.PlaybackPlan
+	APIKeyID         *uuid.UUID
 
 	DeviceID *uuid.UUID
 	UserID   *uuid.UUID
@@ -2127,6 +2136,7 @@ type SessionModel struct {
 	Device              *DeviceModel
 	NowPlaying          *ItemModel
 	PlannedSource       *ItemSourceModel
+	APIKey              *ApiKeyModel
 	SyncPlayMemberships []*SyncPlayGroupMemberModel
 }
 
@@ -2158,6 +2168,7 @@ func fromSession(_m *Session) *SessionModel {
 		PlayingAt:        _m.PlayingAt,
 		PlannedSourceID:  _m.PlannedSourceID,
 		PlaybackPlan:     _m.PlaybackPlan,
+		APIKeyID:         _m.APIKeyID,
 
 		DeviceID: _m.device_sessions,
 		UserID:   _m.user_sessions,
@@ -2166,6 +2177,7 @@ func fromSession(_m *Session) *SessionModel {
 		Device:              fromDevice(_m.Edges.Device),
 		NowPlaying:          fromItem(_m.Edges.NowPlaying),
 		PlannedSource:       fromItemSource(_m.Edges.PlannedSource),
+		APIKey:              fromApiKey(_m.Edges.APIKey),
 		SyncPlayMemberships: fromAllSyncPlayGroupMember(_m.Edges.SyncPlayMemberships),
 	}
 }
@@ -2708,6 +2720,7 @@ type UserModel struct {
 	QuickConnectRequests []*QuickConnectRequestModel
 	Requests             []*RequestModel
 	Reports              []*ReportModel
+	APIKeys              []*ApiKeyModel
 }
 
 func fromAllUser(_m []*User) []*UserModel {
@@ -2749,6 +2762,7 @@ func fromUser(_m *User) *UserModel {
 		QuickConnectRequests: fromAllQuickConnectRequest(_m.Edges.QuickConnectRequests),
 		Requests:             fromAllRequest(_m.Edges.Requests),
 		Reports:              fromAllReport(_m.Edges.Reports),
+		APIKeys:              fromAllApiKey(_m.Edges.APIKeys),
 	}
 }
 

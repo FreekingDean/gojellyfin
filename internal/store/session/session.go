@@ -40,6 +40,8 @@ const (
 	FieldPlannedSourceID = "planned_source_id"
 	// FieldPlaybackPlan holds the string denoting the playback_plan field in the database.
 	FieldPlaybackPlan = "playback_plan"
+	// FieldAPIKeyID holds the string denoting the api_key_id field in the database.
+	FieldAPIKeyID = "api_key_id"
 	// EdgeUser holds the string denoting the user edge name in mutations.
 	EdgeUser = "user"
 	// EdgeDevice holds the string denoting the device edge name in mutations.
@@ -48,6 +50,8 @@ const (
 	EdgeNowPlaying = "now_playing"
 	// EdgePlannedSource holds the string denoting the planned_source edge name in mutations.
 	EdgePlannedSource = "planned_source"
+	// EdgeAPIKey holds the string denoting the api_key edge name in mutations.
+	EdgeAPIKey = "api_key"
 	// EdgeSyncPlayMemberships holds the string denoting the sync_play_memberships edge name in mutations.
 	EdgeSyncPlayMemberships = "sync_play_memberships"
 	// Table holds the table name of the session in the database.
@@ -80,6 +84,13 @@ const (
 	PlannedSourceInverseTable = "item_sources"
 	// PlannedSourceColumn is the table column denoting the planned_source relation/edge.
 	PlannedSourceColumn = "planned_source_id"
+	// APIKeyTable is the table that holds the api_key relation/edge.
+	APIKeyTable = "sessions"
+	// APIKeyInverseTable is the table name for the ApiKey entity.
+	// It exists in this package in order to avoid circular dependency with the "apikey" package.
+	APIKeyInverseTable = "api_keys"
+	// APIKeyColumn is the table column denoting the api_key relation/edge.
+	APIKeyColumn = "api_key_id"
 	// SyncPlayMembershipsTable is the table that holds the sync_play_memberships relation/edge.
 	SyncPlayMembershipsTable = "sync_play_group_members"
 	// SyncPlayMembershipsInverseTable is the table name for the SyncPlayGroupMember entity.
@@ -105,6 +116,7 @@ var Columns = []string{
 	FieldPlayingAt,
 	FieldPlannedSourceID,
 	FieldPlaybackPlan,
+	FieldAPIKeyID,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "sessions"
@@ -210,6 +222,11 @@ func ByPlannedSourceID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPlannedSourceID, opts...).ToFunc()
 }
 
+// ByAPIKeyID orders the results by the api_key_id field.
+func ByAPIKeyID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAPIKeyID, opts...).ToFunc()
+}
+
 // ByUserField orders the results by user field.
 func ByUserField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -235,6 +252,13 @@ func ByNowPlayingField(field string, opts ...sql.OrderTermOption) OrderOption {
 func ByPlannedSourceField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newPlannedSourceStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByAPIKeyField orders the results by api_key field.
+func ByAPIKeyField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAPIKeyStep(), sql.OrderByField(field, opts...))
 	}
 }
 
@@ -277,6 +301,13 @@ func newPlannedSourceStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(PlannedSourceInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, PlannedSourceTable, PlannedSourceColumn),
+	)
+}
+func newAPIKeyStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(APIKeyInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, APIKeyTable, APIKeyColumn),
 	)
 }
 func newSyncPlayMembershipsStep() *sqlgraph.Step {
