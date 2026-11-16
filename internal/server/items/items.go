@@ -158,6 +158,12 @@ func (s *Server) GetItem(ctx context.Context, request api.GetItemRequestObject) 
 		return nil, err
 	}
 
+	described, err := s.items.Description(ctx, item.ID)
+	if err != nil {
+		return nil, err
+	}
+	dto.Describe(&converted[0], described)
+
 	return api.GetItem200JSONResponse(converted[0]), nil
 }
 

@@ -306,6 +306,57 @@ func TestServer_UpdateItem(t *testing.T) {
 		}
 	})
 
+	t.Run("writes genres, studios and people and claims them", func(t *testing.T) {
+		fixture := newFixture(t)
+		ctx := context.Background()
+
+		fixture.update(t, fixture.itemID, api.BaseItemDto{
+			Genres:  &[]string{"Science Fiction", "Action"},
+			Studios: &[]api.NameGuidPair{{Name: apiutil.Ptr("Example Pictures")}},
+			People: &[]api.BaseItemPerson{
+				{Name: apiutil.Ptr("Ada Example"), Role: apiutil.Ptr("Neo"), Type: apiutil.Ptr(api.PersonKindActor)},
+				{Name: apiutil.Ptr("Bo Example"), Type: apiutil.Ptr(api.PersonKindDirector)},
+				{Name: apiutil.Ptr("Cy Example"), Type: apiutil.Ptr(api.PersonKind("Narrator"))},
+			},
+		})
+
+		described, err := items.New(fixture.client).Description(ctx, fixture.itemID)
+		if err != nil {
+			t.Fatalf("failed to describe the item: %v", err)
+		}
+		if got, want := named(described.Genres), []string{"Action", "Science Fiction"}; !slices.Equal(got, want) {
+			t.Errorf("genres = %v, want %v", got, want)
+		}
+		if got, want := named(described.Studios), []string{"Example Pictures"}; !slices.Equal(got, want) {
+			t.Errorf("studios = %v, want %v", got, want)
+		}
+		people := make([]string, 0, len(described.People))
+		for _, person := range described.People {
+			people = append(people, person.Name+"/"+string(person.Kind)+"/"+person.Role)
+		}
+		if want := []string{"Ada Example/Actor/Neo", "Bo Example/Director/", "Cy Example/Unknown/"}; !slices.Equal(people, want) {
+			t.Errorf("people = %v, want %v", people, want)
+		}
+		if want := []string{"Genres", "Studios", "Cast"}; !slices.Equal(fixture.item(t).LockedFields, want) {
+			t.Errorf("locked fields = %v, want %v: the next identify run would take the edit back", fixture.item(t).LockedFields, want)
+		}
+	})
+
+	t.Run("leaves unchanged genres to the provider", func(t *testing.T) {
+		fixture := newFixture(t)
+		if _, err := items.New(fixture.client).UpdateMetadata(context.Background(), fixture.itemID, items.Metadata{
+			Genres: &[]string{"Drama"},
+		}); err != nil {
+			t.Fatalf("failed to seed the genres: %v", err)
+		}
+
+		fixture.update(t, fixture.itemID, api.BaseItemDto{Genres: &[]string{"Drama"}, People: &[]api.BaseItemPerson{}})
+
+		if locked := fixture.item(t).LockedFields; len(locked) != 0 {
+			t.Errorf("locked fields = %v, want none", locked)
+		}
+	})
+
 	t.Run("answers 404 for an unknown item", func(t *testing.T) {
 		fixture := newFixture(t)
 
@@ -399,4 +450,13 @@ func TestServer_UpdateItemContentType(t *testing.T) {
 			t.Fatalf("response = %T, want UpdateItemContentType404JSONResponse", response)
 		}
 	})
+}
+
+func named(listed []items.Named) []string {
+	names := make([]string, 0, len(listed))
+	for _, each := range listed {
+		names = append(names, each.Name)
+	}
+
+	return names
 }

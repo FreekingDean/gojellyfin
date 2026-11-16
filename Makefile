@@ -24,9 +24,20 @@ DATE ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 STAMP := github.com/FreekingDean/gojellyfin/internal/system
 LDFLAGS := -X $(STAMP).buildVersion=$(VERSION) -X $(STAMP).buildCommit=$(COMMIT) -X $(STAMP).buildDate=$(DATE)
 
+# The migration that takes internal/store/migrations to the ent schema, written
+# by replaying them into a scratch database on DATABASE_URL's server. A schema
+# that already matches writes nothing. MIGRATION names the file it writes.
+MIGRATION ?= schema
+
 .PHONY: generate
 generate:
 	go generate ./...
+	go run ./scripts/migrationdiff $(MIGRATION)
+
+# atlas.sum again, after a generated migration was edited by hand.
+.PHONY: migration-hash
+migration-hash:
+	go run ./scripts/migrationdiff --hash
 
 # The admin app the binary embeds and serves at /admin. A file target, so it
 # costs an npm run only when something under admin/ or the spec changed. A
