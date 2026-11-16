@@ -3,7 +3,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { api } from '../api';
 import type { Schemas } from '../api';
 import * as mock from '../mock';
-import { Card, Cell, Page, Pill, since } from '../ui';
+import { Card, Cell, Page, Pill, notify, refused, since } from '../ui';
 
 type Variable = Schemas['Setting'];
 type Shelf = { slug: string; name: string; shows: string; on: boolean; note?: string };
@@ -121,7 +121,6 @@ export function Settings() {
   const [shelves, setShelves] = useState<Shelf[] | undefined>(mock.mocked ? mock.shelves : undefined);
   const [groups, setGroups] = useState<mock.SettingGroup[]>(mock.mocked ? mock.settings : []);
   const [failure, setFailure] = useState('');
-  const [notice, setNotice] = useState('');
 
   async function load() {
     if (mock.mocked) {
@@ -137,7 +136,6 @@ export function Settings() {
   }
 
   function toggle(slug: string, on: boolean) {
-    setNotice('');
     setShelves(shelves?.map((shelf) => (shelf.slug === slug ? { ...shelf, on } : shelf)));
   }
 
@@ -145,9 +143,12 @@ export function Settings() {
     if (mock.mocked || !shelves) {
       return;
     }
-    const { response } = await api.PUT('/GoJellyfin/Shelves', { body: { Enabled: shelves.filter((shelf) => shelf.on).map((shelf) => shelf.slug) } });
-    setFailure(response.ok ? '' : 'The shelves could not be saved.');
-    setNotice(response.ok ? 'Shelves saved. They show on the next visit to the home screen.' : '');
+    const { response, error } = await api.PUT('/GoJellyfin/Shelves', { body: { Enabled: shelves.filter((shelf) => shelf.on).map((shelf) => shelf.slug) } });
+    if (response.ok) {
+      notify('Shelves saved. They show on the next visit to the home screen.');
+    } else {
+      refused(error, 'The shelves could not be saved.');
+    }
     await load();
   }
 
@@ -170,11 +171,6 @@ export function Settings() {
         'Shelves, branding and API keys are edited here. Everything else is set in the environment, so it is shown here and changed in your deployment.'
       }
     >
-      {failure && (
-        <p class="failure" role="alert">
-          {failure}
-        </p>
-      )}
       <Card class="shelves">
         <header class="cardhead">
           <b>Home shelves</b>
@@ -197,11 +193,6 @@ export function Settings() {
             </label>
           ))}
         </div>
-        {notice && (
-          <p class="muted small" role="status">
-            {notice}
-          </p>
-        )}
       </Card>
 
       <div class="grid two spaced">
@@ -242,7 +233,6 @@ type Stored = { LoginDisclaimer?: string; CustomCss?: string; SplashscreenEnable
 function Branding() {
   const [stored, setStored] = useState<Stored | undefined>(mock.mocked ? { LoginDisclaimer: mock.branding.disclaimer, CustomCss: mock.branding.css } : undefined);
   const [failure, setFailure] = useState('');
-  const [notice, setNotice] = useState('');
 
   useEffect(() => {
     if (mock.mocked) {
@@ -260,7 +250,6 @@ function Branding() {
 
   function edit(field: 'LoginDisclaimer' | 'CustomCss') {
     return (event: Event) => {
-      setNotice('');
       setStored({ ...stored, [field]: (event.currentTarget as HTMLTextAreaElement).value });
     };
   }
@@ -269,9 +258,12 @@ function Branding() {
     if (mock.mocked || !stored) {
       return;
     }
-    const { response } = await api.POST('/System/Configuration/{key}', { params: { path: { key: 'branding' } }, body: stored });
-    setFailure(response.ok ? '' : 'The branding could not be saved.');
-    setNotice(response.ok ? 'Branding saved. Clients pick it up the next time they load.' : '');
+    const { response, error } = await api.POST('/System/Configuration/{key}', { params: { path: { key: 'branding' } }, body: stored });
+    if (response.ok) {
+      notify('Branding saved. Clients pick it up the next time they load.');
+    } else {
+      refused(error, 'The branding could not be saved.');
+    }
   }
 
   return (
@@ -299,11 +291,6 @@ function Branding() {
               Save branding
             </button>
           </div>
-          {notice && (
-            <p class="muted small" role="status">
-              {notice}
-            </p>
-          )}
         </>
       )}
     </Card>
@@ -346,12 +333,11 @@ function Keys() {
       return;
     }
     const before = new Set(keys?.map((key) => key.token));
-    const { response } = await api.POST('/Auth/Keys', { params: { query: { app: name } } });
+    const { response, error } = await api.POST('/Auth/Keys', { params: { query: { app: name } } });
     if (!response.ok) {
-      setFailure('The key could not be made.');
+      refused(error, 'The key for ' + name + ' could not be made.');
       return;
     }
-    setFailure('');
     setNaming(undefined);
     setMade((await load()).find((key) => !before.has(key.token)));
   }
@@ -360,8 +346,12 @@ function Keys() {
     if (mock.mocked) {
       return;
     }
-    const { response } = await api.DELETE('/Auth/Keys/{key}', { params: { path: { key: key.token } } });
-    setFailure(response.ok ? '' : 'The key could not be revoked.');
+    const { response, error } = await api.DELETE('/Auth/Keys/{key}', { params: { path: { key: key.token } } });
+    if (response.ok) {
+      notify('The key for ' + key.name + ' was revoked.');
+    } else {
+      refused(error, 'The key for ' + key.name + ' could not be revoked.');
+    }
     if (made?.token === key.token) {
       setMade(undefined);
     }

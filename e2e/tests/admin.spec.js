@@ -123,8 +123,15 @@ test.describe('the admin app', () => {
     await page.getByRole('button', { name: 'Test connection' }).click();
     await expect(page.getByText('Radarr ' + harness.downloaderVersion + ' answered')).toBeVisible();
     await page.getByLabel('Root folder in Radarr').selectOption(harness.downloaderRootFolder);
+    await page.getByLabel('Path on this server').fill('/outside-every-media-directory');
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByRole('alert')).toContainText('The downloader could not be saved. The server said:');
+    await page.getByRole('alert').getByRole('button', { name: 'Dismiss' }).click();
+    await expect(page.getByRole('alert')).toHaveCount(0);
+
     await page.getByLabel('Path on this server').fill(local);
     await page.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByRole('status').filter({ hasText: name + ' added to Movies.' })).toBeVisible();
 
     const card = movies.locator('.card', { hasText: name });
     await expect(card).toContainText(harness.downloaderRootFolder + ' opened here as ' + local);
@@ -133,6 +140,7 @@ test.describe('the admin app', () => {
 
     await card.getByRole('link', { name: 'Edit' }).click();
     await page.getByRole('button', { name: 'Delete downloader' }).click();
+    await expect(page.getByRole('status').filter({ hasText: name + ' deleted.' })).toBeVisible();
     await expect(movies.locator('.card', { hasText: 'Fixtures' })).toBeVisible();
     await expect(movies.locator('.card', { hasText: name })).toHaveCount(0);
   });

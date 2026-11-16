@@ -4,7 +4,7 @@ import { api } from '../api';
 import * as mock from '../mock';
 import { Served, how } from '../playback';
 import type { How } from '../playback';
-import { Cell, Dot, Page, Tabs, since } from '../ui';
+import { Cell, Dot, Page, Tabs, notify, refused, since } from '../ui';
 import type { Tone } from '../ui';
 
 type Tab = 'sessions' | 'devices' | 'log';
@@ -92,8 +92,12 @@ export function Activity() {
     if (mock.mocked) {
       return;
     }
-    const { response } = await api.DELETE('/Devices', { params: { query: { id: [device] } } });
-    setFailure(response.ok ? '' : 'The device could not be signed out.');
+    const { response, error } = await api.DELETE('/Devices', { params: { query: { id: [device] } } });
+    if (response.ok) {
+      notify('Signed out.');
+    } else {
+      refused(error, 'The device could not be signed out.');
+    }
     await load();
   }
 
@@ -121,12 +125,6 @@ export function Activity() {
         selected={tab}
         select={setTab}
       />
-
-      {failure && (
-        <p class="failure" role="alert">
-          {failure}
-        </p>
-      )}
 
       {tab === 'sessions' && (
         <div class="card flush">

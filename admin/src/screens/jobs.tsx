@@ -2,7 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 
 import { api } from '../api';
 import * as mock from '../mock';
-import { Card, Cell, Dot, Page, Pill, since } from '../ui';
+import { Card, Cell, Dot, Page, Pill, notify, refused, since } from '../ui';
 
 type Job = mock.Job;
 
@@ -70,10 +70,12 @@ export function Jobs() {
       return;
     }
     const params = { params: { path: { taskId: job.name } } };
-    const { response } = await (start ? api.POST('/ScheduledTasks/Running/{taskId}', params) : api.DELETE('/ScheduledTasks/Running/{taskId}', params));
-    setFailure(
-      response.ok ? '' : start ? job.title + ' could not be started. Background work is off unless the server is told where Temporal is.' : job.title + ' could not be cancelled.',
-    );
+    const { response, error } = await (start ? api.POST('/ScheduledTasks/Running/{taskId}', params) : api.DELETE('/ScheduledTasks/Running/{taskId}', params));
+    if (response.ok) {
+      notify(job.title + (start ? ' started.' : ' cancelled.'));
+    } else {
+      refused(error, start ? job.title + ' could not be started. Background work is off unless the server is told where Temporal is.' : job.title + ' could not be cancelled.');
+    }
     await load();
   }
 
@@ -97,11 +99,6 @@ export function Jobs() {
 
   return (
     <Page title="Jobs" lead="Background work, run by the worker through Temporal.">
-      {failure && (
-        <p class="failure" role="alert">
-          {failure}
-        </p>
-      )}
       <div class="card flush">
         <table class="rows">
           <colgroup>
