@@ -32,6 +32,9 @@ function emulatorSetup({ PACKAGE, apk, display, playableEpisodes = false }) {
 
     phone.reverse(app.facts.port);
     phone.shell('settings put secure immersive_mode_confirmations confirmed', { allowFailure: true });
+    // A loaded emulator can leave the launcher unresponsive for a moment, and
+    // the dialog saying so takes the keys meant for the app under it.
+    phone.shell('settings put global hide_error_dialogs 1', { allowFailure: true });
     phone.install(await apk());
     phone.clear(PACKAGE);
 

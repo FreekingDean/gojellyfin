@@ -12,7 +12,9 @@ module.exports = defineConfig({
   workers: 1,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
-  timeout: 240000,
+  // The first sign-in types the address a character at a time on an
+  // emulator that can run several times slower from one run to the next.
+  timeout: 360000,
   reporter: process.env.CI
     ? [['list'], ['json', { outputFile: '.build/android-results.json' }]]
     : 'list',
