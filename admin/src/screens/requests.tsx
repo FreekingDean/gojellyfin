@@ -4,7 +4,7 @@ import { api } from '../api';
 import type { Schemas } from '../api';
 import * as mock from '../mock';
 import { Served, attempted, client } from '../playback';
-import { Cell, Dot, Page, Pill, Tabs, since } from '../ui';
+import { Cell, Dot, Page, Pill, Tabs, notify, refused, since } from '../ui';
 import type { Tone } from '../ui';
 
 type Title = Schemas['RequestedTitle'];
@@ -60,7 +60,6 @@ export function Requests() {
   }
 
   async function decide(title: Title, decision: 'Approve' | 'Decline') {
-    setFailure('');
     const pending = title.Requests.filter((entry) => entry.Status === 'Pending');
     const entries = pending.length > 0 ? pending : title.Requests.slice(0, 1);
 
@@ -89,18 +88,21 @@ export function Requests() {
           : api.POST('/GoJellyfin/Requests/{requestId}/Decline', params);
       }),
     );
-    if (answers.some((answer) => !answer.response.ok)) {
-      setFailure(
+    const failed = answers.find((answer) => !answer.response.ok);
+    if (failed) {
+      refused(
+        failed.error,
         decision === 'Approve'
-          ? 'The request could not be approved. Check that a downloader takes requests for this kind of title.'
-          : 'The request could not be declined.',
+          ? 'The request for ' + title.Name + ' could not be approved. Check that a downloader takes requests for this kind of title.'
+          : 'The request for ' + title.Name + ' could not be declined.',
       );
+    } else {
+      notify(title.Name + (decision === 'Approve' ? ' approved.' : ' declined.'));
     }
     await load();
   }
 
   async function close(report: Report, decision: Closing) {
-    setFailure('');
     if (mock.mocked) {
       const status = decision === 'Dismiss' ? 'Dismissed' : 'Resolved';
       setReports(reports.map((each) => (each === report ? { ...each, Status: status } : each)));
@@ -108,13 +110,19 @@ export function Requests() {
     }
 
     const params = { params: { path: { reportId: report.Id } } };
-    const { response } = await (decision === 'Replace'
+    const { response, error } = await (decision === 'Replace'
       ? api.POST('/GoJellyfin/Reports/{reportId}/Replace', params)
       : decision === 'Resolve'
         ? api.POST('/GoJellyfin/Reports/{reportId}/Resolve', params)
         : api.POST('/GoJellyfin/Reports/{reportId}/Dismiss', params));
     if (!response.ok) {
-      setFailure(decision === 'Replace' ? 'The downloader did not replace this copy. Check that it is reachable.' : 'The report could not be closed.');
+      refused(error, decision === 'Replace' ? 'The downloader did not replace this copy of ' + report.ItemName + '. Check that it is reachable.' : 'The report on ' + report.ItemName + ' could not be closed.');
+    } else {
+      notify(
+        decision === 'Replace'
+          ? 'Asked the downloader for another copy of ' + report.ItemName + '.'
+          : 'Report on ' + report.ItemName + (decision === 'Resolve' ? ' resolved.' : ' dismissed.'),
+      );
     }
     await load();
   }

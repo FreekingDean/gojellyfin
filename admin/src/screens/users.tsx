@@ -4,7 +4,7 @@ import { api } from '../api';
 import type { Schemas } from '../api';
 import * as mock from '../mock';
 import { Link, navigate } from '../router';
-import { Card, Cell, Page, Pill, since } from '../ui';
+import { Card, Cell, Page, Pill, notify, refused, since } from '../ui';
 
 type Folder = { id: string; name: string };
 type Device = { id: string; name: string; app: string; seen?: string };
@@ -209,16 +209,16 @@ export function Users({ id }: { id?: string }) {
 function Add({ reload }: { reload: () => Promise<void> }) {
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
-  const [failure, setFailure] = useState('');
 
   async function submit(event: Event) {
     event.preventDefault();
     if (!mock.mocked) {
-      const { data } = await api.POST('/Users/New', { body: { Name: name, Password: password } });
+      const { data, error } = await api.POST('/Users/New', { body: { Name: name, Password: password } });
       if (!data?.Id) {
-        setFailure('The user could not be added. The name may already be taken.');
+        refused(error, 'The user could not be added. The name may already be taken.');
         return;
       }
+      notify(name + ' added.');
       await reload();
       navigate('/users/' + data.Id);
       return;
@@ -238,11 +238,6 @@ function Add({ reload }: { reload: () => Promise<void> }) {
           <input name="password" type="password" autocomplete="new-password" value={password} onInput={(event) => setPassword(event.currentTarget.value)} />
         </label>
         <p class="muted small">Leave the password empty for someone who only signs in with single sign-on.</p>
-        {failure && (
-          <p class="failure" role="alert">
-            {failure}
-          </p>
-        )}
         <div class="actions">
           <Link to="/users" class="button">
             Cancel
@@ -259,8 +254,6 @@ function Add({ reload }: { reload: () => Promise<void> }) {
 function Detail({ person, folders, reload }: { person: Person; folders: Folder[]; reload: () => Promise<void> }) {
   const [draft, setDraft] = useState(person);
   const [password, setPassword] = useState<string | undefined>(undefined);
-  const [failure, setFailure] = useState('');
-  const [notice, setNotice] = useState('');
 
   function change(patch: Partial<Person>) {
     setDraft({ ...draft, ...patch });
@@ -272,14 +265,12 @@ function Detail({ person, folders, reload }: { person: Person; folders: Folder[]
     change({ folders: next.length === folders.length ? 'all' : next });
   }
 
-  async function finish(ok: boolean, refused: string, done?: string) {
-    if (!ok) {
-      setNotice('');
-      setFailure(refused);
+  async function finish(answer: { response: Response; error?: unknown }, fallback: string, done: string) {
+    if (!answer.response.ok) {
+      refused(answer.error, fallback);
       return false;
     }
-    setFailure('');
-    setNotice(done ?? '');
+    notify(done);
     await reload();
 
     return true;
@@ -306,34 +297,34 @@ function Detail({ person, folders, reload }: { person: Person; folders: Folder[]
         body: { CanRequest: draft.canRequest, NeedsApproval: draft.needsApproval, Quota: draft.quota ?? null },
       }),
     ]);
-    const refused = draft.disabled && draft.admin ? 'An administrator cannot be disabled. Take administrator away first.' : 'The changes could not be saved.';
-    if (await finish(policy.response.ok && allowance.response.ok, refused)) {
+    const fallback = draft.disabled && draft.admin ? 'An administrator cannot be disabled. Take administrator away first.' : 'The changes to ' + person.name + ' could not be saved.';
+    if (await finish(policy.response.ok ? allowance : policy, fallback, person.name + ' saved.')) {
       navigate('/users');
     }
   }
 
   async function setNewPassword(event: Event) {
     event.preventDefault();
-    const { response } = await api.POST('/Users/Password', {
+    const answer = await api.POST('/Users/Password', {
       params: { query: { userId: person.id } },
       body: { NewPw: password ?? '', ResetPassword: true },
     });
-    if (await finish(response.ok, 'The password could not be changed.', 'Password changed. Every device ' + person.name + ' was signed in on has been signed out.')) {
+    if (await finish(answer, 'The password could not be changed.', 'Password changed. Every device ' + person.name + ' was signed in on has been signed out.')) {
       setPassword(undefined);
     }
   }
 
   async function signOut(devices: Device[]) {
-    const { response } = await api.DELETE('/Devices', { params: { query: { id: devices.map((device) => device.id) } } });
-    await finish(response.ok, 'The device could not be signed out.');
+    const answer = await api.DELETE('/Devices', { params: { query: { id: devices.map((device) => device.id) } } });
+    await finish(answer, 'The device could not be signed out.', 'Signed out.');
   }
 
   async function remove() {
     if (!window.confirm('Delete ' + person.name + '? Their watch history, favourites and sessions go with them.')) {
       return;
     }
-    const { response } = await api.DELETE('/Users/{userId}', { params: { path: { userId: person.id } } });
-    if (await finish(response.ok, 'The user could not be deleted.')) {
+    const answer = await api.DELETE('/Users/{userId}', { params: { path: { userId: person.id } } });
+    if (await finish(answer, person.name + ' could not be deleted.', person.name + ' deleted.')) {
       navigate('/users');
     }
   }
@@ -353,12 +344,6 @@ function Detail({ person, folders, reload }: { person: Person; folders: Folder[]
         </span>
       }
     >
-      {failure && (
-        <p class="failure" role="alert">
-          {failure}
-        </p>
-      )}
-      {notice && <p class="muted">{notice}</p>}
       <div class="grid two">
         <Card title="Account">
           <label class="check">
