@@ -3,7 +3,6 @@ package jobs
 import (
 	"context"
 	"log"
-	"runtime"
 	"sync"
 	"time"
 
@@ -36,8 +35,7 @@ func (w *Worker) Start() error {
 
 	for _, queue := range w.service.registry.Queues() {
 		polling := worker.New(connection, queue, worker.Options{
-			MaxConcurrentActivityExecutionSize: runtime.GOMAXPROCS(0),
-			WorkerStopTimeout:                  w.stopTimeout,
+			WorkerStopTimeout: w.stopTimeout,
 		})
 		polling.RegisterWorkflowWithOptions(w.run, workflow.RegisterOptions{Name: runWorkflow})
 		polling.RegisterWorkflowWithOptions(w.schedule, workflow.RegisterOptions{Name: scheduleWorkflow})
