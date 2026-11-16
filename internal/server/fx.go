@@ -57,6 +57,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/user"
 	"github.com/FreekingDean/gojellyfin/internal/server/userdata"
 	"github.com/FreekingDean/gojellyfin/internal/server/userviews"
+	"github.com/FreekingDean/gojellyfin/internal/server/videos"
 	"github.com/FreekingDean/gojellyfin/internal/server/years"
 )
 
@@ -113,6 +114,7 @@ var Module = fx.Module(
 	user.Module,
 	userdata.Module,
 	userviews.Module,
+	videos.Module,
 	years.Module,
 	fx.Provide(
 		New,

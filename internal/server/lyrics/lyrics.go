@@ -3,6 +3,7 @@ package lyrics
 import (
 	"context"
 	"errors"
+	"unicode/utf8"
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/lyrics"
@@ -35,6 +36,45 @@ func (s *Server) GetLyrics(ctx context.Context, request api.GetLyricsRequestObje
 	}
 
 	return api.GetLyrics200JSONResponse(lyricDto(lyrics.Parse(text))), nil
+}
+
+func (s *Server) UploadLyrics(ctx context.Context, request api.UploadLyricsRequestObject) (api.UploadLyricsResponseObject, error) {
+	if request.Body == nil || len(*request.Body) == 0 || !utf8.Valid(*request.Body) {
+		return api.UploadLyrics400JSONResponse{}, nil
+	}
+
+	viewer, err := dto.ViewerFor(ctx, s.policies)
+	if err != nil {
+		return nil, err
+	}
+
+	text := string(*request.Body)
+	err = s.items.SaveLyrics(ctx, viewer, request.ItemId, text)
+	if errors.Is(err, items.ErrNotFound) {
+		return api.UploadLyrics404JSONResponse{}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return api.UploadLyrics200JSONResponse(lyricDto(lyrics.Parse(text))), nil
+}
+
+func (s *Server) DeleteLyrics(ctx context.Context, request api.DeleteLyricsRequestObject) (api.DeleteLyricsResponseObject, error) {
+	viewer, err := dto.ViewerFor(ctx, s.policies)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.items.ClearLyrics(ctx, viewer, request.ItemId)
+	if errors.Is(err, items.ErrNotFound) {
+		return api.DeleteLyrics404JSONResponse{}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return api.DeleteLyrics204Response{}, nil
 }
 
 func lyricDto(parsed lyrics.Lyrics) api.LyricDto {

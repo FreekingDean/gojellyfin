@@ -50,11 +50,7 @@ func New(
 }
 
 func (s *Server) RefreshLibrary(ctx context.Context, request api.RefreshLibraryRequestObject) (api.RefreshLibraryResponseObject, error) {
-	if err := s.tasks.Start(ctx, jobs.RefreshLibraries); err != nil {
-		return nil, err
-	}
-
-	return api.RefreshLibrary204Response{}, nil
+	return api.RefreshLibrary204Response{}, s.refresh(ctx)
 }
 
 func (s *Server) itemsByID(ctx context.Context, ids []uuid.UUID) ([]*items.Item, error) {

@@ -102,6 +102,10 @@ func (s *Server) GetServerLogs(ctx context.Context, request api.GetServerLogsReq
 	return api.GetServerLogs200JSONResponse{}, nil
 }
 
+func (s *Server) GetLogFile(context.Context, api.GetLogFileRequestObject) (api.GetLogFileResponseObject, error) {
+	return api.GetLogFile404JSONResponse{}, nil
+}
+
 func (s *Server) GetPingSystem(ctx context.Context, request api.GetPingSystemRequestObject) (api.GetPingSystemResponseObject, error) {
 	return api.GetPingSystem200JSONResponse(s.system.ProductName()), nil
 }
