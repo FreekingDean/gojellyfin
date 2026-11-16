@@ -6,6 +6,7 @@ const { test, expect, openDetails, leavePlayer } = require('./fixtures');
 // Each title takes a different answer: the WebM plays as the file, the
 // MPEG-4 Part 2 has its picture encoded, and an episode, H.264 with E-AC-3
 // in Matroska, has its sound converted, which the emulator cannot decode.
+// Both of those that change reach it as HLS.
 async function openEpisode(phone, harness, name) {
   await phone.tapOn({ label: harness.shows });
   await phone.tapOn({ label: harness.series }, { timeout: 60000 });

@@ -14,6 +14,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/server/dto"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
+	"github.com/FreekingDean/gojellyfin/internal/transcode"
 )
 
 type Server struct {
@@ -26,8 +27,14 @@ func New(items *items.Service, policies dto.Access, sessions *sessions.Service) 
 	return &Server{items: items, policies: policies, sessions: sessions}
 }
 
+type asked struct {
+	profile    api.DeviceProfile
+	startTicks int64
+	noDirect   bool
+}
+
 func (s *Server) GetPlaybackInfo(ctx context.Context, request api.GetPlaybackInfoRequestObject) (api.GetPlaybackInfoResponseObject, error) {
-	response, err := s.playbackInfo(ctx, request.ItemId, nil, 0)
+	response, err := s.playbackInfo(ctx, request.ItemId, asked{})
 	if err != nil {
 		return nil, err
 	}
@@ -36,18 +43,23 @@ func (s *Server) GetPlaybackInfo(ctx context.Context, request api.GetPlaybackInf
 }
 
 func (s *Server) GetPostedPlaybackInfo(ctx context.Context, request api.GetPostedPlaybackInfoRequestObject) (api.GetPostedPlaybackInfoResponseObject, error) {
-	var profile api.DeviceProfile
-	startTicks := apiutil.Deref(request.Params.StartTimeTicks)
+	question := asked{
+		startTicks: apiutil.Deref(request.Params.StartTimeTicks),
+		noDirect:   !apiutil.OrElse(request.Params.EnableDirectPlay, true),
+	}
 	if body := apiutil.Body(request.JSONBody, request.ApplicationWildcardPlusJSONBody); body != nil {
 		if body.DeviceProfile != nil {
-			profile = *body.DeviceProfile
+			question.profile = *body.DeviceProfile
 		}
 		if body.StartTimeTicks != nil {
-			startTicks = *body.StartTimeTicks
+			question.startTicks = *body.StartTimeTicks
+		}
+		if body.EnableDirectPlay != nil && !*body.EnableDirectPlay {
+			question.noDirect = true
 		}
 	}
 
-	response, err := s.playbackInfo(ctx, request.ItemId, profile, startTicks)
+	response, err := s.playbackInfo(ctx, request.ItemId, question)
 	if err != nil {
 		return nil, err
 	}
@@ -55,9 +67,9 @@ func (s *Server) GetPostedPlaybackInfo(ctx context.Context, request api.GetPoste
 	return api.GetPostedPlaybackInfo200JSONResponse(response), nil
 }
 
-func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, profile api.DeviceProfile, startTicks int64) (api.PlaybackInfoResponse, error) {
-	if len(profile) == 0 {
-		profile = sessions.Profile(auth.SessionFrom(ctx))
+func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, question asked) (api.PlaybackInfoResponse, error) {
+	if len(question.profile) == 0 {
+		question.profile = sessions.Profile(auth.SessionFrom(ctx))
 	}
 
 	viewer, err := dto.ViewerFor(ctx, s.policies)
@@ -79,9 +91,7 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, profile api
 		MediaSources:  &[]api.MediaSourceInfo{},
 		PlaySessionId: apiutil.Ptr(session),
 	}
-	native := buildsItsOwnURL(profile)
-
-	plan, err := s.items.SourceFor(ctx, item, capabilities(profile))
+	plan, err := s.items.SourceFor(ctx, item, capabilities(question.profile))
 	if errors.Is(err, items.ErrNoSource) || errors.Is(err, items.ErrNoPlayable) {
 		log.Printf("nothing to play for %s: %v", item.Name, err)
 		response.ErrorCode = apiutil.Ptr(api.NoCompatibleStream)
@@ -94,16 +104,26 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, profile api
 
 	s.record(ctx, plan)
 
-	root := "Videos"
-	if items.IsAudio(item) {
-		root = "Audio"
-	}
-
+	token := auth.AuthorizationFrom(ctx).Token
 	source := dto.MediaSourceDto(plan.Source)
-	if native {
-		response.PlaySessionId = apiutil.Ptr(offered(&source, plan, session))
-	} else {
-		served(&source, plan, streamURL(root, itemID, plan, auth.AuthorizationFrom(ctx).Token, session, startTicks))
+	switch {
+	case items.IsAudio(item):
+		served(&source, plan, streamURL("Audio", itemID, plan, token, session, question.startTicks))
+	case plan.Change == items.ChangeNone:
+		served(&source, plan, streamURL("Videos", itemID, plan, token, session, question.startTicks))
+		source.SupportsDirectPlay = apiutil.Ptr(!question.noDirect)
+	default:
+		segmented, err := s.segmented(ctx, plan)
+		if err != nil {
+			return api.PlaybackInfoResponse{}, err
+		}
+		if !segmented {
+			served(&source, plan, streamURL("Videos", itemID, plan, token, session, question.startTicks))
+			break
+		}
+		served(&source, plan, playlistURL(itemID, plan, token, session, question.startTicks))
+		source.TranscodingSubProtocol = apiutil.Ptr(api.MediaStreamProtocolHls)
+		source.TranscodingContainer = apiutil.Ptr(transcode.VideoContainer)
 	}
 
 	response.MediaSources = &[]api.MediaSourceInfo{source}
@@ -129,20 +149,17 @@ func served(dto *api.MediaSourceInfo, plan items.Plan, url string) {
 	dto.TranscodingContainer = apiutil.Ptr(plan.Container)
 }
 
-func offered(dto *api.MediaSourceInfo, plan items.Plan, session string) string {
-	dto.SupportsTranscoding = apiutil.Ptr(false)
-	if plan.Change == items.ChangeNone {
-		dto.SupportsDirectStream = apiutil.Ptr(false)
-
-		return session
+func (s *Server) segmented(ctx context.Context, plan items.Plan) (bool, error) {
+	if plan.Change.EncodesVideo() {
+		return true, nil
+	}
+	if !transcode.CopiesVideo(items.VideoCodec(plan.Source)) {
+		return false, nil
 	}
 
-	dto.SupportsDirectPlay = apiutil.Ptr(false)
-	dto.Container = apiutil.Ptr(plan.Container)
-	instruction := conversion(plan)
-	instruction.Set(sessionKey, session)
+	keyframes, err := s.items.Keyframes(ctx, plan.Source.ID)
 
-	return instruction.Encode()
+	return len(keyframes) > 0, err
 }
 
 func newPlaySessionId() (string, error) {

@@ -40,3 +40,21 @@ func TestLoggingLeavesCredentialsOut(t *testing.T) {
 		t.Errorf("the log lost the request it describes:\n%s", logged.String())
 	}
 }
+
+func TestLoggingLetsAStreamFlush(t *testing.T) {
+	var flushed error
+	handler := HttpLogging(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("first fragment"))
+		flushed = http.NewResponseController(w).Flush()
+	}))
+
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/Videos/x/hls1/main/0.mp4", nil))
+
+	if flushed != nil {
+		t.Fatalf("flush = %v, want the logger to pass it through", flushed)
+	}
+	if !recorder.Flushed {
+		t.Error("the response was never flushed")
+	}
+}

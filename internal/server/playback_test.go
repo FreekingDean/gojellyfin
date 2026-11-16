@@ -285,7 +285,7 @@ func (f *playbackFixture) answer(t *testing.T, id uuid.UUID, profile string, sta
 func (f *playbackFixture) follow(t *testing.T, rawURL string) *httptest.ResponseRecorder {
 	t.Helper()
 
-	request := httptest.NewRequest(http.MethodGet, rawURL, nil)
+	request := httptest.NewRequest(http.MethodGet, strings.Replace(rawURL, "/master.m3u8?", "/stream."+transcode.VideoContainer+"?", 1), nil)
 	segments := strings.Split(strings.Trim(request.URL.Path, "/"), "/")
 	if len(segments) != 3 {
 		t.Fatalf("path = %q, want /Videos/{itemId}/stream.{container}", request.URL.Path)
@@ -544,7 +544,7 @@ func TestPlayback(t *testing.T) {
 		}
 
 		raw := apiutil.Deref(fixture.offer(t, id, sdrChromeProfile, 0).TranscodingUrl)
-		if !strings.Contains(raw, "/stream.mp4?") || !strings.Contains(raw, "videoCodec=h264") {
+		if !strings.Contains(raw, "/master.m3u8?") || !strings.Contains(raw, "videoCodec=h264") {
 			t.Fatalf("url = %q, want an h264 encode into the mp4 the source already is", raw)
 		}
 

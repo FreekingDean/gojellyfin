@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -224,22 +223,4 @@ func TestHandler_serveRemux(t *testing.T) {
 			t.Errorf("status = %d, want %d", got, http.StatusUnsupportedMediaType)
 		}
 	})
-}
-
-func TestHandler_Serve_PlaySessionInstruction(t *testing.T) {
-	fixture := newFixture(t)
-	fixture.withEncoder(t)
-	id := fixture.addRip(t, "ac3")
-
-	session := url.Values{"audioCodec": {"aac"}, "session": {"x"}}.Encode()
-	recorder := fixture.stream(t, id, "mkv", "playSessionId="+url.QueryEscape(session))
-
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("status = %d, want %d: %s", recorder.Code, http.StatusOK, recorder.Body)
-	}
-	for _, stream := range decodable(t, recorder.Body.Bytes(), "out.mp4").Streams {
-		if stream.CodecType == "audio" && stream.CodecName != "aac" {
-			t.Errorf("audio is %q, want the aac the play session asked for", stream.CodecName)
-		}
-	}
 }
