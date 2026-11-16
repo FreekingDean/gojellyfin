@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"reflect"
-	"time"
 	"testing"
+	"time"
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
